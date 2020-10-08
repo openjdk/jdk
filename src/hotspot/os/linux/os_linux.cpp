@@ -935,9 +935,10 @@ bool os::create_attached_thread(JavaThread* thread) {
     // enabling yellow zone first will crash JVM on SuSE Linux), so there
     // is no gap between the last two virtual memory regions.
 
-    address addr = thread->stack_reserved_zone_base();
+    StackOverflow* overflow_state = thread->stack_overflow_state();
+    address addr = overflow_state->stack_reserved_zone_base();
     assert(addr != NULL, "initialization problem?");
-    assert(thread->stack_available(addr) > 0, "stack guard should not be enabled");
+    assert(overflow_state->stack_available(addr) > 0, "stack guard should not be enabled");
 
     osthread->set_expanding_stack();
     os::Linux::manually_expand_stack(thread, addr);
@@ -1931,9 +1932,10 @@ void * os::Linux::dll_load_in_vmthread(const char *filename, char *ebuf,
 
   if (!_stack_is_executable) {
     for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
-      if (!jt->stack_guard_zone_unused() &&     // Stack not yet fully initialized
-          jt->stack_guards_enabled()) {         // No pending stack overflow exceptions
-        if (!os::guard_memory((char *)jt->stack_end(), jt->stack_guard_zone_size())) {
+      StackOverflow* overflow_state = jt->stack_overflow_state();
+      if (!overflow_state->stack_guard_zone_unused() &&     // Stack not yet fully initialized
+          overflow_state->stack_guards_enabled()) {         // No pending stack overflow exceptions
+        if (!os::guard_memory((char *)jt->stack_end(), overflow_state->stack_guard_zone_size())) {
           warning("Attempt to reguard stack yellow zone failed.");
         }
       }
@@ -5314,7 +5316,7 @@ bool os::start_debugging(char *buf, int buflen) {
 //    |                        |\
 //    |  HotSpot Guard Pages   | - red, yellow and reserved pages
 //    |                        |/
-//    +------------------------+ JavaThread::stack_reserved_zone_base()
+//    +------------------------+ StackOverflow::stack_reserved_zone_base()
 //    |                        |\
 //    |      Normal Stack      | -
 //    |                        |/

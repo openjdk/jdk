@@ -524,7 +524,7 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
     }
 
     G1ScanInYoungSetter x(&_scanner, dest_attr.is_young());
-    obj->oop_iterate_backwards(&_scanner);
+    obj->oop_iterate_backwards(&_scanner, klass);
     return obj;
 
   } else {

@@ -172,39 +172,6 @@ inline void JavaThread::set_done_attaching_via_jni() {
   OrderAccess::fence();
 }
 
-inline bool JavaThread::stack_guard_zone_unused() {
-  return _stack_guard_state == stack_guard_unused;
-}
-
-inline bool JavaThread::stack_yellow_reserved_zone_disabled() {
-  return _stack_guard_state == stack_guard_yellow_reserved_disabled;
-}
-
-inline bool JavaThread::stack_reserved_zone_disabled() {
-  return _stack_guard_state == stack_guard_reserved_disabled;
-}
-
-inline size_t JavaThread::stack_available(address cur_sp) {
-  // This code assumes java stacks grow down
-  address low_addr; // Limit on the address for deepest stack depth
-  if (_stack_guard_state == stack_guard_unused) {
-    low_addr = stack_end();
-  } else {
-    low_addr = stack_reserved_zone_base();
-  }
-  return cur_sp > low_addr ? cur_sp - low_addr : 0;
-}
-
-inline bool JavaThread::stack_guards_enabled() {
-#ifdef ASSERT
-  if (os::uses_stack_guard_pages() &&
-      !(DisablePrimordialThreadGuardPages && os::is_primordial_thread())) {
-    assert(_stack_guard_state != stack_guard_unused, "guard pages must be in use");
-  }
-#endif
-  return _stack_guard_state == stack_guard_enabled;
-}
-
 // The release make sure this store is done after storing the handshake
 // operation or global state
 inline void JavaThread::set_polling_page_release(void* poll_value) {

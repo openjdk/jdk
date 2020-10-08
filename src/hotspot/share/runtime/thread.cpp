@@ -354,8 +354,7 @@ void Thread::record_stack_base_and_size() {
 
   // Set stack limits after thread is initialized.
   if (is_Java_thread()) {
-    as_Java_thread()->set_stack_overflow_limit();
-    as_Java_thread()->set_reserved_stack_activation(stack_base());
+    as_Java_thread()->stack_overflow_state()->initialize(stack_base(), stack_end());
   }
 }
 
@@ -1664,87 +1663,96 @@ bool JavaThread::resize_all_jvmci_counters(int new_size) {
 
 // A JavaThread is a normal Java thread
 
-void JavaThread::initialize() {
+JavaThread::JavaThread() :
   // Initialize fields
 
-  set_saved_exception_pc(NULL);
-  _anchor.clear();
-  set_entry_point(NULL);
-  set_jni_functions(jni_functions());
-  set_callee_target(NULL);
-  set_vm_result(NULL);
-  set_vm_result_2(NULL);
-  set_vframe_array_head(NULL);
-  set_vframe_array_last(NULL);
-  set_deferred_updates(NULL);
-  set_deopt_mark(NULL);
-  set_deopt_compiled_method(NULL);
-  set_monitor_chunks(NULL);
-  _on_thread_list = false;
-  _thread_state = _thread_new;
-  _terminated = _not_terminated;
-  _suspend_equivalent = false;
-  _in_deopt_handler = 0;
-  _doing_unsafe_access = false;
-  _stack_guard_state = stack_guard_unused;
+  _on_thread_list(false),
+  DEBUG_ONLY(_java_call_counter(0) COMMA)
+  _entry_point(nullptr),
+  _deopt_mark(nullptr),
+  _deopt_nmethod(nullptr),
+  _vframe_array_head(nullptr),
+  _vframe_array_last(nullptr),
+  _jvmti_deferred_updates(nullptr),
+  _callee_target(nullptr),
+  _vm_result(nullptr),
+  _vm_result_2(nullptr),
+
+  _monitor_chunks(nullptr),
+  _special_runtime_exit_condition(_no_async_condition),
+  _pending_async_exception(nullptr),
+
+  _thread_state(_thread_new),
+  _saved_exception_pc(nullptr),
+
+  _terminated(_not_terminated),
+  _suspend_equivalent(false),
+  _in_deopt_handler(0),
+  _doing_unsafe_access(false),
+  _do_not_unlock_if_synchronized(false),
+  _jni_attach_state(_not_attaching_via_jni),
 #if INCLUDE_JVMCI
-  _pending_monitorenter = false;
-  _pending_deoptimization = -1;
-  _pending_failed_speculation = 0;
-  _pending_transfer_to_interpreter = false;
-  _in_retryable_allocation = false;
-  _jvmci._alternate_call_target = NULL;
-  assert(_jvmci._implicit_exception_pc == NULL, "must be");
-  _jvmci_counters = NULL;
+  _pending_deoptimization(-1),
+  _pending_monitorenter(false),
+  _pending_transfer_to_interpreter(false),
+  _in_retryable_allocation(false),
+  _pending_failed_speculation(0),
+  _jvmci{nullptr},
+  _jvmci_counters(nullptr),
+#endif // INCLUDE_JVMCI
+
+  _exception_oop(oop()),
+  _exception_pc(0),
+  _exception_handler_pc(0),
+  _is_method_handle_return(0),
+
+  _jni_active_critical(0),
+  _pending_jni_exception_check_fn(nullptr),
+  _depth_first_number(0),
+
+  // JVMTI PopFrame support
+  _popframe_condition(popframe_inactive),
+  _frames_to_pop_failed_realloc(0),
+
+  _handshake(this),
+
+  _popframe_preserved_args(nullptr),
+  _popframe_preserved_args_size(0),
+
+  _jvmti_thread_state(nullptr),
+  _interp_only_mode(0),
+  _should_post_on_exceptions_flag(JNI_FALSE),
+  _thread_stat(new ThreadStatistics()),
+
+  _parker(Parker::Allocate(this)),
+  _cached_monitor_info(nullptr),
+
+  _class_to_be_initialized(nullptr),
+
+  _SleepEvent(ParkEvent::Allocate(this))
+{
+
+  set_jni_functions(jni_functions());
+
+#if INCLUDE_JVMCI
+  assert(_jvmci._implicit_exception_pc == nullptr, "must be");
   if (JVMCICounterSize > 0) {
     resize_counters(0, (int) JVMCICounterSize);
   }
 #endif // INCLUDE_JVMCI
-  _reserved_stack_activation = NULL;  // stack base not known yet
-  set_exception_oop(oop());
-  _exception_pc  = 0;
-  _exception_handler_pc = 0;
-  _is_method_handle_return = 0;
-  _jvmti_thread_state= NULL;
-  _should_post_on_exceptions_flag = JNI_FALSE;
-  _interp_only_mode    = 0;
-  _special_runtime_exit_condition = _no_async_condition;
-  _pending_async_exception = NULL;
-  _thread_stat = NULL;
-  _thread_stat = new ThreadStatistics();
-  _jni_active_critical = 0;
-  _pending_jni_exception_check_fn = NULL;
-  _do_not_unlock_if_synchronized = false;
-  _cached_monitor_info = NULL;
-  _parker = Parker::Allocate(this);
-  _SleepEvent = ParkEvent::Allocate(this);
+
   // Setup safepoint state info for this thread
   ThreadSafepointState::create(this);
 
-  debug_only(_java_call_counter = 0);
-
-  // JVMTI PopFrame support
-  _popframe_condition = popframe_inactive;
-  _popframe_preserved_args = NULL;
-  _popframe_preserved_args_size = 0;
-  _frames_to_pop_failed_realloc = 0;
-
   SafepointMechanism::initialize_header(this);
-
-  _class_to_be_initialized = NULL;
-
   pd_initialize();
+  assert(deferred_card_mark().is_empty(), "Default MemRegion ctor");
 }
 
-JavaThread::JavaThread(bool is_attaching_via_jni) :
-                       Thread(), _handshake(this) {
-  initialize();
+JavaThread::JavaThread(bool is_attaching_via_jni) : JavaThread() {
   if (is_attaching_via_jni) {
     _jni_attach_state = _attaching_via_jni;
-  } else {
-    _jni_attach_state = _not_attaching_via_jni;
   }
-  assert(deferred_card_mark().is_empty(), "Default MemRegion ctor");
 }
 
 
@@ -1805,35 +1813,6 @@ bool JavaThread::is_interrupted(bool clear_interrupted) {
   return interrupted;
 }
 
-bool JavaThread::reguard_stack(address cur_sp) {
-  if (_stack_guard_state != stack_guard_yellow_reserved_disabled
-      && _stack_guard_state != stack_guard_reserved_disabled) {
-    return true; // Stack already guarded or guard pages not needed.
-  }
-
-  // Java code never executes within the yellow zone: the latter is only
-  // there to provoke an exception during stack banging.  If java code
-  // is executing there, either StackShadowPages should be larger, or
-  // some exception code in c1, c2 or the interpreter isn't unwinding
-  // when it should.
-  guarantee(cur_sp > stack_reserved_zone_base(),
-            "not enough space to reguard - increase StackShadowPages");
-  if (_stack_guard_state == stack_guard_yellow_reserved_disabled) {
-    enable_stack_yellow_reserved_zone();
-    if (reserved_stack_activation() != stack_base()) {
-      set_reserved_stack_activation(stack_base());
-    }
-  } else if (_stack_guard_state == stack_guard_reserved_disabled) {
-    set_reserved_stack_activation(stack_base());
-    enable_stack_reserved_zone();
-  }
-  return true;
-}
-
-bool JavaThread::reguard_stack(void) {
-  return reguard_stack(os::current_stack_pointer());
-}
-
 void JavaThread::block_if_vm_exited() {
   if (_terminated == _vm_exited) {
     // _vm_exited is set at safepoint, and Threads_lock is never released
@@ -1851,9 +1830,7 @@ void JavaThread::block_if_vm_exited() {
 static void compiler_thread_entry(JavaThread* thread, TRAPS);
 static void sweeper_thread_entry(JavaThread* thread, TRAPS);
 
-JavaThread::JavaThread(ThreadFunction entry_point, size_t stack_sz) :
-                       Thread(), _handshake(this) {
-  initialize();
+JavaThread::JavaThread(ThreadFunction entry_point, size_t stack_sz) : JavaThread() {
   _jni_attach_state = _not_attaching_via_jni;
   set_entry_point(entry_point);
   // Create the native thread itself.
@@ -1933,11 +1910,11 @@ void JavaThread::pre_run() {
 // which defines the actual logic for that kind of thread.
 void JavaThread::run() {
   // initialize thread-local alloc buffer related fields
-  this->initialize_tlab();
+  initialize_tlab();
 
-  this->create_stack_guard_pages();
+  _stack_overflow_state.create_stack_guard_pages();
 
-  this->cache_global_variables();
+  cache_global_variables();
 
   // Thread is now sufficiently initialized to be handled by the safepoint code as being
   // in the VM. Change thread state from _thread_new to _thread_in_vm
@@ -1954,7 +1931,7 @@ void JavaThread::run() {
 
   // This operation might block. We call that after all safepoint checks for a new thread has
   // been completed.
-  this->set_active_handles(JNIHandleBlock::allocate_block());
+  set_active_handles(JNIHandleBlock::allocate_block());
 
   if (JvmtiExport::should_post_thread_life()) {
     JvmtiExport::post_thread_start(this);
@@ -2173,7 +2150,7 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
   }
 
   // These have to be removed while this is still a valid thread.
-  remove_stack_guard_pages();
+  _stack_overflow_state.remove_stack_guard_pages();
 
   if (UseTLAB) {
     tlab().retire();
@@ -2232,7 +2209,7 @@ void JavaThread::cleanup_failed_attach_current_thread(bool is_daemon) {
   }
 
   // These have to be removed while this is still a valid thread.
-  remove_stack_guard_pages();
+  _stack_overflow_state.remove_stack_guard_pages();
 
   if (UseTLAB) {
     tlab().retire();
@@ -2762,184 +2739,6 @@ void JavaThread::java_resume() {
   }
 }
 
-size_t JavaThread::_stack_red_zone_size = 0;
-size_t JavaThread::_stack_yellow_zone_size = 0;
-size_t JavaThread::_stack_reserved_zone_size = 0;
-size_t JavaThread::_stack_shadow_zone_size = 0;
-
-void JavaThread::create_stack_guard_pages() {
-  if (!os::uses_stack_guard_pages() ||
-      _stack_guard_state != stack_guard_unused ||
-      (DisablePrimordialThreadGuardPages && os::is_primordial_thread())) {
-      log_info(os, thread)("Stack guard page creation for thread "
-                           UINTX_FORMAT " disabled", os::current_thread_id());
-    return;
-  }
-  address low_addr = stack_end();
-  size_t len = stack_guard_zone_size();
-
-  assert(is_aligned(low_addr, os::vm_page_size()), "Stack base should be the start of a page");
-  assert(is_aligned(len, os::vm_page_size()), "Stack size should be a multiple of page size");
-
-  int must_commit = os::must_commit_stack_guard_pages();
-  // warning("Guarding at " PTR_FORMAT " for len " SIZE_FORMAT "\n", low_addr, len);
-
-  if (must_commit && !os::create_stack_guard_pages((char *) low_addr, len)) {
-    log_warning(os, thread)("Attempt to allocate stack guard pages failed.");
-    return;
-  }
-
-  if (os::guard_memory((char *) low_addr, len)) {
-    _stack_guard_state = stack_guard_enabled;
-  } else {
-    log_warning(os, thread)("Attempt to protect stack guard pages failed ("
-      PTR_FORMAT "-" PTR_FORMAT ").", p2i(low_addr), p2i(low_addr + len));
-    if (os::uncommit_memory((char *) low_addr, len)) {
-      log_warning(os, thread)("Attempt to deallocate stack guard pages failed.");
-    }
-    return;
-  }
-
-  log_debug(os, thread)("Thread " UINTX_FORMAT " stack guard pages activated: "
-    PTR_FORMAT "-" PTR_FORMAT ".",
-    os::current_thread_id(), p2i(low_addr), p2i(low_addr + len));
-}
-
-void JavaThread::remove_stack_guard_pages() {
-  assert(Thread::current() == this, "from different thread");
-  if (_stack_guard_state == stack_guard_unused) return;
-  address low_addr = stack_end();
-  size_t len = stack_guard_zone_size();
-
-  if (os::must_commit_stack_guard_pages()) {
-    if (os::remove_stack_guard_pages((char *) low_addr, len)) {
-      _stack_guard_state = stack_guard_unused;
-    } else {
-      log_warning(os, thread)("Attempt to deallocate stack guard pages failed ("
-        PTR_FORMAT "-" PTR_FORMAT ").", p2i(low_addr), p2i(low_addr + len));
-      return;
-    }
-  } else {
-    if (_stack_guard_state == stack_guard_unused) return;
-    if (os::unguard_memory((char *) low_addr, len)) {
-      _stack_guard_state = stack_guard_unused;
-    } else {
-      log_warning(os, thread)("Attempt to unprotect stack guard pages failed ("
-        PTR_FORMAT "-" PTR_FORMAT ").", p2i(low_addr), p2i(low_addr + len));
-      return;
-    }
-  }
-
-  log_debug(os, thread)("Thread " UINTX_FORMAT " stack guard pages removed: "
-    PTR_FORMAT "-" PTR_FORMAT ".",
-    os::current_thread_id(), p2i(low_addr), p2i(low_addr + len));
-}
-
-void JavaThread::enable_stack_reserved_zone() {
-  assert(_stack_guard_state == stack_guard_reserved_disabled, "inconsistent state");
-
-  // The base notation is from the stack's point of view, growing downward.
-  // We need to adjust it to work correctly with guard_memory()
-  address base = stack_reserved_zone_base() - stack_reserved_zone_size();
-
-  guarantee(base < stack_base(),"Error calculating stack reserved zone");
-  guarantee(base < os::current_stack_pointer(),"Error calculating stack reserved zone");
-
-  if (os::guard_memory((char *) base, stack_reserved_zone_size())) {
-    _stack_guard_state = stack_guard_enabled;
-  } else {
-    warning("Attempt to guard stack reserved zone failed.");
-  }
-}
-
-void JavaThread::disable_stack_reserved_zone() {
-  assert(_stack_guard_state == stack_guard_enabled, "inconsistent state");
-
-  // Simply return if called for a thread that does not use guard pages.
-  if (_stack_guard_state != stack_guard_enabled) return;
-
-  // The base notation is from the stack's point of view, growing downward.
-  // We need to adjust it to work correctly with guard_memory()
-  address base = stack_reserved_zone_base() - stack_reserved_zone_size();
-
-  if (os::unguard_memory((char *)base, stack_reserved_zone_size())) {
-    _stack_guard_state = stack_guard_reserved_disabled;
-  } else {
-    warning("Attempt to unguard stack reserved zone failed.");
-  }
-}
-
-void JavaThread::enable_stack_yellow_reserved_zone() {
-  assert(_stack_guard_state != stack_guard_unused, "must be using guard pages.");
-  assert(_stack_guard_state != stack_guard_enabled, "already enabled");
-
-  // The base notation is from the stacks point of view, growing downward.
-  // We need to adjust it to work correctly with guard_memory()
-  address base = stack_red_zone_base();
-
-  guarantee(base < stack_base(), "Error calculating stack yellow zone");
-  guarantee(base < os::current_stack_pointer(), "Error calculating stack yellow zone");
-
-  if (os::guard_memory((char *) base, stack_yellow_reserved_zone_size())) {
-    _stack_guard_state = stack_guard_enabled;
-  } else {
-    warning("Attempt to guard stack yellow zone failed.");
-  }
-}
-
-void JavaThread::disable_stack_yellow_reserved_zone() {
-  assert(_stack_guard_state != stack_guard_unused, "must be using guard pages.");
-  assert(_stack_guard_state != stack_guard_yellow_reserved_disabled, "already disabled");
-
-  // Simply return if called for a thread that does not use guard pages.
-  if (_stack_guard_state == stack_guard_unused) return;
-
-  // The base notation is from the stacks point of view, growing downward.
-  // We need to adjust it to work correctly with guard_memory()
-  address base = stack_red_zone_base();
-
-  if (os::unguard_memory((char *)base, stack_yellow_reserved_zone_size())) {
-    _stack_guard_state = stack_guard_yellow_reserved_disabled;
-  } else {
-    warning("Attempt to unguard stack yellow zone failed.");
-  }
-}
-
-void JavaThread::enable_stack_red_zone() {
-  // The base notation is from the stacks point of view, growing downward.
-  // We need to adjust it to work correctly with guard_memory()
-  assert(_stack_guard_state != stack_guard_unused, "must be using guard pages.");
-  address base = stack_red_zone_base() - stack_red_zone_size();
-
-  guarantee(base < stack_base(), "Error calculating stack red zone");
-  guarantee(base < os::current_stack_pointer(), "Error calculating stack red zone");
-
-  if (!os::guard_memory((char *) base, stack_red_zone_size())) {
-    warning("Attempt to guard stack red zone failed.");
-  }
-}
-
-void JavaThread::disable_stack_red_zone() {
-  // The base notation is from the stacks point of view, growing downward.
-  // We need to adjust it to work correctly with guard_memory()
-  assert(_stack_guard_state != stack_guard_unused, "must be using guard pages.");
-  address base = stack_red_zone_base() - stack_red_zone_size();
-  if (!os::unguard_memory((char *)base, stack_red_zone_size())) {
-    warning("Attempt to unguard stack red zone failed.");
-  }
-}
-
-void JavaThread::frames_do(void f(frame*, const RegisterMap* map)) {
-  // ignore is there is no stack
-  if (!has_last_Java_frame()) return;
-  // traverse the stack frames. Starts from top frame.
-  for (StackFrameStream fst(this); !fst.is_done(); fst.next()) {
-    frame* fr = fst.current();
-    f(fr, fst.register_map());
-  }
-}
-
-
 #ifndef PRODUCT
 // Deoptimization
 // Function for testing deoptimization
@@ -3213,7 +3012,18 @@ void JavaThread::print_on_error(outputStream* st, char *buf, int buflen) const {
   return;
 }
 
+
 // Verification
+
+void JavaThread::frames_do(void f(frame*, const RegisterMap* map)) {
+  // ignore if there is no stack
+  if (!has_last_Java_frame()) return;
+  // traverse the stack frames. Starts from top frame.
+  for (StackFrameStream fst(this); !fst.is_done(); fst.next()) {
+    frame* fr = fst.current();
+    f(fr, fst.register_map());
+  }
+}
 
 static void frame_verify(frame* f, const RegisterMap *map) { f->verify(map); }
 
@@ -3959,7 +3769,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Enable guard page *after* os::create_main_thread(), otherwise it would
   // crash Linux VM, see notes in os_linux.cpp.
-  main_thread->create_stack_guard_pages();
+  main_thread->stack_overflow_state()->create_stack_guard_pages();
 
   // Initialize Java-Level synchronization subsystem
   ObjectMonitor::Initialize();

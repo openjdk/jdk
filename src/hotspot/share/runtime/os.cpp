@@ -454,13 +454,7 @@ void os::init_before_ergo() {
   // decisions depending on large page support and the calculated large page size.
   large_page_init();
 
-  // We need to adapt the configured number of stack protection pages given
-  // in 4K pages to the actual os page size. We must do this before setting
-  // up minimal stack sizes etc. in os::init_2().
-  JavaThread::set_stack_red_zone_size     (align_up(StackRedPages      * 4 * K, vm_page_size()));
-  JavaThread::set_stack_yellow_zone_size  (align_up(StackYellowPages   * 4 * K, vm_page_size()));
-  JavaThread::set_stack_reserved_zone_size(align_up(StackReservedPages * 4 * K, vm_page_size()));
-  JavaThread::set_stack_shadow_zone_size  (align_up(StackShadowPages   * 4 * K, vm_page_size()));
+  StackOverflow::initialize_stack_zone_sizes();
 
   // VM version initialization identifies some characteristics of the
   // platform that are used during ergonomic decisions.
@@ -1376,7 +1370,7 @@ bool os::stack_shadow_pages_available(Thread *thread, const methodHandle& method
     Interpreter::size_top_interpreter_activation(method()) * wordSize;
 
   address limit = thread->as_Java_thread()->stack_end() +
-                  (JavaThread::stack_guard_zone_size() + JavaThread::stack_shadow_zone_size());
+                  (StackOverflow::stack_guard_zone_size() + StackOverflow::stack_shadow_zone_size());
 
   return sp > (limit + framesize_in_bytes);
 }

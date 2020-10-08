@@ -1699,7 +1699,8 @@ WB_ENTRY(jlong, WB_GetThreadStackSize(JNIEnv* env, jobject o))
 WB_END
 
 WB_ENTRY(jlong, WB_GetThreadRemainingStackSize(JNIEnv* env, jobject o))
-  return (jlong) thread->stack_available(os::current_stack_pointer()) - (jlong)JavaThread::stack_shadow_zone_size();
+  return (jlong) thread->stack_overflow_state()->stack_available(
+                   os::current_stack_pointer()) - (jlong)StackOverflow::stack_shadow_zone_size();
 WB_END
 
 
