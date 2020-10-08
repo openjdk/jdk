@@ -1309,7 +1309,7 @@ class StubGenerator: public StubCodeGenerator {
       __ ldrw(r16, Address(a, rscratch2, Address::lsl(exact_log2(size))));
       __ decode_heap_oop(temp); // calls verify_oop
     }
-    __ add(rscratch2, rscratch2, (int)size);
+    __ add(rscratch2, rscratch2, size);
     __ b(loop);
     __ bind(end);
   }
@@ -1367,7 +1367,7 @@ class StubGenerator: public StubCodeGenerator {
       // UnsafeCopyMemory page error: continue after ucm
       bool add_entry = !is_oop && (!aligned || sizeof(jlong) == size);
       UnsafeCopyMemoryMark ucmm(this, add_entry, true);
-      copy_memory(aligned, s, d, count, rscratch1, (int)size);
+      copy_memory(aligned, s, d, count, rscratch1, size);
     }
 
     if (is_oop) {
@@ -1438,7 +1438,7 @@ class StubGenerator: public StubCodeGenerator {
       // UnsafeCopyMemory page error: continue after ucm
       bool add_entry = !is_oop && (!aligned || sizeof(jlong) == size);
       UnsafeCopyMemoryMark ucmm(this, add_entry, true);
-      copy_memory(aligned, s, d, count, rscratch1, -(int)size);
+      copy_memory(aligned, s, d, count, rscratch1, -size);
     }
     if (is_oop) {
       __ pop(RegSet::of(d, count), sp);
