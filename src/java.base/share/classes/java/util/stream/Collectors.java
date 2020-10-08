@@ -56,6 +56,8 @@ import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
 
+import jdk.internal.access.SharedSecrets;
+
 /**
  * Implementations of {@link Collector} that implement various useful reduction
  * operations, such as accumulating elements into collections, summarizing
@@ -296,7 +298,8 @@ public final class Collectors {
     Collector<T, ?, List<T>> toUnmodifiableList() {
         return new CollectorImpl<>((Supplier<List<T>>) ArrayList::new, List::add,
                                    (left, right) -> { left.addAll(right); return left; },
-                                   list -> (List<T>)List.of(list.toArray()),
+                                   list -> (List<T>)SharedSecrets.getJavaUtilCollectionAccess()
+                                                                 .listFromTrustedArray(list.toArray()),
                                    CH_NOID);
     }
 

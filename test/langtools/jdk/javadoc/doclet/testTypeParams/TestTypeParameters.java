@@ -48,6 +48,7 @@ public class TestTypeParameters extends JavadocTester {
     public void test1() {
         javadoc("-d", "out-1",
                 "-use",
+                "--no-platform-links",
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);
@@ -80,6 +81,7 @@ public class TestTypeParameters extends JavadocTester {
     public void test2() {
         javadoc("-d", "out-2",
                 "-linksource",
+                "--no-platform-links",
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);

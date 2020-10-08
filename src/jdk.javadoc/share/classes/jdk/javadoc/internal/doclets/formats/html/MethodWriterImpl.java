@@ -111,7 +111,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
         }
         methodDocTree.add(heading);
         return HtmlTree.SECTION(HtmlStyle.detail, methodDocTree)
-                .setId(links.getName(writer.getAnchor(method)));
+                .setId(links.getAnchor(method));
     }
 
     /**
@@ -284,7 +284,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
             Content codeOverriddenTypeLink = HtmlTree.CODE(overriddenTypeLink);
             Content methlink = writer.getLink(
                     new LinkInfoImpl(writer.configuration, LinkInfoImpl.Kind.MEMBER, holder)
-                            .where(writer.links.getName(writer.getAnchor(method)))
+                            .where(writer.links.getAnchor(method))
                             .label(method.getSimpleName()));
             Content codeMethLink = HtmlTree.CODE(methlink);
             Content dd = HtmlTree.DD(codeMethLink);

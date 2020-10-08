@@ -50,6 +50,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
+#include "signals_posix.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
@@ -216,7 +217,7 @@ JVM_handle_linux_signal(int sig,
 
   if (sig == SIGPIPE || sig == SIGXFSZ) {
     // allow chained handler to go first
-    if (os::Linux::chained_handler(sig, info, ucVoid)) {
+    if (PosixSignals::chained_handler(sig, info, ucVoid)) {
       return true;
     } else {
       // Ignoring SIGPIPE/SIGXFSZ - see bugs 4229104 or 6499219
@@ -234,7 +235,7 @@ JVM_handle_linux_signal(int sig,
 
   JavaThread* thread = NULL;
   VMThread* vmthread = NULL;
-  if (os::Linux::signal_handlers_are_installed) {
+  if (PosixSignals::are_signal_handlers_installed()) {
     if (t != NULL ){
       if(t->is_Java_thread()) {
         thread = t->as_Java_thread();
@@ -425,7 +426,7 @@ JVM_handle_linux_signal(int sig,
   }
 
   // signal-chaining
-  if (os::Linux::chained_handler(sig, info, ucVoid)) {
+  if (PosixSignals::chained_handler(sig, info, ucVoid)) {
      return true;
   }
 
