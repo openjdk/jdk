@@ -33,7 +33,7 @@ import java.util.Objects;
  * way. An application uses a data output stream to write data that
  * can later be read by a data input stream.
  * <p>
- * A DataOutputStream is not safe for use by multiple concurrent
+ * A DataInputStream is not safe for use by multiple concurrent
  * threads. If a DataOutputStream is to be used by more than one
  * thread then access to the data output stream should be controlled
  * by appropriate synchronization.
