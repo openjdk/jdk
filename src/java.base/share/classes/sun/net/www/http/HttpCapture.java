@@ -53,6 +53,7 @@ import sun.util.logging.PlatformLogger;
  *
  * @author jccollet
  */
+// Using synchronized should be safe here.
 public class HttpCapture {
     private File file;
     private boolean incoming = true;

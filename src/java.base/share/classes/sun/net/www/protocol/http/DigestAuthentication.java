@@ -78,6 +78,7 @@ class DigestAuthentication extends AuthenticationInfo {
     // One instance of these may be shared among several DigestAuthentication
     // instances as a result of a single authorization (for multiple domains)
 
+    // synchronized should be safe here
     static class Parameters implements java.io.Serializable {
         private static final long serialVersionUID = -3584543755194526252L;
 
@@ -298,6 +299,8 @@ class DigestAuthentication extends AuthenticationInfo {
      */
     @Override
     public boolean setHeaders(HttpURLConnection conn, HeaderParser p, String raw) {
+        assert conn.isLockHeldByCurrentThread();
+
         params.setNonce (p.findValue("nonce"));
         params.setOpaque (p.findValue("opaque"));
         params.setQop (p.findValue("qop"));

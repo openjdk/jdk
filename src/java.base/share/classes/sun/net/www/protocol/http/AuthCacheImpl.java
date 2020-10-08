@@ -32,7 +32,7 @@ import java.util.HashMap;
 /**
  * @author Michael McMahon
  */
-
+// Using synchronized in this class should be safe
 public class AuthCacheImpl implements AuthCache {
     HashMap<String,LinkedList<AuthCacheValue>> hashtable;
 

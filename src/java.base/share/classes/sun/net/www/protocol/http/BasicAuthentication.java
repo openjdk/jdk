@@ -141,6 +141,7 @@ class BasicAuthentication extends AuthenticationInfo {
      */
     @Override
     public boolean setHeaders(HttpURLConnection conn, HeaderParser p, String raw) {
+        assert conn.isLockHeldByCurrentThread();
         conn.setAuthenticationProperty(getHeaderName(), getHeaderValue(null,null));
         return true;
     }
