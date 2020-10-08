@@ -583,10 +583,13 @@ void Node::setup_is_top() {
 //------------------------------~Node------------------------------------------
 // Fancy destructor; eagerly attempt to reclaim Node numberings and storage
 void Node::destruct() {
-  // Eagerly reclaim unique Node numberings
   Compile* compile = Compile::current();
+  // If this is the most recently created node, reclaim its index. Otherwise,
+  // record the node as dead to keep liveness information accurate.
   if ((uint)_idx+1 == compile->unique()) {
     compile->set_unique(compile->unique()-1);
+  } else {
+    compile->record_dead_node(_idx);
   }
   // Clear debug info:
   Node_Notes* nn = compile->node_notes_at(_idx);
