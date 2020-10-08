@@ -441,46 +441,27 @@ extern "C" JNIEXPORT int JVM_handle_linux_signal(int signo, siginfo_t* siginfo,
                                                int abort_if_unrecognized);
 #endif
 
-#if defined(AIX)
-
-// Set thread signal mask (for some reason on AIX sigthreadmask() seems
-// to be the thing to call; documentation is not terribly clear about whether
-// pthread_sigmask also works, and if it does, whether it does the same.
-bool set_thread_signal_mask(int how, const sigset_t* set, sigset_t* oset) {
-  const int rc = ::pthread_sigmask(how, set, oset);
-  // return value semantics differ slightly for error case:
-  // pthread_sigmask returns error number, sigthreadmask -1 and sets global errno
-  // (so, pthread_sigmask is more theadsafe for error handling)
-  // But success is always 0.
-  return rc == 0 ? true : false;
-}
-
 // Function to unblock all signals which are, according
 // to POSIX, typical program error signals. If they happen while being blocked,
 // they typically will bring down the process immediately.
-bool unblock_program_error_signals() {
+int unblock_program_error_signals() {
   sigset_t set;
   sigemptyset(&set);
   sigaddset(&set, SIGILL);
   sigaddset(&set, SIGBUS);
   sigaddset(&set, SIGFPE);
   sigaddset(&set, SIGSEGV);
-  return set_thread_signal_mask(SIG_UNBLOCK, &set, NULL);
+  return PosixSignals::unblock_thread_signal_mask(&set);
 }
-
-#endif
 
 // Renamed from 'signalHandler' to avoid collision with other shared libs.
 static void javaSignalHandler(int sig, siginfo_t* info, void* uc) {
   assert(info != NULL && uc != NULL, "it must be old kernel");
 
-// TODO: reconcile the differences between Linux/BSD vs AIX here!
-#if defined(AIX)
   // Never leave program error signals blocked;
   // on all our platforms they would bring down the process immediately when
   // getting raised while being blocked.
   unblock_program_error_signals();
-#endif
 
   int orig_errno = errno;  // Preserve errno value over signal handler.
 #if defined(BSD)
@@ -1287,8 +1268,16 @@ bool PosixSignals::is_sig_ignored(int sig) {
   }
 }
 
-int PosixSignals::unblock_thread_signal_mask(const sigset_t *set) {
-  return pthread_sigmask(SIG_UNBLOCK, set, NULL);
+// Set thread signal mask (for some reason on AIX sigthreadmask() seems
+// to be the thing to call; documentation is not terribly clear about whether
+// pthread_sigmask also works, and if it does, whether it does the same.
+bool PosixSignals::unblock_thread_signal_mask(const sigset_t *set) {
+  const int rc = pthread_sigmask(SIG_UNBLOCK, set, NULL);
+  // return value semantics differ slightly for error case:
+  // pthread_sigmask returns error number, sigthreadmask -1 and sets global errno
+  // (so, pthread_sigmask is more theadsafe for error handling)
+  // But success is always 0.
+  return rc == 0 ? true : false;
 }
 
 address PosixSignals::ucontext_get_pc(const ucontext_t* ctx) {
