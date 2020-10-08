@@ -83,10 +83,12 @@ function switchTab(e) {
     var selected = document.querySelector('[aria-selected=true]');
     if (selected) {
         if ((e.keyCode === 37 || e.keyCode === 38) && selected.previousSibling) {
+            // left or up arrow key pressed: move focus to previous tab
             selected.previousSibling.click();
             selected.previousSibling.focus();
             e.preventDefault();
         } else if ((e.keyCode === 39 || e.keyCode === 40) && selected.nextSibling) {
+            // right or down arrow key pressed: move focus to next tab
             selected.nextSibling.click();
             selected.nextSibling.focus();
             e.preventDefault();

@@ -115,13 +115,15 @@ public class TestAbstractMethod extends JavadocTester {
 
         checkOutput("pkg/A.html", false,
                 """
-                    <code>abstract void</code>""");
+                    <div class="col-first even-row-color method-summary-table-tab2 method-summary-ta\
+                    ble method-summary-table-tab3"><code>abstract void</code></div>""");
 
         checkOutput("pkg/B.html", false,
                 """
                     Default Methods""",
                 """
-                    <code>default void</code></td>""");
+                    <div class="col-first even-row-color method-summary-table-tab2 method-summary-ta\
+                    ble-tab5 method-summary-table"><code>default void</code></div>""");
 
         checkOutput("pkg/C.html", false,
                 """
