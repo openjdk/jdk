@@ -48,6 +48,8 @@ import jdk.internal.org.objectweb.asm.tree.MethodNode;
 import jdk.jfr.Enabled;
 import jdk.jfr.Event;
 import jdk.jfr.Name;
+import jdk.jfr.internal.Overridden;
+import jdk.jfr.internal.Overridden.Target;
 import jdk.jfr.Registered;
 import jdk.jfr.SettingControl;
 import jdk.jfr.SettingDefinition;
@@ -118,11 +120,13 @@ public final class EventInstrumentation {
 
     private final ClassNode classNode;
     private final List<SettingInfo> settingInfos;
-    private final List<FieldInfo> fieldInfos;;
+    private final List<FieldInfo> fieldInfos;
     private final Method writeMethod;
     private final String eventHandlerXInternalName;
     private final String eventName;
     private final boolean untypedEventHandler;
+    private FieldInfo eventThreadOverride = null;
+    private FieldInfo stackTraceOverride = null;
     private boolean guardHandlerReference;
     private Class<?> superClass;
 
@@ -132,7 +136,7 @@ public final class EventInstrumentation {
         this.settingInfos = buildSettingInfos(superClass, classNode);
         this.fieldInfos = buildFieldInfos(superClass, classNode);
         this.untypedEventHandler = hasUntypedHandler();
-        this.writeMethod = makeWriteMethod(fieldInfos);
+        this.writeMethod = ASMToolkit.makeWriteMethod(fieldInfos, true);
         this.eventHandlerXInternalName = ASMToolkit.getInternalName(EventHandlerCreator.makeEventHandlerName(id));
         String n =  annotationValue(classNode, ANNOTATION_TYPE_NAME.getDescriptor(), String.class);
         this.eventName = n == null ? classNode.name.replace("/", ".") : n;
@@ -265,7 +269,7 @@ public final class EventInstrumentation {
         return settingInfos;
     }
 
-    private static List<FieldInfo> buildFieldInfos(Class<?> superClass, ClassNode classNode) {
+    private List<FieldInfo> buildFieldInfos(Class<?> superClass, ClassNode classNode) {
         Set<String> fieldSet = new HashSet<>();
         List<FieldInfo> fieldInfos = new ArrayList<>(classNode.fields.size());
         // These two field are added by native as transient so they will be
@@ -279,21 +283,68 @@ public final class EventInstrumentation {
         for (FieldNode field : classNode.fields) {
             if (!fieldSet.contains(field.name) && isValidField(field.access, Type.getType(field.desc).getClassName())) {
                 FieldInfo fi = new FieldInfo(field.name, field.desc, classNode.name);
-                fieldInfos.add(fi);
-                fieldSet.add(field.name);
+                AnnotationNode overridden = getAnnotation(field, Overridden.class);
+                if (overridden == null) {
+                    fieldInfos.add(fi);
+                    fieldSet.add(field.name);
+                } else {
+                    String attrName = (String)overridden.values.get(0);
+                    String[] value = (String[])overridden.values.get(1); // enum values are encoded as 2-elements string arrays [type descriptor, name()]
+                    if (attrName.equals("value")) { // only 'value' is permitted
+                        Overridden.Target target = Overridden.Target.valueOf(value[1]); // ignore the type descriptor - the enum type is fixed
+                        if (!Type.getDescriptor(target.getTargetType()).equals(field.desc)) {
+                            throw new InternalError("Wrong override type for field " + field.name + ". Expected " + target.getTargetType() + ", got " + Type.getType(field.desc).getClassName());
+                        }
+                        switch (target) {
+                            case EVENT_THREAD: {
+                                eventThreadOverride = new FieldInfo(field.name, field.desc, classNode.name);
+                                break;
+                            }
+                            case STACKTRACE: {
+                                stackTraceOverride = new FieldInfo(field.name, field.desc, classNode.name);
+                                break;
+                            }
+                            default: {
+                                throw new InternalError("Unsupported type override: " + target);
+                            }
+                        }
+                    }
+                }
             }
         }
         for (Class<?> c = superClass; c != jdk.internal.event.Event.class; c = c.getSuperclass()) {
+            String internalClassName = ASMToolkit.getInternalName(c.getName());
             for (Field field : c.getDeclaredFields()) {
                 // skip private field in base classes
                 if (!Modifier.isPrivate(field.getModifiers())) {
                     if (isValidField(field.getModifiers(), field.getType().getName())) {
                         String fieldName = field.getName();
-                        if (!fieldSet.contains(fieldName)) {
-                            Type fieldType = Type.getType(field.getType());
-                            String internalClassName = ASMToolkit.getInternalName(c.getName());
-                            fieldInfos.add(new FieldInfo(fieldName, fieldType.getDescriptor(), internalClassName));
-                            fieldSet.add(fieldName);
+                        String fieldDescriptor = Type.getType(field.getType()).getDescriptor();
+                        FieldInfo fi = new FieldInfo(fieldName, fieldDescriptor, internalClassName);
+                        Overridden overridden = field.getAnnotation(Overridden.class);
+                        if (overridden == null) {
+                            if (!fieldSet.contains(fieldName)) {
+                                fieldInfos.add(fi);
+                                fieldSet.add(fieldName);
+                            }
+                        } else {
+                            Overridden.Target target = overridden.value();
+                            if (!target.getTargetType().equals(field.getType())) {
+                                throw new InternalError("Wrong override type for field " + field.getName() + ". Expected " + target.getTargetType() + ", got " + field.getType());
+                            }
+                            switch (target) {
+                                case EVENT_THREAD: {
+                                    eventThreadOverride = fi;
+                                    break;
+                                }
+                                case STACKTRACE: {
+                                    stackTraceOverride = fi;
+                                    break;
+                                }
+                                default: {
+                                    throw new InternalError("Unsupported type override: " + target);
+                                }
+                            }
                         }
                     }
                 }
@@ -421,6 +472,20 @@ public final class EventInstrumentation {
             getEventHandler(methodVisitor);
 
             methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, eventHandlerXInternalName);
+             // custom event thread
+            if (eventThreadOverride == null) {
+                methodVisitor.visitInsn(Opcodes.ACONST_NULL);
+            } else {
+                methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
+                methodVisitor.visitFieldInsn(Opcodes.GETFIELD, eventThreadOverride.internalClassName, eventThreadOverride.fieldName, eventThreadOverride.fieldDescriptor);
+            }
+            // custom stacktrace
+            if (stackTraceOverride == null) {
+                methodVisitor.visitInsn(Opcodes.ACONST_NULL);
+            } else {
+                methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
+                methodVisitor.visitFieldInsn(Opcodes.GETFIELD, stackTraceOverride.internalClassName, stackTraceOverride.fieldName, stackTraceOverride.fieldDescriptor);
+            }
             for (FieldInfo fi : fieldInfos) {
                 methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
                 methodVisitor.visitFieldInsn(Opcodes.GETFIELD, fi.internalClassName, fi.fieldName, fi.fieldDescriptor);
@@ -523,14 +588,16 @@ public final class EventInstrumentation {
         classNode.methods.add(index, newMethod);
     }
 
-    public static Method makeWriteMethod(List<FieldInfo> fields) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("(");
-        for (FieldInfo v : fields) {
-            sb.append(v.fieldDescriptor);
+    private static AnnotationNode getAnnotation(FieldNode field, Class<?> annotationType) {
+        if (field.visibleAnnotations != null) {
+            String typeDescriptor = Type.getDescriptor(annotationType);
+            for (AnnotationNode a : field.visibleAnnotations) {
+                if (typeDescriptor.equals(a.desc)) {
+                    return a;
+                }
+            }
         }
-        sb.append(")V");
-        return new Method("write", sb.toString());
+        return null;
     }
 
     private String getInternalClassName() {

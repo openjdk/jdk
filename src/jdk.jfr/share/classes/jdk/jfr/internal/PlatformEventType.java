@@ -100,10 +100,10 @@ public final class PlatformEventType extends Type {
     private static int stackTraceOffset(String name, boolean isJDK) {
         if (isJDK) {
             if (isExceptionEvent(name)) {
-                return 4;
+                return 5;
             }
             if (isUsingHandler(name)) {
-                return 3;
+                return 4;
             }
         }
         return 4;

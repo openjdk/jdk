@@ -163,6 +163,17 @@ public final class JVM {
     public native long getStackTraceId(int skipCount);
 
     /**
+     * Return unique identifier for stack trace obtained from the given thread.
+     *
+     * Requires that JFR has been started with {@link #createNativeJFR()}
+     *
+     * @param tid id of a thread to get the stacktrace from
+     * @param skipCount number of frames to skip
+     * @return a unique stack trace identifier
+     */
+    public native long getStackTraceId(long tid, int skipCount);
+
+    /**
      * Return identifier for thread
      *
      * @param t thread

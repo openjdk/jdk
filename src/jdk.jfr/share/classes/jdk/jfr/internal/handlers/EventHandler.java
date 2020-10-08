@@ -115,27 +115,51 @@ public abstract class EventHandler {
        return platformEventType.setRegistered(registered);
     }
 
-    public void write(long start, long duration, String host, String address, int port, long timeout, long bytesRead, boolean endOfSTream) {
+    public void write(long start, long duration, String host, String address, int port, long timeout, long bytesRead, boolean endOfStream) {
+        write(null, null, start, duration, host, address, port, timeout, bytesRead, endOfStream);
+    }
+
+    public void write(Thread thrd, StackTraceElement[] stactkrace, long start, long duration, String host, String address, int port, long timeout, long bytesRead, boolean endOfStream) {
         throwError("SocketReadEvent");
     }
 
     public void write(long start, long duration, String host, String address, int port, long bytesWritten) {
+        write(null, null, start, duration, host, address, port, bytesWritten);
+    }
+
+    public void write(Thread thrd, StackTraceElement[] stactkrace, long start, long duration, String host, String address, int port, long bytesWritten) {
         throwError("SocketWriteEvent");
     }
 
     public void write(long start, long duration, String path, boolean metadata) {
+        write(null, null, start, duration, path, metadata);
+    }
+
+    public void write(Thread thrd, StackTraceElement[] stactkrace, long start, long duration, String path, boolean metadata) {
         throwError("FileForceEvent");
     }
 
     public void write(long start, long duration, String path, long bytesRead, boolean endOfFile) {
+        write(null, null, start, duration, path, bytesRead, endOfFile);
+    }
+
+    public void write(Thread thrd, StackTraceElement[] stactkrace, long start, long duration, String path, long bytesRead, boolean endOfFile) {
         throwError("FileReadEvent");
     }
 
     public void write(long start, long duration, String path, long bytesWritten) {
+        write(null, null, start, duration, path, bytesWritten);
+    }
+
+    public void write(Thread thrd, StackTraceElement[] stactkrace, long start, long duration, String path, long bytesWritten) {
         throwError("FileWriteEvent");
     }
 
     public void write(long start, long duration, String path, Class<?> exceptionClass)  {
+        write(null, null, start, duration, path, exceptionClass);
+    }
+
+    public void write(Thread thrd, StackTraceElement[] stactkrace, long start, long duration, String path, Class<?> exceptionClass)  {
         throwError("ExceptionThrownEvent or ErrorThrownEvent");
     }
 

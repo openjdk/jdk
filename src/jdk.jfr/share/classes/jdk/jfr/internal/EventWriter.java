@@ -154,6 +154,15 @@ public final class EventWriter {
         putLong(threadID);
     }
 
+    public void putEventThread(Thread athread) {
+        if (athread == null) {
+            putLong(threadID);
+        } else {
+            long tid = jvm.getThreadId(athread);
+            putLong(tid);
+        }
+    }
+
     public void putThread(Thread athread) {
         if (athread == null) {
             putLong(0L);
@@ -173,6 +182,19 @@ public final class EventWriter {
     public void putStackTrace() {
         if (eventType.getStackTraceEnabled()) {
             putLong(jvm.getStackTraceId(eventType.getStackTraceOffset()));
+        } else {
+            putLong(0L);
+        }
+    }
+
+    public void putStackTrace(Thread athread, StackTraceElement[] stackTrace) {
+        if (eventType.getStackTraceEnabled()) {
+            System.out.println("===> thread: " + athread + ", etype: " + eventType + ", offset: " + eventType.getStackTraceOffset());
+            if (athread != null) {
+                putLong(jvm.getStackTraceId(jvm.getThreadId(athread), 0)); // do not skip any frames
+            } else {
+                putLong(jvm.getStackTraceId(eventType.getStackTraceOffset()));
+            }
         } else {
             putLong(0L);
         }
@@ -294,6 +316,7 @@ public final class EventWriter {
     }
 
     private EventWriter(long startPos, long maxPos, long startPosAddress, long threadID, boolean valid) {
+        try {
         startPosition = currentPosition = startPos;
         maxPosition = maxPos;
         startPositionAddress = startPosAddress;
@@ -302,6 +325,10 @@ public final class EventWriter {
         flushOnEnd = false;
         this.valid = valid;
         notified = false;
+        } catch (Throwable t) {
+            t.printStackTrace();
+            throw t;
+        }
     }
 
     private static int makePaddedInt(int v) {

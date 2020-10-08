@@ -28,6 +28,7 @@
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
+#include "runtime/handshake.hpp"
 #include "runtime/mutexLocker.hpp"
 
 /*
@@ -164,6 +165,28 @@ traceid JfrStackTraceRepository::record(Thread* thread, int skip /* 0 */) {
   assert(frames != NULL, "invariant");
   assert(tl->stackframes() == frames, "invariant");
   return instance().record_for(thread->as_Java_thread(), skip, frames, tl->stackdepth());
+}
+
+traceid JfrStackTraceRepository::record_async(Thread* thread, int skip) {
+  class AsyncRecordClosure : public HandshakeClosure {
+    int _skip;
+    traceid _traceid;
+    void do_thread(Thread* th) {
+      Atomic::store(&_traceid, record(th, _skip));
+    }
+
+    public:
+    AsyncRecordClosure(int skip) : HandshakeClosure("JfrStackTraceRepository_async_record"), _skip(skip), _traceid(0) {}
+    traceid trace_id() const { return _traceid; }
+  };
+
+  if (!thread->is_Java_thread() || thread->is_hidden_from_external_view()) {
+    return 0;
+  }
+
+  AsyncRecordClosure callback(skip);
+  Handshake::execute(&callback, thread->as_Java_thread());
+  return callback.trace_id();
 }
 
 traceid JfrStackTraceRepository::record_for(JavaThread* thread, int skip, JfrStackFrame *frames, u4 max_frames) {

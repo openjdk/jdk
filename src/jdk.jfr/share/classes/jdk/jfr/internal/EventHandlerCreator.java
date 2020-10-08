@@ -106,9 +106,14 @@ final class EventHandlerCreator {
                 String fieldDescriptor = ASMToolkit.getDescriptor(v.getTypeName());
                 Class<?> c = eventClass;
                 String internalName = null;
+                boolean visible = true;
                 while (c != Event.class) {
                     try {
                         Field field = c.getDeclaredField(fieldName);
+                        if (field.getAnnotation(Overridden.class) != null) {
+                            visible = false;
+                            break;
+                        }
                         if (c == eventClass || !Modifier.isPrivate(field.getModifiers())) {
                             internalName = ASMToolkit.getInternalName(c.getName());
                             break;
@@ -118,10 +123,12 @@ final class EventHandlerCreator {
                     }
                     c = c.getSuperclass();
                 }
-                if (internalName != null) {
-                    fieldInfos.add(new FieldInfo(fieldName, fieldDescriptor, internalName));
-                } else {
-                    throw new InternalError("Could not locate field " + fieldName + " for event type" + type.getName());
+                if (visible) {
+                    if (internalName != null) {
+                        fieldInfos.add(new FieldInfo(fieldName, fieldDescriptor, internalName));
+                    } else {
+                        throw new InternalError("Could not locate field " + fieldName + " for event type" + type.getName());
+                    }
                 }
             }
         }
@@ -210,10 +217,16 @@ final class EventHandlerCreator {
     }
 
     private void buildWriteMethod() {
-        int argIndex = 0; // // indexes the argument type array, the argument type array does not include 'this'
-        int slotIndex = 1; // indexes the proper slot in the local variable table, takes type size into account, therefore sometimes argIndex != slotIndex
+        // Optional override arguments are as:
+        // 1. Event Thread
+        // 2. Stacktrace
+        int eventThreadPos = 0;
+        int stackTracePos = 1;
+        int offset = stackTracePos + 1; // skip the optional override arguments
+        int argIndex = 0 + offset; // // indexes the argument type array, the argument type array does not include 'this'
+        int slotIndex = 1 + offset; // indexes the proper slot in the local variable table, takes type size into account, therefore sometimes argIndex != slotIndex
         int fieldIndex = 0;
-        Method desc = ASMToolkit.makeWriteMethod(fields);
+        Method desc = ASMToolkit.makeWriteMethod(fields, true);
         Type[] argumentTypes = Type.getArgumentTypes(desc.getDescriptor());
         MethodVisitor mv = classWriter.visitMethod(Opcodes.ACC_PUBLIC, desc.getName(), desc.getDescriptor(), null, null);
         mv.visitCode();
@@ -257,11 +270,17 @@ final class EventHandlerCreator {
         // write eventThread
         mv.visitInsn(Opcodes.DUP);
         // stack: [BW], [BW]
-        visitMethod(mv, Opcodes.INVOKEVIRTUAL, TYPE_EVENT_WRITER, EventWriterMethod.PUT_EVENT_THREAD.asASM());
+        mv.visitVarInsn(Opcodes.ALOAD, 1);
+        // stack: [BW], [BW], [object]
+        visitMethod(mv, Opcodes.INVOKEVIRTUAL, TYPE_EVENT_WRITER, EventWriterMethod.PUT_EVENT_THREAD_1.asASM());
         // stack: [BW]
         // write stackTrace
         mv.visitInsn(Opcodes.DUP);
         // stack: [BW], [BW]
+        mv.visitVarInsn(Opcodes.ALOAD, 1);
+        // stack: [BW], [BW], [object]
+        mv.visitVarInsn(Opcodes.ALOAD, 2);
+        // stack: [BW], [BW], [object], [object]
         visitMethod(mv, Opcodes.INVOKEVIRTUAL, TYPE_EVENT_WRITER, EventWriterMethod.PUT_STACK_TRACE.asASM());
         // stack: [BW]
         // write custom fields

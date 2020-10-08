@@ -71,6 +71,7 @@ class JfrStackTraceRepository : public JfrCHeapObj {
 
  public:
   static traceid record(Thread* thread, int skip = 0);
+  static traceid record_async(Thread* thread, int skip = 0);
 };
 
 #endif // SHARE_JFR_RECORDER_STACKTRACE_JFRSTACKTRACEREPOSITORY_HPP

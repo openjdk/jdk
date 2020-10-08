@@ -135,11 +135,16 @@ final class ASMToolkit {
         return className.replace(".", "/");
     }
 
-    public static Method makeWriteMethod(List<FieldInfo> fields) {
+    public static Method makeWriteMethod(List<FieldInfo> fields, boolean overridable) {
         StringBuilder sb = new StringBuilder();
         sb.append("(");
+        if (overridable) {
+            // make the first argument to take the custom thread
+            sb.append("Ljava/lang/Thread;");
+            sb.append("[Ljava/lang/StackTraceElement;");
+        }
         for (FieldInfo v : fields) {
-            if (!v.fieldName.equals(EventInstrumentation.FIELD_EVENT_THREAD) && !v.fieldName.equals(EventInstrumentation.FIELD_STACK_TRACE)) {
+            if ((!v.fieldName.equals(EventInstrumentation.FIELD_EVENT_THREAD)) && !v.fieldName.equals(EventInstrumentation.FIELD_STACK_TRACE)) {
                 sb.append(v.fieldDescriptor);
             }
         }

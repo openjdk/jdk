@@ -99,6 +99,7 @@ public class TestExceptionEvents {
             List<RecordedEvent> events = Events.fromRecording(r);
             Events.hasEvents(events);
             for (RecordedEvent e : events) {
+                System.out.println(e);
                 RecordedStackTrace rs = e.getStackTrace();
                 RecordedClass rc = e.getValue("thrownClass");
                 List<RecordedFrame> frames = rs.getFrames();

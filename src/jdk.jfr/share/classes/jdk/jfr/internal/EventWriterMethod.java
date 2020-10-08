@@ -44,7 +44,8 @@ public enum EventWriterMethod {
     PUT_CLASS("(Ljava/lang/Class;)V", Type.CLASS.getName(), "putClass"),
     PUT_STRING("(Ljava/lang/String;Ljdk/jfr/internal/StringPool;)V", Type.STRING.getName(), "putString"),
     PUT_EVENT_THREAD("()V", Type.THREAD.getName(), "putEventThread"),
-    PUT_STACK_TRACE("()V", Type.TYPES_PREFIX + "StackTrace", "putStackTrace");
+    PUT_EVENT_THREAD_1("(Ljava/lang/Thread;)V", Type.THREAD.getName(), "putEventThread"),
+    PUT_STACK_TRACE("(Ljava/lang/Thread;[Ljava/lang/StackTraceElement;)V", Type.TYPES_PREFIX + "StackTrace", "putStackTrace");
 
     private final Method asmMethod;
     private final String typeDescriptor;
