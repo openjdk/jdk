@@ -3801,16 +3801,19 @@ class StubGenerator: public StubCodeGenerator {
     // Base64 class will be used to process the last 12 characters.
     __ sub(sl, sl, sp);
     __ subi(sl, sl, 12);
-    // Load CTR with the number of passes through the unrolled loop
-    // = sl >> block_size_shift
-    __ srawi(sl, sl, block_size_shift);
-    __ mtctr(sl);
 
     // out starts at d + dp
     __ add(out, d, dp);
 
     // in starts at s + sp
     __ add(in, s, sp);
+
+    // Load CTR with the number of passes through the unrolled loop
+    // = sl >> block_size_shift.  After the shift, if sl == 0, there's too
+    // little data to be processed by this intrinsic.
+    __ srawi_(sl, sl, block_size_shift);
+    __ beq_predict_not_taken(CCR0, unrolled_loop_exit);
+    __ mtctr(sl);
 
     __ align(32);
     __ bind(unrolled_loop_start);
