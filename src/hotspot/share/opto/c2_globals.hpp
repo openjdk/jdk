@@ -53,7 +53,7 @@
           "Randomize worklist traversal in IGVN")                           \
                                                                             \
   product(uint, StressSeed, 0, DIAGNOSTIC,                                  \
-          "Seed for IGVN stress testing (if unset, a random one is "        \
+          "Seed for randomized stress testing (if unset, a random one is "  \
           "generated")                                                      \
           range(0, max_juint)                                               \
                                                                             \
