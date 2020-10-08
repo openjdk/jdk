@@ -1577,8 +1577,15 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
     nmethod_mirror_index = -1;
   }
 
-  JVMCI::CodeInstallResult result;
-  {
+  JVMCI::CodeInstallResult result(JVMCI::ok);
+
+  // We require method counters to store some method state (max compilation levels) required by the compilation policy.
+  if (method->get_method_counters(THREAD) == NULL) {
+    result = JVMCI::cache_full;
+    failure_detail = (char*) "can't create method counters";
+  }
+
+  if (result == JVMCI::ok) {
     // To prevent compile queue updates.
     MutexLocker locker(THREAD, MethodCompileQueue_lock);
 
