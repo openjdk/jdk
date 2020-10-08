@@ -60,7 +60,11 @@ public class PhantomReference<T> extends Reference<T> {
         return null;
     }
 
-    /* Type-erased implementation of refersTo(). */
+    /* Override the implementation of Reference.refersTo.
+     * Phantom references are weaker than finalization, so the referent
+     * access needs to be handled differently for garbage collectors that
+     * do reference processing concurrently.
+     */
     @Override
     native final boolean refersTo0(Object o);
 
