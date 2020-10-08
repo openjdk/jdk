@@ -26,7 +26,7 @@
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
-#include "gc/g1/g1RegionMap.inline.hpp"
+#include "gc/g1/g1CommittedRegionMap.inline.hpp"
 #include "gc/g1/g1NUMAStats.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
@@ -69,7 +69,7 @@ HeapRegionManager::HeapRegionManager() :
   _bot_mapper(NULL),
   _cardtable_mapper(NULL),
   _card_counts_mapper(NULL),
-  _region_map(),
+  _committed_map(),
   _allocated_heapregions_length(0),
   _regions(), _heap_mapper(NULL),
   _prev_bitmap_mapper(NULL),
@@ -104,7 +104,7 @@ void HeapRegionManager::initialize(G1RegionToSpaceMapper* heap_storage,
 
   _regions.initialize(heap_storage->reserved(), HeapRegion::GrainBytes);
 
-  _region_map.initialize(reserved_length());
+  _committed_map.initialize(reserved_length());
 }
 
 HeapRegion* HeapRegionManager::allocate_free_region(HeapRegionType type, uint requested_node_index) {
@@ -240,7 +240,7 @@ void HeapRegionManager::uncommit_regions(uint start, uint num_regions) {
 
   _card_counts_mapper->uncommit_regions(start, num_regions);
 
-  _region_map.free(start, end);
+  _committed_map.uncommit(start, end);
 }
 
 void HeapRegionManager::initialize_regions(uint start, uint num_regions) {
@@ -258,7 +258,7 @@ void HeapRegionManager::initialize_regions(uint start, uint num_regions) {
 }
 
 void HeapRegionManager::activate_regions(uint start, uint num_regions) {
-  _region_map.activate(start, start + num_regions);
+  _committed_map.activate(start, start + num_regions);
   initialize_regions(start, num_regions);
 }
 
@@ -267,7 +267,7 @@ void HeapRegionManager::reactivate_regions(uint start, uint num_regions) {
 
   clear_auxiliary_data_structures(start, num_regions);
 
-  _region_map.reactivate(start, start + num_regions);
+  _committed_map.reactivate(start, start + num_regions);
   initialize_regions(start, num_regions);
 }
 
@@ -288,7 +288,7 @@ void HeapRegionManager::deactivate_regions(uint start, size_t num_regions) {
     }
   }
 
-  _region_map.deactivate(start, end);
+  _committed_map.deactivate(start, end);
 }
 
 void HeapRegionManager::clear_auxiliary_data_structures(uint start, uint num_regions) {
@@ -318,7 +318,7 @@ MemoryUsage HeapRegionManager::get_auxiliary_data_memory_usage() const {
 }
 
 bool HeapRegionManager::has_inactive_regions() const {
-  return _region_map.num_inactive() > 0;
+  return _committed_map.num_inactive() > 0;
 }
 
 uint HeapRegionManager::uncommit_inactive_regions(uint limit) {
@@ -328,7 +328,7 @@ uint HeapRegionManager::uncommit_inactive_regions(uint limit) {
   uint offset = 0;
   do {
     MutexLocker uc(Uncommit_lock, Mutex::_no_safepoint_check_flag);
-    HeapRegionRange range = _region_map.next_inactive_range(offset);
+    HeapRegionRange range = _committed_map.next_inactive_range(offset);
     // No more regions available for uncommit
     if (range.length() == 0) {
       return uncommitted;
@@ -349,7 +349,7 @@ uint HeapRegionManager::expand_inactive(uint num_regions) {
   uint expanded = 0;
 
   do {
-    HeapRegionRange regions = _region_map.next_inactive_range(offset);
+    HeapRegionRange regions = _committed_map.next_inactive_range(offset);
     if (regions.length() == 0) {
       // No more unavailable regions.
       break;
@@ -371,7 +371,7 @@ uint HeapRegionManager::expand_any(uint num_regions, WorkGang* pretouch_workers)
   uint expanded = 0;
 
   do {
-    HeapRegionRange regions = _region_map.next_free_range(offset);
+    HeapRegionRange regions = _committed_map.next_committable_range(offset);
     if (regions.length() == 0) {
       // No more unavailable regions.
       break;
@@ -409,18 +409,18 @@ void HeapRegionManager::expand_exact(uint start, uint num_regions, WorkGang* pre
   for (uint i = start; i < end; i++) {
     // First check inactive. If the regions is inactive, try to reactivate it
     // before it get uncommitted by the G1SeriveThread.
-    if (_region_map.inactive(i)) {
+    if (_committed_map.inactive(i)) {
       // Need to grab the lock since this can be called by a java thread
       // doing humongous allocations.
       MutexLocker uc(Uncommit_lock, Mutex::_no_safepoint_check_flag);
       // State might change while getting the lock.
-      if (_region_map.inactive(i)) {
+      if (_committed_map.inactive(i)) {
         reactivate_regions(i, 1);
       }
     }
     // Not else-if to catch the case where the inactive region was uncommited
     // while waiting to get the lock.
-    if (!_region_map.active(i)) {
+    if (!_committed_map.active(i)) {
       expand(i, 1, pretouch_workers);
     }
 
@@ -507,7 +507,7 @@ uint HeapRegionManager::find_contiguous_in_free_list(uint num_regions) {
   HeapRegionRange range(0,0);
 
   do {
-    range = _region_map.next_active_range(range.end());
+    range = _committed_map.next_active_range(range.end());
     candidate = find_contiguous_in_range(range.start(), range.end(), num_regions);
   } while (candidate == G1_NO_HRM_INDEX && range.end() < reserved_length());
 

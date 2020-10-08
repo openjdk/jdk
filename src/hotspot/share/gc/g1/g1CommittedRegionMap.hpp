@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1REGIONMAP_HPP
-#define SHARE_GC_G1_G1REGIONMAP_HPP
+#ifndef SHARE_GC_G1_G1COMMITTEDREGIONMAP_HPP
+#define SHARE_GC_G1_G1COMMITTEDREGIONMAP_HPP
 
 #include "memory/allocation.hpp"
 #include "utilities/bitMap.hpp"
@@ -43,11 +43,11 @@ class HeapRegionRange : public StackObj {
   uint length() const { return _end - _start; }
 };
 
-class G1RegionMap : public CHeapObj<mtGC> {
+class G1CommittedRegionMap : public CHeapObj<mtGC> {
   // Each bit in this bitmap indicates that the corresponding region is active
   // and available for allocation.
   CHeapBitMap _active;
-  // Each bit in this bigmap indicated that the corresponding region is no longer
+  // Each bit in this bitmap indicates that the corresponding region is no longer
   // active and it can be uncommitted.
   CHeapBitMap _inactive;
   // The union of these two bitmaps are the regions that are currently committed.
@@ -67,7 +67,7 @@ class G1RegionMap : public CHeapObj<mtGC> {
   void inactive_clear_range(uint start, uint end);
 
 public:
-  G1RegionMap();
+  G1CommittedRegionMap();
   void initialize(uint num_regions);
 
   uint num_active() const;
@@ -84,17 +84,17 @@ public:
   void deactivate(uint start, uint end);
   // Mark a range of regions active again and no longer ready for uncommit.
   void reactivate(uint start, uint end);
-  // Mark a range of regions free (no longer committed).
-  void free(uint start, uint end);
+  // Uncommit a range of inactive regions.
+  void uncommit(uint start, uint end);
 
   // Finds the next range of active regions starting at offset.
   HeapRegionRange next_active_range(uint offset) const;
   // Finds the next range of inactive regions starting at offset.
   HeapRegionRange next_inactive_range(uint offset) const;
-  // Finds the next range of free regions starting at offset.
+  // Finds the next range of committable regions starting at offset.
   // This function must only be called when no inactive regions are
   // present and can be used to active more regions.
-  HeapRegionRange next_free_range(uint offset) const;
+  HeapRegionRange next_committable_range(uint offset) const;
 
 protected:
   virtual void guarantee_mt_safty_active() const;
@@ -108,4 +108,4 @@ protected:
   void verify_inactive_count(uint start, uint end, uint expected) const NOT_DEBUG_RETURN;
 };
 
-#endif // SHARE_GC_G1_G1REGIONMAP_HPP
+#endif // SHARE_GC_G1_G1COMMITTEDREGIONMAP_HPP

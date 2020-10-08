@@ -22,18 +22,18 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1REGIONMAP_INLINE_HPP
-#define SHARE_GC_G1_G1REGIONMAP_INLINE_HPP
+#ifndef SHARE_GC_G1_G1COMMITTEDREGIONMAP_INLINE_HPP
+#define SHARE_GC_G1_G1COMMITTEDREGIONMAP_INLINE_HPP
 
-#include "gc/g1/g1RegionMap.hpp"
+#include "gc/g1/g1CommittedRegionMap.hpp"
 #include "utilities/bitMap.inline.hpp"
 
-inline bool G1RegionMap::active(uint index) const {
+inline bool G1CommittedRegionMap::active(uint index) const {
   return _active.at(index);
 }
 
-inline bool G1RegionMap::inactive(uint index) const {
+inline bool G1CommittedRegionMap::inactive(uint index) const {
   return _inactive.at(index);
 }
 
-#endif // SHARE_GC_G1_G1REGIONMAP_INLINE_HPP
+#endif // SHARE_GC_G1_G1COMMITTEDREGIONMAP_INLINE_HPP

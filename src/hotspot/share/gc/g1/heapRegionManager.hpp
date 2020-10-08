@@ -26,7 +26,7 @@
 #define SHARE_GC_G1_HEAPREGIONMANAGER_HPP
 
 #include "gc/g1/g1BiasedArray.hpp"
-#include "gc/g1/g1RegionMap.hpp"
+#include "gc/g1/g1CommittedRegionMap.hpp"
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "gc/g1/heapRegionSet.hpp"
 #include "memory/allocation.hpp"
@@ -79,7 +79,7 @@ class HeapRegionManager: public CHeapObj<mtGC> {
   G1RegionToSpaceMapper* _card_counts_mapper;
 
   // Map to keep track of which regions are in use.
-  G1RegionMap _region_map;
+  G1CommittedRegionMap _committed_map;
 
   // Internal only. The highest heap region +1 we allocated a HeapRegion instance for.
   uint _allocated_heapregions_length;
@@ -241,7 +241,7 @@ public:
   uint available() const { return max_length() - length(); }
 
   // Return the number of regions currently active and available for use.
-  uint length() const { return _region_map.num_active(); }
+  uint length() const { return _committed_map.num_active(); }
 
   // The number of regions reserved for the heap.
   uint reserved_length() const { return (uint)_regions.length(); }

@@ -23,11 +23,11 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/g1RegionMap.inline.hpp"
+#include "gc/g1/g1CommittedRegionMap.inline.hpp"
 #include "runtime/os.hpp"
 #include "unittest.hpp"
 
-class G1CommittedRegionMapSerial : public G1RegionMap {
+class G1CommittedRegionMapSerial : public G1CommittedRegionMap {
 public:
   static const uint TestRegions = 512;
 
@@ -45,7 +45,7 @@ static bool mutate() {
   return os::random() % 2 == 0;
 }
 
-static void generate_random_map(G1RegionMap* map) {
+static void generate_random_map(G1CommittedRegionMap* map) {
   for (uint i = 0; i < G1CommittedRegionMapSerial::TestRegions; i++) {
     if (mutate()) {
       map->activate(i, i+1);
@@ -59,7 +59,7 @@ static void generate_random_map(G1RegionMap* map) {
   }
 }
 
-static void random_deactivate(G1RegionMap* map) {
+static void random_deactivate(G1CommittedRegionMap* map) {
   uint current_offset = 0;
   do {
     HeapRegionRange current = map->next_active_range(current_offset);
@@ -76,7 +76,7 @@ static void random_deactivate(G1RegionMap* map) {
   } while (current_offset != G1CommittedRegionMapSerial::TestRegions);
 }
 
-static void random_uncommit_or_reactive(G1RegionMap* map) {
+static void random_uncommit_or_reactive(G1CommittedRegionMap* map) {
   uint current_offset = 0;
   do {
     HeapRegionRange current = map->next_inactive_range(current_offset);
@@ -84,17 +84,17 @@ static void random_uncommit_or_reactive(G1RegionMap* map) {
     if (mutate()) {
       map->reactivate(current.start(), current.end());
     } else {
-      map->free(current.start(), current.end());
+      map->uncommit(current.start(), current.end());
     }
 
     current_offset = current.end();
   } while (current_offset != G1CommittedRegionMapSerial::TestRegions);
 }
 
-static void random_activate_free(G1RegionMap* map) {
+static void random_activate_free(G1CommittedRegionMap* map) {
   uint current_offset = 0;
   do {
-    HeapRegionRange current = map->next_free_range(current_offset);
+    HeapRegionRange current = map->next_committable_range(current_offset);
     // Randomly either reactivate or uncommit
     if (mutate()) {
       if (current.length() < 5) {
@@ -110,7 +110,7 @@ static void random_activate_free(G1RegionMap* map) {
   } while (current_offset != G1CommittedRegionMapSerial::TestRegions);
 }
 
-TEST(G1RegionMapTest, serial) {
+TEST(G1CommittedRegionMapTest, serial) {
   G1CommittedRegionMapSerial serial_map;
   serial_map.initialize(G1CommittedRegionMapSerial::TestRegions);
 
