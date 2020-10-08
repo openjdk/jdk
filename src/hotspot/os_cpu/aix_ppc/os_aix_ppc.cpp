@@ -51,6 +51,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
+#include "signals_posix.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
 #ifdef COMPILER1
@@ -215,7 +216,7 @@ JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrec
   // that do not require siginfo/ucontext first.
 
   if (sig == SIGPIPE) {
-    if (os::Aix::chained_handler(sig, info, ucVoid)) {
+    if (PosixSignals::chained_handler(sig, info, ucVoid)) {
       return 1;
     } else {
       // Ignoring SIGPIPE - see bugs 4229104
@@ -225,7 +226,7 @@ JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrec
 
   JavaThread* thread = NULL;
   VMThread* vmthread = NULL;
-  if (os::Aix::signal_handlers_are_installed) {
+  if (PosixSignals::are_signal_handlers_installed()) {
     if (t != NULL) {
       if(t->is_Java_thread()) {
         thread = t->as_Java_thread();
@@ -527,7 +528,7 @@ run_stub:
 run_chained_handler:
 
   // signal-chaining
-  if (os::Aix::chained_handler(sig, info, ucVoid)) {
+  if (PosixSignals::chained_handler(sig, info, ucVoid)) {
     return 1;
   }
   if (!abort_if_unrecognized) {
