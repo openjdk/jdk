@@ -66,6 +66,7 @@ class JfrStackTraceRepository : public JfrCHeapObj {
 
  public:
   static traceid record(Thread* thread, int skip = 0);
+  static traceid record_async(Thread* thread, int skip = 0);
   static void record_and_cache(JavaThread* thread, int skip = 0);
 };
 

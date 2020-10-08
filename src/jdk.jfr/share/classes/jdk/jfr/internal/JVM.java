@@ -162,6 +162,8 @@ public final class JVM {
      */
     public native long getStackTraceId(int skipCount);
 
+    public native long getStackTraceId(long tid, int skipCount);
+
     /**
      * Return identifier for thread
      *
@@ -442,11 +444,26 @@ public final class JVM {
     public static native Object getEventWriter();
 
     /**
+     * Fast path fetching the EventWriter using VM intrinsics
+     *
+     * @return thread local EventWriter
+     */
+    // @IntrinsicCandidate
+    public static native Object getEventWriter(long tid);
+
+    /**
      * Create a new EventWriter
      *
      * @return thread local EventWriter
      */
     public static native EventWriter newEventWriter();
+
+    /**
+     * Create a new EventWriter
+     *
+     * @return thread local EventWriter
+     */
+    public static native EventWriter newEventWriter(long tid);
 
     /**
      * Flushes the EventWriter for this thread.

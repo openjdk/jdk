@@ -45,7 +45,9 @@
 #include "jfr/leakprofiler/leakProfiler.hpp"
 #include "jfr/support/jfrJdkJfrEvent.hpp"
 #include "jfr/support/jfrKlassUnloading.hpp"
+#include "jfr/support/jfrThreadId.hpp"
 #include "jfr/utilities/jfrJavaLog.hpp"
+#include "jfr/utilities/jfrThreadIterator.hpp"
 #include "jfr/utilities/jfrTimeConverter.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/writers/jfrJavaEventWriter.hpp"
@@ -250,6 +252,22 @@ JVM_END
 
 JVM_ENTRY_NO_ENV(jlong, jfr_stacktrace_id(JNIEnv* env, jobject jvm, jint skip))
   return JfrStackTraceRepository::record(thread, skip);
+JVM_END
+
+JVM_ENTRY_NO_ENV(jlong, jfr_stacktrace_id_1(JNIEnv* env, jobject jvm, jlong tid, jint skip))
+
+  JfrJavaThreadIterator threads(true);
+  Thread* target_thread = thread;
+  while (threads.has_next()) {
+    JavaThread* t = threads.next();
+    traceid ttid = JFR_THREAD_ID(t);
+    if (ttid == (traceid)tid) {
+      target_thread = t;
+      break;
+    }
+  }
+  return JfrStackTraceRepository::record_async(target_thread, skip);
+  // return JfrStackTraceRepository::record(thread, skip);
 JVM_END
 
 JVM_ENTRY_NO_ENV(void, jfr_log(JNIEnv* env, jobject jvm, jint tag_set, jint level, jstring message))

@@ -72,6 +72,7 @@ final class EventHandlerCreator {
     private final static Type TYPE_EVENT_CONTROL = Type.getType(EventControl.class);
     private final static String DESCRIPTOR_EVENT_HANDLER = "(" + Type.BOOLEAN_TYPE.getDescriptor() + TYPE_EVENT_TYPE.getDescriptor() + TYPE_EVENT_CONTROL.getDescriptor() + ")V";
     private final static Method METHOD_GET_EVENT_WRITER = new Method("getEventWriter", "()" + TYPE_EVENT_WRITER.getDescriptor());
+    private final static Method METHOD_GET_EVENT_WRITER_1 = new Method("getEventWriter", "(Ljava/lang/Thread;)" + TYPE_EVENT_WRITER.getDescriptor());
     private final static Method METHOD_EVENT_HANDLER_CONSTRUCTOR = new Method("<init>", DESCRIPTOR_EVENT_HANDLER);
     private final static Method METHOD_RESET = new Method("reset", "()V");
 
@@ -131,7 +132,7 @@ final class EventHandlerCreator {
     public Class<? extends EventHandler> makeEventHandlerClass() {
         buildClassInfo();
         buildConstructor();
-        buildWriteMethod();
+        buildWriteMethods();
         byte[] bytes = classWriter.toByteArray();
         ASMToolkit.logASM(className, bytes);
         return SecuritySupport.defineClass(EventHandler.class, bytes).asSubclass(EventHandler.class);
@@ -209,11 +210,16 @@ final class EventHandlerCreator {
         mv.visitMethodInsn(opcode, type.getInternalName(), method.getName(), method.getDescriptor(), false);
     }
 
-    private void buildWriteMethod() {
+    private void buildWriteMethods() {
+        buildWriteMethod1();
+        buildWriteMethod2();
+    }
+
+    private void buildWriteMethod1() {
         int argIndex = 0; // // indexes the argument type array, the argument type array does not include 'this'
         int slotIndex = 1; // indexes the proper slot in the local variable table, takes type size into account, therefore sometimes argIndex != slotIndex
         int fieldIndex = 0;
-        Method desc = ASMToolkit.makeWriteMethod(fields);
+        Method desc = ASMToolkit.makeWriteMethod(fields, false);
         Type[] argumentTypes = Type.getArgumentTypes(desc.getDescriptor());
         MethodVisitor mv = classWriter.visitMethod(Opcodes.ACC_PUBLIC, desc.getName(), desc.getDescriptor(), null, null);
         mv.visitCode();
@@ -297,6 +303,127 @@ final class EventHandlerCreator {
         // stack: [ex]
         mv.visitFrame(Opcodes.F_SAME1, 0, null, 1, new Object[] {"java/lang/Throwable"});
         visitMethod(mv, Opcodes.INVOKESTATIC, TYPE_EVENT_WRITER, METHOD_GET_EVENT_WRITER);
+        // stack: [ex] [BW]
+        mv.visitInsn(Opcodes.DUP);
+        // stack: [ex] [BW] [BW]
+        Label rethrow = new Label();
+        mv.visitJumpInsn(Opcodes.IFNULL, rethrow);
+        // stack: [ex] [BW]
+        mv.visitInsn(Opcodes.DUP);
+        // stack: [ex] [BW] [BW]
+        visitMethod(mv, Opcodes.INVOKEVIRTUAL, TYPE_EVENT_WRITER, METHOD_RESET);
+        mv.visitLabel(rethrow);
+        // stack:[ex] [BW]
+        mv.visitFrame(Opcodes.F_SAME, 0, null, 2, new Object[] {"java/lang/Throwable", TYPE_EVENT_WRITER.getInternalName()});
+        mv.visitInsn(Opcodes.POP);
+        // stack:[ex]
+        mv.visitInsn(Opcodes.ATHROW);
+        mv.visitLabel(recursive);
+        // stack: [BW]
+        mv.visitFrame(Opcodes.F_SAME, 0, null, 1, new Object[] { TYPE_EVENT_WRITER.getInternalName()} );
+        mv.visitInsn(Opcodes.POP);
+        mv.visitLabel(end);
+        // stack:
+        mv.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
+        mv.visitInsn(Opcodes.RETURN);
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
+    }
+
+    private void buildWriteMethod2() {
+        int offset = 1; // the first arg is custom thread id and it should not be forwarded
+        int argIndex = 0 + offset; // // indexes the argument type array, the argument type array does not include 'this'
+        int slotIndex = 1 + offset; // indexes the proper slot in the local variable table, takes type size into account, therefore sometimes argIndex != slotIndex
+        int fieldIndex = 0;
+        Method desc = ASMToolkit.makeWriteMethod(fields, true);
+        Type[] argumentTypes = Type.getArgumentTypes(desc.getDescriptor());
+        MethodVisitor mv = classWriter.visitMethod(Opcodes.ACC_PUBLIC, desc.getName(), desc.getDescriptor(), null, null);
+        mv.visitCode();
+        Label start = new Label();
+        Label endTryBlock = new Label();
+        Label exceptionHandler = new Label();
+        mv.visitTryCatchBlock(start, endTryBlock, exceptionHandler, "java/lang/Throwable");
+        mv.visitLabel(start);
+        visitMethod(mv, Opcodes.INVOKESTATIC, TYPE_EVENT_WRITER, METHOD_GET_EVENT_WRITER);
+        // stack: [BW]
+        mv.visitInsn(Opcodes.DUP);
+        // stack: [BW], [BW]
+        // write begin event
+        mv.visitVarInsn(Opcodes.ALOAD, 0);
+        // stack: [BW], [BW], [this]
+        mv.visitFieldInsn(Opcodes.GETFIELD, TYPE_EVENT_HANDLER.getInternalName(), FIELD_EVENT_TYPE, TYPE_PLATFORM_EVENT_TYPE.getDescriptor());
+        // stack: [BW], [BW], [BS]
+        visitMethod(mv, Opcodes.INVOKEVIRTUAL, TYPE_EVENT_WRITER, EventWriterMethod.BEGIN_EVENT.asASM());
+        // stack: [BW], [integer]
+        Label recursive = new Label();
+        mv.visitJumpInsn(Opcodes.IFEQ, recursive);
+        // stack: [BW]
+        // write startTime
+        mv.visitInsn(Opcodes.DUP);
+        // stack: [BW], [BW]
+        mv.visitVarInsn(argumentTypes[argIndex].getOpcode(Opcodes.ILOAD), slotIndex);
+        // stack: [BW], [BW], [long]
+        slotIndex += argumentTypes[argIndex++].getSize();
+        visitMethod(mv, Opcodes.INVOKEVIRTUAL, TYPE_EVENT_WRITER, EventWriterMethod.PUT_LONG.asASM());
+        // stack: [BW]
+        fieldIndex++;
+        // write duration
+        mv.visitInsn(Opcodes.DUP);
+        // stack: [BW], [BW]
+        mv.visitVarInsn(argumentTypes[argIndex].getOpcode(Opcodes.ILOAD), slotIndex);
+        // stack: [BW], [BW], [long]
+        slotIndex += argumentTypes[argIndex++].getSize();
+        visitMethod(mv, Opcodes.INVOKEVIRTUAL, TYPE_EVENT_WRITER, EventWriterMethod.PUT_LONG.asASM());
+        // stack: [BW]
+        fieldIndex++;
+        // write eventThread
+        mv.visitInsn(Opcodes.DUP);
+        // stack: [BW], [BW]
+        mv.visitVarInsn(Opcodes.ALOAD, 1);
+        // stac: [BW], [BW], [object]
+        visitMethod(mv, Opcodes.INVOKEVIRTUAL, TYPE_EVENT_WRITER, EventWriterMethod.PUT_EVENT_THREAD_1.asASM());
+        // stack: [BW]
+        // write stackTrace
+        mv.visitInsn(Opcodes.DUP);
+        // stack: [BW], [BW]
+        mv.visitVarInsn(Opcodes.ALOAD, 1);
+        // stac: [BW], [BW], [object]
+        visitMethod(mv, Opcodes.INVOKEVIRTUAL, TYPE_EVENT_WRITER, EventWriterMethod.PUT_STACK_TRACE_1.asASM());
+        // stack: [BW]
+        // write custom fields
+        while (fieldIndex < fields.size()) {
+            mv.visitInsn(Opcodes.DUP);
+            // stack: [BW], [BW]
+            mv.visitVarInsn(argumentTypes[argIndex].getOpcode(Opcodes.ILOAD), slotIndex);
+            // stack:[BW], [BW], [field]
+            slotIndex += argumentTypes[argIndex++].getSize();
+            FieldInfo field = fields.get(fieldIndex);
+            if (field.isString()) {
+                mv.visitVarInsn(Opcodes.ALOAD, 0);
+                // stack:[BW], [BW], [field], [this]
+                mv.visitFieldInsn(Opcodes.GETFIELD, this.internalClassName, FIELD_PREFIX_STRING_POOL + fieldIndex, TYPE_STRING_POOL.getDescriptor());
+                // stack:[BW], [BW], [field], [string]
+            }
+            EventWriterMethod eventMethod = EventWriterMethod.lookupMethod(field);
+            visitMethod(mv, Opcodes.INVOKEVIRTUAL, TYPE_EVENT_WRITER, eventMethod.asASM());
+            // stack: [BW]
+            fieldIndex++;
+        }
+        // stack: [BW]
+        // write end event (writer already on stack)
+        visitMethod(mv, Opcodes.INVOKEVIRTUAL, TYPE_EVENT_WRITER, EventWriterMethod.END_EVENT.asASM());
+        // stack [integer]
+        // notified -> restart event write attempt
+        mv.visitJumpInsn(Opcodes.IFEQ, start);
+        // stack:
+        mv.visitLabel(endTryBlock);
+        Label end = new Label();
+        mv.visitJumpInsn(Opcodes.GOTO, end);
+        mv.visitLabel(exceptionHandler);
+        // stack: [ex]
+        mv.visitFrame(Opcodes.F_SAME1, 0, null, 1, new Object[] {"java/lang/Throwable"});
+        mv.visitVarInsn(Opcodes.ALOAD, 1); // first argument is Thread
+        visitMethod(mv, Opcodes.INVOKESTATIC, TYPE_EVENT_WRITER, METHOD_GET_EVENT_WRITER_1);
         // stack: [ex] [BW]
         mv.visitInsn(Opcodes.DUP);
         // stack: [ex] [BW] [BW]

@@ -65,6 +65,8 @@ jstring JNICALL jfr_get_pid(JNIEnv* env, jobject jvm);
 
 jlong JNICALL jfr_stacktrace_id(JNIEnv* env, jobject jvm, jint skip);
 
+jlong JNICALL jfr_stacktrace_id_1(JNIEnv* env, jobject jvm, jlong tid, jint skip);
+
 jlong JNICALL jfr_elapsed_frequency(JNIEnv* env, jobject jvm);
 
 void JNICALL jfr_subscribe_log_level(JNIEnv* env, jobject jvm, jobject log_tag, jint id);

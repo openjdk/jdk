@@ -15,4 +15,8 @@ test/nashorn/lib
 NashornProfile.txt
 **/JTreport/**
 **/JTwork/**
-/src/utils/LogCompilation/target/
+*.class
+# Eclipse specific folders
+.classpath
+.settings
+.project

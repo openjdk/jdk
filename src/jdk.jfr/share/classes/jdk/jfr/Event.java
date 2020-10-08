@@ -119,6 +119,9 @@ abstract public class Event extends jdk.internal.event.Event {
     final public void commit() {
     }
 
+    final public void commit(Thread thread) {
+    }
+
     /**
      * Returns {@code true} if at least one recording is running, and the
      * enabled setting for this event is set to {@code true}, otherwise

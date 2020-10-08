@@ -56,7 +56,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-static const u2 number_of_new_methods = 5;
+static const u2 number_of_new_methods = 6;
 static const u2 number_of_new_fields = 3;
 static const int extra_stream_bytes = 0x280;
 static const u2 invalid_cp_index = 0;
@@ -73,19 +73,20 @@ static const char* utf8_constants[] = {
   "()Z",          // 8
   "end",          // 9
   "shouldCommit", // 10
-  "startTime",    // 11 // LAST_REQUIRED_UTF8
-  "Ljdk/jfr/internal/handlers/EventHandler;", // 12
-  "Ljava/lang/Object;", // 13
-  "<clinit>",     // 14
-  "jdk/jfr/FlightRecorder", // 15
-  "register",     // 16
-  "(Ljava/lang/Class;)V", // 17
-  "StackMapTable", // 18
-  "Exceptions", // 19
-  "LineNumberTable", // 20
-  "LocalVariableTable", // 21
-  "LocalVariableTypeTable", // 22
-  "RuntimeVisibleAnnotation", // 23
+  "startTime",    // 11 
+  "(Ljava/lang/Thread;)V", // 12// LAST_REQUIRED_UTF8
+  "Ljdk/jfr/internal/handlers/EventHandler;", // 13
+  "Ljava/lang/Object;", // 14
+  "<clinit>",     // 15
+  "jdk/jfr/FlightRecorder", // 16
+  "register",     // 17
+  "(Ljava/lang/Class;)V", // 18
+  "StackMapTable", // 19
+  "Exceptions", // 20
+  "LineNumberTable", // 21
+  "LocalVariableTable", // 22
+  "LocalVariableTypeTable", // 23
+  "RuntimeVisibleAnnotation", // 24
 };
 
 enum utf8_req_symbols {
@@ -101,7 +102,8 @@ enum utf8_req_symbols {
   UTF8_REQ_end,
   UTF8_REQ_shouldCommit,
   UTF8_REQ_startTime,
-  NOF_UTF8_REQ_SYMBOLS
+  UTF8_REQ_EMPTY_VOID_THREAD_METHOD_DESC,
+  NOF_UTF8_REQ_SYMBOLS,
 };
 
 enum utf8_opt_symbols {
@@ -159,6 +161,26 @@ static u1 boolean_method_code_attribute[] = {
   0x0, // ex table len
   0x0,
   0x0, // attributes_count
+};
+
+static u1 empty_void_thread_method_code_attribute[] = {
+  0x0,
+  0x0,
+  0x0,
+  0xd, // attribute len
+  0x0,
+  0x0, // max stack
+  0x0,
+  0x2, // max locals
+  0x0,
+  0x0,
+  0x0,
+  0x1, // code length
+  Bytecodes::_return,
+  0x0,
+  0x0, // ex table len
+  0x0,
+  0x0  // attributes_count
 };
 
 // annotation processing support
@@ -805,6 +827,15 @@ static u2 add_method_infos(JfrBigEndianWriter& writer, const u2* utf8_indexes) {
                   utf8_indexes[UTF8_REQ_Code],
                   empty_void_method_code_attribute,
                   sizeof(empty_void_method_code_attribute));
+
+  assert(writer.is_valid(), "invariant");
+
+  add_method_info(writer,
+                  utf8_indexes[UTF8_REQ_commit],
+                  utf8_indexes[UTF8_REQ_EMPTY_VOID_THREAD_METHOD_DESC],
+                  utf8_indexes[UTF8_REQ_Code],
+                  empty_void_thread_method_code_attribute,
+                  sizeof(empty_void_thread_method_code_attribute));
 
   assert(writer.is_valid(), "invariant");
 

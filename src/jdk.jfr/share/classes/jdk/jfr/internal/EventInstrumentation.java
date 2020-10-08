@@ -107,7 +107,8 @@ public final class EventInstrumentation {
     private static final Type TYPE_EVENT_HANDLER = Type.getType(EventHandler.class);
     private static final Type TYPE_SETTING_CONTROL = Type.getType(SettingControl.class);
     private static final Type TYPE_OBJECT  = Type.getType(Object.class);
-    private static final Method METHOD_COMMIT = new Method("commit", Type.VOID_TYPE, new Type[0]);
+    private static final Method METHOD_COMMIT1 = new Method("commit", Type.VOID_TYPE, new Type[0]);
+    private static final Method METHOD_COMMIT2 = new Method("commit", Type.VOID_TYPE, new Type[]{Type.getType(Thread.class)});
     private static final Method METHOD_BEGIN = new Method("begin", Type.VOID_TYPE, new Type[0]);
     private static final Method METHOD_END = new Method("end", Type.VOID_TYPE, new Type[0]);
     private static final Method METHOD_IS_ENABLED = new Method("isEnabled", Type.BOOLEAN_TYPE, new Type[0]);
@@ -119,7 +120,8 @@ public final class EventInstrumentation {
     private final ClassNode classNode;
     private final List<SettingInfo> settingInfos;
     private final List<FieldInfo> fieldInfos;;
-    private final Method writeMethod;
+    private final Method writeMethod1;
+    private final Method writeMethod2;
     private final String eventHandlerXInternalName;
     private final String eventName;
     private final boolean untypedEventHandler;
@@ -132,7 +134,8 @@ public final class EventInstrumentation {
         this.settingInfos = buildSettingInfos(superClass, classNode);
         this.fieldInfos = buildFieldInfos(superClass, classNode);
         this.untypedEventHandler = hasUntypedHandler();
-        this.writeMethod = makeWriteMethod(fieldInfos);
+        this.writeMethod1 = ASMToolkit.makeWriteMethod(fieldInfos, false);
+        this.writeMethod2 = ASMToolkit.makeWriteMethod(fieldInfos, true);
         this.eventHandlerXInternalName = ASMToolkit.getInternalName(EventHandlerCreator.makeEventHandlerName(id));
         String n =  annotationValue(classNode, ANNOTATION_TYPE_NAME.getDescriptor(), String.class);
         this.eventName = n == null ? classNode.name.replace("/", ".") : n;
@@ -155,6 +158,7 @@ public final class EventInstrumentation {
         ClassNode classNode = new ClassNode();
         ClassReader classReader = new ClassReader(bytes);
         classReader.accept(classNode, 0);
+        ASMToolkit.logASM(classNode.name, bytes);
         return classNode;
     }
 
@@ -367,7 +371,7 @@ public final class EventInstrumentation {
             methodVisitor.visitMaxs(0, 0);
         });
 
-        updateMethod(METHOD_COMMIT, methodVisitor -> {
+        updateMethod(METHOD_COMMIT1, methodVisitor -> {
             // if (!isEnable()) {
             // return;
             // }
@@ -427,7 +431,77 @@ public final class EventInstrumentation {
                 methodVisitor.visitFieldInsn(Opcodes.GETFIELD, fi.internalClassName, fi.fieldName, fi.fieldDescriptor);
             }
 
-            methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, eventHandlerXInternalName, writeMethod.getName(), writeMethod.getDescriptor(), false);
+            methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, eventHandlerXInternalName, writeMethod1.getName(), writeMethod1.getDescriptor(), false);
+            methodVisitor.visitLabel(end);
+            methodVisitor.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
+            methodVisitor.visitInsn(Opcodes.RETURN);
+            methodVisitor.visitEnd();
+        });
+
+        updateMethod(METHOD_COMMIT2, methodVisitor -> {
+            // if (!isEnable()) {
+            // return;
+            // }
+            methodVisitor.visitCode();
+            methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
+            methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, getInternalClassName(), METHOD_IS_ENABLED.getName(), METHOD_IS_ENABLED.getDescriptor(), false);
+            Label l0 = new Label();
+            methodVisitor.visitJumpInsn(Opcodes.IFNE, l0);
+            methodVisitor.visitInsn(Opcodes.RETURN);
+            methodVisitor.visitLabel(l0);
+            methodVisitor.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
+            // if (startTime == 0) {
+            // startTime = EventWriter.timestamp();
+            // } else {
+            methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
+            methodVisitor.visitFieldInsn(Opcodes.GETFIELD, getInternalClassName(), FIELD_START_TIME, "J");
+            methodVisitor.visitInsn(Opcodes.LCONST_0);
+            methodVisitor.visitInsn(Opcodes.LCMP);
+            Label durationalEvent = new Label();
+            methodVisitor.visitJumpInsn(Opcodes.IFNE, durationalEvent);
+            methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
+            methodVisitor.visitMethodInsn(Opcodes.INVOKESTATIC, TYPE_EVENT_HANDLER.getInternalName(), METHOD_TIME_STAMP.getName(), METHOD_TIME_STAMP.getDescriptor(), false);
+            methodVisitor.visitFieldInsn(Opcodes.PUTFIELD, getInternalClassName(), FIELD_START_TIME, "J");
+            Label commit = new Label();
+            methodVisitor.visitJumpInsn(Opcodes.GOTO, commit);
+            // if (duration == 0) {
+            // duration = EventWriter.timestamp() - startTime;
+            // }
+            // }
+            methodVisitor.visitLabel(durationalEvent);
+            methodVisitor.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
+            methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
+            methodVisitor.visitFieldInsn(Opcodes.GETFIELD, getInternalClassName(), FIELD_DURATION, "J");
+            methodVisitor.visitInsn(Opcodes.LCONST_0);
+            methodVisitor.visitInsn(Opcodes.LCMP);
+            methodVisitor.visitJumpInsn(Opcodes.IFNE, commit);
+            methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
+            methodVisitor.visitMethodInsn(Opcodes.INVOKESTATIC, TYPE_EVENT_HANDLER.getInternalName(), METHOD_TIME_STAMP.getName(), METHOD_TIME_STAMP.getDescriptor(), false);
+            methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
+            methodVisitor.visitFieldInsn(Opcodes.GETFIELD, getInternalClassName(), FIELD_START_TIME, "J");
+            methodVisitor.visitInsn(Opcodes.LSUB);
+            methodVisitor.visitFieldInsn(Opcodes.PUTFIELD, getInternalClassName(), FIELD_DURATION, "J");
+            methodVisitor.visitLabel(commit);
+            // if (shouldCommit()) {
+            methodVisitor.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
+            methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
+            methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, getInternalClassName(), METHOD_EVENT_SHOULD_COMMIT.getName(), METHOD_EVENT_SHOULD_COMMIT.getDescriptor(), false);
+            Label end = new Label();
+            // eventHandler.write(...);
+            // }
+            methodVisitor.visitJumpInsn(Opcodes.IFEQ, end);
+            getEventHandler(methodVisitor);
+
+            methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, eventHandlerXInternalName);
+
+            // // load the commit(thread) argument
+            methodVisitor.visitVarInsn(Opcodes.ALOAD, 1);
+            for (FieldInfo fi : fieldInfos) {
+                methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
+                methodVisitor.visitFieldInsn(Opcodes.GETFIELD, fi.internalClassName, fi.fieldName, fi.fieldDescriptor);
+            }
+
+            methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, eventHandlerXInternalName, writeMethod2.getName(), writeMethod2.getDescriptor(), false);
             methodVisitor.visitLabel(end);
             methodVisitor.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
             methodVisitor.visitInsn(Opcodes.RETURN);
@@ -484,7 +558,8 @@ public final class EventInstrumentation {
     private void makeUninstrumented() {
         updateExistingWithReturnFalse(METHOD_EVENT_SHOULD_COMMIT);
         updateExistingWithReturnFalse(METHOD_IS_ENABLED);
-        updateExistingWithEmptyVoidMethod(METHOD_COMMIT);
+        updateExistingWithEmptyVoidMethod(METHOD_COMMIT1);
+        updateExistingWithEmptyVoidMethod(METHOD_COMMIT2);
         updateExistingWithEmptyVoidMethod(METHOD_BEGIN);
         updateExistingWithEmptyVoidMethod(METHOD_END);
     }

@@ -67,6 +67,7 @@ final class JVMUpcalls {
             }
             return JDKEvents.retransformCallback(clazz, oldBytes);
         } catch (Throwable t) {
+            t.printStackTrace();
             Logger.log(LogTag.JFR_SYSTEM, LogLevel.WARN, "Unexpected error when adding instrumentation to event class " + clazz.getName());
         }
         return oldBytes;
