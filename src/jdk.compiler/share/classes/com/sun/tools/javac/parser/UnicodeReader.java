@@ -553,7 +553,7 @@ public class UnicodeReader {
         /**
          * Offset from the beginning of the original reader buffer.
          */
-        final private int offset;
+        private final int offset;
 
         /**
          * Current column in the comment.

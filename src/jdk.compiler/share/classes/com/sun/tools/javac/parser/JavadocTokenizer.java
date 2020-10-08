@@ -104,7 +104,7 @@ public class JavadocTokenizer extends JavaTokenizer {
         /**
          * StringBuilder used to extract the relevant portion of the Javadoc comment.
          */
-        private StringBuilder sb;
+        private final StringBuilder sb;
 
         /**
          * Map used to map the extracted Javadoc comment's character positions back to
