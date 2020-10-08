@@ -133,13 +133,12 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
                 .addTab(resources.errorSummary, e -> utils.isError((TypeElement)e))
                 .addTab(resources.annotationTypeSummary, utils::isAnnotationType)
                 .setTabScript(i -> "show(" + i + ");");
-        for (Character unicode : indexBuilder.keys()) {
-            for (IndexItem indexItem : indexBuilder.getMemberList(unicode)) {
+        for (Character unicode : indexBuilder.getFirstCharacters()) {
+            for (IndexItem indexItem : indexBuilder.getItems(unicode)) {
                 TypeElement typeElement = (TypeElement) indexItem.getElement();
-                if (typeElement == null || !utils.isCoreClass(typeElement)) {
-                    continue;
+                if (typeElement != null && utils.isCoreClass(typeElement)) {
+                    addTableRow(table, typeElement);
                 }
-                addTableRow(table, typeElement);
             }
         }
         Content titleContent = contents.allClassesLabel;

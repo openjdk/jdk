@@ -44,6 +44,7 @@ public class TestPackageAnnotation extends JavadocTester {
     public void testPackageInfoAnnotationNoComment() {
         javadoc("-d", "out-annotation",
                 "-sourcepath", testSrc,
+                "--no-platform-links",
                 "-use",
                 "pkg1");
         checkExit(Exit.OK);
@@ -78,6 +79,7 @@ public class TestPackageAnnotation extends JavadocTester {
     public void testPackageInfoAndHtml() {
         javadoc("-d", "out-annotation-3",
                 "-sourcepath", testSrc,
+                "--no-platform-links",
                 "-use",
                 "pkg3");
         checkExit(Exit.OK);

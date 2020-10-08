@@ -47,11 +47,6 @@
 static const Register rbcp     = LP64_ONLY(r13) NOT_LP64(rsi);
 static const Register rlocals  = LP64_ONLY(r14) NOT_LP64(rdi);
 
-// Platform-dependent initialization
-void TemplateTable::pd_initialize() {
-  // No x86 specific initialization
-}
-
 // Address Computation: local variables
 static inline Address iaddress(int n) {
   return Address(rlocals, Interpreter::local_offset_in_bytes(n));
@@ -3615,11 +3610,6 @@ void TemplateTable::fast_xaccess(TosState state) {
 
 //-----------------------------------------------------------------------------
 // Calls
-
-void TemplateTable::count_calls(Register method, Register temp) {
-  // implemented elsewhere
-  ShouldNotReachHere();
-}
 
 void TemplateTable::prepare_invoke(int byte_no,
                                    Register method,  // linked method (or i-klass)

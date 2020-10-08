@@ -108,13 +108,19 @@ public class TestHumongousConcurrentStartUndo {
 
             ArrayBlockingQueue a;
             for (int iterate = 0; iterate < 3; iterate++) {
+                // Start from an "empty" heap.
                 WHITE_BOX.fullGC();
-
+                // The queue only holds one element, so only one humongous object
+                // will be reachable and the concurrent operation should be undone.
                 a = new ArrayBlockingQueue(1);
                 allocateHumongous(humongousObjectAllocations, humongousObjectSize, a);
                 Helpers.waitTillCMCFinished(WHITE_BOX, 1);
                 a = null;
 
+                // Start from an "empty" heap.
+                WHITE_BOX.fullGC();
+                // The queue only holds all elements, so all humongous object
+                // will be reachable and the concurrent operation should be a regular mark.
                 a = new ArrayBlockingQueue(humongousObjectAllocations);
                 allocateHumongous(humongousObjectAllocations, humongousObjectSize, a);
                 Helpers.waitTillCMCFinished(WHITE_BOX, 1);
