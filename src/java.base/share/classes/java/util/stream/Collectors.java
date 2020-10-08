@@ -298,8 +298,14 @@ public final class Collectors {
     Collector<T, ?, List<T>> toUnmodifiableList() {
         return new CollectorImpl<>((Supplier<List<T>>) ArrayList::new, List::add,
                                    (left, right) -> { left.addAll(right); return left; },
-                                   list -> (List<T>)SharedSecrets.getJavaUtilCollectionAccess()
-                                                                 .listFromTrustedArray(list.toArray()),
+                                   list -> {
+                                       if (list.getClass() == ArrayList.class) { // ensure it's trusted
+                                           return (List<T>)SharedSecrets.getJavaUtilCollectionAccess()
+                                                                        .listFromTrustedArray(list.toArray());
+                                       } else {
+                                           throw new IllegalArgumentException();
+                                       }
+                                   },
                                    CH_NOID);
     }
 
