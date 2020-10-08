@@ -886,23 +886,22 @@ void os::abort(bool dump_core) {
 //---------------------------------------------------------------------------
 // Helper functions for fatal error handler
 
-void os::print_hex_dump(outputStream* st, address start, address end, int unitsize) {
+void os::print_hex_dump(outputStream* st, address start, address end, int unitsize,
+                        int bytes_per_line, address logical_start) {
   assert(unitsize == 1 || unitsize == 2 || unitsize == 4 || unitsize == 8, "just checking");
 
   start = align_down(start, unitsize);
+  logical_start = align_down(logical_start, unitsize);
+  bytes_per_line = align_up(bytes_per_line, 8);
 
   int cols = 0;
-  int cols_per_line = 0;
-  switch (unitsize) {
-    case 1: cols_per_line = 16; break;
-    case 2: cols_per_line = 8;  break;
-    case 4: cols_per_line = 4;  break;
-    case 8: cols_per_line = 2;  break;
-    default: return;
-  }
+  int cols_per_line = bytes_per_line / unitsize;
 
   address p = start;
-  st->print(PTR_FORMAT ":   ", p2i(start));
+  address logical_p = logical_start;
+
+  // Print out the addresses as if we were starting from logical_start.
+  st->print(PTR_FORMAT ":   ", p2i(logical_p));
   while (p < end) {
     if (is_readable_pointer(p)) {
       switch (unitsize) {
@@ -915,11 +914,12 @@ void os::print_hex_dump(outputStream* st, address start, address end, int unitsi
       st->print("%*.*s", 2*unitsize, 2*unitsize, "????????????????");
     }
     p += unitsize;
+    logical_p += unitsize;
     cols++;
     if (cols >= cols_per_line && p < end) {
        cols = 0;
        st->cr();
-       st->print(PTR_FORMAT ":   ", p2i(p));
+       st->print(PTR_FORMAT ":   ", p2i(logical_p));
     } else {
        st->print(" ");
     }

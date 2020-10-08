@@ -44,12 +44,6 @@
 
 #define __ _masm->
 
-// Platform-dependent initialization
-
-void TemplateTable::pd_initialize() {
-  // No aarch64 specific initialization
-}
-
 // Address computation: local variables
 
 static inline Address iaddress(int n) {
@@ -3197,11 +3191,6 @@ void TemplateTable::fast_xaccess(TosState state)
 
 //-----------------------------------------------------------------------------
 // Calls
-
-void TemplateTable::count_calls(Register method, Register temp)
-{
-  __ call_Unimplemented();
-}
 
 void TemplateTable::prepare_invoke(int byte_no,
                                    Register method, // linked method (or i-klass)

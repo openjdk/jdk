@@ -74,6 +74,7 @@ public class TestModules extends JavadocTester {
                 "-nocomment",
                 "-use",
                 "-Xdoclint:none",
+                "--no-platform-links",
                 "-overview", testSrc("overview.html"),
                 "--module-source-path", testSrc,
                 "--module", "moduleA,moduleB",
@@ -170,6 +171,7 @@ public class TestModules extends JavadocTester {
     public void testModuleDeprecation() {
         javadoc("-d", "out-moduledepr",
                 "-Xdoclint:none",
+                "--no-platform-links",
                 "-tag", "regular:a:Regular Tag:",
                 "-tag", "moduletag:s:Module Tag:",
                 "--module-source-path", testSrc,
@@ -430,6 +432,7 @@ public class TestModules extends JavadocTester {
         javadoc("-d", "out-linksource",
                 "-use",
                 "-linksource",
+                "--no-platform-links",
                 "-Xdoclint:none",
                 "--module-source-path", testSrc,
                 "--module", "moduleA,moduleB");
@@ -447,6 +450,7 @@ public class TestModules extends JavadocTester {
                 "-use",
                 "-private",
                 "-linksource",
+                "--no-platform-links",
                 "-Xdoclint:none",
                 "--module-source-path", testSrc,
                 "--module", "moduleA,moduleB");

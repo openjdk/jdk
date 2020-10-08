@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,21 +19,30 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-/* @test TestCodeCacheRootStyles
- * @requires vm.gc.Shenandoah
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+UseShenandoahGC -XX:ShenandoahCodeRootsStyle=0 TestCodeCacheRootStyles
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+UseShenandoahGC -XX:ShenandoahCodeRootsStyle=1 TestCodeCacheRootStyles
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+UseShenandoahGC -XX:ShenandoahCodeRootsStyle=2 TestCodeCacheRootStyles
+/* @test
+ * @bug 8253832
+ * @run testng CoderMalfunctionErrorTest
+ * @summary Check CoderMalfunctionError is thrown for any RuntimeException
+ *      on CharsetDecoder.decodeLoop() invocation.
  */
 
-public class TestCodeCacheRootStyles {
-    public static void main(String[] args) {
-        // Bug should crash before we get here.
+import org.testng.annotations.Test;
+
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.*;
+
+@Test
+public class CoderMalfunctionErrorTest {
+    @Test (expectedExceptions = CoderMalfunctionError.class)
+    public void testDecodeLoop() {
+        new CharsetDecoder(StandardCharsets.US_ASCII, 1, 1) {
+            @Override
+            protected CoderResult decodeLoop(ByteBuffer byteBuffer, CharBuffer charBuffer) {
+                throw new RuntimeException("This exception should be wrapped in CoderMalfunctionError");
+            }
+        }.decode(null, null, true);
     }
 }
