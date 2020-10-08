@@ -1,3 +1,26 @@
+/*
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
 
 #include "precompiled.hpp"
 #include "jni.h"
@@ -78,22 +101,19 @@ public:
       CloseScopedMemoryFindOopClosure cl(_deopt);
       CompiledMethod* cm = last_frame.cb()->as_compiled_method();
 
-      //FIXME: this doesn't work if reachability fences are violated by C2
-      // last_frame.oops_do(&cl, NULL, &register_map);
-
-      // if (cl.found()) {
-      //   // Found the deopt oop in a compiled method; deoptimize.
-      //   Deoptimization::deoptimize(jt, last_frame);
-      // }
-
-      // so... we unconditionally deoptimize, for now
+      /* FIXME: this doesn't work if reachability fences are violated by C2
+      last_frame.oops_do(&cl, NULL, &register_map);
+      if (cl.found()) {
+           //Found the deopt oop in a compiled method; deoptimize.
+           Deoptimization::deoptimize(jt, last_frame);
+      }
+      so... we unconditionally deoptimize, for now: */
       Deoptimization::deoptimize(jt, last_frame);
     }
 
     const int max_critical_stack_depth = 10;
     int depth = 0;
-    vframeStream stream(jt);
-    for (; !stream.at_end(); stream.next()) {
+    for (vframeStream stream(jt); !stream.at_end(); stream.next()) {
       Method* m = stream.method();
       if (m->is_scoped()) {
         StackValueCollection* locals = stream.asJavaVFrame()->locals();
@@ -127,19 +147,19 @@ public:
  * a less common slow path instead.
  * Top frames containg obj will be deoptimized.
  */
-JVM_ENTRY(jboolean, ScopedMemoryAccess_closeScope(JNIEnv *env, jobject receiver, jobject deopt, jobject exception)) {
+JVM_ENTRY(jboolean, ScopedMemoryAccess_closeScope(JNIEnv *env, jobject receiver, jobject deopt, jobject exception))
   CloseScopedMemoryClosure cl(deopt, exception);
   Handshake::execute(&cl);
   return !cl._found;
-} JVM_END
+JVM_END
 
 /// JVM_RegisterUnsafeMethods
 
-#define LANG "Ljdk/internal/misc/"
+#define PKG "Ljdk/internal/misc/"
 
 #define MEMACCESS "ScopedMemoryAccess"
-#define SCOPE LANG MEMACCESS "$Scope;"
-#define SCOPED_ERR LANG MEMACCESS "$Scope$ScopedAccessError;"
+#define SCOPE PKG MEMACCESS "$Scope;"
+#define SCOPED_ERR PKG MEMACCESS "$Scope$ScopedAccessError;"
 
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &f)
@@ -151,16 +171,16 @@ static JNINativeMethod jdk_internal_misc_ScopedMemoryAccess_methods[] = {
 #undef CC
 #undef FN_PTR
 
-#undef LANG
+#undef PKG
 #undef MEMACCESS
 #undef SCOPE
 #undef SCOPED_EXC
 
 // This function is exported, used by NativeLookup.
 
-JVM_ENTRY(void, JVM_RegisterJDKInternalMiscScopedMemoryAccessMethods(JNIEnv *env, jclass scopedMemoryAccessClass)) {
+JVM_ENTRY(void, JVM_RegisterJDKInternalMiscScopedMemoryAccessMethods(JNIEnv *env, jclass scopedMemoryAccessClass))
   ThreadToNativeFromVM ttnfv(thread);
 
   int ok = env->RegisterNatives(scopedMemoryAccessClass, jdk_internal_misc_ScopedMemoryAccess_methods, sizeof(jdk_internal_misc_ScopedMemoryAccess_methods)/sizeof(JNINativeMethod));
   guarantee(ok == 0, "register jdk.internal.misc.ScopedMemoryAccess natives");
-} JVM_END
+JVM_END

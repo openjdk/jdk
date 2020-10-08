@@ -29,8 +29,8 @@ GENSRC_SCOPED_MEMORY_ACCESS :=
 SCOPED_MEMORY_ACCESS_GENSRC_DIR := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/misc
 SCOPED_MEMORY_ACCESS_SRC_DIR := $(TOPDIR)/src/java.base/share/classes/jdk/internal/misc
 
-SCOPED_MEMORY_ACCESS_TEMPLATE := $(TOPDIR)/src/java.base/share/classes/jdk/internal/misc/X-ScopedMemoryAccess.java.template
-SCOPED_MEMORY_ACCESS_BIN_TEMPLATE := $(TOPDIR)/src/java.base/share/classes/jdk/internal/misc/X-ScopedMemoryAccess-bin.java.template
+SCOPED_MEMORY_ACCESS_TEMPLATE := $(SCOPED_MEMORY_ACCESS_SRC_DIR)/X-ScopedMemoryAccess.java.template
+SCOPED_MEMORY_ACCESS_BIN_TEMPLATE := $(SCOPED_MEMORY_ACCESS_SRC_DIR)/X-ScopedMemoryAccess-bin.java.template
 DEST := $(SCOPED_MEMORY_ACCESS_GENSRC_DIR)/ScopedMemoryAccess.java
 
 ################################################################################
@@ -142,7 +142,7 @@ endef
 
 SCOPE_MEMORY_ACCESS_TYPES := Byte Short Char Int Long Float Double
 $(foreach t, $(SCOPE_MEMORY_ACCESS_TYPES), \
-  $(eval $(call GenerateScopedOp,BIN_$t,$t)))
+	  $(eval $(call GenerateScopedOp,BIN_$t,$t)))
 	
 $(DEST): $(BUILD_TOOLS_JDK) $(SCOPED_MEMORY_ACCESS_TEMPLATE) $(SCOPED_MEMORY_ACCESS_BIN_TEMPLATE)
 	$(MKDIR) -p $(SCOPED_MEMORY_ACCESS_GENSRC_DIR)

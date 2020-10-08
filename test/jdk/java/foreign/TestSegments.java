@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @run testng TestSegments
+ * @run testng/othervm -XX:MaxDirectMemorySize=1M TestSegments
  */
 
 import jdk.incubator.foreign.MemoryLayout;
@@ -97,6 +97,13 @@ public class TestSegments {
             assertTrue(target instanceof NullPointerException ||
                           target instanceof UnsupportedOperationException ||
                           target instanceof IllegalStateException);
+        }
+    }
+
+    @Test(expectedExceptions = OutOfMemoryError.class)
+    public void testNativeAllocationTooBig() {
+        try (MemorySegment segment = MemorySegment.allocateNative(1024 * 1024 * 8 * 2)) { // 2M
+            // do nothing
         }
     }
 

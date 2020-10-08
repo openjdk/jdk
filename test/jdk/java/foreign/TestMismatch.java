@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @run testng/othervm -XX:MaxDirectMemorySize=5000000000 TestMismatch
+ * @run testng TestMismatch
  */
 
 import java.lang.invoke.VarHandle;
@@ -110,15 +110,18 @@ public class TestMismatch {
 
     @Test
     public void testLarge() {
-        try (var s1 = MemorySegment.allocateNative((long)Integer.MAX_VALUE + 10L);
-             var s2 = MemorySegment.allocateNative((long)Integer.MAX_VALUE + 10L)) {
-            assertEquals(s1.mismatch(s1), -1);
-            assertEquals(s1.mismatch(s2), -1);
-            assertEquals(s2.mismatch(s1), -1);
+        // skip if not on 64 bits
+        if (MemoryLayouts.ADDRESS.byteSize() > 32) {
+            try (var s1 = MemorySegment.allocateNative((long) Integer.MAX_VALUE + 10L);
+                 var s2 = MemorySegment.allocateNative((long) Integer.MAX_VALUE + 10L)) {
+                assertEquals(s1.mismatch(s1), -1);
+                assertEquals(s1.mismatch(s2), -1);
+                assertEquals(s2.mismatch(s1), -1);
 
-            testLargeAcrossMaxBoundary(s1, s2);
+                testLargeAcrossMaxBoundary(s1, s2);
 
-            testLargeMismatchAcrossMaxBoundary(s1, s2);
+                testLargeMismatchAcrossMaxBoundary(s1, s2);
+            }
         }
     }
 
