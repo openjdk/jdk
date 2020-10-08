@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,30 +21,39 @@
  * questions.
  */
 
-/*
+/**
  * @test
- * @summary Suicide test
- * @run main/othervm Suicide
+ * @bug 8253756
+ * @summary dead outer strip mined not optimized out after expansion
+ * @requires vm.compiler2.enabled
+ *
+ * @run main/othervm -XX:-BackgroundCompilation -XX:LoopMaxUnroll=2 TestOuterStripMinedDeadAfterExpansion
+ *
  */
-public class Suicide {
-    public static void main(String[] args) {
-        String cmd = null;
-        try {
-            long pid = ProcessHandle.current().pid();
-            String osName = System.getProperty("os.name");
-            if (osName.contains("Windows")) {
-                cmd = "taskkill.exe /F /PID " + pid;
-            } else {
-                cmd = "kill -9 " + pid;
-            }
 
-            System.out.printf("executing `%s'%n", cmd);
-            Runtime.getRuntime().exec(cmd);
-            Thread.sleep(2000);
-        } catch (Exception e) {
-            e.printStackTrace();
+public class TestOuterStripMinedDeadAfterExpansion {
+    private static int field;
+
+    public static void main(String[] args) {
+        int[] array = new int[100];
+        for (int i = 0; i < 20_000; i++) {
+            test(array, array, array.length);
+            test_helper(array, 100);
         }
-        System.err.printf("TEST/ENV BUG: %s didn't kill JVM%n", cmd);
-        System.exit(1);
+    }
+
+    private static int test(int[] src, int[] dst, int length) {
+        field = 4 << 17;
+        System.arraycopy(src, 0, dst, 0, length);
+        int stop = field >>> 17;
+        return test_helper(dst, stop);
+    }
+
+    private static int test_helper(int[] dst, int stop) {
+        int res = 0;
+        for (int i = 0; i < stop; i++) {
+            res += dst[i];
+        }
+        return res;
     }
 }
