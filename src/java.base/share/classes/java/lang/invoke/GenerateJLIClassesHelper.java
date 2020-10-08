@@ -60,7 +60,7 @@ class GenerateJLIClassesHelper {
                      shortenSignature(basicTypeSignature(type)) +
                      (resolvedMember != null ? " (success)" : " (fail)"));
         }
-        if (CDS.isDumpingClassList) {
+        if (CDS.isDumpingClassList()) {
             CDS.traceLambdaFormInvoker(LF_RESOLVE, holder.getName(), name, shortenSignature(basicTypeSignature(type)));
         }
     }
@@ -69,7 +69,7 @@ class GenerateJLIClassesHelper {
         if (TRACE_RESOLVE) {
             System.out.println(SPECIES_RESOLVE + " " + cn + (salvage != null ? " (salvaged)" : " (generated)"));
         }
-        if (CDS.isDumpingClassList) {
+        if (CDS.isDumpingClassList()) {
             CDS.traceSpeciesType(SPECIES_RESOLVE, cn);
         }
     }

@@ -25,7 +25,7 @@
 
 package jdk.internal.misc;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -34,14 +34,17 @@ import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
 
 public class CDS {
-    /**
-      * indicator for dumping class list.
-      */
-    static public final boolean isDumpingClassList;
+    static private final boolean isDumpingClassList;
     static {
         isDumpingClassList = isDumpingClassList0();
     }
 
+    /**
+      * indicator for dumping class list.
+      */
+    public static boolean isDumpingClassList() {
+        return isDumpingClassList;
+    }
     private static native boolean isDumpingClassList0();
     private static native void logLambdaFormInvoker(String line);
 
@@ -135,14 +138,14 @@ public class CDS {
         return true;
     }
 
-    // return null for invalid input
-    private static Stream<String>  validateInputLines(String[] lines) {
-        ArrayList<String> list = new ArrayList<String>(lines.length);
+    // return false for invalid input, don't throw exception since it will generate more objects
+    private static boolean isValidInputLines(String[] lines) {
         for (String s: lines) {
+            // There might be a trailing '\f' for line in ExtraClassListFile, do trim first.
             String line = s.trim();
             if (!line.startsWith("[LF_RESOLVE]") && !line.startsWith("[SPECIES_RESOLVE]")) {
                 System.out.println("Wrong prefix: " + line);
-                return null;
+                return false;
             }
 
             String[] parts = line.split(" ");
@@ -152,25 +155,24 @@ public class CDS {
                 if (parts.length != 4) {
                     System.out.println("Incorrecct number of items in the line: " + parts.length);
                     System.out.println("line: " + line);
-                    return null;
+                    return false;
                 }
                 if (!isValidHolderName(parts[1])) {
                     System.out.println("Invalid holder class name: " + parts[1]);
-                    return null;
+                    return false;
                 }
                 if (!isValidMethodType(parts[3])) {
                     System.out.println("Invalid method type: " + parts[3]);
-                    return null;
+                    return false;
                 }
             } else {
                 if (parts.length != 2) {
                    System.out.println("Incorrect number of items in the line: " + parts.length);
-                   return null;
+                   return false;
                 }
            }
-           list.add(line);
       }
-      return list.stream();
+      return true;
     }
 
     /**
@@ -181,10 +183,10 @@ public class CDS {
     private static Object[] generateLambdaFormHolderClasses(String[] lines) {
         Objects.requireNonNull(lines);
         try {
-            Stream<String> lineStream = validateInputLines(lines);
-            if (lineStream == null) {
+            if (!isValidInputLines(lines)) {
                 return null;
             }
+            Stream<String> lineStream = Arrays.stream(lines).map(String::trim);
             Map<String, byte[]> result = SharedSecrets.getJavaLangInvokeAccess().generateHolderClasses(lineStream);
             int size = result.size();
             Object[] retArray = new Object[size * 2];
@@ -195,6 +197,7 @@ public class CDS {
             };
             return retArray;
         } catch (Exception e) {
+            // for debug purpose.
             e.printStackTrace();
             throw e;
         }
