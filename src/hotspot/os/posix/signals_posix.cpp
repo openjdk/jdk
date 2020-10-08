@@ -43,16 +43,6 @@
 // signal handling (except suspend/resume)
 // suspend/resume
 
-// glibc on Bsd platform uses non-documented flag
-// to indicate, that some special sort of signal
-// trampoline is used.
-// We will never set this flag, and we should
-// ignore this flag in our diagnostic
-#ifdef SIGNIFICANT_SIGNAL_MASK
-  #undef SIGNIFICANT_SIGNAL_MASK
-#endif
-#define SIGNIFICANT_SIGNAL_MASK (~0x04000000)
-
 // Todo: provide a os::get_max_process_id() or similar. Number of processes
 // may have been configured, can be read more accurately from proc fs etc.
 #ifndef MAX_PID
@@ -630,9 +620,6 @@ static void check_signal_handler(int sig) {
   }
 
   os_sigaction(sig, (struct sigaction*)NULL, &act);
-
-
-  act.sa_flags &= SIGNIFICANT_SIGNAL_MASK;
 
   address thisHandler = (act.sa_flags & SA_SIGINFO)
     ? CAST_FROM_FN_PTR(address, act.sa_sigaction)
@@ -1246,9 +1233,6 @@ void PosixSignals::print_signal_handler(outputStream* st, int sig,
   struct sigaction sa;
   sigaction(sig, NULL, &sa);
 
-  // See comment for SIGNIFICANT_SIGNAL_MASK define
-  sa.sa_flags &= SIGNIFICANT_SIGNAL_MASK;
-
   st->print("%s: ", os::exception_name(sig, buf, buflen));
 
   address handler = (sa.sa_flags & SA_SIGINFO)
@@ -1270,7 +1254,7 @@ void PosixSignals::print_signal_handler(outputStream* st, int sig,
   // May be, handler was resetted by VMError?
   if (rh != NULL) {
     handler = rh;
-    sa.sa_flags = VMError::get_resetted_sigflags(sig) & SIGNIFICANT_SIGNAL_MASK;
+    sa.sa_flags = VMError::get_resetted_sigflags(sig);
   }
 
   // Print textual representation of sa_flags.
