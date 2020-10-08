@@ -169,9 +169,6 @@ void assert_locked_or_safepoint(const Mutex* lock) {
   if (lock->owned_by_self()) return;
   if (SafepointSynchronize::is_at_safepoint()) return;
   if (!Universe::is_fully_initialized()) return;
-  // see if invoker of VM operation owns it
-  VM_Operation* op = VMThread::vm_operation();
-  if (op != NULL && op->calling_thread() == lock->owner()) return;
   fatal("must own lock %s", lock->name());
 }
 
