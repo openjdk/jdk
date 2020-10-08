@@ -134,6 +134,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
 
       WARNINGS_ENABLE_ALL="-W3"
       DISABLED_WARNINGS="4800"
+      DISABLED_WARNINGS+=" 4146" # unary minus operator applied to unsigned type, result still unsigned
       if test "x$TOOLCHAIN_VERSION" = x2017; then
         # VS2017 incorrectly triggers this warning for constexpr
         DISABLED_WARNINGS+=" 4307"
