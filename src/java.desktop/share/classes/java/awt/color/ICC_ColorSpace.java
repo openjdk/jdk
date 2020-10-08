@@ -35,6 +35,8 @@
 
 package java.awt.color;
 
+import java.io.IOException;
+
 import sun.java2d.cmm.CMSManager;
 import sun.java2d.cmm.ColorTransform;
 import sun.java2d.cmm.PCMM;
@@ -82,11 +84,34 @@ public class ICC_ColorSpace extends ColorSpace {
      */
     private static final long serialVersionUID = 3455889114070431483L;
 
-    private ICC_Profile    thisProfile;
+    /**
+     * The specified {@code ICC_Profile} object.
+     */
+    private ICC_Profile thisProfile;
+
+    /**
+     * The maximum normalized component values.
+     */
     private float[] minVal;
+
+    /**
+     * The minimum normalized component values.
+     */
     private float[] maxVal;
+
+    /**
+     * Difference between min and max values.
+     */
     private float[] diffMinMax;
+
+    /**
+     * Inverted value of the difference between min and max values.
+     */
     private float[] invDiffMinMax;
+
+    /**
+     * Whether the values should be scaled or not.
+     */
     private boolean needScaleInit = true;
 
     // {to,from}{RGB,CIEXYZ} methods create and cache these when needed
@@ -123,7 +148,12 @@ public class ICC_ColorSpace extends ColorSpace {
     }
 
     /**
-     * Validate an ICC_ColorSpace read from an object input stream
+     * Validate an ICC_ColorSpace read from an object input stream.
+     *
+     * @param  s the {@code ObjectInputStream} to read
+     * @throws ClassNotFoundException if the class of a serialized object could
+     *         not be found
+     * @throws IOException if an I/O error occurs
      */
     private void readObject(java.io.ObjectInputStream s)
         throws ClassNotFoundException, java.io.IOException {

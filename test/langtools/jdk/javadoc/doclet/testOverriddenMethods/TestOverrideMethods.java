@@ -69,6 +69,7 @@ public class TestOverrideMethods  extends JavadocTester {
     public void testSummary() {
         javadoc("-d", "out-summary",
                 "-sourcepath", testSrc,
+                "--no-platform-links",
                 "-javafx",
                 "--disable-javafx-strict-checks",
                 "--override-methods=summary",

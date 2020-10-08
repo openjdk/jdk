@@ -236,6 +236,7 @@ public class TestJavaFX extends JavadocTester {
                 "-sourcepath", testSrc,
                 "-javafx",
                 "--disable-javafx-strict-checks",
+                "--no-platform-links",
                 "-package",
                 "pkg2");
         checkExit(Exit.OK);
@@ -304,6 +305,7 @@ public class TestJavaFX extends JavadocTester {
     public void test3() {
         javadoc("-d", "out2b",
                 "-sourcepath", testSrc,
+                "--no-platform-links",
                 "-package",
                 "pkg2");
         checkExit(Exit.OK);

@@ -1033,8 +1033,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   if (synchronized) {
     // address of first monitor
-    __ sub(R1, FP, - (frame::interpreter_frame_monitor_block_bottom_offset - frame::interpreter_frame_monitor_size()) * wordSize);
-    __ unlock_object(R1);
+    __ sub(R0, FP, - (frame::interpreter_frame_monitor_block_bottom_offset - frame::interpreter_frame_monitor_size()) * wordSize);
+    __ unlock_object(R0);
   }
 
   // jvmti/dtrace support

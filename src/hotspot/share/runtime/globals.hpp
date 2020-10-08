@@ -185,7 +185,7 @@ const intx ObjectAlignmentInBytes = 8;
           "features")                                                       \
                                                                             \
   product(bool, JavaMonitorsInStackTrace, true,                             \
-          "Print information about Java monitor locks when the stacks are"  \
+          "Print information about Java monitor locks when the stacks are " \
           "dumped")                                                         \
                                                                             \
   product_pd(bool, UseLargePages,                                           \
@@ -394,10 +394,6 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   notproduct(bool, WalkStackALot, false,                                    \
           "Trace stack (no print) at every exit from the runtime system")   \
-                                                                            \
-  product(bool, Debugging, false,                                           \
-          "Set when executing debug methods in debug.cpp "                  \
-          "(to prevent triggering assertions)")                             \
                                                                             \
   notproduct(bool, VerifyLastFrame, false,                                  \
           "Verify oops on last frame on entry to VM")                       \

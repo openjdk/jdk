@@ -36,12 +36,6 @@ class Linux {
   friend class OSContainer;
   friend class TestReserveMemorySpecial;
 
-  static bool libjsig_is_loaded;        // libjsig that interposes sigaction(),
-                                        // __sigaction(), signal() is loaded
-  static struct sigaction *(*get_signal_action)(int);
-
-  static void check_signal_handler(int sig);
-
   static int (*_pthread_getcpuclockid)(pthread_t, clockid_t *);
   static int (*_pthread_setname_np)(pthread_t, const char*);
 
@@ -133,7 +127,6 @@ class Linux {
   // returns kernel thread id (similar to LWP id on Solaris), which can be
   // used to access /proc
   static pid_t gettid();
-  static void hotspot_sigmask(Thread* thread);
 
   static address   initial_thread_stack_bottom(void)                { return _initial_thread_stack_bottom; }
   static uintptr_t initial_thread_stack_size(void)                  { return _initial_thread_stack_size; }
@@ -147,23 +140,6 @@ class Linux {
   static intptr_t* ucontext_get_fp(const ucontext_t* uc);
 
   static bool get_frame_at_stack_banging_point(JavaThread* thread, ucontext_t* uc, frame* fr);
-
-  // This boolean allows users to forward their own non-matching signals
-  // to JVM_handle_linux_signal, harmlessly.
-  static bool signal_handlers_are_installed;
-
-  static int get_our_sigflags(int);
-  static void set_our_sigflags(int, int);
-  static void signal_sets_init();
-  static void install_signal_handlers();
-  static void set_signal_handler(int, bool);
-
-  static sigset_t* unblocked_signals();
-  static sigset_t* vm_signals();
-
-  // For signal-chaining
-  static struct sigaction *get_chained_signal_action(int sig);
-  static bool chained_handler(int sig, siginfo_t* siginfo, void* context);
 
   // GNU libc and libpthread version strings
   static const char *glibc_version()          { return _glibc_version; }

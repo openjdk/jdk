@@ -44,6 +44,7 @@ public class TestDeprecatedDocs extends JavadocTester {
     @Test
     public void test() {
         javadoc("-d", "out",
+                "--no-platform-links",
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);

@@ -44,13 +44,6 @@
 #define __ _masm->
 
 //----------------------------------------------------------------------------------------------------
-// Platform-dependent initialization
-
-void TemplateTable::pd_initialize() {
-  // No arm specific initialization
-}
-
-//----------------------------------------------------------------------------------------------------
 // Address computation
 
 // local variables
@@ -3607,12 +3600,6 @@ void TemplateTable::fast_xaccess(TosState state) {
 //----------------------------------------------------------------------------------------------------
 // Calls
 
-void TemplateTable::count_calls(Register method, Register temp) {
-  // implemented elsewhere
-  ShouldNotReachHere();
-}
-
-
 void TemplateTable::prepare_invoke(int byte_no,
                                    Register method,  // linked method (or i-klass)
                                    Register index,   // itable index, MethodType, etc.
@@ -4435,6 +4422,7 @@ void TemplateTable::monitorexit() {
   const Register Rcur = R1_tmp;
   const Register Rbottom = R2_tmp;
   const Register Rcur_obj = Rtemp;
+  const Register Rmonitor = R0;      // fixed in unlock_object()
 
   // check for NULL object
   __ null_check(Robj, Rtemp);
@@ -4477,7 +4465,8 @@ void TemplateTable::monitorexit() {
   // Rcur: points to monitor entry
   __ bind(found);
   __ push_ptr(Robj);                             // make sure object is on stack (contract with oopMaps)
-  __ unlock_object(Rcur);
+  __ mov(Rmonitor, Rcur);
+  __ unlock_object(Rmonitor);
   __ pop_ptr(Robj);                              // discard object
 }
 
