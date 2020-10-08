@@ -105,12 +105,12 @@ jobs:
         flavor:
           - build release
           - build debug
-          - build debug hotspot no-pch
+          - build hotspot no-pch
         include:
           - flavor: build debug
             flags: --enable-debug
             artifact: -debug
-          - flavor: build debug hotspot no-pch
+          - flavor: build hotspot no-pch
             flags: --enable-debug --disable-precompiled-headers
             build-target: hotspot
 
