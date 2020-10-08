@@ -25,8 +25,6 @@ package jdk.test.lib;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -35,11 +33,15 @@ import java.net.ServerSocket;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.channels.SocketChannel;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -127,9 +129,8 @@ public final class Utils {
      */
     public static final String SEED_PROPERTY_NAME = "jdk.test.lib.random.seed";
 
-    /* (non-javadoc)
-     * Random generator with (or without) predefined seed. Depends on
-     * "jdk.test.lib.random.seed" property value.
+    /**
+     * Random generator with predefined seed.
      */
     private static volatile Random RANDOM_GENERATOR;
 
@@ -141,7 +142,32 @@ public final class Utils {
     /**
      * Contains the seed value used for {@link java.util.Random} creation.
      */
-    public static final long SEED = Long.getLong(SEED_PROPERTY_NAME, new Random().nextLong());
+    public static final long SEED;
+    static {
+       var seed = Long.getLong(SEED_PROPERTY_NAME);
+       if (seed != null) {
+           // use explicitly set seed
+           SEED = seed;
+       } else {
+           var v = Runtime.version();
+           // promotable builds have build number, and it's greater than 0
+           if (v.build().orElse(0) > 0) {
+               // promotable build -> use 1st 8 bytes of md5($version)
+               try {
+                   var md = MessageDigest.getInstance("MD5");
+                   var bytes = v.toString()
+                                .getBytes(StandardCharsets.UTF_8);
+                   bytes = md.digest(bytes);
+                   SEED = ByteBuffer.wrap(bytes).getLong();
+               } catch (NoSuchAlgorithmException e) {
+                   throw new Error(e);
+               }
+           } else {
+               // "personal" build -> use random seed
+               SEED = new Random().nextLong();
+           }
+       }
+    }
     /**
      * Returns the value of 'test.timeout.factor' system property
      * converted to {@code double}.
@@ -412,63 +438,6 @@ public final class Utils {
     }
 
     /**
-     * Uses "jcmd -l" to search for a jvm pid. This function will wait
-     * forever (until jtreg timeout) for the pid to be found.
-     * @param key Regular expression to search for
-     * @return The found pid.
-     */
-    public static int waitForJvmPid(String key) throws Throwable {
-        final long iterationSleepMillis = 250;
-        System.out.println("waitForJvmPid: Waiting for key '" + key + "'");
-        System.out.flush();
-        while (true) {
-            int pid = tryFindJvmPid(key);
-            if (pid >= 0) {
-                return pid;
-            }
-            Thread.sleep(iterationSleepMillis);
-        }
-    }
-
-    /**
-     * Searches for a jvm pid in the output from "jcmd -l".
-     *
-     * Example output from jcmd is:
-     * 12498 sun.tools.jcmd.JCmd -l
-     * 12254 /tmp/jdk8/tl/jdk/JTwork/classes/com/sun/tools/attach/Application.jar
-     *
-     * @param key A regular expression to search for.
-     * @return The found pid, or -1 if not found.
-     * @throws Exception If multiple matching jvms are found.
-     */
-    public static int tryFindJvmPid(String key) throws Throwable {
-        OutputAnalyzer output = null;
-        try {
-            JDKToolLauncher jcmdLauncher = JDKToolLauncher.create("jcmd");
-            jcmdLauncher.addToolArg("-l");
-            output = ProcessTools.executeProcess(jcmdLauncher.getCommand());
-            output.shouldHaveExitValue(0);
-
-            // Search for a line starting with numbers (pid), follwed by the key.
-            Pattern pattern = Pattern.compile("([0-9]+)\\s.*(" + key + ").*\\r?\\n");
-            Matcher matcher = pattern.matcher(output.getStdout());
-
-            int pid = -1;
-            if (matcher.find()) {
-                pid = Integer.parseInt(matcher.group(1));
-                System.out.println("findJvmPid.pid: " + pid);
-                if (matcher.find()) {
-                    throw new Exception("Found multiple JVM pids for key: " + key);
-                }
-            }
-            return pid;
-        } catch (Throwable t) {
-            System.out.println(String.format("Utils.findJvmPid(%s) failed: %s", key, t));
-            throw t;
-        }
-    }
-
-    /**
      * Adjusts the provided timeout value for the TIMEOUT_FACTOR
      * @param tOut the timeout value to be adjusted
      * @return The timeout value adjusted for the value of "test.timeout.factor"
@@ -531,9 +500,13 @@ public final class Utils {
 
     /**
      * Returns {@link java.util.Random} generator initialized with particular seed.
-     * The seed could be provided via system property {@link Utils#SEED_PROPERTY_NAME}
-     * In case no seed is provided, the method uses a random number.
+     * The seed could be provided via system property {@link Utils#SEED_PROPERTY_NAME}.
+     * In case no seed is provided and the build under test is "promotable"
+     * (its build number ({@code $BUILD} in {@link Runtime.Version}) is greater than 0,
+     * the seed based on string representation of {@link Runtime#version()} is used.
+     * Otherwise, the seed is randomly generated.
      * The used seed printed to stdout.
+     *
      * @return {@link java.util.Random} generator with particular seed.
      */
     public static Random getRandomInstance() {
@@ -800,19 +773,6 @@ public final class Utils {
         NULL_VALUES.put(double.class, 0.0d);
     }
 
-    /**
-     * Returns mandatory property value
-     * @param propName is a name of property to request
-     * @return a String with requested property value
-     */
-    public static String getMandatoryProperty(String propName) {
-        Objects.requireNonNull(propName, "Requested null property");
-        String prop = System.getProperty(propName);
-        Objects.requireNonNull(prop,
-                String.format("A mandatory property '%s' isn't set", propName));
-        return prop;
-    }
-
     /*
      * Run uname with specified arguments.
      */
@@ -821,17 +781,6 @@ public final class Utils {
         cmds[0] = "uname";
         System.arraycopy(args, 0, cmds, 1, args.length);
         return ProcessTools.executeCommand(cmds);
-    }
-
-    /*
-     * Returns the system distro.
-     */
-    public static String distro() {
-        try {
-            return uname("-v").asLines().get(0);
-        } catch (Throwable t) {
-            throw new RuntimeException("Failed to determine distro.", t);
-        }
     }
 
     /**

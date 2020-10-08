@@ -57,15 +57,15 @@ public class TestConstantValuesDriver extends JavadocTester {
                 """
                     <code id="TestConstantValues.BYTE_MAX_VALUE">public&nbsp;static&nbsp;final&nbsp;byte</code></td>
                     <th class="col-second" scope="row"><code><a href="TestConstantValues.html#BYTE_MAX_VALUE">BYTE_MAX_VALUE</a></code></th>
-                    <td class="col-last"><code>127</code></td>""",
+                    <td class="col-last"><code>0x7f</code></td>""",
                 """
                     <code id="TestConstantValues.BYTE_MIN_VALUE">public&nbsp;static&nbsp;final&nbsp;byte</code></td>
                     <th class="col-second" scope="row"><code><a href="TestConstantValues.html#BYTE_MIN_VALUE">BYTE_MIN_VALUE</a></code></th>
-                    <td class="col-last"><code>-127</code></td>""",
+                    <td class="col-last"><code>0x81</code></td>""",
                 """
                     <code id="TestConstantValues.CHAR_MAX_VALUE">public&nbsp;static&nbsp;final&nbsp;char</code></td>
                     <th class="col-second" scope="row"><code><a href="TestConstantValues.html#CHAR_MAX_VALUE">CHAR_MAX_VALUE</a></code></th>
-                    <td class="col-last"><code>65535</code></td>""",
+                    <td class="col-last"><code>'\\uffff'</code></td>""",
                 """
                     <code id="TestConstantValues.DOUBLE_MAX_VALUE">public&nbsp;static&nbsp;final&nbsp;double</code></td>""",
                     """

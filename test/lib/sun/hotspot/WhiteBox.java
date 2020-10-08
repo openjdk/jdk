@@ -620,4 +620,6 @@ public class WhiteBox {
   public native String getLibcName();
 
   public native boolean isJVMTIIncluded();
+
+  public native void waitUnsafe(int time_ms);
 }
