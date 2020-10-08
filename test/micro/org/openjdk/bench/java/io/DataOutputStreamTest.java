@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,36 +20,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-/*
-
-Sample runs on Ryzen 2950X:
-
-Before JDK-8254078:
-
-Benchmark                                                    (BASIC_TYPE)  (SIZE)  Mode  Cnt     Score     Error  Units
-DataOutputStreamTest.dataOutputStreamOverBufferedFileStream          char    4096  avgt    6    58.884 ±   1.018  us/op
-DataOutputStreamTest.dataOutputStreamOverBufferedFileStream         short    4096  avgt    6    59.821 ±   0.928  us/op
-DataOutputStreamTest.dataOutputStreamOverBufferedFileStream           int    4096  avgt    6    59.596 ±   1.036  us/op
-DataOutputStreamTest.dataOutputStreamOverByteArray                   char    4096  avgt    6    48.122 ±   5.672  us/op
-DataOutputStreamTest.dataOutputStreamOverByteArray                  short    4096  avgt    6    49.669 ±   6.732  us/op
-DataOutputStreamTest.dataOutputStreamOverByteArray                    int    4096  avgt    6    53.289 ±   5.453  us/op
-DataOutputStreamTest.dataOutputStreamOverRawFileStream               char    4096  avgt    6  5479.807 ±  84.198  us/op
-DataOutputStreamTest.dataOutputStreamOverRawFileStream              short    4096  avgt    6  5442.496 ± 116.902  us/op
-DataOutputStreamTest.dataOutputStreamOverRawFileStream                int    4096  avgt    6  5458.223 ±  95.796  us/op
-
-After:
-DataOutputStreamTest.dataOutputStreamOverBufferedFileStream          char    4096  avgt    6    29.819 ±  0.805  us/op
-DataOutputStreamTest.dataOutputStreamOverBufferedFileStream         short    4096  avgt    6    29.763 ±  0.510  us/op
-DataOutputStreamTest.dataOutputStreamOverBufferedFileStream           int    4096  avgt    6    14.590 ±  0.603  us/op
-DataOutputStreamTest.dataOutputStreamOverByteArray                   char    4096  avgt    6    30.153 ±  1.285  us/op
-DataOutputStreamTest.dataOutputStreamOverByteArray                  short    4096  avgt    6    29.437 ±  1.286  us/op
-DataOutputStreamTest.dataOutputStreamOverByteArray                    int    4096  avgt    6    17.165 ±  5.683  us/op
-DataOutputStreamTest.dataOutputStreamOverRawFileStream               char    4096  avgt    6  3488.750 ± 77.946  us/op
-DataOutputStreamTest.dataOutputStreamOverRawFileStream              short    4096  avgt    6  3458.778 ± 68.897  us/op
-DataOutputStreamTest.dataOutputStreamOverRawFileStream                int    4096  avgt    6  1709.026 ± 35.592  us/op
-
-*/
 
 package org.openjdk.bench.java.io;
 
