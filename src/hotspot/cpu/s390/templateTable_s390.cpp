@@ -2007,7 +2007,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
 
   // Out-of-line code runtime calls.
   if (UseLoopCounter) {
-    if (ProfileInterpreter) {
+    if (ProfileInterpreter && !TieredCompilation) {
       // Out-of-line code to allocate method data oop.
       __ bind(profile_method);
 
