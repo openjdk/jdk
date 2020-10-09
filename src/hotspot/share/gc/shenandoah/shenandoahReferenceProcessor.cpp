@@ -136,12 +136,19 @@ static void soft_reference_update_clock() {
 }
 
 ShenandoahRefProcThreadLocal::ShenandoahRefProcThreadLocal() :
-  _discovered_list(NULL) {
-
+  _discovered_list(NULL),
+  _encountered_count(),
+  _discovered_count(),
+  _enqueued_count() {
 }
 
 void ShenandoahRefProcThreadLocal::reset() {
   _discovered_list = NULL;
+  for (uint i = 0; i < reference_type_count; i++) {
+    _encountered_count[i] = 0;
+    _discovered_count[i] = 0;
+    _enqueued_count[i] = 0;
+  }
 }
 
 template <typename T>
@@ -297,14 +304,13 @@ void ShenandoahReferenceProcessor::make_inactive(oop reference, ReferenceType ty
 }
 
 template <typename T>
-bool ShenandoahReferenceProcessor::discover(oop reference, ReferenceType type) {
+bool ShenandoahReferenceProcessor::discover(oop reference, ReferenceType type, uint worker_id) {
   if (!should_discover<T>(reference, type)) {
     // Not discovered
     return false;
   }
 
-  // Update statistics
-  //_discovered_count.get()[type]++;
+  _ref_proc_thread_locals[worker_id].inc_discovered(type);
 
   if (type == REF_FINAL) {
     Thread* thread = Thread::current();
@@ -321,7 +327,6 @@ bool ShenandoahReferenceProcessor::discover(oop reference, ReferenceType type) {
 
   // Add reference to discovered list
   assert(reference_discovered<T>(reference) == NULL, "Already discovered: " PTR_FORMAT, p2i(reference));
-  uint worker_id = ShenandoahThreadLocalData::worker_id(Thread::current());
   assert(worker_id != ShenandoahThreadLocalData::INVALID_WORKER_ID, "need valid worker ID");
   ShenandoahRefProcThreadLocal& refproc_data = _ref_proc_thread_locals[worker_id];
   oop discovered_head = refproc_data.discovered_list_head<T>();
@@ -341,11 +346,13 @@ bool ShenandoahReferenceProcessor::discover_reference(oop reference, ReferenceTy
   }
 
   log_trace(gc, ref)("Encountered Reference: " PTR_FORMAT " (%s)", p2i(reference), reference_type_name(type));
+  uint worker_id = ShenandoahThreadLocalData::worker_id(Thread::current());
+  _ref_proc_thread_locals->inc_encountered(type);
 
   if (UseCompressedOops) {
-    return discover<narrowOop>(reference, type);
+    return discover<narrowOop>(reference, type, worker_id);
   } else {
-    return discover<oop>(reference, type);
+    return discover<oop>(reference, type, worker_id);
   }
 }
 
@@ -363,11 +370,11 @@ oop ShenandoahReferenceProcessor::drop(oop reference, ReferenceType type) {
 }
 
 template <typename T>
-T* ShenandoahReferenceProcessor::keep(oop reference, ReferenceType type) {
+T* ShenandoahReferenceProcessor::keep(oop reference, ReferenceType type, uint worker_id) {
   log_trace(gc, ref)("Enqueued Reference: " PTR_FORMAT " (%s)", p2i(reference), reference_type_name(type));
 
   // Update statistics
-  // TODO _enqueued_count.get()[type]++;
+  _ref_proc_thread_locals[worker_id].inc_enqueued(type);
 
   // Make reference inactive
   make_inactive<T>(reference, type);
@@ -395,7 +402,7 @@ void ShenandoahReferenceProcessor::process_references(ShenandoahRefProcThreadLoc
     if (should_drop<T>(reference, type)) {
       set_oop_field(p, drop<T>(reference, type));
     } else {
-      p = keep<T>(reference, type);
+      p = keep<T>(reference, type, worker_id);
     }
   }
 
@@ -457,7 +464,7 @@ void ShenandoahReferenceProcessor::process_references(WorkGang* workers) {
   soft_reference_update_clock();
 
   // Collect, log and trace statistics
-  // collect_statistics();
+  collect_statistics();
 
   enqueue_references();
 }
@@ -502,6 +509,7 @@ void ShenandoahReferenceProcessor::clean_discovered_list(T* list) {
     oop discovered_ref = CompressedOops::decode_not_null(discovered);
     set_oop_field<T>(list, oop(NULL));
     list = reference_discovered_addr<T>(discovered_ref);
+    discovered = *list;
   }
 }
 
@@ -514,4 +522,24 @@ void ShenandoahReferenceProcessor::abandon_partial_discovery() {
       clean_discovered_list<oop>(_ref_proc_thread_locals[index].discovered_list_addr<oop>());
     }
   }
+}
+
+void ShenandoahReferenceProcessor::collect_statistics() {
+  Counters encountered = {};
+  Counters discovered = {};
+  Counters enqueued = {};
+  uint max_workers = ShenandoahHeap::heap()->max_workers();
+  for (uint i = 0; i < max_workers; i++) {
+    for (size_t type = 0; type < reference_type_count; type++) {
+      encountered[type] += _ref_proc_thread_locals[i].encountered((ReferenceType)type);
+      discovered[type] += _ref_proc_thread_locals[i].discovered((ReferenceType)type);
+      enqueued[type] += _ref_proc_thread_locals[i].enqueued((ReferenceType)type);
+    }
+  }
+  log_info(gc,ref)("Encountered references: Soft: " SIZE_FORMAT ", Weak: " SIZE_FORMAT ", Final: " SIZE_FORMAT ", Phantom: " SIZE_FORMAT,
+                   encountered[REF_SOFT], encountered[REF_WEAK], encountered[REF_FINAL], encountered[REF_PHANTOM]);
+  log_info(gc,ref)("Discovered  references: Soft: " SIZE_FORMAT ", Weak: " SIZE_FORMAT ", Final: " SIZE_FORMAT ", Phantom: " SIZE_FORMAT,
+                   discovered[REF_SOFT], discovered[REF_WEAK], discovered[REF_FINAL], discovered[REF_PHANTOM]);
+  log_info(gc,ref)("Enqueued    references: Soft: " SIZE_FORMAT ", Weak: " SIZE_FORMAT ", Final: " SIZE_FORMAT ", Phantom: " SIZE_FORMAT,
+                   enqueued[REF_SOFT], enqueued[REF_WEAK], enqueued[REF_FINAL], enqueued[REF_PHANTOM]);
 }

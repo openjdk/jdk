@@ -30,9 +30,15 @@
 
 class WorkGang;
 
+static const size_t reference_type_count = REF_PHANTOM + 1;
+typedef size_t Counters[reference_type_count];
+
 class ShenandoahRefProcThreadLocal : public CHeapObj<mtGC> {
 private:
   void* _discovered_list;
+  Counters _encountered_count;
+  Counters _discovered_count;
+  Counters _enqueued_count;
 
 public:
   ShenandoahRefProcThreadLocal();
@@ -48,6 +54,26 @@ public:
   oop discovered_list_head() const;
   template<typename T>
   void set_discovered_list_head(oop head);
+
+  size_t encountered(ReferenceType type) const {
+    return _encountered_count[type];
+  }
+  size_t discovered(ReferenceType type) const {
+    return _discovered_count[type];
+  }
+  size_t enqueued(ReferenceType type) const {
+    return _enqueued_count[type];
+  }
+
+  void inc_encountered(ReferenceType type) {
+    _encountered_count[type]++;
+  }
+  void inc_discovered(ReferenceType type) {
+    _discovered_count[type]++;
+  }
+  void inc_enqueued(ReferenceType type) {
+    _enqueued_count[type]++;
+  }
 };
 
 class ShenandoahReferenceProcessor : public ReferenceDiscoverer {
@@ -78,17 +104,19 @@ private:
   void make_inactive(oop reference, ReferenceType type) const;
 
   template <typename T>
-  bool discover(oop reference, ReferenceType type);
+  bool discover(oop reference, ReferenceType type, uint worker_id);
 
   template <typename T>
   oop drop(oop reference, ReferenceType type);
   template <typename T>
-  T* keep(oop reference, ReferenceType type);
+  T* keep(oop reference, ReferenceType type, uint worker_id);
 
   template <typename T>
   void process_references(ShenandoahRefProcThreadLocal& refproc_data, uint worker_id);
   void enqueue_references_locked();
   void enqueue_references();
+
+  void collect_statistics();
 
   template<typename T>
   void clean_discovered_list(T* list);
