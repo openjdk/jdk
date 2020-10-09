@@ -35,6 +35,7 @@ public interface Diff {
      * Default limits for formatters
      */
     public static class Defaults {
+        private Defaults() {  }  // This class should not be instantiated
         public final static int WIDTH = 80;
         public final static int CONTEXT_BEFORE = 2;
     }
