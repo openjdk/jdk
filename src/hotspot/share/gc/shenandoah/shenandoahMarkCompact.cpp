@@ -131,9 +131,7 @@ void ShenandoahMarkCompact::do_it(GCCause::Cause gc_cause) {
 
     // e. Abandon reference discovery and clear all discovered references.
     ShenandoahReferenceProcessor* rp = heap->ref_processor();
-    rp->disable_discovery();
     rp->abandon_partial_discovery();
-    rp->verify_no_references_recorded();
 
     // f. Set back forwarded objects bit back, in case some steps above dropped it.
     heap->set_has_forwarded_objects(has_forwarded_objects);
@@ -246,9 +244,7 @@ void ShenandoahMarkCompact::phase1_mark_heap() {
 
   ShenandoahReferenceProcessor* rp = heap->ref_processor();
   // enable ("weak") refs discovery
-  rp->enable_discovery(true /*verify_no_refs*/);
   rp->set_soft_reference_policy(true); // forcefully purge all soft references
-  rp->set_active_mt_degree(heap->workers()->active_workers());
 
   cm->mark_roots(ShenandoahPhaseTimings::full_gc_scan_roots);
   cm->finish_mark_from_roots(/* full_gc = */ true);

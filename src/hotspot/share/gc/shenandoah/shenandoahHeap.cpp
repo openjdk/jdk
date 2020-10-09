@@ -1791,9 +1791,7 @@ void ShenandoahHeap::op_final_mark() {
 
     // Abandon reference processing right away: pre-cleaning must have failed.
     ShenandoahReferenceProcessor* rp = ref_processor();
-    rp->disable_discovery();
     rp->abandon_partial_discovery();
-    rp->verify_no_references_recorded();
   }
 }
 

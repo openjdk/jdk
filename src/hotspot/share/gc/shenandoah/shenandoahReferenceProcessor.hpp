@@ -90,6 +90,9 @@ private:
   void enqueue_references_locked();
   void enqueue_references();
 
+  template<typename T>
+  void clean_discovered_list(T* list);
+
 public:
   ShenandoahReferenceProcessor(uint max_workers);
 
@@ -103,12 +106,7 @@ public:
 
   void work();
 
-  // TODO: Temporary methods to allow transition.
-  void set_active_mt_degree(uint num_workers) {};
-  void enable_discovery(bool verify_no_refs) {};
-  void disable_discovery() {}
-  void abandon_partial_discovery() {}
-  void verify_no_references_recorded() {}
+  void abandon_partial_discovery();
 };
 
 #endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHREFERENCEPROCESSOR_HPP

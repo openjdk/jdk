@@ -495,3 +495,23 @@ void ShenandoahReferenceProcessor::enqueue_references() {
   _pending_list_tail = &_pending_list;
 }
 
+template<typename T>
+void ShenandoahReferenceProcessor::clean_discovered_list(T* list) {
+  T discovered = *list;
+  while (!CompressedOops::is_null(discovered)) {
+    oop discovered_ref = CompressedOops::decode_not_null(discovered);
+    set_oop_field<T>(list, oop(NULL));
+    list = reference_discovered_addr<T>(discovered_ref);
+  }
+}
+
+void ShenandoahReferenceProcessor::abandon_partial_discovery() {
+  uint max_workers = ShenandoahHeap::heap()->max_workers();
+  for (uint index = 0; index < max_workers; index++) {
+    if (UseCompressedOops) {
+      clean_discovered_list<narrowOop>(_ref_proc_thread_locals[index].discovered_list_addr<narrowOop>());
+    } else {
+      clean_discovered_list<oop>(_ref_proc_thread_locals[index].discovered_list_addr<oop>());
+    }
+  }
+}

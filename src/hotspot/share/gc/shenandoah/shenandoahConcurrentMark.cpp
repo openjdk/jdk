@@ -429,10 +429,6 @@ void ShenandoahConcurrentMark::mark_from_roots() {
   uint nworkers = workers->active_workers();
 
   ShenandoahReferenceProcessor* rp = _heap->ref_processor();
-  rp->set_active_mt_degree(nworkers);
-
-  // enable ("weak") refs discovery
-  rp->enable_discovery(true /*verify_no_refs*/);
 
   task_queues()->reserve(nworkers);
 
