@@ -438,63 +438,6 @@ public final class Utils {
     }
 
     /**
-     * Uses "jcmd -l" to search for a jvm pid. This function will wait
-     * forever (until jtreg timeout) for the pid to be found.
-     * @param key Regular expression to search for
-     * @return The found pid.
-     */
-    public static int waitForJvmPid(String key) throws Throwable {
-        final long iterationSleepMillis = 250;
-        System.out.println("waitForJvmPid: Waiting for key '" + key + "'");
-        System.out.flush();
-        while (true) {
-            int pid = tryFindJvmPid(key);
-            if (pid >= 0) {
-                return pid;
-            }
-            Thread.sleep(iterationSleepMillis);
-        }
-    }
-
-    /**
-     * Searches for a jvm pid in the output from "jcmd -l".
-     *
-     * Example output from jcmd is:
-     * 12498 sun.tools.jcmd.JCmd -l
-     * 12254 /tmp/jdk8/tl/jdk/JTwork/classes/com/sun/tools/attach/Application.jar
-     *
-     * @param key A regular expression to search for.
-     * @return The found pid, or -1 if not found.
-     * @throws Exception If multiple matching jvms are found.
-     */
-    public static int tryFindJvmPid(String key) throws Throwable {
-        OutputAnalyzer output = null;
-        try {
-            JDKToolLauncher jcmdLauncher = JDKToolLauncher.create("jcmd");
-            jcmdLauncher.addToolArg("-l");
-            output = ProcessTools.executeProcess(jcmdLauncher.getCommand());
-            output.shouldHaveExitValue(0);
-
-            // Search for a line starting with numbers (pid), follwed by the key.
-            Pattern pattern = Pattern.compile("([0-9]+)\\s.*(" + key + ").*\\r?\\n");
-            Matcher matcher = pattern.matcher(output.getStdout());
-
-            int pid = -1;
-            if (matcher.find()) {
-                pid = Integer.parseInt(matcher.group(1));
-                System.out.println("findJvmPid.pid: " + pid);
-                if (matcher.find()) {
-                    throw new Exception("Found multiple JVM pids for key: " + key);
-                }
-            }
-            return pid;
-        } catch (Throwable t) {
-            System.out.println(String.format("Utils.findJvmPid(%s) failed: %s", key, t));
-            throw t;
-        }
-    }
-
-    /**
      * Adjusts the provided timeout value for the TIMEOUT_FACTOR
      * @param tOut the timeout value to be adjusted
      * @return The timeout value adjusted for the value of "test.timeout.factor"
@@ -830,19 +773,6 @@ public final class Utils {
         NULL_VALUES.put(double.class, 0.0d);
     }
 
-    /**
-     * Returns mandatory property value
-     * @param propName is a name of property to request
-     * @return a String with requested property value
-     */
-    public static String getMandatoryProperty(String propName) {
-        Objects.requireNonNull(propName, "Requested null property");
-        String prop = System.getProperty(propName);
-        Objects.requireNonNull(prop,
-                String.format("A mandatory property '%s' isn't set", propName));
-        return prop;
-    }
-
     /*
      * Run uname with specified arguments.
      */
@@ -872,7 +802,7 @@ public final class Utils {
      */
     public static Path createTempFile(String prefix, String suffix, FileAttribute<?>... attrs) throws IOException {
         Path dir = Paths.get(System.getProperty("user.dir", "."));
-        return Files.createTempFile(dir, prefix, suffix);
+        return Files.createTempFile(dir, prefix, suffix, attrs);
     }
 
     /**
@@ -892,6 +822,6 @@ public final class Utils {
      */
     public static Path createTempDirectory(String prefix, FileAttribute<?>... attrs) throws IOException {
         Path dir = Paths.get(System.getProperty("user.dir", "."));
-        return Files.createTempDirectory(dir, prefix);
+        return Files.createTempDirectory(dir, prefix, attrs);
     }
 }
