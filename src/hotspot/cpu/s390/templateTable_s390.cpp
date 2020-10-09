@@ -110,12 +110,6 @@
   }
 #endif // ASSERT
 
-// Platform-dependent initialization.
-
-void TemplateTable::pd_initialize() {
-  // No specific initialization.
-}
-
 // Address computation: local variables
 
 static inline Address iaddress(int n) {

@@ -487,10 +487,10 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* thre
       // unguarded. Reguard the stack otherwise if we return to the
       // deopt blob and the stack bang causes a stack overflow we
       // crash.
-      bool guard_pages_enabled = thread->stack_guards_enabled();
-      if (!guard_pages_enabled) guard_pages_enabled = thread->reguard_stack();
-      if (thread->reserved_stack_activation() != thread->stack_base()) {
-        thread->set_reserved_stack_activation(thread->stack_base());
+      StackOverflow* overflow_state = thread->stack_overflow_state();
+      bool guard_pages_enabled = overflow_state->reguard_stack_if_needed();
+      if (overflow_state->reserved_stack_activation() != thread->stack_base()) {
+        overflow_state->set_reserved_stack_activation(thread->stack_base());
       }
       assert(guard_pages_enabled, "stack banging in deopt blob may cause crash");
       // The deferred StackWatermarkSet::after_unwind check will be performed in
@@ -2081,7 +2081,7 @@ char* SharedRuntime::generate_class_cast_message(
 }
 
 JRT_LEAF(void, SharedRuntime::reguard_yellow_pages())
-  (void) JavaThread::current()->reguard_stack();
+  (void) JavaThread::current()->stack_overflow_state()->reguard_stack();
 JRT_END
 
 void SharedRuntime::monitor_enter_helper(oopDesc* obj, BasicLock* lock, JavaThread* thread) {
@@ -3180,10 +3180,9 @@ void AdapterHandlerLibrary::print_statistics() {
 #endif /* PRODUCT */
 
 JRT_LEAF(void, SharedRuntime::enable_stack_reserved_zone(JavaThread* thread))
-  if (thread->stack_reserved_zone_disabled()) {
-    thread->enable_stack_reserved_zone();
-  }
-  thread->set_reserved_stack_activation(thread->stack_base());
+  StackOverflow* overflow_state = thread->stack_overflow_state();
+  overflow_state->enable_stack_reserved_zone(/*check_if_disabled*/true);
+  overflow_state->set_reserved_stack_activation(thread->stack_base());
 JRT_END
 
 frame SharedRuntime::look_for_reserved_stack_annotated_method(JavaThread* thread, frame fr) {

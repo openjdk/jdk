@@ -2067,7 +2067,7 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // needs to be checked. Only true for non-native. For native, we only bang the last page.
   if (UseStackBanging) {
     const int page_size      = os::vm_page_size();
-    const int n_shadow_pages = (int)(JavaThread::stack_shadow_zone_size()/page_size);
+    const int n_shadow_pages = (int)(StackOverflow::stack_shadow_zone_size()/page_size);
     const int start_page_num = native_call ? n_shadow_pages : 1;
     for (int pages = start_page_num; pages <= n_shadow_pages; pages++) {
       __ bang_stack_with_offset(pages*page_size);

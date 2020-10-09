@@ -641,6 +641,7 @@ public:
 
 class ZMarkConcurrentRootsTask : public ZTask {
 private:
+  ZMark* const                        _mark;
   SuspendibleThreadSetJoiner          _sts_joiner;
   ZConcurrentRootsIteratorClaimStrong _roots;
   ZMarkConcurrentRootsIteratorClosure _cl;
@@ -648,6 +649,7 @@ private:
 public:
   ZMarkConcurrentRootsTask(ZMark* mark) :
       ZTask("ZMarkConcurrentRootsTask"),
+      _mark(mark),
       _sts_joiner(),
       _roots(),
       _cl() {
@@ -660,6 +662,12 @@ public:
 
   virtual void work() {
     _roots.oops_do(&_cl);
+
+    // Flush and free worker stacks. Needed here since
+    // the set of workers executing during root scanning
+    // can be different from the set of workers executing
+    // during mark.
+    _mark->flush_and_free();
   }
 };
 

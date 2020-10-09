@@ -553,7 +553,7 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
 
   address continuation = NULL;
   address handler_pc = NULL;
-  if (handler_bci < 0 || !thread->reguard_stack((address) &continuation)) {
+  if (handler_bci < 0 || !thread->stack_overflow_state()->reguard_stack((address) &continuation)) {
     // Forward exception to callee (leaving bci/bcp untouched) because (a) no
     // handler in this method, or (b) after a stack overflow there is not yet
     // enough stack space available to reprotect the stack.

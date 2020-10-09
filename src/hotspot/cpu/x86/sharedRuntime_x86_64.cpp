@@ -2174,7 +2174,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // Generate stack overflow check
 
   if (UseStackBanging) {
-    __ bang_stack_with_offset((int)JavaThread::stack_shadow_zone_size());
+    __ bang_stack_with_offset((int)StackOverflow::stack_shadow_zone_size());
   } else {
     // need a 5 byte instruction to allow MT safe patching to non-entrant
     __ fat_nop();
@@ -2638,7 +2638,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   Label reguard;
   Label reguard_done;
-  __ cmpl(Address(r15_thread, JavaThread::stack_guard_state_offset()), JavaThread::stack_guard_yellow_reserved_disabled);
+  __ cmpl(Address(r15_thread, JavaThread::stack_guard_state_offset()), StackOverflow::stack_guard_yellow_reserved_disabled);
   __ jcc(Assembler::equal, reguard);
   __ bind(reguard_done);
 

@@ -80,13 +80,6 @@ static void do_oop_load(InterpreterMacroAssembler* _masm,
   __ load_heap_oop(dst, offset, base, tmp1, tmp2, false, decorators);
 }
 
-// ============================================================================
-// Platform-dependent initialization
-
-void TemplateTable::pd_initialize() {
-  // No ppc64 specific initialization.
-}
-
 Address TemplateTable::at_bcp(int offset) {
   // Not used on ppc.
   ShouldNotReachHere();

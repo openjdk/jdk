@@ -1701,8 +1701,7 @@ void Deoptimization::load_class_by_index(const constantPoolHandle& constant_pool
       // stack otherwise if we return to the uncommon trap blob and the
       // stack bang causes a stack overflow we crash.
       JavaThread* jt = THREAD->as_Java_thread();
-      bool guard_pages_enabled = jt->stack_guards_enabled();
-      if (!guard_pages_enabled) guard_pages_enabled = jt->reguard_stack();
+      bool guard_pages_enabled = jt->stack_overflow_state()->reguard_stack_if_needed();
       assert(guard_pages_enabled, "stack banging in uncommon trap blob may cause crash");
     }
     return;

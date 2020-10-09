@@ -386,9 +386,7 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
 
   // When we reenter Java, we need to reenable the reserved/yellow zone which
   // might already be disabled when we are in VM.
-  if (!thread->stack_guards_enabled()) {
-    thread->reguard_stack();
-  }
+  thread->stack_overflow_state()->reguard_stack_if_needed();
 
   // Check that there are shadow pages available before changing thread state
   // to Java. Calculate current_stack_pointer here to make sure

@@ -98,6 +98,7 @@
   LOG_TAG(loader) \
   LOG_TAG(logging) \
   LOG_TAG(malloc) \
+  LOG_TAG(map) \
   LOG_TAG(mark) \
   LOG_TAG(marking) \
   LOG_TAG(membername) \

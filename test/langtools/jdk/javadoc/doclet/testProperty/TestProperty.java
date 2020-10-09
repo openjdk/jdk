@@ -43,6 +43,7 @@ public class TestProperty extends JavadocTester {
     @Test
     public void testArrays() {
         javadoc("-d", "out",
+                "--no-platform-links",
                 "-javafx",
                 "--disable-javafx-strict-checks",
                 "-sourcepath", testSrc,

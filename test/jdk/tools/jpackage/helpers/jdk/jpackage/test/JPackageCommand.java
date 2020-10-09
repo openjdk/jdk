@@ -791,11 +791,11 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         }
     }
 
-    public CfgFile readLaunherCfgFile() {
-        return readLaunherCfgFile(null);
+    public CfgFile readLauncherCfgFile() {
+        return readLauncherCfgFile(null);
     }
 
-    public CfgFile readLaunherCfgFile(String launcherName) {
+    public CfgFile readLauncherCfgFile(String launcherName) {
         verifyIsOfType(PackageType.IMAGE);
         if (isRuntime()) {
             return null;
