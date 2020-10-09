@@ -90,29 +90,20 @@ public class SerialObjectBuilder {
         return this;
     }
 
-    private static int getPrimitiveSignature(Class<?> cl) {
-        if (cl == Integer.TYPE) return 'I';
-        else if (cl == Byte.TYPE) return 'B';
-        else if (cl == Long.TYPE) return 'J';
-        else if (cl == Float.TYPE) return 'F';
-        else if (cl == Double.TYPE) return 'D';
-        else if (cl == Short.TYPE) return 'S';
-        else if (cl == Character.TYPE) return 'C';
-        else if (cl == Boolean.TYPE) return 'Z';
-        else throw new InternalError();
-    }
-
     private static void writeUTF(DataOutputStream out, String str) throws IOException {
-        int utflen = str.length(); // assume ASCII
-        assert utflen <= 0xFFFF;
+        assert str.codePoints().noneMatch(cp -> cp > 127); // only ASCII for now
+        int utflen = str.length();
+        assert utflen <= 0xFFFF;  // only small strings for now
         out.writeShort(utflen);
         out.writeBytes(str);
     }
 
     private void writePrimFieldsDesc(DataOutputStream out) throws IOException {
         for (Map.Entry<NameAndType<?>, Object> entry : primFields.entrySet()) {
-            assert entry.getKey().type() != void.class;
-            out.writeByte(getPrimitiveSignature(entry.getKey().type())); // prim_typecode
+            Class<?> primClass = entry.getKey().type();
+            assert primClass.isPrimitive();
+            assert primClass != void.class;
+            out.writeByte(primClass.descriptorString().getBytes()[0]);   // prim_typecode
             out.writeUTF(entry.getKey().name());                         // fieldName
         }
     }
@@ -145,9 +136,7 @@ public class SerialObjectBuilder {
             }
             writeUTF(out, entry.getKey().name());
             out.writeByte(TC_STRING);
-            writeUTF(out,
-                    (cl.isArray() ? cl.getName() : "L" + cl.getName() + ";")
-                            .replace('.', '/'));
+            writeUTF(out, cl.descriptorString());
         }
     }
 
