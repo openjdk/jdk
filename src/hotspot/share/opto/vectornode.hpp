@@ -624,7 +624,6 @@ class OrVNode : public VectorNode {
  public:
   OrVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
   virtual int Opcode() const;
-  Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 //------------------------------XorVNode---------------------------------------

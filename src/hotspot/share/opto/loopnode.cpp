@@ -49,7 +49,7 @@
 // Determine if a node is a counted loop induction variable.
 // NOTE: The method is declared in "node.hpp".
 bool Node::is_cloop_ind_var() const {
-  return (is_Phi() && !as_Phi()->is_copy() &&
+  return (is_Phi() &&
           as_Phi()->region()->is_CountedLoop() &&
           as_Phi()->region()->as_CountedLoop()->phi() == this);
 }
@@ -1105,7 +1105,7 @@ void LoopNode::verify_strip_mined(int expect_skeleton) const {
     bool has_skeleton = outer_le->in(1)->bottom_type()->singleton() && outer_le->in(1)->bottom_type()->is_int()->get_con() == 0;
     if (has_skeleton) {
       assert(expect_skeleton == 1 || expect_skeleton == -1, "unexpected skeleton node");
-      assert(outer->outcnt() == 2, "only phis");
+      assert(outer->outcnt() == 2, "only control nodes");
     } else {
       assert(expect_skeleton == 0 || expect_skeleton == -1, "no skeleton node?");
       uint phis = 0;
@@ -1733,7 +1733,28 @@ const Type* OuterStripMinedLoopEndNode::Value(PhaseGVN* phase) const {
   if (phase->type(in(0)) == Type::TOP)
     return Type::TOP;
 
+  // Until expansion, the loop end condition is not set so this should not constant fold.
+  if (is_expanded(phase)) {
+    return IfNode::Value(phase);
+  }
+
   return TypeTuple::IFBOTH;
+}
+
+bool OuterStripMinedLoopEndNode::is_expanded(PhaseGVN *phase) const {
+  // The outer strip mined loop head only has Phi uses after expansion
+  if (phase->is_IterGVN()) {
+    Node* backedge = proj_out_or_null(true);
+    if (backedge != NULL) {
+      Node* head = backedge->unique_ctrl_out();
+      if (head != NULL && head->is_OuterStripMinedLoop()) {
+        if (head->find_out_with(Op_Phi) != NULL) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
 }
 
 Node *OuterStripMinedLoopEndNode::Ideal(PhaseGVN *phase, bool can_reshape) {

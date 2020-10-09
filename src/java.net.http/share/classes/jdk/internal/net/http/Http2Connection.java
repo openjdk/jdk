@@ -33,7 +33,6 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -41,6 +40,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.ArrayList;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Flow;
@@ -248,7 +248,7 @@ class Http2Connection  {
     //-------------------------------------
     final HttpConnection connection;
     private final Http2ClientImpl client2;
-    private final Map<Integer,Stream<?>> streams = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Integer,Stream<?>> streams = new ConcurrentHashMap<>();
     private int nextstreamid;
     private int nextPushStream = 2;
     // actual stream ids are not allocated until the Headers frame is ready
@@ -700,8 +700,7 @@ class Http2Connection  {
         Throwable initialCause = this.cause;
         if (initialCause == null) this.cause = t;
         client2.deleteConnection(this);
-        List<Stream<?>> c = new LinkedList<>(streams.values());
-        for (Stream<?> s : c) {
+        for (Stream<?> s : streams.values()) {
             try {
                 s.connectionClosing(t);
             } catch (Throwable e) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ inline void os::map_stack_shadow_pages(address sp) {
   // the OS may not map an intervening page into our space
   // and may fault on a memory access to interior of our frame.
   const int page_size = os::win32::vm_page_size();
-  const size_t n_pages = JavaThread::stack_shadow_zone_size() / page_size;
+  const size_t n_pages = StackOverflow::stack_shadow_zone_size() / page_size;
   for (size_t pages = 1; pages <= n_pages; pages++) {
     sp -= page_size;
     *sp = 0;

@@ -25,7 +25,7 @@
 #include "gc/z/zLargePages.hpp"
 #include "runtime/globals.hpp"
 
-void ZLargePages::initialize_platform() {
+void ZLargePages::pd_initialize() {
   if (UseLargePages) {
     if (UseTransparentHugePages) {
       _state = Transparent;

@@ -25,7 +25,7 @@
 
 package sun.security.provider;
 
-import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 import static sun.security.provider.ByteArrayAccess.*;
 import java.nio.*;
 import java.util.*;
@@ -87,7 +87,7 @@ abstract class SHA3 extends DigestBase {
         implCompress0(b, ofs);
     }
 
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     private void implCompress0(byte[] b, int ofs) {
        for (int i = 0; i < buffer.length; i++) {
            state[i] ^= b[ofs++];

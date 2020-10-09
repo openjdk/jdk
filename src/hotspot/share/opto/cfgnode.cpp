@@ -548,7 +548,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
             assert( igvn->eqv(n->in(0), this), "" );
             assert( n->req() == 2 &&  n->in(1) != NULL, "Only one data input expected" );
             // Break dead loop data path.
-            // Eagerly replace phis with top to avoid phis copies generation.
+            // Eagerly replace phis with top to avoid regionless phis.
             igvn->replace_node(n, top);
             if( max != outcnt() ) {
               progress = true;
@@ -589,7 +589,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         assert( req() == 1, "no inputs expected" );
         // During IGVN phase such region will be subsumed by TOP node
         // so region's phis will have TOP as control node.
-        // Kill phis here to avoid it. PhiNode::is_copy() will be always false.
+        // Kill phis here to avoid it.
         // Also set other user's input to top.
         parent_ctrl = phase->C->top();
       } else {
@@ -604,7 +604,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         Node* n = last_out(i);
         igvn->hash_delete(n); // Remove from worklist before modifying edges
         if( n->is_Phi() ) {   // Collapse all Phis
-          // Eagerly replace phis to avoid copies generation.
+          // Eagerly replace phis to avoid regionless phis.
           Node* in;
           if( cnt == 0 ) {
             assert( n->req() == 1, "No data inputs expected" );
@@ -818,8 +818,10 @@ bool RegionNode::optimize_trichotomy(PhaseIterGVN* igvn) {
   } else if (cmp1->Opcode() == Op_CmpF || cmp1->Opcode() == Op_CmpD ||
              cmp2->Opcode() == Op_CmpF || cmp2->Opcode() == Op_CmpD ||
              cmp1->Opcode() == Op_CmpP || cmp1->Opcode() == Op_CmpN ||
-             cmp2->Opcode() == Op_CmpP || cmp2->Opcode() == Op_CmpN) {
+             cmp2->Opcode() == Op_CmpP || cmp2->Opcode() == Op_CmpN ||
+             cmp1->is_SubTypeCheck() || cmp2->is_SubTypeCheck()) {
     // Floats and pointers don't exactly obey trichotomy. To be on the safe side, don't transform their tests.
+    // SubTypeCheck is not commutative
     return false;
   } else if (cmp1 != cmp2) {
     if (cmp1->in(1) == cmp2->in(2) &&
@@ -1377,7 +1379,6 @@ Node* PhiNode::unique_input(PhaseTransform* phase, bool uncast) {
   //                      phi               /    --
 
   Node* r = in(0);                      // RegionNode
-  if (r == NULL)  return in(1);         // Already degraded to a Copy
   Node* input = NULL; // The unique direct input (maybe uncasted = ConstraintCasts removed)
 
   for (uint i = 1, cnt = req(); i < cnt; ++i) {
@@ -1861,11 +1862,8 @@ bool PhiNode::wait_for_region_igvn(PhaseGVN* phase) {
 // Return a node which is more "ideal" than the current node.  Must preserve
 // the CFG, but we can still strip out dead paths.
 Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // The next should never happen after 6297035 fix.
-  if( is_copy() )               // Already degraded to a Copy ?
-    return NULL;                // No change
-
   Node *r = in(0);              // RegionNode
+  assert(r != NULL && r->is_Region(), "this phi must have a region");
   assert(r->in(0) == NULL || !r->in(0)->is_Root(), "not a specially hidden merge");
 
   // Note: During parsing, phis are often transformed before their regions.

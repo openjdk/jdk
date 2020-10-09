@@ -219,7 +219,7 @@ public class KeyStore {
     private KeyStoreSpi keyStoreSpi;
 
     // Has this keystore been initialized (loaded)?
-    private boolean initialized = false;
+    private boolean initialized;
 
     /**
      * A marker interface for {@code KeyStore}
@@ -264,7 +264,7 @@ public class KeyStore {
         private final char[] password;
         private final String protectionAlgorithm;
         private final AlgorithmParameterSpec protectionParameters;
-        private volatile boolean destroyed = false;
+        private volatile boolean destroyed;
 
         /**
          * Creates a password parameter.

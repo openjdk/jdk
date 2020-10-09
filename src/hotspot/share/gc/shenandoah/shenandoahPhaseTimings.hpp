@@ -39,7 +39,6 @@ class outputStream;
   f(CNT_PREFIX ## CodeCacheRoots,           DESC_PREFIX "Code Cache Roots")            \
   f(CNT_PREFIX ## VMStrongRoots,            DESC_PREFIX "VM Strong Roots")             \
   f(CNT_PREFIX ## VMWeakRoots,              DESC_PREFIX "VM Weak Roots")               \
-  f(CNT_PREFIX ## ObjectSynchronizerRoots,  DESC_PREFIX "Synchronizer Roots")          \
   f(CNT_PREFIX ## CLDGRoots,                DESC_PREFIX "CLDG Roots")                  \
   f(CNT_PREFIX ## JVMTIWeakRoots,           DESC_PREFIX "JVMTI Weak Roots")            \
   f(CNT_PREFIX ## StringDedupTableRoots,    DESC_PREFIX "Dedup Table Roots")           \
@@ -107,6 +106,7 @@ class outputStream;
   f(init_update_refs,                               "Pause Init  Update Refs (N)")     \
   f(init_update_refs_manage_gclabs,                 "  Manage GCLABs")                 \
                                                                                        \
+  f(conc_update_thread_roots,                       "Concurrent Update Thread Roots")  \
   f(conc_update_refs,                               "Concurrent Update Refs")          \
                                                                                        \
   f(final_update_refs_gross,                        "Pause Final Update Refs (G)")     \

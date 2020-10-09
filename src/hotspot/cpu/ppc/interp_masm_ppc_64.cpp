@@ -223,7 +223,7 @@ void InterpreterMacroAssembler::dispatch_Lbyte_code(TosState state, Register byt
     address *sfpt_tbl = Interpreter::safept_table(state);
     if (table != sfpt_tbl) {
       Label dispatch;
-      ld(R0, in_bytes(Thread::polling_page_offset()), R16_thread);
+      ld(R0, in_bytes(Thread::polling_word_offset()), R16_thread);
       // Armed page has poll_bit set, if poll bit is cleared just continue.
       andi_(R0, R0, SafepointMechanism::poll_bit());
       beq(CCR0, dispatch);
@@ -997,8 +997,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 // Throw IllegalMonitorException if object is not locked by current thread.
 void InterpreterMacroAssembler::unlock_object(Register monitor, bool check_for_exceptions) {
   if (UseHeavyMonitors) {
-    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit),
-            monitor, check_for_exceptions);
+    call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), monitor);
   } else {
 
     // template code:
@@ -1011,7 +1010,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, bool check_for_e
     //   monitor->set_obj(NULL);
     // } else {
     //   // Slow path.
-    //   InterpreterRuntime::monitorexit(THREAD, monitor);
+    //   InterpreterRuntime::monitorexit(monitor);
     // }
 
     const Register object           = R7_ARG5;
@@ -1065,13 +1064,12 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, bool check_for_e
 
     // } else {
     //   // Slow path.
-    //   InterpreterRuntime::monitorexit(THREAD, monitor);
+    //   InterpreterRuntime::monitorexit(monitor);
 
     // The lock has been converted into a heavy lock and hence
     // we need to get into the slow case.
     bind(slow_case);
-    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit),
-            monitor, check_for_exceptions);
+    call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), monitor);
     // }
 
     Label done;

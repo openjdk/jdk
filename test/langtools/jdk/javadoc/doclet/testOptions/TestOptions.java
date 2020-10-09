@@ -185,6 +185,7 @@ public class TestOptions extends JavadocTester {
     public void testLinkSource() {
         javadoc("-d", "out-9",
                 "-linksource",
+                "--no-platform-links",
                 "-javafx",
                 "--disable-javafx-strict-checks",
                 "-sourcepath", testSrc,

@@ -39,7 +39,7 @@ include MakeBase.gmk
 TARGETS :=
 
 # Include the file being wrapped.
-include modules/$(MODULE)/$(MAKEFILE_PREFIX).gmk
+include $(MAKEFILE_PREFIX).gmk
 
 # Setup copy rules from the modules directories to the jdk image directory.
 ifeq ($(call isTargetOs, windows), true)

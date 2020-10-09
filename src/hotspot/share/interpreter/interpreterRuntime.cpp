@@ -64,6 +64,7 @@
 #include "runtime/jfieldIDWorkaround.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/threadCritical.hpp"
@@ -447,6 +448,10 @@ JRT_END
 // from a call, the expression stack contains the values for the bci at the
 // invoke w/o arguments (i.e., as if one were inside the call).
 JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThread* thread, oopDesc* exception))
+  // We get here after we have unwound from a callee throwing an exception
+  // into the interpreter. Any deferred stack processing is notified of
+  // the event via the StackWatermarkSet.
+  StackWatermarkSet::after_unwind(thread);
 
   LastFrameAccessor last_frame(thread);
   Handle             h_exception(thread, exception);
@@ -548,7 +553,7 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
 
   address continuation = NULL;
   address handler_pc = NULL;
-  if (handler_bci < 0 || !thread->reguard_stack((address) &continuation)) {
+  if (handler_bci < 0 || !thread->stack_overflow_state()->reguard_stack((address) &continuation)) {
     // Forward exception to callee (leaving bci/bcp untouched) because (a) no
     // handler in this method, or (b) after a stack overflow there is not yet
     // enough stack space available to reprotect the stack.
@@ -733,24 +738,21 @@ JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorenter(JavaThread* thread, Ba
 JRT_END
 
 
-//%note monitor_1
-JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorexit(JavaThread* thread, BasicObjectLock* elem))
-#ifdef ASSERT
-  thread->last_frame().interpreter_frame_verify_monitor(elem);
-#endif
-  Handle h_obj(thread, elem->obj());
-  assert(Universe::heap()->is_in_or_null(h_obj()),
-         "must be NULL or an object");
-  if (elem == NULL || h_obj()->is_unlocked()) {
-    THROW(vmSymbols::java_lang_IllegalMonitorStateException());
+JRT_LEAF(void, InterpreterRuntime::monitorexit(BasicObjectLock* elem))
+  oop obj = elem->obj();
+  assert(Universe::heap()->is_in(obj), "must be an object");
+  // The object could become unlocked through a JNI call, which we have no other checks for.
+  // Give a fatal message if CheckJNICalls. Otherwise we ignore it.
+  if (obj->is_unlocked()) {
+    if (CheckJNICalls) {
+      fatal("Object has been unlocked by JNI");
+    }
+    return;
   }
-  ObjectSynchronizer::exit(h_obj(), elem->lock(), thread);
-  // Free entry. This must be done here, since a pending exception might be installed on
-  // exit. If it is not cleared, the exception handling code will try to unlock the monitor again.
+  ObjectSynchronizer::exit(obj, elem->lock(), Thread::current());
+  // Free entry. If it is not cleared, the exception handling code will try to unlock the monitor
+  // again at method exit or in the case of an exception.
   elem->set_obj(NULL);
-#ifdef ASSERT
-  thread->last_frame().interpreter_frame_verify_monitor(elem);
-#endif
 JRT_END
 
 
@@ -1156,12 +1158,31 @@ JRT_ENTRY(void, InterpreterRuntime::at_safepoint(JavaThread* thread))
   // if this is called during a safepoint
 
   if (JvmtiExport::should_post_single_step()) {
+    // This function is called by the interpreter when single stepping. Such single
+    // stepping could unwind a frame. Then, it is important that we process any frames
+    // that we might return into.
+    StackWatermarkSet::before_unwind(thread);
+
     // We are called during regular safepoints and when the VM is
     // single stepping. If any thread is marked for single stepping,
     // then we may have JVMTI work to do.
     LastFrameAccessor last_frame(thread);
     JvmtiExport::at_single_stepping_point(thread, last_frame.method(), last_frame.bcp());
   }
+JRT_END
+
+JRT_ENTRY(void, InterpreterRuntime::at_unwind(JavaThread* thread))
+  // JRT_END does an implicit safepoint check, hence we are guaranteed to block
+  // if this is called during a safepoint
+
+  // This function is called by the interpreter when the return poll found a reason
+  // to call the VM. The reason could be that we are returning into a not yet safe
+  // to access frame. We handle that below.
+  // Note that this path does not check for single stepping, because we do not want
+  // to single step when unwinding frames for an exception being thrown. Instead,
+  // such single stepping code will use the safepoint table, which will use the
+  // InterpreterRuntime::at_safepoint callback.
+  StackWatermarkSet::before_unwind(thread);
 JRT_END
 
 JRT_ENTRY(void, InterpreterRuntime::post_field_access(JavaThread *thread, oopDesc* obj,

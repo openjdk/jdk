@@ -739,7 +739,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   nonstatic_field(Thread,                      _current_pending_monitor_is_from_java,         bool)                                  \
   nonstatic_field(Thread,                      _current_waiting_monitor,                      ObjectMonitor*)                        \
   nonstatic_field(NamedThread,                 _name,                                         char*)                                 \
-  nonstatic_field(NamedThread,                 _processed_thread,                             JavaThread*)                           \
+  nonstatic_field(NamedThread,                 _processed_thread,                             Thread*)                               \
   nonstatic_field(JavaThread,                  _threadObj,                                    OopHandle)                             \
   nonstatic_field(JavaThread,                  _anchor,                                       JavaFrameAnchor)                       \
   nonstatic_field(JavaThread,                  _vm_result,                                    oop)                                   \
@@ -1008,7 +1008,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   /* -XX flags         */                                                                                                            \
   /*********************/                                                                                                            \
                                                                                                                                      \
-  nonstatic_field(JVMFlag,                     _type,                                         const char*)                           \
+  nonstatic_field(JVMFlag,                     _type,                                         int)                                   \
   nonstatic_field(JVMFlag,                     _name,                                         const char*)                           \
   unchecked_nonstatic_field(JVMFlag,           _addr,                                         sizeof(void*)) /* NOTE: no type */     \
   nonstatic_field(JVMFlag,                     _flags,                                        JVMFlag::Flags)                        \

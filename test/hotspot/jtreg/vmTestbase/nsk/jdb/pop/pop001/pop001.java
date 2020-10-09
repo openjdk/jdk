@@ -46,9 +46,9 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build nsk.jdb.pop.pop001.pop001
- *        nsk.jdb.pop.pop001.pop001a
- * @run main/othervm PropertyResolvingWrapper nsk.jdb.pop.pop001.pop001
+ * @build nsk.jdb.pop.pop001.pop001a
+ * @run main/othervm
+ *      nsk.jdb.pop.pop001.pop001
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

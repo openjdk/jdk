@@ -47,9 +47,9 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build nsk.jdb.watch.watch002.watch002
- *        nsk.jdb.watch.watch002.watch002a
- * @run main/othervm PropertyResolvingWrapper nsk.jdb.watch.watch002.watch002
+ * @build nsk.jdb.watch.watch002.watch002a
+ * @run main/othervm
+ *      nsk.jdb.watch.watch002.watch002
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

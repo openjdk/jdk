@@ -95,7 +95,6 @@ class ReferenceToRootClosure : public StackObj {
   bool _complete;
 
   bool do_cldg_roots();
-  bool do_object_synchronizer_roots();
   bool do_oop_storage_roots();
   bool do_string_table_roots();
   bool do_aot_loader_roots();
@@ -126,13 +125,6 @@ bool ReferenceToRootClosure::do_cldg_roots() {
   ReferenceLocateClosure rlc(_callback, OldObjectRoot::_class_loader_data, OldObjectRoot::_type_undetermined, NULL);
   CLDToOopClosure cldt_closure(&rlc, ClassLoaderData::_claim_none);
   ClassLoaderDataGraph::always_strong_cld_do(&cldt_closure);
-  return rlc.complete();
-}
-
-bool ReferenceToRootClosure::do_object_synchronizer_roots() {
-  assert(!complete(), "invariant");
-  ReferenceLocateClosure rlc(_callback, OldObjectRoot::_object_synchronizer, OldObjectRoot::_type_undetermined, NULL);
-  ObjectSynchronizer::oops_do(&rlc);
   return rlc.complete();
 }
 
@@ -168,11 +160,6 @@ bool ReferenceToRootClosure::do_roots() {
 
   if (do_cldg_roots()) {
     _complete = true;
-    return true;
-  }
-
-  if (do_object_synchronizer_roots()) {
-   _complete = true;
     return true;
   }
 
@@ -271,9 +258,6 @@ bool ReferenceToThreadRootClosure::do_thread_stack_detailed(JavaThread* jt) {
   ReferenceLocateClosure rcl(_callback, OldObjectRoot::_threads, OldObjectRoot::_stack_variable, jt);
 
   if (jt->has_last_Java_frame()) {
-    // traverse the registered growable array gc_array
-    // can't do this as it is not reachable from outside
-
     // Traverse the monitor chunks
     MonitorChunk* chunk = jt->monitor_chunks();
     for (; chunk != NULL; chunk = chunk->next()) {
@@ -285,7 +269,7 @@ bool ReferenceToThreadRootClosure::do_thread_stack_detailed(JavaThread* jt) {
     }
 
     // Traverse the execution stack
-    for (StackFrameStream fst(jt); !fst.is_done(); fst.next()) {
+    for (StackFrameStream fst(jt, true /* update */, true /* process_frames */); !fst.is_done(); fst.next()) {
       fst.current()->oops_do(&rcl, NULL, fst.register_map());
     }
 
@@ -310,7 +294,6 @@ bool ReferenceToThreadRootClosure::do_thread_stack_detailed(JavaThread* jt) {
   // around using this function
   /*
   * // can't reach these oop* from the outside
-  f->do_oop((oop*) &_threadObj);
   f->do_oop((oop*) &_vm_result);
   f->do_oop((oop*) &_exception_oop);
   f->do_oop((oop*) &_pending_async_exception);
