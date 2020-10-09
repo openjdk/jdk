@@ -259,8 +259,10 @@ G1ParRemoveSelfForwardPtrsTask::G1ParRemoveSelfForwardPtrsTask(G1RedirtyCardsQue
 void G1ParRemoveSelfForwardPtrsTask::work(uint worker_id) {
   RemoveSelfForwardPtrHRClosure rsfp_cl(_rdcqs, worker_id);
 
-  // We need to check all regions whether they need self forward removals, not only
-  // the last collection set increment. Reference processing may copy over and fail
-  // evacuation in any region in the collection set.
+  // We need to check all collection set regions whether they need self forward
+  // removals, not only the last collection set increment. The reason is that
+  // reference processing (e.g. finalizers) can make it necessary to resurrect an
+  // otherwise unreachable object at the very end of the collection. That object
+  // might cause an evacuation failure in any region in the collection set.
   _g1h->collection_set_par_iterate_all(&rsfp_cl, &_hrclaimer, worker_id);
 }
