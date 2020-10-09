@@ -123,7 +123,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
                                  // to these class loader datas.
 
   // Remembered sets support for the oops in the class loader data.
-  bool _modified_oops;             // Card Table Equivalent (YC support)
+  bool _modified_oops;     // Card Table Equivalent
 
   int _keep_alive;         // if this CLD is kept alive.
                            // Used for non-strong hidden classes, unsafe anonymous classes and the
