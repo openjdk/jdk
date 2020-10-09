@@ -121,7 +121,7 @@ void InterpreterMacroAssembler::dispatch_base(TosState state, address* table, bo
     address *sfpt_tbl = Interpreter::safept_table(state);
     if (table != sfpt_tbl) {
       Label dispatch;
-      const Address poll_byte_addr(Z_thread, in_bytes(Thread::polling_page_offset()) + 7 /* Big Endian */);
+      const Address poll_byte_addr(Z_thread, in_bytes(Thread::polling_word_offset()) + 7 /* Big Endian */);
       // Armed page has poll_bit set, if poll bit is cleared just continue.
       z_tm(poll_byte_addr, SafepointMechanism::poll_bit());
       z_braz(dispatch);

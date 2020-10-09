@@ -61,6 +61,7 @@
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadSMR.hpp"
@@ -160,6 +161,13 @@ JRT_BLOCK_ENTRY(Deoptimization::UnrollBlock*, Deoptimization::fetch_unroll_info(
   }
   thread->inc_in_deopt_handler();
 
+  if (exec_mode == Unpack_exception) {
+    // When we get here, a callee has thrown an exception into a deoptimized
+    // frame. That throw might have deferred stack watermark checking until
+    // after unwinding. So we deal with such deferred requests here.
+    StackWatermarkSet::after_unwind(thread);
+  }
+
   return fetch_unroll_info_helper(thread, exec_mode);
 JRT_END
 
@@ -254,6 +262,10 @@ static void eliminate_locks(JavaThread* thread, GrowableArray<compiledVFrame*>* 
 
 // This is factored, since it is both called from a JRT_LEAF (deoptimization) and a JRT_ENTRY (uncommon_trap)
 Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread* thread, int exec_mode) {
+  // When we get here we are about to unwind the deoptee frame. In order to
+  // catch not yet safe to use frames, the following stack watermark barrier
+  // poll will make such frames safe to use.
+  StackWatermarkSet::before_unwind(thread);
 
   // Note: there is a safepoint safety issue here. No matter whether we enter
   // via vanilla deopt or uncommon trap we MUST NOT stop at a safepoint once
@@ -1510,7 +1522,7 @@ static void get_monitors_from_stack(GrowableArray<Handle>* objects_to_revoke, Ja
   // the places we want to call this routine so we need to walk the
   // stack again to update the register map.
   if (map == NULL || !map->update_map()) {
-    StackFrameStream sfs(thread, true);
+    StackFrameStream sfs(thread, true /* update */, true /* process_frames */);
     bool found = false;
     while (!found && !sfs.is_done()) {
       frame* cur = sfs.current();
