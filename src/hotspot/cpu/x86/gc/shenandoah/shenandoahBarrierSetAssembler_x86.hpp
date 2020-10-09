@@ -76,7 +76,7 @@ public:
 #endif
 
   void load_reference_barrier(MacroAssembler* masm, Register dst, Address src);
-  void load_reference_barrier_native(MacroAssembler* masm, Register dst, Address src, bool weak);
+  void load_reference_barrier_native(MacroAssembler* masm, Register dst, Address src, bool native);
 
   void cmpxchg_oop(MacroAssembler* masm,
                    Register res, Address addr, Register oldval, Register newval,
