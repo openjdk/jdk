@@ -29,6 +29,8 @@
 #include "memory/memRegion.hpp"
 #include "utilities/copy.hpp"
 
+class WorkGang;
+
 // A MutableSpace is a subtype of ImmutableSpace that supports the
 // concept of allocation. This includes the concepts that a space may
 // be only partially full, and the query methods that go with such

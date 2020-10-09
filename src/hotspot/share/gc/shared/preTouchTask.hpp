@@ -25,6 +25,10 @@
 #ifndef SHARE_GC_SHARED_PRETOUCH_HPP
 #define SHARE_GC_SHARED_PRETOUCH_HPP
 
+#include "gc/shared/workgroup.hpp"
+#include "runtime/globals.hpp"
+#include "runtime/os.hpp"
+
 class PretouchTask : public AbstractGangTask {
 
 private:
@@ -47,40 +51,12 @@ public:
 #endif
   }
 
-  virtual void work(uint worker_id) {
-    size_t const actual_chunk_size = MAX2(chunk_size(), _page_size);
-    while (true) {
-      char* touch_addr = Atomic::fetch_and_add(&_cur_addr, actual_chunk_size);
-      if (touch_addr < _start_addr || touch_addr >= _end_addr) {
-        break;
-      }
-      char* end_addr = touch_addr + MIN2(actual_chunk_size, pointer_delta(_end_addr, touch_addr, sizeof(char)));
-      os::pretouch_memory(touch_addr, end_addr, _page_size);
-    }
-  }
+  virtual void work(uint worker_id);
 
-  static size_t chunk_size() { return PreTouchParallelChunkSize; }
+  static size_t chunk_size()              { return PreTouchParallelChunkSize; }
 
   static void pretouch(const char* task_name, char* start_address, char* end_address, size_t page_size,
-                       WorkGang* pretouch_gang) {
-
-    PretouchTask task(task_name, start_address, end_address, page_size);
-    size_t total_bytes = (end_address - start_address);
-
-    if (pretouch_gang != NULL) {
-      size_t num_chunks = MAX2((size_t)1, total_bytes / MAX2(PretouchTask::chunk_size(), page_size));
-
-      uint num_workers = MIN2((uint)num_chunks, pretouch_gang->total_workers());
-      log_debug(gc, heap)("Running %s with %u workers for " SIZE_FORMAT " work units pre-touching " SIZE_FORMAT "B.",
-                          task.name(), num_workers, num_chunks, total_bytes);
-
-      pretouch_gang->run_task(&task, num_workers);
-    } else {
-      log_debug(gc, heap)("Running %s pre-touching " SIZE_FORMAT "B.",
-                          task.name(), total_bytes);
-      task.work(0);
-    }
-  }
+                       WorkGang* pretouch_gang);
 
 };
 

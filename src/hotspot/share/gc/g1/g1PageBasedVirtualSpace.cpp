@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1PageBasedVirtualSpace.hpp"
-#include "gc/shared/preTouch.hpp"
+#include "gc/shared/preTouchTask.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"

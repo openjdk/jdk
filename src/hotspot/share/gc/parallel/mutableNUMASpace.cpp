@@ -26,6 +26,7 @@
 #include "gc/parallel/mutableNUMASpace.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/spaceDecorator.hpp"
+#include "gc/shared/workgroup.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
