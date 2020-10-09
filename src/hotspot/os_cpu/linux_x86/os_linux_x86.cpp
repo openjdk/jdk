@@ -838,8 +838,8 @@ void os::workaround_expand_exec_shield_cs_limit() {
   if (os::is_primordial_thread()) {
     address limit = Linux::initial_thread_stack_bottom();
     if (! DisablePrimordialThreadGuardPages) {
-      limit += JavaThread::stack_red_zone_size() +
-        JavaThread::stack_yellow_zone_size();
+      limit += StackOverflow::stack_red_zone_size() +
+               StackOverflow::stack_yellow_zone_size();
     }
     os::Linux::expand_stack_to(limit);
   }
