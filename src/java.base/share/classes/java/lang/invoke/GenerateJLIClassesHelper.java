@@ -57,8 +57,8 @@ class GenerateJLIClassesHelper {
     static void traceLambdaForm(String name, MethodType type, Class<?> holder, MemberName resolvedMember) {
         if (TRACE_RESOLVE) {
             System.out.println(LF_RESOLVE + " " + holder.getName() + " " + name + " " +
-                     shortenSignature(basicTypeSignature(type)) +
-                     (resolvedMember != null ? " (success)" : " (fail)"));
+                    shortenSignature(basicTypeSignature(type)) +
+                    (resolvedMember != null ? " (success)" : " (fail)"));
         }
         if (CDS.isDumpingClassList()) {
             CDS.traceLambdaFormInvoker(LF_RESOLVE, holder.getName(), name, shortenSignature(basicTypeSignature(type)));
