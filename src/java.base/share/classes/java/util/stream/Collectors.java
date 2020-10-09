@@ -293,15 +293,14 @@ public final class Collectors {
      * <a href="../List.html#unmodifiable">unmodifiable List</a> in encounter order
      * @since 10
      */
-    @SuppressWarnings("unchecked")
     public static <T>
     Collector<T, ?, List<T>> toUnmodifiableList() {
         return new CollectorImpl<>((Supplier<List<T>>) ArrayList::new, List::add,
                                    (left, right) -> { left.addAll(right); return left; },
                                    list -> {
                                        if (list.getClass() == ArrayList.class) { // ensure it's trusted
-                                           return (List<T>)SharedSecrets.getJavaUtilCollectionAccess()
-                                                                        .listFromTrustedArray(list.toArray());
+                                           return SharedSecrets.getJavaUtilCollectionAccess()
+                                                               .listFromTrustedArray(list.toArray());
                                        } else {
                                            throw new IllegalArgumentException();
                                        }
