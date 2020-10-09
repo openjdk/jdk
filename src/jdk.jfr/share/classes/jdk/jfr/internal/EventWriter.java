@@ -60,11 +60,6 @@ public final class EventWriter {
         return ew != null ? ew : JVM.newEventWriter();
     }
 
-    public static EventWriter getEventWriter(Thread thread) {
-        EventWriter ew = (EventWriter)JVM.getEventWriter(thread.getId());
-        return ew != null ? ew : JVM.newEventWriter(thread.getId());
-    }
-
     public void putBoolean(boolean i) {
         if (isValidForSize(Byte.BYTES)) {
             currentPosition += Bits.putBoolean(currentPosition, i);
