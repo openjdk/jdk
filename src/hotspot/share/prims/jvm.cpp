@@ -3683,7 +3683,7 @@ jclass find_class_from_class_loader(JNIEnv* env, Symbol* name, jboolean init,
 JVM_ENTRY(jobject, JVM_InvokeMethod(JNIEnv *env, jobject method, jobject obj, jobjectArray args0))
   JVMWrapper("JVM_InvokeMethod");
   Handle method_handle;
-  if (thread->stack_available((address) &method_handle) >= JVMInvokeMethodSlack) {
+  if (thread->stack_overflow_state()->stack_available((address) &method_handle) >= JVMInvokeMethodSlack) {
     method_handle = Handle(THREAD, JNIHandles::resolve(method));
     Handle receiver(THREAD, JNIHandles::resolve(obj));
     objArrayHandle args(THREAD, objArrayOop(JNIHandles::resolve(args0)));

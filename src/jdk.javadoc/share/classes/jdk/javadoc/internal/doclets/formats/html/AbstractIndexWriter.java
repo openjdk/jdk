@@ -25,24 +25,17 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.io.IOException;
-import java.io.Writer;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.SortedSet;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
 import com.sun.source.doctree.DocTree;
-import jdk.javadoc.internal.doclets.formats.html.SearchIndexItem.Category;
+
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
@@ -50,10 +43,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
-import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
-import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 
@@ -68,50 +58,35 @@ import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  *
- * @see    IndexBuilder
+ * @see IndexBuilder
  */
 public class AbstractIndexWriter extends HtmlDocletWriter {
 
-    /**
-     * The index of all the members with unicode character.
-     */
-    protected IndexBuilder indexBuilder;
+    protected final IndexBuilder mainIndex;
 
-    protected Navigation navBar;
-
-    protected final Map<Character, List<SearchIndexItem>> tagSearchIndexMap;
+    protected final Navigation navBar;
 
     /**
-     * This constructor will be used by {@link SplitIndexWriter}. Initializes
-     * path to this file and relative path from this file.
+     * Initializes the common data for writers that can generate index files
+     * based on the information in {@code configuration.mainIndex}.
      *
-     * @param configuration  The current configuration
-     * @param path       Path to the file which is getting generated.
-     * @param indexBuilder Unicode based Index from {@link IndexBuilder}
+     * @param configuration  the current configuration
+     * @param path           path to the file which is getting generated.
      */
     protected AbstractIndexWriter(HtmlConfiguration configuration,
-                                  DocPath path,
-                                  IndexBuilder indexBuilder) {
+                                  DocPath path) {
         super(configuration, path);
-        this.indexBuilder = indexBuilder;
+        this.mainIndex = configuration.mainIndex;
         this.navBar = new Navigation(null, configuration, PageMode.INDEX, path);
-        Stream<SearchIndexItem> items =
-                searchItems.itemsOfCategories(Category.INDEX, Category.SYSTEM_PROPERTY)
-                        .sorted(comparators.makeGenericSearchIndexComparator());
-        this.tagSearchIndexMap = buildSearchTagIndex(items);
     }
 
-    protected void addContents(Character uc, List<IndexItem> memberlist,
+    protected void addContents(Character uc, SortedSet<IndexItem> memberlist,
             Content contentTree) {
         addHeading(uc, contentTree);
 
         HtmlTree dl = HtmlTree.DL(HtmlStyle.index);
-        Map<String,Integer> duplicateLabelCheck = new HashMap<>();
-        memberlist.forEach(e -> duplicateLabelCheck.compute(e.getFullyQualifiedLabel(utils),
-                (k, v) -> v == null ? 1 : v + 1));
-        for (IndexItem indexItem : memberlist) {
-            addDescription(indexItem, dl,
-                    duplicateLabelCheck.get(indexItem.getFullyQualifiedLabel(utils)) > 1);
+        for (IndexItem item : memberlist) {
+            addDescription(item, dl);
         }
         contentTree.add(dl);
     }
@@ -125,79 +100,62 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         contentTree.add(heading);
     }
 
-    protected void addDescription(IndexItem indexItem, Content dl, boolean addModuleInfo) {
-        SearchIndexItem si = indexItem.getSearchTag();
-        if (si != null) {
-            addDescription(si, dl);
-        } else {
-            si = new SearchIndexItem();
-            si.setLabel(indexItem.getLabel());
-            addElementDescription(indexItem, dl, si, addModuleInfo);
-            searchItems.add(si);
+    protected void addDescription(IndexItem indexItem, Content dl) {
+        if (indexItem.isTagItem()) {
+            addTagDescription(indexItem, dl);
+        } else if (indexItem.isElementItem()) {
+            addElementDescription(indexItem, dl);
         }
     }
 
     /**
      * Add one line summary comment for the element.
      *
-     * @param indexItem the element to be documented
+     * @param item the element to be documented
      * @param dlTree the content tree to which the description will be added
-     * @param si the search index item
-     * @param addModuleInfo whether to include module information
      */
-    protected void addElementDescription(IndexItem indexItem, Content dlTree, SearchIndexItem si,
-                                         boolean addModuleInfo) {
+    protected void addElementDescription(IndexItem item, Content dlTree) {
         Content dt;
-        Element element = indexItem.getElement();
-        String label = indexItem.getLabel();
+        Element element = item.getElement();
+        String label = item.getLabel();
         switch (element.getKind()) {
             case MODULE:
-                dt = HtmlTree.DT(getModuleLink((ModuleElement)element, new StringContent(label)));
-                si.setCategory(Category.MODULES);
+                dt = HtmlTree.DT(getModuleLink((ModuleElement) element, new StringContent(label)));
                 dt.add(" - ").add(contents.module_).add(" " + label);
                 break;
+
             case PACKAGE:
-                dt = HtmlTree.DT(getPackageLink((PackageElement)element, new StringContent(label)));
+                dt = HtmlTree.DT(getPackageLink((PackageElement) element, new StringContent(label)));
                 if (configuration.showModules) {
-                    si.setContainingModule(utils.getFullyQualifiedName(utils.containingModule(element)));
+                    item.setContainingModule(utils.getFullyQualifiedName(utils.containingModule(element)));
                 }
-                si.setCategory(Category.PACKAGES);
                 dt.add(" - ").add(contents.package_).add(" " + label);
                 break;
+
             case CLASS:
             case ENUM:
             case RECORD:
             case ANNOTATION_TYPE:
             case INTERFACE:
                 dt = HtmlTree.DT(getLink(new LinkInfoImpl(configuration,
-                        LinkInfoImpl.Kind.INDEX, (TypeElement)element).strong(true)));
-                si.setContainingPackage(utils.getPackageName(utils.containingPackage(element)));
-                if (configuration.showModules && addModuleInfo) {
-                    si.setContainingModule(utils.getFullyQualifiedName(utils.containingModule(element)));
-                }
-                si.setCategory(Category.TYPES);
+                        LinkInfoImpl.Kind.INDEX, (TypeElement) element).strong(true)));
                 dt.add(" - ");
-                addClassInfo((TypeElement)element, dt);
+                addClassInfo((TypeElement) element, dt);
                 break;
-            default:
-                TypeElement containingType = indexItem.getTypeElement();
+
+            case CONSTRUCTOR:
+            case METHOD:
+            case FIELD:
+            case ENUM_CONSTANT:
+                TypeElement containingType = item.getContainingTypeElement();
                 dt = HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.memberNameLink,
                         getDocLink(LinkInfoImpl.Kind.INDEX, containingType, element, new StringContent(label))));
-                si.setContainingPackage(utils.getPackageName(utils.containingPackage(element)));
-                si.setContainingClass(utils.getSimpleName(containingType));
-                if (configuration.showModules && addModuleInfo) {
-                    si.setContainingModule(utils.getFullyQualifiedName(utils.containingModule(element)));
-                }
-                if (utils.isExecutableElement(element)) {
-                    String url = HtmlTree.encodeURL(links.getName(getAnchor((ExecutableElement)element)));
-                    if (!label.equals(url)) {
-                        si.setUrl(url);
-                    }
-                }
-                si.setCategory(Category.MEMBERS);
                 dt.add(" - ");
                 addMemberDesc(element, containingType, dt);
                 break;
+
+            default:
+                throw new Error();
         }
         dlTree.add(dt);
         Content dd = new HtmlTree(TagName.DD);
@@ -224,19 +182,19 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
                 ));
     }
 
-    protected void addDescription(SearchIndexItem sii, Content dlTree) {
-        String siiPath = pathToRoot.isEmpty() ? "" : pathToRoot.getPath() + "/";
-        siiPath += sii.getUrl();
-        HtmlTree labelLink = HtmlTree.A(siiPath, new StringContent(sii.getLabel()));
+    protected void addTagDescription(IndexItem item, Content dlTree) {
+        String itemPath = pathToRoot.isEmpty() ? "" : pathToRoot.getPath() + "/";
+        itemPath += item.getUrl();
+        HtmlTree labelLink = HtmlTree.A(itemPath, new StringContent(item.getLabel()));
         Content dt = HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.searchTagLink, labelLink));
         dt.add(" - ");
-        dt.add(contents.getContent("doclet.Search_tag_in", sii.getHolder()));
+        dt.add(contents.getContent("doclet.Search_tag_in", item.getHolder()));
         dlTree.add(dt);
         Content dd = new HtmlTree(TagName.DD);
-        if (sii.getDescription().isEmpty()) {
+        if (item.getDescription().isEmpty()) {
             dd.add(Entity.NO_BREAK_SPACE);
         } else {
-            dd.add(sii.getDescription());
+            dd.add(item.getDescription());
         }
         dlTree.add(dd);
     }
@@ -313,85 +271,4 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         return "I:" + links.getName(unicode);
     }
 
-    /**
-     * @throws DocFileIOException if there is a problem creating any of the search index files
-     */
-    protected void createSearchIndexFiles() throws DocFileIOException {
-        createSearchIndexFile(DocPaths.MODULE_SEARCH_INDEX_JS,
-                              searchItems.itemsOfCategories(Category.MODULES),
-                              "moduleSearchIndex");
-        if (!configuration.packages.isEmpty()) {
-            SearchIndexItem si = new SearchIndexItem();
-            si.setCategory(Category.PACKAGES);
-            si.setLabel(resources.getText("doclet.All_Packages"));
-            si.setUrl(DocPaths.ALLPACKAGES_INDEX.getPath());
-            searchItems.add(si);
-        }
-        createSearchIndexFile(DocPaths.PACKAGE_SEARCH_INDEX_JS,
-                              searchItems.itemsOfCategories(Category.PACKAGES),
-                              "packageSearchIndex");
-        SearchIndexItem si = new SearchIndexItem();
-        si.setCategory(Category.TYPES);
-        si.setLabel(resources.getText("doclet.All_Classes"));
-        si.setUrl(DocPaths.ALLCLASSES_INDEX.getPath());
-        searchItems.add(si);
-        createSearchIndexFile(DocPaths.TYPE_SEARCH_INDEX_JS,
-                              searchItems.itemsOfCategories(Category.TYPES),
-                              "typeSearchIndex");
-        createSearchIndexFile(DocPaths.MEMBER_SEARCH_INDEX_JS,
-                              searchItems.itemsOfCategories(Category.MEMBERS),
-                              "memberSearchIndex");
-        createSearchIndexFile(DocPaths.TAG_SEARCH_INDEX_JS,
-                              searchItems.itemsOfCategories(Category.INDEX, Category.SYSTEM_PROPERTY),
-                              "tagSearchIndex");
-    }
-
-    /**
-     * Creates a search index file.
-     *
-     * @param searchIndexJS     the file for the JavaScript to be generated
-     * @param searchIndex       the search index items
-     * @param varName           the variable name to write in the JavaScript file
-     * @throws DocFileIOException if there is a problem creating the search index file
-     */
-    protected void createSearchIndexFile(DocPath searchIndexJS,
-                                         Stream<SearchIndexItem> searchIndex,
-                                         String varName)
-            throws DocFileIOException
-    {
-        // The file needs to be created even if there are no searchIndex items
-        // File could be written straight-through, without an intermediate StringBuilder
-        Iterator<SearchIndexItem> index = searchIndex.iterator();
-        StringBuilder searchVar = new StringBuilder("[");
-        boolean first = true;
-        while (index.hasNext()) {
-            SearchIndexItem item = index.next();
-            if (first) {
-                searchVar.append(item.toString());
-                first = false;
-            } else {
-                searchVar.append(",").append(item.toString());
-            }
-        }
-        searchVar.append("];");
-        DocFile jsFile = DocFile.createFileForOutput(configuration, searchIndexJS);
-        try (Writer wr = jsFile.openWriter()) {
-            wr.write(varName);
-            wr.write(" = ");
-            wr.write(searchVar.toString());
-            wr.write("updateSearchResults();");
-        } catch (IOException ie) {
-            throw new DocFileIOException(jsFile, DocFileIOException.Mode.WRITE, ie);
-        }
-    }
-
-    private static Map<Character, List<SearchIndexItem>> buildSearchTagIndex(
-            Stream<? extends SearchIndexItem> searchItems)
-    {
-        return searchItems.collect(Collectors.groupingBy(i -> keyCharacter(i.getLabel())));
-    }
-
-    protected static Character keyCharacter(String s) {
-        return s.isEmpty() ? '*' : Character.toUpperCase(s.charAt(0));
-    }
 }

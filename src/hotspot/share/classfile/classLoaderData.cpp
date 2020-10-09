@@ -133,7 +133,7 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool has_class_mirror_ho
   _metaspace_lock(new Mutex(Mutex::leaf+1, "Metaspace allocation lock", true,
                             Mutex::_safepoint_check_never)),
   _unloading(false), _has_class_mirror_holder(has_class_mirror_holder),
-  _modified_oops(true), _accumulated_modified_oops(false),
+  _modified_oops(true),
   // An unsafe anonymous class loader data doesn't have anything to keep
   // it from being unloaded during parsing of the unsafe anonymous class.
   // The null-class-loader should always be kept alive.

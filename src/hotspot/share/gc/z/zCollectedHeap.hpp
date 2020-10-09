@@ -88,6 +88,8 @@ public:
   virtual size_t max_tlab_size() const;
   virtual size_t unsafe_max_tlab_alloc(Thread* thr) const;
 
+  virtual bool uses_stack_watermark_barrier() const;
+
   virtual GrowableArray<GCMemoryManager*> memory_managers();
   virtual GrowableArray<MemoryPool*> memory_pools();
 

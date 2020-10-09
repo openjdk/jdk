@@ -6410,7 +6410,7 @@ void ControlFlowOptimizer::delete_jumps_to_return(BlockList* code) {
           if (pred_last_branch->block() == block && pred_last_branch->cond() == lir_cond_always && pred_last_branch->info() == NULL) {
             // replace the jump to a return with a direct return
             // Note: currently the edge between the blocks is not deleted
-            pred_instructions->at_put(pred_instructions->length() - 1, new LIR_Op1(lir_return, return_opr));
+            pred_instructions->at_put(pred_instructions->length() - 1, new LIR_OpReturn(return_opr));
 #ifdef ASSERT
             return_converted.set_bit(pred->block_id());
 #endif

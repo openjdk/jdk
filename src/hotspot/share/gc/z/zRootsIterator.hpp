@@ -107,22 +107,14 @@ public:
 
 class ZRootsIterator {
 private:
-  const bool           _visit_jvmti_weak_export;
-  ZJavaThreadsIterator _java_threads_iter;
+  const bool _visit_jvmti_weak_export;
 
   void do_jvmti_weak_export(ZRootsIteratorClosure* cl);
-  void do_vm_thread(ZRootsIteratorClosure* cl);
-  void do_java_threads(ZRootsIteratorClosure* cl);
-  void do_code_cache(ZRootsIteratorClosure* cl);
 
   ZSerialOopsDo<ZRootsIterator, &ZRootsIterator::do_jvmti_weak_export>   _jvmti_weak_export;
-  ZSerialOopsDo<ZRootsIterator, &ZRootsIterator::do_vm_thread>           _vm_thread;
-  ZParallelOopsDo<ZRootsIterator, &ZRootsIterator::do_java_threads>      _java_threads;
-  ZParallelOopsDo<ZRootsIterator, &ZRootsIterator::do_code_cache>        _code_cache;
 
 public:
   ZRootsIterator(bool visit_jvmti_weak_export = false);
-  ~ZRootsIterator();
 
   void oops_do(ZRootsIteratorClosure* cl);
 };
@@ -130,13 +122,18 @@ public:
 class ZConcurrentRootsIterator {
 private:
   ZOopStorageSetStrongIterator _oop_storage_set_iter;
+  ZJavaThreadsIterator         _java_threads_iter;
   const int                    _cld_claim;
 
   void do_oop_storage_set(ZRootsIteratorClosure* cl);
+  void do_java_threads(ZRootsIteratorClosure* cl);
   void do_class_loader_data_graph(ZRootsIteratorClosure* cl);
+  void do_code_cache(ZRootsIteratorClosure* cl);
 
   ZParallelOopsDo<ZConcurrentRootsIterator, &ZConcurrentRootsIterator::do_oop_storage_set>         _oop_storage_set;
   ZParallelOopsDo<ZConcurrentRootsIterator, &ZConcurrentRootsIterator::do_class_loader_data_graph> _class_loader_data_graph;
+  ZParallelOopsDo<ZConcurrentRootsIterator, &ZConcurrentRootsIterator::do_java_threads>            _java_threads;
+  ZParallelOopsDo<ZConcurrentRootsIterator, &ZConcurrentRootsIterator::do_code_cache>              _code_cache;
 
 public:
   ZConcurrentRootsIterator(int cld_claim);

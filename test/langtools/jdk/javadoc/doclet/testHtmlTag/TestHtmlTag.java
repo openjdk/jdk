@@ -101,6 +101,7 @@ public class TestHtmlTag extends JavadocTester {
     @Test
     public void test_other() {
         javadoc("-locale", "en_US",
+                "--no-platform-links",
                 "-d", "out-other",
                 "-sourcepath", testSrc,
                 "pkg3");
