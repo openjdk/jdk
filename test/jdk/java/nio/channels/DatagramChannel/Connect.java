@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,8 @@ import java.net.*;
 import java.nio.*;
 import java.nio.channels.*;
 import java.nio.charset.*;
-
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 public class Connect {
 
@@ -48,84 +49,70 @@ public class Connect {
         invoke(a, r);
     }
 
-    static void invoke(Sprintable reader, Sprintable writer) throws Exception {
-
-        Thread writerThread = new Thread(writer);
-        writerThread.start();
-
-        Thread readerThread = new Thread(reader);
-        readerThread.start();
-
-        writerThread.join();
-        readerThread.join();
-
-        reader.throwException();
-        writer.throwException();
+    static void invoke(Runnable reader, Runnable writer) {
+        CompletableFuture<Void> f1 = CompletableFuture.runAsync(writer);
+        CompletableFuture<Void> f2 = CompletableFuture.runAsync(reader);
+        wait(f1, f2);
     }
 
-    public interface Sprintable extends Runnable {
-        public void throwException() throws Exception;
+    private static void wait(CompletableFuture<?>... futures) throws CompletionException {
+        CompletableFuture<?> future = CompletableFuture.anyOf(futures);
+        future.join();
     }
 
-    public static class Actor implements Sprintable {
+    public static class Actor implements Runnable {
         final int port;
-        Exception e = null;
 
         Actor(int port) {
             this.port = port;
         }
 
-        public void throwException() throws Exception {
-            if (e != null)
-                throw e;
-        }
-
         public void run() {
-            try {
-                DatagramChannel dc = DatagramChannel.open();
-
-                // Send a message
+            try (DatagramChannel dc = DatagramChannel.open()) {
                 ByteBuffer bb = ByteBuffer.allocateDirect(256);
                 bb.put("hello".getBytes());
                 bb.flip();
-                InetAddress address = InetAddress.getLocalHost();
-                if (address.isLoopbackAddress()) {
-                    address = InetAddress.getLoopbackAddress();
-                }
+                InetAddress address = InetAddress.getLoopbackAddress();
                 InetSocketAddress isa = new InetSocketAddress(address, port);
                 dc.connect(isa);
+
+                // Send a message
+                log.println("Actor attempting to write to Reactor at " + isa.toString());
                 dc.write(bb);
 
                 // Try to send to some other address
-                address = InetAddress.getLocalHost();
-                InetSocketAddress bogus = new InetSocketAddress(address, 3333);
                 try {
-                    dc.send(bb, bogus);
-                    throw new RuntimeException("Allowed bogus send while connected");
+                    InetSocketAddress otherAddress = new InetSocketAddress(address, (port == 3333 ? 3332 : 3333));
+                    log.println("Testing if Actor throws already connected exception when attempting to send to " + otherAddress.toString());
+                    dc.send(bb, otherAddress);
+                    throw new RuntimeException("Actor allowed send to other address while already connected");
                 } catch (AlreadyConnectedException ace) {
                     // Correct behavior
                 }
 
                 // Read a reply
                 bb.flip();
+                log.println("Actor waiting to read");
                 dc.read(bb);
                 bb.flip();
-                CharBuffer cb = Charset.forName("US-ASCII").
-                newDecoder().decode(bb);
-                log.println("From Reactor: "+isa+ " said " +cb);
+                CharBuffer cb = StandardCharsets.US_ASCII.
+                        newDecoder().decode(bb);
+                log.println("Actor received from Reactor at " + isa + ": " + cb);
 
                 // Clean up
                 dc.disconnect();
-                dc.close();
             } catch (Exception ex) {
-                e = ex;
+                log.println("Actor threw exception: " + ex);
+                ex.printStackTrace(log);
+                throw new RuntimeException(ex);
+            } finally {
+                log.println("Actor finished");
             }
         }
     }
 
-    public static class Reactor implements Sprintable {
+    public static class Reactor implements Runnable {
         final DatagramChannel dc;
-        Exception e = null;
 
         Reactor() throws IOException {
             dc = DatagramChannel.open().bind(new InetSocketAddress(0));
@@ -135,31 +122,32 @@ public class Connect {
             return dc.socket().getLocalPort();
         }
 
-        public void throwException() throws Exception {
-            if (e != null)
-                throw e;
-        }
-
         public void run() {
             try {
                 // Listen for a message
                 ByteBuffer bb = ByteBuffer.allocateDirect(100);
+                log.println("Reactor waiting to receive");
                 SocketAddress sa = dc.receive(bb);
                 bb.flip();
-                CharBuffer cb = Charset.forName("US-ASCII").
-                newDecoder().decode(bb);
-                log.println("From Actor: "+sa+ " said " +cb);
+                CharBuffer cb = StandardCharsets.US_ASCII.
+                        newDecoder().decode(bb);
+                log.println("Reactor received from Actor at" + sa +  ": " + cb);
 
                 // Reply to sender
                 dc.connect(sa);
                 bb.flip();
+                log.println("Reactor attempting to write: " + dc.getRemoteAddress().toString());
                 dc.write(bb);
 
                 // Clean up
                 dc.disconnect();
                 dc.close();
             } catch (Exception ex) {
-                e = ex;
+                log.println("Reactor threw exception: " + ex);
+                ex.printStackTrace(log);
+                throw new RuntimeException(ex);
+            } finally {
+                log.println("Reactor finished");
             }
         }
     }
