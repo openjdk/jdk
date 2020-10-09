@@ -68,6 +68,7 @@ ClassListParser::ClassListParser(const char* file) {
   }
   _line_no = 0;
   _interfaces = new (ResourceObj::C_HEAP, mtClass) GrowableArray<int>(10, mtClass);
+  _indy_items = new (ResourceObj::C_HEAP, mtClass) GrowableArray<const char*>(9, mtClass);
 }
 
 ClassListParser::~ClassListParser() {
@@ -98,7 +99,7 @@ bool ClassListParser::parse_one_line() {
   _interfaces->clear();
   _source = NULL;
   _interfaces_specified = false;
-  _cp_index = _unspecified;
+  _indy_items->clear();
 
   {
     int len = (int)strlen(_line);
@@ -120,35 +121,16 @@ bool ClassListParser::parse_one_line() {
       }
     }
     _line_len = len;
+    _class_name = _line;
   }
 
-  int min_len = (int)strlen(LAMBDA_PROXY_TAG);
-  if (_line[0] == '@' && _line_len < min_len) {
-    error("line #%d \"%s\" with length %d too short", _line_no, _line, _line_len);
-    return false;
+  if (_line[0] == '@') {
+    return parse_at_tags();
   }
 
-  bool lambda_proxy_line = false;
-  int class_name_offset = 0;
-  if (strncmp(_line, LAMBDA_PROXY_TAG, min_len) == 0) {
-    lambda_proxy_line = true;
-    if (_line[min_len] != ' ') {
-      error("line #%d \"%s\" expecting a blank space after \":\"", _line_no, _line);
-      return false;
-    }
-    class_name_offset = min_len + 1;
-  }
-
-  _class_name = _line + class_name_offset;
-  _token = strchr(_line + class_name_offset, ' ');
-  if (_token == NULL) {
-    if (!lambda_proxy_line) {
-      // No optional arguments are specified.
-      return true;
-    } else {
-      error("Expecting an index number following the class name");
-      return false;
-    }
+  if ((_token = strchr(_line, ' ')) == NULL) {
+    // No optional arguments are specified.
+    return true;
   }
 
   // Mark the end of the name, and go to the next input char
@@ -178,16 +160,12 @@ bool ClassListParser::parse_one_line() {
         *s = '\0'; // mark the end of _source
         _token = s+1;
       }
-    } else if (lambda_proxy_line) {
-      parse_int(&_cp_index);
     } else {
       error("Unknown input");
     }
   }
 
-  // if it is a lambda_proxy_line
-  //     only indy_index should be specified
-  // else if src is specified
+  // if src is specified
   //     id super interfaces must all be specified
   //     loader may be specified
   // else
@@ -195,6 +173,41 @@ bool ClassListParser::parse_one_line() {
   //     id may be specified
   //     super, interfaces, loader must not be specified
   return true;
+}
+
+void ClassListParser::split_tokens_by_whitespace() {
+  int start = 0;
+  int end;
+  bool done = false;
+  while (!done) {
+    while (_line[start] == ' ' || _line[start] == '\t') start++;
+    end = start;
+    while (_line[end] && _line[end] != ' ' && _line[end] != '\t') end++;
+    if (_line[end] == '\0') {
+      done = true;
+    } else {
+      _line[end] = '\0';
+    }
+    _indy_items->append(_line + start);
+    start = ++end;
+  }
+}
+
+bool ClassListParser::parse_at_tags() {
+  assert(_line[0] == '@', "must be");
+  split_tokens_by_whitespace();
+  if (strcmp(_indy_items->at(0), LAMBDA_PROXY_TAG) == 0) {
+    if (_indy_items->length() < 3) {
+      error("Line with @ tag has too few items \"%s\" line #%d", _line, _line_no);
+      return false;
+    }
+    // set the class name
+    _class_name = _indy_items->at(1);
+    return true;
+  } else {
+    error("Invalid @ tag at the beginning of line \"%s\" line #%d", _line, _line_no);
+    return false;
+  }
 }
 
 void ClassListParser::skip_whitespaces() {
@@ -374,6 +387,53 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
   return k;
 }
 
+void ClassListParser::populate_cds_indy_info(const constantPoolHandle &pool, int cp_index, CDSIndyInfo* cii, TRAPS) {
+  // Caller needs to allocate ResourceMark.
+  int type_index = pool->bootstrap_name_and_type_ref_index_at(cp_index);
+  int name_index = pool->name_ref_index_at(type_index);
+  cii->add_item(pool->symbol_at(name_index)->as_C_string());
+  int sig_index = pool->signature_ref_index_at(type_index);
+  cii->add_item(pool->symbol_at(sig_index)->as_C_string());
+  int argc = pool->bootstrap_argument_count_at(cp_index);
+  if (argc > 0) {
+    for (int arg_i = 0; arg_i < argc; arg_i++) {
+      int arg = pool->bootstrap_argument_index_at(cp_index, arg_i);
+      jbyte tag = pool->tag_at(arg).value();
+      if (tag == JVM_CONSTANT_MethodType) {
+        cii->add_item(pool->method_type_signature_at(arg)->as_C_string());
+      } else if (tag == JVM_CONSTANT_MethodHandle) {
+        cii->add_ref_kind(pool->method_handle_ref_kind_at(arg));
+        int callee_index = pool->method_handle_klass_index_at(arg);
+        Klass* callee = pool->klass_at(callee_index, THREAD);
+        if (callee != NULL) {
+          cii->add_item(callee->name()->as_C_string());
+        }
+        cii->add_item(pool->method_handle_name_ref_at(arg)->as_C_string());
+        cii->add_item(pool->method_handle_signature_ref_at(arg)->as_C_string());
+      } else {
+        ShouldNotReachHere();
+      }
+    }
+  }
+}
+
+bool ClassListParser::is_matching_cp_entry(constantPoolHandle &pool, int cp_index, TRAPS) {
+  ResourceMark rm(THREAD);
+  CDSIndyInfo cii;
+  populate_cds_indy_info(pool, cp_index, &cii, THREAD);
+  GrowableArray<const char*>* items = cii.items();
+  int indy_info_offset = 2;
+  if (_indy_items->length() - indy_info_offset != items->length()) {
+    return false;
+  }
+  for (int i = 0; i < items->length(); i++) {
+    if (strcmp(_indy_items->at(i + indy_info_offset), items->at(i)) != 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
 void ClassListParser::resolve_indy(Symbol* class_name_symbol, TRAPS) {
 
   Handle class_loader(THREAD, SystemDictionary::java_system_loader());
@@ -386,35 +446,51 @@ void ClassListParser::resolve_indy(Symbol* class_name_symbol, TRAPS) {
 
     ConstantPool* cp = ik->constants();
     ConstantPoolCache* cpcache = cp->cache();
+    bool found = false;
     for (int cpcindex = 0; cpcindex < cpcache->length(); cpcindex ++) {
       int indy_index = ConstantPool::encode_invokedynamic_index(cpcindex);
       ConstantPoolCacheEntry* cpce = cpcache->entry_at(cpcindex);
       int pool_index = cpce->constant_pool_index();
-      if (pool_index == _cp_index) {
-        constantPoolHandle pool(THREAD, cp);
-        if (!pool->tag_at(pool_index).has_bootstrap()) {
-          ResourceMark rm(THREAD);
-          tty->print_cr("Invalid cp_index %d for class %s", pool_index, ik->name()->as_C_string());
-          exit(1);
-        }
+      constantPoolHandle pool(THREAD, cp);
+      if (pool->tag_at(pool_index).is_invoke_dynamic()) {
         BootstrapInfo bootstrap_specifier(pool, pool_index, indy_index);
         Handle bsm = bootstrap_specifier.resolve_bsm(THREAD);
         if (!SystemDictionaryShared::is_supported_invokedynamic(bootstrap_specifier)) {
            tty->print_cr("is_supported_invokedynamic check failed for cp_index %d", pool_index);
-           exit(1);
+           continue;
         }
-        CallInfo info;
-        bool is_done = bootstrap_specifier.resolve_previously_linked_invokedynamic(info, THREAD);
-        if (!is_done) {
-          // resolve it
-          Handle recv;
-          LinkResolver::resolve_invoke(info, recv, pool, indy_index, Bytecodes::_invokedynamic, THREAD);
-        }
-        cpce->set_dynamic_call(pool, info);
-        if (HAS_PENDING_EXCEPTION) {
-          exit(1);
+        if (is_matching_cp_entry(pool, pool_index, THREAD)) {
+          found = true;
+          CallInfo info;
+          bool is_done = bootstrap_specifier.resolve_previously_linked_invokedynamic(info, THREAD);
+          if (!is_done) {
+            // resolve it
+            Handle recv;
+            LinkResolver::resolve_invoke(info, recv, pool, indy_index, Bytecodes::_invokedynamic, THREAD);
+            break;
+          }
+          cpce->set_dynamic_call(pool, info);
+          if (HAS_PENDING_EXCEPTION) {
+            ResourceMark rm(THREAD);
+            tty->print("resolve_indy for class %s has", class_name_symbol->as_C_string());
+            oop message = java_lang_Throwable::message(PENDING_EXCEPTION);
+            if (message != NULL) {
+              char* ex_msg = java_lang_String::as_utf8_string(message);
+              tty->print_cr(" exception pending '%s %s'",
+                         PENDING_EXCEPTION->klass()->external_name(), ex_msg);
+            } else {
+              tty->print_cr(" exception pending %s ",
+                         PENDING_EXCEPTION->klass()->external_name());
+            }
+            exit(1);
+          }
         }
       }
+    }
+    if (!found) {
+      ResourceMark rm(THREAD);
+      log_warning(cds)("No invoke dynamic constant pool entry can be found for class %s. The classlist is probably out-of-date.",
+                     class_name_symbol->as_C_string());
     }
   }
 }
@@ -422,7 +498,7 @@ void ClassListParser::resolve_indy(Symbol* class_name_symbol, TRAPS) {
 Klass* ClassListParser::load_current_class(TRAPS) {
   TempNewSymbol class_name_symbol = SymbolTable::new_symbol(_class_name);
 
-  if (_cp_index != _unspecified) {
+  if (_indy_items->length() > 0) {
     resolve_indy(class_name_symbol, CHECK_NULL);
     return NULL;
   }

@@ -33,7 +33,7 @@ final class LambdaProxyClassArchive {
     private static final boolean sharingEnabled;
 
     static {
-        dumpArchive = CDS.isCDSDumpingEnabled();
+        dumpArchive = CDS.isDumpingEnabled();
         sharingEnabled = CDS.isSharingEnabled();
     }
 
@@ -128,7 +128,7 @@ final class LambdaProxyClassArchive {
         if (isDumpArchive())
             throw new IllegalStateException("cannot load class from CDS archive at dump time");
 
-        if (!loadedByBuiltinLoader(caller) ||
+        if (!loadedByBuiltinLoader(caller) || !initialize ||
             !isSharingEnabled() || isSerializable || markerInterfaces.length > 0 || additionalBridges.length > 0)
             return null;
 

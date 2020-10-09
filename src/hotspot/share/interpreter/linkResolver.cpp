@@ -42,6 +42,7 @@
 #include "interpreter/linkResolver.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "memory/archiveUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/cpCache.inline.hpp"
@@ -1769,12 +1770,8 @@ void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHan
   // an ObjectLocker to do the final serialization of updates
   // to CPCE state, including f1.
 
-  if (DumpLoadedClassList != NULL && classlist_file->is_open()) {
-    if (SystemDictionaryShared::is_supported_invokedynamic(bootstrap_specifier)) {
-      ResourceMark rm(THREAD);
-      classlist_file->print_cr("%s %s %d", LAMBDA_PROXY_TAG, pool->pool_holder()->name()->as_C_string(), pool_index);
-    }
-  }
+  // Log dynamic info to CDS classlist.
+  ArchiveUtils::log_to_classlist(bootstrap_specifier, THREAD);
 }
 
 void LinkResolver::resolve_dynamic_call(CallInfo& result,

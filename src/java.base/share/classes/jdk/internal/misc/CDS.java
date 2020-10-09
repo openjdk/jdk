@@ -53,7 +53,7 @@ public class CDS {
     /**
      * Check if CDS dumping is enabled via the DynamicDumpSharedSpaces or the DumpSharedSpaces flag.
      */
-    public static native boolean isCDSDumpingEnabled();
+    public static native boolean isDumpingEnabled();
 
     /**
      * Check if sharing is enabled via the UseSharedSpaces flag.

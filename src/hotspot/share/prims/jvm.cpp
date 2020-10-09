@@ -3831,7 +3831,7 @@ JVM_ENTRY(jclass, JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env,
 JVM_END
 
 JVM_ENTRY(jboolean, JVM_IsCDSDumpingEnabled(JNIEnv* env))
-    JVMWrapper("JVM_IsCDSDumpingEnable");
+    JVMWrapper("JVM_IsCDSDumpingEnabled");
     return Arguments::is_dumping_archive();
 JVM_END
 

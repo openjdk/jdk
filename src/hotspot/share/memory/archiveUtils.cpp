@@ -23,12 +23,16 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classListParser.hpp"
+#include "classfile/systemDictionaryShared.hpp"
+#include "interpreter/bootstrapInfo.hpp"
 #include "memory/archiveUtils.hpp"
 #include "memory/dynamicArchive.hpp"
 #include "memory/filemap.hpp"
 #include "memory/heapShared.inline.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceShared.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
 
@@ -291,5 +295,23 @@ void ReadClosure::do_region(u_char* start, size_t size) {
     *(intptr_t*)start = nextPtr();
     start += sizeof(intptr_t);
     size -= sizeof(intptr_t);
+  }
+}
+
+void ArchiveUtils::log_to_classlist(BootstrapInfo bootstrap_specifier, TRAPS) {
+  if (DumpLoadedClassList != NULL && classlist_file->is_open()) {
+    if (SystemDictionaryShared::is_supported_invokedynamic(bootstrap_specifier)) {
+      ResourceMark rm(THREAD);
+      const constantPoolHandle& pool = bootstrap_specifier.pool();
+      int pool_index = bootstrap_specifier.bss_index();
+      classlist_file->print("%s %s", LAMBDA_PROXY_TAG, pool->pool_holder()->name()->as_C_string());
+      CDSIndyInfo cii;
+      ClassListParser::populate_cds_indy_info(pool, pool_index, &cii, THREAD);
+      GrowableArray<const char*>* indy_items = cii.items();
+      for (int i = 0; i < indy_items->length(); i++) {
+        classlist_file->print(" %s", indy_items->at(i));
+      }
+      classlist_file->print_cr("");
+    }
   }
 }

@@ -1910,11 +1910,21 @@ bool SystemDictionaryShared::check_linking_constraints(InstanceKlass* klass, TRA
 
 bool SystemDictionaryShared::is_supported_invokedynamic(BootstrapInfo bsi) {
   if (bsi.arg_values() == NULL || !bsi.arg_values()->is_objArray()) {
+    tty->print_cr("bsi check failed");
+    tty->print_cr("    bsi.arg_values().not_null() %d", bsi.arg_values().not_null());
+    if (bsi.arg_values().not_null()) {
+      tty->print_cr("    bsi.arg_values()->is_objArray() %d", bsi.arg_values()->is_objArray());
+      bsi.print();
+    }
     return false;
   }
 
   Handle bsm = bsi.bsm();
   if (bsm.is_null() || !java_lang_invoke_DirectMethodHandle::is_instance(bsm())) {
+    tty->print_cr("bsm check failed");
+    tty->print_cr("    bsm.is_null() %d", bsm.is_null());
+    tty->print_cr("    java_lang_invoke_DirectMethodHandle::is_instance(bsm()) %d",
+      java_lang_invoke_DirectMethodHandle::is_instance(bsm()));
     return false;
   }
 
@@ -1924,6 +1934,12 @@ bool SystemDictionaryShared::is_supported_invokedynamic(BootstrapInfo bsi) {
       method->name()->equals("metafactory") &&
       method->signature()->equals("(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;")) {
       return true;
+  } else {
+    ResourceMark rm;
+    tty->print_cr("method check failed");
+    tty->print_cr("    klass_name() %s", method->klass_name()->as_C_string());
+    tty->print_cr("    name() %s", method->name()->as_C_string());
+    tty->print_cr("    signature() %s", method->signature()->as_C_string());
   }
 
   return false;

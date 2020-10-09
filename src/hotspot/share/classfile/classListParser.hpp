@@ -37,6 +37,27 @@ public:
   ID2KlassTable() : KVHashtable<int, InstanceKlass*, mtInternal>(1987) {}
 };
 
+class CDSIndyInfo {
+  char _ref_kind[10];
+  GrowableArray<const char*>* _items;
+public:
+  CDSIndyInfo() : _items(NULL) {_ref_kind[0] = '\0';}
+  void add_item(const char* item) {
+    if (_items == NULL) {
+      _items = new GrowableArray<const char*>(9);
+    }
+    assert(_items != NULL, "sanity");
+    _items->append(item);
+  }
+  void add_ref_kind(int ref_kind) {
+    sprintf(_ref_kind, "%d", ref_kind);
+    _items->append(_ref_kind);
+  }
+  GrowableArray<const char*>* items() {
+    return _items;
+  }
+};
+
 class ClassListParser : public StackObj {
   enum {
     _unspecified      = -999,
@@ -63,7 +84,7 @@ class ClassListParser : public StackObj {
   int                 _line_len;              // Original length of the input line.
   int                 _line_no;               // Line number for current line being parsed
   const char*         _class_name;
-  int                 _cp_index;
+  GrowableArray<const char*>* _indy_items;    // items related to invoke dynamic for archiving lambda proxy classes
   int                 _id;
   int                 _super;
   GrowableArray<int>* _interfaces;
@@ -79,6 +100,8 @@ class ClassListParser : public StackObj {
   InstanceKlass* lookup_class_by_id(int id);
   void print_specified_interfaces();
   void print_actual_interfaces(InstanceKlass *ik);
+  bool is_matching_cp_entry(constantPoolHandle &pool, int cp_index, TRAPS);
+
   void resolve_indy(Symbol* class_name_symbol, TRAPS);
 public:
   ClassListParser(const char* file);
@@ -88,6 +111,8 @@ public:
     return _instance;
   }
   bool parse_one_line();
+  void split_tokens_by_whitespace();
+  bool parse_at_tags();
   char* _token;
   void error(const char* msg, ...);
   void parse_int(int* value);
@@ -132,5 +157,7 @@ public:
   // (in this->load_current_class()).
   InstanceKlass* lookup_super_for_current_class(Symbol* super_name);
   InstanceKlass* lookup_interface_for_current_class(Symbol* interface_name);
+
+  static void populate_cds_indy_info(const constantPoolHandle &pool, int cp_index, CDSIndyInfo* cii, TRAPS);
 };
 #endif // SHARE_CLASSFILE_CLASSLISTPARSER_HPP
