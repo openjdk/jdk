@@ -83,7 +83,8 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
   JavaCalls::call_static(&result, cds_klass, method, signrs, list_lines, THREAD);
 
   if (HAS_PENDING_EXCEPTION) {
-    // The exception message and stacktrace have been printed out already
+    log_info(cds)("%s: %s", THREAD->pending_exception()->klass()->external_name(),
+                            java_lang_String::as_utf8_string(java_lang_Throwable::message(THREAD->pending_exception())));
     CLEAR_PENDING_EXCEPTION;
     return;
   }

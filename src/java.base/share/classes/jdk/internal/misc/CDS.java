@@ -34,7 +34,7 @@ import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
 
 public class CDS {
-    static private final boolean isDumpingClassList;
+    private static final boolean isDumpingClassList;
     static {
         isDumpingClassList = isDumpingClassList0();
     }
@@ -152,7 +152,7 @@ public class CDS {
 
             if (isLF) {
                 if (parts.length != 4) {
-                    throw new IllegalArgumentException("Incorrecct number of items in the line: " + parts.length);
+                    throw new IllegalArgumentException("Incorrect number of items in the line: " + parts.length);
                 }
                 if (!isValidHolderName(parts[1])) {
                     throw new IllegalArgumentException("Invalid holder class name: " + parts[1]);
@@ -173,28 +173,18 @@ public class CDS {
      * @return {@code Object[]} if holder classes can be generated.
      * @param lines in format of LF_RESOLVE or SPECIES_RESOLVE output
      */
-    private static Object[] generateLambdaFormHolderClasses(String[] lines) throws Exception {
+    private static Object[] generateLambdaFormHolderClasses(String[] lines) {
         Objects.requireNonNull(lines);
-        try {
-            validateInputLines(lines);
-            Stream<String> lineStream = Arrays.stream(lines).map(String::trim);
-            Map<String, byte[]> result = SharedSecrets.getJavaLangInvokeAccess().generateHolderClasses(lineStream);
-            int size = result.size();
-            Object[] retArray = new Object[size * 2];
-            int index = 0;
-            for (Map.Entry<String, byte[]> entry : result.entrySet()) {
-                retArray[index++] = entry.getKey();
-                retArray[index++] = entry.getValue();
-            };
-            return retArray;
-        } catch (Exception e) {
-            // This method is only used by CDS, for debug/trace purpose, we print out the exception message and
-            // stack trace here since in vm we need more code to do so.
-            // for test purpose
-            System.out.println("Exception: " + e);
-            // for debug purpose.
-            e.printStackTrace();
-            throw e;
-        }
+        validateInputLines(lines);
+        Stream<String> lineStream = Arrays.stream(lines).map(String::trim);
+        Map<String, byte[]> result = SharedSecrets.getJavaLangInvokeAccess().generateHolderClasses(lineStream);
+        int size = result.size();
+        Object[] retArray = new Object[size * 2];
+        int index = 0;
+        for (Map.Entry<String, byte[]> entry : result.entrySet()) {
+            retArray[index++] = entry.getKey();
+            retArray[index++] = entry.getValue();
+        };
+        return retArray;
     }
 }
