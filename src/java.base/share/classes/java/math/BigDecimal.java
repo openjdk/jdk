@@ -36,12 +36,13 @@ import java.util.Objects;
 /**
  * Immutable, arbitrary-precision signed decimal numbers.  A
  * {@code BigDecimal} consists of an arbitrary precision integer
- * <i>unscaled value</i> and a 32-bit integer <i>scale</i>.  If zero
- * or positive, the scale is the number of digits to the right of the
- * decimal point.  If negative, the unscaled value of the number is
- * multiplied by ten to the power of the negation of the scale.  The
- * value of the number represented by the {@code BigDecimal} is
- * therefore <code>(unscaledValue &times; 10<sup>-scale</sup>)</code>.
+ * <i>unscaled value</i> and a 32-bit integer <i>scale</i>.  If the
+ * scale is zero or positive, the scale is the number of digits to
+ * the right of the decimal point.  If the scale is negative, the
+ * unscaled value of the number is multiplied by ten to the power of
+ * the negation of the scale.  The value of the number represented by
+ * the {@code BigDecimal} is therefore
+ * <code>(unscaledValue &times; 10<sup>-scale</sup>)</code>.
  *
  * <p>The {@code BigDecimal} class provides operations for
  * arithmetic, scale manipulation, rounding, comparison, hashing, and
