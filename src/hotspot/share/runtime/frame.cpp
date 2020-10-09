@@ -1044,9 +1044,13 @@ void frame::oops_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map,
 }
 
 void frame::oops_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map) const {
+#if COMPILER2_OR_JVMCI
   oops_do_internal(f, cf, map, true, DerivedPointerTable::is_active() ?
                                      DerivedPointerIterationMode::_with_table :
                                      DerivedPointerIterationMode::_ignore);
+#else
+  oops_do_internal(f, cf, map, true, DerivedPointerIterationMode::_ignore);
+#endif
 }
 
 void frame::oops_do_internal(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map,
