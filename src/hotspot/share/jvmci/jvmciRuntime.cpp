@@ -861,6 +861,7 @@ void JVMCIRuntime::init_JavaVM_info(jlongArray info, JVMCI_TRAPS) {
 #define JAVAVM_CALL_BLOCK                                             \
   guarantee(thread != NULL && _shared_library_javavm != NULL, "npe"); \
   ThreadToNativeFromVM ttnfv(thread);                                 \
+  Thread::WXExecFromWriteSetter wx_exec;                              \
   JavaVM* javavm = (JavaVM*) _shared_library_javavm;
 
 jint JVMCIRuntime::AttachCurrentThread(JavaThread* thread, void **penv, void *args) {
@@ -1021,6 +1022,7 @@ JVM_ENTRY_NO_ENV(void, JVM_RegisterJVMCINatives(JNIEnv *env, jclass c2vmClass))
     ResourceMark rm(thread);
     HandleMark hm(thread);
     ThreadToNativeFromVM trans(thread);
+    Thread::WXExecFromWriteSetter wx_exec;
 
     // Ensure _non_oop_bits is initialized
     Universe::non_oop_word();

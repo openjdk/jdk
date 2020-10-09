@@ -323,6 +323,8 @@ Thread::Thread() {
     // If the main thread creates other threads before the barrier set that is an error.
     assert(Thread::current_or_null() == NULL, "creating thread before barrier set");
   }
+
+  DEBUG_ONLY(_wx_init = false);
 }
 
 void Thread::initialize_thread_current() {
@@ -379,6 +381,8 @@ void Thread::call_run() {
   // Perform common initialization actions
 
   register_thread_stack_with_NMT();
+
+  this->init_wx();
 
   JFR_ONLY(Jfr::on_thread_start(this);)
 
@@ -2654,6 +2658,8 @@ void JavaThread::check_safepoint_and_suspend_for_native_trans(JavaThread *thread
 // Note only the native==>VM/Java barriers can call this function and when
 // thread state is _thread_in_native_trans.
 void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
+  Thread::WXWriteFromExecSetter wx_write;
+
   check_safepoint_and_suspend_for_native_trans(thread);
 
   // After returning from native, it could be that the stack frames are not
@@ -2677,6 +2683,8 @@ void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
 // exiting the GCLocker.
 void JavaThread::check_special_condition_for_native_trans_and_transition(JavaThread *thread) {
   check_special_condition_for_native_trans(thread);
+
+  Thread::WXWriteFromExecSetter wx_write;
 
   // Finish the transition
   thread->set_thread_state(_thread_in_Java);
@@ -3609,6 +3617,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Initialize the os module
   os::init();
 
+  os::current_thread_enable_wx(WXWrite);
+
   // Record VM creation timing statistics
   TraceVmCreationTime create_vm_timer;
   create_vm_timer.start();
@@ -3712,6 +3722,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   main_thread->record_stack_base_and_size();
   main_thread->register_thread_stack_with_NMT();
   main_thread->set_active_handles(JNIHandleBlock::allocate_block());
+  main_thread->init_wx();
 
   if (!main_thread->set_as_starting_thread()) {
     vm_shutdown_during_initialization(
@@ -4144,6 +4155,7 @@ void Threads::shutdown_vm_agents() {
     if (unload_entry != NULL) {
       JavaThread* thread = JavaThread::current();
       ThreadToNativeFromVM ttn(thread);
+      Thread::WXExecFromWriteSetter wx_exec;
       HandleMark hm(thread);
       (*unload_entry)(&main_vm);
     }
@@ -4163,6 +4175,7 @@ void Threads::create_vm_init_libraries() {
       // Invoke the JVM_OnLoad function
       JavaThread* thread = JavaThread::current();
       ThreadToNativeFromVM ttn(thread);
+      Thread::WXExecFromWriteSetter wx_exec;
       HandleMark hm(thread);
       jint err = (*on_load_entry)(&main_vm, agent->options(), NULL);
       if (err != JNI_OK) {

@@ -82,6 +82,7 @@ JvmtiAgentThread::start_function_wrapper(JavaThread *thread, TRAPS) {
 void
 JvmtiAgentThread::call_start_function() {
     ThreadToNativeFromVM transition(this);
+    Thread::WXExecFromWriteSetter wx_exec;
     _start_fn(_env->jvmti_external(), jni_environment(), (void*)_start_arg);
 }
 

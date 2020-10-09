@@ -43,4 +43,10 @@ static bool platform_print_native_stack(outputStream* st, const void* context,
                                         char *buf, int buf_size);
 #endif
 
+private:
+
+  static void current_thread_enable_wx_impl(WXMode mode) { }
+
+public:
+
 #endif // OS_CPU_WINDOWS_X86_OS_WINDOWS_X86_HPP

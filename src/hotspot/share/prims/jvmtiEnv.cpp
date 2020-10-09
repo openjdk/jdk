@@ -176,6 +176,7 @@ JvmtiEnv::GetThreadLocalStorage(jthread thread, void** data_ptr) {
     // from native so as to resolve the jthread.
 
     ThreadInVMfromNative __tiv(current_thread);
+    Thread::WXExecVerifier __wx_exec;
     VM_ENTRY_BASE(jvmtiError, JvmtiEnv::GetThreadLocalStorage , current_thread)
     debug_only(VMNativeEntryWrapper __vew;)
 

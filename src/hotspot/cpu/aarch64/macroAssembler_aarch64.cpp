@@ -5243,7 +5243,7 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
 // aarch64_get_thread_helper() clobbers only r0, r1, and flags.
 //
 void MacroAssembler::get_thread(Register dst) {
-  RegSet saved_regs = RegSet::range(r0, r1) + lr - dst;
+  RegSet saved_regs = RegSet::range(r0, r1) + BSD_ONLY(RegSet::range(r2, r17)) + lr - dst;
   push(saved_regs, sp);
 
   mov(lr, CAST_FROM_FN_PTR(address, JavaThread::aarch64_get_thread_helper));

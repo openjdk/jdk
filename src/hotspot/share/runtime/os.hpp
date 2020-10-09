@@ -76,6 +76,11 @@ enum ThreadPriority {        // JLS 20.20.1-3
   CriticalPriority = 11      // Critical thread priority
 };
 
+enum WXMode {
+  WXWrite,
+  WXExec
+};
+
 // Executable parameter flag for os::commit_memory() and
 // os::commit_memory_or_exit().
 const bool ExecMem = true;
@@ -113,7 +118,7 @@ class os: AllStatic {
     _page_sizes[1] = 0; // sentinel
   }
 
-  static char*  pd_reserve_memory(size_t bytes);
+  static char*  pd_reserve_memory(size_t bytes, bool executable = false);
 
   static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes);
   static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes, int file_desc);
@@ -128,7 +133,7 @@ class os: AllStatic {
   static void   pd_commit_memory_or_exit(char* addr, size_t size,
                                          size_t alignment_hint,
                                          bool executable, const char* mesg);
-  static bool   pd_uncommit_memory(char* addr, size_t bytes);
+  static bool   pd_uncommit_memory(char* addr, size_t bytes, bool exec);
   static bool   pd_release_memory(char* addr, size_t bytes);
 
   static char*  pd_map_memory(int fd, const char* file_name, size_t file_offset,
@@ -318,7 +323,7 @@ class os: AllStatic {
 
   // Reserves virtual memory.
   // if file_desc != -1, also attaches the memory to the file.
-  static char*  reserve_memory_with_fd(size_t bytes, int file_desc);
+  static char*  reserve_memory_with_fd(size_t bytes, int file_desc, bool executable = false);
 
   // Reserves virtual memory that starts at an address that is aligned to 'alignment'.
   static char*  reserve_memory_aligned(size_t size, size_t alignment, int file_desc = -1);
@@ -347,7 +352,7 @@ class os: AllStatic {
   static void   commit_memory_or_exit(char* addr, size_t size,
                                       size_t alignment_hint,
                                       bool executable, const char* mesg);
-  static bool   uncommit_memory(char* addr, size_t bytes);
+  static bool   uncommit_memory(char* addr, size_t bytes, bool exec);
   static bool   release_memory(char* addr, size_t bytes);
 
   // Touch memory pages that cover the memory range from start to end (exclusive)
@@ -901,6 +906,12 @@ class os: AllStatic {
     bool _done;
   };
 
+  // If the JVM is running in W^X mode, enable write or execute access to
+  // writeable and executable pages. No-op otherwise.
+  static inline void current_thread_enable_wx(WXMode mode) {
+    current_thread_enable_wx_impl(mode);
+  }
+
 #ifndef _WINDOWS
   // Suspend/resume support
   // Protocol:
@@ -969,7 +980,6 @@ class os: AllStatic {
     }
   };
 #endif // !WINDOWS
-
 
  protected:
   static volatile unsigned int _rand_seed;    // seed for random number generator

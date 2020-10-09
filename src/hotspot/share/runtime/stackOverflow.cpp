@@ -103,7 +103,7 @@ void StackOverflow::create_stack_guard_pages() {
   } else {
     log_warning(os, thread)("Attempt to protect stack guard pages failed ("
       PTR_FORMAT "-" PTR_FORMAT ").", p2i(low_addr), p2i(low_addr + len));
-    if (os::uncommit_memory((char *) low_addr, len)) {
+    if (os::uncommit_memory((char *) low_addr, len, !ExecMem)) {
       log_warning(os, thread)("Attempt to deallocate stack guard pages failed.");
     }
     return;

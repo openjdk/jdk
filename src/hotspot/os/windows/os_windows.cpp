@@ -3168,7 +3168,7 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
   return aligned_base;
 }
 
-char* os::pd_reserve_memory(size_t bytes) {
+char* os::pd_reserve_memory(size_t bytes, bool executable) {
   return pd_attempt_reserve_memory_at(NULL /* addr */, bytes);
 }
 
@@ -3369,7 +3369,7 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size,
   pd_commit_memory_or_exit(addr, size, exec, mesg);
 }
 
-bool os::pd_uncommit_memory(char* addr, size_t bytes) {
+bool os::pd_uncommit_memory(char* addr, size_t bytes, bool exec) {
   if (bytes == 0) {
     // Don't bother the OS with noops.
     return true;
@@ -3388,7 +3388,7 @@ bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
 }
 
 bool os::remove_stack_guard_pages(char* addr, size_t size) {
-  return os::uncommit_memory(addr, size);
+  return os::uncommit_memory(addr, size, !ExecMem);
 }
 
 static bool protect_pages_individually(char* addr, size_t bytes, unsigned int p, DWORD *old_status) {

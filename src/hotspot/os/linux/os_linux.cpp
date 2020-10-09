@@ -3239,7 +3239,7 @@ struct bitmask* os::Linux::_numa_nodes_ptr;
 struct bitmask* os::Linux::_numa_interleave_bitmask;
 struct bitmask* os::Linux::_numa_membind_bitmask;
 
-bool os::pd_uncommit_memory(char* addr, size_t size) {
+bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
   uintptr_t res = (uintptr_t) ::mmap(addr, size, PROT_NONE,
                                      MAP_PRIVATE|MAP_FIXED|MAP_NORESERVE|MAP_ANONYMOUS, -1, 0);
   return res  != (uintptr_t) MAP_FAILED;
@@ -3424,7 +3424,7 @@ bool os::remove_stack_guard_pages(char* addr, size_t size) {
     return ::munmap(addr, size) == 0;
   }
 
-  return os::uncommit_memory(addr, size);
+  return os::uncommit_memory(addr, size, !ExecMem);
 }
 
 // 'requested_addr' is only treated as a hint, the return value may or
@@ -3483,7 +3483,7 @@ static int anon_munmap(char * addr, size_t size) {
   return ::munmap(addr, size) == 0;
 }
 
-char* os::pd_reserve_memory(size_t bytes) {
+char* os::pd_reserve_memory(size_t bytes, bool executable) {
   return anon_mmap(NULL, bytes);
 }
 

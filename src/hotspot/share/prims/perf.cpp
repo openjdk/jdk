@@ -54,6 +54,8 @@ static char* jstr_to_utf(JNIEnv *env, jstring str, TRAPS) {
     //throw_new(env,"NullPointerException");
   }
 
+  Thread::WXExecFromWriteSetter wx_exec;
+
   int len = env->GetStringUTFLength(str);
   int unicode_len = env->GetStringLength(str);
 
@@ -91,6 +93,7 @@ PERF_ENTRY(jobject, Perf_Attach(JNIEnv *env, jobject unused, jstring user, int v
 
   {
     ThreadToNativeFromVM ttnfv(thread);
+    Thread::WXExecFromWriteSetter wx_exec;
     return env->NewDirectByteBuffer(address, (jlong)capacity);
   }
 
@@ -111,6 +114,7 @@ PERF_ENTRY(void, Perf_Detach(JNIEnv *env, jobject unused, jobject buffer))
   // get buffer address and capacity
   {
    ThreadToNativeFromVM ttnfv(thread);
+   Thread::WXExecFromWriteSetter wx_exec;
    address = env->GetDirectBufferAddress(buffer);
    capacity = env->GetDirectBufferCapacity(buffer);
   }
@@ -175,6 +179,7 @@ PERF_ENTRY(jobject, Perf_CreateLong(JNIEnv *env, jobject perf, jstring name,
 
   {
     ThreadToNativeFromVM ttnfv(thread);
+    Thread::WXExecFromWriteSetter wx_exec;
     return env->NewDirectByteBuffer(lp, sizeof(jlong));
   }
 
@@ -217,6 +222,8 @@ PERF_ENTRY(jobject, Perf_CreateByteArray(JNIEnv *env, jobject perf,
 
     name_utf = jstr_to_utf(env, name, CHECK_NULL);
 
+    Thread::WXExecFromWriteSetter wx_exec;
+
     value_length = env->GetArrayLength(value);
 
     value_local = NEW_RESOURCE_ARRAY(jbyte, value_length + 1);
@@ -258,6 +265,7 @@ PERF_ENTRY(jobject, Perf_CreateByteArray(JNIEnv *env, jobject perf,
 
   {
     ThreadToNativeFromVM ttnfv(thread);
+    Thread::WXExecFromWriteSetter wx_exec;
     return env->NewDirectByteBuffer(cp, maxlength+1);
   }
 
@@ -320,6 +328,7 @@ JVM_ENTRY(void, JVM_RegisterPerfMethods(JNIEnv *env, jclass perfclass))
   PerfWrapper("JVM_RegisterPerfMethods");
   {
     ThreadToNativeFromVM ttnfv(thread);
+    Thread::WXExecFromWriteSetter wx_exec;
     int ok = env->RegisterNatives(perfclass, perfmethods, sizeof(perfmethods)/sizeof(JNINativeMethod));
     guarantee(ok == 0, "register perf natives");
   }

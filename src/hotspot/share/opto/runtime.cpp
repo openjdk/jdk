@@ -1480,6 +1480,8 @@ address OptoRuntime::rethrow_C(oopDesc* exception, JavaThread* thread, address r
   }
 #endif
 
+  Thread::WXWriteFromExecSetter wx_write;
+
   thread->set_vm_result(exception);
   // Frame not compiled (handles deoptimization blob)
   return SharedRuntime::raw_exception_handler_for_return_address(thread, ret_pc);

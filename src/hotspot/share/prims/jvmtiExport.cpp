@@ -87,12 +87,14 @@ class JvmtiJavaThreadEventTransition : StackObj {
 private:
   ResourceMark _rm;
   ThreadToNativeFromVM _transition;
+  Thread::WXExecFromWriteSetter _wx_exec;
   HandleMark _hm;
 
 public:
   JvmtiJavaThreadEventTransition(JavaThread *thread) :
     _rm(),
     _transition(thread),
+    _wx_exec(),
     _hm(thread)  {};
 };
 
@@ -102,11 +104,12 @@ class JvmtiThreadEventTransition : StackObj {
 private:
   ResourceMark _rm;
   HandleMark _hm;
+  Thread::WXExecFromWriteSetter _wx_exec;
   JavaThreadState _saved_state;
   JavaThread *_jthread;
 
 public:
-  JvmtiThreadEventTransition(Thread *thread) : _rm(), _hm(thread) {
+  JvmtiThreadEventTransition(Thread *thread) : _rm(), _hm(thread), _wx_exec() {
     if (thread->is_Java_thread()) {
        _jthread = thread->as_Java_thread();
        _saved_state = _jthread->thread_state();
@@ -396,6 +399,7 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
     JavaThread* current_thread = JavaThread::current();
     // transition code: native to VM
     ThreadInVMfromNative __tiv(current_thread);
+    Thread::WXExecVerifier __wx_exec;
     VM_ENTRY_BASE(jvmtiEnv*, JvmtiExport::get_jvmti_interface, current_thread)
     debug_only(VMNativeEntryWrapper __vew;)
 

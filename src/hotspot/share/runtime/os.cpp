@@ -54,7 +54,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/stubRoutines.hpp"
+#include "runtime/stubRoutines.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vm_version.hpp"
@@ -1658,7 +1658,7 @@ char* os::reserve_memory(size_t bytes, MEMFLAGS flags) {
   return result;
 }
 
-char* os::reserve_memory_with_fd(size_t bytes, int file_desc) {
+char* os::reserve_memory_with_fd(size_t bytes, int file_desc, bool executable) {
   char* result;
 
   if (file_desc != -1) {
@@ -1669,7 +1669,7 @@ char* os::reserve_memory_with_fd(size_t bytes, int file_desc) {
       MemTracker::record_virtual_memory_reserve_and_commit(result, bytes, CALLER_PC);
     }
   } else {
-    result = pd_reserve_memory(bytes);
+    result = pd_reserve_memory(bytes, executable);
     if (result != NULL) {
       MemTracker::record_virtual_memory_reserve(result, bytes, CALLER_PC);
     }
@@ -1723,16 +1723,16 @@ void os::commit_memory_or_exit(char* addr, size_t size, size_t alignment_hint,
   MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC);
 }
 
-bool os::uncommit_memory(char* addr, size_t bytes) {
+bool os::uncommit_memory(char* addr, size_t bytes, bool exec) {
   bool res;
   if (MemTracker::tracking_level() > NMT_minimal) {
     Tracker tkr(Tracker::uncommit);
-    res = pd_uncommit_memory(addr, bytes);
+    res = pd_uncommit_memory(addr, bytes, exec);
     if (res) {
       tkr.record((address)addr, bytes);
     }
   } else {
-    res = pd_uncommit_memory(addr, bytes);
+    res = pd_uncommit_memory(addr, bytes, exec);
   }
   return res;
 }
