@@ -225,7 +225,7 @@ public class ElementKindVisitor6<R, P>
      * @param p a visitor-specified parameter
      * @return  the result of {@code visitUnknown}
      *
-     * @since 14
+     * @since 16
      */
     public R visitTypeAsRecord(TypeElement e, P p) {
         return visitUnknown(e, p);

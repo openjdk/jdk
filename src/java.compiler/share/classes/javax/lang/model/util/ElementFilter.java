@@ -115,7 +115,7 @@ public class ElementFilter {
      * Returns a list of record components in {@code elements}.
      * @return a list of record components in {@code elements}
      * @param elements the elements to filter
-     * @since 14
+     * @since 16
      */
     public static List<RecordComponentElement>
         recordComponentsIn(Iterable<? extends Element> elements) {
@@ -126,7 +126,7 @@ public class ElementFilter {
      * Returns a set of record components in {@code elements}.
      * @return a set of record components in {@code elements}
      * @param elements the elements to filter
-     * @since 14
+     * @since 16
      */
     public static Set<RecordComponentElement>
     recordComponentsIn(Set<? extends Element> elements) {
