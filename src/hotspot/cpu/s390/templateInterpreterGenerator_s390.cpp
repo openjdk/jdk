@@ -856,7 +856,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(Register frame_
 
   // Compute the beginning of the protected zone minus the requested frame size.
   __ z_sgr(tmp1, tmp2);
-  __ add2reg(tmp1, JavaThread::stack_guard_zone_size());
+  __ add2reg(tmp1, StackOverflow::stack_guard_zone_size());
 
   // Add in the size of the frame (which is the same as subtracting it from the
   // SP, which would take another register.

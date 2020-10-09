@@ -1935,7 +1935,7 @@ void * os::Linux::dll_load_in_vmthread(const char *filename, char *ebuf,
       StackOverflow* overflow_state = jt->stack_overflow_state();
       if (!overflow_state->stack_guard_zone_unused() &&     // Stack not yet fully initialized
           overflow_state->stack_guards_enabled()) {         // No pending stack overflow exceptions
-        if (!os::guard_memory((char *)jt->stack_end(), overflow_state->stack_guard_zone_size())) {
+        if (!os::guard_memory((char *)jt->stack_end(), StackOverflow::stack_guard_zone_size())) {
           warning("Attempt to reguard stack yellow zone failed.");
         }
       }
