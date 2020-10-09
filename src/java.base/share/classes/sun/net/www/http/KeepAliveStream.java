@@ -65,9 +65,8 @@ class KeepAliveStream extends MeteredStream implements Hurryable {
      * Attempt to cache this connection
      */
     public void close() throws IOException  {
-        // If the inputstream is closed already, or if this stream
-        // has already been queued for cleanup.just return.
-        if (closed || queuedForCleanup) return;
+        // If the inputstream is queued for cleanup, just return.
+        if (queuedForCleanup) return;
 
         // Skip past the data that's left in the Inputstream because
         // some sort of error may have occurred.
@@ -80,6 +79,8 @@ class KeepAliveStream extends MeteredStream implements Hurryable {
         // protected by readLock
         lock();
         try {
+            // If the inputstream is closed already, or if this stream
+            // has already been queued for cleanup, just return.
             if (closed || queuedForCleanup) return;
             try {
                 if (expected > count) {

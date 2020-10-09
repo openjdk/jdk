@@ -187,7 +187,8 @@ class NegotiateAuthentication extends AuthenticationInfo {
      */
     @Override
     public boolean setHeaders(HttpURLConnection conn, HeaderParser p, String raw) {
-
+        // no need to synchronize here:
+        //   already locked by s.n.w.p.h.HttpURLConnection
         assert conn.isLockHeldByCurrentThread();
 
         try {

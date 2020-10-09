@@ -117,7 +117,6 @@ public class MeteredStream extends FilterInputStream {
     }
 
     public int read() throws java.io.IOException {
-        if (closed) return -1;
         lock();
         try {
             if (closed) return -1;
@@ -135,7 +134,6 @@ public class MeteredStream extends FilterInputStream {
 
     public int read(byte b[], int off, int len)
                 throws java.io.IOException {
-        if (closed) return -1;
         lock();
         try {
             if (closed) return -1;
@@ -149,8 +147,6 @@ public class MeteredStream extends FilterInputStream {
     }
 
     public long skip(long n) throws IOException {
-
-        if (closed) return 0;
         lock();
         try {
             // REMIND: what does skip do on EOF????
@@ -171,7 +167,6 @@ public class MeteredStream extends FilterInputStream {
     }
 
     public void close() throws IOException {
-        if (closed) return;
         lock();
         try {
             if (closed) return;
@@ -186,7 +181,6 @@ public class MeteredStream extends FilterInputStream {
     }
 
     public int available() throws IOException {
-        if (closed) return 0;
         lock();
         try {
             return closed ? 0 : in.available();
@@ -196,7 +190,6 @@ public class MeteredStream extends FilterInputStream {
     }
 
     public void mark(int readLimit) {
-        if (closed) return;
         lock();
         try {
             if (closed) return;
@@ -213,8 +206,6 @@ public class MeteredStream extends FilterInputStream {
     }
 
     public void reset() throws IOException {
-        if (closed) return;
-
         lock();
         try {
             if (closed) return;
@@ -230,7 +221,6 @@ public class MeteredStream extends FilterInputStream {
     }
 
     public boolean markSupported() {
-        if (closed) return false;
         lock();
         try {
             if (closed) return false;

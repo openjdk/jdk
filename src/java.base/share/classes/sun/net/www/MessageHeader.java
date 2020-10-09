@@ -294,7 +294,7 @@ class MessageHeader {
      * @param line the line to check.
      * @return true if the line might be a request line.
      */
-    private boolean isRequestline(String line) {
+    private static boolean isRequestline(String line) {
         String k = line.trim();
         int i = k.lastIndexOf(' ');
         if (i <= 0) return false;
@@ -327,7 +327,7 @@ class MessageHeader {
         header. Also prints the RFC required blank line
         at the end. Omits pairs with a null key. Omits
         colon if key-value pair is the requestline. */
-    private  void print(int nkeys, String[] keys, String[] values, PrintStream p) {
+    private  static void print(int nkeys, String[] keys, String[] values, PrintStream p) {
         for (int i = 0; i < nkeys; i++)
             if (keys[i] != null) {
                 StringBuilder sb = new StringBuilder(keys[i]);

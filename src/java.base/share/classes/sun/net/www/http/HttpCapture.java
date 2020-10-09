@@ -53,8 +53,10 @@ import sun.util.logging.PlatformLogger;
  *
  * @author jccollet
  */
-// Using synchronized should be safe here.
 public class HttpCapture {
+    // Although accessing files could result in blocking operations,
+    // HttpCapture is a corner case; there seem no urgent need to convert
+    // this class to using java.util.concurrent.locks at this time.
     private File file;
     private boolean incoming = true;
     private BufferedWriter out;
