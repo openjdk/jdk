@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "utilities/align.hpp"
 
 LogStream::LineBuffer::LineBuffer()
  : _buf(_smallbuf), _cap(sizeof(_smallbuf)), _pos(0)

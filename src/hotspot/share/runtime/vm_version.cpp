@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "memory/resourceArea.hpp"
 #include "runtime/vm_version.hpp"
 
 void VM_Version_init() {

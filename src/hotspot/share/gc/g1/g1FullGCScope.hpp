@@ -34,6 +34,7 @@
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "memory/allocation.hpp"
+#include "memory/resourceArea.hpp"
 #include "services/memoryService.hpp"
 
 class GCMemoryManager;
