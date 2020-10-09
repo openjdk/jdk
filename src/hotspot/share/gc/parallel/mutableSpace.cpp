@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 
 #include "precompiled.hpp"
 #include "gc/parallel/mutableSpace.hpp"
-#include "gc/shared/spaceDecorator.inline.hpp"
 #include "gc/shared/preTouch.hpp"
+#include "gc/shared/spaceDecorator.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
@@ -115,11 +115,11 @@ void MutableSpace::initialize(MemRegion mr,
 
       size_t page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
 
-      PretouchTask::pretouch("ParallelGC PreTouch", (char*)head.start(),
-                             (char*)head.end(), page_size, pretouch_gang);
+      PretouchTask::pretouch("ParallelGC PreTouch head", (char*)head.start(), (char*)head.end(),
+                             page_size, pretouch_gang);
 
-      PretouchTask::pretouch("ParallelGC PreTouch", (char*)tail.start(),
-                             (char*)tail.end(), page_size, pretouch_gang);
+      PretouchTask::pretouch("ParallelGC PreTouch tail", (char*)tail.start(), (char*)tail.end(),
+                             page_size, pretouch_gang);
     }
 
     // Remember where we stopped so that we can continue later.
