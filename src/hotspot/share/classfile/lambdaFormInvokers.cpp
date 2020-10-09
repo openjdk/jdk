@@ -81,18 +81,14 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
 
   JavaValue result(T_OBJECT);
   JavaCalls::call_static(&result, cds_klass, method, signrs, list_lines, THREAD);
-  objArrayHandle h_array(THREAD, (objArrayOop)result.get_jobject());
-  if (!HAS_PENDING_EXCEPTION) {
-    if (h_array() == NULL) {
-      log_info(cds)("Failed call to %s.%s", cds_name->as_C_string(), method->as_C_string());
-      return;
-    }
-  } else {
-    log_info(cds)("Exception happened: %s", PENDING_EXCEPTION->klass()->name()->as_C_string());
+
+  if (HAS_PENDING_EXCEPTION) {
+    // The exception message and stacktrace have been printed out already
     CLEAR_PENDING_EXCEPTION;
     return;
   }
 
+  objArrayHandle h_array(THREAD, (objArrayOop)result.get_jobject());
   int sz = h_array->length();
   assert(sz % 2 == 0 && sz >= 2, "Must be even size of length");
   for (int i = 0; i < sz; i+= 2) {

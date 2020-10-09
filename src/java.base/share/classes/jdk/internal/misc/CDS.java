@@ -138,14 +138,13 @@ public class CDS {
         return true;
     }
 
-    // return false for invalid input, don't throw exception since it will generate more objects
-    private static boolean isValidInputLines(String[] lines) {
+    // Throw exception on invalid input
+    private static void validateInputLines(String[] lines) {
         for (String s: lines) {
             // There might be a trailing '\f' for line in ExtraClassListFile, do trim first.
             String line = s.trim();
             if (!line.startsWith("[LF_RESOLVE]") && !line.startsWith("[SPECIES_RESOLVE]")) {
-                System.out.println("Wrong prefix: " + line);
-                return false;
+                throw new IllegalArgumentException("Wrong prefix: " + line);
             }
 
             String[] parts = line.split(" ");
@@ -153,39 +152,31 @@ public class CDS {
 
             if (isLF) {
                 if (parts.length != 4) {
-                    System.out.println("Incorrecct number of items in the line: " + parts.length);
-                    System.out.println("line: " + line);
-                    return false;
+                    throw new IllegalArgumentException("Incorrecct number of items in the line: " + parts.length);
                 }
                 if (!isValidHolderName(parts[1])) {
-                    System.out.println("Invalid holder class name: " + parts[1]);
-                    return false;
+                    throw new IllegalArgumentException("Invalid holder class name: " + parts[1]);
                 }
                 if (!isValidMethodType(parts[3])) {
-                    System.out.println("Invalid method type: " + parts[3]);
-                    return false;
+                    throw new IllegalArgumentException("Invalid method type: " + parts[3]);
                 }
             } else {
                 if (parts.length != 2) {
-                   System.out.println("Incorrect number of items in the line: " + parts.length);
-                   return false;
+                   throw new IllegalArgumentException("Incorrect number of items in the line: " + parts.length);
                 }
            }
       }
-      return true;
     }
 
     /**
      * called from vm to generate MethodHandle holder classes
-     * @return @code { Object[] } if holder classes can be generated.
+     * @return {@code Object[]} if holder classes can be generated.
      * @param lines in format of LF_RESOLVE or SPECIES_RESOLVE output
      */
-    private static Object[] generateLambdaFormHolderClasses(String[] lines) {
+    private static Object[] generateLambdaFormHolderClasses(String[] lines) throws Exception {
         Objects.requireNonNull(lines);
         try {
-            if (!isValidInputLines(lines)) {
-                return null;
-            }
+            validateInputLines(lines);
             Stream<String> lineStream = Arrays.stream(lines).map(String::trim);
             Map<String, byte[]> result = SharedSecrets.getJavaLangInvokeAccess().generateHolderClasses(lineStream);
             int size = result.size();
@@ -197,6 +188,10 @@ public class CDS {
             };
             return retArray;
         } catch (Exception e) {
+            // This method is only used by CDS, for debug/trace purpose, we print out the exception message and
+            // stack trace here since in vm we need more code to do so.
+            // for test purpose
+            System.out.println("Exception: " + e);
             // for debug purpose.
             e.printStackTrace();
             throw e;

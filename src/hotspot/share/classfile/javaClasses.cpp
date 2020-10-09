@@ -1244,6 +1244,8 @@ oop java_lang_Class::process_archived_mirror(Klass* k, oop mirror,
     java_lang_Class:set_init_lock(archived_mirror, NULL);
 
     set_protection_domain(archived_mirror, NULL);
+    set_signers(archived_mirror, NULL);
+    set_source_file(archived_mirror, NULL);
   }
 
   // clear class loader and mirror_module_field

@@ -34,7 +34,6 @@
 
 public class DumpClassListWithLF extends ClassListFormatBase {
     static final String REPLACE_OK = "Replaced class java/lang/invoke/DirectMethodHandle$Holder";
-    static final String REPLACE_NOT_OK = "Failed call to jdk/internal/misc/CDS.generateLambdaFormHolderClasses";
 
     public static void main(String[] args) throws Throwable {
         String appJar = JarBuilder.getOrCreateHelloJar();
@@ -77,14 +76,14 @@ public class DumpClassListWithLF extends ClassListFormatBase {
             appJar, classlist(
                 "Hello",
                 "@lambda-form-invoker [LF_RESOLVE] java.lang.invoke.DirectMethodHandle$Holder invokeStatic LL_G"),
-                REPLACE_NOT_OK);
+                "Invalid method type: LL_G");
         // 6. The line with worng signature format of arg types, will be rejected
         dumpShouldPass(
             "TESTCASE 6: With incorrect signature format of arg types will be rejected",
             appJar, classlist(
                 "Hello",
                 "@lambda-form-invoker [LF_RESOLVE] java.lang.invoke.DirectMethodHandle$Holder invokeStatic MGLL_I"),
-                REPLACE_NOT_OK);
+                "Invalid method type: MGLL_I");
         // 7. The line with worng prefix will ge rejected
         dumpShouldPass(
             "TESTCASE 7: With incorrect LF format, the line will be rejected",
