@@ -2659,9 +2659,6 @@ void G1CollectedHeap::gc_epilogue(bool full) {
   // We are at the end of the GC. Total collections has already been increased.
   rem_set()->print_periodic_summary_info("After GC RS summary", total_collections() - 1);
 
-  // FIXME: what is this about?
-  // I'm ignoring the "fill_newgen()" call if "alloc_event_enabled"
-  // is set.
 #if COMPILER2_OR_JVMCI
   assert(DerivedPointerTable::is_empty(), "derived pointer present");
 #endif
