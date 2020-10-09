@@ -53,6 +53,28 @@ public class ExpressionSwitchInfer {
             case 2 -> null;
         };
         t3.m();
+        var t4 = switch (s) {
+            case 1 -> i1;
+            default -> null;
+        };
+        t4.m();
+        var t5 = switch (s) {
+            default -> null;
+            case 1 -> i1;
+        };
+        t5.m();
+        var t6 = switch (s) {
+            default -> null;
+        };
+        var t7 = switch (s) {
+            case 1 -> null;
+            default -> null;
+        };
+        var t8 = switch (s) {
+            case 1 -> null;
+            case 2 -> null;
+            default -> null;
+        };
     }
 
     interface I {
