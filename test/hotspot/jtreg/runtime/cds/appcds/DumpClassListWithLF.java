@@ -55,7 +55,7 @@ public class DumpClassListWithLF extends ClassListFormatBase {
             appJar, classlist(
                 "Hello",
                 "@lambda-form-invoker [LF_RESOLVE] java.lang.invoke.DirectMethodHandle$Holder invokeStatic"),
-                "Incorrecct number of items in the line: 3");
+                "Incorrect number of items in the line: 3");
         // 3. The two lines with non existed class name, since only 4 holder classes recognizable, all other names will be rejected.
         dumpShouldPass(
             "TESTCASE 3: With incorrect class name will be rejected",
