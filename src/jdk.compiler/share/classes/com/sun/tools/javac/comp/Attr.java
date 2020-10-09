@@ -2026,7 +2026,10 @@ public class Attr extends JCTree.Visitor {
             // both are known to be reference types.  The result is
             // lub(thentype,elsetype). This cannot fail, as it will
             // always be possible to infer "Object" if nothing better.
-            return types.lub(condTypes.stream().map(t -> t.baseType()).collect(List.collector()));
+            return types.lub(condTypes.stream()
+                        .map(t -> t.baseType())
+                        .filter(t -> !t.hasTag(BOT))
+                        .collect(List.collector()));
         }
 
     final static TypeTag[] primitiveTags = new TypeTag[]{

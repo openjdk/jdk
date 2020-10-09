@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8206986
+ * @bug 8206986 8254286
  * @summary Check types inferred for switch expressions.
  * @compile/fail/ref=ExpressionSwitchInfer.out -XDrawDiagnostics ExpressionSwitchInfer.java
  */
@@ -33,5 +33,32 @@ public class ExpressionSwitchInfer {
 
         return null;
     }
+
+    void bug8254286(I1 i1, I2 i2, int s) {
+        var t1 = switch (s) {
+            case 1 -> i1;
+            case 2 -> null;
+            default -> i2;
+        };
+        t1.m();
+        var t2 = switch (s) {
+            case 2 -> null;
+            case 1 -> i1;
+            default -> i2;
+        };
+        t2.m();
+        var t3 = switch (s) {
+            case 1 -> i1;
+            default -> i2;
+            case 2 -> null;
+        };
+        t3.m();
+    }
+
+    interface I {
+        void m();
+    }
+    interface I1 extends I {}
+    interface I2 extends I {}
 
 }
