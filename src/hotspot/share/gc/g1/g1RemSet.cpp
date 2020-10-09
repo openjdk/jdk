@@ -906,20 +906,27 @@ void G1RemSet::scan_collection_set_regions(G1ParScanThreadState* pss,
   }
 }
 
+#ifdef ASSERT
+void G1RemSet::assert_scan_top_is_null(uint hrm_index) {
+  assert(_scan_state->scan_top(hrm_index) == NULL,
+         "scan_top of region %u is unexpectedly " PTR_FORMAT,
+         hrm_index, p2i(_scan_state->scan_top(hrm_index)));
+}
+#endif
+
 void G1RemSet::prepare_region_for_scan(HeapRegion* r) {
   uint hrm_index = r->hrm_index();
 
   // Only update non-collection set old regions, others must have already been set
   // to NULL (don't scan) in the initialization.
-  if (!r->in_collection_set() && r->is_old_or_humongous_or_archive()) {
+  if (r->in_collection_set()) {
+    assert_scan_top_is_null(hrm_index);
+  } else if (r->is_old_or_humongous_or_archive()) {
     _scan_state->set_scan_top(hrm_index, r->top());
   } else {
-    assert(r->in_collection_set() || r->is_free(),
-           "Region %u should be free or in the collection set but is %s",
-           hrm_index, r->get_type_str());
-    assert(_scan_state->scan_top(hrm_index) == NULL,
-           "scan_top of region %u is unexpectedly " PTR_FORMAT,
-           hrm_index, p2i(_scan_state->scan_top(hrm_index)));
+    assert_scan_top_is_null(hrm_index);
+    assert(r->is_free(),
+           "Region %u should be free region but is %s", hrm_index, r->get_type_str());
   }
 }
 
