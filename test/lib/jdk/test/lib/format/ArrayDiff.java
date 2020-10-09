@@ -25,6 +25,7 @@ package jdk.test.lib.format;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -105,16 +106,12 @@ public class ArrayDiff<E> implements Diff {
      * @param width the maximum allowed width in characters for the formatting
      * @param contextBefore maximum number of elements to print before those that differ
      * @throws IllegalArgumentException if component types of arrays is not supported or are not the same
+     * @throws NullPointerException if at least one of the arrays is null
      * @return an ArrayDiff instance for the two arrays and formatting parameters provided
      */
     public static ArrayDiff of(Object first, Object second, int width, int contextBefore) {
-        if (first == null) {
-            throw new IllegalArgumentException("First array argument for ArrayDiff is null");
-        }
-
-        if (second == null) {
-            throw new IllegalArgumentException("Second array argument for ArrayDiff is null");
-        }
+        Objects.requireNonNull(first);
+        Objects.requireNonNull(second);
 
         boolean bothAreArrays = first.getClass().isArray() && second.getClass().isArray();
         boolean componentTypesAreSame =

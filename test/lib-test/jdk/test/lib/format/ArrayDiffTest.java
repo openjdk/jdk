@@ -308,12 +308,12 @@ public class ArrayDiffTest {
             .assertTwoWay();
     }
 
-    @Test (expectedExceptions = IllegalArgumentException.class)
+    @Test (expectedExceptions = NullPointerException.class)
     public void testFirstArrayIsNull() {
         var diff = ArrayDiff.of(null, new String[] {"a", "b"});
     }
 
-    @Test (expectedExceptions = IllegalArgumentException.class)
+    @Test (expectedExceptions = NullPointerException.class)
     public void testSecondArrayIsNull() {
         var diff = ArrayDiff.of(null, new String[] {"a", "b"});
     }
