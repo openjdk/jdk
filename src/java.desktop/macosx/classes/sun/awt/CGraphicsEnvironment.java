@@ -169,15 +169,23 @@ public final class CGraphicsEnvironment extends SunGraphicsEnvironment {
         if (!old.containsKey(mainDisplayID)) {
             old.put(mainDisplayID, new CGraphicsDevice(mainDisplayID));
         }
-        for (int id : getDisplayIDs()) {
+
+        int[] displayIDs = getDisplayIDs();
+        if (displayIDs.length == 0) {
+            // we could throw AWTError in this case.
+            displayIDs = new int[]{mainDisplayID};
+        }
+        for (int id : displayIDs) {
             devices.put(id, old.containsKey(id) ? old.remove(id)
                                                 : new CGraphicsDevice(id));
         }
+        // fetch the main display again, the old value might be outdated
+        mainDisplayID = getMainDisplayID();
 
         // unlikely but make sure the main screen is in the list of screens,
-        // most probably one more "displayReconfiguration" is on the road
+        // most probably one more "displayReconfiguration" is on the road if not
         if (!devices.containsKey(mainDisplayID)) {
-            devices.put(mainDisplayID, new CGraphicsDevice(mainDisplayID));
+            mainDisplayID = displayIDs[0]; // best we can do
         }
         // if a device was not reused it should be invalidated
         for (CGraphicsDevice gd : old.values()) {
