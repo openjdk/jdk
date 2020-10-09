@@ -202,7 +202,6 @@ Metachunk* ChunkManager::get_chunk(chunklevel_t preferred_level, chunklevel_t ma
       if (c->ensure_committed_locked(to_commit) == false) {
         UL2(info, "failed to commit " SIZE_FORMAT " words on chunk " METACHUNK_FORMAT ".",
             to_commit,  METACHUNK_FORMAT_ARGS(c));
-        c->set_in_use(); // gets asserted in return_chunk().
         return_chunk_locked(c);
         c = NULL;
       }
@@ -243,7 +242,7 @@ void ChunkManager::return_chunk_locked(Metachunk* c) {
   UL2(debug, ": returning chunk " METACHUNK_FORMAT ".", METACHUNK_FORMAT_ARGS(c));
   DEBUG_ONLY(c->verify();)
   assert(contains_chunk(c) == false, "A chunk to be added to the freelist must not be in the freelist already.");
-  assert(c->is_in_use(), "Unexpected chunk state");
+  assert(c->is_in_use() || c->is_free(), "Unexpected chunk state");
   assert(!c->in_list(), "Remove from list first");
 
   c->set_free();
