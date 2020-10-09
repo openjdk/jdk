@@ -605,8 +605,6 @@ protected:
   inline  bool is_typeArray_klass()           const { return assert_same_query(
                                                     layout_helper_is_typeArray(layout_helper()),
                                                     is_typeArray_klass_slow()); }
-  virtual bool is_instance_ref_klass()        const { return false; }
-
   #undef assert_same_query
 
   // Access flags

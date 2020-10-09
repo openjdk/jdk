@@ -58,8 +58,6 @@ class InstanceRefKlass: public InstanceKlass {
  public:
   InstanceRefKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
 
-  virtual bool is_instance_ref_klass()        const { return true; }
-
   // Oop fields (and metadata) iterators
   //
   // The InstanceRefKlass iterators also support reference processing.

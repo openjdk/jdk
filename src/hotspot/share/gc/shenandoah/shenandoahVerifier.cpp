@@ -573,6 +573,10 @@ public:
     Atomic::add(&_processed, processed);
   }
 
+  static bool is_instance_ref_klass(Klass* k) {
+    return k->is_instance_klass() && InstanceKlass::cast(k)->reference_type() != REF_NONE;
+  }
+
   void verify_and_follow(HeapWord *addr, ShenandoahVerifierStack &stack, ShenandoahVerifyOopClosure &cl, size_t *processed) {
     if (!_bitmap->par_mark(addr)) return;
 
@@ -582,7 +586,7 @@ public:
 
     // Verify everything reachable from that object too, hopefully realizing
     // everything was already marked, and never touching further:
-    if (!obj->klass()->is_instance_ref_klass()) {
+    if (!is_instance_ref_klass(obj->klass())) {
       cl.verify_oops_from(obj);
       (*processed)++;
     }
