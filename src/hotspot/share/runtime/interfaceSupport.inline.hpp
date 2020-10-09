@@ -169,8 +169,8 @@ class ThreadInVMfromJava : public ThreadStateTransition {
     trans_from_java(_thread_in_vm);
   }
   ~ThreadInVMfromJava()  {
-    if (_thread->stack_yellow_reserved_zone_disabled()) {
-      _thread->enable_stack_yellow_reserved_zone();
+    if (_thread->stack_overflow_state()->stack_yellow_reserved_zone_disabled()) {
+      _thread->stack_overflow_state()->enable_stack_yellow_reserved_zone();
     }
     trans(_thread_in_vm, _thread_in_Java);
     // Check for pending. async. exceptions or suspends.
@@ -309,8 +309,8 @@ class ThreadInVMfromJavaNoAsyncException : public ThreadStateTransition {
     trans_from_java(_thread_in_vm);
   }
   ~ThreadInVMfromJavaNoAsyncException()  {
-    if (_thread->stack_yellow_reserved_zone_disabled()) {
-      _thread->enable_stack_yellow_reserved_zone();
+    if (_thread->stack_overflow_state()->stack_yellow_reserved_zone_disabled()) {
+      _thread->stack_overflow_state()->enable_stack_yellow_reserved_zone();
     }
     trans(_thread_in_vm, _thread_in_Java);
     // NOTE: We do not check for pending. async. exceptions.

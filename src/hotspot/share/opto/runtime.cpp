@@ -1344,7 +1344,7 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* t
     // otherwise, forcibly unwind the frame.
     //
     // 4826555: use default current sp for reguard_stack instead of &nm: it's more accurate.
-    bool force_unwind = !thread->reguard_stack();
+    bool force_unwind = !thread->stack_overflow_state()->reguard_stack();
     bool deopting = false;
     if (nm->is_deopt_pc(pc)) {
       deopting = true;
