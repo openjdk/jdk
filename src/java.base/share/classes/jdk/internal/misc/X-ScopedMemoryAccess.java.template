@@ -47,7 +47,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * when multiple threads are involved is much trickier, as there can be cases where a thread is accessing
  * a memory region while another thread is releasing it.
  * <p>
- * This class provides tools to manages races when multiple threads are accessing and/or releasing the same memory
+ * This class provides tools to manage races when multiple threads are accessing and/or releasing the same memory
  * region concurrently. More specifically, when a thread wants to release a memory region, it should call the
  * {@link #closeScope(jdk.internal.misc.ScopedMemoryAccess.Scope)} method provided by this class. This method initiates
  * thread-local handshakes with all the other VM threads, which are then stopped one by one. If any thread is found
