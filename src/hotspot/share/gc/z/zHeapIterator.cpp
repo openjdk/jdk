@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "gc/z/zRootsIterator.hpp"
 #include "gc/z/zStat.hpp"
 #include "memory/iterator.inline.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/stack.inline.hpp"
 
@@ -82,6 +83,11 @@ public:
 
   virtual void do_oop(narrowOop* p) {
     ShouldNotReachHere();
+  }
+
+  virtual void do_thread(Thread* thread) {
+    CodeBlobToOopClosure code_cl(this, false /* fix_oop_relocations */);
+    thread->oops_do(this, &code_cl);
   }
 };
 

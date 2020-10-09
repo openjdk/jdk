@@ -857,7 +857,7 @@ class VM_WhiteBoxDeoptimizeFrames : public VM_WhiteBoxOperation {
   void doit() {
     for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
       if (t->has_last_Java_frame()) {
-        for (StackFrameStream fst(t, false); !fst.is_done(); fst.next()) {
+        for (StackFrameStream fst(t, false /* update */, true /* process_frames */); !fst.is_done(); fst.next()) {
           frame* f = fst.current();
           if (f->can_be_deoptimized() && !f->is_deoptimized_frame()) {
             Deoptimization::deoptimize(t, *f);
@@ -1685,7 +1685,8 @@ WB_ENTRY(jlong, WB_GetThreadStackSize(JNIEnv* env, jobject o))
 WB_END
 
 WB_ENTRY(jlong, WB_GetThreadRemainingStackSize(JNIEnv* env, jobject o))
-  return (jlong) thread->stack_available(os::current_stack_pointer()) - (jlong)JavaThread::stack_shadow_zone_size();
+  return (jlong) thread->stack_overflow_state()->stack_available(
+                   os::current_stack_pointer()) - (jlong)StackOverflow::stack_shadow_zone_size();
 WB_END
 
 

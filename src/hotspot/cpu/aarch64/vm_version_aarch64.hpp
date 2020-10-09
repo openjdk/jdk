@@ -128,6 +128,7 @@ public:
   static int get_initial_sve_vector_length()  { return _initial_sve_vector_length; };
 
   static bool supports_fast_class_init_checks() { return true; }
+  constexpr static bool supports_stack_watermark_barrier() { return true; }
 };
 
 #endif // CPU_AARCH64_VM_VERSION_AARCH64_HPP

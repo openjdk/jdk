@@ -394,6 +394,7 @@ public class AddLimitMods extends ModuleTestBase {
                 try {
                     System.err.println("Running m2x/test.Test:");
                     output = new JavaTask(tb)
+                       .includeStandardOptions(false)
                        .vmOptions(augmentOptions(options,
                                                  Collections.emptyList(),
                                                  "--module-path", modulePath.toString() + File.pathSeparator + out.getParent().toString(),

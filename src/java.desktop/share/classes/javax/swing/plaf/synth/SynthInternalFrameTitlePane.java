@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,33 @@
 
 package javax.swing.plaf.synth;
 
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
-import javax.swing.plaf.*;
-import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
-import java.beans.PropertyChangeListener;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Image;
+import java.awt.Insets;
+import java.awt.LayoutManager;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.beans.PropertyVetoException;
+
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JInternalFrame;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
+import javax.swing.JSeparator;
+import javax.swing.SwingConstants;
+import javax.swing.UIManager;
+import javax.swing.plaf.UIResource;
+import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
+
 import sun.swing.SwingUtilities2;
 
 /**
@@ -157,6 +176,9 @@ class SynthInternalFrameTitlePane extends BasicInternalFrameTitlePane
         super.uninstallDefaults();
     }
 
+    /**
+     * A subclass of {@code JPopupMenu} that implements {@code UIResource}.
+     */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     private static class JPopupMenuUIResource extends JPopupMenu implements
         UIResource { }

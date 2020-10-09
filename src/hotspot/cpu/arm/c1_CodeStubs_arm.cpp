@@ -38,6 +38,10 @@
 
 #define __ ce->masm()->
 
+void C1SafepointPollStub::emit_code(LIR_Assembler* ce) {
+  ShouldNotReachHere();
+}
+
 void CounterOverflowStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
   ce->store_parameter(_bci, 0);
