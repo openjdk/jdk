@@ -1806,6 +1806,31 @@ void ShenandoahHeap::op_conc_evac() {
   workers()->run_task(&task);
 }
 
+class ShenandoahUpdateThreadClosure : public HandshakeClosure {
+private:
+  ShenandoahUpdateRefsClosure _cl;
+public:
+  ShenandoahUpdateThreadClosure();
+  void do_thread(Thread* thread);
+};
+
+ShenandoahUpdateThreadClosure::ShenandoahUpdateThreadClosure() :
+  HandshakeClosure("Shenandoah Update Thread Roots") {
+}
+
+void ShenandoahUpdateThreadClosure::do_thread(Thread* thread) {
+  if (thread->is_Java_thread()) {
+    JavaThread* jt = thread->as_Java_thread();
+    ResourceMark rm;
+    jt->oops_do(&_cl, NULL);
+  }
+}
+
+void ShenandoahHeap::op_update_thread_roots() {
+  ShenandoahUpdateThreadClosure cl;
+  Handshake::execute(&cl);
+}
+
 void ShenandoahHeap::op_stw_evac() {
   ShenandoahEvacuationTask task(this, _collection_set, false);
   workers()->run_task(&task);
@@ -2735,8 +2760,6 @@ void ShenandoahHeap::op_final_updaterefs() {
 
   if (is_degenerated_gc_in_progress()) {
     concurrent_mark()->update_roots(ShenandoahPhaseTimings::degen_gc_update_roots);
-  } else {
-    concurrent_mark()->update_thread_roots(ShenandoahPhaseTimings::final_update_refs_roots);
   }
 
   // Has to be done before cset is clear
@@ -3017,6 +3040,19 @@ void ShenandoahHeap::entry_evac() {
   try_inject_alloc_failure();
   op_conc_evac();
 }
+
+void ShenandoahHeap::entry_update_thread_roots() {
+  TraceCollectorStats tcs(monitoring_support()->concurrent_collection_counters());
+
+  static const char* msg = "Concurrent update thread roots";
+  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_update_thread_roots);
+  EventMark em("%s", msg);
+
+  // No workers used in this phase, no setup required
+  try_inject_alloc_failure();
+  op_update_thread_roots();
+}
+
 
 void ShenandoahHeap::entry_updaterefs() {
   static const char* msg = "Concurrent update references";

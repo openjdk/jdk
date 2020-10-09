@@ -53,6 +53,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
+#include "signals_posix.hpp"
 #include "utilities/events.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/vmError.hpp"
@@ -257,7 +258,7 @@ JVM_handle_linux_signal(int sig,
   // that do not require siginfo/ucontext first.
 
   if (sig == SIGPIPE) {
-    if (os::Linux::chained_handler(sig, info, ucVoid)) {
+    if (PosixSignals::chained_handler(sig, info, ucVoid)) {
       return true;
     } else {
       if (PrintMiscellaneous && (WizardMode || Verbose)) {
@@ -277,7 +278,7 @@ JVM_handle_linux_signal(int sig,
 
   JavaThread* thread = NULL;
   VMThread* vmthread = NULL;
-  if (os::Linux::signal_handlers_are_installed) {
+  if (PosixSignals::are_signal_handlers_installed()) {
     if (t != NULL) {
       if(t->is_Java_thread()) {
         thread = t->as_Java_thread();
@@ -322,20 +323,21 @@ JVM_handle_linux_signal(int sig,
       // Check if fault address is within thread stack.
       if (thread->is_in_full_stack(addr)) {
         // stack overflow
-        if (thread->in_stack_yellow_reserved_zone(addr)) {
+        StackOverflow* overflow_state = thread->stack_overflow_state();
+        if (overflow_state->in_stack_yellow_reserved_zone(addr)) {
           if (thread->thread_state() == _thread_in_Java) {
-            if (thread->in_stack_reserved_zone(addr)) {
+            if (overflow_state->in_stack_reserved_zone(addr)) {
               frame fr;
               if (os::Linux::get_frame_at_stack_banging_point(thread, uc, &fr)) {
                 assert(fr.is_java_frame(), "Must be a Javac frame");
                 frame activation =
                   SharedRuntime::look_for_reserved_stack_annotated_method(thread, fr);
                 if (activation.sp() != NULL) {
-                  thread->disable_stack_reserved_zone();
+                  overflow_state->disable_stack_reserved_zone();
                   if (activation.is_interpreted_frame()) {
-                    thread->set_reserved_stack_activation((address)activation.fp());
+                    overflow_state->set_reserved_stack_activation((address)activation.fp());
                   } else {
-                    thread->set_reserved_stack_activation((address)activation.unextended_sp());
+                    overflow_state->set_reserved_stack_activation((address)activation.unextended_sp());
                   }
                   return 1;
                 }
@@ -343,17 +345,17 @@ JVM_handle_linux_signal(int sig,
             }
             // Throw a stack overflow exception.
             // Guard pages will be reenabled while unwinding the stack.
-            thread->disable_stack_yellow_reserved_zone();
+            overflow_state->disable_stack_yellow_reserved_zone();
             stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::STACK_OVERFLOW);
           } else {
             // Thread was in the vm or native code. Return and try to finish.
-            thread->disable_stack_yellow_reserved_zone();
+            overflow_state->disable_stack_yellow_reserved_zone();
             return 1;
           }
-        } else if (thread->in_stack_red_zone(addr)) {
+        } else if (overflow_state->in_stack_red_zone(addr)) {
           // Fatal red zone violation.  Disable the guard pages and fall through
           // to handle_unexpected_exception way down below.
-          thread->disable_stack_red_zone();
+          overflow_state->disable_stack_red_zone();
           tty->print_raw_cr("An irrecoverable stack overflow has occurred.");
 
           // This is a likely cause, but hard to verify. Let's just print
@@ -499,7 +501,7 @@ JVM_handle_linux_signal(int sig,
   }
 
   // signal-chaining
-  if (os::Linux::chained_handler(sig, info, ucVoid)) {
+  if (PosixSignals::chained_handler(sig, info, ucVoid)) {
     return true;
   }
 

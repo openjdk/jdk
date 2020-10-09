@@ -30,6 +30,7 @@
 #include "runtime/handshake.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/osThread.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 #include "runtime/task.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
@@ -518,6 +519,10 @@ HandshakeState::ProcessResult HandshakeState::try_process(HandshakeOperation* ma
 
       if (op == match_op) {
         pr_ret = HandshakeState::_succeeded;
+      }
+
+      if (!_handshakee->is_terminated()) {
+        StackWatermarkSet::start_processing(_handshakee, StackWatermarkKind::gc);
       }
 
       _active_handshaker = current_thread;

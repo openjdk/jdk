@@ -138,7 +138,9 @@ intptr_t narrow(BasicType type, intptr_t result) {
     case T_DOUBLE:
     case T_VOID:
       return result;
-    default  : ShouldNotReachHere();
+    default:
+      ShouldNotReachHere();
+      return result; // silence compiler warnings
   }
 }
 

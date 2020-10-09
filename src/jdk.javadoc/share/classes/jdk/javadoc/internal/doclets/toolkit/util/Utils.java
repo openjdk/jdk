@@ -282,8 +282,7 @@ public class Utils {
     }
 
     /**
-     * According to
-     * <cite>The Java Language Specification</cite>,
+     * According to <cite>The Java Language Specification</cite>,
      * all the outer classes and static inner classes are core classes.
      */
     public boolean isCoreClass(TypeElement e) {

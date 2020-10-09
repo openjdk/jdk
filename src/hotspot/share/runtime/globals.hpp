@@ -185,7 +185,7 @@ const intx ObjectAlignmentInBytes = 8;
           "features")                                                       \
                                                                             \
   product(bool, JavaMonitorsInStackTrace, true,                             \
-          "Print information about Java monitor locks when the stacks are"  \
+          "Print information about Java monitor locks when the stacks are " \
           "dumped")                                                         \
                                                                             \
   product_pd(bool, UseLargePages,                                           \

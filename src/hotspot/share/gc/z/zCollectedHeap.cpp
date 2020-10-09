@@ -221,6 +221,10 @@ size_t ZCollectedHeap::unsafe_max_tlab_alloc(Thread* ignored) const {
   return _heap.unsafe_max_tlab_alloc();
 }
 
+bool ZCollectedHeap::uses_stack_watermark_barrier() const {
+  return true;
+}
+
 GrowableArray<GCMemoryManager*> ZCollectedHeap::memory_managers() {
   return GrowableArray<GCMemoryManager*>(1, 1, _heap.serviceability_memory_manager());
 }

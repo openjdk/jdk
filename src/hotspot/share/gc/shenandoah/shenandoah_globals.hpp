@@ -336,12 +336,6 @@
   product(bool, ShenandoahLoadRefBarrier, true, DIAGNOSTIC,                 \
           "Turn on/off load-reference barriers in Shenandoah")              \
                                                                             \
-  product(uintx, ShenandoahCodeRootsStyle, 2, DIAGNOSTIC,                   \
-          "Use this style to scan the code cache roots:"                    \
-          " 0 - sequential iterator;"                                       \
-          " 1 - parallel iterator;"                                         \
-          " 2 - parallel iterator with cset filters;")                      \
-                                                                            \
   develop(bool, ShenandoahVerifyOptoBarriers, false,                        \
           "Verify no missing barriers in C2.")                              \
                                                                             \
