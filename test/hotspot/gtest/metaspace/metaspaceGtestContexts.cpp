@@ -66,6 +66,10 @@ void ChunkGtestContext::checked_alloc_chunk_0(Metachunk** p_return_value, chunkl
       // Needs lock EXPECT_NULL(c->prev_in_vs());
       ASSERT_TRUE(c->is_root_chunk() || c->is_leader());
     }
+    if (Settings::new_chunks_are_fully_committed()) {
+      ASSERT_TRUE(c->is_fully_committed());
+    }
+
     _num_chunks_allocated++;
 
   }
