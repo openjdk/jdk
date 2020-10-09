@@ -2436,10 +2436,10 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, const methodHand
   // The "ASSERT" here is to verify this method generates the exactly same stack
   // trace as utilizing vframe.
 #ifdef ASSERT
-  vframeStream st(thread);
+  vframeStream st(thread, false /* stop_at_java_call_stub */, false /* process_frames */);
 #endif
   int total_count = 0;
-  RegisterMap map(thread, false);
+  RegisterMap map(thread, false /* update */, false /* process_frames */);
   int decode_offset = 0;
   CompiledMethod* nm = NULL;
   bool skip_fillInStackTrace_check = false;
@@ -2581,7 +2581,7 @@ void java_lang_Throwable::fill_in_stack_trace_of_preallocated_backtrace(Handle t
   assert(backtrace.not_null(), "backtrace should have been preallocated");
 
   ResourceMark rm(THREAD);
-  vframeStream st(THREAD);
+  vframeStream st(THREAD, false /* stop_at_java_call_stub */, false /* process_frames */);
 
   BacktraceBuilder bt(THREAD, backtrace);
 

@@ -2237,7 +2237,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // check for safepoint operation in progress and/or pending suspend requests
   { Label Continue, slow_path;
 
-    __ safepoint_poll(slow_path, thread, noreg);
+    __ safepoint_poll(slow_path, thread, true /* at_return */, false /* in_nmethod */);
 
     __ cmpl(Address(thread, JavaThread::suspend_flags_offset()), 0);
     __ jcc(Assembler::equal, Continue);

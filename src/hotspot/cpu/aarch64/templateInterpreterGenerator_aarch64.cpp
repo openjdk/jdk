@@ -980,7 +980,7 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
 
     Label slow_path;
     // If we need a safepoint check, generate full interpreter entry.
-    __ safepoint_poll(slow_path);
+    __ safepoint_poll(slow_path, false /* at_return */, false /* acquire */, false /* in_nmethod */);
 
     // We don't generate local frame and don't align stack because
     // we call stub code and there is no safepoint on this path.
@@ -1029,7 +1029,7 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
 
     Label slow_path;
     // If we need a safepoint check, generate full interpreter entry.
-    __ safepoint_poll(slow_path);
+    __ safepoint_poll(slow_path, false /* at_return */, false /* acquire */, false /* in_nmethod */);
 
     // We don't generate local frame and don't align stack because
     // we call stub code and there is no safepoint on this path.
@@ -1388,7 +1388,16 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // check for safepoint operation in progress and/or pending suspend requests
   {
     Label L, Continue;
-    __ safepoint_poll_acquire(L);
+
+    // We need an acquire here to ensure that any subsequent load of the
+    // global SafepointSynchronize::_state flag is ordered after this load
+    // of the thread-local polling word.  We don't want this poll to
+    // return false (i.e. not safepointing) and a later poll of the global
+    // SafepointSynchronize::_state spuriously to return true.
+    //
+    // This is to avoid a race when we're in a native->Java transition
+    // racing the code which wakes up from a safepoint.
+    __ safepoint_poll(L, true /* at_return */, true /* acquire */, false /* in_nmethod */);
     __ ldrw(rscratch2, Address(rthread, JavaThread::suspend_flags_offset()));
     __ cbz(rscratch2, Continue);
     __ bind(L);
