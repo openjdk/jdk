@@ -161,11 +161,10 @@ public final class CGraphicsEnvironment extends SunGraphicsEnvironment {
         devices.clear();
         mainDisplayID = getMainDisplayID();
 
-        // initialization of the graphics device may change
-        // list of displays on hybrid systems via an activation
-        // of discrete video.
-        // So, we initialize the main display first, and then
-        // retrieve actual list of displays.
+        // initialization of the graphics device may change list of displays on
+        // hybrid systems via an activation of discrete video.
+        // So, we initialize the main display first, then retrieve actual list
+        // of displays, and then recheck the main display again.
         if (!old.containsKey(mainDisplayID)) {
             old.put(mainDisplayID, new CGraphicsDevice(mainDisplayID));
         }
