@@ -123,11 +123,6 @@ uint ShenandoahWorkerPolicy::calc_workers_for_final_update_ref() {
   return _prev_par_update_ref;
 }
 
-uint ShenandoahWorkerPolicy::calc_workers_for_conc_preclean() {
-  // Precleaning is single-threaded
-  return 1;
-}
-
 uint ShenandoahWorkerPolicy::calc_workers_for_conc_cleanup() {
   uint active_workers = (_prev_conc_cleanup == 0) ? ConcGCThreads : _prev_conc_cleanup;
   _prev_conc_cleanup =

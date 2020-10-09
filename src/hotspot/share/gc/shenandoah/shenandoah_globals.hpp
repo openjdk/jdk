@@ -306,11 +306,6 @@
           "Forcefully flush non-empty SATB buffers at this interval. "      \
           "Time is in milliseconds.")                                       \
                                                                             \
-  product(bool, ShenandoahPreclean, true, DIAGNOSTIC,                       \
-          "Do concurrent preclean phase before final mark: process "        \
-          "definitely alive references to avoid dealing with them during "  \
-          "pause.")                                                         \
-                                                                            \
   product(bool, ShenandoahSuspendibleWorkers, false, EXPERIMENTAL,          \
           "Suspend concurrent GC worker threads at safepoints")             \
                                                                             \

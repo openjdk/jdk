@@ -68,9 +68,6 @@ public:
   // Calculate workers for parallel/final reference update
   static uint calc_workers_for_final_update_ref();
 
-  // Calculate workers for concurrent precleaning
-  static uint calc_workers_for_conc_preclean();
-
   // Calculate workers for concurrent cleanup
   static uint calc_workers_for_conc_cleanup();
 

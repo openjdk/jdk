@@ -60,8 +60,6 @@ class outputStream;
   f(conc_mark_roots,                                "  Roots ")                        \
   SHENANDOAH_PAR_PHASE_DO(conc_mark_roots,          "    CM: ", f)                     \
                                                                                        \
-  f(conc_preclean,                                  "Concurrent Precleaning")          \
-                                                                                       \
   f(final_mark_gross,                               "Pause Final Mark (G)")            \
   f(final_mark,                                     "Pause Final Mark (N)")            \
   f(update_roots,                                   "  Update Roots")                  \
