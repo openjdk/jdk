@@ -2595,7 +2595,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     Label Continue;
     Label slow_path;
 
-    __ safepoint_poll(slow_path, r15_thread, rscratch1);
+    __ safepoint_poll(slow_path, r15_thread, true /* at_return */, false /* in_nmethod */);
 
     __ cmpl(Address(r15_thread, JavaThread::suspend_flags_offset()), 0);
     __ jcc(Assembler::equal, Continue);

@@ -26,7 +26,9 @@
 #define SHARE_RUNTIME_OBJECTMONITOR_INLINE_HPP
 
 #include "logging/log.hpp"
+#include "oops/access.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/synchronizer.hpp"
 
 inline intptr_t ObjectMonitor::is_entered(TRAPS) const {
   if (THREAD == _owner || THREAD->is_lock_owned((address) _owner)) {

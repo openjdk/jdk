@@ -113,7 +113,7 @@ jobs:
             flags: --enable-debug
             artifact: -debug
           - flavor: build hotspot no-pch
-            flags: --disable-precompiled-headers
+            flags: --enable-debug --disable-precompiled-headers
             build-target: hotspot
           - flavor: build hotspot zero
             flags: --enable-debug --disable-precompiled-headers --with-jvm-variants=zero

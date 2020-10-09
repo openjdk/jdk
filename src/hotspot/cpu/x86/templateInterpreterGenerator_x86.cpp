@@ -1106,11 +1106,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     Label Continue;
     Label slow_path;
 
-#ifndef _LP64
-    __ safepoint_poll(slow_path, thread, noreg);
-#else
-    __ safepoint_poll(slow_path, r15_thread, rscratch1);
-#endif
+    __ safepoint_poll(slow_path, thread, true /* at_return */, false /* in_nmethod */);
 
     __ cmpl(Address(thread, JavaThread::suspend_flags_offset()), 0);
     __ jcc(Assembler::equal, Continue);
