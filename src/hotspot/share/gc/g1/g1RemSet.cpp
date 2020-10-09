@@ -909,8 +909,8 @@ void G1RemSet::scan_collection_set_regions(G1ParScanThreadState* pss,
 void G1RemSet::prepare_region_for_scan(HeapRegion* r) {
   uint hrm_index = r->hrm_index();
 
-  // The first condition is not absolutely necessary but it provides consistency:
-  // regions in the collection set (and free ones) should never be scanned.
+  // Only update non-collection set old regions, others must have already been set
+  // to NULL (don't scan) in the initialization.
   if (!r->in_collection_set() && r->is_old_or_humongous_or_archive()) {
     _scan_state->set_scan_top(hrm_index, r->top());
   } else {
