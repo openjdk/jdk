@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyStore;
@@ -48,8 +49,6 @@ import java.util.Base64;
 import java.util.Objects;
 
 import static jdk.test.lib.security.DerUtils.*;
-import sun.security.util.ObjectIdentifier;
-import sun.security.util.KnownOIDs;
 import static sun.security.util.KnownOIDs.*;
 import static sun.security.pkcs.ContentInfo.*;
 
@@ -58,15 +57,18 @@ public class ParamsTest  {
     public static void main(String[] args) throws Throwable {
 
         // De-BASE64 textual files in ./params to `pwd`
-        Files.newDirectoryStream(Path.of(System.getProperty("test.src"), "params"))
-                .forEach(p -> {
-                    try (InputStream is = Files.newInputStream(p);
-                         OutputStream os = Files.newOutputStream(p.getFileName())){
-                        Base64.getMimeDecoder().wrap(is).transferTo(os);
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                });
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(
+                Path.of(System.getProperty("test.src"), "params"),
+                p -> !p.getFileName().toString().equals("README"))) {
+            stream.forEach(p -> {
+                try (InputStream is = Files.newInputStream(p);
+                     OutputStream os = Files.newOutputStream(p.getFileName())) {
+                    Base64.getMimeDecoder().wrap(is).transferTo(os);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
+        }
 
         byte[] data;
 
@@ -124,10 +126,6 @@ public class ParamsTest  {
         checkInt(data, "110c010c010011", 50000); // key ic
         checkAlg(data, "110c110110", PBEWithSHA1AndRC2_40); // cert alg
         checkInt(data, "110c1101111", 50000); // cert ic
-
-        keytool("-importkeystore -srckeystore ks -srcstorepass changeit "
-                + "-destkeystore ksnormal -deststorepass changeit "
-                + "-J-Dkeystore.pkcs12.legacy");
 
         // Add a new entry with password-less settings, still has a storepass
         keytool("-keystore ksnormal -genkeypair -keyalg DSA "
