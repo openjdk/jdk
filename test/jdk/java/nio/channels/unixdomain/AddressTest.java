@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,26 +25,26 @@
  * @test
  * @bug 8231358
  * @build AddressTest DummyPath
- * @run main/othervm AddressTest
+ * @run testng/othervm AddressTest
  */
 
 import java.net.UnixDomainSocketAddress;
-import java.nio.channels.*;
-import java.nio.file.InvalidPathException;
+
+import org.testng.annotations.Test;
+
+import static org.testng.Assert.assertThrows;
 
 public class AddressTest {
 
     static UnixDomainSocketAddress addr;
 
-    public static void main(String args[]) throws Exception {
-        runTest();
-    }
+    // Expected exception
+    private static final Class<IllegalArgumentException> IAE =
+        IllegalArgumentException.class;
 
+    @Test
     static void runTest() throws Exception {
         DummyPath path = new DummyPath();
-        try {
-            addr = UnixDomainSocketAddress.of(path);
-            throw new RuntimeException("Expected illegal path exception");
-        } catch (IllegalArgumentException e) {}
+        assertThrows(IAE, () -> UnixDomainSocketAddress.of(path));
     }
 }

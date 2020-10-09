@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,7 +136,7 @@ public final class UnixDomainSocketAddress extends SocketAddress {
     }
 
     /**
-     * Create a UnixDomainSocketAddress from the given path string.
+     * Creates a UnixDomainSocketAddress from the given path string.
      *
      * @param  pathname
      *         The path string, which can be empty
@@ -153,7 +153,7 @@ public final class UnixDomainSocketAddress extends SocketAddress {
     }
 
     /**
-     * Create a UnixDomainSocketAddress for the given path.
+     * Creates a UnixDomainSocketAddress for the given path.
      *
      * @param  path
      *         The path to the socket, which can be empty
@@ -170,7 +170,7 @@ public final class UnixDomainSocketAddress extends SocketAddress {
     }
 
     /**
-     * Return this address's path.
+     * Returns this address's path.
      *
      * @return this address's path
      */
