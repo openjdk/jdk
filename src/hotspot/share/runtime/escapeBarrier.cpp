@@ -307,7 +307,7 @@ bool EscapeBarrier::deoptimize_objects_internal(JavaThread* deoptee, intptr_t* f
     compiledVFrame* last_cvf;
     bool fr_is_deoptimized;
     do {
-      StackFrameStream fst(deoptee);
+      StackFrameStream fst(deoptee, true /* update */, true /* process_frames */);
       while (fst.current()->id() != fr_id && !fst.is_done()) {
         fst.next();
       }
