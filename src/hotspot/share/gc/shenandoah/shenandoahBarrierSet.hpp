@@ -61,7 +61,6 @@ public:
   static bool need_load_reference_barrier(DecoratorSet decorators, BasicType type);
   static bool use_load_reference_barrier_native(DecoratorSet decorators, BasicType type);
   static bool need_keep_alive_barrier(DecoratorSet decorators, BasicType type);
-  static bool is_access_on_jlr_reference(DecoratorSet decorators, BasicType type);
   static ShenandoahLRBKind access_kind(DecoratorSet decorators, BasicType type);
 
   void print_on(outputStream* st) const;

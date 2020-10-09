@@ -115,13 +115,6 @@ bool ShenandoahBarrierSet::need_keep_alive_barrier(DecoratorSet decorators,Basic
   return (on_weak_ref || unknown) && keep_alive;
 }
 
-bool ShenandoahBarrierSet::is_access_on_jlr_reference(DecoratorSet decorators, BasicType type) {
-  // Only needed for references
-  if (!is_reference_type(type)) return false;
-
-  return (decorators & (ON_WEAK_OOP_REF | ON_PHANTOM_OOP_REF)) != 0;
-}
-
 ShenandoahBarrierSet::ShenandoahLRBKind ShenandoahBarrierSet::access_kind(DecoratorSet decorators, BasicType type) {
   if ((decorators & IN_NATIVE) != 0) {
     return NATIVE;
