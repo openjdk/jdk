@@ -301,10 +301,11 @@ public class ArrayCodec<E> {
      * Finds and returns the first mismatch index in another codec
      *
      * @param another a codec mismatch with whom is to be found
-     * @return the first mismatched element's index
+     * @return the first mismatched element's index or -1 if arrays are identical
      */
     public int findMismatchIndex(ArrayCodec<E> another) {
-        for (int result = 0; (source.size() > result) && (another.source.size() > result); result++) {
+        int result = 0;
+        while ((source.size() > result) && (another.source.size() > result)) {
             Object first = source.get(result);
             Object second = another.source.get(result);
 
@@ -320,9 +321,12 @@ public class ArrayCodec<E> {
                 return result;
             }
 
+            result++;
         }
 
-        return 0;
+        return source.size() != another.source.size()
+            ? result    // Lengths are different, but the shorter arrays is a preffix to the longer array.
+            : -1;       // Arrays are identical, there's no mismatch index
     }
 
     /**
