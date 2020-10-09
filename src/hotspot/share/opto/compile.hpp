@@ -85,7 +85,6 @@ class TypeFunc;
 class TypeVect;
 class Unique_Node_List;
 class nmethod;
-class WarmCallInfo;
 class Node_Stack;
 struct Final_Reshape_Counts;
 
@@ -374,7 +373,6 @@ class Compile : public Phase {
   // Parsing, optimization
   PhaseGVN*             _initial_gvn;           // Results of parse-time PhaseGVN
   Unique_Node_List*     _for_igvn;              // Initial work-list for next round of Iterative GVN
-  WarmCallInfo*         _warm_calls;            // Sorted work-list for heat-based inlining.
 
   GrowableArray<CallGenerator*> _late_inlines;        // List of CallGenerators to be revisited after
                                                       // main parsing has finished.
@@ -916,10 +914,6 @@ class Compile : public Phase {
   void              identify_useful_nodes(Unique_Node_List &useful);
   void              update_dead_node_list(Unique_Node_List &useful);
   void              remove_useless_nodes (Unique_Node_List &useful);
-
-  WarmCallInfo*     warm_calls() const          { return _warm_calls; }
-  void          set_warm_calls(WarmCallInfo* l) { _warm_calls = l; }
-  WarmCallInfo* pop_warm_call();
 
   // Record this CallGenerator for inlining at the end of parsing.
   void              add_late_inline(CallGenerator* cg)        {
