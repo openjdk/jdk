@@ -838,8 +838,8 @@ void os::workaround_expand_exec_shield_cs_limit() {
   if (os::is_primordial_thread()) {
     address limit = Linux::initial_thread_stack_bottom();
     if (! DisablePrimordialThreadGuardPages) {
-      limit += JavaThread::stack_red_zone_size() +
-        JavaThread::stack_yellow_zone_size();
+      limit += StackOverflow::stack_red_zone_size() +
+               StackOverflow::stack_yellow_zone_size();
     }
     os::Linux::expand_stack_to(limit);
   }
@@ -860,7 +860,7 @@ void os::workaround_expand_exec_shield_cs_limit() {
    * we don't have much control or understanding of the address space, just let it slide.
    */
   char* hint = (char*)(Linux::initial_thread_stack_bottom() -
-                       (JavaThread::stack_guard_zone_size() + page_size));
+                       (StackOverflow::stack_guard_zone_size() + page_size));
   char* codebuf = os::attempt_reserve_memory_at(hint, page_size);
 
   if (codebuf == NULL) {

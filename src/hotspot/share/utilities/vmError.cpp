@@ -211,7 +211,7 @@ void VMError::print_stack_trace(outputStream* st, JavaThread* jt,
     st->cr();
 
     // Print the frames
-    StackFrameStream sfs(jt);
+    StackFrameStream sfs(jt, true /* update */, true /* process_frames */);
     for(int i = 0; !sfs.is_done(); sfs.next(), i++) {
       sfs.current()->zero_print_on_error(i, st, buf, buflen);
       st->cr();

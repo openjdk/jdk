@@ -191,7 +191,9 @@ void OopMapSet::add_gc_map(int pc_offset, OopMap *map ) {
 }
 
 static void add_derived_oop(oop* base, oop* derived, OopClosure* oop_fn) {
+#if COMPILER2_OR_JVMCI
   DerivedPointerTable::add(derived, base);
+#endif // COMPILER2_OR_JVMCI
 }
 
 static void ignore_derived_oop(oop* base, oop* derived, OopClosure* oop_fn) {
