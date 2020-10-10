@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,29 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "logging/log.hpp"
-#include "logging/logStream.hpp"
-#include "memory/resourceArea.hpp"
-#include "runtime/vm_version.hpp"
+#ifndef SHARE_MEMORY_LAMBDAFORMINVOKERS_HPP
+#define SHARE_MEMORY_LAMBDAFORMINVOKERS_HPP
+#include "memory/allStatic.hpp"
+#include "runtime/handles.hpp"
 
-void VM_Version_init() {
-  VM_Version::initialize();
+template <class T>
+class GrowableArray;
+class ClassFileStream;
 
-  if (log_is_enabled(Info, os, cpu)) {
-    char buf[1024];
-    ResourceMark rm;
-    LogStream ls(Log(os, cpu)::info());
-    os::print_cpu_info(&ls, buf, sizeof(buf));
+class LambdaFormInvokers : public AllStatic {
+ private:
+  static GrowableArray<char*>* _lambdaform_lines;
+  static void reload_class(char* name, ClassFileStream& st, TRAPS);
+ public:
+
+  static void append(char* line);
+  static void regenerate_holder_classes(TRAPS);
+  static GrowableArray<char*>* lambdaform_lines() {
+    return _lambdaform_lines;
   }
-}
+
+  static const char* lambda_form_invoker_tag() {
+    return "@lambda-form-invoker";
+  }
+};
+#endif // SHARE_MEMORY_LAMBDAFORMINVOKERS_HPP
