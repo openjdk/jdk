@@ -37,6 +37,8 @@
 
 #ifdef _LP64
 
+#if COMPILER2_OR_JVMCI
+
 void MacroAssembler::arraycopy_avx3_special_cases(XMMRegister xmm, KRegister mask, Register from,
                                                   Register to, Register count, int shift,
                                                   Register index, Register temp,
@@ -111,7 +113,7 @@ void MacroAssembler::arraycopy_avx3_special_cases_conjoint(XMMRegister xmm, KReg
                                                            bool use64byteVector, Label& L_entry, Label& L_exit) {
   Label L_entry_64, L_entry_96, L_entry_128;
   Label L_entry_160, L_entry_192;
-  bool avx3 = COMPILER2_OR_JVMCI_PRESENT((MaxVectorSize > 32 && AVX3Threshold == 0) ||) false;
+  bool avx3 = MaxVectorSize > 32 && AVX3Threshold == 0;
 
   int size_mat[][6] = {
   /* T_BYTE */ {32 , 64,  96 , 128 , 160 , 192 },
@@ -245,5 +247,7 @@ void MacroAssembler::copy64_avx(Register dst, Register src, Register index, XMMR
     evmovdquq(Address(dst, index, scale, offset), xmm, Assembler::AVX_512bit);
   }
 }
+
+#endif // COMPILER2_OR_JVMCI
 
 #endif
