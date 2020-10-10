@@ -282,6 +282,10 @@
   template(base_name,                                 "base")                                     \
   /* Type Annotations (JDK 8 and above) */                                                        \
   template(type_annotations_name,                     "typeAnnotations")                          \
+  /* used by CDS */                                                                               \
+  template(jdk_internal_misc_CDS, "jdk/internal/misc/CDS")                                        \
+  template(generateLambdaFormHolderClasses, "generateLambdaFormHolderClasses")                    \
+  template(generateLambdaFormHolderClasses_signature, "([Ljava/lang/String;)[Ljava/lang/Object;") \
                                                                                                   \
   /* Intrinsic Annotation (JDK 9 and above) */                                                    \
   template(jdk_internal_vm_annotation_DontInline_signature,  "Ljdk/internal/vm/annotation/DontInline;")  \
@@ -289,7 +293,6 @@
   template(jdk_internal_vm_annotation_Hidden_signature,      "Ljdk/internal/vm/annotation/Hidden;") \
   template(jdk_internal_vm_annotation_IntrinsicCandidate_signature, "Ljdk/internal/vm/annotation/IntrinsicCandidate;") \
   template(jdk_internal_vm_annotation_Stable_signature,      "Ljdk/internal/vm/annotation/Stable;") \
-                                                                                                  \
   /* Support for JSR 292 & invokedynamic (JDK 1.7 and above) */                                   \
   template(java_lang_invoke_CallSite,                 "java/lang/invoke/CallSite")                \
   template(java_lang_invoke_ConstantCallSite,         "java/lang/invoke/ConstantCallSite")        \
