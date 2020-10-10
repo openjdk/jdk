@@ -30,8 +30,6 @@ import jdk.internal.vm.annotation.Stable;
 import java.lang.invoke.VarHandle.AccessMode;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * A var handle form containing a set of member name, one for each operation.
@@ -39,12 +37,17 @@ import java.util.List;
  */
 final class VarForm {
 
+    final boolean exact;
+
     final @Stable MethodType[] methodType_table;
+    final @Stable MethodType[] methodType_table_exact;
 
     final @Stable MemberName[] memberName_table;
 
     VarForm(Class<?> implClass, Class<?> receiver, Class<?> value, Class<?>... intermediate) {
+        this.exact = false;
         this.methodType_table = new MethodType[VarHandle.AccessType.values().length];
+        this.methodType_table_exact = new MethodType[VarHandle.AccessType.values().length];
         if (receiver == null) {
             initMethodTypes(value, intermediate);
         } else {
@@ -59,31 +62,54 @@ final class VarForm {
     }
 
     VarForm(Class<?> value, Class<?>[] coordinates) {
+        this.exact = false;
         this.methodType_table = new MethodType[VarHandle.AccessType.values().length];
+        this.methodType_table_exact = new MethodType[VarHandle.AccessType.values().length];
         this.memberName_table = null;
         initMethodTypes(value, coordinates);
     }
 
+    private VarForm(boolean exact, MethodType[] methodType_table, MethodType[] methodType_table_exact,
+                    MemberName[] memberName_table, MethodType[] methodType_V_table) {
+        this.exact = exact;
+        this.methodType_table = methodType_table;
+        this.methodType_table_exact = methodType_table_exact;
+        this.memberName_table = memberName_table;
+        this.methodType_V_table = methodType_V_table;
+    }
+
+    private void initMethodTypePair(int index, MethodType type) {
+        methodType_table_exact[index] = type;
+        methodType_table[index] = type.erase();
+    }
+
     void initMethodTypes(Class<?> value, Class<?>... coordinates) {
         // (Receiver, <Intermediates>)Value
-        methodType_table[VarHandle.AccessType.GET.ordinal()] =
-                MethodType.methodType(value, coordinates).erase();
+        initMethodTypePair(VarHandle.AccessType.GET.ordinal(), MethodType.methodType(value, coordinates));
 
         // (Receiver, <Intermediates>, Value)void
-        methodType_table[VarHandle.AccessType.SET.ordinal()] =
-                MethodType.methodType(void.class, coordinates).appendParameterTypes(value).erase();
+        initMethodTypePair(VarHandle.AccessType.SET.ordinal(),
+                MethodType.methodType(void.class, coordinates).appendParameterTypes(value));
 
         // (Receiver, <Intermediates>, Value)Value
-        methodType_table[VarHandle.AccessType.GET_AND_UPDATE.ordinal()] =
-                MethodType.methodType(value, coordinates).appendParameterTypes(value).erase();
+        initMethodTypePair(VarHandle.AccessType.GET_AND_UPDATE.ordinal(),
+                MethodType.methodType(value, coordinates).appendParameterTypes(value));
 
         // (Receiver, <Intermediates>, Value, Value)boolean
-        methodType_table[VarHandle.AccessType.COMPARE_AND_SET.ordinal()] =
-                MethodType.methodType(boolean.class, coordinates).appendParameterTypes(value, value).erase();
+        initMethodTypePair(VarHandle.AccessType.COMPARE_AND_SET.ordinal(),
+                MethodType.methodType(boolean.class, coordinates).appendParameterTypes(value, value));
 
         // (Receiver, <Intermediates>, Value, Value)Value
-        methodType_table[VarHandle.AccessType.COMPARE_AND_EXCHANGE.ordinal()] =
-                MethodType.methodType(value, coordinates).appendParameterTypes(value, value).erase();
+        initMethodTypePair(VarHandle.AccessType.COMPARE_AND_EXCHANGE.ordinal(),
+                MethodType.methodType(value, coordinates).appendParameterTypes(value, value));
+    }
+
+    VarForm asExact() {
+        return new VarForm(true, methodType_table, methodType_table_exact, memberName_table, methodType_V_table);
+    }
+
+    VarForm asGeneric() {
+        return new VarForm(false, methodType_table, methodType_table_exact, memberName_table, methodType_V_table);
     }
 
     @ForceInline

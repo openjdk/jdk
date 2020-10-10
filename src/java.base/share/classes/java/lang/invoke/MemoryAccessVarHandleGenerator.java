@@ -71,6 +71,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static jdk.internal.org.objectweb.asm.Opcodes.LALOAD;
 import static jdk.internal.org.objectweb.asm.Opcodes.LASTORE;
 import static jdk.internal.org.objectweb.asm.Opcodes.LLOAD;
+import static jdk.internal.org.objectweb.asm.Opcodes.NEW;
 import static jdk.internal.org.objectweb.asm.Opcodes.NEWARRAY;
 import static jdk.internal.org.objectweb.asm.Opcodes.PUTFIELD;
 import static jdk.internal.org.objectweb.asm.Opcodes.PUTSTATIC;
@@ -94,6 +95,12 @@ class MemoryAccessVarHandleGenerator {
 
     private final static MethodHandle ADD_OFFSETS_HANDLE;
     private final static MethodHandle MUL_OFFSETS_HANDLE;
+
+    private final static MethodType CONSTR_TYPE = MethodType.methodType(void.class, VarForm.class,
+            boolean.class, long.class, long.class, long.class, long[].class);
+    // MemoryAccessVarHandleBase
+    private final static MethodType SUPER_CONTR_TYPE = MethodType.methodType(void.class, VarForm.class,
+            boolean.class, long.class, long.class, long.class);
 
     static {
         helperClassCache = new HashMap<>();
@@ -140,7 +147,7 @@ class MemoryAccessVarHandleGenerator {
         Arrays.fill(components, long.class);
         this.form = new VarForm(BASE_CLASS, MemoryAddressProxy.class, carrier, components);
         this.helperClass = helperClassCache.get(carrier);
-        this.implClassName = helperClass.getName().replace('.', '/') + dimensions;
+        this.implClassName = internalName(helperClass) + dimensions;
         // live constants
         Class<?>[] intermediate = new Class<?>[dimensions];
         Arrays.fill(intermediate, long.class);
@@ -164,8 +171,7 @@ class MemoryAccessVarHandleGenerator {
 
             VarForm form = new VarForm(implCls, MemoryAddressProxy.class, carrier, components);
 
-            MethodType constrType = MethodType.methodType(void.class, VarForm.class, boolean.class, long.class, long.class, long.class, long[].class);
-            MethodHandle constr = lookup.findConstructor(implCls, constrType);
+            MethodHandle constr = lookup.findConstructor(implCls, CONSTR_TYPE);
             constr = MethodHandles.insertArguments(constr, 0, form);
             return constr;
         } catch (Throwable ex) {
@@ -201,6 +207,8 @@ class MemoryAccessVarHandleGenerator {
         addStridesAccessor(cw);
 
         addCarrierAccessor(cw);
+
+        addWithVarForm(cw);
 
         for (VarHandle.AccessMode mode : VarHandle.AccessMode.values()) {
             addAccessModeMethodIfNeeded(mode, cw);
@@ -253,8 +261,7 @@ class MemoryAccessVarHandleGenerator {
     }
 
     void addConstructor(ClassWriter cw) {
-        MethodType constrType = MethodType.methodType(void.class, VarForm.class, boolean.class, long.class, long.class, long.class, long[].class);
-        MethodVisitor mv = cw.visitMethod(0, "<init>", constrType.toMethodDescriptorString(), null, null);
+        MethodVisitor mv = cw.visitMethod(0, "<init>", CONSTR_TYPE.toMethodDescriptorString(), null, null);
         mv.visitCode();
         //super call
         mv.visitVarInsn(ALOAD, 0);
@@ -265,7 +272,7 @@ class MemoryAccessVarHandleGenerator {
         mv.visitVarInsn(LLOAD, 5);
         mv.visitVarInsn(LLOAD, 7);
         mv.visitMethodInsn(INVOKESPECIAL, Type.getInternalName(BASE_CLASS), "<init>",
-                MethodType.methodType(void.class, VarForm.class, boolean.class, long.class, long.class, long.class).toMethodDescriptorString(), false);
+                SUPER_CONTR_TYPE.toMethodDescriptorString(), false);
         //init dimensions
         for (int i = 0 ; i < dimensions ; i++) {
             mv.visitVarInsn(ALOAD, 0);
@@ -409,6 +416,28 @@ class MemoryAccessVarHandleGenerator {
         mv.visitEnd();
     }
 
+    private void addWithVarForm(ClassWriter cw) {
+        MethodVisitor mv = cw.visitMethod(ACC_FINAL, "withVarForm", "(Ljava/lang/invoke/VarForm;)Ljava/lang/invoke/VarHandle;", null, null);
+        mv.visitCode();
+        mv.visitTypeInsn(NEW, implClassName);
+        mv.visitInsn(DUP);
+        mv.visitVarInsn(ALOAD, 1); // form
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitFieldInsn(GETFIELD, internalName(MemoryAccessVarHandleBase.class), "be", boolean.class.descriptorString());
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitFieldInsn(GETFIELD, internalName(MemoryAccessVarHandleBase.class), "length", long.class.descriptorString());
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitFieldInsn(GETFIELD, internalName(MemoryAccessVarHandleBase.class), "offset", long.class.descriptorString());
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitFieldInsn(GETFIELD, internalName(MemoryAccessVarHandleBase.class), "alignmentMask", long.class.descriptorString());
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitMethodInsn(INVOKEVIRTUAL, implClassName, "strides", "()[J", false);
+        mv.visitMethodInsn(INVOKESPECIAL, implClassName, "<init>", CONSTR_TYPE.descriptorString(), false);
+        mv.visitInsn(ARETURN);
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
+    }
+
     // shared code generation helpers
 
     private static int getSlotsForType(Class<?> c) {
@@ -416,6 +445,10 @@ class MemoryAccessVarHandleGenerator {
             return 2;
         }
         return 1;
+    }
+
+    private String internalName(Class<?> cls) {
+        return cls.getName().replace('.', '/');
     }
 
     /**

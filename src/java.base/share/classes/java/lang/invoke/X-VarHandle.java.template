@@ -59,6 +59,11 @@ final class VarHandle$Type$s {
         }
 
         @Override
+        FieldInstanceReadOnly withVarForm(VarForm varForm) {
+            return new FieldInstanceReadOnly(receiverType, fieldOffset{#if[Object]?, fieldType}, varForm);
+        }
+
+        @Override
         final MethodType accessModeTypeUncached(AccessMode accessMode) {
             return accessMode.at.accessModeType(receiverType, {#if[Object]?fieldType:$type$.class});
         }
@@ -110,7 +115,27 @@ final class VarHandle$Type$s {
     static final class FieldInstanceReadWrite extends FieldInstanceReadOnly {
 
         FieldInstanceReadWrite(Class<?> receiverType, long fieldOffset{#if[Object]?, Class<?> fieldType}) {
-            super(receiverType, fieldOffset{#if[Object]?, fieldType}, FieldInstanceReadWrite.FORM);
+            this(receiverType, fieldOffset{#if[Object]?, fieldType}, FieldInstanceReadWrite.FORM);
+        }
+
+        private FieldInstanceReadWrite(Class<?> receiverType, long fieldOffset{#if[Object]?, Class<?> fieldType},
+                               VarForm form) {
+            super(receiverType, fieldOffset{#if[Object]?, fieldType}, form);
+        }
+
+        @Override
+        FieldInstanceReadWrite withVarForm(VarForm varForm) {
+            return new FieldInstanceReadWrite(receiverType, fieldOffset{#if[Object]?, fieldType}, varForm);
+        }
+
+        @Override
+        public FieldInstanceReadWrite asExact() {
+            return withVarForm(FORM_EXACT);
+        }
+
+        @Override
+        public FieldInstanceReadWrite asGeneric() {
+            return withVarForm(FORM);
         }
 
         @ForceInline
@@ -345,6 +370,7 @@ final class VarHandle$Type$s {
 #end[Bitwise]
 
         static final VarForm FORM = new VarForm(FieldInstanceReadWrite.class, Object.class, $type$.class);
+        static final VarForm FORM_EXACT = FORM.asExact();
     }
 
 
@@ -367,6 +393,11 @@ final class VarHandle$Type$s {
 #if[Object]
             this.fieldType = fieldType;
 #end[Object]
+        }
+
+        @Override
+        FieldStaticReadOnly withVarForm(VarForm varForm) {
+            return new FieldStaticReadOnly(base, fieldOffset{#if[Object]?, fieldType}, varForm);
         }
 
         @Override
@@ -423,7 +454,27 @@ final class VarHandle$Type$s {
     static final class FieldStaticReadWrite extends FieldStaticReadOnly {
 
         FieldStaticReadWrite(Object base, long fieldOffset{#if[Object]?, Class<?> fieldType}) {
-            super(base, fieldOffset{#if[Object]?, fieldType}, FieldStaticReadWrite.FORM);
+            this(base, fieldOffset{#if[Object]?, fieldType}, FieldStaticReadWrite.FORM);
+        }
+
+        private FieldStaticReadWrite(Object base, long fieldOffset{#if[Object]?, Class<?> fieldType},
+                             VarForm form) {
+            super(base, fieldOffset{#if[Object]?, fieldType}, form);
+        }
+
+        @Override
+        public FieldStaticReadWrite withVarForm(VarForm varForm) {
+            return new FieldStaticReadWrite(base, fieldOffset{#if[Object]?, fieldType}, varForm);
+        }
+
+       @Override
+        public FieldStaticReadWrite asExact() {
+            return withVarForm(FORM_EXACT);
+        }
+
+        @Override
+        public FieldStaticReadWrite asGeneric() {
+            return withVarForm(FORM);
         }
 
         @ForceInline
@@ -658,6 +709,7 @@ final class VarHandle$Type$s {
 #end[Bitwise]
 
         static final VarForm FORM = new VarForm(FieldStaticReadWrite.class, null, $type$.class);
+        static final VarForm FORM_EXACT = FORM.asExact();
     }
 
 
@@ -670,13 +722,32 @@ final class VarHandle$Type$s {
 #end[Object]
 
         Array(int abase, int ashift{#if[Object]?, Class<?> arrayType}) {
-            super(Array.FORM);
+            this(abase, ashift{#if[Object]?, arrayType}, Array.FORM);
+        }
+
+        private Array(int abase, int ashift{#if[Object]?, Class<?> arrayType}, VarForm form) {
+            super(form);
             this.abase = abase;
             this.ashift = ashift;
 #if[Object]
             this.arrayType = {#if[Object]?arrayType:$type$[].class};
             this.componentType = arrayType.getComponentType();
 #end[Object]
+        }
+
+        @Override
+        Array withVarForm(VarForm varForm) {
+            return new Array(abase, ashift{#if[Object]?, arrayType}, varForm);
+        }
+
+        @Override
+        public Array asExact() {
+            return withVarForm(FORM_EXACT);
+        }
+
+        @Override
+        public Array asGeneric() {
+            return withVarForm(FORM);
         }
 
         @Override
@@ -1078,5 +1149,6 @@ final class VarHandle$Type$s {
 #end[Bitwise]
 
         static final VarForm FORM = new VarForm(Array.class, {#if[Object]?Object[].class:$type$[].class}, {#if[Object]?Object.class:$type$.class}, int.class);
+        static final VarForm FORM_EXACT = FORM.asExact();
     }
 }

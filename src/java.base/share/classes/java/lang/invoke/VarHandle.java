@@ -465,6 +465,18 @@ public abstract class VarHandle implements Constable {
 
     VarHandle target() { return null; }
 
+    boolean isExact() {
+        return vform.exact;
+    }
+
+    /**
+     *  Create a clone of this var handle, but with the given {@code VarForm}
+     *
+     * @param varForm the new {@code VarForm} to use
+     * @return the new var handle
+     */
+    abstract VarHandle withVarForm(VarForm varForm);
+
     // Plain accessors
 
     /**
@@ -1541,6 +1553,23 @@ public abstract class VarHandle implements Constable {
     @IntrinsicCandidate
     Object getAndBitwiseXorRelease(Object... args);
 
+    /**
+     * Returns the a var handle that, upon use, checks whether the invocation type matches
+     * the type of this var handle exactly, and otherwise throws a {@link WrongMethodTypeException}
+     * @return the exact var handle
+     */
+    public VarHandle asExact() {
+        return withVarForm(vform.asExact());
+    }
+
+    /**
+     * Returns the a var handle that, upon use, checks whether the invocation type matches
+     * the type of this var handle exactly, and otherwise throws a {@link WrongMethodTypeException}
+     * @return the exact var handle
+     */
+    public VarHandle asGeneric() {
+        return withVarForm(vform.asGeneric());
+    }
 
     enum AccessType {
         GET(Object.class),
@@ -1859,6 +1888,7 @@ public abstract class VarHandle implements Constable {
     }
 
     static final class AccessDescriptor {
+        final MethodType symbolicMethodTypeExact;
         final MethodType symbolicMethodTypeErased;
         final MethodType symbolicMethodTypeInvoker;
         final Class<?> returnType;
@@ -1866,6 +1896,7 @@ public abstract class VarHandle implements Constable {
         final int mode;
 
         public AccessDescriptor(MethodType symbolicMethodType, int type, int mode) {
+            this.symbolicMethodTypeExact = symbolicMethodType;
             this.symbolicMethodTypeErased = symbolicMethodType.erase();
             this.symbolicMethodTypeInvoker = symbolicMethodType.insertParameterTypes(0, VarHandle.class);
             this.returnType = symbolicMethodType.returnType();

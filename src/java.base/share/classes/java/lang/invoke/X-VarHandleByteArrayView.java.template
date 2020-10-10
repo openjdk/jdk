@@ -77,7 +77,26 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
     static final class ArrayHandle extends ByteArrayViewVarHandle {
 
         ArrayHandle(boolean be) {
-            super(ArrayHandle.FORM, be);
+            this(ArrayHandle.FORM, be);
+        }
+
+        private ArrayHandle(VarForm form, boolean be) {
+            super(form, be);
+        }
+
+        @Override
+        ArrayHandle withVarForm(VarForm varForm) {
+            return new ArrayHandle(varForm, be);
+        }
+
+        @Override
+        public ArrayHandle asExact() {
+            return withVarForm(FORM_EXACT);
+        }
+
+        @Override
+        public ArrayHandle asGeneric() {
+            return withVarForm(FORM);
         }
 
         @Override
@@ -549,13 +568,33 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
 #end[Bitwise]
 
         static final VarForm FORM = new VarForm(ArrayHandle.class, byte[].class, $type$.class, int.class);
+        static final VarForm FORM_EXACT = FORM.asExact();
     }
 
 
     static final class ByteBufferHandle extends ByteArrayViewVarHandle {
 
         ByteBufferHandle(boolean be) {
-            super(ByteBufferHandle.FORM, be);
+            this(ByteBufferHandle.FORM, be);
+        }
+
+        private ByteBufferHandle(VarForm form, boolean be) {
+            super(form, be);
+        }
+
+        @Override
+        ByteBufferHandle withVarForm(VarForm varForm) {
+            return new ByteBufferHandle(varForm, be);
+        }
+
+        @Override
+        public ByteBufferHandle asExact() {
+            return withVarForm(FORM_EXACT);
+        }
+
+        @Override
+        public ByteBufferHandle asGeneric() {
+            return withVarForm(FORM);
         }
 
         @Override
@@ -1043,5 +1082,6 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
 #end[Bitwise]
 
         static final VarForm FORM = new VarForm(ByteBufferHandle.class, ByteBuffer.class, $type$.class, int.class);
+        static final VarForm FORM_EXACT = FORM.asExact();
     }
 }

@@ -53,7 +53,12 @@ import java.util.function.BiFunction;
     private final Class<?>[] coordinates;
 
     IndirectVarHandle(VarHandle target, Class<?> value, Class<?>[] coordinates, BiFunction<AccessMode, MethodHandle, MethodHandle> handleFactory) {
-        super(new VarForm(value, coordinates));
+        this(target, value, coordinates, handleFactory, new VarForm(value, coordinates));
+    }
+
+    private IndirectVarHandle(VarHandle target, Class<?> value, Class<?>[] coordinates,
+                      BiFunction<AccessMode, MethodHandle, MethodHandle> handleFactory, VarForm form) {
+        super(form);
         this.handleFactory = handleFactory;
         this.target = target;
         this.directTarget = target.asDirect();
@@ -88,6 +93,11 @@ import java.util.function.BiFunction;
 
     VarHandle target() {
         return target;
+    }
+
+    @Override
+    IndirectVarHandle withVarForm(VarForm varForm) {
+        return new IndirectVarHandle(target, value, coordinates, handleFactory, varForm);
     }
 
     @Override
