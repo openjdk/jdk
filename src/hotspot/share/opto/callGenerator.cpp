@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -429,7 +429,7 @@ void LateInlineCallGenerator::do_late_inline() {
     // This check is done here because for_method_handle_inline() method
     // needs jvms for inlined state.
     if (!do_late_inline_check(jvms)) {
-      map->disconnect_inputs(NULL, C);
+      map->disconnect_inputs(C);
       return;
     }
 

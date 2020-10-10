@@ -894,33 +894,26 @@ int Node::replace_edges_in_range(Node* old, Node* neww, int start, int end) {
 
 //-------------------------disconnect_inputs-----------------------------------
 // NULL out all inputs to eliminate incoming Def-Use edges.
-// Return the number of edges between 'n' and 'this'
-int Node::disconnect_inputs(Node *n, Compile* C) {
-  int edges_to_n = 0;
-
+void Node::disconnect_inputs(Compile* C) {
   uint cnt = req();
+
   for( uint i = 0; i < cnt; ++i ) {
-    if( in(i) == 0 ) continue;
-    if( in(i) == n ) ++edges_to_n;
-    set_req(i, NULL);
+    if( in(i) == nullptr ) continue;
+    set_req(i, nullptr);
   }
   // Remove precedence edges if any exist
   // Note: Safepoints may have precedence edges, even during parsing
-  if( (req() != len()) && (in(req()) != NULL) ) {
+  if( (req() != len()) && (in(req()) != nullptr) ) {
     uint max = len();
     for( uint i = 0; i < max; ++i ) {
-      if( in(i) == 0 ) continue;
-      if( in(i) == n ) ++edges_to_n;
-      set_prec(i, NULL);
+      if( in(i) == nullptr ) continue;
+      set_prec(i, nullptr);
     }
   }
 
   // Node::destruct requires all out edges be deleted first
   // debug_only(destruct();)   // no reuse benefit expected
-  if (edges_to_n == 0) {
-    C->record_dead_node(_idx);
-  }
-  return edges_to_n;
+  C->record_dead_node(_idx);
 }
 
 //-----------------------------uncast---------------------------------------
