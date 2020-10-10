@@ -326,7 +326,8 @@ bool ShenandoahReferenceProcessor::discover(oop reference, ReferenceType type, u
   }
 
   // Add reference to discovered list
-  assert(reference_discovered<T>(reference) == NULL, "Already discovered: " PTR_FORMAT, p2i(reference));
+  assert(reference_discovered<T>(reference) == NULL, "Already discovered: " PTR_FORMAT " discovered: " PTR_FORMAT,
+         p2i(reference), p2i(reference_discovered<T>(reference)));
   assert(worker_id != ShenandoahThreadLocalData::INVALID_WORKER_ID, "need valid worker ID");
   ShenandoahRefProcThreadLocal& refproc_data = _ref_proc_thread_locals[worker_id];
   oop discovered_head = refproc_data.discovered_list_head<T>();
@@ -522,6 +523,18 @@ void ShenandoahReferenceProcessor::abandon_partial_discovery() {
       clean_discovered_list<oop>(_ref_proc_thread_locals[index].discovered_list_addr<oop>());
     }
   }
+  if (_pending_list != NULL) {
+    oop pending = _pending_list;
+    _pending_list = NULL;
+    if (UseCompressedOops) {
+      narrowOop* list = reference_discovered_addr<narrowOop>(pending);
+      clean_discovered_list<narrowOop>(list);
+    } else {
+      oop* list = reference_discovered_addr<oop>(pending);
+      clean_discovered_list<oop>(list);
+    }
+  }
+  _pending_list_tail = &_pending_list;
 }
 
 void ShenandoahReferenceProcessor::collect_statistics() {
