@@ -149,6 +149,24 @@ import jdk.test.lib.Asserts;
 import sun.hotspot.WhiteBox;
 
 
+//
+// ANALYZING TEST FAILURES
+//
+// - Executing just a single test case with the property EATests.onlytestcase.
+//
+//      Example: java -DEATests.onlytestcase=<test case name> ... EATests
+//
+// - Interactive execution allows for attaching a native debugger, e.g. gdb
+//
+//      Example: java -DEATests.interactive=true ... EATests
+//
+// - Java arguments to the test are passed as vm options to the debuggee:
+//
+//      Example: java ... EATests -XX:+UseNewCode
+//
+
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // Shared base class for test cases for both, debugger and debuggee.
@@ -278,10 +296,15 @@ public class EATests extends TestScaffold {
         public final boolean UseJVMCICompiler;
         public final boolean EliminateAllocations;
         public final boolean DeoptimizeObjectsALot;
+        public final boolean DoEscapeAnalysis;
 
         public TargetVMOptions(EATests env, ClassType testCaseBaseTargetClass) {
-            Value val = testCaseBaseTargetClass.getValue(testCaseBaseTargetClass.fieldByName("EliminateAllocations"));
-            EliminateAllocations = ((PrimitiveValue) val).booleanValue();
+            Value val;
+            val = testCaseBaseTargetClass.getValue(testCaseBaseTargetClass.fieldByName("DoEscapeAnalysis"));
+            DoEscapeAnalysis = ((PrimitiveValue) val).booleanValue();
+            // Escape analysis is a prerequisite for scalar replacement (EliminateAllocations)
+            val = testCaseBaseTargetClass.getValue(testCaseBaseTargetClass.fieldByName("EliminateAllocations"));
+            EliminateAllocations = DoEscapeAnalysis && ((PrimitiveValue) val).booleanValue();
             val = testCaseBaseTargetClass.getValue(testCaseBaseTargetClass.fieldByName("DeoptimizeObjectsALot"));
             DeoptimizeObjectsALot = ((PrimitiveValue) val).booleanValue();
             val = testCaseBaseTargetClass.getValue(testCaseBaseTargetClass.fieldByName("UseJVMCICompiler"));
@@ -2580,7 +2603,8 @@ class EAPopFrameNotInlinedReallocFailure extends EATestCaseBaseDebugger {
         }
         freeAllMemory();
         // We succeeded to pop just one frame. When we continue, we will call dontinline_brkpt() again.
-        Asserts.assertTrue(coughtOom || !env.targetVMOptions.EliminateAllocations, "PopFrame should have triggered an OOM exception in target");
+        Asserts.assertTrue(coughtOom || !env.targetVMOptions.EliminateAllocations,
+                           "PopFrame should have triggered an OOM exception in target");
         String expectedTopFrame =
                 env.targetVMOptions.EliminateAllocations ? "dontinline_consume_all_memory_brkpt" : "dontinline_testMethod";
         Asserts.assertEQ(expectedTopFrame, thread.frame(0).location().method().name());
@@ -2670,7 +2694,8 @@ class EAPopInlinedMethodWithScalarReplacedObjectsReallocFailure extends EATestCa
 
         freeAllMemory();
         setField(testCase, "loopCount", env.vm().mirrorOf(0)); // terminate loop
-        Asserts.assertTrue(coughtOom || !env.targetVMOptions.EliminateAllocations, "PopFrame should have triggered an OOM exception in target");
+        Asserts.assertTrue(coughtOom || !env.targetVMOptions.EliminateAllocations,
+                           "PopFrame should have triggered an OOM exception in target");
         String expectedTopFrame =
                 env.targetVMOptions.EliminateAllocations ? "inlinedCallForcedToReturn" : "dontinline_testMethod";
         Asserts.assertEQ(expectedTopFrame, thread.frame(0).location().method().name());
@@ -2924,7 +2949,9 @@ class EAForceEarlyReturnOfInlinedMethodWithScalarReplacedObjectsReallocFailure e
         }
         freeAllMemory();
         if (env.targetVMOptions.EliminateAllocations) {
-            Asserts.assertTrue(coughtOom, "PopFrame should have triggered an OOM exception in target");
+            printStack(thread);
+            Asserts.assertTrue(coughtOom, "ForceEarlyReturn should have triggered an OOM exception in target");
+            msg("ForceEarlyReturn(2)");
             thread.forceEarlyReturn(env.vm().mirrorOf(43));
         }
         msg("Step over instruction to do the forced return");
