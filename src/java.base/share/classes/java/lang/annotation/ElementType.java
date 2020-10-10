@@ -71,8 +71,9 @@ package java.lang.annotation;
  * @jls 4.1 The Kinds of Types and Values
  */
 public enum ElementType {
-    /** Class, interface (including annotation type), enum, or record
-     * declaration */
+
+    // 类、接口、枚举等
+    /** Class, interface (including annotation type), enum, or record declaration */
     TYPE,
 
     /** Field declaration (includes enum constants) */
@@ -90,9 +91,11 @@ public enum ElementType {
     /** Local variable declaration */
     LOCAL_VARIABLE,
 
+    // 注解
     /** Annotation type declaration */
     ANNOTATION_TYPE,
 
+    // 包名、路径定义
     /** Package declaration */
     PACKAGE,
 
@@ -134,6 +137,6 @@ public enum ElementType {
      * @since 14
      */
     @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
-                                 essentialAPI=true)
+            essentialAPI=true)
     RECORD_COMPONENT;
 }

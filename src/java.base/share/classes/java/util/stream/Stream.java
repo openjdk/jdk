@@ -82,6 +82,9 @@ import java.util.function.UnaryOperator;
  * terminal operation is initiated, and source elements are consumed only
  * as needed.
  *
+ 。
+ *
+ *
  * <p>A stream implementation is permitted significant latitude in optimizing
  * the computation of the result.  For example, a stream implementation is free
  * to elide operations (or entire stages) from a stream pipeline -- and
@@ -1172,7 +1175,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      */
     public static<T> Stream<T> ofNullable(T t) {
         return t == null ? Stream.empty()
-                         : StreamSupport.stream(new Streams.StreamBuilderImpl<>(t), false);
+                : StreamSupport.stream(new Streams.StreamBuilderImpl<>(t), false);
     }
 
     /**
@@ -1214,7 +1217,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
     public static<T> Stream<T> iterate(final T seed, final UnaryOperator<T> f) {
         Objects.requireNonNull(f);
         Spliterator<T> spliterator = new Spliterators.AbstractSpliterator<>(Long.MAX_VALUE,
-               Spliterator.ORDERED | Spliterator.IMMUTABLE) {
+                Spliterator.ORDERED | Spliterator.IMMUTABLE) {
             T prev;
             boolean started;
 
@@ -1277,7 +1280,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
         Objects.requireNonNull(next);
         Objects.requireNonNull(hasNext);
         Spliterator<T> spliterator = new Spliterators.AbstractSpliterator<>(Long.MAX_VALUE,
-               Spliterator.ORDERED | Spliterator.IMMUTABLE) {
+                Spliterator.ORDERED | Spliterator.IMMUTABLE) {
             T prev;
             boolean started, finished;
 
