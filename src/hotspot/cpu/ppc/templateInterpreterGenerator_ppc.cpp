@@ -1549,9 +1549,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // Handle exceptions
 
   if (synchronized) {
-    // Don't check for exceptions since we're still in the i2n frame. Do that
-    // manually afterwards.
-    __ unlock_object(R26_monitor, false); // Can also unlock methods.
+    __ unlock_object(R26_monitor); // Can also unlock methods.
   }
 
   // Reset active handles after returning from native.
@@ -1592,9 +1590,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   BIND(exception_return_sync_check);
 
   if (synchronized) {
-    // Don't check for exceptions since we're still in the i2n frame. Do that
-    // manually afterwards.
-    __ unlock_object(R26_monitor, false); // Can also unlock methods.
+    __ unlock_object(R26_monitor); // Can also unlock methods.
   }
   BIND(exception_return_sync_check_already_unlocked);
 
@@ -2105,7 +2101,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     // Detect such a case in the InterpreterRuntime function and return the member name argument, or NULL.
     __ ld(R4_ARG2, 0, R18_locals);
     __ call_VM(R4_ARG2, CAST_FROM_FN_PTR(address, InterpreterRuntime::member_name_arg_or_null), R4_ARG2, R19_method, R14_bcp);
-    __ restore_interpreter_state(R11_scratch1, /*bcp_and_mdx_only*/ true);
+
     __ cmpdi(CCR0, R4_ARG2, 0);
     __ beq(CCR0, L_done);
     __ std(R4_ARG2, wordSize, R15_esp);

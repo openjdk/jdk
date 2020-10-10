@@ -698,7 +698,18 @@ final public class TKit {
         }
     }
 
-     public static void assertDirectoryExists(Path path) {
+    public static void assertPathNotEmptyDirectory(Path path) {
+        if (Files.isDirectory(path)) {
+            ThrowingRunnable.toRunnable(() -> {
+                try (var files = Files.list(path)) {
+                    TKit.assertFalse(files.findFirst().isEmpty(), String.format
+                            ("Check [%s] is not an empty directory", path));
+                }
+            }).run();
+         }
+    }
+
+    public static void assertDirectoryExists(Path path) {
         assertPathExists(path, true);
         assertTrue(path.toFile().isDirectory(), String.format(
                 "Check [%s] is a directory", path));
