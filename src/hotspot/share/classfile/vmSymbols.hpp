@@ -677,22 +677,25 @@
 
 // enum for figuring positions and size of Symbol::_vm_symbols[]
 enum class vmSymbolID : int {
-  NO_SID = 0,
+  NO_SID = 0,                // exclusive lower limit
 
   #define VM_SYMBOL_ENUM(name, string) VM_SYMBOL_ENUM_NAME_(name),
   VM_SYMBOLS_DO(VM_SYMBOL_ENUM, VM_ALIAS_IGNORE)
   #undef VM_SYMBOL_ENUM
 
-  SID_LIMIT,
+  SID_LIMIT,                 // exclusive upper limit
 
   #define VM_ALIAS_ENUM(name, def) VM_SYMBOL_ENUM_NAME_(name) = VM_SYMBOL_ENUM_NAME_(def),
   VM_SYMBOLS_DO(VM_SYMBOL_IGNORE, VM_ALIAS_ENUM)
   #undef VM_ALIAS_ENUM
 
-  FIRST_SID = NO_SID + 1
+  FIRST_SID = NO_SID + 1,    // inclusive lower limit
+  LAST_SID = SID_LIMIT - 1,  // inclusive upper limit
 };
 
-typedef EnumIterator<vmSymbolID, vmSymbolID::FIRST_SID, vmSymbolID::SID_LIMIT> vmSymbolsIterator;
+ENUMERATOR_RANGE(vmSymbolID, vmSymbolID::FIRST_SID, vmSymbolID::LAST_SID)
+constexpr EnumRange<vmSymbolID> vmSymbolsRange; // the default range of all valid vmSymbolIDs
+using vmSymbolsIterator = EnumIterator<vmSymbolID>; // convenience
 
 class vmSymbols: AllStatic {
   friend class vmIntrinsics;

@@ -126,7 +126,8 @@ void ciObjectFactory::init_shared_objects() {
 
   {
     // Create the shared symbols, but not in _shared_ci_metadata.
-    for (vmSymbolID index : vmSymbolsIterator()) {
+    for (vmSymbolsIterator it = vmSymbolsRange.begin(); it != vmSymbolsRange.end(); ++it) {
+      vmSymbolID index = *it;
       Symbol* vmsym = vmSymbols::symbol_at(index);
       assert(vmSymbols::find_sid(vmsym) == index, "1-1 mapping");
       ciSymbol* sym = new (_arena) ciSymbol(vmsym, index);
@@ -134,7 +135,8 @@ void ciObjectFactory::init_shared_objects() {
       _shared_ci_symbols[vmSymbols::as_int(index)] = sym;
     }
 #ifdef ASSERT
-    for (vmSymbolID index : vmSymbolsIterator()) {
+    for (vmSymbolsIterator it = vmSymbolsRange.begin(); it != vmSymbolsRange.end(); ++it) {
+      vmSymbolID index = *it;
       Symbol* vmsym = vmSymbols::symbol_at(index);
       ciSymbol* sym = vm_symbol_at(index);
       assert(sym->get_symbol() == vmsym, "oop must match");

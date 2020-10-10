@@ -26,67 +26,187 @@
 #define SHARE_UTILITIES_ENUMITERATOR_HPP
 
 #include <type_traits>
+#include "memory/allStatic.hpp"
 #include "utilities/debug.hpp"
 
-// This is a type-safe iterator for enums. The enum T must have a continuous range from FIRST
-// to (but not including) LIMIT.
+// Iteration support for enums.
 //
-// Examples:
-//     enum class Color : int { RED, WHITE, BLUE, LIMIT };
-//     typedef EnumIterator<Color, Color::RED, Color::LIMIT> ColorIterator;
+// E is enum type, U is underlying type of E.
 //
-//     for (Color c : ColorIterator())                 { /* iterates RED,   WHITE, BLUE */ }
-//     for (Color c : ColorIterator(WHITE))            { /* iterates WHITE, BLUE        */ }
-//     for (Color c : ColorIterator.with_limit(WHITE)) { /* iterates RED,   WHITE, BLUE */ }
+// case 1:
+// enum has sequential enumerators, with E first and E last (inclusive).
+//
+// case 2:
+// enum has sequential values, with U start and U end (exclusive).
+// WeakProcessorPhases is an example because of oopstorage.
+// This can be mapped onto case 1 by casting start/(end-1).
+//
+// case 3:
+// enum has non-sequential non-duplicate enumerators
+// Iteration could be supported via array or other sequence of enumerators.
+// Don't bother.
+//
+// case 4:
+// enum has non-sequential enumerators with duplicate values
+// Not clear what iteration should mean in this case.
+// Don't bother trying to figure this out.
+//
+//
+// EnumIterationTraits -- defines the static range of all possible values of the enum.
+// EnumRange -- defines the range of *one specific* iteration loop.
+// EnumIterator -- the current point in the iteration loop.
 
-template<typename T, T FIRST, T LIMIT>
-class EnumIterator {
-  static_assert(std::is_enum<T>::value, "expected an enum type");
-  using Rep = std::underlying_type_t<T>;
-  Rep _current;
-  Rep _limit;
+// Example (see vmSymbols.hpp/cpp)
+//
+// ENUMERATOR_RANGE(vmSymbolID, vmSymbolID::FIRST_SID, vmSymbolID::LAST_SID)
+// constexpr EnumRange<vmSymbolID> vmSymbolsRange;
+// using vmSymbolsIterator = EnumIterator<vmSymbolID>;
+//
+// /* Without range-based for, allowed */
+// for (vmSymbolsIterator it = vmSymbolsRange.begin(); it != vmSymbolsRange.end(); ++it) {
+//  vmSymbolID index = *it; ....
+// }
+//
+// /* With range-base for, not allowed by HotSpot coding style yet */
+// for (vmSymbolID index : vmSymbolsRange) {
+//    ....
+// }
+
+// Traits type supporting iteration over the enumerators of T.
+// Specializations must provide static const data members named
+// "_first" and "_last", whose values are the smallest / largest
+// (resp.) enumerator values for T. For iteration, the enumerators of
+// T must have sequential values in that range.
+template<typename T> struct EnumeratorRange;
+
+// Specialize EnumeratorRange<T>.
+#define ENUMERATOR_RANGE(T, First, Last)        \
+  template<> struct EnumeratorRange<T> {        \
+    static constexpr T _first = First;          \
+    static constexpr T _last = Last;            \
+  };
+
+template<typename T>
+class EnumIterationTraits : AllStatic {
+  using RangeType = EnumeratorRange<T>;
+
 public:
-  // Iterate from first upto (but not including) limit
-  EnumIterator(T first = FIRST, T limit = LIMIT) :
-    _current(static_cast<Rep>(first)),
-    _limit  (static_cast<Rep>(limit)) {
-    assert(_current >= static_cast<Rep>(FIRST) && _current <  static_cast<Rep>(LIMIT) &&
-           _limit   >= static_cast<Rep>(FIRST) && _limit   <= static_cast<Rep>(LIMIT), "range check");
+  // The underlying type for T.
+  using Underlying = std::underlying_type_t<T>;
+
+  // The first enumerator of T.
+  static constexpr T _first = RangeType::_first;
+
+  // The last enumerator of T.
+  static constexpr T _last = RangeType::_last;
+
+  static_assert(static_cast<Underlying>(_last) <
+                std::numeric_limits<Underlying>::max(),
+                "No one-past-the-end value for enum");
+
+  // The value of the first enumerator of T.
+  static constexpr Underlying _start = static_cast<Underlying>(_first);
+
+  // The one-past-the-end value for T.
+  static constexpr Underlying _end = static_cast<Underlying>(_last) + 1;
+};
+
+template<typename T>
+class EnumIterator {
+  using Traits = EnumIterationTraits<T>;
+
+  using Underlying = typename Traits::Underlying;
+  Underlying _value;
+
+  constexpr void assert_in_bounds() const {
+    assert(_value < Traits::_end, "beyond the end");
   }
-  // Iterate from FIRST upto (but not including) limit
-  static EnumIterator with_limit(T limit) {
-    return EnumIterator(FIRST, limit);
+
+public:
+  // Return a beyond-the-end iterator.
+  constexpr EnumIterator() : _value(Traits::_end) {}
+
+  // Return an iterator with the indicated value.
+  constexpr explicit EnumIterator(T value) :
+    _value(static_cast<Underlying>(value))
+  {
+    assert(_value >= Traits::_start, "out of range");
+    assert(_value <= Traits::_end, "out of range");
   }
-  bool is_end() const {
-    return _current == static_cast<Rep>(_limit);
+
+  // True if the enumerators designate the same value.
+  constexpr bool operator==(EnumIterator other) const {
+    return _value == other._value;
   }
-  bool operator==(const EnumIterator& other) const {
-    return _current == other._current;
+
+  // True if the enumerators designate different values.
+  constexpr bool operator!=(EnumIterator other) const {
+    return _value != other._value;
   }
-  bool operator!=(const EnumIterator& other) const {
-    return _current != other._current;
+
+  // Return the current value.
+  // precondition: this is not beyond the last enumerator.
+  constexpr T operator*() const {
+    assert_in_bounds();
+    return static_cast<T>(_value);
   }
-  T operator*() const {
-    return static_cast<T>(_current);
-  }
-  EnumIterator& operator++() {
-    assert(!is_end(), "at end");
-    ++_current;
+
+  // Step this iterator to the next value.
+  // precondition: this is not beyond the last enumerator.
+  constexpr EnumIterator& operator++() {
+    assert_in_bounds();
+    ++_value;
     return *this;
   }
-  EnumIterator operator++(int) {
-    assert(!is_end(), "at end");
+
+  // Return a copy and step this iterator to the next value.
+  // precondition: this is not beyond the last enumerator.
+  constexpr EnumIterator operator++(int) {
+    assert_in_bounds();
     EnumIterator result = *this;
-    ++_current;
+    ++_value;
     return result;
   }
-  EnumIterator begin() const {
-    return EnumIterator();
+};
+
+template<typename T>
+class EnumRange {
+  using Traits = EnumIterationTraits<T>;
+  using Underlying = typename Traits::Underlying;
+
+  Underlying _start;
+  Underlying _end;
+
+public:
+  using Iterator = EnumIterator<T>;
+
+  // Default constructor gives the full range.
+  constexpr EnumRange() :
+    EnumRange(Traits::_first) {}
+
+  // Range from start to the (exclusive) end of the enumerator range.
+  constexpr explicit EnumRange(T start) :
+    EnumRange(start, static_cast<T>(Traits::_end)) {}
+
+  // Range from start (inclusive) to end (exclusive).
+  // precondition: start <= end.
+  constexpr EnumRange(T start, T end) :
+    _start(static_cast<Underlying>(start)),
+    _end(static_cast<Underlying>(end))
+  {
+    assert(Traits::_start <= _start, "out of range");
+    assert(_end <= Traits::_end, "out of range");
+    assert(_start <= _end, "invalid range");
   }
-  EnumIterator end() const {
-    EnumIterator result;
-    result._current = static_cast<Rep>(_limit);
-    return result;
+
+  // Return an iterator for the start of the range.
+  constexpr Iterator begin() const {
+    return Iterator(static_cast<T>(_start));
+  }
+
+  // Return an iterator for the end of the range.
+  constexpr Iterator end() const {
+    return Iterator(static_cast<T>(_end));
   }
 };
 

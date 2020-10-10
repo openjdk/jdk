@@ -82,7 +82,8 @@ void vmSymbols::initialize(TRAPS) {
 
   if (!UseSharedSpaces) {
     const char* string = &vm_symbol_bodies[0];
-    for (vmSymbolID index : vmSymbolsIterator()) {
+    for (vmSymbolsIterator it = vmSymbolsRange.begin(); it != vmSymbolsRange.end(); ++it) {
+      vmSymbolID index = *it;
       Symbol* sym = SymbolTable::new_permanent_symbol(string);
       Symbol::_vm_symbols[as_int(index)] = sym;
       string += strlen(string); // skip string body
@@ -111,9 +112,11 @@ void vmSymbols::initialize(TRAPS) {
 
 #ifdef ASSERT
   // Check for duplicates:
-  for (vmSymbolID i1 : vmSymbolsIterator()) {
+  for (vmSymbolsIterator it1 = vmSymbolsRange.begin(); it1 != vmSymbolsRange.end(); ++it1) {
+    vmSymbolID i1 = *it1;
     Symbol* sym = symbol_at(i1);
-    for (vmSymbolID i2 : vmSymbolsIterator::with_limit(i1)) {
+    for (vmSymbolsIterator it2 = vmSymbolsRange.begin(); it2 != it1; ++it2) {
+      vmSymbolID i2 = *it2;
       if (symbol_at(i2) == sym) {
         tty->print("*** Duplicate VM symbol SIDs %s(%d) and %s(%d): \"",
                    vm_symbol_enum_name(i2), as_int(i2),
@@ -127,7 +130,8 @@ void vmSymbols::initialize(TRAPS) {
 
   // Create an index for find_id:
   {
-    for (vmSymbolID index : vmSymbolsIterator()) {
+    for (vmSymbolsIterator it = vmSymbolsRange.begin(); it != vmSymbolsRange.end(); ++it) {
+      vmSymbolID index = *it;
       vm_symbol_index[as_int(index)] = index;
     }
     int num_sids = SID_LIMIT-FIRST_SID;
@@ -148,7 +152,8 @@ void vmSymbols::initialize(TRAPS) {
     assert(symbol_at(sid) == jlo, "");
 
     // Make sure find_sid produces the right answer in each case.
-    for (vmSymbolID index : vmSymbolsIterator()) {
+    for (vmSymbolsIterator it = vmSymbolsRange.begin(); it != vmSymbolsRange.end(); ++it) {
+      vmSymbolID index = *it;
       Symbol* sym = symbol_at(index);
       sid = find_sid(sym);
       assert(sid == index, "symbol index works");
@@ -172,7 +177,8 @@ const char* vmSymbols::name_for(vmSymbolID sid) {
   if (sid == vmSymbolID::NO_SID)
     return "NO_SID";
   const char* string = &vm_symbol_bodies[0];
-  for (vmSymbolID index : vmSymbolsIterator()) {
+  for (vmSymbolsIterator it = vmSymbolsRange.begin(); it != vmSymbolsRange.end(); ++it) {
+    vmSymbolID index = *it;
     if (index == sid)
       return string;
     string += strlen(string); // skip string body
@@ -185,7 +191,8 @@ const char* vmSymbols::name_for(vmSymbolID sid) {
 
 
 void vmSymbols::symbols_do(SymbolClosure* f) {
-  for (vmSymbolID index : vmSymbolsIterator()) {
+  for (vmSymbolsIterator it = vmSymbolsRange.begin(); it != vmSymbolsRange.end(); ++it) {
+    vmSymbolID index = *it;
     f->do_symbol(&Symbol::_vm_symbols[as_int(index)]);
   }
   for (int i = 0; i < T_VOID+1; i++) {
@@ -193,12 +200,13 @@ void vmSymbols::symbols_do(SymbolClosure* f) {
   }
 }
 
-void vmSymbols::metaspace_pointers_do(MetaspaceClosure *it) {
-  for (vmSymbolID index : vmSymbolsIterator()) {
-    it->push(&Symbol::_vm_symbols[as_int(index)]);
+void vmSymbols::metaspace_pointers_do(MetaspaceClosure *closure) {
+  for (vmSymbolsIterator it = vmSymbolsRange.begin(); it != vmSymbolsRange.end(); ++it) {
+    vmSymbolID index = *it;
+    closure->push(&Symbol::_vm_symbols[as_int(index)]);
   }
   for (int i = 0; i < T_VOID+1; i++) {
-    it->push(&_type_signatures[i]);
+    closure->push(&_type_signatures[i]);
   }
 }
 
@@ -272,7 +280,8 @@ vmSymbolID vmSymbols::find_sid(const Symbol* symbol) {
     // Make sure this is the right answer, using linear search.
     // (We have already proven that there are no duplicates in the list.)
     vmSymbolID sid2 = vmSymbolID::NO_SID;
-    for (vmSymbolID index : vmSymbolsIterator()) {
+    for (vmSymbolsIterator it = vmSymbolsRange.begin(); it != vmSymbolsRange.end(); ++it) {
+      vmSymbolID index = *it;
       Symbol* sym2 = symbol_at(index);
       if (sym2 == symbol) {
         sid2 = index;
