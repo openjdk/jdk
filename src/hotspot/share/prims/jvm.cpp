@@ -3869,7 +3869,11 @@ JVM_END
 
 JVM_ENTRY(jboolean, JVM_IsDumpingClassList(JNIEnv *env))
   JVMWrapper("JVM_IsDumpingClassList");
+#if INCLUDE_CDS
   return DumpLoadedClassList != NULL && classlist_file != NULL && classlist_file->is_open();
+#else
+  return false;
+#endif // INCLUDE_CDS
 JVM_END
 
 JVM_ENTRY(void, JVM_LogLambdaFormInvoker(JNIEnv *env, jstring line))
