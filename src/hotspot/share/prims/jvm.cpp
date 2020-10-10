@@ -31,6 +31,7 @@
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/lambdaFormInvokers.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/packageEntry.hpp"
@@ -3864,6 +3865,24 @@ JVM_ENTRY_NO_ENV(jlong, JVM_GetRandomSeedForDumping())
   } else {
     return 0;
   }
+JVM_END
+
+JVM_ENTRY(jboolean, JVM_IsDumpingClassList(JNIEnv *env))
+  JVMWrapper("JVM_IsDumpingClassList");
+  return DumpLoadedClassList != NULL && classlist_file != NULL && classlist_file->is_open();
+JVM_END
+
+JVM_ENTRY(void, JVM_LogLambdaFormInvoker(JNIEnv *env, jstring line))
+  JVMWrapper("JVM_LogLambdaFormInvoker");
+#if INCLUDE_CDS
+  assert(DumpLoadedClassList != NULL && classlist_file->is_open(), "Should be set and open");
+  if (line != NULL) {
+    ResourceMark rm(THREAD);
+    Handle h_line (THREAD, JNIHandles::resolve_non_null(line));
+    char* c_line = java_lang_String::as_utf8_string(h_line());
+    classlist_file->print_cr("%s %s", LambdaFormInvokers::lambda_form_invoker_tag(), c_line);
+  }
+#endif // INCLUDE_CDS
 JVM_END
 
 // Returns an array of all live Thread objects (VM internal JavaThreads,
