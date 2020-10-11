@@ -36,10 +36,7 @@
 class AwtClipboard {
 private:
     static BOOL isGettingOwnership;
-    // handle to the next window in the clipboard viewer chain
-    static volatile HWND hwndNextViewer;
     static volatile BOOL isClipboardViewerRegistered;
-    static volatile BOOL skipInitialWmDrawClipboardMsg;
     static volatile jmethodID handleContentsChangedMID;
 
 public:
@@ -57,8 +54,7 @@ public:
     }
 
     static void LostOwnership(JNIEnv *env);
-    static void WmChangeCbChain(WPARAM wparam, LPARAM lparam);
-    static void WmDrawClipboard(JNIEnv *env, WPARAM wparam, LPARAM lparam);
+    static void WmClipboardUpdate(JNIEnv *env);
     static void RegisterClipboardViewer(JNIEnv *env, jobject jclipboard);
     static void UnregisterClipboardViewer(JNIEnv *env);
 };
