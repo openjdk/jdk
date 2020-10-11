@@ -483,7 +483,7 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
 
   memcpy(dest, src, bytes);
 
-  intptr_t* archived_vtable = CppVtables::get_archived_cpp_vtable(ref->msotype(), (address)dest);
+  intptr_t* archived_vtable = CppVtables::get_archived_vtable(ref->msotype(), (address)dest);
   if (archived_vtable != NULL) {
     *(address*)dest = (address)archived_vtable;
     ArchivePtrMarker::mark_pointer((address*)dest);
