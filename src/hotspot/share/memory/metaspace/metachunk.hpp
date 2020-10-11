@@ -37,14 +37,32 @@ namespace metaspace {
 
 class VirtualSpaceNode;
 
-// A Metachunk is a contiguous metaspace memory region. It is part of
-// a MetaspaceArena, which keeps a list of MetaChunk and allocates via
-// pointer bump from the top element in the list.
+// A Metachunk is a contiguous metaspace memory region. It is used by
+// a MetaspaceArena to allocate from via pointer bump (somewhat similar
+// to a TLAB in java heap.
 //
 // The Metachunk object itself (the "chunk header") is separated from
 //  the memory region (the chunk payload) it describes. It also can have
 //  no payload (a "dead" chunk). In itself it lives in C-heap, managed
 //  as part of a pool of Metachunk headers (ChunkHeaderPool).
+//
+//
+// +---------+                 +---------+                 +---------+
+// |MetaChunk| <--next/prev--> |MetaChunk| <--next/prev--> |MetaChunk|   Chunk headers
+// +---------+                 +---------+                 +---------+   in C-heap
+//     |                           |                          |
+//    base                        base                       base
+//     |                          /                           |
+//    /            ---------------                           /
+//   /            /              ----------------------------
+//  |            |              /
+//  v            v              v
+// +---------+  +---------+    +-------------------+
+// |         |  |         |    |                   |
+// |  chunk  |  |  chunk  |    |      chunk        |    The real chunks ("payload")
+// |         |  |         |    |                   |    live in Metaspace
+// +---------+  +---------+    +-------------------+
+//
 //
 // -- Metachunk state --
 //
@@ -59,6 +77,12 @@ class VirtualSpaceNode;
 //  In that case it lives as part of a freelist-of-dead-chunk-headers
 //  in the ChunkHeaderPool.
 //
+// A Metachunk is always part of a linked list. In-use chunks are part of
+//  the chunk list of a MetaspaceArena. Free chunks are in a freelist in
+//  the ChunkManager. Dead chunk headers are in a linked list as part
+//  of the ChunkHeaderPool.
+//
+//
 // -- Level --
 //
 // Metachunks are managed as part of a buddy style allocation scheme.
@@ -67,13 +91,14 @@ class VirtualSpaceNode;
 // Its size is encoded as level, with level 0 being the largest chunk
 // size ("root chunk").
 //
+//
 // -- Payload commit state --
 //
-// A Metachunk payload may be committed, partly committed or completely
-// uncommitted. Technically, a payload may be committed "checkered" -
-// i.e. committed and uncommitted parts may interleave - but the
-// important part is how much contiguous space is committed starting
-// at the base of the payload (since that's where we allocate).
+// A Metachunk payload (the "real chunk") may be committed, partly committed
+//  or completely uncommitted. Technically, a payload may be committed
+//  "checkered" - i.e. committed and uncommitted parts may interleave - but the
+//  important part is how much contiguous space is committed starting
+//  at the base of the payload (since that's where we allocate).
 //
 // The Metachunk keeps track of how much space is committed starting
 //  at the base of the payload - which is a performace optimization -
@@ -100,9 +125,46 @@ class VirtualSpaceNode;
 //            |              |     "used"           |           |
 //            |              |                      |           |
 //            +--------------+ <- start   ----------+ ----------+
+//
+//
+// -- Relationships --
+//
+// Chunks are managed by a binary buddy style allocator
+//  (see https://en.wikipedia.org/wiki/Buddy_memory_allocation).
+// Chunks which are not a root chunk always have an adjoining buddy.
+//  The first chunk in a buddy pair is called the leader, the second
+//  one the follower.
+//
+// +----------+----------+
+// | leader   | follower |
+// +----------+----------+
+//
+//
+// -- Layout in address space --
+//
+// In order to implement buddy style allocation, we need an easy way to get
+//  from one chunk to the Metachunk representing the neighboring chunks
+//  (preceding resp. following it in memory).
+// But Metachunk headers and chunks are physically separated, and it is not
+//  possible to get the Metachunk* from the start of the chunk. Therefore
+//  Metachunk headers are part of a second linked list, describing the order
+//  in which their payload appears in memory:
+//
+// +---------+                       +---------+                       +---------+
+// |MetaChunk| <--next/prev_in_vs--> |MetaChunk| <--next/prev_in_vs--> |MetaChunk|
+// +---------+                       +---------+                       +---------+
+//     |                                 |                                  |
+//    base                              base                               base
+//     |                                 /                                  |
+//    /        --------------------------                                  /
+//   /        /          --------------------------------------------------
+//  |         |         /
+//  v         v         v
+// +---------+---------+-------------------+
+// |  chunk  |  chunk  |      chunk        |
+// +---------+---------+-------------------+
+//
 
-// Note: this is a chunk **descriptor**. The real Payload area lives in metaspace,
-// this class lives somewhere else.
 class Metachunk {
 
   // start of chunk memory; NULL if dead.
