@@ -241,21 +241,15 @@ public:
   #endif
   }
 
+#ifndef PRODUCT
   // Transfer ownership of comments to this CodeBlob
   void set_strings(CodeStrings& strings) {
-  #ifndef PRODUCT
+
     assert(!is_aot(), "invalid on aot");
     _strings.assign(strings);
-  #endif
-  }
 
-  static ByteSize name_field_offset() {
-    return byte_offset_of(CodeBlob, _name);
   }
-
-  static ByteSize oop_maps_field_offset() {
-    return byte_offset_of(CodeBlob, _oop_maps);
-  }
+#endif
 };
 
 class CodeBlobLayout : public StackObj {

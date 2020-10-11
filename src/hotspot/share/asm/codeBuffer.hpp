@@ -320,7 +320,6 @@ public:
   const char* add_string(const char * string);
 
   void add_comment(intptr_t offset, const char * comment);
-  bool has_block_comment(intptr_t offset) const;
   void print_block_comment(outputStream* stream, intptr_t offset) const;
   // MOVE strings from other to this; invalidate other.
   void assign(CodeStrings& other);
@@ -656,14 +655,6 @@ class CodeBuffer: public StackObj {
 #ifndef PRODUCT
     intptr_t offset = (intptr_t)(block_begin - _total_start);  // I assume total_start is not correct for all code sections.
     _code_strings.print_block_comment(stream, offset);
-#endif
-  }
-  bool has_block_comment(address block_begin) {
-#ifndef PRODUCT
-    intptr_t offset = (intptr_t)(block_begin - _total_start);  // I assume total_start is not correct for all code sections.
-    return _code_strings.has_block_comment(offset);
-#else
-    return false;
 #endif
   }
 

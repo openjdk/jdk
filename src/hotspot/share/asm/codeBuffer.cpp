@@ -1162,13 +1162,6 @@ void CodeStrings::copy(CodeStrings& other) {
 
 const char* CodeStrings::_prefix = " ;; ";  // default: can be changed via set_prefix
 
-// Check if any block comments are pending for the given offset.
-bool CodeStrings::has_block_comment(intptr_t offset) const {
-  if (_strings == NULL) return false;
-  CodeString* c = find(offset);
-  return c != NULL;
-}
-
 void CodeStrings::print_block_comment(outputStream* stream, intptr_t offset) const {
   check_valid();
   if (_strings != NULL) {
