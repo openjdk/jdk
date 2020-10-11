@@ -43,33 +43,26 @@ namespace metaspace {
 //
 // Chunks in these lists are roughly ordered: uncommitted chunks
 //  are added to the back of the list, fully or partially committed
-//  chunks to the front.
+//  chunks to the front. We do not use a more elaborate sorting on
+//  insert since that path is used during class unloading, hence timing
+//  sensitive.
 //
-// (Small caveat: commit state of a chunk may change as a result of
-//  actions on neighboring chunks, if the chunk is smaller than a commit
-//  granule and therefore shares its granule with neighbors. So it may change
-//  after the chunk has been added to the list.
-//  It will never involuntarily uncommit: only chunks >= granule size are uncommitted.
-//  But it may get involuntarily committed if an in-granule neighbor is committed and
-//  causes committing of the whole granule.
-//  In practice this is not a big deal; it has very little consequence.)
+// During retrieval (at class loading), we search the list for a chunk
+//  of at least n committed words to satisfy the caller requested
+//  committed word size. We stop searching at the first fully uncommitted
+//  chunk.
 //
-// Beyond adding at either front or at back, we do not sort on insert, since the
-//  insert path is used during Metaspace reclamation which may happen at GC pause.
+// Note that even though this is an O(n) search, partially committed chunks are
+//  very rare. A partially committed chunk is one spanning multiple commit
+//  granules, of which some are committed and some are not.
+// If metaspace reclamation is on (MetaspaceReclaimPolicy=balanced|aggressive), these
+//  chunks will become uncommitted after they are returned to the ChunkManager.
+// If metaspace reclamation is off (MetaspaceReclaimPolicy=none) they are fully
+//  committed when handed out and will not be uncommitted when returned to the
+//  ChunkManager.
 //
-// During retrieval (at class loading), we search the list for a chunk of at least
-//  n committed words to satisfy the caller requested committed word size. We stop
-//  searching at the first fully uncommitted chunk.
-//
-// Note that even though this is an O(n) search, in practice this is not a problem:
-//  - in all likelihood the requested commit word size is way smaller than even a single
-//    commit granule, so 99% of all searches would end at the first chunk (which is either
-//    uncommitted or committed to at least one commit granule size).
-//  - in all likelihood chunks, when added to this list, are either fully committed
-//    or fully uncommitted.
-//
-// Should we ever encounter situations where the O(n) search is a bottleneck, this
-//  structure can easily be optimized (e.g. a BST). But for now lets keep this simple.
+// Therefore in all likelihood the chunk lists only contain fully committed or
+// fully uncommitted chunks; either way search will stop at the first chunk.
 
 class FreeChunkList {
 
@@ -143,7 +136,8 @@ public:
 
   void add(Metachunk* c) {
     assert(contains(c) == false, "Chunk already in freelist");
-    assert(_first == NULL || _first->level() == c->level(), "wrong level");
+    assert(_first == NULL || _first->level() == c->level(),
+           "List should only contains chunks of the same level.");
     // Uncomitted chunks go to the back, fully or partially committed to the front.
     if (c->committed_words() == 0) {
       add_back(c);
@@ -165,6 +159,24 @@ public:
 
   // Returns reference to the first chunk in the list, or NULL
   Metachunk* first() const { return _first; }
+
+  // Returns reference to the fist chunk in the list with a committed word
+  // level >= min_committed_words, or NULL.
+  Metachunk* first_minimally_committed(size_t min_committed_words) const {
+    // Since uncommitted chunks are added to the back we can stop looking once
+    //  we encounter a fully uncommitted chunk.
+    Metachunk* c = first();
+    while (c != NULL &&
+           c->committed_words() < min_committed_words &&
+           c->committed_words() > 0) {
+      c = c->next();
+    }
+    if (c != NULL &&
+        c->committed_words() >= min_committed_words) {
+      return c;
+    }
+    return NULL;
+  }
 
 #ifdef ASSERT
   bool contains(const Metachunk* c) const;

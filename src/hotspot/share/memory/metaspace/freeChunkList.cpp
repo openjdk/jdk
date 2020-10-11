@@ -115,9 +115,10 @@ Metachunk* FreeChunkListVector::search_chunk_ascending(chunklevel_t level, chunk
   assert(min_committed_words <= chunklevel::word_size_for_level(max_level),
          "min chunk size too small to hold min_committed_words");
   for (chunklevel_t l = level; l <= max_level; l++) {
-    Metachunk* c = list_for_level(l)->first();
-    if (c != NULL && c->committed_words() >= min_committed_words) {
-      list_for_level(l)->remove(c);
+    FreeChunkList* list = list_for_level(l);
+    Metachunk* c = list->first_minimally_committed(min_committed_words);
+    if (c != NULL) {
+      list->remove(c);
       return c;
     }
   }
@@ -129,9 +130,10 @@ Metachunk* FreeChunkListVector::search_chunk_ascending(chunklevel_t level, chunk
 // Return NULL if no such chunk was found.
 Metachunk* FreeChunkListVector::search_chunk_descending(chunklevel_t level, size_t min_committed_words) {
   for (chunklevel_t l = level; l >= chunklevel::LOWEST_CHUNK_LEVEL; l --) {
-    Metachunk* c = list_for_level(l)->first();
-    if (c != NULL && c->committed_words() >= min_committed_words) {
-      list_for_level(l)->remove(c);
+    FreeChunkList* list = list_for_level(l);
+    Metachunk* c = list->first_minimally_committed(min_committed_words);
+    if (c != NULL) {
+      list->remove(c);
       return c;
     }
   }
