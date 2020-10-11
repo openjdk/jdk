@@ -895,20 +895,24 @@ int Node::replace_edges_in_range(Node* old, Node* neww, int start, int end) {
 //-------------------------disconnect_inputs-----------------------------------
 // NULL out all inputs to eliminate incoming Def-Use edges.
 void Node::disconnect_inputs(Compile* C) {
-  uint cnt = req();
+  // r: a required input, null is allowed
+  // p: a precedence, null values are all at the end
+  // |r|...|r|p|...|p|null|...|null|
+  //         |                     |
+  //         req()                 len()
+  // -----------------------------------
+  uint i = 0;
 
-  for( uint i = 0; i < cnt; ++i ) {
-    if( in(i) == nullptr ) continue;
+  for (; i < req(); ++i) {
+    if(in(i) == nullptr) continue;
     set_req(i, nullptr);
   }
+
   // Remove precedence edges if any exist
   // Note: Safepoints may have precedence edges, even during parsing
-  if( (req() != len()) && (in(req()) != nullptr) ) {
-    uint max = len();
-    for( uint i = 0; i < max; ++i ) {
-      if( in(i) == nullptr ) continue;
-      set_prec(i, nullptr);
-    }
+  // Precedences have no embedded NULL
+  for (; i < len() && in(i) != nullptr; ++i) {
+    set_prec(i, nullptr);
   }
 
   // Node::destruct requires all out edges be deleted first
