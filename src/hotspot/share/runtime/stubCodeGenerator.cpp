@@ -73,13 +73,13 @@ StubCodeGenerator::StubCodeGenerator(CodeBuffer* code, bool print_code) {
 }
 
 StubCodeGenerator::~StubCodeGenerator() {
-  if (PRODUCT_ONLY(_print_code) NOT_PRODUCT(true)) {
-    CodeBuffer* cbuf = _masm->code();
-    CodeBlob*   blob = CodeCache::find_blob_unsafe(cbuf->insts()->start());
-    if (blob != NULL) {
-      blob->set_strings(cbuf->strings());
-    }
+#ifndef PRODUCT
+  CodeBuffer* cbuf = _masm->code();
+  CodeBlob*   blob = CodeCache::find_blob_unsafe(cbuf->insts()->start());
+  if (blob != NULL) {
+    blob->set_strings(cbuf->strings());
   }
+#endif
 }
 
 void StubCodeGenerator::stub_prolog(StubCodeDesc* cdesc) {

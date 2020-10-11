@@ -284,20 +284,18 @@ private:
   bool _defunct; // Zero bit pattern is "valid", see memset call in decode_env::decode_env
 #endif
   static const char* _prefix; // defaults to " ;; "
-#endif
 
   CodeString* find(intptr_t offset) const;
   CodeString* find_last(intptr_t offset) const;
 
   void set_null_and_invalidate() {
-#ifndef PRODUCT
     _strings = NULL;
     _strings_last = NULL;
 #ifdef ASSERT
     _defunct = true;
 #endif
-#endif
   }
+#endif
 
 public:
   CodeStrings() {
@@ -310,6 +308,7 @@ public:
 #endif
   }
 
+#ifndef PRODUCT
   bool is_null() {
 #ifdef ASSERT
     return _strings == NULL;
@@ -318,30 +317,27 @@ public:
 #endif
   }
 
-  const char* add_string(const char * string) PRODUCT_RETURN_(return NULL;);
+  const char* add_string(const char * string);
 
-  void add_comment(intptr_t offset, const char * comment) PRODUCT_RETURN;
+  void add_comment(intptr_t offset, const char * comment);
   bool has_block_comment(intptr_t offset) const;
-  void print_block_comment(outputStream* stream, intptr_t offset) const PRODUCT_RETURN;
+  void print_block_comment(outputStream* stream, intptr_t offset) const;
   // MOVE strings from other to this; invalidate other.
-  void assign(CodeStrings& other)  PRODUCT_RETURN;
+  void assign(CodeStrings& other);
   // COPY strings from other to this; leave other valid.
-  void copy(CodeStrings& other)  PRODUCT_RETURN;
+  void copy(CodeStrings& other);
   // FREE strings; invalidate this.
-  void free() PRODUCT_RETURN;
+  void free();
 
   // Guarantee that _strings are used at most once; assign and free invalidate a buffer.
   inline void check_valid() const {
-#ifdef ASSERT
     assert(!_defunct, "Use of invalid CodeStrings");
-#endif
   }
 
   static void set_prefix(const char *prefix) {
-#ifndef PRODUCT
     _prefix = prefix;
-#endif
   }
+#endif // !PRODUCT
 };
 
 // A CodeBuffer describes a memory space into which assembly
@@ -410,8 +406,10 @@ class CodeBuffer: public StackObj {
   csize_t      _total_size;     // size in bytes of combined memory buffer
 
   OopRecorder* _oop_recorder;
+#ifndef PRODUCT
   CodeStrings  _code_strings;
   bool         _collect_comments;      // Indicate if we need to collect block comments at all.
+#endif
   OopRecorder  _default_oop_recorder;  // override with initialize_oop_recorder
   Arena*       _overflow_arena;
 
@@ -433,12 +431,13 @@ class CodeBuffer: public StackObj {
     _oop_recorder    = NULL;
     _decode_begin    = NULL;
     _overflow_arena  = NULL;
-    _code_strings    = CodeStrings();
     _last_insn       = NULL;
 #if INCLUDE_AOT
     _immutable_PIC   = false;
 #endif
 
+#ifndef PRODUCT
+    _code_strings    = CodeStrings();
     // Collect block comments, but restrict collection to cases where a disassembly is output.
     _collect_comments = ( PrintAssembly
                        || PrintStubCode
@@ -447,6 +446,7 @@ class CodeBuffer: public StackObj {
                        || PrintSignatureHandlers
                        || UnlockDiagnosticVMOptions
                         );
+#endif
   }
 
   void initialize(address code_start, csize_t code_size) {
@@ -636,16 +636,18 @@ class CodeBuffer: public StackObj {
   void initialize_oop_recorder(OopRecorder* r);
 
   OopRecorder* oop_recorder() const   { return _oop_recorder; }
-  CodeStrings& strings()              { return _code_strings; }
+  NOT_PRODUCT(CodeStrings& strings()              { return &_code_strings; })
 
   address last_insn() const { return _last_insn; }
   void set_last_insn(address a) { _last_insn = a; }
   void clear_last_insn() { set_last_insn(NULL); }
 
   void free_strings() {
+#ifndef PRODUCT
     if (!_code_strings.is_null()) {
       _code_strings.free(); // sets _strings Null as a side-effect.
     }
+#endif
   }
 
   // Directly disassemble code buffer.

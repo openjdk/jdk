@@ -63,7 +63,7 @@ class decode_env {
   CodeBuffer*   _codeBuffer;  // != NULL only when decoding a CodeBuffer
   CodeBlob*     _codeBlob;    // != NULL only when decoding a CodeBlob
   nmethod*      _nm;          // != NULL only when decoding a nmethod
-  CodeStrings   _strings;
+  NOT_PRODUCT(CodeStrings   _strings;)
   address       _start;       // != NULL when decoding a range of unknown type
   address       _end;         // != NULL when decoding a range of unknown type
 
@@ -320,7 +320,6 @@ decode_env::decode_env(CodeBuffer* code, outputStream* output) :
   _codeBuffer(code),
   _codeBlob(NULL),
   _nm(NULL),
-  _strings(),
   _start(NULL),
   _end(NULL),
   _option_buf(),
@@ -334,6 +333,7 @@ decode_env::decode_env(CodeBuffer* code, outputStream* output) :
   _helpPrinted(false) {
 
   memset(_option_buf, 0, sizeof(_option_buf));
+  NOT_PRODUCT(_strings = CodeStrings();)
   process_options(_output);
 }
 
@@ -342,7 +342,6 @@ decode_env::decode_env(CodeBlob* code, outputStream* output, CodeStrings c) :
   _codeBuffer(NULL),
   _codeBlob(code),
   _nm(_codeBlob != NULL && _codeBlob->is_nmethod() ? (nmethod*) code : NULL),
-  _strings(),
   _start(NULL),
   _end(NULL),
   _option_buf(),
@@ -356,8 +355,12 @@ decode_env::decode_env(CodeBlob* code, outputStream* output, CodeStrings c) :
   _helpPrinted(false) {
 
   memset(_option_buf, 0, sizeof(_option_buf));
-  _strings.copy(c);
   process_options(_output);
+
+#ifndef PRODUCT
+  _strings = CodeStrings();
+  _strings.copy(c);
+#endif
 }
 
 decode_env::decode_env(nmethod* code, outputStream* output, CodeStrings c) :
@@ -365,7 +368,6 @@ decode_env::decode_env(nmethod* code, outputStream* output, CodeStrings c) :
   _codeBuffer(NULL),
   _codeBlob(NULL),
   _nm(code),
-  _strings(),
   _start(_nm->code_begin()),
   _end(_nm->code_end()),
   _option_buf(),
@@ -379,8 +381,12 @@ decode_env::decode_env(nmethod* code, outputStream* output, CodeStrings c) :
   _helpPrinted(false) {
 
   memset(_option_buf, 0, sizeof(_option_buf));
-  _strings.copy(c);
   process_options(_output);
+
+#ifndef PRODUCT
+  _strings = CodeStrings();
+  _strings.copy(c);
+#endif
 }
 
 // Constructor for a 'decode_env' to decode a memory range [start, end)
@@ -390,7 +396,6 @@ decode_env::decode_env(address start, address end, outputStream* output) :
   _codeBuffer(NULL),
   _codeBlob(NULL),
   _nm(NULL),
-  _strings(),
   _start(start),
   _end(end),
   _option_buf(),
@@ -406,6 +411,8 @@ decode_env::decode_env(address start, address end, outputStream* output) :
   assert(start < end, "Range must have a positive size, [" PTR_FORMAT ".." PTR_FORMAT ").", p2i(start), p2i(end));
   memset(_option_buf, 0, sizeof(_option_buf));
   process_options(_output);
+
+  NOT_PRODUCT(_strings = CodeStrings();)
 }
 
 void decode_env::process_options(outputStream* ost) {
@@ -678,7 +685,7 @@ void decode_env::print_insn_labels() {
     if (_codeBuffer != NULL) {
       _codeBuffer->print_block_comment(st, p);
     }
-    _strings.print_block_comment(st, (intptr_t)(p - _start));
+    NOT_PRODUCT(_strings.print_block_comment(st, (intptr_t)(p - _start));)
   }
 }
 

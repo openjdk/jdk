@@ -752,7 +752,7 @@ void CodeBuffer::copy_code_to(CodeBlob* dest_blob) {
   relocate_code_to(&dest);
 
   // transfer strings and comments from buffer to blob
-  dest_blob->set_strings(_code_strings);
+  NOT_PRODUCT(dest_blob->set_strings(_code_strings);)
 
   // Done moving code bytes; were they the right size?
   assert((int)align_up(dest.total_content_size(), oopSize) == dest_blob->content_size(), "sanity");
