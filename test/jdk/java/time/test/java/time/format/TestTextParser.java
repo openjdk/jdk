@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,7 @@ package test.java.time.format;
 
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
 import static java.time.temporal.ChronoField.DAY_OF_WEEK;
+import static java.time.temporal.ChronoField.FLEXIBLE_PERIOD_OF_DAY;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static java.time.temporal.IsoFields.QUARTER_OF_YEAR;
 import static org.testng.Assert.assertEquals;
@@ -186,6 +187,24 @@ public class TestTextParser extends AbstractTestPrinterParser {
             {QUARTER_OF_YEAR, TextStyle.NARROW, 2, "2"},
             {QUARTER_OF_YEAR, TextStyle.NARROW, 3, "3"},
             {QUARTER_OF_YEAR, TextStyle.NARROW, 4, "4"},
+
+            {FLEXIBLE_PERIOD_OF_DAY, TextStyle.FULL, 0, "midnight"},
+            {FLEXIBLE_PERIOD_OF_DAY, TextStyle.FULL, 90, "at night"},
+            {FLEXIBLE_PERIOD_OF_DAY, TextStyle.FULL, 360, "AM"},
+            {FLEXIBLE_PERIOD_OF_DAY, TextStyle.FULL, 540, "in the morning"},
+            {FLEXIBLE_PERIOD_OF_DAY, TextStyle.FULL, 720, "noon"},
+            {FLEXIBLE_PERIOD_OF_DAY, TextStyle.FULL, 900, "in the afternoon"},
+            {FLEXIBLE_PERIOD_OF_DAY, TextStyle.FULL, 1_080, "PM"},
+            {FLEXIBLE_PERIOD_OF_DAY, TextStyle.FULL, 1_170, "in the evening"},
+
+            {FLEXIBLE_PERIOD_OF_DAY, TextStyle.NARROW, 0, "mi"},
+            {FLEXIBLE_PERIOD_OF_DAY, TextStyle.NARROW, 90, "at night"},
+            {FLEXIBLE_PERIOD_OF_DAY, TextStyle.NARROW, 360, "a"},
+            {FLEXIBLE_PERIOD_OF_DAY, TextStyle.NARROW, 540, "in the morning"},
+            {FLEXIBLE_PERIOD_OF_DAY, TextStyle.NARROW, 720, "n"},
+            {FLEXIBLE_PERIOD_OF_DAY, TextStyle.NARROW, 900, "in the afternoon"},
+            {FLEXIBLE_PERIOD_OF_DAY, TextStyle.NARROW, 1_080, "p"},
+            {FLEXIBLE_PERIOD_OF_DAY, TextStyle.NARROW, 1_170, "in the evening"},
        };
     }
 

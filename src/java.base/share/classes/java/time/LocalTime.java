@@ -525,6 +525,7 @@ public final class LocalTime
      * <li>{@code HOUR_OF_DAY}
      * <li>{@code CLOCK_HOUR_OF_DAY}
      * <li>{@code AMPM_OF_DAY}
+     * <li>{@code FLEXIBLE_PERIOD_OF_DAY}
      * </ul>
      * All other {@code ChronoField} instances will return false.
      * <p>
@@ -832,6 +833,9 @@ public final class LocalTime
      * <li>{@code AMPM_OF_DAY} -
      *  Returns a {@code LocalTime} with the specified AM/PM.
      *  The hour-of-am-pm, minute-of-hour, second-of-minute and nano-of-second will be unchanged.
+     * <li>{@code FLEXIBLE_PERIOD_OF_DAY} -
+     *  Returns a {@code LocalTime} with the specified flexible-period-of-day.
+     *  The second-of-minute and nano-of-second will be unchanged.
      * </ul>
      * <p>
      * In all cases, if the new value is outside the valid range of values for the field
@@ -868,6 +872,7 @@ public final class LocalTime
                 case SECOND_OF_MINUTE: return withSecond((int) newValue);
                 case SECOND_OF_DAY: return plusSeconds(newValue - toSecondOfDay());
                 case MINUTE_OF_HOUR: return withMinute((int) newValue);
+                case FLEXIBLE_PERIOD_OF_DAY:
                 case MINUTE_OF_DAY: return plusMinutes(newValue - (hour * 60 + minute));
                 case HOUR_OF_AMPM: return plusHours(newValue - (hour % 12));
                 case CLOCK_HOUR_OF_AMPM: return plusHours((newValue == 12 ? 0 : newValue) - (hour % 12));
