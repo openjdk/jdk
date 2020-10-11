@@ -1156,22 +1156,21 @@ public class CLDRConverter {
     private static void generateRules(String type) throws Exception {
         Files.createDirectories(Paths.get(DESTINATION_DIR, "sun", "text", "resources"));
         Files.write(Paths.get(DESTINATION_DIR, "sun", "text", "resources", type + "Rules.java"),
+            Stream.concat(
                 Stream.concat(
-                        Stream.concat(
-                                Stream.of(
-                                        "package sun.text.resources;",
-                                        "public final class " + type + "Rules {",
-                                        "    public static final String[][] rulesArray = {"
-                                ),
-                                rulesStream(type).sorted()
-                        ),
-                        Stream.of(
-                                "    };",
-                                "}"
-                        )
+                    Stream.of(
+                            "package sun.text.resources;",
+                            "public final class " + type + "Rules {",
+                            "    public static final String[][] rulesArray = {"
+                    ),
+                    rulesStream(type).sorted()
+                ),
+                Stream.of(
+                    "    };",
+                    "}"
                 )
-                        .collect(Collectors.toList()),
-                StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+            ).collect(Collectors.toList()),
+            StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
     }
 
     private static Stream<String> rulesStream(String type) {
@@ -1201,16 +1200,16 @@ public class CLDRConverter {
 
     private static Stream<String> dayPeriodRulesStream() {
         return handlerDayPeriodRule.getData().entrySet().stream()
-                .filter(e -> !(e.getValue()).isEmpty())
-                .map(e -> {
-                    String loc = e.getKey();
-                    Map<String, String> rules = e.getValue();
-                    return "        {\"" + loc + "\", \"" +
-                            rules.entrySet().stream()
-                                    .map(rule -> rule.getKey() + ":" + rule.getValue().replaceFirst("@.*", ""))
-                                    .map(String::trim)
-                                    .collect(Collectors.joining(";")) + "\"},";
-                });
+            .filter(e -> !(e.getValue()).isEmpty())
+            .map(e -> {
+                String loc = e.getKey();
+                Map<String, String> rules = e.getValue();
+                return "        {\"" + loc + "\", \"" +
+                    rules.entrySet().stream()
+                        .map(rule -> rule.getKey() + ":" + rule.getValue().replaceFirst("@.*", ""))
+                        .map(String::trim)
+                        .collect(Collectors.joining(";")) + "\"},";
+            });
     }
 
     // for debug

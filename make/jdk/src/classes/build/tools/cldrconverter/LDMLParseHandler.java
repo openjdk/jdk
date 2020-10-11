@@ -1036,9 +1036,9 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
             }
             break;
 
-        case "dayPeriodWidth":
         case "monthWidth":
         case "dayWidth":
+        case "dayPeriodWidth":
         case "quarterWidth":
             currentWidth = "";
             putIfEntry();
