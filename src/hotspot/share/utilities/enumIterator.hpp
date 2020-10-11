@@ -26,6 +26,7 @@
 #define SHARE_UTILITIES_ENUMITERATOR_HPP
 
 #include <type_traits>
+#include <limits>
 #include "memory/allStatic.hpp"
 #include "utilities/debug.hpp"
 
