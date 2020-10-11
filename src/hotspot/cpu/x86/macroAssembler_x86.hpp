@@ -1037,18 +1037,6 @@ public:
                 Register rax, Register rcx, Register rdx, Register tmp);
 #endif
 
-#ifdef _LP64
-  void arraycopy_avx3_special_cases(XMMRegister xmm, KRegister mask, Register from,
-                                    Register to, Register count, int shift,
-                                    Register index, Register temp,
-                                    bool use64byteVector, Label& L_entry, Label& L_exit);
-
-  void arraycopy_avx3_special_cases_conjoint(XMMRegister xmm, KRegister mask, Register from,
-                                             Register to, Register start_index, Register end_index,
-                                             Register count, int shift, Register temp,
-                                             bool use64byteVector, Label& L_entry, Label& L_exit);
-#endif
-
 private:
 
   // these are private because users should be doing movflt/movdbl
@@ -1738,6 +1726,17 @@ public:
   void cache_wb(Address line);
   void cache_wbsync(bool is_pre);
 
+#if COMPILER2_OR_JVMCI
+  void arraycopy_avx3_special_cases(XMMRegister xmm, KRegister mask, Register from,
+                                    Register to, Register count, int shift,
+                                    Register index, Register temp,
+                                    bool use64byteVector, Label& L_entry, Label& L_exit);
+
+  void arraycopy_avx3_special_cases_conjoint(XMMRegister xmm, KRegister mask, Register from,
+                                             Register to, Register start_index, Register end_index,
+                                             Register count, int shift, Register temp,
+                                             bool use64byteVector, Label& L_entry, Label& L_exit);
+
   void copy64_masked_avx(Register dst, Register src, XMMRegister xmm,
                          KRegister mask, Register length, Register index,
                          Register temp, int shift = Address::times_1, int offset = 0,
@@ -1753,6 +1752,7 @@ public:
   void copy64_avx(Register dst, Register src, Register index, XMMRegister xmm,
                   bool conjoint, int shift = Address::times_1, int offset = 0,
                   bool use64byteVector = false);
+#endif // COMPILER2_OR_JVMCI
 
 #endif // _LP64
 

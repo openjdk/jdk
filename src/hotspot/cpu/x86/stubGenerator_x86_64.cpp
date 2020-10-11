@@ -1292,6 +1292,7 @@ class StubGenerator: public StubCodeGenerator {
     }
   }
 
+#if COMPILER2_OR_JVMCI
   // Note: Following rules apply to AVX3 optimized arraycopy stubs:-
   // - If target supports AVX3 features (BW+VL+F) then implementation uses 32 byte vectors (YMMs)
   //   for both special cases (various small block sizes) and aligned copy loop. This is the
@@ -1695,6 +1696,7 @@ class StubGenerator: public StubCodeGenerator {
     __ ret(0);
     return start;
   }
+#endif // COMPILER2_OR_JVMCI
 
 
   // Arguments:
@@ -1717,10 +1719,12 @@ class StubGenerator: public StubCodeGenerator {
   //   used by generate_conjoint_byte_copy().
   //
   address generate_disjoint_byte_copy(bool aligned, address* entry, const char *name) {
+#if COMPILER2_OR_JVMCI
     if (VM_Version::supports_avx512vlbw() && MaxVectorSize  >= 32) {
        return generate_disjoint_copy_avx3_masked(entry, "jbyte_disjoint_arraycopy_avx3", 0,
                                                  aligned, false, false);
     }
+#endif
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
@@ -1831,10 +1835,12 @@ class StubGenerator: public StubCodeGenerator {
   //
   address generate_conjoint_byte_copy(bool aligned, address nooverlap_target,
                                       address* entry, const char *name) {
+#if COMPILER2_OR_JVMCI
     if (VM_Version::supports_avx512vlbw() && MaxVectorSize  >= 32) {
        return generate_conjoint_copy_avx3_masked(entry, "jbyte_conjoint_arraycopy_avx3", 0,
                                                  nooverlap_target, aligned, false, false);
     }
+#endif
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
@@ -1940,10 +1946,12 @@ class StubGenerator: public StubCodeGenerator {
   //   used by generate_conjoint_short_copy().
   //
   address generate_disjoint_short_copy(bool aligned, address *entry, const char *name) {
+#if COMPILER2_OR_JVMCI
     if (VM_Version::supports_avx512vlbw() && MaxVectorSize  >= 32) {
        return generate_disjoint_copy_avx3_masked(entry, "jshort_disjoint_arraycopy_avx3", 1,
                                                  aligned, false, false);
     }
+#endif
 
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
@@ -2069,10 +2077,12 @@ class StubGenerator: public StubCodeGenerator {
   //
   address generate_conjoint_short_copy(bool aligned, address nooverlap_target,
                                        address *entry, const char *name) {
+#if COMPILER2_OR_JVMCI
     if (VM_Version::supports_avx512vlbw() && MaxVectorSize  >= 32) {
        return generate_conjoint_copy_avx3_masked(entry, "jshort_conjoint_arraycopy_avx3", 1,
                                                  nooverlap_target, aligned, false, false);
     }
+#endif
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
@@ -2171,10 +2181,12 @@ class StubGenerator: public StubCodeGenerator {
   //
   address generate_disjoint_int_oop_copy(bool aligned, bool is_oop, address* entry,
                                          const char *name, bool dest_uninitialized = false) {
+#if COMPILER2_OR_JVMCI
     if (VM_Version::supports_avx512vlbw() && MaxVectorSize  >= 32) {
        return generate_disjoint_copy_avx3_masked(entry, "jint_disjoint_arraycopy_avx3", 2,
                                                  aligned, is_oop, dest_uninitialized);
     }
+#endif
 
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
@@ -2280,10 +2292,12 @@ class StubGenerator: public StubCodeGenerator {
   address generate_conjoint_int_oop_copy(bool aligned, bool is_oop, address nooverlap_target,
                                          address *entry, const char *name,
                                          bool dest_uninitialized = false) {
+#if COMPILER2_OR_JVMCI
     if (VM_Version::supports_avx512vlbw() && MaxVectorSize  >= 32) {
        return generate_conjoint_copy_avx3_masked(entry, "jint_conjoint_arraycopy_avx3", 2,
                                                  nooverlap_target, aligned, is_oop, dest_uninitialized);
     }
+#endif
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
@@ -2391,10 +2405,12 @@ class StubGenerator: public StubCodeGenerator {
   //
   address generate_disjoint_long_oop_copy(bool aligned, bool is_oop, address *entry,
                                           const char *name, bool dest_uninitialized = false) {
+#if COMPILER2_OR_JVMCI
     if (VM_Version::supports_avx512vlbw() && MaxVectorSize  >= 32) {
        return generate_disjoint_copy_avx3_masked(entry, "jlong_disjoint_arraycopy_avx3", 3,
                                                  aligned, is_oop, dest_uninitialized);
     }
+#endif
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
@@ -2499,10 +2515,12 @@ class StubGenerator: public StubCodeGenerator {
   address generate_conjoint_long_oop_copy(bool aligned, bool is_oop,
                                           address nooverlap_target, address *entry,
                                           const char *name, bool dest_uninitialized = false) {
+#if COMPILER2_OR_JVMCI
     if (VM_Version::supports_avx512vlbw() && MaxVectorSize  >= 32) {
        return generate_conjoint_copy_avx3_masked(entry, "jlong_conjoint_arraycopy_avx3", 3,
                                                  nooverlap_target, aligned, is_oop, dest_uninitialized);
     }
+#endif
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
