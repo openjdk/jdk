@@ -643,7 +643,7 @@ class CodeBuffer: public StackObj {
   void clear_last_insn() { set_last_insn(NULL); }
 
 #ifndef PRODUCT
-  CodeStrings& strings() { return &_code_strings; }
+  CodeStrings& strings() { return _code_strings; }
 
   void free_strings() {
     if (!_code_strings.is_null()) {
