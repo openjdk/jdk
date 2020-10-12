@@ -183,7 +183,7 @@ public:
 
   bool open_valid_debuginfo_file(const char* path_name, uint crc);
 
-  bool get_source_info(int offset_in_library, char* buf, size_t buflen, int* line);
+  bool get_source_info(int offset_in_library, char* filename, size_t filename_size, int* line);
 
 private:
   // sanity check, if the file is a real elf file
@@ -221,7 +221,7 @@ protected:
 
   // find a section by name, return section index
   // if there is no such section, return -1
-  int section_by_name(const char* name, Elf_Shdr& hdr);
+  int read_section_header(const char* name, Elf_Shdr& hdr);
 public:
   // For whitebox test
   static bool _do_not_cache_elf_section;
@@ -296,8 +296,10 @@ class DwarfFile : public ElfFile {
     MarkedDwarfFileReader(FILE* const fd) : MarkedFileReader(fd),
                                             _current_pos(-1), _start_pos(-1), _max_pos(-1) {}
     bool set_position(long new_pos);
+    long get_position() const { return _current_pos; }
     void set_max_pos(long max_pos) { _max_pos = max_pos; }
-    bool has_bytes_left() const; // Have we reached the limit of maximally allowable bytes to read?
+    // Have we reached the limit of maximally allowable bytes to read? Used to ensure an early bail out if the file is corrupted.
+    bool has_bytes_left() const;
     bool update_to_stored_position(); // Call this if another file reader has changed the position of the same file handle
     bool reset_to_previous_position();
     bool move_position(long offset);
@@ -308,7 +310,7 @@ class DwarfFile : public ElfFile {
     bool read_qword(uint64_t* result);
     bool read_uleb128(uint64_t* result, int8_t check_size = -1);
     bool read_sleb128(int64_t* result, int8_t check_size = -1);
-    bool read_string(/* ignore result */);
+    bool read_string(char* result = nullptr, size_t result_len = 0);
   };
 
   // See DWARF4 specification section 6.1.2.
@@ -330,23 +332,10 @@ class DwarfFile : public ElfFile {
     // The size of a segment selector in bytes on the target architecture. If the target system uses a flat address space,
     // this value is 0.
     uint8_t segment_size;
-
-    void print_fields() const {
-      tty->print_cr("%x", unit_length);
-      tty->print_cr("%x", version);
-      tty->print_cr("%x", debug_info_offset);
-      tty->print_cr("%x", address_size);
-      tty->print_cr("%x", segment_size);
-    }
   };
 
-  struct DebugArangesSet64 {
-    uint64_t beginning_address;
-    uint64_t length;
-  };
-
-  static bool is_terminating_set(DebugArangesSet64 set) {
-    return set.beginning_address == 0 && set.length == 0;
+  static bool is_terminating_set(uint64_t beginning_address, uint64_t length) {
+    return beginning_address == 0 && length == 0;
   }
 
   // See DWARF4 spec section 7.5.1.1
@@ -406,6 +395,9 @@ class DwarfFile : public ElfFile {
     // first element of the array corresponds to the opcode whose value is 1, and the last element
     // corresponds to the opcode whose value is opcode_base - 1. DWARF 4 uses 12 standard opcodes.
     uint8_t standard_opcode_lengths[12];
+
+    // Not part of the real header, implementation only
+    long file_starting_pos;
   };
 
   // Defined in DWARF 4, Section 6.2.2
@@ -491,8 +483,8 @@ class DwarfFile : public ElfFile {
     }
 
     // Defined in section 6.2.5.1. set_address_register must always be executed before set_index_register
-    void add_to_address_register(LineNumberProgramHeader32* header, uint8_t operation_advance);
-    void set_index_register(LineNumberProgramHeader32* header, uint8_t operation_advance);
+    void add_to_address_register(LineNumberProgramHeader32* header, uint32_t operation_advance);
+    void set_index_register(LineNumberProgramHeader32* header, uint32_t operation_advance);
   };
 
   // .debug_aranges
@@ -509,12 +501,13 @@ class DwarfFile : public ElfFile {
   static bool read_attribute_specs(MarkedDwarfFileReader* debug_abbrev_reader);
 
   // .debug_line
-  bool find_line_number(int offset_in_library, uint64_t debug_line_offset, int* line);
+  bool find_line_number(int offset_in_library, uint64_t debug_line_offset, char* buf, size_t buflen, int* line);
   static bool read_line_number_program_header(LineNumberProgramHeader32* header, MarkedDwarfFileReader* reader);
-  bool read_line_number_program(int offset_in_library, LineNumberProgramHeader32* header, MarkedDwarfFileReader* reader, int* line);
-  bool read_extended_opcode(LineNumberState* state, MarkedDwarfFileReader* reader);
-  bool read_standard_opcode(uint8_t opcode, LineNumberState* state, LineNumberProgramHeader32* header, MarkedDwarfFileReader* reader);
-  bool read_special_opcode(uint8_t opcode, LineNumberState* state, LineNumberProgramHeader32* header, MarkedDwarfFileReader* reader);
+  static bool read_line_number_program(int offset_in_library, LineNumberProgramHeader32* header, MarkedDwarfFileReader* reader, char* buf, size_t buflen, int* line);
+  static bool read_extended_opcode(LineNumberState* state, MarkedDwarfFileReader* reader);
+  static bool read_standard_opcode(uint8_t opcode, LineNumberState* state, LineNumberProgramHeader32* header, MarkedDwarfFileReader* reader);
+  static bool read_special_opcode(uint8_t opcode, LineNumberState* state, LineNumberProgramHeader32* header);
+  static bool read_file_name_from_header(LineNumberProgramHeader32* header, MarkedDwarfFileReader* reader, uint32_t file_index, char* buf, size_t buflen);
 
  public:
   DwarfFile(const char* filepath) : ElfFile(filepath) {}

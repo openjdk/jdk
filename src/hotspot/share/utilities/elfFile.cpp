@@ -111,21 +111,14 @@ ElfFile::ElfFile(const char* filepath) :
   _status(NullDecoder::no_error), _debuginfo_file(NULL) {
   memset(&_elfHdr, 0, sizeof(_elfHdr));
 
-  int len = strlen(filepath) + 1;
+  size_t len = strlen(filepath) + 1;
   _filepath = (char*)os::malloc(len * sizeof(char), mtInternal);
   if (_filepath == NULL) {
     _status = NullDecoder::out_of_memory;
     return;
   }
   strcpy(_filepath, filepath);
-
   _status = parse_elf(filepath);
-
-  // we no longer need section header string table
-//  if (_shdr_string_table != NULL) {
-//    delete _shdr_string_table;
-//    _shdr_string_table = NULL;
-//  }
 }
 
 ElfFile::~ElfFile() {
@@ -262,18 +255,56 @@ NullDecoder::decoder_status ElfFile::load_tables() {
   return NullDecoder::no_error;
 }
 
-static const char debug_file_directory[] = "/usr/lib/debug";
-
-bool ElfFile::get_source_info(int offset_in_library, char* buf, size_t buflen, int* line) {
-  ResourceMark rm; // TODO: is this correct?
+/*
+ * Starting point of reading line number and file name information from an associated .debuginfo file that belongs to this ELF file.
+ * The debuginfo file is written by GCC in DWARF - a standardized debugging data format. The current version of GCC uses DWARF version 4
+ * as default which is described here: http://www.dwarfstd.org/doc/DWARF4.pdf. This method is able to parse DWARF version 4 for 64-bit
+ * Linux. 32-bit Linux and DWARF version 5 is not (yet) supported.
+ *
+ * Given: offset (also referred to as 'pc') into the library (this ELF file), a filename buffer of size filename_size, a line number pointer
+ * Return: True:  The filename in the 'filename' buffer and the line number at the address pointed to by 'line'.
+ *         False: Something went wrong either while reading from the file or during parsing due to unexpected format.
+ *                This could happen if the DWARF file is corrupted or in an unsupported format.
+ *
+ * Description of used DWARF file sections:
+ * - .debug_aranges: A table that consists of sets of variable length entries, each set describing the portion of the program's
+ *                   address space that is covered by a single compilation unit - a mapping between addresses and compilation units.
+ * - .debug_info:    The core DWARF data containing DWARF Information Entries (DIEs). Each DIE consists of a tag and a series of attributes.
+ *                   Each (normal) compilation unit is represented by a DIE with the tag DW_TAG_compile_unit and contains children.
+ *                   For our purposes, we are only interested in this DIE to get to the .debug_line section. We do not care about the children.
+ *                   This method currently only supports normal compilation units and no partial compilation or type units.
+ * - .debug_abbrev:  Represents abbreviation tables for all compilation units. A table for a specific compilation unit consists of a series of
+ *                   abbreviation declarations. Each declaration specifies a tag and attributes for a DIE. The DIEs from the compilation units
+ *                   in the .debug_info section need the .debug_abbrev table to decode their attributes (their meaning and size).
+ * - .debug_line:    Contains line number information for each compilation unit. To get the information a state machine has to be executed
+ *                   which generates a matrix. Each row describes the line number and filename for a specific pc (among other information).
+ *                   The algorithm below runs this state machine until the row for the requested pc is found to fetch the line number and
+ *                   the filename from it.
+ *
+ * Algorithm:
+ * (1) Find the path to the .debuginfo DWARF file by inspecting the .gnu_debuglink section and open it. All following steps read from this file.
+ * (2) Find the compilation unit offset by reading segments from the section .debug_aranges until we find the correct one that includes the pc.
+ * (3) Find the debug line offset for the line number information program from the .debug_line section:
+ *     (a) Parse the compilation unit header from the .debug_info section at the offset obtained by (2).
+ *     (b) Read the offset into the .debug_abbrev section that belongs to this compilation unit from the header obtained in (3a).
+ *     (c) Read the abbreviation code 'ac' that immediately follows the compilation unit header and find the entry in the abbreviation table
+ *         (.debug_abbrev section) by starting to parse entries at the offset obtained in (3b) until we find the correct one matching 'ac'.
+ *     (d) Parse the found abbreviation entry 'ac' from (3c) and read the specified attributes from the .debug_info section until we find the
+ *         attribute DW_AT_stmt_list. This attributes represents an offset into the .debug_line section which contains the line number information
+ *  (4) Find the line number and filename beloning to the given pc by running the line number information state machine. This will create a
+ *      matrix of line number information, each row representing information for specific addresses. There are several opcodes which modify
+ *      different state registers. Certain opcodes will add a new row to the matrix. As soon as the correct row matching our pc is found,
+ *      we can read the line number from the line register of the state machine and parse the filename from the line number program header
+ *      with the given file index from the file register of the state machine.
+ *
+ *  More details about the different phases can be found at the associated methods.
+ */
+bool ElfFile::get_source_info(int offset_in_library, char* filename, size_t filename_size, int* line) {
+  ResourceMark rm;
   if (!load_debuginfo_file()) {
     return false;
   }
-
-  assert(_debuginfo_file != NULL, "must be created now");
-  tty->print_cr("");
-  tty->print_cr("################");
-  return _debuginfo_file->get_line_number(offset_in_library, buf, buflen, line);
+  return _debuginfo_file->get_line_number(offset_in_library, filename, filename_size, line);
 }
 
 // Requires ResourceMark
@@ -283,8 +314,7 @@ bool ElfFile::load_debuginfo_file() {
   }
 
   Elf_Shdr shdr;
-
-  if (section_by_name(".gnu_debuglink", shdr) == -1) {
+  if (read_section_header(".gnu_debuglink", shdr) == -1) {
     // No debuginfo file link found
     return false;
   }
@@ -303,31 +333,24 @@ bool ElfFile::load_debuginfo_file() {
   if (!mfd.read(debug_filename, shdr.sh_size)) {
     return false;
   }
-//  tty->print_cr("strlen: %ld", strlen(debug_filename));
-//  tty->print_cr("str: %s", debug_filename);
-  int offset = (strlen(debug_filename) + 4) >> 2;
 
-  uint crc;
-  crc = ((uint*)debug_filename)[offset];
-//  tty->print_cr("crc: %x", crc);
-
-  char* debug_pathname = NEW_RESOURCE_ARRAY(char, strlen(debug_filename)
-                                + strlen(_filepath)
-                                + strlen(".debug/")
-                                + strlen(debug_file_directory)
-                                + 2);
+  size_t offset = (strlen(debug_filename) + 4) >> 2;
+  uint32_t crc = ((uint*)debug_filename)[offset];
+  const char* debug_file_directory = "/usr/lib/debug";
+  char* debug_pathname = NEW_RESOURCE_ARRAY(char, strlen(debug_filename) + strlen(_filepath) + strlen(".debug/")
+                                            + strlen(debug_file_directory) + 2);
   if (debug_pathname == NULL) {
     return false;
   }
 
   strcpy(debug_pathname, _filepath);
-  char *last_slash = strrchr(debug_pathname, '/');
+  char* last_slash = strrchr(debug_pathname, '/');
   if (last_slash == NULL) {
     return false;
   }
 
   // Look in the same directory as the object.
-  strcpy(last_slash+1, debug_filename);
+  strcpy(last_slash + 1, debug_filename);
 
   if (open_valid_debuginfo_file(debug_pathname, crc)) {
     return true;
@@ -350,12 +373,14 @@ bool ElfFile::load_debuginfo_file() {
   if (open_valid_debuginfo_file(debug_pathname, crc)) {
     return true;
   }
-
   return false;
 }
 
-int ElfFile::section_by_name(const char* name, Elf_Shdr& hdr) {
-  assert(name != NULL, "No section name");
+int ElfFile::read_section_header(const char* name, Elf_Shdr& hdr) {
+  if (_shdr_string_table == NULL) {
+    // Section header string table should be loaded
+    return -1;
+  }
   size_t len = strlen(name) + 1;
   ResourceMark rm;
   char* buf = NEW_RESOURCE_ARRAY(char, len);
@@ -363,10 +388,11 @@ int ElfFile::section_by_name(const char* name, Elf_Shdr& hdr) {
     return -1;
   }
 
-  assert(_shdr_string_table != NULL, "Section header string table should be loaded");
   ElfStringTable* const table = _shdr_string_table;
   MarkedFileReader mfd(fd());
-  if (!mfd.has_mark() || !mfd.set_position(_elfHdr.e_shoff)) return -1;
+  if (!mfd.has_mark() || !mfd.set_position(_elfHdr.e_shoff)) {
+    return -1;
+  }
 
   int sect_index = -1;
   for (int index = 0; index < _elfHdr.e_shnum; index ++) {
@@ -374,7 +400,6 @@ int ElfFile::section_by_name(const char* name, Elf_Shdr& hdr) {
       break;
     }
     if (table->string_at(hdr.sh_name, buf, len)) {
-      tty->print_cr("Section: %s", buf);
       if (strncmp(buf, name, len) == 0) {
         sect_index = index;
         break;
@@ -445,8 +470,8 @@ ElfStringTable* ElfFile::get_string_table(int index) {
   return NULL;
 }
 
-static const uint crc32_table[256] =
- {
+// Taken from https://sourceware.org/gdb/current/onlinedocs/gdb/Separate-Debug-Files.html#Separate-Debug-Files
+static const uint32_t crc32_table[256] = {
    0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419,
    0x706af48f, 0xe963a535, 0x9e6495a3, 0x0edb8832, 0x79dcb8a4,
    0xe0d5e91e, 0x97d2d988, 0x09b64c2b, 0x7eb17cbd, 0xe7b82d07,
@@ -501,21 +526,9 @@ static const uint crc32_table[256] =
    0x2d02ef8d
  };
 
-/* The CRC used in gnu_debuglink, retrieved from
-   http://sourceware.org/gdb/current/onlinedocs/gdb/Separate-Debug-Files.html#Separate-Debug-Files. */
-uint ElfFile::gnu_debuglink_crc32(uint crc, unsigned char* buf, size_t len) {
-  unsigned char *end;
-
-  crc = ~crc & 0xffffffff;
-  for (end = buf + len; buf < end; ++buf)
-    crc = crc32_table[(crc ^ *buf) & 0xff] ^ (crc >> 8);
-  return ~crc & 0xffffffff;
-}
-
-bool ElfFile::open_valid_debuginfo_file(const char* filepath, uint crc) {
-  assert(filepath, "null file path");
-
+bool ElfFile::open_valid_debuginfo_file(const char* filepath, uint32_t crc) {
   if (_debuginfo_file != NULL) {
+    // Return cached file.
     return true;
   }
 
@@ -524,26 +537,37 @@ bool ElfFile::open_valid_debuginfo_file(const char* filepath, uint crc) {
     return false;
   }
 
-  uint file_crc = 0;
-  unsigned char buffer[8 * 1024];
-  MarkedFileReader freader(file);
+  uint32_t file_crc = 0;
+  uint8_t buffer[8 * 1024];
+  MarkedFileReader reader(file);
 
-  for (;;) {
-    int len = freader.read_buffer(buffer, sizeof(buffer));
+  while (true) {
+    int len = reader.read_buffer(buffer, sizeof(buffer));
     if (len <= 0) {
       break;
     }
     file_crc = gnu_debuglink_crc32(file_crc, buffer, len);
   }
-  fclose(file);
+  fclose(file); // Close it again here to reopen it again when the DwarfFile object is created below.
 
   if (crc == file_crc) {
+    // Must be equal, otherwise the file is corrupted.
     _debuginfo_file = new (std::nothrow) DwarfFile(filepath);
     return true;
-  } else {
-    assert(_debuginfo_file == NULL, "still NULL");
-    return false;
   }
+
+  return false;
+}
+
+/* The CRC used in gnu_debuglink, retrieved from
+   http://sourceware.org/gdb/current/onlinedocs/gdb/Separate-Debug-Files.html#Separate-Debug-Files. */
+uint32_t ElfFile::gnu_debuglink_crc32(uint32_t crc, unsigned char* buf, size_t len) {
+  unsigned char* end;
+
+  crc = ~crc & 0xffffffff;
+  for (end = buf + len; buf < end; ++buf)
+    crc = crc32_table[(crc ^ *buf) & 0xffu] ^ (crc >> 8u);
+  return ~crc & 0xffffffff;
 }
 
 bool DwarfFile::get_line_number(const int offset_in_library, char* buf, size_t buflen, int* line) {
@@ -560,16 +584,16 @@ bool DwarfFile::get_line_number(const int offset_in_library, char* buf, size_t b
 
   tty->print_cr("Line Offset: %x", debug_line_offset);
 
-  if (find_line_number(offset_in_library, debug_line_offset, line)) {
+  if (!find_line_number(offset_in_library, debug_line_offset, buf, buflen, line)) {
     return false;
   }
   return true;
 }
 
+// Specified in section 6.1.2 in DWARF 4 spec.
 bool DwarfFile::find_compilation_unit_offset(const int offset_in_library, uint64_t* compilation_unit_offset) {
-
   Elf_Shdr shdr;
-  if (section_by_name(".debug_aranges", shdr) == -1) {
+  if (read_section_header(".debug_aranges", shdr) == -1) {
     return false;
   }
 
@@ -586,24 +610,21 @@ bool DwarfFile::find_compilation_unit_offset(const int offset_in_library, uint64
       return false;
     }
 
-    DebugArangesSet64 set;
     int i = 0;
+    uint64_t beginning_address = 0;
+    uint64_t length = 0;
     do {
       i++;
-      if (!reader.read_qword(&set.beginning_address)) {
-        return false;
-      }
-
-      if (!reader.read_qword(&set.length)) {
+      if (!reader.read_qword(&beginning_address) || !reader.read_qword(&length)) {
         return false;
       }
 
       // TODO: needs checks because offset is 32 bit int and beginning address is 64 bit...
-      if (set.beginning_address <= (uint64_t)offset_in_library && (uint64_t)offset_in_library < set.beginning_address + set.length) {
+      if (beginning_address <= (uint64_t)offset_in_library && (uint64_t)offset_in_library < beginning_address + length) {
         *compilation_unit_offset = next_set_header.debug_info_offset;
         return true;
       }
-    } while (!is_terminating_set(set));
+    } while (!is_terminating_set(beginning_address, length));
   }
 
   // No compilation unit found for specified pc (offset_in_library)
@@ -644,7 +665,7 @@ bool DwarfFile::read_debug_aranges_set_header(DwarfFile::DebugArangesSetHeader32
 
 bool DwarfFile::find_debug_line_offset(const int offset_in_library, const uint64_t compilation_unit_offset, uint32_t* debug_line_offset) {
   Elf_Shdr shdr;
-  if (section_by_name(".debug_info", shdr) == -1) {
+  if (read_section_header(".debug_info", shdr) == -1) {
     return false;
   }
 
@@ -700,7 +721,7 @@ bool DwarfFile::get_debug_line_offset_from_debug_abbrev(const CompilationUnitHea
   debug_info_reader.set_max_pos(current_pos + cu_header->unit_length + 4); // add 4 because unit_length is not included
 
   Elf_Shdr shdr;
-  if (section_by_name(".debug_abbrev", shdr) == -1) {
+  if (read_section_header(".debug_abbrev", shdr) == -1) {
     return false;
   }
 
@@ -912,9 +933,9 @@ bool DwarfFile::read_attribute_specs(DwarfFile::MarkedDwarfFileReader* debug_abb
   return false;
 }
 
-bool DwarfFile::find_line_number(const int offset_in_library, const uint64_t debug_line_offset, int* line) {
+bool DwarfFile::find_line_number(const int offset_in_library, const uint64_t debug_line_offset, char* buf, size_t buflen, int* line) {
   Elf_Shdr shdr;
-  if (section_by_name(".debug_line", shdr) == -1) {
+  if (read_section_header(".debug_line", shdr) == -1) {
     return false;
   }
 
@@ -936,7 +957,7 @@ bool DwarfFile::find_line_number(const int offset_in_library, const uint64_t deb
 
   reader.set_max_pos(shdr.sh_offset + debug_line_offset + header.unit_length + 4); // add 4 because unit_length is not included
 
-  if (!read_line_number_program(offset_in_library, &header, &reader, line)) {
+  if (!read_line_number_program(offset_in_library, &header, &reader, buf, buflen, line)) {
     return false;
   }
   return true;
@@ -955,7 +976,8 @@ bool DwarfFile::read_line_number_program_header(DwarfFile::LineNumberProgramHead
   if (!reader->read_word(&header->version) || (header->version != 4 && header->version != 3)) {
     // DWARF 3 uses version 3 as specified in DWARF 3 or 4 spec, Appendix F
     // DWARF 4 uses version 4 as specified in DWARF 4 spec, Appendix F
-    // For some reason, GCC is currently using version 3 for the line number program as defined in DWARF 3 spec section 6.2
+    // For some reason, GCC is currently using version 3 for the line number program as defined in DWARF 3 spec section 6.2 even though
+    // GCC should be using version 4 (DWARF 4 is the current default).
     return false;
   }
 
@@ -996,18 +1018,27 @@ bool DwarfFile::read_line_number_program_header(DwarfFile::LineNumberProgramHead
     }
   }
 
-  // TODO: We need file name, too to print it -> give it back to *buf
-  // Skip reading information for field 11 and 12 as we do not need this information.
+  // Read include_directories which are a sequence of path names which. These are terminated by a single null byte.
+  char bla[1024];
+  while (reader->read_string(bla, 1024)) {
+    tty->print_cr("%s", bla);
+  }
+
+  // Delay reading file_names until we found the correct file index in the line number program. Store the position
+  // where the file names start to parse them later
+  header->file_starting_pos = reader->get_position();
   return true;
 }
 
+// Create the line number program matrix as described in section 6.2. Try to find the correct entry by comparing the address register
+// belonging of each entry with the pc (offset_in_library). Once it is found we can read the line number from the line register
+// and the file name by parsing the file_names list from the header until we reach the correct one as specified in the file register.
 bool DwarfFile::read_line_number_program(const int offset_in_library, DwarfFile::LineNumberProgramHeader32* header,
-                                         DwarfFile::MarkedDwarfFileReader* reader, int* line) {
-
+                                         DwarfFile::MarkedDwarfFileReader* reader, char* buf, size_t buflen, int* line) {
+  tty->print_cr("Address:             Line:   Column:");
   LineNumberState state(header->version, header->default_is_stmt != 0);
   uint64_t previous_addr = 0;
   uint32_t previous_line = 0;
-  uint32_t previous_column = 0;
   while (reader->has_bytes_left()) {
     uint8_t opcode;
     if (!reader->read_byte(&opcode)) {
@@ -1026,20 +1057,29 @@ bool DwarfFile::read_line_number_program(const int offset_in_library, DwarfFile:
         return false;
       }
     } else {
-      if (!read_special_opcode(opcode, &state, header, reader)) {
+      if (!read_special_opcode(opcode, &state, header)) {
         return false;
       }
     }
 
     if (state.append_row) {
+      // Append a new line to the line number program matrix
       if (state.first_row) {
+        // If this is the first row check if pc (offset_in_library) is larger than state.address. If that is not the case, then
+        // all following entries belonging to this sequence cannot belong to our pc because the addresses are always growing.
         if ((uint32_t)offset_in_library >= state.address) {
           state.sequence_candidate = true;
         }
         state.first_row = false;
       } else {
         if (state.sequence_candidate) {
-          if ((uint32_t)offset_in_library >= previous_addr && (uint32_t)offset_in_library < state.address) {
+          // Pick the previous row in the matrix as the pc always points to the next instruction at this point
+          if ((uint32_t)offset_in_library > previous_addr && (uint32_t)offset_in_library <= state.address) {
+            // If pc is between the previous address and the current address then we found the correct entry in the matrix. The
+            // matrix is defined in such a way that all addresses in between which have the same entries are not added again.
+            if (!read_file_name_from_header(header, reader, state.file, buf, buflen)) {
+              return false;
+            }
             *line = previous_line;
             return true;
           }
@@ -1048,10 +1088,8 @@ bool DwarfFile::read_line_number_program(const int offset_in_library, DwarfFile:
 
       previous_addr = state.address;
       previous_line = state.line;
-      previous_column = state.column;
 
       // TODO: process it to create matrix, print maybe
-      tty->print_cr("Address:             Line:   Column:");
       tty->print_cr("0x%016lx   %-5u  %3u", state.address, state.line, state.column);
       state.append_row = false;
       if (state.do_reset) {
@@ -1059,7 +1097,6 @@ bool DwarfFile::read_line_number_program(const int offset_in_library, DwarfFile:
       }
     }
   }
-
   return false;
 }
 
@@ -1108,9 +1145,9 @@ bool DwarfFile::read_extended_opcode(LineNumberState* state, DwarfFile::MarkedDw
     case DW_LNE_set_discriminator: // 1 operand
       tty->print_cr("DW_LNE_set_discriminator");
       uint64_t descriminator;
-      // TODO: state->dwarf_version < 4 || --> appearanetly still emitted even though version is 3..??
+      // For some reason, gcc emits this opcode even for earlier versions than DWARF 4 which introduced this opcode.
+      // We need to consume it.
       if (!reader->read_uleb128(&descriminator, 4)) {
-        // Was added in DWARF 4
         // Must be an unsigned integer as specified in section 6.2.2 of the DWARF 4 spec for the descriminator register
         return false;
       }
@@ -1137,19 +1174,19 @@ bool DwarfFile::read_standard_opcode(const uint8_t opcode, LineNumberState* stat
         state->discriminator = 0;
       }
       break;
-    case DW_LNS_advance_pc: // 1 operand
+    case DW_LNS_advance_pc: { // 1 operand
       uint64_t operation_advance;
-      if (!reader->read_uleb128(&operation_advance, 1)) {
-        // Must be 1 byte since the value is defined as calculated from opcodes of 1-byte size.
+      if (!reader->read_uleb128(&operation_advance, 4)) {
+        // Must be at most 4 bytes since the value as we are setting the index register which is only 4-bytes wide.
         return false;
       }
-
       state->add_to_address_register(header, operation_advance);
       if (state->dwarf_version == 4) {
         state->set_index_register(header, operation_advance);
       }
       tty->print_cr("DW_LNS_advance_pc (0x%016lx)", state->address);
       break;
+    }
     case DW_LNS_advance_line: // 1 operand
       int64_t line;
       if (!reader->read_sleb128(&line, 4)) {
@@ -1224,15 +1261,14 @@ bool DwarfFile::read_standard_opcode(const uint8_t opcode, LineNumberState* stat
       tty->print_cr("DW_LNS_set_isa (%u)", state->isa);
       break;
     default:
-      // Should not happend
+      // Unknown opcode
       return false;
   }
   return true;
 }
 
 // Specified in section 6.2.5.1 in DWARF 4 spec.
-bool DwarfFile::read_special_opcode(const uint8_t opcode, LineNumberState* state, DwarfFile::LineNumberProgramHeader32* header,
-                                     DwarfFile::MarkedDwarfFileReader* reader) {
+bool DwarfFile::read_special_opcode(const uint8_t opcode, LineNumberState* state, DwarfFile::LineNumberProgramHeader32* header) {
   uint64_t old_address = state->address;
   uint32_t old_line = state->line;
   uint8_t adjusted_opcode = opcode - header->opcode_base;
@@ -1251,7 +1287,30 @@ bool DwarfFile::read_special_opcode(const uint8_t opcode, LineNumberState* state
   return true;
 }
 
-void DwarfFile::LineNumberState::add_to_address_register(LineNumberProgramHeader32* header, uint8_t operation_advance) {
+bool DwarfFile::read_file_name_from_header(DwarfFile::LineNumberProgramHeader32* header, DwarfFile::MarkedDwarfFileReader* reader,
+                                           uint32_t file_index, char* buf, size_t buflen) {
+  // We do not need to restore the position afterwards as this is the last step of parsing the file for this compilation unit.
+  reader->set_position(header->file_starting_pos);
+  uint32_t current_index = 1; // file_names start at index 1
+  while (reader->has_bytes_left()) {
+    if (!reader->read_string(buf, buflen)) {
+      // Either an error while reading or we have reached the end of the file_names. Both should not happen
+      return false;
+    }
+    if (current_index == file_index) {
+      return true;
+    }
+
+    uint64_t dont_care;
+    if (!reader->read_uleb128(&dont_care) || !reader->read_uleb128(&dont_care) || !reader->read_uleb128(&dont_care)) {
+      return false;
+    }
+    current_index++;
+  }
+  return true;
+}
+
+void DwarfFile::LineNumberState::add_to_address_register(LineNumberProgramHeader32* header, uint32_t operation_advance) {
   if (dwarf_version == 3) {
     address += operation_advance * header->minimum_instruction_length;
   } else if (dwarf_version == 4) {
@@ -1260,7 +1319,7 @@ void DwarfFile::LineNumberState::add_to_address_register(LineNumberProgramHeader
   }
 }
 
-void DwarfFile::LineNumberState::set_index_register(LineNumberProgramHeader32* header, uint8_t operation_advance) {
+void DwarfFile::LineNumberState::set_index_register(LineNumberProgramHeader32* header, uint32_t operation_advance) {
   op_index = (op_index + operation_advance) % header->maximum_operations_per_instruction;
 }
 
@@ -1334,18 +1393,18 @@ bool DwarfFile::MarkedDwarfFileReader::read_leb128(uint64_t* result, int8_t chec
       return false;
     }
     bytes_read++;
-    *result |= (buf & 0x7fU) << shift;
+    *result |= (buf & 0x7fu) << shift;
     shift += 7;
-    if ((buf & 0x80U) == 0) {
+    if ((buf & 0x80u) == 0) {
       break;
     }
   }
   if (bytes_read > 8 || (check_size != -1 && bytes_read > check_size)) {
-    // Invalid uleb128 encoding or the read uleb128 was bigger than expected.
+    // Invalid leb128 encoding or the read leb128 was bigger than expected.
     return false;
   }
 
-  if (is_signed && (shift < 64) && (buf & 0x40)) {
+  if (is_signed && (shift < 64) && (buf & 0x40u)) {
     *result |= static_cast<uint64_t>(-1L) << shift;
   }
   return true;
@@ -1359,14 +1418,39 @@ bool DwarfFile::MarkedDwarfFileReader::read_sleb128(int64_t* result, int8_t chec
   return read_leb128((uint64_t*)result, check_size, true);
 }
 
-bool DwarfFile::MarkedDwarfFileReader::read_string(/* ignore result */) {
+bool DwarfFile::MarkedDwarfFileReader::read_string(char* result, size_t result_len) {
   uint8_t next_byte;
-  if (read_byte(&next_byte)) {
+  if (!read_byte(&next_byte)) {
     return false;
   }
-  while (next_byte != 0) {
-    if (read_byte(&next_byte)) {
+
+  if (next_byte == 0) {
+    // Strings must contain at least one non-null byte
+    return false;
+  }
+
+  if (result != nullptr) {
+    if (result_len < 2) {
+      // Strings must contain at least one non-null byte and a null byte terminator
       return false;
+    }
+    result[0] = next_byte;
+  }
+
+  size_t char_index = 1;
+  while (next_byte != 0) {
+    // Read until we find a null byte which terminates the string
+    if (!read_byte(&next_byte)) {
+      return false;
+    }
+
+    if (result != nullptr) {
+      if (char_index >= result_len) {
+        // Exceeded buffer size of 'result'
+        return false;
+      }
+      result[char_index] = next_byte;
+      char_index++;
     }
   }
   return true;
