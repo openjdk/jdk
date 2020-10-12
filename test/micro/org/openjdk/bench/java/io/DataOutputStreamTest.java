@@ -33,109 +33,97 @@ import java.util.concurrent.TimeUnit;
 @Fork(value = 1, warmups = 0)
 @Measurement(iterations = 6, time = 1)
 @Warmup(iterations=2, time = 2)
+@State(Scope.Benchmark)
 public class DataOutputStreamTest {
 
-    enum BasicType { CHAR, SHORT, INT, STRING }
+    public enum BasicType {CHAR, SHORT, INT, STRING}
+    @Param({"CHAR", "SHORT", "INT", /* "STRING"*/}) BasicType basicType;
 
-    @State(Scope.Benchmark)
-    public static class BenchmarkState {
-        @Param({"4096"}) int SIZE;
-        @Param({"char", "short", "int", /*"string"*/}) String BASIC_TYPE;
-        final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(SIZE);
-        final File f = new File("DataOutputStreamTest.tmp");
-        String outputString;
-        FileOutputStream fileOutputStream;
-        DataOutput bufferedFileStream, rawFileStream, byteArrayStream;
-        BasicType basicType;
+    @Param({"4096"}) int size;
+    final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(size);
+    final File f = new File("DataOutputStreamTest.tmp");
+    String outputString;
+    FileOutputStream fileOutputStream;
+    DataOutput bufferedFileStream, rawFileStream, byteArrayStream;
 
-        @Setup(Level.Trial)
-        public void setup() {
-            try {
-                fileOutputStream = new FileOutputStream(f);
-                byteArrayStream = new DataOutputStream(byteArrayOutputStream);
-                rawFileStream = new DataOutputStream(fileOutputStream);
-                bufferedFileStream = new DataOutputStream(new BufferedOutputStream(fileOutputStream));
-                switch (BASIC_TYPE.toLowerCase()) {
-                    case "char": basicType = BasicType.CHAR; break;
-                    case "short": basicType =  BasicType.SHORT; break;
-                    case "int": basicType = BasicType.INT; break;
-                    case "string": basicType = BasicType.STRING; break;
-                    default: throw new RuntimeException("Unhandled basic type:" + BASIC_TYPE);
-                };
-                outputString = new String(new byte[SIZE]);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
-    public void writeChars(BenchmarkState state, DataOutput dataOutput) {
+    @Setup(Level.Trial)
+    public void setup() {
         try {
-            for (int i = 0; i < state.SIZE; i += 2) {
-                dataOutput.writeChar(i);
-            }
+            fileOutputStream = new FileOutputStream(f);
+            byteArrayStream = new DataOutputStream(byteArrayOutputStream);
+            rawFileStream = new DataOutputStream(fileOutputStream);
+            bufferedFileStream = new DataOutputStream(new BufferedOutputStream(fileOutputStream));
+            outputString = new String(new byte[size]);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    public void writeShorts(BenchmarkState state, DataOutput dataOutput) {
-        try {
-            for (int i = 0; i < state.SIZE; i += 2) {
-                dataOutput.writeShort(i);
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+    public void writeChars(DataOutput dataOutput)
+            throws Exception {
+        for (int i = 0; i < size; i += 2) {
+            dataOutput.writeChar(i);
         }
     }
 
-    public void writeInts(BenchmarkState state, DataOutput dataOutput) {
-        try {
-            for (int i = 0; i < state.SIZE; i += 4) {
-                dataOutput.writeInt(i);
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+    public void writeShorts(DataOutput dataOutput)
+            throws Exception {
+        for (int i = 0; i < size; i += 2) {
+            dataOutput.writeShort(i);
         }
     }
 
-    public void writeString(BenchmarkState state, DataOutput dataOutput) {
-        try {
-            dataOutput.writeChars(state.outputString);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+    public void writeInts(DataOutput dataOutput)
+            throws Exception {
+        for (int i = 0; i < size; i += 4) {
+            dataOutput.writeInt(i);
         }
     }
 
-    public void write(BenchmarkState state, DataOutput dataOutput) {
-        switch (state.basicType) {
-            case CHAR: writeChars(state, dataOutput); break;
-            case SHORT: writeShorts(state, dataOutput); break;
-            case INT: writeInts(state, dataOutput); break;
-            case STRING: writeString(state, dataOutput); break;
-        }
+    public void writeString(DataOutput dataOutput)
+            throws Exception {
+        dataOutput.writeChars(outputString);
     }
-    @Benchmark
-    public void dataOutputStreamOverByteArray(BenchmarkState state)
-            throws IOException {
-        state.byteArrayOutputStream.reset();
-        write(state, state.byteArrayStream);
-        state.byteArrayOutputStream.flush();
+
+    public void write(DataOutput dataOutput)
+            throws Exception {
+        switch (basicType) {
+            case CHAR:
+                writeChars(dataOutput);
+                break;
+            case SHORT:
+                writeShorts(dataOutput);
+                break;
+            case INT:
+                writeInts(dataOutput);
+                break;
+            case STRING:
+                writeString(dataOutput);
+                break;
+        }
     }
 
     @Benchmark
-    public void dataOutputStreamOverRawFileStream(BenchmarkState state)
-            throws IOException {
-        state.fileOutputStream.getChannel().position(0);
-        write(state, state.rawFileStream);
-        state.fileOutputStream.flush();
+    public void dataOutputStreamOverByteArray()
+            throws Exception {
+        byteArrayOutputStream.reset();
+        write(byteArrayStream);
+        byteArrayOutputStream.flush();
     }
 
     @Benchmark
-    public void dataOutputStreamOverBufferedFileStream(BenchmarkState state)
-            throws IOException{
-        state.fileOutputStream.getChannel().position(0);
-        write(state, state.bufferedFileStream);
-        state.fileOutputStream.flush();
+    public void dataOutputStreamOverRawFileStream()
+            throws Exception {
+        fileOutputStream.getChannel().position(0);
+        write(rawFileStream);
+        fileOutputStream.flush();
+    }
+
+    @Benchmark
+    public void dataOutputStreamOverBufferedFileStream()
+            throws Exception{
+        fileOutputStream.getChannel().position(0);
+        write(bufferedFileStream);
+        fileOutputStream.flush();
     }
 }
