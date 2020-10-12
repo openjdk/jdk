@@ -42,7 +42,7 @@ import java.io.PrintWriter;
 /**
  *  @test
  *  @bug 8048109
- *  @summary JToggleButton does not fire actionPerformed under certain 
+ *  @summary JToggleButton does not fire actionPerformed under certain
  *  conditions
  *  @key headful
  *  @run main SetInvokerJPopupMenuTest
@@ -112,7 +112,7 @@ public class SetInvokerJPopupMenuTest {
                 }
             }
             if (popup.isVisible()) {
-                throw new RuntimeException("PopupMenu is not posted after" +
+                throw new RuntimeException("PopupMenu is not taken down after"+
                         "single button click");
             }
         }
