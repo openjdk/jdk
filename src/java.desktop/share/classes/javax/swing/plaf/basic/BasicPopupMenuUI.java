@@ -219,6 +219,14 @@ public class BasicPopupMenuUI extends PopupMenuUI {
         if (menuKeyListener != null) {
             popupMenu.removeMenuKeyListener(menuKeyListener);
         }
+        AppContext context = AppContext.getAppContext();
+        synchronized (MOUSE_GRABBER_KEY) {
+            MouseGrabber mouseGrabber =
+                    (MouseGrabber)context.get(MOUSE_GRABBER_KEY);
+            if (mouseGrabber !=null) {
+                context.remove(MOUSE_GRABBER_KEY);
+            }
+        }
     }
 
     /**
