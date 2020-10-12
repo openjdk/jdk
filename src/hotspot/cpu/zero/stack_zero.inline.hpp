@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -49,7 +49,7 @@ inline void ZeroStack::overflow_check(int required_words, TRAPS) {
 inline int ZeroStack::abi_stack_available(Thread *thread) const {
   guarantee(Thread::current() == thread, "should run in the same thread");
   int stack_used = thread->stack_base() - (address) &stack_used
-    + (JavaThread::stack_guard_zone_size() + JavaThread::stack_shadow_zone_size());
+    + (StackOverflow::stack_guard_zone_size() + StackOverflow::stack_shadow_zone_size());
   int stack_free = thread->stack_size() - stack_used;
   return stack_free;
 }

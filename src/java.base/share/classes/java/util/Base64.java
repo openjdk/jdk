@@ -33,7 +33,7 @@ import java.nio.ByteBuffer;
 
 import sun.nio.cs.ISO_8859_1;
 
-import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
  * This class consists exclusively of static methods for obtaining
@@ -418,7 +418,7 @@ public class Base64 {
             return new Encoder(isURL, newline, linemax, false);
         }
 
-        @HotSpotIntrinsicCandidate
+        @IntrinsicCandidate
         private void encodeBlock(byte[] src, int sp, int sl, byte[] dst, int dp, boolean isURL) {
             char[] base64 = isURL ? toBase64URL : toBase64;
             for (int sp0 = sp, dp0 = dp ; sp0 < sl; ) {

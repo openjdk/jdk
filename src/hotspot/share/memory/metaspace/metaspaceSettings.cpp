@@ -27,9 +27,11 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/metaspace/metaspaceSettings.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/java.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 namespace metaspace {
 

@@ -82,7 +82,12 @@ class WindowsFileStore
             try {
                 return createFromPath(target);
             } catch (WindowsException e) {
-                if (e.lastError() != ERROR_DIR_NOT_ROOT)
+                // GetVolumePathName might return the following error codes
+                // when the drives were created using `subst`.
+                // Try expanding the path again in such cases.
+                if (e.lastError() != ERROR_DIR_NOT_ROOT &&
+                    e.lastError() != ERROR_INVALID_PARAMETER &&
+                    e.lastError() != ERROR_DIRECTORY)
                     throw e;
                 target = WindowsLinkSupport.getFinalPath(file);
                 if (target == null)

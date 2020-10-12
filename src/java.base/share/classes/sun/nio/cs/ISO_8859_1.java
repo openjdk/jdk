@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import java.util.Objects;
 
-import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 public class ISO_8859_1
     extends Charset
@@ -151,7 +151,7 @@ public class ISO_8859_1
             return implEncodeISOArray(sa, sp, da, dp, len);
         }
 
-        @HotSpotIntrinsicCandidate
+        @IntrinsicCandidate
         private static int implEncodeISOArray(char[] sa, int sp,
                                               byte[] da, int dp, int len)
         {

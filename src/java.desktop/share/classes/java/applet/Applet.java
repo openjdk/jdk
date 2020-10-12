@@ -99,7 +99,10 @@ public class Applet extends Panel {
     /**
      * Read an applet from an object input stream.
      *
-     * @param  s an object input stream
+     * @param  s the {@code ObjectInputStream} to read
+     * @throws ClassNotFoundException if the class of a serialized object could
+     *         not be found
+     * @throws IOException if an I/O error occurs
      * @throws HeadlessException if {@code GraphicsEnvironment.isHeadless()}
      *         returns {@code true}
      * @serial

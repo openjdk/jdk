@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,25 +23,25 @@
  * questions.
  */
 
-package jdk.internal;
+package jdk.internal.vm.annotation;
 
 import java.lang.annotation.*;
 
 /**
- * The {@code @HotSpotIntrinsicCandidate} annotation is specific to the
+ * The {@code @IntrinsicCandidate} annotation is specific to the
  * HotSpot Virtual Machine. It indicates that an annotated method
  * may be (but is not guaranteed to be) intrinsified by the HotSpot VM. A method
  * is intrinsified if the HotSpot VM replaces the annotated method with hand-written
  * assembly and/or hand-written compiler IR -- a compiler intrinsic -- to improve
- * performance. The {@code @HotSpotIntrinsicCandidate} annotation is internal to the
+ * performance. The {@code @IntrinsicCandidate} annotation is internal to the
  * Java libraries and is therefore not supposed to have any relevance for application
  * code.
  *
  * Maintainers of the Java libraries must consider the following when
- * modifying methods annotated with {@code @HotSpotIntrinsicCandidate}.
+ * modifying methods annotated with {@code @IntrinsicCandidate}.
  *
  * <ul>
- * <li>When modifying a method annotated with {@code @HotSpotIntrinsicCandidate},
+ * <li>When modifying a method annotated with {@code @IntrinsicCandidate},
  * the corresponding intrinsic code in the HotSpot VM implementation must be
  * updated to match the semantics of the annotated method.</li>
  * <li>For some annotated methods, the corresponding intrinsic may omit some low-level
@@ -92,7 +92,7 @@ import java.lang.annotation.*;
  *
  * <ul>
  * <li>When adding a new intrinsic, make sure that the corresponding method
- * in the Java libraries is annotated with {@code @HotSpotIntrinsicCandidate}
+ * in the Java libraries is annotated with {@code @IntrinsicCandidate}
  * and that all possible call sequences that result in calling the intrinsic contain
  * the checks omitted by the intrinsic (if any).</li>
  * <li>When modifying an existing intrinsic, the Java libraries must be updated
@@ -102,24 +102,24 @@ import java.lang.annotation.*;
  *
  * Persons not directly involved with maintaining the Java libraries or the
  * HotSpot VM can safely ignore the fact that a method is annotated with
- * {@code @HotSpotIntrinsicCandidate}.
+ * {@code @IntrinsicCandidate}.
  *
  * The HotSpot VM defines (internally) a list of intrinsics. Not all intrinsic
  * are available on all platforms supported by the HotSpot VM. Furthermore,
  * the availability of an intrinsic on a given platform depends on the
  * configuration of the HotSpot VM (e.g., the set of VM flags enabled).
- * Therefore, annotating a method with {@code @HotSpotIntrinsicCandidate} does
+ * Therefore, annotating a method with {@code @IntrinsicCandidate} does
  * not guarantee that the marked method is intrinsified by the HotSpot VM.
  *
  * If the {@code CheckIntrinsics} VM flag is enabled, the HotSpot VM checks
  * (when loading a class) that (1) all methods of that class that are also on
- * the VM's list of intrinsics are annotated with {@code @HotSpotIntrinsicCandidate}
+ * the VM's list of intrinsics are annotated with {@code @IntrinsicCandidate}
  * and that (2) for all methods of that class annotated with
- * {@code @HotSpotIntrinsicCandidate} there is an intrinsic in the list.
+ * {@code @IntrinsicCandidate} there is an intrinsic in the list.
  *
- * @since 9
+ * @since 16
  */
 @Target({ElementType.METHOD, ElementType.CONSTRUCTOR})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface HotSpotIntrinsicCandidate {
+public @interface IntrinsicCandidate {
 }

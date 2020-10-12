@@ -630,4 +630,6 @@ public class WhiteBox {
   public native void checkThreadObjOfTerminatingThread(Thread target);
 
   public native boolean isJVMTIIncluded();
+
+  public native void waitUnsafe(int time_ms);
 }
