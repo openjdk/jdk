@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,7 @@
 // may be more conservative in implementations. We advise using the bound
 // variants whenever possible.
 //
-// Finally, we define a "fence" operation, as a bidirectional barrier.
+// We define a "fence" operation, as a bidirectional barrier.
 // It guarantees that any memory access preceding the fence is not
 // reordered w.r.t. any memory accesses subsequent to the fence in program
 // order. This may be used to prevent sequences of loads from floating up
@@ -229,6 +229,20 @@
 // order*.  And that their destructors do a release and unlock, in *that*
 // order.  If their implementations change such that these assumptions
 // are violated, a whole lot of code will break.
+//
+// Finally, we define an "instruction_fence" operation, as a bidirectional
+// barrier for the instruction code cache. It guarantees that any memory access
+// to the instruction code preceding the fence is not reordered w.r.t. any
+// memory accesses to instruction code subsequent to the fence in program order.
+// It  should be used in conjunction with safepointing to ensure that changes
+// to the instruction stream are seen on exit from a safepoint. Namely:
+// [1] Directly before running a new thread [See JavaThread::run()]
+// [2] Whilst in the VM, on exit from being suspended in a safepoint. [See
+//     SafepointMechanism::process_if_requested_slow()]
+// [3] Whilst in the VM, on exit from blocking [See ThreadBlockInVM
+//     and ThreadBlockInVMWithDeadlockCheck]
+// [4] At the end of a JNI call, on exit from blocking. [See
+//     JavaThread::check_safepoint_and_suspend_for_native_trans()]
 
 class OrderAccess : public AllStatic {
  public:
@@ -242,7 +256,9 @@ class OrderAccess : public AllStatic {
   static void     release();
   static void     fence();
 
-  static void     cross_modify_fence();
+  static void     cross_modify_fence() {
+    cross_modify_fence_impl();
+  }
 
   // Processors which are not multi-copy-atomic require a full fence
   // to enforce a globally consistent order of Independent Reads of
@@ -259,6 +275,8 @@ private:
   // routine if it exists, It should only be used by platforms that
   // don't have another way to do the inline assembly.
   static void StubRoutines_fence();
+
+  static void cross_modify_fence_impl();
 };
 
 #include OS_CPU_HEADER(orderAccess)
