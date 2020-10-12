@@ -457,8 +457,7 @@ extern "C" void verify() {
 
 extern "C" void pp(void* p) {
   Command c("pp");
-  FlagSetting fl(PrintVMMessages, true);
-  FlagSetting f2(DisplayVMOutput, true);
+  FlagSetting fl(DisplayVMOutput, true);
   if (Universe::heap()->is_in(p)) {
     oop obj = oop(p);
     obj->print();
@@ -558,7 +557,7 @@ extern "C" void pss() { // print all stacks
 extern "C" void debug() {               // to set things up for compiler debugging
   Command c("debug");
   WizardMode = true;
-  PrintVMMessages = PrintCompilation = true;
+  PrintCompilation = true;
   PrintInlining = PrintAssembly = true;
   tty->flush();
 }

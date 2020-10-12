@@ -37,6 +37,8 @@
 
 #ifdef _LP64
 
+#if COMPILER2_OR_JVMCI
+
 void MacroAssembler::arraycopy_avx3_special_cases(XMMRegister xmm, KRegister mask, Register from,
                                                   Register to, Register count, int shift,
                                                   Register index, Register temp,
@@ -245,5 +247,7 @@ void MacroAssembler::copy64_avx(Register dst, Register src, Register index, XMMR
     evmovdquq(Address(dst, index, scale, offset), xmm, Assembler::AVX_512bit);
   }
 }
+
+#endif // COMPILER2_OR_JVMCI
 
 #endif

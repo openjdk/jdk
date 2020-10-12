@@ -263,7 +263,6 @@ public:
   void set_product();
 
   JVMFlag::MsgType get_locked_message(char*, int) const;
-  JVMFlag::MsgType get_locked_message_ext(char*, int) const;
 
   static bool is_default(JVMFlagsEnum flag);
   static bool is_ergo(JVMFlagsEnum flag);
