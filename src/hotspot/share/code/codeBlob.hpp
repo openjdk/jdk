@@ -110,11 +110,11 @@ protected:
 
   ImmutableOopMapSet* _oop_maps;                 // OopMap for this CodeBlob
   bool                _caller_must_gc_arguments;
-#ifndef PRODUCT
-  CodeStrings         _strings;
-#endif
+
   const char*         _name;
   S390_ONLY(int       _ctable_offset;)
+
+  NOT_PRODUCT(CodeStrings _strings;)
 
   CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, int frame_complete_offset, int frame_size, ImmutableOopMapSet* oop_maps, bool caller_must_gc_arguments);
   CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, CodeBuffer* cb, int frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments);

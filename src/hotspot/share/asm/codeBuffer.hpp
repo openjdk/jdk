@@ -405,10 +405,12 @@ class CodeBuffer: public StackObj {
   csize_t      _total_size;     // size in bytes of combined memory buffer
 
   OopRecorder* _oop_recorder;
+
 #ifndef PRODUCT
   CodeStrings  _code_strings;
   bool         _collect_comments;      // Indicate if we need to collect block comments at all.
 #endif
+
   OopRecorder  _default_oop_recorder;  // override with initialize_oop_recorder
   Arena*       _overflow_arena;
 
@@ -634,29 +636,28 @@ class CodeBuffer: public StackObj {
   // Override default oop recorder.
   void initialize_oop_recorder(OopRecorder* r);
 
-  OopRecorder* oop_recorder() const   { return _oop_recorder; }
-  NOT_PRODUCT(CodeStrings& strings()              { return &_code_strings; })
+  OopRecorder* oop_recorder() const { return _oop_recorder; }
 
   address last_insn() const { return _last_insn; }
   void set_last_insn(address a) { _last_insn = a; }
   void clear_last_insn() { set_last_insn(NULL); }
 
-  void free_strings() {
 #ifndef PRODUCT
+  CodeStrings& strings() { return &_code_strings; }
+
+  void free_strings() {
     if (!_code_strings.is_null()) {
       _code_strings.free(); // sets _strings Null as a side-effect.
     }
-#endif
   }
 
   // Directly disassemble code buffer.
   // Print the comment associated with offset on stream, if there is one.
-  virtual void print_block_comment(outputStream* stream, address block_begin) {
-#ifndef PRODUCT
+  void print_block_comment(outputStream* stream, address block_begin) {
     intptr_t offset = (intptr_t)(block_begin - _total_start);  // I assume total_start is not correct for all code sections.
     _code_strings.print_block_comment(stream, offset);
-#endif
   }
+#endif
 
   // Code generation
   void relocate(address at, RelocationHolder const& rspec, int format = 0) {

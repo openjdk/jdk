@@ -89,6 +89,7 @@ CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& la
   _oop_maps(oop_maps),
   _caller_must_gc_arguments(caller_must_gc_arguments),
   _name(name)
+  NOT_PRODUCT(COMMA _strings())
 {
   assert(is_aligned(layout.size(),            oopSize), "unaligned size");
   assert(is_aligned(layout.header_size(),     oopSize), "unaligned size");
@@ -99,7 +100,6 @@ CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& la
   assert(_frame_size >= -1, "must use frame size or -1 for runtime stubs");
 #endif // COMPILER1
   S390_ONLY(_ctable_offset = 0;) // avoid uninitialized fields
-  NOT_PRODUCT(_strings = CodeStrings();)
 }
 
 CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, CodeBuffer* cb, int frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments) :
@@ -117,6 +117,7 @@ CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& la
   _relocation_end(layout.relocation_end()),
   _caller_must_gc_arguments(caller_must_gc_arguments),
   _name(name)
+  NOT_PRODUCT(COMMA _strings())
 {
   assert(is_aligned(_size,        oopSize), "unaligned size");
   assert(is_aligned(_header_size, oopSize), "unaligned size");
@@ -129,7 +130,6 @@ CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& la
   assert(_frame_size >= -1, "must use frame size or -1 for runtime stubs");
 #endif // COMPILER1
   S390_ONLY(_ctable_offset = 0;) // avoid uninitialized fields
-  NOT_PRODUCT(_strings = CodeStrings();)
 }
 
 

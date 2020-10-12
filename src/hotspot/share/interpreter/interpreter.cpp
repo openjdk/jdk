@@ -106,7 +106,7 @@ CodeletMark::~CodeletMark() {
   // Commit Codelet.
   int committed_code_size = (*_masm)->code()->pure_insts_size();
   if (committed_code_size) {
-    CodeStrings cs = NOT_PRODUCT((*_masm)->code()->strings()) PRODUCT_ONLY(CodeStrings());
+    CodeStrings cs NOT_PRODUCT(= (*_masm)->code()->strings());
     AbstractInterpreter::code()->commit(committed_code_size, cs);
   }
   // Make sure nobody can use _masm outside a CodeletMark lifespan.

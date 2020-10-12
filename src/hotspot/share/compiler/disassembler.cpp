@@ -682,10 +682,12 @@ void decode_env::print_insn_labels() {
     if (_codeBlob != NULL) {
       _codeBlob->print_block_comment(st, p);
     }
+#ifndef PRODUCT
     if (_codeBuffer != NULL) {
       _codeBuffer->print_block_comment(st, p);
     }
-    NOT_PRODUCT(_strings.print_block_comment(st, (intptr_t)(p - _start));)
+    _strings.print_block_comment(st, (intptr_t)(p - _start));
+#endif
   }
 }
 

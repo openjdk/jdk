@@ -140,7 +140,7 @@ CodeBuffer::~CodeBuffer() {
 
   // Claim is that stack allocation ensures resources are cleaned up.
   // This is resource clean up, let's hope that all were properly copied out.
-  free_strings();
+  NOT_PRODUCT(free_strings();)
 
 #ifdef ASSERT
   // Save allocation type to execute assert in ~ResourceObj()
