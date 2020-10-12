@@ -411,7 +411,7 @@
 # http://www.irishstatutebook.ie/eli/1926/sro/919/made/en/print
 # http://www.irishstatutebook.ie/eli/1947/sro/71/made/en/print
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 # Summer Time Act, 1916
 Rule	GB-Eire	1916	only	-	May	21	2:00s	1:00	BST
 Rule	GB-Eire	1916	only	-	Oct	 1	2:00s	0	GMT
@@ -552,7 +552,7 @@ Link	Europe/London	Europe/Isle_of_Man
 # The following is like GB-Eire and EU, except with standard time in
 # summer and negative daylight saving time in winter.  It is for when
 # negative SAVE values are used.
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Eire	1971	only	-	Oct	31	 2:00u	-1:00	-
 Rule	Eire	1972	1980	-	Mar	Sun>=16	 2:00u	0	-
 Rule	Eire	1972	1980	-	Oct	Sun>=23	 2:00u	-1:00	-
@@ -589,7 +589,7 @@ Zone	Europe/Dublin	-0:25:00 -	LMT	1880 Aug  2
 # predecessor organization, the European Communities.
 # For brevity they are called "EU rules" elsewhere in this file.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	EU	1977	1980	-	Apr	Sun>=1	 1:00u	1:00	S
 Rule	EU	1977	only	-	Sep	lastSun	 1:00u	0	-
 Rule	EU	1978	only	-	Oct	 1	 1:00u	0	-
@@ -629,13 +629,13 @@ Rule	C-Eur	1944	only	-	Oct	 2	 2:00s	0	-
 # corrected in version 2008d). The circumstantial evidence is simply the
 # tz database itself, as seen below:
 #
-# Zone Europe/Paris 0:09:21 - LMT 1891 Mar 15  0:01
+# Zone Europe/Paris ...
 #    0:00 France WE%sT 1945 Sep 16  3:00
 #
-# Zone Europe/Monaco 0:29:32 - LMT 1891 Mar 15
+# Zone Europe/Monaco ...
 #    0:00 France WE%sT 1945 Sep 16  3:00
 #
-# Zone Europe/Belgrade 1:22:00 - LMT 1884
+# Zone Europe/Belgrade ...
 #    1:00 1:00 CEST 1945 Sep 16  2:00s
 #
 # Rule France 1945 only - Sep 16  3:00 0 -
@@ -681,7 +681,7 @@ Rule	E-Eur	1996	max	-	Oct	lastSun	 0:00	0	-
 #
 # The 1917-1921 decree URLs are from Alexander Belopolsky (2016-08-23).
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Russia	1917	only	-	Jul	 1	23:00	1:00	MST  # Moscow Summer Time
 #
 # Decree No. 142 (1917-12-22) http://istmat.info/node/28137
@@ -795,7 +795,7 @@ Zone	EET		2:00	EU	EE%sT
 
 
 # Albania
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Albania	1940	only	-	Jun	16	0:00	1:00	S
 Rule	Albania	1942	only	-	Nov	 2	3:00	0	-
 Rule	Albania	1943	only	-	Mar	29	2:00	1:00	S
@@ -849,7 +849,7 @@ Zone	Europe/Andorra	0:06:04 -	LMT	1901
 # In 1946 the end of DST was on Monday, 7 October 1946, at 3:00 am.
 # Shanks had this right.  Source: Die Weltpresse, 5. Oktober 1946, page 5.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Austria	1920	only	-	Apr	 5	2:00s	1:00	S
 Rule	Austria	1920	only	-	Sep	13	2:00s	0	-
 Rule	Austria	1946	only	-	Apr	14	2:00s	1:00	S
@@ -936,7 +936,7 @@ Zone	Europe/Minsk	1:50:16 -	LMT	1880
 # The 1918 rules are listed for completeness; they apply to unoccupied Belgium.
 # Assume Brussels switched to WET in 1918 when the armistice took effect.
 #
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Belgium	1918	only	-	Mar	 9	 0:00s	1:00	S
 Rule	Belgium	1918	1919	-	Oct	Sat>=1	23:00s	0	-
 Rule	Belgium	1919	only	-	Mar	 1	23:00s	1:00	S
@@ -996,7 +996,7 @@ Zone	Europe/Brussels	0:17:30 -	LMT	1880
 # EET -> EETDST is in 03:00 Local time in last Sunday of March ...
 # EETDST -> EET is in 04:00 Local time in last Sunday of October
 #
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Bulg	1979	only	-	Mar	31	23:00	1:00	S
 Rule	Bulg	1979	only	-	Oct	 1	 1:00	0	-
 Rule	Bulg	1980	1982	-	Apr	Sat>=1	23:00	1:00	S
@@ -1028,7 +1028,7 @@ Zone	Europe/Sofia	1:33:16 -	LMT	1880
 # We know of no English-language name for historical Czech winter time;
 # abbreviate it as "GMT", as it happened to be GMT.
 #
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Czech	1945	only	-	Apr	Mon>=1	2:00s	1:00	S
 Rule	Czech	1945	only	-	Oct	 1	2:00s	0	-
 Rule	Czech	1946	only	-	May	 6	2:00s	1:00	S
@@ -1084,7 +1084,7 @@ Zone	Europe/Prague	0:57:44 -	LMT	1850
 # Hence the "02:00" of the 1980 law refers to standard time, not
 # wall-clock time, and so the EU rules were in effect in 1980.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Denmark	1916	only	-	May	14	23:00	1:00	S
 Rule	Denmark	1916	only	-	Sep	30	23:00	0	-
 Rule	Denmark	1940	only	-	May	15	 0:00	1:00	S
@@ -1186,7 +1186,7 @@ Zone Atlantic/Faroe	-0:27:04 -	LMT	1908 Jan 11 # Tórshavn
 # http://naalakkersuisut.gl/~/media/Nanoq/Files/Attached%20Files/Engelske-tekster/Legislation/Executive%20Order%20National%20Park.rtf
 # It is their only National Park.
 #
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Thule	1991	1992	-	Mar	lastSun	2:00	1:00	D
 Rule	Thule	1991	1992	-	Sep	lastSun	2:00	0	S
 Rule	Thule	1993	2006	-	Apr	Sun>=1	2:00	1:00	D
@@ -1317,7 +1317,7 @@ Zone	Europe/Tallinn	1:39:00	-	LMT	1880
 # From Paul Eggert (2014-06-14):
 # Go with Oja over Shanks.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Finland	1942	only	-	Apr	2	24:00	1:00	S
 Rule	Finland	1942	only	-	Oct	4	1:00	0	-
 Rule	Finland	1981	1982	-	Mar	lastSun	2:00	1:00	S
@@ -1349,10 +1349,58 @@ Link	Europe/Helsinki	Europe/Mariehamn
 # Françoise Gauquelin, Problèmes de l'heure résolus en astrologie,
 # Guy Trédaniel, Paris 1987
 
+# From Michael Deckers (2020-06-11):
+# the law of 1891 <https://gallica.bnf.fr/ark:/12148/bpt6k64415343.texteImage>
+# was published on 1891-03-15, so it could only take force on 1891-03-16.
+
+# From Michael Deckers (2020-06-10):
+# Le Gaulois, 1911-03-11, page 1/6, online at
+# https://www.retronews.fr/societe/echo-de-presse/2018/01/29/1911-change-lheure-de-paris
+# ... [ Instantly, all pressure driven clock dials halted...  Nine minutes and
+#       twenty-one seconds later the hands resumed their circular motion. ]
+# There are also precise reports about how the change was prepared in train
+# stations: all the publicly visible clocks stopped at midnight railway time
+# (or were covered), only the chief of service had a watch, labeled
+# "Heure ancienne", that he kept running until it reached 00:04:21, when
+# he announced "Heure nouvelle".  See the "Le Petit Journal 1911-03-11".
+# https://gallica.bnf.fr/ark:/12148/bpt6k6192911/f1.item.zoom
+#
+# From Michael Deckers (2020-06-12):
+# That "all French clocks stopped" for 00:09:21 is a misreading of French
+# newspapers; this sort of adjustment applies only to certain
+# remote-controlled clocks ("pendules pneumatiques", of which there existed
+# perhaps a dozen in Paris, and which simply could not be set back remotely),
+# but not to all the clocks in all French towns and villages.  For instance,
+# the following story in the "Courrier de Saône-et-Loire" 1911-03-11, page 2:
+# only works if legal time was stepped back (was not monotone): ...
+#   [One can observe that children who had been born at midnight less 5
+#    minutes and who had died at midnight of the old time, would turn out to
+#    be dead before being born, time having been set back and having
+#    suppressed 9 minutes and 25 seconds of their existence, that is, more
+#    than they could spend.]
+#
+# From Paul Eggert (2020-06-12):
+# French time in railway stations was legally five minutes behind civil time,
+# which explains why railway "old time" ran to 00:04:21 instead of to 00:09:21.
+# The law's text (which Michael Deckers noted is at
+# <https://gallica.bnf.fr/ark:/12148/bpt6k2022333z/f2>) says only that
+# at 1911-03-11 00:00 legal time was that of Paris mean time delayed by
+# nine minutes and twenty-one seconds, and does not say how the
+# transition from Paris mean time was to occur.
+#
+# tzdb has no way to represent stopped clocks.  As the railway practice
+# was to keep a watch running on "old time" to decide when to restart
+# the other clocks, this could be modeled as a transition for "old time" at
+# 00:09:21.  However, since the law was ambiguous and clocks outside railway
+# stations were probably done haphazardly with the popular impression being
+# that the transition was done at 00:00 "old time", simply leave the time
+# blank; this causes zic to default to 00:00 "old time" which is good enough.
+# Do something similar for the 1891-03-16 transition.  There are similar
+# problems in Algiers, Monaco and Tunis.
 
 #
 # Shank & Pottenger seem to use '24:00' ambiguously; resolve it with Whitman.
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	France	1916	only	-	Jun	14	23:00s	1:00	S
 Rule	France	1916	1919	-	Oct	Sun>=1	23:00s	0	-
 Rule	France	1917	only	-	Mar	24	23:00s	1:00	S
@@ -1412,13 +1460,11 @@ Rule	France	1945	only	-	Sep	16	 3:00	0	-
 # go with Excoffier's 28/3/76 0hUT and 25/9/76 23hUT.
 Rule	France	1976	only	-	Mar	28	 1:00	1:00	S
 Rule	France	1976	only	-	Sep	26	 1:00	0	-
-# Shanks & Pottenger give 0:09:20 for Paris Mean Time, and Whitman 0:09:05,
-# but Howse quotes the actual French legislation as saying 0:09:21.
-# Go with Howse.  Howse writes that the time in France was officially based
+# Howse writes that the time in France was officially based
 # on PMT-0:09:21 until 1978-08-09, when the time base finally switched to UTC.
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone	Europe/Paris	0:09:21 -	LMT	1891 Mar 15  0:01
-			0:09:21	-	PMT	1911 Mar 11  0:01 # Paris MT
+Zone	Europe/Paris	0:09:21 -	LMT	1891 Mar 16
+			0:09:21	-	PMT	1911 Mar 11 # Paris Mean Time
 # Shanks & Pottenger give 1940 Jun 14 0:00; go with Excoffier and Le Corre.
 			0:00	France	WE%sT	1940 Jun 14 23:00
 # Le Corre says Paris stuck with occupied-France time after the liberation;
@@ -1447,7 +1493,7 @@ Zone	Europe/Paris	0:09:21 -	LMT	1891 Mar 15  0:01
 # this was equivalent to UT +03, not +04.
 
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Germany	1946	only	-	Apr	14	2:00s	1:00	S
 Rule	Germany	1946	only	-	Oct	 7	2:00s	0	-
 Rule	Germany	1947	1949	-	Oct	Sun>=1	2:00s	0	-
@@ -1499,7 +1545,7 @@ Zone Europe/Gibraltar	-0:21:24 -	LMT	1880 Aug  2  0:00s
 			1:00	EU	CE%sT
 
 # Greece
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 # Whitman gives 1932 Jul 5 - Nov 1; go with Shanks & Pottenger.
 Rule	Greece	1932	only	-	Jul	 7	0:00	1:00	S
 Rule	Greece	1932	only	-	Sep	 1	0:00	0	-
@@ -1534,38 +1580,69 @@ Zone	Europe/Athens	1:34:52 -	LMT	1895 Sep 14
 			2:00	EU	EE%sT
 
 # Hungary
-# From Paul Eggert (2014-07-15):
-# Dates for 1916-1945 are taken from:
-# Oross A. Jelen a múlt jövője: a nyári időszámítás Magyarországon 1916-1945.
-# National Archives of Hungary (2012-10-29).
-# http://mnl.gov.hu/a_het_dokumentuma/a_nyari_idoszamitas_magyarorszagon_19161945.html
-# This source does not always give times, which are taken from Shanks
-# & Pottenger (which disagree about the dates).
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	Hungary	1918	only	-	Apr	 1	 3:00	1:00	S
-Rule	Hungary	1918	only	-	Sep	16	 3:00	0	-
-Rule	Hungary	1919	only	-	Apr	15	 3:00	1:00	S
-Rule	Hungary	1919	only	-	Nov	24	 3:00	0	-
+
+# From Michael Deckers (2020-06-09):
+# an Austrian encyclopedia of railroads of 1913, online at
+# http://www.zeno.org/Roell-1912/A/Eisenbahnzeit
+# says that the switch [to CET] happened on 1890-11-01.
+
+# From Géza Nyáry (2020-06-07):
+# Data for 1918-1983 are based on the archive database of Library Hungaricana.
+# The dates are collected from original, scanned governmental orders,
+# bulletins, instructions and public press.
+# [See URLs below.]
+
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
+# https://library.hungaricana.hu/hu/view/OGYK_RT_1918/?pg=238
+# https://library.hungaricana.hu/hu/view/OGYK_RT_1919/?pg=808
+# https://library.hungaricana.hu/hu/view/OGYK_RT_1920/?pg=201
+Rule	Hungary	1918	1919	-	Apr	15	 2:00	1:00	S
+Rule	Hungary	1918	1920	-	Sep	Mon>=15	 3:00	0	-
+Rule	Hungary	1920	only	-	Apr	 5	 2:00	1:00	S
+# https://library.hungaricana.hu/hu/view/OGYK_RT_1945/?pg=882
 Rule	Hungary	1945	only	-	May	 1	23:00	1:00	S
-Rule	Hungary	1945	only	-	Nov	 1	 0:00	0	-
+Rule	Hungary	1945	only	-	Nov	 1	 1:00	0	-
+# https://library.hungaricana.hu/hu/view/Delmagyarorszag_1946_03/?pg=49
 Rule	Hungary	1946	only	-	Mar	31	 2:00s	1:00	S
-Rule	Hungary	1946	1949	-	Oct	Sun>=1	 2:00s	0	-
+# https://library.hungaricana.hu/hu/view/Delmagyarorszag_1946_09/?pg=54
+Rule	Hungary	1946	only	-	Oct	 7	 2:00	0	-
+# https://library.hungaricana.hu/hu/view/KulfBelfHirek_1947_04_1__001-123/?pg=90
+# https://library.hungaricana.hu/hu/view/DunantuliNaplo_1947_09/?pg=128
+# https://library.hungaricana.hu/hu/view/KulfBelfHirek_1948_03_3__001-123/?pg=304
+# https://library.hungaricana.hu/hu/view/Zala_1948_09/?pg=64
+# https://library.hungaricana.hu/hu/view/SatoraljaujhelyiLeveltar_ZempleniNepujsag_1948/?pg=53
+# https://library.hungaricana.hu/hu/view/SatoraljaujhelyiLeveltar_ZempleniNepujsag_1948/?pg=160
+# https://library.hungaricana.hu/hu/view/Delmagyarorszag_1949_09/?pg=94
 Rule	Hungary	1947	1949	-	Apr	Sun>=4	 2:00s	1:00	S
-Rule	Hungary	1950	only	-	Apr	17	 2:00s	1:00	S
-Rule	Hungary	1950	only	-	Oct	23	 2:00s	0	-
-Rule	Hungary	1954	1955	-	May	23	 0:00	1:00	S
-Rule	Hungary	1954	1955	-	Oct	 3	 0:00	0	-
-Rule	Hungary	1956	only	-	Jun	Sun>=1	 0:00	1:00	S
-Rule	Hungary	1956	only	-	Sep	lastSun	 0:00	0	-
-Rule	Hungary	1957	only	-	Jun	Sun>=1	 1:00	1:00	S
-Rule	Hungary	1957	only	-	Sep	lastSun	 3:00	0	-
-Rule	Hungary	1980	only	-	Apr	 6	 1:00	1:00	S
+Rule	Hungary	1947	1949	-	Oct	Sun>=1	 2:00s	0	-
+# https://library.hungaricana.hu/hu/view/DTT_KOZL_TanacsokKozlonye_1954/?pg=513
+Rule	Hungary	1954	only	-	May	23	 0:00	1:00	S
+Rule	Hungary	1954	only	-	Oct	 3	 0:00	0	-
+# https://library.hungaricana.hu/hu/view/DTT_KOZL_TanacsokKozlonye_1955/?pg=398
+Rule	Hungary	1955	only	-	May	22	 2:00	1:00	S
+Rule	Hungary	1955	only	-	Oct	 2	 3:00	0	-
+# https://library.hungaricana.hu/hu/view/HevesMegyeiNepujsag_1956_06/?pg=0
+# https://library.hungaricana.hu/hu/view/EszakMagyarorszag_1956_06/?pg=6
+# https://library.hungaricana.hu/hu/view/SzolnokMegyeiNeplap_1957_04/?pg=120
+# https://library.hungaricana.hu/hu/view/PestMegyeiHirlap_1957_09/?pg=143
+Rule	Hungary	1956	1957	-	Jun	Sun>=1	 2:00	1:00	S
+Rule	Hungary	1956	1957	-	Sep	lastSun	 3:00	0	-
+# https://library.hungaricana.hu/hu/view/DTT_KOZL_TanacsokKozlonye_1980/?pg=1227
+Rule	Hungary	1980	only	-	Apr	 6	 0:00	1:00	S
+Rule	Hungary	1980	only	-	Sep	28	 1:00	0	-
+# https://library.hungaricana.hu/hu/view/Delmagyarorszag_1981_01/?pg=79
+# https://library.hungaricana.hu/hu/view/DTT_KOZL_TanacsokKozlonye_1982/?pg=115
+# https://library.hungaricana.hu/hu/view/DTT_KOZL_TanacsokKozlonye_1983/?pg=85
+Rule	Hungary	1981	1983	-	Mar	lastSun	 0:00	1:00	S
+Rule	Hungary	1981	1983	-	Sep	lastSun	 1:00	0	-
+#
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone	Europe/Budapest	1:16:20 -	LMT	1890 Oct
+Zone	Europe/Budapest	1:16:20 -	LMT	1890 Nov  1
 			1:00	C-Eur	CE%sT	1918
-			1:00	Hungary	CE%sT	1941 Apr  8
+# https://library.hungaricana.hu/hu/view/OGYK_RT_1941/?pg=1204
+			1:00	Hungary	CE%sT	1941 Apr  7 23:00
 			1:00	C-Eur	CE%sT	1945
-			1:00	Hungary	CE%sT	1980 Sep 28  2:00s
+			1:00	Hungary	CE%sT	1984
 			1:00	EU	CE%sT
 
 # Iceland
@@ -1601,7 +1678,7 @@ Zone	Europe/Budapest	1:16:20 -	LMT	1890 Oct
 # The information below is taken from the 1988 Almanak; see
 # http://www.almanak.hi.is/klukkan.html
 #
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Iceland	1917	1919	-	Feb	19	23:00	1:00	-
 Rule	Iceland	1917	only	-	Oct	21	 1:00	0	-
 Rule	Iceland	1918	1919	-	Nov	16	 1:00	0	-
@@ -1693,7 +1770,7 @@ Zone Atlantic/Reykjavik	-1:28	-	LMT	1908
 # to 1944-06-04; although Rome was an open city during this period, it
 # was effectively controlled by Germany.
 #
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Italy	1916	only	-	Jun	 3	24:00	1:00	S
 Rule	Italy	1916	1917	-	Sep	30	24:00	0	-
 Rule	Italy	1917	only	-	Mar	31	24:00	1:00	S
@@ -1803,7 +1880,7 @@ Link	Europe/Rome	Europe/San_Marino
 # urged Lithuania and Estonia to adopt a similar time policy, but it
 # appears that they will not do so....
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Latvia	1989	1996	-	Mar	lastSun	 2:00s	1:00	S
 Rule	Latvia	1989	1996	-	Sep	lastSun	 2:00s	0	-
 
@@ -1896,7 +1973,7 @@ Zone	Europe/Vilnius	1:41:16	-	LMT	1880
 # Luxembourg
 # Whitman disagrees with most of these dates in minor ways;
 # go with Shanks & Pottenger.
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Lux	1916	only	-	May	14	23:00	1:00	S
 Rule	Lux	1916	only	-	Oct	 1	 1:00	0	-
 Rule	Lux	1917	only	-	Apr	28	23:00	1:00	S
@@ -1937,7 +2014,7 @@ Zone Europe/Luxembourg	0:24:36 -	LMT	1904 Jun
 # From Paul Eggert (2016-10-21):
 # Assume 1900-1972 was like Rome, overriding Shanks.
 #
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Malta	1973	only	-	Mar	31	0:00s	1:00	S
 Rule	Malta	1973	only	-	Sep	29	0:00s	0	-
 Rule	Malta	1974	only	-	Apr	21	0:00s	1:00	S
@@ -2010,7 +2087,7 @@ Zone	Europe/Malta	0:58:04 -	LMT	1893 Nov  2  0:00s # Valletta
 # says the 2014-03-30 spring-forward transition was at 02:00 local time.
 # Guess that since 1997 Moldova has switched one hour before the EU.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Moldova	1997	max	-	Mar	lastSun	 2:00	1:00	S
 Rule	Moldova	1997	max	-	Oct	lastSun	 3:00	0	-
 
@@ -2028,11 +2105,24 @@ Zone	Europe/Chisinau	1:55:20 -	LMT	1880
 			2:00	Moldova	EE%sT
 
 # Monaco
-# Shanks & Pottenger give 0:09:20 for Paris Mean Time; go with Howse's
-# more precise 0:09:21.
+#
+# From Michael Deckers (2020-06-12):
+# In the "Journal de Monaco" of 1892-05-24, online at
+# https://journaldemonaco.gouv.mc/var/jdm/storage/original/application/b1c67c12c5af11b41ea888fb048e4fe8.pdf
+# we read: ...
+#  [In virtue of a Sovereign Ordinance of the May 13 of the current [year],
+#   legal time in the Principality will be set to, from the date of June 1,
+#   1892 onwards, to the meridian of Paris, as in France.]
+# In the "Journal de Monaco" of 1911-03-28, online at
+# https://journaldemonaco.gouv.mc/var/jdm/storage/original/application/de74ffb7db53d4f599059fe8f0ed482a.pdf
+# we read an ordinance of 1911-03-16: ...
+#  [Legal time in the Principality will be set, from the date of promulgation
+#   of the present ordinance, to legal time in France....  Consequently, legal
+#   time will be retarded by 9 minutes and 21 seconds.]
+#
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone	Europe/Monaco	0:29:32 -	LMT	1891 Mar 15
-			0:09:21	-	PMT	1911 Mar 11 # Paris Mean Time
+Zone	Europe/Monaco	0:29:32 -	LMT	1892 Jun  1
+			0:09:21	-	PMT	1911 Mar 29 # Paris Mean Time
 			0:00	France	WE%sT	1945 Sep 16  3:00
 			1:00	France	CE%sT	1977
 			1:00	EU	CE%sT
@@ -2080,7 +2170,7 @@ Zone	Europe/Monaco	0:29:32 -	LMT	1891 Mar 15
 # The data entries before 1945 are taken from
 # https://www.staff.science.uu.nl/~gent0113/wettijd/wettijd.htm
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Neth	1916	only	-	May	 1	0:00	1:00	NST	# Netherlands Summer Time
 Rule	Neth	1916	only	-	Oct	 1	0:00	0	AMT	# Amsterdam Mean Time
 Rule	Neth	1917	only	-	Apr	16	2:00s	1:00	NST
@@ -2117,7 +2207,7 @@ Zone Europe/Amsterdam	0:19:32 -	LMT	1835
 # Norway
 # http://met.no/met/met_lex/q_u/sommertid.html (2004-01) agrees with Shanks &
 # Pottenger.
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Norway	1916	only	-	May	22	1:00	1:00	S
 Rule	Norway	1916	only	-	Sep	30	0:00	0	-
 Rule	Norway	1945	only	-	Apr	 2	2:00s	1:00	S
@@ -2186,7 +2276,7 @@ Link	Europe/Oslo	Arctic/Longyearbyen
 # The 1919 dates and times can be found in Tygodnik Urzędowy nr 1 (1919-03-20),
 # <http://www.wbc.poznan.pl/publication/32156> pp 1-2.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Poland	1918	1919	-	Sep	16	2:00s	0	-
 Rule	Poland	1919	only	-	Apr	15	2:00s	1:00	S
 Rule	Poland	1944	only	-	Apr	 3	2:00s	1:00	S
@@ -2257,7 +2347,7 @@ Zone	Europe/Warsaw	1:24:00 -	LMT	1880
 # Guess that the Azores changed to EU rules in 1992 (since that's when Portugal
 # harmonized with EU rules), and that they stayed +0:00 that winter.
 #
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 # DSH writes that despite Decree 1,469 (1915), the change to the clocks was not
 # done every year, depending on what Spain did, because of railroad schedules.
 # Go with Shanks & Pottenger.
@@ -2370,7 +2460,7 @@ Zone Atlantic/Madeira	-1:07:36 -	LMT	1884        # Funchal
 # assume that Romania and Moldova switched to EU rules in 1997,
 # the same year as Bulgaria.
 #
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Romania	1932	only	-	May	21	 0:00s	1:00	S
 Rule	Romania	1932	1939	-	Oct	Sun>=1	 0:00s	0	-
 Rule	Romania	1933	1939	-	Apr	Sun>=2	 0:00s	1:00	S
@@ -3468,14 +3558,14 @@ Link Europe/Prague Europe/Bratislava
 # fallback transition from the next day's 00:59... to 00:00.
 
 # From Michael Deckers (2016-12-15):
-# The Royal Decree of 1900-06-26 quoted by Planesas, online at
+# The Royal Decree of 1900-07-26 quoted by Planesas, online at
 # https://www.boe.es/datos/pdfs/BOE//1900/209/A00383-00384.pdf
 # says in its article 5 (my translation):
 # These dispositions will enter into force beginning with the
 # instant at which, according to the time indicated in article 1,
 # the 1st day of January of 1901 will begin.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Spain	1918	only	-	Apr	15	23:00	1:00	S
 Rule	Spain	1918	1919	-	Oct	 6	24:00s	0	-
 Rule	Spain	1919	only	-	Apr	 6	23:00	1:00	S
@@ -3612,7 +3702,7 @@ Zone Europe/Stockholm	1:12:12 -	LMT	1879 Jan  1
 # By the end of the 18th century clocks and watches became commonplace
 # and their performance improved enormously.  Communities began to keep
 # mean time in preference to apparent time - Geneva from 1780 ....
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 # From Whitman (who writes "Midnight?"):
 # Rule	Swiss	1940	only	-	Nov	 2	0:00	1:00	S
 # Rule	Swiss	1940	only	-	Dec	31	0:00	0	-
@@ -3699,7 +3789,7 @@ Zone Europe/Stockholm	1:12:12 -	LMT	1879 Jan  1
 # 1853-07-16, though it probably occurred at some other date in Zurich, and
 # legal civil time probably changed at still some other transition date.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Swiss	1941	1942	-	May	Mon>=1	1:00	1:00	S
 Rule	Swiss	1941	1942	-	Oct	Mon>=1	2:00	0	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
@@ -3848,7 +3938,7 @@ Zone	Europe/Zurich	0:34:08 -	LMT	1853 Jul 16 # See above comment.
 # Although Google Translate misfires on that source, it looks like
 # Turkey reversed last month's decision, and so will stay at +03.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Turkey	1916	only	-	May	 1	0:00	1:00	S
 Rule	Turkey	1916	only	-	Oct	 1	0:00	0	-
 Rule	Turkey	1920	only	-	Mar	28	0:00	1:00	S
@@ -4006,7 +4096,7 @@ Zone Europe/Kiev	2:02:04 -	LMT	1880
 			2:00	1:00	EEST	1991 Sep 29  3:00
 			2:00	E-Eur	EE%sT	1995
 			2:00	EU	EE%sT
-# Ruthenia used CET 1990/1991.
+# Transcarpathia used CET 1990/1991.
 # "Uzhhorod" is the transliteration of the Rusyn/Ukrainian pronunciation, but
 # "Uzhgorod" is more common in English.
 Zone Europe/Uzhgorod	1:29:12 -	LMT	1890 Oct
