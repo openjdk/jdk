@@ -2939,7 +2939,7 @@ class StubGenerator: public StubCodeGenerator {
                                 address long_copy_entry, address checkcast_copy_entry) {
 
     Label L_failed, L_failed_0, L_objArray;
-    Label L_copy_bytes, L_copy_shorts, L_copy_ints, L_copy_longs;
+    Label L_copy_shorts, L_copy_ints, L_copy_longs;
 
     // Input registers
     const Register src        = c_rarg0;  // source array oop
@@ -2948,10 +2948,8 @@ class StubGenerator: public StubCodeGenerator {
     const Register dst_pos    = c_rarg3;  // destination position
 #ifndef _WIN64
     const Register length     = c_rarg4;
-    const Register rklass_tmp = r9;  // load_klass
 #else
     const Address  length(rsp, 6 * wordSize);  // elements count is on stack on Win64
-    const Register rklass_tmp = rdi;  // load_klass
 #endif
 
     { int modulus = CodeEntryAlignment;
@@ -3016,15 +3014,13 @@ class StubGenerator: public StubCodeGenerator {
     guarantee(((j1off ^ j4off) & ~15) != 0, "I$ line of 1st & 4th jumps");
 
     // registers used as temp
-    const Register r11_length    = r11; // elements count to copy
     const Register r10_src_klass = r10; // array klass
 
     //  if (length < 0) return -1;
-    __ movl(r11_length, length);        // length (elements count, 32-bits value)
-    __ testl(r11_length, r11_length);
-    __ jccb(Assembler::negative, L_failed_0);
+    __ cmpl(length, 0);
+    __ jccb(Assembler::less, L_failed_0);
 
-    __ load_klass(r10_src_klass, src, rklass_tmp);
+    __ load_klass(r10_src_klass, src, r11);
 #ifdef ASSERT
     //  assert(src->klass() != NULL);
     {
@@ -3035,7 +3031,7 @@ class StubGenerator: public StubCodeGenerator {
       __ bind(L1);
       __ stop("broken null klass");
       __ bind(L2);
-      __ load_klass(rax, dst, rklass_tmp);
+      __ load_klass(rax, dst, r11);
       __ cmpq(rax, 0);
       __ jcc(Assembler::equal, L1);     // this would be broken also
       BLOCK_COMMENT("} assert klasses not null done");
@@ -3058,7 +3054,7 @@ class StubGenerator: public StubCodeGenerator {
     __ jcc(Assembler::equal, L_objArray);
 
     //  if (src->klass() != dst->klass()) return -1;
-    __ load_klass(rax, dst, rklass_tmp);
+    __ load_klass(rax, dst, r11);
     __ cmpq(r10_src_klass, rax);
     __ jcc(Assembler::notEqual, L_failed);
 
@@ -3082,8 +3078,10 @@ class StubGenerator: public StubCodeGenerator {
     }
 #endif
 
-    arraycopy_range_checks(src, src_pos, dst, dst_pos, r11_length,
-                           r10, L_failed);
+    const Register length_reg = NOT_WIN64(length) WIN64_ONLY(r11); // elements count to copy
+    WIN64_ONLY(__ movl(length_reg, length);) // Load from stack
+
+    arraycopy_range_checks(src, src_pos, dst, dst_pos, length_reg, r10, L_failed);
 
     // TypeArrayKlass
     //
@@ -3110,12 +3108,11 @@ class StubGenerator: public StubCodeGenerator {
     // 'from', 'to', 'count' registers should be set in such order
     // since they are the same as 'src', 'src_pos', 'dst'.
 
-  __ BIND(L_copy_bytes);
     __ cmpl(rax_elsize, 0);
     __ jccb(Assembler::notEqual, L_copy_shorts);
     __ lea(from, Address(src, src_pos, Address::times_1, 0));// src_addr
     __ lea(to,   Address(dst, dst_pos, Address::times_1, 0));// dst_addr
-    __ movl2ptr(count, r11_length); // length
+    __ movl2ptr(count, length_reg); // length
     __ jump(RuntimeAddress(byte_copy_entry));
 
   __ BIND(L_copy_shorts);
@@ -3123,7 +3120,7 @@ class StubGenerator: public StubCodeGenerator {
     __ jccb(Assembler::notEqual, L_copy_ints);
     __ lea(from, Address(src, src_pos, Address::times_2, 0));// src_addr
     __ lea(to,   Address(dst, dst_pos, Address::times_2, 0));// dst_addr
-    __ movl2ptr(count, r11_length); // length
+    __ movl2ptr(count, length_reg); // length
     __ jump(RuntimeAddress(short_copy_entry));
 
   __ BIND(L_copy_ints);
@@ -3131,7 +3128,7 @@ class StubGenerator: public StubCodeGenerator {
     __ jccb(Assembler::notEqual, L_copy_longs);
     __ lea(from, Address(src, src_pos, Address::times_4, 0));// src_addr
     __ lea(to,   Address(dst, dst_pos, Address::times_4, 0));// dst_addr
-    __ movl2ptr(count, r11_length); // length
+    __ movl2ptr(count, length_reg); // length
     __ jump(RuntimeAddress(int_copy_entry));
 
   __ BIND(L_copy_longs);
@@ -3148,44 +3145,44 @@ class StubGenerator: public StubCodeGenerator {
 #endif
     __ lea(from, Address(src, src_pos, Address::times_8, 0));// src_addr
     __ lea(to,   Address(dst, dst_pos, Address::times_8, 0));// dst_addr
-    __ movl2ptr(count, r11_length); // length
+    __ movl2ptr(count, length_reg); // length
     __ jump(RuntimeAddress(long_copy_entry));
 
     // ObjArrayKlass
   __ BIND(L_objArray);
-    // live at this point:  r10_src_klass, r11_length, src[_pos], dst[_pos]
+    // live at this point: r10_src_klass, src[_pos], dst[_pos]
 
     Label L_plain_copy, L_checkcast_copy;
     //  test array classes for subtyping
-    __ load_klass(rax, dst, rklass_tmp);
+    __ load_klass(rax, dst, r11);
     __ cmpq(r10_src_klass, rax); // usual case is exact equality
     __ jcc(Assembler::notEqual, L_checkcast_copy);
 
     // Identically typed arrays can be copied without element-wise checks.
-    arraycopy_range_checks(src, src_pos, dst, dst_pos, r11_length,
-                           r10, L_failed);
+    WIN64_ONLY(__ movl(length_reg, length);) // Load from stack
+    arraycopy_range_checks(src, src_pos, dst, dst_pos, length_reg, r10, L_failed);
 
     __ lea(from, Address(src, src_pos, TIMES_OOP,
                  arrayOopDesc::base_offset_in_bytes(T_OBJECT))); // src_addr
     __ lea(to,   Address(dst, dst_pos, TIMES_OOP,
                  arrayOopDesc::base_offset_in_bytes(T_OBJECT))); // dst_addr
-    __ movl2ptr(count, r11_length); // length
+    __ movl2ptr(count, length_reg); // length
   __ BIND(L_plain_copy);
     __ jump(RuntimeAddress(oop_copy_entry));
 
   __ BIND(L_checkcast_copy);
-    // live at this point:  r10_src_klass, r11_length, rax (dst_klass)
+    // live at this point: r10_src_klass, rax (dst_klass)
     {
       // Before looking at dst.length, make sure dst is also an objArray.
       __ cmpl(Address(rax, lh_offset), objArray_lh);
       __ jcc(Assembler::notEqual, L_failed);
 
       // It is safe to examine both src.length and dst.length.
-      arraycopy_range_checks(src, src_pos, dst, dst_pos, r11_length,
-                             rax, L_failed);
+      WIN64_ONLY(__ movl(length_reg, length);) // Load from stack
+      arraycopy_range_checks(src, src_pos, dst, dst_pos, length_reg, rax, L_failed);
 
       const Register r11_dst_klass = r11;
-      __ load_klass(r11_dst_klass, dst, rklass_tmp); // reload
+      __ load_klass(r11_dst_klass, dst, rax); // reload
 
       // Marshal the base address arguments now, freeing registers.
       __ lea(from, Address(src, src_pos, TIMES_OOP,
