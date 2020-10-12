@@ -88,7 +88,6 @@ inline oop ShenandoahBarrierSet::load_reference_barrier_native(oop obj, T* load_
     if (thr->is_Java_thread()) {
       return NULL;
     } else {
-      log_trace(gc,ref)("LRB-native returning naked oop: " PTR_FORMAT, p2i(obj));
       return obj;
     }
   }
@@ -98,8 +97,6 @@ inline oop ShenandoahBarrierSet::load_reference_barrier_native(oop obj, T* load_
     // Since we are here and we know the load address, update the reference.
     ShenandoahHeap::cas_oop(fwd, load_addr, obj);
   }
-  assert(!_heap->in_collection_set(fwd) || !_heap->has_forwarded_objects() || _heap->cancelled_gc(), "must not return cset-object from LRB-native");
-  log_trace(gc,ref)("Reference or native access/resurrection: obj: " PTR_FORMAT ", fwd: " PTR_FORMAT ", has_fwd: %s", p2i(obj), p2i(fwd), BOOL_TO_STR(_heap->has_forwarded_objects()));
   return fwd;
 }
 

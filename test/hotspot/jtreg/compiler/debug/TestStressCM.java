@@ -29,25 +29,28 @@ import jdk.test.lib.Asserts;
 
 /*
  * @test
- * @bug 8252219
+ * @bug 8253765
  * @requires vm.debug == true & vm.compiler2.enabled
- * @summary Tests that compilations with the same seed yield the same IGVN
- *          trace, and compilations with different seeds yield different IGVN
- *          traces (the latter does not necessarily hold for all pairs of
- *          seeds).
+ * @summary Tests that, when compiling with StressLCM or StressGCM, using the
+ *          same seed results in the same compilation, and using different seeds
+ *          results in different compilations (the latter does not necessarily
+ *          hold for all pairs of seeds). The output of PrintOptoStatistics is
+ *          used to compare among compilations, instead of the more intuitive
+ *          TraceOptoPipelining which prints non-deterministic memory addresses.
  * @library /test/lib /
- * @run driver compiler.debug.TestStressIGVN
+ * @run driver compiler.debug.TestStressCM StressLCM
+ * @run driver compiler.debug.TestStressCM StressGCM
  */
 
-public class TestStressIGVN {
+public class TestStressCM {
 
-    static String igvnTrace(int stressSeed) throws Exception {
-        String className = TestStressIGVN.class.getName();
+    static String optoStats(String stressOpt, int stressSeed) throws Exception {
+        String className = TestStressCM.class.getName();
         String[] procArgs = {
             "-Xcomp", "-XX:-TieredCompilation",
-            "-XX:CompileOnly=" + className + "::sum", "-XX:+TraceIterativeGVN",
-            "-XX:+StressIGVN", "-XX:StressSeed=" + stressSeed,
-            className, "10"};
+            "-XX:CompileOnly=" + className + "::sum",
+            "-XX:+PrintOptoStatistics", "-XX:+" + stressOpt,
+            "-XX:StressSeed=" + stressSeed, className, "10"};
         ProcessBuilder pb  = ProcessTools.createJavaProcessBuilder(procArgs);
         OutputAnalyzer out = new OutputAnalyzer(pb.start());
         return out.getStdout();
@@ -60,11 +63,12 @@ public class TestStressIGVN {
     }
 
     public static void main(String[] args) throws Exception {
-        if (args.length == 0) {
-            Asserts.assertEQ(igvnTrace(10), igvnTrace(10),
-                "got different IGVN traces for the same seed");
-            Asserts.assertNE(igvnTrace(10), igvnTrace(20),
-                "got the same IGVN trace for different seeds");
+        if (args[0].startsWith("Stress")) {
+            String stressOpt = args[0];
+            Asserts.assertEQ(optoStats(stressOpt, 10), optoStats(stressOpt, 10),
+                "got different optimization stats for the same seed");
+            Asserts.assertNE(optoStats(stressOpt, 10), optoStats(stressOpt, 20),
+                "got the same optimization stats for different seeds");
         } else if (args.length > 0) {
             sum(Integer.parseInt(args[0]));
         }
