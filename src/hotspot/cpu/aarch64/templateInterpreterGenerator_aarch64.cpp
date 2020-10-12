@@ -1357,7 +1357,6 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // Call the native method.
   __ blr(r10);
   __ bind(native_return);
-  __ maybe_isb();
   __ get_method(rmethod);
   // result potentially in r0 or v0
 
@@ -1410,7 +1409,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ mov(c_rarg0, rthread);
     __ mov(rscratch2, CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
     __ blr(rscratch2);
-    __ maybe_isb();
+    // An instruction sync is required here after the call into the VM. However,
+    // that will have been caught in the VM by a cross_modify_fence call.
     __ get_method(rmethod);
     __ reinit_heapbase();
     __ bind(Continue);

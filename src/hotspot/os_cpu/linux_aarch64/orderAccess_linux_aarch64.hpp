@@ -30,6 +30,8 @@
 
 #include "runtime/vm_version.hpp"
 
+#define inlasm_isb()    asm volatile("isb" : : : "memory")
+
 // Implementation of class OrderAccess.
 
 inline void OrderAccess::loadload()   { acquire(); }
@@ -53,6 +55,10 @@ inline void OrderAccess::fence() {
   FULL_MEM_BARRIER;
 }
 
-inline void OrderAccess::cross_modify_fence_impl() { }
+inline void OrderAccess::cross_modify_fence_impl() {
+  inlasm_isb();
+}
+
+#undef inlasm_isb
 
 #endif // OS_CPU_LINUX_AARCH64_ORDERACCESS_LINUX_AARCH64_HPP

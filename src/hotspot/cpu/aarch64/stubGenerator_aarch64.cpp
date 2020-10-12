@@ -5017,6 +5017,8 @@ class StubGenerator: public StubCodeGenerator {
     BLOCK_COMMENT("call runtime_entry");
     __ mov(rscratch1, runtime_entry);
     __ blr(rscratch1);
+    // An instruction sync is required here after the call into the VM. However,
+    // that will have been caught in the VM by a cross_modify_fence call.
 
     // Generate oop map
     OopMap* map = new OopMap(framesize, 0);
@@ -5024,7 +5026,6 @@ class StubGenerator: public StubCodeGenerator {
     oop_maps->add_gc_map(the_pc - start, map);
 
     __ reset_last_Java_frame(true);
-    __ maybe_isb();
 
     if (UseSVE > 0) {
       // Reinitialize the ptrue predicate register, in case the external runtime

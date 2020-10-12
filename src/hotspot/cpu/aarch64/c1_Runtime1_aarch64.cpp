@@ -65,6 +65,8 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
   // do the call
   lea(rscratch1, RuntimeAddress(entry));
   blr(rscratch1);
+  // An instruction sync is required here after the call into the VM. However,
+  // that will have been caught in the VM by a cross_modify_fence call.
   bind(retaddr);
   int call_offset = offset();
   // verify callee-saved register
@@ -80,7 +82,6 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
   pop(r0, sp);
 #endif
   reset_last_Java_frame(true);
-  maybe_isb();
 
   // check for pending exceptions
   { Label L;

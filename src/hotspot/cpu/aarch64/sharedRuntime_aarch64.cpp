@@ -373,7 +373,10 @@ static void patch_callers_callsite(MacroAssembler *masm) {
   __ mov(c_rarg1, lr);
   __ lea(rscratch1, RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::fixup_callers_callsite)));
   __ blr(rscratch1);
-  __ maybe_isb();
+
+  // Explicit isb required because fixup_callers_callsite may change the code
+  // stream.
+  __ safepoint_isb();
 
   __ pop_CPU_state();
   // restore sp
@@ -1164,7 +1167,6 @@ static void rt_call(MacroAssembler* masm, address dest) {
   } else {
     __ lea(rscratch1, RuntimeAddress(dest));
     __ blr(rscratch1);
-    __ maybe_isb();
   }
 }
 
@@ -1874,7 +1876,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ verify_sve_vector_length();
   }
 
-  // check for safepoint operation in progress and/or pending suspend requests
+  // Check for safepoint operation in progress and/or pending suspend requests.
   Label safepoint_in_progress, safepoint_in_progress_done;
   {
     // We need an acquire here to ensure that any subsequent load of the
@@ -2054,6 +2056,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ str(zr, Address(rthread, in_bytes(Thread::pending_exception_offset())));
 
     rt_call(masm, CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_unlocking_C));
+    // An instruction sync is required here after the call into the VM. However,
+    // that will have been caught in the VM by a cross_modify_fence call.
 
 #ifdef ASSERT
     {
@@ -2081,6 +2085,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ bind(reguard);
   save_native_result(masm, ret_type, stack_slots);
   rt_call(masm, CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages));
+  // An instruction sync is required here after the call into the VM. However,
+  // that will have been caught in the VM by a cross_modify_fence call.
   restore_native_result(masm, ret_type, stack_slots);
   // and continue
   __ b(reguard_done);
@@ -2104,7 +2110,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ lea(rscratch1, RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans_and_transition)));
     }
     __ blr(rscratch1);
-    __ maybe_isb();
+
     // Restore any method result value
     restore_native_result(masm, ret_type, stack_slots);
 
@@ -2799,6 +2805,8 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   __ mov(c_rarg0, rthread);
   __ lea(rscratch1, RuntimeAddress(call_ptr));
   __ blr(rscratch1);
+  // An instruction sync is required here after the call into the VM. However,
+  // that will have been caught in the VM by a cross_modify_fence call.
   __ bind(retaddr);
 
   // Set an oopmap for the call site.  This oopmap will map all
@@ -2812,7 +2820,6 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
 
   __ reset_last_Java_frame(false);
 
-  __ maybe_isb();
   __ membar(Assembler::LoadLoad | Assembler::LoadStore);
 
   if (UseSVE > 0 && save_vectors) {
@@ -2910,6 +2917,8 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
     __ lea(rscratch1, RuntimeAddress(destination));
 
     __ blr(rscratch1);
+    // An instruction sync is required here after the call into the VM. However,
+    // that will have been caught in the VM by a cross_modify_fence call.
     __ bind(retaddr);
   }
 
@@ -2918,8 +2927,6 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   // registers that the compiler might be keeping live across a safepoint.
 
   oop_maps->add_gc_map( __ offset() - start, map);
-
-  __ maybe_isb();
 
   // r0 contains the address we are going to jump to assuming no exception got installed
 
@@ -3042,7 +3049,8 @@ void OptoRuntime::generate_exception_blob() {
   __ mov(c_rarg0, rthread);
   __ lea(rscratch1, RuntimeAddress(CAST_FROM_FN_PTR(address, OptoRuntime::handle_exception_C)));
   __ blr(rscratch1);
-  __ maybe_isb();
+  // handle_exception_C is a special VM call which does not require an explicit
+  // instruction sync afterwards.
 
   // Set an oopmap for the call site.  This oopmap will only be used if we
   // are unwinding the stack.  Hence, all locations will be dead.
