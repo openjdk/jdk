@@ -429,6 +429,7 @@ class Compile : public Phase {
   PrintInliningBuffer& print_inlining_current();
 
   void log_late_inline_failure(CallGenerator* cg, const char* msg);
+  DEBUG_ONLY(bool _exception_backedge;)
 
  public:
 
@@ -1139,7 +1140,7 @@ class Compile : public Phase {
 
   // Auxiliary methods for randomized fuzzing/stressing
   int random();
-  static bool randomized_select(int count);
+  bool randomized_select(int count);
 
   // supporting clone_map
   CloneMap&     clone_map();
@@ -1166,6 +1167,8 @@ class Compile : public Phase {
 #endif // IA32
 #ifdef ASSERT
   bool _type_verify_symmetry;
+  void set_exception_backedge() { _exception_backedge = true; }
+  bool has_exception_backedge() const { return _exception_backedge; }
 #endif
 };
 

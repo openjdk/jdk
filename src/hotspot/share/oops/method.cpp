@@ -646,7 +646,7 @@ bool Method::compute_has_loops_flag() {
   Bytecodes::Code bc;
 
   while ((bc = bcs.next()) >= 0) {
-    switch( bc ) {
+    switch (bc) {
       case Bytecodes::_ifeq:
       case Bytecodes::_ifnull:
       case Bytecodes::_iflt:
@@ -665,14 +665,42 @@ bool Method::compute_has_loops_flag() {
       case Bytecodes::_if_acmpne:
       case Bytecodes::_goto:
       case Bytecodes::_jsr:
-        if( bcs.dest() < bcs.next_bci() ) _access_flags.set_has_loops();
+        if (bcs.dest() < bcs.next_bci()) _access_flags.set_has_loops();
         break;
 
       case Bytecodes::_goto_w:
       case Bytecodes::_jsr_w:
-        if( bcs.dest_w() < bcs.next_bci() ) _access_flags.set_has_loops();
+        if (bcs.dest_w() < bcs.next_bci()) _access_flags.set_has_loops();
         break;
 
+      case Bytecodes::_lookupswitch: {
+        Bytecode_lookupswitch lookupswitch(this, bcs.bcp());
+        if (lookupswitch.default_offset() < 0) {
+          _access_flags.set_has_loops();
+        } else {
+          for (int i = 0; i < lookupswitch.number_of_pairs(); ++i) {
+            LookupswitchPair pair = lookupswitch.pair_at(i);
+            if (pair.offset() < 0) {
+              _access_flags.set_has_loops();
+              break;
+            }
+          }
+        }
+        break;
+      }
+      case Bytecodes::_tableswitch: {
+        Bytecode_tableswitch tableswitch(this, bcs.bcp());
+        if (tableswitch.default_offset() < 0) {
+          _access_flags.set_has_loops();
+        } else {
+          for (int i = 0; i < tableswitch.length(); ++i) {
+            if (tableswitch.dest_offset_at(i) < 0) {
+              _access_flags.set_has_loops();
+            }
+          }
+        }
+        break;
+      }
       default:
         break;
     }
