@@ -258,6 +258,7 @@ class OrderAccess : public AllStatic {
 
   static void     cross_modify_fence() {
     cross_modify_fence_impl();
+    cross_modify_fence_verify();
   }
 
   // Processors which are not multi-copy-atomic require a full fence
@@ -277,6 +278,8 @@ private:
   static void StubRoutines_fence();
 
   static void cross_modify_fence_impl();
+
+  static void cross_modify_fence_verify() PRODUCT_RETURN;
 };
 
 #include OS_CPU_HEADER(orderAccess)

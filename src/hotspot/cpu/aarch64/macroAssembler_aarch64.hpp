@@ -1307,7 +1307,7 @@ public:
   void mul_add(Register out, Register in, Register offs, Register len, Register k);
 
   // Place an ISB after code may have been modified due to a safepoint.
-  void safepoint_isb() { isb(); }
+  void safepoint_isb();
 
 private:
   // Return the effective address r + (r1 << ext) + offset.
@@ -1383,6 +1383,11 @@ public:
   }
   void cache_wb(Address line);
   void cache_wbsync(bool is_pre);
+
+private:
+  // Check the current thread doesn't need a cross modify fence.
+  void verify_cross_modify_fence_not_required() PRODUCT_RETURN;
+
 };
 
 #ifdef ASSERT
