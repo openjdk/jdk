@@ -2772,7 +2772,7 @@ void Compile::eliminate_redundant_card_marks(Node* n) {
         // Eliminate the previous StoreCM
         prev->set_req(MemNode::Memory, mem->in(MemNode::Memory));
         assert(mem->outcnt() == 0, "should be dead");
-        mem->disconnect_inputs(NULL, this);
+        mem->disconnect_inputs(this);
       } else {
         prev = mem;
       }
@@ -3054,7 +3054,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
           n->set_req(AddPNode::Base, nn);
           n->set_req(AddPNode::Address, nn);
           if (addp->outcnt() == 0) {
-            addp->disconnect_inputs(NULL, this);
+            addp->disconnect_inputs(this);
           }
         }
       }
@@ -3127,12 +3127,12 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
 
       n->subsume_by(new_in1, this);
       if (in1->outcnt() == 0) {
-        in1->disconnect_inputs(NULL, this);
+        in1->disconnect_inputs(this);
       }
     } else {
       n->subsume_by(n->in(1), this);
       if (n->outcnt() == 0) {
-        n->disconnect_inputs(NULL, this);
+        n->disconnect_inputs(this);
       }
     }
     break;
@@ -3210,10 +3210,10 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
         Node* cmpN = new CmpNNode(in1->in(1), new_in2);
         n->subsume_by(cmpN, this);
         if (in1->outcnt() == 0) {
-          in1->disconnect_inputs(NULL, this);
+          in1->disconnect_inputs(this);
         }
         if (in2->outcnt() == 0) {
-          in2->disconnect_inputs(NULL, this);
+          in2->disconnect_inputs(this);
         }
       }
     }
@@ -3244,7 +3244,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
       }
     }
     if (in1->outcnt() == 0) {
-      in1->disconnect_inputs(NULL, this);
+      in1->disconnect_inputs(this);
     }
     break;
   }
@@ -3410,7 +3410,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
         }
       }
       if (in2->outcnt() == 0) { // Remove dead node
-        in2->disconnect_inputs(NULL, this);
+        in2->disconnect_inputs(this);
       }
     }
     break;
@@ -3442,7 +3442,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
               wq.push(in);
             }
           }
-          m->disconnect_inputs(NULL, this);
+          m->disconnect_inputs(this);
         }
       }
     }
@@ -3585,7 +3585,7 @@ void Compile::final_graph_reshaping_walk( Node_Stack &nstack, Node *root, Final_
           n->set_req(j, in->in(1));
         }
         if (in->outcnt() == 0) {
-          in->disconnect_inputs(NULL, this);
+          in->disconnect_inputs(this);
         }
       }
     }
