@@ -45,14 +45,7 @@ void ShenandoahConcurrentMark::do_task(ShenandoahObjToScanQueue* q, T* cl, Shena
   shenandoah_assert_marked(NULL, obj);
   shenandoah_assert_not_in_cset_except(NULL, obj, _heap->cancelled_gc());
 
-  ShenandoahMarkingContext* ctx = _heap->marking_context();
-  uintptr_t mark = ctx->par_marking_bits(obj);
-#ifdef ASSERT
-  if (!ShenandoahMarkBitMap::is_marked_strong(mark)) {
-    assert(ShenandoahMarkBitMap::is_marked_final(mark), "must be marked final if not marked strong");
-  }
-#endif
-  cl->set_strong(ShenandoahMarkBitMap::is_marked_strong(mark));
+  cl->set_strong(task->is_strong());
   if (task->is_not_chunked()) {
     if (obj->is_instance()) {
       // Case 1: Normal oop, process as usual.
@@ -71,7 +64,7 @@ void ShenandoahConcurrentMark::do_task(ShenandoahObjToScanQueue* q, T* cl, Shena
     // Count liveness the last: push the outstanding work to the queues first
     // Avoid double-counting objects that are visited twice due to upgrade
     // from final- to strong mark.
-    if (!ShenandoahMarkBitMap::is_marked_strong_and_final(mark)) {
+    if (task->count_liveness()) {
       count_liveness(live_data, obj);
     }
   } else {
@@ -264,14 +257,14 @@ inline void ShenandoahConcurrentMark::mark_through_ref(T *p, ShenandoahHeap* hea
       shenandoah_assert_not_forwarded(p, obj);
       shenandoah_assert_not_in_cset_except(p, obj, heap->cancelled_gc());
 
-      bool marked;
+      bool marked, marked_first;
       if (strong) {
-        marked = mark_context->mark_strong(obj);
+        marked = mark_context->mark_strong(obj, marked_first);
       } else {
-        marked = mark_context->mark_final(obj);
+        marked = mark_context->mark_final(obj, marked_first);
       }
       if (marked) {
-        bool pushed = q->push(ShenandoahMarkTask(obj));
+        bool pushed = q->push(ShenandoahMarkTask(obj, marked_first, strong));
         assert(pushed, "overflow queue should always succeed pushing");
 
         if ((STRING_DEDUP == ENQUEUE_DEDUP) && ShenandoahStringDedup::is_candidate(obj)) {

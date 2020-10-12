@@ -147,13 +147,13 @@ public:
   // strong.
   // Words that have been marked final before or by a concurrent thread will be
   // upgraded to strong. In this case, this method also returns true.
-  inline bool mark_strong(HeapWord* w);
+  inline bool mark_strong(HeapWord* w, bool& marked_first);
 
   // Mark word as 'final' if it hasn't been marked final or strong yet.
   // Return true if the word has been marked final, false if it has already been
   // marked strong or final or if another thread has beat us by marking it
   // strong or final.
-  inline bool mark_final(HeapWord* w);
+  inline bool mark_final(HeapWord* w, bool& marked_first);
 
   inline bool is_marked_strong(HeapWord* w)  const;
   inline bool is_marked_final(HeapWord* w) const;

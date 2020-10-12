@@ -32,14 +32,14 @@ inline const ShenandoahMarkBitMap* ShenandoahMarkingContext::mark_bit_map() {
   return &_mark_bit_map;
 }
 
-inline bool ShenandoahMarkingContext::mark_strong(oop obj) {
+inline bool ShenandoahMarkingContext::mark_strong(oop obj, bool& marked_first) {
   shenandoah_assert_not_forwarded(NULL, obj);
-  return (! allocated_after_mark_start(obj)) && _mark_bit_map.mark_strong(cast_from_oop<HeapWord*>(obj));
+  return (! allocated_after_mark_start(obj)) && _mark_bit_map.mark_strong(cast_from_oop<HeapWord*>(obj), marked_first);
 }
 
-inline bool ShenandoahMarkingContext::mark_final(oop obj) {
+inline bool ShenandoahMarkingContext::mark_final(oop obj, bool& marked_first) {
   shenandoah_assert_not_forwarded(NULL, obj);
-  return (! allocated_after_mark_start(obj)) && _mark_bit_map.mark_final(cast_from_oop<HeapWord*>(obj));
+  return (! allocated_after_mark_start(obj)) && _mark_bit_map.mark_final(cast_from_oop<HeapWord*>(obj), marked_first);
 }
 
 inline bool ShenandoahMarkingContext::is_marked(oop obj) const {

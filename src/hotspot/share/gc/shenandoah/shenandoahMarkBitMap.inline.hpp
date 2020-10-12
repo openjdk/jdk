@@ -36,29 +36,32 @@ inline HeapWord* ShenandoahMarkBitMap::index_to_address(size_t offset) const {
   return _covered.start() + ((offset >> 1) << _shift);
 }
 
-inline bool ShenandoahMarkBitMap::mark_strong(HeapWord* heap_addr) {
+inline bool ShenandoahMarkBitMap::mark_strong(HeapWord* heap_addr, bool& marked_first) {
   check_mark(heap_addr);
 
   idx_t bit = address_to_index(heap_addr);
   verify_index(bit);
   volatile bm_word_t* const addr = word_addr(bit);
   const bm_word_t mask = bit_mask(bit);
+  const bm_word_t mask_final = (bm_word_t)1 << (bit_in_word(bit) + 1);
   bm_word_t old_val = load_word_ordered(addr, memory_order_conservative);
 
   do {
     const bm_word_t new_val = old_val | mask;
     if (new_val == old_val) {
+      marked_first = false;
       return false;     // Someone else beat us to it.
     }
     const bm_word_t cur_val = Atomic::cmpxchg(addr, old_val, new_val, memory_order_conservative);
     if (cur_val == old_val) {
+      marked_first = (cur_val & mask_final) == 0;
       return true;      // Success.
     }
     old_val = cur_val;  // The value changed, try again.
   } while (true);
 }
 
-inline bool ShenandoahMarkBitMap::mark_final(HeapWord* heap_addr) {
+inline bool ShenandoahMarkBitMap::mark_final(HeapWord* heap_addr, bool& marked_first) {
   check_mark(heap_addr);
 
   idx_t bit = address_to_index(heap_addr);
@@ -70,14 +73,17 @@ inline bool ShenandoahMarkBitMap::mark_final(HeapWord* heap_addr) {
 
   do {
     if ((old_val & mask_strong) != 0) {
+      marked_first = false;
       return false; // Already marked strong,
     }
     const bm_word_t new_val = old_val | mask_final;
     if (new_val == old_val) {
+      marked_first = false;
       return false;     // Someone else beat us to it.
     }
     const bm_word_t cur_val = Atomic::cmpxchg(addr, old_val, new_val, memory_order_conservative);
     if (cur_val == old_val) {
+      marked_first = true;
       return true;      // Success.
     }
     old_val = cur_val;  // The value changed, try again.
