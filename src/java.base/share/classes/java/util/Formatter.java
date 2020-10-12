@@ -2800,6 +2800,9 @@ public final class Formatter implements Closeable, Flushable {
                 try {
                     // skip the trailing '$'
                     index = Integer.parseInt(s, start, end - 1, 10);
+                    if(index <= 0) {
+                       throw new IllegalFormatArgumentIndexException(index);
+                    }
                 } catch (NumberFormatException x) {
                     throw new IllegalFormatArgumentIndexException(Integer.MIN_VALUE);
                 }
