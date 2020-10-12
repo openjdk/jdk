@@ -257,12 +257,6 @@ bool ShenandoahReferenceProcessor::is_softly_live(oop reference, ReferenceType t
 
 template <typename T>
 bool ShenandoahReferenceProcessor::should_discover(oop reference, ReferenceType type) const {
-  if (reference_discovered<T>(reference) != NULL) {
-    // Already discovered. This can happen if the reference is marked finalizable first, and then strong,
-    // in which case it will be seen 2x by marking.
-    log_trace(gc,ref)("Reference already discovered: " PTR_FORMAT, p2i(reference));
-    return false;
-  }
   T* referent_addr = (T*) java_lang_ref_Reference::referent_addr_raw(reference);
   T heap_oop = RawAccess<>::oop_load(referent_addr);
   oop referent = CompressedOops::decode_not_null(heap_oop);
@@ -327,6 +321,13 @@ bool ShenandoahReferenceProcessor::discover(oop reference, ReferenceType type, u
     return false;
   }
 
+  if (reference_discovered<T>(reference) != NULL) {
+    // Already discovered. This can happen if the reference is marked finalizable first, and then strong,
+    // in which case it will be seen 2x by marking.
+    log_trace(gc,ref)("Reference already discovered: " PTR_FORMAT, p2i(reference));
+    return true;
+  }
+
   if (type == REF_FINAL) {
     Thread* thread = Thread::current();
     ShenandoahMarkRefsSuperClosure* cl = ShenandoahThreadLocalData::mark_closure(thread);
@@ -356,9 +357,8 @@ bool ShenandoahReferenceProcessor::discover(oop reference, ReferenceType type, u
     assert(refproc_data.discovered_list_head<T>() == reference, "reference must be new discovered head");
     log_trace(gc, ref)("Discovered Reference: " PTR_FORMAT " (%s)", p2i(reference), reference_type_name(type));
     _ref_proc_thread_locals[worker_id].inc_discovered(type);
-    return true;
   }
-  return false;
+  return true;
 }
 
 bool ShenandoahReferenceProcessor::discover_reference(oop reference, ReferenceType type) {
