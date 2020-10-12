@@ -91,7 +91,6 @@ class arrayOopDesc : public oopDesc {
   // Returns the address of the first element. The elements in the array will not
   // relocate from this address until a subsequent thread transition.
   inline void* base(BasicType type) const;
-  inline void* base_raw(BasicType type) const; // GC barrier invariant
 
   template <typename T>
   static T* obj_offset_to_raw(arrayOop obj, size_t offset_in_bytes, T* raw) {

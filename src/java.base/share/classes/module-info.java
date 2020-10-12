@@ -140,7 +140,6 @@ module java.base {
         java.security.sasl;
     exports jdk.internal to // for @HotSpotIntrinsicCandidate
         java.compiler,
-        jdk.jfr,
         jdk.compiler,
         jdk.incubator.vector,
         jdk.jshell;
@@ -233,6 +232,7 @@ module java.base {
         jdk.internal.vm.ci,
         jdk.incubator.vector,
         jdk.incubator.foreign,
+        jdk.jfr,
         jdk.unsupported;
     exports jdk.internal.vm.vector to
         jdk.incubator.vector;

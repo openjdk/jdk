@@ -53,6 +53,11 @@ import sun.awt.AppContext;
 public abstract class StreamPrintServiceFactory {
 
     /**
+     * Constructor for subclasses to call.
+     */
+     protected StreamPrintServiceFactory() {}
+
+    /**
      * Contains a list of factories.
      */
     static class Services {

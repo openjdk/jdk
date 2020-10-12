@@ -28,7 +28,7 @@ package jdk.javadoc.internal.doclets.formats.html;
 import java.util.Set;
 import java.util.TreeSet;
 
-import jdk.javadoc.internal.doclets.formats.html.SearchIndexItem.Category;
+import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
@@ -38,9 +38,9 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
-import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
+import jdk.javadoc.internal.doclets.toolkit.util.IndexItem.Category;
 
 
 /**
@@ -57,34 +57,26 @@ import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
  */
 public class SingleIndexWriter extends AbstractIndexWriter {
 
-    private Set<Character> elements;
+    private Set<Character> firstCharacters;
 
     /**
      * Construct the SingleIndexWriter with filename "index-all.html" and the
      * {@link IndexBuilder}
      *
      * @param configuration the configuration for this doclet
-     * @param filename     Name of the index file to be generated.
-     * @param indexBuilder Unicode based Index from {@link IndexBuilder}
      */
-    public SingleIndexWriter(HtmlConfiguration configuration,
-                             DocPath filename,
-                             IndexBuilder indexBuilder) {
-        super(configuration, filename, indexBuilder);
+    public SingleIndexWriter(HtmlConfiguration configuration) {
+        super(configuration, DocPaths.INDEX_ALL);
     }
 
     /**
      * Generate single index file, for all Unicode characters.
      *
      * @param configuration the configuration for this doclet
-     * @param indexBuilder IndexBuilder built by {@link IndexBuilder}
      * @throws DocFileIOException if there is a problem generating the index
      */
-    public static void generate(HtmlConfiguration configuration,
-                                IndexBuilder indexBuilder) throws DocFileIOException {
-        DocPath filename = DocPaths.INDEX_ALL;
-        SingleIndexWriter indexgen = new SingleIndexWriter(configuration,
-                                         filename, indexBuilder);
+    public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
+        SingleIndexWriter indexgen = new SingleIndexWriter(configuration);
         indexgen.generateIndexFile();
     }
 
@@ -101,14 +93,10 @@ public class SingleIndexWriter extends AbstractIndexWriter {
         navBar.setUserHeader(getUserHeaderFooter(true));
         headerContent.add(navBar.getContent(Navigation.Position.TOP));
         Content mainContent = new ContentBuilder();
-        elements = new TreeSet<>(indexBuilder.asMap().keySet());
-        elements.addAll(tagSearchIndexMap.keySet());
+        firstCharacters = new TreeSet<>(mainIndex.getFirstCharacters());
         addLinksForIndexes(mainContent);
-        for (Character unicode : elements) {
-            if (tagSearchIndexMap.get(unicode) != null) {
-                indexBuilder.addSearchTags(unicode, tagSearchIndexMap.get(unicode));
-            }
-            addContents(unicode, indexBuilder.getMemberList(unicode), mainContent);
+        for (Character ch : firstCharacters) {
+            addContents(ch, mainIndex.getItems(ch), mainContent);
         }
         addLinksForIndexes(mainContent);
         HtmlTree footer = HtmlTree.FOOTER();
@@ -122,7 +110,6 @@ public class SingleIndexWriter extends AbstractIndexWriter {
                                 contents.getContent("doclet.Index"))))
                 .addMainContent(mainContent)
                 .setFooter(footer));
-        createSearchIndexFiles();
         printHtmlDocument(null, "index", body);
     }
 
@@ -132,7 +119,7 @@ public class SingleIndexWriter extends AbstractIndexWriter {
      * @param contentTree the content tree to which the links for indexes will be added
      */
     protected void addLinksForIndexes(Content contentTree) {
-        for (Character ch : elements) {
+        for (Character ch : firstCharacters) {
             String unicode = ch.toString();
             contentTree.add(
                     links.createLink(getNameForIndex(unicode),
@@ -147,7 +134,8 @@ public class SingleIndexWriter extends AbstractIndexWriter {
             contentTree.add(links.createLink(DocPaths.ALLPACKAGES_INDEX,
                                              contents.allPackagesLabel));
         }
-        if (searchItems.containsAnyOfCategories(Category.SYSTEM_PROPERTY)) {
+        boolean anySystemProperties = !mainIndex.getItems(DocTree.Kind.SYSTEM_PROPERTY).isEmpty();
+        if (anySystemProperties) {
             contentTree.add(getVerticalSeparator());
             contentTree.add(links.createLink(DocPaths.SYSTEM_PROPERTIES, contents.systemPropertiesLabel));
         }

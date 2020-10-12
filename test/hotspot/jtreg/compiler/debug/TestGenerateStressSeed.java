@@ -32,10 +32,12 @@ import jdk.test.lib.Asserts;
  * @test
  * @bug 8252219
  * @requires vm.compiler2.enabled
- * @summary Tests that using -XX:+StressIGVN without -XX:StressSeed=N generates
+ * @summary Tests that using a stress option without -XX:StressSeed=N generates
  *          and logs a random seed.
  * @library /test/lib /
- * @run driver compiler.debug.TestGenerateStressSeed
+ * @run driver compiler.debug.TestGenerateStressSeed StressLCM
+ * @run driver compiler.debug.TestGenerateStressSeed StressGCM
+ * @run driver compiler.debug.TestGenerateStressSeed StressIGVN
  */
 
 public class TestGenerateStressSeed {
@@ -47,17 +49,18 @@ public class TestGenerateStressSeed {
     }
 
     public static void main(String[] args) throws Exception {
-        if (args.length == 0) {
+        if (args[0].startsWith("Stress")) {
             String className = TestGenerateStressSeed.class.getName();
+            String stressOpt = args[0];
             String log = "test.log";
             String[] procArgs = {
-                "-Xcomp", "-XX:-TieredCompilation",
-                "-XX:CompileOnly=" + className + "::sum", "-XX:+StressIGVN",
+                "-Xcomp", "-XX:-TieredCompilation", "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:CompileOnly=" + className + "::sum", "-XX:+" + stressOpt,
                 "-XX:+LogCompilation", "-XX:LogFile=" + log, className, "10"};
             ProcessTools.createJavaProcessBuilder(procArgs).start().waitFor();
             new OutputAnalyzer(Paths.get(log))
                 .shouldContain("stress_test seed");
-        } else if (args.length > 0) {
+        } else {
             sum(Integer.parseInt(args[0]));
         }
     }

@@ -193,7 +193,7 @@ void G1ParScanThreadState::do_oop_evac(T* p) {
     return;
   }
 
-  markWord m = obj->mark_raw();
+  markWord m = obj->mark();
   if (m.is_marked()) {
     obj = (oop) m.decode_pointer();
   } else {
@@ -485,15 +485,15 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
         // In this case, we have to install the mark word first,
         // otherwise obj looks to be forwarded (the old mark word,
         // which contains the forward pointer, was copied)
-        obj->set_mark_raw(old_mark);
+        obj->set_mark(old_mark);
         markWord new_mark = old_mark.displaced_mark_helper().set_age(age);
         old_mark.set_displaced_mark_helper(new_mark);
       } else {
-        obj->set_mark_raw(old_mark.set_age(age));
+        obj->set_mark(old_mark.set_age(age));
       }
       _age_table.add(age, word_sz);
     } else {
-      obj->set_mark_raw(old_mark);
+      obj->set_mark(old_mark);
     }
 
     // Most objects are not arrays, so do one array check rather than
@@ -524,7 +524,7 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
     }
 
     G1ScanInYoungSetter x(&_scanner, dest_attr.is_young());
-    obj->oop_iterate_backwards(&_scanner);
+    obj->oop_iterate_backwards(&_scanner, klass);
     return obj;
 
   } else {

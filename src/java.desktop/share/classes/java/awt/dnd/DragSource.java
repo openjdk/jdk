@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,6 @@ import sun.awt.AWTAccessor;
 import sun.awt.AWTAccessor.DragSourceContextAccessor;
 import sun.awt.dnd.SunDragSourceContextPeer;
 import sun.security.action.GetIntegerAction;
-
 
 /**
  * The {@code DragSource} is the entity responsible
@@ -803,6 +802,8 @@ public class DragSource implements Serializable {
      *     {@code DragSourceMotionListener} object.
      * </ul>
      *
+     * @param  s the {@code ObjectOutputStream} to write
+     * @throws IOException if an I/O error occurs
      * @serialData Either a {@code FlavorMap} instance, or
      *      {@code null}, followed by a {@code null}-terminated
      *      sequence of 0 or more pairs; the pair consists of a
@@ -849,6 +850,10 @@ public class DragSource implements Serializable {
      * <li>Otherwise, the key/value pair is skipped.
      * </ul>
      *
+     * @param  s the {@code ObjectInputStream} to read
+     * @throws ClassNotFoundException if the class of a serialized object could
+     *         not be found
+     * @throws IOException if an I/O error occurs
      * @see java.awt.datatransfer.SystemFlavorMap#getDefaultFlavorMap
      * @since 1.4
      */

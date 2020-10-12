@@ -220,8 +220,9 @@ address MacroAssembler::patch_set_narrow_oop(address a, address bound, narrowOop
   }
   assert(inst1_found, "inst is not lis");
 
-  int xc = (data >> 16) & 0xffff;
-  int xd = (data >>  0) & 0xffff;
+  uint32_t data_value = CompressedOops::narrow_oop_value(data);
+  int xc = (data_value >> 16) & 0xffff;
+  int xd = (data_value >>  0) & 0xffff;
 
   set_imm((int *)inst1_addr, (short)(xc)); // see enc_load_con_narrow_hi/_lo
   set_imm((int *)inst2_addr,        (xd)); // unsigned int
@@ -254,7 +255,7 @@ narrowOop MacroAssembler::get_narrow_oop(address a, address bound) {
   uint xl = ((unsigned int) (get_imm(inst2_addr, 0) & 0xffff));
   uint xh = (((get_imm(inst1_addr, 0)) & 0xffff) << 16);
 
-  return (int) (xl | xh);
+  return CompressedOops::narrow_oop_cast(xl | xh);
 }
 #endif // _LP64
 
@@ -3043,7 +3044,7 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
 }
 
 void MacroAssembler::safepoint_poll(Label& slow_path, Register temp_reg) {
-  ld(temp_reg, in_bytes(Thread::polling_page_offset()), R16_thread);
+  ld(temp_reg, in_bytes(Thread::polling_word_offset()), R16_thread);
   // Armed page has poll_bit set.
   andi_(temp_reg, temp_reg, SafepointMechanism::poll_bit());
   bne(CCR0, slow_path);

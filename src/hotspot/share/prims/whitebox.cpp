@@ -857,7 +857,7 @@ class VM_WhiteBoxDeoptimizeFrames : public VM_WhiteBoxOperation {
   void doit() {
     for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
       if (t->has_last_Java_frame()) {
-        for (StackFrameStream fst(t, false); !fst.is_done(); fst.next()) {
+        for (StackFrameStream fst(t, false /* update */, true /* process_frames */); !fst.is_done(); fst.next()) {
           frame* f = fst.current();
           if (f->can_be_deoptimized() && !f->is_deoptimized_frame()) {
             Deoptimization::deoptimize(t, *f);
@@ -1685,7 +1685,8 @@ WB_ENTRY(jlong, WB_GetThreadStackSize(JNIEnv* env, jobject o))
 WB_END
 
 WB_ENTRY(jlong, WB_GetThreadRemainingStackSize(JNIEnv* env, jobject o))
-  return (jlong) thread->stack_available(os::current_stack_pointer()) - (jlong)JavaThread::stack_shadow_zone_size();
+  return (jlong) thread->stack_overflow_state()->stack_available(
+                   os::current_stack_pointer()) - (jlong)StackOverflow::stack_shadow_zone_size();
 WB_END
 
 
@@ -2026,6 +2027,32 @@ WB_ENTRY(jint, WB_HandshakeWalkStack(JNIEnv* env, jobject wb, jobject thread_han
   return tsc.num_threads_completed();
 WB_END
 
+WB_ENTRY(void, WB_AsyncHandshakeWalkStack(JNIEnv* env, jobject wb, jobject thread_handle))
+  class TraceSelfClosure : public AsyncHandshakeClosure {
+    JavaThread* _self;
+    void do_thread(Thread* th) {
+      assert(th->is_Java_thread(), "sanity");
+      // AsynchHandshake handshakes are only executed by target.
+      assert(_self == th, "Must be");
+      assert(Thread::current() == th, "Must be");
+      JavaThread* jt = th->as_Java_thread();
+      ResourceMark rm;
+      jt->print_on(tty);
+      jt->print_stack_on(tty);
+      tty->cr();
+    }
+
+  public:
+    TraceSelfClosure(JavaThread* self_target) : AsyncHandshakeClosure("WB_TraceSelf"), _self(self_target) {}
+  };
+  oop thread_oop = JNIHandles::resolve(thread_handle);
+  if (thread_oop != NULL) {
+    JavaThread* target = java_lang_Thread::thread(thread_oop);
+    TraceSelfClosure* tsc = new TraceSelfClosure(target);
+    Handshake::execute(tsc, target);
+  }
+WB_END
+
 //Some convenience methods to deal with objects from java
 int WhiteBox::offset_for_field(const char* field_name, oop object,
     Symbol* signature_symbol) {
@@ -2263,6 +2290,10 @@ WB_ENTRY(jboolean, WB_IsJVMTIIncluded(JNIEnv* env, jobject wb))
   return INCLUDE_JVMTI ? JNI_TRUE : JNI_FALSE;
 WB_END
 
+WB_ENTRY(void, WB_WaitUnsafe(JNIEnv* env, jobject wb, jint time))
+    os::naked_short_sleep(time);
+WB_END
+
 #define CC (char*)
 
 static JNINativeMethod methods[] = {
@@ -2487,6 +2518,7 @@ static JNINativeMethod methods[] = {
 
   {CC"clearInlineCaches0",  CC"(Z)V",                 (void*)&WB_ClearInlineCaches },
   {CC"handshakeWalkStack", CC"(Ljava/lang/Thread;Z)I", (void*)&WB_HandshakeWalkStack },
+  {CC"asyncHandshakeWalkStack", CC"(Ljava/lang/Thread;)V", (void*)&WB_AsyncHandshakeWalkStack },
   {CC"checkThreadObjOfTerminatingThread", CC"(Ljava/lang/Thread;)V", (void*)&WB_CheckThreadObjOfTerminatingThread },
   {CC"addCompilerDirective",    CC"(Ljava/lang/String;)I",
                                                       (void*)&WB_AddCompilerDirective },
@@ -2513,6 +2545,7 @@ static JNINativeMethod methods[] = {
   {CC"aotLibrariesCount", CC"()I",                    (void*)&WB_AotLibrariesCount },
   {CC"getKlassMetadataSize", CC"(Ljava/lang/Class;)I",(void*)&WB_GetKlassMetadataSize},
   {CC"isJVMTIIncluded", CC"()Z",                      (void*)&WB_IsJVMTIIncluded},
+  {CC"waitUnsafe", CC"(I)V",                          (void*)&WB_WaitUnsafe},
 };
 
 

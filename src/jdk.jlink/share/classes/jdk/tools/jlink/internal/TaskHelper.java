@@ -30,20 +30,22 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.Map;
 import java.util.HashMap;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.Collections;
+import java.util.Locale;
+import java.util.ResourceBundle;
+import java.util.MissingResourceException;
+import java.util.Comparator;
+
 
 import jdk.tools.jlink.builder.DefaultImageBuilder;
 import jdk.tools.jlink.builder.ImageBuilder;
@@ -373,7 +375,7 @@ public final class TaskHelper {
                         = new PluginOption(false,
                             (task, opt, arg) -> {
                                 Map<String, String> m = addArgumentMap(plugin);
-                                m.put(DefaultCompressPlugin.NAME, DefaultCompressPlugin.LEVEL_2);
+                                m.put(plugin.getName(), DefaultCompressPlugin.LEVEL_2);
                             }, false, "--compress", "-c");
                     mainOptions.add(plugOption);
                 } else if (plugin instanceof DefaultStripDebugPlugin) {
@@ -386,14 +388,14 @@ public final class TaskHelper {
                 } else if (plugin instanceof ExcludeJmodSectionPlugin) {
                     plugOption = new PluginOption(false, (task, opt, arg) -> {
                             Map<String, String> m = addArgumentMap(plugin);
-                            m.put(ExcludeJmodSectionPlugin.NAME,
+                            m.put(plugin.getName(),
                                   ExcludeJmodSectionPlugin.MAN_PAGES);
                         }, false, "--no-man-pages");
                     mainOptions.add(plugOption);
 
                     plugOption = new PluginOption(false, (task, opt, arg) -> {
                         Map<String, String> m = addArgumentMap(plugin);
-                        m.put(ExcludeJmodSectionPlugin.NAME,
+                        m.put(plugin.getName(),
                               ExcludeJmodSectionPlugin.INCLUDE_HEADER_FILES);
                     }, false, "--no-header-files");
                     mainOptions.add(plugOption);
@@ -450,8 +452,8 @@ public final class TaskHelper {
                     // aren't being used at the same time. --strip-debug invokes --strip-native-debug-symbols on
                     // platforms that support it, so it makes little sense to allow both at the same time.
                     if ((plugin instanceof DefaultStripDebugPlugin && seenPlugins.contains(STRIP_NATIVE_DEBUG_SYMBOLS_NAME)) ||
-                        (STRIP_NATIVE_DEBUG_SYMBOLS_NAME.equals(plugin.getName()) && seenPlugins.contains(DefaultStripDebugPlugin.NAME))) {
-                        throw new BadArgs("err.plugin.conflicts", "--" + DefaultStripDebugPlugin.NAME,
+                        (STRIP_NATIVE_DEBUG_SYMBOLS_NAME.equals(plugin.getName()) && seenPlugins.contains(plugin.getName()))) {
+                        throw new BadArgs("err.plugin.conflicts", "--" + plugin.getName(),
                                                                 "-G",
                                                                 "--" + STRIP_NATIVE_DEBUG_SYMBOLS_NAME);
                     }
@@ -606,42 +608,50 @@ public final class TaskHelper {
             List<Plugin> pluginList = PluginRepository.
                     getPlugins(pluginOptions.pluginsLayer);
 
-            for (Plugin plugin : Utils.getSortedPlugins(pluginList)) {
-                showPlugin(plugin, log);
-            }
+            pluginList.stream()
+                    .sorted(Comparator.comparing((Plugin plugin) -> plugin.getUsage().isEmpty(),
+                                                 (Boolean res1, Boolean res2) -> Boolean.compare(res2,res1))
+                                      .thenComparing(Plugin::getName)
+                    )
+                    .forEach((plugin) -> showPlugin(plugin, log));
 
             log.println("\n" + bundleHelper.getMessage("main.extended.help.footer"));
         }
 
         private void showPlugin(Plugin plugin, PrintWriter log) {
             if (showsPlugin(plugin)) {
-                log.println("\n" + bundleHelper.getMessage("main.plugin.name")
-                        + ": " + plugin.getName());
+                if(!plugin.getUsage().isEmpty()) {
+                    log.println(plugin.getUsage());
+                } else {
+                    log.println("\n" + bundleHelper.getMessage("main.plugin.name")
+                            + ": " + plugin.getName());
 
-                // print verbose details for non-builtin plugins
-                if (!Utils.isBuiltin(plugin)) {
-                    log.println(bundleHelper.getMessage("main.plugin.class")
-                         + ": " + plugin.getClass().getName());
-                    log.println(bundleHelper.getMessage("main.plugin.module")
-                         + ": " + plugin.getClass().getModule().getName());
-                    Category category = plugin.getType();
-                    log.println(bundleHelper.getMessage("main.plugin.category")
-                         + ": " + category.getName());
-                    log.println(bundleHelper.getMessage("main.plugin.state")
-                        + ": " + plugin.getStateDescription());
+                    // print verbose details for non-builtin plugins
+                    if (!Utils.isBuiltin(plugin)) {
+                        log.println(bundleHelper.getMessage("main.plugin.class")
+                                + ": " + plugin.getClass().getName());
+                        log.println(bundleHelper.getMessage("main.plugin.module")
+                                + ": " + plugin.getClass().getModule().getName());
+                        Category category = plugin.getType();
+                        log.println(bundleHelper.getMessage("main.plugin.category")
+                                + ": " + category.getName());
+                        log.println(bundleHelper.getMessage("main.plugin.state")
+                                + ": " + plugin.getStateDescription());
+                    }
+
+                    String option = plugin.getOption();
+                    if (option != null) {
+                        log.println(bundleHelper.getMessage("main.plugin.option")
+                                + ": --" + plugin.getOption()
+                                + (plugin.hasArguments()? ("=" + plugin.getArgumentsDescription()) : ""));
+                    }
+
+                    // description can be long spanning more than one line and so
+                    // print a newline after description label.
+                    log.println(bundleHelper.getMessage("main.plugin.description")
+                            + ": " + plugin.getDescription());
                 }
 
-                String option = plugin.getOption();
-                if (option != null) {
-                    log.println(bundleHelper.getMessage("main.plugin.option")
-                        + ": --" + plugin.getOption()
-                        + (plugin.hasArguments()? ("=" + plugin.getArgumentsDescription()) : ""));
-                }
-
-                // description can be long spanning more than one line and so
-                // print a newline after description label.
-                log.println(bundleHelper.getMessage("main.plugin.description")
-                        + ": " + plugin.getDescription());
             }
         }
 
@@ -725,6 +735,6 @@ public final class TaskHelper {
 
     // Display all plugins
     private static boolean showsPlugin(Plugin plugin) {
-        return (!Utils.isDisabled(plugin) && plugin.getOption() != null);
+        return (!Utils.isDisabled(plugin) && (plugin.getOption() != null) || !(plugin.getUsage().isEmpty()));
     }
 }

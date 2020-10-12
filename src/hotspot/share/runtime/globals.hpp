@@ -185,7 +185,7 @@ const intx ObjectAlignmentInBytes = 8;
           "features")                                                       \
                                                                             \
   product(bool, JavaMonitorsInStackTrace, true,                             \
-          "Print information about Java monitor locks when the stacks are"  \
+          "Print information about Java monitor locks when the stacks are " \
           "dumped")                                                         \
                                                                             \
   product_pd(bool, UseLargePages,                                           \
@@ -285,10 +285,6 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, ForceUnreachable, false, DIAGNOSTIC,                        \
           "Make all non code cache addresses to be unreachable by "         \
           "forcing use of 64bit literal fixups")                            \
-                                                                            \
-  notproduct(bool, StressDerivedPointers, false,                            \
-          "Force scavenge when a derived pointer is detected on stack "     \
-          "after rtm call")                                                 \
                                                                             \
   develop(bool, TraceDerivedPointers, false,                                \
           "Trace traversal of derived pointers on stack")                   \
@@ -395,10 +391,6 @@ const intx ObjectAlignmentInBytes = 8;
   notproduct(bool, WalkStackALot, false,                                    \
           "Trace stack (no print) at every exit from the runtime system")   \
                                                                             \
-  product(bool, Debugging, false,                                           \
-          "Set when executing debug methods in debug.cpp "                  \
-          "(to prevent triggering assertions)")                             \
-                                                                            \
   notproduct(bool, VerifyLastFrame, false,                                  \
           "Verify oops on last frame on entry to VM")                       \
                                                                             \
@@ -480,9 +472,6 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, ZapFillerObjects, trueInDebug,                              \
           "Zap filler objects with 0xDEAFBABE")                             \
-                                                                            \
-  develop(bool, PrintVMMessages, true,                                      \
-          "Print VM messages on console")                                   \
                                                                             \
   notproduct(uintx, ErrorHandlerTest, 0,                                    \
           "If > 0, provokes an error after VM initialization; the value "   \
@@ -1332,11 +1321,6 @@ const intx ObjectAlignmentInBytes = 8;
   product_pd(bool, ProfileInterpreter,                                      \
           "Profile at the bytecode level during interpretation")            \
                                                                             \
-  develop(bool, TraceProfileInterpreter, false,                             \
-          "Trace profiling at the bytecode level during interpretation. "   \
-          "This outputs the profiling information collected to improve "    \
-          "jit compilation.")                                               \
-                                                                            \
   develop_pd(bool, ProfileTraps,                                            \
           "Profile deoptimization traps at the bytecode level")             \
                                                                             \
@@ -1350,10 +1334,6 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, VerifyDataPointer, trueInDebug,                             \
           "Verify the method data pointer during interpreter profiling")    \
-                                                                            \
-  develop(bool, VerifyCompiledCode, false,                                  \
-          "Include miscellaneous runtime verifications in nmethod code; "   \
-          "default off because it disturbs nmethod size heuristics")        \
                                                                             \
   notproduct(bool, CrashGCForDumpingJavaThread, false,                      \
           "Manually make GC thread crash then dump java stack trace;  "     \
@@ -1561,10 +1541,6 @@ const intx ObjectAlignmentInBytes = 8;
   develop(intx, InlineThrowMaxSize,   200,                                  \
           "Force inlining of throwing methods smaller than this")           \
           range(0, max_jint)                                                \
-                                                                            \
-  develop(intx, ProfilerNodeSize,  1024,                                    \
-          "Size in K to allocate for the Profile Nodes of each thread")     \
-          range(0, 1024)                                                    \
                                                                             \
   product_pd(size_t, MetaspaceSize,                                         \
           "Initial threshold (in bytes) at which a garbage collection "     \
@@ -1807,7 +1783,7 @@ const intx ObjectAlignmentInBytes = 8;
           "File containing compilation replay information"                  \
           "[default: ./replay_pid%p.log] (%p replaced with pid)")           \
                                                                             \
-   product(ccstr, InlineDataFile, NULL,                                     \
+  product(ccstr, InlineDataFile, NULL,                                      \
           "File containing inlining replay information"                     \
           "[default: ./inline_pid%p.log] (%p replaced with pid)")           \
                                                                             \
@@ -2421,10 +2397,10 @@ const intx ObjectAlignmentInBytes = 8;
              "When a class C is loaded, check that "                        \
              "(1) all intrinsics defined by the VM for class C are present "\
              "in the loaded class file and are marked with the "            \
-             "@HotSpotIntrinsicCandidate annotation, that "                 \
+             "@IntrinsicCandidate annotation, that "                        \
              "(2) there is an intrinsic registered for all loaded methods " \
-             "that are annotated with the @HotSpotIntrinsicCandidate "      \
-             "annotation, and that "                                        \
+             "that are annotated with the @IntrinsicCandidate annotation, " \
+             "and that "                                                    \
              "(3) no orphan methods exist for class C (i.e., methods for "  \
              "which the VM declares an intrinsic but that are not declared "\
              "in the loaded class C. "                                      \

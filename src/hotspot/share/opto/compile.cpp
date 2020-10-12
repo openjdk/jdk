@@ -732,9 +732,9 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   if (failing())  return;
   NOT_PRODUCT( verify_graph_edges(); )
 
-  // If IGVN is randomized for stress testing, seed random number
-  // generation and log the seed for repeatability.
-  if (StressIGVN) {
+  // If LCM, GCM, or IGVN are randomized for stress testing, seed
+  // random number generation and log the seed for repeatability.
+  if (StressLCM || StressGCM || StressIGVN) {
     _stress_seed = FLAG_IS_DEFAULT(StressSeed) ?
       static_cast<uint>(Ticks::now().nanoseconds()) : StressSeed;
     if (_log != NULL) {
@@ -925,7 +925,7 @@ void Compile::Init(int aliaslevel) {
 
   _fixed_slots = 0;
   set_has_split_ifs(false);
-  set_has_loops(has_method() && method()->has_loops()); // first approximation
+  set_has_loops(false); // first approximation
   set_has_stringbuilder(false);
   set_has_boxed_value(false);
   _trap_can_recompile = false;  // no traps emitted yet
@@ -1025,6 +1025,7 @@ void Compile::Init(int aliaslevel) {
 #ifdef ASSERT
   _type_verify_symmetry = true;
   _phase_optimize_finished = false;
+  _exception_backedge = false;
 #endif
 }
 
@@ -2815,7 +2816,7 @@ void Compile::eliminate_redundant_card_marks(Node* n) {
         // Eliminate the previous StoreCM
         prev->set_req(MemNode::Memory, mem->in(MemNode::Memory));
         assert(mem->outcnt() == 0, "should be dead");
-        mem->disconnect_inputs(NULL, this);
+        mem->disconnect_inputs(this);
       } else {
         prev = mem;
       }
@@ -3098,7 +3099,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
           n->set_req(AddPNode::Base, nn);
           n->set_req(AddPNode::Address, nn);
           if (addp->outcnt() == 0) {
-            addp->disconnect_inputs(NULL, this);
+            addp->disconnect_inputs(this);
           }
         }
       }
@@ -3171,12 +3172,12 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
 
       n->subsume_by(new_in1, this);
       if (in1->outcnt() == 0) {
-        in1->disconnect_inputs(NULL, this);
+        in1->disconnect_inputs(this);
       }
     } else {
       n->subsume_by(n->in(1), this);
       if (n->outcnt() == 0) {
-        n->disconnect_inputs(NULL, this);
+        n->disconnect_inputs(this);
       }
     }
     break;
@@ -3254,10 +3255,10 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
         Node* cmpN = new CmpNNode(in1->in(1), new_in2);
         n->subsume_by(cmpN, this);
         if (in1->outcnt() == 0) {
-          in1->disconnect_inputs(NULL, this);
+          in1->disconnect_inputs(this);
         }
         if (in2->outcnt() == 0) {
-          in2->disconnect_inputs(NULL, this);
+          in2->disconnect_inputs(this);
         }
       }
     }
@@ -3288,7 +3289,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
       }
     }
     if (in1->outcnt() == 0) {
-      in1->disconnect_inputs(NULL, this);
+      in1->disconnect_inputs(this);
     }
     break;
   }
@@ -3456,7 +3457,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
         }
       }
       if (in2->outcnt() == 0) { // Remove dead node
-        in2->disconnect_inputs(NULL, this);
+        in2->disconnect_inputs(this);
       }
     }
     break;
@@ -3488,7 +3489,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
               wq.push(in);
             }
           }
-          m->disconnect_inputs(NULL, this);
+          m->disconnect_inputs(this);
         }
       }
     }
@@ -3631,7 +3632,7 @@ void Compile::final_graph_reshaping_walk( Node_Stack &nstack, Node *root, Final_
           n->set_req(j, in->in(1));
         }
         if (in->outcnt() == 0) {
-          in->disconnect_inputs(NULL, this);
+          in->disconnect_inputs(this);
         }
       }
     }
@@ -4535,7 +4536,7 @@ int Compile::random() {
 #define RANDOMIZED_DOMAIN_MASK ((1 << (RANDOMIZED_DOMAIN_POW + 1)) - 1)
 bool Compile::randomized_select(int count) {
   assert(count > 0, "only positive");
-  return (os::random() & RANDOMIZED_DOMAIN_MASK) < (RANDOMIZED_DOMAIN / count);
+  return (random() & RANDOMIZED_DOMAIN_MASK) < (RANDOMIZED_DOMAIN / count);
 }
 
 CloneMap&     Compile::clone_map()                 { return _clone_map; }

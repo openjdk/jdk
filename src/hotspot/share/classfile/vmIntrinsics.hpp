@@ -76,7 +76,7 @@
 // in the (Java) source code and the semantics of the method as defined
 // by the code in the VM, intrinsic methods must be explicitly marked.
 //
-// Intrinsic methods are marked by the jdk.internal.HotSpotIntrinsicCandidate
+// Intrinsic methods are marked by the jdk.internal.vm.annotation.IntrinsicCandidate
 // annotation. If CheckIntrinsics is enabled, the VM performs the following
 // checks when a class C is loaded: (1) all intrinsics defined by the VM for
 // class C are present in the loaded class file and are marked;

@@ -132,10 +132,6 @@ class ThreadInVMForHandshake : public ThreadStateTransition {
   void transition_back() {
     // This can be invoked from transition states and must return to the original state properly
     assert(_thread->thread_state() == _thread_in_vm, "should only call when leaving VM after handshake");
-    // Change to transition state and ensure it is seen by the VM thread.
-    _thread->set_thread_state_fence(_thread_in_vm_trans);
-
-    SafepointMechanism::process_if_requested(_thread);
 
     _thread->set_thread_state(_original_state);
 
@@ -156,6 +152,9 @@ class ThreadInVMForHandshake : public ThreadStateTransition {
     }
 
     thread->set_thread_state(_thread_in_vm);
+
+    // Threads shouldn't block if they are in the middle of printing, but...
+    ttyLocker::break_tty_lock_for_safepoint(os::current_thread_id());
   }
 
   ~ThreadInVMForHandshake() {
@@ -170,8 +169,8 @@ class ThreadInVMfromJava : public ThreadStateTransition {
     trans_from_java(_thread_in_vm);
   }
   ~ThreadInVMfromJava()  {
-    if (_thread->stack_yellow_reserved_zone_disabled()) {
-      _thread->enable_stack_yellow_reserved_zone();
+    if (_thread->stack_overflow_state()->stack_yellow_reserved_zone_disabled()) {
+      _thread->stack_overflow_state()->enable_stack_yellow_reserved_zone();
     }
     trans(_thread_in_vm, _thread_in_Java);
     // Check for pending. async. exceptions or suspends.
@@ -310,8 +309,8 @@ class ThreadInVMfromJavaNoAsyncException : public ThreadStateTransition {
     trans_from_java(_thread_in_vm);
   }
   ~ThreadInVMfromJavaNoAsyncException()  {
-    if (_thread->stack_yellow_reserved_zone_disabled()) {
-      _thread->enable_stack_yellow_reserved_zone();
+    if (_thread->stack_overflow_state()->stack_yellow_reserved_zone_disabled()) {
+      _thread->stack_overflow_state()->enable_stack_yellow_reserved_zone();
     }
     trans(_thread_in_vm, _thread_in_Java);
     // NOTE: We do not check for pending. async. exceptions.
