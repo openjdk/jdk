@@ -129,7 +129,7 @@ public class JdwpAttachTest {
                 if (expectedResult) {
                     log("OK: attached as expected");
                 } else {
-                    throw new RuntimeException("ERROR: LingeredApp.startApp was able to attach");
+                    throw new RuntimeException("ERROR: LingeredApp.startApp was NOT able to attach");
                 }
             } catch (Exception ex) {
                 if (expectedResult) {
