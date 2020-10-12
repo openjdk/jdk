@@ -60,9 +60,8 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.EventRequest.Set.set002
- *        nsk.jdwp.EventRequest.Set.set002a
- * @run main/othervm PropertyResolvingWrapper
+ * @build nsk.jdwp.EventRequest.Set.set002a
+ * @run main/othervm
  *      nsk.jdwp.EventRequest.Set.set002
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

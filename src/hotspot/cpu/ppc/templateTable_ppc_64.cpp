@@ -80,13 +80,6 @@ static void do_oop_load(InterpreterMacroAssembler* _masm,
   __ load_heap_oop(dst, offset, base, tmp1, tmp2, false, decorators);
 }
 
-// ============================================================================
-// Platform-dependent initialization
-
-void TemplateTable::pd_initialize() {
-  // No ppc64 specific initialization.
-}
-
 Address TemplateTable::at_bcp(int offset) {
   // Not used on ppc.
   ShouldNotReachHere();
@@ -2180,7 +2173,7 @@ void TemplateTable::_return(TosState state) {
 
   if (_desc->bytecode() != Bytecodes::_return_register_finalizer) {
     Label no_safepoint;
-    __ ld(R11_scratch1, in_bytes(Thread::polling_page_offset()), R16_thread);
+    __ ld(R11_scratch1, in_bytes(Thread::polling_word_offset()), R16_thread);
     __ andi_(R11_scratch1, R11_scratch1, SafepointMechanism::poll_bit());
     __ beq(CCR0, no_safepoint);
     __ push(state);

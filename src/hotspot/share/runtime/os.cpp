@@ -454,13 +454,7 @@ void os::init_before_ergo() {
   // decisions depending on large page support and the calculated large page size.
   large_page_init();
 
-  // We need to adapt the configured number of stack protection pages given
-  // in 4K pages to the actual os page size. We must do this before setting
-  // up minimal stack sizes etc. in os::init_2().
-  JavaThread::set_stack_red_zone_size     (align_up(StackRedPages      * 4 * K, vm_page_size()));
-  JavaThread::set_stack_yellow_zone_size  (align_up(StackYellowPages   * 4 * K, vm_page_size()));
-  JavaThread::set_stack_reserved_zone_size(align_up(StackReservedPages * 4 * K, vm_page_size()));
-  JavaThread::set_stack_shadow_zone_size  (align_up(StackShadowPages   * 4 * K, vm_page_size()));
+  StackOverflow::initialize_stack_zone_sizes();
 
   // VM version initialization identifies some characteristics of the
   // platform that are used during ergonomic decisions.
@@ -886,23 +880,22 @@ void os::abort(bool dump_core) {
 //---------------------------------------------------------------------------
 // Helper functions for fatal error handler
 
-void os::print_hex_dump(outputStream* st, address start, address end, int unitsize) {
+void os::print_hex_dump(outputStream* st, address start, address end, int unitsize,
+                        int bytes_per_line, address logical_start) {
   assert(unitsize == 1 || unitsize == 2 || unitsize == 4 || unitsize == 8, "just checking");
 
   start = align_down(start, unitsize);
+  logical_start = align_down(logical_start, unitsize);
+  bytes_per_line = align_up(bytes_per_line, 8);
 
   int cols = 0;
-  int cols_per_line = 0;
-  switch (unitsize) {
-    case 1: cols_per_line = 16; break;
-    case 2: cols_per_line = 8;  break;
-    case 4: cols_per_line = 4;  break;
-    case 8: cols_per_line = 2;  break;
-    default: return;
-  }
+  int cols_per_line = bytes_per_line / unitsize;
 
   address p = start;
-  st->print(PTR_FORMAT ":   ", p2i(start));
+  address logical_p = logical_start;
+
+  // Print out the addresses as if we were starting from logical_start.
+  st->print(PTR_FORMAT ":   ", p2i(logical_p));
   while (p < end) {
     if (is_readable_pointer(p)) {
       switch (unitsize) {
@@ -915,11 +908,12 @@ void os::print_hex_dump(outputStream* st, address start, address end, int unitsi
       st->print("%*.*s", 2*unitsize, 2*unitsize, "????????????????");
     }
     p += unitsize;
+    logical_p += unitsize;
     cols++;
     if (cols >= cols_per_line && p < end) {
        cols = 0;
        st->cr();
-       st->print(PTR_FORMAT ":   ", p2i(p));
+       st->print(PTR_FORMAT ":   ", p2i(logical_p));
     } else {
        st->print(" ");
     }
@@ -1376,7 +1370,7 @@ bool os::stack_shadow_pages_available(Thread *thread, const methodHandle& method
     Interpreter::size_top_interpreter_activation(method()) * wordSize;
 
   address limit = thread->as_Java_thread()->stack_end() +
-                  (JavaThread::stack_guard_zone_size() + JavaThread::stack_shadow_zone_size());
+                  (StackOverflow::stack_guard_zone_size() + StackOverflow::stack_shadow_zone_size());
 
   return sp > (limit + framesize_in_bytes);
 }
@@ -1652,8 +1646,8 @@ bool os::create_stack_guard_pages(char* addr, size_t bytes) {
   return os::pd_create_stack_guard_pages(addr, bytes);
 }
 
-char* os::reserve_memory(size_t bytes, size_t alignment_hint, MEMFLAGS flags) {
-  char* result = pd_reserve_memory(bytes, alignment_hint);
+char* os::reserve_memory(size_t bytes, MEMFLAGS flags) {
+  char* result = pd_reserve_memory(bytes);
   if (result != NULL) {
     MemTracker::record_virtual_memory_reserve(result, bytes, CALLER_PC);
     if (flags != mtOther) {
@@ -1664,7 +1658,7 @@ char* os::reserve_memory(size_t bytes, size_t alignment_hint, MEMFLAGS flags) {
   return result;
 }
 
-char* os::reserve_memory_with_fd(size_t bytes, size_t alignment_hint, int file_desc) {
+char* os::reserve_memory_with_fd(size_t bytes, int file_desc) {
   char* result;
 
   if (file_desc != -1) {
@@ -1675,7 +1669,7 @@ char* os::reserve_memory_with_fd(size_t bytes, size_t alignment_hint, int file_d
       MemTracker::record_virtual_memory_reserve_and_commit(result, bytes, CALLER_PC);
     }
   } else {
-    result = pd_reserve_memory(bytes, alignment_hint);
+    result = pd_reserve_memory(bytes);
     if (result != NULL) {
       MemTracker::record_virtual_memory_reserve(result, bytes, CALLER_PC);
     }

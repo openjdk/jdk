@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.swing.plaf.synth;
 
 import java.awt.Color;
@@ -32,6 +33,7 @@ import java.awt.Rectangle;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.Enumeration;
+
 import javax.swing.DefaultCellEditor;
 import javax.swing.Icon;
 import javax.swing.JComponent;
@@ -680,6 +682,10 @@ public class SynthTreeUI extends BasicTreeUI
         return super.getRowX(row, depth) + padding;
     }
 
+    /**
+     * A subclass of {@code DefaultTreeCellRenderer} that implements
+     * {@code UIResource}.
+     */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class SynthTreeCellRenderer extends DefaultTreeCellRenderer
                                implements UIResource {

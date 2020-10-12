@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 package nsk.share.jdi;
 
+import jdk.test.lib.Platform;
 import nsk.share.*;
 import nsk.share.jpda.*;
 
@@ -694,10 +695,18 @@ public class Binder extends DebugeeBinder {
         Connector.Argument arg;
 
         arg = (Connector.StringArgument) arguments.get("quote");
-        String quote = arg.value();
+        String quote = "\0";
+        arg.setValue(quote);
 
-        String cmdline = classToExecute + " " +
-                ArgumentHandler.joinArguments(argumentHandler.getRawArguments(), quote);
+        String[] rawArgs = argumentHandler.getRawArguments();
+        if (Platform.isWindows()) {
+            // " has to be escaped on windows
+            rawArgs = Arrays.stream(rawArgs)
+                            .map(s -> s.replace("\"", "\\\""))
+                            .toArray(String[]::new);
+        }
+
+        String cmdline = classToExecute + " " + ArgumentHandler.joinArguments(rawArgs, quote);
 
         arg = (Connector.StringArgument) arguments.get("main");
         arg.setValue(cmdline);

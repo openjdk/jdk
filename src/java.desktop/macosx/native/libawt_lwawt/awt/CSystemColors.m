@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,7 +126,7 @@ static JNF_STATIC_MEMBER_CACHE(jm_systemColorsChanged, jc_LWCToolkit, "systemCol
 + (NSColor*)getColor:(NSUInteger)colorIndex useAppleColor:(BOOL)useAppleColor {
     NSColor* result = nil;
 
-    if (colorIndex < (useAppleColor) ? sun_lwawt_macosx_LWCToolkit_NUM_APPLE_COLORS : java_awt_SystemColor_NUM_COLORS) {
+    if (colorIndex < ((useAppleColor) ? sun_lwawt_macosx_LWCToolkit_NUM_APPLE_COLORS : java_awt_SystemColor_NUM_COLORS)) {
         result = (useAppleColor ? appleColors : sColors)[colorIndex];
     }
     else {

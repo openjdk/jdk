@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.awt;
 
-import sun.awt.AWTAccessor;
-
 import java.io.ObjectStreamException;
-
 import java.lang.annotation.Native;
+
+import sun.awt.AWTAccessor;
 
 /**
  * A class to encapsulate symbolic colors representing the color of
@@ -536,6 +536,8 @@ public final class SystemColor extends Color implements java.io.Serializable {
      * each {@code SystemColor} object.
      * @return a proxy {@code SystemColor} object with its value
      *         replaced by the corresponding system color index.
+     * @throws ObjectStreamException if a new object replacing this object could
+     *         not be created
      */
     private Object writeReplace() throws ObjectStreamException
     {

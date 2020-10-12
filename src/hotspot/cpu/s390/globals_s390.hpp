@@ -83,37 +83,37 @@ define_pd_global(intx, InitArrayShortSize, 1*BytesPerLong);
                                                                               \
   /* Reoptimize code-sequences of calls at runtime, e.g. replace an */        \
   /* indirect call by a direct call.                                */        \
-  product(bool, ReoptimizeCallSequences, true,                                \
+  product(bool, ReoptimizeCallSequences, true, DIAGNOSTIC,                    \
           "Reoptimize code-sequences of calls at runtime.")                   \
                                                                               \
-  product(bool, UseByteReverseInstruction, true,                              \
+  product(bool, UseByteReverseInstruction, true, DIAGNOSTIC,                  \
           "Use byte reverse instruction.")                                    \
                                                                               \
-  product(bool, ExpandLoadingBaseDecode, true, "Expand the assembler "        \
-          "instruction required to load the base from DecodeN nodes during "  \
-          "matching.")                                                        \
-  product(bool, ExpandLoadingBaseDecode_NN, true, "Expand the assembler "     \
-          "instruction required to load the base from DecodeN_NN nodes "      \
-          "during matching.")                                                 \
-  product(bool, ExpandLoadingBaseEncode, true, "Expand the assembler "        \
-          "instruction required to load the base from EncodeP nodes during "  \
-          "matching.")                                                        \
-  product(bool, ExpandLoadingBaseEncode_NN, true, "Expand the assembler "     \
-          "instruction required to load the base from EncodeP_NN nodes "      \
-          "during matching.")                                                 \
+  product(bool, ExpandLoadingBaseDecode, true, DIAGNOSTIC,                    \
+          "Expand the assembler instruction required to load the base from "  \
+          "DecodeN nodes during matching.")                                   \
+  product(bool, ExpandLoadingBaseDecode_NN, true, DIAGNOSTIC,                 \
+          "Expand the assembler instruction required to load the base from "  \
+          "DecodeN_NN nodes during matching.")                                \
+  product(bool, ExpandLoadingBaseEncode, true, DIAGNOSTIC,                    \
+          "Expand the assembler instruction required to load the base from "  \
+          "EncodeP nodes during matching.")                                   \
+  product(bool, ExpandLoadingBaseEncode_NN, true, DIAGNOSTIC,                 \
+          "Expand the assembler instruction required to load the base from "  \
+          "EncodeP_NN nodes during matching.")                                \
                                                                               \
   /* Seems to pay off with 2 pages already. */                                \
-  product(size_t, MVCLEThreshold, +2*(4*K),                                   \
+  product(size_t, MVCLEThreshold, +2*(4*K), DIAGNOSTIC,                       \
           "Threshold above which page-aligned MVCLE copy/init is used.")      \
                                                                               \
-  product(bool, PreferLAoverADD, false,                                       \
+  product(bool, PreferLAoverADD, false, DIAGNOSTIC,                           \
           "Use LA/LAY instructions over ADD instructions (z/Architecture).")  \
                                                                               \
   develop(bool, ZapEmptyStackFields, false, "Write 0x0101... to empty stack"  \
           " fields. Use this to ease stack debugging.")                       \
                                                                               \
-  product(bool, TraceTraps, false, "Trace all traps the signal handler"       \
-          "handles.")
+  product(bool, TraceTraps, false, DIAGNOSTIC,                                \
+          "Trace all traps the signal handler handles.")
 
 // end of ARCH_FLAGS
 
