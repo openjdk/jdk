@@ -338,6 +338,7 @@ class Assembler : public AbstractAssembler {
     MTCRF_OPCODE  = (31u << OPCODE_SHIFT | 144u << 1),
     MFCR_OPCODE   = (31u << OPCODE_SHIFT | 19u << 1),
     MCRF_OPCODE   = (19u << OPCODE_SHIFT | 0u << 1),
+    MCRXRX_OPCODE = (31u << OPCODE_SHIFT | 576u << 1),
     SETB_OPCODE   = (31u << OPCODE_SHIFT | 128u << 1),
 
     // condition register logic instructions
@@ -1689,6 +1690,7 @@ class Assembler : public AbstractAssembler {
   inline void mcrf( ConditionRegister crd, ConditionRegister cra);
   inline void mtcr( Register s);
   // >= Power9
+  inline void mcrxrx(ConditionRegister cra);
   inline void setb( Register d, ConditionRegister cra);
 
   // Special purpose registers

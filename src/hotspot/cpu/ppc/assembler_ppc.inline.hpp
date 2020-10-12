@@ -378,6 +378,9 @@ inline void Assembler::mfcr( Register d )         { emit_int32(MFCR_OPCODE  | rt
 inline void Assembler::mcrf( ConditionRegister crd, ConditionRegister cra)
                                                       { emit_int32(MCRF_OPCODE | bf(crd) | bfa(cra)); }
 inline void Assembler::mtcr( Register s)          { Assembler::mtcrf(0xff, s); }
+// Introduced in Power 9:
+inline void Assembler::mcrxrx(ConditionRegister cra)
+                                                  { emit_int32(MCRXRX_OPCODE | bf(cra)); }
 inline void Assembler::setb(Register d, ConditionRegister cra)
                                                   { emit_int32(SETB_OPCODE | rt(d) | bfa(cra)); }
 

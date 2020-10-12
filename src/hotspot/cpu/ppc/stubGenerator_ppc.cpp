@@ -3733,14 +3733,38 @@ class StubGenerator: public StubCodeGenerator {
     VectorRegister  r                       = VR8;  // reuse eq_special_case_char's register
     VectorRegister  gathered                = VR9;  // reuse offsets's register
 
-    Label not_URL, calculate_size, unrolled_loop_start, skip_xxsel[loop_unrolls], unrolled_loop_exit;
+    Label not_URL, calculate_size, unrolled_loop_start, skip_xxsel[loop_unrolls], unrolled_loop_exit, return_zero;
 
     // The upper 32 bits of the non-pointer parameter registers are not
     // guaranteed to be zero, so mask off those upper bits.
     __ clrldi(sp, sp, 32);
     __ clrldi(sl, sl, 32);
-    __ clrldi(dp, dp, 32);
+
+    // Don't handle the last 4 characters of the source, because this
+    // VSX-based algorithm doesn't handle padding characters.  Also the
+    // vector code will always write 16 bytes of decoded data on each pass,
+    // but only the first 12 of those 16 bytes are valid data (16 base64
+    // characters become 12 bytes of binary data), so for this reason we
+    // need to subtract an additional 8 bytes from the source length, in
+    // order not to write past the end of the destination buffer.  The
+    // result of this subtraction implies that a Java function in the
+    // Base64 class will be used to process the last 12 characters.
+    __ sub(sl, sl, sp);
+    __ subi(sl, sl, 12);
+
+    // Load CTR with the number of passes through the unrolled loop
+    // = sl >> block_size_shift.  After the shift, if sl == 0, there's too
+    // little data to be processed by this intrinsic.
+    __ srawi_(sl, sl, block_size_shift);
+    __ beq_predict_not_taken(CCR0, return_zero);
+    // if sl was less than zero before the shift, XER CA will be set to 1
+    __ mcrxrx(CCR2); // moves XER's OV, OV32, CA, CA32 to CCR2's LT, GT, EQ, SO bits, respectively.
+    __ beq_predict_not_taken(CCR2, return_zero);
+    __ mtctr(sl);
+
+    // Clear the other two parameter registers upper 32 bits.
     __ clrldi(isURL, isURL, 32);
+    __ clrldi(dp, dp, 32);
 
     // Load constant vec registers that need to be loaded from memory
     __ load_const_optimized(const_ptr, (address)&bitposLUT_val, tmp_reg);
@@ -3790,30 +3814,11 @@ class StubGenerator: public StubCodeGenerator {
 
     __ bind(calculate_size);
 
-    // Don't handle the last 4 characters of the source, because this
-    // VSX-based algorithm doesn't handle padding characters.  Also the
-    // vector code will always write 16 bytes of decoded data on each pass,
-    // but only the first 12 of those 16 bytes are valid data (16 base64
-    // characters become 12 bytes of binary data), so for this reason we
-    // need to subtract an additional 8 bytes from the source length, in
-    // order not to write past the end of the destination buffer.  The
-    // result of this subtraction implies that a Java function in the
-    // Base64 class will be used to process the last 12 characters.
-    __ sub(sl, sl, sp);
-    __ subi(sl, sl, 12);
-
     // out starts at d + dp
     __ add(out, d, dp);
 
     // in starts at s + sp
     __ add(in, s, sp);
-
-    // Load CTR with the number of passes through the unrolled loop
-    // = sl >> block_size_shift.  After the shift, if sl == 0, there's too
-    // little data to be processed by this intrinsic.
-    __ srawi_(sl, sl, block_size_shift);
-    __ beq_predict_not_taken(CCR0, unrolled_loop_exit);
-    __ mtctr(sl);
 
     __ align(32);
     __ bind(unrolled_loop_start);
@@ -3985,6 +3990,10 @@ class StubGenerator: public StubCodeGenerator {
     __ sub(R3_RET, out, d);
     __ sub(R3_RET, R3_RET, dp);
 
+    __ blr();
+
+    __ bind(return_zero);
+    __ li(R3_RET, 0);
     __ blr();
 
     return start;
