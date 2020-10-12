@@ -31,7 +31,9 @@
  * The first models a contiguous memory region, which can reside either inside or outside the Java heap; the latter models an address - which also can
  * reside either inside or outside the Java heap (and can sometimes be expressed as an offset into a given segment).
  * A memory segment represents the main access coordinate of a memory access var handle, which can be obtained
- * using the combinator methods defined in the {@link jdk.incubator.foreign.MemoryHandles} class. Finally, the {@link jdk.incubator.foreign.MemoryLayout} class
+ * using the combinator methods defined in the {@link jdk.incubator.foreign.MemoryHandles} class; a set of
+ * common dereference operations is provided also by the {@link jdk.incubator.foreign.MemoryAccess} class, which can
+ * be useful for simple, non-structured access. Finally, the {@link jdk.incubator.foreign.MemoryLayout} class
  * hierarchy enables description of <em>memory layouts</em> and basic operations such as computing the size in bytes of a given
  * layout, obtain its alignment requirements, and so on. Memory layouts also provide an alternate, more abstract way, to produce
  * memory access var handles, e.g. using <a href="MemoryLayout.html#layout-paths"><em>layout paths</em></a>.
@@ -40,24 +42,21 @@
  * ranging from {@code 0} to {@code 9}, we can use the following code:
  *
  * <pre>{@code
-static final VarHandle intHandle = MemoryHandles.varHandle(int.class, ByteOrder.nativeOrder());
-
 try (MemorySegment segment = MemorySegment.allocateNative(10 * 4)) {
-    for (long i = 0 ; i < 10 ; i++) {
-       intHandle.set(base.asSlice(i * 4), (int)i);
+    for (int i = 0 ; i < 10 ; i++) {
+       MemoryAccess.setIntAtIndex(segment, i);
     }
 }
  * }</pre>
  *
- * Here we create a var handle, namely {@code intHandle}, to manipulate values of the primitive type {@code int}, at
- * a given memory location. Also, {@code intHandle} is stored in a {@code static} and {@code final} field, to achieve
- * better performance and allow for inlining of the memory access operation through the {@link java.lang.invoke.VarHandle}
- * instance. We then create a <em>native</em> memory segment, that is, a memory segment backed by
+ * Here create a <em>native</em> memory segment, that is, a memory segment backed by
  * off-heap memory; the size of the segment is 40 bytes, enough to store 10 values of the primitive type {@code int}.
  * The segment is created inside a <em>try-with-resources</em> construct: this idiom ensures that all the memory resources
  * associated with the segment will be released at the end of the block, according to the semantics described in
  * Section {@jls 14.20.3} of <cite>The Java Language Specification</cite>. Inside the try-with-resources block, we initialize
- * the contents of the memory segment; more specifically, if we view the memory segment as a set of 10 adjacent slots,
+ * the contents of the memory segment using the
+ * {@link jdk.incubator.foreign.MemoryAccess#setIntAtIndex(jdk.incubator.foreign.MemorySegment, long, int)} helper method;
+ * more specifically, if we view the memory segment as a set of 10 adjacent slots,
  * {@code s[i]}, where {@code 0 <= i < 10}, where the size of each slot is exactly 4 bytes, the initialization logic above will set each slot
  * so that {@code s[i] = i}, again where {@code 0 <= i < 10}.
  *
