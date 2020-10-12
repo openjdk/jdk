@@ -34,10 +34,6 @@
 
 #include OS_HEADER_INLINE(os)
 
-#ifndef HWCAP_SHA3
-#define HWCAP_SHA3 (1 << 17)
-#endif
-
 int VM_Version::_cpu;
 int VM_Version::_model;
 int VM_Version::_model2;
@@ -325,16 +321,6 @@ void VM_Version::initialize() {
   } else if (UseSHA512Intrinsics) {
     warning("Intrinsics for SHA-384 and SHA-512 crypto hash functions not available on this CPU.");
     FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
-  }
-
-  if (UseSHA && (_features & CPU_SHA3)) {
-    // Do not auto-enable UseSHA3Intrinsics until it has been fully tested on hardware
-    // if (FLAG_IS_DEFAULT(UseSHA3Intrinsics)) {
-      // FLAG_SET_DEFAULT(UseSHA3Intrinsics, true);
-    // }
-  } else if (UseSHA3Intrinsics) {
-    warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
-    FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
   }
 
   if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA3Intrinsics || UseSHA512Intrinsics)) {
