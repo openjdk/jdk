@@ -84,7 +84,7 @@ static volatile T* reference_referent_addr(oop reference) {
 template <typename T>
 static oop reference_referent(oop reference) {
   T heap_oop = Atomic::load(reference_referent_addr<T>(reference));
-  return lrb(CompressedOops::decode(heap_oop));
+  return CompressedOops::decode(heap_oop);
 }
 
 static void reference_set_referent(oop reference, oop referent) {
