@@ -4295,7 +4295,7 @@ static Array<InstanceKlass*>* compute_transitive_interfaces(const InstanceKlass*
   }
 }
 
-static void check_super_class_access(const InstanceKlass* this_klass, TRAPS) {
+void ClassFileParser::check_super_class_access(const InstanceKlass* this_klass, TRAPS) {
   assert(this_klass != NULL, "invariant");
   const Klass* const super = this_klass->super();
 
@@ -4314,14 +4314,7 @@ static void check_super_class_access(const InstanceKlass* this_klass, TRAPS) {
     }
 
     if (super_ik->is_sealed() && !super_ik->has_as_permitted_subclass(this_klass)) {
-      ResourceMark rm(THREAD);
-      Exceptions::fthrow(
-        THREAD_AND_LOCATION,
-        vmSymbols::java_lang_IncompatibleClassChangeError(),
-        "class %s cannot inherit from sealed class %s",
-        this_klass->external_name(),
-        super_ik->external_name());
-      return;
+      classfile_icce_error("class %s cannot inherit from sealed class %s", super_ik, CHECK);
     }
 
     // If the loader is not the boot loader then throw an exception if its
@@ -4376,7 +4369,7 @@ static void check_super_class_access(const InstanceKlass* this_klass, TRAPS) {
 }
 
 
-static void check_super_interface_access(const InstanceKlass* this_klass, TRAPS) {
+void ClassFileParser::check_super_interface_access(const InstanceKlass* this_klass, TRAPS) {
   assert(this_klass != NULL, "invariant");
   const Array<InstanceKlass*>* const local_interfaces = this_klass->local_interfaces();
   const int lng = local_interfaces->length();
@@ -4385,15 +4378,10 @@ static void check_super_interface_access(const InstanceKlass* this_klass, TRAPS)
     assert (k != NULL && k->is_interface(), "invalid interface");
 
     if (k->is_sealed() && !k->has_as_permitted_subclass(this_klass)) {
-      ResourceMark rm(THREAD);
-      Exceptions::fthrow(
-        THREAD_AND_LOCATION,
-        vmSymbols::java_lang_IncompatibleClassChangeError(),
-        "class %s cannot %s sealed interface %s",
-        this_klass->external_name(),
-        this_klass->is_interface() ? "extend" : "implement",
-        k->external_name());
-      return;
+     classfile_icce_error(this_klass->is_interface() ?
+                            "class %s cannot extend sealed interface %s" :
+                            "class %s cannot implement sealed interface %s",
+                          k, CHECK);
     }
 
     Reflection::VerifyClassAccessResults vca_result =
@@ -4569,16 +4557,12 @@ static bool has_illegal_visibility(jint flags) {
 //  Major_version >= 56 and major_version <= JVM_CLASSFILE_MAJOR_VERSION and minor_version = 0.
 //  Major_version = JVM_CLASSFILE_MAJOR_VERSION and minor_version = 65535 and --enable-preview is present.
 //
-static void verify_class_version(u2 major, u2 minor, Symbol* class_name, TRAPS){
+void ClassFileParser::verify_class_version(u2 major, u2 minor, Symbol* class_name, TRAPS){
   ResourceMark rm(THREAD);
   const u2 max_version = JVM_CLASSFILE_MAJOR_VERSION;
   if (major < JAVA_MIN_SUPPORTED_VERSION) {
-    Exceptions::fthrow(
-      THREAD_AND_LOCATION,
-      vmSymbols::java_lang_UnsupportedClassVersionError(),
-      "%s (class file version %u.%u) was compiled with an invalid major version",
-      class_name->as_C_string(), major, minor);
-    return;
+    classfile_ucve_error("%s (class file version %u.%u) was compiled with an invalid major version",
+                         class_name, major, minor, CHECK);
   }
 
   if (major > max_version) {
@@ -4607,20 +4591,13 @@ static void verify_class_version(u2 major, u2 minor, Symbol* class_name, TRAPS){
     }
 
     if (!Arguments::enable_preview()) {
-      Exceptions::fthrow(
-        THREAD_AND_LOCATION,
-        vmSymbols::java_lang_UnsupportedClassVersionError(),
-        "Preview features are not enabled for %s (class file version %u.%u). Try running with '--enable-preview'",
-        class_name->as_C_string(), major, minor);
-      return;
+      classfile_ucve_error("Preview features are not enabled for %s (class file version %u.%u). Try running with '--enable-preview'",
+                           class_name, major, minor, CHECK);
     }
 
   } else { // minor != JAVA_PREVIEW_MINOR_VERSION
-    Exceptions::fthrow(
-        THREAD_AND_LOCATION,
-        vmSymbols::java_lang_UnsupportedClassVersionError(),
-        "%s (class file version %u.%u) was compiled with an invalid non-zero minor version",
-        class_name->as_C_string(), major, minor);
+    classfile_ucve_error("%s (class file version %u.%u) was compiled with an invalid non-zero minor version",
+                         class_name, major, minor, CHECK);
   }
 }
 
@@ -6128,15 +6105,7 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
     }
 
     if (_super_klass->is_interface()) {
-      ResourceMark rm(THREAD);
-      Exceptions::fthrow(
-        THREAD_AND_LOCATION,
-        vmSymbols::java_lang_IncompatibleClassChangeError(),
-        "class %s has interface %s as super class",
-        _class_name->as_klass_external_name(),
-        _super_klass->external_name()
-      );
-      return;
+      classfile_icce_error("class %s has interface %s as super class", _super_klass, CHECK);
     }
   }
 

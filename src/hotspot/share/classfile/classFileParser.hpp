@@ -374,6 +374,16 @@ class ClassFileParser {
                              const char* signature,
                              TRAPS) const;
 
+  void classfile_icce_error(const char* msg,
+                            const Klass* k,
+                            TRAPS) const;
+
+  void classfile_ucve_error(const char* msg,
+                            const Symbol* class_name,
+                            u2 major,
+                            u2 minor,
+                            TRAPS) const;
+
   inline void guarantee_property(bool b, const char* msg, TRAPS) const {
     if (!b) { classfile_parse_error(msg, CHECK); }
   }
@@ -460,12 +470,20 @@ class ClassFileParser {
                                      const Symbol* signature,
                                      TRAPS) const;
 
+  void verify_class_version(u2 major, u2 minor, Symbol* class_name, TRAPS);
+
   void verify_legal_class_modifiers(jint flags, TRAPS) const;
   void verify_legal_field_modifiers(jint flags, bool is_interface, TRAPS) const;
   void verify_legal_method_modifiers(jint flags,
                                      bool is_interface,
                                      const Symbol* name,
                                      TRAPS) const;
+
+  void check_super_class_access(const InstanceKlass* this_klass,
+                                TRAPS);
+
+  void check_super_interface_access(const InstanceKlass* this_klass,
+                                    TRAPS);
 
   const char* skip_over_field_signature(const char* signature,
                                         bool void_ok,
