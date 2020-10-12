@@ -1346,6 +1346,7 @@ bool SystemDictionaryShared::should_be_excluded(InstanceKlass* k) {
   }
 
   if (k->is_hidden() && !is_registered_lambda_proxy_class(k)) {
+    ResourceMark rm;
     log_debug(cds)("Skipping %s: %s", k->name()->as_C_string(), "Hidden class");
     return true;
   }
