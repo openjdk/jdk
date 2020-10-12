@@ -160,22 +160,6 @@ public:
   inline bool is_marked_strong_and_final(HeapWord* w) const;
   inline bool is_marked_strong_or_final(HeapWord* w) const;
 
-  inline bool par_is_marked_strong(HeapWord* w)  const;
-  inline bool par_is_marked_final(HeapWord* w) const;
-  inline bool par_is_marked_strong_and_final(HeapWord* w) const;
-  inline bool par_is_marked_strong_or_final(HeapWord* w) const;
-
-  static bool is_marked_strong(uintptr_t mark) {
-    return (mark & 1) != 0;
-  }
-  static bool is_marked_final(uintptr_t mark) {
-    return (mark & 2) != 0;
-  }
-  static bool is_marked_strong_and_final(uintptr_t mark) {
-    return (mark & 3) == 3;
-  }
-  inline uintptr_t par_marking_bits(HeapWord* w) const;
-
   // Return the address corresponding to the next marked bit at or after
   // "addr", and before "limit", if "limit" is non-NULL.  If there is no
   // such bit, returns "limit" if that is non-NULL, or else "endWord()".

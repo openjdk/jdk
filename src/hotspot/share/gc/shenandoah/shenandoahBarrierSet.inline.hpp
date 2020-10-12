@@ -340,7 +340,7 @@ void ShenandoahBarrierSet::arraycopy_work(T* src, size_t count) {
         oop witness = ShenandoahHeap::cas_oop(fwd, elem_ptr, o);
         obj = fwd;
       }
-      if (ENQUEUE && !ctx->par_is_marked_strong(obj)) {
+      if (ENQUEUE && !ctx->is_marked_strong(obj)) {
         queue.enqueue_known_active(obj);
       }
     }

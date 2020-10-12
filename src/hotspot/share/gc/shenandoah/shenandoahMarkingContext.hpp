@@ -61,13 +61,6 @@ public:
   inline bool is_marked_final(oop obj) const;
   inline bool is_marked_strong_and_final(oop obj) const;
 
-  // Paralles versions of marking accessors, to be used during marking (e.g. possible concurrent updates)
-  inline bool par_is_marked(oop) const;
-  inline bool par_is_marked_strong(oop obj) const;
-  inline bool par_is_marked_final(oop obj) const;
-  inline bool par_is_marked_strong_and_final(oop obj) const;
-  inline uintptr_t par_marking_bits(oop obj) const;
-
   inline bool allocated_after_mark_start(oop obj) const;
   inline bool allocated_after_mark_start(HeapWord* addr) const;
 

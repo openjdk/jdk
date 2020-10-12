@@ -58,27 +58,6 @@ inline bool ShenandoahMarkingContext::is_marked_strong_and_final(oop obj) const 
   return allocated_after_mark_start(obj) || _mark_bit_map.is_marked_strong_and_final(cast_from_oop<HeapWord*>(obj));
 }
 
-inline bool ShenandoahMarkingContext::par_is_marked(oop obj) const {
-  return allocated_after_mark_start(obj) || _mark_bit_map.par_is_marked_strong_or_final(cast_from_oop<HeapWord*>(obj));
-}
-
-inline bool ShenandoahMarkingContext::par_is_marked_strong(oop obj) const {
-  return allocated_after_mark_start(obj) || _mark_bit_map.par_is_marked_strong(cast_from_oop<HeapWord*>(obj));
-}
-
-inline bool ShenandoahMarkingContext::par_is_marked_final(oop obj) const {
-  return allocated_after_mark_start(obj) || _mark_bit_map.par_is_marked_final(cast_from_oop<HeapWord*>(obj));
-}
-
-inline bool ShenandoahMarkingContext::par_is_marked_strong_and_final(oop obj) const {
-  return allocated_after_mark_start(obj) || _mark_bit_map.par_is_marked_strong_and_final(cast_from_oop<HeapWord*>(obj));
-}
-
-inline uintptr_t ShenandoahMarkingContext::par_marking_bits(oop obj) const {
-  assert(!allocated_after_mark_start(obj), "only on objects < TAMS");
-  return _mark_bit_map.par_marking_bits(cast_from_oop<HeapWord*>(obj));
-}
-
 inline bool ShenandoahMarkingContext::allocated_after_mark_start(oop obj) const {
   HeapWord* addr = cast_from_oop<HeapWord*>(obj);
   return allocated_after_mark_start(addr);

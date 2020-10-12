@@ -116,51 +116,6 @@ inline bool ShenandoahMarkBitMap::is_marked_strong_or_final(HeapWord* addr) cons
   return (*word_addr(index) & mask) != 0;
 }
 
-inline bool ShenandoahMarkBitMap::par_is_marked_strong(HeapWord* heap_addr)  const {
-  check_mark(heap_addr);
-  idx_t index = address_to_index(heap_addr);
-  const volatile bm_word_t* const addr = word_addr(index);
-  bm_word_t word = load_word_ordered(addr, memory_order_acquire);
-  return (word & bit_mask(index)) != 0;
-}
-
-inline bool ShenandoahMarkBitMap::par_is_marked_final(HeapWord* heap_addr) const {
-  check_mark(heap_addr);
-  idx_t index = address_to_index(heap_addr) + 1;
-  const volatile bm_word_t* const addr = word_addr(index);
-  bm_word_t word = load_word_ordered(addr, memory_order_acquire);
-  return (word & bit_mask(index)) != 0;
-}
-
-inline bool ShenandoahMarkBitMap::par_is_marked_strong_and_final(HeapWord* heap_addr) const {
-  check_mark(heap_addr);
-  idx_t index = address_to_index(heap_addr);
-  verify_index(index);
-  bm_word_t mask = (bm_word_t)3 << bit_in_word(index);
-  const volatile bm_word_t* const addr = word_addr(index);
-  bm_word_t word = load_word_ordered(addr, memory_order_acquire);
-  return (word & mask) == mask;
-}
-
-inline bool ShenandoahMarkBitMap::par_is_marked_strong_or_final(HeapWord* heap_addr) const {
-  check_mark(heap_addr);
-  idx_t index = address_to_index(heap_addr);
-  verify_index(index);
-  bm_word_t mask = (bm_word_t)3 << bit_in_word(index);
-  const volatile bm_word_t* const addr = word_addr(index);
-  bm_word_t word = load_word_ordered(addr, memory_order_acquire);
-  return (word & mask) != 0;
-}
-
-inline uintptr_t ShenandoahMarkBitMap::par_marking_bits(HeapWord* heap_addr) const {
-  check_mark(heap_addr);
-  idx_t index = address_to_index(heap_addr);
-  verify_index(index);
-  const volatile bm_word_t* const addr = word_addr(index);
-  bm_word_t word = load_word_ordered(addr, memory_order_acquire);
-  return word >> bit_in_word(index);
-}
-
 inline const ShenandoahMarkBitMap::bm_word_t ShenandoahMarkBitMap::load_word_ordered(const volatile bm_word_t* const addr, atomic_memory_order memory_order) {
   if (memory_order == memory_order_relaxed || memory_order == memory_order_release) {
     return Atomic::load(addr);
