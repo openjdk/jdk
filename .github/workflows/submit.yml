@@ -106,12 +106,20 @@ jobs:
           - build release
           - build debug
           - build hotspot no-pch
+          - build hotspot zero
+          - build hotspot minimal
         include:
           - flavor: build debug
             flags: --enable-debug
             artifact: -debug
           - flavor: build hotspot no-pch
-            flags: --disable-precompiled-headers
+            flags: --enable-debug --disable-precompiled-headers
+            build-target: hotspot
+          - flavor: build hotspot zero
+            flags: --enable-debug --disable-precompiled-headers --with-jvm-variants=zero
+            build-target: hotspot
+          - flavor: build hotspot minimal
+            flags: --enable-debug --disable-precompiled-headers --with-jvm-variants=minimal
             build-target: hotspot
 
     env:

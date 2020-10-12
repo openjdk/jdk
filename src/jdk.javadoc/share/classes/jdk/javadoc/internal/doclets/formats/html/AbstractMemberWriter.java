@@ -313,9 +313,8 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
             return;
         }
         boolean printedUseTableHeader = false;
-        Table useTable = new Table(HtmlStyle.useSummary, HtmlStyle.summaryTable)
+        Table useTable = new Table(HtmlStyle.summaryTable)
                 .setCaption(heading)
-                .setRowScopeColumn(1)
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast);
         for (Element element : members) {
             TypeElement te = (typeElement == null)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -264,7 +264,7 @@ public class StreamTokenizer {
 
     /**
      * Specifies that all characters <i>c</i> in the range
-     * <code>low&nbsp;&lt;=&nbsp;<i>c</i>&nbsp;&lt;=&nbsp;high</code>
+     * {@code low <= c <= high}
      * are word constituents. A word token consists of a word constituent
      * followed by zero or more word constituents or number constituents.
      *
@@ -282,7 +282,7 @@ public class StreamTokenizer {
 
     /**
      * Specifies that all characters <i>c</i> in the range
-     * <code>low&nbsp;&lt;=&nbsp;<i>c</i>&nbsp;&lt;=&nbsp;high</code>
+     * {@code low <= c <= high}
      * are white space characters. White space characters serve only to
      * separate tokens in the input stream.
      *
@@ -303,7 +303,7 @@ public class StreamTokenizer {
 
     /**
      * Specifies that all characters <i>c</i> in the range
-     * <code>low&nbsp;&lt;=&nbsp;<i>c</i>&nbsp;&lt;=&nbsp;high</code>
+     * {@code low <= c <= high}
      * are "ordinary" in this tokenizer. See the
      * {@code ordinaryChar} method for more information on a
      * character being ordinary.

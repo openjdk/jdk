@@ -729,9 +729,9 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   if (failing())  return;
   NOT_PRODUCT( verify_graph_edges(); )
 
-  // If IGVN is randomized for stress testing, seed random number
-  // generation and log the seed for repeatability.
-  if (StressIGVN) {
+  // If LCM, GCM, or IGVN are randomized for stress testing, seed
+  // random number generation and log the seed for repeatability.
+  if (StressLCM || StressGCM || StressIGVN) {
     _stress_seed = FLAG_IS_DEFAULT(StressSeed) ?
       static_cast<uint>(Ticks::now().nanoseconds()) : StressSeed;
     if (_log != NULL) {
@@ -922,7 +922,7 @@ void Compile::Init(int aliaslevel) {
 
   _fixed_slots = 0;
   set_has_split_ifs(false);
-  set_has_loops(has_method() && method()->has_loops()); // first approximation
+  set_has_loops(false); // first approximation
   set_has_stringbuilder(false);
   set_has_boxed_value(false);
   _trap_can_recompile = false;  // no traps emitted yet
@@ -1022,6 +1022,7 @@ void Compile::Init(int aliaslevel) {
 #ifdef ASSERT
   _type_verify_symmetry = true;
   _phase_optimize_finished = false;
+  _exception_backedge = false;
 #endif
 }
 
@@ -4488,7 +4489,7 @@ int Compile::random() {
 #define RANDOMIZED_DOMAIN_MASK ((1 << (RANDOMIZED_DOMAIN_POW + 1)) - 1)
 bool Compile::randomized_select(int count) {
   assert(count > 0, "only positive");
-  return (os::random() & RANDOMIZED_DOMAIN_MASK) < (RANDOMIZED_DOMAIN / count);
+  return (random() & RANDOMIZED_DOMAIN_MASK) < (RANDOMIZED_DOMAIN / count);
 }
 
 CloneMap&     Compile::clone_map()                 { return _clone_map; }

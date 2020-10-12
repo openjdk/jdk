@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,21 +45,6 @@ ZRelocate::ZRelocate(ZWorkers* workers) :
 
 class ZRelocateRootsIteratorClosure : public ZRootsIteratorClosure {
 public:
-  virtual void do_thread(Thread* thread) {
-    // Update thread local address bad mask
-    ZThreadLocalData::set_address_bad_mask(thread, ZAddressBadMask);
-
-    // Relocate invisible root
-    ZThreadLocalData::do_invisible_root(thread, ZBarrier::relocate_barrier_on_root_oop_field);
-
-    // Remap TLAB
-    ZThreadLocalAllocBuffer::remap(thread);
-  }
-
-  virtual bool should_disarm_nmethods() const {
-    return true;
-  }
-
   virtual void do_oop(oop* p) {
     ZBarrier::relocate_barrier_on_root_oop_field(p);
   }

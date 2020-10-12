@@ -436,9 +436,13 @@ void ZHeap::relocate() {
 
 void ZHeap::object_iterate(ObjectClosure* cl, bool visit_weaks) {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
+  ZHeapIterator iter(1 /* nworkers */, visit_weaks);
+  iter.object_iterate(cl, 0 /* worker_id */);
+}
 
-  ZHeapIterator iter;
-  iter.objects_do(cl, visit_weaks);
+ParallelObjectIterator* ZHeap::parallel_object_iterator(uint nworkers, bool visit_weaks) {
+  assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
+  return new ZHeapIterator(nworkers, visit_weaks);
 }
 
 void ZHeap::pages_do(ZPageClosure* cl) {
