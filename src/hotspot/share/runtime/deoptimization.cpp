@@ -1642,7 +1642,9 @@ address Deoptimization::deoptimize_for_missing_exception_handler(CompiledMethod*
 #endif
 
 void Deoptimization::deoptimize_frame_internal(JavaThread* thread, intptr_t* id, DeoptReason reason) {
-  assert(thread == Thread::current() || SafepointSynchronize::is_at_safepoint(),
+  assert(thread == Thread::current() ||
+         thread->is_handshake_safe_for(Thread::current()) ||
+         SafepointSynchronize::is_at_safepoint(),
          "can only deoptimize other thread at a safepoint");
   // Compute frame and register map based on thread and sp.
   RegisterMap reg_map(thread, false);
@@ -1655,7 +1657,8 @@ void Deoptimization::deoptimize_frame_internal(JavaThread* thread, intptr_t* id,
 
 
 void Deoptimization::deoptimize_frame(JavaThread* thread, intptr_t* id, DeoptReason reason) {
-  if (thread == Thread::current()) {
+  Thread* current = Thread::current();
+  if (thread == current || thread->is_handshake_safe_for(current)) {
     Deoptimization::deoptimize_frame_internal(thread, id, reason);
   } else {
     VM_DeoptimizeFrame deopt(thread, id, reason);
