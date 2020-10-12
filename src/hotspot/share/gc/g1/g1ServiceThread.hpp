@@ -28,6 +28,49 @@
 #include "gc/shared/concurrentGCThread.hpp"
 #include "runtime/mutex.hpp"
 
+class G1ServiceTask : public CHeapObj<mtGC> {
+  // The next time this task should be executed.
+  double _time;
+  // Name of the task.
+  const char* _name;
+  // Next task in the task list.
+  G1ServiceTask* _next;
+
+public:
+  G1ServiceTask(const char* name) : _time(), _name(name), _next(NULL) { }
+  const char* name() { return _name; }
+
+  void set_time(double time) { _time = time; }
+  double time() { return _time; }
+
+  void set_next(G1ServiceTask* next) { _next = next; }
+  G1ServiceTask* next() { return _next; }
+
+  // Do the actual work for the task.
+  virtual void execute();
+  // The interval between two executions of the task.
+  virtual double interval();
+};
+
+class G1ServiceTaskList : public StackObj {
+  // The sentinel task is the entry point of this ordered circular list holding
+  // the service tasks. The list is ordered by the time the tasks are scheduled
+  // to run and the sentinel task has the time set to DBL_MAX. This guarantees
+  // that any new task will be added just before the sentinel at the latest.
+  G1ServiceTask _sentinel;
+
+  // Mutex to ensure safe addition of tasks.
+  Mutex _lock;
+
+  // Verify that the list is ordered.
+  void verify_task_list() NOT_DEBUG_RETURN;
+public:
+  G1ServiceTaskList();
+  G1ServiceTask* pop_first();
+  G1ServiceTask* peek_first();
+  void add_ordered(G1ServiceTask* task);
+};
+
 // The G1ServiceThread is used to periodically do a number of different tasks:
 //   - re-assess the validity of the prediction for the
 //     remembered set lengths of the young generation.
@@ -36,35 +79,25 @@ class G1ServiceThread: public ConcurrentGCThread {
 private:
   Monitor _monitor;
 
-  double _last_periodic_gc_attempt_s;
+  G1ServiceTaskList _task_list;
 
   double _vtime_accum;  // Accumulated virtual time.
 
-  // Sample the current length of remembered sets for young.
-  //
-  // At the end of the GC G1 determines the length of the young gen based on
-  // how much time the next GC can take, and when the next GC may occur
-  // according to the MMU.
-  //
-  // The assumption is that a significant part of the GC is spent on scanning
-  // the remembered sets (and many other components), so this thread constantly
-  // reevaluates the prediction for the remembered set scanning costs, and potentially
-  // G1Policy resizes the young gen. This may do a premature GC or even
-  // increase the young gen size to keep pause time length goal.
-  void sample_young_list_rs_length();
-
   void run_service();
-  void check_for_periodic_gc();
 
   void stop_service();
 
+  // Timeout to next task in millisecond granularity.
+  int64_t timeout_to_next_task();
   void sleep_before_next_cycle();
-
-  bool should_start_periodic_gc();
+  void run_task(G1ServiceTask* task);
+  void run_tasks();
+  void reschedule_task(G1ServiceTask* task);
 
 public:
   G1ServiceThread();
   double vtime_accum() { return _vtime_accum; }
+  void register_task(G1ServiceTask* task);
 };
 
 #endif // SHARE_GC_G1_G1SERVICETHREAD_HPP
