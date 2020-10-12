@@ -33,6 +33,44 @@ class WorkGang;
 static const size_t reference_type_count = REF_PHANTOM + 1;
 typedef size_t Counters[reference_type_count];
 
+/*
+ * Shenandoah concurrent reference processing
+ *
+ * Concurrent reference processing is made up of two main phases:
+ * 1. Concurrent reference marking: Discover all j.l.r.Reference objects and determine reachability of all live objects.
+ * 2. Concurrent reference processing: For all discoved j.l.r.References, determine whether or not to keep or clean
+ *    them. Also, clean and enqueue relevant references concurrently.
+ *
+ * Concurrent reference marking:
+ * The goal here is to establish the kind of reachability for all objects on the heap. We distinguish two kinds of
+ * reachability:
+ * - An object is 'strongly reachable' if it can be found by searching transitively from GC roots.
+ * - An object is 'finalizably reachable' if it is not strongly reachable, but can be found by searching
+ *   from the referents of FinalReferences.
+ *
+ * These reachabilities are implemented in shenandoahMarkBitMap.*
+ * Conceptually, marking starts with a strong wavefront at the GC roots. Whenever a Reference object is encountered,
+ * that Reference is discovered, it may be discovered by the ShenandoahReferenceProcessor. If it is discovered, it
+ * gets added to the discovered list, and that wavefront stops there, except when it's a FinalReference, in which
+ * case the wavefront switches to finalizable marking and marks through the refenent. When a Reference is not
+ * discovered, e.g. if it's a SoftReference that is not eligible for discovery, then marking continues as if the
+ * Reference were a regular object. Whenever a strong wavefront encounters an object that is already marked
+ * finalizable, then the object's reachability is upgraded to strong.
+ *
+ * Concurrent reference processing:
+ * This happens after the concurrent marking phase and the final marking pause, when reachability for all objects
+ * has been established.
+ * The discovered list is scanned and for each reference is decided what to do:
+ * - If the referent is reachable (finalizable for PhantomReference, strong for all others), then the Reference
+ *   is dropped from the discovered list and otherwise ignored
+ * - Otherwise its referent becomes cleared and the Reference added to the pending list, from which it will later
+ *   be processed (e.g. enqueued in its ReferenceQueue) by the Java ReferenceHandler thread.
+ *
+ * In order to prevent resurrection by Java threads calling Reference.get() concurrently while we are clearing
+ * referents, we employ a special barrier, the native LRB, which returns NULL when the referent is unreachable.
+ */
+
+
 class ShenandoahRefProcThreadLocal : public CHeapObj<mtGC> {
 private:
   void* _discovered_list;
