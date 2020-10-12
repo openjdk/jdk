@@ -62,10 +62,10 @@
  * @run driver nsk.share.ExtraClassesBuilder
  *      newclass
  *
- * @build ExecDriver
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
+ * @comment ExecDriver is used b/c main class isn't on source/class path
+ * @run main/othervm/native ExecDriver --java
  *      -cp ${test.class.path}${path.separator}./bin/newclass
- *      "-agentlib:systemclssearch_agent=-waittime=5 phasetocheck=onload segment1=./bin/newclass"
+ *      -agentlib:systemclssearch_agent=-waittime=5,phasetocheck=onload,segment1=./bin/newclass
  *      nsk.jvmti.AddToSystemClassLoaderSearch.systemclssearch001
  */
 

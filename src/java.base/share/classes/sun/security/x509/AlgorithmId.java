@@ -207,9 +207,20 @@ public class AlgorithmId implements Serializable, DerEncoder {
                 bytes.putNull();
             }*/
             if (algid.equals(RSASSA_PSS_oid) || algid.equals(ed448_oid)
-                    || algid.equals(ed25519_oid)) {
+                    || algid.equals(ed25519_oid)
+                    || algid.equals(x448_oid)
+                    || algid.equals(x25519_oid)
+                    || algid.equals(SHA224withECDSA_oid)
+                    || algid.equals(SHA256withECDSA_oid)
+                    || algid.equals(SHA384withECDSA_oid)
+                    || algid.equals(SHA512withECDSA_oid)) {
                 // RFC 4055 3.3: when an RSASSA-PSS key does not require
                 // parameter validation, field is absent.
+                // RFC 8410 3: for id-X25519, id-X448, id-Ed25519, and
+                // id-Ed448, the parameters must be absent.
+                // RFC 5758 3.2: the encoding must omit the parameters field
+                // for ecdsa-with-SHA224, ecdsa-with-SHA256, ecdsa-with-SHA384
+                // and ecdsa-with-SHA512.
             } else {
                 bytes.putNull();
             }
@@ -643,6 +654,20 @@ public class AlgorithmId implements Serializable, DerEncoder {
             ObjectIdentifier.of(KnownOIDs.Ed25519);
     public static final ObjectIdentifier ed448_oid =
             ObjectIdentifier.of(KnownOIDs.Ed448);
+
+    public static final ObjectIdentifier x25519_oid =
+            ObjectIdentifier.of(KnownOIDs.X25519);
+    public static final ObjectIdentifier x448_oid =
+            ObjectIdentifier.of(KnownOIDs.X448);
+
+    public static final ObjectIdentifier SHA224withECDSA_oid =
+            ObjectIdentifier.of(KnownOIDs.SHA224withECDSA);
+    public static final ObjectIdentifier SHA256withECDSA_oid =
+            ObjectIdentifier.of(KnownOIDs.SHA256withECDSA);
+    public static final ObjectIdentifier SHA384withECDSA_oid =
+            ObjectIdentifier.of(KnownOIDs.SHA384withECDSA);
+    public static final ObjectIdentifier SHA512withECDSA_oid =
+            ObjectIdentifier.of(KnownOIDs.SHA512withECDSA);
 
     /**
      * Creates a signature algorithm name from a digest algorithm

@@ -28,6 +28,7 @@
 #include "classfile/classListParser.hpp"
 #include "classfile/classLoaderExt.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/lambdaFormInvokers.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -84,6 +85,12 @@ bool ClassListParser::parse_one_line() {
       error("input line too long (must be no longer than %d chars)", _max_allowed_line_len);
     }
     if (*_line == '#') { // comment
+      continue;
+    }
+    // The line is output TRACE_RESOLVE
+    if (strncmp(_line, LambdaFormInvokers::lambda_form_invoker_tag(),
+                strlen(LambdaFormInvokers::lambda_form_invoker_tag())) == 0) {
+      LambdaFormInvokers::append(os::strdup((const char*)_line, mtInternal));
       continue;
     }
     break;

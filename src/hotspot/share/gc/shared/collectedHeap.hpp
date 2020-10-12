@@ -90,6 +90,7 @@ class GCHeapLog : public EventLogBase<GCMessage> {
 class ParallelObjectIterator : public CHeapObj<mtGC> {
 public:
   virtual void object_iterate(ObjectClosure* cl, uint worker_id) = 0;
+  virtual ~ParallelObjectIterator() {}
 };
 
 //
@@ -353,13 +354,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // allocation from them and necessitating allocation of new TLABs.
   virtual void ensure_parsability(bool retire_tlabs);
 
-  // Section on thread-local allocation buffers (TLABs)
-  // If the heap supports thread-local allocation buffers, it should override
-  // the following methods:
-  // Returns "true" iff the heap supports thread-local allocation buffers.
-  // The default is "no".
-  virtual bool supports_tlab_allocation() const = 0;
-
   // The amount of space available for thread-local allocation buffers.
   virtual size_t tlab_capacity(Thread *thr) const = 0;
 
@@ -375,6 +369,11 @@ class CollectedHeap : public CHeapObj<mtInternal> {
     guarantee(false, "thread-local allocation buffers not supported");
     return 0;
   }
+
+  // If a GC uses a stack watermark barrier, the stack processing is lazy, concurrent,
+  // incremental and cooperative. In order for that to work well, mechanisms that stop
+  // another thread might want to ensure its roots are in a sane state.
+  virtual bool uses_stack_watermark_barrier() const { return false; }
 
   // Perform a collection of the heap; intended for use in implementing
   // "System.gc".  This probably implies as full a collection as the

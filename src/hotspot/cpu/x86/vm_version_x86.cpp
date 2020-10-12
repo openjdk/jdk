@@ -44,6 +44,7 @@ int VM_Version::_model;
 int VM_Version::_stepping;
 bool VM_Version::_has_intel_jcc_erratum;
 VM_Version::CpuidInfo VM_Version::_cpuid_info = { 0, };
+const char* VM_Version::_features_names[] = { FEATURES_NAMES };
 
 // Address of instruction which causes SEGV
 address VM_Version::_cpuinfo_segv_addr = 0;
@@ -762,6 +763,8 @@ void VM_Version::get_processor_features() {
   if (is_intel()) { // Intel cpus specific settings
     if (is_knights_family()) {
       _features &= ~CPU_VZEROUPPER;
+      _features &= ~CPU_AVX512BW;
+      _features &= ~CPU_AVX512VL;
     }
   }
 
@@ -772,65 +775,14 @@ void VM_Version::get_processor_features() {
   }
 
   char buf[512];
-  int res = jio_snprintf(buf, sizeof(buf),
-              "(%u cores per cpu, %u threads per core) family %d model %d stepping %d microcode 0x%x"
-              "%s%s%s%s%s%s%s%s%s%s" "%s%s%s%s%s%s%s%s%s%s" "%s%s%s%s%s%s%s%s%s%s" "%s%s%s%s%s%s%s%s%s%s" "%s%s%s%s%s%s",
-
-               cores_per_cpu(), threads_per_core(),
-               cpu_family(), _model, _stepping, os::cpu_microcode_revision(),
-
-               (supports_cmov() ? ", cmov" : ""),
-               (supports_cmpxchg8() ? ", cx8" : ""),
-               (supports_fxsr() ? ", fxsr" : ""),
-               (supports_mmx()  ? ", mmx"  : ""),
-               (supports_sse()  ? ", sse"  : ""),
-               (supports_sse2() ? ", sse2" : ""),
-               (supports_sse3() ? ", sse3" : ""),
-               (supports_ssse3()? ", ssse3": ""),
-               (supports_sse4_1() ? ", sse4.1" : ""),
-               (supports_sse4_2() ? ", sse4.2" : ""),
-
-               (supports_popcnt() ? ", popcnt" : ""),
-               (supports_vzeroupper() ? ", vzeroupper" : ""),
-               (supports_avx()    ? ", avx" : ""),
-               (supports_avx2()   ? ", avx2" : ""),
-               (supports_aes()    ? ", aes" : ""),
-               (supports_clmul()  ? ", clmul" : ""),
-               (supports_erms()   ? ", erms" : ""),
-               (supports_rtm()    ? ", rtm" : ""),
-               (supports_3dnow_prefetch() ? ", 3dnowpref" : ""),
-               (supports_lzcnt()   ? ", lzcnt": ""),
-
-               (supports_sse4a()   ? ", sse4a": ""),
-               (supports_ht() ? ", ht": ""),
-               (supports_tsc() ? ", tsc": ""),
-               (supports_tscinv_bit() ? ", tscinvbit": ""),
-               (supports_tscinv() ? ", tscinv": ""),
-               (supports_bmi1() ? ", bmi1" : ""),
-               (supports_bmi2() ? ", bmi2" : ""),
-               (supports_adx() ? ", adx" : ""),
-               (supports_evex() ? ", avx512f" : ""),
-               (supports_avx512dq() ? ", avx512dq" : ""),
-
-               (supports_avx512pf() ? ", avx512pf" : ""),
-               (supports_avx512er() ? ", avx512er" : ""),
-               (supports_avx512cd() ? ", avx512cd" : ""),
-               (supports_avx512bw() ? ", avx512bw" : ""),
-               (supports_avx512vl() ? ", avx512vl" : ""),
-               (supports_avx512_vpopcntdq() ? ", avx512_vpopcntdq" : ""),
-               (supports_avx512_vpclmulqdq() ? ", avx512_vpclmulqdq" : ""),
-               (supports_avx512_vbmi() ? ", avx512_vbmi" : ""),
-               (supports_avx512_vbmi2() ? ", avx512_vbmi2" : ""),
-               (supports_avx512_vaes() ? ", avx512_vaes" : ""),
-
-               (supports_avx512_vnni() ? ", avx512_vnni" : ""),
-               (supports_sha() ? ", sha" : ""),
-               (supports_fma() ? ", fma" : ""),
-               (supports_clflush() ? ", clflush" : ""),
-               (supports_clflushopt() ? ", clflushopt" : ""),
-               (supports_clwb() ? ", clwb" : ""));
-
-  assert(res > 0, "not enough temporary space allocated"); // increase 'buf' size
+  int res = jio_snprintf(
+              buf, sizeof(buf),
+              "(%u cores per cpu, %u threads per core) family %d model %d stepping %d microcode 0x%x",
+              cores_per_cpu(), threads_per_core(),
+              cpu_family(), _model, _stepping, os::cpu_microcode_revision());
+  assert(res > 0, "not enough temporary space allocated");
+  assert(exact_log2_long(CPU_MAX_FEATURE) + 1 == sizeof(_features_names) / sizeof(char*), "wrong size features_names");
+  insert_features_names(buf + res, sizeof(buf) - res, _features_names);
 
   _features_string = os::strdup(buf);
 
@@ -1161,13 +1113,6 @@ void VM_Version::get_processor_features() {
     }
   }
 #endif // COMPILER2 && ASSERT
-
-  if (!FLAG_IS_DEFAULT(AVX3Threshold)) {
-    if (!is_power_of_2(AVX3Threshold)) {
-      warning("AVX3Threshold must be a power of 2");
-      FLAG_SET_DEFAULT(AVX3Threshold, 4096);
-    }
-  }
 
 #ifdef _LP64
   if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {

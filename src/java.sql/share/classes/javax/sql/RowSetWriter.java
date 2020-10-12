@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ public interface RowSetWriter {
    *        registered, and (3) that called this method internally
    * @return <code>true</code> if the modified data was written; <code>false</code>
    *          if not, which will be the case if there is a conflict
-   * @exception SQLException if a database access error occurs
+   * @throws SQLException if a database access error occurs
    */
   boolean writeData(RowSetInternal caller) throws SQLException;
 

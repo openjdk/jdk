@@ -86,15 +86,12 @@ runtime/cds/DeterministicDump.java 8253495 generic-all
 runtime/cds/serviceability/ReplaceCriticalClassesForSubgraphs.java 8253081 generic-all
 runtime/jni/terminatedThread/TestTerminatedThread.java 8219652 aix-ppc64
 runtime/ReservedStack/ReservedStackTest.java 8231031 generic-all
-containers/docker/TestMemoryAwareness.java 8250984 linux-5.4.0-1019-oracle
 
 #############################################################################
 
 # :hotspot_serviceability
 
 serviceability/sa/sadebugd/DebugdConnectTest.java 8239062 macosx-x64
-serviceability/sa/TestInstanceKlassSize.java 8230664 linux-ppc64le,linux-ppc64
-serviceability/sa/TestInstanceKlassSizeForInterface.java 8230664 linux-ppc64le,linux-ppc64
 serviceability/sa/TestRevPtrsForInvokeDynamic.java 8241235 generic-all
 
 serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatIntervalTest.java 8214032 generic-all
@@ -147,7 +144,6 @@ vmTestbase/jit/escape/LockCoarsening/LockCoarsening002.java 8208259 generic-all
 
 vmTestbase/vm/mlvm/indy/func/jvmti/redefineClassInBootstrap/TestDescription.java 8013267 generic-all
 vmTestbase/vm/mlvm/meth/func/java/throwException/Test.java 8058176 generic-all
-vmTestbase/vm/mlvm/meth/func/jdi/breakpointOtherStratum/Test.java 8208257,8058176 generic-all
 vmTestbase/vm/mlvm/meth/stress/compiler/deoptimize/Test.java#id1 8058176 generic-all
 vmTestbase/vm/mlvm/meth/stress/compiler/i2c_c2i/Test.java 8058176 generic-all
 vmTestbase/vm/mlvm/meth/stress/compiler/sequences/Test.java 8058176 generic-all

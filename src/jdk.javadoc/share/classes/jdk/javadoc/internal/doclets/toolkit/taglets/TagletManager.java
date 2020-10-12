@@ -110,7 +110,7 @@ public class TagletManager {
     /**
      * The taglets that can appear inline in descriptive text.
      */
-    private List<Taglet> inlineTags;
+    private Map<String, Taglet> inlineTags;
 
     /**
      * The taglets that can appear in the serialized form.
@@ -288,7 +288,7 @@ public class TagletManager {
     }
 
     /**
-     * Add a new {@code SimpleTaglet}.
+     * Adds a new {@code SimpleTaglet}.
      *
      * If this tag already exists and the header passed as an argument is {@code null},
      * move tag to the back of the list. If this tag already exists and the
@@ -332,11 +332,12 @@ public class TagletManager {
     }
 
     /**
-     * Given a name of a seen custom tag, remove it from the set of unseen
-     * custom tags.
-     * @param name the name of the seen custom tag
+     * Reports that a tag was seen in a doc comment.
+     * It is removed from the list of custom tags that have not yet been seen.
+     *
+     * @param name the name of the tag
      */
-    void seenCustomTag(String name) {
+    void seenTag(String name) {
         unseenCustomTags.remove(name);
     }
 
@@ -497,9 +498,9 @@ public class TagletManager {
      * Returns the taglets that can appear inline, in descriptive text.
      * @return the taglets that can appear inline
      */
-    List<Taglet> getInlineTaglets() {
+    Map<String, Taglet> getInlineTaglets() {
         if (inlineTags == null) {
-            initBlockTaglets();
+            initTaglets();
         }
         return inlineTags;
     }
@@ -510,7 +511,7 @@ public class TagletManager {
      */
     public List<Taglet> getSerializedFormTaglets() {
         if (serializedFormTags == null) {
-            initBlockTaglets();
+            initTaglets();
         }
         return serializedFormTags;
     }
@@ -525,7 +526,7 @@ public class TagletManager {
     @SuppressWarnings("fallthrough")
     public List<Taglet> getBlockTaglets(Element e) {
         if (blockTagletsByLocation == null) {
-            initBlockTaglets();
+            initTaglets();
         }
 
         switch (e.getKind()) {
@@ -565,30 +566,30 @@ public class TagletManager {
     }
 
     /**
-     * Initialize the custom tag Lists.
+     * Initialize the tag collections.
      */
-    private void initBlockTaglets() {
+    private void initTaglets() {
 
         blockTagletsByLocation = new EnumMap<>(Location.class);
         for (Location site : Location.values()) {
             blockTagletsByLocation.put(site, new ArrayList<>());
         }
 
-        inlineTags = new ArrayList<>();
+        inlineTags = new LinkedHashMap<>();
 
-        for (Taglet current : allTaglets.values()) {
-            if (current.isInlineTag()) {
-                inlineTags.add(current);
+        for (Taglet t : allTaglets.values()) {
+            if (t.isInlineTag()) {
+                inlineTags.put(t.getName(), t);
             }
 
-            if (current.isBlockTag()) {
-                for (Location l : current.getAllowedLocations()) {
-                    blockTagletsByLocation.get(l).add(current);
+            if (t.isBlockTag()) {
+                for (Location l : t.getAllowedLocations()) {
+                    blockTagletsByLocation.get(l).add(t);
                 }
             }
         }
 
-        //Init the serialized form tags
+        // init the serialized form tags for the serialized form page
         serializedFormTags = new ArrayList<>();
         serializedFormTags.add(allTaglets.get(SERIAL_DATA.tagName));
         serializedFormTags.add(allTaglets.get(THROWS.tagName));

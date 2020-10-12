@@ -83,16 +83,18 @@ public:
   virtual void collect_as_vm_thread(GCCause::Cause cause);
   virtual void do_full_collection(bool clear_all_soft_refs);
 
-  virtual bool supports_tlab_allocation() const;
   virtual size_t tlab_capacity(Thread* thr) const;
   virtual size_t tlab_used(Thread* thr) const;
   virtual size_t max_tlab_size() const;
   virtual size_t unsafe_max_tlab_alloc(Thread* thr) const;
 
+  virtual bool uses_stack_watermark_barrier() const;
+
   virtual GrowableArray<GCMemoryManager*> memory_managers();
   virtual GrowableArray<MemoryPool*> memory_pools();
 
   virtual void object_iterate(ObjectClosure* cl);
+  virtual ParallelObjectIterator* parallel_object_iterator(uint nworkers);
 
   virtual void keep_alive(oop obj);
 

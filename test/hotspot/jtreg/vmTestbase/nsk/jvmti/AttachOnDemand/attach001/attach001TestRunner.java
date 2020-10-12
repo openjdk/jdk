@@ -43,8 +43,7 @@
  * @comment create SimpleAgent00.jar in current directory
  * @build nsk.jvmti.AttachOnDemand.sharedAgents.SimpleAgent00
  * @run driver ClassFileInstaller nsk.jvmti.AttachOnDemand.sharedAgents.SimpleAgent00
- * @build ExecDriver
- * @run driver PropertyResolvingWrapper ExecDriver --cmd
+ * @run driver ExecDriver --cmd
  *      ${compile.jdk}/bin/jar
  *      -cfm SimpleAgent00.jar ${test.src}/../sharedAgents/SimpleAgent00.mf
  *      nsk/jvmti/AttachOnDemand/sharedAgents/SimpleAgent00.class
@@ -52,10 +51,9 @@
  * @run main/othervm/native
  *      -XX:+UsePerfData
  *      -Djdk.attach.allowAttachSelf
- *      PropertyResolvingWrapper
  *      nsk.jvmti.AttachOnDemand.attach001.attach001TestRunner
  *      -jdk ${test.jdk}
- *      "-javaOpts=-XX:+UsePerfData -Djdk.attach.allowAttachSelf ${test.vm.opts} ${test.java.opts}"
+ *      -javaOpts="-XX:+UsePerfData -Djdk.attach.allowAttachSelf ${test.vm.opts} ${test.java.opts}"
  *      -ja SimpleAgent00.jar
  *      -na simpleAgent00
  */
