@@ -813,45 +813,47 @@ public class TestSearch extends JavadocTester {
     void checkAllPkgsAllClasses() {
         checkOutput("allclasses-index.html", true,
                 """
-                    <div class="type-summary" id="all-classes-table">
-                    <div class="table-tabs" role="tablist" aria-orientation="horizontal"><button rol\
-                    e="tab" aria-selected="true" aria-controls="all-classes-table.tabpanel" tabindex\
-                    ="0" onkeydown="switchTab(event)" id="t0" class="active-table-tab">All Classes</\
-                    button><button role="tab" aria-selected="false" aria-controls="all-classes-table\
-                    .tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="t1" class="table-tab" \
-                    onclick="show(1);">Interface Summary</button><button role="tab" aria-selected="f\
-                    alse" aria-controls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switch\
-                    Tab(event)" id="t2" class="table-tab" onclick="show(2);">Class Summary</button><\
-                    button role="tab" aria-selected="false" aria-controls="all-classes-table.tabpane\
-                    l" tabindex="-1" onkeydown="switchTab(event)" id="t3" class="table-tab" onclick=\
-                    "show(4);">Enum Summary</button><button role="tab" aria-selected="false" aria-co\
-                    ntrols="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" i\
-                    d="t4" class="table-tab" onclick="show(8);">Exception Summary</button><button ro\
-                    le="tab" aria-selected="false" aria-controls="all-classes-table.tabpanel" tabind\
-                    ex="-1" onkeydown="switchTab(event)" id="t5" class="table-tab" onclick="show(16)\
-                    ;">Error Summary</button><button role="tab" aria-selected="false" aria-controls=\
-                    "all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="t6" \
-                    class="table-tab" onclick="show(32);">Annotation Types Summary</button></div>
+                    <div id="all-classes-table">
+                    <div class="table-tabs" role="tablist" aria-orientation="horizontal">\
+                    <button id="all-classes-table-tab0" role="tab" aria-selected="true" aria-control\
+                    s="all-classes-table.tabpanel" tabindex="0" onkeydown="switchTab(event)" onclick\
+                    ="show('all-classes-table', 'all-classes-table', 2)" class="active-table-tab">Al\
+                    l Classes</button>\
+                    <button id="all-classes-table-tab1" role="tab" aria-selected="false" aria-contro\
+                    ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
+                    ck="show('all-classes-table', 'all-classes-table-tab1', 2)" class="table-tab">In\
+                    terface Summary</button>\
+                    <button id="all-classes-table-tab2" role="tab" aria-selected="false" aria-contro\
+                    ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
+                    ck="show('all-classes-table', 'all-classes-table-tab2', 2)" class="table-tab">Cl\
+                    ass Summary</button>\
+                    <button id="all-classes-table-tab3" role="tab" aria-selected="false" aria-contro\
+                    ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
+                    ck="show('all-classes-table', 'all-classes-table-tab3', 2)" class="table-tab">En\
+                    um Summary</button>\
+                    <button id="all-classes-table-tab4" role="tab" aria-selected="false" aria-contro\
+                    ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
+                    ck="show('all-classes-table', 'all-classes-table-tab4', 2)" class="table-tab">Ex\
+                    ception Summary</button>\
+                    <button id="all-classes-table-tab5" role="tab" aria-selected="false" aria-contro\
+                    ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
+                    ck="show('all-classes-table', 'all-classes-table-tab5', 2)" class="table-tab">Er\
+                    ror Summary</button>\
+                    <button id="all-classes-table-tab6" role="tab" aria-selected="false" aria-contro\
+                    ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
+                    ck="show('all-classes-table', 'all-classes-table-tab6', 2)" class="table-tab">An\
+                    notation Types Summary</button>\
+                    </div>
                     <div id="all-classes-table.tabpanel" role="tabpanel">
-                    <table class="summary-table" aria-labelledby="t0">
-                    <thead>
-                    <tr>
-                    <th class="col-first" scope="col">Class</th>
-                    <th class="col-last" scope="col">Description</th>
-                    </tr>""",
-                """
-                    var data = {"i0":32,"i1":2,"i2":4,"i3":2,"i4":2,"i5":1,"i6":2,"i7":32,"i8":2,"i9\
-                    ":4,"i10":16,"i11":16,"i12":8,"i13":8,"i14":1,"i15":2};""");
+                    <div class="summary-table two-column-summary" aria-labelledby="all-classes-table-tab0">
+                    <div class="table-header col-first">Class</div>
+                    <div class="table-header col-last">Description</div>""");
         checkOutput("allpackages-index.html", true,
                 """
-                    <div class="packages-summary">
-                    <table class="summary-table">
-                    <caption><span>Package Summary</span></caption>
-                    <thead>
-                    <tr>
-                    <th class="col-first" scope="col">Package</th>
-                    <th class="col-last" scope="col">Description</th>
-                    </tr>
+                    <div class="caption"><span>Package Summary</span></div>
+                    <div class="summary-table two-column-summary">
+                    <div class="table-header col-first">Package</div>
+                    <div class="table-header col-last">Description</div>
                     """);
         checkOutput("type-search-index.js", true,
                 """
