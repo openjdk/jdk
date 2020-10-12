@@ -423,9 +423,9 @@ public class SourceLauncherTest extends TestRunner {
 
     @Test
     public void testNoSourceOnClassPath(Path base) throws IOException {
-        Path auxSrc = base.resolve("auxSrc");
-        tb.writeJavaFiles(auxSrc,
-            "public class Aux {\n" +
+        Path extraSrc = base.resolve("extraSrc");
+        tb.writeJavaFiles(extraSrc,
+            "public class Extra {\n" +
             "    static final String MESSAGE = \"Hello World\";\n" +
             "}\n");
 
@@ -434,18 +434,18 @@ public class SourceLauncherTest extends TestRunner {
             "import java.util.Arrays;\n" +
             "class HelloWorld {\n" +
             "    public static void main(String... args) {\n" +
-            "        System.out.println(Aux.MESSAGE + Arrays.toString(args));\n" +
+            "        System.out.println(Extra.MESSAGE + Arrays.toString(args));\n" +
             "    }\n" +
             "}");
 
-        List<String> javacArgs = List.of("-classpath", auxSrc.toString());
+        List<String> javacArgs = List.of("-classpath", extraSrc.toString());
         List<String> classArgs = List.of("1", "2", "3");
         String FS = File.separator;
         String expectStdErr =
             "testNoSourceOnClassPath" + FS + "mainSrc" + FS + "HelloWorld.java:4: error: cannot find symbol\n" +
-            "        System.out.println(Aux.MESSAGE + Arrays.toString(args));\n" +
+            "        System.out.println(Extra.MESSAGE + Arrays.toString(args));\n" +
             "                           ^\n" +
-            "  symbol:   variable Aux\n" +
+            "  symbol:   variable Extra\n" +
             "  location: class HelloWorld\n" +
             "1 error\n";
         Result r = run(mainSrc.resolve("HelloWorld.java"), javacArgs, classArgs);

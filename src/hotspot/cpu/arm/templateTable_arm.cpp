@@ -44,13 +44,6 @@
 #define __ _masm->
 
 //----------------------------------------------------------------------------------------------------
-// Platform-dependent initialization
-
-void TemplateTable::pd_initialize() {
-  // No arm specific initialization
-}
-
-//----------------------------------------------------------------------------------------------------
 // Address computation
 
 // local variables
@@ -2108,7 +2101,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
       const Address mask(Rcounters, in_bytes(MethodCounters::backedge_mask_offset()));
       __ increment_mask_and_jump(Address(Rcounters, be_offset), increment, mask,
                                  Rcnt, R4_tmp, eq, &backedge_counter_overflow);
-    } else {
+    } else { // not TieredCompilation
       // Increment backedge counter in MethodCounters*
       __ get_method_counters(Rmethod, Rcounters, dispatch, true /*saveRegs*/,
                              Rdisp, R3_bytecode,
@@ -2173,7 +2166,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
   __ dispatch_only(vtos, true);
 
   if (UseLoopCounter) {
-    if (ProfileInterpreter) {
+    if (ProfileInterpreter && !TieredCompilation) {
       // Out-of-line code to allocate method data oop.
       __ bind(profile_method);
 
@@ -3607,12 +3600,6 @@ void TemplateTable::fast_xaccess(TosState state) {
 //----------------------------------------------------------------------------------------------------
 // Calls
 
-void TemplateTable::count_calls(Register method, Register temp) {
-  // implemented elsewhere
-  ShouldNotReachHere();
-}
-
-
 void TemplateTable::prepare_invoke(int byte_no,
                                    Register method,  // linked method (or i-klass)
                                    Register index,   // itable index, MethodType, etc.
@@ -4435,6 +4422,7 @@ void TemplateTable::monitorexit() {
   const Register Rcur = R1_tmp;
   const Register Rbottom = R2_tmp;
   const Register Rcur_obj = Rtemp;
+  const Register Rmonitor = R0;      // fixed in unlock_object()
 
   // check for NULL object
   __ null_check(Robj, Rtemp);
@@ -4477,7 +4465,8 @@ void TemplateTable::monitorexit() {
   // Rcur: points to monitor entry
   __ bind(found);
   __ push_ptr(Robj);                             // make sure object is on stack (contract with oopMaps)
-  __ unlock_object(Rcur);
+  __ mov(Rmonitor, Rcur);
+  __ unlock_object(Rmonitor);
   __ pop_ptr(Robj);                              // discard object
 }
 

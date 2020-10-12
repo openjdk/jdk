@@ -1407,6 +1407,14 @@ bool SystemDictionaryShared::is_excluded_class(InstanceKlass* k) {
   return (p == NULL) ? true : p->is_excluded();
 }
 
+void SystemDictionaryShared::set_excluded(InstanceKlass* k) {
+  Arguments::assert_is_dumping_archive();
+  DumpTimeSharedClassInfo* info = find_or_allocate_info_for(k);
+  if (info != NULL) {
+    info->set_excluded();
+  }
+}
+
 void SystemDictionaryShared::set_class_has_failed_verification(InstanceKlass* ik) {
   Arguments::assert_is_dumping_archive();
   DumpTimeSharedClassInfo* p = find_or_allocate_info_for(ik);
@@ -2053,6 +2061,7 @@ InstanceKlass* SystemDictionaryShared::find_builtin_class(Symbol* name) {
   const RunTimeSharedClassInfo* record = find_record(&_builtin_dictionary, &_dynamic_builtin_dictionary, name);
   if (record != NULL) {
     assert(!record->_klass->is_hidden(), "hidden class cannot be looked up by name");
+    assert(check_alignment(record->_klass), "Address not aligned");
     return record->_klass;
   } else {
     return NULL;

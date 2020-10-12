@@ -373,9 +373,7 @@ void VM_Version::initialize() {
     if (!has_tm()) {
       vm_exit_during_initialization("RTM is not supported on this OS version.");
     }
-  }
 
-  if (UseRTMLocking) {
 #if INCLUDE_RTM_OPT
     if (!FLAG_IS_CMDLINE(UseRTMLocking)) {
       // RTM locking should be used only for applications with

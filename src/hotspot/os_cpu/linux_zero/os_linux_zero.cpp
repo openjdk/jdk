@@ -48,6 +48,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
+#include "signals_posix.hpp"
 #include "utilities/align.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
@@ -139,7 +140,7 @@ JVM_handle_linux_signal(int sig,
 
   if (sig == SIGPIPE || sig == SIGXFSZ) {
     // allow chained handler to go first
-    if (os::Linux::chained_handler(sig, info, ucVoid)) {
+    if (PosixSignals::chained_handler(sig, info, ucVoid)) {
       return true;
     } else {
       // Ignoring SIGPIPE/SIGXFSZ - see bugs 4229104 or 6499219
@@ -149,7 +150,7 @@ JVM_handle_linux_signal(int sig,
 
   JavaThread* thread = NULL;
   VMThread* vmthread = NULL;
-  if (os::Linux::signal_handlers_are_installed) {
+  if (PosixSignals::are_signal_handlers_installed()) {
     if (t != NULL ){
       if(t->is_Java_thread()) {
         thread = t->as_Java_thread();
@@ -167,13 +168,14 @@ JVM_handle_linux_signal(int sig,
 
       // check if fault address is within thread stack
       if (thread->is_in_full_stack(addr)) {
+        StackOverflow* overflow_state = thread->stack_overflow_state();
         // stack overflow
-        if (thread->in_stack_yellow_reserved_zone(addr)) {
-          thread->disable_stack_yellow_reserved_zone();
+        if (overflow_state->in_stack_yellow_reserved_zone(addr)) {
+          overflow_state->disable_stack_yellow_reserved_zone();
           ShouldNotCallThis();
         }
-        else if (thread->in_stack_red_zone(addr)) {
-          thread->disable_stack_red_zone();
+        else if (overflow_state->in_stack_red_zone(addr)) {
+          overflow_state->disable_stack_red_zone();
           ShouldNotCallThis();
         }
         else {
@@ -217,7 +219,7 @@ JVM_handle_linux_signal(int sig,
   }
 
   // signal-chaining
-  if (os::Linux::chained_handler(sig, info, ucVoid)) {
+  if (PosixSignals::chained_handler(sig, info, ucVoid)) {
      return true;
   }
 
@@ -479,6 +481,7 @@ extern "C" {
     long long unsigned int oldval,
     long long unsigned int newval) {
     ShouldNotCallThis();
+    return 0; // silence compiler compiler warnings
   }
 };
 #endif // !_LP64

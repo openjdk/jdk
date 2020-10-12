@@ -40,7 +40,10 @@
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/park.hpp"
+#include "runtime/safepointMechanism.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/stackOverflow.hpp"
 #include "runtime/threadHeapSampler.hpp"
 #include "runtime/threadLocalStorage.hpp"
 #include "runtime/threadStatisticalInfo.hpp"
@@ -283,6 +286,12 @@ class Thread: public ThreadShadow {
   // suspend/resume lock: used for self-suspend
   Monitor* _SR_lock;
 
+  // Stack watermark barriers.
+  StackWatermarks _stack_watermarks;
+
+ public:
+  inline StackWatermarks* stack_watermarks() { return &_stack_watermarks; }
+
  protected:
   enum SuspendFlags {
     // NOTE: avoid using the sign-bit as cc generates different test code
@@ -390,8 +399,10 @@ class Thread: public ThreadShadow {
   friend class NoSafepointVerifier;
   friend class PauseNoSafepointVerifier;
 
-  volatile void* _polling_page;                 // Thread local polling page
+ protected:
+  SafepointMechanism::ThreadData _poll_data;
 
+ private:
   ThreadLocalAllocBuffer _tlab;                 // Thread-local eden
   jlong _allocated_bytes;                       // Cumulative number of bytes allocated on
                                                 // the Java heap
@@ -490,6 +501,7 @@ class Thread: public ThreadShadow {
   virtual bool is_ConcurrentGC_thread() const        { return false; }
   virtual bool is_Named_thread() const               { return false; }
   virtual bool is_Worker_thread() const              { return false; }
+  virtual bool is_JfrSampler_thread() const          { return false; }
 
   // Can this thread make Java upcalls
   virtual bool can_call_java() const                 { return false; }
@@ -652,7 +664,9 @@ class Thread: public ThreadShadow {
   // Apply "f->do_oop" to all root oops in "this".
   //   Used by JavaThread::oops_do.
   // Apply "cf->do_code_blob" (if !NULL) to all code blobs active in frames
-  virtual void oops_do(OopClosure* f, CodeBlobClosure* cf);
+  virtual void oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf);
+  virtual void oops_do_frames(OopClosure* f, CodeBlobClosure* cf) {}
+  void oops_do(OopClosure* f, CodeBlobClosure* cf);
 
   // Handles the parallel case for claim_threads_do.
  private:
@@ -747,8 +761,6 @@ protected:
   size_t           _stack_size;
   int              _lgrp_id;
 
-  volatile void** polling_page_addr() { return &_polling_page; }
-
  public:
   // Stack overflow support
   address stack_base() const           { assert(_stack_base != NULL,"Sanity check"); return _stack_base; }
@@ -812,7 +824,8 @@ protected:
   static ByteSize stack_base_offset()            { return byte_offset_of(Thread, _stack_base); }
   static ByteSize stack_size_offset()            { return byte_offset_of(Thread, _stack_size); }
 
-  static ByteSize polling_page_offset()          { return byte_offset_of(Thread, _polling_page); }
+  static ByteSize polling_word_offset()          { return byte_offset_of(Thread, _poll_data) + byte_offset_of(SafepointMechanism::ThreadData, _polling_word);}
+  static ByteSize polling_page_offset()          { return byte_offset_of(Thread, _poll_data) + byte_offset_of(SafepointMechanism::ThreadData, _polling_page);}
 
   static ByteSize tlab_start_offset()            { return byte_offset_of(Thread, _tlab) + ThreadLocalAllocBuffer::start_offset(); }
   static ByteSize tlab_end_offset()              { return byte_offset_of(Thread, _tlab) + ThreadLocalAllocBuffer::end_offset(); }
@@ -922,8 +935,8 @@ class NamedThread: public NonJavaThread {
   };
  private:
   char* _name;
-  // log JavaThread being processed by oops_do
-  JavaThread* _processed_thread;
+  // log Thread being processed by oops_do
+  Thread* _processed_thread;
   uint _gc_id; // The current GC id when a thread takes part in GC
 
  public:
@@ -933,8 +946,8 @@ class NamedThread: public NonJavaThread {
   void set_name(const char* format, ...)  ATTRIBUTE_PRINTF(2, 3);
   virtual bool is_Named_thread() const { return true; }
   virtual char* name() const { return _name == NULL ? (char*)"Unknown Thread" : _name; }
-  JavaThread *processed_thread() { return _processed_thread; }
-  void set_processed_thread(JavaThread *thread) { _processed_thread = thread; }
+  Thread *processed_thread() { return _processed_thread; }
+  void set_processed_thread(Thread *thread) { _processed_thread = thread; }
   virtual void print_on(outputStream* st) const;
 
   void set_gc_id(uint gc_id) { _gc_id = gc_id; }
@@ -1133,16 +1146,6 @@ class JavaThread: public Thread {
   // of _attaching_via_jni and transitions to _attached_via_jni.
   volatile JNIAttachStates _jni_attach_state;
 
- public:
-  // State of the stack guard pages for this thread.
-  enum StackGuardState {
-    stack_guard_unused,         // not needed
-    stack_guard_reserved_disabled,
-    stack_guard_yellow_reserved_disabled,// disabled (temporarily) after stack overflow
-    stack_guard_enabled         // enabled
-  };
-
- private:
 
 #if INCLUDE_JVMCI
   // The _pending_* fields below are used to communicate extra information
@@ -1190,12 +1193,7 @@ class JavaThread: public Thread {
  private:
 #endif // INCLUDE_JVMCI
 
-  StackGuardState  _stack_guard_state;
-
-  // Precompute the limit of the stack as used in stack overflow checks.
-  // We load it from here to simplify the stack overflow check in assembly.
-  address          _stack_overflow_limit;
-  address          _reserved_stack_activation;
+  StackOverflow    _stack_overflow_state;
 
   // Compiler exception handling (NOTE: The _exception_oop is *NOT* the same as _pending_exception. It is
   // used to temp. parsing values into and out of the runtime system during exception handling for compiled
@@ -1229,11 +1227,11 @@ class JavaThread: public Thread {
   friend class ThreadWaitTransition;
   friend class VM_Exit;
 
-  void initialize();                             // Initialized the instance variables
 
  public:
   // Constructor
-  JavaThread(bool is_attaching_via_jni = false); // for main thread and JNI attached threads
+  JavaThread();                            // delegating constructor
+  JavaThread(bool is_attaching_via_jni);   // for main thread and JNI attached threads
   JavaThread(ThreadFunction entry_point, size_t stack_size = 0);
   ~JavaThread();
 
@@ -1241,6 +1239,8 @@ class JavaThread: public Thread {
   // verify this JavaThread hasn't be published in the Threads::list yet
   void verify_not_published();
 #endif // ASSERT
+
+  StackOverflow* stack_overflow_state() { return &_stack_overflow_state; }
 
   //JNI functiontable getter/setter for JVMTI jni function table interception API.
   void set_jni_functions(struct JNINativeInterface_* functionTable) {
@@ -1286,7 +1286,6 @@ class JavaThread: public Thread {
 
   void set_saved_exception_pc(address pc)        { _saved_exception_pc = pc; }
   address saved_exception_pc()                   { return _saved_exception_pc; }
-
 
   ThreadFunction entry_point() const             { return _entry_point; }
 
@@ -1338,9 +1337,7 @@ class JavaThread: public Thread {
   bool do_not_unlock_if_synchronized()             { return _do_not_unlock_if_synchronized; }
   void set_do_not_unlock_if_synchronized(bool val) { _do_not_unlock_if_synchronized = val; }
 
-  inline void set_polling_page_release(void* poll_value);
-  inline void set_polling_page(void* poll_value);
-  inline volatile void* get_polling_page();
+  SafepointMechanism::ThreadData* poll_data() { return &_poll_data; }
 
  private:
   // Support for thread handshake operations
@@ -1573,186 +1570,11 @@ class JavaThread: public Thread {
     set_exception_pc(NULL);
   }
 
-  // Stack overflow support
-  //
-  //  (small addresses)
-  //
-  //  --  <-- stack_end()                   ---
-  //  |                                      |
-  //  |  red pages                           |
-  //  |                                      |
-  //  --  <-- stack_red_zone_base()          |
-  //  |                                      |
-  //  |                                     guard
-  //  |  yellow pages                       zone
-  //  |                                      |
-  //  |                                      |
-  //  --  <-- stack_yellow_zone_base()       |
-  //  |                                      |
-  //  |                                      |
-  //  |  reserved pages                      |
-  //  |                                      |
-  //  --  <-- stack_reserved_zone_base()    ---      ---
-  //                                                 /|\  shadow     <--  stack_overflow_limit() (somewhere in here)
-  //                                                  |   zone
-  //                                                 \|/  size
-  //  some untouched memory                          ---
-  //
-  //
-  //  --
-  //  |
-  //  |  shadow zone
-  //  |
-  //  --
-  //  x    frame n
-  //  --
-  //  x    frame n-1
-  //  x
-  //  --
-  //  ...
-  //
-  //  --
-  //  x    frame 0
-  //  --  <-- stack_base()
-  //
-  //  (large addresses)
-  //
-
- private:
-  // These values are derived from flags StackRedPages, StackYellowPages,
-  // StackReservedPages and StackShadowPages. The zone size is determined
-  // ergonomically if page_size > 4K.
-  static size_t _stack_red_zone_size;
-  static size_t _stack_yellow_zone_size;
-  static size_t _stack_reserved_zone_size;
-  static size_t _stack_shadow_zone_size;
- public:
-  inline size_t stack_available(address cur_sp);
-
-  static size_t stack_red_zone_size() {
-    assert(_stack_red_zone_size > 0, "Don't call this before the field is initialized.");
-    return _stack_red_zone_size;
-  }
-  static void set_stack_red_zone_size(size_t s) {
-    assert(is_aligned(s, os::vm_page_size()),
-           "We can not protect if the red zone size is not page aligned.");
-    assert(_stack_red_zone_size == 0, "This should be called only once.");
-    _stack_red_zone_size = s;
-  }
-  address stack_red_zone_base() {
-    return (address)(stack_end() + stack_red_zone_size());
-  }
-  bool in_stack_red_zone(address a) {
-    return a <= stack_red_zone_base() && a >= stack_end();
-  }
-
-  static size_t stack_yellow_zone_size() {
-    assert(_stack_yellow_zone_size > 0, "Don't call this before the field is initialized.");
-    return _stack_yellow_zone_size;
-  }
-  static void set_stack_yellow_zone_size(size_t s) {
-    assert(is_aligned(s, os::vm_page_size()),
-           "We can not protect if the yellow zone size is not page aligned.");
-    assert(_stack_yellow_zone_size == 0, "This should be called only once.");
-    _stack_yellow_zone_size = s;
-  }
-
-  static size_t stack_reserved_zone_size() {
-    // _stack_reserved_zone_size may be 0. This indicates the feature is off.
-    return _stack_reserved_zone_size;
-  }
-  static void set_stack_reserved_zone_size(size_t s) {
-    assert(is_aligned(s, os::vm_page_size()),
-           "We can not protect if the reserved zone size is not page aligned.");
-    assert(_stack_reserved_zone_size == 0, "This should be called only once.");
-    _stack_reserved_zone_size = s;
-  }
-  address stack_reserved_zone_base() const {
-    return (address)(stack_end() +
-                     (stack_red_zone_size() + stack_yellow_zone_size() + stack_reserved_zone_size()));
-  }
-  bool in_stack_reserved_zone(address a) {
-    return (a <= stack_reserved_zone_base()) &&
-           (a >= (address)((intptr_t)stack_reserved_zone_base() - stack_reserved_zone_size()));
-  }
-
-  static size_t stack_yellow_reserved_zone_size() {
-    return _stack_yellow_zone_size + _stack_reserved_zone_size;
-  }
-  bool in_stack_yellow_reserved_zone(address a) {
-    return (a <= stack_reserved_zone_base()) && (a >= stack_red_zone_base());
-  }
-
-  // Size of red + yellow + reserved zones.
-  static size_t stack_guard_zone_size() {
-    return stack_red_zone_size() + stack_yellow_reserved_zone_size();
-  }
-
-  static size_t stack_shadow_zone_size() {
-    assert(_stack_shadow_zone_size > 0, "Don't call this before the field is initialized.");
-    return _stack_shadow_zone_size;
-  }
-  static void set_stack_shadow_zone_size(size_t s) {
-    // The shadow area is not allocated or protected, so
-    // it needs not be page aligned.
-    // But the stack bang currently assumes that it is a
-    // multiple of page size. This guarantees that the bang
-    // loop touches all pages in the shadow zone.
-    // This can be guaranteed differently, as well.  E.g., if
-    // the page size is a multiple of 4K, banging in 4K steps
-    // suffices to touch all pages. (Some pages are banged
-    // several times, though.)
-    assert(is_aligned(s, os::vm_page_size()),
-           "Stack bang assumes multiple of page size.");
-    assert(_stack_shadow_zone_size == 0, "This should be called only once.");
-    _stack_shadow_zone_size = s;
-  }
-
-  void create_stack_guard_pages();
-  void remove_stack_guard_pages();
-
-  void enable_stack_reserved_zone();
-  void disable_stack_reserved_zone();
-  void enable_stack_yellow_reserved_zone();
-  void disable_stack_yellow_reserved_zone();
-  void enable_stack_red_zone();
-  void disable_stack_red_zone();
-
-  inline bool stack_guard_zone_unused();
-  inline bool stack_yellow_reserved_zone_disabled();
-  inline bool stack_reserved_zone_disabled();
-  inline bool stack_guards_enabled();
-
-  address reserved_stack_activation() const { return _reserved_stack_activation; }
-  void set_reserved_stack_activation(address addr) {
-    assert(_reserved_stack_activation == stack_base()
-            || _reserved_stack_activation == NULL
-            || addr == stack_base(), "Must not be set twice");
-    _reserved_stack_activation = addr;
-  }
-
-  // Attempt to reguard the stack after a stack overflow may have occurred.
-  // Returns true if (a) guard pages are not needed on this thread, (b) the
-  // pages are already guarded, or (c) the pages were successfully reguarded.
-  // Returns false if there is not enough stack space to reguard the pages, in
-  // which case the caller should unwind a frame and try again.  The argument
-  // should be the caller's (approximate) sp.
-  bool reguard_stack(address cur_sp);
-  // Similar to above but see if current stackpoint is out of the guard area
-  // and reguard if possible.
-  bool reguard_stack(void);
-
-  address stack_overflow_limit() { return _stack_overflow_limit; }
-  void set_stack_overflow_limit() {
-    _stack_overflow_limit =
-      stack_end() + MAX2(JavaThread::stack_guard_zone_size(), JavaThread::stack_shadow_zone_size());
-  }
-
   // Check if address is in the usable part of the stack (excludes protected
   // guard pages). Can be applied to any thread and is an approximation for
   // using is_in_live_stack when the query has to happen from another thread.
   bool is_in_usable_stack(address adr) const {
-    return is_in_stack_range_incl(adr, stack_reserved_zone_base());
+    return is_in_stack_range_incl(adr, _stack_overflow_state.stack_reserved_zone_base());
   }
 
   // Misc. accessors/mutators
@@ -1792,10 +1614,19 @@ class JavaThread: public Thread {
   static ByteSize exception_oop_offset()         { return byte_offset_of(JavaThread, _exception_oop); }
   static ByteSize exception_pc_offset()          { return byte_offset_of(JavaThread, _exception_pc); }
   static ByteSize exception_handler_pc_offset()  { return byte_offset_of(JavaThread, _exception_handler_pc); }
-  static ByteSize stack_overflow_limit_offset()  { return byte_offset_of(JavaThread, _stack_overflow_limit); }
   static ByteSize is_method_handle_return_offset() { return byte_offset_of(JavaThread, _is_method_handle_return); }
-  static ByteSize stack_guard_state_offset()     { return byte_offset_of(JavaThread, _stack_guard_state); }
-  static ByteSize reserved_stack_activation_offset() { return byte_offset_of(JavaThread, _reserved_stack_activation); }
+
+  // StackOverflow offsets
+  static ByteSize stack_overflow_limit_offset()  {
+    return byte_offset_of(JavaThread, _stack_overflow_state._stack_overflow_limit);
+  }
+  static ByteSize stack_guard_state_offset()     {
+    return byte_offset_of(JavaThread, _stack_overflow_state._stack_guard_state);
+  }
+  static ByteSize reserved_stack_activation_offset() {
+    return byte_offset_of(JavaThread, _stack_overflow_state._reserved_stack_activation);
+  }
+
   static ByteSize suspend_flags_offset()         { return byte_offset_of(JavaThread, _suspend_flags); }
 
   static ByteSize do_not_unlock_if_synchronized_offset() { return byte_offset_of(JavaThread, _do_not_unlock_if_synchronized); }
@@ -1868,7 +1699,8 @@ class JavaThread: public Thread {
   void frames_do(void f(frame*, const RegisterMap*));
 
   // Memory operations
-  void oops_do(OopClosure* f, CodeBlobClosure* cf);
+  void oops_do_frames(OopClosure* f, CodeBlobClosure* cf);
+  void oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf);
 
   // Sweeper operations
   virtual void nmethods_do(CodeBlobClosure* cf);
@@ -2120,7 +1952,7 @@ class CodeCacheSweeperThread : public JavaThread {
   bool is_Code_cache_sweeper_thread() const { return true; }
 
   // Prevent GC from unloading _scanned_compiled_method
-  void oops_do(OopClosure* f, CodeBlobClosure* cf);
+  void oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf);
   void nmethods_do(CodeBlobClosure* cf);
 };
 

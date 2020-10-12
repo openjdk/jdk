@@ -215,7 +215,7 @@ class EnterInterpOnlyModeClosure : public HandshakeClosure {
       // interpreted-only mode is enabled the first time for a given
       // thread (nothing to do if no Java frames yet).
       ResourceMark resMark;
-      for (StackFrameStream fst(jt, false); !fst.is_done(); fst.next()) {
+      for (StackFrameStream fst(jt, false /* update */, false /* process_frames */); !fst.is_done(); fst.next()) {
         if (fst.current()->can_be_deoptimized()) {
           Deoptimization::deoptimize(jt, *fst.current());
         }

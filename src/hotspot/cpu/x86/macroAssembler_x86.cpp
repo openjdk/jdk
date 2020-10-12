@@ -1058,7 +1058,7 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
   // was post-decremented.)  Skip this address by starting at i=1, and
   // touch a few more pages below.  N.B.  It is important to touch all
   // the way down including all pages in the shadow zone.
-  for (int i = 1; i < ((int)JavaThread::stack_shadow_zone_size() / os::vm_page_size()); i++) {
+  for (int i = 1; i < ((int)StackOverflow::stack_shadow_zone_size() / os::vm_page_size()); i++) {
     // this could be any sized move but this is can be a debugging crumb
     // so the bigger the better.
     movptr(Address(tmp, (-i*os::vm_page_size())), size );
@@ -2699,16 +2699,17 @@ void MacroAssembler::save_rax(Register tmp) {
   else if (tmp != rax) mov(tmp, rax);
 }
 
-void MacroAssembler::safepoint_poll(Label& slow_path, Register thread_reg, Register temp_reg) {
+void MacroAssembler::safepoint_poll(Label& slow_path, Register thread_reg, bool at_return, bool in_nmethod) {
 #ifdef _LP64
-  assert(thread_reg == r15_thread, "should be");
-#else
-  if (thread_reg == noreg) {
-    thread_reg = temp_reg;
-    get_thread(thread_reg);
+  if (at_return) {
+    // Note that when in_nmethod is set, the stack pointer is incremented before the poll. Therefore,
+    // we may safely use rsp instead to perform the stack watermark check.
+    cmpq(Address(thread_reg, Thread::polling_word_offset()), in_nmethod ? rsp : rbp);
+    jcc(Assembler::above, slow_path);
+    return;
   }
 #endif
-  testb(Address(thread_reg, Thread::polling_page_offset()), SafepointMechanism::poll_bit());
+  testb(Address(thread_reg, Thread::polling_word_offset()), SafepointMechanism::poll_bit());
   jcc(Assembler::notZero, slow_path); // handshake bit set implies poll
 }
 
@@ -5133,7 +5134,7 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
 }
 
 // encode char[] to byte[] in ISO_8859_1
-   //@HotSpotIntrinsicCandidate
+   //@IntrinsicCandidate
    //private static int implEncodeISOArray(byte[] sa, int sp,
    //byte[] da, int dp, int len) {
    //  int i = 0;
@@ -7510,7 +7511,7 @@ void MacroAssembler::crc32c_ipl_alg2_alt2(Register in_out, Register in1, Registe
 
 // Compress char[] array to byte[].
 //   ..\jdk\src\java.base\share\classes\java\lang\StringUTF16.java
-//   @HotSpotIntrinsicCandidate
+//   @IntrinsicCandidate
 //   private static int compress(char[] src, int srcOff, byte[] dst, int dstOff, int len) {
 //     for (int i = 0; i < len; i++) {
 //       int c = src[srcOff++];
@@ -7726,7 +7727,7 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
 
 // Inflate byte[] array to char[].
 //   ..\jdk\src\java.base\share\classes\java\lang\StringLatin1.java
-//   @HotSpotIntrinsicCandidate
+//   @IntrinsicCandidate
 //   private static void inflate(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
 //     for (int i = 0; i < len; i++) {
 //       dst[dstOff++] = (char)(src[srcOff++] & 0xff);
@@ -7963,6 +7964,7 @@ void MacroAssembler::cache_wbsync(bool is_pre)
     sfence();
   }
 }
+
 #endif // _LP64
 
 Assembler::Condition MacroAssembler::negate_condition(Assembler::Condition cond) {

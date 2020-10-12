@@ -624,9 +624,9 @@ public:
   // Return Symbol or throw exception if name given is can not be a valid Symbol.
   static Symbol* class_name_symbol(const char* name, Symbol* exception, TRAPS);
 
-protected:
   // Setup link to hierarchy
   static void add_to_hierarchy(InstanceKlass* k, TRAPS);
+protected:
 
   // Basic find on loaded classes
   static InstanceKlass* find_class(unsigned int hash,

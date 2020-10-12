@@ -31,6 +31,7 @@
 #include "memory/metaspace/metaspaceCommon.hpp"
 #include "memory/metaspace/spaceManager.hpp"
 #include "memory/metaspace/virtualSpaceList.hpp"
+#include "memory/resourceArea.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/init.hpp"
 #include "services/memoryService.hpp"

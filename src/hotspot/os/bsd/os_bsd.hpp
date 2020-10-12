@@ -33,13 +33,6 @@ static bool zero_page_read_protected() { return true; }
 class Bsd {
   friend class os;
 
-  // For signal-chaining
-  static bool libjsig_is_loaded;        // libjsig that interposes sigaction(),
-                                        // __sigaction(), signal() is loaded
-  static struct sigaction *(*get_signal_action)(int);
-
-  static void check_signal_handler(int sig);
-
 #ifdef __APPLE__
   // mach_absolute_time
   static mach_timebase_info_data_t _timebase_info;
@@ -70,8 +63,6 @@ class Bsd {
   static void init_thread_fpu_state();
   static pthread_t main_thread(void)                                { return _main_thread; }
 
-  static void hotspot_sigmask(Thread* thread);
-
   static pid_t gettid();
 
   static int page_size(void)                                        { return _page_size; }
@@ -83,23 +74,6 @@ class Bsd {
   static intptr_t* ucontext_get_fp(const ucontext_t* uc);
 
   static bool get_frame_at_stack_banging_point(JavaThread* thread, ucontext_t* uc, frame* fr);
-
-  // This boolean allows users to forward their own non-matching signals
-  // to JVM_handle_bsd_signal, harmlessly.
-  static bool signal_handlers_are_installed;
-
-  static int get_our_sigflags(int);
-  static void set_our_sigflags(int, int);
-  static void signal_sets_init();
-  static void install_signal_handlers();
-  static void set_signal_handler(int, bool);
-
-  static sigset_t* unblocked_signals();
-  static sigset_t* vm_signals();
-
-  // For signal-chaining
-  static struct sigaction *get_chained_signal_action(int sig);
-  static bool chained_handler(int sig, siginfo_t* siginfo, void* context);
 
   // Real-time clock functions
   static void clock_init(void);

@@ -22,6 +22,7 @@
  */
 
 import java.nio.file.Path;
+import java.io.File;
 import java.util.Map;
 import java.lang.invoke.MethodHandles;
 import jdk.jpackage.test.PackageTest;
@@ -32,6 +33,7 @@ import jdk.jpackage.test.JavaAppDesc;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.CfgFile;
 
 /**
  * Test --add-launcher parameter. Output of the test should be
@@ -200,6 +202,30 @@ public class AddLauncherTest {
         .applyTo(cmd);
 
         cmd.executeAndAssertHelloAppImageCreated();
+
+        // check value of app.mainmodule in ModularAppLauncher's cfg file
+        CfgFile cfg = cmd.readLauncherCfgFile("ModularAppLauncher");
+        String moduleValue = cfg.getValue("Application", "app.mainmodule");
+        String mainClass = null;
+        String classpath = null;
+        String expectedMod = JavaAppDesc.parse(
+                modularAppDesc.toString()).setBundleFileName(null).toString();
+        TKit.assertEquals(expectedMod, moduleValue,
+                String.format("Check value of app.mainmodule=[%s]" +
+                "in ModularAppLauncher cfg file is as expected", expectedMod));
+
+        // check values of app.mainclass and app.classpath in cfg file
+        cfg = cmd.readLauncherCfgFile("NonModularAppLauncher");
+        moduleValue = null;
+        mainClass = cfg.getValue("Application", "app.mainclass");
+        classpath = cfg.getValue("Application", "app.classpath");
+        String ExpectedCN = nonModularAppDesc.className();
+        TKit.assertEquals(ExpectedCN, mainClass,
+                String.format("Check value of app.mainclass=[%s]" +
+                "in NonModularAppLauncher cfg file is as expected", ExpectedCN));
+        TKit.assertTrue(classpath.startsWith("$APPDIR" + File.separator
+                + nonModularAppDesc.jarFileName()),
+                "Check app.classpath value in ModularAppLauncher cfg file");
     }
 
     private final static Path GOLDEN_ICON = TKit.TEST_SRC_ROOT.resolve(Path.of(
