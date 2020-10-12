@@ -191,9 +191,8 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
 
     @Override
     protected Table createSummaryTable() {
-        return new Table(HtmlStyle.memberSummary, HtmlStyle.summaryTable)
+        return new Table(HtmlStyle.summaryTable)
                 .setHeader(getSummaryTableHeader(typeElement))
-                .setRowScopeColumn(1)
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast)
                 .setId("method-summary-table")
                 .setDefaultTab(resources.getText("doclet.All_Methods"))
@@ -204,8 +203,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                         e -> !utils.isAbstract(e) && !utils.isInterface(e.getEnclosingElement()))
                 .addTab(resources.getText("doclet.Default_Methods"), utils::isDefault)
                 .addTab(resources.getText("doclet.Deprecated_Methods"),
-                        e -> utils.isDeprecated(e) || utils.isDeprecated(typeElement))
-                .setTabScript(i -> "show(" + i + ");");
+                        e -> utils.isDeprecated(e) || utils.isDeprecated(typeElement));
     }
 
     @Override
