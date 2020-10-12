@@ -217,8 +217,7 @@ public class TestZoneInfo310 {
         zids_new = TimeZone.getAvailableIDs(-8 * 60 * 60 * 1000);
         Arrays.sort(zids_new);
         zids_old = ZoneInfoOld.getAvailableIDs(-8 * 60 * 60 * 1000);
-	Arrays.sort(zids_old);
-	System.out.println("new and old length = " + zids_new.length + " " + zids_old.length);
+        Arrays.sort(zids_old);
         if (!Arrays.equals(zids_new, zids_old)) {
             System.out.println("------------------------");
             System.out.println("NEW.getAvailableIDs(-8:00)");
