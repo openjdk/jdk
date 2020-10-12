@@ -54,9 +54,8 @@ import sun.util.logging.PlatformLogger;
  * @author jccollet
  */
 public class HttpCapture {
-    // Although accessing files could result in blocking operations,
-    // HttpCapture is a corner case; there seem no urgent need to convert
-    // this class to using java.util.concurrent.locks at this time.
+    // HttpCapture does blocking I/O operations while holding monitors.
+    // This is not a concern because it is rarely used.
     private File file;
     private boolean incoming = true;
     private BufferedWriter out;
