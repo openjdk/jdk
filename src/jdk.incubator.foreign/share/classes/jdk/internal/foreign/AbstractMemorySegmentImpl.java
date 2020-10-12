@@ -35,14 +35,11 @@ import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.ForceInline;
 import sun.security.action.GetPropertyAction;
 
+import java.io.FileDescriptor;
 import java.lang.invoke.VarHandle;
 import java.lang.ref.Cleaner;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Random;
-import java.util.Spliterator;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
@@ -110,14 +107,14 @@ public abstract class AbstractMemorySegmentImpl implements MemorySegment, Memory
         return dup(offset, newSize, mask, scope);
     }
 
-    @SuppressWarnings("unchecked")
-    public static <S extends MemorySegment> Spliterator<S> spliterator(S segment, SequenceLayout sequenceLayout) {
-        ((AbstractMemorySegmentImpl)segment).checkValidState();
-        if (sequenceLayout.byteSize() != segment.byteSize()) {
+    @Override
+    public Spliterator<MemorySegment> spliterator(SequenceLayout sequenceLayout) {
+        checkValidState();
+        if (sequenceLayout.byteSize() != byteSize()) {
             throw new IllegalArgumentException();
         }
-        return (Spliterator<S>)new SegmentSplitter(sequenceLayout.elementLayout().byteSize(), sequenceLayout.elementCount().getAsLong(),
-                (AbstractMemorySegmentImpl)segment.withAccessModes(segment.accessModes() & ~CLOSE));
+        return new SegmentSplitter(sequenceLayout.elementLayout().byteSize(), sequenceLayout.elementCount().getAsLong(),
+                withAccessModes(accessModes() & ~CLOSE));
     }
 
     @Override
@@ -313,6 +310,11 @@ public abstract class AbstractMemorySegmentImpl implements MemorySegment, Memory
             throw unsupportedAccessMode(CLOSE);
         }
         scope.close();
+    }
+
+    @Override
+    public Optional<FileDescriptor> fileDescriptor() {
+        return Optional.empty();
     }
 
     @Override

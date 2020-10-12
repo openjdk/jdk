@@ -26,6 +26,7 @@
 
 package jdk.incubator.foreign;
 
+import java.io.FileDescriptor;
 import java.lang.ref.Cleaner;
 import java.nio.ByteBuffer;
 
@@ -39,8 +40,8 @@ import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Spliterator;
-import java.util.function.Consumer;
 
 /**
  * A memory segment models a contiguous region of memory. A memory segment is associated with both spatial
@@ -75,8 +76,10 @@ import java.util.function.Consumer;
  * by native memory.
  * <p>
  * Finally, it is also possible to obtain a memory segment backed by a memory-mapped file using the factory method
- * {@link MemorySegment#mapFromPath(Path, long, long, FileChannel.MapMode)}. Such memory segments are called <em>mapped memory segments</em>
- * (see {@link MappedMemorySegment}).
+ * {@link MemorySegment#mapFromPath(Path, long, long, FileChannel.MapMode)}. Such memory segments are called <em>mapped memory segments</em>;
+ * mapped memory segments are associated with a {@link FileDescriptor} instance which can be obtained calling the
+ * {@link #fileDescriptor()} method. For more operations on mapped memory segments, please refer to the
+ * {@link MappedMemorySegments} class.
  * <p>
  * Array and buffer segments are effectively <em>views</em> over existing memory regions which might outlive the
  * lifecycle of the segments derived from them, and can even be manipulated directly (e.g. via array access, or direct use
@@ -180,7 +183,7 @@ MemorySegment sharedSegment = segment.share();
 SequenceLayout SEQUENCE_LAYOUT = MemoryLayout.ofSequence(1024, MemoryLayouts.JAVA_INT);
 try (MemorySegment segment = MemorySegment.allocateNative(SEQUENCE_LAYOUT).share()) {
     VarHandle VH_int = SEQUENCE_LAYOUT.elementLayout().varHandle(int.class);
-    int sum = StreamSupport.stream(MemorySegment.spliterator(segment, SEQUENCE_LAYOUT), true)
+    int sum = StreamSupport.stream(segment.spliterator(SEQUENCE_LAYOUT), true)
                            .mapToInt(s -> (int)VH_int.get(s.address()))
                            .sum();
 }
@@ -213,8 +216,7 @@ MemorySegment gcSegment = segment.registerCleaner(cleaner);
  * as such, if not closed explicitly (see {@link #close()}), the new segment will be automatically closed by the cleaner.
  *
  * @apiNote In the future, if the Java language permits, {@link MemorySegment}
- * may become a {@code sealed} interface, which would prohibit subclassing except by
- * {@link MappedMemorySegment} and other explicitly permitted subtypes.
+ * may become a {@code sealed} interface, which would prohibit subclassing except by other explicitly permitted subtypes.
  *
  * @implSpec
  * Implementations of this interface are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
@@ -233,32 +235,25 @@ public interface MemorySegment extends Addressable, AutoCloseable {
     MemoryAddress address();
 
     /**
-     * Returns a spliterator for the given memory segment. The returned spliterator reports {@link Spliterator#SIZED},
+     * Returns a spliterator for this memory segment. The returned spliterator reports {@link Spliterator#SIZED},
      * {@link Spliterator#SUBSIZED}, {@link Spliterator#IMMUTABLE}, {@link Spliterator#NONNULL} and {@link Spliterator#ORDERED}
      * characteristics.
      * <p>
-     * The returned spliterator splits the segment according to the specified sequence layout; that is,
+     * The returned spliterator splits this segment according to the specified sequence layout; that is,
      * if the supplied layout is a sequence layout whose element count is {@code N}, then calling {@link Spliterator#trySplit()}
      * will result in a spliterator serving approximatively {@code N/2} elements (depending on whether N is even or not).
      * As such, splitting is possible as long as {@code N >= 2}. The spliterator returns segments that feature the same
      * <a href="#access-modes">access modes</a> as the given segment less the {@link #CLOSE} access mode.
      * <p>
-     * The returned spliterator effectively allows to slice a segment into disjoint sub-segments, which can then
+     * The returned spliterator effectively allows to slice this segment into disjoint sub-segments, which can then
      * be processed in parallel by multiple threads (if the segment is shared).
-     * While closing the segment (see {@link #close()}) during pending concurrent execution will generally
-     * fail with an exception, it is possible to close a segment when a spliterator has been obtained but no thread
-     * is actively working on it using {@link Spliterator#tryAdvance(Consumer)}; in such cases, any subsequent call
-     * to {@link Spliterator#tryAdvance(Consumer)} will fail with an exception.
-     * @param segment the segment to be used for splitting.
+     *
      * @param layout the layout to be used for splitting.
-     * @param <S> the memory segment type
      * @return the element spliterator for this segment
      * @throws IllegalStateException if the segment is not <em>alive</em>, or if access occurs from a thread other than the
      * thread owning this segment
      */
-    static <S extends MemorySegment> Spliterator<S> spliterator(S segment, SequenceLayout layout) {
-        return AbstractMemorySegmentImpl.spliterator(segment, layout);
-    }
+    Spliterator<MemorySegment> spliterator(SequenceLayout layout);
 
     /**
      * The thread owning this segment.
@@ -382,6 +377,14 @@ public interface MemorySegment extends Addressable, AutoCloseable {
     }
 
     /**
+     * Obtain the file descriptor with this memory segment, assuming this segment is a mapped memory segment,
+     * created using the {@link #mapFromPath(Path, long, long, FileChannel.MapMode)} factory, or a buffer segment
+     * derived from a {@link java.nio.MappedByteBuffer} using the {@link #ofByteBuffer(ByteBuffer)} factory.
+     * @return the file descriptor associated with this memory segment (if any).
+     */
+    Optional<FileDescriptor> fileDescriptor();
+
+    /**
      * Is this segment alive?
      * @return true, if the segment is alive.
      * @see MemorySegment#close()
@@ -396,7 +399,6 @@ public interface MemorySegment extends Addressable, AutoCloseable {
      * @throws IllegalStateException if this segment is not <em>alive</em>, or if access occurs from a thread other than the
      * thread owning this segment, or if this segment is shared and the segment is concurrently accessed while this method is
      * called.
-     * thread (see {@link #spliterator(MemorySegment, SequenceLayout)}).
      * @throws UnsupportedOperationException if this segment does not support the {@link #CLOSE} access mode.
      */
     void close();
@@ -802,6 +804,20 @@ allocateNative(bytesSize, 1);
      * The segment will feature all <a href="#access-modes">access modes</a> (see {@link #ALL_ACCESS}),
      * unless the given mapping mode is {@linkplain FileChannel.MapMode#READ_ONLY READ_ONLY}, in which case
      * the segment will not feature the {@link #WRITE} access mode, and its confinement thread is the current thread (see {@link Thread#currentThread()}).
+     * <p>
+     * The content of a mapped memory segment can change at any time, for example
+     * if the content of the corresponding region of the mapped file is changed by
+     * this (or another) program.  Whether or not such changes occur, and when they
+     * occur, is operating-system dependent and therefore unspecified.
+     * <p>
+     * All or part of a mapped memory segment may become
+     * inaccessible at any time, for example if the backing mapped file is truncated.  An
+     * attempt to access an inaccessible region of a mapped memory segment will not
+     * change the segment's content and will cause an unspecified exception to be
+     * thrown either at the time of the access or at some later time.  It is
+     * therefore strongly recommended that appropriate precautions be taken to
+     * avoid the manipulation of a mapped file by this (or another) program, except to read or write
+     * the file's content.
      *
      * @implNote When obtaining a mapped segment from a newly created file, the initialization state of the contents of the block
      * of mapped memory associated with the returned mapped memory segment is unspecified and should not be relied upon.
@@ -810,14 +826,14 @@ allocateNative(bytesSize, 1);
      * @param bytesOffset the offset (expressed in bytes) within the file at which the mapped segment is to start.
      * @param bytesSize the size (in bytes) of the mapped memory backing the memory segment.
      * @param mapMode a file mapping mode, see {@link FileChannel#map(FileChannel.MapMode, long, long)}; the chosen mapping mode
-     *                might affect the behavior of the returned memory mapped segment (see {@link MappedMemorySegment#force()}).
+     *                might affect the behavior of the returned memory mapped segment (see {@link MappedMemorySegments#force(MemorySegment)}).
      * @return a new confined mapped memory segment.
      * @throws IllegalArgumentException if {@code bytesOffset < 0}.
      * @throws IllegalArgumentException if {@code bytesSize < 0}.
      * @throws UnsupportedOperationException if an unsupported map mode is specified.
      * @throws IOException if the specified path does not point to an existing file, or if some other I/O error occurs.
      */
-    static MappedMemorySegment mapFromPath(Path path, long bytesOffset, long bytesSize, FileChannel.MapMode mapMode) throws IOException {
+    static MemorySegment mapFromPath(Path path, long bytesOffset, long bytesSize, FileChannel.MapMode mapMode) throws IOException {
         return MappedMemorySegmentImpl.makeMappedSegment(path, bytesOffset, bytesSize, mapMode);
     }
 
@@ -898,7 +914,6 @@ allocateNative(bytesSize, 1);
 
     /**
      * Share access mode; this segment support sharing with threads other than the owner thread (see {@link #share()}).
-     * (see {@link #spliterator(MemorySegment, SequenceLayout)}).
      * @see MemorySegment#accessModes()
      * @see MemorySegment#withAccessModes(int)
      */

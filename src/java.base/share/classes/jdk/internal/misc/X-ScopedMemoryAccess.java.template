@@ -30,7 +30,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.ref.Reference;
+import java.io.FileDescriptor;
 
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.ForceInline;
 
@@ -233,6 +235,90 @@ public class ScopedMemoryAccess {
         } finally {
             Reference.reachabilityFence(aScope);
             Reference.reachabilityFence(bScope);
+        }
+    }
+
+    @ForceInline
+    public boolean isLoaded(Scope scope, long address, boolean isSync, long size) {
+        try {
+            return isLoadedInternal(scope, address, isSync, size);
+        } catch (Scope.ScopedAccessError ex) {
+            throw new IllegalStateException("This segment is already closed");
+        }
+    }
+
+    @ForceInline @Scoped
+    public boolean isLoadedInternal(Scope scope, long address, boolean isSync, long size) {
+        try {
+            if (scope != null) {
+                scope.checkValidState();
+            }
+            return SharedSecrets.getJavaNioAccess().isLoaded(address, isSync, size);
+        } finally {
+            Reference.reachabilityFence(scope);
+        }
+    }
+
+    @ForceInline
+    public void load(Scope scope, long address, boolean isSync, long size) {
+        try {
+            loadInternal(scope, address, isSync, size);
+        } catch (Scope.ScopedAccessError ex) {
+            throw new IllegalStateException("This segment is already closed");
+        }
+    }
+
+    @ForceInline @Scoped
+    public void loadInternal(Scope scope, long address, boolean isSync, long size) {
+        try {
+            if (scope != null) {
+                scope.checkValidState();
+            }
+            SharedSecrets.getJavaNioAccess().load(address, isSync, size);
+        } finally {
+            Reference.reachabilityFence(scope);
+        }
+    }
+
+    @ForceInline
+    public void unload(Scope scope, long address, boolean isSync, long size) {
+        try {
+            unloadInternal(scope, address, isSync, size);
+        } catch (Scope.ScopedAccessError ex) {
+            throw new IllegalStateException("This segment is already closed");
+        }
+    }
+
+    @ForceInline @Scoped
+    public void unloadInternal(Scope scope, long address, boolean isSync, long size) {
+        try {
+            if (scope != null) {
+                scope.checkValidState();
+            }
+            SharedSecrets.getJavaNioAccess().unload(address, isSync, size);
+        } finally {
+            Reference.reachabilityFence(scope);
+        }
+    }
+
+    @ForceInline
+    public void force(Scope scope, FileDescriptor fd, long address, boolean isSync, long index, long length) {
+        try {
+            forceInternal(scope, fd, address, isSync, index, length);
+        } catch (Scope.ScopedAccessError ex) {
+            throw new IllegalStateException("This segment is already closed");
+        }
+    }
+
+    @ForceInline @Scoped
+    public void forceInternal(Scope scope, FileDescriptor fd, long address, boolean isSync, long index, long length) {
+        try {
+            if (scope != null) {
+                scope.checkValidState();
+            }
+            SharedSecrets.getJavaNioAccess().force(fd, address, isSync, index, length);
+        } finally {
+            Reference.reachabilityFence(scope);
         }
     }
     // typed-ops here

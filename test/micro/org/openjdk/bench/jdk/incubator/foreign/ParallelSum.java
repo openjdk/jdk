@@ -117,23 +117,23 @@ public class ParallelSum {
 
     @Benchmark
     public int segment_parallel() {
-        return new SumSegment(MemorySegment.spliterator(segment, SEQUENCE_LAYOUT), SEGMENT_TO_INT).invoke();
+        return new SumSegment(segment.spliterator(SEQUENCE_LAYOUT), SEGMENT_TO_INT).invoke();
     }
 
     @Benchmark
     public int segment_parallel_bulk() {
-        return new SumSegment(MemorySegment.spliterator(segment, SEQUENCE_LAYOUT_BULK), SEGMENT_TO_INT_BULK).invoke();
+        return new SumSegment(segment.spliterator(SEQUENCE_LAYOUT_BULK), SEGMENT_TO_INT_BULK).invoke();
     }
 
     @Benchmark
     public int segment_stream_parallel() {
-        return StreamSupport.stream(MemorySegment.spliterator(segment, SEQUENCE_LAYOUT), true)
+        return StreamSupport.stream(segment.spliterator(SEQUENCE_LAYOUT), true)
                 .mapToInt(SEGMENT_TO_INT).sum();
     }
 
     @Benchmark
     public int segment_stream_parallel_bulk() {
-        return StreamSupport.stream(MemorySegment.spliterator(segment, SEQUENCE_LAYOUT_BULK), true)
+        return StreamSupport.stream(segment.spliterator(SEQUENCE_LAYOUT_BULK), true)
                 .mapToInt(SEGMENT_TO_INT_BULK).sum();
     }
 
@@ -150,28 +150,28 @@ public class ParallelSum {
 
     @Benchmark
     public Optional<MemorySegment> segment_stream_findany_serial() {
-        return StreamSupport.stream(MemorySegment.spliterator(segment, SEQUENCE_LAYOUT), false)
+        return StreamSupport.stream(segment.spliterator(SEQUENCE_LAYOUT), false)
                 .filter(FIND_SINGLE)
                 .findAny();
     }
 
     @Benchmark
     public Optional<MemorySegment> segment_stream_findany_parallel() {
-        return StreamSupport.stream(MemorySegment.spliterator(segment, SEQUENCE_LAYOUT), true)
+        return StreamSupport.stream(segment.spliterator(SEQUENCE_LAYOUT), true)
                 .filter(FIND_SINGLE)
                 .findAny();
     }
 
     @Benchmark
     public Optional<MemorySegment> segment_stream_findany_serial_bulk() {
-        return StreamSupport.stream(MemorySegment.spliterator(segment, SEQUENCE_LAYOUT_BULK), false)
+        return StreamSupport.stream(segment.spliterator(SEQUENCE_LAYOUT_BULK), false)
                 .filter(FIND_BULK)
                 .findAny();
     }
 
     @Benchmark
     public Optional<MemorySegment> segment_stream_findany_parallel_bulk() {
-        return StreamSupport.stream(MemorySegment.spliterator(segment, SEQUENCE_LAYOUT_BULK), true)
+        return StreamSupport.stream(segment.spliterator(SEQUENCE_LAYOUT_BULK), true)
                 .filter(FIND_BULK)
                 .findAny();
     }

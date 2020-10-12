@@ -81,7 +81,7 @@ public class TestSharedAccess {
             }
             List<Thread> threads = new ArrayList<>();
             List<Spliterator<MemorySegment>> spliterators = new ArrayList<>();
-            spliterators.add(MemorySegment.spliterator(s, layout));
+            spliterators.add(s.spliterator(layout));
             while (true) {
                 boolean progress = false;
                 List<Spliterator<MemorySegment>> newSpliterators = new ArrayList<>();
