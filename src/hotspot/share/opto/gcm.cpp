@@ -1198,7 +1198,7 @@ Block* PhaseCFG::hoist_to_cheaper_block(Block* LCA, Block* early, Node* self) {
 #endif
     cand_cnt++;
     if (LCA_freq < least_freq              || // Better Frequency
-        (StressGCM && Compile::randomized_select(cand_cnt)) || // Should be randomly accepted in stress mode
+        (StressGCM && C->randomized_select(cand_cnt)) || // Should be randomly accepted in stress mode
          (!StressGCM                    &&    // Otherwise, choose with latency
           !in_latency                   &&    // No block containing latency
           LCA_freq < least_freq * delta &&    // No worse frequency

@@ -38,6 +38,7 @@
  * @compile -encoding UTF-8 BodyPublishersOfFile.java
  * @compile -encoding UTF-8 BodyPublishersOfInputStream.java
  * @compile -encoding UTF-8 BodyPublishersOfSubByteArray.java
+ * @compile -encoding UTF-8 BodyPublishersConcat.java
  *
  * @compile -encoding UTF-8 BodySubscribersBuffering.java
  * @compile -encoding UTF-8 BodySubscribersDiscarding.java
@@ -65,6 +66,7 @@
  * @run testng/othervm BodyPublishersOfFile
  * @run testng/othervm BodyPublishersOfInputStream
  * @run testng/othervm BodyPublishersOfSubByteArray
+ * @run testng/othervm BodyPublishersConcat
  *
  * @run testng/othervm BodySubscribersBuffering
  * @run testng/othervm BodySubscribersDiscarding

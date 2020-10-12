@@ -237,6 +237,10 @@ void ZCollectedHeap::object_iterate(ObjectClosure* cl) {
   _heap.object_iterate(cl, true /* visit_weaks */);
 }
 
+ParallelObjectIterator* ZCollectedHeap::parallel_object_iterator(uint nworkers) {
+  return _heap.parallel_object_iterator(nworkers, true /* visit_weaks */);
+}
+
 void ZCollectedHeap::keep_alive(oop obj) {
   _heap.keep_alive(obj);
 }

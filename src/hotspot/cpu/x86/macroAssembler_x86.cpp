@@ -7964,6 +7964,7 @@ void MacroAssembler::cache_wbsync(bool is_pre)
     sfence();
   }
 }
+
 #endif // _LP64
 
 Assembler::Condition MacroAssembler::negate_condition(Assembler::Condition cond) {
