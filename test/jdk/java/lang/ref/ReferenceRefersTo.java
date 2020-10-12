@@ -33,22 +33,14 @@ import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 
 public class ReferenceRefersTo {
-    private static final class TestObject {
-        public final int value;
-
-        public TestObject(int value) {
-            this.value = value;
-        }
-    }
-
     private static final void fail(String msg) throws Exception {
         throw new RuntimeException(msg);
     }
 
     private static final <T extends Reference>
     void test(T ref,
-              TestObject expectedValue,
-              TestObject unexpectedValue,
+              Object expectedValue,
+              Object unexpectedValue,
               String kind) throws Exception {
         if ((expectedValue != null) && ref.refersTo(null)) {
             fail(kind + "refers to null");
@@ -60,12 +52,12 @@ public class ReferenceRefersTo {
     }
 
     public static void main(String[] args) throws Exception {
-        var queue = new ReferenceQueue<TestObject>();
+        var queue = new ReferenceQueue<Object>();
 
-        var obj0 = new TestObject(0);
-        var obj1 = new TestObject(1);
-        var obj2 = new TestObject(2);
-        var obj3 = new TestObject(3);
+        var obj0 = new Object();
+        var obj1 = new Object();
+        var obj2 = new Object();
+        var obj3 = new Object();
 
         var pref = new PhantomReference(obj0, queue);
         var wref = new WeakReference(obj1);
