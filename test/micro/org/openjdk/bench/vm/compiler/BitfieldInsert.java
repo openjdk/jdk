@@ -33,10 +33,10 @@ public class BitfieldInsert {
 
     public int intValue;
 
-    @Benchmark 
+    @Benchmark
     public int bench1() {
         int b1, b2, b3, b4;
-	int base = intValue;
+        int base = intValue;
         int a1 = base + 1;
         int a2 = a1 + 1;
         int a3 = a1 + 2;
