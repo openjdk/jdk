@@ -65,7 +65,7 @@ bool ElfDecoder::get_source_info(address pc, char* buf, size_t buflen, int* line
     return false;
   }
 
-  if (file->get_source_info(offset_in_library, buf, buflen, line)) {
+  if (!file->get_source_info(offset_in_library, buf, buflen, line)) {
     return false;
   }
 
