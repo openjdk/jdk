@@ -26,7 +26,6 @@ package vm.runtime.defmeth;
 import nsk.share.TestFailure;
 import nsk.share.test.TestBase;
 import vm.runtime.defmeth.shared.MemoryClassLoader;
-import vm.runtime.defmeth.shared.annotation.KnownFailure;
 import vm.runtime.defmeth.shared.annotation.NotApplicableFor;
 import vm.runtime.defmeth.shared.builder.TestBuilder;
 import vm.runtime.defmeth.shared.data.*;
@@ -64,9 +63,6 @@ public class BasicTest extends DefMethTest {
      * objectref does not implement the resolved interface, invokevirtual throws
      * an IncompatibleClassChangeError.
      */
-    @KnownFailure(modes = {
-        REFLECTION,                           // throws IAE
-        INVOKE_GENERIC, INVOKE_WITH_ARGS})    // throws ClassCastException
     public void testInterfaceNotImplemented() {
         TestBuilder b = factory.getBuilder();
 
@@ -90,7 +86,7 @@ public class BasicTest extends DefMethTest {
             // code must run, and that is where the ClassCastException occurs.
             // This exception can be thrown from code that is cleanly
             // compiled and does no bytecode generation, so an ICCE would
-        // be inappropriate since no classes are changed.
+            // be inappropriate since no classes are changed.
             expectedClass = ClassCastException.class;
         } else {
             expectedClass = IncompatibleClassChangeError.class;
@@ -109,9 +105,6 @@ public class BasicTest extends DefMethTest {
      *
      * ...
      */
-    @KnownFailure(modes = {
-        DIRECT, REFLECTION, INVOKE_WITH_ARGS, // NSME, instead of AME
-        INVOKE_EXACT, INVOKE_GENERIC, INDY})        // IncompatibleClassChangeError, instead of AME
     public void testNoMatch() {
         TestBuilder b = factory.getBuilder();
 
@@ -196,13 +189,13 @@ public class BasicTest extends DefMethTest {
 
     /**
      * interface I {
-     *   static { throw new RE()}
+     *   static { throw new RE(); }
      *   public default void m() {}
      * }
      *
      * class C implements I {}
      *
-     * TEST: C c = new C(); ==> LinkageError
+     * TEST: C c = new C(); ==> ExceptionInInitializerError
      * Static initialization of class C will trigger
      * I's static initialization due to I's default method.
      */
@@ -221,20 +214,20 @@ public class BasicTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(I).build();
 
-        b.test().callSite(I, C, "m", "()V").throws_(LinkageError.class).done()
+        b.test().callSite(I, C, "m", "()V").throws_(ExceptionInInitializerError.class).done()
 
         .run();
     }
 
     /**
      * interface I {
-     *   static { throw new RE()}
+     *   static { throw new RE(); }
      *   private default void m() {}
      * }
      *
      * class C implements I {}
      *
-     * TEST: C c = new C(); ==> LinkageError
+     * TEST: C c = new C(); ==> ExceptionInInitializerError
      * Static initialization of class C will trigger
      * I's static initialization due to I's private concrete method.
      */
@@ -255,10 +248,17 @@ public class BasicTest extends DefMethTest {
         ConcreteClass C = b.clazz("C").implement(I).build();
 
         Class expectedClass;
-        if (factory.getExecutionMode().equals("REFLECTION")) {
-            expectedClass = NoSuchMethodException.class;
-        } else {
-            expectedClass = LinkageError.class;
+        switch (factory.getExecutionMode()) {
+            case "REFLECTION":
+                expectedClass = NoSuchMethodException.class;
+                break;
+            case "INVOKE_EXACT":
+            case "INVOKE_GENERIC":
+                expectedClass = IllegalAccessError.class;
+                break;
+            default:
+                expectedClass = ExceptionInInitializerError.class;
+                break;
         }
         b.test().callSite(I, C, "m", "()V").throws_(expectedClass).done()
 

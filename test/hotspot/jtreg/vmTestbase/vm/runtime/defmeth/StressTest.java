@@ -195,8 +195,6 @@ public class StressTest implements Runnable {
                                         "-ver", Integer.toString(majorVer),
                                         "-flags", Integer.toString(flags),
                                         "-redefine", Boolean.toString(redefine),
-                                        "-ignoreCrashes",
-                                        "-ignoreKnownFailures",
                                         "-silent",
                                         "-failfast"});
 
@@ -221,20 +219,6 @@ public class StressTest implements Runnable {
 
         System.out.printf("Seed: %d\n", seed);
         rand = new Random(seed);
-
-        //Workaround for the deadlock caused by
-        // JDK-7122142: "(ann) Race condition between isAnnotationPresent and getAnnotations"
-        try {
-            // Do a warm-up cycle
-            for (Class<? extends DefMethTest> testClass : DefMethTest.getTests()) {
-                DefMethTest test = testClass.newInstance();
-
-                OptionSupport.setupAndRun(test,
-                        new String[] { "-silent", "-ignoreKnownFailures"});
-            }
-        } catch(InstantiationException | IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
 
         int threadsCount = opts.getThreadsFactor();
         if (threadsCount == 1) {

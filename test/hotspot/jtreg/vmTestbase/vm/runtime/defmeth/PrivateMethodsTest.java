@@ -25,8 +25,6 @@ package vm.runtime.defmeth;
 
 import nsk.share.test.TestBase;
 import vm.runtime.defmeth.shared.DefMethTest;
-import vm.runtime.defmeth.shared.annotation.Crash;
-import vm.runtime.defmeth.shared.annotation.KnownFailure;
 import vm.runtime.defmeth.shared.annotation.NotApplicableFor;
 import vm.runtime.defmeth.shared.data.*;
 import static vm.runtime.defmeth.shared.data.method.body.CallMethod.Invoke.*;

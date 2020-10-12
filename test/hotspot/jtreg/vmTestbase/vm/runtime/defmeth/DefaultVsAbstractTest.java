@@ -25,7 +25,6 @@ package vm.runtime.defmeth;
 
 import nsk.share.test.TestBase;
 import vm.runtime.defmeth.shared.DefMethTest;
-import vm.runtime.defmeth.shared.annotation.KnownFailure;
 import vm.runtime.defmeth.shared.data.*;
 import vm.runtime.defmeth.shared.data.method.param.NewInstanceParam;
 import vm.runtime.defmeth.shared.builder.TestBuilder;
@@ -87,8 +86,6 @@ public class DefaultVsAbstractTest extends DefMethTest {
      * TEST: C c = new D(); c.m() ==> AME
      * TEST: D d = new D(); d.m() ==> AME
      */
-    @KnownFailure(modes = {INVOKE_EXACT, INVOKE_GENERIC, INVOKE_WITH_ARGS, INDY }) // Test1_I_D_m: NPE instead of AME
-                                                                                   // Test3_D_D_m: AME => IAE => ICCE instead of AME
     public void test1() {
         TestBuilder b = factory.getBuilder();
 
@@ -130,8 +127,6 @@ public class DefaultVsAbstractTest extends DefMethTest {
      * TEST: C o = new D(); o.m()I throws AME
      * TEST: D o = new D(); o.m()I throws AME
      */
-    @KnownFailure(modes = { INVOKE_EXACT, INVOKE_GENERIC, INVOKE_WITH_ARGS, INDY }) // Test1_I_D_m: NPE instead of AME
-                                                                                    // Test3_D_D_m: AME => IAE => ICCE instead of AME
     public void test2() {
         TestBuilder b = factory.getBuilder();
 
@@ -218,11 +213,6 @@ public class DefaultVsAbstractTest extends DefMethTest {
      * TEST: D o = new C(); o.m()I throws AME
      * TEST: C o = new C(); o.m()I throws AME
      */
-    @KnownFailure(modes = {
-        INVOKE_EXACT, INVOKE_GENERIC, INVOKE_WITH_ARGS, INDY // Test1_I_C_m: NPE instead of AME
-                                                             // Test3_D_C_m: AME => IAE => ICCE instead of AME
-                                                             // Test4_C_C_m: AME => IAE => ICCE instead of AME
-    })
     public void test4() {
         TestBuilder b = factory.getBuilder();
 

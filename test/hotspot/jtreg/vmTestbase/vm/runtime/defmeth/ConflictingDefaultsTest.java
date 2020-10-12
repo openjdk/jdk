@@ -25,7 +25,6 @@ package vm.runtime.defmeth;
 
 import nsk.share.test.TestBase;
 import vm.runtime.defmeth.shared.DefMethTest;
-import vm.runtime.defmeth.shared.annotation.KnownFailure;
 import vm.runtime.defmeth.shared.annotation.NotApplicableFor;
 import vm.runtime.defmeth.shared.data.*;
 import static vm.runtime.defmeth.shared.data.method.body.CallMethod.Invoke.*;
@@ -486,7 +485,6 @@ public class ConflictingDefaultsTest extends DefMethTest {
      * TEST: J j = new C(); j.m() ==> NSME; j.m(0) == 2
      * TEST: C c = new C(); c.m() == 1; c.m(0) == 2
      */
-    @KnownFailure(modes = { INVOKE_EXACT, INVOKE_GENERIC, INDY }) // IncompatibleClassChangeError instead of NoSuchMethodError
     public void testMixedArity1() {
         TestBuilder b = factory.getBuilder();
 
