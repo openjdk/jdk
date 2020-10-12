@@ -593,6 +593,7 @@ public abstract class ColorSpace implements Serializable {
     /**
      * Checks that {@code component} is in range of the number of components.
      *
+     * @param  component the component index
      * @throws IllegalArgumentException if component is less than 0 or greater
      *         than {@code numComponents - 1}
      */
