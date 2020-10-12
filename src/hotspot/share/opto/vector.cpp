@@ -450,7 +450,7 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
     }
 
     gvn.hash_delete(vec_unbox);
-    vec_unbox->disconnect_inputs(NULL, C);
+    vec_unbox->disconnect_inputs(C);
     C->gvn_replace_by(vec_unbox, vec_val_load);
   }
   C->remove_macro_node(vec_unbox);
