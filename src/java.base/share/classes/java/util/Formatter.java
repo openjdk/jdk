@@ -692,7 +692,8 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * <p> If the format specifier contains a width or precision with an invalid
  * value or which is otherwise unsupported, then a {@link
  * IllegalFormatWidthException} or {@link IllegalFormatPrecisionException}
- * respectively will be thrown.
+ * respectively will be thrown. Similarly, values of zero for an argument
+ * index will result in an {@link IllegalFormatArgumentIndexException}.
  *
  * <p> If a format specifier contains a conversion character that is not
  * applicable to the corresponding argument, then an {@link
