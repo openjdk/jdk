@@ -26,17 +26,21 @@
 package jdk.internal.platform;
 
 /**
- * Data structure to hold info from /proc/self/cgroup
+ * Data structure to hold info from /proc/self/cgroup,
+ * /proc/cgroups and /proc/self/mountinfo
  *
  * man 7 cgroups
  *
  * @see CgroupSubsystemFactory
  */
-class CgroupInfo {
+public class CgroupInfo {
 
     private final String name;
     private final int hierarchyId;
     private final boolean enabled;
+    private String mountPoint;
+    private String mountRoot;
+    private String cgroupPath;
 
     private CgroupInfo(String name, int hierarchyId, boolean enabled) {
         this.name = name;
@@ -44,16 +48,40 @@ class CgroupInfo {
         this.enabled = enabled;
     }
 
-    String getName() {
+    public String getName() {
         return name;
     }
 
-    int getHierarchyId() {
+    public int getHierarchyId() {
         return hierarchyId;
     }
 
-    boolean isEnabled() {
+    public boolean isEnabled() {
         return enabled;
+    }
+
+    public String getMountPoint() {
+        return mountPoint;
+    }
+
+    public void setMountPoint(String mountPoint) {
+        this.mountPoint = mountPoint;
+    }
+
+    public String getMountRoot() {
+        return mountRoot;
+    }
+
+    public void setMountRoot(String mountRoot) {
+        this.mountRoot = mountRoot;
+    }
+
+    public String getCgroupPath() {
+        return cgroupPath;
+    }
+
+    public void setCgroupPath(String cgroupPath) {
+        this.cgroupPath = cgroupPath;
     }
 
     static CgroupInfo fromCgroupsLine(String line) {
