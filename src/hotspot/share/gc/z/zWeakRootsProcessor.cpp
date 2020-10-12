@@ -29,27 +29,6 @@
 ZWeakRootsProcessor::ZWeakRootsProcessor(ZWorkers* workers) :
     _workers(workers) {}
 
-class ZProcessWeakRootsTask : public ZTask {
-private:
-  ZWeakRootsIterator _weak_roots;
-
-public:
-  ZProcessWeakRootsTask() :
-      ZTask("ZProcessWeakRootsTask"),
-      _weak_roots() {}
-
-  virtual void work() {
-    ZPhantomIsAliveObjectClosure is_alive;
-    ZPhantomKeepAliveOopClosure keep_alive;
-    _weak_roots.weak_oops_do(&is_alive, &keep_alive);
-  }
-};
-
-void ZWeakRootsProcessor::process_weak_roots() {
-  ZProcessWeakRootsTask task;
-  _workers->run_parallel(&task);
-}
-
 class ZProcessConcurrentWeakRootsTask : public ZTask {
 private:
   ZConcurrentWeakRootsIterator _concurrent_weak_roots;

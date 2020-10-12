@@ -41,6 +41,7 @@
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
+#include "prims/jvmtiTagMap.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.hpp"
@@ -288,9 +289,6 @@ bool ZHeap::mark_end() {
   // Block resurrection of weak/phantom references
   ZResurrection::block();
 
-  // Process weak roots
-  _weak_roots_processor.process_weak_roots();
-
   // Prepare to unload stale metadata and nmethods
   _unload.prepare();
 
@@ -418,8 +416,8 @@ void ZHeap::relocate_start() {
   ZStatSample(ZSamplerHeapUsedBeforeRelocation, used());
   ZStatHeap::set_at_relocate_start(capacity(), allocated(), used());
 
-  // Remap/Relocate roots
-  _relocate.start();
+  // Notify JVMTI
+  JvmtiTagMap::set_needs_processing();
 }
 
 void ZHeap::relocate() {

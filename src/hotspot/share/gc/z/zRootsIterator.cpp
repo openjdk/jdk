@@ -34,12 +34,10 @@
 #include "runtime/safepoint.hpp"
 #include "utilities/debug.hpp"
 
-static const ZStatSubPhase ZSubPhasePauseRootsJVMTIWeakExport("Pause Roots JVMTIWeakExport");
 static const ZStatSubPhase ZSubPhaseConcurrentRootsOopStorageSet("Concurrent Roots OopStorageSet");
 static const ZStatSubPhase ZSubPhaseConcurrentRootsClassLoaderDataGraph("Concurrent Roots ClassLoaderDataGraph");
 static const ZStatSubPhase ZSubPhaseConcurrentRootsJavaThreads("Concurrent Roots JavaThreads");
 static const ZStatSubPhase ZSubPhaseConcurrentRootsCodeCache("Concurrent Roots CodeCache");
-static const ZStatSubPhase ZSubPhasePauseWeakRootsJVMTIWeakExport("Pause Weak Roots JVMTIWeakExport");
 static const ZStatSubPhase ZSubPhaseConcurrentWeakRootsOopStorageSet("Concurrent Weak Roots OopStorageSet");
 
 template <typename T, void (T::*F)(ZRootsIteratorClosure*)>
@@ -57,17 +55,6 @@ void ZParallelOopsDo<T, F>::oops_do(ZRootsIteratorClosure* cl) {
   }
 }
 
-template <typename T, void (T::*F)(BoolObjectClosure*, ZRootsIteratorClosure*)>
-ZSerialWeakOopsDo<T, F>::ZSerialWeakOopsDo(T* iter) :
-    _iter(iter),
-    _claimed(false) {}
-
-template <typename T, void (T::*F)(BoolObjectClosure*, ZRootsIteratorClosure*)>
-void ZSerialWeakOopsDo<T, F>::weak_oops_do(BoolObjectClosure* is_alive, ZRootsIteratorClosure* cl) {
-  if (!Atomic::load(&_claimed) && Atomic::cmpxchg(&_claimed, false, true) == false) {
-    (_iter->*F)(is_alive, cl);
-  }
-}
 
 ZJavaThreadsIterator::ZJavaThreadsIterator() :
     _threads(),
@@ -81,12 +68,6 @@ void ZJavaThreadsIterator::threads_do(ThreadClosure* cl) {
   for (uint i = claim(); i < _threads.length(); i = claim()) {
     cl->do_thread(_threads.thread_at(i));
   }
-}
-
-void ZRelocateRoots::oops_do(OopClosure* cl) {
-  ZStatTimer timer(ZSubPhasePauseRootsJVMTIWeakExport);
-  AlwaysTrueClosure always_alive;
-  JvmtiExport::weak_oops_do(&always_alive, cl);
 }
 
 ZConcurrentRootsIterator::ZConcurrentRootsIterator(int cld_claim) :
@@ -155,25 +136,6 @@ void ZConcurrentRootsIterator::oops_do(ZRootsIteratorClosure* cl) {
   if (!ClassUnloading) {
     _code_cache.oops_do(cl);
   }
-}
-
-ZWeakRootsIterator::ZWeakRootsIterator() :
-    _jvmti_weak_export(this) {
-  assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
-}
-
-void ZWeakRootsIterator::do_jvmti_weak_export(BoolObjectClosure* is_alive, ZRootsIteratorClosure* cl) {
-  ZStatTimer timer(ZSubPhasePauseWeakRootsJVMTIWeakExport);
-  JvmtiExport::weak_oops_do(is_alive, cl);
-}
-
-void ZWeakRootsIterator::weak_oops_do(BoolObjectClosure* is_alive, ZRootsIteratorClosure* cl) {
-  _jvmti_weak_export.weak_oops_do(is_alive, cl);
-}
-
-void ZWeakRootsIterator::oops_do(ZRootsIteratorClosure* cl) {
-  AlwaysTrueClosure always_alive;
-  weak_oops_do(&always_alive, cl);
 }
 
 ZConcurrentWeakRootsIterator::ZConcurrentWeakRootsIterator() :

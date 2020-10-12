@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public:
   virtual bool do_object_b(oop o);
 };
 
-class ZPhantomKeepAliveOopClosure : public ZRootsIteratorClosure {
+class ZPhantomCleanOopClosure : public ZRootsIteratorClosure {
 public:
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
@@ -61,7 +61,7 @@ public:
   virtual ZNMethodEntry nmethod_entry() const;
 };
 
-class ZPhantomCleanOopClosure : public ZRootsIteratorClosure {
+class ZPhantomKeepAliveOopClosure : public ZRootsIteratorClosure {
 public:
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);

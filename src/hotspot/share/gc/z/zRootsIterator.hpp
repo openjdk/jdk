@@ -47,17 +47,6 @@ public:
   void oops_do(ZRootsIteratorClosure* cl);
 };
 
-template <typename T, void (T::*F)(BoolObjectClosure*, ZRootsIteratorClosure*)>
-class ZSerialWeakOopsDo {
-private:
-  T* const      _iter;
-  volatile bool _claimed;
-
-public:
-  ZSerialWeakOopsDo(T* iter);
-  void weak_oops_do(BoolObjectClosure* is_alive, ZRootsIteratorClosure* cl);
-};
-
 class ZRootsIteratorClosure : public OopClosure {
 public:
   virtual void do_thread(Thread* thread) {}
@@ -122,19 +111,6 @@ class ZConcurrentRootsIteratorClaimNone : public ZConcurrentRootsIterator {
 public:
   ZConcurrentRootsIteratorClaimNone() :
       ZConcurrentRootsIterator(ClassLoaderData::_claim_none) {}
-};
-
-class ZWeakRootsIterator {
-private:
-  void do_jvmti_weak_export(BoolObjectClosure* is_alive, ZRootsIteratorClosure* cl);
-
-  ZSerialWeakOopsDo<ZWeakRootsIterator, &ZWeakRootsIterator::do_jvmti_weak_export> _jvmti_weak_export;
-
-public:
-  ZWeakRootsIterator();
-
-  void weak_oops_do(BoolObjectClosure* is_alive, ZRootsIteratorClosure* cl);
-  void oops_do(ZRootsIteratorClosure* cl);
 };
 
 class ZConcurrentWeakRootsIterator {

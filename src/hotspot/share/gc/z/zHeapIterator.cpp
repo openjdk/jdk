@@ -181,7 +181,6 @@ ZHeapIterator::ZHeapIterator(uint nworkers, bool visit_weaks) :
     _queues(nworkers),
     _array_queues(nworkers),
     _concurrent_roots(),
-    _weak_roots(),
     _concurrent_weak_roots(),
     _terminator(nworkers, &_queues) {
 
@@ -346,7 +345,6 @@ template <bool VisitWeaks>
 void ZHeapIterator::object_iterate_inner(const ZHeapIteratorContext& context, ObjectClosure* cl) {
   push_roots<true  /* Concurrent */, false /* Weak */>(context, _concurrent_roots);
   if (VisitWeaks) {
-    push_roots<false /* Concurrent */, true  /* Weak */>(context, _weak_roots);
     push_roots<true  /* Concurrent */, true  /* Weak */>(context, _concurrent_weak_roots);
   }
 

@@ -31,7 +31,7 @@
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zNMethod.hpp"
-#include "gc/z/zOopClosures.hpp"
+#include "gc/z/zOopClosures.inline.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zUnload.hpp"
 #include "oops/access.inline.hpp"

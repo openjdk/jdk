@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,10 @@ static jlong timeout = 0;
 /* test objects */
 static jthread thread = NULL;
 static jclass klass = NULL;
+static jobject testedObject = NULL;
+const jlong TESTED_TAG_VALUE = (5555555L);
+static bool testedObjectNotified = false;
+
 
 /* event counts */
 static int ClassFileLoadHookEventsCount = 0;
@@ -259,6 +263,10 @@ ObjectFree(jvmtiEnv *jvmti_env, jlong tag) {
 
     ObjectFreeEventsCount++;
     NSK_DISPLAY1("ObjectFree event: tag=%s\n", jlong_to_string(tag, buffer));
+
+    if (tag == TESTED_TAG_VALUE) {
+      testedObjectNotified = true;
+    }
 }
 
 /* ========================================================================== */
@@ -414,6 +422,71 @@ ThreadObjectReference(jvmtiObjectReferenceKind reference_kind, jlong class_tag,
     static jlong ThreadObjectReferenceTagCount;
     *tag_ptr = ++ThreadObjectReferenceTagCount;
     return JVMTI_ITERATION_CONTINUE;
+}
+
+// Create the jni local ref in a new frame so it
+// doesn't stay alive.
+class NewFrame {
+  JNIEnv* _jni;
+ public:
+  NewFrame(JNIEnv* jni) : _jni(jni) {
+    _jni->PushLocalFrame(16);
+  }
+  ~NewFrame() {
+    _jni->PopLocalFrame(NULL);
+  }
+};
+
+static int checkObjectTagEvent(jvmtiEnv* jvmti, JNIEnv* jni) {
+    jlong tag = TESTED_TAG_VALUE;
+    jint count;
+    jobject *res_objects = NULL;
+    jlong *res_tags = NULL;
+
+    NewFrame local_frame(jni);
+
+    // Create a tested object to tag.
+    if (!NSK_JNI_VERIFY(jni, (testedObject = jni->NewStringUTF("abcde")) != NULL))
+        return NSK_FALSE;
+
+    NSK_DISPLAY0("Checking positive: SetTag\n");
+    if (!NSK_JVMTI_VERIFY(jvmti->SetTag(testedObject, TESTED_TAG_VALUE)))
+        return NSK_FALSE;
+
+    NSK_DISPLAY0("Checking positive: GetObjectsWithTags\n");
+    if (!NSK_JVMTI_VERIFY(jvmti->GetObjectsWithTags(1, &tag, &count, &res_objects, &res_tags)))
+        return NSK_FALSE;
+
+    if (!NSK_VERIFY(count == 1))
+        return NSK_FALSE;
+
+    return NSK_TRUE;
+}
+
+
+// Test that after GC, the object was removed from the tag map table.
+static int checkObjectFreeEvent(jvmtiEnv* jvmti) {
+    jlong tag = TESTED_TAG_VALUE;
+    jint count;
+    jobject *res_objects = NULL;
+    jlong *res_tags = NULL;
+
+    // Make some GCs happen
+    for (int i = 0; i < 5; i++) {
+        if (!NSK_JVMTI_VERIFY(jvmti->ForceGarbageCollection()))
+            return NSK_FALSE;
+    }
+
+    if (!NSK_JVMTI_VERIFY(jvmti->GetObjectsWithTags(1, &tag, &count, &res_objects, &res_tags)))
+        return NSK_FALSE;
+
+    if (!NSK_VERIFY(count == 0))
+        return NSK_FALSE;
+
+    if (!NSK_VERIFY(testedObjectNotified))
+        return NSK_FALSE;
+
+    return NSK_TRUE;
 }
 
 static int checkHeapFunctions(jvmtiEnv* jvmti) {
@@ -580,6 +653,7 @@ static int checkGeneratedEvents() {
     if (!NSK_VERIFY(GarbageCollectionFinishEventsCount != 0))
         result = NSK_FALSE;
 
+    printf("Object free events %d\n", ObjectFreeEventsCount);
     NSK_DISPLAY1("ObjectFree events received: %d\n",
         ObjectFreeEventsCount);
     if (!NSK_VERIFY(ObjectFreeEventsCount != 0))
@@ -622,6 +696,9 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     if (!checkGetThreadCpuTime(jvmti))
         nsk_jvmti_setFailStatus();
 
+    if (!checkObjectTagEvent(jvmti, jni))
+        nsk_jvmti_setFailStatus();
+
     NSK_TRACE(jni->DeleteGlobalRef(thread));
 
     /* resume debugee and wait for sync */
@@ -632,6 +709,11 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
     NSK_DISPLAY0("Testcase #3: check if the events are generated\n");
     if (!checkGeneratedEvents()) {
+        nsk_jvmti_setFailStatus();
+    }
+
+    NSK_DISPLAY0("Testcase #4: check if the object is freed in the tag map\n");
+    if (!checkObjectFreeEvent(jvmti)) {
         nsk_jvmti_setFailStatus();
     }
 

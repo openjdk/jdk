@@ -53,30 +53,6 @@ public:
   }
 };
 
-class ZRelocateRootsTask : public ZTask {
-private:
-  ZRelocateRootsIteratorClosure _cl;
-
-public:
-  ZRelocateRootsTask() :
-      ZTask("ZRelocateRootsTask") {}
-
-  virtual void work() {
-    // Allocation path assumes that relocating GC threads are ZWorkers
-    assert(ZThread::is_worker(), "Relocation code needs to be run as a worker");
-    assert(ZThread::worker_id() == 0, "No multi-thread support");
-
-    // During relocation we need to visit the JVMTI
-    // export weak roots to rehash the JVMTI tag map
-    ZRelocateRoots::oops_do(&_cl);
-  }
-};
-
-void ZRelocate::start() {
-  ZRelocateRootsTask task;
-  _workers->run_serial(&task);
-}
-
 uintptr_t ZRelocate::relocate_object_inner(ZForwarding* forwarding, uintptr_t from_index, uintptr_t from_offset) const {
   ZForwardingCursor cursor;
 

@@ -73,6 +73,7 @@
 
 #include "memory/classLoaderMetaspace.hpp"
 #include "oops/compressedOops.inline.hpp"
+#include "prims/jvmtiTagMap.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -1753,6 +1754,9 @@ void ShenandoahHeap::op_final_mark() {
         }
         evacuate_and_update_roots();
       }
+
+      // Notify JVMTI that oops are changed.
+      JvmtiTagMap::set_needs_processing();
 
       if (ShenandoahPacing) {
         pacer()->setup_for_evac();

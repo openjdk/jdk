@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,16 +37,8 @@
 #include "runtime/globals.hpp"
 #include "utilities/macros.hpp"
 
-void WeakProcessor::do_serial_parts(BoolObjectClosure* is_alive,
-                                    OopClosure* keep_alive) {
-  WeakProcessorPhases::Iterator it = WeakProcessorPhases::serial_iterator();
-  for ( ; !it.is_end(); ++it) {
-    WeakProcessorPhases::processor(*it)(is_alive, keep_alive);
-  }
-}
 
 void WeakProcessor::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* keep_alive) {
-  do_serial_parts(is_alive, keep_alive);
 
   OopStorageSet::Iterator it = OopStorageSet::weak_iterator();
   for ( ; !it.is_end(); ++it) {
@@ -61,8 +53,6 @@ void WeakProcessor::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* keep_a
 }
 
 void WeakProcessor::oops_do(OopClosure* closure) {
-  AlwaysTrueClosure always_true;
-  do_serial_parts(&always_true, closure);
 
   OopStorageSet::Iterator it = OopStorageSet::weak_iterator();
   for ( ; !it.is_end(); ++it) {
@@ -111,7 +101,6 @@ void WeakProcessor::Task::initialize() {
 WeakProcessor::Task::Task(uint nworkers) :
   _phase_times(NULL),
   _nworkers(nworkers),
-  _serial_phases_done(WeakProcessorPhases::serial_phase_count),
   _storage_states()
 {
   initialize();
@@ -120,7 +109,6 @@ WeakProcessor::Task::Task(uint nworkers) :
 WeakProcessor::Task::Task(WeakProcessorPhaseTimes* phase_times, uint nworkers) :
   _phase_times(phase_times),
   _nworkers(nworkers),
-  _serial_phases_done(WeakProcessorPhases::serial_phase_count),
   _storage_states()
 {
   initialize();
