@@ -73,10 +73,6 @@ void Settings::ergo_initialize() {
   assert(commit_granule_words() <= chunklevel::MAX_CHUNK_WORD_SIZE, "Too large granule size");
   assert(is_power_of_2(commit_granule_words()), "granule size must be a power of 2");
 
-  // Should always be true since root chunk size should be much larger than alloc granularity
-  assert(is_aligned(VirtualSpaceNodeReserveAlignmentWordSize * BytesPerWord,
-                    os::vm_allocation_granularity()), "Sanity");
-
 #ifdef ASSERT
   // Off for release builds, and by default for debug builds, but can be switched on manually to aid
   // error analysis.

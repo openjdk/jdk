@@ -236,8 +236,9 @@ MetaWord* MetaspaceArena::allocate(size_t requested_word_size) {
       DEBUG_ONLY(InternalStats::inc_num_allocs_from_deallocated_blocks();)
       UL2(trace, "taken from fbl (now: %d, " SIZE_FORMAT ").",
           _fbl->count(), _fbl->total_size());
-      // Note: Space in the freeblock dictionary counts as already used (see retire_current_chunk()) -
-      // that means that we do not modify any counters and therefore can skip the epilog.
+      // Note: Space which is kept in the freeblock dictionary still counts as used as far
+      //  as statistics go; therefore we skip the epilogue in this function to avoid double
+      //  accounting.
       return p;
     }
   }
@@ -465,12 +466,10 @@ void MetaspaceArena::verify() const {
 bool MetaspaceArena::is_valid_area(MetaWord* p, size_t word_size) const {
   assert(p != NULL && word_size > 0, "Sanity");
   bool found = false;
-  if (!found) {
-    for (const Metachunk* c = _chunks.first(); c != NULL && !found; c = c->next()) {
-      assert(c->is_valid_committed_pointer(p) ==
-             c->is_valid_committed_pointer(p + word_size - 1), "range intersects");
-      found = c->is_valid_committed_pointer(p);
-    }
+  for (const Metachunk* c = _chunks.first(); c != NULL && !found; c = c->next()) {
+    assert(c->is_valid_committed_pointer(p) ==
+           c->is_valid_committed_pointer(p + word_size - 1), "range intersects");
+    found = c->is_valid_committed_pointer(p);
   }
   return found;
 }
