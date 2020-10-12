@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8188055
  * @summary Basic functional test of Reference.refersTo.
  */
 
@@ -37,16 +38,17 @@ public class ReferenceRefersTo {
         throw new RuntimeException(msg);
     }
 
-    private static final <T extends Reference>
-    void test(T ref,
-              Object expectedValue,
-              Object unexpectedValue,
-              String kind) throws Exception {
+    private static final <T extends Reference> void test(T ref,
+                                                         Object expectedValue,
+                                                         Object unexpectedValue,
+                                                         String kind) throws Exception {
         if ((expectedValue != null) && ref.refersTo(null)) {
             fail(kind + "refers to null");
-        } else if (!ref.refersTo(expectedValue)) {
+        }
+        if (!ref.refersTo(expectedValue)) {
             fail(kind + " doesn't refer to expected value");
-        } else if (ref.refersTo(unexpectedValue)) {
+        }
+        if (ref.refersTo(unexpectedValue)) {
             fail(kind + " refers to unexpected value");
         }
     }
