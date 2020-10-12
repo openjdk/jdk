@@ -252,6 +252,10 @@ abstract class AESCipher extends CipherSpi {
         return core.getOutputSize(inputLen);
     }
 
+    protected int getOutputSize(int inputLen, boolean isUpdate) {
+        return core.getOutputSizeByOperation(inputLen, !isUpdate);
+    }
+
     /**
      * Returns the initialization vector (IV) in a new buffer.
      *
@@ -418,6 +422,20 @@ abstract class AESCipher extends CipherSpi {
         updateCalled = true;
         return core.update(input, inputOffset, inputLen, output,
                            outputOffset);
+    }
+
+    @Override
+    protected int engineUpdate(ByteBuffer input, ByteBuffer output)
+        throws ShortBufferException {
+        try {
+            return bufferCrypt(input, output, true);
+        } catch (IllegalBlockSizeException e) {
+            // never thrown for engineUpdate()
+            throw new ProviderException("Internal error in update()");
+        } catch (BadPaddingException e) {
+            // never thrown for engineUpdate()
+            throw new ProviderException("Internal error in update()");
+        }
     }
 
     /**
@@ -650,6 +668,7 @@ abstract class AESCipher extends CipherSpi {
             }
         }
     }
+
     @Override
     protected int engineDoFinal(ByteBuffer input, ByteBuffer output)
             throws ShortBufferException, IllegalBlockSizeException,
@@ -677,7 +696,7 @@ abstract class AESCipher extends CipherSpi {
         if (isUpdate && (inLen == 0)) {
             return 0;
         }
-        int outLenNeeded = engineGetOutputSize(inLen);
+        int outLenNeeded = getOutputSize(inLen, isUpdate);
 
         if (output.remaining() < outLenNeeded) {
             throw new ShortBufferException("Need at least " + outLenNeeded
@@ -739,12 +758,9 @@ abstract class AESCipher extends CipherSpi {
                 input.position(inLimit);
             }
         } else { // input does not have an accessible byte[]
-            if (core.getMode() == CipherCore.GCM_MODE) {
-                if (isUpdate) {
-                    return core.update(input, output);
-                } else {
-                    return core.doFinal(input, output);
-                }
+
+            if (!isUpdate && core.getMode() == CipherCore.GCM_MODE) {
+                    return core.gcmDoFinal(input, output);
             } else {
                 // have to assume the worst, since we have no way of determine
                 // if input and output overlaps or not

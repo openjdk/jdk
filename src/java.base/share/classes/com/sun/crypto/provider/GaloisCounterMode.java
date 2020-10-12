@@ -68,7 +68,7 @@ final class GaloisCounterMode extends FeedbackCipher {
     private ByteArrayOutputStream aadBuffer = new ByteArrayOutputStream();
     private int sizeOfAAD = 0;
 
-    // buffer for storing input in decryption, not used for encryption
+    // buffer data for crypto operation
     private ByteArrayOutputStream ibuffer = null;
 
     // in bytes; need to convert to bits (default value 128) when needed
@@ -470,6 +470,22 @@ final class GaloisCounterMode extends FeedbackCipher {
         processed += gctrPAndC.doFinal(src, dst);
     }
 
+     /*
+     * This method is for CipherCore to insert the remainder of its buffer
+     * into the ibuffer before a doFinal(ByteBuffer, ByteBuffer) operation
+     */
+    int encrypt(byte[] in, int inOfs, int len) {
+        if (len > 0) {
+            // store internally until encryptFinal
+            ArrayUtil.nullAndBoundsCheck(in, inOfs, len);
+            if (ibuffer == null) {
+                ibuffer = new ByteArrayOutputStream();
+                ibuffer.write(in, inOfs, len);
+            }
+        }
+        return len;
+    }
+
     /**
      * Performs encryption operation.
      *
@@ -505,54 +521,6 @@ final class GaloisCounterMode extends FeedbackCipher {
         return len;
     }
 
-    int decrypt(ByteBuffer src, ByteBuffer dst) {
-        if (src.remaining() > 0) {
-            byte[] b = new byte[src.remaining()];
-            src.get(b);
-            try {
-                ibuffer.write(b);
-            } catch (IOException e) {
-                throw new ProviderException("Unable to add remaining input to the buffer", e);
-            }
-        }
-        return 0;
-    }
-
-
-    int encrypt(ByteBuffer src, ByteBuffer dst) {
-        int len = src.remaining();
-        if (len == 0) {
-            return 0;
-        }
-
-        ArrayUtil.blockSizeCheck(src.remaining(), blockSize);
-        checkDataLength(processed, src.remaining());
-        processAAD();
-
-        if (len >= AES_BLOCK_SIZE) {
-            ByteBuffer data = src.duplicate();
-            len = gctrPAndC.update(data, dst);
-        } else {
-            if (src.remaining() > 0) {
-                byte[] b = new byte[src.remaining()];
-                src.get(b);
-                try {
-                    ibuffer.write(b);
-                } catch (IOException e) {
-                    throw new ProviderException(
-                        "Unable to add remaining input to the buffer", e);
-                }
-            }
-            return 0;
-        }
-
-        processed += len;
-        ghashAllToS.update(src, len);
-        return len;
-    }
-
-
-
     /**
      * Performs encryption operation for the last time.
      *
@@ -587,12 +555,9 @@ final class GaloisCounterMode extends FeedbackCipher {
 
         byte[] block = getLengthBlock(sizeOfAAD, processed);
         ghashAllToS.update(block);
-        byte[] s = ghashAllToS.digest();
-        if (tagLenBytes > block.length) {
-            block = new byte[tagLenBytes];
-        }
+        block = ghashAllToS.digest();
         GCTR gctrForSToTag = new GCTR(embeddedCipher, this.preCounterBlock);
-        gctrForSToTag.doFinal(s, 0, s.length, block, 0);
+        gctrForSToTag.doFinal(block, 0, tagLenBytes, block, 0);
 
         System.arraycopy(block, 0, out, (outOfs + len), tagLenBytes);
         return (len + tagLenBytes);
@@ -601,6 +566,9 @@ final class GaloisCounterMode extends FeedbackCipher {
     int encryptFinal(ByteBuffer src, ByteBuffer dst)
         throws IllegalBlockSizeException, ShortBufferException {
         int len = src.remaining();
+        if (ibuffer != null) {
+            len += ibuffer.size();
+        }
         dst.mark();
         if (len > MAX_BUF_SIZE - tagLenBytes) {
             throw new ShortBufferException
@@ -618,21 +586,17 @@ final class GaloisCounterMode extends FeedbackCipher {
             doLastBlock((ibuffer == null || ibuffer.size() == 0) ?
                     null : ByteBuffer.wrap(ibuffer.toByteArray()), src, dst);
             dst.reset();
-            ghashAllToS.doLastBlock(dst, processed);
+            ghashAllToS.doLastBlock(dst, len);
         }
 
         byte[] block = getLengthBlock(sizeOfAAD, processed);
         ghashAllToS.update(block);
-
-        byte[] s = ghashAllToS.digest();
-        if (tagLenBytes > block.length) {
-            block = new byte[tagLenBytes];
-        }
+        block = ghashAllToS.digest();
         GCTR gctrForSToTag = new GCTR(embeddedCipher, this.preCounterBlock);
-        gctrForSToTag.doFinal(s, 0, s.length, block, 0);
+        gctrForSToTag.doFinal(block, 0, tagLenBytes, block, 0);
         dst.put(block, 0, tagLenBytes);
 
-        return (processed + tagLenBytes);
+        return (len + tagLenBytes);
     }
 
     /**
@@ -665,6 +629,19 @@ final class GaloisCounterMode extends FeedbackCipher {
             // is successfully verified
             ArrayUtil.nullAndBoundsCheck(in, inOfs, len);
             ibuffer.write(in, inOfs, len);
+        }
+        return 0;
+    }
+
+    int decrypt(ByteBuffer src, ByteBuffer dst) {
+        if (src.remaining() > 0) {
+            byte[] b = new byte[src.remaining()];
+            src.get(b);
+            try {
+                ibuffer.write(b);
+            } catch (IOException e) {
+                throw new ProviderException("Unable to add remaining input to the buffer", e);
+            }
         }
         return 0;
     }
@@ -733,14 +710,9 @@ final class GaloisCounterMode extends FeedbackCipher {
 
         byte[] block = getLengthBlock(sizeOfAAD, processed);
         ghashAllToS.update(block);
-
-        byte[] s = ghashAllToS.digest();
-        //byte[] sOut = new byte[s.length];
-        if (tagLenBytes != block.length) {
-            block = new byte[tagLenBytes];
-        }
+        block = ghashAllToS.digest();
         GCTR gctrForSToTag = new GCTR(embeddedCipher, this.preCounterBlock);
-        gctrForSToTag.doFinal(s, 0, tagLenBytes, block, 0);
+        gctrForSToTag.doFinal(block, 0, tagLenBytes, block, 0);
 
         // check entire authentication tag for time-consistency
         int mismatch = 0;
@@ -844,13 +816,9 @@ final class GaloisCounterMode extends FeedbackCipher {
         }
         byte[] block = getLengthBlock(sizeOfAAD, len);
         ghashAllToS.update(block);
-        byte[] s = ghashAllToS.digest();
-        if (tagLenBytes > block.length) {
-            block = new byte[tagLenBytes];
-        }
-       // byte[] sOut = new byte[s.length];
+        block = ghashAllToS.digest();
         GCTR gctrForSToTag = new GCTR(embeddedCipher, this.preCounterBlock);
-        gctrForSToTag.doFinal(s, 0, s.length, block, 0);
+        gctrForSToTag.doFinal(block, 0, tagLenBytes, block, 0);
 
         // check entire authentication tag for time-consistency
         int mismatch = 0;

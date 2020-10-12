@@ -325,7 +325,7 @@ final class CipherCore {
         return getOutputSizeByOperation(inputLen, true);
     }
 
-    private int getOutputSizeByOperation(int inputLen, boolean isDoFinal) {
+    int getOutputSizeByOperation(int inputLen, boolean isDoFinal) {
         int totalLen = Math.addExact(buffered, cipher.getBufferedLength());
         totalLen = Math.addExact(totalLen, inputLen);
         switch (cipherMode) {
@@ -337,6 +337,8 @@ final class CipherCore {
                 } else {
                     totalLen -= tagLen;
                 }
+            } else {
+                totalLen = 0;
             }
             if (totalLen < 0) {
                 totalLen = 0;
@@ -723,8 +725,8 @@ final class CipherCore {
         len = (len > 0 ? (len - (len % unitBytes)) : 0);
 
         // check output buffer capacity
-        if ((output == null) ||
-            ((output.length - outputOffset) < len)) {
+        if (getMode() != GCM_MODE && (output == null ||
+            ((output.length - outputOffset) < len))) {
             throw new ShortBufferException("Output buffer must be "
                                            + "(at least) " + len
                                            + " bytes long");
@@ -811,13 +813,6 @@ final class CipherCore {
             buffered = Math.addExact(buffered, inputLen);
         }
         return outLen;
-    }
-
-    int update(ByteBuffer src, ByteBuffer dst) throws ShortBufferException {
-        if (decrypting) {
-            return cipher.decrypt(src, dst);
-        }
-        return cipher.encrypt(src, dst);
     }
 
     /**
@@ -1239,7 +1234,7 @@ final class CipherCore {
     // This must only be used with GCM.
     // If some data has been buffered from an update call, operate on the buffer
     // then run doFinal.
-    int doFinal(ByteBuffer src, ByteBuffer dst) throws ShortBufferException,
+    int gcmDoFinal(ByteBuffer src, ByteBuffer dst) throws ShortBufferException,
         IllegalBlockSizeException, BadPaddingException {
         int estOutSize = getOutputSizeByOperation(src.remaining(), true);
         if (estOutSize > dst.remaining()) {
@@ -1253,7 +1248,7 @@ final class CipherCore {
             return cipher.decryptFinal(src, dst);
         } else {
             if (buffered > 0) {
-                cipher.encrypt(buffer, 0, buffered, new byte[0], 0);
+                ((GaloisCounterMode)cipher).encrypt(buffer, 0, buffered);
             }
             return cipher.encryptFinal(src, dst);
         }

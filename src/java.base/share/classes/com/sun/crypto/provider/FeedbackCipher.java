@@ -257,8 +257,7 @@ abstract class FeedbackCipher {
     };
 
     int encryptFinal(ByteBuffer src, ByteBuffer dst)
-        throws IllegalBlockSizeException, AEADBadTagException,
-        ShortBufferException {
+        throws IllegalBlockSizeException, ShortBufferException {
         throw new UnsupportedOperationException("ByteBuffer not supported");
     };
 
