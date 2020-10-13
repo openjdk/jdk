@@ -701,7 +701,7 @@ public class Properties extends Hashtable<Object,Object> {
             bufLen = Integer.MAX_VALUE;
         }
         StringBuilder outBuffer = new StringBuilder(bufLen);
-        HexFormat hex = HexFormat.of().withUppercase();
+        HexFormat hex = HexFormat.of().withUpperCase();
         for(int x=0; x<len; x++) {
             char aChar = theString.charAt(x);
             // Handle common case first, selecting largest block that
@@ -748,7 +748,7 @@ public class Properties extends Hashtable<Object,Object> {
 
     private static void writeComments(BufferedWriter bw, String comments)
         throws IOException {
-        HexFormat hex = HexFormat.of().withUppercase();
+        HexFormat hex = HexFormat.of().withUpperCase();
         bw.write("#");
         int len = comments.length();
         int current = 0;

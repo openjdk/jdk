@@ -29,7 +29,6 @@ import javax.naming.NamingException;
 import javax.naming.directory.InvalidSearchFilterException;
 
 import java.io.IOException;
-import java.util.HexFormat;
 
 /**
  * LDAP (RFC-1960) and LDAPv3 (RFC-2254) search filters.

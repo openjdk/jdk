@@ -29,6 +29,7 @@ import org.testng.annotations.Test;
 
 import java.util.Arrays;
 import java.util.HexFormat;
+import java.util.Locale;
 
 /*
  * @test
@@ -46,7 +47,7 @@ public class HexFormatTest {
         String codeSuffix = "";
         return new Object[][]{
                 {"", "", "", true,
-                        HexFormat.of().withUppercase()},
+                        HexFormat.of().withUpperCase()},
                 {", ", "#", "L", false,
                         HexFormat.ofDelimiter(", ").withPrefix("#").withSuffix("L")},
                 {"", "", "", false,
@@ -54,7 +55,7 @@ public class HexFormatTest {
                 {".", "", "", false,
                         HexFormat.ofDelimiter(".").withPrefix("").withSuffix("")},
                 {",", "0x", "", true,
-                        HexFormat.ofDelimiter(",").withUppercase().withPrefix("0x").withSuffix("")},
+                        HexFormat.ofDelimiter(",").withUpperCase().withPrefix("0x").withSuffix("")},
                 {codeDelim, codePrefix, codeSuffix, false,
                         HexFormat.ofDelimiter(codeDelim).withPrefix(codePrefix).withSuffix(codeSuffix)},
 
@@ -324,7 +325,7 @@ public class HexFormatTest {
                 // Check case of digits
                 String cc = value.substring(prefix.length(), prefix.length() + 2);
                 Assert.assertEquals(cc,
-                        (uppercase) ? cc.toUpperCase() : cc.toLowerCase(),
+                        (uppercase) ? cc.toUpperCase(Locale.ROOT) : cc.toLowerCase(Locale.ROOT),
                         "Case mismatch");
                 if (i < expected.length - 1 && !delimiter.isEmpty()) {
                     // Check the delimiter is present for each pair except the last
@@ -427,7 +428,7 @@ public class HexFormatTest {
 
         {
             // RFC 4752 Fingerprint
-            HexFormat formatFingerprint = HexFormat.ofDelimiter(":").withUppercase();
+            HexFormat formatFingerprint = HexFormat.ofDelimiter(":").withUpperCase();
             byte[] bytes = {0, 1, 2, 3, 124, 125, 126, 127};
             String str = formatFingerprint.formatHex(bytes);
             System.out.println("    Formatted: " + str);

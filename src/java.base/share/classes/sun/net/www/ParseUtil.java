@@ -48,7 +48,7 @@ import sun.nio.cs.UTF_8;
 
 public final class ParseUtil {
 
-    private static final HexFormat HEX_UPPERCASE = HexFormat.of().withUppercase();
+    private static final HexFormat HEX_UPPERCASE = HexFormat.of().withUpperCase();
 
     private ParseUtil() {}
 

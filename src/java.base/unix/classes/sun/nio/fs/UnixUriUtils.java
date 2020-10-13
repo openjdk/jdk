@@ -102,7 +102,7 @@ class UnixUriUtils {
         byte[] path = up.toAbsolutePath().asByteArray();
         StringBuilder sb = new StringBuilder("file:///");
         assert path[0] == '/';
-        HexFormat hex = HexFormat.of().withUppercase();
+        HexFormat hex = HexFormat.of().withUpperCase();
         for (int i=1; i<path.length; i++) {
             char c = (char)(path[i] & 0xff);
             if (match(c, L_PATH, H_PATH)) {

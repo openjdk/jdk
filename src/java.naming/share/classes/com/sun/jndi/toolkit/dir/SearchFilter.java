@@ -487,7 +487,7 @@ public class SearchFilter implements AttrFilter {
 
         if (obj instanceof byte[]) {
             // binary data must be encoded as \hh where hh is a hex char
-            HexFormat hex = HexFormat.of().withUppercase().withPrefix("\\");
+            HexFormat hex = HexFormat.of().withUpperCase().withPrefix("\\");
             byte[] bytes = (byte[])obj;
             return hex.formatHex(bytes);
         }

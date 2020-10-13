@@ -42,13 +42,13 @@ import java.nio.charset.StandardCharsets;
  * {@link #ofDelimiter(String) of(delimiter)}. For other parameter combinations
  * the {@code withXXX} methods return copies of {@code HexFormat}ters modified
  * {@link #withPrefix(String)}, {@link #withSuffix(String)}, {@link #withDelimiter(String)}
- * or choice of {@link #withUppercase()} or {@link #withLowercase()} parameters using
+ * or choice of {@link #withUpperCase()} or {@link #withLowerCase()} parameters using
  * a fluent builder style.
  * <p>
  * For primitive to hexadecimal string conversions the {@code toHexDigits}
  * methods include {@link #toHexDigits(byte)}, {@link #toHexDigits(int)}, and
  * {@link #toHexDigits(long)}, etc.
- * For conversions producing uppercase hexadecimal strings use {@link #withUppercase()}.
+ * For conversions producing uppercase hexadecimal strings use {@link #withUpperCase()}.
  *
  * <p>
  * For hexadecimal string to primitive conversions the {@code fromHexDigits}
@@ -65,7 +65,7 @@ import java.nio.charset.StandardCharsets;
  * Each byte value is formatted as the {@code prefix}, two hexadecimal characters from the
  * uppercase or lowercase digits, and the {@code suffix}.
  * A {@code delimiter} appears after each formatted value, except the last.
- * For conversions producing uppercase hexadecimal strings use {@link #withUppercase()}.
+ * For conversions producing uppercase hexadecimal strings use {@link #withUpperCase()}.
  *
  * <p>
  * For formatted hexadecimal string to byte array conversions the
@@ -74,7 +74,6 @@ import java.nio.charset.StandardCharsets;
  * Each byte value is parsed as the {@code prefix}, two hexadecimal characters from the
  * uppercase or lowercase digits, and the {@code suffix}.
  * The {@code delimiter} is required after each formatted value, except the last.
- * <p>
  *
  * @apiNote
  * For example, an individual byte is converted to a string of hexadecimal digits using
@@ -105,11 +104,11 @@ import java.nio.charset.StandardCharsets;
  *     // The formatted string is: "#00, #01, #02, #03, #7c, #7d, #7e, #7f"
  * }</pre>
  * <p>
- * For a fingerprint of byte values that uses the delimiter colon ({@code ":""})
+ * For a fingerprint of byte values that uses the delimiter colon ({@code ":"})
  * and uppercase letters the {@code HexFormat} is:
  * <pre>{@code
- *     HexFormat formatFingerprint = HexFormat.ofDelimiter(":").withUppercase();
- *     byte[] bytes = { 0, 1, 2, 3, 124, 125, 126, 127};
+ *     HexFormat formatFingerprint = HexFormat.ofDelimiter(":").withUpperCase();
+ *     byte[] bytes = {0, 1, 2, 3, 124, 125, 126, 127};
  *     String str = formatFingerprint.formatHex(bytes);
  *     byte[] parsed = formatFingerprint.parseHex(str);
  *     assert(Arrays.equals(bytes, parsed));
@@ -162,7 +161,7 @@ public final class HexFormat {
     private final byte[] digits;
 
     /**
-     * Construct a formatter with a delimiter, prefix, suffix, and array of digits.
+     * Returns a HexFormat with a delimiter, prefix, suffix, and array of digits.
      *
      * @param delimiter a delimiter, non-null
      * @param prefix a prefix, non-null
@@ -181,7 +180,7 @@ public final class HexFormat {
      * Returns a hexadecimal formatter with no delimiter and lowercase characters.
      * The hex characters are lowercase and the delimiter, prefix, and suffix are empty.
      * The methods {@link #withDelimiter(String) withDelimiter},
-     * {@link #withUppercase() withUppercase}, {@link #withLowercase() withLowercase},
+     * {@link #withUpperCase() withUpperCase}, {@link #withLowerCase() withLowerCase},
      * {@link #withPrefix(String) withPrefix}, and {@link #withSuffix(String) withSuffix}
      * return copies of formatters with new parameters.
      *
@@ -195,15 +194,15 @@ public final class HexFormat {
      * Returns a hexadecimal formatter with a {@code delimiter} and lowercase letters.
      * The prefix and suffix are empty.
      * The methods {@link #withDelimiter(String) withDelimiter},
-     * {@link #withUppercase() withUppercase}, {@link #withLowercase() withLowercase},
+     * {@link #withUpperCase() withUpperCase}, {@link #withLowerCase() withLowerCase},
      * {@link #withPrefix(String) withPrefix}, and {@link #withSuffix(String) withSuffix}
      * return copies of formatters with new parameters.
      *
      * @param delimiter a {@code delimiter}, non-null, may be empty
-     * @return a {@link Formatter} with the {@code delimiter} and lowercase letters
+     * @return a {@link HexFormat} with the {@code delimiter} and lowercase letters
      */
     public static HexFormat ofDelimiter(String delimiter) {
-        return new HexFormat(delimiter, "", "", HexFormat.LOWERCASE_DIGITS);
+        return new HexFormat(delimiter, "", "", LOWERCASE_DIGITS);
     }
 
     /**
@@ -241,8 +240,8 @@ public final class HexFormat {
      *
      * @return a copy of this {@code HexFormat} with uppercase hexadecimal characters
      */
-    public HexFormat withUppercase() {
-        return new HexFormat(this.delimiter, this.prefix, this.suffix, HexFormat.UPPERCASE_DIGITS);
+    public HexFormat withUpperCase() {
+        return new HexFormat(this.delimiter, this.prefix, this.suffix, UPPERCASE_DIGITS);
     }
 
     /**
@@ -251,8 +250,8 @@ public final class HexFormat {
      *
      * @return a copy of this {@code HexFormat} with lowercase hex characters
      */
-    public HexFormat withLowercase() {
-        return new HexFormat(this.delimiter, this.prefix, this.suffix, HexFormat.LOWERCASE_DIGITS);
+    public HexFormat withLowerCase() {
+        return new HexFormat(this.delimiter, this.prefix, this.suffix, LOWERCASE_DIGITS);
     }
 
     /**
@@ -288,14 +287,14 @@ public final class HexFormat {
      * @return returns {@code true} if the hexadecimal digits will be uppercase,
      *          otherwise {@code false}
      */
-    public boolean uppercase() {
+    public boolean isUpperCase() {
         return Arrays.equals(digits, UPPERCASE_DIGITS);
     }
 
     /**
      * Returns a hexadecimal string formatted from a byte array.
      * Each byte value is formatted as the {@code prefix}, two hexadecimal characters
-     * {@linkplain #uppercase selected from} uppercase or lowercase digits, and the {@code suffix}.
+     * {@linkplain #isUpperCase selected from} uppercase or lowercase digits, and the {@code suffix}.
      * A {@code delimiter} appears after each formatted value, except the last.
      *
      * The behavior is equivalent to
@@ -311,7 +310,7 @@ public final class HexFormat {
     /**
      * Returns a hexadecimal string formatted from a byte array range.
      * Each byte value is formatted as the {@code prefix}, two hexadecimal characters
-     * {@linkplain #uppercase selected from} uppercase or lowercase digits, and the {@code suffix}.
+     * {@linkplain #isUpperCase selected from} uppercase or lowercase digits, and the {@code suffix}.
      * A {@code delimiter} appears after each formatted value, except the last.
      *
      * @param bytes a non-null array of bytes
@@ -340,7 +339,7 @@ public final class HexFormat {
     /**
      * Appends a hexadecimal string formatted from a byte array to the {@link Appendable}.
      * Each byte value is formatted as the {@code prefix}, two hexadecimal characters
-     * {@linkplain #uppercase selected from} uppercase or lowercase digits, and the {@code suffix}.
+     * {@linkplain #isUpperCase selected from} uppercase or lowercase digits, and the {@code suffix}.
      * A {@code delimiter} appears after each formatted value, except the last.
      * The behavior is equivalent to
      * {@link #formatHex(byte[]) out.append(format(bytes))}.
@@ -358,7 +357,7 @@ public final class HexFormat {
     /**
      * Appends a hexadecimal string formatted from a byte array range to the {@link Appendable}.
      * Each byte value is formatted as the {@code prefix}, two hexadecimal characters
-     * {@linkplain #uppercase selected from} uppercase or lowercase digits, and the {@code suffix}.
+     * {@linkplain #isUpperCase selected from} uppercase or lowercase digits, and the {@code suffix}.
      * A {@code delimiter} appears after each formatted value, except the last.
      * The behavior is equivalent to
      * {@link #formatHex(byte[], int, int)  out.append(format(bytes, index, length))}.
@@ -518,7 +517,7 @@ public final class HexFormat {
             if (v < 0)
                 throw new IllegalArgumentException("input contains non-hex characters");
             bytes[i] = (byte) v;
-            HexFormat.checkLiteral(string, offset + 2, between);
+            checkLiteral(string, offset + 2, between);
         }
         int v = fromHexDigits(string, offset);
         if (v < 0)
@@ -591,7 +590,7 @@ public final class HexFormat {
 
     /**
      * Returns the hex character for the low 4 bits of the value considering it to be a byte.
-     * If the parameter {@link #uppercase()} is {@code true} the
+     * If the parameter {@link #isUpperCase()} is {@code true} the
      * character returned for values {@code 10-15} is uppercase {@code "A-F"},
      * otherwise the character returned is lowercase {@code "a-f"}.
      * The values in the range {@code 0-9} are returned as {@code "0-9"}.
@@ -605,7 +604,7 @@ public final class HexFormat {
 
     /**
      * Returns the hex character for the high 4 bits of the value considering it to be a byte.
-     * If the parameter {@link #uppercase()} is {@code true} the
+     * If the parameter {@link #isUpperCase()} is {@code true} the
      * character returned for values {@code 10-15} is uppercase {@code "A-F"},
      * otherwise the character returned is lowercase {@code "a-f"}.
      * The values in the range {@code 0-9} are returned as {@code "0-9"}.
@@ -619,8 +618,8 @@ public final class HexFormat {
 
     /**
      * Returns the two hex characters for the {@code byte} value.
-     * Each nibble (4 bits) of the value is formatted as if by
-     * {@link #toLowHexDigit(int) toLowHexDigit(nibble)}.
+     * Each nibble (4 bits) from most significant to least significant of the value
+     * is formatted as if by {@link #toLowHexDigit(int) toLowHexDigit(nibble)}.
      * The {@code delimiter}, {@code prefix} and {@code suffix} are not used.
      *
      * @param value a byte value
@@ -639,6 +638,8 @@ public final class HexFormat {
 
     /**
      * Appends two hex characters for the byte value to the {@link Appendable}.
+     * Each nibble (4 bits) from most significant to least significant of the value
+     * is formatted as if by {@link #toLowHexDigit(int) toLowHexDigit(nibble)}.
      * The behavior is equivalent to
      * {@link #toHexDigits(byte) out.append(toHexDigits((byte)value))}.
      *
@@ -660,8 +661,8 @@ public final class HexFormat {
 
     /**
      * Returns the four hex characters for the {@code char} value.
-     * Each nibble (4 bits) of the value is formatted as if by
-     * {@link #toLowHexDigit(int) toLowHexDigit(nibble)}.
+     * Each nibble (4 bits) from most significant to least significant of the value
+     * is formatted as if by {@link #toLowHexDigit(int) toLowHexDigit(nibble)}.
      * The {@code delimiter}, {@code prefix} and {@code suffix} are not used.
      *
      * @param value a {@code char} value
@@ -673,8 +674,8 @@ public final class HexFormat {
 
     /**
      * Returns the four hex characters for the {@code short} value.
-     * Each nibble (4 bits) of the value is formatted as if by
-     * {@link #toLowHexDigit(int) toLowHexDigit(nibble)}.
+     * Each nibble (4 bits) from most significant to least significant of the value
+     * is formatted as if by {@link #toLowHexDigit(int) toLowHexDigit(nibble)}.
      * The {@code delimiter}, {@code prefix} and {@code suffix} are not used.
      *
      * @param value a {@code short} value
@@ -696,8 +697,8 @@ public final class HexFormat {
 
     /**
      * Returns the eight hex characters for the {@code int} value.
-     * Each nibble (4 bits) of the value is formatted as if by
-     * {@link #toLowHexDigit(int) toLowHexDigit(nibble)}.
+     * Each nibble (4 bits) from most significant to least significant of the value
+     * is formatted as if by {@link #toLowHexDigit(int) toLowHexDigit(nibble)}.
      * The {@code delimiter}, {@code prefix} and {@code suffix} are not used.
      *
      * @param value an {@code int} value
@@ -723,8 +724,8 @@ public final class HexFormat {
 
     /**
      * Returns the sixteen hex characters for the {@code long} value.
-     * Each nibble (4 bits) of the value is formatted as if by
-     * {@link #toLowHexDigit(int) toLowHexDigit(nibble)}.
+     * Each nibble (4 bits) from most significant to least significant of the value
+     * is formatted as if by {@link #toLowHexDigit(int) toLowHexDigit(nibble)}.
      * The {@code delimiter}, {@code prefix} and {@code suffix} are not used.
      *
      * @param value a {@code long} value
@@ -758,8 +759,8 @@ public final class HexFormat {
 
     /**
      * Returns up to sixteen hex characters for the {@code long} value.
-     * Each nibble (4 bits) of the value is formatted as if by
-     * {@link #toLowHexDigit(int) toLowHexDigit(nibble)}.
+     * Each nibble (4 bits) from most significant to least significant of the value
+     * is formatted as if by {@link #toLowHexDigit(int) toLowHexDigit(nibble)}.
      * The {@code delimiter}, {@code prefix} and {@code suffix} are not used.
      *
      * @param value an {@code long} value
@@ -876,7 +877,8 @@ public final class HexFormat {
 
     /**
      * Returns the {@code int} value parsed from a string of up to eight hexadecimal characters.
-     * All of the characters must be valid hex digits according to {@link #fromHexDigit(int)}.
+     * The hexadecimal characters are parsed from most significant to least significant
+     * using {@link #fromHexDigit(int)}.
      * The {@code delimiter}, {@code prefix} and {@code suffix} are not used.
      *
      * @param string a CharSequence containing up to eight hex characters
@@ -898,8 +900,8 @@ public final class HexFormat {
     /**
      * Returns the {@code int} value parsed from a string range of up to eight hexadecimal
      * characters.
-     * The characters in the range from {@code index} to {@code index + length - 1},
-     * inclusive, must be valid hex length according to {@link #fromHexDigit(int)}.
+     * The characters in the range from {@code index} to {@code index + length - 1}, inclusive,
+     * are parsed from most significant to least significant using {@link #fromHexDigit(int)}.
      * The {@code delimiter}, {@code prefix} and {@code suffix} are not used.
      *
      * @param string a CharSequence containing the characters
@@ -924,7 +926,8 @@ public final class HexFormat {
 
     /**
      * Returns the long value parsed from a string of up to sixteen hexadecimal characters.
-     * All of the characters must be valid hex digits according to {@link #fromHexDigit(int)}.
+     * The hexadecimal characters are parsed from most significant to least significant
+     * using {@link #fromHexDigit(int)}.
      * The {@code delimiter}, {@code prefix} and {@code suffix} are not used.
      *
      * @param string a CharSequence containing up to sixteen hex characters
@@ -946,8 +949,8 @@ public final class HexFormat {
     /**
      * Returns the long value parsed parsed from a string range of up to sixteen hexadecimal
      * characters.
-     * The characters in the range from {@code index} to {@code index + length - 1},
-     * inclusive, must be valid hex digits according to {@link #fromHexDigit(int)}.
+     * The characters in the range from {@code index} to {@code index + length - 1}, inclusive,
+     * are parsed from most significant to least significant using {@link #fromHexDigit(int)}.
      * The {@code delimiter}, {@code prefix} and {@code suffix} are not used.
      *
      * @param string a CharSequence containing the characters
@@ -1009,11 +1012,11 @@ public final class HexFormat {
      * Returns a description of the formatter parameters for {@code uppercase},
      * {@code delimiter}, {@code prefix}, and {@code suffix}.
      *
-     * @return return a description of this {@code Formatter}
+     * @return return a description of this {@code HexFormat}
      */
     @Override
     public String toString() {
-        return escapeNL("uppercase: " + (digits == UPPERCASE_DIGITS) +
+        return escapeNL("uppercase: " + Arrays.equals(digits, UPPERCASE_DIGITS) +
                 ", delimiter: \"" + delimiter +
                 "\", prefix: \"" + prefix +
                 "\", suffix: \"" + suffix + "\"");

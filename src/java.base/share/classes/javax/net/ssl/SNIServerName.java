@@ -190,7 +190,7 @@ public abstract class SNIServerName {
         if (bytes.length == 0) {
             return "(empty)";
         }
-        return HexFormat.ofDelimiter(":").withUppercase().formatHex(bytes);
+        return HexFormat.ofDelimiter(":").withUpperCase().formatHex(bytes);
     }
 }
 

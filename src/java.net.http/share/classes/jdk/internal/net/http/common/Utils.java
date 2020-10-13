@@ -1113,7 +1113,7 @@ public final class Utils {
             assert false : x;
         }
 
-        HexFormat format = HexFormat.of().withUppercase();
+        HexFormat format = HexFormat.of().withUpperCase();
         StringBuilder sb = new StringBuilder();
         while (bb.hasRemaining()) {
             int b = bb.get() & 0xff;
