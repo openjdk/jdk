@@ -76,6 +76,31 @@ inline oop ShenandoahBarrierSet::load_reference_barrier_mutator(oop obj, T* load
   return fwd;
 }
 
+template <class T>
+inline oop ShenandoahBarrierSet::load_reference_barrier_native(oop obj, T* load_addr) {
+  if (CompressedOops::is_null(obj)) {
+    return NULL;
+  }
+
+  ShenandoahMarkingContext* const marking_context = _heap->marking_context();
+  if (_heap->is_concurrent_weak_root_in_progress() && !marking_context->is_marked(obj)) {
+    Thread* thr = Thread::current();
+    if (thr->is_Java_thread()) {
+      return NULL;
+    } else {
+      return obj;
+    }
+  }
+
+  oop fwd = load_reference_barrier_not_null(obj);
+  if (ShenandoahSelfFixing && load_addr != NULL && fwd != obj) {
+    // Since we are here and we know the load address, update the reference.
+    ShenandoahHeap::cas_oop(fwd, load_addr, obj);
+  }
+
+  return fwd;
+}
+
 inline void ShenandoahBarrierSet::enqueue(oop obj) {
   assert(obj != NULL, "checked by caller");
   assert(_satb_mark_queue_set.is_active(), "only get here when SATB active");

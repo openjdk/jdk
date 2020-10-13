@@ -794,7 +794,6 @@ private:
 
   void decl(Register dst);
   void decl(Address dst);
-  void decq(Register dst);
   void decq(Address dst);
 
   void incl(Register dst);
@@ -879,6 +878,7 @@ private:
   void popa_uncached();
 #endif
   void vzeroupper_uncached();
+  void decq(Register dst);
 
   void pusha();
   void popa();
@@ -1487,6 +1487,10 @@ private:
   void evmovdquq(XMMRegister dst, Address src, int vector_len);
   void evmovdquq(XMMRegister dst, XMMRegister src, int vector_len);
 
+  // Generic move instructions.
+  void evmovdqu(Address dst, KRegister mask, XMMRegister src, int vector_len, int type);
+  void evmovdqu(XMMRegister dst, KRegister mask, Address src, int vector_len, int type);
+
   // Move lower 64bit to high 64bit in 128bit register
   void movlhps(XMMRegister dst, XMMRegister src);
 
@@ -1989,6 +1993,8 @@ private:
 
   void shlxl(Register dst, Register src1, Register src2);
   void shlxq(Register dst, Register src1, Register src2);
+  void shrxq(Register dst, Register src1, Register src2);
+
 
   //====================VECTOR ARITHMETIC=====================================
 

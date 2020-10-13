@@ -316,6 +316,11 @@ public class InstanceKlass extends Klass {
   }
 
   public boolean hasStoredFingerprint() {
+    // has_stored_fingerprint() @ instanceKlass.cpp can return true only if INCLUDE_AOT is
+    // set during compilation.
+    if (!VM.getVM().hasAOT()) {
+      return false;
+    }
     return shouldStoreFingerprint() || isShared();
   }
 

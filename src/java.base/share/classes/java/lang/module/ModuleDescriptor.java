@@ -1331,7 +1331,7 @@ public class ModuleDescriptor
      * <p> Returns {@code true} if this is an automatic module. </p>
      *
      * <p> This method is equivalent to testing if the set of {@link #modifiers()
-     * modifiers} contains the {@link Modifier#OPEN AUTOMATIC} modifier. </p>
+     * modifiers} contains the {@link Modifier#AUTOMATIC AUTOMATIC} modifier. </p>
      *
      * @return  {@code true} if this is an automatic module
      */
