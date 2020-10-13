@@ -73,6 +73,7 @@ requires.properties= \
     vm.graal.enabled \
     vm.compiler1.enabled \
     vm.compiler2.enabled \
+    vm.musl \
     docker.support \
     test.vm.gc.nvdimm
 
