@@ -101,7 +101,7 @@ void entry(CodeBuffer *cb) {
     __ adds(r28, r15, r8, Assembler::ASR, 39);         //       adds    x28, x15, x8, ASR #39
     __ subs(r7, r28, r30, Assembler::ASR, 57);         //       subs    x7, x28, x30, ASR #57
     __ addw(r9, r22, r27, Assembler::ASR, 15);         //       add     w9, w22, w27, ASR #15
-    __ subw(r3, r13, r18, Assembler::ASR, 30);         //       sub     w3, w13, w18, ASR #30
+    __ subw(r3, r13, r17, Assembler::ASR, 30);         //       sub     w3, w13, w17, ASR #30
     __ addsw(r14, r26, r8, Assembler::ASR, 17);        //       adds    w14, w26, w8, ASR #17
     __ subsw(r0, r22, r12, Assembler::ASR, 21);        //       subs    w0, w22, w12, ASR #21
     __ andr(r0, r15, r26, Assembler::LSL, 20);         //       and     x0, x15, x26, LSL #20
@@ -109,8 +109,8 @@ void entry(CodeBuffer *cb) {
     __ eor(r24, r13, r2, Assembler::LSL, 32);          //       eor     x24, x13, x2, LSL #32
     __ ands(r28, r3, r17, Assembler::ASR, 35);         //       ands    x28, x3, x17, ASR #35
     __ andw(r25, r16, r29, Assembler::LSR, 18);        //       and     w25, w16, w29, LSR #18
-    __ orrw(r13, r18, r11, Assembler::LSR, 9);         //       orr     w13, w18, w11, LSR #9
-    __ eorw(r5, r5, r18, Assembler::LSR, 15);          //       eor     w5, w5, w18, LSR #15
+    __ orrw(r13, r17, r11, Assembler::LSR, 9);         //       orr     w13, w17, w11, LSR #9
+    __ eorw(r5, r5, r17, Assembler::LSR, 15);          //       eor     w5, w5, w17, LSR #15
     __ andsw(r2, r23, r27, Assembler::ASR, 26);        //       ands    w2, w23, w27, ASR #26
     __ bic(r27, r28, r16, Assembler::LSR, 45);         //       bic     x27, x28, x16, LSR #45
     __ orn(r8, r25, r26, Assembler::ASR, 37);          //       orn     x8, x25, x26, ASR #37
@@ -135,7 +135,7 @@ void entry(CodeBuffer *cb) {
     __ andw(r6, r11, 4294049777ull);                   //       and     w6, w11, #0xfff1fff1
     __ orrw(r28, r5, 4294966791ull);                   //       orr     w28, w5, #0xfffffe07
     __ eorw(r1, r20, 134217216ull);                    //       eor     w1, w20, #0x7fffe00
-    __ andsw(r7, r18, 1048576ull);                     //       ands    w7, w18, #0x100000
+    __ andsw(r7, r17, 1048576ull);                     //       ands    w7, w17, #0x100000
     __ andr(r14, r12, 9223372036854775808ull);         //       and     x14, x12, #0x8000000000000000
     __ orr(r9, r11, 562675075514368ull);               //       orr     x9, x11, #0x1ffc000000000
     __ eor(r17, r0, 18014398509481728ull);             //       eor     x17, x0, #0x3fffffffffff00
@@ -283,7 +283,7 @@ void entry(CodeBuffer *cb) {
 // LoadStoreExclusiveOp
     __ stxrw(r22, r27, r19);                           //       stxr    w22, w27, [x19]
     __ stlxrw(r11, r16, r6);                           //       stlxr   w11, w16, [x6]
-    __ ldxrw(r18, r0);                                 //       ldxr    w18, [x0]
+    __ ldxrw(r17, r0);                                 //       ldxr    w17, [x0]
     __ ldaxrw(r4, r10);                                //       ldaxr   w4, [x10]
     __ stlrw(r24, r22);                                //       stlr    w24, [x22]
     __ ldarw(r10, r19);                                //       ldar    w10, [x19]
@@ -311,7 +311,7 @@ void entry(CodeBuffer *cb) {
     __ stlxp(r12, r16, r13, r15);                      //       stlxp   w12, x16, x13, [x15]
 
 // LoadStoreExclusiveOp
-    __ ldxpw(r18, r21, r13);                           //       ldxp    w18, w21, [x13]
+    __ ldxpw(r17, r21, r13);                           //       ldxp    w17, w21, [x13]
     __ ldaxpw(r11, r30, r8);                           //       ldaxp   w11, w30, [x8]
     __ stxpw(r24, r13, r11, r1);                       //       stxp    w24, w13, w11, [x1]
     __ stlxpw(r26, r21, r27, r13);                     //       stlxp   w26, w21, w27, [x13]
@@ -324,7 +324,7 @@ void entry(CodeBuffer *cb) {
     __ strh(r2, Address(r25, -50));                    //       strh    w2, [x25, -50]
     __ ldr(r4, Address(r2, -241));                     //       ldr     x4, [x2, -241]
     __ ldrw(r30, Address(r20, -31));                   //       ldr     w30, [x20, -31]
-    __ ldrb(r18, Address(r23, -23));                   //       ldrb    w18, [x23, -23]
+    __ ldrb(r17, Address(r23, -23));                   //       ldrb    w17, [x23, -23]
     __ ldrh(r29, Address(r26, -1));                    //       ldrh    w29, [x26, -1]
     __ ldrsb(r1, Address(r9, 6));                      //       ldrsb   x1, [x9, 6]
     __ ldrsh(r11, Address(r12, 19));                   //       ldrsh   x11, [x12, 19]
@@ -375,14 +375,14 @@ void entry(CodeBuffer *cb) {
 
 // base_plus_reg
 // LoadStoreOp
-    __ str(r10, Address(r18, r21, Address::sxtw(3)));  //       str     x10, [x18, w21, sxtw #3]
+    __ str(r10, Address(r17, r21, Address::sxtw(3)));  //       str     x10, [x17, w21, sxtw #3]
     __ strw(r4, Address(r13, r22, Address::sxtw(2)));  //       str     w4, [x13, w22, sxtw #2]
     __ strb(r13, Address(r0, r19, Address::uxtw(0)));  //       strb    w13, [x0, w19, uxtw #0]
     __ strh(r12, Address(r27, r6, Address::sxtw(0)));  //       strh    w12, [x27, w6, sxtw #0]
     __ ldr(r0, Address(r8, r16, Address::lsl(0)));     //       ldr     x0, [x8, x16, lsl #0]
     __ ldrw(r0, Address(r4, r26, Address::sxtx(0)));   //       ldr     w0, [x4, x26, sxtx #0]
     __ ldrb(r14, Address(r25, r5, Address::sxtw(0)));  //       ldrb    w14, [x25, w5, sxtw #0]
-    __ ldrh(r9, Address(r4, r18, Address::uxtw(0)));   //       ldrh    w9, [x4, w18, uxtw #0]
+    __ ldrh(r9, Address(r4, r17, Address::uxtw(0)));   //       ldrh    w9, [x4, w17, uxtw #0]
     __ ldrsb(r27, Address(r4, r7, Address::lsl(0)));   //       ldrsb   x27, [x4, x7, lsl #0]
     __ ldrsh(r15, Address(r17, r30, Address::sxtw(0))); //      ldrsh   x15, [x17, w30, sxtw #0]
     __ ldrshw(r16, Address(r0, r22, Address::sxtw(0))); //      ldrsh   w16, [x0, w22, sxtw #0]
@@ -439,7 +439,7 @@ void entry(CodeBuffer *cb) {
     __ sbcs(r1, r24, r3);                              //       sbcs    x1, x24, x3
 
 // AddSubExtendedOp
-    __ addw(r18, r24, r20, ext::uxtb, 2);              //       add     w18, w24, w20, uxtb #2
+    __ addw(r17, r24, r20, ext::uxtb, 2);              //       add     w17, w24, w20, uxtb #2
     __ addsw(r13, r28, r10, ext::uxth, 1);             //       adds    w13, w28, w10, uxth #1
     __ sub(r15, r16, r2, ext::sxth, 2);                //       sub     x15, x16, x2, sxth #2
     __ subsw(r29, r13, r13, ext::uxth, 2);             //       subs    w29, w13, w13, uxth #2
@@ -450,8 +450,8 @@ void entry(CodeBuffer *cb) {
 
 // ConditionalCompareOp
     __ ccmnw(r0, r13, 14u, Assembler::MI);             //       ccmn    w0, w13, #14, MI
-    __ ccmpw(r22, r18, 6u, Assembler::CC);             //       ccmp    w22, w18, #6, CC
-    __ ccmn(r18, r30, 14u, Assembler::VS);             //       ccmn    x18, x30, #14, VS
+    __ ccmpw(r22, r17, 6u, Assembler::CC);             //       ccmp    w22, w17, #6, CC
+    __ ccmn(r17, r30, 14u, Assembler::VS);             //       ccmn    x17, x30, #14, VS
     __ ccmp(r10, r19, 12u, Assembler::HI);             //       ccmp    x10, x19, #12, HI
 
 // ConditionalCompareImmedOp
@@ -476,7 +476,7 @@ void entry(CodeBuffer *cb) {
     __ revw(r29, r30);                                 //       rev     w29, w30
     __ clzw(r25, r21);                                 //       clz     w25, w21
     __ clsw(r4, r0);                                   //       cls     w4, w0
-    __ rbit(r18, r21);                                 //       rbit    x18, x21
+    __ rbit(r17, r21);                                 //       rbit    x17, x21
     __ rev16(r29, r16);                                //       rev16   x29, x16
     __ rev32(r21, r20);                                //       rev32   x21, x20
     __ rev(r6, r19);                                   //       rev     x6, x19
@@ -486,16 +486,16 @@ void entry(CodeBuffer *cb) {
 // ThreeRegOp
     __ udivw(r11, r24, r0);                            //       udiv    w11, w24, w0
     __ sdivw(r27, r25, r14);                           //       sdiv    w27, w25, w14
-    __ lslvw(r3, r14, r18);                            //       lslv    w3, w14, w18
+    __ lslvw(r3, r14, r17);                            //       lslv    w3, w14, w17
     __ lsrvw(r7, r15, r24);                            //       lsrv    w7, w15, w24
     __ asrvw(r28, r17, r25);                           //       asrv    w28, w17, w25
     __ rorvw(r2, r26, r28);                            //       rorv    w2, w26, w28
     __ udiv(r5, r25, r26);                             //       udiv    x5, x25, x26
-    __ sdiv(r27, r16, r18);                            //       sdiv    x27, x16, x18
+    __ sdiv(r27, r16, r17);                            //       sdiv    x27, x16, x17
     __ lslv(r6, r21, r12);                             //       lslv    x6, x21, x12
     __ lsrv(r0, r4, r12);                              //       lsrv    x0, x4, x12
     __ asrv(r27, r17, r28);                            //       asrv    x27, x17, x28
-    __ rorv(r28, r2, r18);                             //       rorv    x28, x2, x18
+    __ rorv(r28, r2, r17);                             //       rorv    x28, x2, x17
     __ umulh(r10, r15, r14);                           //       umulh   x10, x15, x14
     __ smulh(r14, r3, r25);                            //       smulh   x14, x3, x25
 
@@ -540,7 +540,7 @@ void entry(CodeBuffer *cb) {
     __ fmovd(v24, v11);                                //       fmov    d24, d11
     __ fabsd(v7, v1);                                  //       fabs    d7, d1
     __ fnegd(v11, v0);                                 //       fneg    d11, d0
-    __ fsqrtd(v3, v18);                                //       fsqrt   d3, d18
+    __ fsqrtd(v3, v17);                                //       fsqrt   d3, d17
     __ fcvtd(v28, v6);                                 //       fcvt    s28, d6
 
 // FloatConvertOp
@@ -552,9 +552,9 @@ void entry(CodeBuffer *cb) {
     __ scvtfs(v25, r13);                               //       scvtf   s25, x13
     __ scvtfwd(v11, r23);                              //       scvtf   d11, w23
     __ scvtfd(v19, r8);                                //       scvtf   d19, x8
-    __ fmovs(r18, v21);                                //       fmov    w18, s21
+    __ fmovs(r17, v21);                                //       fmov    w17, s21
     __ fmovd(r25, v20);                                //       fmov    x25, d20
-    __ fmovs(v19, r18);                                //       fmov    s19, w18
+    __ fmovs(v19, r17);                                //       fmov    s19, w17
     __ fmovd(v2, r29);                                 //       fmov    d2, x29
 
 // TwoRegFloatOp
@@ -598,11 +598,11 @@ void entry(CodeBuffer *cb) {
     __ ld1r(v29, __ T8B, Address(r17));                //       ld1r    {v29.8B}, [x17]
     __ ld1r(v24, __ T4S, Address(__ post(r23, 4)));    //       ld1r    {v24.4S}, [x23], 4
     __ ld1r(v10, __ T1D, Address(__ post(r5, r25)));   //       ld1r    {v10.1D}, [x5], x25
-    __ ld2(v18, v19, __ T2D, Address(r10));            //       ld2     {v18.2D, v19.2D}, [x10]
+    __ ld2(v17, v18, __ T2D, Address(r10));            //       ld2     {v17.2D, v18.2D}, [x10]
     __ ld2(v12, v13, __ T4H, Address(__ post(r15, 16))); //     ld2     {v12.4H, v13.4H}, [x15], 16
-    __ ld2r(v25, v26, __ T16B, Address(r18));          //       ld2r    {v25.16B, v26.16B}, [x18]
+    __ ld2r(v25, v26, __ T16B, Address(r17));          //       ld2r    {v25.16B, v26.16B}, [x17]
     __ ld2r(v1, v2, __ T2S, Address(__ post(r30, 8))); //       ld2r    {v1.2S, v2.2S}, [x30], 8
-    __ ld2r(v16, v17, __ T2D, Address(__ post(r18, r9))); //    ld2r    {v16.2D, v17.2D}, [x18], x9
+    __ ld2r(v16, v17, __ T2D, Address(__ post(r17, r9))); //    ld2r    {v16.2D, v17.2D}, [x17], x9
     __ ld3(v25, v26, v27, __ T4S, Address(__ post(r12, r2))); //        ld3     {v25.4S, v26.4S, v27.4S}, [x12], x2
     __ ld3(v26, v27, v28, __ T2S, Address(r19));       //       ld3     {v26.2S, v27.2S, v28.2S}, [x19]
     __ ld3r(v15, v16, v17, __ T8H, Address(r21));      //       ld3r    {v15.8H, v16.8H, v17.8H}, [x21]
@@ -610,7 +610,7 @@ void entry(CodeBuffer *cb) {
     __ ld3r(v14, v15, v16, __ T1D, Address(__ post(r28, r29))); //      ld3r    {v14.1D, v15.1D, v16.1D}, [x28], x29
     __ ld4(v17, v18, v19, v20, __ T8H, Address(__ post(r29, 64))); //   ld4     {v17.8H, v18.8H, v19.8H, v20.8H}, [x29], 64
     __ ld4(v27, v28, v29, v30, __ T8B, Address(__ post(r7, r0))); //    ld4     {v27.8B, v28.8B, v29.8B, v30.8B}, [x7], x0
-    __ ld4r(v24, v25, v26, v27, __ T8B, Address(r18)); //       ld4r    {v24.8B, v25.8B, v26.8B, v27.8B}, [x18]
+    __ ld4r(v24, v25, v26, v27, __ T8B, Address(r17)); //       ld4r    {v24.8B, v25.8B, v26.8B, v27.8B}, [x17]
     __ ld4r(v0, v1, v2, v3, __ T4H, Address(__ post(r26, 8))); //       ld4r    {v0.4H, v1.4H, v2.4H, v3.4H}, [x26], 8
     __ ld4r(v12, v13, v14, v15, __ T2S, Address(__ post(r25, r2))); //  ld4r    {v12.2S, v13.2S, v14.2S, v15.2S}, [x25], x2
 
@@ -698,7 +698,7 @@ void entry(CodeBuffer *cb) {
     __ fmla(v0, __ T2D, v1, v2);                       //       fmla    v0.2D, v1.2D, v2.2D
     __ mlsv(v30, __ T4H, v31, v0);                     //       mls     v30.4H, v31.4H, v0.4H
     __ mlsv(v0, __ T8H, v1, v2);                       //       mls     v0.8H, v1.8H, v2.8H
-    __ mlsv(v18, __ T2S, v19, v20);                    //       mls     v18.2S, v19.2S, v20.2S
+    __ mlsv(v17, __ T2S, v18, v19);                    //       mls     v17.2S, v18.2S, v19.2S
     __ mlsv(v28, __ T4S, v29, v30);                    //       mls     v28.4S, v29.4S, v30.4S
     __ fmls(v25, __ T2S, v26, v27);                    //       fmls    v25.2S, v26.2S, v27.2S
     __ fmls(v9, __ T4S, v10, v11);                     //       fmls    v9.4S, v10.4S, v11.4S
@@ -707,7 +707,7 @@ void entry(CodeBuffer *cb) {
     __ fdiv(v15, __ T4S, v16, v17);                    //       fdiv    v15.4S, v16.4S, v17.4S
     __ fdiv(v11, __ T2D, v12, v13);                    //       fdiv    v11.2D, v12.2D, v13.2D
     __ maxv(v10, __ T8B, v11, v12);                    //       smax    v10.8B, v11.8B, v12.8B
-    __ maxv(v18, __ T16B, v19, v20);                   //       smax    v18.16B, v19.16B, v20.16B
+    __ maxv(v17, __ T16B, v18, v19);                   //       smax    v17.16B, v18.16B, v19.16B
     __ maxv(v24, __ T4H, v25, v26);                    //       smax    v24.4H, v25.4H, v26.4H
     __ maxv(v21, __ T8H, v22, v23);                    //       smax    v21.8H, v22.8H, v23.8H
     __ maxv(v23, __ T2S, v24, v25);                    //       smax    v23.2S, v24.2S, v25.2S
@@ -720,9 +720,9 @@ void entry(CodeBuffer *cb) {
     __ minv(v5, __ T4H, v6, v7);                       //       smin    v5.4H, v6.4H, v7.4H
     __ minv(v5, __ T8H, v6, v7);                       //       smin    v5.8H, v6.8H, v7.8H
     __ minv(v20, __ T2S, v21, v22);                    //       smin    v20.2S, v21.2S, v22.2S
-    __ minv(v18, __ T4S, v19, v20);                    //       smin    v18.4S, v19.4S, v20.4S
+    __ minv(v17, __ T4S, v18, v19);                    //       smin    v17.4S, v18.4S, v19.4S
     __ fmin(v15, __ T2S, v16, v17);                    //       fmin    v15.2S, v16.2S, v17.2S
-    __ fmin(v18, __ T4S, v19, v20);                    //       fmin    v18.4S, v19.4S, v20.4S
+    __ fmin(v17, __ T4S, v18, v19);                    //       fmin    v17.4S, v18.4S, v19.4S
     __ fmin(v29, __ T2D, v30, v31);                    //       fmin    v29.2D, v30.2D, v31.2D
     __ cmeq(v26, __ T8B, v27, v28);                    //       cmeq    v26.8B, v27.8B, v28.8B
     __ cmeq(v28, __ T16B, v29, v30);                   //       cmeq    v28.16B, v29.16B, v30.16B
@@ -744,7 +744,7 @@ void entry(CodeBuffer *cb) {
     __ fcmgt(v20, __ T2S, v21, v22);                   //       fcmgt   v20.2S, v21.2S, v22.2S
     __ fcmgt(v8, __ T4S, v9, v10);                     //       fcmgt   v8.4S, v9.4S, v10.4S
     __ fcmgt(v30, __ T2D, v31, v0);                    //       fcmgt   v30.2D, v31.2D, v0.2D
-    __ cmge(v18, __ T8B, v19, v20);                    //       cmge    v18.8B, v19.8B, v20.8B
+    __ cmge(v17, __ T8B, v18, v19);                    //       cmge    v17.8B, v18.8B, v19.8B
     __ cmge(v10, __ T16B, v11, v12);                   //       cmge    v10.16B, v11.16B, v12.16B
     __ cmge(v27, __ T4H, v28, v29);                    //       cmge    v27.4H, v28.4H, v29.4H
     __ cmge(v2, __ T8H, v3, v4);                       //       cmge    v2.8H, v3.8H, v4.8H
@@ -753,7 +753,7 @@ void entry(CodeBuffer *cb) {
     __ cmge(v3, __ T2D, v4, v5);                       //       cmge    v3.2D, v4.2D, v5.2D
     __ fcmge(v8, __ T2S, v9, v10);                     //       fcmge   v8.2S, v9.2S, v10.2S
     __ fcmge(v22, __ T4S, v23, v24);                   //       fcmge   v22.4S, v23.4S, v24.4S
-    __ fcmge(v18, __ T2D, v19, v20);                   //       fcmge   v18.2D, v19.2D, v20.2D
+    __ fcmge(v17, __ T2D, v18, v19);                   //       fcmge   v17.2D, v18.2D, v19.2D
 
 // SHA512SIMDOp
     __ sha512h(v13, __ T2D, v4, v28);                  //       sha512h         q13, q4, v28.2D
@@ -806,7 +806,7 @@ void entry(CodeBuffer *cb) {
     __ sve_st1w(z0, __ S, p1, Address(r0, 7));         //       st1w    {z0.s}, p1, [x0, #7, MUL VL]
     __ sve_st1b(z0, __ B, p2, Address(sp, r1));        //       st1b    {z0.b}, p2, [sp, x1]
     __ sve_st1h(z0, __ H, p3, Address(sp, r8));        //       st1h    {z0.h}, p3, [sp, x8, LSL #1]
-    __ sve_st1d(z0, __ D, p4, Address(r0, r18));       //       st1d    {z0.d}, p4, [x0, x18, LSL #3]
+    __ sve_st1d(z0, __ D, p4, Address(r0, r17));       //       st1d    {z0.d}, p4, [x0, x17, LSL #3]
     __ sve_ldr(z0, Address(sp));                       //       ldr     z0, [sp]
     __ sve_ldr(z31, Address(sp, -256));                //       ldr     z31, [sp, #-256, MUL VL]
     __ sve_str(z8, Address(r8, 255));                  //       str     z8, [x8, #255, MUL VL]
@@ -853,7 +853,7 @@ void entry(CodeBuffer *cb) {
     __ ldorr(Assembler::xword, r24, r4, r3);           //       ldset   x24, x4, [x3]
     __ ldsmin(Assembler::xword, r12, zr, r28);         //       ldsmin  x12, xzr, [x28]
     __ ldsmax(Assembler::xword, r10, r26, r2);         //       ldsmax  x10, x26, [x2]
-    __ ldumin(Assembler::xword, r12, r18, sp);         //       ldumin  x12, x18, [sp]
+    __ ldumin(Assembler::xword, r12, r16, sp);         //       ldumin  x12, x16, [sp]
     __ ldumax(Assembler::xword, r1, r13, r29);         //       ldumax  x1, x13, [x29]
 
 // LSEOp
@@ -863,7 +863,7 @@ void entry(CodeBuffer *cb) {
     __ ldeora(Assembler::xword, r1, r26, r28);         //       ldeora  x1, x26, [x28]
     __ ldorra(Assembler::xword, r4, r30, r4);          //       ldseta  x4, x30, [x4]
     __ ldsmina(Assembler::xword, r6, r30, r26);        //       ldsmina x6, x30, [x26]
-    __ ldsmaxa(Assembler::xword, r18, r9, r8);         //       ldsmaxa x18, x9, [x8]
+    __ ldsmaxa(Assembler::xword, r16, r9, r8);         //       ldsmaxa x16, x9, [x8]
     __ ldumina(Assembler::xword, r12, r0, r20);        //       ldumina x12, x0, [x20]
     __ ldumaxa(Assembler::xword, r1, r24, r2);         //       ldumaxa x1, x24, [x2]
 
@@ -871,7 +871,7 @@ void entry(CodeBuffer *cb) {
     __ swpal(Assembler::xword, r0, r9, r24);           //       swpal   x0, x9, [x24]
     __ ldaddal(Assembler::xword, r26, r16, r30);       //       ldaddal x26, x16, [x30]
     __ ldbical(Assembler::xword, r3, r10, r23);        //       ldclral x3, x10, [x23]
-    __ ldeoral(Assembler::xword, r10, r4, r18);        //       ldeoral x10, x4, [x18]
+    __ ldeoral(Assembler::xword, r10, r4, r15);        //       ldeoral x10, x4, [x15]
     __ ldorral(Assembler::xword, r2, r11, r8);         //       ldsetal x2, x11, [x8]
     __ ldsminal(Assembler::xword, r10, r15, r17);      //       ldsminal        x10, x15, [x17]
     __ ldsmaxal(Assembler::xword, r2, r10, r12);       //       ldsmaxal        x2, x10, [x12]
@@ -881,8 +881,8 @@ void entry(CodeBuffer *cb) {
 // LSEOp
     __ swpl(Assembler::xword, r26, r16, r4);           //       swpl    x26, x16, [x4]
     __ ldaddl(Assembler::xword, r2, r4, r12);          //       ldaddl  x2, x4, [x12]
-    __ ldbicl(Assembler::xword, r18, r21, r16);        //       ldclrl  x18, x21, [x16]
-    __ ldeorl(Assembler::xword, r18, r11, r21);        //       ldeorl  x18, x11, [x21]
+    __ ldbicl(Assembler::xword, r16, r21, r16);        //       ldclrl  x16, x21, [x16]
+    __ ldeorl(Assembler::xword, r16, r11, r21);        //       ldeorl  x16, x11, [x21]
     __ ldorrl(Assembler::xword, r23, r12, r26);        //       ldsetl  x23, x12, [x26]
     __ ldsminl(Assembler::xword, r23, r28, r14);       //       ldsminl x23, x28, [x14]
     __ ldsmaxl(Assembler::xword, r11, r24, r1);        //       ldsmaxl x11, x24, [x1]
@@ -905,8 +905,8 @@ void entry(CodeBuffer *cb) {
     __ ldadda(Assembler::word, r9, r28, r15);          //       ldadda  w9, w28, [x15]
     __ ldbica(Assembler::word, r29, r22, sp);          //       ldclra  w29, w22, [sp]
     __ ldeora(Assembler::word, r19, zr, r5);           //       ldeora  w19, wzr, [x5]
-    __ ldorra(Assembler::word, r14, r18, sp);          //       ldseta  w14, w18, [sp]
-    __ ldsmina(Assembler::word, r18, r27, r20);        //       ldsmina w18, w27, [x20]
+    __ ldorra(Assembler::word, r14, r16, sp);          //       ldseta  w14, w16, [sp]
+    __ ldsmina(Assembler::word, r16, r27, r20);        //       ldsmina w16, w27, [x20]
     __ ldsmaxa(Assembler::word, r16, r12, r11);        //       ldsmaxa w16, w12, [x11]
     __ ldumina(Assembler::word, r9, r6, r30);          //       ldumina w9, w6, [x30]
     __ ldumaxa(Assembler::word, r17, r27, r28);        //       ldumaxa w17, w27, [x28]
@@ -935,12 +935,12 @@ void entry(CodeBuffer *cb) {
 
 // SVEVectorOp
     __ sve_add(z24, __ D, z2, z30);                    //       add     z24.d, z2.d, z30.d
-    __ sve_sub(z18, __ S, z10, z22);                   //       sub     z18.s, z10.s, z22.s
+    __ sve_sub(z17, __ S, z10, z22);                   //       sub     z17.s, z10.s, z22.s
     __ sve_fadd(z2, __ D, z17, z0);                    //       fadd    z2.d, z17.d, z0.d
     __ sve_fmul(z25, __ D, z22, z2);                   //       fmul    z25.d, z22.d, z2.d
     __ sve_fsub(z12, __ D, z3, z27);                   //       fsub    z12.d, z3.d, z27.d
     __ sve_abs(z28, __ B, p4, z26);                    //       abs     z28.b, p4/m, z26.b
-    __ sve_add(z9, __ B, p7, z18);                     //       add     z9.b, p7/m, z9.b, z18.b
+    __ sve_add(z9, __ B, p7, z17);                     //       add     z9.b, p7/m, z9.b, z17.b
     __ sve_asr(z4, __ H, p1, z15);                     //       asr     z4.h, p1/m, z4.h, z15.h
     __ sve_cnt(z22, __ D, p2, z2);                     //       cnt     z22.d, p2/m, z2.d
     __ sve_lsl(z20, __ D, p7, z5);                     //       lsl     z20.d, p7/m, z20.d, z5.d
@@ -967,14 +967,14 @@ void entry(CodeBuffer *cb) {
     __ sve_fmls(z16, __ S, p1, z2, z28);               //       fmls    z16.s, p1/m, z2.s, z28.s
     __ sve_fnmla(z4, __ S, p1, z17, z19);              //       fnmla   z4.s, p1/m, z17.s, z19.s
     __ sve_fnmls(z12, __ D, p5, z8, z24);              //       fnmls   z12.d, p5/m, z8.d, z24.d
-    __ sve_mla(z18, __ B, p0, z10, z23);               //       mla     z18.b, p0/m, z10.b, z23.b
+    __ sve_mla(z17, __ B, p0, z10, z23);               //       mla     z17.b, p0/m, z10.b, z23.b
     __ sve_mls(z19, __ B, p7, z13, z16);               //       mls     z19.b, p7/m, z13.b, z16.b
     __ sve_and(z0, z7, z14);                           //       and     z0.d, z7.d, z14.d
     __ sve_eor(z25, z8, z10);                          //       eor     z25.d, z8.d, z10.d
     __ sve_orr(z20, z22, z27);                         //       orr     z20.d, z22.d, z27.d
 
 // SVEReductionOp
-    __ sve_andv(v3, __ S, p3, z18);                    //       andv s3, p3, z18.s
+    __ sve_andv(v3, __ S, p3, z17);                    //       andv s3, p3, z17.s
     __ sve_orv(v7, __ B, p1, z28);                     //       orv b7, p1, z28.b
     __ sve_eorv(v0, __ S, p2, z16);                    //       eorv s0, p2, z16.s
     __ sve_smaxv(v22, __ H, p1, z15);                  //       smaxv h22, p1, z15.h
@@ -992,14 +992,14 @@ void entry(CodeBuffer *cb) {
   static const unsigned int insns[] =
   {
     0x8b0d82fa,     0xcb49970c,     0xab889dfc,     0xeb9ee787,
-    0x0b9b3ec9,     0x4b9279a3,     0x2b88474e,     0x6b8c56c0,
+    0x0b9b3ec9,     0x4b9179a3,     0x2b88474e,     0x6b8c56c0,
     0x8a1a51e0,     0xaa11f4ba,     0xca0281b8,     0xea918c7c,
-    0x0a5d4a19,     0x2a4b264d,     0x4a523ca5,     0x6a9b6ae2,
+    0x0a5d4a19,     0x2a4b262d,     0x4a513ca5,     0x6a9b6ae2,
     0x8a70b79b,     0xaaba9728,     0xca6dfe3d,     0xea627f1c,
     0x0aa70f53,     0x2aaa0f06,     0x4a6176a4,     0x6a604eb0,
     0x1105ed91,     0x3100583e,     0x5101f8bd,     0x710f0306,
     0x9101a1a0,     0xb10a5cc8,     0xd10810aa,     0xf10fd061,
-    0x120cb166,     0x321764bc,     0x52174681,     0x720c0247,
+    0x120cb166,     0x321764bc,     0x52174681,     0x720c0227,
     0x9241018e,     0xb25a2969,     0xd278b411,     0xf26aad01,
     0x14000000,     0x17ffffd7,     0x140002c9,     0x94000000,
     0x97ffffd4,     0x940002c6,     0x3400000a,     0x34fffa2a,
@@ -1030,14 +1030,14 @@ void entry(CodeBuffer *cb) {
     0xd5033fdf,     0xd5033e9f,     0xd50332bf,     0xd61f0200,
     0xd63f0280,     0xc80a7d1b,     0xc800fea1,     0xc85f7fb1,
     0xc85fff9d,     0xc89ffee1,     0xc8dffe95,     0x88167e7b,
-    0x880bfcd0,     0x885f7c12,     0x885ffd44,     0x889ffed8,
+    0x880bfcd0,     0x885f7c11,     0x885ffd44,     0x889ffed8,
     0x88dffe6a,     0x48017fc5,     0x4808fe2c,     0x485f7dc9,
     0x485ffc27,     0x489ffe05,     0x48dffd82,     0x080a7c6c,
     0x081cff4e,     0x085f7d5e,     0x085ffeae,     0x089ffd2d,
     0x08dfff76,     0xc87f4d7c,     0xc87fcc5e,     0xc8220417,
-    0xc82cb5f0,     0x887f55b2,     0x887ff90b,     0x88382c2d,
+    0xc82cb5f0,     0x887f55b1,     0x887ff90b,     0x88382c2d,
     0x883aedb5,     0xf819928b,     0xb803e21c,     0x381f713b,
-    0x781ce322,     0xf850f044,     0xb85e129e,     0x385e92f2,
+    0x781ce322,     0xf850f044,     0xb85e129e,     0x385e92f1,
     0x785ff35d,     0x39801921,     0x7881318b,     0x78dce02b,
     0xb8829313,     0xfc45f318,     0xbc5d50af,     0xfc001375,
     0xbc1951b7,     0xf8008c0b,     0xb801dc03,     0x38009dcb,
@@ -1048,9 +1048,9 @@ void entry(CodeBuffer *cb) {
     0x7801b506,     0xf853654e,     0xb85d74b0,     0x384095c2,
     0x785ec5bc,     0x389e15a9,     0x789dc703,     0x78c06474,
     0xb89ff667,     0xfc57e51e,     0xbc4155f9,     0xfc05a6ee,
-    0xbc1df408,     0xf835da4a,     0xb836d9a4,     0x3833580d,
+    0xbc1df408,     0xf835da2a,     0xb836d9a4,     0x3833580d,
     0x7826cb6c,     0xf8706900,     0xb87ae880,     0x3865db2e,
-    0x78724889,     0x38a7789b,     0x78beca2f,     0x78f6c810,
+    0x78714889,     0x38a7789b,     0x78beca2f,     0x78f6c810,
     0xb8bef956,     0xfc6afabd,     0xbc734963,     0xfc3d5b8d,
     0xbc25fbb7,     0xf9189d05,     0xb91ecb1d,     0x39187a33,
     0x791f226d,     0xf95aa2f3,     0xb9587bb7,     0x395f7176,
@@ -1059,19 +1059,19 @@ void entry(CodeBuffer *cb) {
     0xbd1b1869,     0x58003ddb,     0x1800000b,     0xf8945060,
     0xd8000000,     0xf8ae6ba0,     0xf99a0080,     0x1a070035,
     0x3a0700a8,     0x5a0e0367,     0x7a11009b,     0x9a000380,
-    0xba1e030c,     0xda0f0320,     0xfa030301,     0x0b340b12,
+    0xba1e030c,     0xda0f0320,     0xfa030301,     0x0b340b11,
     0x2b2a278d,     0xcb22aa0f,     0x6b2d29bd,     0x8b2cce8c,
     0xab2b877e,     0xcb21c8ee,     0xeb3ba47d,     0x3a4d400e,
-    0x7a5232c6,     0xba5e624e,     0xfa53814c,     0x3a52d8c2,
+    0x7a5132c6,     0xba5e622e,     0xfa53814c,     0x3a52d8c2,
     0x7a4d8924,     0xba4b3aab,     0xfa4d7882,     0x1a96804c,
     0x1a912618,     0x5a90b0e6,     0x5a96976b,     0x9a9db06a,
     0x9a9b374c,     0xda95c14f,     0xda89c6fe,     0x5ac0015e,
     0x5ac005fd,     0x5ac00bdd,     0x5ac012b9,     0x5ac01404,
-    0xdac002b2,     0xdac0061d,     0xdac00a95,     0xdac00e66,
+    0xdac002b1,     0xdac0061d,     0xdac00a95,     0xdac00e66,
     0xdac0107e,     0xdac01675,     0x1ac00b0b,     0x1ace0f3b,
-    0x1ad221c3,     0x1ad825e7,     0x1ad92a3c,     0x1adc2f42,
-    0x9ada0b25,     0x9ad20e1b,     0x9acc22a6,     0x9acc2480,
-    0x9adc2a3b,     0x9ad22c5c,     0x9bce7dea,     0x9b597c6e,
+    0x1ad121c3,     0x1ad825e7,     0x1ad92a3c,     0x1adc2f42,
+    0x9ada0b25,     0x9ad10e1b,     0x9acc22a6,     0x9acc2480,
+    0x9adc2a3b,     0x9ad12c5c,     0x9bce7dea,     0x9b597c6e,
     0x1b0e166f,     0x1b1ae490,     0x9b023044,     0x9b089e3d,
     0x9b391083,     0x9b24c73a,     0x9bb15f40,     0x9bbcc6af,
     0x1e23095b,     0x1e3918e0,     0x1e2f28c9,     0x1e2a39fd,
@@ -1080,10 +1080,10 @@ void entry(CodeBuffer *cb) {
     0x1f2935da,     0x1f2574ea,     0x1f4b306f,     0x1f5ec7cf,
     0x1f6f3e93,     0x1f6226a9,     0x1e2040fb,     0x1e20c3dd,
     0x1e214031,     0x1e21c0c2,     0x1e22c06a,     0x1e604178,
-    0x1e60c027,     0x1e61400b,     0x1e61c243,     0x1e6240dc,
+    0x1e60c027,     0x1e61400b,     0x1e61c223,     0x1e6240dc,
     0x1e3800d6,     0x9e380360,     0x1e78005a,     0x9e7800e5,
     0x1e22017c,     0x9e2201b9,     0x1e6202eb,     0x9e620113,
-    0x1e2602b2,     0x9e660299,     0x1e270253,     0x9e6703a2,
+    0x1e2602b1,     0x9e660299,     0x1e270233,     0x9e6703a2,
     0x1e2822c0,     0x1e7322a0,     0x1e202288,     0x1e602168,
     0x293c19f4,     0x2966387b,     0x69762971,     0xa9041dc7,
     0xa9475c0c,     0x29b61ccd,     0x29ee405e,     0x69ee0744,
@@ -1091,10 +1091,10 @@ void entry(CodeBuffer *cb) {
     0x68f61831,     0xa8b352ad,     0xa8c56d5e,     0x28024565,
     0x2874134e,     0xa8027597,     0xa87b1aa0,     0x0c40734f,
     0x4cdfa177,     0x0cc76ee8,     0x4cdf2733,     0x0d40c23d,
-    0x4ddfcaf8,     0x0dd9ccaa,     0x4c408d52,     0x0cdf85ec,
-    0x4d60c259,     0x0dffcbc1,     0x4de9ce50,     0x4cc24999,
+    0x4ddfcaf8,     0x0dd9ccaa,     0x4c408d51,     0x0cdf85ec,
+    0x4d60c239,     0x0dffcbc1,     0x4de9ce30,     0x4cc24999,
     0x0c404a7a,     0x4d40e6af,     0x4ddfe9b9,     0x0dddef8e,
-    0x4cdf07b1,     0x0cc000fb,     0x0d60e258,     0x0dffe740,
+    0x4cdf07b1,     0x0cc000fb,     0x0d60e238,     0x0dffe740,
     0x0de2eb2c,     0x0e31baf6,     0x4e31bb9b,     0x0e71b8a4,
     0x4e71b907,     0x4eb1b8e6,     0x0e30a841,     0x4e30ab7a,
     0x0e70aa0f,     0x4e70a862,     0x4eb0a9cd,     0x6e30f9cd,
@@ -1115,20 +1115,20 @@ void entry(CodeBuffer *cb) {
     0x2e3adf38,     0x6e22dc20,     0x6e7ddf9b,     0x0e7f97dd,
     0x4e6794c5,     0x0ea794c5,     0x4ebf97dd,     0x0e2dcd8b,
     0x4e3bcf59,     0x4e62cc20,     0x2e6097fe,     0x6e629420,
-    0x2eb49672,     0x6ebe97bc,     0x0ebbcf59,     0x4eabcd49,
+    0x2eb39651,     0x6ebe97bc,     0x0ebbcf59,     0x4eabcd49,
     0x4efbcf59,     0x2e2efdac,     0x6e31fe0f,     0x6e6dfd8b,
-    0x0e2c656a,     0x4e346672,     0x0e7a6738,     0x4e7766d5,
+    0x0e2c656a,     0x4e336651,     0x0e7a6738,     0x4e7766d5,
     0x0eb96717,     0x4ea26420,     0x0e32f630,     0x4e2cf56a,
     0x4e68f4e6,     0x0e3e6fbc,     0x4e286ce6,     0x0e676cc5,
-    0x4e676cc5,     0x0eb66eb4,     0x4eb46e72,     0x0eb1f60f,
-    0x4eb4f672,     0x4efff7dd,     0x2e3c8f7a,     0x6e3e8fbc,
+    0x4e676cc5,     0x0eb66eb4,     0x4eb36e51,     0x0eb1f60f,
+    0x4eb3f651,     0x4efff7dd,     0x2e3c8f7a,     0x6e3e8fbc,
     0x2e638c41,     0x6e7d8f9b,     0x2ea28c20,     0x6eb68eb4,
     0x6efe8fbc,     0x0e31e60f,     0x4e2ee5ac,     0x4e6ce56a,
     0x0e3e37bc,     0x4e3e37bc,     0x0e753693,     0x4e7836f6,
     0x0eac356a,     0x4ea634a4,     0x4ee037fe,     0x2eb6e6b4,
-    0x6eaae528,     0x6ee0e7fe,     0x0e343e72,     0x4e2c3d6a,
+    0x6eaae528,     0x6ee0e7fe,     0x0e333e51,     0x4e2c3d6a,
     0x0e7d3f9b,     0x4e643c62,     0x0eba3f38,     0x4ea63ca4,
-    0x4ee53c83,     0x2e2ae528,     0x6e38e6f6,     0x6e74e672,
+    0x4ee53c83,     0x2e2ae528,     0x6e38e6f6,     0x6e73e651,
     0xce7c808d,     0xce7986b7,     0xcec08078,     0xce778b57,
     0xba5fd3e3,     0x3a5f03e5,     0xfa411be4,     0x7a42cbe2,
     0x93df03ff,     0xc820ffff,     0x8822fc7f,     0xc8247cbf,
@@ -1141,7 +1141,7 @@ void entry(CodeBuffer *cb) {
     0x25f8f007,     0xa400a3e0,     0xa4a8a7ea,     0xa547a814,
     0xa4084ffe,     0xa55c53e0,     0xa5e1540b,     0xe400fbf6,
     0xe408ffff,     0xe547e400,     0xe4014be0,     0xe4a84fe0,
-    0xe5f25000,     0x858043e0,     0x85a043ff,     0xe59f5d08,
+    0xe5f15000,     0x858043e0,     0x85a043ff,     0xe59f5d08,
     0x1e601000,     0x1e603000,     0x1e621000,     0x1e623000,
     0x1e641000,     0x1e643000,     0x1e661000,     0x1e663000,
     0x1e681000,     0x1e683000,     0x1e6a1000,     0x1e6a3000,
@@ -1151,33 +1151,33 @@ void entry(CodeBuffer *cb) {
     0x1e781000,     0x1e783000,     0x1e7a1000,     0x1e7a3000,
     0x1e7c1000,     0x1e7c3000,     0x1e7e1000,     0x1e7e3000,
     0xf82f8075,     0xf8380328,     0xf8341230,     0xf8222001,
-    0xf8383064,     0xf82c539f,     0xf82a405a,     0xf82c73f2,
+    0xf8383064,     0xf82c539f,     0xf82a405a,     0xf82c73f0,
     0xf82163ad,     0xf8a08193,     0xf8b101b6,     0xf8bc13fe,
-    0xf8a1239a,     0xf8a4309e,     0xf8a6535e,     0xf8b24109,
+    0xf8a1239a,     0xf8a4309e,     0xf8a6535e,     0xf8b04109,
     0xf8ac7280,     0xf8a16058,     0xf8e08309,     0xf8fa03d0,
-    0xf8e312ea,     0xf8ea2244,     0xf8e2310b,     0xf8ea522f,
+    0xf8e312ea,     0xf8ea21e4,     0xf8e2310b,     0xf8ea522f,
     0xf8e2418a,     0xf8ec71af,     0xf8e26287,     0xf87a8090,
-    0xf8620184,     0xf8721215,     0xf87222ab,     0xf877334c,
+    0xf8620184,     0xf8701215,     0xf87022ab,     0xf877334c,
     0xf87751dc,     0xf86b4038,     0xf86c715f,     0xf8706047,
     0xb823826d,     0xb8310070,     0xb82113cb,     0xb82521e8,
     0xb83d301e,     0xb8345287,     0xb83742bc,     0xb83b70b9,
     0xb8216217,     0xb8bf8185,     0xb8a901fc,     0xb8bd13f6,
-    0xb8b320bf,     0xb8ae33f2,     0xb8b2529b,     0xb8b0416c,
+    0xb8b320bf,     0xb8ae33f0,     0xb8b0529b,     0xb8b0416c,
     0xb8a973c6,     0xb8b1639b,     0xb8fe8147,     0xb8f4008a,
     0xb8f81231,     0xb8f623a3,     0xb8ef3276,     0xb8f35056,
     0xb8ef4186,     0xb8f071ab,     0xb8f763c1,     0xb8738225,
     0xb86202d0,     0xb86d12aa,     0xb87d219b,     0xb87b3023,
     0xb87f5278,     0xb8714389,     0xb87b70ef,     0xb87563f7,
-    0x04fe0058,     0x04b60552,     0x65c00222,     0x65c20ad9,
-    0x65db046c,     0x0416b35c,     0x04001e49,     0x045085e4,
+    0x04fe0058,     0x04b60551,     0x65c00222,     0x65c20ad9,
+    0x65db046c,     0x0416b35c,     0x04001e29,     0x045085e4,
     0x04daa856,     0x04d39cb4,     0x041191c0,     0x04900b79,
     0x0497bb1a,     0x049ea4c0,     0x040805e0,     0x044a04a9,
     0x0481069b,     0x049ca554,     0x65c09cd0,     0x65cd8fa2,
     0x65c69ac2,     0x65c78f6e,     0x65828457,     0x04ddb14a,
     0x65c2ac76,     0x65c0a430,     0x6581b190,     0x658da20c,
     0x658194b4,     0x65fb1187,     0x65bc2450,     0x65b34624,
-    0x65f8750c,     0x04174152,     0x04107db3,     0x042e30e0,
-    0x04aa3119,     0x047b32d4,     0x049a2e43,     0x04182787,
+    0x65f8750c,     0x04174151,     0x04107db3,     0x042e30e0,
+    0x04aa3119,     0x047b32d4,     0x049a2e23,     0x04182787,
     0x04992a00,     0x044825f6,     0x040a2b36,     0x65c731be,
     0x658621ab,     0x65983334,     0x04412624,
   };
