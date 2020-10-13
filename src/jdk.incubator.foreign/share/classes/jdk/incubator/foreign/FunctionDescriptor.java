@@ -48,7 +48,7 @@ public final class FunctionDescriptor implements Constable {
      * attribute value must be a boolean.
      */
     public static final String TRIVIAL_ATTRIBUTE_NAME = "abi/trivial";
-    
+
     private final MemoryLayout resLayout;
     private final MemoryLayout[] argLayouts;
     private final Map<String, Constable> attributes;
