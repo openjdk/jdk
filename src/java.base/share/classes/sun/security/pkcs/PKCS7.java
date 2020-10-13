@@ -793,11 +793,13 @@ public class PKCS7 {
 
         AlgorithmId digAlgID = SignatureUtil.getDigestAlgInPkcs7SignerInfo(
                 signer, sigalg, privateKey, directsign);
+        AlgorithmId sigAlgID = SignatureUtil.fromSignature(signer, privateKey);
 
         PKCS9Attributes authAttrs = null;
         if (!directsign) {
-            String digAlgName = digAlgID.getName();
+            // MessageDigest
             byte[] md;
+            String digAlgName = digAlgID.getName();
             if (digAlgName.equals("SHAKE256") || digAlgName.equals("SHAKE256-LEN")) {
                 // No MessageDigest impl for SHAKE256 yet
                 var shaker = new SHAKE256(64);
@@ -807,9 +809,19 @@ public class PKCS7 {
                 md = MessageDigest.getInstance(digAlgName)
                         .digest(content);
             }
+            // CMSAlgorithmProtection (RFC6211)
+            DerOutputStream derAp = new DerOutputStream();
+            DerOutputStream derAlgs = new DerOutputStream();
+            digAlgID.derEncode(derAlgs);
+            DerOutputStream derSigAlg = new DerOutputStream();
+            sigAlgID.derEncode(derSigAlg);
+            derAlgs.writeImplicit((byte)0xA1, derSigAlg);
+            derAp.write(DerValue.tag_Sequence, derAlgs);
             authAttrs = new PKCS9Attributes(new PKCS9Attribute[]{
                     new PKCS9Attribute(PKCS9Attribute.CONTENT_TYPE_OID,
                             ContentInfo.DATA_OID),
+                    new PKCS9Attribute(PKCS9Attribute.CMS_ALGORITHM_PROTECTION_OID,
+                            derAp.toByteArray()),
                     new PKCS9Attribute(PKCS9Attribute.MESSAGE_DIGEST_OID,
                             md)
             });
@@ -825,7 +837,7 @@ public class PKCS7 {
                 authAttrs,
                 ts == null ? null : ts.apply(signature),
                 digAlgID,
-                SignatureUtil.fromSignature(signer, privateKey));
+                sigAlgID);
     }
 
     /**

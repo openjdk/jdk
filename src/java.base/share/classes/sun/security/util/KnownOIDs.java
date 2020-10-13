@@ -232,6 +232,7 @@ public enum KnownOIDs {
     FriendlyName("1.2.840.113549.1.9.20"),
     LocalKeyID("1.2.840.113549.1.9.21"),
     CertTypeX509("1.2.840.113549.1.9.22.1"),
+    CMSAlgorithmProtection("1.2.840.113549.1.9.52"),
 
     // PKCS12 1.2.840.113549.1.12.*
     PBEWithSHA1AndRC4_128("1.2.840.113549.1.12.1.1"),

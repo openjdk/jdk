@@ -359,7 +359,7 @@ public final class JarSigner {
          * value for each section of the manifest and not for the whole
          * manifest, "false" otherwise. Default "false".
          * <li>"directsign": "true" if the signature is calculated on the
-         * content directly, "false" if it's calulcated on signed attributes
+         * content directly, "false" if it's calculated on signed attributes
          * which itself is calculated from the content and stored in the
          * signer's SignerInfo. Default "false".
          * </ul>

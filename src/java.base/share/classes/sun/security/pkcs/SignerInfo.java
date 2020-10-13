@@ -185,6 +185,36 @@ public class SignerInfo implements DerEncoder {
         if (derin.available() != 0) {
             throw new ParsingException("extra data at the end");
         }
+
+        // verify CMSAlgorithmProtection
+        checkCMSAlgorithmProtection();
+    }
+
+    // CMSAlgorithmProtection verification as described in RFC 6211
+    private void checkCMSAlgorithmProtection() throws IOException {
+        if (authenticatedAttributes == null) {
+            return;
+        }
+        PKCS9Attribute ap = authenticatedAttributes.getAttribute(
+                PKCS9Attribute.CMS_ALGORITHM_PROTECTION_OID);
+        if (ap == null) {
+            return;
+        }
+        DerValue dv = new DerValue((byte[])ap.getValue());
+        DerInputStream data = dv.data();
+        AlgorithmId d = AlgorithmId.parse(data.getDerValue());
+        DerValue ds = data.getDerValue();
+        if (data.available() > 0) {
+            throw new IOException("Unknown field in CMSAlgorithmProtection");
+        }
+        if (!ds.isContextSpecific((byte)1)) {
+            throw new IOException("No signature algorithm in CMSAlgorithmProtection");
+        }
+        AlgorithmId s = AlgorithmId.parse(ds.withTag(DerValue.tag_Sequence));
+        if (!s.equals(digestEncryptionAlgorithmId)
+                || !d.equals(digestAlgorithmId)) {
+            throw new IOException("CMSAlgorithmProtection check failed");
+        }
     }
 
     public void encode(DerOutputStream out) throws IOException {
