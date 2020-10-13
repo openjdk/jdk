@@ -225,6 +225,47 @@ public:
   static bool _do_not_cache_elf_section;
 };
 
+
+/*
+ * This class parses and read line number and filename information from an associated .debuginfo file that belongs to this ELF file.
+ * The .debuginfo file is written by GCC in DWARF - a standardized debugging data format. The current version of GCC uses DWARF version 4
+ * as default which is described here: http://www.dwarfstd.org/doc/DWARF4.pdf. This class is able to parse 32-bit DWARF version 4 for 64-bit
+ * Linux. GCC does not emit 64-bit DWARF and therefore is not supported by this parser. 32-bit Linux and DWARF version 5 is not (yet) supported.
+ *
+ * Description of used DWARF file sections:
+ * - .debug_aranges: A table that consists of sets of variable length entries, each set describing the portion of the program's
+ *                   address space that is covered by a single compilation unit - a mapping between addresses and compilation units.
+ * - .debug_info:    The core DWARF data containing DWARF Information Entries (DIEs). Each DIE consists of a tag and a series of attributes.
+ *                   Each (normal) compilation unit is represented by a DIE with the tag DW_TAG_compile_unit and contains children.
+ *                   For our purposes, we are only interested in this DIE to get to the .debug_line section. We do not care about the children.
+ *                   This method currently only supports normal compilation units and no partial compilation or type units.
+ * - .debug_abbrev:  Represents abbreviation tables for all compilation units. A table for a specific compilation unit consists of a series of
+ *                   abbreviation declarations. Each declaration specifies a tag and attributes for a DIE. The DIEs from the compilation units
+ *                   in the .debug_info section need the .debug_abbrev table to decode their attributes (their meaning and size).
+ * - .debug_line:    Contains line number information for each compilation unit. To get the information a state machine has to be executed
+ *                   which generates a matrix. Each row describes the line number and filename for a specific pc (among other information).
+ *                   The algorithm below runs this state machine until the row for the requested pc is found to fetch the line number and
+ *                   the filename from it.
+ *
+ * Algorithm:
+ * (1) First, the path to the .debuginfo DWARF file is found by inspecting the .gnu_debuglink section. The DWARF file is then opened by calling
+ *     the constructor of this class. Once this is done, the processing of the DWARF file is initiated by calling get_filename_and_line_number().
+ * (2) Find the compilation unit offset by reading segments from the section .debug_aranges until we find the correct one that includes the pc.
+ * (3) Find the debug line offset for the line number information program from the .debug_line section:
+ *     (a) Parse the compilation unit header from the .debug_info section at the offset obtained by (2).
+ *     (b) Read the offset into the .debug_abbrev section that belongs to this compilation unit from the header obtained in (3a).
+ *     (c) Read the abbreviation code 'ac' that immediately follows the compilation unit header and find the entry in the abbreviation table
+ *         (.debug_abbrev section) by starting to parse entries at the offset obtained in (3b) until we find the correct one matching 'ac'.
+ *     (d) Parse the found abbreviation entry 'ac' from (3c) and read the specified attributes from the .debug_info section until we find the
+ *         attribute DW_AT_stmt_list. This attributes represents an offset into the .debug_line section which contains the line number information
+ *  (4) Find the line number and filename beloning to the given pc by running the line number information state machine. This will create a
+ *      matrix of line number information, each row representing information for specific addresses. There are several opcodes which modify
+ *      different state registers. Certain opcodes will add a new row to the matrix. As soon as the correct row matching our pc is found,
+ *      we can read the line number from the line register of the state machine and parse the filename from the line number program header
+ *      with the given file index from the file register of the state machine.
+ *
+ *  More details about the different phases can be found at the associated classes and methods.
+ */
 class DwarfFile : public ElfFile {
 
   // Tag encoding from Figure 18 in DWARF 4 spec
@@ -263,26 +304,6 @@ class DwarfFile : public ElfFile {
   static constexpr uint8_t DW_FORM_flag_present = 0x19; // flag
   static constexpr uint8_t DW_FORM_ref_sig8 = 0x20; // reference
 
-  // Standard Opcodes for line number program from section 6.2.5.2 in DWARF 4 spec
-  static constexpr uint8_t DW_LNS_copy = 1;
-  static constexpr uint8_t DW_LNS_advance_pc = 2;
-  static constexpr uint8_t DW_LNS_advance_line = 3;
-  static constexpr uint8_t DW_LNS_set_file = 4;
-  static constexpr uint8_t DW_LNS_set_column = 5;
-  static constexpr uint8_t DW_LNS_negate_stmt = 6;
-  static constexpr uint8_t DW_LNS_set_basic_block = 7;
-  static constexpr uint8_t DW_LNS_const_add_pc = 8;
-  static constexpr uint8_t DW_LNS_fixed_advance_pc = 9;
-  static constexpr uint8_t DW_LNS_set_prologue_end = 10;
-  static constexpr uint8_t DW_LNS_set_epilogue_begin = 11;
-  static constexpr uint8_t DW_LNS_set_isa = 12;
-
-  // Exnteded Opcodes for line number program from section 6.2.5.3 in DWARF 4 spec
-  static constexpr uint8_t DW_LNE_end_sequence = 1;
-  static constexpr uint8_t DW_LNE_set_address = 2;
-  static constexpr uint8_t DW_LNE_define_file = 3;
-  static constexpr uint8_t DW_LNE_set_discriminator = 4; // DWARF 4 only
-
   class MarkedDwarfFileReader : public MarkedFileReader {
    private:
     long _current_pos;
@@ -312,7 +333,7 @@ class DwarfFile : public ElfFile {
   };
 
   // See DWARF4 specification section 6.1.2.
-  struct DebugArangesSetHeader32 {
+  struct DebugArangesSetHeader {
     // The total length of all of the entries for that set, not including the length field itself
     uint32_t _unit_length;
 
@@ -332,14 +353,14 @@ class DwarfFile : public ElfFile {
     uint8_t _segment_size;
 
     bool read_header(MarkedDwarfFileReader* reader);
-    };
+  };
 
   static bool is_terminating_set(uint64_t beginning_address, uint64_t length) {
     return beginning_address == 0 && length == 0;
   }
 
   // See DWARF4 spec section 7.5.1.1
-  struct CompilationUnitHeader32 {
+  struct CompilationUnitHeader {
     // The length of the .debug_info contribution for that compilation unit, not including the length field itself.
     uint32_t _unit_length;
 
@@ -357,162 +378,187 @@ class DwarfFile : public ElfFile {
     bool read_header(MarkedDwarfFileReader* reader);
   };
 
-  // See DWARF 4 spec, section 6.2.4
-  struct LineNumberProgramHeader32 {
-    // The size in bytes of the line number information for this compilation unit, not including the
-    // unit_length field itself. 32-bit DWARF uses 4 bytes.
-    uint32_t _unit_length;
-
-    // A version number (see Appendix F). This number is specific to the line number information
-    // and is independent of the DWARF version number.
-    uint16_t _version;
-
-    // The number of bytes following the header_length field to the beginning of the first byte of
-    // the line number program itself. In the 32-bit DWARF format uses 4 bytes.
-    uint32_t _header_length;
-
-    // The size in bytes of the smallest target machine instruction. Line number program opcodes that alter the address
-    // and op_index registers use this and maximum_operations_per_instruction in their calculations.
-    uint8_t _minimum_instruction_length;
-
-    // The maximum number of individual operations that may be encoded in an instruction. Line number program opcodes
-    // that alter the address and op_index registers use this and minimum_instruction_length in their calculations.
-    // For non-VLIW architectures, this field is 1, the op_index register is always 0, and the operation pointer is
-    // simply the address register.
-    uint8_t _maximum_operations_per_instruction;
-
-    // The initial value of the is_stmt register.
-    uint8_t _default_is_stmt;
-
-    // This parameter affects the meaning of the special opcodes.
-    int8_t _line_base;
-
-    // This parameter affects the meaning of the special opcodes.
-    uint8_t _line_range;
-
-    // The number assigned to the first special opcode.
-    uint8_t _opcode_base;
-
-    // This array specifies the number of LEB128 operands for each of the standard opcodes. The
-    // first element of the array corresponds to the opcode whose value is 1, and the last element
-    // corresponds to the opcode whose value is opcode_base - 1. DWARF 4 uses 12 standard opcodes.
-    uint8_t _standard_opcode_lengths[12];
-
-    // Not part of the real header, implementation only
-    long _file_starting_pos;
-
-    bool read_header(MarkedDwarfFileReader* reader);
-  };
-
-  // Defined in DWARF 4, Section 6.2.2
-  struct LineNumberState {
-    // The program-counter value corresponding to a machine instruction generated by the compiler.
-    uint64_t _address; // TODO 32 bit?
-
-    // The index of an operation within a VLIW instruction. The index of the first operation is 0. For non-VLIW
-    // architectures, this register will always be 0.
-    // The address and op_index registers, taken together, form an operation pointer that can reference any
-    // individual operation with the instruction stream. This field was added in DWARF 4.
-    uint32_t _op_index;
-
-    // The identity of the source file corresponding to a machine instruction.
-    uint32_t _file;
-
-    // A source line number. Lines are numbered beginning at 1. The compiler may emit the value 0 in cases where an
-    // instruction cannot be attributed to any source line.
-    uint32_t _line;
-
-    // A column number within a source line. Columns are numbered beginning at 1. The value 0 is reserved to indicate
-    // that a statement begins at the “left edge” of the line.
-    uint32_t _column;
-
-    bool _is_stmt;
-    bool _basic_block;
-    bool _end_sequence;
-    bool _prologue_end;
-    bool _epilogue_begin;
-    uint32_t _isa;
-    uint32_t _discriminator; // This field was added in DWARF 4
-
-    /*
-     * Implementation specific fields
-     */
-    // Specifies which DWARF version is used in the .debug_line section. Currently supported: DWARF 3 + 4
-    const uint8_t _dwarf_version;
-    const bool _initial_is_stmt;
-    bool _first_row;
-    bool _append_row;
-    bool _do_reset;
-
-    // Could the current sequence be a candidate which contains the pc? (pc must be smaller than the address of the first row in the matrix)
-    bool _sequence_candidate;
-
-    LineNumberState(uint8_t dwarf_version, bool default_is_stmt) :
-            _address(0),
-            _op_index(0),
-            _file(1),
-            _line(1),
-            _column(0),
-            _is_stmt(default_is_stmt),
-            _basic_block(false),
-            _end_sequence(false),
-            _prologue_end(false),
-            _epilogue_begin(false),
-            _isa(0),
-            _discriminator(0),
-            _dwarf_version(dwarf_version),
-            _initial_is_stmt(default_is_stmt),
-            _first_row(true),
-            _append_row(false),
-            _do_reset(false),
-            _sequence_candidate(false) {}
-
-    void reset_fields() {
-      _address = 0;
-      _op_index = 0;
-      _file = 1;
-      _line = 1;
-      _column = 0;
-      _is_stmt = _initial_is_stmt;
-      _basic_block = false;
-      _end_sequence = false;
-      _prologue_end = false;
-      _epilogue_begin = false;
-      _isa = 0;
-      _discriminator = 0;
-      _first_row = true;
-      _append_row = false;
-      _do_reset = false;
-      _sequence_candidate = false;
-    }
-
-    // Defined in section 6.2.5.1. set_address_register must always be executed before set_index_register
-    void add_to_address_register(LineNumberProgramHeader32* header, uint32_t operation_advance);
-    void set_index_register(LineNumberProgramHeader32* header, uint32_t operation_advance);
-  };
-
   // .debug_aranges
   bool find_compilation_unit_offset(int offset_in_library, uint64_t* compilation_unit_offset);
 
   // .debug_abbrev and .debug_info
   bool find_debug_line_offset(int offset_in_library, uint64_t compilation_unit_offset, uint32_t* debug_line_offset);
-  bool get_debug_line_offset_from_debug_abbrev(const CompilationUnitHeader32* cu_header, uint64_t abbrev_code, uint32_t* debug_line_offset);
-  bool process_attribute_specs(MarkedDwarfFileReader* debug_abbrev_reader, uint8_t address_size,
-                               MarkedDwarfFileReader* debug_info_reader, uint32_t* debug_line_offset);
+  bool get_debug_line_offset_from_debug_abbrev(const CompilationUnitHeader* cu_header, uint64_t abbrev_code, uint32_t* debug_line_offset);
+  static bool process_attribute_specs(MarkedDwarfFileReader* debug_abbrev_reader, uint8_t address_size,
+                                      MarkedDwarfFileReader* debug_info_reader, uint32_t* debug_line_offset);
   static bool process_attribute(uint64_t attribute, uint8_t address_size, MarkedDwarfFileReader* debug_info_reader, uint32_t* debug_line_offset = nullptr);
   static bool read_attribute_specs(MarkedDwarfFileReader* debug_abbrev_reader);
 
+  // (4) Everything related to .debug_line
+  class LineNumberProgram {
+
+    // Standard Opcodes for line number program from section 6.2.5.2 in DWARF 4 spec
+    static constexpr uint8_t DW_LNS_copy = 1;
+    static constexpr uint8_t DW_LNS_advance_pc = 2;
+    static constexpr uint8_t DW_LNS_advance_line = 3;
+    static constexpr uint8_t DW_LNS_set_file = 4;
+    static constexpr uint8_t DW_LNS_set_column = 5;
+    static constexpr uint8_t DW_LNS_negate_stmt = 6;
+    static constexpr uint8_t DW_LNS_set_basic_block = 7;
+    static constexpr uint8_t DW_LNS_const_add_pc = 8;
+    static constexpr uint8_t DW_LNS_fixed_advance_pc = 9;
+    static constexpr uint8_t DW_LNS_set_prologue_end = 10;
+    static constexpr uint8_t DW_LNS_set_epilogue_begin = 11;
+    static constexpr uint8_t DW_LNS_set_isa = 12;
+
+    // Exnteded Opcodes for line number program from section 6.2.5.3 in DWARF 4 spec
+    static constexpr uint8_t DW_LNE_end_sequence = 1;
+    static constexpr uint8_t DW_LNE_set_address = 2;
+    static constexpr uint8_t DW_LNE_define_file = 3;
+    static constexpr uint8_t DW_LNE_set_discriminator = 4; // DWARF 4 only
+
+    // See DWARF 4 spec, section 6.2.4
+    struct LineNumberProgramHeader {
+      // The size in bytes of the line number information for this compilation unit, not including the
+      // unit_length field itself. 32-bit DWARF uses 4 bytes.
+      uint32_t _unit_length;
+
+      // A version number (see Appendix F). This number is specific to the line number information
+      // and is independent of the DWARF version number.
+      uint16_t _version;
+
+      // The number of bytes following the header_length field to the beginning of the first byte of
+      // the line number program itself. In the 32-bit DWARF format uses 4 bytes.
+      uint32_t _header_length;
+
+      // The size in bytes of the smallest target machine instruction. Line number program opcodes that alter the address
+      // and op_index registers use this and maximum_operations_per_instruction in their calculations.
+      uint8_t _minimum_instruction_length;
+
+      // The maximum number of individual operations that may be encoded in an instruction. Line number program opcodes
+      // that alter the address and op_index registers use this and minimum_instruction_length in their calculations.
+      // For non-VLIW architectures, this field is 1, the op_index register is always 0, and the operation pointer is
+      // simply the address register.
+      uint8_t _maximum_operations_per_instruction;
+
+      // The initial value of the is_stmt register.
+      uint8_t _default_is_stmt;
+
+      // This parameter affects the meaning of the special opcodes.
+      int8_t _line_base;
+
+      // This parameter affects the meaning of the special opcodes.
+      uint8_t _line_range;
+
+      // The number assigned to the first special opcode.
+      uint8_t _opcode_base;
+
+      // This array specifies the number of LEB128 operands for each of the standard opcodes. The
+      // first element of the array corresponds to the opcode whose value is 1, and the last element
+      // corresponds to the opcode whose value is opcode_base - 1. DWARF 4 uses 12 standard opcodes.
+      uint8_t _standard_opcode_lengths[12];
+
+      // Not part of the real header, implementation only
+      long _file_starting_pos;
+      MarkedDwarfFileReader* _reader;
+
+      bool read_header();
+    };
+
+    // Defined in DWARF 4, Section 6.2.2
+    struct LineNumberProgramState : public CHeapObj<mtInternal> {
+      // The program-counter value corresponding to a machine instruction generated by the compiler.
+      uint64_t _address; // TODO 32 bit?
+
+      // The index of an operation within a VLIW instruction. The index of the first operation is 0. For non-VLIW
+      // architectures, this register will always be 0.
+      // The address and op_index registers, taken together, form an operation pointer that can reference any
+      // individual operation with the instruction stream. This field was added in DWARF 4.
+      uint32_t _op_index;
+
+      // The identity of the source file corresponding to a machine instruction.
+      uint32_t _file;
+
+      // A source line number. Lines are numbered beginning at 1. The compiler may emit the value 0 in cases where an
+      // instruction cannot be attributed to any source line.
+      uint32_t _line;
+
+      // A column number within a source line. Columns are numbered beginning at 1. The value 0 is reserved to indicate
+      // that a statement begins at the “left edge” of the line.
+      uint32_t _column;
+
+      bool _is_stmt;
+      bool _basic_block;
+      bool _end_sequence;
+      bool _prologue_end;
+      bool _epilogue_begin;
+      uint32_t _isa;
+      uint32_t _discriminator; // This field was added in DWARF 4
+
+      /*
+       * Implementation specific fields
+       */
+      // Specifies which DWARF version is used in the .debug_line section. Currently supported: DWARF 3 + 4
+      const uint8_t _dwarf_version;
+      const bool _initial_is_stmt;
+      bool _first_row;
+      bool _append_row;
+      bool _do_reset;
+
+      // Could the current sequence be a candidate which contains the pc? (pc must be smaller than the address of the first row in the matrix)
+      bool _sequence_candidate;
+      LineNumberProgramHeader* _header;
+
+      LineNumberProgramState(LineNumberProgramHeader* header)
+        : _is_stmt(header->_default_is_stmt != 0), _dwarf_version(header->_version),
+          _initial_is_stmt(header->_default_is_stmt != 0), _header(header) {
+        reset_fields();
+      }
+
+      void reset_fields();
+
+      // Defined in section 6.2.5.1. set_address_register must always be executed before set_index_register
+      void add_to_address_register(uint32_t operation_advance);
+      void set_index_register(uint32_t operation_advance);
+    };
+
+    const int _offset_in_library;
+    const uint64_t _debug_line_offset;
+    LineNumberProgramHeader _header;
+    LineNumberProgramState* _state;
+    MarkedDwarfFileReader _reader;
+    DwarfFile* _file;
+    int* _line;
+    char* _filename;
+    size_t _filename_len;
+
+    bool read_line_number_program();
+    bool apply_extended_opcode();
+    bool apply_standard_opcode(uint8_t opcode);
+    bool apply_special_opcode(uint8_t opcode);
+    bool read_filename_from_header(uint32_t file_index);
+
+   public:
+    LineNumberProgram(int offset_in_library, uint64_t debug_line_offset, DwarfFile* file) : _offset_in_library(offset_in_library), _debug_line_offset(debug_line_offset),
+    _state(nullptr), _reader(file->fd()), _file(file), _line(nullptr), _filename(nullptr), _filename_len(0) {
+      _header._reader = &_reader;
+    }
+    ~LineNumberProgram() {
+      delete _state;
+    }
+    bool find_filename_and_line_number(char* filename, size_t filename_len, int* line);
+  };
   // .debug_line
-  bool find_line_number(int offset_in_library, uint64_t debug_line_offset, char* buf, size_t buflen, int* line);
-  static bool read_line_number_program(int offset_in_library, LineNumberProgramHeader32* header, MarkedDwarfFileReader* reader, char* buf, size_t buflen, int* line);
-  static bool read_extended_opcode(LineNumberState* state, MarkedDwarfFileReader* reader);
-  static bool read_standard_opcode(uint8_t opcode, LineNumberState* state, LineNumberProgramHeader32* header, MarkedDwarfFileReader* reader);
-  static bool read_special_opcode(uint8_t opcode, LineNumberState* state, LineNumberProgramHeader32* header);
-  static bool read_file_name_from_header(LineNumberProgramHeader32* header, MarkedDwarfFileReader* reader, uint32_t file_index, char* buf, size_t buflen);
 
  public:
   DwarfFile(const char* filepath) : ElfFile(filepath) {}
-  bool get_filename_and_line_number(int offset_in_library, char* buf, size_t buflen, int* line);
+
+  /*
+ * Starting point of reading line number and filename information from the DWARF file.
+ *
+ * Given:  offset (also referred to as 'pc') into the library (this ELF file), a filename buffer of size filename_size, a line number pointer
+ * Return: True:  The filename in the 'filename' buffer and the line number at the address pointed to by 'line'.
+ *         False: Something went wrong either while reading from the file or during parsing due to an unexpected format.
+ *                This could happen if the DWARF file is corrupted or in an unsupported format.
+ *
+ *  More details about the different phases can be found at the associated methods.
+ */
+  bool get_filename_and_line_number(int offset_in_library, char* filename, size_t filename_len, int* line);
 };
 
 #endif // !_WINDOWS && !__APPLE__
