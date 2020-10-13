@@ -54,7 +54,6 @@
 #include "runtime/vmThread.hpp"
 #include "utilities/debug.hpp"
 
-static const ZStatSubPhase ZSubPhasePauseRoots("Pause Roots");
 static const ZStatSubPhase ZSubPhasePauseRootsJVMTIWeakExport("Pause Roots JVMTIWeakExport");
 
 static const ZStatSubPhase ZSubPhaseConcurrentRootsSetup("Concurrent Roots Setup");
@@ -141,23 +140,10 @@ void ZJavaThreadsIterator::threads_do(ThreadClosure* cl) {
   }
 }
 
-ZRootsIterator::ZRootsIterator(bool visit_jvmti_weak_export) :
-    _visit_jvmti_weak_export(visit_jvmti_weak_export),
-    _jvmti_weak_export(this) {
-  assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
-}
-
-void ZRootsIterator::do_jvmti_weak_export(ZRootsIteratorClosure* cl) {
+void ZRelocateRoots::oops_do(OopClosure* cl) {
   ZStatTimer timer(ZSubPhasePauseRootsJVMTIWeakExport);
   AlwaysTrueClosure always_alive;
   JvmtiExport::weak_oops_do(&always_alive, cl);
-}
-
-void ZRootsIterator::oops_do(ZRootsIteratorClosure* cl) {
-  ZStatTimer timer(ZSubPhasePauseRoots);
-  if (_visit_jvmti_weak_export) {
-    _jvmti_weak_export.oops_do(cl);
-  }
 }
 
 ZConcurrentRootsIterator::ZConcurrentRootsIterator(int cld_claim) :

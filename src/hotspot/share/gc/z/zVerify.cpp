@@ -229,10 +229,6 @@ void ZVerify::roots(bool verify_fixed) {
   }
 }
 
-void ZVerify::roots_strong() {
-  roots<ZRootsIterator>(true /* verify_fixed */);
-}
-
 void ZVerify::roots_weak() {
   roots<ZWeakRootsIterator>(true /* verify_fixed */);
 }
@@ -246,7 +242,6 @@ void ZVerify::roots_concurrent_weak() {
 }
 
 void ZVerify::roots(bool verify_concurrent_strong, bool verify_weaks) {
-  roots_strong();
   roots_concurrent_strong(verify_concurrent_strong);
   if (verify_weaks) {
     roots_weak();
