@@ -26,37 +26,22 @@
 #define SHARE_GC_SHARED_PRETOUCH_HPP
 
 #include "gc/shared/workgroup.hpp"
-#include "runtime/globals.hpp"
-#include "runtime/os.hpp"
 
 class PretouchTask : public AbstractGangTask {
-
-private:
   char* volatile _cur_addr;
   char* const _start_addr;
   char* const _end_addr;
   size_t _page_size;
 
 public:
-  PretouchTask(const char* task_name, char* start_address, char* end_address, size_t page_size) :
-    AbstractGangTask(task_name),
-    _cur_addr(start_address),
-    _start_addr(start_address),
-    _end_addr(end_address),
-    _page_size(0) {
-#ifdef LINUX
-    _page_size = UseTransparentHugePages ? (size_t)os::vm_page_size(): page_size;
-#else
-    _page_size = page_size;
-#endif
-  }
+  PretouchTask(const char* task_name, char* start_address, char* end_address, size_t page_size);
 
   virtual void work(uint worker_id);
 
-  static size_t chunk_size()              { return PreTouchParallelChunkSize; }
+  static size_t chunk_size();
 
-  static void pretouch(const char* task_name, char* start_address, char* end_address, size_t page_size,
-                       WorkGang* pretouch_gang);
+  static void pretouch(const char* task_name, char* start_address, char* end_address,
+                       size_t page_size, WorkGang* pretouch_gang);
 
 };
 

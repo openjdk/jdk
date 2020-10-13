@@ -22,11 +22,30 @@
  *
  */
 
+#include "precompiled.hpp"
 #include "gc/shared/preTouchTask.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/globals.hpp"
+#include "runtime/os.hpp"
+
+PretouchTask::PretouchTask(const char* task_name, char* start_address, char* end_address, size_t page_size) :
+    AbstractGangTask(task_name),
+    _cur_addr(start_address),
+    _start_addr(start_address),
+    _end_addr(end_address),
+    _page_size(0) {
+#ifdef LINUX
+  _page_size = UseTransparentHugePages ? (size_t)os::vm_page_size(): page_size;
+#else
+  _page_size = page_size;
+#endif
+}
+
+size_t PretouchTask::chunk_size() {
+  return PreTouchParallelChunkSize;
+}
 
 void PretouchTask::work(uint worker_id) {
-
   size_t const actual_chunk_size = MAX2(chunk_size(), _page_size);
 
   while (true) {
@@ -41,10 +60,8 @@ void PretouchTask::work(uint worker_id) {
   }
 }
 
-
 void PretouchTask::pretouch(const char* task_name, char* start_address, char* end_address,
                             size_t page_size, WorkGang* pretouch_gang) {
-
   PretouchTask task(task_name, start_address, end_address, page_size);
   size_t total_bytes = (end_address - start_address);
 

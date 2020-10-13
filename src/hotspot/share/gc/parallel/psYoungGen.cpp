@@ -638,8 +638,8 @@ void PSYoungGen::resize_spaces(size_t requested_eden_size,
       to_space()->check_mangled_unused_area(limit);
   }
 
-  WorkGang* workers = Thread::current()->is_VM_thread() ?
-                      &ParallelScavengeHeap::heap()->workers() : NULL;
+  WorkGang* workers = &ParallelScavengeHeap::heap()->workers();
+
   // When an existing space is being initialized, it is not
   // mangled because the space has been previously mangled.
   eden_space()->initialize(edenMR,
@@ -794,14 +794,11 @@ void PSYoungGen::reset_survivors_after_shrink() {
   if (new_end < space_shrinking->end()) {
     MemRegion mr(space_shrinking->bottom(), new_end);
 
-    WorkGang* workers = Thread::current()->is_VM_thread() ?
-                        &ParallelScavengeHeap::heap()->workers() : NULL;
-
     space_shrinking->initialize(mr,
                                 SpaceDecorator::DontClear,
                                 SpaceDecorator::Mangle,
                                 MutableSpace::SetupPages,
-                                workers);
+                                &ParallelScavengeHeap::heap()->workers());
   }
 }
 
