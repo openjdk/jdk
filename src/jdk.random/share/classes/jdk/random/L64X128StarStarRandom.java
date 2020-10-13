@@ -27,13 +27,13 @@ package jdk.random;
 
 import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.random.RandomGenerator.SplittableGenerator;
+import java.util.random.RandomGenerator;
 import java.util.random.RandomSupport;
 import java.util.random.RandomSupport.AbstractSplittableWithBrineGenerator;
 
 /**
  * A "splittable" pseudorandom number generator (PRNG) whose period
- * is roughly 2<sup>192</sup>.  Class {@link L64X128MStarStarRandom} implements
+ * is roughly 2<sup>192</sup>.  Class {@link L64X128StarStarRandom} implements
  * interfaces {@link RandomGenerator} and {@link SplittableGenerator},
  * and therefore supports methods for producing pseudorandomly chosen
  * values of type {@code int}, {@code long}, {@code float}, {@code double},

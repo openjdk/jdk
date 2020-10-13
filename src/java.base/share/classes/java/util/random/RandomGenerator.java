@@ -26,6 +26,7 @@
 package java.util.random;
 
 import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.random.RandomSupport.*;
@@ -35,62 +36,76 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 /**
- * The {@link RandomGenerator} interface is designed to provide a common protocol for objects that
- * generate random or (more typically) pseudorandom sequences of numbers (or Boolean values).
- * Such a sequence may be obtained by either repeatedly invoking a method that returns a single
- * (pseudo)randomly chosen value, or by invoking a method that returns a stream of (pseudo)randomly
- * chosen values.
- * <p>
- * Ideally, given an implicitly or explicitly specified range of values, each value would be chosen
- * independently and uniformly from that range. In practice, one may have to settle for some
- * approximation to independence and uniformity.
- * <p>
- * In the case of {@code int}, {@code long}, and {@code boolean} values, if there is no explicit
- * specification of range, then the range includes all possible values of the type.  In the case of
- * {@code float} and {@code double} values, first a value is always chosen uniformly from the set of
- * 2<sup><i>w</i></sup> values between 0.0 (inclusive) and 1.0 (exclusive), where <i>w</i> is 23 for
- * {@code float} values and 52 for {@code double} values, such that adjacent values differ by
- * 2<sup>&minus;<i>w</i></sup> (notice that this set is a <i>subset</i> of the set of
+ * The {@link RandomGenerator} interface is designed to provide a common
+ * protocol for objects that generate random or (more typically) pseudorandom
+ * sequences of numbers (or Boolean values). Such a sequence may be obtained by
+ * either repeatedly invoking a method that returns a single (pseudo)randomly
+ * chosen value, or by invoking a method that returns a stream of
+ * (pseudo)randomly chosen values.
+ *
+ * <p> Ideally, given an implicitly or explicitly specified range of values,
+ * each value would be chosen independently and uniformly from that range. In
+ * practice, one may have to settle for some approximation to independence and
+ * uniformity.
+ *
+ * <p> In the case of {@code int}, {@code long}, and {@code boolean} values, if
+ * there is no explicit specification of range, then the range includes all
+ * possible values of the type. In the case of {@code float} and {@code double}
+ * values, first a value is always chosen uniformly from the set of
+ * 2<sup><i>w</i></sup> values between 0.0 (inclusive) and 1.0 (exclusive),
+ * where <i>w</i> is 23 for {@code float} values and 52 for {@code double}
+ * values, such that adjacent values differ by 2<sup>&minus;<i>w</i></sup>
+ * (notice that this set is a <i>subset</i> of the set of
  * <i>all representable floating-point values</i> between 0.0 (inclusive) and 1.0 (exclusive));
- * then if an explicit range was specified, then the chosen number is computationally scaled
- * and translated so as to appear to have been chosen approximately uniformly from that explicit range.
- * <p>
- * Each method that returns a stream produces a stream of values each of which is chosen in the same
- * manner as for a method that returns a single (pseudo)randomly chosen value.  For example, if
- * {@code r} implements {@link RandomGenerator}, then the method call {@code r.ints(100)} returns a
- * stream of 100 {@code int} values.  These are not necessarily the exact same values that would
- * have been returned if instead {@code r.nextInt()} had been called 100 times; all that is
- * guaranteed is that each value in the stream is chosen in a similar (pseudo)random manner from the
- * same range.
- * <p>
- * Every object that implements the {@link RandomGenerator} interface by using a
- * pseudorandom algorithm is assumed to contain a finite amount of state.  Using such an object to
- * generate a pseudorandomly chosen value alters its state by computing a new state as a function
- * of the current state, without reference to any information other than the current state.
- * The number of distinct possible states of such an object is called its <i>period</i>.
- * (Some implementations of the {@link RandomGenerator} interface may be truly random
- * rather than pseudorandom, for example relying on the statistical behavior of a physical
- * object to derive chosen values.  Such implementations do not have a fixed period.)
- * <p>
- * As a rule, objects that implement the {@link RandomGenerator} interface need not be thread-safe.
- * It is recommended that multithreaded applications use either {@link ThreadLocalRandom} or
- * (preferably) pseudorandom number generators that implement the {@link SplittableGenerator} or
+ * then if an explicit range was specified, then the chosen number is
+ * computationally scaled and translated so as to appear to have been chosen
+ * approximately uniformly from that explicit range.
+ *
+ * <p> Each method that returns a stream produces a stream of values each of
+ * which is chosen in the same manner as for a method that returns a single
+ * (pseudo)randomly chosen value. For example, if {@code r} implements
+ * {@link RandomGenerator}, then the method call {@code r.ints(100)} returns a
+ * stream of 100 {@code int} values. These are not necessarily the exact same
+ * values that would have been returned if instead {@code r.nextInt()} had been
+ * called 100 times; all that is guaranteed is that each value in the stream is
+ * chosen in a similar (pseudo)random manner from the same range.
+ *
+ * <p> Every object that implements the {@link RandomGenerator} interface by
+ * using a pseudorandom algorithm is assumed to contain a finite amount of
+ * state. Using such an object to generate a pseudorandomly chosen value alters
+ * its state by computing a new state as a function of the current state,
+ * without reference to any information other than the current state. The number
+ * of distinct possible states of such an object is called its <i>period</i>.
+ * (Some implementations of the {@link RandomGenerator} interface may be truly
+ * random rather than pseudorandom, for example relying on the statistical
+ * behavior of a physical object to derive chosen values. Such implementations
+ * do not have a fixed period.)
+ *
+ * <p> As a rule, objects that implement the {@link RandomGenerator} interface
+ * need not be thread-safe. It is recommended that multithreaded applications
+ * use either {@link ThreadLocalRandom} or (preferably) pseudorandom number
+ * generators that implement the {@link SplittableGenerator} or
  * {@link JumpableGenerator} interface.
- * <p>
- * To implement this interface, a class only needs to provide concrete definitions for the methods
- * {@code nextLong()} and {@code period()}. Default implementations are provided for all other
- * methods (but it may be desirable to override some of them, especially {@code nextInt()} if the
- * underlying algorithm is {@code int}-based). Moreover, it may be preferable instead to implement
- * a more specialized interface such as {@link JumpableGenerator} or {@link LeapableGenerator},
- * or to extend an abstract implementation-support class such as {@link AbstractSplittableGenerator}
- * or {@link AbstractArbitrarilyJumpableGenerator}.
- * <p>
- * Objects that implement {@link RandomGenerator} are typically not cryptographically secure.
- * Consider instead using {@link java.security.SecureRandom} to get a cryptographically secure
- * pseudorandom number generator for use by security-sensitive applications.  Note, however, that
- * {@code java.security.SecureRandom} does implement the {@link RandomGenerator} interface, so that
- * instances of {@code java.security.SecureRandom} may be used interchangeably with other types of
- * pseudorandom generators in applications that do not require a secure generator.
+ *
+ * <p> To implement this interface, a class only needs to provide concrete
+ * definitions for the methods {@link RandomGenerator#nextLong() nextLong}() and
+ * {@link RandomGenerator#period() period}(). Default implementations are provided
+ * for all other methods (but it may be desirable to override some of them,
+ * especially {@link RandomGenerator#nextInt() nextInt}() if the underlying
+ * algorithm is {@code int}-based). Moreover, it may be preferable instead to
+ * implement a more specialized interface such as {@link JumpableGenerator} or
+ * {@link LeapableGenerator}, or to extend an abstract implementation-support
+ * class such as {@link AbstractSplittableGenerator} or
+ * {@link AbstractArbitrarilyJumpableGenerator}.
+ *
+ * <p> Objects that implement {@link RandomGenerator} are typically not
+ * cryptographically secure. Consider instead using {@link SecureRandom} to get
+ * a cryptographically secure pseudorandom number generator for use by
+ * security-sensitive applications. Note, however, that {@link SecureRandom}
+ * does implement the {@link RandomGenerator} interface, so that instances of
+ * {@link SecureRandom} may be used interchangeably with other types of
+ * pseudorandom generators in applications that do not require a secure
+ * generator.
  *
  * @since 16
  */
@@ -103,30 +118,32 @@ public interface RandomGenerator {
      *
      * @return An instance of {@link RandomGenerator}
      */
-    public static RandomGenerator of(String name) {
+    static RandomGenerator of(String name) {
         Objects.requireNonNull(name);
+
         return RandomGeneratorFactory.of(name, RandomGenerator.class);
     }
 
     /**
-     * Returns a {@link RandomGeneratorFactory} that can produce instances
-     * of {@link RandomGenerator} that utilize the {@code name} algorithm.
+     * Returns a {@link RandomGeneratorFactory} that can produce instances of
+     * {@link RandomGenerator} that utilize the {@code name} algorithm.
      *
      * @param name  Name of random number generator algorithm
      *
      * @return {@link RandomGeneratorFactory} of {@link RandomGenerator}
      */
-    public static RandomGeneratorFactory<RandomGenerator> factoryOf(String name) {
+    static RandomGeneratorFactory<RandomGenerator> factoryOf(String name) {
         Objects.requireNonNull(name);
+
         return RandomGeneratorFactory.factoryOf(name, RandomGenerator.class);
     }
 
     /**
-     * Returns a stream of all available RandomGeneratorFactory(s).
+     * Returns a stream of all available {@link RandomGeneratorFactory RandomGeneratorFactory(s)}.
      *
-     * @return Stream of all available RandomGeneratorFactory(s).
+     * @return Stream of all available {@link RandomGeneratorFactory RandomGeneratorFactory(s)}.
      */
-    public static Stream<RandomGeneratorFactory<RandomGenerator>> all() {
+    static Stream<RandomGeneratorFactory<RandomGenerator>> all() {
         return RandomGeneratorFactory.all(RandomGenerator.class);
     }
 
@@ -136,11 +153,11 @@ public interface RandomGenerator {
      *
      * @return a stream of (pseudo)randomly chosen {@code double} values
      *
-     * @implNote It is permitted to implement this method in a manner
-     * equivalent to {@code doubles(Long.MAX_VALUE)}.
-     *
-     * @implNote The default implementation produces a sequential stream
-     *           that repeatedly calls {@code nextDouble()}.
+     * @implNote It is permitted to implement this method in a manner equivalent to
+     *           {@link RandomGenerator#doubles(long) doubles}
+     *           ({@link Long#MAX_VALUE Long.MAX_VALUE}).
+     *           The default implementation produces a sequential stream
+     *           that repeatedly calls {@link RandomGenerator#nextDouble nextDouble}().
      */
     default DoubleStream doubles() {
         return DoubleStream.generate(this::nextDouble).sequential();
@@ -148,8 +165,8 @@ public interface RandomGenerator {
 
     /**
      * Returns an effectively unlimited stream of (pseudo)randomly chosen
-     * {@code double} values, where each value is between the specified
-     * origin (inclusive) and the specified bound (exclusive).
+     * {@code double} values, where each value is between the specified origin
+     * (inclusive) and the specified bound (exclusive).
      *
      * @param randomNumberOrigin the least value that can be produced
      * @param randomNumberBound the upper bound (exclusive) for each value produced
@@ -162,12 +179,14 @@ public interface RandomGenerator {
      *         is greater than or equal to {@code randomNumberBound}
      *
      * @implNote It is permitted to implement this method in a manner equivalent to
-     *           {@code doubles(Long.MAX_VALUE, randomNumberOrigin, randomNumberBound)}.
-     * @implNote The default implementation produces a sequential stream that repeatedly
-     *           calls {@code nextDouble(randomNumberOrigin, randomNumberBound)}.
+     *           {@link RandomGenerator#doubles(long, double, double) doubles}
+     *           ({@link Long#MAX_VALUE Long.MAX_VALUE}, randomNumberOrigin, randomNumberBound).
+     *           The default implementation produces a sequential stream that repeatedly
+     *           calls {@link RandomGenerator#nextDouble(double, double) nextDouble}(randomNumberOrigin, randomNumberBound).
      */
     default DoubleStream doubles(double randomNumberOrigin, double randomNumberBound) {
         RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
+
         return DoubleStream.generate(() -> nextDouble(randomNumberOrigin, randomNumberBound)).sequential();
     }
 
@@ -183,17 +202,19 @@ public interface RandomGenerator {
      *         less than zero
      *
      * @implNote The default implementation produces a sequential stream
-     * that repeatedly calls {@code nextDouble()}.
+     *           that repeatedly calls {@link RandomGenerator#nextDouble nextDouble()}.
      */
     default DoubleStream doubles(long streamSize) {
         RandomSupport.checkStreamSize(streamSize);
+
         return doubles().limit(streamSize);
     }
 
     /**
      * Returns a stream producing the given {@code streamSize} number of
-     * (pseudo)randomly chosen {@code double} values, where each value is between
-     * the specified origin (inclusive) and the specified bound (exclusive).
+     * (pseudo)randomly chosen {@code double} values, where each value is
+     * between the specified origin (inclusive) and the specified bound
+     * (exclusive).
      *
      * @param streamSize the number of values to generate
      * @param randomNumberOrigin the least value that can be produced
@@ -208,12 +229,13 @@ public interface RandomGenerator {
      *         is greater than or equal to {@code randomNumberBound}
      *
      * @implNote The default implementation produces a sequential stream that repeatedly
-     *           calls {@code nextDouble(randomNumberOrigin, randomNumberBound)}.
+     *           calls {@link RandomGenerator#nextDouble(double, double)  nextDouble}(randomNumberOrigin, randomNumberBound).
      */
     default DoubleStream doubles(long streamSize, double randomNumberOrigin,
                 double randomNumberBound) {
         RandomSupport.checkStreamSize(streamSize);
         RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
+
         return doubles(randomNumberOrigin, randomNumberBound).limit(streamSize);
     }
 
@@ -224,9 +246,10 @@ public interface RandomGenerator {
      * @return a stream of (pseudo)randomly chosen {@code int} values
      *
      * @implNote It is permitted to implement this method in a manner
-     *           equivalent to {@code ints(Long.MAX_VALUE)}.
-     * @implNote The default implementation produces a sequential stream
-     *           that repeatedly calls {@code nextInt()}.
+     *           equivalent to {@link RandomGenerator#ints(long) ints}
+     *           ({@link Long#MAX_VALUE Long.MAX_VALUE}).
+     *           The default implementation produces a sequential stream
+     *           that repeatedly calls {@link RandomGenerator#nextInt() nextInt}().
      */
     default IntStream ints() {
         return IntStream.generate(this::nextInt).sequential();
@@ -234,8 +257,8 @@ public interface RandomGenerator {
 
     /**
      * Returns an effectively unlimited stream of (pseudo)randomly chosen
-     * {@code int} values, where each value is between the specified
-     * origin (inclusive) and the specified bound (exclusive).
+     * {@code int} values, where each value is between the specified origin
+     * (inclusive) and the specified bound (exclusive).
      *
      * @param randomNumberOrigin the least value that can be produced
      * @param randomNumberBound the upper bound (exclusive) for each value produced
@@ -247,12 +270,14 @@ public interface RandomGenerator {
      *         is greater than or equal to {@code randomNumberBound}
      *
      * @implNote It is permitted to implement this method in a manner equivalent to
-     *           {@code ints(Long.MAX_VALUE, randomNumberOrigin, randomNumberBound)}.
-     * @implNote The default implementation produces a sequential stream that repeatedly
-     *           calls {@code nextInt(randomNumberOrigin, randomNumberBound)}.
+     *           {@link RandomGenerator#ints(long, int, int) ints}
+     *           ({@link Long#MAX_VALUE Long.MAX_VALUE}, randomNumberOrigin, randomNumberBound).
+     *           The default implementation produces a sequential stream that repeatedly
+     *           calls {@link RandomGenerator#nextInt(int, int) nextInt}(randomNumberOrigin, randomNumberBound).
      */
     default IntStream ints(int randomNumberOrigin, int randomNumberBound) {
         RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
+
         return IntStream.generate(() -> nextInt(randomNumberOrigin, randomNumberBound)).sequential();
     }
 
@@ -268,10 +293,11 @@ public interface RandomGenerator {
      *         less than zero
      *
      * @implNote The default implementation produces a sequential stream
-     *           that repeatedly calls {@code nextInt()}.
+     *           that repeatedly calls {@link RandomGenerator#nextInt() nextInt}().
      */
     default IntStream ints(long streamSize) {
         RandomSupport.checkStreamSize(streamSize);
+
         return ints().limit(streamSize);
     }
 
@@ -292,12 +318,13 @@ public interface RandomGenerator {
      *         is greater than or equal to {@code randomNumberBound}
      *
      * @implNote The default implementation produces a sequential stream that repeatedly
-     *           calls {@code nextInt(randomNumberOrigin, randomNumberBound)}.
+     *           calls {@link RandomGenerator#nextInt(int, int) nextInt}(randomNumberOrigin, randomNumberBound).
      */
     default IntStream ints(long streamSize, int randomNumberOrigin,
               int randomNumberBound) {
         RandomSupport.checkStreamSize(streamSize);
         RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
+
         return ints(randomNumberOrigin, randomNumberBound).limit(streamSize);
     }
 
@@ -308,9 +335,10 @@ public interface RandomGenerator {
      * @return a stream of (pseudo)randomly chosen {@code long} values
      *
      * @implNote It is permitted to implement this method in a manner
-     *           equivalent to {@code longs(Long.MAX_VALUE)}.
-     * @implNote The default implementation produces a sequential stream
-     *           that repeatedly calls {@code nextLong()}.
+     *           equivalent to {@link RandomGenerator#longs(long) longs}
+     *           ({@link Long#MAX_VALUE Long.MAX_VALUE}).
+     *           The default implementation produces a sequential stream
+     *           that repeatedly calls {@link RandomGenerator#nextLong() nextLong}().
      */
     default LongStream longs() {
         return LongStream.generate(this::nextLong).sequential();
@@ -318,8 +346,8 @@ public interface RandomGenerator {
 
     /**
      * Returns an effectively unlimited stream of (pseudo)randomly chosen
-     * {@code long} values, where each value is between the specified
-     * origin (inclusive) and the specified bound (exclusive).
+     * {@code long} values, where each value is between the specified origin
+     * (inclusive) and the specified bound (exclusive).
      *
      * @param randomNumberOrigin the least value that can be produced
      * @param randomNumberBound the upper bound (exclusive) for each value produced
@@ -331,12 +359,14 @@ public interface RandomGenerator {
      *         is greater than or equal to {@code randomNumberBound}
      *
      * @implNote It is permitted to implement this method in a manner equivalent to
-     *           {@code longs(Long.MAX_VALUE, randomNumberOrigin, randomNumberBound)}.
-     * @implNote The default implementation produces a sequential stream that repeatedly
-     *           calls {@code nextLong(randomNumberOrigin, randomNumberBound)}.
+     *           {@link RandomGenerator#longs(long, long, long) longs}
+     *           ({@link Long#MAX_VALUE Long.MAX_VALUE}, randomNumberOrigin, randomNumberBound).
+     *           The default implementation produces a sequential stream that repeatedly
+     *           calls {@link RandomGenerator#nextLong(long, long) nextLong}(randomNumberOrigin, randomNumberBound).
      */
     default LongStream longs(long randomNumberOrigin, long randomNumberBound) {
         RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
+
         return LongStream.generate(() -> nextLong(randomNumberOrigin, randomNumberBound)).sequential();
     }
 
@@ -352,10 +382,11 @@ public interface RandomGenerator {
      *         less than zero
      *
      * @implNote The default implementation produces a sequential stream
-     * that repeatedly calls {@code nextLong()}.
+     * that repeatedly calls {@link RandomGenerator#nextLong() nextLong}().
      */
     default LongStream longs(long streamSize) {
         RandomSupport.checkStreamSize(streamSize);
+
         return longs().limit(streamSize);
     }
 
@@ -376,21 +407,24 @@ public interface RandomGenerator {
      *         is greater than or equal to {@code randomNumberBound}
      *
      * @implNote The default implementation produces a sequential stream that repeatedly
-     *            calls {@code nextLong(randomNumberOrigin, randomNumberBound)}.
+     *            calls {@link RandomGenerator#nextLong(long, long) nextLong}(randomNumberOrigin, randomNumberBound).
      */
     default LongStream longs(long streamSize, long randomNumberOrigin,
                 long randomNumberBound) {
         RandomSupport.checkStreamSize(streamSize);
         RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
+
         return longs(randomNumberOrigin, randomNumberBound).limit(streamSize);
     }
 
     /**
      * Returns a (pseudo)randomly chosen {@code boolean} value.
-     * <p>
-     * The default implementation tests the high-order bit (sign bit) of a value produced by
-     * {@code nextInt()}, on the grounds that some algorithms for pseudorandom number generation
-     * produce values whose high-order bits have better statistical quality than the low-order bits.
+     *
+     * <p> The default implementation tests the high-order bit (sign bit) of a
+     * value produced by {@link RandomGenerator#nextInt() nextInt}(), on the
+     * grounds that some algorithms for pseudorandom number generation produce
+     * values whose high-order bits have better statistical quality than the
+     * low-order bits.
      *
      * @return a (pseudo)randomly chosen {@code boolean} value
      */
@@ -399,8 +433,9 @@ public interface RandomGenerator {
     }
 
     /**
-     * Fills a user-supplied byte array with generated byte values (pseudo)randomly chosen
-     * uniformly from the range of values between -128 (inclusive) and 255 (inclusive).
+     * Fills a user-supplied byte array with generated byte values
+     * (pseudo)randomly chosen uniformly from the range of values between -128
+     * (inclusive) and 255 (inclusive).
      *
      * @param  bytes the byte array to fill with pseudorandom bytes
      * @throws NullPointerException if bytes is null
@@ -420,9 +455,11 @@ public interface RandomGenerator {
     }
 
     /**
-     * Returns a pseudorandom {@code float} value between zero (inclusive) and one (exclusive).
-     * <p>
-     * The default implementation uses the 24 high-order bits from a call to {@code nextInt()}.
+     * Returns a pseudorandom {@code float} value between zero (inclusive) and
+     * one (exclusive).
+     *
+     * <p> The default implementation uses the 24 high-order bits from a call to
+     * {@link RandomGenerator#nextInt() nextInt}().
      *
      * @return a pseudorandom {@code float} value between zero (inclusive) and one (exclusive)
      */
@@ -444,11 +481,12 @@ public interface RandomGenerator {
      *         both positive and finite
      *
      * @implNote The default implementation simply calls
-     *           {@code RandomSupport.checkBound(bound)} and then
-     *           {@code RandomSupport.boundedNextFloat(this, bound)}.
+     *           {@link RandomSupport#checkBound checkBound}(bound) and then
+     *           {@link RandomSupport#boundedNextFloat boundedNextFloat}(this, bound).
      */
     default float nextFloat(float bound) {
         RandomSupport.checkBound(bound);
+
         return RandomSupport.boundedNextFloat(this, bound);
     }
 
@@ -467,20 +505,24 @@ public interface RandomGenerator {
      *         is greater than or equal to {@code bound}
      *
      * @implNote The default implementation simply calls
-     *           {@code RandomSupport.checkRange(origin, bound)} and then
-     *           {@code RandomSupport.boundedNextFloat(this, origin, bound)}.
+     *           {@link RandomSupport#checkBound checkBound}(bound) and then
+     *           {@link RandomSupport#boundedNextFloat boundedNextFloat}(this, bound).
      */
     default float nextFloat(float origin, float bound) {
         RandomSupport.checkRange(origin, bound);
+
         return RandomSupport.boundedNextFloat(this, origin, bound);
     }
 
     /**
-     * Returns a pseudorandom {@code double} value between zero (inclusive) and one (exclusive).
-     * <p>
-     * The default implementation uses the 53 high-order bits from a call to {@code nextLong()}.
+     * Returns a pseudorandom {@code double} value between zero (inclusive) and
+     * one (exclusive).
      *
-     * @return a pseudorandom {@code double} value between zero (inclusive) and one (exclusive)
+     * <p> The default implementation uses the 53 high-order bits from a call to
+     * {@link RandomGenerator#nextLong nextLong}().
+     *
+     * @return a pseudorandom {@code double} value between zero (inclusive)
+     *         and one (exclusive)
      */
     default double nextDouble() {
         return (nextLong() >>> 11) * 0x1.0p-53;
@@ -500,11 +542,12 @@ public interface RandomGenerator {
      *         both positive and finite
      *
      * @implNote The default implementation simply calls
-     *           {@code RandomSupport.checkBound(bound)} and then
-     *           {@code RandomSupport.boundedNextDouble(this, bound)}.
+     *           {@link RandomSupport#checkBound checkBound}(bound) and then
+     *           {@link RandomSupport#boundedNextDouble boundedNextDouble}(this, bound).
      */
     default double nextDouble(double bound) {
         RandomSupport.checkBound(bound);
+
         return RandomSupport.boundedNextDouble(this, bound);
     }
 
@@ -523,28 +566,30 @@ public interface RandomGenerator {
      *         is greater than or equal to {@code bound}
      *
      * @implNote The default implementation simply calls
-     *           {@code RandomSupport.checkRange(origin, bound)} and then
-     *           {@code RandomSupport.boundedNextDouble(this, origin, bound)}.
+     *           {@link RandomSupport#checkBound checkBound}(bound) and then
+     *           {@link RandomSupport#boundedNextDouble boundedNextDouble}(this, bound).
      */
     default double nextDouble(double origin, double bound) {
         RandomSupport.checkRange(origin, bound);
+
         return RandomSupport.boundedNextDouble(this, origin, bound);
     }
 
     /**
      * Returns a (pseudo)randomly chosen {@code int} value.
-     * <p>
-     * The default implementation uses the 32 high-order bits from a call to {@code nextLong()}.
+     *
+     * <p> The default implementation uses the 32 high-order bits from a call to
+     * {@link RandomGenerator#nextLong nextLong}().
      *
      * @return a (pseudo)randomly chosen {@code int} value
      */
-    default public int nextInt() {
+    default int nextInt() {
         return (int)(nextLong() >>> 32);
     }
 
     /**
-     * Returns a (pseudo)randomly chosen {@code int} value between
-     * zero (inclusive) and the specified bound (exclusive).
+     * Returns a (pseudo)randomly chosen {@code int} value between zero
+     * (inclusive) and the specified bound (exclusive).
      *
      * @param bound the upper bound (exclusive) for the returned value. Must be positive.
      *
@@ -554,17 +599,18 @@ public interface RandomGenerator {
      * @throws IllegalArgumentException if {@code bound} is not positive
      *
      * @implNote The default implementation simply calls
-     *           {@code RandomSupport.checkBound(bound)} and then
-     *           {@code RandomSupport.boundedNextInt(this, bound)}.
+     *           {@link RandomSupport#checkBound checkBound}(bound) and then
+     *           {@link RandomSupport#boundedNextInt boundedNextInt}(this, bound).
      */
     default int nextInt(int bound) {
         RandomSupport.checkBound(bound);
+
         return RandomSupport.boundedNextInt(this, bound);
     }
 
     /**
-     * Returns a (pseudo)randomly chosen {@code int} value between the
-     * specified origin (inclusive) and the specified bound (exclusive).
+     * Returns a (pseudo)randomly chosen {@code int} value between the specified
+     * origin (inclusive) and the specified bound (exclusive).
      *
      * @param origin the least value that can be returned
      * @param bound the upper bound (exclusive) for the returned value
@@ -576,11 +622,12 @@ public interface RandomGenerator {
      *         or equal to {@code bound}
      *
      * @implNote The default implementation simply calls
-     *           {@code RandomSupport.checkRange(origin, bound)} and then
-     *           {@code RandomSupport.boundedNextInt(this, origin, bound)}.
+     *           {@link RandomSupport#checkBound(long) checkBound}(bound) and then
+     *           {@link RandomSupport#boundedNextInt(RandomGenerator, int) boundedNextInt}(this, bound).
      */
     default int nextInt(int origin, int bound) {
         RandomSupport.checkRange(origin, bound);
+
         return RandomSupport.boundedNextInt(this, origin, bound);
     }
 
@@ -592,8 +639,8 @@ public interface RandomGenerator {
     long nextLong();
 
     /**
-     * Returns a (pseudo)randomly chosen {@code long} value between
-     * zero (inclusive) and the specified bound (exclusive).
+     * Returns a (pseudo)randomly chosen {@code long} value between zero
+     * (inclusive) and the specified bound (exclusive).
      *
      * @param bound the upper bound (exclusive) for the returned value.  Must be positive.
      *
@@ -603,11 +650,12 @@ public interface RandomGenerator {
      * @throws IllegalArgumentException if {@code bound} is not positive
      *
      * @implNote The default implementation simply calls
-     *           {@code RandomSupport.checkBound(bound)} and then
-     *           {@code RandomSupport.boundedNextLong(this, bound)}.
+     *           {@link RandomSupport#checkBound checkBound}(bound) and then
+     *           {@link RandomSupport#boundedNextLong boundedNextLong}(this, bound).
      */
     default long nextLong(long bound) {
         RandomSupport.checkBound(bound);
+
         return RandomSupport.boundedNextLong(this, bound);
     }
 
@@ -625,19 +673,19 @@ public interface RandomGenerator {
      *         or equal to {@code bound}
      *
      * @implNote The default implementation simply calls
-     *           {@code RandomSupport.checkRange(origin, bound)} and then
-     *           {@code RandomSupport.boundedNextInt(this, origin, bound)}.
+     *           {@link RandomSupport#checkBound checkBound}(bound) and then
+     *           {@link RandomSupport#boundedNextLong boundedNextLong}(this, bound).
      *
      */
     default long nextLong(long origin, long bound) {
         RandomSupport.checkRange(origin, bound);
+
         return RandomSupport.boundedNextLong(this, origin, bound);
     }
 
     /**
-     * Returns a {@code double} value (pseudo)randomly chosen from
-     * a Gaussian (normal) distribution whose mean is 0 and whose
-     * standard deviation is 1.
+     * Returns a {@code double} value (pseudo)randomly chosen from a Gaussian
+     * (normal) distribution whose mean is 0 and whose standard deviation is 1.
      *
      * @return a {@code double} value (pseudo)randomly chosen from a
      *         Gaussian distribution
@@ -647,9 +695,9 @@ public interface RandomGenerator {
     }
 
     /**
-     * Returns a {@code double} value (pseudo)randomly chosen from
-     * a Gaussian (normal) distribution with a mean and
-     * standard deviation specified by the arguments.
+     * Returns a {@code double} value (pseudo)randomly chosen from a Gaussian
+     * (normal) distribution with a mean and standard deviation specified by the
+     * arguments.
      *
      * @param mean the mean of the Gaussian distribution to be drawn from
      * @param stddev the standard deviation (square root of the variance)
@@ -662,12 +710,13 @@ public interface RandomGenerator {
      */
     default double nextGaussian(double mean, double stddev) {
         if (stddev < 0.0) throw new IllegalArgumentException("standard deviation must be non-negative");
+
         return mean + stddev * RandomSupport.computeNextGaussian(this);
     }
 
     /**
-     * Returns a nonnegative {@code double} value (pseudo)randomly chosen
-     * from an exponential distribution whose mean is 1.
+     * Returns a nonnegative {@code double} value (pseudo)randomly chosen from
+     * an exponential distribution whose mean is 1.
      *
      * @return a nonnegative {@code double} value (pseudo)randomly chosen from an
      *         exponential distribution
@@ -686,61 +735,69 @@ public interface RandomGenerator {
     BigInteger period();
 
     /**
-     * The value (0) returned by the {@code period()} method if the period is unknown.
+     * The value (0) returned by the {@link RandomGenerator#period period()}
+     * method if the period is unknown.
      */
-    static final BigInteger UNKNOWN_PERIOD = BigInteger.ZERO;
+    BigInteger UNKNOWN_PERIOD = BigInteger.ZERO;
 
     /**
-     * The (negative) value returned by the {@code period()} method if this generator
-     * has no period because it is truly random rather than just pseudorandom.
+     * The (negative) value returned by the
+     * {@link RandomGenerator#period period}() method if this generator has no
+     * period because it is truly random rather than just pseudorandom.
      */
-    static final BigInteger TRULY_RANDOM = BigInteger.valueOf(-1);
+    BigInteger TRULY_RANDOM = BigInteger.valueOf(-1);
 
     /**
-     * The (negative) value that may be returned by the {@code period()} method
-     * if this generator has a huge period (larger than 2**(2**16)).
+     * The (negative) value that may be returned by the
+     * {@link RandomGenerator#period period}() method if this generator has a
+     * huge period (larger than 2**(2**16)).
      */
-    static final BigInteger HUGE_PERIOD = BigInteger.valueOf(-2);
+    BigInteger HUGE_PERIOD = BigInteger.valueOf(-2);
 
     /**
-     * The {@link StreamableGenerator} interface augments the {@link RandomGenerator} interface
-     * to provide methods that return streams of {@link RandomGenerator} objects.
-     * Ideally, such a stream of objects would have the property that the
-     * behavior of each object is statistically independent of all the others.
-     * In practice, one may have to settle for some approximation to this property.
+     * The {@link StreamableGenerator} interface augments the
+     * {@link RandomGenerator} interface to provide methods that return streams
+     * of {@link RandomGenerator} objects. Ideally, such a stream of objects
+     * would have the property that the behavior of each object is statistically
+     * independent of all the others. In practice, one may have to settle for
+     * some approximation to this property.
      *
-     * A generator that implements interface {@link SplittableGenerator}
-     * may choose to use its {@link SplittableGenerator#splits splits} method to implement the {@link RandomGenerator#rngs() rngs()}
-     * method required by this interface.
+     * <p> A generator that implements interface {@link SplittableGenerator} may
+     * choose to use its {@link SplittableGenerator#splits splits}() method to
+     * implement the {@link StreamableGenerator#rngs rngs}() method required by this
+     * interface.
      *
-     * A generator that implements interface {@link JumpableGenerator}
-     * may choose to use its {@link JumpableGenerator#jumps} method to implement the {@link RandomGenerator#rngs() rngs()}
-     * method required by this interface.
+     * <p> A generator that implements interface {@link JumpableGenerator} may
+     * choose to use its {@link JumpableGenerator#jumps() jumps}() method to implement the
+     * {@link StreamableGenerator#rngs() rngs}() method required by this interface.
      *
-     * A generator that implements interface {@link LeapableGenerator}
-     * may choose to use its {@link LeapableGenerator#leaps} method to implement the {@link RandomGenerator#rngs() rngs()}
-     * method required by this interface.
-     * <p>
-     * An implementation of the {@link StreamableGenerator} interface must provide
-     * concrete definitions for the methods {@link StreamableGenerator#nextLong}, {@link RandomGenerator#period()}, and
-     * {@link RandomGenerator#rngs() rngs()}.  Default implementations are provided for all other methods.
-     * <p>
-     * Objects that implement {@link StreamableGenerator} are typically
-     * not cryptographically secure.  Consider instead using
-     * {@link java.security.SecureRandom} to get a cryptographically
-     * secure pseudo-random number generator for use by
+     * <p> A generator that implements interface {@link LeapableGenerator} may
+     * choose to use its {@link LeapableGenerator#leaps() leaps}() method to
+     * implement the {@link StreamableGenerator#rngs() rngs}() method required by this
+     * interface.
+     *
+     * <p> An implementation of the {@link StreamableGenerator} interface must
+     * provide concrete definitions for the methods
+     * {@link StreamableGenerator#nextLong() nextLong}(),
+     * {@link RandomGenerator#period() period}(), and
+     * {@link StreamableGenerator#rngs() rngs}(). Default implementations are provided
+     * for all other methods.
+     *
+     * <p> Objects that implement {@link StreamableGenerator} are typically not
+     * cryptographically secure. Consider instead using {@link SecureRandom} to
+     * get a cryptographically secure pseudo-random number generator for use by
      * security-sensitive applications.
      *
      * @since   16
      */
-    public interface StreamableGenerator extends RandomGenerator {
+    interface StreamableGenerator extends RandomGenerator {
 
         /**
-         * Returns a stream of all available StreamableGenerator factories.
+         * Returns a stream of all available {@link StreamableGenerator} factories.
          *
-         * @return Stream of all available StreamableGenerator factories.
+         * @return Stream of all available {@link StreamableGenerator} factories.
          */
-        public static Stream<RandomGeneratorFactory<StreamableGenerator>> all() {
+        static Stream<RandomGeneratorFactory<StreamableGenerator>> all() {
             return RandomGeneratorFactory.all(StreamableGenerator.class);
         }
 
@@ -752,44 +809,46 @@ public interface RandomGenerator {
          *
          * @return An instance of {@link StreamableGenerator}
          */
-        public static StreamableGenerator of(String name) {
+        static StreamableGenerator of(String name) {
             Objects.requireNonNull(name);
+
             return RandomGeneratorFactory.of(name, StreamableGenerator.class);
         }
 
         /**
          * Returns a {@link RandomGeneratorFactory} that can produce instances
-         * of {@link StreamableGenerator} that utilize the {@code name} algorithm.
+         * of {@link StreamableGenerator} that utilize the {@code name}
+         * algorithm.
          *
          * @param name  Name of random number generator algorithm
          *
          * @return {@link RandomGeneratorFactory} of {@link StreamableGenerator}
          */
-        public static RandomGeneratorFactory<StreamableGenerator> factoryOf(String name) {
+        static RandomGeneratorFactory<StreamableGenerator> factoryOf(String name) {
             Objects.requireNonNull(name);
+
             return RandomGeneratorFactory.factoryOf(name, StreamableGenerator.class);
         }
 
         /**
-         * Returns an effectively unlimited stream of objects, each of
-         * which implements the {@link RandomGenerator} interface.  Ideally the
-         * generators in the stream will appear to be statistically
-         * independent.  The new generators should be of the same kind
-         * as this generator.
+         * Returns an effectively unlimited stream of objects, each of which
+         * implements the {@link RandomGenerator} interface. Ideally the
+         * generators in the stream will appear to be statistically independent.
+         * The new generators should be of the same kind as this generator.
          *
          * @return a stream of objects that implement the {@link RandomGenerator} interface
          *
          * @implNote It is permitted to implement this method in a manner
-         *           equivalent to {@code rngs(Long.MAX_VALUE)}.
+         *           equivalent to {@link StreamableGenerator#rngs(long) rngs}
+         *           ({@link Long#MAX_VALUE Long.MAX_VALUE}).
          */
         Stream<RandomGenerator> rngs();
 
         /**
-         * Returns an effectively unlimited stream of objects, each of
-         * which implements the {@link RandomGenerator} interface.  Ideally the
-         * generators in the stream will appear to be statistically
-         * independent.  The new generators should be of the same kind
-         * as this generator.
+         * Returns an effectively unlimited stream of objects, each of which
+         * implements the {@link RandomGenerator} interface. Ideally the
+         * generators in the stream will appear to be statistically independent.
+         * The new generators should be of the same kind as this generator.
          *
          * @param streamSize the number of generators to generate
          *
@@ -798,59 +857,64 @@ public interface RandomGenerator {
          * @throws IllegalArgumentException if {@code streamSize} is
          *         less than zero
          *
-         * @implNote The default implementation calls {@code rngs()} and
+         * @implNote The default implementation calls {@link StreamableGenerator#rngs() rngs}() and
          *           then limits its length to {@code streamSize}.
          */
         default Stream<RandomGenerator> rngs(long streamSize) {
             RandomSupport.checkStreamSize(streamSize);
+
             return rngs().limit(streamSize);
         }
     }
 
     /**
-     * This interface is designed to provide a common protocol for objects
-     * that generate sequences of pseudorandom numbers (or Boolean values)
-     * and furthermore can be <i>split</i> into two objects (the original
-     * one and a new one) each of which obey that same protocol (and therefore
-     * can be recursively split indefinitely).
-     * <p>
-     * Ideally, all {@link SplittableGenerator} objects produced by recursive
-     * splitting from a single original {@link SplittableGenerator} object are
-     * statistically independent of one another and individually uniform.
-     * Therefore we would expect the set of values collectively generated
-     * by a set of such objects to have the same statistical properties as
-     * if the same quantity of values were generated by a single thread
-     * using a single {@link SplittableGenerator} object.  In practice, one must
-     * settle for some approximation to independence and uniformity.
-     * <p>
-     * Methods are provided to perform a single splitting operation and
-     * also to produce a stream of generators split off from the original
-     * (by either iterative or recursive splitting, or a combination).
-     * <p>
-     * An implementation of the {@link SplittableGenerator} interface must
-     * provide concrete definitions for the methods {@code nextLong},
-     * {@code period()}, {@code split()}, {@code split(SplittableGenerator)},
-     * {@code splits()}, {@code splits(long)}, {@code splits(SplittableGenerator)},
-     * and {@code splits(long, SplittableGenerator)}.  Perhaps the most convenient
-     * way to implement this interface is to extend the abstract class
-     * {@link AbstractSplittableGenerator}.
-     * <p>
-     * Objects that implement {@link SplittableGenerator} are
-     * typically not cryptographically secure.  Consider instead using
-     * {@link java.security.SecureRandom} to get a cryptographically
-     * secure pseudo-random number generator for use by
+     * This interface is designed to provide a common protocol for objects that
+     * generate sequences of pseudorandom numbers (or Boolean values) and
+     * furthermore can be <i>split</i> into two objects (the original one and a
+     * new one) each of which obey that same protocol (and therefore can be
+     * recursively split indefinitely).
+     *
+     * <p> Ideally, all {@link SplittableGenerator} objects produced by
+     * recursive splitting from a single original {@link SplittableGenerator}
+     * object are statistically independent of one another and individually
+     * uniform. Therefore we would expect the set of values collectively
+     * generated by a set of such objects to have the same statistical
+     * properties as if the same quantity of values were generated by a single
+     * thread using a single {@link SplittableGenerator} object. In practice,
+     * one must settle for some approximation to independence and uniformity.
+     *
+     * <p> Methods are provided to perform a single splitting operation and also
+     * to produce a stream of generators split off from the original (by either
+     * iterative or recursive splitting, or a combination).
+     *
+     * <p> An implementation of the {@link SplittableGenerator} interface must
+     * provide concrete definitions for the methods
+     * {@link RandomGenerator#nextLong nextLong}(),
+     * {@link RandomGenerator#period period}(),
+     * {@link SplittableGenerator#split split}(),
+     * {@link SplittableGenerator#split(SplittableGenerator) split}(SplittableGenerator),
+     * {@link SplittableGenerator#splits() splits}(),
+     * {@link SplittableGenerator#splits splits}(long),
+     * {@link SplittableGenerator#split split}(SplittableGenerator), and
+     * {@link SplittableGenerator#splits splits}(long, SplittableGenerator). Perhaps the
+     * most convenient way to implement this interface is to extend the abstract
+     * class {@link AbstractSplittableGenerator}.
+     *
+     * <p> Objects that implement {@link SplittableGenerator} are typically not
+     * cryptographically secure. Consider instead using {@link SecureRandom} to
+     * get a cryptographically secure pseudo-random number generator for use by
      * security-sensitive applications.
      *
      * @since   16
      */
-    public interface SplittableGenerator extends StreamableGenerator {
+    interface SplittableGenerator extends StreamableGenerator {
 
         /**
-         * Returns a stream of all available SplittableGenerator factories.
+         * Returns a stream of all available {@link SplittableGenerator} factories.
          *
-         * @return Stream of all available SplittableGenerator factories.
+         * @return Stream of all available {@link SplittableGenerator} factories.
          */
-        public static Stream<RandomGeneratorFactory<SplittableGenerator>> all() {
+        static Stream<RandomGeneratorFactory<SplittableGenerator>> all() {
             return RandomGeneratorFactory.all(SplittableGenerator.class);
         }
 
@@ -862,30 +926,33 @@ public interface RandomGenerator {
          *
          * @return An instance of {@link SplittableGenerator}
          */
-        public static SplittableGenerator of(String name) {
+        static SplittableGenerator of(String name) {
             Objects.requireNonNull(name);
+
             return RandomGeneratorFactory.of(name, SplittableGenerator.class);
         }
 
         /**
          * Returns a {@link RandomGeneratorFactory} that can produce instances
-         * of {@link SplittableGenerator} that utilize the {@code name} algorithm.
+         * of {@link SplittableGenerator} that utilize the {@code name}
+         * algorithm.
          *
          * @param name  Name of random number generator algorithm
          *
          * @return {@link RandomGeneratorFactory} of {@link SplittableGenerator}
          */
-        public static RandomGeneratorFactory<SplittableGenerator> factoryOf(String name) {
+        static RandomGeneratorFactory<SplittableGenerator> factoryOf(String name) {
             Objects.requireNonNull(name);
+
             return RandomGeneratorFactory.factoryOf(name, SplittableGenerator.class);
         }
 
         /**
-         * Returns a new pseudorandom number generator, split off from
-         * this one, that implements the {@link RandomGenerator} and {@link SplittableGenerator}
-         * interfaces.
+         * Returns a new pseudorandom number generator, split off from this one,
+         * that implements the {@link RandomGenerator} and
+         * {@link SplittableGenerator} interfaces.
          *
-         * This pseudorandom number generator may be used as a source of
+         * <p> This pseudorandom number generator may be used as a source of
          * pseudorandom bits used to initialize the state the new one.
          *
          * @return a new object that implements the {@link RandomGenerator} and
@@ -894,9 +961,9 @@ public interface RandomGenerator {
         SplittableGenerator split();
 
         /**
-         * Returns a new pseudorandom number generator, split off from
-         * this one, that implements the {@link RandomGenerator} and {@link SplittableGenerator}
-         * interfaces.
+         * Returns a new pseudorandom number generator, split off from this one,
+         * that implements the {@link RandomGenerator} and
+         * {@link SplittableGenerator} interfaces.
          *
          * @param source a {@link SplittableGenerator} instance to be used instead
          *               of this one as a source of pseudorandom bits used to
@@ -908,15 +975,16 @@ public interface RandomGenerator {
         SplittableGenerator split(SplittableGenerator source);
 
         /**
-         * Returns an effectively unlimited stream of new pseudorandom
-         * number generators, each of which implements the {@link SplittableGenerator}
+         * Returns an effectively unlimited stream of new pseudorandom number
+         * generators, each of which implements the {@link SplittableGenerator}
          * interface.
          *
-         * This pseudorandom number generator may be used as a source of
+         * <p> This pseudorandom number generator may be used as a source of
          * pseudorandom bits used to initialize the state the new ones.
          *
          * @implNote It is permitted to implement this method in a manner
-         * equivalent to {@code splits(Long.MAX_VALUE)}.
+         * equivalent to {@link SplittableGenerator#splits(long) splits}
+         * ({@link Long#MAX_VALUE Long.MAX_VALUE}).
          *
          * @return a stream of {@link SplittableGenerator} objects
          */
@@ -925,11 +993,11 @@ public interface RandomGenerator {
         }
 
         /**
-         * Returns a stream producing the given {@code streamSize} number of
-         * new pseudorandom number generators, each of which implements the
+         * Returns a stream producing the given {@code streamSize} number of new
+         * pseudorandom number generators, each of which implements the
          * {@link SplittableGenerator} interface.
          *
-         * This pseudorandom number generator may be used as a source of
+         * <p> This pseudorandom number generator may be used as a source of
          * pseudorandom bits used to initialize the state the new ones.
          *
          * @param streamSize the number of values to generate
@@ -942,8 +1010,8 @@ public interface RandomGenerator {
         Stream<SplittableGenerator> splits(long streamSize);
 
         /**
-         * Returns an effectively unlimited stream of new pseudorandom
-         * number generators, each of which implements the {@link SplittableGenerator}
+         * Returns an effectively unlimited stream of new pseudorandom number
+         * generators, each of which implements the {@link SplittableGenerator}
          * interface.
          *
          * @param source a {@link SplittableGenerator} instance to be used instead
@@ -953,13 +1021,14 @@ public interface RandomGenerator {
          * @return a stream of {@link SplittableGenerator} objects
          *
          * @implNote It is permitted to implement this method in a manner
-         *           equivalent to {@code splits(Long.MAX_VALUE, source)}.
+         *           equivalent to {@link SplittableGenerator#splits(long, SplittableGenerator) splits}
+         *           ({@link Long#MAX_VALUE Long.MAX_VALUE}, source).
          */
         Stream<SplittableGenerator> splits(SplittableGenerator source);
 
         /**
-         * Returns a stream producing the given {@code streamSize} number of
-         * new pseudorandom number generators, each of which implements the
+         * Returns a stream producing the given {@code streamSize} number of new
+         * pseudorandom number generators, each of which implements the
          * {@link SplittableGenerator} interface.
          *
          * @param streamSize the number of values to generate
@@ -975,24 +1044,24 @@ public interface RandomGenerator {
         Stream<SplittableGenerator> splits(long streamSize, SplittableGenerator source);
 
         /**
-         * Returns an effectively unlimited stream of new pseudorandom
-         * number generators, each of which implements the {@link RandomGenerator}
-         * interface.  Ideally the generators in the stream will appear
-         * to be statistically independent.
+         * Returns an effectively unlimited stream of new pseudorandom number
+         * generators, each of which implements the {@link RandomGenerator}
+         * interface. Ideally the generators in the stream will appear to be
+         * statistically independent.
          *
          * @return a stream of objects that implement the {@link RandomGenerator} interface
          *
-         * @implNote The default implementation calls {@code splits()}.
+         * @implNote The default implementation calls {@link SplittableGenerator#splits() splits}().
          */
         default Stream<RandomGenerator> rngs() {
-            return this.splits().map(x -> (RandomGenerator)x);
+            return this.splits().map(x -> x);
         }
 
         /**
-         * Returns a stream producing the given {@code streamSize} number of
-         * new pseudorandom number generators, each of which implements the
-         * {@link RandomGenerator} interface.  Ideally the generators in the stream will
-         * appear to be statistically independent.
+         * Returns a stream producing the given {@code streamSize} number of new
+         * pseudorandom number generators, each of which implements the
+         * {@link RandomGenerator} interface. Ideally the generators in the
+         * stream will appear to be statistically independent.
          *
          * @param streamSize the number of generators to generate
          *
@@ -1001,57 +1070,71 @@ public interface RandomGenerator {
          * @throws IllegalArgumentException if {@code streamSize} is
          *         less than zero
          *
-         * @implNote The default implementation calls {@code splits(streamSize)}.
+         * @implNote The default implementation calls {@link SplittableGenerator#splits(long) splits}(streamSize).
          */
         default Stream<RandomGenerator> rngs(long streamSize) {
-            return this.splits(streamSize).map(x -> (RandomGenerator)x);
+            return this.splits(streamSize).map(x -> x);
         }
     }
 
     /**
-     * This interface is designed to provide a common protocol for objects that generate
-     * pseudorandom sequences of numbers (or Boolean values) and furthermore can easily <i>jump</i>
-     * forward (by a fixed amount) to a distant point in the state cycle.
-     * <p>
-     * Ideally, all {@link JumpableGenerator} objects produced by iterative jumping from a single
-     * original {@link JumpableGenerator} object are statistically independent of one another and
-     * individually uniform. In practice, one must settle for some approximation to independence and
-     * uniformity.  In particular, a specific implementation may assume that each generator in a
-     * stream produced by the {@code jumps} method is used to produce a number of values no larger
-     * than either 2<sup>64</sup> or the square root of its period.  Implementors are advised to use
-     * algorithms whose period is at least 2<sup>127</sup>.
-     * <p>
-     * Methods are provided to perform a single jump operation and also to produce a stream of
-     * generators produced from the original by iterative copying and jumping of internal state.  A
-     * typical strategy for a multithreaded application is to create a single {@link
-     * JumpableGenerator} object, calls its {@code jumps} method exactly once, and then parcel out
-     * generators from the resulting stream, one to each thread.  It is generally not a good idea to
-     * call {@code jump} on a generator that was itself produced by the {@code jumps} method,
-     * because the result may be a generator identical to another generator already produce by that
-     * call to the {@code jumps} method. For this reason, the return type of the {@code jumps}
-     * method is {@code Stream<RandomGenerator>} rather than {@code Stream<JumpableGenerator>}, even
-     * though the actual generator objects in that stream likely do also implement the {@link
-     * JumpableGenerator} interface.
-     * <p>
-     * An implementation of the {@link JumpableGenerator} interface must provide concrete
-     * definitions for the methods {@code nextLong}, {@code period()}, {@code copy()},
-     * {@code jump()}, and {@code defaultJumpDistance()}. Default implementations are
-     * provided for all other methods.
-     * <p>
-     * Objects that implement {@link JumpableGenerator} are typically not cryptographically secure.
-     * Consider instead using {@link java.security.SecureRandom} to get a cryptographically secure
-     * pseudo-random number generator for use by security-sensitive applications.
+     * This interface is designed to provide a common protocol for objects that
+     * generate pseudorandom sequences of numbers (or Boolean values) and
+     * furthermore can easily <i>jump</i> forward (by a fixed amount) to a
+     * distant point in the state cycle.
+     *
+     * <p> Ideally, all {@link JumpableGenerator} objects produced by iterative
+     * jumping from a single original {@link JumpableGenerator} object are
+     * statistically independent of one another and individually uniform. In
+     * practice, one must settle for some approximation to independence and
+     * uniformity. In particular, a specific implementation may assume that each
+     * generator in a stream produced by the
+     * {@link JumpableGenerator#jump jump()} method is used to produce a number
+     * of values no larger than either 2<sup>64</sup> or the square root of its
+     * period. Implementors are advised to use algorithms whose period is at
+     * least 2<sup>127</sup>.
+     *
+     * <p> Methods are provided to perform a single jump operation and also to
+     * produce a stream of generators produced from the original by iterative
+     * copying and jumping of internal state. A typical strategy for a
+     * multithreaded application is to create a single {@link JumpableGenerator}
+     * object, calls its {@link JumpableGenerator#jump jump}() method exactly
+     * once, and then parcel out generators from the resulting stream, one to
+     * each thread. It is generally not a good idea to call
+     * {@link JumpableGenerator#jump jump}() on a generator that was itself
+     * produced by the {@link JumpableGenerator#jump jump}() method, because the
+     * result may be a generator identical to another generator already produce
+     * by that call to the {@link JumpableGenerator#jump jump}() method. For
+     * this reason, the return type of the {@link JumpableGenerator#jump jump}()
+     * method is {@link Stream<RandomGenerator>} rather than
+     * {@link Stream<JumpableGenerator>}, even though the actual generator
+     * objects in that stream likely do also implement the
+     * {@link JumpableGenerator} interface.
+     *
+     * <p> An implementation of the {@link JumpableGenerator} interface must
+     * provide concrete definitions for the methods
+     * {@link RandomGenerator#nextLong nextLong}(),
+     * {@link RandomGenerator#period period}(),
+     * {@link JumpableGenerator#copy copy}(),
+     * {@link JumpableGenerator#jump jump}(), and
+     * {@link ArbitrarilyJumpableGenerator#defaultJumpDistance defaultJumpDistance}().
+     * Default implementations are provided for all other methods.
+     *
+     * <p> Objects that implement {@link JumpableGenerator} are typically not
+     * cryptographically secure. Consider instead using {@link SecureRandom} to
+     * get a cryptographically secure pseudo-random number generator for use by
+     * security-sensitive applications.
      *
      * @since   16
      */
-    public interface JumpableGenerator extends StreamableGenerator {
+    interface JumpableGenerator extends StreamableGenerator {
 
         /**
-         * Returns a stream of all available JumpableGenerator factories.
+         * Returns a stream of all available {@link JumpableGenerator} factories.
          *
-         * @return Stream of all available JumpableGenerator factories.
+         * @return Stream of all available {@link JumpableGenerator} factories.
          */
-        public static Stream<RandomGeneratorFactory<JumpableGenerator>> all() {
+        static Stream<RandomGeneratorFactory<JumpableGenerator>> all() {
             return RandomGeneratorFactory.all(JumpableGenerator.class);
         }
 
@@ -1063,8 +1146,9 @@ public interface RandomGenerator {
          *
          * @return An instance of {@link JumpableGenerator}
          */
-        public static JumpableGenerator of(String name) {
+        static JumpableGenerator of(String name) {
             Objects.requireNonNull(name);
+
             return RandomGeneratorFactory.of(name, JumpableGenerator.class);
         }
 
@@ -1076,156 +1160,183 @@ public interface RandomGenerator {
          *
          * @return {@link RandomGeneratorFactory} of {@link JumpableGenerator}
          */
-        public static RandomGeneratorFactory<JumpableGenerator> factoryOf(String name) {
+        static RandomGeneratorFactory<JumpableGenerator> factoryOf(String name) {
             Objects.requireNonNull(name);
+
             return RandomGeneratorFactory.factoryOf(name, JumpableGenerator.class);
         }
 
         /**
-         * Returns a new generator whose internal state is an exact copy of this generator (therefore
-         * their future behavior should be identical if subjected to the same series of operations).
+         * Returns a new generator whose internal state is an exact copy of this
+         * generator (therefore their future behavior should be identical if
+         * subjected to the same series of operations).
          *
          * @return a new object that is a copy of this generator
          */
         JumpableGenerator copy();
 
         /**
-         * Alter the state of this pseudorandom number generator so as to jump forward a large, fixed
-         * distance (typically 2<sup>64</sup> or more) within its state cycle.
+         * Alter the state of this pseudorandom number generator so as to jump
+         * forward a large, fixed distance (typically 2<sup>64</sup> or more)
+         * within its state cycle.
          */
         void jump();
 
         /**
-         * Returns the distance by which the {@code jump()} method will jump forward within the state
-         * cycle of this generator object.
+         * Returns the distance by which the
+         * {@link JumpableGenerator#jump jump}() method will jump forward within
+         * the state cycle of this generator object.
          *
          * @return the default jump distance (as a {@code double} value)
          */
         double defaultJumpDistance();
 
         /**
-         * Returns an effectively unlimited stream of new pseudorandom number generators, each of which
-         * implements the {@link RandomGenerator} interface.
+         * Returns an effectively unlimited stream of new pseudorandom number
+         * generators, each of which implements the {@link RandomGenerator}
+         * interface.
          *
          * @return a stream of objects that implement the {@link RandomGenerator} interface
          *
          * @implNote It is permitted to implement this method in a manner equivalent to
-         *         {@code jumps(Long.MAX_VALUE)}.
-         * @implNote The default implementation produces a sequential stream that  repeatedly
-         *         calls {@code copy()} and {@code jump()} on this generator, and the copies become the
-         *         generators produced by the stream.
+         *           {@link JumpableGenerator#jumps(long) jumps}
+         *           ({@link Long#MAX_VALUE Long.MAX_VALUE}).
+         *           The default implementation produces a sequential stream that  repeatedly
+         *           calls {@link JumpableGenerator#copy copy}() and {@link JumpableGenerator#jump jump}()
+         *           on this generator, and the copies become the generators produced by the stream.
          */
         default Stream<RandomGenerator> jumps() {
             return Stream.generate(this::copyAndJump).sequential();
         }
 
         /**
-         * Returns a stream producing the given {@code streamSize} number of new pseudorandom number
-         * generators, each of which implements the {@link RandomGenerator} interface.
+         * Returns a stream producing the given {@code streamSize} number of new
+         * pseudorandom number generators, each of which implements the
+         * {@link RandomGenerator} interface.
          *
          * @param streamSize the number of generators to generate
          *
          * @return a stream of objects that implement the {@link RandomGenerator} interface
          *
          * @throws IllegalArgumentException if {@code streamSize} is less than zero
+         * 
          * @implNote The default implementation produces a sequential stream that  repeatedly
-         *         calls {@code copy()} and {@code jump()} on this generator, and the copies become the
-         *         generators produced by the stream.
+         *           calls {@link JumpableGenerator#copy copy}() and {@link JumpableGenerator#jump jump}()
+         *           on this generator, and the copies become the generators produced by the stream.
          */
         default Stream<RandomGenerator> jumps(long streamSize) {
             return jumps().limit(streamSize);
         }
 
         /**
-         * Returns an effectively unlimited stream of new pseudorandom number generators, each of which
-         * implements the {@link RandomGenerator} interface.  Ideally the generators in the stream
-         * will appear to be statistically independent.
+         * Returns an effectively unlimited stream of new pseudorandom number
+         * generators, each of which implements the {@link RandomGenerator}
+         * interface. Ideally the generators in the stream will appear to be
+         * statistically independent.
          *
          * @return a stream of objects that implement the {@link RandomGenerator} interface
          *
-         * @implNote The default implementation calls {@code jumps()}.
+         * @implNote The default implementation calls {@link JumpableGenerator#jump jump}().
          */
         default Stream<RandomGenerator> rngs() {
             return this.jumps();
         }
 
         /**
-         * Returns a stream producing the given {@code streamSize} number of new pseudorandom number
-         * generators, each of which implements the {@link RandomGenerator} interface.  Ideally
-         * the generators in the stream will appear to be statistically independent.
+         * Returns a stream producing the given {@code streamSize} number of new
+         * pseudorandom number generators, each of which implements the
+         * {@link RandomGenerator} interface. Ideally the generators in the
+         * stream will appear to be statistically independent.
          *
          * @param streamSize the number of generators to generate
          *
          * @return a stream of objects that implement the {@link RandomGenerator} interface
          *
          * @throws IllegalArgumentException if {@code streamSize} is less than zero
-         * @implNote The default implementation calls {@code jumps(streamSize)}.
+         *
+         * @implNote The default implementation calls {@link JumpableGenerator#jumps(long) jumps}(streamSize).
          */
         default Stream<RandomGenerator> rngs(long streamSize) {
             return this.jumps(streamSize);
         }
 
         /**
-         * Copy this generator, jump this generator forward, then return the copy.
+         * Copy this generator, jump this generator forward, then return the
+         * copy.
          *
          * @return a copy of this generator object before the jump occurred
          */
         default RandomGenerator copyAndJump() {
             RandomGenerator result = copy();
             jump();
+
             return result;
         }
 
     }
 
     /**
-     * This interface is designed to provide a common protocol for objects that generate sequences
-     * of pseudorandom numbers (or Boolean values) and furthermore can easily not only jump but
-     * also
+     * This interface is designed to provide a common protocol for objects that
+     * generate sequences of pseudorandom numbers (or Boolean values) and
+     * furthermore can easily not only jump but also
      * <i>leap</i> to a very distant point in the state cycle.
-     * <p>
-     * Typically one will construct a series of {@link LeapableGenerator} objects by iterative
-     * leaping from a single original {@link LeapableGenerator} object, and then for each such
-     * object produce a subseries of objects by iterative jumping.  There is little conceptual
-     * difference between leaping and jumping, but typically a leap will be a very long jump in the
-     * state cycle (perhaps distance 2<sup>128</sup> or so).
-     * <p>
-     * Ideally, all {@link LeapableGenerator} objects produced by iterative leaping and jumping from
-     * a single original {@link LeapableGenerator} object are statistically independent of one
-     * another and individually uniform. In practice, one must settle for some approximation to
-     * independence and uniformity.  In particular, a specific implementation may assume that each
-     * generator in a stream produced by the {@code leaps} method is used to produce (by jumping) a
-     * number of objects no larger than 2<sup>64</sup>.  Implementors are advised to use algorithms
-     * whose period is at least 2<sup>191</sup>.
-     * <p>
-     * Methods are provided to perform a single leap operation and also to produce a stream of
-     * generators produced from the original by iterative copying and leaping of internal state.
-     * The generators produced must implement the {@link JumpableGenerator} interface but need not
-     * also implement the {@link LeapableGenerator} interface.  A typical strategy for a
-     * multithreaded application is to create a single {@link LeapableGenerator} object, calls its
-     * {@code leaps} method exactly once, and then parcel out generators from the resulting stream,
-     * one to each thread.  Then the {@code jumps} method of each such generator be called to
-     * produce a substream of generator objects.
-     * <p>
-     * An implementation of the {@link LeapableGenerator} interface must provide concrete
-     * definitions for the methods {@code nextLong}, {@code period()}, {@code copy()},
-     * {@code jump()}, {@code defaultJumpDistance()}, {@code leap()}, and {@code defaultLeapDistance()}.
+     *
+     * Typically one will construct a series of {@link LeapableGenerator}
+     * objects by iterative leaping from a single original
+     * {@link LeapableGenerator} object, and then for each such object produce a
+     * subseries of objects by iterative jumping. There is little conceptual
+     * difference between leaping and jumping, but typically a leap will be a
+     * very long jump in the state cycle (perhaps distance 2<sup>128</sup> or
+     * so).
+     *
+     * <p> Ideally, all {@link LeapableGenerator} objects produced by iterative
+     * leaping and jumping from a single original {@link LeapableGenerator}
+     * object are statistically independent of one another and individually
+     * uniform. In practice, one must settle for some approximation to
+     * independence and uniformity. In particular, a specific implementation may
+     * assume that each generator in a stream produced by the {@code leaps}
+     * method is used to produce (by jumping) a number of objects no larger than
+     * 2<sup>64</sup>. Implementors are advised to use algorithms whose period
+     * is at least 2<sup>191</sup>.
+     *
+     * <p> Methods are provided to perform a single leap operation and also to
+     * produce a stream of generators produced from the original by iterative
+     * copying and leaping of internal state. The generators produced must
+     * implement the {@link JumpableGenerator} interface but need not also
+     * implement the {@link LeapableGenerator} interface. A typical strategy for
+     * a multithreaded application is to create a single
+     * {@link LeapableGenerator} object, calls its {@code leaps} method exactly
+     * once, and then parcel out generators from the resulting stream, one to
+     * each thread. Then the {@link JumpableGenerator#jump() jump}() method of
+     * each such generator be called to produce a substream of generator
+     * objects.
+     *
+     * <p> An implementation of the {@link LeapableGenerator} interface must
+     * provide concrete definitions for the methods
+     * {@link RandomGenerator#nextLong() nextLong}(),
+     * {@link RandomGenerator#period() period}(),
+     * {@link LeapableGenerator#copy() copy}(),
+     * {@link JumpableGenerator#jump() jump}(),
+     * {@link ArbitrarilyJumpableGenerator#defaultJumpDistance() defaultJumpDistance}(),
+     * {@link LeapableGenerator#leap() leap}(), and
+     * {@link ArbitrarilyJumpableGenerator#defaultLeapDistance() defaultLeapDistance}().
      * Default implementations are provided for all other methods.
-     * <p>
-     * Objects that implement {@link LeapableGenerator} are typically not cryptographically secure.
-     * Consider instead using {@link java.security.SecureRandom} to get a cryptographically secure
-     * pseudo-random number generator for use by security-sensitive applications.
+     *
+     * <p> Objects that implement {@link LeapableGenerator} are typically not
+     * cryptographically secure. Consider instead using {@link SecureRandom} to
+     * get a cryptographically secure pseudo-random number generator for use by
+     * security-sensitive applications.
      *
      * @since   16
      */
-    public interface LeapableGenerator extends JumpableGenerator {
+    interface LeapableGenerator extends JumpableGenerator {
 
         /**
-         * Returns a stream of all available LeapableGenerator factories.
+         * Returns a stream of all available {@link LeapableGenerator} factories.
          *
-         * @return Stream of all available LeapableGenerator factories.
+         * @return Stream of all available {@link LeapableGenerator} factories.
          */
-        public static Stream<RandomGeneratorFactory<LeapableGenerator>> all() {
+        static Stream<RandomGeneratorFactory<LeapableGenerator>> all() {
             return RandomGeneratorFactory.all(LeapableGenerator.class);
         }
 
@@ -1237,8 +1348,9 @@ public interface RandomGenerator {
          *
          * @return An instance of {@link LeapableGenerator}
          */
-        public static LeapableGenerator of(String name) {
+        static LeapableGenerator of(String name) {
             Objects.requireNonNull(name);
+
             return RandomGeneratorFactory.of(name, LeapableGenerator.class);
         }
 
@@ -1250,68 +1362,77 @@ public interface RandomGenerator {
          *
          * @return {@link RandomGeneratorFactory} of {@link LeapableGenerator}
          */
-        public static RandomGeneratorFactory<LeapableGenerator> factoryOf(String name) {
+        static RandomGeneratorFactory<LeapableGenerator> factoryOf(String name) {
             Objects.requireNonNull(name);
+
             return RandomGeneratorFactory.factoryOf(name, LeapableGenerator.class);
         }
 
         /**
-         * Returns a new generator whose internal state is an exact copy of this generator (therefore
-         * their future behavior should be identical if subjected to the same series of operations).
+         * Returns a new generator whose internal state is an exact copy of this
+         * generator (therefore their future behavior should be identical if
+         * subjected to the same series of operations).
          *
          * @return a new object that is a copy of this generator
          */
         LeapableGenerator copy();
 
         /**
-         * Alter the state of this pseudorandom number generator so as to leap forward a large, fixed
-         * distance (typically 2<sup>96</sup> or more) within its state cycle.
+         * Alter the state of this pseudorandom number generator so as to leap
+         * forward a large, fixed distance (typically 2<sup>96</sup> or more)
+         * within its state cycle.
          */
         void leap();
 
         /**
-         * Returns the distance by which the {@code leap()} method will leap forward within the state
-         * cycle of this generator object.
+         * Returns the distance by which the
+         * {@link LeapableGenerator#leap() leap}() method will leap forward within
+         * the state cycle of this generator object.
          *
          * @return the default leap distance (as a {@code double} value)
          */
         double defaultLeapDistance();
 
         /**
-         * Returns an effectively unlimited stream of new pseudorandom number generators, each of which
-         * implements the {@link JumpableGenerator} interface.
+         * Returns an effectively unlimited stream of new pseudorandom number
+         * generators, each of which implements the {@link JumpableGenerator}
+         * interface.
          *
          * @return a stream of objects that implement the {@link JumpableGenerator} interface
          *
-         * @implNote It is permitted to implement this method in a manner equivalent to {@code
-         *         leaps(Long.MAX_VALUE)}.
-         * @implNote The default implementation produces a sequential stream that  repeatedly
-         *         calls {@code copy()} and {@code leap()} on this generator, and the copies become the
-         *         generators produced by the stream.
+         * @implNote It is permitted to implement this method in a manner equivalent to
+         *           {@link LeapableGenerator#leaps(long) leaps}
+         *           ({@link  Long#MAX_VALUE Long.MAX_VALUE}).
+         *           The default implementation produces a sequential stream that  repeatedly
+         *           calls {@link LeapableGenerator#copy() copy}() and {@link LeapableGenerator#leap() leap}()
+         *           on this generator, and the copies become the generators produced by the stream.
          */
         default Stream<JumpableGenerator> leaps() {
             return Stream.generate(this::copyAndLeap).sequential();
         }
 
         /**
-         * Returns a stream producing the given {@code streamSize} number of new pseudorandom number
-         * generators, each of which implements the {@link JumpableGenerator} interface.
+         * Returns a stream producing the given {@code streamSize} number of new
+         * pseudorandom number generators, each of which implements the
+         * {@link JumpableGenerator} interface.
          *
          * @param streamSize the number of generators to generate
          *
          * @return a stream of objects that implement the {@link JumpableGenerator} interface
          *
          * @throws IllegalArgumentException if {@code streamSize} is less than zero
+         * 
          * @implNote The default implementation produces a sequential stream that  repeatedly
-         *         calls {@code copy()} and {@code leap()} on this generator, and the copies become the
-         *         generators produced by the stream.
+         *           calls {@link LeapableGenerator#copy() copy}() and {@link LeapableGenerator#leap() leap}()
+         *           on this generator, and the copies become the generators produced by the stream.
          */
         default Stream<JumpableGenerator> leaps(long streamSize) {
             return leaps().limit(streamSize);
         }
 
         /**
-         * Copy this generator, leap this generator forward, then return the copy.
+         * Copy this generator, leap this generator forward, then return the
+         * copy.
          *
          * @return a copy of this generator object before the leap occurred
          */
@@ -1324,96 +1445,122 @@ public interface RandomGenerator {
     }
 
     /**
-     * This interface is designed to provide a common protocol for objects that generate sequences
-     * of pseudorandom numbers (or Boolean values) and furthermore can easily <i>jump</i> to an
-     * arbitrarily specified distant point in the state cycle.
-     * <p>
-     * Ideally, all {@link ArbitrarilyJumpableGenerator} objects produced by iterative jumping from
-     * a single original {@link ArbitrarilyJumpableGenerator} object are statistically independent
-     * of one another and individually uniform, provided that they do not traverse overlapping
-     * portions of the state cycle. In practice, one must settle for some approximation to
-     * independence and uniformity.  In particular, a specific implementation may assume that each
-     * generator in a stream produced by the {@code jumps} method is used to produce a number of
-     * values no larger than the jump distance specified.  Implementors are advised to use
-     * algorithms whose period is at least 2<sup>127</sup>.
-     * <p>
-     * For many applications, it suffices to jump forward by a power of two or some small multiple
-     * of a power of two, but this power of two may not be representable as a {@code long} value.
-     * To avoid the use of {@link java.math.BigInteger} values as jump distances, {@code double}
-     * values are used instead.
-     * <p>
-     * Methods are provided to perform a single jump operation and also to produce a stream of
-     * generators produced from the original by iterative copying and jumping of internal state.  A
-     * typical strategy for a multithreaded application is to create a single
-     * {@link ArbitrarilyJumpableGenerator} object, call its {@code jumps} method exactly once, and
-     * then parcel out generators from the resulting stream, one to each thread.  However, each
-     * generator produced also has type {@link ArbitrarilyJumpableGenerator}; with care, different
-     * jump distances can be used to traverse the entire state cycle in various ways.
-     * <p>
-     * An implementation of the {@link ArbitrarilyJumpableGenerator} interface must provide concrete
-     * definitions for the methods {@code nextLong}, {@code period()}, {@code copy()},
-     * {@code jump(double)}, {@code defaultJumpDistance()}, and {@code defaultLeapDistance()}.
-     * Default implementations are provided for all other methods.
-     * Perhaps the most convenient way to implement this interface is to extend the abstract class
-     * {@link AbstractArbitrarilyJumpableGenerator}, which provides spliterator-based implementations
-     * of the methods {@code ints}, {@code longs}, {@code doubles}, {@code rngs}, {@code jumps},
-     * and {@code leaps}.
-     * <p>
-     * Objects that implement {@link ArbitrarilyJumpableGenerator} are typically not
-     * cryptographically secure. Consider instead using {@link java.security.SecureRandom} to get a
-     * cryptographically secure pseudo-random number generator for use by security-sensitive
-     * applications.
+     * This interface is designed to provide a common protocol for objects that
+     * generate sequences of pseudorandom numbers (or Boolean values) and
+     * furthermore can easily <i>jump</i> to an arbitrarily specified distant
+     * point in the state cycle.
+     *
+     * <p> Ideally, all {@link ArbitrarilyJumpableGenerator} objects produced by
+     * iterative jumping from a single original
+     * {@link ArbitrarilyJumpableGenerator} object are statistically independent
+     * of one another and individually uniform, provided that they do not
+     * traverse overlapping portions of the state cycle. In practice, one must
+     * settle for some approximation to independence and uniformity. In
+     * particular, a specific implementation may assume that each generator in a
+     * stream produced by the {@link JumpableGenerator#jump() jump}() method is
+     * used to produce a number of values no larger than the jump distance
+     * specified. Implementors are advised to use algorithms whose period is at
+     * least 2<sup>127</sup>.
+     *
+     * <p> For many applications, it suffices to jump forward by a power of two
+     * or some small multiple of a power of two, but this power of two may not
+     * be representable as a {@code long} value. To avoid the use of
+     * {@link BigInteger} values as jump distances, {@code double} values are
+     * used instead.
+     *
+     * <p> Methods are provided to perform a single jump operation and also to
+     * produce a stream of generators produced from the original by iterative
+     * copying and jumping of internal state. A typical strategy for a
+     * multithreaded application is to create a single
+     * {@link ArbitrarilyJumpableGenerator} object, call its
+     * {@link JumpableGenerator#jump() jump}() method exactly once, and then
+     * parcel out generators from the resulting stream, one to each thread.
+     * However, each generator produced also has type
+     * {@link ArbitrarilyJumpableGenerator}; with care, different jump distances
+     * can be used to traverse the entire state cycle in various ways.
+     *
+     * <p> An implementation of the {@link ArbitrarilyJumpableGenerator}
+     * interface must provide concrete definitions for the methods
+     * {@link RandomGenerator#nextLong() nextLong}(),
+     * {@link RandomGenerator#period() period}(),
+     * {@link ArbitrarilyJumpableGenerator#copy() copy}(),
+     * {@link ArbitrarilyJumpableGenerator#jump(double) jump}(double),
+     * {@link ArbitrarilyJumpableGenerator#defaultJumpDistance() defaultJumpDistance}(),
+     * and
+     * {@link ArbitrarilyJumpableGenerator#defaultLeapDistance defaultLeapDistance()}.
+     * Default implementations are provided for all other methods. Perhaps the
+     * most convenient way to implement this interface is to extend the abstract
+     * class {@link AbstractArbitrarilyJumpableGenerator}, which provides
+     * spliterator-based implementations of the methods
+     * {@link RandomGenerator#ints() ints}(),
+     * {@link RandomGenerator#longs() longs}(),
+     * {@link RandomGenerator#doubles() doubles}(),
+     * {@link JumpableGenerator#rngs() rngs}(),
+     * {@link JumpableGenerator#jump() jump}(), and
+     * {@link LeapableGenerator#leaps() leaps}().
+     *
+     * <p> Objects that implement {@link ArbitrarilyJumpableGenerator} are
+     * typically not cryptographically secure. Consider instead using
+     * {@link SecureRandom} to get a cryptographically secure pseudo-random
+     * number generator for use by security-sensitive applications.
      *
      * @since   16
      */
-    public interface ArbitrarilyJumpableGenerator extends LeapableGenerator {
+    interface ArbitrarilyJumpableGenerator extends LeapableGenerator {
 
         /**
-         * Returns a stream of all available ArbitrarilyJumpableGenerator factories.
+         * Returns a stream of all available {@link ArbitrarilyJumpableGenerator}
+         * factories.
          *
-         * @return Stream of all available ArbitrarilyJumpableGenerator factories.
+         * @return Stream of all available {@link ArbitrarilyJumpableGenerator}
+         * factories.
          */
-        public static Stream<RandomGeneratorFactory<ArbitrarilyJumpableGenerator>> all() {
+        static Stream<RandomGeneratorFactory<ArbitrarilyJumpableGenerator>> all() {
             return RandomGeneratorFactory.all(ArbitrarilyJumpableGenerator.class);
         }
 
         /**
-         * Returns an instance of {@link ArbitrarilyJumpableGenerator} that utilizes the
-         * {@code name} algorithm.
+         * Returns an instance of {@link ArbitrarilyJumpableGenerator} that
+         * utilizes the {@code name} algorithm.
          *
          * @param name  Name of random number generator algorithm
          *
          * @return An instance of {@link ArbitrarilyJumpableGenerator}
          */
-        public static ArbitrarilyJumpableGenerator of(String name) {
+        static ArbitrarilyJumpableGenerator of(String name) {
             Objects.requireNonNull(name);
+
             return RandomGeneratorFactory.of(name, ArbitrarilyJumpableGenerator.class);
         }
 
         /**
          * Returns a {@link RandomGeneratorFactory} that can produce instances
-         * of {@link ArbitrarilyJumpableGenerator} that utilize the {@code name} algorithm.
+         * of {@link ArbitrarilyJumpableGenerator} that utilize the {@code name}
+         * algorithm.
          *
          * @param name  Name of random number generator algorithm
          *
          * @return {@link RandomGeneratorFactory} of {@link ArbitrarilyJumpableGenerator}
          */
-        public static RandomGeneratorFactory<ArbitrarilyJumpableGenerator> factoryOf(String name) {
+        static RandomGeneratorFactory<ArbitrarilyJumpableGenerator> factoryOf(String name) {
             Objects.requireNonNull(name);
+
             return RandomGeneratorFactory.factoryOf(name, ArbitrarilyJumpableGenerator.class);
         }
 
         /**
-         * Returns a new generator whose internal state is an exact copy of this generator (therefore
-         * their future behavior should be identical if subjected to the same series of operations).
+         * Returns a new generator whose internal state is an exact copy of this
+         * generator (therefore their future behavior should be identical if
+         * subjected to the same series of operations).
          *
          * @return a new object that is a copy of this generator
          */
         ArbitrarilyJumpableGenerator copy();
 
         /**
-         * Alter the state of this pseudorandom number generator so as to jump forward a distance equal
-         * to 2<sup>{@code logDistance}</sup> within its state cycle.
+         * Alter the state of this pseudorandom number generator so as to jump
+         * forward a distance equal to 2<sup>{@code logDistance}</sup> within
+         * its state cycle.
          *
          * @param logDistance the base-2 logarithm of the distance to jump forward within the state
          *                    cycle
@@ -1425,8 +1572,8 @@ public interface RandomGenerator {
         void jumpPowerOfTwo(int logDistance);
 
         /**
-         * Alter the state of this pseudorandom number generator so as to jump forward a specified
-         * distance within its state cycle.
+         * Alter the state of this pseudorandom number generator so as to jump
+         * forward a specified distance within its state cycle.
          *
          * @param distance the distance to jump forward within the state cycle
          *
@@ -1436,31 +1583,37 @@ public interface RandomGenerator {
         void jump(double distance);
 
         /**
-         * Alter the state of this pseudorandom number generator so as to jump forward a large, fixed
-         * distance (typically 2<sup>64</sup> or more) within its state cycle.  The distance used is
-         * that returned by method {@code defaultJumpDistance()}.
+         * Alter the state of this pseudorandom number generator so as to jump
+         * forward a large, fixed distance (typically 2<sup>64</sup> or more)
+         * within its state cycle. The distance used is that returned by method
+         * {@link ArbitrarilyJumpableGenerator#defaultJumpDistance() defaultJumpDistance}().
          */
         default void jump() { jump(defaultJumpDistance()); }
 
         /**
-         * Returns an effectively unlimited stream of new pseudorandom number generators, each of
-         * which implements the {@link ArbitrarilyJumpableGenerator} interface, produced by jumping
-         * copies of this generator by different integer multiples of the specified jump distance.
+         * Returns an effectively unlimited stream of new pseudorandom number
+         * generators, each of which implements the
+         * {@link ArbitrarilyJumpableGenerator} interface, produced by jumping
+         * copies of this generator by different integer multiples of the
+         * specified jump distance.
          *
          * @param distance a distance to jump forward within the state cycle
          *
          * @return a stream of objects that implement the {@link RandomGenerator} interface
          *
-         * @implNote This method is implemented to be equivalent to {@code jumps(Long.MAX_VALUE)}.
+         * @implNote This method is implemented to be equivalent to
+         *           {@link ArbitrarilyJumpableGenerator#jumps(long) jumps}
+         *           ({@link Long#MAX_VALUE Long.MAX_VALUE}).
          */
         default Stream<ArbitrarilyJumpableGenerator> jumps(double distance) {
             return Stream.generate(() -> copyAndJump(distance)).sequential();
         }
 
         /**
-         * Returns a stream producing the given {@code streamSize} number of new pseudorandom number
-         * generators, each of which implements the {@link ArbitrarilyJumpableGenerator} interface,
-         * produced by jumping copies of this generator by different integer multiples of the
+         * Returns a stream producing the given {@code streamSize} number of new
+         * pseudorandom number generators, each of which implements the
+         * {@link ArbitrarilyJumpableGenerator} interface, produced by jumping
+         * copies of this generator by different integer multiples of the
          * specified jump distance.
          *
          * @param streamSize the number of generators to generate
@@ -1475,14 +1628,17 @@ public interface RandomGenerator {
         }
 
         /**
-         * Alter the state of this pseudorandom number generator so as to jump forward a very large,
-         * fixed distance (typically 2<sup>128</sup> or more) within its state cycle.  The distance
-         * used is that returned by method {@code defaultJLeapDistance()}.
+         * Alter the state of this pseudorandom number generator so as to jump
+         * forward a very large, fixed distance (typically 2<sup>128</sup> or
+         * more) within its state cycle. The distance used is that returned by
+         * method
+         * {@link ArbitrarilyJumpableGenerator#defaultLeapDistance() defaultLeapDistance}().
          */
         default void leap() { jump(defaultLeapDistance()); }
 
         /**
-         * Copy this generator, jump this generator forward, then return the copy.
+         * Copy this generator, jump this generator forward, then return the
+         * copy.
          *
          * @param distance a distance to jump forward within the state cycle
          *
@@ -1491,6 +1647,7 @@ public interface RandomGenerator {
         default ArbitrarilyJumpableGenerator copyAndJump(double distance) {
             ArbitrarilyJumpableGenerator result = copy();
             jump(distance);
+
             return result;
         }
 

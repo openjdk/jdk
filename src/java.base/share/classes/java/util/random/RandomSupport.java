@@ -38,10 +38,11 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 /**
- * Low-level utility methods helpful for implementing (pseudo)random number generators.
+ * Low-level utility methods helpful for implementing (pseudo)random number
+ * generators.
  *
- * This class is mostly for library writers creating specific implementations of the
- * interface {@link RandomGenerator}.
+ * <p> This class is mostly for library writers creating specific
+ * implementations of the interface {@link RandomGenerator}.
  *
  * @since   16
  */
@@ -83,8 +84,9 @@ public class RandomSupport {
      * @throws IllegalArgumentException if {@code streamSize} is negative
      */
     public static void checkStreamSize(long streamSize) {
-        if (streamSize < 0L)
+        if (streamSize < 0L) {
             throw new IllegalArgumentException(BAD_SIZE);
+        }
     }
 
     /**
@@ -92,11 +94,12 @@ public class RandomSupport {
      *
      * @param distance the proposed jump distance
      *
-     * @throws IllegalArgumentException if {@code size} fails to be positive, finite, and an exact integer
+     * @throws IllegalArgumentException if {@code size} fails to be positive,
+     *         finite, and an exact integer
      */
     public static void checkJumpDistance(double distance) {
         if (!(distance > 0.0 && distance < Float.POSITIVE_INFINITY
-                             && distance == Math.floor(distance))) {
+                && distance == Math.floor(distance))) {
             throw new IllegalArgumentException(BAD_DISTANCE);
         }
     }
@@ -212,9 +215,9 @@ public class RandomSupport {
     }
 
     /**
-     * Given an array of seed bytes of any length, construct an array
-     * of {@code long} seed values of length {@code n}, such that the
-     * last {@code z} values are not all zero.
+     * Given an array of seed bytes of any length, construct an array of
+     * {@code long} seed values of length {@code n}, such that the last
+     * {@code z} values are not all zero.
      *
      * @param seed an array of {@code byte} values
      * @param n the length of the result array (should be nonnegative)
@@ -250,13 +253,14 @@ public class RandomSupport {
                 result[j] = mixMurmur64(w += SILVER_RATIO_64);
             }
         }
+
         return result;
     }
 
     /**
-     * Given an array of seed bytes of any length, construct an array
-     * of {@code int} seed values of length {@code n}, such that the
-     * last {@code z} values are not all zero.
+     * Given an array of seed bytes of any length, construct an array of
+     * {@code int} seed values of length {@code n}, such that the last {@code z}
+     * values are not all zero.
      *
      * @param seed an array of {@code byte} values
      * @param n the length of the result array (should be nonnegative)
@@ -303,15 +307,17 @@ public class RandomSupport {
      */
 
     /**
-     * This is the form of {@code nextLong} used by a {@link LongStream}
-     * {@link Spliterator} and by the public method
-     * {@code nextLong(origin, bound)}.  If {@code origin} is greater
-     * than {@code bound}, then this method simply calls the unbounded
-     * version of {@code nextLong()}, choosing (pseudo)randomly from
-     * among all 2<sup>64</sup> possible {@code long} values}, and
-     * otherwise uses one or more calls to {@code nextLong()} to
-     * choose a value (pseudo)randomly from the possible values
-     * between {@code origin} (inclusive) and {@code bound} (exclusive).
+     * This is the form of {@link RandomGenerator#nextLong() nextLong}() used by
+     * a {@link LongStream} {@link Spliterator} and by the public method
+     * {@link RandomGenerator#nextLong(long, long) nextLong}(origin, bound). If
+     * {@code origin} is greater than {@code bound}, then this method simply
+     * calls the unbounded version of
+     * {@link RandomGenerator#nextLong() nextLong}(), choosing (pseudo)randomly
+     * from among all 2<sup>64</sup> possible {@code long} values}, and
+     * otherwise uses one or more calls to
+     * {@link RandomGenerator#nextLong() nextLong}() to choose a value
+     * (pseudo)randomly from the possible values between {@code origin}
+     * (inclusive) and {@code bound} (exclusive).
      *
      * @implNote This method first calls {@code nextLong()} to obtain
      * a {@code long} value that is assumed to be (pseudo)randomly
@@ -322,34 +328,37 @@ public class RandomSupport {
      * a power of 2), {@code nextLong()} may be called additional times
      * to ensure that that the values in the specified range are
      * equally likely to be chosen (provided the assumption holds).
-     * <p>
+     *
      * The implementation considers four cases:
      * <ol>
      *
      * <li> If the {@code} bound} is less than or equal to the {@code origin}
-     *      (indicated an unbounded form), the 64-bit {@code long} value
-     *      obtained from {@code nextLong()} is returned directly.
+     * (indicated an unbounded form), the 64-bit {@code long} value obtained
+     * from {@link RandomGenerator#nextLong() nextLong}() is returned directly.
+     * </li>
      *
      * <li> Otherwise, if the length <i>n</i> of the specified range is an
-     *      exact power of two 2<sup><i>m</i></sup> for some integer
+     * exact power of two 2<sup><i>m</i></sup> for some integer
      *      <i>m</i>, then return the sum of {@code origin} and the
      *      <i>m</i> lowest-order bits of the value from {@code nextLong()}.
+     * </li>
      *
      * <li> Otherwise, if the length <i>n</i> of the specified range
-     *      is less than 2<sup>63</sup>, then the basic idea is to use the
-     *      remainder modulo <i>n</i> of the value from {@code nextLong()},
-     *      but with this approach some values will be over-represented.
-     *      Therefore a loop is used to avoid potential bias by rejecting
-     *      candidates that are too large.  Assuming that the results from
-     *      {@code nextLong()} are truly chosen uniformly and independently,
-     *      the expected number of iterations will be somewhere between
-     *      1 and 2, depending on the precise value of <i>n</i>.
+     * is less than 2<sup>63</sup>, then the basic idea is to use the remainder
+     * modulo <i>n</i> of the value from
+     * {@link RandomGenerator#nextLong() nextLong}(), but with this approach
+     * some values will be over-represented. Therefore a loop is used to avoid
+     * potential bias by rejecting candidates that are too large. Assuming that
+     * the results from {@link RandomGenerator#nextLong() nextLong}() are truly
+     * chosen uniformly and independently, the expected number of iterations
+     * will be somewhere between 1 and 2, depending on the precise value of
+     * <i>n</i>.</li>
      *
      * <li> Otherwise, the length <i>n</i> of the specified range
-     *      cannot be represented as a positive {@code long} value.
-     *      A loop repeatedly calls {@code nextlong()} until obtaining
-     *      a suitable candidate,  Again, the expected number of iterations
-     *      is less than 2.
+     * cannot be represented as a positive {@code long} value. A loop repeatedly
+     * calls {@link RandomGenerator#nextLong() nextLong}() until obtaining a
+     * suitable candidate, Again, the expected number of iterations is less than
+     * 2.</li>
      *
      * </ol>
      *
@@ -397,13 +406,13 @@ public class RandomSupport {
     }
 
     /**
-     * This is the form of {@code nextLong} used by the public method
-     * {@code nextLong(bound)}.  This is essentially a version of
-     * {@code boundedNextLong(origin, bound)} that has been
-     * specialized for the case where the {@code origin} is zero
-     * and the {@code bound} is greater than zero.  The value
-     * returned is chosen (pseudo)randomly from nonnegative integer
-     * values less than {@code bound}.
+     * This is the form of {@link RandomGenerator#nextLong() nextLong}() used by
+     * the public method {@link RandomGenerator#nextLong(long) nextLong}(bound).
+     * This is essentially a version of
+     * {@link RandomSupport#boundedNextLong(RandomGenerator, long, long) boundedNextLong}(rng, origin, bound)
+     * that has been specialized for the case where the {@code origin} is zero
+     * and the {@code bound} is greater than zero. The value returned is chosen
+     * (pseudo)randomly from nonnegative integer values less than {@code bound}.
      *
      * @implNote This method first calls {@code nextLong()} to obtain
      * a {@code long} value that is assumed to be (pseudo)randomly
@@ -414,23 +423,23 @@ public class RandomSupport {
      * a power of 2), {@code nextLong()} may be called additional times
      * to ensure that that the values in the specified range are
      * equally likely to be chosen (provided the assumption holds).
-     * <p>
+     *
      * The implementation considers two cases:
      * <ol>
      *
      * <li> If {@code bound} is an exact power of two 2<sup><i>m</i></sup>
-     *      for some integer <i>m</i>, then return the sum of {@code origin}
-     *      and the <i>m</i> lowest-order bits of the value from
-     *      {@code nextLong()}.
+     * for some integer <i>m</i>, then return the sum of {@code origin} and the
+     * <i>m</i> lowest-order bits of the value from
+     * {@link RandomGenerator#nextLong() nextLong}().</li>
      *
      * <li> Otherwise, the basic idea is to use the remainder modulo
      *      <i>bound</i> of the value from {@code nextLong()},
-     *      but with this approach some values will be over-represented.
-     *      Therefore a loop is used to avoid potential bias by rejecting
-     *      candidates that vare too large.  Assuming that the results from
-     *      {@code nextLong()} are truly chosen uniformly and independently,
-     *      the expected number of iterations will be somewhere between
-     *      1 and 2, depending on the precise value of <i>bound</i>.
+     * but with this approach some values will be over-represented. Therefore a
+     * loop is used to avoid potential bias by rejecting candidates that vare
+     * too large. Assuming that the results from
+     * {@link RandomGenerator#nextLong() nextLong}() are truly chosen uniformly
+     * and independently, the expected number of iterations will be somewhere
+     * between 1 and 2, depending on the precise value of <i>bound</i>.</li>
      *
      * </ol>
      *
@@ -463,15 +472,16 @@ public class RandomSupport {
     }
 
     /**
-     * This is the form of {@code nextInt} used by an {@link IntStream}
-     * {@link Spliterator} and by the public method
-     * {@code nextInt(origin, bound)}.  If {@code origin} is greater
-     * than {@code bound}, then this method simply calls the unbounded
-     * version of {@code nextInt()}, choosing (pseudo)randomly from
-     * among all 2<sup>64</sup> possible {@code int} values}, and
-     * otherwise uses one or more calls to {@code nextInt()} to
-     * choose a value (pseudo)randomly from the possible values
-     * between {@code origin} (inclusive) and {@code bound} (exclusive).
+     * This is the form of {@link RandomGenerator#nextInt() nextInt}() used by
+     * an {@link IntStream} {@link Spliterator} and by the public method
+     * {@link RandomGenerator#nextInt(int, int) nextInt}(origin, bound). If
+     * {@code origin} is greater than {@code bound}, then this method simply
+     * calls the unbounded version of
+     * {@link RandomGenerator#nextInt() nextInt}(), choosing (pseudo)randomly
+     * from among all 2<sup>64</sup> possible {@code int} values}, and otherwise
+     * uses one or more calls to {@link RandomGenerator#nextInt() nextInt}() to
+     * choose a value (pseudo)randomly from the possible values between
+     * {@code origin} (inclusive) and {@code bound} (exclusive).
      *
      * @param rng a random number generator to be used as a
      *        source of (pseudo)random {@code int} values
@@ -519,13 +529,13 @@ public class RandomSupport {
     }
 
     /**
-     * This is the form of {@code nextInt} used by the public method
-     * {@code nextInt(bound)}.  This is essentially a version of
-     * {@code boundedNextInt(origin, bound)} that has been
-     * specialized for the case where the {@code origin} is zero
-     * and the {@code bound} is greater than zero.  The value
-     * returned is chosen (pseudo)randomly from nonnegative integer
-     * values less than {@code bound}.
+     * This is the form of {@link RandomGenerator#nextInt() nextInt}() used by
+     * the public method {@link RandomGenerator#nextInt(int) nextInt}(bound).
+     * This is essentially a version of
+     * {@link RandomSupport#boundedNextInt(RandomGenerator, int, int) boundedNextInt}(rng, origin, bound)
+     * that has been specialized for the case where the {@code origin} is zero
+     * and the {@code bound} is greater than zero. The value returned is chosen
+     * (pseudo)randomly from nonnegative integer values less than {@code bound}.
      *
      * @param rng a random number generator to be used as a
      *        source of (pseudo)random {@code long} values
@@ -557,27 +567,30 @@ public class RandomSupport {
     }
 
     /**
-     * This is the form of {@code nextDouble} used by a {@link DoubleStream}
-     * {@link Spliterator} and by the public method
-     * {@code nextDouble(origin, bound)}.  If {@code origin} is greater
-     * than {@code bound}, then this method simply calls the unbounded
-     * version of {@code nextDouble()}, and otherwise scales and translates
-     * the result of a call to {@code nextDouble()} so that it lies
-     * between {@code origin} (inclusive) and {@code bound} (exclusive).
+     * This is the form of {@link RandomGenerator#nextDouble() nextDouble}()
+     * used by a {@link DoubleStream} {@link Spliterator} and by the public
+     * method
+     * {@link RandomGenerator#nextDouble(double, double) nextDouble}(origin, bound).
+     * If {@code origin} is greater than {@code bound}, then this method simply
+     * calls the unbounded version of
+     * {@link RandomGenerator#nextDouble() nextDouble}(), and otherwise scales
+     * and translates the result of a call to
+     * {@link RandomGenerator#nextDouble() nextDouble}() so that it lies between
+     * {@code origin} (inclusive) and {@code bound} (exclusive).
      *
      * @implNote The implementation considers two cases:
      * <ol>
      *
      * <li> If the {@code bound} is less than or equal to the {@code origin}
-     *      (indicated an unbounded form), the 64-bit {@code double} value
-     *      obtained from {@code nextDouble()} is returned directly.
+     * (indicated an unbounded form), the 64-bit {@code double} value obtained
+     * from {@link RandomGenerator#nextDouble() nextDouble}() is returned
+     * directly.
      *
      * <li> Otherwise, the result of a call to {@code nextDouble} is
-     *      multiplied by {@code (bound - origin)}, then {@code origin}
-     *      is added, and then if this this result is not less than
-     *      {@code bound} (which can sometimes occur because of rounding),
-     *      it is replaced with the largest {@code double} value that
-     *      is less than {@code bound}.
+     * multiplied by {@code (bound - origin)}, then {@code origin} is added, and
+     * then if this this result is not less than {@code bound} (which can
+     * sometimes occur because of rounding), it is replaced with the largest
+     * {@code double} value that is less than {@code bound}.
      *
      * </ol>
      *
@@ -605,10 +618,12 @@ public class RandomSupport {
     }
 
     /**
-     * This is the form of {@code nextDouble} used by the public method
-     * {@code nextDouble(bound)}.  This is essentially a version of
-     * {@code boundedNextDouble(origin, bound)} that has been
-     * specialized for the case where the {@code origin} is zero
+     * This is the form of {@link RandomGenerator#nextDouble() nextDouble}()
+     * used by the public method
+     * {@link RandomGenerator#nextDouble(double) nextDouble}(bound). This is
+     * essentially a version of
+     * {@link RandomSupport#boundedNextDouble(RandomGenerator, double, double) boundedNextDouble}(rng, origin, bound)
+     * that has been specialized for the case where the {@code origin} is zero
      * and the {@code bound} is greater than zero.
      *
      * @implNote The result of a call to {@code nextDouble} is
@@ -634,13 +649,16 @@ public class RandomSupport {
     }
 
     /**
-     * This is the form of {@code nextFloat} used by a {@code Stream<Float>}
-     * {@link Spliterator} (if there were any) and by the public method
-     * {@code nextFloat(origin, bound)}.  If {@code origin} is greater
-     * than {@code bound}, then this method simply calls the unbounded
-     * version of {@code nextFloat()}, and otherwise scales and translates
-     * the result of a call to {@code nextFloat()} so that it lies
-     * between {@code origin} (inclusive) and {@code bound} (exclusive).
+     * This is the form of {@link RandomGenerator#nextFloat() nextFloat}() used
+     * by a {@link Stream<Float>} {@link Spliterator} (if there were any) and by
+     * the public method
+     * {@link RandomGenerator#nextFloat(float, float) nextFloat}(origin, bound).
+     * If {@code origin} is greater than {@code bound}, then this method simply
+     * calls the unbounded version of
+     * {@link RandomGenerator#nextFloat() nextFloat}(), and otherwise scales and
+     * translates the result of a call to
+     * {@link RandomGenerator#nextFloat() nextFloat}() so that it lies between
+     * {@code origin} (inclusive) and {@code bound} (exclusive).
      *
      * @implNote The implementation of this method is identical to
      *     the implementation of {@code nextDouble(origin, bound)}
@@ -672,10 +690,12 @@ public class RandomSupport {
     }
 
     /**
-     * This is the form of {@code nextFloat} used by the public method
-     * {@code nextFloat(bound)}.  This is essentially a version of
-     * {@code boundedNextFloat(origin, bound)} that has been
-     * specialized for the case where the {@code origin} is zero
+     * This is the form of {@link RandomGenerator#nextFloat() nextFloat}() used
+     * by the public method
+     * {@link RandomGenerator#nextFloat(float) nextFloat}(bound). This is
+     * essentially a version of
+     * {@link RandomSupport#boundedNextFloat(RandomGenerator, float, float) boundedNextFloat}(rng, origin, bound)
+     * that has been specialized for the case where the {@code origin} is zero
      * and the {@code bound} is greater than zero.
      *
      * @implNote The implementation of this method is identical to
@@ -711,10 +731,10 @@ public class RandomSupport {
     private static final boolean useSecureRandomSeed = secureRandomSeedRequested();
 
     /**
-     * Returns a {@code long} value (chosen from some
-     * machine-dependent entropy source) that may be useful for
-     * initializing a source of seed values for instances of {@link RandomGenerator}
-     * created by zero-argument constructors.  (This method should
+     * Returns a {@code long} value (chosen from some machine-dependent entropy
+     * source) that may be useful for initializing a source of seed values for
+     * instances of {@link RandomGenerator} created by zero-argument
+     * constructors. (This method should
      * <i>not</i> be called repeatedly, once per constructed
      * object; at most it should be called once per class.)
      *
@@ -735,34 +755,36 @@ public class RandomSupport {
 
     /**
      * The first 32 bits of the golden ratio (1+sqrt(5))/2, forced to be odd.
-     * Useful for producing good Weyl sequences or as an arbitrary nonzero odd value.
+     * Useful for producing good Weyl sequences or as an arbitrary nonzero odd
+     * value.
      */
     public static final int  GOLDEN_RATIO_32 = 0x9e3779b9;
 
     /**
      * The first 64 bits of the golden ratio (1+sqrt(5))/2, forced to be odd.
-     * Useful for producing good Weyl sequences or as an arbitrary nonzero odd value.
+     * Useful for producing good Weyl sequences or as an arbitrary nonzero odd
+     * value.
      */
     public static final long GOLDEN_RATIO_64 = 0x9e3779b97f4a7c15L;
 
     /**
-     * The first 32 bits of the silver ratio 1+sqrt(2), forced to be odd.
-     * Useful for producing good Weyl sequences or as an arbitrary nonzero odd value.
+     * The first 32 bits of the silver ratio 1+sqrt(2), forced to be odd. Useful
+     * for producing good Weyl sequences or as an arbitrary nonzero odd value.
      */
     public static final int  SILVER_RATIO_32 = 0x6A09E667;
 
     /**
-     * The first 64 bits of the silver ratio 1+sqrt(2), forced to be odd.
-     * Useful for producing good Weyl sequences or as an arbitrary nonzero odd value.
+     * The first 64 bits of the silver ratio 1+sqrt(2), forced to be odd. Useful
+     * for producing good Weyl sequences or as an arbitrary nonzero odd value.
      */
     public static final long SILVER_RATIO_64 = 0x6A09E667F3BCC909L;
 
     /**
-     * Computes the 64-bit mixing function for MurmurHash3.
-     * This is a 64-bit hashing function with excellent avalanche statistics.
+     * Computes the 64-bit mixing function for MurmurHash3. This is a 64-bit
+     * hashing function with excellent avalanche statistics.
      * https://github.com/aappleby/smhasher/wiki/MurmurHash3
      *
-     * Note that if the argument {@code z} is 0, the result is 0.
+     * <p> Note that if the argument {@code z} is 0, the result is 0.
      *
      * @param z any long value
      *
@@ -775,11 +797,12 @@ public class RandomSupport {
     }
 
     /**
-     * Computes Stafford variant 13 of the 64-bit mixing function for MurmurHash3.
-     * This is a 64-bit hashing function with excellent avalanche statistics.
+     * Computes Stafford variant 13 of the 64-bit mixing function for
+     * MurmurHash3. This is a 64-bit hashing function with excellent avalanche
+     * statistics.
      * http://zimbry.blogspot.com/2011/09/better-bit-mixing-improving-on.html
      *
-     * Note that if the argument {@code z} is 0, the result is 0.
+     * <p> Note that if the argument {@code z} is 0, the result is 0.
      *
      * @param z any long value
      *
@@ -792,12 +815,12 @@ public class RandomSupport {
     }
 
     /**
-     * Computes Doug Lea's 64-bit mixing function.
-     * This is a 64-bit hashing function with excellent avalanche statistics.
-     * It has the advantages of using the same multiplicative constant twice
-     * and of using only 32-bit shifts.
+     * Computes Doug Lea's 64-bit mixing function. This is a 64-bit hashing
+     * function with excellent avalanche statistics. It has the advantages of
+     * using the same multiplicative constant twice and of using only 32-bit
+     * shifts.
      *
-     * Note that if the argument {@code z} is 0, the result is 0.
+     * <p> Note that if the argument {@code z} is 0, the result is 0.
      *
      * @param z any long value
      *
@@ -810,11 +833,11 @@ public class RandomSupport {
     }
 
     /**
-     * Computes the 32-bit mixing function for MurmurHash3.
-     * This is a 32-bit hashing function with excellent avalanche statistics.
+     * Computes the 32-bit mixing function for MurmurHash3. This is a 32-bit
+     * hashing function with excellent avalanche statistics.
      * https://github.com/aappleby/smhasher/wiki/MurmurHash3
      *
-     * Note that if the argument {@code z} is 0, the result is 0.
+     * <p> Note that if the argument {@code z} is 0, the result is 0.
      *
      * @param z any long value
      *
@@ -827,12 +850,12 @@ public class RandomSupport {
     }
 
     /**
-     * Computes Doug Lea's 32-bit mixing function.
-     * This is a 32-bit hashing function with excellent avalanche statistics.
-     * It has the advantages of using the same multiplicative constant twice
-     * and of using only 16-bit shifts.
+     * Computes Doug Lea's 32-bit mixing function. This is a 32-bit hashing
+     * function with excellent avalanche statistics. It has the advantages of
+     * using the same multiplicative constant twice and of using only 16-bit
+     * shifts.
      *
-     * Note that if the argument {@code z} is 0, the result is 0.
+     * <p> Note that if the argument {@code z} is 0, the result is 0.
      *
      * @param z any long value
      *
@@ -848,22 +871,22 @@ public class RandomSupport {
     // and AbstractArbitrarilyJumpableGenerator and AbstractSharedGenerator
 
     /**
-     * Base class for making Spliterator classes for streams of randomly chosen values.
+     * Base class for making Spliterator classes for streams of randomly chosen
+     * values.
      */
     public abstract static class RandomSpliterator {
 
         /** low range value */
-        public long index;
+       public long index;
 
-        /** high range value */
-        public final long fence;
+       /** high range value */
+       public final long fence;
 
-        /**
-         * Constructor
-         *
-         * @param index  low range value
-         * @param fence  high range value
-         */
+       /** Constructor
+        *
+        * @param index  low range value
+        * @param fence  high range value
+        */
         public RandomSpliterator(long index, long fence) {
             this.index = index; this.fence = fence;
         }
@@ -889,9 +912,9 @@ public class RandomSupport {
     }
 
     /**
-     * Spliterators for int streams. These are based on abstract spliterator classes provided
-     * by class AbstractSpliteratorGenerator. Each one needs to define only a constructor and two
-     * methods.
+     * Spliterators for int streams. These are based on abstract spliterator
+     * classes provided by class AbstractSpliteratorGenerator. Each one needs to
+     * define only a constructor and two methods.
      */
     public static class RandomIntsSpliterator extends RandomSupport.RandomSpliterator
             implements Spliterator.OfInt {
@@ -1085,25 +1108,25 @@ public class RandomSupport {
      *         from an exponential distribution whose mean is 1
      */
     static double computeNextExponential(RandomGenerator rng) {
-    /*
-     * The tables themselves, as well as a number of associated parameters, are
-     * defined in class java.util.DoubleZigguratTables, which is automatically
-     * generated by the program create_ziggurat_tables.c (which takes only a
-     * few seconds to run).
-     *
-     * For more information about the algorithm, see these articles:
-     *
-     * Christopher D. McFarland.  2016 (published online 24 Jun 2015).  A modified ziggurat
-     * algorithm for generating exponentially and normally distributed pseudorandom numbers.
-     * Journal of Statistical Computation and Simulation 86 (7), pages 1281-1294.
-     * https://www.tandfonline.com/doi/abs/10.1080/00949655.2015.1060234
-     * Also at https://arxiv.org/abs/1403.6870 (26 March 2014).
-     *
-     * Alastair J. Walker.  1977.  An efficient method for generating discrete random
-     * variables with general distributions. ACM Trans. Math. Software 3, 3
-     * (September 1977), 253-256. DOI: https://doi.org/10.1145/355744.355749
-     *
-     */
+        /*
+         * The tables themselves, as well as a number of associated parameters, are
+         * defined in class java.util.DoubleZigguratTables, which is automatically
+         * generated by the program create_ziggurat_tables.c (which takes only a
+         * few seconds to run).
+         *
+         * For more information about the algorithm, see these articles:
+         *
+         * Christopher D. McFarland.  2016 (published online 24 Jun 2015).  A modified ziggurat
+         * algorithm for generating exponentially and normally distributed pseudorandom numbers.
+         * Journal of Statistical Computation and Simulation 86 (7), pages 1281-1294.
+         * https://www.tandfonline.com/doi/abs/10.1080/00949655.2015.1060234
+         * Also at https://arxiv.org/abs/1403.6870 (26 March 2014).
+         *
+         * Alastair J. Walker.  1977.  An efficient method for generating discrete random
+         * variables with general distributions. ACM Trans. Math. Software 3, 3
+         * (September 1977), 253-256. DOI: https://doi.org/10.1145/355744.355749
+         *
+         */
         long U1 = rng.nextLong();
         // Experimentation on a variety of machines indicates that it is overall much faster
         // to do the following & and < operations on longs rather than first cast U1 to int
@@ -1123,7 +1146,7 @@ public class RandomSupport {
             int j = (int)UA & DoubleZigguratTables.exponentialAliasMask;
             if (UA >= DoubleZigguratTables.exponentialAliasThreshold[j]) {
                 j = DoubleZigguratTables.exponentialAliasMap[j] &
-                    DoubleZigguratTables.exponentialSignCorrectionMask;
+                        DoubleZigguratTables.exponentialSignCorrectionMask;
             }
             if (j > 0) {   // Sample overhang j
                 // For the exponential distribution, every overhang is convex.
@@ -1189,25 +1212,25 @@ public class RandomSupport {
      *         standard deviation is 1.
      */
     static double computeNextGaussian(RandomGenerator rng) {
-    /*
-     * The tables themselves, as well as a number of associated parameters, are
-     * defined in class java.util.DoubleZigguratTables, which is automatically
-     * generated by the program create_ziggurat_tables.c (which takes only a
-     * few seconds to run).
-     *
-     * For more information about the algorithm, see these articles:
-     *
-     * Christopher D. McFarland.  2016 (published online 24 Jun 2015).  A modified ziggurat
-     * algorithm for generating exponentially and normally distributed pseudorandom numbers.
-     * Journal of Statistical Computation and Simulation 86 (7), pages 1281-1294.
-     * https://www.tandfonline.com/doi/abs/10.1080/00949655.2015.1060234
-     * Also at https://arxiv.org/abs/1403.6870 (26 March 2014).
-     *
-     * Alastair J. Walker.  1977.  An efficient method for generating discrete random
-     * variables with general distributions. ACM Trans. Math. Software 3, 3
-     * (September 1977), 253-256. DOI: https://doi.org/10.1145/355744.355749
-     *
-     */
+        /*
+         * The tables themselves, as well as a number of associated parameters, are
+         * defined in class java.util.DoubleZigguratTables, which is automatically
+         * generated by the program create_ziggurat_tables.c (which takes only a
+         * few seconds to run).
+         *
+         * For more information about the algorithm, see these articles:
+         *
+         * Christopher D. McFarland.  2016 (published online 24 Jun 2015).  A modified ziggurat
+         * algorithm for generating exponentially and normally distributed pseudorandom numbers.
+         * Journal of Statistical Computation and Simulation 86 (7), pages 1281-1294.
+         * https://www.tandfonline.com/doi/abs/10.1080/00949655.2015.1060234
+         * Also at https://arxiv.org/abs/1403.6870 (26 March 2014).
+         *
+         * Alastair J. Walker.  1977.  An efficient method for generating discrete random
+         * variables with general distributions. ACM Trans. Math. Software 3, 3
+         * (September 1977), 253-256. DOI: https://doi.org/10.1145/355744.355749
+         *
+         */
         long U1 = rng.nextLong();
         // Experimentation on a variety of machines indicates that it is overall much faster
         // to do the following & and < operations on longs rather than first cast U1 to int
@@ -1339,18 +1362,23 @@ public class RandomSupport {
     }
 
     /**
-     * This class overrides the stream-producing methods (such as {@code ints()})
-     * in class {@link AbstractGenerator} to provide {@link Spliterator}-based
-     * implmentations that support potentially parallel execution.
+     * This class overrides the stream-producing methods (such as
+     * {@link RandomGenerator#ints() ints}()) in class {@link RandomGenerator}
+     * to provide {@link Spliterator}-based implmentations that support
+     * potentially parallel execution.
      *
-     * To implement a (pseudo)random number generator, the programmer needs
+     * <p> To implement a (pseudo)random number generator, the programmer needs
      * only to extend this class and provide implementations for the methods
-     * {@code nextInt()}, {@code nextLong()}, {@code makeIntsSpliterator},
-     * {@code makeLongsSpliterator}, and {@code makeDoublesSpliterator}.
+     * {@link RandomGenerator#nextInt() nextInt}(),
+     * {@link RandomGenerator#nextLong() nextLong}(),
+     * {@link AbstractSpliteratorGenerator#makeIntsSpliterator(long, long, int, int) makeIntsSpliterator}(index, fence, origin, bound),
+     * {@link AbstractSpliteratorGenerator#makeLongsSpliterator(long, long, long, long) makeLongsSpliterator}(index, fence, origin, bound),
+     * and
+     * {@link AbstractSpliteratorGenerator#makeDoublesSpliterator(long, long, double, double) makeDoublesSpliterator}(index, fence, origin, bound).
      *
-     * This class is not public; it provides shared code to the public
-     * classes {@link AbstractSplittableGenerator}, {@link AbstractSharedGenerator},
-     * and {@link AbstractArbitrarilyJumpableGenerator}.
+     * <p> This class is not public; it provides shared code to the public
+     * classes {@link AbstractSplittableGenerator}, and
+     * {@link AbstractArbitrarilyJumpableGenerator}.
      *
      * @since   16
      */
@@ -1376,10 +1404,11 @@ public class RandomSupport {
         }
 
         /**
-         * Create an instance of {@link Spliterator.OfInt} that for each traversal position
-         * between the specified index (inclusive) and the specified fence (exclusive) generates
-         * a (pseudo)randomly chosen {@code int} value between the specified origin (inclusive) and
-         * the specified bound (exclusive).
+         * Create an instance of {@link Spliterator.OfInt} that for each
+         * traversal position between the specified index (inclusive) and the
+         * specified fence (exclusive) generates a (pseudo)randomly chosen
+         * {@code int} value between the specified origin (inclusive) and the
+         * specified bound (exclusive).
          *
          * @param index the (inclusive) lower bound on traversal positions
          * @param fence the (exclusive) upper bound on traversal positions
@@ -1390,10 +1419,11 @@ public class RandomSupport {
         public abstract Spliterator.OfInt makeIntsSpliterator(long index, long fence, int origin, int bound);
 
         /**
-         * Create an instance of {@link Spliterator.OfLong} that for each traversal position
-         * between the specified index (inclusive) and the specified fence (exclusive) generates
-         * a (pseudo)randomly chosen {@code long} value between the specified origin (inclusive) and
-         * the specified bound (exclusive).
+         * Create an instance of {@link Spliterator.OfLong} that for each
+         * traversal position between the specified index (inclusive) and the
+         * specified fence (exclusive) generates a (pseudo)randomly chosen
+         * {@code long} value between the specified origin (inclusive) and the
+         * specified bound (exclusive).
          *
          * @param index the (inclusive) lower bound on traversal positions
          * @param fence the (exclusive) upper bound on traversal positions
@@ -1404,10 +1434,11 @@ public class RandomSupport {
         public abstract Spliterator.OfLong makeLongsSpliterator(long index, long fence, long origin, long bound);
 
         /**
-         * Create an instance of {@link Spliterator.OfDouble} that for each traversal position
-         * between the specified index (inclusive) and the specified fence (exclusive) generates
-         * a (pseudo)randomly chosen {@code double} value between the specified origin (inclusive) and
-         * the specified bound (exclusive).
+         * Create an instance of {@link Spliterator.OfDouble} that for each
+         * traversal position between the specified index (inclusive) and the
+         * specified fence (exclusive) generates a (pseudo)randomly chosen
+         * {@code double} value between the specified origin (inclusive) and the
+         * specified bound (exclusive).
          *
          * @param index the (inclusive) lower bound on traversal positions
          * @param fence the (exclusive) upper bound on traversal positions
@@ -1435,8 +1466,9 @@ public class RandomSupport {
         }
 
         /**
-         * Returns a stream producing the given {@code streamSize} number of (pseudo)random {@code int}
-         * values from this generator and/or one split from it.
+         * Returns a stream producing the given {@code streamSize} number of
+         * (pseudo)random {@code int} values from this generator and/or one
+         * split from it.
          *
          * @param streamSize the number of values to generate
          *
@@ -1464,9 +1496,10 @@ public class RandomSupport {
         }
 
         /**
-         * Returns a stream producing the given {@code streamSize} number of (pseudo)random {@code int}
-         * values from this generator and/or one split from it; each value conforms to the given origin
-         * (inclusive) and bound (exclusive).
+         * Returns a stream producing the given {@code streamSize} number of
+         * (pseudo)random {@code int} values from this generator and/or one
+         * split from it; each value conforms to the given origin (inclusive)
+         * and bound (exclusive).
          *
          * @param streamSize         the number of values to generate
          * @param randomNumberOrigin the origin (inclusive) of each random value
@@ -1486,9 +1519,9 @@ public class RandomSupport {
         }
 
         /**
-         * Returns an effectively unlimited stream of (pseudo)random {@code int} values from this
-         * generator and/or one split from it; each value conforms to the given origin (inclusive) and
-         * bound (exclusive).
+         * Returns an effectively unlimited stream of (pseudo)random {@code int}
+         * values from this generator and/or one split from it; each value
+         * conforms to the given origin (inclusive) and bound (exclusive).
          *
          * @param randomNumberOrigin the origin (inclusive) of each random value
          * @param randomNumberBound  the bound (exclusive) of each random value
@@ -1508,8 +1541,9 @@ public class RandomSupport {
         }
 
         /**
-         * Returns a stream producing the given {@code streamSize} number of (pseudo)random {@code long}
-         * values from this generator and/or one split from it.
+         * Returns a stream producing the given {@code streamSize} number of
+         * (pseudo)random {@code long} values from this generator and/or one
+         * split from it.
          *
          * @param streamSize the number of values to generate
          *
@@ -1523,8 +1557,8 @@ public class RandomSupport {
         }
 
         /**
-         * Returns an effectively unlimited stream of (pseudo)random {@code long} values from this
-         * generator and/or one split from it.
+         * Returns an effectively unlimited stream of (pseudo)random
+         * {@code long} values from this generator and/or one split from it.
          *
          * @return a stream of (pseudo)random {@code long} values
          *
@@ -1536,9 +1570,10 @@ public class RandomSupport {
         }
 
         /**
-         * Returns a stream producing the given {@code streamSize} number of (pseudo)random {@code long}
-         * values from this generator and/or one split from it; each value conforms to the given origin
-         * (inclusive) and bound (exclusive).
+         * Returns a stream producing the given {@code streamSize} number of
+         * (pseudo)random {@code long} values from this generator and/or one
+         * split from it; each value conforms to the given origin (inclusive)
+         * and bound (exclusive).
          *
          * @param streamSize         the number of values to generate
          * @param randomNumberOrigin the origin (inclusive) of each random value
@@ -1552,16 +1587,17 @@ public class RandomSupport {
          *                                  randomNumberBound}
          */
         public LongStream longs(long streamSize, long randomNumberOrigin,
-                                 long randomNumberBound) {
+                                long randomNumberBound) {
             RandomSupport.checkStreamSize(streamSize);
             RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
             return longStream(makeLongsSpliterator(0L, streamSize, randomNumberOrigin, randomNumberBound));
         }
 
         /**
-         * Returns an effectively unlimited stream of (pseudo)random {@code long} values from this
-         * generator and/or one split from it; each value conforms to the given origin (inclusive) and
-         * bound (exclusive).
+         * Returns an effectively unlimited stream of (pseudo)random
+         * {@code long} values from this generator and/or one split from it;
+         * each value conforms to the given origin (inclusive) and bound
+         * (exclusive).
          *
          * @param randomNumberOrigin the origin (inclusive) of each random value
          * @param randomNumberBound  the bound (exclusive) of each random value
@@ -1578,14 +1614,15 @@ public class RandomSupport {
         public LongStream longs(long randomNumberOrigin, long randomNumberBound) {
             RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
             return StreamSupport.longStream
-                (makeLongsSpliterator(0L, Long.MAX_VALUE, randomNumberOrigin, randomNumberBound),
-                 false);
+                    (makeLongsSpliterator(0L, Long.MAX_VALUE, randomNumberOrigin, randomNumberBound),
+                            false);
         }
 
         /**
-         * Returns a stream producing the given {@code streamSize} number of (pseudo)random {@code double}
-         * values from this generator and/or one split from it; each value is between zero (inclusive)
-         * and one (exclusive).
+         * Returns a stream producing the given {@code streamSize} number of
+         * (pseudo)random {@code double} values from this generator and/or one
+         * split from it; each value is between zero (inclusive) and one
+         * (exclusive).
          *
          * @param streamSize the number of values to generate
          *
@@ -1599,9 +1636,9 @@ public class RandomSupport {
         }
 
         /**
-         * Returns an effectively unlimited stream of (pseudo)random {@code double} values from this
-         * generator and/or one split from it; each value is between zero (inclusive) and one
-         * (exclusive).
+         * Returns an effectively unlimited stream of (pseudo)random
+         * {@code double} values from this generator and/or one split from it;
+         * each value is between zero (inclusive) and one (exclusive).
          *
          * @return a stream of (pseudo)random {@code double} values
          *
@@ -1613,9 +1650,10 @@ public class RandomSupport {
         }
 
         /**
-         * Returns a stream producing the given {@code streamSize} number of (pseudo)random {@code double}
-         * values from this generator and/or one split from it; each value conforms to the given origin
-         * (inclusive) and bound (exclusive).
+         * Returns a stream producing the given {@code streamSize} number of
+         * (pseudo)random {@code double} values from this generator and/or one
+         * split from it; each value conforms to the given origin (inclusive)
+         * and bound (exclusive).
          *
          * @param streamSize         the number of values to generate
          * @param randomNumberOrigin the origin (inclusive) of each random value
@@ -1635,9 +1673,10 @@ public class RandomSupport {
         }
 
         /**
-         * Returns an effectively unlimited stream of (pseudo)random {@code double} values from this
-         * generator and/or one split from it; each value conforms to the given origin (inclusive) and
-         * bound (exclusive).
+         * Returns an effectively unlimited stream of (pseudo)random
+         * {@code double} values from this generator and/or one split from it;
+         * each value conforms to the given origin (inclusive) and bound
+         * (exclusive).
          *
          * @param randomNumberOrigin the origin (inclusive) of each random value
          * @param randomNumberBound  the bound (exclusive) of each random value
@@ -1663,45 +1702,55 @@ public class RandomSupport {
      * {@link ArbitrarilyJumpableGenerator} interface, to minimize the effort
      * required to implement that interface.
      *
-     * To implement a (pseudo)random number generator, the programmer needs
-     * only to extend this class and provide implementations for the
-     * methods {@link #nextInt()}, {@link #nextLong()}, {@link #copy()},
-     * {@link #jump(double)}, {@link #jumpPowerOfTwo(int)},
-     * {@link #defaultJumpDistance()}, and {@link #defaultLeapDistance()}.
+     * <p> To implement a (pseudo)random number generator, the programmer needs
+     * only to extend this class and provide implementations for the methods
+     * {@link RandomGenerator#nextInt() nextInt}(),
+     * {@link RandomGenerator#nextLong() nextLong}(),
+     * {@link ArbitrarilyJumpableGenerator#copy() copy}(),
+     * {@link JumpableGenerator#jumps(long) jumps}(long),
+     * {@link ArbitrarilyJumpableGenerator#jumpPowerOfTwo(int) jumpPowerOfTwo}(logDistance),
+     * {@link JumpableGenerator#defaultJumpDistance() defaultJumpDistance}(),
+     * and
+     * {@link LeapableGenerator#defaultLeapDistance() defaultLeapDistance}().
      *
-     * (If the (pseudo)random number generator also has the ability to split,
-     * then the programmer may wish to consider instead extending
+     * <p> (If the (pseudo)random number generator also has the ability to
+     * split, then the programmer may wish to consider instead extending
      * {@link AbstractSplittableGenerator}.)
      *
-     * The programmer should generally provide at least three constructors:
-     * one that takes no arguments, one that accepts a {@code long}
-     * seed value, and one that accepts an array of seed {@code byte} values.
-     * This class provides a public {@code initialSeed()} method that may
-     * be useful in initializing some static state from which to derive
-     * defaults seeds for use by the no-argument constructor.
+     * <p> The programmer should generally provide at least three constructors:
+     * one that takes no arguments, one that accepts a {@code long} seed value,
+     * and one that accepts an array of seed {@code byte} values. This class
+     * provides a public {@link RandomSupport#initialSeed() initialSeed}()
+     * method that may be useful in initializing some static state from which to
+     * derive defaults seeds for use by the no-argument constructor.
      *
-     * For the stream methods (such as {@code ints()} and {@code splits()}),
-     * this class provides {@link Spliterator}-based implementations that
-     * allow parallel execution when appropriate.  In this respect
-     * {@link ArbitrarilyJumpableGenerator} differs from {@link JumpableGenerator},
-     * which provides very simple implementations that produce
-     * sequential streams only.
+     * <p> For the stream methods (such as {@link RandomGenerator#ints() ints}()
+     * and {@link SplittableGenerator#splits() splits}()), this class provides
+     * {@link Spliterator}-based implementations that allow parallel execution
+     * when appropriate. In this respect {@link ArbitrarilyJumpableGenerator}
+     * differs from {@link JumpableGenerator}, which provides very simple
+     * implementations that produce sequential streams only.
      *
-     * <p>An implementation of the {@link AbstractArbitrarilyJumpableGenerator} class
-     * must provide concrete definitions for the methods {@code nextInt()},
-     * {@code nextLong}, {@code period()}, {@code copy()}, {@code jump(double)},
-     * {@code defaultJumpDistance()}, and {@code defaultLeapDistance()}.
+     * <p> An implementation of the {@link AbstractArbitrarilyJumpableGenerator}
+     * class must provide concrete definitions for the methods
+     * {@link RandomGenerator#nextInt() nextInt}(),
+     * {@link RandomGenerator#nextLong() nextLong}(),
+     * {@link RandomGenerator#period() period}(), {@code copy()},
+     * {@link AbstractArbitrarilyJumpableGenerator#jumps(double) jumps}(double),
+     * {@link JumpableGenerator#defaultJumpDistance() defaultJumpDistance}(),
+     * and
+     * {@link LeapableGenerator#defaultLeapDistance() defaultLeapDistance}().
      * Default implementations are provided for all other methods.
      *
-     * The documentation for each non-abstract method in this class
-     * describes its implementation in detail. Each of these methods may
-     * be overridden if the (pseudo)random number generator being
-     * implemented admits a more efficient implementation.
+     * <p> The documentation for each non-abstract method in this class
+     * describes its implementation in detail. Each of these methods may be
+     * overridden if the (pseudo)random number generator being implemented
+     * admits a more efficient implementation.
      *
      * @since   16
      */
     public abstract static class AbstractArbitrarilyJumpableGenerator
-        extends AbstractSpliteratorGenerator implements RandomGenerator.ArbitrarilyJumpableGenerator {
+            extends AbstractSpliteratorGenerator implements RandomGenerator.ArbitrarilyJumpableGenerator {
 
         /*
          * Implementation Overview.
@@ -1757,9 +1806,9 @@ public class RandomSupport {
         /* ---------------- public methods ---------------- */
 
         /**
-         * Returns a new generator whose internal state is an exact copy
-         * of this generator (therefore their future behavior should be
-         * identical if subjected to the same series of operations).
+         * Returns a new generator whose internal state is an exact copy of this
+         * generator (therefore their future behavior should be identical if
+         * subjected to the same series of operations).
          *
          * @return a new object that is a copy of this generator
          */
@@ -1772,9 +1821,10 @@ public class RandomSupport {
         }
 
         /**
-         * Returns an effectively unlimited stream of new (pseudo)random number generators, each of which
-         * implements the {@link RandomGenerator} interface, produced by jumping copies of this
-         * generator by different integer multiples of the default jump distance.
+         * Returns an effectively unlimited stream of new (pseudo)random number
+         * generators, each of which implements the {@link RandomGenerator}
+         * interface, produced by jumping copies of this generator by different
+         * integer multiples of the default jump distance.
          *
          * @return a stream of objects that implement the {@link RandomGenerator} interface
          *
@@ -1786,10 +1836,11 @@ public class RandomSupport {
         }
 
         /**
-         * Returns a stream producing the given {@code streamSize} number of
-         * new (pseudo)random number generators, each of which implements the
-         * {@link RandomGenerator} interface, produced by jumping copies of this generator
-         * by different integer multiples of the default jump distance.
+         * Returns a stream producing the given {@code streamSize} number of new
+         * (pseudo)random number generators, each of which implements the
+         * {@link RandomGenerator} interface, produced by jumping copies of this
+         * generator by different integer multiples of the default jump
+         * distance.
          *
          * @param streamSize the number of generators to generate
          *
@@ -1803,9 +1854,10 @@ public class RandomSupport {
         }
 
         /**
-         * Returns an effectively unlimited stream of new (pseudo)random number generators, each of which
-         * implements the {@link RandomGenerator} interface, produced by jumping copies of this
-         * generator by different integer multiples of the specified jump distance.
+         * Returns an effectively unlimited stream of new (pseudo)random number
+         * generators, each of which implements the {@link RandomGenerator}
+         * interface, produced by jumping copies of this generator by different
+         * integer multiples of the specified jump distance.
          *
          * @param distance a distance to jump forward within the state cycle
          *
@@ -1819,9 +1871,10 @@ public class RandomSupport {
         }
 
         /**
-         * Returns a stream producing the given {@code streamSize} number of new (pseudo)random number
-         * generators, each of which implements the {@link RandomGenerator} interface, produced by
-         * jumping copies of this generator by different integer multiples of the specified jump
+         * Returns a stream producing the given {@code streamSize} number of new
+         * (pseudo)random number generators, each of which implements the
+         * {@link RandomGenerator} interface, produced by jumping copies of this
+         * generator by different integer multiples of the specified jump
          * distance.
          *
          * @param streamSize the number of generators to generate
@@ -1837,10 +1890,11 @@ public class RandomSupport {
         }
 
         /**
-         * Alter the state of this (pseudo)random number generator so as to
-         * jump forward a very large, fixed distance (typically 2<sup>128</sup>
-         * or more) within its state cycle.  The distance used is that
-         * returned by method {@code defaultLeapDistance()}.
+         * Alter the state of this (pseudo)random number generator so as to jump
+         * forward a very large, fixed distance (typically 2<sup>128</sup> or
+         * more) within its state cycle. The distance used is that returned by
+         * method
+         * {@link LeapableGenerator#defaultLeapDistance() defaultLeapDistance}().
          */
         public void leap() {
             jump(defaultLeapDistance());
@@ -1849,9 +1903,10 @@ public class RandomSupport {
         // Stream methods for leaping
 
         /**
-         * Returns an effectively unlimited stream of new (pseudo)random number generators, each of which
-         * implements the {@link RandomGenerator} interface, produced by jumping copies of this
-         * generator by different integer multiples of the default leap distance.
+         * Returns an effectively unlimited stream of new (pseudo)random number
+         * generators, each of which implements the {@link RandomGenerator}
+         * interface, produced by jumping copies of this generator by different
+         * integer multiples of the default leap distance.
          *
          * @implNote This method is implemented to be equivalent to {@code leaps(Long.MAX_VALUE)}.
          *
@@ -1862,9 +1917,10 @@ public class RandomSupport {
         }
 
         /**
-         * Returns a stream producing the given {@code streamSize} number of new (pseudo)random number
-         * generators, each of which implements the {@link RandomGenerator} interface, produced by
-         * jumping copies of this generator by different integer multiples of the default leap
+         * Returns a stream producing the given {@code streamSize} number of new
+         * (pseudo)random number generators, each of which implements the
+         * {@link RandomGenerator} interface, produced by jumping copies of this
+         * generator by different integer multiples of the default leap
          * distance.
          *
          * @param streamSize the number of generators to generate
@@ -1879,13 +1935,16 @@ public class RandomSupport {
 
 
         /**
-         * Spliterator for int streams. We multiplex the four int versions into one class by treating a
-         * bound less than origin as unbounded, and also by treating "infinite" as equivalent to
-         * {@code Long.MAX_VALUE}. For splits, we choose to override the method {@code trySplit()} to
-         * try to optimize execution speed: instead of dividing a range in half, it breaks off the
-         * largest possible chunk whose size is a power of two such that the remaining chunk is not
-         * empty. In this way, the necessary jump distances will tend to be powers of two.  The long
-         * and double versions of this class are identical except for types.
+         * Spliterator for int streams. We multiplex the four int versions into
+         * one class by treating a bound less than origin as unbounded, and also
+         * by treating "infinite" as equivalent to
+         * {@link Long#MAX_VALUE Long.MAX_VALUE}. For splits, we choose to
+         * override the method {@code trySplit()} to try to optimize execution
+         * speed: instead of dividing a range in half, it breaks off the largest
+         * possible chunk whose size is a power of two such that the remaining
+         * chunk is not empty. In this way, the necessary jump distances will
+         * tend to be powers of two. The long and double versions of this class
+         * are identical except for types.
          */
         static class RandomIntsSpliterator extends RandomSupport.RandomSpliterator implements Spliterator.OfInt {
             final ArbitrarilyJumpableGenerator generatingGenerator;
@@ -2036,7 +2095,8 @@ public class RandomSupport {
         // powers of two.
 
         /**
-         * Spliterator for stream of generators of type RandomGenerator produced by jumps.
+         * Spliterator for stream of generators of type RandomGenerator produced
+         * by jumps.
          */
         static class RandomJumpsSpliterator extends RandomSupport.RandomSpliterator implements Spliterator<RandomGenerator> {
             ArbitrarilyJumpableGenerator generatingGenerator;
@@ -2081,7 +2141,8 @@ public class RandomSupport {
         }
 
         /**
-         * Spliterator for stream of generators of type RandomGenerator produced by leaps.
+         * Spliterator for stream of generators of type RandomGenerator produced
+         * by leaps.
          */
         static class RandomLeapsSpliterator extends RandomSupport.RandomSpliterator implements Spliterator<JumpableGenerator> {
             ArbitrarilyJumpableGenerator generatingGenerator;
@@ -2125,7 +2186,8 @@ public class RandomSupport {
         }
 
         /**
-         * Spliterator for stream of generators of type RandomGenerator produced by arbitrary jumps.
+         * Spliterator for stream of generators of type RandomGenerator produced
+         * by arbitrary jumps.
          */
         static class RandomArbitraryJumpsSpliterator extends RandomSupport.RandomSpliterator implements Spliterator<ArbitrarilyJumpableGenerator> {
             ArbitrarilyJumpableGenerator generatingGenerator;
@@ -2171,30 +2233,38 @@ public class RandomSupport {
     }
 
     /**
-     * This class provides much of the implementation of the {@link SplittableGenerator} interface, to
-     * minimize the effort required to implement this interface.
-     * <p>
-     * To implement a (pseudo)random number generator, the programmer needs only to extend this class and
-     * provide implementations for the methods {@code nextInt()}, {@code nextLong()}, {@code period()},
-     * and {@code split(SplittableGenerator)}.
-     * <p>
-     * (If the (pseudo)random number generator also has the ability to jump an arbitrary
-     * specified distance, then the programmer may wish to consider instead extending the
-     * class {@link AbstractArbitrarilyJumpableGenerator}.  See also the class
-     * {@link AbstractSplittableWithBrineGenerator}.)
-     * <p>
-     * The programmer should generally provide at least three constructors: one that takes no arguments,
-     * one that accepts a {@code long} seed value, and one that accepts an array of seed {@code byte}
-     * values. This class provides a public {@code initialSeed()} method that may be useful in
-     * initializing some static state from which to derive defaults seeds for use by the no-argument
-     * constructor.
-     * <p>
-     * For the stream methods (such as {@code ints()} and {@code splits()}), this class provides
-     * {@link Spliterator}-based implementations that allow parallel execution when appropriate.
-     * <p>
-     * The documentation for each non-abstract method in this class describes its implementation in
-     * detail. Each of these methods may be overridden if the (pseudo)random number generator being
-     * implemented admits a more efficient implementation.
+     * This class provides much of the implementation of the
+     * {@link SplittableGenerator} interface, to minimize the effort required to
+     * implement this interface.
+     *
+     * <p> To implement a (pseudo)random number generator, the programmer needs
+     * only to extend this class and provide implementations for the methods
+     * {@link RandomGenerator#nextInt() nextInt}(),
+     * {@link RandomGenerator#nextLong() nextLong}(),
+     * {@link RandomGenerator#period() period}(), and
+     * {@link SplittableGenerator#split(SplittableGenerator) split}(splittable).
+     *
+     * <p> (If the (pseudo)random number generator also has the ability to jump
+     * an arbitrary specified distance, then the programmer may wish to consider
+     * instead extending the class {@link AbstractArbitrarilyJumpableGenerator}.
+     * See also the class {@link AbstractSplittableWithBrineGenerator}.)
+     *
+     * <p> The programmer should generally provide at least three constructors:
+     * one that takes no arguments, one that accepts a {@code long} seed value,
+     * and one that accepts an array of seed {@code byte} values. This class
+     * provides a public {@link RandomSupport#initialSeed() initialSeed}()
+     * method that may be useful in initializing some static state from which to
+     * derive defaults seeds for use by the no-argument constructor.
+     *
+     * <p> For the stream methods (such as {@link RandomGenerator#ints() ints}()
+     * and {@link SplittableGenerator#splits() splits}()), this class provides
+     * {@link Spliterator}-based implementations that allow parallel execution
+     * when appropriate.
+     *
+     * <p> The documentation for each non-abstract method in this class
+     * describes its implementation in detail. Each of these methods may be
+     * overridden if the (pseudo)random number generator being implemented
+     * admits a more efficient implementation.
      *
      * @since   16
      */
@@ -2240,7 +2310,8 @@ public class RandomSupport {
         /* ---------------- public methods ---------------- */
 
         /**
-         * Implements the @code{split()} method as {@code this.split(this)}.
+         * Implements the @code{split()} method as
+         * {@link SplittableGenerator#split(SplittableGenerator) split}(this).
          *
          * @return the new {@link SplittableGenerator} instance
          */
@@ -2251,10 +2322,12 @@ public class RandomSupport {
         // Stream methods for splittings
 
         /**
-         * Returns an effectively unlimited stream of new (pseudo)random number generators, each of which
-         * implements the {@link SplittableGenerator} interface.
-         * <p>
-         * This (pseudo)random number generator provides the entropy used to seed the new ones.
+         * Returns an effectively unlimited stream of new (pseudo)random number
+         * generators, each of which implements the {@link SplittableGenerator}
+         * interface.
+         *
+         * <p> This (pseudo)random number generator provides the entropy used to
+         * seed the new ones.
          *
          * @return a stream of {@link SplittableGenerator} objects
          *
@@ -2265,10 +2338,12 @@ public class RandomSupport {
         }
 
         /**
-         * Returns a stream producing the given {@code streamSize} number of new (pseudo)random number
-         * generators, each of which implements the {@link SplittableGenerator} interface.
-         * <p>
-         * This (pseudo)random number generator provides the entropy used to seed the new ones.
+         * Returns a stream producing the given {@code streamSize} number of new
+         * (pseudo)random number generators, each of which implements the
+         * {@link SplittableGenerator} interface.
+         *
+         * <p> This (pseudo)random number generator provides the entropy used to
+         * seed the new ones.
          *
          * @param streamSize the number of values to generate
          *
@@ -2281,8 +2356,9 @@ public class RandomSupport {
         }
 
         /**
-         * Returns an effectively unlimited stream of new (pseudo)random number generators, each of which
-         * implements the {@link SplittableGenerator} interface.
+         * Returns an effectively unlimited stream of new (pseudo)random number
+         * generators, each of which implements the {@link SplittableGenerator}
+         * interface.
          *
          * @param source a {@link SplittableGenerator} instance to be used instead of this one as a source of
          *               (pseudo)random bits used to initialize the state of the new ones.
@@ -2296,8 +2372,9 @@ public class RandomSupport {
         }
 
         /**
-         * Returns a stream producing the given {@code streamSize} number of new (pseudo)random number
-         * generators, each of which implements the {@link SplittableGenerator} interface.
+         * Returns a stream producing the given {@code streamSize} number of new
+         * (pseudo)random number generators, each of which implements the
+         * {@link SplittableGenerator} interface.
          *
          * @param streamSize the number of values to generate
          * @param source     a {@link SplittableGenerator} instance to be used instead of this one as a source
@@ -2313,10 +2390,12 @@ public class RandomSupport {
         }
 
         /**
-         * Spliterator for int streams.  We multiplex the four int versions into one class by treating a
-         * bound less than origin as unbounded, and also by treating "infinite" as equivalent to
-         * {@code Long.MAX_VALUE}. For splits, it uses the standard divide-by-two approach. The long and
-         * double versions of this class are identical except for types.
+         * Spliterator for int streams. We multiplex the four int versions into
+         * one class by treating a bound less than origin as unbounded, and also
+         * by treating "infinite" as equivalent to
+         * {@link Long#MAX_VALUE Long.MAX_VALUE}. For splits, it uses the
+         * standard divide-by-two approach. The long and double versions of this
+         * class are identical except for types.
          */
         static class RandomIntsSpliterator extends RandomSupport.RandomSpliterator implements Spliterator.OfInt {
             final SplittableGenerator generatingGenerator;
@@ -2454,17 +2533,18 @@ public class RandomSupport {
         }
 
         /**
-         * Spliterator for stream of generators of type SplittableGenerator.  We multiplex the two
-         * versions into one class by treating "infinite" as equivalent to Long.MAX_VALUE.
-         * For splits, it uses the standard divide-by-two approach.
+         * Spliterator for stream of generators of type SplittableGenerator. We
+         * multiplex the two versions into one class by treating "infinite" as
+         * equivalent to Long.MAX_VALUE. For splits, it uses the standard
+         * divide-by-two approach.
          */
         static class RandomSplitsSpliterator extends RandomSpliterator implements Spliterator<SplittableGenerator> {
             final SplittableGenerator generatingGenerator;
             final SplittableGenerator constructingGenerator;
 
             RandomSplitsSpliterator(SplittableGenerator generatingGenerator,
-                   long index, long fence,
-                   SplittableGenerator constructingGenerator) {
+                                    long index, long fence,
+                                    SplittableGenerator constructingGenerator) {
                 super(index, fence);
                 this.generatingGenerator = generatingGenerator;
                 this.constructingGenerator = constructingGenerator;
@@ -2505,32 +2585,42 @@ public class RandomSupport {
     }
 
     /**
-     * This class provides much of the implementation of the {@link SplittableGenerator} interface, to
-     * minimize the effort required to implement this interface.  It is similar to the class
-     * {@link AbstractSplittableGenerator} but makes use of the brine technique for ensuring that
-     * distinct generators created by a single call to a {@code splits} method have distinct state cycles.
-     * <p>
-     * To implement a (pseudo)random number generator, the programmer needs only to extend this class and
-     * provide implementations for the methods {@code nextInt()}, {@code nextLong()}, {@code period()},
-     * and {@code split(SplittableGenerator, long)}.
-     * <p>
-     * The programmer should generally provide at least three constructors: one that takes no arguments,
-     * one that accepts a {@code long} seed value, and one that accepts an array of seed {@code byte}
-     * values. This class provides a public {@code initialSeed()} method that may be useful in
-     * initializing some static state from which to derive defaults seeds for use by the no-argument
-     * constructor.
-     * <p>
-     * For the stream methods (such as {@code ints()} and {@code splits()}), this class provides
-     * {@link Spliterator}-based implementations that allow parallel execution when appropriate.
-     * <p>
-     * The documentation for each non-abstract method in this class describes its implementation in
-     * detail. Each of these methods may be overridden if the (pseudo)random number generator being
-     * implemented admits a more efficient implementation.
+     * This class provides much of the implementation of the
+     * {@link SplittableGenerator} interface, to minimize the effort required to
+     * implement this interface. It is similar to the class
+     * {@link AbstractSplittableGenerator} but makes use of the brine technique
+     * for ensuring that distinct generators created by a single call to a
+     * {@link SplittableGenerator#splits() splits}() method have distinct state
+     * cycles.
+     *
+     * <p> To implement a (pseudo)random number generator, the programmer needs
+     * only to extend this class and provide implementations for the methods
+     * {@link RandomGenerator#nextInt() nextInt}(),
+     * {@link RandomGenerator#nextLong() nextLong}(),
+     * {@link RandomGenerator#period() period}(), and
+     * {@link RandomSplitsSpliteratorWithSalt#split(SplittableGenerator, long) split}(splittable, brine).
+     *
+     * <p> The programmer should generally provide at least three constructors:
+     * one that takes no arguments, one that accepts a {@code long} seed value,
+     * and one that accepts an array of seed {@code byte} values. This class
+     * provides a public {@link RandomSupport#initialSeed() initialSeed}()
+     * method that may be useful in initializing some static state from which to
+     * derive defaults seeds for use by the no-argument constructor.
+     *
+     * <p> For the stream methods (such as {@link RandomGenerator#ints() ints}()
+     * and {@link SplittableGenerator#splits() splits}()), this class provides
+     * {@link Spliterator}-based implementations that allow parallel execution
+     * when appropriate.
+     *
+     * <p> The documentation for each non-abstract method in this class
+     * describes its implementation in detail. Each of these methods may be
+     * overridden if the (pseudo)random number generator being implemented
+     * admits a more efficient implementation.
      *
      * @since   16
      */
     public abstract static class AbstractSplittableWithBrineGenerator
-       extends AbstractSplittableGenerator {
+            extends AbstractSplittableGenerator {
 
         /*
          * Implementation Overview.
@@ -2584,9 +2674,9 @@ public class RandomSupport {
             long multiplier = (1 << SALT_SHIFT) - 1;
             long salt = multiplier << (64 - SALT_SHIFT);
             while ((salt & multiplier) != 0) {
-            long digit = Math.multiplyHigh(bits, multiplier);
-            salt = (salt >>> SALT_SHIFT) | (digit << (64 - SALT_SHIFT));
-            bits *= multiplier;
+                long digit = Math.multiplyHigh(bits, multiplier);
+                salt = (salt >>> SALT_SHIFT) | (digit << (64 - SALT_SHIFT));
+                bits *= multiplier;
             }
             // This is the point at which newly generated salt gets injected into
             // the root of a newly created brine-generating splits-spliterator.
@@ -2598,15 +2688,17 @@ public class RandomSupport {
         // Stream methods for splitting
 
         /**
-         * Constructs and returns a new instance of {@code AbstractSplittableWithBrineGenerator}
-         * that shares no mutable state with this instance. However, with very high
-         * probability, the set of values collectively generated by the two objects
-         * should have the same statistical properties as if the same quantity of
-         * values were generated by a single thread using a single may be
-         * {@code AbstractSplittableWithBrineGenerator} object. Either or both of the two objects
-         * further split using the {@code split()} method, and the same expected
-         * statistical properties apply to the entire set of generators constructed
-         * by such recursive splitting.
+         * Constructs and returns a new instance of
+         * {@link AbstractSplittableWithBrineGenerator} that shares no mutable
+         * state with this instance. However, with very high probability, the
+         * set of values collectively generated by the two objects should have
+         * the same statistical properties as if the same quantity of values
+         * were generated by a single thread using a single may be
+         * {@link AbstractSplittableWithBrineGenerator} object. Either or both
+         * of the two objects further split using the
+         * {@link SplittableGenerator#split() split}() method, and the same
+         * expected statistical properties apply to the entire set of generators
+         * constructed by such recursive splitting.
          *
          * @param brine a long value, of which the low 63 bits provide a unique id
          * among calls to this method for constructing a single series of Generator objects.
@@ -2618,15 +2710,16 @@ public class RandomSupport {
         }
 
         /**
-         * Constructs and returns a new instance of {@code SplittableGenerator}
-         * that shares no mutable state with this instance.
-         * However, with very high probability, the set of values collectively
-         * generated by the two objects has the same statistical properties as if
-         * same the quantity of values were generated by a single thread using
-         * a single {@code L64X128MixRandom} object.  Either or both of the two
-         * objects may be further split using the {@code split} method,
-         * and the same expected statistical properties apply to the
-         * entire set of generators constructed by such recursive splitting.
+         * Constructs and returns a new instance of {@link SplittableGenerator}
+         * that shares no mutable state with this instance. However, with very
+         * high probability, the set of values collectively generated by the two
+         * objects has the same statistical properties as if same the quantity
+         * of values were generated by a single thread using a single
+         * {@code jdk.random.L64X128MixRandom} object. Either or both of the two
+         * objects may be further split using the
+         * {@link SplittableGenerator#split() split}() method, and the same
+         * expected statistical properties apply to the entire set of generators
+         * constructed by such recursive splitting.
          *
          * @param source a {@code SplittableGenerator} instance to be used instead
          *               of this one as a source of (pseudo)random bits used to
@@ -2639,15 +2732,17 @@ public class RandomSupport {
         }
 
         /**
-         * Constructs and returns a new instance of {@code AbstractSplittableWithBrineGenerator}
-         * that shares no mutable state with this instance. However, with very high
-         * probability, the set of values collectively generated by the two objects
-         * should have the same statistical properties as if the same quantity of
-         * values were generated by a single thread using a single may be
-         * {@code AbstractSplittableWithBrineGenerator} object. Either or both of the two objects
-         * further split using the {@code split()} method, and the same expected
-         * statistical properties apply to the entire set of generators constructed
-         * by such recursive splitting.
+         * Constructs and returns a new instance of
+         * {@link AbstractSplittableWithBrineGenerator} that shares no mutable
+         * state with this instance. However, with very high probability, the
+         * set of values collectively generated by the two objects should have
+         * the same statistical properties as if the same quantity of values
+         * were generated by a single thread using a single may be
+         * {@link AbstractSplittableWithBrineGenerator} object. Either or both
+         * of the two objects further split using the
+         * {@link SplittableGenerator#split() split}() method, and the same
+         * expected statistical properties apply to the entire set of generators
+         * constructed by such recursive splitting.
          *
          * @param source a {@code SplittableGenerator} instance to be used instead
          *               of this one as a source of (pseudo)random bits used to
@@ -2663,15 +2758,18 @@ public class RandomSupport {
 
         /* ---------------- spliterator ---------------- */
         /**
-         * Alternate spliterator for stream of generators of type SplittableGenerator.  We multiplex
-         * the two versions into one class by treating "infinite" as equivalent to Long.MAX_VALUE.
-         * For splits, it uses the standard divide-by-two approach.
+         * Alternate spliterator for stream of generators of type
+         * SplittableGenerator. We multiplex the two versions into one class by
+         * treating "infinite" as equivalent to Long.MAX_VALUE. For splits, it
+         * uses the standard divide-by-two approach.
          *
-         * This differs from {@code SplittableGenerator.RandomSplitsSpliterator} in that it provides
-         * a brine argument (a mixture of salt and an index) when calling the {@code split} method.
+         * <p> This differs from
+         * {@link AbstractSplittableGenerator.RandomSplitsSpliterator} in that it
+         * provides a brine argument (a mixture of salt and an index) when
+         * calling the {@link SplittableGenerator#split() split}() method.
          */
         static class RandomSplitsSpliteratorWithSalt
-            extends RandomSpliterator implements Spliterator<SplittableGenerator> {
+                extends RandomSpliterator implements Spliterator<SplittableGenerator> {
 
             final SplittableGenerator generatingGenerator;
             final AbstractSplittableWithBrineGenerator constructingGenerator;
@@ -2685,7 +2783,7 @@ public class RandomSupport {
             // necessary to maintain the invariant.
 
             RandomSplitsSpliteratorWithSalt(SplittableGenerator generatingGenerator, long index, long fence,
-                            AbstractSplittableWithBrineGenerator constructingGenerator, long salt) {
+                                            AbstractSplittableWithBrineGenerator constructingGenerator, long salt) {
                 super(index, fence);
                 this.generatingGenerator = generatingGenerator;
                 this.constructingGenerator = constructingGenerator;
@@ -2699,10 +2797,10 @@ public class RandomSupport {
                 long i = index, m = (i + fence) >>> 1;
                 if (m <= i) return null;
                 RandomSplitsSpliteratorWithSalt result =
-                   new RandomSplitsSpliteratorWithSalt(generatingGenerator.split(), i, m, constructingGenerator, salt);
+                        new RandomSplitsSpliteratorWithSalt(generatingGenerator.split(), i, m, constructingGenerator, salt);
                 index = m;
                 while ((salt != 0) && (Long.compareUnsigned(salt & -salt, index) <= 0)) {
-                   salt = salt << SALT_SHIFT;
+                    salt = salt << SALT_SHIFT;
                 }
                 return result;
             }
@@ -2728,9 +2826,9 @@ public class RandomSupport {
                     AbstractSplittableWithBrineGenerator c = constructingGenerator;
                     SplittableGenerator r = generatingGenerator;
                     do {
-                    consumer.accept(c.split(r, salt | i));
-                    ++i;
-                    if ((i & salt) != 0) salt <<= SALT_SHIFT;
+                        consumer.accept(c.split(r, salt | i));
+                        ++i;
+                        if ((i & salt) != 0) salt <<= SALT_SHIFT;
                     } while (i < f);
                 }
             }
@@ -2739,12 +2837,15 @@ public class RandomSupport {
     }
 
     /**
-     * Implementation support for modified-ziggurat implementation of nextExponential()
+     * Implementation support for modified-ziggurat implementation of
+     * nextExponential()
      *
-     * This Java class was generated automatically by a program `create_ziggurat_tables.c`.
+     * <p> This Java class was generated automatically by a program
+     * `create_ziggurat_tables.c`.
      *
-     * Fraction of the area under the curve that lies outside the layer boxes: 0.0156
-     * Fraction of non-box area that lies in the tail of the distribution: 0.0330
+     * <p> Fraction of the area under the curve that lies outside the layer
+     * boxes: 0.0156 Fraction of non-box area that lies in the tail of the
+     * distribution: 0.0330
      */
     static class DoubleZigguratTables {
 

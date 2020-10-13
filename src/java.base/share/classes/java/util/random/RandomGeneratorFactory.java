@@ -33,7 +33,6 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.function.Function;
 import java.util.Map;
-import java.util.Objects;
 import java.util.random.RandomGenerator.ArbitrarilyJumpableGenerator;
 import java.util.random.RandomGenerator.JumpableGenerator;
 import java.util.random.RandomGenerator.LeapableGenerator;
@@ -139,7 +138,7 @@ public class RandomGeneratorFactory<T> {
      *
      * @return A provider matching name and category.
      *
-     * @throws IllegalArgumentException
+     * @throws IllegalArgumentException if provider is not a subclass of category.
      */
     private static Provider<? extends RandomGenerator> findProvider(String name,
                                                                     Class<? extends RandomGenerator> category)
@@ -160,13 +159,12 @@ public class RandomGeneratorFactory<T> {
      *
      * @return Stream of matching Providers.
      */
-    @SuppressWarnings("unchecked")
     static <T> Stream<RandomGeneratorFactory<T>> all(Class<? extends RandomGenerator> category) {
         Map<String, Provider<? extends RandomGenerator>> pm = getProviderMap();
         return pm.values()
                  .stream()
                  .filter(p -> isSubclass(category, p))
-                 .map(p -> new RandomGeneratorFactory<>((Provider<? extends RandomGenerator>)p));
+                 .map(RandomGeneratorFactory::new);
     }
 
     /**
@@ -201,10 +199,8 @@ public class RandomGeneratorFactory<T> {
      */
     static <T> RandomGeneratorFactory<T> factoryOf(String name, Class<? extends RandomGenerator> category)
             throws IllegalArgumentException {
-        @SuppressWarnings("unchecked")
-        Provider<? extends RandomGenerator> uncheckedProvider =
-                (Provider<? extends RandomGenerator>)findProvider(name, category);
-        return new RandomGeneratorFactory<T>(uncheckedProvider);
+        Provider<? extends RandomGenerator> uncheckedProvider = findProvider(name, category);
+        return new RandomGeneratorFactory<>(uncheckedProvider);
     }
 
     /**
@@ -215,8 +211,7 @@ public class RandomGeneratorFactory<T> {
     @SuppressWarnings("unchecked")
     private synchronized void getConstructors(Class<? extends RandomGenerator> randomGeneratorClass) {
         if (ctor == null) {
-            PrivilegedExceptionAction<Constructor<?>[]> ctorAction =
-                () -> randomGeneratorClass.getConstructors();
+            PrivilegedExceptionAction<Constructor<?>[]> ctorAction = randomGeneratorClass::getConstructors;
             try {
                 Constructor<?>[] ctors = AccessController.doPrivileged(ctorAction);
                 for (Constructor<?> ctorGeneric : ctors) {
@@ -386,7 +381,7 @@ public class RandomGeneratorFactory<T> {
     public T create(byte[] seed) {
         try {
             ensureConstructors();
-            return ctorBytes.newInstance(seed);
+            return ctorBytes.newInstance((Object)seed);
         } catch (Exception ex) {
             return create();
         }
