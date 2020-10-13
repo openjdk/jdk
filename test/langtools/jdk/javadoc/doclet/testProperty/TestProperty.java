@@ -43,6 +43,7 @@ public class TestProperty extends JavadocTester {
     @Test
     public void testArrays() {
         javadoc("-d", "out",
+                "--no-platform-links",
                 "-javafx",
                 "--disable-javafx-strict-checks",
                 "-sourcepath", testSrc,
@@ -74,23 +75,24 @@ public class TestProperty extends JavadocTester {
                     <a href="#setBad(pkg.MyObj%5B%5D)"><code>setBad(MyObj[])</code></a></dd>
                     </dl>""",
 
-                // id should not be used in the property table
+                // no tab classes should be used in the property table
                 """
-                    <tr class="alt-color">
-                    <td class="col-first"><code><a href="ObjectProperty.html" title="class in pkg">O\
-                    bjectProperty</a>&lt;<a href="MyObj.html" title="class in pkg">MyObj</a>[]&gt;</\
-                    code></td>
-                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
-                    "#badProperty">bad</a></span></code></th>""",
+                    <div class="col-first even-row-color"><code><a href="ObjectProperty.html" title="clas\
+                    s in pkg">ObjectProperty</a>&lt;<a href="MyObj.html" title="class in pkg">MyObj<\
+                    /a>[]&gt;</code></div>
+                    <div class="col-second even-row-color"><code><span class="member-name-link"><a href="\
+                    #badProperty">bad</a></span></code></div>
+                    <div class="col-last even-row-color">""",
 
-                // id should be used in the method table
+                // tab classes should be used in the method table
                 """
-                    <tr class="alt-color" id="i0">
-                    <td class="col-first"><code><a href="ObjectProperty.html" title="class in pkg">O\
-                    bjectProperty</a>&lt;<a href="MyObj.html" title="class in pkg">MyObj</a>[]&gt;</\
-                    code></td>
-                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
-                    "#badProperty()">badProperty</a></span>()</code></th>"""
+                    <div class="col-first even-row-color method-summary-table-tab2 method-summary-table-t\
+                    ab4 method-summary-table"><code><a href="ObjectProperty.html" title="class in pk\
+                    g">ObjectProperty</a>&lt;<a href="MyObj.html" title="class in pkg">MyObj</a>[]&g\
+                    t;</code></div>
+                    <div class="col-second even-row-color method-summary-table-tab2 method-summary-table-\
+                    tab4 method-summary-table"><code><span class="member-name-link"><a href="#badPro\
+                    perty()">badProperty</a></span>()</code></div>"""
         );
 
         checkOutput("pkg/MyClassT.html", true,

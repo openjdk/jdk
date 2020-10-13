@@ -134,7 +134,7 @@ void VM_DeoptimizeAll::doit() {
         tcount = 0;
           int fcount = 0;
           // Deoptimize some selected frames.
-          for(StackFrameStream fst(thread, false); !fst.is_done(); fst.next()) {
+          for(StackFrameStream fst(thread, false /* update */, true /* process_frames */); !fst.is_done(); fst.next()) {
             if (fst.current()->can_be_deoptimized()) {
               if (fcount++ == fnum) {
                 fcount = 0;

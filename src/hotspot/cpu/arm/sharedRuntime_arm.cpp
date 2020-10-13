@@ -1238,7 +1238,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ ldr_s32(R2, Address(Rthread, JavaThread::stack_guard_state_offset()));
   __ str_32(Rtemp, Address(Rthread, JavaThread::thread_state_offset()));
 
-  __ cmp(R2, JavaThread::stack_guard_yellow_reserved_disabled);
+  __ cmp(R2, StackOverflow::stack_guard_yellow_reserved_disabled);
   __ b(reguard, eq);
   __ bind(reguard_done);
 

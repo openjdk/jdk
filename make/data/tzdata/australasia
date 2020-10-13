@@ -36,7 +36,7 @@
 
 # Please see the notes below for the controversy about "EST" versus "AEST" etc.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Aus	1917	only	-	Jan	 1	0:01	1:00	D
 Rule	Aus	1917	only	-	Mar	25	2:00	0	S
 Rule	Aus	1942	only	-	Jan	 1	2:00	1:00	D
@@ -55,7 +55,7 @@ Zone Australia/Darwin	 8:43:20 -	LMT	1895 Feb
 			 9:30	Aus	AC%sT
 # Western Australia
 #
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	AW	1974	only	-	Oct	lastSun	2:00s	1:00	D
 Rule	AW	1975	only	-	Mar	Sun>=1	2:00s	0	S
 Rule	AW	1983	only	-	Oct	lastSun	2:00s	1:00	D
@@ -93,7 +93,7 @@ Zone Australia/Eucla	 8:35:28 -	LMT	1895 Dec
 # applies to all of the Whitsundays.
 # http://www.australia.gov.au/about-australia/australian-story/austn-islands
 #
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	AQ	1971	only	-	Oct	lastSun	2:00s	1:00	D
 Rule	AQ	1972	only	-	Feb	lastSun	2:00s	0	S
 Rule	AQ	1989	1991	-	Oct	lastSun	2:00s	1:00	D
@@ -109,7 +109,7 @@ Zone Australia/Lindeman  9:55:56 -	LMT	1895
 			10:00	Holiday	AE%sT
 
 # South Australia
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	AS	1971	1985	-	Oct	lastSun	2:00s	1:00	D
 Rule	AS	1986	only	-	Oct	19	2:00s	1:00	D
 Rule	AS	1987	2007	-	Oct	lastSun	2:00s	1:00	D
@@ -137,7 +137,7 @@ Zone Australia/Adelaide	9:14:20 -	LMT	1895 Feb
 # http://www.bom.gov.au/climate/averages/tables/dst_times.shtml
 # says King Island didn't observe DST from WWII until late 1971.
 #
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	AT	1967	only	-	Oct	Sun>=1	2:00s	1:00	D
 Rule	AT	1968	only	-	Mar	lastSun	2:00s	0	S
 Rule	AT	1968	1985	-	Oct	lastSun	2:00s	1:00	D
@@ -170,7 +170,7 @@ Zone Australia/Currie	9:35:28	-	LMT	1895 Sep
 			10:00	AT	AE%sT
 
 # Victoria
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	AV	1971	1985	-	Oct	lastSun	2:00s	1:00	D
 Rule	AV	1972	only	-	Feb	lastSun	2:00s	0	S
 Rule	AV	1973	1985	-	Mar	Sun>=1	2:00s	0	S
@@ -191,7 +191,7 @@ Zone Australia/Melbourne 9:39:52 -	LMT	1895 Feb
 			10:00	AV	AE%sT
 
 # New South Wales
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	AN	1971	1985	-	Oct	lastSun	2:00s	1:00	D
 Rule	AN	1972	only	-	Feb	27	2:00s	0	S
 Rule	AN	1973	1981	-	Mar	Sun>=1	2:00s	0	S
@@ -220,7 +220,7 @@ Zone Australia/Broken_Hill 9:25:48 -	LMT	1895 Feb
 			9:30	AS	AC%sT
 
 # Lord Howe Island
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	LH	1981	1984	-	Oct	lastSun	2:00	1:00	-
 Rule	LH	1982	1985	-	Mar	Sun>=1	2:00	0	-
 Rule	LH	1985	only	-	Oct	lastSun	2:00	0:30	-
@@ -275,8 +275,9 @@ Zone Antarctica/Macquarie 0	-	-00	1899 Nov
 			10:00	Aus	AE%sT	1919 Apr  1  0:00s
 			0	-	-00	1948 Mar 25
 			10:00	Aus	AE%sT	1967
-			10:00	AT	AE%sT	2010 Apr  4  3:00
-			11:00	-	+11
+			10:00	AT	AE%sT	2010
+			10:00	1:00	AEDT	2011
+			10:00	AT	AE%sT
 
 # Christmas
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
@@ -403,7 +404,7 @@ Zone	Indian/Cocos	6:27:40	-	LMT	1900
 # From Michael Deckers (2019-08-06):
 # https://www.laws.gov.fj/LawsAsMade/downloadfile/848
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Fiji	1998	1999	-	Nov	Sun>=1	2:00	1:00	-
 Rule	Fiji	1999	2000	-	Feb	lastSun	3:00	0	-
 Rule	Fiji	2009	only	-	Nov	29	2:00	1:00	-
@@ -432,7 +433,7 @@ Zone	Pacific/Tahiti	 -9:58:16 -	LMT	1912 Oct # Papeete
 
 # Guam
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 # http://guamlegislature.com/Public_Laws_5th/PL05-025.pdf
 # http://documents.guam.gov/wp-content/uploads/E.O.-59-7-Guam-Daylight-Savings-Time-May-6-1959.pdf
 Rule	Guam	1959	only	-	Jun	27	2:00	1:00	D
@@ -543,7 +544,7 @@ Zone	Pacific/Nauru	11:07:40 -	LMT	1921 Jan 15 # Uaobe
 			12:00	-	+12
 
 # New Caledonia
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	NC	1977	1978	-	Dec	Sun>=1	0:00	1:00	-
 Rule	NC	1978	1979	-	Feb	27	0:00	0	-
 Rule	NC	1996	only	-	Dec	 1	2:00s	1:00	-
@@ -558,7 +559,7 @@ Zone	Pacific/Noumea	11:05:48 -	LMT	1912 Jan 13 # Nouméa
 
 # New Zealand
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	NZ	1927	only	-	Nov	 6	2:00	1:00	S
 Rule	NZ	1928	only	-	Mar	 4	2:00	0	M
 Rule	NZ	1928	1933	-	Oct	Sun>=8	2:00	0:30	S
@@ -610,7 +611,7 @@ Link Pacific/Auckland Antarctica/McMurdo
 
 # Cook Is
 # From Shanks & Pottenger:
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Cook	1978	only	-	Nov	12	0:00	0:30	-
 Rule	Cook	1979	1991	-	Mar	Sun>=1	0:00	0	-
 Rule	Cook	1979	1990	-	Oct	lastSun	0:00	0:30	-
@@ -755,7 +756,7 @@ Link Pacific/Pago_Pago Pacific/Midway # in US minor outlying islands
 # That web page currently lists transitions for 2012/3 and 2013/4.
 # Assume the pattern instituted in 2012 will continue indefinitely.
 
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	WS	2010	only	-	Sep	lastSun	0:00	1	-
 Rule	WS	2011	only	-	Apr	Sat>=1	4:00	0	-
 Rule	WS	2011	only	-	Sep	lastSat	3:00	1	-
@@ -799,7 +800,7 @@ Zone	Pacific/Fakaofo	-11:24:56 -	LMT	1901
 			13:00	-	+13
 
 # Tonga
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Tonga	1999	only	-	Oct	 7	2:00s	1:00	-
 Rule	Tonga	2000	only	-	Mar	19	2:00s	0	-
 Rule	Tonga	2000	2001	-	Nov	Sun>=1	2:00	1:00	-
@@ -880,7 +881,7 @@ Zone	Pacific/Wake	11:06:28 -	LMT	1901
 
 
 # Vanuatu
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Vanuatu	1983	only	-	Sep	25	0:00	1:00	-
 Rule	Vanuatu	1984	1991	-	Mar	Sun>=23	0:00	0	-
 Rule	Vanuatu	1984	only	-	Oct	23	0:00	1:00	-

@@ -446,8 +446,7 @@ protected:
   int replace_edge(Node* old, Node* neww);
   int replace_edges_in_range(Node* old, Node* neww, int start, int end);
   // NULL out all inputs to eliminate incoming Def-Use edges.
-  // Return the number of edges between 'n' and 'this'
-  int  disconnect_inputs(Node *n, Compile *c);
+  void disconnect_inputs(Compile* C);
 
   // Quickly, return true if and only if I am Compile::current()->top().
   bool is_top() const {
@@ -517,7 +516,7 @@ public:
   // and cutting input edges of old node.
   void subsume_by(Node* new_node, Compile* c) {
     replace_by(new_node);
-    disconnect_inputs(NULL, c);
+    disconnect_inputs(c);
   }
   void set_req_X( uint i, Node *n, PhaseIterGVN *igvn );
   // Find the one non-null required input.  RegionNode only
