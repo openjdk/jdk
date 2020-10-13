@@ -2973,7 +2973,7 @@ class StubGenerator: public StubCodeGenerator {
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
 #ifdef _WIN64
-   __ push(rklass_tmp); // rdi is callee-save on Windows
+    __ push(rklass_tmp); // rdi is callee-save on Windows
 #endif
 
     // bump this on entry, not on exit:
@@ -3221,7 +3221,7 @@ class StubGenerator: public StubCodeGenerator {
       assert_clean_int(sco_temp, rax);
 
 #ifdef _WIN64
-    __ pop(rklass_tmp); // Restore callee-save rdi
+      __ pop(rklass_tmp); // Restore callee-save rdi
 #endif
 
       // the checkcast_copy loop needs two extra arguments:
