@@ -34,7 +34,7 @@ import java.util.Objects;
  * can later be read by a data input stream.
  * <p>
  * A DataInputStream is not safe for use by multiple concurrent
- * threads. If a DataOutputStream is to be used by more than one
+ * threads. If a DataInputStream is to be used by more than one
  * thread then access to the data output stream should be controlled
  * by appropriate synchronization.
  *

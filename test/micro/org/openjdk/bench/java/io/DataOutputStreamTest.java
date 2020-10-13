@@ -41,22 +41,19 @@ public class DataOutputStreamTest {
 
     @Param({"4096"}) int size;
     final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(size);
-    final File f = new File("DataOutputStreamTest.tmp");
+    File f;
     String outputString;
     FileOutputStream fileOutputStream;
     DataOutput bufferedFileStream, rawFileStream, byteArrayStream;
 
     @Setup(Level.Trial)
-    public void setup() {
-        try {
-            fileOutputStream = new FileOutputStream(f);
-            byteArrayStream = new DataOutputStream(byteArrayOutputStream);
-            rawFileStream = new DataOutputStream(fileOutputStream);
-            bufferedFileStream = new DataOutputStream(new BufferedOutputStream(fileOutputStream));
-            outputString = new String(new byte[size]);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    public void setup() throws Exception {
+        f = File.createTempFile("DataOutputStreamTest","out");
+        fileOutputStream = new FileOutputStream(f);
+        byteArrayStream = new DataOutputStream(byteArrayOutputStream);
+        rawFileStream = new DataOutputStream(fileOutputStream);
+        bufferedFileStream = new DataOutputStream(new BufferedOutputStream(fileOutputStream));
+        outputString = new String(new byte[size]);
     }
 
     public void writeChars(DataOutput dataOutput)
@@ -104,24 +101,21 @@ public class DataOutputStreamTest {
     }
 
     @Benchmark
-    public void dataOutputStreamOverByteArray()
-            throws Exception {
+    public void dataOutputStreamOverByteArray() throws Exception {
         byteArrayOutputStream.reset();
         write(byteArrayStream);
         byteArrayOutputStream.flush();
     }
 
     @Benchmark
-    public void dataOutputStreamOverRawFileStream()
-            throws Exception {
+    public void dataOutputStreamOverRawFileStream() throws Exception {
         fileOutputStream.getChannel().position(0);
         write(rawFileStream);
         fileOutputStream.flush();
     }
 
     @Benchmark
-    public void dataOutputStreamOverBufferedFileStream()
-            throws Exception{
+    public void dataOutputStreamOverBufferedFileStream() throws Exception{
         fileOutputStream.getChannel().position(0);
         write(bufferedFileStream);
         fileOutputStream.flush();
