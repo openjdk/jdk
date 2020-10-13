@@ -29,7 +29,6 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/oopStorageSet.hpp"
-#include "gc/shared/oopStorageParState.inline.hpp"
 #include "gc/shared/oopStorageSetParState.inline.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zBarrierSetNMethod.hpp"

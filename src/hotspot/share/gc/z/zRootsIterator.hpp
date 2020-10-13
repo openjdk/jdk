@@ -24,7 +24,6 @@
 #ifndef SHARE_GC_Z_ZROOTSITERATOR_HPP
 #define SHARE_GC_Z_ZROOTSITERATOR_HPP
 
-#include "gc/shared/oopStorageParState.hpp"
 #include "gc/shared/oopStorageSetParState.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "memory/allocation.hpp"
