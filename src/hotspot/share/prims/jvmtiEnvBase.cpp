@@ -556,7 +556,7 @@ JvmtiEnvBase::new_jthreadGroupArray(int length, Handle *handles) {
 }
 
 // return the vframe on the specified thread and depth, NULL if no such frame
-// The thread and the oops in the returned might not have been process.
+// The thread and the oops in the returned vframe might not have been process.
 vframe*
 JvmtiEnvBase::vframeForNoProcess(JavaThread* java_thread, jint depth) {
   if (!java_thread->has_last_Java_frame()) {
