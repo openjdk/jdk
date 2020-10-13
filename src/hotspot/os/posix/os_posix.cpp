@@ -30,6 +30,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "services/memTracker.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/java.hpp"
@@ -906,6 +907,119 @@ size_t os::Posix::get_initial_stack_size(ThreadType thr_type, size_t req_stack_s
 
   return stack_size;
 }
+
+#ifndef ZERO
+#ifndef ARM
+static bool get_frame_at_stack_banging_point(JavaThread* thread, address pc, const void* ucVoid, frame* fr) {
+  if (Interpreter::contains(pc)) {
+    // interpreter performs stack banging after the fixed frame header has
+    // been generated while the compilers perform it before. To maintain
+    // semantic consistency between interpreted and compiled frames, the
+    // method returns the Java sender of the current frame.
+    *fr = os::fetch_frame_from_context(ucVoid);
+    if (!fr->is_first_java_frame()) {
+      // get_frame_at_stack_banging_point() is only called when we
+      // have well defined stacks so java_sender() calls do not need
+      // to assert safe_for_sender() first.
+      *fr = fr->java_sender();
+    }
+  } else {
+    // more complex code with compiled code
+    assert(!Interpreter::contains(pc), "Interpreted methods should have been handled above");
+    CodeBlob* cb = CodeCache::find_blob(pc);
+    if (cb == NULL || !cb->is_nmethod() || cb->is_frame_complete_at(pc)) {
+      // Not sure where the pc points to, fallback to default
+      // stack overflow handling
+      return false;
+    } else {
+      // in compiled code, the stack banging is performed just after the return pc
+      // has been pushed on the stack
+      *fr = os::fetch_compiled_frame_from_context(ucVoid);
+      if (!fr->is_java_frame()) {
+        assert(!fr->is_first_frame(), "Safety check");
+        // See java_sender() comment above.
+        *fr = fr->java_sender();
+      }
+    }
+  }
+  assert(fr->is_java_frame(), "Safety check");
+  return true;
+}
+#endif // ARM
+
+// This return true if the signal handler should just continue, ie. return after calling this
+bool os::Posix::handle_stack_overflow(JavaThread* thread, address addr, address pc,
+                                      const void* ucVoid, address* stub) {
+  // stack overflow
+  StackOverflow* overflow_state = thread->stack_overflow_state();
+  if (overflow_state->in_stack_yellow_reserved_zone(addr)) {
+    if (thread->thread_state() == _thread_in_Java) {
+#ifndef ARM
+      // arm32 doesn't have this
+      if (overflow_state->in_stack_reserved_zone(addr)) {
+        frame fr;
+        if (get_frame_at_stack_banging_point(thread, pc, ucVoid, &fr)) {
+          assert(fr.is_java_frame(), "Must be a Java frame");
+          frame activation =
+            SharedRuntime::look_for_reserved_stack_annotated_method(thread, fr);
+          if (activation.sp() != NULL) {
+            overflow_state->disable_stack_reserved_zone();
+            if (activation.is_interpreted_frame()) {
+              overflow_state->set_reserved_stack_activation((address)(
+                activation.fp() + frame::interpreter_frame_initial_sp_offset));
+            } else {
+              overflow_state->set_reserved_stack_activation((address)activation.unextended_sp());
+            }
+            return true; // just continue
+          }
+        }
+      }
+#endif // ARM
+      // Throw a stack overflow exception.  Guard pages will be reenabled
+      // while unwinding the stack.
+      overflow_state->disable_stack_yellow_reserved_zone();
+      *stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::STACK_OVERFLOW);
+    } else {
+      // Thread was in the vm or native code.  Return and try to finish.
+      overflow_state->disable_stack_yellow_reserved_zone();
+      return true; // just continue
+    }
+  } else if (overflow_state->in_stack_red_zone(addr)) {
+    // Fatal red zone violation.  Disable the guard pages and fall through
+    // to handle_unexpected_exception way down below.
+    overflow_state->disable_stack_red_zone();
+    tty->print_raw_cr("An irrecoverable stack overflow has occurred.");
+
+    // This is a likely cause, but hard to verify. Let's just print
+    // it as a hint.
+    tty->print_raw_cr("Please check if any of your loaded .so files has "
+                      "enabled executable stack (see man page execstack(8))");
+
+  } else {
+#if !defined(AIX) && !defined(__APPLE__)
+    // bsd and aix don't have this
+
+    // Accessing stack address below sp may cause SEGV if current
+    // thread has MAP_GROWSDOWN stack. This should only happen when
+    // current thread was created by user code with MAP_GROWSDOWN flag
+    // and then attached to VM. See notes in os_linux.cpp.
+    if (thread->osthread()->expanding_stack() == 0) {
+       thread->osthread()->set_expanding_stack();
+       if (os::Linux::manually_expand_stack(thread, addr)) {
+         thread->osthread()->clear_expanding_stack();
+         return true; // just continue
+       }
+       thread->osthread()->clear_expanding_stack();
+    } else {
+       fatal("recursive segv. expanding stack.");
+    }
+#else
+    tty->print_raw_cr("SIGSEGV happened inside stack but outside yellow and red zone.");
+#endif // AIX or BSD
+  }
+  return false;
+}
+#endif // ZERO
 
 bool os::Posix::is_root(uid_t uid){
     return ROOT_UID == uid;
