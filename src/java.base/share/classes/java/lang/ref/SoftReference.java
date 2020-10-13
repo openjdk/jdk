@@ -73,7 +73,7 @@ public class SoftReference<T> extends Reference<T> {
      * this field when selecting soft references to be cleared, but it is not
      * required to do so.
      */
-    private long timestamp;
+    protected long timestamp;
 
     /**
      * Creates a new soft reference that refers to the given object.  The new
@@ -115,4 +115,11 @@ public class SoftReference<T> extends Reference<T> {
         return o;
     }
 
+    /**
+     * transparent accessor
+     * @return the value provided by get(), without setting timestamp=clock
+     */
+    protected final T _get() {
+        return super.get();
+    }
 }
