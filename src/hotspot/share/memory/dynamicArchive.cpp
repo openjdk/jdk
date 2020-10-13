@@ -201,7 +201,7 @@ public:
     dump_ro_region();
     relocate_pointers();
 
-    verify_estimate_size(_estimated_metsapceobj_bytes, "MetaspaceObjs");
+    verify_estimate_size(_estimated_metaspaceobj_bytes, "MetaspaceObjs");
 
     char* serialized_data;
     {
@@ -250,20 +250,26 @@ public:
 
 size_t DynamicArchiveBuilder::estimate_archive_size() {
   // size of the symbol table and two dictionaries, plus the RunTimeSharedClassInfo's
-  _estimated_hashtable_bytes = 0;
-  _estimated_hashtable_bytes += SymbolTable::estimate_size_for_archive();
-  _estimated_hashtable_bytes += SystemDictionaryShared::estimate_size_for_archive();
+  size_t symbol_table_est = SymbolTable::estimate_size_for_archive();
+  size_t dictionary_est = SystemDictionaryShared::estimate_size_for_archive();
+  _estimated_hashtable_bytes = symbol_table_est + dictionary_est;
 
   _estimated_trampoline_bytes = estimate_trampoline_size();
 
   size_t total = 0;
 
-  total += _estimated_metsapceobj_bytes;
+  total += _estimated_metaspaceobj_bytes;
   total += _estimated_hashtable_bytes;
   total += _estimated_trampoline_bytes;
 
   // allow fragmentation at the end of each dump region
   total += _total_dump_regions * reserve_alignment();
+
+  log_info(cds, dynamic)("_estimated_hashtable_bytes = " SIZE_FORMAT " + " SIZE_FORMAT " = " SIZE_FORMAT,
+                         symbol_table_est, dictionary_est, _estimated_hashtable_bytes);
+  log_info(cds, dynamic)("_estimated_metaspaceobj_bytes = " SIZE_FORMAT, _estimated_metaspaceobj_bytes);
+  log_info(cds, dynamic)("_estimated_trampoline_bytes = " SIZE_FORMAT, _estimated_trampoline_bytes);
+  log_info(cds, dynamic)("total estimate bytes = " SIZE_FORMAT, total);
 
   return align_up(total, reserve_alignment());
 }
@@ -348,7 +354,7 @@ size_t DynamicArchiveBuilder::estimate_trampoline_size() {
     // We have nothing to archive, but let's avoid having an empty region.
     total = SharedRuntime::trampoline_size();
   }
-  return total;
+  return align_up(total, SharedSpaceObjectAlignment);
 }
 
 void DynamicArchiveBuilder::make_trampolines() {
