@@ -28,7 +28,10 @@ package jdk.internal.invoke;
 import java.lang.invoke.MethodType;
 import java.util.Objects;
 
-/** TODO */
+/**
+ * This class describes a native call, including arguments/return shuffle moves, PC entry point and
+ * various other info which are relevant when the call will be intrinsified by C2.
+ */
 public class NativeEntryPoint {
     static {
         registerNatives();
