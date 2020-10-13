@@ -43,7 +43,7 @@ class ShuffleRecipe;
 typedef void (*ProgrammableStub)(address);
 
 class ProgrammableInvoker: AllStatic {
-public:  
+public:
   static void invoke_native(ProgrammableStub stub, address buff, JavaThread* thread);
   static jlong generate_adapter(JNIEnv* env, jobject abi, jobject layout);
 };
