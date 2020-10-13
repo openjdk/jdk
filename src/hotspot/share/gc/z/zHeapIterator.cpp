@@ -176,7 +176,6 @@ ZHeapIterator::ZHeapIterator(uint nworkers, bool visit_weaks) :
     _bitmaps_lock(),
     _queues(nworkers),
     _array_queues(nworkers),
-    _roots(),
     _concurrent_roots(),
     _weak_roots(),
     _concurrent_weak_roots(),
@@ -341,7 +340,6 @@ void ZHeapIterator::drain_and_steal(const ZHeapIteratorContext& context, ObjectC
 
 template <bool VisitWeaks>
 void ZHeapIterator::object_iterate_inner(const ZHeapIteratorContext& context, ObjectClosure* cl) {
-  push_roots<false /* Concurrent */, false /* Weak */>(context, _roots);
   push_roots<true  /* Concurrent */, false /* Weak */>(context, _concurrent_roots);
   if (VisitWeaks) {
     push_roots<false /* Concurrent */, true  /* Weak */>(context, _weak_roots);

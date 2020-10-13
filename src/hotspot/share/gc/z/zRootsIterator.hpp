@@ -105,18 +105,9 @@ public:
   void threads_do(ThreadClosure* cl);
 };
 
-class ZRootsIterator {
-private:
-  const bool _visit_jvmti_weak_export;
-
-  void do_jvmti_weak_export(ZRootsIteratorClosure* cl);
-
-  ZSerialOopsDo<ZRootsIterator, &ZRootsIterator::do_jvmti_weak_export>   _jvmti_weak_export;
-
+class ZRelocateRoots : public AllStatic {
 public:
-  ZRootsIterator(bool visit_jvmti_weak_export = false);
-
-  void oops_do(ZRootsIteratorClosure* cl);
+  static void oops_do(OopClosure* cl);
 };
 
 class ZConcurrentRootsIterator {
@@ -168,7 +159,6 @@ private:
 
 public:
   ZWeakRootsIterator();
-  ~ZWeakRootsIterator();
 
   void weak_oops_do(BoolObjectClosure* is_alive, ZRootsIteratorClosure* cl);
   void oops_do(ZRootsIteratorClosure* cl);
