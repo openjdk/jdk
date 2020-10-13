@@ -242,7 +242,7 @@ public:
 
 class ArchiveUtils {
 public:
-  static void log_to_classlist(BootstrapInfo bootstrap_specifier, TRAPS);
+  static void log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) NOT_CDS_RETURN;
 };
 
 #endif // SHARE_MEMORY_ARCHIVEUTILS_HPP

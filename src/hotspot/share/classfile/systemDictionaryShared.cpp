@@ -1917,18 +1917,18 @@ bool SystemDictionaryShared::check_linking_constraints(InstanceKlass* klass, TRA
   return false;
 }
 
-bool SystemDictionaryShared::is_supported_invokedynamic(BootstrapInfo bsi) {
-  if (bsi.arg_values() == NULL || !bsi.arg_values()->is_objArray()) {
+bool SystemDictionaryShared::is_supported_invokedynamic(BootstrapInfo* bsi) {
+  if (bsi->arg_values() == NULL || !bsi->arg_values()->is_objArray()) {
     tty->print_cr("bsi check failed");
-    tty->print_cr("    bsi.arg_values().not_null() %d", bsi.arg_values().not_null());
-    if (bsi.arg_values().not_null()) {
-      tty->print_cr("    bsi.arg_values()->is_objArray() %d", bsi.arg_values()->is_objArray());
-      bsi.print();
+    tty->print_cr("    bsi->arg_values().not_null() %d", bsi->arg_values().not_null());
+    if (bsi->arg_values().not_null()) {
+      tty->print_cr("    bsi->arg_values()->is_objArray() %d", bsi->arg_values()->is_objArray());
+      bsi->print();
     }
     return false;
   }
 
-  Handle bsm = bsi.bsm();
+  Handle bsm = bsi->bsm();
   if (bsm.is_null() || !java_lang_invoke_DirectMethodHandle::is_instance(bsm())) {
     tty->print_cr("bsm check failed");
     tty->print_cr("    bsm.is_null() %d", bsm.is_null());
@@ -2231,27 +2231,27 @@ public:
 };
 
 void SystemDictionaryShared::print_on(const char* prefix,
-                                      RunTimeSharedDictionary builtin_dictionary,
-                                      RunTimeSharedDictionary unregistered_dictionary,
-                                      LambdaProxyClassDictionary lambda_dictionary,
+                                      RunTimeSharedDictionary* builtin_dictionary,
+                                      RunTimeSharedDictionary* unregistered_dictionary,
+                                      LambdaProxyClassDictionary* lambda_dictionary,
                                       outputStream* st) {
   st->print_cr("%sShared Dictionary", prefix);
   SharedDictionaryPrinter p(st);
-  builtin_dictionary.iterate(&p);
-  unregistered_dictionary.iterate(&p);
-  if (!lambda_dictionary.empty()) {
+  builtin_dictionary->iterate(&p);
+  unregistered_dictionary->iterate(&p);
+  if (!lambda_dictionary->empty()) {
     st->print_cr("%sShared Lambda Dictionary", prefix);
     SharedLambdaDictionaryPrinter ldp(st);
-    lambda_dictionary.iterate(&ldp);
+    lambda_dictionary->iterate(&ldp);
   }
 }
 
 void SystemDictionaryShared::print_on(outputStream* st) {
   if (UseSharedSpaces) {
-    print_on("", _builtin_dictionary, _unregistered_dictionary, _lambda_proxy_class_dictionary, st);
+    print_on("", &_builtin_dictionary, &_unregistered_dictionary, &_lambda_proxy_class_dictionary, st);
     if (DynamicArchive::is_mapped()) {
-      print_on("", _dynamic_builtin_dictionary, _dynamic_unregistered_dictionary,
-               _dynamic_lambda_proxy_class_dictionary, st);
+      print_on("", &_dynamic_builtin_dictionary, &_dynamic_unregistered_dictionary,
+               &_dynamic_lambda_proxy_class_dictionary, st);
     }
   }
 }

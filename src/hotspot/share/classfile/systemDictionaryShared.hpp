@@ -101,6 +101,7 @@
 ===============================================================================*/
 #define UNREGISTERED_INDEX -9999
 
+class BootstrapInfo;
 class ClassFileStream;
 class Dictionary;
 class DumpTimeSharedClassInfo;
@@ -221,9 +222,9 @@ private:
   static bool _dump_in_progress;
   DEBUG_ONLY(static bool _no_class_loading_should_happen;)
   static void print_on(const char* prefix,
-                       RunTimeSharedDictionary builtin_dictionary,
-                       RunTimeSharedDictionary unregistered_dictionary,
-                       LambdaProxyClassDictionary lambda_dictionary,
+                       RunTimeSharedDictionary* builtin_dictionary,
+                       RunTimeSharedDictionary* unregistered_dictionary,
+                       LambdaProxyClassDictionary* lambda_dictionary,
                        outputStream* st) NOT_CDS_RETURN;
 
 public:
@@ -327,7 +328,7 @@ public:
   static bool empty_dumptime_table() NOT_CDS_RETURN_(true);
   static void start_dumping() NOT_CDS_RETURN;
   static Handle create_jar_manifest(const char* man, size_t size, TRAPS) NOT_CDS_RETURN_(Handle());
-  static bool is_supported_invokedynamic(BootstrapInfo bsi) NOT_CDS_RETURN_(false);
+  static bool is_supported_invokedynamic(BootstrapInfo* bsi) NOT_CDS_RETURN_(false);
 
   DEBUG_ONLY(static bool no_class_loading_should_happen() {return _no_class_loading_should_happen;})
 

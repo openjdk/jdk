@@ -462,7 +462,7 @@ void ClassListParser::resolve_indy(Symbol* class_name_symbol, TRAPS) {
       if (pool->tag_at(pool_index).is_invoke_dynamic()) {
         BootstrapInfo bootstrap_specifier(pool, pool_index, indy_index);
         Handle bsm = bootstrap_specifier.resolve_bsm(THREAD);
-        if (!SystemDictionaryShared::is_supported_invokedynamic(bootstrap_specifier)) {
+        if (!SystemDictionaryShared::is_supported_invokedynamic(&bootstrap_specifier)) {
            tty->print_cr("is_supported_invokedynamic check failed for cp_index %d", pool_index);
            continue;
         }
