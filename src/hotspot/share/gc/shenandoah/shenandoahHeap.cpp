@@ -2003,7 +2003,7 @@ void ShenandoahHeap::op_weak_refs() {
   {
     ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_refs_work);
     ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_weak_refs_work);
-    ref_processor()->process_references(workers());
+    ref_processor()->process_references(workers(), true /* concurrent */);
   }
 }
 
@@ -2145,7 +2145,11 @@ void ShenandoahHeap::op_degenerated(ShenandoahDegenPoint point) {
         ShenandoahCodeRoots::disarm_nmethods();
       }
 
-      op_weak_refs();
+      {
+        ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_refs_work);
+        ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_weak_refs_work);
+        ref_processor()->process_references(workers(), false /* concurrent */);
+      }
 
       op_cleanup_early();
 

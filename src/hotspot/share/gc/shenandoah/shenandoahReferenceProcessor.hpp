@@ -152,7 +152,7 @@ private:
   template <typename T>
   void process_references(ShenandoahRefProcThreadLocal& refproc_data, uint worker_id);
   void enqueue_references_locked();
-  void enqueue_references();
+  void enqueue_references(bool concurrent);
 
   void collect_statistics();
 
@@ -168,7 +168,7 @@ public:
 
   bool discover_reference(oop obj, ReferenceType type) override;
 
-  void process_references(WorkGang* workers);
+  void process_references(WorkGang* workers, bool concurrent);
 
   void work();
 

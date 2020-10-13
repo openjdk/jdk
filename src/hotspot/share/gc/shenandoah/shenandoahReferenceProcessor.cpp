@@ -482,7 +482,7 @@ public:
   }
 };
 
-void ShenandoahReferenceProcessor::process_references(WorkGang* workers) {
+void ShenandoahReferenceProcessor::process_references(WorkGang* workers, bool concurrent) {
 
   Atomic::release_store_fence(&_iterate_discovered_list_id, 0U);
 
@@ -496,7 +496,7 @@ void ShenandoahReferenceProcessor::process_references(WorkGang* workers) {
   // Collect, log and trace statistics
   collect_statistics();
 
-  enqueue_references();
+  enqueue_references(concurrent);
 }
 
 void ShenandoahReferenceProcessor::enqueue_references_locked() {
@@ -509,13 +509,14 @@ void ShenandoahReferenceProcessor::enqueue_references_locked() {
   }
 }
 
-void ShenandoahReferenceProcessor::enqueue_references() {
+void ShenandoahReferenceProcessor::enqueue_references(bool concurrent) {
   if (_pending_list == NULL) {
     // Nothing to enqueue
     return;
   }
 
-  if (ShenandoahSafepoint::is_at_shenandoah_safepoint()) {
+  if (!concurrent) {
+    // When called from mark-compact or degen-GC, the locking is done by the VMOperation,
     enqueue_references_locked();
   } else {
     // Heap_lock protects external pending list
