@@ -519,10 +519,10 @@ class DwarfFile : public ElfFile {
 
     const int _offset_in_library;
     const uint64_t _debug_line_offset;
-    LineNumberProgramHeader _header;
-    LineNumberProgramState* _state;
     MarkedDwarfFileReader _reader;
-    DwarfFile* _file;
+    LineNumberProgramState* _state;
+    LineNumberProgramHeader _header;
+    DwarfFile* _dwarf_file;
     int* _line;
     char* _filename;
     size_t _filename_len;
@@ -534,8 +534,9 @@ class DwarfFile : public ElfFile {
     bool read_filename_from_header(uint32_t file_index);
 
    public:
-    LineNumberProgram(int offset_in_library, uint64_t debug_line_offset, DwarfFile* file) : _offset_in_library(offset_in_library), _debug_line_offset(debug_line_offset),
-    _state(nullptr), _reader(file->fd()), _file(file), _line(nullptr), _filename(nullptr), _filename_len(0) {
+    LineNumberProgram(int offset_in_library, uint64_t debug_line_offset, DwarfFile* dwarf_file)
+      : _offset_in_library(offset_in_library), _debug_line_offset(debug_line_offset), _reader(dwarf_file->fd()), _state(nullptr),
+        _dwarf_file(dwarf_file), _line(nullptr), _filename(nullptr), _filename_len(0) {
       _header._reader = &_reader;
     }
     ~LineNumberProgram() {
