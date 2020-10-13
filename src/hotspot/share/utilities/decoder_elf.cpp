@@ -54,6 +54,7 @@ bool ElfDecoder::decode(address addr, char *buf, int buflen, int* offset, const 
 }
 
 bool ElfDecoder::get_source_info(address pc, char* buf, size_t buflen, int* line) {
+  log_debug(dwarf)("##### Find filename and line number for " INTPTR_FORMAT " #####", p2i(pc));
   char filepath[JVM_MAXPATHLEN];
   int offset_in_library;
   if (!os::dll_address_to_library_name(pc, filepath, sizeof(filepath), &offset_in_library)) {
@@ -66,9 +67,12 @@ bool ElfDecoder::get_source_info(address pc, char* buf, size_t buflen, int* line
   }
 
   if (!file->get_source_info(offset_in_library, buf, buflen, line)) {
+    log_error(dwarf)("Failed to retrieve line number and filename information for pc: " INTPTR_FORMAT, p2i(pc));
     return false;
   }
 
+  log_info(dwarf)("pc: " INTPTR_FORMAT ", Filename: %s, Line: %u", p2i(pc), buf, *line);
+  log_debug(dwarf)(""); // To structure the debug output better
   return true;
 }
 

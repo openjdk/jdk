@@ -211,10 +211,8 @@ private:
 
   // Cleanup string, symbol and function descriptor tables
   void cleanup_tables();
-
-  static uint gnu_debuglink_crc32(uint crc, unsigned char* buf, size_t len);
-
   bool load_debuginfo_file();
+  static uint gnu_debuglink_crc32(uint32_t crc, uint8_t* buf, size_t len);
 
 protected:
   FILE* const fd() const { return _file; }
@@ -288,8 +286,8 @@ class DwarfFile : public ElfFile {
   class MarkedDwarfFileReader : public MarkedFileReader {
    private:
     long _current_pos;
-    long _start_pos;
-    long _max_pos; // Used to guarantee that we stop reading in case of a corrupted DWARF file
+    long _start_pos; // Where we started reading, set after first set_position() call.
+    long _max_pos; // Used to guarantee that we stop reading in case of a corrupted DWARF file.
 
     bool read_leb128(uint64_t* result, int8_t check_size, bool is_signed);
    public:
@@ -316,23 +314,25 @@ class DwarfFile : public ElfFile {
   // See DWARF4 specification section 6.1.2.
   struct DebugArangesSetHeader32 {
     // The total length of all of the entries for that set, not including the length field itself
-    uint32_t unit_length;
+    uint32_t _unit_length;
 
     // This number is specific to the address lookup table and is independent of the DWARF version number.
-    uint16_t version;
+    uint16_t _version;
 
     // The offset from the beginning of the .debug_info or .debug_types section of the compilation unit header referenced
     // by the set. In this implementation we only use it as offset into .debug_info.
-    uint32_t debug_info_offset;
+    uint32_t _debug_info_offset;
 
     // The size of an address in bytes on the target architecture. For segmented addressing, this is the size of the offset
     // portion of the address.
-    uint8_t address_size;
+    uint8_t _address_size;
 
     // The size of a segment selector in bytes on the target architecture. If the target system uses a flat address space,
     // this value is 0.
-    uint8_t segment_size;
-  };
+    uint8_t _segment_size;
+
+    bool read_header(MarkedDwarfFileReader* reader);
+    };
 
   static bool is_terminating_set(uint64_t beginning_address, uint64_t length) {
     return beginning_address == 0 && length == 0;
@@ -341,145 +341,149 @@ class DwarfFile : public ElfFile {
   // See DWARF4 spec section 7.5.1.1
   struct CompilationUnitHeader32 {
     // The length of the .debug_info contribution for that compilation unit, not including the length field itself.
-    uint32_t unit_length;
+    uint32_t _unit_length;
 
     // The version of the DWARF information for the compilation unit. The value in this field is 4 for DWARF 4.
-    uint16_t version;
+    uint16_t _version;
 
     // The unsigned offset into the .debug_abbrev section. This offset associates the compilation unit with a particular
     // set of debugging information entry abbreviations.
-    uint32_t debug_abbrev_offset;
+    uint32_t _debug_abbrev_offset;
 
     // The size in bytes of an address on the target architecture. If the system uses segmented addressing, this value
     // represents the size of the offset portion of an address.
-    uint8_t  address_size;
+    uint8_t  _address_size;
+
+    bool read_header(MarkedDwarfFileReader* reader);
   };
 
   // See DWARF 4 spec, section 6.2.4
   struct LineNumberProgramHeader32 {
     // The size in bytes of the line number information for this compilation unit, not including the
     // unit_length field itself. 32-bit DWARF uses 4 bytes.
-    uint32_t unit_length;
+    uint32_t _unit_length;
 
     // A version number (see Appendix F). This number is specific to the line number information
     // and is independent of the DWARF version number.
-    uint16_t version;
+    uint16_t _version;
 
     // The number of bytes following the header_length field to the beginning of the first byte of
     // the line number program itself. In the 32-bit DWARF format uses 4 bytes.
-    uint32_t header_length;
+    uint32_t _header_length;
 
     // The size in bytes of the smallest target machine instruction. Line number program opcodes that alter the address
     // and op_index registers use this and maximum_operations_per_instruction in their calculations.
-    uint8_t minimum_instruction_length;
+    uint8_t _minimum_instruction_length;
 
     // The maximum number of individual operations that may be encoded in an instruction. Line number program opcodes
     // that alter the address and op_index registers use this and minimum_instruction_length in their calculations.
     // For non-VLIW architectures, this field is 1, the op_index register is always 0, and the operation pointer is
     // simply the address register.
-    uint8_t maximum_operations_per_instruction;
+    uint8_t _maximum_operations_per_instruction;
 
     // The initial value of the is_stmt register.
-    uint8_t default_is_stmt;
+    uint8_t _default_is_stmt;
 
     // This parameter affects the meaning of the special opcodes.
-    int8_t line_base;
+    int8_t _line_base;
 
     // This parameter affects the meaning of the special opcodes.
-    uint8_t line_range;
+    uint8_t _line_range;
 
     // The number assigned to the first special opcode.
-    uint8_t opcode_base;
+    uint8_t _opcode_base;
 
     // This array specifies the number of LEB128 operands for each of the standard opcodes. The
     // first element of the array corresponds to the opcode whose value is 1, and the last element
     // corresponds to the opcode whose value is opcode_base - 1. DWARF 4 uses 12 standard opcodes.
-    uint8_t standard_opcode_lengths[12];
+    uint8_t _standard_opcode_lengths[12];
 
     // Not part of the real header, implementation only
-    long file_starting_pos;
+    long _file_starting_pos;
+
+    bool read_header(MarkedDwarfFileReader* reader);
   };
 
   // Defined in DWARF 4, Section 6.2.2
   struct LineNumberState {
-
-    // Specifies which DWARF version is used in the .debug_line section. Currently supported: DWARF 3 + 4
-    const uint8_t dwarf_version;
-
     // The program-counter value corresponding to a machine instruction generated by the compiler.
-    uint64_t address; // TODO 32 bit?
+    uint64_t _address; // TODO 32 bit?
 
     // The index of an operation within a VLIW instruction. The index of the first operation is 0. For non-VLIW
     // architectures, this register will always be 0.
     // The address and op_index registers, taken together, form an operation pointer that can reference any
     // individual operation with the instruction stream. This field was added in DWARF 4.
-    uint32_t op_index;
+    uint32_t _op_index;
 
     // The identity of the source file corresponding to a machine instruction.
-    uint32_t file;
+    uint32_t _file;
 
     // A source line number. Lines are numbered beginning at 1. The compiler may emit the value 0 in cases where an
     // instruction cannot be attributed to any source line.
-    uint32_t line;
+    uint32_t _line;
 
     // A column number within a source line. Columns are numbered beginning at 1. The value 0 is reserved to indicate
     // that a statement begins at the “left edge” of the line.
-    uint32_t column;
+    uint32_t _column;
 
-    const bool initial_is_stmt;
-    bool is_stmt;
-    bool basic_block;
-    bool end_sequence;
-    bool prologue_end;
-    bool epilogue_begin;
-    uint32_t isa;
-    uint32_t discriminator; // This field was added in DWARF 4
+    bool _is_stmt;
+    bool _basic_block;
+    bool _end_sequence;
+    bool _prologue_end;
+    bool _epilogue_begin;
+    uint32_t _isa;
+    uint32_t _discriminator; // This field was added in DWARF 4
 
-    // Implementation specific
-    bool first_row;
-    bool append_row;
-    bool do_reset;
+    /*
+     * Implementation specific fields
+     */
+    // Specifies which DWARF version is used in the .debug_line section. Currently supported: DWARF 3 + 4
+    const uint8_t _dwarf_version;
+    const bool _initial_is_stmt;
+    bool _first_row;
+    bool _append_row;
+    bool _do_reset;
 
     // Could the current sequence be a candidate which contains the pc? (pc must be smaller than the address of the first row in the matrix)
-    bool sequence_candidate;
+    bool _sequence_candidate;
 
     LineNumberState(uint8_t dwarf_version, bool default_is_stmt) :
-    dwarf_version(dwarf_version),
-    address(0),
-    op_index(0),
-    file(1),
-    line(1),
-    column(0),
-    initial_is_stmt(default_is_stmt),
-    is_stmt(default_is_stmt),
-    basic_block(false),
-    end_sequence(false),
-    prologue_end(false),
-    epilogue_begin(false),
-    isa(0),
-    discriminator(0),
-    first_row(true),
-    append_row(false),
-    do_reset(false),
-    sequence_candidate(false) {}
+            _address(0),
+            _op_index(0),
+            _file(1),
+            _line(1),
+            _column(0),
+            _is_stmt(default_is_stmt),
+            _basic_block(false),
+            _end_sequence(false),
+            _prologue_end(false),
+            _epilogue_begin(false),
+            _isa(0),
+            _discriminator(0),
+            _dwarf_version(dwarf_version),
+            _initial_is_stmt(default_is_stmt),
+            _first_row(true),
+            _append_row(false),
+            _do_reset(false),
+            _sequence_candidate(false) {}
 
     void reset_fields() {
-      address = 0;
-      op_index = 0;
-      file = 1;
-      line = 1;
-      column = 0;
-      is_stmt = initial_is_stmt;
-      basic_block = false;
-      end_sequence = false;
-      prologue_end = false;
-      epilogue_begin = false;
-      isa = 0;
-      discriminator = 0;
-      first_row = true;
-      append_row = false;
-      do_reset = false;
-      sequence_candidate = false;
+      _address = 0;
+      _op_index = 0;
+      _file = 1;
+      _line = 1;
+      _column = 0;
+      _is_stmt = _initial_is_stmt;
+      _basic_block = false;
+      _end_sequence = false;
+      _prologue_end = false;
+      _epilogue_begin = false;
+      _isa = 0;
+      _discriminator = 0;
+      _first_row = true;
+      _append_row = false;
+      _do_reset = false;
+      _sequence_candidate = false;
     }
 
     // Defined in section 6.2.5.1. set_address_register must always be executed before set_index_register
@@ -489,11 +493,9 @@ class DwarfFile : public ElfFile {
 
   // .debug_aranges
   bool find_compilation_unit_offset(int offset_in_library, uint64_t* compilation_unit_offset);
-  static bool read_debug_aranges_set_header(DebugArangesSetHeader32* header, MarkedDwarfFileReader* reader);
 
   // .debug_abbrev and .debug_info
   bool find_debug_line_offset(int offset_in_library, uint64_t compilation_unit_offset, uint32_t* debug_line_offset);
-  static bool read_compilation_unit_header(CompilationUnitHeader32 *compilation_unit_header, MarkedDwarfFileReader* reader);
   bool get_debug_line_offset_from_debug_abbrev(const CompilationUnitHeader32* cu_header, uint64_t abbrev_code, uint32_t* debug_line_offset);
   bool process_attribute_specs(MarkedDwarfFileReader* debug_abbrev_reader, uint8_t address_size,
                                MarkedDwarfFileReader* debug_info_reader, uint32_t* debug_line_offset);
@@ -502,7 +504,6 @@ class DwarfFile : public ElfFile {
 
   // .debug_line
   bool find_line_number(int offset_in_library, uint64_t debug_line_offset, char* buf, size_t buflen, int* line);
-  static bool read_line_number_program_header(LineNumberProgramHeader32* header, MarkedDwarfFileReader* reader);
   static bool read_line_number_program(int offset_in_library, LineNumberProgramHeader32* header, MarkedDwarfFileReader* reader, char* buf, size_t buflen, int* line);
   static bool read_extended_opcode(LineNumberState* state, MarkedDwarfFileReader* reader);
   static bool read_standard_opcode(uint8_t opcode, LineNumberState* state, LineNumberProgramHeader32* header, MarkedDwarfFileReader* reader);
@@ -511,7 +512,7 @@ class DwarfFile : public ElfFile {
 
  public:
   DwarfFile(const char* filepath) : ElfFile(filepath) {}
-  bool get_line_number(int offset_in_library, char* buf, size_t buflen, int* line);
+  bool get_filename_and_line_number(int offset_in_library, char* buf, size_t buflen, int* line);
 };
 
 #endif // !_WINDOWS && !__APPLE__
