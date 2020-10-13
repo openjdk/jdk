@@ -30,7 +30,7 @@ import java.net.URLClassLoader;
 
 /**
  * @test
- * @bug 8207331
+ * @bug 8231454
  * @summary Tests cache cleanup by the Introspector.flushXXX()
  */
 public final class FlushClassInfoCache {
