@@ -26,7 +26,7 @@
 #include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "code/vmreg.hpp"
-
+#include "vmreg_aarch64.inline.hpp"
 
 
 void VMRegImpl::set_regName() {
@@ -50,4 +50,18 @@ void VMRegImpl::set_regName() {
   for ( ; i < ConcreteRegisterImpl::number_of_registers ; i ++ ) {
     regName[i] = "NON-GPR-FPR";
   }
+}
+
+#define INTEGER_TYPE 0
+#define VECTOR_TYPE 1
+#define X87_TYPE 2
+#define STACK_TYPE 3
+
+VMReg VMRegImpl::vmStorageToVMReg(int type, int index) {
+  switch(type) {
+    case INTEGER_TYPE: return ::as_Register(index)->as_VMReg();
+    case VECTOR_TYPE: return ::as_FloatRegister(index)->as_VMReg();
+    case STACK_TYPE: return VMRegImpl::stack2reg(index LP64_ONLY(* 2));
+  }
+  return VMRegImpl::Bad();
 }

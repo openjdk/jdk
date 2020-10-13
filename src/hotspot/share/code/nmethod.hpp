@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -282,6 +282,9 @@ class nmethod : public CompiledMethod {
   ByteSize _native_receiver_sp_offset;
   ByteSize _native_basic_lock_sp_offset;
 
+  address* _native_stubs;
+  int _num_stubs;
+
   friend class nmethodLocker;
 
   // For native wrappers
@@ -312,7 +315,9 @@ class nmethod : public CompiledMethod {
           ExceptionHandlerTable* handler_table,
           ImplicitExceptionTable* nul_chk_table,
           AbstractCompiler* compiler,
-          int comp_level
+          int comp_level,
+          address* native_stubs,
+          int num_stubs
 #if INCLUDE_JVMCI
           , char* speculations,
           int speculations_len,
@@ -360,7 +365,9 @@ class nmethod : public CompiledMethod {
                               ExceptionHandlerTable* handler_table,
                               ImplicitExceptionTable* nul_chk_table,
                               AbstractCompiler* compiler,
-                              int comp_level
+                              int comp_level,
+                              address* native_stubs = NULL,
+                              int num_stubs = 0
 #if INCLUDE_JVMCI
                               , char* speculations = NULL,
                               int speculations_len = 0,
@@ -524,6 +531,8 @@ class nmethod : public CompiledMethod {
 
   void copy_values(GrowableArray<jobject>* oops);
   void copy_values(GrowableArray<Metadata*>* metadata);
+
+  void free_native_stubs();
 
   // Relocation support
 private:

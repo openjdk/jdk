@@ -385,6 +385,7 @@ class Compile : public Phase {
   int                           _late_inlines_pos;    // Where in the queue should the next late inlining candidate go (emulate depth first inlining)
   uint                          _number_of_mh_late_inlines; // number of method handle late inlining still pending
 
+  GrowableArray<address>*       _native_stubs;
 
   // Inlining may not happen in parse order which would make
   // PrintInlining output confusing. Keep track of PrintInlining
@@ -939,6 +940,10 @@ class Compile : public Phase {
   void              add_boxing_late_inline(CallGenerator* cg) {
     _boxing_late_inlines.push(cg);
   }
+
+  void add_native_stub(address stub);
+
+  GrowableArray<address>* native_stubs() const { return _native_stubs; }
 
   void remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, Unique_Node_List &useful);
 

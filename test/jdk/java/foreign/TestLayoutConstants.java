@@ -26,6 +26,7 @@
  * @run testng TestLayoutConstants
  */
 
+import jdk.incubator.foreign.FunctionDescriptor;
 import jdk.incubator.foreign.MemoryLayouts;
 import jdk.incubator.foreign.MemoryLayout;
 
@@ -40,6 +41,20 @@ public class TestLayoutConstants {
     public void testDescribeResolve(MemoryLayout expected) {
         try {
             MemoryLayout actual = expected.describeConstable().get()
+                    .resolveConstantDesc(MethodHandles.lookup());
+            assertEquals(actual, expected);
+        } catch (ReflectiveOperationException ex) {
+            throw new AssertionError(ex);
+        }
+    }
+
+    @Test(dataProvider = "functions")
+    public void testDescribeResolveFunction(MemoryLayout layout, boolean isVoid) {
+        FunctionDescriptor expected = isVoid ?
+                FunctionDescriptor.ofVoid(layout) :
+                FunctionDescriptor.of(layout, layout);
+        try {
+            FunctionDescriptor actual = expected.describeConstable().get()
                     .resolveConstantDesc(MethodHandles.lookup());
             assertEquals(actual, expected);
         } catch (ReflectiveOperationException ex) {
@@ -95,5 +110,22 @@ public class TestLayoutConstants {
                 { MemoryLayouts.BITS_32_LE.withBitAlignment(8) },
                 { MemoryLayouts.BITS_32_LE.withAttribute("xyz", "abc") },
         };
+    }
+
+    @DataProvider(name = "functions")
+    public Object[][] createFunctions() {
+        Object[][] layouts = createLayouts();
+        Object[][] functions = new Object[layouts.length * 2][];
+        boolean[] values = new boolean[] { true, false };
+        for (int i = 0 ; i < layouts.length ; i++) {
+            for (boolean isVoid : values) {
+                int offset = 0;
+                if (isVoid) {
+                    offset += 1;
+                }
+                functions[i * 2 + offset] = new Object[] { layouts[i][0], isVoid };
+            }
+        }
+        return functions;
     }
 }

@@ -7081,13 +7081,6 @@ void Assembler::decl(Register dst) {
 
 // 64bit doesn't use the x87
 
-void Assembler::emit_operand32(Register reg, Address adr) {
-  assert(reg->encoding() < 8, "no extended registers");
-  assert(!adr.base_needs_rex() && !adr.index_needs_rex(), "no extended registers");
-  emit_operand(reg, adr._base, adr._index, adr._scale, adr._disp,
-               adr._rspec);
-}
-
 void Assembler::emit_farith(int b1, int b2, int i) {
   assert(isByte(b1) && isByte(b2), "wrong opcode");
   assert(0 <= i &&  i < 8, "illegal stack offset");
@@ -7272,12 +7265,6 @@ void Assembler::fld_s(int index) {
   emit_farith(0xD9, 0xC0, index);
 }
 
-void Assembler::fld_x(Address adr) {
-  InstructionMark im(this);
-  emit_int8((unsigned char)0xDB);
-  emit_operand32(rbp, adr);
-}
-
 void Assembler::fldcw(Address src) {
   InstructionMark im(this);
   emit_int8((unsigned char)0xD9);
@@ -7402,12 +7389,6 @@ void Assembler::fstp_s(Address adr) {
   InstructionMark im(this);
   emit_int8((unsigned char)0xD9);
   emit_operand32(rbx, adr);
-}
-
-void Assembler::fstp_x(Address adr) {
-  InstructionMark im(this);
-  emit_int8((unsigned char)0xDB);
-  emit_operand32(rdi, adr);
 }
 
 void Assembler::fsub(int i) {
@@ -8572,6 +8553,25 @@ void Assembler::decq(Address dst) {
   InstructionMark im(this);
   emit_int16(get_prefixq(dst), (unsigned char)0xFF);
   emit_operand(rcx, dst);
+}
+
+void Assembler::fld_x(Address adr) {
+  InstructionMark im(this);
+  emit_int8((unsigned char)0xDB);
+  emit_operand32(rbp, adr);
+}
+
+void Assembler::fstp_x(Address adr) {
+  InstructionMark im(this);
+  emit_int8((unsigned char)0xDB);
+  emit_operand32(rdi, adr);
+}
+
+void Assembler::emit_operand32(Register reg, Address adr) {
+  assert(reg->encoding() < 8, "no extended registers");
+  assert(!adr.base_needs_rex() && !adr.index_needs_rex(), "no extended registers");
+  emit_operand(reg, adr._base, adr._index, adr._scale, adr._disp,
+               adr._rspec);
 }
 
 void Assembler::fxrstor(Address src) {

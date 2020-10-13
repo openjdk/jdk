@@ -941,6 +941,7 @@ class CompiledArgumentOopFinder: public SignatureIterator {
     // In LP64-land, the high-order bits are valid but unhelpful.
     VMReg reg = _regs[_offset].first();
     oop *loc = _fr.oopmapreg_to_location(reg, _reg_map);
+    assert(loc != NULL, "missing register map entry");
     _f->do_oop(loc);
   }
 

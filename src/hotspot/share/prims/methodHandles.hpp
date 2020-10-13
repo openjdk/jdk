@@ -118,7 +118,7 @@ class MethodHandles: AllStatic {
   static bool has_member_arg(vmIntrinsics::ID iid) {
     assert(is_signature_polymorphic(iid), "");
     return (iid >= vmIntrinsics::_linkToVirtual &&
-            iid <= vmIntrinsics::_linkToInterface);
+            iid <= vmIntrinsics::_linkToNative);
   }
   static bool has_member_arg(Symbol* klass, Symbol* name) {
     if ((klass == vmSymbols::java_lang_invoke_MethodHandle() ||

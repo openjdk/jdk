@@ -547,6 +547,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _boxing_late_inlines(comp_arena(), 2, 0, NULL),
                   _late_inlines_pos(0),
                   _number_of_mh_late_inlines(0),
+                  _native_stubs(NULL),
                   _print_inlining_stream(NULL),
                   _print_inlining_list(NULL),
                   _print_inlining_idx(0),
@@ -842,6 +843,7 @@ Compile::Compile( ciEnv* ci_env,
     _for_igvn(NULL),
     _warm_calls(NULL),
     _number_of_mh_late_inlines(0),
+    _native_stubs(NULL),
     _print_inlining_stream(NULL),
     _print_inlining_list(NULL),
     _print_inlining_idx(0),
@@ -1018,6 +1020,7 @@ void Compile::Init(int aliaslevel) {
   _expensive_nodes = new(comp_arena()) GrowableArray<Node*>(comp_arena(), 8,  0, NULL);
   _range_check_casts = new(comp_arena()) GrowableArray<Node*>(comp_arena(), 8,  0, NULL);
   _opaque4_nodes = new(comp_arena()) GrowableArray<Node*>(comp_arena(), 8,  0, NULL);
+  _native_stubs = new(comp_arena()) GrowableArray<address>(comp_arena(), 1,  0, NULL);
   register_library_intrinsics();
 #ifdef ASSERT
   _type_verify_symmetry = true;
@@ -2899,6 +2902,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     frc.inc_java_call_count(); // Count java call site;
   case Op_CallRuntime:
   case Op_CallLeaf:
+  case Op_CallNative:
   case Op_CallLeafNoFP: {
     assert (n->is_Call(), "");
     CallNode *call = n->as_Call();
@@ -4676,3 +4680,6 @@ void Compile::igv_print_method_to_network(const char* phase_name) {
 }
 #endif
 
+void Compile::add_native_stub(address stubAddress) {
+  _native_stubs->append(stubAddress);
+}

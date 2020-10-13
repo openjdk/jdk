@@ -520,6 +520,11 @@ class SharedRuntime: AllStatic {
 
   static address handle_unsafe_access(JavaThread* thread, address next_pc);
 
+  static address make_native_invoker(address call_target,
+                                     int shadow_space_bytes,
+                                     const GrowableArray<VMReg>& input_registers,
+                                     const GrowableArray<VMReg>& output_registers);
+
 #ifndef PRODUCT
 
   // Collect and print inline cache miss statistics

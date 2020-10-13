@@ -22,8 +22,15 @@
  */
 #include <jni.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include "points.h"
+
+double distance(Point p1, Point p2) {
+    int xDist = abs(p1.x - p2.x);
+    int yDist = abs(p1.y - p2.y);
+    return sqrt((xDist * xDist) + (yDist * yDist));
+}
 
 JNIEXPORT jlong JNICALL Java_org_openjdk_bench_jdk_incubator_foreign_points_support_JNIPoint_allocate
   (JNIEnv *env, jclass nativePointClass) {
@@ -58,4 +65,18 @@ JNIEXPORT void JNICALL Java_org_openjdk_bench_jdk_incubator_foreign_points_suppo
   (JNIEnv *env, jclass cls, jlong thisPoint, jint value) {
     Point* point = (Point*) thisPoint;
     point->y = value;
+}
+
+JNIEXPORT jdouble JNICALL Java_org_openjdk_bench_jdk_incubator_foreign_points_support_JNIPoint_distance
+  (JNIEnv *env, jclass cls, jlong thisPoint, jlong other) {
+    Point* p1 = (Point*) thisPoint;
+    Point* p2 = (Point*) other;
+    return distance(*p1, *p2);
+}
+
+JNIEXPORT jdouble JNICALL Java_org_openjdk_bench_jdk_incubator_foreign_points_support_BBPoint_distance
+  (JNIEnv *env, jclass ignored, jobject buffP1, jobject buffP2) {
+    Point* p1 = (Point*) (*env)->GetDirectBufferAddress(env, buffP1);
+    Point* p2 = (Point*) (*env)->GetDirectBufferAddress(env, buffP2);
+    return distance(*p1, *p2);
 }

@@ -287,6 +287,7 @@ void DebugInformationRecorder::describe_scope(int         pc_offset,
                                               bool        reexecute,
                                               bool        rethrow_exception,
                                               bool        is_method_handle_invoke,
+                                              bool        is_optimized_linkToNative,
                                               bool        return_oop,
                                               DebugToken* locals,
                                               DebugToken* expressions,
@@ -303,6 +304,7 @@ void DebugInformationRecorder::describe_scope(int         pc_offset,
   last_pd->set_should_reexecute(reexecute);
   last_pd->set_rethrow_exception(rethrow_exception);
   last_pd->set_is_method_handle_invoke(is_method_handle_invoke);
+  last_pd->set_is_optimized_linkToNative(is_optimized_linkToNative);
   last_pd->set_return_oop(return_oop);
 
   // serialize sender stream offest

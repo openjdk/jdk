@@ -495,7 +495,9 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
   ExceptionHandlerTable* handler_table,
   ImplicitExceptionTable* nul_chk_table,
   AbstractCompiler* compiler,
-  int comp_level
+  int comp_level,
+  address* native_stubs,
+  int num_stubs
 #if INCLUDE_JVMCI
   , char* speculations,
   int speculations_len,
@@ -532,7 +534,9 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
             handler_table,
             nul_chk_table,
             compiler,
-            comp_level
+            comp_level,
+            native_stubs,
+            num_stubs
 #if INCLUDE_JVMCI
             , speculations,
             speculations_len,
@@ -596,7 +600,8 @@ nmethod::nmethod(
   : CompiledMethod(method, "native nmethod", type, nmethod_size, sizeof(nmethod), code_buffer, offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false),
   _is_unloading_state(0),
   _native_receiver_sp_offset(basic_lock_owner_sp_offset),
-  _native_basic_lock_sp_offset(basic_lock_sp_offset)
+  _native_basic_lock_sp_offset(basic_lock_sp_offset),
+  _native_stubs(NULL), _num_stubs(0)
 {
   {
     int scopes_data_offset   = 0;
@@ -716,7 +721,9 @@ nmethod::nmethod(
   ExceptionHandlerTable* handler_table,
   ImplicitExceptionTable* nul_chk_table,
   AbstractCompiler* compiler,
-  int comp_level
+  int comp_level,
+  address* native_stubs,
+  int num_stubs
 #if INCLUDE_JVMCI
   , char* speculations,
   int speculations_len,
@@ -726,7 +733,8 @@ nmethod::nmethod(
   : CompiledMethod(method, "nmethod", type, nmethod_size, sizeof(nmethod), code_buffer, offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false),
   _is_unloading_state(0),
   _native_receiver_sp_offset(in_ByteSize(-1)),
-  _native_basic_lock_sp_offset(in_ByteSize(-1))
+  _native_basic_lock_sp_offset(in_ByteSize(-1)),
+  _native_stubs(native_stubs), _num_stubs(num_stubs)
 {
   assert(debug_info->oop_recorder() == code_buffer->oop_recorder(), "shared OR");
   {
@@ -1034,6 +1042,17 @@ void nmethod::copy_values(GrowableArray<Metadata*>* array) {
   Metadata** dest = metadata_begin();
   for (int index = 0 ; index < length; index++) {
     dest[index] = array->at(index);
+  }
+}
+
+void nmethod::free_native_stubs() {
+  if (_native_stubs != NULL) {
+    for (int i = 0; i < _num_stubs; i++) {
+      CodeBlob* cb = CodeCache::find_blob((char*)  _native_stubs[i]);
+      assert(cb != NULL, "Expected to find blob");
+      CodeCache::free(cb);
+    }
+    FREE_C_HEAP_ARRAY(address, _native_stubs);
   }
 }
 

@@ -25,6 +25,9 @@
 #include "precompiled.hpp"
 #include "ci/ciUtilities.hpp"
 #include "classfile/javaClasses.hpp"
+#include "ci/ciNativeEntryPoint.hpp"
+#include "ci/ciObjArray.hpp"
+#include "asm/register.hpp"
 #include "compiler/compileLog.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
@@ -47,6 +50,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "utilities/growableArray.hpp"
 
 //----------------------------GraphKit-----------------------------------------
 // Main utility constructor.
@@ -2558,6 +2562,135 @@ Node* GraphKit::make_runtime_call(int flags,
   }
   return call;
 
+}
+
+// i2b
+Node* GraphKit::sign_extend_byte(Node* in) {
+  Node* tmp = _gvn.transform(new LShiftINode(in, _gvn.intcon(24)));
+  return _gvn.transform(new RShiftINode(tmp, _gvn.intcon(24)));
+}
+
+// i2s
+Node* GraphKit::sign_extend_short(Node* in) {
+  Node* tmp = _gvn.transform(new LShiftINode(in, _gvn.intcon(16)));
+  return _gvn.transform(new RShiftINode(tmp, _gvn.intcon(16)));
+}
+
+//-----------------------------make_native_call-------------------------------
+Node* GraphKit::make_native_call(const TypeFunc* call_type, uint nargs, ciNativeEntryPoint* nep) {
+  uint n_filtered_args = nargs - 2; // -fallback, -nep;
+  ResourceMark rm;
+  Node** argument_nodes = NEW_RESOURCE_ARRAY(Node*, n_filtered_args);
+  const Type** arg_types = NEW_RESOURCE_ARRAY(const Type*, n_filtered_args);
+  GrowableArray<VMReg> arg_regs(C->comp_arena(), n_filtered_args, n_filtered_args, VMRegImpl::Bad());
+
+  VMReg* argRegs = nep->argMoves();
+  {
+    for (uint vm_arg_pos = 0, java_arg_read_pos = 0;
+        vm_arg_pos < n_filtered_args; vm_arg_pos++) {
+      uint vm_unfiltered_arg_pos = vm_arg_pos + 1; // +1 to skip fallback handle argument
+      Node* node = argument(vm_unfiltered_arg_pos);
+      const Type* type = call_type->domain()->field_at(TypeFunc::Parms + vm_unfiltered_arg_pos);
+      VMReg reg = type == Type::HALF
+        ? VMRegImpl::Bad()
+        : argRegs[java_arg_read_pos++];
+
+      argument_nodes[vm_arg_pos] = node;
+      arg_types[vm_arg_pos] = type;
+      arg_regs.at_put(vm_arg_pos, reg);
+    }
+  }
+
+  uint n_returns = call_type->range()->cnt() - TypeFunc::Parms;
+  GrowableArray<VMReg> ret_regs(C->comp_arena(), n_returns, n_returns, VMRegImpl::Bad());
+  const Type** ret_types = NEW_RESOURCE_ARRAY(const Type*, n_returns);
+
+  VMReg* retRegs = nep->returnMoves();
+  {
+    for (uint vm_ret_pos = 0, java_ret_read_pos = 0;
+        vm_ret_pos < n_returns; vm_ret_pos++) { // 0 or 1
+      const Type* type = call_type->range()->field_at(TypeFunc::Parms + vm_ret_pos);
+      VMReg reg = type == Type::HALF
+        ? VMRegImpl::Bad()
+        : retRegs[java_ret_read_pos++];
+
+      ret_regs.at_put(vm_ret_pos, reg);
+      ret_types[vm_ret_pos] = type;
+    }
+  }
+
+  const TypeFunc* new_call_type = TypeFunc::make(
+    TypeTuple::make_func(n_filtered_args, arg_types),
+    TypeTuple::make_func(n_returns, ret_types)
+  );
+
+  address call_addr = nep->entry_point();
+  if (nep->need_transition()) {
+    call_addr = SharedRuntime::make_native_invoker(call_addr,
+                                                   nep->shadow_space(),
+                                                   arg_regs, ret_regs);
+    if (call_addr == NULL) return NULL;
+    C->add_native_stub(call_addr);
+  }
+  assert(call_addr != NULL, "sanity");
+
+  CallNativeNode* call = new CallNativeNode(new_call_type, call_addr, nep->name(), TypePtr::BOTTOM,
+                                            arg_regs,
+                                            ret_regs,
+                                            nep->shadow_space(),
+                                            nep->need_transition());
+
+  if (call->_need_transition) {
+    add_safepoint_edges(call);
+  }
+
+  set_predefined_input_for_runtime_call(call);
+
+  for (uint i = 0; i < n_filtered_args; i++) {
+    call->init_req(i + TypeFunc::Parms, argument_nodes[i]);
+  }
+
+  Node* c = gvn().transform(call);
+  assert(c == call, "cannot disappear");
+
+  set_predefined_output_for_runtime_call(call);
+
+  Node* ret;
+  if (method() == NULL || method()->return_type()->basic_type() == T_VOID) {
+    ret = top();
+  } else {
+    Node* current_value = NULL;
+    for (uint vm_ret_pos = 0; vm_ret_pos < n_returns; vm_ret_pos++) {
+      if (new_call_type->range()->field_at(TypeFunc::Parms + vm_ret_pos)  == Type::HALF) {
+        // FIXME is this needed?
+        gvn().transform(new ProjNode(call, TypeFunc::Parms + vm_ret_pos));
+      } else {
+        assert(current_value == NULL, "Must not overwrite");
+        current_value = gvn().transform(new ProjNode(call, TypeFunc::Parms + vm_ret_pos));
+      }
+    }
+    assert(current_value != NULL, "Should not be null");
+    // Unpack native results if needed
+    // Need this method type since it's unerased
+    switch (nep->method_type()->rtype()->basic_type()) {
+      case T_CHAR:
+        current_value = _gvn.transform(new AndINode(current_value, _gvn.intcon(0xFFFF)));
+        break;
+      case T_BYTE:
+        current_value = sign_extend_byte(current_value);
+        break;
+      case T_SHORT:
+        current_value = sign_extend_short(current_value);
+        break;
+      default: // do nothing
+        break;
+    }
+    ret = current_value;
+  }
+
+  push_node(method()->return_type()->basic_type(), ret);
+
+  return call;
 }
 
 //------------------------------merge_memory-----------------------------------

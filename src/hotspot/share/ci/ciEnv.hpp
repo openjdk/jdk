@@ -377,7 +377,9 @@ public:
                        AbstractCompiler*         compiler,
                        bool                      has_unsafe_access,
                        bool                      has_wide_vectors,
-                       RTMState                  rtm_state = NoRTM);
+                       RTMState                  rtm_state = NoRTM,
+                       address*                  native_stubs = NULL,
+                       int                       num_stubs = 0);
 
 
   // Access to certain well known ciObjects.

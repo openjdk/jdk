@@ -27,6 +27,7 @@ package java.lang.invoke;
 
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.invoke.NativeEntryPoint;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.reflect.CallerSensitive;
@@ -1766,6 +1767,11 @@ abstract class MethodHandleImpl {
             @Override
             public Map<String, byte[]> generateHolderClasses(Stream<String> traces) {
                 return GenerateJLIClassesHelper.generateHolderClasses(traces);
+            }
+
+            @Override
+            public MethodHandle nativeMethodHandle(NativeEntryPoint nep, MethodHandle fallback) {
+                return NativeMethodHandle.make(nep, fallback);
             }
 
             @Override
