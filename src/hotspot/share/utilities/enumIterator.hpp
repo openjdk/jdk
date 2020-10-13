@@ -53,7 +53,6 @@
 // Don't bother trying to figure this out.
 //
 //
-// EnumIterationTraits -- defines the static range of all possible values of the enum.
 // EnumRange -- defines the range of *one specific* iteration loop.
 // EnumIterator -- the current point in the iteration loop.
 
@@ -73,7 +72,7 @@
 //    ....
 // }
 
-// Traits type supporting iteration over the enumerators of T.
+// EnumeratorRange is a traits type supporting iteration over the enumerators of T.
 // Specializations must provide static const data members named
 // "_first" and "_last", whose values are the smallest / largest
 // (resp.) enumerator values for T. For iteration, the enumerators of
@@ -87,6 +86,8 @@ template<typename T> struct EnumeratorRange;
     static constexpr T _last = Last;            \
   };
 
+// A helper class for EnumIterator, computing some additional information the
+// iterator uses, based on T and EnumeratorRange.
 template<typename T>
 class EnumIterationTraits : AllStatic {
   using RangeType = EnumeratorRange<T>;
@@ -135,12 +136,12 @@ public:
     assert(_value <= Traits::_end, "out of range");
   }
 
-  // True if the enumerators designate the same value.
+  // True if the iterators designate the same enumeration value.
   constexpr bool operator==(EnumIterator other) const {
     return _value == other._value;
   }
 
-  // True if the enumerators designate different values.
+  // True if the iterators designate different enumeration values.
   constexpr bool operator!=(EnumIterator other) const {
     return _value != other._value;
   }

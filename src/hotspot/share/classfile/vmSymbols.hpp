@@ -677,7 +677,7 @@
 
 // enum for figuring positions and size of Symbol::_vm_symbols[]
 enum class vmSymbolID : int {
-  NO_SID = 0,                // exclusive lower limit
+  NO_SID = -1,               // exclusive lower limit
 
   #define VM_SYMBOL_ENUM(name, string) VM_SYMBOL_ENUM_NAME_(name),
   VM_SYMBOLS_DO(VM_SYMBOL_ENUM, VM_ALIAS_IGNORE)
@@ -702,16 +702,17 @@ class vmSymbols: AllStatic {
   friend class VMStructs;
   friend class JVMCIVMStructs;
 
-  static const int NO_SID    = static_cast<int>(vmSymbolID::NO_SID);
-  static const int FIRST_SID = static_cast<int>(vmSymbolID::FIRST_SID);
-  static const int SID_LIMIT = static_cast<int>(vmSymbolID::SID_LIMIT);
+  static const int NO_SID    = static_cast<int>(vmSymbolID::NO_SID);    // exclusive lower limit
+  static const int FIRST_SID = static_cast<int>(vmSymbolID::FIRST_SID); // inclusive lower limit
+  static const int LAST_SID  = static_cast<int>(vmSymbolID::FIRST_SID); // inclusive upper limit
+  static const int SID_LIMIT = static_cast<int>(vmSymbolID::SID_LIMIT); // exclusive upper limit
 
  public:
   static constexpr bool is_valid_id(int id) {
     return (id >= FIRST_SID && id < SID_LIMIT);
   }
   static constexpr bool is_valid_id(vmSymbolID sid) {
-    return (static_cast<int>(sid) >= FIRST_SID && static_cast<int>(sid) < SID_LIMIT);
+    return is_valid_id(static_cast<int>(sid));
   }
 
   static constexpr vmSymbolID as_SID(int id) {
@@ -725,6 +726,7 @@ class vmSymbols: AllStatic {
   }
 
   static constexpr int number_of_symbols() {
+    static_assert(FIRST_SID == 0, "must be");
     return SID_LIMIT;
   }
 
