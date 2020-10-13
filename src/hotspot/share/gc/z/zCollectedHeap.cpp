@@ -35,9 +35,7 @@
 #include "gc/z/zServiceability.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zUtils.inline.hpp"
-#include "memory/iterator.hpp"
 #include "memory/universe.hpp"
-#include "runtime/mutexLocker.hpp"
 #include "utilities/align.hpp"
 
 ZCollectedHeap* ZCollectedHeap::heap() {

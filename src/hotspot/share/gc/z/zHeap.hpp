@@ -28,7 +28,6 @@
 #include "gc/z/zForwardingTable.hpp"
 #include "gc/z/zMark.hpp"
 #include "gc/z/zObjectAllocator.hpp"
-#include "gc/z/zPage.hpp"
 #include "gc/z/zPageAllocator.hpp"
 #include "gc/z/zPageTable.hpp"
 #include "gc/z/zReferenceProcessor.hpp"
@@ -39,6 +38,7 @@
 #include "gc/z/zUnload.hpp"
 #include "gc/z/zWorkers.hpp"
 
+class Page;
 class ThreadClosure;
 
 class ZHeap {

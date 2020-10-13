@@ -23,7 +23,6 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
-#include "gc/shared/workgroup.hpp"
 #include "gc/z/zRuntimeWorkers.hpp"
 #include "gc/z/zThread.hpp"
 #include "runtime/java.hpp"

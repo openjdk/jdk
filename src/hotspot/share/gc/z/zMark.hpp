@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,9 @@
 
 #include "gc/z/zMarkStack.hpp"
 #include "gc/z/zMarkStackAllocator.hpp"
+#include "gc/z/zMarkStackEntry.hpp"
 #include "gc/z/zMarkTerminate.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "utilities/globalDefinitions.hpp"
 
 class Thread;
 class ZMarkCache;
@@ -36,9 +36,7 @@ class ZPageTable;
 class ZWorkers;
 
 class ZMark {
-  friend class ZMarkRootsTask;
   friend class ZMarkTask;
-  friend class ZMarkTryCompleteTask;
 
 private:
   ZWorkers* const     _workers;

@@ -29,7 +29,6 @@
 #include "gc/z/zWorkers.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/safepoint.hpp"
 
 class ZWorkersInitializeTask : public ZTask {
 private:
