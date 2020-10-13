@@ -282,7 +282,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier_native(MacroAssembler
   __ ldrb(rscratch2, gc_state);
 
   // Check for heap in evacuation phase
-  __ tbz(rscratch2, ShenandoahHeap::EVACUATION_BITPOS, done);
+  __ tbz(rscratch2, ShenandoahHeap::HAS_FORWARDED_BITPOS, done);
 
   __ mov(rscratch2, dst);
   __ push_call_clobbered_registers();

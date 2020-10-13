@@ -27,8 +27,9 @@
 #include "classfile/classLoaderDataShared.hpp"
 #include "classfile/classListParser.hpp"
 #include "classfile/classLoaderExt.hpp"
-#include "classfile/loaderConstraints.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/lambdaFormInvokers.hpp"
+#include "classfile/loaderConstraints.hpp"
 #include "classfile/placeholders.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/stringTable.hpp"
@@ -608,8 +609,8 @@ public:
 
 class StaticArchiveBuilder : public ArchiveBuilder {
 public:
-  StaticArchiveBuilder(DumpRegion* rw_region, DumpRegion* ro_region)
-    : ArchiveBuilder(rw_region, ro_region) {
+  StaticArchiveBuilder(DumpRegion* mc_region, DumpRegion* rw_region, DumpRegion* ro_region)
+    : ArchiveBuilder(mc_region, rw_region, ro_region) {
     _alloc_bottom = address(SharedBaseAddress);
     _buffer_to_target_delta = 0;
   }
@@ -724,7 +725,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   // that so we don't have to walk the SystemDictionary again.
   SystemDictionaryShared::check_excluded_classes();
 
-  StaticArchiveBuilder builder(&_rw_region, &_ro_region);
+  StaticArchiveBuilder builder(&_mc_region, &_rw_region, &_ro_region);
   builder.set_current_dump_space(&_mc_region);
   builder.gather_klasses_and_symbols();
   _global_klass_objects = builder.klasses();
@@ -796,7 +797,10 @@ void VM_PopulateDumpSharedSpace::doit() {
   mapinfo->set_i2i_entry_code_buffers(MetaspaceShared::i2i_entry_code_buffers(),
                                       MetaspaceShared::i2i_entry_code_buffers_size());
   mapinfo->open_for_write();
-  MetaspaceShared::write_core_archive_regions(mapinfo, _closed_archive_heap_oopmaps, _open_archive_heap_oopmaps);
+  size_t bitmap_size_in_bytes;
+  char* bitmap = MetaspaceShared::write_core_archive_regions(mapinfo, _closed_archive_heap_oopmaps,
+                                                             _open_archive_heap_oopmaps,
+                                                             bitmap_size_in_bytes);
   _total_closed_archive_region_size = mapinfo->write_archive_heap_regions(
                                         _closed_archive_heap_regions,
                                         _closed_archive_heap_oopmaps,
@@ -813,6 +817,10 @@ void VM_PopulateDumpSharedSpace::doit() {
   mapinfo->write_header();
   print_region_stats(mapinfo);
   mapinfo->close();
+
+  builder.write_cds_map_to_log(mapinfo, _closed_archive_heap_regions, _open_archive_heap_regions,
+                               bitmap, bitmap_size_in_bytes);
+  FREE_C_HEAP_ARRAY(char, bitmap);
 
   if (log_is_enabled(Info, cds)) {
     builder.print_stats(int(_ro_region.used()), int(_rw_region.used()), int(_mc_region.used()));
@@ -878,9 +886,10 @@ void VM_PopulateDumpSharedSpace::print_heap_region_stats(GrowableArray<MemRegion
   }
 }
 
-void MetaspaceShared::write_core_archive_regions(FileMapInfo* mapinfo,
-                                                 GrowableArray<ArchiveHeapOopmapInfo>* closed_oopmaps,
-                                                 GrowableArray<ArchiveHeapOopmapInfo>* open_oopmaps) {
+char* MetaspaceShared::write_core_archive_regions(FileMapInfo* mapinfo,
+                                                  GrowableArray<ArchiveHeapOopmapInfo>* closed_oopmaps,
+                                                  GrowableArray<ArchiveHeapOopmapInfo>* open_oopmaps,
+                                                  size_t& bitmap_size_in_bytes) {
   // Make sure NUM_CDS_REGIONS (exported in cds.h) agrees with
   // MetaspaceShared::n_regions (internal to hotspot).
   assert(NUM_CDS_REGIONS == MetaspaceShared::n_regions, "sanity");
@@ -890,7 +899,9 @@ void MetaspaceShared::write_core_archive_regions(FileMapInfo* mapinfo,
   write_region(mapinfo, mc, &_mc_region, /*read_only=*/false,/*allow_exec=*/true);
   write_region(mapinfo, rw, &_rw_region, /*read_only=*/false,/*allow_exec=*/false);
   write_region(mapinfo, ro, &_ro_region, /*read_only=*/true, /*allow_exec=*/false);
-  mapinfo->write_bitmap_region(ArchivePtrMarker::ptrmap(), closed_oopmaps, open_oopmaps);
+
+  return mapinfo->write_bitmap_region(ArchivePtrMarker::ptrmap(), closed_oopmaps, open_oopmaps,
+                                      bitmap_size_in_bytes);
 }
 
 void MetaspaceShared::write_region(FileMapInfo* mapinfo, int region_idx, DumpRegion* dump_region, bool read_only,  bool allow_exec) {
@@ -1040,8 +1051,14 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
     if (SharedArchiveConfigFile) {
       log_info(cds)("Reading extra data from %s ...", SharedArchiveConfigFile);
       read_extra_data(SharedArchiveConfigFile, THREAD);
+      log_info(cds)("Reading extra data: done.");
     }
-    log_info(cds)("Reading extra data: done.");
+
+    if (LambdaFormInvokers::lambdaform_lines() != NULL) {
+      log_info(cds)("Regenerate MethodHandle Holder classes...");
+      LambdaFormInvokers::regenerate_holder_classes(THREAD);
+      log_info(cds)("Regenerate MethodHandle Holder classes done.");
+    }
 
     HeapShared::init_for_dumping(THREAD);
 

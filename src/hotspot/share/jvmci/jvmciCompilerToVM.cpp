@@ -1223,7 +1223,7 @@ C2V_VMENTRY_NULL(jobject, iterateFrames, (JNIEnv* env, jobject compilerToVM, job
   HotSpotJVMCI::HotSpotStackFrameReference::klass()->initialize(CHECK_NULL);
   Handle frame_reference = HotSpotJVMCI::HotSpotStackFrameReference::klass()->allocate_instance_handle(CHECK_NULL);
 
-  StackFrameStream fst(thread);
+  StackFrameStream fst(thread, true /* update */, true /* process_frames */);
   jobjectArray methods = initial_methods;
 
   int frame_number = 0;
@@ -1330,7 +1330,7 @@ C2V_VMENTRY_NULL(jobject, iterateFrames, (JNIEnv* env, jobject compilerToVM, job
         if (HotSpotJVMCI::HotSpotStackFrameReference::objectsMaterialized(JVMCIENV, frame_reference()) == JNI_TRUE) {
           // the frame has been deoptimized, we need to re-synchronize the frame and vframe
           intptr_t* stack_pointer = (intptr_t*) HotSpotJVMCI::HotSpotStackFrameReference::stackPointer(JVMCIENV, frame_reference());
-          fst = StackFrameStream(thread);
+          fst = StackFrameStream(thread, true /* update */, true /* process_frames */);
           while (fst.current()->sp() != stack_pointer && !fst.is_done()) {
             fst.next();
           }
@@ -1462,7 +1462,7 @@ C2V_VMENTRY(void, materializeVirtualObjects, (JNIEnv* env, jobject, jobject _hs_
   JVMCIENV->HotSpotStackFrameReference_initialize(JVMCI_CHECK);
 
   // look for the given stack frame
-  StackFrameStream fst(thread, false);
+  StackFrameStream fst(thread, false /* update */, true /* process_frames */);
   intptr_t* stack_pointer = (intptr_t*) JVMCIENV->get_HotSpotStackFrameReference_stackPointer(hs_frame);
   while (fst.current()->sp() != stack_pointer && !fst.is_done()) {
     fst.next();
@@ -1480,7 +1480,7 @@ C2V_VMENTRY(void, materializeVirtualObjects, (JNIEnv* env, jobject, jobject _hs_
   }
   Deoptimization::deoptimize(thread, *fst.current(), Deoptimization::Reason_none);
   // look for the frame again as it has been updated by deopt (pc, deopt state...)
-  StackFrameStream fstAfterDeopt(thread);
+  StackFrameStream fstAfterDeopt(thread, true /* update */, true /* process_frames */);
   while (fstAfterDeopt.current()->sp() != stack_pointer && !fstAfterDeopt.is_done()) {
     fstAfterDeopt.next();
   }

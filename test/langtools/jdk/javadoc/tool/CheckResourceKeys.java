@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8000612
+ * @bug 8000612 8254627
  * @summary need test program to validate javadoc resource bundles
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  *          jdk.javadoc/jdk.javadoc.internal.doclets.formats.html.resources:open
@@ -201,9 +201,9 @@ public class CheckResourceKeys {
             }
 
             // special handling for code strings synthesized in
-            // com.sun.tools.doclets.internal.toolkit.util.Util.getTypeName
+            // jdk.javadoc.internal.doclets.toolkit.util.Utils.getTypeName
             String[] extras = {
-                "AnnotationType", "Class", "Enum", "Error", "Exception", "Interface"
+                "AnnotationType", "Class", "Enum", "Error", "Exception", "Interface", "Record"
             };
             for (String s: extras) {
                 if (results.contains("doclet." + s))

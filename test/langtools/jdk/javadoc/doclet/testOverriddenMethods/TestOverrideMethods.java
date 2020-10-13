@@ -69,6 +69,7 @@ public class TestOverrideMethods  extends JavadocTester {
     public void testSummary() {
         javadoc("-d", "out-summary",
                 "-sourcepath", testSrc,
+                "--no-platform-links",
                 "-javafx",
                 "--disable-javafx-strict-checks",
                 "--override-methods=summary",
@@ -313,24 +314,19 @@ public class TestOverrideMethods  extends JavadocTester {
         // Only m2 should be shown in summary; m1 and m3 should listed as declared in Base
         checkOutput("pkg6/Sub.html", true,
                 """
-                    <table class="summary-table" aria-labelledby="t0">
-                    <thead>
-                    <tr>
-                    <th class="col-first" scope="col">Modifier and Type</th>
-                    <th class="col-second" scope="col">Method</th>
-                    <th class="col-last" scope="col">Description</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr class="alt-color" id="i0">
-                    <td class="col-first"><code>java.lang.String</code></td>
-                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href="#m2()">m2</a></span>()</code></th>
-                    <td class="col-last">
+                    <div class="summary-table three-column-summary" aria-labelledby="method-summary-table-tab0">
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Method</div>
+                    <div class="table-header col-last">Description</div>
+                    <div class="col-first even-row-color method-summary-table-tab2 method-summary-table-t\
+                    ab4 method-summary-table"><code>java.lang.String</code></div>
+                    <div class="col-second even-row-color method-summary-table-tab2 method-summary-table-\
+                    tab4 method-summary-table"><code><span class="member-name-link"><a href="#m2()">\
+                    m2</a></span>()</code></div>
+                    <div class="col-last even-row-color method-summary-table-tab2 method-summary-table-tab4 method-summary-table">
                     <div class="block">This is Base::m2.</div>
-                    </td>
-                    </tr>
-                    </tbody>
-                    </table>
+                    </div>
+                    </div>
                     """,
                 """
                     <div class="inherited-list">

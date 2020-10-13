@@ -686,7 +686,11 @@ class os: AllStatic {
   // return current frame. pc() and sp() are set to NULL on failure.
   static frame      current_frame();
 
-  static void print_hex_dump(outputStream* st, address start, address end, int unitsize);
+  static void print_hex_dump(outputStream* st, address start, address end, int unitsize,
+                             int bytes_per_line, address logical_start);
+  static void print_hex_dump(outputStream* st, address start, address end, int unitsize) {
+    print_hex_dump(st, start, end, unitsize, /*bytes_per_line=*/16, /*logical_start=*/start);
+  }
 
   // returns a string to describe the exception/signal;
   // returns NULL if exception_code is not an OS exception/signal.

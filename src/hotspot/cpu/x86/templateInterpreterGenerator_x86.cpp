@@ -771,7 +771,7 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // needs to be checked.  Only true for non-native.
   if (UseStackBanging) {
     const int page_size = os::vm_page_size();
-    const int n_shadow_pages = ((int)JavaThread::stack_shadow_zone_size()) / page_size;
+    const int n_shadow_pages = ((int)StackOverflow::stack_shadow_zone_size()) / page_size;
     const int start_page = native_call ? n_shadow_pages : 1;
     for (int pages = start_page; pages <= n_shadow_pages; pages++) {
       __ bang_stack_with_offset(pages*page_size);
@@ -1106,11 +1106,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     Label Continue;
     Label slow_path;
 
-#ifndef _LP64
-    __ safepoint_poll(slow_path, thread, noreg);
-#else
-    __ safepoint_poll(slow_path, r15_thread, rscratch1);
-#endif
+    __ safepoint_poll(slow_path, thread, true /* at_return */, false /* in_nmethod */);
 
     __ cmpl(Address(thread, JavaThread::suspend_flags_offset()), 0);
     __ jcc(Assembler::equal, Continue);
@@ -1180,7 +1176,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   {
     Label no_reguard;
     __ cmpl(Address(thread, JavaThread::stack_guard_state_offset()),
-            JavaThread::stack_guard_yellow_reserved_disabled);
+            StackOverflow::stack_guard_yellow_reserved_disabled);
     __ jcc(Assembler::notEqual, no_reguard);
 
     __ pusha(); // XXX only save smashed registers
