@@ -62,11 +62,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements ConstantsSummaryWriter {
 
     /**
-     * The configuration used in this run of the standard doclet.
-     */
-    HtmlConfiguration configuration;
-
-    /**
      * The current class being documented.
      */
     private TypeElement currentTypeElement;
@@ -91,7 +86,6 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
      */
     public ConstantsSummaryWriterImpl(HtmlConfiguration configuration) {
         super(configuration, DocPaths.CONSTANT_VALUES);
-        this.configuration = configuration;
         constantsTableHeader = new TableHeader(
                 contents.modifierAndTypeLabel, contents.constantFieldLabel, contents.valueLabel);
         this.navBar = new Navigation(null, configuration, PageMode.CONSTANT_VALUES, path);
