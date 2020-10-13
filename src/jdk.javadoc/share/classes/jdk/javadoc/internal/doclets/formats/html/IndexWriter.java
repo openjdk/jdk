@@ -25,8 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.SortedSet;
@@ -84,18 +82,17 @@ public class IndexWriter extends HtmlDocletWriter {
     public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
         IndexBuilder mainIndex = configuration.mainIndex;
         List<Character> firstCharacters = mainIndex.getFirstCharacters();
-        firstCharacters.sort(Comparator.naturalOrder());
         if (configuration.getOptions().splitIndex()) {
             ListIterator<Character> iter = firstCharacters.listIterator();
             while (iter.hasNext()) {
                 Character ch = iter.next();
                 DocPath file = DocPaths.INDEX_FILES.resolve(DocPaths.indexN(iter.nextIndex()));
                 IndexWriter writer = new IndexWriter(configuration, file);
-                writer.generateIndexFile(List.of(ch));
+                writer.generateIndexFile(firstCharacters, List.of(ch));
             }
         } else {
             IndexWriter writer = new IndexWriter(configuration, DocPaths.INDEX_ALL);
-            writer.generateIndexFile(firstCharacters);
+            writer.generateIndexFile(firstCharacters, firstCharacters);
         }
     }
 
@@ -114,12 +111,14 @@ public class IndexWriter extends HtmlDocletWriter {
     /**
      * Generates a page containing some or all of the overall index.
      *
-     * @param firstCharacters the initial characters of the index items to appear on this page
+     * @param allFirstCharacters     the initial characters of all index items
+     * @param displayFirstCharacters the initial characters of the index items to appear on this page
      * @throws DocFileIOException if an error occurs while writing the page
      */
-    protected void generateIndexFile(List<Character> firstCharacters) throws DocFileIOException {
+    protected void generateIndexFile(List<Character> allFirstCharacters,
+                                     List<Character> displayFirstCharacters) throws DocFileIOException {
         String title = splitIndex
-                ? resources.getText("doclet.Window_Split_Index", firstCharacters.get(0))
+                ? resources.getText("doclet.Window_Split_Index", displayFirstCharacters.get(0))
                 : resources.getText("doclet.Window_Single_Index");
         HtmlTree body = getBody(getWindowTitle(title));
         Content headerContent = new ContentBuilder();
@@ -128,10 +127,8 @@ public class IndexWriter extends HtmlDocletWriter {
         navBar.setUserHeader(getUserHeaderFooter(true));
         headerContent.add(navBar.getContent(Navigation.Position.TOP));
         Content mainContent = new ContentBuilder();
-        List<Character> allFirstCharacters = new ArrayList<>(mainIndex.getFirstCharacters());
-        allFirstCharacters.sort(Comparator.naturalOrder());
         addLinksForIndexes(allFirstCharacters, mainContent);
-        for (Character ch : firstCharacters) {
+        for (Character ch : displayFirstCharacters) {
             addContents(ch, mainIndex.getItems(ch), mainContent);
         }
         addLinksForIndexes(allFirstCharacters, mainContent);
@@ -147,7 +144,7 @@ public class IndexWriter extends HtmlDocletWriter {
                 .addMainContent(mainContent)
                 .setFooter(footer));
 
-        String description = splitIndex ? "index: " + firstCharacters.get(0) : "index";
+        String description = splitIndex ? "index: " + displayFirstCharacters.get(0) : "index";
         printHtmlDocument(null, description, body);
     }
 
