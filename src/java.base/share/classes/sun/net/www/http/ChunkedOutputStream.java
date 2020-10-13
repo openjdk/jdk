@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 package sun.net.www.http;
 
 import java.io.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import sun.nio.cs.US_ASCII;
 
@@ -32,7 +34,7 @@ import sun.nio.cs.US_ASCII;
  * OutputStream that sends the output to the underlying stream using chunked
  * encoding as specified in RFC 2068.
  */
-public class ChunkedOutputStream extends PrintStream {
+public class ChunkedOutputStream extends OutputStream {
 
     /* Default chunk size (including chunk header) if not specified */
     static final int DEFAULT_CHUNK_SIZE = 4096;
@@ -63,6 +65,8 @@ public class ChunkedOutputStream extends PrintStream {
     /* header for a complete Chunk */
     private byte[] completeHeader;
 
+    private final Lock writeLock = new ReentrantLock();
+
     /* return the size of the header for a particular chunk size */
     private static int getHeaderSize(int size) {
         return (Integer.toHexString(size)).length() + CRLF_SIZE;
@@ -85,7 +89,6 @@ public class ChunkedOutputStream extends PrintStream {
     }
 
     public ChunkedOutputStream(PrintStream o, int size) {
-        super(o);
         out = o;
 
         if (size <= 0) {
@@ -144,7 +147,7 @@ public class ChunkedOutputStream extends PrintStream {
             reset();
         } else if (flushAll){
             /* complete the last chunk and flush it to underlying stream */
-            if (size > 0){
+            if (size > 0) {
                 /* adjust a header start index in case the header of the last
                  * chunk is shorter then preferedHeaderSize */
 
@@ -168,18 +171,18 @@ public class ChunkedOutputStream extends PrintStream {
 
             out.flush();
             reset();
-         }
+        }
     }
 
-    @Override
     public boolean checkError() {
-        return out.checkError();
+        var out = this.out;
+        return out == null || out.checkError();
     }
 
     /* Check that the output stream is still open */
-    private void ensureOpen() {
+    private void ensureOpen() throws IOException {
         if (out == null)
-            setError();
+            throw new IOException("closed");
     }
 
    /*
@@ -194,77 +197,92 @@ public class ChunkedOutputStream extends PrintStream {
     * The size of the data is of course smaller than preferredChunkSize.
     */
     @Override
-    public synchronized void write(byte b[], int off, int len) {
-        ensureOpen();
-        if ((off < 0) || (off > b.length) || (len < 0) ||
-            ((off + len) > b.length) || ((off + len) < 0)) {
-            throw new IndexOutOfBoundsException();
-        } else if (len == 0) {
-            return;
-        }
+    public void write(byte b[], int off, int len) throws IOException {
+        writeLock.lock();
+        try {
+            ensureOpen();
+            if ((off < 0) || (off > b.length) || (len < 0) ||
+                    ((off + len) > b.length) || ((off + len) < 0)) {
+                throw new IndexOutOfBoundsException();
+            } else if (len == 0) {
+                return;
+            }
 
-        /* if b[] contains enough data then one loop cycle creates one complete
-         * data chunk with a header, body and a footer, and then flushes the
-         * chunk to the underlying stream. Otherwise, the last loop cycle
-         * creates incomplete data chunk with empty header and with no footer
-         * and stores this incomplete chunk in an internal buffer buf[]
-         */
-        int bytesToWrite = len;
-        int inputIndex = off;  /* the index of the byte[] currently being written */
+            /* if b[] contains enough data then one loop cycle creates one complete
+             * data chunk with a header, body and a footer, and then flushes the
+             * chunk to the underlying stream. Otherwise, the last loop cycle
+             * creates incomplete data chunk with empty header and with no footer
+             * and stores this incomplete chunk in an internal buffer buf[]
+             */
+            int bytesToWrite = len;
+            int inputIndex = off;  /* the index of the byte[] currently being written */
 
-        do {
-            /* enough data to complete a chunk */
-            if (bytesToWrite >= spaceInCurrentChunk) {
+            do {
+                /* enough data to complete a chunk */
+                if (bytesToWrite >= spaceInCurrentChunk) {
 
-                /* header */
-                for (int i=0; i<completeHeader.length; i++)
-                    buf[i] = completeHeader[i];
+                    /* header */
+                    for (int i = 0; i < completeHeader.length; i++)
+                        buf[i] = completeHeader[i];
 
-                /* data */
-                System.arraycopy(b, inputIndex, buf, count, spaceInCurrentChunk);
-                inputIndex += spaceInCurrentChunk;
-                bytesToWrite -= spaceInCurrentChunk;
-                count += spaceInCurrentChunk;
+                    /* data */
+                    System.arraycopy(b, inputIndex, buf, count, spaceInCurrentChunk);
+                    inputIndex += spaceInCurrentChunk;
+                    bytesToWrite -= spaceInCurrentChunk;
+                    count += spaceInCurrentChunk;
 
-                /* footer */
-                buf[count++] = FOOTER[0];
-                buf[count++] = FOOTER[1];
-                spaceInCurrentChunk = 0; //chunk is complete
+                    /* footer */
+                    buf[count++] = FOOTER[0];
+                    buf[count++] = FOOTER[1];
+                    spaceInCurrentChunk = 0; //chunk is complete
 
-                flush(false);
-                if (checkError()){
-                    break;
+                    flush(false);
+                    if (checkError()) {
+                        break;
+                    }
                 }
-            }
 
-            /* not enough data to build a chunk */
-            else {
-                /* header */
-                /* do not write header if not enough bytes to build a chunk yet */
+                /* not enough data to build a chunk */
+                else {
+                    /* header */
+                    /* do not write header if not enough bytes to build a chunk yet */
 
-                /* data */
-                System.arraycopy(b, inputIndex, buf, count, bytesToWrite);
-                count += bytesToWrite;
-                size += bytesToWrite;
-                spaceInCurrentChunk -= bytesToWrite;
-                bytesToWrite = 0;
+                    /* data */
+                    System.arraycopy(b, inputIndex, buf, count, bytesToWrite);
+                    count += bytesToWrite;
+                    size += bytesToWrite;
+                    spaceInCurrentChunk -= bytesToWrite;
+                    bytesToWrite = 0;
 
-                /* footer */
-                /* do not write header if not enough bytes to build a chunk yet */
-            }
-        } while (bytesToWrite > 0);
+                    /* footer */
+                    /* do not write header if not enough bytes to build a chunk yet */
+                }
+            } while (bytesToWrite > 0);
+        } finally {
+            writeLock.unlock();
+        }
     }
 
     @Override
-    public synchronized void write(int _b) {
-        byte b[] = {(byte)_b};
-        write(b, 0, 1);
+    public void write(int _b) throws IOException {
+        writeLock.lock();
+        try {
+            byte b[] = {(byte) _b};
+            write(b, 0, 1);
+        } finally {
+            writeLock.unlock();
+        }
     }
 
-    public synchronized void reset() {
-        count = preferedHeaderSize;
-        size = 0;
-        spaceInCurrentChunk = preferredChunkDataSize;
+    public void reset() {
+        writeLock.lock();
+        try {
+            count = preferedHeaderSize;
+            size = 0;
+            spaceInCurrentChunk = preferredChunkDataSize;
+        } finally {
+            writeLock.unlock();
+        }
     }
 
     public int size() {
@@ -272,26 +290,36 @@ public class ChunkedOutputStream extends PrintStream {
     }
 
     @Override
-    public synchronized void close() {
-        ensureOpen();
+    public void close() {
+        writeLock.lock();
+        try {
+           if (out == null) return;
 
-        /* if we have buffer a chunked send it */
-        if (size > 0) {
+            /* if we have buffer a chunked send it */
+            if (size > 0) {
+                flush(true);
+            }
+
+            /* send a zero length chunk */
             flush(true);
+
+            /* don't close the underlying stream */
+            out = null;
+        } finally {
+            writeLock.unlock();
         }
-
-        /* send a zero length chunk */
-        flush(true);
-
-        /* don't close the underlying stream */
-        out = null;
     }
 
     @Override
-    public synchronized void flush() {
-        ensureOpen();
-        if (size > 0) {
-            flush(true);
+    public void flush() throws IOException {
+        writeLock.lock();
+        try {
+            ensureOpen();
+            if (size > 0) {
+                flush(true);
+            }
+        } finally {
+            writeLock.unlock();
         }
     }
 }
