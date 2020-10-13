@@ -2591,10 +2591,10 @@ void Assembler::evmovdqub(XMMRegister dst, KRegister mask, Address src, int vect
 
 void Assembler::evmovdqu(XMMRegister dst, KRegister mask, Address src, int vector_len, int type) {
   assert(VM_Version::supports_avx512vlbw(), "");
-  assert(type == T_BYTE || type == T_SHORT || type == T_CHAR || type == T_INT || type == T_LONG, "");
+  assert(is_java_primitive((BasicType)type), "");
   InstructionMark im(this);
   bool wide = type == T_SHORT || type == T_CHAR || type == T_LONG;
-  int prefix = (type == T_BYTE ||  type == T_SHORT || type == T_CHAR) ? VEX_SIMD_F2 : VEX_SIMD_F3;
+  int prefix = is_subword_type((BasicType)type) ? VEX_SIMD_F2 : VEX_SIMD_F3;
   InstructionAttr attributes(vector_len, /* vex_w */ wide, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
   attributes.set_address_attributes(/* tuple_type */ EVEX_FVM, /* input_size_in_bits */ EVEX_NObit);
   attributes.set_embedded_opmask_register_specifier(mask);
@@ -2607,10 +2607,10 @@ void Assembler::evmovdqu(XMMRegister dst, KRegister mask, Address src, int vecto
 void Assembler::evmovdqu(Address dst, KRegister mask, XMMRegister src, int vector_len, int type) {
   assert(VM_Version::supports_avx512vlbw(), "");
   assert(src != xnoreg, "sanity");
-  assert(type == T_BYTE || type == T_SHORT || type == T_CHAR || type == T_INT || type == T_LONG, "");
+  assert(is_java_primitive((BasicType)type), "");
   InstructionMark im(this);
   bool wide = type == T_SHORT || type == T_CHAR || type == T_LONG;
-  int prefix = (type == T_BYTE ||  type == T_SHORT || type == T_CHAR) ? VEX_SIMD_F2 : VEX_SIMD_F3;
+  int prefix = is_subword_type((BasicType)type) ? VEX_SIMD_F2 : VEX_SIMD_F3;
   InstructionAttr attributes(vector_len, /* vex_w */ wide, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
   attributes.set_address_attributes(/* tuple_type */ EVEX_FVM, /* input_size_in_bits */ EVEX_NObit);
   attributes.reset_is_clear_context();
