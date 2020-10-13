@@ -10,12 +10,23 @@ package java.lang.ref;
 public class FuzzyReference<T> extends SoftReference<T> {
 
     /**
-     * default constructor
+     * default constructor.  priority initialized to 0
      *
      * @param referent reference
      */
     public FuzzyReference(T referent) {
+        this(referent, 0);
+    }
+
+    /**
+     * default constructor
+     *
+     * @param referent reference
+     * @param pri initial priority
+     */
+    public FuzzyReference(T referent, long pri) {
         super(referent);
+        pri(pri);
     }
 
     /**
@@ -26,6 +37,7 @@ public class FuzzyReference<T> extends SoftReference<T> {
      */
     public FuzzyReference(T referent, ReferenceQueue<T> q) {
         super(referent, q);
+        pri(0);
     }
 
     /**
