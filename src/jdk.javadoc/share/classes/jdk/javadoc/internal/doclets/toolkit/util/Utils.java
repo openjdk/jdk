@@ -1337,33 +1337,35 @@ public class Utils {
     }
 
     /**
-     * Given a TypeElement, return the name of its type (Class, Interface, etc.).
+     * Returns the name of the kind of a type element (Class, Interface, etc.).
      *
-     * @param te the TypeElement to check.
-     * @param lowerCaseOnly true if you want the name returned in lower case.
-     *                      If false, the first letter of the name is capitalized.
-     * @return
+     * @param te the type element
+     * @param lowerCaseOnly true if you want the name returned in lower case;
+     *                      if false, the first letter of the name is capitalized
+     * @return the name
      */
-    public String getTypeElementName(TypeElement te, boolean lowerCaseOnly) {
-        String typeName = "";
-        if (isInterface(te)) {
-            typeName = "doclet.Interface";
-        } else if (isException(te)) {
-            typeName = "doclet.Exception";
-        } else if (isError(te)) {
-            typeName = "doclet.Error";
-        } else if (isAnnotationType(te)) {
-            typeName = "doclet.AnnotationType";
-        } else if (isEnum(te)) {
-            typeName = "doclet.Enum";
-        } else if (isOrdinaryClass(te)) {
-            typeName = "doclet.Class";
-        }
-        typeName = lowerCaseOnly ? toLowerCase(typeName) : typeName;
-        return typeNameMap.computeIfAbsent(typeName, resources::getText);
+    public String getTypeElementKindName(TypeElement te, boolean lowerCaseOnly) {
+        String kindName = switch (te.getKind()) {
+            case ANNOTATION_TYPE ->
+                    "doclet.AnnotationType";
+            case ENUM ->
+                    "doclet.Enum";
+            case INTERFACE ->
+                    "doclet.Interface";
+            case RECORD ->
+                    "doclet.Record";
+            case CLASS ->
+                    isException(te) ? "doclet.Exception"
+                    : isError(te) ? "doclet.Error"
+                    : "doclet.Class";
+            default ->
+                    throw new IllegalArgumentException(te.getKind().toString());
+        };
+        kindName = lowerCaseOnly ? toLowerCase(kindName) : kindName;
+        return kindNameMap.computeIfAbsent(kindName, resources::getText);
     }
 
-    private final Map<String, String> typeNameMap = new HashMap<>();
+    private final Map<String, String> kindNameMap = new HashMap<>();
 
     public String getTypeName(TypeMirror t, boolean fullyQualified) {
         return new SimpleTypeVisitor9<String, Void>() {

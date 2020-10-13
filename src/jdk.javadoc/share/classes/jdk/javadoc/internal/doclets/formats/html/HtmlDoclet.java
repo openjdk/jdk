@@ -171,11 +171,7 @@ public class HtmlDoclet extends AbstractDoclet {
         if (options.createIndex()) {
             SystemPropertiesWriter.generate(configuration);
             configuration.mainIndex.addElements();
-            if (options.splitIndex()) {
-                SplitIndexWriter.generate(configuration);
-            } else {
-                SingleIndexWriter.generate(configuration);
-            }
+            IndexWriter.generate(configuration);
             IndexBuilder allClassesIndex = new IndexBuilder(configuration, nodeprecated, true);
             allClassesIndex.addElements();
             AllClassesIndexWriter.generate(configuration, allClassesIndex);
