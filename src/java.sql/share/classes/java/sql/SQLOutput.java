@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,8 +59,8 @@ package java.sql;
    * in the Java programming language.
    *
    * @param x the value to pass to the database
-   * @exception SQLException if a database access error occurs
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLException if a database access error occurs
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */
@@ -72,8 +72,8 @@ package java.sql;
    * in the Java programming language.
    *
    * @param x the value to pass to the database
-   * @exception SQLException if a database access error occurs
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLException if a database access error occurs
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */
@@ -85,8 +85,8 @@ package java.sql;
    * in the Java programming language.
    *
    * @param x the value to pass to the database
-   * @exception SQLException if a database access error occurs
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLException if a database access error occurs
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */
@@ -98,8 +98,8 @@ package java.sql;
    * in the Java programming language.
    *
    * @param x the value to pass to the database
-   * @exception SQLException if a database access error occurs
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLException if a database access error occurs
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */
@@ -111,8 +111,8 @@ package java.sql;
    * in the Java programming language.
    *
    * @param x the value to pass to the database
-   * @exception SQLException if a database access error occurs
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLException if a database access error occurs
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */
@@ -124,8 +124,8 @@ package java.sql;
    * in the Java programming language.
    *
    * @param x the value to pass to the database
-   * @exception SQLException if a database access error occurs
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLException if a database access error occurs
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */
@@ -137,8 +137,8 @@ package java.sql;
    * in the Java programming language.
    *
    * @param x the value to pass to the database
-   * @exception SQLException if a database access error occurs
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLException if a database access error occurs
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */
@@ -150,8 +150,8 @@ package java.sql;
    * in the Java programming language.
    *
    * @param x the value to pass to the database
-   * @exception SQLException if a database access error occurs
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLException if a database access error occurs
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */
@@ -163,8 +163,8 @@ package java.sql;
    * in the Java programming language.
    *
    * @param x the value to pass to the database
-   * @exception SQLException if a database access error occurs
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLException if a database access error occurs
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */
@@ -176,8 +176,8 @@ package java.sql;
    * in the Java programming language.
    *
    * @param x the value to pass to the database
-   * @exception SQLException if a database access error occurs
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLException if a database access error occurs
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */
@@ -189,8 +189,8 @@ package java.sql;
    * in the Java programming language.
    *
    * @param x the value to pass to the database
-   * @exception SQLException if a database access error occurs
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLException if a database access error occurs
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */
@@ -202,8 +202,8 @@ package java.sql;
    * in the Java programming language.
    *
    * @param x the value to pass to the database
-   * @exception SQLException if a database access error occurs
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLException if a database access error occurs
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */
@@ -215,8 +215,8 @@ package java.sql;
    * in the Java programming language.
    *
    * @param x the value to pass to the database
-   * @exception SQLException if a database access error occurs
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLException if a database access error occurs
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */
@@ -226,8 +226,8 @@ package java.sql;
    * Writes the next attribute to the stream as a stream of Unicode characters.
    *
    * @param x the value to pass to the database
-   * @exception SQLException if a database access error occurs
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLException if a database access error occurs
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */
@@ -237,8 +237,8 @@ package java.sql;
    * Writes the next attribute to the stream as a stream of ASCII characters.
    *
    * @param x the value to pass to the database
-   * @exception SQLException if a database access error occurs
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLException if a database access error occurs
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */
@@ -249,8 +249,8 @@ package java.sql;
    * bytes.
    *
    * @param x the value to pass to the database
-   * @exception SQLException if a database access error occurs
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLException if a database access error occurs
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */
@@ -282,8 +282,8 @@ package java.sql;
    *
    * @param x the object representing data of an SQL structured or
    * distinct type
-   * @exception SQLException if a database access error occurs
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLException if a database access error occurs
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */
@@ -294,8 +294,8 @@ package java.sql;
    *
    * @param x a <code>Ref</code> object representing data of an SQL
    * <code>REF</code> value
-   * @exception SQLException if a database access error occurs
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLException if a database access error occurs
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */
@@ -307,8 +307,8 @@ package java.sql;
    * @param x a <code>Blob</code> object representing data of an SQL
    * <code>BLOB</code> value
    *
-   * @exception SQLException if a database access error occurs
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLException if a database access error occurs
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */
@@ -320,8 +320,8 @@ package java.sql;
    * @param x a <code>Clob</code> object representing data of an SQL
    * <code>CLOB</code> value
    *
-   * @exception SQLException if a database access error occurs
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLException if a database access error occurs
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */
@@ -333,8 +333,8 @@ package java.sql;
    * @param x a <code>Struct</code> object representing data of an SQL
    * structured type
    *
-   * @exception SQLException if a database access error occurs
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLException if a database access error occurs
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */
@@ -346,8 +346,8 @@ package java.sql;
    * @param x an <code>Array</code> object representing data of an SQL
    * <code>ARRAY</code> type
    *
-   * @exception SQLException if a database access error occurs
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLException if a database access error occurs
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */
@@ -361,8 +361,8 @@ package java.sql;
       * @param x a <code>java.net.URL</code> object representing the data
       * of SQL DATALINK type
       *
-      * @exception SQLException if a database access error occurs
-      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+      * @throws SQLException if a database access error occurs
+      * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
       * this method
       * @since 1.4
       */
@@ -380,8 +380,8 @@ package java.sql;
    * when it sends it to the stream.
    *
    * @param x the value to pass to the database
-   * @exception SQLException if a database access error occurs
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLException if a database access error occurs
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.6
    */
@@ -393,8 +393,8 @@ package java.sql;
    * @param x a <code>NClob</code> object representing data of an SQL
    * <code>NCLOB</code> value
    *
-   * @exception SQLException if a database access error occurs
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLException if a database access error occurs
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.6
    */
@@ -407,8 +407,8 @@ package java.sql;
    * @param x a <code>RowId</code> object representing data of an SQL
    * <code>ROWID</code> value
    *
-   * @exception SQLException if a database access error occurs
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLException if a database access error occurs
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.6
    */
@@ -427,7 +427,7 @@ package java.sql;
    *  if there is an error processing the XML value.  The <code>getCause</code> method
    *  of the exception may provide a more detailed exception, for example, if the
    *  stream does not contain valid XML.
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.6
    */
@@ -457,11 +457,11 @@ package java.sql;
    *
    * @param x the object containing the input parameter value
    * @param targetSqlType the SQL type to be sent to the database.
-   * @exception SQLException if a database access error occurs  or
-   *            if the Java Object specified by x is an InputStream
-   *            or Reader object and the value of the scale parameter is less
-   *            than zero
-   * @exception SQLFeatureNotSupportedException if
+   * @throws SQLException if a database access error occurs  or
+   *         if the Java Object specified by x is an InputStream
+   *         or Reader object and the value of the scale parameter is less
+   *         than zero
+   * @throws SQLFeatureNotSupportedException if
    * the JDBC driver does not support this data type
    * @see JDBCType
    * @see SQLType

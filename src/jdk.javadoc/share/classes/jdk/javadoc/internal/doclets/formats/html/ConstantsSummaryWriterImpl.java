@@ -205,10 +205,9 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         }
         caption.add(classlink);
 
-        Table table = new Table(HtmlStyle.constantsSummary, HtmlStyle.summaryTable)
+        Table table = new Table(HtmlStyle.summaryTable)
                 .setCaption(caption)
                 .setHeader(constantsTableHeader)
-                .setRowScopeColumn(1)
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast);
 
         for (VariableElement field : fields) {
@@ -258,7 +257,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
      * @return the value column of the constant table row
      */
     private Content getValue(VariableElement member) {
-        String value = utils.constantValueExpresion(member);
+        String value = utils.constantValueExpression(member);
         Content valueContent = new StringContent(value);
         return HtmlTree.CODE(valueContent);
     }

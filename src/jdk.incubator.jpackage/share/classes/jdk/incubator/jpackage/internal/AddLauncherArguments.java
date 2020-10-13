@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
 import jdk.incubator.jpackage.internal.Arguments.CLIOptions;
+import static jdk.incubator.jpackage.internal.StandardBundlerParam.LAUNCHER_DATA;
 
 /*
  * AddLauncherArguments
@@ -156,6 +157,9 @@ class AddLauncherArguments {
             Map<String, ? super Object> additional, String... exclude) {
         Map<String, ? super Object> tmp = new HashMap<>(original);
         List.of(exclude).forEach(tmp::remove);
+
+        // remove LauncherData from map so it will re-run the defaultValueFunction
+        tmp.remove(LAUNCHER_DATA.getID());
 
         if (additional.containsKey(CLIOptions.MODULE.getId())) {
             tmp.remove(CLIOptions.MAIN_JAR.getId());

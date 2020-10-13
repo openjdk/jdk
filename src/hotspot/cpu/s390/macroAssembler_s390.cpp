@@ -1163,7 +1163,7 @@ void MacroAssembler::load_const_32to64(Register t, int64_t x, bool sign_extend) 
 // Load narrow oop constant, no decompression.
 void MacroAssembler::load_narrow_oop(Register t, narrowOop a) {
   assert(UseCompressedOops, "must be on to call this method");
-  load_const_32to64(t, a, false /*sign_extend*/);
+  load_const_32to64(t, CompressedOops::narrow_oop_value(a), false /*sign_extend*/);
 }
 
 // Load narrow klass constant, compression required.
@@ -1181,7 +1181,7 @@ void MacroAssembler::load_narrow_klass(Register t, Klass* k) {
 void MacroAssembler::compare_immediate_narrow_oop(Register oop1, narrowOop oop2) {
   assert(UseCompressedOops, "must be on to call this method");
 
-  Assembler::z_clfi(oop1, oop2);
+  Assembler::z_clfi(oop1, CompressedOops::narrow_oop_value(oop2));
 }
 
 // Compare narrow oop in reg with narrow oop constant, no decompression.
@@ -1273,9 +1273,7 @@ int MacroAssembler::patch_compare_immediate_32(address pos, int64_t np) {
 // The passed ptr must NOT be in compressed format!
 int MacroAssembler::patch_load_narrow_oop(address pos, oop o) {
   assert(UseCompressedOops, "Can only patch compressed oops");
-
-  narrowOop no = CompressedOops::encode(o);
-  return patch_load_const_32to64(pos, no);
+  return patch_load_const_32to64(pos, CompressedOops::narrow_oop_value(o));
 }
 
 // Patching the immediate value of CPU version dependent load_narrow_klass sequence.
@@ -1291,9 +1289,7 @@ int MacroAssembler::patch_load_narrow_klass(address pos, Klass* k) {
 // The passed ptr must NOT be in compressed format!
 int MacroAssembler::patch_compare_immediate_narrow_oop(address pos, oop o) {
   assert(UseCompressedOops, "Can only patch compressed oops");
-
-  narrowOop no = CompressedOops::encode(o);
-  return patch_compare_immediate_32(pos, no);
+  return patch_compare_immediate_32(pos, CompressedOops::narrow_oop_value(o));
 }
 
 // Patching the immediate value of CPU version dependent compare_immediate_narrow_klass sequence.
@@ -2684,7 +2680,7 @@ uint MacroAssembler::get_poll_register(address instr_loc) {
 }
 
 void MacroAssembler::safepoint_poll(Label& slow_path, Register temp_reg) {
-  const Address poll_byte_addr(Z_thread, in_bytes(Thread::polling_page_offset()) + 7 /* Big Endian */);
+  const Address poll_byte_addr(Z_thread, in_bytes(Thread::polling_word_offset()) + 7 /* Big Endian */);
   // Armed page has poll_bit set.
   z_tm(poll_byte_addr, SafepointMechanism::poll_bit());
   z_brnaz(slow_path);

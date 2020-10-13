@@ -26,7 +26,6 @@
 package jdk.javadoc.internal.doclets.toolkit.util;
 
 import com.sun.source.doctree.SerialFieldTree;
-import jdk.javadoc.internal.doclets.formats.html.SearchIndexItem;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
@@ -279,44 +278,12 @@ public class Comparators {
         return indexUseComparator;
     }
 
-    /**
-     * Returns a comparator for the {@code IndexItem}s in the index page. This is a composite
-     * comparator that must be able to compare all kinds {@code Element}s as well as
-     * {@code SearchIndexItem}s.
-     *
-     * @return a comparator for index page items.
-     */
-    public Comparator<IndexItem> makeIndexComparator(boolean classesOnly) {
-        Comparator<Element> elementComparator = classesOnly
-                ? makeAllClassesComparator()
-                : makeIndexElementComparator();
-        Comparator<SearchIndexItem> searchTagComparator =
-                makeGenericSearchIndexComparator();
-
-        return (o1, o2) -> {
-            // Compare two elements
-            if (o1.getElement() != null && o2.getElement() != null) {
-                return elementComparator.compare(o1.getElement(), o2.getElement());
-            }
-            // Compare two search tags
-            if (o1.getSearchTag() != null && o2.getSearchTag() != null) {
-                return searchTagComparator.compare(o1.getSearchTag(), o2.getSearchTag());
-            }
-            // Compare an element with a search tag.
-            // Compares labels, if those are equal put the search tag first.
-            int d = utils.compareStrings(o1.getLabel(), o2.getLabel());
-            if (d == 0) {
-                d = o1.getElement() == null ? 1 : -1;
-            }
-            return d;
-        };
-    }
-
     private Comparator<TypeMirror> typeMirrorClassUseComparator = null;
 
     /**
-     * Compares the FullyQualifiedNames of two TypeMirrors
-     * @return
+     * Returns a comparator that compares the fully qualified names of two type mirrors.
+     *
+     * @return the comparator
      */
     public Comparator<TypeMirror> makeTypeMirrorClassUseComparator() {
         if (typeMirrorClassUseComparator == null) {
@@ -332,10 +299,10 @@ public class Comparators {
     private Comparator<TypeMirror> typeMirrorIndexUseComparator = null;
 
     /**
-     * Compares the SimpleNames of TypeMirrors if equal then the
-     * FullyQualifiedNames of TypeMirrors.
+     * Returns a comparator that compares the simple names of two type mirrors,
+     * or the fully qualified names if the simple names are equal.
      *
-     * @return
+     * @return the comparator
      */
     public Comparator<TypeMirror> makeTypeMirrorIndexUseComparator() {
         if (typeMirrorIndexUseComparator == null) {
@@ -468,7 +435,7 @@ public class Comparators {
          *         argument is less than, equal to, or greater than the second.
          */
         protected int compareFullyQualifiedNames(Element e1, Element e2) {
-            // add simplename to be compatible
+            // add simple name to be compatible
             String thisElement = getFullyQualifiedName(e1);
             String thatElement = getFullyQualifiedName(e2);
             return utils.compareStrings(thisElement, thatElement);
@@ -527,20 +494,20 @@ public class Comparators {
         }
 
         private int getKindIndex(Element e) {
-            switch (e.getKind()) {
-                case MODULE:            return 0;
-                case PACKAGE:           return 1;
-                case CLASS:             return 2;
-                case ENUM:              return 3;
-                case ENUM_CONSTANT:     return 4;
-                case RECORD:            return 5;
-                case INTERFACE:         return 6;
-                case ANNOTATION_TYPE:   return 7;
-                case FIELD:             return 8;
-                case CONSTRUCTOR:       return 9;
-                case METHOD:            return 10;
-                default: throw new IllegalArgumentException(e.getKind().toString());
-            }
+            return switch (e.getKind()) {
+                case MODULE ->          0;
+                case PACKAGE ->         1;
+                case CLASS ->           2;
+                case ENUM ->            3;
+                case ENUM_CONSTANT ->   4;
+                case RECORD ->          5;
+                case INTERFACE ->       6;
+                case ANNOTATION_TYPE -> 7;
+                case FIELD ->           8;
+                case CONSTRUCTOR ->     9;
+                case METHOD ->          10;
+                default -> throw new IllegalArgumentException(e.getKind().toString());
+            };
         }
 
         @SuppressWarnings("preview")
@@ -598,48 +565,4 @@ public class Comparators {
             }.visit(e);
         }
     }
-
-    /**
-     * Returns a Comparator for SearchIndexItems representing types. Items are
-     * compared by short name, or full string representation if names are equal.
-     *
-     * @return a Comparator
-     */
-    public Comparator<SearchIndexItem> makeTypeSearchIndexComparator() {
-        return (SearchIndexItem sii1, SearchIndexItem sii2) -> {
-            int result = utils.compareStrings(sii1.getSimpleName(), sii2.getSimpleName());
-            if (result == 0) {
-                // TreeSet needs this to be consistent with equal so we do
-                // a plain comparison of string representations as fallback.
-                result = sii1.toString().compareTo(sii2.toString());
-            }
-            return result;
-        };
-    }
-
-    private Comparator<SearchIndexItem> genericSearchIndexComparator = null;
-
-    /**
-     * Returns a Comparator for SearchIndexItems representing modules, packages, or members.
-     * Items are compared by label (member name plus signature for members, package name for
-     * packages, and module name for modules). If labels are equal then full string
-     * representation is compared.
-     *
-     * @return a Comparator
-     */
-    public Comparator<SearchIndexItem> makeGenericSearchIndexComparator() {
-        if (genericSearchIndexComparator == null) {
-            genericSearchIndexComparator = (SearchIndexItem sii1, SearchIndexItem sii2) -> {
-                int result = utils.compareStrings(sii1.getLabel(), sii2.getLabel());
-                if (result == 0) {
-                    // TreeSet needs this to be consistent with equal so we do
-                    // a plain comparison of string representations as fallback.
-                    result = sii1.toString().compareTo(sii2.toString());
-                }
-                return result;
-            };
-        }
-        return genericSearchIndexComparator;
-    }
-
 }

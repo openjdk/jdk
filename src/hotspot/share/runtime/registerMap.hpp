@@ -75,6 +75,7 @@ class RegisterMap : public StackObj {
   JavaThread* _thread;                  // Reference to current thread
   bool        _update_map;              // Tells if the register map need to be
                                         // updated when traversing the stack
+  bool        _process_frames;          // Should frames be processed by stack watermark barriers?
 
 #ifdef ASSERT
   void check_location_valid();
@@ -84,7 +85,7 @@ class RegisterMap : public StackObj {
 
  public:
   debug_only(intptr_t* _update_for_id;) // Assert that RegisterMap is not updated twice for same frame
-  RegisterMap(JavaThread *thread, bool update_map = true);
+  RegisterMap(JavaThread *thread, bool update_map = true, bool process_frames = true);
   RegisterMap(const RegisterMap* map);
 
   address location(VMReg reg) const {
@@ -114,8 +115,9 @@ class RegisterMap : public StackObj {
   bool include_argument_oops() const      { return _include_argument_oops; }
   void set_include_argument_oops(bool f)  { _include_argument_oops = f; }
 
-  JavaThread *thread() const { return _thread; }
-  bool update_map()    const { return _update_map; }
+  JavaThread *thread()  const { return _thread; }
+  bool update_map()     const { return _update_map; }
+  bool process_frames() const { return _process_frames; }
 
   void print_on(outputStream* st) const;
   void print() const;
