@@ -117,12 +117,14 @@ public class TestHumongousConcurrentStartUndo {
                 Helpers.waitTillCMCFinished(WHITE_BOX, 1);
                 a = null;
 
-                // Start from an "empty" heap.
-                WHITE_BOX.fullGC();
-                // The queue only holds all elements, so all humongous object
-                // will be reachable and the concurrent operation should be a regular mark.
                 a = new ArrayBlockingQueue(humongousObjectAllocations);
                 allocateHumongous(humongousObjectAllocations, humongousObjectSize, a);
+                Helpers.waitTillCMCFinished(WHITE_BOX, 1);
+                // At this point we keep humongousObjectAllocations humongous objects live
+                // in "a" which is larger than the IHOP. We just waited for any pending
+                // marking cycles. Another dummy allocation must trigger a humongous
+                // allocation that is not an Undo Cycle.
+                allocateHumongous(1, humongousObjectSize, new ArrayBlockingQueue(1));
                 Helpers.waitTillCMCFinished(WHITE_BOX, 1);
                 a = null;
 
