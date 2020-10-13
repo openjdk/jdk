@@ -48,6 +48,7 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 
 
 /**
@@ -80,6 +81,8 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
     private final Navigation navBar;
 
     private final BodyContents bodyContents = new BodyContents();
+
+    private boolean hasConstants = false;
 
     /**
      * Construct a ConstantsSummaryWriter.
@@ -184,6 +187,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
     @Override
     public void addClassConstant(Content summariesTree, Content classConstantTree) {
         summaryTree.add(classConstantTree);
+        hasConstants = true;
     }
 
     @Override
@@ -283,5 +287,10 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
     public void printDocument(Content contentTree) throws DocFileIOException {
         contentTree.add(bodyContents);
         printHtmlDocument(null, "summary of constants", contentTree);
+
+        if (hasConstants && configuration.mainIndex != null) {
+            configuration.mainIndex.add(IndexItem.of(IndexItem.Category.MEMBERS,
+                    resources.getText("doclet.Constants_Summary"), path));
+        }
     }
 }
