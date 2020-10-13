@@ -140,6 +140,22 @@ public class TestSharedAccess {
         }
     }
 
+    @Test
+    public void testHandoffToSelf() {
+        MemorySegment s1 = MemorySegment.ofArray(new int[4]);
+        MemorySegment s2 = s1.handoff(Thread.currentThread());
+        assertFalse(s1.isAlive());
+        assertTrue(s2.isAlive());
+    }
+
+    @Test
+    public void testShareTwice() {
+        MemorySegment s1 = MemorySegment.ofArray(new int[4]).share();
+        MemorySegment s2 = s1.share();
+        assertFalse(s1.isAlive());
+        assertTrue(s2.isAlive());
+    }
+
     @Test(expectedExceptions=UnsupportedOperationException.class)
     public void testBadHandoffNoAccess() {
         MemorySegment.ofArray(new int[4])
