@@ -231,8 +231,14 @@ AC_DEFUN([FLAGS_SETUP_OPTIMIZATION],
     # -D_FORTIFY_SOURCE=2 hardening option needs optimization (at least -O1) enabled
     # set for lower O-levels -U_FORTIFY_SOURCE to overwrite previous settings
     if test "x$OPENJDK_TARGET_OS" = xlinux -a "x$DEBUG_LEVEL" = "xfastdebug"; then
-      ENABLE_FORTIFY_CFLAGS="-D_FORTIFY_SOURCE=2"
       DISABLE_FORTIFY_CFLAGS="-U_FORTIFY_SOURCE"
+      # ASan doesn't work well with _FORTIFY_SOURCE
+      # See https://github.com/google/sanitizers/wiki/AddressSanitizer#faq
+      if test "x$ASAN_ENABLED" = xyes; then
+        ENABLE_FORTIFY_CFLAGS="${DISABLE_FORTIFY_CFLAGS}"
+      else
+        ENABLE_FORTIFY_CFLAGS="-D_FORTIFY_SOURCE=2"
+      fi
       C_O_FLAG_HIGHEST_JVM="${C_O_FLAG_HIGHEST_JVM} ${ENABLE_FORTIFY_CFLAGS}"
       C_O_FLAG_HIGHEST="${C_O_FLAG_HIGHEST} ${ENABLE_FORTIFY_CFLAGS}"
       C_O_FLAG_HI="${C_O_FLAG_HI} ${ENABLE_FORTIFY_CFLAGS}"
