@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1010,6 +1010,11 @@ public class JProgressBar extends JComponent implements SwingConstants, Accessib
     @SuppressWarnings("serial") // Same-version serialization only
     protected class AccessibleJProgressBar extends AccessibleJComponent
         implements AccessibleValue {
+
+        /**
+         * Constructs an {@code AccessibleJProgressBar}.
+         */
+        protected AccessibleJProgressBar() {}
 
         /**
          * Gets the state set of this object.

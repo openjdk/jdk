@@ -70,6 +70,7 @@
 #include "opto/type.hpp"
 #include "opto/vectornode.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -523,6 +524,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
 #endif
                   _has_method_handle_invokes(false),
                   _clinit_barrier_on_entry(false),
+                  _stress_seed(0),
                   _comp_arena(mtCompiler),
                   _barrier_set_state(BarrierSet::barrier_set()->barrier_set_c2()->create_barrier_state(comp_arena())),
                   _env(ci_env),
@@ -727,6 +729,18 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   if (failing())  return;
   NOT_PRODUCT( verify_graph_edges(); )
 
+  // If LCM, GCM, or IGVN are randomized for stress testing, seed
+  // random number generation and log the seed for repeatability.
+  if (StressLCM || StressGCM || StressIGVN) {
+    _stress_seed = FLAG_IS_DEFAULT(StressSeed) ?
+      static_cast<uint>(Ticks::now().nanoseconds()) : StressSeed;
+    if (_log != NULL) {
+      _log->elem("stress_test seed='%u'", _stress_seed);
+    } else if (FLAG_IS_DEFAULT(StressSeed)) {
+      tty->print_cr("Warning:  set +LogCompilation to log the seed.");
+    }
+  }
+
   // Now optimize
   Optimize();
   if (failing())  return;
@@ -809,6 +823,7 @@ Compile::Compile( ciEnv* ci_env,
 #endif
     _has_method_handle_invokes(false),
     _clinit_barrier_on_entry(false),
+    _stress_seed(0),
     _comp_arena(mtCompiler),
     _barrier_set_state(BarrierSet::barrier_set()->barrier_set_c2()->create_barrier_state(comp_arena())),
     _env(ci_env),
@@ -907,7 +922,7 @@ void Compile::Init(int aliaslevel) {
 
   _fixed_slots = 0;
   set_has_split_ifs(false);
-  set_has_loops(has_method() && method()->has_loops()); // first approximation
+  set_has_loops(false); // first approximation
   set_has_stringbuilder(false);
   set_has_boxed_value(false);
   _trap_can_recompile = false;  // no traps emitted yet
@@ -1007,6 +1022,7 @@ void Compile::Init(int aliaslevel) {
 #ifdef ASSERT
   _type_verify_symmetry = true;
   _phase_optimize_finished = false;
+  _exception_backedge = false;
 #endif
 }
 
@@ -2756,7 +2772,7 @@ void Compile::eliminate_redundant_card_marks(Node* n) {
         // Eliminate the previous StoreCM
         prev->set_req(MemNode::Memory, mem->in(MemNode::Memory));
         assert(mem->outcnt() == 0, "should be dead");
-        mem->disconnect_inputs(NULL, this);
+        mem->disconnect_inputs(this);
       } else {
         prev = mem;
       }
@@ -3038,7 +3054,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
           n->set_req(AddPNode::Base, nn);
           n->set_req(AddPNode::Address, nn);
           if (addp->outcnt() == 0) {
-            addp->disconnect_inputs(NULL, this);
+            addp->disconnect_inputs(this);
           }
         }
       }
@@ -3111,12 +3127,12 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
 
       n->subsume_by(new_in1, this);
       if (in1->outcnt() == 0) {
-        in1->disconnect_inputs(NULL, this);
+        in1->disconnect_inputs(this);
       }
     } else {
       n->subsume_by(n->in(1), this);
       if (n->outcnt() == 0) {
-        n->disconnect_inputs(NULL, this);
+        n->disconnect_inputs(this);
       }
     }
     break;
@@ -3194,10 +3210,10 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
         Node* cmpN = new CmpNNode(in1->in(1), new_in2);
         n->subsume_by(cmpN, this);
         if (in1->outcnt() == 0) {
-          in1->disconnect_inputs(NULL, this);
+          in1->disconnect_inputs(this);
         }
         if (in2->outcnt() == 0) {
-          in2->disconnect_inputs(NULL, this);
+          in2->disconnect_inputs(this);
         }
       }
     }
@@ -3228,7 +3244,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
       }
     }
     if (in1->outcnt() == 0) {
-      in1->disconnect_inputs(NULL, this);
+      in1->disconnect_inputs(this);
     }
     break;
   }
@@ -3397,7 +3413,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
         }
       }
       if (in2->outcnt() == 0) { // Remove dead node
-        in2->disconnect_inputs(NULL, this);
+        in2->disconnect_inputs(this);
       }
     }
     break;
@@ -3429,7 +3445,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
               wq.push(in);
             }
           }
-          m->disconnect_inputs(NULL, this);
+          m->disconnect_inputs(this);
         }
       }
     }
@@ -3572,7 +3588,7 @@ void Compile::final_graph_reshaping_walk( Node_Stack &nstack, Node *root, Final_
           n->set_req(j, in->in(1));
         }
         if (in->outcnt() == 0) {
-          in->disconnect_inputs(NULL, this);
+          in->disconnect_inputs(this);
         }
       }
     }
@@ -4439,8 +4455,13 @@ void Compile::remove_speculative_types(PhaseIterGVN &igvn) {
   }
 }
 
-// Auxiliary method to support randomized stressing/fuzzing.
-//
+// Auxiliary methods to support randomized stressing/fuzzing.
+
+int Compile::random() {
+  _stress_seed = os::next_random(_stress_seed);
+  return static_cast<int>(_stress_seed);
+}
+
 // This method can be called the arbitrary number of times, with current count
 // as the argument. The logic allows selecting a single candidate from the
 // running list of candidates as follows:
@@ -4471,7 +4492,7 @@ void Compile::remove_speculative_types(PhaseIterGVN &igvn) {
 #define RANDOMIZED_DOMAIN_MASK ((1 << (RANDOMIZED_DOMAIN_POW + 1)) - 1)
 bool Compile::randomized_select(int count) {
   assert(count > 0, "only positive");
-  return (os::random() & RANDOMIZED_DOMAIN_MASK) < (RANDOMIZED_DOMAIN / count);
+  return (random() & RANDOMIZED_DOMAIN_MASK) < (RANDOMIZED_DOMAIN / count);
 }
 
 CloneMap&     Compile::clone_map()                 { return _clone_map; }

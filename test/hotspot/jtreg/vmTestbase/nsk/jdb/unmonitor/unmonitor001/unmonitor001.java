@@ -56,7 +56,8 @@
  * @clean nsk.jdb.unmonitor.unmonitor001.unmonitor001a
  * @compile -g:lines,source,vars unmonitor001a.java
  *
- * @run main/othervm PropertyResolvingWrapper nsk.jdb.unmonitor.unmonitor001.unmonitor001
+ * @run main/othervm
+ *      nsk.jdb.unmonitor.unmonitor001.unmonitor001
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

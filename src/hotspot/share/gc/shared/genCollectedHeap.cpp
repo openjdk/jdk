@@ -817,9 +817,6 @@ void GenCollectedHeap::process_roots(StrongRootsScope* scope,
   bool is_par = scope->n_threads() > 1;
   Threads::possibly_parallel_oops_do(is_par, strong_roots, roots_from_code_p);
 
-  if (_process_strong_tasks->try_claim_task(GCH_PS_ObjectSynchronizer_oops_do)) {
-    ObjectSynchronizer::oops_do(strong_roots);
-  }
 #if INCLUDE_AOT
   if (UseAOT && _process_strong_tasks->try_claim_task(GCH_PS_aot_oops_do)) {
     AOTLoader::oops_do(strong_roots);
@@ -1032,33 +1029,22 @@ bool GenCollectedHeap::block_is_obj(const HeapWord* addr) const {
   return _old_gen->block_is_obj(addr);
 }
 
-bool GenCollectedHeap::supports_tlab_allocation() const {
-  assert(!_old_gen->supports_tlab_allocation(), "Old gen supports TLAB allocation?!");
-  return _young_gen->supports_tlab_allocation();
-}
-
 size_t GenCollectedHeap::tlab_capacity(Thread* thr) const {
   assert(!_old_gen->supports_tlab_allocation(), "Old gen supports TLAB allocation?!");
-  if (_young_gen->supports_tlab_allocation()) {
-    return _young_gen->tlab_capacity();
-  }
-  return 0;
+  assert(_young_gen->supports_tlab_allocation(), "Young gen doesn't support TLAB allocation?!");
+  return _young_gen->tlab_capacity();
 }
 
 size_t GenCollectedHeap::tlab_used(Thread* thr) const {
   assert(!_old_gen->supports_tlab_allocation(), "Old gen supports TLAB allocation?!");
-  if (_young_gen->supports_tlab_allocation()) {
-    return _young_gen->tlab_used();
-  }
-  return 0;
+  assert(_young_gen->supports_tlab_allocation(), "Young gen doesn't support TLAB allocation?!");
+  return _young_gen->tlab_used();
 }
 
 size_t GenCollectedHeap::unsafe_max_tlab_alloc(Thread* thr) const {
   assert(!_old_gen->supports_tlab_allocation(), "Old gen supports TLAB allocation?!");
-  if (_young_gen->supports_tlab_allocation()) {
-    return _young_gen->unsafe_max_tlab_alloc();
-  }
-  return 0;
+  assert(_young_gen->supports_tlab_allocation(), "Young gen doesn't support TLAB allocation?!");
+  return _young_gen->unsafe_max_tlab_alloc();
 }
 
 HeapWord* GenCollectedHeap::allocate_new_tlab(size_t min_size,

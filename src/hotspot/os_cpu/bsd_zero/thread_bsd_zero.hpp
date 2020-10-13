@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -61,15 +61,6 @@
   }
 
  public:
-  void record_base_of_stack_pointer() {
-    assert(top_zero_frame() == NULL, "junk on stack prior to Java call");
-  }
-  void set_base_of_stack_pointer(intptr_t* base_sp) {
-    assert(base_sp == NULL, "should be");
-    assert(top_zero_frame() == NULL, "junk on stack after Java call");
-  }
-
- public:
   void set_last_Java_frame() {
     set_last_Java_frame(top_zero_frame(), zero_stack()->sp());
   }
@@ -109,11 +100,5 @@
     ShouldNotCallThis();
     return false;
   }
-
-  // These routines are only used on cpu architectures that
-  // have separate register stacks (Itanium).
-  static bool register_stack_overflow() { return false; }
-  static void enable_register_stack_guard() {}
-  static void disable_register_stack_guard() {}
 
 #endif // OS_CPU_BSD_ZERO_THREAD_BSD_ZERO_HPP

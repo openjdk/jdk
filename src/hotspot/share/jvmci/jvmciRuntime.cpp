@@ -76,10 +76,10 @@ static void deopt_caller() {
 }
 
 // Manages a scope for a JVMCI runtime call that attempts a heap allocation.
-// If there is a pending exception upon closing the scope and the runtime
+// If there is a pending nonasync exception upon closing the scope and the runtime
 // call is of the variety where allocation failure returns NULL without an
 // exception, the following action is taken:
-//   1. The pending exception is cleared
+//   1. The pending nonasync exception is cleared
 //   2. NULL is written to JavaThread::_vm_result
 //   3. Checks that an OutOfMemoryError is Universe::out_of_memory_error_retry().
 class RetryableAllocationMark: public StackObj {
@@ -101,7 +101,8 @@ class RetryableAllocationMark: public StackObj {
       JavaThread* THREAD = _thread;
       if (HAS_PENDING_EXCEPTION) {
         oop ex = PENDING_EXCEPTION;
-        CLEAR_PENDING_EXCEPTION;
+        // Do not clear probable async exceptions.
+        CLEAR_PENDING_NONASYNC_EXCEPTION;
         oop retry_oome = Universe::out_of_memory_error_retry();
         if (ex->is_a(retry_oome->klass()) && retry_oome != ex) {
           ResourceMark rm;
@@ -266,8 +267,7 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
   // Check the stack guard pages and reenable them if necessary and there is
   // enough space on the stack to do so.  Use fast exceptions only if the guard
   // pages are enabled.
-  bool guard_pages_enabled = thread->stack_guards_enabled();
-  if (!guard_pages_enabled) guard_pages_enabled = thread->reguard_stack();
+  bool guard_pages_enabled = thread->stack_overflow_state()->reguard_stack_if_needed();
 
   if (JvmtiExport::can_post_on_exceptions()) {
     // To ensure correct notification of exception catches and throws
@@ -1576,8 +1576,15 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
     nmethod_mirror_index = -1;
   }
 
-  JVMCI::CodeInstallResult result;
-  {
+  JVMCI::CodeInstallResult result(JVMCI::ok);
+
+  // We require method counters to store some method state (max compilation levels) required by the compilation policy.
+  if (method->get_method_counters(THREAD) == NULL) {
+    result = JVMCI::cache_full;
+    failure_detail = (char*) "can't create method counters";
+  }
+
+  if (result == JVMCI::ok) {
     // To prevent compile queue updates.
     MutexLocker locker(THREAD, MethodCompileQueue_lock);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3710,6 +3710,11 @@ public abstract class JComponent extends Container implements Serializable,
          */
         protected class AccessibleContainerHandler
             implements ContainerListener {
+
+            /**
+             * Constructs an {@code AccessibleContainerHandler}.
+             */
+            protected AccessibleContainerHandler() {}
             public void componentAdded(ContainerEvent e) {
                 Component c = e.getChild();
                 if (c != null && c instanceof Accessible) {
@@ -3738,6 +3743,10 @@ public abstract class JComponent extends Container implements Serializable,
          */
         @Deprecated
         protected class AccessibleFocusHandler implements FocusListener {
+           /**
+            * Constructs an {@code AccessibleFocusHandler}.
+            */
+           protected AccessibleFocusHandler() {}
            public void focusGained(FocusEvent event) {
                if (accessibleContext != null) {
                     accessibleContext.firePropertyChange(

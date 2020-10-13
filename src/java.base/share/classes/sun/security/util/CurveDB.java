@@ -53,11 +53,6 @@ public class CurveDB {
 
     private static Collection<? extends NamedCurve> specCollection;
 
-    // Used by SunECEntries
-    public static Collection<? extends NamedCurve>getSupportedCurves() {
-        return specCollection;
-    }
-
     // Return a NamedCurve for the specified OID/name or null if unknown.
     public static NamedCurve lookup(String name) {
         NamedCurve spec = oidMap.get(name);

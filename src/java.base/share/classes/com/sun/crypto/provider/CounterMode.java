@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package com.sun.crypto.provider;
 
 import java.security.InvalidKeyException;
 
-import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 import sun.security.util.ArrayUtil;
 
 /**
@@ -182,7 +182,7 @@ class CounterMode extends FeedbackCipher {
     }
 
     // Implementation of crpyt() method. Possibly replaced with a compiler intrinsic.
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     private int implCrypt(byte[] in, int inOff, int len, byte[] out, int outOff) {
         int result = len;
         while (len-- > 0) {

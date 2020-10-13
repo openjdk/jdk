@@ -101,7 +101,7 @@ class G1EvacSummary;
 typedef OverflowTaskQueue<ScannerTask, mtGC>           G1ScannerTasksQueue;
 typedef GenericTaskQueueSet<G1ScannerTasksQueue, mtGC> G1ScannerTasksQueueSet;
 
-typedef int RegionIdx_t;   // needs to hold [ 0..max_regions() )
+typedef int RegionIdx_t;   // needs to hold [ 0..max_reserved_regions() )
 typedef int CardIdx_t;     // needs to hold [ 0..CardsPerRegion )
 
 // The G1 STW is alive closure.
@@ -746,6 +746,9 @@ private:
   void reset_taskqueue_stats();
   #endif // TASKQUEUE_STATS
 
+  // Start a concurrent cycle.
+  void start_concurrent_cycle(bool concurrent_operation_is_full_mark);
+
   // Schedule the VM operation that will do an evacuation pause to
   // satisfy an allocation request of word_size. *succeeded will
   // return whether the VM operation was successful (it did do an
@@ -782,7 +785,23 @@ private:
   void calculate_collection_set(G1EvacuationInfo& evacuation_info, double target_pause_time_ms);
 
   // Actually do the work of evacuating the parts of the collection set.
-  void evacuate_initial_collection_set(G1ParScanThreadStateSet* per_thread_states);
+  // The has_optional_evacuation_work flag for the initial collection set
+  // evacuation indicates whether one or more optional evacuation steps may
+  // follow.
+  // If not set, G1 can avoid clearing the card tables of regions that we scan
+  // for roots from the heap: when scanning the card table for dirty cards after
+  // all remembered sets have been dumped onto it, for optional evacuation we
+  // mark these cards as "Scanned" to know that we do not need to re-scan them
+  // in the additional optional evacuation passes. This means that in the "Clear
+  // Card Table" phase we need to clear those marks. However, if there is no
+  // optional evacuation, g1 can immediately clean the dirty cards it encounters
+  // as nobody else will be looking at them again, saving the clear card table
+  // work later.
+  // This case is very common (young only collections and most mixed gcs), so
+  // depending on the ratio between scanned and evacuated regions (which g1 always
+  // needs to clear), this is a big win.
+  void evacuate_initial_collection_set(G1ParScanThreadStateSet* per_thread_states,
+                                       bool has_optional_evacuation_work);
   void evacuate_optional_collection_set(G1ParScanThreadStateSet* per_thread_states);
 private:
   // Evacuate the next set of optional regions.
@@ -1061,11 +1080,12 @@ public:
   // The current number of regions in the heap.
   uint num_regions() const { return _hrm->length(); }
 
-  // The max number of regions in the heap.
-  uint max_regions() const { return _hrm->max_length(); }
+  // The max number of regions reserved for the heap. Except for static array
+  // sizing purposes you probably want to use max_regions().
+  uint max_reserved_regions() const { return _hrm->reserved_length(); }
 
-  // Max number of regions that can be comitted.
-  uint max_expandable_regions() const { return _hrm->max_expandable_length(); }
+  // Max number of regions that can be committed.
+  uint max_regions() const { return _hrm->max_length(); }
 
   // The number of regions that are completely free.
   uint num_free_regions() const { return _hrm->num_free_regions(); }
@@ -1248,7 +1268,6 @@ public:
   // Section on thread-local allocation buffers (TLABs)
   // See CollectedHeap for semantics.
 
-  bool supports_tlab_allocation() const;
   size_t tlab_capacity(Thread* ignored) const;
   size_t tlab_used(Thread* ignored) const;
   size_t max_tlab_size() const;
@@ -1305,16 +1324,6 @@ public:
 #ifdef ASSERT
   bool check_young_list_empty();
 #endif
-
-  // *** Stuff related to concurrent marking.  It's not clear to me that so
-  // many of these need to be public.
-
-  // The functions below are helper functions that a subclass of
-  // "CollectedHeap" can use in the implementation of its virtual
-  // functions.
-  // This performs a concurrent marking of the live objects in a
-  // bitmap off to the side.
-  void do_concurrent_mark();
 
   bool is_marked_next(oop obj) const;
 

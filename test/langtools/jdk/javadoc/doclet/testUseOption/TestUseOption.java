@@ -129,20 +129,20 @@ public class TestUseOption extends JavadocTester {
                 Subinterfaces of <a href="../UsedInterface.html" title="interface in pkg1">UsedI\
                 nterface</a> in <a href="../package-summary.html">pkg1""",
             """
-                <td class="col-first"><code>interface&nbsp;</code></td>
-                <th class="col-second" scope="row"><code><span class="member-name-link"><a href=\
-                "../SubInterface.html" title="interface in pkg1">SubInterface</a>&lt;T&gt;</span\
-                ></code></th>"""
+                <div class="col-first even-row-color"><code>interface&nbsp;</code></div>
+                <div class="col-second even-row-color"><code><span class="member-name-link"><a href="\
+                ../SubInterface.html" title="interface in pkg1">SubInterface</a>&lt;T&gt;</span>\
+                </code></div>"""
         );
         checkOutput("pkg1/class-use/UsedThrowable.html", true,
             """
                 Methods in <a href="../package-summary.html">pkg1</a> that throw <a href="../Use\
                 dThrowable.html" title="class in pkg1">UsedThrowable</a>""",
             """
-                <td class="col-first"><code>void</code></td>
-                <th class="col-second" scope="row"><span class="type-name-label">C1.</span><code\
-                ><span class="member-name-link"><a href="../C1.html#methodInC1ThrowsThrowable()"\
-                >methodInC1ThrowsThrowable</a></span>()</code></th>"""
+                <div class="col-first even-row-color"><code>void</code></div>
+                <div class="col-second even-row-color"><span class="type-name-label">C1.</span><code>\
+                <span class="member-name-link"><a href="../C1.html#methodInC1ThrowsThrowable()">\
+                methodInC1ThrowsThrowable</a></span>()</code></div>"""
         );
     }
 
@@ -167,10 +167,10 @@ public class TestUseOption extends JavadocTester {
         );
         checkOutput("package-use.html", true,
                 """
-                    <th class="col-first" scope="row"><a href="class-use/UsedInC.html#unnamed.package">UsedInC</a></th>""",
+                    <div class="col-first even-row-color"><a href="class-use/UsedInC.html#unnamed.package">UsedInC</a></div>""",
                 """
-                    <th class="col-first" scope="row"><a href="#unnamed.package">&lt;Unnamed&gt;</a></th>
-                    <td class="col-last">&nbsp;</td>"""
+                    <div class="col-first even-row-color"><a href="#unnamed.package">&lt;Unnamed&gt;</a></div>
+                    <div class="col-last even-row-color">&nbsp;</div>"""
         );
     }
 

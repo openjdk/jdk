@@ -49,7 +49,7 @@
 // Determine if a node is a counted loop induction variable.
 // NOTE: The method is declared in "node.hpp".
 bool Node::is_cloop_ind_var() const {
-  return (is_Phi() && !as_Phi()->is_copy() &&
+  return (is_Phi() &&
           as_Phi()->region()->is_CountedLoop() &&
           as_Phi()->region()->as_CountedLoop()->phi() == this);
 }
@@ -1105,7 +1105,7 @@ void LoopNode::verify_strip_mined(int expect_skeleton) const {
     bool has_skeleton = outer_le->in(1)->bottom_type()->singleton() && outer_le->in(1)->bottom_type()->is_int()->get_con() == 0;
     if (has_skeleton) {
       assert(expect_skeleton == 1 || expect_skeleton == -1, "unexpected skeleton node");
-      assert(outer->outcnt() == 2, "only phis");
+      assert(outer->outcnt() == 2, "only control nodes");
     } else {
       assert(expect_skeleton == 0 || expect_skeleton == -1, "no skeleton node?");
       uint phis = 0;
@@ -1733,7 +1733,28 @@ const Type* OuterStripMinedLoopEndNode::Value(PhaseGVN* phase) const {
   if (phase->type(in(0)) == Type::TOP)
     return Type::TOP;
 
+  // Until expansion, the loop end condition is not set so this should not constant fold.
+  if (is_expanded(phase)) {
+    return IfNode::Value(phase);
+  }
+
   return TypeTuple::IFBOTH;
+}
+
+bool OuterStripMinedLoopEndNode::is_expanded(PhaseGVN *phase) const {
+  // The outer strip mined loop head only has Phi uses after expansion
+  if (phase->is_IterGVN()) {
+    Node* backedge = proj_out_or_null(true);
+    if (backedge != NULL) {
+      Node* head = backedge->unique_ctrl_out();
+      if (head != NULL && head->is_OuterStripMinedLoop()) {
+        if (head->find_out_with(Op_Phi) != NULL) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
 }
 
 Node *OuterStripMinedLoopEndNode::Ideal(PhaseGVN *phase, bool can_reshape) {
@@ -2915,6 +2936,31 @@ bool PhaseIdealLoop::process_expensive_nodes() {
   return progress;
 }
 
+#ifdef ASSERT
+bool PhaseIdealLoop::only_has_infinite_loops() {
+  for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
+    IdealLoopTree* lpt = iter.current();
+    if (lpt->is_innermost()) {
+      uint i = 1;
+      for (; i < C->root()->req(); i++) {
+        Node* in = C->root()->in(i);
+        if (in != NULL &&
+            in->Opcode() == Op_Halt &&
+            in->in(0)->is_Proj() &&
+            in->in(0)->in(0)->Opcode() == Op_NeverBranch &&
+            in->in(0)->in(0)->in(0) == lpt->_head) {
+          break;
+        }
+      }
+      if (i == C->root()->req()) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+#endif
+
 
 //=============================================================================
 //----------------------------build_and_optimize-------------------------------
@@ -2970,6 +3016,13 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
     return;
   }
 
+  // Verify that the has_loops() flag set at parse time is consistent
+  // with the just built loop tree. With infinite loops, it could be
+  // that one pass of loop opts only finds infinite loops, clears the
+  // has_loops() flag but adds NeverBranch nodes so the next loop opts
+  // verification pass finds a non empty loop tree. When the back edge
+  // is an exception edge, parsing doesn't set has_loops().
+  assert(_ltree_root->_child == NULL || C->has_loops() || only_has_infinite_loops() || C->has_exception_backedge(), "parsing found no loops but there are some");
   // No loops after all
   if( !_ltree_root->_child && !_verify_only ) C->set_has_loops(false);
 

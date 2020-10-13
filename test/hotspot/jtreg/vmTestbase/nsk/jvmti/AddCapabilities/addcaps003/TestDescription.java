@@ -47,9 +47,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build ExecDriver
- *        nsk.jvmti.AddCapabilities.addcaps003
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
+ * @run main/othervm/native
  *      -XX:+UnlockDiagnosticVMOptions
  *      -XX:+PrintInterpreter
  *      -XX:+IgnoreUnrecognizedVMOptions

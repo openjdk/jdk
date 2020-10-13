@@ -49,6 +49,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
     public void test_Comment_Deprecated() {
         javadoc("-Xdoclint:none",
                 "-d", "out-1",
+                "--no-platform-links",
                 "-sourcepath", testSrc,
                 "pkg1");
         checkExit(Exit.OK);
@@ -61,6 +62,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
         javadoc("-Xdoclint:none",
                 "-d", "out-2",
                 "-nocomment",
+                "--no-platform-links",
                 "-sourcepath", testSrc,
                 "pkg1");
         checkExit(Exit.OK);
@@ -73,6 +75,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
         javadoc("-Xdoclint:none",
                 "-d", "out-3",
                 "-nodeprecated",
+                "--no-platform-links",
                 "-sourcepath", testSrc,
                 "pkg1");
         checkExit(Exit.OK);
@@ -87,6 +90,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                 "-d", "out-4",
                 "-nocomment",
                 "-nodeprecated",
+                "--no-platform-links",
                 "-sourcepath", testSrc,
                 "pkg1");
         checkExit(Exit.OK);

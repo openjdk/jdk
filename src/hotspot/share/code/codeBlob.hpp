@@ -601,10 +601,6 @@ class DeoptimizationBlob: public SingletonBlob {
 
   // Typing
   bool is_deoptimization_stub() const { return true; }
-  bool exception_address_is_unpack_entry(address pc) const {
-    address unpack_pc = unpack();
-    return (pc == unpack_pc || (pc + frame::pc_return_offset) == unpack_pc);
-  }
 
   // GC for args
   void preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map, OopClosure* f) { /* Nothing to do */ }
