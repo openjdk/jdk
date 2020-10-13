@@ -1710,23 +1710,6 @@ public class Utils {
         return sb.toString().trim();
     }
 
-    private Collection<TypeElement> types2Classes(List<? extends TypeMirror> types) {
-        List<TypeElement> result = new ArrayList<>();
-        List<TypeMirror> todo = new ArrayList<>(types);
-        
-        while (!todo.isEmpty()) {
-            TypeMirror type = todo.remove(todo.size() - 1);
-
-            if (type.getKind() == DECLARED) {
-                DeclaredType dt = (DeclaredType) type;
-                result.add((TypeElement) dt.asElement());
-                todo.addAll(dt.getTypeArguments());
-            }
-        }
-
-        return result;
-    }
-
     private static class DocCollator {
         private final Map<String, CollationKey> keys;
         private final Collator instance;
@@ -2968,10 +2951,10 @@ public class Utils {
     }
 
     /**
-     * Return true if the given Element is deprecated.
+     * Return the set of preview language features used to declare the given element.
      *
      * @param e the Element to check.
-     * @return true if the given Element is deprecated.
+     * @return the set of preview language features used to declare the given element
      */
     @SuppressWarnings("preview")
     public Set<DeclarationPreviewLanguageFeatures> previewLanguageFeaturesUsed(Element e) {
@@ -2996,6 +2979,7 @@ public class Utils {
     }
 
     public enum DeclarationPreviewLanguageFeatures {
+
         SEALED(List.of("sealed")),
         SEALED_PERMITS(List.of("sealed", "permits")),
         RECORD(List.of("record"));
@@ -3005,25 +2989,6 @@ public class Utils {
             this.features = features;
         }
         
-    }
-
-    public PreviewSummary getPreviewAPITypes(Iterable<TypeElement> elements) { //TODO: private/merge into declaredUsingPreviewAPIs?
-        Set<TypeElement> previewAPI = new HashSet<>();
-        Set<TypeElement> reflectivePreviewAPI = new HashSet<>();
-        Set<TypeElement> declaredUsingPreviewFeature = new HashSet<>();
-
-        for (TypeElement type : elements) {
-            if (!isIncluded(type) && !configuration.extern.isExternal(type)) {
-                continue;
-            }
-            switch (getPreviewAPIType(type)) {
-                case PREVIEW -> previewAPI.add(type);
-                case REFLECTIVE -> reflectivePreviewAPI.add(type);
-                case DECLARED_USING_PREVIEW -> declaredUsingPreviewFeature.add(type);
-            }
-        }
-
-        return new PreviewSummary(previewAPI, reflectivePreviewAPI, declaredUsingPreviewFeature);
     }
 
     @SuppressWarnings("preview")
@@ -3062,8 +3027,45 @@ public class Utils {
             }
             default -> throw new IllegalStateException("Unexpected: " + el.getKind());
         }
-        PreviewSummary previewAPITypes = getPreviewAPITypes(usedInDeclaration);
-        return previewAPITypes;
+
+        Set<TypeElement> previewAPI = new HashSet<>();
+        Set<TypeElement> reflectivePreviewAPI = new HashSet<>();
+        Set<TypeElement> declaredUsingPreviewFeature = new HashSet<>();
+
+        for (TypeElement type : usedInDeclaration) {
+            if (!isIncluded(type) && !configuration.extern.isExternal(type)) {
+                continue;
+            }
+            if (isPreviewAPI(type)) {
+                if (isReflectivePreviewAPI(type)) {
+                    reflectivePreviewAPI.add(type);
+                } else {
+                    previewAPI.add(type);
+                }
+            }
+            if (!previewLanguageFeaturesUsed(type).isEmpty()) {
+                declaredUsingPreviewFeature.add(type);
+            }
+        }
+
+        return new PreviewSummary(previewAPI, reflectivePreviewAPI, declaredUsingPreviewFeature);
+    }
+
+    private Collection<TypeElement> types2Classes(List<? extends TypeMirror> types) {
+        List<TypeElement> result = new ArrayList<>();
+        List<TypeMirror> todo = new ArrayList<>(types);
+
+        while (!todo.isEmpty()) {
+            TypeMirror type = todo.remove(todo.size() - 1);
+
+            if (type.getKind() == DECLARED) {
+                DeclaredType dt = (DeclaredType) type;
+                result.add((TypeElement) dt.asElement());
+                todo.addAll(dt.getTypeArguments());
+            }
+        }
+
+        return result;
     }
 
     public static final class PreviewSummary {
@@ -3081,29 +3083,40 @@ public class Utils {
         public String toString() {
             return "PreviewSummary{" + "previewAPI=" + previewAPI + ", reflectivePreviewAPI=" + reflectivePreviewAPI + ", declaredUsingPreviewFeature=" + declaredUsingPreviewFeature + '}';
         }
-        
+
     }
 
-    public PreviewAPIType getPreviewAPIType(Element el) {
-        //TODO: PREVIEW+DECLARED_USING_PREVIEW?
-        if (!previewLanguageFeaturesUsed(el).isEmpty()) {
-            return PreviewAPIType.DECLARED_USING_PREVIEW;
+    /**
+     * Checks whether the given Element should be marked as a preview API.
+     *
+     * Note that is a type is marked as a preview, its members are not.
+     *
+     * @param el the element to check
+     * @return true if and only if the given element should be marked as a preview API
+     */
+    public boolean isPreviewAPI(Element el) {
+        boolean parentPreviewAPI = false;
+        Element enclosing = el.getEnclosingElement();
+        if (enclosing != null && (enclosing.getKind().isClass() || enclosing.getKind().isInterface())) {
+            parentPreviewAPI = configuration.workArounds.isPreviewAPI(el.getEnclosingElement());
         }
-        return configuration.workArounds.getPreviewAPIType(el);
+        boolean previewAPI = configuration.workArounds.isPreviewAPI(el);
+        return !parentPreviewAPI && previewAPI;
     }
 
-    public enum PreviewAPIType {
-        STANDARD,
-        REFLECTIVE,
-        PREVIEW,
-        DECLARED_USING_PREVIEW;
+    public boolean isReflectivePreviewAPI(Element el) {
+        return isPreviewAPI(el) && configuration.workArounds.isReflectivePreviewAPI(el);
     }
 
     public Set<ElementFlag> elementFlags(Element el) {
         Set<ElementFlag> flags = EnumSet.noneOf(ElementFlag.class);
         PreviewSummary previewAPIs = declaredUsingPreviewAPIs(el);
 
-        if (!previewLanguageFeaturesUsed(el).isEmpty() || configuration.workArounds.getPreviewAPIType(el) != PreviewAPIType.STANDARD || !previewAPIs.previewAPI.isEmpty() || !previewAPIs.reflectivePreviewAPI.isEmpty() || !previewAPIs.declaredUsingPreviewFeature.isEmpty())  {
+        if (!previewLanguageFeaturesUsed(el).isEmpty() ||
+            configuration.workArounds.isPreviewAPI(el) ||
+            !previewAPIs.previewAPI.isEmpty() ||
+            !previewAPIs.reflectivePreviewAPI.isEmpty() ||
+            !previewAPIs.declaredUsingPreviewFeature.isEmpty())  {
             flags.add(ElementFlag.PREVIEW);
         }
 
@@ -3114,14 +3127,4 @@ public class Utils {
         PREVIEW;
     }
 
-    public boolean isPreview(Element el) {
-        PreviewAPIType parentPreviewAPIType = PreviewAPIType.STANDARD;
-        Element enclosing = el.getEnclosingElement();
-        if (enclosing != null && (enclosing.getKind().isClass() || enclosing.getKind().isInterface())) {
-            parentPreviewAPIType = getPreviewAPIType(el.getEnclosingElement());
-        }
-        PreviewAPIType previewAPIType = getPreviewAPIType(el);
-        return parentPreviewAPIType == PreviewAPIType.STANDARD &&
-            (previewAPIType == PreviewAPIType.PREVIEW || previewAPIType == PreviewAPIType.REFLECTIVE);
-    }
 }

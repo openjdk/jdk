@@ -111,13 +111,6 @@ public abstract class LinkInfo {
     public boolean linkToSelf = true;
 
     /**
-     * By default, the target of the link should be checked if it is a preview API.
-     * However, for record supertype (java.lang.Record), do not mark the supertype
-     * as preview.
-     */
-    public boolean checkPreviewAPI = true;
-
-    /**
      * Return an empty instance of a content object.
      *
      * @return an empty instance of a content object.

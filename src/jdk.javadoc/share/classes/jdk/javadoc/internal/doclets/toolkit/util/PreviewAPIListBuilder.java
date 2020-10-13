@@ -90,21 +90,21 @@ public class PreviewAPIListBuilder {
         SortedSet<ModuleElement> modules = configuration.modules;
         SortedSet<Element> mset = previewMap.get(PreviewElementKind.MODULE);
         for (Element me : modules) {
-            if (utils.isPreview(me)) {
+            if (utils.isPreviewAPI(me)) {
                 mset.add(me);
             }
         }
         SortedSet<PackageElement> packages = configuration.packages;
         SortedSet<Element> pset = previewMap.get(PreviewElementKind.PACKAGE);
         for (Element pe : packages) {
-            if (utils.isPreview(pe)) {
+            if (utils.isPreviewAPI(pe)) {
                 pset.add(pe);
             }
         }
         for (Element e : configuration.getIncludedTypeElements()) {
             TypeElement te = (TypeElement)e;
             SortedSet<Element> eset;
-            if (utils.isPreview(e)) {
+            if (utils.isPreviewAPI(e)) {
                 switch (e.getKind()) {
                     case ANNOTATION_TYPE:
                         eset = previewMap.get(PreviewElementKind.ANNOTATION_TYPE);
@@ -157,7 +157,7 @@ public class PreviewAPIListBuilder {
      */
     private void composeDeprecatedList(SortedSet<Element> sset, List<? extends Element> members) {
         for (Element member : members) {
-            if (utils.isPreview(member)) {
+            if (utils.isPreviewAPI(member)) {
                 sset.add(member);
             }
         }

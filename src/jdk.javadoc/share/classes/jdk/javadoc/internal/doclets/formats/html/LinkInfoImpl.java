@@ -241,7 +241,14 @@ public class LinkInfoImpl extends LinkInfo {
      */
     public String where = "";
 
+    /**
+     * The member this link points to (if any).
+     */
     public Element whereMember;
+
+    /**
+     * True iff the preview flags should be skipped for this link.
+     */
     public boolean skipPreview;
 
     /**
@@ -315,14 +322,6 @@ public class LinkInfoImpl extends LinkInfo {
     }
 
     /**
-     * Set the checkPreviewAPI flag.
-     */
-    public LinkInfoImpl checkPreviewAPI(boolean checkPreviewAPI) {
-        this.checkPreviewAPI = checkPreviewAPI;
-        return this;
-    }
-
-    /**
      * Set whether or not the link should be strong.
      */
     public LinkInfoImpl strong(boolean strong) {
@@ -355,11 +354,17 @@ public class LinkInfoImpl extends LinkInfo {
         return this;
     }
 
+    /**
+     * Set the member this link points to (if any).
+     */
     public LinkInfoImpl whereMember(Element el) {
         this.whereMember = el;
         return this;
     }
 
+    /**
+     * Set whether or not the preview flags should be skipped for this link.
+     */
     public LinkInfoImpl skipPreview(boolean skipPreview) {
         this.skipPreview = skipPreview;
         return this;

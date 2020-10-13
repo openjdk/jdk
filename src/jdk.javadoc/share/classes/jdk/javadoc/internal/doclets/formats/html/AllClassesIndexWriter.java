@@ -165,7 +165,7 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
         Content classLink = getLink(new LinkInfoImpl(
                 configuration, LinkInfoImpl.Kind.INDEX, klass));
         ContentBuilder description = new ContentBuilder();
-        if (utils.isPreview(klass)) {
+        if (utils.isPreviewAPI(klass)) {
             description.add(contents.previewPhrase);
             addSummaryComment(klass, description);
         } else if (utils.isDeprecated(klass)) {

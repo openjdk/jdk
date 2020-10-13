@@ -84,7 +84,6 @@ public class Table extends Content {
     private int rowScopeColumnIndex;
     private List<HtmlStyle> stripedStyles = Arrays.asList(HtmlStyle.altColor, HtmlStyle.rowColor);
     private final List<Content> bodyRows;
-    private int significantRowCount = -1;
     private final List<Integer> bodyRowMasks;
     private String rowIdPrefix = "i";
     private String id;
@@ -361,31 +360,25 @@ public class Table extends Content {
 
         HtmlTree row = new HtmlTree(TagName.TR);
 
+        if (stripedStyles != null) {
+            int rowIndex = bodyRows.size();
+            row.setStyle(stripedStyles.get(rowIndex % 2));
+        }
         int colIndex = 0;
         for (Content c : contents) {
-            if (c instanceof HtmlTree && ((HtmlTree) c).tagName == TagName.TD) {
-                row.add(c);
-                colIndex++;
-                significantRowCount--; //XXX - should not happen this way
-            } else {
-                HtmlStyle cellStyle = (columnStyles == null || colIndex > columnStyles.size())
-                        ? null
-                        : columnStyles.get(colIndex);
-                HtmlTree cell = (colIndex == rowScopeColumnIndex)
-                        ? HtmlTree.TH(cellStyle, "row", c)
-                        : HtmlTree.TD(cellStyle, c);
-                row.add(cell);
-                colIndex++;
-            }
-        }
-        significantRowCount++;
-        if (stripedStyles != null) {
-            row.setStyle(stripedStyles.get(significantRowCount % 2));
+            HtmlStyle cellStyle = (columnStyles == null || colIndex > columnStyles.size())
+                    ? null
+                    : columnStyles.get(colIndex);
+            HtmlTree cell = (colIndex == rowScopeColumnIndex)
+                    ? HtmlTree.TH(cellStyle, "row", c)
+                    : HtmlTree.TD(cellStyle, c);
+            row.add(cell);
+            colIndex++;
         }
         bodyRows.add(row);
 
         if (tabMap != null) {
-            int index = significantRowCount;
+            int index = bodyRows.size() - 1;
             row.put(HtmlAttr.ID, (rowIdPrefix + index));
             int mask = 0;
             int maskBit = 1;

@@ -205,7 +205,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
             }
             if ("record".equals(modifiersPart) || "sealed".equals(modifiersPart)) {
                 pre.add(modifiersPart);
-                pre.add(new HtmlTree(TagName.SUP).add(HtmlTree.A("#preview", new ContentBuilder().add("PREVIEW"))));
+                pre.add(new HtmlTree(TagName.SUP).add(HtmlTree.A("#preview", contents.previewMark)));
                 pre.add(" ");
             } else {
                 pre.add(modifiersPart);
@@ -240,8 +240,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                     pre.add("extends ");
                     Content link = getLink(new LinkInfoImpl(configuration,
                             LinkInfoImpl.Kind.CLASS_SIGNATURE_PARENT_NAME,
-                            superclass)
-                    .checkPreviewAPI(typeElement.getKind() != ElementKind.RECORD));
+                            superclass));
                     pre.add(link);
                 }
             }
@@ -278,7 +277,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                 if (isFirst) {
                     pre.add(DocletConstants.NL);
                     pre.add("permits");
-                    pre.add(new HtmlTree(TagName.SUP).add(HtmlTree.A("#preview", new ContentBuilder().add("PREVIEW"))));
+                    pre.add(new HtmlTree(TagName.SUP).add(HtmlTree.A("#preview", contents.previewMark)));
                     pre.add(" ");
                     isFirst = false;
                 } else {

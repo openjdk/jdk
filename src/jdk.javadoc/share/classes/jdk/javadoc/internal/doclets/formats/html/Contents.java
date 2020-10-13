@@ -154,6 +154,7 @@ public class Contents {
     public final Content parameters;
     public final Content previewAPI;
     public final Content previewLabel;
+    public final Content previewMark;
     public final Content previewPhrase;
     public final Content properties;
     public final Content propertyLabel;
@@ -292,7 +293,8 @@ public class Contents {
         packagesLabel = getContent("doclet.Packages");
         parameters = getContent("doclet.Parameters");
         previewAPI = getContent("doclet.Preview_API");
-        previewLabel = getContent("doclet.navPreview");
+        previewLabel = getContent("doclet.Preview_Label");
+        previewMark = getContent("doclet.Preview_Mark");
         previewPhrase = getContent("doclet.Preview");
         properties = getContent("doclet.Properties");
         propertyLabel = getContent("doclet.Property");
