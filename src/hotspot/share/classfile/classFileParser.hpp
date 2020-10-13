@@ -385,7 +385,7 @@ class ClassFileParser {
                             TRAPS) const;
 
   inline void guarantee_property(bool b, const char* msg, TRAPS) const {
-    if (!b) { classfile_parse_error(msg, CHECK); }
+    if (!b) { classfile_parse_error(msg, THREAD); return; }
   }
 
   void report_assert_property_failure(const char* msg, TRAPS) const PRODUCT_RETURN;
@@ -430,14 +430,14 @@ class ClassFileParser {
                                  const char* msg,
                                  int index,
                                  TRAPS) const {
-    if (!b) { classfile_parse_error(msg, index, CHECK); }
+    if (!b) { classfile_parse_error(msg, index, THREAD); return; }
   }
 
   inline void guarantee_property(bool b,
                                  const char* msg,
                                  const char *name,
                                  TRAPS) const {
-    if (!b) { classfile_parse_error(msg, name, CHECK); }
+    if (!b) { classfile_parse_error(msg, name, THREAD); return; }
   }
 
   inline void guarantee_property(bool b,
@@ -445,7 +445,7 @@ class ClassFileParser {
                                  int index,
                                  const char *name,
                                  TRAPS) const {
-    if (!b) { classfile_parse_error(msg, index, name, CHECK); }
+    if (!b) { classfile_parse_error(msg, index, name, THREAD); return; }
   }
 
   void throwIllegalSignature(const char* type,
