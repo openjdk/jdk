@@ -126,35 +126,34 @@ public class SetInvokerJPopupMenuTest {
     public static void postDown() {
         popup.setVisible(false);
     }
-}
 
-class MyButton extends JButton {
-    private static final long serialVersionUID = 1L;
-    public MyButton(String string) {
-        super (string);
-    }
-    @Override
-    protected void processMouseEvent(MouseEvent e) {
-        super.processMouseEvent(e);
-    }
-}
-
-class MyPopupMenu extends JPopupMenu {
-    private static final long serialVersionUID = 1L;
-    @Override
-    public void setVisible( boolean state ) {
-        if( !state ) {
-            Exception ex = new Exception();
-            StringWriter stringWriter = new StringWriter();
-            PrintWriter printWriter = new PrintWriter( stringWriter );
-            ex.printStackTrace( printWriter );
-            String traceString = stringWriter.getBuffer().toString();
-            if( traceString.lastIndexOf( "windowDeactivated" ) > 0
-                    || traceString.lastIndexOf( "menuSelectionChanged" )
-                    > 0 ) {
-                return;
-            }
+    private static class MyButton extends JButton {
+        public MyButton(String string) {
+            super (string);
         }
-        super.setVisible(state);
+        @Override
+        protected void processMouseEvent(MouseEvent e) {
+            super.processMouseEvent(e);
+        }
+    }
+
+    private static class MyPopupMenu extends JPopupMenu {
+        private static final long serialVersionUID = 1L;
+        @Override
+        public void setVisible( boolean state ) {
+            if( !state ) {
+                Exception ex = new Exception();
+                StringWriter stringWriter = new StringWriter();
+                PrintWriter printWriter = new PrintWriter( stringWriter );
+                ex.printStackTrace( printWriter );
+                String traceString = stringWriter.getBuffer().toString();
+                if( traceString.lastIndexOf( "windowDeactivated" ) > 0
+                        || traceString.lastIndexOf( "menuSelectionChanged" )
+                        > 0 ) {
+                    return;
+                }
+            }
+            super.setVisible(state);
+        }
     }
 }
