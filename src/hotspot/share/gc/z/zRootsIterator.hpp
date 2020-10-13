@@ -159,7 +159,6 @@ private:
 
 public:
   ZWeakRootsIterator();
-  ~ZWeakRootsIterator();
 
   void weak_oops_do(BoolObjectClosure* is_alive, ZRootsIteratorClosure* cl);
   void oops_do(ZRootsIteratorClosure* cl);

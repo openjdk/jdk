@@ -55,21 +55,11 @@
 #include "utilities/debug.hpp"
 
 static const ZStatSubPhase ZSubPhasePauseRootsJVMTIWeakExport("Pause Roots JVMTIWeakExport");
-
-static const ZStatSubPhase ZSubPhaseConcurrentRootsSetup("Concurrent Roots Setup");
-static const ZStatSubPhase ZSubPhaseConcurrentRoots("Concurrent Roots");
-static const ZStatSubPhase ZSubPhaseConcurrentRootsTeardown("Concurrent Roots Teardown");
 static const ZStatSubPhase ZSubPhaseConcurrentRootsOopStorageSet("Concurrent Roots OopStorageSet");
 static const ZStatSubPhase ZSubPhaseConcurrentRootsClassLoaderDataGraph("Concurrent Roots ClassLoaderDataGraph");
-static const ZStatSubPhase ZSubPhaseConcurrentRootsJavaThreads("Concurrent Roots Java Threads");
+static const ZStatSubPhase ZSubPhaseConcurrentRootsJavaThreads("Concurrent Roots JavaThreads");
 static const ZStatSubPhase ZSubPhaseConcurrentRootsCodeCache("Concurrent Roots CodeCache");
-
-static const ZStatSubPhase ZSubPhasePauseWeakRootsSetup("Pause Weak Roots Setup");
-static const ZStatSubPhase ZSubPhasePauseWeakRoots("Pause Weak Roots");
-static const ZStatSubPhase ZSubPhasePauseWeakRootsTeardown("Pause Weak Roots Teardown");
 static const ZStatSubPhase ZSubPhasePauseWeakRootsJVMTIWeakExport("Pause Weak Roots JVMTIWeakExport");
-
-static const ZStatSubPhase ZSubPhaseConcurrentWeakRoots("Concurrent Weak Roots");
 static const ZStatSubPhase ZSubPhaseConcurrentWeakRootsOopStorageSet("Concurrent Weak Roots OopStorageSet");
 
 template <typename T, void (T::*F)(ZRootsIteratorClosure*)>
@@ -154,7 +144,6 @@ ZConcurrentRootsIterator::ZConcurrentRootsIterator(int cld_claim) :
     _class_loader_data_graph(this),
     _java_threads(this),
     _code_cache(this) {
-  ZStatTimer timer(ZSubPhaseConcurrentRootsSetup);
   ClassLoaderDataGraph::clear_claimed_marks(cld_claim);
   if (!ClassUnloading) {
     ZNMethodTable::nmethods_do_begin();
@@ -162,7 +151,6 @@ ZConcurrentRootsIterator::ZConcurrentRootsIterator(int cld_claim) :
 }
 
 ZConcurrentRootsIterator::~ZConcurrentRootsIterator() {
-  ZStatTimer timer(ZSubPhaseConcurrentRootsTeardown);
   if (!ClassUnloading) {
     ZNMethodTable::nmethods_do_end();
   }
@@ -179,12 +167,18 @@ void ZConcurrentRootsIterator::do_class_loader_data_graph(ZRootsIteratorClosure*
   ClassLoaderDataGraph::always_strong_cld_do(&cld_cl);
 }
 
+void ZConcurrentRootsIterator::do_code_cache(ZRootsIteratorClosure* cl) {
+  ZStatTimer timer(ZSubPhaseConcurrentRootsCodeCache);
+  ZNMethod::oops_do(cl, cl->should_disarm_nmethods());
+}
+
 class ZConcurrentRootsIteratorThreadClosure : public ThreadClosure {
 private:
-  ZRootsIteratorClosure* const _cl;
-  // The resource mark is needed because interpreter oop maps are not reused in concurrent mode.
-  // Instead, they are temporary and resource allocated.
+  // The resource mark is needed because interpreter oop maps are
+  // not reused in concurrent mode. Instead, they are temporary and
+  // resource allocated.
   ResourceMark                 _rm;
+  ZRootsIteratorClosure* const _cl;
 
 public:
   ZConcurrentRootsIteratorThreadClosure(ZRootsIteratorClosure* cl) :
@@ -195,11 +189,6 @@ public:
   }
 };
 
-void ZConcurrentRootsIterator::do_code_cache(ZRootsIteratorClosure* cl) {
-  ZStatTimer timer(ZSubPhaseConcurrentRootsCodeCache);
-  ZNMethod::oops_do(cl, cl->should_disarm_nmethods());
-}
-
 void ZConcurrentRootsIterator::do_java_threads(ZRootsIteratorClosure* cl) {
   ZStatTimer timer(ZSubPhaseConcurrentRootsJavaThreads);
   ZConcurrentRootsIteratorThreadClosure thread_cl(cl);
@@ -207,7 +196,6 @@ void ZConcurrentRootsIterator::do_java_threads(ZRootsIteratorClosure* cl) {
 }
 
 void ZConcurrentRootsIterator::oops_do(ZRootsIteratorClosure* cl) {
-  ZStatTimer timer(ZSubPhaseConcurrentRoots);
   _oop_storage_set.oops_do(cl);
   _class_loader_data_graph.oops_do(cl);
   _java_threads.oops_do(cl);
@@ -219,11 +207,6 @@ void ZConcurrentRootsIterator::oops_do(ZRootsIteratorClosure* cl) {
 ZWeakRootsIterator::ZWeakRootsIterator() :
     _jvmti_weak_export(this) {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
-  ZStatTimer timer(ZSubPhasePauseWeakRootsSetup);
-}
-
-ZWeakRootsIterator::~ZWeakRootsIterator() {
-  ZStatTimer timer(ZSubPhasePauseWeakRootsTeardown);
 }
 
 void ZWeakRootsIterator::do_jvmti_weak_export(BoolObjectClosure* is_alive, ZRootsIteratorClosure* cl) {
@@ -232,7 +215,6 @@ void ZWeakRootsIterator::do_jvmti_weak_export(BoolObjectClosure* is_alive, ZRoot
 }
 
 void ZWeakRootsIterator::weak_oops_do(BoolObjectClosure* is_alive, ZRootsIteratorClosure* cl) {
-  ZStatTimer timer(ZSubPhasePauseWeakRoots);
   _jvmti_weak_export.weak_oops_do(is_alive, cl);
 }
 
@@ -256,6 +238,5 @@ void ZConcurrentWeakRootsIterator::do_oop_storage_set(ZRootsIteratorClosure* cl)
 }
 
 void ZConcurrentWeakRootsIterator::oops_do(ZRootsIteratorClosure* cl) {
-  ZStatTimer timer(ZSubPhaseConcurrentWeakRoots);
   _oop_storage_set.oops_do(cl);
 }
