@@ -143,6 +143,12 @@ class CLDToOopClosure : public CLDClosure {
   void do_cld(ClassLoaderData* cld);
 };
 
+template <int claim>
+class ClaimingCLDToOopClosure : public CLDToOopClosure {
+public:
+  ClaimingCLDToOopClosure(OopClosure* cl) : CLDToOopClosure(cl, claim) {}
+};
+
 class ClaimMetadataVisitingOopIterateClosure : public OopIterateClosure {
  protected:
   const int _claim;
@@ -163,6 +169,15 @@ class ClaimMetadataVisitingOopIterateClosure : public OopIterateClosure {
 class MetadataVisitingOopIterateClosure: public ClaimMetadataVisitingOopIterateClosure {
  public:
   MetadataVisitingOopIterateClosure(ReferenceDiscoverer* rd = NULL);
+};
+
+class ThreadToOopClosure : public ThreadClosure {
+private:
+  OopClosure* const _cl;
+
+public:
+  ThreadToOopClosure(OopClosure* cl) : _cl(cl) {}
+  void do_thread(Thread* thread);
 };
 
 // ObjectClosure is used for iterating through an object space
