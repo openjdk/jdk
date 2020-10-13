@@ -1391,7 +1391,8 @@ bool SystemDictionaryShared::should_be_excluded(InstanceKlass* k) {
   }
 
   if (k->is_hidden() && !is_registered_lambda_proxy_class(k)) {
-    warn_excluded(k, "Hidden class");
+    ResourceMark rm;
+    log_debug(cds)("Skipping %s: %s", k->name()->as_C_string(), "Hidden class");
     return true;
   }
 
@@ -1450,6 +1451,14 @@ bool SystemDictionaryShared::is_excluded_class(InstanceKlass* k) {
   Arguments::assert_is_dumping_archive();
   DumpTimeSharedClassInfo* p = find_or_allocate_info_for(k);
   return (p == NULL) ? true : p->is_excluded();
+}
+
+void SystemDictionaryShared::set_excluded(InstanceKlass* k) {
+  Arguments::assert_is_dumping_archive();
+  DumpTimeSharedClassInfo* info = find_or_allocate_info_for(k);
+  if (info != NULL) {
+    info->set_excluded();
+  }
 }
 
 void SystemDictionaryShared::set_class_has_failed_verification(InstanceKlass* ik) {

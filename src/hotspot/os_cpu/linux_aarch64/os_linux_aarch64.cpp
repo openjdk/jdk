@@ -75,7 +75,6 @@
 # include <pwd.h>
 # include <poll.h>
 # include <ucontext.h>
-# include <fpu_control.h>
 
 #define REG_FP 29
 #define REG_LR 30
