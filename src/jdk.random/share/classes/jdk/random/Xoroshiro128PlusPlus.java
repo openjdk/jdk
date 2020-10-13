@@ -27,6 +27,7 @@ package jdk.random;
 
 import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.random.RandomGenerator;
 import java.util.random.RandomGenerator.LeapableGenerator;
 import java.util.random.RandomSupport;
 
