@@ -67,12 +67,12 @@ public abstract class SelectorProviderImpl
 
     @Override
     public ServerSocketChannel openServerSocketChannel() throws IOException {
-        return new InetServerSocketChannelImpl(this);
+        return new ServerSocketChannelImpl(this);
     }
 
     @Override
     public SocketChannel openSocketChannel() throws IOException {
-        return new InetSocketChannelImpl(this);
+        return new SocketChannelImpl(this);
     }
 
     @Override
@@ -82,10 +82,10 @@ public abstract class SelectorProviderImpl
             throw new UnsupportedOperationException("IPv6 not available");
         } else if (family == StandardProtocolFamily.INET ||
                    family == StandardProtocolFamily.INET6)  {
-            return new InetSocketChannelImpl(this, family);
+            return new SocketChannelImpl(this, family);
         } else if (family == StandardProtocolFamily.UNIX &&
                    UnixDomainSockets.isSupported()) {
-            return new UnixDomainSocketChannelImpl(this, UnixDomainSockets.socket(), false);
+            return new SocketChannelImpl(this, family);
         } else
             return super.openSocketChannel(family);
     }
@@ -97,10 +97,10 @@ public abstract class SelectorProviderImpl
             throw new UnsupportedOperationException("IPv6 not available");
         } else if (family == StandardProtocolFamily.INET ||
                    family == StandardProtocolFamily.INET6)  {
-            return new InetServerSocketChannelImpl(this, family);
+            return new ServerSocketChannelImpl(this, family);
         } else if (family == StandardProtocolFamily.UNIX &&
                    UnixDomainSockets.isSupported()) {
-            return new UnixDomainServerSocketChannelImpl(this);
+            return new ServerSocketChannelImpl(this, family);
         } else
             return super.openServerSocketChannel(family);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@
 
 #include "sun_nio_ch_InheritedChannel.h"
 
-static int matchFamilyInet(SOCKETADDRESS *sa) {
+static int toInetFamily(SOCKETADDRESS *sa) {
     return (sa->sa.sa_family == (ipv6_available() ? AF_INET6 : AF_INET));
 }
 
@@ -50,7 +50,7 @@ Java_sun_nio_ch_InheritedChannel_initIDs(JNIEnv *env, jclass cla)
 }
 
 JNIEXPORT jobject JNICALL
-Java_sun_nio_ch_InheritedChannel_peerAddressInet(JNIEnv *env, jclass cla, jint fd)
+Java_sun_nio_ch_InheritedChannel_inetPeerAddress0(JNIEnv *env, jclass cla, jint fd)
 {
     SOCKETADDRESS sa;
     socklen_t len = sizeof(SOCKETADDRESS);
@@ -58,7 +58,7 @@ Java_sun_nio_ch_InheritedChannel_peerAddressInet(JNIEnv *env, jclass cla, jint f
     jint remote_port;
 
     if (getpeername(fd, &sa.sa, &len) == 0) {
-        if (matchFamilyInet(&sa)) {
+        if (toInetFamily(&sa)) {
             remote_ia = NET_SockaddrToInetAddress(env, &sa, (int *)&remote_port);
         }
     }
@@ -67,7 +67,7 @@ Java_sun_nio_ch_InheritedChannel_peerAddressInet(JNIEnv *env, jclass cla, jint f
 }
 
 JNIEXPORT jbyteArray JNICALL
-Java_sun_nio_ch_InheritedChannel_peerAddressUnix0(JNIEnv *env, jclass cla, jint fd)
+Java_sun_nio_ch_InheritedChannel_unixPeerAddress0(JNIEnv *env, jclass cla, jint fd)
 {
     struct sockaddr_un sa;
     socklen_t len = sizeof(struct sockaddr_un);
@@ -89,7 +89,7 @@ Java_sun_nio_ch_InheritedChannel_peerPort0(JNIEnv *env, jclass cla, jint fd)
     jint remote_port = -1;
 
     if (getpeername(fd, (struct sockaddr *)&sa.sa, &len) == 0) {
-        if (matchFamilyInet(&sa)) {
+        if (toInetFamily(&sa)) {
             NET_SockaddrToInetAddress(env, &sa, (int *)&remote_port);
         }
     }

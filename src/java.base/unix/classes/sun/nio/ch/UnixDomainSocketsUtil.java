@@ -31,6 +31,7 @@ import java.nio.file.Path;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import sun.net.NetProperties;
+import jdk.internal.util.StaticProperty;
 
 /**
  * Platform specific utility functions
@@ -58,7 +59,7 @@ class UnixDomainSocketsUtil {
                 return s;
             }
 
-            return System.getProperty("java.io.tmpdir");
+            return StaticProperty.javaIOTmpdir();
         };
         return AccessController.doPrivileged(action);
     }

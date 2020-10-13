@@ -669,18 +669,6 @@
       <setting name="stackTrace">true</setting>
     </event>
 
-    <event name="jdk.UnixSocketRead">
-      <setting name="enabled">true</setting>
-      <setting name="stackTrace">true</setting>
-      <setting name="threshold" control="socket-io-threshold">20 ms</setting>
-    </event>
-
-    <event name="jdk.UnixSocketWrite">
-      <setting name="enabled">true</setting>
-      <setting name="stackTrace">true</setting>
-      <setting name="threshold" control="socket-io-threshold">20 ms</setting>
-    </event>
-
     <event name="jdk.X509Validation">
        <setting name="enabled">false</setting>
        <setting name="stackTrace">true</setting>

@@ -21,6 +21,12 @@
  * questions.
  */
 
+/**
+ * @test
+ * @bug 8231358
+ * @run main/othervm SocketOptions
+ */
+
 import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;

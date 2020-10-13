@@ -266,7 +266,7 @@ public class Basic {
 
     private static FileDescriptor getFD(SocketChannel sc) {
         try {
-            Class<?> clazz = Class.forName("sun.nio.ch.SocketChannelImpl");
+            Class<?> clazz = sc.getClass();
             Field f = clazz.getDeclaredField("fd");
             f.setAccessible(true);
             return (FileDescriptor) f.get(sc);

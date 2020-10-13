@@ -328,14 +328,6 @@ public class ProtocolFamilies {
 
     // Helper methods
 
-    private static StandardProtocolFamily expectedFamily(StandardProtocolFamily family) {
-        if (family == null) {
-            return preferIPv4 ? INET : INET6;
-        } else {
-            return family;
-        }
-    }
-
     private static SocketChannel openSC(StandardProtocolFamily family)
             throws IOException {
         SocketChannel sc = family == null ? SocketChannel.open()

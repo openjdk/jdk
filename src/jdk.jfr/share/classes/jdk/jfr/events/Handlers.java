@@ -30,8 +30,6 @@ import jdk.jfr.internal.Utils;
 public final class Handlers {
     public final static EventHandler SOCKET_READ = Utils.getHandler(SocketReadEvent.class);
     public final static EventHandler SOCKET_WRITE = Utils.getHandler(SocketWriteEvent.class);
-    public final static EventHandler UNIX_SOCKET_READ = Utils.getHandler(UnixSocketReadEvent.class);
-    public final static EventHandler UNIX_SOCKET_WRITE = Utils.getHandler(UnixSocketWriteEvent.class);
     public final static EventHandler FILE_READ = Utils.getHandler(FileReadEvent.class);
     public final static EventHandler FILE_WRITE = Utils.getHandler(FileWriteEvent.class);
     public final static EventHandler FILE_FORCE = Utils.getHandler(FileForceEvent.class);

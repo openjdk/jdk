@@ -31,6 +31,7 @@ import java.nio.file.Files;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import sun.net.NetProperties;
+import jdk.internal.util.StaticProperty;
 
 class UnixDomainSocketsUtil {
 
@@ -61,7 +62,7 @@ class UnixDomainSocketsUtil {
             if (temp != null) {
                 return temp;
             }
-            return System.getProperty("java.io.tmpdir");
+            return StaticProperty.javaIOTmpdir();
         };
         return AccessController.doPrivileged(action);
     }

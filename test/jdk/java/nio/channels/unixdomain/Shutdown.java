@@ -21,6 +21,12 @@
  * questions.
  */
 
+/**
+ * @test
+ * @bug 8231358
+ * @run main/othervm Shutdown
+ */
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.*;

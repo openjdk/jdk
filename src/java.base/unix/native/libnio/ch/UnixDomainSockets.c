@@ -41,12 +41,6 @@
 #include "nio_util.h"
 #include "nio.h"
 
-#ifdef _AIX
-#include <stdlib.h>
-#include <sys/utsname.h>
-#endif
-
-
 /* Subtle platform differences in how unnamed sockets (empty path)
  * are returned from getsockname()
  */
@@ -84,12 +78,11 @@ jint unixSocketAddressToSockaddr(JNIEnv *env, jbyteArray path, struct sockaddr_u
     if (name_len > MAX_UNIX_DOMAIN_PATH_LEN) {
         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Unix domain path too long");
         ret = 1;
-        goto finish;
+    } else {
+        memcpy(sa->sun_path, pname, name_len);
+        *len = (int)(offsetof(struct sockaddr_un, sun_path) + name_len + 1);
+        ret = 0;
     }
-    memcpy(sa->sun_path, pname, name_len);
-    *len = (int)(offsetof(struct sockaddr_un, sun_path) + name_len + 1);
-    ret = 0;
-  finish:
     (*env)->ReleaseByteArrayElements(env, path, (jbyte *)pname, 0);
     return ret;
 }
@@ -122,9 +115,6 @@ Java_sun_nio_ch_UnixDomainSockets_bind0(JNIEnv *env, jclass clazz, jobject fdo, 
     struct sockaddr_un sa;
     int sa_len = 0;
     int rv = 0;
-
-    if (path == NULL)
-        return; /* Rely on implicit bind: Unix */
 
     if (unixSocketAddressToSockaddr(env, path, &sa, &sa_len) != 0)
         return;
@@ -162,7 +152,7 @@ Java_sun_nio_ch_UnixDomainSockets_connect0(JNIEnv *env, jclass clazz, jobject fd
 
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_UnixDomainSockets_accept0(JNIEnv *env, jclass clazz, jobject fdo, jobject newfdo,
-                           jobjectArray usaa)
+                                          jobjectArray usaa)
 {
     jint fd = fdval(env, fdo);
     jint newfd;

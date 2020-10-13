@@ -24,8 +24,8 @@
 /**
  * @test
  * @bug 8231358
- * @run main/othervm Security policy1
- * @run main/othervm Security policy2
+ * @run main/othervm/java.security.policy=policy1 Security policy1
+ * @run main/othervm/java.security.policy=policy2 Security policy2
  * @summary Security test for Unix Domain socket and server socket channels
  */
 
@@ -81,27 +81,11 @@ public class Security {
         }
 
         String policy = args[0];
-        switch (policy) {
-            case "policy1":
-                setSecurityManager(policy);
-                testPolicy1();
-                break;
-            case "policy2":
-                setSecurityManager(policy);
-                testPolicy2();
-                break;
-            default:
+        if (policy.equals("policy1")) {
+            testPolicy1();
+        } else {
+            testPolicy2();
         }
-
-    }
-
-    static void setSecurityManager(String policy) {
-        String testSrc = System.getProperty("test.src");
-        // Three /// required for Windows below
-        String policyURL = "file:///" + testSrc + File.separator + policy;
-        System.out.println("POLICY: " + policyURL);
-        System.setProperty("java.security.policy", policyURL);
-        System.setSecurityManager(new SecurityManager());
     }
 
     static void close(NetworkChannel... channels) {

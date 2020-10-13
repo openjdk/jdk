@@ -21,6 +21,12 @@
  * questions.
  */
 
+/**
+ * @test
+ * @bug 8231358
+ * @run main/othervm NonBlockingAccept
+ */
+
 import java.net.StandardProtocolFamily;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;

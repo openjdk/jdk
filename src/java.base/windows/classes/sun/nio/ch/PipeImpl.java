@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,16 +175,21 @@ class PipeImpl
         this(sp, true);
     }
 
-    // if buffering is false and TCP sockets being used, then TCP_NODELAY
-    // is set on the sink channel.
-
+    /**
+     * Creates a PipeImpl using either UNIX channels if available
+     * or INET/6 otherwise.
+     *
+     * @param sp the SelectorProvider
+     *
+     * @param buffering if false and TCP sockets being used, then TCP_NODELAY
+     *                  is set on the sink channel.
+     */
     PipeImpl(final SelectorProvider sp, boolean buffering) throws IOException {
         try {
             AccessController.doPrivileged(new Initializer(sp));
             SocketChannel sc = sink.channel();
-            if (!buffering && (sc instanceof InetSocketChannelImpl)) {
-                var isc = (InetSocketChannelImpl)sc;
-                isc.setOption(StandardSocketOptions.TCP_NODELAY, true);
+            if (!buffering && !UnixDomainSockets.isUnixDomain(sc)) {
+                sc.setOption(StandardSocketOptions.TCP_NODELAY, true);
             }
         } catch (PrivilegedActionException x) {
             throw (IOException)x.getCause();
@@ -199,7 +204,7 @@ class PipeImpl
         return sink;
     }
 
-    private static volatile boolean noUnixDomainSockets = false;
+    private static volatile boolean noUnixDomainSockets;
 
     private static ServerSocketChannel createListener() throws IOException {
         ServerSocketChannel listener = null;

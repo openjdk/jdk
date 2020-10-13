@@ -42,8 +42,6 @@ import jdk.jfr.events.ProcessStartEvent;
 import jdk.jfr.events.SecurityPropertyModificationEvent;
 import jdk.jfr.events.SocketReadEvent;
 import jdk.jfr.events.SocketWriteEvent;
-import jdk.jfr.events.UnixSocketReadEvent;
-import jdk.jfr.events.UnixSocketWriteEvent;
 import jdk.jfr.events.TLSHandshakeEvent;
 import jdk.jfr.events.X509CertificateEvent;
 import jdk.jfr.events.X509ValidationEvent;
@@ -70,8 +68,6 @@ public final class JDKEvents {
         FileWriteEvent.class,
         SocketReadEvent.class,
         SocketWriteEvent.class,
-        UnixSocketReadEvent.class,
-        UnixSocketWriteEvent.class,
         ExceptionThrownEvent.class,
         ExceptionStatisticsEvent.class,
         ErrorThrownEvent.class,
@@ -93,8 +89,7 @@ public final class JDKEvents {
         FileChannelImplInstrumentor.class,
         SocketInputStreamInstrumentor.class,
         SocketOutputStreamInstrumentor.class,
-        InetSocketChannelImplInstrumentor.class,
-        UnixSocketChannelImplInstrumentor.class
+        SocketChannelImplInstrumentor.class
     };
 
     private static final Class<?>[] targetClasses = new Class<?>[instrumentationClasses.length];

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,17 +53,17 @@ class SocketAdaptor
     extends Socket
 {
     // The channel being adapted
-    private final InetSocketChannelImpl sc;
+    private final SocketChannelImpl sc;
 
     // Timeout "option" value for reads
     private volatile int timeout;
 
-    private SocketAdaptor(InetSocketChannelImpl sc) throws SocketException {
+    private SocketAdaptor(SocketChannelImpl sc) throws SocketException {
         super(DummySocketImpl.create());
         this.sc = sc;
     }
 
-    static Socket create(InetSocketChannelImpl sc) {
+    static Socket create(SocketChannelImpl sc) {
         PrivilegedExceptionAction<Socket> pa = () -> new SocketAdaptor(sc);
         try {
             return AccessController.doPrivileged(pa);
@@ -106,7 +106,7 @@ class SocketAdaptor
 
     @Override
     public InetAddress getInetAddress() {
-        InetSocketAddress remote = sc.remoteAddress();
+        InetSocketAddress remote = (InetSocketAddress)sc.remoteAddress();
         if (remote == null) {
             return null;
         } else {
@@ -117,7 +117,7 @@ class SocketAdaptor
     @Override
     public InetAddress getLocalAddress() {
         if (sc.isOpen()) {
-            InetSocketAddress local = sc.localAddress();
+            InetSocketAddress local = (InetSocketAddress)sc.localAddress();
             if (local != null) {
                 return Net.getRevealedLocalAddress(local).getAddress();
             }
@@ -127,7 +127,7 @@ class SocketAdaptor
 
     @Override
     public int getPort() {
-        InetSocketAddress remote = sc.remoteAddress();
+        InetSocketAddress remote = (InetSocketAddress)sc.remoteAddress();
         if (remote == null) {
             return 0;
         } else {
@@ -137,7 +137,7 @@ class SocketAdaptor
 
     @Override
     public int getLocalPort() {
-        InetSocketAddress local = sc.localAddress();
+        InetSocketAddress local = (InetSocketAddress)sc.localAddress();
         if (local == null) {
             return -1;
         } else {
@@ -152,7 +152,7 @@ class SocketAdaptor
 
     @Override
     public SocketAddress getLocalSocketAddress() {
-        InetSocketAddress local = sc.localAddress();
+        InetSocketAddress local = (InetSocketAddress)sc.localAddress();
         if (local != null) {
             return Net.getRevealedLocalAddress(local);
         } else {

@@ -27,14 +27,20 @@ package sun.nio.ch;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
+import java.net.BindException;
 import java.net.NetPermission;
 import java.net.SocketAddress;
 import java.net.UnixDomainSocketAddress;
+import java.nio.channels.SocketChannel;
 import java.nio.channels.UnsupportedAddressTypeException;
 import java.nio.file.FileSystems;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.security.AccessController;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivilegedAction;
+import java.security.SecureRandom;
+import java.util.Random;
 
 import sun.nio.fs.AbstractFileSystemProvider;
 
@@ -99,6 +105,11 @@ class UnixDomainSockets {
         return usa;
     }
 
+    static boolean isUnixDomain(SocketChannel sc) {
+        SocketChannelImpl sci = (SocketChannelImpl)sc;
+        return sci.localAddress() instanceof UnixDomainSocketAddress;
+    }
+
     static boolean isSupported() {
         return supported;
     }
@@ -124,6 +135,33 @@ class UnixDomainSockets {
     static void bind(FileDescriptor fd, Path addr) throws IOException {
         byte[] path = getPathBytes(addr);
         bind0(fd, path);
+    }
+
+    private static Random getRandom() {
+        try {
+            return SecureRandom.getInstance("NativePRNGNonBlocking");
+        } catch (NoSuchAlgorithmException e) {
+            return new SecureRandom(); // This should not fail
+        }
+    }
+
+    private static final Random random = getRandom();
+
+    /**
+     * Return a possible temporary name to bind to, which is different for each call
+     * Name is of the form <temp dir>/socket_<random>
+     */
+    static UnixDomainSocketAddress getTempName() throws IOException {
+        String dir = UnixDomainSockets.tempDir;
+        if (dir == null)
+            throw new BindException("Could not locate temporary directory for sockets");
+        int rnd = random.nextInt(Integer.MAX_VALUE);
+        try {
+            Path path = Path.of(dir, "socket_" + Integer.toString(rnd));
+            return UnixDomainSocketAddress.of(path);
+        } catch (InvalidPathException e) {
+            throw new BindException("Invalid temporary directory");
+        }
     }
 
     static int connect(FileDescriptor fd, Path addr) throws IOException {

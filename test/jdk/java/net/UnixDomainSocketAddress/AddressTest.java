@@ -24,11 +24,15 @@
 /**
  * @test
  * @bug 8231358
- * @build AddressTest DummyPath
+ * @compile ../../nio/file/spi/TestProvider.java AddressTest.java
  * @run testng/othervm AddressTest
  */
 
 import java.net.UnixDomainSocketAddress;
+import java.net.URI;
+import java.nio.file.FileSystems;
+import java.nio.file.spi.FileSystemProvider;
+import java.nio.file.Path;
 
 import org.testng.annotations.Test;
 
@@ -43,8 +47,9 @@ public class AddressTest {
         IllegalArgumentException.class;
 
     @Test
-    static void runTest() throws Exception {
-        DummyPath path = new DummyPath();
+    public static void runTest() throws Exception {
+        TestProvider prov = new TestProvider(FileSystems.getDefault().provider());
+        Path path = prov.getPath(URI.create("file:/"));
         assertThrows(IAE, () -> UnixDomainSocketAddress.of(path));
     }
 }
