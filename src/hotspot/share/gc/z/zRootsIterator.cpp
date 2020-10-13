@@ -29,7 +29,6 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/oopStorageSet.hpp"
-#include "gc/shared/oopStorageParState.inline.hpp"
 #include "gc/shared/oopStorageSetParState.inline.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zBarrierSetNMethod.hpp"
@@ -63,18 +62,6 @@ static const ZStatSubPhase ZSubPhasePauseWeakRootsJVMTIWeakExport("Pause Weak Ro
 static const ZStatSubPhase ZSubPhaseConcurrentWeakRootsOopStorageSet("Concurrent Weak Roots OopStorageSet");
 
 template <typename T, void (T::*F)(ZRootsIteratorClosure*)>
-ZSerialOopsDo<T, F>::ZSerialOopsDo(T* iter) :
-    _iter(iter),
-    _claimed(false) {}
-
-template <typename T, void (T::*F)(ZRootsIteratorClosure*)>
-void ZSerialOopsDo<T, F>::oops_do(ZRootsIteratorClosure* cl) {
-  if (!_claimed && Atomic::cmpxchg(&_claimed, false, true) == false) {
-    (_iter->*F)(cl);
-  }
-}
-
-template <typename T, void (T::*F)(ZRootsIteratorClosure*)>
 ZParallelOopsDo<T, F>::ZParallelOopsDo(T* iter) :
     _iter(iter),
     _completed(false) {}
@@ -98,21 +85,6 @@ template <typename T, void (T::*F)(BoolObjectClosure*, ZRootsIteratorClosure*)>
 void ZSerialWeakOopsDo<T, F>::weak_oops_do(BoolObjectClosure* is_alive, ZRootsIteratorClosure* cl) {
   if (!_claimed && Atomic::cmpxchg(&_claimed, false, true) == false) {
     (_iter->*F)(is_alive, cl);
-  }
-}
-
-template <typename T, void (T::*F)(BoolObjectClosure*, ZRootsIteratorClosure*)>
-ZParallelWeakOopsDo<T, F>::ZParallelWeakOopsDo(T* iter) :
-    _iter(iter),
-    _completed(false) {}
-
-template <typename T, void (T::*F)(BoolObjectClosure*, ZRootsIteratorClosure*)>
-void ZParallelWeakOopsDo<T, F>::weak_oops_do(BoolObjectClosure* is_alive, ZRootsIteratorClosure* cl) {
-  if (!_completed) {
-    (_iter->*F)(is_alive, cl);
-    if (!_completed) {
-      _completed = true;
-    }
   }
 }
 
