@@ -149,7 +149,7 @@ private:
 
   NullDecoder::decoder_status  _status;
 
-  DwarfFile* _debuginfo_file;
+  DwarfFile* _dwarf_file;
 protected:
   // Elf header
   Elf_Ehdr          _elfHdr;
@@ -183,7 +183,7 @@ public:
 
   bool open_valid_debuginfo_file(const char* path_name, uint crc);
 
-  bool get_source_info(int offset_in_library, char* filename, size_t filename_size, int* line);
+  bool get_source_info(uint32_t offset_in_library, char* filename, size_t filename_size, int* line);
 
 private:
   // sanity check, if the file is a real elf file
@@ -227,10 +227,10 @@ public:
 
 
 /*
- * This class parses and read line number and filename information from an associated .debuginfo file that belongs to this ELF file.
- * The .debuginfo file is written by GCC in DWARF - a standardized debugging data format. The current version of GCC uses DWARF version 4
- * as default which is described here: http://www.dwarfstd.org/doc/DWARF4.pdf. This class is able to parse 32-bit DWARF version 4 for 64-bit
- * Linux. GCC does not emit 64-bit DWARF and therefore is not supported by this parser. 32-bit Linux and DWARF version 5 is not (yet) supported.
+ * This class parses and read line number and filename information from an associated .debuginfo file that belongs to this ELF file. The .debuginfo
+ * file is written by GCC in DWARF - a standardized debugging data format. The current version of GCC uses DWARF version 4 as default which is defined
+ * in the official standard: http://www.dwarfstd.org/doc/DWARF4.pdf. This class is able to parse 32-bit DWARF version 4 for 32 and 64-bit Linux builds.
+ * GCC does not emit 64-bit DWARF and therefore is not supported by this parser. Other DWARF versions, especially version 5, is not (yet) supported.
  *
  * Description of used DWARF file sections:
  * - .debug_aranges: A table that consists of sets of variable length entries, each set describing the portion of the program's
@@ -312,14 +312,16 @@ class DwarfFile : public ElfFile {
 
     bool read_leb128(uint64_t* result, int8_t check_size, bool is_signed);
    public:
-    MarkedDwarfFileReader(FILE* const fd) : MarkedFileReader(fd),
-                                            _current_pos(-1), _start_pos(-1), _max_pos(-1) {}
+    MarkedDwarfFileReader(FILE* const fd) : MarkedFileReader(fd), _current_pos(-1), _start_pos(-1), _max_pos(-1) {}
+
     bool set_position(long new_pos);
     long get_position() const { return _current_pos; }
     void set_max_pos(long max_pos) { _max_pos = max_pos; }
     // Have we reached the limit of maximally allowable bytes to read? Used to ensure an early bail out if the file is corrupted.
     bool has_bytes_left() const;
-    bool update_to_stored_position(); // Call this if another file reader has changed the position of the same file handle
+    // Call this if another file reader has changed the position of the same file handle.
+    bool update_to_stored_position();
+    // Must be called to restore the old position before this file reader changed it with update_to_stored_position().
     bool reset_to_previous_position();
     bool move_position(long offset);
     bool read_sbyte(int8_t* result);
@@ -329,6 +331,8 @@ class DwarfFile : public ElfFile {
     bool read_qword(uint64_t* result);
     bool read_uleb128(uint64_t* result, int8_t check_size = -1);
     bool read_sleb128(int64_t* result, int8_t check_size = -1);
+    // Reads 4 bytes for 32-bit and 8 bytes for 64-bit Linux builds.
+    bool read_address_sized(uintptr_t* result);
     bool read_string(char* result = nullptr, size_t result_len = 0);
   };
 
@@ -341,21 +345,19 @@ class DwarfFile : public ElfFile {
     uint16_t _version;
 
     // The offset from the beginning of the .debug_info or .debug_types section of the compilation unit header referenced
-    // by the set. In this implementation we only use it as offset into .debug_info.
+    // by the set. In this implementation we only use it as offset into .debug_info. This must be 4 bytes for 32-bit DWARF.
     uint32_t _debug_info_offset;
 
-    // The size of an address in bytes on the target architecture. For segmented addressing, this is the size of the offset
-    // portion of the address.
+    // The size of an address in bytes on the target architecture.
     uint8_t _address_size;
 
-    // The size of a segment selector in bytes on the target architecture. If the target system uses a flat address space,
-    // this value is 0.
+    // The size of a segment selector in bytes on the target architecture. This should be 0.
     uint8_t _segment_size;
 
     bool read_header(MarkedDwarfFileReader* reader);
   };
 
-  static bool is_terminating_set(uint64_t beginning_address, uint64_t length) {
+  static bool is_terminating_set(uintptr_t beginning_address, uintptr_t length) {
     return beginning_address == 0 && length == 0;
   }
 
@@ -379,14 +381,13 @@ class DwarfFile : public ElfFile {
   };
 
   // .debug_aranges
-  bool find_compilation_unit_offset(int offset_in_library, uint64_t* compilation_unit_offset);
+  bool find_compilation_unit_offset(uint32_t offset_in_library, uint32_t* compilation_unit_offset);
 
   // .debug_abbrev and .debug_info
-  bool find_debug_line_offset(int offset_in_library, uint64_t compilation_unit_offset, uint32_t* debug_line_offset);
+  bool find_debug_line_offset(uint32_t offset_in_library, const uint32_t compilation_unit_offset, uint32_t* debug_line_offset);
   bool get_debug_line_offset_from_debug_abbrev(const CompilationUnitHeader* cu_header, uint64_t abbrev_code, uint32_t* debug_line_offset);
-  static bool process_attribute_specs(MarkedDwarfFileReader* debug_abbrev_reader, uint8_t address_size,
-                                      MarkedDwarfFileReader* debug_info_reader, uint32_t* debug_line_offset);
-  static bool process_attribute(uint64_t attribute, uint8_t address_size, MarkedDwarfFileReader* debug_info_reader, uint32_t* debug_line_offset = nullptr);
+  static bool process_attribute_specs(MarkedDwarfFileReader* debug_abbrev_reader, MarkedDwarfFileReader* debug_info_reader, uint32_t* debug_line_offset);
+  static bool process_attribute(uint64_t attribute, MarkedDwarfFileReader* debug_info_reader, uint32_t* debug_line_offset = nullptr);
   static bool read_attribute_specs(MarkedDwarfFileReader* debug_abbrev_reader);
 
   // (4) Everything related to .debug_line
@@ -406,7 +407,7 @@ class DwarfFile : public ElfFile {
     static constexpr uint8_t DW_LNS_set_epilogue_begin = 11;
     static constexpr uint8_t DW_LNS_set_isa = 12;
 
-    // Exnteded Opcodes for line number program from section 6.2.5.3 in DWARF 4 spec
+    // Extended Opcodes for line number program from section 6.2.5.3 in DWARF 4 spec
     static constexpr uint8_t DW_LNE_end_sequence = 1;
     static constexpr uint8_t DW_LNE_set_address = 2;
     static constexpr uint8_t DW_LNE_define_file = 3;
@@ -461,9 +462,11 @@ class DwarfFile : public ElfFile {
     };
 
     // Defined in DWARF 4, Section 6.2.2
+    // Most of the state fields are not used to get the filename and the line number information.
     struct LineNumberProgramState : public CHeapObj<mtInternal> {
       // The program-counter value corresponding to a machine instruction generated by the compiler.
-      uint64_t _address; // TODO 32 bit?
+      // 8 bytes on 64-bit and 4 bytes on 32-bit
+      uintptr_t _address;
 
       // The index of an operation within a VLIW instruction. The index of the first operation is 0. For non-VLIW
       // architectures, this register will always be 0.
@@ -482,7 +485,10 @@ class DwarfFile : public ElfFile {
       // that a statement begins at the “left edge” of the line.
       uint32_t _column;
 
+      // A boolean indicating that the current instruction is a recommended breakpoint location.
       bool _is_stmt;
+
+      // A boolean indicating that the current instruction is the beginning of a basic block.
       bool _basic_block;
       bool _end_sequence;
       bool _prologue_end;
@@ -517,7 +523,7 @@ class DwarfFile : public ElfFile {
       void set_index_register(uint32_t operation_advance);
     };
 
-    const int _offset_in_library;
+    const uint32_t _offset_in_library;
     const uint64_t _debug_line_offset;
     MarkedDwarfFileReader _reader;
     LineNumberProgramState* _state;
@@ -534,7 +540,7 @@ class DwarfFile : public ElfFile {
     bool read_filename_from_header(uint32_t file_index);
 
    public:
-    LineNumberProgram(int offset_in_library, uint64_t debug_line_offset, DwarfFile* dwarf_file)
+    LineNumberProgram(uint32_t offset_in_library, uint64_t debug_line_offset, DwarfFile* dwarf_file)
       : _offset_in_library(offset_in_library), _debug_line_offset(debug_line_offset), _reader(dwarf_file->fd()), _state(nullptr),
         _dwarf_file(dwarf_file), _line(nullptr), _filename(nullptr), _filename_len(0) {
       _header._reader = &_reader;
@@ -559,7 +565,7 @@ class DwarfFile : public ElfFile {
  *
  *  More details about the different phases can be found at the associated methods.
  */
-  bool get_filename_and_line_number(int offset_in_library, char* filename, size_t filename_len, int* line);
+  bool get_filename_and_line_number(uint32_t offset_in_library, char* filename, size_t filename_len, int* line);
 };
 
 #endif // !_WINDOWS && !__APPLE__
