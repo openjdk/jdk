@@ -677,7 +677,10 @@
 
 // enum for figuring positions and size of Symbol::_vm_symbols[]
 enum class vmSymbolID : int {
-  NO_SID = -1,               // exclusive lower limit
+  // [FIRST_SID ... LAST_SID] is the iteration range for the *valid* symbols.
+  // NO_SID is used to indicate an invalid symbol. Some implementation code
+  // *may* read _vm_symbols[NO_SID], so it must be a valid array index.
+  NO_SID = 0,                // exclusive lower limit
 
   #define VM_SYMBOL_ENUM(name, string) VM_SYMBOL_ENUM_NAME_(name),
   VM_SYMBOLS_DO(VM_SYMBOL_ENUM, VM_ALIAS_IGNORE)
@@ -726,7 +729,8 @@ class vmSymbols: AllStatic {
   }
 
   static constexpr int number_of_symbols() {
-    static_assert(FIRST_SID == 0, "must be");
+    static_assert(NO_SID == 0, "must be a valid array index");
+    static_assert(FIRST_SID == 1, "must not be the same as NO_SID");
     return SID_LIMIT;
   }
 
