@@ -401,11 +401,7 @@ JVM_handle_bsd_signal(int sig,
 
   Thread* t = Thread::current_or_null_safe();
 
-  // Must do this before SignalHandlerMark, if crash protection installed we will longjmp away
-  // (no destructors can be run)
   os::ThreadCrashProtection::check_crash_protection(sig, t);
-
-  SignalHandlerMark shm(t);
 
   // Note: it's not uncommon that JNI code uses signal/sigset to install
   // then restore certain signal handler (e.g. to temporarily block SIGPIPE,

@@ -249,11 +249,7 @@ extern "C" int JVM_handle_linux_signal(int sig, siginfo_t* info,
 
   Thread* t = Thread::current_or_null_safe();
 
-  // Must do this before SignalHandlerMark, if crash protection installed we will longjmp away
-  // (no destructors can be run)
   os::ThreadCrashProtection::check_crash_protection(sig, t);
-
-  SignalHandlerMark shm(t);
 
   if (sig == SIGILL &&
       ((info->si_addr == (caddr_t)check_simd_fault_instr)
