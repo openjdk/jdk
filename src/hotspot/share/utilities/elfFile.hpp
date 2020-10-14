@@ -207,18 +207,17 @@ private:
   // return a string table at specified section index
   ElfStringTable* get_string_table(int index);
 
-
-
   // Cleanup string, symbol and function descriptor tables
   void cleanup_tables();
-  bool load_debuginfo_file();
+
+  // Load the DWARF file (.debuginfo) that belongs to this file.
+  bool load_dwarf_file();
   static uint gnu_debuglink_crc32(uint32_t crc, uint8_t* buf, size_t len);
 
 protected:
   FILE* const fd() const { return _file; }
 
-  // find a section by name, return section index
-  // if there is no such section, return -1
+  // Find a section by name and return the section index. Return -1 if there is no such section.
   int read_section_header(const char* name, Elf_Shdr& hdr);
 public:
   // For whitebox test
@@ -250,14 +249,18 @@ public:
  * Algorithm:
  * (1) First, the path to the .debuginfo DWARF file is found by inspecting the .gnu_debuglink section. The DWARF file is then opened by calling
  *     the constructor of this class. Once this is done, the processing of the DWARF file is initiated by calling get_filename_and_line_number().
- * (2) Find the compilation unit offset by reading segments from the section .debug_aranges until we find the correct one that includes the pc.
+ * (2) Find the compilation unit offset by reading entries from the section .debug_aranges, which contain address range descriptors, until we
+ *     find the correct descriptor that includes the pc.
  * (3) Find the debug line offset for the line number information program from the .debug_line section:
  *     (a) Parse the compilation unit header from the .debug_info section at the offset obtained by (2).
- *     (b) Read the offset into the .debug_abbrev section that belongs to this compilation unit from the header obtained in (3a).
- *     (c) Read the abbreviation code 'ac' that immediately follows the compilation unit header and find the entry in the abbreviation table
- *         (.debug_abbrev section) by starting to parse entries at the offset obtained in (3b) until we find the correct one matching 'ac'.
- *     (d) Parse the found abbreviation entry 'ac' from (3c) and read the specified attributes from the .debug_info section until we find the
- *         attribute DW_AT_stmt_list. This attributes represents an offset into the .debug_line section which contains the line number information
+ *     (b) Read the debug_abbrev_offset into the .debug_abbrev section that belongs to this compilation unit from the header obtained in (3a).
+ *     (c) Read the abbreviation code that immediately follows the compilation unit header from (3a) which is needed to find the correct entry
+ *         in the .debug_abbrev section.
+ *     (d) Find the correct entry in the abbreviation table in the .debug_abbrev section by starting to parse entries at the debug_abbrev_offset
+ *         from (3b) until we find the correct one matching the abbreviation code from (3c) .
+ *     (e) Read the specified attributes of the abbreviation entry from (3d) from the compilation unit (in the .debug_info section) until we
+ *         find the attribute DW_AT_stmt_list. This attributes represents an offset into the .debug_line section which contains the line number
+ *         program information to get the filename and the line number.
  *  (4) Find the line number and filename beloning to the given pc by running the line number information state machine. This will create a
  *      matrix of line number information, each row representing information for specific addresses. There are several opcodes which modify
  *      different state registers. Certain opcodes will add a new row to the matrix. As soon as the correct row matching our pc is found,
@@ -267,42 +270,6 @@ public:
  *  More details about the different phases can be found at the associated classes and methods.
  */
 class DwarfFile : public ElfFile {
-
-  // Tag encoding from Figure 18 in DWARF 4 spec
-  static constexpr uint8_t DW_TAG_compile_unit = 0x11;
-
-  // Child determination encoding from Figure 19 in DWARF 4 spec
-  static constexpr uint8_t DW_CHILDREN_yes = 0x01;
-
-  // Attribute encoding from Figure 20 in DWARF 4 spec
-  static constexpr uint8_t DW_AT_stmt_list = 0x10;
-
-  // Attribute form encodings from Figure 21 in DWARF 4 spec
-  static constexpr uint8_t DW_FORM_addr = 0x01; // address
-  static constexpr uint8_t DW_FORM_block2 = 0x03; // block
-  static constexpr uint8_t DW_FORM_block4 = 0x04; // block
-  static constexpr uint8_t DW_FORM_data2 = 0x05; // constant
-  static constexpr uint8_t DW_FORM_data4 = 0x06; // constant
-  static constexpr uint8_t DW_FORM_data8 = 0x07; // constant
-  static constexpr uint8_t DW_FORM_string = 0x08; // string
-  static constexpr uint8_t DW_FORM_block = 0x09; // block
-  static constexpr uint8_t DW_FORM_block1 = 0x0a; // block
-  static constexpr uint8_t DW_FORM_data1 = 0x0b; // constant
-  static constexpr uint8_t DW_FORM_flag = 0x0c; // flag
-  static constexpr uint8_t DW_FORM_sdata = 0x0d; // constant
-  static constexpr uint8_t DW_FORM_strp = 0x0e; // string
-  static constexpr uint8_t DW_FORM_udata = 0x0f; // constant
-  static constexpr uint8_t DW_FORM_ref_addr = 0x10; // reference0;
-  static constexpr uint8_t DW_FORM_ref1 = 0x11; // reference
-  static constexpr uint8_t DW_FORM_ref2 = 0x12; // reference
-  static constexpr uint8_t DW_FORM_ref4 = 0x13; // reference
-  static constexpr uint8_t DW_FORM_ref8 = 0x14; // reference
-  static constexpr uint8_t DW_FORM_ref_udata = 0x15; // reference
-  static constexpr uint8_t DW_FORM_indirect = 0x16; // see Section 7.5.3
-  static constexpr uint8_t DW_FORM_sec_offset = 0x17; // lineptr, loclistptr, macptr, rangelistptr
-  static constexpr uint8_t DW_FORM_exprloc = 0x18;// exprloc
-  static constexpr uint8_t DW_FORM_flag_present = 0x19; // flag
-  static constexpr uint8_t DW_FORM_ref_sig8 = 0x20; // reference
 
   class MarkedDwarfFileReader : public MarkedFileReader {
    private:
@@ -336,64 +303,147 @@ class DwarfFile : public ElfFile {
     bool read_string(char* result = nullptr, size_t result_len = 0);
   };
 
-  // See DWARF4 specification section 6.1.2.
-  struct DebugArangesSetHeader {
-    // The total length of all of the entries for that set, not including the length field itself
-    uint32_t _unit_length;
+  // (2) Processing the .debug_aranges section. This is specified in section 6.1.2 of the DWARF 4 spec.
+  class DebugAranges {
 
-    // This number is specific to the address lookup table and is independent of the DWARF version number.
-    uint16_t _version;
+    // The header is defined in section 6.1.2 of the DWARF 4 spec.
+    struct DebugArangesSetHeader {
+      // The total length of all of the entries for that set, not including the length field itself.
+      uint32_t _unit_length;
 
-    // The offset from the beginning of the .debug_info or .debug_types section of the compilation unit header referenced
-    // by the set. In this implementation we only use it as offset into .debug_info. This must be 4 bytes for 32-bit DWARF.
-    uint32_t _debug_info_offset;
+      // This number is specific to the address lookup table and is independent of the DWARF version number.
+      uint16_t _version;
 
-    // The size of an address in bytes on the target architecture.
-    uint8_t _address_size;
+      // The offset from the beginning of the .debug_info or .debug_types section of the compilation unit header referenced
+      // by the set. In this implementation we only use it as offset into .debug_info. This must be 4 bytes for 32-bit DWARF.
+      uint32_t _debug_info_offset;
 
-    // The size of a segment selector in bytes on the target architecture. This should be 0.
-    uint8_t _segment_size;
+      // The size of an address in bytes on the target architecture.
+      uint8_t _address_size;
 
-    bool read_header(MarkedDwarfFileReader* reader);
+      // The size of a segment selector in bytes on the target architecture. This should be 0.
+      uint8_t _segment_size;
+
+      bool read_header(MarkedDwarfFileReader* reader);
+    };
+
+    DwarfFile* _dwarf_file;
+    MarkedDwarfFileReader _reader;
+
+    bool read_section_header();
+    static bool is_terminating_set(uintptr_t beginning_address, uintptr_t length) {
+      return beginning_address == 0 && length == 0;
+    }
+   public:
+    DebugAranges(DwarfFile* dwarf_file) : _dwarf_file(dwarf_file), _reader(dwarf_file->fd()) {}
+    bool find_compilation_unit_offset(uint32_t offset_in_library, uint32_t* compilation_unit_offset);
   };
 
-  static bool is_terminating_set(uintptr_t beginning_address, uintptr_t length) {
-    return beginning_address == 0 && length == 0;
-  }
+  // (3a-c,e) The compilation unit is read from the .debug_info section.
+  class CompilationUnit {
 
-  // See DWARF4 spec section 7.5.1.1
-  struct CompilationUnitHeader {
-    // The length of the .debug_info contribution for that compilation unit, not including the length field itself.
-    uint32_t _unit_length;
+    // Attribute form encodings from Figure 21 in section 7.5 of the DWARF 4 spec.
+    static constexpr uint8_t DW_FORM_addr = 0x01; // address
+    static constexpr uint8_t DW_FORM_block2 = 0x03; // block
+    static constexpr uint8_t DW_FORM_block4 = 0x04; // block
+    static constexpr uint8_t DW_FORM_data2 = 0x05; // constant
+    static constexpr uint8_t DW_FORM_data4 = 0x06; // constant
+    static constexpr uint8_t DW_FORM_data8 = 0x07; // constant
+    static constexpr uint8_t DW_FORM_string = 0x08; // string
+    static constexpr uint8_t DW_FORM_block = 0x09; // block
+    static constexpr uint8_t DW_FORM_block1 = 0x0a; // block
+    static constexpr uint8_t DW_FORM_data1 = 0x0b; // constant
+    static constexpr uint8_t DW_FORM_flag = 0x0c; // flag
+    static constexpr uint8_t DW_FORM_sdata = 0x0d; // constant
+    static constexpr uint8_t DW_FORM_strp = 0x0e; // string
+    static constexpr uint8_t DW_FORM_udata = 0x0f; // constant
+    static constexpr uint8_t DW_FORM_ref_addr = 0x10; // reference0;
+    static constexpr uint8_t DW_FORM_ref1 = 0x11; // reference
+    static constexpr uint8_t DW_FORM_ref2 = 0x12; // reference
+    static constexpr uint8_t DW_FORM_ref4 = 0x13; // reference
+    static constexpr uint8_t DW_FORM_ref8 = 0x14; // reference
+    static constexpr uint8_t DW_FORM_ref_udata = 0x15; // reference
+    static constexpr uint8_t DW_FORM_indirect = 0x16; // see Section 7.5.3
+    static constexpr uint8_t DW_FORM_sec_offset = 0x17; // lineptr, loclistptr, macptr, rangelistptr
+    static constexpr uint8_t DW_FORM_exprloc = 0x18;// exprloc
+    static constexpr uint8_t DW_FORM_flag_present = 0x19; // flag
+    static constexpr uint8_t DW_FORM_ref_sig8 = 0x20; // reference
 
-    // The version of the DWARF information for the compilation unit. The value in this field is 4 for DWARF 4.
-    uint16_t _version;
+    // The header is defined in section 7.5.1.1 of the DWARF 4 spec.
+    struct CompilationUnitHeader {
+      // The length of the .debug_info contribution for that compilation unit, not including the length field itself.
+      uint32_t _unit_length;
 
-    // The unsigned offset into the .debug_abbrev section. This offset associates the compilation unit with a particular
-    // set of debugging information entry abbreviations.
-    uint32_t _debug_abbrev_offset;
+      // The version of the DWARF information for the compilation unit. The value in this field is 4 for DWARF 4.
+      uint16_t _version;
 
-    // The size in bytes of an address on the target architecture. If the system uses segmented addressing, this value
-    // represents the size of the offset portion of an address.
-    uint8_t  _address_size;
+      // The unsigned offset into the .debug_abbrev section. This offset associates the compilation unit with a particular
+      // set of debugging information entry abbreviations.
+      uint32_t _debug_abbrev_offset;
 
-    bool read_header(MarkedDwarfFileReader* reader);
+      // The size in bytes of an address on the target architecture. If the system uses segmented addressing, this value
+      // represents the size of the offset portion of an address.
+      uint8_t  _address_size;
+
+      MarkedDwarfFileReader* _reader;
+      bool read_header();
+    };
+
+    DwarfFile* _dwarf_file;
+    MarkedDwarfFileReader _reader;
+    CompilationUnitHeader _header;
+    const uint32_t _compilation_unit_offset;
+
+    // Result of a request initiated by find_debug_line_offset().
+    uint32_t* _debug_line_offset;
+
+    bool read_header();
+   public:
+    CompilationUnit(DwarfFile* dwarf_file, uint32_t compilation_unit_offset)
+      : _dwarf_file(dwarf_file), _reader(dwarf_file->fd()), _compilation_unit_offset(compilation_unit_offset), _debug_line_offset(nullptr) {
+      _header._reader = &_reader;
+    }
+    bool find_debug_line_offset(uint32_t* debug_line_offset);
+    bool read_attribute(uint64_t attribute, bool set_result);
   };
 
-  // .debug_aranges
-  bool find_compilation_unit_offset(uint32_t offset_in_library, uint32_t* compilation_unit_offset);
+  // (3d) Read from the .debug_abbrev section at the debug_abbrev_offset specified by the compilation unit header.
+  class DebugAbbrev {
 
+    // Tag encoding from Figure 18 in section 7.5 of the DWARF 4 spec.
+    static constexpr uint8_t DW_TAG_compile_unit = 0x11;
+
+    // Child determination encoding from Figure 19 in section 7.5 of the DWARF 4 spec.
+    static constexpr uint8_t DW_CHILDREN_yes = 0x01;
+
+    // Attribute encoding from Figure 20 in section 7.5 of the DWARF 4 spec.
+    static constexpr uint8_t DW_AT_stmt_list = 0x10;
+
+    /* There is no specific header for this section */
+
+    DwarfFile* _dwarf_file;
+    MarkedDwarfFileReader _reader;
+    CompilationUnit* _compilation_unit; // Needs to read from compilation unit while parsing the entries in .debug_abbrev
+
+    // Result field of a request
+    uint32_t* _debug_line_offset;
+
+    bool skip_attribute_specifications();
+    bool read_attribute_specifications();
+
+   public:
+    DebugAbbrev(DwarfFile* dwarf_file, CompilationUnit* compilation_unit) :
+      _dwarf_file(dwarf_file), _reader(_dwarf_file->fd()), _compilation_unit(compilation_unit) {}
+    bool read_section_header(uint32_t debug_abbrev_offset);
+    bool get_debug_line_offset(uint64_t abbrev_code);
+
+  };
   // .debug_abbrev and .debug_info
-  bool find_debug_line_offset(uint32_t offset_in_library, const uint32_t compilation_unit_offset, uint32_t* debug_line_offset);
-  bool get_debug_line_offset_from_debug_abbrev(const CompilationUnitHeader* cu_header, uint64_t abbrev_code, uint32_t* debug_line_offset);
-  static bool process_attribute_specs(MarkedDwarfFileReader* debug_abbrev_reader, MarkedDwarfFileReader* debug_info_reader, uint32_t* debug_line_offset);
-  static bool process_attribute(uint64_t attribute, MarkedDwarfFileReader* debug_info_reader, uint32_t* debug_line_offset = nullptr);
-  static bool read_attribute_specs(MarkedDwarfFileReader* debug_abbrev_reader);
 
-  // (4) Everything related to .debug_line
+  // (4) The line number program for the compilation unit at the offset of the .debug_line obtained by (3).
   class LineNumberProgram {
 
-    // Standard Opcodes for line number program from section 6.2.5.2 in DWARF 4 spec
+    // Standard opcodes for the line number program defined in section 6.2.5.2 of the DWARF 4 spec.
     static constexpr uint8_t DW_LNS_copy = 1;
     static constexpr uint8_t DW_LNS_advance_pc = 2;
     static constexpr uint8_t DW_LNS_advance_line = 3;
@@ -407,13 +457,13 @@ class DwarfFile : public ElfFile {
     static constexpr uint8_t DW_LNS_set_epilogue_begin = 11;
     static constexpr uint8_t DW_LNS_set_isa = 12;
 
-    // Extended Opcodes for line number program from section 6.2.5.3 in DWARF 4 spec
+    // Extended opcodes for the line number program defined in section 6.2.5.2 of the DWARF 4 spec.
     static constexpr uint8_t DW_LNE_end_sequence = 1;
     static constexpr uint8_t DW_LNE_set_address = 2;
     static constexpr uint8_t DW_LNE_define_file = 3;
-    static constexpr uint8_t DW_LNE_set_discriminator = 4; // DWARF 4 only
+    static constexpr uint8_t DW_LNE_set_discriminator = 4;
 
-    // See DWARF 4 spec, section 6.2.4
+    // The header is defined in section 6.2.4 of the DWARF 4 spec.
     struct LineNumberProgramHeader {
       // The size in bytes of the line number information for this compilation unit, not including the
       // unit_length field itself. 32-bit DWARF uses 4 bytes.
@@ -485,21 +535,35 @@ class DwarfFile : public ElfFile {
       // that a statement begins at the “left edge” of the line.
       uint32_t _column;
 
-      // A boolean indicating that the current instruction is a recommended breakpoint location.
+      // Indicates that the current instruction is a recommended breakpoint location.
       bool _is_stmt;
 
-      // A boolean indicating that the current instruction is the beginning of a basic block.
+      // Indicates that the current instruction is the beginning of a basic block.
       bool _basic_block;
+
+      // Indicates that the current address is that of the first byte after the end of a sequence of target machine
+      // instructions. end_sequence terminates a sequence of lines.
       bool _end_sequence;
+
+      // Indicates that the current address is one (of possibly many) where execution should be suspended for an entry
+      // breakpoint of a function.
       bool _prologue_end;
+
+      // Indicates that the current address is one (of possibly many) where execution should be suspended for an exit
+      // breakpoint of a function.
       bool _epilogue_begin;
+
+      // Encodes the applicable instruction set architecture for the current instruction.
       uint32_t _isa;
-      uint32_t _discriminator; // This field was added in DWARF 4
+
+      // Identifies the block to which the current instruction belongs. This field was added in DWARF 4
+      uint32_t _discriminator;
 
       /*
        * Implementation specific fields
        */
-      // Specifies which DWARF version is used in the .debug_line section. Currently supported: DWARF 3 + 4
+      // Specifies which DWARF version is used in the .debug_line section. Currently supported: DWARF 3 + 4.
+      LineNumberProgramHeader* _header;
       const uint8_t _dwarf_version;
       const bool _initial_is_stmt;
       bool _first_row;
@@ -508,31 +572,32 @@ class DwarfFile : public ElfFile {
 
       // Could the current sequence be a candidate which contains the pc? (pc must be smaller than the address of the first row in the matrix)
       bool _sequence_candidate;
-      LineNumberProgramHeader* _header;
 
       LineNumberProgramState(LineNumberProgramHeader* header)
-        : _is_stmt(header->_default_is_stmt != 0), _dwarf_version(header->_version),
-          _initial_is_stmt(header->_default_is_stmt != 0), _header(header) {
+        : _is_stmt(header->_default_is_stmt != 0), _header(header), _dwarf_version(header->_version),
+          _initial_is_stmt(header->_default_is_stmt != 0) {
         reset_fields();
       }
 
       void reset_fields();
-
-      // Defined in section 6.2.5.1. set_address_register must always be executed before set_index_register
+      // Defined in section 6.2.5.1 of the DWARF spec 4. add_to_address_register() must always be executed before set_index_register.
       void add_to_address_register(uint32_t operation_advance);
       void set_index_register(uint32_t operation_advance);
     };
 
+    DwarfFile* _dwarf_file;
+    MarkedDwarfFileReader _reader;
+    LineNumberProgramHeader _header;
+    LineNumberProgramState* _state;
     const uint32_t _offset_in_library;
     const uint64_t _debug_line_offset;
-    MarkedDwarfFileReader _reader;
-    LineNumberProgramState* _state;
-    LineNumberProgramHeader _header;
-    DwarfFile* _dwarf_file;
+
+    // Result fields of a request
     int* _line;
     char* _filename;
     size_t _filename_len;
 
+    bool read_header();
     bool read_line_number_program();
     bool apply_extended_opcode();
     bool apply_standard_opcode(uint8_t opcode);
@@ -540,9 +605,9 @@ class DwarfFile : public ElfFile {
     bool read_filename_from_header(uint32_t file_index);
 
    public:
-    LineNumberProgram(uint32_t offset_in_library, uint64_t debug_line_offset, DwarfFile* dwarf_file)
-      : _offset_in_library(offset_in_library), _debug_line_offset(debug_line_offset), _reader(dwarf_file->fd()), _state(nullptr),
-        _dwarf_file(dwarf_file), _line(nullptr), _filename(nullptr), _filename_len(0) {
+    LineNumberProgram(DwarfFile* dwarf_file, uint32_t offset_in_library, uint64_t debug_line_offset)
+      : _dwarf_file(dwarf_file),  _reader(dwarf_file->fd()), _state(nullptr), _offset_in_library(offset_in_library),
+        _debug_line_offset(debug_line_offset), _line(nullptr), _filename(nullptr), _filename_len(0) {
       _header._reader = &_reader;
     }
     ~LineNumberProgram() {
@@ -550,21 +615,20 @@ class DwarfFile : public ElfFile {
     }
     bool find_filename_and_line_number(char* filename, size_t filename_len, int* line);
   };
-  // .debug_line
 
  public:
   DwarfFile(const char* filepath) : ElfFile(filepath) {}
 
   /*
- * Starting point of reading line number and filename information from the DWARF file.
- *
- * Given:  offset (also referred to as 'pc') into the library (this ELF file), a filename buffer of size filename_size, a line number pointer
- * Return: True:  The filename in the 'filename' buffer and the line number at the address pointed to by 'line'.
- *         False: Something went wrong either while reading from the file or during parsing due to an unexpected format.
- *                This could happen if the DWARF file is corrupted or in an unsupported format.
- *
- *  More details about the different phases can be found at the associated methods.
- */
+   * Starting point of reading line number and filename information from the DWARF file.
+   *
+   * Given:  offset (also referred to as 'pc') into the library (this ELF file), a filename buffer of size filename_size, a line number pointer
+   * Return: True:  The filename in the 'filename' buffer and the line number at the address pointed to by 'line'.
+   *         False: Something went wrong either while reading from the file or during parsing due to an unexpected format.
+   *                This could happen if the DWARF file is corrupted or in an unsupported format.
+   *
+   *  More details about the different phases can be found at the associated methods.
+   */
   bool get_filename_and_line_number(uint32_t offset_in_library, char* filename, size_t filename_len, int* line);
 };
 
