@@ -184,7 +184,7 @@ public class IndexBuilder {
     }
 
     /**
-     * Returns a list of index keys.
+     * Returns a sorted list of the first characters of the labels of index items.
      */
     public List<Character> getFirstCharacters() {
         return new ArrayList<>(itemsByFirstChar.keySet());
