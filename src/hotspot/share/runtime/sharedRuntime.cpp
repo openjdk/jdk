@@ -2708,7 +2708,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter0(const methodHandle& met
       CodeBuffer buffer(buf);
       short buffer_locs[20];
       buffer.insts()->initialize_shared_locs((relocInfo*)buffer_locs,
-                                             sizeof(buffer_locs)/sizeof(relocInfo));
+                                             sizeof(buffer_locs)/(sizeof(relocInfo)));
 
       MacroAssembler _masm(&buffer);
       entry = SharedRuntime::generate_i2c2i_adapters(&_masm,
@@ -2873,7 +2873,7 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
     if (buf != NULL) {
       CodeBuffer buffer(buf);
       struct { double data[20]; } locs_buf;
-      buffer.insts()->initialize_shared_locs((relocInfo*)&locs_buf, sizeof(locs_buf) / sizeof(relocInfo));
+      buffer.insts()->initialize_shared_locs((relocInfo*)&locs_buf, sizeof(locs_buf) / (sizeof(relocInfo)));
 #if defined(AARCH64)
       // On AArch64 with ZGC and nmethod entry barriers, we need all oops to be
       // in the constant pool to ensure ordering between the barrier and oops
