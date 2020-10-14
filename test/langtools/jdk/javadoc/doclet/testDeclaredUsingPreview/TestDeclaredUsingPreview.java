@@ -27,11 +27,14 @@
  * @summary  test generated docs for items declared using preview
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
+ *          jdk.javadoc/jdk.javadoc.internal.doclets.formats.html.resources:+open
  * @build    javadoc.tester.*
  * @run main TestDeclaredUsingPreview
  */
 
 import java.nio.file.Paths;
+import java.text.MessageFormat;
+import java.util.ResourceBundle;
 import javadoc.tester.JavadocTester;
 
 public class TestDeclaredUsingPreview extends JavadocTester {
@@ -43,27 +46,38 @@ public class TestDeclaredUsingPreview extends JavadocTester {
 
     @Test
     public void test() {
+        String doc = "file://" + Paths.get(testSrc, "doc").toAbsolutePath().toString();
         javadoc("-d", "out",
                 "-XDforcePreview", "--enable-preview", "-source", System.getProperty("java.specification.version"),
                 "--patch-module", "java.base=" + Paths.get(testSrc, "api").toAbsolutePath().toString(),
                 "--add-exports", "java.base/preview=m",
                 "--module-source-path", testSrc,
+                "-linkoffline", doc, doc,
                 "m/pkg");
         checkExit(Exit.OK);
 
-        checkOutput("m/pkg/TestPreviewDeclaration.html", true,
-                "<span class=\"preview-label\">");
+        ResourceBundle bundle = ResourceBundle.getBundle("jdk.javadoc.internal.doclets.formats.html.resources.standard", ModuleLayer.boot().findModule("jdk.javadoc").get());
+
+        {
+            String zero = MessageFormat.format(bundle.getString("doclet.PreviewLeadingNote"), "TestPreviewDeclaration");
+            String one = MessageFormat.format(bundle.getString("doclet.Declared_Using_Preview"), "<code>TestPreviewDeclaration</code>", "<em>Sealed Classes</em>", "<code>sealed</code>");
+            String two = MessageFormat.format(bundle.getString("doclet.PreviewTrailingNote1"), "TestPreviewDeclaration");
+            String three = MessageFormat.format(bundle.getString("doclet.PreviewTrailingNote2"), new Object[0]);
+            String expectedTemplate = """
+                                      <div class="preview-block"><a id="preview"><span class="preview-label">{0}</span></a>
+                                      <ul class="preview-comment">
+                                      <li>{1}</li>
+                                      </ul>
+                                      <div class="preview-comment">{2}</div>
+                                      <div class="preview-comment">{3}</div>
+                                      </div>""";
+            String expected = MessageFormat.format(expectedTemplate, zero, one, two, three);
+            checkOutput("m/pkg/TestPreviewDeclaration.html", true, expected);
+        }
+
         checkOutput("m/pkg/TestPreviewDeclarationUse.html", true,
-                "<span class=\"preview-reference\" title=");
-        checkOutput("m/pkg/TestPreviewDeclarationUse.Sealed.html", true,
-                "<span class=\"preview-label\">");
-        checkOutput("m/pkg/TestPreviewDeclarationUse.Impl.html", false,
-                "<span class=\"preview-label\">");
-        checkOutput("m/pkg/TestPreviewDeclarationUse.Impl.html", true,
-                "<span class=\"preview-reference\" title=");
-        checkOutput("m/pkg/TestPreviewDeclarationUse.E.html", false,
-                "<span class=\"preview-label\">");
+                    "<code><a href=\"TestPreviewDeclaration.html\" title=\"interface in pkg\">TestPreviewDeclaration</a><sup><a href=\"TestPreviewDeclaration.html#preview\">PREVIEW</a></sup></code>");
         checkOutput("m/pkg/TestPreviewAPIUse.html", true,
-                "<span class=\"preview-reference\" title=");
+                "<a href=\"" + doc + "/java.base/preview/Core.html\" title=\"class or interface in preview\" class=\"external-link\">Core</a><sup><a href=\"" + doc + "/java.base/preview/Core.html#preview\" title=\"class or interface in preview\" class=\"external-link\">PREVIEW</a>");
     }
 }

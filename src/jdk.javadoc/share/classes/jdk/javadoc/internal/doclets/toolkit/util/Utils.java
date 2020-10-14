@@ -2964,7 +2964,8 @@ public class Utils {
             result.add(DeclarationPreviewLanguageFeatures.RECORD);
         }
 
-        if (e.getModifiers().contains(Modifier.SEALED)) {
+        if ((e.getKind().isClass() || e.getKind().isInterface()) &&
+            e.getModifiers().contains(Modifier.SEALED)) {
             List<? extends TypeMirror> permits = ((TypeElement) e).getPermittedSubclasses();
             boolean hasLinkablePermits = permits.stream()
                                                 .anyMatch(t -> isLinkable(asTypeElement(t)));

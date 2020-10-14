@@ -23,5 +23,6 @@
 
 package pkg;
 
-public record TestPreviewDeclaration(int i) {
+public sealed interface TestPreviewDeclaration permits Impl {
 }
+class Impl implements TestPreviewDeclaration {}

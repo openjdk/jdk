@@ -199,14 +199,14 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         Content pre = new HtmlTree(TagName.PRE);
         addAnnotationInfo(typeElement, pre);
         String sep = null;
-        for (String modifiersPart : modifiers.split(" ")) {
+        for (String modifiersPart : modifiers.split(" ")) { //TODO: annotations?
             if (sep != null) {
                 pre.add(sep);
             }
-            if ("record".equals(modifiersPart) || "sealed".equals(modifiersPart)) {
+            if ("record".equals(modifiersPart) ||
+                "sealed".equals(modifiersPart) || "non-sealed".equals(modifiersPart)) {
                 pre.add(modifiersPart);
                 pre.add(new HtmlTree(TagName.SUP).add(HtmlTree.A("#preview", contents.previewMark)));
-                pre.add(" ");
             } else {
                 pre.add(modifiersPart);
             }

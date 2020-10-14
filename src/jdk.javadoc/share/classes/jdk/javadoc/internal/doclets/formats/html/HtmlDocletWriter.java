@@ -682,7 +682,8 @@ public class HtmlDocletWriter {
      * @return a content for the module link
      */
     public Content getModuleLink(ModuleElement mdle, Content label) {
-        Set<ElementFlag> flags = utils.elementFlags(mdle);
+        Set<ElementFlag> flags = mdle != null ? utils.elementFlags(mdle)
+                                              : EnumSet.noneOf(ElementFlag.class);
         boolean included = utils.isIncluded(mdle);
         if (included) {
             DocLink targetLink = new DocLink(pathToRoot.resolve(docPaths.moduleSummary(mdle)));

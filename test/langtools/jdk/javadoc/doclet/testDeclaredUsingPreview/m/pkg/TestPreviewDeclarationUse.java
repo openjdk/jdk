@@ -27,8 +27,4 @@ public class TestPreviewDeclarationUse {
 
     public TestPreviewDeclaration field;
 
-    public sealed interface Sealed {}
-    public static final class Impl implements Sealed {}
-    public enum E { A; }
-
 }
