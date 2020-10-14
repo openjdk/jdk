@@ -64,9 +64,39 @@ public class Preconditions {
                ? new IndexOutOfBoundsException(outOfBoundsMessage(checkKind, largs)) : e;
     }
 
+    /**
+     * Maps out-of-bounds values to a runtime exception.
+     *
+     * @param checkKind the kind of bounds check, whose name may correspond
+     *        to the name of one of the range check methods, checkLongIndex,
+     *        checkFromToLongIndex, checkFromLongIndexSize
+     * @param args the out-of-bounds arguments that failed the range check.
+     *        If the checkKind corresponds a the name of a range check method
+     *        then the bounds arguments are those that can be passed in order
+     *        to the method.
+     * @param oobef the exception formatter that when applied with a checkKind
+     *        and a list out-of-bounds arguments returns a runtime exception.
+     *        If {@code null} then, it is as if an exception formatter was
+     *        supplied that returns {@link IndexOutOfBoundsException} for any
+     *        given arguments.
+     * @return the runtime exception
+     */
+    private static RuntimeException outOfBoundsLong(
+            BiFunction<String, List<Long>, ? extends RuntimeException> oobef,
+            String checkKind,
+            Long... args) {
+        List<Long> largs = List.of(args);
+        RuntimeException e = oobef == null
+                             ? null : oobef.apply(checkKind, largs);
+        return e == null
+               ? new IndexOutOfBoundsException(outOfBoundsMessage(checkKind, largs)) : e;
+    }
+
     private static RuntimeException outOfBoundsCheckIndex(
             BiFunction<String, List<Integer>, ? extends RuntimeException> oobe,
             int index, int length) {
+        final List<Integer> list = List.of(index, length);
+        List<? extends Number> list2 = list;
         return outOfBounds(oobe, "checkIndex", index, length);
     }
 
@@ -80,6 +110,24 @@ public class Preconditions {
             BiFunction<String, List<Integer>, ? extends RuntimeException> oobe,
             int fromIndex, int size, int length) {
         return outOfBounds(oobe, "checkFromIndexSize", fromIndex, size, length);
+    }
+
+    private static RuntimeException outOfBoundsCheckLongIndex(
+            BiFunction<String, List<Long>, ? extends RuntimeException> oobe,
+            long index, long length) {
+        return outOfBoundsLong(oobe, "checkLongIndex", index, length);
+    }
+
+    private static RuntimeException outOfBoundsCheckFromToLongIndex(
+            BiFunction<String, List<Long>, ? extends RuntimeException> oobe,
+            long fromIndex, long toIndex, long length) {
+        return outOfBoundsLong(oobe, "checkFromToLongIndex", fromIndex, toIndex, length);
+    }
+
+    private static RuntimeException outOfBoundsCheckFromLongIndexSize(
+            BiFunction<String, List<Long>, ? extends RuntimeException> oobe,
+            long fromIndex, long size, long length) {
+        return outOfBoundsLong(oobe, "checkFromLongIndexSize", fromIndex, size, length);
     }
 
     /**
@@ -161,7 +209,86 @@ public class Preconditions {
         };
     }
 
-    private static String outOfBoundsMessage(String checkKind, List<Integer> args) {
+    /**
+     * Returns an out-of-bounds exception formatter from an given exception
+     * factory.  The exception formatter is a function that formats an
+     * out-of-bounds message from its arguments and applies that message to the
+     * given exception factory to produce and relay an exception.
+     *
+     * <p>The exception formatter accepts two arguments: a {@code String}
+     * describing the out-of-bounds range check that failed, referred to as the
+     * <em>check kind</em>; and a {@code List<Long>} containing the
+     * out-of-bound long values that failed the check.  The list of
+     * out-of-bound values is not modified.
+     *
+     * <p>Three check kinds are supported {@code checkLongIndex},
+     * {@code checkFromToLongIndex} and {@code checkFromLongIndexSize} corresponding
+     * respectively to the specified application of an exception formatter as an
+     * argument to the out-of-bounds range check methods
+     * {@link #checkLongIndex(long, long, BiFunction) checkLongIndex},
+     * {@link #checkFromToLongIndex(long, long, long, BiFunction) checkFromToLongIndex}, and
+     * {@link #checkFromLongIndexSize(long, long, long, BiFunction) checkFromLongIndexSize}.
+     * Thus a supported check kind corresponds to a method name and the
+     * out-of-bound long values correspond to method argument values, in
+     * order, preceding the exception formatter argument (similar in many
+     * respects to the form of arguments required for a reflective invocation of
+     * such a range check method).
+     *
+     * <p>Formatter arguments conforming to such supported check kinds will
+     * produce specific exception messages describing failed out-of-bounds
+     * checks.  Otherwise, more generic exception messages will be produced in
+     * any of the following cases: the check kind is supported but fewer
+     * or more out-of-bounds values are supplied, the check kind is not
+     * supported, the check kind is {@code null}, or the list of out-of-bound
+     * values is {@code null}.
+     *
+     * @apiNote
+     * This method produces an out-of-bounds exception formatter that can be
+     * passed as an argument to any of the supported out-of-bounds range check
+     * methods declared by {@code Objects}.  For example, a formatter producing
+     * an {@code ArrayIndexOutOfBoundsException} may be produced and stored on a
+     * {@code static final} field as follows:
+     * <pre>{@code
+     * static final
+     * BiFunction<String, List<Long>, ArrayIndexOutOfBoundsException> AIOOBEF =
+     *     outOfBoundsExceptionFormatter(ArrayIndexOutOfBoundsException::new);
+     * }</pre>
+     * The formatter instance {@code AIOOBEF} may be passed as an argument to an
+     * out-of-bounds range check method, such as checking if an {@code index}
+     * is within the bounds of a {@code limit}:
+     * <pre>{@code
+     * checkLongIndex(index, limit, AIOOBEF);
+     * }</pre>
+     * If the bounds check fails then the range check method will throw an
+     * {@code ArrayIndexOutOfBoundsException} with an appropriate exception
+     * message that is a produced from {@code AIOOBEF} as follows:
+     * <pre>{@code
+     * AIOOBEF.apply("checkLongIndex", List.of(index, limit));
+     * }</pre>
+     *
+     * @param f the exception factory, that produces an exception from a message
+     *        where the message is produced and formatted by the returned
+     *        exception formatter.  If this factory is stateless and side-effect
+     *        free then so is the returned formatter.
+     *        Exceptions thrown by the factory are relayed to the caller
+     *        of the returned formatter.
+     * @param <X> the type of runtime exception to be returned by the given
+     *        exception factory and relayed by the exception formatter
+     * @return the out-of-bounds exception formatter
+     */
+    public static <X extends RuntimeException>
+    BiFunction<String, List<Long>, X> outOfBoundsExceptionFormatterLong(Function<String, X> f) {
+        // Use anonymous class to avoid bootstrap issues if this method is
+        // used early in startup
+        return new BiFunction<String, List<Long>, X>() {
+            @Override
+            public X apply(String checkKind, List<Long> args) {
+                return f.apply(outOfBoundsMessage(checkKind, args));
+            }
+        };
+    }
+
+    private static String outOfBoundsMessage(String checkKind, List<? extends Number> args) {
         if (checkKind == null && args == null) {
             return String.format("Range check failed");
         } else if (checkKind == null) {
@@ -173,10 +300,13 @@ public class Preconditions {
         int argSize = 0;
         switch (checkKind) {
             case "checkIndex":
+            case "checkLongIndex":
                 argSize = 2;
                 break;
             case "checkFromToIndex":
+            case "checkFromToLongIndex":
             case "checkFromIndexSize":
+            case "checkFromLongIndexSize":
                 argSize = 3;
                 break;
             default:
@@ -185,12 +315,15 @@ public class Preconditions {
         // Switch to default if fewer or more arguments than required are supplied
         switch ((args.size() != argSize) ? "" : checkKind) {
             case "checkIndex":
+            case "checkLongIndex":
                 return String.format("Index %d out of bounds for length %d",
                                      args.get(0), args.get(1));
             case "checkFromToIndex":
+            case "checkFromToLongIndex":
                 return String.format("Range [%d, %d) out of bounds for length %d",
                                      args.get(0), args.get(1), args.get(2));
             case "checkFromIndexSize":
+            case "checkFromLongIndexSize":
                 return String.format("Range [%d, %<d + %d) out of bounds for length %d",
                                      args.get(0), args.get(1), args.get(2));
             default:
@@ -213,7 +346,7 @@ public class Preconditions {
      * <p>If the {@code index} is out of bounds, then a runtime exception is
      * thrown that is the result of applying the following arguments to the
      * exception formatter: the name of this method, {@code checkIndex};
-     * and an unmodifiable list integers whose values are, in order, the
+     * and an unmodifiable list of integers whose values are, in order, the
      * out-of-bounds arguments {@code index} and {@code length}.
      *
      * @param <X> the type of runtime exception to throw if the arguments are
@@ -266,7 +399,7 @@ public class Preconditions {
      * <p>If the sub-range is out of bounds, then a runtime exception is
      * thrown that is the result of applying the following arguments to the
      * exception formatter: the name of this method, {@code checkFromToIndex};
-     * and an unmodifiable list integers whose values are, in order, the
+     * and an unmodifiable list of integers whose values are, in order, the
      * out-of-bounds arguments {@code fromIndex}, {@code toIndex}, and {@code length}.
      *
      * @param <X> the type of runtime exception to throw if the arguments are
@@ -313,7 +446,7 @@ public class Preconditions {
      * <p>If the sub-range is out of bounds, then a runtime exception is
      * thrown that is the result of applying the following arguments to the
      * exception formatter: the name of this method, {@code checkFromIndexSize};
-     * and an unmodifiable list integers whose values are, in order, the
+     * and an unmodifiable list of integers whose values are, in order, the
      * out-of-bounds arguments {@code fromIndex}, {@code size}, and
      * {@code length}.
      *
@@ -334,13 +467,159 @@ public class Preconditions {
      *         function is non-{@code null}
      * @throws IndexOutOfBoundsException if the sub-range is out of bounds and
      *         the exception factory function is {@code null}
-     * @since 9
+     * @since 16
      */
     public static <X extends RuntimeException>
     int checkFromIndexSize(int fromIndex, int size, int length,
                            BiFunction<String, List<Integer>, X> oobef) {
         if ((length | fromIndex | size) < 0 || size > length - fromIndex)
             throw outOfBoundsCheckFromIndexSize(oobef, fromIndex, size, length);
+        return fromIndex;
+    }
+
+    /**
+     * Checks if the {@code index} is within the bounds of the range from
+     * {@code 0} (inclusive) to {@code length} (exclusive).
+     *
+     * <p>The {@code index} is defined to be out of bounds if any of the
+     * following inequalities is true:
+     * <ul>
+     *  <li>{@code index < 0}</li>
+     *  <li>{@code index >= length}</li>
+     *  <li>{@code length < 0}, which is implied from the former inequalities</li>
+     * </ul>
+     *
+     * <p>If the {@code index} is out of bounds, then a runtime exception is
+     * thrown that is the result of applying the following arguments to the
+     * exception formatter: the name of this method, {@code checkLongIndex};
+     * and an unmodifiable list of longs whose values are, in order, the
+     * out-of-bounds arguments {@code index} and {@code length}.
+     *
+     * @param <X> the type of runtime exception to throw if the arguments are
+     *        out of bounds
+     * @param index the index
+     * @param length the upper-bound (exclusive) of the range
+     * @param oobef the exception formatter that when applied with this
+     *        method name and out-of-bounds arguments returns a runtime
+     *        exception.  If {@code null} or returns {@code null} then, it is as
+     *        if an exception formatter produced from an invocation of
+     *        {@code outOfBoundsExceptionFormatter(IndexOutOfBounds::new)} is used
+     *        instead (though it may be more efficient).
+     *        Exceptions thrown by the formatter are relayed to the caller.
+     * @return {@code index} if it is within bounds of the range
+     * @throws X if the {@code index} is out of bounds and the exception
+     *         formatter is non-{@code null}
+     * @throws IndexOutOfBoundsException if the {@code index} is out of bounds
+     *         and the exception formatter is {@code null}
+     * @since 16
+     *
+     * @implNote
+     * This method is made intrinsic in optimizing compilers to guide them to
+     * perform unsigned comparisons of the index and length when it is known the
+     * length is a non-negative value (such as that of an array length or from
+     * the upper bound of a loop)
+     */
+//    @IntrinsicCandidate
+    public static <X extends RuntimeException>
+    long checkLongIndex(long index, long length,
+                        BiFunction<String, List<Long>, X> oobef) {
+        if (index < 0 || index >= length)
+            throw outOfBoundsCheckLongIndex(oobef, index, length);
+        return index;
+    }
+
+    /**
+     * Checks if the sub-range from {@code fromIndex} (inclusive) to
+     * {@code toIndex} (exclusive) is within the bounds of range from {@code 0}
+     * (inclusive) to {@code length} (exclusive).
+     *
+     * <p>The sub-range is defined to be out of bounds if any of the following
+     * inequalities is true:
+     * <ul>
+     *  <li>{@code fromIndex < 0}</li>
+     *  <li>{@code fromIndex > toIndex}</li>
+     *  <li>{@code toIndex > length}</li>
+     *  <li>{@code length < 0}, which is implied from the former inequalities</li>
+     * </ul>
+     *
+     * <p>If the sub-range is out of bounds, then a runtime exception is
+     * thrown that is the result of applying the following arguments to the
+     * exception formatter: the name of this method, {@code checkFromToLongIndex};
+     * and an unmodifiable list of longs whose values are, in order, the
+     * out-of-bounds arguments {@code fromIndex}, {@code toIndex}, and {@code length}.
+     *
+     * @param <X> the type of runtime exception to throw if the arguments are
+     *        out of bounds
+     * @param fromIndex the lower-bound (inclusive) of the sub-range
+     * @param toIndex the upper-bound (exclusive) of the sub-range
+     * @param length the upper-bound (exclusive) the range
+     * @param oobef the exception formatter that when applied with this
+     *        method name and out-of-bounds arguments returns a runtime
+     *        exception.  If {@code null} or returns {@code null} then, it is as
+     *        if an exception formatter produced from an invocation of
+     *        {@code outOfBoundsExceptionFormatter(IndexOutOfBounds::new)} is used
+     *        instead (though it may be more efficient).
+     *        Exceptions thrown by the formatter are relayed to the caller.
+     * @return {@code fromIndex} if the sub-range within bounds of the range
+     * @throws X if the sub-range is out of bounds and the exception factory
+     *         function is non-{@code null}
+     * @throws IndexOutOfBoundsException if the sub-range is out of bounds and
+     *         the exception factory function is {@code null}
+     * @since 16
+     */
+    public static <X extends RuntimeException>
+    long checkFromToLongIndex(long fromIndex, long toIndex, long length,
+                              BiFunction<String, List<Long>, X> oobef) {
+        if (fromIndex < 0 || fromIndex > toIndex || toIndex > length)
+            throw outOfBoundsCheckFromToLongIndex(oobef, fromIndex, toIndex, length);
+        return fromIndex;
+    }
+
+    /**
+     * Checks if the sub-range from {@code fromIndex} (inclusive) to
+     * {@code fromIndex + size} (exclusive) is within the bounds of range from
+     * {@code 0} (inclusive) to {@code length} (exclusive).
+     *
+     * <p>The sub-range is defined to be out of bounds if any of the following
+     * inequalities is true:
+     * <ul>
+     *  <li>{@code fromIndex < 0}</li>
+     *  <li>{@code size < 0}</li>
+     *  <li>{@code fromIndex + size > length}, taking into account integer overflow</li>
+     *  <li>{@code length < 0}, which is implied from the former inequalities</li>
+     * </ul>
+     *
+     * <p>If the sub-range is out of bounds, then a runtime exception is
+     * thrown that is the result of applying the following arguments to the
+     * exception formatter: the name of this method, {@code checkFromLongIndexSize};
+     * and an unmodifiable list of longs whose values are, in order, the
+     * out-of-bounds arguments {@code fromIndex}, {@code size}, and
+     * {@code length}.
+     *
+     * @param <X> the type of runtime exception to throw if the arguments are
+     *        out of bounds
+     * @param fromIndex the lower-bound (inclusive) of the sub-interval
+     * @param size the size of the sub-range
+     * @param length the upper-bound (exclusive) of the range
+     * @param oobef the exception formatter that when applied with this
+     *        method name and out-of-bounds arguments returns a runtime
+     *        exception.  If {@code null} or returns {@code null} then, it is as
+     *        if an exception formatter produced from an invocation of
+     *        {@code outOfBoundsExceptionFormatter(IndexOutOfBounds::new)} is used
+     *        instead (though it may be more efficient).
+     *        Exceptions thrown by the formatter are relayed to the caller.
+     * @return {@code fromIndex} if the sub-range within bounds of the range
+     * @throws X if the sub-range is out of bounds and the exception factory
+     *         function is non-{@code null}
+     * @throws IndexOutOfBoundsException if the sub-range is out of bounds and
+     *         the exception factory function is {@code null}
+     * @since 16
+     */
+    public static <X extends RuntimeException>
+    long checkFromLongIndexSize(long fromIndex, long size, long length,
+                               BiFunction<String, List<Long>, X> oobef) {
+        if ((length | fromIndex | size) < 0 || size > length - fromIndex)
+            throw outOfBoundsCheckFromLongIndexSize(oobef, fromIndex, size, length);
         return fromIndex;
     }
 }
