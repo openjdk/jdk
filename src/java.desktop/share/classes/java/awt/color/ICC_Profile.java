@@ -759,7 +759,7 @@ public class ICC_Profile implements Serializable {
      *         Object#finalize()} for further information about migration
      *         options.
      */
-    @Deprecated(since="9")
+    @Deprecated(since = "9", forRemoval = true)
     protected void finalize () {
     }
 
