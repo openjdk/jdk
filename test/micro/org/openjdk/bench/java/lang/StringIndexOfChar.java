@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
-public class IndexOfBenchmark {
+public class StringIndexOfChar {
     private static final int loops = 100000;
     private static final Random rng = new Random(1999);
     private static final int pathCnt = 1000;
@@ -68,7 +68,7 @@ public class IndexOfBenchmark {
     private static String makeRndString(boolean isUtf16, int length) {
         StringBuilder sb = new StringBuilder(length);
         if(length > 0){
-            sb.append(isUtf16?'☺':'b');
+            sb.append(isUtf16?'\u2026':'b'); // ...
 
             for (int i = 1; i < length-1; i++) {
                 sb.append((char)('b' + rng.nextInt(26)));
@@ -81,7 +81,7 @@ public class IndexOfBenchmark {
 
 
     @Benchmark
-    public static void latin1_mixed_char() {
+    public void latin1_mixed_char() {
         int ret = 0;
         for (String what : latn1_mixedLength) {
             ret += what.indexOf('a');
@@ -89,7 +89,7 @@ public class IndexOfBenchmark {
     }
 
     @Benchmark
-    public static void utf16_mixed_char() {
+    public void utf16_mixed_char() {
         int ret = 0;
         for (String what : utf16_mixedLength) {
             ret += what.indexOf('a');
@@ -97,7 +97,7 @@ public class IndexOfBenchmark {
     }
 
     @Benchmark
-    public static void latin1_mixed_String() {
+    public void latin1_mixed_String() {
         int ret = 0;
         for (String what : latn1_mixedLength) {
             ret += what.indexOf("a");
@@ -105,7 +105,7 @@ public class IndexOfBenchmark {
     }
 
     @Benchmark
-    public static void utf16_mixed_String() {
+    public void utf16_mixed_String() {
         int ret = 0;
         for (String what : utf16_mixedLength) {
             ret += what.indexOf("a");
@@ -115,7 +115,7 @@ public class IndexOfBenchmark {
     ////////// more detailed code path dependent tests //////////
 
     @Benchmark
-    public static void latin1_Short_char() {
+    public void latin1_Short_char() {
         int ret = 0;
         for (String what : latn1_short) {
             ret += what.indexOf('a');
@@ -123,7 +123,7 @@ public class IndexOfBenchmark {
     }
 
     @Benchmark
-    public static void latin1_SSE4_char() {
+    public void latin1_SSE4_char() {
         int ret = 0;
         for (String what : latn1_sse4) {
             ret += what.indexOf('a');
@@ -131,7 +131,7 @@ public class IndexOfBenchmark {
     }
 
     @Benchmark
-    public static void latin1_AVX2_char() {
+    public void latin1_AVX2_char() {
         int ret = 0;
         for (String what : latn1_avx2) {
             ret += what.indexOf('a');
@@ -139,7 +139,7 @@ public class IndexOfBenchmark {
     }
 
     @Benchmark
-    public static int utf16_Short_char() {
+    public int utf16_Short_char() {
         int ret = 0;
         for (String what : utf16_short) {
             ret += what.indexOf('a');
@@ -148,7 +148,7 @@ public class IndexOfBenchmark {
     }
 
     @Benchmark
-    public static int utf16_SSE4_char() {
+    public int utf16_SSE4_char() {
         int ret = 0;
         for (String what : utf16_sse4) {
             ret += what.indexOf('a');
@@ -157,7 +157,7 @@ public class IndexOfBenchmark {
     }
 
     @Benchmark
-    public static int utf16_AVX2_char() {
+    public int utf16_AVX2_char() {
         int ret = 0;
         for (String what : utf16_avx2) {
             ret += what.indexOf('a');
@@ -166,7 +166,7 @@ public class IndexOfBenchmark {
     }
 
     @Benchmark
-    public static int latin1_Short_String() {
+    public int latin1_Short_String() {
         int ret = 0;
         for (String what : latn1_short) {
             ret += what.indexOf("a");
@@ -175,7 +175,7 @@ public class IndexOfBenchmark {
     }
 
     @Benchmark
-    public static int latin1_SSE4_String() {
+    public int latin1_SSE4_String() {
         int ret = 0;
         for (String what : latn1_sse4) {
             ret += what.indexOf("a");
@@ -184,7 +184,7 @@ public class IndexOfBenchmark {
     }
 
     @Benchmark
-    public static int latin1_AVX2_String() {
+    public int latin1_AVX2_String() {
         int ret = 0;
         for (String what : latn1_avx2) {
             ret += what.indexOf("a");
@@ -193,7 +193,7 @@ public class IndexOfBenchmark {
     }
 
     @Benchmark
-    public static int utf16_Short_String() {
+    public int utf16_Short_String() {
         int ret = 0;
         for (String what : utf16_short) {
             ret += what.indexOf("a");
@@ -202,7 +202,7 @@ public class IndexOfBenchmark {
     }
 
     @Benchmark
-    public static int utf16_SSE4_String() {
+    public int utf16_SSE4_String() {
         int ret = 0;
         for (String what : utf16_sse4) {
             ret += what.indexOf("a");
@@ -211,7 +211,7 @@ public class IndexOfBenchmark {
     }
 
     @Benchmark
-    public static int utf16_AVX2_String() {
+    public int utf16_AVX2_String() {
         int ret = 0;
         for (String what : utf16_avx2) {
             ret += what.indexOf("a");
