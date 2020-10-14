@@ -32,11 +32,10 @@ import jdk.test.lib.Asserts;
  * @bug 8253765
  * @requires vm.debug == true & vm.compiler2.enabled
  * @summary Tests that, when compiling with StressLCM or StressGCM, using the
- *          same seed results in the same compilation, and using different seeds
- *          results in different compilations (the latter does not necessarily
- *          hold for all pairs of seeds). The output of PrintOptoStatistics is
- *          used to compare among compilations, instead of the more intuitive
- *          TraceOptoPipelining which prints non-deterministic memory addresses.
+ *          same seed results in the same compilation. The output of
+ *          PrintOptoStatistics is used to compare among compilations, instead
+ *          of the more intuitive TraceOptoPipelining which prints
+ *          non-deterministic memory addresses.
  * @library /test/lib /
  * @run driver compiler.debug.TestStressCM StressLCM
  * @run driver compiler.debug.TestStressCM StressGCM
@@ -67,8 +66,6 @@ public class TestStressCM {
             String stressOpt = args[0];
             Asserts.assertEQ(optoStats(stressOpt, 10), optoStats(stressOpt, 10),
                 "got different optimization stats for the same seed");
-            Asserts.assertNE(optoStats(stressOpt, 10), optoStats(stressOpt, 20),
-                "got the same optimization stats for different seeds");
         } else if (args.length > 0) {
             sum(Integer.parseInt(args[0]));
         }

@@ -2939,7 +2939,7 @@ class StubGenerator: public StubCodeGenerator {
                                 address long_copy_entry, address checkcast_copy_entry) {
 
     Label L_failed, L_failed_0, L_objArray;
-    Label L_copy_bytes, L_copy_shorts, L_copy_ints, L_copy_longs;
+    Label L_copy_shorts, L_copy_ints, L_copy_longs;
 
     // Input registers
     const Register src        = c_rarg0;  // source array oop
@@ -2950,7 +2950,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register length     = c_rarg4;
     const Register rklass_tmp = r9;  // load_klass
 #else
-    const Address  length(rsp, 6 * wordSize);  // elements count is on stack on Win64
+    const Address  length(rsp, 7 * wordSize);  // elements count is on stack on Win64
     const Register rklass_tmp = rdi;  // load_klass
 #endif
 
@@ -2971,6 +2971,10 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ pc();
 
     __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+#ifdef _WIN64
+    __ push(rklass_tmp); // rdi is callee-save on Windows
+#endif
 
     // bump this on entry, not on exit:
     inc_counter_np(SharedRuntime::_generic_array_copy_ctr);
@@ -3102,6 +3106,10 @@ class StubGenerator: public StubCodeGenerator {
     BLOCK_COMMENT("choose copy loop based on element size");
     __ andl(rax_lh, Klass::_lh_log2_element_size_mask); // rax_lh -> rax_elsize
 
+#ifdef _WIN64
+    __ pop(rklass_tmp); // Restore callee-save rdi
+#endif
+
     // next registers should be set before the jump to corresponding stub
     const Register from     = c_rarg0;  // source array address
     const Register to       = c_rarg1;  // destination array address
@@ -3110,7 +3118,6 @@ class StubGenerator: public StubCodeGenerator {
     // 'from', 'to', 'count' registers should be set in such order
     // since they are the same as 'src', 'src_pos', 'dst'.
 
-  __ BIND(L_copy_bytes);
     __ cmpl(rax_elsize, 0);
     __ jccb(Assembler::notEqual, L_copy_shorts);
     __ lea(from, Address(src, src_pos, Address::times_1, 0));// src_addr
@@ -3171,6 +3178,9 @@ class StubGenerator: public StubCodeGenerator {
                  arrayOopDesc::base_offset_in_bytes(T_OBJECT))); // dst_addr
     __ movl2ptr(count, r11_length); // length
   __ BIND(L_plain_copy);
+#ifdef _WIN64
+    __ pop(rklass_tmp); // Restore callee-save rdi
+#endif
     __ jump(RuntimeAddress(oop_copy_entry));
 
   __ BIND(L_checkcast_copy);
@@ -3210,6 +3220,10 @@ class StubGenerator: public StubCodeGenerator {
       __ movl(  sco_temp,      Address(r11_dst_klass, sco_offset));
       assert_clean_int(sco_temp, rax);
 
+#ifdef _WIN64
+      __ pop(rklass_tmp); // Restore callee-save rdi
+#endif
+
       // the checkcast_copy loop needs two extra arguments:
       assert(c_rarg3 == sco_temp, "#3 already in place");
       // Set up arguments for checkcast_copy_entry.
@@ -3219,6 +3233,9 @@ class StubGenerator: public StubCodeGenerator {
     }
 
   __ BIND(L_failed);
+#ifdef _WIN64
+    __ pop(rklass_tmp); // Restore callee-save rdi
+#endif
     __ xorptr(rax, rax);
     __ notptr(rax); // return -1
     __ leave();   // required for proper stackwalking of RuntimeStub frame
