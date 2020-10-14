@@ -49,10 +49,10 @@ public class IllegalFormatArgumentIndexException extends IllegalFormatException 
     }
 
     /**
-     * Get the value of the illegal index.
+     * Gets the value of the illegal index.
      * Returns {@code Integer.MIN_VALUE} if the illegal index is not
      * representable by an integer type.
-     * @return The value of the illegal index from a format string.
+     * @return the illegal index value
      */
     public int getIndex() {
         return illegalIndex;

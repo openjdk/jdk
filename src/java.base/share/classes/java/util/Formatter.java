@@ -699,22 +699,17 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * applicable to the corresponding argument, then an {@link
  * IllegalFormatConversionException} will be thrown.
  *
- * <p> Values of <i>precision</i> and <i>width</i> are maximally constrained by
- * {@link Integer#MAX_VALUE}. Values appearing for these arguments that are
- * larger than {@link Integer#MAX_VALUE} will result in
- * {@link IllegalFormatPrecisionException} or
- * {@link IllegalFormatWidthException} being thrown, respectively.
- * Values for these fields in their associated exceptions will be given as
- * {@link Integer#MIN_VALUE} for these cases.
- * </p>
+ * <p> Values of <i>precision</i> must be in the range zero to
+ * {@link Integer#MAX_VALUE}, inclusive, otherwise
+ * {@link IllegalFormatPrecisionException} is thrown.</p>
  *
- * <p>Values of <i>index</i> are maximally constrained by
- * {@link Integer#MAX_VALUE} and minimally constrained by
- * {@link Integer#MIN_VALUE}. Values appearing for <i>index</i> outside of these
- * bounds will result in {@link IllegalFormatArgumentIndexException} being
- * thrown with an indicated field value of {@link Integer#MIN_VALUE} for these
- * cases.
- * </p>
+ * <p> Values of <i>width</i> must be in the range {@link Integer#MIN_VALUE} to
+ * {@link Integer#MAX_VALUE}, inclusive, otherwise
+ * {@link IllegalFormatWidthException} will be thrown</p>
+ *
+ * <p> Values of <i>index</i> must be in the range one to
+ * {@link Integer#MAX_VALUE}, inclusive, otherwise
+ * {@link IllegalFormatArgumentIndexException} will be thrown.</p>
  *
  * <p> All specified exceptions may be thrown by any of the {@code format}
  * methods of {@code Formatter} as well as by any {@code format} convenience
