@@ -58,7 +58,6 @@ $(eval $(call SetupJavaCompilation, COMPILE_CREATE_SYMBOLS, \
     DISABLED_WARNINGS := options, \
     JAVAC_FLAGS := \
         $(INTERIM_LANGTOOLS_ARGS) \
-        --patch-module java.base=$(BUILDTOOLS_OUTPUTDIR)/gensrc/java.base.interim \
         $(COMPILECREATESYMBOLS_ADD_EXPORTS), \
 ))
 
