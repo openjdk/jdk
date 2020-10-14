@@ -78,6 +78,7 @@ public class TestHeapDumpOnOutOfMemoryError {
                 //  MaxMetaspaceSize=16M - ~12-15K classes - ~12sec runtime with all verifications
                 //  MaxMetaspaceSize=16M - ~12-15K classes - VerifyDependencies off - ~3seconds on ppc
                 "-XX:MaxMetaspaceSize=16m",
+                "-XX:+IgnoreUnrecognizedVMOptions",
                 "-XX:-VerifyDependencies",
                 TestHeapDumpOnOutOfMemoryError.class.getName(), type);
 
