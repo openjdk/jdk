@@ -134,7 +134,7 @@ inline void ShenandoahConcurrentMark::do_chunked_array_start(ShenandoahObjToScan
       pow--;
       chunk = 2;
       last_idx = (1 << pow);
-      bool pushed = q->push(ShenandoahMarkTask(array, 1, pow));
+      bool pushed = q->push(ShenandoahMarkTask(array, false, false, 1, pow));
       assert(pushed, "overflow queue should always succeed pushing");
     }
 
@@ -147,7 +147,7 @@ inline void ShenandoahConcurrentMark::do_chunked_array_start(ShenandoahObjToScan
       int right_chunk = chunk*2;
       int left_chunk_end = left_chunk * (1 << pow);
       if (left_chunk_end < len) {
-        bool pushed = q->push(ShenandoahMarkTask(array, left_chunk, pow));
+        bool pushed = q->push(ShenandoahMarkTask(array, false, false, left_chunk, pow));
         assert(pushed, "overflow queue should always succeed pushing");
         chunk = right_chunk;
         last_idx = left_chunk_end;
@@ -176,7 +176,7 @@ inline void ShenandoahConcurrentMark::do_chunked_array(ShenandoahObjToScanQueue*
   while ((1 << pow) > (int)ObjArrayMarkingStride && (chunk*2 < ShenandoahMarkTask::chunk_size())) {
     pow--;
     chunk *= 2;
-    bool pushed = q->push(ShenandoahMarkTask(array, chunk - 1, pow));
+    bool pushed = q->push(ShenandoahMarkTask(array, false, false, chunk - 1, pow));
     assert(pushed, "overflow queue should always succeed pushing");
   }
 

@@ -154,11 +154,11 @@ public:
     assert(decode_oop(encode_oop(o, count_liveness, strong)) ==  o, "oop can be encoded: " PTR_FORMAT, p2i(o));
     _obj = encode_oop(o, count_liveness, strong);
   }
-  ObjArrayChunkedTask(oop o, int chunk, int pow) {
-    assert(decode_oop(encode_oop(o, true, true)) == o, "oop can be encoded: " PTR_FORMAT, p2i(o));
+  ObjArrayChunkedTask(oop o, bool count_liveness, bool strong, int chunk, int pow) {
+    assert(decode_oop(encode_oop(o, count_liveness, strong)) == o, "oop can be encoded: " PTR_FORMAT, p2i(o));
     assert(decode_chunk(encode_chunk(chunk)) == chunk, "chunk can be encoded: %d", chunk);
     assert(decode_pow(encode_pow(pow)) == pow, "pow can be encoded: %d", pow);
-    _obj = encode_oop(o, true, true) | encode_chunk(chunk) | encode_pow(pow);
+    _obj = encode_oop(o, count_liveness, strong) | encode_chunk(chunk) | encode_pow(pow);
   }
 
   // Trivially copyable.
@@ -223,7 +223,8 @@ public:
     pow_bits    = 5,
   };
 public:
-  ObjArrayChunkedTask(oop o = NULL, int chunk = 0, int pow = 0): _obj(o) {
+  ObjArrayChunkedTask(oop o = NULL, bool count_liveness = true, bool strong = true, int chunk = 0, int pow = 0):
+    _obj(o), _count_liveness(count_liveness), _strong(strong) {
     assert(0 <= chunk && chunk < nth_bit(chunk_bits), "chunk is sane: %d", chunk);
     assert(0 <= pow && pow < nth_bit(pow_bits), "pow is sane: %d", pow);
     _chunk = chunk;
@@ -232,10 +233,11 @@ public:
 
   // Trivially copyable.
 
-  inline oop obj()   const { return _obj; }
-  inline int chunk() const { return _chunk; }
-  inline int pow()  const { return _pow; }
-
+  inline oop obj()             const { return _obj; }
+  inline int chunk()           const { return _chunk; }
+  inline int pow()             const { return _pow; }
+  inline bool is_strong()      const { return _strong; };
+  inline bool count_liveness() const { return _count_liveness; }
   inline bool is_not_chunked() const { return _chunk == 0; }
 
   DEBUG_ONLY(bool is_valid() const); // Tasks to be pushed/popped must be valid.
@@ -250,6 +252,8 @@ public:
 
 private:
   oop _obj;
+  bool _count_liveness;
+  bool _strong;
   int _chunk;
   int _pow;
 };
