@@ -81,16 +81,16 @@ public class Security {
         }
 
         String policy = args[0];
-	switch (policy) {
+        switch (policy) {
             case "policy1":
                 testPolicy1();
-		break;
+                break;
             case "policy2":
                 testPolicy2();
-		break;
+                break;
             case "policy3":
                 testPolicy3();
-		break;
+                break;
         }
     }
 
@@ -157,34 +157,34 @@ public class Security {
         Path sock1 = Path.of("sock3");
         Files.deleteIfExists(sock1);
         final UnixDomainSocketAddress saddr = UnixDomainSocketAddress.of(sock1);
-	var s1 = ServerSocketChannel.open(UNIX);
-	s1.bind(saddr);
-	var s2 = ServerSocketChannel.open(UNIX);
-	s2.bind(null);
-	var add2 = (UnixDomainSocketAddress)s2.getLocalAddress();
-	saddr.getPath().toFile().deleteOnExit();
-	add2.getPath().toFile().deleteOnExit();
+        var s1 = ServerSocketChannel.open(UNIX);
+        s1.bind(saddr);
+        var s2 = ServerSocketChannel.open(UNIX);
+        s2.bind(null);
+        var add2 = (UnixDomainSocketAddress)s2.getLocalAddress();
+        saddr.getPath().toFile().deleteOnExit();
+        add2.getPath().toFile().deleteOnExit();
 
-	// Now set security manager and check if we can see addresses
+        // Now set security manager and check if we can see addresses
 
-	setSecurityManager("policy3");
+        setSecurityManager("policy3");
 
-	if (((UnixDomainSocketAddress)s1
-			.getLocalAddress())
-			.getPath()
-			.toString()
-			.length() != 0)
-	{
-	    throw new RuntimeException("address should have been empty");
-	}
+        if (((UnixDomainSocketAddress)s1
+                        .getLocalAddress())
+                        .getPath()
+                        .toString()
+                        .length() != 0)
+        {
+            throw new RuntimeException("address should have been empty");
+        }
 
-	if (((UnixDomainSocketAddress)s2
-			.getLocalAddress())
-			.getPath()
-			.toString()
-			.length() != 0)
-	{
-	    throw new RuntimeException("address should have been empty");
-	}
+        if (((UnixDomainSocketAddress)s2
+                        .getLocalAddress())
+                        .getPath()
+                        .toString()
+                        .length() != 0)
+        {
+            throw new RuntimeException("address should have been empty");
+        }
     }
 }
