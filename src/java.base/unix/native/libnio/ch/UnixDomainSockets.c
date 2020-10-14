@@ -62,6 +62,9 @@ jbyteArray sockaddrToUnixAddressBytes(JNIEnv *env, struct sockaddr_un *sa, sockl
         jbyteArray name = (*env)->NewByteArray(env, namelen);
         if (namelen != 0) {
             (*env)->SetByteArrayRegion(env, name, 0, namelen, (jbyte*)sa->sun_path);
+            if ((*env)->ExceptionOccurred(env)) {
+                return NULL;
+            }
         }
         return name;
     }
@@ -74,6 +77,10 @@ jint unixSocketAddressToSockaddr(JNIEnv *env, jbyteArray path, struct sockaddr_u
     sa->sun_family = AF_UNIX;
     int ret;
     const char* pname = (const char *)(*env)->GetByteArrayElements(env, path, NULL);
+    if (pname == NULL) {
+        JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Unix domain path not present");
+        return 1;
+    }
     size_t name_len = (*env)->GetArrayLength(env, path);
     if (name_len > MAX_UNIX_DOMAIN_PATH_LEN) {
         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Unix domain path too long");

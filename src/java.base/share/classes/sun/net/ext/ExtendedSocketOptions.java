@@ -48,7 +48,7 @@ public abstract class ExtendedSocketOptions {
     private final Set<SocketOption<?>> datagramOptions;
     private final Set<SocketOption<?>> clientStreamOptions;
     private final Set<SocketOption<?>> serverStreamOptions;
-    private final Set<SocketOption<?>> unixOptions;
+    private final Set<SocketOption<?>> unixDomainClientOptions;
 
     /** Tells whether or not the option is supported. */
     public final boolean isOptionSupported(SocketOption<?> option) {
@@ -58,8 +58,14 @@ public abstract class ExtendedSocketOptions {
     /** Return the, possibly empty, set of extended socket options available. */
     public final Set<SocketOption<?>> options() { return options; }
 
-    /** Return the, possibly empty, set of extended socket options available. */
-    public final Set<SocketOption<?>> unixOptions() { return unixOptions; }
+    /**
+     * Return the, possibly empty, set of extended socket options available for
+     * Unix domain client sockets. Note, there are no extended
+     * Unix domain server options.
+     */
+    public final Set<SocketOption<?>> unixDomainClientOptions() {
+        return unixDomainClientOptions;
+    }
 
     /**
      * Returns the (possibly empty) set of extended socket options for
@@ -70,7 +76,7 @@ public abstract class ExtendedSocketOptions {
     }
 
     public static Set<SocketOption<?>> unixSocketOptions() {
-        return getInstance().unixOptions();
+        return getInstance().unixDomainClientOptions();
     }
 
     /**
@@ -133,7 +139,7 @@ public abstract class ExtendedSocketOptions {
         var datagramOptions = new HashSet<SocketOption<?>>();
         var serverStreamOptions = new HashSet<SocketOption<?>>();
         var clientStreamOptions = new HashSet<SocketOption<?>>();
-        var unixOptions = new HashSet<SocketOption<?>>();
+        var unixDomainClientOptions = new HashSet<SocketOption<?>>();
         for (var option : options) {
             if (isDatagramOption(option)) {
                 datagramOptions.add(option);
@@ -145,13 +151,13 @@ public abstract class ExtendedSocketOptions {
                 clientStreamOptions.add(option);
             }
             if (isUnixDomainOption(option)) {
-                unixOptions.add(option);
+                unixDomainClientOptions.add(option);
             }
         }
         this.datagramOptions = Set.copyOf(datagramOptions);
         this.serverStreamOptions = Set.copyOf(serverStreamOptions);
         this.clientStreamOptions = Set.copyOf(clientStreamOptions);
-        this.unixOptions = Set.copyOf(unixOptions);
+        this.unixDomainClientOptions = Set.copyOf(unixDomainClientOptions);
     }
 
     private static volatile ExtendedSocketOptions instance;

@@ -132,8 +132,7 @@ class SocketChannelImpl
                 : StandardProtocolFamily.INET);
     }
 
-    SocketChannelImpl(SelectorProvider sp, ProtocolFamily family) throws IOException {
-        super(sp);
+    private static FileDescriptor socketFor(ProtocolFamily family) throws IOException {
         Objects.requireNonNull(family, "'family' is null");
         if ((family != StandardProtocolFamily.INET) &&
                 (family != StandardProtocolFamily.UNIX) &&
@@ -141,13 +140,24 @@ class SocketChannelImpl
             throw new UnsupportedOperationException("Protocol family not supported");
         }
         if (family == StandardProtocolFamily.UNIX) {
-            this.fd = UnixDomainSockets.socket();
+            return UnixDomainSockets.socket();
         } else if (family == StandardProtocolFamily.INET6 && !Net.isIPv6Available()) {
             throw new UnsupportedOperationException("IPv6 not available");
         } else {
-            this.fd = Net.socket(family, true);
+            return Net.socket(family, true);
         }
+    }
+
+    SocketChannelImpl(SelectorProvider sp, ProtocolFamily family) throws IOException {
+        this(sp, family, socketFor(family));
+    }
+
+    private SocketChannelImpl(SelectorProvider sp, ProtocolFamily family, FileDescriptor fd)
+      throws IOException
+    {
+        super(sp);
         this.family = family;
+        this.fd = fd;
         this.fdVal = IOUtil.fdVal(fd);
     }
 

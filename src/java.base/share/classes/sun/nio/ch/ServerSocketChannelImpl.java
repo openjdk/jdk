@@ -48,7 +48,6 @@ import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
-import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -248,7 +247,7 @@ class ServerSocketChannelImpl
 
     private static class DefaultOptionsHolder {
         static final Set<SocketOption<?>> defaultInetOptions = defaultInetOptions();
-        static final Set<SocketOption<?>> defaultUnixOptions = defaultUnixOptions();
+        static final Set<SocketOption<?>> defaultUnixDomainOptions = defaultUnixDomainOptions();
 
         private static Set<SocketOption<?>> defaultInetOptions() {
             HashSet<SocketOption<?>> set = new HashSet<>();
@@ -261,7 +260,7 @@ class ServerSocketChannelImpl
             return Collections.unmodifiableSet(set);
         }
 
-        private static Set<SocketOption<?>> defaultUnixOptions() {
+        private static Set<SocketOption<?>> defaultUnixDomainOptions() {
             HashSet<SocketOption<?>> set = new HashSet<>();
             set.add(StandardSocketOptions.SO_RCVBUF);
             return Collections.unmodifiableSet(set);
@@ -271,7 +270,7 @@ class ServerSocketChannelImpl
     @Override
     public final Set<SocketOption<?>> supportedOptions() {
         if (family == StandardProtocolFamily.UNIX) {
-            return DefaultOptionsHolder.defaultUnixOptions;
+            return DefaultOptionsHolder.defaultUnixDomainOptions;
         } else {
             return DefaultOptionsHolder.defaultInetOptions;
         }
@@ -426,7 +425,7 @@ class ServerSocketChannelImpl
         return n;
     }
 
-    protected int implAcceptUnix(FileDescriptor fd, FileDescriptor newfd, SocketAddress[] addrs)
+    private int implAcceptUnix(FileDescriptor fd, FileDescriptor newfd, SocketAddress[] addrs)
         throws IOException
     {
         UnixDomainSockets.checkPermission();

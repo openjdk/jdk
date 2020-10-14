@@ -125,13 +125,6 @@ public final class UnixDomainSocketAddress extends SocketAddress {
     }
 
     private UnixDomainSocketAddress(Path path) {
-        FileSystem fs = path.getFileSystem();
-        if (fs != FileSystems.getDefault()) {
-            throw new IllegalArgumentException();
-        }
-        if (fs.getClass().getModule() != Object.class.getModule()) {
-            throw new IllegalArgumentException();
-        }
         this.path = path;
     }
 
@@ -166,6 +159,13 @@ public final class UnixDomainSocketAddress extends SocketAddress {
      * @throws NullPointerException if path is {@code null}
      */
     public static UnixDomainSocketAddress of(Path path) {
+        FileSystem fs = path.getFileSystem();
+        if (fs != FileSystems.getDefault()) {
+            throw new IllegalArgumentException();
+        }
+        if (fs.getClass().getModule() != Object.class.getModule()) {
+            throw new IllegalArgumentException();
+        }
         return new UnixDomainSocketAddress(path);
     }
 
