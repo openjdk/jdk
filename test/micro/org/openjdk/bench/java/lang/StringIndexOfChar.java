@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
-public class IndexOfBenchmark {
+public class StringIndexOfChar {
     private static final int loops = 100000;
     private static final Random rng = new Random(1999);
     private static final int pathCnt = 1000;
