@@ -126,6 +126,7 @@ import jdk.javadoc.internal.doclets.formats.html.LinkInfoImpl;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import static jdk.javadoc.internal.doclets.toolkit.builders.ConstantsSummaryBuilder.MAX_CONSTANT_VALUE_INDEX_LENGTH;
 
@@ -2845,15 +2846,16 @@ public class Utils {
                                .orElse(null);
     }
 
-    public Pair<String, String> getPreviewTreeSummaryAndDetails(DocTree t) {
-        //TODO: handle broken trees:
+    public Content getPreviewTreeSummaryOrDetails(DocTree t, boolean summary) {
         UnknownInlineTagTree previewTag = (UnknownInlineTagTree) t;
         List<? extends DocTree> previewContent = previewTag.getContent();
         String previewText = ((TextTree) previewContent.get(0)).getBody();
         String[] summaryAndDetails = previewText.split("\n\r?\n\r?");
-        String summary = summaryAndDetails[0];
-        String details = summaryAndDetails.length > 1 ? summaryAndDetails[1] : summaryAndDetails[0];
-        return new Pair<>(summary, details);
+        String rawHTML =
+               summary ? summaryAndDetails[0]
+                       : summaryAndDetails.length > 1 ? summaryAndDetails[1]
+                                                      : summaryAndDetails[0];
+        return new RawHtml(rawHTML);
     }
 
     public List<? extends DocTree> getFirstSentenceTrees(Element element) {

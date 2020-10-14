@@ -60,7 +60,7 @@ public class TestDeclaredUsingPreview extends JavadocTester {
 
         {
             String zero = MessageFormat.format(bundle.getString("doclet.PreviewLeadingNote"), "TestPreviewDeclaration");
-            String one = MessageFormat.format(bundle.getString("doclet.Declared_Using_Preview"), "<code>TestPreviewDeclaration</code>", "<em>Sealed Classes</em>", "<code>sealed</code>");
+            String one = MessageFormat.format(bundle.getString("doclet.Declared_Using_Preview"), "TestPreviewDeclaration", "Sealed Classes", "<code>sealed</code>");
             String two = MessageFormat.format(bundle.getString("doclet.PreviewTrailingNote1"), "TestPreviewDeclaration");
             String three = MessageFormat.format(bundle.getString("doclet.PreviewTrailingNote2"), new Object[0]);
             String expectedTemplate = """

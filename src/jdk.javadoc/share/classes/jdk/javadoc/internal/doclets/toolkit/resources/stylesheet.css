@@ -700,7 +700,7 @@ ul.help-section-list {
 /*
  * Indicator icon for external links.
  */
-main a[href*="://"]:not()::after {
+main a[href*="://"]::after {
     content:"";
     display:inline-block;
     background-image:url('data:image/svg+xml; utf8, \
