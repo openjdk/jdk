@@ -993,8 +993,7 @@ public final class HexFormat {
     }
 
     /**
-     * Returns a hashcode for this {@code HexFormat} that is consistent with
-     * {@link #equals(Object) equals}.
+     * Returns a hashcode for this {@code HexFormat}.
      *
      * @return a hashcode for this {@code HexFormat}
      */

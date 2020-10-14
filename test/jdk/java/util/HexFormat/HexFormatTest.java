@@ -383,18 +383,27 @@ public class HexFormatTest {
     static void testVariableLength() {
         HexFormat hex = HexFormat.of();
 
+        String allHex = "fedcba9876543210";
         final long orig = 0xfedcba9876543210L;
         for (int digits = 0; digits <= 16; digits++) {
             String s = hex.toHexDigits(orig, digits);
             long actual = hex.fromHexDigitsToLong(s, 0, digits);
             System.out.printf("    digits: %2d, formatted: \"%s\", parsed as: 0x%016xL%n",
                     digits, s, actual);
+            Assert.assertEquals(s, allHex.substring(16 - digits, 16));
+            long expected = (digits < 16) ? orig & ~(0xffffffffffffffffL << (4 * digits)) : orig;
+            Assert.assertEquals(actual, expected);
         }
     }
 
+    /**
+     * Example code from the HexFormat javadoc.
+     * Showing simple usage of the API using "assert" to express the correct results
+     * when shown in the javadoc.
+     * The additional TestNG asserts verify the correctness of the same code.
+     */
     @Test
     private static void samples() {
-
         {
             // Primitive formatting and parsing.
             HexFormat hex = HexFormat.of();
@@ -406,24 +415,30 @@ public class HexFormatTest {
             int byteVal = hex.fromHexDigits(byteStr);
             assert(byteStr.equals("7f"));
             assert(b == byteVal);
+            Assert.assertTrue(byteStr.equals("7f"));
+            Assert.assertTrue(b == byteVal);
+
 
             char c = 'A';
             String charStr = hex.toHexDigits(c);
             System.out.println("    " + charStr);
             int charVal = hex.fromHexDigits(charStr);
             assert(c == charVal);
+            Assert.assertTrue(c == charVal);
 
             int i = 12345;
             String intStr = hex.toHexDigits(i);
             System.out.println("    " + intStr);
             int intVal = hex.fromHexDigits(intStr);
             assert(i == intVal);
+            Assert.assertTrue(i == intVal);
 
             long l = Long.MAX_VALUE;
             String longStr = hex.toHexDigits(l, 16);
             long longVal = hex.fromHexDigitsToLong(longStr, 0, 16);
             System.out.println("    " + longStr + ", " + longVal);
             assert(l == longVal);
+            Assert.assertTrue(l == longVal);
         }
 
         {
@@ -436,6 +451,7 @@ public class HexFormatTest {
             byte[] parsed = formatFingerprint.parseHex(str);
             System.out.println("    Parsed: " + Arrays.toString(parsed));
             assert(Arrays.equals(bytes, parsed));
+            Assert.assertTrue(Arrays.equals(bytes, parsed));
         }
 
         {
@@ -448,6 +464,7 @@ public class HexFormatTest {
             byte[] parsed = commaFormat.parseHex(str);
             System.out.println("    Parsed: " + Arrays.toString(parsed));
             assert(Arrays.equals(bytes, parsed));
+            Assert.assertTrue(Arrays.equals(bytes, parsed));
         }
         {
             // Text formatting
@@ -459,6 +476,7 @@ public class HexFormatTest {
             byte[] parsed = commaFormat.parseHex(str);
             System.out.println("    Parsed:    " + Arrays.toString(parsed));
             assert(Arrays.equals(bytes, parsed));
+            Assert.assertTrue(Arrays.equals(bytes, parsed));
         }
     }
 }
