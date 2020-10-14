@@ -23,11 +23,11 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
-#include "gc/z/zGlobals.hpp"
 #include "gc/z/zTask.hpp"
 #include "gc/z/zThread.hpp"
 #include "gc/z/zWorkers.inline.hpp"
 #include "runtime/java.hpp"
+#include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
 
 class ZWorkersInitializeTask : public ZTask {

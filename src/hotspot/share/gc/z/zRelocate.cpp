@@ -27,6 +27,7 @@
 #include "gc/z/zForwarding.inline.hpp"
 #include "gc/z/zHeap.hpp"
 #include "gc/z/zOopClosures.inline.hpp"
+#include "gc/z/zPage.inline.hpp"
 #include "gc/z/zRelocate.hpp"
 #include "gc/z/zRelocationSet.inline.hpp"
 #include "gc/z/zRootsIterator.hpp"

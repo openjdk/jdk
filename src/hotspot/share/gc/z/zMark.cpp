@@ -601,7 +601,6 @@ public:
   }
 };
 
-
 class ZMarkConcurrentRootsTask : public ZTask {
 private:
   ZMark* const                        _mark;

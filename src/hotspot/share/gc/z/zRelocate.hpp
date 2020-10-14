@@ -24,11 +24,10 @@
 #ifndef SHARE_GC_Z_ZRELOCATE_HPP
 #define SHARE_GC_Z_ZRELOCATE_HPP
 
-#include "gc/z/zWorkers.hpp"
-
 class ZForwarding;
 class ZRelocationSet;
 class ZRelocationSetParallelIterator;
+class ZWorkers;
 
 class ZRelocate {
   friend class ZRelocateTask;

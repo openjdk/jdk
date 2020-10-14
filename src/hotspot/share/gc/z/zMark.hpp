@@ -29,6 +29,7 @@
 #include "gc/z/zMarkStackEntry.hpp"
 #include "gc/z/zMarkTerminate.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class Thread;
 class ZMarkCache;

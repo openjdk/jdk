@@ -38,8 +38,8 @@
 #include "gc/z/zUnload.hpp"
 #include "gc/z/zWorkers.hpp"
 
-class Page;
 class ThreadClosure;
+class ZPage;
 
 class ZHeap {
   friend class VMStructs;

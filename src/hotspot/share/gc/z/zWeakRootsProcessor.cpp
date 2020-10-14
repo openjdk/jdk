@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "gc/z/zOopClosures.inline.hpp"
 #include "gc/z/zTask.hpp"
+#include "gc/z/zWorkers.hpp"
 
 ZWeakRootsProcessor::ZWeakRootsProcessor(ZWorkers* workers) :
     _workers(workers) {}

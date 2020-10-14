@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zHeuristics.hpp"
 #include "gc/z/zObjectAllocator.hpp"
