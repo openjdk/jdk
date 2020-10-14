@@ -275,7 +275,30 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
         return mix64(nextSeed());
     }
 
-    static final BigInteger PERIOD = BigInteger.ONE.shiftLeft(64);  // Period is 2**64
+    /*
+     * Period of SplittableRandom is 2**64
+     */
+    static final BigInteger PERIOD = BigInteger.ONE.shiftLeft(64);
+
+    /*
+     * Number of bits used to maintain state of seed.
+     */
+    private static final int STATE_BITS = 64;
+
+    /*
+     * The equidistribution of the algorithm.
+     */
+    private static final int EQUIDISTRIBUTION = 1;
+
+    @Override
+    public int stateBits() {
+        return STATE_BITS;
+    }
+
+    @Override
+    public int equidistribution() {
+        return EQUIDISTRIBUTION;
+    }
 
     @Override
     public BigInteger period() {

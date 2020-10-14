@@ -176,8 +176,6 @@ class RandomTestMoments {
         RandomGenerator.all().forEach(factory -> {
             testOneRng(factory.create(325));
         });
-
-       testOneRng(new java.util.SplittableRandom(325));
     }
 
 }

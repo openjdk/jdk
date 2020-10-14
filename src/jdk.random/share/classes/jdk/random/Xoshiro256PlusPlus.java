@@ -32,6 +32,15 @@ import java.util.random.RandomGenerator.LeapableGenerator;
 import java.util.random.RandomSupport;
 
 /**
+ * {@preview Associated with random number generators, a preview feature of
+ *           the Java core libraries.
+ *
+ *           This class is associated with <i>random number generators</i>,
+ *           a preview feature of the Java core libraries. Programs can only use
+ *           this class when preview features are enabled. Preview features
+ *           may be removed in a future release, or upgraded to permanent
+ *           features of the Java core libraries.}
+ *
  * A "jumpable and leapable" pseudorandom number generator (PRNG) whose period
  * is roughly 2<sup>256</sup>.  Class {@link Xoshiro256PlusPlus} implements
  * interfaces {@link RandomGenerator} and {@link LeapableGenerator},
@@ -83,6 +92,10 @@ import java.util.random.RandomSupport;
  * {@code java.util.secureRandomSeed} is set to {@code true}.
  *
  * @since   16
+ *
+ * @jdk.internal.PreviewFeature(feature= PreviewFeature.Feature.RANDOM_NUMBERS,
+ *          essentialAPI=true)
+ * @SuppressWarnings("preview")
  */
 public final class Xoshiro256PlusPlus implements LeapableGenerator {
 
@@ -135,6 +148,16 @@ public final class Xoshiro256PlusPlus implements LeapableGenerator {
      */
     private static final BigInteger PERIOD =
         BigInteger.ONE.shiftLeft(256).subtract(BigInteger.ONE);
+
+    /*
+     * Number of bits used to maintain state of seed.
+     */
+    private static final int STATE_BITS = 256;
+
+    /*
+     * The equidistribution of the algorithm.
+     */
+    private static final int EQUIDISTRIBUTION = 4;
 
     /* ---------------- instance fields ---------------- */
 
@@ -269,6 +292,16 @@ public final class Xoshiro256PlusPlus implements LeapableGenerator {
         }
         x0 = q0; x1 = q1; x2 = q2; x3 = q3;
         return result;
+    }
+
+    @Override
+    public int stateBits() {
+        return STATE_BITS;
+    }
+
+    @Override
+    public int equidistribution() {
+        return EQUIDISTRIBUTION;
     }
 
     @Override
