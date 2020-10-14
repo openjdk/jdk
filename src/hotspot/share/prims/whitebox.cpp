@@ -1741,8 +1741,13 @@ WB_ENTRY(void, WB_AddReadsModule(JNIEnv* env, jobject o, jobject from_module, jo
 WB_END
 
 WB_ENTRY(jlong, WB_IncMetaspaceCapacityUntilGC(JNIEnv* env, jobject wb, jlong inc))
-  size_t max_size_t = (size_t) -1;
-  if ((size_t) inc > max_size_t) {
+  if (inc < 0) {
+    THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
+        err_msg("WB_IncMetaspaceCapacityUntilGC: inc is negative: " JLONG_FORMAT, inc));
+  }
+
+  jlong max_size_t = (jlong) ((size_t) -1);
+  if (inc > max_size_t) {
     THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
         err_msg("WB_IncMetaspaceCapacityUntilGC: inc does not fit in size_t: " JLONG_FORMAT, inc));
   }
