@@ -309,6 +309,7 @@
   do_intrinsic(_indexOfIU,                java_lang_StringUTF16, indexOf_name, indexOfI_signature,               F_S)   \
   do_intrinsic(_indexOfIUL,               java_lang_StringUTF16, indexOfUL_name, indexOfI_signature,             F_S)   \
   do_intrinsic(_indexOfU_char,            java_lang_StringUTF16, indexOfChar_name, indexOfChar_signature,        F_S)   \
+  do_intrinsic(_indexOfL_char,            java_lang_StringLatin1,indexOfChar_name, indexOfChar_signature,        F_S)   \
    do_name(     indexOf_name,                                    "indexOf")                                             \
    do_name(     indexOfChar_name,                                "indexOfChar")                                         \
    do_name(     indexOfUL_name,                                  "indexOfLatin1")                                       \

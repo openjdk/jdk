@@ -216,14 +216,6 @@ public class SubstDrive {
             fileStore2.getBlockSize());
 
         assertEquals(
-            fileStore1.getUnallocatedSpace(),
-            fileStore2.getUnallocatedSpace());
-
-        assertEquals(
-            fileStore1.getUsableSpace(),
-            fileStore2.getUsableSpace());
-
-        assertEquals(
             fileStore1.name(),
             fileStore2.name());
 

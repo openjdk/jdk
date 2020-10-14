@@ -408,7 +408,6 @@ class Arguments : AllStatic {
   static jint set_aggressive_heap_flags();
 
   // Argument parsing
-  static void do_pd_flag_adjustments();
   static bool parse_argument(const char* arg, JVMFlag::Flags origin);
   static bool process_argument(const char* arg, jboolean ignore_unrecognized, JVMFlag::Flags origin);
   static void process_java_launcher_argument(const char*, void*);

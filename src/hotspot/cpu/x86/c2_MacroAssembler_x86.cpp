@@ -1859,6 +1859,99 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1, Regist
   bind(DONE_LABEL);
 } // string_indexof_char
 
+void C2_MacroAssembler::stringL_indexof_char(Register str1, Register cnt1, Register ch, Register result,
+                                            XMMRegister vec1, XMMRegister vec2, XMMRegister vec3, Register tmp) {
+  ShortBranchVerifier sbv(this);
+  assert(UseSSE42Intrinsics, "SSE4.2 intrinsics are required");
+
+  int stride = 16;
+
+  Label FOUND_CHAR, SCAN_TO_CHAR_INIT, SCAN_TO_CHAR_LOOP,
+        SCAN_TO_16_CHAR, SCAN_TO_16_CHAR_LOOP, SCAN_TO_32_CHAR_LOOP,
+        RET_NOT_FOUND, SCAN_TO_16_CHAR_INIT,
+        FOUND_SEQ_CHAR, DONE_LABEL;
+
+  movptr(result, str1);
+  if (UseAVX >= 2) {
+    cmpl(cnt1, stride);
+    jcc(Assembler::less, SCAN_TO_CHAR_INIT);
+    cmpl(cnt1, stride*2);
+    jcc(Assembler::less, SCAN_TO_16_CHAR_INIT);
+    movdl(vec1, ch);
+    vpbroadcastb(vec1, vec1, Assembler::AVX_256bit);
+    vpxor(vec2, vec2);
+    movl(tmp, cnt1);
+    andl(tmp, 0xFFFFFFE0);  //vector count (in chars)
+    andl(cnt1,0x0000001F);  //tail count (in chars)
+
+    bind(SCAN_TO_32_CHAR_LOOP);
+    vmovdqu(vec3, Address(result, 0));
+    vpcmpeqb(vec3, vec3, vec1, Assembler::AVX_256bit);
+    vptest(vec2, vec3);
+    jcc(Assembler::carryClear, FOUND_CHAR);
+    addptr(result, 32);
+    subl(tmp, stride*2);
+    jcc(Assembler::notZero, SCAN_TO_32_CHAR_LOOP);
+    jmp(SCAN_TO_16_CHAR);
+
+    bind(SCAN_TO_16_CHAR_INIT);
+    movdl(vec1, ch);
+    pxor(vec2, vec2);
+    pshufb(vec1, vec2);
+  }
+
+  bind(SCAN_TO_16_CHAR);
+  cmpl(cnt1, stride);
+  jcc(Assembler::less, SCAN_TO_CHAR_INIT);//less than 16 entires left
+  if (UseAVX < 2) {
+    movdl(vec1, ch);
+    pxor(vec2, vec2);
+    pshufb(vec1, vec2);
+  }
+  movl(tmp, cnt1);
+  andl(tmp, 0xFFFFFFF0);  //vector count (in bytes)
+  andl(cnt1,0x0000000F);  //tail count (in bytes)
+
+  bind(SCAN_TO_16_CHAR_LOOP);
+  movdqu(vec3, Address(result, 0));
+  pcmpeqb(vec3, vec1);
+  ptest(vec2, vec3);
+  jcc(Assembler::carryClear, FOUND_CHAR);
+  addptr(result, 16);
+  subl(tmp, stride);
+  jcc(Assembler::notZero, SCAN_TO_16_CHAR_LOOP);//last 16 items...
+
+  bind(SCAN_TO_CHAR_INIT);
+  testl(cnt1, cnt1);
+  jcc(Assembler::zero, RET_NOT_FOUND);
+  bind(SCAN_TO_CHAR_LOOP);
+  load_unsigned_byte(tmp, Address(result, 0));
+  cmpl(ch, tmp);
+  jccb(Assembler::equal, FOUND_SEQ_CHAR);
+  addptr(result, 1);
+  subl(cnt1, 1);
+  jccb(Assembler::zero, RET_NOT_FOUND);
+  jmp(SCAN_TO_CHAR_LOOP);
+
+  bind(RET_NOT_FOUND);
+  movl(result, -1);
+  jmpb(DONE_LABEL);
+
+  bind(FOUND_CHAR);
+  if (UseAVX >= 2) {
+    vpmovmskb(tmp, vec3);
+  } else {
+    pmovmskb(tmp, vec3);
+  }
+  bsfl(ch, tmp);
+  addl(result, ch);
+
+  bind(FOUND_SEQ_CHAR);
+  subptr(result, str1);
+
+  bind(DONE_LABEL);
+} // stringL_indexof_char
+
 // helper function for string_compare
 void C2_MacroAssembler::load_next_elements(Register elem1, Register elem2, Register str1, Register str2,
                                            Address::ScaleFactor scale, Address::ScaleFactor scale1,

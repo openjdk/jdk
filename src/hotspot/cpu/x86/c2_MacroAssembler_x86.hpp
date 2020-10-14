@@ -131,6 +131,9 @@ public:
   void string_indexof_char(Register str1, Register cnt1, Register ch, Register result,
                            XMMRegister vec1, XMMRegister vec2, XMMRegister vec3, Register tmp);
 
+  void stringL_indexof_char(Register str1, Register cnt1, Register ch, Register result,
+                           XMMRegister vec1, XMMRegister vec2, XMMRegister vec3, Register tmp);
+
   // IndexOf strings.
   // Small strings are loaded through stack if they cross page boundary.
   void string_indexof(Register str1, Register str2,
