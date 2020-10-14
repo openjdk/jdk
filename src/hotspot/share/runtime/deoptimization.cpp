@@ -218,6 +218,11 @@ static bool eliminate_allocations(JavaThread* thread, int exec_mode, CompiledMet
       Thread* THREAD = thread;
       // Clear pending OOM if reallocation fails and return true indicating allocation failure
       realloc_failures = Deoptimization::realloc_objects(thread, &deoptee, &map, objects, CHECK_AND_CLEAR_(true));
+      // Make sure the deoptee frame gets processed after a potential safepoint during
+      // object reallocation. This is necessary because (a) deoptee_thread can be
+      // different from the current thread and (b) the deoptee frame does not need to be
+      // the top frame.
+      StackWatermarkSet::finish_processing(deoptee_thread, NULL /* context */, StackWatermarkKind::gc);
       deoptimized_objects = true;
     } else {
       JRT_BLOCK
@@ -1650,6 +1655,10 @@ void Deoptimization::revoke_for_object_deoptimization(JavaThread* deoptee_thread
     return;
   }
   GrowableArray<Handle>* objects_to_revoke = new GrowableArray<Handle>();
+  if (deoptee_thread != thread) {
+    // Process stack of deoptee thread as we will access oops during object deoptimization.
+    StackWatermarkSet::start_processing(deoptee_thread, StackWatermarkKind::gc);
+  }
   // Collect monitors but only those with eliminated locking.
   get_monitors_from_stack(objects_to_revoke, deoptee_thread, fr, map, true);
 

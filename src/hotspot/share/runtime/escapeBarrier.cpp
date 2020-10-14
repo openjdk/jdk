@@ -76,7 +76,7 @@ bool EscapeBarrier::deoptimize_objects(int depth) {
     assert(calling_thread() == Thread::current(), "should be");
     ResourceMark rm(calling_thread());
     HandleMark   hm(calling_thread());
-    RegisterMap  reg_map(deoptee_thread());
+    RegisterMap  reg_map(deoptee_thread(), false /* update_map */, false /* process_frames */);
     vframe* vf = deoptee_thread()->last_java_vframe(&reg_map);
     int cur_depth = 0;
     while (vf != NULL && ((cur_depth <= depth) || !vf->is_entry_frame())) {
@@ -110,7 +110,7 @@ bool EscapeBarrier::deoptimize_objects_all_threads() {
   ResourceMark rm(calling_thread());
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
     if (jt->has_last_Java_frame()) {
-      RegisterMap reg_map(jt);
+      RegisterMap reg_map(jt, false /* update_map */, false /* process_frames */);
       vframe* vf = jt->last_java_vframe(&reg_map);
       assert(jt->frame_anchor()->walkable(),
              "The stack of JavaThread " PTR_FORMAT " is not walkable. Thread state is %d",
@@ -307,6 +307,10 @@ bool EscapeBarrier::deoptimize_objects_internal(JavaThread* deoptee, intptr_t* f
     compiledVFrame* last_cvf;
     bool fr_is_deoptimized;
     do {
+      if (!self_deopt()) {
+        // Process stack of deoptee thread as we will access oops during object deoptimization.
+        StackWatermarkSet::start_processing(deoptee, StackWatermarkKind::gc);
+      }
       StackFrameStream fst(deoptee, true /* update */, true /* process_frames */);
       while (fst.current()->id() != fr_id && !fst.is_done()) {
         fst.next();
