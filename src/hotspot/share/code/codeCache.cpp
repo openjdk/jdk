@@ -71,6 +71,7 @@
 #include "opto/node.hpp"
 #endif
 
+#ifndef PRODUCT
 // Helper class for printing in CodeCache
 class CodeBlob_sizes {
  private:
@@ -136,6 +137,7 @@ class CodeBlob_sizes {
     }
   }
 };
+#endif
 
 // Iterate over all CodeHeaps
 #define FOR_ALL_HEAPS(heap) for (GrowableArrayIterator<CodeHeap*> heap = _heaps->begin(); heap != _heaps->end(); ++heap)
