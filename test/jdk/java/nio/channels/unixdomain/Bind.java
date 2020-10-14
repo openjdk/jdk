@@ -177,6 +177,14 @@ public class Bind {
             assertAddress(a, nullAddr, "null address");
             assertEquals(a, UNNAMED);
         });
+        // client bind to UNNAMED: allowed
+        checkNormal(() -> {
+            client = SocketChannel.open(StandardProtocolFamily.UNIX);
+            client.bind(UNNAMED);
+            SocketAddress a = client.getLocalAddress();
+            assertAddress(a, nullAddr, "null address");
+            assertEquals(a, UNNAMED);
+        });
         // server bind to null: should bind to a local address
         checkNormal(() -> {
             server = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
@@ -242,6 +250,22 @@ public class Bind {
             AlreadyBoundException.class, () -> {
                 client = SocketChannel.open(StandardProtocolFamily.UNIX);
                 client.bind(cAddr);
+                client.bind(cAddr);
+            }
+        );
+        // client multiple bind to different addresses: not allowed
+        checkException(
+            AlreadyBoundException.class, () -> {
+                client = SocketChannel.open(StandardProtocolFamily.UNIX);
+                client.bind(cAddr);
+                client.bind(sAddr);
+            }
+        );
+        // client multiple bind to differnt addresses, incl null: not allowed
+        checkException(
+            AlreadyBoundException.class, () -> {
+                client = SocketChannel.open(StandardProtocolFamily.UNIX);
+                client.bind(null);
                 client.bind(cAddr);
             }
         );

@@ -1,0 +1,4 @@
+grant {
+    // No permission
+    permission java.io.FilePermission "sock", "delete";
+};

@@ -26,6 +26,7 @@
  * @bug 8231358
  * @run main/othervm/java.security.policy=policy1 Security policy1
  * @run main/othervm/java.security.policy=policy2 Security policy2
+ * @run main/othervm Security policy3
  * @summary Security test for Unix Domain socket and server socket channels
  */
 
@@ -66,7 +67,7 @@ public class Security {
         }
         if (expectedException != null && !threw) {
             // should have thrown
-            throw new RuntimeException("SecurityException was expected");
+            throw new RuntimeException("% was expected".formatted(expectedException.getName()));
         }
     }
 
@@ -74,18 +75,32 @@ public class Security {
     public static void main(String[] args) throws Exception {
         try {
            SocketChannel.open(UNIX);
-        }
-        catch (UnsupportedOperationException e) {
+        } catch (UnsupportedOperationException e) {
             System.out.println("Unix domain not supported");
             return;
         }
 
         String policy = args[0];
-        if (policy.equals("policy1")) {
-            testPolicy1();
-        } else {
-            testPolicy2();
+	switch (policy) {
+            case "policy1":
+                testPolicy1();
+		break;
+            case "policy2":
+                testPolicy2();
+		break;
+            case "policy3":
+                testPolicy3();
+		break;
         }
+    }
+
+    static void setSecurityManager(String policy) {
+        String testSrc = System.getProperty("test.src");
+        // Three /// required for Windows below
+        String policyURL = "file:///" + testSrc + File.separator + policy;
+        System.out.println("POLICY: " + policyURL);
+        System.setProperty("java.security.policy", policyURL);
+        System.setSecurityManager(new SecurityManager());
     }
 
     static void close(NetworkChannel... channels) {
@@ -136,5 +151,40 @@ public class Security {
         }, null);
         close(server, client);
         Files.deleteIfExists(servername);
+    }
+
+    public static void testPolicy3() throws Exception {
+        Path sock1 = Path.of("sock3");
+        Files.deleteIfExists(sock1);
+        final UnixDomainSocketAddress saddr = UnixDomainSocketAddress.of(sock1);
+	var s1 = ServerSocketChannel.open(UNIX);
+	s1.bind(saddr);
+	var s2 = ServerSocketChannel.open(UNIX);
+	s2.bind(null);
+	var add2 = (UnixDomainSocketAddress)s2.getLocalAddress();
+	saddr.getPath().toFile().deleteOnExit();
+	add2.getPath().toFile().deleteOnExit();
+
+	// Now set security manager and check if we can see addresses
+
+	setSecurityManager("policy3");
+
+	if (((UnixDomainSocketAddress)s1
+			.getLocalAddress())
+			.getPath()
+			.toString()
+			.length() != 0)
+	{
+	    throw new RuntimeException("address should have been empty");
+	}
+
+	if (((UnixDomainSocketAddress)s2
+			.getLocalAddress())
+			.getPath()
+			.toString()
+			.length() != 0)
+	{
+	    throw new RuntimeException("address should have been empty");
+	}
     }
 }
