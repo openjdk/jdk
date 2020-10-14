@@ -380,6 +380,20 @@ void VM_Version::initialize() {
     UsePopCountInstruction = true;
   }
 
+  if (_features & CPU_PACA) {
+#ifdef __ARM_FEATURE_PAC_DEFAULT
+    FLAG_SET_DEFAULT(UseROPProtection, true);
+#else
+    // The VM has not been built with the branch protection flag.
+    // Therefore there's no benefit in protecting generated code.
+    warning("UseROPProtection specified, but not supported.");
+    FLAG_SET_DEFAULT(UseROPProtection, false);
+#endif
+  } else if (UseROPProtection) {
+    warning("UseROPProtection specified, but not supported on this CPU");
+    FLAG_SET_DEFAULT(UseROPProtection, false);
+  }
+
 #ifdef COMPILER2
   if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
     UseMultiplyToLenIntrinsic = true;

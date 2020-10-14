@@ -111,10 +111,11 @@ public:
     decl(SHA3,          "sha3",          17)  \
     decl(SHA512,        "sha512",        21)  \
     decl(SVE,           "sve",           22)  \
+    decl(PACA,          "paca",          30)  \
     /* flags above must follow Linux HWCAP */ \
     decl(SVE2,          "sve2",          28)  \
     decl(STXR_PREFETCH, "stxr_prefetch", 29)  \
-    decl(A53MAC,        "a53mac",        30)
+    decl(A53MAC,        "a53mac",        31)
 
 #define DECLARE_CPU_FEATURE_FLAG(id, name, bit) CPU_##id = (1 << bit),
     CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_FLAG)

@@ -72,6 +72,10 @@
 #define HWCAP_SVE (1 << 22)
 #endif
 
+#ifndef HWCAP_PACA
+#define HWCAP_PACA (1 << 30)
+#endif
+
 #ifndef HWCAP2_SVE2
 #define HWCAP2_SVE2 (1 << 1)
 #endif
@@ -111,6 +115,7 @@ void VM_Version::get_os_cpu_info() {
   static_assert(CPU_SHA3    == HWCAP_SHA3,    "Flag CPU_SHA3 must follow Linux HWCAP");
   static_assert(CPU_SHA512  == HWCAP_SHA512,  "Flag CPU_SHA512 must follow Linux HWCAP");
   static_assert(CPU_SVE     == HWCAP_SVE,     "Flag CPU_SVE must follow Linux HWCAP");
+  static_assert(CPU_PACA    == HWCAP_PACA,    "Flag CPU_PACA must follow Linux HWCAP");
   _features = auxv & (
       HWCAP_FP      |
       HWCAP_ASIMD   |
@@ -124,7 +129,8 @@ void VM_Version::get_os_cpu_info() {
       HWCAP_DCPOP   |
       HWCAP_SHA3    |
       HWCAP_SHA512  |
-      HWCAP_SVE);
+      HWCAP_SVE     |
+      HWCAP_PACA);
 
   if (auxv2 & HWCAP2_SVE2) _features |= CPU_SVE2;
 
