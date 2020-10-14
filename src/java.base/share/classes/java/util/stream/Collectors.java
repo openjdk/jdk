@@ -277,7 +277,7 @@ public final class Collectors {
      */
     public static <T>
     Collector<T, ?, List<T>> toList() {
-        return new CollectorImpl<>((Supplier<List<T>>) ArrayList::new, List::add,
+        return new CollectorImpl<>(ArrayList::new, List::add,
                                    (left, right) -> { left.addAll(right); return left; },
                                    CH_ID);
     }
@@ -293,13 +293,18 @@ public final class Collectors {
      * <a href="../List.html#unmodifiable">unmodifiable List</a> in encounter order
      * @since 10
      */
-    @SuppressWarnings("unchecked")
     public static <T>
     Collector<T, ?, List<T>> toUnmodifiableList() {
-        return new CollectorImpl<>((Supplier<List<T>>) ArrayList::new, List::add,
+        return new CollectorImpl<>(ArrayList::new, List::add,
                                    (left, right) -> { left.addAll(right); return left; },
-                                   list -> (List<T>)SharedSecrets.getJavaUtilCollectionAccess()
-                                                                 .listFromTrustedArray(list.toArray()),
+                                   list -> {
+                                       if (list.getClass() == ArrayList.class) { // ensure it's trusted
+                                           return SharedSecrets.getJavaUtilCollectionAccess()
+                                                               .listFromTrustedArray(list.toArray());
+                                       } else {
+                                           throw new IllegalArgumentException();
+                                       }
+                                   },
                                    CH_NOID);
     }
 
@@ -319,7 +324,7 @@ public final class Collectors {
      */
     public static <T>
     Collector<T, ?, Set<T>> toSet() {
-        return new CollectorImpl<>((Supplier<Set<T>>) HashSet::new, Set::add,
+        return new CollectorImpl<>(HashSet::new, Set::add,
                                    (left, right) -> {
                                        if (left.size() < right.size()) {
                                            right.addAll(left); return right;
@@ -348,7 +353,7 @@ public final class Collectors {
     @SuppressWarnings("unchecked")
     public static <T>
     Collector<T, ?, Set<T>> toUnmodifiableSet() {
-        return new CollectorImpl<>((Supplier<Set<T>>) HashSet::new, Set::add,
+        return new CollectorImpl<>(HashSet::new, Set::add,
                                    (left, right) -> {
                                        if (left.size() < right.size()) {
                                            right.addAll(left); return right;

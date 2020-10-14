@@ -32,6 +32,12 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
+#ifdef LINUX
+// Note. On Alpine Linux pthread.h includes calloc/malloc functions declaration.
+// We need to include pthread.h before the following stdlib names poisoning.
+#include <pthread.h>
+#endif
+
 #ifdef DEBUG
     /* Just to make sure these interfaces are not used here. */
     #undef free

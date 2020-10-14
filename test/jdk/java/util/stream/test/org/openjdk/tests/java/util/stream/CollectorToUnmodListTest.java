@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,39 +20,33 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package org.openjdk.tests.java.util.stream;
 
-#ifndef SHARE_GC_Z_ZWORKERS_HPP
-#define SHARE_GC_Z_ZWORKERS_HPP
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
-#include "gc/shared/workgroup.hpp"
-#include "memory/allocation.hpp"
+import org.testng.annotations.Test;
+import static org.testng.Assert.*;
 
-class ThreadClosure;
-class ZTask;
-
-class ZWorkers {
-private:
-  bool     _boost;
-  WorkGang _workers;
-
-  void run(ZTask* task, uint nworkers);
-
-public:
-  ZWorkers();
-
-  uint nparallel() const;
-  uint nparallel_no_boost() const;
-  uint nconcurrent() const;
-  uint nconcurrent_no_boost() const;
-  uint nworkers() const;
-
-  void set_boost(bool boost);
-
-  void run_serial(ZTask* task);
-  void run_parallel(ZTask* task);
-  void run_concurrent(ZTask* task);
-
-  void threads_do(ThreadClosure* tc) const;
-};
-
-#endif // SHARE_GC_Z_ZWORKERS_HPP
+/*
+ * @test
+ * @bug 8254090
+ * @summary Test for Collectors.toUnmodifiableList().
+ */
+public class CollectorToUnmodListTest {
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testFinisher() {
+        String[] array = { "x", "y", "z" };
+        List<String> in = new ArrayList<>() {
+            public Object[] toArray() {
+                return array;
+            }
+        };
+        var finisher = (Function<List<String>, List<String>>)Collectors.<String>toUnmodifiableList().finisher();
+        assertThrows(IllegalArgumentException.class, () -> finisher.apply(in));
+  }
+}

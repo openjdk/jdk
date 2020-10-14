@@ -30,7 +30,7 @@
 #include "ci/ciObject.hpp"
 #include "ci/ciSignature.hpp"
 #include "compiler/methodLiveness.hpp"
-#include "prims/methodHandles.hpp"
+#include "runtime/handles.hpp"
 #include "utilities/bitMap.hpp"
 
 class ciMethodBlocks;
