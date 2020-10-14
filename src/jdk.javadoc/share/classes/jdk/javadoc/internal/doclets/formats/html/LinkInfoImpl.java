@@ -256,7 +256,6 @@ public class LinkInfoImpl extends LinkInfo {
      */
     public String target = "";
     public  final Utils utils;
-    
     /**
      * Construct a LinkInfo object.
      *

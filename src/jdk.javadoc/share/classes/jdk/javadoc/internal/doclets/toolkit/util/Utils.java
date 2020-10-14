@@ -2991,7 +2991,7 @@ public class Utils {
         private DeclarationPreviewLanguageFeatures(List<String> features) {
             this.features = features;
         }
-        
+
     }
 
     @SuppressWarnings("preview")

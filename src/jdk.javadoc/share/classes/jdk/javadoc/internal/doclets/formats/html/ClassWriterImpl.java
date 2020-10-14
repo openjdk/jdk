@@ -327,7 +327,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
             }
         }
     }
-    
+
     private void addPreviewInfo(Content classInfoTree) {
         addPreviewInfo(typeElement, classInfoTree);
     }
