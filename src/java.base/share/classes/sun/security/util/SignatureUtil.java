@@ -194,10 +194,10 @@ public class SignatureUtil {
         SharedSecrets.getJavaSecuritySignatureAccess().initSign(s, key, params, sr);
     }
 
-    private static class EdDSADigestAlgHolder {
-        final static AlgorithmId sha512;
-        final static AlgorithmId shake256;
-        final static AlgorithmId shake256$512;
+    public static class EdDSADigestAlgHolder {
+        public final static AlgorithmId sha512;
+        public final static AlgorithmId shake256;
+        public final static AlgorithmId shake256$512;
 
         static {
             try {

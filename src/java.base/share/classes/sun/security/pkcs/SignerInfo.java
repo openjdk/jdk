@@ -34,6 +34,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.CertPath;
 import java.security.cert.X509Certificate;
 import java.security.*;
+import java.security.spec.PSSParameterSpec;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -417,7 +418,8 @@ public class SignerInfo implements DerEncoder {
             // to form signing algorithm. See makeSigAlg for details.
             String algname = makeSigAlg(
                     digestAlgorithmId,
-                    digestEncryptionAlgorithmId);
+                    digestEncryptionAlgorithmId,
+                    authenticatedAttributes == null);
 
             // check that jar signature algorithm is not restricted
             try {
@@ -502,19 +504,46 @@ public class SignerInfo implements DerEncoder {
     /**
      * Derives the signature algorithm name from the digest algorithm
      * name and the encryption algorithm name inside a PKCS7 SignerInfo.
-     * This is useful for old style PKCS7 files where we use RSA, DSA, EC
-     * as SingerInfo.digestEncryptionAlgorithmId. Now we use the
-     * signature algorithms directly.
+     *
+     * For old style PKCS7 files where we use RSA, DSA, EC asencAlgId
+     * a DIGESTwithENC algorithm is returned. For new style RSASSA-PSS
+     * and EdDSA encryption, this method ensures digAlgId is compatible
+     * with the algorithm.
+     *
+     * @param digAlgId the digest algorithm
+     * @param encAlgId the encryption or signature algorithm
+     * @param directSign whether the signature is calculated on the content
+     *                   directly. This makes difference for Ed448.
      */
-    public static String makeSigAlg(AlgorithmId digAlgId, AlgorithmId encAlgId) {
+    public static String makeSigAlg(AlgorithmId digAlgId, AlgorithmId encAlgId,
+            boolean directSign) throws NoSuchAlgorithmException {
         String encAlg = encAlgId.getName();
         if (encAlg.contains("with")) {
             return encAlg;
         }
         switch (encAlg) {
             case "RSASSA-PSS":
+                PSSParameterSpec spec = (PSSParameterSpec)
+                        SignatureUtil.getParamSpec(encAlg, encAlgId.getParameters());
+                if (!AlgorithmId.get(spec.getDigestAlgorithm()).equals(digAlgId)) {
+                    throw new NoSuchAlgorithmException("Incompatible digest algorithm");
+                }
+                return encAlg;
             case "Ed25519":
+                if (!digAlgId.equals(SignatureUtil.EdDSADigestAlgHolder.sha512)) {
+                    throw new NoSuchAlgorithmException("Incompatible digest algorithm");
+                }
+                return encAlg;
             case "Ed448":
+                if (directSign) {
+                    if (!digAlgId.equals(SignatureUtil.EdDSADigestAlgHolder.shake256)) {
+                        throw new NoSuchAlgorithmException("Incompatible digest algorithm");
+                    }
+                } else {
+                    if (!digAlgId.equals(SignatureUtil.EdDSADigestAlgHolder.shake256$512)) {
+                        throw new NoSuchAlgorithmException("Incompatible digest algorithm");
+                    }
+                }
                 return encAlg;
             default:
                 String digAlg = digAlgId.getName().replace("-", "");

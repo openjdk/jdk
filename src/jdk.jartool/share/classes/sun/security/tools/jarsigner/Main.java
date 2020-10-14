@@ -163,6 +163,7 @@ public class Main {
     boolean debug = false; // debug
     boolean signManifest = true; // "sign" the whole manifest
     boolean externalSF = true; // leave the .SF out of the PKCS7 block
+    boolean directSign = false; // sign SF directly or thru signedAttrs
     boolean strict = false;  // treat warnings as error
     boolean revocationCheck = false; // Revocation check flag
 
@@ -472,6 +473,8 @@ public class Main {
                 signManifest = false;
             } else if (collator.compare(flags, "-internalsf") ==0) {
                 externalSF = false;
+            } else if (collator.compare(flags, "-directsign") ==0) {
+                directSign = true;
             } else if (collator.compare(flags, "-verify") ==0) {
                 verify = true;
             } else if (collator.compare(flags, "-verbose") ==0) {
@@ -659,6 +662,9 @@ public class Main {
         System.out.println();
         System.out.println(rb.getString
                 (".internalsf.include.the.SF.file.inside.the.signature.block"));
+        System.out.println();
+        System.out.println(rb.getString
+                (".directsign.sign.the.SF.file.directly.no.signed.attributes"));
         System.out.println();
         System.out.println(rb.getString
                 (".sectionsonly.don.t.compute.hash.of.entire.manifest"));
@@ -957,7 +963,8 @@ public class Main {
                             String digestAlg = digestMap.get(s);
                             String sigAlg = SignerInfo.makeSigAlg(
                                     si.getDigestAlgorithmId(),
-                                    si.getDigestEncryptionAlgorithmId());
+                                    si.getDigestEncryptionAlgorithmId(),
+                                    si.getAuthenticatedAttributes() == null);
                             PublicKey key = signer.getPublicKey();
                             PKCS7 tsToken = si.getTsToken();
                             if (tsToken != null) {
@@ -970,7 +977,8 @@ public class Main {
                                 String tsDigestAlg = tsTokenInfo.getHashAlgorithm().getName();
                                 String tsSigAlg = SignerInfo.makeSigAlg(
                                         tsSi.getDigestAlgorithmId(),
-                                        tsSi.getDigestEncryptionAlgorithmId());
+                                        tsSi.getDigestEncryptionAlgorithmId(),
+                                        tsSi.getAuthenticatedAttributes() == null);
                                 Calendar c = Calendar.getInstance(
                                         TimeZone.getTimeZone("UTC"),
                                         Locale.getDefault(Locale.Category.FORMAT));
@@ -1765,6 +1773,7 @@ public class Main {
 
         builder.setProperty("sectionsOnly", Boolean.toString(!signManifest));
         builder.setProperty("internalSF", Boolean.toString(!externalSF));
+        builder.setProperty("directsign", Boolean.toString(directSign));
 
         FileOutputStream fos = null;
         try {

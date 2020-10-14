@@ -820,6 +820,8 @@ public class PKCS7 {
             authAttrs = new PKCS9Attributes(new PKCS9Attribute[]{
                     new PKCS9Attribute(PKCS9Attribute.CONTENT_TYPE_OID,
                             ContentInfo.DATA_OID),
+                    new PKCS9Attribute(PKCS9Attribute.SIGNING_TIME_OID,
+                            new Date()),
                     new PKCS9Attribute(PKCS9Attribute.CMS_ALGORITHM_PROTECTION_OID,
                             derAp.toByteArray()),
                     new PKCS9Attribute(PKCS9Attribute.MESSAGE_DIGEST_OID,
