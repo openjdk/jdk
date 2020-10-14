@@ -68,7 +68,7 @@ public class IndexOfBenchmark {
     private static String makeRndString(boolean isUtf16, int length) {
         StringBuilder sb = new StringBuilder(length);
         if(length > 0){
-            sb.append(isUtf16?'☺':'b');
+            sb.append(isUtf16?'\u2026':'b'); // ...
 
             for (int i = 1; i < length-1; i++) {
                 sb.append((char)('b' + rng.nextInt(26)));
