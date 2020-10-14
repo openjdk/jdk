@@ -30,6 +30,14 @@ import java.util.ServiceLoader;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.Plugin;
 
+/**
+ * The base class for the DocLint service used by javac.
+ *
+ * <p><b>This is NOT part of any supported API.
+ * If you write code that depends on this, you do so at your own risk.
+ * This code and its internal interfaces are subject to change or
+ * deletion without notice.</b>
+ */
 public abstract class DocLint implements Plugin {
     public static final String XMSGS_OPTION = "-Xmsgs";
     public static final String XMSGS_CUSTOM_PREFIX = "-Xmsgs:";

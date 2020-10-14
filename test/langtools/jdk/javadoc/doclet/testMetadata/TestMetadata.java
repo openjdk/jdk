@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8218998 8219946 8219060 8241190 8242056
+ * @bug 8218998 8219946 8219060 8241190 8242056 8254627
  * @summary Add metadata to generated API documentation files
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -150,6 +150,7 @@ public class TestMetadata extends JavadocTester {
         "deprecated-list-page",
         "doc-file-page",
         "help-page",
+        "index-page",
         "index-redirect-page",
         "module-declaration-page",
         "module-index-page",
@@ -158,9 +159,7 @@ public class TestMetadata extends JavadocTester {
         "package-tree-page",
         "package-use-page",
         "serialized-form-page",
-        "single-index-page",
         "source-page",
-        "split-index-page",
         "system-properties-page",
         "tree-page"
     );
@@ -218,6 +217,7 @@ public class TestMetadata extends JavadocTester {
             "DocFileWriter",
             "HelpWriter",
             "IndexRedirectWriter",
+            "IndexWriter",
             "ModuleIndexWriter",
             "ModuleWriterImpl",
             "PackageIndexWriter",
@@ -225,9 +225,7 @@ public class TestMetadata extends JavadocTester {
             "PackageUseWriter",
             "PackageWriterImpl",
             "SerializedFormWriterImpl",
-            "SingleIndexWriter",
             "SourceToHTMLConverter",
-            "SplitIndexWriter",
             "SystemPropertiesWriter",
             "TreeWriter"
             );
@@ -353,6 +351,10 @@ public class TestMetadata extends JavadocTester {
                 check(generator, content, content.contains("redirect"));
                 break;
 
+            case "IndexWriter":
+                check(generator, content, content.startsWith("index"));
+                break;
+
             case "PackageTreeWriter":
             case "TreeWriter":
                 check(generator, content, content.contains("tree"));
@@ -360,11 +362,6 @@ public class TestMetadata extends JavadocTester {
 
             case "SerializedFormWriterImpl":
                 check(generator, content, content.contains("serialized"));
-                break;
-
-            case "SingleIndexWriter":
-            case "SplitIndexWriter":
-                check(generator, content, content.startsWith("index"));
                 break;
 
             case "SourceToHTMLConverter":

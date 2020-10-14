@@ -117,7 +117,7 @@ template <class T>
 intptr_t* CppVtableCloner<T>::allocate(const char* name) {
   assert(is_aligned(mc_region()->top(), sizeof(intptr_t)), "bad alignment");
   int n = get_vtable_length(name);
-  _info = (CppVtableInfo*)mc_region()->allocate(CppVtableInfo::byte_size(n), sizeof(intptr_t));
+  _info = (CppVtableInfo*)mc_region()->allocate(CppVtableInfo::byte_size(n));
   _info->set_vtable_size(n);
 
   intptr_t* p = clone_vtable(name, _info);
@@ -242,7 +242,7 @@ static intptr_t** _cloned_cpp_vtptrs = NULL;
 void CppVtables::allocate_cloned_cpp_vtptrs() {
   assert(DumpSharedSpaces, "must");
   size_t vtptrs_bytes = _num_cloned_vtable_kinds * sizeof(intptr_t*);
-  _cloned_cpp_vtptrs = (intptr_t**)mc_region()->allocate(vtptrs_bytes, sizeof(intptr_t*));
+  _cloned_cpp_vtptrs = (intptr_t**)mc_region()->allocate(vtptrs_bytes);
 }
 
 void CppVtables::serialize_cloned_cpp_vtptrs(SerializeClosure* soc) {
