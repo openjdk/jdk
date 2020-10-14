@@ -447,6 +447,12 @@ public enum HtmlStyle {
     colLast,
 
     /**
+     * The class of the cells in a table column used to display the name
+     * of a deprecated item.
+     */
+    colPreviewItemName,
+
+    /**
      * The class of the second column of cells in a table.
      * This is typically the column that defines the name of a field or the
      * name and parameters of a method.

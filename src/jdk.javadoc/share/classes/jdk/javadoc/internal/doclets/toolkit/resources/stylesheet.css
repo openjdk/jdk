@@ -439,7 +439,7 @@ div.table-tabs > button.table-tab {
     text-align:left;
     padding: 8px 3px 3px 7px;
 }
-.col-first, .col-second, .col-last, .col-constructor-name, .col-deprecated-item-name {
+.col-first, .col-second, .col-last, .col-constructor-name, .col-deprecated-item-name, .col-preview-item-name {
     vertical-align:top;
     padding-right:0;
     padding-top:8px;

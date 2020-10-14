@@ -45,8 +45,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.util.DeprecatedAPIListBuilder;
-import jdk.javadoc.internal.doclets.toolkit.util.DeprecatedAPIListBuilder.DeprElementKind;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
@@ -343,11 +341,11 @@ public class PreviewListWriter extends SubWriterHolderWriter {
             String tableSummary, TableHeader tableHeader, Content contentTree) {
         if (deprList.size() > 0) {
             Content caption = contents.getContent(headingKey);
-            Table table = new Table(HtmlStyle.deprecatedSummary, HtmlStyle.summaryTable)
+            Table table = new Table(HtmlStyle.summaryTable)
                     .setCaption(caption)
                     .setHeader(tableHeader)
                     .setId(id)
-                    .setColumnStyles(HtmlStyle.colDeprecatedItemName, HtmlStyle.colLast);
+                    .setColumnStyles(HtmlStyle.colPreviewItemName, HtmlStyle.colLast);
             for (Element e : deprList) {
                 Content link;
                 switch (e.getKind()) {
@@ -377,7 +375,6 @@ public class PreviewListWriter extends SubWriterHolderWriter {
     }
 
     protected Content getPreviewLink(Element e) {
-        //XXX!!!XXX!!!XXX!!!
         AbstractMemberWriter writer;
         switch (e.getKind()) {
             case INTERFACE:
