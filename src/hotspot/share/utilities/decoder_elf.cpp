@@ -26,7 +26,7 @@
 
 #if !defined(_WINDOWS) && !defined(__APPLE__)
 #include "decoder_elf.hpp"
-#include "memory/allocation.inline.hpp"
+#include "logging/log.hpp"
 
 ElfDecoder::~ElfDecoder() {
   if (_opened_elf_files != NULL) {
@@ -54,20 +54,24 @@ bool ElfDecoder::decode(address addr, char *buf, int buflen, int* offset, const 
 }
 
 bool ElfDecoder::get_source_info(address pc, char* buf, size_t buflen, int* line) {
-  log_debug(dwarf)("##### Find filename and line number for " INTPTR_FORMAT " #####", p2i(pc));
   char filepath[JVM_MAXPATHLEN];
   int offset_in_library;
   if (!os::dll_address_to_library_name(pc, filepath, sizeof(filepath), &offset_in_library)) {
     return false;
   }
 
+  if (offset_in_library < 0) {
+    // Should not have been overflown
+  }
+  const uint32_t unsigend_offset_in_library = (uint32_t) offset_in_library;
+  log_debug(dwarf)("##### Find filename and line number for offset " PTR32_FORMAT " in library %s #####", unsigend_offset_in_library, filepath);
+
   ElfFile* file = get_elf_file(filepath);
   if (file == NULL) {
     return false;
   }
 
-  if (!file->get_source_info(offset_in_library, buf, buflen, line)) {
-    log_error(dwarf)("Failed to retrieve line number and filename information for pc: " INTPTR_FORMAT, p2i(pc));
+  if (!file->get_source_info(unsigend_offset_in_library, buf, buflen, line)) {
     return false;
   }
 
