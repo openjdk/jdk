@@ -213,8 +213,8 @@ public class TestLists extends JavadocTester {
                     <li>
                     <section class="field-summary" id="field.summary">
                     <h2>Field Summary</h2>
-                    <div class="member-summary">
-                    <table class="summary-table">""",
+                    <div class="caption"><span>Fields</span></div>
+                    <div class="summary-table three-column-summary">""",
                 """
                     </section>
                     </li>
@@ -222,8 +222,8 @@ public class TestLists extends JavadocTester {
                     <li>
                     <section class="constructor-summary" id="constructor.summary">
                     <h2>Constructor Summary</h2>
-                    <div class="member-summary">
-                    <table class="summary-table">""");
+                    <div class="caption"><span>Constructors</span></div>
+                    <div class="summary-table two-column-summary">""");
 
         checkOutput("p/E.html", true,
                 """
@@ -233,8 +233,8 @@ public class TestLists extends JavadocTester {
                     <li>
                     <section class="constants-summary" id="enum.constant.summary">
                     <h2>Enum Constant Summary</h2>
-                    <div class="member-summary">
-                    <table class="summary-table">""");
+                    <div class="caption"><span>Enum Constants</span></div>
+                    <div class="summary-table two-column-summary">""");
 
         checkOutput("p/A.html", true,
                 """
@@ -244,8 +244,8 @@ public class TestLists extends JavadocTester {
                     <li>
                     <section class="member-summary" id="annotation.type.required.element.summary">
                     <h2>Required Element Summary</h2>
-                    <div class="member-summary">
-                    <table class="summary-table">""");
+                    <div class="caption"><span>Required Elements</span></div>
+                    <div class="summary-table three-column-summary">""");
 
     }
 }

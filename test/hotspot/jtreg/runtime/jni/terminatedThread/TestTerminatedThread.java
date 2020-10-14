@@ -26,6 +26,9 @@ import java.lang.management.*;
  * @test
  * @bug     8205878 8206954
  * @requires os.family != "windows"
+ * @comment Calling pthread_getcpuclockid() with invalid pid leads to undefined
+ * behavior in musl libc (see 8240187).
+ * @requires !vm.musl
  * @summary Basic test of Thread and ThreadMXBean queries on a natively
  *          attached thread that has failed to detach before terminating.
  * @comment The native code only supports POSIX so no windows testing

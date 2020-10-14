@@ -102,8 +102,7 @@ class MacroAssembler: public Assembler {
  virtual void check_and_handle_popframe(Register java_thread);
  virtual void check_and_handle_earlyret(Register java_thread);
 
-  void safepoint_poll(Label& slow_path);
-  void safepoint_poll_acquire(Label& slow_path);
+  void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod);
 
   // Biased locking support
   // lock_reg and obj_reg must be loaded up with the appropriate values.
@@ -1231,7 +1230,6 @@ public:
 
   address read_polling_page(Register r, relocInfo::relocType rtype);
   void get_polling_page(Register dest, relocInfo::relocType rtype);
-  address fetch_and_read_polling_page(Register r, relocInfo::relocType rtype);
 
   // CRC32 code for java.util.zip.CRC32::updateBytes() instrinsic.
   void update_byte_crc32(Register crc, Register val, Register table);

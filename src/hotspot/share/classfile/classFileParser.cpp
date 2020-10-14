@@ -6056,7 +6056,18 @@ void ClassFileParser::mangle_hidden_class_name(InstanceKlass* const ik) {
   // use an illegal char such as ';' because that causes serialization issues
   // and issues with hidden classes that create their own hidden classes.
   char addr_buf[20];
-  jio_snprintf(addr_buf, 20, INTPTR_FORMAT, p2i(ik));
+  if (DumpSharedSpaces) {
+    // We want stable names for the archived hidden classes (only for static
+    // archive for now). Spaces under default_SharedBaseAddress() will be
+    // occupied by the archive at run time, so we know that no dynamically
+    // loaded InstanceKlass will be placed under there.
+    static volatile size_t counter = 0;
+    Atomic::cmpxchg(&counter, (size_t)0, Arguments::default_SharedBaseAddress()); // initialize it
+    size_t new_id = Atomic::add(&counter, (size_t)1);
+    jio_snprintf(addr_buf, 20, SIZE_FORMAT_HEX, new_id);
+  } else {
+    jio_snprintf(addr_buf, 20, INTPTR_FORMAT, p2i(ik));
+  }
   size_t new_name_len = _class_name->utf8_length() + 2 + strlen(addr_buf);
   char* new_name = NEW_RESOURCE_ARRAY(char, new_name_len);
   jio_snprintf(new_name, new_name_len, "%s+%s",

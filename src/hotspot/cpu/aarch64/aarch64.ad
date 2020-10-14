@@ -1966,9 +1966,10 @@ void MachEpilogNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   }
 
   if (do_polling() && C->is_method_compilation()) {
-    st->print("# touch polling page\n\t");
-    st->print("ldr rscratch1, [rthread],#polling_page_offset\n\t");
-    st->print("ldr zr, [rscratch1]");
+    st->print("# test polling word\n\t");
+    st->print("ldr  rscratch1, [rthread],#%d\n\t", in_bytes(JavaThread::polling_word_offset()));
+    st->print("cmp  sp, rscratch1\n\t");
+    st->print("bhi #slow_path");
   }
 }
 #endif
@@ -1985,7 +1986,13 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   }
 
   if (do_polling() && C->is_method_compilation()) {
-    __ fetch_and_read_polling_page(rscratch1, relocInfo::poll_return_type);
+    Label dummy_label;
+    Label* code_stub = &dummy_label;
+    if (!C->output()->in_scratch_emit_size()) {
+      code_stub = &C->output()->safepoint_poll_table()->add_safepoint(__ offset());
+    }
+    __ relocate(relocInfo::poll_return_type);
+    __ safepoint_poll(*code_stub, true /* at_return */, false /* acquire */, true /* in_nmethod */);
   }
 }
 

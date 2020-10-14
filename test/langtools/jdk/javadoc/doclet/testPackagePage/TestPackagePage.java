@@ -90,27 +90,18 @@ public class TestPackagePage extends JavadocTester {
             "<li>Package</li>");
         checkOutput("allclasses-index.html", true,
                 """
-                    <div class="type-summary" id="all-classes-table">
-                    <table class="summary-table">
-                    <caption><span>Class Summary</span></caption>
-                    <thead>
-                    <tr>
-                    <th class="col-first" scope="col">Class</th>
-                    <th class="col-last" scope="col">Description</th>
-                    </tr>
-                    </thead>
+                    <div id="all-classes-table">
+                    <div class="caption"><span>Class Summary</span></div>
+                    <div class="summary-table two-column-summary">
+                    <div class="table-header col-first">Class</div>
+                    <div class="table-header col-last">Description</div>
                     """);
         checkOutput("allpackages-index.html", true,
                 """
-                    <div class="packages-summary">
-                    <table class="summary-table">
-                    <caption><span>Package Summary</span></caption>
-                    <thead>
-                    <tr>
-                    <th class="col-first" scope="col">Package</th>
-                    <th class="col-last" scope="col">Description</th>
-                    </tr>
-                    </thead>
+                    <div class="caption"><span>Package Summary</span></div>
+                    <div class="summary-table two-column-summary">
+                    <div class="table-header col-first">Package</div>
+                    <div class="table-header col-last">Description</div>
                     """);
         checkOutput("type-search-index.js", true,
                 """
