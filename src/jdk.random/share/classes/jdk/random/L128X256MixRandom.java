@@ -33,6 +33,15 @@ import java.util.random.RandomSupport.AbstractSplittableWithBrineGenerator;
 
 
 /**
+ * {@preview Associated with random number generators, a preview feature of
+ *           the Java core libraries.
+ *
+ *           This class is associated with <i>random number generators</i>,
+ *           a preview feature of the Java core libraries. Programs can only use
+ *           this class when preview features are enabled. Preview features
+ *           may be removed in a future release, or upgraded to permanent
+ *           features of the Java core libraries.}
+ *
  * A "splittable" pseudorandom number generator (PRNG) whose period
  * is roughly 2<sup>384</sup>.  Class {@link L128X256MixRandom} implements
  * interfaces {@link RandomGenerator} and {@link SplittableGenerator},
@@ -74,6 +83,10 @@ import java.util.random.RandomSupport.AbstractSplittableWithBrineGenerator;
  * {@code java.util.secureRandomSeed} is set to {@code true}.
  *
  * @since   16
+ *
+ * @jdk.internal.PreviewFeature(feature= PreviewFeature.Feature.RANDOM_NUMBERS,
+ *          essentialAPI=true)
+ * @SuppressWarnings("preview")
  */
 public final class L128X256MixRandom extends AbstractSplittableWithBrineGenerator {
 
@@ -125,6 +138,16 @@ public final class L128X256MixRandom extends AbstractSplittableWithBrineGenerato
      */
     private static final BigInteger PERIOD =
         BigInteger.ONE.shiftLeft(256).subtract(BigInteger.ONE).shiftLeft(128);
+
+    /*
+     * Number of bits used to maintain state of seed.
+     */
+    private static final int STATE_BITS = 384;
+
+    /*
+     * The equidistribution of the algorithm.
+     */
+    private static final int EQUIDISTRIBUTION = 1;
 
     /*
      * Low half of multiplier used in the LCG portion of the algorithm;
@@ -296,6 +319,16 @@ public final class L128X256MixRandom extends AbstractSplittableWithBrineGenerato
         x0 = q0; x1 = q1; x2 = q2; x3 = q3;
 
         return result;
+    }
+
+    @Override
+    public int stateBits() {
+        return STATE_BITS;
+    }
+
+    @Override
+    public int equidistribution() {
+        return EQUIDISTRIBUTION;
     }
 
     @Override

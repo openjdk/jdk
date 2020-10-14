@@ -32,6 +32,15 @@ import java.util.random.RandomSupport;
 import java.util.random.RandomSupport.AbstractArbitrarilyJumpableGenerator;
 
 /**
+ * {@preview Associated with random number generators, a preview feature of
+ *           the Java core libraries.
+ *
+ *           This class is associated with <i>random number generators</i>,
+ *           a preview feature of the Java core libraries. Programs can only use
+ *           this class when preview features are enabled. Preview features
+ *           may be removed in a future release, or upgraded to permanent
+ *           features of the Java core libraries.}
+ *
  * An "arbitrarily jumpable" pseudorandom number generator (PRNG) whose period
  * is roughly 2<sup>191</sup>.  Class {@link MRG32k3a} implements
  * interface {@link RandomGenerator} and extends abstract class
@@ -66,6 +75,10 @@ import java.util.random.RandomSupport.AbstractArbitrarilyJumpableGenerator;
  * {@code java.util.secureRandomSeed} is set to {@code true}.
  *
  * @since   16
+ *
+ * @jdk.internal.PreviewFeature(feature= PreviewFeature.Feature.RANDOM_NUMBERS,
+ *          essentialAPI=true)
+ * @SuppressWarnings("preview")
  */
 public final class MRG32k3a extends AbstractArbitrarilyJumpableGenerator {
 
@@ -343,7 +356,30 @@ public final class MRG32k3a extends AbstractArbitrarilyJumpableGenerator {
         return t1.shiftRight(1).multiply(t2);
     }
 
-    static final BigInteger PERIOD = calculateThePeriod();
+    /*
+     * The period of this generator..
+     */
+    private static final BigInteger PERIOD = calculateThePeriod();
+
+    /*
+     * Number of bits used to maintain state of seed.
+     */
+    private static final int STATE_BITS = 191;
+
+    /*
+     * The equidistribution of the algorithm.
+     */
+    private static final int EQUIDISTRIBUTION = 0;
+
+    @Override
+    public int stateBits() {
+        return STATE_BITS;
+    }
+
+    @Override
+    public int equidistribution() {
+        return EQUIDISTRIBUTION;
+    }
 
     @Override
     public BigInteger period() {

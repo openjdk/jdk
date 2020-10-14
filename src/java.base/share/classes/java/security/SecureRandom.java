@@ -1016,6 +1016,45 @@ public class SecureRandom extends java.util.Random {
         }
     }
 
+    /*
+     * A negative value indicating a period larger than 2**(2**16).
+     */
+    private static final BigInteger PERIOD = RandomGenerator.HUGE_PERIOD;
+
+    /*
+     * Number of bits used to maintain state of seed. A large value indicating
+     * stateBits is unknown.
+     */
+    private static final int STATE_BITS = Integer.MAX_VALUE;
+
+    /*
+     * The equidistribution of the algorithm. A large value indicating
+     * stateBits is unknown.
+     */
+    private static final int EQUIDISTRIBUTION = Integer.MAX_VALUE;
+
+    /**
+     * {@inheritDoc}
+     *
+     * @implInfo This {@link RandomGenerator} returns a large value indicating
+     *           stateBits is unknown.
+     */
+    @Override
+    public int stateBits() {
+        return STATE_BITS;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @implInfo This {@link RandomGenerator} returns a large value indicating
+     *           equidistribution is unknown.
+     */
+    @Override
+    public int equidistribution() {
+        return EQUIDISTRIBUTION;
+    }
+
     /**
      * {@inheritDoc}
      *
@@ -1024,7 +1063,7 @@ public class SecureRandom extends java.util.Random {
      */
     @Override
     public BigInteger period() {
-        return RandomGenerator.HUGE_PERIOD;
+        return PERIOD;
     }
 
     // Declare serialVersionUID to be compatible with JDK1.1

@@ -221,6 +221,26 @@ public class Random extends AbstractSpliteratorGenerator
      */
     private static final BigInteger PERIOD = BigInteger.valueOf(1L<<48);
 
+    /*
+     * Number of bits used to maintain state of seed.
+     */
+    private static final int STATE_BITS = 48;
+
+    /*
+     * The equidistribution of the algorithm.
+     */
+    private static final int EQUIDISTRIBUTION = 0;
+
+    @Override
+    public int stateBits() {
+        return STATE_BITS;
+    }
+
+    @Override
+    public int equidistribution() {
+        return EQUIDISTRIBUTION;
+    }
+
     @Override
     public BigInteger period() {
         return PERIOD;

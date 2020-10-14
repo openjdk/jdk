@@ -39,6 +39,7 @@
 package java.util.concurrent;
 
 import java.io.ObjectStreamField;
+import java.math.BigInteger;
 import java.security.AccessControlContext;
 import java.util.Random;
 import java.util.Spliterator;
@@ -448,5 +449,36 @@ public class ThreadLocalRandom extends Random {
                 s = (s << 8) | ((long)seedBytes[i] & 0xffL);
             seeder.set(s);
         }
+    }
+
+    /*
+     * The period of this generator, which is 2**64 - 1.
+     */
+    private static final BigInteger PERIOD =
+            BigInteger.ONE.shiftLeft(64);
+
+    /*
+     * Number of bits used to maintain state of seed.
+     */
+    private static final int STATE_BITS = 64;
+
+    /*
+     * The equidistribution of the algorithm.
+     */
+    private static final int EQUIDISTRIBUTION = 1;
+
+    @Override
+    public int stateBits() {
+        return STATE_BITS;
+    }
+
+    @Override
+    public int equidistribution() {
+        return EQUIDISTRIBUTION;
+    }
+
+    @Override
+    public BigInteger period() {
+        return PERIOD;
     }
 }

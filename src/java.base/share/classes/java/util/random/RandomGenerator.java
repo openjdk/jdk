@@ -25,6 +25,8 @@
 
 package java.util.random;
 
+import jdk.internal.PreviewFeature;
+
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Objects;
@@ -36,6 +38,15 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 /**
+ * {@preview Associated with random number generators, a preview feature of
+ *           the Java core libraries.
+ *
+ *           This class is associated with <i>random number generators</i>,
+ *           a preview feature of the Java core libraries. Programs can only use
+ *           this class when preview features are enabled. Preview features
+ *           may be removed in a future release, or upgraded to permanent
+ *           features of the Java core libraries.}
+ *
  * The {@link RandomGenerator} interface is designed to provide a common
  * protocol for objects that generate random or (more typically) pseudorandom
  * sequences of numbers (or Boolean values). Such a sequence may be obtained by
@@ -108,6 +119,10 @@ import java.util.stream.Stream;
  * generator.
  *
  * @since 16
+ *
+ * @jdk.internal.PreviewFeature(feature= PreviewFeature.Feature.RANDOM_NUMBERS,
+ *          essentialAPI=true)
+ * @SuppressWarnings("preview")
  */
 public interface RandomGenerator {
     /**
@@ -726,6 +741,20 @@ public interface RandomGenerator {
     }
 
     /**
+     * Returns number of bits used to maintain state of seed.
+     *
+     * @return number of bits used to maintain state of seed.
+     */
+    int stateBits();
+
+    /**
+     * Returns the equidistribution of the algorithm.
+     *
+     * @return the equidistribution of the algorithm.
+     */
+    int equidistribution();
+
+    /**
      * Returns the period of this {@link RandomGenerator} object.
      *
      * @return a {@link BigInteger} whose value is the number of distinct possible states of this
@@ -753,6 +782,8 @@ public interface RandomGenerator {
      * huge period (larger than 2**(2**16)).
      */
     BigInteger HUGE_PERIOD = BigInteger.valueOf(-2);
+
+
 
     /**
      * The {@link StreamableGenerator} interface augments the

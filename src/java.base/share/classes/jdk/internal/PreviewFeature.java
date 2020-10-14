@@ -64,6 +64,7 @@ public @interface PreviewFeature {
         TEXT_BLOCKS,
         RECORDS,
         SEALED_CLASSES,
+        RANDOM_NUMBERS,
         ;
     }
 }
