@@ -649,6 +649,28 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_isCompileConstant:
   case vmIntrinsics::_Preconditions_checkIndex:
     break;
+
+  case vmIntrinsics::_VectorUnaryOp:
+  case vmIntrinsics::_VectorBinaryOp:
+  case vmIntrinsics::_VectorTernaryOp:
+  case vmIntrinsics::_VectorBroadcastCoerced:
+  case vmIntrinsics::_VectorShuffleIota:
+  case vmIntrinsics::_VectorShuffleToVector:
+  case vmIntrinsics::_VectorLoadOp:
+  case vmIntrinsics::_VectorStoreOp:
+  case vmIntrinsics::_VectorGatherOp:
+  case vmIntrinsics::_VectorScatterOp:
+  case vmIntrinsics::_VectorReductionCoerced:
+  case vmIntrinsics::_VectorTest:
+  case vmIntrinsics::_VectorBlend:
+  case vmIntrinsics::_VectorRearrange:
+  case vmIntrinsics::_VectorCompare:
+  case vmIntrinsics::_VectorBroadcastInt:
+  case vmIntrinsics::_VectorConvert:
+  case vmIntrinsics::_VectorInsert:
+  case vmIntrinsics::_VectorExtract:
+    return EnableVectorSupport;
+
   default:
     return false;
   }
