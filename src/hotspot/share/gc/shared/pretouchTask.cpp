@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/preTouchTask.hpp"
+#include "gc/shared/pretouchTask.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
@@ -63,7 +63,7 @@ void PretouchTask::work(uint worker_id) {
 void PretouchTask::pretouch(const char* task_name, char* start_address, char* end_address,
                             size_t page_size, WorkGang* pretouch_gang) {
   PretouchTask task(task_name, start_address, end_address, page_size);
-  size_t total_bytes = (end_address - start_address);
+  size_t total_bytes = pointer_delta(end_address, start_address, sizeof(char));
 
   if (pretouch_gang != NULL) {
     size_t num_chunks = MAX2((size_t)1, total_bytes / MAX2(PretouchTask::chunk_size(), page_size));

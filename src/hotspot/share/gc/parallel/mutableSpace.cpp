@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/parallel/mutableSpace.hpp"
-#include "gc/shared/preTouchTask.hpp"
+#include "gc/shared/pretouchTask.hpp"
 #include "gc/shared/spaceDecorator.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/universe.hpp"
