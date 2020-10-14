@@ -172,14 +172,13 @@ JVM_handle_bsd_signal(int sig,
 
       // check if fault address is within thread stack
       if (thread->is_in_full_stack(addr)) {
-        StackOverflow* overflow_state = thread->stack_overflow_state();
         // stack overflow
-        if (overflow_state->in_stack_yellow_reserved_zone(addr)) {
-          overflow_state->disable_stack_yellow_reserved_zone();
+        if (thread->in_stack_yellow_reserved_zone(addr)) {
+          thread->disable_stack_yellow_reserved_zone();
           ShouldNotCallThis();
         }
-        else if (overflow_state->in_stack_red_zone(addr)) {
-          overflow_state->disable_stack_red_zone();
+        else if (thread->in_stack_red_zone(addr)) {
+          thread->disable_stack_red_zone();
           ShouldNotCallThis();
         }
       }
