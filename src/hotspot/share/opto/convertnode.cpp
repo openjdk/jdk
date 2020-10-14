@@ -344,6 +344,10 @@ Node *ConvI2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     Node* x = z->in(1);
     Node* y = z->in(2);
     assert (x != z && y != z, "dead loop in ConvI2LNode::Ideal");
+    if (op == Op_SubI && x == y) {
+      // SubI(x, x) should be simplified to zero during parsing.
+      return this_changed;
+    }
     if (phase->type(x) == Type::TOP)  return this_changed;
     if (phase->type(y) == Type::TOP)  return this_changed;
     const TypeInt*  tx = phase->type(x)->is_int();
@@ -400,11 +404,19 @@ Node *ConvI2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     assert(rxlo == (int)rxlo && rxhi == (int)rxhi, "x should not overflow");
     assert(rylo == (int)rylo && ryhi == (int)ryhi, "y should not overflow");
     Node* cx = phase->C->constrained_convI2L(phase, x, TypeInt::make(rxlo, rxhi, widen), NULL);
-    Node *hook = new Node(1);
-    hook->init_req(0, cx);  // Add a use to cx to prevent him from dying
-    Node* cy = phase->C->constrained_convI2L(phase, y, TypeInt::make(rylo, ryhi, widen), NULL);
-    hook->del_req(0);  // Just yank bogus edge
-    hook->destruct();
+    Node* cy;
+    if (x == y) {
+      // In the special case ConvI2L(AddI(x, x)), feed both inputs of AddL with
+      // the same node cx = cy = ConvI2L(x).
+      cy = cx;
+    } else {
+      // General case (x != y): create a different node cy = ConvI2L(y).
+      Node *hook = new Node(1);
+      hook->init_req(0, cx);  // Add a use to cx to prevent him from dying
+      cy = phase->C->constrained_convI2L(phase, y, TypeInt::make(rylo, ryhi, widen), NULL);
+      hook->del_req(0);  // Just yank bogus edge
+      hook->destruct();
+    }
     switch (op) {
       case Op_AddI:  return new AddLNode(cx, cy);
       case Op_SubI:  return new SubLNode(cx, cy);
