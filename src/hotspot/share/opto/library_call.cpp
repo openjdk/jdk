@@ -219,7 +219,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_string_indexOfI(StrIntrinsicNode::ArgEnc ae);
   Node* make_indexOf_node(Node* src_start, Node* src_count, Node* tgt_start, Node* tgt_count,
                           RegionNode* region, Node* phi, StrIntrinsicNode::ArgEnc ae);
-  bool inline_string_indexOfChar();
+  bool inline_string_indexOfChar(StrIntrinsicNode::ArgEnc ae);
   bool inline_string_equals(StrIntrinsicNode::ArgEnc ae);
   bool inline_string_toBytesU();
   bool inline_string_getCharsU();
@@ -591,7 +591,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_indexOfIL:                return inline_string_indexOfI(StrIntrinsicNode::LL);
   case vmIntrinsics::_indexOfIU:                return inline_string_indexOfI(StrIntrinsicNode::UU);
   case vmIntrinsics::_indexOfIUL:               return inline_string_indexOfI(StrIntrinsicNode::UL);
-  case vmIntrinsics::_indexOfU_char:            return inline_string_indexOfChar();
+  case vmIntrinsics::_indexOfU_char:            return inline_string_indexOfChar(StrIntrinsicNode::U);
+  case vmIntrinsics::_indexOfL_char:            return inline_string_indexOfChar(StrIntrinsicNode::L);
 
   case vmIntrinsics::_equalsL:                  return inline_string_equals(StrIntrinsicNode::LL);
   case vmIntrinsics::_equalsU:                  return inline_string_equals(StrIntrinsicNode::UU);
@@ -1431,7 +1432,7 @@ Node* LibraryCallKit::make_indexOf_node(Node* src_start, Node* src_count, Node* 
 }
 
 //-----------------------------inline_string_indexOfChar-----------------------
-bool LibraryCallKit::inline_string_indexOfChar() {
+bool LibraryCallKit::inline_string_indexOfChar(StrIntrinsicNode::ArgEnc ae) {
   if (too_many_traps(Deoptimization::Reason_intrinsic)) {
     return false;
   }
@@ -1446,12 +1447,12 @@ bool LibraryCallKit::inline_string_indexOfChar() {
 
   src = must_be_not_null(src, true);
 
-  Node* src_offset = _gvn.transform(new LShiftINode(from_index, intcon(1)));
+  Node* src_offset = ae == StrIntrinsicNode::L ? from_index : _gvn.transform(new LShiftINode(from_index, intcon(1)));
   Node* src_start = array_element_address(src, src_offset, T_BYTE);
   Node* src_count = _gvn.transform(new SubINode(max, from_index));
 
   // Range checks
-  generate_string_range_check(src, src_offset, src_count, true);
+  generate_string_range_check(src, src_offset, src_count, ae == StrIntrinsicNode::U);
   if (stopped()) {
     return true;
   }
@@ -1459,7 +1460,7 @@ bool LibraryCallKit::inline_string_indexOfChar() {
   RegionNode* region = new RegionNode(3);
   Node* phi = new PhiNode(region, TypeInt::INT);
 
-  Node* result = new StrIndexOfCharNode(control(), memory(TypeAryPtr::BYTES), src_start, src_count, tgt, StrIntrinsicNode::none);
+  Node* result = new StrIndexOfCharNode(control(), memory(TypeAryPtr::BYTES), src_start, src_count, tgt, ae);
   C->set_has_split_ifs(true); // Has chance for split-if optimization
   _gvn.transform(result);
 

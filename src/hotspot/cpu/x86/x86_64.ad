@@ -11017,15 +11017,29 @@ instruct string_indexofUL(rdi_RegP str1, rdx_RegI cnt1, rsi_RegP str2, rax_RegI 
   ins_pipe( pipe_slow );
 %}
 
-instruct string_indexofU_char(rdi_RegP str1, rdx_RegI cnt1, rax_RegI ch,
+instruct string_indexof_char(rdi_RegP str1, rdx_RegI cnt1, rax_RegI ch,
                               rbx_RegI result, legRegD tmp_vec1, legRegD tmp_vec2, legRegD tmp_vec3, rcx_RegI tmp, rFlagsReg cr)
 %{
-  predicate(UseSSE42Intrinsics);
+  predicate(UseSSE42Intrinsics && (((StrIndexOfCharNode*)n)->encoding() == StrIntrinsicNode::U));
   match(Set result (StrIndexOfChar (Binary str1 cnt1) ch));
   effect(TEMP tmp_vec1, TEMP tmp_vec2, TEMP tmp_vec3, USE_KILL str1, USE_KILL cnt1, USE_KILL ch, TEMP tmp, KILL cr);
-  format %{ "String IndexOf char[] $str1,$cnt1,$ch -> $result   // KILL all" %}
+  format %{ "StringUTF16 IndexOf char[] $str1,$cnt1,$ch -> $result   // KILL all" %}
   ins_encode %{
     __ string_indexof_char($str1$$Register, $cnt1$$Register, $ch$$Register, $result$$Register,
+                           $tmp_vec1$$XMMRegister, $tmp_vec2$$XMMRegister, $tmp_vec3$$XMMRegister, $tmp$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct stringL_indexof_char(rdi_RegP str1, rdx_RegI cnt1, rax_RegI ch,
+                              rbx_RegI result, legRegD tmp_vec1, legRegD tmp_vec2, legRegD tmp_vec3, rcx_RegI tmp, rFlagsReg cr)
+%{
+  predicate(UseSSE42Intrinsics && (((StrIndexOfCharNode*)n)->encoding() == StrIntrinsicNode::L));
+  match(Set result (StrIndexOfChar (Binary str1 cnt1) ch));
+  effect(TEMP tmp_vec1, TEMP tmp_vec2, TEMP tmp_vec3, USE_KILL str1, USE_KILL cnt1, USE_KILL ch, TEMP tmp, KILL cr);
+  format %{ "StringLatin1 IndexOf char[] $str1,$cnt1,$ch -> $result   // KILL all" %}
+  ins_encode %{
+    __ stringL_indexof_char($str1$$Register, $cnt1$$Register, $ch$$Register, $result$$Register,
                            $tmp_vec1$$XMMRegister, $tmp_vec2$$XMMRegister, $tmp_vec3$$XMMRegister, $tmp$$Register);
   %}
   ins_pipe( pipe_slow );
