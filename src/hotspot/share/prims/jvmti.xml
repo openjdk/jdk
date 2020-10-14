@@ -9949,9 +9949,11 @@ myInit() {
           there is a <code>jint</code> parameter, the event handler should be
           declared:
 <example>
-    void JNICALL myHandler(jvmtiEnv* jvmti_env, jint myInt, ...)
+    void JNICALL myHandler(jvmtiEnv* jvmti_env, ...)
 </example>
           Note the terminal "<code>...</code>" which indicates varargs.
+          The <code>jint</code> argument inside <code>myHandler</code> needs to be extracted using
+          the <code>va_*</code> syntax of the C programming language.
         </description>
         <parameters>
           <param id="jvmti_env">

@@ -521,9 +521,15 @@ void LIR_Assembler::emit_op1(LIR_Op1* op) {
       break;
     }
 
-    case lir_return:
-      return_op(op->in_opr());
+    case lir_return: {
+      assert(op->as_OpReturn() != NULL, "sanity");
+      LIR_OpReturn *ret_op = (LIR_OpReturn*)op;
+      return_op(ret_op->in_opr(), ret_op->stub());
+      if (ret_op->stub() != NULL) {
+        append_code_stub(ret_op->stub());
+      }
       break;
+    }
 
     case lir_safepoint:
       if (compilation()->debug_info_recorder()->last_pc_offset() == code_offset()) {

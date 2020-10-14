@@ -1099,7 +1099,9 @@ public final class HexPrinter {
                             dest.append(info);
                             info = "";
                         } else {
-                            dest.append(info, 0, nl);
+                            // append up to the newline (ignoring \r if present)
+                            dest.append(info, 0,
+                                    (nl > 0 && info.charAt(nl - 1) == '\r') ? nl - 1 : nl);
                             info = info.substring(nl + 1);
                         }
                     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,10 +52,6 @@ public final class CleanerImpl implements Runnable {
      */
     final PhantomCleanable<?> phantomCleanableList;
 
-    final WeakCleanable<?> weakCleanableList;
-
-    final SoftCleanable<?> softCleanableList;
-
     // The ReferenceQueue of pending cleaning actions
     final ReferenceQueue<Object> queue;
 
@@ -87,8 +83,6 @@ public final class CleanerImpl implements Runnable {
     public CleanerImpl() {
         queue = new ReferenceQueue<>();
         phantomCleanableList = new PhantomCleanableRef();
-        weakCleanableList = new WeakCleanableRef();
-        softCleanableList = new SoftCleanableRef();
     }
 
     /**
@@ -135,9 +129,7 @@ public final class CleanerImpl implements Runnable {
         InnocuousThread mlThread = (t instanceof InnocuousThread)
                 ? (InnocuousThread) t
                 : null;
-        while (!phantomCleanableList.isListEmpty() ||
-                !weakCleanableList.isListEmpty() ||
-                !softCleanableList.isListEmpty()) {
+        while (!phantomCleanableList.isListEmpty()) {
             if (mlThread != null) {
                 // Clear the thread locals
                 mlThread.eraseThreadLocals();
@@ -205,109 +197,6 @@ public final class CleanerImpl implements Runnable {
         public void clear() {
             throw new UnsupportedOperationException("clear");
         }
-    }
-
-    /**
-     * Perform cleaning on an unreachable WeakReference.
-     */
-    public static final class WeakCleanableRef extends WeakCleanable<Object> {
-        private final Runnable action;
-
-        /**
-         * Constructor for a weak cleanable reference.
-         * @param obj the object to monitor
-         * @param cleaner the cleaner
-         * @param action the action Runnable
-         */
-        WeakCleanableRef(Object obj, Cleaner cleaner, Runnable action) {
-            super(obj, cleaner);
-            this.action = action;
-        }
-
-        /**
-         * Constructor used only for root of weak cleanable list.
-         */
-        WeakCleanableRef() {
-            super();
-            this.action = null;
-        }
-
-        @Override
-        protected void performCleanup() {
-            action.run();
-        }
-
-        /**
-         * Prevent access to referent even when it is still alive.
-         *
-         * @throws UnsupportedOperationException always
-         */
-        @Override
-        public Object get() {
-            throw new UnsupportedOperationException("get");
-        }
-
-        /**
-         * Direct clearing of the referent is not supported.
-         *
-         * @throws UnsupportedOperationException always
-         */
-        @Override
-        public void clear() {
-            throw new UnsupportedOperationException("clear");
-        }
-    }
-
-    /**
-     * Perform cleaning on an unreachable SoftReference.
-     */
-    public static final class SoftCleanableRef extends SoftCleanable<Object> {
-        private final Runnable action;
-
-        /**
-         * Constructor for a soft cleanable reference.
-         * @param obj the object to monitor
-         * @param cleaner the cleaner
-         * @param action the action Runnable
-         */
-        SoftCleanableRef(Object obj, Cleaner cleaner, Runnable action) {
-            super(obj, cleaner);
-            this.action = action;
-        }
-
-        /**
-         * Constructor used only for root of soft cleanable list.
-         */
-        SoftCleanableRef() {
-            super();
-            this.action = null;
-        }
-
-        @Override
-        protected void performCleanup() {
-            action.run();
-        }
-
-        /**
-         * Prevent access to referent even when it is still alive.
-         *
-         * @throws UnsupportedOperationException always
-         */
-        @Override
-        public Object get() {
-            throw new UnsupportedOperationException("get");
-        }
-
-        /**
-         * Direct clearing of the referent is not supported.
-         *
-         * @throws UnsupportedOperationException always
-         */
-        @Override
-        public void clear() {
-            throw new UnsupportedOperationException("clear");
-        }
-
     }
 
     /**

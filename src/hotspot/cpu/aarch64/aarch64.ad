@@ -1966,9 +1966,10 @@ void MachEpilogNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   }
 
   if (do_polling() && C->is_method_compilation()) {
-    st->print("# touch polling page\n\t");
-    st->print("ldr rscratch1, [rthread],#polling_page_offset\n\t");
-    st->print("ldr zr, [rscratch1]");
+    st->print("# test polling word\n\t");
+    st->print("ldr  rscratch1, [rthread],#%d\n\t", in_bytes(JavaThread::polling_word_offset()));
+    st->print("cmp  sp, rscratch1\n\t");
+    st->print("bhi #slow_path");
   }
 }
 #endif
@@ -1985,7 +1986,13 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   }
 
   if (do_polling() && C->is_method_compilation()) {
-    __ fetch_and_read_polling_page(rscratch1, relocInfo::poll_return_type);
+    Label dummy_label;
+    Label* code_stub = &dummy_label;
+    if (!C->output()->in_scratch_emit_size()) {
+      code_stub = &C->output()->safepoint_poll_table()->add_safepoint(__ offset());
+    }
+    __ relocate(relocInfo::poll_return_type);
+    __ safepoint_poll(*code_stub, true /* at_return */, false /* acquire */, true /* in_nmethod */);
   }
 }
 
@@ -16369,18 +16376,38 @@ instruct string_indexof_conUL(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2,
   ins_pipe(pipe_class_memory);
 %}
 
-instruct string_indexofU_char(iRegP_R1 str1, iRegI_R2 cnt1, iRegI_R3 ch,
+instruct string_indexof_char(iRegP_R1 str1, iRegI_R2 cnt1, iRegI_R3 ch,
                               iRegI_R0 result, iRegINoSp tmp1, iRegINoSp tmp2,
                               iRegINoSp tmp3, rFlagsReg cr)
 %{
   match(Set result (StrIndexOfChar (Binary str1 cnt1) ch));
+  predicate(((StrIndexOfCharNode*)n)->encoding() == StrIntrinsicNode::U);
   effect(USE_KILL str1, USE_KILL cnt1, USE_KILL ch,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
 
-  format %{ "String IndexOf char[] $str1,$cnt1,$ch -> $result" %}
+  format %{ "StringUTF16 IndexOf char[] $str1,$cnt1,$ch -> $result" %}
 
   ins_encode %{
     __ string_indexof_char($str1$$Register, $cnt1$$Register, $ch$$Register,
+                           $result$$Register, $tmp1$$Register, $tmp2$$Register,
+                           $tmp3$$Register);
+  %}
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct stringL_indexof_char(iRegP_R1 str1, iRegI_R2 cnt1, iRegI_R3 ch,
+                              iRegI_R0 result, iRegINoSp tmp1, iRegINoSp tmp2,
+                              iRegINoSp tmp3, rFlagsReg cr)
+%{
+  match(Set result (StrIndexOfChar (Binary str1 cnt1) ch));
+  predicate(((StrIndexOfCharNode*)n)->encoding() == StrIntrinsicNode::L);
+  effect(USE_KILL str1, USE_KILL cnt1, USE_KILL ch,
+         TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
+
+  format %{ "StringLatin1 IndexOf char[] $str1,$cnt1,$ch -> $result" %}
+
+  ins_encode %{
+    __ stringL_indexof_char($str1$$Register, $cnt1$$Register, $ch$$Register,
                            $result$$Register, $tmp1$$Register, $tmp2$$Register,
                            $tmp3$$Register);
   %}
