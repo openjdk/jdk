@@ -743,4 +743,4 @@ vmIntrinsics::Flags vmIntrinsics::flags_for(vmIntrinsics::ID id) {
   assert(((ID4(1021,1022,1023,15) >> shift) & mask) == 15, "");
   return Flags( (info >> shift) & mask );
 }
-#endif
+#endif // ASSERT
