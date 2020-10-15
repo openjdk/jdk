@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "classfile/classFileStream.hpp"
+#include "classfile/classListWriter.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderData.inline.hpp"
@@ -3867,7 +3868,7 @@ JVM_END
 JVM_ENTRY(jboolean, JVM_IsDumpingClassList(JNIEnv *env))
   JVMWrapper("JVM_IsDumpingClassList");
 #if INCLUDE_CDS
-  return DumpLoadedClassList != NULL && classlist_file != NULL && classlist_file->is_open();
+  return ClassListWriter::is_enabled();
 #else
   return false;
 #endif // INCLUDE_CDS
@@ -3876,12 +3877,13 @@ JVM_END
 JVM_ENTRY(void, JVM_LogLambdaFormInvoker(JNIEnv *env, jstring line))
   JVMWrapper("JVM_LogLambdaFormInvoker");
 #if INCLUDE_CDS
-  assert(DumpLoadedClassList != NULL && classlist_file->is_open(), "Should be set and open");
+  assert(ClassListWriter::is_enabled(), "Should be set and open");
   if (line != NULL) {
     ResourceMark rm(THREAD);
     Handle h_line (THREAD, JNIHandles::resolve_non_null(line));
     char* c_line = java_lang_String::as_utf8_string(h_line());
-    classlist_file->print_cr("%s %s", LambdaFormInvokers::lambda_form_invoker_tag(), c_line);
+    ClassListWriter w;
+    w.stream()->print_cr("%s %s", LambdaFormInvokers::lambda_form_invoker_tag(), c_line);
   }
 #endif // INCLUDE_CDS
 JVM_END
