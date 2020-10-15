@@ -1682,4 +1682,21 @@ public class RecordCompilationTests extends CompilationTestCase {
             removeLastCompileOptions(2);
         }
     }
+
+    public void testSaveVarargsAnno() {
+        // the compiler would generate an erronous accessor
+        assertFail("compiler.err.varargs.invalid.trustme.anno",
+                """
+                record R(@SafeVarargs String... s) {}
+                """
+        );
+        // but this is OK
+        assertOK(
+                """
+                record R(@SafeVarargs String... s) {
+                    public String[] s() { return s; }
+                }
+                """
+        );
+    }
 }
