@@ -1525,6 +1525,7 @@ public class IndexColorModel extends ColorModel {
      *     information about migration options.
      */
     @Deprecated(since = "9", forRemoval = true)
+    @SuppressWarnings("removal")
     public void finalize() {
     }
 

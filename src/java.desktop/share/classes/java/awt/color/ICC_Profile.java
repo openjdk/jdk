@@ -760,6 +760,7 @@ public class ICC_Profile implements Serializable {
      *         options.
      */
     @Deprecated(since = "9", forRemoval = true)
+    @SuppressWarnings("removal")
     protected void finalize () {
     }
 
