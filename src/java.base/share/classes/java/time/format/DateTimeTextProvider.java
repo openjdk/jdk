@@ -64,7 +64,6 @@ package java.time.format;
 import static java.time.temporal.ChronoField.AMPM_OF_DAY;
 import static java.time.temporal.ChronoField.DAY_OF_WEEK;
 import static java.time.temporal.ChronoField.ERA;
-import static java.time.temporal.ChronoField.FLEXIBLE_PERIOD_OF_DAY;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 
 import java.time.chrono.Chronology;
@@ -78,10 +77,7 @@ import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-import sun.text.resources.DayPeriodRules;
 import sun.util.locale.provider.CalendarDataUtility;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.LocaleResources;
@@ -107,18 +103,7 @@ class DateTimeTextProvider {
     // Singleton instance
     private static final DateTimeTextProvider INSTANCE = new DateTimeTextProvider();
 
-    // DayPeriod constants
-    private static final Pattern RULE = Pattern.compile("(?<type>[a-z12]+):(?<from>\\d{2}):00(-(?<to>\\d{2}))*");
-    private static final int DP_MIDNIGHT = 2;
-    private static final int DP_NOON = 3;
-    private static final int DP_MORNING1 = 4;
-    private static final int DP_MORNING2 = 5;
-    private static final int DP_AFTERNOON1 = 6;
-    private static final int DP_AFTERNOON2 = 7;
-    private static final int DP_EVENING1 = 8;
-    private static final int DP_EVENING2 = 9;
-    private static final int DP_NIGHT1 = 10;
-    private static final int DP_NIGHT2 = 11;
+
 
     DateTimeTextProvider() {}
 
@@ -148,15 +133,6 @@ class DateTimeTextProvider {
     public String getText(TemporalField field, long value, TextStyle style, Locale locale) {
         Object store = findStore(field, locale);
         if (store instanceof LocaleStore) {
-            if (field == FLEXIBLE_PERIOD_OF_DAY) {
-                final long val = value;
-                final var map = getDayPeriodMap(locale);
-                value = map.keySet().stream()
-                    .filter(k -> k.includes(val))
-                    .min(DayPeriod.DPCOMPARATOR)
-                    .map(DayPeriod::mid)
-                    .orElse((long) (val / 720 == 0 ? 360 : 1_080));
-            }
             return ((LocaleStore) store).getText(value, style);
         }
         return null;
@@ -209,9 +185,6 @@ class DateTimeTextProvider {
         } else if (field == AMPM_OF_DAY) {
             fieldIndex = Calendar.AM_PM;
             fieldValue = (int) value;
-        } else if (field == FLEXIBLE_PERIOD_OF_DAY) {
-            fieldIndex = Calendar.AM_PM;
-            fieldValue = getDayPeriodIndex(locale, value);
         } else {
             return null;
         }
@@ -279,7 +252,6 @@ class DateTimeTextProvider {
             fieldIndex = Calendar.DAY_OF_WEEK;
             break;
         case AMPM_OF_DAY:
-        case FLEXIBLE_PERIOD_OF_DAY:
             fieldIndex = Calendar.AM_PM;
             break;
         default:
@@ -458,8 +430,7 @@ class DateTimeTextProvider {
             return new LocaleStore(styleMap);
         }
 
-        if (field == AMPM_OF_DAY ||
-            field == FLEXIBLE_PERIOD_OF_DAY) {
+        if (field == AMPM_OF_DAY) {
             for (TextStyle textStyle : TextStyle.values()) {
                 if (textStyle.isStandalone()) {
                     // Stand-alone isn't applicable to AM/PM.
@@ -468,26 +439,12 @@ class DateTimeTextProvider {
 
                 Map<Long, String> map = new HashMap<>();
                 int calStyle = textStyle.toCalendarStyle();
-                if (field == AMPM_OF_DAY) {
-                    Map<String, Integer> displayNames = CalendarDataUtility.retrieveJavaTimeFieldValueNames(
-                            "gregory", Calendar.AM_PM, calStyle, locale);
-                    if (displayNames != null) {
-                        for (Entry<String, Integer> entry : displayNames.entrySet()) {
-                            map.put((long) entry.getValue(), entry.getKey());
-                        }
+                Map<String, Integer> displayNames = CalendarDataUtility.retrieveJavaTimeFieldValueNames(
+                        "gregory", Calendar.AM_PM, calStyle, locale);
+                if (displayNames != null) {
+                    for (Entry<String, Integer> entry : displayNames.entrySet()) {
+                        map.put((long) entry.getValue(), entry.getKey());
                     }
-                } else {
-                    assert field == FLEXIBLE_PERIOD_OF_DAY;
-                    var periodMap = getDayPeriodMap(locale);
-                    periodMap.forEach((key, value) -> {
-                        String displayName = CalendarDataUtility.retrieveJavaTimeFieldValueName(
-                                "gregory", Calendar.AM_PM, value, calStyle, locale);
-                        if (displayName != null) {
-                            map.put(key.mid(), displayName);
-                        } else {
-                            periodMap.remove(key);
-                        }
-                    });
                 }
                 if (!map.isEmpty()) {
                     styleMap.put(textStyle, map);
@@ -549,128 +506,6 @@ class DateTimeTextProvider {
                                         CalendarDataUtility.findRegionOverride(locale));
         ResourceBundle rb = lr.getJavaTimeFormatData();
         return rb.containsKey(key) ? (T) rb.getObject(key) : null;
-    }
-
-    /**
-     * DayPeriod class that represents a DayPeriod defined in CLDR.
-     */
-    static final class DayPeriod {
-        static final Comparator<DayPeriod> DPCOMPARATOR = (dp1, dp2) -> (int)(dp1.duration() - dp2.duration());
-
-        private final long from;
-        private final long to;
-
-        DayPeriod(long from, long to) {
-            this.from = from;
-            this.to = to;
-        }
-
-        /**
-         * Returns the midpoint of this day period in minute-of-day
-         * @return midpoint
-         */
-        long mid() {
-            return (from + duration() / 2) % 1_440;
-        }
-
-        /**
-         * Checks whether the passed minute-of-day is within this
-         * day period or not.
-         *
-         * @param mod minute-of-day to check
-         * @return true if {@code mod} is within this day period
-         */
-        boolean includes(long mod) {
-            return (from <= mod && mod <= to || // contiguous from-to
-                    from > to && (from <= mod || to > mod)); // beyond midnight
-        }
-
-        /**
-         * Calculates the duration of this day period
-         * @return the duration in minutes
-         */
-        private long duration() {
-            return from > to ? 1_440 - from + to: to - from;
-        }
-
-        /**
-         * Gets the index to the am/pm array returned from the Calendar resource
-         * bundle.
-         *
-         * @param period day period name defined in LDML
-         * @return the array index
-         */
-        static int index(String period) {
-            return switch (period) {
-                case "am" -> Calendar.AM;
-                case "pm" -> Calendar.PM;
-                case "midnight" -> DP_MIDNIGHT;
-                case "noon" -> DP_NOON;
-                case "morning1" -> DP_MORNING1;
-                case "morning2" -> DP_MORNING2;
-                case "afternoon1" -> DP_AFTERNOON1;
-                case "afternoon2" -> DP_AFTERNOON2;
-                case "evening1" -> DP_EVENING1;
-                case "evening2" -> DP_EVENING2;
-                case "night1" -> DP_NIGHT1;
-                case "night2" -> DP_NIGHT2;
-                default -> throw new InternalError("invalid day period type");
-            };
-        }
-    }
-
-    private final static Map<Locale, Map<DayPeriod, Integer>> DAY_PERIOD_CACHE = new ConcurrentHashMap<>();
-
-     /**
-     * Returns the DayPeriod to array index map for a locale.
-     *
-     * @param locale  the locale, not null
-     * @return the DayPeriod to index map
-     */
-    private static Map<DayPeriod, Integer> getDayPeriodMap(Locale locale) {
-        return DAY_PERIOD_CACHE.computeIfAbsent(locale, l -> {
-            final Map<DayPeriod, Integer> pm = new ConcurrentHashMap<>();
-            Arrays.stream(DayPeriodRules.rulesArray)
-                .filter(ra -> ra[0].equals(l.getLanguage()))
-                .flatMap(ra -> Arrays.stream(ra[1].split(";")))
-                .forEach(period -> {
-                    Matcher m = RULE.matcher(period);
-                    if (m.find()) {
-                        String from = m.group("from");
-                        String to = m.group("to");
-                        if (to == null) {
-                            to = from;
-                        }
-                        pm.putIfAbsent(
-                            new DayPeriod(
-                                Long.parseLong(from) * 60,
-                                Long.parseLong(to) * 60),
-                            DayPeriod.index(m.group("type")));
-                    }
-                });
-
-                // add am/pm
-                pm.putIfAbsent(new DayPeriod(0, 720), 0);
-                pm.putIfAbsent(new DayPeriod(720, 1_440), 1);
-                return pm;
-            });
-    }
-
-    /**
-     * Returns the localized flexible period array index
-     *
-     * @param locale  the locale, not null
-     * @param mod minute of day
-     * @return the flexible period index
-     */
-    private static int getDayPeriodIndex(Locale locale, long mod) {
-        var map = getDayPeriodMap(locale);
-
-        return map.keySet().stream()
-            .filter(k -> k.includes(mod))
-            .min(DayPeriod.DPCOMPARATOR)
-            .map(map::get)
-            .orElse((int) (mod / 720));
     }
 
     /**
