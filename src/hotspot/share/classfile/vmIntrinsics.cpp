@@ -701,6 +701,7 @@ const char* vmIntrinsics::short_name_as_C_string(vmIntrinsics::ID id, char* buf,
 
 #define ID4(x, y, z, f) ((ID3(x, y, z) << vmIntrinsics::log2_FLAG_LIMIT) | (jlong) (f))
 
+#ifdef ASSERT
 static const jlong intrinsic_info_array[vmIntrinsics::ID_LIMIT+1] = {
 #define VM_INTRINSIC_INFO(ignore_id, klass, name, sig, fcode) \
   ID4(SID_ENUM(klass), SID_ENUM(name), SID_ENUM(sig), vmIntrinsics::fcode),
@@ -715,7 +716,6 @@ inline jlong intrinsic_info(vmIntrinsics::ID id) {
   return intrinsic_info_array[vmIntrinsics::ID_from((int)id)];
 }
 
-#ifdef ASSERT
 vmSymbolID vmIntrinsics::class_for(vmIntrinsics::ID id) {
   jlong info = intrinsic_info(id);
   int shift = 2*vmSymbols::log2_SID_LIMIT + log2_FLAG_LIMIT, mask = right_n_bits(vmSymbols::log2_SID_LIMIT);
