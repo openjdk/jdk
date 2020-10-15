@@ -45,9 +45,7 @@ public:
     ShouldNotReachHere();
     return false;
   }
-
   bool get_source_info(address pc, char* buf, size_t buflen, int* line);
-
 
 private:
   ElfFile*         get_elf_file(const char* filepath);
