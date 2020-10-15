@@ -401,6 +401,9 @@ JVM_handle_bsd_signal(int sig,
 
   Thread* t = Thread::current_or_null_safe();
 
+  // If crash protection is installed we may longjmp away and no destructors
+  // for objects in this scope will be run.
+  // So don't use any RAII utilities before crash protection is checked.
   os::ThreadCrashProtection::check_crash_protection(sig, t);
 
   // Note: it's not uncommon that JNI code uses signal/sigset to install

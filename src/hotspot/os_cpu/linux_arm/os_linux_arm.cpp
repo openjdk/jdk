@@ -249,6 +249,9 @@ extern "C" int JVM_handle_linux_signal(int sig, siginfo_t* info,
 
   Thread* t = Thread::current_or_null_safe();
 
+  // If crash protection is installed we may longjmp away and no destructors
+  // for objects in this scope will be run.
+  // So don't use any RAII utilities before crash protection is checked.
   os::ThreadCrashProtection::check_crash_protection(sig, t);
 
   if (sig == SIGILL &&
