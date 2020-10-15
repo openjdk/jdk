@@ -381,6 +381,17 @@ inline void Assembler::mtcr( Register s)          { Assembler::mtcrf(0xff, s); }
 inline void Assembler::setb(Register d, ConditionRegister cra)
                                                   { emit_int32(SETB_OPCODE | rt(d) | bfa(cra)); }
 
+inline void Assembler::setbc(Register d, int biint)
+                                                  { emit_int32(SETBC_OPCODE | rt(d) | bi(biint)); }
+inline void Assembler::setbc(Register d, ConditionRegister cr, Condition cc) {
+    setbc(d, bi0(cr, cc));
+}
+inline void Assembler::setnbc(Register d, int biint)
+                                                  { emit_int32(SETNBC_OPCODE | rt(d) | bi(biint)); }
+inline void Assembler::setnbc(Register d, ConditionRegister cr, Condition cc) {
+    setnbc(d, bi0(cr, cc));
+}
+
 // Special purpose registers
 // Exception Register
 inline void Assembler::mtxer(Register s1)         { emit_int32(MTXER_OPCODE | rs(s1)); }

@@ -236,6 +236,30 @@ inline bool MacroAssembler::is_bc_far_variant3_at(address instruction_addr) {
          is_endgroup(instruction_2);
 }
 
+// set dst to -1, 0, +1
+inline void MacroAssembler::set_cmp3(Register dst) {
+  assert_different_registers(dst, R0);
+  // P10, prefer using setbc intructions
+  if (VM_Version::has_brw()) {
+    setbc(R0, CCR0, Assembler::greater);
+    setnbc(dst, CCR0, Assembler::less);
+  } else {
+    mfcr(R0); // set bit 32..33 as follows: <: 0b10, =: 0b00, >: 0b01
+    srwi(dst, R0, 30);
+    srawi(R0, R0, 31);
+  }
+  orr(dst, dst, R0);
+}
+
+// set dst to (treat_unordered_like_less ? -1 : +1)
+inline void MacroAssembler::set_cmpu3(Register dst, bool treat_unordered_like_less) {
+  if (treat_unordered_like_less) {
+    cror(CCR0, Assembler::less, CCR0, Assembler::summary_overflow); // treat unordered like less
+  } else {
+    cror(CCR0, Assembler::greater, CCR0, Assembler::summary_overflow); // treat unordered like greater
+  }
+  set_cmp3(dst);
+}
 
 // Convenience bc_far versions
 inline void MacroAssembler::blt_far(ConditionRegister crx, Label& L, int optimize) { MacroAssembler::bc_far(bcondCRbiIs1, bi0(crx, less), L, optimize); }
