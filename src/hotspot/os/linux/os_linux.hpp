@@ -81,6 +81,8 @@ class Linux {
   static size_t find_default_large_page_size();
   static size_t find_large_page_size(size_t page_size);
   static size_t setup_large_page_size();
+  static size_t large_page_size_2m();
+  static size_t select_large_page_size(size_t bytes);
 
   static bool setup_large_page_type(size_t page_size);
   static bool transparent_huge_pages_sanity_check(bool warn, size_t pages_size);

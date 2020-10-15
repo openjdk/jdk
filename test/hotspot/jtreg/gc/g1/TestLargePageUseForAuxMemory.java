@@ -36,6 +36,8 @@ package gc.g1;
  */
 
 import java.lang.Math;
+import java.io.File;
+import java.util.Scanner;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Asserts;
@@ -46,6 +48,7 @@ import sun.hotspot.WhiteBox;
 public class TestLargePageUseForAuxMemory {
     static final long HEAP_REGION_SIZE = 1 * 1024 * 1024;
     static long largePageSize;
+    static long largePageExecSize;
     static long smallPageSize;
     static long allocGranularity;
 
@@ -74,7 +77,7 @@ public class TestLargePageUseForAuxMemory {
         checkSize(output, expectedPageSize, "Next Bitmap: .*page_size=([^ ]+)");
     }
 
-    static void testVM(String what, long heapsize, boolean cardsShouldUseLargePages, boolean bitmapShouldUseLargePages) throws Exception {
+    static void testVM(String what, long heapsize, boolean cardsShouldUseLargePages, boolean bitmapShouldUseLargePages, boolean largePages2m) throws Exception {
         System.out.println(what + " heapsize " + heapsize + " card table should use large pages " + cardsShouldUseLargePages + " " +
                            "bitmaps should use large pages " + bitmapShouldUseLargePages);
         ProcessBuilder pb;
@@ -89,8 +92,8 @@ public class TestLargePageUseForAuxMemory {
                                                    "-version");
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        checkSmallTables(output, (cardsShouldUseLargePages ? largePageSize : smallPageSize));
-        checkBitmaps(output, (bitmapShouldUseLargePages ? largePageSize : smallPageSize));
+        checkSmallTables(output, (cardsShouldUseLargePages ? largePageSize : (largePages2m ? largePageExecSize : smallPageSize)));
+        checkBitmaps(output, (bitmapShouldUseLargePages ? largePageSize : (largePages2m ? largePageExecSize : smallPageSize)));
         output.shouldHaveExitValue(0);
 
         // Test with large page disabled.
@@ -128,8 +131,10 @@ public class TestLargePageUseForAuxMemory {
         WhiteBox wb = WhiteBox.getWhiteBox();
         smallPageSize = wb.getVMPageSize();
         largePageSize = wb.getVMLargePageSize();
+        largePageExecSize = 2097152;
         allocGranularity = wb.getVMAllocationGranularity();
         final long heapAlignment = lcm(cardSize * smallPageSize, largePageSize);
+        boolean largePages2m = false;
 
         if (largePageSize == 0) {
             throw new SkippedException("Large page support does not seem to be available on this platform.");
@@ -137,6 +142,17 @@ public class TestLargePageUseForAuxMemory {
         if (largePageSize == smallPageSize) {
             throw new SkippedException("Large page support does not seem to be available on this platform."
                     + "Small and large page size are the same.");
+        }
+
+
+        if (Platform.isLinux() && largePageSize != largePageExecSize) {
+            try {
+                Scanner scan_hugepages = new Scanner(new File("/sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages"));
+
+                if (scan_hugepages.nextLine() != "0") { largePages2m = true; }
+            } catch (Exception exc) {
+                // Ignore
+            }
         }
 
         // To get large pages for the card table etc. we need at least a 1G heap (with 4k page size).
@@ -148,9 +164,13 @@ public class TestLargePageUseForAuxMemory {
 
             Asserts.assertGT(heapSizeForCardTableUsingLargePages, heapSizeDiffForCardTable,
                              "To test we would require to use an invalid heap size");
-            testVM("case1: card table and bitmap use large pages (barely)", heapSizeForCardTableUsingLargePages, true, true);
-            testVM("case2: card table and bitmap use large pages (extra slack)", heapSizeForCardTableUsingLargePages + heapSizeDiffForCardTable, true, true);
-            testVM("case3: only bitmap uses large pages (barely not)", heapSizeForCardTableUsingLargePages - heapSizeDiffForCardTable, false, true);
+            testVM("case1: card table and bitmap use large pages (barely)", heapSizeForCardTableUsingLargePages, true, true, largePages2m);
+            testVM("case2: card table and bitmap use large pages (extra slack)", heapSizeForCardTableUsingLargePages + heapSizeDiffForCardTable, true, true, largePages2m);
+            if (largePages2m) {
+                testVM("case3: card table and bitmap use large pages", heapSizeForCardTableUsingLargePages - heapSizeDiffForCardTable, false, true, largePages2m);
+            } else {
+                testVM("case3: only bitmap uses large pages (barely not)", heapSizeForCardTableUsingLargePages - heapSizeDiffForCardTable, false, true, largePages2m);
+            }
         }
 
         // Minimum heap requirement to get large pages for bitmaps is 128M heap. This seems okay to test
@@ -163,9 +183,15 @@ public class TestLargePageUseForAuxMemory {
         Asserts.assertGT(heapSizeForBitmapUsingLargePages, heapSizeDiffForBitmap,
                          "To test we would require to use an invalid heap size");
 
-        testVM("case4: only bitmap uses large pages (barely)", heapSizeForBitmapUsingLargePages, false, true);
-        testVM("case5: only bitmap uses large pages (extra slack)", heapSizeForBitmapUsingLargePages + heapSizeDiffForBitmap, false, true);
-        testVM("case6: nothing uses large pages (barely not)", heapSizeForBitmapUsingLargePages - heapSizeDiffForBitmap, false, false);
+        if (largePages2m) {
+            testVM("case4: card table and bitmap use large pages 2m", heapSizeForBitmapUsingLargePages, false, true, largePages2m);
+            testVM("case5: card table and bitmap use large pages 2m", heapSizeForBitmapUsingLargePages + heapSizeDiffForBitmap, false, true, largePages2m);
+            testVM("case6: nothing uses large pages (barely not)", heapSizeForBitmapUsingLargePages - heapSizeDiffForBitmap, false, false, largePages2m);
+        } else {
+            testVM("case4: card table and bitmap use large pages (barely)", heapSizeForBitmapUsingLargePages, false, true, largePages2m);
+            testVM("case5: card table and bitmap use large pages (extra slack)", heapSizeForBitmapUsingLargePages + heapSizeDiffForBitmap, false, true, largePages2m);
+            testVM("case6: nothing uses large pages (barely not)", heapSizeForBitmapUsingLargePages - heapSizeDiffForBitmap, false, false, largePages2m);
+        }
     }
 
     public static long parseMemoryString(String value) {
