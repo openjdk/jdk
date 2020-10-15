@@ -81,6 +81,16 @@
   template(java_lang_Integer_IntegerCache,            "java/lang/Integer$IntegerCache")           \
   template(java_lang_Long,                            "java/lang/Long")                           \
   template(java_lang_Long_LongCache,                  "java/lang/Long$LongCache")                 \
+                                                                                                  \
+  template(jdk_internal_vm_vector_VectorSupport,      "jdk/internal/vm/vector/VectorSupport")               \
+  template(jdk_internal_vm_vector_VectorPayload,      "jdk/internal/vm/vector/VectorSupport$VectorPayload") \
+  template(jdk_internal_vm_vector_Vector,             "jdk/internal/vm/vector/VectorSupport$Vector")        \
+  template(jdk_internal_vm_vector_VectorMask,         "jdk/internal/vm/vector/VectorSupport$VectorMask")    \
+  template(jdk_internal_vm_vector_VectorShuffle,      "jdk/internal/vm/vector/VectorSupport$VectorShuffle") \
+  template(payload_name,                              "payload")                                            \
+  template(ETYPE_name,                                "ETYPE")                                              \
+  template(VLENGTH_name,                              "VLENGTH")                                            \
+                                                                                                  \
   template(java_lang_Shutdown,                        "java/lang/Shutdown")                       \
   template(java_lang_ref_Reference,                   "java/lang/ref/Reference")                  \
   template(java_lang_ref_SoftReference,               "java/lang/ref/SoftReference")              \

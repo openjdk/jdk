@@ -27,6 +27,7 @@
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "memory/oopFactory.hpp"
+#include "prims/methodHandles.hpp"
 
 // ------------------------------------------------------------------
 // ciSymbol::ciSymbol
