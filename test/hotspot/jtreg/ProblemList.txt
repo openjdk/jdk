@@ -64,8 +64,6 @@ compiler/rtm/print/TestPrintPreciseRTMLockingStatistics.java 8183263 generic-x64
 
 compiler/c2/Test8004741.java 8235801 generic-all
 
-compiler/debug/TestStressCM.java 8254602 generic-all
-
 #############################################################################
 
 # :hotspot_gc
@@ -132,6 +130,7 @@ vmTestbase/metaspace/gc/firstGC_50m/TestDescription.java 8208250 generic-all
 vmTestbase/metaspace/gc/firstGC_99m/TestDescription.java 8208250 generic-all
 vmTestbase/metaspace/gc/firstGC_default/TestDescription.java 8208250 generic-all
 
+vmTestbase/nsk/jvmti/ResourceExhausted/resexhausted001/TestDescription.java 8253916 linux-all
 vmTestbase/nsk/jvmti/ResourceExhausted/resexhausted003/TestDescription.java 6606767 generic-all
 vmTestbase/nsk/jvmti/ResourceExhausted/resexhausted004/TestDescription.java 6606767 generic-all
 vmTestbase/nsk/jvmti/AttachOnDemand/attach045/TestDescription.java 8202971 generic-all
