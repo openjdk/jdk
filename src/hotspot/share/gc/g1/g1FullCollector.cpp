@@ -114,18 +114,20 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap, bool explicit_gc, bool c
     _is_alive(heap->concurrent_mark()->next_mark_bitmap()),
     _is_alive_mutator(heap->ref_processor_stw(), &_is_alive),
     _always_subject_to_discovery(),
-    _is_subject_mutator(heap->ref_processor_stw(), &_always_subject_to_discovery) {
+    _is_subject_mutator(heap->ref_processor_stw(), &_always_subject_to_discovery),
+    _region_attr_table() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
 
   _preserved_marks_set.init(_num_workers);
   _markers = NEW_C_HEAP_ARRAY(G1FullGCMarker*, _num_workers, mtGC);
   _compaction_points = NEW_C_HEAP_ARRAY(G1FullGCCompactionPoint*, _num_workers, mtGC);
   for (uint i = 0; i < _num_workers; i++) {
-    _markers[i] = new G1FullGCMarker(i, _preserved_marks_set.get(i), mark_bitmap());
+    _markers[i] = new G1FullGCMarker(this, i, _preserved_marks_set.get(i), mark_bitmap());
     _compaction_points[i] = new G1FullGCCompactionPoint();
     _oop_queue_set.register_queue(i, marker(i)->oop_stack());
     _array_queue_set.register_queue(i, marker(i)->objarray_stack());
   }
+  _region_attr_table.initialize(heap->reserved(), HeapRegion::GrainBytes);
 }
 
 G1FullCollector::~G1FullCollector() {
@@ -184,6 +186,10 @@ void G1FullCollector::complete_collection() {
 
   BiasedLocking::restore_marks();
 
+  _heap->concurrent_mark()->swap_mark_bitmaps();
+  // Prepare the bitmap for the next (potentially concurrent) marking.
+  _heap->concurrent_mark()->clear_next_bitmap(_heap->workers());
+
   _heap->prepare_heap_for_mutators();
 
   _heap->policy()->record_full_collection_end();
@@ -192,6 +198,16 @@ void G1FullCollector::complete_collection() {
   _heap->verify_after_full_collection();
 
   _heap->print_heap_after_full_collection(scope()->heap_transition());
+}
+
+void G1FullCollector::update_attribute_table(HeapRegion* hr) {
+  uint8_t value = _region_attr_table.Normal;
+  if (hr->is_closed_archive()) {
+    value = _region_attr_table.ClosedArchive;
+  } else if (hr->is_pinned()) {
+    value = _region_attr_table.Pinned;
+  }
+  _region_attr_table.set_by_index(hr->hrm_index(), value);
 }
 
 void G1FullCollector::phase1_mark_live_objects() {

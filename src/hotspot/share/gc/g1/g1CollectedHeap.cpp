@@ -1073,17 +1073,7 @@ void G1CollectedHeap::verify_after_full_collection() {
   _hrm->verify_optional();
   _verifier->verify_region_sets_optional();
   _verifier->verify_after_gc(G1HeapVerifier::G1VerifyFull);
-  // Clear the previous marking bitmap, if needed for bitmap verification.
-  // Note we cannot do this when we clear the next marking bitmap in
-  // G1ConcurrentMark::abort() above since VerifyDuringGC verifies the
-  // objects marked during a full GC against the previous bitmap.
-  // But we need to clear it before calling check_bitmaps below since
-  // the full GC has compacted objects and updated TAMS but not updated
-  // the prev bitmap.
-  if (G1VerifyBitmaps) {
-    GCTraceTime(Debug, gc) tm("Clear Prev Bitmap for Verification");
-    _cm->clear_prev_bitmap(workers());
-  }
+
   // This call implicitly verifies that the next bitmap is clear after Full GC.
   _verifier->check_bitmaps("Full GC End");
 

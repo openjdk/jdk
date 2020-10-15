@@ -33,6 +33,7 @@
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/allocation.hpp"
+#include "oops/oopsHierarchy.hpp"
 
 class AbstractGangTask;
 class G1CMBitMap;
@@ -54,6 +55,23 @@ public:
 
 // The G1FullCollector holds data associated with the current Full GC.
 class G1FullCollector : StackObj {
+
+  // This table is used to store some per-region attributes needed during collection.
+  class G1FullGCHeapRegionAttrBiasedMappedArray : public G1BiasedMappedArray<uint8_t> {
+  public:
+    static const uint8_t Normal = 0;
+    static const uint8_t Pinned = 1;
+    static const uint8_t ClosedArchive = 2;
+
+  protected:
+    uint8_t default_value() const { return Normal; }
+    
+  public:
+    bool is_closed(HeapWord* obj) const { return get_by_address(obj) == ClosedArchive; }
+    bool is_pinned(HeapWord* obj) const { return get_by_address(obj) >= Pinned; }
+    bool is_normal(HeapWord* obj) const { return get_by_address(obj) == Normal; }
+  };
+
   G1CollectedHeap*          _heap;
   G1FullGCScope             _scope;
   uint                      _num_workers;
@@ -70,6 +88,10 @@ class G1FullCollector : StackObj {
 
   G1FullGCSubjectToDiscoveryClosure _always_subject_to_discovery;
   ReferenceProcessorSubjectToDiscoveryMutator _is_subject_mutator;
+
+  // Collects interesting information about regions for quick access. Only valid
+  // from phase 2 (preparation) onwards.
+  G1FullGCHeapRegionAttrBiasedMappedArray _region_attr_table;
 
 public:
   G1FullCollector(G1CollectedHeap* heap, bool explicit_gc, bool clear_soft_refs);
@@ -89,6 +111,11 @@ public:
   G1FullGCCompactionPoint* serial_compaction_point() { return &_serial_compaction_point; }
   G1CMBitMap*              mark_bitmap();
   ReferenceProcessor*      reference_processor();
+
+  void update_attribute_table(HeapRegion* hr);
+
+  bool is_in_pinned(oop obj) const { return _region_attr_table.is_pinned(cast_from_oop<HeapWord*>(obj)); }
+  bool is_in_closed(oop obj) const { return _region_attr_table.is_closed(cast_from_oop<HeapWord*>(obj)); }
 
 private:
   void phase1_mark_live_objects();

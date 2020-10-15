@@ -299,8 +299,6 @@ public:
 
   // Check if the object is in closed archive
   static inline bool is_closed_archive_object(oop object);
-  // Check if the object is in open archive
-  static inline bool is_open_archive_object(oop object);
   // Check if the object is either in closed archive or open archive
   static inline bool is_archived_object(oop object);
 
@@ -308,10 +306,8 @@ private:
   static bool _archive_check_enabled;
   static G1ArchiveRegionMap  _archive_region_map;
 
-  // Check if an object is in a closed archive region using the _closed_archive_region_map.
+  // Check if an object is in a closed archive region using the _archive_region_map.
   static inline bool in_closed_archive_range(oop object);
-  // Check if an object is in open archive region using the _open_archive_region_map.
-  static inline bool in_open_archive_range(oop object);
 
   // Check if archive object checking is enabled, to avoid calling in_open/closed_archive_range
   // unnecessarily.
