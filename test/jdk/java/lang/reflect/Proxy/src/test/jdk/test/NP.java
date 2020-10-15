@@ -28,4 +28,8 @@ package jdk.test;
  */
 interface NP {
     void test();
+
+    default int m() {
+        return 100;
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,12 @@
  * questions.
  */
 
-package p.three.internal;
+package p;
+import java.lang.reflect.*;
 
-public interface Q {
-    default int m() {
-        throw new UnsupportedOperationException("Q::m is in a non-exported package");
-    }
+public class DefaultMethodInvoker {
+     public static Object invoke(Object proxy, Method method, Object... args)
+            throws IllegalAccessException, InvocationTargetException {
+         return InvocationHandler.invokeDefaultMethod(proxy, method, args);
+     }
 }

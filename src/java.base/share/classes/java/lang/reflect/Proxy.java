@@ -29,7 +29,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
-import java.lang.invoke.WrongMethodTypeException;
 import java.lang.module.ModuleDescriptor;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -47,7 +46,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.BooleanSupplier;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
@@ -62,7 +60,6 @@ import sun.security.action.GetPropertyAction;
 import sun.security.util.SecurityConstants;
 
 import static java.lang.module.ModuleDescriptor.Modifier.SYNTHETIC;
-import static java.lang.invoke.MethodType.methodType;
 
 /**
  *
@@ -155,8 +152,8 @@ import static java.lang.invoke.MethodType.methodType;
  * <li>A proxy interface may define a default method or inherit
  * a default method from its superinterface directly or indirectly.
  * An invocation handler can invoke a default method of a proxy interface
- * by calling {@link Proxy#invokeDefaultMethod(Object, Method, Object...)
- * Proxy::invokeDefaultMethod}.
+ * by calling {@link InvocationHandler#invokeDefaultMethod(Object, Method, Object...)
+ * InvocationHandler::invokeDefaultMethod}.
  *
  * <li>An invocation of the {@code hashCode},
  * {@code equals}, or {@code toString} methods declared in
@@ -1156,188 +1153,12 @@ public class Proxy implements java.io.Serializable {
         }
     };
 
-    private static final Object[] EMPTY_ARGS = new Object[0];
-
-    /**
-     * Invokes the specified default method on the given {@code proxy} instance with
-     * the given parameters.  The given {@code method} must be a default method
-     * declared in a proxy interface of the {@code proxy}'s class or inherited
-     * from its superinterface directly or indirectly.
-     * <p>
-     * This method behaves as if {@code X.super.m(A* a)} is called from the proxy
-     * class as the caller where {@code X} is a proxy interface and
-     * the call to {@code X.super::m(A*)} is resolved to the given {@code method}.
-     * <p>
-     * For example, interface {@code A} and {@code B} both declare a default
-     * implementation of method {@code m}. Interface {@code C} extends {@code A}
-     * and it inherits the default method {@code m} from its superinterface {@code A}.
-     *
-     * <blockquote><pre>{@code
-     * interface A {
-     *     default T m(A a) { return t1; }
-     * }
-     * interface B {
-     *     default T m(A a) { return t2; }
-     * }
-     * interface C extends A {}
-     * }</pre></blockquote>
-     *
-     * The following creates a proxy instance that implements {@code C}.
-     * When {@code proxy::m} is invoked, the {@code method} argument passed to
-     * {@link InvocationHandler#invoke(Object, Method, Object[]) InvocationHandler::invoke}
-     * would be {@code A::m} as {@code C} inherits "{@code m}" from {@code A}.
-     * An invocation handler can directly invoke the default method via
-     * {@code Proxy::invokeDefaultMethod}.
-     *
-     * <blockquote><pre>{@code
-     * Object proxy = Proxy.newProxyInstance(loader, new Class<?>[] { C.class },
-     *        (o, m, params) -> {
-     *             assert m.getDeclaringClass() == A.class && m.isDefault();
-     *             return Proxy.invokeDefaultMethod(o, m, params);
-     *        });
-     * }</pre></blockquote>
-     *
-     * The following creates a proxy instance that implements {@code A} and {@code B}
-     * and the invocation handler delegates the method invocation to
-     * invoking {@code B::m} via {@code Proxy::invokeDefaultMethod}.
-     *
-     * <blockquote><pre>{@code
-     * Object proxy = Proxy.newProxyInstance(loader, new Class<?>[] { A.class, B.class },
-     *         (o, m, params) -> {
-     *             // delegate to calling B::m
-     *             return Proxy.invokeDefaultMethod(o, B.class.getMethod(m.getName(), m.getParameterTypes()), params);
-     *         });
-     * }</pre></blockquote>
-     *
-     * If an interface {@code D} extends {@code A} and overrides {@code m},
-     * the proxy class implementing {@code D} can invoke {@code D::m} default method
-     * as if calling {@code D.super::m}.  As {@code D} has the implementation of
-     * {@code m}, invoking {@code A::m} via {@code Proxy::invokeDefaultMethod}
-     * will result in an {@code IllegalArgumentException} because {@code A::m}
-     * is not inherited from any proxy interface.
-     *
-     * <blockquote><pre>{@code
-     * interface D extends A {
-     *     default T m(A a) { return t3; }
-     * }
-     *
-     * Object proxy = Proxy.newProxyInstance(loader, new Class<?>[] { D.class },
-     *         (o, m, params) -> {
-     *             // IllegalArgumentException thrown as {@code A::m} is not a method
-     *             // inherited from its proxy interface
-     *             return Proxy.invokeDefaultMethod(o, A.class.getMethod("m"), params);
-     *         });
-     * }</pre></blockquote>
-     * @param proxy   the {@code Proxy} instance on which the default method to be invoked
-     * @param method  the {@code Method} instance corresponding to a default method
-     *                declared in a proxy interface of the proxy class or inherited
-     *                from its superinterface directly or indirectly
-     * @param args    the parameters used for the method invocation; can be {@code null}
-     *                if the number of formal parameters required by the method is zero.
-     * @return the value returned from the method invocation
-     *
-     * @throws IllegalArgumentException if any of the following conditions is {@code true}:
-     *         <ul>
-     *         <li>{@code proxy} is not {@linkplain #isProxyClass(Class)
-     *             a proxy instance}; or</li>
-     *         <li>the given {@code method} is not a default method declared
-     *             in a proxy interface of the proxy class and not inherited from
-     *             any of its superinterfaces; or</li>
-     *         <li>the given {@code method} is overridden directly or indirectly by
-     *             the proxy interfaces and the method reference to the named
-     *             method never resolves to the given {@code method}; or</li>
-     *         <li>the length of the given {@code args} array does not match the
-     *             number of parameters of the method to be invoked; or</li>
-     *         <li>any of the {@code args} elements fails the unboxing
-     *             conversion if the corresponding method parameter type is
-     *             a primitive type; or if, after possible unboxing, any of the
-     *             {@code args} elements cannot be assigned to the corresponding
-     *             method parameter type.</li>
-     *         </ul>
-     * @throws InvocationTargetException if the invoked default method throws
-     *         any exception, it is wrapped by {@code InvocationTargetException}
-     *         and rethrown
-     * @throws NullPointerException if {@code proxy} or {@code method} is {@code null}
-     *
-     * @since 16
-     * @jvms 5.4.3. Method Resolution
-     */
-    public static Object invokeDefaultMethod(Object proxy, Method method, Object... args)
-            throws InvocationTargetException {
-        Objects.requireNonNull(proxy);
-        Objects.requireNonNull(method);
-
-        // verify that the object is actually a proxy instance
-        Class<?> proxyClass = proxy.getClass();
-        if (!isProxyClass(proxyClass)) {
-            throw new IllegalArgumentException("'proxy' is not a proxy instance");
-        }
-        if (!method.isDefault()) {
-            throw new IllegalArgumentException("\"" + method + "\" is not a default method");
-        }
-
-        // lookup the cached method handle
-        ConcurrentHashMap<Method, MethodHandle> methods = DEFAULT_METHODS_MAP.get(proxyClass);
-        MethodHandle superMH = methods.get(method);
-
-        if (superMH == null) {
-            MethodType type = methodType(method.getReturnType(), method.getParameterTypes());
-            MethodHandles.Lookup lookup = MethodHandles.lookup();
-            Class<?> proxyInterface = findProxyInterfaceOrElseThrow(proxyClass, method);
-            MethodHandle mh0;
-            try {
-                mh0 = ((Proxy) proxy).proxyClassLookup(lookup)
-                                     .findSpecial(proxyInterface, method.getName(), type, proxyClass)
-                                     .withVarargs(false);
-            } catch (IllegalAccessException | NoSuchMethodException e) {
-                // should not reach here
-                throw new InternalError(e);
-            }
-            // this check can be turned into assertion as it is guaranteed to succeed by the virtue of
-            // looking up a default (instance) method declared or inherited by proxyInterface
-            // while proxyClass implements (is a subtype of) proxyInterface ...
-            assert ((BooleanSupplier) () -> {
-                try {
-                    // make sure that the method type matches
-                    mh0.asType(type.insertParameterTypes(0, proxyClass));
-                    return true;
-                } catch (WrongMethodTypeException e) {
-                    return false;
-                }
-            }).getAsBoolean() : "Wrong method type";
-            // change return type to Object
-            MethodHandle mh = mh0.asType(mh0.type().changeReturnType(Object.class));
-            // wrap any exception thrown with InvocationTargetException
-            mh = MethodHandles.catchException(mh, Throwable.class, wrapWithInvocationTargetExceptionMH());
-            // spread array of arguments among parameters (skipping 1st parameter - target)
-            mh = mh.asSpreader(1, Object[].class, type.parameterCount());
-            // change target type to Object
-            mh = mh.asType(MethodType.methodType(Object.class, Object.class, Object[].class));
-
-            // push MH into cache
-            MethodHandle cached = methods.putIfAbsent(method, mh);
-            if (cached != null) {
-                superMH = cached;
-            } else {
-                superMH = mh;
-            }
-        }
-
-        // invoke the super method
-        try {
-            // the args array can be null if the number of formal parameters required by
-            // the method is zero (consistent with Method::invoke)
-            Object[] params = args != null ? args : EMPTY_ARGS;
-            return superMH.invokeExact(proxy, params);
-        } catch (ClassCastException | NullPointerException e) {
-            throw new IllegalArgumentException(e.getMessage(), e);
-        } catch (InvocationTargetException | RuntimeException | Error e) {
-            throw e;
-        } catch (Throwable e) {
-            // should not reach here
-            throw new InternalError(e);
-        }
+    static ConcurrentHashMap<Method, MethodHandle> defaultMethodMap(Class<?> proxyClass) {
+        assert isProxyClass(proxyClass);
+        return DEFAULT_METHODS_MAP.get(proxyClass);
     }
+
+    static final Object[] EMPTY_ARGS = new Object[0];
 
     /**
      * Finds the first proxy interface that declares the given method
@@ -1345,7 +1166,7 @@ public class Proxy implements java.io.Serializable {
      *
      * @throws IllegalArgumentException if not found
      */
-    private static Class<?> findProxyInterfaceOrElseThrow(Class<?> proxyClass, Method method) {
+    static Class<?> findProxyInterfaceOrElseThrow(Class<?> proxyClass, Method method) {
         Class<?> declaringClass = method.getDeclaringClass();
         if (!declaringClass.isInterface()) {
             throw new IllegalArgumentException("\"" + method +
@@ -1410,8 +1231,7 @@ public class Proxy implements java.io.Serializable {
      *
      * @return a lookup for proxy class of this proxy instance
      */
-    private Lookup proxyClassLookup(Lookup caller) {
-        Class<?> proxyClass = this.getClass();
+    static Lookup proxyClassLookup(Lookup caller, Class<?> proxyClass) {
         return AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override
             public Lookup run() {
@@ -1438,7 +1258,7 @@ public class Proxy implements java.io.Serializable {
     @Stable
     private static MethodHandle wrapWithInvocationTargetExceptionMH;
 
-    private static MethodHandle wrapWithInvocationTargetExceptionMH() {
+    static MethodHandle wrapWithInvocationTargetExceptionMH() {
         MethodHandle mh = wrapWithInvocationTargetExceptionMH;
         if (mh == null) {
             try {
