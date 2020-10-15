@@ -60,7 +60,7 @@ class RandomTestBsi1999 {
      *
      *   Werner Schindler.  Functionality Classes and Evaluation Methodology for
      *   Deterministic Random Number Generators, Version 2.0.
-     *   Bundesamt für Sicherheit in der Informationstechnik (BSI).  December 2, 1999.
+     *   Bundesamt fur Sicherheit in der Informationstechnik (BSI).  December 2, 1999.
      *   https://www.bsi.bund.de/SharedDocs/Downloads/DE/BSI/Zertifizierung/Interpretationen/AIS_20_Functionality_Classes_Evaluation_Methodology_DRNG_e.pdf
      *
      * Section F of this report (pp. 19-20) recommends the use of five tests to evaluate a
