@@ -31,7 +31,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.DoubleConsumer;
 import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
+import java.util.Map;
 import java.util.random.RandomGenerator;
+import java.util.random.RandomGenerator.RandomGeneratorProperty;
 import java.util.random.RandomSupport;
 import java.util.random.RandomSupport.AbstractSpliteratorGenerator;
 import java.util.random.RandomSupport.RandomIntsSpliterator;
@@ -106,6 +108,36 @@ public class Random extends AbstractSpliteratorGenerator
     static final String BadBound = "bound must be positive";
     static final String BadRange = "bound must be greater than origin";
     static final String BadSize  = "size must be non-negative";
+
+    /*
+     * Period of Random is 2**48
+     */
+    private static final BigInteger PERIOD = BigInteger.valueOf(1L<<48);
+
+    /*
+     * Number of bits used to maintain state of seed.
+     */
+    private static final int STATE_BITS = 48;
+
+    /*
+     * The equidistribution of the algorithm.
+     */
+    private static final int EQUIDISTRIBUTION = 0;
+
+    /*
+     * RandomGenerator properties.
+     */
+    static Map<RandomGeneratorProperty, Object> getProperties() {
+        return Map.ofEntries(
+                Map.entry(RandomGeneratorProperty.NAME, "Random"),
+                Map.entry(RandomGeneratorProperty.GROUP, "Legacy"),
+                Map.entry(RandomGeneratorProperty.PERIOD, PERIOD),
+                Map.entry(RandomGeneratorProperty.STATE_BITS, STATE_BITS),
+                Map.entry(RandomGeneratorProperty.EQUIDISTRIBUTION, EQUIDISTRIBUTION),
+                Map.entry(RandomGeneratorProperty.IS_STOCHASTIC, false),
+                Map.entry(RandomGeneratorProperty.IS_HARDWARE, false)
+        );
+    }
 
     /**
      * Creates a new random number generator. This constructor sets
@@ -214,36 +246,6 @@ public class Random extends AbstractSpliteratorGenerator
             nextseed = (oldseed * multiplier + addend) & mask;
         } while (!seed.compareAndSet(oldseed, nextseed));
         return (int)(nextseed >>> (48 - bits));
-    }
-
-    /*
-     * Period of Random is 2**48
-     */
-    private static final BigInteger PERIOD = BigInteger.valueOf(1L<<48);
-
-    /*
-     * Number of bits used to maintain state of seed.
-     */
-    private static final int STATE_BITS = 48;
-
-    /*
-     * The equidistribution of the algorithm.
-     */
-    private static final int EQUIDISTRIBUTION = 0;
-
-    @Override
-    public int stateBits() {
-        return STATE_BITS;
-    }
-
-    @Override
-    public int equidistribution() {
-        return EQUIDISTRIBUTION;
-    }
-
-    @Override
-    public BigInteger period() {
-        return PERIOD;
     }
 
     /**

@@ -26,6 +26,8 @@ package java.util;
 
 import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.Map;
+import java.util.random.RandomGenerator.RandomGeneratorProperty;
 import java.util.random.RandomGenerator.SplittableGenerator;
 import java.util.random.RandomSupport;
 import java.util.random.RandomSupport.AbstractSplittableGenerator;
@@ -150,6 +152,36 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
      * some custom spliterator classes needed for stream methods.
      */
 
+    /*
+     * Period of SplittableRandom is 2**64
+     */
+    static final BigInteger PERIOD = BigInteger.ONE.shiftLeft(64);
+
+    /*
+     * Number of bits used to maintain state of seed.
+     */
+    private static final int STATE_BITS = 64;
+
+    /*
+     * The equidistribution of the algorithm.
+     */
+    private static final int EQUIDISTRIBUTION = 1;
+
+    /*
+     * RandomGenerator properties.
+     */
+    static Map<RandomGeneratorProperty, Object> getProperties() {
+        return Map.ofEntries(
+                Map.entry(RandomGeneratorProperty.NAME, "SplittableRandom"),
+                Map.entry(RandomGeneratorProperty.GROUP, "Legacy"),
+                Map.entry(RandomGeneratorProperty.PERIOD, PERIOD),
+                Map.entry(RandomGeneratorProperty.STATE_BITS, STATE_BITS),
+                Map.entry(RandomGeneratorProperty.EQUIDISTRIBUTION, EQUIDISTRIBUTION),
+                Map.entry(RandomGeneratorProperty.IS_STOCHASTIC, false),
+                Map.entry(RandomGeneratorProperty.IS_HARDWARE, false)
+        );
+    }
+
     /**
      * The golden ratio scaled to 64bits, used as the initial gamma
      * value for (unsplit) SplittableRandoms.
@@ -273,36 +305,6 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
     @Override
     public long nextLong() {
         return mix64(nextSeed());
-    }
-
-    /*
-     * Period of SplittableRandom is 2**64
-     */
-    static final BigInteger PERIOD = BigInteger.ONE.shiftLeft(64);
-
-    /*
-     * Number of bits used to maintain state of seed.
-     */
-    private static final int STATE_BITS = 64;
-
-    /*
-     * The equidistribution of the algorithm.
-     */
-    private static final int EQUIDISTRIBUTION = 1;
-
-    @Override
-    public int stateBits() {
-        return STATE_BITS;
-    }
-
-    @Override
-    public int equidistribution() {
-        return EQUIDISTRIBUTION;
-    }
-
-    @Override
-    public BigInteger period() {
-        return PERIOD;
     }
 
 }

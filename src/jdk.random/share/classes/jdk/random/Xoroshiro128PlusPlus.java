@@ -27,8 +27,10 @@ package jdk.random;
 
 import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.Map;
 import java.util.random.RandomGenerator;
 import java.util.random.RandomGenerator.LeapableGenerator;
+import java.util.random.RandomGenerator.RandomGeneratorProperty;
 import java.util.random.RandomSupport;
 
 /**
@@ -144,6 +146,21 @@ public final class Xoroshiro128PlusPlus implements LeapableGenerator {
      * The equidistribution of the algorithm.
      */
     private static final int EQUIDISTRIBUTION = 2;
+
+    /*
+     * RandomGenerator properties.
+     */
+    static Map<RandomGeneratorProperty, Object> getProperties() {
+        return Map.ofEntries(
+                Map.entry(RandomGeneratorProperty.NAME, "Xoroshiro128PlusPlus"),
+                Map.entry(RandomGeneratorProperty.GROUP, "Xoroshiro"),
+                Map.entry(RandomGeneratorProperty.PERIOD, PERIOD),
+                Map.entry(RandomGeneratorProperty.STATE_BITS, STATE_BITS),
+                Map.entry(RandomGeneratorProperty.EQUIDISTRIBUTION, EQUIDISTRIBUTION),
+                Map.entry(RandomGeneratorProperty.IS_STOCHASTIC, false),
+                Map.entry(RandomGeneratorProperty.IS_HARDWARE, false)
+        );
+    }
 
     /* ---------------- instance fields ---------------- */
 
@@ -263,21 +280,6 @@ public final class Xoroshiro128PlusPlus implements LeapableGenerator {
         x1 = Long.rotateLeft(s1, 28); // c
 
         return result;
-    }
-
-    @Override
-    public int stateBits() {
-        return STATE_BITS;
-    }
-
-    @Override
-    public int equidistribution() {
-        return EQUIDISTRIBUTION;
-    }
-
-    @Override
-    public BigInteger period() {
-        return PERIOD;
     }
 
     @Override
