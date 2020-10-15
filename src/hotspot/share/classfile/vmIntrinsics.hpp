@@ -25,6 +25,14 @@
 #ifndef SHARE_CLASSFILE_VMINTRINSICS_HPP
 #define SHARE_CLASSFILE_VMINTRINSICS_HPP
 
+#include "jfr/support/jfrIntrinsics.hpp"
+#include "memory/allStatic.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/vmEnums.hpp"
+
+class Method;
+class methodHandle;
+
 // Here are all the intrinsics known to the runtime and the CI.
 // Each intrinsic consists of a public enum name (like _hashCode),
 // followed by a specification of its klass, name, and signature:
@@ -986,5 +994,143 @@
    do_name(     forEachRemaining_signature,                      "(Ljava/util/function/IntConsumer;)V")                 \
 
     /*end*/
+
+// VM Intrinsic ID's uniquely identify some very special methods
+class vmIntrinsics : AllStatic {
+  friend class vmSymbols;
+  friend class ciObjectFactory;
+
+ public:
+  // Accessing
+  enum ID {
+    _none = 0,                      // not an intrinsic (default answer)
+
+    #define VM_INTRINSIC_ENUM(id, klass, name, sig, flags)  id,
+    #define __IGNORE_CLASS(id, name)                      /*ignored*/
+    #define __IGNORE_NAME(id, name)                       /*ignored*/
+    #define __IGNORE_SIGNATURE(id, name)                  /*ignored*/
+    #define __IGNORE_ALIAS(id, name)                      /*ignored*/
+
+    VM_INTRINSICS_DO(VM_INTRINSIC_ENUM,
+                     __IGNORE_CLASS, __IGNORE_NAME, __IGNORE_SIGNATURE, __IGNORE_ALIAS)
+    #undef VM_INTRINSIC_ENUM
+    #undef __IGNORE_CLASS
+    #undef __IGNORE_NAME
+    #undef __IGNORE_SIGNATURE
+    #undef __IGNORE_ALIAS
+
+    ID_LIMIT,
+    LAST_COMPILER_INLINE = _VectorScatterOp,
+    FIRST_MH_SIG_POLY    = _invokeGeneric,
+    FIRST_MH_STATIC      = _linkToVirtual,
+    LAST_MH_SIG_POLY     = _linkToInterface,
+
+    FIRST_ID = _none + 1
+  };
+
+  enum Flags {
+    // AccessFlags syndromes relevant to intrinsics.
+    F_none = 0,
+    F_R,                        // !static ?native !synchronized (R="regular")
+    F_S,                        //  static ?native !synchronized
+    F_Y,                        // !static ?native  synchronized
+    F_RN,                       // !static  native !synchronized
+    F_SN,                       //  static  native !synchronized
+    F_RNY,                      // !static  native  synchronized
+
+    FLAG_LIMIT
+  };
+  enum {
+    log2_FLAG_LIMIT = 4         // checked by an assert at start-up
+  };
+
+public:
+  static ID ID_from(int raw_id) {
+    assert(raw_id >= (int)_none && raw_id < (int)ID_LIMIT,
+           "must be a valid intrinsic ID");
+    return (ID)raw_id;
+  }
+
+  static const char* name_at(ID id);
+
+private:
+  static ID find_id_impl(vmSymbolID holder,
+                         vmSymbolID name,
+                         vmSymbolID sig,
+                         jshort flags);
+
+  // check if the intrinsic is disabled by course-grained flags.
+  static bool disabled_by_jvm_flags(vmIntrinsics::ID id);
+public:
+  static ID find_id(const char* name);
+  // Given a method's class, name, signature, and access flags, report its ID.
+  static ID find_id(vmSymbolID holder,
+                    vmSymbolID name,
+                    vmSymbolID sig,
+                    jshort flags) {
+    ID id = find_id_impl(holder, name, sig, flags);
+#ifdef ASSERT
+    // ID _none does not hold the following asserts.
+    if (id == _none)  return id;
+#endif
+    assert(    class_for(id) == holder, "correct id");
+    assert(     name_for(id) == name,   "correct id");
+    assert(signature_for(id) == sig,    "correct id");
+    return id;
+  }
+
+  static void verify_method(ID actual_id, Method* m) PRODUCT_RETURN;
+
+  // Find out the symbols behind an intrinsic:
+  static vmSymbolID     class_for(ID id);
+  static vmSymbolID      name_for(ID id);
+  static vmSymbolID signature_for(ID id);
+  static Flags              flags_for(ID id);
+
+  static const char* short_name_as_C_string(ID id, char* buf, int size);
+
+  // Wrapper object methods:
+  static ID for_boxing(BasicType type);
+  static ID for_unboxing(BasicType type);
+
+  // Raw conversion:
+  static ID for_raw_conversion(BasicType src, BasicType dest);
+
+  // The methods below provide information related to compiling intrinsics.
+
+  // (1) Information needed by the C1 compiler.
+
+  static bool preserves_state(vmIntrinsics::ID id);
+  static bool can_trap(vmIntrinsics::ID id);
+  static bool should_be_pinned(vmIntrinsics::ID id);
+
+  // (2) Information needed by the C2 compiler.
+
+  // Returns true if the intrinsic for method 'method' will perform a virtual dispatch.
+  static bool does_virtual_dispatch(vmIntrinsics::ID id);
+  // A return value larger than 0 indicates that the intrinsic for method
+  // 'method' requires predicated logic.
+  static int predicates_needed(vmIntrinsics::ID id);
+
+  // There are 2 kinds of JVM options to control intrinsics.
+  // 1. Disable/Control Intrinsic accepts a list of intrinsic IDs.
+  //    ControlIntrinsic is recommended. DisableIntrinic will be deprecated.
+  //    Currently, the DisableIntrinsic list prevails if an intrinsic appears on
+  //    both lists.
+  //
+  // 2. Explicit UseXXXIntrinsics options. eg. UseAESIntrinsics, UseCRC32Intrinsics etc.
+  //    Each option can control a group of intrinsics. The user can specify them but
+  //    their final values are subject to hardware inspection (VM_Version::initialize).
+  //    Stub generators are controlled by them.
+  //
+  // An intrinsic is enabled if and only if neither the fine-grained control(1) nor
+  // the corresponding coarse-grained control(2) disables it.
+  static bool is_disabled_by_flags(vmIntrinsics::ID id);
+
+  static bool is_disabled_by_flags(const methodHandle& method);
+  static bool is_intrinsic_available(vmIntrinsics::ID id) {
+    return !is_disabled_by_flags(id);
+  }
+};
 
 #endif // SHARE_CLASSFILE_VMINTRINSICS_HPP
