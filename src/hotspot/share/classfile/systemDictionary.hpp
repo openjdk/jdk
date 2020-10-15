@@ -226,6 +226,13 @@ class TableStatistics;
   /* support for records */                                                                                     \
   do_klass(RecordComponent_klass,                       java_lang_reflect_RecordComponent                     ) \
                                                                                                                 \
+  /* support for vectors*/                                                                                      \
+  do_klass(vector_VectorSupport_klass,                  jdk_internal_vm_vector_VectorSupport                  ) \
+  do_klass(vector_VectorPayload_klass,                  jdk_internal_vm_vector_VectorPayload                  ) \
+  do_klass(vector_Vector_klass,                         jdk_internal_vm_vector_Vector                         ) \
+  do_klass(vector_VectorMask_klass,                     jdk_internal_vm_vector_VectorMask                     ) \
+  do_klass(vector_VectorShuffle_klass,                  jdk_internal_vm_vector_VectorShuffle                  ) \
+                                                                                                                \
   /*end*/
 
 class SystemDictionary : AllStatic {
@@ -624,9 +631,9 @@ public:
   // Return Symbol or throw exception if name given is can not be a valid Symbol.
   static Symbol* class_name_symbol(const char* name, Symbol* exception, TRAPS);
 
-protected:
   // Setup link to hierarchy
   static void add_to_hierarchy(InstanceKlass* k, TRAPS);
+protected:
 
   // Basic find on loaded classes
   static InstanceKlass* find_class(unsigned int hash,

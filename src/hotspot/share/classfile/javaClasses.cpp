@@ -53,6 +53,7 @@
 #include "oops/recordComponent.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "prims/methodHandles.hpp"
 #include "prims/resolvedMethodTable.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
@@ -1244,6 +1245,8 @@ oop java_lang_Class::process_archived_mirror(Klass* k, oop mirror,
     java_lang_Class:set_init_lock(archived_mirror, NULL);
 
     set_protection_domain(archived_mirror, NULL);
+    set_signers(archived_mirror, NULL);
+    set_source_file(archived_mirror, NULL);
   }
 
   // clear class loader and mirror_module_field
@@ -2436,10 +2439,10 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, const methodHand
   // The "ASSERT" here is to verify this method generates the exactly same stack
   // trace as utilizing vframe.
 #ifdef ASSERT
-  vframeStream st(thread);
+  vframeStream st(thread, false /* stop_at_java_call_stub */, false /* process_frames */);
 #endif
   int total_count = 0;
-  RegisterMap map(thread, false);
+  RegisterMap map(thread, false /* update */, false /* process_frames */);
   int decode_offset = 0;
   CompiledMethod* nm = NULL;
   bool skip_fillInStackTrace_check = false;
@@ -2581,7 +2584,7 @@ void java_lang_Throwable::fill_in_stack_trace_of_preallocated_backtrace(Handle t
   assert(backtrace.not_null(), "backtrace should have been preallocated");
 
   ResourceMark rm(THREAD);
-  vframeStream st(THREAD);
+  vframeStream st(THREAD, false /* stop_at_java_call_stub */, false /* process_frames */);
 
   BacktraceBuilder bt(THREAD, backtrace);
 
@@ -4535,6 +4538,30 @@ void java_util_concurrent_locks_AbstractOwnableSynchronizer::serialize_offsets(S
   AOS_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
 }
 #endif
+
+int vector_VectorPayload::_payload_offset;
+
+#define VECTORPAYLOAD_FIELDS_DO(macro) \
+  macro(_payload_offset, k, "payload", object_signature, false)
+
+void vector_VectorPayload::compute_offsets() {
+  InstanceKlass* k = SystemDictionary::vector_VectorPayload_klass();
+  VECTORPAYLOAD_FIELDS_DO(FIELD_COMPUTE_OFFSET);
+}
+
+#if INCLUDE_CDS
+void vector_VectorPayload::serialize_offsets(SerializeClosure* f) {
+  VECTORPAYLOAD_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
+}
+#endif
+
+void vector_VectorPayload::set_payload(oop o, oop val) {
+  o->obj_field_put(_payload_offset, val);
+}
+
+bool vector_VectorPayload::is_instance(oop obj) {
+  return obj != NULL && is_subclass(obj->klass());
+}
 
 int java_lang_Integer_IntegerCache::_static_cache_offset;
 int java_lang_Long_LongCache::_static_cache_offset;

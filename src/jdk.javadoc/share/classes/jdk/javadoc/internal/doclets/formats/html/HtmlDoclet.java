@@ -169,18 +169,16 @@ public class HtmlDoclet extends AbstractDoclet {
         }
 
         if (options.createIndex()) {
-            IndexBuilder indexBuilder = new IndexBuilder(configuration, nodeprecated);
-            if (options.splitIndex()) {
-                SplitIndexWriter.generate(configuration, indexBuilder);
-            } else {
-                SingleIndexWriter.generate(configuration, indexBuilder);
-            }
-            AllClassesIndexWriter.generate(configuration,
-                    new IndexBuilder(configuration, nodeprecated, true));
+            SystemPropertiesWriter.generate(configuration);
+            configuration.mainIndex.addElements();
+            IndexWriter.generate(configuration);
+            IndexBuilder allClassesIndex = new IndexBuilder(configuration, nodeprecated, true);
+            allClassesIndex.addElements();
+            AllClassesIndexWriter.generate(configuration, allClassesIndex);
             if (!configuration.packages.isEmpty()) {
                 AllPackagesIndexWriter.generate(configuration);
             }
-            SystemPropertiesWriter.generate(configuration);
+            configuration.mainIndex.createSearchIndexFiles();
         }
 
         if (options.createOverview()) {

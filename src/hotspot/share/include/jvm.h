@@ -203,8 +203,14 @@ JVM_IsDynamicDumpingEnabled(JNIEnv* env);
 JNIEXPORT jboolean JNICALL
 JVM_IsSharingEnabled(JNIEnv* env);
 
+JNIEXPORT jboolean JNICALL
+JVM_IsDumpingClassList(JNIEnv* env);
+
 JNIEXPORT jlong JNICALL
 JVM_GetRandomSeedForDumping();
+
+JNIEXPORT void JNICALL
+JVM_LogLambdaFormInvoker(JNIEnv* env, jstring line);
 
 /*
  * java.lang.Throwable

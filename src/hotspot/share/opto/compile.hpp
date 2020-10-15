@@ -382,6 +382,8 @@ class Compile : public Phase {
 
   GrowableArray<CallGenerator*> _boxing_late_inlines; // same but for boxing operations
 
+  GrowableArray<CallGenerator*> _vector_reboxing_late_inlines; // same but for vector reboxing operations
+
   int                           _late_inlines_pos;    // Where in the queue should the next late inlining candidate go (emulate depth first inlining)
   uint                          _number_of_mh_late_inlines; // number of method handle late inlining still pending
 
@@ -429,6 +431,7 @@ class Compile : public Phase {
   PrintInliningBuffer& print_inlining_current();
 
   void log_late_inline_failure(CallGenerator* cg, const char* msg);
+  DEBUG_ONLY(bool _exception_backedge;)
 
  public:
 
@@ -643,7 +646,9 @@ class Compile : public Phase {
 #endif
   }
 
+  void print_method(CompilerPhaseType cpt, const char *name, int level = 1, int idx = 0);
   void print_method(CompilerPhaseType cpt, int level = 1, int idx = 0);
+  void print_method(CompilerPhaseType cpt, Node* n, int level = 3);
 
 #ifndef PRODUCT
   void igv_print_method_to_file(const char* phase_name = "Debug", bool append = false);
@@ -864,10 +869,13 @@ class Compile : public Phase {
                                    bool allow_intrinsics = true);
   bool should_delay_inlining(ciMethod* call_method, JVMState* jvms) {
     return should_delay_string_inlining(call_method, jvms) ||
-           should_delay_boxing_inlining(call_method, jvms);
+           should_delay_boxing_inlining(call_method, jvms) ||
+           should_delay_vector_inlining(call_method, jvms);
   }
   bool should_delay_string_inlining(ciMethod* call_method, JVMState* jvms);
   bool should_delay_boxing_inlining(ciMethod* call_method, JVMState* jvms);
+  bool should_delay_vector_inlining(ciMethod* call_method, JVMState* jvms);
+  bool should_delay_vector_reboxing_inlining(ciMethod* call_method, JVMState* jvms);
 
   // Helper functions to identify inlining potential at call-site
   ciMethod* optimize_virtual_call(ciMethod* caller, int bci, ciInstanceKlass* klass,
@@ -939,6 +947,10 @@ class Compile : public Phase {
     _boxing_late_inlines.push(cg);
   }
 
+  void              add_vector_reboxing_late_inline(CallGenerator* cg) {
+    _vector_reboxing_late_inlines.push(cg);
+  }
+
   void remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, Unique_Node_List &useful);
 
   void process_print_inlining();
@@ -967,6 +979,9 @@ class Compile : public Phase {
   void inline_boxing_calls(PhaseIterGVN& igvn);
   bool optimize_loops(PhaseIterGVN& igvn, LoopOptsMode mode);
   void remove_root_to_sfpts_edges(PhaseIterGVN& igvn);
+
+  void inline_vector_reboxing_calls();
+  bool has_vbox_nodes();
 
   // Matching, CFG layout, allocation, code generation
   PhaseCFG*         cfg()                       { return _cfg; }
@@ -1139,7 +1154,7 @@ class Compile : public Phase {
 
   // Auxiliary methods for randomized fuzzing/stressing
   int random();
-  static bool randomized_select(int count);
+  bool randomized_select(int count);
 
   // supporting clone_map
   CloneMap&     clone_map();
@@ -1166,6 +1181,8 @@ class Compile : public Phase {
 #endif // IA32
 #ifdef ASSERT
   bool _type_verify_symmetry;
+  void set_exception_backedge() { _exception_backedge = true; }
+  bool has_exception_backedge() const { return _exception_backedge; }
 #endif
 };
 

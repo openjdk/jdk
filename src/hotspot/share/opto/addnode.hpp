@@ -281,6 +281,30 @@ public:
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 };
 
+//------------------------------MaxLNode---------------------------------------
+// MAXimum of 2 longs.
+class MaxLNode : public MaxNode {
+public:
+  MaxLNode(Node *in1, Node *in2) : MaxNode(in1, in2) {}
+  virtual int Opcode() const;
+  virtual const Type *add_ring(const Type*, const Type*) const { return TypeLong::LONG; }
+  virtual const Type *add_id() const { return TypeLong::make(min_jlong); }
+  virtual const Type *bottom_type() const { return TypeLong::LONG; }
+  virtual uint ideal_reg() const { return Op_RegL; }
+};
+
+//------------------------------MinLNode---------------------------------------
+// MINimum of 2 longs.
+class MinLNode : public MaxNode {
+public:
+  MinLNode(Node *in1, Node *in2) : MaxNode(in1, in2) {}
+  virtual int Opcode() const;
+  virtual const Type *add_ring(const Type*, const Type*) const { return TypeLong::LONG; }
+  virtual const Type *add_id() const { return TypeLong::make(max_jlong); }
+  virtual const Type *bottom_type() const { return TypeLong::LONG; }
+  virtual uint ideal_reg() const { return Op_RegL; }
+};
+
 //------------------------------MaxFNode---------------------------------------
 // Maximum of 2 floats.
 class MaxFNode : public MaxNode {
