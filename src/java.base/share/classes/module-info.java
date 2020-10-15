@@ -142,8 +142,6 @@ module java.base {
         java.compiler,
         jdk.compiler,
         jdk.jshell;
-    exports jdk.internal to // for @HotSpotIntrinsicCandidate
-        jdk.incubator.vector;
     exports jdk.internal.access to
         java.desktop,
         java.logging,
