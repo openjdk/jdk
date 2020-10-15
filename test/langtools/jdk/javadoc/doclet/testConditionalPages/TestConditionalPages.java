@@ -53,8 +53,8 @@ public class TestConditionalPages extends JavadocTester {
     @Test
     public void testConstantValues(Path base) throws IOException {
         test(base, """
-                package p; 
-                public class C { 
+                package p;
+                public class C {
                     public static final int ZERO = 0;
                 }
                 """,
@@ -66,7 +66,7 @@ public class TestConditionalPages extends JavadocTester {
     @Test
     public void testDeprecated(Path base) throws IOException {
         test(base, """
-                package p; 
+                package p;
                 @Deprecated
                 public class C {  }
                 """,
@@ -77,7 +77,7 @@ public class TestConditionalPages extends JavadocTester {
     @Test
     public void testSerializedForm(Path base) throws IOException {
         test(base, """
-                package p; 
+                package p;
                 import java.io.Serializable;
                 public class C implements Serializable {  }
                 """,
@@ -89,7 +89,7 @@ public class TestConditionalPages extends JavadocTester {
     @Test
     public void testSystemProperties(Path base) throws IOException {
         test(base, """
-                package p; 
+                package p;
                 /** This class uses {@systemProperty line.separator}. */
                 public class C {  }
                 """,
