@@ -91,7 +91,7 @@ bool ClassListParser::parse_one_line() {
     {
       int len = (int)strlen(_line);
       int i;
-      // Replace \t\r\n with ' '
+      // Replace \t\r\n\f with ' '
       for (i=0; i<len; i++) {
         if (_line[i] == '\t' || _line[i] == '\r' || _line[i] == '\n' || _line[i] == '\f') {
           _line[i] = ' ';
