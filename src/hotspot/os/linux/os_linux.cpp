@@ -3767,11 +3767,16 @@ size_t os::Linux::setup_large_page_size() {
     _large_page_size = _default_large_page_size;
   }
 
+  // If _large_page_size > default_page_size add it to _page_sizes
+  // If _large_page_size > large_page_size_2m add large_page_size_2m
+  // to _page_sizes also
   const size_t default_page_size = (size_t)Linux::page_size();
+  const size_t large_page_size_2m = (size_t)os::Linux::large_page_size_2m();
   if (_large_page_size > default_page_size) {
     _page_sizes[0] = _large_page_size;
-    _page_sizes[1] = default_page_size;
-    _page_sizes[2] = 0;
+    _page_sizes[1] = large_page_size_2m < _large_page_size ? large_page_size_2m : default_page_size;
+    _page_sizes[2] = large_page_size_2m < _large_page_size ? default_page_size : 0;
+    _page_sizes[3] = 0;
   }
 
   return _large_page_size;
@@ -3864,6 +3869,13 @@ void os::large_page_init() {
     shm_warning_format(str " (error = %d)", err);  \
   } while (0)
 
+#define shm_warning_format_with_errno(format, msg, ...) \
+  do {                                                  \
+    int err = errno;                                    \
+    shm_warning_format(format " (error = %d)", msg,     \
+    err);                                               \
+  } while (0)
+
 static char* shmat_with_alignment(int shmid, size_t bytes, size_t alignment) {
   assert(is_aligned(bytes, alignment), "Must be divisible by the alignment");
 
@@ -3940,13 +3952,18 @@ static char* shmat_large_pages(int shmid, size_t bytes, size_t alignment, char* 
 
 char* os::Linux::reserve_memory_special_shm(size_t bytes, size_t alignment,
                                             char* req_addr, bool exec) {
+  // Select large_page_size from _page_sizes
+  // that is smaller than size_t bytes
+  size_t large_page_size;
+  large_page_size = os::Linux::select_large_page_size(bytes);
+
   // "exec" is passed in but not used.  Creating the shared image for
   // the code cache doesn't have an SHM_X executable permission to check.
   assert(UseLargePages && UseSHM, "only for SHM large pages");
-  assert(is_aligned(req_addr, os::large_page_size()), "Unaligned address");
+  assert(is_aligned(req_addr, large_page_size), "Unaligned address");
   assert(is_aligned(req_addr, alignment), "Unaligned address");
 
-  if (!is_aligned(bytes, os::large_page_size())) {
+  if (!is_aligned(bytes, large_page_size)) {
     return NULL; // Fallback to small pages.
   }
 
@@ -3968,7 +3985,9 @@ char* os::Linux::reserve_memory_special_shm(size_t bytes, size_t alignment,
     //            they are so fragmented after a long run that they can't
     //            coalesce into large pages. Try to reserve large pages when
     //            the system is still "fresh".
-    shm_warning_with_errno("Failed to reserve shared memory.");
+    char msg[128];
+    jio_snprintf(msg, sizeof(msg), "Failed to reserve shared memory with large_page_size: " SIZE_FORMAT ".", large_page_size);
+    shm_warning_format_with_errno("%s", msg);
     return NULL;
   }
 
@@ -3985,7 +4004,7 @@ char* os::Linux::reserve_memory_special_shm(size_t bytes, size_t alignment,
 }
 
 static void warn_on_large_pages_failure(char* req_addr, size_t bytes,
-                                        int error) {
+                                        size_t large_page_sz, int error) {
   assert(error == ENOMEM, "Only expect to fail if no memory is available");
 
   bool warn_on_failure = UseLargePages &&
@@ -3995,8 +4014,8 @@ static void warn_on_large_pages_failure(char* req_addr, size_t bytes,
 
   if (warn_on_failure) {
     char msg[128];
-    jio_snprintf(msg, sizeof(msg), "Failed to reserve large pages memory req_addr: "
-                 PTR_FORMAT " bytes: " SIZE_FORMAT " (errno = %d).", req_addr, bytes, error);
+    jio_snprintf(msg, sizeof(msg), "Failed to reserve memory with large_page_size: " SIZE_FORMAT "' req_addr: "
+                 PTR_FORMAT " bytes: " SIZE_FORMAT " (errno = %d).", large_page_sz, req_addr, bytes, error);
     warning("%s", msg);
   }
 }
@@ -4004,24 +4023,29 @@ static void warn_on_large_pages_failure(char* req_addr, size_t bytes,
 char* os::Linux::reserve_memory_special_huge_tlbfs_only(size_t bytes,
                                                         char* req_addr,
                                                         bool exec) {
+  // Select large_page_size from _page_sizes
+  // that is smaller than size_t bytes
+  size_t large_page_size;
+  large_page_size = os::Linux::select_large_page_size(bytes);
+
   assert(UseLargePages && UseHugeTLBFS, "only for Huge TLBFS large pages");
-  assert(is_aligned(bytes, os::large_page_size()), "Unaligned size");
-  assert(is_aligned(req_addr, os::large_page_size()), "Unaligned address");
+  assert(is_aligned(bytes, large_page_size), "Unaligned size");
+  assert(is_aligned(req_addr, large_page_size), "Unaligned address");
 
   int prot = exec ? PROT_READ|PROT_WRITE|PROT_EXEC : PROT_READ|PROT_WRITE;
   int flags = MAP_PRIVATE|MAP_ANONYMOUS|MAP_HUGETLB;
 
-  if (os::large_page_size() != default_large_page_size()) {
-    flags |= (exact_log2(os::large_page_size()) << MAP_HUGE_SHIFT);
+  if (large_page_size != default_large_page_size()) {
+    flags |= (exact_log2(large_page_size) << MAP_HUGE_SHIFT);
   }
   char* addr = (char*)::mmap(req_addr, bytes, prot, flags, -1, 0);
 
   if (addr == MAP_FAILED) {
-    warn_on_large_pages_failure(req_addr, bytes, errno);
+    warn_on_large_pages_failure(req_addr, bytes, large_page_size, errno);
     return NULL;
   }
 
-  assert(is_aligned(addr, os::large_page_size()), "Must be");
+  assert(is_aligned(addr, large_page_size), "Must be");
 
   return addr;
 }
@@ -4037,7 +4061,11 @@ char* os::Linux::reserve_memory_special_huge_tlbfs_mixed(size_t bytes,
                                                          size_t alignment,
                                                          char* req_addr,
                                                          bool exec) {
-  size_t large_page_size = os::large_page_size();
+  // Select large_page_size from _page_sizes
+  // that is smaller than size_t bytes
+  size_t large_page_size;
+  large_page_size = os::Linux::select_large_page_size(bytes);
+
   assert(bytes >= large_page_size, "Shouldn't allocate large pages for small sizes");
 
   assert(is_aligned(req_addr, alignment), "Must be");
@@ -4085,13 +4113,13 @@ char* os::Linux::reserve_memory_special_huge_tlbfs_mixed(size_t bytes,
   // Commit large-paged area.
   flags |= MAP_HUGETLB;
 
-  if (os::large_page_size() != default_large_page_size()) {
-    flags |= (exact_log2(os::large_page_size()) << MAP_HUGE_SHIFT);
+  if (large_page_size != default_large_page_size()) {
+    flags |= (exact_log2(large_page_size) << MAP_HUGE_SHIFT);
   }
 
   result = ::mmap(lp_start, lp_bytes, prot, flags, -1, 0);
   if (result == MAP_FAILED) {
-    warn_on_large_pages_failure(lp_start, lp_bytes, errno);
+    warn_on_large_pages_failure(lp_start, lp_bytes, large_page_size, errno);
     // If the mmap above fails, the large pages region will be unmapped and we
     // have regions before and after with small pages. Release these regions.
     //
@@ -4122,13 +4150,18 @@ char* os::Linux::reserve_memory_special_huge_tlbfs(size_t bytes,
                                                    size_t alignment,
                                                    char* req_addr,
                                                    bool exec) {
+  // Select large_page_size from _page_sizes
+  // that is smaller than size_t bytes
+  size_t large_page_size;
+  large_page_size = os::Linux::select_large_page_size(bytes);
+
   assert(UseLargePages && UseHugeTLBFS, "only for Huge TLBFS large pages");
   assert(is_aligned(req_addr, alignment), "Must be");
   assert(is_aligned(alignment, os::vm_allocation_granularity()), "Must be");
-  assert(is_power_of_2(os::large_page_size()), "Must be");
-  assert(bytes >= os::large_page_size(), "Shouldn't allocate large pages for small sizes");
+  assert(is_power_of_2(large_page_size), "Must be");
+  assert(bytes >= large_page_size, "Shouldn't allocate large pages for small sizes");
 
-  if (is_aligned(bytes, os::large_page_size()) && alignment <= os::large_page_size()) {
+  if (is_aligned(bytes, large_page_size) && alignment <= large_page_size) {
     return reserve_memory_special_huge_tlbfs_only(bytes, req_addr, exec);
   } else {
     return reserve_memory_special_huge_tlbfs_mixed(bytes, alignment, req_addr, exec);
@@ -4180,6 +4213,20 @@ bool os::pd_release_memory_special(char* base, size_t bytes) {
 
 size_t os::large_page_size() {
   return _large_page_size;
+}
+
+size_t os::Linux::large_page_size_2m() {
+  return  2 * M;
+}
+
+size_t os::Linux::select_large_page_size(size_t bytes) {
+    for (size_t i = 0; _page_sizes[i] != 0; ++i) {
+      const size_t page_size = _page_sizes[i];
+      if (page_size <= bytes) {
+        return page_size;
+      }
+    }
+  return (size_t)Linux::page_size();
 }
 
 // With SysV SHM the entire memory region must be allocated as shared
