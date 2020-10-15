@@ -31,7 +31,14 @@ enum CompilerPhaseType {
   PHASE_BEFORE_REMOVEUSELESS,
   PHASE_AFTER_PARSING,
   PHASE_ITER_GVN1,
+  PHASE_EXPAND_VUNBOX,
+  PHASE_SCALARIZE_VBOX,
+  PHASE_INLINE_VECTOR_REBOX,
+  PHASE_EXPAND_VBOX,
+  PHASE_ELIMINATE_VBOX_ALLOC,
   PHASE_PHASEIDEAL_BEFORE_EA,
+  PHASE_ITER_GVN_AFTER_VECTOR,
+  PHASE_ITER_GVN_BEFORE_EA,
   PHASE_ITER_GVN_AFTER_EA,
   PHASE_ITER_GVN_AFTER_ELIMINATION,
   PHASE_PHASEIDEALLOOP1,
@@ -41,6 +48,7 @@ enum CompilerPhaseType {
   PHASE_ITER_GVN2,
   PHASE_PHASEIDEALLOOP_ITERATIONS,
   PHASE_OPTIMIZE_FINISHED,
+  PHASE_AFTER_MATCHING,
   PHASE_GLOBAL_CODE_MOTION,
   PHASE_FINAL_CODE,
   PHASE_AFTER_EA,
@@ -51,6 +59,7 @@ enum CompilerPhaseType {
   PHASE_BEFORE_MATCHING,
   PHASE_MATCHING,
   PHASE_INCREMENTAL_INLINE,
+  PHASE_INCREMENTAL_INLINE_STEP,
   PHASE_INCREMENTAL_BOXING_INLINE,
   PHASE_CALL_CATCH_CLEANUP,
   PHASE_INSERT_BARRIER,
@@ -73,7 +82,14 @@ class CompilerPhaseTypeHelper {
       case PHASE_BEFORE_REMOVEUSELESS:       return "Before RemoveUseless";
       case PHASE_AFTER_PARSING:              return "After Parsing";
       case PHASE_ITER_GVN1:                  return "Iter GVN 1";
+      case PHASE_EXPAND_VUNBOX:              return "Expand VectorUnbox";
+      case PHASE_SCALARIZE_VBOX:             return "Scalarize VectorBox";
+      case PHASE_INLINE_VECTOR_REBOX:        return "Inline Vector Rebox Calls";
+      case PHASE_EXPAND_VBOX:                return "Expand VectorBox";
+      case PHASE_ELIMINATE_VBOX_ALLOC:       return "Eliminate VectorBoxAllocate";
       case PHASE_PHASEIDEAL_BEFORE_EA:       return "PhaseIdealLoop before EA";
+      case PHASE_ITER_GVN_AFTER_VECTOR:      return "Iter GVN after vector box elimination";
+      case PHASE_ITER_GVN_BEFORE_EA:         return "Iter GVN before EA";
       case PHASE_ITER_GVN_AFTER_EA:          return "Iter GVN after EA";
       case PHASE_ITER_GVN_AFTER_ELIMINATION: return "Iter GVN after eliminating allocations and locks";
       case PHASE_PHASEIDEALLOOP1:            return "PhaseIdealLoop 1";
@@ -83,6 +99,7 @@ class CompilerPhaseTypeHelper {
       case PHASE_ITER_GVN2:                  return "Iter GVN 2";
       case PHASE_PHASEIDEALLOOP_ITERATIONS:  return "PhaseIdealLoop iterations";
       case PHASE_OPTIMIZE_FINISHED:          return "Optimize finished";
+      case PHASE_AFTER_MATCHING:             return "After Matching";
       case PHASE_GLOBAL_CODE_MOTION:         return "Global code motion";
       case PHASE_FINAL_CODE:                 return "Final Code";
       case PHASE_AFTER_EA:                   return "After Escape Analysis";
@@ -93,6 +110,7 @@ class CompilerPhaseTypeHelper {
       case PHASE_BEFORE_MATCHING:            return "Before matching";
       case PHASE_MATCHING:                   return "After matching";
       case PHASE_INCREMENTAL_INLINE:         return "Incremental Inline";
+      case PHASE_INCREMENTAL_INLINE_STEP:    return "Incremental Inline Step";
       case PHASE_INCREMENTAL_BOXING_INLINE:  return "Incremental Boxing Inline";
       case PHASE_CALL_CATCH_CLEANUP:         return "Call catch cleanup";
       case PHASE_INSERT_BARRIER:             return "Insert barrier";
