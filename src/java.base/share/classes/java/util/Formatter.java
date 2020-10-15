@@ -703,9 +703,12 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * {@link Integer#MAX_VALUE}, inclusive, otherwise
  * {@link IllegalFormatPrecisionException} is thrown.</p>
  *
- * <p> Values of <i>width</i> must be in the range {@link Integer#MIN_VALUE} to
+ * <p> Values of <i>width</i> must be in the range one to
  * {@link Integer#MAX_VALUE}, inclusive, otherwise
- * {@link IllegalFormatWidthException} will be thrown</p>
+ * {@link IllegalFormatWidthException} will be thrown
+ * Note that widths can appear to have a negative value, but the negative sign
+ * is a <i>flag</i>. For example in the format string {@code "%-20s"} the
+ * <i>width</i> is <i>20</i> and the <i>flag</i> is "-".</p>
  *
  * <p> Values of <i>index</i> must be in the range one to
  * {@link Integer#MAX_VALUE}, inclusive, otherwise
