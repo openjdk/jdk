@@ -452,7 +452,6 @@ public class URLClassPath {
                     push(urls);
                 }
             } catch (IOException e) {
-                e.printStackTrace();
                 // Silently ignore for now...
                 continue;
             } catch (SecurityException se) {

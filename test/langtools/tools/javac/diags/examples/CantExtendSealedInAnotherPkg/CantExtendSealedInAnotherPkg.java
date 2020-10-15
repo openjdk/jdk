@@ -22,6 +22,6 @@
  */
 
 // key: compiler.err.class.in.unnamed.module.cant.extend.sealed.in.diff.package
-// key: compiler.note.preview.filename
+// key: compiler.note.preview.plural
 // key: compiler.note.preview.recompile
 // options: --enable-preview -source ${jdk.version}
