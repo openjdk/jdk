@@ -357,7 +357,7 @@ public abstract class Reference<T> {
         return refersTo0(obj);
     }
 
-    /* Implementation of refersTo() for non-phantom references.
+    /* Implementation of refersTo(), overridden for phantom references.
      */
     native boolean refersTo0(Object o);
 
