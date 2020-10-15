@@ -25,10 +25,7 @@
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zCPU.inline.hpp"
 #include "gc/z/zGlobals.hpp"
-#include "gc/z/zHeap.inline.hpp"
-#include "gc/z/zLargePages.inline.hpp"
 #include "gc/z/zNMethodTable.hpp"
-#include "gc/z/zNUMA.hpp"
 #include "gc/z/zRelocationSetSelector.inline.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zTracer.inline.hpp"
@@ -38,7 +35,6 @@
 #include "runtime/os.hpp"
 #include "runtime/timer.hpp"
 #include "utilities/align.hpp"
-#include "utilities/compilerWarnings.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ticks.hpp"
 

@@ -345,6 +345,9 @@ public:
   // Vector ideal reg
   static const uint vector_ideal_reg(int len);
 
+  // Does the CPU supports vector variable shift instructions?
+  static bool supports_vector_variable_shifts(void);
+
   // CPU supports misaligned vectors store/load.
   static const bool misaligned_vectors_ok();
 

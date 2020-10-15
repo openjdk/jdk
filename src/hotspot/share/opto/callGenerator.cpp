@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -429,7 +429,7 @@ void LateInlineCallGenerator::do_late_inline() {
     // This check is done here because for_method_handle_inline() method
     // needs jvms for inlined state.
     if (!do_late_inline_check(jvms)) {
-      map->disconnect_inputs(NULL, C);
+      map->disconnect_inputs(C);
       return;
     }
 
@@ -536,7 +536,7 @@ class LateInlineStringCallGenerator : public LateInlineCallGenerator {
 
     C->add_string_late_inline(this);
 
-    JVMState* new_jvms =  DirectCallGenerator::generate(jvms);
+    JVMState* new_jvms = DirectCallGenerator::generate(jvms);
     return new_jvms;
   }
 
@@ -560,7 +560,7 @@ class LateInlineBoxingCallGenerator : public LateInlineCallGenerator {
 
     C->add_boxing_late_inline(this);
 
-    JVMState* new_jvms =  DirectCallGenerator::generate(jvms);
+    JVMState* new_jvms = DirectCallGenerator::generate(jvms);
     return new_jvms;
   }
 };
@@ -569,6 +569,28 @@ CallGenerator* CallGenerator::for_boxing_late_inline(ciMethod* method, CallGener
   return new LateInlineBoxingCallGenerator(method, inline_cg);
 }
 
+class LateInlineVectorReboxingCallGenerator : public LateInlineCallGenerator {
+
+ public:
+  LateInlineVectorReboxingCallGenerator(ciMethod* method, CallGenerator* inline_cg) :
+    LateInlineCallGenerator(method, inline_cg, /*is_pure=*/true) {}
+
+  virtual JVMState* generate(JVMState* jvms) {
+    Compile *C = Compile::current();
+
+    C->log_inline_id(this);
+
+    C->add_vector_reboxing_late_inline(this);
+
+    JVMState* new_jvms = DirectCallGenerator::generate(jvms);
+    return new_jvms;
+  }
+};
+
+//   static CallGenerator* for_vector_reboxing_late_inline(ciMethod* m, CallGenerator* inline_cg);
+CallGenerator* CallGenerator::for_vector_reboxing_late_inline(ciMethod* method, CallGenerator* inline_cg) {
+  return new LateInlineVectorReboxingCallGenerator(method, inline_cg);
+}
 //---------------------------WarmCallGenerator--------------------------------
 // Internal class which handles initial deferral of inlining decisions.
 class WarmCallGenerator : public CallGenerator {
