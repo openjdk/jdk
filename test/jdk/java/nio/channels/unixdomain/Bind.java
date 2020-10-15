@@ -190,7 +190,7 @@ public class Bind {
             server = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
             server.bind(null);
             UnixDomainSocketAddress usa = (UnixDomainSocketAddress)server.getLocalAddress();
-            if (usa.getPath().toString().length() < 1)
+            if (usa.getPath().toString().isEmpty())
                 throw new RuntimeException("expected non zero address length");
             System.out.println("Null server address: " + server.getLocalAddress());
         });

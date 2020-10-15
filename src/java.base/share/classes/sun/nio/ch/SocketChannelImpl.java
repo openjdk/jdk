@@ -710,11 +710,11 @@ class SocketChannelImpl
         UnixDomainSockets.checkPermission();
         UnixDomainSocketAddress usa = UnixDomainSockets.checkAddress(local);
         Path path = usa == null ? null : usa.getPath();
-        if (path != null && path.toString().length() > 0) {
+        if (path != null && !path.toString().isEmpty()) {
             // implicit bind for null address or empty path
             UnixDomainSockets.bind(fd, path);
         }
-        if (usa == null || path.toString().equals("")) {
+        if (usa == null || path.toString().isEmpty()) {
             return UnixDomainSockets.UNNAMED;
         } else {
             return UnixDomainSockets.localAddress(fd);
