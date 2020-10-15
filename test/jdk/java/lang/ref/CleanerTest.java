@@ -55,8 +55,7 @@ import org.testng.annotations.Test;
  *        jdk.test.lib.JDKToolLauncher
  *        jdk.test.lib.Platform
  *        jdk.test.lib.process.*
- * @modules java.base/jdk.internal
- *          java.base/jdk.internal.misc
+ * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.ref
  *          java.management
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox

@@ -27,7 +27,6 @@
  * @summary Test TimSort stack size on big arrays
  * @library /test/lib
  * @modules java.management
- *          java.base/jdk.internal
  * @requires (vm.debug == false)
  * @build TimSortStackSize2
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
