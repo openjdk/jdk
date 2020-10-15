@@ -22,36 +22,16 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/classLoaderDataGraph.hpp"
-#include "classfile/stringTable.hpp"
-#include "code/codeCache.hpp"
-#include "compiler/oopMap.hpp"
-#include "gc/shared/barrierSet.hpp"
-#include "gc/shared/barrierSetNMethod.hpp"
-#include "gc/shared/oopStorageSet.hpp"
-#include "gc/shared/oopStorageParState.inline.hpp"
 #include "gc/shared/oopStorageSetParState.inline.hpp"
-#include "gc/shared/suspendibleThreadSet.hpp"
-#include "gc/z/zBarrierSetNMethod.hpp"
-#include "gc/z/zGlobals.hpp"
-#include "gc/z/zLock.inline.hpp"
 #include "gc/z/zNMethod.hpp"
 #include "gc/z/zNMethodTable.hpp"
-#include "gc/z/zOopClosures.inline.hpp"
 #include "gc/z/zRootsIterator.hpp"
 #include "gc/z/zStat.hpp"
-#include "gc/z/zThreadLocalData.hpp"
-#include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
-#include "memory/universe.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "prims/resolvedMethodTable.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/stackWatermark.hpp"
-#include "runtime/synchronizer.hpp"
-#include "runtime/thread.hpp"
-#include "runtime/vmThread.hpp"
 #include "utilities/debug.hpp"
 
 static const ZStatSubPhase ZSubPhasePauseRootsJVMTIWeakExport("Pause Roots JVMTIWeakExport");
@@ -63,28 +43,16 @@ static const ZStatSubPhase ZSubPhasePauseWeakRootsJVMTIWeakExport("Pause Weak Ro
 static const ZStatSubPhase ZSubPhaseConcurrentWeakRootsOopStorageSet("Concurrent Weak Roots OopStorageSet");
 
 template <typename T, void (T::*F)(ZRootsIteratorClosure*)>
-ZSerialOopsDo<T, F>::ZSerialOopsDo(T* iter) :
-    _iter(iter),
-    _claimed(false) {}
-
-template <typename T, void (T::*F)(ZRootsIteratorClosure*)>
-void ZSerialOopsDo<T, F>::oops_do(ZRootsIteratorClosure* cl) {
-  if (!_claimed && Atomic::cmpxchg(&_claimed, false, true) == false) {
-    (_iter->*F)(cl);
-  }
-}
-
-template <typename T, void (T::*F)(ZRootsIteratorClosure*)>
 ZParallelOopsDo<T, F>::ZParallelOopsDo(T* iter) :
     _iter(iter),
     _completed(false) {}
 
 template <typename T, void (T::*F)(ZRootsIteratorClosure*)>
 void ZParallelOopsDo<T, F>::oops_do(ZRootsIteratorClosure* cl) {
-  if (!_completed) {
+  if (!Atomic::load(&_completed)) {
     (_iter->*F)(cl);
-    if (!_completed) {
-      _completed = true;
+    if (!Atomic::load(&_completed)) {
+      Atomic::store(&_completed, true);
     }
   }
 }
@@ -96,23 +64,8 @@ ZSerialWeakOopsDo<T, F>::ZSerialWeakOopsDo(T* iter) :
 
 template <typename T, void (T::*F)(BoolObjectClosure*, ZRootsIteratorClosure*)>
 void ZSerialWeakOopsDo<T, F>::weak_oops_do(BoolObjectClosure* is_alive, ZRootsIteratorClosure* cl) {
-  if (!_claimed && Atomic::cmpxchg(&_claimed, false, true) == false) {
+  if (!Atomic::load(&_claimed) && Atomic::cmpxchg(&_claimed, false, true) == false) {
     (_iter->*F)(is_alive, cl);
-  }
-}
-
-template <typename T, void (T::*F)(BoolObjectClosure*, ZRootsIteratorClosure*)>
-ZParallelWeakOopsDo<T, F>::ZParallelWeakOopsDo(T* iter) :
-    _iter(iter),
-    _completed(false) {}
-
-template <typename T, void (T::*F)(BoolObjectClosure*, ZRootsIteratorClosure*)>
-void ZParallelWeakOopsDo<T, F>::weak_oops_do(BoolObjectClosure* is_alive, ZRootsIteratorClosure* cl) {
-  if (!_completed) {
-    (_iter->*F)(is_alive, cl);
-    if (!_completed) {
-      _completed = true;
-    }
   }
 }
 

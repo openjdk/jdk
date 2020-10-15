@@ -346,7 +346,7 @@
                                                                                                                                      \
   nonstatic_field(ThreadShadow,             _pending_exception,                               oop)                                   \
                                                                                                                                      \
-  static_field(vmSymbols,                   _symbols[0],                                      Symbol*)                               \
+  static_field(Symbol,                      _vm_symbols[0],                                   Symbol*)                               \
                                                                                                                                      \
   nonstatic_field(vtableEntry,              _method,                                          Method*)                               \
 

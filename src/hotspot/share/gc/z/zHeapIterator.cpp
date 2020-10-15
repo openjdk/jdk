@@ -31,7 +31,6 @@
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zOop.inline.hpp"
 #include "memory/iterator.inline.hpp"
-#include "runtime/stackWatermarkSet.hpp"
 #include "utilities/bitMap.inline.hpp"
 
 class ZHeapIteratorBitMap : public CHeapObj<mtGC> {
