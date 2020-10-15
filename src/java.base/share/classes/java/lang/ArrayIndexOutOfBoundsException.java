@@ -65,17 +65,4 @@ public class ArrayIndexOutOfBoundsException extends IndexOutOfBoundsException {
     public ArrayIndexOutOfBoundsException(int index) {
         super("Array index out of range: " + index);
     }
-
-    /**
-     * Constructs a new {@code ArrayIndexOutOfBoundsException} class with an
-     * argument indicating the illegal index.
-     *
-     * <p>The index is included in this exception's detail message.  The
-     * exact presentation format of the detail message is unspecified.
-     *
-     * @param index the illegal index.
-     */
-    public ArrayIndexOutOfBoundsException(long index) {
-        super("Array index out of range: " + index);
-    }
 }

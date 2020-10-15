@@ -95,8 +95,6 @@ public class Preconditions {
     private static RuntimeException outOfBoundsCheckIndex(
             BiFunction<String, List<Integer>, ? extends RuntimeException> oobe,
             int index, int length) {
-        final List<Integer> list = List.of(index, length);
-        List<? extends Number> list2 = list;
         return outOfBounds(oobe, "checkIndex", index, length);
     }
 
@@ -467,7 +465,7 @@ public class Preconditions {
      *         function is non-{@code null}
      * @throws IndexOutOfBoundsException if the sub-range is out of bounds and
      *         the exception factory function is {@code null}
-     * @since 16
+     * @since 9
      */
     public static <X extends RuntimeException>
     int checkFromIndexSize(int fromIndex, int size, int length,

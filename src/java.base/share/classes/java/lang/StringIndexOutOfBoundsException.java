@@ -68,17 +68,4 @@ public class StringIndexOutOfBoundsException extends IndexOutOfBoundsException {
     public StringIndexOutOfBoundsException(int index) {
         super("String index out of range: " + index);
     }
-
-    /**
-     * Constructs a new {@code StringIndexOutOfBoundsException} class with an
-     * argument indicating the illegal index.
-     *
-     * <p>The index is included in this exception's detail message.  The
-     * exact presentation format of the detail message is unspecified.
-     *
-     * @param index the illegal index.
-     */
-    public StringIndexOutOfBoundsException(long index) {
-        super("String index out of range: " + index);
-    }
 }
