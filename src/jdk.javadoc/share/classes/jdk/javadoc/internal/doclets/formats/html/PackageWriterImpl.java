@@ -117,9 +117,6 @@ public class PackageWriterImpl extends HtmlDocletWriter
                     new StringContent(mdle.getQualifiedName().toString())));
             div.add(moduleNameDiv);
         }
-        Content annotationContent = new HtmlTree(TagName.P);
-        addAnnotationInfo(packageElement, annotationContent);
-        div.add(annotationContent);
         Content tHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, contents.packageLabel);
         tHeading.add(Entity.NO_BREAK_SPACE);
@@ -251,6 +248,16 @@ public class PackageWriterImpl extends HtmlDocletWriter
         Content htmlTree = sectionTree;
         addTagsInfo(packageElement, htmlTree);
         packageContentTree.add(sectionTree);
+    }
+
+    @Override
+    public void addPackageSignature(Content packageContentTree) {
+        packageContentTree.add(new HtmlTree(TagName.HR));
+        Content pre = new HtmlTree(TagName.PRE);
+        addAnnotationInfo(packageElement, pre);
+        pre.add("package ");
+        pre.add(packageElement.getQualifiedName().toString());
+        packageContentTree.add(pre);
     }
 
     @Override

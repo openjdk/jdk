@@ -121,6 +121,7 @@ public class ModuleSummaryBuilder extends AbstractBuilder {
     protected void buildContent() throws DocletException {
         Content moduleContentTree = moduleWriter.getContentHeader();
 
+        moduleWriter.addModuleSignature(moduleContentTree);
         buildModuleDescription(moduleContentTree);
         buildSummary(moduleContentTree);
 

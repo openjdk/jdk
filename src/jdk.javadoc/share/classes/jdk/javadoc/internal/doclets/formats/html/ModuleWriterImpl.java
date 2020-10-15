@@ -196,9 +196,6 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         headerContent.add(navBar.getContent(Navigation.Position.TOP));
         HtmlTree div = new HtmlTree(TagName.DIV);
         div.setStyle(HtmlStyle.header);
-        Content annotationContent = new HtmlTree(TagName.P);
-        addAnnotationInfo(mdle, annotationContent);
-        div.add(annotationContent);
         Content label = mdle.isOpen() && (configuration.docEnv.getModuleMode() == ModuleMode.ALL)
                 ? contents.openModuleLabel : contents.moduleLabel;
         Content tHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
@@ -830,6 +827,19 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
             addTagsInfo(mdle, tree);
             moduleContentTree.add(tree);
         }
+    }
+
+    @Override
+    public void addModuleSignature(Content moduleContentTree) {
+        moduleContentTree.add(new HtmlTree(TagName.HR));
+        Content pre = new HtmlTree(TagName.PRE);
+        addAnnotationInfo(mdle, pre);
+        String label = mdle.isOpen() && (configuration.docEnv.getModuleMode() == ModuleMode.ALL)
+                ? "open module" : "module";
+        pre.add(label);
+        pre.add(" ");
+        pre.add(mdle.getQualifiedName().toString());
+        moduleContentTree.add(pre);
     }
 
     @Override

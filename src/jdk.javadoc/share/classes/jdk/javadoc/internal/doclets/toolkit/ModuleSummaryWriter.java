@@ -77,6 +77,14 @@ public interface ModuleSummaryWriter {
     void addModuleDescription(Content moduleContentTree);
 
     /**
+     * Adds the module signature.
+     *
+     * @param moduleContentTree the content tree to which the module signature
+     *                           will be added
+     */
+    void addModuleSignature(Content moduleContentTree);
+
+    /**
      * Adds the summary of modules to the list of summaries.
      *
      * @param summariesList the list of summaries
