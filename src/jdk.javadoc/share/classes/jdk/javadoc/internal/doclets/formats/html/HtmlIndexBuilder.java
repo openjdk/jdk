@@ -163,12 +163,12 @@ public class HtmlIndexBuilder extends IndexBuilder {
     public void createSearchIndexFiles() throws DocFileIOException {
         // add last-minute items
         if (!configuration.packages.isEmpty()) {
-            IndexItem item = IndexItem.of(IndexItem.Category.PACKAGES,
+            IndexItem item = IndexItem.of(IndexItem.Category.TAGS,
                     resources.getText("doclet.All_Packages"),
                     DocPaths.ALLPACKAGES_INDEX);
             add(item);
         }
-        IndexItem item = IndexItem.of(IndexItem.Category.TYPES,
+        IndexItem item = IndexItem.of(IndexItem.Category.TAGS,
                 resources.getText("doclet.All_Classes"),
                 DocPaths.ALLCLASSES_INDEX);
         add(item);

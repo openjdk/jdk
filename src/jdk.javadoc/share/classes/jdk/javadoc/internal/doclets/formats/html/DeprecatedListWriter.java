@@ -303,7 +303,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
         printHtmlDocument(null, description, body);
 
         if (!deprapi.isEmpty() && configuration.mainIndex != null) {
-            configuration.mainIndex.add(IndexItem.of(IndexItem.Category.MEMBERS,
+            configuration.mainIndex.add(IndexItem.of(IndexItem.Category.TAGS,
                     resources.getText("doclet.Deprecated_API"), path));
         }
     }

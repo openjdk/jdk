@@ -214,7 +214,7 @@ public class IndexBuilder {
     public SortedSet<IndexItem> getItems(DocTree.Kind kind) {
         Objects.requireNonNull(kind);
         return itemsByCategory.getOrDefault(IndexItem.Category.TAGS, Collections.emptySortedSet()).stream()
-                .filter(i -> i.getDocTree().getKind() == kind)
+                .filter(i -> i.isKind(kind))
                 .collect(Collectors.toCollection(() -> new TreeSet<>(mainComparator)));
     }
 

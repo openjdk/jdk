@@ -94,13 +94,9 @@ public class TestUnnamedPackage extends JavadocTester {
                     </div>
                     </div>""");
 
-        checkOutput("type-search-index.js", true,
+        checkOutput("tag-search-index.js", true,
                 """
-                    {"l":"All Classes","u":"allclasses-index.html"}""");
-
-        checkOutput("package-search-index.js", true,
-                """
-                    {"l":"All Packages","u":"allpackages-index.html"}""");
+                    {"l":"All Classes","h":"","u":"allclasses-index.html"},{"l":"All Packages","h":"","u":"allpackages-index.html"}""");
 
         checkOutput("index-all.html", true,
                 """

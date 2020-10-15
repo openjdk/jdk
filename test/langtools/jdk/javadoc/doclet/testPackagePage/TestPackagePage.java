@@ -70,10 +70,6 @@ public class TestPackagePage extends JavadocTester {
                 <li><a href="com/pkg/package-summary.html">Package</a></li>""");
     }
 
-    private static final String[][] TEST1 = {
-    };
-
-
     @Test
     public void testMultiplePackages() {
         javadoc("-d", "out-2",
@@ -103,12 +99,9 @@ public class TestPackagePage extends JavadocTester {
                     <div class="table-header col-first">Package</div>
                     <div class="table-header col-last">Description</div>
                     """);
-        checkOutput("type-search-index.js", true,
+        checkOutput("tag-search-index.js", true,
                 """
-                    {"l":"All Classes","u":"allclasses-index.html"}""");
-        checkOutput("package-search-index.js", true,
-                """
-                    {"l":"All Packages","u":"allpackages-index.html"}""");
+                    {"l":"All Classes","h":"","u":"allclasses-index.html"},{"l":"All Packages","h":"","u":"allpackages-index.html"}""");
         checkOutput("index-all.html", true,
                 """
                     <br><a href="allclasses-index.html">All&nbsp;Classes</a><span class="vertical-se\

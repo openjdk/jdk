@@ -283,7 +283,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         printHtmlDocument(null, "summary of constants", contentTree);
 
         if (hasConstants && configuration.mainIndex != null) {
-            configuration.mainIndex.add(IndexItem.of(IndexItem.Category.MEMBERS,
+            configuration.mainIndex.add(IndexItem.of(IndexItem.Category.TAGS,
                     resources.getText("doclet.Constants_Summary"), path));
         }
     }
