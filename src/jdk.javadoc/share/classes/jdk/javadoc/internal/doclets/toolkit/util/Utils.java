@@ -2659,7 +2659,8 @@ public class Utils {
      * A cache of doc comment info objects for elements.
      * The entries may come from the AST and DocCommentParser, or may be autromatically
      * generated comments for mandated elements and JavaFX properties.
-     ** @see CommentUtils#dcInfoMap
+     *
+     * @see CommentUtils#dcInfoMap
      */
     private final Map<Element, DocCommentInfo> dcTreeCache = new LinkedHashMap<>();
 
