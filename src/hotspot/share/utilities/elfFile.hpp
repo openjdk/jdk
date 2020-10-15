@@ -97,13 +97,12 @@ private:
 };
 
 class FileReader : public StackObj {
-protected:
+ protected:
   FILE* const _fd;
-public:
+ public:
   FileReader(FILE* const fd) : _fd(fd) {};
   bool read(void* buf, size_t size);
   int  read_buffer(void* buf, size_t size);
-
   virtual bool set_position(long offset);
 };
 
@@ -180,9 +179,7 @@ public:
   // On systems other than linux it always returns false.
   static bool specifies_noexecstack(const char* filepath) NOT_LINUX({ return false; });
 
-
   bool open_valid_debuginfo_file(const char* path_name, uint crc);
-
   bool get_source_info(uint32_t offset_in_library, char* filename, size_t filename_size, int* line);
 
 private:
@@ -226,46 +223,48 @@ public:
 
 
 /*
- * This class parses and read line number and filename information from an associated .debuginfo file that belongs to this ELF file. The .debuginfo
+ * This class parses and reads filename and line number information from an associated .debuginfo file that belongs to this ELF file. The .debuginfo
  * file is written by GCC in DWARF - a standardized debugging data format. The current version of GCC uses DWARF version 4 as default which is defined
  * in the official standard: http://www.dwarfstd.org/doc/DWARF4.pdf. This class is able to parse 32-bit DWARF version 4 for 32 and 64-bit Linux builds.
  * GCC does not emit 64-bit DWARF and therefore is not supported by this parser. Other DWARF versions, especially version 5, is not (yet) supported.
  *
  * Description of used DWARF file sections:
- * - .debug_aranges: A table that consists of sets of variable length entries, each set describing the portion of the program's
- *                   address space that is covered by a single compilation unit - a mapping between addresses and compilation units.
+ * - .debug_aranges: A table that consists of sets of variable length entries, each set describing the portion of the program's address space that
+ *                   is covered by a single compilation unit. In other words the entries describe a mapping between addresses and compilation units.
  * - .debug_info:    The core DWARF data containing DWARF Information Entries (DIEs). Each DIE consists of a tag and a series of attributes.
  *                   Each (normal) compilation unit is represented by a DIE with the tag DW_TAG_compile_unit and contains children.
  *                   For our purposes, we are only interested in this DIE to get to the .debug_line section. We do not care about the children.
- *                   This method currently only supports normal compilation units and no partial compilation or type units.
+ *                   This parser currently only supports normal compilation units and no partial compilation or type units.
  * - .debug_abbrev:  Represents abbreviation tables for all compilation units. A table for a specific compilation unit consists of a series of
  *                   abbreviation declarations. Each declaration specifies a tag and attributes for a DIE. The DIEs from the compilation units
- *                   in the .debug_info section need the .debug_abbrev table to decode their attributes (their meaning and size).
- * - .debug_line:    Contains line number information for each compilation unit. To get the information a state machine has to be executed
- *                   which generates a matrix. Each row describes the line number and filename for a specific pc (among other information).
- *                   The algorithm below runs this state machine until the row for the requested pc is found to fetch the line number and
- *                   the filename from it.
+ *                   in the .debug_info section need the abbreviation table to decode their attributes (their meaning and size).
+ * - .debug_line:    Contains filename and line number information for each compilation unit. To get the information, a state machine needs to be
+ *                   executed which generates a matrix. Each row of this matrix describes the filename and line number (among other information)
+ *                   for a specific offset in the associated ELF library file. The state machine is executed until the row for the requested offset
+ *                   is found. The filename and line number information can then be fetched with the current register values of the state machine.
  *
  * Algorithm:
+ * Given: Offset into the ELF file library.
+ * Return: Filename and line number for this offset.
  * (1) First, the path to the .debuginfo DWARF file is found by inspecting the .gnu_debuglink section. The DWARF file is then opened by calling
  *     the constructor of this class. Once this is done, the processing of the DWARF file is initiated by calling get_filename_and_line_number().
  * (2) Find the compilation unit offset by reading entries from the section .debug_aranges, which contain address range descriptors, until we
- *     find the correct descriptor that includes the pc.
- * (3) Find the debug line offset for the line number information program from the .debug_line section:
+ *     find the correct descriptor that includes the library offset.
+ * (3) Find the .debug_line offset for the line number information program from the .debug_info section:
  *     (a) Parse the compilation unit header from the .debug_info section at the offset obtained by (2).
  *     (b) Read the debug_abbrev_offset into the .debug_abbrev section that belongs to this compilation unit from the header obtained in (3a).
  *     (c) Read the abbreviation code that immediately follows the compilation unit header from (3a) which is needed to find the correct entry
- *         in the .debug_abbrev section.
+ *         into the .debug_abbrev section.
  *     (d) Find the correct entry in the abbreviation table in the .debug_abbrev section by starting to parse entries at the debug_abbrev_offset
  *         from (3b) until we find the correct one matching the abbreviation code from (3c) .
  *     (e) Read the specified attributes of the abbreviation entry from (3d) from the compilation unit (in the .debug_info section) until we
  *         find the attribute DW_AT_stmt_list. This attributes represents an offset into the .debug_line section which contains the line number
  *         program information to get the filename and the line number.
- *  (4) Find the line number and filename beloning to the given pc by running the line number information state machine. This will create a
- *      matrix of line number information, each row representing information for specific addresses. There are several opcodes which modify
- *      different state registers. Certain opcodes will add a new row to the matrix. As soon as the correct row matching our pc is found,
- *      we can read the line number from the line register of the state machine and parse the filename from the line number program header
- *      with the given file index from the file register of the state machine.
+ *  (4) Find the filename and line number belonging to the given library offset by running the line number program state machine with its registers.
+ *      This creates a matrix where each row stores information for specific addresses (library offsets). The state machine executes different opcodes
+ *      which modify the state machine registers. Certain opcodes will add a new row to the matrix by taking the current values of state machine.
+ *      registers. As soon as the correct matrix row matching the library offset is found, we can read the line number from the line register of the
+ *      state machine and parse the filename from the line number program header with the given file index from the file register of the state machine.
  *
  *  More details about the different phases can be found at the associated classes and methods.
  */
@@ -274,12 +273,11 @@ class DwarfFile : public ElfFile {
   class MarkedDwarfFileReader : public MarkedFileReader {
    private:
     long _current_pos;
-    long _start_pos; // Where we started reading, set after first set_position() call.
     long _max_pos; // Used to guarantee that we stop reading in case of a corrupted DWARF file.
 
     bool read_leb128(uint64_t* result, int8_t check_size, bool is_signed);
    public:
-    MarkedDwarfFileReader(FILE* const fd) : MarkedFileReader(fd), _current_pos(-1), _start_pos(-1), _max_pos(-1) {}
+    MarkedDwarfFileReader(FILE* const fd) : MarkedFileReader(fd), _current_pos(-1), _max_pos(-1) {}
 
     bool set_position(long new_pos);
     long get_position() const { return _current_pos; }
@@ -315,10 +313,10 @@ class DwarfFile : public ElfFile {
       uint16_t _version;
 
       // The offset from the beginning of the .debug_info or .debug_types section of the compilation unit header referenced
-      // by the set. In this implementation we only use it as offset into .debug_info. This must be 4 bytes for 32-bit DWARF.
+      // by the set. In this parser we only use it as offset into .debug_info. This must be 4 bytes for 32-bit DWARF.
       uint32_t _debug_info_offset;
 
-      // The size of an address in bytes on the target architecture.
+      // The size of an address in bytes on the target architecture, 4 bytes for 32-bit and 8 bytes for 64-bit Linux builds.
       uint8_t _address_size;
 
       // The size of a segment selector in bytes on the target architecture. This should be 0.
@@ -378,12 +376,11 @@ class DwarfFile : public ElfFile {
       // The version of the DWARF information for the compilation unit. The value in this field is 4 for DWARF 4.
       uint16_t _version;
 
-      // The unsigned offset into the .debug_abbrev section. This offset associates the compilation unit with a particular
-      // set of debugging information entry abbreviations.
+      // The offset into the .debug_abbrev section. This offset associates the compilation unit with a particular set of
+      // debugging information entry abbreviations.
       uint32_t _debug_abbrev_offset;
 
-      // The size in bytes of an address on the target architecture. If the system uses segmented addressing, this value
-      // represents the size of the offset portion of an address.
+      // The size in bytes of an address on the target architecture, 4 bytes for 32-bit and 8 bytes for 64-bit Linux builds.
       uint8_t  _address_size;
     };
 
@@ -419,7 +416,7 @@ class DwarfFile : public ElfFile {
 
     DwarfFile* _dwarf_file;
     MarkedDwarfFileReader _reader;
-    CompilationUnit* _compilation_unit; // Needs to read from compilation unit while parsing the entries in .debug_abbrev
+    CompilationUnit* _compilation_unit; // Need to read from compilation unit while parsing the entries in .debug_abbrev.
 
     // Result field of a request
     uint32_t* _debug_line_offset;
@@ -434,7 +431,6 @@ class DwarfFile : public ElfFile {
     bool get_debug_line_offset(uint64_t abbrev_code);
 
   };
-  // .debug_abbrev and .debug_info
 
   // (4) The line number program for the compilation unit at the offset of the .debug_line obtained by (3).
   class LineNumberProgram {
@@ -461,16 +457,16 @@ class DwarfFile : public ElfFile {
 
     // The header is defined in section 6.2.4 of the DWARF 4 spec.
     struct LineNumberProgramHeader {
-      // The size in bytes of the line number information for this compilation unit, not including the
-      // unit_length field itself. 32-bit DWARF uses 4 bytes.
+      // The size in bytes of the line number information for this compilation unit, not including the unit_length
+      // field itself. 32-bit DWARF uses 4 bytes.
       uint32_t _unit_length;
 
-      // A version number (see Appendix F). This number is specific to the line number information
-      // and is independent of the DWARF version number.
+      // The version of the DWARF information for the line number program unit. The value in this field should be 4 for DWARF 4.
+      // But for some reason, GCC uses version 3 as used for DWARF 3.
       uint16_t _version;
 
-      // The number of bytes following the header_length field to the beginning of the first byte of
-      // the line number program itself. In the 32-bit DWARF format uses 4 bytes.
+      // The number of bytes following the header_length field to the beginning of the first byte of the line number program itself.
+      // 32-bit DWARF uses 4 bytes.
       uint32_t _header_length;
 
       // The size in bytes of the smallest target machine instruction. Line number program opcodes that alter the address
@@ -480,7 +476,7 @@ class DwarfFile : public ElfFile {
       // The maximum number of individual operations that may be encoded in an instruction. Line number program opcodes
       // that alter the address and op_index registers use this and minimum_instruction_length in their calculations.
       // For non-VLIW architectures, this field is 1, the op_index register is always 0, and the operation pointer is
-      // simply the address register.
+      // simply the address register. This is only used in DWARF 4.
       uint8_t _maximum_operations_per_instruction;
 
       // The initial value of the is_stmt register.
@@ -495,20 +491,21 @@ class DwarfFile : public ElfFile {
       // The number assigned to the first special opcode.
       uint8_t _opcode_base;
 
-      // This array specifies the number of LEB128 operands for each of the standard opcodes. The
-      // first element of the array corresponds to the opcode whose value is 1, and the last element
-      // corresponds to the opcode whose value is opcode_base - 1. DWARF 4 uses 12 standard opcodes.
+      // This array specifies the number of LEB128 operands for each of the standard opcodes. The first element of the array
+      // corresponds to the opcode whose value is 1, and the last element corresponds to the opcode whose value is opcode_base-1.
+      // DWARF 3 and 4 use 12 standard opcodes.
       uint8_t _standard_opcode_lengths[12];
 
       // Not part of the real header, implementation only
       long _file_starting_pos;
     };
 
-    // Defined in DWARF 4, Section 6.2.2
-    // Most of the state fields are not used to get the filename and the line number information.
+    // The line number program state consists of several registers that hold the current state of the line number program state machine.
+    // The state/different state registers are defined in section 6.2.2 of the DWARF 4 spec. Most of these fields (state registers) are
+    // not used to get the filename and the line number information.
     struct LineNumberProgramState : public CHeapObj<mtInternal> {
       // The program-counter value corresponding to a machine instruction generated by the compiler.
-      // 8 bytes on 64-bit and 4 bytes on 32-bit
+      // 4 bytes on 32-bit and 8 bytes on 64-bit.
       uintptr_t _address;
 
       // The index of an operation within a VLIW instruction. The index of the first operation is 0. For non-VLIW
@@ -549,21 +546,22 @@ class DwarfFile : public ElfFile {
       // Encodes the applicable instruction set architecture for the current instruction.
       uint32_t _isa;
 
-      // Identifies the block to which the current instruction belongs. This field was added in DWARF 4
+      // Identifies the block to which the current instruction belongs. This field was added in DWARF 4.
       uint32_t _discriminator;
 
       /*
-       * Implementation specific fields
+       * Implementation specific fields and not part of the actual state
        */
-      // Specifies which DWARF version is used in the .debug_line section. Currently supported: DWARF 3 + 4.
       LineNumberProgramHeader* _header;
+      // Specifies which DWARF version is used in the .debug_line section. Currently supported: DWARF 3 + 4.
       const uint8_t _dwarf_version;
       const bool _initial_is_stmt;
       bool _first_row;
       bool _append_row;
       bool _do_reset;
 
-      // Could the current sequence be a candidate which contains the pc? (pc must be smaller than the address of the first row in the matrix)
+      // Could the current sequence be a candidate which contains the library offset?
+      // (library offset must be smaller than the address of the first row in the matrix)
       bool _sequence_candidate;
 
       LineNumberProgramState(LineNumberProgramHeader* header)
@@ -585,7 +583,7 @@ class DwarfFile : public ElfFile {
     const uint32_t _offset_in_library;
     const uint64_t _debug_line_offset;
 
-    // Result fields of a request
+    // Result fields of a request.
     int* _line;
     char* _filename;
     size_t _filename_len;
@@ -614,10 +612,10 @@ class DwarfFile : public ElfFile {
   /*
    * Starting point of reading line number and filename information from the DWARF file.
    *
-   * Given:  offset (also referred to as 'pc') into the library (this ELF file), a filename buffer of size filename_size, a line number pointer
-   * Return: True:  The filename in the 'filename' buffer and the line number at the address pointed to by 'line'.
+   * Given:  Offset into the ELF library file, a filename buffer of size filename_size, a line number pointer.
+   * Return: True:  The filename is set in the 'filename' buffer and the line number at the address pointed to by 'line'.
    *         False: Something went wrong either while reading from the file or during parsing due to an unexpected format.
-   *                This could happen if the DWARF file is corrupted or in an unsupported format.
+   *                This could happen if the DWARF file is corrupted or is in an unsupported format.
    *
    *  More details about the different phases can be found at the associated methods.
    */
