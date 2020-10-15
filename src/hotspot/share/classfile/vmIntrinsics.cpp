@@ -694,13 +694,13 @@ bool vmIntrinsics::is_disabled_by_flags(vmIntrinsics::ID id) {
 #define ID3(x, y, z) (( jlong)(z) +                                  \
                       ((jlong)(y) <<    vmSymbols::log2_SID_LIMIT) + \
                       ((jlong)(x) << (2*vmSymbols::log2_SID_LIMIT))  )
-#define SID_ENUM(n) vmSymbols::VM_SYMBOL_ENUM_NAME(n)
+#define SID_ENUM(n) VM_SYMBOL_ENUM_NAME(n)
 
-vmIntrinsics::ID vmIntrinsics::find_id_impl(vmSymbols::SID holder,
-                                            vmSymbols::SID name,
-                                            vmSymbols::SID sig,
+vmIntrinsics::ID vmIntrinsics::find_id_impl(vmSymbolID holder,
+                                            vmSymbolID name,
+                                            vmSymbolID sig,
                                             jshort flags) {
-  assert((int)vmSymbols::SID_LIMIT <= (1<<vmSymbols::log2_SID_LIMIT), "must fit");
+  assert((int)vmSymbolID::SID_LIMIT <= (1<<vmSymbols::log2_SID_LIMIT), "must fit");
 
   // Let the C compiler build the decision tree.
 
@@ -763,25 +763,25 @@ inline jlong intrinsic_info(vmIntrinsics::ID id) {
   return intrinsic_info_array[vmIntrinsics::ID_from((int)id)];
 }
 
-vmSymbols::SID vmIntrinsics::class_for(vmIntrinsics::ID id) {
+vmSymbolID vmIntrinsics::class_for(vmIntrinsics::ID id) {
   jlong info = intrinsic_info(id);
   int shift = 2*vmSymbols::log2_SID_LIMIT + log2_FLAG_LIMIT, mask = right_n_bits(vmSymbols::log2_SID_LIMIT);
   assert(((ID4(1021,1022,1023,15) >> shift) & mask) == 1021, "");
-  return vmSymbols::SID( (info >> shift) & mask );
+  return vmSymbols::as_SID( (info >> shift) & mask );
 }
 
-vmSymbols::SID vmIntrinsics::name_for(vmIntrinsics::ID id) {
+vmSymbolID vmIntrinsics::name_for(vmIntrinsics::ID id) {
   jlong info = intrinsic_info(id);
   int shift = vmSymbols::log2_SID_LIMIT + log2_FLAG_LIMIT, mask = right_n_bits(vmSymbols::log2_SID_LIMIT);
   assert(((ID4(1021,1022,1023,15) >> shift) & mask) == 1022, "");
-  return vmSymbols::SID( (info >> shift) & mask );
+  return vmSymbols::as_SID( (info >> shift) & mask );
 }
 
-vmSymbols::SID vmIntrinsics::signature_for(vmIntrinsics::ID id) {
+vmSymbolID vmIntrinsics::signature_for(vmIntrinsics::ID id) {
   jlong info = intrinsic_info(id);
   int shift = log2_FLAG_LIMIT, mask = right_n_bits(vmSymbols::log2_SID_LIMIT);
   assert(((ID4(1021,1022,1023,15) >> shift) & mask) == 1023, "");
-  return vmSymbols::SID( (info >> shift) & mask );
+  return vmSymbols::as_SID( (info >> shift) & mask );
 }
 
 vmIntrinsics::Flags vmIntrinsics::flags_for(vmIntrinsics::ID id) {

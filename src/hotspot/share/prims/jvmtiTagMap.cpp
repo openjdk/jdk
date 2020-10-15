@@ -804,9 +804,6 @@ class ClassFieldMap: public CHeapObj<mtInternal> {
   // add a field
   void add(int index, char type, int offset);
 
-  // returns the field count for the given class
-  static int compute_field_count(InstanceKlass* ik);
-
  public:
   ~ClassFieldMap();
 

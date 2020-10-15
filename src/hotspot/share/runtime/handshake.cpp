@@ -406,6 +406,10 @@ HandshakeOperation* HandshakeState::pop() {
 };
 
 void HandshakeState::process_by_self() {
+  assert(Thread::current() == _handshakee, "should call from _handshakee");
+  assert(!_handshakee->is_terminated(), "should not be a terminated thread");
+  assert(_handshakee->thread_state() != _thread_blocked, "should not be in a blocked state");
+  assert(_handshakee->thread_state() != _thread_in_native, "should not be in native");
   ThreadInVMForHandshake tivm(_handshakee);
   {
     NoSafepointVerifier nsv;
@@ -414,11 +418,6 @@ void HandshakeState::process_by_self() {
 }
 
 void HandshakeState::process_self_inner() {
-  assert(Thread::current() == _handshakee, "should call from _handshakee");
-  assert(!_handshakee->is_terminated(), "should not be a terminated thread");
-  assert(_handshakee->thread_state() != _thread_blocked, "should not be in a blocked state");
-  assert(_handshakee->thread_state() != _thread_in_native, "should not be in native");
-
   while (should_process()) {
     HandleMark hm(_handshakee);
     CautiouslyPreserveExceptionMark pem(_handshakee);

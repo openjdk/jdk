@@ -943,19 +943,21 @@ void ThreadSafepointState::print_on(outputStream *st) const {
 
 // Process pending operation.
 void ThreadSafepointState::handle_polling_page_exception() {
+  JavaThread* self = thread();
+  assert(self == Thread::current()->as_Java_thread(), "must be self");
 
   // Step 1: Find the nmethod from the return address
-  address real_return_addr = thread()->saved_exception_pc();
+  address real_return_addr = self->saved_exception_pc();
 
   CodeBlob *cb = CodeCache::find_blob(real_return_addr);
   assert(cb != NULL && cb->is_compiled(), "return address should be in nmethod");
   CompiledMethod* nm = (CompiledMethod*)cb;
 
   // Find frame of caller
-  frame stub_fr = thread()->last_frame();
+  frame stub_fr = self->last_frame();
   CodeBlob* stub_cb = stub_fr.cb();
   assert(stub_cb->is_safepoint_stub(), "must be a safepoint stub");
-  RegisterMap map(thread(), true, false);
+  RegisterMap map(self, true, false);
   frame caller_fr = stub_fr.sender(&map);
 
   // Should only be poll_return or poll
@@ -976,17 +978,18 @@ void ThreadSafepointState::handle_polling_page_exception() {
       // to keep it in a handle.
       oop result = caller_fr.saved_oop_result(&map);
       assert(oopDesc::is_oop_or_null(result), "must be oop");
-      return_value = Handle(thread(), result);
+      return_value = Handle(self, result);
       assert(Universe::heap()->is_in_or_null(result), "must be heap pointer");
     }
 
     // We get here if compiled return polls found a reason to call into the VM.
     // One condition for that is that the top frame is not yet safe to use.
     // The following stack watermark barrier poll will catch such situations.
-    StackWatermarkSet::after_unwind(thread());
+    StackWatermarkSet::after_unwind(self);
 
     // Process pending operation
-    SafepointMechanism::process_if_requested(thread());
+    SafepointMechanism::process_if_requested(self);
+    self->check_and_handle_async_exceptions();
 
     // restore oop result, if any
     if (return_oop) {
@@ -1002,21 +1005,21 @@ void ThreadSafepointState::handle_polling_page_exception() {
     assert(real_return_addr == caller_fr.pc(), "must match");
 
     // Process pending operation
-    SafepointMechanism::process_if_requested(thread());
+    SafepointMechanism::process_if_requested(self);
     set_at_poll_safepoint(false);
 
     // If we have a pending async exception deoptimize the frame
     // as otherwise we may never deliver it.
-    if (thread()->has_async_condition()) {
-      ThreadInVMfromJavaNoAsyncException __tiv(thread());
-      Deoptimization::deoptimize_frame(thread(), caller_fr.id());
+    if (self->has_async_condition()) {
+      ThreadInVMfromJavaNoAsyncException __tiv(self);
+      Deoptimization::deoptimize_frame(self, caller_fr.id());
     }
 
     // If an exception has been installed we must check for a pending deoptimization
     // Deoptimize frame if exception has been thrown.
 
-    if (thread()->has_pending_exception() ) {
-      RegisterMap map(thread(), true, false);
+    if (self->has_pending_exception() ) {
+      RegisterMap map(self, true, false);
       frame caller_fr = stub_fr.sender(&map);
       if (caller_fr.is_deoptimized_frame()) {
         // The exception patch will destroy registers that are still
