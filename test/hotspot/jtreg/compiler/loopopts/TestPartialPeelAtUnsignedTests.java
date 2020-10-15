@@ -73,7 +73,7 @@ public class TestPartialPeelAtUnsignedTests {
 
     /*
         Same as test1 but with a negative stride.
-        
+
         loop:
             i -= 1000;
             if (i <u 10_000) {
@@ -105,10 +105,10 @@ public class TestPartialPeelAtUnsignedTests {
         }
         return i;
     }
-    
+
     /*
         Same as test1 but with inverted exit condition.
-        
+
         loop:
             i += 1000;
             if (i <u 10_000) {
@@ -140,10 +140,10 @@ public class TestPartialPeelAtUnsignedTests {
         }
         return i;
     }
-    
+
     /*
         Same as test2 but with inverted exit condition.
-        
+
         loop:
             i -= 1000;
             if (i <u 10_000) {
