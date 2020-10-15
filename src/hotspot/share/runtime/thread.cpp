@@ -2665,14 +2665,16 @@ void JavaThread::wait_for_object_deoptimization() {
     // suspend after restoring the saved state. Without this the current thread
     // might return to _thread_in_Java and execute bytecode.
     set_thread_state_fence(state);
-  } while (is_obj_deopt_suspend() || is_external_suspend());
 
-  // Since we are not using a regular thread-state transition helper here,
-  // we must manually emit the instruction barrier after leaving a safe state.
-  OrderAccess::cross_modify_fence();
-  if (state != _thread_in_native) {
-    SafepointMechanism::process_if_requested(this);
-  }
+    // Since we are not using a regular thread-state transition helper here,
+    // we must manually emit the instruction barrier after leaving a safe state.
+    OrderAccess::cross_modify_fence();
+    if (state != _thread_in_native) {
+      SafepointMechanism::process_if_requested(this);
+    }
+    // A handshake for obj. deoptimization suspend could have been processed so
+    // we must check after processing.
+  } while (is_obj_deopt_suspend() || is_external_suspend());
 }
 
 #ifdef ASSERT

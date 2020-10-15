@@ -1361,14 +1361,14 @@ class JavaThread: public Thread {
   inline void set_ext_suspended();
   inline void clear_ext_suspended();
 
-  // Synchronize with another thread (most likely a JVMTI agent) that is deoptimizing objects of the
-  // current thread, i.e. reverts optimizations based on escape analysis.
-  void wait_for_object_deoptimization();
-
  public:
   void java_suspend(); // higher-level suspension logic called by the public APIs
   void java_resume();  // higher-level resume logic called by the public APIs
   int  java_suspend_self(); // low-level self-suspension mechanics
+
+  // Synchronize with another thread that is deoptimizing objects of the
+  // current thread, i.e. reverts optimizations based on escape analysis.
+  void wait_for_object_deoptimization();
 
  private:
   // mid-level wrapper around java_suspend_self to set up correct state and
