@@ -139,8 +139,6 @@ class Linux {
   static intptr_t* ucontext_get_sp(const ucontext_t* uc);
   static intptr_t* ucontext_get_fp(const ucontext_t* uc);
 
-  static bool get_frame_at_stack_banging_point(JavaThread* thread, ucontext_t* uc, frame* fr);
-
   // GNU libc and libpthread version strings
   static const char *libc_version()           { return _libc_version; }
   static const char *libpthread_version()     { return _libpthread_version; }

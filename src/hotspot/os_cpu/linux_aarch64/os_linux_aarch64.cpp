@@ -133,44 +133,16 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
   return frame(sp, fp, epc);
 }
 
-bool os::Linux::get_frame_at_stack_banging_point(JavaThread* thread, ucontext_t* uc, frame* fr) {
-  address pc = (address) os::Linux::ucontext_get_pc(uc);
-  if (Interpreter::contains(pc)) {
-    // interpreter performs stack banging after the fixed frame header has
-    // been generated while the compilers perform it before. To maintain
-    // semantic consistency between interpreted and compiled frames, the
-    // method returns the Java sender of the current frame.
-    *fr = os::fetch_frame_from_context(uc);
-    if (!fr->is_first_java_frame()) {
-      assert(fr->safe_for_sender(thread), "Safety check");
-      *fr = fr->java_sender();
-    }
-  } else {
-    // more complex code with compiled code
-    assert(!Interpreter::contains(pc), "Interpreted methods should have been handled above");
-    CodeBlob* cb = CodeCache::find_blob(pc);
-    if (cb == NULL || !cb->is_nmethod() || cb->is_frame_complete_at(pc)) {
-      // Not sure where the pc points to, fallback to default
-      // stack overflow handling
-      return false;
-    } else {
-      // In compiled code, the stack banging is performed before LR
-      // has been saved in the frame.  LR is live, and SP and FP
-      // belong to the caller.
-      intptr_t* fp = os::Linux::ucontext_get_fp(uc);
-      intptr_t* sp = os::Linux::ucontext_get_sp(uc);
-      address pc = (address)(uc->uc_mcontext.regs[REG_LR]
+frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
+  const ucontext_t* uc = (const ucontext_t*)ucVoid;
+  // In compiled code, the stack banging is performed before LR
+  // has been saved in the frame.  LR is live, and SP and FP
+  // belong to the caller.
+  intptr_t* fp = os::Linux::ucontext_get_fp(uc);
+  intptr_t* sp = os::Linux::ucontext_get_sp(uc);
+  address pc = (address)(uc->uc_mcontext.regs[REG_LR]
                          - NativeInstruction::instruction_size);
-      *fr = frame(sp, fp, pc);
-      if (!fr->is_java_frame()) {
-        assert(fr->safe_for_sender(thread), "Safety check");
-        assert(!fr->is_first_frame(), "Safety check");
-        *fr = fr->java_sender();
-      }
-    }
-  }
-  assert(fr->is_java_frame(), "Safety check");
-  return true;
+  return frame(sp, fp, pc);
 }
 
 // By default, gcc always saves frame pointer rfp on this stack. This
@@ -278,62 +250,8 @@ JVM_handle_linux_signal(int sig,
     if (sig == SIGSEGV) {
       // check if fault address is within thread stack
       if (thread->is_in_full_stack(addr)) {
-        StackOverflow* overflow_state = thread->stack_overflow_state();
-        // stack overflow
-        if (overflow_state->in_stack_yellow_reserved_zone(addr)) {
-          if (thread->thread_state() == _thread_in_Java) {
-            if (overflow_state->in_stack_reserved_zone(addr)) {
-              frame fr;
-              if (os::Linux::get_frame_at_stack_banging_point(thread, uc, &fr)) {
-                assert(fr.is_java_frame(), "Must be a Java frame");
-                frame activation =
-                  SharedRuntime::look_for_reserved_stack_annotated_method(thread, fr);
-                if (activation.sp() != NULL) {
-                  overflow_state->disable_stack_reserved_zone();
-                  if (activation.is_interpreted_frame()) {
-                    overflow_state->set_reserved_stack_activation((address)(
-                      activation.fp() + frame::interpreter_frame_initial_sp_offset));
-                  } else {
-                    overflow_state->set_reserved_stack_activation((address)activation.unextended_sp());
-                  }
-                  return 1;
-                }
-              }
-            }
-            // Throw a stack overflow exception.  Guard pages will be reenabled
-            // while unwinding the stack.
-            overflow_state->disable_stack_yellow_reserved_zone();
-            stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::STACK_OVERFLOW);
-          } else {
-            // Thread was in the vm or native code.  Return and try to finish.
-            overflow_state->disable_stack_yellow_reserved_zone();
-            return 1;
-          }
-        } else if (overflow_state->in_stack_red_zone(addr)) {
-          // Fatal red zone violation.  Disable the guard pages and fall through
-          // to handle_unexpected_exception way down below.
-          overflow_state->disable_stack_red_zone();
-          tty->print_raw_cr("An irrecoverable stack overflow has occurred.");
-
-          // This is a likely cause, but hard to verify. Let's just print
-          // it as a hint.
-          tty->print_raw_cr("Please check if any of your loaded .so files has "
-                            "enabled executable stack (see man page execstack(8))");
-        } else {
-          // Accessing stack address below sp may cause SEGV if current
-          // thread has MAP_GROWSDOWN stack. This should only happen when
-          // current thread was created by user code with MAP_GROWSDOWN flag
-          // and then attached to VM. See notes in os_linux.cpp.
-          if (thread->osthread()->expanding_stack() == 0) {
-             thread->osthread()->set_expanding_stack();
-             if (os::Linux::manually_expand_stack(thread, addr)) {
-               thread->osthread()->clear_expanding_stack();
-               return 1;
-             }
-             thread->osthread()->clear_expanding_stack();
-          } else {
-             fatal("recursive segv. expanding stack.");
-          }
+        if (os::Posix::handle_stack_overflow(thread, addr, pc, uc, &stub)) {
+          return 1; // continue
         }
       }
     }

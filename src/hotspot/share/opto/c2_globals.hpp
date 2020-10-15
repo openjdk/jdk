@@ -743,6 +743,15 @@
   product(bool, UseMontgomerySquareIntrinsic, false, DIAGNOSTIC,            \
           "Enables intrinsification of BigInteger.montgomerySquare()")      \
                                                                             \
+  product(bool, EnableVectorSupport, false, EXPERIMENTAL,                   \
+          "Enables VectorSupport intrinsics")                               \
+                                                                            \
+  product(bool, EnableVectorReboxing, false, EXPERIMENTAL,                  \
+          "Enables reboxing of vectors")                                    \
+                                                                            \
+  product(bool, EnableVectorAggressiveReboxing, false, EXPERIMENTAL,        \
+          "Enables aggressive reboxing of vectors")                         \
+                                                                            \
   product(bool, UseTypeSpeculation, true,                                   \
           "Speculatively propagate types from profiles")                    \
                                                                             \

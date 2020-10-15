@@ -611,6 +611,16 @@ class StubGenerator: public StubCodeGenerator {
 
   void array_overlap_test(Label& L_no_overlap, Address::sxtw sf) { __ b(L_no_overlap); }
 
+  // Generate indices for iota vector.
+  address generate_iota_indices(const char *stub_name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", stub_name);
+    address start = __ pc();
+    __ emit_data64(0x0706050403020100, relocInfo::none);
+    __ emit_data64(0x0F0E0D0C0B0A0908, relocInfo::none);
+    return start;
+  }
+
   // The inner part of zero_words().  This is the bulk operation,
   // zeroing words in blocks, possibly using DC ZVA to do it.  The
   // caller is responsible for zeroing the last few words.
@@ -5957,6 +5967,8 @@ class StubGenerator: public StubCodeGenerator {
                                CAST_FROM_FN_PTR(address,
                                                 SharedRuntime::
                                                 throw_NullPointerException_at_call));
+
+    StubRoutines::aarch64::_vector_iota_indices    = generate_iota_indices("iota_indices");
 
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();

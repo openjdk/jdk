@@ -189,9 +189,10 @@ void PSYoungGen::set_space_boundaries(size_t eden_size, size_t survivor_size) {
   MemRegion to_mr  ((HeapWord*)to_start, (HeapWord*)from_start);
   MemRegion from_mr((HeapWord*)from_start, (HeapWord*)from_end);
 
-  eden_space()->initialize(eden_mr, true, ZapUnusedHeapArea);
-    to_space()->initialize(to_mr  , true, ZapUnusedHeapArea);
-  from_space()->initialize(from_mr, true, ZapUnusedHeapArea);
+  WorkGang& pretouch_workers = ParallelScavengeHeap::heap()->workers();
+  eden_space()->initialize(eden_mr, true, ZapUnusedHeapArea, MutableSpace::SetupPages, &pretouch_workers);
+    to_space()->initialize(to_mr  , true, ZapUnusedHeapArea, MutableSpace::SetupPages, &pretouch_workers);
+  from_space()->initialize(from_mr, true, ZapUnusedHeapArea, MutableSpace::SetupPages, &pretouch_workers);
 }
 
 #ifndef PRODUCT
@@ -636,17 +637,26 @@ void PSYoungGen::resize_spaces(size_t requested_eden_size,
     from_space()->check_mangled_unused_area(limit);
       to_space()->check_mangled_unused_area(limit);
   }
+
+  WorkGang* workers = &ParallelScavengeHeap::heap()->workers();
+
   // When an existing space is being initialized, it is not
   // mangled because the space has been previously mangled.
   eden_space()->initialize(edenMR,
                            SpaceDecorator::Clear,
-                           SpaceDecorator::DontMangle);
+                           SpaceDecorator::DontMangle,
+                           MutableSpace::SetupPages,
+                           workers);
     to_space()->initialize(toMR,
                            SpaceDecorator::Clear,
-                           SpaceDecorator::DontMangle);
+                           SpaceDecorator::DontMangle,
+                           MutableSpace::SetupPages,
+                           workers);
   from_space()->initialize(fromMR,
                            SpaceDecorator::DontClear,
-                           SpaceDecorator::DontMangle);
+                           SpaceDecorator::DontMangle,
+                           MutableSpace::SetupPages,
+                           workers);
 
   assert(from_space()->top() == old_from_top, "from top changed!");
 
@@ -783,9 +793,12 @@ void PSYoungGen::reset_survivors_after_shrink() {
   // Was there a shrink of the survivor space?
   if (new_end < space_shrinking->end()) {
     MemRegion mr(space_shrinking->bottom(), new_end);
+
     space_shrinking->initialize(mr,
                                 SpaceDecorator::DontClear,
-                                SpaceDecorator::Mangle);
+                                SpaceDecorator::Mangle,
+                                MutableSpace::SetupPages,
+                                &ParallelScavengeHeap::heap()->workers());
   }
 }
 
