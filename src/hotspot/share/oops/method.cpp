@@ -1624,14 +1624,14 @@ methodHandle Method::clone_with_new_data(const methodHandle& m, u_char* new_code
   return newm;
 }
 
-vmSymbols::SID Method::klass_id_for_intrinsics(const Klass* holder) {
+vmSymbolID Method::klass_id_for_intrinsics(const Klass* holder) {
   // if loader is not the default loader (i.e., != NULL), we can't know the intrinsics
   // because we are not loading from core libraries
   // exception: the AES intrinsics come from lib/ext/sunjce_provider.jar
   // which does not use the class default class loader so we check for its loader here
   const InstanceKlass* ik = InstanceKlass::cast(holder);
   if ((ik->class_loader() != NULL) && !SystemDictionary::is_platform_class_loader(ik->class_loader())) {
-    return vmSymbols::NO_SID;   // regardless of name, no intrinsics here
+    return vmSymbolID::NO_SID;   // regardless of name, no intrinsics here
   }
 
   // see if the klass name is well-known:
@@ -1646,20 +1646,20 @@ void Method::init_intrinsic_id() {
   assert(intrinsic_id_size_in_bytes() == sizeof(_intrinsic_id), "");
 
   // the klass name is well-known:
-  vmSymbols::SID klass_id = klass_id_for_intrinsics(method_holder());
-  assert(klass_id != vmSymbols::NO_SID, "caller responsibility");
+  vmSymbolID klass_id = klass_id_for_intrinsics(method_holder());
+  assert(klass_id != vmSymbolID::NO_SID, "caller responsibility");
 
   // ditto for method and signature:
-  vmSymbols::SID  name_id = vmSymbols::find_sid(name());
-  if (klass_id != vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_invoke_MethodHandle)
-      && klass_id != vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_invoke_VarHandle)
-      && name_id == vmSymbols::NO_SID) {
+  vmSymbolID name_id = vmSymbols::find_sid(name());
+  if (klass_id != VM_SYMBOL_ENUM_NAME(java_lang_invoke_MethodHandle)
+      && klass_id != VM_SYMBOL_ENUM_NAME(java_lang_invoke_VarHandle)
+      && name_id == vmSymbolID::NO_SID) {
     return;
   }
-  vmSymbols::SID   sig_id = vmSymbols::find_sid(signature());
-  if (klass_id != vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_invoke_MethodHandle)
-      && klass_id != vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_invoke_VarHandle)
-      && sig_id == vmSymbols::NO_SID) {
+  vmSymbolID sig_id = vmSymbols::find_sid(signature());
+  if (klass_id != VM_SYMBOL_ENUM_NAME(java_lang_invoke_MethodHandle)
+      && klass_id != VM_SYMBOL_ENUM_NAME(java_lang_invoke_VarHandle)
+      && sig_id == vmSymbolID::NO_SID) {
     return;
   }
   jshort flags = access_flags().as_short();
@@ -1676,14 +1676,14 @@ void Method::init_intrinsic_id() {
 
   // A few slightly irregular cases:
   switch (klass_id) {
-  case vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_StrictMath):
+  case VM_SYMBOL_ENUM_NAME(java_lang_StrictMath):
     // Second chance: check in regular Math.
     switch (name_id) {
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(min_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(max_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(sqrt_name):
+    case VM_SYMBOL_ENUM_NAME(min_name):
+    case VM_SYMBOL_ENUM_NAME(max_name):
+    case VM_SYMBOL_ENUM_NAME(sqrt_name):
       // pretend it is the corresponding method in the non-strict class:
-      klass_id = vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_Math);
+      klass_id = VM_SYMBOL_ENUM_NAME(java_lang_Math);
       id = vmIntrinsics::find_id(klass_id, name_id, sig_id, flags);
       break;
     default:
@@ -1692,8 +1692,8 @@ void Method::init_intrinsic_id() {
     break;
 
   // Signature-polymorphic methods: MethodHandle.invoke*, InvokeDynamic.*., VarHandle
-  case vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_invoke_MethodHandle):
-  case vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_invoke_VarHandle):
+  case VM_SYMBOL_ENUM_NAME(java_lang_invoke_MethodHandle):
+  case VM_SYMBOL_ENUM_NAME(java_lang_invoke_VarHandle):
     if (!is_native())  break;
     id = MethodHandles::signature_polymorphic_name_id(method_holder(), name());
     if (is_static() != MethodHandles::is_signature_polymorphic_static(id))

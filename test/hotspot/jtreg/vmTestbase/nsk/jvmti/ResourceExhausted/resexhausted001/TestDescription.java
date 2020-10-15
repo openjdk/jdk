@@ -37,11 +37,10 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @ignore 7013634
- * @run main/othervm/native
+ * @run main/othervm/native/timeout=240
  *      -agentlib:resexhausted=-waittime=5
  *      -XX:-UseGCOverheadLimit
  *      nsk.jvmti.ResourceExhausted.resexhausted001
- *      -stressTime 1200
+ *      -stressTime 220
  */
 

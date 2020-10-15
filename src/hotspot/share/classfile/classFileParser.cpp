@@ -1742,9 +1742,9 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
 
       // Injected field
       FieldInfo* const field = FieldInfo::from_field_array(fa, index);
-      field->initialize(JVM_ACC_FIELD_INTERNAL,
-                        injected[n].name_index,
-                        injected[n].signature_index,
+      field->initialize((u2)JVM_ACC_FIELD_INTERNAL,
+                        (u2)(injected[n].name_index),
+                        (u2)(injected[n].signature_index),
                         0);
 
       const BasicType type = Signature::basic_type(injected[n].signature());
@@ -2084,53 +2084,53 @@ AnnotationCollector::ID
 AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
                                       const Symbol* name,
                                       const bool can_access_vm_annotations) {
-  const vmSymbols::SID sid = vmSymbols::find_sid(name);
+  const vmSymbolID sid = vmSymbols::find_sid(name);
   // Privileged code can use all annotations.  Other code silently drops some.
   const bool privileged = loader_data->is_boot_class_loader_data() ||
                           loader_data->is_platform_class_loader_data() ||
                           can_access_vm_annotations;
   switch (sid) {
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(reflect_CallerSensitive_signature): {
+    case VM_SYMBOL_ENUM_NAME(reflect_CallerSensitive_signature): {
       if (_location != _in_method)  break;  // only allow for methods
       if (!privileged)              break;  // only allow in privileged code
       return _method_CallerSensitive;
     }
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_ForceInline_signature): {
+    case VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_ForceInline_signature): {
       if (_location != _in_method)  break;  // only allow for methods
       if (!privileged)              break;  // only allow in privileged code
       return _method_ForceInline;
     }
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_DontInline_signature): {
+    case VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_DontInline_signature): {
       if (_location != _in_method)  break;  // only allow for methods
       if (!privileged)              break;  // only allow in privileged code
       return _method_DontInline;
     }
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_invoke_InjectedProfile_signature): {
+    case VM_SYMBOL_ENUM_NAME(java_lang_invoke_InjectedProfile_signature): {
       if (_location != _in_method)  break;  // only allow for methods
       if (!privileged)              break;  // only allow in privileged code
       return _method_InjectedProfile;
     }
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_invoke_LambdaForm_Compiled_signature): {
+    case VM_SYMBOL_ENUM_NAME(java_lang_invoke_LambdaForm_Compiled_signature): {
       if (_location != _in_method)  break;  // only allow for methods
       if (!privileged)              break;  // only allow in privileged code
       return _method_LambdaForm_Compiled;
     }
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_Hidden_signature): {
+    case VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_Hidden_signature): {
       if (_location != _in_method)  break;  // only allow for methods
       if (!privileged)              break;  // only allow in privileged code
       return _method_Hidden;
     }
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_IntrinsicCandidate_signature): {
+    case VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_IntrinsicCandidate_signature): {
       if (_location != _in_method)  break;  // only allow for methods
       if (!privileged)              break;  // only allow in privileged code
       return _method_IntrinsicCandidate;
     }
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_Stable_signature): {
+    case VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_Stable_signature): {
       if (_location != _in_field)   break;  // only allow for fields
       if (!privileged)              break;  // only allow in privileged code
       return _field_Stable;
     }
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_Contended_signature): {
+    case VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_Contended_signature): {
       if (_location != _in_field && _location != _in_class) {
         break;  // only allow for fields and classes
       }
@@ -2139,7 +2139,7 @@ AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
       }
       return _jdk_internal_vm_annotation_Contended;
     }
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_ReservedStackAccess_signature): {
+    case VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_ReservedStackAccess_signature): {
       if (_location != _in_method)  break;  // only allow for methods
       if (RestrictReservedStack && !privileged) break; // honor privileges
       return _jdk_internal_vm_annotation_ReservedStackAccess;
@@ -5208,9 +5208,9 @@ static void check_methods_for_intrinsics(const InstanceKlass* ik,
   // (We used to do this lazily, but now we query it in Rewriter,
   // which is eagerly done for every method, so we might as well do it now,
   // when everything is fresh in memory.)
-  const vmSymbols::SID klass_id = Method::klass_id_for_intrinsics(ik);
+  const vmSymbolID klass_id = Method::klass_id_for_intrinsics(ik);
 
-  if (klass_id != vmSymbols::NO_SID) {
+  if (klass_id != vmSymbolID::NO_SID) {
     for (int j = 0; j < methods->length(); ++j) {
       Method* method = methods->at(j);
       method->init_intrinsic_id();

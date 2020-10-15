@@ -33,7 +33,7 @@
 // ciSymbol::ciSymbol
 //
 // Preallocated symbol variant.  Used with symbols from vmSymbols.
-ciSymbol::ciSymbol(Symbol* s, vmSymbols::SID sid)
+ciSymbol::ciSymbol(Symbol* s, vmSymbolID sid)
   : _symbol(s), _sid(sid)
 {
   assert(_symbol != NULL, "adding null symbol");
@@ -43,7 +43,7 @@ ciSymbol::ciSymbol(Symbol* s, vmSymbols::SID sid)
 
 // Normal case for non-famous symbols.
 ciSymbol::ciSymbol(Symbol* s)
-  : _symbol(s), _sid(vmSymbols::NO_SID)
+  : _symbol(s), _sid(vmSymbolID::NO_SID)
 {
   assert(_symbol != NULL, "adding null symbol");
   _symbol->increment_refcount();  // increment ref count
