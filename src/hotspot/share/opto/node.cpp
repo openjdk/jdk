@@ -911,8 +911,8 @@ void Node::disconnect_inputs(Compile* C) {
 
   // Remove precedence edges if any exist
   // Note: Safepoints may have precedence edges, even during parsing
-  for (uint i = len() - 1; i < len() && i >= req(); --i) {
-    rm_prec(i);                // no-op if _in[i] is nullptr
+  for (uint i = len(); i > req(); ) {
+    rm_prec(--i);  // no-op if _in[i] is nullptr
   }
 
 #ifdef ASSERT
