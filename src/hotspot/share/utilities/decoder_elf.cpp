@@ -55,15 +55,13 @@ bool ElfDecoder::decode(address addr, char *buf, int buflen, int* offset, const 
 
 bool ElfDecoder::get_source_info(address pc, char* buf, size_t buflen, int* line) {
   char filepath[JVM_MAXPATHLEN];
-  int offset_in_library;
-  if (!os::dll_address_to_library_name(pc, filepath, sizeof(filepath), &offset_in_library)) {
+  int offset_in_library = -1;
+  if (!os::dll_address_to_library_name(pc, filepath, sizeof(filepath), &offset_in_library) || offset_in_library < 0) {
+    // offset_in_library should not overflow.
     return false;
   }
 
-  if (offset_in_library < 0) {
-    // Should not have been overflown
-  }
-  const uint32_t unsigend_offset_in_library = (uint32_t) offset_in_library;
+  const uint32_t unsigend_offset_in_library = (uint32_t)offset_in_library;
   log_debug(dwarf)("##### Find filename and line number for offset " PTR32_FORMAT " in library %s #####", unsigend_offset_in_library, filepath);
 
   ElfFile* file = get_elf_file(filepath);
@@ -75,8 +73,8 @@ bool ElfDecoder::get_source_info(address pc, char* buf, size_t buflen, int* line
     return false;
   }
 
-  log_info(dwarf)("pc: " INTPTR_FORMAT ", Filename: %s, Line: %u", p2i(pc), buf, *line);
-  log_debug(dwarf)(""); // To structure the debug output better
+  log_info(dwarf)("pc: " INTPTR_FORMAT ", offset: " PTR32_FORMAT ", filename: %s, line: %u", p2i(pc), offset_in_library, buf, *line);
+  log_debug(dwarf)(""); // To structure the debug output better.
   return true;
 }
 

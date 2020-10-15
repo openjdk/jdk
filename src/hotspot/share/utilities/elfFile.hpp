@@ -217,8 +217,8 @@ private:
 protected:
   FILE* const fd() const { return _file; }
 
-  // Find a section by name and return the section index. Return -1 if there is no such section.
-  int read_section_header(const char* name, Elf_Shdr& hdr);
+  // Read the section header of section 'name'.
+  bool read_section_header(const char* name, Elf_Shdr& hdr);
 public:
   // For whitebox test
   static bool _do_not_cache_elf_section;
@@ -323,14 +323,15 @@ class DwarfFile : public ElfFile {
 
       // The size of a segment selector in bytes on the target architecture. This should be 0.
       uint8_t _segment_size;
-
-      bool read_header(MarkedDwarfFileReader* reader);
     };
 
     DwarfFile* _dwarf_file;
     MarkedDwarfFileReader _reader;
+    DebugArangesSetHeader _header;
 
+    bool read_header();
     bool read_section_header();
+
     static bool is_terminating_set(uintptr_t beginning_address, uintptr_t length) {
       return beginning_address == 0 && length == 0;
     }
@@ -384,9 +385,6 @@ class DwarfFile : public ElfFile {
       // The size in bytes of an address on the target architecture. If the system uses segmented addressing, this value
       // represents the size of the offset portion of an address.
       uint8_t  _address_size;
-
-      MarkedDwarfFileReader* _reader;
-      bool read_header();
     };
 
     DwarfFile* _dwarf_file;
@@ -400,9 +398,7 @@ class DwarfFile : public ElfFile {
     bool read_header();
    public:
     CompilationUnit(DwarfFile* dwarf_file, uint32_t compilation_unit_offset)
-      : _dwarf_file(dwarf_file), _reader(dwarf_file->fd()), _compilation_unit_offset(compilation_unit_offset), _debug_line_offset(nullptr) {
-      _header._reader = &_reader;
-    }
+      : _dwarf_file(dwarf_file), _reader(dwarf_file->fd()), _compilation_unit_offset(compilation_unit_offset), _debug_line_offset(nullptr) {}
     bool find_debug_line_offset(uint32_t* debug_line_offset);
     bool read_attribute(uint64_t attribute, bool set_result);
   };
@@ -506,9 +502,6 @@ class DwarfFile : public ElfFile {
 
       // Not part of the real header, implementation only
       long _file_starting_pos;
-      MarkedDwarfFileReader* _reader;
-
-      bool read_header();
     };
 
     // Defined in DWARF 4, Section 6.2.2
@@ -607,11 +600,10 @@ class DwarfFile : public ElfFile {
    public:
     LineNumberProgram(DwarfFile* dwarf_file, uint32_t offset_in_library, uint64_t debug_line_offset)
       : _dwarf_file(dwarf_file),  _reader(dwarf_file->fd()), _state(nullptr), _offset_in_library(offset_in_library),
-        _debug_line_offset(debug_line_offset), _line(nullptr), _filename(nullptr), _filename_len(0) {
-      _header._reader = &_reader;
-    }
+        _debug_line_offset(debug_line_offset), _line(nullptr), _filename(nullptr), _filename_len(0) {}
     ~LineNumberProgram() {
       delete _state;
+      _state = nullptr;
     }
     bool find_filename_and_line_number(char* filename, size_t filename_len, int* line);
   };
