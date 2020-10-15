@@ -915,7 +915,7 @@ void Node::disconnect_inputs(Compile* C) {
     rm_prec(i);                // no-op if _in[i] is nullptr
   }
 
-#ifndef PRODUCT
+#ifdef ASSERT
   // sanity check
   for (uint i = 0; i < len(); ++i) {
     assert(_in[i] == nullptr, "disconnect_inputs() failed!");
