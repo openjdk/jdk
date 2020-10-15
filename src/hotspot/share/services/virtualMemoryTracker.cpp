@@ -678,8 +678,8 @@ void MetaspaceSnapshot::snapshot(Metaspace::MetadataType type, MetaspaceSnapshot
 }
 
 void MetaspaceSnapshot::snapshot(MetaspaceSnapshot& mss) {
-  snapshot(Metaspace::ClassType, mss);
+  snapshot(Metaspace::NonClassType, mss);
   if (Metaspace::using_class_space()) {
-    snapshot(Metaspace::NonClassType, mss);
+    snapshot(Metaspace::ClassType, mss);
   }
 }

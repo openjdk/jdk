@@ -27,8 +27,9 @@
 #include "classfile/classLoaderDataShared.hpp"
 #include "classfile/classListParser.hpp"
 #include "classfile/classLoaderExt.hpp"
-#include "classfile/loaderConstraints.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/lambdaFormInvokers.hpp"
+#include "classfile/loaderConstraints.hpp"
 #include "classfile/placeholders.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/stringTable.hpp"
@@ -1050,8 +1051,14 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
     if (SharedArchiveConfigFile) {
       log_info(cds)("Reading extra data from %s ...", SharedArchiveConfigFile);
       read_extra_data(SharedArchiveConfigFile, THREAD);
+      log_info(cds)("Reading extra data: done.");
     }
-    log_info(cds)("Reading extra data: done.");
+
+    if (LambdaFormInvokers::lambdaform_lines() != NULL) {
+      log_info(cds)("Regenerate MethodHandle Holder classes...");
+      LambdaFormInvokers::regenerate_holder_classes(THREAD);
+      log_info(cds)("Regenerate MethodHandle Holder classes done.");
+    }
 
     HeapShared::init_for_dumping(THREAD);
 

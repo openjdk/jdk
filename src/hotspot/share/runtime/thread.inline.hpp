@@ -166,23 +166,6 @@ inline void JavaThread::set_done_attaching_via_jni() {
   OrderAccess::fence();
 }
 
-// The release make sure this store is done after storing the handshake
-// operation or global state
-inline void JavaThread::set_polling_page_release(void* poll_value) {
-  Atomic::release_store(polling_page_addr(), poll_value);
-}
-
-// Caller is responsible for using a memory barrier if needed.
-inline void JavaThread::set_polling_page(void* poll_value) {
-  *polling_page_addr() = poll_value;
-}
-
-// The aqcquire make sure reading of polling page is done before
-// the reading the handshake operation or the global state
-inline volatile void* JavaThread::get_polling_page() {
-  return Atomic::load_acquire(polling_page_addr());
-}
-
 inline bool JavaThread::is_exiting() const {
   // Use load-acquire so that setting of _terminated by
   // JavaThread::exit() is seen more quickly.

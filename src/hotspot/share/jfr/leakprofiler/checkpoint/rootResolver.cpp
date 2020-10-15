@@ -258,9 +258,6 @@ bool ReferenceToThreadRootClosure::do_thread_stack_detailed(JavaThread* jt) {
   ReferenceLocateClosure rcl(_callback, OldObjectRoot::_threads, OldObjectRoot::_stack_variable, jt);
 
   if (jt->has_last_Java_frame()) {
-    // traverse the registered growable array gc_array
-    // can't do this as it is not reachable from outside
-
     // Traverse the monitor chunks
     MonitorChunk* chunk = jt->monitor_chunks();
     for (; chunk != NULL; chunk = chunk->next()) {
@@ -272,7 +269,7 @@ bool ReferenceToThreadRootClosure::do_thread_stack_detailed(JavaThread* jt) {
     }
 
     // Traverse the execution stack
-    for (StackFrameStream fst(jt); !fst.is_done(); fst.next()) {
+    for (StackFrameStream fst(jt, true /* update */, true /* process_frames */); !fst.is_done(); fst.next()) {
       fst.current()->oops_do(&rcl, NULL, fst.register_map());
     }
 
@@ -297,7 +294,6 @@ bool ReferenceToThreadRootClosure::do_thread_stack_detailed(JavaThread* jt) {
   // around using this function
   /*
   * // can't reach these oop* from the outside
-  f->do_oop((oop*) &_threadObj);
   f->do_oop((oop*) &_vm_result);
   f->do_oop((oop*) &_exception_oop);
   f->do_oop((oop*) &_pending_async_exception);

@@ -70,45 +70,29 @@ public class TestUnnamedPackage extends JavadocTester {
 
         checkOutput("allclasses-index.html", true,
                 """
-                    <div class="type-summary" id="all-classes-table">
-                    <table class="summary-table">
-                    <caption><span>Class Summary</span></caption>
-                    <thead>
-                    <tr>
-                    <th class="col-first" scope="col">Class</th>
-                    <th class="col-last" scope="col">Description</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr class="alt-color" id="i0">
-                    <td class="col-first"><a href="C.html" title="class in &lt;Unnamed&gt;">C</a></td>
-                    <th class="col-last" scope="row">
+                    <div id="all-classes-table">
+                    <div class="caption"><span>Class Summary</span></div>
+                    <div class="summary-table two-column-summary">
+                    <div class="table-header col-first">Class</div>
+                    <div class="table-header col-last">Description</div>
+                    <div class="col-first even-row-color all-classes-table-tab2 all-classes-table"><a hre\
+                    f="C.html" title="class in &lt;Unnamed&gt;">C</a></div>
+                    <div class="col-last even-row-color all-classes-table-tab2 all-classes-table">
                     <div class="block">This is a class in the unnamed package.</div>
-                    </th>
-                    </tr>
-                    </tbody>
-                    </table>""");
+                    </div>
+                    </div>""");
 
         checkOutput("allpackages-index.html", true,
                 """
-                    <div class="packages-summary">
-                    <table class="summary-table">
-                    <caption><span>Package Summary</span></caption>
-                    <thead>
-                    <tr>
-                    <th class="col-first" scope="col">Package</th>
-                    <th class="col-last" scope="col">Description</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr class="alt-color">
-                    <th class="col-first" scope="row"><a href="package-summary.html">&lt;Unnamed&gt;</a></th>
-                    <td class="col-last">
+                    <div class="caption"><span>Package Summary</span></div>
+                    <div class="summary-table two-column-summary">
+                    <div class="table-header col-first">Package</div>
+                    <div class="table-header col-last">Description</div>
+                    <div class="col-first even-row-color"><a href="package-summary.html">&lt;Unnamed&gt;</a></div>
+                    <div class="col-last even-row-color">
                     <div class="block">This is a package comment for the unnamed package.</div>
-                    </td>
-                    </tr>
-                    </tbody>
-                    </table>""");
+                    </div>
+                    </div>""");
 
         checkOutput("type-search-index.js", true,
                 """

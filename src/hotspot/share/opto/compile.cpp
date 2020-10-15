@@ -68,6 +68,7 @@
 #include "opto/runtime.hpp"
 #include "opto/stringopts.hpp"
 #include "opto/type.hpp"
+#include "opto/vector.hpp"
 #include "opto/vectornode.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
@@ -412,6 +413,7 @@ void Compile::remove_useless_nodes(Unique_Node_List &useful) {
   remove_useless_late_inlines(&_string_late_inlines, useful);
   remove_useless_late_inlines(&_boxing_late_inlines, useful);
   remove_useless_late_inlines(&_late_inlines, useful);
+  remove_useless_late_inlines(&_vector_reboxing_late_inlines, useful);
   debug_only(verify_graph_edges(true/*check for no_dead_code*/);)
 }
 
@@ -545,6 +547,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _late_inlines(comp_arena(), 2, 0, NULL),
                   _string_late_inlines(comp_arena(), 2, 0, NULL),
                   _boxing_late_inlines(comp_arena(), 2, 0, NULL),
+                  _vector_reboxing_late_inlines(comp_arena(), 2, 0, NULL),
                   _late_inlines_pos(0),
                   _number_of_mh_late_inlines(0),
                   _print_inlining_stream(NULL),
@@ -729,9 +732,9 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   if (failing())  return;
   NOT_PRODUCT( verify_graph_edges(); )
 
-  // If IGVN is randomized for stress testing, seed random number
-  // generation and log the seed for repeatability.
-  if (StressIGVN) {
+  // If LCM, GCM, or IGVN are randomized for stress testing, seed
+  // random number generation and log the seed for repeatability.
+  if (StressLCM || StressGCM || StressIGVN) {
     _stress_seed = FLAG_IS_DEFAULT(StressSeed) ?
       static_cast<uint>(Ticks::now().nanoseconds()) : StressSeed;
     if (_log != NULL) {
@@ -922,7 +925,7 @@ void Compile::Init(int aliaslevel) {
 
   _fixed_slots = 0;
   set_has_split_ifs(false);
-  set_has_loops(has_method() && method()->has_loops()); // first approximation
+  set_has_loops(false); // first approximation
   set_has_stringbuilder(false);
   set_has_boxed_value(false);
   _trap_can_recompile = false;  // no traps emitted yet
@@ -1022,6 +1025,7 @@ void Compile::Init(int aliaslevel) {
 #ifdef ASSERT
   _type_verify_symmetry = true;
   _phase_optimize_finished = false;
+  _exception_backedge = false;
 #endif
 }
 
@@ -1961,6 +1965,8 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
 
     inline_incrementally_cleanup(igvn);
 
+    print_method(PHASE_INCREMENTAL_INLINE_STEP, 3);
+
     if (failing())  return;
   }
   assert( igvn._worklist.size() == 0, "should be done with igvn" );
@@ -2094,6 +2100,16 @@ void Compile::Optimize() {
   // No more new expensive nodes will be added to the list from here
   // so keep only the actual candidates for optimizations.
   cleanup_expensive_nodes(igvn);
+
+  assert(EnableVectorSupport || !has_vbox_nodes(), "sanity");
+  if (EnableVectorSupport && has_vbox_nodes()) {
+    TracePhase tp("", &timers[_t_vector]);
+    PhaseVector pv(igvn);
+    pv.optimize_vector_boxes();
+
+    print_method(PHASE_ITER_GVN_AFTER_VECTOR, 2);
+  }
+  assert(!has_vbox_nodes(), "sanity");
 
   if (!failing() && RenumberLiveNodes && live_nodes() + NodeLimitFudgeFactor < unique()) {
     Compile::TracePhase tp("", &timers[_t_renumberLive]);
@@ -2269,6 +2285,35 @@ void Compile::Optimize() {
 
  print_method(PHASE_OPTIMIZE_FINISHED, 2);
  DEBUG_ONLY(set_phase_optimize_finished();)
+}
+
+void Compile::inline_vector_reboxing_calls() {
+  if (C->_vector_reboxing_late_inlines.length() > 0) {
+    PhaseGVN* gvn = C->initial_gvn();
+
+    _late_inlines_pos = C->_late_inlines.length();
+    while (_vector_reboxing_late_inlines.length() > 0) {
+      CallGenerator* cg = _vector_reboxing_late_inlines.pop();
+      cg->do_late_inline();
+      if (failing())  return;
+      print_method(PHASE_INLINE_VECTOR_REBOX, cg->call_node());
+    }
+    _vector_reboxing_late_inlines.trunc_to(0);
+  }
+}
+
+bool Compile::has_vbox_nodes() {
+  if (C->_vector_reboxing_late_inlines.length() > 0) {
+    return true;
+  }
+  for (int macro_idx = C->macro_count() - 1; macro_idx >= 0; macro_idx--) {
+    Node * n = C->macro_node(macro_idx);
+    assert(n->is_macro(), "only macro nodes expected here");
+    if (n->Opcode() == Op_VectorUnbox || n->Opcode() == Op_VectorBox || n->Opcode() == Op_VectorBoxAllocate) {
+      return true;
+    }
+  }
+  return false;
 }
 
 //---------------------------- Bitwise operation packing optimization ---------------------------
@@ -2617,8 +2662,8 @@ void Compile::Code_Gen() {
     if (failing()) {
       return;
     }
+    print_method(PHASE_AFTER_MATCHING, 3);
   }
-
   // In debug mode can dump m._nodes.dump() for mapping of ideal to machine
   // nodes.  Mapping is only valid at the root of each matched subtree.
   NOT_PRODUCT( verify_graph_edges(); )
@@ -2771,7 +2816,7 @@ void Compile::eliminate_redundant_card_marks(Node* n) {
         // Eliminate the previous StoreCM
         prev->set_req(MemNode::Memory, mem->in(MemNode::Memory));
         assert(mem->outcnt() == 0, "should be dead");
-        mem->disconnect_inputs(NULL, this);
+        mem->disconnect_inputs(this);
       } else {
         prev = mem;
       }
@@ -2797,7 +2842,8 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
     // Check for commutative opcode
     switch( nop ) {
     case Op_AddI:  case Op_AddF:  case Op_AddD:  case Op_AddL:
-    case Op_MaxI:  case Op_MinI:
+    case Op_MaxI:  case Op_MaxL:  case Op_MaxF:  case Op_MaxD:
+    case Op_MinI:  case Op_MinL:  case Op_MinF:  case Op_MinD:
     case Op_MulI:  case Op_MulF:  case Op_MulD:  case Op_MulL:
     case Op_AndL:  case Op_XorL:  case Op_OrL:
     case Op_AndI:  case Op_XorI:  case Op_OrI: {
@@ -3053,7 +3099,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
           n->set_req(AddPNode::Base, nn);
           n->set_req(AddPNode::Address, nn);
           if (addp->outcnt() == 0) {
-            addp->disconnect_inputs(NULL, this);
+            addp->disconnect_inputs(this);
           }
         }
       }
@@ -3126,12 +3172,12 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
 
       n->subsume_by(new_in1, this);
       if (in1->outcnt() == 0) {
-        in1->disconnect_inputs(NULL, this);
+        in1->disconnect_inputs(this);
       }
     } else {
       n->subsume_by(n->in(1), this);
       if (n->outcnt() == 0) {
-        n->disconnect_inputs(NULL, this);
+        n->disconnect_inputs(this);
       }
     }
     break;
@@ -3209,10 +3255,10 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
         Node* cmpN = new CmpNNode(in1->in(1), new_in2);
         n->subsume_by(cmpN, this);
         if (in1->outcnt() == 0) {
-          in1->disconnect_inputs(NULL, this);
+          in1->disconnect_inputs(this);
         }
         if (in2->outcnt() == 0) {
-          in2->disconnect_inputs(NULL, this);
+          in2->disconnect_inputs(this);
         }
       }
     }
@@ -3243,7 +3289,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
       }
     }
     if (in1->outcnt() == 0) {
-      in1->disconnect_inputs(NULL, this);
+      in1->disconnect_inputs(this);
     }
     break;
   }
@@ -3347,6 +3393,8 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
 
   case Op_LoadVector:
   case Op_StoreVector:
+  case Op_LoadVectorGather:
+  case Op_StoreVectorScatter:
     break;
 
   case Op_AddReductionVI:
@@ -3409,7 +3457,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
         }
       }
       if (in2->outcnt() == 0) { // Remove dead node
-        in2->disconnect_inputs(NULL, this);
+        in2->disconnect_inputs(this);
       }
     }
     break;
@@ -3441,7 +3489,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
               wq.push(in);
             }
           }
-          m->disconnect_inputs(NULL, this);
+          m->disconnect_inputs(this);
         }
       }
     }
@@ -3584,7 +3632,7 @@ void Compile::final_graph_reshaping_walk( Node_Stack &nstack, Node *root, Final_
           n->set_req(j, in->in(1));
         }
         if (in->outcnt() == 0) {
-          in->disconnect_inputs(NULL, this);
+          in->disconnect_inputs(this);
         }
       }
     }
@@ -4488,7 +4536,7 @@ int Compile::random() {
 #define RANDOMIZED_DOMAIN_MASK ((1 << (RANDOMIZED_DOMAIN_POW + 1)) - 1)
 bool Compile::randomized_select(int count) {
   assert(count > 0, "only positive");
-  return (os::random() & RANDOMIZED_DOMAIN_MASK) < (RANDOMIZED_DOMAIN / count);
+  return (random() & RANDOMIZED_DOMAIN_MASK) < (RANDOMIZED_DOMAIN / count);
 }
 
 CloneMap&     Compile::clone_map()                 { return _clone_map; }
@@ -4567,24 +4615,41 @@ void Compile::sort_macro_nodes() {
   }
 }
 
-void Compile::print_method(CompilerPhaseType cpt, int level, int idx) {
+void Compile::print_method(CompilerPhaseType cpt, const char *name, int level, int idx) {
   EventCompilerPhase event;
   if (event.should_commit()) {
     CompilerEvent::PhaseEvent::post(event, C->_latest_stage_start_counter, cpt, C->_compile_id, level);
   }
-
 #ifndef PRODUCT
   if (should_print(level)) {
-    char output[1024];
-    if (idx != 0) {
-      jio_snprintf(output, sizeof(output), "%s:%d", CompilerPhaseTypeHelper::to_string(cpt), idx);
-    } else {
-      jio_snprintf(output, sizeof(output), "%s", CompilerPhaseTypeHelper::to_string(cpt));
-    }
-    _printer->print_method(output, level);
+    _printer->print_method(name, level);
   }
 #endif
   C->_latest_stage_start_counter.stamp();
+}
+
+void Compile::print_method(CompilerPhaseType cpt, int level, int idx) {
+  char output[1024];
+#ifndef PRODUCT
+  if (idx != 0) {
+    jio_snprintf(output, sizeof(output), "%s:%d", CompilerPhaseTypeHelper::to_string(cpt), idx);
+  } else {
+    jio_snprintf(output, sizeof(output), "%s", CompilerPhaseTypeHelper::to_string(cpt));
+  }
+#endif
+  print_method(cpt, output, level, idx);
+}
+
+void Compile::print_method(CompilerPhaseType cpt, Node* n, int level) {
+  ResourceMark rm;
+  stringStream ss;
+  ss.print_raw(CompilerPhaseTypeHelper::to_string(cpt));
+  if (n != NULL) {
+    ss.print(": %d %s ", n->_idx, NodeClassNames[n->Opcode()]);
+  } else {
+    ss.print_raw(": NULL");
+  }
+  C->print_method(cpt, ss.as_string(), level);
 }
 
 void Compile::end_method(int level) {

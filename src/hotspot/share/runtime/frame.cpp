@@ -53,9 +53,10 @@
 #include "utilities/decoder.hpp"
 #include "utilities/formatBuffer.hpp"
 
-RegisterMap::RegisterMap(JavaThread *thread, bool update_map) {
+RegisterMap::RegisterMap(JavaThread *thread, bool update_map, bool process_frames) {
   _thread         = thread;
   _update_map     = update_map;
+  _process_frames = process_frames;
   clear();
   debug_only(_update_for_id = NULL;)
 #ifndef PRODUCT
@@ -68,6 +69,7 @@ RegisterMap::RegisterMap(const RegisterMap* map) {
   assert(map != NULL, "RegisterMap must be present");
   _thread                = map->thread();
   _update_map            = map->update_map();
+  _process_frames        = map->process_frames();
   _include_argument_oops = map->include_argument_oops();
   debug_only(_update_for_id = map->_update_for_id;)
   pd_initialize_from(map);
@@ -896,10 +898,11 @@ void frame::oops_interpreted_arguments_do(Symbol* signature, bool has_receiver, 
   finder.oops_do();
 }
 
-void frame::oops_code_blob_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* reg_map) const {
+void frame::oops_code_blob_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* reg_map,
+                              DerivedPointerIterationMode derived_mode) const {
   assert(_cb != NULL, "sanity check");
   if (_cb->oop_maps() != NULL) {
-    OopMapSet::oops_do(this, reg_map, f);
+    OopMapSet::oops_do(this, reg_map, f, derived_mode);
 
     // Preserve potential arguments for a callee. We handle this by dispatching
     // on the codeblob. For c2i, we do
@@ -1035,8 +1038,23 @@ void frame::oops_entry_do(OopClosure* f, const RegisterMap* map) const {
   entry_frame_call_wrapper()->oops_do(f);
 }
 
+void frame::oops_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map,
+                    DerivedPointerIterationMode derived_mode) const {
+  oops_do_internal(f, cf, map, true, derived_mode);
+}
 
-void frame::oops_do_internal(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map, bool use_interpreter_oop_map_cache) const {
+void frame::oops_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map) const {
+#if COMPILER2_OR_JVMCI
+  oops_do_internal(f, cf, map, true, DerivedPointerTable::is_active() ?
+                                     DerivedPointerIterationMode::_with_table :
+                                     DerivedPointerIterationMode::_ignore);
+#else
+  oops_do_internal(f, cf, map, true, DerivedPointerIterationMode::_ignore);
+#endif
+}
+
+void frame::oops_do_internal(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map,
+                             bool use_interpreter_oop_map_cache, DerivedPointerIterationMode derived_mode) const {
 #ifndef PRODUCT
   // simulate GC crash here to dump java thread in error report
   if (CrashGCForDumpingJavaThread) {
@@ -1049,7 +1067,7 @@ void frame::oops_do_internal(OopClosure* f, CodeBlobClosure* cf, const RegisterM
   } else if (is_entry_frame()) {
     oops_entry_do(f, map);
   } else if (CodeCache::contains(pc())) {
-    oops_code_blob_do(f, cf, map);
+    oops_code_blob_do(f, cf, map, derived_mode);
   } else {
     ShouldNotReachHere();
   }
@@ -1086,7 +1104,7 @@ void frame::verify(const RegisterMap* map) const {
 #if COMPILER2_OR_JVMCI
   assert(DerivedPointerTable::is_empty(), "must be empty before verify");
 #endif
-  oops_do_internal(&VerifyOopClosure::verify_oop, NULL, map, false);
+  oops_do_internal(&VerifyOopClosure::verify_oop, NULL, map, false, DerivedPointerIterationMode::_ignore);
 }
 
 
@@ -1219,7 +1237,7 @@ void frame::describe(FrameValues& values, int frame_no) {
 //-----------------------------------------------------------------------------------
 // StackFrameStream implementation
 
-StackFrameStream::StackFrameStream(JavaThread *thread, bool update) : _reg_map(thread, update) {
+StackFrameStream::StackFrameStream(JavaThread *thread, bool update, bool process_frames) : _reg_map(thread, update, process_frames) {
   assert(thread->has_last_Java_frame(), "sanity check");
   _fr = thread->last_frame();
   _is_done = false;
