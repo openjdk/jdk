@@ -2936,6 +2936,31 @@ bool PhaseIdealLoop::process_expensive_nodes() {
   return progress;
 }
 
+#ifdef ASSERT
+bool PhaseIdealLoop::only_has_infinite_loops() {
+  for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
+    IdealLoopTree* lpt = iter.current();
+    if (lpt->is_innermost()) {
+      uint i = 1;
+      for (; i < C->root()->req(); i++) {
+        Node* in = C->root()->in(i);
+        if (in != NULL &&
+            in->Opcode() == Op_Halt &&
+            in->in(0)->is_Proj() &&
+            in->in(0)->in(0)->Opcode() == Op_NeverBranch &&
+            in->in(0)->in(0)->in(0) == lpt->_head) {
+          break;
+        }
+      }
+      if (i == C->root()->req()) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+#endif
+
 
 //=============================================================================
 //----------------------------build_and_optimize-------------------------------
@@ -2991,6 +3016,13 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
     return;
   }
 
+  // Verify that the has_loops() flag set at parse time is consistent
+  // with the just built loop tree. With infinite loops, it could be
+  // that one pass of loop opts only finds infinite loops, clears the
+  // has_loops() flag but adds NeverBranch nodes so the next loop opts
+  // verification pass finds a non empty loop tree. When the back edge
+  // is an exception edge, parsing doesn't set has_loops().
+  assert(_ltree_root->_child == NULL || C->has_loops() || only_has_infinite_loops() || C->has_exception_backedge(), "parsing found no loops but there are some");
   // No loops after all
   if( !_ltree_root->_child && !_verify_only ) C->set_has_loops(false);
 

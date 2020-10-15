@@ -50,6 +50,8 @@
 #include "oops/verifyOopClosure.hpp"
 #include "prims/jvmtiDeferredUpdates.hpp"
 #include "prims/jvmtiThreadState.hpp"
+#include "prims/vectorSupport.hpp"
+#include "prims/methodHandles.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/deoptimization.hpp"
@@ -1054,7 +1056,15 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap*
 #endif // INCLUDE_JVMCI || INCLUDE_AOT
       InstanceKlass* ik = InstanceKlass::cast(k);
       if (obj == NULL) {
+#ifdef COMPILER2
+        if (EnableVectorSupport && VectorSupport::is_vector(ik)) {
+          obj = VectorSupport::allocate_vector(ik, fr, reg_map, sv, THREAD);
+        } else {
+          obj = ik->allocate_instance(THREAD);
+        }
+#else
         obj = ik->allocate_instance(THREAD);
+#endif // COMPILER2
       }
     } else if (k->is_typeArray_klass()) {
       TypeArrayKlass* ak = TypeArrayKlass::cast(k);
@@ -1391,6 +1401,11 @@ void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableAr
       continue;
     }
 #endif // INCLUDE_JVMCI || INCLUDE_AOT
+#ifdef COMPILER2
+    if (EnableVectorSupport && VectorSupport::is_vector(k)) {
+      continue; // skip field reassignment for vectors
+    }
+#endif
     if (k->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(k);
       reassign_fields_by_klass(ik, fr, reg_map, sv, 0, obj(), skip_internal);

@@ -286,10 +286,6 @@ const intx ObjectAlignmentInBytes = 8;
           "Make all non code cache addresses to be unreachable by "         \
           "forcing use of 64bit literal fixups")                            \
                                                                             \
-  notproduct(bool, StressDerivedPointers, false,                            \
-          "Force scavenge when a derived pointer is detected on stack "     \
-          "after rtm call")                                                 \
-                                                                            \
   develop(bool, TraceDerivedPointers, false,                                \
           "Trace traversal of derived pointers on stack")                   \
                                                                             \
@@ -499,9 +495,6 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, ZapFillerObjects, trueInDebug,                              \
           "Zap filler objects with 0xDEAFBABE")                             \
-                                                                            \
-  develop(bool, PrintVMMessages, true,                                      \
-          "Print VM messages on console")                                   \
                                                                             \
   notproduct(uintx, ErrorHandlerTest, 0,                                    \
           "If > 0, provokes an error after VM initialization; the value "   \
@@ -1351,11 +1344,6 @@ const intx ObjectAlignmentInBytes = 8;
   product_pd(bool, ProfileInterpreter,                                      \
           "Profile at the bytecode level during interpretation")            \
                                                                             \
-  develop(bool, TraceProfileInterpreter, false,                             \
-          "Trace profiling at the bytecode level during interpretation. "   \
-          "This outputs the profiling information collected to improve "    \
-          "jit compilation.")                                               \
-                                                                            \
   develop_pd(bool, ProfileTraps,                                            \
           "Profile deoptimization traps at the bytecode level")             \
                                                                             \
@@ -1369,10 +1357,6 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, VerifyDataPointer, trueInDebug,                             \
           "Verify the method data pointer during interpreter profiling")    \
-                                                                            \
-  develop(bool, VerifyCompiledCode, false,                                  \
-          "Include miscellaneous runtime verifications in nmethod code; "   \
-          "default off because it disturbs nmethod size heuristics")        \
                                                                             \
   notproduct(bool, CrashGCForDumpingJavaThread, false,                      \
           "Manually make GC thread crash then dump java stack trace;  "     \
@@ -1580,10 +1564,6 @@ const intx ObjectAlignmentInBytes = 8;
   develop(intx, InlineThrowMaxSize,   200,                                  \
           "Force inlining of throwing methods smaller than this")           \
           range(0, max_jint)                                                \
-                                                                            \
-  develop(intx, ProfilerNodeSize,  1024,                                    \
-          "Size in K to allocate for the Profile Nodes of each thread")     \
-          range(0, 1024)                                                    \
                                                                             \
   product_pd(size_t, MetaspaceSize,                                         \
           "Initial threshold (in bytes) at which a garbage collection "     \
@@ -1826,7 +1806,7 @@ const intx ObjectAlignmentInBytes = 8;
           "File containing compilation replay information"                  \
           "[default: ./replay_pid%p.log] (%p replaced with pid)")           \
                                                                             \
-   product(ccstr, InlineDataFile, NULL,                                     \
+  product(ccstr, InlineDataFile, NULL,                                      \
           "File containing inlining replay information"                     \
           "[default: ./inline_pid%p.log] (%p replaced with pid)")           \
                                                                             \

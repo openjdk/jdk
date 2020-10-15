@@ -53,8 +53,8 @@
           "Randomize worklist traversal in IGVN")                           \
                                                                             \
   product(uint, StressSeed, 0, DIAGNOSTIC,                                  \
-          "Seed for IGVN stress testing (if unset, a random one is "        \
-          "generated")                                                      \
+          "Seed for randomized stress testing (if unset, a random one is "  \
+          "generated)")                                                     \
           range(0, max_juint)                                               \
                                                                             \
   develop(bool, StressMethodHandleLinkerInlining, false,                    \
@@ -742,6 +742,15 @@
                                                                             \
   product(bool, UseMontgomerySquareIntrinsic, false, DIAGNOSTIC,            \
           "Enables intrinsification of BigInteger.montgomerySquare()")      \
+                                                                            \
+  product(bool, EnableVectorSupport, false, EXPERIMENTAL,                   \
+          "Enables VectorSupport intrinsics")                               \
+                                                                            \
+  product(bool, EnableVectorReboxing, false, EXPERIMENTAL,                  \
+          "Enables reboxing of vectors")                                    \
+                                                                            \
+  product(bool, EnableVectorAggressiveReboxing, false, EXPERIMENTAL,        \
+          "Enables aggressive reboxing of vectors")                         \
                                                                             \
   product(bool, UseTypeSpeculation, true,                                   \
           "Speculatively propagate types from profiles")                    \

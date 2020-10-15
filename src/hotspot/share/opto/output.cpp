@@ -892,6 +892,10 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
                                                       ? Location::int_in_long : Location::normal ));
     } else if( t->base() == Type::NarrowOop ) {
       array->append(new_loc_value( C->regalloc(), regnum, Location::narrowoop ));
+    } else if ( t->base() == Type::VectorS || t->base() == Type::VectorD ||
+                t->base() == Type::VectorX || t->base() == Type::VectorY ||
+                t->base() == Type::VectorZ) {
+      array->append(new_loc_value( C->regalloc(), regnum, Location::vector ));
     } else {
       array->append(new_loc_value( C->regalloc(), regnum, C->regalloc()->is_oop(local) ? Location::oop : Location::normal ));
     }

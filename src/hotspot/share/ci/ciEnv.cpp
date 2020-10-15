@@ -59,6 +59,7 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "prims/methodHandles.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/reflection.hpp"

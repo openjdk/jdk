@@ -395,7 +395,7 @@ public class TagletWriterImpl extends TagletWriter {
 
                     @Override
                     public String visitType(TypeElement e, Void p) {
-                        return utils.getTypeElementName(e, true)
+                        return utils.getTypeElementKindName(e, true)
                                 + " " + utils.getFullyQualifiedName(e);
                     }
 

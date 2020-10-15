@@ -3232,7 +3232,6 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
   }
 
   UNSUPPORTED_OPTION(ProfileInterpreter);
-  NOT_PRODUCT(UNSUPPORTED_OPTION(TraceProfileInterpreter));
 #endif
 
 
@@ -4196,7 +4195,23 @@ jint Arguments::apply_ergo() {
   if (!UseBiasedLocking) {
     UseOptoBiasInlining = false;
   }
-#endif
+
+  if (!EnableVectorSupport) {
+    if (!FLAG_IS_DEFAULT(EnableVectorReboxing) && EnableVectorReboxing) {
+      warning("Disabling EnableVectorReboxing since EnableVectorSupport is turned off.");
+    }
+    FLAG_SET_DEFAULT(EnableVectorReboxing, false);
+
+    if (!FLAG_IS_DEFAULT(EnableVectorAggressiveReboxing) && EnableVectorAggressiveReboxing) {
+      if (!EnableVectorReboxing) {
+        warning("Disabling EnableVectorAggressiveReboxing since EnableVectorReboxing is turned off.");
+      } else {
+        warning("Disabling EnableVectorAggressiveReboxing since EnableVectorSupport is turned off.");
+      }
+    }
+    FLAG_SET_DEFAULT(EnableVectorAggressiveReboxing, false);
+  }
+#endif // COMPILER2
 
   if (FLAG_IS_CMDLINE(DiagnoseSyncOnPrimitiveWrappers)) {
     if (DiagnoseSyncOnPrimitiveWrappers == ObjectSynchronizer::LOG_WARNING && !log_is_enabled(Info, primitivewrappers)) {
