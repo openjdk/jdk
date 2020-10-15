@@ -2420,6 +2420,29 @@ void Node::ensure_control_or_add_prec(Node* c) {
   }
 }
 
+bool Node::is_dead_loop_safe() const {
+  if (is_Phi()) {
+    return true;
+  }
+  if (is_Proj() && in(0) == NULL)  {
+    return true;
+  }
+  if ((_flags & (Flag_is_dead_loop_safe | Flag_is_Con)) != 0) {
+    if (!is_Proj()) {
+      return true;
+    }
+    if (in(0)->is_Allocate()) {
+      return false;
+    }
+    // MemNode::can_see_stored_value() peeks through the boxing call
+    if (in(0)->is_CallStaticJava() && in(0)->as_CallStaticJava()->is_boxing_method()) {
+      return false;
+    }
+    return true;
+  }
+  return false;
+}
+
 //=============================================================================
 //------------------------------yank-------------------------------------------
 // Find and remove

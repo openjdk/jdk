@@ -24,13 +24,11 @@
 #ifndef SHARE_GC_Z_ZROOTSITERATOR_HPP
 #define SHARE_GC_Z_ZROOTSITERATOR_HPP
 
+#include "classfile/classLoaderDataGraph.hpp"
 #include "gc/shared/oopStorageSetParState.hpp"
-#include "gc/shared/suspendibleThreadSet.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
-#include "runtime/thread.hpp"
 #include "runtime/threadSMR.hpp"
-#include "utilities/globalDefinitions.hpp"
 
 class ZRootsIteratorClosure;
 
