@@ -56,6 +56,7 @@ public class TestCopyFiles extends JavadocTester {
                     "Hello World" (phi-WINDOW-TITLE-phi)""",
                 "phi-TOP-phi",
                 // check top navbar
+                "phi-HEADER-phi",
                 """
                     <a href="../../module-summary.html">Module</a>""",
                 """
@@ -66,12 +67,12 @@ public class TestCopyFiles extends JavadocTester {
                     <a href="../../../deprecated-list.html">Deprecated</a>""",
                 """
                     <a href="../../../index-all.html">Index</a>""",
-                "phi-HEADER-phi",
                 """
                     In a named module acme.module and named package <a href="../package-summary.html"><code>p</code></a>.""",
                 "<dt>Since:</",
                 "forever",
                 // check bottom navbar
+                "phi-FOOTER-phi",
                 """
                     <a href="../../module-summary.html">Module</a>""",
                 """
@@ -82,7 +83,6 @@ public class TestCopyFiles extends JavadocTester {
                     <a href="../../../deprecated-list.html">Deprecated</a>""",
                 """
                     <a href="../../../index-all.html">Index</a>""",
-                "phi-FOOTER-phi",
                 "phi-BOTTOM-phi"
         );
     }
@@ -104,6 +104,7 @@ public class TestCopyFiles extends JavadocTester {
                     "Hello World" (phi-WINDOW-TITLE-phi)""",
                 "phi-TOP-phi",
                 // check top navbar
+                "phi-HEADER-phi",
                 """
                     <a href="../../module-summary.html">Module</a>""",
                 """
@@ -114,12 +115,12 @@ public class TestCopyFiles extends JavadocTester {
                     <a href="../../../deprecated-list.html">Deprecated</a>""",
                 """
                     <a href="../../../index-all.html">Index</a>""",
-                "phi-HEADER-phi",
                 """
                     In a named module acme.module and named package <a href="../package-summary.html"><code>p</code></a>.""",
                 "<dt>Since:</",
                 "forever",
                 // check bottom navbar
+                "phi-FOOTER-phi",
                 """
                     <a href="../../module-summary.html">Module</a>""",
                 """
@@ -130,7 +131,6 @@ public class TestCopyFiles extends JavadocTester {
                     <a href="../../../deprecated-list.html">Deprecated</a>""",
                 """
                     <a href="../../../index-all.html">Index</a>""",
-                "phi-FOOTER-phi",
                 "phi-BOTTOM-phi"
         );
 
@@ -139,6 +139,7 @@ public class TestCopyFiles extends JavadocTester {
                 "SubSubReadme (phi-WINDOW-TITLE-phi)",
                 "phi-TOP-phi",
                 // check top navbar
+                "phi-HEADER-phi",
                 """
                     <a href="../../../../module-summary.html">Module</a>""",
                 """
@@ -149,9 +150,9 @@ public class TestCopyFiles extends JavadocTester {
                     <a href="../../../../../deprecated-list.html">Deprecated</a>""",
                 """
                     <a href="../../../../../index-all.html">Index</a>""",
-                "phi-HEADER-phi",
                 "SubSubReadme.html at third level of doc-file directory.",
                 // check bottom navbar
+                "phi-FOOTER-phi",
                 """
                     <a href="../../../../module-summary.html">Module</a>""",
                 """
@@ -162,7 +163,6 @@ public class TestCopyFiles extends JavadocTester {
                     <a href="../../../../../deprecated-list.html">Deprecated</a>""",
                 """
                     <a href="../../../../../index-all.html">Index</a>""",
-                "phi-FOOTER-phi",
                 "phi-BOTTOM-phi"
         );
     }
