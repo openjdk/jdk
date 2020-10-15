@@ -34,6 +34,7 @@ import static jdk.vm.ci.aarch64.AArch64.r7;
 import static jdk.vm.ci.aarch64.AArch64.rscratch1;
 import static jdk.vm.ci.aarch64.AArch64.rscratch2;
 import static jdk.vm.ci.aarch64.AArch64.r12;
+import static jdk.vm.ci.aarch64.AArch64.r18;
 import static jdk.vm.ci.aarch64.AArch64.r27;
 import static jdk.vm.ci.aarch64.AArch64.r28;
 import static jdk.vm.ci.aarch64.AArch64.r29;
@@ -122,21 +123,28 @@ public class AArch64HotSpotRegisterConfig implements RegisterConfig {
      */
     public static final Register metaspaceMethodRegister = r12;
 
+    public static final Register platformRegister = r18;
     public static final Register heapBaseRegister = r27;
     public static final Register threadRegister = r28;
     public static final Register fp = r29;
 
     private static final RegisterArray reservedRegisters = new RegisterArray(rscratch1, rscratch2, threadRegister, fp, lr, r31, zr, sp);
 
-    private static RegisterArray initAllocatable(Architecture arch, boolean reserveForHeapBase) {
+    private static RegisterArray initAllocatable(Architecture arch, boolean reserveForHeapBase, boolean linuxOs) {
         RegisterArray allRegisters = arch.getAvailableValueRegisters();
-        Register[] registers = new Register[allRegisters.size() - reservedRegisters.size() - (reserveForHeapBase ? 1 : 0)];
+        Register[] registers = new Register[allRegisters.size() - reservedRegisters.size() - (reserveForHeapBase ? 1 : 0) - (!linuxOs ? 1 : 0)];
         List<Register> reservedRegistersList = reservedRegisters.asList();
 
         int idx = 0;
         for (Register reg : allRegisters) {
             if (reservedRegistersList.contains(reg)) {
                 // skip reserved registers
+                continue;
+            }
+            if (!linuxOs && reg.equals(platformRegister)) {
+                // ARMv8 defines r18 as being available to the platform ABI.
+                // Windows and Darwin use it for such. Linux doesn't assign it
+                // and thus r18 can be used as an additional register.
                 continue;
             }
             assert !(reg.equals(threadRegister) || reg.equals(fp) || reg.equals(lr) || reg.equals(r31) || reg.equals(zr) || reg.equals(sp));
@@ -152,8 +160,8 @@ public class AArch64HotSpotRegisterConfig implements RegisterConfig {
         return new RegisterArray(registers);
     }
 
-    public AArch64HotSpotRegisterConfig(TargetDescription target, boolean useCompressedOops) {
-        this(target, initAllocatable(target.arch, useCompressedOops));
+    public AArch64HotSpotRegisterConfig(TargetDescription target, boolean useCompressedOops, boolean linuxOs) {
+        this(target, initAllocatable(target.arch, useCompressedOops, linuxOs));
         assert callerSaved.size() >= allocatable.size();
     }
 
