@@ -338,29 +338,6 @@ public enum ChronoField implements TemporalField {
      */
     AMPM_OF_DAY("AmPmOfDay", HALF_DAYS, DAYS, ValueRange.of(0, 1), "dayperiod"),
     /**
-     * The flexible-period-of-day.
-     * <p>
-     * This field represents the flexible period of the day, which implements the
-     * CLDR's
-     * <a href="http://www.unicode.org/reports/tr35/tr35-dates.html#Variable_periods">Variable periods</a>.
-     * The values are {@code MINUTE_OF_DAY} representing the flexible periods.
-     * <p>
-     * When formatting this field, the field value is translated to
-     * flexible day period, which is depending on the locale of the formatter, then
-     * an appropriate locale dependent text is output.
-     * <p>
-     * When parsing this field it behaves equivalent to the following:
-     * The value is validated from 0 to 24 * 60 - 1 in strict and smart mode.
-     * In lenient mode the value is not validated. If neither {@code MINUTE_OF_DAY}
-     * nor {@code HOUR_OF_DAY} is present, the value is derived from the midpoint
-     * time of the flexible day period for the locale.
-     * For example, if the field represents "morning1", and morning1 is defined as
-     * 06:00 to 12:00 (exclusive), {@code 540}
-     * will be set to the {@code MINUTE_OF_DAY}. For more detail, refer to CLDR's
-     * <a href="http://www.unicode.org/reports/tr35/tr35-dates.html#Parsing_Day_Periods">Parsing Day Periods</a>.
-     */
-    FLEXIBLE_PERIOD_OF_DAY("FlexiblePeriodOfDay", MINUTES, DAYS, ValueRange.of(0, (24 * 60) - 1), "flexible_dayperiod"),
-    /**
      * The day-of-week, such as Tuesday.
      * <p>
      * This represents the standard concept of the day of the week.

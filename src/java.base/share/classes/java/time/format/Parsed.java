@@ -64,7 +64,6 @@ package java.time.format;
 import static java.time.temporal.ChronoField.AMPM_OF_DAY;
 import static java.time.temporal.ChronoField.CLOCK_HOUR_OF_AMPM;
 import static java.time.temporal.ChronoField.CLOCK_HOUR_OF_DAY;
-import static java.time.temporal.ChronoField.FLEXIBLE_PERIOD_OF_DAY;
 import static java.time.temporal.ChronoField.HOUR_OF_AMPM;
 import static java.time.temporal.ChronoField.HOUR_OF_DAY;
 import static java.time.temporal.ChronoField.INSTANT_SECONDS;
@@ -156,6 +155,10 @@ final class Parsed implements TemporalAccessor {
      * The excess period from time-only parsing.
      */
     Period excessDays = Period.ZERO;
+    /**
+     * The parsed day period (in minute-of-day).
+     */
+    long dayPeriod = -1L;
 
     /**
      * Creates an instance.
@@ -171,6 +174,7 @@ final class Parsed implements TemporalAccessor {
         Parsed cloned = new Parsed();
         cloned.fieldValues.putAll(this.fieldValues);
         cloned.zone = this.zone;
+        cloned.dayPeriod= this.dayPeriod;
         cloned.chrono = this.chrono;
         cloned.leapSecond = this.leapSecond;
         return cloned;
@@ -439,19 +443,15 @@ final class Parsed implements TemporalAccessor {
             updateCheckConflict(SECOND_OF_DAY, MINUTE_OF_HOUR, (sod / 60) % 60);
             updateCheckConflict(SECOND_OF_DAY, SECOND_OF_MINUTE, sod % 60);
         }
-        if (fieldValues.containsKey(FLEXIBLE_PERIOD_OF_DAY)) {
-            long fpd = fieldValues.remove(FLEXIBLE_PERIOD_OF_DAY);
-            if (resolverStyle != ResolverStyle.LENIENT) {
-                FLEXIBLE_PERIOD_OF_DAY.checkValidValue(fpd);
-            }
+        if (dayPeriod >= 0) {
             if (!fieldValues.containsKey(MINUTE_OF_DAY) &&
                 !fieldValues.containsKey(HOUR_OF_DAY)) {
-                updateCheckConflict(FLEXIBLE_PERIOD_OF_DAY, MINUTE_OF_DAY, fpd);
+                fieldValues.put(MINUTE_OF_DAY, dayPeriod);
             }
-            // FlexiblePeriod precedes AmPm. Override it if exists without conflict
+            // dayPeriod precedes AmPm. Override it if exists without conflict
             // checking as for, e.g., "at night" can either be "AM" or "PM".
             if (fieldValues.containsKey(AMPM_OF_DAY)) {
-                fieldValues.put(AMPM_OF_DAY, fpd / 720);
+                fieldValues.put(AMPM_OF_DAY, dayPeriod / 720);
             }
         }
         if (fieldValues.containsKey(MINUTE_OF_DAY)) {

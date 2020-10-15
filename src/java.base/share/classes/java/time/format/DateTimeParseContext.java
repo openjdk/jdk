@@ -424,6 +424,15 @@ final class DateTimeParseContext {
         currentParsed().leapSecond = true;
     }
 
+    /**
+     * Stores the parsed day period.
+     *
+     * @param dayPeriod the parsed day period in minute-of-day
+     */
+    void setParsedDayPeriod(long dayPeriod) {
+        currentParsed().dayPeriod = dayPeriod;
+    }
+
     //-----------------------------------------------------------------------
     /**
      * Returns a string version of the context for debugging.
