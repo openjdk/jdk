@@ -32,9 +32,7 @@ import jdk.test.lib.Asserts;
  * @bug 8252219
  * @requires vm.debug == true & vm.compiler2.enabled
  * @summary Tests that compilations with the same seed yield the same IGVN
- *          trace, and compilations with different seeds yield different IGVN
- *          traces (the latter does not necessarily hold for all pairs of
- *          seeds).
+ *          trace.
  * @library /test/lib /
  * @run driver compiler.debug.TestStressIGVN
  */
@@ -63,8 +61,6 @@ public class TestStressIGVN {
         if (args.length == 0) {
             Asserts.assertEQ(igvnTrace(10), igvnTrace(10),
                 "got different IGVN traces for the same seed");
-            Asserts.assertNE(igvnTrace(10), igvnTrace(20),
-                "got the same IGVN trace for different seeds");
         } else if (args.length > 0) {
             sum(Integer.parseInt(args[0]));
         }

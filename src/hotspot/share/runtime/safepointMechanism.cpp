@@ -80,7 +80,7 @@ void SafepointMechanism::process(JavaThread *thread) {
     // Any load in ::block must not pass the global poll load.
     // Otherwise we might load an old safepoint counter (for example).
     OrderAccess::loadload();
-    SafepointSynchronize::block(thread);
+    SafepointSynchronize::block(thread); // Recursive
   }
 
   // The call to start_processing fixes the thread's oops and the first few frames.
@@ -92,7 +92,7 @@ void SafepointMechanism::process(JavaThread *thread) {
   StackWatermarkSet::start_processing(thread, StackWatermarkKind::gc);
 
   if (thread->handshake_state()->should_process()) {
-    thread->handshake_state()->process_by_self(); // Recursive
+    thread->handshake_state()->process_by_self();
   }
 }
 

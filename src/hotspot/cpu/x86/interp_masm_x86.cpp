@@ -988,7 +988,7 @@ void InterpreterMacroAssembler::remove_activation(
   const Register rmon    = LP64_ONLY(c_rarg1) NOT_LP64(rcx);
                               // monitor pointers need different register
                               // because rdx may have the result in it
-  NOT_LP64(get_thread(rcx);)
+  NOT_LP64(get_thread(rthread);)
 
   // The below poll is for the stack watermark barrier. It allows fixing up frames lazily,
   // that would normally not be safe to use. Such bad returns into unsafe territory of
@@ -1001,6 +1001,7 @@ void InterpreterMacroAssembler::remove_activation(
   push(state);
   call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind));
   pop(state);
+  NOT_LP64(get_thread(rthread);) // call_VM clobbered it, restore
   bind(fast_path);
 
   // get the value of _do_not_unlock_if_synchronized into rdx

@@ -249,13 +249,13 @@ class StringConcat : public ResourceObj {
 
       _stringopts->gvn()->transform(call);
       C->gvn_replace_by(uct, call);
-      uct->disconnect_inputs(NULL, C);
+      uct->disconnect_inputs(C);
     }
   }
 
   void cleanup() {
     // disconnect the hook node
-    _arguments->disconnect_inputs(NULL, _stringopts->C);
+    _arguments->disconnect_inputs(_stringopts->C);
   }
 };
 
@@ -373,7 +373,7 @@ void StringConcat::eliminate_initialize(InitializeNode* init) {
     C->gvn_replace_by(mem_proj, mem);
   }
   C->gvn_replace_by(init, C->top());
-  init->disconnect_inputs(NULL, C);
+  init->disconnect_inputs(C);
 }
 
 Node_List PhaseStringOpts::collect_toString_calls() {
@@ -1983,6 +1983,6 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
   kit.replace_call(sc->end(), result);
 
   // Unhook any hook nodes
-  string_sizes->disconnect_inputs(NULL, C);
+  string_sizes->disconnect_inputs(C);
   sc->cleanup();
 }

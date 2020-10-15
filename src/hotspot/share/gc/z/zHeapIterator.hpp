@@ -52,7 +52,6 @@ private:
   ZLock                              _bitmaps_lock;
   ZHeapIteratorQueues                _queues;
   ZHeapIteratorArrayQueues           _array_queues;
-  ZRootsIterator                     _roots;
   ZConcurrentRootsIteratorClaimOther _concurrent_roots;
   ZWeakRootsIterator                 _weak_roots;
   ZConcurrentWeakRootsIterator       _concurrent_weak_roots;

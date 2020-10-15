@@ -35,7 +35,6 @@
 #include "gc/z/zRelocationSetSelector.inline.hpp"
 #include "gc/z/zResurrection.hpp"
 #include "gc/z/zStat.hpp"
-#include "gc/z/zTask.hpp"
 #include "gc/z/zThread.inline.hpp"
 #include "gc/z/zVerify.hpp"
 #include "gc/z/zWorkers.inline.hpp"
