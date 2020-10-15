@@ -37,10 +37,6 @@ address* ArchivePtrMarker::_ptr_base;
 address* ArchivePtrMarker::_ptr_end;
 bool ArchivePtrMarker::_compacted;
 
-// Metaspace::allocate() requires that all blocks must be aligned with KlassAlignmentInBytes.
-// We enforce the same alignment rule in blocks allocated from the shared space.
-const int SharedSpaceObjectAlignment = KlassAlignmentInBytes;
-
 void ArchivePtrMarker::initialize(CHeapBitMap* ptrmap, address* ptr_base, address* ptr_end) {
   assert(_ptrmap == NULL, "initialize only once");
   _ptr_base = ptr_base;
