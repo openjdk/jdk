@@ -214,7 +214,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
             pre.add(span);
         }
         if (utils.isRecord(typeElement)) {
-            pre.add(getRecordComponents(typeElement));
+            pre.add(getRecordComponents());
         }
         if (!utils.isAnnotationType(typeElement)) {
             if (!utils.isInterface(typeElement)) {
@@ -280,7 +280,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     }
 
     @SuppressWarnings("preview")
-    private Content getRecordComponents(TypeElement typeElem) {
+    private Content getRecordComponents() {
         Content content = new ContentBuilder();
         content.add("(");
         String sep = "";

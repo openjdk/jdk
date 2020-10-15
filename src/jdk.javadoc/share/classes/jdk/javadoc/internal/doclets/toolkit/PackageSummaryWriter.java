@@ -139,6 +139,14 @@ public interface PackageSummaryWriter {
     void addPackageTags(Content packageContentTree);
 
     /**
+     * Adds the package signature.
+     *
+     * @param packageContentTree the content tree to which the package signature
+     *                           will be added
+     */
+    void addPackageSignature(Content packageContentTree);
+
+    /**
      * Adds the tag information from the "packages.html" or "package-info.java" file to the
      * documentation tree.
      *
