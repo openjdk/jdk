@@ -61,7 +61,7 @@ import java.nio.charset.StandardCharsets;
  * the {@code formatHex} methods include {@link #formatHex(byte[]) formatHex(byte[])}
  * and {@link #formatHex(Appendable, byte[]) formatHex(Appendable, byte[])}.
  * The formatted output can be appended to {@link StringBuilder}, {@link System#out},
- * {@link java.io.Writer}, and {@link java.io.PrintStream}, all of which are {@link Appendable}s.
+ * {@link java.io.Writer}, and {@link java.io.PrintStream}, all of which are {@link Appendable}.
  * Each byte value is formatted as the prefix, two hexadecimal characters from the
  * uppercase or lowercase digits, and the suffix.
  * A delimiter appears after each formatted value, except the last.
@@ -298,7 +298,7 @@ public final class HexFormat {
      * A delimiter appears after each formatted value, except the last.
      *
      * The behavior is equivalent to
-     * {@link #formatHex(byte[], int, int) format(bytes, 0, bytes.length))}.
+     * {@link #formatHex(byte[], int, int) formatHex(bytes, 0, bytes.length))}.
      *
      * @param bytes a non-null array of bytes
      * @return a string hexadecimal formatting of the byte array
@@ -342,7 +342,7 @@ public final class HexFormat {
      * {@linkplain #isUpperCase selected from} uppercase or lowercase digits, and the suffix.
      * A delimiter appears after each formatted value, except the last.
      * The behavior is equivalent to
-     * {@link #formatHex(byte[]) out.append(format(bytes))}.
+     * {@link #formatHex(byte[]) out.append(formatHex(bytes))}.
      *
      * @param <A> The type of Appendable
      * @param out an Appendable, non-null
@@ -360,7 +360,7 @@ public final class HexFormat {
      * {@linkplain #isUpperCase selected from} uppercase or lowercase digits, and the suffix.
      * A delimiter appears after each formatted value, except the last.
      * The behavior is equivalent to
-     * {@link #formatHex(byte[], int, int)  out.append(format(bytes, index, length))}.
+     * {@link #formatHex(byte[], int, int)  out.append(formatHex(bytes, index, length))}.
      *
      * @param <A> The type of Appendable
      * @param out an Appendable, non-null
