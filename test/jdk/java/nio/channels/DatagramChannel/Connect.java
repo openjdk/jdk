@@ -34,6 +34,7 @@ import java.nio.channels.*;
 import java.nio.charset.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.stream.Stream;
 
 public class Connect {
 
@@ -49,14 +50,23 @@ public class Connect {
         invoke(a, r);
     }
 
-    static void invoke(Runnable reader, Runnable writer) {
+    static void invoke(Runnable reader, Runnable writer) throws CompletionException {
         CompletableFuture<Void> f1 = CompletableFuture.runAsync(writer);
         CompletableFuture<Void> f2 = CompletableFuture.runAsync(reader);
         wait(f1, f2);
     }
 
+    // This method waits until one of the given CompletableFutures completes exceptionally. In which case, it stops waiting for the other futures and
+    // throws a CompletionException. Otherwise, will wait for all futures to complete successfully.
     private static void wait(CompletableFuture<?>... futures) throws CompletionException {
-        CompletableFuture<?> future = CompletableFuture.anyOf(futures);
+        CompletableFuture<?> future = CompletableFuture.allOf(futures);
+        Stream.of(futures)
+                .forEach(f -> {
+                    f.exceptionally(ex -> {
+                        future.completeExceptionally(ex);
+                        return null;
+                    });
+                });
         future.join();
     }
 
@@ -103,7 +113,6 @@ public class Connect {
                 dc.disconnect();
             } catch (Exception ex) {
                 log.println("Actor threw exception: " + ex);
-                ex.printStackTrace(log);
                 throw new RuntimeException(ex);
             } finally {
                 log.println("Actor finished");
@@ -144,7 +153,6 @@ public class Connect {
                 dc.close();
             } catch (Exception ex) {
                 log.println("Reactor threw exception: " + ex);
-                ex.printStackTrace(log);
                 throw new RuntimeException(ex);
             } finally {
                 log.println("Reactor finished");
