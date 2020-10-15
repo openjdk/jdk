@@ -27,7 +27,9 @@ package jdk.random;
 
 import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.Map;
 import java.util.random.RandomGenerator;
+import java.util.random.RandomGenerator.RandomGeneratorProperty;
 import java.util.random.RandomSupport;
 import java.util.random.RandomSupport.AbstractArbitrarilyJumpableGenerator;
 
@@ -92,11 +94,6 @@ public final class MRG32k3a extends AbstractArbitrarilyJumpableGenerator {
      * some custom spliterator classes needed for stream methods.
      */
 
-    /**
-     * Group name.
-     */
-    private static final String GROUP = "MRG";
-
     private final static double NORM1 = 2.328306549295728e-10;
     private final static double NORM2 = 2.328318824698632e-10;
     private final static double M1 =   4294967087.0;
@@ -106,6 +103,36 @@ public final class MRG32k3a extends AbstractArbitrarilyJumpableGenerator {
     private final static double A21 =      527612.0;
     private final static double A23N =    1370589.0;
     private final static int M1_DEFICIT = 209;
+
+    /*
+     * The period of this generator..
+     */
+    private static final BigInteger PERIOD = calculateThePeriod();
+
+    /*
+     * Number of bits used to maintain state of seed.
+     */
+    private static final int STATE_BITS = 191;
+
+    /*
+     * The equidistribution of the algorithm.
+     */
+    private static final int EQUIDISTRIBUTION = 0;
+
+    /*
+     * RandomGenerator properties.
+     */
+    static Map<RandomGeneratorProperty, Object> getProperties() {
+        return Map.ofEntries(
+                Map.entry(RandomGeneratorProperty.NAME, "MRG32k3a"),
+                Map.entry(RandomGeneratorProperty.GROUP, "MRG"),
+                Map.entry(RandomGeneratorProperty.PERIOD, PERIOD),
+                Map.entry(RandomGeneratorProperty.STATE_BITS, STATE_BITS),
+                Map.entry(RandomGeneratorProperty.EQUIDISTRIBUTION, EQUIDISTRIBUTION),
+                Map.entry(RandomGeneratorProperty.IS_STOCHASTIC, false),
+                Map.entry(RandomGeneratorProperty.IS_HARDWARE, false)
+        );
+    }
 
     /**
      * The per-instance state.
@@ -354,36 +381,6 @@ public final class MRG32k3a extends AbstractArbitrarilyJumpableGenerator {
         BigInteger t1 = bigm1.multiply(bigm1).multiply(bigm1).subtract(BigInteger.ONE);
         BigInteger t2 = bigm2.multiply(bigm2).multiply(bigm2).subtract(BigInteger.ONE);
         return t1.shiftRight(1).multiply(t2);
-    }
-
-    /*
-     * The period of this generator..
-     */
-    private static final BigInteger PERIOD = calculateThePeriod();
-
-    /*
-     * Number of bits used to maintain state of seed.
-     */
-    private static final int STATE_BITS = 191;
-
-    /*
-     * The equidistribution of the algorithm.
-     */
-    private static final int EQUIDISTRIBUTION = 0;
-
-    @Override
-    public int stateBits() {
-        return STATE_BITS;
-    }
-
-    @Override
-    public int equidistribution() {
-        return EQUIDISTRIBUTION;
-    }
-
-    @Override
-    public BigInteger period() {
-        return PERIOD;
     }
 
     // Jump and leap distances recommended in Section 1.3 of this paper:

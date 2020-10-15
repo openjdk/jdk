@@ -26,7 +26,7 @@
 package java.util.random;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.random.RandomGenerator.ArbitrarilyJumpableGenerator;
 import java.util.random.RandomGenerator.JumpableGenerator;
 import java.util.random.RandomGenerator.LeapableGenerator;
+import java.util.random.RandomGenerator.RandomGeneratorProperty;
 import java.util.random.RandomGenerator.SplittableGenerator;
 import java.util.random.RandomGenerator.StreamableGenerator;
 import java.util.ServiceLoader;
@@ -67,12 +68,17 @@ public class RandomGeneratorFactory<T> {
     /**
      * Map of provider classes.
      */
-    private static Map<String, Provider<? extends RandomGenerator>> providerMap;
+    private static Map<String, Provider<? extends RandomGenerator>> factoryMap;
 
     /**
      * Instance provider class of random number algorithm.
      */
     private final Provider<? extends RandomGenerator> provider;
+
+    /**
+     * Map of properties for provider.
+     */
+    private Map<RandomGeneratorProperty, Object> properties;
 
     /**
      * Default provider constructor.
@@ -99,15 +105,15 @@ public class RandomGeneratorFactory<T> {
     }
 
     /**
-     * Returns the provider map, lazily constructing map on first call.
+     * Returns the factory map, lazily constructing map on first call.
      *
-     * @return Map of provider classes.
+     * @return Map of RandomGeneratorFactory classes.
      */
-    private static Map<String, Provider<? extends RandomGenerator>> getProviderMap() {
-        if (providerMap == null) {
+    private static Map<String, Provider<? extends RandomGenerator>> getFactoryMap() {
+        if (factoryMap == null) {
             synchronized (RandomGeneratorFactory.class) {
-                if (providerMap == null) {
-                    providerMap =
+                if (factoryMap == null) {
+                    factoryMap =
                         ServiceLoader
                             .load(RandomGenerator.class)
                             .stream()
@@ -117,7 +123,40 @@ public class RandomGeneratorFactory<T> {
                 }
             }
         }
-        return providerMap;
+        return factoryMap;
+    }
+
+    /**
+     * Return the properties map for the specified provider.
+     *
+     * @param provider  provider to locate.
+     *
+     * @return properties map for the specified provider.
+     */
+    @SuppressWarnings("unchecked")
+    private Map<RandomGeneratorProperty, Object> getProperties() {
+        if (properties == null) {
+            synchronized (provider) {
+                if (properties == null) {
+                    try {
+                        Method getProperties = provider.type().getDeclaredMethod("getProperties");
+                        PrivilegedExceptionAction<Map<RandomGeneratorProperty, Object>> getAction = () -> {
+                            getProperties.setAccessible(true);
+                            return (Map<RandomGeneratorProperty, Object>)getProperties.invoke(null);
+                        };
+                        return AccessController.doPrivileged(getAction);
+                    } catch (SecurityException | NoSuchMethodException | PrivilegedActionException ex) {
+                        return Map.of();
+                    }
+                }
+            }
+        }
+
+        return properties;
+    }
+
+    private Object getProperty(RandomGeneratorProperty property, Object defaultValue) {
+        return getProperties().getOrDefault(property, defaultValue);
     }
 
     /**
@@ -157,8 +196,8 @@ public class RandomGeneratorFactory<T> {
     private static Provider<? extends RandomGenerator> findProvider(String name,
                                                                     Class<? extends RandomGenerator> category)
             throws IllegalArgumentException {
-        Map<String, Provider<? extends RandomGenerator>> pm = getProviderMap();
-        Provider<? extends RandomGenerator> provider = pm.get(name.toUpperCase());
+        Map<String, Provider<? extends RandomGenerator>> fm = getFactoryMap();
+        Provider<? extends RandomGenerator> provider = fm.get(name.toUpperCase());
         if (!isSubclass(category, provider)) {
             throw new IllegalArgumentException(name + " is an unknown random number generator");
         }
@@ -174,8 +213,8 @@ public class RandomGeneratorFactory<T> {
      * @return Stream of matching Providers.
      */
     static <T> Stream<RandomGeneratorFactory<T>> all(Class<? extends RandomGenerator> category) {
-        Map<String, Provider<? extends RandomGenerator>> pm = getProviderMap();
-        return pm.values()
+        Map<String, Provider<? extends RandomGenerator>> fm = getFactoryMap();
+        return fm.values()
                  .stream()
                  .filter(p -> isSubclass(category, p))
                  .map(RandomGeneratorFactory::new);
@@ -274,16 +313,7 @@ public class RandomGeneratorFactory<T> {
      * @return Group name of the algorithm.
      */
     public String group() {
-        try {
-           Field groupField = provider.type().getDeclaredField("GROUP");
-           PrivilegedExceptionAction<String> getAction = () -> {
-               groupField.setAccessible(true);
-               return (String)groupField.get(null);
-           };
-           return AccessController.doPrivileged(getAction);
-        } catch (SecurityException | NoSuchFieldException | PrivilegedActionException ex) {
-            return "Legacy";
-        }
+        return (String)getProperty(RandomGeneratorProperty.GROUP, "Legacy");
     }
 
     /**
@@ -292,16 +322,7 @@ public class RandomGeneratorFactory<T> {
      * @return number of bits used to maintain state of seed.
      */
     public int stateBits() {
-        try {
-            Field stateBitsField = provider.type().getDeclaredField("STATE_BITS");
-            PrivilegedExceptionAction<Integer> getAction = () -> {
-                stateBitsField.setAccessible(true);
-                return (Integer)stateBitsField.get(null);
-            };
-            return AccessController.doPrivileged(getAction);
-        } catch (SecurityException | NoSuchFieldException | PrivilegedActionException ex) {
-            return Integer.MAX_VALUE;
-        }
+        return (Integer)getProperty(RandomGeneratorProperty.STATE_BITS, Integer.MAX_VALUE);
     }
 
     /**
@@ -310,16 +331,7 @@ public class RandomGeneratorFactory<T> {
      * @return the equidistribution of the algorithm.
      */
     public int equidistribution() {
-        try {
-            Field equidistributionField = provider.type().getDeclaredField("EQUIDISTRIBUTION");
-            PrivilegedExceptionAction<Integer> getAction = () -> {
-                equidistributionField.setAccessible(true);
-                return (Integer)equidistributionField.get(null);
-            };
-            return AccessController.doPrivileged(getAction);
-        } catch (SecurityException | NoSuchFieldException | PrivilegedActionException ex) {
-            return Integer.MAX_VALUE;
-        }
+        return (Integer)getProperty(RandomGeneratorProperty.EQUIDISTRIBUTION, Integer.MAX_VALUE);
     }
 
     /**
@@ -328,16 +340,7 @@ public class RandomGeneratorFactory<T> {
      * @return BigInteger period.
      */
     public BigInteger period() {
-        try {
-            Field periodField = provider.type().getDeclaredField("PERIOD");
-            PrivilegedExceptionAction<BigInteger> getAction = () -> {
-                periodField.setAccessible(true);
-                return (BigInteger)periodField.get(null);
-            };
-            return AccessController.doPrivileged(getAction);
-        } catch (SecurityException | NoSuchFieldException | PrivilegedActionException ex) {
-            return RandomGenerator.HUGE_PERIOD;
-        }
+        return (BigInteger)getProperty(RandomGeneratorProperty.PERIOD, RandomGenerator.HUGE_PERIOD);
     }
 
     /**
@@ -346,7 +349,7 @@ public class RandomGeneratorFactory<T> {
      * @return true if random generator is statistical.
      */
     public boolean isStatistical() {
-        return !isSubclass(SecureRandom.class);
+        return !(Boolean)getProperty(RandomGeneratorProperty.IS_STOCHASTIC, true);
     }
 
     /**
@@ -355,7 +358,7 @@ public class RandomGeneratorFactory<T> {
      * @return true if random generator is stochastic.
      */
     public boolean isStochastic() {
-        return isSubclass(SecureRandom.class);
+        return (Boolean)getProperty(RandomGeneratorProperty.IS_STOCHASTIC, false);
     }
 
     /**
@@ -364,7 +367,7 @@ public class RandomGeneratorFactory<T> {
      * @return true if random generator is generated by hardware.
      */
     public boolean isHardware() {
-        return false;
+        return (Boolean)getProperty(RandomGeneratorProperty.IS_HARDWARE, false);
     }
 
     /**

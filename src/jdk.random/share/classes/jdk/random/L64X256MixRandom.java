@@ -27,7 +27,9 @@ package jdk.random;
 
 import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.Map;
 import java.util.random.RandomGenerator;
+import java.util.random.RandomGenerator.RandomGeneratorProperty;
 import java.util.random.RandomSupport;
 import java.util.random.RandomSupport.AbstractSplittableWithBrineGenerator;
 
@@ -120,11 +122,6 @@ public final class L64X256MixRandom extends AbstractSplittableWithBrineGenerator
     /* ---------------- static fields ---------------- */
 
     /**
-     * Group name.
-     */
-    private static final String GROUP = "LMX";
-
-    /**
      * The seed generator for default constructors.
      */
     private static final AtomicLong defaultGen = new AtomicLong(RandomSupport.initialSeed());
@@ -144,6 +141,21 @@ public final class L64X256MixRandom extends AbstractSplittableWithBrineGenerator
      * The equidistribution of the algorithm.
      */
     private static final int EQUIDISTRIBUTION = 4;
+
+    /*
+     * RandomGenerator properties.
+     */
+    static Map<RandomGeneratorProperty, Object> getProperties() {
+        return Map.ofEntries(
+                Map.entry(RandomGeneratorProperty.NAME, "L64X256MixRandom"),
+                Map.entry(RandomGeneratorProperty.GROUP, "LXM"),
+                Map.entry(RandomGeneratorProperty.PERIOD, PERIOD),
+                Map.entry(RandomGeneratorProperty.STATE_BITS, STATE_BITS),
+                Map.entry(RandomGeneratorProperty.EQUIDISTRIBUTION, EQUIDISTRIBUTION),
+                Map.entry(RandomGeneratorProperty.IS_STOCHASTIC, false),
+                Map.entry(RandomGeneratorProperty.IS_HARDWARE, false)
+        );
+    }
 
     /*
      * Multiplier used in the LCG portion of the algorithm.
@@ -293,18 +305,4 @@ public final class L64X256MixRandom extends AbstractSplittableWithBrineGenerator
         return result;
     }
 
-    @Override
-    public int stateBits() {
-        return STATE_BITS;
-    }
-
-    @Override
-    public int equidistribution() {
-        return EQUIDISTRIBUTION;
-    }
-
-    @Override
-    public BigInteger period() {
-        return PERIOD;
-    }
-}
+ }

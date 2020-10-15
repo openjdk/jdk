@@ -27,8 +27,10 @@ package jdk.random;
 
 import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.Map;
 import java.util.random.RandomGenerator;
 import java.util.random.RandomGenerator.LeapableGenerator;
+import java.util.random.RandomGenerator.RandomGeneratorProperty;
 import java.util.random.RandomSupport;
 
 /**
@@ -134,11 +136,6 @@ public final class Xoshiro256PlusPlus implements LeapableGenerator {
     /* ---------------- static fields ---------------- */
 
     /**
-     * Group name.
-     */
-    private static final String GROUP = "Xoshiro";
-
-    /**
      * The seed generator for default constructors.
      */
     private static final AtomicLong DEFAULT_GEN = new AtomicLong(RandomSupport.initialSeed());
@@ -158,6 +155,21 @@ public final class Xoshiro256PlusPlus implements LeapableGenerator {
      * The equidistribution of the algorithm.
      */
     private static final int EQUIDISTRIBUTION = 4;
+
+    /*
+     * RandomGenerator properties.
+     */
+    static Map<RandomGeneratorProperty, Object> getProperties() {
+        return Map.ofEntries(
+                Map.entry(RandomGeneratorProperty.NAME, "Xoshiro256PlusPlus"),
+                Map.entry(RandomGeneratorProperty.GROUP, "Xoshiro"),
+                Map.entry(RandomGeneratorProperty.PERIOD, PERIOD),
+                Map.entry(RandomGeneratorProperty.STATE_BITS, STATE_BITS),
+                Map.entry(RandomGeneratorProperty.EQUIDISTRIBUTION, EQUIDISTRIBUTION),
+                Map.entry(RandomGeneratorProperty.IS_STOCHASTIC, false),
+                Map.entry(RandomGeneratorProperty.IS_HARDWARE, false)
+        );
+    }
 
     /* ---------------- instance fields ---------------- */
 
@@ -292,21 +304,6 @@ public final class Xoshiro256PlusPlus implements LeapableGenerator {
         }
         x0 = q0; x1 = q1; x2 = q2; x3 = q3;
         return result;
-    }
-
-    @Override
-    public int stateBits() {
-        return STATE_BITS;
-    }
-
-    @Override
-    public int equidistribution() {
-        return EQUIDISTRIBUTION;
-    }
-
-    @Override
-    public BigInteger period() {
-        return PERIOD;
     }
 
     @Override
