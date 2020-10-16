@@ -31,17 +31,17 @@ package java.sql;
  * only for custom mapping, is used by the driver, and its
  * methods are never directly invoked by a programmer.
  * <p>When an object of a class implementing the interface
- * <code>SQLData</code> is passed as an argument to an SQL statement, the
- * JDBC driver calls the method <code>SQLData.getSQLType</code> to
+ * {@code SQLData} is passed as an argument to an SQL statement, the
+ * JDBC driver calls the method {@code SQLData.getSQLType} to
  * determine the  kind of SQL
  * datum being passed to the database.
- * The driver then creates an instance of <code>SQLOutput</code> and
- * passes it to the method <code>SQLData.writeSQL</code>.
- * The method <code>writeSQL</code> in turn calls the
- * appropriate <code>SQLOutput</code> <i>writer</i> methods
- * <code>writeBoolean</code>, <code>writeCharacterStream</code>, and so on)
- * to write data from the <code>SQLData</code> object to
- * the <code>SQLOutput</code> output stream as the
+ * The driver then creates an instance of {@code SQLOutput} and
+ * passes it to the method {@code SQLData.writeSQL}.
+ * The method {@code writeSQL} in turn calls the
+ * appropriate {@code SQLOutput} <i>writer</i> methods
+ * {@code writeBoolean}, {@code writeCharacterStream}, and so on)
+ * to write data from the {@code SQLData} object to
+ * the {@code SQLOutput} output stream as the
  * representation of an SQL user-defined type.
  * @since 1.2
  */
@@ -55,7 +55,7 @@ package java.sql;
   //================================================================
 
   /**
-   * Writes the next attribute to the stream as a <code>String</code>
+   * Writes the next attribute to the stream as a {@code String}
    * in the Java programming language.
    *
    * @param x the value to pass to the database
@@ -68,7 +68,7 @@ package java.sql;
 
   /**
    * Writes the next attribute to the stream as a Java boolean.
-   * Writes the next attribute to the stream as a <code>String</code>
+   * Writes the next attribute to the stream as a {@code String}
    * in the Java programming language.
    *
    * @param x the value to pass to the database
@@ -81,7 +81,7 @@ package java.sql;
 
   /**
    * Writes the next attribute to the stream as a Java byte.
-   * Writes the next attribute to the stream as a <code>String</code>
+   * Writes the next attribute to the stream as a {@code String}
    * in the Java programming language.
    *
    * @param x the value to pass to the database
@@ -94,7 +94,7 @@ package java.sql;
 
   /**
    * Writes the next attribute to the stream as a Java short.
-   * Writes the next attribute to the stream as a <code>String</code>
+   * Writes the next attribute to the stream as a {@code String}
    * in the Java programming language.
    *
    * @param x the value to pass to the database
@@ -107,7 +107,7 @@ package java.sql;
 
   /**
    * Writes the next attribute to the stream as a Java int.
-   * Writes the next attribute to the stream as a <code>String</code>
+   * Writes the next attribute to the stream as a {@code String}
    * in the Java programming language.
    *
    * @param x the value to pass to the database
@@ -120,7 +120,7 @@ package java.sql;
 
   /**
    * Writes the next attribute to the stream as a Java long.
-   * Writes the next attribute to the stream as a <code>String</code>
+   * Writes the next attribute to the stream as a {@code String}
    * in the Java programming language.
    *
    * @param x the value to pass to the database
@@ -133,7 +133,7 @@ package java.sql;
 
   /**
    * Writes the next attribute to the stream as a Java float.
-   * Writes the next attribute to the stream as a <code>String</code>
+   * Writes the next attribute to the stream as a {@code String}
    * in the Java programming language.
    *
    * @param x the value to pass to the database
@@ -146,7 +146,7 @@ package java.sql;
 
   /**
    * Writes the next attribute to the stream as a Java double.
-   * Writes the next attribute to the stream as a <code>String</code>
+   * Writes the next attribute to the stream as a {@code String}
    * in the Java programming language.
    *
    * @param x the value to pass to the database
@@ -159,7 +159,7 @@ package java.sql;
 
   /**
    * Writes the next attribute to the stream as a java.math.BigDecimal object.
-   * Writes the next attribute to the stream as a <code>String</code>
+   * Writes the next attribute to the stream as a {@code String}
    * in the Java programming language.
    *
    * @param x the value to pass to the database
@@ -172,7 +172,7 @@ package java.sql;
 
   /**
    * Writes the next attribute to the stream as an array of bytes.
-   * Writes the next attribute to the stream as a <code>String</code>
+   * Writes the next attribute to the stream as a {@code String}
    * in the Java programming language.
    *
    * @param x the value to pass to the database
@@ -185,7 +185,7 @@ package java.sql;
 
   /**
    * Writes the next attribute to the stream as a java.sql.Date object.
-   * Writes the next attribute to the stream as a <code>java.sql.Date</code> object
+   * Writes the next attribute to the stream as a {@code java.sql.Date} object
    * in the Java programming language.
    *
    * @param x the value to pass to the database
@@ -198,7 +198,7 @@ package java.sql;
 
   /**
    * Writes the next attribute to the stream as a java.sql.Time object.
-   * Writes the next attribute to the stream as a <code>java.sql.Date</code> object
+   * Writes the next attribute to the stream as a {@code java.sql.Date} object
    * in the Java programming language.
    *
    * @param x the value to pass to the database
@@ -211,7 +211,7 @@ package java.sql;
 
   /**
    * Writes the next attribute to the stream as a java.sql.Timestamp object.
-   * Writes the next attribute to the stream as a <code>java.sql.Date</code> object
+   * Writes the next attribute to the stream as a {@code java.sql.Date} object
    * in the Java programming language.
    *
    * @param x the value to pass to the database
@@ -266,17 +266,17 @@ package java.sql;
 
   /**
    * Writes to the stream the data contained in the given
-   * <code>SQLData</code> object.
-   * When the <code>SQLData</code> object is <code>null</code>, this
-   * method writes an SQL <code>NULL</code> to the stream.
-   * Otherwise, it calls the <code>SQLData.writeSQL</code>
+   * {@code SQLData} object.
+   * When the {@code SQLData} object is {@code null}, this
+   * method writes an SQL {@code NULL} to the stream.
+   * Otherwise, it calls the {@code SQLData.writeSQL}
    * method of the given object, which
    * writes the object's attributes to the stream.
-   * The implementation of the method <code>SQLData.writeSQL</code>
-   * calls the appropriate <code>SQLOutput</code> writer method(s)
+   * The implementation of the method {@code SQLData.writeSQL}
+   * calls the appropriate {@code SQLOutput} writer method(s)
    * for writing each of the object's attributes in order.
-   * The attributes must be read from an <code>SQLInput</code>
-   * input stream and written to an <code>SQLOutput</code>
+   * The attributes must be read from an {@code SQLInput}
+   * input stream and written to an {@code SQLOutput}
    * output stream in the same order in which they were
    * listed in the SQL definition of the user-defined type.
    *
@@ -290,10 +290,10 @@ package java.sql;
   void writeObject(SQLData x) throws SQLException;
 
   /**
-   * Writes an SQL <code>REF</code> value to the stream.
+   * Writes an SQL {@code REF} value to the stream.
    *
-   * @param x a <code>Ref</code> object representing data of an SQL
-   * <code>REF</code> value
+   * @param x a {@code Ref} object representing data of an SQL
+   * {@code REF} value
    * @throws SQLException if a database access error occurs
    * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
@@ -302,10 +302,10 @@ package java.sql;
   void writeRef(Ref x) throws SQLException;
 
   /**
-   * Writes an SQL <code>BLOB</code> value to the stream.
+   * Writes an SQL {@code BLOB} value to the stream.
    *
-   * @param x a <code>Blob</code> object representing data of an SQL
-   * <code>BLOB</code> value
+   * @param x a {@code Blob} object representing data of an SQL
+   * {@code BLOB} value
    *
    * @throws SQLException if a database access error occurs
    * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
@@ -315,10 +315,10 @@ package java.sql;
   void writeBlob(Blob x) throws SQLException;
 
   /**
-   * Writes an SQL <code>CLOB</code> value to the stream.
+   * Writes an SQL {@code CLOB} value to the stream.
    *
-   * @param x a <code>Clob</code> object representing data of an SQL
-   * <code>CLOB</code> value
+   * @param x a {@code Clob} object representing data of an SQL
+   * {@code CLOB} value
    *
    * @throws SQLException if a database access error occurs
    * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
@@ -330,7 +330,7 @@ package java.sql;
   /**
    * Writes an SQL structured type value to the stream.
    *
-   * @param x a <code>Struct</code> object representing data of an SQL
+   * @param x a {@code Struct} object representing data of an SQL
    * structured type
    *
    * @throws SQLException if a database access error occurs
@@ -341,10 +341,10 @@ package java.sql;
   void writeStruct(Struct x) throws SQLException;
 
   /**
-   * Writes an SQL <code>ARRAY</code> value to the stream.
+   * Writes an SQL {@code ARRAY} value to the stream.
    *
-   * @param x an <code>Array</code> object representing data of an SQL
-   * <code>ARRAY</code> type
+   * @param x an {@code Array} object representing data of an SQL
+   * {@code ARRAY} type
    *
    * @throws SQLException if a database access error occurs
    * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
@@ -356,9 +356,9 @@ package java.sql;
      //--------------------------- JDBC 3.0 ------------------------
 
      /**
-      * Writes a SQL <code>DATALINK</code> value to the stream.
+      * Writes a SQL {@code DATALINK} value to the stream.
       *
-      * @param x a <code>java.net.URL</code> object representing the data
+      * @param x a {@code java.net.URL} object representing the data
       * of SQL DATALINK type
       *
       * @throws SQLException if a database access error occurs
@@ -371,12 +371,12 @@ package java.sql;
      //--------------------------- JDBC 4.0 ------------------------
 
   /**
-   * Writes the next attribute to the stream as a <code>String</code>
+   * Writes the next attribute to the stream as a {@code String}
    * in the Java programming language. The driver converts this to a
-   * SQL <code>NCHAR</code> or
-   * <code>NVARCHAR</code> or <code>LONGNVARCHAR</code> value
+   * SQL {@code NCHAR} or
+   * {@code NVARCHAR} or {@code LONGNVARCHAR} value
    * (depending on the argument's
-   * size relative to the driver's limits on <code>NVARCHAR</code> values)
+   * size relative to the driver's limits on {@code NVARCHAR} values)
    * when it sends it to the stream.
    *
    * @param x the value to pass to the database
@@ -388,10 +388,10 @@ package java.sql;
   void writeNString(String x) throws SQLException;
 
   /**
-   * Writes an SQL <code>NCLOB</code> value to the stream.
+   * Writes an SQL {@code NCLOB} value to the stream.
    *
-   * @param x a <code>NClob</code> object representing data of an SQL
-   * <code>NCLOB</code> value
+   * @param x a {@code NClob} object representing data of an SQL
+   * {@code NCLOB} value
    *
    * @throws SQLException if a database access error occurs
    * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
@@ -402,10 +402,10 @@ package java.sql;
 
 
   /**
-   * Writes an SQL <code>ROWID</code> value to the stream.
+   * Writes an SQL {@code ROWID} value to the stream.
    *
-   * @param x a <code>RowId</code> object representing data of an SQL
-   * <code>ROWID</code> value
+   * @param x a {@code RowId} object representing data of an SQL
+   * {@code ROWID} value
    *
    * @throws SQLException if a database access error occurs
    * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
@@ -416,15 +416,15 @@ package java.sql;
 
 
   /**
-   * Writes an SQL <code>XML</code> value to the stream.
+   * Writes an SQL {@code XML} value to the stream.
    *
-   * @param x a <code>SQLXML</code> object representing data of an SQL
-   * <code>XML</code> value
+   * @param x a {@code SQLXML} object representing data of an SQL
+   * {@code XML} value
    *
    * @throws SQLException if a database access error occurs,
-   * the <code>java.xml.transform.Result</code>,
-   *  <code>Writer</code> or <code>OutputStream</code> has not been closed for the <code>SQLXML</code> object or
-   *  if there is an error processing the XML value.  The <code>getCause</code> method
+   * the {@code java.xml.transform.Result},
+   *  {@code Writer} or {@code OutputStream} has not been closed for the {@code SQLXML} object or
+   *  if there is an error processing the XML value.  The {@code getCause} method
    *  of the exception may provide a more detailed exception, for example, if the
    *  stream does not contain valid XML.
    * @throws SQLFeatureNotSupportedException if the JDBC driver does not support

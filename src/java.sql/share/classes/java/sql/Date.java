@@ -30,12 +30,12 @@ import java.time.LocalDate;
 
 /**
  * <P>A thin wrapper around a millisecond value that allows
- * JDBC to identify this as an SQL <code>DATE</code> value.  A
+ * JDBC to identify this as an SQL {@code DATE} value.  A
  * milliseconds value represents the number of milliseconds that
  * have passed since January 1, 1970 00:00:00.000 GMT.
  * <p>
- * To conform with the definition of SQL <code>DATE</code>, the
- * millisecond values wrapped by a <code>java.sql.Date</code> instance
+ * To conform with the definition of SQL {@code DATE}, the
+ * millisecond values wrapped by a {@code java.sql.Date} instance
  * must be 'normalized' by setting the
  * hours, minutes, seconds, and milliseconds to zero in the particular
  * time zone with which the instance is associated.
@@ -45,7 +45,7 @@ import java.time.LocalDate;
 public class Date extends java.util.Date {
 
     /**
-     * Constructs a <code>Date</code> object initialized with the given
+     * Constructs a {@code Date} object initialized with the given
      * year, month, and day.
      * <P>
      * The result is undefined if a given argument is out of bounds.
@@ -54,7 +54,7 @@ public class Date extends java.util.Date {
      *        8099 is 9999 minus 1900.)
      * @param month 0 to 11
      * @param day 1 to 31
-     * @deprecated instead use the constructor <code>Date(long date)</code>
+     * @deprecated instead use the constructor {@code Date(long date)}
      */
     @Deprecated(since="1.2")
     public Date(int year, int month, int day) {
@@ -62,7 +62,7 @@ public class Date extends java.util.Date {
     }
 
     /**
-     * Constructs a <code>Date</code> object using the given milliseconds
+     * Constructs a {@code Date} object using the given milliseconds
      * time value.  If the given milliseconds value contains time
      * information, the driver will set the time components to the
      * time in the default time zone (the time zone of the Java virtual
@@ -80,7 +80,7 @@ public class Date extends java.util.Date {
     }
 
     /**
-     * Sets an existing <code>Date</code> object
+     * Sets an existing {@code Date} object
      * using the given milliseconds time value.
      * If the given milliseconds value contains time information,
      * the driver will set the time components to the
@@ -99,12 +99,12 @@ public class Date extends java.util.Date {
 
     /**
      * Converts a string in JDBC date escape format to
-     * a <code>Date</code> value.
+     * a {@code Date} value.
      *
-     * @param s a <code>String</code> object representing a date in
-     *        in the format "yyyy-[m]m-[d]d". The leading zero for <code>mm</code>
-     * and <code>dd</code> may also be omitted.
-     * @return a <code>java.sql.Date</code> object representing the
+     * @param s a {@code String} object representing a date in
+     *        in the format "yyyy-[m]m-[d]d". The leading zero for {@code mm}
+     * and {@code dd} may also be omitted.
+     * @return a {@code java.sql.Date} object representing the
      *         given date
      * @throws IllegalArgumentException if the date given is not in the
      *         JDBC date escape format (yyyy-[m]m-[d]d)

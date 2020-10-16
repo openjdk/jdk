@@ -28,13 +28,13 @@ package java.sql;
 /**
  * An object that can be used to get information about the types
  * and properties for each parameter marker in a
- * <code>PreparedStatement</code> object. For some queries and driver
- * implementations, the data that would be returned by a <code>ParameterMetaData</code>
- * object may not be available until the <code>PreparedStatement</code> has
+ * {@code PreparedStatement} object. For some queries and driver
+ * implementations, the data that would be returned by a {@code ParameterMetaData}
+ * object may not be available until the {@code PreparedStatement} has
  * been executed.
  *<p>
  *Some driver implementations may not be able to provide information about the
- *types and properties for each parameter marker in a <code>CallableStatement</code>
+ *types and properties for each parameter marker in a {@code CallableStatement}
  *object.
  *
  * @since 1.4
@@ -43,8 +43,8 @@ package java.sql;
 public interface ParameterMetaData extends Wrapper {
 
     /**
-     * Retrieves the number of parameters in the <code>PreparedStatement</code>
-     * object for which this <code>ParameterMetaData</code> object contains
+     * Retrieves the number of parameters in the {@code PreparedStatement}
+     * object for which this {@code ParameterMetaData} object contains
      * information.
      *
      * @return the number of parameters
@@ -58,9 +58,9 @@ public interface ParameterMetaData extends Wrapper {
      *
      * @param param the first parameter is 1, the second is 2, ...
      * @return the nullability status of the given parameter; one of
-     *        <code>ParameterMetaData.parameterNoNulls</code>,
-     *        <code>ParameterMetaData.parameterNullable</code>, or
-     *        <code>ParameterMetaData.parameterNullableUnknown</code>
+     *        {@code ParameterMetaData.parameterNoNulls},
+     *        {@code ParameterMetaData.parameterNullable}, or
+     *        {@code ParameterMetaData.parameterNullableUnknown}
      * @throws SQLException if a database access error occurs
      * @since 1.4
      */
@@ -68,13 +68,13 @@ public interface ParameterMetaData extends Wrapper {
 
     /**
      * The constant indicating that a
-     * parameter will not allow <code>NULL</code> values.
+     * parameter will not allow {@code NULL} values.
      */
     int parameterNoNulls = 0;
 
     /**
      * The constant indicating that a
-     * parameter will allow <code>NULL</code> values.
+     * parameter will allow {@code NULL} values.
      */
     int parameterNullable = 1;
 
@@ -88,7 +88,7 @@ public interface ParameterMetaData extends Wrapper {
      * Retrieves whether values for the designated parameter can be signed numbers.
      *
      * @param param the first parameter is 1, the second is 2, ...
-     * @return <code>true</code> if so; <code>false</code> otherwise
+     * @return {@code true} if so; {@code false} otherwise
      * @throws SQLException if a database access error occurs
      * @since 1.4
      */
@@ -126,7 +126,7 @@ public interface ParameterMetaData extends Wrapper {
      * Retrieves the designated parameter's SQL type.
      *
      * @param param the first parameter is 1, the second is 2, ...
-     * @return SQL type from <code>java.sql.Types</code>
+     * @return SQL type from {@code java.sql.Types}
      * @throws SQLException if a database access error occurs
      * @since 1.4
      * @see Types
@@ -147,12 +147,12 @@ public interface ParameterMetaData extends Wrapper {
 
     /**
      * Retrieves the fully-qualified name of the Java class whose instances
-     * should be passed to the method <code>PreparedStatement.setObject</code>.
+     * should be passed to the method {@code PreparedStatement.setObject}.
      *
      * @param param the first parameter is 1, the second is 2, ...
      * @return the fully-qualified name of the class in the Java programming
      *         language that would be used by the method
-     *         <code>PreparedStatement.setObject</code> to set the value
+     *         {@code PreparedStatement.setObject} to set the value
      *         in the specified parameter. This is the class name used
      *         for custom mapping.
      * @throws SQLException if a database access error occurs
@@ -185,10 +185,10 @@ public interface ParameterMetaData extends Wrapper {
      *
      * @param param the first parameter is 1, the second is 2, ...
      * @return mode of the parameter; one of
-     *        <code>ParameterMetaData.parameterModeIn</code>,
-     *        <code>ParameterMetaData.parameterModeOut</code>, or
-     *        <code>ParameterMetaData.parameterModeInOut</code>
-     *        <code>ParameterMetaData.parameterModeUnknown</code>.
+     *        {@code ParameterMetaData.parameterModeIn},
+     *        {@code ParameterMetaData.parameterModeOut}, or
+     *        {@code ParameterMetaData.parameterModeInOut}
+     *        {@code ParameterMetaData.parameterModeUnknown}.
      * @throws SQLException if a database access error occurs
      * @since 1.4
      */
