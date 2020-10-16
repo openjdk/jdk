@@ -45,8 +45,7 @@ import sun.hotspot.WhiteBox;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
-import java.util.Queue;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.lang.ref.Reference;
 
 public class TestHumongousConcurrentStartUndo {
     // Heap sizes < 224 MB are increased to 224 MB if vm_page_size == 64K to
@@ -91,31 +90,27 @@ public class TestHumongousConcurrentStartUndo {
                 (int)(((HeapSize - YoungSize) * 80 / 100.0) / HeapRegionSize);
 
 
-        private static void allocateHumongous(int num, Queue keeper) {
-            for (int i = 1; i <= num; i++) {
+        private static void allocateHumongous(int num, Object[] holder) {
+            for (int i = 0; i < num; i++) {
                 if (i % 10 == 0) {
                     System.out.println("Allocating humongous object " + i + "/" + num +
                                        " of size " + HumongousObjectSize + " bytes");
                 }
-                byte[] e = new byte[HumongousObjectSize];
-                if (!keeper.offer(e)) {
-                    keeper.remove();
-                    keeper.offer(e);
-                }
+                holder[i % holder.length] = new byte[HumongousObjectSize];
             }
         }
 
-        private static void runConcurrentUndoCycle(ArrayBlockingQueue a) {
+        private static void runConcurrentUndoCycle() {
             // Start from an "empty" heap.
             WB.fullGC();
             // The queue only holds one element, so only one humongous object
             // will be reachable and the concurrent operation should be undone.
-            a = new ArrayBlockingQueue(1);
-            allocateHumongous(NumHumongousObjectAllocations, a);
+            allocateHumongous(NumHumongousObjectAllocations, new Object[1]);
             Helpers.waitTillCMCFinished(WB, 1);
         }
 
-        private static void runConcurrentMarkCycle(ArrayBlockingQueue a) {
+        private static void runConcurrentMarkCycle() {
+            Object[] a = new Object[NumHumongousObjectAllocations];
             // Start from an "empty" heap.
             WB.fullGC();
             // Try to trigger a concurrent mark cycle. Block concurrent operation
@@ -124,8 +119,6 @@ public class TestHumongousConcurrentStartUndo {
             try {
                 System.out.println("Acquire CM control");
                 WB.concurrentGCAcquireControl();
-                WB.concurrentGCRunToIdle();
-
                 allocateHumongous(NumHumongousObjectAllocations, a);
             } finally {
                 System.out.println("Release CM control");
@@ -134,20 +127,17 @@ public class TestHumongousConcurrentStartUndo {
             // At this point we kept NumHumongousObjectAllocations humongous objects live
             // in "a" which is larger than the IHOP threshold. Another dummy humongous
             // allocation must trigger a concurrent cycle that is not an Undo Cycle.
-            allocateHumongous(1, new ArrayBlockingQueue(1));
+            allocateHumongous(1, new Object[1]);
             Helpers.waitTillCMCFinished(WB, 1);
+
+            Reference.reachabilityFence(a);
         }
 
         public static void main(String [] args) throws Exception {
-            ArrayBlockingQueue a = null;
             for (int iterate = 0; iterate < 3; iterate++) {
-                a = new ArrayBlockingQueue(1);
-                runConcurrentUndoCycle(a);
-
-                a = new ArrayBlockingQueue(NumHumongousObjectAllocations);
-                runConcurrentMarkCycle(a);
+                runConcurrentUndoCycle();
+                runConcurrentMarkCycle();
             }
-            System.out.println(a);
         }
     }
 }
