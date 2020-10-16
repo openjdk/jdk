@@ -328,7 +328,7 @@ public final class HexFormat {
         // Format efficiently if possible
         String s = formatOptDelimiter(bytes, index, length);
         if (s == null) {
-            StringBuilder sb = new StringBuilder(bytes.length *
+            StringBuilder sb = new StringBuilder(length *
                     (delimiter.length() + prefix.length() + suffix.length()) - delimiter.length());
             formatHex(sb, bytes, index, length);
             s = sb.toString();
@@ -380,15 +380,15 @@ public final class HexFormat {
             try {
                 String between = suffix + delimiter + prefix;
                 out.append(prefix);
-                toHexDigits(out, bytes[0]);
+                toHexDigits(out, bytes[index]);
                 if (between.isEmpty()) {
-                    for (int i = 1; i < bytes.length; i++) {
-                        toHexDigits(out, bytes[i]);
+                    for (int i = 1; i < length; i++) {
+                        toHexDigits(out, bytes[index + i]);
                     }
                 } else {
-                    for (int i = 1; i < bytes.length; i++) {
+                    for (int i = 1; i < length; i++) {
                         out.append(between);
-                        toHexDigits(out, bytes[i]);
+                        toHexDigits(out, bytes[index + i]);
                     }
                 }
                 out.append(suffix);
@@ -426,13 +426,13 @@ public final class HexFormat {
             // Allocate the byte array and fill in the characters for the first byte
             // Then insert the delimiter and hex characters for each of the remaining bytes
             char sep = delimiter.charAt(0);
-            rep = new byte[bytes.length * 3 - 1];
-            rep[0] = (byte) toHighHexDigit(bytes[0]);
-            rep[1] = (byte) toLowHexDigit(bytes[0]);
-            for (int i = 1; i < bytes.length; i++) {
+            rep = new byte[length * 3 - 1];
+            rep[0] = (byte) toHighHexDigit(bytes[index]);
+            rep[1] = (byte) toLowHexDigit(bytes[index]);
+            for (int i = 1; i < length; i++) {
                 rep[i * 3 - 1] = (byte) sep;
-                rep[i * 3    ] = (byte) toHighHexDigit(bytes[i]);
-                rep[i * 3 + 1] = (byte) toLowHexDigit(bytes[i]);
+                rep[i * 3    ] = (byte) toHighHexDigit(bytes[index + i]);
+                rep[i * 3 + 1] = (byte) toLowHexDigit(bytes[index + i]);
             }
         } else {
             // Delimiter formatting not to a single byte
@@ -490,7 +490,7 @@ public final class HexFormat {
         Objects.checkFromIndexSize(index, length, string.length());
 
         if (index != 0 || length != string.length()) {
-            string = string.subSequence(index, length);
+            string = string.subSequence(index, index + length);
         }
 
         if (string.length() == 0)
@@ -569,7 +569,8 @@ public final class HexFormat {
             if (string.charAt(index + i) != literal.charAt(i)) {
                 throw new IllegalArgumentException(escapeNL("found: \"" +
                         string.subSequence(index, index + literal.length()) +
-                        "\", expected: \"" + literal + "\""));
+                        "\", expected: \"" + literal + "\", index: " + index +
+                        " ch: " + (int)string.charAt(index + i)));
             }
         }
     }
@@ -640,12 +641,13 @@ public final class HexFormat {
      * The behavior is equivalent to
      * {@link #toHexDigits(byte) out.append(toHexDigits((byte)value))}.
      *
+     * @param <A> The type of Appendable
      * @param out an Appendable, non-null
      * @param value a byte value
      * @return the {@code Appendable}
      * @throws UncheckedIOException if an I/O exception occurs appending to the output
      */
-    public Appendable toHexDigits(Appendable out, byte value) {
+    public <A extends Appendable> A toHexDigits(A out, byte value) {
         Objects.requireNonNull(out, "out");
         try {
             out.append(toHighHexDigit(value));
@@ -847,7 +849,7 @@ public final class HexFormat {
     public int fromHexDigit(int ch) {
         int value = Character.digit(ch, 16);
         if (value < 0)
-            throw new NumberFormatException("not a hexadecimal digit: \"" + (char)ch + "\"");
+            throw new NumberFormatException("not a hexadecimal digit: \"" + (char)ch + "\" + " + ch);
         return value;
     }
 
