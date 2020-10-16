@@ -158,6 +158,10 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
     allow_inline = false;
   }
 
+  if (callee->is_string_substring()) {
+    C->set_has_stringsubstring(true);
+  }
+
   // Attempt to inline...
   if (allow_inline) {
     // The profile data is only partly attributable to this caller,
@@ -415,6 +419,17 @@ bool Compile::should_delay_string_inlining(ciMethod* call_method, JVMState* jvms
         return false;
     }
   }
+
+  if (call_method->holder() == C->env()->String_klass()) {
+    switch (call_method->intrinsic_id()) {
+    case vmIntrinsics::_String_startsWith:
+    case vmIntrinsics::_String_substring:
+      return true;
+    default:
+      ;
+    }
+  }
+
   return false;
 }
 

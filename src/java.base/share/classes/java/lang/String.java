@@ -1496,6 +1496,7 @@ public final class String
      *          {@link #equals(Object)} method.
      * @since   1.0
      */
+    @IntrinsicCandidate
     public boolean startsWith(String prefix) {
         return startsWith(prefix, 0);
     }
@@ -1902,6 +1903,7 @@ public final class String
      *             {@code beginIndex} is larger than
      *             {@code endIndex}.
      */
+    @IntrinsicCandidate
     public String substring(int beginIndex, int endIndex) {
         int length = length();
         checkBoundsBeginEnd(beginIndex, endIndex, length);

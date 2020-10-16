@@ -39,6 +39,19 @@
 
 #define __ kit.
 
+static bool is_SB_toString(Node* call) {
+  if (call->is_CallStaticJava()) {
+    CallStaticJavaNode* csj = call->as_CallStaticJava();
+    ciMethod* m = csj->method();
+    if (m != NULL &&
+        (m->intrinsic_id() == vmIntrinsics::_StringBuilder_toString ||
+          m->intrinsic_id() == vmIntrinsics::_StringBuffer_toString)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 class StringConcat : public ResourceObj {
  private:
   PhaseStringOpts*    _stringopts;
@@ -130,19 +143,6 @@ class StringConcat : public ResourceObj {
     push(value, CharMode);
   }
 
-  static bool is_SB_toString(Node* call) {
-    if (call->is_CallStaticJava()) {
-      CallStaticJavaNode* csj = call->as_CallStaticJava();
-      ciMethod* m = csj->method();
-      if (m != NULL &&
-          (m->intrinsic_id() == vmIntrinsics::_StringBuilder_toString ||
-           m->intrinsic_id() == vmIntrinsics::_StringBuffer_toString)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   static Node* skip_string_null_check(Node* value) {
     // Look for a diamond shaped Null check of toString() result
     // (could be code from String.valueOf()):
@@ -203,7 +203,6 @@ class StringConcat : public ResourceObj {
 
   void eliminate_unneeded_control();
   void eliminate_initialize(InitializeNode* init);
-  void eliminate_call(CallNode* call);
 
   void maybe_log_transform() {
     CompileLog* log = _stringopts->C->log();
@@ -268,7 +267,11 @@ void StringConcat::eliminate_unneeded_control() {
     }
     if (n->is_Call()) {
       if (n != _end) {
-        eliminate_call(n->as_Call());
+        CallNode* call = n->as_Call();
+        CallProjections projs;
+
+        call->extract_projections(&projs, false);
+        _stringopts->eliminate_call(call, projs);
       }
     } else if (n->is_IfTrue()) {
       Compile* C = _stringopts->C;
@@ -319,44 +322,6 @@ StringConcat* StringConcat::merge(StringConcat* other, Node* arg) {
   return result;
 }
 
-
-void StringConcat::eliminate_call(CallNode* call) {
-  Compile* C = _stringopts->C;
-  CallProjections projs;
-  call->extract_projections(&projs, false);
-  if (projs.fallthrough_catchproj != NULL) {
-    C->gvn_replace_by(projs.fallthrough_catchproj, call->in(TypeFunc::Control));
-  }
-  if (projs.fallthrough_memproj != NULL) {
-    C->gvn_replace_by(projs.fallthrough_memproj, call->in(TypeFunc::Memory));
-  }
-  if (projs.catchall_memproj != NULL) {
-    C->gvn_replace_by(projs.catchall_memproj, C->top());
-  }
-  if (projs.fallthrough_ioproj != NULL) {
-    C->gvn_replace_by(projs.fallthrough_ioproj, call->in(TypeFunc::I_O));
-  }
-  if (projs.catchall_ioproj != NULL) {
-    C->gvn_replace_by(projs.catchall_ioproj, C->top());
-  }
-  if (projs.catchall_catchproj != NULL) {
-    // EA can't cope with the partially collapsed graph this
-    // creates so put it on the worklist to be collapsed later.
-    for (SimpleDUIterator i(projs.catchall_catchproj); i.has_next(); i.next()) {
-      Node *use = i.get();
-      int opc = use->Opcode();
-      if (opc == Op_CreateEx || opc == Op_Region) {
-        _stringopts->record_dead_node(use);
-      }
-    }
-    C->gvn_replace_by(projs.catchall_catchproj, C->top());
-  }
-  if (projs.resproj != NULL) {
-    C->gvn_replace_by(projs.resproj, C->top());
-  }
-  C->gvn_replace_by(call, C->top());
-}
-
 void StringConcat::eliminate_initialize(InitializeNode* init) {
   Compile* C = _stringopts->C;
 
@@ -376,12 +341,12 @@ void StringConcat::eliminate_initialize(InitializeNode* init) {
   init->disconnect_inputs(C);
 }
 
-Node_List PhaseStringOpts::collect_toString_calls() {
-  Node_List string_calls;
+template <Predicate Pred>
+Node_List PhaseStringOpts::collect_interesting_calls() {
+  Node_List calls;
   Node_List worklist;
 
   _visited.clear();
-
   // Prime the worklist
   for (uint i = 1; i < C->root()->len(); i++) {
     Node* n = C->root()->in(i);
@@ -392,9 +357,9 @@ Node_List PhaseStringOpts::collect_toString_calls() {
 
   while (worklist.size() > 0) {
     Node* ctrl = worklist.pop();
-    if (StringConcat::is_SB_toString(ctrl)) {
+    if (Pred(ctrl)) {
       CallStaticJavaNode* csj = ctrl->as_CallStaticJava();
-      string_calls.push(csj);
+      calls.push(csj);
     }
     if (ctrl->in(0) != NULL && !_visited.test_set(ctrl->in(0)->_idx)) {
       worklist.push(ctrl->in(0));
@@ -407,9 +372,9 @@ Node_List PhaseStringOpts::collect_toString_calls() {
       }
     }
   }
-  return string_calls;
-}
 
+  return calls;
+}
 
 StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
   ciMethod* m = call->method();
@@ -591,12 +556,127 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
   return NULL;
 }
 
+static bool is_string_startsWith(Node* call) {
+  if (call->is_CallStaticJava()) {
+    CallStaticJavaNode* csj = call->as_CallStaticJava();
+    ciMethod* m = csj->method();
+    if (m != NULL &&
+        m->intrinsic_id() == vmIntrinsics::_String_startsWith) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+void PhaseStringOpts::eliminate_call(CallNode* call, CallProjections& projs) {
+  if (projs.fallthrough_catchproj != NULL) {
+    C->gvn_replace_by(projs.fallthrough_catchproj, call->in(TypeFunc::Control));
+  }
+  if (projs.fallthrough_memproj != NULL) {
+    C->gvn_replace_by(projs.fallthrough_memproj, call->in(TypeFunc::Memory));
+  }
+  if (projs.catchall_memproj != NULL) {
+    C->gvn_replace_by(projs.catchall_memproj, C->top());
+  }
+  if (projs.fallthrough_ioproj != NULL) {
+    C->gvn_replace_by(projs.fallthrough_ioproj, call->in(TypeFunc::I_O));
+  }
+  if (projs.catchall_ioproj != NULL) {
+    C->gvn_replace_by(projs.catchall_ioproj, C->top());
+  }
+  if (projs.catchall_catchproj != NULL) {
+    // EA can't cope with the partially collapsed graph this
+    // creates so put it on the worklist to be collapsed later.
+    for (SimpleDUIterator i(projs.catchall_catchproj); i.has_next(); i.next()) {
+      Node *use = i.get();
+      int opc = use->Opcode();
+      if (opc == Op_CreateEx || opc == Op_Region) {
+        record_dead_node(use);
+      }
+    }
+    C->gvn_replace_by(projs.catchall_catchproj, C->top());
+  }
+  if (projs.resproj != NULL) {
+    C->gvn_replace_by(projs.resproj, C->top());
+  }
+  C->gvn_replace_by(call, C->top());
+}
+
+void PhaseStringOpts::optimize_startsWith(CallJavaNode* substr, CallJavaNode* startsWith, Node* castpp, CallProjections& projs) {
+  ciMethod* m = startsWith->method();
+  ciInstanceKlass* holder = m->holder();
+  ciMethod* m2 = holder->find_method(m->name(), ciSymbol::make("(Ljava/lang/String;I)Z"));
+
+  Node* s = startsWith->in(TypeFunc::Parms + 0);
+  startsWith->replace_edge(s, substr->in(TypeFunc::Parms + 0));              // parent of substring
+  startsWith->ins_req(TypeFunc::Parms + 2, substr->in(TypeFunc::Parms + 1)); // offset of substring
+
+  startsWith->set_tf(TypeFunc::make(m2));
+  startsWith->set_method(m2);
+  startsWith->set_override_symbolic_info(true);
+  startsWith->jvms()->adapt_position(+1);
+
+  Node* iff = startsWith->in(TypeFunc::Control)->in(TypeFunc::Control);
+  if (iff->is_If()) {
+    iff->replace_edge(iff->in(1), C->top());
+    C->for_igvn()->push(iff);
+  }
+
+  // rewrite defs using the defs of substr
+  for (node_idx_t idx = TypeFunc::Control; idx < TypeFunc::Parms; ++idx) {
+    startsWith->replace_edge(startsWith->in(idx), substr->in(idx));
+  }
+
+  if (castpp->outcnt() == 0 && !substr->is_top()) {
+    eliminate_call(substr, projs);
+    NOT_PRODUCT(substring_eliminated++;)
+  }
+}
+
+void PhaseStringOpts::optimize_for_substring() {
+  Node_List calls = collect_interesting_calls<is_string_startsWith>();
+
+  for (uint i = 0; i < calls.size(); ++i) {
+    CallStaticJavaNode* call = calls[i]->as_CallStaticJava();
+
+    Node* castpp = call->in(TypeFunc::Parms);
+    if (castpp->Opcode() == Op_CastPP && castpp->in(1)->is_Proj()) {
+      CallStaticJavaNode* substr = castpp->in(1)->in(0)->isa_CallStaticJava();
+      CallProjections projs;
+
+      if (substr != nullptr && substr->method() != nullptr &&
+          substr->method()->is_string_substring()) {
+#ifndef PRODUCT
+        if (PrintOptimizeSubstring) {
+          tty->print_cr("[optimize_startsWith] before:");
+          call->dump(2);
+        }
+#endif /*PRODUCT*/
+
+        substr->extract_projections(&projs, true);
+        optimize_startsWith(substr, call, castpp, projs);
+
+#ifndef PRODUCT
+        if (PrintOptimizeSubstring) {
+          tty->print_cr("[optimize_startsWith] after:");
+          call->dump(2);
+        }
+#endif /*PRODUCT*/
+      }
+    }
+  }
+}
 
 PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn, Unique_Node_List*):
   Phase(StringOpts),
   _gvn(gvn) {
 
-  assert(OptimizeStringConcat, "shouldn't be here");
+  if (OptimizeSubstring && C->has_stringsubstring()) {
+    optimize_for_substring();
+  }
+
+  if(!OptimizeStringConcat) return;
 
   size_table_field = C->env()->Integer_klass()->get_field_by_name(ciSymbol::make("sizeTable"),
                                                                   ciSymbol::make("[I"), true);
@@ -616,7 +696,7 @@ PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn, Unique_Node_List*):
   // if it's possible to fuse the usage of the SB into a single String
   // construction.
   GrowableArray<StringConcat*> concats;
-  Node_List toStrings = collect_toString_calls();
+  Node_List toStrings = collect_interesting_calls<is_SB_toString>();
   while (toStrings.size() > 0) {
     StringConcat* sc = build_candidate(toStrings.pop()->as_CallStaticJava());
     if (sc != NULL) {
@@ -630,7 +710,7 @@ PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn, Unique_Node_List*):
     StringConcat* sc = concats.at(c);
     for (int i = 0; i < sc->num_arguments(); i++) {
       Node* arg = sc->argument_uncast(i);
-      if (arg->is_Proj() && StringConcat::is_SB_toString(arg->in(0))) {
+      if (arg->is_Proj() && is_SB_toString(arg->in(0))) {
         CallStaticJavaNode* csj = arg->in(0)->as_CallStaticJava();
         for (int o = 0; o < concats.length(); o++) {
           if (c == o) continue;
@@ -1986,3 +2066,13 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
   string_sizes->disconnect_inputs(C);
   sc->cleanup();
 }
+
+#ifndef PRODUCT
+int PhaseStringOpts::substring_eliminated = 0;
+
+void PhaseStringOpts::print_statistics() {
+  if (OptimizeSubstring) {
+    tty->print_cr("OptimizeSubstring: substring_eliminated= %d", substring_eliminated);
+  }
+}
+#endif /*PRODUCT*/

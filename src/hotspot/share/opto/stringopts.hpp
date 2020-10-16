@@ -30,6 +30,7 @@
 
 class StringConcat;
 class IdealVariable;
+typedef bool (*Predicate)(Node*);
 
 class PhaseStringOpts : public Phase {
   friend class StringConcat;
@@ -49,8 +50,8 @@ class PhaseStringOpts : public Phase {
   // A set for use by various stages
   VectorSet _visited;
 
-  // Collect a list of all SB.toString calls
-  Node_List collect_toString_calls();
+  template <Predicate Pred>
+  Node_List collect_interesting_calls();
 
   // Examine the use of the SB alloc to see if it can be replace with
   // a single string construction.
@@ -104,6 +105,10 @@ class PhaseStringOpts : public Phase {
   void record_dead_node(Node* node);
   void remove_dead_nodes();
 
+  void eliminate_call(CallNode* call, CallProjections& projs);
+  void optimize_for_substring();
+  void optimize_startsWith(CallJavaNode* substr, CallJavaNode* startsWith, Node* castpp, CallProjections& projs);
+
   PhaseGVN* gvn() { return _gvn; }
 
   enum {
@@ -111,8 +116,10 @@ class PhaseStringOpts : public Phase {
     unroll_string_copy_length = 6
   };
 
+  NOT_PRODUCT(static int substring_eliminated;)
  public:
   PhaseStringOpts(PhaseGVN* gvn, Unique_Node_List* worklist);
+  NOT_PRODUCT(static void print_statistics();)
 };
 
 #endif // SHARE_OPTO_STRINGOPTS_HPP

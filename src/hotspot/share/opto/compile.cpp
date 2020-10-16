@@ -251,6 +251,7 @@ void Compile::print_statistics() {
     PhaseOutput::print_statistics();
     PhasePeephole::print_statistics();
     PhaseIdealLoop::print_statistics();
+    PhaseStringOpts::print_statistics();
     if (xtty != NULL)  xtty->tail("statistics");
   }
   if (_intrinsic_hist_flags[vmIntrinsics::_none] != 0) {
@@ -914,6 +915,7 @@ void Compile::Init(int aliaslevel) {
   set_has_split_ifs(false);
   set_has_loops(false); // first approximation
   set_has_stringbuilder(false);
+  set_has_stringsubstring(false);
   set_has_boxed_value(false);
   _trap_can_recompile = false;  // no traps emitted yet
   _major_progress = true; // start out assuming good things will happen
@@ -1934,7 +1936,6 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
   assert( igvn._worklist.size() == 0, "should be done with igvn" );
 
   if (_string_late_inlines.length() > 0) {
-    assert(has_stringbuilder(), "inconsistent");
     for_igvn()->clear();
     initial_gvn()->replace_with(&igvn);
 

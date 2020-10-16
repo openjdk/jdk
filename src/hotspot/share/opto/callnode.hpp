@@ -298,6 +298,7 @@ public:
   void              set_bci(int bci) {if(_bci != bci)_reexecute=Reexecute_Undefined; _bci = bci; }
   void              set_should_reexecute(bool reexec) {_reexecute = reexec ? Reexecute_True : Reexecute_False;}
 
+  void              set_method(ciMethod* method) { _method = method; }
   // Miscellaneous utility functions
   JVMState* clone_deep(Compile* C) const;    // recursively clones caller chain
   JVMState* clone_shallow(Compile* C) const; // retains uncloned caller

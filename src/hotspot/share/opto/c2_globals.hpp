@@ -555,6 +555,12 @@
   notproduct(bool, PrintOptimizeStringConcat, false,                        \
           "Print information about transformations performed on Strings")   \
                                                                             \
+  product(bool, OptimizeSubstring, true,                                    \
+          "enable substring optimization")                                  \
+                                                                            \
+  notproduct(bool, PrintOptimizeSubstring, false,                           \
+          "Trace substring stack replacement")                              \
+                                                                            \
   product(intx, ValueSearchLimit, 1000,                                     \
           "Recursion limit in PhaseMacroExpand::value_from_mem_phi")        \
           range(0, max_jint)                                                \

@@ -1014,6 +1014,14 @@ bool CallJavaNode::validate_symbolic_info() const {
   }
   ciMethod* symbolic_info = jvms()->method()->get_method_at_bci(_bci);
   ciMethod* callee = method();
+
+  // vmIntrinsics::_String_startsWith, callee has changed to the overrided version
+  if (callee->holder()->name() == ciSymbol::java_lang_String()
+          && 0 == strcmp(callee->name()->as_quoted_ascii(), "startsWith")
+          && override_symbolic_info()) {
+    return true; //skip
+  }
+
   if (symbolic_info->is_method_handle_intrinsic() && !callee->is_method_handle_intrinsic()) {
     assert(override_symbolic_info(), "should be set");
   }
