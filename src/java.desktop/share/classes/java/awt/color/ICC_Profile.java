@@ -830,8 +830,6 @@ public class ICC_Profile implements Serializable {
      */
     public static ICC_Profile getInstance (int cspace) {
         ICC_Profile thisProfile = null;
-        String fileName;
-
         switch (cspace) {
         case ColorSpace.CS_sRGB:
             synchronized(ICC_Profile.class) {
@@ -869,17 +867,11 @@ public class ICC_Profile implements Serializable {
         case ColorSpace.CS_PYCC:
             synchronized(ICC_Profile.class) {
                 if (PYCCprofile == null) {
-                    if (standardProfileExists("PYCC.pf"))
-                    {
-                        ProfileDeferralInfo pInfo =
-                            new ProfileDeferralInfo("PYCC.pf",
-                                                    ColorSpace.TYPE_3CLR, 3,
-                                                    CLASS_DISPLAY);
-                        PYCCprofile = getDeferredInstance(pInfo);
-                    } else {
-                        throw new IllegalArgumentException(
-                                "Can't load standard profile: PYCC.pf");
-                    }
+                    ProfileDeferralInfo pInfo =
+                        new ProfileDeferralInfo("PYCC.pf",
+                                                ColorSpace.TYPE_3CLR, 3,
+                                                CLASS_DISPLAY);
+                    PYCCprofile = getDeferredInstance(pInfo);
                 }
                 thisProfile = PYCCprofile;
             }
