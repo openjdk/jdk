@@ -289,6 +289,7 @@ public class TestModules extends JavadocTester {
                 "--show-module-contents=all",
                 "-Xdoclint:none",
                 "--module-source-path", testSrc,
+                "--add-modules", "moduleC",
                 "--module", "moduleB",
                 "testpkg2mdlB", "testpkgmdlB");
         checkExit(Exit.OK);

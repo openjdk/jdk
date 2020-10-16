@@ -489,7 +489,7 @@ public class TestRecordTypes extends JavadocTester {
                         + rcAnno
                         + """
                             int&nbsp;i)
-                            extends java.lang.Record</pre>""",
+                            extends java.lang.Record<sup>PREVIEW</sup></pre>""",
                 "<div class=\"member-signature\">"
                         + fAnno
                         + """
