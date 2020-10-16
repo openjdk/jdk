@@ -65,7 +65,7 @@ class G1FullCollector : StackObj {
 
   protected:
     uint8_t default_value() const { return Normal; }
-    
+
   public:
     bool is_closed(HeapWord* obj) const { return get_by_address(obj) == ClosedArchive; }
     bool is_pinned(HeapWord* obj) const { return get_by_address(obj) >= Pinned; }
