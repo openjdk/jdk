@@ -501,7 +501,7 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   SystemDictionaryShared::serialize_well_known_klasses(soc);
   soc->do_tag(--tag);
 
-  CppVtables::serialize_cloned_cpp_vtptrs(soc);
+  CppVtables::serialize(soc);
   soc->do_tag(--tag);
 
   CDS_JAVA_HEAP_ONLY(ClassLoaderDataShared::serialize(soc));
@@ -732,9 +732,7 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   builder.gather_source_objs();
 
-  CppVtables::allocate_cloned_cpp_vtptrs();
-  char* cloned_vtables = _mc_region.top();
-  CppVtables::allocate_cpp_vtable_clones();
+  char* cloned_vtables = CppVtables::dumptime_init();
 
   {
     _mc_region.pack(&_rw_region);
@@ -780,7 +778,7 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   // The vtable clones contain addresses of the current process.
   // We don't want to write these addresses into the archive. Same for i2i buffer.
-  CppVtables::zero_cpp_vtable_clones_for_writing();
+  CppVtables::zero_archived_vtables();
   memset(MetaspaceShared::i2i_entry_code_buffers(), 0,
          MetaspaceShared::i2i_entry_code_buffers_size());
 
@@ -1707,12 +1705,10 @@ void MetaspaceShared::initialize_shared_spaces() {
   FileMapInfo *static_mapinfo = FileMapInfo::current_info();
   _i2i_entry_code_buffers = static_mapinfo->i2i_entry_code_buffers();
   _i2i_entry_code_buffers_size = static_mapinfo->i2i_entry_code_buffers_size();
-  char* buffer = static_mapinfo->cloned_vtables();
-  CppVtables::clone_cpp_vtables((intptr_t*)buffer);
 
   // Verify various attributes of the archive, plus initialize the
   // shared string/symbol tables
-  buffer = static_mapinfo->serialized_data();
+  char* buffer = static_mapinfo->serialized_data();
   intptr_t* array = (intptr_t*)buffer;
   ReadClosure rc(&array);
   serialize(&rc);
