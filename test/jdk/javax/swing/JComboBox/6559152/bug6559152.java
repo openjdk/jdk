@@ -41,9 +41,11 @@ import java.awt.event.KeyEvent;
 public class bug6559152 {
     private JFrame frame;
     private JComboBox cb;
-    private ExtendedRobot robot;
+    private static Robot robot;
 
     public static void main(String[] args) throws Exception {
+        robot = new Robot();
+        robot.setAutoDelay(100);
         final bug6559152 test = new bug6559152();
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
@@ -51,6 +53,8 @@ public class bug6559152 {
                     test.setupUI();
                 }
             });
+            robot.waitForIdle();
+            robot.delay(1000);
             test.test();
         } finally {
             if (test.frame != null) {
@@ -77,19 +81,20 @@ public class bug6559152 {
     }
 
     private void test() throws Exception {
-        robot = new ExtendedRobot();
-        robot.waitForIdle();
         testImpl();
         robot.waitForIdle();
         checkResult();
     }
 
     private void testImpl() throws Exception {
-        robot.type(KeyEvent.VK_DOWN);
+        robot.keyPress(KeyEvent.VK_DOWN);
+        robot.keyRelease(KeyEvent.VK_DOWN);
         robot.waitForIdle();
-        robot.type(KeyEvent.VK_DOWN);
+        robot.keyPress(KeyEvent.VK_DOWN);
+        robot.keyRelease(KeyEvent.VK_DOWN);
         robot.waitForIdle();
-        robot.type(KeyEvent.VK_ENTER);
+        robot.keyPress(KeyEvent.VK_ENTER);
+        robot.keyRelease(KeyEvent.VK_ENTER);
     }
 
     private void checkResult() {
