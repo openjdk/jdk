@@ -218,7 +218,8 @@ public class TsaSigner {
             SignerInfo signerInfo = new SignerInfo(
                     new X500Name(issuerName),
                     signerEntry.cert.getSerialNumber(),
-                    AlgorithmId.get(SignatureUtil.extractDigestAlgFromDwithE(sigAlgo)),
+                    SignatureUtil.getDigestAlgInPkcs7SignerInfo(
+                            signature, sigAlgo, signerEntry.privateKey, false),
                     AlgorithmId.get(sigAlgo),
                     signature.sign());
 

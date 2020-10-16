@@ -102,7 +102,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
      * Constructs an algorithm ID with algorithm parameters.
      *
      * @param oid the identifier for the algorithm.
-     * @param algparams the associated algorithm parameters.
+     * @param algparams the associated algorithm parameters, can be null.
      */
     public AlgorithmId(ObjectIdentifier oid, AlgorithmParameters algparams) {
         algid = oid;
@@ -110,6 +110,12 @@ public class AlgorithmId implements Serializable, DerEncoder {
         constructedFromDer = false;
     }
 
+    /**
+     * Constructs an algorithm ID with algorithm parameters as a DerValue.
+     *
+     * @param oid the identifier for the algorithm.
+     * @param params the associated algorithm parameters, can be null.
+     */
     public AlgorithmId(ObjectIdentifier oid, DerValue params)
             throws IOException {
         this.algid = oid;

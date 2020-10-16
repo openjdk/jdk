@@ -505,7 +505,7 @@ public class SignerInfo implements DerEncoder {
      * Derives the signature algorithm name from the digest algorithm
      * name and the encryption algorithm name inside a PKCS7 SignerInfo.
      *
-     * For old style PKCS7 files where we use RSA, DSA, EC asencAlgId
+     * For old style PKCS7 files where we use RSA, DSA, EC as encAlgId
      * a DIGESTwithENC algorithm is returned. For new style RSASSA-PSS
      * and EdDSA encryption, this method ensures digAlgId is compatible
      * with the algorithm.
@@ -546,7 +546,10 @@ public class SignerInfo implements DerEncoder {
                 }
                 return encAlg;
             default:
-                String digAlg = digAlgId.getName().replace("-", "");
+                String digAlg = digAlgId.getName();
+                if (digAlg.startsWith("SHA-")) {
+                    digAlg = "SHA" + digAlg.substring(4);
+                }
                 if (encAlg.equals("EC")) encAlg = "ECDSA";
                 return digAlg + "with" + encAlg;
         }

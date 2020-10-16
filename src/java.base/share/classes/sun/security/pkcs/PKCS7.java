@@ -180,6 +180,7 @@ public class PKCS7 {
             parseOldSignedData(content);
         } else if (contentType.equals(ContentInfo.NETSCAPE_CERT_SEQUENCE_OID)){
             parseNetscapeCertChain(content);
+            contentInfo = block; // Maybe useless, just do not let it be null
         } else {
             throw new ParsingException("content type " + contentType +
                                        " not supported.");

@@ -47,12 +47,11 @@ import sun.security.x509.AlgorithmId;
 public class SignatureUtil {
 
     /**
-     * Convent OID.1.2.3.4 or 1.2.3.4 to the matched stdName.
+     * Convert OID.1.2.3.4 or 1.2.3.4 to its matching stdName.
      *
      * @param algName input, could be in any form
-     * @return the original name is it does not look like an OID,
-     *         the matched name for an OID, or the OID itself
-     *         if no match is found.
+     * @return the matching stdName, or {@code algName} if it is not in the
+     *      form of an OID, or the OID value if no match is found.
      */
     private static String checkName(String algName) {
         if (algName.indexOf(".") == -1) {
@@ -89,16 +88,15 @@ public class SignatureUtil {
      *
      * @param sigName signature algorithm
      * @param params (optional) parameters
-     * @return an AlgorithmParameterSpec object
-     * @throws ProviderException
+     * @return an AlgorithmParameterSpec, null if {@code params} is null
      */
     public static AlgorithmParameterSpec getParamSpec(String sigName,
             AlgorithmParameters params)
             throws ProviderException {
 
-        sigName = checkName(sigName).toUpperCase(Locale.ENGLISH);
         AlgorithmParameterSpec paramSpec = null;
         if (params != null) {
+            sigName = checkName(sigName).toUpperCase(Locale.ENGLISH);
             // AlgorithmParameters.getAlgorithm() may returns oid if it's
             // created during DER decoding. Convert to use the standard name
             // before passing it to RSAUtil
@@ -124,21 +122,25 @@ public class SignatureUtil {
                     ("Unrecognized algorithm for signature parameters " +
                      sigName);
             }
-        } else {
-            paramSpec = getDefaultAlgorithmParameterSpec(sigName, null);
         }
         return paramSpec;
     }
 
-    // Utility method for converting the specified parameter bytes into an
-    // AlgorithmParameterSpec object.
+    /**
+     * Utility method for converting the specified parameter bytes
+     * into an AlgorithmParameterSpec object.
+     *
+     * @param sigName signature algorithm
+     * @param paramBytes (optional) parameter bytes
+     * @return an AlgorithmParameterSpec, null if {@code paramBytes} is null
+     */
     public static AlgorithmParameterSpec getParamSpec(String sigName,
             byte[] paramBytes)
             throws ProviderException {
-        sigName = checkName(sigName).toUpperCase(Locale.ENGLISH);
         AlgorithmParameterSpec paramSpec = null;
 
         if (paramBytes != null) {
+            sigName = checkName(sigName).toUpperCase(Locale.ENGLISH);
             if (sigName.indexOf("RSA") != -1) {
                 AlgorithmParameters params =
                     createAlgorithmParameters(sigName, paramBytes);
@@ -160,8 +162,6 @@ public class SignatureUtil {
                      ("Unrecognized algorithm for signature parameters " +
                       sigName);
             }
-        } else {
-            paramSpec = getDefaultAlgorithmParameterSpec(sigName, null);
         }
         return paramSpec;
     }
@@ -201,24 +201,24 @@ public class SignatureUtil {
 
         static {
             try {
-                sha512 = AlgorithmId.get(KnownOIDs.SHA_512.stdName());
-                shake256 = AlgorithmId.get(KnownOIDs.SHAKE256.stdName());
+                sha512 = new AlgorithmId(ObjectIdentifier.of(KnownOIDs.SHA_512));
+                shake256 = new AlgorithmId(ObjectIdentifier.of(KnownOIDs.SHAKE256));
                 shake256$512 = new AlgorithmId(
                         ObjectIdentifier.of(KnownOIDs.SHAKE256_LEN),
                         new DerValue((byte) 2, new byte[]{2, 0})); // int 512
-            } catch (IOException | NoSuchAlgorithmException e) {
-                throw new AssertionError("Shoudl not happen", e);
+            } catch (IOException e) {
+                throw new AssertionError("Should not happen", e);
             }
         }
     }
     /**
-     * Determines the digestEncryptionAlgorithmId in PKCS& SignerInfo.
+     * Determines the digestEncryptionAlgorithmId in PKCS7 SignerInfo.
      *
-     * @param signer Signature object that tells you RSASA-PSS params
-     * @param sigalg Signature algorithm tells you who with who
+     * @param signer Signature object that tells you RSASSA-PSS params
+     * @param sigalg Signature algorithm
      * @param privateKey key tells you EdDSA params
      * @param directsign Ed448 uses different digest algs depending on this
-     * @return the digest alg
+     * @return the digest algId
      * @throws NoSuchAlgorithmException
      */
     public static AlgorithmId getDigestAlgInPkcs7SignerInfo(
@@ -265,7 +265,7 @@ public class SignatureUtil {
     }
 
     /**
-     * Extracts the digest algorithm names from a signature
+     * Extracts the digest algorithm name from a signature
      * algorithm name in either the "DIGESTwithENCRYPTION" or the
      * "DIGESTwithENCRYPTIONandWHATEVER" format.
      *
@@ -287,7 +287,7 @@ public class SignatureUtil {
      * This is only useful for RSASSA-PSS now, which is the only algorithm
      * that must be initialized with a AlgorithmParameterSpec now.
      */
-    public static AlgorithmParameterSpec getDefaultAlgorithmParameterSpec(
+    public static AlgorithmParameterSpec getDefaultParamSpec(
             String sigAlg, Key k) {
         sigAlg = checkName(sigAlg);
         if (sigAlg.equalsIgnoreCase("RSASSA-PSS")) {
@@ -346,7 +346,7 @@ public class SignatureUtil {
     private static Signature autoInitInternal(String alg, Key key, Signature s)
             throws InvalidKeyException {
         AlgorithmParameterSpec params = SignatureUtil
-                .getDefaultAlgorithmParameterSpec(alg, key);
+                .getDefaultParamSpec(alg, key);
         try {
             if (key instanceof PrivateKey) {
                 SignatureUtil.initSignWithParam(s, (PrivateKey) key, params,
@@ -364,7 +364,7 @@ public class SignatureUtil {
      * Derives AlgorithmId from a signature object and a key.
      * @param sigEngine the signature object
      * @param key the private key
-     * @return the AlgorithmIA, not null
+     * @return the AlgorithmId, not null
      * @throws SignatureException if cannot find one
      */
     public static AlgorithmId fromSignature(Signature sigEngine, PrivateKey key)
@@ -496,8 +496,15 @@ public class SignatureUtil {
                 64, PSSParameterSpec.TRAILER_FIELD_BC);
     }
 
-    // Values from SP800-57 part 1 rev 4 tables 2 and 3
-    // Attention: sync with JarSigner.Builder#getDefaultSignatureAlgorithm
+    // The following values are from SP800-57 part 1 rev 4 tables 2 and 3
+
+    /**
+     * Return the default message digest algorithm with the same security
+     * strength as the specified EC key size.
+     *
+     * Attention: sync with the @implNote inside
+     * {@link jdk.security.jarsigner.JarSigner.Builder#getDefaultSignatureAlgorithm}.
+     */
     private static String ecStrength (int bitLength) {
         if (bitLength >= 512) { // 256 bits of strength
             return "SHA512";
@@ -508,8 +515,13 @@ public class SignatureUtil {
         }
     }
 
-    // Same values for RSA and DSA
-    // Attention: sync with JarSigner.Builder#getDefaultSignatureAlgorithm
+    /**
+     * Return the default message digest algorithm with the same security
+     * strength as the specified IFC/FFC key size.
+     *
+     * Attention: sync with the @implNote inside
+     * {@link jdk.security.jarsigner.JarSigner.Builder#getDefaultSignatureAlgorithm}.
+     */
     private static String ifcFfcStrength (int bitLength) {
         if (bitLength > 7680) { // 256 bits
             return "SHA512";

@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8056174
+ * @bug 8056174 8242068
  * @summary Make sure JarSigner impl conforms to spec
  * @library /test/lib
  * @modules java.base/sun.security.tools.keytool
@@ -126,6 +126,7 @@ public class Spec {
         npe(()->b1.setProperty("sectionsonly", null));
         iae(()->b1.setProperty("sectionsonly", "OK"));
         npe(()->b1.setProperty("sectionsonly", null));
+        npe(()->b1.setProperty("altsigner", null));
         iae(()->b1.setProperty("directsign", "OK"));
         npe(()->b1.setProperty("directsign", null));
         npe(()->b1.eventHandler(null));

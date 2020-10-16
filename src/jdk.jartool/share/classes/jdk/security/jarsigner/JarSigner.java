@@ -855,7 +855,7 @@ public final class JarSigner {
         sf.write(baos);
         byte[] content = baos.toByteArray();
 
-        // Use new method is directSign is false or it's a modern
+        // Use new method if directSign is false or it's a modern
         // algorithm not supported by existing ContentSigner.
         // Make this always true after we remove ContentSigner.
         boolean useNewMethod = !directsign
