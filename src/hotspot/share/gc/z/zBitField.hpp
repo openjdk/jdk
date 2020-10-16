@@ -60,9 +60,9 @@ class ZBitField : public AllStatic {
 private:
   static const int ContainerBits = sizeof(ContainerType) * BitsPerByte;
 
-  STATIC_ASSERT(FieldBits < ContainerBits);
-  STATIC_ASSERT(FieldShift + FieldBits <= ContainerBits);
-  STATIC_ASSERT(ValueShift + FieldBits <= ContainerBits);
+  static_assert(FieldBits < ContainerBits);
+  static_assert(FieldShift + FieldBits <= ContainerBits);
+  static_assert(ValueShift + FieldBits <= ContainerBits);
 
   static const ContainerType FieldMask = (((ContainerType)1 << FieldBits) - 1);
 

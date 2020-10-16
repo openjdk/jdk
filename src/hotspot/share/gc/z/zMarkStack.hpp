@@ -66,10 +66,13 @@ public:
   T* pop();
 };
 
-typedef ZStack<ZMarkStackEntry, ZMarkStackSlots>     ZMarkStack;
-typedef ZStackList<ZMarkStack>                       ZMarkStackList;
-typedef ZStack<ZMarkStack*, ZMarkStackMagazineSlots> ZMarkStackMagazine;
-typedef ZStackList<ZMarkStackMagazine>               ZMarkStackMagazineList;
+using ZMarkStack = ZStack<ZMarkStackEntry, ZMarkStackSlots>;
+using ZMarkStackList = ZStackList<ZMarkStack>;
+using ZMarkStackMagazine = ZStack<ZMarkStack*, ZMarkStackMagazineSlots>;
+using ZMarkStackMagazineList = ZStackList<ZMarkStackMagazine>;
+
+static_assert(sizeof(ZMarkStack) == ZMarkStackSize);
+static_assert(sizeof(ZMarkStackMagazine) <= ZMarkStackSize);
 
 class ZMarkStripe {
 private:

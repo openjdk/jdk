@@ -128,9 +128,6 @@ uintptr_t ZMarkStackSpace::alloc(size_t size) {
 ZMarkStackAllocator::ZMarkStackAllocator() :
     _freelist(),
     _space() {
-  guarantee(sizeof(ZMarkStack) == ZMarkStackSize, "Size mismatch");
-  guarantee(sizeof(ZMarkStackMagazine) <= ZMarkStackSize, "Size mismatch");
-
   // Prime free list to avoid an immediate space
   // expansion when marking starts.
   if (_space.is_initialized()) {
