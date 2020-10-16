@@ -2352,6 +2352,8 @@ C2V_END
 C2V_VMENTRY_PREFIX(jboolean, attachCurrentThread, (JNIEnv* env, jobject c2vm, jbyteArray name, jboolean as_daemon))
   if (thread == NULL) {
     // Called from unattached JVMCI shared library thread
+	guarantee(name != NULL, "libjvmci caller must pass non-null name");
+
     extern struct JavaVM_ main_vm;
     JNIEnv* hotspotEnv;
 
