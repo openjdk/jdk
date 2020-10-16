@@ -273,6 +273,7 @@ public abstract class SocketChannel
         throws IOException
     {
         SocketChannel sc;
+        requireNonNull(remote);
         if (remote instanceof InetSocketAddress)
             sc = open();
         else if (remote instanceof UnixDomainSocketAddress)

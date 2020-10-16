@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8231358
+ * @bug 8245194
  * @run main/othervm Shutdown
  */
 

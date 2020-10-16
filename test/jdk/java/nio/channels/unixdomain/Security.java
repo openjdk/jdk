@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8231358
+ * @bug 8245194
  * @run main/othervm/java.security.policy=policy1 Security policy1
  * @run main/othervm/java.security.policy=policy2 Security policy2
  * @run main/othervm Security policy3
