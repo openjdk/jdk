@@ -146,7 +146,7 @@ frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
   const ucontext_t* uc = (const ucontext_t*)ucVoid;
   intptr_t* sp = os::Aix::ucontext_get_sp(uc);
   address lr = ucontext_get_lr(uc);
-  *fr = frame(sp, lr);
+  return frame(sp, lr);
 }
 
 frame os::get_sender_for_C_frame(frame* fr) {
