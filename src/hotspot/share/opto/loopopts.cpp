@@ -2558,7 +2558,13 @@ IfNode* PhaseIdealLoop::insert_cmpi_loop_exit(IfNode* if_cmpu, IdealLoopTree *lo
 
   ProjNode* lp_continue = lp_proj->as_Proj();
   ProjNode* lp_exit     = if_cmpu->proj_out(!lp_continue->is_IfTrue())->as_Proj();
-
+  if (!lp_exit->is_IfFalse()) {
+    // The loop exit condition is (i <u limit) ==> (i >= 0 && i < limit).
+    // We therefore can't add a single exit condition.
+    return NULL;
+  }
+  // The loop exit condition is !(i <u limit) ==> (i < 0 || i >= limit).
+  // Split out the exit condition (i < 0) for stride < 0 or (i >= limit) for stride > 0.
   Node* limit = NULL;
   if (stride > 0) {
     limit = cmpu->in(2);

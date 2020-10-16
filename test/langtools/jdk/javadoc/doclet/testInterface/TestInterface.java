@@ -135,11 +135,15 @@ public class TestInterface extends JavadocTester {
                     <div class="block">A hider field</div>""",
 
                 """
-                    <td class="col-first"><code>static void</code></td>
-                    <th class="col-second" scope="row"><code><span class="member-name-link"><a href="#m()">m</a></span>()</code></th>
-                    <td class="col-last">
+                    <div class="col-first even-row-color method-summary-table-tab1 method-summary-table-t\
+                    ab4 method-summary-table"><code>static void</code></div>
+                    <div class="col-second even-row-color method-summary-table-tab1 method-summary-table-\
+                    tab4 method-summary-table"><code><span class="member-name-link"><a href="#m()">m\
+                    </a></span>()</code></div>
+                    <div class="col-last even-row-color method-summary-table-tab1 method-summary-table-ta\
+                    b4 method-summary-table">
                     <div class="block">A hider method</div>
-                    </td>
+                    </div>
                     """,
 
                 """

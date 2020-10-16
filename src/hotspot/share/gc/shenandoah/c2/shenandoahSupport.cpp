@@ -1325,7 +1325,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     assert(val->bottom_type()->make_oopptr(), "need oop");
     assert(val->bottom_type()->make_oopptr()->const_oop() == NULL, "expect non-constant");
 
-    enum { _heap_stable = 1, _not_cset, _evac_path, PATH_LIMIT };
+    enum { _heap_stable = 1, _evac_path, _not_cset, PATH_LIMIT };
     Node* region = new RegionNode(PATH_LIMIT);
     Node* val_phi = new PhiNode(region, val->bottom_type()->is_oopptr());
     Node* raw_mem_phi = PhiNode::make(region, raw_mem, Type::MEMORY, TypeRawPtr::BOTTOM);
@@ -1339,14 +1339,21 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     val_phi->init_req(_heap_stable, val);
     raw_mem_phi->init_req(_heap_stable, raw_mem);
 
-    // Test for in-cset.
+    // Test for in-cset, unless it's a native-LRB. Native LRBs need to return NULL
+    // even for non-cset objects to prevent ressurrection of such objects.
     // Wires !in_cset(obj) to slot 2 of region and phis
     Node* not_cset_ctrl = NULL;
-    test_in_cset(ctrl, not_cset_ctrl, val, raw_mem, phase);
+    if (!lrb->is_native()) {
+      test_in_cset(ctrl, not_cset_ctrl, val, raw_mem, phase);
+    }
     if (not_cset_ctrl != NULL) {
       region->init_req(_not_cset, not_cset_ctrl);
       val_phi->init_req(_not_cset, val);
       raw_mem_phi->init_req(_not_cset, raw_mem);
+    } else {
+      region->del_req(_not_cset);
+      val_phi->del_req(_not_cset);
+      raw_mem_phi->del_req(_not_cset);
     }
 
     // Resolve object when orig-value is in cset.

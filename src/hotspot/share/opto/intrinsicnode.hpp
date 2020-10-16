@@ -47,10 +47,11 @@ class PartialSubtypeCheckNode : public Node {
 // Base class for Ideal nodes used in String intrinsic code.
 class StrIntrinsicNode: public Node {
  public:
-  // Possible encodings of the two parameters passed to the string intrinsic.
+  // Possible encodings of the parameters passed to the string intrinsic.
   // 'L' stands for Latin1 and 'U' stands for UTF16. For example, 'LU' means that
   // the first string is Latin1 encoded and the second string is UTF16 encoded.
-  typedef enum ArgEncoding { LL, LU, UL, UU, none } ArgEnc;
+  // 'L' means that the single string is Latin1 encoded
+  typedef enum ArgEncoding { LL, LU, UL, UU, L, U, none } ArgEnc;
 
  protected:
   // Encoding of strings. Used to select the right version of the intrinsic.
