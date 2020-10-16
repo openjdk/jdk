@@ -61,6 +61,11 @@ public:
     const char* list_name = make_log_name(DumpLoadedClassList, NULL);
     _classlist_file = new(ResourceObj::C_HEAP, mtInternal)
                          fileStream(list_name);
+    _classlist_file->print_cr("# NOTE: Do not modify this file.");
+    _classlist_file->print_cr("#");
+    _classlist_file->print_cr("# This file is generated via the -XX:DumpLoadedClassList=<class_list_file> option");
+    _classlist_file->print_cr("# and is used at CDS archive dump time (see -Xshare:dump).");
+    _classlist_file->print_cr("#");
     FREE_C_HEAP_ARRAY(char, list_name);
   }
 #endif
