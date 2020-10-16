@@ -99,6 +99,7 @@ import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.UnknownBlockTagTree;
+import com.sun.source.doctree.UnknownInlineTagTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.LineMap;
 import com.sun.source.util.DocSourcePositions;
@@ -119,15 +120,8 @@ import static javax.lang.model.element.Modifier.*;
 import static javax.lang.model.type.TypeKind.*;
 
 import static com.sun.source.doctree.DocTree.Kind.*;
-import com.sun.source.doctree.UnknownInlineTagTree;
-import java.util.function.Function;
-import jdk.javadoc.internal.doclets.formats.html.HtmlDocletWriter;
-import jdk.javadoc.internal.doclets.formats.html.LinkInfoImpl;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
-import jdk.javadoc.internal.doclets.toolkit.Content;
+import javax.lang.model.AnnotatedConstruct;
+import javax.lang.model.util.SimpleAnnotationValueVisitor14;
 import static jdk.javadoc.internal.doclets.toolkit.builders.ConstantsSummaryBuilder.MAX_CONSTANT_VALUE_INDEX_LENGTH;
 
 /**
@@ -2848,7 +2842,7 @@ public class Utils {
                                .orElse(null);
     }
 
-    public Content getPreviewTreeSummaryOrDetails(DocTree t, boolean summary) {
+    public String getPreviewTreeSummaryOrDetails(DocTree t, boolean summary) {
         UnknownInlineTagTree previewTag = (UnknownInlineTagTree) t;
         List<? extends DocTree> previewContent = previewTag.getContent();
         String previewText = ((TextTree) previewContent.get(0)).getBody();
@@ -2857,7 +2851,7 @@ public class Utils {
                summary ? summaryAndDetails[0]
                        : summaryAndDetails.length > 1 ? summaryAndDetails[1]
                                                       : summaryAndDetails[0];
-        return new RawHtml(rawHTML);
+        return rawHTML;
     }
 
     public List<? extends DocTree> getFirstSentenceTrees(Element element) {
@@ -2999,9 +2993,9 @@ public class Utils {
     @SuppressWarnings("preview")
     public PreviewSummary declaredUsingPreviewAPIs(Element el) {
         List<TypeElement> usedInDeclaration = new ArrayList<>();
+        usedInDeclaration.addAll(annotations2Classes(el));
         switch (el.getKind()) {
             case ANNOTATION_TYPE, CLASS, ENUM, INTERFACE, RECORD -> {
-                //TODO: annotations
                 TypeElement te = (TypeElement) el;
                 for (TypeParameterElement tpe : te.getTypeParameters()) {
                     usedInDeclaration.addAll(types2Classes(tpe.getBounds()));
@@ -3012,7 +3006,6 @@ public class Utils {
                 usedInDeclaration.addAll(types2Classes(te.getRecordComponents().stream().map(c -> c.asType()).collect(Collectors.toList()))); //TODO: annotations on record components???
             }
             case CONSTRUCTOR, METHOD -> {
-                //TODO: annotations
                 ExecutableElement ee = (ExecutableElement) el;
                 for (TypeParameterElement tpe : ee.getTypeParameters()) {
                     usedInDeclaration.addAll(types2Classes(tpe.getBounds()));
@@ -3021,14 +3014,13 @@ public class Utils {
                 usedInDeclaration.addAll(types2Classes(List.of(ee.getReceiverType())));
                 usedInDeclaration.addAll(types2Classes(ee.getThrownTypes()));
                 usedInDeclaration.addAll(types2Classes(ee.getParameters().stream().map(p -> p.asType()).collect(Collectors.toList())));
+                usedInDeclaration.addAll(annotationValue2Classes(ee.getDefaultValue()));
             }
             case FIELD, ENUM_CONSTANT, RECORD_COMPONENT -> {
-                //TODO: annotations
                 VariableElement ve = (VariableElement) el;
                 usedInDeclaration.addAll(types2Classes(List.of(ve.asType())));
             }
             case MODULE, PACKAGE -> {
-                //TODO: annotations?
             }
             default -> throw new IllegalStateException("Unexpected: " + el.getKind());
         }
@@ -3063,12 +3055,68 @@ public class Utils {
         while (!todo.isEmpty()) {
             TypeMirror type = todo.remove(todo.size() - 1);
 
+            result.addAll(annotations2Classes(type));
+
             if (type.getKind() == DECLARED) {
                 DeclaredType dt = (DeclaredType) type;
                 result.add((TypeElement) dt.asElement());
                 todo.addAll(dt.getTypeArguments());
             }
         }
+
+        return result;
+    }
+
+    private Collection<TypeElement> annotations2Classes(AnnotatedConstruct annotated) {
+        List<TypeElement> result = new ArrayList<>();
+
+        for (AnnotationMirror am : annotated.getAnnotationMirrors()) {
+            result.addAll(annotation2Classes(am));
+        }
+
+        return result;
+    }
+
+    private Collection<TypeElement> annotation2Classes(AnnotationMirror am) {
+        List<TypeElement> result = new ArrayList<>();
+
+        result.addAll(types2Classes(List.of(am.getAnnotationType())));
+        am.getElementValues()
+          .values()
+          .stream()
+          .flatMap(av -> annotationValue2Classes(av).stream())
+          .forEach(result::add);
+
+        return result;
+    }
+
+    private Collection<TypeElement> annotationValue2Classes(AnnotationValue value) {
+        if (value == null) {
+            return List.of();
+        }
+
+        List<TypeElement> result = new ArrayList<>();
+
+        value.accept(new SimpleAnnotationValueVisitor14<>() {
+            @Override
+            public Object visitArray(List<? extends AnnotationValue> vals, Object p) {
+                vals.stream()
+                    .forEach(v -> v.accept(this, null));
+                return super.visitArray(vals, p);
+            }
+            @Override
+            public Object visitAnnotation(AnnotationMirror a, Object p) {
+                result.addAll(annotation2Classes(a));
+                return super.visitAnnotation(a, p);
+            }
+
+            @Override
+            public Object visitType(TypeMirror t, Object p) {
+                result.addAll(types2Classes(List.of(t)));
+                return super.visitType(t, p);
+            }
+
+        }, null);
 
         return result;
     }

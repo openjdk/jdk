@@ -3554,7 +3554,7 @@ public class Check {
         }
         if (declaredUsingPreviewFeature(s)) {
             if (preview.isEnabled()) {
-                //for preview disabled do presumably do not need to do anything?
+                //for preview disabled do presumably so not need to do anything?
                 //If "s" is compiled from source, then there was an error for it already;
                 //if "s" is from classfile, there already was an error for the classfile.
                 preview.markUsesPreview(pos);

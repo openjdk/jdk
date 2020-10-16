@@ -119,8 +119,8 @@ public class FSInfo {
                     if (url != null) {
                         list.add(Path.of(url.toURI()));
                     }
-                } catch (URISyntaxException | MalformedURLException ex) {
-                    //ignored per the jar file specification
+                } catch (URISyntaxException ex) {
+                    throw new IOException(ex);
                 }
             }
 

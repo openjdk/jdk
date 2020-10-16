@@ -1280,11 +1280,12 @@ public class ElementsTable {
             switch (kind) {
                 case CLASS: case METHOD: case MODULE: case PACKAGE:
                     return kind;
-                case RECORD: case ANNOTATION_TYPE: case ENUM: case INTERFACE: /*???*/case RECORD_COMPONENT:
+                case RECORD: case ANNOTATION_TYPE: case ENUM: case INTERFACE:
                     return ElementKind.CLASS;
                 case CONSTRUCTOR: case ENUM_CONSTANT: case EXCEPTION_PARAMETER:
                 case FIELD: case INSTANCE_INIT: case LOCAL_VARIABLE: case PARAMETER:
                 case RESOURCE_VARIABLE: case STATIC_INIT: case TYPE_PARAMETER:
+                case RECORD_COMPONENT:
                     return ElementKind.METHOD;
                 default:
                     throw new AssertionError("unsupported kind: " + kind);

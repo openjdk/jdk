@@ -654,7 +654,6 @@ public class HtmlDocletWriter {
             targetLink = getCrossPackageLink(packageElement);
         }
         if (targetLink != null) {
-            //TODO: external
             if (flags.contains(ElementFlag.PREVIEW)) {
                 return new ContentBuilder(
                     links.createLink(targetLink, label),
@@ -664,7 +663,12 @@ public class HtmlDocletWriter {
             }
             return links.createLink(targetLink, label);
         } else {
-            //TODO: PREVIEW
+            if (flags.contains(ElementFlag.PREVIEW)) {
+                return new ContentBuilder(
+                    label,
+                    new HtmlTree(TagName.SUP).add(contents.previewMark)
+                );
+            }
             return label;
         }
     }
@@ -692,7 +696,12 @@ public class HtmlDocletWriter {
             }
             return link;
         }
-        //TODO: preview
+        if (flags.contains(ElementFlag.PREVIEW)) {
+            return new ContentBuilder(
+                label,
+                new HtmlTree(TagName.SUP).add(contents.previewMark)
+            );
+        }
         return label;
     }
 
@@ -1297,7 +1306,7 @@ public class HtmlDocletWriter {
             div = HtmlTree.DIV(HtmlStyle.deprecationComment, result);
             htmltree.add(div);
         } else if (preview) {
-            div = HtmlTree.DIV(HtmlStyle.block, result); //TODO: or preview comment (italics)
+            div = HtmlTree.DIV(HtmlStyle.block, result);
             htmltree.add(div);
         } else {
             div = HtmlTree.DIV(HtmlStyle.block, result);
@@ -2211,7 +2220,7 @@ public class HtmlDocletWriter {
             Content div = HtmlTree.DIV(HtmlStyle.block);
             if (previewTree != null) {
                 div.add(HtmlTree.SPAN(HtmlStyle.previewLabel,
-                                      utils.getPreviewTreeSummaryOrDetails(previewTree, true)));
+                                      new RawHtml(utils.getPreviewTreeSummaryOrDetails(previewTree, true))));
             } else {
                 div.add(HtmlTree.SPAN(HtmlStyle.previewLabel, contents.previewPhrase));
             }
@@ -2226,7 +2235,7 @@ public class HtmlDocletWriter {
             DocTree previewTree = utils.getPreviewTree(forWhat);
             if (previewTree != null) {
                 previewDiv.add(new HtmlTree(TagName.A).put(HtmlAttr.ID, "preview")
-                                                      .add(utils.getPreviewTreeSummaryOrDetails(previewTree, false)));
+                                                      .add(new RawHtml(utils.getPreviewTreeSummaryOrDetails(previewTree, false))));
             } else {
                 String name = (switch (forWhat.getKind()) {
                     case PACKAGE, MODULE ->

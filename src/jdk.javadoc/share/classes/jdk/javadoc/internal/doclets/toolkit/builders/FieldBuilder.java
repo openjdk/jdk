@@ -30,7 +30,6 @@ import java.util.*;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
-import jdk.javadoc.internal.doclets.formats.html.AbstractMemberWriter;
 
 import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
 import jdk.javadoc.internal.doclets.toolkit.Content;

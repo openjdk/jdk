@@ -29,7 +29,7 @@
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  *          jdk.javadoc/jdk.javadoc.internal.doclets.formats.html.resources:+open
  * @build    javadoc.tester.*
- * @run main TestDeclaredUsingPreview
+ * @run main TestPreview
  */
 
 import java.nio.file.Paths;
@@ -37,10 +37,10 @@ import java.text.MessageFormat;
 import java.util.ResourceBundle;
 import javadoc.tester.JavadocTester;
 
-public class TestDeclaredUsingPreview extends JavadocTester {
+public class TestPreview extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestDeclaredUsingPreview tester = new TestDeclaredUsingPreview();
+        TestPreview tester = new TestPreview();
         tester.runTests();
     }
 
@@ -72,6 +72,7 @@ public class TestDeclaredUsingPreview extends JavadocTester {
                                       <div class="preview-comment">{3}</div>
                                       </div>""";
             String expected = MessageFormat.format(expectedTemplate, zero, one, two, three);
+            expected = expected.replace("\n", NL);
             checkOutput("m/pkg/TestPreviewDeclaration.html", true, expected);
         }
 
@@ -79,5 +80,11 @@ public class TestDeclaredUsingPreview extends JavadocTester {
                     "<code><a href=\"TestPreviewDeclaration.html\" title=\"interface in pkg\">TestPreviewDeclaration</a><sup><a href=\"TestPreviewDeclaration.html#preview\">PREVIEW</a></sup></code>");
         checkOutput("m/pkg/TestPreviewAPIUse.html", true,
                 "<a href=\"" + doc + "/java.base/preview/Core.html\" title=\"class or interface in preview\" class=\"external-link\">Core</a><sup><a href=\"" + doc + "/java.base/preview/Core.html#preview\" title=\"class or interface in preview\" class=\"external-link\">PREVIEW</a>");
+        checkOutput("m/pkg/DocAnnotation.html", true,
+                "<div class=\"preview-block\"><a id=\"preview\"><span class=\"preview-label\">");
+        checkOutput("m/pkg/DocAnnotationUse1.html", true,
+                "<div class=\"preview-block\"><a id=\"preview\"><span class=\"preview-label\">");
+        checkOutput("m/pkg/DocAnnotationUse2.html", true,
+                "<div class=\"preview-block\"><a id=\"preview\"><span class=\"preview-label\">");
     }
 }

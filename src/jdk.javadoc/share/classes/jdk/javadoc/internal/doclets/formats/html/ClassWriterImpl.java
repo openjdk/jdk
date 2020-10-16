@@ -199,7 +199,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         Content pre = new HtmlTree(TagName.PRE);
         addAnnotationInfo(typeElement, pre);
         String sep = null;
-        for (String modifiersPart : modifiers.split(" ")) { //TODO: annotations?
+        for (String modifiersPart : modifiers.split(" ")) {
             if (sep != null) {
                 pre.add(sep);
             }
