@@ -30,6 +30,7 @@ import java.util.Formatter;
 import java.util.List;
 
 import jdk.vm.ci.code.BailoutException;
+import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.SpeculationLog;
 
@@ -118,8 +119,17 @@ public class HotSpotSpeculationLog implements SpeculationLog {
 
     public static final class HotSpotSpeculation extends Speculation {
 
+        // Also defined in JVMCINMethodData C++ class - keep in sync
+        static final int LENGTH_BITS = 5;
+        static final int INDEX_BITS = 31 - LENGTH_BITS;
+
+        static final int MAX_LENGTH = (1 << LENGTH_BITS) - 1;
+        static final int MAX_INDEX = (1 << INDEX_BITS) - 1;
+
+        static final int LENGTH_MASK = MAX_LENGTH;
+
         /**
-         * A speculation id is a long encoding an offset (high 32 bits) and a length (low 32 bts).
+         * A speculation id is a long encoding a length (low 5 bits) and an index (next 26 bits).
          * Combined, the index and length denote where the {@linkplain #encoding encoded
          * speculation} is in a {@linkplain HotSpotSpeculationLog#getFlattenedSpeculations
          * flattened} speculations array.
@@ -233,15 +243,21 @@ public class HotSpotSpeculationLog implements SpeculationLog {
     }
 
     private static long encodeIndexAndLength(int index, int length) {
-        return ((long) index) << 32 | length;
+        if (length > HotSpotSpeculation.MAX_LENGTH || length < 0) {
+            throw new InternalError(String.format("Invalid encoded speculation length: %d (0x%x)", length, length));
+        }
+        if (index > HotSpotSpeculation.MAX_INDEX || index < 0) {
+            throw new JVMCIError("Encoded speculation index is negative or too big: %d (0x%x)", index, index);
+        }
+        return (index << HotSpotSpeculation.LENGTH_BITS) | length;
     }
 
     private static int decodeIndex(long indexAndLength) {
-        return (int) (indexAndLength >>> 32);
+        return (int) (indexAndLength >>> HotSpotSpeculation.LENGTH_BITS);
     }
 
     private static int decodeLength(long indexAndLength) {
-        return (int) indexAndLength & 0xFFFFFFFF;
+        return (int) (indexAndLength & HotSpotSpeculation.LENGTH_MASK);
     }
 
     @Override
@@ -358,4 +374,3 @@ public class HotSpotSpeculationLog implements SpeculationLog {
         final long address;
     }
 }
-
