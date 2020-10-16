@@ -61,7 +61,6 @@ package test.java.time.format;
 
 import static java.time.temporal.ChronoField.AMPM_OF_DAY;
 import static java.time.temporal.ChronoField.DAY_OF_WEEK;
-import static java.time.temporal.ChronoField.FLEXIBLE_PERIOD_OF_DAY;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static org.testng.Assert.assertEquals;
 import java.time.ZonedDateTime;
@@ -129,22 +128,6 @@ public class TestDateTimeTextProvider extends AbstractTestPrinterParser {
 
             {AMPM_OF_DAY, 0, TextStyle.SHORT, enUS, "AM"},
             {AMPM_OF_DAY, 1, TextStyle.SHORT, enUS, "PM"},
-
-            {FLEXIBLE_PERIOD_OF_DAY, 0, TextStyle.FULL, enUS, "midnight"},
-            {FLEXIBLE_PERIOD_OF_DAY, 1, TextStyle.FULL, enUS, "at night"},
-            {FLEXIBLE_PERIOD_OF_DAY, 360, TextStyle.FULL, enUS, "in the morning"},
-            {FLEXIBLE_PERIOD_OF_DAY, 720, TextStyle.FULL, enUS, "noon"},
-            {FLEXIBLE_PERIOD_OF_DAY, 721, TextStyle.FULL, enUS, "in the afternoon"},
-            {FLEXIBLE_PERIOD_OF_DAY, 1_080, TextStyle.FULL, enUS, "in the evening"},
-            {FLEXIBLE_PERIOD_OF_DAY, 1_320, TextStyle.FULL, enUS, "at night"},
-
-            {FLEXIBLE_PERIOD_OF_DAY, 0, TextStyle.NARROW, enUS, "mi"},
-            {FLEXIBLE_PERIOD_OF_DAY, 1, TextStyle.NARROW, enUS, "at night"},
-            {FLEXIBLE_PERIOD_OF_DAY, 360, TextStyle.NARROW, enUS, "in the morning"},
-            {FLEXIBLE_PERIOD_OF_DAY, 720, TextStyle.NARROW, enUS, "n"},
-            {FLEXIBLE_PERIOD_OF_DAY, 721, TextStyle.NARROW, enUS, "in the afternoon"},
-            {FLEXIBLE_PERIOD_OF_DAY, 1_080, TextStyle.NARROW, enUS, "in the evening"},
-            {FLEXIBLE_PERIOD_OF_DAY, 1_320, TextStyle.NARROW, enUS, "at night"},
         };
     }
 

@@ -1466,14 +1466,20 @@ public final class DateTimeFormatterBuilder {
      * a day period type and its translation both depend on the locale in the formatter.
      * <p>
      * During parsing, the text will be parsed into a day period type first. If neither
-     * {@code HOUR_OF_DAY} nor {@code MINUTE_OF_HOUR} exist, then the mid-point of the
-     * day period will be set to {@code MINUTE_OF_DAY} field. Optionally if {@code AMPM_OF_DAY}
-     * exists, it will also be overridden. For example, if the parsed day period is
+     * {@code HOUR_OF_DAY} nor {@code MINUTE_OF_HOUR} exist, then the day period type
+     * is resolved to {@code HOUR_OF_DAY} and {@code MINUTE_OF_HOUR} with the mid-point
+     * of the day period. For example, if the parsed day period type is
      * "morning1" and the period defined for it in the formatter locale is from 00:00
-     * to 06:00, then '180' is set to {@code MINUTE_OF_DAY}.
+     * to 06:00, then '3' is set to {@code HOUR_OF_DAY} and '0' to
+     * {@code MINUTE_OF_HOUR}. Otherwise those time fields remain intact.
+     * If {@code HOUR_OF_DAY} and {@code MINUTE_OF_HOUR} exist, those
+     * values are checked with the parsed day period, and if those time fields are outside
+     * the parsed day period, {@link DateTimeException} is thrown.
+     * Optionally if {@code AMPM_OF_DAY} exists, it will also be overridden.
      *
      * @param style the text style to use, not null
      * @return this, for chaining, not null
+     * @since 16
      */
     public DateTimeFormatterBuilder appendDayPeriodText(TextStyle style) {
         Objects.requireNonNull(style, "style");
@@ -1859,19 +1865,10 @@ public final class DateTimeFormatterBuilder {
                     }
                 } else if (cur == 'B') {
                     switch (count) {
-                        case 1:
-                        case 2:
-                        case 3:
-                            appendDayPeriodText(TextStyle.SHORT);
-                            break;
-                        case 4:
-                            appendDayPeriodText(TextStyle.FULL);
-                            break;
-                        case 5:
-                            appendDayPeriodText(TextStyle.NARROW);
-                            break;
-                        default:
-                            throw new IllegalArgumentException("Too many pattern letters: " + cur);
+                        case 1, 2, 3 -> appendDayPeriodText(TextStyle.SHORT);
+                        case 4 -> appendDayPeriodText(TextStyle.FULL);
+                        case 5 -> appendDayPeriodText(TextStyle.NARROW);
+                        default -> throw new IllegalArgumentException("Too many pattern letters: " + cur);
                     }
                 } else {
                     throw new IllegalArgumentException("Unknown pattern letter: " + cur);
@@ -1984,19 +1981,10 @@ public final class DateTimeFormatterBuilder {
                 break;
             case 'G':
                 switch (count) {
-                    case 1:
-                    case 2:
-                    case 3:
-                        appendText(field, TextStyle.SHORT);
-                        break;
-                    case 4:
-                        appendText(field, TextStyle.FULL);
-                        break;
-                    case 5:
-                        appendText(field, TextStyle.NARROW);
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Too many pattern letters: " + cur);
+                    case 1, 2, 3 -> appendText(field, TextStyle.SHORT);
+                    case 4 -> appendText(field, TextStyle.FULL);
+                    case 5 -> appendText(field, TextStyle.NARROW);
+                    default -> throw new IllegalArgumentException("Too many pattern letters: " + cur);
                 }
                 break;
             case 'S':
@@ -5069,8 +5057,8 @@ public final class DateTimeFormatterBuilder {
             value = map.keySet().stream()
                     .filter(k -> k.includes(val))
                     .min(DayPeriod.DPCOMPARATOR)
-                    .map(DayPeriod::mid)
-                    .orElse((long) (val / 720 == 0 ? 360 : 1_080));
+                    .map(map::get)
+                    .orElse(val / 720); // fall back to am/pm
             String text = store.getText(value, textStyle);
             buf.append(text);
             return true;
@@ -5091,7 +5079,7 @@ public final class DateTimeFormatterBuilder {
                     Entry<String, Long> entry = it.next();
                     String itText = entry.getKey();
                     if (context.subSequenceEquals(itText, 0, parseText, position, itText.length())) {
-                        context.setParsedDayPeriod(entry.getValue());
+                        context.setParsedDayPeriod(getDayPeriod(context.getLocale(), entry.getValue()));
                         return position + itText.length();
                     }
                 }
@@ -5129,9 +5117,9 @@ public final class DateTimeFormatterBuilder {
                 var periodMap = getDayPeriodMap(locale);
                 periodMap.forEach((key, value) -> {
                     String displayName = CalendarDataUtility.retrieveJavaTimeFieldValueName(
-                            "gregory", Calendar.AM_PM, value, calStyle, locale);
+                            "gregory", Calendar.AM_PM, value.intValue(), calStyle, locale);
                     if (displayName != null) {
-                        map.put(key.mid(), displayName);
+                        map.put(value, displayName);
                     } else {
                         periodMap.remove(key);
                     }
@@ -5144,7 +5132,7 @@ public final class DateTimeFormatterBuilder {
         }
     }
 
-    private final static Map<Locale, Map<DayPeriod, Integer>> DAY_PERIOD_CACHE = new ConcurrentHashMap<>();
+    private final static Map<Locale, Map<DayPeriod, Long>> DAY_PERIOD_CACHE = new ConcurrentHashMap<>();
     /**
      * DayPeriod class that represents a DayPeriod defined in CLDR.
      */
@@ -5153,10 +5141,21 @@ public final class DateTimeFormatterBuilder {
 
         private final long from;
         private final long to;
+        private final long index;
 
-        DayPeriod(long from, long to) {
+        DayPeriod(long from, long to, long index) {
             this.from = from;
             this.to = to;
+            this.index = index;
+        }
+
+        /**
+         * Gets the index of this day period
+         *
+         * @return index
+         */
+        long getIndex() {
+            return index;
         }
 
         /**
@@ -5189,13 +5188,13 @@ public final class DateTimeFormatterBuilder {
         }
 
         /**
-         * Gets the index to the am/pm array returned from the Calendar resource
-         * bundle.
+         * Maps the day period key defined in LDML to the index to the am/pm array
+         * returned from the Calendar resource bundle.
          *
-         * @param period day period name defined in LDML
+         * @param period day period type defined in LDML
          * @return the array index
          */
-        static int index(String period) {
+        static long mapToIndex(String period) {
             return switch (period) {
                 case "am"           -> Calendar.AM;
                 case "pm"           -> Calendar.PM;
@@ -5221,9 +5220,9 @@ public final class DateTimeFormatterBuilder {
      * @param locale  the locale, not null
      * @return the DayPeriod to index map
      */
-    private static Map<DayPeriod, Integer> getDayPeriodMap(Locale locale) {
+    private static Map<DayPeriod, Long> getDayPeriodMap(Locale locale) {
         return DAY_PERIOD_CACHE.computeIfAbsent(locale, l -> {
-            final Map<DayPeriod, Integer> pm = new ConcurrentHashMap<>();
+            final Map<DayPeriod, Long> pm = new ConcurrentHashMap<>();
             Arrays.stream(DayPeriodRules.rulesArray)
                     .filter(ra -> ra[0].equals(l.getLanguage()))
                     .flatMap(ra -> Arrays.stream(ra[1].split(";")))
@@ -5232,32 +5231,30 @@ public final class DateTimeFormatterBuilder {
                         if (m.find()) {
                             String from = m.group("from");
                             String to = m.group("to");
+                            long index = DayPeriod.mapToIndex(m.group("type"));
                             if (to == null) {
                                 to = from;
                             }
                             pm.putIfAbsent(
                                 new DayPeriod(
                                     Long.parseLong(from) * 60,
-                                    Long.parseLong(to) * 60),
-                                DayPeriod.index(m.group("type")));
+                                    Long.parseLong(to) * 60,
+                                        index),
+                                index);
                         }
                     });
 
             // add am/pm
-            pm.putIfAbsent(new DayPeriod(0, 720), 0);
-            pm.putIfAbsent(new DayPeriod(720, 1_440), 1);
+            pm.putIfAbsent(new DayPeriod(0, 720, 0), 0L);
+            pm.putIfAbsent(new DayPeriod(720, 1_440, 1), 1L);
             return pm;
         });
     }
 
-    //-------------------------------------------------------------------------
-    /**
-     * Length comparator.
-     */
-    static final Comparator<String> LENGTH_SORT = new Comparator<String>() {
-        @Override
-        public int compare(String str1, String str2) {
-            return str1.length() == str2.length() ? str1.compareTo(str2) : str1.length() - str2.length();
-        }
-    };
+    static DateTimeFormatterBuilder.DayPeriod getDayPeriod(Locale locale, long index) {
+        return DAY_PERIOD_CACHE.get(locale).keySet().stream()
+                .filter(dp -> dp.getIndex() == index)
+                .findAny()
+                .orElseThrow();
+    }
 }

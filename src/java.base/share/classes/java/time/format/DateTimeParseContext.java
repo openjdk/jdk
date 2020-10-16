@@ -429,7 +429,7 @@ final class DateTimeParseContext {
      *
      * @param dayPeriod the parsed day period in minute-of-day
      */
-    void setParsedDayPeriod(long dayPeriod) {
+    void setParsedDayPeriod(DateTimeFormatterBuilder.DayPeriod dayPeriod) {
         currentParsed().dayPeriod = dayPeriod;
     }
 
