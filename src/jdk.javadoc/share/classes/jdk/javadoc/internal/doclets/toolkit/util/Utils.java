@@ -2660,7 +2660,7 @@ public class Utils {
      * The entries may come from the AST and DocCommentParser, or may be autromatically
      * generated comments for mandated elements and JavaFX properties.
      *
-     * @see CommentUtils.dcInfoMap
+     * @see CommentUtils#dcInfoMap
      */
     private final Map<Element, DocCommentInfo> dcTreeCache = new LinkedHashMap<>();
 

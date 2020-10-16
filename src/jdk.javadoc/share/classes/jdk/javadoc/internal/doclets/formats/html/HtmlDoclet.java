@@ -187,7 +187,6 @@ public class HtmlDoclet extends AbstractDoclet {
         if (options.createIndex()) {
             SystemPropertiesWriter.generate(configuration);
             configuration.mainIndex.addElements();
-            IndexWriter.generate(configuration);
             IndexBuilder allClassesIndex = new IndexBuilder(configuration, nodeprecated, true);
             allClassesIndex.addElements();
             AllClassesIndexWriter.generate(configuration, allClassesIndex);
@@ -195,6 +194,7 @@ public class HtmlDoclet extends AbstractDoclet {
                 AllPackagesIndexWriter.generate(configuration);
             }
             configuration.mainIndex.createSearchIndexFiles();
+            IndexWriter.generate(configuration);
         }
 
         if (options.createOverview()) {

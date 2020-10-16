@@ -259,6 +259,25 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
+//------------------------------URShiftBNode-----------------------------------
+// Logical shift right
+class URShiftBNode : public Node {
+public:
+  URShiftBNode( Node *in1, Node *in2 ) : Node(0,in1,in2) {
+    ShouldNotReachHere(); // only vector variant is used
+  }
+  virtual int Opcode() const;
+};
+
+//------------------------------URShiftSNode-----------------------------------
+// Logical shift right
+class URShiftSNode : public Node {
+public:
+  URShiftSNode( Node *in1, Node *in2 ) : Node(0,in1,in2) {
+    ShouldNotReachHere(); // only vector variant is used
+  }
+  virtual int Opcode() const;
+};
 
 //------------------------------URShiftINode-----------------------------------
 // Logical shift right

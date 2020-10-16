@@ -59,8 +59,7 @@ public class TestConditionalPages extends JavadocTester {
                 }
                 """,
                 "constant-values.html",
-                b -> {}); // FIXME: blocked by JDK-8253559
-                //b -> checkOutput("index-all.html", b, "Constant Values"));
+                b -> checkOutput("index-all.html", b, "Constant&nbsp;Field&nbsp;Values"));
     }
 
     @Test
@@ -82,8 +81,7 @@ public class TestConditionalPages extends JavadocTester {
                 public class C implements Serializable {  }
                 """,
                 "serialized-form.html",
-                b -> {}); // FIXME: blocked by JDK-8253559
-                //b -> checkOutput("index-all.html", b, "Serialized Form"));
+                b -> checkOutput("index-all.html", b, "Serialized&nbsp;Form"));
     }
 
     @Test
@@ -94,7 +92,7 @@ public class TestConditionalPages extends JavadocTester {
                 public class C {  }
                 """,
                 "system-properties.html",
-                b -> checkOutput("index-all.html", b, "System Properties"));
+                b -> checkOutput("index-all.html", b, "System&nbsp;Properties"));
     }
 
     void test(Path base, String code, String file, Consumer<Boolean> extraChecks) throws IOException {

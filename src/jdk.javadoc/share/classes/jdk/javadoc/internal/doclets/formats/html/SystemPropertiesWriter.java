@@ -126,6 +126,10 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
                 .addMainContent(mainContent)
                 .setFooter(footer));
         printHtmlDocument(null, "system properties", body);
+
+        if (configuration.mainIndex != null) {
+            configuration.mainIndex.add(IndexItem.of(IndexItem.Category.TAGS, title, path));
+        }
     }
 
     /**

@@ -363,6 +363,14 @@ const Type* MoveL2DNode::Value(PhaseGVN* phase) const {
   return TypeD::make( v.get_jdouble() );
 }
 
+//------------------------------Identity----------------------------------------
+Node* MoveL2DNode::Identity(PhaseGVN* phase) {
+  if (in(1)->Opcode() == Op_MoveD2L) {
+    return in(1)->in(1);
+  }
+  return this;
+}
+
 //------------------------------Value------------------------------------------
 const Type* MoveI2FNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
@@ -372,6 +380,14 @@ const Type* MoveI2FNode::Value(PhaseGVN* phase) const {
   JavaValue v;
   v.set_jint(ti->get_con());
   return TypeF::make( v.get_jfloat() );
+}
+
+//------------------------------Identity----------------------------------------
+Node* MoveI2FNode::Identity(PhaseGVN* phase) {
+  if (in(1)->Opcode() == Op_MoveF2I) {
+    return in(1)->in(1);
+  }
+  return this;
 }
 
 //------------------------------Value------------------------------------------
@@ -385,6 +401,14 @@ const Type* MoveF2INode::Value(PhaseGVN* phase) const {
   return TypeInt::make( v.get_jint() );
 }
 
+//------------------------------Identity----------------------------------------
+Node* MoveF2INode::Identity(PhaseGVN* phase) {
+  if (in(1)->Opcode() == Op_MoveI2F) {
+    return in(1)->in(1);
+  }
+  return this;
+}
+
 //------------------------------Value------------------------------------------
 const Type* MoveD2LNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
@@ -394,6 +418,14 @@ const Type* MoveD2LNode::Value(PhaseGVN* phase) const {
   JavaValue v;
   v.set_jdouble(td->getd());
   return TypeLong::make( v.get_jlong() );
+}
+
+//------------------------------Identity----------------------------------------
+Node* MoveD2LNode::Identity(PhaseGVN* phase) {
+  if (in(1)->Opcode() == Op_MoveL2D) {
+    return in(1)->in(1);
+  }
+  return this;
 }
 
 #ifndef PRODUCT
