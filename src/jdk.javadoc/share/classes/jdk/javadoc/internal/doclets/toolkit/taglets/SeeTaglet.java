@@ -55,7 +55,7 @@ public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
 
     @Override
     public void inherit(DocFinder.Input input, DocFinder.Output output) {
-        List<? extends DocTree> tags = input.utils.getSeeTrees(input.element);
+        List<? extends SeeTree> tags = input.utils.getSeeTrees(input.element);
         if (!tags.isEmpty()) {
             CommentHelper ch =  input.utils.getCommentHelper(input.element);
             output.holder = input.element;

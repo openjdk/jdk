@@ -40,6 +40,7 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.ElementFilter;
 
+import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.doclet.DocletEnvironment.ModuleMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
@@ -815,7 +816,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      * @param div the content tree to which the deprecation information will be added
      */
     public void addDeprecationInfo(Content div) {
-        List<? extends DocTree> deprs = utils.getDeprecatedTrees(mdle);
+        List<? extends DeprecatedTree> deprs = utils.getDeprecatedTrees(mdle);
         if (utils.isDeprecated(mdle)) {
             CommentHelper ch = utils.getCommentHelper(mdle);
             HtmlTree deprDiv = new HtmlTree(TagName.DIV);
@@ -873,9 +874,8 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      * @param pkg the PackageDoc that is added
      */
     public void addPackageDeprecationInfo(Content li, PackageElement pkg) {
-        List<? extends DocTree> deprs;
         if (utils.isDeprecated(pkg)) {
-            deprs = utils.getDeprecatedTrees(pkg);
+            List<? extends DeprecatedTree> deprs = utils.getDeprecatedTrees(pkg);
             HtmlTree deprDiv = new HtmlTree(TagName.DIV);
             deprDiv.setStyle(HtmlStyle.deprecationBlock);
             Content deprPhrase = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(pkg));

@@ -74,7 +74,8 @@ public class ThrowsTaglet extends BaseTaglet
         Element exception;
         CommentHelper ch = utils.getCommentHelper(input.element);
         if (input.tagId == null) {
-            exception = ch.getException(input.docTreeInfo.docTree);
+            exception = input.docTreeInfo.docTree instanceof ThrowsTree
+                    ? ch.getException((ThrowsTree) input.docTreeInfo.docTree) : null;
             input.tagId = exception == null
                     ? ch.getExceptionName(input.docTreeInfo.docTree).getSignature()
                     : utils.getFullyQualifiedName(exception);
@@ -82,18 +83,18 @@ public class ThrowsTaglet extends BaseTaglet
             exception = input.utils.findClass(input.element, input.tagId);
         }
 
-        for (DocTree dt : input.utils.getThrowsTrees(input.element)) {
-            Element exc = ch.getException(dt);
+        for (ThrowsTree tt : input.utils.getThrowsTrees(input.element)) {
+            Element exc = ch.getException(tt);
             if (exc != null && (input.tagId.equals(utils.getSimpleName(exc)) ||
                  (input.tagId.equals(utils.getFullyQualifiedName(exc))))) {
                 output.holder = input.element;
-                output.holderTag = dt;
+                output.holderTag = tt;
                 output.inlineTags = ch.getBody(output.holderTag);
-                output.tagList.add(dt);
+                output.tagList.add(tt);
             } else if (exception != null && exc != null &&
                     utils.isTypeElement(exc) && utils.isTypeElement(exception) &&
                     utils.isSubclassOf((TypeElement)exc, (TypeElement)exception)) {
-                output.tagList.add(dt);
+                output.tagList.add(tt);
             }
         }
     }

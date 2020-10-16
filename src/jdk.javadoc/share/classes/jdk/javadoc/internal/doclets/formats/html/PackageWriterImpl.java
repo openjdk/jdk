@@ -224,7 +224,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
                 ContentBuilder description = new ContentBuilder();
                 if (utils.isDeprecated(klass)) {
                     description.add(getDeprecatedPhrase(klass));
-                    List<? extends DocTree> tags = utils.getDeprecatedTrees(klass);
+                    List<? extends DeprecatedTree> tags = utils.getDeprecatedTrees(klass);
                     if (!tags.isEmpty()) {
                         addSummaryDeprecatedComment(klass, tags.get(0), description);
                     }

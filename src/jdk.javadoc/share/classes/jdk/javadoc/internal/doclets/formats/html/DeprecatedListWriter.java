@@ -25,6 +25,7 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import com.sun.source.doctree.DeprecatedTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Table;
 import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 
@@ -390,7 +391,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
                         link = getDeprecatedLink(e);
                 }
                 Content desc = new ContentBuilder();
-                List<? extends DocTree> tags = utils.getDeprecatedTrees(e);
+                List<? extends DeprecatedTree> tags = utils.getDeprecatedTrees(e);
                 if (!tags.isEmpty()) {
                     addInlineDeprecatedComment(e, tags.get(0), desc);
                 } else {
