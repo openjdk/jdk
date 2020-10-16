@@ -67,22 +67,10 @@ public abstract class AbstractOverviewIndexWriter extends HtmlDocletWriter {
      *
      * @param header the documentation tree to which the navigation bar header will be added
      */
-    protected void addNavigationBarHeader(Content header) {
+    protected void addNavigationBar(Content header) {
         addTop(header);
-        navBar.setUserHeader(getUserHeaderFooter(true));
-        header.add(navBar.getContent(Navigation.Position.TOP));
-    }
-
-    /**
-     * Adds the lower navigation bar and the bottom text
-     * (from the -bottom option) at the bottom of page.
-     *
-     * @param footer the documentation tree to which the navigation bar footer will be added
-     */
-    protected void addNavigationBarFooter(Content footer) {
-        navBar.setUserFooter(getUserHeaderFooter(false));
-        footer.add(navBar.getContent(Navigation.Position.BOTTOM));
-        addBottom(footer);
+        navBar.setUserHeader(getUserHeader());
+        header.add(navBar.getContent());
     }
 
     /**
@@ -124,16 +112,14 @@ public abstract class AbstractOverviewIndexWriter extends HtmlDocletWriter {
         String windowOverview = resources.getText(title);
         Content body = getBody(getWindowTitle(windowOverview));
         Content header = new ContentBuilder();
-        addNavigationBarHeader(header);
+        addNavigationBar(header);
         Content main = new ContentBuilder();
         addOverviewHeader(main);
         addIndex(main);
-        Content footer = HtmlTree.FOOTER();
-        addNavigationBarFooter(footer);
         body.add(new BodyContents()
                 .setHeader(header)
                 .addMainContent(main)
-                .setFooter(footer));
+                .setFooter(getFooter()));
         printHtmlDocument(
                 configuration.metakeywords.getOverviewMetaKeywords(title, configuration.getOptions().docTitle()),
                 description, body);

@@ -227,10 +227,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
                     utils.getFullyQualifiedName(typeElement)));
         }
         bodyContents.addMainContent(mainContent);
-        HtmlTree footer = HtmlTree.FOOTER();
-        navBar.setUserFooter(getUserHeaderFooter(false));
-        footer.add(navBar.getContent(Navigation.Position.BOTTOM));
-        addBottom(footer);
+        Content footer = getFooter();
         bodyContents.setFooter(footer);
         body.add(bodyContents);
         String description = getDescription("use", typeElement);
@@ -434,8 +431,8 @@ public class ClassUseWriter extends SubWriterHolderWriter {
                 configuration, LinkInfoImpl.Kind.CLASS_USE_HEADER, typeElement)
                 .label(resources.getText("doclet.Class")));
         navBar.setNavLinkClass(classLinkContent);
-        navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(Navigation.Position.TOP));
+        navBar.setUserHeader(getUserHeader());
+        headerContent.add(navBar.getContent());
         ContentBuilder headingContent = new ContentBuilder();
         headingContent.add(contents.getContent("doclet.ClassUse_Title", cltype));
         headingContent.add(new HtmlTree(TagName.BR));

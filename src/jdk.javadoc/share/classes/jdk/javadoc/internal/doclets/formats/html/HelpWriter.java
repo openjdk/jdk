@@ -95,18 +95,14 @@ public class HelpWriter extends HtmlDocletWriter {
         HtmlTree body = getBody(getWindowTitle(title));
         Content headerContent = new ContentBuilder();
         addTop(headerContent);
-        navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(Navigation.Position.TOP));
+        navBar.setUserHeader(getUserHeader());
+        headerContent.add(navBar.getContent());
         ContentBuilder helpFileContent = new ContentBuilder();
         addHelpFileContents(helpFileContent);
-        HtmlTree footer = HtmlTree.FOOTER();
-        navBar.setUserFooter(getUserHeaderFooter(false));
-        footer.add(navBar.getContent(Navigation.Position.BOTTOM));
-        addBottom(footer);
         body.add(new BodyContents()
                 .setHeader(headerContent)
                 .addMainContent(helpFileContent)
-                .setFooter(footer));
+                .setFooter(getFooter()));
         printHtmlDocument(null, "help", body);
     }
 

@@ -100,8 +100,8 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         HtmlTree bodyTree = getBody(getWindowTitle(label));
         Content headerContent = new ContentBuilder();
         addTop(headerContent);
-        navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(Navigation.Position.TOP));
+        navBar.setUserHeader(getUserHeader());
+        headerContent.add(navBar.getContent());
         bodyContents.setHeader(headerContent);
         return bodyTree;
     }
@@ -272,11 +272,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
 
     @Override
     public void addFooter() {
-        Content htmlTree = HtmlTree.FOOTER();
-        navBar.setUserFooter(getUserHeaderFooter(false));
-        htmlTree.add(navBar.getContent(Navigation.Position.BOTTOM));
-        addBottom(htmlTree);
-        bodyContents.setFooter(htmlTree);
+        bodyContents.setFooter(getFooter());
     }
 
     @Override

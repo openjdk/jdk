@@ -112,10 +112,7 @@ public class PackageTreeWriter extends AbstractTreeWriter {
         addTree(classtree.baseAnnotationTypes(), "doclet.Annotation_Type_Hierarchy", mainContent);
         addTree(classtree.baseEnums(), "doclet.Enum_Hierarchy", mainContent, true);
         bodyContents.addMainContent(mainContent);
-        HtmlTree footer = HtmlTree.FOOTER();
-        navBar.setUserFooter(getUserHeaderFooter(false));
-        footer.add(navBar.getContent(Navigation.Position.BOTTOM));
-        addBottom(footer);
+        Content footer = getFooter();
         bodyContents.setFooter(footer);
         body.add(bodyContents);
         printHtmlDocument(null, getDescription("tree", packageElement), body);
@@ -135,8 +132,8 @@ public class PackageTreeWriter extends AbstractTreeWriter {
         Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(packageElement),
                 contents.moduleLabel);
         navBar.setNavLinkModule(linkContent);
-        navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(Navigation.Position.TOP));
+        navBar.setUserHeader(getUserHeader());
+        headerContent.add(navBar.getContent());
         bodyContents.setHeader(headerContent);
         return bodyTree;
     }

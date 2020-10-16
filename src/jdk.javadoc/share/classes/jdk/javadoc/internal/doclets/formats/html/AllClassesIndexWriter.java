@@ -96,21 +96,17 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
         Content header = new ContentBuilder();
         addTop(header);
         Navigation navBar = new Navigation(null, configuration, PageMode.ALL_CLASSES, path);
-        navBar.setUserHeader(getUserHeaderFooter(true));
-        header.add(navBar.getContent(Navigation.Position.TOP));
+        navBar.setUserHeader(getUserHeader());
+        header.add(navBar.getContent());
         Content allClassesContent = new ContentBuilder();
         addContents(allClassesContent);
         Content mainContent = new ContentBuilder();
         mainContent.add(allClassesContent);
-        Content footer = HtmlTree.FOOTER();
-        navBar.setUserFooter(getUserHeaderFooter(false));
-        footer.add(navBar.getContent(Navigation.Position.BOTTOM));
-        addBottom(footer);
         HtmlTree bodyTree = getBody(getWindowTitle(label));
         bodyTree.add(new BodyContents()
                 .setHeader(header)
                 .addMainContent(mainContent)
-                .setFooter(footer));
+                .setFooter(getFooter()));
         printHtmlDocument(null, "class index", bodyTree);
     }
 

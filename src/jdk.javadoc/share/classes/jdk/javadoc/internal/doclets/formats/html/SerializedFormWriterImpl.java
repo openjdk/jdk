@@ -76,8 +76,8 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
         HtmlTree bodyTree = getBody(getWindowTitle(header));
         Content headerContent = new ContentBuilder();
         addTop(headerContent);
-        navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(Navigation.Position.TOP));
+        navBar.setUserHeader(getUserHeader());
+        headerContent.add(navBar.getContent());
         Content h1Content = new StringContent(header);
         Content heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, h1Content);
@@ -239,11 +239,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
      */
     @Override
     public void addFooter() {
-        Content htmlTree = HtmlTree.FOOTER();
-        navBar.setUserFooter(getUserHeaderFooter(false));
-        htmlTree.add(navBar.getContent(Navigation.Position.BOTTOM));
-        addBottom(htmlTree);
-        bodyContents.setFooter(htmlTree);
+        bodyContents.setFooter(getFooter());
     }
 
     @Override

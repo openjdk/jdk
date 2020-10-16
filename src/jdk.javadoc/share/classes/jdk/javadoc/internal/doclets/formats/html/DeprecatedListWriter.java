@@ -292,11 +292,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
             }
         }
         bodyContents.addMainContent(content);
-        HtmlTree htmlTree = HtmlTree.FOOTER();
-        navBar.setUserFooter(getUserHeaderFooter(false));
-        htmlTree.add(navBar.getContent(Navigation.Position.BOTTOM));
-        addBottom(htmlTree);
-        bodyContents.setFooter(htmlTree);
+        bodyContents.setFooter(getFooter());
         String description = "deprecated elements";
         body.add(bodyContents);
         printHtmlDocument(null, description, body);
@@ -350,8 +346,8 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
         HtmlTree bodyTree = getBody(getWindowTitle(title));
         Content headerContent = new ContentBuilder();
         addTop(headerContent);
-        navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(Navigation.Position.TOP));
+        navBar.setUserHeader(getUserHeader());
+        headerContent.add(navBar.getContent());
         bodyContents.setHeader(headerContent);
         return bodyTree;
     }

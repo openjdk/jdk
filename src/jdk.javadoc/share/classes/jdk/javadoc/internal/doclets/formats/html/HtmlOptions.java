@@ -111,12 +111,6 @@ public class HtmlOptions extends BaseOptions {
      */
     private String docTitle = "";
 
-
-    /**
-     * Argument for command-line option {@code -footer}.
-     */
-    private String footer = "";
-
     /**
      * Argument for command-line option {@code -header}.
      */
@@ -235,7 +229,7 @@ public class HtmlOptions extends BaseOptions {
                 new Option(resources, "-footer", 1) {
                     @Override
                     public boolean process(String opt, List<String> args) {
-                        footer = args.get(0);
+                        messages.warning("doclet.footer_specified");
                         return true;
                     }
                 },
@@ -499,7 +493,6 @@ public class HtmlOptions extends BaseOptions {
         // to be handled here.
         Utils utils = config.utils;
         utils.checkJavaScriptInOption("-header", header);
-        utils.checkJavaScriptInOption("-footer", footer);
         utils.checkJavaScriptInOption("-top", top);
         utils.checkJavaScriptInOption("-bottom", bottom);
         utils.checkJavaScriptInOption("-doctitle", docTitle);
@@ -591,13 +584,6 @@ public class HtmlOptions extends BaseOptions {
      */
     String docTitle() {
         return docTitle;
-    }
-
-    /**
-     * Argument for command-line option {@code -footer}.
-     */
-    String footer() {
-        return footer;
     }
 
     /**

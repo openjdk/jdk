@@ -485,25 +485,26 @@ public class HtmlDocletWriter {
         return title;
     }
 
-    /**
-     * Get user specified header and the footer.
-     *
-     * @param header if true print the user provided header else print the
-     * user provided footer.
-     */
-    public Content getUserHeaderFooter(boolean header) {
-        String content;
-        if (header) {
-            content = replaceDocRootDir(options.header());
-        } else {
-            if (options.footer().length() != 0) {
-                content = replaceDocRootDir(options.footer());
-            } else {
-                content = replaceDocRootDir(options.header());
-            }
+    public Content getFooter() {
+        String bottom = options.bottom();
+        if (bottom == null || bottom.isEmpty()) {
+            return new ContentBuilder();
         }
-        Content rawContent = new RawHtml(content);
-        return rawContent;
+
+        return HtmlTree.FOOTER()
+                .add(new HtmlTree(TagName.HR))
+                .add(HtmlTree.P(HtmlStyle.legalCopy,
+                        HtmlTree.SMALL(
+                                new RawHtml(replaceDocRootDir(bottom)))));
+    }
+
+    /**
+     * Returns the user specified header.
+     *
+     * @return the user specified header
+     */
+    public Content getUserHeader() {
+        return new RawHtml(replaceDocRootDir(options.header()));
     }
 
     /**
@@ -514,18 +515,6 @@ public class HtmlDocletWriter {
     public void addTop(Content htmlTree) {
         Content top = new RawHtml(replaceDocRootDir(options.top()));
         htmlTree.add(top);
-    }
-
-    /**
-     * Adds the user specified bottom.
-     *
-     * @param htmlTree the content tree to which user specified bottom will be added
-     */
-    public void addBottom(Content htmlTree) {
-        Content bottom = new RawHtml(replaceDocRootDir(options.bottom()));
-        Content small = HtmlTree.SMALL(bottom);
-        Content p = HtmlTree.P(HtmlStyle.legalCopy, small);
-        htmlTree.add(p);
     }
 
     /**

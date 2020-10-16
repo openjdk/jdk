@@ -118,13 +118,9 @@ public class TreeWriter extends AbstractTreeWriter {
         addTree(classtree.baseInterfaces(), "doclet.Interface_Hierarchy", mainContent);
         addTree(classtree.baseAnnotationTypes(), "doclet.Annotation_Type_Hierarchy", mainContent);
         addTree(classtree.baseEnums(), "doclet.Enum_Hierarchy", mainContent, true);
-        HtmlTree footerTree = HtmlTree.FOOTER();
-        navBar.setUserFooter(getUserHeaderFooter(false));
-        footerTree.add(navBar.getContent(Navigation.Position.BOTTOM));
-        addBottom(footerTree);
         body.add(bodyContents
                 .addMainContent(mainContent)
-                .setFooter(footerTree));
+                .setFooter(getFooter()));
         printHtmlDocument(null, "class tree", body);
     }
 
@@ -177,8 +173,8 @@ public class TreeWriter extends AbstractTreeWriter {
         HtmlTree bodyTree = getBody(getWindowTitle(title));
         Content headerContent = new ContentBuilder();
         addTop(headerContent);
-        navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(Navigation.Position.TOP));
+        navBar.setUserHeader(getUserHeader());
+        headerContent.add(navBar.getContent());
         bodyContents.setHeader(headerContent);
         return bodyTree;
     }

@@ -77,24 +77,20 @@ public class AllPackagesIndexWriter extends HtmlDocletWriter {
         Content headerContent = new ContentBuilder();
         Navigation navBar = new Navigation(null, configuration, PageMode.ALL_PACKAGES, path);
         addTop(headerContent);
-        navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(Navigation.Position.TOP));
+        navBar.setUserHeader(getUserHeader());
+        headerContent.add(navBar.getContent());
         Content mainContent = new ContentBuilder();
         addPackages(mainContent);
         Content titleContent = contents.allPackagesLabel;
         Content pHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, titleContent);
         Content headerDiv = HtmlTree.DIV(HtmlStyle.header, pHeading);
-        Content footer = HtmlTree.FOOTER();
-        navBar.setUserFooter(getUserHeaderFooter(false));
-        footer.add(navBar.getContent(Navigation.Position.BOTTOM));
-        addBottom(footer);
         HtmlTree bodyTree = getBody(getWindowTitle(label));
         bodyTree.add(new BodyContents()
                 .setHeader(headerContent)
                 .addMainContent(headerDiv)
                 .addMainContent(mainContent)
-                .setFooter(footer));
+                .setFooter(getFooter()));
         printHtmlDocument(null, "package index", bodyTree);
     }
 

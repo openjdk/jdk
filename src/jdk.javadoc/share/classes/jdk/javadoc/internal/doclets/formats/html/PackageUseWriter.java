@@ -131,10 +131,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
             addPackageUse(mainContent);
         }
         bodyContents.addMainContent(mainContent);
-        HtmlTree footer = HtmlTree.FOOTER();
-        navBar.setUserFooter(getUserHeaderFooter(false));
-        footer.add(navBar.getContent(Navigation.Position.BOTTOM));
-        addBottom(footer);
+        Content footer = getFooter();
         bodyContents.setFooter(footer);
         body.add(bodyContents);
         printHtmlDocument(null,
@@ -241,8 +238,8 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(packageElement),
                 contents.moduleLabel);
         navBar.setNavLinkModule(linkContent);
-        navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(Navigation.Position.TOP));
+        navBar.setUserHeader(getUserHeader());
+        headerContent.add(navBar.getContent());
         ContentBuilder headingContent = new ContentBuilder();
         headingContent.add(contents.getContent("doclet.ClassUse_Title", packageText));
         headingContent.add(new HtmlTree(TagName.BR));

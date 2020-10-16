@@ -213,21 +213,17 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
         navBar.setNavLinkModule(mdleLinkContent);
         Content pkgLinkContent = docletWriter.getPackageLink(pkg, docletWriter.contents.packageLabel);
         navBar.setNavLinkPackage(pkgLinkContent);
-        navBar.setUserHeader(docletWriter.getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(Navigation.Position.TOP));
+        navBar.setUserHeader(docletWriter.getUserHeader());
+        headerContent.add(navBar.getContent());
 
         List<? extends DocTree> fullBody = utils.getFullBody(dfElement);
         Content pageContent = docletWriter.commentTagsToContent(null, dfElement, fullBody, false);
         docletWriter.addTagsInfo(dfElement, pageContent);
 
-        navBar.setUserFooter(docletWriter.getUserHeaderFooter(false));
-        Content footer = HtmlTree.FOOTER();
-        footer.add(navBar.getContent(Navigation.Position.BOTTOM));
-        docletWriter.addBottom(footer);
         htmlContent.add(new BodyContents()
                 .setHeader(headerContent)
                 .addMainContent(pageContent)
-                .setFooter(footer));
+                .setFooter(docletWriter.getFooter()));
         docletWriter.printHtmlDocument(Collections.emptyList(), null, localTagsContent, Collections.emptyList(), htmlContent);
     }
 
