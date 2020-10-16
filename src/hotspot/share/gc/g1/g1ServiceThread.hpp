@@ -37,38 +37,37 @@ class G1ServiceTask : public CHeapObj<mtGC> {
   G1ServiceTask* _next;
 
 public:
-  G1ServiceTask(const char* name) : _time(), _name(name), _next(NULL) { }
-  const char* name() { return _name; }
+  G1ServiceTask(const char* name);
+  const char* name();
 
-  void set_time(double time) { _time = time; }
-  double time() { return _time; }
+  void set_time(double time);
+  double time();
 
-  void set_next(G1ServiceTask* next) { _next = next; }
-  G1ServiceTask* next() { return _next; }
+  void set_next(G1ServiceTask* next);
+  G1ServiceTask* next();
 
   // Do the actual work for the task.
   virtual void execute();
-  // The interval between two executions of the task.
-  virtual double interval();
+  // The timeout to the next invocation. A negative timeout
+  // will cause the task to not be rescheduled after completing.
+  virtual double timeout();
 };
 
-class G1ServiceTaskList : public StackObj {
+class G1ServiceTaskList {
   // The sentinel task is the entry point of this ordered circular list holding
   // the service tasks. The list is ordered by the time the tasks are scheduled
   // to run and the sentinel task has the time set to DBL_MAX. This guarantees
   // that any new task will be added just before the sentinel at the latest.
   G1ServiceTask _sentinel;
 
-  // Mutex to ensure safe addition of tasks.
-  Mutex _lock;
-
   // Verify that the list is ordered.
   void verify_task_list() NOT_DEBUG_RETURN;
 public:
   G1ServiceTaskList();
-  G1ServiceTask* pop_first();
-  G1ServiceTask* peek_first();
+  G1ServiceTask* pop();
+  G1ServiceTask* peek();
   void add_ordered(G1ServiceTask* task);
+  bool is_empty();
 };
 
 // The G1ServiceThread is used to periodically do a number of different tasks:
@@ -77,19 +76,20 @@ public:
 //   - check if a periodic GC should be scheduled.
 class G1ServiceThread: public ConcurrentGCThread {
 private:
+  // The monitor is used to ensure thread saftey for the task list
+  // and allow other threads to signal the service thread to wake up.
   Monitor _monitor;
-
   G1ServiceTaskList _task_list;
 
   double _vtime_accum;  // Accumulated virtual time.
 
   void run_service();
-
   void stop_service();
 
-  // Timeout to next task in millisecond granularity.
-  int64_t timeout_to_next_task();
+  int64_t sleep_time();
   void sleep_before_next_cycle();
+
+  G1ServiceTask* pop_due_task();
   void run_task(G1ServiceTask* task);
   void run_tasks();
   void reschedule_task(G1ServiceTask* task);

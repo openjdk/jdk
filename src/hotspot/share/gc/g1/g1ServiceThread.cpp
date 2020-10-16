@@ -38,8 +38,6 @@
 
 // Task handling periodic GCs
 class G1PeriodicGCTask : public G1ServiceTask {
-  double _last_attempt;
-
   bool should_start_periodic_gc() {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     // If we are currently in a concurrent mark we are going to uncommit memory soon.
@@ -72,26 +70,22 @@ class G1PeriodicGCTask : public G1ServiceTask {
     if (G1PeriodicGCInterval == 0) {
       return;
     }
-    if ((os::elapsedTime() - _last_attempt) > (G1PeriodicGCInterval / 1000.0)) {
-      log_debug(gc, periodic)("Checking for periodic GC.");
-      if (should_start_periodic_gc()) {
-        if (!G1CollectedHeap::heap()->try_collect(GCCause::_g1_periodic_collection)) {
-          log_debug(gc, periodic)("GC request denied. Skipping.");
-        }
+
+    log_debug(gc, periodic)("Checking for periodic GC.");
+    if (should_start_periodic_gc()) {
+      if (!G1CollectedHeap::heap()->try_collect(GCCause::_g1_periodic_collection)) {
+        log_debug(gc, periodic)("GC request denied. Skipping.");
       }
-      _last_attempt = os::elapsedTime();
     }
   }
 public:
-  G1PeriodicGCTask(const char* name) :
-    G1ServiceTask(name),
-    _last_attempt(os::elapsedTime()) { }
+  G1PeriodicGCTask(const char* name) : G1ServiceTask(name) { }
 
   virtual void execute() {
     check_for_periodic_gc();
   }
 
-  virtual double interval() {
+  virtual double timeout() {
     // G1PeriodicGCInterval is a manageable flag and can be updated
     // during runtime. If no value is set, wait a second and run it
     // again to see if the value has been updated. Otherwise use the
@@ -167,7 +161,7 @@ public:
     sample_young_list_rs_length();
   }
 
-  virtual double interval() {
+  virtual double timeout() {
     return G1ConcRefinementServiceIntervalMillis/1000.0;
   }
 };
@@ -185,38 +179,73 @@ G1ServiceThread::G1ServiceThread() :
 }
 
 void G1ServiceThread::register_task(G1ServiceTask* task) {
-  // Add the task to the list.
+  MonitorLocker ml(&_monitor, Mutex::_no_safepoint_check_flag);
   _task_list.add_ordered(task);
 
   log_debug(gc, task)("G1 Service Thread (%s) (register)", task->name());
 
   // Notify the service thread that there is a new task, thread might
   // be waiting and the newly added task might be first in the list.
-  MonitorLocker ml(&_monitor, Mutex::_no_safepoint_check_flag);
-  _monitor.notify();
+  ml.notify();
 }
 
-int64_t G1ServiceThread::timeout_to_next_task() {
-  double time_to_next_task = _task_list.peek_first()->time() - os::elapsedTime();
-  return (int64_t) (time_to_next_task * MILLIUNITS);
+int64_t G1ServiceThread::sleep_time() {
+  assert(_monitor.owned_by_self(), "Must be owner of lock");
+  assert(!_task_list.is_empty(), "Should not be called for empty list");
+
+  double time_diff = _task_list.peek()->time() - os::elapsedTime();
+  if (time_diff < 0) {
+    // Run without sleeping.
+    return 0;
+  }
+
+  // Return sleep time in milliseconds.
+  return (int64_t) (time_diff * MILLIUNITS);
 }
 
 void G1ServiceThread::sleep_before_next_cycle() {
+  if (should_terminate()) {
+    return;
+  }
+
   MonitorLocker ml(&_monitor, Mutex::_no_safepoint_check_flag);
-  if (!should_terminate()) {
-    int64_t timeout = timeout_to_next_task();
-    if (timeout > 0) {
-      // Log in seconds for consistency.
-      log_trace(gc, task)("G1 Service Thread (wait) %1.3fs", timeout/1000.0);
-      ml.wait(timeout);
+  if (_task_list.is_empty()) {
+    // Sleep until new task is registered if no tasks available.
+    log_trace(gc, task)("G1 Service Thread (wait for new tasks)");
+    ml.wait(0);
+  } else {
+    int64_t sleep = sleep_time();
+    if (sleep > 0) {
+      log_trace(gc, task)("G1 Service Thread (wait) %1.3fs", sleep / 1000.0);
+      ml.wait(sleep);
     }
   }
 }
 
 void G1ServiceThread::reschedule_task(G1ServiceTask* task) {
-  task->set_time(os::elapsedTime() + task->interval());
+  double timeout = task->timeout();
+  if (timeout < 0) {
+    // Negative timeout, don't reschedule.
+    log_trace(gc, task)("G1 Service Thread (%s) (done)", task->name());
+    return;
+  }
+
+  // Reschedule task by updating task time and add back to queue.
+  task->set_time(os::elapsedTime() + timeout);
+
+  MutexLocker ml(&_monitor, Mutex::_no_safepoint_check_flag);
   _task_list.add_ordered(task);
+
   log_trace(gc, task)("G1 Service Thread (%s) (schedule) @%1.3fs", task->name(), task->time());;
+}
+
+G1ServiceTask* G1ServiceThread::pop_due_task() {
+  MutexLocker ml(&_monitor, Mutex::_no_safepoint_check_flag);
+  if (_task_list.is_empty() || sleep_time() != 0) {
+    return NULL;
+  }
+
+  return _task_list.pop();
 }
 
 void G1ServiceThread::run_task(G1ServiceTask* task) {
@@ -232,8 +261,11 @@ void G1ServiceThread::run_task(G1ServiceTask* task) {
 void G1ServiceThread::run_tasks() {
   // Execute tasks that are due. Need to check for termination to avoid
   // running forever if task reschedule with very short interval.
-  while (!should_terminate() && timeout_to_next_task() <= 0) {
-    G1ServiceTask* task = _task_list.pop_first();
+  while (!should_terminate()) {
+    G1ServiceTask* task = pop_due_task();
+    if (task == NULL) {
+      return;
+    }
 
     run_task(task);
     reschedule_task(task);
@@ -264,31 +296,51 @@ void G1ServiceThread::run_service() {
 }
 
 void G1ServiceThread::stop_service() {
-  MutexLocker x(&_monitor, Mutex::_no_safepoint_check_flag);
-  _monitor.notify();
+  MonitorLocker ml(&_monitor, Mutex::_no_safepoint_check_flag);
+  ml.notify();
+}
+
+G1ServiceTask::G1ServiceTask(const char* name) :
+  _time(),
+  _name(name),
+  _next(NULL) { }
+
+const char* G1ServiceTask::name() {
+  return _name;
+}
+
+void G1ServiceTask::set_time(double time) {
+  _time = time;
+}
+
+double G1ServiceTask::time() {
+  return _time;
+}
+
+void G1ServiceTask::set_next(G1ServiceTask* next) {
+  _next = next;
+}
+
+G1ServiceTask* G1ServiceTask::next() {
+  return _next;
 }
 
 void G1ServiceTask::execute() {
   guarantee(false, "Sentinel service task should never be executed.");
 }
 
-double G1ServiceTask::interval() {
+double G1ServiceTask::timeout() {
   guarantee(false, "Sentinel service task should never be sceduled.");
   return 0.0;
 }
 
 G1ServiceTaskList::G1ServiceTaskList() :
-    _sentinel("Sentinel"),
-    _lock(Mutex::leaf,
-          "G1ServiceTaskList lock",
-          Mutex::_allow_vm_block_flag,
-          Mutex::_safepoint_check_never) {
+    _sentinel("Sentinel") {
   _sentinel.set_next(&_sentinel);
   _sentinel.set_time(DBL_MAX);
 }
 
-G1ServiceTask* G1ServiceTaskList::pop_first() {
-  MutexLocker ml(&_lock, Monitor::_no_safepoint_check_flag);
+G1ServiceTask* G1ServiceTaskList::pop() {
   verify_task_list();
 
   G1ServiceTask* task = _sentinel.next();
@@ -298,14 +350,16 @@ G1ServiceTask* G1ServiceTaskList::pop_first() {
   return task;
 }
 
-G1ServiceTask* G1ServiceTaskList::peek_first() {
-  MutexLocker ml(&_lock, Monitor::_no_safepoint_check_flag);
+G1ServiceTask* G1ServiceTaskList::peek() {
   verify_task_list();
   return _sentinel.next();
 }
 
+bool G1ServiceTaskList::is_empty() {
+  return &_sentinel == _sentinel.next();
+}
+
 void G1ServiceTaskList::add_ordered(G1ServiceTask* task) {
-  MutexLocker ml(&_lock, Monitor::_no_safepoint_check_flag);
   assert(task->next() == NULL, "invariant");
   assert(task->time() != DBL_MAX, "invalid time for task");
 
@@ -325,6 +379,8 @@ void G1ServiceTaskList::add_ordered(G1ServiceTask* task) {
 #ifdef ASSERT
 void G1ServiceTaskList::verify_task_list() {
   G1ServiceTask* cur = _sentinel.next();
+
+  assert(cur != &_sentinel, "Should never try to verify empty list");
   while (cur != &_sentinel) {
     G1ServiceTask* next = cur->next();
     assert(cur->time() <= next->time(),

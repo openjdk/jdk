@@ -31,97 +31,135 @@
 
 class CheckTask : public G1ServiceTask {
   G1ServiceThread* _st;
-  bool _has_executed;
+  int _execution_count;
+  double _timeout;
 public:
-  CheckTask(const char* name, G1ServiceThread* st) : G1ServiceTask(name), _st(st), _has_executed(false) { }
-  virtual void execute() { _has_executed = true; }
-  virtual double interval() { return 10; }
-  bool has_executed() { return _has_executed;}
+  CheckTask(const char* name, G1ServiceThread* st) :
+      G1ServiceTask(name),
+      _st(st),
+      _execution_count(0),
+      _timeout(0.1) { }
+  virtual void execute() { _execution_count++; }
+  virtual double timeout() { return _timeout; }
+  int execution_count() { return _execution_count;}
+  void set_timeout(double timeout) { _timeout = timeout; }
 };
 
+static void stop_service_thread(G1ServiceThread* thread) {
+  ThreadInVMfromNative tvn(JavaThread::current());
+  thread->stop();
+}
+
 // Test that a task that is added during runtime gets run.
-TEST(G1ServiceThread, test_add) {
+TEST_VM(G1ServiceThread, test_add) {
+  // Create thread and let it start.
   G1ServiceThread* st = new G1ServiceThread();
+  os::naked_short_sleep(500);
 
-  // Give the thread time to start running
-  os::naked_short_sleep(999);
-
-  CheckTask ct("CheckTask", st);
+  CheckTask ct("AddAndRun", st);
   st->register_task(&ct);
 
   // Give CheckTask time to run.
-  os::naked_short_sleep(999);
+  os::naked_short_sleep(500);
+  stop_service_thread(st);
 
-  // Stop our service thread.
-  {
-    ThreadInVMfromNative tvn(JavaThread::current());
-    st->stop();
-  }
-  ASSERT_TRUE(ct.has_executed());
+  ASSERT_GT(ct.execution_count(), 0);
 }
 
 // Test that a task that is added while the service thread is
 // waiting gets run in a timely manner.
-TEST(G1ServiceThread, test_add_while_waiting) {
-  G1ServiceThread* st = new G1ServiceThread();
-
+TEST_VM(G1ServiceThread, test_add_while_waiting) {
   // Make sure default tasks use long intervals.
   AutoModifyRestore<uintx> f1(G1PeriodicGCInterval, 100000);
   AutoModifyRestore<uintx> f2(G1ConcRefinementServiceIntervalMillis, 100000);
 
-  // Give the thread time to start running
-  os::naked_short_sleep(999);
+  // Create thread and let it start.
+  G1ServiceThread* st = new G1ServiceThread();
+  os::naked_short_sleep(500);
 
-  CheckTask ct("CheckTask", st);
+  CheckTask ct("AddWhileWaiting", st);
   st->register_task(&ct);
 
   // Give CheckTask time to run.
-  os::naked_short_sleep(999);
+  os::naked_short_sleep(500);
+  stop_service_thread(st);
 
-  // Stop our service thread.
-  {
-    ThreadInVMfromNative tvn(JavaThread::current());
-    st->stop();
-  }
-  ASSERT_TRUE(ct.has_executed());
+  ASSERT_GT(ct.execution_count(), 0);
+}
+
+// Test that a task with negative timeout is not rescheduled.
+TEST_VM(G1ServiceThread, test_add_run_once) {
+  // Create thread and let it start.
+  G1ServiceThread* st = new G1ServiceThread();
+  os::naked_short_sleep(500);
+
+  // Negative timeout to avoid rescheduling.
+  CheckTask ct("AddRunOnce", st);
+  ct.set_timeout(-1);
+  st->register_task(&ct);
+
+  // Give CheckTask time to run.
+  os::naked_short_sleep(500);
+  stop_service_thread(st);
+
+  // Should be exactly 1 since negative timeout should
+  // prevent rescheduling.
+  ASSERT_EQ(ct.execution_count(), 1);
 }
 
 class TestTask : public G1ServiceTask {
-  double _interval;
+  double _timeout;
 public:
-  TestTask(const char* name, double interval) :
-      G1ServiceTask(name),
-      _interval(interval) {
-    set_time(interval);
+  TestTask(double timeout) :
+      G1ServiceTask("TestTask"),
+      _timeout(timeout) {
+    set_time(timeout);
   }
   virtual void execute() { }
-  virtual double interval() { return _interval; }
+  virtual double timeout() { return _timeout; }
 };
 
-TEST(G1ServiceTaskList, add_ordered) {
+TEST_VM(G1ServiceTaskList, add_ordered) {
   G1ServiceTaskList list;
-  TestTask a("a", 0.1);
-  list.add_ordered(&a);
-  TestTask b("b", 0.2);
-  list.add_ordered(&b);
-  TestTask c("c", 0.3);
-  list.add_ordered(&c);
-  TestTask d("d", 0.4);
-  list.add_ordered(&d);
-  TestTask e("e", 0.5);
-  list.add_ordered(&e);
+
+  int num_test_tasks = 5;
+  for (int i = 1; i <= num_test_tasks; i++) {
+    // Create tasks with different timeout.
+    TestTask* task = new TestTask(0.1 * i);
+    list.add_ordered(task);
+  }
 
   // Now fake a run-loop, that reschedules the tasks using a
   // random multiplyer.
   for (double now = 0; now < 1000; now++) {
-    // Multiplyier is at least 1 to ensure progress.
+    // Random multiplyier is at least 1 to ensure progress.
     int multiplyer = 1 + os::random() % 10;
-    while (list.peek_first()->time() < now) {
-      G1ServiceTask* task = list.pop_first();
+    while (list.peek()->time() < now) {
+      G1ServiceTask* task = list.pop();
       task->execute();
-      task->set_time(now + (task->interval() * multiplyer));
+      task->set_time(now + (task->timeout() * multiplyer));
       // All additions will verify that the list is sorted.
       list.add_ordered(task);
     }
   }
+
+  while (!list.is_empty()) {
+    G1ServiceTask* task = list.pop();
+    delete task;
+  }
 }
+
+#ifdef ASSERT
+TEST_VM_ASSERT_MSG(G1ServiceTaskList, pop_empty,
+    "Should never try to verify empty list") {
+  G1ServiceTaskList list;
+  list.pop();
+}
+
+TEST_VM_ASSERT_MSG(G1ServiceTaskList, peek_empty,
+    "Should never try to verify empty list") {
+  G1ServiceTaskList list;
+  list.peek();
+}
+
+#endif
