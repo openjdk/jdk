@@ -24,26 +24,30 @@
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.io.CharArrayWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.CharBuffer;
 import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.Locale;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.expectThrows;
 
 /*
  * @test
- * @summary Check Hex formatting and parsing
+ * @summary Check HexFormat formatting and parsing
  * @run testng HexFormatTest
  */
 
 @Test
 public class HexFormatTest {
+    static final Class<NullPointerException> NPE = NullPointerException.class;
 
     @DataProvider(name = "HexFormattersParsers")
     Object[][] hexFormattersParsers() {
@@ -191,13 +195,13 @@ public class HexFormatTest {
     }
 
     @Test
-    static void testAppendHexByte() {
+    static void testAppendHexByteWithStringBuilder() {
         HexFormat hex = HexFormat.of();
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 256; i++) {
             sb.setLength(0);
-            StringBuilder s = hex.toHexDigits(sb, (byte)i);
-            assertEquals(s, sb, "toHexDigits returned unknown StringBuilder");
+            StringBuilder sb1 = hex.toHexDigits(sb, (byte)i);
+            assertSame(sb1, sb, "toHexDigits returned different StringBuilder");
             assertEquals(sb.length(), 2, "wrong length after append: " + i);
             assertEquals(sb.charAt(0), hex.toHighHexDigit((byte)i), "MSB converted wrong");
             assertEquals(sb.charAt(1), hex.toLowHexDigit((byte)i), "LSB converted wrong");
@@ -207,8 +211,31 @@ public class HexFormatTest {
     }
 
     @Test
-    static void testFromHexDigitsInvalid() {
-                HexFormat hex = HexFormat.of();
+    static void testAppendHexByteWithCharBuffer() {
+        HexFormat hex = HexFormat.of();
+        CharBuffer cb = CharBuffer.allocate(256);
+        for (int i = 1; i <= 128; i++) {
+            CharBuffer cb1 = hex.toHexDigits(cb, (byte)i);
+            assertTrue(cb1 == cb);
+            assertEquals(cb.position(), i * 2);
+        }
+        assertEquals(cb.remaining(), 0);
+    }
+
+    @Test
+    static void testAppendHexByteWithCharArrayWriter() {
+        HexFormat hex = HexFormat.of();
+        CharArrayWriter caw = new CharArrayWriter();
+        for (int i = 1; i <= 128; i++) {
+            CharArrayWriter caw1 = hex.toHexDigits(caw, (byte)i);
+            assertTrue(caw1 == caw);
+            assertEquals(caw.size(), i * 2);
+        }
+    }
+
+    @Test
+    static void testFromHexPairInvalid() {
+        HexFormat hex = HexFormat.of();
 
         // An assortment of invalid characters
         String chars = "-0--0-";
@@ -234,55 +261,41 @@ public class HexFormatTest {
 
     @Test
     static void testFactoryNPE() {
-        assertThrows(NullPointerException.class, () -> HexFormat.ofDelimiter(null));
-        assertThrows(NullPointerException.class, () -> HexFormat.of().withDelimiter(null));
-        assertThrows(NullPointerException.class, () -> HexFormat.of().withPrefix(null));
-        assertThrows(NullPointerException.class, () -> HexFormat.of().withSuffix(null));
+        assertThrows(NPE, () -> HexFormat.ofDelimiter(null));
+        assertThrows(NPE, () -> HexFormat.of().withDelimiter(null));
+        assertThrows(NPE, () -> HexFormat.of().withPrefix(null));
+        assertThrows(NPE, () -> HexFormat.of().withSuffix(null));
     }
 
     @Test
     static void testFormatHexNPE() {
-        assertThrows(NullPointerException.class,
-                () -> HexFormat.of().formatHex(null));
-        assertThrows(NullPointerException.class,
-                () -> HexFormat.of().formatHex(null, 0, 1));
-        assertThrows(NullPointerException.class,
-                () -> HexFormat.of().formatHex(null, null));
-        assertThrows(NullPointerException.class,
-                () -> HexFormat.of().formatHex(null, null, 0, 0));
+        assertThrows(NPE, () -> HexFormat.of().formatHex(null));
+        assertThrows(NPE, () -> HexFormat.of().formatHex(null, 0, 1));
+        assertThrows(NPE, () -> HexFormat.of().formatHex(null, null));
+        assertThrows(NPE,  () -> HexFormat.of().formatHex(null, null, 0, 0));
         StringBuilder sb = new StringBuilder();
-        assertThrows(NullPointerException.class,
-                () -> HexFormat.of().formatHex(sb, null));
-        assertThrows(NullPointerException.class,
-                () -> HexFormat.of().formatHex(sb, null, 0, 1));
+        assertThrows(NPE, () -> HexFormat.of().formatHex(sb, null));
+        assertThrows(NPE, () -> HexFormat.of().formatHex(sb, null, 0, 1));
     }
 
     @Test
     static void testParseHexNPE() {
-        assertThrows(NullPointerException.class,
-                () -> HexFormat.of().parseHex(null));
-        assertThrows(NullPointerException.class,
-                () -> HexFormat.of().parseHex((String)null, 0, 0));
-        assertThrows(NullPointerException.class,
-                () -> HexFormat.of().parseHex((char[])null, 0, 0));
+        assertThrows(NPE, () -> HexFormat.of().parseHex(null));
+        assertThrows(NPE, () -> HexFormat.of().parseHex((String)null, 0, 0));
+        assertThrows(NPE, () -> HexFormat.of().parseHex((char[])null, 0, 0));
     }
 
     @Test
     static void testFromHexNPE() {
-        assertThrows(NullPointerException.class,
-                () -> HexFormat.of().fromHexDigits(null));
-        assertThrows(NullPointerException.class,
-                () -> HexFormat.of().fromHexDigits(null, 0, 0));
-        assertThrows(NullPointerException.class,
-                () -> HexFormat.of().fromHexDigitsToLong(null));
-        assertThrows(NullPointerException.class,
-                () -> HexFormat.of().fromHexDigitsToLong(null, 0, 0));
+        assertThrows(NPE, () -> HexFormat.of().fromHexDigits(null));
+        assertThrows(NPE, () -> HexFormat.of().fromHexDigits(null, 0, 0));
+        assertThrows(NPE, () -> HexFormat.of().fromHexDigitsToLong(null));
+        assertThrows(NPE, () -> HexFormat.of().fromHexDigitsToLong(null, 0, 0));
     }
 
     @Test
     static void testToHexDigitsNPE() {
-        assertThrows(NullPointerException.class,
-                () -> HexFormat.of().toHexDigits(null, (byte)0));
+        assertThrows(NPE, () -> HexFormat.of().toHexDigits(null, (byte)0));
     }
 
     @Test(dataProvider = "BadParseHexThrowing")
@@ -372,7 +385,7 @@ public class HexFormatTest {
         byte[] expected = genBytes('A', 15);
         String s = hex.formatHex(expected);
 
-        // Parse values 2,3,4 from the generated string
+        // Parse values 2, 3, 4 from the generated string
         int low = 2;
         int high = 5;
         int stride = prefix.length() + 2 + suffix.length() + delimiter.length();
