@@ -158,7 +158,7 @@ final class Parsed implements TemporalAccessor {
     /**
      * The parsed day period (in minute-of-day).
      */
-    long dayPeriod = -1L;
+    DateTimeFormatterBuilder.DayPeriod dayPeriod;
 
     /**
      * Creates an instance.
@@ -443,17 +443,6 @@ final class Parsed implements TemporalAccessor {
             updateCheckConflict(SECOND_OF_DAY, MINUTE_OF_HOUR, (sod / 60) % 60);
             updateCheckConflict(SECOND_OF_DAY, SECOND_OF_MINUTE, sod % 60);
         }
-        if (dayPeriod >= 0) {
-            if (!fieldValues.containsKey(MINUTE_OF_DAY) &&
-                !fieldValues.containsKey(HOUR_OF_DAY)) {
-                fieldValues.put(MINUTE_OF_DAY, dayPeriod);
-            }
-            // dayPeriod precedes AmPm. Override it if exists without conflict
-            // checking as for, e.g., "at night" can either be "AM" or "PM".
-            if (fieldValues.containsKey(AMPM_OF_DAY)) {
-                fieldValues.put(AMPM_OF_DAY, dayPeriod / 720);
-            }
-        }
         if (fieldValues.containsKey(MINUTE_OF_DAY)) {
             long mod = fieldValues.remove(MINUTE_OF_DAY);
             if (resolverStyle != ResolverStyle.LENIENT) {
@@ -461,6 +450,23 @@ final class Parsed implements TemporalAccessor {
             }
             updateCheckConflict(MINUTE_OF_DAY, HOUR_OF_DAY, mod / 60);
             updateCheckConflict(MINUTE_OF_DAY, MINUTE_OF_HOUR, mod % 60);
+        }
+        if (dayPeriod != null) {
+            if (fieldValues.containsKey(HOUR_OF_DAY) &&
+                fieldValues.containsKey(MINUTE_OF_HOUR)) {
+                if (!dayPeriod.includes(fieldValues.get(HOUR_OF_DAY) * 60 + fieldValues.get(MINUTE_OF_HOUR))) {
+                    throw new DateTimeException("Conflict found: hour-of-day/minute-of-hour conflict with day period");
+                }
+            } else {
+                long midpoint = dayPeriod.mid();
+                fieldValues.put(HOUR_OF_DAY, midpoint / 60);
+                fieldValues.put(MINUTE_OF_HOUR, midpoint % 60);
+                // dayPeriod precedes AmPm. Override it if exists without conflict
+                // checking as for, e.g., "at night" can either be "AM" or "PM".
+                if (fieldValues.containsKey(AMPM_OF_DAY)) {
+                    fieldValues.put(AMPM_OF_DAY, midpoint / 720);
+                }
+            }
         }
 
         // combine partial second fields strictly, leaving lenient expansion to later
