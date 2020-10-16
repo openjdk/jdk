@@ -64,7 +64,6 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
     public final DocPath  source;
     public final HtmlConfiguration configuration;
     private final HtmlOptions options;
-    private Navigation navBar;
 
     /**
      * Constructor to construct the DocFilesWriter object.
@@ -196,7 +195,9 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
         DocFileElement dfElement = new DocFileElement(utils, element, fileObject);
 
         DocPath dfilePath = dstPath.resolve(srcfile.getName());
-        HtmlDocletWriter docletWriter = new DocFileWriter(configuration, dfilePath, element);
+        PackageElement pkg = dfElement.getPackageElement();
+
+        HtmlDocletWriter docletWriter = new DocFileWriter(configuration, dfilePath, element, pkg);
         configuration.messages.notice("doclet.Generating_0", docletWriter.filename.getPath());
 
         List<? extends DocTree> localTags = getLocalHeaderTags(utils.getPreamble(dfElement));
@@ -204,24 +205,13 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
 
         String title = getWindowTitle(docletWriter, dfElement).trim();
         HtmlTree htmlContent = docletWriter.getBody(title);
-        PackageElement pkg = dfElement.getPackageElement();
-        this.navBar = new Navigation(element, configuration, PageMode.DOC_FILE, docletWriter.path);
-        Content headerContent = new ContentBuilder();
-        docletWriter.addTop(headerContent);
-        Content mdleLinkContent = docletWriter.getModuleLink(utils.elementUtils.getModuleOf(pkg),
-                docletWriter.contents.moduleLabel);
-        navBar.setNavLinkModule(mdleLinkContent);
-        Content pkgLinkContent = docletWriter.getPackageLink(pkg, docletWriter.contents.packageLabel);
-        navBar.setNavLinkPackage(pkgLinkContent);
-        navBar.setUserHeader(docletWriter.getUserHeader());
-        headerContent.add(navBar.getContent());
 
         List<? extends DocTree> fullBody = utils.getFullBody(dfElement);
         Content pageContent = docletWriter.commentTagsToContent(null, dfElement, fullBody, false);
         docletWriter.addTagsInfo(dfElement, pageContent);
 
         htmlContent.add(new BodyContents()
-                .setHeader(headerContent)
+                .setHeader(docletWriter.getHeader(PageMode.DOC_FILE, element))
                 .addMainContent(pageContent)
                 .setFooter(docletWriter.getFooter()));
         docletWriter.printHtmlDocument(Collections.emptyList(), null, localTagsContent, Collections.emptyList(), htmlContent);
@@ -287,15 +277,17 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
     }
 
     private static class DocFileWriter extends HtmlDocletWriter {
+        private final PackageElement pkg;
 
         /**
          * Constructor to construct the HtmlDocletWriter object.
          *
-         * @param configuration the configuration of this doclet.
-         * @param path          the file to be generated.
-         * @param e             the anchoring element.
+         * @param configuration the configuration of this doclet
+         * @param path          the file to be generated
+         * @param e             the anchoring element
+         * @param pkg           the package containing the doc file
          */
-        public DocFileWriter(HtmlConfiguration configuration, DocPath path, Element e) {
+        public DocFileWriter(HtmlConfiguration configuration, DocPath path, Element e, PackageElement pkg) {
             super(configuration, path);
             switch (e.getKind()) {
                 case PACKAGE:
@@ -304,6 +296,17 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
                 default:
                     throw new AssertionError("unsupported element: " + e.getKind());
             }
+            this.pkg = pkg;
+        }
+
+        @Override
+        protected Navigation getNavBar(PageMode pageMode, Element element) {
+            Content mdleLinkContent = getModuleLink(utils.elementUtils.getModuleOf(element),
+                    contents.moduleLabel);
+            Content pkgLinkContent = getPackageLink(pkg, contents.packageLabel);
+            return super.getNavBar(pageMode, element)
+                    .setNavLinkModule(mdleLinkContent)
+                    .setNavLinkPackage(pkgLinkContent);
         }
     }
 }

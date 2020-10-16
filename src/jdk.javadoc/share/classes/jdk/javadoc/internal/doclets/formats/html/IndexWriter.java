@@ -121,11 +121,6 @@ public class IndexWriter extends HtmlDocletWriter {
                 ? resources.getText("doclet.Window_Split_Index", displayFirstCharacters.get(0))
                 : resources.getText("doclet.Window_Single_Index");
         HtmlTree body = getBody(getWindowTitle(title));
-        Content headerContent = new ContentBuilder();
-        addTop(headerContent);
-        Navigation navBar = new Navigation(null, configuration, PageMode.INDEX, path);
-        navBar.setUserHeader(getUserHeader());
-        headerContent.add(navBar.getContent());
         Content mainContent = new ContentBuilder();
         addLinksForIndexes(allFirstCharacters, mainContent);
         for (Character ch : displayFirstCharacters) {
@@ -133,7 +128,7 @@ public class IndexWriter extends HtmlDocletWriter {
         }
         addLinksForIndexes(allFirstCharacters, mainContent);
         body.add(new BodyContents()
-                .setHeader(headerContent)
+                .setHeader(getHeader(PageMode.INDEX))
                 .addMainContent(HtmlTree.DIV(HtmlStyle.header,
                         HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
                                 contents.getContent("doclet.Index"))))

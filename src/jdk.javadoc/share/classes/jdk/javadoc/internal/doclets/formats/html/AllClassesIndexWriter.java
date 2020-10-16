@@ -93,18 +93,13 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
      */
     protected void buildAllClassesFile() throws DocFileIOException {
         String label = resources.getText("doclet.All_Classes");
-        Content header = new ContentBuilder();
-        addTop(header);
-        Navigation navBar = new Navigation(null, configuration, PageMode.ALL_CLASSES, path);
-        navBar.setUserHeader(getUserHeader());
-        header.add(navBar.getContent());
         Content allClassesContent = new ContentBuilder();
         addContents(allClassesContent);
         Content mainContent = new ContentBuilder();
         mainContent.add(allClassesContent);
         HtmlTree bodyTree = getBody(getWindowTitle(label));
         bodyTree.add(new BodyContents()
-                .setHeader(header)
+                .setHeader(getHeader(PageMode.ALL_CLASSES))
                 .addMainContent(mainContent)
                 .setFooter(getFooter()));
         printHtmlDocument(null, "class index", bodyTree);

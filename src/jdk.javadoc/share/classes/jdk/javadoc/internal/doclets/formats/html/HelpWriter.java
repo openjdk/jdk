@@ -51,8 +51,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
  */
 public class HelpWriter extends HtmlDocletWriter {
 
-    private final Navigation navBar;
-
     private final String[][] SEARCH_EXAMPLES = {
             {"j.l.obj", "\"java.lang.Object\""},
             {"InpStr", "\"java.io.InputStream\""},
@@ -67,7 +65,6 @@ public class HelpWriter extends HtmlDocletWriter {
     public HelpWriter(HtmlConfiguration configuration,
                       DocPath filename) {
         super(configuration, filename);
-        this.navBar = new Navigation(null, configuration, PageMode.HELP, path);
     }
 
     /**
@@ -93,14 +90,10 @@ public class HelpWriter extends HtmlDocletWriter {
     protected void generateHelpFile() throws DocFileIOException {
         String title = resources.getText("doclet.Window_Help_title");
         HtmlTree body = getBody(getWindowTitle(title));
-        Content headerContent = new ContentBuilder();
-        addTop(headerContent);
-        navBar.setUserHeader(getUserHeader());
-        headerContent.add(navBar.getContent());
         ContentBuilder helpFileContent = new ContentBuilder();
         addHelpFileContents(helpFileContent);
         body.add(new BodyContents()
-                .setHeader(headerContent)
+                .setHeader(getHeader(PageMode.HELP))
                 .addMainContent(helpFileContent)
                 .setFooter(getFooter()));
         printHtmlDocument(null, "help", body);

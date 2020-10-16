@@ -46,8 +46,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
  */
 public abstract class AbstractOverviewIndexWriter extends HtmlDocletWriter {
 
-    protected Navigation navBar;
-
     /**
      * Constructs the AbstractOverviewIndexWriter.
      *
@@ -57,20 +55,6 @@ public abstract class AbstractOverviewIndexWriter extends HtmlDocletWriter {
     public AbstractOverviewIndexWriter(HtmlConfiguration configuration,
                                       DocPath filename) {
         super(configuration, filename);
-        this.navBar = new Navigation(null, configuration, PageMode.OVERVIEW, path);
-    }
-
-    /**
-     * Adds the top text (from the -top option), the upper
-     * navigation bar, and then the title (from the"-header"
-     * option), at the top of page.
-     *
-     * @param header the documentation tree to which the navigation bar header will be added
-     */
-    protected void addNavigationBar(Content header) {
-        addTop(header);
-        navBar.setUserHeader(getUserHeader());
-        header.add(navBar.getContent());
     }
 
     /**
@@ -111,13 +95,11 @@ public abstract class AbstractOverviewIndexWriter extends HtmlDocletWriter {
             throws DocFileIOException {
         String windowOverview = resources.getText(title);
         Content body = getBody(getWindowTitle(windowOverview));
-        Content header = new ContentBuilder();
-        addNavigationBar(header);
         Content main = new ContentBuilder();
         addOverviewHeader(main);
         addIndex(main);
         body.add(new BodyContents()
-                .setHeader(header)
+                .setHeader(getHeader(PageMode.OVERVIEW))
                 .addMainContent(main)
                 .setFooter(getFooter()));
         printHtmlDocument(

@@ -54,15 +54,12 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
 
     Set<TypeElement> visibleClasses;
 
-    private final Navigation navBar;
-
     /**
      * @param configuration the configuration data for the doclet
      */
     public SerializedFormWriterImpl(HtmlConfiguration configuration) {
         super(configuration, DocPaths.SERIALIZED_FORM);
         visibleClasses = configuration.getIncludedTypeElements();
-        this.navBar = new Navigation(null, configuration, PageMode.SERIALIZED_FORM, path);
     }
 
     /**
@@ -74,15 +71,11 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
     @Override
     public Content getHeader(String header) {
         HtmlTree bodyTree = getBody(getWindowTitle(header));
-        Content headerContent = new ContentBuilder();
-        addTop(headerContent);
-        navBar.setUserHeader(getUserHeader());
-        headerContent.add(navBar.getContent());
         Content h1Content = new StringContent(header);
         Content heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, h1Content);
         Content div = HtmlTree.DIV(HtmlStyle.header, heading);
-        bodyContents.setHeader(headerContent)
+        bodyContents.setHeader(getHeader(PageMode.SERIALIZED_FORM))
                 .addMainContent(div);
         return bodyTree;
     }

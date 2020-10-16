@@ -77,8 +77,6 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
      */
     private HtmlTree summaryTree;
 
-    private final Navigation navBar;
-
     private final BodyContents bodyContents = new BodyContents();
 
     /**
@@ -91,18 +89,13 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         this.configuration = configuration;
         constantsTableHeader = new TableHeader(
                 contents.modifierAndTypeLabel, contents.constantFieldLabel, contents.valueLabel);
-        this.navBar = new Navigation(null, configuration, PageMode.CONSTANT_VALUES, path);
     }
 
     @Override
     public Content getHeader() {
         String label = resources.getText("doclet.Constants_Summary");
         HtmlTree bodyTree = getBody(getWindowTitle(label));
-        Content headerContent = new ContentBuilder();
-        addTop(headerContent);
-        navBar.setUserHeader(getUserHeader());
-        headerContent.add(navBar.getContent());
-        bodyContents.setHeader(headerContent);
+        bodyContents.setHeader(getHeader(PageMode.CONSTANT_VALUES));
         return bodyTree;
     }
 

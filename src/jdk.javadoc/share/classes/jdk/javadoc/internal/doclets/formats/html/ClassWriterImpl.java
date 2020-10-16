@@ -89,8 +89,6 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
 
     protected final ClassTree classtree;
 
-    private final Navigation navBar;
-
     /**
      * @param configuration the configuration data for the doclet
      * @param typeElement the class being documented.
@@ -102,20 +100,11 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         this.typeElement = typeElement;
         configuration.currentTypeElement = typeElement;
         this.classtree = classTree;
-        this.navBar = new Navigation(typeElement, configuration, PageMode.CLASS, path);
     }
 
     @Override
     public Content getHeader(String header) {
         HtmlTree bodyTree = getBody(getWindowTitle(utils.getSimpleName(typeElement)));
-        Content headerContent = new ContentBuilder();
-        addTop(headerContent);
-        Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(typeElement),
-                contents.moduleLabel);
-        navBar.setNavLinkModule(linkContent);
-        navBar.setMemberSummaryBuilder(configuration.getBuilderFactory().getMemberSummaryBuilder(this));
-        navBar.setUserHeader(getUserHeader());
-        headerContent.add(navBar.getContent());
         HtmlTree div = new HtmlTree(TagName.DIV);
         div.setStyle(HtmlStyle.header);
         if (configuration.showModules) {
@@ -145,7 +134,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                 HtmlStyle.title, new StringContent(header));
         heading.add(getTypeParameterLinks(linkInfo));
         div.add(heading);
-        bodyContents.setHeader(headerContent)
+        bodyContents.setHeader(getHeader(PageMode.CLASS, typeElement))
                 .addMainContent(MarkerComments.START_OF_CLASS_DATA)
                 .addMainContent(div);
         return bodyTree;
@@ -154,6 +143,15 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     @Override
     public Content getClassContentHeader() {
         return getContentHeader();
+    }
+
+    @Override
+    protected Navigation getNavBar(PageMode pageMode, Element element) {
+        Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(element),
+                contents.moduleLabel);
+        return super.getNavBar(pageMode, element)
+                .setNavLinkModule(linkContent)
+                .setMemberSummaryBuilder(configuration.getBuilderFactory().getMemberSummaryBuilder(this));
     }
 
     @Override

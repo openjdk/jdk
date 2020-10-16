@@ -66,8 +66,6 @@ public class TreeWriter extends AbstractTreeWriter {
      */
     private final boolean classesOnly;
 
-    private final Navigation navBar;
-
     protected BodyContents bodyContents;
 
     /**
@@ -81,7 +79,6 @@ public class TreeWriter extends AbstractTreeWriter {
         super(configuration, filename, classtree);
         packages = configuration.packages;
         classesOnly = packages.isEmpty();
-        this.navBar = new Navigation(null, configuration, PageMode.TREE, path);
         this.bodyContents = new BodyContents();
     }
 
@@ -171,11 +168,7 @@ public class TreeWriter extends AbstractTreeWriter {
     protected HtmlTree getTreeHeader() {
         String title = resources.getText("doclet.Window_Class_Hierarchy");
         HtmlTree bodyTree = getBody(getWindowTitle(title));
-        Content headerContent = new ContentBuilder();
-        addTop(headerContent);
-        navBar.setUserHeader(getUserHeader());
-        headerContent.add(navBar.getContent());
-        bodyContents.setHeader(headerContent);
+        bodyContents.setHeader(getHeader(PageMode.TREE));
         return bodyTree;
     }
 

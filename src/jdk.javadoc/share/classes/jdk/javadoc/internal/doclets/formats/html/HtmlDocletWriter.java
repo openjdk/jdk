@@ -485,36 +485,62 @@ public class HtmlDocletWriter {
         return title;
     }
 
-    public Content getFooter() {
+    /**
+     * Returns a {@code <header>} element, containing the user "top" text, if any,
+     * amd the main navigation bar.
+     *
+     * @param pageMode the pageMode used to configure the navigation bar
+     *
+     * @return the {@code <header>} element
+     */
+    protected HtmlTree getHeader(Navigation.PageMode pageMode) {
+        return getHeader(pageMode, null);
+    }
+
+    /**
+     * Returns a {@code <header>} element, containing the user "top" text, if any,
+     * amd the main navigation bar.
+     *
+     * @param pageMode the page mode used to configure the navigation bar
+     * @param element  the element used to configure the navigation bar
+     *
+     * @return the {@code <header>} element
+     */
+    protected HtmlTree getHeader(Navigation.PageMode pageMode, Element element) {
+        return HtmlTree.HEADER()
+                .add(new RawHtml(replaceDocRootDir(options.top())))
+                .add(getNavBar(pageMode, element).getContent());
+    }
+
+    /**
+     * Returns a basic navigation bar for a kind of page and element.
+     *
+     * @apiNote the result may be further configured by overriding this method
+     *
+     * @param pageMode the page mode
+     * @param element  the defining element for the navigation bar, or {@code null} if none
+     * @return the basic navigation bar
+     */
+    protected Navigation getNavBar(Navigation.PageMode pageMode, Element element) {
+        return new Navigation(element, configuration, pageMode, path)
+                .setUserHeader(new RawHtml(replaceDocRootDir(options.header())));
+    }
+
+    /**
+     * Returns a {@code <footer>} element containing the user's "bottom" text,
+     * or {@code null} if there is no such text.
+     *
+     * @return the {@code <footer>} element or {@code null}.
+     */
+    public HtmlTree getFooter() {
         String bottom = options.bottom();
-        if (bottom == null || bottom.isEmpty()) {
-            return new ContentBuilder();
-        }
-
-        return HtmlTree.FOOTER()
-                .add(new HtmlTree(TagName.HR))
-                .add(HtmlTree.P(HtmlStyle.legalCopy,
-                        HtmlTree.SMALL(
-                                new RawHtml(replaceDocRootDir(bottom)))));
-    }
-
-    /**
-     * Returns the user specified header.
-     *
-     * @return the user specified header
-     */
-    public Content getUserHeader() {
-        return new RawHtml(replaceDocRootDir(options.header()));
-    }
-
-    /**
-     * Adds the user specified top.
-     *
-     * @param htmlTree the content tree to which user specified top will be added
-     */
-    public void addTop(Content htmlTree) {
-        Content top = new RawHtml(replaceDocRootDir(options.top()));
-        htmlTree.add(top);
+        return (bottom == null || bottom.isEmpty())
+                ? null
+                : HtmlTree.FOOTER()
+                    .add(new HtmlTree(TagName.HR))
+                    .add(HtmlTree.P(HtmlStyle.legalCopy,
+                            HtmlTree.SMALL(
+                                    new RawHtml(replaceDocRootDir(bottom)))));
     }
 
     /**

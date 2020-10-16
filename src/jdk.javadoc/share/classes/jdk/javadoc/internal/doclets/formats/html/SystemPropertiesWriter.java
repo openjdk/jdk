@@ -64,8 +64,6 @@ import static java.util.stream.Collectors.toList;
  */
 public class SystemPropertiesWriter extends HtmlDocletWriter {
 
-    private final Navigation navBar;
-
     /**
      * Cached contents of {@code <title>...</title>} tags of the HTML pages.
      */
@@ -79,7 +77,6 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
      */
     public SystemPropertiesWriter(HtmlConfiguration configuration, DocPath filename) {
         super(configuration, filename);
-        this.navBar = new Navigation(null, configuration, PageMode.SYSTEM_PROPERTIES, path);
     }
 
     public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
@@ -108,14 +105,10 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
     protected void buildSystemPropertiesPage() throws DocFileIOException {
         String title = resources.getText("doclet.systemProperties");
         HtmlTree body = getBody(getWindowTitle(title));
-        Content headerContent = new ContentBuilder();
-        addTop(headerContent);
-        navBar.setUserHeader(getUserHeader());
-        headerContent.add(navBar.getContent());
         Content mainContent = new ContentBuilder();
         addSystemProperties(mainContent);
         body.add(new BodyContents()
-                .setHeader(headerContent)
+                .setHeader(getHeader(PageMode.SYSTEM_PROPERTIES))
                 .addMainContent(HtmlTree.DIV(HtmlStyle.header,
                         HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
                                 contents.getContent("doclet.systemProperties"))))
