@@ -1,4 +1,4 @@
-dnl Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
+dnl Copyright (c) 2019, 2020, Red Hat Inc. All rights reserved.
 dnl DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 dnl
 dnl This code is free software; you can redistribute it and/or modify it
@@ -19,10 +19,14 @@ dnl Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 dnl or visit www.oracle.com if you need additional information or have any
 dnl questions.
 dnl
-dnl 
-dnl Process this file with m4 aarch64_ad.m4 to generate the arithmetic
-dnl and shift patterns patterns used in aarch64.ad.
 dnl
+dnl Process this file with m4 aarch64_ad.m4 to generate instructions used in
+dnl aarch64.ad:
+dnl 1. the arithmetic
+dnl 2. shift patterns
+dnl
+// BEGIN This section of the file is automatically generated. Do not edit --------------
+// This section is generated from aarch64_ad.m4
 dnl
 define(`ORL2I', `ifelse($1,I,orL2I)')
 dnl

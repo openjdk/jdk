@@ -580,7 +580,7 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
 
   if (needs_thread_local_poll) {
     NOT_PRODUCT(block_comment("Thread-local Safepoint poll"));
-    ldr(Rtemp, Address(Rthread, Thread::polling_page_offset()));
+    ldr(Rtemp, Address(Rthread, Thread::polling_word_offset()));
     tbnz(Rtemp, exact_log2(SafepointMechanism::poll_bit()), safepoint);
   }
 
@@ -729,7 +729,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state, Register ret_a
   // BasicObjectLock will be first in list, since this is a synchronized method. However, need
   // to check that the object has not been unlocked by an explicit monitorexit bytecode.
 
-  const Register Rmonitor = R1;                  // fixed in unlock_object()
+  const Register Rmonitor = R0;                  // fixed in unlock_object()
   const Register Robj = R2;
 
   // address of first monitor
@@ -772,8 +772,8 @@ void InterpreterMacroAssembler::remove_activation(TosState state, Register ret_a
     // Unlock does not block, so don't have to worry about the frame
 
     push(state);
-    mov(R1, Rcur);
-    unlock_object(R1);
+    mov(Rmonitor, Rcur);
+    unlock_object(Rmonitor);
 
     if (install_monitor_exception) {
       call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::new_illegal_monitor_state_exception));
@@ -987,7 +987,7 @@ void InterpreterMacroAssembler::lock_object(Register Rlock) {
 // Throw an IllegalMonitorException if object is not locked by current thread
 // Blows volatile registers R0-R3, Rtemp, LR. Calls VM.
 void InterpreterMacroAssembler::unlock_object(Register Rlock) {
-  assert(Rlock == R1, "the second argument");
+  assert(Rlock == R0, "the first argument");
 
   if (UseHeavyMonitors) {
     call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), Rlock);

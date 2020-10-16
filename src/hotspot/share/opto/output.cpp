@@ -224,6 +224,72 @@ public:
 
 };
 
+volatile int C2SafepointPollStubTable::_stub_size = 0;
+
+Label& C2SafepointPollStubTable::add_safepoint(uintptr_t safepoint_offset) {
+  C2SafepointPollStub* entry = new (Compile::current()->comp_arena()) C2SafepointPollStub(safepoint_offset);
+  _safepoints.append(entry);
+  return entry->_stub_label;
+}
+
+void C2SafepointPollStubTable::emit(CodeBuffer& cb) {
+  MacroAssembler masm(&cb);
+  for (int i = _safepoints.length() - 1; i >= 0; i--) {
+    // Make sure there is enough space in the code buffer
+    if (cb.insts()->maybe_expand_to_ensure_remaining(PhaseOutput::MAX_inst_size) && cb.blob() == NULL) {
+      ciEnv::current()->record_failure("CodeCache is full");
+      return;
+    }
+
+    C2SafepointPollStub* entry = _safepoints.at(i);
+    emit_stub(masm, entry);
+  }
+}
+
+int C2SafepointPollStubTable::stub_size_lazy() const {
+  int size = Atomic::load(&_stub_size);
+
+  if (size != 0) {
+    return size;
+  }
+
+  Compile* const C = Compile::current();
+  BufferBlob* const blob = C->output()->scratch_buffer_blob();
+  CodeBuffer cb(blob->content_begin(), C->output()->scratch_buffer_code_size());
+  MacroAssembler masm(&cb);
+  C2SafepointPollStub* entry = _safepoints.at(0);
+  emit_stub(masm, entry);
+  size += cb.insts_size();
+
+  Atomic::store(&_stub_size, size);
+
+  return size;
+}
+
+int C2SafepointPollStubTable::estimate_stub_size() const {
+  if (_safepoints.length() == 0) {
+    return 0;
+  }
+
+  int result = stub_size_lazy() * _safepoints.length();
+
+#ifdef ASSERT
+  Compile* const C = Compile::current();
+  BufferBlob* const blob = C->output()->scratch_buffer_blob();
+  int size = 0;
+
+  for (int i = _safepoints.length() - 1; i >= 0; i--) {
+    CodeBuffer cb(blob->content_begin(), C->output()->scratch_buffer_code_size());
+    MacroAssembler masm(&cb);
+    C2SafepointPollStub* entry = _safepoints.at(i);
+    emit_stub(masm, entry);
+    size += cb.insts_size();
+  }
+  assert(size == result, "stubs should not have variable size");
+#endif
+
+  return result;
+}
 
 PhaseOutput::PhaseOutput()
   : Phase(Phase::Output),
@@ -826,6 +892,10 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
                                                       ? Location::int_in_long : Location::normal ));
     } else if( t->base() == Type::NarrowOop ) {
       array->append(new_loc_value( C->regalloc(), regnum, Location::narrowoop ));
+    } else if ( t->base() == Type::VectorS || t->base() == Type::VectorD ||
+                t->base() == Type::VectorX || t->base() == Type::VectorY ||
+                t->base() == Type::VectorZ) {
+      array->append(new_loc_value( C->regalloc(), regnum, Location::vector ));
     } else {
       array->append(new_loc_value( C->regalloc(), regnum, C->regalloc()->is_oop(local) ? Location::oop : Location::normal ));
     }
@@ -1235,6 +1305,7 @@ CodeBuffer* PhaseOutput::init_buffer() {
 
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   stub_req += bs->estimate_stub_size();
+  stub_req += safepoint_poll_table()->estimate_stub_size();
 
   // nmethod and CodeBuffer count stubs & constants as part of method's code.
   // class HandlerImpl is platform-specific and defined in the *.ad files.
@@ -1735,6 +1806,10 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
 
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   bs->emit_stubs(*cb);
+  if (C->failing())  return;
+
+  // Fill in stubs for calling the runtime from safepoint polls.
+  safepoint_poll_table()->emit(*cb);
   if (C->failing())  return;
 
 #ifndef PRODUCT

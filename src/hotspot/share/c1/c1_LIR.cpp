@@ -23,11 +23,13 @@
  */
 
 #include "precompiled.hpp"
+#include "c1/c1_CodeStubs.hpp"
 #include "c1/c1_InstructionPrinter.hpp"
 #include "c1/c1_LIR.hpp"
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciInstance.hpp"
+#include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 
 Register LIR_OprDesc::as_register() const {
@@ -447,7 +449,6 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
     case lir_fld:            // input always valid, result and info always invalid
     case lir_push:           // input always valid, result and info always invalid
     case lir_pop:            // input always valid, result and info always invalid
-    case lir_return:         // input always valid, result and info always invalid
     case lir_leal:           // input and result always valid, info always invalid
     case lir_monaddr:        // input and result always valid, info always invalid
     case lir_null_check:     // input and info always valid, result always invalid
@@ -459,6 +460,19 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       if (op1->_info)                  do_info(op1->_info);
       if (op1->_opr->is_valid())       do_input(op1->_opr);
       if (op1->_result->is_valid())    do_output(op1->_result);
+
+      break;
+    }
+
+    case lir_return:
+    {
+      assert(op->as_OpReturn() != NULL, "must be");
+      LIR_OpReturn* op_ret = (LIR_OpReturn*)op;
+
+      if (op_ret->_info)               do_info(op_ret->_info);
+      if (op_ret->_opr->is_valid())    do_input(op_ret->_opr);
+      if (op_ret->_result->is_valid()) do_output(op_ret->_result);
+      if (op_ret->stub() != NULL)      do_stub(op_ret->stub());
 
       break;
     }
@@ -947,6 +961,15 @@ bool LIR_OpVisitState::no_operands(LIR_Op* op) {
          !has_slow_case();
 }
 #endif
+
+// LIR_OpReturn
+LIR_OpReturn::LIR_OpReturn(LIR_Opr opr) :
+    LIR_Op1(lir_return, opr, (CodeEmitInfo*)NULL /* info */),
+    _stub(NULL) {
+  if (VM_Version::supports_stack_watermark_barrier()) {
+    _stub = new C1SafepointPollStub();
+  }
+}
 
 //---------------------------------------------------
 

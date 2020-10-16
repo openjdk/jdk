@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,9 @@ public:
   T get(uintptr_t offset) const;
   void put(uintptr_t offset, T value);
   void put(uintptr_t offset, size_t size, T value);
+
+  T get_acquire(uintptr_t offset) const;
+  void release_put(uintptr_t offset, T value);
 };
 
 template <typename T>

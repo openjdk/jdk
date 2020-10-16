@@ -3964,7 +3964,7 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
     return JNI_ERR;
   }
   // Enable stack overflow checks
-  thread->create_stack_guard_pages();
+  thread->stack_overflow_state()->create_stack_guard_pages();
 
   thread->initialize_tlab();
 

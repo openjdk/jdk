@@ -50,6 +50,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DeprecatedAPIListBuilder.DeprEl
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 
 /**
  * Generate File to list all the deprecated classes and class members with the
@@ -301,6 +302,11 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
         String description = "deprecated elements";
         body.add(bodyContents);
         printHtmlDocument(null, description, body);
+
+        if (!deprapi.isEmpty() && configuration.mainIndex != null) {
+            configuration.mainIndex.add(IndexItem.of(IndexItem.Category.TAGS,
+                    resources.getText("doclet.Deprecated_API"), path));
+        }
     }
 
     /**
@@ -371,7 +377,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
             String tableSummary, TableHeader tableHeader, Content contentTree) {
         if (deprList.size() > 0) {
             Content caption = contents.getContent(headingKey);
-            Table table = new Table(HtmlStyle.deprecatedSummary, HtmlStyle.summaryTable)
+            Table table = new Table(HtmlStyle.summaryTable)
                     .setCaption(caption)
                     .setHeader(tableHeader)
                     .setId(id)

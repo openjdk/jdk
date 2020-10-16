@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,7 +141,7 @@ public class AquaSpinnerUI extends SpinnerUI {
     protected void installListeners() {
         spinner.addPropertyChangeListener(getPropertyChangeListener());
         JComponent editor = spinner.getEditor();
-        if (editor != null && editor instanceof JSpinner.DefaultEditor) {
+        if (editor instanceof DefaultEditor) {
             JTextField tf = ((JSpinner.DefaultEditor)editor).getTextField();
             if (tf != null) {
                 tf.addFocusListener(getNextButtonHandler());
@@ -151,6 +151,14 @@ public class AquaSpinnerUI extends SpinnerUI {
     }
 
     protected void uninstallListeners() {
+        JComponent editor = spinner.getEditor();
+        if (editor instanceof DefaultEditor) {
+            JTextField tf = ((JSpinner.DefaultEditor) editor).getTextField();
+            if (tf != null) {
+                tf.removeFocusListener(getNextButtonHandler());
+                tf.removeFocusListener(getPreviousButtonHandler());
+            }
+        }
         spinner.removePropertyChangeListener(getPropertyChangeListener());
     }
 
