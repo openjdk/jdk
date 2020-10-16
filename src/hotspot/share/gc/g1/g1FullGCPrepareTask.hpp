@@ -57,17 +57,19 @@ protected:
     G1CMBitMap* _bitmap;
     G1FullGCCompactionPoint* _cp;
     uint _humongous_regions_removed;
+    uint _pinned_archive_regions_removed;
 
     virtual void prepare_for_compaction(HeapRegion* hr);
     void prepare_for_compaction_work(G1FullGCCompactionPoint* cp, HeapRegion* hr);
     void free_humongous_region(HeapRegion* hr);
+    void free_pinned_region(HeapRegion* hr);
+
     void reset_region_metadata(HeapRegion* hr);
 
   public:
     G1CalculatePointersClosure(G1FullCollector* collector,
                                G1FullGCCompactionPoint* cp);
 
-    void update_sets();
     bool do_heap_region(HeapRegion* hr);
     bool freed_regions();
   };

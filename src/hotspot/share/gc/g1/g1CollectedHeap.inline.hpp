@@ -282,7 +282,7 @@ inline bool G1CollectedHeap::is_obj_ill(const oop obj) const {
 }
 
 inline bool G1CollectedHeap::is_obj_dead_full(const oop obj, const HeapRegion* hr) const {
-   return !is_marked_next(obj) && !hr->is_archive();
+   return !is_marked_next(obj) && !hr->is_closed_archive();
 }
 
 inline bool G1CollectedHeap::is_obj_dead_full(const oop obj) const {
