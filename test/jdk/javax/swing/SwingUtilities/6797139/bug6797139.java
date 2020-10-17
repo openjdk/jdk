@@ -22,9 +22,8 @@
  */
 
 /* @test
- *
+ * @key headful
  * @bug 6797139
- * @author Alexander Potochkin
  * @summary tests that JButton's text is not incorrectly truncated
  */
 import javax.swing.*;

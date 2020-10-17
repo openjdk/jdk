@@ -781,7 +781,6 @@ javax/swing/plaf/basic/BasicComboBoxEditor/Test8015336.java 8198394 generic-all
 javax/swing/plaf/metal/MetalLookAndFeel/Test8039750.java 8198395 generic-all
 javax/swing/text/DevanagariEditor.java 8198397 generic-all
 javax/swing/SpringLayout/4726194/bug4726194.java 8198399 generic-all
-javax/swing/SwingUtilities/6797139/bug6797139.java 8198400 generic-all
 javax/swing/text/html/parser/Parser/6836089/bug6836089.java 8198401 generic-all
 javax/swing/JTable/8133919/DrawGridLinesTest.java 8198407 generic-all
 javax/swing/text/html/StyleSheet/BackgroundImage/BackgroundImagePosition.java 8198409 generic-all
