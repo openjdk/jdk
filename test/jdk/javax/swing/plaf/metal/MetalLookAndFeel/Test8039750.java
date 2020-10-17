@@ -34,7 +34,7 @@ import javax.swing.plaf.metal.MetalLookAndFeel;
  */
 public class Test8039750 {
     public static void main(String[] args) throws Exception {
-	SwingUtilities.invokeAndWait(() -> {
+        SwingUtilities.invokeAndWait(() -> {
             UIDefaults table= new MetalLookAndFeel().getDefaults();
             test(table.get("ToolBar.rolloverBorder"),
                     "javax.swing.plaf.metal.MetalBorders$ButtonBorder",
@@ -58,7 +58,7 @@ public class Test8039750 {
                     "javax.swing.plaf.metal.MetalBorders$QuestionDialogBorder");
             test(table.get("RootPane.warningDialogBorder"),
                     "javax.swing.plaf.metal.MetalBorders$WarningDialogBorder");
-	});
+        });
     }
 
     private static void test(Object value, String name) {
