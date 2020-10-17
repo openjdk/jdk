@@ -2269,24 +2269,6 @@ void Node::verify(Node* n, int verify_depth) {
 }
 #endif // not PRODUCT
 
-//------------------------------walk-------------------------------------------
-// Graph walk, with both pre-order and post-order functions
-void Node::walk(NFunc pre, NFunc post, void *env) {
-  VectorSet visited; // Setup for local walk
-  walk_(pre, post, env, visited);
-}
-
-void Node::walk_(NFunc pre, NFunc post, void *env, VectorSet &visited) {
-  if( visited.test_set(_idx) ) return;
-  pre(*this,env);               // Call the pre-order walk function
-  for( uint i=0; i<_max; i++ )
-    if( in(i) )                 // Input exists and is not walked?
-      in(i)->walk_(pre,post,env,visited); // Walk it with pre & post functions
-  post(*this,env);              // Call the post-order walk function
-}
-
-void Node::nop(Node &, void*) {}
-
 //------------------------------Registers--------------------------------------
 // Do we Match on this edge index or not?  Generally false for Control
 // and true for everything else.  Weird for calls & returns.
