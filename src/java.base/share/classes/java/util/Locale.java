@@ -66,8 +66,11 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
 import sun.util.locale.provider.TimeZoneNameUtility;
 
 /**
- * A {@code Locale} object represents a specific geographical, political,
- * or cultural region. An operation that requires a {@code Locale} to perform
+ * A {@code Locale} object represents a specific geographical, political, or cultural region.
+ * fixme
+ *      Locale 对象代表了一个指定的地理、政治或者文化地区。
+ *
+ * An operation that requires a {@code Locale} to perform
  * its task is called <em>locale-sensitive</em> and uses the {@code Locale}
  * to tailor information for the user. For example, displaying a number
  * is a locale-sensitive operation&mdash; the number should be formatted

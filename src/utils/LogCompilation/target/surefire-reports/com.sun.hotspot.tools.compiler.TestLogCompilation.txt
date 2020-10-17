@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.sun.hotspot.tools.compiler.TestLogCompilation
+-------------------------------------------------------------------------------
+Tests run: 35, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.43 s - in com.sun.hotspot.tools.compiler.TestLogCompilation

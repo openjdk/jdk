@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="com.sun.hotspot.tools.compiler.TestLogCompilation" time="1.43" tests="35" errors="0" skipped="0" failures="0">
+  <properties>
+    <property name="gopherProxySet" value="false"/>
+    <property name="awt.toolkit" value="sun.lwawt.macosx.LWCToolkit"/>
+    <property name="file.encoding.pkg" value="sun.io"/>
+    <property name="java.specification.version" value="1.8"/>
+    <property name="sun.cpu.isalist" value=""/>
+    <property name="sun.jnu.encoding" value="UTF-8"/>
+    <property name="java.class.path" value="/Users/dugenkui/githubPlus/jdk/src/utils/LogCompilation/target/test-classes:/Users/dugenkui/githubPlus/jdk/src/utils/LogCompilation/target/classes:/Users/dugenkui/.m2/repository/junit/junit/4.8.2/junit-4.8.2.jar:"/>
+    <property name="java.vm.vendor" value="Oracle Corporation"/>
+    <property name="sun.arch.data.model" value="64"/>
+    <property name="java.vendor.url" value="http://java.oracle.com/"/>
+    <property name="user.timezone" value=""/>
+    <property name="java.vm.specification.version" value="1.8"/>
+    <property name="os.name" value="Mac OS X"/>
+    <property name="user.country" value="CN"/>
+    <property name="sun.java.launcher" value="SUN_STANDARD"/>
+    <property name="sun.boot.library.path" value="/Library/Java/JavaVirtualMachines/jdk1.8.0_261.jdk/Contents/Home/jre/lib"/>
+    <property name="sun.java.command" value="/Users/dugenkui/githubPlus/jdk/src/utils/LogCompilation/target/surefire/surefirebooter3790602495642197184.jar /Users/dugenkui/githubPlus/jdk/src/utils/LogCompilation/target/surefire 2020-10-11T00-24-11_651-jvmRun1 surefire7802155900947379431tmp surefire_08890088300970509626tmp"/>
+    <property name="http.nonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
+    <property name="surefire.test.class.path" value="/Users/dugenkui/githubPlus/jdk/src/utils/LogCompilation/target/test-classes:/Users/dugenkui/githubPlus/jdk/src/utils/LogCompilation/target/classes:/Users/dugenkui/.m2/repository/junit/junit/4.8.2/junit-4.8.2.jar:"/>
+    <property name="sun.cpu.endian" value="little"/>
+    <property name="user.home" value="/Users/dugenkui"/>
+    <property name="user.language" value="zh"/>
+    <property name="java.specification.vendor" value="Oracle Corporation"/>
+    <property name="java.home" value="/Library/Java/JavaVirtualMachines/jdk1.8.0_261.jdk/Contents/Home/jre"/>
+    <property name="basedir" value="/Users/dugenkui/githubPlus/jdk/src/utils/LogCompilation"/>
+    <property name="file.separator" value="/"/>
+    <property name="line.separator" value="&#10;"/>
+    <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
+    <property name="java.specification.name" value="Java Platform API Specification"/>
+    <property name="java.awt.graphicsenv" value="sun.awt.CGraphicsEnvironment"/>
+    <property name="surefire.real.class.path" value="/Users/dugenkui/githubPlus/jdk/src/utils/LogCompilation/target/surefire/surefirebooter3790602495642197184.jar"/>
+    <property name="sun.boot.class.path" value="/Library/Java/JavaVirtualMachines/jdk1.8.0_261.jdk/Contents/Home/jre/lib/resources.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_261.jdk/Contents/Home/jre/lib/rt.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_261.jdk/Contents/Home/jre/lib/sunrsasign.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_261.jdk/Contents/Home/jre/lib/jsse.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_261.jdk/Contents/Home/jre/lib/jce.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_261.jdk/Contents/Home/jre/lib/charsets.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_261.jdk/Contents/Home/jre/lib/jfr.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_261.jdk/Contents/Home/jre/classes"/>
+    <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
+    <property name="ftp.nonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
+    <property name="java.runtime.version" value="1.8.0_261-b12"/>
+    <property name="user.name" value="dugenkui"/>
+    <property name="path.separator" value=":"/>
+    <property name="os.version" value="10.15.5"/>
+    <property name="java.endorsed.dirs" value="/Library/Java/JavaVirtualMachines/jdk1.8.0_261.jdk/Contents/Home/jre/lib/endorsed"/>
+    <property name="java.runtime.name" value="Java(TM) SE Runtime Environment"/>
+    <property name="file.encoding" value="UTF-8"/>
+    <property name="java.vm.name" value="Java HotSpot(TM) 64-Bit Server VM"/>
+    <property name="localRepository" value="/Users/dugenkui/.m2/repository"/>
+    <property name="java.vendor.url.bug" value="http://bugreport.sun.com/bugreport/"/>
+    <property name="java.io.tmpdir" value="/var/folders/1k/f26bt7_n0jzgnm3ktt0dwd8m0000gp/T/"/>
+    <property name="idea.version" value="2020.2.2"/>
+    <property name="java.version" value="1.8.0_261"/>
+    <property name="user.dir" value="/Users/dugenkui/githubPlus/jdk/src/utils/LogCompilation"/>
+    <property name="os.arch" value="x86_64"/>
+    <property name="java.vm.specification.name" value="Java Virtual Machine Specification"/>
+    <property name="java.awt.printerjob" value="sun.lwawt.macosx.CPrinterJob"/>
+    <property name="sun.os.patch.level" value="unknown"/>
+    <property name="java.library.path" value="/Users/dugenkui/Library/Java/Extensions:/Library/Java/Extensions:/Network/Library/Java/Extensions:/System/Library/Java/Extensions:/usr/lib/java:."/>
+    <property name="java.vm.info" value="mixed mode"/>
+    <property name="java.vendor" value="Oracle Corporation"/>
+    <property name="java.vm.version" value="25.261-b12"/>
+    <property name="java.ext.dirs" value="/Users/dugenkui/Library/Java/Extensions:/Library/Java/JavaVirtualMachines/jdk1.8.0_261.jdk/Contents/Home/jre/lib/ext:/Library/Java/Extensions:/Network/Library/Java/Extensions:/System/Library/Java/Extensions:/usr/lib/java"/>
+    <property name="sun.io.unicode.encoding" value="UnicodeBig"/>
+    <property name="java.class.version" value="52.0"/>
+    <property name="socksNonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
+  </properties>
+  <testcase name="testDashi[0]" classname="com.sun.hotspot.tools.compiler.TestLogCompilation" time="0.012"/>
+  <testcase name="testDashU[0]" classname="com.sun.hotspot.tools.compiler.TestLogCompilation" time="0.007"/>
+  <testcase name="testDashe[0]" classname="com.sun.hotspot.tools.compiler.TestLogCompilation" time="0.008"/>
+  <testcase name="testDashiDasht[0]" classname="com.sun.hotspot.tools.compiler.TestLogCompilation" time="0.005"/>
+  <testcase name="testDefault[0]" classname="com.sun.hotspot.tools.compiler.TestLogCompilation" time="0.006"/>
+  <testcase name="testDashS[0]" classname="com.sun.hotspot.tools.compiler.TestLogCompilation" time="0.007"/>
+  <testcase name="testDashn[0]" classname="com.sun.hotspot.tools.compiler.TestLogCompilation" time="0.006"/>
+  <testcase name="testDashi[1]" classname="com.sun.hotspot.tools.compiler.TestLogCompilation" time="0.034"/>
+  <testcase name="testDashU[1]" classname="com.sun.hotspot.tools.compiler.TestLogCompilation" time="0.026"/>
+  <testcase name="testDashe[1]" classname="com.sun.hotspot.tools.compiler.TestLogCompilation" time="0.025"/>
+  <testcase name="testDashiDasht[1]" classname="com.sun.hotspot.tools.compiler.TestLogCompilation" time="0.026"/>
+  <testcase name="testDefault[1]" classname="com.sun.hotspot.tools.compiler.TestLogCompilation" time="0.027"/>
+  <testcase name="testDashS[1]" classname="com.sun.hotspot.tools.compiler.TestLogCompilation" time="0.023"/>
+  <testcase name="testDashn[1]" classname="com.sun.hotspot.tools.compiler.TestLogCompilation" time="0.023"/>
+  <testcase name="testDashi[2]" classname="com.sun.hotspot.tools.compiler.TestLogCompilation" time="0.025"/>
+  <testcase name="testDashU[2]" classname="com.sun.hotspot.tools.compiler.TestLogCompilation" time="0.022"/>
+  <testcase name="testDashe[2]" classname="com.sun.hotspot.tools.compiler.TestLogCompilation" time="0.02"/>
+  <testcase name="testDashiDasht[2]" classname="com.sun.hotspot.tools.compiler.TestLogCompilation" time="0.022"/>
+  <testcase name="testDefault[2]" classname="com.sun.hotspot.tools.compiler.TestLogCompilation" time="0.013"/>
+  <testcase name="testDashS[2]" classname="com.sun.hotspot.tools.compiler.TestLogCompilation" time="0.015"/>
+  <testcase name="testDashn[2]" classname="com.sun.hotspot.tools.compiler.TestLogCompilation" time="0.014"/>
+  <testcase name="testDashi[3]" classname="com.sun.hotspot.tools.compiler.TestLogCompilation" time="0.004"/>
+  <testcase name="testDashU[3]" classname="com.sun.hotspot.tools.compiler.TestLogCompilation" time="0.003"/>
+  <testcase name="testDashe[3]" classname="com.sun.hotspot.tools.compiler.TestLogCompilation" time="0.003"/>
+  <testcase name="testDashiDasht[3]" classname="com.sun.hotspot.tools.compiler.TestLogCompilation" time="0.003"/>
+  <testcase name="testDefault[3]" classname="com.sun.hotspot.tools.compiler.TestLogCompilation" time="0.003"/>
+  <testcase name="testDashS[3]" classname="com.sun.hotspot.tools.compiler.TestLogCompilation" time="0.002"/>
+  <testcase name="testDashn[3]" classname="com.sun.hotspot.tools.compiler.TestLogCompilation" time="0.005"/>
+  <testcase name="testDashi[4]" classname="com.sun.hotspot.tools.compiler.TestLogCompilation" time="0.003"/>
+  <testcase name="testDashU[4]" classname="com.sun.hotspot.tools.compiler.TestLogCompilation" time="0.003"/>
+  <testcase name="testDashe[4]" classname="com.sun.hotspot.tools.compiler.TestLogCompilation" time="0.002"/>
+  <testcase name="testDashiDasht[4]" classname="com.sun.hotspot.tools.compiler.TestLogCompilation" time="0.003"/>
+  <testcase name="testDefault[4]" classname="com.sun.hotspot.tools.compiler.TestLogCompilation" time="0.003"/>
+  <testcase name="testDashS[4]" classname="com.sun.hotspot.tools.compiler.TestLogCompilation" time="0.003"/>
+  <testcase name="testDashn[4]" classname="com.sun.hotspot.tools.compiler.TestLogCompilation" time="0.004"/>
+</testsuite>

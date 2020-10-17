@@ -100,6 +100,8 @@ public class Random implements java.io.Serializable {
      * Creates a new random number generator. This constructor sets
      * the seed of the random number generator to a value very likely
      * to be distinct from any other invocation of this constructor.
+     *
+     * 不用自定义随机种子， new Random()
      */
     public Random() {
         this(seedUniquifier() ^ System.nanoTime());

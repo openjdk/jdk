@@ -36,8 +36,12 @@
 package java.util;
 
 /**
- * A linear collection that supports element insertion and removal at
- * both ends.  The name <i>deque</i> is short for "double ended queue"
+ * A linear collection that supports element insertion and removal at both ends.
+ * fixme
+ *      线性集合：允许在队列两端进行插入、移除；
+ *      如果一直在末端进行插入、删除的话、就是栈。
+ *
+ * The name <i>deque</i> is short for "double ended queue"
  * and is usually pronounced "deck".  Most {@code Deque}
  * implementations place no fixed limits on the number of elements
  * they may contain, but this interface supports capacity-restricted

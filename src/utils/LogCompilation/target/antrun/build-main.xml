@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<project name="maven-antrun-" default="main"  >
+<target name="main">
+  <copy file="/Users/dugenkui/githubPlus/jdk/src/utils/LogCompilation/target/LogCompilation-1.0-SNAPSHOT.jar" tofile="/Users/dugenkui/githubPlus/jdk/src/utils/LogCompilation/logc.jar"/>
+</target>
+</project>

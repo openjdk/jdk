@@ -33,6 +33,9 @@ package java.util.function;
  * whose functional method is {@link #apply(Object)}.
  *
  * @param <T> the type of the operand and result of the operator
+ *           fixme 操作的输入类型和输出类型相同： T apply(T t)
+ *
+ * unary: adj 一元的
  *
  * @see Function
  * @since 1.8

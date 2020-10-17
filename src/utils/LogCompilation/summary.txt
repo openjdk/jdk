@@ -1,0 +1,3 @@
+java/lang/String::hashCode (55 bytes) (C2(0)) 1 
+java/lang/String::indexOf (70 bytes) (C2(0)) 1 
+java/lang/String::charAt (29 bytes) (C2(0)) 1 

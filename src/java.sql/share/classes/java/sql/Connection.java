@@ -29,9 +29,13 @@ import java.util.Properties;
 import java.util.concurrent.Executor;
 
 /**
- * <P>A connection (session) with a specific
- * database. SQL statements are executed and results are returned
- * within the context of a connection.
+ * <P>A connection (session) with a specific database.
+ * SQL statements are executed and results are returned within the context of a connection.
+ *
+ * fixme
+ *      和指定数据库的连接；
+ *      sql语句在连接上下文中进行执行和返回结果；
+ *
  * <P>
  * A <code>Connection</code> object's database is able to provide information
  * describing its tables, its supported SQL grammar, its stored

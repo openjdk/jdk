@@ -1475,6 +1475,9 @@ public interface DatabaseMetaData extends Wrapper {
 
     /**
      * Retrieves a description of the tables available in the given catalog.
+     *
+     * fixme 获取给定目录下的表。
+     *
      * Only table descriptions matching the catalog, schema, table
      * name and type criteria are returned.  They are ordered by
      * <code>TABLE_TYPE</code>, <code>TABLE_CAT</code>,
