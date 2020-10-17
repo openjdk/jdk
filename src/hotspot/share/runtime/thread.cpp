@@ -2404,15 +2404,15 @@ void JavaThread::handle_special_runtime_exit_condition(bool check_asyncs) {
     java_suspend_self_with_safepoint_check();
   }
 
+  if (is_obj_deopt_suspend()) {
+    frame_anchor()->make_walkable(this);
+    wait_for_object_deoptimization();
+  }
+
   // We might be here for reasons in addition to the self-suspend request
   // so check for other async requests.
   if (check_asyncs) {
     check_and_handle_async_exceptions();
-  }
-
-  if (is_obj_deopt_suspend()) {
-    frame_anchor()->make_walkable(this);
-    wait_for_object_deoptimization();
   }
 
   JFR_ONLY(SUSPEND_THREAD_CONDITIONAL(this);)
