@@ -98,7 +98,7 @@ public class TestCaretPositionJTextPane {
 
             robot.waitForIdle();
             Point p = textPane.getLocationOnScreen();
-            robot.mouseMove(p.x+ 480, p.y+6);
+            robot.mouseMove(p.x+ 380, p.y+6);
             robot.waitForIdle();
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();
@@ -114,7 +114,7 @@ public class TestCaretPositionJTextPane {
 
         for (int i = 0; i < 30; i++) {
             StringBuilder row = new StringBuilder();
-            for (int j = 0; j < 30; j++) {
+            for (int j = 0; j < 50; j++) {
                 row.append(j);
                 if (j % 5 == 0) {
                     row.append(" ");
