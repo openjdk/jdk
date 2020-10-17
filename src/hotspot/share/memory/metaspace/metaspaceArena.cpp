@@ -28,6 +28,7 @@
 #include "logging/logStream.hpp"
 #include "memory/metaspace/allocationGuard.hpp"
 #include "memory/metaspace/chunkManager.hpp"
+#include "memory/metaspace/counters.hpp"
 #include "memory/metaspace/freeBlocks.hpp"
 #include "memory/metaspace/internalStats.hpp"
 #include "memory/metaspace/metachunk.hpp"

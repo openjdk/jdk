@@ -35,7 +35,6 @@
 #include "memory/metaspace/metaspaceStatistics.hpp"
 #include "memory/metaspace/runningCounters.hpp"
 #include "memory/metaspaceTracer.hpp"
-#include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 
 using metaspace::ChunkManager;
