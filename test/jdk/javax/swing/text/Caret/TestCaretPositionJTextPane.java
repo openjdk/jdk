@@ -114,7 +114,7 @@ public class TestCaretPositionJTextPane {
 
         for (int i = 0; i < 30; i++) {
             StringBuilder row = new StringBuilder();
-            for (int j = 0; j < 50; j++) {
+            for (int j = 0; j < 30; j++) {
                 row.append(j);
                 if (j % 5 == 0) {
                     row.append(" ");
