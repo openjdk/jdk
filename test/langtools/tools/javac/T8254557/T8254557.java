@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8254557
- * @summary Method Attr.preFlow can't visit class definitions that have not yet been entered and attributed.
+ * @summary Method Attr.preFlow shouldn't visit class definitions that have not yet been entered and attributed.
  * @compile T8254557.java
  */
 

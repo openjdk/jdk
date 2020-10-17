@@ -2112,7 +2112,7 @@ public class Attr extends JCTree.Visitor {
                 @Override
                 public void visitClassDef(JCClassDecl that) {
                     if (that.sym != null) {
-                        // Method preFlow can't visit class definitions
+                        // Method preFlow shouldn't visit class definitions
                         // that have not been entered and attributed.
                         // See JDK-8254557 and JDK-8203277 for more details.
                         super.visitClassDef(that);
@@ -2122,7 +2122,7 @@ public class Attr extends JCTree.Visitor {
                 @Override
                 public void visitLambda(JCLambda that) {
                     if (that.type != null) {
-                        // Method preFlow can't visit lambda expressions
+                        // Method preFlow shouldn't visit lambda expressions
                         // that have not been entered and attributed.
                         // See JDK-8254557 and JDK-8203277 for more details.
                         super.visitLambda(that);
