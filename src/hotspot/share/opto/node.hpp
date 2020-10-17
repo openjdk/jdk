@@ -541,7 +541,7 @@ public:
     }
     if (_in[i] != NULL) _in[i]->del_out((Node *)this);
     _in[i] = n;
-    if (n != NULL) n->add_out((Node *)this);
+    n->add_out((Node *)this);
   }
 
   // Set this node's index, used by cisc_version to replace current node
