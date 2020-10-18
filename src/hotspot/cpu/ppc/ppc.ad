@@ -535,7 +535,6 @@ alloc_class chunk4 (
 // information in this architecture description.
 
 // 1) reg_class inline_cache_reg           ( as defined in frame section )
-// 2) reg_class compiler_method_reg        ( as defined in frame section )
 // 2) reg_class interpreter_method_reg     ( as defined in frame section )
 // 3) reg_class stack_slots( /* one chunk of stack-based "registers" */ )
 //
@@ -4760,13 +4759,6 @@ operand regF() %{
 // Method Register
 operand inline_cache_regP(iRegPdst reg) %{
   constraint(ALLOC_IN_RC(r19_bits64_reg)); // inline_cache_reg
-  match(reg);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand compiler_method_regP(iRegPdst reg) %{
-  constraint(ALLOC_IN_RC(rscratch1_bits64_reg)); // compiler_method_reg
   match(reg);
   format %{ %}
   interface(REG_INTER);
