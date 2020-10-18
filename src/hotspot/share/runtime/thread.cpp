@@ -2666,9 +2666,6 @@ void JavaThread::wait_for_object_deoptimization() {
     // might return to _thread_in_Java and execute bytecode.
     set_thread_state_fence(state);
 
-    // Since we are not using a regular thread-state transition helper here,
-    // we must manually emit the instruction barrier after leaving a safe state.
-    OrderAccess::cross_modify_fence();
     if (state != _thread_in_native) {
       SafepointMechanism::process_if_requested(this);
     }
