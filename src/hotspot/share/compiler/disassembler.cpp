@@ -208,7 +208,7 @@ class decode_env {
 
   static SourceFileInfoTable& src_table() {
     if (_src_table == NULL) {
-      _src_table = new SourceFileInfoTable();
+      _src_table = new (ResourceObj::C_HEAP, mtCode)SourceFileInfoTable();
     }
     return *_src_table;
   }
