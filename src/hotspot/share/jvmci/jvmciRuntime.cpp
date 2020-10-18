@@ -645,14 +645,11 @@ void JVMCINMethodData::initialize(
 }
 
 void JVMCINMethodData::add_failed_speculation(nmethod* nm, jlong speculation) {
-  // This field is written directly by JVMCI compiled code. However, it should
-  // only ever write values originating from HotSpotSpeculation. Since the latter are
-  // 31-bit in precision, ensure only the low 31 bits are set.
-  guarantee((speculation & 0x7FFFFFFF) == speculation, "Encoded JVMCI speculation is larger than 31 bits: " INTPTR_FORMAT, speculation);
-  uint index = (uint) speculation >> JVMCINMethodData::SPECULATION_LENGTH_BITS;
+  jlong index = speculation >> JVMCINMethodData::SPECULATION_LENGTH_BITS;
+  guarantee(index >= 0 && index <= max_jint, "Encoded JVMCI speculation index is not a positive Java int: " INTPTR_FORMAT, index);
   int length = speculation & JVMCINMethodData::SPECULATION_LENGTH_MASK;
   if (index + length > (uint) nm->speculations_size()) {
-    fatal(INTPTR_FORMAT "[index: %d, length: %d] out of bounds wrt encoded speculations of length %u", speculation, index, length, nm->speculations_size());
+    fatal(INTPTR_FORMAT "[index: " JLONG_FORMAT ", length: %d out of bounds wrt encoded speculations of length %u", speculation, index, length, nm->speculations_size());
   }
   address data = nm->speculations_begin() + index;
   FailedSpeculation::add_failed_speculation(nm, _failed_speculations, data, length);

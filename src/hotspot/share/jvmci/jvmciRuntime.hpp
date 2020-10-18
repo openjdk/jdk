@@ -52,17 +52,10 @@ class JVMCINMethodData {
   // is appended when it causes a deoptimization.
   FailedSpeculation** _failed_speculations;
 
-  // A speculation id is an index (high 26 bits) and a length (low 5 bits).
-  // Keep in sync with HotSpotSpeculationLog.HotSpotSpeculation.
-  // Since the offset of Thread::_pending_failed_speculation is exposed via VMStructs
-  // but its type is not, JVMCI Java code assumes that it's a long. So even
-  // though it could be encoded in an int, doing this would be a breaking JVMCI
-  // API change. It's sufficient to ensure that only 31-bit encoded values (i.e. signed
-  // ints) are produced by JVMCI. This allows JVMCI compilers to emit an efficient
-  // instruction sequence to store a value to Thread::_pending_failed_speculation
-  // (e.g., on x86 a MOVESLQ can write a 32 bit value sign extended to a long
-  // into a long memory location).
+  // A speculation id is a length (low 5 bits) and an index into
+  // a jbyte array (i.e. 31 bits for a positive Java int).
   enum {
+    // Keep in sync with HotSpotSpeculationEncoding.
     SPECULATION_LENGTH_BITS = 5,
     SPECULATION_LENGTH_MASK = (1 << SPECULATION_LENGTH_BITS) - 1
   };

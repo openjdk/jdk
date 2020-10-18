@@ -119,19 +119,10 @@ public class HotSpotSpeculationLog implements SpeculationLog {
 
     public static final class HotSpotSpeculation extends Speculation {
 
-        // Also defined in JVMCINMethodData C++ class - keep in sync
-        static final int LENGTH_BITS = 5;
-        static final int INDEX_BITS = 31 - LENGTH_BITS;
-
-        static final int MAX_LENGTH = (1 << LENGTH_BITS) - 1;
-        static final int MAX_INDEX = (1 << INDEX_BITS) - 1;
-
-        static final int LENGTH_MASK = MAX_LENGTH;
-
         /**
-         * A speculation id is a long encoding a length (low 5 bits) and an index (next 26 bits).
-         * Combined, the index and length denote where the {@linkplain #encoding encoded
-         * speculation} is in a {@linkplain HotSpotSpeculationLog#getFlattenedSpeculations
+         * A speculation id is a long encoding a length (low 5 bits) and an index into a
+         * {@code byte[]}. Combined, the index and length denote where the {@linkplain #encoding
+         * encoded speculation} is in a {@linkplain HotSpotSpeculationLog#getFlattenedSpeculations
          * flattened} speculations array.
          */
         private final JavaConstant id;
@@ -243,21 +234,21 @@ public class HotSpotSpeculationLog implements SpeculationLog {
     }
 
     private static long encodeIndexAndLength(int index, int length) {
-        if (length > HotSpotSpeculation.MAX_LENGTH || length < 0) {
+        if (length > HotSpotSpeculationEncoding.MAX_LENGTH || length < 0) {
             throw new InternalError(String.format("Invalid encoded speculation length: %d (0x%x)", length, length));
         }
-        if (index > HotSpotSpeculation.MAX_INDEX || index < 0) {
-            throw new JVMCIError("Encoded speculation index is negative or too big: %d (0x%x)", index, index);
+        if (index < 0) {
+            throw new JVMCIError("Encoded speculation index is negative: %d (0x%x)", index, index);
         }
-        return (index << HotSpotSpeculation.LENGTH_BITS) | length;
+        return (index << HotSpotSpeculationEncoding.LENGTH_BITS) | length;
     }
 
     private static int decodeIndex(long indexAndLength) {
-        return (int) (indexAndLength >>> HotSpotSpeculation.LENGTH_BITS);
+        return (int) (indexAndLength >>> HotSpotSpeculationEncoding.LENGTH_BITS);
     }
 
     private static int decodeLength(long indexAndLength) {
-        return (int) (indexAndLength & HotSpotSpeculation.LENGTH_MASK);
+        return (int) (indexAndLength & HotSpotSpeculationEncoding.LENGTH_MASK);
     }
 
     @Override

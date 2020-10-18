@@ -29,6 +29,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
+import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.SpeculationLog.SpeculationReasonEncoding;
@@ -36,10 +37,24 @@ import jdk.vm.ci.meta.SpeculationLog.SpeculationReasonEncoding;
 /**
  * Implements a {@link SpeculationReasonEncoding} that {@linkplain #getByteArray() produces} a byte
  * array. Data is added via a {@link DataOutputStream}. When producing the final byte array, if the
- * total length of data exceeds the length of a SHA-1 digest and a SHA-1 digest algorithm is
- * available, then a SHA-1 digest of the data is produced instead.
+ * total length of data exceeds {@value HotSpotSpeculationEncoding#MAX_LENGTH}, then a SHA-1 digest
+ * of the data is produced instead.
  */
 final class HotSpotSpeculationEncoding extends ByteArrayOutputStream implements SpeculationReasonEncoding {
+
+    /**
+     * Number of bits used for the length of an encoded speculation. The bit size of 5 is chosen to
+     * accommodate specifying // the length of a SHA-1 digest (i.e., 20 bytes).
+     */
+    // Also defined in C++ JVMCINMethodData class - keep in sync.
+    static final int LENGTH_BITS = 5;
+
+    /**
+     * The maximum length of an encoded speculation.
+     */
+    static final int MAX_LENGTH = (1 << LENGTH_BITS) - 1;
+
+    static final int LENGTH_MASK = MAX_LENGTH;
 
     private DataOutputStream dos = new DataOutputStream(this);
     private byte[] result;

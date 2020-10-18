@@ -26,7 +26,6 @@ import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
 import jdk.vm.ci.common.JVMCIError;
-import jdk.vm.ci.hotspot.HotSpotSpeculationLog.HotSpotSpeculation;
 import jdk.vm.ci.services.Services;
 import jdk.internal.misc.Unsafe;
 
@@ -50,7 +49,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
         super(store);
 
         int speculationLengthBits = getConstant("JVMCINMethodData::SPECULATION_LENGTH_BITS", Integer.class);
-        JVMCIError.guarantee(HotSpotSpeculation.LENGTH_BITS == speculationLengthBits, "%d != %d", HotSpotSpeculation.LENGTH_BITS, speculationLengthBits);
+        JVMCIError.guarantee(HotSpotSpeculationEncoding.LENGTH_BITS == speculationLengthBits, "%d != %d", HotSpotSpeculationEncoding.LENGTH_BITS, speculationLengthBits);
     }
 
     /**
