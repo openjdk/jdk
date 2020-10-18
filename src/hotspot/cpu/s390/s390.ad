@@ -1573,6 +1573,10 @@ const bool Matcher::has_predicated_vectors(void) {
   return false;
 }
 
+bool Matcher::supports_vector_variable_shifts(void) {
+  return false; // not supported
+}
+
 const int Matcher::float_pressure(int default_pressure_threshold) {
   return default_pressure_threshold;
 }

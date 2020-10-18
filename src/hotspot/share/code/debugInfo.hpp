@@ -42,6 +42,7 @@
 // - ConstantValue   describes a constant
 
 class ConstantOopReadValue;
+class LocationValue;
 class ObjectValue;
 
 class ScopeValue: public ResourceObj {
@@ -65,6 +66,11 @@ class ScopeValue: public ResourceObj {
   ObjectValue* as_ObjectValue() {
     assert(is_object(), "must be");
     return (ObjectValue*)this;
+  }
+
+  LocationValue* as_LocationValue() {
+    assert(is_location(), "must be");
+    return (LocationValue*)this;
   }
 
   // Serialization of debugging information

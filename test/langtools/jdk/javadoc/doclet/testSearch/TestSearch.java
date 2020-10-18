@@ -25,7 +25,7 @@
  * @test
  * @bug 8141492 8071982 8141636 8147890 8166175 8168965 8176794 8175218 8147881
  *      8181622 8182263 8074407 8187521 8198522 8182765 8199278 8196201 8196202
- *      8184205 8214468 8222548 8223378 8234746 8241219
+ *      8184205 8214468 8222548 8223378 8234746 8241219 8254627
  * @summary Test the search feature of javadoc.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -487,14 +487,14 @@ public class TestSearch extends JavadocTester {
                     /a></span> - Search tag in pkg.AnotherClass.CONSTANT1</dt>""",
                 """
                     <dt><span class="member-name-link"><a href="pkg2/TestEnum.html#ONE">ONE</a></spa\
-                    n> - pkg2.<a href="pkg2/TestEnum.html" title="enum in pkg2">TestEnum</a></dt>""",
+                    n> - Enum constant in enum pkg2.<a href="pkg2/TestEnum.html" title="enum in pkg2">TestEnum</a></dt>""",
                 """
                     <dt><span class="member-name-link"><a href="pkg2/TestEnum.html#THREE">THREE</a><\
-                    /span> - pkg2.<a href="pkg2/TestEnum.html" title="enum in pkg2">TestEnum</a></dt\
+                    /span> - Enum constant in enum pkg2.<a href="pkg2/TestEnum.html" title="enum in pkg2">TestEnum</a></dt\
                     >""",
                 """
                     <dt><span class="member-name-link"><a href="pkg2/TestEnum.html#TWO">TWO</a></spa\
-                    n> - pkg2.<a href="pkg2/TestEnum.html" title="enum in pkg2">TestEnum</a></dt>""");
+                    n> - Enum constant in enum pkg2.<a href="pkg2/TestEnum.html" title="enum in pkg2">TestEnum</a></dt>""");
         checkOutput("index-all.html", true,
                 """
                     <div class="deprecation-comment">class_test1 passes. Search tag <span id="Search\
@@ -575,16 +575,16 @@ public class TestSearch extends JavadocTester {
         checkOutput("index-files/index-9.html", true,
                 """
                     <dt><span class="member-name-link"><a href="../pkg2/TestEnum.html#ONE">ONE</a></\
-                    span> - pkg2.<a href="../pkg2/TestEnum.html" title="enum in pkg2">TestEnum</a></\
+                    span> - Enum constant in enum pkg2.<a href="../pkg2/TestEnum.html" title="enum in pkg2">TestEnum</a></\
                     dt>""");
         checkOutput("index-files/index-14.html", true,
                 """
                     <dt><span class="member-name-link"><a href="../pkg2/TestEnum.html#THREE">THREE</\
-                    a></span> - pkg2.<a href="../pkg2/TestEnum.html" title="enum in pkg2">TestEnum</\
+                    a></span> - Enum constant in enum pkg2.<a href="../pkg2/TestEnum.html" title="enum in pkg2">TestEnum</\
                     a></dt>""",
                 """
                     <dt><span class="member-name-link"><a href="../pkg2/TestEnum.html#TWO">TWO</a></\
-                    span> - pkg2.<a href="../pkg2/TestEnum.html" title="enum in pkg2">TestEnum</a></\
+                    span> - Enum constant in enum pkg2.<a href="../pkg2/TestEnum.html" title="enum in pkg2">TestEnum</a></\
                     dt>""");
     }
 

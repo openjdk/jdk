@@ -895,6 +895,14 @@ int Node::replace_edges_in_range(Node* old, Node* neww, int start, int end) {
 //-------------------------disconnect_inputs-----------------------------------
 // NULL out all inputs to eliminate incoming Def-Use edges.
 void Node::disconnect_inputs(Compile* C) {
+  // the layout of Node::_in
+  // r: a required input, null is allowed
+  // p: a precedence, null values are all at the end
+  // -----------------------------------
+  // |r|...|r|p|...|p|null|...|null|
+  //         |                     |
+  //         req()                 len()
+  // -----------------------------------
   for (uint i = 0; i < req(); ++i) {
     if (in(i) != nullptr) {
       set_req(i, nullptr);
@@ -903,9 +911,16 @@ void Node::disconnect_inputs(Compile* C) {
 
   // Remove precedence edges if any exist
   // Note: Safepoints may have precedence edges, even during parsing
-  for (uint i = req(); i < len(); ++i) {
-    set_prec(i, nullptr);
+  for (uint i = len(); i > req(); ) {
+    rm_prec(--i);  // no-op if _in[i] is nullptr
   }
+
+#ifdef ASSERT
+  // sanity check
+  for (uint i = 0; i < len(); ++i) {
+    assert(_in[i] == nullptr, "disconnect_inputs() failed!");
+  }
+#endif
 
   // Node::destruct requires all out edges be deleted first
   // debug_only(destruct();)   // no reuse benefit expected
@@ -2418,6 +2433,29 @@ void Node::ensure_control_or_add_prec(Node* c) {
   } else if (in(0) != c) {
     add_prec(c);
   }
+}
+
+bool Node::is_dead_loop_safe() const {
+  if (is_Phi()) {
+    return true;
+  }
+  if (is_Proj() && in(0) == NULL)  {
+    return true;
+  }
+  if ((_flags & (Flag_is_dead_loop_safe | Flag_is_Con)) != 0) {
+    if (!is_Proj()) {
+      return true;
+    }
+    if (in(0)->is_Allocate()) {
+      return false;
+    }
+    // MemNode::can_see_stored_value() peeks through the boxing call
+    if (in(0)->is_CallStaticJava() && in(0)->as_CallStaticJava()->is_boxing_method()) {
+      return false;
+    }
+    return true;
+  }
+  return false;
 }
 
 //=============================================================================
