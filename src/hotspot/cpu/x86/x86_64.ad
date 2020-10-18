@@ -1661,9 +1661,6 @@ const bool Matcher::rematerialize_float_constants = true; // XXX
 // C code as the Java calling convention forces doubles to be aligned.
 const bool Matcher::misaligned_doubles_ok = true;
 
-// No-op on amd64
-void Matcher::pd_implicit_null_fixup(MachNode *node, uint idx) {}
-
 // Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
 const bool Matcher::strict_fp_requires_explicit_rounding = false;
 
