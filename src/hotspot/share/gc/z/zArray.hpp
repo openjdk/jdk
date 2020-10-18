@@ -29,23 +29,23 @@
 
 template <typename T> using ZArray = GrowableArrayCHeap<T, mtGC>;
 
-template <typename T, bool parallel>
+template <typename T, bool Parallel>
 class ZArrayIteratorImpl : public StackObj {
 private:
-  ZArray<T>* const _array;
-  int              _next;
+  const T*       _next;
+  const T* const _end;
+
+  bool next_serial(T* elem);
+  bool next_parallel(T* elem);
 
 public:
-  ZArrayIteratorImpl(ZArray<T>* array);
+  ZArrayIteratorImpl(const T* array, size_t length);
+  ZArrayIteratorImpl(const ZArray<T>* array);
 
   bool next(T* elem);
 };
 
-// Iterator types
-#define ZARRAY_SERIAL      false
-#define ZARRAY_PARALLEL    true
-
-template <typename T> using ZArrayIterator = ZArrayIteratorImpl<T, ZARRAY_SERIAL>;
-template <typename T> using ZArrayParallelIterator = ZArrayIteratorImpl<T, ZARRAY_PARALLEL>;
+template <typename T> using ZArrayIterator = ZArrayIteratorImpl<T, false /* Parallel */>;
+template <typename T> using ZArrayParallelIterator = ZArrayIteratorImpl<T, true /* Parallel */>;
 
 #endif // SHARE_GC_Z_ZARRAY_HPP

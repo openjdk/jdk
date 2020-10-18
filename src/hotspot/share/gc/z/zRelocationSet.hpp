@@ -24,6 +24,7 @@
 #ifndef SHARE_GC_Z_ZRELOCATIONSET_HPP
 #define SHARE_GC_Z_ZRELOCATIONSET_HPP
 
+#include "gc/z/zArray.hpp"
 #include "memory/allocation.hpp"
 
 class ZForwarding;
@@ -44,32 +45,13 @@ public:
   void reset();
 };
 
-template <bool parallel>
-class ZRelocationSetIteratorImpl : public StackObj {
-private:
-  ZRelocationSet* const _relocation_set;
-  size_t                _next;
-
+template <bool Parallel>
+class ZRelocationSetIteratorImpl : public ZArrayIteratorImpl<ZForwarding*, Parallel> {
 public:
   ZRelocationSetIteratorImpl(ZRelocationSet* relocation_set);
-
-  bool next(ZForwarding** forwarding);
 };
 
-// Iterator types
-#define ZRELOCATIONSET_SERIAL      false
-#define ZRELOCATIONSET_PARALLEL    true
-
-class ZRelocationSetIterator : public ZRelocationSetIteratorImpl<ZRELOCATIONSET_SERIAL> {
-public:
-  ZRelocationSetIterator(ZRelocationSet* relocation_set) :
-      ZRelocationSetIteratorImpl<ZRELOCATIONSET_SERIAL>(relocation_set) {}
-};
-
-class ZRelocationSetParallelIterator : public ZRelocationSetIteratorImpl<ZRELOCATIONSET_PARALLEL> {
-public:
-  ZRelocationSetParallelIterator(ZRelocationSet* relocation_set) :
-      ZRelocationSetIteratorImpl<ZRELOCATIONSET_PARALLEL>(relocation_set) {}
-};
+using ZRelocationSetIterator = ZRelocationSetIteratorImpl<false /* Parallel */>;
+using ZRelocationSetParallelIterator = ZRelocationSetIteratorImpl<true /* Parallel */>;
 
 #endif // SHARE_GC_Z_ZRELOCATIONSET_HPP
