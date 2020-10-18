@@ -71,8 +71,8 @@ using ZMarkStackList = ZStackList<ZMarkStack>;
 using ZMarkStackMagazine = ZStack<ZMarkStack*, ZMarkStackMagazineSlots>;
 using ZMarkStackMagazineList = ZStackList<ZMarkStackMagazine>;
 
-static_assert(sizeof(ZMarkStack) == ZMarkStackSize);
-static_assert(sizeof(ZMarkStackMagazine) <= ZMarkStackSize);
+static_assert(sizeof(ZMarkStack) == ZMarkStackSize, "ZMarkStack size mismatch");
+static_assert(sizeof(ZMarkStackMagazine) <= ZMarkStackSize, "ZMarkStackMagazine size too large");
 
 class ZMarkStripe {
 private:
