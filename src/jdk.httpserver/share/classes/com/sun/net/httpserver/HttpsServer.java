@@ -45,6 +45,7 @@ import com.sun.net.httpserver.spi.HttpServerProvider;
 public abstract class HttpsServer extends HttpServer {
 
     /**
+     * Constructor for subclasses to call.
      */
     protected HttpsServer() {
     }
@@ -75,10 +76,10 @@ public abstract class HttpsServer extends HttpServer {
      * established with {@link #setHttpsConfigurator(HttpsConfigurator)}.
      *
      * @param addr the address to listen on, if {@code null} then
-     *             {@link #bind(InetSocketAddress,int)}  must be called to set
+     *             {@link #bind(InetSocketAddress,int)} must be called to set
      *             the address
      * @param backlog the socket backlog. If this value is less than or equal to
-     *               zero, then a system default value is used
+     *               zero, then a system default value is used.
      * @throws BindException if the server cannot bind to the requested address,
      *          or if the server is already bound
      * @throws IOException if an I/O error occurs
