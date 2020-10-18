@@ -3702,8 +3702,10 @@ void ArchDesc::buildReduceMaps(FILE *fp_hpp, FILE *fp_cpp) {
   OutputRightOp output_right_op(fp_hpp, fp_cpp, _globalNames, *this);
   build_map(output_right_op);
   // Construct the table of rule names
+  fprintf(fp_cpp, "\n#ifndef PRODUCT\n");
   OutputRuleName output_rule_name(fp_hpp, fp_cpp, _globalNames, *this);
   build_map(output_rule_name);
+  fprintf(fp_cpp, "\n#endif // PRODUCT\n");
   // Construct the boolean table for subsumed operands
   OutputSwallowed output_swallowed(fp_hpp, fp_cpp, _globalNames, *this);
   build_map(output_swallowed);

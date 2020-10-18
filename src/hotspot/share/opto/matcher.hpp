@@ -203,8 +203,6 @@ public:
   static const char *regName[];
   // Machine register encodings
   static const unsigned char _regEncode[];
-  // Machine Node names
-  const char **_ruleName;
   // Rules that are cheaper to rematerialize than to spill
   static const uint _begin_rematerialize;
   static const uint _end_rematerialize;
