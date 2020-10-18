@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.net.Authenticator.RequestorType;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.concurrent.locks.ReentrantLock;
+
 import sun.net.www.HeaderParser;
 import static sun.net.www.protocol.http.AuthScheme.NEGOTIATE;
 import static sun.net.www.protocol.http.AuthScheme.KERBEROS;
@@ -57,6 +59,8 @@ class NegotiateAuthentication extends AuthenticationInfo {
     // the cache can be used only once, so after the first use, it's cleaned.
     static HashMap <String, Boolean> supported = null;
     static ThreadLocal <HashMap <String, Negotiator>> cache = null;
+    private static final ReentrantLock negotiateLock = new ReentrantLock();
+
     /* Whether cache is enabled for Negotiate/Kerberos */
     private static final boolean cacheSPNEGO;
     static {
@@ -101,40 +105,50 @@ class NegotiateAuthentication extends AuthenticationInfo {
      *
      * @return true if supported
      */
-    synchronized public static boolean isSupported(HttpCallerInfo hci) {
-        if (supported == null) {
-            supported = new HashMap<>();
-        }
-        String hostname = hci.host;
-        hostname = hostname.toLowerCase();
-        if (supported.containsKey(hostname)) {
-            return supported.get(hostname);
-        }
-
-        Negotiator neg = Negotiator.getNegotiator(hci);
-        if (neg != null) {
-            supported.put(hostname, true);
-            // the only place cache.put is called. here we can make sure
-            // the object is valid and the oneToken inside is not null
-            if (cache == null) {
-                cache = new ThreadLocal<>() {
-                    @Override
-                    protected HashMap<String, Negotiator> initialValue() {
-                        return new HashMap<>();
-                    }
-                };
+    public static boolean isSupported(HttpCallerInfo hci) {
+        negotiateLock.lock();
+        try {
+            if (supported == null) {
+                supported = new HashMap<>();
             }
-            cache.get().put(hostname, neg);
-            return true;
-        } else {
-            supported.put(hostname, false);
-            return false;
+            String hostname = hci.host;
+            hostname = hostname.toLowerCase();
+            if (supported.containsKey(hostname)) {
+                return supported.get(hostname);
+            }
+
+            Negotiator neg = Negotiator.getNegotiator(hci);
+            if (neg != null) {
+                supported.put(hostname, true);
+                // the only place cache.put is called. here we can make sure
+                // the object is valid and the oneToken inside is not null
+                if (cache == null) {
+                    cache = new ThreadLocal<>() {
+                        @Override
+                        protected HashMap<String, Negotiator> initialValue() {
+                            return new HashMap<>();
+                        }
+                    };
+                }
+                cache.get().put(hostname, neg);
+                return true;
+            } else {
+                supported.put(hostname, false);
+                return false;
+            }
+        } finally {
+            negotiateLock.unlock();
         }
     }
 
-    private static synchronized HashMap<String, Negotiator> getCache() {
-        if (cache == null) return null;
-        return cache.get();
+    private static HashMap<String, Negotiator> getCache() {
+        negotiateLock.lock();
+        try {
+            if (cache == null) return null;
+            return cache.get();
+        } finally {
+            negotiateLock.unlock();
+        }
     }
 
     @Override
@@ -172,7 +186,10 @@ class NegotiateAuthentication extends AuthenticationInfo {
      * @return true if all goes well, false if no headers were set.
      */
     @Override
-    public synchronized boolean setHeaders(HttpURLConnection conn, HeaderParser p, String raw) {
+    public boolean setHeaders(HttpURLConnection conn, HeaderParser p, String raw) {
+        // no need to synchronize here:
+        //   already locked by s.n.w.p.h.HttpURLConnection
+        assert conn.isLockHeldByCurrentThread();
 
         try {
             String response;

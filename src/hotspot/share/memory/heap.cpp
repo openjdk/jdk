@@ -30,11 +30,6 @@
 #include "utilities/align.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-size_t CodeHeap::header_size() {
-  return sizeof(HeapBlock);
-}
-
-
 // Implementation of Heap
 
 CodeHeap::CodeHeap(const char* name, const int code_blob_type)

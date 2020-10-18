@@ -127,6 +127,7 @@ class CallGenerator : public ResourceObj {
   static CallGenerator* for_mh_late_inline(ciMethod* caller, ciMethod* callee, bool input_not_const);
   static CallGenerator* for_string_late_inline(ciMethod* m, CallGenerator* inline_cg);
   static CallGenerator* for_boxing_late_inline(ciMethod* m, CallGenerator* inline_cg);
+  static CallGenerator* for_vector_reboxing_late_inline(ciMethod* m, CallGenerator* inline_cg);
 
   // How to make a call but defer the decision whether to inline or not.
   static CallGenerator* for_warm_call(WarmCallInfo* ci,
