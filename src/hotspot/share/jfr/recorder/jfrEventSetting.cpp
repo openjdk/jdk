@@ -58,10 +58,10 @@ void JfrEventSetting::set_large(JfrEventId event_id) {
   setting(event_id).large = true;
 }
 
-bool JfrEventSetting::set_ratelimit(jlong id, jlong ratelimit_hz) {
+bool JfrEventSetting::set_ratelimit(jlong id, jlong ratelimit) {
   JfrEventId event_id = (JfrEventId)id;
   assert(bounds_check_event(event_id), "invariant");
-  setting(event_id).ratelimit_hz = ratelimit_hz;
+  setting(event_id).ratelimit = ratelimit;
   return true;
 }
 

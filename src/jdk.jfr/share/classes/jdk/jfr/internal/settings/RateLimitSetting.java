@@ -27,6 +27,7 @@ package jdk.jfr.internal.settings;
 
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import jdk.jfr.Description;
 import jdk.jfr.Label;
@@ -38,13 +39,14 @@ import jdk.jfr.internal.Type;
 import jdk.jfr.internal.Utils;
 
 @MetadataDefinition
-@Label("Rate Limit")
-@Description("TODO")
+@Label("Event Emmission Rate Limit")
+@Description("Event emissions rate (events per second) limit")
 @Name(Type.SETTINGS_PREFIX + "RateLimit")
 public final class RateLimitSetting extends JDKSettingControl {
+    private final static Pattern NUMBER_PTN = Pattern.compile("([0-9]+)");
     private final static long typeId = Type.getTypeId(RateLimitSetting.class);
 
-    private String value = "0 hz";
+    private String value = "0";
     private final PlatformEventType eventType;
 
     public RateLimitSetting(PlatformEventType eventType) {
@@ -54,7 +56,7 @@ public final class RateLimitSetting extends JDKSettingControl {
     @Override
     public String combine(Set<String> values) {
         long min = Long.MAX_VALUE;
-        String text = "0 hz";
+        String text = "0";
         for (String value : values) {
             long l = parseValueSafe(value);
             if (l < min) {
@@ -86,7 +88,12 @@ public final class RateLimitSetting extends JDKSettingControl {
             return 0L;
         }
         try {
-            return Long.valueOf(value.replace("hz", "").trim());
+            Matcher matcher = NUMBER_PTN.matcher(value);
+            if (matcher.find()) {
+                return Long.valueOf(matcher.group(1));
+            } else {
+                return 0L;
+            }
         } catch (NumberFormatException nfe) {
             return 0L;
         }

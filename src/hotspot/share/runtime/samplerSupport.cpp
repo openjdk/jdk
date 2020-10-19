@@ -2,6 +2,8 @@
 #include "runtime/atomic.hpp"
 #include "runtime/samplerSupport.hpp"
 
+// NOTE: This code is just moved from threadHeapSampler.cpp so it can be shared between several heap samplers
+
 // Ordering here is important: _log_table first, _log_table_initialized second.
 double SamplerSupport::_log_table[1 << SamplerSupport::FastLogNumBits] = {};
 

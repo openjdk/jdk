@@ -52,6 +52,6 @@ inline bool JfrEventSetting::is_large(JfrEventId event_id) {
 }
 
 inline jlong JfrEventSetting::ratelimit(JfrEventId event_id) {
-  return setting(event_id).ratelimit_hz;
+  return setting(event_id).ratelimit;
 }
 #endif // SHARE_JFR_RECORDER_JFREVENTSETTING_INLINE_HPP

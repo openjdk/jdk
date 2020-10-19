@@ -11,7 +11,9 @@ SamplerWindowParams JfrEventSampler::new_window_params() {
   // a simple heuristic to derive the window size and number of samples per window from the provided rate limit
   double duration = 10; // start with 10ms window
   double samples = (duration * limit) / (double)1000; // duration is in milliseconds and limit in samples per second
+  // rebalance if too few samples are to be generated per window
   if (samples < MIN_SAMPLES_PER_WINDOW) {
+    // target at least MIN_SAMPLES_PER_WINDOW samples per window
     duration *= (MIN_SAMPLES_PER_WINDOW / samples);
     samples = MIN_SAMPLES_PER_WINDOW;
   }

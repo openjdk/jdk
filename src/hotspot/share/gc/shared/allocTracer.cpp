@@ -34,6 +34,10 @@
 #endif
 
 namespace {
+  /*
+   * Allocation events are sampled so not each event will get written to JFR
+   * _skipped_allocations and _skipped_events are maintained for discarded allocation events and then reported by an accepted allocation event.
+   */
   static THREAD_LOCAL size_t _skipped_allocations = 0;
   static THREAD_LOCAL size_t _skipped_events = 0;
 

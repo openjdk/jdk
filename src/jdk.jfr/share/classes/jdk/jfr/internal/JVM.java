@@ -516,7 +516,7 @@ public final class JVM {
      */
     public native boolean setCutoff(long eventTypeId, long cutoffTicks);
 
-    public native boolean setRateLimit(long eventTypeId, long rateLimitHz);
+    public native boolean setRateLimit(long eventTypeId, long rateLimit);
 
     /**
      * Emit old object sample events.

@@ -1,6 +1,8 @@
 #ifndef SHARE_RUNTIME_SAMPLERSUPPORT_HPP
 #define SHARE_RUNTIME_SAMPLERSUPPORT_HPP
 
+// NOTE: This code is just moved from threadHeapSampler.hpp so it can be shared between several heap samplers
+
 class SamplerSupport : public CHeapObj<mtInternal> {
   private:
   static bool _log_table_initialized;

@@ -34,7 +34,11 @@ import java.lang.annotation.Target;
 import jdk.jfr.MetadataDefinition;
 
 /**
- * TODO
+ * Event annotation, determines the event emission rate limit in event per second.
+ *
+ * This settings is only supported for JVM events.
+ *
+ * @since 16
  */
 @MetadataDefinition
 @Target({ ElementType.TYPE })
@@ -45,10 +49,11 @@ public @interface RateLimit {
      * Settings name {@code "ratelimit"} for configuring event rate limit.
      */
     public final static String NAME = "ratelimit";
-    public final static String DEFAULT = "100 hz";
+    public final static int DEFAULT = 100;
 
     /**
-     * TODO
+     * The event emission rate limit.
+     * When 0 or a negative number is specified the rate limit will be disregarded.
      */
-    String value() default DEFAULT;
+    int value() default DEFAULT;
 }

@@ -48,7 +48,7 @@ class JfrEventSetting : AllStatic {
   static jlong cutoff(JfrEventId event_id);
   static bool is_large(JfrEventId event_id);
   static void set_large(JfrEventId event_id);
-  static bool set_ratelimit(jlong event_id, jlong rate_hz);
+  static bool set_ratelimit(jlong event_id, jlong ratelimit);
   static jlong ratelimit(JfrEventId event_id);
 
   DEBUG_ONLY(static bool bounds_check_event(jlong id);)

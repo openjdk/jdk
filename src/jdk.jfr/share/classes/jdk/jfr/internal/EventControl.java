@@ -260,12 +260,12 @@ public final class EventControl {
 
     private static Control defineRateLimit(PlatformEventType type) {
         RateLimit limit = type.getAnnotation(RateLimit.class);
-        String def = RateLimit.DEFAULT;
+        int def = RateLimit.DEFAULT;
         if (limit != null) {
             def = limit.value();
         }
         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_RATELIMIT, RateLimit.NAME, def, Collections.emptyList()));
-        return new Control(new RateLimitSetting(type), def);
+        return new Control(new RateLimitSetting(type), Integer.toString(def));
     }
 
     private static Control definePeriod(PlatformEventType type) {

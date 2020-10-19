@@ -616,7 +616,7 @@ public class GenerateJfrFiles {
             out.write("struct jfrNativeEventSetting {");
             out.write("  jlong  threshold_ticks;");
             out.write("  jlong  cutoff_ticks;");
-            out.write("  jlong  ratelimit_hz;");
+            out.write("  jlong  ratelimit;");
             out.write("  u1     stacktrace;");
             out.write("  u1     enabled;");
             out.write("  u1     large;");

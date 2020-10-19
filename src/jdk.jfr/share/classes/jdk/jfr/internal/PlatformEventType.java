@@ -154,9 +154,9 @@ public final class PlatformEventType extends Type {
         }
     }
 
-    public void setRateLimit(long rateLimitHz) {
+    public void setRateLimit(long rateLimit) {
         if (isJVM) {
-            JVM.getJVM().setRateLimit(getId(), rateLimitHz);
+            JVM.getJVM().setRateLimit(getId(), rateLimit);
         }
     }
 
