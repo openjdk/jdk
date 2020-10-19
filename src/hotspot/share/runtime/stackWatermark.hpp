@@ -28,7 +28,9 @@
 #include "memory/allocation.hpp"
 #include "runtime/stackWatermarkKind.hpp"
 
+class frame;
 class JavaThread;
+class RegisterMap;
 class StackWatermarkFramesIterator;
 
 // The StackWatermark state is a tuple comprising the last epoch in which
