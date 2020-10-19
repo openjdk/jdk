@@ -156,7 +156,7 @@ final class Parsed implements TemporalAccessor {
      */
     Period excessDays = Period.ZERO;
     /**
-     * The parsed day period (in minute-of-day).
+     * The parsed day period.
      */
     DateTimeFormatterBuilder.DayPeriod dayPeriod;
 
@@ -174,9 +174,9 @@ final class Parsed implements TemporalAccessor {
         Parsed cloned = new Parsed();
         cloned.fieldValues.putAll(this.fieldValues);
         cloned.zone = this.zone;
-        cloned.dayPeriod= this.dayPeriod;
         cloned.chrono = this.chrono;
         cloned.leapSecond = this.leapSecond;
+        cloned.dayPeriod= this.dayPeriod;
         return cloned;
     }
 
@@ -452,10 +452,20 @@ final class Parsed implements TemporalAccessor {
             updateCheckConflict(MINUTE_OF_DAY, MINUTE_OF_HOUR, mod % 60);
         }
         if (dayPeriod != null) {
-            if (fieldValues.containsKey(HOUR_OF_DAY) &&
-                fieldValues.containsKey(MINUTE_OF_HOUR)) {
-                if (!dayPeriod.includes(fieldValues.get(HOUR_OF_DAY) * 60 + fieldValues.get(MINUTE_OF_HOUR))) {
+            if (fieldValues.containsKey(HOUR_OF_DAY)) {
+                if (!dayPeriod.includes(fieldValues.get(HOUR_OF_DAY) * 60 +
+                        (fieldValues.containsKey(MINUTE_OF_HOUR) ? fieldValues.get(MINUTE_OF_HOUR) : 0))) {
                     throw new DateTimeException("Conflict found: hour-of-day/minute-of-hour conflict with day period");
+                }
+            } else if (fieldValues.containsKey(HOUR_OF_AMPM)) {
+                long hoap = fieldValues.get(HOUR_OF_AMPM);
+                long moh = fieldValues.containsKey(MINUTE_OF_HOUR) ? fieldValues.get(MINUTE_OF_HOUR) : 0;
+                if (dayPeriod.includes(hoap * 60 + moh)) {
+                    updateCheckConflict(HOUR_OF_AMPM, HOUR_OF_DAY, hoap);
+                } else if (dayPeriod.includes((hoap + 12) * 60 + moh)) {
+                    updateCheckConflict(HOUR_OF_AMPM, HOUR_OF_DAY, hoap + 12);
+                } else {
+                    throw new DateTimeException("Conflict found: hour-of-ampm conflicts with day period");
                 }
             } else {
                 long midpoint = dayPeriod.mid();
@@ -464,7 +474,7 @@ final class Parsed implements TemporalAccessor {
                 // dayPeriod precedes AmPm. Override it if exists without conflict
                 // checking as for, e.g., "at night" can either be "AM" or "PM".
                 if (fieldValues.containsKey(AMPM_OF_DAY)) {
-                    fieldValues.put(AMPM_OF_DAY, midpoint / 720);
+                    updateCheckConflict(HOUR_OF_DAY, AMPM_OF_DAY, midpoint / 720);
                 }
             }
         }
