@@ -17,7 +17,7 @@ SamplerWindowParams JfrEventSampler::new_window_params() {
   }
   params.window_duration = (jlong)duration;
   params.samples_per_window = (jlong)samples;
-  
+
   return params;
 }
 

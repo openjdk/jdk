@@ -35,7 +35,7 @@ bool SamplerWindow::should_sample() {
       return true;
     }
   } else {
-    double n_rand = _sample_all ? -1 : get_sampler_support()->next_random_uniform(); 
+    double n_rand = _sample_all ? -1 : get_sampler_support()->next_random_uniform();
     if (n_rand < _probability) {
       if (Atomic::add(&_sample_count, (size_t)1, memory_order_acq_rel) <= _samples_budget) {
         return true;
@@ -55,7 +55,7 @@ const double SamplerWindow::adjustment_factor(jlong window_duration_ms) {
 
 AdaptiveSampler::AdaptiveSampler(size_t window_lookback_cnt, size_t budget_lookback_cnt) :
 _window_lookback_alpha(compute_interval_alpha(window_lookback_cnt)), _budget_lookback_cnt(budget_lookback_cnt),
-_budget_lookback_alpha(compute_interval_alpha(budget_lookback_cnt)),  
+_budget_lookback_alpha(compute_interval_alpha(budget_lookback_cnt)),
 _probability(1), _avg_count(0), _window_mutex(Mutex::special, "Sampler mutex", false, Mutex::_safepoint_check_never) {
   SamplerWindowParams params = {-1, -1};
   _samples_budget = params.samples_per_window * (1 + budget_lookback_cnt);

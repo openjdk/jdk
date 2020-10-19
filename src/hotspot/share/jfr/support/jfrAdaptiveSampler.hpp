@@ -12,7 +12,7 @@
  * The maximum number is a soft limit which can be, in extreme situations be crossed but the overshoot
  * is usually staying within 15-20% of the requested limit (the actual number is affected by the 'sampling budget' size).
  * As for the implementation - the sampler is using fixed size time windows and adjusts the sampling rate/probability
- * for the next window based on what it learned in the past. While this strategy fares pretty well for a fairly stable system 
+ * for the next window based on what it learned in the past. While this strategy fares pretty well for a fairly stable system
  * it can fail for bursty ones when an extremely bursty window can influence the moving average in a way that several subsequent
  * windows will end up undersampled. As a measure of compensation the adaptive sampler employs the concept of 'sampling budget'
  * The 'sampling budget' is working as a 'spike damper', smoothing out the extremes in a way that the overall target rate
@@ -59,7 +59,7 @@ class SamplerWindow : public CHeapObj<mtInternal> {
 
     /**
      * Ratio between the requested and the measured window duration
-     */ 
+     */
     inline
     const double adjustment_factor() {
         return (double)(_end_ticks - _start_ticks) / (jfr_ticks() - _start_ticks);
@@ -110,7 +110,7 @@ class FixedRateSampler : public AdaptiveSampler {
         _params.samples_per_window = samples_per_window;
         _params.window_duration = window_duration;
     }
-    
+
     inline SamplerWindowParams new_window_params() {
         return _params;
     }

@@ -33,7 +33,7 @@
 class ThreadHeapSampler {
  private:
   static volatile int _sampling_interval;
-  
+
   SamplerSupport _sampler_support;
 
   size_t _bytes_until_sample;

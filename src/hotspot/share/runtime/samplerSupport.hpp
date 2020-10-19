@@ -30,7 +30,7 @@ class SamplerSupport : public CHeapObj<mtInternal> {
   }
 
   size_t pick_next_geometric_sample(size_t mean);
-  
+
   double next_random_uniform();
 };
 
