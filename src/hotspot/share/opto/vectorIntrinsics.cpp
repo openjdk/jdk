@@ -598,7 +598,7 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
   if (using_byte_array) {
     int byte_num_elem = num_elem * type2aelembytes(elem_bt);
     if (!arch_supports_vector(is_store ? Op_StoreVector : Op_LoadVector, byte_num_elem, T_BYTE, VecMaskNotUsed)
-        || !arch_supports_vector(Op_VectorReinterpret, num_elem, T_BYTE, VecMaskNotUsed)) {
+        || !arch_supports_vector(Op_VectorReinterpret, byte_num_elem, T_BYTE, VecMaskNotUsed)) {
       if (C->print_intrinsics()) {
         tty->print_cr("  ** not supported: arity=%d op=%s vlen=%d*8 etype=%s/8 ismask=no",
                       is_store, is_store ? "store" : "load",
