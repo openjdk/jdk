@@ -146,7 +146,7 @@ frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
   const ucontext_t* uc = (const ucontext_t*)ucVoid;
   intptr_t* sp = os::Aix::ucontext_get_sp(uc);
   address lr = ucontext_get_lr(uc);
-  *fr = frame(sp, lr);
+  return frame(sp, lr);
 }
 
 frame os::get_sender_for_C_frame(frame* fr) {
@@ -176,8 +176,6 @@ JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrec
   ucontext_t* uc = (ucontext_t*) ucVoid;
 
   Thread* t = Thread::current_or_null_safe();
-
-  SignalHandlerMark shm(t);
 
   // Note: it's not uncommon that JNI code uses signal/sigset to install
   // then restore certain signal handler (e.g. to temporarily block SIGPIPE,

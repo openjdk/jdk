@@ -87,43 +87,46 @@ bool ClassListParser::parse_one_line() {
     if (*_line == '#') { // comment
       continue;
     }
-    // The line is output TRACE_RESOLVE
+
+    {
+      int len = (int)strlen(_line);
+      int i;
+      // Replace \t\r\n\f with ' '
+      for (i=0; i<len; i++) {
+        if (_line[i] == '\t' || _line[i] == '\r' || _line[i] == '\n' || _line[i] == '\f') {
+          _line[i] = ' ';
+        }
+      }
+
+      // Remove trailing newline/space
+      while (len > 0) {
+        if (_line[len-1] == ' ') {
+          _line[len-1] = '\0';
+          len --;
+        } else {
+          break;
+        }
+      }
+      _line_len = len;
+    }
+
+    // Check if the line is output TRACE_RESOLVE
     if (strncmp(_line, LambdaFormInvokers::lambda_form_invoker_tag(),
                 strlen(LambdaFormInvokers::lambda_form_invoker_tag())) == 0) {
       LambdaFormInvokers::append(os::strdup((const char*)_line, mtInternal));
       continue;
     }
+
+    // valid line
     break;
   }
 
+  _class_name = _line;
   _id = _unspecified;
   _super = _unspecified;
   _interfaces->clear();
   _source = NULL;
   _interfaces_specified = false;
-
-  {
-    int len = (int)strlen(_line);
-    int i;
-    // Replace \t\r\n with ' '
-    for (i=0; i<len; i++) {
-      if (_line[i] == '\t' || _line[i] == '\r' || _line[i] == '\n') {
-        _line[i] = ' ';
-      }
-    }
-
-    // Remove trailing newline/space
-    while (len > 0) {
-      if (_line[len-1] == ' ') {
-        _line[len-1] = '\0';
-        len --;
-      } else {
-        break;
-      }
-    }
-    _line_len = len;
-    _class_name = _line;
-  }
 
   if ((_token = strchr(_line, ' ')) == NULL) {
     // No optional arguments are specified.

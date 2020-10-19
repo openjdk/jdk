@@ -45,6 +45,7 @@
 #include "memory/heapShared.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -1860,7 +1861,7 @@ public:
   bool do_entry(InstanceKlass* k, DumpTimeSharedClassInfo& info) {
     if (!info.is_excluded()) {
       size_t byte_size = RunTimeSharedClassInfo::byte_size(info._klass, info.num_verifier_constraints(), info.num_loader_constraints());
-      _shared_class_info_size += align_up(byte_size, BytesPerWord);
+      _shared_class_info_size += align_up(byte_size, SharedSpaceObjectAlignment);
     }
     return true; // keep on iterating
   }
@@ -1877,8 +1878,9 @@ size_t SystemDictionaryShared::estimate_size_for_archive() {
     CompactHashtableWriter::estimate_size(_dumptime_table->count_of(true)) +
     CompactHashtableWriter::estimate_size(_dumptime_table->count_of(false));
   if (_dumptime_lambda_proxy_class_dictionary != NULL) {
+    size_t bytesize = align_up(sizeof(RunTimeLambdaProxyClassInfo), SharedSpaceObjectAlignment);
     total_size +=
-      (sizeof(RunTimeLambdaProxyClassInfo) * _dumptime_lambda_proxy_class_dictionary->_count) +
+      (bytesize * _dumptime_lambda_proxy_class_dictionary->_count) +
       CompactHashtableWriter::estimate_size(_dumptime_lambda_proxy_class_dictionary->_count);
   } else {
     total_size += CompactHashtableWriter::estimate_size(0);
