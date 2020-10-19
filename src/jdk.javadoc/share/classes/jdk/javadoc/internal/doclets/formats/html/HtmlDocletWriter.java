@@ -657,8 +657,9 @@ public class HtmlDocletWriter {
             if (flags.contains(ElementFlag.PREVIEW)) {
                 return new ContentBuilder(
                     links.createLink(targetLink, label),
-                    new HtmlTree(TagName.SUP).add(links.createLink(targetLink.withFragment("preview"),
-                                    contents.previewMark))
+                    new HtmlTree(TagName.SUP)
+                            .add(links.createLink(targetLink.withFragment(SectionName.PREVIEW.getName()),
+                                                  contents.previewMark))
                 );
             }
             return links.createLink(targetLink, label);
@@ -690,8 +691,9 @@ public class HtmlDocletWriter {
             if (flags.contains(ElementFlag.PREVIEW) && label != contents.moduleLabel) {
                 link = new ContentBuilder(
                         link,
-                        new HtmlTree(TagName.SUP).add(links.createLink(targetLink.withFragment("preview"),
-                                    contents.previewMark))
+                        new HtmlTree(TagName.SUP)
+                                .add(links.createLink(targetLink.withFragment(SectionName.PREVIEW.getName()),
+                                                      contents.previewMark))
                 );
             }
             return link;
@@ -2232,10 +2234,10 @@ public class HtmlDocletWriter {
         if (utils.isPreviewAPI(forWhat)) {
             //in Java platform:
             HtmlTree previewDiv = HtmlTree.DIV(HtmlStyle.previewBlock);
+            previewDiv.setId(SectionName.PREVIEW.getName());
             DocTree previewTree = utils.getPreviewTree(forWhat);
             if (previewTree != null) {
-                previewDiv.add(new HtmlTree(TagName.A).put(HtmlAttr.ID, "preview")
-                                                      .add(new RawHtml(utils.getPreviewTreeSummaryOrDetails(previewTree, false))));
+                previewDiv.add(new RawHtml(utils.getPreviewTreeSummaryOrDetails(previewTree, false)));
             } else {
                 String name = (switch (forWhat.getKind()) {
                     case PACKAGE, MODULE ->
@@ -2250,9 +2252,8 @@ public class HtmlDocletWriter {
                                              : "doclet.ReflectivePreviewPlatformLeadingNote";
                 RawHtml leadingNote =
                         new RawHtml(resources.getText(leadingNoteKey, name));
-                previewDiv.add(new HtmlTree(TagName.A).put(HtmlAttr.ID, "preview")
-                                                      .add(HtmlTree.SPAN(HtmlStyle.previewLabel,
-                                                                         leadingNote)));
+                previewDiv.add(HtmlTree.SPAN(HtmlStyle.previewLabel,
+                                             leadingNote));
                 if (!isReflectivePreview) {
                     RawHtml note1 = new RawHtml(resources.getText("doclet.PreviewTrailingNote1", name));
                     previewDiv.add(HtmlTree.DIV(HtmlStyle.previewComment, note1));
@@ -2268,9 +2269,8 @@ public class HtmlDocletWriter {
                 Name name = forWhat.getSimpleName();
                 HtmlTree previewDiv = HtmlTree.DIV(HtmlStyle.previewBlock);
                 RawHtml leadingNote = new RawHtml(resources.getText("doclet.PreviewLeadingNote", name));
-                previewDiv.add(new HtmlTree(TagName.A).put(HtmlAttr.ID, "preview")
-                                                      .add(HtmlTree.SPAN(HtmlStyle.previewLabel,
-                                                                         leadingNote)));
+                previewDiv.add(HtmlTree.SPAN(HtmlStyle.previewLabel,
+                                             leadingNote));
                 HtmlTree ul = new HtmlTree(TagName.UL);
                 ul.setStyle(HtmlStyle.previewComment);
                 for (Content note : previewNotes) {

@@ -61,6 +61,7 @@ public enum SectionName {
     NESTED_CLASS_SUMMARY("nested.class.summary"),
     OVERVIEW_DESCRIPTION("overview.description"),
     PACKAGE_DESCRIPTION("package.description"),
+    PREVIEW("preview.section"),
     PROPERTY_DETAIL("property.detail"),
     PROPERTIES_INHERITANCE("properties.inherited.from.class."),
     PROPERTY_SUMMARY("property.summary"),

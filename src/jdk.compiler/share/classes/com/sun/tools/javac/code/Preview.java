@@ -46,6 +46,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static com.sun.tools.javac.code.Flags.RECORD;
+import static com.sun.tools.javac.code.Flags.SEALED;
+import static com.sun.tools.javac.code.Flags.NON_SEALED;
 import static com.sun.tools.javac.main.Option.PREVIEW;
 
 /**
@@ -212,6 +215,19 @@ public class Preview {
     public Error disabledError(JavaFileObject classfile, int majorVersion) {
         Assert.check(!isEnabled());
         return Errors.PreviewFeatureDisabledClassfile(classfile, majorVersionToSource.get(majorVersion).name);
+    }
+
+    /**
+     * Check whether the given symbol has been declared using
+     * a preview language feature.
+     *
+     * @param sym Symbol to check
+     * @return true iff sym has been declared using a preview language feature
+     */
+    public boolean declaredUsingPreviewFeature(Symbol sym) {
+        return ((sym.flags() & RECORD) != 0 && isPreview(Feature.RECORDS)) ||
+               ((sym.flags() & SEALED) != 0 && isPreview(Feature.SEALED_CLASSES)) ||
+               ((sym.flags() & NON_SEALED) != 0 && isPreview(Feature.SEALED_CLASSES));
     }
 
     /**

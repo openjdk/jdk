@@ -35,7 +35,6 @@ import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Kinds.KindName;
 import com.sun.tools.javac.code.Kinds.KindSelector;
 import com.sun.tools.javac.code.Scope.*;
-import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.main.Option.PkgInfo;
@@ -105,7 +104,6 @@ public class Enter extends JCTree.Visitor {
     TypeEnvs typeEnvs;
     Modules modules;
     JCDiagnostic.Factory diags;
-    Preview preview;
 
     private final Todo todo;
 
@@ -130,7 +128,6 @@ public class Enter extends JCTree.Visitor {
         names = Names.instance(context);
         modules = Modules.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
-        preview = Preview.instance(context);
 
         predefClassDef = make.ClassDef(
             make.Modifiers(PUBLIC),

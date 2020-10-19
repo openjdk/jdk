@@ -3552,7 +3552,7 @@ public class Check {
                     deferredLintHandler.report(() -> warnPreviewAPI(pos, Warnings.IsPreviewReflective(s)));
             }
         }
-        if (declaredUsingPreviewFeature(s)) {
+        if (preview.declaredUsingPreviewFeature(s)) {
             if (preview.isEnabled()) {
                 //for preview disabled do presumably so not need to do anything?
                 //If "s" is compiled from source, then there was an error for it already;
@@ -3561,10 +3561,6 @@ public class Check {
                 deferredLintHandler.report(() -> warnDeclaredUsingPreview(pos, s));
             }
         }
-    }
-    private boolean declaredUsingPreviewFeature(Symbol sym) {
-        return ((sym.flags() & RECORD) != 0 && preview.isPreview(Feature.RECORDS)) ||
-               ((sym.flags() & SEALED) != 0 && preview.isPreview(Feature.SEALED_CLASSES));
     }
 
 /* *************************************************************************
