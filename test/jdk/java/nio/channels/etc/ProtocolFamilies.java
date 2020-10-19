@@ -44,6 +44,7 @@ import static org.testng.Assert.assertThrows;
 
 /*
  * @test
+ * @bug 8254692
  * @summary Test SocketChannel, ServerSocketChannel and DatagramChannel
  *          with various ProtocolFamily combinations
  * @library /test/lib
