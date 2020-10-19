@@ -42,13 +42,13 @@ public class LambdaProxyClasslist {
 
     // 1. No error with a correct @lambda-proxy entry.
     OutputAnalyzer out = TestCommon.dump(appJar,
-        TestCommon.list("StrConcatApp",
-                        "@lambda-proxy: LambHello run ()Ljava/lang/Runnable; ()V 6 LambHello lambda$main$0 ()V ()V"));
+        TestCommon.list("LambHello",
+                        "@lambda-proxy: LambHello run ()Ljava/lang/Runnable; ()V REF_invokeStatic LambHello lambda$doTest$0 ()V ()V"));
     out.shouldHaveExitValue(0);
 
     // 2. Error if the @lambda-proxy entry is too short.
     out = TestCommon.dump(appJar,
-        TestCommon.list("StrConcatApp",
+        TestCommon.list("LambHello",
                         "@lambda-proxy: LambHello"));
     out.shouldContain("An error has occurred while processing class list file")
        .shouldContain("Line with @ tag has too few items \"@lambda-proxy:\" line #2")
@@ -57,21 +57,21 @@ public class LambdaProxyClasslist {
 
     // 3. Warning message if there's an incorrect signature in the @lambda-proxy entry.
     out = TestCommon.dump(appJar,
-        TestCommon.list("StrConcatApp",
-                        "@lambda-proxy: LambHello run ()Ljava/lang/Runnable; ()V 6 LambHello lambda$main$0 ()V ()Z"));
+        TestCommon.list("LambHello",
+                        "@lambda-proxy: LambHello run ()Ljava/lang/Runnable; ()V REF_invokeStatic LambHello lambda$doTest$0 ()V ()Z"));
     out.shouldContain("[warning][cds] No invoke dynamic constant pool entry can be found for class LambHello. The classlist is probably out-of-date.")
        .shouldHaveExitValue(0);
 
     // 4. More blank spaces in between items should be fine.
     out = TestCommon.dump(appJar,
-        TestCommon.list("StrConcatApp",
-                        "@lambda-proxy:  LambHello run  ()Ljava/lang/Runnable; ()V 6 LambHello lambda$main$0 ()V ()V"));
+        TestCommon.list("LambHello",
+                        "@lambda-proxy:  LambHello run  ()Ljava/lang/Runnable; ()V REF_invokeStatic LambHello lambda$doTest$0 ()V ()V"));
     out.shouldHaveExitValue(0);
 
     // 5. Trailing spaces at the end of the @lambda-proxy line should be fine.
     out = TestCommon.dump(appJar,
-        TestCommon.list("StrConcatApp",
-                        "@lambda-proxy: LambHello run ()Ljava/lang/Runnable; ()V 6 LambHello lambda$main$0 ()V ()V "));
+        TestCommon.list("LambHello",
+                        "@lambda-proxy: LambHello run ()Ljava/lang/Runnable; ()V REF_invokeStatic LambHello lambda$doTest$0 ()V ()V "));
     out.shouldHaveExitValue(0);
   }
 }
