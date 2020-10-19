@@ -329,7 +329,7 @@ public final class HexFormat {
         String s = formatOptDelimiter(bytes, index, length);
         if (s == null) {
             StringBuilder sb = new StringBuilder(length *
-                    (delimiter.length() + prefix.length() + suffix.length()) - delimiter.length());
+                    (delimiter.length() + prefix.length() + 2 + suffix.length()) - delimiter.length());
             formatHex(sb, bytes, index, length);
             s = sb.toString();
         }
@@ -548,12 +548,13 @@ public final class HexFormat {
     public byte[] parseHex(char[] chars, int index, int length) {
         Objects.requireNonNull(chars, "chars");
         Objects.checkFromIndexSize(index, length, chars.length);
-        CharBuffer cb = CharBuffer.wrap(chars, index, index + length);
+        CharBuffer cb = CharBuffer.wrap(chars, index, length);
         return parseHex(cb);
     }
 
     /**
      * Compare the literal and throw an exception if it does not match.
+     * Pre-condition:  {@code index + literal.length() <= string.length()}.
      *
      * @param string a CharSequence
      * @param index the index of the literal in the CharSequence
@@ -561,6 +562,7 @@ public final class HexFormat {
      * @throws IllegalArgumentException if the literal is not present
      */
     private static void checkLiteral(CharSequence string, int index, String literal) {
+        assert index + literal.length() <= string.length() : "pre-checked invariant error";
         if (literal.isEmpty() ||
                 (literal.length() == 1 && literal.charAt(0) == string.charAt(index))) {
             return;

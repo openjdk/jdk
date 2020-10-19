@@ -478,6 +478,30 @@ public class HexFormatTest {
     }
 
     @Test(dataProvider="HexFormattersParsers")
+    static void testFormatHexCharArrayIndexed(String delimiter, String prefix, String suffix,
+                                              boolean unused4, HexFormat hex) {
+        byte[] expected = genBytes('A', 15);
+        String s = hex.formatHex(expected);
+        System.out.println("    formatted: " + s);
+
+
+        // Parse values 2, 3, 4 from the generated string
+        int low = 2;
+        int high = 5;
+        int stride = prefix.length() + 2 + suffix.length() + delimiter.length();
+        System.out.println("    formatted subrange: " +
+                s.substring(low * stride, high * stride - delimiter.length()));
+        char[] chars = s.toCharArray();
+        byte[] actual = hex.parseHex(chars, low * stride,
+                (high - low ) * stride - delimiter.length());
+        System.out.println("    parsed as: " + Arrays.toString(actual));
+
+        assertEquals(actual.length, (high - low), "array length");
+        int mismatch = Arrays.mismatch(expected, low, high, actual, 0, high - low);
+        assertEquals(mismatch, -1, "format/parse cycle failed, mismatch: " + mismatch);
+    }
+
+    @Test(dataProvider="HexFormattersParsers")
     static void testFormatterToString(String delimiter, String prefix, String suffix,
                                     boolean uppercase,
                                     HexFormat hex) {
