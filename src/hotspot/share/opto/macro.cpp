@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,44 +94,6 @@ void PhaseMacroExpand::migrate_outs(Node *old, Node *target) {
   assert(old->outcnt() == 0, "all uses must be deleted");
 }
 
-void PhaseMacroExpand::copy_call_debug_info(CallNode *oldcall, CallNode * newcall) {
-  // Copy debug information and adjust JVMState information
-  uint old_dbg_start = oldcall->tf()->domain()->cnt();
-  uint new_dbg_start = newcall->tf()->domain()->cnt();
-  int jvms_adj  = new_dbg_start - old_dbg_start;
-  assert (new_dbg_start == newcall->req(), "argument count mismatch");
-
-  // SafePointScalarObject node could be referenced several times in debug info.
-  // Use Dict to record cloned nodes.
-  Dict* sosn_map = new Dict(cmpkey,hashkey);
-  for (uint i = old_dbg_start; i < oldcall->req(); i++) {
-    Node* old_in = oldcall->in(i);
-    // Clone old SafePointScalarObjectNodes, adjusting their field contents.
-    if (old_in != NULL && old_in->is_SafePointScalarObject()) {
-      SafePointScalarObjectNode* old_sosn = old_in->as_SafePointScalarObject();
-      uint old_unique = C->unique();
-      Node* new_in = old_sosn->clone(sosn_map);
-      if (old_unique != C->unique()) { // New node?
-        new_in->set_req(0, C->root()); // reset control edge
-        new_in = transform_later(new_in); // Register new node.
-      }
-      old_in = new_in;
-    }
-    newcall->add_req(old_in);
-  }
-
-  // JVMS may be shared so clone it before we modify it
-  newcall->set_jvms(oldcall->jvms() != NULL ? oldcall->jvms()->clone_deep(C) : NULL);
-  for (JVMState *jvms = newcall->jvms(); jvms != NULL; jvms = jvms->caller()) {
-    jvms->set_map(newcall);
-    jvms->set_locoff(jvms->locoff()+jvms_adj);
-    jvms->set_stkoff(jvms->stkoff()+jvms_adj);
-    jvms->set_monoff(jvms->monoff()+jvms_adj);
-    jvms->set_scloff(jvms->scloff()+jvms_adj);
-    jvms->set_endoff(jvms->endoff()+jvms_adj);
-  }
-}
-
 Node* PhaseMacroExpand::opt_bits_test(Node* ctrl, Node* region, int edge, Node* word, int mask, int bits, bool return_fast_path) {
   Node* cmp;
   if (mask != 0) {
@@ -184,7 +146,7 @@ CallNode* PhaseMacroExpand::make_slow_call(CallNode *oldcall, const TypeFunc* sl
   if (parm0 != NULL)  call->init_req(TypeFunc::Parms+0, parm0);
   if (parm1 != NULL)  call->init_req(TypeFunc::Parms+1, parm1);
   if (parm2 != NULL)  call->init_req(TypeFunc::Parms+2, parm2);
-  copy_call_debug_info(oldcall, call);
+  call->copy_call_debug_info(&_igvn, oldcall);
   call->set_cnt(PROB_UNLIKELY_MAG(4));  // Same effect as RC_UNCOMMON.
   _igvn.replace_node(oldcall, call);
   transform_later(call);
@@ -1473,7 +1435,7 @@ void PhaseMacroExpand::expand_allocate_common(
 
   // Copy debug information and adjust JVMState information, then replace
   // allocate node with the call
-  copy_call_debug_info((CallNode *) alloc,  call);
+  call->copy_call_debug_info(&_igvn, alloc);
   if (expand_fast_path) {
     call->set_cnt(PROB_UNLIKELY_MAG(4));  // Same effect as RC_UNCOMMON.
   } else {
@@ -2460,7 +2422,7 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
   Node *slow_ctrl = _fallthroughproj->clone();
   transform_later(slow_ctrl);
   _igvn.hash_delete(_fallthroughproj);
-  _fallthroughproj->disconnect_inputs(NULL, C);
+  _fallthroughproj->disconnect_inputs(C);
   region->init_req(1, slow_ctrl);
   // region inputs are now complete
   transform_later(region);
@@ -2528,7 +2490,7 @@ void PhaseMacroExpand::expand_unlock_node(UnlockNode *unlock) {
   Node *slow_ctrl = _fallthroughproj->clone();
   transform_later(slow_ctrl);
   _igvn.hash_delete(_fallthroughproj);
-  _fallthroughproj->disconnect_inputs(NULL, C);
+  _fallthroughproj->disconnect_inputs(C);
   region->init_req(1, slow_ctrl);
   // region inputs are now complete
   transform_later(region);

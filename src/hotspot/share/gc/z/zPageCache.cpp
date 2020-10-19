@@ -29,7 +29,6 @@
 #include "gc/z/zPageCache.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zValue.inline.hpp"
-#include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"

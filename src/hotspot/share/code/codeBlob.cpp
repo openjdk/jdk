@@ -55,9 +55,8 @@ const char* CodeBlob::compiler_name() const {
 
 unsigned int CodeBlob::align_code_offset(int offset) {
   // align the size to CodeEntryAlignment
-  return
-    ((offset + (int)CodeHeap::header_size() + (CodeEntryAlignment-1)) & ~(CodeEntryAlignment-1))
-    - (int)CodeHeap::header_size();
+  int header_size = (int)CodeHeap::header_size();
+  return align_up(offset + header_size, CodeEntryAlignment) - header_size;
 }
 
 

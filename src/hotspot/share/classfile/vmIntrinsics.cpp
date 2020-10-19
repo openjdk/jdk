@@ -59,53 +59,6 @@ inline bool match_F_SN(jshort flags) {
   return (flags & (req | neg)) == req;
 }
 
-inline bool match_F_RNY(jshort flags) {
-  const int req = JVM_ACC_NATIVE | JVM_ACC_SYNCHRONIZED;
-  const int neg = JVM_ACC_STATIC;
-  return (flags & (req | neg)) == req;
-}
-
-static vmIntrinsics::ID wrapper_intrinsic(BasicType type, bool unboxing) {
-#define TYPE2(type, unboxing) ((int)(type)*2 + ((unboxing) ? 1 : 0))
-  switch (TYPE2(type, unboxing)) {
-#define BASIC_TYPE_CASE(type, box, unbox) \
-    case TYPE2(type, false):  return vmIntrinsics::box; \
-    case TYPE2(type, true):   return vmIntrinsics::unbox
-    BASIC_TYPE_CASE(T_BOOLEAN, _Boolean_valueOf,   _booleanValue);
-    BASIC_TYPE_CASE(T_BYTE,    _Byte_valueOf,      _byteValue);
-    BASIC_TYPE_CASE(T_CHAR,    _Character_valueOf, _charValue);
-    BASIC_TYPE_CASE(T_SHORT,   _Short_valueOf,     _shortValue);
-    BASIC_TYPE_CASE(T_INT,     _Integer_valueOf,   _intValue);
-    BASIC_TYPE_CASE(T_LONG,    _Long_valueOf,      _longValue);
-    BASIC_TYPE_CASE(T_FLOAT,   _Float_valueOf,     _floatValue);
-    BASIC_TYPE_CASE(T_DOUBLE,  _Double_valueOf,    _doubleValue);
-#undef BASIC_TYPE_CASE
-  }
-#undef TYPE2
-  return vmIntrinsics::_none;
-}
-
-vmIntrinsics::ID vmIntrinsics::for_boxing(BasicType type) {
-  return wrapper_intrinsic(type, false);
-}
-vmIntrinsics::ID vmIntrinsics::for_unboxing(BasicType type) {
-  return wrapper_intrinsic(type, true);
-}
-
-vmIntrinsics::ID vmIntrinsics::for_raw_conversion(BasicType src, BasicType dest) {
-#define SRC_DEST(s,d) (((int)(s) << 4) + (int)(d))
-  switch (SRC_DEST(src, dest)) {
-  case SRC_DEST(T_INT, T_FLOAT):   return vmIntrinsics::_intBitsToFloat;
-  case SRC_DEST(T_FLOAT, T_INT):   return vmIntrinsics::_floatToRawIntBits;
-
-  case SRC_DEST(T_LONG, T_DOUBLE): return vmIntrinsics::_longBitsToDouble;
-  case SRC_DEST(T_DOUBLE, T_LONG): return vmIntrinsics::_doubleToRawLongBits;
-  }
-#undef SRC_DEST
-
-  return vmIntrinsics::_none;
-}
-
 bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
   switch(id) {
@@ -246,6 +199,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     case vmIntrinsics::_indexOfIU:
     case vmIntrinsics::_indexOfIUL:
     case vmIntrinsics::_indexOfU_char:
+    case vmIntrinsics::_indexOfL_char:
     case vmIntrinsics::_compareToL:
     case vmIntrinsics::_compareToU:
     case vmIntrinsics::_compareToLU:
@@ -531,6 +485,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_indexOfIU:
   case vmIntrinsics::_indexOfIUL:
   case vmIntrinsics::_indexOfU_char:
+  case vmIntrinsics::_indexOfL_char:
     if (!SpecialStringIndexOf) return true;
     break;
   case vmIntrinsics::_equalsL:
@@ -692,13 +647,13 @@ bool vmIntrinsics::is_disabled_by_flags(vmIntrinsics::ID id) {
 #define ID3(x, y, z) (( jlong)(z) +                                  \
                       ((jlong)(y) <<    vmSymbols::log2_SID_LIMIT) + \
                       ((jlong)(x) << (2*vmSymbols::log2_SID_LIMIT))  )
-#define SID_ENUM(n) vmSymbols::VM_SYMBOL_ENUM_NAME(n)
+#define SID_ENUM(n) VM_SYMBOL_ENUM_NAME(n)
 
-vmIntrinsics::ID vmIntrinsics::find_id_impl(vmSymbols::SID holder,
-                                            vmSymbols::SID name,
-                                            vmSymbols::SID sig,
+vmIntrinsics::ID vmIntrinsics::find_id_impl(vmSymbolID holder,
+                                            vmSymbolID name,
+                                            vmSymbolID sig,
                                             jshort flags) {
-  assert((int)vmSymbols::SID_LIMIT <= (1<<vmSymbols::log2_SID_LIMIT), "must fit");
+  assert((int)vmSymbolID::SID_LIMIT <= (1<<vmSymbols::log2_SID_LIMIT), "must fit");
 
   // Let the C compiler build the decision tree.
 
@@ -729,7 +684,6 @@ const char* vmIntrinsics::short_name_as_C_string(vmIntrinsics::ID id, char* buf,
   case F_RN: fname = "native ";        break;
   case F_SN: fname = "native static "; break;
   case F_S:  fname = "static ";        break;
-  case F_RNY:fname = "native synchronized "; break;
   default:   break;
   }
   const char* kptr = strrchr(kname, JVM_SIGNATURE_SLASH);
@@ -747,6 +701,7 @@ const char* vmIntrinsics::short_name_as_C_string(vmIntrinsics::ID id, char* buf,
 
 #define ID4(x, y, z, f) ((ID3(x, y, z) << vmIntrinsics::log2_FLAG_LIMIT) | (jlong) (f))
 
+#ifdef ASSERT
 static const jlong intrinsic_info_array[vmIntrinsics::ID_LIMIT+1] = {
 #define VM_INTRINSIC_INFO(ignore_id, klass, name, sig, fcode) \
   ID4(SID_ENUM(klass), SID_ENUM(name), SID_ENUM(sig), vmIntrinsics::fcode),
@@ -761,25 +716,25 @@ inline jlong intrinsic_info(vmIntrinsics::ID id) {
   return intrinsic_info_array[vmIntrinsics::ID_from((int)id)];
 }
 
-vmSymbols::SID vmIntrinsics::class_for(vmIntrinsics::ID id) {
+vmSymbolID vmIntrinsics::class_for(vmIntrinsics::ID id) {
   jlong info = intrinsic_info(id);
   int shift = 2*vmSymbols::log2_SID_LIMIT + log2_FLAG_LIMIT, mask = right_n_bits(vmSymbols::log2_SID_LIMIT);
   assert(((ID4(1021,1022,1023,15) >> shift) & mask) == 1021, "");
-  return vmSymbols::SID( (info >> shift) & mask );
+  return vmSymbols::as_SID( (info >> shift) & mask );
 }
 
-vmSymbols::SID vmIntrinsics::name_for(vmIntrinsics::ID id) {
+vmSymbolID vmIntrinsics::name_for(vmIntrinsics::ID id) {
   jlong info = intrinsic_info(id);
   int shift = vmSymbols::log2_SID_LIMIT + log2_FLAG_LIMIT, mask = right_n_bits(vmSymbols::log2_SID_LIMIT);
   assert(((ID4(1021,1022,1023,15) >> shift) & mask) == 1022, "");
-  return vmSymbols::SID( (info >> shift) & mask );
+  return vmSymbols::as_SID( (info >> shift) & mask );
 }
 
-vmSymbols::SID vmIntrinsics::signature_for(vmIntrinsics::ID id) {
+vmSymbolID vmIntrinsics::signature_for(vmIntrinsics::ID id) {
   jlong info = intrinsic_info(id);
   int shift = log2_FLAG_LIMIT, mask = right_n_bits(vmSymbols::log2_SID_LIMIT);
   assert(((ID4(1021,1022,1023,15) >> shift) & mask) == 1023, "");
-  return vmSymbols::SID( (info >> shift) & mask );
+  return vmSymbols::as_SID( (info >> shift) & mask );
 }
 
 vmIntrinsics::Flags vmIntrinsics::flags_for(vmIntrinsics::ID id) {
@@ -788,66 +743,4 @@ vmIntrinsics::Flags vmIntrinsics::flags_for(vmIntrinsics::ID id) {
   assert(((ID4(1021,1022,1023,15) >> shift) & mask) == 15, "");
   return Flags( (info >> shift) & mask );
 }
-
-
-#ifndef PRODUCT
-// verify_method performs an extra check on a matched intrinsic method
-
-static bool match_method(Method* m, Symbol* n, Symbol* s) {
-  return (m->name() == n &&
-          m->signature() == s);
-}
-
-static vmIntrinsics::ID match_method_with_klass(Method* m, Symbol* mk) {
-#define VM_INTRINSIC_MATCH(id, klassname, namepart, sigpart, flags) \
-  { Symbol* k = vmSymbols::klassname(); \
-    if (mk == k) { \
-      Symbol* n = vmSymbols::namepart(); \
-      Symbol* s = vmSymbols::sigpart(); \
-      if (match_method(m, n, s)) \
-        return vmIntrinsics::id; \
-    } }
-  VM_INTRINSICS_DO(VM_INTRINSIC_MATCH,
-                   VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE);
-  return vmIntrinsics::_none;
-#undef VM_INTRINSIC_MATCH
-}
-
-void vmIntrinsics::verify_method(ID actual_id, Method* m) {
-  Symbol* mk = m->method_holder()->name();
-  ID declared_id = match_method_with_klass(m, mk);
-
-  if (declared_id == actual_id)  return; // success
-
-  if (declared_id == _none && actual_id != _none && mk == vmSymbols::java_lang_StrictMath()) {
-    // Here are a few special cases in StrictMath not declared in vmSymbols.hpp.
-    switch (actual_id) {
-    case _min:
-    case _max:
-    case _dsqrt:
-      declared_id = match_method_with_klass(m, vmSymbols::java_lang_Math());
-      if (declared_id == actual_id)  return; // acceptable alias
-      break;
-    default:
-        break;
-    }
-  }
-
-  const char* declared_name = name_at(declared_id);
-  const char* actual_name   = name_at(actual_id);
-  m = NULL;
-  ttyLocker ttyl;
-  if (xtty != NULL) {
-    xtty->begin_elem("intrinsic_misdeclared actual='%s' declared='%s'",
-                     actual_name, declared_name);
-    xtty->method(m);
-    xtty->end_elem("%s", "");
-  }
-  if (PrintMiscellaneous && (WizardMode || Verbose)) {
-    tty->print_cr("*** misidentified method; %s(%d) should be %s(%d):",
-                  declared_name, declared_id, actual_name, actual_id);
-    m->print_short_name(tty);
-    tty->cr();
-  }
-}
-#endif //PRODUCT
+#endif // ASSERT

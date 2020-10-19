@@ -27,6 +27,7 @@
 #include "code/icBuffer.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
+#include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zNMethod.hpp"
@@ -55,7 +56,7 @@ void ZNMethod::attach_gc_data(nmethod* nm) {
   GrowableArray<oop*> immediate_oops;
   bool non_immediate_oops = false;
 
-  // Find all oops relocations
+  // Find all oop relocations
   RelocIterator iter(nm);
   while (iter.next()) {
     if (iter.type() != relocInfo::oop_type) {
