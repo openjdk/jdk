@@ -111,26 +111,8 @@ public:
   bool next(T** elem);
 };
 
-// Iterator types
-#define ZLIST_FORWARD        true
-#define ZLIST_REVERSE        false
-
-template <typename T>
-class ZListIterator : public ZListIteratorImpl<T, ZLIST_FORWARD> {
-public:
-  ZListIterator(const ZList<T>* list);
-};
-
-template <typename T>
-class ZListReverseIterator : public ZListIteratorImpl<T, ZLIST_REVERSE> {
-public:
-  ZListReverseIterator(const ZList<T>* list);
-};
-
-template <typename T>
-class ZListRemoveIterator : public ZListRemoveIteratorImpl<T, ZLIST_FORWARD> {
-public:
-  ZListRemoveIterator(ZList<T>* list);
-};
+template <typename T> using ZListIterator = ZListIteratorImpl<T, true /* Forward */>;
+template <typename T> using ZListReverseIterator = ZListIteratorImpl<T, false /* Forward */>;
+template <typename T> using ZListRemoveIterator = ZListRemoveIteratorImpl<T, true /* Forward */>;
 
 #endif // SHARE_GC_Z_ZLIST_HPP
