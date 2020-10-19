@@ -30,8 +30,8 @@
 
 namespace metaspace {
 
-#define MATERIALIZE_COUNTER(name)          uint64_t InternalStats::_##name;
-#define MATERIALIZE_ATOMIC_COUNTER(name)   volatile uint64_t InternalStats::_##name;
+#define MATERIALIZE_COUNTER(name)          uintx InternalStats::_##name;
+#define MATERIALIZE_ATOMIC_COUNTER(name)   volatile uintx InternalStats::_##name;
   ALL_MY_COUNTERS(MATERIALIZE_COUNTER, MATERIALIZE_ATOMIC_COUNTER)
 #undef MATERIALIZE_COUNTER
 #undef MATERIALIZE_ATOMIC_COUNTER
@@ -41,7 +41,7 @@ void InternalStats::print_on(outputStream* st) {
 #define xstr(s) str(s)
 #define str(s) #s
 
-#define PRINT_COUNTER(name)  st->print_cr("%s: " UINT64_FORMAT ".", xstr(name), _##name);
+#define PRINT_COUNTER(name)  st->print_cr("%s: " UINTX_FORMAT ".", xstr(name), _##name);
   ALL_MY_COUNTERS(PRINT_COUNTER, PRINT_COUNTER)
 #undef PRINT_COUNTER
 

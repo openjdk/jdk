@@ -95,8 +95,11 @@ class InternalStats : public AllStatic {
   /* Number of times we did a purge */              \
   x(num_purges)                                     \
 
-#define DEFINE_COUNTER(name)          static uint64_t _##name;
-#define DEFINE_ATOMIC_COUNTER(name)   static volatile uint64_t _##name;
+// Note: We use uintx since 32bit platforms lack 64bit atomic add; this increases
+//  the possibility of counter overflows but the probability is very low for any counter
+//  but num_allocs; note that these counters are for human eyes only.
+#define DEFINE_COUNTER(name)          static uintx _##name;
+#define DEFINE_ATOMIC_COUNTER(name)   static volatile uintx _##name;
   ALL_MY_COUNTERS(DEFINE_COUNTER, DEFINE_ATOMIC_COUNTER)
 #undef DEFINE_COUNTER
 #undef DEFINE_ATOMIC_COUNTER
