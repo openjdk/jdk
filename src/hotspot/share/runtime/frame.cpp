@@ -1115,6 +1115,9 @@ void frame::verify(const RegisterMap* map) const {
 
 #ifdef ASSERT
 bool frame::verify_return_pc(address x) {
+  AARCH64_ONLY(if (!pauth_ptr_is_raw(x)) {
+    return false;
+  })
   if (StubRoutines::returns_to_call_stub(x)) {
     return true;
   }

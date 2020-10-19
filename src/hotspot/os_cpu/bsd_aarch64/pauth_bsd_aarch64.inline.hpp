@@ -25,6 +25,8 @@
 #ifndef OS_CPU_BSD_AARCH64_PAUTH_BSD_AARCH64_INLINE_HPP
 #define OS_CPU_BSD_AARCH64_PAUTH_BSD_AARCH64_INLINE_HPP
 
+inline bool pauth_ptr_is_raw(address ptr);
+
 #ifdef __APPLE__
 #include <ptrauth.h>
 #endif
@@ -36,6 +38,8 @@
 // optimization.
 
 #define XPACLRI "hint #0x7;"
+#define PACIA1716 "hint #0x8;"
+#define AUTIA1716 "hint #0xc;"
 
 inline address pauth_strip_pointer(address ptr) {
 #ifdef __APPLE__
@@ -47,7 +51,41 @@ inline address pauth_strip_pointer(address ptr) {
 #endif
 }
 
+inline address pauth_sign_return_address(address ret_addr, address sp) {
+  if (UseROPProtection) {
+    // A pointer cannot be double signed.
+    guarantee(pauth_ptr_is_raw(ret_addr), "Return address is already signed");
+#ifdef __APPLE__
+    ret_addr = ptrauth_sign_unauthenticated(ret_addr, ptrauth_key_asib, sp);
+#else
+    register address r17 __asm("r17") = ret_addr;
+    register address r16 __asm("r16") = sp;
+    asm volatile (PACIA1716 : "+r"(r17) : "r"(r16));
+    ret_addr = r17;
+#endif
+  }
+  return ret_addr;
+}
+
+inline address pauth_authenticate_return_address(address ret_addr, address sp) {
+  if (UseROPProtection) {
+#ifdef __APPLE__
+    ret_addr = ptrauth_auth_data(ret_addr, ptrauth_key_asib, sp);
+#else
+    register address r17 __asm("r17") = ret_addr;
+    register address r16 __asm("r16") = sp;
+    asm volatile (AUTIA1716 : "+r"(r17) : "r"(r16));
+    ret_addr = r17;
+#endif
+    // Ensure that the pointer authenticated.
+    guarantee(pauth_ptr_is_raw(ret_addr), "Return address did not authenticate");
+  }
+  return ret_addr;
+}
+
 #undef XPACLRI
+#undef PACIA1716
+#undef AUTIA1716
 
 #endif // OS_CPU_BSD_AARCH64_PAUTH_BSD_AARCH64_INLINE_HPP
 

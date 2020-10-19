@@ -385,6 +385,7 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
 
     // load issuing PC (the return address for this stub) into r3
     __ ldr(exception_pc, Address(rfp, 1*BytesPerWord));
+    __ authenticate_return_address(exception_pc, Address(rfp), rscratch1);
 
     // make sure that the vm_results are cleared (may be unnecessary)
     __ str(zr, Address(rthread, JavaThread::vm_result_offset()));
@@ -433,6 +434,7 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
   __ str(exception_pc, Address(rthread, JavaThread::exception_pc_offset()));
 
   // patch throwing pc into return address (has bci & oop map)
+  __ protect_return_address(exception_pc, Address(rfp), rscratch1);
   __ str(exception_pc, Address(rfp, 1*BytesPerWord));
 
   // compute the exception handler.
@@ -443,12 +445,11 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
   // r0: handler address
   //      will be the deopt blob if nmethod was deoptimized while we looked up
   //      handler regardless of whether handler existed in the nmethod.
+  //      Move it into LR ready for returning.
+  __ mov(lr, r0);
 
   // only r0 is valid at this time, all other registers have been destroyed by the runtime call
   __ invalidate_registers(false, true, true, true, true, true);
-
-  // patch the return address, this stub will directly return to the exception handler
-  __ str(r0, Address(rfp, 1*BytesPerWord));
 
   switch (id) {
   case forward_exception_id:
@@ -461,6 +462,11 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
     break;
   default:  ShouldNotReachHere();
   }
+
+  // Restore the frame (without overwriting lr), and return.
+  __ mov(sp, rfp);
+  __ ldr(rfp, Address(__ post(sp, 2 * wordSize)));
+  __ ret(lr);
 
   return oop_maps;
 }
@@ -496,10 +502,12 @@ void Runtime1::generate_unwind_exception(StubAssembler *sasm) {
   // Save our return address because
   // exception_handler_for_return_address will destroy it.  We also
   // save exception_oop
+  __ mov(r3, lr);
+  __ protect_return_address();
   __ stp(lr, exception_oop, Address(__ pre(sp, -2 * wordSize)));
 
   // search the exception handler address of the caller (using the return address)
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), rthread, lr);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), rthread, r3);
   // r0: exception handler address of the caller
 
   // Only R0 is valid at this time; all other registers have been
@@ -512,6 +520,7 @@ void Runtime1::generate_unwind_exception(StubAssembler *sasm) {
   // get throwing pc (= return address).
   // lr has been destroyed by the call
   __ ldp(lr, exception_oop, Address(__ post(sp, 2 * wordSize)));
+  __ authenticate_return_address();
   __ mov(r3, lr);
 
   __ verify_not_null_oop(exception_oop);
@@ -617,8 +626,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
     case forward_exception_id:
       {
         oop_maps = generate_handle_exception(id, sasm);
-        __ leave();
-        __ ret(lr);
       }
       break;
 
@@ -1043,13 +1050,13 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
     case handle_exception_nofpu_id:
     case handle_exception_id:
-      { StubFrame f(sasm, "handle_exception", dont_gc_arguments);
+      { StubFrame f(sasm, "handle_exception", dont_gc_arguments, does_not_return);
         oop_maps = generate_handle_exception(id, sasm);
       }
       break;
 
     case handle_exception_from_callee_id:
-      { StubFrame f(sasm, "handle_exception_from_callee", dont_gc_arguments);
+      { StubFrame f(sasm, "handle_exception_from_callee", dont_gc_arguments, does_not_return);
         oop_maps = generate_handle_exception(id, sasm);
       }
       break;

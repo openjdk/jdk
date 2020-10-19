@@ -1133,6 +1133,7 @@ void MacroAssembler::verify_oop(Register reg, const char* s) {
   }
   BLOCK_COMMENT("verify_oop {");
 
+  protect_return_address();
   stp(r0, rscratch1, Address(pre(sp, -2 * wordSize)));
   stp(rscratch2, lr, Address(pre(sp, -2 * wordSize)));
 
@@ -1146,6 +1147,7 @@ void MacroAssembler::verify_oop(Register reg, const char* s) {
 
   ldp(rscratch2, lr, Address(post(sp, 2 * wordSize)));
   ldp(r0, rscratch1, Address(post(sp, 2 * wordSize)));
+  authenticate_return_address();
 
   BLOCK_COMMENT("} verify_oop");
 }
@@ -1162,6 +1164,7 @@ void MacroAssembler::verify_oop_addr(Address addr, const char* s) {
   }
   BLOCK_COMMENT("verify_oop_addr {");
 
+  protect_return_address();
   stp(r0, rscratch1, Address(pre(sp, -2 * wordSize)));
   stp(rscratch2, lr, Address(pre(sp, -2 * wordSize)));
 
@@ -1182,6 +1185,7 @@ void MacroAssembler::verify_oop_addr(Address addr, const char* s) {
 
   ldp(rscratch2, lr, Address(post(sp, 2 * wordSize)));
   ldp(r0, rscratch1, Address(post(sp, 2 * wordSize)));
+  authenticate_return_address();
 
   BLOCK_COMMENT("} verify_oop_addr");
 }
@@ -4206,6 +4210,7 @@ void MacroAssembler::load_byte_map_base(Register reg) {
 void MacroAssembler::build_frame(int framesize) {
   assert(framesize >= 2 * wordSize, "framesize must include space for FP/LR");
   assert(framesize % (2*wordSize) == 0, "must preserve 2*wordSize alignment");
+  protect_return_address();
   if (framesize < ((1 << 9) + 2 * wordSize)) {
     sub(sp, sp, framesize);
     stp(rfp, lr, Address(sp, framesize - 2 * wordSize));
@@ -4238,6 +4243,7 @@ void MacroAssembler::remove_frame(int framesize) {
     }
     ldp(rfp, lr, Address(post(sp, 2 * wordSize)));
   }
+  authenticate_return_address();
 }
 
 
@@ -5072,6 +5078,7 @@ void MacroAssembler::get_thread(Register dst) {
     LINUX_ONLY(RegSet::range(r0, r1)  + lr - dst)
     NOT_LINUX (RegSet::range(r0, r17) + lr - dst);
 
+  protect_return_address();
   push(saved_regs, sp);
 
   mov(lr, CAST_FROM_FN_PTR(address, JavaThread::aarch64_get_thread_helper));
@@ -5081,6 +5088,7 @@ void MacroAssembler::get_thread(Register dst) {
   }
 
   pop(saved_regs, sp);
+  authenticate_return_address();
 }
 
 void MacroAssembler::cache_wb(Address line) {
@@ -5151,6 +5159,78 @@ void MacroAssembler::verify_cross_modify_fence_not_required() {
     mov(c_rarg0, rthread);
     blr(rscratch1);
     bind(fence_not_required);
+  }
+}
+#endif
+
+
+// Stack frame creation/removal
+
+void MacroAssembler::enter()
+{
+  protect_return_address();
+  stp(rfp, lr, Address(pre(sp, -2 * wordSize)));
+  mov(rfp, sp);
+}
+
+void MacroAssembler::leave()
+{
+  mov(sp, rfp);
+  ldp(rfp, lr, Address(post(sp, 2 * wordSize)));
+  authenticate_return_address();
+}
+
+// ROP Protection
+
+void MacroAssembler::protect_return_address() {
+  // Used before pushing the LR on the stack.
+  if (UseROPProtection) {
+    check_return_address();
+    // The standard convention here is to use paciasp as SP would equal FP. Thus when LR and FP
+    // are pushed to the stack, the modifier used to sign LR is the value before it on the stack.
+    // In JDK, SP and FP may not match, but we still want to sign using the value pushed to the
+    // stack (FP). Note this version of the instruction is not in the NOP space.
+    pacia(lr, rfp);
+  }
+}
+
+void MacroAssembler::protect_return_address(Register return_reg, Address modifier, Register temp_reg) {
+  if (UseROPProtection) {
+    check_return_address(return_reg);
+    ldr(temp_reg, modifier);
+    pacia(return_reg, temp_reg);
+  }
+}
+
+void MacroAssembler::authenticate_return_address() {
+  // Used after popping the LR off the stack.
+  if (UseROPProtection) {
+    // Match with protect_return_address.
+    autia(lr, rfp);
+    check_return_address();
+  }
+}
+
+void MacroAssembler::authenticate_return_address(Register return_reg, Address modifier, Register temp_reg) {
+  if (UseROPProtection) {
+    ldr(temp_reg, modifier);
+    autia(return_reg, temp_reg);
+    check_return_address(return_reg);
+  }
+}
+
+void MacroAssembler::strip_return_address() {
+  if (UseROPProtection) {
+    xpaclri();
+  }
+}
+
+#ifndef PRODUCT
+void MacroAssembler::check_return_address(Register return_reg) {
+  // This load helps debugging sign/auth failures, as the segfault will happen here instead of
+  // after using the failed address.
+  if (UseROPProtection) {
+    ldr(zr, Address(return_reg));
   }
 }
 #endif

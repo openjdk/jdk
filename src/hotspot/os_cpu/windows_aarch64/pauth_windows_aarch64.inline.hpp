@@ -30,5 +30,14 @@ inline address pauth_strip_pointer(address ptr) {
   return ptr;
 }
 
-#endif // OS_CPU_WINDOWS_AARCH64_PAUTH_WINDOWS_AARCH64_INLINE_HPP
+inline address pauth_sign_return_address(address ret_addr, address sp) {
+  // No PAC support in windows as of yet.
+  return ret_addr;
+}
 
+inline address pauth_authenticate_return_address(address ret_addr, address sp) {
+  // No PAC support in windows as of yet.
+  return ret_addr;
+}
+
+#endif // OS_CPU_WINDOWS_AARCH64_PAUTH_WINDOWS_AARCH64_INLINE_HPP

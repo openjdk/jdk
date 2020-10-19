@@ -1366,8 +1366,8 @@ source %{
       _NO_SPECIAL_PTR_REG_mask.SUBTRACT(_HEAPBASE_REG_mask);
     }
 
-    // r29 is not allocatable when PreserveFramePointer is on
-    if (PreserveFramePointer) {
+    // r29 is not allocatable when PreserveFramePointer or UseROPProtection is on
+    if (PreserveFramePointer || UseROPProtection) {
       _NO_SPECIAL_REG32_mask.Remove(OptoReg::as_OptoReg(r29->as_VMReg()));
       _NO_SPECIAL_REG_mask.SUBTRACT(_FP_REG_mask);
       _NO_SPECIAL_PTR_REG_mask.SUBTRACT(_FP_REG_mask);

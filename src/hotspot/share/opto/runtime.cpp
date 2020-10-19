@@ -1461,6 +1461,16 @@ address OptoRuntime::rethrow_C(oopDesc* exception, JavaThread* thread, address r
   // Enable WXWrite: the function called directly by compiled code.
   MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
 
+  // ret_pc will have been loaded from the stack, so for AArch64 will be signed.
+  // This needs authenticating, but to do that here requires the fp of the previous frame.
+  // A better way of doing it would be authenticate in the caller by adding a
+  // AuthPAuthNode and using it in GraphKit::gen_stub:
+  // if (return_pc) {             // Return PC, if asked for.
+  //   call->init_req(cnt++, _gvn.transform(new AuthPAuthNode(returnadr())));
+  // }
+  // For now, just strip it.
+  AARCH64_ONLY(ret_pc=pauth_strip_pointer(ret_pc));
+
   // The frame we rethrow the exception to might not have been processed by the GC yet.
   // The stack watermark barrier takes care of detecting that and ensuring the frame
   // has updated oops.
