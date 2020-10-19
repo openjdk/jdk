@@ -2108,11 +2108,6 @@ void Compile::Optimize() {
     set_for_igvn(&new_worklist);
     igvn = PhaseIterGVN(initial_gvn());
     igvn.optimize();
-
-    // Restore the original for_igvn pointer for subsequent uses.
-    // Clear the for_igvn list because it may have irrelevant nodes
-    // from the previous PhaseRenumberLive run.
-    save_for_igvn->clear();
     set_for_igvn(save_for_igvn);
   }
 
