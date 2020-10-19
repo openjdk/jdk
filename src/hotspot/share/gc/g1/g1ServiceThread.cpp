@@ -36,6 +36,20 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 
+G1SentinelTask::G1SentinelTask() : G1ServiceTask("Sentinel Task") {
+  set_time(DBL_MAX);
+  set_next(this);
+}
+
+void G1SentinelTask::execute() {
+  guarantee(false, "Sentinel service task should never be executed.");
+}
+
+int64_t G1SentinelTask::timeout_ms() {
+  guarantee(false, "Sentinel service task should never be scheduled.");
+  return 0;
+}
+
 // Task handling periodic GCs
 class G1PeriodicGCTask : public G1ServiceTask {
   bool should_start_periodic_gc() {
@@ -85,12 +99,12 @@ public:
     check_for_periodic_gc();
   }
 
-  virtual double timeout() {
+  virtual int64_t timeout_ms() {
     // G1PeriodicGCInterval is a manageable flag and can be updated
     // during runtime. If no value is set, wait a second and run it
     // again to see if the value has been updated. Otherwise use the
     // real value provided.
-    return G1PeriodicGCInterval == 0 ? 1.0 : (G1PeriodicGCInterval / 1000.0);
+    return G1PeriodicGCInterval == 0 ? 1000 : G1PeriodicGCInterval;
   }
 };
 
@@ -161,8 +175,8 @@ public:
     sample_young_list_rs_length();
   }
 
-  virtual double timeout() {
-    return G1ConcRefinementServiceIntervalMillis/1000.0;
+  virtual int64_t timeout_ms() {
+    return G1ConcRefinementServiceIntervalMillis;
   }
 };
 
@@ -223,15 +237,15 @@ void G1ServiceThread::sleep_before_next_cycle() {
 }
 
 void G1ServiceThread::reschedule_task(G1ServiceTask* task) {
-  double timeout = task->timeout();
-  if (timeout < 0) {
+  int64_t timeout_ms = task->timeout_ms();
+  if (timeout_ms < 0) {
     // Negative timeout, don't reschedule.
     log_trace(gc, task)("G1 Service Thread (%s) (done)", task->name());
     return;
   }
 
   // Reschedule task by updating task time and add back to queue.
-  task->set_time(os::elapsedTime() + timeout);
+  task->set_time(os::elapsedTime() + (timeout_ms / 1000.0));
 
   MutexLocker ml(&_monitor, Mutex::_no_safepoint_check_flag);
   _task_list.add_ordered(task);
@@ -325,20 +339,7 @@ G1ServiceTask* G1ServiceTask::next() {
   return _next;
 }
 
-void G1ServiceTask::execute() {
-  guarantee(false, "Sentinel service task should never be executed.");
-}
-
-double G1ServiceTask::timeout() {
-  guarantee(false, "Sentinel service task should never be sceduled.");
-  return 0.0;
-}
-
-G1ServiceTaskList::G1ServiceTaskList() :
-    _sentinel("Sentinel") {
-  _sentinel.set_next(&_sentinel);
-  _sentinel.set_time(DBL_MAX);
-}
+G1ServiceTaskList::G1ServiceTaskList() : _sentinel() { }
 
 G1ServiceTask* G1ServiceTaskList::pop() {
   verify_task_list();

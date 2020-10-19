@@ -47,10 +47,17 @@ public:
   G1ServiceTask* next();
 
   // Do the actual work for the task.
+  virtual void execute() = 0;
+  // Timeout to the next invocation. A negative value can be used
+  // to stop the task from being rescheduled and run again.
+  virtual int64_t timeout_ms() = 0;
+};
+
+class G1SentinelTask : public G1ServiceTask {
+public:
+  G1SentinelTask();
   virtual void execute();
-  // The timeout to the next invocation. A negative timeout
-  // will cause the task to not be rescheduled after completing.
-  virtual double timeout();
+  virtual int64_t timeout_ms();
 };
 
 class G1ServiceTaskList {
@@ -58,7 +65,7 @@ class G1ServiceTaskList {
   // the service tasks. The list is ordered by the time the tasks are scheduled
   // to run and the sentinel task has the time set to DBL_MAX. This guarantees
   // that any new task will be added just before the sentinel at the latest.
-  G1ServiceTask _sentinel;
+  G1SentinelTask _sentinel;
 
   // Verify that the list is ordered.
   void verify_task_list() NOT_DEBUG_RETURN;

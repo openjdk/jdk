@@ -32,17 +32,17 @@
 class CheckTask : public G1ServiceTask {
   G1ServiceThread* _st;
   int _execution_count;
-  double _timeout;
+  int64_t _timeout;
 public:
   CheckTask(const char* name, G1ServiceThread* st) :
       G1ServiceTask(name),
       _st(st),
       _execution_count(0),
-      _timeout(0.1) { }
+      _timeout(100) { }
   virtual void execute() { _execution_count++; }
-  virtual double timeout() { return _timeout; }
+  virtual int64_t timeout_ms() { return _timeout; }
   int execution_count() { return _execution_count;}
-  void set_timeout(double timeout) { _timeout = timeout; }
+  void set_timeout(int64_t timeout) { _timeout = timeout; }
 };
 
 static void stop_service_thread(G1ServiceThread* thread) {
@@ -108,15 +108,15 @@ TEST_VM(G1ServiceThread, test_add_run_once) {
 }
 
 class TestTask : public G1ServiceTask {
-  double _timeout;
+  int64_t _timeout;
 public:
-  TestTask(double timeout) :
+  TestTask(int64_t timeout) :
       G1ServiceTask("TestTask"),
       _timeout(timeout) {
-    set_time(timeout);
+    set_time(timeout / 1000.0);
   }
   virtual void execute() { }
-  virtual double timeout() { return _timeout; }
+  virtual int64_t timeout_ms() { return _timeout; }
 };
 
 TEST_VM(G1ServiceTaskList, add_ordered) {
@@ -125,7 +125,7 @@ TEST_VM(G1ServiceTaskList, add_ordered) {
   int num_test_tasks = 5;
   for (int i = 1; i <= num_test_tasks; i++) {
     // Create tasks with different timeout.
-    TestTask* task = new TestTask(0.1 * i);
+    TestTask* task = new TestTask(100 * i);
     list.add_ordered(task);
   }
 
@@ -137,7 +137,7 @@ TEST_VM(G1ServiceTaskList, add_ordered) {
     while (list.peek()->time() < now) {
       G1ServiceTask* task = list.pop();
       task->execute();
-      task->set_time(now + (task->timeout() * multiplyer));
+      task->set_time(now + ((task->timeout_ms() * multiplyer) / 1000.0));
       // All additions will verify that the list is sorted.
       list.add_ordered(task);
     }
