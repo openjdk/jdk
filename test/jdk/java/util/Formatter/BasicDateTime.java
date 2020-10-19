@@ -1687,6 +1687,14 @@ public class BasicDateTime extends Basic {
 
         // Get the supported ids for GMT-08:00 (Pacific Standard Time)
         String[] ids = TimeZone.getAvailableIDs(-8 * 60 * 60 * 1000);
+
+        final List<String> list =  new ArrayList<String>();
+        Collections.addAll(list, ids);
+        list.remove("America/Dawson");
+        list.remove("America/WhiteHorse");
+        list.remove("Canada/Yukon");
+        ids = list.toArray(new String[list.size()]);
+
         // Create a Pacific Standard Time time zone
         SimpleTimeZone tz = new SimpleTimeZone(-8 * 60 * 60 * 1000, ids[0]);
         // public GregorianCalendar(TimeZone zone, Locale aLocale);
