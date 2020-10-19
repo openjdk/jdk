@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @bug 8246774
  * @summary Class redefinition must preclude changes to Record attributes
  * @comment This is a copy of test/jdk/java/lang/instrument/RedefineNestmateAttr/
  * @comment modified for records and the Record attribute.
@@ -34,10 +33,11 @@
  *          java.instrument
  * @compile ../NamedBuffer.java
  * @run main RedefineClassHelper
- * @compile Host/Host.java
- * @run main/othervm -javaagent:redefineagent.jar -Xlog:redefine+class+record=trace TestRecordAttrGenericSig Host
- * @compile HostA/Host.java
- * @run main/othervm -javaagent:redefineagent.jar -Xlog:redefine+class+record=trace TestRecordAttrGenericSig HostA
+ * @compile --enable-preview --source ${jdk.version} Host/Host.java
+ * @compile --enable-preview --source ${jdk.version} TestRecordAttrGenericSig.java
+ * @run main/othervm -javaagent:redefineagent.jar -Xlog:redefine+class+record=trace --enable-preview TestRecordAttrGenericSig Host
+ * @compile --enable-preview --source ${jdk.version} HostA/Host.java
+ * @run main/othervm -javaagent:redefineagent.jar -Xlog:redefine+class+record=trace --enable-preview TestRecordAttrGenericSig HostA
  */
 
 /* Test Description
@@ -207,6 +207,8 @@ public class TestRecordAttrGenericSig {
                                         "            to: " + dst);
         CompilerUtils.compile(src.toPath(),
                               dst.toPath(),
-                              false /* don't recurse */);
+                              false /* don't recurse */,
+                              "--enable-preview",
+                              "--source", VERSION);
     }
 }
