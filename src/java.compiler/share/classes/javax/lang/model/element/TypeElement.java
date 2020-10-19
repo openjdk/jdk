@@ -180,13 +180,6 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
     List<? extends TypeParameterElement> getTypeParameters();
 
     /**
-     * {@preview Associated with records, a preview feature of the Java language.
-     *
-     *           This method is associated with <i>records</i>, a preview
-     *           feature of the Java language. Preview features
-     *           may be removed in a future release, or upgraded to permanent
-     *           features of the Java language.}
-     *
      * Returns the record components of this type element in
      * declaration order.
      *
@@ -196,11 +189,8 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
      * @return the record components, or an empty list if there are
      * none
      *
-     * @since 14
+     * @since 16
      */
-    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
-                                 essentialAPI=false)
-    @SuppressWarnings("preview")
     default List<? extends RecordComponentElement> getRecordComponents() {
         return List.of();
     }

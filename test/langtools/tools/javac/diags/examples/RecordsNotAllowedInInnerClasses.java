@@ -22,9 +22,6 @@
  */
 
 // key: compiler.err.static.declaration.not.allowed.in.inner.classes
-// key: compiler.note.preview.filename
-// key: compiler.note.preview.recompile
-// options: --enable-preview -source ${jdk.version}
 
 class Outer {
     class Inner {

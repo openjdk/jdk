@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,10 @@ template <class T, MEMFLAGS F> HashtableEntry<T, F>* Hashtable<T, F>::new_entry(
 template <class T, MEMFLAGS F> HashtableEntry<T, F>* Hashtable<T, F>::allocate_new_entry(unsigned int hashValue, T obj) {
   HashtableEntry<T, F>* entry = (HashtableEntry<T, F>*) NEW_C_HEAP_ARRAY(char, this->entry_size(), F);
 
+  if (DumpSharedSpaces) {
+    // Avoid random bits in structure padding so we can have deterministic content in CDS archive
+    memset((void*)entry, 0, this->entry_size());
+  }
   entry->set_hash(hashValue);
   entry->set_literal(obj);
   entry->set_next(NULL);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,6 @@
  */
 
 package com.sun.net.httpserver;
-import java.net.*;
-import java.io.*;
-import java.util.*;
 import java.security.Principal;
 
 /**
@@ -75,6 +72,8 @@ public class HttpPrincipal implements Principal {
 
     /**
      * returns the username this object was created with.
+     *
+     * @return The name of the user assoicated with this object
      */
     public String getUsername() {
         return username;
@@ -82,6 +81,8 @@ public class HttpPrincipal implements Principal {
 
     /**
      * returns the realm this object was created with.
+     *
+     * @return The realm associated with this object
      */
     public String getRealm() {
         return realm;

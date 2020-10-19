@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.awt.geom;
 
 import java.awt.Rectangle;
 import java.awt.Shape;
+import java.io.IOException;
 import java.io.Serializable;
 import java.io.StreamCorruptedException;
 import java.util.Arrays;
@@ -857,6 +858,8 @@ public abstract class Path2D implements Shape, Cloneable {
          * serialization of the path segments stored in this
          * path.
          *
+         * @param  s the {@code ObjectOutputStream} to write
+         * @throws IOException if an I/O error occurs
          * @serialData
          * <ol>
          * <li>The default serializable fields.
@@ -994,6 +997,10 @@ public abstract class Path2D implements Shape, Cloneable {
          * The serial data for this object is described in the
          * writeObject method.
          *
+         * @param  s the {@code ObjectInputStream} to read
+         * @throws ClassNotFoundException if the class of a serialized object
+         *         could not be found
+         * @throws IOException if an I/O error occurs
          * @since 1.6
          */
         private void readObject(java.io.ObjectInputStream s)
@@ -1632,6 +1639,8 @@ public abstract class Path2D implements Shape, Cloneable {
          * serialization of the path segments stored in this
          * path.
          *
+         * @param  s the {@code ObjectOutputStream} to write
+         * @throws IOException if an I/O error occurs
          * @serialData
          * <ol>
          * <li>The default serializable fields.
@@ -1768,6 +1777,10 @@ public abstract class Path2D implements Shape, Cloneable {
          * The serial data for this object is described in the
          * writeObject method.
          *
+         * @param  s the {@code ObjectInputStream} to read
+         * @throws ClassNotFoundException if the class of a serialized object
+         *         could not be found
+         * @throws IOException if an I/O error occurs         *
          * @since 1.6
          */
         private void readObject(java.io.ObjectInputStream s)

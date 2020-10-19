@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package java.awt.geom;
 
+import java.io.IOException;
 import java.io.Serializable;
 
 /**
@@ -330,6 +331,8 @@ public abstract class Arc2D extends RectangularShape {
          * indicating the arc type of this {@code Arc2D}
          * instance.
          *
+         * @param  s the {@code ObjectOutputStream} to write
+         * @throws IOException if an I/O error occurs
          * @serialData
          * <ol>
          * <li>The default serializable fields.
@@ -352,6 +355,10 @@ public abstract class Arc2D extends RectangularShape {
          * indicating the arc type of this {@code Arc2D}
          * instance.
          *
+         * @param  s the {@code ObjectInputStream} to read
+         * @throws ClassNotFoundException if the class of a serialized object
+         *         could not be found
+         * @throws IOException if an I/O error occurs
          * @serialData
          * <ol>
          * <li>The default serializable fields.
@@ -622,6 +629,8 @@ public abstract class Arc2D extends RectangularShape {
          * indicating the arc type of this {@code Arc2D}
          * instance.
          *
+         * @param  s the {@code ObjectOutputStream} to write
+         * @throws IOException if an I/O error occurs
          * @serialData
          * <ol>
          * <li>The default serializable fields.
@@ -644,6 +653,10 @@ public abstract class Arc2D extends RectangularShape {
          * indicating the arc type of this {@code Arc2D}
          * instance.
          *
+         * @param  s the {@code ObjectInputStream} to read
+         * @throws ClassNotFoundException if the class of a serialized object
+         *         could not be found
+         * @throws IOException if an I/O error occurs
          * @serialData
          * <ol>
          * <li>The default serializable fields.

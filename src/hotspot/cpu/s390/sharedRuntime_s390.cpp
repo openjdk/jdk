@@ -35,6 +35,7 @@
 #include "nativeInst_s390.hpp"
 #include "oops/compiledICHolder.hpp"
 #include "oops/klass.inline.hpp"
+#include "prims/methodHandles.hpp"
 #include "registerSaver_s390.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -2209,8 +2210,8 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
   Label no_reguard;
 
-  __ z_cli(Address(Z_thread, JavaThread::stack_guard_state_offset() + in_ByteSize(sizeof(JavaThread::StackGuardState) - 1)),
-           JavaThread::stack_guard_yellow_reserved_disabled);
+  __ z_cli(Address(Z_thread, JavaThread::stack_guard_state_offset() + in_ByteSize(sizeof(StackOverflow::StackGuardState) - 1)),
+           StackOverflow::stack_guard_yellow_reserved_disabled);
 
   __ z_bre(no_reguard);
 

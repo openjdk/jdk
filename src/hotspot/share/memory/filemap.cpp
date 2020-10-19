@@ -60,6 +60,7 @@
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/classpathStream.hpp"
 #include "utilities/defaultStream.hpp"
+#include "utilities/ostream.hpp"
 #if INCLUDE_G1GC
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/heapRegion.hpp"
@@ -246,6 +247,56 @@ void FileMapHeader::populate(FileMapInfo* mapinfo, size_t alignment) {
   if (!DynamicDumpSharedSpaces) {
     set_shared_path_table(mapinfo->_shared_path_table);
   }
+}
+
+void FileMapHeader::print(outputStream* st) {
+  ResourceMark rm;
+
+  st->print_cr("- magic:                          0x%08x", _magic);
+  st->print_cr("- crc:                            0x%08x", _crc);
+  st->print_cr("- version:                        %d", _version);
+
+  for (int i = 0; i < NUM_CDS_REGIONS; i++) {
+    FileMapRegion* si = space_at(i);
+    si->print(st, i);
+  }
+  st->print_cr("============ end regions ======== ");
+
+  st->print_cr("- header_size:                    " SIZE_FORMAT, _header_size);
+  st->print_cr("- alignment:                      " SIZE_FORMAT, _alignment);
+  st->print_cr("- obj_alignment:                  %d", _obj_alignment);
+  st->print_cr("- narrow_oop_base:                " INTPTR_FORMAT, p2i(_narrow_oop_base));
+  st->print_cr("- narrow_oop_base:                " INTPTR_FORMAT, p2i(_narrow_oop_base));
+  st->print_cr("- narrow_oop_shift                %d", _narrow_oop_shift);
+  st->print_cr("- compact_strings:                %d", _compact_strings);
+  st->print_cr("- max_heap_size:                  " UINTX_FORMAT, _max_heap_size);
+  st->print_cr("- narrow_oop_mode:                %d", _narrow_oop_mode);
+  st->print_cr("- narrow_klass_shift:             %d", _narrow_klass_shift);
+  st->print_cr("- compressed_oops:                %d", _compressed_oops);
+  st->print_cr("- compressed_class_ptrs:          %d", _compressed_class_ptrs);
+  st->print_cr("- cloned_vtables_offset:          " SIZE_FORMAT_HEX, _cloned_vtables_offset);
+  st->print_cr("- serialized_data_offset:         " SIZE_FORMAT_HEX, _serialized_data_offset);
+  st->print_cr("- i2i_entry_code_buffers_offset:  " SIZE_FORMAT_HEX, _i2i_entry_code_buffers_offset);
+  st->print_cr("- i2i_entry_code_buffers_size:    " SIZE_FORMAT, _i2i_entry_code_buffers_size);
+  st->print_cr("- heap_end:                       " INTPTR_FORMAT, p2i(_heap_end));
+  st->print_cr("- base_archive_is_default:        %d", _base_archive_is_default);
+  st->print_cr("- jvm_ident:                      %s", _jvm_ident);
+  st->print_cr("- base_archive_name_size:         " SIZE_FORMAT, _base_archive_name_size);
+  st->print_cr("- shared_path_table_offset:       " SIZE_FORMAT_HEX, _shared_path_table_offset);
+  st->print_cr("- shared_path_table_size:         %d", _shared_path_table_size);
+  st->print_cr("- app_class_paths_start_index:    %d", _app_class_paths_start_index);
+  st->print_cr("- app_module_paths_start_index:   %d", _app_module_paths_start_index);
+  st->print_cr("- num_module_paths:               %d", _num_module_paths);
+  st->print_cr("- max_used_path_index:            %d", _max_used_path_index);
+  st->print_cr("- verify_local:                   %d", _verify_local);
+  st->print_cr("- verify_remote:                  %d", _verify_remote);
+  st->print_cr("- has_platform_or_app_classes:    %d", _has_platform_or_app_classes);
+  st->print_cr("- requested_base_address:         " INTPTR_FORMAT, p2i(_requested_base_address));
+  st->print_cr("- mapped_base_address:            " INTPTR_FORMAT, p2i(_mapped_base_address));
+  st->print_cr("- allow_archiving_with_java_agent:%d", _allow_archiving_with_java_agent);
+  st->print_cr("- use_optimized_module_handling:  %d", _use_optimized_module_handling);
+  st->print_cr("- use_full_module_graph           %d", _use_full_module_graph);
+  st->print_cr("- ptrmap_size_in_bits:            " SIZE_FORMAT, _ptrmap_size_in_bits);
 }
 
 void SharedClassPathEntry::init_as_non_existent(const char* path, TRAPS) {
@@ -1229,9 +1280,32 @@ void FileMapRegion::init(int region_index, char* base, size_t size, bool read_on
   _mapped_base = NULL;
 }
 
-static const char* region_names[] = {
-  "mc", "rw", "ro", "bm", "ca0", "ca1", "oa0", "oa1"
-};
+
+static const char* region_name(int region_index) {
+  static const char* names[] = {
+    "mc", "rw", "ro", "bm", "ca0", "ca1", "oa0", "oa1"
+  };
+  const int num_regions = sizeof(names)/sizeof(names[0]);
+  assert(0 <= region_index && region_index < num_regions, "sanity");
+
+  return names[region_index];
+}
+
+void FileMapRegion::print(outputStream* st, int region_index) {
+  st->print_cr("============ region ============= %d \"%s\"", region_index, region_name(region_index));
+  st->print_cr("- crc:                            0x%08x", _crc);
+  st->print_cr("- read_only:                      %d", _read_only);
+  st->print_cr("- allow_exec:                     %d", _allow_exec);
+  st->print_cr("- is_heap_region:                 %d", _is_heap_region);
+  st->print_cr("- is_bitmap_region:               %d", _is_bitmap_region);
+  st->print_cr("- mapped_from_file:               %d", _mapped_from_file);
+  st->print_cr("- file_offset:                    " SIZE_FORMAT_HEX, _file_offset);
+  st->print_cr("- mapping_offset:                 " SIZE_FORMAT_HEX, _mapping_offset);
+  st->print_cr("- used:                           " SIZE_FORMAT, _used);
+  st->print_cr("- oopmap_offset:                  " SIZE_FORMAT_HEX, _oopmap_offset);
+  st->print_cr("- oopmap_size_in_bits:            " SIZE_FORMAT, _oopmap_size_in_bits);
+  st->print_cr("- mapped_base:                    " INTPTR_FORMAT, p2i(_mapped_base));
+}
 
 void FileMapInfo::write_region(int region, char* base, size_t size,
                                bool read_only, bool allow_exec) {
@@ -1239,9 +1313,6 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
 
   FileMapRegion* si = space_at(region);
   char* target_base;
-
-  const int num_regions = sizeof(region_names)/sizeof(region_names[0]);
-  assert(0 <= region && region < num_regions, "sanity");
 
   if (region == MetaspaceShared::bm) {
     target_base = NULL; // always NULL for bm region.
@@ -1261,7 +1332,7 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
     log_debug(cds)("Shared file region (%-3s)  %d: " SIZE_FORMAT_W(8)
                    " bytes, addr " INTPTR_FORMAT " file offset " SIZE_FORMAT_HEX_W(08)
                    " crc 0x%08x",
-                   region_names[region], region, size, p2i(requested_base), _file_offset, crc);
+                   region_name(region), region, size, p2i(requested_base), _file_offset, crc);
   }
   si->init(region, target_base, size, read_only, allow_exec, crc);
 
@@ -1278,28 +1349,28 @@ size_t FileMapInfo::set_oopmaps_offset(GrowableArray<ArchiveHeapOopmapInfo>* oop
   return curr_size;
 }
 
-size_t FileMapInfo::write_oopmaps(GrowableArray<ArchiveHeapOopmapInfo>* oopmaps, size_t curr_offset, uintptr_t* buffer) {
+size_t FileMapInfo::write_oopmaps(GrowableArray<ArchiveHeapOopmapInfo>* oopmaps, size_t curr_offset, char* buffer) {
   for (int i = 0; i < oopmaps->length(); i++) {
-    memcpy(((char*)buffer) + curr_offset, oopmaps->at(i)._oopmap, oopmaps->at(i)._oopmap_size_in_bytes);
+    memcpy(buffer + curr_offset, oopmaps->at(i)._oopmap, oopmaps->at(i)._oopmap_size_in_bytes);
     curr_offset += oopmaps->at(i)._oopmap_size_in_bytes;
   }
   return curr_offset;
 }
 
-void FileMapInfo::write_bitmap_region(const CHeapBitMap* ptrmap,
-                                      GrowableArray<ArchiveHeapOopmapInfo>* closed_oopmaps,
-                                      GrowableArray<ArchiveHeapOopmapInfo>* open_oopmaps) {
-  ResourceMark rm;
+char* FileMapInfo::write_bitmap_region(const CHeapBitMap* ptrmap,
+                                       GrowableArray<ArchiveHeapOopmapInfo>* closed_oopmaps,
+                                       GrowableArray<ArchiveHeapOopmapInfo>* open_oopmaps,
+                                       size_t &size_in_bytes) {
   size_t size_in_bits = ptrmap->size();
-  size_t size_in_bytes = ptrmap->size_in_bytes();
+  size_in_bytes = ptrmap->size_in_bytes();
 
   if (closed_oopmaps != NULL && open_oopmaps != NULL) {
     size_in_bytes = set_oopmaps_offset(closed_oopmaps, size_in_bytes);
     size_in_bytes = set_oopmaps_offset(open_oopmaps, size_in_bytes);
   }
 
-  uintptr_t* buffer = (uintptr_t*)NEW_RESOURCE_ARRAY(char, size_in_bytes);
-  ptrmap->write_to(buffer, ptrmap->size_in_bytes());
+  char* buffer = NEW_C_HEAP_ARRAY(char, size_in_bytes, mtClassShared);
+  ptrmap->write_to((BitMap::bm_word_t*)buffer, ptrmap->size_in_bytes());
   header()->set_ptrmap_size_in_bits(size_in_bits);
 
   if (closed_oopmaps != NULL && open_oopmaps != NULL) {
@@ -1308,6 +1379,7 @@ void FileMapInfo::write_bitmap_region(const CHeapBitMap* ptrmap,
   }
 
   write_region(MetaspaceShared::bm, (char*)buffer, size_in_bytes, /*read_only=*/true, /*allow_exec=*/false);
+  return buffer;
 }
 
 // Write out the given archive heap memory regions.  GC code combines multiple
@@ -1663,8 +1735,7 @@ size_t FileMapInfo::read_bytes(void* buffer, size_t count) {
 
 address FileMapInfo::decode_start_address(FileMapRegion* spc, bool with_current_oop_encoding_mode) {
   size_t offset = spc->mapping_offset();
-  assert(offset == (size_t)(uint32_t)offset, "must be 32-bit only");
-  uint n = (uint)offset;
+  narrowOop n = CompressedOops::narrow_oop_cast(offset);
   if (with_current_oop_encoding_mode) {
     return cast_from_oop<address>(CompressedOops::decode_not_null(n));
   } else {

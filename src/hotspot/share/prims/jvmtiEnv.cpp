@@ -1213,8 +1213,8 @@ JvmtiEnv::GetOwnedMonitorInfo(JavaThread* java_thread, jint* owned_monitor_count
   } else {
     // get owned monitors info with handshake
     GetOwnedMonitorInfoClosure op(calling_thread, this, owned_monitors_list);
-    bool executed = Handshake::execute_direct(&op, java_thread);
-    err = executed ? op.result() : JVMTI_ERROR_THREAD_NOT_ALIVE;
+    Handshake::execute(&op, java_thread);
+    err = op.result();
   }
   jint owned_monitor_count = owned_monitors_list->length();
   if (err == JVMTI_ERROR_NONE) {
@@ -1258,8 +1258,8 @@ JvmtiEnv::GetOwnedMonitorStackDepthInfo(JavaThread* java_thread, jint* monitor_i
   } else {
     // get owned monitors info with handshake
     GetOwnedMonitorInfoClosure op(calling_thread, this, owned_monitors_list);
-    bool executed = Handshake::execute_direct(&op, java_thread);
-    err = executed ? op.result() : JVMTI_ERROR_THREAD_NOT_ALIVE;
+    Handshake::execute(&op, java_thread);
+    err = op.result();
   }
 
   jint owned_monitor_count = owned_monitors_list->length();
@@ -1302,8 +1302,8 @@ JvmtiEnv::GetCurrentContendedMonitor(JavaThread* java_thread, jobject* monitor_p
   } else {
     // get contended monitor information with handshake
     GetCurrentContendedMonitorClosure op(calling_thread, this, monitor_ptr);
-    bool executed = Handshake::execute_direct(&op, java_thread);
-    err = executed ? op.result() : JVMTI_ERROR_THREAD_NOT_ALIVE;
+    Handshake::execute(&op, java_thread);
+    err = op.result();
   }
   return err;
 } /* end GetCurrentContendedMonitor */
@@ -1540,8 +1540,8 @@ JvmtiEnv::GetStackTrace(JavaThread* java_thread, jint start_depth, jint max_fram
   } else {
     // Get stack trace with handshake.
     GetStackTraceClosure op(this, start_depth, max_frame_count, frame_buffer, count_ptr);
-    bool executed = Handshake::execute_direct(&op, java_thread);
-    err = executed ? op.result() : JVMTI_ERROR_THREAD_NOT_ALIVE;
+    Handshake::execute(&op, java_thread);
+    err = op.result();
   }
 
   return err;
@@ -1585,8 +1585,8 @@ JvmtiEnv::GetThreadListStackTraces(jint thread_count, const jthread* thread_list
     }
 
     GetSingleStackTraceClosure op(this, current_thread, *thread_list, max_frame_count);
-    bool executed = Handshake::execute_direct(&op, java_thread);
-    err = executed ? op.result() : JVMTI_ERROR_THREAD_NOT_ALIVE;
+    Handshake::execute(&op, java_thread);
+    err = op.result();
     if (err == JVMTI_ERROR_NONE) {
       *stack_info_ptr = op.stack_info();
     }
@@ -1623,8 +1623,8 @@ JvmtiEnv::GetFrameCount(JavaThread* java_thread, jint* count_ptr) {
   } else {
     // get java stack frame count with handshake.
     GetFrameCountClosure op(this, state, count_ptr);
-    bool executed = Handshake::execute_direct(&op, java_thread);
-    err = executed ? op.result() : JVMTI_ERROR_THREAD_NOT_ALIVE;
+    Handshake::execute(&op, java_thread);
+    err = op.result();
   }
   return err;
 } /* end GetFrameCount */
@@ -1674,7 +1674,7 @@ JvmtiEnv::PopFrame(JavaThread* java_thread) {
     bool is_interpreted[2];
     intptr_t *frame_sp[2];
     // The 2-nd arg of constructor is needed to stop iterating at java entry frame.
-    for (vframeStream vfs(java_thread, true); !vfs.at_end(); vfs.next()) {
+    for (vframeStream vfs(java_thread, true, false /* process_frames */); !vfs.at_end(); vfs.next()) {
       methodHandle mh(current_thread, vfs.method());
       if (mh->is_native()) return(JVMTI_ERROR_OPAQUE_FRAME);
       is_interpreted[frame_count] = vfs.is_interpreted_frame();
@@ -1686,7 +1686,7 @@ JvmtiEnv::PopFrame(JavaThread* java_thread) {
       // There can be two situations here:
       //  1. There are no more java frames
       //  2. Two top java frames are separated by non-java native frames
-      if(vframeFor(java_thread, 1) == NULL) {
+      if(vframeForNoProcess(java_thread, 1) == NULL) {
         return JVMTI_ERROR_NO_MORE_FRAMES;
       } else {
         // Intervening non-java native or VM frames separate java frames.
@@ -1721,10 +1721,9 @@ JvmtiEnv::PopFrame(JavaThread* java_thread) {
         state->update_for_pop_top_frame();
       } else {
         UpdateForPopTopFrameClosure op(state);
-        bool executed = Handshake::execute_direct(&op, java_thread);
-        jvmtiError err = executed ? op.result() : JVMTI_ERROR_THREAD_NOT_ALIVE;
-        if (err != JVMTI_ERROR_NONE) {
-          return err;
+        Handshake::execute(&op, java_thread);
+        if (op.result() != JVMTI_ERROR_NONE) {
+          return op.result();
         }
       }
     }
@@ -1756,8 +1755,8 @@ JvmtiEnv::GetFrameLocation(JavaThread* java_thread, jint depth, jmethodID* metho
   } else {
     // JVMTI get java stack frame location via direct handshake.
     GetFrameLocationClosure op(this, depth, method_ptr, location_ptr);
-    bool executed = Handshake::execute_direct(&op, java_thread);
-    err = executed ? op.result() : JVMTI_ERROR_THREAD_NOT_ALIVE;
+    Handshake::execute(&op, java_thread);
+    err = op.result();
   }
   return err;
 } /* end GetFrameLocation */
@@ -1786,7 +1785,7 @@ JvmtiEnv::NotifyFramePop(JavaThread* java_thread, jint depth) {
     JvmtiSuspendControl::print();
   }
 
-  vframe *vf = vframeFor(java_thread, depth);
+  vframe *vf = vframeForNoProcess(java_thread, depth);
   if (vf == NULL) {
     return JVMTI_ERROR_NO_MORE_FRAMES;
   }
@@ -1805,8 +1804,8 @@ JvmtiEnv::NotifyFramePop(JavaThread* java_thread, jint depth) {
     state->env_thread_state(this)->set_frame_pop(frame_number);
   } else {
     SetFramePopClosure op(this, state, depth);
-    bool executed = Handshake::execute_direct(&op, java_thread);
-    err = executed ? op.result() : JVMTI_ERROR_THREAD_NOT_ALIVE;
+    Handshake::execute(&op, java_thread);
+    err = op.result();
   }
   return err;
 } /* end NotifyFramePop */

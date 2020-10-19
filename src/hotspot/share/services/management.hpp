@@ -66,8 +66,6 @@ public:
   static void* get_jmm_interface(int version);
   static void  get_optional_support(jmmOptionalSupport* support);
 
-  static void get_loaded_classes(JavaThread* cur_thread, GrowableArray<Klass*>* klass_array);
-
   static void  record_vm_startup_time(jlong begin, jlong duration)
       NOT_MANAGEMENT_RETURN;
   static void  record_vm_init_completed() {

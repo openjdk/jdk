@@ -62,7 +62,8 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
 
     Label slow_path;
     // If we need a safepoint check, generate full interpreter entry.
-    __ safepoint_poll(slow_path, noreg, rdi);
+    __ get_thread(rdi);
+    __ safepoint_poll(slow_path, rdi, false /* at_return */, false /* in_nmethod */);
 
     // We don't generate local frame and don't align stack because
     // we call stub code and there is no safepoint on this path.
@@ -111,7 +112,8 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
 
     Label slow_path;
     // If we need a safepoint check, generate full interpreter entry.
-    __ safepoint_poll(slow_path, noreg, rdi);
+    __ get_thread(rdi);
+    __ safepoint_poll(slow_path, rdi, false /* at_return */, false /* in_nmethod */);
 
     // We don't generate local frame and don't align stack because
     // we call stub code and there is no safepoint on this path.

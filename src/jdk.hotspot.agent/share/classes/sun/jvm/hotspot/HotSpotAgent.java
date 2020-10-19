@@ -530,8 +530,10 @@ public class HotSpotAgent {
             machDesc = new MachineDescriptionIntelX86();
         } else if (cpu.equals("amd64")) {
             machDesc = new MachineDescriptionAMD64();
+        } else if (cpu.equals("aarch64")) {
+            machDesc = new MachineDescriptionAArch64();
         } else {
-            throw new DebuggerException("Win32 supported under x86 and amd64 only");
+            throw new DebuggerException("Win32 supported under x86, amd64 and aarch64 only");
         }
 
         // Note we do not use a cache for the local debugger in server
