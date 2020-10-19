@@ -311,15 +311,9 @@ class Thread: public ThreadShadow {
   volatile uint32_t _suspend_flags;
 
  private:
-  int _num_nested_signal;
-
   DEBUG_ONLY(bool _suspendible_thread;)
 
  public:
-  void enter_signal_handler() { _num_nested_signal++; }
-  void leave_signal_handler() { _num_nested_signal--; }
-  bool is_inside_signal_handler() const { return _num_nested_signal > 0; }
-
   // Determines if a heap allocation failure will be retried
   // (e.g., by deoptimizing and re-executing in the interpreter).
   // In this case, the failed allocation must raise
@@ -2144,20 +2138,6 @@ class Threads: AllStatic {
   static void deoptimized_wrt_marked_nmethods();
 
   struct Test;                  // For private gtest access.
-};
-
-class SignalHandlerMark: public StackObj {
- private:
-  Thread* _thread;
- public:
-  SignalHandlerMark(Thread* t) {
-    _thread = t;
-    if (_thread) _thread->enter_signal_handler();
-  }
-  ~SignalHandlerMark() {
-    if (_thread) _thread->leave_signal_handler();
-    _thread = NULL;
-  }
 };
 
 class UnlockFlagSaver {

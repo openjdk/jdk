@@ -260,7 +260,6 @@ Thread::Thread() {
   _current_pending_monitor_is_from_java = true;
   _current_waiting_monitor = NULL;
   _current_pending_raw_monitor = NULL;
-  _num_nested_signal = 0;
   om_free_list = NULL;
   om_free_count = 0;
   om_free_provision = 32;
