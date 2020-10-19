@@ -91,7 +91,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
 
     @Override
     public Content getSignature(ExecutableElement property) {
-        return new MemberSignature(property)
+        return new Signatures.MemberSignature(property, this)
                 .addType(utils.getReturnType(typeElement, property))
                 .toContent();
     }

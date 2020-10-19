@@ -114,7 +114,7 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
 
     @Override
     public Content getSignature(Element member) {
-        return new MemberSignature(member)
+        return new Signatures.MemberSignature(member, this)
                 .addType(getType(member))
                 .toContent();
     }

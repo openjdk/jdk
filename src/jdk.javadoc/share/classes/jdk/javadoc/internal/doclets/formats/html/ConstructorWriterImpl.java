@@ -130,7 +130,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
 
     @Override
     public Content getSignature(ExecutableElement constructor) {
-        return new MemberSignature(constructor)
+        return new Signatures.MemberSignature(constructor, this)
                 .addParameters(getParameters(constructor, true))
                 .addExceptions(getExceptions(constructor))
                 .toContent();
