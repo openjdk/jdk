@@ -126,13 +126,12 @@ public class HtmlDoclet extends AbstractDoclet {
      * @throws DocletException if there is a problem while writing the other files
      */
     @Override // defined by AbstractDoclet
-    protected void generateOtherFiles(DocletEnvironment docEnv, ClassTree classtree)
+    protected void generateOtherFiles(ClassTree classtree)
             throws DocletException {
-        super.generateOtherFiles(docEnv, classtree);
+        super.generateOtherFiles(classtree);
         HtmlOptions options = configuration.getOptions();
         if (options.linkSource()) {
-            SourceToHTMLConverter.convertRoot(configuration,
-                docEnv, DocPaths.SOURCE_OUTPUT);
+            SourceToHTMLConverter.convertRoot(configuration,DocPaths.SOURCE_OUTPUT);
         }
         // Modules with no documented classes may be specified on the
         // command line to specify a service provider, allow these.
