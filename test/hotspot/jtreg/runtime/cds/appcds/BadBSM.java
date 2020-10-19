@@ -21,17 +21,29 @@
  * questions.
  *
  */
-public class LambHello {
-    public static void main(String[] args) {
-        doTest();
-    }
 
-    static void doTest() {
-        doit(() -> {
-            System.out.println("Hello from doTest");
-        });
-    }
-    static void doit(Runnable t) {
-        t.run();
-    }
+/*
+ * @test
+ * @summary CDS dump should abort if a class file contains a bad BSM.
+ * @requires vm.cds
+ * @library /test/lib
+ * @compile test-classes/WrongBSM.jcod
+ * @run driver BadBSM
+ */
+
+import jdk.test.lib.process.OutputAnalyzer;
+
+public class BadBSM {
+
+  public static void main(String[] args) throws Exception {
+    JarBuilder.build("wrongbsm", "WrongBSM");
+
+    String appJar = TestCommon.getTestJar("wrongbsm.jar");
+
+    OutputAnalyzer out = TestCommon.dump(appJar,
+        TestCommon.list("WrongBSM",
+                        "@lambda-proxy: WrongBSM 7"));
+    out.shouldHaveExitValue(0);
+    out.shouldContain( "is_supported_invokedynamic check failed for cp_index 7");
+  }
 }

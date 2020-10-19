@@ -27,6 +27,7 @@
 #include "aot/aotLoader.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
+#include "classfile/classListWriter.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.hpp"
@@ -4195,7 +4196,7 @@ unsigned char * InstanceKlass::get_cached_class_file_bytes() {
 
 void InstanceKlass::log_to_classlist(const ClassFileStream* stream) const {
 #if INCLUDE_CDS
-  if (DumpLoadedClassList && classlist_file->is_open()) {
+  if (ClassListWriter::is_enabled()) {
     if (!ClassLoader::has_jrt_entry()) {
        warning("DumpLoadedClassList and CDS are not supported in exploded build");
        DumpLoadedClassList = NULL;
@@ -4208,6 +4209,11 @@ void InstanceKlass::log_to_classlist(const ClassFileStream* stream) const {
     bool skip = false;
     if (is_shared()) {
       assert(stream == NULL, "shared class with stream");
+      if (is_hidden()) {
+        // Don't include archived lambda proxy class in the classlist.
+        assert(!is_non_strong_hidden(), "unexpected non-strong hidden class");
+        return;
+      }
     } else {
       assert(stream != NULL, "non-shared class without stream");
       // skip hidden class and unsafe anonymous class.
@@ -4235,8 +4241,9 @@ void InstanceKlass::log_to_classlist(const ClassFileStream* stream) const {
       tty->print_cr("skip writing class %s from source %s to classlist file",
                     name()->as_C_string(), stream->source());
     } else {
-      classlist_file->print_cr("%s", name()->as_C_string());
-      classlist_file->flush();
+      ClassListWriter w;
+      w.stream()->print_cr("%s", name()->as_C_string());
+      w.stream()->flush();
     }
   }
 #endif // INCLUDE_CDS
