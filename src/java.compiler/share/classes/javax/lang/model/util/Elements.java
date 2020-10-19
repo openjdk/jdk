@@ -634,13 +634,6 @@ public interface Elements {
     boolean isFunctionalInterface(TypeElement type);
 
     /**
-     * {@preview Associated with records, a preview feature of the Java language.
-     *
-     *           This method is associated with <i>records</i>, a preview
-     *           feature of the Java language. Preview features
-     *           may be removed in a future release, or upgraded to permanent
-     *           features of the Java language.}
-     *
      * Returns the record component for the given accessor. Returns null if the
      * given method is not a record component accessor.
      *
@@ -655,11 +648,8 @@ public interface Elements {
      * @param accessor the method for which the record component should be found.
      * @return the record component, or null if the given method is not an record
      * component accessor
-     * @since 14
+     * @since 16
      */
-    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
-                                 essentialAPI=false)
-    @SuppressWarnings("preview")
     default RecordComponentElement recordComponentFor(ExecutableElement accessor) {
         if (accessor.getEnclosingElement().getKind() == ElementKind.RECORD) {
             for (RecordComponentElement rec : ElementFilter.recordComponentsIn(accessor.getEnclosingElement().getEnclosedElements())) {
