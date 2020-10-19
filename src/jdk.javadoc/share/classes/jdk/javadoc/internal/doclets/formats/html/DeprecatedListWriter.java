@@ -263,11 +263,10 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
      * @throws DocFileIOException if there is a problem writing the deprecated list
      */
     public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
-        DeprecatedAPIListBuilder deprAPI = configuration.deprecatedAPIListBuilder;
-        if (deprAPI != null && !deprAPI.isEmpty()) {
+        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.DEPRECATED)) {
             DocPath filename = DocPaths.DEPRECATED_LIST;
             DeprecatedListWriter depr = new DeprecatedListWriter(configuration, filename);
-            depr.generateDeprecatedListFile(deprAPI);
+            depr.generateDeprecatedListFile(configuration.deprecatedAPIListBuilder);
         }
     }
 

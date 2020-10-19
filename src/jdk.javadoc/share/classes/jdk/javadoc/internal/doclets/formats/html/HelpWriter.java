@@ -235,7 +235,7 @@ public class HelpWriter extends HtmlDocletWriter {
         }
 
         // Deprecated
-        if (configuration.conditionalPages.contains(HtmlConfiguration.PageKind.DEPRECATED)) {
+        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.DEPRECATED)) {
             section = newHelpSection(contents.deprecatedAPI);
             Content deprBody = getContent("doclet.help.deprecated.body",
                     links.createLink(DocPaths.DEPRECATED_LIST, resources.getText("doclet.Deprecated_API")));
@@ -255,14 +255,14 @@ public class HelpWriter extends HtmlDocletWriter {
         }
 
         // Serialized Form
-        if (configuration.conditionalPages.contains(HtmlConfiguration.PageKind.SERIALIZED_FORM)) {
+        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.SERIALIZED_FORM)) {
             section = newHelpSection(contents.serializedForm)
                     .add(HtmlTree.P(getContent("doclet.help.serial_form.body")));
             contentTree.add(section);
         }
 
         // Constant Field Values
-        if (configuration.conditionalPages.contains(HtmlConfiguration.PageKind.CONSTANT_VALUES)) {
+        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.CONSTANT_VALUES)) {
             section = newHelpSection(contents.constantsSummaryTitle);
             Content constantsBody = getContent("doclet.help.constants.body",
                     links.createLink(DocPaths.CONSTANT_VALUES, resources.getText("doclet.Constants_Summary")));
@@ -271,11 +271,11 @@ public class HelpWriter extends HtmlDocletWriter {
         }
 
         // System Properties
-        if (configuration.conditionalPages.contains(HtmlConfiguration.PageKind.SYSTEM_PROPERTIES)) {
+        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.SYSTEM_PROPERTIES)) {
             section = newHelpSection(contents.systemPropertiesLabel);
-            Content constantsBody = getContent("doclet.help.systemProperties.body",
+            Content sysPropsBody = getContent("doclet.help.systemProperties.body",
                     links.createLink(DocPaths.SYSTEM_PROPERTIES, resources.getText("doclet.systemProperties")));
-            section.add(HtmlTree.P(constantsBody));
+            section.add(HtmlTree.P(sysPropsBody));
             contentTree.add(section);
         }
 

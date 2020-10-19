@@ -99,7 +99,7 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
         }
         SystemPropertiesWriter systemPropertiesGen = new SystemPropertiesWriter(configuration, fileName);
         systemPropertiesGen.buildSystemPropertiesPage();
-        configuration.conditionalPages.add(HtmlConfiguration.PageKind.SYSTEM_PROPERTIES);
+        configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.SYSTEM_PROPERTIES);
     }
 
     /**

@@ -309,7 +309,7 @@ public class Navigation {
                 addTreeLink(tree);
                 if (documentedPage == PageMode.DEPRECATED) {
                     addActivePageLink(tree, contents.deprecatedLabel,
-                            configuration.conditionalPages.contains(HtmlConfiguration.PageKind.DEPRECATED));
+                            configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.DEPRECATED));
                 } else {
                     addDeprecatedLink(tree);
                 }
@@ -863,7 +863,7 @@ public class Navigation {
     }
 
     private void addDeprecatedLink(Content tree) {
-        if (configuration.conditionalPages.contains(HtmlConfiguration.PageKind.DEPRECATED)) {
+        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.DEPRECATED)) {
             tree.add(HtmlTree.LI(links.createLink(pathToRoot.resolve(DocPaths.DEPRECATED_LIST),
                     contents.deprecatedLabel, "", "")));
         }

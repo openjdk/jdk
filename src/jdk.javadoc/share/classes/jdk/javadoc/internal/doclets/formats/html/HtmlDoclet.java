@@ -124,7 +124,7 @@ public class HtmlDoclet extends AbstractDoclet {
             DeprecatedAPIListBuilder builder = new DeprecatedAPIListBuilder(configuration);
             if (!builder.isEmpty()) {
                 configuration.deprecatedAPIListBuilder = builder;
-                configuration.conditionalPages.add(HtmlConfiguration.PageKind.DEPRECATED);
+                configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.DEPRECATED);
             }
         }
 
@@ -172,7 +172,7 @@ public class HtmlDoclet extends AbstractDoclet {
             TreeWriter.generate(configuration, classtree);
         }
 
-        if (configuration.conditionalPages.contains((HtmlConfiguration.PageKind.DEPRECATED))) {
+        if (configuration.conditionalPages.contains((HtmlConfiguration.ConditionalPage.DEPRECATED))) {
             DeprecatedListWriter.generate(configuration);
         }
 

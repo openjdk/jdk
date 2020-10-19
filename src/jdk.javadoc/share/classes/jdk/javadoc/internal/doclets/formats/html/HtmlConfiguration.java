@@ -129,11 +129,11 @@ public class HtmlConfiguration extends BaseConfiguration {
     private final HtmlOptions options;
 
     /**
-     * Kinds of pages.
+     * Kinds of conditional pages.
      */
     // Note: this should (eventually) be merged with Navigation.PageMode,
     // which performs a somewhat similar role
-    public enum PageKind {
+    public enum ConditionalPage {
         CONSTANT_VALUES, DEPRECATED, SERIALIZED_FORM, SYSTEM_PROPERTIES
     }
 
@@ -143,7 +143,7 @@ public class HtmlConfiguration extends BaseConfiguration {
      * they are required, such as when deciding whether or not to generate links
      * to these files in the navigation par, on each page, the help file, and so on.
      */
-    public final Set<PageKind> conditionalPages;
+    public final Set<ConditionalPage> conditionalPages;
 
     /**
      * Constructs the full configuration needed by the doclet, including
@@ -193,7 +193,7 @@ public class HtmlConfiguration extends BaseConfiguration {
         }
         docletVersion = v;
 
-        conditionalPages = EnumSet.noneOf(PageKind.class);
+        conditionalPages = EnumSet.noneOf(ConditionalPage.class);
     }
 
     private final Runtime.Version docletVersion;
