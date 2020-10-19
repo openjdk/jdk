@@ -812,6 +812,8 @@ private:
   bool only_has_infinite_loops();
 #endif
 
+  void log_loop_tree();
+
 public:
 
   PhaseIterGVN &igvn() const { return _igvn; }
@@ -1037,6 +1039,14 @@ public:
   static void optimize(PhaseIterGVN &igvn, LoopOptsMode mode) {
     ResourceMark rm;
     PhaseIdealLoop v(igvn, mode);
+
+    Compile* C = Compile::current();
+    if (!C->failing()) {
+      // Cleanup any modified bits
+      igvn.optimize();
+
+      v.log_loop_tree();
+    }
   }
 
   // True if the method has at least 1 irreducible loop
