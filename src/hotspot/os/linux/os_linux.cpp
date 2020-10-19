@@ -4762,7 +4762,16 @@ int os::active_processor_count() {
 
 uint os::processor_id() {
   const int id = Linux::sched_getcpu();
-  assert(id >= 0 && id < _processor_count, "Invalid processor id");
+
+  #ifndef PRODUCT
+  if (LimitedCPUsDebugging && id >= _processor_count) {
+    // Some debuggers limit the processor count without limiting
+    // the returned processor ids. Fake the processor id.
+    return 0;
+  }
+#endif
+
+  assert(id >= 0 && id < _processor_count, "Invalid processor id [%d]", id);
   return (uint)id;
 }
 

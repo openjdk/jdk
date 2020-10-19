@@ -4099,6 +4099,17 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   return JNI_OK;
 }
 
+static void override_for_debugger() {
+  // Debugging with limited number of CPUs
+  if (LimitedCPUsDebugging) {
+    FLAG_SET_ERGO_IF_DEFAULT(UseNUMA, false);
+    FLAG_SET_ERGO_IF_DEFAULT(ConcGCThreads, 1);
+    FLAG_SET_ERGO_IF_DEFAULT(ParallelGCThreads, 1);
+    FLAG_SET_ERGO_IF_DEFAULT(CICompilerCount, 2);
+  }
+}
+
+
 jint Arguments::apply_ergo() {
   // Set flags based on ergonomics.
   jint result = set_ergonomics_flags();
@@ -4106,6 +4117,8 @@ jint Arguments::apply_ergo() {
 
   // Set heap size based on available physical memory
   set_heap_size();
+
+  override_for_debugger();
 
   GCConfig::arguments()->initialize();
 

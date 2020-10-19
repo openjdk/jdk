@@ -231,6 +231,9 @@ const intx ObjectAlignmentInBytes = 8;
           "Maximum number of pages to include in the page scan procedure")  \
           range(0, max_uintx)                                               \
                                                                             \
+  notproduct(bool, LimitedCPUsDebugging, false    ,                         \
+          "For debugging with limited CPUs")                                \
+                                                                            \
   product(bool, UseAES, false,                                              \
           "Control whether AES instructions are used when available")       \
                                                                             \
