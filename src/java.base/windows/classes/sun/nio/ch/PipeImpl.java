@@ -38,7 +38,7 @@ import java.net.StandardSocketOptions;
 import java.nio.*;
 import java.nio.channels.*;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.nio.channels.spi.*;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
@@ -61,16 +61,17 @@ class PipeImpl
     private static final Random RANDOM_NUMBER_GENERATOR = new SecureRandom();
 
     // Source and sink channels
-    private SourceChannelImpl source;
-    private SinkChannelImpl sink;
+    private final SourceChannel source;
+    private final SinkChannel sink;
 
     private class Initializer
         implements PrivilegedExceptionAction<Void>
     {
 
         private final SelectorProvider sp;
-
-        private IOException ioe = null;
+        private IOException ioe;
+        SourceChannelImpl source;
+        SinkChannelImpl sink;
 
         private Initializer(SelectorProvider sp) {
             this.sp = sp;
@@ -163,37 +164,43 @@ class PipeImpl
                     try {
                         if (ssc != null)
                             ssc.close();
-                        if (sa instanceof UnixDomainSocketAddress)
-                            Files.delete(((UnixDomainSocketAddress)sa).getPath());
+                        if (sa instanceof UnixDomainSocketAddress) {
+                            Path path = ((UnixDomainSocketAddress) sa).getPath();
+                            Files.deleteIfExists(path);
+                        }
                     } catch (IOException e2) {}
                 }
             }
         }
     }
 
-    PipeImpl(final SelectorProvider sp) throws IOException {
+    /**
+     * Creates a Pipe implementation that supports buffering.
+     */
+    PipeImpl(SelectorProvider sp) throws IOException {
         this(sp, true);
     }
 
     /**
-     * Creates a PipeImpl using either UNIX channels if available
-     * or INET/6 otherwise.
+     * Creates Pipe implementation that supports optionally buffering.
      *
-     * @param sp the SelectorProvider
-     *
-     * @param buffering if false and TCP sockets being used, then TCP_NODELAY
-     *                  is set on the sink channel.
+     * @implNote The pipe uses Unix domain sockets where possible. It uses a
+     * loopback connection on older editions of Windows. When buffering is
+     * disabled then it sets TCP_NODELAY on the sink channel.
      */
-    PipeImpl(final SelectorProvider sp, boolean buffering) throws IOException {
+    PipeImpl(SelectorProvider sp, boolean buffering) throws IOException {
+        Initializer initializer = new Initializer(sp);
         try {
-            AccessController.doPrivileged(new Initializer(sp));
-            SocketChannel sc = sink.channel();
-            if (!buffering && !UnixDomainSockets.isUnixDomain(sc)) {
-                sc.setOption(StandardSocketOptions.TCP_NODELAY, true);
+            AccessController.doPrivileged(initializer);
+            SinkChannelImpl sink = initializer.sink;
+            if (sink.isNetSocket() && !buffering) {
+                sink.setOption(StandardSocketOptions.TCP_NODELAY, true);
             }
-        } catch (PrivilegedActionException x) {
-            throw (IOException)x.getCause();
+        } catch (PrivilegedActionException pae) {
+            throw (IOException) pae.getCause();
         }
+        this.source = initializer.source;
+        this.sink = initializer.sink;
     }
 
     public SourceChannel source() {

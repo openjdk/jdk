@@ -59,24 +59,11 @@ public abstract class ExtendedSocketOptions {
     public final Set<SocketOption<?>> options() { return options; }
 
     /**
-     * Return the, possibly empty, set of extended socket options available for
-     * Unix domain client sockets. Note, there are no extended
-     * Unix domain server options.
-     */
-    public final Set<SocketOption<?>> unixDomainClientOptions() {
-        return unixDomainClientOptions;
-    }
-
-    /**
      * Returns the (possibly empty) set of extended socket options for
      * stream-oriented listening sockets.
      */
     public static Set<SocketOption<?>> serverSocketOptions() {
         return getInstance().options0(SOCK_STREAM, true);
-    }
-
-    public static Set<SocketOption<?>> unixSocketOptions() {
-        return getInstance().unixDomainClientOptions();
     }
 
     /**
@@ -85,6 +72,19 @@ public abstract class ExtendedSocketOptions {
      */
     public static Set<SocketOption<?>> clientSocketOptions() {
         return getInstance().options0(SOCK_STREAM, false);
+    }
+
+    /**
+     * Return the, possibly empty, set of extended socket options available for
+     * Unix domain client sockets. Note, there are no extended
+     * Unix domain server options.
+     */
+    private final Set<SocketOption<?>> unixDomainClientOptions() {
+        return unixDomainClientOptions;
+    }
+
+    public static Set<SocketOption<?>> unixDomainSocketOptions() {
+        return getInstance().unixDomainClientOptions();
     }
 
     /**
@@ -104,10 +104,11 @@ public abstract class ExtendedSocketOptions {
     }
 
     private static boolean isStreamOption(SocketOption<?> option, boolean server) {
-        if (isUnixDomainOption(option)) {
+        if (option.name().startsWith("UDP_") || isUnixDomainOption(option)) {
             return false;
+        } else {
+            return true;
         }
-        return !option.name().startsWith("UDP_");
     }
 
     private Set<SocketOption<?>> options0(short type, boolean server) {

@@ -36,9 +36,7 @@ import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.SocketOption;
 import java.net.SocketTimeoutException;
-import java.net.StandardProtocolFamily;
 import java.net.StandardSocketOptions;
-import java.net.UnixDomainSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.AlreadyBoundException;
 import java.nio.channels.AlreadyConnectedException;
@@ -57,6 +55,9 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
+import static java.net.StandardProtocolFamily.INET;
+import static java.net.StandardProtocolFamily.INET6;
+import static java.net.StandardProtocolFamily.UNIX;
 
 import sun.net.ConnectionResetException;
 import sun.net.NetHooks;
@@ -124,40 +125,26 @@ class SocketChannelImpl
 
     // -- End of fields protected by stateLock
 
-    // Constructor for normal connecting sockets
-
     SocketChannelImpl(SelectorProvider sp) throws IOException {
-        this(sp, Net.isIPv6Available()
-                ? StandardProtocolFamily.INET6
-                : StandardProtocolFamily.INET);
-    }
-
-    private static FileDescriptor socketFor(ProtocolFamily family) throws IOException {
-        Objects.requireNonNull(family, "'family' is null");
-        if ((family != StandardProtocolFamily.INET) &&
-                (family != StandardProtocolFamily.UNIX) &&
-                (family != StandardProtocolFamily.INET6)) {
-            throw new UnsupportedOperationException("Protocol family not supported");
-        }
-        if (family == StandardProtocolFamily.UNIX) {
-            return UnixDomainSockets.socket();
-        } else if (family == StandardProtocolFamily.INET6 && !Net.isIPv6Available()) {
-            throw new UnsupportedOperationException("IPv6 not available");
-        } else {
-            return Net.socket(family, true);
-        }
+        this(sp, Net.isIPv6Available() ? INET6 : INET);
     }
 
     SocketChannelImpl(SelectorProvider sp, ProtocolFamily family) throws IOException {
-        this(sp, family, socketFor(family));
-    }
-
-    private SocketChannelImpl(SelectorProvider sp, ProtocolFamily family, FileDescriptor fd)
-      throws IOException
-    {
         super(sp);
+        Objects.requireNonNull(family, "'family' is null");
+        if ((family != INET) && (family != INET6) && (family != UNIX)) {
+            throw new UnsupportedOperationException("Protocol family not supported");
+        }
+        if (family == INET6 && !Net.isIPv6Available()) {
+            throw new UnsupportedOperationException("IPv6 not available");
+        }
+
         this.family = family;
-        this.fd = fd;
+        if (family == UNIX) {
+            this.fd = UnixDomainSockets.socket();
+        } else {
+            this.fd = Net.socket(family, true);
+        }
         this.fdVal = IOUtil.fdVal(fd);
     }
 
@@ -166,7 +153,7 @@ class SocketChannelImpl
     SocketChannelImpl(SelectorProvider sp,
                       ProtocolFamily family,
                       FileDescriptor fd,
-                      SocketAddress isa)
+                      SocketAddress remoteAddress)
         throws IOException
     {
         super(sp);
@@ -174,10 +161,28 @@ class SocketChannelImpl
         this.fd = fd;
         this.fdVal = IOUtil.fdVal(fd);
         synchronized (stateLock) {
-            this.localAddress = implLocalAddress(fd);
-            this.remoteAddress = isa;
+            if (family == UNIX) {
+                this.localAddress = UnixDomainSockets.localAddress(fd);
+            } else {
+                this.localAddress = Net.localAddress(fd);
+            }
+            this.remoteAddress = remoteAddress;
             this.state = ST_CONNECTED;
         }
+    }
+
+    /**
+     * Returns true if this channel is to a INET or INET6 socket.
+     */
+    boolean isNetSocket() {
+        return (family == INET) || (family == INET6);
+    }
+
+    /**
+     * Returns true if this channel is to a UNIX socket.
+     */
+    boolean isUnixSocket() {
+        return (family == UNIX);
     }
 
     /**
@@ -214,11 +219,12 @@ class SocketChannelImpl
     @Override
     public Socket socket() {
         synchronized (stateLock) {
-            if (family == StandardProtocolFamily.UNIX) {
-                throw new UnsupportedOperationException("protocol family not supported");
-            }
             if (socket == null) {
-                socket = SocketAdaptor.create(this);
+                if (isNetSocket()) {
+                    socket = SocketAdaptor.create(this);
+                } else {
+                    throw new UnsupportedOperationException("Not supported");
+                }
             }
             return socket;
         }
@@ -228,25 +234,11 @@ class SocketChannelImpl
     public SocketAddress getLocalAddress() throws IOException {
         synchronized (stateLock) {
             ensureOpen();
-            return getRevealedLocalAddress(localAddress);
-        }
-    }
-
-    private SocketAddress implLocalAddress(FileDescriptor fd) throws IOException {
-        if (family == StandardProtocolFamily.UNIX) {
-            return UnixDomainSockets.localAddress(fd);
-        } else {
-            return Net.localAddress(fd);
-        }
-    }
-
-    private SocketAddress getRevealedLocalAddress(SocketAddress sa) {
-        if (family == StandardProtocolFamily.UNIX) {
-            UnixDomainSocketAddress usa = (UnixDomainSocketAddress)sa;
-            return UnixDomainSockets.getRevealedLocalAddress(usa);
-        } else {
-            InetSocketAddress isa = (InetSocketAddress)sa;
-            return Net.getRevealedLocalAddress(isa);
+            if (isUnixSocket()) {
+                return UnixDomainSockets.getRevealedLocalAddress(localAddress);
+            } else {
+                return Net.getRevealedLocalAddress(localAddress);
+            }
         }
     }
 
@@ -270,20 +262,22 @@ class SocketChannelImpl
 
         synchronized (stateLock) {
             ensureOpen();
-            if (family == StandardProtocolFamily.UNIX) {
-                Net.setSocketOption(fd, name, value);
-            } else {
+
+            if (isNetSocket()) {
                 if (name == StandardSocketOptions.IP_TOS) {
-                    ProtocolFamily family = Net.isIPv6Available() ?
-                        StandardProtocolFamily.INET6 : StandardProtocolFamily.INET;
+                    // special handling for IP_TOS
                     Net.setSocketOption(fd, family, name, value);
-                } else if (name == StandardSocketOptions.SO_REUSEADDR && Net.useExclusiveBind()) {
+                    return this;
+                }
+                if (name == StandardSocketOptions.SO_REUSEADDR && Net.useExclusiveBind()) {
                     // SO_REUSEADDR emulated when using exclusive bind
-                    isReuseAddress = (Boolean)value;
-                } else {
-                    Net.setSocketOption(fd, name, value);
+                    isReuseAddress = (Boolean) value;
+                    return this;
                 }
             }
+
+            // no options that require special handling
+            Net.setSocketOption(fd, name, value);
             return this;
         }
     }
@@ -299,22 +293,20 @@ class SocketChannelImpl
 
         synchronized (stateLock) {
             ensureOpen();
-            if (family == StandardProtocolFamily.UNIX) {
-                return (T) Net.getSocketOption(fd, name);
-            } else {
-                if (name == StandardSocketOptions.SO_REUSEADDR && Net.useExclusiveBind()) {
-                    // SO_REUSEADDR emulated when using exclusive bind
-                    return (T)Boolean.valueOf(isReuseAddress);
-                }
 
-                // special handling for IP_TOS
+            if (isNetSocket()) {
                 if (name == StandardSocketOptions.IP_TOS) {
-                    ProtocolFamily family = Net.isIPv6Available() ?
-                        StandardProtocolFamily.INET6 : StandardProtocolFamily.INET;
+                    // special handling for IP_TOS
                     return (T) Net.getSocketOption(fd, family, name);
                 }
-                return (T) Net.getSocketOption(fd, name);
+                if (name == StandardSocketOptions.SO_REUSEADDR && Net.useExclusiveBind()) {
+                    // SO_REUSEADDR emulated when using exclusive bind
+                    return (T) Boolean.valueOf(isReuseAddress);
+                }
             }
+
+            // no options that require special handling
+            return (T) Net.getSocketOption(fd, name);
         }
     }
 
@@ -345,20 +337,19 @@ class SocketChannelImpl
             set.add(StandardSocketOptions.SO_SNDBUF);
             set.add(StandardSocketOptions.SO_RCVBUF);
             set.add(StandardSocketOptions.SO_LINGER);
-            set.addAll(ExtendedSocketOptions.unixSocketOptions());
+            set.addAll(ExtendedSocketOptions.unixDomainSocketOptions());
             return Collections.unmodifiableSet(set);
         }
     }
 
     @Override
     public final Set<SocketOption<?>> supportedOptions() {
-        if (family == StandardProtocolFamily.UNIX) {
+        if (isUnixSocket()) {
             return DefaultOptionsHolder.defaultUnixOptions;
         } else {
             return DefaultOptionsHolder.defaultInetOptions;
         }
     }
-
 
     /**
      * Marks the beginning of a read operation that might block.
@@ -691,10 +682,10 @@ class SocketChannelImpl
                         throw new ConnectionPendingException();
                     if (localAddress != null)
                         throw new AlreadyBoundException();
-                    if (family == StandardProtocolFamily.UNIX) {
-                        localAddress = implBindUnix(local);
+                    if (isUnixSocket()) {
+                        localAddress = unixBind(local);
                     } else {
-                        localAddress = implBindInet(local);
+                        localAddress = netBind(local);
                     }
                 }
             } finally {
@@ -706,22 +697,23 @@ class SocketChannelImpl
         return this;
     }
 
-    private SocketAddress implBindUnix(SocketAddress local) throws IOException {
+    private SocketAddress unixBind(SocketAddress local) throws IOException {
         UnixDomainSockets.checkPermission();
-        UnixDomainSocketAddress usa = UnixDomainSockets.checkAddress(local);
-        Path path = usa == null ? null : usa.getPath();
-        if (path != null && !path.toString().isEmpty()) {
-            // implicit bind for null address or empty path
-            UnixDomainSockets.bind(fd, path);
-        }
-        if (usa == null || path.toString().isEmpty()) {
+        if (local == null) {
             return UnixDomainSockets.UNNAMED;
         } else {
-            return UnixDomainSockets.localAddress(fd);
+            Path path = UnixDomainSockets.checkAddress(local).getPath();
+            if (path.toString().isEmpty()) {
+                return UnixDomainSockets.UNNAMED;
+            } else {
+                // bind to non-empty path
+                UnixDomainSockets.bind(fd, path);
+                return UnixDomainSockets.localAddress(fd);
+            }
         }
     }
 
-    private SocketAddress implBindInet(SocketAddress local) throws IOException {
+    private SocketAddress netBind(SocketAddress local) throws IOException {
         InetSocketAddress isa;
         if (local == null) {
             isa = new InetSocketAddress(Net.anyLocalAddress(family), 0);
@@ -773,8 +765,8 @@ class SocketChannelImpl
             assert state == ST_UNCONNECTED;
             this.state = ST_CONNECTIONPENDING;
 
-            if (localAddress == null && sa instanceof InetSocketAddress) {
-                InetSocketAddress isa = (InetSocketAddress)sa;
+            if (isNetSocket() && (localAddress == null)) {
+                InetSocketAddress isa = (InetSocketAddress) sa;
                 NetHooks.beforeTcpConnect(fd, isa.getAddress(), isa.getPort());
             }
             remoteAddress = sa;
@@ -801,7 +793,11 @@ class SocketChannelImpl
         if (completed) {
             synchronized (stateLock) {
                 if (state == ST_CONNECTIONPENDING) {
-                    localAddress = implLocalAddress(fd);
+                    if (isUnixSocket()) {
+                        localAddress = UnixDomainSockets.localAddress(fd);
+                    } else {
+                        localAddress = Net.localAddress(fd);
+                    }
                     state = ST_CONNECTED;
                 }
             }
@@ -811,29 +807,28 @@ class SocketChannelImpl
     /**
      * Checks the remote address to which this channel is to be connected.
      */
-    private SocketAddress checkRemote(SocketAddress sa) throws IOException {
-        if (family == StandardProtocolFamily.UNIX) {
-            Objects.requireNonNull(sa);
+    private SocketAddress checkRemote(SocketAddress sa) {
+        if (isUnixSocket()) {
             UnixDomainSockets.checkPermission();
-            UnixDomainSocketAddress usa = UnixDomainSockets.checkAddress(sa);
-            return usa;
-        }
-        InetSocketAddress isa = Net.checkAddress(sa, family);
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkConnect(isa.getAddress().getHostAddress(), isa.getPort());
-        }
-        InetAddress address = isa.getAddress();
-        if (address.isAnyLocalAddress()) {
-            int port = isa.getPort();
-            if (address instanceof Inet4Address) {
-                return new InetSocketAddress(Net.inet4LoopbackAddress(), port);
-            } else {
-                assert family == StandardProtocolFamily.INET6;
-                return new InetSocketAddress(Net.inet6LoopbackAddress(), port);
-            }
+            return UnixDomainSockets.checkAddress(sa);
         } else {
-            return isa;
+            InetSocketAddress isa = Net.checkAddress(sa, family);
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                sm.checkConnect(isa.getAddress().getHostAddress(), isa.getPort());
+            }
+            InetAddress address = isa.getAddress();
+            if (address.isAnyLocalAddress()) {
+                int port = isa.getPort();
+                if (address instanceof Inet4Address) {
+                    return new InetSocketAddress(Net.inet4LoopbackAddress(), port);
+                } else {
+                    assert family == INET6;
+                    return new InetSocketAddress(Net.inet6LoopbackAddress(), port);
+                }
+            } else {
+                return isa;
+            }
         }
     }
 
@@ -849,7 +844,12 @@ class SocketChannelImpl
                     boolean connected = false;
                     try {
                         beginConnect(blocking, sa);
-                        int n = implConnect(fd, sa);
+                        int n;
+                        if (isUnixSocket()) {
+                            n = UnixDomainSockets.connect(fd, sa);
+                        } else {
+                            n = Net.connect(family, fd, sa);
+                        }
                         if (n > 0) {
                             connected = true;
                         } else if (blocking) {
@@ -875,16 +875,6 @@ class SocketChannelImpl
             // connect failed, close the channel
             close();
             throw SocketExceptions.of(ioe, sa);
-        }
-    }
-
-    private int implConnect(FileDescriptor fd,SocketAddress sa) throws IOException {
-        if (family == StandardProtocolFamily.UNIX) {
-            UnixDomainSocketAddress usa = (UnixDomainSocketAddress)sa;
-            return UnixDomainSockets.connect(fd, usa.getPath());
-        } else {
-            InetSocketAddress isa = (InetSocketAddress)sa;
-            return Net.connect(family, fd, isa.getAddress(), isa.getPort());
         }
     }
 
@@ -925,7 +915,11 @@ class SocketChannelImpl
         if (completed) {
             synchronized (stateLock) {
                 if (state == ST_CONNECTIONPENDING) {
-                    localAddress = implLocalAddress(fd);
+                    if (isUnixSocket()) {
+                        localAddress = UnixDomainSockets.localAddress(fd);
+                    } else {
+                        localAddress = Net.localAddress(fd);
+                    }
                     state = ST_CONNECTED;
                 }
             }
@@ -1178,7 +1172,12 @@ class SocketChannelImpl
                         // change socket to non-blocking
                         lockedConfigureBlocking(false);
                         try {
-                            int n = implConnect(fd, sa);
+                            int n;
+                            if (isUnixSocket()) {
+                                n = UnixDomainSockets.connect(fd, sa);
+                            } else {
+                                n = Net.connect(family, fd, sa);
+                            }
                             connected = (n > 0) ? true : finishTimedConnect(nanos);
                         } finally {
                             // restore socket to blocking mode (if channel is open)
@@ -1443,16 +1442,6 @@ class SocketChannelImpl
         return fdVal;
     }
 
-    private String getRevealedLocalAddressAsString(SocketAddress sa) {
-        if (family == StandardProtocolFamily.UNIX) {
-            UnixDomainSocketAddress usa = (UnixDomainSocketAddress)sa;
-            return UnixDomainSockets.getRevealedLocalAddressAsString(usa);
-        } else {
-            InetSocketAddress isa = (InetSocketAddress)sa;
-            return Net.getRevealedLocalAddressAsString(isa);
-        }
-    }
-
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -1480,7 +1469,11 @@ class SocketChannelImpl
                 SocketAddress addr = localAddress();
                 if (addr != null) {
                     sb.append(" local=");
-                    sb.append(getRevealedLocalAddressAsString(addr));
+                    if (isUnixSocket()) {
+                        sb.append(UnixDomainSockets.getRevealedLocalAddressAsString(addr));
+                    } else {
+                        sb.append(Net.getRevealedLocalAddressAsString(addr));
+                    }
                 }
                 if (remoteAddress() != null) {
                     sb.append(" remote=");

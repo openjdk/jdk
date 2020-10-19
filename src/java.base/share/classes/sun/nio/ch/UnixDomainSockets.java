@@ -36,20 +36,14 @@ import java.nio.channels.UnsupportedAddressTypeException;
 import java.nio.file.FileSystems;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
-import java.security.AccessController;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivilegedAction;
 import java.security.SecureRandom;
 import java.util.Random;
 
 import sun.nio.fs.AbstractFileSystemProvider;
 
 class UnixDomainSockets {
-
-    static {
-        // Load all required native libs
-        IOUtil.load();
-    }
+    private UnixDomainSockets() { }
 
     static final UnixDomainSocketAddress UNNAMED = UnixDomainSocketAddress.of("");
 
@@ -63,8 +57,9 @@ class UnixDomainSockets {
             sm.checkPermission(np);
     }
 
-    static UnixDomainSocketAddress getRevealedLocalAddress(UnixDomainSocketAddress addr) {
-        try{
+    static UnixDomainSocketAddress getRevealedLocalAddress(SocketAddress sa) {
+        UnixDomainSocketAddress addr = (UnixDomainSocketAddress) sa;
+        try {
             checkPermission();
             // Security check passed
         } catch (SecurityException e) {
@@ -92,22 +87,16 @@ class UnixDomainSockets {
     static native byte[] remoteAddress0(FileDescriptor fd)
         throws IOException;
 
-    static String getRevealedLocalAddressAsString(UnixDomainSocketAddress addr) {
-        return System.getSecurityManager() == null ? addr.toString() : "";
+    static String getRevealedLocalAddressAsString(SocketAddress sa) {
+        return (System.getSecurityManager() != null) ? sa.toString() : "";
     }
 
     static UnixDomainSocketAddress checkAddress(SocketAddress sa) {
         if (sa == null)
-            return null;
+            throw new NullPointerException();
         if (!(sa instanceof UnixDomainSocketAddress))
             throw new UnsupportedAddressTypeException();
-        UnixDomainSocketAddress usa = (UnixDomainSocketAddress)sa;
-        return usa;
-    }
-
-    static boolean isUnixDomain(SocketChannel sc) {
-        SocketChannelImpl sci = (SocketChannelImpl)sc;
-        return sci.localAddress() instanceof UnixDomainSocketAddress;
+        return (UnixDomainSocketAddress) sa;
     }
 
     static boolean isSupported() {
@@ -151,7 +140,7 @@ class UnixDomainSockets {
      * Return a possible temporary name to bind to, which is different for each call
      * Name is of the form <temp dir>/socket_<random>
      */
-    static UnixDomainSocketAddress getTempName() throws IOException {
+    static UnixDomainSocketAddress generateTempName() throws IOException {
         String dir = UnixDomainSockets.tempDir;
         if (dir == null)
             throw new BindException("Could not locate temporary directory for sockets");
@@ -162,6 +151,10 @@ class UnixDomainSockets {
         } catch (InvalidPathException e) {
             throw new BindException("Invalid temporary directory");
         }
+    }
+
+    static int connect(FileDescriptor fd, SocketAddress sa) throws IOException {
+        return UnixDomainSockets.connect(fd, ((UnixDomainSocketAddress) sa).getPath());
     }
 
     static int connect(FileDescriptor fd, Path addr) throws IOException {
@@ -194,4 +187,8 @@ class UnixDomainSockets {
 
     static native int maxNameLen0();
 
+    static {
+        // Load all required native libs
+        IOUtil.load();
+    }
 }

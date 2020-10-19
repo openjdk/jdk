@@ -151,7 +151,7 @@ public final class StaticProperty {
      *
      * @return the {@code java.io.tmpdir} system property
      */
-    public static String javaIOTmpdir() {
+    public static String javaIoTmpDir() {
         return JAVA_IO_TMPDIR;
     }
 

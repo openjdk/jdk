@@ -77,28 +77,18 @@ public class IOHelper {
         // Log all events
         for (RecordedEvent event : events) {
             String msg = event.getEventType().getName();
-            boolean isInetSock = IOEvent.EVENT_SOCKET_READ.equals(msg) || IOEvent.EVENT_SOCKET_WRITE.equals(msg);
-            boolean isUnixSock = IOEvent.EVENT_UNIX_SOCKET_READ.equals(msg) ||
-                                 IOEvent.EVENT_UNIX_SOCKET_WRITE.equals(msg);
-            boolean isFile = IOEvent.EVENT_FILE_FORCE.equals(msg)
-                          || IOEvent.EVENT_FILE_READ.equals(msg)
-                          || IOEvent.EVENT_FILE_WRITE.equals(msg);
-
+            boolean isSocket = IOEvent.EVENT_SOCKET_READ.equals(msg) || IOEvent.EVENT_SOCKET_WRITE.equals(msg);
+            boolean isFile = IOEvent.EVENT_FILE_FORCE.equals(msg) || IOEvent.EVENT_FILE_READ.equals(msg) || IOEvent.EVENT_FILE_WRITE.equals(msg);
             boolean isFileReadOrWrite = IOEvent.EVENT_FILE_READ.equals(msg) || IOEvent.EVENT_FILE_WRITE.equals(msg);
-
-            boolean isRead = IOEvent.EVENT_FILE_READ.equals(msg)
-                          || IOEvent.EVENT_SOCKET_READ.equals(msg)
-                          || IOEvent.EVENT_UNIX_SOCKET_READ.equals(msg);
+            boolean isRead = IOEvent.EVENT_FILE_READ.equals(msg) || IOEvent.EVENT_SOCKET_READ.equals(msg);
             if (isFile) {
                 msg += " : " + Events.assertField(event, "path").getValue();
-            } else if (isInetSock) {
+            } else if (isSocket) {
                 msg += " - " + Events.assertField(event, "host").getValue();
                 msg += "." + Events.assertField(event, "address").getValue();
                 msg += "." + Events.assertField(event, "port").getValue();
-            } else if (isUnixSock) {
-                msg += " : " + Events.assertField(event, "path").getValue();
             }
-            if (isInetSock || isUnixSock || isFileReadOrWrite) {
+            if (isSocket || isFileReadOrWrite) {
                 String field = isRead ? "bytesRead" : "bytesWritten";
                 msg += " : " + Events.assertField(event, field).getValue();
             }

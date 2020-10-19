@@ -93,7 +93,7 @@ class ServerSocketAdaptor                        // package-private
 
     @Override
     public InetAddress getInetAddress() {
-        InetSocketAddress local = (InetSocketAddress)ssc.localAddress();
+        SocketAddress local = ssc.localAddress();
         if (local == null) {
             return null;
         } else {
@@ -103,7 +103,7 @@ class ServerSocketAdaptor                        // package-private
 
     @Override
     public int getLocalPort() {
-        InetSocketAddress local = (InetSocketAddress)ssc.localAddress();
+        InetSocketAddress local = (InetSocketAddress) ssc.localAddress();
         if (local == null) {
             return -1;
         } else {

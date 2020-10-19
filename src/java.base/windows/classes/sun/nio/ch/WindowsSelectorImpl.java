@@ -413,20 +413,19 @@ class WindowsSelectorImpl extends SelectorImpl {
                 // processDeregisterQueue.
                 if (me == null)
                     continue;
-                SelectionKeyImpl sk = me.ski;
+                SelectionKeyImpl ski = me.ski;
 
                 // The descriptor may be in the exceptfds set because there is
                 // OOB data queued to the socket. If there is OOB data then it
                 // is discarded and the key is not added to the selected set.
-                SelectableChannel sc = sk.channel();
-                if (isExceptFds && sc instanceof SocketChannelImpl &&
-                    !UnixDomainSockets.isUnixDomain((SocketChannelImpl)sc) &&
-                    discardUrgentData(desc))
-                {
+                SelectableChannel sc = ski.channel();
+                if (isExceptFds && (sc instanceof SocketChannelImpl)
+                        && ((SocketChannelImpl) sc).isNetSocket()
+                        && discardUrgentData(desc)) {
                     continue;
                 }
 
-                int updated = processReadyEvents(rOps, sk, action);
+                int updated = processReadyEvents(rOps, ski, action);
                 if (updated > 0 && me.updateCount != updateCount) {
                     me.updateCount = updateCount;
                     numKeysUpdated++;
