@@ -23,11 +23,12 @@
 
 /*
  * @test
- * @bug      8236539 8246774
+ * @bug      8236539
  * @summary  Relative link tags in record javadoc don't resolve
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    toolbox.ToolBox javadoc.tester.*
+ * @compile TestRecordLinks.java
  * @run main TestRecordLinks
  */
 
@@ -73,6 +74,7 @@ public class TestRecordLinks  extends JavadocTester {
 
         javadoc("-d", base.resolve("out").toString(),
                 "-sourcepath", src.toString(),
+                "--enable-preview", "--source", thisRelease,
                 "example");
         checkExit(Exit.OK);
 

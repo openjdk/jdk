@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @bug 8246774
  * @compile abstractRecord.jcod notFinalRecord.jcod oldRecordAttribute.jcod superNotJLRecord.jcod
  * @compile shortRecordAttribute.jcod twoRecordAttributes.jcod badRecordAttribute.jcod
- * @run main recordAttributeTest
+ *
+ * @run main/othervm --enable-preview recordAttributeTest
  */
 
 
@@ -37,7 +37,7 @@ public class recordAttributeTest {
     public static void runTest(String className, String cfeMessage) {
         try {
             Class newClass = Class.forName(className);
-            throw new RuntimeException("Expected ClassFormatError exception not thrown");
+            throw new RuntimeException("Expected ClasFormatError exception not thrown");
         } catch (java.lang.ClassFormatError e) {
             String eMsg = e.getMessage();
             if (!eMsg.contains(cfeMessage)) {

@@ -1,2 +1,2 @@
-IllegalAnnotation.java:10:10: compiler.err.annotation.decl.not.allowed.here
+IllegalAnnotation.java:11:10: compiler.err.annotation.decl.not.allowed.here
 1 error
