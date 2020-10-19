@@ -38,10 +38,9 @@ public:
 };
 
 class CDSIndyInfo {
-  char _ref_kind[10];
   GrowableArray<const char*>* _items;
 public:
-  CDSIndyInfo() : _items(NULL) {_ref_kind[0] = '\0';}
+  CDSIndyInfo() : _items(NULL) {}
   void add_item(const char* item) {
     if (_items == NULL) {
       _items = new GrowableArray<const char*>(9);
@@ -50,8 +49,18 @@ public:
     _items->append(item);
   }
   void add_ref_kind(int ref_kind) {
-    sprintf(_ref_kind, "%d", ref_kind);
-    _items->append(_ref_kind);
+    switch (ref_kind) {
+    case JVM_REF_getField         : _items->append("REF_getField"); break;
+    case JVM_REF_getStatic        : _items->append("REF_getStatic"); break;
+    case JVM_REF_putField         : _items->append("REF_putField"); break;
+    case JVM_REF_putStatic        : _items->append("REF_putStatic"); break;
+    case JVM_REF_invokeVirtual    : _items->append("REF_invokeVirtual"); break;
+    case JVM_REF_invokeStatic     : _items->append("REF_invokeStatic"); break;
+    case JVM_REF_invokeSpecial    : _items->append("REF_invokeSpecial"); break;
+    case JVM_REF_newInvokeSpecial : _items->append("REF_newInvokeSpecial"); break;
+    case JVM_REF_invokeInterface  : _items->append("REF_invokeInterface"); break;
+    default                       : ShouldNotReachHere();
+    }
   }
   GrowableArray<const char*>* items() {
     return _items;
