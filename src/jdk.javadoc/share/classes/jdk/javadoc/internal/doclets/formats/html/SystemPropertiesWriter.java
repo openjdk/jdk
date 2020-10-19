@@ -126,6 +126,10 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
                 .addMainContent(mainContent)
                 .setFooter(footer));
         printHtmlDocument(null, "system properties", body);
+
+        if (configuration.mainIndex != null) {
+            configuration.mainIndex.add(IndexItem.of(IndexItem.Category.TAGS, title, path));
+        }
     }
 
     /**
@@ -136,7 +140,7 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
     protected void addSystemProperties(Content content) {
         Map<String, List<IndexItem>> searchIndexMap = groupSystemProperties();
         Content separator = new StringContent(", ");
-        Table table = new Table(HtmlStyle.systemPropertiesSummary, HtmlStyle.summaryTable)
+        Table table = new Table(HtmlStyle.summaryTable)
                 .setCaption(contents.systemPropertiesSummaryLabel)
                 .setHeader(new TableHeader(contents.propertyLabel, contents.referencedIn))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);

@@ -30,7 +30,7 @@
 #include "ci/ciObject.hpp"
 #include "ci/ciSignature.hpp"
 #include "compiler/methodLiveness.hpp"
-#include "prims/methodHandles.hpp"
+#include "runtime/handles.hpp"
 #include "utilities/bitMap.hpp"
 
 class ciMethodBlocks;
@@ -356,6 +356,7 @@ class ciMethod : public ciMetadata {
   bool has_reserved_stack_access() const         { return _has_reserved_stack_access; }
   bool is_boxing_method() const;
   bool is_unboxing_method() const;
+  bool is_vector_method() const;
   bool is_object_initializer() const;
 
   bool can_be_statically_bound(ciInstanceKlass* context) const;

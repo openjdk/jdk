@@ -40,8 +40,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Flow;
 import java.util.function.Supplier;
+
 import jdk.internal.net.http.HttpRequestBuilderImpl;
 import jdk.internal.net.http.RequestPublishers;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -653,6 +655,59 @@ public abstract class HttpRequest {
          */
         public static BodyPublisher noBody() {
             return new RequestPublishers.EmptyPublisher();
+        }
+
+        /**
+         * Returns a {@code BodyPublisher} that publishes a request
+         * body consisting of the concatenation of the request bodies
+         * published by a sequence of publishers.
+         *
+         * <p> If the sequence is empty an {@linkplain #noBody() empty} publisher
+         * is returned. Otherwise, if the sequence contains a single element,
+         * that publisher is returned. Otherwise a <em>concatenation publisher</em>
+         * is returned.
+         *
+         * <p> The request body published by a <em>concatenation publisher</em>
+         * is logically equivalent to the request body that would have
+         * been published by concatenating all the bytes of each publisher
+         * in sequence.
+         *
+         * <p> Each publisher is lazily subscribed to in turn,
+         * until all the body bytes are published, an error occurs, or the
+         * concatenation publisher's subscription is cancelled.
+         * The concatenation publisher may be subscribed to more than once,
+         * which in turn may result in the publishers in the sequence being
+         * subscribed to more than once.
+         *
+         * <p> The concatenation publisher has a known content
+         * length only if all publishers in the sequence have a known content
+         * length. The {@link BodyPublisher#contentLength() contentLength}
+         * reported by the concatenation publisher is computed as follows:
+         * <ul>
+         *     <li> If any of the publishers reports an <em>{@linkplain
+         *         BodyPublisher#contentLength() unknown}</em> content length,
+         *         or if the sum of the known content lengths would exceed
+         *         {@link Long#MAX_VALUE}, the resulting
+         *         content length is <em>unknown</em>.</li>
+         *     <li> Otherwise, the resulting content length is the sum of the
+         *         known content lengths, a number between
+         *         {@code 0} and {@link Long#MAX_VALUE}, inclusive.</li>
+         * </ul>
+         *
+         * @implNote If the concatenation publisher's subscription is
+         * {@linkplain Flow.Subscription#cancel() cancelled}, or an error occurs
+         * while publishing the bytes, not all publishers in the sequence may
+         * be subscribed to.
+         *
+         * @param publishers a sequence of publishers.
+         * @return An aggregate publisher that publishes a request body
+         * logically equivalent to the concatenation of all bytes published
+         * by each publisher in the sequence.
+         *
+         * @since 16
+         */
+        public static BodyPublisher concat(BodyPublisher... publishers) {
+            return RequestPublishers.concat(Objects.requireNonNull(publishers));
         }
     }
 }
