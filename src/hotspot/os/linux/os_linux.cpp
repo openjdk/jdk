@@ -3217,7 +3217,17 @@ void os::Linux::rebuild_cpu_to_node_map() {
         if (cpu_map[j] != 0) {
           for (size_t k = 0; k < BitsPerCLong; k++) {
             if (cpu_map[j] & (1UL << k)) {
-              cpu_to_node()->at_put(j * BitsPerCLong + k, closest_node);
+              int cpu_index = j * BitsPerCLong + k;
+
+#ifndef PRODUCT
+              if (UseDebuggerErgo1 && cpu_index >= (int)cpu_num) {
+                // Some debuggers limit the processor count without
+                // intercepting the NUMA APIs. Just fake the values.
+                cpu_index = 0;
+              }
+#endif
+
+              cpu_to_node()->at_put(cpu_index, closest_node);
             }
           }
         }
@@ -4763,8 +4773,8 @@ int os::active_processor_count() {
 uint os::processor_id() {
   const int id = Linux::sched_getcpu();
 
-  #ifndef PRODUCT
-  if (LimitedCPUsDebugging && id >= _processor_count) {
+#ifndef PRODUCT
+  if (UseDebuggerErgo1 && id >= _processor_count) {
     // Some debuggers limit the processor count without limiting
     // the returned processor ids. Fake the processor id.
     return 0;

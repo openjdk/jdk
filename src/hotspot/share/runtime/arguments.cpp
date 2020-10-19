@@ -3900,6 +3900,22 @@ bool Arguments::handle_deprecated_print_gc_flags() {
   return true;
 }
 
+static void apply_debugger_ergo() {
+  if (UseDebuggerErgo) {
+    // Turn on sub-flags
+    FLAG_SET_ERGO_IF_DEFAULT(UseDebuggerErgo1, true);
+    FLAG_SET_ERGO_IF_DEFAULT(UseDebuggerErgo2, true);
+  }
+
+  if (UseDebuggerErgo2) {
+    // Debugging with limited number of CPUs
+    FLAG_SET_ERGO_IF_DEFAULT(UseNUMA, false);
+    FLAG_SET_ERGO_IF_DEFAULT(ConcGCThreads, 1);
+    FLAG_SET_ERGO_IF_DEFAULT(ParallelGCThreads, 1);
+    FLAG_SET_ERGO_IF_DEFAULT(CICompilerCount, 2);
+  }
+}
+
 // Parse entry point called from JNI_CreateJavaVM
 
 jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
@@ -4096,19 +4112,10 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   }
 #endif
 
+  apply_debugger_ergo();
+
   return JNI_OK;
 }
-
-static void override_for_debugger() {
-  // Debugging with limited number of CPUs
-  if (LimitedCPUsDebugging) {
-    FLAG_SET_ERGO_IF_DEFAULT(UseNUMA, false);
-    FLAG_SET_ERGO_IF_DEFAULT(ConcGCThreads, 1);
-    FLAG_SET_ERGO_IF_DEFAULT(ParallelGCThreads, 1);
-    FLAG_SET_ERGO_IF_DEFAULT(CICompilerCount, 2);
-  }
-}
-
 
 jint Arguments::apply_ergo() {
   // Set flags based on ergonomics.
@@ -4117,8 +4124,6 @@ jint Arguments::apply_ergo() {
 
   // Set heap size based on available physical memory
   set_heap_size();
-
-  override_for_debugger();
 
   GCConfig::arguments()->initialize();
 
