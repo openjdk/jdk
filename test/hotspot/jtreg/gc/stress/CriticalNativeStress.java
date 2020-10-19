@@ -55,6 +55,17 @@ import jdk.test.lib.Utils;
  * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu        -Xcomp -Xmx512M -XX:+CriticalJNINatives gc.stress.CriticalNativeStress
  * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive -Xcomp -Xmx512M -XX:+CriticalJNINatives gc.stress.CriticalNativeStress
  */
+
+/*
+ * @test CriticalNativeStress
+ * @key randomness
+ * @bug 8199868
+ * @library / /test/lib
+ * @requires os.arch =="x86_64" | os.arch == "amd64" | os.arch=="x86" | os.arch=="i386"
+ * @summary test argument unpacking nmethod wrapper of critical native method
+ * @run main/othervm/native -Xcomp -Xmx512M -XX:+CriticalJNINatives gc.stress.CriticalNativeStress
+ */
+
 public class CriticalNativeStress {
     // CYCLES and THREAD_PER_CASE are used to tune the tests for different GC settings,
     // so that they can execrise enough GC cycles and not OOM

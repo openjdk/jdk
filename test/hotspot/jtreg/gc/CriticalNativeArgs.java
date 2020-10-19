@@ -50,6 +50,15 @@ package gc;
  * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:+UnlockExperimentalVMOptions -XX:ShenandoahGCMode=iu        -Xcomp -Xmx512M -XX:+CriticalJNINatives gc.CriticalNativeArgs
  * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:+UnlockExperimentalVMOptions -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive -Xcomp -Xmx512M -XX:+CriticalJNINatives gc.CriticalNativeArgs
  */
+
+/*
+ * @test CriticalNativeStress
+ * @bug 8199868
+ * @library /
+ * @requires os.arch =="x86_64" | os.arch == "amd64" | os.arch=="x86" | os.arch=="i386"
+ * @summary test argument unpacking nmethod wrapper of critical native method
+ * @run main/othervm/native -Xcomp -Xmx512M -XX:+CriticalJNINatives gc.CriticalNativeArgs
+ */
 public class CriticalNativeArgs {
     public static void main(String[] args) {
         int[] arr = new int[2];

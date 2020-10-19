@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,6 @@ void CompiledMethod::init_defaults() {
   }
   _has_unsafe_access          = 0;
   _has_method_handle_invokes  = 0;
-  _lazy_critical_native       = 0;
   _has_wide_vectors           = 0;
 }
 

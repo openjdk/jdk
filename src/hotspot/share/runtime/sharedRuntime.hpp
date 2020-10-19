@@ -486,9 +486,6 @@ class SharedRuntime: AllStatic {
                                           BasicType ret_type,
                                           address critical_entry);
 
-  // Block before entering a JNI critical method
-  static void block_for_jni_critical(JavaThread* thread);
-
   // Pin/Unpin object
   static oopDesc* pin_object(JavaThread* thread, oopDesc* obj);
   static void unpin_object(JavaThread* thread, oopDesc* obj);
