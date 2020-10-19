@@ -38,6 +38,8 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "prims/methodHandles.hpp"
 
+static constexpr CodeBuffer::csize_t native_invoker_size = 1024;
+
 void generate_invoke_native(MacroAssembler* _masm, const ABIDescriptor& abi, const BufferLayout& layout) {
 
 #if 0
@@ -190,7 +192,7 @@ jlong ProgrammableInvoker::generate_adapter(JNIEnv* env, jobject jabi, jobject j
     const ABIDescriptor abi = parseABIDescriptor(env, jabi);
     const BufferLayout layout = parseBufferLayout(env, jlayout);
 
-    BufferBlob* _invoke_native_blob = BufferBlob::create("invoke_native_blob", MethodHandles::adapter_code_size);
+    BufferBlob* _invoke_native_blob = BufferBlob::create("invoke_native_blob", native_invoker_size);
 
     CodeBuffer code2(_invoke_native_blob);
     ProgrammableInvokerGenerator g2(&code2, &abi, &layout);

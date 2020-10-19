@@ -39,6 +39,8 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "classfile/symbolTable.hpp"
 
+static constexpr CodeBuffer::csize_t upcall_stub_size = 1024;
+
 extern struct JavaVM_ main_vm;
 
 static struct {
@@ -119,7 +121,7 @@ static void upcall_helper(jobject rec, address buff) {
 
 static address generate_upcall_stub(jobject rec, const ABIDescriptor& abi, const BufferLayout& layout) {
   ResourceMark rm;
-  CodeBuffer buffer("upcall_stub", 1024, 1024);
+  CodeBuffer buffer("upcall_stub", 1024, upcall_stub_size);
 
   MacroAssembler* _masm = new MacroAssembler(&buffer);
   int stack_alignment_C = 16; // bytes
