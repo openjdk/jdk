@@ -73,7 +73,7 @@ static const char* utf8_constants[] = {
   "()Z",          // 8
   "end",          // 9
   "shouldCommit", // 10
-  "startTime",    // 11 
+  "startTime",    // 11
   "(Ljava/lang/Thread;)V", // 12// LAST_REQUIRED_UTF8
   "Ljdk/jfr/internal/handlers/EventHandler;", // 13
   "Ljava/lang/Object;", // 14

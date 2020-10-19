@@ -58,9 +58,7 @@ public class TestCustomThreadJavaEvent {
     private static final int EVENTS_PER_THREAD = 50;
     private static final int THREAD_COUNT = 100;
 
-    public static class MyEvent extends Event {
-        
-    }
+    public static class MyEvent extends Event {}
 
     public static void main(String... args) throws IOException, InterruptedException {
         Recording r = new Recording();

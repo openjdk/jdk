@@ -153,7 +153,7 @@ traceid JfrStackTraceRepository::record_async(Thread* thread, int skip) {
     void do_thread(Thread* th) {
       Atomic::store(&_traceid, record(th, _skip));
     }
-    
+
     public:
     AsyncRecordClosure(int skip) : HandshakeClosure("JfrStackTraceRepository_async_record"), _skip(skip), _traceid(0) {}
     traceid trace_id() const { return _traceid; }
