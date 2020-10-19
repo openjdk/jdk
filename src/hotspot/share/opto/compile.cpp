@@ -3426,6 +3426,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     }
     break;
   case Op_Loop:
+    assert(!n->as_Loop()->is_transformed_long_loop(), "should have been turned into a counted loop");
   case Op_CountedLoop:
   case Op_OuterStripMinedLoop:
     if (n->as_Loop()->is_inner_loop()) {
