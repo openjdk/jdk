@@ -39,6 +39,7 @@ import static java.lang.Boolean.parseBoolean;
 import static java.net.StandardProtocolFamily.INET;
 import static java.net.StandardProtocolFamily.INET6;
 import static jdk.test.lib.net.IPSupport.*;
+import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertThrows;
 
 /*
@@ -317,7 +318,9 @@ public class ProtocolFamilies {
 
     // Tests the specified default implementation of SelectorProvider
     @Test
-    public void testCustomProvider() {
+    public void testCustomProvider() throws IOException {
+        assertNull(customerSelectorProvider.inheritedChannel());
+
         assertThrows(NPE, () -> customerSelectorProvider.openSocketChannel(null));
         assertThrows(NPE, () -> customerSelectorProvider.openServerSocketChannel(null));
 
