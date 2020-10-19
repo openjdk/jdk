@@ -26,16 +26,13 @@
 package com.sun.net.httpserver;
 
 import java.net.InetSocketAddress;
-
-//BEGIN_TIGER_EXCLUDE
 import javax.net.ssl.SSLParameters;
-//END_TIGER_EXCLUDE
 
 /**
  * Represents the set of parameters for each https connection negotiated with
  * clients. One of these is created and passed to
  * {@link HttpsConfigurator#configure(HttpsParameters)} for every incoming https
- * connection,in order to determine the parameters to use.
+ * connection, in order to determine the parameters to use.
  *
  * <p> The underlying SSL parameters may be established either via the set/get
  * methods of this class, or else via a {@link javax.net.ssl.SSLParameters}
@@ -74,7 +71,6 @@ public abstract class HttpsParameters {
      */
     public abstract InetSocketAddress getClientAddress();
 
-//BEGIN_TIGER_EXCLUDE
     /**
      * Sets the {@link SSLParameters} to use for this {@code HttpsParameters}.
      * The parameters must be supported by the {@link SSLContext} contained
@@ -88,7 +84,6 @@ public abstract class HttpsParameters {
      * unsupported
      */
     public abstract void setSSLParameters(SSLParameters params);
-//END_TIGER_EXCLUDE
 
     /**
      * Returns a copy of the array of ciphersuites or {@code null} if none
