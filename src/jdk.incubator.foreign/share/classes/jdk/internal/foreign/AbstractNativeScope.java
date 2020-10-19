@@ -1,24 +1,24 @@
 /*
- * copyright (c) 2020 oracle and/or its affiliates. all rights reserved.
- * do not alter or remove copyright notices or this file header.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * this code is free software; you can redistribute it and/or modify it
- * under the terms of the gnu general public license version 2 only, as
- * published by the free software foundation.  oracle designates this
- * particular file as subject to the "classpath" exception as provided
- * by oracle in the license file that accompanied this code.
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
- * this code is distributed in the hope that it will be useful, but without
- * any warranty; without even the implied warranty of merchantability or
- * fitness for a particular purpose.  see the gnu general public license
- * version 2 for more details (a copy is included in the license file that
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
- * you should have received a copy of the gnu general public license version
- * 2 along with this work; if not, write to the free software foundation,
- * inc., 51 franklin st, fifth floor, boston, ma 02110-1301 usa.
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * please contact oracle, 500 oracle parkway, redwood shores, ca 94065 usa
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
