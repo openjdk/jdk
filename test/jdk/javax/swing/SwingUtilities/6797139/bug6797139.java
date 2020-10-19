@@ -22,7 +22,6 @@
  */
 
 /* @test
- * @key headful
  * @bug 6797139
  * @summary tests that JButton's text is not incorrectly truncated
  */
