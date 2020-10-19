@@ -141,14 +141,12 @@ public class CDS {
     // Throw exception on invalid input
     private static void validateInputLines(String[] lines) {
         for (String s: lines) {
-            // There might be a trailing '\f' for line in ExtraClassListFile, do trim first.
-            String line = s.trim();
-            if (!line.startsWith("[LF_RESOLVE]") && !line.startsWith("[SPECIES_RESOLVE]")) {
-                throw new IllegalArgumentException("Wrong prefix: " + line);
+            if (!s.startsWith("[LF_RESOLVE]") && !s.startsWith("[SPECIES_RESOLVE]")) {
+                throw new IllegalArgumentException("Wrong prefix: " + s);
             }
 
-            String[] parts = line.split(" ");
-            boolean isLF = line.startsWith("[LF_RESOLVE]");
+            String[] parts = s.split(" ");
+            boolean isLF = s.startsWith("[LF_RESOLVE]");
 
             if (isLF) {
                 if (parts.length != 4) {
@@ -176,7 +174,7 @@ public class CDS {
     private static Object[] generateLambdaFormHolderClasses(String[] lines) {
         Objects.requireNonNull(lines);
         validateInputLines(lines);
-        Stream<String> lineStream = Arrays.stream(lines).map(String::trim);
+        Stream<String> lineStream = Arrays.stream(lines);
         Map<String, byte[]> result = SharedSecrets.getJavaLangInvokeAccess().generateHolderClasses(lineStream);
         int size = result.size();
         Object[] retArray = new Object[size * 2];
