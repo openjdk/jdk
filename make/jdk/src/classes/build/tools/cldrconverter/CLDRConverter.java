@@ -118,6 +118,10 @@ public class CLDRConverter {
     private static String tzDataDir;
     private static final Map<String, String> canonicalTZMap = new HashMap<>();
 
+    // rules maps
+    static Map<String, String> pluralRules;
+    static Map<String, String> dayPeriodRules;
+
     static enum DraftType {
         UNCONFIRMED,
         PROVISIONAL,
@@ -262,6 +266,10 @@ public class CLDRConverter {
         parseSupplemental();
         parseBCP47();
 
+        // rules maps
+        pluralRules = generateRules(handlerPlurals);
+        dayPeriodRules = generateRules(handlerDayPeriodRule);
+
         List<Bundle> bundles = readBundleList();
         convertBundles(bundles);
 
@@ -271,12 +279,6 @@ public class CLDRConverter {
 
             // Generate Windows tzmappings
             generateWindowsTZMappings();
-
-            // Generate Plural rules
-            generatePluralRules();
-
-            // Generate dayPeriod rules
-            generateDayPeriodRules();
         }
     }
 
@@ -819,7 +821,9 @@ public class CLDRConverter {
         "TimePatterns",
         "DatePatterns",
         "DateTimePatterns",
-        "DateTimePatternChars"
+        "DateTimePatternChars",
+        "PluralRules",
+        "DayPeriodRules",
     };
 
     private static Map<String, Object> extractFormatData(Map<String, Object> map, String id) {
@@ -1135,81 +1139,21 @@ public class CLDRConverter {
     }
 
     /**
-     * Generate ResourceBundle source file for plural rules. The generated
-     * class is {@code sun.text.resources.PluralRules} which has one public
-     * two dimensional array {@code rulesArray}. Each array element consists
-     * of two elements that designate the locale and the locale's plural rules
-     * string. The latter has the syntax from Unicode Consortium's
-     * <a href="http://unicode.org/reports/tr35/tr35-numbers.html#Plural_rules_syntax">
-     * Plural rules syntax</a>. {@code samples} and {@code "other"} are being ommited.
-     *
-     * @throws Exception
+     * Generates rules map for Plural rules and DayPeriod rules. The key is the locale id,
+     * and the value is rules, defined by the LDML spec. Each rule consists of {@code type:rule}
+     * notation, concatenated with a ";" as a delimiter.
+     * @param handler handler containing rules
+     * @return the map
      */
-    private static void generatePluralRules() throws Exception {
-        generateRules("Plural");
-    }
-
-    private static void generateDayPeriodRules() throws Exception {
-        generateRules("DayPeriod");
-    }
-
-    private static void generateRules(String type) throws Exception {
-        Files.createDirectories(Paths.get(DESTINATION_DIR, "sun", "text", "resources"));
-        Files.write(Paths.get(DESTINATION_DIR, "sun", "text", "resources", type + "Rules.java"),
-            Stream.concat(
-                Stream.concat(
-                    Stream.of(
-                            "package sun.text.resources;",
-                            "public final class " + type + "Rules {",
-                            "    public static final String[][] rulesArray = {"
-                    ),
-                    rulesStream(type).sorted()
-                ),
-                Stream.of(
-                    "    };",
-                    "}"
-                )
-            ).collect(Collectors.toList()),
-            StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-    }
-
-    private static Stream<String> rulesStream(String type) {
-        switch (type) {
-            case "Plural":
-                return pluralRulesStream();
-            case "DayPeriod":
-                return dayPeriodRulesStream();
-            default:
-                throw new InternalError("unknown rule type");
-        }
-    }
-
-    private static Stream<String> pluralRulesStream() {
-        return handlerPlurals.getData().entrySet().stream()
-            .filter(e -> !(e.getValue()).isEmpty())
-            .map(e -> {
-                String loc = e.getKey();
+    private static Map<String, String> generateRules(AbstractLDMLHandler<Map<String, String>> handler) {
+        return handler.getData().entrySet().stream()
+            .collect(Collectors.toMap(Map.Entry::getKey, e -> {
                 Map<String, String> rules = e.getValue();
-                return "        {\"" + loc + "\", \"" +
-                    rules.entrySet().stream()
-                        .map(rule -> rule.getKey() + ":" + rule.getValue().replaceFirst("@.*", ""))
-                        .map(String::trim)
-                        .collect(Collectors.joining(";")) + "\"},";
-            });
-    }
-
-    private static Stream<String> dayPeriodRulesStream() {
-        return handlerDayPeriodRule.getData().entrySet().stream()
-            .filter(e -> !(e.getValue()).isEmpty())
-            .map(e -> {
-                String loc = e.getKey();
-                Map<String, String> rules = e.getValue();
-                return "        {\"" + loc + "\", \"" +
-                    rules.entrySet().stream()
-                        .map(rule -> rule.getKey() + ":" + rule.getValue().replaceFirst("@.*", ""))
-                        .map(String::trim)
-                        .collect(Collectors.joining(";")) + "\"},";
-            });
+                return rules.entrySet().stream()
+                    .map(rule -> rule.getKey() + ":" + rule.getValue().replaceFirst("@.*", ""))
+                    .map(String::trim)
+                    .collect(Collectors.joining(";"));
+            }));
     }
 
     // for debug
@@ -1230,4 +1174,3 @@ public class CLDRConverter {
             .forEach(System.out::println);
     }
 }
-

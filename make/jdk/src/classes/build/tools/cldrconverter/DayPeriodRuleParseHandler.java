@@ -102,14 +102,14 @@ class DayPeriodRuleParseHandler extends AbstractLDMLHandler<Map<String, String>>
                         final String rule = (String) entry.getValue();
                         String locales = ((KeyContainer) (currentContainer.getParent())).getKey();
                         Arrays.stream(locales.split("\\s"))
-                                .forEach(loc -> {
-                                    Map<String, String> rules = get(loc);
-                                    if (rules == null) {
-                                        rules = new HashMap<>();
-                                        put(loc, rules);
-                                    }
-                                    rules.put(type, rule);
-                                });
+                            .forEach(loc -> {
+                                Map<String, String> rules = get(loc);
+                                if (rules == null) {
+                                    rules = new HashMap<>();
+                                    put(loc, rules);
+                                }
+                                rules.put(type, rule);
+                            });
                     }
                     break;
             }

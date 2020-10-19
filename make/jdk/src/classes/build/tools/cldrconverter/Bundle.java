@@ -375,6 +375,16 @@ class Bundle {
             }
         }
 
+        // rules
+        String rule = CLDRConverter.pluralRules.get(id);
+        if (rule != null) {
+            myMap.put("PluralRules", rule);
+        }
+        rule = CLDRConverter.dayPeriodRules.get(id);
+        if (rule != null) {
+            myMap.put("DayPeriodRules", rule);
+        }
+
         // Remove all duplicates
         if (Objects.nonNull(parentsMap)) {
             for (Iterator<String> it = myMap.keySet().iterator(); it.hasNext();) {

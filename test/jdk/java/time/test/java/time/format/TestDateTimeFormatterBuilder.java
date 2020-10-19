@@ -593,43 +593,43 @@ public class TestDateTimeFormatterBuilder {
     @DataProvider(name="dayPeriodParse")
     Object[][] data_dayPeriodParse() {
         return new Object[][] {
-            {TextStyle.FULL, Locale.US, 0, 0, "midnight"},
-            {TextStyle.FULL, Locale.US, 1, 30, "at night"},
-            {TextStyle.FULL, Locale.US, 6, 0, "AM"},
-            {TextStyle.FULL, Locale.US, 9, 0, "in the morning"},
-            {TextStyle.FULL, Locale.US, 12, 0, "noon"},
-            {TextStyle.FULL, Locale.US, 15, 0, "in the afternoon"},
-            {TextStyle.FULL, Locale.US, 18, 0, "PM"},
-            {TextStyle.FULL, Locale.US, 19, 30, "in the evening"},
+                {TextStyle.FULL, Locale.US, 0, 0, "midnight"},
+                {TextStyle.FULL, Locale.US, 1, 30, "at night"},
+                {TextStyle.FULL, Locale.US, 6, 0, "AM"},
+                {TextStyle.FULL, Locale.US, 9, 0, "in the morning"},
+                {TextStyle.FULL, Locale.US, 12, 0, "noon"},
+                {TextStyle.FULL, Locale.US, 15, 0, "in the afternoon"},
+                {TextStyle.FULL, Locale.US, 18, 0, "PM"},
+                {TextStyle.FULL, Locale.US, 19, 30, "in the evening"},
 
-            {TextStyle.FULL, Locale.JAPAN, 0, 0, "\u771f\u591c\u4e2d"},
-            {TextStyle.FULL, Locale.JAPAN, 1, 30, "\u591c\u4e2d"},
-            {TextStyle.FULL, Locale.JAPAN, 6, 0, "\u5348\u524d"},
-            {TextStyle.FULL, Locale.JAPAN, 8, 0, "\u671d"},
-            {TextStyle.FULL, Locale.JAPAN, 12, 0, "\u6b63\u5348"},
-            {TextStyle.FULL, Locale.JAPAN, 14, 0, "\u663c"},
-            {TextStyle.FULL, Locale.JAPAN, 17, 30, "\u5915\u65b9"},
-            {TextStyle.FULL, Locale.JAPAN, 18, 0, "\u5348\u5f8c"},
-            {TextStyle.FULL, Locale.JAPAN, 21, 0, "\u591c"},
+                {TextStyle.FULL, Locale.JAPAN, 0, 0, "\u771f\u591c\u4e2d"},
+                {TextStyle.FULL, Locale.JAPAN, 1, 30, "\u591c\u4e2d"},
+                {TextStyle.FULL, Locale.JAPAN, 6, 0, "\u5348\u524d"},
+                {TextStyle.FULL, Locale.JAPAN, 8, 0, "\u671d"},
+                {TextStyle.FULL, Locale.JAPAN, 12, 0, "\u6b63\u5348"},
+                {TextStyle.FULL, Locale.JAPAN, 14, 0, "\u663c"},
+                {TextStyle.FULL, Locale.JAPAN, 17, 30, "\u5915\u65b9"},
+                {TextStyle.FULL, Locale.JAPAN, 18, 0, "\u5348\u5f8c"},
+                {TextStyle.FULL, Locale.JAPAN, 21, 0, "\u591c"},
 
-            {TextStyle.NARROW, Locale.US, 0, 0, "mi"},
-            {TextStyle.NARROW, Locale.US, 1, 30, "at night"},
-            {TextStyle.NARROW, Locale.US, 6, 0, "a"},
-            {TextStyle.NARROW, Locale.US, 9, 0, "in the morning"},
-            {TextStyle.NARROW, Locale.US, 12, 0, "n"},
-            {TextStyle.NARROW, Locale.US, 15, 0, "in the afternoon"},
-            {TextStyle.NARROW, Locale.US, 18, 0, "p"},
-            {TextStyle.NARROW, Locale.US, 19, 30, "in the evening"},
+                {TextStyle.NARROW, Locale.US, 0, 0, "mi"},
+                {TextStyle.NARROW, Locale.US, 1, 30, "at night"},
+                {TextStyle.NARROW, Locale.US, 6, 0, "a"},
+                {TextStyle.NARROW, Locale.US, 9, 0, "in the morning"},
+                {TextStyle.NARROW, Locale.US, 12, 0, "n"},
+                {TextStyle.NARROW, Locale.US, 15, 0, "in the afternoon"},
+                {TextStyle.NARROW, Locale.US, 18, 0, "p"},
+                {TextStyle.NARROW, Locale.US, 19, 30, "in the evening"},
 
-            {TextStyle.NARROW, Locale.JAPAN, 0, 0, "\u771f\u591c\u4e2d"},
-            {TextStyle.NARROW, Locale.JAPAN, 1, 30, "\u591c\u4e2d"},
-            {TextStyle.NARROW, Locale.JAPAN, 6, 0, "\u5348\u524d"},
-            {TextStyle.NARROW, Locale.JAPAN, 8, 0, "\u671d"},
-            {TextStyle.NARROW, Locale.JAPAN, 12, 0, "\u6b63\u5348"},
-            {TextStyle.NARROW, Locale.JAPAN, 14, 0, "\u663c"},
-            {TextStyle.NARROW, Locale.JAPAN, 17, 30, "\u5915\u65b9"},
-            {TextStyle.NARROW, Locale.JAPAN, 18, 0, "\u5348\u5f8c"},
-            {TextStyle.NARROW, Locale.JAPAN, 21, 0, "\u591c"},
+                {TextStyle.NARROW, Locale.JAPAN, 0, 0, "\u771f\u591c\u4e2d"},
+                {TextStyle.NARROW, Locale.JAPAN, 1, 30, "\u591c\u4e2d"},
+                {TextStyle.NARROW, Locale.JAPAN, 6, 0, "\u5348\u524d"},
+                {TextStyle.NARROW, Locale.JAPAN, 8, 0, "\u671d"},
+                {TextStyle.NARROW, Locale.JAPAN, 12, 0, "\u6b63\u5348"},
+                {TextStyle.NARROW, Locale.JAPAN, 14, 0, "\u663c"},
+                {TextStyle.NARROW, Locale.JAPAN, 17, 30, "\u5915\u65b9"},
+                {TextStyle.NARROW, Locale.JAPAN, 18, 0, "\u5348\u5f8c"},
+                {TextStyle.NARROW, Locale.JAPAN, 21, 0, "\u591c"},
         };
     }
     @Test (dataProvider="dayPeriodParse")
@@ -639,6 +639,28 @@ public class TestDateTimeFormatterBuilder {
         var p = f.parse(dayPeriod);
         assertEquals(p.getLong(HOUR_OF_DAY), hod);
         assertEquals(p.getLong(MINUTE_OF_HOUR), moh);
+    }
+
+    @DataProvider(name="dayPeriodParsePattern")
+    Object[][] data_dayPeriodParsePattern() {
+        return new Object[][] {
+            {"H B", "23 at night", 23},
+            {"H B", "3 at night", 3},
+            {"K B", "11 at night", 23},
+            {"K B", "3 at night", 3},
+            {"K B", "11 in the morning", 11},
+            {"h B", "11 at night", 23},
+            {"h B", "3 at night", 3},
+            {"h B", "11 in the morning", 11},
+        };
+    }
+
+    @Test (dataProvider="dayPeriodParsePattern")
+    public void test_dayPeriodParsePattern(String pattern, String hourDayPeriod, long expected) throws Exception {
+        builder.appendPattern(pattern);
+        DateTimeFormatter f = builder.toFormatter().withLocale(Locale.US);
+        var p = f.parse(hourDayPeriod);
+        assertEquals(p.getLong(HOUR_OF_DAY), expected);
     }
 
     @DataProvider(name="dayPeriodParseInvalid")

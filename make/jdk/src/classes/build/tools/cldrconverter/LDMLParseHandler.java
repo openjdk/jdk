@@ -317,18 +317,18 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
             // create string array entry for am/pm.
             currentWidth = attributes.getValue("type");
             switch (currentWidth) {
-                case "wide":
-                    pushStringArrayEntry(qName, attributes, "AmPmMarkers/" + getContainerKey(), 12);
-                    break;
-                case "narrow":
-                    pushStringArrayEntry(qName, attributes, "narrow.AmPmMarkers/" + getContainerKey(), 12);
-                    break;
-                case "abbreviated":
-                    pushStringArrayEntry(qName, attributes, "abbreviated.AmPmMarkers/" + getContainerKey(), 12);
-                    break;
-                default:
-                    pushIgnoredContainer(qName);
-                    break;
+            case "wide":
+                pushStringArrayEntry(qName, attributes, "AmPmMarkers/" + getContainerKey(), 12);
+                break;
+            case "narrow":
+                pushStringArrayEntry(qName, attributes, "narrow.AmPmMarkers/" + getContainerKey(), 12);
+                break;
+            case "abbreviated":
+                pushStringArrayEntry(qName, attributes, "abbreviated.AmPmMarkers/" + getContainerKey(), 12);
+                break;
+            default:
+                pushIgnoredContainer(qName);
+                break;
             }
             break;
         case "dayPeriod":
@@ -336,45 +336,45 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
             // add to string array entry of AmPmMarkers element
             if (attributes.getValue("alt") == null) {
                 switch (attributes.getValue("type")) {
-                    case "am":
-                        pushStringArrayElement(qName, attributes, 0);
-                        break;
-                    case "pm":
-                        pushStringArrayElement(qName, attributes, 1);
-                        break;
-                    case "midnight":
-                        pushStringArrayElement(qName, attributes, 2);
-                        break;
-                    case "noon":
-                        pushStringArrayElement(qName, attributes, 3);
-                        break;
-                    case "morning1":
-                        pushStringArrayElement(qName, attributes, 4);
-                        break;
-                    case "morning2":
-                        pushStringArrayElement(qName, attributes, 5);
-                        break;
-                    case "afternoon1":
-                        pushStringArrayElement(qName, attributes, 6);
-                        break;
-                    case "afternoon2":
-                        pushStringArrayElement(qName, attributes, 7);
-                        break;
-                    case "evening1":
-                        pushStringArrayElement(qName, attributes, 8);
-                        break;
-                    case "evening2":
-                        pushStringArrayElement(qName, attributes, 9);
-                        break;
-                    case "night1":
-                        pushStringArrayElement(qName, attributes, 10);
-                        break;
-                    case "night2":
-                        pushStringArrayElement(qName, attributes, 11);
-                        break;
-                    default:
-                        pushIgnoredContainer(qName);
-                        break;
+                case "am":
+                    pushStringArrayElement(qName, attributes, 0);
+                    break;
+                case "pm":
+                    pushStringArrayElement(qName, attributes, 1);
+                    break;
+                case "midnight":
+                    pushStringArrayElement(qName, attributes, 2);
+                    break;
+                case "noon":
+                    pushStringArrayElement(qName, attributes, 3);
+                    break;
+                case "morning1":
+                    pushStringArrayElement(qName, attributes, 4);
+                    break;
+                case "morning2":
+                    pushStringArrayElement(qName, attributes, 5);
+                    break;
+                case "afternoon1":
+                    pushStringArrayElement(qName, attributes, 6);
+                    break;
+                case "afternoon2":
+                    pushStringArrayElement(qName, attributes, 7);
+                    break;
+                case "evening1":
+                    pushStringArrayElement(qName, attributes, 8);
+                    break;
+                case "evening2":
+                    pushStringArrayElement(qName, attributes, 9);
+                    break;
+                case "night1":
+                    pushStringArrayElement(qName, attributes, 10);
+                    break;
+                case "night2":
+                    pushStringArrayElement(qName, attributes, 11);
+                    break;
+                default:
+                    pushIgnoredContainer(qName);
+                    break;
                 }
             } else {
                 // discard alt values

@@ -72,9 +72,17 @@ import java.time.chrono.JapaneseChronology;
 import java.time.temporal.ChronoField;
 import java.time.temporal.IsoFields;
 import java.time.temporal.TemporalField;
-import java.util.*;
 import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.ResourceBundle;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -102,8 +110,6 @@ class DateTimeTextProvider {
 
     // Singleton instance
     private static final DateTimeTextProvider INSTANCE = new DateTimeTextProvider();
-
-
 
     DateTimeTextProvider() {}
 
@@ -436,18 +442,16 @@ class DateTimeTextProvider {
                     // Stand-alone isn't applicable to AM/PM.
                     continue;
                 }
-
-                Map<Long, String> map = new HashMap<>();
-                int calStyle = textStyle.toCalendarStyle();
                 Map<String, Integer> displayNames = CalendarDataUtility.retrieveJavaTimeFieldValueNames(
-                        "gregory", Calendar.AM_PM, calStyle, locale);
+                        "gregory", Calendar.AM_PM, textStyle.toCalendarStyle(), locale);
                 if (displayNames != null) {
+                    Map<Long, String> map = new HashMap<>();
                     for (Entry<String, Integer> entry : displayNames.entrySet()) {
                         map.put((long) entry.getValue(), entry.getKey());
                     }
-                }
-                if (!map.isEmpty()) {
-                    styleMap.put(textStyle, map);
+                    if (!map.isEmpty()) {
+                        styleMap.put(textStyle, map);
+                    }
                 }
             }
             return new LocaleStore(styleMap);

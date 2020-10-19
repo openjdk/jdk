@@ -122,10 +122,10 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import sun.text.resources.DayPeriodRules;
 import sun.text.spi.JavaTimeDateTimePatternProvider;
 import sun.util.locale.provider.CalendarDataUtility;
 import sun.util.locale.provider.LocaleProviderAdapter;
+import sun.util.locale.provider.LocaleResources;
 import sun.util.locale.provider.TimeZoneNameUtility;
 
 /**
@@ -197,7 +197,6 @@ public final class DateTimeFormatterBuilder {
      * The index of the last variable width value parser.
      */
     private int valueParserIndex = -1;
-
 
     /**
      * Gets the formatting pattern for date and time styles for a locale and chronology.
@@ -1460,22 +1459,23 @@ public final class DateTimeFormatterBuilder {
      * <a href="https://unicode.org/reports/tr35/tr35-dates.html#dayPeriods">"day periods"
      * </a> element.
      * <p>
-     * During formatting, the day period is obtained from {@code HOUR_OF_DAY} and
-     * {@code MINUTE_OF_HOUR} if exist. It will be mapped to a day period type defined
-     * in LDML, such as "morning1" and then it will be translated into text. Mapping to
-     * a day period type and its translation both depend on the locale in the formatter.
+     * During formatting, the day period is obtained from {@code HOUR_OF_DAY}, and
+     * optionally {@code MINUTE_OF_HOUR} if exist. It will be mapped to a day period
+     * type defined in LDML, such as "morning1" and then it will be translated into
+     * text. Mapping to a day period type and its translation both depend on the
+     * locale in the formatter.
      * <p>
-     * During parsing, the text will be parsed into a day period type first. If neither
-     * {@code HOUR_OF_DAY} nor {@code MINUTE_OF_HOUR} exist, then the day period type
-     * is resolved to {@code HOUR_OF_DAY} and {@code MINUTE_OF_HOUR} with the mid-point
-     * of the day period. For example, if the parsed day period type is
-     * "morning1" and the period defined for it in the formatter locale is from 00:00
-     * to 06:00, then '3' is set to {@code HOUR_OF_DAY} and '0' to
-     * {@code MINUTE_OF_HOUR}. Otherwise those time fields remain intact.
-     * If {@code HOUR_OF_DAY} and {@code MINUTE_OF_HOUR} exist, those
-     * values are checked with the parsed day period, and if those time fields are outside
-     * the parsed day period, {@link DateTimeException} is thrown.
-     * Optionally if {@code AMPM_OF_DAY} exists, it will also be overridden.
+     * During parsing, the text will be parsed into a day period type first. If
+     * {@code HOUR_OF_DAY}, and optionally {@code MINUTE_OF_HOUR} exists,
+     * those values are validated with the parsed day period. If they are within the
+     * parsed day period, those values remain intact, otherwise {@code DateTimeException}
+     * is thrown. If {@code HOUR_OF_AMPM} exists and validated with the day period,
+     * {@code HOUR_OF_DAY} is derived from the parsed day period. If neither
+     * {@code HOUR_OF_DAY} nor {@code HOUR_OF_AMPM} exists, {@code HOUR_OF_DAY} and
+     * {@code MINUTE_OF_HOUR} are resolved to the mid-point of the day period.
+     * For example, if the parsed day period type is "night1" and the period defined
+     * for it in the formatter locale is from 21:00 to 06:00, then {@code HOUR_OF_DAY}
+     * is set to '1' and {@code MINUTE_OF_HOUR} set to '30'.
      *
      * @param style the text style to use, not null
      * @return this, for chaining, not null
@@ -1489,7 +1489,6 @@ public final class DateTimeFormatterBuilder {
         appendInternal(new DayPeriodPrinterParser(style));
         return this;
     }
-
 
     //-----------------------------------------------------------------------
     /**
@@ -5053,7 +5052,7 @@ public final class DateTimeFormatterBuilder {
             Locale locale = context.getLocale();
             LocaleStore store = findDayPeriodStore(locale);
             final long val = value;
-            final var map = getDayPeriodMap(locale);
+            final var map = DayPeriod.getDayPeriodMap(locale);
             value = map.keySet().stream()
                     .filter(k -> k.includes(val))
                     .min(DayPeriod.DPCOMPARATOR)
@@ -5079,7 +5078,7 @@ public final class DateTimeFormatterBuilder {
                     Entry<String, Long> entry = it.next();
                     String itText = entry.getKey();
                     if (context.subSequenceEquals(itText, 0, parseText, position, itText.length())) {
-                        context.setParsedDayPeriod(getDayPeriod(context.getLocale(), entry.getValue()));
+                        context.setParsedDayPeriod(DayPeriod.ofLocale(context.getLocale(), entry.getValue()));
                         return position + itText.length();
                     }
                 }
@@ -5092,51 +5091,44 @@ public final class DateTimeFormatterBuilder {
             return "Text(DayPeriod," + textStyle + ")";
         }
 
-        private static final ConcurrentMap<Locale, LocaleStore> DAY_PERIOD_STORE = new ConcurrentHashMap<>(16, 0.75f, 2);
-        private LocaleStore findDayPeriodStore(Locale locale) {
-            LocaleStore store = DAY_PERIOD_STORE.get(locale);
-            if (store == null) {
-                store = createDayPeriodStore(locale);
-                DAY_PERIOD_STORE.putIfAbsent(locale, store);
-                store = DAY_PERIOD_STORE.get(locale);
-            }
-            return store;
-        }
+        private static final ConcurrentMap<Locale, LocaleStore> DAYPERIOD_LOCALESTORE = new ConcurrentHashMap<>();
+        private static LocaleStore findDayPeriodStore(Locale locale) {
+            return DAYPERIOD_LOCALESTORE.computeIfAbsent(locale, loc -> {
+                Map<TextStyle, Map<Long, String>> styleMap = new HashMap<>();
 
-        private LocaleStore createDayPeriodStore(Locale locale) {
-            Map<TextStyle, Map<Long, String>> styleMap = new HashMap<>();
-
-            for (TextStyle textStyle : TextStyle.values()) {
-                if (textStyle.isStandalone()) {
-                    // Stand-alone isn't applicable to day period.
-                    continue;
-                }
-
-                Map<Long, String> map = new HashMap<>();
-                int calStyle = textStyle.toCalendarStyle();
-                var periodMap = getDayPeriodMap(locale);
-                periodMap.forEach((key, value) -> {
-                    String displayName = CalendarDataUtility.retrieveJavaTimeFieldValueName(
-                            "gregory", Calendar.AM_PM, value.intValue(), calStyle, locale);
-                    if (displayName != null) {
-                        map.put(value, displayName);
-                    } else {
-                        periodMap.remove(key);
+                for (TextStyle textStyle : TextStyle.values()) {
+                    if (textStyle.isStandalone()) {
+                        // Stand-alone isn't applicable to day period.
+                        continue;
                     }
-                });
-                if (!map.isEmpty()) {
-                    styleMap.put(textStyle, map);
+
+                    Map<Long, String> map = new HashMap<>();
+                    int calStyle = textStyle.toCalendarStyle();
+                    var periodMap = DayPeriod.getDayPeriodMap(loc);
+                    periodMap.forEach((key, value) -> {
+                        String displayName = CalendarDataUtility.retrieveJavaTimeFieldValueName(
+                                "gregory", Calendar.AM_PM, value.intValue(), calStyle, loc);
+                        if (displayName != null) {
+                            map.put(value, displayName);
+                        } else {
+                            periodMap.remove(key);
+                        }
+                    });
+                    if (!map.isEmpty()) {
+                        styleMap.put(textStyle, map);
+                    }
                 }
-            }
-            return new LocaleStore(styleMap);
+                return new LocaleStore(styleMap);
+            });
         }
     }
 
-    private final static Map<Locale, Map<DayPeriod, Long>> DAY_PERIOD_CACHE = new ConcurrentHashMap<>();
+    private final static Map<Locale, Map<DayPeriod, Long>> DAYPERIOD_CACHE = new ConcurrentHashMap<>();
     /**
      * DayPeriod class that represents a DayPeriod defined in CLDR.
      */
     static final class DayPeriod {
+        // comparator based on the duration of the day period.
         private static final Comparator<DayPeriod> DPCOMPARATOR = (dp1, dp2) -> (int)(dp1.duration() - dp2.duration());
 
         private final long from;
@@ -5211,23 +5203,23 @@ public final class DateTimeFormatterBuilder {
                 default -> throw new InternalError("invalid day period type");
             };
         }
-    }
 
-    private static final Pattern RULE = Pattern.compile("(?<type>[a-z12]+):(?<from>\\d{2}):00(-(?<to>\\d{2}))*");
-    /**
-     * Returns the DayPeriod to array index map for a locale.
-     *
-     * @param locale  the locale, not null
-     * @return the DayPeriod to index map
-     */
-    private static Map<DayPeriod, Long> getDayPeriodMap(Locale locale) {
-        return DAY_PERIOD_CACHE.computeIfAbsent(locale, l -> {
-            final Map<DayPeriod, Long> pm = new ConcurrentHashMap<>();
-            Arrays.stream(DayPeriodRules.rulesArray)
-                    .filter(ra -> ra[0].equals(l.getLanguage()))
-                    .flatMap(ra -> Arrays.stream(ra[1].split(";")))
-                    .forEach(period -> {
-                        Matcher m = RULE.matcher(period);
+        private static final Pattern RULE = Pattern.compile("(?<type>[a-z12]+):(?<from>\\d{2}):00(-(?<to>\\d{2}))*");
+        /**
+         * Returns the DayPeriod to array index map for a locale.
+         *
+         * @param locale  the locale, not null
+         * @return the DayPeriod to index map
+         */
+        static Map<DayPeriod, Long> getDayPeriodMap(Locale locale) {
+            return DAYPERIOD_CACHE.computeIfAbsent(locale, l -> {
+                LocaleResources lr = LocaleProviderAdapter.getResourceBundleBased()
+                        .getLocaleResources(CalendarDataUtility.findRegionOverride(l));
+                String dayPeriodRules = lr.getRules()[1];
+                final Map<DayPeriod, Long> pm = new ConcurrentHashMap<>();
+                Arrays.stream(dayPeriodRules.split(";"))
+                    .forEach(rule -> {
+                        Matcher m = RULE.matcher(rule);
                         if (m.find()) {
                             String from = m.group("from");
                             String to = m.group("to");
@@ -5244,17 +5236,39 @@ public final class DateTimeFormatterBuilder {
                         }
                     });
 
-            // add am/pm
-            pm.putIfAbsent(new DayPeriod(0, 720, 0), 0L);
-            pm.putIfAbsent(new DayPeriod(720, 1_440, 1), 1L);
-            return pm;
-        });
-    }
+                // add am/pm
+                pm.putIfAbsent(new DayPeriod(0, 720, 0), 0L);
+                pm.putIfAbsent(new DayPeriod(720, 1_440, 1), 1L);
+                return pm;
+            });
+        }
 
-    static DateTimeFormatterBuilder.DayPeriod getDayPeriod(Locale locale, long index) {
-        return DAY_PERIOD_CACHE.get(locale).keySet().stream()
+        /**
+         * Returns the DayPeriod singleton for the locale and index.
+         * @param locale desired locale
+         * @param index resource bundle array index
+         * @return a DayPeriod instance
+         */
+        static DayPeriod ofLocale(Locale locale, long index) {
+            return DAYPERIOD_CACHE.get(locale).keySet().stream()
                 .filter(dp -> dp.getIndex() == index)
                 .findAny()
                 .orElseThrow();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            DayPeriod dayPeriod = (DayPeriod) o;
+            return from == dayPeriod.from &&
+                    to == dayPeriod.to &&
+                    index == dayPeriod.index;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(from, to, index);
+        }
     }
 }

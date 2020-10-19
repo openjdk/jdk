@@ -25,7 +25,7 @@
  * @test
  * @bug 8000983 8008577 8247781
  * @summary Unit test for narrow names support. This test is locale data-dependent
- *          and assumes that both JRE and CLDR have the same narrow names if not
+ *          and assumes that both COMPAT and CLDR have the same narrow names if not
  *          explicitly specified.
  * @modules jdk.localedata
  * @comment Locale providers: COMPAT,SPI
