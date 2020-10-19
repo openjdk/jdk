@@ -135,6 +135,8 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
       if (cg->does_virtual_dispatch()) {
         cg_intrinsic = cg;
         cg = NULL;
+      } else if (should_delay_vector_inlining(callee, jvms)) {
+        return CallGenerator::for_late_inline(callee, cg);
       } else {
         return cg;
       }
@@ -185,6 +187,8 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
             return CallGenerator::for_string_late_inline(callee, cg);
           } else if (should_delay_boxing_inlining(callee, jvms)) {
             return CallGenerator::for_boxing_late_inline(callee, cg);
+          } else if (should_delay_vector_reboxing_inlining(callee, jvms)) {
+            return CallGenerator::for_vector_reboxing_late_inline(callee, cg);
           } else if ((should_delay || AlwaysIncrementalInline)) {
             return CallGenerator::for_late_inline(callee, cg);
           }
@@ -420,6 +424,14 @@ bool Compile::should_delay_boxing_inlining(ciMethod* call_method, JVMState* jvms
     return aggressive_unboxing();
   }
   return false;
+}
+
+bool Compile::should_delay_vector_inlining(ciMethod* call_method, JVMState* jvms) {
+  return EnableVectorSupport && call_method->is_vector_method();
+}
+
+bool Compile::should_delay_vector_reboxing_inlining(ciMethod* call_method, JVMState* jvms) {
+  return EnableVectorSupport && (call_method->intrinsic_id() == vmIntrinsics::_VectorRebox);
 }
 
 // uncommon-trap call-sites where callee is unloaded, uninitialized or will not link

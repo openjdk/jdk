@@ -1353,6 +1353,11 @@ bool ciMethod::is_unboxing_method() const {
   return false;
 }
 
+bool ciMethod::is_vector_method() const {
+  return (holder() == ciEnv::current()->vector_VectorSupport_klass()) &&
+         (intrinsic_id() != vmIntrinsics::_none);
+}
+
 BCEscapeAnalyzer  *ciMethod::get_bcea() {
 #ifdef COMPILER2
   if (_bcea == NULL) {

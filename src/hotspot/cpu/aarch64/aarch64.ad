@@ -2410,6 +2410,12 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
       break;
     case Op_MulVL:
       return false;
+    case Op_VectorLoadShuffle:
+    case Op_VectorRearrange:
+      if (vlen < 4) {
+        return false;
+      }
+      break;
     default:
       break;
     }
@@ -2419,6 +2425,10 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
 
 const bool Matcher::has_predicated_vectors(void) {
   return UseSVE > 0;
+}
+
+bool Matcher::supports_vector_variable_shifts(void) {
+  return true;
 }
 
 const int Matcher::float_pressure(int default_pressure_threshold) {
@@ -2466,11 +2476,18 @@ const int Matcher::min_vector_size(const BasicType bt) {
   if ((UseSVE > 0) && (MaxVectorSize >= 16)) {
     // Currently vector length less than SVE vector register size is not supported.
     return max_size;
-  } else {
-    //  For the moment limit the vector size to 8 bytes with NEON.
+  } else { // NEON
+    // Limit the vector size to 8 bytes
     int size = 8 / type2aelembytes(bt);
+    if (bt == T_BYTE) {
+      // To support vector api shuffle/rearrange.
+      size = 4;
+    } else if (bt == T_BOOLEAN) {
+      // To support vector api load/store mask.
+      size = 2;
+    }
     if (size < 2) size = 2;
-    return size;
+    return MIN2(size,max_size);
   }
 }
 
@@ -2489,6 +2506,9 @@ const uint Matcher::vector_ideal_reg(int len) {
     return Op_VecA;
   }
   switch(len) {
+    // For 16-bit/32-bit mask vector, reuse VecD.
+    case  2:
+    case  4:
     case  8: return Op_VecD;
     case 16: return Op_VecX;
   }
@@ -3131,6 +3151,12 @@ encode %{
   // END Non-volatile memory access
 
   // Vector loads and stores
+  enc_class aarch64_enc_ldrvH(vecD dst, memory mem) %{
+    FloatRegister dst_reg = as_FloatRegister($dst$$reg);
+    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldr, dst_reg, MacroAssembler::H,
+       $mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
+  %}
+
   enc_class aarch64_enc_ldrvS(vecD dst, memory mem) %{
     FloatRegister dst_reg = as_FloatRegister($dst$$reg);
     loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldr, dst_reg, MacroAssembler::S,
@@ -3146,6 +3172,12 @@ encode %{
   enc_class aarch64_enc_ldrvQ(vecX dst, memory mem) %{
     FloatRegister dst_reg = as_FloatRegister($dst$$reg);
     loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldr, dst_reg, MacroAssembler::Q,
+       $mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
+  %}
+
+  enc_class aarch64_enc_strvH(vecD src, memory mem) %{
+    FloatRegister src_reg = as_FloatRegister($src$$reg);
+    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::str, src_reg, MacroAssembler::H,
        $mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}
 
@@ -4245,6 +4277,26 @@ operand immI_le_4()
 operand immI_31()
 %{
   predicate(n->get_int() == 31);
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immI_2()
+%{
+  predicate(n->get_int() == 2);
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immI_4()
+%{
+  predicate(n->get_int() == 4);
   match(ConI);
 
   op_cost(0);
@@ -11222,6 +11274,7 @@ instruct rShiftL_reg_imm(iRegLNoSp dst, iRegL src1, immI src2) %{
 %}
 
 // BEGIN This section of the file is automatically generated. Do not edit --------------
+// This section is generated from aarch64_ad.m4
 
 
 // This pattern is automatically generated from aarch64_ad.m4
@@ -16848,6 +16901,7 @@ instruct replicate2D(vecX dst, vRegD src)
 
 instruct reduce_add2I(iRegINoSp dst, iRegIorL2I isrc, vecD vsrc, iRegINoSp tmp, iRegINoSp tmp2)
 %{
+  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_INT);
   match(Set dst (AddReductionVI isrc vsrc));
   ins_cost(INSN_COST);
   effect(TEMP tmp, TEMP tmp2);
@@ -16867,6 +16921,7 @@ instruct reduce_add2I(iRegINoSp dst, iRegIorL2I isrc, vecD vsrc, iRegINoSp tmp, 
 
 instruct reduce_add4I(iRegINoSp dst, iRegIorL2I isrc, vecX vsrc, vecX vtmp, iRegINoSp itmp)
 %{
+  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_INT);
   match(Set dst (AddReductionVI isrc vsrc));
   ins_cost(INSN_COST);
   effect(TEMP vtmp, TEMP itmp);
@@ -16885,6 +16940,7 @@ instruct reduce_add4I(iRegINoSp dst, iRegIorL2I isrc, vecX vsrc, vecX vtmp, iReg
 
 instruct reduce_mul2I(iRegINoSp dst, iRegIorL2I isrc, vecD vsrc, iRegINoSp tmp)
 %{
+  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_INT);
   match(Set dst (MulReductionVI isrc vsrc));
   ins_cost(INSN_COST);
   effect(TEMP tmp, TEMP dst);
@@ -16904,6 +16960,7 @@ instruct reduce_mul2I(iRegINoSp dst, iRegIorL2I isrc, vecD vsrc, iRegINoSp tmp)
 
 instruct reduce_mul4I(iRegINoSp dst, iRegIorL2I isrc, vecX vsrc, vecX vtmp, iRegINoSp itmp)
 %{
+  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_INT);
   match(Set dst (MulReductionVI isrc vsrc));
   ins_cost(INSN_COST);
   effect(TEMP vtmp, TEMP itmp, TEMP dst);
@@ -17985,8 +18042,7 @@ instruct vabs2F(vecD dst, vecD src)
   ins_cost(INSN_COST * 3);
   format %{ "fabs  $dst,$src\t# vector (2S)" %}
   ins_encode %{
-    __ fabs(as_FloatRegister($dst$$reg), __ T2S,
-            as_FloatRegister($src$$reg));
+    __ fabs(as_FloatRegister($dst$$reg), __ T2S, as_FloatRegister($src$$reg));
   %}
   ins_pipe(vunop_fp64);
 %}
@@ -17998,8 +18054,7 @@ instruct vabs4F(vecX dst, vecX src)
   ins_cost(INSN_COST * 3);
   format %{ "fabs  $dst,$src\t# vector (4S)" %}
   ins_encode %{
-    __ fabs(as_FloatRegister($dst$$reg), __ T4S,
-            as_FloatRegister($src$$reg));
+    __ fabs(as_FloatRegister($dst$$reg), __ T4S, as_FloatRegister($src$$reg));
   %}
   ins_pipe(vunop_fp128);
 %}
@@ -18011,8 +18066,7 @@ instruct vabs2D(vecX dst, vecX src)
   ins_cost(INSN_COST * 3);
   format %{ "fabs  $dst,$src\t# vector (2D)" %}
   ins_encode %{
-    __ fabs(as_FloatRegister($dst$$reg), __ T2D,
-            as_FloatRegister($src$$reg));
+    __ fabs(as_FloatRegister($dst$$reg), __ T2D, as_FloatRegister($src$$reg));
   %}
   ins_pipe(vunop_fp128);
 %}
@@ -18153,7 +18207,8 @@ instruct vxor16B(vecX dst, vecX src1, vecX src2)
 
 // ------------------------------ Shift ---------------------------------------
 instruct vshiftcnt8B(vecD dst, iRegIorL2I cnt) %{
-  predicate(n->as_Vector()->length_in_bytes() == 8);
+  predicate(n->as_Vector()->length_in_bytes() == 4 ||
+            n->as_Vector()->length_in_bytes() == 8);
   match(Set dst (LShiftCntV cnt));
   match(Set dst (RShiftCntV cnt));
   format %{ "dup  $dst, $cnt\t# shift count vector (8B)" %}
@@ -18977,12 +19032,12 @@ instruct vpopcount4I(vecX dst, vecX src) %{
     "uaddlp  $dst, $dst\t# vector (8H)"
   %}
   ins_encode %{
-     __ cnt(as_FloatRegister($dst$$reg), __ T16B,
-            as_FloatRegister($src$$reg));
-     __ uaddlp(as_FloatRegister($dst$$reg), __ T16B,
-               as_FloatRegister($dst$$reg));
-     __ uaddlp(as_FloatRegister($dst$$reg), __ T8H,
-               as_FloatRegister($dst$$reg));
+    __ cnt(as_FloatRegister($dst$$reg), __ T16B,
+           as_FloatRegister($src$$reg));
+    __ uaddlp(as_FloatRegister($dst$$reg), __ T16B,
+              as_FloatRegister($dst$$reg));
+    __ uaddlp(as_FloatRegister($dst$$reg), __ T8H,
+              as_FloatRegister($dst$$reg));
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -18996,12 +19051,12 @@ instruct vpopcount2I(vecD dst, vecD src) %{
     "uaddlp  $dst, $dst\t# vector (4H)"
   %}
   ins_encode %{
-     __ cnt(as_FloatRegister($dst$$reg), __ T8B,
-            as_FloatRegister($src$$reg));
-     __ uaddlp(as_FloatRegister($dst$$reg), __ T8B,
-               as_FloatRegister($dst$$reg));
-     __ uaddlp(as_FloatRegister($dst$$reg), __ T4H,
-               as_FloatRegister($dst$$reg));
+    __ cnt(as_FloatRegister($dst$$reg), __ T8B,
+           as_FloatRegister($src$$reg));
+    __ uaddlp(as_FloatRegister($dst$$reg), __ T8B,
+              as_FloatRegister($dst$$reg));
+    __ uaddlp(as_FloatRegister($dst$$reg), __ T4H,
+              as_FloatRegister($dst$$reg));
   %}
   ins_pipe(pipe_class_default);
 %}

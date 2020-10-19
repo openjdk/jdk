@@ -128,22 +128,7 @@ class ThreadStateTransition : public StackObj {
 
 class ThreadInVMForHandshake : public ThreadStateTransition {
   const JavaThreadState _original_state;
-
-  void transition_back() {
-    // This can be invoked from transition states and must return to the original state properly
-    assert(_thread->thread_state() == _thread_in_vm, "should only call when leaving VM after handshake");
-
-    _thread->set_thread_state(_original_state);
-
-    if (_original_state != _thread_blocked_trans &&  _original_state != _thread_in_vm_trans &&
-        _thread->has_special_runtime_exit_condition()) {
-      _thread->handle_special_runtime_exit_condition(
-          !_thread->is_at_poll_safepoint() && (_original_state != _thread_in_native_trans));
-    }
-  }
-
  public:
-
   ThreadInVMForHandshake(JavaThread* thread) : ThreadStateTransition(thread),
       _original_state(thread->thread_state()) {
 
@@ -158,7 +143,8 @@ class ThreadInVMForHandshake : public ThreadStateTransition {
   }
 
   ~ThreadInVMForHandshake() {
-    transition_back();
+    assert(_thread->thread_state() == _thread_in_vm, "should only call when leaving VM after handshake");
+    _thread->set_thread_state(_original_state);
   }
 
 };

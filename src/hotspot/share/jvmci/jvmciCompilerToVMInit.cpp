@@ -162,16 +162,16 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
 JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
   JVMCIObjectArray vmIntrinsics = JVMCIENV->new_VMIntrinsicMethod_array(vmIntrinsics::ID_LIMIT - 1, JVMCI_CHECK_NULL);
   int index = 0;
-  vmSymbols::SID kls_sid = vmSymbols::NO_SID;
+  vmSymbolID kls_sid = vmSymbolID::NO_SID;
   JVMCIObject kls_str;
 #define VM_SYMBOL_TO_STRING(s) \
-  JVMCIENV->create_string(vmSymbols::symbol_at(vmSymbols::VM_SYMBOL_ENUM_NAME(s)), JVMCI_CHECK_NULL)
-#define VM_INTRINSIC_INFO(id, kls, name, sig, ignore_fcode) {             \
-    vmSymbols::SID sid = vmSymbols::VM_SYMBOL_ENUM_NAME(kls);             \
-    if (kls_sid != sid) {                                                 \
-      kls_str = VM_SYMBOL_TO_STRING(kls);                                 \
-      kls_sid = sid;                                                      \
-    }                                                                     \
+  JVMCIENV->create_string(vmSymbols::symbol_at(VM_SYMBOL_ENUM_NAME(s)), JVMCI_CHECK_NULL)
+#define VM_INTRINSIC_INFO(id, kls, name, sig, ignore_fcode) {            \
+    vmSymbolID sid = VM_SYMBOL_ENUM_NAME(kls);                           \
+    if (kls_sid != sid) {                                                \
+      kls_str = VM_SYMBOL_TO_STRING(kls);                                \
+      kls_sid = sid;                                                     \
+    }                                                                    \
     JVMCIObject name_str = VM_SYMBOL_TO_STRING(name);                    \
     JVMCIObject sig_str = VM_SYMBOL_TO_STRING(sig);                      \
     JVMCIObject vmIntrinsicMethod = JVMCIENV->new_VMIntrinsicMethod(kls_str, name_str, sig_str, (jint) vmIntrinsics::id, JVMCI_CHECK_NULL); \

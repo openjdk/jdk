@@ -430,7 +430,7 @@ static RegMask *init_input_masks( uint size, RegMask &ret_adr, RegMask &fp ) {
   return rms;
 }
 
-#define NOF_STACK_MASKS (3*6+6)
+#define NOF_STACK_MASKS (3*12)
 
 // Create the initial stack mask used by values spilling to the stack.
 // Disallow any debug info in outgoing argument areas by setting the
@@ -472,6 +472,20 @@ void Matcher::init_first_stack_mask() {
   idealreg2spillmask  [Op_VecX] = &rms[21];
   idealreg2spillmask  [Op_VecY] = &rms[22];
   idealreg2spillmask  [Op_VecZ] = &rms[23];
+
+  idealreg2debugmask  [Op_VecA] = &rms[24];
+  idealreg2debugmask  [Op_VecS] = &rms[25];
+  idealreg2debugmask  [Op_VecD] = &rms[26];
+  idealreg2debugmask  [Op_VecX] = &rms[27];
+  idealreg2debugmask  [Op_VecY] = &rms[28];
+  idealreg2debugmask  [Op_VecZ] = &rms[29];
+
+  idealreg2mhdebugmask[Op_VecA] = &rms[30];
+  idealreg2mhdebugmask[Op_VecS] = &rms[31];
+  idealreg2mhdebugmask[Op_VecD] = &rms[32];
+  idealreg2mhdebugmask[Op_VecX] = &rms[33];
+  idealreg2mhdebugmask[Op_VecY] = &rms[34];
+  idealreg2mhdebugmask[Op_VecZ] = &rms[35];
 
   OptoReg::Name i;
 
@@ -520,13 +534,19 @@ void Matcher::init_first_stack_mask() {
   if (Matcher::vector_size_supported(T_BYTE,4)) {
     *idealreg2spillmask[Op_VecS] = *idealreg2regmask[Op_VecS];
      idealreg2spillmask[Op_VecS]->OR(C->FIRST_STACK_mask());
+  } else {
+    *idealreg2spillmask[Op_VecS] = RegMask::Empty;
   }
+
   if (Matcher::vector_size_supported(T_FLOAT,2)) {
     // For VecD we need dual alignment and 8 bytes (2 slots) for spills.
     // RA guarantees such alignment since it is needed for Double and Long values.
     *idealreg2spillmask[Op_VecD] = *idealreg2regmask[Op_VecD];
      idealreg2spillmask[Op_VecD]->OR(aligned_stack_mask);
+  } else {
+    *idealreg2spillmask[Op_VecD] = RegMask::Empty;
   }
+
   if (Matcher::vector_size_supported(T_FLOAT,4)) {
     // For VecX we need quadro alignment and 16 bytes (4 slots) for spills.
     //
@@ -544,7 +564,10 @@ void Matcher::init_first_stack_mask() {
      assert(aligned_stack_mask.is_AllStack(), "should be infinite stack");
     *idealreg2spillmask[Op_VecX] = *idealreg2regmask[Op_VecX];
      idealreg2spillmask[Op_VecX]->OR(aligned_stack_mask);
+  } else {
+    *idealreg2spillmask[Op_VecX] = RegMask::Empty;
   }
+
   if (Matcher::vector_size_supported(T_FLOAT,8)) {
     // For VecY we need octo alignment and 32 bytes (8 slots) for spills.
     OptoReg::Name in = OptoReg::add(_in_arg_limit, -1);
@@ -556,7 +579,10 @@ void Matcher::init_first_stack_mask() {
      assert(aligned_stack_mask.is_AllStack(), "should be infinite stack");
     *idealreg2spillmask[Op_VecY] = *idealreg2regmask[Op_VecY];
      idealreg2spillmask[Op_VecY]->OR(aligned_stack_mask);
+  } else {
+    *idealreg2spillmask[Op_VecY] = RegMask::Empty;
   }
+
   if (Matcher::vector_size_supported(T_FLOAT,16)) {
     // For VecZ we need enough alignment and 64 bytes (16 slots) for spills.
     OptoReg::Name in = OptoReg::add(_in_arg_limit, -1);
@@ -568,6 +594,8 @@ void Matcher::init_first_stack_mask() {
      assert(aligned_stack_mask.is_AllStack(), "should be infinite stack");
     *idealreg2spillmask[Op_VecZ] = *idealreg2regmask[Op_VecZ];
      idealreg2spillmask[Op_VecZ]->OR(aligned_stack_mask);
+  } else {
+    *idealreg2spillmask[Op_VecZ] = RegMask::Empty;
   }
 
   if (Matcher::supports_scalable_vector()) {
@@ -622,12 +650,26 @@ void Matcher::init_first_stack_mask() {
   *idealreg2debugmask  [Op_RegD] = *idealreg2spillmask[Op_RegD];
   *idealreg2debugmask  [Op_RegP] = *idealreg2spillmask[Op_RegP];
 
+  *idealreg2debugmask  [Op_VecA] = *idealreg2spillmask[Op_VecA];
+  *idealreg2debugmask  [Op_VecS] = *idealreg2spillmask[Op_VecS];
+  *idealreg2debugmask  [Op_VecD] = *idealreg2spillmask[Op_VecD];
+  *idealreg2debugmask  [Op_VecX] = *idealreg2spillmask[Op_VecX];
+  *idealreg2debugmask  [Op_VecY] = *idealreg2spillmask[Op_VecY];
+  *idealreg2debugmask  [Op_VecZ] = *idealreg2spillmask[Op_VecZ];
+
   *idealreg2mhdebugmask[Op_RegN] = *idealreg2spillmask[Op_RegN];
   *idealreg2mhdebugmask[Op_RegI] = *idealreg2spillmask[Op_RegI];
   *idealreg2mhdebugmask[Op_RegL] = *idealreg2spillmask[Op_RegL];
   *idealreg2mhdebugmask[Op_RegF] = *idealreg2spillmask[Op_RegF];
   *idealreg2mhdebugmask[Op_RegD] = *idealreg2spillmask[Op_RegD];
   *idealreg2mhdebugmask[Op_RegP] = *idealreg2spillmask[Op_RegP];
+
+  *idealreg2mhdebugmask[Op_VecA] = *idealreg2spillmask[Op_VecA];
+  *idealreg2mhdebugmask[Op_VecS] = *idealreg2spillmask[Op_VecS];
+  *idealreg2mhdebugmask[Op_VecD] = *idealreg2spillmask[Op_VecD];
+  *idealreg2mhdebugmask[Op_VecX] = *idealreg2spillmask[Op_VecX];
+  *idealreg2mhdebugmask[Op_VecY] = *idealreg2spillmask[Op_VecY];
+  *idealreg2mhdebugmask[Op_VecZ] = *idealreg2spillmask[Op_VecZ];
 
   // Prevent stub compilations from attempting to reference
   // callee-saved (SOE) registers from debug info
@@ -642,12 +684,26 @@ void Matcher::init_first_stack_mask() {
   idealreg2debugmask[Op_RegD]->SUBTRACT(*caller_save_mask);
   idealreg2debugmask[Op_RegP]->SUBTRACT(*caller_save_mask);
 
+  idealreg2debugmask[Op_VecA]->SUBTRACT(*caller_save_mask);
+  idealreg2debugmask[Op_VecS]->SUBTRACT(*caller_save_mask);
+  idealreg2debugmask[Op_VecD]->SUBTRACT(*caller_save_mask);
+  idealreg2debugmask[Op_VecX]->SUBTRACT(*caller_save_mask);
+  idealreg2debugmask[Op_VecY]->SUBTRACT(*caller_save_mask);
+  idealreg2debugmask[Op_VecZ]->SUBTRACT(*caller_save_mask);
+
   idealreg2mhdebugmask[Op_RegN]->SUBTRACT(*mh_caller_save_mask);
   idealreg2mhdebugmask[Op_RegI]->SUBTRACT(*mh_caller_save_mask);
   idealreg2mhdebugmask[Op_RegL]->SUBTRACT(*mh_caller_save_mask);
   idealreg2mhdebugmask[Op_RegF]->SUBTRACT(*mh_caller_save_mask);
   idealreg2mhdebugmask[Op_RegD]->SUBTRACT(*mh_caller_save_mask);
   idealreg2mhdebugmask[Op_RegP]->SUBTRACT(*mh_caller_save_mask);
+
+  idealreg2mhdebugmask[Op_VecA]->SUBTRACT(*mh_caller_save_mask);
+  idealreg2mhdebugmask[Op_VecS]->SUBTRACT(*mh_caller_save_mask);
+  idealreg2mhdebugmask[Op_VecD]->SUBTRACT(*mh_caller_save_mask);
+  idealreg2mhdebugmask[Op_VecX]->SUBTRACT(*mh_caller_save_mask);
+  idealreg2mhdebugmask[Op_VecY]->SUBTRACT(*mh_caller_save_mask);
+  idealreg2mhdebugmask[Op_VecZ]->SUBTRACT(*mh_caller_save_mask);
 }
 
 //---------------------------is_save_on_entry----------------------------------
@@ -1953,7 +2009,6 @@ bool Matcher::is_vshift_con_pattern(Node *n, Node *m) {
   return false;
 }
 
-
 bool Matcher::clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
   // Must clone all producers of flags, or we will not match correctly.
   // Suppose a compare setting int-flags is shared (e.g., a switch-tree)
@@ -2308,8 +2363,28 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       n->del_req(3);
       break;
     }
+    case Op_VectorBlend:
+    case Op_VectorInsert: {
+      Node* pair = new BinaryNode(n->in(1), n->in(2));
+      n->set_req(1, pair);
+      n->set_req(2, n->in(3));
+      n->del_req(3);
+      break;
+    }
+    case Op_StoreVectorScatter: {
+      Node* pair = new BinaryNode(n->in(MemNode::ValueIn), n->in(MemNode::ValueIn+1));
+      n->set_req(MemNode::ValueIn, pair);
+      n->del_req(MemNode::ValueIn+1);
+      break;
+    }
+    case Op_VectorMaskCmp: {
+      n->set_req(1, new BinaryNode(n->in(1), n->in(2)));
+      n->set_req(2, n->in(3));
+      n->del_req(3);
+      break;
     default:
       break;
+    }
   }
 }
 

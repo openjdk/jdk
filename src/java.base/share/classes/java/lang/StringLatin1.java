@@ -213,7 +213,7 @@ final class StringLatin1 {
         return indexOfChar(value, ch, fromIndex, max);
     }
 
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     private static int indexOfChar(byte[] value, int ch, int fromIndex, int max) {
         byte c = (byte)ch;
         for (int i = fromIndex; i < max; i++) {

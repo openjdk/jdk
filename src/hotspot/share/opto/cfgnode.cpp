@@ -43,6 +43,7 @@
 #include "opto/regmask.hpp"
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
+#include "opto/vectornode.hpp"
 #include "utilities/vmError.hpp"
 
 // Portions of code courtesy of Clifford Click
@@ -2386,6 +2387,47 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 #endif
+
+  // Phi (VB ... VB) => VB (Phi ...) (Phi ...)
+  if (EnableVectorReboxing && can_reshape && progress == NULL) {
+    PhaseIterGVN* igvn = phase->is_IterGVN();
+
+    bool all_inputs_are_equiv_vboxes = true;
+    for (uint i = 1; i < req(); ++i) {
+      Node* n = in(i);
+      if (in(i)->Opcode() != Op_VectorBox) {
+        all_inputs_are_equiv_vboxes = false;
+        break;
+      }
+      // Check that vector type of vboxes is equivalent
+      if (i != 1) {
+        if (Type::cmp(in(i-0)->in(VectorBoxNode::Value)->bottom_type(),
+                      in(i-1)->in(VectorBoxNode::Value)->bottom_type()) != 0) {
+          all_inputs_are_equiv_vboxes = false;
+          break;
+        }
+        if (Type::cmp(in(i-0)->in(VectorBoxNode::Box)->bottom_type(),
+                      in(i-1)->in(VectorBoxNode::Box)->bottom_type()) != 0) {
+          all_inputs_are_equiv_vboxes = false;
+          break;
+        }
+      }
+    }
+
+    if (all_inputs_are_equiv_vboxes) {
+      VectorBoxNode* vbox = static_cast<VectorBoxNode*>(in(1));
+      PhiNode* new_vbox_phi = new PhiNode(r, vbox->box_type());
+      PhiNode* new_vect_phi = new PhiNode(r, vbox->vec_type());
+      for (uint i = 1; i < req(); ++i) {
+        VectorBoxNode* old_vbox = static_cast<VectorBoxNode*>(in(i));
+        new_vbox_phi->set_req(i, old_vbox->in(VectorBoxNode::Box));
+        new_vect_phi->set_req(i, old_vbox->in(VectorBoxNode::Value));
+      }
+      igvn->register_new_node_with_optimizer(new_vbox_phi, this);
+      igvn->register_new_node_with_optimizer(new_vect_phi, this);
+      progress = new VectorBoxNode(igvn->C, new_vbox_phi, new_vect_phi, vbox->box_type(), vbox->vec_type());
+    }
+  }
 
   return progress;              // Return any progress
 }

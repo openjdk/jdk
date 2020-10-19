@@ -59,6 +59,7 @@ BOOT_MODULES += \
     java.security.sasl \
     java.xml \
     jdk.incubator.foreign \
+    jdk.incubator.vector \
     jdk.internal.vm.ci \
     jdk.jfr \
     jdk.management \
@@ -145,6 +146,7 @@ DOCS_MODULES += \
     jdk.hotspot.agent \
     jdk.httpserver \
     jdk.incubator.jpackage \
+    jdk.incubator.vector \
     jdk.jartool \
     jdk.javadoc \
     jdk.jcmd \
