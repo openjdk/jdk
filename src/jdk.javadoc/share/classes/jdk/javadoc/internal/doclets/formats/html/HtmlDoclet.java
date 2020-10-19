@@ -40,6 +40,7 @@ import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.builders.AbstractBuilder;
 import jdk.javadoc.internal.doclets.toolkit.builders.BuilderFactory;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
+import jdk.javadoc.internal.doclets.toolkit.util.DeprecatedAPIListBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -115,6 +116,21 @@ public class HtmlDoclet extends AbstractDoclet {
         return configuration;
     }
 
+    @Override // defined by AbstractDoclet
+    public void generateClassFiles(DocletEnvironment docEnv, ClassTree classTree) throws DocletException {
+
+        if (!(configuration.getOptions().noDeprecated()
+                || configuration.getOptions().noDeprecatedList())) {
+            DeprecatedAPIListBuilder builder = new DeprecatedAPIListBuilder(configuration);
+            if (!builder.isEmpty()) {
+                configuration.deprecatedAPIListBuilder = builder;
+                configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.DEPRECATED);
+            }
+        }
+
+        super.generateClassFiles(docEnv, classTree);
+    }
+
     /**
      * Start the generation of files. Call generate methods in the individual
      * writers, which will in turn generate the documentation files. Call the
@@ -155,7 +171,7 @@ public class HtmlDoclet extends AbstractDoclet {
             TreeWriter.generate(configuration, classtree);
         }
 
-        if (!(options.noDeprecatedList() || nodeprecated)) {
+        if (configuration.conditionalPages.contains((HtmlConfiguration.ConditionalPage.DEPRECATED))) {
             DeprecatedListWriter.generate(configuration);
         }
 

@@ -34,6 +34,8 @@
 import javadoc.tester.JavadocTester;
 
 public class TestHelpFile extends JavadocTester {
+    /** A constant value to be documented. */
+    public static final int ZERO = 0;
 
     public static void main(String... args) throws Exception {
         TestHelpFile tester = new TestHelpFile();
