@@ -35,9 +35,6 @@ import java.net.ProtocolFamily;
 import java.net.SocketAddress;
 import java.net.UnixDomainSocketAddress;
 import java.nio.channels.Channel;
-import java.nio.channels.SocketChannel;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.DatagramChannel;
 import java.nio.channels.spi.SelectorProvider;
 import static java.net.StandardProtocolFamily.INET6;
 import static java.net.StandardProtocolFamily.INET;
@@ -81,12 +78,22 @@ class InheritedChannel {
         }
     }
 
-    static ProtocolFamily family(SocketAddress sa) {
+    static ProtocolFamily protocolFamily(SocketAddress sa) {
         if (sa instanceof UnixDomainSocketAddress) {
             return UNIX;
+        } else {
+            InetSocketAddress isa = (InetSocketAddress) sa;
+            return (isa.getAddress() instanceof Inet6Address) ? INET6 : INET;
         }
-        InetSocketAddress isa = (InetSocketAddress)sa;
-        return (isa.getAddress() instanceof Inet6Address) ? INET6 : INET;
+    }
+
+    static ProtocolFamily protocolFamily(int family) {
+        return switch (family) {
+            case AF_INET -> INET;
+            case AF_INET6 -> INET6;
+            case AF_UNIX -> UNIX;
+            default -> throw new IllegalArgumentException();
+        };
     }
 
     /*
@@ -101,7 +108,7 @@ class InheritedChannel {
                                    SocketAddress remote)
             throws IOException
         {
-            super(sp, family(remote), fd, remote);
+            super(sp, protocolFamily(remote), fd, remote);
         }
 
         protected void implCloseSelectableChannel() throws IOException {
@@ -112,7 +119,9 @@ class InheritedChannel {
 
     public static class InheritedServerSocketChannelImpl extends ServerSocketChannelImpl {
 
-        InheritedServerSocketChannelImpl(SelectorProvider sp, ProtocolFamily family, FileDescriptor fd)
+        InheritedServerSocketChannelImpl(SelectorProvider sp,
+                                         ProtocolFamily family,
+                                         FileDescriptor fd)
             throws IOException
         {
             super(sp, family, fd, true);
@@ -125,8 +134,7 @@ class InheritedChannel {
         }
     }
 
-    public static class InheritedDatagramChannelImpl extends
-        DatagramChannelImpl {
+    public static class InheritedDatagramChannelImpl extends DatagramChannelImpl {
 
         InheritedDatagramChannelImpl(SelectorProvider sp,
                                      FileDescriptor fd)
@@ -145,22 +153,11 @@ class InheritedChannel {
      * If there's a SecurityManager then check for the appropriate
      * RuntimePermission.
      */
-    private static void checkAccess(Channel c) {
+    private static void checkAccess() {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            sm.checkPermission(
-                new RuntimePermission("inheritedChannel")
-            );
+            sm.checkPermission(new RuntimePermission("inheritedChannel"));
         }
-    }
-
-    static ProtocolFamily protocolFamily(int family) {
-        return switch (family) {
-            case AF_INET -> INET;
-            case AF_INET6 -> INET6;
-            case AF_UNIX -> UNIX;
-            default -> throw new IllegalArgumentException();
-        };
     }
 
     /*
@@ -257,7 +254,7 @@ class InheritedChannel {
         // if there is a channel then do the security check before
         // returning it.
         if (channel != null) {
-            checkAccess(channel);
+            checkAccess();
         }
         return channel;
     }

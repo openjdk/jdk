@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,8 @@
 #include "sun_nio_ch_Net.h"
 #include "sun_nio_ch_PollArrayWrapper.h"
 
-jbyteArray sockaddrToUnixAddressBytes(JNIEnv *env, struct sockaddr_un *sa, socklen_t len) {
-
+jbyteArray sockaddrToUnixAddressBytes(JNIEnv *env, struct sockaddr_un *sa, socklen_t len)
+{
     if (sa->sun_family == AF_UNIX) {
         int namelen = (int)strlen(sa->sun_path);
         jbyteArray name = (*env)->NewByteArray(env, namelen);
@@ -68,13 +68,13 @@ jint unixSocketAddressToSockaddr(JNIEnv *env, jbyteArray addr, struct sockaddr_u
     char *pname = (*env)->GetByteArrayElements(env, addr, &isCopy);
     if (pname == NULL) {
         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Unix domain path not present");
-        return 1;
+        return -1;
     }
 
     size_t name_len = (size_t)(*env)->GetArrayLength(env, addr);
     if (name_len > MAX_UNIX_DOMAIN_PATH_LEN) {
         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Unix domain path too long");
-        ret=1;
+        ret = -1;
     } else {
         strncpy(sa->sun_path, pname, name_len);
         *len = (int)(offsetof(struct sockaddr_un, sun_path) + name_len);
@@ -84,32 +84,26 @@ jint unixSocketAddressToSockaddr(JNIEnv *env, jbyteArray addr, struct sockaddr_u
     return ret;
 }
 
-
 JNIEXPORT jboolean JNICALL
 Java_sun_nio_ch_UnixDomainSockets_socketSupported(JNIEnv *env, jclass cl)
 {
-    SOCKET fd = socket(PF_UNIX, SOCK_STREAM, 0);
-    if (fd == INVALID_SOCKET) {
+    SOCKET s = socket(PF_UNIX, SOCK_STREAM, 0);
+    if (s == INVALID_SOCKET) {
         return JNI_FALSE;
     }
-    closesocket(fd);
+    closesocket(s);
     return JNI_TRUE;
-}
-
-JNIEXPORT jint JNICALL
-Java_sun_nio_ch_UnixDomainSockets_maxNameLen0(JNIEnv *env, jclass cl)
-{
-    return MAX_UNIX_DOMAIN_PATH_LEN - 1;
 }
 
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_UnixDomainSockets_socket0(JNIEnv *env, jclass cl)
 {
-    SOCKET fd = socket(PF_UNIX, SOCK_STREAM, 0);
-    if (fd == INVALID_SOCKET) {
+    SOCKET s = socket(PF_UNIX, SOCK_STREAM, 0);
+    if (s == INVALID_SOCKET) {
         return handleSocketError(env, WSAGetLastError());
     }
-    return (int)fd;
+    SetHandleInformation((HANDLE)s, HANDLE_FLAG_INHERIT, 0);
+    return (int)s;
 }
 
 /**
@@ -126,10 +120,8 @@ Java_sun_nio_ch_UnixDomainSockets_bind0(JNIEnv *env, jclass clazz, jobject fdo, 
     if (unixSocketAddressToSockaddr(env, addr, &sa, &sa_len) != 0)
         return;
 
-    int fd = fdval(env, fdo);
-
     rv = bind(fdval(env, fdo), (struct sockaddr *)&sa, sa_len);
-    if (rv != 0) {
+    if (rv == SOCKET_ERROR) {
         int err = WSAGetLastError();
         NET_ThrowNew(env, err, "bind");
     }
@@ -160,13 +152,13 @@ Java_sun_nio_ch_UnixDomainSockets_connect0(JNIEnv *env, jclass clazz, jobject fd
 
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_UnixDomainSockets_accept0(JNIEnv *env, jclass clazz, jobject fdo, jobject newfdo,
-                           jobjectArray usaa)
+                                          jobjectArray array)
 {
     jint fd = fdval(env, fdo);
     jint newfd;
     struct sockaddr_un sa;
     socklen_t sa_len = sizeof(sa);
-    jobject usa;
+    jbyteArray address;
 
     memset((char *)&sa, 0, sizeof(sa));
     newfd = (jint) accept(fd, (struct sockaddr *)&sa, &sa_len);
@@ -182,10 +174,9 @@ Java_sun_nio_ch_UnixDomainSockets_accept0(JNIEnv *env, jclass clazz, jobject fdo
     SetHandleInformation((HANDLE)(UINT_PTR)newfd, HANDLE_FLAG_INHERIT, 0);
     setfdval(env, newfdo, newfd);
 
-    usa = sockaddrToUnixAddressBytes(env, &sa, sa_len);
-    CHECK_NULL_RETURN(usa, IOS_THROWN);
-
-    (*env)->SetObjectArrayElement(env, usaa, 0, usa);
+    address = sockaddrToUnixAddressBytes(env, &sa, sa_len);
+    CHECK_NULL_RETURN(address, IOS_THROWN);
+    (*env)->SetObjectArrayElement(env, array, 0, address);
 
     return 1;
 }
@@ -203,15 +194,3 @@ Java_sun_nio_ch_UnixDomainSockets_localAddress0(JNIEnv *env, jclass clazz, jobje
     return sockaddrToUnixAddressBytes(env, &sa, sa_len);
 }
 
-JNIEXPORT jbyteArray JNICALL
-Java_sun_nio_ch_UnixDomainSockets_remoteAddress0(JNIEnv *env, jclass clazz, jobject fdo)
-{
-    struct sockaddr_un sa;
-    int sa_len = sizeof(sa);
-
-    if (getpeername(fdval(env, fdo), (struct sockaddr *)&sa, &sa_len) == SOCKET_ERROR) {
-        JNU_ThrowIOExceptionWithLastError(env, "getpeername");
-        return NULL;
-    }
-    return sockaddrToUnixAddressBytes(env, &sa, sa_len);
-}

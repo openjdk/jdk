@@ -96,7 +96,11 @@ public abstract class ExtendedSocketOptions {
     }
 
     private static boolean isDatagramOption(SocketOption<?> option) {
-        return !option.name().startsWith("TCP_") && !isUnixDomainOption(option);
+        if (option.name().startsWith("TCP_") || isUnixDomainOption(option)) {
+            return false;
+        } else {
+            return true;
+        }
     }
 
     private static boolean isUnixDomainOption(SocketOption<?> option) {

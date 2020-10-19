@@ -35,7 +35,7 @@ public class NonBlockingAccept {
 
     static boolean supported() {
         try {
-            SocketChannel.open(StandardProtocolFamily.UNIX);
+            SocketChannel.open(StandardProtocolFamily.UNIX).close();
         } catch (UnsupportedOperationException e) {
             return false;
         } catch (Exception e) {

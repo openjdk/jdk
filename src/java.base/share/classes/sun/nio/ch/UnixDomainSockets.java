@@ -31,15 +31,14 @@ import java.net.BindException;
 import java.net.NetPermission;
 import java.net.SocketAddress;
 import java.net.UnixDomainSocketAddress;
-import java.nio.channels.SocketChannel;
 import java.nio.channels.UnsupportedAddressTypeException;
 import java.nio.file.FileSystems;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.nio.file.spi.FileSystemProvider;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Random;
-
 import sun.nio.fs.AbstractFileSystemProvider;
 
 class UnixDomainSockets {
@@ -49,12 +48,19 @@ class UnixDomainSockets {
 
     private static final boolean supported = socketSupported();
 
-    private static final NetPermission np = new NetPermission("accessUnixDomainSocket");
+    private static final String tempDir = UnixDomainSocketsUtil.getTempDir();
+
+    private static final NetPermission accessUnixDomainSocket =
+            new NetPermission("accessUnixDomainSocket");
+
+    static boolean isSupported() {
+        return supported;
+    }
 
     static void checkPermission() {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
-            sm.checkPermission(np);
+            sm.checkPermission(accessUnixDomainSocket);
     }
 
     static UnixDomainSocketAddress getRevealedLocalAddress(SocketAddress sa) {
@@ -70,22 +76,11 @@ class UnixDomainSockets {
     }
 
     static UnixDomainSocketAddress localAddress(FileDescriptor fd) throws IOException {
-        byte[] bytes = localAddress0(fd);
-        return UnixDomainSocketAddress.of(
-                    new String(bytes, UnixDomainSocketsUtil.getCharset()));
+        String path = new String(localAddress0(fd), UnixDomainSocketsUtil.getCharset());
+        return UnixDomainSocketAddress.of(path);
     }
 
-    static native byte[] localAddress0(FileDescriptor fd)
-        throws IOException;
-
-    static UnixDomainSocketAddress remoteAddress(FileDescriptor fd) throws IOException {
-        byte[] bytes = remoteAddress0(fd);
-        return UnixDomainSocketAddress.of(new String(bytes,
-                    UnixDomainSocketsUtil.getCharset()));
-    }
-
-    static native byte[] remoteAddress0(FileDescriptor fd)
-        throws IOException;
+    private static native byte[] localAddress0(FileDescriptor fd) throws IOException;
 
     static String getRevealedLocalAddressAsString(SocketAddress sa) {
         return (System.getSecurityManager() != null) ? sa.toString() : "";
@@ -99,22 +94,9 @@ class UnixDomainSockets {
         return (UnixDomainSocketAddress) sa;
     }
 
-    static boolean isSupported() {
-        return supported;
-    }
-
-    static int maxNameLen() {
-        return supported ? maxNameLen0() : -1;
-    }
-
-    static final String tempDir = UnixDomainSocketsUtil.getTempDir();
-
-    static byte[] getPathBytes(Path path) throws IOException {
-        if (path == null)
-            return null;
-        AbstractFileSystemProvider provider = (AbstractFileSystemProvider)
-            FileSystems.getDefault().provider();
-        return provider.getSunPathForSocketFile(path);
+    static byte[] getPathBytes(Path path) {
+        FileSystemProvider provider = FileSystems.getDefault().provider();
+        return ((AbstractFileSystemProvider) provider).getSunPathForSocketFile(path);
     }
 
     static FileDescriptor socket() throws IOException {
@@ -146,7 +128,7 @@ class UnixDomainSockets {
             throw new BindException("Could not locate temporary directory for sockets");
         int rnd = random.nextInt(Integer.MAX_VALUE);
         try {
-            Path path = Path.of(dir, "socket_" + Integer.toString(rnd));
+            Path path = Path.of(dir, "socket_" + rnd);
             return UnixDomainSocketAddress.of(path);
         } catch (InvalidPathException e) {
             throw new BindException("Invalid temporary directory");
@@ -157,24 +139,25 @@ class UnixDomainSockets {
         return UnixDomainSockets.connect(fd, ((UnixDomainSocketAddress) sa).getPath());
     }
 
-    static int connect(FileDescriptor fd, Path addr) throws IOException {
-        byte[] path = getPathBytes(addr);
-        return connect0(fd, path);
+    static int connect(FileDescriptor fd, Path path) throws IOException {
+        return connect0(fd, getPathBytes(path));
     }
 
-    static int accept(FileDescriptor fd, FileDescriptor newfd, String[] isaa)
+    static int accept(FileDescriptor fd, FileDescriptor newfd, String[] paths)
         throws IOException
     {
-        Object[] barray  = new Object[1];
-        int ret = accept0(fd, newfd, barray);
-        byte[] bytes = (byte[])barray[0];
-        isaa[0] = bytes == null ? null : new String(bytes, UnixDomainSocketsUtil.getCharset());
-        return ret;
+        Object[] array  = new Object[1];
+        int n = accept0(fd, newfd, array);
+        if (n > 0) {
+            byte[] bytes = (byte[]) array[0];
+            paths[0] = new String(bytes, UnixDomainSocketsUtil.getCharset());
+        }
+        return n;
     }
 
-    private static native int socket0();
-
     private static native boolean socketSupported();
+
+    private static native int socket0() throws IOException;
 
     private static native void bind0(FileDescriptor fd, byte[] path)
         throws IOException;
@@ -182,10 +165,8 @@ class UnixDomainSockets {
     private static native int connect0(FileDescriptor fd, byte[] path)
         throws IOException;
 
-    static native int accept0(FileDescriptor fd, FileDescriptor newfd, Object[] isaa)
+    private static native int accept0(FileDescriptor fd, FileDescriptor newfd, Object[] array)
         throws IOException;
-
-    static native int maxNameLen0();
 
     static {
         // Load all required native libs
