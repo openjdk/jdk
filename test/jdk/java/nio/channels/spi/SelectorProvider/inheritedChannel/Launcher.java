@@ -76,14 +76,17 @@ public class Launcher {
     public static SocketChannel launchWithUnixSocketChannel(String className)
             throws IOException
     {
+        UnixDomainSocketAddress addr = null;
         try (ServerSocketChannel ssc = ServerSocketChannel.open(UNIX)) {
-            var addr = (UnixDomainSocketAddress)ssc.bind(null).getLocalAddress();
+            addr = (UnixDomainSocketAddress)ssc.bind(null).getLocalAddress();
             SocketChannel sc1 = SocketChannel.open(addr);
             try (SocketChannel sc2 = ssc.accept()) {
                 launch(className, null, null, Util.getFD(sc2));
             }
-            Files.delete(addr.getPath());
             return sc1;
+        } finally {
+            if (addr != null)
+                Files.delete(addr.getPath());
         }
     }
 
