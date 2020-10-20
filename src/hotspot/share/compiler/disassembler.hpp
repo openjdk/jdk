@@ -28,7 +28,8 @@
 #include "utilities/globalDefinitions.hpp"
 
 #include "asm/assembler.hpp"
-#include "asm/codeBuffer.hpp"
+#include "code/codeBlob.hpp"
+#include "code/nmethod.hpp"
 #include "compiler/abstractDisassembler.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/macros.hpp"
@@ -105,14 +106,12 @@ class Disassembler : public AbstractDisassembler {
 #endif
   }
 
-  // Directly disassemble code buffer.
-  static void decode(CodeBuffer* cb, address start, address end, outputStream* st = NULL);
   // Directly disassemble code blob.
-  static void decode(CodeBlob *cb,               outputStream* st = NULL, CodeStrings c = CodeStrings());
+  static void decode(CodeBlob *cb,               outputStream* st = NULL);
   // Directly disassemble nmethod.
-  static void decode(nmethod* nm,                outputStream* st = NULL, CodeStrings c = CodeStrings());
+  static void decode(nmethod* nm,                outputStream* st = NULL);
   // Disassemble an arbitrary memory range.
-  static void decode(address start, address end, outputStream* st = NULL, CodeStrings c = CodeStrings() /* , ptrdiff_t offset */);
+  static void decode(address start, address end, outputStream* st = NULL /* , ptrdiff_t offset */);
 
   static void _hook(const char* file, int line, class MacroAssembler* masm);
 
