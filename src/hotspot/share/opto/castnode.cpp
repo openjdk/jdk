@@ -290,9 +290,17 @@ Node* CheckCastPPNode::Identity(PhaseGVN* phase) {
   if (_carry_dependency) {
     return this;
   }
-  // Toned down to rescue meeting at a Phi 3 different oops all implementing
-  // the same interface.
-  return (phase->type(in(1)) == phase->type(this)) ? in(1) : this;
+  const Type* t = phase->type(in(1));
+  if (EnableVectorReboxing && in(1)->Opcode() == Op_VectorBox) {
+    if (t->higher_equal_speculative(phase->type(this))) {
+      return in(1);
+    }
+  } else if (t == phase->type(this)) {
+    // Toned down to rescue meeting at a Phi 3 different oops all implementing
+    // the same interface.
+    return in(1);
+  }
+  return this;
 }
 
 //------------------------------Value------------------------------------------

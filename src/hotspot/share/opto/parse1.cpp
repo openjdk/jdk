@@ -435,6 +435,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
     C->set_parsed_irreducible_loop(true);
   }
 #endif
+  C->set_has_loops(C->has_loops() || method()->has_loops());
 
   if (_expected_uses <= 0) {
     _prof_factor = 1;
@@ -1599,6 +1600,11 @@ void Parse::merge_new_path(int target_bci) {
 // Merge the current mapping into the basic block starting at bci
 // The ex_oop must be pushed on the stack, unlike throw_to_exit.
 void Parse::merge_exception(int target_bci) {
+#ifdef ASSERT
+  if (target_bci < bci()) {
+    C->set_exception_backedge();
+  }
+#endif
   assert(sp() == 1, "must have only the throw exception on the stack");
   Block* target = successor_for_bci(target_bci);
   if (target == NULL) { handle_missing_successor(target_bci); return; }
@@ -2248,23 +2254,7 @@ void Parse::return_current(Node* value) {
 
 //------------------------------add_safepoint----------------------------------
 void Parse::add_safepoint() {
-  // See if we can avoid this safepoint.  No need for a SafePoint immediately
-  // after a Call (except Leaf Call) or another SafePoint.
-  Node *proj = control();
   uint parms = TypeFunc::Parms+1;
-  if( proj->is_Proj() ) {
-    Node *n0 = proj->in(0);
-    if( n0->is_Catch() ) {
-      n0 = n0->in(0)->in(0);
-      assert( n0->is_Call(), "expect a call here" );
-    }
-    if( n0->is_Call() ) {
-      if( n0->as_Call()->guaranteed_safepoint() )
-        return;
-    } else if( n0->is_SafePoint() && n0->req() >= parms ) {
-      return;
-    }
-  }
 
   // Clear out dead values from the debug info.
   kill_dead_locals();

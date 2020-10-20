@@ -246,6 +246,8 @@ public final class Utils {
         return prependTestJavaOpts(userArgs);
     }
 
+    private static final Pattern useGcPattern = Pattern.compile(
+            "(?:\\-XX\\:[\\+\\-]Use.+GC)");
     /**
      * Removes any options specifying which GC to use, for example "-XX:+UseG1GC".
      * Removes any options matching: -XX:(+/-)Use*GC
@@ -253,8 +255,6 @@ public final class Utils {
      * GC specified by the framework must first be removed.
      * @return A copy of given opts with all GC options removed.
      */
-    private static final Pattern useGcPattern = Pattern.compile(
-            "(?:\\-XX\\:[\\+\\-]Use.+GC)");
     public static List<String> removeGcOpts(List<String> opts) {
         List<String> optsWithoutGC = new ArrayList<String>();
         for (String opt : opts) {
@@ -438,63 +438,6 @@ public final class Utils {
     }
 
     /**
-     * Uses "jcmd -l" to search for a jvm pid. This function will wait
-     * forever (until jtreg timeout) for the pid to be found.
-     * @param key Regular expression to search for
-     * @return The found pid.
-     */
-    public static int waitForJvmPid(String key) throws Throwable {
-        final long iterationSleepMillis = 250;
-        System.out.println("waitForJvmPid: Waiting for key '" + key + "'");
-        System.out.flush();
-        while (true) {
-            int pid = tryFindJvmPid(key);
-            if (pid >= 0) {
-                return pid;
-            }
-            Thread.sleep(iterationSleepMillis);
-        }
-    }
-
-    /**
-     * Searches for a jvm pid in the output from "jcmd -l".
-     *
-     * Example output from jcmd is:
-     * 12498 sun.tools.jcmd.JCmd -l
-     * 12254 /tmp/jdk8/tl/jdk/JTwork/classes/com/sun/tools/attach/Application.jar
-     *
-     * @param key A regular expression to search for.
-     * @return The found pid, or -1 if not found.
-     * @throws Exception If multiple matching jvms are found.
-     */
-    public static int tryFindJvmPid(String key) throws Throwable {
-        OutputAnalyzer output = null;
-        try {
-            JDKToolLauncher jcmdLauncher = JDKToolLauncher.create("jcmd");
-            jcmdLauncher.addToolArg("-l");
-            output = ProcessTools.executeProcess(jcmdLauncher.getCommand());
-            output.shouldHaveExitValue(0);
-
-            // Search for a line starting with numbers (pid), follwed by the key.
-            Pattern pattern = Pattern.compile("([0-9]+)\\s.*(" + key + ").*\\r?\\n");
-            Matcher matcher = pattern.matcher(output.getStdout());
-
-            int pid = -1;
-            if (matcher.find()) {
-                pid = Integer.parseInt(matcher.group(1));
-                System.out.println("findJvmPid.pid: " + pid);
-                if (matcher.find()) {
-                    throw new Exception("Found multiple JVM pids for key: " + key);
-                }
-            }
-            return pid;
-        } catch (Throwable t) {
-            System.out.println(String.format("Utils.findJvmPid(%s) failed: %s", key, t));
-            throw t;
-        }
-    }
-
-    /**
      * Adjusts the provided timeout value for the TIMEOUT_FACTOR
      * @param tOut the timeout value to be adjusted
      * @return The timeout value adjusted for the value of "test.timeout.factor"
@@ -621,7 +564,7 @@ public final class Utils {
     /**
      * Wait for condition to be true
      *
-     * @param condition, a condition to wait for
+     * @param condition a condition to wait for
      */
     public static final void waitForCondition(BooleanSupplier condition) {
         waitForCondition(condition, -1L, 100L);
@@ -630,7 +573,7 @@ public final class Utils {
     /**
      * Wait until timeout for condition to be true
      *
-     * @param condition, a condition to wait for
+     * @param condition a condition to wait for
      * @param timeout a time in milliseconds to wait for condition to be true
      * specifying -1 will wait forever
      * @return condition value, to determine if wait was successful
@@ -643,7 +586,7 @@ public final class Utils {
     /**
      * Wait until timeout for condition to be true for specified time
      *
-     * @param condition, a condition to wait for
+     * @param condition a condition to wait for
      * @param timeout a time in milliseconds to wait for condition to be true,
      * specifying -1 will wait forever
      * @param sleepTime a time to sleep value in milliseconds
@@ -676,13 +619,13 @@ public final class Utils {
      * Filters out an exception that may be thrown by the given
      * test according to the given filter.
      *
-     * @param test - method that is invoked and checked for exception.
-     * @param filter - function that checks if the thrown exception matches
-     *                 criteria given in the filter's implementation.
-     * @return - exception that matches the filter if it has been thrown or
-     *           {@code null} otherwise.
-     * @throws Throwable - if test has thrown an exception that does not
-     *                     match the filter.
+     * @param test method that is invoked and checked for exception.
+     * @param filter function that checks if the thrown exception matches
+     *               criteria given in the filter's implementation.
+     * @return exception that matches the filter if it has been thrown or
+     *         {@code null} otherwise.
+     * @throws Throwable if test has thrown an exception that does not
+     *                   match the filter.
      */
     public static Throwable filterException(ThrowingRunnable test,
             Function<Throwable, Boolean> filter) throws Throwable {
@@ -830,19 +773,6 @@ public final class Utils {
         NULL_VALUES.put(double.class, 0.0d);
     }
 
-    /**
-     * Returns mandatory property value
-     * @param propName is a name of property to request
-     * @return a String with requested property value
-     */
-    public static String getMandatoryProperty(String propName) {
-        Objects.requireNonNull(propName, "Requested null property");
-        String prop = System.getProperty(propName);
-        Objects.requireNonNull(prop,
-                String.format("A mandatory property '%s' isn't set", propName));
-        return prop;
-    }
-
     /*
      * Run uname with specified arguments.
      */
@@ -856,42 +786,44 @@ public final class Utils {
     /**
      * Creates an empty file in "user.dir" if the property set.
      * <p>
-     * This method is meant as a replacement for {@code Files#createTempFile(String, String, FileAttribute...)}
+     * This method is meant as a replacement for {@link Files#createTempFile(String, String, FileAttribute...)}
      * that doesn't leave files behind in /tmp directory of the test machine
      * <p>
      * If the property "user.dir" is not set, "." will be used.
      *
-     * @param prefix
-     * @param suffix
-     * @param attrs
+     * @param prefix the prefix string to be used in generating the file's name;
+     *               may be null
+     * @param suffix the suffix string to be used in generating the file's name;
+     *               may be null, in which case ".tmp" is used
+     * @param attrs an optional list of file attributes to set atomically when creating the file
      * @return the path to the newly created file that did not exist before this
      *         method was invoked
-     * @throws IOException
+     * @throws IOException if an I/O error occurs or dir does not exist
      *
-     * @see {@link Files#createTempFile(String, String, FileAttribute...)}
+     * @see Files#createTempFile(String, String, FileAttribute...)
      */
     public static Path createTempFile(String prefix, String suffix, FileAttribute<?>... attrs) throws IOException {
         Path dir = Paths.get(System.getProperty("user.dir", "."));
-        return Files.createTempFile(dir, prefix, suffix);
+        return Files.createTempFile(dir, prefix, suffix, attrs);
     }
 
     /**
      * Creates an empty directory in "user.dir" or "."
      * <p>
-     * This method is meant as a replacement for {@code Files#createTempDirectory(String, String, FileAttribute...)}
+     * This method is meant as a replacement for {@link Files#createTempDirectory(Path, String, FileAttribute...)}
      * that doesn't leave files behind in /tmp directory of the test machine
      * <p>
      * If the property "user.dir" is not set, "." will be used.
      *
-     * @param prefix
-     * @param attrs
+     * @param prefix the prefix string to be used in generating the directory's name; may be null
+     * @param attrs an optional list of file attributes to set atomically when creating the directory
      * @return the path to the newly created directory
-     * @throws IOException
+     * @throws IOException if an I/O error occurs or dir does not exist
      *
-     * @see {@link Files#createTempDirectory(String, String, FileAttribute...)}
+     * @see Files#createTempDirectory(Path, String, FileAttribute...)
      */
     public static Path createTempDirectory(String prefix, FileAttribute<?>... attrs) throws IOException {
         Path dir = Paths.get(System.getProperty("user.dir", "."));
-        return Files.createTempDirectory(dir, prefix);
+        return Files.createTempDirectory(dir, prefix, attrs);
     }
 }

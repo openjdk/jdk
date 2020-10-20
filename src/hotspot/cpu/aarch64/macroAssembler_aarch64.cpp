@@ -288,27 +288,21 @@ address MacroAssembler::target_addr_for_insn(address insn_addr, unsigned insn) {
   return address(((uint64_t)insn_addr + (offset << 2)));
 }
 
-void MacroAssembler::safepoint_poll(Label& slow_path) {
-  ldr(rscratch1, Address(rthread, Thread::polling_page_offset()));
-  tbnz(rscratch1, exact_log2(SafepointMechanism::poll_bit()), slow_path);
-}
-
-// Just like safepoint_poll, but use an acquiring load for thread-
-// local polling.
-//
-// We need an acquire here to ensure that any subsequent load of the
-// global SafepointSynchronize::_state flag is ordered after this load
-// of the local Thread::_polling page.  We don't want this poll to
-// return false (i.e. not safepointing) and a later poll of the global
-// SafepointSynchronize::_state spuriously to return true.
-//
-// This is to avoid a race when we're in a native->Java transition
-// racing the code which wakes up from a safepoint.
-//
-void MacroAssembler::safepoint_poll_acquire(Label& slow_path) {
-  lea(rscratch1, Address(rthread, Thread::polling_page_offset()));
-  ldar(rscratch1, rscratch1);
-  tbnz(rscratch1, exact_log2(SafepointMechanism::poll_bit()), slow_path);
+void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod) {
+  if (acquire) {
+    lea(rscratch1, Address(rthread, Thread::polling_word_offset()));
+    ldar(rscratch1, rscratch1);
+  } else {
+    ldr(rscratch1, Address(rthread, Thread::polling_word_offset()));
+  }
+  if (at_return) {
+    // Note that when in_nmethod is set, the stack pointer is incremented before the poll. Therefore,
+    // we may safely use the sp instead to perform the stack watermark check.
+    cmp(in_nmethod ? sp : rfp, rscratch1);
+    br(Assembler::HI, slow_path);
+  } else {
+    tbnz(rscratch1, exact_log2(SafepointMechanism::poll_bit()), slow_path);
+  }
 }
 
 void MacroAssembler::reset_last_Java_frame(bool clear_fp) {
@@ -4392,7 +4386,7 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
   // was post-decremented.)  Skip this address by starting at i=1, and
   // touch a few more pages below.  N.B.  It is important to touch all
   // the way down to and including i=StackShadowPages.
-  for (int i = 0; i < (int)(JavaThread::stack_shadow_zone_size() / os::vm_page_size()) - 1; i++) {
+  for (int i = 0; i < (int)(StackOverflow::stack_shadow_zone_size() / os::vm_page_size()) - 1; i++) {
     // this could be any sized move but this is can be a debugging crumb
     // so the bigger the better.
     lea(tmp, Address(tmp, -os::vm_page_size()));
@@ -4403,13 +4397,6 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
 // Move the address of the polling page into dest.
 void MacroAssembler::get_polling_page(Register dest, relocInfo::relocType rtype) {
   ldr(dest, Address(rthread, Thread::polling_page_offset()));
-}
-
-// Move the address of the polling page into r, then read the polling
-// page.
-address MacroAssembler::fetch_and_read_polling_page(Register r, relocInfo::relocType rtype) {
-  get_polling_page(r, rtype);
-  return read_polling_page(r, rtype);
 }
 
 // Read the polling page.  The address of the polling page must

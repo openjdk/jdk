@@ -37,7 +37,6 @@
 #include "gc/z/zUtils.inline.hpp"
 #include "memory/iterator.hpp"
 #include "memory/universe.hpp"
-#include "runtime/mutexLocker.hpp"
 #include "utilities/align.hpp"
 
 ZCollectedHeap* ZCollectedHeap::heap() {
@@ -221,6 +220,10 @@ size_t ZCollectedHeap::unsafe_max_tlab_alloc(Thread* ignored) const {
   return _heap.unsafe_max_tlab_alloc();
 }
 
+bool ZCollectedHeap::uses_stack_watermark_barrier() const {
+  return true;
+}
+
 GrowableArray<GCMemoryManager*> ZCollectedHeap::memory_managers() {
   return GrowableArray<GCMemoryManager*>(1, 1, _heap.serviceability_memory_manager());
 }
@@ -231,6 +234,10 @@ GrowableArray<MemoryPool*> ZCollectedHeap::memory_pools() {
 
 void ZCollectedHeap::object_iterate(ObjectClosure* cl) {
   _heap.object_iterate(cl, true /* visit_weaks */);
+}
+
+ParallelObjectIterator* ZCollectedHeap::parallel_object_iterator(uint nworkers) {
+  return _heap.parallel_object_iterator(nworkers, true /* visit_weaks */);
 }
 
 void ZCollectedHeap::keep_alive(oop obj) {

@@ -129,25 +129,27 @@ class ObjectSynchronizer : AllStatic {
   // GC: we current use aggressive monitor deflation policy
   // Basically we deflate all monitors that are not busy.
   // An adaptive profile-based deflation policy could be used if needed
-  static void deflate_idle_monitors_using_JT();
-  static void deflate_global_idle_monitors_using_JT();
-  static void deflate_per_thread_idle_monitors_using_JT(JavaThread* target);
-  static void deflate_common_idle_monitors_using_JT(bool is_global, JavaThread* target);
+  static void deflate_idle_monitors();
+  static void deflate_global_idle_monitors(Thread* self);
+  static void deflate_per_thread_idle_monitors(Thread* self,
+                                               JavaThread* target);
+  static void deflate_common_idle_monitors(Thread* self, bool is_global,
+                                           JavaThread* target);
 
   // For a given in-use monitor list: global or per-thread, deflate idle
-  // monitors using a JavaThread.
-  static int deflate_monitor_list_using_JT(ObjectMonitor** list_p,
-                                           int* count_p,
-                                           ObjectMonitor** free_head_p,
-                                           ObjectMonitor** free_tail_p,
-                                           ObjectMonitor** saved_mid_in_use_p);
-  static bool deflate_monitor_using_JT(ObjectMonitor* mid,
-                                       ObjectMonitor** free_head_p,
-                                       ObjectMonitor** free_tail_p);
+  // monitors.
+  static int deflate_monitor_list(Thread* self, ObjectMonitor** list_p,
+                                  int* count_p, ObjectMonitor** free_head_p,
+                                  ObjectMonitor** free_tail_p,
+                                  ObjectMonitor** saved_mid_in_use_p);
+  static bool deflate_monitor(ObjectMonitor* mid, ObjectMonitor** free_head_p,
+                              ObjectMonitor** free_tail_p);
   static bool is_async_deflation_needed();
   static bool is_async_deflation_requested() { return _is_async_deflation_requested; }
+  static bool is_final_audit() { return _is_final_audit; }
+  static void set_is_final_audit() { _is_final_audit = true; }
   static jlong last_async_deflation_time_ns() { return _last_async_deflation_time_ns; }
-  static bool request_deflate_idle_monitors();  // for whitebox test support and VM exit logging
+  static bool request_deflate_idle_monitors();  // for whitebox test support
   static void set_is_async_deflation_requested(bool new_value) { _is_async_deflation_requested = new_value; }
   static jlong time_since_last_async_deflation_ms();
 
@@ -169,6 +171,7 @@ class ObjectSynchronizer : AllStatic {
   static void chk_per_thread_free_list_and_count(JavaThread *jt,
                                                  outputStream * out,
                                                  int *error_cnt_p);
+  static void do_final_audit_and_print_stats();
   static void log_in_use_monitor_details(outputStream * out);
   static int  log_monitor_list_counts(outputStream * out);
   static int  verify_objmon_isinpool(ObjectMonitor *addr) PRODUCT_RETURN0;
@@ -182,6 +185,7 @@ class ObjectSynchronizer : AllStatic {
   // global list of blocks of monitors
   static PaddedObjectMonitor* g_block_list;
   static volatile bool _is_async_deflation_requested;
+  static volatile bool _is_final_audit;
   static jlong         _last_async_deflation_time_ns;
 
   // Function to prepend new blocks to the appropriate lists:

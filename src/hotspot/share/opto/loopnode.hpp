@@ -76,7 +76,8 @@ protected:
          IsMultiversioned=16384,
          StripMined=32768,
          SubwordLoop=65536,
-         ProfileTripFailed=131072};
+         ProfileTripFailed=131072,
+         TransformedLongLoop=262144};
   char _unswitch_count;
   enum { _unswitch_max=3 };
   char _postloop_flags;
@@ -101,6 +102,7 @@ public:
   bool is_strip_mined() const { return _loop_flags & StripMined; }
   bool is_profile_trip_failed() const { return _loop_flags & ProfileTripFailed; }
   bool is_subword_loop() const { return _loop_flags & SubwordLoop; }
+  bool is_transformed_long_loop() const { return _loop_flags & TransformedLongLoop; }
 
   void mark_partial_peel_failed() { _loop_flags |= PartialPeelFailed; }
   void mark_has_reductions() { _loop_flags |= HasReductions; }
@@ -115,6 +117,7 @@ public:
   void clear_strip_mined() { _loop_flags &= ~StripMined; }
   void mark_profile_trip_failed() { _loop_flags |= ProfileTripFailed; }
   void mark_subword_loop() { _loop_flags |= SubwordLoop; }
+  void mark_transformed_long_loop() { _loop_flags |= TransformedLongLoop; }
 
   int unswitch_max() { return _unswitch_max; }
   int unswitch_count() { return _unswitch_count; }
@@ -469,6 +472,8 @@ public:
 
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+
+  bool is_expanded(PhaseGVN *phase) const;
 };
 
 // -----------------------------IdealLoopTree----------------------------------
@@ -803,6 +808,9 @@ private:
   bool skeleton_predicate_has_opaque(IfNode* iff);
   void update_main_loop_skeleton_predicates(Node* ctrl, CountedLoopNode* loop_head, Node* init, int stride_con);
   void insert_loop_limit_check(ProjNode* limit_check_proj, Node* cmp_limit, Node* bol);
+#ifdef ASSERT
+  bool only_has_infinite_loops();
+#endif
 
 public:
 
@@ -1044,6 +1052,13 @@ public:
   PhiNode* loop_iv_phi(Node* xphi, Node* phi_incr, Node* x, IdealLoopTree* loop);
 
   bool is_counted_loop(Node* n, IdealLoopTree* &loop);
+  void long_loop_replace_long_iv(Node* iv_to_replace, Node* inner_iv, Node* outer_phi, Node* inner_head);
+  bool is_long_counted_loop(Node* x, IdealLoopTree* loop, Node_List &old_new);
+#ifdef ASSERT
+  bool convert_to_long_loop(Node* cmp, Node* phi, IdealLoopTree* loop);
+#endif
+  void add_empty_predicate(Deoptimization::DeoptReason reason, Node* inner_head, IdealLoopTree* loop, SafePointNode* sfpt);
+  SafePointNode* find_safepoint(Node* back_control, Node* x, IdealLoopTree* loop);
   IdealLoopTree* insert_outer_loop(IdealLoopTree* loop, LoopNode* outer_l, Node* outer_ift);
   IdealLoopTree* create_outer_strip_mined_loop(BoolNode *test, Node *cmp, Node *init_control,
                                                IdealLoopTree* loop, float cl_prob, float le_fcnt,
@@ -1466,6 +1481,9 @@ public:
   static void print_statistics();
   static int _loop_invokes;     // Count of PhaseIdealLoop invokes
   static int _loop_work;        // Sum of PhaseIdealLoop x _unique
+  static volatile int _long_loop_candidates;
+  static volatile int _long_loop_nests;
+  static volatile int _long_loop_counted_loops;
 #endif
 
   void rpo(Node* start, Node_Stack &stk, VectorSet &visited, Node_List &rpo_list) const;

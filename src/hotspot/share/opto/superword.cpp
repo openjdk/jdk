@@ -2767,7 +2767,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
         }
       }
       // Move shift count into vector register.
-      cnt = VectorNode::shift_count(p0, cnt, vlen, velt_basic_type(p0));
+      cnt = VectorNode::shift_count(p0->Opcode(), cnt, vlen, velt_basic_type(p0));
       _igvn.register_new_node_with_optimizer(cnt);
       _phase->set_ctrl(cnt, _phase->get_ctrl(opd));
       return cnt;

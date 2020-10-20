@@ -449,9 +449,13 @@ const Type* ConvL2INode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return Type::TOP;
   const TypeLong *tl = t->is_long();
-  if (tl->is_con())
+  if (tl->is_con()) {
   // Easy case.
   return TypeInt::make((jint)tl->get_con());
+  }
+  if (tl->_lo >= min_jint && tl->_hi <= max_jint) {
+    return TypeInt::make((jint)tl->_lo, (jint)tl->_hi, tl->_widen);
+  }
   return bottom_type();
 }
 
