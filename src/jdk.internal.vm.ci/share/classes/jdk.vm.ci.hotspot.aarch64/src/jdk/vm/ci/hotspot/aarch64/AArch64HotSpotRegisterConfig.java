@@ -123,6 +123,11 @@ public class AArch64HotSpotRegisterConfig implements RegisterConfig {
      */
     public static final Register metaspaceMethodRegister = r12;
 
+    /**
+     * The platform ABI can use r18 to carry inter-procedural state (e.g. thread
+     * context). If not defined as such by the platform ABI, it can be used as
+     * additional temporary register.
+     */
     public static final Register platformRegister = r18;
     public static final Register heapBaseRegister = r27;
     public static final Register threadRegister = r28;
