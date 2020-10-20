@@ -1308,9 +1308,16 @@ VM_GetAllStackTraces::doit() {
 // HandleMark must be defined in the caller only.
 // It is to keep a ret_ob_h handle alive after return to the caller.
 jvmtiError
-JvmtiEnvBase::check_top_frame(Thread* current_thread, JavaThread* java_thread,
+JvmtiEnvBase::check_top_frame(JavaThread* current_thread, JavaThread* java_thread,
                               jvalue value, TosState tos, Handle* ret_ob_h) {
   ResourceMark rm(current_thread);
+
+  if (java_thread->frames_to_pop_failed_realloc() > 0) {
+    // VM is in the process of popping the top frame because it has scalar replaced objects
+    // which could not be reallocated on the heap.
+    // Return JVMTI_ERROR_OUT_OF_MEMORY to avoid interfering with the VM.
+    return JVMTI_ERROR_OUT_OF_MEMORY;
+  }
 
   vframe *vf = vframeForNoProcess(java_thread, 0);
   NULL_CHECK(vf, JVMTI_ERROR_NO_MORE_FRAMES);
@@ -1326,6 +1333,12 @@ JvmtiEnvBase::check_top_frame(Thread* current_thread, JavaThread* java_thread,
       return JVMTI_ERROR_OPAQUE_FRAME;
     }
     Deoptimization::deoptimize_frame(java_thread, jvf->fr().id());
+    // Eagerly reallocate scalar replaced objects.
+    EscapeBarrier eb(true, current_thread, java_thread);
+    if (!eb.deoptimize_objects(jvf->fr().id())) {
+      // Reallocation of scalar replaced objects failed -> return with error
+      return JVMTI_ERROR_OUT_OF_MEMORY;
+    }
   }
 
   // Get information about method return type
@@ -1388,7 +1401,7 @@ JvmtiEnvBase::force_early_return(JavaThread* java_thread, jvalue value, TosState
 void
 SetForceEarlyReturn::doit(Thread *target, bool self) {
   JavaThread *java_thread = target->as_Java_thread();
-  Thread* current_thread = Thread::current();
+  JavaThread* current_thread = JavaThread::current();
   HandleMark   hm(current_thread);
 
   if (!self) {
@@ -1520,7 +1533,7 @@ JvmtiModuleClosure::get_all_modules(JvmtiEnv* env, jint* module_count_ptr, jobje
 
 void
 UpdateForPopTopFrameClosure::doit(Thread *target, bool self) {
-  Thread* current_thread  = Thread::current();
+  JavaThread* current_thread  = JavaThread::current();
   HandleMark hm(current_thread);
   JavaThread* java_thread = target->as_Java_thread();
 
@@ -1546,6 +1559,14 @@ UpdateForPopTopFrameClosure::doit(Thread *target, bool self) {
   OSThread* osThread = java_thread->osthread();
   if (osThread->get_state() == MONITOR_WAIT) {
     _result = JVMTI_ERROR_OPAQUE_FRAME;
+    return;
+  }
+  
+  if (java_thread->frames_to_pop_failed_realloc() > 0) {
+    // VM is in the process of popping the top frame because it has scalar replaced objects which
+    // could not be reallocated on the heap.
+    // Return JVMTI_ERROR_OUT_OF_MEMORY to avoid interfering with the VM.
+    _result = JVMTI_ERROR_OUT_OF_MEMORY;
     return;
   }
 
@@ -1584,9 +1605,16 @@ UpdateForPopTopFrameClosure::doit(Thread *target, bool self) {
   }
 
   // If any of the top 2 frames is a compiled one, need to deoptimize it
+  EscapeBarrier eb(!is_interpreted[0] || !is_interpreted[1], current_thread, java_thread);
   for (int i = 0; i < 2; i++) {
     if (!is_interpreted[i]) {
       Deoptimization::deoptimize_frame(java_thread, frame_sp[i]);
+      // Eagerly reallocate scalar replaced objects.
+      if (!eb.deoptimize_objects(frame_sp[i])) {
+        // Reallocation of scalar replaced objects failed -> return with error
+        _result = JVMTI_ERROR_OUT_OF_MEMORY;
+        return;
+      }
     }
   }
 

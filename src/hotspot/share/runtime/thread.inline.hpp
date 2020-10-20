@@ -65,6 +65,12 @@ inline void Thread::set_trace_flag() {
 inline void Thread::clear_trace_flag() {
   clear_suspend_flag(_trace_flag);
 }
+inline void Thread::set_obj_deopt_flag() {
+  set_suspend_flag(_obj_deopt);
+}
+inline void Thread::clear_obj_deopt_flag() {
+  clear_suspend_flag(_obj_deopt);
+}
 
 inline jlong Thread::cooked_allocated_bytes() {
   jlong allocated_bytes = Atomic::load_acquire(&_allocated_bytes);
