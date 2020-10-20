@@ -131,10 +131,10 @@ public class Security {
                 call(() -> {
                     client.connect(saddr);
                 }, SE);
-	    }
-	} finally {
+            }
+        } finally {
             Files.deleteIfExists(servername);
-	}
+        }
     }
 
     // All permissions
@@ -152,9 +152,9 @@ public class Security {
                     client.connect(saddr);
                 }, null);
             }
-	} finally {
+        } finally {
             Files.deleteIfExists(servername);
-	}
+        }
     }
 
     public static void testPolicy3() throws Exception {
@@ -190,7 +190,7 @@ public class Security {
                 {
                     throw new RuntimeException("address should have been empty");
                 }
-	    }
-	}
+            }
+        }
     }
 }

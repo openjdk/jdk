@@ -53,8 +53,8 @@ public class SocketOptions {
     }
 
     static void testPeerCred() throws Exception {
-    	UnixDomainSocketAddress addr = null;
-	UnixDomainPrincipal p;
+        UnixDomainSocketAddress addr = null;
+        UnixDomainPrincipal p;
         try (ServerSocketChannel s = ServerSocketChannel.open(StandardProtocolFamily.UNIX)) {
             s.bind(null);
             addr = (UnixDomainSocketAddress)s.getLocalAddress();
@@ -81,11 +81,11 @@ public class SocketOptions {
                     c.setOption(SO_PEERCRED, p);
                     throw new RuntimeException("should have thrown SocketException");
                 } catch (SocketException e) {}
-	    }
-	} finally {
-	    if (addr != null)
+            }
+        } finally {
+            if (addr != null)
                 Files.deleteIfExists(addr.getPath());
-	}
+        }
 
         // Try getting from unconnected socket
 
@@ -95,7 +95,7 @@ public class SocketOptions {
                 System.out.println(p.user());
                 throw new RuntimeException("should have thrown SocketException");
             } catch (SocketException e) {}
-	}
+        }
 
         // Try getting from ServerSocketChannel
 
@@ -105,7 +105,7 @@ public class SocketOptions {
                 System.out.println(p.user());
                 throw new RuntimeException("should have thrown USE");
             } catch (UnsupportedOperationException e) {}
-	}
+        }
     }
 
     static boolean supported() {

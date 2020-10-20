@@ -74,17 +74,17 @@ public class Launcher {
      * SocketChannel returned by this method.
      */
     public static SocketChannel launchWithUnixSocketChannel(String className)
-            throws IOException 
+            throws IOException
     {
         try (ServerSocketChannel ssc = ServerSocketChannel.open(UNIX)) {
             var addr = (UnixDomainSocketAddress)ssc.bind(null).getLocalAddress();
             SocketChannel sc1 = SocketChannel.open(addr);
             try (SocketChannel sc2 = ssc.accept()) {
                 launch(className, null, null, Util.getFD(sc2));
-	    }
+            }
             Files.delete(addr.getPath());
             return sc1;
-	}
+        }
     }
 
     /**
@@ -95,7 +95,7 @@ public class Launcher {
     public static SocketChannel launchWithInetSocketChannel(String className,
                                                         String options[],
                                                         String... args)
-            throws IOException 
+            throws IOException
     {
         try (ServerSocketChannel ssc = ServerSocketChannel.open()) {
             ssc.socket().bind(new InetSocketAddress(InetAddress.getLocalHost(), 0));
@@ -128,7 +128,7 @@ public class Launcher {
     public static SocketChannel launchWithInetServerSocketChannel(String className,
                                                               String[] options,
                                                               String... args)
-            throws IOException 
+            throws IOException
     {
         try (ServerSocketChannel ssc = ServerSocketChannel.open()) {
             ssc.socket().bind(new InetSocketAddress(InetAddress.getLocalHost(), 0));
@@ -136,7 +136,7 @@ public class Launcher {
             launch(className, options, args, Util.getFD(ssc));
             InetSocketAddress isa = new InetSocketAddress(InetAddress.getLocalHost(), port);
             return SocketChannel.open(isa);
-	}
+        }
     }
 
     public static SocketChannel launchWithUnixServerSocketChannel(String className) throws IOException {
