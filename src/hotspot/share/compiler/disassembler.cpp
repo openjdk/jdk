@@ -969,7 +969,7 @@ void Disassembler::decode(address start, address end, outputStream* st /*, ptrdi
   if (cb != NULL) {
     // If we  have an CodeBlob at hand,
     // call the specialized decoder directly.
-    decode(cb, st, c);
+    decode(cb, st);
   } else
 #endif
   {

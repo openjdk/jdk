@@ -49,14 +49,11 @@ class InterpreterCodelet: public Stub {
   int         _size;                             // the size in bytes
   const char* _description;                      // a description of the codelet, for debugging & printing
   Bytecodes::Code _bytecode;                     // associated bytecode if any
-  DEBUG_ONLY(CodeStrings _strings;)              // Comments for annotating assembler output.
 
  public:
   // Initialization/finalization
   void    initialize(int size,
-                     CodeStrings& strings)       { _size = size;
-                                                   DEBUG_ONLY(::new(&_strings) CodeStrings();)
-                                                   DEBUG_ONLY(_strings.assign(strings);) }
+                     CodeStrings& strings)       { _size = size; }
   void    finalize()                             { ShouldNotCallThis(); }
 
   // General info/converters
