@@ -278,7 +278,7 @@ typeArrayOop StringDedupTable::lookup(typeArrayOop value, bool latin1, unsigned 
     if (entry->hash() == hash && entry->latin1() == latin1) {
       oop* obj_addr = (oop*)entry->obj_addr();
       oop obj = NativeAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(obj_addr);
-      if (java_lang_String::value_equals(value, static_cast<typeArrayOop>(obj))) {
+      if (obj != NULL && java_lang_String::value_equals(value, static_cast<typeArrayOop>(obj))) {
         obj = NativeAccess<ON_PHANTOM_OOP_REF>::oop_load(obj_addr);
         return static_cast<typeArrayOop>(obj);
       }

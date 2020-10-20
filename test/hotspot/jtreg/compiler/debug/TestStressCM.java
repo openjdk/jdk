@@ -32,10 +32,7 @@ import jdk.test.lib.Asserts;
  * @bug 8253765
  * @requires vm.debug == true & vm.compiler2.enabled
  * @summary Tests that, when compiling with StressLCM or StressGCM, using the
- *          same seed results in the same compilation. The output of
- *          PrintOptoStatistics is used to compare among compilations, instead
- *          of the more intuitive TraceOptoPipelining which prints
- *          non-deterministic memory addresses.
+ *          same seed yields the same code motion trace.
  * @library /test/lib /
  * @run driver compiler.debug.TestStressCM StressLCM
  * @run driver compiler.debug.TestStressCM StressGCM
@@ -43,16 +40,33 @@ import jdk.test.lib.Asserts;
 
 public class TestStressCM {
 
-    static String optoStats(String stressOpt, int stressSeed) throws Exception {
+    static String cmTrace(String stressOpt, int stressSeed) throws Exception {
         String className = TestStressCM.class.getName();
         String[] procArgs = {
-            "-Xcomp", "-XX:-TieredCompilation",
+            "-Xcomp", "-XX:-TieredCompilation", "-XX:-Inline",
             "-XX:CompileOnly=" + className + "::sum",
-            "-XX:+PrintOptoStatistics", "-XX:+" + stressOpt,
+            "-XX:+TraceOptoPipelining", "-XX:+" + stressOpt,
             "-XX:StressSeed=" + stressSeed, className, "10"};
         ProcessBuilder pb  = ProcessTools.createJavaProcessBuilder(procArgs);
         OutputAnalyzer out = new OutputAnalyzer(pb.start());
-        return out.getStdout();
+        // Extract the trace of our method (the last one after those of all
+        // mandatory stubs such as _new_instance_Java, etc.).
+        String [] traces = out.getStdout().split("\\R");
+        int start = -1;
+        for (int i = traces.length - 1; i >= 0; i--) {
+            if (traces[i].contains("Start GlobalCodeMotion")) {
+                start = i;
+                break;
+            }
+        }
+        // We should have found the start of the trace.
+        Asserts.assertTrue(start >= 0,
+            "could not find the code motion trace");
+        String trace = "";
+        for (int i = start; i < traces.length; i++) {
+            trace += traces[i] + "\n";
+        }
+        return trace;
     }
 
     static void sum(int n) {
@@ -64,8 +78,10 @@ public class TestStressCM {
     public static void main(String[] args) throws Exception {
         if (args[0].startsWith("Stress")) {
             String stressOpt = args[0];
-            Asserts.assertEQ(optoStats(stressOpt, 10), optoStats(stressOpt, 10),
-                "got different optimization stats for the same seed");
+            for (int s = 0; s < 10; s++) {
+                Asserts.assertEQ(cmTrace(stressOpt, s), cmTrace(stressOpt, s),
+                    "got different code motion traces for the same seed " + s);
+            }
         } else if (args.length > 0) {
             sum(Integer.parseInt(args[0]));
         }

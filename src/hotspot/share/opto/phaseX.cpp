@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -439,6 +439,7 @@ PhaseRemoveUseless::PhaseRemoveUseless(PhaseGVN* gvn, Unique_Node_List* worklist
 // The PhaseRenumberLive phase updates two data structures with the new node IDs.
 // (1) The worklist is used by the PhaseIterGVN phase to identify nodes that must be
 // processed. A new worklist (with the updated node IDs) is returned in 'new_worklist'.
+// 'worklist' is cleared upon returning.
 // (2) Type information (the field PhaseGVN::_types) maps type information to each
 // node ID. The mapping is updated to use the new node IDs as well. Updated type
 // information is returned in PhaseGVN::_types.
@@ -510,6 +511,9 @@ PhaseRenumberLive::PhaseRenumberLive(PhaseGVN* gvn,
 
   // Set the dead node count to 0 and reset dead node list.
   C->reset_dead_node_list();
+
+  // Clear the original worklist
+  worklist->clear();
 }
 
 int PhaseRenumberLive::new_index(int old_idx) {
