@@ -36,7 +36,7 @@ import java.nio.channels.*;
 import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
 
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertThrows;
 
 public class TestDefaultBehaviour {
