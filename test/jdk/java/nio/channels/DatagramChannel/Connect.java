@@ -32,6 +32,8 @@ import java.net.*;
 import java.nio.*;
 import java.nio.channels.*;
 import java.nio.charset.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.stream.Stream;
@@ -51,9 +53,14 @@ public class Connect {
     }
 
     static void invoke(Runnable reader, Runnable writer) throws CompletionException {
-        CompletableFuture<Void> f1 = CompletableFuture.runAsync(writer);
-        CompletableFuture<Void> f2 = CompletableFuture.runAsync(reader);
-        wait(f1, f2);
+        ExecutorService threadPool = Executors.newCachedThreadPool();
+        try {
+            CompletableFuture<Void> f1 = CompletableFuture.runAsync(writer, threadPool);
+            CompletableFuture<Void> f2 = CompletableFuture.runAsync(reader, threadPool);
+            wait(f1, f2);
+        } finally {
+            threadPool.shutdown();
+        }
     }
 
     // This method waits until one of the given CompletableFutures completes exceptionally. In which case, it stops waiting for the other futures and
