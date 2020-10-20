@@ -1941,7 +1941,7 @@ private:
   ShenandoahVMWeakRoots<true /*concurrent*/> _vm_roots;
 
   // Roots related to concurrent class unloading
-  ShenandoahClassLoaderDataRoots<true /* concurrent */, false /* single thread*/>
+  ShenandoahClassLoaderDataRoots<true /* concurrent */, true /* single thread*/>
                                              _cld_roots;
   ShenandoahConcurrentNMethodIterator        _nmethod_itr;
   ShenandoahConcurrentStringDedupRoots       _dedup_roots;
