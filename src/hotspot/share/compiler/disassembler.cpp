@@ -63,7 +63,7 @@ class decode_env {
   CodeBuffer*   _codeBuffer;  // != NULL only when decoding a CodeBuffer
   CodeBlob*     _codeBlob;    // != NULL only when decoding a CodeBlob
   nmethod*      _nm;          // != NULL only when decoding a nmethod
-  NOT_PRODUCT(CodeStrings   _strings;)
+
   address       _start;       // != NULL when decoding a range of unknown type
   address       _end;         // != NULL when decoding a range of unknown type
 
@@ -77,6 +77,8 @@ class decode_env {
   bool          _print_help;
   bool          _helpPrinted;
   static bool   _optionsParsed;
+
+  NOT_PRODUCT(CodeStrings   _strings;)
 
   enum {
     tabspacing = 8
@@ -337,10 +339,10 @@ decode_env::decode_env(CodeBuffer* code, outputStream* output) :
   _post_decode_alignment(0),
   _print_file_name(false),
   _print_help(false),
-  _helpPrinted(false) {
+  _helpPrinted(false)
+  NOT_PRODUCT(COMMA _strings()) {
 
   memset(_option_buf, 0, sizeof(_option_buf));
-  NOT_PRODUCT(_strings = CodeStrings();)
   process_options(_output);
 }
 
@@ -359,13 +361,13 @@ decode_env::decode_env(CodeBlob* code, outputStream* output, CodeStrings c) :
   _post_decode_alignment(0),
   _print_file_name(false),
   _print_help(false),
-  _helpPrinted(false) {
+  _helpPrinted(false)
+  NOT_PRODUCT(COMMA _strings())  {
 
   memset(_option_buf, 0, sizeof(_option_buf));
   process_options(_output);
 
 #ifndef PRODUCT
-  _strings = CodeStrings();
   _strings.copy(c);
 #endif
 }
