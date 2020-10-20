@@ -30,21 +30,20 @@
 #include "unittest.hpp"
 
 class CheckTask : public G1ServiceTask {
-  G1ServiceThread* _st;
   int _execution_count;
-  int64_t _timeout;
+  bool _reschedule;
+
 public:
-  CheckTask(const char* name, G1ServiceThread* st) :
+  CheckTask(const char* name) :
       G1ServiceTask(name),
-      _st(st),
       _execution_count(0),
-      _timeout(100) { }
+      _reschedule(true) { }
   virtual void execute() { _execution_count++; }
-  virtual uint64_t delay_ms() { return _timeout; }
-  virtual bool should_reschedule() { return true; }
+  virtual uint64_t delay_ms() { return 100; }
+  virtual bool should_reschedule() { return _reschedule; }
 
   int execution_count() { return _execution_count;}
-  void set_timeout(int64_t timeout) { _timeout = timeout; }
+  void set_reschedule(bool reschedule) { _reschedule = reschedule; }
 };
 
 static void stop_service_thread(G1ServiceThread* thread) {
@@ -58,7 +57,7 @@ TEST_VM(G1ServiceThread, test_add) {
   G1ServiceThread* st = new G1ServiceThread();
   os::naked_short_sleep(500);
 
-  CheckTask ct("AddAndRun", st);
+  CheckTask ct("AddAndRun");
   st->register_task(&ct);
 
   // Give CheckTask time to run.
@@ -79,7 +78,7 @@ TEST_VM(G1ServiceThread, test_add_while_waiting) {
   G1ServiceThread* st = new G1ServiceThread();
   os::naked_short_sleep(500);
 
-  CheckTask ct("AddWhileWaiting", st);
+  CheckTask ct("AddWhileWaiting");
   st->register_task(&ct);
 
   // Give CheckTask time to run.
@@ -95,9 +94,9 @@ TEST_VM(G1ServiceThread, test_add_run_once) {
   G1ServiceThread* st = new G1ServiceThread();
   os::naked_short_sleep(500);
 
-  // Negative timeout to avoid rescheduling.
-  CheckTask ct("AddRunOnce", st);
-  ct.set_timeout(-1);
+  // Set reschedule to false to only run once.
+  CheckTask ct("AddRunOnce");
+  ct.set_reschedule(false);
   st->register_task(&ct);
 
   // Give CheckTask time to run.
@@ -110,15 +109,15 @@ TEST_VM(G1ServiceThread, test_add_run_once) {
 }
 
 class TestTask : public G1ServiceTask {
-  int64_t _timeout;
+  int64_t _delay_ms;
 public:
-  TestTask(int64_t timeout) :
+  TestTask(int64_t delay) :
       G1ServiceTask("TestTask"),
-      _timeout(timeout) {
-    set_time(timeout / 1000.0);
+      _delay_ms(delay) {
+    set_time(delay / 1000.0);
   }
   virtual void execute() { }
-  virtual uint64_t delay_ms() { return _timeout; }
+  virtual uint64_t delay_ms() { return _delay_ms; }
   virtual bool should_reschedule() { return true; }
 };
 
