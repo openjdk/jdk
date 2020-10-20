@@ -94,9 +94,10 @@ public class PreviewAutoSuppress extends TestRunner {
 
         List<String> expected =
                 List.of("Outer.java:3:5: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.records)",
+                        "Outer.java:3:5: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.records)",
                         "Outer.java:4:5: compiler.warn.declared.using.preview: kindname.record, test.Outer.R",
                         "Use.java:3:8: compiler.warn.declared.using.preview: kindname.record, test.Outer.R",
-                        "3 warnings");
+                        "4 warnings");
         if (!log.equals(expected))
             throw new Exception("expected output not found" + log);
         checkPreviewClassfile(classes.resolve("test").resolve("Outer.class"),

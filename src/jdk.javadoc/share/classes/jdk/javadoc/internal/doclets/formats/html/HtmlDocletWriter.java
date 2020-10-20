@@ -120,6 +120,7 @@ import static com.sun.source.doctree.DocTree.Kind.LINK;
 import static com.sun.source.doctree.DocTree.Kind.LINK_PLAIN;
 import static com.sun.source.doctree.DocTree.Kind.SEE;
 import static com.sun.source.doctree.DocTree.Kind.TEXT;
+import static javax.lang.model.element.ElementKind.METHOD;
 import static javax.lang.model.element.ElementKind.PACKAGE;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import static jdk.javadoc.internal.doclets.toolkit.util.CommentHelper.SPACER;
@@ -658,7 +659,7 @@ public class HtmlDocletWriter {
                 return new ContentBuilder(
                     links.createLink(targetLink, label),
                     new HtmlTree(TagName.SUP)
-                            .add(links.createLink(targetLink.withFragment(SectionName.PREVIEW.getName()),
+                            .add(links.createLink(targetLink.withFragment(getPreviewSectionAnchor(packageElement)),
                                                   contents.previewMark))
                 );
             }
@@ -692,7 +693,7 @@ public class HtmlDocletWriter {
                 link = new ContentBuilder(
                         link,
                         new HtmlTree(TagName.SUP)
-                                .add(links.createLink(targetLink.withFragment(SectionName.PREVIEW.getName()),
+                                .add(links.createLink(targetLink.withFragment(getPreviewSectionAnchor(mdle)),
                                                       contents.previewMark))
                 );
             }
@@ -2234,7 +2235,7 @@ public class HtmlDocletWriter {
         if (utils.isPreviewAPI(forWhat)) {
             //in Java platform:
             HtmlTree previewDiv = HtmlTree.DIV(HtmlStyle.previewBlock);
-            previewDiv.setId(SectionName.PREVIEW.getName());
+            previewDiv.setId(getPreviewSectionAnchor(forWhat));
             DocTree previewTree = utils.getPreviewTree(forWhat);
             if (previewTree != null) {
                 previewDiv.add(new RawHtml(utils.getPreviewTreeSummaryOrDetails(previewTree, false)));
@@ -2268,6 +2269,7 @@ public class HtmlDocletWriter {
             if (!previewNotes.isEmpty()) {
                 Name name = forWhat.getSimpleName();
                 HtmlTree previewDiv = HtmlTree.DIV(HtmlStyle.previewBlock);
+                previewDiv.setId(getPreviewSectionAnchor(forWhat));
                 RawHtml leadingNote = new RawHtml(resources.getText("doclet.PreviewLeadingNote", name));
                 previewDiv.add(HtmlTree.SPAN(HtmlStyle.previewLabel,
                                              leadingNote));
@@ -2360,5 +2362,14 @@ public class HtmlDocletWriter {
         return new LinkInfoImpl(configuration, LinkInfoImpl.Kind.CLASS, te)
                 .label(HtmlTree.CODE(new StringContent(te.getSimpleName())))
                 .skipPreview(true);
+    }
+
+    public String getPreviewSectionAnchor(Element el) {
+        return "preview-" + switch (el.getKind()) {
+            case CONSTRUCTOR, METHOD ->
+                links.getAnchor((ExecutableElement) el);
+            case PACKAGE -> getPackageAnchorName((PackageElement) el);
+            default -> utils.getFullyQualifiedName(el, false);
+        };
     }
 }
