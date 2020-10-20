@@ -71,7 +71,7 @@
 #include "gc/shenandoah/shenandoahJfrSupport.hpp"
 #endif
 
-#include "memory/metaspace.hpp"
+#include "memory/classLoaderMetaspace.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
@@ -2410,7 +2410,7 @@ void ShenandoahHeap::stw_unload_classes(bool full_gc) {
   }
   // Resize and verify metaspace
   MetaspaceGC::compute_new_size();
-  MetaspaceUtils::verify_metrics();
+  DEBUG_ONLY(MetaspaceUtils::verify();)
 }
 
 // Weak roots are either pre-evacuated (final mark) or updated (final updaterefs),
