@@ -3753,13 +3753,10 @@ class StubGenerator: public StubCodeGenerator {
     __ subi(sl, sl, 12);
 
     // Load CTR with the number of passes through the unrolled loop
-    // = sl >> block_size_shift.  After the shift, if sl == 0, there's too
+    // = sl >> block_size_shift.  After the shift, if sl <= 0, there's too
     // little data to be processed by this intrinsic.
     __ srawi_(sl, sl, block_size_shift);
-    __ beq_predict_not_taken(CCR0, return_zero);
-    // if sl was less than zero before the shift, XER CA will be set to 1
-    __ mcrxrx(CCR2); // moves XER's OV, OV32, CA, CA32 to CCR2's LT, GT, EQ, SO bits, respectively.
-    __ beq_predict_not_taken(CCR2, return_zero);
+    __ ble(CCR0, return_zero);
     __ mtctr(sl);
 
     // Clear the other two parameter registers upper 32 bits.
