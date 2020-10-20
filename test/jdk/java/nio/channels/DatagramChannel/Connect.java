@@ -47,9 +47,10 @@ public class Connect {
     }
 
     static void test() throws Exception {
-        Reactor r = new Reactor();
-        Actor a = new Actor(r.port());
-        invoke(a, r);
+        try (Reactor r = new Reactor();
+             Actor a = new Actor(r.port())) {
+            invoke(a, r);
+        }
     }
 
     static void invoke(Runnable reader, Runnable writer) throws CompletionException {
@@ -63,29 +64,30 @@ public class Connect {
         }
     }
 
-    // This method waits until one of the given CompletableFutures completes exceptionally. In which case, it stops waiting for the other futures and
-    // throws a CompletionException. Otherwise, will wait for all futures to complete successfully.
+
+    // This method waits for either one of the given futures to complete exceptionally
+    // or for all of the given futures to complete successfully.
     private static void wait(CompletableFuture<?>... futures) throws CompletionException {
         CompletableFuture<?> future = CompletableFuture.allOf(futures);
         Stream.of(futures)
-                .forEach(f -> {
-                    f.exceptionally(ex -> {
-                        future.completeExceptionally(ex);
-                        return null;
-                    });
-                });
+                .forEach(f -> f.exceptionally(ex -> {
+                    future.completeExceptionally(ex);
+                    return null;
+                }));
         future.join();
     }
 
-    public static class Actor implements Runnable {
+    public static class Actor implements AutoCloseable, Runnable {
         final int port;
+        final DatagramChannel dc;
 
-        Actor(int port) {
+        Actor(int port) throws IOException {
             this.port = port;
+            dc = DatagramChannel.open();
         }
 
         public void run() {
-            try (DatagramChannel dc = DatagramChannel.open()) {
+            try {
                 ByteBuffer bb = ByteBuffer.allocateDirect(256);
                 bb.put("hello".getBytes());
                 bb.flip();
@@ -115,9 +117,6 @@ public class Connect {
                 CharBuffer cb = StandardCharsets.US_ASCII.
                         newDecoder().decode(bb);
                 log.println("Actor received from Reactor at " + isa + ": " + cb);
-
-                // Clean up
-                dc.disconnect();
             } catch (Exception ex) {
                 log.println("Actor threw exception: " + ex);
                 throw new RuntimeException(ex);
@@ -125,9 +124,14 @@ public class Connect {
                 log.println("Actor finished");
             }
         }
+
+        @Override
+        public void close() throws Exception {
+            dc.close();
+        }
     }
 
-    public static class Reactor implements Runnable {
+    public static class Reactor implements AutoCloseable, Runnable {
         final DatagramChannel dc;
 
         Reactor() throws IOException {
@@ -154,16 +158,17 @@ public class Connect {
                 bb.flip();
                 log.println("Reactor attempting to write: " + dc.getRemoteAddress().toString());
                 dc.write(bb);
-
-                // Clean up
-                dc.disconnect();
-                dc.close();
             } catch (Exception ex) {
                 log.println("Reactor threw exception: " + ex);
                 throw new RuntimeException(ex);
             } finally {
                 log.println("Reactor finished");
             }
+        }
+
+        @Override
+        public void close() throws IOException {
+            dc.close();
         }
     }
 }
