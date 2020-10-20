@@ -596,6 +596,9 @@ int ZeroInterpreter::accessor_entry(Method* method, intptr_t UNUSED, TRAPS) {
     break;
   }
   if (entry->is_volatile()) {
+    if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
+      OrderAccess::fence();
+    }
     switch (entry->flag_state()) {
     case ctos:
       SET_LOCALS_INT(object->char_field_acquire(entry->f2_as_index()), 0);
