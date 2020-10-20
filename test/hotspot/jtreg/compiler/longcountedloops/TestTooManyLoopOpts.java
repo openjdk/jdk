@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug JDK-8254998
+ * @bug 8254998
  * @summary C2: assert(!n->as_Loop()->is_transformed_long_loop()) failure with -XX:StressLongCountedLoop=1
  * @requires vm.compiler2.enabled & vm.gc.Parallel
  *
