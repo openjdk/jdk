@@ -62,6 +62,7 @@
 #include "oops/typeArrayOop.inline.hpp"
 #include "oops/verifyOopClosure.hpp"
 #include "prims/jvm_misc.hpp"
+#include "prims/jvmtiDeferredUpdates.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/arguments.hpp"
@@ -119,6 +120,7 @@
 #include "utilities/macros.hpp"
 #include "utilities/preserveException.hpp"
 #include "utilities/singleWriterSynchronizer.hpp"
+#include "utilities/spinYield.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
@@ -1702,7 +1704,7 @@ JavaThread::JavaThread() :
   _deopt_nmethod(nullptr),
   _vframe_array_head(nullptr),
   _vframe_array_last(nullptr),
-  _deferred_locals_updates(nullptr),
+  _jvmti_deferred_updates(nullptr),
   _callee_target(nullptr),
   _vm_result(nullptr),
   _vm_result_2(nullptr),
@@ -1903,17 +1905,13 @@ JavaThread::~JavaThread() {
     delete old_array;
   }
 
-  GrowableArray<jvmtiDeferredLocalVariableSet*>* deferred = deferred_locals();
-  if (deferred != NULL) {
+  JvmtiDeferredUpdates* updates = deferred_updates();
+  if (updates != NULL) {
     // This can only happen if thread is destroyed before deoptimization occurs.
-    assert(deferred->length() != 0, "empty array!");
-    do {
-      jvmtiDeferredLocalVariableSet* dlv = deferred->at(0);
-      deferred->remove_at(0);
-      // individual jvmtiDeferredLocalVariableSet are CHeapObj's
-      delete dlv;
-    } while (deferred->length() != 0);
-    delete deferred;
+    assert(updates->count() > 0, "Updates holder not deleted");
+    // free deferred updates.
+    delete updates;
+    set_deferred_updates(NULL);
   }
 
   // All Java related clean up happens in exit
@@ -2405,6 +2403,11 @@ void JavaThread::handle_special_runtime_exit_condition(bool check_asyncs) {
     java_suspend_self_with_safepoint_check();
   }
 
+  if (is_obj_deopt_suspend()) {
+    frame_anchor()->make_walkable(this);
+    wait_for_object_deoptimization();
+  }
+
   // We might be here for reasons in addition to the self-suspend request
   // so check for other async requests.
   if (check_asyncs) {
@@ -2610,6 +2613,63 @@ void JavaThread::java_suspend_self_with_safepoint_check() {
   }
 }
 
+// Wait for another thread to perform object reallocation and relocking on behalf of
+// this thread.
+// This method is very similar to JavaThread::java_suspend_self_with_safepoint_check()
+// and has the same callers. It also performs a raw thread state transition to
+// _thread_blocked and back again to the original state before returning. The current
+// thread is required to change to _thread_blocked in order to be seen to be
+// safepoint/handshake safe whilst suspended and only after becoming handshake safe,
+// the other thread can complete the handshake used to synchronize with this thread
+// and then perform the reallocation and relocking. We cannot use the thread state
+// transition helpers because we arrive here in various states and also because the
+// helpers indirectly call this method.  After leaving _thread_blocked we have to
+// check for safepoint/handshake, except if _thread_in_native. The thread is safe
+// without blocking then. Allowed states are enumerated in
+// SafepointSynchronize::block(). See also EscapeBarrier::sync_and_suspend_*()
+
+void JavaThread::wait_for_object_deoptimization() {
+  assert(!has_last_Java_frame() || frame_anchor()->walkable(), "should have walkable stack");
+  assert(this == Thread::current(), "invariant");
+  JavaThreadState state = thread_state();
+
+  bool spin_wait = os::is_MP();
+  do {
+    set_thread_state(_thread_blocked);
+    // Check if _external_suspend was set in the previous loop iteration.
+    if (is_external_suspend()) {
+      java_suspend_self();
+    }
+    // Wait for object deoptimization if requested.
+    if (spin_wait) {
+      // A single deoptimization is typically very short. Microbenchmarks
+      // showed 5% better performance when spinning.
+      const uint spin_limit = 10 * SpinYield::default_spin_limit;
+      SpinYield spin(spin_limit);
+      for (uint i = 0; is_obj_deopt_suspend() && i < spin_limit; i++) {
+        spin.wait();
+      }
+      // Spin just once
+      spin_wait = false;
+    } else {
+      MonitorLocker ml(this, EscapeBarrier_lock, Monitor::_no_safepoint_check_flag);
+      if (is_obj_deopt_suspend()) {
+        ml.wait();
+      }
+    }
+    // The current thread could have been suspended again. We have to check for
+    // suspend after restoring the saved state. Without this the current thread
+    // might return to _thread_in_Java and execute bytecode.
+    set_thread_state_fence(state);
+
+    if (state != _thread_in_native) {
+      SafepointMechanism::process_if_requested(this);
+    }
+    // A handshake for obj. deoptimization suspend could have been processed so
+    // we must check after processing.
+  } while (is_obj_deopt_suspend() || is_external_suspend());
+}
+
 #ifdef ASSERT
 // Verify the JavaThread has not yet been published in the Threads::list, and
 // hence doesn't need protection from concurrent access at this stage.
@@ -2637,6 +2697,10 @@ void JavaThread::check_safepoint_and_suspend_for_native_trans(JavaThread *thread
     thread->java_suspend_self_with_safepoint_check();
   } else {
     SafepointMechanism::process_if_requested(thread);
+  }
+
+  if (thread->is_obj_deopt_suspend()) {
+    thread->wait_for_object_deoptimization();
   }
 
   JFR_ONLY(SUSPEND_THREAD_CONDITIONAL(thread);)
@@ -2802,7 +2866,7 @@ void JavaThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
   assert(vframe_array_head() == NULL, "deopt in progress at a safepoint!");
   // If we have deferred set_locals there might be oops waiting to be
   // written
-  GrowableArray<jvmtiDeferredLocalVariableSet*>* list = deferred_locals();
+  GrowableArray<jvmtiDeferredLocalVariableSet*>* list = JvmtiDeferredUpdates::deferred_locals(this);
   if (list != NULL) {
     for (int i = 0; i < list->length(); i++) {
       list->at(i)->oops_do(f);
@@ -4384,6 +4448,9 @@ void Threads::add(JavaThread* p, bool force_daemon) {
 
   // Possible GC point.
   Events::log(p, "Thread added: " INTPTR_FORMAT, p2i(p));
+
+  // Make new thread known to active EscapeBarrier
+  EscapeBarrier::thread_added(p);
 }
 
 void Threads::remove(JavaThread* p, bool is_daemon) {
@@ -4424,6 +4491,9 @@ void Threads::remove(JavaThread* p, bool is_daemon) {
     // to do callbacks into the safepoint code. However, the safepoint code is not aware
     // of this thread since it is removed from the queue.
     p->set_terminated_value();
+
+    // Notify threads waiting in EscapeBarriers
+    EscapeBarrier::thread_removed(p);
   } // unlock Threads_lock
 
   // Since Events::log uses a lock, we grab it outside the Threads_lock

@@ -306,7 +306,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
                                            jobject *monitor_ptr);
   jvmtiError get_owned_monitors(JavaThread *calling_thread, JavaThread* java_thread,
                                 GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list);
-  jvmtiError check_top_frame(Thread* current_thread, JavaThread* java_thread,
+  jvmtiError check_top_frame(JavaThread* current_thread, JavaThread* java_thread,
                              jvalue value, TosState tos, Handle* ret_ob_h);
   jvmtiError force_early_return(JavaThread* java_thread, jvalue value, TosState tos);
 };
