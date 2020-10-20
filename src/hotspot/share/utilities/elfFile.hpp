@@ -262,7 +262,7 @@ public:
  *         program information to get the filename and the line number.
  *  (4) Find the filename and line number belonging to the given library offset by running the line number program state machine with its registers.
  *      This creates a matrix where each row stores information for specific addresses (library offsets). The state machine executes different opcodes
- *      which modify the state machine registers. Certain opcodes will add a new row to the matrix by taking the current values of state machine.
+ *      which modify the state machine registers. Certain opcodes will add a new row to the matrix by taking the current values of state machine
  *      registers. As soon as the correct matrix row matching the library offset is found, we can read the line number from the line register of the
  *      state machine and parse the filename from the line number program header with the given file index from the file register of the state machine.
  *
@@ -561,7 +561,7 @@ class DwarfFile : public ElfFile {
       bool _do_reset;
 
       // Could the current sequence be a candidate which contains the library offset?
-      // (library offset must be smaller than the address of the first row in the matrix)
+      // (library offset must be bigger than the address of the first row in the matrix)
       bool _sequence_candidate;
 
       LineNumberProgramState(LineNumberProgramHeader* header)
