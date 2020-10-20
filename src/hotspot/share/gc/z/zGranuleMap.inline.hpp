@@ -24,6 +24,7 @@
 #ifndef SHARE_GC_Z_ZGRANULEMAP_INLINE_HPP
 #define SHARE_GC_Z_ZGRANULEMAP_INLINE_HPP
 
+#include "gc/z/zArray.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zGranuleMap.hpp"
 #include "memory/allocation.inline.hpp"
@@ -86,30 +87,7 @@ inline void ZGranuleMap<T>::release_put(uintptr_t offset, T value) {
 }
 
 template <typename T>
-inline ZGranuleMapIterator<T>::ZGranuleMapIterator(const ZGranuleMap<T>* map) :
-    _map(map),
-    _next(0) {}
-
-template <typename T>
-inline bool ZGranuleMapIterator<T>::next(T* value) {
-  if (_next < _map->_size) {
-    *value = _map->_map[_next++];
-    return true;
-  }
-
-  // End of map
-  return false;
-}
-
-template <typename T>
-inline bool ZGranuleMapIterator<T>::next(T** value) {
-  if (_next < _map->_size) {
-    *value = _map->_map + _next++;
-    return true;
-  }
-
-  // End of map
-  return false;
-}
+inline ZGranuleMapIterator<T>::ZGranuleMapIterator(const ZGranuleMap<T>* granule_map) :
+    ZArrayIteratorImpl<T, false /* Parallel */>(granule_map->_map, granule_map->_size) {}
 
 #endif // SHARE_GC_Z_ZGRANULEMAP_INLINE_HPP
