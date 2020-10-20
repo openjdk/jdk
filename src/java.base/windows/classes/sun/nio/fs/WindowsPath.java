@@ -206,7 +206,7 @@ class WindowsPath implements Path {
         // directory on removal media devices can change during the lifetime
         // of the VM)
         if (type != WindowsPathType.DRIVE_RELATIVE) {
-            synchronized (path) {
+            synchronized (this) {
                 pathForWin32Calls = new WeakReference<String>(resolved);
             }
         }
