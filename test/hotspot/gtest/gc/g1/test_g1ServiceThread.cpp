@@ -40,7 +40,9 @@ public:
       _execution_count(0),
       _timeout(100) { }
   virtual void execute() { _execution_count++; }
-  virtual int64_t timeout_ms() { return _timeout; }
+  virtual uint64_t delay_ms() { return _timeout; }
+  virtual bool should_reschedule() { return true; }
+
   int execution_count() { return _execution_count;}
   void set_timeout(int64_t timeout) { _timeout = timeout; }
 };
@@ -116,17 +118,18 @@ public:
     set_time(timeout / 1000.0);
   }
   virtual void execute() { }
-  virtual int64_t timeout_ms() { return _timeout; }
+  virtual uint64_t delay_ms() { return _timeout; }
+  virtual bool should_reschedule() { return true; }
 };
 
-TEST_VM(G1ServiceTaskList, add_ordered) {
-  G1ServiceTaskList list;
+TEST_VM(G1ServiceTaskQueue, add_ordered) {
+  G1ServiceTaskQueue queue;
 
   int num_test_tasks = 5;
   for (int i = 1; i <= num_test_tasks; i++) {
     // Create tasks with different timeout.
     TestTask* task = new TestTask(100 * i);
-    list.add_ordered(task);
+    queue.add_ordered(task);
   }
 
   // Now fake a run-loop, that reschedules the tasks using a
@@ -134,32 +137,32 @@ TEST_VM(G1ServiceTaskList, add_ordered) {
   for (double now = 0; now < 1000; now++) {
     // Random multiplyier is at least 1 to ensure progress.
     int multiplyer = 1 + os::random() % 10;
-    while (list.peek()->time() < now) {
-      G1ServiceTask* task = list.pop();
+    while (queue.peek()->time() < now) {
+      G1ServiceTask* task = queue.pop();
       task->execute();
-      task->set_time(now + ((task->timeout_ms() * multiplyer) / 1000.0));
-      // All additions will verify that the list is sorted.
-      list.add_ordered(task);
+      task->set_time(now + ((task->delay_ms() * multiplyer) / 1000.0));
+      // All additions will verify that the queue is sorted.
+      queue.add_ordered(task);
     }
   }
 
-  while (!list.is_empty()) {
-    G1ServiceTask* task = list.pop();
+  while (!queue.is_empty()) {
+    G1ServiceTask* task = queue.pop();
     delete task;
   }
 }
 
 #ifdef ASSERT
-TEST_VM_ASSERT_MSG(G1ServiceTaskList, pop_empty,
-    "Should never try to verify empty list") {
-  G1ServiceTaskList list;
-  list.pop();
+TEST_VM_ASSERT_MSG(G1ServiceTaskQueue, pop_empty,
+    "Should never try to verify empty queue") {
+  G1ServiceTaskQueue queue;
+  queue.pop();
 }
 
-TEST_VM_ASSERT_MSG(G1ServiceTaskList, peek_empty,
-    "Should never try to verify empty list") {
-  G1ServiceTaskList list;
-  list.peek();
+TEST_VM_ASSERT_MSG(G1ServiceTaskQueue, peek_empty,
+    "Should never try to verify empty queue") {
+  G1ServiceTaskQueue queue;
+  queue.peek();
 }
 
 #endif
