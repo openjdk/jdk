@@ -84,7 +84,7 @@ public class DeprecatedAPIListBuilder {
     }
 
     public boolean isEmpty() {
-        return deprecatedMap.values().stream().allMatch(Collection::isEmpty);
+        return deprecatedMap.values().stream().allMatch(Set::isEmpty);
     }
 
     /**

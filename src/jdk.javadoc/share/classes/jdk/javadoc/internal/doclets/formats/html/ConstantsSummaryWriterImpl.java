@@ -89,6 +89,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         constantsTableHeader = new TableHeader(
                 contents.modifierAndTypeLabel, contents.constantFieldLabel, contents.valueLabel);
         this.navBar = new Navigation(null, configuration, PageMode.CONSTANT_VALUES, path);
+        configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.CONSTANT_VALUES);
     }
 
     @Override
