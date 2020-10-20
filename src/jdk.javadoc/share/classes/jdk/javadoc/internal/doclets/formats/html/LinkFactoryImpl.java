@@ -91,13 +91,18 @@ public class LinkFactoryImpl extends LinkFactory {
         }
         Content label = classLinkInfo.getClassLinkLabel(configuration);
         Set<ElementFlag> flags;
-        boolean noPreview = classLinkInfo.skipPreview;
-        if (!hasWhere && !noPreview) {
+        Element target;
+        boolean showPreview = !classLinkInfo.skipPreview;
+        if (!hasWhere && showPreview) {
             flags = utils.elementFlags(typeElement);
-        } else if ((classLinkInfo.context == LinkInfoImpl.Kind.SEE_TAG || classLinkInfo.context == LinkInfoImpl.Kind.MEMBER_DEPRECATED_PREVIEW) && classLinkInfo.whereMember != null && !noPreview) {
+            target = typeElement;
+        } else if ((classLinkInfo.context == LinkInfoImpl.Kind.SEE_TAG || classLinkInfo.context == LinkInfoImpl.Kind.MEMBER_DEPRECATED_PREVIEW) &&
+                   classLinkInfo.whereMember != null && showPreview) {
             flags = utils.elementFlags(classLinkInfo.whereMember);
+            target = classLinkInfo.whereMember;
         } else {
             flags = EnumSet.noneOf(ElementFlag.class);
+            target = null;
         }
 
         Content link = new ContentBuilder();
@@ -114,7 +119,7 @@ public class LinkFactoryImpl extends LinkFactory {
                                 classLinkInfo.target));
                         if (flags.contains(ElementFlag.PREVIEW)) {
                             link.add(new HtmlTree(TagName.SUP).add(m_writer.links.createLink(
-                                    filename.fragment(SectionName.PREVIEW.getName()),
+                                    filename.fragment(m_writer.getPreviewSectionAnchor(target)),
                                     m_writer.contents.previewMark)));
                         }
                         if (noLabel && !classLinkInfo.excludeTypeParameterLinks) {
@@ -132,7 +137,7 @@ public class LinkFactoryImpl extends LinkFactory {
                 if (flags.contains(ElementFlag.PREVIEW)) {
                     link.add(new HtmlTree(TagName.SUP).add(m_writer.getCrossClassLink(
                         typeElement,
-                        SectionName.PREVIEW.getName(),
+                        m_writer.getPreviewSectionAnchor(target),
                         m_writer.contents.previewMark,
                         false, false)));
                 }

@@ -206,7 +206,8 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
             if ("record".equals(modifiersPart) ||
                 "sealed".equals(modifiersPart) || "non-sealed".equals(modifiersPart)) {
                 pre.add(modifiersPart);
-                pre.add(new HtmlTree(TagName.SUP).add(links.createLink(SectionName.PREVIEW, contents.previewMark)));
+                pre.add(new HtmlTree(TagName.SUP).add(links.createLink(getPreviewSectionAnchor(typeElement),
+                                                      contents.previewMark)));
             } else {
                 pre.add(modifiersPart);
             }
@@ -277,7 +278,8 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                 if (isFirst) {
                     pre.add(DocletConstants.NL);
                     pre.add("permits");
-                    pre.add(new HtmlTree(TagName.SUP).add(links.createLink(SectionName.PREVIEW, contents.previewMark)));
+                    pre.add(new HtmlTree(TagName.SUP).add(links.createLink(getPreviewSectionAnchor(typeElement),
+                                                          contents.previewMark)));
                     pre.add(" ");
                     isFirst = false;
                 } else {
