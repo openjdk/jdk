@@ -289,6 +289,8 @@ void DebugInformationRecorder::describe_scope(int         pc_offset,
                                               bool        is_method_handle_invoke,
                                               bool        is_optimized_linkToNative,
                                               bool        return_oop,
+                                              bool        has_ea_local_in_scope,
+                                              bool        arg_escape,
                                               DebugToken* locals,
                                               DebugToken* expressions,
                                               DebugToken* monitors) {
@@ -306,6 +308,8 @@ void DebugInformationRecorder::describe_scope(int         pc_offset,
   last_pd->set_is_method_handle_invoke(is_method_handle_invoke);
   last_pd->set_is_optimized_linkToNative(is_optimized_linkToNative);
   last_pd->set_return_oop(return_oop);
+  last_pd->set_has_ea_local_in_scope(has_ea_local_in_scope);
+  last_pd->set_arg_escape(arg_escape);
 
   // serialize sender stream offest
   stream()->write_int(sender_stream_offset);

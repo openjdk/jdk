@@ -1004,6 +1004,8 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
   int safepoint_pc_offset = current_offset;
   bool is_method_handle_invoke = false;
   bool return_oop = false;
+  bool has_ea_local_in_scope = sfn->_has_ea_local_in_scope;
+  bool arg_escape = false;
 
   // Add the safepoint in the DebugInfoRecorder
   if( !mach->is_MachCall() ) {
@@ -1018,6 +1020,7 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
         assert(C->has_method_handle_invokes(), "must have been set during call generation");
         is_method_handle_invoke = true;
       }
+      arg_escape = mcall->as_MachCallJava()->_arg_escape;
     }
 
     // Check if a call returns an object.
@@ -1138,6 +1141,7 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
     // Now we can describe the scope.
     methodHandle null_mh;
     bool rethrow_exception = false;
+    bool is_opt_native = mach->is_MachCallNative();
     C->debug_info()->describe_scope(
       safepoint_pc_offset,
       null_mh,
@@ -1146,8 +1150,10 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
       jvms->should_reexecute(),
       rethrow_exception,
       is_method_handle_invoke,
-      mach->is_MachCallNative(),
+      is_opt_native,
       return_oop,
+      has_ea_local_in_scope,
+      arg_escape,
       locvals,
       expvals,
       monvals

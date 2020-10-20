@@ -244,7 +244,12 @@ class IRScopeDebugInfo: public CompilationResourceObj {
     bool reexecute = topmost ? should_reexecute() : false;
     bool return_oop = false; // This flag will be ignored since it used only for C2 with escape analysis.
     bool rethrow_exception = false;
-    recorder->describe_scope(pc_offset, methodHandle(), scope()->method(), bci(), reexecute, rethrow_exception, is_method_handle_invoke, false /* is opt native */, return_oop, locvals, expvals, monvals);
+    bool is_opt_native = false;
+    bool has_ea_local_in_scope = false;
+    bool arg_escape = false;
+    recorder->describe_scope(pc_offset, methodHandle(), scope()->method(), bci(),
+                             reexecute, rethrow_exception, is_method_handle_invoke, is_opt_native, return_oop,
+                             has_ea_local_in_scope, arg_escape, locvals, expvals, monvals);
   }
 };
 

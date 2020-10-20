@@ -182,11 +182,11 @@ alloc_class chunk0(
 alloc_class chunk1(
                    R_S16, R_S17, R_S18, R_S19, R_S20, R_S21, R_S22, R_S23,
                    R_S24, R_S25, R_S26, R_S27, R_S28, R_S29, R_S30, R_S31,
-                   R_S0,  R_S1,  R_S2,  R_S3,  R_S4,  R_S5,  R_S6,  R_S7, 
+                   R_S0,  R_S1,  R_S2,  R_S3,  R_S4,  R_S5,  R_S6,  R_S7,
                    R_S8,  R_S9,  R_S10, R_S11, R_S12, R_S13, R_S14, R_S15,
-                   R_D16, R_D16x,R_D17, R_D17x,R_D18, R_D18x,R_D19, R_D19x, 
-                   R_D20, R_D20x,R_D21, R_D21x,R_D22, R_D22x,R_D23, R_D23x, 
-                   R_D24, R_D24x,R_D25, R_D25x,R_D26, R_D26x,R_D27, R_D27x, 
+                   R_D16, R_D16x,R_D17, R_D17x,R_D18, R_D18x,R_D19, R_D19x,
+                   R_D20, R_D20x,R_D21, R_D21x,R_D22, R_D22x,R_D23, R_D23x,
+                   R_D24, R_D24x,R_D25, R_D25x,R_D26, R_D26x,R_D27, R_D27x,
                    R_D28, R_D28x,R_D29, R_D29x,R_D30, R_D30x,R_D31, R_D31x
 );
 
@@ -196,8 +196,7 @@ alloc_class chunk2(APSR, FPSCR);
 // Several register classes are automatically defined based upon information in
 // this architecture description.
 // 1) reg_class inline_cache_reg           ( as defined in frame section )
-// 2) reg_class interpreter_method_reg     ( as defined in frame section )
-// 3) reg_class stack_slots( /* one chunk of stack-based "registers" */ )
+// 2) reg_class stack_slots( /* one chunk of stack-based "registers" */ )
 //
 
 // ----------------------------
@@ -223,7 +222,6 @@ reg_class ptr_reg(R_R0, R_R1, R_R2, R_R3, R_R4, R_R5, R_R6, R_R7, R_R8, R_R9, R_
 reg_class sp_ptr_reg(R_R0, R_R1, R_R2, R_R3, R_R4, R_R5, R_R6, R_R7, R_R8, R_R9, R_R11, R_R12, R_R14, R_R10 /* TLS*/, R_R13 /* SP*/);
 
 #define R_Ricklass R_R8
-#define R_Rmethod  R_R9
 #define R_Rthread  R_R10
 #define R_Rexception_obj R_R4
 
@@ -237,7 +235,6 @@ reg_class R9_regP(R_R9);
 reg_class R12_regP(R_R12);
 reg_class Rexception_regP(R_Rexception_obj);
 reg_class Ricklass_regP(R_Ricklass);
-reg_class Rmethod_regP(R_Rmethod);
 reg_class Rthread_regP(R_Rthread);
 reg_class IP_regP(R_R12);
 reg_class SP_regP(R_R13);
@@ -442,7 +439,7 @@ int MachCallStaticJavaNode::ret_addr_offset() {
 int MachCallDynamicJavaNode::ret_addr_offset() {
   bool far = !cache_reachable();
   // mov_oop is always 2 words
-  return (2 + (far ? 3 : 1)) * NativeInstruction::instruction_size; 
+  return (2 + (far ? 3 : 1)) * NativeInstruction::instruction_size;
 }
 
 int MachCallRuntimeNode::ret_addr_offset() {

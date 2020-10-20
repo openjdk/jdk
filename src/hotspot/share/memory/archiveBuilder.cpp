@@ -154,7 +154,7 @@ ArchiveBuilder::ArchiveBuilder(DumpRegion* mc_region, DumpRegion* rw_region, Dum
   _rw_region = rw_region;
   _ro_region = ro_region;
 
-  _estimated_metsapceobj_bytes = 0;
+  _estimated_metaspaceobj_bytes = 0;
 }
 
 ArchiveBuilder::~ArchiveBuilder() {
@@ -205,7 +205,8 @@ bool ArchiveBuilder::gather_klass_and_symbol(MetaspaceClosure::Ref* ref, bool re
         _num_type_array_klasses ++;
       }
     }
-    _estimated_metsapceobj_bytes += BytesPerWord; // See RunTimeSharedClassInfo::get_for()
+    // See RunTimeSharedClassInfo::get_for()
+    _estimated_metaspaceobj_bytes += align_up(BytesPerWord, SharedSpaceObjectAlignment);
   } else if (ref->msotype() == MetaspaceObj::SymbolType) {
     // Make sure the symbol won't be GC'ed while we are dumping the archive.
     Symbol* sym = (Symbol*)ref->obj();
@@ -214,7 +215,7 @@ bool ArchiveBuilder::gather_klass_and_symbol(MetaspaceClosure::Ref* ref, bool re
   }
 
   int bytes = ref->size() * BytesPerWord;
-  _estimated_metsapceobj_bytes += bytes;
+  _estimated_metaspaceobj_bytes += align_up(bytes, SharedSpaceObjectAlignment);
 
   return true; // recurse
 }
@@ -238,8 +239,8 @@ void ArchiveBuilder::gather_klasses_and_symbols() {
 
   if (DumpSharedSpaces) {
     // To ensure deterministic contents in the static archive, we need to ensure that
-    // we iterate the MetsapceObjs in a deterministic order. It doesn't matter where
-    // the MetsapceObjs are located originally, as they are copied sequentially into
+    // we iterate the MetaspaceObjs in a deterministic order. It doesn't matter where
+    // the MetaspaceObjs are located originally, as they are copied sequentially into
     // the archive during the iteration.
     //
     // The only issue here is that the symbol table and the system directories may be
@@ -483,7 +484,7 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
 
   memcpy(dest, src, bytes);
 
-  intptr_t* archived_vtable = CppVtables::get_archived_cpp_vtable(ref->msotype(), (address)dest);
+  intptr_t* archived_vtable = CppVtables::get_archived_vtable(ref->msotype(), (address)dest);
   if (archived_vtable != NULL) {
     *(address*)dest = (address)archived_vtable;
     ArchivePtrMarker::mark_pointer((address*)dest);

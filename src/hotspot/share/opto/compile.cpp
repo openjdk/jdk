@@ -2123,9 +2123,11 @@ void Compile::Optimize() {
       ResourceMark rm;
       PhaseRenumberLive prl = PhaseRenumberLive(initial_gvn(), for_igvn(), &new_worklist);
     }
+    Unique_Node_List* save_for_igvn = for_igvn();
     set_for_igvn(&new_worklist);
     igvn = PhaseIterGVN(initial_gvn());
     igvn.optimize();
+    set_for_igvn(save_for_igvn);
   }
 
   // Perform escape analysis
@@ -3430,6 +3432,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     }
     break;
   case Op_Loop:
+    assert(!n->as_Loop()->is_transformed_long_loop() || _loop_opts_cnt == 0, "should have been turned into a counted loop");
   case Op_CountedLoop:
   case Op_OuterStripMinedLoop:
     if (n->as_Loop()->is_inner_loop()) {

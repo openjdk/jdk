@@ -64,12 +64,7 @@ class SimpleScopeDesc : public StackObj {
 class ScopeDesc : public ResourceObj {
  public:
   // Constructor
-  ScopeDesc(const CompiledMethod* code, int decode_offset, int obj_decode_offset, bool reexecute, bool rethrow_exception, bool return_oop);
-
-  // Calls above, giving default value of "serialized_null" to the
-  // "obj_decode_offset" argument.  (We don't use a default argument to
-  // avoid a .hpp-.hpp dependency.)
-  ScopeDesc(const CompiledMethod* code, int decode_offset, bool reexecute, bool rethrow_exception, bool return_oop);
+  ScopeDesc(const CompiledMethod* code, PcDesc* pd, bool ignore_objects = false);
 
   // Direct access to scope
   ScopeDesc* at_offset(int decode_offset) { return new ScopeDesc(this, decode_offset); }
@@ -80,6 +75,10 @@ class ScopeDesc : public ResourceObj {
   bool should_reexecute() const { return _reexecute; }
   bool rethrow_exception() const { return _rethrow_exception; }
   bool return_oop()       const { return _return_oop; }
+  // Returns true if one or more NoEscape or ArgEscape objects exist in
+  // any of the scopes at compiled pc.
+  bool has_ea_local_in_scope() const { return _has_ea_local_in_scope; }
+  bool arg_escape()       const { return _arg_escape; }
 
   GrowableArray<ScopeValue*>*   locals();
   GrowableArray<ScopeValue*>*   expressions();
@@ -109,6 +108,9 @@ class ScopeDesc : public ResourceObj {
   bool          _reexecute;
   bool          _rethrow_exception;
   bool          _return_oop;
+  bool          _has_ea_local_in_scope;       // One or more NoEscape or ArgEscape objects exist in
+                                              // any of the scopes at compiled pc.
+  bool          _arg_escape;                  // Compiled Java call in youngest scope passes ArgEscape
 
   // Decoding offsets
   int _decode_offset;

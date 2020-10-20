@@ -202,9 +202,16 @@ class decode_env {
       15889,      // prime number
       ResourceObj::C_HEAP> SourceFileInfoTable;
 
-  static SourceFileInfoTable _src_table;
+  static SourceFileInfoTable* _src_table;
   static const char* _cached_src;
   static GrowableArray<const char*>* _cached_src_lines;
+
+  static SourceFileInfoTable& src_table() {
+    if (_src_table == NULL) {
+      _src_table = new (ResourceObj::C_HEAP, mtCode)SourceFileInfoTable();
+    }
+    return *_src_table;
+  }
 
  public:
   decode_env(CodeBuffer* code, outputStream* output);
@@ -229,7 +236,7 @@ class decode_env {
 
 bool decode_env::_optionsParsed = false;
 
-decode_env::SourceFileInfoTable decode_env::_src_table;
+decode_env::SourceFileInfoTable* decode_env::_src_table = NULL;
 const char* decode_env::_cached_src = NULL;
 GrowableArray<const char*>* decode_env::_cached_src_lines = NULL;
 
@@ -238,17 +245,17 @@ void decode_env::hook(const char* file, int line, address pc) {
   // necessary as we add to the table only when PrintInterpreter is true,
   // which means we are debugging the VM and a little bit of extra
   // memory usage doesn't matter.
-  SourceFileInfo* found = _src_table.get(pc);
+  SourceFileInfo* found = src_table().get(pc);
   if (found != NULL) {
     found->append(file, line);
   } else {
     SourceFileInfo sfi(file, line);
-    _src_table.put(pc, sfi); // sfi is copied by value
+    src_table().put(pc, sfi); // sfi is copied by value
   }
 }
 
 void decode_env::print_hook_comments(address pc, bool newline) {
-  SourceFileInfo* found = _src_table.get(pc);
+  SourceFileInfo* found = src_table().get(pc);
   outputStream* st = output();
   if (found != NULL) {
     for (SourceFileInfo::Link *link = found->head; link; link = link->next) {
