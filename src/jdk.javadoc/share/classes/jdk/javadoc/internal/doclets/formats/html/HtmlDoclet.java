@@ -117,7 +117,7 @@ public class HtmlDoclet extends AbstractDoclet {
     }
 
     @Override // defined by AbstractDoclet
-    public void generateClassFiles(DocletEnvironment docEnv, ClassTree classTree) throws DocletException {
+    public void generateClassFiles(ClassTree classTree) throws DocletException {
 
         if (!(configuration.getOptions().noDeprecated()
                 || configuration.getOptions().noDeprecatedList())) {
@@ -128,7 +128,7 @@ public class HtmlDoclet extends AbstractDoclet {
             }
         }
 
-        super.generateClassFiles(docEnv, classTree);
+        super.generateClassFiles(classTree);
     }
 
     /**
