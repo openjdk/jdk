@@ -664,7 +664,7 @@ public class Main {
                 (".internalsf.include.the.SF.file.inside.the.signature.block"));
         System.out.println();
         System.out.println(rb.getString
-                (".directsign.sign.the.SF.file.directly.no.signed.attributes"));
+                (".directsign.sign.the.SF.file.directly.no.signerinfo.signedattributes"));
         System.out.println();
         System.out.println(rb.getString
                 (".sectionsonly.don.t.compute.hash.of.entire.manifest"));
