@@ -2605,9 +2605,6 @@ void JavaThread::java_suspend_self_with_safepoint_check() {
     set_thread_state_fence(state);
   } while (is_external_suspend());
 
-  // Since we are not using a regular thread-state transition helper here,
-  // we must manually emit the instruction barrier after leaving a safe state.
-  OrderAccess::cross_modify_fence();
   if (state != _thread_in_native) {
     SafepointMechanism::process_if_requested(this);
   }
