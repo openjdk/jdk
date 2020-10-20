@@ -776,6 +776,8 @@ void VM_PopulateDumpSharedSpace::doit() {
   char* serialized_data = dump_read_only_tables();
   _ro_region.pack();
 
+  SystemDictionaryShared::adjust_lambda_proxy_class_dictionary();
+
   // The vtable clones contain addresses of the current process.
   // We don't want to write these addresses into the archive. Same for i2i buffer.
   CppVtables::zero_archived_vtables();
