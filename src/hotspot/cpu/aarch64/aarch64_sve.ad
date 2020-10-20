@@ -873,7 +873,7 @@ instruct vpopcountI(vReg dst, vReg src) %{
 
 instruct reduce_addB(iRegINoSp dst, iRegIorL2I src1, vReg src2, vRegD tmp) %{
   predicate(UseSVE > 0 && n->in(2)->bottom_type()->is_vect()->length_in_bytes() >= 16 &&
-            (n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_BYTE));
+            n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_BYTE);
   match(Set dst (AddReductionVI src1 src2));
   effect(TEMP_DEF dst, TEMP tmp);
   ins_cost(SVE_COST);
@@ -893,8 +893,7 @@ instruct reduce_addB(iRegINoSp dst, iRegIorL2I src1, vReg src2, vRegD tmp) %{
 
 instruct reduce_addS(iRegINoSp dst, iRegIorL2I src1, vReg src2, vRegD tmp) %{
   predicate(UseSVE > 0 && n->in(2)->bottom_type()->is_vect()->length_in_bytes() >= 16 &&
-            (n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_SHORT ||
-            (n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_CHAR)));
+            n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_SHORT);
   match(Set dst (AddReductionVI src1 src2));
   effect(TEMP_DEF dst, TEMP tmp);
   ins_cost(SVE_COST);
@@ -914,7 +913,7 @@ instruct reduce_addS(iRegINoSp dst, iRegIorL2I src1, vReg src2, vRegD tmp) %{
 
 instruct reduce_addI(iRegINoSp dst, iRegIorL2I src1, vReg src2, vRegD tmp) %{
   predicate(UseSVE > 0 && n->in(2)->bottom_type()->is_vect()->length_in_bytes() >= 16 &&
-            (n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_INT));
+            n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_INT);
   match(Set dst (AddReductionVI src1 src2));
   effect(TEMP_DEF dst, TEMP tmp);
   ins_cost(SVE_COST);
@@ -932,7 +931,7 @@ instruct reduce_addI(iRegINoSp dst, iRegIorL2I src1, vReg src2, vRegD tmp) %{
 
 instruct reduce_addL(iRegLNoSp dst, iRegL src1, vReg src2, vRegD tmp) %{
   predicate(UseSVE > 0 && n->in(2)->bottom_type()->is_vect()->length_in_bytes() >= 16 &&
-            (n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_LONG));
+            n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_LONG);
   match(Set dst (AddReductionVL src1 src2));
   effect(TEMP_DEF dst, TEMP tmp);
   ins_cost(SVE_COST);
