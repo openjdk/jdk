@@ -1149,8 +1149,11 @@ void CodeStrings::copy(CodeStrings& other) {
   CodeString** ps = &_strings;
   CodeString* prev = NULL;
   while (n != NULL) {
-    // Raw copy to avoiding assertion for non-comment access to n->offset()
-    *ps = new CodeString(n->string(),n->_offset);
+    if (n->is_comment()) {
+      *ps = new CodeString(n->string(),n->offset());
+    } else {
+      *ps = new CodeString(n->string());
+    }
     (*ps)->_prev = prev;
     prev = *ps;
     ps = &((*ps)->_next);
