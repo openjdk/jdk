@@ -38,9 +38,12 @@ import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertThrows;
 
+/**
+ * Verify that UnixDomainSocketAddress.of(path) throws IAE
+ * if given a Path that does not originate from system default
+ * file system.
+ */
 public class AddressTest {
-
-    static UnixDomainSocketAddress addr;
 
     // Expected exception
     private static final Class<IllegalArgumentException> IAE =

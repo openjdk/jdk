@@ -74,16 +74,17 @@ public class Launcher {
      * SocketChannel returned by this method.
      */
     public static SocketChannel launchWithUnixSocketChannel(String className)
-            throws IOException {
-        ServerSocketChannel ssc = ServerSocketChannel.open(UNIX);
-        var addr = (UnixDomainSocketAddress)ssc.bind(null).getLocalAddress();
-        SocketChannel sc1 = SocketChannel.open(addr);
-        SocketChannel sc2 = ssc.accept();
-        launch(className, null, null, Util.getFD(sc2));
-        sc2.close();
-        Files.delete(addr.getPath());
-        ssc.close();
-        return sc1;
+            throws IOException 
+    {
+        try (ServerSocketChannel ssc = ServerSocketChannel.open(UNIX)) {
+            var addr = (UnixDomainSocketAddress)ssc.bind(null).getLocalAddress();
+            SocketChannel sc1 = SocketChannel.open(addr);
+            try (SocketChannel sc2 = ssc.accept()) {
+                launch(className, null, null, Util.getFD(sc2));
+	    }
+            Files.delete(addr.getPath());
+            return sc1;
+	}
     }
 
     /**
@@ -94,17 +95,18 @@ public class Launcher {
     public static SocketChannel launchWithInetSocketChannel(String className,
                                                         String options[],
                                                         String... args)
-            throws IOException {
-        ServerSocketChannel ssc = ServerSocketChannel.open();
-        ssc.socket().bind(new InetSocketAddress(InetAddress.getLocalHost(), 0));
-        InetSocketAddress isa = new InetSocketAddress(InetAddress.getLocalHost(),
+            throws IOException 
+    {
+        try (ServerSocketChannel ssc = ServerSocketChannel.open()) {
+            ssc.socket().bind(new InetSocketAddress(InetAddress.getLocalHost(), 0));
+            InetSocketAddress isa = new InetSocketAddress(InetAddress.getLocalHost(),
                                                       ssc.socket().getLocalPort());
-        SocketChannel sc1 = SocketChannel.open(isa);
-        SocketChannel sc2 = ssc.accept();
-        launch(className, options, args, Util.getFD(sc2));
-        sc2.close();
-        ssc.close();
-        return sc1;
+            SocketChannel sc1 = SocketChannel.open(isa);
+            try (SocketChannel sc2 = ssc.accept()) {
+                launch(className, options, args, Util.getFD(sc2));
+            }
+            return sc1;
+        }
     }
 
     /**
@@ -126,14 +128,15 @@ public class Launcher {
     public static SocketChannel launchWithInetServerSocketChannel(String className,
                                                               String[] options,
                                                               String... args)
-            throws IOException {
-        ServerSocketChannel ssc = ServerSocketChannel.open();
-        ssc.socket().bind(new InetSocketAddress(InetAddress.getLocalHost(), 0));
-        int port = ssc.socket().getLocalPort();
-        launch(className, options, args, Util.getFD(ssc));
-        ssc.close();
-        InetSocketAddress isa = new InetSocketAddress(InetAddress.getLocalHost(), port);
-        return SocketChannel.open(isa);
+            throws IOException 
+    {
+        try (ServerSocketChannel ssc = ServerSocketChannel.open()) {
+            ssc.socket().bind(new InetSocketAddress(InetAddress.getLocalHost(), 0));
+            int port = ssc.socket().getLocalPort();
+            launch(className, options, args, Util.getFD(ssc));
+            InetSocketAddress isa = new InetSocketAddress(InetAddress.getLocalHost(), port);
+            return SocketChannel.open(isa);
+	}
     }
 
     public static SocketChannel launchWithUnixServerSocketChannel(String className) throws IOException {

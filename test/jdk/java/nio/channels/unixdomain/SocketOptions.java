@@ -53,54 +53,59 @@ public class SocketOptions {
     }
 
     static void testPeerCred() throws Exception {
-        ServerSocketChannel s = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
-        s.bind(null);
-        UnixDomainSocketAddress addr = (UnixDomainSocketAddress)s.getLocalAddress();
-        SocketChannel c = SocketChannel.open(addr);
-        if (!c.supportedOptions().contains(SO_PEERCRED)) {
-            return;
-        }
-        Files.deleteIfExists(addr.getPath());
-        UnixDomainPrincipal p = c.getOption(SO_PEERCRED);
-        String s1 = p.user().getName();
-        System.out.println(s1);
-        System.out.println(p.group().getName());
-        String s2 = System.getProperty("user.name");
+    	UnixDomainSocketAddress addr = null;
+	UnixDomainPrincipal p;
+        try (ServerSocketChannel s = ServerSocketChannel.open(StandardProtocolFamily.UNIX)) {
+            s.bind(null);
+            addr = (UnixDomainSocketAddress)s.getLocalAddress();
+            try (SocketChannel c = SocketChannel.open(addr)) {
+                if (!c.supportedOptions().contains(SO_PEERCRED)) {
+                    return;
+                }
+                Files.deleteIfExists(addr.getPath());
+                p = c.getOption(SO_PEERCRED);
+                String s1 = p.user().getName();
+                System.out.println(s1);
+                System.out.println(p.group().getName());
+                String s2 = System.getProperty("user.name");
 
-        // Check returned user name
+                // Check returned user name
 
-        if (!s1.equals(s2)) {
-            throw new RuntimeException("wrong username");
-        }
+                if (!s1.equals(s2)) {
+                    throw new RuntimeException("wrong username");
+                }
 
-        // Try setting the option: Read only
+                // Try setting the option: Read only
 
-        try {
-            c.setOption(SO_PEERCRED, p);
-            throw new RuntimeException("should have thrown SocketException");
-        } catch (SocketException e) {}
-
-        c.close();
-        s.close();
+                try {
+                    c.setOption(SO_PEERCRED, p);
+                    throw new RuntimeException("should have thrown SocketException");
+                } catch (SocketException e) {}
+	    }
+	} finally {
+	    if (addr != null)
+                Files.deleteIfExists(addr.getPath());
+	}
 
         // Try getting from unconnected socket
 
-        c = SocketChannel.open(StandardProtocolFamily.UNIX);
-        try {
-            p = c.getOption(SO_PEERCRED);
-            System.out.println(p.user());
-            throw new RuntimeException("should have thrown SocketException");
-        } catch (SocketException e) {}
+        try (var c = SocketChannel.open(StandardProtocolFamily.UNIX)) {
+            try {
+                p = c.getOption(SO_PEERCRED);
+                System.out.println(p.user());
+                throw new RuntimeException("should have thrown SocketException");
+            } catch (SocketException e) {}
+	}
 
         // Try getting from ServerSocketChannel
 
-        var server = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
-        try {
-            p = server.getOption(SO_PEERCRED);
-            System.out.println(p.user());
-            throw new RuntimeException("should have thrown USE");
-        } catch (UnsupportedOperationException e) {}
-
+        try (var server = ServerSocketChannel.open(StandardProtocolFamily.UNIX)) {
+            try {
+                p = server.getOption(SO_PEERCRED);
+                System.out.println(p.user());
+                throw new RuntimeException("should have thrown USE");
+            } catch (UnsupportedOperationException e) {}
+	}
     }
 
     static boolean supported() {
