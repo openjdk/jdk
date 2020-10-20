@@ -161,9 +161,7 @@ alloc_class chunk0(R10,         R10_H,
 // Several register classes are automatically defined based upon information in
 // this architecture description.
 // 1) reg_class inline_cache_reg           ( /* as def'd in frame section */ )
-// 2) reg_class compiler_method_reg        ( /* as def'd in frame section */ )
-// 2) reg_class interpreter_method_reg     ( /* as def'd in frame section */ )
-// 3) reg_class stack_slots( /* one chunk of stack-based "registers" */ )
+// 2) reg_class stack_slots( /* one chunk of stack-based "registers" */ )
 //
 
 // Empty register class.
@@ -1661,9 +1659,6 @@ const bool Matcher::rematerialize_float_constants = true; // XXX
 // C code as the Java calling convention forces doubles to be aligned.
 const bool Matcher::misaligned_doubles_ok = true;
 
-// No-op on amd64
-void Matcher::pd_implicit_null_fixup(MachNode *node, uint idx) {}
-
 // Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
 const bool Matcher::strict_fp_requires_explicit_rounding = false;
 
@@ -2742,8 +2737,6 @@ frame
   // These three registers define part of the calling convention
   // between compiled code and the interpreter.
   inline_cache_reg(RAX);                // Inline Cache Register
-  interpreter_method_reg(RBX);          // Method Register when
-                                        // calling interpreter
 
   // Optional: name the operand used by cisc-spilling to access
   // [stack_pointer + offset]
