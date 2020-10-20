@@ -1385,13 +1385,6 @@ class JavaThread: public Thread {
   static void check_special_condition_for_native_trans_and_transition(JavaThread *thread);
 
   bool is_ext_suspend_completed(int delay, uint32_t *bits);
-  bool is_ext_suspend_completed_with_lock(uint32_t *bits) {
-    MutexLocker ml(SR_lock(), Mutex::_no_safepoint_check_flag);
-    // Warning: is_ext_suspend_completed() may temporarily drop the
-    // SR_lock to allow the thread to reach a stable thread state if
-    // it is currently in a transient thread state.
-    return is_ext_suspend_completed(SuspendRetryDelay, bits);
-  }
 
   inline void set_external_suspend();
   inline void clear_external_suspend();
