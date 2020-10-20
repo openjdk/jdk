@@ -759,22 +759,22 @@ StoreVectorNode* StoreVectorNode::make(int opc, Node* ctl, Node* mem,
   return new StoreVectorNode(ctl, mem, adr, atyp, val);
 }
 
-VectorMaskedLoadNode* make(int opc, Node* ctl, Node* mem, Node* src,
+LoadVectorMaskedNode* make(int opc, Node* ctl, Node* mem, Node* src,
                        const TypePtr* atype, const TypeVect* vt,
                        Node* mask) {
-  return new VectorMaskedLoadNode(ctl, mem, src, atype, vt, mask);
+  return new LoadVectorMaskedNode(ctl, mem, src, atype, vt, mask);
 }
 
-VectorMaskedStoreNode* make(int opc, Node* ctl, Node* mem, Node* dst,
+StoreVectorMaskedNode* make(int opc, Node* ctl, Node* mem, Node* dst,
                             Node* src, const TypePtr* atype, Node* mask) {
-  return new VectorMaskedStoreNode(ctl, mem, dst, src, atype, mask);
+  return new StoreVectorMaskedNode(ctl, mem, dst, src, atype, mask);
 }
 
 VectorMaskGenNode* make(int opc, Node* src, const Type* ty, const Type* ety) {
   return new VectorMaskGenNode(src, ty, ety);
 }
 
-Node* VectorMaskedLoadNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+Node* LoadVectorMaskedNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* mask_len = in(3)->in(1);
   const TypeLong* ty = phase->type(mask_len)->isa_long();
   if (ty && ty->is_con()) {
@@ -791,7 +791,7 @@ Node* VectorMaskedLoadNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return NULL;
 }
 
-Node* VectorMaskedStoreNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+Node* StoreVectorMaskedNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* mask_len = in(4)->in(1);
   const TypeLong* ty = phase->type(mask_len)->isa_long();
   if (ty && ty->is_con()) {

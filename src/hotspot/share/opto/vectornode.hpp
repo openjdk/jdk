@@ -778,9 +778,9 @@ class StoreVectorNode : public StoreNode {
                                                      idx == MemNode::ValueIn + 1; }
 };
 
-class VectorMaskedStoreNode : public StoreVectorNode {
+class StoreVectorMaskedNode : public StoreVectorNode {
  public:
-  VectorMaskedStoreNode(Node* c, Node* mem, Node* dst, Node* src, const TypePtr* at, Node* mask)
+  StoreVectorMaskedNode(Node* c, Node* mem, Node* dst, Node* src, const TypePtr* at, Node* mask)
    : StoreVectorNode(c, mem, dst, at, src) {
     assert(mask->bottom_type()->is_long(), "sanity");
     init_class_id(Class_StoreVector);
@@ -795,13 +795,13 @@ class VectorMaskedStoreNode : public StoreVectorNode {
   }
   Node* Ideal(PhaseGVN* phase, bool can_reshape);
 
-  static VectorMaskedStoreNode* make(int opc, Node* ctl, Node* mem, Node* dst, Node* src,
+  static StoreVectorMaskedNode* make(int opc, Node* ctl, Node* mem, Node* dst, Node* src,
                                     const TypePtr* atype, Node* mask);
 };
 
-class VectorMaskedLoadNode : public LoadVectorNode {
+class LoadVectorMaskedNode : public LoadVectorNode {
  public:
-  VectorMaskedLoadNode(Node* c, Node* mem, Node* src, const TypePtr* at, const TypeVect* vt, Node* mask)
+  LoadVectorMaskedNode(Node* c, Node* mem, Node* src, const TypePtr* at, const TypeVect* vt, Node* mask)
    : LoadVectorNode(c, mem, src, at, vt) {
     assert(mask->bottom_type()->is_long(), "sanity");
     init_class_id(Class_LoadVector);
@@ -816,7 +816,7 @@ class VectorMaskedLoadNode : public LoadVectorNode {
   }
   Node* Ideal(PhaseGVN* phase, bool can_reshape);
 
-  static VectorMaskedLoadNode* make(int opc, Node* ctl, Node* mem, Node* src,
+  static LoadVectorMaskedNode* make(int opc, Node* ctl, Node* mem, Node* src,
                                 const TypePtr* atype, const TypeVect* vt,
                                 Node* mask);
 };

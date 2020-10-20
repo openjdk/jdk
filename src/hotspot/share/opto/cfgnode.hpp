@@ -102,7 +102,7 @@ public:
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual const RegMask &out_RegMask() const;
   bool try_clean_mem_phi(PhaseGVN *phase);
-  bool is_self_loop(Node* n);
+  bool is_self_loop(Node* n, PhaseGVN *phase);
   bool try_phi_disintegration(PhaseGVN *phase);
   bool optimize_trichotomy(PhaseIterGVN* igvn);
 };

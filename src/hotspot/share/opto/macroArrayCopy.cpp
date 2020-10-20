@@ -176,8 +176,8 @@ void PhaseMacroExpand::generate_limit_guard(Node** ctrl, Node* offset, Node* sub
 //  if (length <= ArrayCopyPartialInlineSize) {
 //    partial_inlining_block:
 //      mask = Mask_Gen
-//      vload = VectorMaskedLoad src , mask
-//      VectorMaskedStore dst, mask, vload
+//      vload = LoadVectorMasked src , mask
+//      StoreVectorMasked dst, mask, vload
 //  } else {
 //    stub_block:
 //      callstub array_copy
@@ -219,8 +219,8 @@ bool PhaseMacroExpand::generate_partial_inlining_block(Node** ctrl, MergeMemNode
   // target does not supports masked load/stores.
   int lane_count = ArrayCopyNode::get_partial_inline_vector_lane_count(type, con_len);
   if ( con_len > ArrayCopyPartialInlineSize ||
-      !Matcher::match_rule_supported_vector(Op_VectorMaskedLoad, lane_count, type)  ||
-      !Matcher::match_rule_supported_vector(Op_VectorMaskedStore, lane_count, type) ||
+      !Matcher::match_rule_supported_vector(Op_LoadVectorMasked, lane_count, type)  ||
+      !Matcher::match_rule_supported_vector(Op_StoreVectorMasked, lane_count, type) ||
       !Matcher::match_rule_supported_vector(Op_VectorMaskGen, lane_count, type)) {
     return true;
   }
@@ -238,9 +238,7 @@ bool PhaseMacroExpand::generate_partial_inlining_block(Node** ctrl, MergeMemNode
     is_lt64bytes_tp  = generate_guard(ctrl, bol_le, NULL, PROB_FAIR);
     is_lt64bytes_fp = *ctrl;
 
-    inline_block = new RegionNode(2);
-    transform_later(inline_block);
-    inline_block->init_req(1, is_lt64bytes_tp);
+    inline_block = is_lt64bytes_tp;
   } else {
     inline_block = *ctrl;
   }
@@ -256,26 +254,24 @@ bool PhaseMacroExpand::generate_partial_inlining_block(Node** ctrl, MergeMemNode
   int alias_idx = C->get_alias_index(src_adr_type);
   Node* mm = (*mem)->memory_at(alias_idx);
   const TypeVect * vt = TypeVect::make(type, lane_count);
-  Node* masked_load = new VectorMaskedLoadNode(inline_block, mm, src_start,
+  Node* masked_load = new LoadVectorMaskedNode(inline_block, mm, src_start,
                                                src_adr_type, vt, mask_gen);
   transform_later(masked_load);
 
   mm = (*mem)->memory_at(C->get_alias_index(adr_type));
-  Node* masked_store = new VectorMaskedStoreNode(inline_block, mm, dst_start,
+  Node* masked_store = new StoreVectorMaskedNode(inline_block, mm, dst_start,
                                                  masked_load, adr_type, mask_gen);
   transform_later(masked_store);
 
   // Stub region is created for non-constant copy length.
   if (con_len < 0) {
     // Region containing stub calling node.
-    RegionNode* stub_block = new RegionNode(2);
-    transform_later(stub_block);
-    stub_block->init_req(1, is_lt64bytes_fp);
+    Node* stub_block = is_lt64bytes_fp;
 
     // Convergence region for inline_block and stub_block.
     *exit_block = new RegionNode(3);
     transform_later(*exit_block);
-    (*exit_block)->init_req(1, masked_store);
+    (*exit_block)->init_req(1, is_lt64bytes_tp);
     *result_memory = new PhiNode(*exit_block, Type::MEMORY, adr_type);
     transform_later(*result_memory);
     (*result_memory)->init_req(1, masked_store);
@@ -296,6 +292,7 @@ bool PhaseMacroExpand::generate_partial_inlining_block(Node** ctrl, MergeMemNode
     return false;
   }
 }
+
 
 Node* PhaseMacroExpand::generate_nonpositive_guard(Node** ctrl, Node* index, bool never_negative) {
   if ((*ctrl)->is_top())  return NULL;
@@ -847,7 +844,7 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
   if (is_partial_array_copy) {
     assert((*ctrl)->is_Proj(), "MemBar control projection");
     assert((*ctrl)->in(0)->isa_MemBar(), "MemBar node");
-    (*ctrl)->in(0)->isa_MemBar()->set_after_partial_array_copy();
+    (*ctrl)->in(0)->isa_MemBar()->set_trailing_partial_array_copy();
   }
 
   _igvn.replace_node(_memproj_fallthrough, out_mem);
@@ -856,7 +853,7 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
 
 #ifdef ASSERT
   const TypeOopPtr* dest_t = _igvn.type(dest)->is_oopptr();
-  if (dest_t->is_known_instance() && false == is_partial_array_copy) {
+  if (dest_t->is_known_instance() && !is_partial_array_copy) {
     ArrayCopyNode* ac = NULL;
     assert(ArrayCopyNode::may_modify(dest_t, (*ctrl)->in(0)->as_MemBar(), &_igvn, ac), "dependency on arraycopy lost");
     assert(ac == NULL, "no arraycopy anymore");

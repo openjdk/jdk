@@ -688,7 +688,7 @@ bool ArrayCopyNode::may_modify(const TypeOopPtr *t_oop, MemBarNode* mb, PhaseTra
     assert(c == mb->in(0) || (ac != NULL && ac->is_clonebasic() && !use_ReduceInitialCardMarks), "only for clone");
 #endif
     return true;
-  } else if (mb->after_partial_array_copy()) {
+  } else if (mb->trailing_partial_array_copy()) {
     return true;
   }
 

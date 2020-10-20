@@ -2201,7 +2201,7 @@ bool Matcher::find_shared_visit(MStack& mstack, Node* n, uint opcode, bool& mem_
     case Op_FmaVD:
     case Op_FmaVF:
     case Op_MacroLogicV:
-    case Op_VectorMaskedLoad:
+    case Op_LoadVectorMasked:
       set_shared(n); // Force result into register (it will be anyways)
       break;
     case Op_ConP: {  // Convert pointers above the centerline to NUL
@@ -2304,7 +2304,7 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       n->del_req(3);
       break;
     }
-    case Op_VectorMaskedStore: {
+    case Op_StoreVectorMasked: {
       Node* pair = new BinaryNode(n->in(3), n->in(4));
       n->set_req(3, pair);
       n->del_req(4);

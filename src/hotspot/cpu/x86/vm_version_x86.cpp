@@ -1358,28 +1358,6 @@ void VM_Version::get_processor_features() {
       }
 #endif // COMPILER2
 
-      if (FLAG_IS_DEFAULT(ArrayCopyPartialInlineSize) ||
-          (!FLAG_IS_DEFAULT(ArrayCopyPartialInlineSize) &&
-           ArrayCopyPartialInlineSize != 0 &&
-           ArrayCopyPartialInlineSize != 32 &&
-           ArrayCopyPartialInlineSize != 64)) {
-        int pi_size = 0;
-        if (MaxVectorSize > 32 && AVX3Threshold == 0) {
-          pi_size = 64;
-        } else if (MaxVectorSize >= 32) {
-          pi_size = 32;
-        }
-        if(!FLAG_IS_DEFAULT(ArrayCopyPartialInlineSize)) {
-          warning("Setting ArrayCopyPartialInlineSize as %d", pi_size);
-        }
-        ArrayCopyPartialInlineSize = pi_size;
-      }
-
-      if (ArrayCopyPartialInlineSize > MaxVectorSize) {
-        ArrayCopyPartialInlineSize = MaxVectorSize;
-        warning("Setting ArrayCopyPartialInlineSize as MaxVectorSize");
-      }
-
       if (FLAG_IS_DEFAULT(UseXMMForArrayCopy)) {
         UseXMMForArrayCopy = true; // use SSE2 movq on new Intel cpus
       }
@@ -1417,6 +1395,29 @@ void VM_Version::get_processor_features() {
     if (FLAG_IS_DEFAULT(AllocatePrefetchInstr) && supports_3dnow_prefetch()) {
       FLAG_SET_DEFAULT(AllocatePrefetchInstr, 3);
     }
+#ifdef COMPILER2
+    if (FLAG_IS_DEFAULT(ArrayCopyPartialInlineSize) ||
+        (!FLAG_IS_DEFAULT(ArrayCopyPartialInlineSize) &&
+         ArrayCopyPartialInlineSize != 0 &&
+         ArrayCopyPartialInlineSize != 32 &&
+         ArrayCopyPartialInlineSize != 64)) {
+      int pi_size = 0;
+      if (MaxVectorSize > 32 && AVX3Threshold == 0) {
+        pi_size = 64;
+      } else if (MaxVectorSize >= 32) {
+        pi_size = 32;
+      }
+      if(!FLAG_IS_DEFAULT(ArrayCopyPartialInlineSize)) {
+        warning("Setting ArrayCopyPartialInlineSize as %d", pi_size);
+      }
+      ArrayCopyPartialInlineSize = pi_size;
+    }
+
+    if (ArrayCopyPartialInlineSize > MaxVectorSize) {
+      ArrayCopyPartialInlineSize = MaxVectorSize;
+      warning("Setting ArrayCopyPartialInlineSize as MaxVectorSize");
+    }
+#endif
   }
 
 #ifdef _LP64

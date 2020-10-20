@@ -1522,8 +1522,8 @@ const bool Matcher::match_rule_supported(int opcode) {
       }
       break;
     case Op_VectorMaskGen:
-    case Op_VectorMaskedLoad:
-    case Op_VectorMaskedStore:
+    case Op_LoadVectorMasked:
+    case Op_StoreVectorMasked:
       if (UseAVX < 3) {
         return false;
       }
@@ -1602,8 +1602,8 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
       }
       break;
     case Op_VectorMaskGen:
-    case Op_VectorMaskedLoad:
-    case Op_VectorMaskedStore:
+    case Op_LoadVectorMasked:
+    case Op_StoreVectorMasked:
       if (!VM_Version::supports_avx512bw()) {
         return false;
       }
@@ -7939,12 +7939,11 @@ instruct vprorate(vec dst, vec src, vec shift) %{
 // ---------------------------------- Masked Block Copy ------------------------------------
 
 instruct vmasked_load64(vec dst, memory mem, rRegL mask) %{
-  match(Set dst (VectorMaskedLoad mem mask));
+  match(Set dst (LoadVectorMasked mem mask));
   format %{ "vector_masked_load $dst, $mem, $mask \t! vector masked copy" %}
   ins_encode %{
     BasicType elmType =  this->bottom_type()->is_vect()->element_basic_type();
     int vector_len = vector_length_encoding(this);
-    //TODO: KRegister to be made valid "bound" operand to promote sharing.
     __ kmovql(k2, $mask$$Register);
     __ evmovdqu($dst$$XMMRegister, k2, $mem$$Address, vector_len, elmType);
   %}
@@ -7971,13 +7970,12 @@ instruct vmask_gen_imm(rRegL dst, immL len) %{
 %}
 
 instruct vmasked_store64(memory mem, vec src, rRegL mask) %{
-  match(Set mem (VectorMaskedStore mem (Binary src mask)));
+  match(Set mem (StoreVectorMasked mem (Binary src mask)));
   format %{ "vector_masked_store $mem, $src, $mask \t! vector masked store" %}
   ins_encode %{
     const MachNode* src_node = static_cast<const MachNode*>(this->in(this->operand_index($src)));
     BasicType elmType =  src_node->bottom_type()->is_vect()->element_basic_type();
     int vector_len = vector_length_encoding(src_node);
-    //TODO: KRegister to be made valid "bound" operand to promote sharing.
     __ kmovql(k2, $mask$$Register);
     __ evmovdqu($mem$$Address, k2, $src$$XMMRegister, vector_len, elmType);
   %}
