@@ -35,6 +35,7 @@
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 
 template <bool CONCURRENT>
