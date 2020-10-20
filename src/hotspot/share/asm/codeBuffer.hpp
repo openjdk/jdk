@@ -653,9 +653,8 @@ class CodeBuffer: public StackObj {
     }
   }
 
-  // Directly disassemble code buffer.
   // Print the comment associated with offset on stream, if there is one.
-  void print_block_comment(outputStream* stream, address block_begin) {
+  virtual void print_block_comment(outputStream* stream, address block_begin) {
     intptr_t offset = (intptr_t)(block_begin - _total_start);  // I assume total_start is not correct for all code sections.
     _code_strings.print_block_comment(stream, offset);
   }

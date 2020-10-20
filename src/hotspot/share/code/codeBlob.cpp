@@ -88,7 +88,7 @@ CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& la
   _oop_maps(oop_maps),
   _caller_must_gc_arguments(caller_must_gc_arguments),
   _name(name)
-  NOT_PRODUCT(COMMA _strings())
+  NOT_PRODUCT(COMMA _strings(CodeStrings()))
 {
   assert(is_aligned(layout.size(),            oopSize), "unaligned size");
   assert(is_aligned(layout.header_size(),     oopSize), "unaligned size");
@@ -116,7 +116,7 @@ CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& la
   _relocation_end(layout.relocation_end()),
   _caller_must_gc_arguments(caller_must_gc_arguments),
   _name(name)
-  NOT_PRODUCT(COMMA _strings())
+  NOT_PRODUCT(COMMA _strings(CodeStrings()))
 {
   assert(is_aligned(_size,        oopSize), "unaligned size");
   assert(is_aligned(_header_size, oopSize), "unaligned size");
