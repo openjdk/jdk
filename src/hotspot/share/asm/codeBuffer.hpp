@@ -420,8 +420,10 @@ class CodeBuffer: public StackObj {
   bool         _immutable_PIC;
 #endif
 
+#ifndef PRODUCT
   address      _decode_begin;   // start address for decode
   address      decode_begin();
+#endif
 
   void initialize_misc(const char * name) {
     // all pointers other than code_start/end and those inside the sections
@@ -430,7 +432,6 @@ class CodeBuffer: public StackObj {
     _before_expand   = NULL;
     _blob            = NULL;
     _oop_recorder    = NULL;
-    _decode_begin    = NULL;
     _overflow_arena  = NULL;
     _last_insn       = NULL;
 #if INCLUDE_AOT
@@ -438,6 +439,7 @@ class CodeBuffer: public StackObj {
 #endif
 
 #ifndef PRODUCT
+    _decode_begin    = NULL;
     _code_strings    = CodeStrings();
     // Collect block comments, but restrict collection to cases where a disassembly is output.
     _collect_comments = ( PrintAssembly

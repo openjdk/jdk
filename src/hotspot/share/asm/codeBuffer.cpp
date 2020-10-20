@@ -267,13 +267,14 @@ bool CodeBuffer::is_backward_branch(Label& L) {
   return L.is_bound() && insts_end() <= locator_address(L.loc());
 }
 
+#ifndef PRODUCT
 address CodeBuffer::decode_begin() {
   address begin = _insts.start();
   if (_decode_begin != NULL && _decode_begin > begin)
     begin = _decode_begin;
   return begin;
 }
-
+#endif // !PRODUCT
 
 GrowableArray<int>* CodeBuffer::create_patch_overflow() {
   if (_overflow_arena == NULL) {
@@ -1032,10 +1033,6 @@ void CodeBuffer::log_section_sizes(const char* name) {
 
 #ifndef PRODUCT
 
-void CodeSection::decode() {
-  Disassembler::decode(start(), end());
-}
-
 void CodeBuffer::block_comment(intptr_t offset, const char * comment) {
   if (_collect_comments) {
     _code_strings.add_comment(offset, comment);
@@ -1152,7 +1149,8 @@ void CodeStrings::copy(CodeStrings& other) {
   CodeString** ps = &_strings;
   CodeString* prev = NULL;
   while (n != NULL) {
-    *ps = new CodeString(n->string(),n->offset());
+    // Raw copy to avoiding assertion for non-comment access to n->offset()
+    *ps = new CodeString(n->string(),n->_offset);
     (*ps)->_prev = prev;
     prev = *ps;
     ps = &((*ps)->_next);
@@ -1237,12 +1235,6 @@ void CodeBuffer::print() {
     CodeSection* cs = code_section(n);
     cs->print(code_section_name(n));
   }
-}
-
-// Directly disassemble code buffer.
-void CodeBuffer::decode(address start, address end) {
-  ttyLocker ttyl;
-  Disassembler::decode(this, start, end, tty);
 }
 
 #endif // PRODUCT

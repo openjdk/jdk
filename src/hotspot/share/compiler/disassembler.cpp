@@ -60,6 +60,7 @@ static bool use_new_version = true;
 class decode_env {
  private:
   outputStream* _output;      // where the disassembly is directed to
+  CodeBuffer*   _codeBuffer;  // != NULL only when decoding a CodeBuffer
   CodeBlob*     _codeBlob;    // != NULL only when decoding a CodeBlob
   nmethod*      _nm;          // != NULL only when decoding a nmethod
 
@@ -76,6 +77,8 @@ class decode_env {
   bool          _print_help;
   bool          _helpPrinted;
   static bool   _optionsParsed;
+
+  NOT_PRODUCT(CodeStrings   _strings;)
 
   enum {
     tabspacing = 8
@@ -213,12 +216,11 @@ class decode_env {
   }
 
  public:
-  decode_env(CodeBuffer* code, outputStream* output);
-  decode_env(CodeBlob*   code, outputStream* output /* , ptrdiff_t offset */);
-  decode_env(nmethod*    code, outputStream* output);
+  decode_env(CodeBlob*   code, outputStream* output, CodeStrings c = CodeStrings() /* , ptrdiff_t offset */);
+  decode_env(nmethod*    code, outputStream* output, CodeStrings c = CodeStrings());
   // Constructor for a 'decode_env' to decode an arbitrary
   // piece of memory, hopefully containing code.
-  decode_env(address start, address end, outputStream* output);
+  decode_env(address start, address end, outputStream* output, CodeStrings c = CodeStrings());
 
   // Add 'original_start' argument which is the the original address
   // the instructions were located at (if this is not equal to 'start').
@@ -321,7 +323,7 @@ void decode_env::print_hook_comments(address pc, bool newline) {
   }
 }
 
-decode_env::decode_env(CodeBlob* code, outputStream* output) :
+decode_env::decode_env(CodeBlob* code, outputStream* output, CodeStrings c) :
   _output(output ? output : tty),
   _codeBlob(code),
   _nm(_codeBlob != NULL && _codeBlob->is_nmethod() ? (nmethod*) code : NULL),
@@ -335,13 +337,16 @@ decode_env::decode_env(CodeBlob* code, outputStream* output) :
   _post_decode_alignment(0),
   _print_file_name(false),
   _print_help(false),
-  _helpPrinted(false)  {
+  _helpPrinted(false)
+  NOT_PRODUCT(COMMA _strings())  {
 
   memset(_option_buf, 0, sizeof(_option_buf));
   process_options(_output);
+
+  NOT_PRODUCT(_strings.copy(c);)
 }
 
-decode_env::decode_env(nmethod* code, outputStream* output) :
+decode_env::decode_env(nmethod* code, outputStream* output, CodeStrings c) :
   _output(output ? output : tty),
   _codeBlob(NULL),
   _nm(code),
@@ -355,15 +360,18 @@ decode_env::decode_env(nmethod* code, outputStream* output) :
   _post_decode_alignment(0),
   _print_file_name(false),
   _print_help(false),
-  _helpPrinted(false) {
+  _helpPrinted(false)
+  NOT_PRODUCT(COMMA _strings()) {
 
   memset(_option_buf, 0, sizeof(_option_buf));
   process_options(_output);
+
+  NOT_PRODUCT(_strings.copy(c);)
 }
 
 // Constructor for a 'decode_env' to decode a memory range [start, end)
 // of unknown origin, assuming it contains code.
-decode_env::decode_env(address start, address end, outputStream* output) :
+decode_env::decode_env(address start, address end, outputStream* output, CodeStrings c) :
   _output(output ? output : tty),
   _codeBlob(NULL),
   _nm(NULL),
@@ -377,11 +385,14 @@ decode_env::decode_env(address start, address end, outputStream* output) :
   _post_decode_alignment(0),
   _print_file_name(false),
   _print_help(false),
-  _helpPrinted(false) {
+  _helpPrinted(false)
+  NOT_PRODUCT(COMMA _strings()) {
 
   assert(start < end, "Range must have a positive size, [" PTR_FORMAT ".." PTR_FORMAT ").", p2i(start), p2i(end));
   memset(_option_buf, 0, sizeof(_option_buf));
   process_options(_output);
+
+  NOT_PRODUCT(_strings.copy(c);)
 }
 
 void decode_env::process_options(outputStream* ost) {
@@ -651,6 +662,9 @@ void decode_env::print_insn_labels() {
     if (_codeBlob != NULL) {
       _codeBlob->print_block_comment(st, p);
     }
+#ifndef PRODUCT
+    _strings.print_block_comment(st, (intptr_t)(p - _start));
+#endif
   }
 }
 
@@ -883,17 +897,18 @@ bool Disassembler::load_library(outputStream* st) {
   return _library_usable;
 }
 
+
 // Directly disassemble code blob.
-void Disassembler::decode(CodeBlob* cb, outputStream* st) {
+void Disassembler::decode(CodeBlob* cb, outputStream* st, CodeStrings c) {
 #if defined(SUPPORT_ASSEMBLY) || defined(SUPPORT_ABSTRACT_ASSEMBLY)
   if (cb->is_nmethod()) {
     // If we  have an nmethod at hand,
     // call the specialized decoder directly.
-    decode((nmethod*)cb, st);
+    decode((nmethod*)cb, st, c);
     return;
   }
 
-  decode_env env(cb, st);
+  decode_env env(cb, st, c);
   env.output()->print_cr("--------------------------------------------------------------------------------");
   if (cb->is_aot()) {
     env.output()->print("A ");
@@ -927,11 +942,11 @@ void Disassembler::decode(CodeBlob* cb, outputStream* st) {
 // Decode a nmethod.
 // This includes printing the constant pool and all code segments.
 // The nmethod data structures (oop maps, relocations and the like) are not printed.
-void Disassembler::decode(nmethod* nm, outputStream* st) {
+void Disassembler::decode(nmethod* nm, outputStream* st, CodeStrings c) {
 #if defined(SUPPORT_ASSEMBLY) || defined(SUPPORT_ABSTRACT_ASSEMBLY)
   ttyLocker ttyl;
 
-  decode_env env(nm, st);
+  decode_env env(nm, st, c);
   env.output()->print_cr("--------------------------------------------------------------------------------");
   nm->print_constant_pool(env.output());
   env.output()->print_cr("--------------------------------------------------------------------------------");
@@ -946,7 +961,7 @@ void Disassembler::decode(nmethod* nm, outputStream* st) {
 }
 
 // Decode a range, given as [start address, end address)
-void Disassembler::decode(address start, address end, outputStream* st /*, ptrdiff_t offset */) {
+void Disassembler::decode(address start, address end, outputStream* st, CodeStrings c) {
 #if defined(SUPPORT_ASSEMBLY) || defined(SUPPORT_ABSTRACT_ASSEMBLY)
   //---<  Test memory before decoding  >---
   if (!os::is_readable_range(start, end)) {
@@ -969,12 +984,12 @@ void Disassembler::decode(address start, address end, outputStream* st /*, ptrdi
   if (cb != NULL) {
     // If we  have an CodeBlob at hand,
     // call the specialized decoder directly.
-    decode(cb, st);
+    decode(cb, st, c);
   } else
 #endif
   {
     // This seems to be just a chunk of memory.
-    decode_env env(start, end, st);
+    decode_env env(start, end, st, c);
     env.output()->print_cr("--------------------------------------------------------------------------------");
     env.decode_instructions(start, end);
     env.output()->print_cr("--------------------------------------------------------------------------------");

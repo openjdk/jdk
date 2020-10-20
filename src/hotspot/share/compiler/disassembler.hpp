@@ -89,10 +89,10 @@ class Disassembler : public AbstractDisassembler {
   // about which decoding format is used.
   // We can also enforce using the abstract disassembler.
   static bool is_abstract() {
-    if (!_tried_to_load_library /* && !UseAbstractDisassembler */) {
+    if (!_tried_to_load_library) {
       load_library();
     }
-    return ! _library_usable /* || UseAbstractDisassembler */;  // Not available until DecodeErrorFile is supported.
+    return ! _library_usable;
   }
 
   // Check out if we are doing a live disassembly or a post-mortem
@@ -107,11 +107,11 @@ class Disassembler : public AbstractDisassembler {
   }
 
   // Directly disassemble code blob.
-  static void decode(CodeBlob *cb,               outputStream* st = NULL);
+  static void decode(CodeBlob *cb,               outputStream* st = NULL, CodeStrings c = CodeStrings());
   // Directly disassemble nmethod.
-  static void decode(nmethod* nm,                outputStream* st = NULL);
+  static void decode(nmethod* nm,                outputStream* st = NULL, CodeStrings c = CodeStrings());
   // Disassemble an arbitrary memory range.
-  static void decode(address start, address end, outputStream* st = NULL /* , ptrdiff_t offset */);
+  static void decode(address start, address end, outputStream* st = NULL, CodeStrings c = CodeStrings());
 
   static void _hook(const char* file, int line, class MacroAssembler* masm);
 
