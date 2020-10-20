@@ -78,7 +78,13 @@ class decode_env {
   bool          _helpPrinted;
   static bool   _optionsParsed;
 
-  NOT_PRODUCT(CodeStrings   _strings;)
+#ifndef PRODUCT
+  CodeStrings   _strings;
+  void init_strings(CodeStrings& c) {
+    _strings = CodeStrings();
+    _strings.copy(c);
+  }
+#endif // !PRODUCT
 
   enum {
     tabspacing = 8
@@ -337,13 +343,11 @@ decode_env::decode_env(CodeBlob* code, outputStream* output, CodeStrings c) :
   _post_decode_alignment(0),
   _print_file_name(false),
   _print_help(false),
-  _helpPrinted(false)
-  NOT_PRODUCT(COMMA _strings())  {
+  _helpPrinted(false) {
 
   memset(_option_buf, 0, sizeof(_option_buf));
   process_options(_output);
-
-  NOT_PRODUCT(_strings.copy(c);)
+  NOT_PRODUCT(init_strings(c);)
 }
 
 decode_env::decode_env(nmethod* code, outputStream* output, CodeStrings c) :
@@ -360,13 +364,11 @@ decode_env::decode_env(nmethod* code, outputStream* output, CodeStrings c) :
   _post_decode_alignment(0),
   _print_file_name(false),
   _print_help(false),
-  _helpPrinted(false)
-  NOT_PRODUCT(COMMA _strings()) {
+  _helpPrinted(false) {
 
   memset(_option_buf, 0, sizeof(_option_buf));
   process_options(_output);
-
-  NOT_PRODUCT(_strings.copy(c);)
+  NOT_PRODUCT(init_strings(c);)
 }
 
 // Constructor for a 'decode_env' to decode a memory range [start, end)
@@ -385,14 +387,12 @@ decode_env::decode_env(address start, address end, outputStream* output, CodeStr
   _post_decode_alignment(0),
   _print_file_name(false),
   _print_help(false),
-  _helpPrinted(false)
-  NOT_PRODUCT(COMMA _strings()) {
+  _helpPrinted(false) {
 
   assert(start < end, "Range must have a positive size, [" PTR_FORMAT ".." PTR_FORMAT ").", p2i(start), p2i(end));
   memset(_option_buf, 0, sizeof(_option_buf));
   process_options(_output);
-
-  NOT_PRODUCT(_strings.copy(c);)
+  NOT_PRODUCT(init_strings(c);)
 }
 
 void decode_env::process_options(outputStream* ost) {
