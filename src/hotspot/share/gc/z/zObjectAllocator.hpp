@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
 #define SHARE_GC_Z_ZOBJECTALLOCATOR_HPP
 
 #include "gc/z/zAllocationFlags.hpp"
-#include "gc/z/zPage.hpp"
 #include "gc/z/zValue.hpp"
-#include "memory/allocation.hpp"
+
+class ZPage;
 
 class ZObjectAllocator {
 private:

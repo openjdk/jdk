@@ -527,7 +527,7 @@ public:
   // corresponds appropriately to "this" in "new_call".  Assumes that
   // "sosn_map" is a map, specific to the translation of "s" to "new_call",
   // mapping old SafePointScalarObjectNodes to new, to avoid multiple copies.
-  SafePointScalarObjectNode* clone(Dict* sosn_map) const;
+  SafePointScalarObjectNode* clone(Dict* sosn_map, bool& new_node) const;
 
 #ifndef PRODUCT
   virtual void              dump_spec(outputStream *st) const;
@@ -635,6 +635,8 @@ public:
 
   bool is_call_to_arraycopystub() const;
 
+  virtual void copy_call_debug_info(PhaseIterGVN* phase, SafePointNode *sfpt) {}
+
 #ifndef PRODUCT
   virtual void        dump_req(outputStream *st = tty) const;
   virtual void        dump_spec(outputStream *st) const;
@@ -677,6 +679,7 @@ public:
   bool  is_method_handle_invoke() const    { return _method_handle_invoke; }
   void  set_override_symbolic_info(bool f) { _override_symbolic_info = f; }
   bool  override_symbolic_info() const     { return _override_symbolic_info; }
+  void copy_call_debug_info(PhaseIterGVN* phase, SafePointNode *sfpt);
 
   DEBUG_ONLY( bool validate_symbolic_info() const; )
 

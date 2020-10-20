@@ -25,16 +25,9 @@
 #define SHARE_GC_Z_ZARRAY_HPP
 
 #include "memory/allocation.hpp"
-#include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 
-template <typename T>
-class ZArray : public GrowableArrayCHeap<T, mtGC> {
-public:
-  ZArray();
-
-  void transfer(ZArray<T>* from);
-};
+template <typename T> using ZArray = GrowableArrayCHeap<T, mtGC>;
 
 template <typename T, bool parallel>
 class ZArrayIteratorImpl : public StackObj {

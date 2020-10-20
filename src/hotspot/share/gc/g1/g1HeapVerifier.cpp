@@ -68,7 +68,8 @@ public:
       oop obj = CompressedOops::decode_not_null(heap_oop);
       if (_g1h->is_obj_dead_cond(obj, _vo)) {
         Log(gc, verify) log;
-        log.error("Root location " PTR_FORMAT " points to dead obj " PTR_FORMAT, p2i(p), p2i(obj));
+        log.error("Root location " PTR_FORMAT " points to dead obj " PTR_FORMAT " in region " HR_FORMAT,
+                  p2i(p), p2i(obj), HR_FORMAT_PARAMS(_g1h->heap_region_containing(obj)));
         ResourceMark rm;
         LogStream ls(log.error());
         obj->print_on(&ls);

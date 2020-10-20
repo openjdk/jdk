@@ -965,8 +965,12 @@ bool os::Posix::handle_stack_overflow(JavaThread* thread, address addr, address 
           if (activation.sp() != NULL) {
             overflow_state->disable_stack_reserved_zone();
             if (activation.is_interpreted_frame()) {
-              overflow_state->set_reserved_stack_activation((address)(
-                activation.fp() + frame::interpreter_frame_initial_sp_offset));
+              overflow_state->set_reserved_stack_activation((address)(activation.fp()
+                // Some platforms use frame pointers for interpreter frames, others use initial sp.
+#if !defined(PPC64) && !defined(S390)
+                + frame::interpreter_frame_initial_sp_offset
+#endif
+                ));
             } else {
               overflow_state->set_reserved_stack_activation((address)activation.unextended_sp());
             }
