@@ -1142,9 +1142,13 @@ void CodeStrings::assign(CodeStrings& other) {
 // Only used for actual disassembly so this is cheaper than reference counting
 // for the "normal" fastdebug case.
 void CodeStrings::copy(CodeStrings& other) {
+  assert (other != NULL, "other must not be NULL");
   other.check_valid();
   check_valid();
   assert(is_null(), "Cannot copy onto non-empty CodeStrings");
+  if (other.is_null()) {
+    return;
+  }
   CodeString* n = other._strings;
   CodeString** ps = &_strings;
   CodeString* prev = NULL;

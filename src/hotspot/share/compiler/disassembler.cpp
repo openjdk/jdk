@@ -346,8 +346,9 @@ decode_env::decode_env(CodeBlob* code, outputStream* output, CodeStrings c) :
   _helpPrinted(false) {
 
   memset(_option_buf, 0, sizeof(_option_buf));
-  process_options(_output);
   NOT_PRODUCT(init_strings(c);)
+  process_options(_output);
+
 }
 
 decode_env::decode_env(nmethod* code, outputStream* output, CodeStrings c) :
@@ -367,8 +368,8 @@ decode_env::decode_env(nmethod* code, outputStream* output, CodeStrings c) :
   _helpPrinted(false) {
 
   memset(_option_buf, 0, sizeof(_option_buf));
-  process_options(_output);
   NOT_PRODUCT(init_strings(c);)
+  process_options(_output);
 }
 
 // Constructor for a 'decode_env' to decode a memory range [start, end)
@@ -391,8 +392,8 @@ decode_env::decode_env(address start, address end, outputStream* output, CodeStr
 
   assert(start < end, "Range must have a positive size, [" PTR_FORMAT ".." PTR_FORMAT ").", p2i(start), p2i(end));
   memset(_option_buf, 0, sizeof(_option_buf));
-  process_options(_output);
   NOT_PRODUCT(init_strings(c);)
+  process_options(_output);
 }
 
 void decode_env::process_options(outputStream* ost) {
