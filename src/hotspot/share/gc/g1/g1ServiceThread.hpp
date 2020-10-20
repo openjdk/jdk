@@ -103,7 +103,6 @@ private:
 
   G1ServiceTask* pop_due_task();
   void run_task(G1ServiceTask* task);
-  void run_tasks();
   void reschedule_task(G1ServiceTask* task);
 
 public:

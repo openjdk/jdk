@@ -256,8 +256,8 @@ void G1ServiceThread::reschedule_task(G1ServiceTask* task) {
   }
 
   // Reschedule task by updating task time and add back to queue.
-  double delay_ms = task->delay_ms() / 1000.0;
-  task->set_time(os::elapsedTime() + delay_ms);
+  double delay = task->delay_ms() / 1000.0;
+  task->set_time(os::elapsedTime() + delay);
 
   MutexLocker ml(&_monitor, Mutex::_no_safepoint_check_flag);
   _task_queue.add_ordered(task);
@@ -284,20 +284,6 @@ void G1ServiceThread::run_task(G1ServiceTask* task) {
   log_debug(gc, task)("G1 Service Thread (%s) (run) %1.3fms", task->name(), duration * MILLIUNITS);
 }
 
-void G1ServiceThread::run_tasks() {
-  // Execute tasks that are due. Need to check for termination to avoid
-  // running forever if task reschedule with very short interval.
-  while (!should_terminate()) {
-    G1ServiceTask* task = pop_due_task();
-    if (task == NULL) {
-      return;
-    }
-
-    run_task(task);
-    reschedule_task(task);
-  }
-}
-
 void G1ServiceThread::run_service() {
   double vtime_start = os::elapsedVTime();
 
@@ -310,7 +296,11 @@ void G1ServiceThread::run_service() {
   register_task(&remset_task);
 
   while (!should_terminate()) {
-    run_tasks();
+    G1ServiceTask* task = pop_due_task();
+    if (task != NULL) {
+      run_task(task);
+      reschedule_task(task);
+    }
 
     if (os::supports_vtime()) {
       _vtime_accum = (os::elapsedVTime() - vtime_start);
