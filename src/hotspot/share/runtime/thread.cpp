@@ -532,80 +532,9 @@ void Thread::send_async_exception(oop java_thread, oop java_throwable) {
 // Check if an external suspend request has completed (or has been
 // cancelled). Returns true if the thread is externally suspended and
 // false otherwise.
-//
-// The bits parameter returns information about the code path through
-// the routine. Useful for debugging:
-//
-// set in is_ext_suspend_completed():
-// 0x00000001 - routine was entered
-// 0x00000010 - routine return false at end
-// 0x00000100 - thread exited (return false)
-// 0x00000200 - suspend request cancelled (return false)
-// 0x00000400 - thread suspended (return true)
-// 0x00001000 - thread is in a suspend equivalent state (return true)
-// 0x00002000 - thread is native and walkable (return true)
-// 0x00004000 - thread is native_trans and walkable (needed retry)
-//
-// set in wait_for_ext_suspend_completion():
-// 0x00010000 - routine was entered
-// 0x00020000 - suspend request cancelled before loop (return false)
-// 0x00040000 - thread suspended before loop (return true)
-// 0x00080000 - suspend request cancelled in loop (return false)
-// 0x00100000 - thread suspended in loop (return true)
-// 0x00200000 - suspend not completed during retry loop (return false)
-
-// Helper class for tracing suspend wait debug bits.
-//
-// 0x00000100 indicates that the target thread exited before it could
-// self-suspend which is not a wait failure. 0x00000200, 0x00020000 and
-// 0x00080000 each indicate a cancelled suspend request so they don't
-// count as wait failures either.
-#define DEBUG_FALSE_BITS (0x00000010 | 0x00200000)
-
-class TraceSuspendDebugBits : public StackObj {
- private:
-  JavaThread* _jt;
-  uint32_t*   _bits;
-
- public:
-  TraceSuspendDebugBits(JavaThread *jt, uint32_t *bits) : _jt(jt), _bits(bits) {
-  }
-
-  ~TraceSuspendDebugBits() {
-#if 1
-    // By default, don't trace bits for is_ext_suspend_completed() calls.
-    // That trace is very chatty.
-    return;
-#else
-    // If tracing for is_ext_suspend_completed() is enabled, then only
-    // trace calls to it from wait_for_ext_suspend_completion()
-    return;
-#endif
-
-    if (AssertOnSuspendWaitFailure || TraceSuspendWaitFailures) {
-      if (_bits != NULL && (*_bits & DEBUG_FALSE_BITS) != 0) {
-        MutexLocker ml(Threads_lock);  // needed for get_thread_name()
-        ResourceMark rm;
-
-        tty->print_cr(
-                      "Failed wait_for_ext_suspend_completion(thread=%s, debug_bits=%x)",
-                      _jt->get_thread_name(), *_bits);
-
-        guarantee(!AssertOnSuspendWaitFailure, "external suspend wait failed");
-      }
-    }
-  }
-};
-#undef DEBUG_FALSE_BITS
-
-
-bool JavaThread::is_ext_suspend_completed(int delay, uint32_t *bits) {
-  TraceSuspendDebugBits tsdb(this, bits);
-
+bool JavaThread::is_ext_suspend_completed() {
   bool did_trans_retry = false;  // only do thread_in_native_trans retry once
   bool do_trans_retry;           // flag to force the retry
-
-  *bits |= 0x00000001;
 
   do {
     do_trans_retry = false;
@@ -613,7 +542,6 @@ bool JavaThread::is_ext_suspend_completed(int delay, uint32_t *bits) {
     if (is_exiting()) {
       // Thread is in the process of exiting. This is always checked
       // first to reduce the risk of dereferencing a freed JavaThread.
-      *bits |= 0x00000100;
       return false;
     }
 
@@ -621,13 +549,11 @@ bool JavaThread::is_ext_suspend_completed(int delay, uint32_t *bits) {
       // Suspend request is cancelled. This is always checked before
       // is_ext_suspended() to reduce the risk of a rogue resume
       // confusing the thread that made the suspend request.
-      *bits |= 0x00000200;
       return false;
     }
 
     if (is_ext_suspended()) {
       // thread is suspended
-      *bits |= 0x00000400;
       return true;
     }
 
@@ -655,14 +581,12 @@ bool JavaThread::is_ext_suspend_completed(int delay, uint32_t *bits) {
       //
       // Return true since we wouldn't be here unless there was still an
       // external suspend request.
-      *bits |= 0x00001000;
       return true;
     } else if (save_state == _thread_in_native && frame_anchor()->walkable()) {
       // Threads running native code will self-suspend on native==>VM/Java
       // transitions. If its stack is walkable (should always be the case
       // unless this function is called before the actual java_suspend()
       // call), then the wait is done.
-      *bits |= 0x00002000;
       return true;
     } else if (!did_trans_retry &&
                save_state == _thread_in_native_trans &&
@@ -680,8 +604,6 @@ bool JavaThread::is_ext_suspend_completed(int delay, uint32_t *bits) {
       // _thread_blocked by the time we get here. In that case, we will
       // make a single unnecessary pass through the logic below. This
       // doesn't hurt anything since we still do the trans retry.
-
-      *bits |= 0x00004000;
 
       // Once the thread leaves thread_in_native_trans for another
       // thread state, we break out of this retry loop. We shouldn't
@@ -702,9 +624,9 @@ bool JavaThread::is_ext_suspend_completed(int delay, uint32_t *bits) {
         // (if we're a JavaThread - the WatcherThread can also call this)
         // and increase delay with each retry
         if (Thread::current()->is_Java_thread()) {
-          SR_lock()->wait(i * delay);
+          SR_lock()->wait(i * SuspendRetryDelay);
         } else {
-          SR_lock()->wait_without_safepoint_check(i * delay);
+          SR_lock()->wait_without_safepoint_check(i * SuspendRetryDelay);
         }
 
         // check the actual thread state instead of what we saved above
@@ -715,12 +637,9 @@ bool JavaThread::is_ext_suspend_completed(int delay, uint32_t *bits) {
           break;
         }
       } // end retry loop
-
-
     }
   } while (do_trans_retry);
 
-  *bits |= 0x00000010;
   return false;
 }
 
@@ -2355,11 +2274,11 @@ void JavaThread::java_suspend() {
     }
 
     // suspend is done
-    uint32_t debug_bits = 0;
+
     // Warning: is_ext_suspend_completed() may temporarily drop the
     // SR_lock to allow the thread to reach a stable thread state if
     // it is currently in a transient thread state.
-    if (is_ext_suspend_completed(SuspendRetryDelay, &debug_bits)) {
+    if (is_ext_suspend_completed()) {
       return;
     }
   }

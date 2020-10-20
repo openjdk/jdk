@@ -1384,7 +1384,7 @@ class JavaThread: public Thread {
   // block.
   static void check_special_condition_for_native_trans_and_transition(JavaThread *thread);
 
-  bool is_ext_suspend_completed(int delay, uint32_t *bits);
+  bool is_ext_suspend_completed();
 
   inline void set_external_suspend();
   inline void clear_external_suspend();
