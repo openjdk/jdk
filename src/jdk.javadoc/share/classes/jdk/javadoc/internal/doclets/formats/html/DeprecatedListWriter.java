@@ -263,32 +263,33 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
      * @throws DocFileIOException if there is a problem writing the deprecated list
      */
     public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
-        DocPath filename = DocPaths.DEPRECATED_LIST;
-        DeprecatedListWriter depr = new DeprecatedListWriter(configuration, filename);
-        depr.generateDeprecatedListFile(
-               new DeprecatedAPIListBuilder(configuration));
+        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.DEPRECATED)) {
+            DocPath filename = DocPaths.DEPRECATED_LIST;
+            DeprecatedListWriter depr = new DeprecatedListWriter(configuration, filename);
+            depr.generateDeprecatedListFile(configuration.deprecatedAPIListBuilder);
+        }
     }
 
     /**
      * Generate the deprecated API list.
      *
-     * @param deprapi list of deprecated API built already.
+     * @param deprAPI list of deprecated API built already.
      * @throws DocFileIOException if there is a problem writing the deprecated list
      */
-    protected void generateDeprecatedListFile(DeprecatedAPIListBuilder deprapi)
+    protected void generateDeprecatedListFile(DeprecatedAPIListBuilder deprAPI)
             throws DocFileIOException {
         HtmlTree body = getHeader();
-        bodyContents.addMainContent(getContentsList(deprapi));
+        bodyContents.addMainContent(getContentsList(deprAPI));
         String memberTableSummary;
         Content content = new ContentBuilder();
         for (DeprElementKind kind : DeprElementKind.values()) {
-            if (deprapi.hasDocumentation(kind)) {
+            if (deprAPI.hasDocumentation(kind)) {
                 memberTableSummary = resources.getText("doclet.Member_Table_Summary",
                         resources.getText(getHeadingKey(kind)),
                         resources.getText(getSummaryKey(kind)));
                 TableHeader memberTableHeader = new TableHeader(
                         contents.getContent(getHeaderKey(kind)), contents.descriptionLabel);
-                addDeprecatedAPI(deprapi.getSet(kind), getAnchorName(kind),
+                addDeprecatedAPI(deprAPI.getSet(kind), getAnchorName(kind),
                             getHeadingKey(kind), memberTableSummary, memberTableHeader, content);
             }
         }
@@ -302,7 +303,7 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
         body.add(bodyContents);
         printHtmlDocument(null, description, body);
 
-        if (!deprapi.isEmpty() && configuration.mainIndex != null) {
+        if (!deprAPI.isEmpty() && configuration.mainIndex != null) {
             configuration.mainIndex.add(IndexItem.of(IndexItem.Category.TAGS,
                     resources.getText("doclet.Deprecated_API"), path));
         }

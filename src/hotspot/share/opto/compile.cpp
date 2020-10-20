@@ -2120,9 +2120,11 @@ void Compile::Optimize() {
       ResourceMark rm;
       PhaseRenumberLive prl = PhaseRenumberLive(initial_gvn(), for_igvn(), &new_worklist);
     }
+    Unique_Node_List* save_for_igvn = for_igvn();
     set_for_igvn(&new_worklist);
     igvn = PhaseIterGVN(initial_gvn());
     igvn.optimize();
+    set_for_igvn(save_for_igvn);
   }
 
   // Perform escape analysis

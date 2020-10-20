@@ -919,7 +919,6 @@ const intx ObjectAlignmentInBytes = 8;
           NOT_LP64(2200*K) LP64_ONLY(4*M),                                  \
           "(Deprecated) Initial size of the boot class loader data metaspace") \
           range(30*K, max_uintx/BytesPerWord)                               \
-          constraint(InitialBootClassLoaderMetaspaceSizeConstraintFunc, AfterErgo)\
                                                                             \
   product(bool, PrintHeapAtSIGBREAK, true,                                  \
           "Print heap layout in response to SIGBREAK")                      \
@@ -1555,6 +1554,15 @@ const intx ObjectAlignmentInBytes = 8;
           "Maximum size of class area in Metaspace when compressed "        \
           "class pointers are used")                                        \
           range(1*M, 3*G)                                                   \
+                                                                            \
+  product(ccstr, MetaspaceReclaimPolicy, "balanced",                        \
+          "options: balanced, aggressive, none")                            \
+                                                                            \
+  product(bool, MetaspaceGuardAllocations, false, DIAGNOSTIC,               \
+          "Metapace allocations are guarded.")                              \
+                                                                            \
+  product(bool, MetaspaceHandleDeallocations, true, DIAGNOSTIC,             \
+          "Switch off Metapace deallocation handling.")                     \
                                                                             \
   product(uintx, MinHeapFreeRatio, 40, MANAGEABLE,                          \
           "The minimum percentage of heap free after GC to avoid expansion."\
