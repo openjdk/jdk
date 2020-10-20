@@ -1036,12 +1036,11 @@ class vmIntrinsics : AllStatic {
     F_Y,                        // !static ?native  synchronized
     F_RN,                       // !static  native !synchronized
     F_SN,                       //  static  native !synchronized
-    F_RNY,                      // !static  native  synchronized
 
     FLAG_LIMIT
   };
   enum {
-    log2_FLAG_LIMIT = 4         // checked by an assert at start-up
+    log2_FLAG_LIMIT = 3         // checked by an assert at start-up
   };
 
 public:
@@ -1079,22 +1078,15 @@ public:
     return id;
   }
 
-  static void verify_method(ID actual_id, Method* m) PRODUCT_RETURN;
-
+#ifdef ASSERT
   // Find out the symbols behind an intrinsic:
   static vmSymbolID     class_for(ID id);
   static vmSymbolID      name_for(ID id);
   static vmSymbolID signature_for(ID id);
   static Flags              flags_for(ID id);
+#endif
 
   static const char* short_name_as_C_string(ID id, char* buf, int size);
-
-  // Wrapper object methods:
-  static ID for_boxing(BasicType type);
-  static ID for_unboxing(BasicType type);
-
-  // Raw conversion:
-  static ID for_raw_conversion(BasicType src, BasicType dest);
 
   // The methods below provide information related to compiling intrinsics.
 

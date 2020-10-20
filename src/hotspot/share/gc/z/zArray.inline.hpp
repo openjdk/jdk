@@ -25,23 +25,7 @@
 #define SHARE_GC_Z_ZARRAY_INLINE_HPP
 
 #include "gc/z/zArray.hpp"
-#include "memory/allocation.inline.hpp"
 #include "runtime/atomic.hpp"
-
-template <typename T>
-inline ZArray<T>::ZArray() :
-    GrowableArrayCHeap<T, mtGC>(0) {}
-
-template <typename T>
-inline void ZArray<T>::transfer(ZArray<T>* from) {
-  assert(this->_data == NULL, "Should be empty");
-  this->_data = from->_data;
-  this->_len = from->_len;
-  this->_max = from->_max;
-  from->_data = NULL;
-  from->_len = 0;
-  from->_max = 0;
-}
 
 template <typename T, bool parallel>
 inline ZArrayIteratorImpl<T, parallel>::ZArrayIteratorImpl(ZArray<T>* array) :
