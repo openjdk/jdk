@@ -289,7 +289,7 @@ public final class L32X64MixRandom extends AbstractSplittableWithBrineGenerator 
 
     @Override
     public long nextLong() {
-        return ((long)(nextInt()) << 32) | nextInt();
+        return ((long)nextInt() << 32) ^ (long)nextInt();
     }
 
 }

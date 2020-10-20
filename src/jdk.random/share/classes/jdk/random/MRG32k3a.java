@@ -161,14 +161,13 @@ public final class MRG32k3a extends AbstractArbitrarilyJumpableGenerator {
     private void nextState() {
         /* Component 1 */
         double p1 = A12 * s11 - A13N * s10;
-        double k1 = p1 / M1;   p1 -= k1 * M1;   if (p1 < 0.0) p1 += M1;
+        long k1 = (long)(p1 / M1);   p1 -= k1 * M1;   if (p1 < 0.0) p1 += M1;
         s10 = s11;   s11 = s12;   s12 = p1;
         /* Component 2 */
         double p2 = A21 * s22 - A23N * s20;
-        double k2 = p2 / M2;   p2 -= k2 * M2;   if (p2 < 0.0) p2 += M2;
+        long k2 = (long)(p2 / M2);   p2 -= k2 * M2;   if (p2 < 0.0) p2 += M2;
         s20 = s21;   s21 = s22;   s22 = p2;
     }
-
 
     /**
      * The form of nextInt used by IntStream Spliterators.
