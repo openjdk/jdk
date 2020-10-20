@@ -41,7 +41,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
-import jdk.javadoc.internal.doclets.toolkit.util.IndexItem.Category;
 
 import javax.lang.model.element.Element;
 import java.nio.file.Path;
@@ -100,6 +99,7 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
         }
         SystemPropertiesWriter systemPropertiesGen = new SystemPropertiesWriter(configuration, fileName);
         systemPropertiesGen.buildSystemPropertiesPage();
+        configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.SYSTEM_PROPERTIES);
     }
 
     /**

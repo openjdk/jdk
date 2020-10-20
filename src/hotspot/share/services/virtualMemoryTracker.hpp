@@ -396,7 +396,7 @@ class VirtualMemoryTracker : AllStatic {
   static SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base>* _reserved_regions;
 };
 
-
+// Todo: clean up after jep387, see JDK-8251392
 class MetaspaceSnapshot : public ResourceObj {
 private:
   size_t  _reserved_in_bytes[Metaspace::MetadataTypeCount];

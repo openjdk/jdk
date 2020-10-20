@@ -22,8 +22,6 @@
  */
 
 // key: compiler.err.local.enum
-// key: compiler.warn.source.no.system.modules.path
-// options: -source 15
 
 class LocalEnum {
     void m() {
