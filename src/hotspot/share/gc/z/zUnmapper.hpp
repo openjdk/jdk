@@ -24,9 +24,9 @@
 #ifndef SHARE_GC_Z_ZUNMAPPER_HPP
 #define SHARE_GC_Z_ZUNMAPPER_HPP
 
+#include "gc/shared/concurrentGCThread.hpp"
 #include "gc/z/zList.hpp"
 #include "gc/z/zLock.hpp"
-#include "gc/shared/concurrentGCThread.hpp"
 
 class ZPage;
 class ZPageAllocator;

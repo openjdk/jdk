@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,38 +19,31 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
 /*
- * @ test
- * @ bug      <BUG-ID>
- * @ summary  <BUG-SYNOPSIS>
- * @ author   <AUTHOR> or delete
- * @ library  ../lib/
- * @ build    JavadocTester <CLASS NAME>
- * @ run main <CLASS NAME>
+ * @test
+ * @summary CDS dump should abort if a class file contains a bad BSM.
+ * @requires vm.cds
+ * @library /test/lib
+ * @compile test-classes/WrongBSM.jcod
+ * @run driver BadBSM
  */
 
-import javadoc.tester.JavadocTester;
+import jdk.test.lib.process.OutputAnalyzer;
 
-public class Template extends JavadocTester {
+public class BadBSM {
 
-    //Javadoc arguments.
-    private static final String[] ARGS = new String[] {
-        "-d", OUTPUT_DIR, "-sourcepath", SRC_DIR
-    };
+  public static void main(String[] args) throws Exception {
+    JarBuilder.build("wrongbsm", "WrongBSM");
 
-    //Input for string search tests.
-    private static final String[][] TEST = NO_TEST;
-    private static final String[][] NEGATED_TEST = NO_TEST;
+    String appJar = TestCommon.getTestJar("wrongbsm.jar");
 
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-    public static void main(String[] args) {
-        Template tester = new Template();
-        tester.run(ARGS, TEST, NEGATED_TEST);
-        tester.printSummary();
-    }
+    OutputAnalyzer out = TestCommon.dump(appJar,
+        TestCommon.list("WrongBSM",
+                        "@lambda-proxy: WrongBSM 7"));
+    out.shouldHaveExitValue(0);
+    out.shouldContain( "is_supported_invokedynamic check failed for cp_index 7");
+  }
 }

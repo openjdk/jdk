@@ -120,8 +120,6 @@ JVM_handle_linux_signal(int sig,
 
   Thread* t = Thread::current_or_null_safe();
 
-  SignalHandlerMark shm(t);
-
   // handle SafeFetch faults
   if (sig == SIGSEGV || sig == SIGBUS) {
     sigjmp_buf* const pjb = get_jmp_buf_for_continuation();
@@ -481,7 +479,7 @@ extern "C" {
     long long unsigned int oldval,
     long long unsigned int newval) {
     ShouldNotCallThis();
-    return 0; // silence compiler compiler warnings
+    return 0; // silence compiler warnings
   }
 };
 #endif // !_LP64
