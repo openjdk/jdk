@@ -72,6 +72,7 @@ tier2_part3 = \
 
 tier3 = \
     :build \
+    :jdk_vector \
     :jdk_rmi \
     :jdk_beans \
     :jdk_imageio \
@@ -337,6 +338,9 @@ jdk_svc = \
 
 jdk_foreign = \
     java/foreign
+
+jdk_vector = \
+    jdk/incubator/vector
 
 #############################
 

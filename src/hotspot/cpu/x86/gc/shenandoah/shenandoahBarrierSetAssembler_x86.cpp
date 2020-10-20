@@ -366,7 +366,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier_native(MacroAssembler
   assert_different_registers(dst, thread);
 
   Address gc_state(thread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
-  __ testb(gc_state, ShenandoahHeap::EVACUATION);
+  __ testb(gc_state, ShenandoahHeap::HAS_FORWARDED);
 #ifndef _LP64
   __ pop(thread);
 #endif

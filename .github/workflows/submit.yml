@@ -17,6 +17,8 @@ jobs:
     runs-on: "ubuntu-latest"
     outputs:
       should_run: ${{ steps.check_submit.outputs.should_run }}
+      bundle_id: ${{ steps.check_bundle_id.outputs.bundle_id }}
+      platform_linux_x32: ${{ steps.check_platforms.outputs.platform_linux_x32 }}
       platform_linux_x64: ${{ steps.check_platforms.outputs.platform_linux_x64 }}
       platform_windows_x64: ${{ steps.check_platforms.outputs.platform_windows_x64 }}
       platform_macos_x64: ${{ steps.check_platforms.outputs.platform_macos_x64 }}
@@ -31,12 +33,13 @@ jobs:
         id: check_platforms
         run: |
           echo "::set-output name=platform_linux_x64::${{ contains(github.event.inputs.platforms, 'linux x64') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'linux x64'))) }}"
+          echo "::set-output name=platform_linux_x32::${{ contains(github.event.inputs.platforms, 'linux x32') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'linux x32'))) }}"
           echo "::set-output name=platform_windows_x64::${{ contains(github.event.inputs.platforms, 'windows x64') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'windows x64'))) }}"
           echo "::set-output name=platform_macos_x64::${{ contains(github.event.inputs.platforms, 'macos x64') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'macos x64'))) }}"
         if: steps.check_submit.outputs.should_run != 'false'
 
       - name: Determine unique bundle identifier
-        run: echo "::set-env name=bundleid::${GITHUB_ACTOR}_${GITHUB_SHA:0:8}"
+        run: echo "::set-output name=bundle_id::${GITHUB_ACTOR}_${GITHUB_SHA:0:8}"
         if: steps.check_submit.outputs.should_run != 'false'
 
       - name: Checkout the source
@@ -56,7 +59,7 @@ jobs:
         if: steps.check_submit.outputs.should_run != 'false'
 
       - name: Determine the jtreg ref to checkout
-        run: "echo ::set-env name=JTREG_REF::jtreg${{ fromJson(steps.check_deps.outputs.dependencies).JTREG_VERSION }}-${{ fromJson(steps.check_deps.outputs.dependencies).JTREG_BUILD }}"
+        run: "echo JTREG_REF=jtreg${{ fromJson(steps.check_deps.outputs.dependencies).JTREG_VERSION }}-${{ fromJson(steps.check_deps.outputs.dependencies).JTREG_BUILD }} >> $GITHUB_ENV"
         if: steps.check_submit.outputs.should_run != 'false'
 
       - name: Check if a jtreg image is present in the cache
@@ -88,7 +91,7 @@ jobs:
       - name: Store jtreg for use by later steps
         uses: actions/upload-artifact@v2
         with:
-          name: transient_jtreg_${{ env.bundleid }}
+          name: transient_jtreg_${{ steps.check_bundle_id.outputs.bundle_id }}
           path: ~/jtreg/
         if: steps.check_submit.outputs.should_run != 'false'
 
@@ -105,12 +108,20 @@ jobs:
           - build release
           - build debug
           - build hotspot no-pch
+          - build hotspot zero
+          - build hotspot minimal
         include:
           - flavor: build debug
             flags: --enable-debug
             artifact: -debug
           - flavor: build hotspot no-pch
-            flags: --disable-precompiled-headers
+            flags: --enable-debug --disable-precompiled-headers
+            build-target: hotspot
+          - flavor: build hotspot zero
+            flags: --enable-debug --disable-precompiled-headers --with-jvm-variants=zero
+            build-target: hotspot
+          - flavor: build hotspot minimal
+            flags: --enable-debug --disable-precompiled-headers --with-jvm-variants=minimal
             build-target: hotspot
 
     env:
@@ -121,9 +132,6 @@ jobs:
       BOOT_JDK_SHA256: "${{ fromJson(needs.prerequisites.outputs.dependencies).LINUX_X64_BOOT_JDK_SHA256 }}"
 
     steps:
-      - name: Determine unique bundle identifier
-        run: echo "::set-env name=bundleid::${GITHUB_ACTOR}_${GITHUB_SHA:0:8}"
-
       - name: Checkout the source
         uses: actions/checkout@v2
         with:
@@ -146,10 +154,19 @@ jobs:
         if: steps.bootjdk.outputs.cache-hit != 'true'
 
       - name: Restore jtreg artifact
+        id: jtreg_restore
         uses: actions/download-artifact@v2
         with:
-          name: transient_jtreg_${{ env.bundleid }}
+          name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
+        continue-on-error: true
+
+      - name: Restore jtreg artifact (retry)
+        uses: actions/download-artifact@v2
+        with:
+          name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
+          path: ~/jtreg/
+        if: steps.jtreg_restore.outcome == 'failure'
 
       - name: Checkout gtest sources
         uses: actions/checkout@v2
@@ -183,7 +200,7 @@ jobs:
       - name: Persist test bundles
         uses: actions/upload-artifact@v2
         with:
-          name: transient_jdk-linux-x64${{ matrix.artifact }}_${{ env.bundleid }}
+          name: transient_jdk-linux-x64${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
           path: |
             jdk/build/linux-x64/bundles/jdk-${{ env.JDK_VERSION }}-internal+0_linux-x64_bin${{ matrix.artifact }}.tar.gz
             jdk/build/linux-x64/bundles/jdk-${{ env.JDK_VERSION }}-internal+0_linux-x64_bin-tests${{ matrix.artifact }}.tar.gz
@@ -242,9 +259,6 @@ jobs:
       BOOT_JDK_SHA256: "${{ fromJson(needs.prerequisites.outputs.dependencies).LINUX_X64_BOOT_JDK_SHA256 }}"
 
     steps:
-      - name: Determine unique bundle identifier
-        run: echo "::set-env name=bundleid::${GITHUB_ACTOR}_${GITHUB_SHA:0:8}"
-
       - name: Checkout the source
         uses: actions/checkout@v2
 
@@ -265,16 +279,34 @@ jobs:
         if: steps.bootjdk.outputs.cache-hit != 'true'
 
       - name: Restore jtreg artifact
+        id: jtreg_restore
         uses: actions/download-artifact@v2
         with:
-          name: transient_jtreg_${{ env.bundleid }}
+          name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
+        continue-on-error: true
+
+      - name: Restore jtreg artifact (retry)
+        uses: actions/download-artifact@v2
+        with:
+          name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
+          path: ~/jtreg/
+        if: steps.jtreg_restore.outcome == 'failure'
 
       - name: Restore build artifacts
+        id: build_restore
         uses: actions/download-artifact@v2
         with:
-          name: transient_jdk-linux-x64${{ matrix.artifact }}_${{ env.bundleid }}
+          name: transient_jdk-linux-x64${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jdk-linux-x64${{ matrix.artifact }}
+        continue-on-error: true
+
+      - name: Restore build artifacts (retry)
+        uses: actions/download-artifact@v2
+        with:
+          name: transient_jdk-linux-x64${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
+          path: ~/jdk-linux-x64${{ matrix.artifact }}
+        if: steps.build_restore.outcome == 'failure'
 
       - name: Unpack jdk
         run: |
@@ -289,7 +321,7 @@ jobs:
       - name: Find root of jdk image dir
         run: |
           imageroot=`find ${HOME}/jdk-linux-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_linux-x64_bin${{ matrix.artifact }} -name release -type f`
-          echo "::set-env name=imageroot::`dirname ${imageroot}`"
+          echo "imageroot=`dirname ${imageroot}`" >> $GITHUB_ENV
 
       - name: Run tests
         run: >
@@ -304,10 +336,19 @@ jobs:
           TEST="${{ matrix.suites }}"
           TEST_OPTS_JAVA_OPTIONS=
           JTREG_KEYWORDS="!headful"
+          JTREG="JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash"
+
+      - name: Check that all tests executed successfully
+        if: always()
+        run: >
+          if ! grep --include=test-summary.txt -lqr build/*/test-results -e "TEST SUCCESS" ; then
+            cat build/*/test-results/*/text/newfailures.txt ;
+            exit 1 ;
+          fi
 
       - name: Create suitable test log artifact name
         if: always()
-        run: echo "::set-env name=logsuffix::`echo ${{ matrix.test }} | sed -e 's!/!_!'g -e 's! !_!'g`"
+        run: echo "logsuffix=`echo ${{ matrix.test }} | sed -e 's!/!_!'g -e 's! !_!'g`" >> $GITHUB_ENV
 
       - name: Persist test logs
         if: always()
@@ -316,6 +357,103 @@ jobs:
           name: linux-x64${{ matrix.artifact }}_testlogs_${{ env.logsuffix }}
           path: build/*/test-results
         continue-on-error: true
+
+  linux_x32_build:
+    name: Linux x32
+    runs-on: "ubuntu-latest"
+    needs: prerequisites
+    if: needs.prerequisites.outputs.should_run != 'false' && needs.prerequisites.outputs.platform_linux_x32 != 'false'
+
+    strategy:
+      fail-fast: false
+      matrix:
+        flavor:
+          - build debug
+        include:
+          - flavor: build debug
+            flags: --enable-debug
+            artifact: -debug
+
+    # Reduced 32-bit build uses the same boot JDK as 64-bit build
+    env:
+      JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).DEFAULT_VERSION_FEATURE }}"
+      BOOT_JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).BOOT_JDK_VERSION }}"
+      BOOT_JDK_FILENAME: "${{ fromJson(needs.prerequisites.outputs.dependencies).LINUX_X64_BOOT_JDK_FILENAME }}"
+      BOOT_JDK_URL: "${{ fromJson(needs.prerequisites.outputs.dependencies).LINUX_X64_BOOT_JDK_URL }}"
+      BOOT_JDK_SHA256: "${{ fromJson(needs.prerequisites.outputs.dependencies).LINUX_X64_BOOT_JDK_SHA256 }}"
+
+    steps:
+      - name: Checkout the source
+        uses: actions/checkout@v2
+        with:
+          path: jdk
+
+      - name: Restore boot JDK from cache
+        id: bootjdk
+        uses: actions/cache@v2
+        with:
+          path: ~/bootjdk/${{ env.BOOT_JDK_VERSION }}
+          key: bootjdk-${{ runner.os }}-${{ env.BOOT_JDK_VERSION }}-${{ env.BOOT_JDK_SHA256 }}-v1
+
+      - name: Download boot JDK
+        run: |
+          mkdir -p "${HOME}/bootjdk/${BOOT_JDK_VERSION}"
+          wget -O "${HOME}/bootjdk/${BOOT_JDK_FILENAME}" "${BOOT_JDK_URL}"
+          echo "${BOOT_JDK_SHA256} ${HOME}/bootjdk/${BOOT_JDK_FILENAME}" | sha256sum -c >/dev/null -
+          tar -xf "${HOME}/bootjdk/${BOOT_JDK_FILENAME}" -C "${HOME}/bootjdk/${BOOT_JDK_VERSION}"
+          mv "${HOME}/bootjdk/${BOOT_JDK_VERSION}/"*/* "${HOME}/bootjdk/${BOOT_JDK_VERSION}/"
+        if: steps.bootjdk.outputs.cache-hit != 'true'
+
+      - name: Restore jtreg artifact
+        id: jtreg_restore
+        uses: actions/download-artifact@v2
+        with:
+          name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
+          path: ~/jtreg/
+        continue-on-error: true
+
+      - name: Restore jtreg artifact (retry)
+        uses: actions/download-artifact@v2
+        with:
+          name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
+          path: ~/jtreg/
+        if: steps.jtreg_restore.outcome == 'failure'
+
+      - name: Checkout gtest sources
+        uses: actions/checkout@v2
+        with:
+          repository: "google/googletest"
+          ref: "release-${{ fromJson(needs.prerequisites.outputs.dependencies).GTEST_VERSION }}"
+          path: gtest
+
+      # Roll in the multilib environment and its dependencies.
+      # Some multilib libraries do not have proper inter-dependencies, so we have to
+      # install their dependencies manually.
+      - name: Install dependencies
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update
+          sudo apt-get install gcc-multilib g++-multilib libfreetype6-dev:i386 libxrandr-dev:i386 libxtst-dev:i386 libtiff-dev:i386 libcupsimage2-dev:i386 libcups2-dev:i386 libasound2-dev:i386
+
+      - name: Configure
+        run: >
+          bash configure
+          --with-conf-name=linux-x32
+          --with-target-bits=32
+          ${{ matrix.flags }}
+          --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}
+          --with-version-build=0
+          --with-boot-jdk=${HOME}/bootjdk/${BOOT_JDK_VERSION}
+          --with-jtreg=${HOME}/jtreg
+          --with-gtest=${GITHUB_WORKSPACE}/gtest
+          --with-default-make-target="product-bundles test-bundles"
+          --with-zlib=system
+          --enable-jtreg-failure-handler
+        working-directory: jdk
+
+      - name: Build
+        run: make CONF_NAME=linux-x32 ${{ matrix.build-target }}
+        working-directory: jdk
 
   windows_x64_build:
     name: Windows x64
@@ -342,9 +480,6 @@ jobs:
       BOOT_JDK_SHA256: "${{ fromJson(needs.prerequisites.outputs.dependencies).WINDOWS_X64_BOOT_JDK_SHA256 }}"
 
     steps:
-      - name: Determine unique bundle identifier
-        run: echo ("::set-env name=bundleid::$env:GITHUB_ACTOR" + "_" + (-join "$env:GITHUB_SHA"[0..7]))
-
       - name: Restore cygwin packages from cache
         id: cygwin
         uses: actions/cache@v2
@@ -388,10 +523,19 @@ jobs:
           path: gtest
 
       - name: Restore jtreg artifact
+        id: jtreg_restore
         uses: actions/download-artifact@v2
         with:
-          name: transient_jtreg_${{ env.bundleid }}
+          name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
+        continue-on-error: true
+
+      - name: Restore jtreg artifact (retry)
+        uses: actions/download-artifact@v2
+        with:
+          name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
+          path: ~/jtreg/
+        if: steps.jtreg_restore.outcome == 'failure'
 
       - name: Configure
         run: >
@@ -419,7 +563,7 @@ jobs:
       - name: Persist test bundles
         uses: actions/upload-artifact@v2
         with:
-          name: transient_jdk-windows-x64${{ matrix.artifact }}_${{ env.bundleid }}
+          name: transient_jdk-windows-x64${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
           path: |
             jdk/build/windows-x64/bundles/jdk-${{ env.JDK_VERSION }}-internal+0_windows-x64_bin${{ matrix.artifact }}.zip
             jdk/build/windows-x64/bundles/jdk-${{ env.JDK_VERSION }}-internal+0_windows-x64_bin-tests${{ matrix.artifact }}.tar.gz
@@ -479,9 +623,6 @@ jobs:
       BOOT_JDK_SHA256: "${{ fromJson(needs.prerequisites.outputs.dependencies).WINDOWS_X64_BOOT_JDK_SHA256 }}"
 
     steps:
-      - name: Determine unique bundle identifier
-        run: echo ("::set-env name=bundleid::$env:GITHUB_ACTOR" + "_" + (-join "$env:GITHUB_SHA"[0..7]))
-
       - name: Checkout the source
         uses: actions/checkout@v2
 
@@ -516,16 +657,34 @@ jobs:
           Start-Process -FilePath "$HOME\cygwin\setup-x86_64.exe" -ArgumentList "--quiet-mode --packages autoconf,make,zip,unzip --root $HOME\cygwin\cygwin64 --local-package-dir $HOME\cygwin\packages --site http://mirrors.kernel.org/sourceware/cygwin --no-desktop --no-shortcuts --no-startmenu --no-admin" -Wait -NoNewWindow
 
       - name: Restore jtreg artifact
+        id: jtreg_restore
         uses: actions/download-artifact@v2
         with:
-          name: transient_jtreg_${{ env.bundleid }}
+          name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
+        continue-on-error: true
+
+      - name: Restore jtreg artifact (retry)
+        uses: actions/download-artifact@v2
+        with:
+          name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
+          path: ~/jtreg/
+        if: steps.jtreg_restore.outcome == 'failure'
 
       - name: Restore build artifacts
+        id: build_restore
         uses: actions/download-artifact@v2
         with:
-          name: transient_jdk-windows-x64${{ matrix.artifact }}_${{ env.bundleid }}
+          name: transient_jdk-windows-x64${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jdk-windows-x64${{ matrix.artifact }}
+        continue-on-error: true
+
+      - name: Restore build artifacts (retry)
+        uses: actions/download-artifact@v2
+        with:
+          name: transient_jdk-windows-x64${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
+          path: ~/jdk-windows-x64${{ matrix.artifact }}
+        if: steps.build_restore.outcome == 'failure'
 
       - name: Unpack jdk
         run: |
@@ -543,7 +702,7 @@ jobs:
           tar -xf "${HOME}/jdk-windows-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_windows-x64_bin-tests${{ matrix.artifact }}.tar.gz" -C "${HOME}/jdk-windows-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_windows-x64_bin-tests${{ matrix.artifact }}"
 
       - name: Find root of jdk image dir
-        run: echo ("::set-env name=imageroot::" + (Get-ChildItem -Path $HOME/jdk-windows-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_windows-x64_bin${{ matrix.artifact }} -Filter release -Recurse -ErrorAction SilentlyContinue -Force).DirectoryName)
+        run: echo ("imageroot=" + (Get-ChildItem -Path $HOME/jdk-windows-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_windows-x64_bin${{ matrix.artifact }} -Filter release -Recurse -ErrorAction SilentlyContinue -Force).DirectoryName) | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
 
       - name: Run tests
         run: >
@@ -561,10 +720,19 @@ jobs:
           TEST=${{ matrix.suites }}
           TEST_OPTS_JAVA_OPTIONS=
           JTREG_KEYWORDS="!headful"
+          JTREG="JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash"
+
+      - name: Check that all tests executed successfully
+        if: always()
+        run: >
+          if ((Get-ChildItem -Path build\*\test-results\test-summary.txt -Recurse | Select-String -Pattern "TEST SUCCESS" ).Count -eq 0) {
+            Get-Content -Path build\*\test-results\*\*\newfailures.txt ;
+            exit 1
+          }
 
       - name: Create suitable test log artifact name
         if: always()
-        run: echo ("::set-env name=logsuffix::" + ("${{ matrix.test }}" -replace "/", "_" -replace " ", "_"))
+        run: echo ("logsuffix=" + ("${{ matrix.test }}" -replace "/", "_" -replace " ", "_")) | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
 
       - name: Persist test logs
         if: always()
@@ -600,9 +768,6 @@ jobs:
       BOOT_JDK_SHA256: "${{ fromJson(needs.prerequisites.outputs.dependencies).MACOS_X64_BOOT_JDK_SHA256 }}"
 
     steps:
-      - name: Determine unique bundle identifier
-        run: echo "::set-env name=bundleid::${GITHUB_ACTOR}_${GITHUB_SHA:0:8}"
-
       - name: Checkout the source
         uses: actions/checkout@v2
         with:
@@ -625,10 +790,19 @@ jobs:
         if: steps.bootjdk.outputs.cache-hit != 'true'
 
       - name: Restore jtreg artifact
+        id: jtreg_restore
         uses: actions/download-artifact@v2
         with:
-          name: transient_jtreg_${{ env.bundleid }}
+          name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
+        continue-on-error: true
+
+      - name: Restore jtreg artifact (retry)
+        uses: actions/download-artifact@v2
+        with:
+          name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
+          path: ~/jtreg/
+        if: steps.jtreg_restore.outcome == 'failure'
 
       - name: Checkout gtest sources
         uses: actions/checkout@v2
@@ -662,7 +836,7 @@ jobs:
       - name: Persist test bundles
         uses: actions/upload-artifact@v2
         with:
-          name: transient_jdk-macos-x64${{ matrix.artifact }}_${{ env.bundleid }}
+          name: transient_jdk-macos-x64${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
           path: |
             jdk/build/macos-x64/bundles/jdk-${{ env.JDK_VERSION }}-internal+0_osx-x64_bin${{ matrix.artifact }}.tar.gz
             jdk/build/macos-x64/bundles/jdk-${{ env.JDK_VERSION }}-internal+0_osx-x64_bin-tests${{ matrix.artifact }}.tar.gz
@@ -721,9 +895,6 @@ jobs:
       BOOT_JDK_SHA256: "${{ fromJson(needs.prerequisites.outputs.dependencies).MACOS_X64_BOOT_JDK_SHA256 }}"
 
     steps:
-      - name: Determine unique bundle identifier
-        run: echo "::set-env name=bundleid::${GITHUB_ACTOR}_${GITHUB_SHA:0:8}"
-
       - name: Checkout the source
         uses: actions/checkout@v2
 
@@ -744,16 +915,34 @@ jobs:
         if: steps.bootjdk.outputs.cache-hit != 'true'
 
       - name: Restore jtreg artifact
+        id: jtreg_restore
         uses: actions/download-artifact@v2
         with:
-          name: transient_jtreg_${{ env.bundleid }}
+          name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
+        continue-on-error: true
+
+      - name: Restore jtreg artifact (retry)
+        uses: actions/download-artifact@v2
+        with:
+          name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
+          path: ~/jtreg/
+        if: steps.jtreg_restore.outcome == 'failure'
 
       - name: Restore build artifacts
+        id: build_restore
         uses: actions/download-artifact@v2
         with:
-          name: transient_jdk-macos-x64${{ matrix.artifact }}_${{ env.bundleid }}
+          name: transient_jdk-macos-x64${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jdk-macos-x64${{ matrix.artifact }}
+        continue-on-error: true
+
+      - name: Restore build artifacts (retry)
+        uses: actions/download-artifact@v2
+        with:
+          name: transient_jdk-macos-x64${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
+          path: ~/jdk-macos-x64${{ matrix.artifact }}
+        if: steps.build_restore.outcome == 'failure'
 
       - name: Unpack jdk
         run: |
@@ -771,7 +960,7 @@ jobs:
       - name: Find root of jdk image dir
         run: |
           imageroot=`find ${HOME}/jdk-macos-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_osx-x64_bin${{ matrix.artifact }} -name release -type f`
-          echo "::set-env name=imageroot::`dirname ${imageroot}`"
+          echo "imageroot=`dirname ${imageroot}`" >> $GITHUB_ENV
 
       - name: Run tests
         run: >
@@ -786,10 +975,19 @@ jobs:
           TEST=${{ matrix.suites }}
           TEST_OPTS_JAVA_OPTIONS=
           JTREG_KEYWORDS="!headful"
+          JTREG="JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash"
+
+      - name: Check that all tests executed successfully
+        if: always()
+        run: >
+          if ! grep --include=test-summary.txt -lqr build/*/test-results -e "TEST SUCCESS" ; then
+            cat build/*/test-results/*/text/newfailures.txt ;
+            exit 1 ;
+          fi
 
       - name: Create suitable test log artifact name
         if: always()
-        run: echo "::set-env name=logsuffix::`echo ${{ matrix.test }} | sed -e 's!/!_!'g -e 's! !_!'g`"
+        run: echo "logsuffix=`echo ${{ matrix.test }} | sed -e 's!/!_!'g -e 's! !_!'g`" >> $GITHUB_ENV
 
       - name: Persist test logs
         if: always()
@@ -851,11 +1049,8 @@ jobs:
           -X DELETE "${url}";
           done
 
-      - name: Determine unique bundle identifier
-        run: echo "::set-env name=bundleid::${GITHUB_ACTOR}_${GITHUB_SHA:0:8}"
-
       - name: Upload a combined test results artifact
         uses: actions/upload-artifact@v2
         with:
-          name: test-results_${{ env.bundleid }}
+          name: test-results_${{ needs.prerequisites.outputs.bundle_id }}
           path: test-results

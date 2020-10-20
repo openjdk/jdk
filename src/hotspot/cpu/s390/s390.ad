@@ -278,9 +278,7 @@ alloc_class chunk2(
 // information in this architecture description.
 
 // 1) reg_class inline_cache_reg           (as defined in frame section)
-// 2) reg_class compiler_method_reg        (as defined in frame section)
-// 2) reg_class interpreter_method_reg     (as defined in frame section)
-// 3) reg_class stack_slots(/* one chunk of stack-based "registers" */)
+// 2) reg_class stack_slots(/* one chunk of stack-based "registers" */)
 
 // Integer Register Classes
 reg_class z_int_reg(
@@ -1573,6 +1571,10 @@ const bool Matcher::has_predicated_vectors(void) {
   return false;
 }
 
+bool Matcher::supports_vector_variable_shifts(void) {
+  return false; // not supported
+}
+
 const int Matcher::float_pressure(int default_pressure_threshold) {
   return default_pressure_threshold;
 }
@@ -2461,12 +2463,6 @@ frame %{
   //
   // Tos is loaded in run_compiled_code to Z_ARG5=Z_R6.
   // interpreter_arg_ptr_reg(Z_R6);
-
-  // Temporary in compiled entry-points
-  // compiler_method_reg(Z_R1);//Z_R1_scratch
-
-  // Method Register when calling interpreter
-  interpreter_method_reg(Z_R9);//Z_method
 
   // Optional: name the operand used by cisc-spilling to access
   // [stack_pointer + offset].
@@ -3526,20 +3522,6 @@ operand rscratchRegF() %{
 // Method Register
 operand inline_cache_regP(iRegP reg) %{
   constraint(ALLOC_IN_RC(z_r9_regP)); // inline_cache_reg
-  match(reg);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand compiler_method_regP(iRegP reg) %{
-  constraint(ALLOC_IN_RC(z_r1_RegP)); // compiler_method_reg
-  match(reg);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand interpreter_method_regP(iRegP reg) %{
-  constraint(ALLOC_IN_RC(z_r9_regP)); // interpreter_method_reg
   match(reg);
   format %{ %}
   interface(REG_INTER);

@@ -114,8 +114,8 @@ reg_def R16     ( SOC, SOC, Op_RegI, 16, r16->as_VMReg()        );
 reg_def R16_H   ( SOC, SOC, Op_RegI, 16, r16->as_VMReg()->next());
 reg_def R17     ( SOC, SOC, Op_RegI, 17, r17->as_VMReg()        );
 reg_def R17_H   ( SOC, SOC, Op_RegI, 17, r17->as_VMReg()->next());
-reg_def R18     ( SOC, SOC, Op_RegI, 18, r18->as_VMReg()        );
-reg_def R18_H   ( SOC, SOC, Op_RegI, 18, r18->as_VMReg()->next());
+reg_def R18     ( SOC, SOC, Op_RegI, 18, r18_tls->as_VMReg()        );
+reg_def R18_H   ( SOC, SOC, Op_RegI, 18, r18_tls->as_VMReg()->next());
 reg_def R19     ( SOC, SOE, Op_RegI, 19, r19->as_VMReg()        );
 reg_def R19_H   ( SOC, SOE, Op_RegI, 19, r19->as_VMReg()->next());
 reg_def R20     ( SOC, SOE, Op_RegI, 20, r20->as_VMReg()        ); // caller esp
@@ -614,9 +614,7 @@ alloc_class chunk3(RFLAGS);
 // Several register classes are automatically defined based upon information in
 // this architecture description.
 // 1) reg_class inline_cache_reg           ( /* as def'd in frame section */ )
-// 2) reg_class compiler_method_reg        ( /* as def'd in frame section */ )
-// 2) reg_class interpreter_method_reg     ( /* as def'd in frame section */ )
-// 3) reg_class stack_slots( /* one chunk of stack-based "registers" */ )
+// 2) reg_class stack_slots( /* one chunk of stack-based "registers" */ )
 //
 
 // Class for all 32 bit general purpose registers
@@ -716,6 +714,10 @@ reg_class any_reg %{
 
 // Class for non-allocatable 32 bit registers
 reg_class non_allocatable_reg32(
+#ifdef R18_RESERVED
+    // See comment in register_aarch64.hpp
+    R18,                        // tls on Windows
+#endif
     R28,                        // thread
     R30,                        // lr
     R31                         // sp
@@ -723,6 +725,10 @@ reg_class non_allocatable_reg32(
 
 // Class for non-allocatable 64 bit registers
 reg_class non_allocatable_reg(
+#ifdef R18_RESERVED
+    // See comment in register_aarch64.hpp
+    R18, R18_H,                 // tls on Windows, platform register on macOS
+#endif
     R28, R28_H,                 // thread
     R30, R30_H,                 // lr
     R31, R31_H                  // sp
@@ -1958,9 +1964,10 @@ void MachEpilogNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   }
 
   if (do_polling() && C->is_method_compilation()) {
-    st->print("# touch polling page\n\t");
-    st->print("ldr rscratch1, [rthread],#polling_page_offset\n\t");
-    st->print("ldr zr, [rscratch1]");
+    st->print("# test polling word\n\t");
+    st->print("ldr  rscratch1, [rthread],#%d\n\t", in_bytes(JavaThread::polling_word_offset()));
+    st->print("cmp  sp, rscratch1\n\t");
+    st->print("bhi #slow_path");
   }
 }
 #endif
@@ -1977,7 +1984,13 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   }
 
   if (do_polling() && C->is_method_compilation()) {
-    __ fetch_and_read_polling_page(rscratch1, relocInfo::poll_return_type);
+    Label dummy_label;
+    Label* code_stub = &dummy_label;
+    if (!C->output()->in_scratch_emit_size()) {
+      code_stub = &C->output()->safepoint_poll_table()->add_safepoint(__ offset());
+    }
+    __ relocate(relocInfo::poll_return_type);
+    __ safepoint_poll(*code_stub, true /* at_return */, false /* acquire */, true /* in_nmethod */);
   }
 }
 
@@ -2395,6 +2408,12 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
       break;
     case Op_MulVL:
       return false;
+    case Op_VectorLoadShuffle:
+    case Op_VectorRearrange:
+      if (vlen < 4) {
+        return false;
+      }
+      break;
     default:
       break;
     }
@@ -2404,6 +2423,10 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
 
 const bool Matcher::has_predicated_vectors(void) {
   return UseSVE > 0;
+}
+
+bool Matcher::supports_vector_variable_shifts(void) {
+  return true;
 }
 
 const int Matcher::float_pressure(int default_pressure_threshold) {
@@ -2451,11 +2474,18 @@ const int Matcher::min_vector_size(const BasicType bt) {
   if ((UseSVE > 0) && (MaxVectorSize >= 16)) {
     // Currently vector length less than SVE vector register size is not supported.
     return max_size;
-  } else {
-    //  For the moment limit the vector size to 8 bytes with NEON.
+  } else { // NEON
+    // Limit the vector size to 8 bytes
     int size = 8 / type2aelembytes(bt);
+    if (bt == T_BYTE) {
+      // To support vector api shuffle/rearrange.
+      size = 4;
+    } else if (bt == T_BOOLEAN) {
+      // To support vector api load/store mask.
+      size = 2;
+    }
     if (size < 2) size = 2;
-    return size;
+    return MIN2(size,max_size);
   }
 }
 
@@ -2474,6 +2504,9 @@ const uint Matcher::vector_ideal_reg(int len) {
     return Op_VecA;
   }
   switch(len) {
+    // For 16-bit/32-bit mask vector, reuse VecD.
+    case  2:
+    case  4:
     case  8: return Op_VecD;
     case 16: return Op_VecX;
   }
@@ -2572,11 +2605,6 @@ const bool Matcher::rematerialize_float_constants = false;
 // and move it piece-by-piece.  Only happens when passing doubles into
 // C code as the Java calling convention forces doubles to be aligned.
 const bool Matcher::misaligned_doubles_ok = true;
-
-// No-op on amd64
-void Matcher::pd_implicit_null_fixup(MachNode *node, uint idx) {
-  Unimplemented();
-}
 
 // Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
 const bool Matcher::strict_fp_requires_explicit_rounding = false;
@@ -3116,6 +3144,12 @@ encode %{
   // END Non-volatile memory access
 
   // Vector loads and stores
+  enc_class aarch64_enc_ldrvH(vecD dst, memory mem) %{
+    FloatRegister dst_reg = as_FloatRegister($dst$$reg);
+    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldr, dst_reg, MacroAssembler::H,
+       $mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
+  %}
+
   enc_class aarch64_enc_ldrvS(vecD dst, memory mem) %{
     FloatRegister dst_reg = as_FloatRegister($dst$$reg);
     loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldr, dst_reg, MacroAssembler::S,
@@ -3131,6 +3165,12 @@ encode %{
   enc_class aarch64_enc_ldrvQ(vecX dst, memory mem) %{
     FloatRegister dst_reg = as_FloatRegister($dst$$reg);
     loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldr, dst_reg, MacroAssembler::Q,
+       $mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
+  %}
+
+  enc_class aarch64_enc_strvH(vecD src, memory mem) %{
+    FloatRegister src_reg = as_FloatRegister($src$$reg);
+    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::str, src_reg, MacroAssembler::H,
        $mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}
 
@@ -4043,9 +4083,6 @@ frame %{
   // Inline Cache Register or Method for I2C.
   inline_cache_reg(R12);
 
-  // Method Register when calling interpreter.
-  interpreter_method_reg(R12);
-
   // Number of stack slots consumed by locking an object
   sync_stack_slots(2);
 
@@ -4230,6 +4267,26 @@ operand immI_le_4()
 operand immI_31()
 %{
   predicate(n->get_int() == 31);
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immI_2()
+%{
+  predicate(n->get_int() == 2);
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immI_4()
+%{
+  predicate(n->get_int() == 4);
   match(ConI);
 
   op_cost(0);
@@ -5613,16 +5670,6 @@ operand inline_cache_RegP(iRegP reg)
   interface(REG_INTER);
 %}
 
-operand interpreter_method_RegP(iRegP reg)
-%{
-  constraint(ALLOC_IN_RC(method_reg)); // interpreter_method_reg
-  match(reg);
-  match(iRegPNoSp);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
 // Thread Register
 operand thread_RegP(iRegP reg)
 %{
@@ -6286,7 +6333,7 @@ pipeline %{
 attributes %{
   // ARM instructions are of fixed length
   fixed_size_instructions;        // Fixed size instructions TODO does
-  max_instructions_per_bundle = 2;   // A53 = 2, A57 = 4
+  max_instructions_per_bundle = 4;   // A53 = 2, A57 = 4
   // ARM instructions come in 32-bit word units
   instruction_unit_size = 4;         // An instruction is 4 bytes long
   instruction_fetch_unit_size = 64;  // The processor fetches one line
@@ -11207,6 +11254,7 @@ instruct rShiftL_reg_imm(iRegLNoSp dst, iRegL src1, immI src2) %{
 %}
 
 // BEGIN This section of the file is automatically generated. Do not edit --------------
+// This section is generated from aarch64_ad.m4
 
 
 // This pattern is automatically generated from aarch64_ad.m4
@@ -16361,18 +16409,38 @@ instruct string_indexof_conUL(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2,
   ins_pipe(pipe_class_memory);
 %}
 
-instruct string_indexofU_char(iRegP_R1 str1, iRegI_R2 cnt1, iRegI_R3 ch,
+instruct string_indexof_char(iRegP_R1 str1, iRegI_R2 cnt1, iRegI_R3 ch,
                               iRegI_R0 result, iRegINoSp tmp1, iRegINoSp tmp2,
                               iRegINoSp tmp3, rFlagsReg cr)
 %{
   match(Set result (StrIndexOfChar (Binary str1 cnt1) ch));
+  predicate(((StrIndexOfCharNode*)n)->encoding() == StrIntrinsicNode::U);
   effect(USE_KILL str1, USE_KILL cnt1, USE_KILL ch,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
 
-  format %{ "String IndexOf char[] $str1,$cnt1,$ch -> $result" %}
+  format %{ "StringUTF16 IndexOf char[] $str1,$cnt1,$ch -> $result" %}
 
   ins_encode %{
     __ string_indexof_char($str1$$Register, $cnt1$$Register, $ch$$Register,
+                           $result$$Register, $tmp1$$Register, $tmp2$$Register,
+                           $tmp3$$Register);
+  %}
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct stringL_indexof_char(iRegP_R1 str1, iRegI_R2 cnt1, iRegI_R3 ch,
+                              iRegI_R0 result, iRegINoSp tmp1, iRegINoSp tmp2,
+                              iRegINoSp tmp3, rFlagsReg cr)
+%{
+  match(Set result (StrIndexOfChar (Binary str1 cnt1) ch));
+  predicate(((StrIndexOfCharNode*)n)->encoding() == StrIntrinsicNode::L);
+  effect(USE_KILL str1, USE_KILL cnt1, USE_KILL ch,
+         TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
+
+  format %{ "StringLatin1 IndexOf char[] $str1,$cnt1,$ch -> $result" %}
+
+  ins_encode %{
+    __ stringL_indexof_char($str1$$Register, $cnt1$$Register, $ch$$Register,
                            $result$$Register, $tmp1$$Register, $tmp2$$Register,
                            $tmp3$$Register);
   %}
@@ -16813,6 +16881,7 @@ instruct replicate2D(vecX dst, vRegD src)
 
 instruct reduce_add2I(iRegINoSp dst, iRegIorL2I isrc, vecD vsrc, iRegINoSp tmp, iRegINoSp tmp2)
 %{
+  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_INT);
   match(Set dst (AddReductionVI isrc vsrc));
   ins_cost(INSN_COST);
   effect(TEMP tmp, TEMP tmp2);
@@ -16832,6 +16901,7 @@ instruct reduce_add2I(iRegINoSp dst, iRegIorL2I isrc, vecD vsrc, iRegINoSp tmp, 
 
 instruct reduce_add4I(iRegINoSp dst, iRegIorL2I isrc, vecX vsrc, vecX vtmp, iRegINoSp itmp)
 %{
+  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_INT);
   match(Set dst (AddReductionVI isrc vsrc));
   ins_cost(INSN_COST);
   effect(TEMP vtmp, TEMP itmp);
@@ -16850,6 +16920,7 @@ instruct reduce_add4I(iRegINoSp dst, iRegIorL2I isrc, vecX vsrc, vecX vtmp, iReg
 
 instruct reduce_mul2I(iRegINoSp dst, iRegIorL2I isrc, vecD vsrc, iRegINoSp tmp)
 %{
+  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_INT);
   match(Set dst (MulReductionVI isrc vsrc));
   ins_cost(INSN_COST);
   effect(TEMP tmp, TEMP dst);
@@ -16869,6 +16940,7 @@ instruct reduce_mul2I(iRegINoSp dst, iRegIorL2I isrc, vecD vsrc, iRegINoSp tmp)
 
 instruct reduce_mul4I(iRegINoSp dst, iRegIorL2I isrc, vecX vsrc, vecX vtmp, iRegINoSp itmp)
 %{
+  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_INT);
   match(Set dst (MulReductionVI isrc vsrc));
   ins_cost(INSN_COST);
   effect(TEMP vtmp, TEMP itmp, TEMP dst);
@@ -17950,8 +18022,7 @@ instruct vabs2F(vecD dst, vecD src)
   ins_cost(INSN_COST * 3);
   format %{ "fabs  $dst,$src\t# vector (2S)" %}
   ins_encode %{
-    __ fabs(as_FloatRegister($dst$$reg), __ T2S,
-            as_FloatRegister($src$$reg));
+    __ fabs(as_FloatRegister($dst$$reg), __ T2S, as_FloatRegister($src$$reg));
   %}
   ins_pipe(vunop_fp64);
 %}
@@ -17963,8 +18034,7 @@ instruct vabs4F(vecX dst, vecX src)
   ins_cost(INSN_COST * 3);
   format %{ "fabs  $dst,$src\t# vector (4S)" %}
   ins_encode %{
-    __ fabs(as_FloatRegister($dst$$reg), __ T4S,
-            as_FloatRegister($src$$reg));
+    __ fabs(as_FloatRegister($dst$$reg), __ T4S, as_FloatRegister($src$$reg));
   %}
   ins_pipe(vunop_fp128);
 %}
@@ -17976,8 +18046,7 @@ instruct vabs2D(vecX dst, vecX src)
   ins_cost(INSN_COST * 3);
   format %{ "fabs  $dst,$src\t# vector (2D)" %}
   ins_encode %{
-    __ fabs(as_FloatRegister($dst$$reg), __ T2D,
-            as_FloatRegister($src$$reg));
+    __ fabs(as_FloatRegister($dst$$reg), __ T2D, as_FloatRegister($src$$reg));
   %}
   ins_pipe(vunop_fp128);
 %}
@@ -18118,7 +18187,8 @@ instruct vxor16B(vecX dst, vecX src1, vecX src2)
 
 // ------------------------------ Shift ---------------------------------------
 instruct vshiftcnt8B(vecD dst, iRegIorL2I cnt) %{
-  predicate(n->as_Vector()->length_in_bytes() == 8);
+  predicate(n->as_Vector()->length_in_bytes() == 4 ||
+            n->as_Vector()->length_in_bytes() == 8);
   match(Set dst (LShiftCntV cnt));
   match(Set dst (RShiftCntV cnt));
   format %{ "dup  $dst, $cnt\t# shift count vector (8B)" %}
@@ -18942,12 +19012,12 @@ instruct vpopcount4I(vecX dst, vecX src) %{
     "uaddlp  $dst, $dst\t# vector (8H)"
   %}
   ins_encode %{
-     __ cnt(as_FloatRegister($dst$$reg), __ T16B,
-            as_FloatRegister($src$$reg));
-     __ uaddlp(as_FloatRegister($dst$$reg), __ T16B,
-               as_FloatRegister($dst$$reg));
-     __ uaddlp(as_FloatRegister($dst$$reg), __ T8H,
-               as_FloatRegister($dst$$reg));
+    __ cnt(as_FloatRegister($dst$$reg), __ T16B,
+           as_FloatRegister($src$$reg));
+    __ uaddlp(as_FloatRegister($dst$$reg), __ T16B,
+              as_FloatRegister($dst$$reg));
+    __ uaddlp(as_FloatRegister($dst$$reg), __ T8H,
+              as_FloatRegister($dst$$reg));
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -18961,12 +19031,12 @@ instruct vpopcount2I(vecD dst, vecD src) %{
     "uaddlp  $dst, $dst\t# vector (4H)"
   %}
   ins_encode %{
-     __ cnt(as_FloatRegister($dst$$reg), __ T8B,
-            as_FloatRegister($src$$reg));
-     __ uaddlp(as_FloatRegister($dst$$reg), __ T8B,
-               as_FloatRegister($dst$$reg));
-     __ uaddlp(as_FloatRegister($dst$$reg), __ T4H,
-               as_FloatRegister($dst$$reg));
+    __ cnt(as_FloatRegister($dst$$reg), __ T8B,
+           as_FloatRegister($src$$reg));
+    __ uaddlp(as_FloatRegister($dst$$reg), __ T8B,
+              as_FloatRegister($dst$$reg));
+    __ uaddlp(as_FloatRegister($dst$$reg), __ T4H,
+              as_FloatRegister($dst$$reg));
   %}
   ins_pipe(pipe_class_default);
 %}

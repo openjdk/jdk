@@ -37,6 +37,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/compiledICHolder.hpp"
 #include "oops/klass.inline.hpp"
+#include "prims/methodHandles.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vframeArray.hpp"
@@ -1868,7 +1869,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // Generate stack overflow check
 
   if (UseStackBanging) {
-    __ bang_stack_with_offset((int)JavaThread::stack_shadow_zone_size());
+    __ bang_stack_with_offset((int)StackOverflow::stack_shadow_zone_size());
   } else {
     // need a 5 byte instruction to allow MT safe patching to non-entrant
     __ fat_nop();
@@ -2237,7 +2238,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // check for safepoint operation in progress and/or pending suspend requests
   { Label Continue, slow_path;
 
-    __ safepoint_poll(slow_path, thread, noreg);
+    __ safepoint_poll(slow_path, thread, true /* at_return */, false /* in_nmethod */);
 
     __ cmpl(Address(thread, JavaThread::suspend_flags_offset()), 0);
     __ jcc(Assembler::equal, Continue);
@@ -2279,7 +2280,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   Label reguard;
   Label reguard_done;
-  __ cmpl(Address(thread, JavaThread::stack_guard_state_offset()), JavaThread::stack_guard_yellow_reserved_disabled);
+  __ cmpl(Address(thread, JavaThread::stack_guard_state_offset()), StackOverflow::stack_guard_yellow_reserved_disabled);
   __ jcc(Assembler::equal, reguard);
 
   // slow path reguard  re-enters here

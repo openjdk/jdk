@@ -535,9 +535,7 @@ alloc_class chunk4 (
 // information in this architecture description.
 
 // 1) reg_class inline_cache_reg           ( as defined in frame section )
-// 2) reg_class compiler_method_reg        ( as defined in frame section )
-// 2) reg_class interpreter_method_reg     ( as defined in frame section )
-// 3) reg_class stack_slots( /* one chunk of stack-based "registers" */ )
+// 2) reg_class stack_slots( /* one chunk of stack-based "registers" */ )
 //
 
 // ----------------------------
@@ -1427,7 +1425,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     // insert the code of generate_stack_overflow_check(), see
     // assembler.cpp for some illuminative comments.
     const int page_size = os::vm_page_size();
-    int bang_end = JavaThread::stack_shadow_zone_size();
+    int bang_end = StackOverflow::stack_shadow_zone_size();
 
     // This is how far the previous frame's stack banging extended.
     const int bang_end_safe = bang_end;
@@ -2161,6 +2159,10 @@ const bool Matcher::has_predicated_vectors(void) {
   return false;
 }
 
+bool Matcher::supports_vector_variable_shifts(void) {
+  return false; // not supported
+}
+
 const int Matcher::float_pressure(int default_pressure_threshold) {
   return default_pressure_threshold;
 }
@@ -2339,10 +2341,6 @@ const bool Matcher::rematerialize_float_constants = false;
 // piece-by-piece. Only happens when passing doubles into C code as the
 // Java calling convention forces doubles to be aligned.
 const bool Matcher::misaligned_doubles_ok = true;
-
-void Matcher::pd_implicit_null_fixup(MachNode *node, uint idx) {
- Unimplemented();
-}
 
 // Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
 const bool Matcher::strict_fp_requires_explicit_rounding = false;
@@ -3855,9 +3853,6 @@ frame %{
   // Inline Cache Register or method for I2C.
   inline_cache_reg(R19); // R19_method
 
-  // Method Register when calling interpreter.
-  interpreter_method_reg(R19); // R19_method
-
   // Optional: name the operand used by cisc-spilling to access
   // [stack_pointer + offset].
   cisc_spilling_operand_name(indOffset);
@@ -4760,20 +4755,6 @@ operand regF() %{
 // Method Register
 operand inline_cache_regP(iRegPdst reg) %{
   constraint(ALLOC_IN_RC(r19_bits64_reg)); // inline_cache_reg
-  match(reg);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand compiler_method_regP(iRegPdst reg) %{
-  constraint(ALLOC_IN_RC(rscratch1_bits64_reg)); // compiler_method_reg
-  match(reg);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand interpreter_method_regP(iRegPdst reg) %{
-  constraint(ALLOC_IN_RC(r19_bits64_reg)); // interpreter_method_reg
   match(reg);
   format %{ %}
   interface(REG_INTER);

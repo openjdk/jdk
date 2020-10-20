@@ -26,9 +26,6 @@ package sun.hotspot.tools.ctw;
 import com.sun.management.HotSpotDiagnosticMXBean;
 import java.lang.management.ManagementFactory;
 
-import java.io.File;
-import java.util.regex.Pattern;
-
 /**
  * Auxiliary methods.
  */
@@ -57,11 +54,6 @@ public class Utils {
      * Initial compilation level.
      */
     public static final int INITIAL_COMP_LEVEL;
-    /**
-     * Compiled path-separator regexp.
-     */
-    public static final Pattern PATH_SEPARATOR = Pattern.compile(
-            File.pathSeparator, Pattern.LITERAL);
     /**
      * Value of {@code -DCompileTheWorldStopAt}. Last class to consider.
      */

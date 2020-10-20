@@ -40,8 +40,11 @@
 #include "opto/loopnode.hpp"
 #include "opto/movenode.hpp"
 #include "opto/mulnode.hpp"
+#include "opto/opaquenode.hpp"
 #include "opto/rootnode.hpp"
+#include "opto/runtime.hpp"
 #include "opto/superword.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 //=============================================================================
@@ -501,6 +504,729 @@ static int check_stride_overflow(jint stride_con, const TypeInt* limit_t) {
   return 0;
 }
 
+static int check_stride_overflow(jlong stride_con, const TypeLong* limit_t) {
+  if (stride_con > 0) {
+    if (limit_t->_lo > (max_jlong - stride_con)) {
+      return -1;
+    }
+    if (limit_t->_hi > (max_jlong - stride_con)) {
+      return 1;
+    }
+  } else {
+    if (limit_t->_hi < (min_jlong - stride_con)) {
+      return -1;
+    }
+    if (limit_t->_lo < (min_jlong - stride_con)) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
+static bool condition_stride_ok(BoolTest::mask bt, jlong stride_con) {
+  // If the condition is inverted and we will be rolling
+  // through MININT to MAXINT, then bail out.
+  if (bt == BoolTest::eq || // Bail out, but this loop trips at most twice!
+      // Odd stride
+      (bt == BoolTest::ne && stride_con != 1 && stride_con != -1) ||
+      // Count down loop rolls through MAXINT
+      ((bt == BoolTest::le || bt == BoolTest::lt) && stride_con < 0) ||
+      // Count up loop rolls through MININT
+      ((bt == BoolTest::ge || bt == BoolTest::gt) && stride_con > 0)) {
+    return false; // Bail out
+  }
+  return true;
+}
+
+void PhaseIdealLoop::long_loop_replace_long_iv(Node* iv_to_replace, Node* inner_iv, Node* outer_phi, Node* inner_head) {
+  Node* iv_as_long = new ConvI2LNode(inner_iv, TypeLong::INT);
+  register_new_node(iv_as_long, inner_head);
+  Node* iv_replacement = new AddLNode(outer_phi, iv_as_long);
+  register_new_node(iv_replacement, inner_head);
+  for (DUIterator_Last imin, i = iv_to_replace->last_outs(imin); i >= imin;) {
+    Node* u = iv_to_replace->last_out(i);
+#ifdef ASSERT
+    if (!is_dominator(inner_head, ctrl_or_self(u))) {
+      assert(u->is_Phi(), "should be a Phi");
+      for (uint j = 1; j < u->req(); j++) {
+        if (u->in(j) == iv_to_replace) {
+          assert(is_dominator(inner_head, u->in(0)->in(j)), "iv use above loop?");
+        }
+      }
+    }
+#endif
+    _igvn.rehash_node_delayed(u);
+    int nb = u->replace_edge(iv_to_replace, iv_replacement);
+    i -= nb;
+  }
+}
+
+void PhaseIdealLoop::add_empty_predicate(Deoptimization::DeoptReason reason, Node* inner_head, IdealLoopTree* loop, SafePointNode* sfpt) {
+  if (!C->too_many_traps(reason)) {
+    Node *cont = _igvn.intcon(1);
+    Node* opq = new Opaque1Node(C, cont);
+    _igvn.register_new_node_with_optimizer(opq);
+    Node *bol = new Conv2BNode(opq);
+    _igvn.register_new_node_with_optimizer(bol);
+    set_subtree_ctrl(bol);
+    IfNode* iff = new IfNode(inner_head->in(LoopNode::EntryControl), bol, PROB_MAX, COUNT_UNKNOWN);
+    register_control(iff, loop, inner_head->in(LoopNode::EntryControl));
+    Node* iffalse = new IfFalseNode(iff);
+    register_control(iffalse, _ltree_root, iff);
+    Node* iftrue = new IfTrueNode(iff);
+    register_control(iftrue, loop, iff);
+    C->add_predicate_opaq(opq);
+
+    int trap_request = Deoptimization::make_trap_request(reason, Deoptimization::Action_maybe_recompile);
+    address call_addr = SharedRuntime::uncommon_trap_blob()->entry_point();
+    const TypePtr* no_memory_effects = NULL;
+    JVMState* jvms = sfpt->jvms();
+    CallNode* unc = new CallStaticJavaNode(OptoRuntime::uncommon_trap_Type(), call_addr, "uncommon_trap",
+                                           jvms->bci(), no_memory_effects);
+
+    Node* mem = NULL;
+    Node* i_o = NULL;
+    if (sfpt->is_Call()) {
+      mem = sfpt->proj_out(TypeFunc::Memory);
+      i_o = sfpt->proj_out(TypeFunc::I_O);
+    } else {
+      mem = sfpt->memory();
+      i_o = sfpt->i_o();
+    }
+
+    Node *frame = new ParmNode(C->start(), TypeFunc::FramePtr);
+    register_new_node(frame, C->start());
+    Node *ret = new ParmNode(C->start(), TypeFunc::ReturnAdr);
+    register_new_node(ret, C->start());
+
+    unc->init_req(TypeFunc::Control, iffalse);
+    unc->init_req(TypeFunc::I_O, i_o);
+    unc->init_req(TypeFunc::Memory, mem); // may gc ptrs
+    unc->init_req(TypeFunc::FramePtr, frame);
+    unc->init_req(TypeFunc::ReturnAdr, ret);
+    unc->init_req(TypeFunc::Parms+0, _igvn.intcon(trap_request));
+    unc->set_cnt(PROB_UNLIKELY_MAG(4));
+    unc->copy_call_debug_info(&_igvn, sfpt);
+
+    for (uint i = TypeFunc::Parms; i < unc->req(); i++) {
+      set_subtree_ctrl(unc->in(i));
+    }
+    register_control(unc, _ltree_root, iffalse);
+
+    Node* ctrl = new ProjNode(unc, TypeFunc::Control);
+    register_control(ctrl, _ltree_root, unc);
+    Node* halt = new HaltNode(ctrl, frame, "uncommon trap returned which should never happen" PRODUCT_ONLY(COMMA /*reachable*/false));
+    register_control(halt, _ltree_root, ctrl);
+    C->root()->add_req(halt);
+
+    _igvn.replace_input_of(inner_head, LoopNode::EntryControl, iftrue);
+    set_idom(inner_head, iftrue, dom_depth(inner_head));
+  }
+}
+
+// Find a safepoint node that dominates the back edge. We need a
+// SafePointNode so we can use its jvm state to create empty
+// predicates.
+SafePointNode* PhaseIdealLoop::find_safepoint(Node* back_control, Node* x, IdealLoopTree* loop) {
+  IfNode* exit_test = back_control->in(0)->as_If();
+  SafePointNode* safepoint = NULL;
+  if (exit_test->in(0)->is_SafePoint() && exit_test->in(0)->outcnt() == 1) {
+    safepoint = exit_test->in(0)->as_SafePoint();
+  } else {
+    Node* c = back_control;
+    while (c != x && c->Opcode() != Op_SafePoint) {
+      c = idom(c);
+    }
+
+    if (c->Opcode() == Op_SafePoint) {
+      safepoint = c->as_SafePoint();
+    }
+
+    if (safepoint == NULL) {
+      return NULL;
+    }
+
+    Node* mem = safepoint->in(TypeFunc::Memory);
+
+    // We can only use that safepoint if there's not side effect
+    // between the backedge and the safepoint.
+
+#ifdef ASSERT
+    // mm is used for book keeping
+    MergeMemNode* mm = NULL;
+    if (mem->is_MergeMem()) {
+      mm = mem->clone()->as_MergeMem();
+      for (MergeMemStream mms(mem->as_MergeMem()); mms.next_non_empty(); ) {
+        if (mms.alias_idx() != Compile::AliasIdxBot && loop != get_loop(ctrl_or_self(mms.memory()))) {
+          mm->set_memory_at(mms.alias_idx(), mem->as_MergeMem()->base_memory());
+        }
+      }
+    }
+#endif
+    for (DUIterator_Fast imax, i = x->fast_outs(imax); i < imax; i++) {
+      Node* u = x->fast_out(i);
+      if (u->is_Phi() && u->bottom_type() == Type::MEMORY) {
+        Node* m = u->in(LoopNode::LoopBackControl);
+        if (u->adr_type() == TypePtr::BOTTOM) {
+          if (m->is_MergeMem() && mem->is_MergeMem()) {
+            if (m != mem DEBUG_ONLY(|| true)) {
+              for (MergeMemStream mms(m->as_MergeMem(), mem->as_MergeMem()); mms.next_non_empty2(); ) {
+                if (!mms.is_empty()) {
+                  if (mms.memory() != mms.memory2()) {
+                    return NULL;
+                  }
+#ifdef ASSERT
+                  if (mms.alias_idx() != Compile::AliasIdxBot) {
+                    mm->set_memory_at(mms.alias_idx(), mem->as_MergeMem()->base_memory());
+                  }
+#endif
+                }
+              }
+            }
+          } else if (mem->is_MergeMem()) {
+            if (m != mem->as_MergeMem()->base_memory()) {
+              return NULL;
+            }
+          } else {
+            return NULL;
+          }
+        } else {
+          if (mem->is_MergeMem()) {
+            if (m != mem->as_MergeMem()->memory_at(C->get_alias_index(u->adr_type()))) {
+              return NULL;
+            }
+#ifdef ASSERT
+            mm->set_memory_at(C->get_alias_index(u->adr_type()), mem->as_MergeMem()->base_memory());
+#endif
+          } else {
+            if (m != mem) {
+              return NULL;
+            }
+          }
+        }
+      }
+    }
+#ifdef ASSERT
+    if (mm != NULL) {
+      assert (_igvn.transform(mm) == mem->as_MergeMem()->base_memory(), "all memory state should have been processed");
+      _igvn.remove_dead_node(mm);
+    }
+#endif
+  }
+  return safepoint;
+}
+
+// If the loop has the shape of a counted loop but with a long
+// induction variable, transform the loop in a loop nest: an inner
+// loop that iterates for at most max int iterations with an integer
+// induction variable and an outer loop that iterates over the full
+// range of long values from the initial loop in (at most) max int
+// steps. That is:
+//
+// x: for (long phi = init; phi < limit; phi += stride) {
+//   // phi := Phi(L, init, incr)
+//   // incr := AddL(phi, longcon(stride))
+//   // phi_incr := phi (test happens before increment)
+//   long incr = phi + stride;
+//   ... use phi and incr ...
+// }
+//
+// OR:
+//
+// x: for (long phi = init; (phi += stride) < limit; ) {
+//   // phi := Phi(L, AddL(init, stride), incr)
+//   // incr := AddL(phi, longcon(stride))
+//   // phi_incr := NULL (test happens after increment)
+//   long incr = phi + stride;
+//   ... use phi and (phi + stride) ...
+// }
+//
+// ==transform=>
+//
+// const ulong inner_iters_limit = INT_MAX - stride - 1;  //near 0x7FFFFFF0
+// assert(stride <= inner_iters_limit);  // else abort transform
+// assert((extralong)limit + stride <= LONG_MAX);  // else deopt
+// outer_head: for (long outer_phi = init;;) {
+//   // outer_phi := Phi(outer_head, init, AddL(outer_phi, I2L(inner_phi)))
+//   ulong inner_iters_max = (ulong) MAX(0, ((extralong)limit + stride - outer_phi));
+//   long inner_iters_actual = MIN(inner_iters_limit, inner_iters_max);
+//   assert(inner_iters_actual == (int)inner_iters_actual);
+//   int inner_phi, inner_incr;
+//   x: for (inner_phi = 0;; inner_phi = inner_incr) {
+//     // inner_phi := Phi(x, intcon(0), inner_incr)
+//     // inner_incr := AddI(inner_phi, intcon(stride))
+//     inner_incr = inner_phi + stride;
+//     if (inner_incr < inner_iters_actual) {
+//       ... use phi=>(outer_phi+inner_phi) and incr=>(outer_phi+inner_incr) ...
+//       continue;
+//     }
+//     else break;
+//   }
+//   if ((outer_phi+inner_phi) < limit)  //OR (outer_phi+inner_incr) < limit
+//     continue;
+//   else break;
+// }
+bool PhaseIdealLoop::is_long_counted_loop(Node* x, IdealLoopTree* loop, Node_List &old_new) {
+  // Only for inner loops
+  if (loop->_child != NULL) {
+    return false;
+  }
+
+  // Checks whether the loop has the shape of a counted loop
+  Node* back_control = loop_exit_control(x, loop);
+  if (back_control == NULL) {
+    return false;
+  }
+
+  BoolTest::mask bt = BoolTest::illegal;
+  float cl_prob = 0;
+  Node* incr = NULL;
+  Node* limit = NULL;
+
+  Node* cmp = loop_exit_test(back_control, loop, incr, limit, bt, cl_prob);
+  if (cmp == NULL || cmp->Opcode() != Op_CmpL) {
+    return false; // Avoid pointer & float & 32-bit compares
+  }
+
+  Node* phi_incr = NULL;
+  incr = loop_iv_incr(incr, x, loop, phi_incr);
+  if (incr == NULL || incr->Opcode() != Op_AddL) {
+    return false;
+  }
+
+  Node* xphi = NULL;
+  Node* stride = loop_iv_stride(incr, loop, xphi);
+
+  if (stride == NULL) {
+    return false;
+  }
+
+#ifndef PRODUCT
+  Atomic::inc(&_long_loop_candidates);
+#endif
+
+  jlong stride_con = stride->get_long();
+  assert(stride_con != 0, "missed some peephole opt");
+  // We can't iterate for more than max int at a time.
+  if (stride_con != (jint)stride_con) {
+    return false;
+  }
+  // The number of iterations for the integer count loop: guarantee no
+  // overflow: max_jint - stride_con max. -1 so there's no need for a
+  // loop limit check if the exit test is <= or >=.
+  int iters_limit = max_jint - ABS(stride_con) - 1;
+#ifdef ASSERT
+  if (StressLongCountedLoop > 0) {
+    iters_limit = iters_limit / StressLongCountedLoop;
+  }
+#endif
+  // At least 2 iterations so counted loop construction doesn't fail
+  if (iters_limit/ABS(stride_con) < 2) {
+    return false;
+  }
+
+  PhiNode* phi = loop_iv_phi(xphi, phi_incr, x, loop);
+
+  if (phi == NULL || phi->in(LoopNode::LoopBackControl) != incr) {
+    return false;
+  }
+
+  // Safepoint on backedge not supported
+  if (x->in(LoopNode::LoopBackControl)->Opcode() == Op_SafePoint) {
+    return false;
+  }
+
+  // data nodes on back branch not supported
+  if (back_control->outcnt() > 1) {
+    return false;
+  }
+
+  if (!condition_stride_ok(bt, stride_con)) {
+    return false;
+  }
+
+  // We'll need to use the loop limit before the inner loop is entered
+  if (!is_dominator(get_ctrl(limit), x)) {
+    return false;
+  }
+
+  IfNode* exit_test = back_control->in(0)->as_If();
+
+  // We need a safepoint to insert empty predicates for the inner loop.
+  SafePointNode* safepoint = find_safepoint(back_control, x, loop);
+  if (safepoint == NULL) {
+    // If exit condition is ne, then a loop limit check is likely needed
+    if (bt == BoolTest::ne) {
+      return false;
+    }
+  } else if (C->too_many_traps(safepoint->jvms()->method(),
+                        safepoint->jvms()->bci(),
+                        Deoptimization::Reason_loop_limit_check)) {
+    // We must have transformed the loop already and a loop limit
+    // check must have failed.
+    return false;
+  }
+
+  Node* exit_branch = exit_test->proj_out(back_control->Opcode() == Op_IfFalse);
+  Node* entry_control = x->in(LoopNode::EntryControl);
+
+  // if the loop exit test is on the IV before it is incremented: i <
+  // limit, we transform the exit test so it is performed on the exit
+  // test after it is incremented: i + stride < limit + stride.  We
+  // need limit + stride to not overflow. See adjusted_limit below.
+  bool limit_check_required = false;
+  if (phi_incr != NULL) {
+    const TypeLong* limit_t = _igvn.type(limit)->is_long();
+    int sov = check_stride_overflow(stride_con, limit_t);
+    if (sov != 0) {
+      if (sov < 0) {
+        return false;  // Bailout: integer overflow is certain.
+      }
+      // Check that inserting a predicate is indeed possible
+      if (find_predicate_insertion_point(x->in(LoopNode::EntryControl), Deoptimization::Reason_loop_limit_check) == NULL) {
+        return false;
+      }
+      limit_check_required = true;
+    }
+  }
+
+  // Clone the control flow of the loop to build an outer loop
+  Node* outer_back_branch = back_control->clone();
+  Node* outer_exit_test = exit_test->clone();
+  Node* inner_exit_branch = exit_branch->clone();
+
+  Node* outer_head = new LoopNode(entry_control, outer_back_branch);
+  IdealLoopTree* outer_ilt = insert_outer_loop(loop, outer_head->as_Loop(), outer_back_branch);
+
+  const bool body_populated = true;
+  register_control(outer_head, outer_ilt, entry_control, body_populated);
+
+  _igvn.register_new_node_with_optimizer(inner_exit_branch);
+  set_loop(inner_exit_branch, outer_ilt);
+  set_idom(inner_exit_branch, exit_test, dom_depth(exit_branch));
+
+  outer_exit_test->set_req(0, inner_exit_branch);
+  register_control(outer_exit_test, outer_ilt, inner_exit_branch, body_populated);
+
+  _igvn.replace_input_of(exit_branch, 0, outer_exit_test);
+  set_idom(exit_branch, outer_exit_test, dom_depth(exit_branch));
+
+  outer_back_branch->set_req(0, outer_exit_test);
+  register_control(outer_back_branch, outer_ilt, outer_exit_test, body_populated);
+
+  _igvn.replace_input_of(x, LoopNode::EntryControl, outer_head);
+  set_idom(x, outer_head, dom_depth(x));
+
+  // add an iv phi to the outer loop and use it to compute the inner
+  // loop iteration limit
+  Node* outer_phi = phi->clone();
+  outer_phi->set_req(0, outer_head);
+  register_new_node(outer_phi, outer_head);
+
+  Node* adjusted_limit = limit;
+  if (phi_incr != NULL) {
+    // If compare points directly to the phi we need to adjust the
+    // compare so that it points to the incr.
+    Node* long_stride = _igvn.longcon(stride_con);
+    set_ctrl(long_stride, C->root());
+    adjusted_limit = new AddLNode(limit, long_stride);
+    _igvn.register_new_node_with_optimizer(adjusted_limit);
+  }
+  Node* inner_iters_max = NULL;
+  if (stride_con > 0) {
+    inner_iters_max = MaxNode::max_diff_with_zero(adjusted_limit, outer_phi, TypeLong::LONG, _igvn);
+  } else {
+    inner_iters_max = MaxNode::max_diff_with_zero(outer_phi, adjusted_limit, TypeLong::LONG, _igvn);
+  }
+
+  Node* inner_iters_limit = _igvn.longcon(iters_limit);
+  // inner_iters_max may not fit in a signed integer (iterating from
+  // Long.MIN_VALUE to Long.MAX_VALUE for instance). Use an unsigned
+  // min.
+  Node* inner_iters_actual = MaxNode::unsigned_min(inner_iters_max, inner_iters_limit, TypeLong::make(0, iters_limit, Type::WidenMin), _igvn);
+
+  Node* inner_iters_actual_int = new ConvL2INode(inner_iters_actual);
+  _igvn.register_new_node_with_optimizer(inner_iters_actual_int);
+
+  Node* zero = _igvn.intcon(0);
+  set_ctrl(zero, C->root());
+  if (stride_con < 0) {
+    inner_iters_actual_int = new SubINode(zero, inner_iters_actual_int);
+    _igvn.register_new_node_with_optimizer(inner_iters_actual_int);
+  }
+
+  // Clone the iv data nodes as an integer iv
+  Node* int_stride = _igvn.intcon((int)stride_con);
+  set_ctrl(int_stride, C->root());
+  Node* inner_phi = new PhiNode(x->in(0), TypeInt::INT);
+  Node* inner_incr = new AddINode(inner_phi, int_stride);
+  Node* inner_cmp = NULL;
+  if (cmp->in(1) == incr || cmp->in(1) == phi) {
+    inner_cmp = new CmpINode(inner_incr, inner_iters_actual_int);
+  }  else {
+    assert(cmp->in(2) == incr || cmp->in(2) == phi, "bad iv shape");
+    inner_cmp = new CmpINode(inner_iters_actual_int, inner_incr);
+  }
+  Node* inner_bol = new BoolNode(inner_cmp, exit_test->in(1)->as_Bool()->_test._test);
+  inner_phi->set_req(LoopNode::EntryControl, zero);
+  inner_phi->set_req(LoopNode::LoopBackControl, inner_incr);
+  register_new_node(inner_phi, x);
+  register_new_node(inner_incr, x);
+  register_new_node(inner_cmp, x);
+  register_new_node(inner_bol, x);
+
+  _igvn.replace_input_of(exit_test, 1, inner_bol);
+
+  // Add a predicate to guarantee limit adjustment doesn't overflow
+  if (limit_check_required) {
+    assert(phi_incr != NULL, "only when exit test must be transformed");
+    ProjNode *limit_check_proj = find_predicate_insertion_point(outer_head->in(LoopNode::EntryControl), Deoptimization::Reason_loop_limit_check);
+    assert(limit_check_proj != NULL, "was tested before");
+    IfNode* check_iff = limit_check_proj->in(0)->as_If();
+    Node* cmp_limit;
+    Node* bol;
+
+    if (stride_con > 0) {
+      cmp_limit = new CmpLNode(limit, _igvn.longcon(max_jlong - stride_con));
+      bol = new BoolNode(cmp_limit, BoolTest::le);
+    } else {
+      cmp_limit = new CmpLNode(limit, _igvn.longcon(min_jlong - stride_con));
+      bol = new BoolNode(cmp_limit, BoolTest::ge);
+    }
+
+    insert_loop_limit_check(limit_check_proj, cmp_limit, bol);
+    Node* new_predicate = limit_check_proj->in(0)->in(0);
+    Node* above_predicate = new_predicate->in(0)->in(0);
+    Node* entry = outer_head->in(LoopNode::EntryControl);
+    _igvn.replace_input_of(limit_check_proj->in(0), 0, above_predicate);
+    _igvn.replace_input_of(new_predicate->in(0), 0, entry);
+    _igvn.replace_input_of(outer_head, LoopNode::EntryControl, new_predicate);
+    set_idom(new_predicate->in(0), entry, dom_depth(entry));
+    set_idom(new_predicate, new_predicate->in(0), dom_depth(entry));
+    Node* region = new_predicate->in(0)->as_If()->proj_out(new_predicate->Opcode() == Op_IfFalse)->unique_ctrl_out();
+    assert(region->is_Region(), "should be region merging predicates");
+    set_idom(region, entry, dom_depth(entry));
+    set_idom(limit_check_proj->in(0), above_predicate, dom_depth(above_predicate));
+  }
+
+  LoopNode* inner_head = x->as_Loop();
+
+  // Clone inner loop phis to outer loop
+  for (uint i = 0; i < inner_head->outcnt(); i++) {
+    Node* u = inner_head->raw_out(i);
+    if (u->is_Phi() && u != inner_phi && u != phi) {
+      assert(u->in(0) == inner_head, "inconsistent");
+      Node* clone = u->clone();
+      clone->set_req(0, outer_head);
+      register_new_node(clone, outer_head);
+      _igvn.replace_input_of(u, LoopNode::EntryControl, clone);
+    }
+  }
+
+  // Replace inner loop long iv phi as inner loop int iv phi + outer
+  // loop iv phi
+  long_loop_replace_long_iv(phi, inner_phi, outer_phi, inner_head);
+
+  // Replace inner loop long iv incr with inner loop int incr + outer
+  // loop iv phi
+  long_loop_replace_long_iv(incr, inner_incr, outer_phi, inner_head);
+
+  set_subtree_ctrl(inner_iters_actual_int);
+
+  // Summary of steps from inital loop to loop nest:
+  //
+  // == old IR nodes =>
+  //
+  // entry_control: {...}
+  // x:
+  // for (long phi = init;;) {
+  //   // phi := Phi(x, init, incr)
+  //   // incr := AddL(phi, longcon(stride))
+  //   exit_test:
+  //   if (phi < limit)
+  //     back_control: fallthrough;
+  //   else
+  //     exit_branch: break;
+  //   // test happens before increment => phi == phi_incr != NULL
+  //   long incr = phi + stride;
+  //   ... use phi and incr ...
+  //   phi = incr;
+  // }
+  //
+  // == new IR nodes (just before final peel) =>
+  //
+  // entry_control: {...}
+  // long adjusted_limit = limit + stride;  //because phi_incr != NULL
+  // assert(!limit_check_required || (extralong)limit + stride == adjusted_limit);  // else deopt
+  // ulong inner_iters_limit = max_jint - ABS(stride) - 1;  //near 0x7FFFFFF0
+  // outer_head:
+  // for (long outer_phi = init;;) {
+  //   // outer_phi := phi->clone(), in(0):=outer_head, => Phi(outer_head, init, incr)
+  //   // REPLACE phi  => AddL(outer_phi, I2L(inner_phi))
+  //   // REPLACE incr => AddL(outer_phi, I2L(inner_incr))
+  //   // SO THAT outer_phi := Phi(outer_head, init, AddL(outer_phi, I2L(inner_incr)))
+  //   ulong inner_iters_max = (ulong) MAX(0, ((extralong)adjusted_limit - outer_phi) * SGN(stride));
+  //   int inner_iters_actual_int = (int) MIN(inner_iters_limit, inner_iters_max) * SGN(stride);
+  //   inner_head: x: //in(1) := outer_head
+  //   int inner_phi;
+  //   for (inner_phi = 0;;) {
+  //     // inner_phi := Phi(x, intcon(0), inner_phi + stride)
+  //     int inner_incr = inner_phi + stride;
+  //     bool inner_bol = (inner_incr < inner_iters_actual_int);
+  //     exit_test: //exit_test->in(1) := inner_bol;
+  //     if (inner_bol) // WAS (phi < limit)
+  //       back_control: fallthrough;
+  //     else
+  //       inner_exit_branch: break;  //exit_branch->clone()
+  //     ... use phi=>(outer_phi+inner_phi) and incr=>(outer_phi+inner_incr) ...
+  //     inner_phi = inner_phi + stride;  // inner_incr
+  //   }
+  //   outer_exit_test:  //exit_test->clone(), in(0):=inner_exit_branch
+  //   if ((outer_phi+inner_phi) < limit)  // WAS (phi < limit)
+  //     outer_back_branch: fallthrough;  //back_control->clone(), in(0):=outer_exit_test
+  //   else
+  //     exit_branch: break;  //in(0) := outer_exit_test
+  // }
+
+  // Peel one iteration of the loop and use the safepoint at the end
+  // of the peeled iteration to insert empty predicates. If no well
+  // positioned safepoint peel to guarantee a safepoint in the outer
+  // loop.
+  if (safepoint != NULL || !loop->_has_call) {
+    old_new.clear();
+    do_peeling(loop, old_new);
+  }
+
+  if (safepoint != NULL) {
+    SafePointNode* cloned_sfpt = old_new[safepoint->_idx]->as_SafePoint();
+
+    if (UseLoopPredicate) {
+      add_empty_predicate(Deoptimization::Reason_predicate, inner_head, outer_ilt, cloned_sfpt);
+    }
+    if (UseProfiledLoopPredicate) {
+      add_empty_predicate(Deoptimization::Reason_profile_predicate, inner_head, outer_ilt, cloned_sfpt);
+    }
+    add_empty_predicate(Deoptimization::Reason_loop_limit_check, inner_head, outer_ilt, cloned_sfpt);
+  }
+
+#ifndef PRODUCT
+  Atomic::inc(&_long_loop_nests);
+#endif
+
+  inner_head->mark_transformed_long_loop();
+
+  return true;
+}
+
+#ifdef ASSERT
+// convert an int counted loop to a long counted to stress handling of
+// long counted loops
+bool PhaseIdealLoop::convert_to_long_loop(Node* cmp, Node* phi, IdealLoopTree* loop) {
+  Unique_Node_List iv_nodes;
+  Node_List old_new;
+  iv_nodes.push(cmp);
+  bool failed = false;
+
+  for (uint i = 0; i < iv_nodes.size() && !failed; i++) {
+    Node* n = iv_nodes.at(i);
+    switch(n->Opcode()) {
+      case Op_Phi: {
+        Node* clone = new PhiNode(n->in(0), TypeLong::LONG);
+        old_new.map(n->_idx, clone);
+        break;
+      }
+      case Op_CmpI: {
+        Node* clone = new CmpLNode(NULL, NULL);
+        old_new.map(n->_idx, clone);
+        break;
+      }
+      case Op_AddI: {
+        Node* clone = new AddLNode(NULL, NULL);
+        old_new.map(n->_idx, clone);
+        break;
+      }
+      case Op_CastII: {
+        failed = true;
+        break;
+      }
+      default:
+        DEBUG_ONLY(n->dump());
+        fatal("unexpected");
+    }
+
+    for (uint i = 1; i < n->req(); i++) {
+      Node* in = n->in(i);
+      if (in == NULL) {
+        continue;
+      }
+      if (loop->is_member(get_loop(get_ctrl(in)))) {
+        iv_nodes.push(in);
+      }
+    }
+  }
+
+  if (failed) {
+    for (uint i = 0; i < iv_nodes.size(); i++) {
+      Node* n = iv_nodes.at(i);
+      Node* clone = old_new[n->_idx];
+      if (clone != NULL) {
+        _igvn.remove_dead_node(clone);
+      }
+    }
+    return false;
+  }
+
+  for (uint i = 0; i < iv_nodes.size(); i++) {
+    Node* n = iv_nodes.at(i);
+    Node* clone = old_new[n->_idx];
+    for (uint i = 1; i < n->req(); i++) {
+      Node* in = n->in(i);
+      if (in == NULL) {
+        continue;
+      }
+      Node* in_clone = old_new[in->_idx];
+      if (in_clone == NULL) {
+        assert(_igvn.type(in)->isa_int(), "");
+        in_clone = new ConvI2LNode(in);
+        _igvn.register_new_node_with_optimizer(in_clone);
+        set_subtree_ctrl(in_clone);
+      }
+      if (in_clone->in(0) == NULL) {
+        in_clone->set_req(0, C->top());
+        clone->set_req(i, in_clone);
+        in_clone->set_req(0, NULL);
+      } else {
+        clone->set_req(i, in_clone);
+      }
+    }
+    _igvn.register_new_node_with_optimizer(clone);
+  }
+  set_ctrl(old_new[phi->_idx], phi->in(0));
+
+  for (uint i = 0; i < iv_nodes.size(); i++) {
+    Node* n = iv_nodes.at(i);
+    Node* clone = old_new[n->_idx];
+    set_subtree_ctrl(clone);
+    Node* m = n->Opcode() == Op_CmpI ? clone : NULL;
+    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+      Node* u = n->fast_out(i);
+      if (iv_nodes.member(u)) {
+        continue;
+      }
+      if (m == NULL) {
+        m = new ConvL2INode(clone);
+        _igvn.register_new_node_with_optimizer(m);
+        set_subtree_ctrl(m);
+      }
+      _igvn.rehash_node_delayed(u);
+      int nb = u->replace_edge(n, m);
+      --i, imax -= nb;
+    }
+  }
+  return true;
+}
+#endif
+
 //------------------------------is_counted_loop--------------------------------
 bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*& loop) {
   PhaseGVN *gvn = &_igvn;
@@ -514,7 +1240,6 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*& loop) {
   float cl_prob = 0;
   Node* incr = NULL;
   Node* limit = NULL;
-
   Node* cmp = loop_exit_test(back_control, loop, incr, limit, bt, cl_prob);
   if (cmp == NULL || cmp->Opcode() != Op_CmpI) {
     return false; // Avoid pointer & float & 64-bit compares
@@ -640,16 +1365,8 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*& loop) {
     assert(trunc1 == NULL && trunc2 == NULL, "no truncation for int");
   }
 
-  // If the condition is inverted and we will be rolling
-  // through MININT to MAXINT, then bail out.
-  if (bt == BoolTest::eq || // Bail out, but this loop trips at most twice!
-      // Odd stride
-      (bt == BoolTest::ne && stride_con != 1 && stride_con != -1) ||
-      // Count down loop rolls through MAXINT
-      ((bt == BoolTest::le || bt == BoolTest::lt) && stride_con < 0) ||
-      // Count up loop rolls through MININT
-      ((bt == BoolTest::ge || bt == BoolTest::gt) && stride_con > 0)) {
-    return false; // Bail out
+  if (!condition_stride_ok(bt, stride_con)) {
+    return false;
   }
 
   const TypeInt* init_t = gvn->type(init_trip)->is_int();
@@ -722,6 +1439,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*& loop) {
     if (sov < 0) {
       return false;  // Bailout: integer overflow is certain.
     }
+    assert(!x->as_Loop()->is_transformed_long_loop(), "long loop was transformed");
     // Generate loop's limit check.
     // Loop limit check predicate should be near the loop.
     ProjNode *limit_check_proj = find_predicate_insertion_point(init_control, Deoptimization::Reason_loop_limit_check);
@@ -808,6 +1526,12 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*& loop) {
       }
     }
   }
+
+#ifdef ASSERT
+  if (!x->as_Loop()->is_transformed_long_loop() && StressLongCountedLoop > 0 && trunc1 == NULL && convert_to_long_loop(cmp, phi, loop)) {
+    return false;
+  }
+#endif
 
   if (phi_incr != NULL) {
     // If compare points directly to the phi we need to adjust
@@ -995,6 +1719,12 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*& loop) {
     loop = outer_ilt;
   }
 
+#ifndef PRODUCT
+  if (x->as_Loop()->is_transformed_long_loop()) {
+    Atomic::inc(&_long_loop_counted_loops);
+  }
+#endif
+
   return true;
 }
 
@@ -1105,7 +1835,7 @@ void LoopNode::verify_strip_mined(int expect_skeleton) const {
     bool has_skeleton = outer_le->in(1)->bottom_type()->singleton() && outer_le->in(1)->bottom_type()->is_int()->get_con() == 0;
     if (has_skeleton) {
       assert(expect_skeleton == 1 || expect_skeleton == -1, "unexpected skeleton node");
-      assert(outer->outcnt() == 2, "only phis");
+      assert(outer->outcnt() == 2, "only control nodes");
     } else {
       assert(expect_skeleton == 0 || expect_skeleton == -1, "no skeleton node?");
       uint phis = 0;
@@ -1733,7 +2463,28 @@ const Type* OuterStripMinedLoopEndNode::Value(PhaseGVN* phase) const {
   if (phase->type(in(0)) == Type::TOP)
     return Type::TOP;
 
+  // Until expansion, the loop end condition is not set so this should not constant fold.
+  if (is_expanded(phase)) {
+    return IfNode::Value(phase);
+  }
+
   return TypeTuple::IFBOTH;
+}
+
+bool OuterStripMinedLoopEndNode::is_expanded(PhaseGVN *phase) const {
+  // The outer strip mined loop head only has Phi uses after expansion
+  if (phase->is_IterGVN()) {
+    Node* backedge = proj_out_or_null(true);
+    if (backedge != NULL) {
+      Node* head = backedge->unique_ctrl_out();
+      if (head != NULL && head->is_OuterStripMinedLoop()) {
+        if (head->find_out_with(Op_Phi) != NULL) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
 }
 
 Node *OuterStripMinedLoopEndNode::Ideal(PhaseGVN *phase, bool can_reshape) {
@@ -2553,10 +3304,13 @@ void IdealLoopTree::counted_loop( PhaseIdealLoop *phase ) {
     // Look for induction variables
     phase->replace_parallel_iv(this);
 
-  } else if (_parent != NULL && !_irreducible) {
+  } else {
+    assert(!_head->is_Loop() || !_head->as_Loop()->is_transformed_long_loop(), "transformation to counted loop should not fail");
+    if (_parent != NULL && !_irreducible) {
     // Not a counted loop. Keep one safepoint.
     bool keep_one_sfpt = true;
     remove_safepoints(phase, keep_one_sfpt);
+  }
   }
 
   // Recursively
@@ -2915,6 +3669,31 @@ bool PhaseIdealLoop::process_expensive_nodes() {
   return progress;
 }
 
+#ifdef ASSERT
+bool PhaseIdealLoop::only_has_infinite_loops() {
+  for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
+    IdealLoopTree* lpt = iter.current();
+    if (lpt->is_innermost()) {
+      uint i = 1;
+      for (; i < C->root()->req(); i++) {
+        Node* in = C->root()->in(i);
+        if (in != NULL &&
+            in->Opcode() == Op_Halt &&
+            in->in(0)->is_Proj() &&
+            in->in(0)->in(0)->Opcode() == Op_NeverBranch &&
+            in->in(0)->in(0)->in(0) == lpt->_head) {
+          break;
+        }
+      }
+      if (i == C->root()->req()) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+#endif
+
 
 //=============================================================================
 //----------------------------build_and_optimize-------------------------------
@@ -2970,6 +3749,13 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
     return;
   }
 
+  // Verify that the has_loops() flag set at parse time is consistent
+  // with the just built loop tree. With infinite loops, it could be
+  // that one pass of loop opts only finds infinite loops, clears the
+  // has_loops() flag but adds NeverBranch nodes so the next loop opts
+  // verification pass finds a non empty loop tree. When the back edge
+  // is an exception edge, parsing doesn't set has_loops().
+  assert(_ltree_root->_child == NULL || C->has_loops() || only_has_infinite_loops() || C->has_exception_backedge(), "parsing found no loops but there are some");
   // No loops after all
   if( !_ltree_root->_child && !_verify_only ) C->set_has_loops(false);
 
@@ -3170,7 +3956,12 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
     return;
   }
 
-  if (ReassociateInvariants) {
+  for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
+    IdealLoopTree* lpt = iter.current();
+    is_long_counted_loop(lpt->_head, lpt, worklist);
+  }
+
+  if (ReassociateInvariants && !C->major_progress()) {
     // Reassociate invariants and prep for split_thru_phi
     for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
       IdealLoopTree* lpt = iter.current();
@@ -3198,7 +3989,7 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
 
   // Check for aggressive application of split-if and other transforms
   // that require basic-block info (like cloning through Phi's)
-  if( SplitIfBlocks && do_split_ifs ) {
+  if (!C->major_progress() && SplitIfBlocks && do_split_ifs) {
     visited.clear();
     split_if_with_blocks( visited, nstack);
     NOT_PRODUCT( if( VerifyLoopOptimizations ) verify(); );
@@ -3316,8 +4107,11 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
 //------------------------------print_statistics-------------------------------
 int PhaseIdealLoop::_loop_invokes=0;// Count of PhaseIdealLoop invokes
 int PhaseIdealLoop::_loop_work=0; // Sum of PhaseIdealLoop x unique
+volatile int PhaseIdealLoop::_long_loop_candidates=0; // Number of long loops seen
+volatile int PhaseIdealLoop::_long_loop_nests=0; // Number of long loops successfully transformed to a nest
+volatile int PhaseIdealLoop::_long_loop_counted_loops=0; // Number of long loops successfully transformed to a counted loop
 void PhaseIdealLoop::print_statistics() {
-  tty->print_cr("PhaseIdealLoop=%d, sum _unique=%d", _loop_invokes, _loop_work);
+  tty->print_cr("PhaseIdealLoop=%d, sum _unique=%d, long loops=%d/%d/%d", _loop_invokes, _loop_work, _long_loop_counted_loops, _long_loop_nests, _long_loop_candidates);
 }
 
 //------------------------------verify-----------------------------------------
