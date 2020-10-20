@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -546,6 +546,7 @@ JNIEXPORT jboolean JNICALL Java_sun_lwawt_macosx_CPrinterJob_printLoop
     static JNF_MEMBER_CACHE(jm_getPageFormatArea, sjc_CPrinterJob, "getPageFormatArea", "(Ljava/awt/print/PageFormat;)Ljava/awt/geom/Rectangle2D;");
     static JNF_MEMBER_CACHE(jm_getPrinterName, sjc_CPrinterJob, "getPrinterName", "()Ljava/lang/String;");
     static JNF_MEMBER_CACHE(jm_getPageable, sjc_CPrinterJob, "getPageable", "()Ljava/awt/print/Pageable;");
+    static JNF_MEMBER_CACHE(jm_getPrinterTray, sjc_CPrinterJob, "getPrinterTray", "()Ljava/lang/String;");
 
     jboolean retVal = JNI_FALSE;
 
@@ -560,6 +561,13 @@ JNF_COCOA_ENTER(env);
         [printerView setFirstPage:firstPage lastPage:lastPage];
 
         NSPrintInfo* printInfo = (NSPrintInfo*)jlong_to_ptr(JNFCallLongMethod(env, jthis, sjm_getNSPrintInfo)); // AWT_THREADING Safe (known object)
+        jobject printerTrayObj = JNFCallObjectMethod(env, jthis, jm_getPrinterTray);
+        if (printerTrayObj != NULL) {
+            NSString *printerTray = JNFJavaToNSString(env, printerTrayObj);
+            if (printerTray != nil) {
+                [[printInfo printSettings] setObject:printerTray forKey:@"InputSlot"];
+            }
+        }
 
         // <rdar://problem/4156975> passing jthis CPrinterJob as well, so we can extract the printer name from the current job
         javaPageFormatToNSPrintInfo(env, jthis, page, printInfo);

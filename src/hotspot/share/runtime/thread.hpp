@@ -1160,7 +1160,8 @@ class JavaThread: public Thread {
   bool      _in_retryable_allocation;
 
   // An id of a speculation that JVMCI compiled code can use to further describe and
-  // uniquely identify the  speculative optimization guarded by the uncommon trap
+  // uniquely identify the speculative optimization guarded by an uncommon trap.
+  // See JVMCINMethodData::SPECULATION_LENGTH_BITS for further details.
   jlong     _pending_failed_speculation;
 
   // These fields are mutually exclusive in terms of live ranges.

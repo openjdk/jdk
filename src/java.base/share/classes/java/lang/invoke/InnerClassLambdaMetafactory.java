@@ -25,6 +25,7 @@
 
 package java.lang.invoke;
 
+import jdk.internal.misc.CDS;
 import jdk.internal.org.objectweb.asm.*;
 import sun.invoke.util.BytecodeDescriptor;
 import sun.security.action.GetPropertyAction;
@@ -263,7 +264,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
      */
     private Class<?> spinInnerClass() throws LambdaConversionException {
         // include lambda proxy class in CDS archive at dump time
-        if (LambdaProxyClassArchive.isDumpArchive()) {
+        if (CDS.isDumpingArchive()) {
             Class<?> innerClass = generateInnerClass();
             LambdaProxyClassArchive.register(targetClass,
                                              samMethodName,
