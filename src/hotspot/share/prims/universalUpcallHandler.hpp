@@ -24,15 +24,24 @@
 #ifndef SHARE_VM_PRIMS_UNIVERSALUPCALLHANDLER_HPP
 #define SHARE_VM_PRIMS_UNIVERSALUPCALLHANDLER_HPP
 
-#include "classfile/javaClasses.hpp"
-#include "classfile/vmSymbols.hpp"
-#include "include/jvm.h"
-#include "runtime/frame.inline.hpp"
-#include "runtime/globals.hpp"
-#include "utilities/macros.hpp"
 #include "prims/foreign_globals.hpp"
 
-class ProgrammableUpcallHandler : AllStatic {
+class ProgrammableUpcallHandler {
+private:
+  static constexpr CodeBuffer::csize_t upcall_stub_size = 1024;
+
+  struct UpcallMethod {
+    Klass* klass;
+    Symbol* name;
+    Symbol* sig;
+  } upcall_method;
+
+  ProgrammableUpcallHandler();
+
+  static const ProgrammableUpcallHandler& instance();
+
+  static void upcall_helper(JNIEnv* env, jobject rec, address buff);
+  static void attach_thread_and_do_upcall(jobject rec, address buff);
 public:
   static address generate_upcall_stub(jobject rec, jobject abi, jobject buffer_layout);
 };
