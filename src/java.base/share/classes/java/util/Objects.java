@@ -431,8 +431,8 @@ public final class Objects {
      */
     @ForceInline
     public static
-    long checkLongIndex(long index, long length) {
-        return Preconditions.checkLongIndex(index, length, null);
+    long checkIndex(long index, long length) {
+        return Preconditions.checkIndex(index, length, null);
     }
 
     /**
@@ -457,8 +457,8 @@ public final class Objects {
      * @since 16
      */
     public static
-    long checkFromToLongIndex(long fromIndex, long toIndex, long length) {
-        return Preconditions.checkFromToLongIndex(fromIndex, toIndex, length, null);
+    long checkFromToIndex(long fromIndex, long toIndex, long length) {
+        return Preconditions.checkFromToIndex(fromIndex, toIndex, length, null);
     }
 
     /**
@@ -483,7 +483,7 @@ public final class Objects {
      * @since 16
      */
     public static
-    long checkFromLongIndexSize(long fromIndex, long size, long length) {
-        return Preconditions.checkFromLongIndexSize(fromIndex, size, length, null);
+    long checkFromIndexSize(long fromIndex, long size, long length) {
+        return Preconditions.checkFromIndexSize(fromIndex, size, length, null);
     }
 }
