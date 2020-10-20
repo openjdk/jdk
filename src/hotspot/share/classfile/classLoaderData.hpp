@@ -62,6 +62,7 @@ class ModuleEntryTable;
 class PackageEntryTable;
 class DictionaryEntry;
 class Dictionary;
+class ClassLoaderMetaspace;
 
 // ClassLoaderData class
 
