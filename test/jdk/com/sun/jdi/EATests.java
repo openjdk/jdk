@@ -2602,11 +2602,9 @@ class EAPopFrameNotInlinedReallocFailure extends EATestCaseBaseDebugger {
             coughtOom  = true;
         }
         freeAllMemory();
-        // We succeeded to pop just one frame. When we continue, we will call dontinline_brkpt() again.
-        Asserts.assertTrue(coughtOom || !env.targetVMOptions.EliminateAllocations,
-                           "PopFrame should have triggered an OOM exception in target");
+        // We succeeded to pop just one frame if OOM was raised. When we continue, we will call dontinline_brkpt() again.
         String expectedTopFrame =
-                env.targetVMOptions.EliminateAllocations ? "dontinline_consume_all_memory_brkpt" : "dontinline_testMethod";
+                env.targetVMOptions.EliminateAllocations && coughtOom ? "dontinline_consume_all_memory_brkpt" : "dontinline_testMethod";
         Asserts.assertEQ(expectedTopFrame, thread.frame(0).location().method().name());
         printStack(thread);
     }
@@ -2694,10 +2692,8 @@ class EAPopInlinedMethodWithScalarReplacedObjectsReallocFailure extends EATestCa
 
         freeAllMemory();
         setField(testCase, "loopCount", env.vm().mirrorOf(0)); // terminate loop
-        Asserts.assertTrue(coughtOom || !env.targetVMOptions.EliminateAllocations,
-                           "PopFrame should have triggered an OOM exception in target");
         String expectedTopFrame =
-                env.targetVMOptions.EliminateAllocations ? "inlinedCallForcedToReturn" : "dontinline_testMethod";
+                env.targetVMOptions.EliminateAllocations && coughtOom ? "inlinedCallForcedToReturn" : "dontinline_testMethod";
         Asserts.assertEQ(expectedTopFrame, thread.frame(0).location().method().name());
     }
 
@@ -2948,9 +2944,8 @@ class EAForceEarlyReturnOfInlinedMethodWithScalarReplacedObjectsReallocFailure e
             coughtOom   = true;
         }
         freeAllMemory();
-        if (env.targetVMOptions.EliminateAllocations) {
+        if (coughtOom) {
             printStack(thread);
-            Asserts.assertTrue(coughtOom, "ForceEarlyReturn should have triggered an OOM exception in target");
             msg("ForceEarlyReturn(2)");
             thread.forceEarlyReturn(env.vm().mirrorOf(43));
         }
