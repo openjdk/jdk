@@ -60,7 +60,7 @@ public class AddNodeChangeListener {
         N2 = userRoot.node("N2");
         userRoot.flush();
         int passItr = -1;
-        
+
         for (int i = 0; i < SLEEP_ITRS; i++) {
             Thread.sleep(3000);
             if (ncla.getAddNumber() == 1) {
@@ -76,7 +76,7 @@ public class AddNodeChangeListener {
         N2.removeNode();
         userRoot.flush();
         int passItr = -1;
-        
+
         for (int i = 0; i < SLEEP_ITRS; i++) {
             Thread.sleep(3000);
             if (ncla.getAddNumber() == 0) {
@@ -93,10 +93,10 @@ public class AddNodeChangeListener {
     private static void checkPassItr(int itr, String methodName) {
         if (itr == 0) {
             System.out.println(methodName + " test passed");
-        } else { 
+        } else {
             failed = true;
             if (itr == -1) {
-                throw new RuntimeException("Failed in " + methodName + " - change listener never notified");            
+                throw new RuntimeException("Failed in " + methodName + " - change listener never notified");
             } else {
                 throw new RuntimeException("Failed in " + methodName + " - listener notified on iteration " + itr);
             }
