@@ -27,7 +27,7 @@
 
 // Adapters
 enum /* platform_dependent_constants */ {
-  adapter_code_size = 3000 DEBUG_ONLY(+ 3000)
+  adapter_code_size = 3000 DEBUG_ONLY(+ 6000)
 };
 
 // Additional helper methods for MethodHandles code generation:
