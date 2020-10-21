@@ -45,7 +45,7 @@ public interface BindingPatternTree extends PatternTree {
      * @return the type
      * @deprecated Use getVariable().getType()
      */
-    @Deprecated
+    @Deprecated(since="16")
     default Tree getType() {
         return getVariable().getType();
     }
@@ -55,7 +55,7 @@ public interface BindingPatternTree extends PatternTree {
      * @return the name of the binding variable
      * @deprecated Use getVariable().getName()
      */
-    @Deprecated
+    @Deprecated(since="16")
     default Name getBinding() {
         return getVariable().getName();
     }
