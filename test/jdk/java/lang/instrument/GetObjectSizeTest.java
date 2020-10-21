@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,392 +21,64 @@
  * questions.
  */
 
-/*
+/**
  * @test
- * @bug 4882798 8253525
- * @summary Test for fInst.getObjectSize with 32-bit compressed oops
- * @library /test/lib
+ * @bug 4882798
+ * @summary round-trip test for getObjectSize (does it return, and is the result non-zero?)
+ * @author Gabriel Adauto, Wily Technology
  *
- * @build sun.hotspot.WhiteBox
  * @run build GetObjectSizeTest
  * @run shell MakeJAR.sh basicAgent
- *
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *
- * @run main/othervm -Xmx128m
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -Xint
- *                   -javaagent:basicAgent.jar GetObjectSizeTest GetObjectSizeTest
- *
- * @run main/othervm -Xmx128m
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:TieredStopAtLevel=1
- *                   -javaagent:basicAgent.jar GetObjectSizeTest GetObjectSizeTest
- *
- * @run main/othervm -Xmx128m
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:-TieredCompilation
- *                   -javaagent:basicAgent.jar GetObjectSizeTest GetObjectSizeTest
+ * @run main/othervm -javaagent:basicAgent.jar GetObjectSizeTest GetObjectSizeTest
  */
-
-/*
- * @test
- * @summary Test for fInst.getObjectSize with zero-based compressed oops
- * @library /test/lib
- * @requires vm.bits == 64
- *
- * @build sun.hotspot.WhiteBox
- * @run build GetObjectSizeTest
- * @run shell MakeJAR.sh basicAgent
- *
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *
- * @run main/othervm -Xmx4g
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -Xint
- *                   -javaagent:basicAgent.jar GetObjectSizeTest GetObjectSizeTest
- *
- * @run main/othervm -Xmx4g
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:TieredStopAtLevel=1
- *                   -javaagent:basicAgent.jar GetObjectSizeTest GetObjectSizeTest
- *
- * @run main/othervm -Xmx4g
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:-TieredCompilation
- *                   -javaagent:basicAgent.jar GetObjectSizeTest GetObjectSizeTest
- */
-
-/*
- * @test
- * @summary Test for fInst.getObjectSize without compressed oops
- * @library /test/lib
- * @requires vm.bits == 64
- *
- * @build sun.hotspot.WhiteBox
- * @run build GetObjectSizeTest
- * @run shell MakeJAR.sh basicAgent
- *
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *
- * @run main/othervm -Xmx128m -XX:-UseCompressedOops
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -Xint
- *                   -javaagent:basicAgent.jar GetObjectSizeTest GetObjectSizeTest
- *
- * @run main/othervm -Xmx128m -XX:-UseCompressedOops
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:TieredStopAtLevel=1
- *                   -javaagent:basicAgent.jar GetObjectSizeTest GetObjectSizeTest
- *
- * @run main/othervm -Xmx128m -XX:-UseCompressedOops
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:-TieredCompilation
- *                   -javaagent:basicAgent.jar GetObjectSizeTest GetObjectSizeTest
- */
-
-/*
- * @test
- * @summary Test for fInst.getObjectSize with 32-bit compressed oops
- * @library /test/lib
- * @requires vm.debug
- *
- * @build sun.hotspot.WhiteBox
- * @run build GetObjectSizeTest
- * @run shell MakeJAR.sh basicAgent
- *
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *
- * @run main/othervm -Xmx128m
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:FastAllocateSizeLimit=0
- *                   -Xint
- *                   -javaagent:basicAgent.jar GetObjectSizeTest GetObjectSizeTest
- *
- * @run main/othervm -Xmx128m
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:FastAllocateSizeLimit=0
- *                   -XX:TieredStopAtLevel=1
- *                   -javaagent:basicAgent.jar GetObjectSizeTest GetObjectSizeTest
- *
- * @run main/othervm -Xmx128m
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:FastAllocateSizeLimit=0
- *                   -XX:-TieredCompilation
- *                   -javaagent:basicAgent.jar GetObjectSizeTest GetObjectSizeTest
- */
-
-/*
- * @test
- * @summary Test for fInst.getObjectSize with zero-based compressed oops
- * @library /test/lib
- * @requires vm.bits == 64
- * @requires vm.debug
- *
- * @build sun.hotspot.WhiteBox
- * @run build GetObjectSizeTest
- * @run shell MakeJAR.sh basicAgent
- *
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *
- * @run main/othervm -Xmx4g
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:FastAllocateSizeLimit=0
- *                   -Xint
- *                   -javaagent:basicAgent.jar GetObjectSizeTest GetObjectSizeTest
- *
- * @run main/othervm -Xmx4g
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:FastAllocateSizeLimit=0
- *                   -XX:TieredStopAtLevel=1
- *                   -javaagent:basicAgent.jar GetObjectSizeTest GetObjectSizeTest
- *
- * @run main/othervm -Xmx4g
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:FastAllocateSizeLimit=0
- *                   -XX:-TieredCompilation
- *                   -javaagent:basicAgent.jar GetObjectSizeTest GetObjectSizeTest
- */
-
-/*
- * @test
- * @summary Test for fInst.getObjectSize without compressed oops
- * @library /test/lib
- * @requires vm.bits == 64
- * @requires vm.debug
- *
- * @build sun.hotspot.WhiteBox
- * @run build GetObjectSizeTest
- * @run shell MakeJAR.sh basicAgent
- *
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *
- * @run main/othervm -Xmx128m -XX:-UseCompressedOops
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:FastAllocateSizeLimit=0
- *                   -Xint
- *                   -javaagent:basicAgent.jar GetObjectSizeTest GetObjectSizeTest
- *
- * @run main/othervm -Xmx128m -XX:-UseCompressedOops
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:FastAllocateSizeLimit=0
- *                   -XX:TieredStopAtLevel=1
- *                   -javaagent:basicAgent.jar GetObjectSizeTest GetObjectSizeTest
- *
- * @run main/othervm -Xmx128m -XX:-UseCompressedOops
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:FastAllocateSizeLimit=0
- *                   -XX:-TieredCompilation
- *                   -javaagent:basicAgent.jar GetObjectSizeTest GetObjectSizeTest
- */
-
-/*
- * @test
- * @summary Test for fInst.getObjectSize with 32-bit compressed oops
- * @library /test/lib
- * @requires vm.bits == 64
- * @requires vm.debug
- *
- * @build sun.hotspot.WhiteBox
- * @run build GetObjectSizeTest
- * @run shell MakeJAR.sh basicAgent
- *
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *
- * @run main/othervm -Xmx128m
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:ObjectAlignmentInBytes=32
- *                   -Xint
- *                   -javaagent:basicAgent.jar GetObjectSizeTest GetObjectSizeTest
- *
- * @run main/othervm -Xmx128m
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:ObjectAlignmentInBytes=32
- *                   -XX:TieredStopAtLevel=1
- *                   -javaagent:basicAgent.jar GetObjectSizeTest GetObjectSizeTest
- *
- * @run main/othervm -Xmx128m
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:ObjectAlignmentInBytes=32
- *                   -XX:-TieredCompilation
- *                   -javaagent:basicAgent.jar GetObjectSizeTest GetObjectSizeTest
- */
-
-/*
- * @test
- * @summary Test for fInst.getObjectSize with zero-based compressed oops
- * @library /test/lib
- * @requires vm.bits == 64
- * @requires vm.debug
- *
- * @build sun.hotspot.WhiteBox
- * @run build GetObjectSizeTest
- * @run shell MakeJAR.sh basicAgent
- *
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *
- * @run main/othervm -Xmx4g
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:ObjectAlignmentInBytes=32
- *                   -Xint
- *                   -javaagent:basicAgent.jar GetObjectSizeTest GetObjectSizeTest
- *
- * @run main/othervm -Xmx4g
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:ObjectAlignmentInBytes=32
- *                   -XX:TieredStopAtLevel=1
- *                   -javaagent:basicAgent.jar GetObjectSizeTest GetObjectSizeTest
- *
- * @run main/othervm -Xmx4g
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:ObjectAlignmentInBytes=32
- *                   -XX:-TieredCompilation
- *                   -javaagent:basicAgent.jar GetObjectSizeTest GetObjectSizeTest
- */
-
 import java.util.*;
 
-import jdk.test.lib.Platform;
-import sun.hotspot.WhiteBox;
+public class
+GetObjectSizeTest
+    extends ASimpleInstrumentationTestCase
+{
 
-public class GetObjectSizeTest extends ASimpleInstrumentationTestCase {
-
-    static final Boolean compressedOops = WhiteBox.getWhiteBox().getBooleanVMFlag("UseCompressedOops");
-    static final int R = ((compressedOops == null) || (compressedOops == true)) ?  4 : 8;
-
-    static final Long align = WhiteBox.getWhiteBox().getIntxVMFlag("ObjectAlignmentInBytes");
-    static final int A = (align == null ? 8 : align.intValue());
-
-    public GetObjectSizeTest(String name) {
+    /**
+     * Constructor for GetObjectSizeTest.
+     * @param name
+     */
+    public GetObjectSizeTest(String name)
+    {
         super(name);
     }
 
-    public static void main(String[] args)throws Throwable {
-        new GetObjectSizeTest(args[0]).runTest();
+    public static void
+    main (String[] args)
+        throws Throwable {
+        ATestCaseScaffold   test = new GetObjectSizeTest(args[0]);
+        test.runTest();
     }
 
-    public static final int ITERS = 1_000_000;
-
-    public static void assertEquals(long expected, long actual) {
-        if (expected != actual) {
-            throw new IllegalStateException(
-               "Error: expected: " + expected + " (" + Long.toHexString(expected) +
-                "), actual: " + actual + " (" + Long.toHexString(actual) + ")");
-        }
+    protected final void
+    doRunTest()
+        throws Throwable {
+        testGetObjectSize();
     }
 
-    public static void assertNotEquals(long notExpected, long actual) {
-        if (notExpected == actual) {
-            throw new IllegalStateException(
-               "Error: not expected: " + notExpected + " (" + Long.toHexString(notExpected) +
-                "), actual: " + actual + " (" + Long.toHexString(actual) + ")");
-        }
-    }
-
-    public static void assertFail() {
-        throw new IllegalStateException("Should not be here");
-    }
-
-    protected final void doRunTest() throws Throwable {
-        testSize_newObject();
-        testSize_localObject();
-        testSize_fieldObject();
-
-        testSize_newSmallByteArray();
-        testSize_localSmallByteArray();
-        testSize_fieldSmallByteArray();
-
-        testSize_newSmallObjArray();
-        testSize_localSmallObjArray();
-        testSize_fieldSmallObjArray();
-
-        testNulls();
-    }
-
-    private static int roundUp(int v, int a) {
-        return (v + a - 1) / a * a;
-    }
-
-    private void testSize_newObject() {
-        int expected = roundUp(Platform.is64bit() ? 16 : 8, A);
-        for (int c = 0; c < ITERS; c++) {
-            assertEquals(expected, fInst.getObjectSize(new Object()));
-        }
-    }
-
-    private void testSize_localObject() {
-        int expected = roundUp(Platform.is64bit() ? 16 : 8, A);
-        Object o = new Object();
-        for (int c = 0; c < ITERS; c++) {
-            assertEquals(expected, fInst.getObjectSize(o));
-        }
-    }
-
-    static Object staticO = new Object();
-
-    private void testSize_fieldObject() {
-        int expected = roundUp(Platform.is64bit() ? 16 : 8, A);
-        for (int c = 0; c < ITERS; c++) {
-            assertEquals(expected, fInst.getObjectSize(staticO));
-        }
-    }
-
-    private void testSize_newSmallByteArray() {
-        int expected = roundUp(1024 + 16, A);
-        for (int c = 0; c < ITERS; c++) {
-            assertEquals(expected, fInst.getObjectSize(new byte[1024]));
-        }
-    }
-
-    private void testSize_localSmallByteArray() {
-        byte[] arr = new byte[1024];
-        int expected = roundUp(arr.length + 16, A);
-        for (int c = 0; c < ITERS; c++) {
-            assertEquals(expected, fInst.getObjectSize(arr));
-        }
-    }
-
-    static byte[] smallArr = new byte[1024];
-
-    private void testSize_fieldSmallByteArray() {
-        int expected = roundUp(smallArr.length + 16, A);
-        for (int c = 0; c < ITERS; c++) {
-            assertEquals(expected, fInst.getObjectSize(smallArr));
-        }
-    }
-
-    private void testSize_newSmallObjArray() {
-        int expected = roundUp(1024*R + 16, A);
-        for (int c = 0; c < ITERS; c++) {
-            assertEquals(expected, fInst.getObjectSize(new Object[1024]));
-        }
-    }
-
-    private void testSize_localSmallObjArray() {
-        Object[] arr = new Object[1024];
-        int expected = roundUp(arr.length*R + 16, A);
-        for (int c = 0; c < ITERS; c++) {
-            assertEquals(expected, fInst.getObjectSize(arr));
-        }
-    }
-
-    static Object[] smallObjArr = new Object[1024];
-
-    private void testSize_fieldSmallObjArray() {
-        int expected = roundUp(smallArr.length*R + 16, A);
-        for (int c = 0; c < ITERS; c++) {
-            assertEquals(expected, fInst.getObjectSize(smallObjArr));
-        }
-    }
-
-    private void testNulls() {
-        for (int c = 0; c < ITERS; c++) {
-            try {
-                fInst.getObjectSize(null);
-                assertFail();
-            } catch (NullPointerException e) {
-                // expected
-            }
+    /*
+     *  Lame test just to show we can do the roundtrip
+     */
+    public void
+    testGetObjectSize()
+    {
+        Object[] objects = new Object[] {
+            "Hello World",
+            new Integer(8),
+            this,
+            new StringBuffer("Another test object"),
+            new Vector(99),
+            // Add more objects here
+            };
+        for (int i = 0; i < objects.length; i++)
+        {
+            Object o = objects[i];
+            long size = fInst.getObjectSize(o);
+            assertTrue(size > 0);
         }
     }
 
