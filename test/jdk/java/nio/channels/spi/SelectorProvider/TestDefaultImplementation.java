@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 8254692
- * @summary Basic test for java.nio.channels.spi.SelectorProvider.java default behavior
- * @run testng TestDefaultBehaviour
+ * @summary Basic test for java.nio.channels.spi.SelectorProvider.java default implementation
+ * @run testng TestDefaultImplementation
  */
 
 import org.testng.annotations.Test;
@@ -39,7 +39,7 @@ import java.nio.channels.spi.SelectorProvider;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertThrows;
 
-public class TestDefaultBehaviour {
+public class TestDefaultImplementation {
     static final Class<UnsupportedOperationException> UOE = UnsupportedOperationException.class;
     static final Class<NullPointerException> NPE = NullPointerException.class;
     static final ProtocolFamily BAD_PF = () -> "BAD_PROTOCOL_FAMILY";
