@@ -2183,13 +2183,12 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ bind(locked);
   }
 
+  // Use that pc we placed in r_return_pc a while back as the current frame anchor.
+  __ set_last_Java_frame(R1_SP, r_return_pc);
 
   if (!is_critical_native) {
     // Publish thread state
     // --------------------------------------------------------------------------
-
-    // Use that pc we placed in r_return_pc a while back as the current frame anchor.
-    __ set_last_Java_frame(R1_SP, r_return_pc);
 
     // Transition from _thread_in_Java to _thread_in_native.
     __ li(R0, _thread_in_native);

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2019, Red Hat, Inc. and/or its affiliates.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,9 +60,9 @@ import jdk.test.lib.Utils;
 /*
  * @test CriticalNativeStress
  * @key randomness
- * @bug 8199868
+ * @bug 8199868 8233343
  * @library / /test/lib
- * @requires os.arch =="x86_64" | os.arch == "amd64" | os.arch=="x86" | os.arch=="i386"
+ * @requires os.arch =="x86_64" | os.arch == "amd64" | os.arch=="x86" | os.arch=="i386" | os.arch=="ppc64" | os.arch=="ppc64le" | os.arch=="s390x"
  * @summary test argument unpacking nmethod wrapper of critical native method
  * @run main/othervm/native -Xcomp -Xmx512M -XX:+CriticalJNINatives gc.stress.CriticalNativeStress
  */
