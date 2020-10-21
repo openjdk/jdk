@@ -39,6 +39,11 @@ void StackOverflow::initialize_stack_zone_sizes() {
   // Stack zone sizes must be page aligned.
   size_t page_size = os::vm_page_size();
 
+  // Note: Zone sizes are given via Stack(Red|Yellow|Reserved|Shadow)Pages
+  //  parameters; these names are misleading since they actually contain
+  //  zone size in units-of-4K-size, regardless the actual platform page size,
+  //  which may be larger (e.g. ppc64 has 64K pages).
+
   // We need to adapt the configured number of stack protection pages given
   // in 4K pages to the actual os page size. We must do this before setting
   // up minimal stack sizes etc. in os::init_2().
@@ -64,6 +69,7 @@ void StackOverflow::initialize_stack_zone_sizes() {
   // several times, though.)
   assert(_stack_shadow_zone_size == 0, "This should be called only once.");
   _stack_shadow_zone_size = align_up(StackShadowPages * alignment, page_size);
+
 }
 
 bool StackOverflow::stack_guards_enabled() const {
