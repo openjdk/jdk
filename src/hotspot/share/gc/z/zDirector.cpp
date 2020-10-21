@@ -48,7 +48,7 @@ void ZDirector::sample_allocation_rate() const {
 }
 
 bool ZDirector::rule_timer() const {
-  if (ZCollectionInterval == 0) {
+  if (ZCollectionInterval <= 0) {
     // Rule disabled
     return false;
   }
@@ -57,7 +57,7 @@ bool ZDirector::rule_timer() const {
   const double time_since_last_gc = ZStatCycle::time_since_last();
   const double time_until_gc = ZCollectionInterval - time_since_last_gc;
 
-  log_debug(gc, director)("Rule: Timer, Interval: %us, TimeUntilGC: %.3fs",
+  log_debug(gc, director)("Rule: Timer, Interval: %.3fs, TimeUntilGC: %.3fs",
                           ZCollectionInterval, time_until_gc);
 
   return time_until_gc <= 0;

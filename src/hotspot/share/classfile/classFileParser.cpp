@@ -3121,8 +3121,83 @@ void ClassFileParser::parse_classfile_source_debug_extension_attribute(const Cla
                                            JVM_ACC_STATIC                   \
                                          )
 
+// Find index of the InnerClasses entry for the specified inner_class_info_index.
+// Return -1 if none is found.
+static int inner_classes_find_index(const Array<u2>* inner_classes, int inner, const ConstantPool* cp, int length) {
+  Symbol* cp_klass_name =  cp->klass_name_at(inner);
+  for (int idx = 0; idx < length; idx += InstanceKlass::inner_class_next_offset) {
+    int idx_inner = inner_classes->at(idx + InstanceKlass::inner_class_inner_class_info_offset);
+    if (cp->klass_name_at(idx_inner) == cp_klass_name) {
+      return idx;
+    }
+  }
+  return -1;
+}
+
+// Return the outer_class_info_index for the InnerClasses entry containing the
+// specified inner_class_info_index.  Return -1 if no InnerClasses entry is found.
+static int inner_classes_jump_to_outer(const Array<u2>* inner_classes, int inner, const ConstantPool* cp, int length) {
+  if (inner == 0) return -1;
+  int idx = inner_classes_find_index(inner_classes, inner, cp, length);
+  if (idx == -1) return -1;
+  int result = inner_classes->at(idx + InstanceKlass::inner_class_outer_class_info_offset);
+  return result;
+}
+
+// Return true if circularity is found, false if no circularity is found.
+// Use Floyd's cycle finding algorithm.
+static bool inner_classes_check_loop_through_outer(const Array<u2>* inner_classes, int idx, const ConstantPool* cp, int length) {
+  int slow = inner_classes->at(idx + InstanceKlass::inner_class_inner_class_info_offset);
+  int fast = inner_classes->at(idx + InstanceKlass::inner_class_outer_class_info_offset);
+  while (fast != -1 && fast != 0) {
+    if (slow != 0 && (cp->klass_name_at(slow) == cp->klass_name_at(fast))) {
+      return true;  // found a circularity
+    }
+    fast = inner_classes_jump_to_outer(inner_classes, fast, cp, length);
+    if (fast == -1) return false;
+    fast = inner_classes_jump_to_outer(inner_classes, fast, cp, length);
+    if (fast == -1) return false;
+    slow = inner_classes_jump_to_outer(inner_classes, slow, cp, length);
+    assert(slow != -1, "sanity check");
+  }
+  return false;
+}
+
+// Loop through each InnerClasses entry checking for circularities and duplications
+// with other entries.  If duplicate entries are found then throw CFE.  Otherwise,
+// return true if a circularity or entries with duplicate inner_class_info_indexes
+// are found.
+bool ClassFileParser::check_inner_classes_circularity(const ConstantPool* cp, int length, TRAPS) {
+  // Loop through each InnerClasses entry.
+  for (int idx = 0; idx < length; idx += InstanceKlass::inner_class_next_offset) {
+    // Return true if there are circular entries.
+    if (inner_classes_check_loop_through_outer(_inner_classes, idx, cp, length)) {
+      return true;
+    }
+    // Check if there are duplicate entries or entries with the same inner_class_info_index.
+    for (int y = idx + InstanceKlass::inner_class_next_offset; y < length;
+         y += InstanceKlass::inner_class_next_offset) {
+
+      // To maintain compatibility, throw an exception if duplicate inner classes
+      // entries are found.
+      guarantee_property((_inner_classes->at(idx) != _inner_classes->at(y) ||
+                          _inner_classes->at(idx+1) != _inner_classes->at(y+1) ||
+                          _inner_classes->at(idx+2) != _inner_classes->at(y+2) ||
+                          _inner_classes->at(idx+3) != _inner_classes->at(y+3)),
+                         "Duplicate entry in InnerClasses attribute in class file %s",
+                         CHECK_(true));
+      // Return true if there are two entries with the same inner_class_info_index.
+      if (_inner_classes->at(y) == _inner_classes->at(idx)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 // Return number of classes in the inner classes attribute table
 u2 ClassFileParser::parse_classfile_inner_classes_attribute(const ClassFileStream* const cfs,
+                                                            const ConstantPool* cp,
                                                             const u1* const inner_classes_attribute_start,
                                                             bool parsed_enclosingmethod_attribute,
                                                             u2 enclosing_method_class_index,
@@ -3146,7 +3221,7 @@ u2 ClassFileParser::parse_classfile_inner_classes_attribute(const ClassFileStrea
   //    enclosing_method_class_index,
   //    enclosing_method_method_index]
   const int size = length * 4 + (parsed_enclosingmethod_attribute ? 2 : 0);
-  Array<u2>* const inner_classes = MetadataFactory::new_array<u2>(_loader_data, size, CHECK_0);
+  Array<u2>* inner_classes = MetadataFactory::new_array<u2>(_loader_data, size, CHECK_0);
   _inner_classes = inner_classes;
 
   int index = 0;
@@ -3197,25 +3272,28 @@ u2 ClassFileParser::parse_classfile_inner_classes_attribute(const ClassFileStrea
   }
 
   // 4347400: make sure there's no duplicate entry in the classes array
+  // Also, check for circular entries.
+  bool has_circularity = false;
   if (_need_verify && _major_version >= JAVA_1_5_VERSION) {
-    for(int i = 0; i < length * 4; i += 4) {
-      for(int j = i + 4; j < length * 4; j += 4) {
-        guarantee_property((inner_classes->at(i)   != inner_classes->at(j) ||
-                            inner_classes->at(i+1) != inner_classes->at(j+1) ||
-                            inner_classes->at(i+2) != inner_classes->at(j+2) ||
-                            inner_classes->at(i+3) != inner_classes->at(j+3)),
-                            "Duplicate entry in InnerClasses in class file %s",
-                            CHECK_0);
+    has_circularity = check_inner_classes_circularity(cp, length * 4, CHECK_0);
+    if (has_circularity) {
+      // If circularity check failed then ignore InnerClasses attribute.
+      MetadataFactory::free_array<u2>(_loader_data, _inner_classes);
+      index = 0;
+      if (parsed_enclosingmethod_attribute) {
+        inner_classes = MetadataFactory::new_array<u2>(_loader_data, 2, CHECK_0);
+        _inner_classes = inner_classes;
+      } else {
+        _inner_classes = Universe::the_empty_short_array();
       }
     }
   }
-
   // Set EnclosingMethod class and method indexes.
   if (parsed_enclosingmethod_attribute) {
     inner_classes->at_put(index++, enclosing_method_class_index);
     inner_classes->at_put(index++, enclosing_method_method_index);
   }
-  assert(index == size, "wrong size");
+  assert(index == size || has_circularity, "wrong size");
 
   // Restore buffer's current position.
   cfs->set_current(current_mark);
@@ -3908,6 +3986,7 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
   if (parsed_innerclasses_attribute || parsed_enclosingmethod_attribute) {
     const u2 num_of_classes = parse_classfile_inner_classes_attribute(
                             cfs,
+                            cp,
                             inner_classes_attribute_start,
                             parsed_innerclasses_attribute,
                             enclosing_method_class_index,

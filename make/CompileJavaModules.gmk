@@ -547,6 +547,10 @@ jdk.jfr_COPY := .xsd .xml .dtd
 jdk.jfr_JAVAC_FLAGS := -XDstringConcat=inline
 
 ################################################################################
+
+jdk.incubator.vector_DOCLINT += -Xdoclint:all/protected
+
+################################################################################
 # If this is an imported module that has prebuilt classes, only compile
 # module-info.java.
 ifneq ($(IMPORT_MODULES_CLASSES), )

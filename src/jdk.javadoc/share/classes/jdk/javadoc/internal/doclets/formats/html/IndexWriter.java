@@ -28,6 +28,8 @@ package jdk.javadoc.internal.doclets.formats.html;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.SortedSet;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -369,22 +371,14 @@ public class IndexWriter extends HtmlDocletWriter {
         }
 
         contentTree.add(new HtmlTree(TagName.BR));
-
-        contentTree.add(links.createLink(pathToRoot.resolve(DocPaths.ALLCLASSES_INDEX),
-                contents.allClassesLabel));
-
-        if (!configuration.packages.isEmpty()) {
-            contentTree.add(getVerticalSeparator());
-            contentTree.add(links.createLink(pathToRoot.resolve(DocPaths.ALLPACKAGES_INDEX),
-                    contents.allPackagesLabel));
-        }
-
-        boolean anySystemProperties = !mainIndex.getItems(DocTree.Kind.SYSTEM_PROPERTY).isEmpty();
-        if (anySystemProperties) {
-            contentTree.add(getVerticalSeparator());
-            contentTree.add(links.createLink(pathToRoot.resolve(DocPaths.SYSTEM_PROPERTIES),
-                    contents.systemPropertiesLabel));
-        }
+        List<Content> pageLinks = Stream.of(IndexItem.Category.values())
+                .flatMap(c -> mainIndex.getItems(c).stream())
+                .filter(i -> !(i.isElementItem() || i.isTagItem()))
+                .sorted((i1,i2)-> utils.compareStrings(i1.getLabel(), i2.getLabel()))
+                .map(i -> links.createLink(pathToRoot.resolve(i.getUrl()),
+                        contents.getNonBreakString(i.getLabel())))
+                .collect(Collectors.toList());
+        contentTree.add(contents.join(getVerticalSeparator(), pageLinks));
     }
 
     /**

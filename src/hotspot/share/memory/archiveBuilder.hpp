@@ -198,7 +198,7 @@ protected:
   virtual void iterate_roots(MetaspaceClosure* it, bool is_relocating_pointers) = 0;
 
   // Conservative estimate for number of bytes needed for:
-  size_t _estimated_metsapceobj_bytes;   // all archived MetsapceObj's.
+  size_t _estimated_metaspaceobj_bytes;   // all archived MetaspaceObj's.
 
 protected:
   DumpRegion* _current_dump_space;
