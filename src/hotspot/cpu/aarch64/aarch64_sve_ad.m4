@@ -146,6 +146,31 @@ source %{
       case Op_ExtractL:
       case Op_ExtractS:
       case Op_ExtractUB:
+      // Vector API specific
+      case Op_AndReductionV:
+      case Op_OrReductionV:
+      case Op_XorReductionV:
+      case Op_MaxReductionV:
+      case Op_MinReductionV:
+      case Op_LoadVectorGather:
+      case Op_StoreVectorScatter:
+      case Op_VectorBlend:
+      case Op_VectorCast:
+      case Op_VectorCastB2X:
+      case Op_VectorCastD2X:
+      case Op_VectorCastF2X:
+      case Op_VectorCastI2X:
+      case Op_VectorCastL2X:
+      case Op_VectorCastS2X:
+      case Op_VectorInsert:
+      case Op_VectorLoadConst:
+      case Op_VectorLoadMask:
+      case Op_VectorLoadShuffle:
+      case Op_VectorMaskCmp:
+      case Op_VectorRearrange:
+      case Op_VectorReinterpret:
+      case Op_VectorStoreMask:
+      case Op_VectorTest:
         return false;
       default:
         return true;
@@ -507,15 +532,38 @@ instruct vpopcountI(vReg dst, vReg src) %{
      __ sve_cnt(as_FloatRegister($dst$$reg), __ S, ptrue, as_FloatRegister($src$$reg));
   %}
   ins_pipe(pipe_slow);
-%}
+%}dnl
 
+dnl
+dnl REDUCE_ADD_EXT($1,        $2,      $3,      $4,      $5,   $6,        $7   )
+dnl REDUCE_ADD_EXT(insn_name, op_name, reg_dst, reg_src, size, elem_type, insn1)
+define(`REDUCE_ADD_EXT', `
+instruct $1($3 dst, $4 src1, vReg src2, vRegD tmp) %{
+  predicate(UseSVE > 0 && n->in(2)->bottom_type()->is_vect()->length_in_bytes() >= 16 &&
+            n->in(2)->bottom_type()->is_vect()->element_basic_type() == $6);
+  match(Set dst ($2 src1 src2));
+  effect(TEMP_DEF dst, TEMP tmp);
+  ins_cost(SVE_COST);
+  format %{ "sve_uaddv $tmp, $src2\t# vector (sve) ($5)\n\t"
+            "smov  $dst, $tmp, $5, 0\n\t"
+            "addw  $dst, $dst, $src1\n\t"
+            "$7  $dst, $dst\t # add reduction $5" %}
+  ins_encode %{
+    __ sve_uaddv(as_FloatRegister($tmp$$reg), __ $5,
+         ptrue, as_FloatRegister($src2$$reg));
+    __ smov($dst$$Register, as_FloatRegister($tmp$$reg), __ $5, 0);
+    __ addw($dst$$Register, $dst$$Register, $src1$$Register);
+    __ $7($dst$$Register, $dst$$Register);
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
 dnl
 dnl REDUCE_ADD($1,        $2,      $3,      $4,      $5,   $6,        $7   )
 dnl REDUCE_ADD(insn_name, op_name, reg_dst, reg_src, size, elem_type, insn1)
 define(`REDUCE_ADD', `
 instruct $1($3 dst, $4 src1, vReg src2, vRegD tmp) %{
   predicate(UseSVE > 0 && n->in(2)->bottom_type()->is_vect()->length_in_bytes() >= 16 &&
-            ELEMENT_SHORT_CHAR($6, n->in(2)));
+            n->in(2)->bottom_type()->is_vect()->element_basic_type() == $6);
   match(Set dst ($2 src1 src2));
   effect(TEMP_DEF dst, TEMP tmp);
   ins_cost(SVE_COST);
@@ -545,8 +593,10 @@ instruct $1($3 src1_dst, vReg src2) %{
   %}
   ins_pipe(pipe_slow);
 %}')dnl
-dnl
+
 // vector add reduction
+REDUCE_ADD_EXT(reduce_addB, AddReductionVI, iRegINoSp, iRegIorL2I, B, T_BYTE,  sxtb)
+REDUCE_ADD_EXT(reduce_addS, AddReductionVI, iRegINoSp, iRegIorL2I, H, T_SHORT, sxth)
 REDUCE_ADD(reduce_addI, AddReductionVI, iRegINoSp, iRegIorL2I, S, T_INT, addw)
 REDUCE_ADD(reduce_addL, AddReductionVL, iRegLNoSp, iRegL, D, T_LONG, add)
 REDUCE_ADDF(reduce_addF, AddReductionVF, vRegF, S)
