@@ -163,6 +163,10 @@ public:
 
   void always_strong_cld_do(CLDClosure* clds, uint worker_id);
   void cld_do(CLDClosure* clds, uint worker_id);
+
+private:
+  typedef void (*CldDo)(CLDClosure*);
+  void cld_do_impl(CldDo f, CLDClosure* clds, uint worker_id);
 };
 
 class ShenandoahRootProcessor : public StackObj {
