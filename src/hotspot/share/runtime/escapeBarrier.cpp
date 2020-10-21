@@ -33,6 +33,7 @@
 #include "runtime/handles.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/keepStackGCProcessed.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/registerMap.hpp"
 #include "runtime/stackValue.hpp"
@@ -74,6 +75,7 @@ bool EscapeBarrier::objs_are_deoptimized(JavaThread* thread, intptr_t* fr_id) {
 bool EscapeBarrier::deoptimize_objects(int depth) {
   if (barrier_active() && deoptee_thread()->has_last_Java_frame()) {
     assert(calling_thread() == Thread::current(), "should be");
+    KeepStackGCProcessedMark ksgcpm(deoptee_thread());
     ResourceMark rm(calling_thread());
     HandleMark   hm(calling_thread());
     RegisterMap  reg_map(deoptee_thread(), false /* update_map */, false /* process_frames */);
@@ -110,6 +112,7 @@ bool EscapeBarrier::deoptimize_objects_all_threads() {
   ResourceMark rm(calling_thread());
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
     if (jt->has_last_Java_frame()) {
+      KeepStackGCProcessedMark ksgcpm(jt);
       RegisterMap reg_map(jt, false /* update_map */, false /* process_frames */);
       vframe* vf = jt->last_java_vframe(&reg_map);
       assert(jt->frame_anchor()->walkable(),
@@ -307,11 +310,7 @@ bool EscapeBarrier::deoptimize_objects_internal(JavaThread* deoptee, intptr_t* f
     compiledVFrame* last_cvf;
     bool fr_is_deoptimized;
     do {
-      if (!self_deopt()) {
-        // Process stack of deoptee thread as we will access oops during object deoptimization.
-        StackWatermarkSet::start_processing(deoptee, StackWatermarkKind::gc);
-      }
-      StackFrameStream fst(deoptee, true /* update */, true /* process_frames */);
+      StackFrameStream fst(deoptee, true /* update */, false /* process_frames */);
       while (fst.current()->id() != fr_id && !fst.is_done()) {
         fst.next();
       }
