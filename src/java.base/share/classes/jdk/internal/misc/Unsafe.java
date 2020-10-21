@@ -1397,7 +1397,7 @@ public final class Unsafe {
            throw new IllegalArgumentException("Component type is not primitive");
        }
        if (length < 0) {
-           throw new IllegalArgumentException("Negative length");
+           throw new NegativeArraySizeException("Negative length" + length);
        }
        return allocateUninitializedArray0(componentType, length);
     }

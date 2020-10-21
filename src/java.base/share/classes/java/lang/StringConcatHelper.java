@@ -491,7 +491,18 @@ final class StringConcatHelper {
     static byte[] newArray(long indexCoder) {
         byte coder = (byte)(indexCoder >> 32);
         int index = (int)indexCoder;
-        return (byte[]) UNSAFE.allocateUninitializedArray(byte.class, index << coder);
+        int length = index << coder;
+        return newArray(length);
+    }
+
+    /**
+     * Allocates an uninitialized byte array
+     * @param length
+     * @return the newly allocated byte array
+     */
+    @ForceInline
+    static byte[] newArray(int length) {
+        return (byte[]) UNSAFE.allocateUninitializedArray(byte.class, length);
     }
 
     /**

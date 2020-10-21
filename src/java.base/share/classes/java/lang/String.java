@@ -3572,12 +3572,12 @@ public final class String
             throw new OutOfMemoryError("Required length exceeds implementation limit");
         }
         if (len == 1) {
-            final byte[] single = new byte[count];
+            final byte[] single = StringConcatHelper.newArray(count);
             Arrays.fill(single, value[0]);
             return new String(single, coder);
         }
         final int limit = len * count;
-        final byte[] multiple = new byte[limit];
+        final byte[] multiple = StringConcatHelper.newArray(limit);
         System.arraycopy(value, 0, multiple, 0, len);
         int copied = len;
         for (; copied < limit - copied; copied <<= 1) {

@@ -33,8 +33,6 @@ import java.util.function.IntConsumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import jdk.internal.util.ArraysSupport;
-import jdk.internal.vm.annotation.DontInline;
-import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import static java.lang.String.UTF16;
@@ -642,7 +640,7 @@ final class StringUTF16 {
             }
         }
         if (i < len) {
-            byte[] buf = new byte[value.length];
+            byte[] buf = StringConcatHelper.newArray(value.length);
             for (int j = 0; j < i; j++) {
                 putChar(buf, j, getChar(value, j)); // TBD:arraycopy?
             }
