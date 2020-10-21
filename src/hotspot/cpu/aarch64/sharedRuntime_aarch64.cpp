@@ -1837,8 +1837,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ cbnzw(rscratch1, needs_safepoint);
     __ b(after_transition);
     __ bind(needs_safepoint);
-    __ mov(rscratch1, _thread_in_native);
-    __ strw(rscratch1, Address(rthread, JavaThread::thread_state_offset()));
   }
 
   // Switch thread to "native transition" state before reading the synchronization state.

@@ -1214,97 +1214,6 @@ void SharedRuntime::restore_native_result(MacroAssembler *masm, BasicType ret_ty
   }
 }
 
-// Registers need to be saved for runtime call
-static Register caller_saved_registers[] = {
-  rcx, rdx, rsi, rdi
-};
-
-// Save caller saved registers except r1 and r2
-static void save_registers_except(MacroAssembler* masm, Register r1, Register r2) {
-  int reg_len = (int)(sizeof(caller_saved_registers) / sizeof(Register));
-  for (int index = 0; index < reg_len; index ++) {
-    Register this_reg = caller_saved_registers[index];
-    if (this_reg != r1 && this_reg != r2) {
-      __ push(this_reg);
-    }
-  }
-}
-
-// Restore caller saved registers except r1 and r2
-static void restore_registers_except(MacroAssembler* masm, Register r1, Register r2) {
-  int reg_len = (int)(sizeof(caller_saved_registers) / sizeof(Register));
-  for (int index = reg_len - 1; index >= 0; index --) {
-    Register this_reg = caller_saved_registers[index];
-    if (this_reg != r1 && this_reg != r2) {
-      __ pop(this_reg);
-    }
-  }
-}
-
-// Pin object, return pinned object or null in rax
-static void gen_pin_object(MacroAssembler* masm,
-                           Register thread, VMRegPair reg) {
-  __ block_comment("gen_pin_object {");
-
-  Label is_null;
-  Register tmp_reg = rax;
-  VMRegPair tmp(tmp_reg->as_VMReg());
-  if (reg.first()->is_stack()) {
-    // Load the arg up from the stack
-    simple_move32(masm, reg, tmp);
-    reg = tmp;
-  } else {
-    __ movl(tmp_reg, reg.first()->as_Register());
-  }
-  __ testptr(reg.first()->as_Register(), reg.first()->as_Register());
-  __ jccb(Assembler::equal, is_null);
-
-  // Save registers that may be used by runtime call
-  Register arg = reg.first()->is_Register() ? reg.first()->as_Register() : noreg;
-  save_registers_except(masm, arg, thread);
-
-  __ call_VM_leaf(
-    CAST_FROM_FN_PTR(address, SharedRuntime::pin_object),
-    thread, reg.first()->as_Register());
-
-  // Restore saved registers
-  restore_registers_except(masm, arg, thread);
-
-  __ bind(is_null);
-  __ block_comment("} gen_pin_object");
-}
-
-// Unpin object
-static void gen_unpin_object(MacroAssembler* masm,
-                             Register thread, VMRegPair reg) {
-  __ block_comment("gen_unpin_object {");
-  Label is_null;
-
-  // temp register
-  __ push(rax);
-  Register tmp_reg = rax;
-  VMRegPair tmp(tmp_reg->as_VMReg());
-
-  simple_move32(masm, reg, tmp);
-
-  __ testptr(rax, rax);
-  __ jccb(Assembler::equal, is_null);
-
-  // Save registers that may be used by runtime call
-  Register arg = reg.first()->is_Register() ? reg.first()->as_Register() : noreg;
-  save_registers_except(masm, arg, thread);
-
-  __ call_VM_leaf(
-    CAST_FROM_FN_PTR(address, SharedRuntime::unpin_object),
-    thread, rax);
-
-  // Restore saved registers
-  restore_registers_except(masm, arg, thread);
-  __ bind(is_null);
-  __ pop(rax);
-  __ block_comment("} gen_unpin_object");
-}
-
 // Unpack an array argument into a pointer to the body and the length
 // if the array is non-null, otherwise pass 0 for both.
 static void unpack_array_argument(MacroAssembler* masm, VMRegPair reg, BasicType in_elem_type, VMRegPair body_arg, VMRegPair length_arg) {
@@ -1779,11 +1688,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   //
   OopMap* map = new OopMap(stack_slots * 2, 0 /* arg_slots*/);
 
-  // Inbound arguments that need to be pinned for critical natives
-  GrowableArray<int> pinned_args(total_in_args);
-  // Current stack slot for storing register based array argument
-  int pinned_slot = oop_handle_offset;
-
   // Mark location of rbp,
   // map->set_callee_saved(VMRegImpl::stack2reg( stack_slots - 2), stack_slots * 2, 0, rbp->as_VMReg());
 
@@ -1796,26 +1700,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       case T_ARRAY:
         if (is_critical_native) {
           VMRegPair in_arg = in_regs[i];
-          if (Universe::heap()->supports_object_pinning()) {
-            // gen_pin_object handles save and restore
-            // of any clobbered registers
-            gen_pin_object(masm, thread, in_arg);
-            pinned_args.append(i);
-
-            // rax has pinned array
-            VMRegPair result_reg(rax->as_VMReg());
-            if (!in_arg.first()->is_stack()) {
-              assert(pinned_slot <= stack_slots, "overflow");
-              simple_move32(masm, result_reg, VMRegImpl::stack2reg(pinned_slot));
-              pinned_slot += VMRegImpl::slots_per_word;
-            } else {
-              // Write back pinned value, it will be used to unpin this argument
-              __ movptr(Address(rbp, reg2offset_in(in_arg.first())), result_reg.first()->as_Register());
-            }
-            // We have the array in register, use it
-            in_arg = result_reg;
-          }
-
           unpack_array_argument(masm, in_arg, in_elem_bt[i], out_regs[c_arg + 1], out_regs[c_arg]);
           c_arg++;
           break;
@@ -1970,15 +1854,14 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // Finally just about ready to make the JNI call
 
-
   // get JNIEnv* which is first argument to native
   if (!is_critical_native) {
     __ lea(rdx, Address(thread, in_bytes(JavaThread::jni_environment_offset())));
     __ movptr(Address(rsp, 0), rdx);
-  }
 
-  // Now set thread in native
-  __ movl(Address(thread, JavaThread::thread_state_offset()), _thread_in_native);
+    // Now set thread in native
+    __ movl(Address(thread, JavaThread::thread_state_offset()), _thread_in_native);
+  }
 
   __ call(RuntimeAddress(native_func));
 
@@ -2009,26 +1892,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   default       : ShouldNotReachHere();
   }
 
-  // unpin pinned arguments
-  pinned_slot = oop_handle_offset;
-  if (pinned_args.length() > 0) {
-    // save return value that may be overwritten otherwise.
-    save_native_result(masm, ret_type, stack_slots);
-    for (int index = 0; index < pinned_args.length(); index ++) {
-      int i = pinned_args.at(index);
-      assert(pinned_slot <= stack_slots, "overflow");
-      if (!in_regs[i].first()->is_stack()) {
-        int offset = pinned_slot * VMRegImpl::stack_slot_size;
-        __ movl(in_regs[i].first()->as_Register(), Address(rsp, offset));
-        pinned_slot += VMRegImpl::slots_per_word;
-      }
-      // gen_pin_object handles save and restore
-      // of any other clobbered registers
-      gen_unpin_object(masm, thread, in_regs[i]);
-    }
-    restore_native_result(masm, ret_type, stack_slots);
-  }
-
   Label after_transition;
 
   // If this is a critical native, check for a safepoint or suspend request after the call.
@@ -2040,7 +1903,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ cmpl(Address(thread, JavaThread::suspend_flags_offset()), 0);
     __ jcc(Assembler::equal, after_transition);
     __ bind(needs_safepoint);
-    __ movl(Address(thread, JavaThread::thread_state_offset()), _thread_in_native);
   }
 
   // Switch thread to "native transition" state before reading the synchronization state.

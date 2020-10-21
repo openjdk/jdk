@@ -2271,10 +2271,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ cmpwi(CCR1, suspend_flags, 0);
     __ beq(CCR1, after_transition);
     __ bind(needs_safepoint);
-    // Transition from _thread_in_Java to _thread_in_native.
-    __ li(R0, _thread_in_native);
-    __ release();
-    __ stw(R0, thread_(thread_state));
   }
 
   // Publish thread state

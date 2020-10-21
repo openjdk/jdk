@@ -1990,7 +1990,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ load_and_test_int(Z_R0, Address(Z_thread, JavaThread::suspend_flags_offset()));
     __ z_bre(after_transition);
     __ bind(needs_safepoint);
-    __ set_thread_state(_thread_in_native);
   }
 
   // Switch thread to "native transition" state before reading the synchronization state.
