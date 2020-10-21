@@ -140,7 +140,7 @@ public class B5045306
             server.terminate();
         }
         if (!uncaught.isEmpty()) {
-            throw new AssertionError("Unhandled exception:", uncaught.get(0));
+            throw new RuntimeException("Unhandled exception:", uncaught.get(0));
         }
     }
 }
