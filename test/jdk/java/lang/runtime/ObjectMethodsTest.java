@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 
 /*
  * @test
+ * @bug 8246774
  * @summary Basic tests for ObjectMethods
- * @compile --enable-preview -source ${jdk.version} ObjectMethodsTest.java
- * @run testng/othervm --enable-preview ObjectMethodsTest
- * @run testng/othervm/java.security.policy=empty.policy --enable-preview ObjectMethodsTest
+ * @run testng ObjectMethodsTest
+ * @run testng/othervm/java.security.policy=empty.policy ObjectMethodsTest
  */
 
 import java.lang.invoke.CallSite;

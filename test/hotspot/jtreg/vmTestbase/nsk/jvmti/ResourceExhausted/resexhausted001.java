@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import nsk.share.Consts;
 import nsk.share.test.Stresser;
+import jtreg.SkippedException;
 
 public class resexhausted001 {
     static {
@@ -56,15 +57,15 @@ public class resexhausted001 {
             }
 
             System.out.println("Can't reproduce OOME due to a limit on iterations/execution time. Test was useless.");
-            return Consts.TEST_PASSED;
+            throw new SkippedException("Test did not get an OutOfMemory error");
 
         } catch (OutOfMemoryError e) {
             count = threadCount.get();
+        } finally {
             threadsDone = true;
             synchronized (hanger) {
                 hanger.notifyAll();
             }
-        } finally {
             stress.finish();
         }
 

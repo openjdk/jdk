@@ -123,7 +123,9 @@ public:
   }
 
 public:
-  DynamicArchiveBuilder() : ArchiveBuilder(NULL, NULL) {
+  DynamicArchiveBuilder() : ArchiveBuilder(MetaspaceShared::misc_code_dump_space(),
+                                           MetaspaceShared::read_write_dump_space(),
+                                           MetaspaceShared::read_only_dump_space()) {
     _estimated_hashtable_bytes = 0;
     _estimated_trampoline_bytes = 0;
 
@@ -177,7 +179,6 @@ public:
 
     // rw space starts ...
     address reserved_bottom = reserve_space_and_init_buffer_to_target_delta();
-    set_dump_regions(MetaspaceShared::read_write_dump_space(), MetaspaceShared::read_only_dump_space());
     init_header(reserved_bottom);
 
     CHeapBitMap ptrmap;
@@ -200,7 +201,7 @@ public:
     dump_ro_region();
     relocate_pointers();
 
-    verify_estimate_size(_estimated_metsapceobj_bytes, "MetaspaceObjs");
+    verify_estimate_size(_estimated_metaspaceobj_bytes, "MetaspaceObjs");
 
     char* serialized_data;
     {
@@ -249,20 +250,26 @@ public:
 
 size_t DynamicArchiveBuilder::estimate_archive_size() {
   // size of the symbol table and two dictionaries, plus the RunTimeSharedClassInfo's
-  _estimated_hashtable_bytes = 0;
-  _estimated_hashtable_bytes += SymbolTable::estimate_size_for_archive();
-  _estimated_hashtable_bytes += SystemDictionaryShared::estimate_size_for_archive();
+  size_t symbol_table_est = SymbolTable::estimate_size_for_archive();
+  size_t dictionary_est = SystemDictionaryShared::estimate_size_for_archive();
+  _estimated_hashtable_bytes = symbol_table_est + dictionary_est;
 
   _estimated_trampoline_bytes = estimate_trampoline_size();
 
   size_t total = 0;
 
-  total += _estimated_metsapceobj_bytes;
+  total += _estimated_metaspaceobj_bytes;
   total += _estimated_hashtable_bytes;
   total += _estimated_trampoline_bytes;
 
   // allow fragmentation at the end of each dump region
   total += _total_dump_regions * reserve_alignment();
+
+  log_info(cds, dynamic)("_estimated_hashtable_bytes = " SIZE_FORMAT " + " SIZE_FORMAT " = " SIZE_FORMAT,
+                         symbol_table_est, dictionary_est, _estimated_hashtable_bytes);
+  log_info(cds, dynamic)("_estimated_metaspaceobj_bytes = " SIZE_FORMAT, _estimated_metaspaceobj_bytes);
+  log_info(cds, dynamic)("_estimated_trampoline_bytes = " SIZE_FORMAT, _estimated_trampoline_bytes);
+  log_info(cds, dynamic)("total estimate bytes = " SIZE_FORMAT, total);
 
   return align_up(total, reserve_alignment());
 }
@@ -347,7 +354,7 @@ size_t DynamicArchiveBuilder::estimate_trampoline_size() {
     // We have nothing to archive, but let's avoid having an empty region.
     total = SharedRuntime::trampoline_size();
   }
-  return total;
+  return align_up(total, SharedSpaceObjectAlignment);
 }
 
 void DynamicArchiveBuilder::make_trampolines() {
@@ -566,11 +573,16 @@ void DynamicArchiveBuilder::write_archive(char* serialized_data) {
   // Now write the archived data including the file offsets.
   const char* archive_name = Arguments::GetSharedDynamicArchivePath();
   dynamic_info->open_for_write(archive_name);
-  MetaspaceShared::write_core_archive_regions(dynamic_info, NULL, NULL);
+  size_t bitmap_size_in_bytes;
+  char* bitmap = MetaspaceShared::write_core_archive_regions(dynamic_info, NULL, NULL, bitmap_size_in_bytes);
   dynamic_info->set_final_requested_base((char*)MetaspaceShared::requested_base_address());
   dynamic_info->set_header_crc(dynamic_info->compute_header_crc());
   dynamic_info->write_header();
   dynamic_info->close();
+
+  write_cds_map_to_log(dynamic_info, NULL, NULL,
+                       bitmap, bitmap_size_in_bytes);
+  FREE_C_HEAP_ARRAY(char, bitmap);
 
   address base = to_target(_alloc_bottom);
   address top  = address(current_dump_space()->top()) + _buffer_to_target_delta;

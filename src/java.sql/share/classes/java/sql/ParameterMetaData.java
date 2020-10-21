@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ public interface ParameterMetaData extends Wrapper {
      * information.
      *
      * @return the number of parameters
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.4
      */
     int getParameterCount() throws SQLException;
@@ -61,7 +61,7 @@ public interface ParameterMetaData extends Wrapper {
      *        <code>ParameterMetaData.parameterNoNulls</code>,
      *        <code>ParameterMetaData.parameterNullable</code>, or
      *        <code>ParameterMetaData.parameterNullableUnknown</code>
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.4
      */
     int isNullable(int param) throws SQLException;
@@ -89,7 +89,7 @@ public interface ParameterMetaData extends Wrapper {
      *
      * @param param the first parameter is 1, the second is 2, ...
      * @return <code>true</code> if so; <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.4
      */
     boolean isSigned(int param) throws SQLException;
@@ -106,7 +106,7 @@ public interface ParameterMetaData extends Wrapper {
      *
      * @param param the first parameter is 1, the second is 2, ...
      * @return precision
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.4
      */
     int getPrecision(int param) throws SQLException;
@@ -117,7 +117,7 @@ public interface ParameterMetaData extends Wrapper {
      *
      * @param param the first parameter is 1, the second is 2, ...
      * @return scale
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.4
      */
     int getScale(int param) throws SQLException;
@@ -127,7 +127,7 @@ public interface ParameterMetaData extends Wrapper {
      *
      * @param param the first parameter is 1, the second is 2, ...
      * @return SQL type from <code>java.sql.Types</code>
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.4
      * @see Types
      */
@@ -139,7 +139,7 @@ public interface ParameterMetaData extends Wrapper {
      * @param param the first parameter is 1, the second is 2, ...
      * @return type the name used by the database. If the parameter type is
      * a user-defined type, then a fully-qualified type name is returned.
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.4
      */
     String getParameterTypeName(int param) throws SQLException;
@@ -155,7 +155,7 @@ public interface ParameterMetaData extends Wrapper {
      *         <code>PreparedStatement.setObject</code> to set the value
      *         in the specified parameter. This is the class name used
      *         for custom mapping.
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.4
      */
     String getParameterClassName(int param) throws SQLException;
@@ -189,7 +189,7 @@ public interface ParameterMetaData extends Wrapper {
      *        <code>ParameterMetaData.parameterModeOut</code>, or
      *        <code>ParameterMetaData.parameterModeInOut</code>
      *        <code>ParameterMetaData.parameterModeUnknown</code>.
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @since 1.4
      */
     int getParameterMode(int param) throws SQLException;

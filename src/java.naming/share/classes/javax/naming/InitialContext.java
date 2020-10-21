@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -297,8 +297,8 @@ public class InitialContext implements Context {
      * and cache it in defaultInitCtx.
      * Set <code>gotDefault</code> so that we know we've tried this before.
      * @return The non-null cached initial context.
-     * @exception NoInitialContextException If cannot find an initial context.
-     * @exception NamingException If a naming exception was encountered.
+     * @throws NoInitialContextException If cannot find an initial context.
+     * @throws NamingException If a naming exception was encountered.
      */
     protected Context getDefaultInitCtx() throws NamingException{
         if (!gotDefault) {
@@ -323,8 +323,8 @@ public class InitialContext implements Context {
      * @param name The non-null name for which to get the context.
      * @return A URL context for <code>name</code> or the cached
      *         initial context. The result cannot be null.
-     * @exception NoInitialContextException If cannot find an initial context.
-     * @exception NamingException In a naming exception is encountered.
+     * @throws NoInitialContextException If cannot find an initial context.
+     * @throws NamingException In a naming exception is encountered.
      * @see javax.naming.spi.NamingManager#getURLContext
      */
     protected Context getURLOrDefaultInitCtx(String name)
@@ -379,8 +379,8 @@ public class InitialContext implements Context {
      * @param name The non-null name for which to get the context.
      * @return A URL context for <code>name</code> or the cached
      *         initial context. The result cannot be null.
-     * @exception NoInitialContextException If cannot find an initial context.
-     * @exception NamingException In a naming exception is encountered.
+     * @throws NoInitialContextException If cannot find an initial context.
+     * @throws NamingException In a naming exception is encountered.
      *
      * @see javax.naming.spi.NamingManager#getURLContext
      */

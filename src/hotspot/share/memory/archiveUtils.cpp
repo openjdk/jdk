@@ -165,9 +165,9 @@ char* DumpRegion::expand_top_to(char* newtop) {
   return _top;
 }
 
-char* DumpRegion::allocate(size_t num_bytes, size_t alignment) {
-  char* p = (char*)align_up(_top, alignment);
-  char* newtop = p + align_up(num_bytes, alignment);
+char* DumpRegion::allocate(size_t num_bytes) {
+  char* p = (char*)align_up(_top, (size_t)SharedSpaceObjectAlignment);
+  char* newtop = p + align_up(num_bytes, (size_t)SharedSpaceObjectAlignment);
   expand_top_to(newtop);
   memset(p, 0, newtop - p);
   return p;
@@ -271,8 +271,8 @@ void ReadClosure::do_tag(int tag) {
 }
 
 void ReadClosure::do_oop(oop *p) {
-  narrowOop o = (narrowOop)nextPtr();
-  if (o == 0 || !HeapShared::open_archive_heap_region_mapped()) {
+  narrowOop o = CompressedOops::narrow_oop_cast(nextPtr());
+  if (CompressedOops::is_null(o) || !HeapShared::open_archive_heap_region_mapped()) {
     *p = NULL;
   } else {
     assert(HeapShared::is_heap_object_archiving_allowed(),

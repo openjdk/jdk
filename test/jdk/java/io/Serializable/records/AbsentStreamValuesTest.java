@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 
 /*
  * @test
+ * @bug 8246774
  * @summary Checks that the appropriate default value is given to the canonical ctr
- * @compile --enable-preview -source ${jdk.version} AbsentStreamValuesTest.java
- * @run testng/othervm --enable-preview AbsentStreamValuesTest
- * @run testng/othervm/java.security.policy=empty_security.policy --enable-preview AbsentStreamValuesTest
+ * @run testng AbsentStreamValuesTest
+ * @run testng/othervm/java.security.policy=empty_security.policy AbsentStreamValuesTest
  */
 
 import java.io.ByteArrayInputStream;

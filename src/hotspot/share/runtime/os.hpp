@@ -113,7 +113,7 @@ class os: AllStatic {
     _page_sizes[1] = 0; // sentinel
   }
 
-  static char*  pd_reserve_memory(size_t bytes, size_t alignment_hint);
+  static char*  pd_reserve_memory(size_t bytes);
 
   static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes);
   static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes, int file_desc);
@@ -314,11 +314,11 @@ class os: AllStatic {
 
   // Reserves virtual memory.
   // alignment_hint - currently only used by AIX
-  static char*  reserve_memory(size_t bytes, size_t alignment_hint = 0, MEMFLAGS flags = mtOther);
+  static char*  reserve_memory(size_t bytes, MEMFLAGS flags = mtOther);
 
   // Reserves virtual memory.
   // if file_desc != -1, also attaches the memory to the file.
-  static char*  reserve_memory_with_fd(size_t bytes, size_t alignment_hint, int file_desc);
+  static char*  reserve_memory_with_fd(size_t bytes, int file_desc);
 
   // Reserves virtual memory that starts at an address that is aligned to 'alignment'.
   static char*  reserve_memory_aligned(size_t size, size_t alignment, int file_desc = -1);
@@ -482,6 +482,7 @@ class os: AllStatic {
 
   static address    fetch_frame_from_context(const void* ucVoid, intptr_t** sp, intptr_t** fp);
   static frame      fetch_frame_from_context(const void* ucVoid);
+  static frame      fetch_compiled_frame_from_context(const void* ucVoid);
 
   static void breakpoint();
   static bool start_debugging(char *buf, int buflen);
@@ -686,7 +687,11 @@ class os: AllStatic {
   // return current frame. pc() and sp() are set to NULL on failure.
   static frame      current_frame();
 
-  static void print_hex_dump(outputStream* st, address start, address end, int unitsize);
+  static void print_hex_dump(outputStream* st, address start, address end, int unitsize,
+                             int bytes_per_line, address logical_start);
+  static void print_hex_dump(outputStream* st, address start, address end, int unitsize) {
+    print_hex_dump(st, start, end, unitsize, /*bytes_per_line=*/16, /*logical_start=*/start);
+  }
 
   // returns a string to describe the exception/signal;
   // returns NULL if exception_code is not an OS exception/signal.
