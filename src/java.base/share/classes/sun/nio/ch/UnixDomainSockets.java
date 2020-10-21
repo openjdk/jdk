@@ -46,7 +46,7 @@ class UnixDomainSockets {
 
     static final UnixDomainSocketAddress UNNAMED = UnixDomainSocketAddress.of("");
 
-    private static final boolean supported = socketSupported();
+    private static final boolean supported;
 
     private static final String tempDir = UnixDomainSocketsUtil.getTempDir();
 
@@ -171,5 +171,6 @@ class UnixDomainSockets {
     static {
         // Load all required native libs
         IOUtil.load();
+        supported = socketSupported();
     }
 }
