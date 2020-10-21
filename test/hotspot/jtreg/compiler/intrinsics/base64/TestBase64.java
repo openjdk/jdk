@@ -26,7 +26,7 @@
  * @author Eric Wang <yiming.wang@oracle.com>
  * @summary tests java.util.Base64
  * @library /test/lib /
- * @build sun.hotspot.WhiteBox jdk.test.lib.Utils
+ * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *
  * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true
