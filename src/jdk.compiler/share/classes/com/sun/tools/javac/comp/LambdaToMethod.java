@@ -971,10 +971,15 @@ public class LambdaToMethod extends TreeTranslator {
                 // If the unerased parameter type is a type variable whose
                 // bound is an intersection (eg. <T extends A & B>) then
                 // use the SAM parameter type
-                if (checkForIntersection && descPTypes.head.getKind() == TypeKind.TYPEVAR) {
-                    TypeVar tv = (TypeVar) descPTypes.head;
-                    if (tv.getUpperBound().getKind() == TypeKind.INTERSECTION) {
+                if (checkForIntersection) {
+                    if (descPTypes.head.getKind() == TypeKind.INTERSECTION) {
                         parmType = samPTypes.head;
+                    }
+                    if (descPTypes.head.getKind() == TypeKind.TYPEVAR) {
+                        TypeVar tv = (TypeVar) descPTypes.head;
+                        if (tv.getUpperBound().getKind() == TypeKind.INTERSECTION) {
+                            parmType = samPTypes.head;
+                        }
                     }
                 }
                 addParameter("x$" + i, parmType, true);
