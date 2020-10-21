@@ -337,6 +337,13 @@ public class CheckGraalIntrinsics extends GraalTest {
             add(toBeInvestigated,
                             "java/lang/StringCoding.hasNegatives([BII)Z",
                             "java/lang/StringCoding.implEncodeISOArray([BI[BII)I");
+
+            if (isJDK16OrHigher()) {
+                // Added by JDK-8173585: Intrinsify StringLatin1.indexOf(char)
+                add(toBeInvestigated,
+                            "java/lang/StringLatin1.indexOfChar([BIII)I");
+            }
+
             add(ignore,
                             // handled through an intrinsic for String.equals itself
                             "java/lang/StringLatin1.equals([B[B)Z",

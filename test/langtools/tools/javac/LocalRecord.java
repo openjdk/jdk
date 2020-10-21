@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @bug 8242478 8246774
+ * @bug 8242478
  * @summary test local records
- * @compile LocalRecord.java
+ * @compile --enable-preview -source ${jdk.version} LocalRecord.java
  */
 class LocalRecord {
     void m() {

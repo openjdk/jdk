@@ -25,7 +25,6 @@
  * CheckRecordMembers
  *
  * @test
- * @bug 8246774
  * @summary check that the accessors, equals, hashCode and toString methods
  *          work as expected
  * @library /tools/javac/lib
@@ -33,7 +32,7 @@
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.util
  * @build combo.ComboTestHelper
- * @run main CheckRecordMembers
+ * @run main/othervm --enable-preview CheckRecordMembers
  */
 
 import java.lang.reflect.Constructor;
@@ -103,6 +102,7 @@ public class CheckRecordMembers extends combo.ComboInstance<CheckRecordMembers> 
     @Override
     public void doWork() throws Throwable {
         newCompilationTask()
+                .withOptions(new String[]{"--enable-preview", "-source", Integer.toString(Runtime.version().feature())})
                 .withSourceFromTemplate("Data", sourceTemplate)
                 .generate(this::check);
     }

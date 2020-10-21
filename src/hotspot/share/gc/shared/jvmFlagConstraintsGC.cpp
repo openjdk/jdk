@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,18 +259,6 @@ JVMFlag::Error GCPauseIntervalMillisConstraintFunc(uintx value, bool verbose) {
   }
 #endif
 
-  return JVMFlag::SUCCESS;
-}
-
-JVMFlag::Error InitialBootClassLoaderMetaspaceSizeConstraintFunc(size_t value, bool verbose) {
-  size_t aligned_max = align_down(max_uintx/2, Metaspace::reserve_alignment_words());
-  if (value > aligned_max) {
-    JVMFlag::printError(verbose,
-                        "InitialBootClassLoaderMetaspaceSize (" SIZE_FORMAT ") must be "
-                        "less than or equal to aligned maximum value (" SIZE_FORMAT ")\n",
-                        value, aligned_max);
-    return JVMFlag::VIOLATES_CONSTRAINT;
-  }
   return JVMFlag::SUCCESS;
 }
 

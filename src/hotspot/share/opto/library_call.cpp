@@ -95,12 +95,6 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
   }
 }
 
-//----------------------register_library_intrinsics-----------------------
-// Initialize this file's data structures, for each Compile instance.
-void Compile::register_library_intrinsics() {
-  // Nothing to do here.
-}
-
 JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
   LibraryCallKit kit(jvms, this);
   Compile* C = kit.C;

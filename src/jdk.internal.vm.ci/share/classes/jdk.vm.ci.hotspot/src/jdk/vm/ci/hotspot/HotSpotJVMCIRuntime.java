@@ -1117,7 +1117,8 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
      *             the length of the array returned by {@link #registerNativeMethods}
      */
     public boolean attachCurrentThread(boolean asDaemon) {
-        return compilerToVm.attachCurrentThread(asDaemon);
+        byte[] name = IS_IN_NATIVE_IMAGE ? Thread.currentThread().getName().getBytes() : null;
+        return compilerToVm.attachCurrentThread(name, asDaemon);
     }
 
     /**

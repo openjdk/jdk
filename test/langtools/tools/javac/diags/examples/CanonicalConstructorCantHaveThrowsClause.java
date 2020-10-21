@@ -23,7 +23,10 @@
 
 // key: compiler.err.invalid.canonical.constructor.in.record
 // key: compiler.misc.throws.clause.not.allowed.for.canonical.constructor
+// key: compiler.note.preview.filename
+// key: compiler.note.preview.recompile
 // key: compiler.misc.canonical
+// options: --enable-preview -source ${jdk.version}
 
 record R(int i) {
     public R(int i) throws Exception {

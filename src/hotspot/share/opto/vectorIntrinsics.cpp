@@ -597,7 +597,8 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
   // Since we are using byte array, we need to double check that the byte operations are supported by backend.
   if (using_byte_array) {
     int byte_num_elem = num_elem * type2aelembytes(elem_bt);
-    if (!arch_supports_vector(is_store ? Op_StoreVector : Op_LoadVector, byte_num_elem, T_BYTE, VecMaskNotUsed)) {
+    if (!arch_supports_vector(is_store ? Op_StoreVector : Op_LoadVector, byte_num_elem, T_BYTE, VecMaskNotUsed)
+        || !arch_supports_vector(Op_VectorReinterpret, byte_num_elem, T_BYTE, VecMaskNotUsed)) {
       if (C->print_intrinsics()) {
         tty->print_cr("  ** not supported: arity=%d op=%s vlen=%d*8 etype=%s/8 ismask=no",
                       is_store, is_store ? "store" : "load",
@@ -620,9 +621,9 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
         return false; // not supported
       }
     } else {
-         if (!arch_supports_vector(Op_StoreVector, num_elem, elem_bt, VecMaskUseStore)) {
-           return false; // not supported
-         }
+      if (!arch_supports_vector(Op_StoreVector, num_elem, elem_bt, VecMaskUseStore)) {
+        return false; // not supported
+      }
     }
   }
 
@@ -660,11 +661,11 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
     } else {
       // Special handle for masks
       if (is_mask) {
-          vload = gvn().transform(LoadVectorNode::make(0, control(), memory(addr), addr, addr_type, num_elem, T_BOOLEAN));
-          const TypeVect* to_vect_type = TypeVect::make(elem_bt, num_elem);
-          vload = gvn().transform(new VectorLoadMaskNode(vload, to_vect_type));
+        vload = gvn().transform(LoadVectorNode::make(0, control(), memory(addr), addr, addr_type, num_elem, T_BOOLEAN));
+        const TypeVect* to_vect_type = TypeVect::make(elem_bt, num_elem);
+        vload = gvn().transform(new VectorLoadMaskNode(vload, to_vect_type));
       } else {
-          vload = gvn().transform(LoadVectorNode::make(0, control(), memory(addr), addr, addr_type, num_elem, elem_bt));
+        vload = gvn().transform(LoadVectorNode::make(0, control(), memory(addr), addr, addr_type, num_elem, elem_bt));
       }
     }
     Node* box = box_vector(vload, vbox_type, elem_bt, num_elem);

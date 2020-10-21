@@ -42,7 +42,7 @@ public class TestStressIGVN {
     static String igvnTrace(int stressSeed) throws Exception {
         String className = TestStressIGVN.class.getName();
         String[] procArgs = {
-            "-Xcomp", "-XX:-TieredCompilation",
+            "-Xcomp", "-XX:-TieredCompilation", "-XX:-Inline",
             "-XX:CompileOnly=" + className + "::sum", "-XX:+TraceIterativeGVN",
             "-XX:+StressIGVN", "-XX:StressSeed=" + stressSeed,
             className, "10"};
@@ -59,8 +59,10 @@ public class TestStressIGVN {
 
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
-            Asserts.assertEQ(igvnTrace(10), igvnTrace(10),
-                "got different IGVN traces for the same seed");
+            for (int s = 0; s < 10; s++) {
+                Asserts.assertEQ(igvnTrace(s), igvnTrace(s),
+                    "got different IGVN traces for the same seed");
+            }
         } else if (args.length > 0) {
             sum(Integer.parseInt(args[0]));
         }
