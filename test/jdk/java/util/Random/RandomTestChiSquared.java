@@ -230,8 +230,6 @@ public class RandomTestChiSquared {
 
             if (factory.name().equals("Random")) {
                 testOneRng(factory.create(417), 1);
-            } else if (factory.name().equals("MRG32k3a")) {
-                // MRG32k3a is known to fail these tests badly
             } else {
                 testOneRng(factory.create(417), 0);
             }

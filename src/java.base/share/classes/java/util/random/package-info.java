@@ -158,20 +158,14 @@
  * certainly has a sufficiently long period.
  *
  * <p> For an application running in a 32-bit hardware environment and using
- * only one thread or a small number of threads,
- * {@link jdk.random.L32X64StarStarRandom} or {@link jdk.random.L32X64MixRandom}
- * may be a good choice.
+ * only one thread or a small number of threads, may be a good choice.
  *
  * <p> For an application that uses many threads that are allocated in one batch
  * at the start of the computation, either a "jumpable" generator such as
  * {@link jdk.random.Xoroshiro128PlusPlus} or
  * {@link jdk.random.Xoshiro256PlusPlus} may be used, or a "splittable"
  * generator such as {@link jdk.random.L64X128MixRandom} or
- * {@link jdk.random.L64X256MixRandom} may be used. If furthermore the
- * application uses only floating-point values from a uniform distribution, and
- * no more than 32 bits of floating-point precision are required, and exact
- * equidistribution is not required, then {@link jdk.random.MRG32k3a} (a classic
- * and well-studied algorithm) may be appropriate.
+ * {@link jdk.random.L64X256MixRandom} may be used.
  *
  * <p> For an application that creates many threads dynamically, perhaps through
  * the use of spliterators, a "splittable" generator such as
@@ -228,8 +222,8 @@
  * {@link ArbitrarilyJumpableGenerator} for algorithms that allow jumping along
  * the state cycle by any user-specified distance. In this package,
  * implementations of these interfaces include
- * {@link jdk.random.Xoroshiro128PlusPlus},
- * {@link jdk.random.Xoshiro256PlusPlus}, and {@link jdk.random.MRG32k3a}.
+ * {@link jdk.random.Xoroshiro128PlusPlus}, and
+ * {@link jdk.random.Xoshiro256PlusPlus}.
  *
  * <p> A more recent category of "splittable" pseudorandom generator algorithms
  * uses a large family of state cycles and makes some attempt to ensure that
@@ -238,7 +232,7 @@
  * different regions parts of that shared state cycle. This strategy is
  * supported by the interface {@link SplittableGenerator}. In this package,
  * implementations of this interface include
- * {@link jdk.random.L32X64StarStarRandom}, {@link jdk.random.L32X64MixRandom},
+ * {@link jdk.random.L32X64MixRandom},
  * {@link jdk.random.L64X128StarStarRandom},
  * {@link jdk.random.L64X128MixRandom}, {@link jdk.random.L64X256MixRandom},
  * {@link jdk.random.L64X1024MixRandom}, {@link jdk.random.L128X128MixRandom},
@@ -332,11 +326,6 @@
  *       <th style="text-align:left">{@link RandomGenerator#nextLong nextLong()} values are</th></tr>
  * </thead>
  * <tbody>
- *   <tr><td style="text-align:left">{@link jdk.random.L32X64StarStarRandom L32X64StarStarRandom}</td>
- *       <td style="text-align:right">2<sup>32</sup>(2<sup>64</sup>&minus;1)</td>
- *       <td style="text-align:right">96 bits</td>
- *       <td style="text-align:right">32 bits</td>
- *       <td style="text-align:left"></td></tr>
  *   <tr><td style="text-align:left">{@link jdk.random.L32X64MixRandom L32X64MixRandom}</td>
  *       <td style="text-align:right">2<sup>32</sup>(2<sup>64</sup>&minus;1)</td>
  *       <td style="text-align:right">96 bits</td>
@@ -445,11 +434,6 @@
  *       <th style="text-align:left">Mixing function</th></tr>
  * </thead>
  * <tbody>
- *   <tr><td style="text-align:left">{@link jdk.random.L32X64StarStarRandom L32X64StarStarRandom}</td>
- *       <td style="text-align:right">{@code 0xadb4a92d}</td>
- *       <td style="text-align:left">{@code xoroshiro64}, version 1.0</td>
- *       <td style="text-align:left">{@code (26, 9, 13)}</td>
- *       <td style="text-align:left">{@code Integer.rotateLeft((s+x0)* 5, 7) * 9}</td></tr>
  *   <tr><td style="text-align:left">{@link jdk.random.L32X64MixRandom L32X64MixRandom}</td>
  *       <td style="text-align:right">{@code 0xadb4a92d}</td>
  *       <td style="text-align:left">{@code xoroshiro64}, version 1.0</td>

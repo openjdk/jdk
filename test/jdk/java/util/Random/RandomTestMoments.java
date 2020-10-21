@@ -196,11 +196,7 @@ public class RandomTestMoments {
         RandomGenerator.all()
              .forEach(factory -> {
                 setRNG(factory.name());
-                if (factory.name().equals("MRG32k3a")) {
-                     // MRG32k3a is known to fail these tests badly
-                } else {
-                    testOneRng(factory.create(325) );
-                }
+                testOneRng(factory.create(325) );
             });
 
         exceptionOnFail();

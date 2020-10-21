@@ -54,7 +54,6 @@ module jdk.random {
 
     provides java.util.random.RandomGenerator with
         jdk.random.L32X64MixRandom,
-        jdk.random.L32X64StarStarRandom,
         jdk.random.L64X128MixRandom,
         jdk.random.L64X128StarStarRandom,
         jdk.random.L64X256MixRandom,
@@ -62,7 +61,6 @@ module jdk.random {
         jdk.random.L128X128MixRandom,
         jdk.random.L128X256MixRandom,
         jdk.random.L128X1024MixRandom,
-        jdk.random.MRG32k3a,
         jdk.random.Xoroshiro128PlusPlus,
         jdk.random.Xoshiro256PlusPlus;
 }
