@@ -321,8 +321,7 @@ public:
 
   void add_comment(intptr_t offset, const char * comment);
   void print_block_comment(outputStream* stream, intptr_t offset) const;
-  // MOVE strings from other to this; invalidate other.
-  void assign(CodeStrings& other);
+  int  count() const;
   // COPY strings from other to this; leave other valid.
   void copy(CodeStrings& other);
   // FREE strings; invalidate this.

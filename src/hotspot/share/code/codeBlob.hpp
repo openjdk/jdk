@@ -242,11 +242,9 @@ public:
   }
 
 #ifndef PRODUCT
-  // Transfer ownership of comments to this CodeBlob
   void set_strings(CodeStrings& strings) {
     assert(!is_aot(), "invalid on aot");
-    _strings.assign(strings);
-
+    _strings.copy(strings);
   }
 #endif
 };

@@ -958,12 +958,11 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
   debug_only(Copy::fill_to_bytes(bxp->_total_start, bxp->_total_size,
                                  badCodeHeapFreeVal));
 
-  _decode_begin = NULL;  // sanity
-
   // Make certain that the new sections are all snugly inside the new blob.
   verify_section_allocation();
 
 #ifndef PRODUCT
+  _decode_begin = NULL;  // sanity
   if (PrintNMethods && (WizardMode || Verbose)) {
     tty->print("expanded CodeBuffer:");
     this->print();
@@ -1051,8 +1050,12 @@ class CodeString: public CHeapObj<mtCode> {
   CodeString*  _prev;
   intptr_t     _offset;
 
+  static long allocated_code_strings;
+
   ~CodeString() {
     assert(_next == NULL && _prev == NULL, "wrong interface for freeing list");
+    allocated_code_strings--;
+    log_trace(codestrings)("Freeing CodeString [%s] (%p)", _string, (void*)_string);
     os::free((void*)_string);
   }
 
@@ -1061,12 +1064,14 @@ class CodeString: public CHeapObj<mtCode> {
  public:
   CodeString(const char * string, intptr_t offset = -1)
     : _next(NULL), _prev(NULL), _offset(offset) {
+    allocated_code_strings++;
     _string = os::strdup(string, mtCode);
+    log_trace(codestrings)("Created CodeString [%s] (%p)", _string, (void*)_string);
   }
 
   const char * string() const { return _string; }
   intptr_t     offset() const { assert(_offset >= 0, "offset for non comment?"); return _offset;  }
-  CodeString* next()    const { return _next; }
+  CodeString*  next()   const { return _next; }
 
   void set_next(CodeString* next) {
     _next = next;
@@ -1091,6 +1096,10 @@ class CodeString: public CHeapObj<mtCode> {
   }
 };
 
+// For tracing statistics. Will use raw increment/decrement, so it might not be
+// exact
+long CodeString::allocated_code_strings = 0;
+
 CodeString* CodeStrings::find(intptr_t offset) const {
   CodeString* a = _strings->first_comment();
   while (a != NULL && a->offset() != offset) {
@@ -1113,7 +1122,7 @@ void CodeStrings::add_comment(intptr_t offset, const char * comment) {
   CodeString* c      = new CodeString(comment, offset);
   CodeString* inspos = (_strings == NULL) ? NULL : find_last(offset);
 
-  if (inspos) {
+  if (inspos != NULL) {
     // insert after already existing comments with same offset
     c->set_next(inspos->next());
     inspos->set_next(c);
@@ -1127,34 +1136,19 @@ void CodeStrings::add_comment(intptr_t offset, const char * comment) {
   }
 }
 
-void CodeStrings::assign(CodeStrings& other) {
-  other.check_valid();
-  assert(is_null(), "Cannot assign onto non-empty CodeStrings");
-  _strings = other._strings;
-  _strings_last = other._strings_last;
-#ifdef ASSERT
-  _defunct = false;
-#endif
-  other.set_null_and_invalidate();
-}
-
 // Deep copy of CodeStrings for consistent memory management.
-// Only used for actual disassembly so this is cheaper than reference counting
-// for the "normal" fastdebug case.
 void CodeStrings::copy(CodeStrings& other) {
-  assert (other != NULL, "other must not be NULL");
+  log_debug(codestrings)("Copying %d Codestring(s)", other.count());
+
   other.check_valid();
   check_valid();
   assert(is_null(), "Cannot copy onto non-empty CodeStrings");
-  if (other.is_null()) {
-    return;
-  }
   CodeString* n = other._strings;
   CodeString** ps = &_strings;
   CodeString* prev = NULL;
   while (n != NULL) {
     if (n->is_comment()) {
-      *ps = new CodeString(n->string(),n->offset());
+      *ps = new CodeString(n->string(), n->offset());
     } else {
       *ps = new CodeString(n->string());
     }
@@ -1182,8 +1176,19 @@ void CodeStrings::print_block_comment(outputStream* stream, intptr_t offset) con
   }
 }
 
-// Also sets isNull()
+int CodeStrings::count() const {
+  int i = 0;
+  CodeString* s = _strings;
+  while (s != NULL) {
+    i++;
+    s = s->_next;
+  }
+  return i;
+}
+
+// Also sets is_null()
 void CodeStrings::free() {
+  log_debug(codestrings)("Freeing %d out of approx. %ld CodeString(s), ", count(), CodeString::allocated_code_strings);
   CodeString* n = _strings;
   while (n) {
     // unlink the node from the list saving a pointer to the next
