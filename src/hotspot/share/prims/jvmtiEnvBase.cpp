@@ -1573,7 +1573,7 @@ UpdateForPopTopFrameClosure::doit(Thread *target, bool self) {
   bool is_interpreted[2];
   intptr_t *frame_sp[2];
   // The 2-nd arg of constructor is needed to stop iterating at java entry frame.
-  for (vframeStream vfs(java_thread, true); !vfs.at_end(); vfs.next()) {
+  for (vframeStream vfs(java_thread, true, false /* process_frames */); !vfs.at_end(); vfs.next()) {
     methodHandle mh(current_thread, vfs.method());
     if (mh->is_native()) {
       _result = JVMTI_ERROR_OPAQUE_FRAME;
