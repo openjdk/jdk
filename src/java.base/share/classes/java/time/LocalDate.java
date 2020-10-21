@@ -136,6 +136,7 @@ import java.util.stream.Stream;
  *
  * @since 1.8
  */
+@jdk.internal.ValueBased
 public final class LocalDate
         implements Temporal, TemporalAdjuster, ChronoLocalDate, Serializable {
 

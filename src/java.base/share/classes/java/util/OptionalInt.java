@@ -54,6 +54,7 @@ import java.util.stream.IntStream;
  *
  * @since 1.8
  */
+@jdk.internal.ValueBased
 public final class OptionalInt {
     /**
      * Common instance for {@code empty()}.

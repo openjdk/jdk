@@ -91,6 +91,7 @@ import java.util.stream.Stream;
  * @see Process
  * @since 9
  */
+@jdk.internal.ValueBased
 public interface ProcessHandle extends Comparable<ProcessHandle> {
 
     /**
