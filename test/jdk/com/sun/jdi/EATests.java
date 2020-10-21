@@ -1076,11 +1076,16 @@ abstract class EATestCaseBaseTarget extends EATestCaseBaseShared implements Runn
     }
 
     static class LinkedList {
-        LinkedList l;
-        public long[] array;
-        public LinkedList(LinkedList l, int size) {
-            this.array = new long[size];
+        public LinkedList l;
+        public LinkedList(LinkedList l) {
             this.l = l;
+        }
+    }
+    static class LinkedListOfLongArrays extends LinkedList {
+        public long[] array;
+        public LinkedListOfLongArrays(LinkedList l, int size) {
+            super(l);
+            this.array = new long[size];
         }
     }
 
@@ -1092,7 +1097,8 @@ abstract class EATestCaseBaseTarget extends EATestCaseBaseShared implements Runn
         while(size > 0) {
             try {
                 while(true) {
-                    consumedMemory = new LinkedList(consumedMemory, size);
+                    consumedMemory =
+                            size == 1 ? new LinkedList(consumedMemory) : new LinkedListOfLongArrays(consumedMemory, size);
                 }
             } catch(OutOfMemoryError oom) {
             }
@@ -2604,7 +2610,7 @@ class EAPopFrameNotInlinedReallocFailure extends EATestCaseBaseDebugger {
         freeAllMemory();
         // We succeeded to pop just one frame if OOM was raised. When we continue, we will call dontinline_brkpt() again.
         String expectedTopFrame =
-                env.targetVMOptions.EliminateAllocations && coughtOom ? "dontinline_consume_all_memory_brkpt" : "dontinline_testMethod";
+                coughtOom ? "dontinline_consume_all_memory_brkpt" : "dontinline_testMethod";
         Asserts.assertEQ(expectedTopFrame, thread.frame(0).location().method().name());
         printStack(thread);
     }
@@ -2613,7 +2619,10 @@ class EAPopFrameNotInlinedReallocFailure extends EATestCaseBaseDebugger {
     public boolean shouldSkip() {
         // OOMEs because of realloc failures with DeoptimizeObjectsALot are too random.
         // And Graal currently doesn't provide all information about non-escaping objects in debug info
-        return super.shouldSkip() || env.targetVMOptions.DeoptimizeObjectsALot || env.targetVMOptions.UseJVMCICompiler;
+        return super.shouldSkip() ||
+                !env.targetVMOptions.EliminateAllocations ||
+                env.targetVMOptions.DeoptimizeObjectsALot ||
+                env.targetVMOptions.UseJVMCICompiler;
     }
 }
 
@@ -2653,7 +2662,10 @@ class EAPopFrameNotInlinedReallocFailureTarget extends EATestCaseBaseTarget {
     public boolean shouldSkip() {
         // OOMEs because of realloc failures with DeoptimizeObjectsALot are too random.
         // And Graal currently doesn't provide all information about non-escaping objects in debug info
-        return super.shouldSkip() || DeoptimizeObjectsALot || UseJVMCICompiler;
+        return super.shouldSkip() ||
+                !EliminateAllocations ||
+                DeoptimizeObjectsALot ||
+                UseJVMCICompiler;
     }
 }
 
@@ -2693,7 +2705,7 @@ class EAPopInlinedMethodWithScalarReplacedObjectsReallocFailure extends EATestCa
         freeAllMemory();
         setField(testCase, "loopCount", env.vm().mirrorOf(0)); // terminate loop
         String expectedTopFrame =
-                env.targetVMOptions.EliminateAllocations && coughtOom ? "inlinedCallForcedToReturn" : "dontinline_testMethod";
+                coughtOom ? "inlinedCallForcedToReturn" : "dontinline_testMethod";
         Asserts.assertEQ(expectedTopFrame, thread.frame(0).location().method().name());
     }
 
@@ -2701,7 +2713,10 @@ class EAPopInlinedMethodWithScalarReplacedObjectsReallocFailure extends EATestCa
     public boolean shouldSkip() {
         // OOMEs because of realloc failures with DeoptimizeObjectsALot are too random.
         // And Graal currently doesn't provide all information about non-escaping objects in debug info
-        return super.shouldSkip() || env.targetVMOptions.DeoptimizeObjectsALot || env.targetVMOptions.UseJVMCICompiler;
+        return super.shouldSkip() ||
+                !env.targetVMOptions.EliminateAllocations ||
+                env.targetVMOptions.DeoptimizeObjectsALot ||
+                env.targetVMOptions.UseJVMCICompiler;
     }
 }
 
@@ -2757,7 +2772,10 @@ class EAPopInlinedMethodWithScalarReplacedObjectsReallocFailureTarget extends EA
     public boolean shouldSkip() {
         // OOMEs because of realloc failures with DeoptimizeObjectsALot are too random.
         // And Graal currently doesn't provide all information about non-escaping objects in debug info
-        return super.shouldSkip() || DeoptimizeObjectsALot || UseJVMCICompiler;
+        return super.shouldSkip() ||
+                !EliminateAllocations ||
+                DeoptimizeObjectsALot ||
+                UseJVMCICompiler;
     }
 }
 
@@ -2959,7 +2977,10 @@ class EAForceEarlyReturnOfInlinedMethodWithScalarReplacedObjectsReallocFailure e
     public boolean shouldSkip() {
         // OOMEs because of realloc failures with DeoptimizeObjectsALot are too random.
         // And Graal currently doesn't support Force Early Return
-        return super.shouldSkip() || env.targetVMOptions.DeoptimizeObjectsALot || env.targetVMOptions.UseJVMCICompiler;
+        return super.shouldSkip() ||
+                !env.targetVMOptions.EliminateAllocations ||
+                env.targetVMOptions.DeoptimizeObjectsALot ||
+                env.targetVMOptions.UseJVMCICompiler;
     }
 }
 
@@ -3016,7 +3037,10 @@ class EAForceEarlyReturnOfInlinedMethodWithScalarReplacedObjectsReallocFailureTa
     public boolean shouldSkip() {
         // OOMEs because of realloc failures with DeoptimizeObjectsALot are too random.
         // And Graal currently doesn't support Force Early Return
-        return super.shouldSkip() || DeoptimizeObjectsALot || UseJVMCICompiler;
+        return super.shouldSkip() ||
+                !EliminateAllocations ||
+                DeoptimizeObjectsALot ||
+                UseJVMCICompiler;
     }
 }
 
