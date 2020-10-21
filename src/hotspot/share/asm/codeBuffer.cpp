@@ -1218,7 +1218,7 @@ const char* CodeStrings::add_string(const char * string) {
 
 void CodeBuffer::decode() {
   ttyLocker ttyl;
-  Disassembler::decode(decode_begin(), insts_end(), tty);
+  Disassembler::decode(decode_begin(), insts_end(), tty NOT_PRODUCT(COMMA &strings()));
   _decode_begin = insts_end();
 }
 

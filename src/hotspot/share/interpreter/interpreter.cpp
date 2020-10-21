@@ -76,7 +76,7 @@ void InterpreterCodelet::print_on(outputStream* st) const {
 
   if (PrintInterpreter) {
     st->cr();
-    Disassembler::decode(code_begin(), code_end(), st, DEBUG_ONLY(_strings) NOT_DEBUG(CodeStrings()));
+    Disassembler::decode(code_begin(), code_end(), st DEBUG_ONLY(COMMA &_strings));
   }
 }
 

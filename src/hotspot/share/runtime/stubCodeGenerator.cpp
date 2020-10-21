@@ -88,17 +88,16 @@ void StubCodeGenerator::stub_prolog(StubCodeDesc* cdesc) {
 
 void StubCodeGenerator::stub_epilog(StubCodeDesc* cdesc) {
   if (_print_code) {
-    CodeStrings cs;
 #ifndef PRODUCT
     // Find the code strings in the outer CodeBuffer.
     CodeBuffer *outer_cbuf = _masm->code_section()->outer();
-    cs = outer_cbuf->strings();
+    CodeStrings* cs = &outer_cbuf->strings();
 #endif
     ttyLocker ttyl;
     tty->print_cr("- - - [BEGIN] - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -");
     cdesc->print_on(tty);
     tty->cr();
-    Disassembler::decode(cdesc->begin(), cdesc->end(), tty, cs);
+    Disassembler::decode(cdesc->begin(), cdesc->end(), tty NOT_PRODUCT(COMMA cs));
     tty->print_cr("- - - [END] - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -");
     tty->cr();
   }
