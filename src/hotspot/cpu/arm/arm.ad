@@ -993,6 +993,10 @@ const bool Matcher::has_predicated_vectors(void) {
   return false;
 }
 
+bool Matcher::supports_vector_variable_shifts(void) {
+  return VM_Version::has_simd();
+}
+
 const int Matcher::float_pressure(int default_pressure_threshold) {
   return default_pressure_threshold;
 }
@@ -1154,10 +1158,6 @@ const bool Matcher::rematerialize_float_constants = false;
 // piece-by-piece.  Only happens when passing doubles into C code as the
 // Java calling convention forces doubles to be aligned.
 const bool Matcher::misaligned_doubles_ok = false;
-
-// No-op on ARM.
-void Matcher::pd_implicit_null_fixup(MachNode *node, uint idx) {
-}
 
 // Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
 const bool Matcher::strict_fp_requires_explicit_rounding = false;
@@ -1663,7 +1663,6 @@ frame %{
   // These two registers define part of the calling convention
   // between compiled code and the interpreter.
   inline_cache_reg(R_Ricklass);          // Inline Cache Register or Method* for I2C
-  interpreter_method_reg(R_Rmethod);     // Method Register when calling interpreter
 
   // Optional: name the operand used by cisc-spilling to access [stack_pointer + offset]
   cisc_spilling_operand_name(indOffset);
@@ -2522,14 +2521,6 @@ operand inline_cache_regP(iRegP reg) %{
   format %{ %}
   interface(REG_INTER);
 %}
-
-operand interpreter_method_regP(iRegP reg) %{
-  constraint(ALLOC_IN_RC(Rmethod_regP));
-  match(reg);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
 
 //----------Complex Operands---------------------------------------------------
 // Indirect Memory Reference

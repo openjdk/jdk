@@ -587,6 +587,29 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  address generate_iota_indices(const char *stub_name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", stub_name);
+    address start = __ pc();
+    __ emit_data(0x03020100, relocInfo::none, 0);
+    __ emit_data(0x07060504, relocInfo::none, 0);
+    __ emit_data(0x0B0A0908, relocInfo::none, 0);
+    __ emit_data(0x0F0E0D0C, relocInfo::none, 0);
+    __ emit_data(0x13121110, relocInfo::none, 0);
+    __ emit_data(0x17161514, relocInfo::none, 0);
+    __ emit_data(0x1B1A1918, relocInfo::none, 0);
+    __ emit_data(0x1F1E1D1C, relocInfo::none, 0);
+    __ emit_data(0x23222120, relocInfo::none, 0);
+    __ emit_data(0x27262524, relocInfo::none, 0);
+    __ emit_data(0x2B2A2928, relocInfo::none, 0);
+    __ emit_data(0x2F2E2D2C, relocInfo::none, 0);
+    __ emit_data(0x33323130, relocInfo::none, 0);
+    __ emit_data(0x37363534, relocInfo::none, 0);
+    __ emit_data(0x3B3A3938, relocInfo::none, 0);
+    __ emit_data(0x3F3E3D3C, relocInfo::none, 0);
+    return start;
+  }
+
   address generate_vector_mask_long_double(const char *stub_name, int32_t maskhi, int32_t masklo) {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", stub_name);
@@ -623,6 +646,40 @@ class StubGenerator: public StubCodeGenerator {
     __ emit_data(0x00000000, relocInfo::none, 0);
     __ emit_data(0x00000006, relocInfo::none, 0);
     __ emit_data(0x00000000, relocInfo::none, 0);
+
+    return start;
+  }
+
+  address generate_vector_custom_i32(const char *stub_name, Assembler::AvxVectorLen len,
+                                     int32_t val0, int32_t val1, int32_t val2, int32_t val3,
+                                     int32_t val4 = 0, int32_t val5 = 0, int32_t val6 = 0, int32_t val7 = 0,
+                                     int32_t val8 = 0, int32_t val9 = 0, int32_t val10 = 0, int32_t val11 = 0,
+                                     int32_t val12 = 0, int32_t val13 = 0, int32_t val14 = 0, int32_t val15 = 0) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", stub_name);
+    address start = __ pc();
+
+    assert(len != Assembler::AVX_NoVec, "vector len must be specified");
+    __ emit_data(val0, relocInfo::none, 0);
+    __ emit_data(val1, relocInfo::none, 0);
+    __ emit_data(val2, relocInfo::none, 0);
+    __ emit_data(val3, relocInfo::none, 0);
+    if (len >= Assembler::AVX_256bit) {
+      __ emit_data(val4, relocInfo::none, 0);
+      __ emit_data(val5, relocInfo::none, 0);
+      __ emit_data(val6, relocInfo::none, 0);
+      __ emit_data(val7, relocInfo::none, 0);
+      if (len >= Assembler::AVX_512bit) {
+        __ emit_data(val8, relocInfo::none, 0);
+        __ emit_data(val9, relocInfo::none, 0);
+        __ emit_data(val10, relocInfo::none, 0);
+        __ emit_data(val11, relocInfo::none, 0);
+        __ emit_data(val12, relocInfo::none, 0);
+        __ emit_data(val13, relocInfo::none, 0);
+        __ emit_data(val14, relocInfo::none, 0);
+        __ emit_data(val15, relocInfo::none, 0);
+      }
+    }
 
     return start;
   }
@@ -3902,8 +3959,19 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::x86::_vector_double_sign_mask = generate_vector_mask_long_double("vector_double_sign_mask", 0x7FFFFFFF, 0xFFFFFFFF);
     StubRoutines::x86::_vector_double_sign_flip = generate_vector_mask_long_double("vector_double_sign_flip", 0x80000000, 0x00000000);
     StubRoutines::x86::_vector_short_to_byte_mask = generate_vector_mask("vector_short_to_byte_mask", 0x00ff00ff);
+    StubRoutines::x86::_vector_int_to_byte_mask = generate_vector_mask("vector_int_to_byte_mask", 0x000000ff);
+    StubRoutines::x86::_vector_int_to_short_mask = generate_vector_mask("vector_int_to_short_mask", 0x0000ffff);
+    StubRoutines::x86::_vector_32_bit_mask = generate_vector_custom_i32("vector_32_bit_mask", Assembler::AVX_512bit,
+                                                                        0xFFFFFFFF, 0, 0, 0);
+    StubRoutines::x86::_vector_64_bit_mask = generate_vector_custom_i32("vector_64_bit_mask", Assembler::AVX_512bit,
+                                                                        0xFFFFFFFF, 0xFFFFFFFF, 0, 0);
+    StubRoutines::x86::_vector_int_shuffle_mask = generate_vector_mask("vector_int_shuffle_mask", 0x03020100);
+    StubRoutines::x86::_vector_short_shuffle_mask = generate_vector_mask("vector_short_shuffle_mask", 0x01000100);
+    StubRoutines::x86::_vector_long_shuffle_mask = generate_vector_mask_long_double("vector_long_shuffle_mask", 0x00000001, 0x0);
     StubRoutines::x86::_vector_byte_perm_mask = generate_vector_byte_perm_mask("vector_byte_perm_mask");
     StubRoutines::x86::_vector_long_sign_mask = generate_vector_mask_long_double("vector_long_sign_mask", 0x80000000, 0x00000000);
+    StubRoutines::x86::_vector_all_bits_set = generate_vector_mask("vector_all_bits_set", 0xFFFFFFFF);
+    StubRoutines::x86::_vector_iota_indices = generate_iota_indices("iota_indices");
 
     // support for verify_oop (must happen after universe_init)
     StubRoutines::_verify_oop_subroutine_entry     = generate_verify_oop();

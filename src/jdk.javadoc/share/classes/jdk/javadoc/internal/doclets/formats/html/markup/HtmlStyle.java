@@ -484,7 +484,6 @@ public enum HtmlStyle {
     /**
      * The class of the element used to present the documentation comment for a module element,
      * excluding block tags.
-     * The content of the block tags will be in a sibling element with class {@link #moduleTags}.
      */
     moduleDescription,
 
@@ -631,6 +630,11 @@ public enum HtmlStyle {
     helpPage,
 
     /**
+     * The class of the {@code body} element for a page in either the "single" or "split index".
+     */
+    indexPage,
+
+    /**
      * The class of the {@code body} element for the top-level redirect page.
      */
     indexRedirectPage,
@@ -671,19 +675,9 @@ public enum HtmlStyle {
     serializedFormPage,
 
     /**
-     * The class of the {@code body} element for the full single index page.
-     */
-    singleIndexPage,
-
-    /**
      * The class of the {@code body} element for a page with the source code for a class.
      */
     sourcePage,
-
-    /**
-     * The class of the {@code body} element for a page in a "split index".
-     */
-    splitIndexPage,
 
     /**
      * The class of the {@code body} element for the system-properties page.

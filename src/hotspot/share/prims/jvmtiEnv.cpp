@@ -1206,6 +1206,11 @@ JvmtiEnv::GetOwnedMonitorInfo(JavaThread* java_thread, jint* owned_monitor_count
   GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
       new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
 
+  EscapeBarrier eb(true, calling_thread, java_thread);
+  if (!eb.deoptimize_objects(MaxJavaStackTraceDepth)) {
+    return JVMTI_ERROR_OUT_OF_MEMORY;
+  }
+
   // It is only safe to perform the direct operation on the current
   // thread. All other usage needs to use a direct handshake for safety.
   if (java_thread == calling_thread) {
@@ -1250,6 +1255,11 @@ JvmtiEnv::GetOwnedMonitorStackDepthInfo(JavaThread* java_thread, jint* monitor_i
   // growable array of jvmti monitors info on the C-heap
   GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
          new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
+
+  EscapeBarrier eb(true, calling_thread, java_thread);
+  if (!eb.deoptimize_objects(MaxJavaStackTraceDepth)) {
+    return JVMTI_ERROR_OUT_OF_MEMORY;
+  }
 
   // It is only safe to perform the direct operation on the current
   // thread. All other usage needs to use a direct handshake for safety.
@@ -1666,6 +1676,13 @@ JvmtiEnv::PopFrame(JavaThread* java_thread) {
     }
   }
 
+  if (java_thread->frames_to_pop_failed_realloc() > 0) {
+    // VM is in the process of popping the top frame because it has scalar replaced objects which
+    // could not be reallocated on the heap.
+    // Return JVMTI_ERROR_OUT_OF_MEMORY to avoid interfering with the VM.
+    return JVMTI_ERROR_OUT_OF_MEMORY;
+  }
+
   {
     ResourceMark rm(current_thread);
     // Check if there are more than one Java frame in this thread, that the top two frames
@@ -1674,7 +1691,7 @@ JvmtiEnv::PopFrame(JavaThread* java_thread) {
     bool is_interpreted[2];
     intptr_t *frame_sp[2];
     // The 2-nd arg of constructor is needed to stop iterating at java entry frame.
-    for (vframeStream vfs(java_thread, true); !vfs.at_end(); vfs.next()) {
+    for (vframeStream vfs(java_thread, true, false /* process_frames */); !vfs.at_end(); vfs.next()) {
       methodHandle mh(current_thread, vfs.method());
       if (mh->is_native()) return(JVMTI_ERROR_OPAQUE_FRAME);
       is_interpreted[frame_count] = vfs.is_interpreted_frame();
@@ -1686,7 +1703,7 @@ JvmtiEnv::PopFrame(JavaThread* java_thread) {
       // There can be two situations here:
       //  1. There are no more java frames
       //  2. Two top java frames are separated by non-java native frames
-      if(vframeFor(java_thread, 1) == NULL) {
+      if(vframeForNoProcess(java_thread, 1) == NULL) {
         return JVMTI_ERROR_NO_MORE_FRAMES;
       } else {
         // Intervening non-java native or VM frames separate java frames.
@@ -1697,9 +1714,15 @@ JvmtiEnv::PopFrame(JavaThread* java_thread) {
     }
 
     // If any of the top 2 frames is a compiled one, need to deoptimize it
+    EscapeBarrier eb(!is_interpreted[0] || !is_interpreted[1], current_thread, java_thread);
     for (int i = 0; i < 2; i++) {
       if (!is_interpreted[i]) {
         Deoptimization::deoptimize_frame(java_thread, frame_sp[i]);
+        // Eagerly reallocate scalar replaced objects.
+        if (!eb.deoptimize_objects(frame_sp[i])) {
+          // Reallocation of scalar replaced objects failed -> return with error
+          return JVMTI_ERROR_OUT_OF_MEMORY;
+        }
       }
     }
 
@@ -1785,7 +1808,7 @@ JvmtiEnv::NotifyFramePop(JavaThread* java_thread, jint depth) {
     JvmtiSuspendControl::print();
   }
 
-  vframe *vf = vframeFor(java_thread, depth);
+  vframe *vf = vframeForNoProcess(java_thread, depth);
   if (vf == NULL) {
     return JVMTI_ERROR_NO_MORE_FRAMES;
   }

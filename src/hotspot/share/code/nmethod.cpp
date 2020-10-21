@@ -50,6 +50,7 @@
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiImpl.hpp"
 #include "prims/jvmtiThreadState.hpp"
+#include "prims/methodHandles.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/flags/flagSetting.hpp"
@@ -2418,9 +2419,7 @@ void nmethod::verify_interrupt_point(address call_site) {
 
   PcDesc* pd = pc_desc_at(nativeCall_at(call_site)->return_address());
   assert(pd != NULL, "PcDesc must exist");
-  for (ScopeDesc* sd = new ScopeDesc(this, pd->scope_decode_offset(),
-                                     pd->obj_decode_offset(), pd->should_reexecute(), pd->rethrow_exception(),
-                                     pd->return_oop());
+  for (ScopeDesc* sd = new ScopeDesc(this, pd);
        !sd->is_top(); sd = sd->sender()) {
     sd->verify();
   }
@@ -3055,9 +3054,7 @@ const char* nmethod::reloc_string_for(u_char* begin, u_char* end) {
 ScopeDesc* nmethod::scope_desc_in(address begin, address end) {
   PcDesc* p = pc_desc_near(begin+1);
   if (p != NULL && p->real_pc(this) <= end) {
-    return new ScopeDesc(this, p->scope_decode_offset(),
-                         p->obj_decode_offset(), p->should_reexecute(), p->rethrow_exception(),
-                         p->return_oop());
+    return new ScopeDesc(this, p);
   }
   return NULL;
 }
