@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 5045306 6356004 6993490
+ * @bug 5045306 6356004 6993490 8255124
  * @modules java.base/sun.net.www
  *          java.management
  * @library ../../httptest/
