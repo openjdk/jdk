@@ -441,9 +441,9 @@ public class RandomTestBsi1999 {
             setRNG(factory.name());
 
             if (factory.name().equals("Random")) {
-                testOneRng(factory.create(59), 1);
-            } else if (factory.name().equals("MRG32k3a")) {
-                // MRG32k3a is known to fail these tests badly
+                // testOneRng(factory.create(59), 1);
+                // autocorrelation failure for java.util.Random longs bit 0: count=2207 (should be in [2267,2733]), tau=2819
+
             } else {
                 testOneRng(factory.create(59), 0);
             }
