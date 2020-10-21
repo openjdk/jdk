@@ -83,7 +83,7 @@ class vframe;
 class javaVFrame;
 
 class DeoptResourceMark;
-class jvmtiDeferredLocalVariableSet;
+class JvmtiDeferredUpdates;
 
 class ThreadClosure;
 class ICRefillVerifier;
@@ -303,7 +303,8 @@ class Thread: public ThreadShadow {
     _has_async_exception    = 0x00000001U, // there is a pending async exception
     _critical_native_unlock = 0x00000002U, // Must call back to unlock JNI critical lock
 
-    _trace_flag             = 0x00000004U  // call tracing backend
+    _trace_flag             = 0x00000004U, // call tracing backend
+    _obj_deopt              = 0x00000008U  // suspend for object reallocation and relocking for JVMTI agent
   };
 
   // various suspension related flags - atomically updated
@@ -550,6 +551,9 @@ class Thread: public ThreadShadow {
   inline void set_trace_flag();
   inline void clear_trace_flag();
 
+  inline void set_obj_deopt_flag();
+  inline void clear_obj_deopt_flag();
+
   // Support for Unhandled Oop detection
   // Add the field for both, fastdebug and debug, builds to keep
   // Thread's fields layout the same.
@@ -623,6 +627,8 @@ class Thread: public ThreadShadow {
   JFR_ONLY(DEFINE_THREAD_LOCAL_ACCESSOR_JFR;)
 
   bool is_trace_suspend()               { return (_suspend_flags & _trace_flag) != 0; }
+
+  bool is_obj_deopt_suspend()           { return (_suspend_flags & _obj_deopt) != 0; }
 
   // For tracking the heavyweight monitor the thread is pending on.
   ObjectMonitor* current_pending_monitor() {
@@ -1059,11 +1065,10 @@ class JavaThread: public Thread {
   CompiledMethod*       _deopt_nmethod;         // CompiledMethod that is currently being deoptimized
   vframeArray*  _vframe_array_head;              // Holds the heap of the active vframeArrays
   vframeArray*  _vframe_array_last;              // Holds last vFrameArray we popped
-  // Because deoptimization is lazy we must save jvmti requests to set locals
-  // in compiled frames until we deoptimize and we have an interpreter frame.
-  // This holds the pointer to array (yeah like there might be more than one) of
-  // description of compiled vframes that have locals that need to be updated.
-  GrowableArray<jvmtiDeferredLocalVariableSet*>* _deferred_locals_updates;
+  // Holds updates by JVMTI agents for compiled frames that cannot be performed immediately. They
+  // will be carried out as soon as possible which, in most cases, is just before deoptimization of
+  // the frame, when control returns to it.
+  JvmtiDeferredUpdates* _jvmti_deferred_updates;
 
   // Handshake value for fixing 6243940. We need a place for the i2c
   // adapter to store the callee Method*. This value is NEVER live
@@ -1356,6 +1361,10 @@ class JavaThread: public Thread {
   void java_resume();  // higher-level resume logic called by the public APIs
   int  java_suspend_self(); // low-level self-suspension mechanics
 
+  // Synchronize with another thread that is deoptimizing objects of the
+  // current thread, i.e. reverts optimizations based on escape analysis.
+  void wait_for_object_deoptimization();
+
  private:
   // mid-level wrapper around java_suspend_self to set up correct state and
   // check for a pending safepoint at the end
@@ -1415,7 +1424,7 @@ class JavaThread: public Thread {
   // Whenever a thread transitions from native to vm/java it must suspend
   // if external|deopt suspend is present.
   bool is_suspend_after_native() const {
-    return (_suspend_flags & (_external_suspend JFR_ONLY(| _trace_flag))) != 0;
+    return (_suspend_flags & (_external_suspend | _obj_deopt JFR_ONLY(| _trace_flag))) != 0;
   }
 
   // external suspend request is completed
@@ -1488,7 +1497,7 @@ class JavaThread: public Thread {
     // we have checked is_external_suspend(), we will recheck its value
     // under SR_lock in java_suspend_self().
     return (_special_runtime_exit_condition != _no_async_condition) ||
-            is_external_suspend() || is_trace_suspend();
+            is_external_suspend() || is_trace_suspend() || is_obj_deopt_suspend();
   }
 
   void set_pending_unsafe_access_error()          { _special_runtime_exit_condition = _async_unsafe_access_error; }
@@ -1505,8 +1514,8 @@ class JavaThread: public Thread {
   vframeArray* vframe_array_head() const         { return _vframe_array_head;  }
 
   // Side structure for deferring update of java frame locals until deopt occurs
-  GrowableArray<jvmtiDeferredLocalVariableSet*>* deferred_locals() const { return _deferred_locals_updates; }
-  void set_deferred_locals(GrowableArray<jvmtiDeferredLocalVariableSet *>* vf) { _deferred_locals_updates = vf; }
+  JvmtiDeferredUpdates* deferred_updates() const      { return _jvmti_deferred_updates; }
+  void set_deferred_updates(JvmtiDeferredUpdates* du) { _jvmti_deferred_updates = du; }
 
   // These only really exist to make debugging deopt problems simpler
 

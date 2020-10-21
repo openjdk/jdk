@@ -305,6 +305,9 @@ public abstract class SelectorProvider {
      * returned. Subsequent invocations of this method return the same
      * channel. </p>
      *
+     * @implSpec The default implementation of this method returns
+     * {@code null}.
+     *
      * @return  The inherited channel, if any, otherwise {@code null}.
      *
      * @throws  IOException
