@@ -184,9 +184,9 @@ static address generate_upcall_stub(jobject rec, const ABIDescriptor& abi,
   return blob->code_begin();
 }
 
-jlong ProgrammableUpcallHandler::generate_upcall_stub(JNIEnv *env, jobject rec, jobject jabi, jobject jlayout) {
-  const ABIDescriptor abi = parseABIDescriptor(env, jabi);
-  const BufferLayout layout = parseBufferLayout(env, jlayout);
+jlong ProgrammableUpcallHandler::generate_upcall_stub(jobject rec, jobject jabi, jobject jlayout) {
+  const ABIDescriptor abi = ForeignGlobals::parseABIDescriptor(jabi);
+  const BufferLayout layout = ForeignGlobals::parseBufferLayout(jlayout);
 
   return (jlong) ::generate_upcall_stub(rec, abi, layout);
 }

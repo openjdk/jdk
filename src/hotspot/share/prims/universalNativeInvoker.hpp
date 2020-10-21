@@ -30,7 +30,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/macros.hpp"
-#include CPU_HEADER(foreign_globals)
+#include "prims/foreign_globals.hpp"
 
 #ifdef ZERO
 # include "entry_zero.hpp"
@@ -45,7 +45,7 @@ typedef void (*ProgrammableStub)(address);
 class ProgrammableInvoker: AllStatic {
 public:
   static void invoke_native(ProgrammableStub stub, address buff, JavaThread* thread);
-  static jlong generate_adapter(JNIEnv* env, jobject abi, jobject layout);
+  static jlong generate_adapter(jobject abi, jobject layout);
 };
 
 #endif // SHARE_VM_PRIMS_UNIVERSALNATIVEINVOKER_HPP

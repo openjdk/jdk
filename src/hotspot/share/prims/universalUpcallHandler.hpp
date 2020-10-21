@@ -30,11 +30,11 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/macros.hpp"
-#include CPU_HEADER(foreign_globals)
+#include "prims/foreign_globals.hpp"
 
 class ProgrammableUpcallHandler : AllStatic {
 public:
-  static jlong generate_upcall_stub(JNIEnv *env, jobject rec, jobject abi, jobject buffer_layout);
+  static jlong generate_upcall_stub(jobject rec, jobject abi, jobject buffer_layout);
 };
 
 #endif // SHARE_VM_PRIMS_UNIVERSALUPCALLHANDLER_HPP

@@ -149,10 +149,9 @@ public:
   }
 };
 
-jlong ProgrammableInvoker::generate_adapter(JNIEnv* env, jobject jabi, jobject jlayout) {
-  ResourceMark rm;
-  const ABIDescriptor abi = parseABIDescriptor(env, jabi);
-  const BufferLayout layout = parseBufferLayout(env, jlayout);
+jlong ProgrammableInvoker::generate_adapter(jobject jabi, jobject jlayout) {
+  const ABIDescriptor abi = ForeignGlobals::parseABIDescriptor(jabi);
+  const BufferLayout layout = ForeignGlobals::parseBufferLayout(jlayout);
 
   BufferBlob* _invoke_native_blob = BufferBlob::create("invoke_native_blob", native_invoker_size);
 

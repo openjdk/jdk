@@ -54,14 +54,9 @@ static JNINativeMethod UH_methods[] = {
 /**
  * This one function is exported, used by NativeLookup.
  */
-JVM_ENTRY(void, JVM_RegisterUpcallHandlerMethods(JNIEnv *env, jclass UH_class)) {
-  {
-    ThreadToNativeFromVM ttnfv(thread);
-
-    int status = env->RegisterNatives(UH_class, UH_methods, sizeof(UH_methods)/sizeof(JNINativeMethod));
-    guarantee(status == JNI_OK && !env->ExceptionOccurred(),
-              "register jdk.internal.foreign.abi.UpcallStubs natives");
-  }
-}
+JVM_LEAF(void, JVM_RegisterUpcallHandlerMethods(JNIEnv *env, jclass UH_class))
+  int status = env->RegisterNatives(UH_class, UH_methods, sizeof(UH_methods)/sizeof(JNINativeMethod));
+  guarantee(status == JNI_OK && !env->ExceptionOccurred(),
+            "register jdk.internal.foreign.abi.UpcallStubs natives");
 JVM_END
 

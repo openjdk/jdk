@@ -22,8 +22,10 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/macroAssembler.hpp"
-#include CPU_HEADER(foreign_globals)
+#include "runtime/jniHandles.hpp"
+#include "runtime/jniHandles.inline.hpp"
+#include "prims/foreign_globals.hpp"
+#include "prims/foreign_globals.inline.hpp"
 
 bool ABIDescriptor::is_volatile_reg(Register reg) const {
     return _integer_argument_registers.contains(reg)
@@ -35,86 +37,52 @@ bool ABIDescriptor::is_volatile_reg(XMMRegister reg) const {
         || _vector_additional_volatile_registers.contains(reg);
 }
 
-#define FOREIGN_ABI "jdk/internal/foreign/abi/"
-
 #define INTEGER_TYPE 0
 #define VECTOR_TYPE 1
 #define X87_TYPE 2
-#define STACK_TYPE 3
 
-template<typename T, typename Func>
-void loadArray(JNIEnv* env, jfieldID indexField, jobjectArray jarray, jint type_index, GrowableArray<T>& array, Func converter) {
-    jobjectArray subarray = (jobjectArray) env->GetObjectArrayElement(jarray, type_index);
-    jint subarray_length = env->GetArrayLength(subarray);
-    for (jint i = 0; i < subarray_length; i++) {
-        jobject storage = env->GetObjectArrayElement(subarray, i);
-        jint index = env->GetIntField(storage, indexField);
-        array.push(converter(index));
-    }
+const ABIDescriptor ForeignGlobals::parseABIDescriptor_impl(jobject jabi) const {
+  oop abi_oop = JNIHandles::resolve_non_null(jabi);
+  ABIDescriptor abi;
+
+  objArrayOop inputStorage = cast<objArrayOop>(abi_oop->obj_field(ABI.inputStorage_offset));
+  loadArray(inputStorage, INTEGER_TYPE, abi._integer_argument_registers, as_Register);
+  loadArray(inputStorage, VECTOR_TYPE, abi._vector_argument_registers, as_XMMRegister);
+
+  objArrayOop outputStorage = cast<objArrayOop>(abi_oop->obj_field(ABI.outputStorage_offset));
+  loadArray(outputStorage, INTEGER_TYPE, abi._integer_return_registers, as_Register);
+  loadArray(outputStorage, VECTOR_TYPE, abi._vector_return_registers, as_XMMRegister);
+  objArrayOop subarray = cast<objArrayOop>(outputStorage->obj_at(X87_TYPE));
+  abi._X87_return_registers_noof = subarray->length();
+
+  objArrayOop volatileStorage = cast<objArrayOop>(abi_oop->obj_field(ABI.volatileStorage_offset));
+  loadArray(volatileStorage, INTEGER_TYPE, abi._integer_additional_volatile_registers, as_Register);
+  loadArray(volatileStorage, VECTOR_TYPE, abi._vector_additional_volatile_registers, as_XMMRegister);
+
+  abi._stack_alignment_bytes = abi_oop->int_field(ABI.stackAlignment_offset);
+  abi._shadow_space_bytes = abi_oop->int_field(ABI.shadowSpace_offset);
+
+  return abi;
 }
 
-const ABIDescriptor parseABIDescriptor(JNIEnv* env, jobject jabi) {
-    jclass jc_ABIDescriptor = env->FindClass(FOREIGN_ABI "ABIDescriptor");
-    jfieldID jfID_inputStorage = env->GetFieldID(jc_ABIDescriptor, "inputStorage", "[[L" FOREIGN_ABI "VMStorage;");
-    jfieldID jfID_outputStorage = env->GetFieldID(jc_ABIDescriptor, "outputStorage", "[[L" FOREIGN_ABI "VMStorage;");
-    jfieldID jfID_volatileStorage = env->GetFieldID(jc_ABIDescriptor, "volatileStorage", "[[L" FOREIGN_ABI "VMStorage;");
-    jfieldID jfID_stackAlignment = env->GetFieldID(jc_ABIDescriptor, "stackAlignment", "I");
-    jfieldID jfID_shadowSpace = env->GetFieldID(jc_ABIDescriptor, "shadowSpace", "I");
+const BufferLayout ForeignGlobals::parseBufferLayout_impl(jobject jlayout) const {
+  oop layout_oop = JNIHandles::resolve_non_null(jlayout);
+  BufferLayout layout;
 
-    jclass jc_VMStorage = env->FindClass(FOREIGN_ABI "VMStorage");
-    jfieldID jfID_storageIndex = env->GetFieldID(jc_VMStorage, "index", "I");
+  layout.stack_args_bytes = layout_oop->long_field(BL.stack_args_bytes_offset);
+  layout.stack_args = layout_oop->long_field(BL.stack_args_offset);
+  layout.arguments_next_pc = layout_oop->long_field(BL.arguments_next_pc_offset);
 
-    ABIDescriptor abi;
+  typeArrayOop input_offsets = cast<typeArrayOop>(layout_oop->obj_field(BL.input_type_offsets_offset));
+  layout.arguments_integer = (size_t) input_offsets->long_at(INTEGER_TYPE);
+  layout.arguments_vector = (size_t) input_offsets->long_at(VECTOR_TYPE);
 
-    jobjectArray inputStorage = (jobjectArray) env->GetObjectField(jabi, jfID_inputStorage);
-    loadArray(env, jfID_storageIndex, inputStorage, INTEGER_TYPE, abi._integer_argument_registers, as_Register);
-    loadArray(env, jfID_storageIndex, inputStorage, VECTOR_TYPE, abi._vector_argument_registers, as_XMMRegister);
+  typeArrayOop output_offsets = cast<typeArrayOop>(layout_oop->obj_field(BL.output_type_offsets_offset));
+  layout.returns_integer = (size_t) output_offsets->long_at(INTEGER_TYPE);
+  layout.returns_vector = (size_t) output_offsets->long_at(VECTOR_TYPE);
+  layout.returns_x87 = (size_t) output_offsets->long_at(X87_TYPE);
 
-    jobjectArray outputStorage = (jobjectArray) env->GetObjectField(jabi, jfID_outputStorage);
-    loadArray(env, jfID_storageIndex, outputStorage, INTEGER_TYPE, abi._integer_return_registers, as_Register);
-    loadArray(env, jfID_storageIndex, outputStorage, VECTOR_TYPE, abi._vector_return_registers, as_XMMRegister);
-    jobjectArray subarray = (jobjectArray) env->GetObjectArrayElement(outputStorage, X87_TYPE);
-    abi._X87_return_registers_noof = env->GetArrayLength(subarray);
+  layout.buffer_size = layout_oop->long_field(BL.size_offset);
 
-    jobjectArray volatileStorage = (jobjectArray) env->GetObjectField(jabi, jfID_volatileStorage);
-    loadArray(env, jfID_storageIndex, volatileStorage, INTEGER_TYPE, abi._integer_additional_volatile_registers, as_Register);
-    loadArray(env, jfID_storageIndex, volatileStorage, VECTOR_TYPE, abi._vector_additional_volatile_registers, as_XMMRegister);
-
-    abi._stack_alignment_bytes = env->GetIntField(jabi, jfID_stackAlignment);
-    abi._shadow_space_bytes = env->GetIntField(jabi, jfID_shadowSpace);
-
-    return abi;
-}
-
-const BufferLayout parseBufferLayout(JNIEnv* env, jobject jlayout) {
-    jclass jc_BufferLayout = env->FindClass(FOREIGN_ABI "BufferLayout");
-    jfieldID jfID_size = env->GetFieldID(jc_BufferLayout, "size", "J");
-    jfieldID jfID_arguments_next_pc = env->GetFieldID(jc_BufferLayout, "arguments_next_pc", "J");
-    jfieldID jfID_stack_args_bytes = env->GetFieldID(jc_BufferLayout, "stack_args_bytes", "J");
-    jfieldID jfID_stack_args = env->GetFieldID(jc_BufferLayout, "stack_args", "J");
-    jfieldID jfID_input_type_offsets = env->GetFieldID(jc_BufferLayout, "input_type_offsets", "[J");
-    jfieldID jfID_output_type_offsets = env->GetFieldID(jc_BufferLayout, "output_type_offsets", "[J");
-
-    BufferLayout layout;
-
-    layout.stack_args_bytes = env->GetLongField(jlayout, jfID_stack_args_bytes);
-    layout.stack_args = env->GetLongField(jlayout, jfID_stack_args);
-    layout.arguments_next_pc = env->GetLongField(jlayout, jfID_arguments_next_pc);
-
-    jlongArray input_offsets = (jlongArray) env->GetObjectField(jlayout, jfID_input_type_offsets);
-    jlong* input_offsets_prim = env->GetLongArrayElements(input_offsets, NULL);
-    layout.arguments_integer = (size_t) input_offsets_prim[INTEGER_TYPE];
-    layout.arguments_vector = (size_t) input_offsets_prim[VECTOR_TYPE];
-    env->ReleaseLongArrayElements(input_offsets, input_offsets_prim, JNI_ABORT);
-
-    jlongArray output_offsets = (jlongArray) env->GetObjectField(jlayout, jfID_output_type_offsets);
-    jlong* output_offsets_prim = env->GetLongArrayElements(output_offsets, NULL);
-    layout.returns_integer = (size_t) output_offsets_prim[INTEGER_TYPE];
-    layout.returns_vector = (size_t) output_offsets_prim[VECTOR_TYPE];
-    layout.returns_x87 = (size_t) output_offsets_prim[X87_TYPE];
-    env->ReleaseLongArrayElements(output_offsets, output_offsets_prim, JNI_ABORT);
-
-    layout.buffer_size = env->GetLongField(jlayout, jfID_size);
-
-    return layout;
+  return layout;
 }

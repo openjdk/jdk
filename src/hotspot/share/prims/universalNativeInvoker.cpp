@@ -40,38 +40,28 @@ void ProgrammableInvoker::invoke_native(ProgrammableStub stub, address buff, Jav
   assert(thread->thread_state() == _thread_in_vm, "thread state is: %d", thread->thread_state());
 }
 
-JVM_ENTRY(void, PI_invokeNative(JNIEnv* env, jclass _unused, jlong adapter_stub, jlong buff)) {
+JVM_ENTRY(void, PI_invokeNative(JNIEnv* env, jclass _unused, jlong adapter_stub, jlong buff))
   assert(thread->thread_state() == _thread_in_vm, "thread state is: %d", thread->thread_state());
   ProgrammableStub stub = (ProgrammableStub) adapter_stub;
   address c = (address) buff;
   ProgrammableInvoker::invoke_native(stub, c, thread);
-}
 JVM_END
 
-JVM_ENTRY(jlong, PI_generateAdapter(JNIEnv* env, jclass _unused, jobject abi, jobject layout)) {
-  ThreadToNativeFromVM ttnfvm(thread);
-  return ProgrammableInvoker::generate_adapter(env, abi, layout);
-}
+JVM_ENTRY(jlong, PI_generateAdapter(JNIEnv* env, jclass _unused, jobject abi, jobject layout))
+  return ProgrammableInvoker::generate_adapter(abi, layout);
 JVM_END
 
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &f)
-#define LANG "Ljava/lang/"
-
 #define FOREIGN_ABI "Ljdk/internal/foreign/abi"
 
 static JNINativeMethod PI_methods[] = {
-  {CC "invokeNative",          CC "(JJ)V",           FN_PTR(PI_invokeNative)},
-  {CC "generateAdapter",       CC "(" FOREIGN_ABI "/ABIDescriptor;" FOREIGN_ABI "/BufferLayout;" ")J",           FN_PTR(PI_generateAdapter)}
+  {CC "invokeNative",    CC "(JJ)V",                                                             FN_PTR(PI_invokeNative)   },
+  {CC "generateAdapter", CC "(" FOREIGN_ABI "/ABIDescriptor;" FOREIGN_ABI "/BufferLayout;" ")J", FN_PTR(PI_generateAdapter)}
 };
 
-JVM_ENTRY(void, JVM_RegisterProgrammableInvokerMethods(JNIEnv *env, jclass PI_class)) {
-  {
-    ThreadToNativeFromVM ttnfv(thread);
-
-    int status = env->RegisterNatives(PI_class, PI_methods, sizeof(PI_methods)/sizeof(JNINativeMethod));
-    guarantee(status == JNI_OK && !env->ExceptionOccurred(),
-              "register jdk.internal.foreign.abi.programmable.ProgrammableInvoker natives");
-  }
-}
+JVM_LEAF(void, JVM_RegisterProgrammableInvokerMethods(JNIEnv *env, jclass PI_class))
+  int status = env->RegisterNatives(PI_class, PI_methods, sizeof(PI_methods)/sizeof(JNINativeMethod));
+  guarantee(status == JNI_OK && !env->ExceptionOccurred(),
+            "register jdk.internal.foreign.abi.programmable.ProgrammableInvoker natives");
 JVM_END

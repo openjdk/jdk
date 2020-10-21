@@ -21,11 +21,11 @@
  * questions.
  */
 
-#include "asm/macroAssembler.hpp"
-#include "utilities/growableArray.hpp"
-
 #ifndef CPU_X86_VM_FOREIGN_GLOBALS_X86_HPP
 #define CPU_X86_VM_FOREIGN_GLOBALS_X86_HPP
+
+#include "asm/macroAssembler.hpp"
+#include "utilities/growableArray.hpp"
 
 #define __ _masm->
 
@@ -72,8 +72,5 @@ struct BufferLayout {
   size_t returns_x87;
   size_t buffer_size;
 };
-
-const ABIDescriptor parseABIDescriptor(JNIEnv* env, jobject jabi);
-const BufferLayout parseBufferLayout(JNIEnv* env, jobject jlayout);
 
 #endif // CPU_X86_VM_FOREIGN_GLOBALS_X86_HPP
