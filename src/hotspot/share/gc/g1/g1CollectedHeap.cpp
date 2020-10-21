@@ -2260,28 +2260,13 @@ bool G1CollectedHeap::try_collect(GCCause::Cause cause) {
 }
 
 bool G1CollectedHeap::is_in(const void* p) const {
-  if (_hrm->reserved().contains(p)) {
-    // Given that we know that p is in the reserved space,
-    // heap_region_containing() should successfully
-    // return the containing region.
-    HeapRegion* hr = heap_region_containing(p);
-    return hr->is_in(p);
-  } else {
-    return false;
-  }
-}
-
-#ifdef ASSERT
-bool G1CollectedHeap::is_in_exact(const void* p) const {
-  bool contains = reserved().contains(p);
-  bool available = _hrm->is_available(addr_to_region((HeapWord*)p));
-  if (contains && available) {
+  if (is_in_reserved(p) &&
+    _hrm->is_available(addr_to_region((HeapWord*)p))) {
     return true;
   } else {
     return false;
   }
 }
-#endif
 
 // Iteration functions.
 
