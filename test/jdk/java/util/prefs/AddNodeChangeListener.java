@@ -62,7 +62,9 @@ public class AddNodeChangeListener {
         int passItr = -1;
 
         for (int i = 0; i < SLEEP_ITRS; i++) {
+            System.out.print("addNode sleep iteration " + i + "...");
             Thread.sleep(3000);
+            System.out.println("done.");
             if (ncla.getAddNumber() == 1) {
                 passItr = i;
                 break;
@@ -78,7 +80,9 @@ public class AddNodeChangeListener {
         int passItr = -1;
 
         for (int i = 0; i < SLEEP_ITRS; i++) {
+            System.out.print("removeNode sleep iteration " + i + "...");
             Thread.sleep(3000);
+            System.out.println("done.");
             if (ncla.getAddNumber() == 0) {
                 passItr = i;
                 break;
