@@ -791,7 +791,7 @@ public:
     return ((_class_id & ClassMask_##type) == Class_##type); \
   }                                                          \
   type##Node *as_##type() const {                            \
-    assert(is_##type(), "invalid node class");               \
+    assert(is_##type(), "invalid node class: %s", Name()); \
     return (type##Node*)this;                                \
   }                                                          \
   type##Node* isa_##type() const {                           \

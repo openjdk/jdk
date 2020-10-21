@@ -3486,34 +3486,39 @@ void IdealLoopTree::dump() const {
 
 #endif
 
-static void log_loop_tree(IdealLoopTree* root, IdealLoopTree* loop, CompileLog* log) {
+static void log_loop_tree_helper(IdealLoopTree* root, IdealLoopTree* loop, CompileLog* log) {
   if (loop == root) {
     if (loop->_child != NULL) {
       log->begin_head("loop_tree");
       log->end_head();
-      if( loop->_child ) log_loop_tree(root, loop->_child, log);
+      log_loop_tree_helper(root, loop->_child, log);
       log->tail("loop_tree");
       assert(loop->_next == NULL, "what?");
     }
-  } else {
+  } else if (loop != NULL) {
     Node* head = loop->_head;
     log->begin_head("loop");
     log->print(" idx='%d' ", head->_idx);
     if (loop->_irreducible) log->print("irreducible='1' ");
     if (head->is_Loop()) {
-      if (head->as_Loop()->is_inner_loop()) log->print("inner_loop='1' ");
+      if (head->as_Loop()->is_inner_loop())        log->print("inner_loop='1' ");
       if (head->as_Loop()->is_partial_peel_loop()) log->print("partial_peel_loop='1' ");
-    }
-    if (head->is_CountedLoop()) {
+    } else if (head->is_CountedLoop()) {
       CountedLoopNode* cl = head->as_CountedLoop();
       if (cl->is_pre_loop())  log->print("pre_loop='%d' ",  cl->main_idx());
       if (cl->is_main_loop()) log->print("main_loop='%d' ", cl->_idx);
-      if (cl->is_post_loop()) log->print("post_loop='%d' ",  cl->main_idx());
+      if (cl->is_post_loop()) log->print("post_loop='%d' ", cl->main_idx());
     }
     log->end_head();
-    if( loop->_child ) log_loop_tree(root, loop->_child, log);
+    log_loop_tree_helper(root, loop->_child, log);
     log->tail("loop");
-    if( loop->_next  ) log_loop_tree(root, loop->_next, log);
+    log_loop_tree_helper(root, loop->_next, log);
+  }
+}
+
+void PhaseIdealLoop::log_loop_tree() {
+  if (C->log() != NULL) {
+    log_loop_tree_helper(_ltree_root, _ltree_root, C->log());
   }
 }
 
@@ -3776,7 +3781,6 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
   bool do_expensive_nodes = C->should_optimize_expensive_nodes(_igvn);
   bool strip_mined_loops_expanded = bs->strip_mined_loops_expanded(mode);
   if (stop_early && !do_expensive_nodes) {
-    _igvn.optimize();           // Cleanup NeverBranches
     return;
   }
 
@@ -3886,7 +3890,6 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
       // nodes again.
       C->set_major_progress();
     }
-    _igvn.optimize();
     return;
   }
 
@@ -3909,15 +3912,7 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
 #endif
 
   if (skip_loop_opts) {
-    // restore major progress flag
     C->restore_major_progress(old_progress);
-
-    // Cleanup any modified bits
-    _igvn.optimize();
-
-    if (C->log() != NULL) {
-      log_loop_tree(_ltree_root, _ltree_root, C->log());
-    }
     return;
   }
 
@@ -3939,20 +3934,10 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
     }
 
     C->restore_major_progress(old_progress);
-
-    _igvn.optimize();
-
-    if (C->log() != NULL) {
-      log_loop_tree(_ltree_root, _ltree_root, C->log());
-    }
     return;
   }
 
   if (bs->optimize_loops(this, mode, visited, nstack, worklist)) {
-    _igvn.optimize();
-    if (C->log() != NULL) {
-      log_loop_tree(_ltree_root, _ltree_root, C->log());
-    }
     return;
   }
 
@@ -4091,16 +4076,9 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
     }
   }
 
-  // Cleanup any modified bits
-  _igvn.optimize();
-
   // disable assert until issue with split_flow_path is resolved (6742111)
   // assert(!_has_irreducible_loops || C->parsed_irreducible_loop() || C->is_osr_compilation(),
   //        "shouldn't introduce irreducible loops");
-
-  if (C->log() != NULL) {
-    log_loop_tree(_ltree_root, _ltree_root, C->log());
-  }
 }
 
 #ifndef PRODUCT
