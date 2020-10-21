@@ -46,9 +46,10 @@ import java.text.AttributedString;
 
 public class bug8023392 extends Applet {
     static final String[] instructions = {
+        "Please select variable radiobutton in applet.",
         "A Frame containing several pairs of labels ((a) and (b)) is displayed.",
-        "Labels of each pair look the same and are left-aligned (with spaces ",
-        "between chars).",
+        "Labels of each pair look the same with spaces ",
+        "between chars.",
         "1. Hit the print button.",
         "2. Select any available printer (printing to file is also fine).",
         "3. Look at the printing result (paper, PDF, PS, etc.):",
@@ -72,9 +73,9 @@ public class bug8023392 extends Applet {
 
         public SimplePrint2() {
             setLayout(new BorderLayout());
-            label1 = new JLabel("2a) a b c d e" +
+            label1 = new JLabel("  2a) a b c d e" +
                     "                         ");
-            label2 = new JLabel("2b) a b c d e");
+            label2 = new JLabel("  2b) a b c d e");
 
             Box p1 = new Box(BoxLayout.Y_AXIS);
             p1.add(label1);
@@ -84,7 +85,7 @@ public class bug8023392 extends Applet {
                 @Override
                 protected void paintComponent(Graphics g) {
                     sun.swing.SwingUtilities2.drawChars(this, g, s.toCharArray(),
-                            0, s.length(), 0, 15);
+                            0, s.length(), 20, 15);
                 }
             });
             p1.add(new JLabel("wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww") {
@@ -92,7 +93,7 @@ public class bug8023392 extends Applet {
                 @Override
                 protected void paintComponent(Graphics g) {
                     sun.swing.SwingUtilities2.drawChars(this, g, s.toCharArray(),
-                            0, s.length(), 0, 15);
+                            0, s.length(), 20, 15);
                 }
             });
             p1.add(new JLabel("wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww") {
@@ -106,7 +107,7 @@ public class bug8023392 extends Applet {
                 }
                 @Override
                 protected void paintComponent(Graphics g) {
-                    sun.swing.SwingUtilities2.drawString(this, g, it, 0, 15);
+                    sun.swing.SwingUtilities2.drawString(this, g, it, 20, 15);
                 }
             });
 
@@ -121,7 +122,7 @@ public class bug8023392 extends Applet {
                 }
                 @Override
                 protected void paintComponent(Graphics g) {
-                    sun.swing.SwingUtilities2.drawString(this, g, it, 0, 15);
+                    sun.swing.SwingUtilities2.drawString(this, g, it, 20, 15);
                 }
             });
 
@@ -132,18 +133,18 @@ public class bug8023392 extends Applet {
 
             Container c = this;
             c.add(p1, BorderLayout.CENTER);
-            c.add(p2, BorderLayout.SOUTH);
+            c.add(p2, BorderLayout.NORTH);
 
             String[] data = {
-                    "1a) \u30aa\u30f3\u30e9\u30a4\u30f3\u6d88\u8fbc" +
+                    "   1a) \u30aa\u30f3\u30e9\u30a4\u30f3\u6d88\u8fbc" +
                     "                                              ",
-                    "1b) \u30aa\u30f3\u30e9\u30a4\u30f3\u6d88\u8fbc"
+                    "   1b) \u30aa\u30f3\u30e9\u30a4\u30f3\u6d88\u8fbc"
             };
             JList l0 = new JList(data);
             l0.setVisibleRowCount(l0.getModel().getSize());
             JScrollPane jsp = new JScrollPane(l0);
             l0.setBorder(new LineBorder(Color.GRAY));
-            c.add(jsp, BorderLayout.NORTH);
+            c.add(jsp, BorderLayout.SOUTH);
 
             for (Component comp : new Component[]{label1, label2, printButton}) {
                 comp.setFont(new Font("Monospaced", 0, 16));
