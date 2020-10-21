@@ -258,10 +258,26 @@ static inline bool long_ranges_overlap(jlong lo1, jlong hi1,
   // Two ranges overlap iff one range's low point falls in the other range.
   return (lo2 <= lo1 && lo1 <= hi2) || (lo1 <= lo2 && lo2 <= hi1);
 }
+
+// If the given node has a ConvI2LNode user of the given type, return it.
+// Otherwise, create and return a new one, postponing its optimization to avoid
+// an explosion of recursive Ideal() calls when compiling long AddI chains.
+static Node* find_or_make_convI2L(PhaseIterGVN* igvn, Node* value,
+                                  const TypeLong* ltype) {
+  for (DUIterator_Fast imax, i = value->fast_outs(imax); i < imax; i++) {
+    Node* n = value->fast_out(i);
+    if (n->Opcode() == Op_ConvI2L &&
+        static_cast<TypeNode*>(n)->type()->is_long()->eq(ltype)) {
+      return n;
+    }
+  }
+  return igvn->register_new_node_with_optimizer(new ConvI2LNode(value, ltype));
+}
 #endif
 
 //------------------------------Ideal------------------------------------------
 Node *ConvI2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  PhaseIterGVN *igvn = phase->is_IterGVN();
   const TypeLong* this_type = this->type()->is_long();
   Node* this_changed = NULL;
 
@@ -269,7 +285,7 @@ Node *ConvI2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // remove this node's type assertion until no more loop ops can happen.
   // The progress bit is set in the major loop optimizations THEN comes the
   // call to IterGVN and any chance of hitting this code.  Cf. Opaque1Node.
-  if (can_reshape && !phase->C->major_progress()) {
+  if (igvn != NULL && !phase->C->major_progress()) {
     const TypeInt* in_type = phase->type(in(1))->isa_int();
     if (in_type != NULL && this_type != NULL &&
         (in_type->_lo != this_type->_lo ||
@@ -334,20 +350,15 @@ Node *ConvI2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* z = in(1);
   int op = z->Opcode();
   if (op == Op_AddI || op == Op_SubI) {
-    if (!can_reshape) {
-      // Postpone this optimization to after parsing because with deep AddNode
-      // chains a large amount of dead ConvI2L nodes might be created that are
-      // not removed during parsing. As a result, we might hit the node limit.
+    if (igvn == NULL) {
+      // Postpone this optimization to iterative GVN, where we can handle deep
+      // AddI chains without an exponential number of recursive Ideal() calls.
       phase->record_for_igvn(this);
       return this_changed;
     }
     Node* x = z->in(1);
     Node* y = z->in(2);
     assert (x != z && y != z, "dead loop in ConvI2LNode::Ideal");
-    if (op == Op_SubI && x == y) {
-      // SubI(x, x) should be simplified to zero during parsing.
-      return this_changed;
-    }
     if (phase->type(x) == Type::TOP)  return this_changed;
     if (phase->type(y) == Type::TOP)  return this_changed;
     const TypeInt*  tx = phase->type(x)->is_int();
@@ -403,20 +414,8 @@ Node *ConvI2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
     assert(rxlo == (int)rxlo && rxhi == (int)rxhi, "x should not overflow");
     assert(rylo == (int)rylo && ryhi == (int)ryhi, "y should not overflow");
-    Node* cx = phase->C->constrained_convI2L(phase, x, TypeInt::make(rxlo, rxhi, widen), NULL);
-    Node* cy;
-    if (x == y) {
-      // In the special case ConvI2L(AddI(x, x)), feed both inputs of AddL with
-      // the same node cx = cy = ConvI2L(x).
-      cy = cx;
-    } else {
-      // General case (x != y): create a different node cy = ConvI2L(y).
-      Node *hook = new Node(1);
-      hook->init_req(0, cx);  // Add a use to cx to prevent him from dying
-      cy = phase->C->constrained_convI2L(phase, y, TypeInt::make(rylo, ryhi, widen), NULL);
-      hook->del_req(0);  // Just yank bogus edge
-      hook->destruct();
-    }
+    Node* cx = find_or_make_convI2L(igvn, x, TypeLong::make(rxlo, rxhi, widen));
+    Node* cy = find_or_make_convI2L(igvn, y, TypeLong::make(rylo, ryhi, widen));
     switch (op) {
       case Op_AddI:  return new AddLNode(cx, cy);
       case Op_SubI:  return new SubLNode(cx, cy);
