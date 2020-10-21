@@ -35,6 +35,7 @@
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 
 template <bool CONCURRENT>
@@ -102,9 +103,12 @@ void ShenandoahClassLoaderDataRoots<CONCURRENT, SINGLE_THREADED>::cld_do_impl(Cl
   if (CONCURRENT) {
     if (_semaphore.try_acquire()) {
       ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CLDGRoots, worker_id);
-      if (SINGLE_THREADED) ClassLoaderDataGraph_lock->lock();
-      f(clds);
-      if (SINGLE_THREADED) ClassLoaderDataGraph_lock->unlock();
+      if (SINGLE_THREADED){
+        MutexLocker ml(ClassLoaderDataGraph_lock, Mutex::_no_safepoint_check_flag);
+        f(clds);
+      } else {
+        f(clds);
+      }
       _semaphore.claim_all();
     }
   } else {
