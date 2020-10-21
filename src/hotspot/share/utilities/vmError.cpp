@@ -144,8 +144,7 @@ static void print_bug_submit_message(outputStream *out, Thread *thread) {
   // provider of that code.
   if (thread && thread->is_Java_thread() &&
       !thread->is_hidden_from_external_view()) {
-    JavaThread* jt = (JavaThread*)thread;
-    if (jt->thread_state() == _thread_in_native) {
+    if (thread->as_Java_thread()->thread_state() == _thread_in_native) {
       out->print_cr("# The crash happened outside the Java Virtual Machine in native code.\n# See problematic frame for where to report the bug.");
     }
   }
@@ -212,7 +211,7 @@ void VMError::print_stack_trace(outputStream* st, JavaThread* jt,
     st->cr();
 
     // Print the frames
-    StackFrameStream sfs(jt);
+    StackFrameStream sfs(jt, true /* update */, true /* process_frames */);
     for(int i = 0; !sfs.is_done(); sfs.next(), i++) {
       sfs.current()->zero_print_on_error(i, st, buf, buflen);
       st->cr();
@@ -225,7 +224,7 @@ void VMError::print_stack_trace(outputStream* st, JavaThread* jt,
 #else
   if (jt->has_last_Java_frame()) {
     st->print_cr("Java frames: (J=compiled Java code, j=interpreted, Vv=VM code)");
-    for(StackFrameStream sfs(jt); !sfs.is_done(); sfs.next()) {
+    for (StackFrameStream sfs(jt, true /* update */, true /* process_frames */); !sfs.is_done(); sfs.next()) {
       sfs.current()->print_on_error(st, buf, buflen, verbose);
       st->cr();
     }
@@ -259,7 +258,7 @@ void VMError::print_native_stack(outputStream* st, frame fr, Thread* t, char* bu
           break;
         }
         if (fr.is_java_frame() || fr.is_native_frame() || fr.is_runtime_frame()) {
-          RegisterMap map((JavaThread*)t, false); // No update
+          RegisterMap map(t->as_Java_thread(), false); // No update
           fr = fr.sender(&map);
         } else {
           // is_first_C_frame() does only simple checks for frame pointer,
@@ -743,15 +742,16 @@ void VMError::report(outputStream* st, bool _verbose) {
   STEP("printing Java stack")
 
      if (_verbose && _thread && _thread->is_Java_thread()) {
-       print_stack_trace(st, (JavaThread*)_thread, buf, sizeof(buf));
+       print_stack_trace(st, _thread->as_Java_thread(), buf, sizeof(buf));
      }
 
   STEP("printing target Java thread stack")
 
      // printing Java thread stack trace if it is involved in GC crash
      if (_verbose && _thread && (_thread->is_Named_thread())) {
-       JavaThread*  jt = ((NamedThread *)_thread)->processed_thread();
-       if (jt != NULL) {
+       Thread* thread = ((NamedThread *)_thread)->processed_thread();
+       if (thread != NULL && thread->is_Java_thread()) {
+         JavaThread* jt = thread->as_Java_thread();
          st->print_cr("JavaThread " PTR_FORMAT " (nid = %d) was being processed", p2i(jt), jt->osthread()->thread_id());
          print_stack_trace(st, jt, buf, sizeof(buf), true);
        }

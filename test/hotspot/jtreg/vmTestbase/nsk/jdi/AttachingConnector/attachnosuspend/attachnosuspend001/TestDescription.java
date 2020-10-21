@@ -42,13 +42,13 @@
  *          /test/lib
  * @build nsk.jdi.AttachingConnector.attachnosuspend.attachnosuspend001
  *        nsk.jdi.AttachingConnector.attachnosuspend.attachnosuspend001t
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.AttachingConnector.attachnosuspend.attachnosuspend001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
 

@@ -36,7 +36,6 @@ class OldObjectRoot : public AllStatic {
     _threads,
     _strong_oop_storage_set_first,
     _strong_oop_storage_set_last = _strong_oop_storage_set_first + OopStorageSet::strong_count - 1,
-    _object_synchronizer,
     _class_loader_data,
     _code_cache,
     _aot,

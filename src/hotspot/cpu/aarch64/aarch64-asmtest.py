@@ -1,4 +1,7 @@
+import os
 import random
+import subprocess
+import sys
 
 AARCH64_AS = "as"
 AARCH64_OBJDUMP = "objdump"
@@ -13,6 +16,8 @@ class Register(Operand):
 
     def generate(self):
         self.number = random.randint(0, 30)
+        if self.number == 18:
+            self.number = 17
         return self
 
     def astr(self, prefix):
@@ -37,6 +42,8 @@ class GeneralRegisterOrZr(Register):
 
     def generate(self):
         self.number = random.randint(0, 31)
+        if self.number == 18:
+            self.number = 16
         return self
 
     def astr(self, prefix = ""):
@@ -54,6 +61,8 @@ class GeneralRegisterOrZr(Register):
 class GeneralRegisterOrSp(Register):
     def generate(self):
         self.number = random.randint(0, 31)
+        if self.number == 18:
+            self.number = 15
         return self
 
     def astr(self, prefix = ""):
@@ -123,6 +132,8 @@ class OperandFactory:
 
     _modes = {'x' : GeneralRegister,
               'w' : GeneralRegister,
+              'b' : FloatRegister,
+              'h' : FloatRegister,
               's' : FloatRegister,
               'd' : FloatRegister,
               'z' : FloatZero,
@@ -192,16 +203,16 @@ class InstructionWithModes(Instruction):
         self.isFloat = (mode == 'd') | (mode == 's')
         if self.isFloat:
             self.isWord = mode != 'd'
-            self.asmRegPrefix = ["d", "s"][self.isWord] 
+            self.asmRegPrefix = ["d", "s"][self.isWord]
         else:
             self.isWord = mode != 'x'
             self.asmRegPrefix = ["x", "w"][self.isWord]
-       
+
     def name(self):
         return self._name + (self.mode if self.mode != 'x' else '')
-            
+
     def aname(self):
-        return (self._name+mode if (mode == 'b' or mode == 'h') 
+        return (self._name+mode if (mode == 'b' or mode == 'h')
             else self._name)
 
 class ThreeRegInstruction(Instruction):
@@ -214,17 +225,17 @@ class ThreeRegInstruction(Instruction):
 
     def cstr(self):
         return (super(ThreeRegInstruction, self).cstr()
-                + ('%s, %s, %s' 
+                + ('%s, %s, %s'
                    % (self.reg[0],
                       self.reg[1], self.reg[2])))
-                
+
     def astr(self):
         prefix = self.asmRegPrefix
         return (super(ThreeRegInstruction, self).astr()
-                + ('%s, %s, %s' 
+                + ('%s, %s, %s'
                    % (self.reg[0].astr(prefix),
                       self.reg[1].astr(prefix), self.reg[2].astr(prefix))))
-                
+
 class FourRegInstruction(ThreeRegInstruction):
 
     def generate(self):
@@ -235,12 +246,12 @@ class FourRegInstruction(ThreeRegInstruction):
     def cstr(self):
         return (super(FourRegInstruction, self).cstr()
                 + (', %s' % self.reg[3]))
-                
+
     def astr(self):
         prefix = self.asmRegPrefix
         return (super(FourRegInstruction, self).astr()
                 + (', %s' % self.reg[3].astr(prefix)))
-                
+
 class TwoRegInstruction(Instruction):
 
     def generate(self):
@@ -255,17 +266,17 @@ class TwoRegInstruction(Instruction):
     def astr(self):
         prefix = self.asmRegPrefix
         return (super(TwoRegInstruction, self).astr()
-                + ('%s, %s' 
+                + ('%s, %s'
                    % (self.reg[0].astr(prefix),
                       self.reg[1].astr(prefix))))
-                
+
 class TwoRegImmedInstruction(TwoRegInstruction):
 
     def generate(self):
         super(TwoRegImmedInstruction, self).generate()
         self.immed = random.randint(0, 1<<11 -1)
         return self
-        
+
     def cstr(self):
         return (super(TwoRegImmedInstruction, self).cstr()
                 + ', %su' % self.immed)
@@ -295,9 +306,9 @@ class ArithOp(ThreeRegInstruction):
         self.kind = ShiftKind().generate()
         self.distance = random.randint(0, (1<<5)-1 if self.isWord else (1<<6)-1)
         return self
-        
+
     def cstr(self):
-        return ('%s, Assembler::%s, %s);' 
+        return ('%s, Assembler::%s, %s);'
                 % (ThreeRegInstruction.cstr(self),
                    self.kind.cstr(), self.distance))
 
@@ -308,9 +319,9 @@ class ArithOp(ThreeRegInstruction):
                    self.distance))
 
 class AddSubCarryOp(ThreeRegInstruction):
-    
+
     def cstr(self):
-        return ('%s);' 
+        return ('%s);'
                 % (ThreeRegInstruction.cstr(self)))
 
 class AddSubExtendedOp(ThreeRegInstruction):
@@ -326,76 +337,75 @@ class AddSubExtendedOp(ThreeRegInstruction):
 
     def cstr(self):
         return (super(AddSubExtendedOp, self).cstr()
-                + (", ext::" + AddSubExtendedOp.optNames[self.option] 
+                + (", ext::" + AddSubExtendedOp.optNames[self.option]
                    + ", " + str(self.amount) + ");"))
-                
+
     def astr(self):
         return (super(AddSubExtendedOp, self).astr()
-                + (", " + AddSubExtendedOp.optNames[self.option] 
+                + (", " + AddSubExtendedOp.optNames[self.option]
                    + " #" + str(self.amount)))
 
 class AddSubImmOp(TwoRegImmedInstruction):
 
     def cstr(self):
          return super(AddSubImmOp, self).cstr() + ");"
-    
+
 class LogicalImmOp(AddSubImmOp):
 
      # These tables are legal immediate logical operands
      immediates32 \
-         = [0x1, 0x3f, 0x1f0, 0x7e0, 
-            0x1c00, 0x3ff0, 0x8000, 0x1e000, 
-            0x3e000, 0x78000, 0xe0000, 0x100000, 
-            0x1fffe0, 0x3fe000, 0x780000, 0x7ffff8, 
-            0xff8000, 0x1800180, 0x1fffc00, 0x3c003c0, 
-            0x3ffff00, 0x7c00000, 0x7fffe00, 0xf000f00, 
-            0xfffe000, 0x18181818, 0x1ffc0000, 0x1ffffffe, 
-            0x3f003f00, 0x3fffe000, 0x60006000, 0x7f807f80, 
-            0x7ffffc00, 0x800001ff, 0x803fffff, 0x9f9f9f9f, 
-            0xc0000fff, 0xc0c0c0c0, 0xe0000000, 0xe003e003, 
-            0xe3ffffff, 0xf0000fff, 0xf0f0f0f0, 0xf80000ff, 
-            0xf83ff83f, 0xfc00007f, 0xfc1fffff, 0xfe0001ff, 
-            0xfe3fffff, 0xff003fff, 0xff800003, 0xff87ff87, 
-            0xffc00fff, 0xffe0000f, 0xffefffef, 0xfff1fff1, 
-            0xfff83fff, 0xfffc0fff, 0xfffe0fff, 0xffff3fff, 
-            0xffffc007, 0xffffe1ff, 0xfffff80f, 0xfffffe07, 
+         = [0x1, 0x3f, 0x1f0, 0x7e0,
+            0x1c00, 0x3ff0, 0x8000, 0x1e000,
+            0x3e000, 0x78000, 0xe0000, 0x100000,
+            0x1fffe0, 0x3fe000, 0x780000, 0x7ffff8,
+            0xff8000, 0x1800180, 0x1fffc00, 0x3c003c0,
+            0x3ffff00, 0x7c00000, 0x7fffe00, 0xf000f00,
+            0xfffe000, 0x18181818, 0x1ffc0000, 0x1ffffffe,
+            0x3f003f00, 0x3fffe000, 0x60006000, 0x7f807f80,
+            0x7ffffc00, 0x800001ff, 0x803fffff, 0x9f9f9f9f,
+            0xc0000fff, 0xc0c0c0c0, 0xe0000000, 0xe003e003,
+            0xe3ffffff, 0xf0000fff, 0xf0f0f0f0, 0xf80000ff,
+            0xf83ff83f, 0xfc00007f, 0xfc1fffff, 0xfe0001ff,
+            0xfe3fffff, 0xff003fff, 0xff800003, 0xff87ff87,
+            0xffc00fff, 0xffe0000f, 0xffefffef, 0xfff1fff1,
+            0xfff83fff, 0xfffc0fff, 0xfffe0fff, 0xffff3fff,
+            0xffffc007, 0xffffe1ff, 0xfffff80f, 0xfffffe07,
             0xffffffbf, 0xfffffffd]
 
      immediates \
-         = [0x1, 0x1f80, 0x3fff0, 0x3ffffc, 
-            0x3fe0000, 0x1ffc0000, 0xf8000000, 0x3ffffc000, 
-            0xffffffe00, 0x3ffffff800, 0xffffc00000, 0x3f000000000, 
-            0x7fffffff800, 0x1fe000001fe0, 0x3ffffff80000, 0xc00000000000, 
-            0x1ffc000000000, 0x3ffff0003ffff, 0x7ffffffe00000, 0xfffffffffc000, 
-            0x1ffffffffffc00, 0x3fffffffffff00, 0x7ffffffffffc00, 0xffffffffff8000, 
-            0x1ffffffff800000, 0x3fffffc03fffffc, 0x7fffc0000000000, 0xff80ff80ff80ff8, 
-            0x1c00000000000000, 0x1fffffffffff0000, 0x3fffff803fffff80, 0x7fc000007fc00000, 
-            0x8000000000000000, 0x803fffff803fffff, 0xc000007fc000007f, 0xe00000000000ffff, 
-            0xe3ffffffffffffff, 0xf007f007f007f007, 0xf80003ffffffffff, 0xfc000003fc000003, 
-            0xfe000000007fffff, 0xff00000000007fff, 0xff800000000003ff, 0xffc00000000000ff, 
-            0xffe00000000003ff, 0xfff0000000003fff, 0xfff80000001fffff, 0xfffc0000fffc0000, 
-            0xfffe003fffffffff, 0xffff3fffffffffff, 0xffffc0000007ffff, 0xffffe01fffffe01f, 
-            0xfffff800000007ff, 0xfffffc0fffffffff, 0xffffff00003fffff, 0xffffffc0000007ff, 
-            0xfffffff0000001ff, 0xfffffffc00003fff, 0xffffffff07ffffff, 0xffffffffe003ffff, 
+         = [0x1, 0x1f80, 0x3fff0, 0x3ffffc,
+            0x3fe0000, 0x1ffc0000, 0xf8000000, 0x3ffffc000,
+            0xffffffe00, 0x3ffffff800, 0xffffc00000, 0x3f000000000,
+            0x7fffffff800, 0x1fe000001fe0, 0x3ffffff80000, 0xc00000000000,
+            0x1ffc000000000, 0x3ffff0003ffff, 0x7ffffffe00000, 0xfffffffffc000,
+            0x1ffffffffffc00, 0x3fffffffffff00, 0x7ffffffffffc00, 0xffffffffff8000,
+            0x1ffffffff800000, 0x3fffffc03fffffc, 0x7fffc0000000000, 0xff80ff80ff80ff8,
+            0x1c00000000000000, 0x1fffffffffff0000, 0x3fffff803fffff80, 0x7fc000007fc00000,
+            0x8000000000000000, 0x803fffff803fffff, 0xc000007fc000007f, 0xe00000000000ffff,
+            0xe3ffffffffffffff, 0xf007f007f007f007, 0xf80003ffffffffff, 0xfc000003fc000003,
+            0xfe000000007fffff, 0xff00000000007fff, 0xff800000000003ff, 0xffc00000000000ff,
+            0xffe00000000003ff, 0xfff0000000003fff, 0xfff80000001fffff, 0xfffc0000fffc0000,
+            0xfffe003fffffffff, 0xffff3fffffffffff, 0xffffc0000007ffff, 0xffffe01fffffe01f,
+            0xfffff800000007ff, 0xfffffc0fffffffff, 0xffffff00003fffff, 0xffffffc0000007ff,
+            0xfffffff0000001ff, 0xfffffffc00003fff, 0xffffffff07ffffff, 0xffffffffe003ffff,
             0xfffffffffc01ffff, 0xffffffffffc00003, 0xfffffffffffc000f, 0xffffffffffffe07f]
 
      def generate(self):
           AddSubImmOp.generate(self)
           self.immed = \
               self.immediates32[random.randint(0, len(self.immediates32)-1)] \
-              	if self.isWord \
-              else \
-              	self.immediates[random.randint(0, len(self.immediates)-1)]
-              
+              if self.isWord else \
+              self.immediates[random.randint(0, len(self.immediates)-1)]
+
           return self
-                  
+
      def astr(self):
           return (super(TwoRegImmedInstruction, self).astr()
                   + ', #0x%x' % self.immed)
 
      def cstr(self):
           return super(AddSubImmOp, self).cstr() + "ll);"
-    
+
 class MultiOp():
 
     def multipleForms(self):
@@ -416,9 +426,9 @@ class AbsOp(MultiOp, Instruction):
         return Instruction.astr(self) + "%s"
 
 class RegAndAbsOp(MultiOp, Instruction):
-    
+
     def multipleForms(self):
-        if self.name() == "adrp": 
+        if self.name() == "adrp":
             # We can only test one form of adrp because anything other
             # than "adrp ." requires relocs in the assembler output
             return 1
@@ -428,11 +438,11 @@ class RegAndAbsOp(MultiOp, Instruction):
         Instruction.generate(self)
         self.reg = GeneralRegister().generate()
         return self
-    
+
     def cstr(self):
         if self.name() == "adrp":
             return "__ _adrp(" + "%s, %s);" % (self.reg, "%s")
-        return (super(RegAndAbsOp, self).cstr() 
+        return (super(RegAndAbsOp, self).cstr()
                 + "%s, %s);" % (self.reg, "%s"))
 
     def astr(self):
@@ -440,14 +450,14 @@ class RegAndAbsOp(MultiOp, Instruction):
                 + self.reg.astr(self.asmRegPrefix) + ", %s")
 
 class RegImmAbsOp(RegAndAbsOp):
-    
+
     def cstr(self):
         return (Instruction.cstr(self)
                 + "%s, %s, %s);" % (self.reg, self.immed, "%s"))
 
     def astr(self):
         return (Instruction.astr(self)
-                + ("%s, #%s, %s" 
+                + ("%s, #%s, %s"
                    % (self.reg.astr(self.asmRegPrefix), self.immed, "%s")))
 
     def generate(self):
@@ -456,7 +466,7 @@ class RegImmAbsOp(RegAndAbsOp):
         return self
 
 class MoveWideImmOp(RegImmAbsOp):
-    
+
     def multipleForms(self):
          return 0
 
@@ -466,8 +476,8 @@ class MoveWideImmOp(RegImmAbsOp):
 
     def astr(self):
         return (Instruction.astr(self)
-                + ("%s, #%s, lsl %s" 
-                   % (self.reg.astr(self.asmRegPrefix), 
+                + ("%s, #%s, lsl %s"
+                   % (self.reg.astr(self.asmRegPrefix),
                       self.immed, self.shift)))
 
     def generate(self):
@@ -480,7 +490,7 @@ class MoveWideImmOp(RegImmAbsOp):
         return self
 
 class BitfieldOp(TwoRegInstruction):
-    
+
     def cstr(self):
         return (Instruction.cstr(self)
                 + ("%s, %s, %s, %s);"
@@ -507,16 +517,16 @@ class ExtractOp(ThreeRegInstruction):
     def cstr(self):
         return (ThreeRegInstruction.cstr(self)
                 + (", %s);" % self.lsb))
-    
+
     def astr(self):
         return (ThreeRegInstruction.astr(self)
                 + (", #%s" % self.lsb))
-    
+
 class CondBranchOp(MultiOp, Instruction):
 
     def cstr(self):
         return "__ br(Assembler::" + self.name() + ", %s);"
-        
+
     def astr(self):
         return "b." + self.name() + "\t%s"
 
@@ -524,10 +534,10 @@ class ImmOp(Instruction):
 
     def cstr(self):
         return "%s%s);" % (Instruction.cstr(self), self.immed)
-        
+
     def astr(self):
         return Instruction.astr(self) + "#" + str(self.immed)
-        
+
     def generate(self):
         self.immed = random.randint(0, 1<<16 -1)
         return self
@@ -536,6 +546,8 @@ class Op(Instruction):
 
     def cstr(self):
         return Instruction.cstr(self) + ");"
+    def astr(self):
+        return self.aname();
 
 class SystemOp(Instruction):
 
@@ -567,11 +579,11 @@ class ConditionalCompareOp(TwoRegImmedInstruction):
         return self
 
     def cstr(self):
-        return (super(ConditionalCompareOp, self).cstr() + ", " 
+        return (super(ConditionalCompareOp, self).cstr() + ", "
                 + "Assembler::" + conditionCodes[self.cond] + ");")
 
     def astr(self):
-        return (super(ConditionalCompareOp, self).astr() + 
+        return (super(ConditionalCompareOp, self).astr() +
                  ", " + conditionCodes[self.cond])
 
 class ConditionalCompareImmedOp(Instruction):
@@ -590,33 +602,33 @@ class ConditionalCompareImmedOp(Instruction):
                 + "Assembler::" + conditionCodes[self.cond] + ");")
 
     def astr(self):
-        return (Instruction.astr(self) 
-                + self.reg.astr(self.asmRegPrefix) 
+        return (Instruction.astr(self)
+                + self.reg.astr(self.asmRegPrefix)
                 + ", #" + str(self.immed)
                 + ", #" + str(self.immed2)
                 + ", " + conditionCodes[self.cond])
 
 class TwoRegOp(TwoRegInstruction):
-    
+
     def cstr(self):
         return TwoRegInstruction.cstr(self) + ");"
 
 class ThreeRegOp(ThreeRegInstruction):
-    
+
     def cstr(self):
         return ThreeRegInstruction.cstr(self) + ");"
 
 class FourRegMulOp(FourRegInstruction):
-    
+
     def cstr(self):
         return FourRegInstruction.cstr(self) + ");"
 
     def astr(self):
         isMaddsub = self.name().startswith("madd") | self.name().startswith("msub")
         midPrefix = self.asmRegPrefix if isMaddsub else "w"
-        return (Instruction.astr(self) 
-                + self.reg[0].astr(self.asmRegPrefix) 
-                + ", " + self.reg[1].astr(midPrefix) 
+        return (Instruction.astr(self)
+                + self.reg[0].astr(self.asmRegPrefix)
+                + ", " + self.reg[1].astr(midPrefix)
                 + ", " + self.reg[2].astr(midPrefix)
                 + ", " + self.reg[3].astr(self.asmRegPrefix))
 
@@ -632,8 +644,8 @@ class ConditionalSelectOp(ThreeRegInstruction):
                 + "Assembler::" + conditionCodes[self.cond] + ");")
 
     def astr(self):
-        return (ThreeRegInstruction.astr(self) 
-                + ", " + conditionCodes[self.cond])    
+        return (ThreeRegInstruction.astr(self)
+                + ", " + conditionCodes[self.cond])
 
 class LoadStoreExclusiveOp(InstructionWithModes):
 
@@ -645,7 +657,7 @@ class LoadStoreExclusiveOp(InstructionWithModes):
         result = self.aname() + '\t'
         regs = list(self.regs)
         index = regs.pop() # The last reg is the index register
-        prefix = ('x' if (self.mode == 'x') 
+        prefix = ('x' if (self.mode == 'x')
                   & ((self.name().startswith("ld"))
                      | (self.name().startswith("stlr"))) # Ewww :-(
                   else 'w')
@@ -692,17 +704,17 @@ class LoadStoreExclusiveOp(InstructionWithModes):
             return self._name
 
 class Address(object):
-    
+
     base_plus_unscaled_offset, pre, post, base_plus_reg, \
         base_plus_scaled_offset, pcrel, post_reg, base_only = range(8)
-    kinds = ["base_plus_unscaled_offset", "pre", "post", "base_plus_reg", 
+    kinds = ["base_plus_unscaled_offset", "pre", "post", "base_plus_reg",
              "base_plus_scaled_offset", "pcrel", "post_reg", "base_only"]
     extend_kinds = ["uxtw", "lsl", "sxtw", "sxtx"]
 
     @classmethod
     def kindToStr(cls, i):
          return cls.kinds[i]
-    
+
     def generate(self, kind, shift_distance):
         self.kind = kind
         self.base = GeneralRegister().generate()
@@ -732,7 +744,7 @@ class Address(object):
             Address.pcrel: "",
             Address.base_plus_reg: "Address(%s, %s, Address::%s(%s))" \
                 % (self.base, self.index, self.extend_kind, self.shift_distance),
-            Address.base_plus_scaled_offset: 
+            Address.base_plus_scaled_offset:
             "Address(%s, %s)" % (self.base, self.offset) } [self.kind]
         if (self.kind == Address.pcrel):
             result = ["__ pc()", "back", "forth"][self.offset]
@@ -752,7 +764,7 @@ class Address(object):
             Address.base_only: "[%s]" %  (self.base.astr(prefix)),
             Address.pcrel: "",
             Address.base_plus_reg: "[%s, %s, %s #%s]" \
-                % (self.base.astr(prefix), self.index.astr(extend_prefix), 
+                % (self.base.astr(prefix), self.index.astr(extend_prefix),
                    self.extend_kind, self.shift_distance),
             Address.base_plus_scaled_offset: \
                 "[%s, %s]" \
@@ -761,7 +773,7 @@ class Address(object):
         if (self.kind == Address.pcrel):
             result = [".", "back", "forth"][self.offset]
         return result
-        
+
 class LoadStoreOp(InstructionWithModes):
 
     def __init__(self, args):
@@ -816,14 +828,14 @@ class LoadStoreOp(InstructionWithModes):
 class LoadStorePairOp(InstructionWithModes):
 
      numRegs = 2
-     
+
      def __init__(self, args):
           name, self.asmname, self.kind, mode = args
           InstructionWithModes.__init__(self, name, mode)
           self.offset = random.randint(-1<<4, 1<<4-1) << 4
-          
+
      def generate(self):
-          self.reg = [OperandFactory.create(self.mode).generate() 
+          self.reg = [OperandFactory.create(self.mode).generate()
                       for i in range(self.numRegs)]
           self.base = OperandFactory.create('x').generate()
           kindStr = Address.kindToStr(self.kind);
@@ -840,8 +852,8 @@ class LoadStorePairOp(InstructionWithModes):
           address = ["[%s, #%s]", "[%s, #%s]!", "[%s], #%s"][self.kind]
           address = address % (self.base.astr('x'), self.offset)
           result = "%s\t%s, %s, %s" \
-              % (self.asmname, 
-                 self.reg[0].astr(self.asmRegPrefix), 
+              % (self.asmname,
+                 self.reg[0].astr(self.asmRegPrefix),
                  self.reg[1].astr(self.asmRegPrefix), address)
           return result
 
@@ -869,7 +881,7 @@ class FloatInstruction(Instruction):
         Instruction.__init__(self, name)
 
     def generate(self):
-        self.reg = [OperandFactory.create(self.modes[i]).generate() 
+        self.reg = [OperandFactory.create(self.modes[i]).generate()
                     for i in range(self.numRegs)]
         return self
 
@@ -878,7 +890,7 @@ class FloatInstruction(Instruction):
         return (formatStr
                 % tuple([Instruction.cstr(self)] +
                         [str(self.reg[i]) for i in range(self.numRegs)])) # Yowza
-    
+
     def astr(self):
         formatStr = "%s%s" + ''.join([", %s" for i in range(1, self.numRegs)])
         return (formatStr
@@ -979,7 +991,7 @@ class SVEReductionOp(Instruction):
                                  moreReg +
                                  [str(self.reg[2]) + self._width.astr()])
 
-class LdStSIMDOp(Instruction):
+class LdStNEONOp(Instruction):
     def __init__(self, args):
         self._name, self.regnum, self.arrangement, self.addresskind = args
 
@@ -998,7 +1010,7 @@ class LdStSIMDOp(Instruction):
         return self
 
     def cstr(self):
-        buf = super(LdStSIMDOp, self).cstr() + str(self._firstSIMDreg)
+        buf = super(LdStNEONOp, self).cstr() + str(self._firstSIMDreg)
         current = self._firstSIMDreg
         for cnt in range(1, self.regnum):
             buf = '%s, %s' % (buf, current.nextReg())
@@ -1015,6 +1027,57 @@ class LdStSIMDOp(Instruction):
 
     def aname(self):
          return self._name
+
+class NEONReduceInstruction(Instruction):
+    def __init__(self, args):
+        self._name, self.insname, self.arrangement = args
+
+    def generate(self):
+        current = FloatRegister().generate()
+        self.dstSIMDreg = current
+        self.srcSIMDreg = current.nextReg()
+        return self
+
+    def cstr(self):
+        buf = Instruction.cstr(self) + str(self.dstSIMDreg)
+        buf = '%s, __ T%s, %s);' % (buf, self.arrangement, self.srcSIMDreg)
+        return buf
+
+    def astr(self):
+        buf = '%s\t%s' % (self.insname, self.dstSIMDreg.astr(self.arrangement[-1].lower()))
+        buf = '%s, %s.%s' % (buf, self.srcSIMDreg, self.arrangement)
+        return buf
+
+    def aname(self):
+        return self._name
+
+class CommonNEONInstruction(Instruction):
+    def __init__(self, args):
+        self._name, self.insname, self.arrangement = args
+
+    def generate(self):
+        self._firstSIMDreg = FloatRegister().generate()
+        return self
+
+    def cstr(self):
+        buf = Instruction.cstr(self) + str(self._firstSIMDreg)
+        buf = '%s, __ T%s' % (buf, self.arrangement)
+        current = self._firstSIMDreg
+        for cnt in range(1, self.numRegs):
+            buf = '%s, %s' % (buf, current.nextReg())
+            current = current.nextReg()
+        return '%s);' % (buf)
+
+    def astr(self):
+        buf = '%s\t%s.%s' % (self.insname, self._firstSIMDreg, self.arrangement)
+        current = self._firstSIMDreg
+        for cnt in range(1, self.numRegs):
+            buf = '%s, %s.%s' % (buf, current.nextReg(), self.arrangement)
+            current = current.nextReg()
+        return buf
+
+    def aname(self):
+        return self._name
 
 class SHA512SIMDOp(Instruction):
 
@@ -1091,6 +1154,12 @@ class FloatConvertOp(TwoRegFloatOp):
     def cname(self):
         return self._cname
 
+class TwoRegNEONOp(CommonNEONInstruction):
+    numRegs = 2
+
+class ThreeRegNEONOp(TwoRegNEONOp):
+    numRegs = 3
+
 class SpecialCases(Instruction):
     def __init__(self, data):
         self._name = data[0]
@@ -1123,6 +1192,7 @@ def generate(kind, names):
 
 outfile = open("aarch64ops.s", "w")
 
+# To minimize the changes of assembler test code
 random.seed(0)
 
 print "// BEGIN  Generated code -- do not edit"
@@ -1133,18 +1203,18 @@ print "    __ bind(back);"
 
 outfile.write("back:\n")
 
-generate (ArithOp, 
+generate (ArithOp,
           [ "add", "sub", "adds", "subs",
             "addw", "subw", "addsw", "subsw",
             "and", "orr", "eor", "ands",
-            "andw", "orrw", "eorw", "andsw", 
-            "bic", "orn", "eon", "bics", 
+            "andw", "orrw", "eorw", "andsw",
+            "bic", "orn", "eon", "bics",
             "bicw", "ornw", "eonw", "bicsw" ])
 
-generate (AddSubImmOp, 
+generate (AddSubImmOp,
           [ "addw", "addsw", "subw", "subsw",
             "add", "adds", "sub", "subs"])
-generate (LogicalImmOp, 
+generate (LogicalImmOp,
           [ "andw", "orrw", "eorw", "andsw",
             "and", "orr", "eor", "ands"])
 
@@ -1185,26 +1255,26 @@ for mode in 'xw':
                                      ["stxp", mode, 4], ["stlxp", mode, 4]])
 
 for kind in range(6):
-    print "\n// " + Address.kindToStr(kind),
+    sys.stdout.write("\n// " + Address.kindToStr(kind))
     if kind != Address.pcrel:
-        generate (LoadStoreOp, 
-                  [["str", "str", kind, "x"], ["str", "str", kind, "w"], 
+        generate (LoadStoreOp,
+                  [["str", "str", kind, "x"], ["str", "str", kind, "w"],
                    ["str", "strb", kind, "b"], ["str", "strh", kind, "h"],
-                   ["ldr", "ldr", kind, "x"], ["ldr", "ldr", kind, "w"], 
+                   ["ldr", "ldr", kind, "x"], ["ldr", "ldr", kind, "w"],
                    ["ldr", "ldrb", kind, "b"], ["ldr", "ldrh", kind, "h"],
-                   ["ldrsb", "ldrsb", kind, "x"], ["ldrsh", "ldrsh", kind, "x"], 
+                   ["ldrsb", "ldrsb", kind, "x"], ["ldrsh", "ldrsh", kind, "x"],
                    ["ldrsh", "ldrsh", kind, "w"], ["ldrsw", "ldrsw", kind, "x"],
-                   ["ldr", "ldr", kind, "d"], ["ldr", "ldr", kind, "s"], 
-                   ["str", "str", kind, "d"], ["str", "str", kind, "s"], 
+                   ["ldr", "ldr", kind, "d"], ["ldr", "ldr", kind, "s"],
+                   ["str", "str", kind, "d"], ["str", "str", kind, "s"],
                    ])
     else:
-        generate (LoadStoreOp, 
+        generate (LoadStoreOp,
                   [["ldr", "ldr", kind, "x"], ["ldr", "ldr", kind, "w"]])
-        
+
 
 for kind in (Address.base_plus_unscaled_offset, Address.pcrel, Address.base_plus_reg, \
                  Address.base_plus_scaled_offset):
-    generate (LoadStoreOp, 
+    generate (LoadStoreOp,
               [["prfm", "prfm\tPLDL1KEEP,", kind, "x"]])
 
 generate(AddSubCarryOp, ["adcw", "adcsw", "sbcw", "sbcsw", "adc", "adcs", "sbc", "sbcs"])
@@ -1213,32 +1283,32 @@ generate(AddSubExtendedOp, ["addw", "addsw", "sub", "subsw", "add", "adds", "sub
 
 generate(ConditionalCompareOp, ["ccmnw", "ccmpw", "ccmn", "ccmp"])
 generate(ConditionalCompareImmedOp, ["ccmnw", "ccmpw", "ccmn", "ccmp"])
-generate(ConditionalSelectOp, 
+generate(ConditionalSelectOp,
          ["cselw", "csincw", "csinvw", "csnegw", "csel", "csinc", "csinv", "csneg"])
 
-generate(TwoRegOp, 
-         ["rbitw", "rev16w", "revw", "clzw", "clsw", "rbit", 
+generate(TwoRegOp,
+         ["rbitw", "rev16w", "revw", "clzw", "clsw", "rbit",
           "rev16", "rev32", "rev", "clz", "cls"])
-generate(ThreeRegOp, 
-         ["udivw", "sdivw", "lslvw", "lsrvw", "asrvw", "rorvw", "udiv", "sdiv", 
+generate(ThreeRegOp,
+         ["udivw", "sdivw", "lslvw", "lsrvw", "asrvw", "rorvw", "udiv", "sdiv",
           "lslv", "lsrv", "asrv", "rorv", "umulh", "smulh"])
-generate(FourRegMulOp, 
+generate(FourRegMulOp,
          ["maddw", "msubw", "madd", "msub", "smaddl", "smsubl", "umaddl", "umsubl"])
 
-generate(ThreeRegFloatOp, 
-         [["fmuls", "sss"], ["fdivs", "sss"], ["fadds", "sss"], ["fsubs", "sss"], 
+generate(ThreeRegFloatOp,
+         [["fmuls", "sss"], ["fdivs", "sss"], ["fadds", "sss"], ["fsubs", "sss"],
           ["fmuls", "sss"],
-          ["fmuld", "ddd"], ["fdivd", "ddd"], ["faddd", "ddd"], ["fsubd", "ddd"], 
+          ["fmuld", "ddd"], ["fdivd", "ddd"], ["faddd", "ddd"], ["fsubd", "ddd"],
           ["fmuld", "ddd"]])
 
-generate(FourRegFloatOp, 
-         [["fmadds", "ssss"], ["fmsubs", "ssss"], ["fnmadds", "ssss"], ["fnmadds", "ssss"], 
+generate(FourRegFloatOp,
+         [["fmadds", "ssss"], ["fmsubs", "ssss"], ["fnmadds", "ssss"], ["fnmadds", "ssss"],
           ["fmaddd", "dddd"], ["fmsubd", "dddd"], ["fnmaddd", "dddd"], ["fnmaddd", "dddd"],])
 
-generate(TwoRegFloatOp, 
-         [["fmovs", "ss"], ["fabss", "ss"], ["fnegs", "ss"], ["fsqrts", "ss"], 
+generate(TwoRegFloatOp,
+         [["fmovs", "ss"], ["fabss", "ss"], ["fnegs", "ss"], ["fsqrts", "ss"],
           ["fcvts", "ds"],
-          ["fmovd", "dd"], ["fabsd", "dd"], ["fnegd", "dd"], ["fsqrtd", "dd"], 
+          ["fmovd", "dd"], ["fabsd", "dd"], ["fnegd", "dd"], ["fsqrtd", "dd"],
           ["fcvtd", "sd"],
           ])
 
@@ -1249,18 +1319,18 @@ generate(FloatConvertOp, [["fcvtzsw", "fcvtzs", "ws"], ["fcvtzs", "fcvtzs", "xs"
                           ["fmovs", "fmov", "ws"], ["fmovd", "fmov", "xd"],
                           ["fmovs", "fmov", "sw"], ["fmovd", "fmov", "dx"]])
 
-generate(TwoRegFloatOp, [["fcmps", "ss"], ["fcmpd", "dd"], 
+generate(TwoRegFloatOp, [["fcmps", "ss"], ["fcmpd", "dd"],
                          ["fcmps", "sz"], ["fcmpd", "dz"]])
 
 for kind in range(3):
      generate(LoadStorePairOp, [["stp", "stp", kind, "w"], ["ldp", "ldp", kind, "w"],
-                                ["ldpsw", "ldpsw", kind, "x"], 
+                                ["ldpsw", "ldpsw", kind, "x"],
                                 ["stp", "stp", kind, "x"], ["ldp", "ldp", kind, "x"]
                                 ])
 generate(LoadStorePairOp, [["stnp", "stnp", 0, "w"], ["ldnp", "ldnp", 0, "w"],
                            ["stnp", "stnp", 0, "x"], ["ldnp", "ldnp", 0, "x"]])
 
-generate(LdStSIMDOp, [["ld1",  1, "8B",  Address.base_only],
+generate(LdStNEONOp, [["ld1",  1, "8B",  Address.base_only],
                       ["ld1",  2, "16B", Address.post],
                       ["ld1",  3, "1D",  Address.post_reg],
                       ["ld1",  4, "8H",  Address.post],
@@ -1283,6 +1353,93 @@ generate(LdStSIMDOp, [["ld1",  1, "8B",  Address.base_only],
                       ["ld4r", 4, "4H",  Address.post],
                       ["ld4r", 4, "2S",  Address.post_reg],
 ])
+
+generate(NEONReduceInstruction,
+         [["addv", "addv", "8B"], ["addv", "addv", "16B"],
+          ["addv", "addv", "4H"], ["addv", "addv", "8H"],
+          ["addv", "addv", "4S"],
+          ["smaxv", "smaxv", "8B"], ["smaxv", "smaxv", "16B"],
+          ["smaxv", "smaxv", "4H"], ["smaxv", "smaxv", "8H"],
+          ["smaxv", "smaxv", "4S"], ["fmaxv", "fmaxv", "4S"],
+          ["sminv", "sminv", "8B"], ["sminv", "sminv", "16B"],
+          ["sminv", "sminv", "4H"], ["sminv", "sminv", "8H"],
+          ["sminv", "sminv", "4S"], ["fminv", "fminv", "4S"],
+          ])
+
+generate(TwoRegNEONOp,
+         [["absr", "abs", "8B"], ["absr", "abs", "16B"],
+          ["absr", "abs", "4H"], ["absr", "abs", "8H"],
+          ["absr", "abs", "2S"], ["absr", "abs", "4S"],
+          ["absr", "abs", "2D"],
+          ["fabs", "fabs", "2S"], ["fabs", "fabs", "4S"],
+          ["fabs", "fabs", "2D"],
+          ["fneg", "fneg", "2S"], ["fneg", "fneg", "4S"],
+          ["fneg", "fneg", "2D"],
+          ["fsqrt", "fsqrt", "2S"], ["fsqrt", "fsqrt", "4S"],
+          ["fsqrt", "fsqrt", "2D"],
+          ["notr", "not", "8B"], ["notr", "not", "16B"],
+          ])
+
+generate(ThreeRegNEONOp,
+         [["andr", "and", "8B"], ["andr", "and", "16B"],
+          ["orr", "orr", "8B"], ["orr", "orr", "16B"],
+          ["eor", "eor", "8B"], ["eor", "eor", "16B"],
+          ["addv", "add", "8B"], ["addv", "add", "16B"],
+          ["addv", "add", "4H"], ["addv", "add", "8H"],
+          ["addv", "add", "2S"], ["addv", "add", "4S"],
+          ["addv", "add", "2D"],
+          ["fadd", "fadd", "2S"], ["fadd", "fadd", "4S"],
+          ["fadd", "fadd", "2D"],
+          ["subv", "sub", "8B"], ["subv", "sub", "16B"],
+          ["subv", "sub", "4H"], ["subv", "sub", "8H"],
+          ["subv", "sub", "2S"], ["subv", "sub", "4S"],
+          ["subv", "sub", "2D"],
+          ["fsub", "fsub", "2S"], ["fsub", "fsub", "4S"],
+          ["fsub", "fsub", "2D"],
+          ["mulv", "mul", "8B"], ["mulv", "mul", "16B"],
+          ["mulv", "mul", "4H"], ["mulv", "mul", "8H"],
+          ["mulv", "mul", "2S"], ["mulv", "mul", "4S"],
+          ["fmul", "fmul", "2S"], ["fmul", "fmul", "4S"],
+          ["fmul", "fmul", "2D"],
+          ["mlav", "mla", "4H"], ["mlav", "mla", "8H"],
+          ["mlav", "mla", "2S"], ["mlav", "mla", "4S"],
+          ["fmla", "fmla", "2S"], ["fmla", "fmla", "4S"],
+          ["fmla", "fmla", "2D"],
+          ["mlsv", "mls", "4H"], ["mlsv", "mls", "8H"],
+          ["mlsv", "mls", "2S"], ["mlsv", "mls", "4S"],
+          ["fmls", "fmls", "2S"], ["fmls", "fmls", "4S"],
+          ["fmls", "fmls", "2D"],
+          ["fdiv", "fdiv", "2S"], ["fdiv", "fdiv", "4S"],
+          ["fdiv", "fdiv", "2D"],
+          ["maxv", "smax", "8B"], ["maxv", "smax", "16B"],
+          ["maxv", "smax", "4H"], ["maxv", "smax", "8H"],
+          ["maxv", "smax", "2S"], ["maxv", "smax", "4S"],
+          ["fmax", "fmax", "2S"], ["fmax", "fmax", "4S"],
+          ["fmax", "fmax", "2D"],
+          ["minv", "smin", "8B"], ["minv", "smin", "16B"],
+          ["minv", "smin", "4H"], ["minv", "smin", "8H"],
+          ["minv", "smin", "2S"], ["minv", "smin", "4S"],
+          ["fmin", "fmin", "2S"], ["fmin", "fmin", "4S"],
+          ["fmin", "fmin", "2D"],
+          ["cmeq", "cmeq", "8B"], ["cmeq", "cmeq", "16B"],
+          ["cmeq", "cmeq", "4H"], ["cmeq", "cmeq", "8H"],
+          ["cmeq", "cmeq", "2S"], ["cmeq", "cmeq", "4S"],
+          ["cmeq", "cmeq", "2D"],
+          ["fcmeq", "fcmeq", "2S"], ["fcmeq", "fcmeq", "4S"],
+          ["fcmeq", "fcmeq", "2D"],
+          ["cmgt", "cmgt", "8B"], ["cmgt", "cmgt", "16B"],
+          ["cmgt", "cmgt", "4H"], ["cmgt", "cmgt", "8H"],
+          ["cmgt", "cmgt", "2S"], ["cmgt", "cmgt", "4S"],
+          ["cmgt", "cmgt", "2D"],
+          ["fcmgt", "fcmgt", "2S"], ["fcmgt", "fcmgt", "4S"],
+          ["fcmgt", "fcmgt", "2D"],
+          ["cmge", "cmge", "8B"], ["cmge", "cmge", "16B"],
+          ["cmge", "cmge", "4H"], ["cmge", "cmge", "8H"],
+          ["cmge", "cmge", "2S"], ["cmge", "cmge", "4S"],
+          ["cmge", "cmge", "2D"],
+          ["fcmge", "fcmge", "2S"], ["fcmge", "fcmge", "4S"],
+          ["fcmge", "fcmge", "2D"],
+          ])
 
 generate(SHA512SIMDOp, ["sha512h", "sha512h2", "sha512su0", "sha512su1"])
 
@@ -1331,16 +1488,16 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["st1w",   "__ sve_st1w(z0, __ S, p1, Address(r0, 7));",         "st1w\t{z0.s}, p1, [x0, #7, MUL VL]"],
                         ["st1b",   "__ sve_st1b(z0, __ B, p2, Address(sp, r1));",        "st1b\t{z0.b}, p2, [sp, x1]"],
                         ["st1h",   "__ sve_st1h(z0, __ H, p3, Address(sp, r8));",        "st1h\t{z0.h}, p3, [sp, x8, LSL #1]"],
-                        ["st1d",   "__ sve_st1d(z0, __ D, p4, Address(r0, r18));",       "st1d\t{z0.d}, p4, [x0, x18, LSL #3]"],
+                        ["st1d",   "__ sve_st1d(z0, __ D, p4, Address(r0, r17));",       "st1d\t{z0.d}, p4, [x0, x17, LSL #3]"],
                         ["ldr",    "__ sve_ldr(z0, Address(sp));",                       "ldr\tz0, [sp]"],
                         ["ldr",    "__ sve_ldr(z31, Address(sp, -256));",                "ldr\tz31, [sp, #-256, MUL VL]"],
                         ["str",    "__ sve_str(z8, Address(r8, 255));",                  "str\tz8, [x8, #255, MUL VL]"],
 ])
 
 print "\n// FloatImmediateOp"
-for float in ("2.0", "2.125", "4.0", "4.25", "8.0", "8.5", "16.0", "17.0", "0.125", 
-              "0.1328125", "0.25", "0.265625", "0.5", "0.53125", "1.0", "1.0625", 
-              "-2.0", "-2.125", "-4.0", "-4.25", "-8.0", "-8.5", "-16.0", "-17.0", 
+for float in ("2.0", "2.125", "4.0", "4.25", "8.0", "8.5", "16.0", "17.0", "0.125",
+              "0.1328125", "0.25", "0.265625", "0.5", "0.53125", "1.0", "1.0625",
+              "-2.0", "-2.125", "-4.0", "-4.25", "-8.0", "-8.5", "-16.0", "-17.0",
               "-0.125", "-0.1328125", "-0.25", "-0.265625", "-0.5", "-0.53125", "-1.0", "-1.0625"):
     astr = "fmov d0, #" + float
     cstr = "__ fmovd(v0, " + float + ");"
@@ -1408,16 +1565,11 @@ outfile.write("forth:\n")
 
 outfile.close()
 
-import subprocess
-import sys
-
 # compile for sve with 8.1 and sha2 because of lse atomics and sha512 crypto extension.
 subprocess.check_call([AARCH64_AS, "-march=armv8.1-a+sha2+sve", "aarch64ops.s", "-o", "aarch64ops.o"])
 
 print
-print "/*",
-sys.stdout.flush()
-subprocess.check_call([AARCH64_OBJDUMP, "-d", "aarch64ops.o"])
+print "/*"
 print "*/"
 
 subprocess.check_call([AARCH64_OBJCOPY, "-O", "binary", "-j", ".text", "aarch64ops.o", "aarch64ops.bin"])
@@ -1438,4 +1590,7 @@ while i < len(bytes):
 print "\n  };"
 print "// END  Generated code -- do not edit"
 
+infile.close()
 
+for f in ["aarch64ops.s", "aarch64ops.o", "aarch64ops.bin"]:
+    os.remove(f)

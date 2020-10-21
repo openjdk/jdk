@@ -31,6 +31,7 @@
  *     /test/hotspot/jtreg/testlibrary/jvmti
  * @requires vm.cds
  * @requires !vm.graal.enabled
+ * @requires vm.jvmti
  * @build TransformUtil TransformerAgent ParallelLoad
  * @run driver ParallelLoadAndTransformTest
  */

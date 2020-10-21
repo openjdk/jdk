@@ -175,7 +175,7 @@ int MacroAssembler::patch_oop(address insn_addr, address o) {
   // instruction.
   if (Instruction_aarch64::extract(insn, 31, 21) == 0b11010010101) {
     // Move narrow OOP
-    narrowOop n = CompressedOops::encode((oop)o);
+    uint32_t n = CompressedOops::narrow_oop_value((oop)o);
     Instruction_aarch64::patch(insn_addr, 20, 5, n >> 16);
     Instruction_aarch64::patch(insn_addr+4, 20, 5, n & 0xffff);
     instructions = 2;
@@ -288,27 +288,21 @@ address MacroAssembler::target_addr_for_insn(address insn_addr, unsigned insn) {
   return address(((uint64_t)insn_addr + (offset << 2)));
 }
 
-void MacroAssembler::safepoint_poll(Label& slow_path) {
-  ldr(rscratch1, Address(rthread, Thread::polling_page_offset()));
-  tbnz(rscratch1, exact_log2(SafepointMechanism::poll_bit()), slow_path);
-}
-
-// Just like safepoint_poll, but use an acquiring load for thread-
-// local polling.
-//
-// We need an acquire here to ensure that any subsequent load of the
-// global SafepointSynchronize::_state flag is ordered after this load
-// of the local Thread::_polling page.  We don't want this poll to
-// return false (i.e. not safepointing) and a later poll of the global
-// SafepointSynchronize::_state spuriously to return true.
-//
-// This is to avoid a race when we're in a native->Java transition
-// racing the code which wakes up from a safepoint.
-//
-void MacroAssembler::safepoint_poll_acquire(Label& slow_path) {
-  lea(rscratch1, Address(rthread, Thread::polling_page_offset()));
-  ldar(rscratch1, rscratch1);
-  tbnz(rscratch1, exact_log2(SafepointMechanism::poll_bit()), slow_path);
+void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod) {
+  if (acquire) {
+    lea(rscratch1, Address(rthread, Thread::polling_word_offset()));
+    ldar(rscratch1, rscratch1);
+  } else {
+    ldr(rscratch1, Address(rthread, Thread::polling_word_offset()));
+  }
+  if (at_return) {
+    // Note that when in_nmethod is set, the stack pointer is incremented before the poll. Therefore,
+    // we may safely use the sp instead to perform the stack watermark check.
+    cmp(in_nmethod ? sp : rfp, rscratch1);
+    br(Assembler::HI, slow_path);
+  } else {
+    tbnz(rscratch1, exact_log2(SafepointMechanism::poll_bit()), slow_path);
+  }
 }
 
 void MacroAssembler::reset_last_Java_frame(bool clear_fp) {
@@ -1004,27 +998,22 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
   // }
   Label search, found_method;
 
-  for (int peel = 1; peel >= 0; peel--) {
-    ldr(method_result, Address(scan_temp, itableOffsetEntry::interface_offset_in_bytes()));
-    cmp(intf_klass, method_result);
-
-    if (peel) {
-      br(Assembler::EQ, found_method);
-    } else {
-      br(Assembler::NE, search);
-      // (invert the test to fall through to found_method...)
-    }
-
-    if (!peel)  break;
-
-    bind(search);
-
-    // Check that the previous entry is non-null.  A null entry means that
-    // the receiver class doesn't implement the interface, and wasn't the
-    // same as when the caller was compiled.
-    cbz(method_result, L_no_such_interface);
+  ldr(method_result, Address(scan_temp, itableOffsetEntry::interface_offset_in_bytes()));
+  cmp(intf_klass, method_result);
+  br(Assembler::EQ, found_method);
+  bind(search);
+  // Check that the previous entry is non-null.  A null entry means that
+  // the receiver class doesn't implement the interface, and wasn't the
+  // same as when the caller was compiled.
+  cbz(method_result, L_no_such_interface);
+  if (itableOffsetEntry::interface_offset_in_bytes() != 0) {
     add(scan_temp, scan_temp, scan_step);
+    ldr(method_result, Address(scan_temp, itableOffsetEntry::interface_offset_in_bytes()));
+  } else {
+    ldr(method_result, Address(pre(scan_temp, scan_step)));
   }
+  cmp(intf_klass, method_result);
+  br(Assembler::NE, search);
 
   bind(found_method);
 
@@ -2656,9 +2645,17 @@ void MacroAssembler::debug64(char* msg, int64_t pc, int64_t regs[])
   fatal("DEBUG MESSAGE: %s", msg);
 }
 
+RegSet MacroAssembler::call_clobbered_registers() {
+  RegSet regs = RegSet::range(r0, r17) - RegSet::of(rscratch1, rscratch2);
+#ifndef R18_RESERVED
+  regs += r18_tls;
+#endif
+  return regs;
+}
+
 void MacroAssembler::push_call_clobbered_registers_except(RegSet exclude) {
   int step = 4 * wordSize;
-  push(RegSet::range(r0, r18) - RegSet::of(rscratch1, rscratch2) - exclude, sp);
+  push(call_clobbered_registers() - exclude, sp);
   sub(sp, sp, step);
   mov(rscratch1, -step);
   // Push v0-v7, v16-v31.
@@ -2678,7 +2675,7 @@ void MacroAssembler::pop_call_clobbered_registers_except(RegSet exclude) {
           as_FloatRegister(i+3), T1D, Address(post(sp, 4 * wordSize)));
   }
 
-  pop(RegSet::range(r0, r18) - RegSet::of(rscratch1, rscratch2) - exclude, sp);
+  pop(call_clobbered_registers() - exclude, sp);
 }
 
 void MacroAssembler::push_CPU_state(bool save_vectors, bool use_sve,
@@ -4389,7 +4386,7 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
   // was post-decremented.)  Skip this address by starting at i=1, and
   // touch a few more pages below.  N.B.  It is important to touch all
   // the way down to and including i=StackShadowPages.
-  for (int i = 0; i < (int)(JavaThread::stack_shadow_zone_size() / os::vm_page_size()) - 1; i++) {
+  for (int i = 0; i < (int)(StackOverflow::stack_shadow_zone_size() / os::vm_page_size()) - 1; i++) {
     // this could be any sized move but this is can be a debugging crumb
     // so the bigger the better.
     lea(tmp, Address(tmp, -os::vm_page_size()));
@@ -4400,13 +4397,6 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
 // Move the address of the polling page into dest.
 void MacroAssembler::get_polling_page(Register dest, relocInfo::relocType rtype) {
   ldr(dest, Address(rthread, Thread::polling_page_offset()));
-}
-
-// Move the address of the polling page into r, then read the polling
-// page.
-address MacroAssembler::fetch_and_read_polling_page(Register r, relocInfo::relocType rtype) {
-  get_polling_page(r, rtype);
-  return read_polling_page(r, rtype);
 }
 
 // Read the polling page.  The address of the polling page must
@@ -5271,7 +5261,7 @@ void MacroAssembler::cache_wb(Address line) {
   assert(line.offset() == 0, "offset should be 0");
   // would like to assert this
   // assert(line._ext.shift == 0, "shift should be zero");
-  if (VM_Version::supports_dcpop()) {
+  if (VM_Version::features() & VM_Version::CPU_DCPOP) {
     // writeback using clear virtual address to point of persistence
     dc(Assembler::CVAP, line.base());
   } else {

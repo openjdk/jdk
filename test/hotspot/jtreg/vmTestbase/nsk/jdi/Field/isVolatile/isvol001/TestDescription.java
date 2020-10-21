@@ -41,13 +41,13 @@
  *          /test/lib
  * @build nsk.jdi.Field.isVolatile.isvol001
  *        nsk.jdi.Field.isVolatile.isvol001a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Field.isVolatile.isvol001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
 

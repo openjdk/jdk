@@ -39,7 +39,7 @@ public class FileMapInfo {
   // Fields for handling the copied C++ vtables
   private static Address mcRegionBaseAddress;
   private static Address mcRegionEndAddress;
-  private static Address vtablesStartAddress;
+  private static Address vtablesIndex;
 
   // HashMap created by mapping the vTable addresses in the mc region with
   // the corresponding metadata type.
@@ -95,10 +95,10 @@ public class FileMapInfo {
 
     // char* mapped_base_address = header->_mapped_base_address
     // size_t cloned_vtable_offset = header->_cloned_vtable_offset
-    // char* vtablesStartAddress = mapped_base_address + cloned_vtable_offset;
+    // CppVtableInfo** vtablesIndex = mapped_base_address + cloned_vtable_offset;
     Address mapped_base_address = get_AddressField(FileMapHeader_type, header, "_mapped_base_address");
     long cloned_vtable_offset = get_CIntegerField(FileMapHeader_type, header, "_cloned_vtables_offset");
-    vtablesStartAddress = mapped_base_address.addOffsetTo(cloned_vtable_offset);
+    vtablesIndex = mapped_base_address.addOffsetTo(cloned_vtable_offset);
 
     // CDSFileMapRegion* mc_space = &header->_space[mc];
     // char* mcRegionBaseAddress = mc_space->_mapped_base;
@@ -163,18 +163,26 @@ public class FileMapInfo {
 
     public void createVtableTypeMapping() {
       vTableTypeMap = new HashMap<Address, Type>();
-      long metadataVTableSize = 0;
       long addressSize = VM.getVM().getAddressSize();
 
-      Address copiedVtableAddress = vtablesStartAddress;
-      for (int i=0; i < metadataTypeArray.length; i++) {
-        // The first entry denotes the vtable size.
-        metadataVTableSize = copiedVtableAddress.getAddressAt(0).asLongValue();
-        vTableTypeMap.put(copiedVtableAddress.addOffsetTo(addressSize), metadataTypeArray[i]);
+      // vtablesIndex points to this:
+      //     class CppVtableInfo {
+      //         intptr_t _vtable_size;
+      //         intptr_t _cloned_vtable[1];
+      //         ...
+      //     };
+      //     CppVtableInfo** CppVtables::_index;
+      // This is the index of all the cloned vtables. E.g., for
+      //     ConstantPool* cp = ....; // an archived constant pool
+      //     InstanceKlass* ik = ....;// an archived class
+      // the following holds true:
+      //     &_index[ConstantPool_Kind]->_cloned_vtable[0]  == ((intptr_t**)cp)[0]
+      //     &_index[InstanceKlass_Kind]->_cloned_vtable[0] == ((intptr_t**)ik)[0]
 
-        // The '+ 1' below is to skip the entry containing the size of this metadata's vtable.
-        copiedVtableAddress =
-          copiedVtableAddress.addOffsetTo((metadataVTableSize + 1) * addressSize);
+      for (int i=0; i < metadataTypeArray.length; i++) {
+        Address vtableInfoAddress = vtablesIndex.getAddressAt(i * addressSize); // = _index[i]
+        Address vtableAddress = vtableInfoAddress.addOffsetTo(addressSize); // = &_index[i]->_cloned_vtable[0]
+        vTableTypeMap.put(vtableAddress, metadataTypeArray[i]);
       }
     }
   }

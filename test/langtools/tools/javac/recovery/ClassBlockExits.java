@@ -32,8 +32,8 @@
  *          jdk.compiler/com.sun.tools.javac.util
  * @build toolbox.ToolBox toolbox.JavacTask
  * @build combo.ComboTestHelper
- * @compile --enable-preview -source ${jdk.version} ClassBlockExits.java
- * @run main/othervm --enable-preview ClassBlockExits
+ * @compile ClassBlockExits.java
+ * @run main ClassBlockExits
  */
 
 import combo.ComboInstance;

@@ -24,6 +24,8 @@
 
 #include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "gc/shared/oopStorage.hpp"
+#include "gc/shared/oopStorageSet.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrThreadId.hpp"
 #include "logging/log.hpp"
@@ -32,6 +34,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvmtiDeferredUpdates.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -113,6 +116,8 @@ static int Knob_FixedSpin           = 0;
 static int Knob_PreSpin             = 10;      // 20-100 likely better
 
 DEBUG_ONLY(static volatile bool InitDone = false;)
+
+OopStorage* ObjectMonitor::_oop_storage = NULL;
 
 // -----------------------------------------------------------------------------
 // Theory of operations -- Monitors lists, thread residency, etc:
@@ -237,6 +242,53 @@ void ObjectMonitor::operator delete[] (void *p) {
   operator delete(p);
 }
 
+// Check that object() and set_object() are called from the right context:
+static void check_object_context() {
+#ifdef ASSERT
+  Thread* self = Thread::current();
+  if (self->is_Java_thread()) {
+    // Mostly called from JavaThreads so sanity check the thread state.
+    JavaThread* jt = self->as_Java_thread();
+    switch (jt->thread_state()) {
+    case _thread_in_vm:    // the usual case
+    case _thread_in_Java:  // during deopt
+      break;
+    default:
+      fatal("called from an unsafe thread state");
+    }
+    assert(jt->is_active_Java_thread(), "must be active JavaThread");
+  } else {
+    // However, ThreadService::get_current_contended_monitor()
+    // can call here via the VMThread so sanity check it.
+    assert(self->is_VM_thread(), "must be");
+  }
+#endif // ASSERT
+}
+
+oop ObjectMonitor::object() const {
+  check_object_context();
+  if (_object.is_null()) {
+    return NULL;
+  }
+  return _object.resolve();
+}
+
+oop ObjectMonitor::object_peek() const {
+  if (_object.is_null()) {
+    return NULL;
+  }
+  return _object.peek();
+}
+
+void ObjectMonitor::set_object(oop obj) {
+  check_object_context();
+  if (_object.is_null()) {
+    _object = WeakHandle(_oop_storage, obj);
+  } else {
+    _object.replace(obj);
+  }
+}
+
 // -----------------------------------------------------------------------------
 // Enter support
 
@@ -276,9 +328,9 @@ bool ObjectMonitor::enter(TRAPS) {
   if (TrySpin(Self) > 0) {
     assert(_owner == Self, "must be Self: owner=" INTPTR_FORMAT, p2i(_owner));
     assert(_recursions == 0, "must be 0: recursions=" INTX_FORMAT, _recursions);
-    assert(((oop)object())->mark() == markWord::encode(this),
+    assert(object()->mark() == markWord::encode(this),
            "object mark must match encoded this: mark=" INTPTR_FORMAT
-           ", encoded this=" INTPTR_FORMAT, ((oop)object())->mark().value(),
+           ", encoded this=" INTPTR_FORMAT, object()->mark().value(),
            markWord::encode(this).value());
     Self->_Stalled = 0;
     return true;
@@ -286,8 +338,7 @@ bool ObjectMonitor::enter(TRAPS) {
 
   assert(_owner != Self, "invariant");
   assert(_succ != Self, "invariant");
-  assert(Self->is_Java_thread(), "invariant");
-  JavaThread * jt = (JavaThread *) Self;
+  JavaThread * jt = Self->as_Java_thread();
   assert(!SafepointSynchronize::is_at_safepoint(), "invariant");
   assert(jt->thread_state() != _thread_blocked, "invariant");
 
@@ -297,7 +348,7 @@ bool ObjectMonitor::enter(TRAPS) {
     // Async deflation is in progress and our contentions increment
     // above lost the race to async deflation. Undo the work and
     // force the caller to retry.
-    const oop l_object = (oop)object();
+    const oop l_object = object();
     if (l_object != NULL) {
       // Attempt to restore the header/dmw to the object's header so that
       // we only retry once if the deflater thread happens to be slow.
@@ -311,8 +362,8 @@ bool ObjectMonitor::enter(TRAPS) {
   JFR_ONLY(JfrConditionalFlushWithStacktrace<EventJavaMonitorEnter> flush(jt);)
   EventJavaMonitorEnter event;
   if (event.should_commit()) {
-    event.set_monitorClass(((oop)this->object())->klass());
-    event.set_address((uintptr_t)(this->object_addr()));
+    event.set_monitorClass(object()->klass());
+    event.set_address((uintptr_t)object_addr());
   }
 
   { // Change java thread status to indicate blocked on monitor enter.
@@ -375,7 +426,7 @@ bool ObjectMonitor::enter(TRAPS) {
   assert(_recursions == 0, "invariant");
   assert(_owner == Self, "invariant");
   assert(_succ != Self, "invariant");
-  assert(((oop)(object()))->mark() == markWord::encode(this), "invariant");
+  assert(object()->mark() == markWord::encode(this), "invariant");
 
   // The thread -- now the owner -- is back in vm mode.
   // Report the glorious news via TI,DTrace and jvmstat.
@@ -439,18 +490,15 @@ void ObjectMonitor::install_displaced_markword_in_object(const oop obj) {
 
   // Separate loads in is_being_async_deflated(), which is almost always
   // called before this function, from the load of dmw/header below.
-  if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
-    // A non-multiple copy atomic (nMCA) machine needs a bigger
-    // hammer to separate the loads before and the load below.
-    OrderAccess::fence();
-  } else {
-    OrderAccess::loadload();
-  }
 
-  const oop l_object = (oop)object();
+  // _contentions and dmw/header may get written by different threads.
+  // Make sure to observe them in the same order when having several observers.
+  OrderAccess::loadload_for_IRIW();
+
+  const oop l_object = object_peek();
   if (l_object == NULL) {
     // ObjectMonitor's object ref has already been cleared by async
-    // deflation so we're done here.
+    // deflation or GC so we're done here.
     return;
   }
   assert(l_object == obj, "object=" INTPTR_FORMAT " must equal obj="
@@ -506,8 +554,7 @@ const char* ObjectMonitor::is_busy_to_string(stringStream* ss) {
 
 void ObjectMonitor::EnterI(TRAPS) {
   Thread * const Self = THREAD;
-  assert(Self->is_Java_thread(), "invariant");
-  assert(((JavaThread *) Self)->thread_state() == _thread_blocked, "invariant");
+  assert(Self->as_Java_thread()->thread_state() == _thread_blocked, "invariant");
 
   // Try the lock - TATAS
   if (TryLock (Self) > 0) {
@@ -705,10 +752,6 @@ void ObjectMonitor::EnterI(TRAPS) {
   // In addition, Self.TState is stable.
 
   assert(_owner == Self, "invariant");
-  assert(object() != NULL, "invariant");
-  // I'd like to write:
-  //   guarantee (((oop)(object()))->mark() == markWord::encode(this), "invariant") ;
-  // but as we're at a safepoint that's not safe.
 
   UnlinkAfterAcquire(Self, &node);
   if (_succ == Self) _succ = NULL;
@@ -775,9 +818,10 @@ void ObjectMonitor::ReenterI(Thread * Self, ObjectWaiter * SelfNode) {
   assert(SelfNode != NULL, "invariant");
   assert(SelfNode->_thread == Self, "invariant");
   assert(_waiters > 0, "invariant");
-  assert(((oop)(object()))->mark() == markWord::encode(this), "invariant");
-  assert(((JavaThread *)Self)->thread_state() != _thread_blocked, "invariant");
-  JavaThread * jt = (JavaThread *) Self;
+  assert(object()->mark() == markWord::encode(this), "invariant");
+
+  JavaThread * jt = Self->as_Java_thread();
+  assert(jt->thread_state() != _thread_blocked, "invariant");
 
   int nWakeups = 0;
   for (;;) {
@@ -843,7 +887,7 @@ void ObjectMonitor::ReenterI(Thread * Self, ObjectWaiter * SelfNode) {
   // In addition, Self.TState is stable.
 
   assert(_owner == Self, "invariant");
-  assert(((oop)(object()))->mark() == markWord::encode(this), "invariant");
+  assert(object()->mark() == markWord::encode(this), "invariant");
   UnlinkAfterAcquire(Self, SelfNode);
   if (_succ == Self) _succ = NULL;
   assert(_succ != Self, "invariant");
@@ -1230,8 +1274,7 @@ void ObjectMonitor::ExitEpilog(Thread * Self, ObjectWaiter * Wakee) {
 // thread due to contention.
 intx ObjectMonitor::complete_exit(TRAPS) {
   Thread * const Self = THREAD;
-  assert(Self->is_Java_thread(), "Must be Java thread!");
-  JavaThread *jt = (JavaThread *)THREAD;
+  JavaThread * jt = Self->as_Java_thread();
 
   assert(InitDone, "Unexpectedly not initialized");
 
@@ -1256,8 +1299,7 @@ intx ObjectMonitor::complete_exit(TRAPS) {
 // complete_exit/reenter operate as a wait without waiting
 bool ObjectMonitor::reenter(intx recursions, TRAPS) {
   Thread * const Self = THREAD;
-  assert(Self->is_Java_thread(), "Must be Java thread!");
-  JavaThread *jt = (JavaThread *)THREAD;
+  JavaThread * jt = Self->as_Java_thread();
 
   guarantee(_owner != Self, "reenter already owner");
   if (!enter(THREAD)) {
@@ -1307,7 +1349,7 @@ static void post_monitor_wait_event(EventJavaMonitorWait* event,
                                     bool timedout) {
   assert(event != NULL, "invariant");
   assert(monitor != NULL, "invariant");
-  event->set_monitorClass(((oop)monitor->object())->klass());
+  event->set_monitorClass(monitor->object()->klass());
   event->set_timeout(timeout);
   event->set_address((uintptr_t)monitor->object_addr());
   event->set_notifier(notifier_tid);
@@ -1322,8 +1364,7 @@ static void post_monitor_wait_event(EventJavaMonitorWait* event,
 // will need to be replicated in complete_exit
 void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   Thread * const Self = THREAD;
-  assert(Self->is_Java_thread(), "Must be Java thread!");
-  JavaThread *jt = (JavaThread *)THREAD;
+  JavaThread * jt = Self->as_Java_thread();
 
   assert(InitDone, "Unexpectedly not initialized");
 
@@ -1520,13 +1561,14 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   jt->set_current_waiting_monitor(NULL);
 
   guarantee(_recursions == 0, "invariant");
-  _recursions = save;     // restore the old recursion count
+  _recursions = save      // restore the old recursion count
+                + JvmtiDeferredUpdates::get_and_reset_relock_count_after_wait(jt); //  increased by the deferred relock count
   _waiters--;             // decrement the number of waiters
 
   // Verify a few postconditions
   assert(_owner == Self, "invariant");
   assert(_succ != Self, "invariant");
-  assert(((oop)(object()))->mark() == markWord::encode(this), "invariant");
+  assert(object()->mark() == markWord::encode(this), "invariant");
 
   // check if the notification happened
   if (!WasNotified) {
@@ -1951,12 +1993,12 @@ ObjectWaiter::ObjectWaiter(Thread* thread) {
 }
 
 void ObjectWaiter::wait_reenter_begin(ObjectMonitor * const mon) {
-  JavaThread *jt = (JavaThread *)this->_thread;
+  JavaThread *jt = this->_thread->as_Java_thread();
   _active = JavaThreadBlockedOnMonitorEnterState::wait_reenter_begin(jt, mon);
 }
 
 void ObjectWaiter::wait_reenter_end(ObjectMonitor * const mon) {
-  JavaThread *jt = (JavaThread *)this->_thread;
+  JavaThread *jt = this->_thread->as_Java_thread();
   JavaThreadBlockedOnMonitorEnterState::wait_reenter_end(jt, _active);
 }
 
@@ -2062,6 +2104,8 @@ void ObjectMonitor::Initialize() {
 #undef NEWPERFVARIABLE
   }
 
+  _oop_storage = OopStorageSet::create_weak("ObjectSynchronizer Weak");
+
   DEBUG_ONLY(InitDone = true;)
 }
 
@@ -2110,7 +2154,7 @@ void ObjectMonitor::print() const { print_on(tty); }
 void ObjectMonitor::print_debug_style_on(outputStream* st) const {
   st->print_cr("(ObjectMonitor*) " INTPTR_FORMAT " = {", p2i(this));
   st->print_cr("  _header = " INTPTR_FORMAT, header().value());
-  st->print_cr("  _object = " INTPTR_FORMAT, p2i(_object));
+  st->print_cr("  _object = " INTPTR_FORMAT, p2i(object_peek()));
   st->print("  _allocation_state = ");
   if (is_free()) {
     st->print("Free");

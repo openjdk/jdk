@@ -175,7 +175,7 @@ public class DriverManager {
      * connection arguments; normally at least a "user" and
      * "password" property should be included
      * @return a Connection to the URL
-     * @exception SQLException if a database access error occurs or the url is
+     * @throws SQLException if a database access error occurs or the url is
      * {@code null}
      * @throws SQLTimeoutException  when the driver has determined that the
      * timeout value specified by the {@code setLoginTimeout} method
@@ -206,7 +206,7 @@ public class DriverManager {
      *   made
      * @param password the user's password
      * @return a connection to the URL
-     * @exception SQLException if a database access error occurs or the url is
+     * @throws SQLException if a database access error occurs or the url is
      * {@code null}
      * @throws SQLTimeoutException  when the driver has determined that the
      * timeout value specified by the {@code setLoginTimeout} method
@@ -236,7 +236,7 @@ public class DriverManager {
      * @param url a database url of the form
      *  <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
      * @return a connection to the URL
-     * @exception SQLException if a database access error occurs or the url is
+     * @throws SQLException if a database access error occurs or the url is
      * {@code null}
      * @throws SQLTimeoutException  when the driver has determined that the
      * timeout value specified by the {@code setLoginTimeout} method
@@ -260,7 +260,7 @@ public class DriverManager {
      *     <code>jdbc:<em>subprotocol</em>:<em>subname</em></code>
      * @return a <code>Driver</code> object representing a driver
      * that can connect to the given URL
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     @CallerSensitive
     public static Driver getDriver(String url)
@@ -308,8 +308,8 @@ public class DriverManager {
      *
      * @param driver the new JDBC Driver that is to be registered with the
      *               {@code DriverManager}
-     * @exception SQLException if a database access error occurs
-     * @exception NullPointerException if {@code driver} is null
+     * @throws SQLException if a database access error occurs
+     * @throws NullPointerException if {@code driver} is null
      */
     public static void registerDriver(java.sql.Driver driver)
         throws SQLException {
@@ -328,8 +328,8 @@ public class DriverManager {
      *               {@code DriverManager}
      * @param da     the {@code DriverAction} implementation to be used when
      *               {@code DriverManager#deregisterDriver} is called
-     * @exception SQLException if a database access error occurs
-     * @exception NullPointerException if {@code driver} is null
+     * @throws SQLException if a database access error occurs
+     * @throws NullPointerException if {@code driver} is null
      * @since 1.8
      */
     public static void registerDriver(java.sql.Driver driver,
@@ -368,7 +368,7 @@ public class DriverManager {
      * prior to the driver being removed from the list of registered drivers.
      *
      * @param driver the JDBC Driver to remove
-     * @exception SQLException if a database access error occurs
+     * @throws SQLException if a database access error occurs
      * @throws SecurityException if a security manager exists and its
      * {@code checkPermission} method denies permission to deregister a driver.
      *

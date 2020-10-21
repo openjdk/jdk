@@ -98,26 +98,20 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         this(writer, null);
     }
 
-    /*** abstracts ***/
+    /* ----- abstracts ----- */
 
     /**
-     * Add the summary label for the member.
+     * Adds the summary label for the member.
      *
      * @param memberTree the content tree to which the label will be added
      */
     public abstract void addSummaryLabel(Content memberTree);
 
     /**
-     * Get the summary for the member summary table.
-     *
-     * @return a string for the table summary
-     */
-    private String getTableSummaryX() { return null; }
-
-    /**
-     * Get the summary table header for the member.
+     * Returns the summary table header for the member.
      *
      * @param member the member to be documented
+     *
      * @return the summary table header
      */
     public abstract TableHeader getSummaryTableHeader(Element member);
@@ -132,7 +126,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
     }
 
     /**
-     * Create the summary table for this element.
+     * Creates the summary table for this element.
      * The table should be created and initialized if needed, and configured
      * so that it is ready to add content with {@link Table#addRow(Content[])}
      * and similar methods.
@@ -142,66 +136,67 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
     protected abstract Table createSummaryTable();
 
     /**
-     * Add inherited summary label for the member.
+     * Adds inherited summary label for the member.
      *
-     * @param typeElement the TypeElement to which to link to
+     * @param typeElement   the type element to which to link to
      * @param inheritedTree the content tree to which the inherited summary label will be added
      */
     public abstract void addInheritedSummaryLabel(TypeElement typeElement, Content inheritedTree);
 
     /**
-     * Add the summary type for the member.
+     * Adds the summary type for the member.
      *
-     * @param member the member to be documented
+     * @param member        the member to be documented
      * @param tdSummaryType the content tree to which the type will be added
      */
     protected abstract void addSummaryType(Element member, Content tdSummaryType);
 
     /**
-     * Add the summary link for the member.
+     * Adds the summary link for the member.
      *
-     * @param typeElement the TypeElement to be documented
-     * @param member the member to be documented
-     * @param tdSummary the content tree to which the link will be added
+     * @param typeElement the type element to be documented
+     * @param member      the member to be documented
+     * @param tdSummary   the content tree to which the link will be added
      */
     protected void addSummaryLink(TypeElement typeElement, Element member, Content tdSummary) {
         addSummaryLink(LinkInfoImpl.Kind.MEMBER, typeElement, member, tdSummary);
     }
 
     /**
-     * Add the summary link for the member.
+     * Adds the summary link for the member.
      *
-     * @param context the id of the context where the link will be printed
-     * @param typeElement the TypeElement to be documented
-     * @param member the member to be documented
-     * @param tdSummary the content tree to which the summary link will be added
+     * @param context     the id of the context where the link will be printed
+     * @param typeElement the type element to be documented
+     * @param member      the member to be documented
+     * @param tdSummary   the content tree to which the summary link will be added
      */
     protected abstract void addSummaryLink(LinkInfoImpl.Kind context,
             TypeElement typeElement, Element member, Content tdSummary);
 
     /**
-     * Add the inherited summary link for the member.
+     * Adds the inherited summary link for the member.
      *
-     * @param typeElement the TypeElement to be documented
-     * @param member the member to be documented
-     * @param linksTree the content tree to which the inherited summary link will be added
+     * @param typeElement the type element to be documented
+     * @param member      the member to be documented
+     * @param linksTree   the content tree to which the inherited summary link will be added
      */
     protected abstract void addInheritedSummaryLink(TypeElement typeElement,
             Element member, Content linksTree);
 
     /**
-     * Get the deprecated link.
+     * Returns the deprecated link.
      *
      * @param member the member being linked to
+     *
      * @return a content tree representing the link
      */
     protected abstract Content getDeprecatedLink(Element member);
 
     /**
-     * Add the modifier and type for the member in the member summary.
+     * Adds the modifier and type for the member in the member summary.
      *
-     * @param member the member to add the type for
-     * @param type the type to add
+     * @param member        the member to add the type for
+     * @param type          the type to add
      * @param tdSummaryType the content tree to which the modified and type will be added
      */
     protected void addModifierAndType(Element member, TypeMirror type,
@@ -225,24 +220,19 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
                 } else {
                     code.add(Entity.NO_BREAK_SPACE);
                 }
-                code.add(
-                        writer.getLink(new LinkInfoImpl(configuration,
-                        LinkInfoImpl.Kind.SUMMARY_RETURN_TYPE, type)));
-            } else {
-                code.add(
-                        writer.getLink(new LinkInfoImpl(configuration,
-                        LinkInfoImpl.Kind.SUMMARY_RETURN_TYPE, type)));
             }
-
+            code.add(
+                    writer.getLink(new LinkInfoImpl(configuration,
+                            LinkInfoImpl.Kind.SUMMARY_RETURN_TYPE, type)));
         }
         tdSummaryType.add(code);
     }
 
     /**
-     * Add the modifier for the member.
+     * Adds the modifier for the member.
      *
      * @param member the member to add the type for
-     * @param code the content tree to which the modified will be added
+     * @param code   the content tree to which the modifier will be added
      */
     private void addModifier(Element member, Content code) {
         if (utils.isProtected(member)) {
@@ -268,30 +258,28 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
     }
 
     /**
-     * Add the deprecated information for the given member.
+     * Adds the deprecated information for the given member.
      *
-     * @param member the member being documented.
+     * @param member      the member being documented.
      * @param contentTree the content tree to which the deprecated information will be added.
      */
     protected void addDeprecatedInfo(Element member, Content contentTree) {
-        Content output = (new DeprecatedTaglet()).getTagletOutput(member,
+        Content output = (new DeprecatedTaglet()).getAllBlockTagOutput(member,
             writer.getTagletWriterInstance(false));
         if (!output.isEmpty()) {
-            Content deprecatedContent = output;
-            Content div = HtmlTree.DIV(HtmlStyle.deprecationBlock, deprecatedContent);
-            contentTree.add(div);
+            contentTree.add(HtmlTree.DIV(HtmlStyle.deprecationBlock, output));
         }
     }
 
     /**
-     * Add the comment for the given member.
+     * Adds the comment for the given member.
      *
-     * @param member the member being documented.
-     * @param htmltree the content tree to which the comment will be added.
+     * @param member   the member being documented.
+     * @param htmlTree the content tree to which the comment will be added.
      */
-    protected void addComment(Element member, Content htmltree) {
+    protected void addComment(Element member, Content htmlTree) {
         if (!utils.getFullBody(member).isEmpty()) {
-            writer.addInlineComment(member, htmltree);
+            writer.addInlineComment(member, htmlTree);
         }
     }
 
@@ -300,14 +288,13 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
     }
 
     /**
-    * Return true if the given <code>ProgramElement</code> is inherited
-    * by the class that is being documented.
-    *
-    * @param ped The <code>ProgramElement</code> being checked.
-    * return true if the <code>ProgramElement</code> is being inherited and
-    * false otherwise.
-     *@return true if inherited
-    */
+     * Returns {@code true} if the given element is inherited
+     * by the class that is being documented.
+     *
+     * @param ped the element being checked
+     *
+     * @return {@code true} if inherited
+     */
     protected boolean isInherited(Element ped){
         return (!utils.isPrivate(ped) &&
                 (!utils.isPackagePrivate(ped) ||
@@ -315,54 +302,50 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
     }
 
     /**
-     * Add use information to the documentation tree.
+     * Adds use information to the documentation tree.
      *
-     * @param mems list of program elements for which the use information will be added
-     * @param heading the section heading
+     * @param members     list of program elements for which the use information will be added
+     * @param heading     the section heading
      * @param contentTree the content tree to which the use information will be added
      */
-    protected void addUseInfo(List<? extends Element> mems, Content heading, Content contentTree) {
-        if (mems == null || mems.isEmpty()) {
+    protected void addUseInfo(List<? extends Element> members, Content heading, Content contentTree) {
+        if (members == null || members.isEmpty()) {
             return;
         }
-        List<? extends Element> members = mems;
         boolean printedUseTableHeader = false;
-        if (members.size() > 0) {
-            Table useTable = new Table(HtmlStyle.useSummary, HtmlStyle.summaryTable)
-                    .setCaption(heading)
-                    .setRowScopeColumn(1)
-                    .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast);
-            for (Element element : members) {
-                TypeElement te = (typeElement == null)
-                        ? utils.getEnclosingTypeElement(element)
-                        : typeElement;
-                if (!printedUseTableHeader) {
-                    useTable.setHeader(getSummaryTableHeader(element));
-                    printedUseTableHeader = true;
-                }
-                Content summaryType = new ContentBuilder();
-                addSummaryType(element, summaryType);
-                Content typeContent = new ContentBuilder();
-                if (te != null
-                        && !utils.isConstructor(element)
-                        && !utils.isClass(element)
-                        && !utils.isInterface(element)
-                        && !utils.isAnnotationType(element)) {
-                    HtmlTree name = new HtmlTree(TagName.SPAN);
-                    name.setStyle(HtmlStyle.typeNameLabel);
-                    name.add(name(te) + ".");
-                    typeContent.add(name);
-                }
-                addSummaryLink(utils.isClass(element) || utils.isInterface(element)
-                        ? LinkInfoImpl.Kind.CLASS_USE
-                        : LinkInfoImpl.Kind.MEMBER,
-                        te, element, typeContent);
-                Content desc = new ContentBuilder();
-                writer.addSummaryLinkComment(this, element, desc);
-                useTable.addRow(summaryType, typeContent, desc);
+        Table useTable = new Table(HtmlStyle.summaryTable)
+                .setCaption(heading)
+                .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast);
+        for (Element element : members) {
+            TypeElement te = (typeElement == null)
+                    ? utils.getEnclosingTypeElement(element)
+                    : typeElement;
+            if (!printedUseTableHeader) {
+                useTable.setHeader(getSummaryTableHeader(element));
+                printedUseTableHeader = true;
             }
-            contentTree.add(useTable);
+            Content summaryType = new ContentBuilder();
+            addSummaryType(element, summaryType);
+            Content typeContent = new ContentBuilder();
+            if (te != null
+                    && !utils.isConstructor(element)
+                    && !utils.isClass(element)
+                    && !utils.isInterface(element)
+                    && !utils.isAnnotationType(element)) {
+                HtmlTree name = new HtmlTree(TagName.SPAN);
+                name.setStyle(HtmlStyle.typeNameLabel);
+                name.add(name(te) + ".");
+                typeContent.add(name);
+            }
+            addSummaryLink(utils.isClass(element) || utils.isInterface(element)
+                    ? LinkInfoImpl.Kind.CLASS_USE
+                    : LinkInfoImpl.Kind.MEMBER,
+                    te, element, typeContent);
+            Content desc = new ContentBuilder();
+            writer.addSummaryLinkComment(this, element, desc);
+            useTable.addRow(summaryType, typeContent, desc);
         }
+        contentTree.add(useTable);
     }
 
     protected void serialWarning(Element e, String key, String a1, String a2) {
@@ -371,16 +354,9 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         }
     }
 
-    /**
-     * Add the member summary for the given class.
-     *
-     * @param tElement the class that is being documented
-     * @param member the member being documented
-     * @param firstSentenceTags the first sentence tags to be added to the summary
-     */
     @Override
     public void addMemberSummary(TypeElement tElement, Element member,
-            List<? extends DocTree> firstSentenceTags) {
+            List<? extends DocTree> firstSentenceTrees) {
         if (tElement != typeElement) {
             throw new IllegalStateException();
         }
@@ -394,34 +370,18 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         addSummaryLink(tElement, member, summaryLink);
         rowContents.add(summaryLink);
         Content desc = new ContentBuilder();
-        writer.addSummaryLinkComment(this, member, firstSentenceTags, desc);
+        writer.addSummaryLinkComment(this, member, firstSentenceTrees, desc);
         rowContents.add(desc);
         table.addRow(member, rowContents);
     }
 
-    /**
-     * Add inherited member summary for the given class and member.
-     *
-     * @param tElement the class the inherited member belongs to
-     * @param nestedClass the inherited member that is summarized
-     * @param isFirst true if this is the first member in the list
-     * @param isLast true if this is the last member in the list
-     * @param linksTree the content tree to which the summary will be added
-     */
     @Override
     public void addInheritedMemberSummary(TypeElement tElement,
             Element nestedClass, boolean isFirst, boolean isLast,
             Content linksTree) {
-        writer.addInheritedMemberSummary(this, tElement, nestedClass, isFirst,
-                linksTree);
+        writer.addInheritedMemberSummary(this, tElement, nestedClass, isFirst, linksTree);
     }
 
-    /**
-     * Get the inherited summary header for the given class.
-     *
-     * @param tElement the class the inherited member belongs to
-     * @return a content tree for the inherited summary header
-     */
     @Override
     public Content getInheritedSummaryHeader(TypeElement tElement) {
         Content inheritedTree = writer.getMemberInheritedTree();
@@ -429,22 +389,11 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         return inheritedTree;
     }
 
-    /**
-     * Get the inherited summary links tree.
-     *
-     * @return a content tree for the inherited summary links
-     */
     @Override
     public Content getInheritedSummaryLinksTree() {
         return new HtmlTree(TagName.CODE);
     }
 
-    /**
-     * Get the summary table tree for the given class.
-     *
-     * @param tElement the class for which the summary table is generated
-     * @return a content tree for the summary table
-     */
     @Override
     public Content getSummaryTableTree(TypeElement tElement) {
         if (tElement != typeElement) {
@@ -457,12 +406,6 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         return table;
     }
 
-    /**
-     * Get the member tree to be documented.
-     *
-     * @param memberTree the content tree of member to be documented
-     * @return a content tree that will be added to the class documentation
-     */
     @Override
     public Content getMemberTree(Content memberTree) {
         return writer.getMemberTree(memberTree);
@@ -483,7 +426,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
      */
     class MemberSignature {
 
-        private Element element;
+        private final Element element;
         private Content typeParameters;
         private Content returnType;
         private Content parameters;
@@ -497,19 +440,20 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         private static final int RETURN_TYPE_MAX_LINE_LENGTH = 50;
 
         /**
-         * Create a new member signature builder.
+         * Creates a new member signature builder.
          *
-         * @param element The element for which to create a signature.
+         * @param element the element for which to create a signature
          */
         MemberSignature(Element element) {
             this.element = element;
         }
 
         /**
-         * Add the type parameters for an executable member.
+         * Adds the type parameters for an executable member.
          *
          * @param typeParameters the content tree containing the type parameters to add.
-         * @return this MemberSignature instance
+         *
+         * @return this instance
          */
         MemberSignature addTypeParameters(Content typeParameters) {
             this.typeParameters = typeParameters;
@@ -517,10 +461,11 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         }
 
         /**
-         * Add the return type for an executable member.
+         * Adds the return type for an executable member.
          *
          * @param returnType the content tree containing the return type to add.
-         * @return this MemberSignature instance
+         *
+         * @return this instance
          */
         MemberSignature addReturnType(Content returnType) {
             this.returnType = returnType;
@@ -528,10 +473,11 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         }
 
         /**
-         * Add the type information for a non-executable member.
+         * Adds the type information for a non-executable member.
          *
          * @param type the type of the member.
-         * @return this MemberSignature instance
+         *
+         * @return this instance
          */
         MemberSignature addType(TypeMirror type) {
             this.returnType = writer.getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.MEMBER, type));
@@ -539,10 +485,11 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         }
 
         /**
-         * Add the parameter information of an executable member.
+         * Adds the parameter information of an executable member.
          *
          * @param paramTree the content tree containing the parameter information.
-         * @return this MemberSignature instance
+         *
+         * @return this instance
          */
         MemberSignature addParameters(Content paramTree) {
             this.parameters = paramTree;
@@ -550,10 +497,11 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         }
 
         /**
-         * Add the exception information of an executable member.
+         * Adds the exception information of an executable member.
          *
          * @param exceptionTree the content tree containing the exception information
-         * @return this MemberSignature instance
+         *
+         * @return this instance
          */
         MemberSignature addExceptions(Content exceptionTree) {
             this.exceptions = exceptionTree;
@@ -561,9 +509,9 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         }
 
         /**
-         * Return a HTML tree containing the member signature.
+         * Returns an HTML tree containing the member signature.
          *
-         * @return a HTML tree containing the member signature
+         * @return an HTML tree containing the member signature
          */
         Content toContent() {
             Content content = new ContentBuilder();
@@ -602,7 +550,6 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
             }
             content.add(nameSpan);
 
-
             // Parameters and exceptions
             if (parameters != null) {
                 appendParametersAndExceptions(content, lastLineSeparator);
@@ -612,12 +559,12 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         }
 
         /**
-         * Add the modifier for the member. The modifiers are ordered as specified
+         * Adds the modifier for the member. The modifiers are ordered as specified
          * by <em>The Java Language Specification</em>.
          *
-         * @param htmltree the content tree to which the modifier information will be added.
+         * @param htmlTree the content tree to which the modifier information will be added
          */
-        private void appendModifiers(Content htmltree) {
+        private void appendModifiers(Content htmlTree) {
             Set<Modifier> set = new TreeSet<>(element.getModifiers());
 
             // remove the ones we really don't need
@@ -639,68 +586,69 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
             }
             if (!set.isEmpty()) {
                 String mods = set.stream().map(Modifier::toString).collect(Collectors.joining(" "));
-                htmltree.add(HtmlTree.SPAN(HtmlStyle.modifiers, new StringContent(mods)));
-                htmltree.add(Entity.NO_BREAK_SPACE);
+                htmlTree.add(HtmlTree.SPAN(HtmlStyle.modifiers, new StringContent(mods)))
+                        .add(Entity.NO_BREAK_SPACE);
             }
         }
 
         /**
-         * Append the type parameter information to the HTML tree.
+         * Appends the type parameter information to the HTML tree.
          *
-         * @param htmltree the HTML tree
-         * @param lastLineSeparator index of last line separator in HTML tree
+         * @param htmlTree          the HTML tree
+         * @param lastLineSeparator index of last line separator in the HTML tree
+         *
          * @return the new index of the last line separator
          */
-        private int appendTypeParameters(Content htmltree, int lastLineSeparator) {
+        private int appendTypeParameters(Content htmlTree, int lastLineSeparator) {
             // Apply different wrapping strategies for type parameters
             // depending of combined length of type parameters and return type.
             int typeParamLength = typeParameters.charCount();
 
             if (typeParamLength >= TYPE_PARAMS_MAX_INLINE_LENGTH) {
-                htmltree.add(HtmlTree.SPAN(HtmlStyle.typeParametersLong, typeParameters));
+                htmlTree.add(HtmlTree.SPAN(HtmlStyle.typeParametersLong, typeParameters));
             } else {
-                htmltree.add(HtmlTree.SPAN(HtmlStyle.typeParameters, typeParameters));
+                htmlTree.add(HtmlTree.SPAN(HtmlStyle.typeParameters, typeParameters));
             }
 
-            int lineLength = htmltree.charCount() - lastLineSeparator;
+            int lineLength = htmlTree.charCount() - lastLineSeparator;
             int newLastLineSeparator = lastLineSeparator;
 
             // sum below includes length of modifiers plus type params added above
             if (lineLength + returnType.charCount()> RETURN_TYPE_MAX_LINE_LENGTH) {
-                htmltree.add(DocletConstants.NL);
-                newLastLineSeparator = htmltree.charCount();
+                htmlTree.add(DocletConstants.NL);
+                newLastLineSeparator = htmlTree.charCount();
             } else {
-                htmltree.add(Entity.NO_BREAK_SPACE);
+                htmlTree.add(Entity.NO_BREAK_SPACE);
             }
 
             return newLastLineSeparator;
         }
 
         /**
-         * Append the parameters and exceptions information to the HTML tree.
+         * Appends the parameters and exceptions information to the HTML tree.
          *
-         * @param htmltree the HTML tree
-         * @param lastLineSeparator the index of the last line separator in HTML tree
+         * @param htmlTree          the HTML tree
+         * @param lastLineSeparator the index of the last line separator in the HTML tree
          */
-        private void appendParametersAndExceptions(Content htmltree, int lastLineSeparator) {
+        private void appendParametersAndExceptions(Content htmlTree, int lastLineSeparator) {
             // Record current position for indentation of exceptions
-            int indentSize = htmltree.charCount() - lastLineSeparator;
+            int indentSize = htmlTree.charCount() - lastLineSeparator;
 
             if (parameters.charCount() == 2) {
                 // empty parameters are added without packing
-                htmltree.add(parameters);
+                htmlTree.add(parameters);
             } else {
-                htmltree.add(Entity.ZERO_WIDTH_SPACE);
-                htmltree.add(HtmlTree.SPAN(HtmlStyle.parameters, parameters));
+                htmlTree.add(Entity.ZERO_WIDTH_SPACE)
+                        .add(HtmlTree.SPAN(HtmlStyle.parameters, parameters));
             }
 
             // Exceptions
             if (exceptions != null && !exceptions.isEmpty()) {
                 CharSequence indent = " ".repeat(Math.max(0, indentSize + 1 - 7));
-                htmltree.add(DocletConstants.NL);
-                htmltree.add(indent);
-                htmltree.add("throws ");
-                htmltree.add(HtmlTree.SPAN(HtmlStyle.exceptions, exceptions));
+                htmlTree.add(DocletConstants.NL)
+                        .add(indent)
+                        .add("throws ")
+                        .add(HtmlTree.SPAN(HtmlStyle.exceptions, exceptions));
             }
         }
     }

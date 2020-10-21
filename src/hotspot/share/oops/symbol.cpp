@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classLoaderData.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -35,9 +36,12 @@
 #include "memory/universe.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/signature.hpp"
 #include "utilities/utf8.hpp"
+
+Symbol* Symbol::_vm_symbols[vmSymbols::number_of_symbols()];
 
 uint32_t Symbol::pack_hash_and_refcount(short hash, int refcount) {
   STATIC_ASSERT(PERM_REFCOUNT == ((1 << 16) - 1));
@@ -63,13 +67,14 @@ Symbol::Symbol(const u1* name, int length, int refcount) {
 void* Symbol::operator new(size_t sz, int len) throw() {
 #if INCLUDE_CDS
  if (DumpSharedSpaces) {
-    // To get deterministic output from -Xshare:dump, we ensure that Symbols are allocated in
-    // increasing addresses. When the symbols are copied into the archive, we preserve their
-    // relative address order (see SortedSymbolClosure in metaspaceShared.cpp)
-    //
-    // We cannot use arena because arena chunks are allocated by the OS. As a result, for example,
-    // the archived symbol of "java/lang/Object" may sometimes be lower than "java/lang/String", and
-    // sometimes be higher. This would cause non-deterministic contents in the archive.
+   MutexLocker ml(DumpRegion_lock, Mutex::_no_safepoint_check_flag);
+   // To get deterministic output from -Xshare:dump, we ensure that Symbols are allocated in
+   // increasing addresses. When the symbols are copied into the archive, we preserve their
+   // relative address order (sorted, see ArchiveBuilder::gather_klasses_and_symbols).
+   //
+   // We cannot use arena because arena chunks are allocated by the OS. As a result, for example,
+   // the archived symbol of "java/lang/Object" may sometimes be lower than "java/lang/String", and
+   // sometimes be higher. This would cause non-deterministic contents in the archive.
    DEBUG_ONLY(static void* last = 0);
    void* p = (void*)MetaspaceShared::symbol_space_alloc(size(len)*wordSize);
    assert(p > last, "must increase monotonically");
@@ -415,3 +420,9 @@ bool Symbol::is_valid(Symbol* s) {
 
 // SymbolTable prints this in its statistics
 NOT_PRODUCT(size_t Symbol::_total_count = 0;)
+
+#ifndef PRODUCT
+bool Symbol::is_valid_id(vmSymbolID vm_symbol_id) {
+  return vmSymbols::is_valid_id(vm_symbol_id);
+}
+#endif

@@ -35,6 +35,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/compiledICHolder.hpp"
 #include "oops/klass.inline.hpp"
+#include "prims/methodHandles.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vframeArray.hpp"
@@ -2507,7 +2508,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
   Label no_reguard;
   __ lwz(r_temp_1, thread_(stack_guard_state));
-  __ cmpwi(CCR0, r_temp_1, JavaThread::stack_guard_yellow_reserved_disabled);
+  __ cmpwi(CCR0, r_temp_1, StackOverflow::stack_guard_yellow_reserved_disabled);
   __ bne(CCR0, no_reguard);
 
   save_native_result(masm, ret_type, workspace_slot_offset);

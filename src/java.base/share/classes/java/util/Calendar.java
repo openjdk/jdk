@@ -1796,8 +1796,10 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @param date the given Date.
      * @see #getTime()
      * @see #setTimeInMillis(long)
+     * @throws NullPointerException if {@code date} is {@code null}
      */
     public final void setTime(Date date) {
+        Objects.requireNonNull(date, "date must not be null");
         setTimeInMillis(date.getTime());
     }
 
@@ -2726,7 +2728,9 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
                 lenient == that.lenient &&
                 firstDayOfWeek == that.firstDayOfWeek &&
                 minimalDaysInFirstWeek == that.minimalDaysInFirstWeek &&
-                zone.equals(that.zone);
+                (zone instanceof ZoneInfo ?
+                    zone.equals(that.zone) :
+                    zone.equals(that.getTimeZone()));
         } catch (Exception e) {
             // Note: GregorianCalendar.computeTime throws
             // IllegalArgumentException if the ERA value is invalid

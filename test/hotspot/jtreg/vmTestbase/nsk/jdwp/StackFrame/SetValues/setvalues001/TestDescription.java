@@ -71,12 +71,11 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.StackFrame.SetValues.setvalues001
- *        nsk.jdwp.StackFrame.SetValues.setvalues001a
+ * @build nsk.jdwp.StackFrame.SetValues.setvalues001a
  * @comment debuggee should be compiled w/ debug info
  * @clean nsk.jdwp.StackFrame.SetValues.setvalues001a
  * @compile -g:lines,source,vars ../setvalues001a.java
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.StackFrame.SetValues.setvalues001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

@@ -1639,7 +1639,7 @@ class Assembler : public AbstractAssembler {
 
   // For convenience. Load pointer into d from b+s1.
   inline void ld_ptr(Register d, int b, Register s1);
-  DEBUG_ONLY(inline void ld_ptr(Register d, ByteSize b, Register s1);)
+  inline void ld_ptr(Register d, ByteSize b, Register s1);
 
   //  PPC 1, section 3.3.3 Fixed-Point Store Instructions
   inline void stwx( Register d, Register s1, Register s2);
@@ -1663,7 +1663,7 @@ class Assembler : public AbstractAssembler {
   inline void stdbrx( Register d, Register s1, Register s2);
 
   inline void st_ptr(Register d, int si16,    Register s1);
-  DEBUG_ONLY(inline void st_ptr(Register d, ByteSize b, Register s1);)
+  inline void st_ptr(Register d, ByteSize b, Register s1);
 
   // PPC 1, section 3.3.13 Move To/From System Register Instructions
   inline void mtlr( Register s1);

@@ -40,6 +40,18 @@
 #include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 
+ShenandoahGCStateResetter::ShenandoahGCStateResetter() :
+  _gc_state(ShenandoahHeap::heap()->gc_state()),
+  _concurrent_weak_root_in_progress(ShenandoahHeap::heap()->is_concurrent_weak_root_in_progress()) {
+}
+
+ShenandoahGCStateResetter::~ShenandoahGCStateResetter() {
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  heap->_gc_state.set(_gc_state);
+  assert(heap->gc_state() == _gc_state, "Should be restored");
+  heap->set_concurrent_weak_root_in_progress(_concurrent_weak_root_in_progress);
+}
+
 // Check for overflow of number of root types.
 STATIC_ASSERT((static_cast<uint>(ShenandoahRootVerifier::AllRoots) + 1) > static_cast<uint>(ShenandoahRootVerifier::AllRoots));
 
@@ -60,6 +72,8 @@ ShenandoahRootVerifier::RootTypes ShenandoahRootVerifier::combine(RootTypes t1, 
 }
 
 void ShenandoahRootVerifier::oops_do(OopClosure* oops) {
+  ShenandoahGCStateResetter resetter;
+
   CodeBlobToOopClosure blobs(oops, !CodeBlobToOopClosure::FixRelocations);
   if (verify(CodeRoots)) {
     shenandoah_assert_locked_or_safepoint(CodeCache_lock);
@@ -74,7 +88,6 @@ void ShenandoahRootVerifier::oops_do(OopClosure* oops) {
 
   if (verify(SerialRoots)) {
     shenandoah_assert_safepoint();
-    ObjectSynchronizer::oops_do(oops);
   }
 
   if (verify(JNIHandleRoots)) {
@@ -109,6 +122,7 @@ void ShenandoahRootVerifier::oops_do(OopClosure* oops) {
 }
 
 void ShenandoahRootVerifier::roots_do(OopClosure* oops) {
+  ShenandoahGCStateResetter resetter;
   shenandoah_assert_safepoint();
 
   CodeBlobToOopClosure blobs(oops, !CodeBlobToOopClosure::FixRelocations);
@@ -118,7 +132,6 @@ void ShenandoahRootVerifier::roots_do(OopClosure* oops) {
   ClassLoaderDataGraph::cld_do(&clds);
 
   JNIHandles::oops_do(oops);
-  ObjectSynchronizer::oops_do(oops);
   Universe::vm_global()->oops_do(oops);
 
   AlwaysTrueClosure always_true;
@@ -135,6 +148,7 @@ void ShenandoahRootVerifier::roots_do(OopClosure* oops) {
 }
 
 void ShenandoahRootVerifier::strong_roots_do(OopClosure* oops) {
+  ShenandoahGCStateResetter resetter;
   shenandoah_assert_safepoint();
 
   CodeBlobToOopClosure blobs(oops, !CodeBlobToOopClosure::FixRelocations);
@@ -143,7 +157,6 @@ void ShenandoahRootVerifier::strong_roots_do(OopClosure* oops) {
   ClassLoaderDataGraph::roots_cld_do(&clds, NULL);
 
   JNIHandles::oops_do(oops);
-  ObjectSynchronizer::oops_do(oops);
   Universe::vm_global()->oops_do(oops);
 
   // Do thread roots the last. This allows verification code to find

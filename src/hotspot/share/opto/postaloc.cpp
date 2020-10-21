@@ -152,7 +152,7 @@ int PhaseChaitin::yank_if_dead_recurse(Node *old, Node *orig_old, Block *current
       }
     }
     // Disconnect control and remove precedence edges if any exist
-    old->disconnect_inputs(NULL, C);
+    old->disconnect_inputs(C);
   }
   return blk_adjust;
 }

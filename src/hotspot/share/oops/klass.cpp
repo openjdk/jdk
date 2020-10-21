@@ -204,7 +204,7 @@ Klass::Klass(KlassID id) : _id(id),
                            _prototype_header(markWord::prototype()),
                            _shared_class_path_index(-1) {
   CDS_ONLY(_shared_class_flags = 0;)
-  CDS_JAVA_HEAP_ONLY(_archived_mirror = 0;)
+  CDS_JAVA_HEAP_ONLY(_archived_mirror = narrowOop::null;)
   _primary_supers[0] = this;
   set_super_check_offset(in_bytes(primary_supers_offset()));
 }
@@ -618,6 +618,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   // Only recreate it if not present.  A previous attempt to restore may have
   // gotten an OOM later but keep the mirror if it was created.
   if (java_mirror() == NULL) {
+    ResourceMark rm(THREAD);
     log_trace(cds, mirror)("Recreate mirror for %s", external_name());
     java_lang_Class::create_mirror(this, loader, module_handle, protection_domain, Handle(), CHECK);
   }

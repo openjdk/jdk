@@ -119,11 +119,14 @@ ifneq ($(call check-jvm-feature, cds), true)
       archiveBuilder.cpp \
       archiveUtils.cpp \
       classListParser.cpp \
+      classLoaderDataShared.cpp \
       classLoaderExt.cpp \
+      cppVtables.cpp \
       dumpAllocStats.cpp \
       dynamicArchive.cpp \
       filemap.cpp \
       heapShared.cpp \
+      lambdaFormInvokers.cpp \
       metaspaceShared.cpp \
       metaspaceShared_$(HOTSPOT_TARGET_CPU).cpp \
       metaspaceShared_$(HOTSPOT_TARGET_CPU_ARCH).cpp \

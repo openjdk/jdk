@@ -46,9 +46,17 @@ import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLParameters;
+import javax.net.ssl.HandshakeCompletedEvent;
+import javax.net.ssl.HandshakeCompletedListener;
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.security.sasl.SaslException;
 
 /**
   * A thread that creates a connection to an LDAP server.
@@ -109,7 +117,7 @@ import javax.net.ssl.SSLParameters;
   * @author Rosanna Lee
   * @author Jagane Sundar
   */
-public final class Connection implements Runnable {
+public final class Connection implements Runnable, HandshakeCompletedListener {
 
     private static final boolean debug = false;
     private static final int dump = 0; // > 0 r, > 1 rw
@@ -161,6 +169,13 @@ public final class Connection implements Runnable {
 
     int readTimeout;
     int connectTimeout;
+
+    // Is connection upgraded to SSL via STARTTLS extended operation
+    private volatile boolean isUpgradedToStartTls;
+
+    // Lock to maintain isUpgradedToStartTls state
+    final Object startTlsLock = new Object();
+
     private static final boolean IS_HOSTNAME_VERIFICATION_DISABLED
             = hostnameVerificationDisabledValue();
 
@@ -342,6 +357,7 @@ public final class Connection implements Runnable {
                 param.setEndpointIdentificationAlgorithm("LDAPS");
                 sslSocket.setSSLParameters(param);
             }
+            sslSocket.addHandshakeCompletedListener(this);
             if (connectTimeout > 0) {
                 int socketTimeout = sslSocket.getSoTimeout();
                 sslSocket.setSoTimeout(connectTimeout); // reuse full timeout value
@@ -637,6 +653,15 @@ public final class Connection implements Runnable {
                             ldr = ldr.next;
                         }
                     }
+                    if (isTlsConnection()) {
+                        if (closureReason != null) {
+                            CommunicationException ce = new CommunicationException();
+                            ce.setRootCause(closureReason);
+                            tlsHandshakeCompleted.completeExceptionally(ce);
+                        } else {
+                            tlsHandshakeCompleted.cancel(false);
+                        }
+                    }
                     sock = null;
                 }
                 nparent = notifyParent;
@@ -677,6 +702,23 @@ public final class Connection implements Runnable {
 
         // Replace stream
         outStream = newOut;
+    }
+
+    /*
+     * Replace streams and set isUpdradedToStartTls flag to the provided value
+     */
+    synchronized public void replaceStreams(InputStream newIn, OutputStream newOut, boolean isStartTls) {
+        synchronized (startTlsLock) {
+            replaceStreams(newIn, newOut);
+            isUpgradedToStartTls = isStartTls;
+        }
+    }
+
+    /*
+     * Returns true if connection was upgraded to SSL with STARTTLS extended operation
+     */
+    public boolean isUpgradedToStartTls() {
+        return isUpgradedToStartTls;
     }
 
     /**
@@ -833,6 +875,11 @@ public final class Connection implements Runnable {
                     // is equal to & 0x80 (i.e. length byte with high bit off).
                     if ((seqlen & 0x80) == 0x80) {
                         seqlenlen = seqlen & 0x7f;  // number of length bytes
+                        // Check the length of length field, since seqlen is int
+                        // the number of bytes can't be greater than 4
+                        if (seqlenlen > 4) {
+                            throw new IOException("Length coded with too many bytes: " + seqlenlen);
+                        }
 
                         bytesread = 0;
                         eos = false;
@@ -860,6 +907,13 @@ public final class Connection implements Runnable {
                         offset += bytesread;
                     }
 
+                    if (seqlenlen > bytesread) {
+                        throw new IOException("Unexpected EOF while reading length");
+                    }
+
+                    if (seqlen < 0) {
+                        throw new IOException("Length too big: " + (((long) seqlen) & 0xFFFFFFFFL));
+                    }
                     // read in seqlen bytes
                     byte[] left = readFully(in, seqlen);
                     inbuf = Arrays.copyOf(inbuf, offset + left.length);
@@ -971,5 +1025,47 @@ public final class Connection implements Runnable {
             nread += count;
         }
         return buf;
+    }
+
+    private final CompletableFuture<X509Certificate> tlsHandshakeCompleted =
+            new CompletableFuture<>();
+
+    @Override
+    public void handshakeCompleted(HandshakeCompletedEvent event) {
+        try {
+            X509Certificate tlsServerCert = null;
+            Certificate[] certs;
+            if (event.getSocket().getUseClientMode()) {
+                certs = event.getPeerCertificates();
+            } else {
+                certs = event.getLocalCertificates();
+            }
+            if (certs != null && certs.length > 0 &&
+                    certs[0] instanceof X509Certificate) {
+                tlsServerCert = (X509Certificate) certs[0];
+            }
+            tlsHandshakeCompleted.complete(tlsServerCert);
+        } catch (SSLPeerUnverifiedException ex) {
+            CommunicationException ce = new CommunicationException();
+            ce.setRootCause(closureReason);
+            tlsHandshakeCompleted.completeExceptionally(ex);
+        }
+    }
+
+    public boolean isTlsConnection() {
+        return sock instanceof SSLSocket;
+    }
+
+    public X509Certificate getTlsServerCertificate()
+            throws SaslException {
+        try {
+            if (isTlsConnection())
+                return tlsHandshakeCompleted.get();
+        } catch (InterruptedException iex) {
+            throw new SaslException("TLS Handshake Exception ", iex);
+        } catch (ExecutionException eex) {
+            throw new SaslException("TLS Handshake Exception ", eex.getCause());
+        }
+        return null;
     }
 }

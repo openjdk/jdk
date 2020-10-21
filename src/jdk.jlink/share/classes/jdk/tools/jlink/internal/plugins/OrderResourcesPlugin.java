@@ -37,7 +37,6 @@ import java.util.Map;
 import java.util.function.ToIntFunction;
 
 import jdk.tools.jlink.internal.Utils;
-import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
@@ -46,21 +45,16 @@ import jdk.tools.jlink.plugin.ResourcePoolEntry;
  *
  * Order Resources plugin
  */
-public final class OrderResourcesPlugin implements Plugin {
-    public static final String NAME = "order-resources";
+public final class OrderResourcesPlugin extends AbstractPlugin {
     private static final FileSystem JRT_FILE_SYSTEM = Utils.jrtFileSystem();
 
     private final List<ToIntFunction<String>> filters;
     private final Map<String, Integer> orderedPaths;
 
     public OrderResourcesPlugin() {
+        super("order-resources");
         this.filters = new ArrayList<>();
         this.orderedPaths = new HashMap<>();
-    }
-
-    @Override
-    public String getName() {
-        return NAME;
     }
 
     static class SortWrapper {
@@ -149,23 +143,13 @@ public final class OrderResourcesPlugin implements Plugin {
     }
 
     @Override
-    public String getDescription() {
-        return PluginsResourceBundle.getDescription(NAME);
-    }
-
-    @Override
     public boolean hasArguments() {
         return true;
     }
 
     @Override
-    public String getArgumentsDescription() {
-       return PluginsResourceBundle.getArgument(NAME);
-    }
-
-    @Override
     public void configure(Map<String, String> config) {
-        List<String> patterns = Utils.parseList(config.get(NAME));
+        List<String> patterns = Utils.parseList(config.get(getName()));
         int ordinal = 0;
 
         for (String pattern : patterns) {

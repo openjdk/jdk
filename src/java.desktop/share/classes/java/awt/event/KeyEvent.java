@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+
 import sun.awt.AWTAccessor;
 
 /**
@@ -1878,6 +1879,11 @@ public class KeyEvent extends InputEvent {
     /**
      * Sets new modifiers by the old ones. The key modifiers
      * override overlapping mouse modifiers.
+     *
+     * @param  s the {@code ObjectInputStream} to read
+     * @throws ClassNotFoundException if the class of a serialized object could
+     *         not be found
+     * @throws IOException if an I/O error occurs
      * @serial
      */
     @SuppressWarnings("deprecation")

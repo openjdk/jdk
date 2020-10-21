@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ public final class IllegalAccessLogger {
     /**
      * Logger modes
      */
-    public static enum Mode {
+    public enum Mode {
         /**
          * Prints a warning when an illegal access succeeds and then
          * discards the logger so that there is no further output.
@@ -118,7 +118,7 @@ public final class IllegalAccessLogger {
         }
 
         /**
-         * Builds the IllegalAccessLogger and sets it as the system-wise logger.
+         * Builds the IllegalAccessLogger and sets it as the system-wide logger.
          */
         public void complete() {
             Map<Module, Set<String>> map1 = unmodifiableMap(moduleToConcealedPackages);

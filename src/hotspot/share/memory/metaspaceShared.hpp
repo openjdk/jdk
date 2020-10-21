@@ -35,6 +35,10 @@
 
 #define MAX_SHARED_DELTA                (0x7FFFFFFF)
 
+// Metaspace::allocate() requires that all blocks must be aligned with KlassAlignmentInBytes.
+// We enforce the same alignment rule in blocks allocated from the shared space.
+const int SharedSpaceObjectAlignment = KlassAlignmentInBytes;
+
 class outputStream;
 class CHeapBitMap;
 class FileMapInfo;
@@ -78,6 +82,7 @@ class MetaspaceShared : AllStatic {
   static intx _relocation_delta;
   static char* _requested_base_address;
   static bool _use_optimized_module_handling;
+  static bool _use_full_module_graph;
  public:
   enum {
     // core archive spaces
@@ -167,13 +172,6 @@ class MetaspaceShared : AllStatic {
 
   static bool is_shared_dynamic(void* p) NOT_CDS_RETURN_(false);
 
-  static char* allocate_cpp_vtable_clones();
-  static void clone_cpp_vtables(intptr_t* p);
-  static void zero_cpp_vtable_clones_for_writing();
-  static void patch_cpp_vtable_pointers();
-  static void serialize_cloned_cpp_vtptrs(SerializeClosure* sc);
-
-  static bool is_valid_shared_method(const Method* m) NOT_CDS_RETURN_(false);
   static void serialize(SerializeClosure* sc) NOT_CDS_RETURN;
 
   static MetaspaceSharedStats* stats() {
@@ -215,23 +213,28 @@ class MetaspaceShared : AllStatic {
   // Allocate a block of memory from the "mc" or "ro" regions.
   static char* misc_code_space_alloc(size_t num_bytes);
   static char* read_only_space_alloc(size_t num_bytes);
+  static char* read_write_space_alloc(size_t num_bytes);
 
   template <typename T>
   static Array<T>* new_ro_array(int length) {
-#if INCLUDE_CDS
     size_t byte_size = Array<T>::byte_sizeof(length, sizeof(T));
     Array<T>* array = (Array<T>*)read_only_space_alloc(byte_size);
     array->initialize(length);
     return array;
-#else
-    return NULL;
-#endif
+  }
+
+  template <typename T>
+  static Array<T>* new_rw_array(int length) {
+    size_t byte_size = Array<T>::byte_sizeof(length, sizeof(T));
+    Array<T>* array = (Array<T>*)read_write_space_alloc(byte_size);
+    array->initialize(length);
+    return array;
   }
 
   template <typename T>
   static size_t ro_array_bytesize(int length) {
     size_t byte_size = Array<T>::byte_sizeof(length, sizeof(T));
-    return align_up(byte_size, BytesPerWord);
+    return align_up(byte_size, SharedSpaceObjectAlignment);
   }
 
   static address i2i_entry_code_buffers(size_t total_size);
@@ -246,8 +249,6 @@ class MetaspaceShared : AllStatic {
 
   static Klass* get_relocated_klass(Klass *k, bool is_final=false);
 
-  static void allocate_cloned_cpp_vtptrs();
-  static intptr_t* get_archived_cpp_vtable(MetaspaceObj::Type msotype, address obj);
   static void initialize_ptr_marker(CHeapBitMap* ptrmap);
 
   // This is the base address as specified by -XX:SharedBaseAddress during -Xshare:dump.
@@ -265,13 +266,20 @@ class MetaspaceShared : AllStatic {
     return is_windows;
   }
 
-  static void write_core_archive_regions(FileMapInfo* mapinfo,
-                                         GrowableArray<ArchiveHeapOopmapInfo>* closed_oopmaps,
-                                         GrowableArray<ArchiveHeapOopmapInfo>* open_oopmaps);
+  // Returns the bitmap region which is allocated from C heap.
+  // Caller must free it with FREE_C_HEAP_ARRAY()
+  static char* write_core_archive_regions(FileMapInfo* mapinfo,
+                                          GrowableArray<ArchiveHeapOopmapInfo>* closed_oopmaps,
+                                          GrowableArray<ArchiveHeapOopmapInfo>* open_oopmaps,
+                                          size_t& bitmap_size_in_bytes);
 
   // Can we skip some expensive operations related to modules?
-  static bool use_optimized_module_handling()     { return _use_optimized_module_handling;  }
+  static bool use_optimized_module_handling() { return NOT_CDS(false) CDS_ONLY(_use_optimized_module_handling); }
   static void disable_optimized_module_handling() { _use_optimized_module_handling = false; }
+
+  // Can we use the full archived modue graph?
+  static bool use_full_module_graph() NOT_CDS_RETURN_(false);
+  static void disable_full_module_graph() { _use_full_module_graph = false; }
 
 private:
 #if INCLUDE_CDS
