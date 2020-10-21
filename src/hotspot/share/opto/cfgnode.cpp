@@ -1970,7 +1970,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // Wait until after parsing for the type information to propagate from the casts.
       assert(can_reshape, "Invalid during parsing");
       const Type* phi_type = bottom_type();
-      assert(phi_type->isa_int() || phi_type->isa_ptr(), "bad phi type");
+      assert(phi_type->isa_int() || phi_type->isa_ptr() || phi_type->isa_long(), "bad phi type");
       // Add casts to carry the control dependency of the Phi that is
       // going away
       Node* cast = NULL;

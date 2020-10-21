@@ -103,6 +103,13 @@ class GraphKit : public Phase {
   // Create or find a constant node
   Node* intcon(jint con)        const { return _gvn.intcon(con); }
   Node* longcon(jlong con)      const { return _gvn.longcon(con); }
+  Node* integercon(jlong con, BasicType bt)   const {
+    if (bt == T_INT) {
+      assert((jlong)(jint)con == con, "not an int");
+      return intcon((jint) con);
+    }
+    return longcon(con);
+  }
   Node* makecon(const Type *t)  const { return _gvn.makecon(t); }
   Node* zerocon(BasicType bt)   const { return _gvn.zerocon(bt); }
   // (See also macro MakeConX in type.hpp, which uses intcon or longcon.)

@@ -404,7 +404,7 @@ public class Preconditions {
      * length is a non-negative value (such as that of an array length or from
      * the upper bound of a loop)
      */
-//    @IntrinsicCandidate
+    @IntrinsicCandidate
     public static <X extends RuntimeException>
     long checkIndex(long index, long length,
                     BiFunction<String, List<Number>, X> oobef) {
