@@ -150,7 +150,7 @@ template <int N> static void get_header_version(char (&header_version) [N]) {
   } else {
     // Get the hash value.  Use a static seed because the hash needs to return the same
     // value over multiple jvm invocations.
-    unsigned int hash = AltHashing::murmur3_32(8191, (const jbyte*)vm_version, version_len);
+    uint32_t hash = AltHashing::halfsiphash_32(8191, (const uint8_t*)vm_version, version_len);
 
     // Truncate the ident, saving room for the 8 hex character hash value.
     strncpy(header_version, vm_version, JVM_IDENT_MAX-9);

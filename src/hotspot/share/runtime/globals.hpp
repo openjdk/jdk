@@ -391,6 +391,29 @@ const intx ObjectAlignmentInBytes = 8;
   notproduct(bool, WalkStackALot, false,                                    \
           "Trace stack (no print) at every exit from the runtime system")   \
                                                                             \
+  develop(bool, DeoptimizeObjectsALot, false,                               \
+          "For testing purposes concurrent threads revert optimizations "   \
+          "based on escape analysis at intervals given with "               \
+          "DeoptimizeObjectsALotInterval=n. The thread count is given "     \
+          "with DeoptimizeObjectsALotThreadCountSingle and "                \
+          "DeoptimizeObjectsALotThreadCountAll.")                           \
+                                                                            \
+  develop(uint64_t, DeoptimizeObjectsALotInterval, 5,                       \
+          "Interval for DeoptimizeObjectsALot.")                            \
+          range(0, max_jlong)                                               \
+                                                                            \
+  develop(int, DeoptimizeObjectsALotThreadCountSingle, 1,                   \
+          "The number of threads that revert optimizations based on "       \
+          "escape analysis for a single thread if DeoptimizeObjectsALot "   \
+          "is enabled. The target thread is selected round robin." )        \
+          range(0, max_jint)                                                \
+                                                                            \
+  develop(int, DeoptimizeObjectsALotThreadCountAll, 1,                      \
+          "The number of threads that revert optimizations based on "       \
+          "escape analysis for all threads if DeoptimizeObjectsALot "       \
+          "is enabled." )                                                   \
+          range(0, max_jint)                                                \
+                                                                            \
   notproduct(bool, VerifyLastFrame, false,                                  \
           "Verify oops on last frame on entry to VM")                       \
                                                                             \
@@ -919,7 +942,6 @@ const intx ObjectAlignmentInBytes = 8;
           NOT_LP64(2200*K) LP64_ONLY(4*M),                                  \
           "(Deprecated) Initial size of the boot class loader data metaspace") \
           range(30*K, max_uintx/BytesPerWord)                               \
-          constraint(InitialBootClassLoaderMetaspaceSizeConstraintFunc, AfterErgo)\
                                                                             \
   product(bool, PrintHeapAtSIGBREAK, true,                                  \
           "Print heap layout in response to SIGBREAK")                      \
@@ -1555,6 +1577,15 @@ const intx ObjectAlignmentInBytes = 8;
           "Maximum size of class area in Metaspace when compressed "        \
           "class pointers are used")                                        \
           range(1*M, 3*G)                                                   \
+                                                                            \
+  product(ccstr, MetaspaceReclaimPolicy, "balanced",                        \
+          "options: balanced, aggressive, none")                            \
+                                                                            \
+  product(bool, MetaspaceGuardAllocations, false, DIAGNOSTIC,               \
+          "Metapace allocations are guarded.")                              \
+                                                                            \
+  product(bool, MetaspaceHandleDeallocations, true, DIAGNOSTIC,             \
+          "Switch off Metapace deallocation handling.")                     \
                                                                             \
   product(uintx, MinHeapFreeRatio, 40, MANAGEABLE,                          \
           "The minimum percentage of heap free after GC to avoid expansion."\

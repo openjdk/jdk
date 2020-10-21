@@ -1188,7 +1188,11 @@ void CodeInstaller::record_scope(jint pc_offset, JVMCIObject position, ScopeMode
     throw_exception = jvmci_env()->get_BytecodeFrame_rethrowException(frame) == JNI_TRUE;
   }
 
+  // has_ea_local_in_scope and arg_escape should be added to JVMCI
+  const bool has_ea_local_in_scope = false;
+  const bool arg_escape            = false;
   _debug_recorder->describe_scope(pc_offset, method, NULL, bci, reexecute, throw_exception, is_mh_invoke, return_oop,
+                                  has_ea_local_in_scope, arg_escape,
                                   locals_token, expressions_token, monitors_token);
 }
 

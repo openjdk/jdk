@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2011, 2015, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -103,7 +103,13 @@ inline T Atomic::PlatformCmpxchg<4>::operator()(T volatile* dest,
                                                 T exchange_value,
                                                 atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(T));
-  return __sync_val_compare_and_swap(dest, compare_value, exchange_value);
+
+  T value = compare_value;
+  FULL_MEM_BARRIER;
+  __atomic_compare_exchange(dest, &value, &exchange_value, /*weak*/false,
+                            __ATOMIC_RELAXED, __ATOMIC_RELAXED);
+  FULL_MEM_BARRIER;
+  return value;
 }
 
 template<>
@@ -113,7 +119,13 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T volatile* dest,
                                                 T exchange_value,
                                                 atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(T));
-  return __sync_val_compare_and_swap(dest, compare_value, exchange_value);
+
+  FULL_MEM_BARRIER;
+  T value = compare_value;
+  __atomic_compare_exchange(dest, &value, &exchange_value, /*weak*/false,
+                            __ATOMIC_RELAXED, __ATOMIC_RELAXED);
+  FULL_MEM_BARRIER;
+  return value;
 }
 
 template<>
