@@ -730,29 +730,30 @@ public:
 
   // Flags are sorted by usage frequency.
   enum NodeFlags {
-    Flag_is_Copy                     = 0x01, // should be first bit to avoid shift
-    Flag_rematerialize               = Flag_is_Copy << 1,
-    Flag_needs_anti_dependence_check = Flag_rematerialize << 1,
-    Flag_is_macro                    = Flag_needs_anti_dependence_check << 1,
-    Flag_is_Con                      = Flag_is_macro << 1,
-    Flag_is_cisc_alternate           = Flag_is_Con << 1,
-    Flag_is_dead_loop_safe           = Flag_is_cisc_alternate << 1,
-    Flag_may_be_short_branch         = Flag_is_dead_loop_safe << 1,
-    Flag_avoid_back_to_back_before   = Flag_may_be_short_branch << 1,
-    Flag_avoid_back_to_back_after    = Flag_avoid_back_to_back_before << 1,
-    Flag_has_call                    = Flag_avoid_back_to_back_after << 1,
-    Flag_is_reduction                = Flag_has_call << 1,
-    Flag_is_scheduled                = Flag_is_reduction << 1,
-    Flag_has_vector_mask_set         = Flag_is_scheduled << 1,
-    Flag_is_expensive                = Flag_has_vector_mask_set << 1,
-    _last_flag                       = Flag_is_expensive
+    Flag_is_Copy                     = 1 << 0, // should be first bit to avoid shift
+    Flag_rematerialize               = 1 << 1,
+    Flag_needs_anti_dependence_check = 1 << 2,
+    Flag_is_macro                    = 1 << 3,
+    Flag_is_Con                      = 1 << 4,
+    Flag_is_cisc_alternate           = 1 << 5,
+    Flag_is_dead_loop_safe           = 1 << 6,
+    Flag_may_be_short_branch         = 1 << 7,
+    Flag_avoid_back_to_back_before   = 1 << 8,
+    Flag_avoid_back_to_back_after    = 1 << 9,
+    Flag_has_call                    = 1 << 10,
+    Flag_is_reduction                = 1 << 11,
+    Flag_is_scheduled                = 1 << 12,
+    Flag_has_vector_mask_set         = 1 << 13,
+    Flag_is_expensive                = 1 << 14,
+    Flag_for_post_loop_opts_igvn     = 1 << 15,
+    _last_flag                       = Flag_for_post_loop_opts_igvn
   };
 
   class PD;
 
 private:
   juint _class_id;
-  jushort _flags;
+  juint _flags;
 
   static juint max_flags();
 
@@ -773,11 +774,11 @@ protected:
 public:
   const juint class_id() const { return _class_id; }
 
-  const jushort flags() const { return _flags; }
+  const juint flags() const { return _flags; }
 
-  void add_flag(jushort fl) { init_flags(fl); }
+  void add_flag(juint fl) { init_flags(fl); }
 
-  void remove_flag(jushort fl) { clear_flag(fl); }
+  void remove_flag(juint fl) { clear_flag(fl); }
 
   // Return a dense integer opcode number
   virtual int Opcode() const;
@@ -949,6 +950,8 @@ public:
 
   // Used in lcm to mark nodes that have scheduled
   bool is_scheduled() const { return (_flags & Flag_is_scheduled) != 0; }
+
+  bool for_post_loop_opts_igvn() const { return (_flags & Flag_for_post_loop_opts_igvn) != 0; }
 
 //----------------- Optimization
 
