@@ -893,9 +893,9 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
                                                       ? Location::int_in_long : Location::normal ));
     } else if( t->base() == Type::NarrowOop ) {
       array->append(new_loc_value( C->regalloc(), regnum, Location::narrowoop ));
-    } else if ( t->base() == Type::VectorS || t->base() == Type::VectorD ||
-                t->base() == Type::VectorX || t->base() == Type::VectorY ||
-                t->base() == Type::VectorZ) {
+    } else if (t->base() == Type::VectorA || t->base() == Type::VectorS ||
+               t->base() == Type::VectorD || t->base() == Type::VectorX ||
+               t->base() == Type::VectorY || t->base() == Type::VectorZ) {
       array->append(new_loc_value( C->regalloc(), regnum, Location::vector ));
     } else {
       array->append(new_loc_value( C->regalloc(), regnum, C->regalloc()->is_oop(local) ? Location::oop : Location::normal ));
@@ -3395,11 +3395,11 @@ void PhaseOutput::install_code(ciMethod*         target,
 
     address* native_stubs = NULL;
     int num_stubs = 0;
-    if (!C->native_stubs()->is_empty()) {
-      num_stubs = C->native_stubs()->length();
+    if (!C->native_stubs().is_empty()) {
+      num_stubs = C->native_stubs().length();
       native_stubs = NEW_C_HEAP_ARRAY(address, num_stubs, mtInternal);
       for (int i = 0; i < num_stubs; i++) {
-        native_stubs[i] = C->native_stubs()->at(i);
+        native_stubs[i] = C->native_stubs().at(i);
       }
     }
 
