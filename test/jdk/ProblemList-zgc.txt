@@ -27,4 +27,4 @@
 #
 #############################################################################
 
-com/sun/jdi/EATests.java 8255072 generic-all
+com/sun/jdi/EATests.java#0 8255072 generic-all
