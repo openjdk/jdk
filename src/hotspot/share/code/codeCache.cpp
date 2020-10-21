@@ -1567,6 +1567,7 @@ void CodeCache::write_perf_map(outputStream* st) {
 
   fileStream fs(fname, "w");
   if (!fs.is_open()) {
+    log_warning(codecache)("Failed to create %s for perf map", fname);
     st->print_cr("Failed to create %s", fname);
     return;
   }

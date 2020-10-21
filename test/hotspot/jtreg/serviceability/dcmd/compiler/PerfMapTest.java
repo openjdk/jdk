@@ -42,10 +42,9 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.dcmd.CommandExecutor;
 import jdk.test.lib.dcmd.JMXExecutor;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.util.Iterator;
-import java.util.Scanner;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -55,26 +54,25 @@ import java.util.regex.Pattern;
  */
 public class PerfMapTest {
 
-    static Pattern outputPattern =
+    static final Pattern OUTPUT_PATTERN =
         Pattern.compile("Written to (/tmp/perf-\\p{Digit}*\\.map)");
-    static Pattern linePattern =
+    static final Pattern LINE_PATTERN =
         Pattern.compile("^((?:0x)?\\p{XDigit}+)\\s+((?:0x)?\\p{XDigit}+)\\s+(.*)$");
 
     public void run(CommandExecutor executor) {
         OutputAnalyzer output = executor.execute("Compiler.perfmap");
         String line = output.asLines().iterator().next();
-        Matcher m = outputPattern.matcher(line);
+        Matcher m = OUTPUT_PATTERN.matcher(line);
 
-        Assert.assertTrue(m.matches(), "Did not print map file name");
+        Assert.assertTrue(m.matches(), "Did not print map file name, line = " + line);
 
         // Sanity check the file contents
-        try (Scanner in = new Scanner(new FileInputStream(m.group(1)))) {
-            while (in.hasNextLine()) {
-                line = in.nextLine();
-                m = linePattern.matcher(line);
-                Assert.assertTrue(m.matches(), "Invalid file format: " + line);
+        try {
+            for (String entry : Files.readAllLines(Paths.get(m.group(1)))) {
+                m = LINE_PATTERN.matcher(entry);
+                Assert.assertTrue(m.matches(), "Invalid file format: " + entry);
             }
-        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
             Assert.fail(e.toString());
         }
     }

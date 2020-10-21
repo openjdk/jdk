@@ -587,7 +587,7 @@ public:
     return "Write map file for Linux perf tool.";
   }
   static const char* impact() {
-    return "Medium";
+    return "Low";
   }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
