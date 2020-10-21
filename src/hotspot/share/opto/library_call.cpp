@@ -483,7 +483,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_copyOfRange:              return inline_array_copyOf(true);
   case vmIntrinsics::_equalsB:                  return inline_array_equals(StrIntrinsicNode::LL);
   case vmIntrinsics::_equalsC:                  return inline_array_equals(StrIntrinsicNode::UU);
-  case vmIntrinsics::_Preconditions_checkIndex: return inline_preconditions_checkIndex();
+  case vmIntrinsics::_Preconditions_checkIndex: return inline_preconditions_checkIndex(T_INT);
+  case vmIntrinsics::_Preconditions_checkLongIndex: return inline_preconditions_checkIndex(T_LONG);
   case vmIntrinsics::_clone:                    return inline_native_clone(intrinsic()->is_virtual());
 
   case vmIntrinsics::_allocateUninitializedArray: return inline_unsafe_newArray(true);
@@ -996,14 +997,14 @@ bool LibraryCallKit::inline_hasNegatives() {
   return true;
 }
 
-bool LibraryCallKit::inline_preconditions_checkIndex() {
+bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
   Node* index = argument(0);
-  Node* length = argument(1);
+  Node* length = bt == T_INT ? argument(1) : argument(2);
   if (too_many_traps(Deoptimization::Reason_intrinsic) || too_many_traps(Deoptimization::Reason_range_check)) {
     return false;
   }
 
-  Node* len_pos_cmp = _gvn.transform(new CmpINode(length, intcon(0)));
+  Node* len_pos_cmp = _gvn.transform(CmpNode::make(length, integercon(0, bt), bt));
   Node* len_pos_bol = _gvn.transform(new BoolNode(len_pos_cmp, BoolTest::ge));
 
   {
@@ -1012,11 +1013,17 @@ bool LibraryCallKit::inline_preconditions_checkIndex() {
                   Deoptimization::Action_make_not_entrant);
   }
 
+  jlong upper_bound = _gvn.type(length)->is_integer(bt)->hi_as_long();
+  Node* casted_length = ConstraintCastNode::make(control(), length, TypeInteger::make(0, upper_bound, Type::WidenMax, bt), bt);
+  casted_length = _gvn.transform(casted_length);
+  replace_in_map(length, casted_length);
+  length = casted_length;
+
   if (stopped()) {
     return false;
   }
 
-  Node* rc_cmp = _gvn.transform(new CmpUNode(index, length));
+  Node* rc_cmp = _gvn.transform(CmpNode::make(index, length, bt, true));
   BoolTest::mask btest = BoolTest::lt;
   Node* rc_bool = _gvn.transform(new BoolNode(rc_cmp, btest));
   RangeCheckNode* rc = new RangeCheckNode(control(), rc_bool, PROB_MAX, COUNT_UNKNOWN);
@@ -1036,8 +1043,7 @@ bool LibraryCallKit::inline_preconditions_checkIndex() {
     return false;
   }
 
-  Node* result = new CastIINode(index, TypeInt::make(0, _gvn.type(length)->is_int()->_hi, Type::WidenMax));
-  result->set_req(0, control());
+  Node* result = ConstraintCastNode::make(control(), index, TypeInteger::make(0, upper_bound, Type::WidenMax, bt), bt);
   result = _gvn.transform(result);
   set_result(result);
   replace_in_map(index, result);

@@ -96,6 +96,12 @@ Node* ConstraintCastNode::make_cast(int opcode, Node* c, Node *n, const Type *t,
     cast->set_req(0, c);
     return cast;
   }
+  case Op_CastLL: {
+    assert(!carry_dependency, "carry dependency not supported");
+    Node* cast = new CastLLNode(n, t);
+    cast->set_req(0, c);
+    return cast;
+  }
   case Op_CastPP: {
     Node* cast = new CastPPNode(n, t, carry_dependency);
     cast->set_req(0, c);
@@ -104,6 +110,20 @@ Node* ConstraintCastNode::make_cast(int opcode, Node* c, Node *n, const Type *t,
   case Op_CheckCastPP: return new CheckCastPPNode(c, n, t, carry_dependency);
   default:
     fatal("Bad opcode %d", opcode);
+  }
+  return NULL;
+}
+
+Node* ConstraintCastNode::make(Node* c, Node *n, const Type *t, BasicType bt) {
+  switch(bt) {
+  case T_INT: {
+    return make_cast(Op_CastII, c, n, t, false);
+  }
+  case T_LONG: {
+    return make_cast(Op_CastLL, c, n, t, false);
+  }
+  default:
+    fatal("Bad basic type %s", type2name(bt));
   }
   return NULL;
 }
