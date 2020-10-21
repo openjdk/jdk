@@ -875,14 +875,14 @@ void ShenandoahBarrierSetAssembler::gen_load_reference_barrier_stub(LIR_Assemble
   ce->store_parameter(res, 0);
   ce->store_parameter(addr, 1);
   switch (stub->kind()) {
-    case ShenandoahBarrierSet::NORMAL:
+    case ShenandoahBarrierSet::ShenandoahLRBKind::NORMAL:
       __ call(RuntimeAddress(bs->load_reference_barrier_normal_rt_code_blob()->code_begin()));
       break;
-    case ShenandoahBarrierSet::NATIVE:
-      __ call(RuntimeAddress(bs->load_reference_barrier_native_rt_code_blob()->code_begin()));
-      break;
-    case ShenandoahBarrierSet::WEAK:
+    case ShenandoahBarrierSet::ShenandoahLRBKind::WEAK:
       __ call(RuntimeAddress(bs->load_reference_barrier_weakref_rt_code_blob()->code_begin()));
+      break;
+    case ShenandoahBarrierSet::ShenandoahLRBKind::NATIVE:
+      __ call(RuntimeAddress(bs->load_reference_barrier_native_rt_code_blob()->code_begin()));
       break;
     default:
       ShouldNotReachHere();
@@ -959,29 +959,40 @@ void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_s
 #ifdef _LP64
   __ load_parameter(0, c_rarg0);
   __ load_parameter(1, c_rarg1);
-  if (kind == ShenandoahBarrierSet::NATIVE) {
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native), c_rarg0, c_rarg1);
-  } else if (kind == ShenandoahBarrierSet::WEAK) {
-    if (UseCompressedOops) {
-      __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native_narrow), c_rarg0, c_rarg1);
-    } else {
+  switch (kind) {
+    case ShenandoahBarrierSet::ShenandoahLRBKind::NORMAL:
+      if (UseCompressedOops) {
+        __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_narrow), c_rarg0, c_rarg1);
+      } else {
+        __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier), c_rarg0, c_rarg1);
+      }
+      break;
+    case ShenandoahBarrierSet::ShenandoahLRBKind::WEAK:
+      if (UseCompressedOops) {
+        __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native_narrow), c_rarg0, c_rarg1);
+      } else {
+        __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native), c_rarg0, c_rarg1);
+      }
+      break;
+    case ShenandoahBarrierSet::ShenandoahLRBKind::NATIVE:
       __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native), c_rarg0, c_rarg1);
-    }
-  } else {
-    assert(kind == ShenandoahBarrierSet::NORMAL, "what else?");
-    if (UseCompressedOops) {
-      __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_narrow), c_rarg0, c_rarg1);
-    } else {
-      __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier), c_rarg0, c_rarg1);
-    }
+      break;
+    default:
+      ShouldNotReachHere();
   }
 #else
   __ load_parameter(0, rax);
   __ load_parameter(1, rbx);
-  if (kind == ShenandoahBarrierSet::NORMAL) {
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier), rax, rbx);
-  } else {
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native), rax, rbx);
+  switch (kind) {
+    case ShenandoahBarrierSet::ShenandoahLRBKind::NORMAL:
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier), rax, rbx);
+      break;
+    case ShenandoahBarrierSet::ShenandoahLRBKind::WEAK:
+    case ShenandoahBarrierSet::ShenandoahLRBKind::NATIVE:
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native), rax, rbx);
+      break;
+    default:
+      ShouldNotReachHere();
   }
 #endif
 

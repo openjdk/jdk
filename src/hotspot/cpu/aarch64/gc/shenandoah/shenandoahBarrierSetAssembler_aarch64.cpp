@@ -674,14 +674,14 @@ void ShenandoahBarrierSetAssembler::gen_load_reference_barrier_stub(LIR_Assemble
   ce->store_parameter(res, 0);
   ce->store_parameter(addr, 1);
   switch (stub->kind()) {
-    case ShenandoahBarrierSet::NORMAL:
+    case ShenandoahBarrierSet::ShenandoahLRBKind::NORMAL:
       __ far_call(RuntimeAddress(bs->load_reference_barrier_normal_rt_code_blob()->code_begin()));
       break;
-    case ShenandoahBarrierSet::NATIVE:
-      __ far_call(RuntimeAddress(bs->load_reference_barrier_native_rt_code_blob()->code_begin()));
-      break;
-    case ShenandoahBarrierSet::WEAK:
+    case ShenandoahBarrierSet::ShenandoahLRBKind::WEAK:
       __ far_call(RuntimeAddress(bs->load_reference_barrier_weakref_rt_code_blob()->code_begin()));
+      break;
+    case ShenandoahBarrierSet::ShenandoahLRBKind::NATIVE:
+      __ far_call(RuntimeAddress(bs->load_reference_barrier_native_rt_code_blob()->code_begin()));
       break;
     default:
       ShouldNotReachHere();
@@ -747,21 +747,26 @@ void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_s
   __ push_call_clobbered_registers();
   __ load_parameter(0, r0);
   __ load_parameter(1, r1);
-  if (kind == ShenandoahBarrierSet::NATIVE) {
-    __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native));
-  } else if (kind == ShenandoahBarrierSet::WEAK) {
-    if (UseCompressedOops) {
-      __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native_narrow));
-    } else {
+  switch (kind) {
+    case ShenandoahBarrierSet::ShenandoahLRBKind::NORMAL:
+      if (UseCompressedOops) {
+        __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_narrow));
+      } else {
+        __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier));
+      }
+      break;
+    case ShenandoahBarrierSet::ShenandoahLRBKind::WEAK:
+      if (UseCompressedOops) {
+        __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native_narrow));
+      } else {
+        __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native));
+      }
+      break;
+    case ShenandoahBarrierSet::ShenandoahLRBKind::NATIVE:
       __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native));
-    }
-  } else {
-    assert(kind == ShenandoahBarrierSet::NORMAL, "what else?");
-    if (UseCompressedOops) {
-      __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_narrow));
-    } else {
-      __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier));
-    }
+      break;
+   default:
+      ShouldNotReachHere();
   }
   __ blr(lr);
   __ mov(rscratch1, r0);

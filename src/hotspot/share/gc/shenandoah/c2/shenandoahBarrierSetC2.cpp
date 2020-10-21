@@ -643,7 +643,7 @@ Node* ShenandoahBarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess
       load_store = kit->gvn().transform(new DecodeNNode(load_store, load_store->get_ptr_type()));
     }
 #endif
-    load_store = kit->gvn().transform(new ShenandoahLoadReferenceBarrierNode(NULL, load_store, ShenandoahBarrierSet::NORMAL));
+    load_store = kit->gvn().transform(new ShenandoahLoadReferenceBarrierNode(NULL, load_store, ShenandoahBarrierSet::ShenandoahLRBKind::NORMAL));
     return load_store;
   }
   return BarrierSetC2::atomic_cmpxchg_val_at_resolved(access, expected_val, new_val, value_type);
@@ -711,7 +711,7 @@ Node* ShenandoahBarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& acces
   }
   Node* result = BarrierSetC2::atomic_xchg_at_resolved(access, val, value_type);
   if (access.is_oop()) {
-    result = kit->gvn().transform(new ShenandoahLoadReferenceBarrierNode(NULL, result, ShenandoahBarrierSet::NORMAL));
+    result = kit->gvn().transform(new ShenandoahLoadReferenceBarrierNode(NULL, result, ShenandoahBarrierSet::ShenandoahLRBKind::NORMAL));
     shenandoah_write_barrier_pre(kit, false /* do_load */,
                                  NULL, NULL, max_juint, NULL, NULL,
                                  result /* pre_val */, T_OBJECT);
@@ -1060,12 +1060,12 @@ Node* ShenandoahBarrierSetC2::ideal_node(PhaseGVN* phase, Node* n, bool can_resh
     Node* in2 = n->in(2);
     if (in1->bottom_type() == TypePtr::NULL_PTR &&
         (in2->Opcode() != Op_ShenandoahLoadReferenceBarrier ||
-         ((ShenandoahLoadReferenceBarrierNode*)in2)->kind() == ShenandoahBarrierSet::NORMAL)) {
+         ((ShenandoahLoadReferenceBarrierNode*)in2)->kind() == ShenandoahBarrierSet::ShenandoahLRBKind::NORMAL)) {
       in2 = step_over_gc_barrier(in2);
     }
     if (in2->bottom_type() == TypePtr::NULL_PTR &&
         (in1->Opcode() != Op_ShenandoahLoadReferenceBarrier ||
-         ((ShenandoahLoadReferenceBarrierNode*)in1)->kind() == ShenandoahBarrierSet::NORMAL)) {
+         ((ShenandoahLoadReferenceBarrierNode*)in1)->kind() == ShenandoahBarrierSet::ShenandoahLRBKind::NORMAL)) {
       in1 = step_over_gc_barrier(in1);
     }
     PhaseIterGVN* igvn = phase->is_IterGVN();

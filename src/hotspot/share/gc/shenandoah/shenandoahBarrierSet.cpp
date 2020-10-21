@@ -117,11 +117,11 @@ bool ShenandoahBarrierSet::need_keep_alive_barrier(DecoratorSet decorators,Basic
 
 ShenandoahBarrierSet::ShenandoahLRBKind ShenandoahBarrierSet::access_kind(DecoratorSet decorators, BasicType type) {
   if ((decorators & IN_NATIVE) != 0) {
-    return NATIVE;
+    return ShenandoahLRBKind::NATIVE;
   } else if ((decorators & (ON_WEAK_OOP_REF | ON_PHANTOM_OOP_REF)) != 0) {
-    return WEAK;
+    return ShenandoahLRBKind::WEAK;
   } else {
-    return NORMAL;
+    return ShenandoahLRBKind::NORMAL;
   }
 }
 

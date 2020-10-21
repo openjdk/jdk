@@ -135,9 +135,6 @@ private:
   template <typename T>
   bool should_drop(oop reference, ReferenceType type) const;
 
-  // template <typename T>
-  // void keep_alive(oop reference, ReferenceType type) const;
-
   template <typename T>
   void make_inactive(oop reference, ReferenceType type) const;
 

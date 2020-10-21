@@ -34,13 +34,13 @@ class ShenandoahBarrierSetAssembler;
 
 class ShenandoahBarrierSet: public BarrierSet {
 public:
-  enum ShenandoahLRBKind {
+  enum class ShenandoahLRBKind {
     NORMAL,
     NATIVE,
     WEAK
   };
-private:
 
+private:
   ShenandoahHeap* _heap;
   BufferNode::Allocator _satb_mark_queue_buffer_allocator;
   ShenandoahSATBMarkQueueSet _satb_mark_queue_set;
@@ -97,7 +97,7 @@ public:
   oop load_reference_barrier(oop obj);
   oop load_reference_barrier_not_null(oop obj);
 
-  template <class T>
+  template <typename T>
   inline oop load_reference_barrier_mutator(oop obj, T* load_addr);
 
   template<typename T>

@@ -976,17 +976,17 @@ void ShenandoahBarrierC2Support::call_lrb_stub(Node*& ctrl, Node*& val, Node* lo
   address calladdr;
   const char* name;
   switch (kind) {
-    case ShenandoahBarrierSet::NATIVE:
+    case ShenandoahBarrierSet::ShenandoahLRBKind::NATIVE:
       calladdr = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native);
       name = "load_reference_barrier_native";
       break;
-    case ShenandoahBarrierSet::WEAK:
+    case ShenandoahBarrierSet::ShenandoahLRBKind::WEAK:
       calladdr = LP64_ONLY(UseCompressedOops) NOT_LP64(false) ?
                  CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native_narrow) :
                  CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native);
       name = "load_reference_barrier_weak";
       break;
-    case ShenandoahBarrierSet::NORMAL:
+    case ShenandoahBarrierSet::ShenandoahLRBKind::NORMAL:
       calladdr = LP64_ONLY(UseCompressedOops) NOT_LP64(false) ?
                  CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_narrow) :
                  CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier);
@@ -1359,7 +1359,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     // even for non-cset objects to prevent ressurrection of such objects.
     // Wires !in_cset(obj) to slot 2 of region and phis
     Node* not_cset_ctrl = NULL;
-    if (lrb->kind() == ShenandoahBarrierSet::NORMAL) {
+    if (lrb->kind() == ShenandoahBarrierSet::ShenandoahLRBKind::NORMAL) {
       test_in_cset(ctrl, not_cset_ctrl, val, raw_mem, phase);
     }
     if (not_cset_ctrl != NULL) {
@@ -2914,7 +2914,21 @@ uint ShenandoahLoadReferenceBarrierNode::size_of() const {
 }
 
 uint ShenandoahLoadReferenceBarrierNode::hash() const {
-  return Node::hash() + _kind;
+  uint hash = Node::hash();
+  switch (_kind) {
+    case ShenandoahBarrierSet::ShenandoahLRBKind::NORMAL:
+      hash += 0;
+      break;
+    case ShenandoahBarrierSet::ShenandoahLRBKind::WEAK:
+      hash += 1;
+      break;
+    case ShenandoahBarrierSet::ShenandoahLRBKind::NATIVE:
+      hash += 2;
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+  return hash;
 }
 
 bool ShenandoahLoadReferenceBarrierNode::cmp( const Node &n ) const {
