@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -293,17 +293,13 @@ void CompiledMethod::verify_oop_relocations() {
 ScopeDesc* CompiledMethod::scope_desc_at(address pc) {
   PcDesc* pd = pc_desc_at(pc);
   guarantee(pd != NULL, "scope must be present");
-  return new ScopeDesc(this, pd->scope_decode_offset(),
-                       pd->obj_decode_offset(), pd->should_reexecute(), pd->rethrow_exception(),
-                       pd->return_oop());
+  return new ScopeDesc(this, pd);
 }
 
 ScopeDesc* CompiledMethod::scope_desc_near(address pc) {
   PcDesc* pd = pc_desc_near(pc);
   guarantee(pd != NULL, "scope must be present");
-  return new ScopeDesc(this, pd->scope_decode_offset(),
-                       pd->obj_decode_offset(), pd->should_reexecute(), pd->rethrow_exception(),
-                       pd->return_oop());
+  return new ScopeDesc(this, pd);
 }
 
 address CompiledMethod::oops_reloc_begin() const {

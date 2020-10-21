@@ -56,7 +56,6 @@
                                                                \
  f(uintx,  MaxGCPauseMillisConstraintFunc)                     \
  f(uintx,  GCPauseIntervalMillisConstraintFunc)                \
- f(size_t, InitialBootClassLoaderMetaspaceSizeConstraintFunc)  \
  f(size_t, MinHeapSizeConstraintFunc)                          \
  f(size_t, InitialHeapSizeConstraintFunc)                      \
  f(size_t, MaxHeapSizeConstraintFunc)                          \

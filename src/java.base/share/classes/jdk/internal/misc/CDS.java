@@ -35,8 +35,12 @@ import jdk.internal.access.SharedSecrets;
 
 public class CDS {
     private static final boolean isDumpingClassList;
+    private static final boolean isDumpingArchive;
+    private static final boolean isSharingEnabled;
     static {
         isDumpingClassList = isDumpingClassList0();
+        isDumpingArchive = isDumpingArchive0();
+        isSharingEnabled = isSharingEnabled0();
     }
 
     /**
@@ -45,7 +49,23 @@ public class CDS {
     public static boolean isDumpingClassList() {
         return isDumpingClassList;
     }
+
+    /**
+      * Is the VM writing to a (static or dynamic) CDS archive.
+      */
+    public static boolean isDumpingArchive() {
+        return isDumpingArchive;
+    }
+
+    /**
+      * Is sharing enabled via the UseSharedSpaces flag.
+      */
+    public static boolean isSharingEnabled() {
+        return isSharingEnabled;
+    }
     private static native boolean isDumpingClassList0();
+    private static native boolean isDumpingArchive0();
+    private static native boolean isSharingEnabled0();
     private static native void logLambdaFormInvoker(String line);
 
     /**
@@ -71,16 +91,6 @@ public class CDS {
      * ImmutableCollections are always sorted the same order for the same VM build.
      */
     public static native long getRandomSeedForDumping();
-
-    /**
-     * Check if dynamic dumping is enabled via the DynamicDumpSharedSpaces flag.
-     */
-    public static native boolean isDynamicDumpingEnabled(); // will return false for static dumping.
-
-    /**
-     * Check if sharing is enabled via the UseSharedSpaces flag.
-     */
-    public static native boolean isSharingEnabled();
 
     /**
      * log lambda form invoker holder, name and method type
@@ -141,14 +151,12 @@ public class CDS {
     // Throw exception on invalid input
     private static void validateInputLines(String[] lines) {
         for (String s: lines) {
-            // There might be a trailing '\f' for line in ExtraClassListFile, do trim first.
-            String line = s.trim();
-            if (!line.startsWith("[LF_RESOLVE]") && !line.startsWith("[SPECIES_RESOLVE]")) {
-                throw new IllegalArgumentException("Wrong prefix: " + line);
+            if (!s.startsWith("[LF_RESOLVE]") && !s.startsWith("[SPECIES_RESOLVE]")) {
+                throw new IllegalArgumentException("Wrong prefix: " + s);
             }
 
-            String[] parts = line.split(" ");
-            boolean isLF = line.startsWith("[LF_RESOLVE]");
+            String[] parts = s.split(" ");
+            boolean isLF = s.startsWith("[LF_RESOLVE]");
 
             if (isLF) {
                 if (parts.length != 4) {
@@ -176,7 +184,7 @@ public class CDS {
     private static Object[] generateLambdaFormHolderClasses(String[] lines) {
         Objects.requireNonNull(lines);
         validateInputLines(lines);
-        Stream<String> lineStream = Arrays.stream(lines).map(String::trim);
+        Stream<String> lineStream = Arrays.stream(lines);
         Map<String, byte[]> result = SharedSecrets.getJavaLangInvokeAccess().generateHolderClasses(lineStream);
         int size = result.size();
         Object[] retArray = new Object[size * 2];
