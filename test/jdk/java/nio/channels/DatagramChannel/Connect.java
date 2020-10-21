@@ -47,21 +47,19 @@ public class Connect {
     }
 
     static void test() throws Exception {
+        ExecutorService threadPool = Executors.newCachedThreadPool();
         try (Reactor r = new Reactor();
              Actor a = new Actor(r.port())) {
-            invoke(a, r);
-        }
-    }
-
-    static void invoke(Runnable reader, Runnable writer) throws CompletionException {
-        ExecutorService threadPool = Executors.newCachedThreadPool();
-        try {
-            CompletableFuture<Void> f1 = CompletableFuture.runAsync(writer, threadPool);
-            CompletableFuture<Void> f2 = CompletableFuture.runAsync(reader, threadPool);
-            wait(f1, f2);
+            invoke(threadPool, a, r);
         } finally {
             threadPool.shutdown();
         }
+    }
+
+    static void invoke(ExecutorService e, Runnable reader, Runnable writer) throws CompletionException {
+        CompletableFuture<Void> f1 = CompletableFuture.runAsync(writer, e);
+        CompletableFuture<Void> f2 = CompletableFuture.runAsync(reader, e);
+        wait(f1, f2);
     }
 
 
@@ -126,7 +124,7 @@ public class Connect {
         }
 
         @Override
-        public void close() throws Exception {
+        public void close() throws IOException {
             dc.close();
         }
     }
