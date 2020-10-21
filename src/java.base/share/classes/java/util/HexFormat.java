@@ -42,13 +42,12 @@ import java.nio.charset.StandardCharsets;
  * {@link #ofDelimiter(String) of(delimiter)}. For other parameter combinations
  * the {@code withXXX} methods return copies of {@code HexFormat} modified
  * {@link #withPrefix(String)}, {@link #withSuffix(String)}, {@link #withDelimiter(String)}
- * or choice of {@link #withUpperCase()} or {@link #withLowerCase()} parameters using
- * a fluent builder style.
+ * or choice of {@link #withUpperCase()} or {@link #withLowerCase()} parameters.
  * <p>
  * For primitive to hexadecimal string conversions the {@code toHexDigits}
  * methods include {@link #toHexDigits(byte)}, {@link #toHexDigits(int)}, and
- * {@link #toHexDigits(long)}, etc.
- * For conversions producing uppercase hexadecimal strings use {@link #withUpperCase()}.
+ * {@link #toHexDigits(long)}, etc. The default is to use lowercase characters {@code "0-9","a-f"}.
+ * For conversions producing uppercase hexadecimal the characters are {@code "0-9","A-F"}.
  *
  * <p>
  * For hexadecimal string to primitive conversions the {@code fromHexDigits}
@@ -60,8 +59,8 @@ import java.nio.charset.StandardCharsets;
  * For byte array to formatted hexadecimal string conversions
  * the {@code formatHex} methods include {@link #formatHex(byte[]) formatHex(byte[])}
  * and {@link #formatHex(Appendable, byte[]) formatHex(Appendable, byte[])}.
- * The formatted output can be appended to {@link StringBuilder}, {@link System#out},
- * {@link java.io.Writer}, and {@link java.io.PrintStream}, all of which are {@link Appendable}.
+ * The formatted output is a string or to {@link Appendable} types including
+ * {@link StringBuilder}, {@link java.io.Writer}, and {@link java.io.PrintStream}.
  * Each byte value is formatted as the prefix, two hexadecimal characters from the
  * uppercase or lowercase digits, and the suffix.
  * A delimiter appears after each formatted value, except the last.
@@ -84,7 +83,7 @@ import java.nio.charset.StandardCharsets;
  *     byte b = 127;
  *     String byteStr = hex.toHexDigits(b);
  *
- *     int byteVal = hex.fromHexDigits(byteStr);
+ *     byte byteVal = (byte)hex.fromHexDigits(byteStr);
  *     assert(byteStr.equals("7f"));
  *     assert(b == byteVal);
  *
@@ -123,7 +122,6 @@ import java.nio.charset.StandardCharsets;
  * {@code HexFormat} may have unpredictable results and should be avoided.
  * The {@code equals} method should be used for comparisons.
  *
- * @implSpec
  * This class is immutable and thread-safe.
  * <p>
  * Unless otherwise noted, passing a null argument to any method will cause a
@@ -562,7 +560,7 @@ public final class HexFormat {
      * @throws IllegalArgumentException if the literal is not present
      */
     private static void checkLiteral(CharSequence string, int index, String literal) {
-        assert index + literal.length() <= string.length() : "pre-checked invariant error";
+        assert index <= string.length() - literal.length()  : "pre-checked invariant error";
         if (literal.isEmpty() ||
                 (literal.length() == 1 && literal.charAt(0) == string.charAt(index))) {
             return;

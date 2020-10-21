@@ -637,7 +637,7 @@ public class HexFormatTest {
             String byteStr = hex.toHexDigits(b);
             System.out.println("    " + byteStr);
 
-            int byteVal = hex.fromHexDigits(byteStr);
+            byte byteVal = (byte)hex.fromHexDigits(byteStr);
             assert(byteStr.equals("7f"));
             assert(b == byteVal);
             assertTrue(byteStr.equals("7f"));
