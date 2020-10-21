@@ -30,7 +30,7 @@
  * @run main SpecTest 512
  * @run main SpecTest 768
  * @run main SpecTest 1024
- * @run main SpecTest 1024 65537
+ * @run main SpecTest 1024 167971
  * @run main SpecTest 2048
  * @run main/timeout=240 SpecTest 4096
  * @run main/timeout=240 SpecTest 5120

@@ -164,43 +164,51 @@ public abstract class RSAKeyPairGenerator extends KeyPairGeneratorSpi {
         int lq = keySize - lp;
         int pqDiffSize = lp - 100;
 
-        BigInteger p = null;
-        int i = 0;
-        while (i++ < 10*lp) {
-            BigInteger tmpP = BigInteger.probablePrime(lp, random);
-            if ((!useNew || tmpP.compareTo(minValue) == 1) &&
-                    isRelativePrime(e, tmpP.subtract(ONE))) {
-                p = tmpP;
-                break;
-            }
-        }
-        if (p == null) {
-            throw new ProviderException("Cannot find prime P");
-        }
+        while (true) {
+            BigInteger p = null;
+            BigInteger q = null;
 
-        BigInteger q = null;
-        i = 0;
-
-        while (i++ < 20*lq) {
-            BigInteger tmpQ = BigInteger.probablePrime(lq, random);
-
-            if ((!useNew || tmpQ.compareTo(minValue) == 1) &&
-                    (p.subtract(tmpQ).abs().compareTo
-                            (TWO.pow(pqDiffSize)) == 1) &&
-                    isRelativePrime(e, tmpQ.subtract(ONE))) {
-                q = tmpQ;
-                BigInteger n = p.multiply(q);
-                if (!useNew && n.bitLength() != keySize) {
-                    // regenerate Q if n is not the right length
-                    continue;
-                }
-                KeyPair kp = createKeyPair(type, keyParams, n, e, p, q);
-                if (kp != null) {
-                    return kp;
+            int i = 0;
+            while (i++ < 10*lp) {
+                BigInteger tmpP = BigInteger.probablePrime(lp, random);
+                if ((!useNew || tmpP.compareTo(minValue) == 1) &&
+                        isRelativePrime(e, tmpP.subtract(ONE))) {
+                    p = tmpP;
+                    break;
                 }
             }
+            if (p == null) {
+                throw new ProviderException("Cannot find prime P");
+            }
+
+            i = 0;
+
+            while (i++ < 20*lq) {
+                BigInteger tmpQ = BigInteger.probablePrime(lq, random);
+
+                if ((!useNew || tmpQ.compareTo(minValue) == 1) &&
+                        (p.subtract(tmpQ).abs().compareTo
+                                (TWO.pow(pqDiffSize)) == 1) &&
+                        isRelativePrime(e, tmpQ.subtract(ONE))) {
+                    q = tmpQ;
+                    break;
+                }
+            }
+            if (q == null) {
+                throw new ProviderException("Cannot find prime Q");
+            }
+
+            BigInteger n = p.multiply(q);
+            if (n.bitLength() != keySize) {
+                // regenerate P, Q if n is not the right length; should
+                // never happen for the new case but check it anyway
+                continue;
+            }
+
+            KeyPair kp = createKeyPair(type, keyParams, n, e, p, q);
+            // done, return the generated keypair;
+            if (kp != null) return kp;
         }
-        throw new ProviderException("Cannot find prime Q");
     }
 
     private static BigInteger getSqrt(int keySize) {
