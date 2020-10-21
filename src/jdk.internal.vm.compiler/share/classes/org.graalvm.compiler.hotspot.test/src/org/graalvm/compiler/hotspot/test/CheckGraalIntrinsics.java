@@ -433,10 +433,10 @@ public class CheckGraalIntrinsics extends GraalTest {
             if (config.useBase64Intrinsics()) {
                 // Currently implemented on ppc64le only, but could be implemented on others
                 add(toBeInvestigated,
-                            "java/util/Base64$Encoder.decodeBlock([BII[BIZ)I");
+                            "java/util/Base64$Decoder.decodeBlock([BII[BIZ)I");
             } else {
                 add(ignore,
-                            "java/util/Base64$Encoder.decodeBlock([BII[BIZ)I");
+                            "java/util/Base64$Decoder.decodeBlock([BII[BIZ)I");
             }
         }
 
