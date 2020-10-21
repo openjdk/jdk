@@ -301,7 +301,6 @@ class Thread: public ThreadShadow {
     _ext_suspended          = 0x40000000U, // thread has self-suspended
 
     _has_async_exception    = 0x00000001U, // there is a pending async exception
-    _critical_native_unlock = 0x00000002U, // Must call back to unlock JNI critical lock
 
     _trace_flag             = 0x00000004U, // call tracing backend
     _obj_deopt              = 0x00000008U  // suspend for object reallocation and relocking for JVMTI agent
@@ -542,11 +541,6 @@ class Thread: public ThreadShadow {
 
   inline void set_has_async_exception();
   inline void clear_has_async_exception();
-
-  bool do_critical_native_unlock() const { return (_suspend_flags & _critical_native_unlock) != 0; }
-
-  inline void set_critical_native_unlock();
-  inline void clear_critical_native_unlock();
 
   inline void set_trace_flag();
   inline void clear_trace_flag();
@@ -1388,11 +1382,6 @@ class JavaThread: public Thread {
   static void check_safepoint_and_suspend_for_native_trans(JavaThread *thread);
   // Check for async exception in addition to safepoint and suspend request.
   static void check_special_condition_for_native_trans(JavaThread *thread);
-
-  // Same as check_special_condition_for_native_trans but finishes the
-  // transition into thread_in_Java mode so that it can potentially
-  // block.
-  static void check_special_condition_for_native_trans_and_transition(JavaThread *thread);
 
   bool is_ext_suspend_completed(bool called_by_wait, int delay, uint32_t *bits);
   bool is_ext_suspend_completed_with_lock(uint32_t *bits) {

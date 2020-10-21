@@ -321,11 +321,8 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, InlineUnsafeOps, true, DIAGNOSTIC,                          \
           "Inline memory ops (native methods) from Unsafe")                 \
                                                                             \
-  product(bool, CriticalJNINatives, true,                                   \
-          "Check for critical JNI entry points")                            \
-                                                                            \
-  notproduct(bool, StressCriticalJNINatives, false,                         \
-          "Exercise register saving code in critical natives")              \
+  product(bool, CriticalJNINatives, false,                                  \
+          "(Deprecated) Check for critical JNI entry points")               \
                                                                             \
   product(bool, UseAESIntrinsics, false, DIAGNOSTIC,                        \
           "Use intrinsics for AES versions of crypto")                      \
