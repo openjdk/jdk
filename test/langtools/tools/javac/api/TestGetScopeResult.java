@@ -23,12 +23,13 @@
 
 /*
  * @test
- * @bug 8205418 8207229 8207230 8230847 8245786 8247334 8248641 8240658 8246774
+ * @bug 8205418 8207229 8207230 8230847 8245786 8247334 8248641 8240658
  * @summary Test the outcomes from Trees.getScope
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.comp
  *          jdk.compiler/com.sun.tools.javac.tree
  *          jdk.compiler/com.sun.tools.javac.util
+ * @compile TestGetScopeResult.java
  */
 
 import java.io.IOException;
@@ -558,7 +559,9 @@ public class TestGetScopeResult {
             }
             Context ctx = new Context();
             TestAnalyzer.preRegister(ctx);
-            JavacTask t = (JavacTask) c.getTask(null, fm, null, null, null,
+            List<String> options = List.of("--enable-preview",
+                                           "-source", System.getProperty("java.specification.version"));
+            JavacTask t = (JavacTask) c.getTask(null, fm, null, options, null,
                                                 List.of(new MyFileObject()), ctx);
             CompilationUnitTree cut = t.parse().iterator().next();
             t.analyze();
@@ -633,7 +636,9 @@ public class TestGetScopeResult {
                 }
                 Context ctx = new Context();
                 TestAnalyzer.preRegister(ctx);
-                JavacTask t = (JavacTask) c.getTask(null, fm, null, null, null,
+                List<String> options = List.of("--enable-preview",
+                                               "-source", System.getProperty("java.specification.version"));
+                JavacTask t = (JavacTask) c.getTask(null, fm, null, options, null,
                                                     List.of(new MyFileObject()), ctx);
                 CompilationUnitTree cut = t.parse().iterator().next();
                 t.analyze();

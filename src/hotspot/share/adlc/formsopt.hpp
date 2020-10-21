@@ -336,7 +336,6 @@ public:
   // Public Data
   char *_sync_stack_slots;
   char *_inline_cache_reg;
-  char *_interpreter_method_reg;
   char *_interpreter_frame_pointer_reg;
   char *_cisc_spilling_operand_name;
   char *_frame_pointer;

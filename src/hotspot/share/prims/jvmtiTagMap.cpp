@@ -47,6 +47,7 @@
 #include "prims/jvmtiImpl.hpp"
 #include "prims/jvmtiTagMap.hpp"
 #include "runtime/biasedLocking.hpp"
+#include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -1482,6 +1483,11 @@ void JvmtiTagMap::iterate_over_heap(jvmtiHeapObjectFilter object_filter,
                                     jvmtiHeapObjectCallback heap_object_callback,
                                     const void* user_data)
 {
+  // EA based optimizations on tagged objects are already reverted.
+  EscapeBarrier eb(object_filter == JVMTI_HEAP_OBJECT_UNTAGGED ||
+                   object_filter == JVMTI_HEAP_OBJECT_EITHER,
+                   JavaThread::current());
+  eb.deoptimize_objects_all_threads();
   MutexLocker ml(Heap_lock);
   IterateOverHeapObjectClosure blk(this,
                                    klass,
@@ -1499,6 +1505,9 @@ void JvmtiTagMap::iterate_through_heap(jint heap_filter,
                                        const jvmtiHeapCallbacks* callbacks,
                                        const void* user_data)
 {
+  // EA based optimizations on tagged objects are already reverted.
+  EscapeBarrier eb(!(heap_filter & JVMTI_HEAP_FILTER_UNTAGGED), JavaThread::current());
+  eb.deoptimize_objects_all_threads();
   MutexLocker ml(Heap_lock);
   IterateThroughHeapObjectClosure blk(this,
                                       klass,
@@ -3246,6 +3255,9 @@ void JvmtiTagMap::iterate_over_reachable_objects(jvmtiHeapRootCallback heap_root
                                                  jvmtiStackReferenceCallback stack_ref_callback,
                                                  jvmtiObjectReferenceCallback object_ref_callback,
                                                  const void* user_data) {
+  JavaThread* jt = JavaThread::current();
+  EscapeBarrier eb(true, jt);
+  eb.deoptimize_objects_all_threads();
   MutexLocker ml(Heap_lock);
   BasicHeapWalkContext context(heap_root_callback, stack_ref_callback, object_ref_callback);
   VM_HeapWalkOperation op(this, Handle(), context, user_data);
@@ -3273,8 +3285,13 @@ void JvmtiTagMap::follow_references(jint heap_filter,
                                     const void* user_data)
 {
   oop obj = JNIHandles::resolve(object);
-  Handle initial_object(Thread::current(), obj);
-
+  JavaThread* jt = JavaThread::current();
+  Handle initial_object(jt, obj);
+  // EA based optimizations that are tagged or reachable from initial_object are already reverted.
+  EscapeBarrier eb(initial_object.is_null() &&
+                   !(heap_filter & JVMTI_HEAP_FILTER_UNTAGGED),
+                   jt);
+  eb.deoptimize_objects_all_threads();
   MutexLocker ml(Heap_lock);
   AdvancedHeapWalkContext context(heap_filter, klass, callbacks);
   VM_HeapWalkOperation op(this, initial_object, context, user_data);

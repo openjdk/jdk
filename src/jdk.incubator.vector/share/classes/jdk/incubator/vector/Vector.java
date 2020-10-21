@@ -102,7 +102,7 @@ import java.util.Arrays;
  * such as {@code a + b} for the
  * {@link VectorOperators#ADD ADD} operator token.
  * General lane-wise operation-token accepting methods, such as for a
- * {@link Vector#lanewise(VectorOperators.Unary) unary lane-wise}
+ * {@linkplain Vector#lanewise(VectorOperators.Unary) unary lane-wise}
  * operation, are provided on {@code Vector} and come in the same variants as
  * a full-service named operation.
  *
@@ -124,7 +124,8 @@ import java.util.Arrays;
  * of {@code ETYPE}. For example, in the type {@code Vector<Integer>}, the {@code E}
  * parameter is {@code Integer} and the {@code ETYPE} is {@code int}.  In such a
  * vector, each lane carries a primitive {@code int} value.  This pattern continues
- * for the other primitive types as well.
+ * for the other primitive types as well. (See also sections {@jls 5.1.7} and
+ * {@jls 5.1.8} of the <cite>The Java Language Specification</cite>.)
  *
  * <p><a id="VLENGTH"></a> The {@linkplain #length() length} of a vector
  * is the lane count, the number of lanes it contains.
@@ -143,8 +144,8 @@ import java.util.Arrays;
  * {@linkplain #shape() <em>vector shape</em>}, also called its
  * {@code VSHAPE}.  Each possible {@code VSHAPE} is represented by
  * a member of the {@link VectorShape} enumeration, and represents
- * an implementation format shared in common by all vectors of a
- * of that shape.  Thus, the {@linkplain #bitSize() size in bits} of
+ * an implementation format shared in common by all vectors of
+ * that shape.  Thus, the {@linkplain #bitSize() size in bits} of
  * of a vector is determined by appealing to its vector shape.
  *
  * <p> Some Java platforms give special support to only one shape,
@@ -200,7 +201,7 @@ import java.util.Arrays;
  * of floating point element types).
  * There are six abstract sub-classes of Vector corresponding to the supported set
  * of element types, {@link ByteVector}, {@link ShortVector},
- * {@link IntVector} {@link LongVector}, {@link FloatVector}, and
+ * {@link IntVector}, {@link LongVector}, {@link FloatVector}, and
  * {@link DoubleVector}. Along with type-specific operations these classes
  * support creation of vector values (instances of Vector).
  * They expose static constants corresponding to the supported species,
@@ -1181,6 +1182,8 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
     /**
      * Returns the primitive <a href="Vector.html#ETYPE">element type</a>
      * ({@code ETYPE}) of this vector.
+     *
+     * @implSpec
      * This is the same value as {@code this.species().elementType()}.
      *
      * @return the primitive element type of this vector
@@ -1189,6 +1192,8 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
 
     /**
      * Returns the size of each lane, in bits, of this vector.
+     *
+     * @implSpec
      * This is the same value as {@code this.species().elementSize()}.
      *
      * @return the lane size, in bits, of this vector
@@ -1197,6 +1202,8 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
 
     /**
      * Returns the shape of this vector.
+     *
+     * @implSpec
      * This is the same value as {@code this.species().vectorShape()}.
      *
      * @return the shape of this vector
@@ -1213,6 +1220,8 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
 
     /**
      * Returns the total size, in bits, of this vector.
+     *
+     * @implSpec
      * This is the same value as {@code this.shape().vectorBitSize()}.
      *
      * @return the total size, in bits, of this vector
@@ -1221,6 +1230,8 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
 
     /**
      * Returns the total size, in bytes, of this vector.
+     *
+     * @implSpec
      * This is the same value as {@code this.bitSize()/Byte.SIZE}.
      *
      * @return the total size, in bytes, of this vector

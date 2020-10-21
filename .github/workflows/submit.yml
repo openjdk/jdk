@@ -18,6 +18,7 @@ jobs:
     outputs:
       should_run: ${{ steps.check_submit.outputs.should_run }}
       bundle_id: ${{ steps.check_bundle_id.outputs.bundle_id }}
+      platform_linux_x32: ${{ steps.check_platforms.outputs.platform_linux_x32 }}
       platform_linux_x64: ${{ steps.check_platforms.outputs.platform_linux_x64 }}
       platform_windows_x64: ${{ steps.check_platforms.outputs.platform_windows_x64 }}
       platform_macos_x64: ${{ steps.check_platforms.outputs.platform_macos_x64 }}
@@ -32,6 +33,7 @@ jobs:
         id: check_platforms
         run: |
           echo "::set-output name=platform_linux_x64::${{ contains(github.event.inputs.platforms, 'linux x64') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'linux x64'))) }}"
+          echo "::set-output name=platform_linux_x32::${{ contains(github.event.inputs.platforms, 'linux x32') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'linux x32'))) }}"
           echo "::set-output name=platform_windows_x64::${{ contains(github.event.inputs.platforms, 'windows x64') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'windows x64'))) }}"
           echo "::set-output name=platform_macos_x64::${{ contains(github.event.inputs.platforms, 'macos x64') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'macos x64'))) }}"
         if: steps.check_submit.outputs.should_run != 'false'
@@ -355,6 +357,103 @@ jobs:
           name: linux-x64${{ matrix.artifact }}_testlogs_${{ env.logsuffix }}
           path: build/*/test-results
         continue-on-error: true
+
+  linux_x32_build:
+    name: Linux x32
+    runs-on: "ubuntu-latest"
+    needs: prerequisites
+    if: needs.prerequisites.outputs.should_run != 'false' && needs.prerequisites.outputs.platform_linux_x32 != 'false'
+
+    strategy:
+      fail-fast: false
+      matrix:
+        flavor:
+          - build debug
+        include:
+          - flavor: build debug
+            flags: --enable-debug
+            artifact: -debug
+
+    # Reduced 32-bit build uses the same boot JDK as 64-bit build
+    env:
+      JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).DEFAULT_VERSION_FEATURE }}"
+      BOOT_JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).BOOT_JDK_VERSION }}"
+      BOOT_JDK_FILENAME: "${{ fromJson(needs.prerequisites.outputs.dependencies).LINUX_X64_BOOT_JDK_FILENAME }}"
+      BOOT_JDK_URL: "${{ fromJson(needs.prerequisites.outputs.dependencies).LINUX_X64_BOOT_JDK_URL }}"
+      BOOT_JDK_SHA256: "${{ fromJson(needs.prerequisites.outputs.dependencies).LINUX_X64_BOOT_JDK_SHA256 }}"
+
+    steps:
+      - name: Checkout the source
+        uses: actions/checkout@v2
+        with:
+          path: jdk
+
+      - name: Restore boot JDK from cache
+        id: bootjdk
+        uses: actions/cache@v2
+        with:
+          path: ~/bootjdk/${{ env.BOOT_JDK_VERSION }}
+          key: bootjdk-${{ runner.os }}-${{ env.BOOT_JDK_VERSION }}-${{ env.BOOT_JDK_SHA256 }}-v1
+
+      - name: Download boot JDK
+        run: |
+          mkdir -p "${HOME}/bootjdk/${BOOT_JDK_VERSION}"
+          wget -O "${HOME}/bootjdk/${BOOT_JDK_FILENAME}" "${BOOT_JDK_URL}"
+          echo "${BOOT_JDK_SHA256} ${HOME}/bootjdk/${BOOT_JDK_FILENAME}" | sha256sum -c >/dev/null -
+          tar -xf "${HOME}/bootjdk/${BOOT_JDK_FILENAME}" -C "${HOME}/bootjdk/${BOOT_JDK_VERSION}"
+          mv "${HOME}/bootjdk/${BOOT_JDK_VERSION}/"*/* "${HOME}/bootjdk/${BOOT_JDK_VERSION}/"
+        if: steps.bootjdk.outputs.cache-hit != 'true'
+
+      - name: Restore jtreg artifact
+        id: jtreg_restore
+        uses: actions/download-artifact@v2
+        with:
+          name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
+          path: ~/jtreg/
+        continue-on-error: true
+
+      - name: Restore jtreg artifact (retry)
+        uses: actions/download-artifact@v2
+        with:
+          name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
+          path: ~/jtreg/
+        if: steps.jtreg_restore.outcome == 'failure'
+
+      - name: Checkout gtest sources
+        uses: actions/checkout@v2
+        with:
+          repository: "google/googletest"
+          ref: "release-${{ fromJson(needs.prerequisites.outputs.dependencies).GTEST_VERSION }}"
+          path: gtest
+
+      # Roll in the multilib environment and its dependencies.
+      # Some multilib libraries do not have proper inter-dependencies, so we have to
+      # install their dependencies manually.
+      - name: Install dependencies
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update
+          sudo apt-get install gcc-multilib g++-multilib libfreetype6-dev:i386 libxrandr-dev:i386 libxtst-dev:i386 libtiff-dev:i386 libcupsimage2-dev:i386 libcups2-dev:i386 libasound2-dev:i386
+
+      - name: Configure
+        run: >
+          bash configure
+          --with-conf-name=linux-x32
+          --with-target-bits=32
+          ${{ matrix.flags }}
+          --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}
+          --with-version-build=0
+          --with-boot-jdk=${HOME}/bootjdk/${BOOT_JDK_VERSION}
+          --with-jtreg=${HOME}/jtreg
+          --with-gtest=${GITHUB_WORKSPACE}/gtest
+          --with-default-make-target="product-bundles test-bundles"
+          --with-zlib=system
+          --enable-jtreg-failure-handler
+        working-directory: jdk
+
+      - name: Build
+        run: make CONF_NAME=linux-x32 ${{ matrix.build-target }}
+        working-directory: jdk
 
   windows_x64_build:
     name: Windows x64
