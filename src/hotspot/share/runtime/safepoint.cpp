@@ -989,6 +989,10 @@ void ThreadSafepointState::handle_polling_page_exception() {
 
     // Process pending operation
     SafepointMechanism::process_if_requested(self);
+    // We have to wait if we are here because of a handshake for object deoptimization.
+    if (self->is_obj_deopt_suspend()) {
+      self->wait_for_object_deoptimization();
+    }
     self->check_and_handle_async_exceptions();
 
     // restore oop result, if any
@@ -1006,6 +1010,10 @@ void ThreadSafepointState::handle_polling_page_exception() {
 
     // Process pending operation
     SafepointMechanism::process_if_requested(self);
+    // We have to wait if we are here because of a handshake for object deoptimization.
+    if (self->is_obj_deopt_suspend()) {
+      self->wait_for_object_deoptimization();
+    }
     set_at_poll_safepoint(false);
 
     // If we have a pending async exception deoptimize the frame

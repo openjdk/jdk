@@ -696,9 +696,7 @@ class Compile : public Phase {
   void set_post_loop_opts_phase() { _post_loop_opts_phase = true; }
 
   void record_for_post_loop_opts_igvn(Node* n);
-
   void remove_from_post_loop_opts_igvn(Node* n);
-
   void process_for_post_loop_opts_igvn(PhaseIterGVN& igvn);
 
   void sort_macro_nodes();

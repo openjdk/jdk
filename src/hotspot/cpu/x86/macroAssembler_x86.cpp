@@ -4084,6 +4084,9 @@ class ControlWord {
       case 1: rc = "round down"; break;
       case 2: rc = "round up  "; break;
       case 3: rc = "chop      "; break;
+      default:
+        rc = NULL; // silence compiler warnings
+        fatal("Unknown rounding control: %d", rounding_control());
     };
     // precision control
     const char* pc;
@@ -4092,6 +4095,9 @@ class ControlWord {
       case 1: pc = "reserved"; break;
       case 2: pc = "53 bits "; break;
       case 3: pc = "64 bits "; break;
+      default:
+        pc = NULL; // silence compiler warnings
+        fatal("Unknown precision control: %d", precision_control());
     };
     // flags
     char f[9];
