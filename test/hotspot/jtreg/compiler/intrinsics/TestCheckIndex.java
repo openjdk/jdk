@@ -23,7 +23,8 @@
 
 /**
  * @test
- * @summary 
+ * @bug 8255150
+ * @summary Add utility methods to check long indexes and ranges
  * @requires vm.compiler2.enabled
  * @library /test/lib /
  * @build sun.hotspot.WhiteBox
