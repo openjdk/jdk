@@ -159,6 +159,31 @@ source %{
       case Op_ExtractL:
       case Op_ExtractS:
       case Op_ExtractUB:
+      // Vector API specific
+      case Op_AndReductionV:
+      case Op_OrReductionV:
+      case Op_XorReductionV:
+      case Op_MaxReductionV:
+      case Op_MinReductionV:
+      case Op_LoadVectorGather:
+      case Op_StoreVectorScatter:
+      case Op_VectorBlend:
+      case Op_VectorCast:
+      case Op_VectorCastB2X:
+      case Op_VectorCastD2X:
+      case Op_VectorCastF2X:
+      case Op_VectorCastI2X:
+      case Op_VectorCastL2X:
+      case Op_VectorCastS2X:
+      case Op_VectorInsert:
+      case Op_VectorLoadConst:
+      case Op_VectorLoadMask:
+      case Op_VectorLoadShuffle:
+      case Op_VectorMaskCmp:
+      case Op_VectorRearrange:
+      case Op_VectorReinterpret:
+      case Op_VectorStoreMask:
+      case Op_VectorTest:
         return false;
       default:
         return true;
@@ -846,9 +871,49 @@ instruct vpopcountI(vReg dst, vReg src) %{
 
 // vector add reduction
 
+instruct reduce_addB(iRegINoSp dst, iRegIorL2I src1, vReg src2, vRegD tmp) %{
+  predicate(UseSVE > 0 && n->in(2)->bottom_type()->is_vect()->length_in_bytes() >= 16 &&
+            n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_BYTE);
+  match(Set dst (AddReductionVI src1 src2));
+  effect(TEMP_DEF dst, TEMP tmp);
+  ins_cost(SVE_COST);
+  format %{ "sve_uaddv $tmp, $src2\t# vector (sve) (B)\n\t"
+            "smov  $dst, $tmp, B, 0\n\t"
+            "addw  $dst, $dst, $src1\n\t"
+            "sxtb  $dst, $dst\t # add reduction B" %}
+  ins_encode %{
+    __ sve_uaddv(as_FloatRegister($tmp$$reg), __ B,
+         ptrue, as_FloatRegister($src2$$reg));
+    __ smov($dst$$Register, as_FloatRegister($tmp$$reg), __ B, 0);
+    __ addw($dst$$Register, $dst$$Register, $src1$$Register);
+    __ sxtb($dst$$Register, $dst$$Register);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct reduce_addS(iRegINoSp dst, iRegIorL2I src1, vReg src2, vRegD tmp) %{
+  predicate(UseSVE > 0 && n->in(2)->bottom_type()->is_vect()->length_in_bytes() >= 16 &&
+            n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_SHORT);
+  match(Set dst (AddReductionVI src1 src2));
+  effect(TEMP_DEF dst, TEMP tmp);
+  ins_cost(SVE_COST);
+  format %{ "sve_uaddv $tmp, $src2\t# vector (sve) (H)\n\t"
+            "smov  $dst, $tmp, H, 0\n\t"
+            "addw  $dst, $dst, $src1\n\t"
+            "sxth  $dst, $dst\t # add reduction H" %}
+  ins_encode %{
+    __ sve_uaddv(as_FloatRegister($tmp$$reg), __ H,
+         ptrue, as_FloatRegister($src2$$reg));
+    __ smov($dst$$Register, as_FloatRegister($tmp$$reg), __ H, 0);
+    __ addw($dst$$Register, $dst$$Register, $src1$$Register);
+    __ sxth($dst$$Register, $dst$$Register);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct reduce_addI(iRegINoSp dst, iRegIorL2I src1, vReg src2, vRegD tmp) %{
   predicate(UseSVE > 0 && n->in(2)->bottom_type()->is_vect()->length_in_bytes() >= 16 &&
-            (n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_INT));
+            n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_INT);
   match(Set dst (AddReductionVI src1 src2));
   effect(TEMP_DEF dst, TEMP tmp);
   ins_cost(SVE_COST);
@@ -866,7 +931,7 @@ instruct reduce_addI(iRegINoSp dst, iRegIorL2I src1, vReg src2, vRegD tmp) %{
 
 instruct reduce_addL(iRegLNoSp dst, iRegL src1, vReg src2, vRegD tmp) %{
   predicate(UseSVE > 0 && n->in(2)->bottom_type()->is_vect()->length_in_bytes() >= 16 &&
-            (n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_LONG));
+            n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_LONG);
   match(Set dst (AddReductionVL src1 src2));
   effect(TEMP_DEF dst, TEMP tmp);
   ins_cost(SVE_COST);

@@ -105,21 +105,11 @@ class DllWrapper {
 public:
     DllWrapper(const tstring& dllName) {
         try {
-            // Try load DLL.
-            dll = std::unique_ptr<Dll>(new Dll(dllName));
-            LOG_TRACE(tstrings::any() << "Load [" << dllName << "]: OK");
-        }
-        catch (const std::exception&) {
-            // JVM DLL load failed, though it exists in file system.
-            try {
-                // Try adjust the DLL search paths with AddDllDirectory() WINAPI CALL
-                dll = loadDllWithAddDllDirectory(dllName);
-            }
-            catch (const std::exception&) {
-                // AddDllDirectory() didn't work. Try altering PATH environment
-                // variable as the last resort.
-                dll = loadDllWithAlteredPATH(dllName);
-            }
+            // Adjust the DLL search paths with AddDllDirectory() WINAPI CALL
+            dll = loadDllWithAddDllDirectory(dllName);
+        } catch (const std::exception&) {
+            // Alter PATH environment variable as the last resort.
+            dll = loadDllWithAlteredPATH(dllName);
         }
     }
 

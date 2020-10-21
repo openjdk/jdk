@@ -812,6 +812,8 @@ private:
   bool only_has_infinite_loops();
 #endif
 
+  void log_loop_tree();
+
 public:
 
   PhaseIterGVN &igvn() const { return _igvn; }
@@ -1037,6 +1039,14 @@ public:
   static void optimize(PhaseIterGVN &igvn, LoopOptsMode mode) {
     ResourceMark rm;
     PhaseIdealLoop v(igvn, mode);
+
+    Compile* C = Compile::current();
+    if (!C->failing()) {
+      // Cleanup any modified bits
+      igvn.optimize();
+
+      v.log_loop_tree();
+    }
   }
 
   // True if the method has at least 1 irreducible loop
@@ -1256,9 +1266,9 @@ public:
   // always holds true.  That is, either increase the number of iterations in
   // the pre-loop or the post-loop until the condition holds true in the main
   // loop.  Scale_con, offset and limit are all loop invariant.
-  void add_constraint( int stride_con, int scale_con, Node *offset, Node *low_limit, Node *upper_limit, Node *pre_ctrl, Node **pre_limit, Node **main_limit );
+  void add_constraint(jlong stride_con, jlong scale_con, Node* offset, Node* low_limit, Node* upper_limit, Node* pre_ctrl, Node** pre_limit, Node** main_limit);
   // Helper function for add_constraint().
-  Node* adjust_limit(int stride_con, Node * scale, Node *offset, Node *rc_limit, Node *loop_limit, Node *pre_ctrl, bool round_up);
+  Node* adjust_limit(bool reduce, Node* scale, Node* offset, Node* rc_limit, Node* old_limit, Node* pre_ctrl, bool round);
 
   // Partially peel loop up through last_peel node.
   bool partial_peel( IdealLoopTree *loop, Node_List &old_new );
