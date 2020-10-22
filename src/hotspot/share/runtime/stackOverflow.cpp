@@ -69,7 +69,6 @@ void StackOverflow::initialize_stack_zone_sizes() {
   // several times, though.)
   assert(_stack_shadow_zone_size == 0, "This should be called only once.");
   _stack_shadow_zone_size = align_up(StackShadowPages * alignment, page_size);
-
 }
 
 bool StackOverflow::stack_guards_enabled() const {
