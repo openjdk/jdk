@@ -131,9 +131,7 @@ alloc_class chunk0( ECX,   EBX,   EBP,   EDI,   EAX,   EDX,   ESI, ESP,
 // Several register classes are automatically defined based upon information in
 // this architecture description.
 // 1) reg_class inline_cache_reg           ( /* as def'd in frame section */ )
-// 2) reg_class compiler_method_reg        ( /* as def'd in frame section */ )
-// 2) reg_class interpreter_method_reg     ( /* as def'd in frame section */ )
-// 3) reg_class stack_slots( /* one chunk of stack-based "registers" */ )
+// 2) reg_class stack_slots( /* one chunk of stack-based "registers" */ )
 //
 // Class for no registers (empty set).
 reg_class no_reg();
@@ -150,7 +148,6 @@ reg_class_dynamic any_reg(any_reg_no_ebp, any_reg_with_ebp, %{ PreserveFramePoin
 // Class for general registers
 reg_class int_reg_with_ebp(EAX, EDX, EBP, EDI, ESI, ECX, EBX);
 // Class for general registers (excluding EBP).
-// This register class can be used for implicit null checks on win95.
 // It is also safe for use by tailjumps (we don't want to allocate in ebp).
 // Used also if the PreserveFramePointer flag is true.
 reg_class int_reg_no_ebp(EAX, EDX, EDI, ESI, ECX, EBX);
@@ -1445,57 +1442,6 @@ const bool Matcher::rematerialize_float_constants = true;
 // piece-by-piece.  Only happens when passing doubles into C code as the
 // Java calling convention forces doubles to be aligned.
 const bool Matcher::misaligned_doubles_ok = true;
-
-
-void Matcher::pd_implicit_null_fixup(MachNode *node, uint idx) {
-  // Get the memory operand from the node
-  uint numopnds = node->num_opnds();        // Virtual call for number of operands
-  uint skipped  = node->oper_input_base();  // Sum of leaves skipped so far
-  assert( idx >= skipped, "idx too low in pd_implicit_null_fixup" );
-  uint opcnt     = 1;                 // First operand
-  uint num_edges = node->_opnds[1]->num_edges(); // leaves for first operand
-  while( idx >= skipped+num_edges ) {
-    skipped += num_edges;
-    opcnt++;                          // Bump operand count
-    assert( opcnt < numopnds, "Accessing non-existent operand" );
-    num_edges = node->_opnds[opcnt]->num_edges(); // leaves for next operand
-  }
-
-  MachOper *memory = node->_opnds[opcnt];
-  MachOper *new_memory = NULL;
-  switch (memory->opcode()) {
-  case DIRECT:
-  case INDOFFSET32X:
-    // No transformation necessary.
-    return;
-  case INDIRECT:
-    new_memory = new indirect_win95_safeOper( );
-    break;
-  case INDOFFSET8:
-    new_memory = new indOffset8_win95_safeOper(memory->disp(NULL, NULL, 0));
-    break;
-  case INDOFFSET32:
-    new_memory = new indOffset32_win95_safeOper(memory->disp(NULL, NULL, 0));
-    break;
-  case INDINDEXOFFSET:
-    new_memory = new indIndexOffset_win95_safeOper(memory->disp(NULL, NULL, 0));
-    break;
-  case INDINDEXSCALE:
-    new_memory = new indIndexScale_win95_safeOper(memory->scale());
-    break;
-  case INDINDEXSCALEOFFSET:
-    new_memory = new indIndexScaleOffset_win95_safeOper(memory->scale(), memory->disp(NULL, NULL, 0));
-    break;
-  case LOAD_LONG_INDIRECT:
-  case LOAD_LONG_INDOFFSET32:
-    // Does not use EBP as address register, use { EDX, EBX, EDI, ESI}
-    return;
-  default:
-    assert(false, "unexpected memory operand in pd_implicit_null_fixup()");
-    return;
-  }
-  node->_opnds[opcnt] = new_memory;
-}
 
 // Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
 const bool Matcher::strict_fp_requires_explicit_rounding = true;
@@ -3190,7 +3136,6 @@ frame %{
   // These three registers define part of the calling convention
   // between compiled code and the interpreter.
   inline_cache_reg(EAX);                // Inline Cache Register
-  interpreter_method_reg(EBX);          // Method Register when calling interpreter
 
   // Optional: name the operand used by cisc-spilling to access [stack_pointer + offset]
   cisc_spilling_operand_name(indOffset32);
@@ -4401,98 +4346,6 @@ operand stackSlotL(sRegL reg) %{
     index(0x4);  // No Index
     scale(0x0);  // No Scale
     disp($reg);  // Stack Offset
-  %}
-%}
-
-//----------Memory Operands - Win95 Implicit Null Variants----------------
-// Indirect Memory Operand
-operand indirect_win95_safe(eRegP_no_EBP reg)
-%{
-  constraint(ALLOC_IN_RC(int_reg));
-  match(reg);
-
-  op_cost(100);
-  format %{ "[$reg]" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index(0x4);
-    scale(0x0);
-    disp(0x0);
-  %}
-%}
-
-// Indirect Memory Plus Short Offset Operand
-operand indOffset8_win95_safe(eRegP_no_EBP reg, immI8 off)
-%{
-  match(AddP reg off);
-
-  op_cost(100);
-  format %{ "[$reg + $off]" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index(0x4);
-    scale(0x0);
-    disp($off);
-  %}
-%}
-
-// Indirect Memory Plus Long Offset Operand
-operand indOffset32_win95_safe(eRegP_no_EBP reg, immI off)
-%{
-  match(AddP reg off);
-
-  op_cost(100);
-  format %{ "[$reg + $off]" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index(0x4);
-    scale(0x0);
-    disp($off);
-  %}
-%}
-
-// Indirect Memory Plus Index Register Plus Offset Operand
-operand indIndexOffset_win95_safe(eRegP_no_EBP reg, rRegI ireg, immI off)
-%{
-  match(AddP (AddP reg ireg) off);
-
-  op_cost(100);
-  format %{"[$reg + $off + $ireg]" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index($ireg);
-    scale(0x0);
-    disp($off);
-  %}
-%}
-
-// Indirect Memory Times Scale Plus Index Register
-operand indIndexScale_win95_safe(eRegP_no_EBP reg, rRegI ireg, immI2 scale)
-%{
-  match(AddP reg (LShiftI ireg scale));
-
-  op_cost(100);
-  format %{"[$reg + $ireg << $scale]" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index($ireg);
-    scale($scale);
-    disp(0x0);
-  %}
-%}
-
-// Indirect Memory Times Scale Plus Index Register Plus Offset Operand
-operand indIndexScaleOffset_win95_safe(eRegP_no_EBP reg, immI off, rRegI ireg, immI2 scale)
-%{
-  match(AddP (AddP reg (LShiftI ireg scale)) off);
-
-  op_cost(100);
-  format %{"[$reg + $off + $ireg << $scale]" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index($ireg);
-    scale($scale);
-    disp($off);
   %}
 %}
 

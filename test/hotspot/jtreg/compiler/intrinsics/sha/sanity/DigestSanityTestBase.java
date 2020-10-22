@@ -45,6 +45,8 @@ public class DigestSanityTestBase {
             = "_sha2_implCompress";
     protected static final String SHA512_INTRINSIC_ID
             = "_sha5_implCompress";
+    protected static final String SHA3_INTRINSIC_ID
+            = "_sha3_implCompress";
     protected static final String MB_INTRINSIC_ID
             = "_digestBase_implCompressMB";
 
