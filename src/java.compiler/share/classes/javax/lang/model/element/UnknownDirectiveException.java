@@ -39,7 +39,6 @@ import javax.lang.model.UnknownEntityException;
  * @author Peter von der Ah&eacute;
  * @see ModuleElement.DirectiveVisitor#visitUnknown
  * @since 9
- * @spec JPMS
  */
 public class UnknownDirectiveException extends UnknownEntityException {
 

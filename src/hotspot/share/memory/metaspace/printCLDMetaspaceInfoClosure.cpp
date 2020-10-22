@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,26 +22,32 @@
  * questions.
  *
  */
+
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.hpp"
+#include "memory/classLoaderMetaspace.hpp"
+#include "memory/metaspace/metaspaceCommon.hpp"
 #include "memory/metaspace/printCLDMetaspaceInfoClosure.hpp"
 #include "memory/metaspace/printMetaspaceInfoKlassClosure.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
-
 namespace metaspace {
 
 PrintCLDMetaspaceInfoClosure::PrintCLDMetaspaceInfoClosure(outputStream* out, size_t scale, bool do_print,
-    bool do_print_classes, bool break_down_by_chunktype)
-: _out(out), _scale(scale), _do_print(do_print), _do_print_classes(do_print_classes)
-, _break_down_by_chunktype(break_down_by_chunktype)
-, _num_loaders(0), _num_loaders_without_metaspace(0), _num_loaders_unloading(0)
-,  _num_classes(0), _num_classes_shared(0)
+                                                           bool do_print_classes, bool break_down_by_chunktype) :
+  _out(out),
+  _scale(scale),
+  _do_print(do_print),
+  _do_print_classes(do_print_classes),
+  _break_down_by_chunktype(break_down_by_chunktype),
+  _num_loaders(0),
+  _num_loaders_without_metaspace(0),
+  _num_loaders_unloading(0),
+  _num_classes(0), _num_classes_shared(0)
 {
   memset(_num_loaders_by_spacetype, 0, sizeof(_num_loaders_by_spacetype));
   memset(_num_classes_by_spacetype, 0, sizeof(_num_classes_by_spacetype));
@@ -56,36 +63,35 @@ public:
 
   CountKlassClosure() : _num_classes(0), _num_classes_shared(0) {}
   void do_klass(Klass* k) {
-    _num_classes ++;
+    _num_classes++;
     if (k->is_shared()) {
-      _num_classes_shared ++;
+      _num_classes_shared++;
     }
   }
 
 }; // end: PrintKlassInfoClosure
 
 void PrintCLDMetaspaceInfoClosure::do_cld(ClassLoaderData* cld) {
-
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
 
   if (cld->is_unloading()) {
-    _num_loaders_unloading ++;
+    _num_loaders_unloading++;
     return;
   }
 
   ClassLoaderMetaspace* msp = cld->metaspace_or_null();
   if (msp == NULL) {
-    _num_loaders_without_metaspace ++;
+    _num_loaders_without_metaspace++;
     return;
   }
 
   // Collect statistics for this class loader metaspace
-  ClassLoaderMetaspaceStatistics this_cld_stat;
+  ClmsStats this_cld_stat;
   msp->add_to_statistics(&this_cld_stat);
 
   // And add it to the running totals
   _stats_total.add(this_cld_stat);
-  _num_loaders ++;
+  _num_loaders++;
   _stats_by_spacetype[msp->space_type()].add(this_cld_stat);
   _num_loaders_by_spacetype[msp->space_type()] ++;
 
@@ -100,12 +106,10 @@ void PrintCLDMetaspaceInfoClosure::do_cld(ClassLoaderData* cld) {
 
   // Optionally, print
   if (_do_print) {
-
     _out->print(UINTX_FORMAT_W(4) ": ", _num_loaders);
 
     // Print "CLD for [<loader name>,] instance of <loader class name>"
     // or    "CLD for <hidden or anonymous class>, loaded by [<loader name>,] instance of <loader class name>"
-
     ResourceMark rm;
     const char* name = NULL;
     const char* class_name = NULL;
@@ -161,9 +165,7 @@ void PrintCLDMetaspaceInfoClosure::do_cld(ClassLoaderData* cld) {
     // Print statistics
     this_cld_stat.print_on(_out, _scale, _break_down_by_chunktype);
     _out->cr();
-
   }
-
 }
 
 } // namespace metaspace
