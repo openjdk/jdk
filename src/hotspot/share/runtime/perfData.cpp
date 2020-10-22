@@ -91,7 +91,8 @@ PerfData::PerfData(CounterNS ns, const char* name, Units u, Variability v)
      // No prefix is added to counters with the NULL_NS namespace.
      strcpy(_name, name);
      // set the F_Supported flag based on the counter name prefix.
-     if (PerfDataManager::is_stable_supported(_name)) {
+     if (PerfDataManager::is_stable_supported(_name) ||
+         PerfDataManager::is_unstable_supported(_name)) {
        _flags = F_Supported;
      }
      else {
@@ -101,7 +102,8 @@ PerfData::PerfData(CounterNS ns, const char* name, Units u, Variability v)
   else {
     sprintf(_name, "%s.%s", prefix, name);
     // set the F_Supported flag based on the given namespace.
-    if (PerfDataManager::is_stable_supported(ns)) {
+    if (PerfDataManager::is_stable_supported(ns) ||
+        PerfDataManager::is_unstable_supported(ns)) {
       _flags = F_Supported;
     }
     else {

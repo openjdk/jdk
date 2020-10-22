@@ -39,21 +39,29 @@ template <typename T> class GrowableArray;
 enum CounterNS {
   // top level name spaces
   JAVA_NS,
+  COM_NS,
   SUN_NS,
   // subsystem name spaces
   JAVA_GC,              // Garbage Collection name spaces
+  COM_GC,
   SUN_GC,
   JAVA_CI,              // Compiler name spaces
+  COM_CI,
   SUN_CI,
   JAVA_CLS,             // Class Loader name spaces
+  COM_CLS,
   SUN_CLS,
   JAVA_RT,              // Runtime name spaces
+  COM_RT,
   SUN_RT,
   JAVA_OS,              // Operating System name spaces
+  COM_OS,
   SUN_OS,
   JAVA_THREADS,         // Threads System name spaces
+  COM_THREADS,
   SUN_THREADS,
   JAVA_PROPERTY,        // Java Property name spaces
+  COM_PROPERTY,
   SUN_PROPERTY,
   NULL_NS,
   COUNTERNS_LAST = NULL_NS
@@ -165,11 +173,11 @@ enum CounterNS {
  *   foo_counter->inc();
  *
  * Creating a performance counter that holds a variably change long
- * data value with units specified in U_Bytes in the "sun.ci.*"
+ * data value with units specified in U_Bytes in the "com.sun.ci
  * name space.
  *
  *   PerfLongVariable* bar_variable;
- *   bar_variable = PerfDataManager::create_long_variable(SUN_CI, "bar",
+ *   bar_variable = PerfDataManager::create_long_variable(COM_CI, "bar",
 .*                                                        PerfData::U_Bytes,
  *                                                        optionalInitialValue,
  *                                                        CHECK);
@@ -696,12 +704,19 @@ class PerfDataManager : AllStatic {
     static bool is_stable_supported(CounterNS ns) {
       return (ns != NULL_NS) && ((ns % 3) == JAVA_NS);
     }
+    static bool is_unstable_supported(CounterNS ns) {
+      return (ns != NULL_NS) && ((ns % 3) == COM_NS);
+    }
 
     // methods to test the interface stability of a given counter name
     //
     static bool is_stable_supported(const char* name) {
       const char* javadot = "java.";
       return strncmp(name, javadot, strlen(javadot)) == 0;
+    }
+    static bool is_unstable_supported(const char* name) {
+      const char* comdot = "com.sun.";
+      return strncmp(name, comdot, strlen(comdot)) == 0;
     }
 
     // method to construct counter name strings in a given name space.
