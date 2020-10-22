@@ -47,15 +47,15 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jfieldIDWorkaround.hpp"
 #include "runtime/jniHandles.inline.hpp"
-#include "runtime/objectMonitor.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
-#include "runtime/vframe.hpp"
+#include "runtime/vframe.inline.hpp"
 #include "runtime/vframe_hp.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
+
 
 ///////////////////////////////////////////////////////////////
 //
@@ -1306,16 +1306,9 @@ VM_GetAllStackTraces::doit() {
 // HandleMark must be defined in the caller only.
 // It is to keep a ret_ob_h handle alive after return to the caller.
 jvmtiError
-JvmtiEnvBase::check_top_frame(JavaThread* current_thread, JavaThread* java_thread,
+JvmtiEnvBase::check_top_frame(Thread* current_thread, JavaThread* java_thread,
                               jvalue value, TosState tos, Handle* ret_ob_h) {
   ResourceMark rm(current_thread);
-
-  if (java_thread->frames_to_pop_failed_realloc() > 0) {
-    // VM is in the process of popping the top frame because it has scalar replaced objects
-    // which could not be reallocated on the heap.
-    // Return JVMTI_ERROR_OUT_OF_MEMORY to avoid interfering with the VM.
-    return JVMTI_ERROR_OUT_OF_MEMORY;
-  }
 
   vframe *vf = vframeForNoProcess(java_thread, 0);
   NULL_CHECK(vf, JVMTI_ERROR_NO_MORE_FRAMES);
@@ -1331,12 +1324,6 @@ JvmtiEnvBase::check_top_frame(JavaThread* current_thread, JavaThread* java_threa
       return JVMTI_ERROR_OPAQUE_FRAME;
     }
     Deoptimization::deoptimize_frame(java_thread, jvf->fr().id());
-    // Eagerly reallocate scalar replaced objects.
-    EscapeBarrier eb(true, current_thread, java_thread);
-    if (!eb.deoptimize_objects(jvf->fr().id())) {
-      // Reallocation of scalar replaced objects failed -> return with error
-      return JVMTI_ERROR_OUT_OF_MEMORY;
-    }
   }
 
   // Get information about method return type
@@ -1382,26 +1369,56 @@ JvmtiEnvBase::check_top_frame(JavaThread* current_thread, JavaThread* java_threa
 
 jvmtiError
 JvmtiEnvBase::force_early_return(JavaThread* java_thread, jvalue value, TosState tos) {
-  JavaThread* current_thread = JavaThread::current();
-  HandleMark   hm(current_thread);
-  uint32_t debug_bits = 0;
-
   // retrieve or create the state
   JvmtiThreadState* state = JvmtiThreadState::state_for(java_thread);
   if (state == NULL) {
     return JVMTI_ERROR_THREAD_NOT_ALIVE;
   }
 
-  // Check if java_thread is fully suspended
-  if (!java_thread->is_thread_fully_suspended(true /* wait for suspend completion */, &debug_bits)) {
-    return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
+  // Eagerly reallocate scalar replaced objects.
+  JavaThread* current_thread = JavaThread::current();
+  EscapeBarrier eb(true, current_thread, java_thread);
+  if (eb.barrier_active()) {
+    if (java_thread->frames_to_pop_failed_realloc() > 0) {
+      // VM is in the process of popping the top frame because it has scalar replaced objects
+      // which could not be reallocated on the heap.
+      // Return JVMTI_ERROR_OUT_OF_MEMORY to avoid interfering with the VM.
+      return JVMTI_ERROR_OUT_OF_MEMORY;
+    }
+    if (!eb.deoptimize_objects(0)) {
+      // Reallocation of scalar replaced objects failed -> return with error
+      return JVMTI_ERROR_OUT_OF_MEMORY;
+    }
+  }
+
+  SetForceEarlyReturn op(state, value, tos);
+  if (java_thread == current_thread) {
+    op.doit(java_thread, true /* self */);
+  } else {
+    Handshake::execute(&op, java_thread);
+  }
+  return op.result();
+}
+
+void
+SetForceEarlyReturn::doit(Thread *target, bool self) {
+  JavaThread* java_thread = target->as_Java_thread();
+  Thread* current_thread = Thread::current();
+  HandleMark   hm(current_thread);
+
+  if (!self) {
+    if (!java_thread->is_external_suspend()) {
+      _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
+      return;
+    }
   }
 
   // Check to see if a ForceEarlyReturn was already in progress
-  if (state->is_earlyret_pending()) {
+  if (_state->is_earlyret_pending()) {
     // Probably possible for JVMTI clients to trigger this, but the
     // JPDA backend shouldn't allow this to happen
-    return JVMTI_ERROR_INTERNAL;
+    _result = JVMTI_ERROR_INTERNAL;
+    return;
   }
   {
     // The same as for PopFrame. Workaround bug:
@@ -1411,15 +1428,17 @@ JvmtiEnvBase::force_early_return(JavaThread* java_thread, jvalue value, TosState
     // frame error.
     OSThread* osThread = java_thread->osthread();
     if (osThread->get_state() == MONITOR_WAIT) {
-      return JVMTI_ERROR_OPAQUE_FRAME;
+      _result = JVMTI_ERROR_OPAQUE_FRAME;
+      return;
     }
   }
+
   Handle ret_ob_h;
-  jvmtiError err = check_top_frame(current_thread, java_thread, value, tos, &ret_ob_h);
-  if (err != JVMTI_ERROR_NONE) {
-    return err;
+  _result = JvmtiEnvBase::check_top_frame(current_thread, java_thread, _value, _tos, &ret_ob_h);
+  if (_result != JVMTI_ERROR_NONE) {
+    return;
   }
-  assert(tos != atos || value.l == NULL || ret_ob_h() != NULL,
+  assert(_tos != atos || _value.l == NULL || ret_ob_h() != NULL,
          "return object oop must not be NULL if jobject is not NULL");
 
   // Update the thread state to reflect that the top frame must be
@@ -1428,16 +1447,14 @@ JvmtiEnvBase::force_early_return(JavaThread* java_thread, jvalue value, TosState
   // thread is resumed and right before returning from VM to Java.
   // (see call_VM_base() in assembler_<cpu>.cpp).
 
-  state->set_earlyret_pending();
-  state->set_earlyret_oop(ret_ob_h());
-  state->set_earlyret_value(value, tos);
+  _state->set_earlyret_pending();
+  _state->set_earlyret_oop(ret_ob_h());
+  _state->set_earlyret_value(_value, _tos);
 
   // Set pending step flag for this early return.
   // It is cleared when next step event is posted.
-  state->set_pending_step_for_earlyret();
-
-  return JVMTI_ERROR_NONE;
-} /* end force_early_return */
+  _state->set_pending_step_for_earlyret();
+}
 
 void
 JvmtiMonitorClosure::do_monitor(ObjectMonitor* mon) {
@@ -1517,24 +1534,126 @@ JvmtiModuleClosure::get_all_modules(JvmtiEnv* env, jint* module_count_ptr, jobje
 }
 
 void
-UpdateForPopTopFrameClosure::do_thread(Thread *target) {
-  JavaThread* jt = _state->get_thread();
-  assert(jt == target, "just checking");
-  if (!jt->is_exiting() && jt->threadObj() != NULL) {
+UpdateForPopTopFrameClosure::doit(Thread *target, bool self) {
+  Thread* current_thread  = Thread::current();
+  HandleMark hm(current_thread);
+  JavaThread* java_thread = target->as_Java_thread();
+  assert(java_thread == _state->get_thread(), "Must be");
+
+  if (!self && !java_thread->is_external_suspend()) {
+    _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
+    return;
+  }
+
+  // Check to see if a PopFrame was already in progress
+  if (java_thread->popframe_condition() != JavaThread::popframe_inactive) {
+    // Probably possible for JVMTI clients to trigger this, but the
+    // JPDA backend shouldn't allow this to happen
+    _result = JVMTI_ERROR_INTERNAL;
+    return;
+  }
+
+  // Was workaround bug
+  //    4812902: popFrame hangs if the method is waiting at a synchronize
+  // Catch this condition and return an error to avoid hanging.
+  // Now JVMTI spec allows an implementation to bail out with an opaque frame error.
+  OSThread* osThread = java_thread->osthread();
+  if (osThread->get_state() == MONITOR_WAIT) {
+    _result = JVMTI_ERROR_OPAQUE_FRAME;
+    return;
+  }
+
+  ResourceMark rm(current_thread);
+  // Check if there is more than one Java frame in this thread, that the top two frames
+  // are Java (not native) frames, and that there is no intervening VM frame
+  int frame_count = 0;
+  bool is_interpreted[2];
+  intptr_t *frame_sp[2];
+  // The 2-nd arg of constructor is needed to stop iterating at java entry frame.
+  for (vframeStream vfs(java_thread, true, false /* process_frames */); !vfs.at_end(); vfs.next()) {
+    methodHandle mh(current_thread, vfs.method());
+    if (mh->is_native()) {
+      _result = JVMTI_ERROR_OPAQUE_FRAME;
+      return;
+    }
+    is_interpreted[frame_count] = vfs.is_interpreted_frame();
+    frame_sp[frame_count] = vfs.frame_id();
+    if (++frame_count > 1) break;
+  }
+  if (frame_count < 2)  {
+    // We haven't found two adjacent non-native Java frames on the top.
+    // There can be two situations here:
+    //  1. There are no more java frames
+    //  2. Two top java frames are separated by non-java native frames
+    if(JvmtiEnvBase::vframeForNoProcess(java_thread, 1) == NULL) {
+      _result = JVMTI_ERROR_NO_MORE_FRAMES;
+      return;
+    } else {
+      // Intervening non-java native or VM frames separate java frames.
+      // Current implementation does not support this. See bug #5031735.
+      // In theory it is possible to pop frames in such cases.
+      _result = JVMTI_ERROR_OPAQUE_FRAME;
+      return;
+    }
+  }
+
+  // If any of the top 2 frames is a compiled one, need to deoptimize it
+  for (int i = 0; i < 2; i++) {
+    if (!is_interpreted[i]) {
+      Deoptimization::deoptimize_frame(java_thread, frame_sp[i]);
+    }
+  }
+
+  // Update the thread state to reflect that the top frame is popped
+  // so that cur_stack_depth is maintained properly and all frameIDs
+  // are invalidated.
+  // The current frame will be popped later when the suspended thread
+  // is resumed and right before returning from VM to Java.
+  // (see call_VM_base() in assembler_<cpu>.cpp).
+
+  // It's fine to update the thread state here because no JVMTI events
+  // shall be posted for this PopFrame.
+
+  if (!java_thread->is_exiting() && java_thread->threadObj() != NULL) {
     _state->update_for_pop_top_frame();
+    java_thread->set_popframe_condition(JavaThread::popframe_pending_bit);
+    // Set pending step flag for this popframe and it is cleared when next
+    // step event is posted.
+    _state->set_pending_step_for_popframe();
     _result = JVMTI_ERROR_NONE;
   }
 }
 
 void
-SetFramePopClosure::do_thread(Thread *target) {
-  JavaThread* jt = _state->get_thread();
-  assert(jt == target, "just checking");
-  if (!jt->is_exiting() && jt->threadObj() != NULL) {
-    int frame_number = _state->count_frames() - _depth;
-    _state->env_thread_state((JvmtiEnvBase*)_env)->set_frame_pop(frame_number);
-    _result = JVMTI_ERROR_NONE;
+SetFramePopClosure::doit(Thread *target, bool self) {
+  ResourceMark rm;
+  JavaThread* java_thread = target->as_Java_thread();
+
+  assert(_state->get_thread() == java_thread, "Must be");
+
+  if (!self && !java_thread->is_external_suspend()) {
+    _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
+    return;
   }
+
+  vframe *vf = JvmtiEnvBase::vframeForNoProcess(java_thread, _depth);
+  if (vf == NULL) {
+    _result = JVMTI_ERROR_NO_MORE_FRAMES;
+    return;
+  }
+
+  if (!vf->is_java_frame() || ((javaVFrame*) vf)->method()->is_native()) {
+    _result = JVMTI_ERROR_OPAQUE_FRAME;
+    return;
+  }
+
+  assert(vf->frame_pointer() != NULL, "frame pointer mustn't be NULL");
+  if (java_thread->is_exiting() || java_thread->threadObj() == NULL) {
+    return; /* JVMTI_ERROR_THREAD_NOT_ALIVE (default) */
+  }
+  int frame_number = _state->count_frames() - _depth;
+  _state->env_thread_state((JvmtiEnvBase*)_env)->set_frame_pop(frame_number);
+  _result = JVMTI_ERROR_NONE;
 }
 
 void
