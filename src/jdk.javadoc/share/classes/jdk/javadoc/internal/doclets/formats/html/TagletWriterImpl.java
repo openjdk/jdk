@@ -306,12 +306,6 @@ public class TagletWriterImpl extends TagletWriter {
             // used as zero or more block tags
             ContentBuilder body = new ContentBuilder();
             for (SpecTree st : specTags) {
-                if (st.getURI() == null) {
-                    // Temporary hidden support to ignore existing legacy tags in JDK code:
-                    //      @spec JPMS, @spec jsr-51
-                    // These have a null URI
-                    continue;
-                }
                 appendSeparatorIfNotEmpty(body);
                 body.add(specTagToContent(holder, st));
             }

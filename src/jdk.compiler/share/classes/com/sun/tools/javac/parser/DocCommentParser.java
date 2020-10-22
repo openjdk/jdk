@@ -1403,12 +1403,6 @@ public class DocCommentParser {
                             throw new IllegalArgumentException(kind.toString());
                     }
                     if (label.isEmpty() || DCTree.isBlank(label)) {
-                        if (!url.getBody().contains("/")) {
-                            // Temporary hidden support for existing legacy tags in JDK code:
-                            //      @spec JPMS, @spec jsr-51
-                            // Store these with a null URI and the argument as the label
-                            return m.at(pos).newSpecTree(kind == Kind.INLINE, null, List.of(url));
-                        }
                         throw new ParseException("dc.no.label");
                     }
                     return m.at(pos).newSpecTree(kind == Kind.INLINE, url, label);
