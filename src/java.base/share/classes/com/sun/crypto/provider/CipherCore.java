@@ -325,7 +325,7 @@ final class CipherCore {
         return getOutputSizeByOperation(inputLen, true);
     }
 
-    int getOutputSizeByOperation(int inputLen, boolean isDoFinal) {
+    private int getOutputSizeByOperation(int inputLen, boolean isDoFinal) {
         int totalLen = Math.addExact(buffered, cipher.getBufferedLength());
         totalLen = Math.addExact(totalLen, inputLen);
         switch (cipherMode) {
@@ -337,8 +337,6 @@ final class CipherCore {
                 } else {
                     totalLen -= tagLen;
                 }
-            } else {
-                totalLen = 0;
             }
             if (totalLen < 0) {
                 totalLen = 0;

@@ -432,10 +432,9 @@ final class GaloisCounterMode extends FeedbackCipher {
     void doLastBlock(ByteBuffer buffer, ByteBuffer src, ByteBuffer dst)
         throws IllegalBlockSizeException {
 
-        processed = 0;
         if (buffer != null && buffer.remaining() > 0) {
             // en/decrypt on how much buffer there is in AES_BLOCK_SIZE
-            processed = gctrPAndC.update(buffer, dst);
+            processed += gctrPAndC.update(buffer, dst);
 
             // Process the remainder in the buffer
             if (buffer.remaining() > 0) {
@@ -480,8 +479,8 @@ final class GaloisCounterMode extends FeedbackCipher {
             ArrayUtil.nullAndBoundsCheck(in, inOfs, len);
             if (ibuffer == null) {
                 ibuffer = new ByteArrayOutputStream();
-                ibuffer.write(in, inOfs, len);
             }
+            ibuffer.write(in, inOfs, len);
         }
         return len;
     }
@@ -503,12 +502,17 @@ final class GaloisCounterMode extends FeedbackCipher {
      * @return the number of bytes placed into the <code>out</code> buffer
      */
     int encrypt(byte[] in, int inOfs, int len, byte[] out, int outOfs) {
-        ArrayUtil.blockSizeCheck(len, blockSize);
-
         checkDataLength(processed, len);
 
         processAAD();
-
+        int remainder = len % blockSize;
+        if ( remainder > 0) {
+            if (ibuffer == null) {
+                ibuffer = new ByteArrayOutputStream(len % blockSize);
+            }
+            len -= remainder;
+            ibuffer.write(in, len, remainder);
+        }
         if (len > 0) {
             ArrayUtil.nullAndBoundsCheck(in, inOfs, len);
             ArrayUtil.nullAndBoundsCheck(out, outOfs, len);
@@ -533,18 +537,14 @@ final class GaloisCounterMode extends FeedbackCipher {
      */
     int encryptFinal(byte[] in, int inOfs, int len, byte[] out, int outOfs)
         throws IllegalBlockSizeException, ShortBufferException {
-        if (len > MAX_BUF_SIZE - tagLenBytes) {
-            throw new ShortBufferException
-                ("Can't fit both data and tag into one buffer");
-        }
+        checkDataLength(processed, Math.addExact(len, tagLenBytes));
+
         try {
             ArrayUtil.nullAndBoundsCheck(out, outOfs,
                 (len + tagLenBytes));
         } catch (ArrayIndexOutOfBoundsException aiobe) {
             throw new ShortBufferException("Output buffer too small");
         }
-
-        checkDataLength(processed, len);
 
         processAAD();
         if (len > 0) {
@@ -569,17 +569,13 @@ final class GaloisCounterMode extends FeedbackCipher {
         if (ibuffer != null) {
             len += ibuffer.size();
         }
-        dst.mark();
-        if (len > MAX_BUF_SIZE - tagLenBytes) {
-            throw new ShortBufferException
-                ("Can't fit both data and tag into one buffer");
-        }
 
+        checkDataLength(processed, Math.addExact(len, tagLenBytes));
+
+        dst.mark();
         if (dst.remaining() < len + tagLenBytes) {
             throw new ShortBufferException("Output buffer too small");
         }
-
-        checkDataLength(processed, len);
 
         processAAD();
         if (len > 0) {
@@ -617,8 +613,6 @@ final class GaloisCounterMode extends FeedbackCipher {
      * @return the number of bytes placed into the <code>out</code> buffer
      */
     int decrypt(byte[] in, int inOfs, int len, byte[] out, int outOfs) {
-        ArrayUtil.blockSizeCheck(len, blockSize);
-
         checkDataLength(ibuffer.size(), len);
 
         processAAD();
@@ -734,34 +728,35 @@ final class GaloisCounterMode extends FeedbackCipher {
         ShortBufferException {
         // Length of the input
         ByteBuffer tag;
-        ByteBuffer data = src.duplicate();
-        data.mark();
+        ByteBuffer ct = src.duplicate();
+        ct.mark();
 
         ByteBuffer buffer = ((ibuffer == null || ibuffer.size() == 0) ? null :
             ByteBuffer.wrap(ibuffer.toByteArray()));
         int len;
 
-        if (data.remaining() >= tagLenBytes) {
+        if (ct.remaining() >= tagLenBytes) {
             tag = src.duplicate();
-            tag.position(data.limit() - tagLenBytes);
-            data.limit(data.limit() - tagLenBytes);
-            len = data.remaining();
+            tag.position(ct.limit() - tagLenBytes);
+            ct.limit(ct.limit() - tagLenBytes);
+            len = ct.remaining();
             if (buffer != null) {
                 len += buffer.remaining();
             }
-        } else if (buffer != null && buffer.remaining() >= tagLenBytes) {
+            ct.mark();
+        } else if (buffer != null && ct.remaining() < tagLenBytes) {
             // It's unlikely the tag will be between the buffer and data
             tag = ByteBuffer.allocate(tagLenBytes);
-            int limit = buffer.remaining() - tagLenBytes - data.remaining();
+            int limit = buffer.remaining() - (tagLenBytes - ct.remaining());
+            buffer.mark();
             buffer.position(limit);
+            // Read from "new" limit to buffer's end
             tag.put(buffer);
             // reset buffer to data only
-            buffer.position(0);  // ibuffer should always start at zero.
+            buffer.reset();
             buffer.limit(limit);
-            data.mark();  // Maybe data position is not zero
-            tag.put(data);
+            tag.put(ct);
             tag.flip();
-            data.reset();
             // Limit is how much of the ibuffer has been chopped off.
             len = buffer.remaining();
         } else {
@@ -772,7 +767,7 @@ final class GaloisCounterMode extends FeedbackCipher {
         // scenario for the subsequent output buffer capacity check.
         checkDataLength(0, len);
 
-        if ((ibuffer.size() + data.remaining()) - tagLenBytes >
+        if ((ibuffer.size() + ct.remaining()) - tagLenBytes >
             dst.remaining()) {
             throw new ShortBufferException("Output buffer too small");
         }
@@ -785,34 +780,37 @@ final class GaloisCounterMode extends FeedbackCipher {
             // Process the overage
             if (buffer.remaining() > 0) {
                 // Fill out block between two buffers
-                if (data.remaining() > 0) {
+                if (ct.remaining() > 0) {
                     int over = buffer.remaining();
                     byte[] block = new byte[AES_BLOCK_SIZE];
                     // Copy the remainder of the buffer into the extra block
                     buffer.get(block, 0, over);
 
                     // Fill out block with what is in data
-                    if (data.remaining() > AES_BLOCK_SIZE - over) {
-                        data.get(block, over, AES_BLOCK_SIZE - over);
+                    if (ct.remaining() > AES_BLOCK_SIZE - over) {
+                        ct.get(block, over, AES_BLOCK_SIZE - over);
                         ghashAllToS.update(block, 0, AES_BLOCK_SIZE);
                     } else {
                         // If the remaining in buffer + data does not fill a
                         // block, complete the ghash operation
-                        int l = data.remaining();
-                        data.get(block, over, l);
+                        int l = ct.remaining();
+                        ct.get(block, over, l);
                         ghashAllToS.doLastBlock(ByteBuffer.wrap(block), over + l);
                     }
-                    processed += AES_BLOCK_SIZE;
                 } else {
                     // data is empty, so complete the ghash op with the
                     // remaining buffer
                     ghashAllToS.doLastBlock(buffer, buffer.remaining());
                 }
             }
+            // Prepare buffer for decryption
+            buffer.flip();
         }
 
-        if (data.remaining() > 0) {
-            ghashAllToS.doLastBlock(data, data.remaining());
+        if (ct.remaining() > 0) {
+            ghashAllToS.doLastBlock(ct, ct.remaining());
+            // Prepare buffer for decryption
+            ct.reset();
         }
         byte[] block = getLengthBlock(sizeOfAAD, len);
         ghashAllToS.update(block);
@@ -830,14 +828,8 @@ final class GaloisCounterMode extends FeedbackCipher {
             throw new AEADBadTagException("Tag mismatch!");
         }
 
-        // Reset the buffers for the data decryption phase
-        data.reset();
-        if (buffer != null) {
-            buffer.flip();
-        }
-
         // Decrypt the all the input data and put it into dst
-        doLastBlock(buffer, data, dst);
+        doLastBlock(buffer, ct, dst);
         dst.limit(dst.position());
 
         // 'processed' from the gctr decryption operation, not ghash

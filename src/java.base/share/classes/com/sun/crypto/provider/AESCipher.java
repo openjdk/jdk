@@ -252,10 +252,6 @@ abstract class AESCipher extends CipherSpi {
         return core.getOutputSize(inputLen);
     }
 
-    protected int getOutputSize(int inputLen, boolean isUpdate) {
-        return core.getOutputSizeByOperation(inputLen, !isUpdate);
-    }
-
     /**
      * Returns the initialization vector (IV) in a new buffer.
      *
@@ -424,19 +420,6 @@ abstract class AESCipher extends CipherSpi {
                            outputOffset);
     }
 
-    @Override
-    protected int engineUpdate(ByteBuffer input, ByteBuffer output)
-        throws ShortBufferException {
-        try {
-            return bufferCrypt(input, output, true);
-        } catch (IllegalBlockSizeException e) {
-            // never thrown for engineUpdate()
-            throw new ProviderException("Internal error in update()");
-        } catch (BadPaddingException e) {
-            // never thrown for engineUpdate()
-            throw new ProviderException("Internal error in update()");
-        }
-    }
 
     /**
      * Encrypts or decrypts data in a single-part operation,
@@ -696,7 +679,7 @@ abstract class AESCipher extends CipherSpi {
         if (isUpdate && (inLen == 0)) {
             return 0;
         }
-        int outLenNeeded = getOutputSize(inLen, isUpdate);
+        int outLenNeeded = engineGetOutputSize(inLen);
 
         if (output.remaining() < outLenNeeded) {
             throw new ShortBufferException("Need at least " + outLenNeeded
