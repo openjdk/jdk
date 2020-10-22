@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -405,6 +405,11 @@ public class JPasswordField extends JTextField {
      * Please see {@link java.beans.XMLEncoder}.
      */
     protected class AccessibleJPasswordField extends AccessibleJTextField {
+
+        /**
+         * Constructs an {@code AccessibleJPasswordField}.
+         */
+        protected AccessibleJPasswordField() {}
 
         /**
          * Gets the role of this object.

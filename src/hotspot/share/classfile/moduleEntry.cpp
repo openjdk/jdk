@@ -29,7 +29,11 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "logging/log.hpp"
+#include "memory/archiveBuilder.hpp"
+#include "memory/archiveUtils.hpp"
 #include "memory/filemap.hpp"
+#include "memory/heapShared.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oopHandle.inline.hpp"
@@ -40,6 +44,8 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/hashtable.inline.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/quickSort.hpp"
+#include "utilities/resourceHash.hpp"
 
 ModuleEntry* ModuleEntryTable::_javabase_module = NULL;
 
@@ -108,15 +114,15 @@ void ModuleEntry::set_version(Symbol* version) {
 
 // Returns the shared ProtectionDomain
 oop ModuleEntry::shared_protection_domain() {
-  return _pd.resolve();
+  return _shared_pd.resolve();
 }
 
 // Set the shared ProtectionDomain atomically
 void ModuleEntry::set_shared_protection_domain(ClassLoaderData *loader_data,
                                                Handle pd_h) {
   // Create a handle for the shared ProtectionDomain and save it atomically.
-  // init_handle_locked checks if someone beats us setting the _pd cache.
-  loader_data->init_handle_locked(_pd, pd_h);
+  // init_handle_locked checks if someone beats us setting the _shared_pd cache.
+  loader_data->init_handle_locked(_shared_pd, pd_h);
 }
 
 // Returns true if this module can read module m
@@ -361,6 +367,204 @@ ModuleEntryTable::~ModuleEntryTable() {
   assert(number_of_entries() == 0, "should have removed all entries");
   assert(new_entry_free_list() == NULL, "entry present on ModuleEntryTable's free list");
 }
+
+#if INCLUDE_CDS_JAVA_HEAP
+typedef ResourceHashtable<
+  const ModuleEntry*,
+  ModuleEntry*,
+  primitive_hash<const ModuleEntry*>,
+  primitive_equals<const ModuleEntry*>,
+  557, // prime number
+  ResourceObj::C_HEAP> ArchivedModuleEntries;
+static ArchivedModuleEntries* _archive_modules_entries = NULL;
+
+ModuleEntry* ModuleEntry::allocate_archived_entry() const {
+  assert(is_named(), "unnamed packages/modules are not archived");
+  ModuleEntry* archived_entry = (ModuleEntry*)MetaspaceShared::read_write_space_alloc(sizeof(ModuleEntry));
+  memcpy((void*)archived_entry, (void*)this, sizeof(ModuleEntry));
+
+  if (_archive_modules_entries == NULL) {
+    _archive_modules_entries = new (ResourceObj::C_HEAP, mtClass)ArchivedModuleEntries();
+  }
+  assert(_archive_modules_entries->get(this) == NULL, "Each ModuleEntry must not be shared across ModuleEntryTables");
+  _archive_modules_entries->put(this, archived_entry);
+
+  return archived_entry;
+}
+
+ModuleEntry* ModuleEntry::get_archived_entry(ModuleEntry* orig_entry) {
+  ModuleEntry** ptr = _archive_modules_entries->get(orig_entry);
+  assert(ptr != NULL && *ptr != NULL, "must have been allocated");
+  return *ptr;
+}
+
+// This function is used to archive ModuleEntry::_reads and PackageEntry::_qualified_exports.
+// GrowableArray cannot be directly archived, as it needs to be expandable at runtime.
+// Write it out as an Array, and convert it back to GrowableArray at runtime.
+Array<ModuleEntry*>* ModuleEntry::write_growable_array(GrowableArray<ModuleEntry*>* array) {
+  Array<ModuleEntry*>* archived_array = NULL;
+  int length = (array == NULL) ? 0 : array->length();
+  if (length > 0) {
+    archived_array = MetaspaceShared::new_ro_array<ModuleEntry*>(length);
+    for (int i = 0; i < length; i++) {
+      ModuleEntry* archived_entry = get_archived_entry(array->at(i));
+      archived_array->at_put(i, archived_entry);
+      ArchivePtrMarker::mark_pointer((address*)archived_array->adr_at(i));
+    }
+  }
+
+  return archived_array;
+}
+
+GrowableArray<ModuleEntry*>* ModuleEntry::restore_growable_array(Array<ModuleEntry*>* archived_array) {
+  GrowableArray<ModuleEntry*>* array = NULL;
+  int length = (archived_array == NULL) ? 0 : archived_array->length();
+  if (length > 0) {
+    array = new (ResourceObj::C_HEAP, mtModule)GrowableArray<ModuleEntry*>(length, mtModule);
+    for (int i = 0; i < length; i++) {
+      ModuleEntry* archived_entry = archived_array->at(i);
+      array->append(archived_entry);
+    }
+  }
+
+  return array;
+}
+
+void ModuleEntry::iterate_symbols(MetaspaceClosure* closure) {
+  closure->push(literal_addr()); // name
+  closure->push(&_version);
+  closure->push(&_location);
+}
+
+void ModuleEntry::init_as_archived_entry() {
+  Array<ModuleEntry*>* archived_reads = write_growable_array(_reads);
+
+  set_next(NULL);
+  set_hash(0x0);        // re-init at runtime
+  _loader_data = NULL;  // re-init at runtime
+  _shared_path_index = FileMapInfo::get_module_shared_path_index(_location);
+  if (literal() != NULL) {
+    set_literal(ArchiveBuilder::get_relocated_symbol(literal()));
+    ArchivePtrMarker::mark_pointer((address*)literal_addr());
+  }
+  _reads = (GrowableArray<ModuleEntry*>*)archived_reads;
+  if (_version != NULL) {
+    _version = ArchiveBuilder::get_relocated_symbol(_version);
+  }
+  if (_location != NULL) {
+    _location = ArchiveBuilder::get_relocated_symbol(_location);
+  }
+  JFR_ONLY(set_trace_id(0));// re-init at runtime
+
+  ArchivePtrMarker::mark_pointer((address*)&_reads);
+  ArchivePtrMarker::mark_pointer((address*)&_version);
+  ArchivePtrMarker::mark_pointer((address*)&_location);
+}
+
+void ModuleEntry::init_archived_oops() {
+  assert(DumpSharedSpaces, "static dump only");
+  oop module_obj = module();
+  if (module_obj != NULL) {
+    oop m = HeapShared::find_archived_heap_object(module_obj);
+    assert(m != NULL, "sanity");
+    _archived_module_narrow_oop = CompressedOops::encode(m);
+  }
+  assert(shared_protection_domain() == NULL, "never set during -Xshare:dump");
+  // Clear handles and restore at run time. Handles cannot be archived.
+  OopHandle null_handle;
+  _module = null_handle;
+}
+
+void ModuleEntry::load_from_archive(ClassLoaderData* loader_data) {
+  set_loader_data(loader_data);
+  _reads = restore_growable_array((Array<ModuleEntry*>*)_reads);
+  JFR_ONLY(INIT_ID(this);)
+}
+
+void ModuleEntry::restore_archive_oops(ClassLoaderData* loader_data) {
+  Handle module_handle(Thread::current(), HeapShared::materialize_archived_object(_archived_module_narrow_oop));
+  assert(module_handle.not_null(), "huh");
+  set_module(loader_data->add_handle(module_handle));
+
+  // This was cleared to zero during dump time -- we didn't save the value
+  // because it may be affected by archive relocation.
+  java_lang_Module::set_module_entry(module_handle(), this);
+
+  if (loader_data->class_loader() != NULL) {
+    java_lang_Module::set_loader(module_handle(), loader_data->class_loader());
+  }
+}
+
+static int compare_module_by_name(ModuleEntry* a, ModuleEntry* b) {
+  assert(a == b || a->name() != b->name(), "no duplicated names");
+  return a->name()->fast_compare(b->name());
+}
+
+void ModuleEntryTable::iterate_symbols(MetaspaceClosure* closure) {
+  for (int i = 0; i < table_size(); ++i) {
+    for (ModuleEntry* m = bucket(i); m != NULL; m = m->next()) {
+      m->iterate_symbols(closure);
+    }
+  }
+}
+
+Array<ModuleEntry*>* ModuleEntryTable::allocate_archived_entries() {
+  Array<ModuleEntry*>* archived_modules = MetaspaceShared::new_rw_array<ModuleEntry*>(number_of_entries());
+  int n = 0;
+  for (int i = 0; i < table_size(); ++i) {
+    for (ModuleEntry* m = bucket(i); m != NULL; m = m->next()) {
+      archived_modules->at_put(n++, m);
+    }
+  }
+  if (n > 1) {
+    // Always allocate in the same order to produce deterministic archive.
+    QuickSort::sort(archived_modules->data(), n, (_sort_Fn)compare_module_by_name, true);
+  }
+  for (int i = 0; i < n; i++) {
+    archived_modules->at_put(i, archived_modules->at(i)->allocate_archived_entry());
+    ArchivePtrMarker::mark_pointer((address*)archived_modules->adr_at(i));
+  }
+  return archived_modules;
+}
+
+void ModuleEntryTable::init_archived_entries(Array<ModuleEntry*>* archived_modules) {
+  assert(DumpSharedSpaces, "dump time only");
+  for (int i = 0; i < archived_modules->length(); i++) {
+    ModuleEntry* archived_entry = archived_modules->at(i);
+    archived_entry->init_as_archived_entry();
+  }
+}
+
+void ModuleEntryTable::init_archived_oops(Array<ModuleEntry*>* archived_modules) {
+  assert(DumpSharedSpaces, "dump time only");
+  for (int i = 0; i < archived_modules->length(); i++) {
+    ModuleEntry* archived_entry = archived_modules->at(i);
+    archived_entry->init_archived_oops();
+  }
+}
+
+void ModuleEntryTable::load_archived_entries(ClassLoaderData* loader_data,
+                                             Array<ModuleEntry*>* archived_modules) {
+  assert(UseSharedSpaces, "runtime only");
+
+  for (int i = 0; i < archived_modules->length(); i++) {
+    ModuleEntry* archived_entry = archived_modules->at(i);
+    archived_entry->load_from_archive(loader_data);
+
+    unsigned int hash = compute_hash(archived_entry->name());
+    archived_entry->set_hash(hash);
+    add_entry(hash_to_index(hash), archived_entry);
+  }
+}
+
+void ModuleEntryTable::restore_archived_oops(ClassLoaderData* loader_data, Array<ModuleEntry*>* archived_modules) {
+  assert(UseSharedSpaces, "runtime only");
+  for (int i = 0; i < archived_modules->length(); i++) {
+    ModuleEntry* archived_entry = archived_modules->at(i);
+    archived_entry->restore_archive_oops(loader_data);
+  }
+}
+#endif // INCLUDE_CDS_JAVA_HEAP
 
 ModuleEntry* ModuleEntryTable::new_entry(unsigned int hash, Handle module_handle,
                                          bool is_open, Symbol* name,

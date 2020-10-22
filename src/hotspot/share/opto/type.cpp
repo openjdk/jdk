@@ -62,12 +62,14 @@ const Type::TypeInfo Type::_type_info[Type::lastype] = {
   { Bad,             T_ARRAY,      "array:",        false, Node::NotAMachineReg, relocInfo::none          },  // Array
 
 #if defined(PPC64)
+  { Bad,             T_ILLEGAL,    "vectora:",      false, Op_VecA,              relocInfo::none          },  // VectorA.
   { Bad,             T_ILLEGAL,    "vectors:",      false, 0,                    relocInfo::none          },  // VectorS
   { Bad,             T_ILLEGAL,    "vectord:",      false, Op_RegL,              relocInfo::none          },  // VectorD
   { Bad,             T_ILLEGAL,    "vectorx:",      false, Op_VecX,              relocInfo::none          },  // VectorX
   { Bad,             T_ILLEGAL,    "vectory:",      false, 0,                    relocInfo::none          },  // VectorY
   { Bad,             T_ILLEGAL,    "vectorz:",      false, 0,                    relocInfo::none          },  // VectorZ
 #elif defined(S390)
+  { Bad,             T_ILLEGAL,    "vectora:",      false, Op_VecA,              relocInfo::none          },  // VectorA.
   { Bad,             T_ILLEGAL,    "vectors:",      false, 0,                    relocInfo::none          },  // VectorS
   { Bad,             T_ILLEGAL,    "vectord:",      false, Op_RegL,              relocInfo::none          },  // VectorD
   { Bad,             T_ILLEGAL,    "vectorx:",      false, 0,                    relocInfo::none          },  // VectorX
@@ -248,7 +250,7 @@ const Type* Type::make_from_constant(ciConstant constant, bool require_constant,
           guarantee(require_constant || oop_constant->should_be_constant(), "con_type must get computed");
           con_type = TypeOopPtr::make_from_constant(oop_constant, require_constant);
           if (Compile::current()->eliminate_boxing() && is_autobox_cache) {
-            con_type = con_type->is_aryptr()->cast_to_autobox_cache(true);
+            con_type = con_type->is_aryptr()->cast_to_autobox_cache();
           }
           if (stable_dimension > 0) {
             assert(FoldStableValues, "sanity");
@@ -437,16 +439,22 @@ void Type::Initialize_shared(Compile* current) {
   BOTTOM  = make(Bottom);       // Everything
   HALF    = make(Half);         // Placeholder half of doublewide type
 
+  TypeF::MAX = TypeF::make(max_jfloat); // Float MAX
+  TypeF::MIN = TypeF::make(min_jfloat); // Float MIN
   TypeF::ZERO = TypeF::make(0.0); // Float 0 (positive zero)
   TypeF::ONE  = TypeF::make(1.0); // Float 1
   TypeF::POS_INF = TypeF::make(jfloat_cast(POSITIVE_INFINITE_F));
   TypeF::NEG_INF = TypeF::make(-jfloat_cast(POSITIVE_INFINITE_F));
 
+  TypeD::MAX = TypeD::make(max_jdouble); // Double MAX
+  TypeD::MIN = TypeD::make(min_jdouble); // Double MIN
   TypeD::ZERO = TypeD::make(0.0); // Double 0 (positive zero)
   TypeD::ONE  = TypeD::make(1.0); // Double 1
   TypeD::POS_INF = TypeD::make(jdouble_cast(POSITIVE_INFINITE_D));
   TypeD::NEG_INF = TypeD::make(-jdouble_cast(POSITIVE_INFINITE_D));
 
+  TypeInt::MAX = TypeInt::make(max_jint); // Int MAX
+  TypeInt::MIN = TypeInt::make(min_jint); // Int MIN
   TypeInt::MINUS_1 = TypeInt::make(-1);  // -1
   TypeInt::ZERO    = TypeInt::make( 0);  //  0
   TypeInt::ONE     = TypeInt::make( 1);  //  1
@@ -475,6 +483,8 @@ void Type::Initialize_shared(Compile* current) {
   assert( TypeInt::CC_GE == TypeInt::BOOL,    "types must match for CmpL to work" );
   assert( (juint)(TypeInt::CC->_hi - TypeInt::CC->_lo) <= SMALLINT, "CC is truly small");
 
+  TypeLong::MAX = TypeLong::make(max_jlong);  // Long MAX
+  TypeLong::MIN = TypeLong::make(min_jlong);  // Long MIN
   TypeLong::MINUS_1 = TypeLong::make(-1);        // -1
   TypeLong::ZERO    = TypeLong::make( 0);        //  0
   TypeLong::ONE     = TypeLong::make( 1);        //  1
@@ -1117,6 +1127,8 @@ void Type::typerr( const Type *t ) const {
 
 //=============================================================================
 // Convenience common pre-built types.
+const TypeF *TypeF::MAX;        // Floating point max
+const TypeF *TypeF::MIN;        // Floating point min
 const TypeF *TypeF::ZERO;       // Floating point zero
 const TypeF *TypeF::ONE;        // Floating point one
 const TypeF *TypeF::POS_INF;    // Floating point positive infinity
@@ -1227,6 +1239,8 @@ bool TypeF::empty(void) const {
 
 //=============================================================================
 // Convenience common pre-built types.
+const TypeD *TypeD::MAX;        // Floating point max
+const TypeD *TypeD::MIN;        // Floating point min
 const TypeD *TypeD::ZERO;       // Floating point zero
 const TypeD *TypeD::ONE;        // Floating point one
 const TypeD *TypeD::POS_INF;    // Floating point positive infinity
@@ -1333,6 +1347,8 @@ bool TypeD::empty(void) const {
 
 //=============================================================================
 // Convience common pre-built types.
+const TypeInt *TypeInt::MAX;    // INT_MAX
+const TypeInt *TypeInt::MIN;    // INT_MIN
 const TypeInt *TypeInt::MINUS_1;// -1
 const TypeInt *TypeInt::ZERO;   // 0
 const TypeInt *TypeInt::ONE;    // 1
@@ -1602,6 +1618,8 @@ bool TypeInt::empty(void) const {
 
 //=============================================================================
 // Convenience common pre-built types.
+const TypeLong *TypeLong::MAX;
+const TypeLong *TypeLong::MIN;
 const TypeLong *TypeLong::MINUS_1;// -1
 const TypeLong *TypeLong::ZERO; // 0
 const TypeLong *TypeLong::ONE;  // 1
@@ -4201,15 +4219,14 @@ int TypeAryPtr::stable_dimension() const {
 }
 
 //----------------------cast_to_autobox_cache-----------------------------------
-const TypeAryPtr* TypeAryPtr::cast_to_autobox_cache(bool cache) const {
-  if (is_autobox_cache() == cache)  return this;
+const TypeAryPtr* TypeAryPtr::cast_to_autobox_cache() const {
+  if (is_autobox_cache())  return this;
   const TypeOopPtr* etype = elem()->make_oopptr();
   if (etype == NULL)  return this;
   // The pointers in the autobox arrays are always non-null.
-  TypePtr::PTR ptr_type = cache ? TypePtr::NotNull : TypePtr::AnyNull;
   etype = etype->cast_to_ptr_type(TypePtr::NotNull)->is_oopptr();
   const TypeAry* new_ary = TypeAry::make(etype, size(), is_stable());
-  return make(ptr(), const_oop(), new_ary, klass(), klass_is_exact(), _offset, _instance_id, _speculative, _inline_depth, cache);
+  return make(ptr(), const_oop(), new_ary, klass(), klass_is_exact(), _offset, _instance_id, _speculative, _inline_depth, /*is_autobox_cache=*/true);
 }
 
 //------------------------------eq---------------------------------------------

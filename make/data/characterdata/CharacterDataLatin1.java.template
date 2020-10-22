@@ -25,7 +25,7 @@
 
 package java.lang;
 
-import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /** The CharacterData class encapsulates the large tables found in
     Java.lang.Character. */
@@ -80,18 +80,18 @@ class CharacterDataLatin1 extends CharacterData {
         return props;
     }
 
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     boolean isDigit(int ch) {
         return '0' <= ch && ch <= '9';
     }
 
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     boolean isLowerCase(int ch) {
         int props = getProperties(ch);
         return (props & $$maskType) == Character.LOWERCASE_LETTER;
     }
 
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     boolean isUpperCase(int ch) {
         int props = getProperties(ch);
         return (props & $$maskType) == Character.UPPERCASE_LETTER;
@@ -232,7 +232,7 @@ class CharacterDataLatin1 extends CharacterData {
         return retval;
     }
 
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     boolean isWhitespace(int ch) {
         int props = getProperties(ch);
         return ((props & $$maskIdentifierInfo) == $$valueJavaWhitespace);

@@ -42,7 +42,7 @@
 # List items are testnames followed by labels, all MUST BE commented
 #   as to why they are here and use a label:
 #     generic-all   Problems on all platforms
-#     generic-ARCH  Where ARCH is one of: x64, i586, ppc64, ppc64le, s390x etc.
+#     generic-ARCH  Where ARCH is one of: x64, i586, ppc64, ppc64le, s390x, aarch64 etc.
 #     OSNAME-all    Where OSNAME is one of: linux, windows, macosx, aix
 #     OSNAME-ARCH   Specific on to one OSNAME and ARCH, e.g. macosx-x64
 #     OSNAME-REV    Specific on to one OSNAME and REV, e.g. macosx-10.7.4
@@ -272,7 +272,6 @@ sun/java2d/SunGraphics2D/PolyVertTest.java 6986565 generic-all
 sun/java2d/SunGraphics2D/SimplePrimQuality.java 6992007 generic-all
 sun/java2d/SunGraphics2D/SourceClippingBlitTest/SourceClippingBlitTest.java 8196185 generic-all
 
-sun/java2d/pipe/InterpolationQualityTest.java 8171303 windows-all,linux-all,macosx-all
 sun/java2d/X11SurfaceData/SharedMemoryPixmapsTest/SharedMemoryPixmapsTest.sh 8221451 linux-all
 java/awt/FullScreen/DisplayChangeVITest/DisplayChangeVITest.java 8169469 windows-all
 java/awt/Graphics2D/DrawString/DrawRotatedStringUsingRotatedFont.java 8197796 generic-all
@@ -733,7 +732,6 @@ javax/swing/plaf/basic/BasicTextUI/8001470/bug8001470.java 8233177 linux-all,win
 javax/swing/border/TestTitledBorderLeak.java 8213531 linux-all
 javax/swing/JComponent/7154030/bug7154030.java 7190978 generic-all
 javax/swing/JComponent/6683775/bug6683775.java 8172337 generic-all
-javax/swing/JComboBox/6236162/bug6236162.java 8028707 windows-all,macosx-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/ShapedTranslucentPerPixelTranslucentGradient.java 8233582 linux-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/ShapedPerPixelTranslucentGradient.java 8233582 linux-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/PerPixelTranslucentSwing.java 8194128 macosx-all
@@ -743,7 +741,6 @@ javax/swing/JWindow/ShapedAndTranslucentWindows/TranslucentJComboBox.java 802462
 javax/swing/JComboBox/8033069/bug8033069ScrollBar.java 8163367 generic-all
 javax/swing/JColorChooser/Test6827032.java 8197825 windows-all
 javax/swing/JColorChooser/Test6541987.java 8143021 windows-all,linux-all,macosx-all
-javax/swing/JColorChooser/Test7194184.java 8194126 linux-all,macosx-all
 javax/swing/JTable/4235420/bug4235420.java     8079127 generic-all
 javax/swing/JSplitPane/4201995/bug4201995.java 8079127 generic-all
 javax/swing/JTree/DnD/LastNodeLowerHalfDrop.java 8159131 linux-all
@@ -778,27 +775,10 @@ javax/swing/JFileChooser/8062561/bug8062561.java 8196466 linux-all,macosx-all
 javax/swing/JInternalFrame/Test6325652.java 8224977 macosx-all
 javax/swing/JInternalFrame/8146321/JInternalFrameIconTest.java 8225045 linux-all
 javax/swing/JPopupMenu/4870644/bug4870644.java 8194130 macosx-all,linux-all
-javax/swing/JPopupMenu/4966112/bug4966112.java 8064915 macosx-all
-javax/swing/MultiUIDefaults/Test6860438.java 8198391 generic-all
-javax/swing/UITest/UITest.java 8198392 generic-all
-javax/swing/plaf/basic/BasicComboBoxEditor/Test8015336.java 8198394 generic-all
-javax/swing/plaf/metal/MetalLookAndFeel/Test8039750.java 8198395 generic-all
-javax/swing/text/DevanagariEditor.java 8198397 generic-all
-javax/swing/SpringLayout/4726194/bug4726194.java 8198399 generic-all
-javax/swing/SwingUtilities/6797139/bug6797139.java 8198400 generic-all
-javax/swing/text/html/parser/Parser/6836089/bug6836089.java 8198401 generic-all
-javax/swing/JTable/8133919/DrawGridLinesTest.java 8198407 generic-all
-javax/swing/text/html/StyleSheet/BackgroundImage/BackgroundImagePosition.java 8198409 generic-all
-javax/swing/text/AbstractDocument/DocumentInsert/DocumentInsertAtWrongPositionTest.java 8198396 generic-all
 javax/swing/JFileChooser/6868611/bug6868611.java 7059834 windows-all
 javax/swing/SwingWorker/6493680/bug6493680.java 8198410 windows-all
 javax/swing/PopupFactory/6276087/NonOpaquePopupMenuTest.java 8065099,8208565 macosx-all,linux-all
 javax/swing/DataTransfer/8059739/bug8059739.java 8199074 generic-all
-javax/swing/JCheckBox/8032667/bug8032667_image_diff.java 8199063 macosx-all
-javax/swing/JComboBox/7031551/bug7031551.java 8199056 generic-all
-javax/swing/JScrollBar/6924059/bug6924059.java 8199078 generic-all
-javax/swing/JTree/8003830/bug8003830.java 8199057 generic-all
-javax/swing/plaf/nimbus/ColorCustomizationTest.java 8199080 generic-all
 javax/swing/SwingWorker/6432565/bug6432565.java 8199077 generic-all
 javax/swing/SwingWorker/6880336/NestedWorkers.java 8199049 windows-all
 javax/swing/text/DefaultCaret/6938583/bug6938583.java 8199058 generic-all
@@ -807,10 +787,8 @@ javax/swing/text/html/parser/Parser/HtmlCommentTagParseTest/HtmlCommentTagParseT
 javax/swing/text/StyledEditorKit/8016833/bug8016833.java 8199055 generic-all
 javax/swing/text/Utilities/8134721/bug8134721.java 8199062 generic-all
 javax/swing/tree/DefaultTreeCellRenderer/7142955/bug7142955.java 8199076 generic-all
-javax/swing/UIDefaults/6302464/bug6302464.java 8199079 generic-all
-javax/swing/UIDefaults/8133926/InternalFrameIcon.java 8199075 generic-all
+javax/swing/UIDefaults/6302464/bug6302464.java 8199079 macosx-all
 javax/swing/UIDefaults/8149879/InternalResourceBundle.java 8199054 windows-all
-javax/swing/text/html/parser/Parser/8078268/bug8078268.java 8199092 generic-all
 javax/swing/PopupFactory/8048506/bug8048506.java 8202660 windows-all
 javax/swing/JTextArea/TextViewOOM/TextViewOOM.java 8167355 generic-all
 javax/swing/JPopupMenu/8075063/ContextMenuScrollTest.java 202880 linux-all
@@ -835,9 +813,7 @@ javax/swing/JMenuItem/ActionListenerCalledTwice/ActionListenerCalledTwiceTest.ja
 javax/swing/JMenuItem/6249972/bug6249972.java 8233640 macosx-all
 javax/swing/JMenuItem/4171437/bug4171437.java 8233641 macosx-all
 javax/swing/JMenu/4692443/bug4692443.java 8171998 macosx-all
-javax/swing/plaf/synth/7158712/bug7158712.java 8238720 windows-all
 javax/swing/plaf/basic/BasicComboPopup/JComboBoxPopupLocation/JComboBoxPopupLocation.java 8238720 windows-all
-javax/swing/plaf/basic/BasicComboPopup/7072653/bug7072653.java 8238720 windows-all
 
 sanity/client/SwingSet/src/ToolTipDemoTest.java 8225012 windows-all,macosx-all
 sanity/client/SwingSet/src/ScrollPaneDemoTest.java 8225013 linux-all
@@ -855,7 +831,8 @@ sanity/client/SwingSet/src/ScrollPaneDemoTest.java 8225013 linux-all
 
 # core_tools
 
-tools/jlink/JLinkReproducibleTest.java                          8217166 windows-all
+tools/jlink/JLinkReproducibleTest.java                          8217166 windows-all,linux-aarch64
+tools/jlink/JLinkReproducible3Test.java                         8253688 linux-aarch64
 tools/jlink/plugins/CompressorPluginTest.java                   8247407 generic-all
 
 ############################################################################
@@ -891,8 +868,6 @@ sun/tools/jhsdb/BasicLauncherTest.java                          8211767 linux-pp
 
 # jdk_other
 
-com/sun/jndi/ldap/DeadSSLLdapTimeoutTest.java                   8169942 linux-i586,macosx-all,windows-x64
-
 javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-all
 
 javax/script/Test7.java                                         8239361 generic-all
@@ -908,8 +883,6 @@ jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-
 ############################################################################
 
 # jdk_internal
-
-jdk/internal/platform/docker/TestDockerMemoryMetrics.java 8250984 linux-5.4.0-1019-oracle
 
 ############################################################################
 

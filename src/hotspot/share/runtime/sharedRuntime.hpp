@@ -266,7 +266,6 @@ class SharedRuntime: AllStatic {
 
   // To be used as the entry point for unresolved native methods.
   static address native_method_throw_unsatisfied_link_error_entry();
-  static address native_method_throw_unsupported_operation_exception_entry();
 
   static oop retrieve_receiver(Symbol* sig, frame caller);
 
@@ -355,10 +354,6 @@ class SharedRuntime: AllStatic {
                                         CallInfo& callinfo, TRAPS);
 
   static Method* extract_attached_method(vframeStream& vfst);
-
-  static address clean_virtual_call_entry();
-  static address clean_opt_virtual_call_entry();
-  static address clean_static_call_entry();
 
 #if defined(X86) && defined(COMPILER1)
   // For Object.hashCode, System.identityHashCode try to pull hashCode from object header if available.
@@ -490,13 +485,6 @@ class SharedRuntime: AllStatic {
                                           VMRegPair* regs,
                                           BasicType ret_type,
                                           address critical_entry);
-
-  // Block before entering a JNI critical method
-  static void block_for_jni_critical(JavaThread* thread);
-
-  // Pin/Unpin object
-  static oopDesc* pin_object(JavaThread* thread, oopDesc* obj);
-  static void unpin_object(JavaThread* thread, oopDesc* obj);
 
   // A compiled caller has just called the interpreter, but compiled code
   // exists.  Patch the caller so he no longer calls into the interpreter.

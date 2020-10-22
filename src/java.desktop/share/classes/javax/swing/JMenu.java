@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1394,6 +1394,11 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
     @SuppressWarnings("serial")
     protected class AccessibleJMenu extends AccessibleJMenuItem
         implements AccessibleSelection {
+
+        /**
+         * Constructs an {@code AccessibleJMenu}.
+         */
+        protected AccessibleJMenu() {}
 
         /**
          * Returns the number of accessible children in the object.  If all

@@ -201,10 +201,16 @@ JNIEXPORT jboolean JNICALL
 JVM_IsCDSDumpingEnabled(JNIEnv* env);
 
 JNIEXPORT jboolean JNICALL
-JVM_IsCDSSharingEnabled(JNIEnv* env);
+JVM_IsSharingEnabled(JNIEnv* env);
+
+JNIEXPORT jboolean JNICALL
+JVM_IsDumpingClassList(JNIEnv* env);
 
 JNIEXPORT jlong JNICALL
-JVM_GetRandomSeedForCDSDump();
+JVM_GetRandomSeedForDumping();
+
+JNIEXPORT void JNICALL
+JVM_LogLambdaFormInvoker(JNIEnv* env, jstring line);
 
 /*
  * java.lang.Throwable
@@ -489,6 +495,14 @@ JVM_AddModuleExportsToAll(JNIEnv *env, jobject from_module, jstring package);
  */
 JNIEXPORT void JNICALL
 JVM_AddReadsModule(JNIEnv *env, jobject from_module, jobject source_module);
+
+/*
+ * Define all modules that have been stored in the CDS archived heap.
+ *  platform_loader: the built-in platform class loader
+ *  system_loader:   the built-in system class loader
+ */
+JNIEXPORT void JNICALL
+JVM_DefineArchivedModules(JNIEnv *env, jobject platform_loader, jobject system_loader);
 
 /*
  * Reflection support functions

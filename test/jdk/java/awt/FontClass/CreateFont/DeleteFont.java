@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,11 @@
  * questions.
  */
 
-import java.io.*;
-import java.awt.*;
+import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.IOException;
+import java.awt.Font;
 
 public class DeleteFont {
 
@@ -55,19 +58,22 @@ public class DeleteFont {
         if (!gotException) {
             throw new RuntimeException("No expected IOException");
         }
-        badRead(-2, Font.TRUETYPE_FONT);
-        badRead(8193, Font.TRUETYPE_FONT);
 
-        badRead(-2, Font.TYPE1_FONT);
-        badRead(8193, Font.TYPE1_FONT);
+        badRead(-2, 16, Font.TYPE1_FONT);
+        badRead(8193, 14, Font.TYPE1_FONT);
+
+        badRead(-2, 12, Font.TRUETYPE_FONT);
+        badRead(8193, 10, Font.TRUETYPE_FONT);
 
         // Make sure GC has a chance to clean up before we exit.
         System.gc(); System.gc();
+        Thread.sleep(5000);
+        System.gc(); System.gc();
     }
 
-    static void badRead(final int retval, int fontType) {
+    static void badRead(final int retval, final int multiple, int fontType) {
         int num = 2;
-        byte[] buff = new byte[16*8192]; // Multiple of 8192 is important.
+        byte[] buff = new byte[multiple*8192]; // Multiple of 8192 is important.
         for (int ct=0; ct<num; ++ct) {
             try {
                 Font.createFont(

@@ -26,17 +26,15 @@
 #define OS_LINUX_GLOBALS_LINUX_HPP
 
 //
-// Defines Linux specific flags. They are not available on other platforms.
+// Declare Linux specific flags. They are not available on other platforms.
 //
-#define RUNTIME_OS_FLAGS(develop, \
-                         develop_pd, \
-                         product, \
-                         product_pd, \
-                         diagnostic, \
-                         diagnostic_pd, \
-                         notproduct, \
-                         range, \
-                         constraint) \
+#define RUNTIME_OS_FLAGS(develop,                                       \
+                         develop_pd,                                    \
+                         product,                                       \
+                         product_pd,                                    \
+                         notproduct,                                    \
+                         range,                                         \
+                         constraint)                                    \
                                                                         \
   product(bool, UseOprofile, false,                                     \
         "enable support for Oprofile profiler")                         \
@@ -70,18 +68,20 @@
           "Increase the thread stack size to include space for glibc "  \
           "static thread-local storage (TLS) if true")                  \
                                                                         \
-  diagnostic(bool, DumpPrivateMappingsInCore, true,                     \
+  product(bool, DumpPrivateMappingsInCore, true, DIAGNOSTIC,            \
           "If true, sets bit 2 of /proc/PID/coredump_filter, thus "     \
           "resulting in file-backed private mappings of the process to "\
           "be dumped into the corefile.")                               \
                                                                         \
-  diagnostic(bool, DumpSharedMappingsInCore, true,                      \
+  product(bool, DumpSharedMappingsInCore, true, DIAGNOSTIC,             \
           "If true, sets bit 3 of /proc/PID/coredump_filter, thus "     \
           "resulting in file-backed shared mappings of the process to " \
           "be dumped into the corefile.")                               \
                                                                         \
-  diagnostic(bool, UseCpuAllocPath, false,                              \
+  product(bool, UseCpuAllocPath, false, DIAGNOSTIC,                     \
              "Use CPU_ALLOC code path in os::active_processor_count ")
+
+// end of RUNTIME_OS_FLAGS
 
 //
 // Defines Linux-specific default values. The flags are available on all

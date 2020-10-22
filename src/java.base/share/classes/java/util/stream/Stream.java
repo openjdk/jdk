@@ -375,7 +375,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * </ul>
      *
      * <p>If a lambda expression is provided as the mapper function argument, additional type
-     * information maybe be necessary for proper inference of the element type {@code <R>} of
+     * information may be necessary for proper inference of the element type {@code <R>} of
      * the returned stream. This can be provided in the form of explicit type declarations for
      * the lambda parameters or as an explicit type argument to the {@code mapMulti} call.
      *

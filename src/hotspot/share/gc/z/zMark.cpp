@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
+#include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zMark.inline.hpp"
 #include "gc/z/zMarkCache.inline.hpp"
@@ -32,6 +33,7 @@
 #include "gc/z/zPage.hpp"
 #include "gc/z/zPageTable.inline.hpp"
 #include "gc/z/zRootsIterator.hpp"
+#include "gc/z/zStackWatermark.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zTask.hpp"
 #include "gc/z/zThread.inline.hpp"
@@ -46,6 +48,8 @@
 #include "runtime/handshake.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
+#include "runtime/stackWatermark.hpp"
+#include "runtime/stackWatermarkSet.inline.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -120,63 +124,6 @@ void ZMark::prepare_mark() {
   }
 }
 
-class ZMarkRootsIteratorClosure : public ZRootsIteratorClosure {
-public:
-  ZMarkRootsIteratorClosure() {
-    ZThreadLocalAllocBuffer::reset_statistics();
-  }
-
-  ~ZMarkRootsIteratorClosure() {
-    ZThreadLocalAllocBuffer::publish_statistics();
-  }
-
-  virtual void do_thread(Thread* thread) {
-    // Update thread local address bad mask
-    ZThreadLocalData::set_address_bad_mask(thread, ZAddressBadMask);
-
-    // Mark invisible root
-    ZThreadLocalData::do_invisible_root(thread, ZBarrier::mark_barrier_on_invisible_root_oop_field);
-
-    // Retire TLAB
-    ZThreadLocalAllocBuffer::retire(thread);
-  }
-
-  virtual bool should_disarm_nmethods() const {
-    return true;
-  }
-
-  virtual void do_oop(oop* p) {
-    ZBarrier::mark_barrier_on_root_oop_field(p);
-  }
-
-  virtual void do_oop(narrowOop* p) {
-    ShouldNotReachHere();
-  }
-};
-
-class ZMarkRootsTask : public ZTask {
-private:
-  ZMark* const              _mark;
-  ZRootsIterator            _roots;
-  ZMarkRootsIteratorClosure _cl;
-
-public:
-  ZMarkRootsTask(ZMark* mark) :
-      ZTask("ZMarkRootsTask"),
-      _mark(mark),
-      _roots(false /* visit_jvmti_weak_export */) {}
-
-  virtual void work() {
-    _roots.oops_do(&_cl);
-
-    // Flush and free worker stacks. Needed here since
-    // the set of workers executing during root scanning
-    // can be different from the set of workers executing
-    // during mark.
-    _mark->flush_and_free();
-  }
-};
-
 void ZMark::start() {
   // Verification
   if (ZVerifyMarking) {
@@ -185,10 +132,6 @@ void ZMark::start() {
 
   // Prepare for concurrent mark
   prepare_mark();
-
-  // Mark roots
-  ZMarkRootsTask task(this);
-  _workers->run_parallel(&task);
 }
 
 void ZMark::prepare_work() {
@@ -563,9 +506,9 @@ private:
   bool           _expired;
 
 public:
-  ZMarkTimeout(uint64_t timeout_in_millis) :
+  ZMarkTimeout(uint64_t timeout_in_micros) :
       _start(Ticks::now()),
-      _timeout(_start.value() + TimeHelper::millis_to_counter(timeout_in_millis)),
+      _timeout(_start.value() + TimeHelper::micros_to_counter(timeout_in_micros)),
       _check_interval(200),
       _check_at(_check_interval),
       _check_count(0),
@@ -591,9 +534,9 @@ public:
   }
 };
 
-void ZMark::work_with_timeout(ZMarkCache* cache, ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks, uint64_t timeout_in_millis) {
+void ZMark::work_with_timeout(ZMarkCache* cache, ZMarkStripe* stripe, ZMarkThreadLocalStacks* stacks, uint64_t timeout_in_micros) {
   ZStatTimer timer(ZSubPhaseMarkTryComplete);
-  ZMarkTimeout timeout(timeout_in_millis);
+  ZMarkTimeout timeout(timeout_in_micros);
 
   for (;;) {
     if (!drain_and_flush(stripe, stacks, cache, &timeout)) {
@@ -611,15 +554,15 @@ void ZMark::work_with_timeout(ZMarkCache* cache, ZMarkStripe* stripe, ZMarkThrea
   }
 }
 
-void ZMark::work(uint64_t timeout_in_millis) {
+void ZMark::work(uint64_t timeout_in_micros) {
   ZMarkCache cache(_stripes.nstripes());
   ZMarkStripe* const stripe = _stripes.stripe_for_worker(_nworkers, ZThread::worker_id());
   ZMarkThreadLocalStacks* const stacks = ZThreadLocalData::stacks(Thread::current());
 
-  if (timeout_in_millis == 0) {
+  if (timeout_in_micros == 0) {
     work_without_timeout(&cache, stripe, stacks);
   } else {
-    work_with_timeout(&cache, stripe, stacks, timeout_in_millis);
+    work_with_timeout(&cache, stripe, stacks, timeout_in_micros);
   }
 
   // Make sure stacks have been flushed
@@ -631,6 +574,24 @@ void ZMark::work(uint64_t timeout_in_millis) {
 
 class ZMarkConcurrentRootsIteratorClosure : public ZRootsIteratorClosure {
 public:
+  ZMarkConcurrentRootsIteratorClosure() {
+    ZThreadLocalAllocBuffer::reset_statistics();
+  }
+
+  ~ZMarkConcurrentRootsIteratorClosure() {
+    ZThreadLocalAllocBuffer::publish_statistics();
+  }
+
+  virtual bool should_disarm_nmethods() const {
+    return true;
+  }
+
+  virtual void do_thread(Thread* thread) {
+    JavaThread* const jt = thread->as_Java_thread();
+    StackWatermarkSet::finish_processing(jt, this, StackWatermarkKind::gc);
+    ZThreadLocalAllocBuffer::update_stats(jt);
+  }
+
   virtual void do_oop(oop* p) {
     ZBarrier::mark_barrier_on_oop_field(p, false /* finalizable */);
   }
@@ -640,9 +601,9 @@ public:
   }
 };
 
-
 class ZMarkConcurrentRootsTask : public ZTask {
 private:
+  ZMark* const                        _mark;
   SuspendibleThreadSetJoiner          _sts_joiner;
   ZConcurrentRootsIteratorClaimStrong _roots;
   ZMarkConcurrentRootsIteratorClosure _cl;
@@ -650,6 +611,7 @@ private:
 public:
   ZMarkConcurrentRootsTask(ZMark* mark) :
       ZTask("ZMarkConcurrentRootsTask"),
+      _mark(mark),
       _sts_joiner(),
       _roots(),
       _cl() {
@@ -662,19 +624,25 @@ public:
 
   virtual void work() {
     _roots.oops_do(&_cl);
+
+    // Flush and free worker stacks. Needed here since
+    // the set of workers executing during root scanning
+    // can be different from the set of workers executing
+    // during mark.
+    _mark->flush_and_free();
   }
 };
 
 class ZMarkTask : public ZTask {
 private:
   ZMark* const   _mark;
-  const uint64_t _timeout_in_millis;
+  const uint64_t _timeout_in_micros;
 
 public:
-  ZMarkTask(ZMark* mark, uint64_t timeout_in_millis = 0) :
+  ZMarkTask(ZMark* mark, uint64_t timeout_in_micros = 0) :
       ZTask("ZMarkTask"),
       _mark(mark),
-      _timeout_in_millis(timeout_in_millis) {
+      _timeout_in_micros(timeout_in_micros) {
     _mark->prepare_work();
   }
 
@@ -683,7 +651,7 @@ public:
   }
 
   virtual void work() {
-    _mark->work(_timeout_in_millis);
+    _mark->work(_timeout_in_micros);
   }
 };
 

@@ -565,7 +565,7 @@ void SystemDictionary::double_lock_wait(Handle lockObject, TRAPS) {
   assert_lock_strong(SystemDictionary_lock);
 
   bool calledholdinglock
-      = ObjectSynchronizer::current_thread_holds_lock((JavaThread*)THREAD, lockObject);
+      = ObjectSynchronizer::current_thread_holds_lock(THREAD->as_Java_thread(), lockObject);
   assert(calledholdinglock,"must hold lock for notify");
   assert((lockObject() != _system_loader_lock_obj.resolve() &&
          !is_parallelCapable(lockObject)), "unexpected double_lock_wait");
@@ -898,9 +898,7 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
           }
 
           if (JvmtiExport::should_post_class_load()) {
-            Thread *thread = THREAD;
-            assert(thread->is_Java_thread(), "thread->is_Java_thread()");
-            JvmtiExport::post_class_load((JavaThread *) thread, k);
+            JvmtiExport::post_class_load(THREAD->as_Java_thread(), k);
           }
         }
       }
@@ -1084,8 +1082,7 @@ InstanceKlass* SystemDictionary::parse_stream(Symbol* class_name,
 
     // notify jvmti
     if (JvmtiExport::should_post_class_load()) {
-        assert(THREAD->is_Java_thread(), "thread->is_Java_thread()");
-        JvmtiExport::post_class_load((JavaThread *) THREAD, k);
+      JvmtiExport::post_class_load(THREAD->as_Java_thread(), k);
     }
     if (class_load_start_event.should_commit()) {
       post_class_load_event(&class_load_start_event, k, loader_data);
@@ -1356,8 +1353,10 @@ InstanceKlass* SystemDictionary::load_shared_lambda_proxy_class(InstanceKlass* i
 
   InstanceKlass* loaded_ik = load_shared_class(ik, class_loader, protection_domain, NULL, pkg_entry, CHECK_NULL);
 
-  assert(shared_nest_host->is_same_class_package(ik),
-         "lambda proxy class and its nest host must be in the same package");
+  if (loaded_ik != NULL) {
+    assert(shared_nest_host->is_same_class_package(ik),
+           "lambda proxy class and its nest host must be in the same package");
+  }
 
   return loaded_ik;
 }
@@ -1583,8 +1582,7 @@ InstanceKlass* SystemDictionary::load_instance_class(Symbol* class_name, Handle 
     // Use user specified class loader to load class. Call loadClass operation on class_loader.
     ResourceMark rm(THREAD);
 
-    assert(THREAD->is_Java_thread(), "must be a JavaThread");
-    JavaThread* jt = (JavaThread*) THREAD;
+    JavaThread* jt = THREAD->as_Java_thread();
 
     PerfClassTraceTime vmtimer(ClassLoader::perf_app_classload_time(),
                                ClassLoader::perf_app_classload_selftime(),
@@ -1647,15 +1645,15 @@ void SystemDictionary::define_instance_class(InstanceKlass* k, TRAPS) {
   ClassLoaderData* loader_data = k->class_loader_data();
   Handle class_loader_h(THREAD, loader_data->class_loader());
 
- // for bootstrap and other parallel classloaders don't acquire lock,
- // use placeholder token
- // If a parallelCapable class loader calls define_instance_class instead of
- // find_or_define_instance_class to get here, we have a timing
- // hole with systemDictionary updates and check_constraints
- if (!class_loader_h.is_null() && !is_parallelCapable(class_loader_h)) {
-    assert(ObjectSynchronizer::current_thread_holds_lock((JavaThread*)THREAD,
-         compute_loader_lock_object(class_loader_h, THREAD)),
-         "define called without lock");
+  // for bootstrap and other parallel classloaders don't acquire lock,
+  // use placeholder token
+  // If a parallelCapable class loader calls define_instance_class instead of
+  // find_or_define_instance_class to get here, we have a timing
+  // hole with systemDictionary updates and check_constraints
+  if (!class_loader_h.is_null() && !is_parallelCapable(class_loader_h)) {
+    assert(ObjectSynchronizer::current_thread_holds_lock(THREAD->as_Java_thread(),
+           compute_loader_lock_object(class_loader_h, THREAD)),
+           "define called without lock");
   }
 
   // Check class-loading constraints. Throw exception if violation is detected.
@@ -1705,9 +1703,7 @@ void SystemDictionary::define_instance_class(InstanceKlass* k, TRAPS) {
 
   // notify jvmti
   if (JvmtiExport::should_post_class_load()) {
-      assert(THREAD->is_Java_thread(), "thread->is_Java_thread()");
-      JvmtiExport::post_class_load((JavaThread *) THREAD, k);
-
+    JvmtiExport::post_class_load(THREAD->as_Java_thread(), k);
   }
   post_class_define_event(k, loader_data);
 }
@@ -1832,7 +1828,7 @@ void SystemDictionary::check_loader_lock_contention(Handle loader_lock, TRAPS) {
 
   assert(!loader_lock.is_null(), "NULL lock object");
 
-  if (ObjectSynchronizer::query_lock_ownership((JavaThread*)THREAD, loader_lock)
+  if (ObjectSynchronizer::query_lock_ownership(THREAD->as_Java_thread(), loader_lock)
       == ObjectSynchronizer::owner_other) {
     // contention will likely happen, so increment the corresponding
     // contention counter.
@@ -1988,9 +1984,11 @@ void SystemDictionary::initialize(TRAPS) {
 }
 
 // Compact table of directions on the initialization of klasses:
+// TODO: we should change the base type of vmSymbolID from int to short. Then we can declare this
+// array as vmSymbolID wk_init_info[] anf avoid all the type casts.
 static const short wk_init_info[] = {
   #define WK_KLASS_INIT_INFO(name, symbol) \
-    ((short)vmSymbols::VM_SYMBOL_ENUM_NAME(symbol)),
+    ((short)VM_SYMBOL_ENUM_NAME(symbol)),
 
   WK_KLASSES_DO(WK_KLASS_INIT_INFO)
   #undef WK_KLASS_INIT_INFO
@@ -2001,7 +1999,7 @@ static const short wk_init_info[] = {
 bool SystemDictionary::is_well_known_klass(Symbol* class_name) {
   int sid;
   for (int i = 0; (sid = wk_init_info[i]) != 0; i++) {
-    Symbol* symbol = vmSymbols::symbol_at((vmSymbols::SID)sid);
+    Symbol* symbol = vmSymbols::symbol_at(vmSymbols::as_SID(sid));
     if (class_name == symbol) {
       return true;
     }
@@ -2017,7 +2015,7 @@ bool SystemDictionary::is_well_known_klass(Klass* k) {
 bool SystemDictionary::resolve_wk_klass(WKID id, TRAPS) {
   assert(id >= (int)FIRST_WKID && id < (int)WKID_LIMIT, "oob");
   int sid = wk_init_info[id - FIRST_WKID];
-  Symbol* symbol = vmSymbols::symbol_at((vmSymbols::SID)sid);
+  Symbol* symbol = vmSymbols::symbol_at(vmSymbols::as_SID(sid));
   InstanceKlass** klassp = &_well_known_klasses[id];
 
 #if INCLUDE_CDS

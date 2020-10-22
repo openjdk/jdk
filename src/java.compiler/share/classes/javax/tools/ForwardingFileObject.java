@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,17 +50,19 @@ public class ForwardingFileObject<F extends FileObject> implements FileObject {
     protected final F fileObject;
 
     /**
-     * Creates a new instance of ForwardingFileObject.
+     * Creates a new instance of {@code ForwardingFileObject}.
      * @param fileObject delegate to this file object
      */
     protected ForwardingFileObject(F fileObject) {
         this.fileObject = Objects.requireNonNull(fileObject);
     }
 
+    @Override
     public URI toUri() {
         return fileObject.toUri();
     }
 
+    @Override
     public String getName() {
         return fileObject.getName();
     }
@@ -70,6 +72,7 @@ public class ForwardingFileObject<F extends FileObject> implements FileObject {
      * @throws UnsupportedOperationException {@inheritDoc}
      * @throws IOException {@inheritDoc}
      */
+    @Override
     public InputStream openInputStream() throws IOException {
         return fileObject.openInputStream();
     }
@@ -79,6 +82,7 @@ public class ForwardingFileObject<F extends FileObject> implements FileObject {
      * @throws UnsupportedOperationException {@inheritDoc}
      * @throws IOException {@inheritDoc}
      */
+    @Override
     public OutputStream openOutputStream() throws IOException {
         return fileObject.openOutputStream();
     }
@@ -88,6 +92,7 @@ public class ForwardingFileObject<F extends FileObject> implements FileObject {
      * @throws UnsupportedOperationException {@inheritDoc}
      * @throws IOException {@inheritDoc}
      */
+    @Override
     public Reader openReader(boolean ignoreEncodingErrors) throws IOException {
         return fileObject.openReader(ignoreEncodingErrors);
     }
@@ -97,6 +102,7 @@ public class ForwardingFileObject<F extends FileObject> implements FileObject {
      * @throws UnsupportedOperationException {@inheritDoc}
      * @throws IOException {@inheritDoc}
      */
+    @Override
     public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
         return fileObject.getCharContent(ignoreEncodingErrors);
     }
@@ -106,14 +112,17 @@ public class ForwardingFileObject<F extends FileObject> implements FileObject {
      * @throws UnsupportedOperationException {@inheritDoc}
      * @throws IOException {@inheritDoc}
      */
+    @Override
     public Writer openWriter() throws IOException {
         return fileObject.openWriter();
     }
 
+    @Override
     public long getLastModified() {
         return fileObject.getLastModified();
     }
 
+    @Override
     public boolean delete() {
         return fileObject.delete();
     }

@@ -93,11 +93,12 @@ static struct JNINativeInterface_ * unchecked_jni_NativeInterface;
 #define JNI_ENTRY_CHECKED(result_type, header)                           \
 extern "C" {                                                             \
   result_type JNICALL header {                                           \
-    JavaThread* thr = (JavaThread*) Thread::current_or_null();           \
-    if (thr == NULL || !thr->is_Java_thread()) {                         \
+    Thread* cur = Thread::current_or_null();                             \
+    if (cur == NULL || !cur->is_Java_thread()) {                         \
       tty->print_cr("%s", fatal_using_jnienv_in_nonjava);                \
       os::abort(true);                                                   \
     }                                                                    \
+    JavaThread* thr = cur->as_Java_thread();                             \
     JNIEnv* xenv = thr->jni_environment();                               \
     if (env != xenv) {                                                   \
       NativeReportJNIFatalError(thr, warn_wrong_jnienv);                 \

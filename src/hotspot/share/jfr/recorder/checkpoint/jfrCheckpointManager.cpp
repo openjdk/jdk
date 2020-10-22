@@ -387,7 +387,7 @@ size_t JfrCheckpointManager::write_static_type_set(Thread* thread) {
 size_t JfrCheckpointManager::write_threads(Thread* thread) {
   assert(thread != NULL, "invariant");
   // can safepoint here
-  ThreadInVMfromNative transition((JavaThread*)thread);
+  ThreadInVMfromNative transition(thread->as_Java_thread());
   ResetNoHandleMark rnhm;
   ResourceMark rm(thread);
   HandleMark hm(thread);
@@ -412,10 +412,10 @@ void JfrCheckpointManager::on_rotation() {
 
 void JfrCheckpointManager::clear_type_set() {
   assert(!JfrRecorder::is_recording(), "invariant");
-  Thread* t = Thread::current();
+  JavaThread* t = JavaThread::current();
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(t));
   // can safepoint here
-  ThreadInVMfromNative transition((JavaThread*)t);
+  ThreadInVMfromNative transition(t);
   ResetNoHandleMark rnhm;
   MutexLocker cld_lock(ClassLoaderDataGraph_lock);
   MutexLocker module_lock(Module_lock);
@@ -424,10 +424,10 @@ void JfrCheckpointManager::clear_type_set() {
 
 void JfrCheckpointManager::write_type_set() {
   {
-    Thread* const thread = Thread::current();
+    JavaThread* const thread = JavaThread::current();
     DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(thread));
     // can safepoint here
-    ThreadInVMfromNative transition((JavaThread*)thread);
+    ThreadInVMfromNative transition(thread);
     ResetNoHandleMark rnhm;
     MutexLocker cld_lock(thread, ClassLoaderDataGraph_lock);
     MutexLocker module_lock(thread, Module_lock);
@@ -467,7 +467,7 @@ size_t JfrCheckpointManager::flush_type_set() {
     Thread* const thread = Thread::current();
     if (thread->is_Java_thread()) {
       // can safepoint here
-      ThreadInVMfromNative transition((JavaThread*)thread);
+      ThreadInVMfromNative transition(thread->as_Java_thread());
       ResetNoHandleMark rnhm;
       elements = ::flush_type_set(thread);
     } else {
@@ -496,9 +496,8 @@ class JfrNotifyClosure : public ThreadClosure {
  public:
   void do_thread(Thread* thread) {
     assert(thread != NULL, "invariant");
-    assert(thread->is_Java_thread(), "invariant");
     assert_locked_or_safepoint(Threads_lock);
-    JfrJavaEventWriter::notify((JavaThread*)thread);
+    JfrJavaEventWriter::notify(thread->as_Java_thread());
   }
 };
 

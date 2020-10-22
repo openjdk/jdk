@@ -31,6 +31,7 @@
 #include "gc/shenandoah/mode/shenandoahSATBMode.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 
 void ShenandoahSATBMode::initialize_flags() const {

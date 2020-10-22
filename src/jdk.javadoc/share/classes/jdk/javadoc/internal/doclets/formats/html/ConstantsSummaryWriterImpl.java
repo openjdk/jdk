@@ -48,6 +48,7 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 
 
 /**
@@ -59,11 +60,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
  *  deletion without notice.</b>
  */
 public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements ConstantsSummaryWriter {
-
-    /**
-     * The configuration used in this run of the standard doclet.
-     */
-    HtmlConfiguration configuration;
 
     /**
      * The current class being documented.
@@ -81,6 +77,8 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
 
     private final BodyContents bodyContents = new BodyContents();
 
+    private boolean hasConstants = false;
+
     /**
      * Construct a ConstantsSummaryWriter.
      * @param configuration the configuration used in this run
@@ -88,10 +86,10 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
      */
     public ConstantsSummaryWriterImpl(HtmlConfiguration configuration) {
         super(configuration, DocPaths.CONSTANT_VALUES);
-        this.configuration = configuration;
         constantsTableHeader = new TableHeader(
                 contents.modifierAndTypeLabel, contents.constantFieldLabel, contents.valueLabel);
         this.navBar = new Navigation(null, configuration, PageMode.CONSTANT_VALUES, path);
+        configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.CONSTANT_VALUES);
     }
 
     @Override
@@ -184,6 +182,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
     @Override
     public void addClassConstant(Content summariesTree, Content classConstantTree) {
         summaryTree.add(classConstantTree);
+        hasConstants = true;
     }
 
     @Override
@@ -205,10 +204,9 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         }
         caption.add(classlink);
 
-        Table table = new Table(HtmlStyle.constantsSummary, HtmlStyle.summaryTable)
+        Table table = new Table(HtmlStyle.summaryTable)
                 .setCaption(caption)
                 .setHeader(constantsTableHeader)
-                .setRowScopeColumn(1)
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast);
 
         for (VariableElement field : fields) {
@@ -258,7 +256,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
      * @return the value column of the constant table row
      */
     private Content getValue(VariableElement member) {
-        String value = utils.constantValueExpresion(member);
+        String value = utils.constantValueExpression(member);
         Content valueContent = new StringContent(value);
         return HtmlTree.CODE(valueContent);
     }
@@ -284,5 +282,10 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
     public void printDocument(Content contentTree) throws DocFileIOException {
         contentTree.add(bodyContents);
         printHtmlDocument(null, "summary of constants", contentTree);
+
+        if (hasConstants && configuration.mainIndex != null) {
+            configuration.mainIndex.add(IndexItem.of(IndexItem.Category.TAGS,
+                    resources.getText("doclet.Constants_Summary"), path));
+        }
     }
 }

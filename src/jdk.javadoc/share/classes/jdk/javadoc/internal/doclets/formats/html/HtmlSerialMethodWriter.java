@@ -153,16 +153,12 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
      */
     @Override
     public void addMemberTags(ExecutableElement member, Content methodsContentTree) {
-        Content tagContent = new ContentBuilder();
-        TagletManager tagletManager =
-            configuration.tagletManager;
-        TagletWriter.genTagOutput(tagletManager, member,
-            tagletManager.getSerializedFormTaglets(),
-            writer.getTagletWriterInstance(false), tagContent);
+        TagletManager tagletManager = configuration.tagletManager;
+        Content tagContent = writer.getBlockTagOutput(member, tagletManager.getSerializedFormTaglets());
         HtmlTree dl = HtmlTree.DL(HtmlStyle.notes);
         dl.add(tagContent);
         methodsContentTree.add(dl);
-        if (name(member).compareTo("writeExternal") == 0
+        if (name(member).equals("writeExternal")
                 && utils.getSerialDataTrees(member).isEmpty()) {
             serialWarning(member, "doclet.MissingSerialDataTag",
                 utils.getFullyQualifiedName(member.getEnclosingElement()), name(member));

@@ -89,6 +89,8 @@ public class VM {
   private FileMapInfo  fileMapInfo;
   private Bytes        bytes;
 
+  /** Flag indicating if AOT is enabled in the build */
+  private boolean      hasAOT;
   /** Flag indicating if JVMTI support is included in the build */
   private boolean      isJvmtiSupported;
   /** Flags indicating whether we are attached to a core, C1, or C2 build */
@@ -443,6 +445,16 @@ public class VM {
     checkVMVersion(vmRelease);
 
     invocationEntryBCI = db.lookupIntConstant("InvocationEntryBci").intValue();
+
+    // We infer AOT if _method @ methodCounters is declared.
+    {
+      Type type = db.lookupType("MethodCounters");
+      if (type.getField("_method", false, false) == null) {
+        hasAOT = false;
+      } else {
+        hasAOT = true;
+      }
+    }
 
     // We infer the presence of JVMTI from the presence of the InstanceKlass::_breakpoints field.
     {
@@ -829,6 +841,11 @@ public class VM {
     return isBigEndian;
   }
 
+  /** Returns true if AOT is enabled, false otherwise */
+  public boolean hasAOT() {
+    return hasAOT;
+  }
+
   /** Returns true if JVMTI is supported, false otherwise */
   public boolean isJvmtiSupported() {
     return isJvmtiSupported;
@@ -1002,6 +1019,27 @@ public class VM {
     return (Flag) flagsMap.get(name);
   }
 
+  private static final String cmdFlagTypes[] = {
+    "bool",
+    "int",
+    "uint",
+    "intx",
+    "uintx",
+    "uint64_t",
+    "size_t",
+    "double",
+    "ccstr",
+    "ccstrlist"
+  };
+
+  private String getFlagTypeAsString(int typeIndex) {
+    if (0 <= typeIndex && typeIndex < cmdFlagTypes.length) {
+      return cmdFlagTypes[typeIndex];
+    } else {
+      return "unknown";
+    }
+  }
+
   private void readCommandLineFlags() {
     // get command line flags
     TypeDataBase db = getTypeDataBase();
@@ -1011,8 +1049,7 @@ public class VM {
     commandLineFlags = new Flag[numFlags - 1];
 
     Address flagAddr = flagType.getAddressField("flags").getValue();
-
-    AddressField typeFld = flagType.getAddressField("_type");
+    CIntField typeFld = new CIntField(flagType.getCIntegerField("_type"), 0);
     AddressField nameFld = flagType.getAddressField("_name");
     AddressField addrFld = flagType.getAddressField("_addr");
     CIntField flagsFld = new CIntField(flagType.getCIntegerField("_flags"), 0);
@@ -1021,7 +1058,8 @@ public class VM {
 
     // NOTE: last flag contains null values.
     for (int f = 0; f < numFlags - 1; f++) {
-      String type = CStringUtilities.getString(typeFld.getValue(flagAddr));
+      int typeIndex = (int)typeFld.getValue(flagAddr);
+      String type = getFlagTypeAsString(typeIndex);
       String name = CStringUtilities.getString(nameFld.getValue(flagAddr));
       Address addr = addrFld.getValue(flagAddr);
       int flags = (int)flagsFld.getValue(flagAddr);

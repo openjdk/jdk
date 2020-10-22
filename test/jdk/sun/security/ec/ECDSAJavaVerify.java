@@ -66,10 +66,7 @@ public class ECDSAJavaVerify {
             "SHA1withECDSA", "SHA256withECDSA", "SHA384withECDSA", "SHA512withECDSA"};
 
     static final String[] ALL_CURVES = new String[] {
-            "secp128r1", "secp256k1", "secp256r1", "secp384r1", "secp521r1"};
-
-    static final List<String> ALL_JAVA_CURVES
-            = List.of("secp256r1", "secp384r1", "secp521r1");
+            "secp256r1", "secp384r1", "secp521r1"};
 
     public static void main(String[] args) throws Exception {
         if (args.length == 1) {
@@ -100,8 +97,7 @@ public class ECDSAJavaVerify {
                 = launchingConnector.defaultArguments();
         arguments.get("main").setValue(ECDSAJavaVerify.class.getName());
         arguments.get("options").setValue(
-                "-cp " + System.getProperty("test.classes") +
-                " -Djdk.sunec.disableNative=false");
+                "-cp " + System.getProperty("test.classes"));
         VirtualMachine vm = launchingConnector.launch(arguments);
 
         MethodEntryRequest req = vm.eventRequestManager()
@@ -117,7 +113,7 @@ public class ECDSAJavaVerify {
         int pos = 0;
         for (String dummy : ALL_ALGS) {
             for (String curve : ALL_CURVES) {
-                char caller = ALL_JAVA_CURVES.contains(curve) ? 'J' : 'N';
+                char caller = 'J';
                 // For each case, Signature::verify is called twice
                 expected[pos++] = caller;
                 expected[pos++] = caller;
@@ -149,9 +145,6 @@ public class ECDSAJavaVerify {
                                 break;
                             case "verifySignedDigestImpl": // the java impl
                                 result[pos] = expected[pos] != 'J' ? 'x' : 'v';
-                                break;
-                            case "verifySignedDigest": // the native impl
-                                result[pos] = expected[pos] != 'N' ? 'x' : 'v';
                                 break;
                         }
                     }

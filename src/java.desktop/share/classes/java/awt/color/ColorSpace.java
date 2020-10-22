@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
 
 package java.awt.color;
 
+import java.io.Serializable;
 import java.lang.annotation.Native;
 
 import sun.java2d.cmm.CMSManager;
@@ -91,11 +92,21 @@ import sun.java2d.cmm.CMSManager;
  *
  * @see ICC_ColorSpace
  */
-public abstract class ColorSpace implements java.io.Serializable {
+public abstract class ColorSpace implements Serializable {
 
-    static final long serialVersionUID = -409452704308689724L;
+    /**
+     * Use serialVersionUID from JDK 1.2 for interoperability.
+     */
+    private static final long serialVersionUID = -409452704308689724L;
 
+    /**
+     * One of the {@code ColorSpace} type constants.
+     */
     private int type;
+
+    /**
+     * The number of components in the color space.
+     */
     private int numComponents;
     private transient String [] compName = null;
 
