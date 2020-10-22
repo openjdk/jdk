@@ -138,7 +138,7 @@ static void crash_handler(int sig, siginfo_t* info, void* ucVoid) {
   VMError::report_and_die(NULL, sig, pc, info, ucVoid);
 }
 
-void VMError::reset_signal_handlers() {
+void VMError::rearm_signal_handlers() {
   // install signal handlers for all synchronous program error signals
   sigset_t newset;
   sigemptyset(&newset);
@@ -149,6 +149,10 @@ void VMError::reset_signal_handlers() {
     sigaddset(&newset, SIGNALS[i]);
   }
   PosixSignals::unblock_thread_signal_mask(&newset);
+}
+
+void VMError::clear_signal_handlers() {
+  PosixSignals::clear_signal_handlers();
 }
 
 // Write a hint to the stream in case siginfo relates to a segv/bus error

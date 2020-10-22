@@ -1414,6 +1414,17 @@ void PosixSignals::hotspot_sigmask(Thread* thread) {
   }
 }
 
+void PosixSignals::clear_signal_handlers() {
+  // set signal handlers back to their defaults
+  struct sigaction defaulthandler;
+  sigemptyset(&defaulthandler.sa_mask);
+
+  defaulthandler.sa_handler = SIG_DFL;
+  for (int i = 0; i < NSIG + 1; i++) {
+    sigaction(i, &defaulthandler, NULL);
+  }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // suspend/resume support
 

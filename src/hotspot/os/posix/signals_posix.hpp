@@ -48,6 +48,11 @@ public:
   static int unblock_thread_signal_mask(const sigset_t *set);
   static void hotspot_sigmask(Thread* thread);
 
+  // set signal handlers back to their system defaults (i.e. no handler)
+  // to let the process die at the crash site (so that the OS can
+  // catch and process it)
+  static void clear_signal_handlers();
+
   static void print_signal_handler(outputStream* st, int sig, char* buf, size_t buflen);
 
   static address ucontext_get_pc(const ucontext_t* ctx);

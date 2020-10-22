@@ -44,8 +44,11 @@ LONG WINAPI crash_handler(struct _EXCEPTION_POINTERS* exceptionInfo) {
   return EXCEPTION_CONTINUE_SEARCH;
 }
 
-void VMError::reset_signal_handlers() {
+void VMError::rearm_signal_handlers() {
   SetUnhandledExceptionFilter(crash_handler);
+}
+
+void VMError::clear_signal_handlers() {
 }
 
 // Write a hint to the stream in case siginfo relates to a segv/bus error

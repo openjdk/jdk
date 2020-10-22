@@ -1429,14 +1429,19 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
 
     os::check_dump_limit(buffer, sizeof(buffer));
 
-    // reset signal handlers or exception filter; make sure recursive crashes
-    // are handled properly.
-    reset_signal_handlers();
+    // Rearm signal handlers (Linux, macOS) or exception filter (Windows)
+    // to make sure that recursive crashes are handled properly.
+    rearm_signal_handlers();
   } else {
     // If UseOsErrorReporting we call this for each level of the call stack
     // while searching for the exception handler.  Only the first level needs
     // to be reported.
-    if (UseOSErrorReporting && log_done) return;
+    if (UseOSErrorReporting && log_done) {
+      // We already handled the signal once, so reset signal handlers
+      // to their defaults and let OS handle it after the process will die
+      clear_signal_handlers();
+      return;
+    }
 
     // This is not the first error, see if it happened in a different thread
     // or in the same thread during error reporting.
