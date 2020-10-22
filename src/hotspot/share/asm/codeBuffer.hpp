@@ -405,11 +405,6 @@ class CodeBuffer: public StackObj {
 
   OopRecorder* _oop_recorder;
 
-#ifndef PRODUCT
-  CodeStrings  _code_strings;
-  bool         _collect_comments;      // Indicate if we need to collect block comments at all.
-#endif
-
   OopRecorder  _default_oop_recorder;  // override with initialize_oop_recorder
   Arena*       _overflow_arena;
 
@@ -420,7 +415,9 @@ class CodeBuffer: public StackObj {
 #endif
 
 #ifndef PRODUCT
-  address      _decode_begin;   // start address for decode
+  CodeStrings  _code_strings;
+  bool         _collect_comments; // Indicate if we need to collect block comments at all.
+  address      _decode_begin;     // start address for decode
   address      decode_begin();
 #endif
 
