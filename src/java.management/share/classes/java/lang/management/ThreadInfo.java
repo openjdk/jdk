@@ -888,7 +888,6 @@ public class ThreadInfo {
      *         {@code null} otherwise.
      *
      * @revised 9
-     * @spec JPMS
      */
     public static ThreadInfo from(CompositeData cd) {
         if (cd == null) {

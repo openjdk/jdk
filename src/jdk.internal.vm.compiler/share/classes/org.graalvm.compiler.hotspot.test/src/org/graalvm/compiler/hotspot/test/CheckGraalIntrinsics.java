@@ -337,6 +337,13 @@ public class CheckGraalIntrinsics extends GraalTest {
             add(toBeInvestigated,
                             "java/lang/StringCoding.hasNegatives([BII)Z",
                             "java/lang/StringCoding.implEncodeISOArray([BI[BII)I");
+
+            if (isJDK16OrHigher()) {
+                // Added by JDK-8173585: Intrinsify StringLatin1.indexOf(char)
+                add(toBeInvestigated,
+                            "java/lang/StringLatin1.indexOfChar([BIII)I");
+            }
+
             add(ignore,
                             // handled through an intrinsic for String.equals itself
                             "java/lang/StringLatin1.equals([B[B)Z",
@@ -600,6 +607,10 @@ public class CheckGraalIntrinsics extends GraalTest {
         }
         if (!config.useSHA512Intrinsics()) {
             add(ignore, "sun/security/provider/SHA5." + shaCompressName + "([BI)V");
+        }
+
+        if (isJDK16OrHigher()) {
+            add(toBeInvestigated, "sun/security/provider/SHA3." + shaCompressName + "([BI)V");
         }
     }
 

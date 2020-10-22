@@ -903,7 +903,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   c2_nonstatic_field(Node,                     _outmax,                                       node_idx_t)                            \
   c2_nonstatic_field(Node,                     _idx,                                          const node_idx_t)                      \
   c2_nonstatic_field(Node,                     _class_id,                                     juint)                                 \
-  c2_nonstatic_field(Node,                     _flags,                                        jushort)                               \
+  c2_nonstatic_field(Node,                     _flags,                                        juint)                                 \
                                                                                                                                      \
   c2_nonstatic_field(Compile,                  _root,                                         RootNode*)                             \
   c2_nonstatic_field(Compile,                  _unique,                                       uint)                                  \
