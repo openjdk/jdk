@@ -345,6 +345,10 @@ const intx ObjectAlignmentInBytes = 8;
           "Use intrinsics for SHA-384 and SHA-512 crypto hash functions. "  \
           "Requires that UseSHA is enabled.")                               \
                                                                             \
+  product(bool, UseSHA3Intrinsics, false, DIAGNOSTIC,                       \
+          "Use intrinsics for SHA3 crypto hash function. "                  \
+          "Requires that UseSHA is enabled.")                               \
+                                                                            \
   product(bool, UseCRC32Intrinsics, false, DIAGNOSTIC,                      \
           "use intrinsics for java.util.zip.CRC32")                         \
                                                                             \
