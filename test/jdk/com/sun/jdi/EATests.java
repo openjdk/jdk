@@ -147,6 +147,7 @@ import java.util.function.Function;
 
 import jdk.test.lib.Asserts;
 import sun.hotspot.WhiteBox;
+import sun.hotspot.gc.GC;
 
 
 //
@@ -297,6 +298,7 @@ public class EATests extends TestScaffold {
         public final boolean EliminateAllocations;
         public final boolean DeoptimizeObjectsALot;
         public final boolean DoEscapeAnalysis;
+        public final boolean ZGCIsSelected;
 
         public TargetVMOptions(EATests env, ClassType testCaseBaseTargetClass) {
             Value val;
@@ -309,6 +311,8 @@ public class EATests extends TestScaffold {
             DeoptimizeObjectsALot = ((PrimitiveValue) val).booleanValue();
             val = testCaseBaseTargetClass.getValue(testCaseBaseTargetClass.fieldByName("UseJVMCICompiler"));
             UseJVMCICompiler = ((PrimitiveValue) val).booleanValue();
+            val = testCaseBaseTargetClass.getValue(testCaseBaseTargetClass.fieldByName("ZGCIsSelected"));
+            ZGCIsSelected = ((PrimitiveValue) val).booleanValue();
         }
 
     }
@@ -780,6 +784,7 @@ abstract class EATestCaseBaseTarget extends EATestCaseBaseShared implements Runn
     public static final boolean DeoptimizeObjectsALot   = WB.getBooleanVMFlag("DeoptimizeObjectsALot");                      // read by debugger
     public static final long BiasedLockingBulkRebiasThreshold = WB.getIntxVMFlag("BiasedLockingBulkRebiasThreshold");
     public static final long BiasedLockingBulkRevokeThreshold = WB.getIntxVMFlag("BiasedLockingBulkRevokeThreshold");
+    public static final boolean ZGCIsSelected        = GC.Z.isSelected();
 
     public String testMethodName;
     public int testMethodDepth;
@@ -1076,16 +1081,11 @@ abstract class EATestCaseBaseTarget extends EATestCaseBaseShared implements Runn
     }
 
     static class LinkedList {
-        public LinkedList l;
-        public LinkedList(LinkedList l) {
-            this.l = l;
-        }
-    }
-    static class LinkedListOfLongArrays extends LinkedList {
+        LinkedList l;
         public long[] array;
-        public LinkedListOfLongArrays(LinkedList l, int size) {
-            super(l);
-            this.array = new long[size];
+        public LinkedList(LinkedList l, int size) {
+            this.array = size > 0 ? new long[size] : null;
+            this.l = l;
         }
     }
 
@@ -1094,13 +1094,13 @@ abstract class EATestCaseBaseTarget extends EATestCaseBaseShared implements Runn
     public void consumeAllMemory() {
         msg("consume all memory");
         int size = 128 * 1024 * 1024;
-        while(size > 0) {
+        while(true) {
             try {
                 while(true) {
-                    consumedMemory =
-                            size == 1 ? new LinkedList(consumedMemory) : new LinkedListOfLongArrays(consumedMemory, size);
+                    consumedMemory = new LinkedList(consumedMemory, size);
                 }
             } catch(OutOfMemoryError oom) {
+                if (size == 0) break;
             }
             size = size / 2;
         }
@@ -2608,9 +2608,9 @@ class EAPopFrameNotInlinedReallocFailure extends EATestCaseBaseDebugger {
             coughtOom  = true;
         }
         freeAllMemory();
-        // We succeeded to pop just one frame if OOM was raised. When we continue, we will call dontinline_brkpt() again.
-        String expectedTopFrame =
-                coughtOom ? "dontinline_consume_all_memory_brkpt" : "dontinline_testMethod";
+        // We succeeded to pop just one frame. When we continue, we will call dontinline_brkpt() again.
+        Asserts.assertTrue(coughtOom, "PopFrame should have triggered an OOM exception in target");
+        String expectedTopFrame = "dontinline_consume_all_memory_brkpt";
         Asserts.assertEQ(expectedTopFrame, thread.frame(0).location().method().name());
         printStack(thread);
     }
@@ -2621,6 +2621,8 @@ class EAPopFrameNotInlinedReallocFailure extends EATestCaseBaseDebugger {
         // And Graal currently doesn't provide all information about non-escaping objects in debug info
         return super.shouldSkip() ||
                 !env.targetVMOptions.EliminateAllocations ||
+                // With ZGC the OOME is not always thrown as expected
+                env.targetVMOptions.ZGCIsSelected ||
                 env.targetVMOptions.DeoptimizeObjectsALot ||
                 env.targetVMOptions.UseJVMCICompiler;
     }
@@ -2664,6 +2666,8 @@ class EAPopFrameNotInlinedReallocFailureTarget extends EATestCaseBaseTarget {
         // And Graal currently doesn't provide all information about non-escaping objects in debug info
         return super.shouldSkip() ||
                 !EliminateAllocations ||
+                // With ZGC the OOME is not always thrown as expected
+                ZGCIsSelected ||
                 DeoptimizeObjectsALot ||
                 UseJVMCICompiler;
     }
@@ -2704,8 +2708,8 @@ class EAPopInlinedMethodWithScalarReplacedObjectsReallocFailure extends EATestCa
 
         freeAllMemory();
         setField(testCase, "loopCount", env.vm().mirrorOf(0)); // terminate loop
-        String expectedTopFrame =
-                coughtOom ? "inlinedCallForcedToReturn" : "dontinline_testMethod";
+        Asserts.assertTrue(coughtOom, "PopFrame should have triggered an OOM exception in target");
+        String expectedTopFrame = "inlinedCallForcedToReturn";
         Asserts.assertEQ(expectedTopFrame, thread.frame(0).location().method().name());
     }
 
@@ -2715,6 +2719,8 @@ class EAPopInlinedMethodWithScalarReplacedObjectsReallocFailure extends EATestCa
         // And Graal currently doesn't provide all information about non-escaping objects in debug info
         return super.shouldSkip() ||
                 !env.targetVMOptions.EliminateAllocations ||
+                // With ZGC the OOME is not always thrown as expected
+                env.targetVMOptions.ZGCIsSelected ||
                 env.targetVMOptions.DeoptimizeObjectsALot ||
                 env.targetVMOptions.UseJVMCICompiler;
     }
@@ -2774,6 +2780,8 @@ class EAPopInlinedMethodWithScalarReplacedObjectsReallocFailureTarget extends EA
         // And Graal currently doesn't provide all information about non-escaping objects in debug info
         return super.shouldSkip() ||
                 !EliminateAllocations ||
+                // With ZGC the OOME is not always thrown as expected
+                ZGCIsSelected ||
                 DeoptimizeObjectsALot ||
                 UseJVMCICompiler;
     }
@@ -2962,11 +2970,10 @@ class EAForceEarlyReturnOfInlinedMethodWithScalarReplacedObjectsReallocFailure e
             coughtOom   = true;
         }
         freeAllMemory();
-        if (coughtOom) {
-            printStack(thread);
-            msg("ForceEarlyReturn(2)");
-            thread.forceEarlyReturn(env.vm().mirrorOf(43));
-        }
+        Asserts.assertTrue(coughtOom, "ForceEarlyReturn should have triggered an OOM exception in target");
+        printStack(thread);
+        msg("ForceEarlyReturn(2)");
+        thread.forceEarlyReturn(env.vm().mirrorOf(43));
         msg("Step over instruction to do the forced return");
         env.stepOverInstruction(thread);
         printStack(thread);
@@ -2979,6 +2986,8 @@ class EAForceEarlyReturnOfInlinedMethodWithScalarReplacedObjectsReallocFailure e
         // And Graal currently doesn't support Force Early Return
         return super.shouldSkip() ||
                 !env.targetVMOptions.EliminateAllocations ||
+                // With ZGC the OOME is not always thrown as expected
+                env.targetVMOptions.ZGCIsSelected ||
                 env.targetVMOptions.DeoptimizeObjectsALot ||
                 env.targetVMOptions.UseJVMCICompiler;
     }
@@ -3039,6 +3048,8 @@ class EAForceEarlyReturnOfInlinedMethodWithScalarReplacedObjectsReallocFailureTa
         // And Graal currently doesn't support Force Early Return
         return super.shouldSkip() ||
                 !EliminateAllocations ||
+                // With ZGC the OOME is not always thrown as expected
+                ZGCIsSelected ||
                 DeoptimizeObjectsALot ||
                 UseJVMCICompiler;
     }
