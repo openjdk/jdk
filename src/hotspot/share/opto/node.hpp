@@ -152,7 +152,10 @@ class TypeNode;
 class UnlockNode;
 class VectorNode;
 class LoadVectorNode;
+class LoadVectorGatherNode;
 class StoreVectorNode;
+class StoreVectorScatterNode;
+class VectorMaskCmpNode;
 class VectorSet;
 typedef void (*NFunc)(Node&,void*);
 extern "C" {
@@ -446,8 +449,7 @@ protected:
   int replace_edge(Node* old, Node* neww);
   int replace_edges_in_range(Node* old, Node* neww, int start, int end);
   // NULL out all inputs to eliminate incoming Def-Use edges.
-  // Return the number of edges between 'n' and 'this'
-  int  disconnect_inputs(Node *n, Compile *c);
+  void disconnect_inputs(Compile* C);
 
   // Quickly, return true if and only if I am Compile::current()->top().
   bool is_top() const {
@@ -517,7 +519,7 @@ public:
   // and cutting input edges of old node.
   void subsume_by(Node* new_node, Compile* c) {
     replace_by(new_node);
-    disconnect_inputs(NULL, c);
+    disconnect_inputs(c);
   }
   void set_req_X( uint i, Node *n, PhaseIterGVN *igvn );
   // Find the one non-null required input.  RegionNode only
@@ -539,7 +541,7 @@ public:
     }
     if (_in[i] != NULL) _in[i]->del_out((Node *)this);
     _in[i] = n;
-    if (n != NULL) n->add_out((Node *)this);
+    n->add_out((Node *)this);
   }
 
   // Set this node's index, used by cisc_version to replace current node
@@ -689,8 +691,10 @@ public:
     DEFINE_CLASS_ID(Mem,   Node, 4)
       DEFINE_CLASS_ID(Load,  Mem, 0)
         DEFINE_CLASS_ID(LoadVector,  Load, 0)
+          DEFINE_CLASS_ID(LoadVectorGather, LoadVector, 0)
       DEFINE_CLASS_ID(Store, Mem, 1)
         DEFINE_CLASS_ID(StoreVector, Store, 0)
+          DEFINE_CLASS_ID(StoreVectorScatter, StoreVector, 0)
       DEFINE_CLASS_ID(LoadStore, Mem, 2)
         DEFINE_CLASS_ID(LoadStoreConditional, LoadStore, 0)
           DEFINE_CLASS_ID(CompareAndSwap, LoadStoreConditional, 0)
@@ -715,6 +719,7 @@ public:
     DEFINE_CLASS_ID(Add,      Node, 11)
     DEFINE_CLASS_ID(Mul,      Node, 12)
     DEFINE_CLASS_ID(Vector,   Node, 13)
+      DEFINE_CLASS_ID(VectorMaskCmp, Vector, 0)
     DEFINE_CLASS_ID(ClearArray, Node, 14)
     DEFINE_CLASS_ID(Halt, Node, 15)
     DEFINE_CLASS_ID(Opaque1, Node, 16)
@@ -725,29 +730,30 @@ public:
 
   // Flags are sorted by usage frequency.
   enum NodeFlags {
-    Flag_is_Copy                     = 0x01, // should be first bit to avoid shift
-    Flag_rematerialize               = Flag_is_Copy << 1,
-    Flag_needs_anti_dependence_check = Flag_rematerialize << 1,
-    Flag_is_macro                    = Flag_needs_anti_dependence_check << 1,
-    Flag_is_Con                      = Flag_is_macro << 1,
-    Flag_is_cisc_alternate           = Flag_is_Con << 1,
-    Flag_is_dead_loop_safe           = Flag_is_cisc_alternate << 1,
-    Flag_may_be_short_branch         = Flag_is_dead_loop_safe << 1,
-    Flag_avoid_back_to_back_before   = Flag_may_be_short_branch << 1,
-    Flag_avoid_back_to_back_after    = Flag_avoid_back_to_back_before << 1,
-    Flag_has_call                    = Flag_avoid_back_to_back_after << 1,
-    Flag_is_reduction                = Flag_has_call << 1,
-    Flag_is_scheduled                = Flag_is_reduction << 1,
-    Flag_has_vector_mask_set         = Flag_is_scheduled << 1,
-    Flag_is_expensive                = Flag_has_vector_mask_set << 1,
-    _last_flag                       = Flag_is_expensive
+    Flag_is_Copy                     = 1 << 0, // should be first bit to avoid shift
+    Flag_rematerialize               = 1 << 1,
+    Flag_needs_anti_dependence_check = 1 << 2,
+    Flag_is_macro                    = 1 << 3,
+    Flag_is_Con                      = 1 << 4,
+    Flag_is_cisc_alternate           = 1 << 5,
+    Flag_is_dead_loop_safe           = 1 << 6,
+    Flag_may_be_short_branch         = 1 << 7,
+    Flag_avoid_back_to_back_before   = 1 << 8,
+    Flag_avoid_back_to_back_after    = 1 << 9,
+    Flag_has_call                    = 1 << 10,
+    Flag_is_reduction                = 1 << 11,
+    Flag_is_scheduled                = 1 << 12,
+    Flag_has_vector_mask_set         = 1 << 13,
+    Flag_is_expensive                = 1 << 14,
+    Flag_for_post_loop_opts_igvn     = 1 << 15,
+    _last_flag                       = Flag_for_post_loop_opts_igvn
   };
 
   class PD;
 
 private:
   juint _class_id;
-  jushort _flags;
+  juint _flags;
 
   static juint max_flags();
 
@@ -768,11 +774,11 @@ protected:
 public:
   const juint class_id() const { return _class_id; }
 
-  const jushort flags() const { return _flags; }
+  const juint flags() const { return _flags; }
 
-  void add_flag(jushort fl) { init_flags(fl); }
+  void add_flag(juint fl) { init_flags(fl); }
 
-  void remove_flag(jushort fl) { clear_flag(fl); }
+  void remove_flag(juint fl) { clear_flag(fl); }
 
   // Return a dense integer opcode number
   virtual int Opcode() const;
@@ -786,7 +792,7 @@ public:
     return ((_class_id & ClassMask_##type) == Class_##type); \
   }                                                          \
   type##Node *as_##type() const {                            \
-    assert(is_##type(), "invalid node class");               \
+    assert(is_##type(), "invalid node class: %s", Name()); \
     return (type##Node*)this;                                \
   }                                                          \
   type##Node* isa_##type() const {                           \
@@ -885,7 +891,10 @@ public:
   DEFINE_CLASS_QUERY(Type)
   DEFINE_CLASS_QUERY(Vector)
   DEFINE_CLASS_QUERY(LoadVector)
+  DEFINE_CLASS_QUERY(LoadVectorGather)
   DEFINE_CLASS_QUERY(StoreVector)
+  DEFINE_CLASS_QUERY(StoreVectorScatter)
+  DEFINE_CLASS_QUERY(VectorMaskCmp)
   DEFINE_CLASS_QUERY(Unlock)
 
   #undef DEFINE_CLASS_QUERY
@@ -897,11 +906,7 @@ public:
 
   bool is_Con () const { return (_flags & Flag_is_Con) != 0; }
   // The data node which is safe to leave in dead loop during IGVN optimization.
-  bool is_dead_loop_safe() const {
-    return is_Phi() || (is_Proj() && in(0) == NULL) ||
-           ((_flags & (Flag_is_dead_loop_safe | Flag_is_Con)) != 0 &&
-            (!is_Proj() || !in(0)->is_Allocate()));
-  }
+  bool is_dead_loop_safe() const;
 
   // is_Copy() returns copied edge index (0 or 1)
   uint is_Copy() const { return (_flags & Flag_is_Copy); }
@@ -945,6 +950,8 @@ public:
 
   // Used in lcm to mark nodes that have scheduled
   bool is_scheduled() const { return (_flags & Flag_is_scheduled) != 0; }
+
+  bool for_post_loop_opts_igvn() const { return (_flags & Flag_for_post_loop_opts_igvn) != 0; }
 
 //----------------- Optimization
 

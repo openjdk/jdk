@@ -27,6 +27,7 @@ import java.util.Random;
 import jdk.test.lib.Utils;
 
 import nsk.share.Consts;
+import jtreg.SkippedException;
 
 public class resexhausted004 {
     public static int run(String args[], PrintStream out) {
@@ -35,23 +36,24 @@ public class resexhausted004 {
         int r;
 
         for ( int i = 4 + selector.nextInt() & 3; i > 0; i-- ) {
-            switch ( selector.nextInt() % 3 ) {
+            try {
+                switch (selector.nextInt() % 3) {
                 case 0:
                     r = resexhausted001.run(args, out);
-                    if ( r != Consts.TEST_PASSED )
-                        return r;
                     break;
                 case 1:
                     r = resexhausted002.run(args, out);
-                    if ( r != Consts.TEST_PASSED )
-                        return r;
                     break;
                 default:
                     r = resexhausted003.run(args, out);
-                    if ( r != Consts.TEST_PASSED )
-                        return r;
                     break;
-           }
+                }
+                if (r != Consts.TEST_PASSED) {
+                    return r;
+                }
+            } catch (SkippedException ex) {
+                // it's ok
+            }
        }
 
        return Consts.TEST_PASSED;

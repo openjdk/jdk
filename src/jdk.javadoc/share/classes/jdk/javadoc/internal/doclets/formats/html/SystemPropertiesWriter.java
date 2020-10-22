@@ -24,7 +24,7 @@
  */
 package jdk.javadoc.internal.doclets.formats.html;
 
-import jdk.javadoc.internal.doclets.formats.html.SearchIndexItem.Category;
+import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.FixedStringContent;
@@ -40,6 +40,7 @@ import jdk.javadoc.internal.doclets.toolkit.OverviewElement;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 
 import javax.lang.model.element.Element;
 import java.nio.file.Path;
@@ -85,8 +86,8 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
     }
 
     private static void generate(HtmlConfiguration configuration, DocPath fileName) throws DocFileIOException {
-        boolean hasSystemProperties = configuration.searchItems
-                .containsAnyOfCategories(Category.SYSTEM_PROPERTY);
+        boolean hasSystemProperties = configuration.mainIndex != null
+                && !configuration.mainIndex.getItems(DocTree.Kind.SYSTEM_PROPERTY).isEmpty();
         if (!hasSystemProperties) {
             // Cannot defer this check any further, because of the super() call
             // that prints out notices on creating files, etc.
@@ -98,6 +99,7 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
         }
         SystemPropertiesWriter systemPropertiesGen = new SystemPropertiesWriter(configuration, fileName);
         systemPropertiesGen.buildSystemPropertiesPage();
+        configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.SYSTEM_PROPERTIES);
     }
 
     /**
@@ -124,6 +126,10 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
                 .addMainContent(mainContent)
                 .setFooter(footer));
         printHtmlDocument(null, "system properties", body);
+
+        if (configuration.mainIndex != null) {
+            configuration.mainIndex.add(IndexItem.of(IndexItem.Category.TAGS, title, path));
+        }
     }
 
     /**
@@ -132,15 +138,15 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
      * @param content HtmlTree content to which the links will be added
      */
     protected void addSystemProperties(Content content) {
-        Map<String, List<SearchIndexItem>> searchIndexMap = groupSystemProperties();
+        Map<String, List<IndexItem>> searchIndexMap = groupSystemProperties();
         Content separator = new StringContent(", ");
-        Table table = new Table(HtmlStyle.systemPropertiesSummary, HtmlStyle.summaryTable)
+        Table table = new Table(HtmlStyle.summaryTable)
                 .setCaption(contents.systemPropertiesSummaryLabel)
                 .setHeader(new TableHeader(contents.propertyLabel, contents.referencedIn))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
-        for (Entry<String, List<SearchIndexItem>> entry : searchIndexMap.entrySet()) {
+        for (Entry<String, List<IndexItem>> entry : searchIndexMap.entrySet()) {
             Content propertyName = new StringContent(entry.getKey());
-            List<SearchIndexItem> searchIndexItems = entry.getValue();
+            List<IndexItem> searchIndexItems = entry.getValue();
             Content separatedReferenceLinks = new ContentBuilder();
             separatedReferenceLinks.add(createLink(searchIndexItems.get(0)));
             for (int i = 1; i < searchIndexItems.size(); i++) {
@@ -152,24 +158,23 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
         content.add(table);
     }
 
-    private Map<String, List<SearchIndexItem>> groupSystemProperties() {
-        return searchItems
-                .itemsOfCategories(Category.SYSTEM_PROPERTY)
-                .collect(groupingBy(SearchIndexItem::getLabel, TreeMap::new, toList()));
+    private Map<String, List<IndexItem>> groupSystemProperties() {
+        return configuration.mainIndex.getItems(DocTree.Kind.SYSTEM_PROPERTY).stream()
+                .collect(groupingBy(IndexItem::getLabel, TreeMap::new, toList()));
     }
 
-    private Content createLink(SearchIndexItem i) {
-        assert i.getCategory() == Category.SYSTEM_PROPERTY : i;
-        if (i.getElement() != null) {
-            if (i.getElement() instanceof OverviewElement) {
-                return links.createLink(pathToRoot.resolve(i.getUrl()),
-                                        resources.getText("doclet.Overview"));
-            }
-            DocletElement e = ((DocletElement) i.getElement());
+    private Content createLink(IndexItem i) {
+        assert i.getDocTree().getKind() == DocTree.Kind.SYSTEM_PROPERTY : i;
+        Element element = i.getElement();
+        if (element instanceof OverviewElement) {
+            return links.createLink(pathToRoot.resolve(i.getUrl()),
+                    resources.getText("doclet.Overview"));
+        } else if (element instanceof DocletElement) {
+            DocletElement e = (DocletElement) element;
             // Implementations of DocletElement do not override equals and
             // hashCode; putting instances of DocletElement in a map is not
             // incorrect, but might well be inefficient
-            String t = titles.computeIfAbsent(i.getElement(), utils::getHTMLTitle);
+            String t = titles.computeIfAbsent(element, utils::getHTMLTitle);
             if (t.isBlank()) {
                 // The user should probably be notified (a warning?) that this
                 // file does not have a title

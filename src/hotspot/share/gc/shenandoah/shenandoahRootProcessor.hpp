@@ -149,6 +149,8 @@ private:
   ShenandoahPhaseTimings::Phase _phase;
 
   static uint worker_count(uint n_workers) {
+    if (SINGLE_THREADED) return 1u;
+
     // Limit concurrency a bit, otherwise it wastes resources when workers are tripping
     // over each other. This also leaves free workers to process other parts of the root
     // set, while admitted workers are busy with doing the CLDG walk.
@@ -161,6 +163,10 @@ public:
 
   void always_strong_cld_do(CLDClosure* clds, uint worker_id);
   void cld_do(CLDClosure* clds, uint worker_id);
+
+private:
+  typedef void (*CldDo)(CLDClosure*);
+  void cld_do_impl(CldDo f, CLDClosure* clds, uint worker_id);
 };
 
 class ShenandoahRootProcessor : public StackObj {

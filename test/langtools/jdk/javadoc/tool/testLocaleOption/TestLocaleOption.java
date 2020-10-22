@@ -183,20 +183,20 @@ public class TestLocaleOption extends TestRunner {
             checkContains(hw,
                     "<h2>METHOD SUMMARY</h2>",
                     """
-                        <th class="col-first" scope="col">MODIFIER AND TYPE</th>""",
+                        <div class="table-header col-first">MODIFIER AND TYPE</div>""",
                     """
-                        <th class="col-second" scope="col">METHOD</th>""",
+                        <div class="table-header col-second">METHOD</div>""",
                     """
-                        <th class="col-last" scope="col">DESCRIPTION</th>""");
+                        <div class="table-header col-last">DESCRIPTION</div>""");
         } else {
             checkContains(hw,
                     "<h2>Method Summary</h2>",
                     """
-                        <th class="col-first" scope="col">Modifier and Type</th>""",
+                        <div class="table-header col-first">Modifier and Type</div>""",
                     """
-                        <th class="col-second" scope="col">Method</th>""",
+                        <div class="table-header col-second">Method</div>""",
                     """
-                        <th class="col-last" scope="col">Description</th>""");
+                        <div class="table-header col-last">Description</div>""");
         }
     }
 

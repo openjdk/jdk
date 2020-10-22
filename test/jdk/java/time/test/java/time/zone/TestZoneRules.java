@@ -98,7 +98,7 @@ public class TestZoneRules {
             {CASABLANCA, LocalDate.of(2019, 5, 6), OFF_0, OFF_0, false},
             {CASABLANCA, LocalDate.of(2037, 10, 5), OFF_0, OFF_0, false},
             {CASABLANCA, LocalDate.of(2037, 11, 16), OFF_1, OFF_0, true},
-            {CASABLANCA, LocalDate.of(2038, 11, 1), OFF_1, OFF_0, true},
+            {CASABLANCA, LocalDate.of(2038, 11, 8), OFF_1, OFF_0, true},
         };
     }
 

@@ -154,7 +154,6 @@ public class MethodHandles {
      * @return a lookup object which is trusted minimally
      *
      * @revised 9
-     * @spec JPMS
      */
     public static Lookup publicLookup() {
         return Lookup.PUBLIC_LOOKUP;
@@ -218,7 +217,6 @@ public class MethodHandles {
      * @throws SecurityException if denied by the security manager
      * @throws IllegalAccessException if any of the other access checks specified above fails
      * @since 9
-     * @spec JPMS
      * @see Lookup#dropLookupMode
      * @see <a href="MethodHandles.Lookup.html#cross-module-lookup">Cross-module lookups</a>
      */
@@ -1411,7 +1409,6 @@ public class MethodHandles {
          *  previous lookup class} is always {@code null}.
          *
          *  @since 9
-         *  @spec JPMS
          */
         public static final int MODULE = PACKAGE << 1;
 
@@ -1430,7 +1427,6 @@ public class MethodHandles {
          *  previous lookup class} is always {@code null}.
          *
          *  @since 9
-         *  @spec JPMS
          *  @see #publicLookup()
          */
         public static final int UNCONDITIONAL = PACKAGE << 2;
@@ -1519,7 +1515,6 @@ public class MethodHandles {
          *  @see #dropLookupMode
          *
          *  @revised 9
-         *  @spec JPMS
          */
         public int lookupModes() {
             return allowedModes & ALL_MODES;
@@ -1599,7 +1594,6 @@ public class MethodHandles {
          * @throws NullPointerException if the argument is null
          *
          * @revised 9
-         * @spec JPMS
          * @see #accessClass(Class)
          * @see <a href="#cross-module-lookup">Cross-module lookups</a>
          */
@@ -1746,7 +1740,6 @@ public class MethodHandles {
          *                           <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws NullPointerException if {@code bytes} is {@code null}
          * @since 9
-         * @spec JPMS
          * @see Lookup#privateLookupIn
          * @see Lookup#dropLookupMode
          * @see ClassLoader#defineClass(String,byte[],int,int,ProtectionDomain)
@@ -2396,7 +2389,6 @@ public class MethodHandles {
          * @see #in
          *
          * @revised 9
-         * @spec JPMS
          */
         @Override
         public String toString() {

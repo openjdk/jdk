@@ -128,8 +128,8 @@ public class HtmlOptions extends BaseOptions {
     private String helpFile = "";
 
     /**
-     * Argument for command-line option {@code -nodeprecated}.
-     * True if command-line option "-nodeprecated" is used. Default value is
+     * Argument for command-line option {@code -nodeprecatedlist}.
+     * True if command-line option "-nodeprecatedlist" is used. Default value is
      * false.
      */
     private boolean noDeprecatedList = false;

@@ -450,13 +450,11 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      * Get a table, with two columns.
      *
      * @param caption the table caption
-     * @param tableStyle the table style
      * @param tableHeader the table header
      * @return a content object
      */
-    private Table getTable2(Content caption, HtmlStyle tableStyle,
-            TableHeader tableHeader) {
-        return new Table(tableStyle, HtmlStyle.detailsTable)
+    private Table getTable2(Content caption, TableHeader tableHeader) {
+        return new Table(HtmlStyle.detailsTable)
                 .setCaption(caption)
                 .setHeader(tableHeader)
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
@@ -466,17 +464,13 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      * Get a table, with three columns, with the second column being the defining column.
      *
      * @param caption the table caption
-     * @param tableSummary the summary for the table
-     * @param tableStyle the table style
      * @param tableHeader the table header
      * @return a content object
      */
-    private Table getTable3(Content caption, String tableSummary, HtmlStyle tableStyle,
-            TableHeader tableHeader) {
-        return new Table(tableStyle, HtmlStyle.detailsTable)
+    private Table getTable3(Content caption, TableHeader tableHeader) {
+        return new Table(HtmlStyle.detailsTable)
                 .setCaption(caption)
                 .setHeader(tableHeader)
-                .setRowScopeColumn(1)
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast);
     }
 
@@ -495,8 +489,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                         text,
                         resources.getText("doclet.modules"));
                 Content caption = new StringContent(text);
-                Table table = getTable3(caption, tableSummary, HtmlStyle.requiresSummary,
-                            requiresTableHeader);
+                Table table = getTable3(caption, requiresTableHeader);
                 addModulesList(requires, table);
                 section.add(table);
             }
@@ -507,8 +500,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                         amrText,
                         resources.getText("doclet.modules"));
                 Content amrCaption = new StringContent(amrText);
-                Table amrTable = getTable3(amrCaption, amrTableSummary, HtmlStyle.requiresSummary,
-                            requiresTableHeader);
+                Table amrTable = getTable3(amrCaption, requiresTableHeader);
                 addModulesList(indirectModules, amrTable);
                 section.add(amrTable);
             }
@@ -546,15 +538,13 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                     new TableHeader(contents.fromLabel, contents.packagesLabel);
             if (display(indirectPackages)) {
                 String aepText = resources.getText("doclet.Indirect_Exports_Summary");
-                Table aepTable = getTable2(new StringContent(aepText),
-                        HtmlStyle.packagesSummary, indirectPackagesHeader);
+                Table aepTable = getTable2(new StringContent(aepText), indirectPackagesHeader);
                 addIndirectPackages(aepTable, indirectPackages);
                 section.add(aepTable);
             }
             if (display(indirectOpenPackages)) {
                 String aopText = resources.getText("doclet.Indirect_Opens_Summary");
-                Table aopTable = getTable2(new StringContent(aopText), HtmlStyle.packagesSummary,
-                        indirectPackagesHeader);
+                Table aopTable = getTable2(new StringContent(aopText), indirectPackagesHeader);
                 addIndirectPackages(aopTable, indirectOpenPackages);
                 section.add(aopTable);
             }
@@ -568,13 +558,12 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      * @param li
      */
     public void addPackageSummary(HtmlTree li) {
-        Table table = new Table(HtmlStyle.packagesSummary, HtmlStyle.summaryTable)
+        Table table = new Table(HtmlStyle.summaryTable)
                 .setId("package-summary-table")
                 .setDefaultTab(resources.getText("doclet.All_Packages"))
                 .addTab(resources.getText("doclet.Exported_Packages_Summary"), this::isExported)
                 .addTab(resources.getText("doclet.Opened_Packages_Summary"), this::isOpened)
-                .addTab(resources.getText("doclet.Concealed_Packages_Summary"), this::isConcealed)
-                .setTabScript(i -> String.format("show(%d);", i));
+                .addTab(resources.getText("doclet.Concealed_Packages_Summary"), this::isConcealed);
 
         // Determine whether to show the "Exported To" and "Opened To" columns,
         // based on whether such columns would provide "useful" info.
@@ -718,8 +707,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                     new TableHeader(contents.typeLabel, contents.descriptionLabel);
             if (haveProvides) {
                 String label = resources.getText("doclet.Provides_Summary");
-                Table table = getTable2(new StringContent(label), HtmlStyle.providesSummary,
-                        usesProvidesTableHeader);
+                Table table = getTable2(new StringContent(label), usesProvidesTableHeader);
                 addProvidesList(table);
                 if (!table.isEmpty()) {
                     section.add(table);
@@ -727,8 +715,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
             }
             if (haveUses){
                 String label = resources.getText("doclet.Uses_Summary");
-                Table table = getTable2(new StringContent(label), HtmlStyle.usesSummary,
-                        usesProvidesTableHeader);
+                Table table = getTable2(new StringContent(label), usesProvidesTableHeader);
                 addUsesList(table);
                 if (!table.isEmpty()) {
                     section.add(table);
