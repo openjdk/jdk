@@ -33,6 +33,7 @@
 import jdk.incubator.vector.LongVector;
 import jdk.incubator.vector.VectorMask;
 import jdk.incubator.vector.VectorSpecies;
+import jdk.incubator.vector.VectorShuffle;
 import jdk.internal.vm.annotation.DontInline;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
@@ -43,7 +44,7 @@ import java.nio.LongBuffer;
 import java.nio.ByteOrder;
 import java.nio.ReadOnlyBufferException;
 import java.util.List;
-import java.util.function.IntFunction;
+import java.util.function.*;
 
 @Test
 public class Long128VectorLoadStoreTests extends AbstractVectorTest {
@@ -171,6 +172,13 @@ public class Long128VectorLoadStoreTests extends AbstractVectorTest {
     @DataProvider
     public Object[][] longProvider() {
         return LONG_GENERATORS.stream().
+                map(f -> new Object[]{f}).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] maskProvider() {
+        return BOOLEAN_MASK_GENERATORS.stream().
                 map(f -> new Object[]{f}).
                 toArray(Object[][]::new);
     }
@@ -946,5 +954,31 @@ public class Long128VectorLoadStoreTests extends AbstractVectorTest {
                 Assert.fail("Unexpected IndexOutOfBoundsException");
             }
         }
+    }
+
+    @Test(dataProvider = "maskProvider")
+    static void loadStoreMask(IntFunction<boolean[]> fm) {
+        boolean[] a = fm.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                VectorMask<Long> vmask = SPECIES.loadMask(a, i);
+                vmask.intoArray(r, i);
+            }
+        }
+        Assert.assertEquals(a, r);
+    }
+
+    @Test
+    static void loadStoreShuffle() {
+        IntUnaryOperator fn = a -> a + 5;
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            var shuffle = VectorShuffle.fromOp(SPECIES, fn);
+            int [] r = shuffle.toArray();
+
+            int [] a = expectedShuffle(SPECIES.length(), fn);
+            Assert.assertEquals(a, r);
+       }
     }
 }

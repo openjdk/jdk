@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import javax.print.attribute.standard.MediaTray;
 import javax.print.attribute.standard.Media;
 import java.util.ArrayList;
 
-class CustomMediaTray extends MediaTray {
+public class CustomMediaTray extends MediaTray {
     private static ArrayList<String> customStringTable = new ArrayList<>();
     private static ArrayList<MediaTray> customEnumTable = new ArrayList<>();
     private String choiceName;

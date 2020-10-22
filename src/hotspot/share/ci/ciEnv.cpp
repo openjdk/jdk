@@ -242,6 +242,7 @@ bool ciEnv::cache_jvmti_state() {
   _jvmti_can_post_on_exceptions         = JvmtiExport::can_post_on_exceptions();
   _jvmti_can_pop_frame                  = JvmtiExport::can_pop_frame();
   _jvmti_can_get_owned_monitor_info     = JvmtiExport::can_get_owned_monitor_info();
+  _jvmti_can_walk_any_space             = JvmtiExport::can_walk_any_space();
   return _task != NULL && _task->method()->is_old();
 }
 
@@ -269,6 +270,10 @@ bool ciEnv::jvmti_state_changed() const {
   }
   if (!_jvmti_can_get_owned_monitor_info &&
       JvmtiExport::can_get_owned_monitor_info()) {
+    return true;
+  }
+  if (!_jvmti_can_walk_any_space &&
+      JvmtiExport::can_walk_any_space()) {
     return true;
   }
 
