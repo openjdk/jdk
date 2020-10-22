@@ -78,7 +78,6 @@ void CompiledMethod::init_defaults() {
   }
   _has_unsafe_access          = 0;
   _has_method_handle_invokes  = 0;
-  _lazy_critical_native       = 0;
   _has_wide_vectors           = 0;
 }
 

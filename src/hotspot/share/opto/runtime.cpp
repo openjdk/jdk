@@ -961,14 +961,15 @@ const TypeFunc* OptoRuntime::counterMode_aescrypt_Type() {
 /*
  * void implCompress(byte[] buf, int ofs)
  */
-const TypeFunc* OptoRuntime::digestBase_implCompress_Type() {
+const TypeFunc* OptoRuntime::digestBase_implCompress_Type(bool is_sha3) {
   // create input type (domain)
-  int num_args = 2;
+  int num_args = is_sha3 ? 3 : 2;
   int argcnt = num_args;
   const Type** fields = TypeTuple::fields(argcnt);
   int argp = TypeFunc::Parms;
   fields[argp++] = TypePtr::NOTNULL; // buf
   fields[argp++] = TypePtr::NOTNULL; // state
+  if (is_sha3) fields[argp++] = TypeInt::INT; // digest_length
   assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
   const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
 
@@ -982,14 +983,15 @@ const TypeFunc* OptoRuntime::digestBase_implCompress_Type() {
 /*
  * int implCompressMultiBlock(byte[] b, int ofs, int limit)
  */
-const TypeFunc* OptoRuntime::digestBase_implCompressMB_Type() {
+const TypeFunc* OptoRuntime::digestBase_implCompressMB_Type(bool is_sha3) {
   // create input type (domain)
-  int num_args = 4;
+  int num_args = is_sha3 ? 5 : 4;
   int argcnt = num_args;
   const Type** fields = TypeTuple::fields(argcnt);
   int argp = TypeFunc::Parms;
   fields[argp++] = TypePtr::NOTNULL; // buf
   fields[argp++] = TypePtr::NOTNULL; // state
+  if (is_sha3) fields[argp++] = TypeInt::INT; // digest_length
   fields[argp++] = TypeInt::INT;     // ofs
   fields[argp++] = TypeInt::INT;     // limit
   assert(argp == TypeFunc::Parms+argcnt, "correct decoding");

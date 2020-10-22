@@ -278,8 +278,8 @@ private:
   static const TypeFunc* electronicCodeBook_aescrypt_Type();
   static const TypeFunc* counterMode_aescrypt_Type();
 
-  static const TypeFunc* digestBase_implCompress_Type();
-  static const TypeFunc* digestBase_implCompressMB_Type();
+  static const TypeFunc* digestBase_implCompress_Type(bool is_sha3);
+  static const TypeFunc* digestBase_implCompressMB_Type(bool is_sha3);
 
   static const TypeFunc* multiplyToLen_Type();
   static const TypeFunc* montgomeryMultiply_Type();

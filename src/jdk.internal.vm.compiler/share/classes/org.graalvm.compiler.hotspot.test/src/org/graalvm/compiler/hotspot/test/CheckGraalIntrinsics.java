@@ -608,6 +608,10 @@ public class CheckGraalIntrinsics extends GraalTest {
         if (!config.useSHA512Intrinsics()) {
             add(ignore, "sun/security/provider/SHA5." + shaCompressName + "([BI)V");
         }
+
+        if (isJDK16OrHigher()) {
+            add(toBeInvestigated, "sun/security/provider/SHA3." + shaCompressName + "([BI)V");
+        }
     }
 
     private static boolean isJDK9OrHigher() {

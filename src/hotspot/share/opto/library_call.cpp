@@ -542,6 +542,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_sha_implCompress:
   case vmIntrinsics::_sha2_implCompress:
   case vmIntrinsics::_sha5_implCompress:
+  case vmIntrinsics::_sha3_implCompress:
     return inline_digestBase_implCompress(intrinsic_id());
 
   case vmIntrinsics::_digestBase_implCompressMB:
@@ -6188,6 +6189,9 @@ bool LibraryCallKit::inline_base64_encodeBlock() {
 // Calculate SHA5 (i.e., SHA-384 or SHA-512) for single-block byte[] array.
 // void com.sun.security.provider.SHA5.implCompress(byte[] buf, int ofs)
 //
+// Calculate SHA3 (i.e., SHA3-224 or SHA3-256 or SHA3-384 or SHA3-512) for single-block byte[] array.
+// void com.sun.security.provider.SHA3.implCompress(byte[] buf, int ofs)
+//
 bool LibraryCallKit::inline_digestBase_implCompress(vmIntrinsics::ID id) {
   assert(callee()->signature()->size() == 2, "sha_implCompress has 2 parameters");
 
@@ -6210,33 +6214,42 @@ bool LibraryCallKit::inline_digestBase_implCompress(vmIntrinsics::ID id) {
   src = must_be_not_null(src, true);
   Node* src_start = array_element_address(src, ofs, src_elem);
   Node* state = NULL;
+  Node* digest_length = NULL;
   address stubAddr;
   const char *stubName;
 
   switch(id) {
   case vmIntrinsics::_md5_implCompress:
     assert(UseMD5Intrinsics, "need MD5 instruction support");
-    state = get_state_from_digest_object(digestBase_obj);
+    state = get_state_from_digest_object(digestBase_obj, "[I");
     stubAddr = StubRoutines::md5_implCompress();
     stubName = "md5_implCompress";
     break;
   case vmIntrinsics::_sha_implCompress:
     assert(UseSHA1Intrinsics, "need SHA1 instruction support");
-    state = get_state_from_digest_object(digestBase_obj);
+    state = get_state_from_digest_object(digestBase_obj, "[I");
     stubAddr = StubRoutines::sha1_implCompress();
     stubName = "sha1_implCompress";
     break;
   case vmIntrinsics::_sha2_implCompress:
     assert(UseSHA256Intrinsics, "need SHA256 instruction support");
-    state = get_state_from_digest_object(digestBase_obj);
+    state = get_state_from_digest_object(digestBase_obj, "[I");
     stubAddr = StubRoutines::sha256_implCompress();
     stubName = "sha256_implCompress";
     break;
   case vmIntrinsics::_sha5_implCompress:
     assert(UseSHA512Intrinsics, "need SHA512 instruction support");
-    state = get_long_state_from_digest_object(digestBase_obj);
+    state = get_state_from_digest_object(digestBase_obj, "[J");
     stubAddr = StubRoutines::sha512_implCompress();
     stubName = "sha512_implCompress";
+    break;
+  case vmIntrinsics::_sha3_implCompress:
+    assert(UseSHA3Intrinsics, "need SHA3 instruction support");
+    state = get_state_from_digest_object(digestBase_obj, "[B");
+    stubAddr = StubRoutines::sha3_implCompress();
+    stubName = "sha3_implCompress";
+    digest_length = get_digest_length_from_digest_object(digestBase_obj);
+    if (digest_length == NULL) return false;
     break;
   default:
     fatal_unexpected_iid(id);
@@ -6248,22 +6261,29 @@ bool LibraryCallKit::inline_digestBase_implCompress(vmIntrinsics::ID id) {
   if (stubAddr == NULL) return false;
 
   // Call the stub.
-  Node* call = make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::digestBase_implCompress_Type(),
-                                 stubAddr, stubName, TypePtr::BOTTOM,
-                                 src_start, state);
+  Node* call;
+  if (digest_length == NULL) {
+    call = make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::digestBase_implCompress_Type(false),
+                             stubAddr, stubName, TypePtr::BOTTOM,
+                             src_start, state);
+  } else {
+    call = make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::digestBase_implCompress_Type(true),
+                             stubAddr, stubName, TypePtr::BOTTOM,
+                             src_start, state, digest_length);
+  }
 
   return true;
 }
 
 //------------------------------inline_digestBase_implCompressMB-----------------------
 //
-// Calculate MD5/SHA/SHA2/SHA5 for multi-block byte[] array.
+// Calculate MD5/SHA/SHA2/SHA5/SHA3 for multi-block byte[] array.
 // int com.sun.security.provider.DigestBase.implCompressMultiBlock(byte[] b, int ofs, int limit)
 //
 bool LibraryCallKit::inline_digestBase_implCompressMB(int predicate) {
-  assert(UseMD5Intrinsics || UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics,
-         "need MD5/SHA1/SHA256/SHA512 instruction support");
-  assert((uint)predicate < 4, "sanity");
+  assert(UseMD5Intrinsics || UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics || UseSHA3Intrinsics,
+         "need MD5/SHA1/SHA256/SHA512/SHA3 instruction support");
+  assert((uint)predicate < 5, "sanity");
   assert(callee()->signature()->size() == 3, "digestBase_implCompressMB has 3 parameters");
 
   Node* digestBase_obj = argument(0); // The receiver was checked for NULL already.
@@ -6289,7 +6309,7 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(int predicate) {
   const char* klass_digestBase_name = NULL;
   const char* stub_name = NULL;
   address     stub_addr = NULL;
-  bool        long_state = false;
+  const char* state_type = "[I";
 
   switch (predicate) {
   case 0:
@@ -6318,7 +6338,15 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(int predicate) {
       klass_digestBase_name = "sun/security/provider/SHA5";
       stub_name = "sha512_implCompressMB";
       stub_addr = StubRoutines::sha512_implCompressMB();
-      long_state = true;
+      state_type = "[J";
+    }
+    break;
+  case 4:
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_sha3_implCompress)) {
+      klass_digestBase_name = "sun/security/provider/SHA3";
+      stub_name = "sha3_implCompressMB";
+      stub_addr = StubRoutines::sha3_implCompressMB();
+      state_type = "[B";
     }
     break;
   default:
@@ -6336,33 +6364,43 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(int predicate) {
     ciKlass* klass_digestBase = tinst->klass()->as_instance_klass()->find_klass(ciSymbol::make(klass_digestBase_name));
     assert(klass_digestBase->is_loaded(), "predicate checks that this class is loaded");
     ciInstanceKlass* instklass_digestBase = klass_digestBase->as_instance_klass();
-    return inline_digestBase_implCompressMB(digestBase_obj, instklass_digestBase, long_state, stub_addr, stub_name, src_start, ofs, limit);
+    return inline_digestBase_implCompressMB(digestBase_obj, instklass_digestBase, state_type, stub_addr, stub_name, src_start, ofs, limit);
   }
   return false;
 }
 
 //------------------------------inline_digestBase_implCompressMB-----------------------
 bool LibraryCallKit::inline_digestBase_implCompressMB(Node* digestBase_obj, ciInstanceKlass* instklass_digestBase,
-                                                      bool long_state, address stubAddr, const char *stubName,
+                                                      const char* state_type, address stubAddr, const char *stubName,
                                                       Node* src_start, Node* ofs, Node* limit) {
   const TypeKlassPtr* aklass = TypeKlassPtr::make(instklass_digestBase);
   const TypeOopPtr* xtype = aklass->as_instance_type();
   Node* digest_obj = new CheckCastPPNode(control(), digestBase_obj, xtype);
   digest_obj = _gvn.transform(digest_obj);
 
-  Node* state;
-  if (long_state) {
-    state = get_long_state_from_digest_object(digest_obj);
-  } else {
-    state = get_state_from_digest_object(digest_obj);
-  }
+  Node* state = get_state_from_digest_object(digest_obj, state_type);
   if (state == NULL) return false;
 
+  Node* digest_length = NULL;
+  if (strcmp("sha3_implCompressMB", stubName) == 0) {
+    digest_length = get_digest_length_from_digest_object(digest_obj);
+    if (digest_length == NULL) return false;
+  }
+
   // Call the stub.
-  Node* call = make_runtime_call(RC_LEAF|RC_NO_FP,
-                                 OptoRuntime::digestBase_implCompressMB_Type(),
-                                 stubAddr, stubName, TypePtr::BOTTOM,
-                                 src_start, state, ofs, limit);
+  Node* call;
+  if (digest_length == NULL) {
+    call = make_runtime_call(RC_LEAF|RC_NO_FP,
+                             OptoRuntime::digestBase_implCompressMB_Type(false),
+                             stubAddr, stubName, TypePtr::BOTTOM,
+                             src_start, state, ofs, limit);
+  } else {
+     call = make_runtime_call(RC_LEAF|RC_NO_FP,
+                             OptoRuntime::digestBase_implCompressMB_Type(true),
+                             stubAddr, stubName, TypePtr::BOTTOM,
+                             src_start, state, digest_length, ofs, limit);
+  }
+
   // return ofs (int)
   Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
   set_result(result);
@@ -6371,9 +6409,9 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(Node* digestBase_obj, ciIn
 }
 
 //------------------------------get_state_from_digest_object-----------------------
-Node * LibraryCallKit::get_state_from_digest_object(Node *digest_object) {
-  Node* digest_state = load_field_from_object(digest_object, "state", "[I", /*is_exact*/ false);
-  assert (digest_state != NULL, "wrong version of sun.security.provider.MD5/SHA/SHA2");
+Node * LibraryCallKit::get_state_from_digest_object(Node *digest_object, const char *state_type) {
+  Node* digest_state = load_field_from_object(digest_object, "state", state_type, /*is_exact*/ false);
+  assert (digest_state != NULL, "wrong version of sun.security.provider.MD5/SHA/SHA2/SHA5/SHA3");
   if (digest_state == NULL) return (Node *) NULL;
 
   // now have the array, need to get the start address of the state array
@@ -6381,26 +6419,22 @@ Node * LibraryCallKit::get_state_from_digest_object(Node *digest_object) {
   return state;
 }
 
-//------------------------------get_long_state_from_digest_object-----------------------
-Node * LibraryCallKit::get_long_state_from_digest_object(Node *digest_object) {
-  Node* digest_state = load_field_from_object(digest_object, "state", "[J", /*is_exact*/ false);
-  assert (digest_state != NULL, "wrong version of sun.security.provider.SHA5");
-  if (digest_state == NULL) return (Node *) NULL;
-
-  // now have the array, need to get the start address of the state array
-  Node* state = array_element_address(digest_state, intcon(0), T_LONG);
-  return state;
+//------------------------------get_digest_length_from_sha3_object----------------------------------
+Node * LibraryCallKit::get_digest_length_from_digest_object(Node *digest_object) {
+  Node* digest_length = load_field_from_object(digest_object, "digestLength", "I", /*is_exact*/ false);
+  assert (digest_length != NULL, "sanity");
+  return digest_length;
 }
 
 //----------------------------inline_digestBase_implCompressMB_predicate----------------------------
 // Return node representing slow path of predicate check.
 // the pseudo code we want to emulate with this predicate is:
-//    if (digestBaseObj instanceof MD5/SHA/SHA2/SHA5) do_intrinsic, else do_javapath
+//    if (digestBaseObj instanceof MD5/SHA/SHA2/SHA5/SHA3) do_intrinsic, else do_javapath
 //
 Node* LibraryCallKit::inline_digestBase_implCompressMB_predicate(int predicate) {
-  assert(UseMD5Intrinsics || UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics,
-         "need MD5/SHA1/SHA256/SHA512 instruction support");
-  assert((uint)predicate < 4, "sanity");
+  assert(UseMD5Intrinsics || UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics || UseSHA3Intrinsics,
+         "need MD5/SHA1/SHA256/SHA512/SHA3 instruction support");
+  assert((uint)predicate < 5, "sanity");
 
   // The receiver was checked for NULL already.
   Node* digestBaseObj = argument(0);
@@ -6434,6 +6468,12 @@ Node* LibraryCallKit::inline_digestBase_implCompressMB_predicate(int predicate) 
     if (UseSHA512Intrinsics) {
       // we want to do an instanceof comparison against the SHA5 class
       klass_name = "sun/security/provider/SHA5";
+    }
+    break;
+  case 4:
+    if (UseSHA3Intrinsics) {
+      // we want to do an instanceof comparison against the SHA3 class
+      klass_name = "sun/security/provider/SHA3";
     }
     break;
   default:
