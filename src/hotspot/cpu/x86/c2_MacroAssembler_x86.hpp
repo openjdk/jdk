@@ -120,6 +120,9 @@ public:
   void evgather(BasicType typ, XMMRegister dst, KRegister mask, Register base, XMMRegister idx, int vector_len);
   void evscatter(BasicType typ, Register base, XMMRegister idx, KRegister mask, XMMRegister src, int vector_len);
 
+  void evmovdqu(BasicType typ, KRegister kmask, XMMRegister dst, Address src, int vector_len);
+  void evmovdqu(BasicType typ, KRegister kmask, Address dst, XMMRegister src, int vector_len);
+
   // extract
   void extract(BasicType typ, Register dst, XMMRegister src, int idx);
   XMMRegister get_lane(BasicType typ, XMMRegister dst, XMMRegister src, int elemindex);

@@ -823,14 +823,14 @@ class LoadVectorMaskedNode : public LoadVectorNode {
 
 class VectorMaskGenNode : public TypeNode {
  public:
-  VectorMaskGenNode(Node* src, const Type* ty, const Type* ety): TypeNode(ty, 2), _elemType(ety) {
-    init_req(1, src);
+  VectorMaskGenNode(Node* length, const Type* ty, const Type* ety): TypeNode(ty, 2), _elemType(ety) {
+    init_req(1, length);
   }
 
   virtual int Opcode() const;
   const Type* get_elem_type()  { return _elemType;}
 
-  static VectorMaskGenNode* make(int opc, Node* src, const Type* ty, const Type* ety);
+  static VectorMaskGenNode* make(int opc, Node* length, const Type* ty, const Type* ety);
   private:
    const Type* _elemType;
 };

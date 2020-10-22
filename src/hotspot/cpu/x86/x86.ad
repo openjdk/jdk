@@ -7945,7 +7945,7 @@ instruct vmasked_load64(vec dst, memory mem, rRegL mask) %{
     BasicType elmType =  this->bottom_type()->is_vect()->element_basic_type();
     int vector_len = vector_length_encoding(this);
     __ kmovql(k2, $mask$$Register);
-    __ evmovdqu($dst$$XMMRegister, k2, $mem$$Address, vector_len, elmType);
+    __ evmovdqu(elmType, k2, $dst$$XMMRegister, $mem$$Address, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -7977,7 +7977,7 @@ instruct vmasked_store64(memory mem, vec src, rRegL mask) %{
     BasicType elmType =  src_node->bottom_type()->is_vect()->element_basic_type();
     int vector_len = vector_length_encoding(src_node);
     __ kmovql(k2, $mask$$Register);
-    __ evmovdqu($mem$$Address, k2, $src$$XMMRegister, vector_len, elmType);
+    __ evmovdqu(elmType, k2, $mem$$Address, $src$$XMMRegister, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}

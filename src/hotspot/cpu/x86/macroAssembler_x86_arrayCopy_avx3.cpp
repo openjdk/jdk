@@ -200,8 +200,8 @@ void MacroAssembler::copy64_masked_avx(Register dst, Register src, XMMRegister x
     mov64(temp, -1);
     shrxq(temp, temp, length);
     kmovql(mask, temp);
-    evmovdqu(xmm, mask, Address(src, index, scale, offset), Assembler::AVX_512bit, type[shift]);
-    evmovdqu(Address(dst, index, scale, offset), mask, xmm, Assembler::AVX_512bit, type[shift]);
+    evmovdqu(type[shift], mask, xmm, Address(src, index, scale, offset), Assembler::AVX_512bit);
+    evmovdqu(type[shift], mask, Address(dst, index, scale, offset), xmm, Assembler::AVX_512bit);
   }
 }
 
@@ -216,8 +216,8 @@ void MacroAssembler::copy32_masked_avx(Register dst, Register src, XMMRegister x
   shlxq(temp, temp, length);
   decq(temp);
   kmovql(mask, temp);
-  evmovdqu(xmm, mask, Address(src, index, scale, offset), Assembler::AVX_256bit, type[shift]);
-  evmovdqu(Address(dst, index, scale, offset), mask, xmm, Assembler::AVX_256bit, type[shift]);
+  evmovdqu(type[shift], mask, xmm, Address(src, index, scale, offset), Assembler::AVX_256bit);
+  evmovdqu(type[shift], mask, Address(dst, index, scale, offset), xmm, Assembler::AVX_256bit);
 }
 
 

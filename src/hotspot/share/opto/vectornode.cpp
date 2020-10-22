@@ -770,8 +770,8 @@ StoreVectorMaskedNode* make(int opc, Node* ctl, Node* mem, Node* dst,
   return new StoreVectorMaskedNode(ctl, mem, dst, src, atype, mask);
 }
 
-VectorMaskGenNode* make(int opc, Node* src, const Type* ty, const Type* ety) {
-  return new VectorMaskGenNode(src, ty, ety);
+VectorMaskGenNode* make(int opc, Node* length, const Type* ty, const Type* ety) {
+  return new VectorMaskGenNode(length, ty, ety);
 }
 
 Node* LoadVectorMaskedNode::Ideal(PhaseGVN* phase, bool can_reshape) {
