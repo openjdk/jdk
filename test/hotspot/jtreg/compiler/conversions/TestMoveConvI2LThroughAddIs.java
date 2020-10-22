@@ -23,6 +23,7 @@
 
 package compiler.conversions;
 
+import java.util.Random;
 import jdk.test.lib.Asserts;
 
 /*
@@ -31,46 +32,46 @@ import jdk.test.lib.Asserts;
  * @requires vm.compiler2.enabled
  * @summary Exercises the optimization that moves integer-to-long conversions
  *          upwards through different shapes of integer addition
- *          subgraphs. Contains three basic (small) tests and two stress tests
- *          that resulted in a compilation time and memory explosion, triggering
- *          the short specified timeout.
+ *          subgraphs. Contains three small functional tests and two stress
+ *          tests that resulted in a compilation time and memory explosion
+ *          before fixing bug 8254317. The stress tests run with -Xbatch to wait
+ *          for C2, so that a timeout or an out-of-memory error is triggered if
+ *          there was an explosion. These tests use a timeout of 30s to catch
+ *          the explosion earlier.
  * @library /test/lib /
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:-Inline
- *      -XX:CompileOnly=::testChain,::testTree,::testDAG
- *      compiler.conversions.TestMoveConvI2LThroughAddIs basic
- * @run main/othervm/timeout=1 -Xcomp -XX:-TieredCompilation -XX:-Inline
- *      -XX:CompileOnly=::testStress1
+ * @run main/othervm
+ *      compiler.conversions.TestMoveConvI2LThroughAddIs functional
+ * @run main/othervm/timeout=30 -Xbatch
  *      compiler.conversions.TestMoveConvI2LThroughAddIs stress1
- * @run main/othervm/timeout=1 -Xcomp -XX:-TieredCompilation -XX:-Inline
- *      -XX:CompileOnly=::testStress2
+ * @run main/othervm/timeout=30 -Xbatch
  *      compiler.conversions.TestMoveConvI2LThroughAddIs stress2
  */
 
 public class TestMoveConvI2LThroughAddIs {
 
-    // This guard is used to make C2 infer that the 'a' variables in the
-    // different test methods are in a small value range, enabling the
-    // optimization in ConvI2LNode::Ideal() for LP64 platforms.
-    static boolean val = true;
+    // Number of repetitions of each test. Should be sufficiently large for the
+    // method under test to be compiled with C2.
+    static final int N = 100_000;
 
-    static void testChain() {
-        int a = val ? 2 : 10;
+    // Chain-shaped functional test.
+    static long testChain(boolean cnd) {
+        int a = cnd ? 1 : 2;
         int b = a + a;
         int c = b + b;
         int d = c + c;
-        long out = d;
-        Asserts.assertEQ(out, 16L);
+        return d;
     }
 
-    static void testTree() {
-        int a0 = val ? 2 : 10;
-        int a1 = val ? 2 : 10;
-        int a2 = val ? 2 : 10;
-        int a3 = val ? 2 : 10;
-        int a4 = val ? 2 : 10;
-        int a5 = val ? 2 : 10;
-        int a6 = val ? 2 : 10;
-        int a7 = val ? 2 : 10;
+    // Tree-shaped functional test.
+    static long testTree(boolean cnd) {
+        int a0 = cnd ? 1 : 2;
+        int a1 = cnd ? 1 : 2;
+        int a2 = cnd ? 1 : 2;
+        int a3 = cnd ? 1 : 2;
+        int a4 = cnd ? 1 : 2;
+        int a5 = cnd ? 1 : 2;
+        int a6 = cnd ? 1 : 2;
+        int a7 = cnd ? 1 : 2;
         int b0 = a0 + a1;
         int b1 = a2 + a3;
         int b2 = a4 + a5;
@@ -78,59 +79,84 @@ public class TestMoveConvI2LThroughAddIs {
         int c0 = b0 + b1;
         int c1 = b2 + b3;
         int d = c0 + c1;
-        long out = d;
-        Asserts.assertEQ(out, 16L);
+        return d;
     }
 
-    static void testDAG() {
-        int a0 = val ? 2 : 10;
-        int a1 = val ? 2 : 10;
-        int a2 = val ? 2 : 10;
-        int a3 = val ? 2 : 10;
+    // DAG-shaped functional test.
+    static long testDAG(boolean cnd) {
+        int a0 = cnd ? 1 : 2;
+        int a1 = cnd ? 1 : 2;
+        int a2 = cnd ? 1 : 2;
+        int a3 = cnd ? 1 : 2;
         int b0 = a0 + a1;
         int b1 = a1 + a2;
         int b2 = a2 + a3;
         int c0 = b0 + b1;
         int c1 = b1 + b2;
         int d = c0 + c1;
-        long out = d;
-        Asserts.assertEQ(out, 16L);
+        return d;
     }
 
-    static void testStress1() {
-        int a = val ? 2 : 10;
-        // This loop should be fully unrolled.
-        for (int i = 0; i < 24; i++) {
+    // Chain-shaped stress test. Before fixing bug 8254317, this test would
+    // result in an out-of-memory error after minutes running.
+    static long testStress1(boolean cnd) {
+        // C2 infers a finite, small value range for a. Note that there are
+        // different ways to achieve this, for example a might take the value of
+        // the induction variable in an outer counted loop.
+        int a = cnd ? 1 : 2;
+        // C2 fully unrolls this loop, creating a long chain of AddIs.
+        for (int i = 0; i < 28; i++) {
             a = a + a;
         }
-        long out = a;
-        Asserts.assertEQ(out, 33554432L);
+        // C2 places a ConvI2L at the end of the AddI chain.
+        return a;
     }
 
-    static void testStress2() {
-         int a = val ? 1 : 2;
-         int b = a;
-         int c = a + a;
-         // This loop should be fully unrolled.
-         for (int i = 0; i < 16; i++) {
-             b = b + c;
-             c = b + c;
-         }
-         long out = b + c;
-         Asserts.assertEQ(out, 14930352L);
-     }
+    // DAG-shaped stress test. Before fixing bug 8254317, this test would result
+    // in an out-of-memory error after minutes running.
+    static long testStress2(boolean cnd) {
+        int a = cnd ? 1 : 2;
+        int b = a;
+        int c = a + a;
+        for (int i = 0; i < 20; i++) {
+            b = b + c;
+            c = b + c;
+        }
+        int d = b + c;
+        return d;
+    }
 
     public static void main(String[] args) {
+        // We use a random number generator to avoid constant propagation in C2
+        // and produce a variable ("a" in the different tests) with a finite,
+        // small value range.
+        Random rnd = new Random();
         switch(args[0]) {
-        case "basic":
-            testChain();
-            testTree();
-            testDAG();
+        case "functional":
+            // Small, functional tests.
+            for (int i = 0; i < N; i++) {
+                boolean cnd = rnd.nextBoolean();
+                Asserts.assertEQ(testChain(cnd), cnd ? 8L : 16L);
+                Asserts.assertEQ(testTree(cnd), cnd ? 8L : 16L);
+                Asserts.assertEQ(testDAG(cnd), cnd ? 8L : 16L);
+            }
             break;
         case "stress1":
-            testStress1();
+            // Chain-shaped stress test.
+            for (int i = 0; i < N; i++) {
+                boolean cnd = rnd.nextBoolean();
+                Asserts.assertEQ(testStress1(cnd),
+                                 cnd ? 268435456L : 536870912L);
+            }
+            break;
         case "stress2":
-            testStress2();
+            // DAG-shaped stress test.
+            for (int i = 0; i < N; i++) {
+                boolean cnd = rnd.nextBoolean();
+                Asserts.assertEQ(testStress2(cnd),
+                                 cnd ? 701408733L : 1402817466L);
+            }
+            break;
         default:
             System.out.println("invalid mode");
         }
