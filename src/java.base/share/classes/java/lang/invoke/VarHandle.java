@@ -39,9 +39,9 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import jdk.internal.HotSpotIntrinsicCandidate;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
 
 import static java.lang.invoke.MethodHandleStatics.UNSAFE;
@@ -494,7 +494,7 @@ public abstract class VarHandle implements Constable {
      */
     public final native
     @MethodHandle.PolymorphicSignature
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     Object get(Object... args);
 
     /**
@@ -520,7 +520,7 @@ public abstract class VarHandle implements Constable {
      */
     public final native
     @MethodHandle.PolymorphicSignature
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     void set(Object... args);
 
 
@@ -552,7 +552,7 @@ public abstract class VarHandle implements Constable {
      */
     public final native
     @MethodHandle.PolymorphicSignature
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     Object getVolatile(Object... args);
 
     /**
@@ -582,7 +582,7 @@ public abstract class VarHandle implements Constable {
      */
     public final native
     @MethodHandle.PolymorphicSignature
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     void setVolatile(Object... args);
 
 
@@ -612,7 +612,7 @@ public abstract class VarHandle implements Constable {
      */
     public final native
     @MethodHandle.PolymorphicSignature
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     Object getOpaque(Object... args);
 
     /**
@@ -639,7 +639,7 @@ public abstract class VarHandle implements Constable {
      */
     public final native
     @MethodHandle.PolymorphicSignature
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     void setOpaque(Object... args);
 
 
@@ -676,7 +676,7 @@ public abstract class VarHandle implements Constable {
      */
     public final native
     @MethodHandle.PolymorphicSignature
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     Object getAcquire(Object... args);
 
     /**
@@ -707,7 +707,7 @@ public abstract class VarHandle implements Constable {
      */
     public final native
     @MethodHandle.PolymorphicSignature
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     void setRelease(Object... args);
 
 
@@ -743,7 +743,7 @@ public abstract class VarHandle implements Constable {
      */
     public final native
     @MethodHandle.PolymorphicSignature
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     boolean compareAndSet(Object... args);
 
     /**
@@ -778,7 +778,7 @@ public abstract class VarHandle implements Constable {
      */
     public final native
     @MethodHandle.PolymorphicSignature
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     Object compareAndExchange(Object... args);
 
     /**
@@ -813,7 +813,7 @@ public abstract class VarHandle implements Constable {
      */
     public final native
     @MethodHandle.PolymorphicSignature
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     Object compareAndExchangeAcquire(Object... args);
 
     /**
@@ -848,7 +848,7 @@ public abstract class VarHandle implements Constable {
      */
     public final native
     @MethodHandle.PolymorphicSignature
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     Object compareAndExchangeRelease(Object... args);
 
     // Weak (spurious failures allowed)
@@ -887,7 +887,7 @@ public abstract class VarHandle implements Constable {
      */
     public final native
     @MethodHandle.PolymorphicSignature
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     boolean weakCompareAndSetPlain(Object... args);
 
     /**
@@ -924,7 +924,7 @@ public abstract class VarHandle implements Constable {
      */
     public final native
     @MethodHandle.PolymorphicSignature
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     boolean weakCompareAndSet(Object... args);
 
     /**
@@ -962,7 +962,7 @@ public abstract class VarHandle implements Constable {
      */
     public final native
     @MethodHandle.PolymorphicSignature
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     boolean weakCompareAndSetAcquire(Object... args);
 
     /**
@@ -1000,7 +1000,7 @@ public abstract class VarHandle implements Constable {
      */
     public final native
     @MethodHandle.PolymorphicSignature
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     boolean weakCompareAndSetRelease(Object... args);
 
     /**
@@ -1033,7 +1033,7 @@ public abstract class VarHandle implements Constable {
      */
     public final native
     @MethodHandle.PolymorphicSignature
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     Object getAndSet(Object... args);
 
     /**
@@ -1066,7 +1066,7 @@ public abstract class VarHandle implements Constable {
      */
     public final native
     @MethodHandle.PolymorphicSignature
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     Object getAndSetAcquire(Object... args);
 
     /**
@@ -1099,7 +1099,7 @@ public abstract class VarHandle implements Constable {
      */
     public final native
     @MethodHandle.PolymorphicSignature
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     Object getAndSetRelease(Object... args);
 
     // Primitive adders
@@ -1135,7 +1135,7 @@ public abstract class VarHandle implements Constable {
      */
     public final native
     @MethodHandle.PolymorphicSignature
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     Object getAndAdd(Object... args);
 
     /**
@@ -1168,7 +1168,7 @@ public abstract class VarHandle implements Constable {
      */
     public final native
     @MethodHandle.PolymorphicSignature
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     Object getAndAddAcquire(Object... args);
 
     /**
@@ -1201,7 +1201,7 @@ public abstract class VarHandle implements Constable {
      */
     public final native
     @MethodHandle.PolymorphicSignature
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     Object getAndAddRelease(Object... args);
 
 
@@ -1242,7 +1242,7 @@ public abstract class VarHandle implements Constable {
      */
     public final native
     @MethodHandle.PolymorphicSignature
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     Object getAndBitwiseOr(Object... args);
 
     /**
@@ -1279,7 +1279,7 @@ public abstract class VarHandle implements Constable {
      */
     public final native
     @MethodHandle.PolymorphicSignature
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     Object getAndBitwiseOrAcquire(Object... args);
 
     /**
@@ -1316,7 +1316,7 @@ public abstract class VarHandle implements Constable {
      */
     public final native
     @MethodHandle.PolymorphicSignature
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     Object getAndBitwiseOrRelease(Object... args);
 
     /**
@@ -1353,7 +1353,7 @@ public abstract class VarHandle implements Constable {
      */
     public final native
     @MethodHandle.PolymorphicSignature
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     Object getAndBitwiseAnd(Object... args);
 
     /**
@@ -1390,7 +1390,7 @@ public abstract class VarHandle implements Constable {
      */
     public final native
     @MethodHandle.PolymorphicSignature
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     Object getAndBitwiseAndAcquire(Object... args);
 
     /**
@@ -1427,7 +1427,7 @@ public abstract class VarHandle implements Constable {
      */
     public final native
     @MethodHandle.PolymorphicSignature
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     Object getAndBitwiseAndRelease(Object... args);
 
     /**
@@ -1464,7 +1464,7 @@ public abstract class VarHandle implements Constable {
      */
     public final native
     @MethodHandle.PolymorphicSignature
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     Object getAndBitwiseXor(Object... args);
 
     /**
@@ -1501,7 +1501,7 @@ public abstract class VarHandle implements Constable {
      */
     public final native
     @MethodHandle.PolymorphicSignature
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     Object getAndBitwiseXorAcquire(Object... args);
 
     /**
@@ -1538,7 +1538,7 @@ public abstract class VarHandle implements Constable {
      */
     public final native
     @MethodHandle.PolymorphicSignature
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     Object getAndBitwiseXorRelease(Object... args);
 
 

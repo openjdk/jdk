@@ -29,6 +29,7 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/disassembler.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "runtime/stubCodeGenerator.hpp"
@@ -330,6 +331,11 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
   }
 
+  if (UseSHA3Intrinsics) {
+    warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
+    FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
+  }
+
   if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) {
     FLAG_SET_DEFAULT(UseSHA, false);
   }
@@ -372,9 +378,7 @@ void VM_Version::initialize() {
     if (!has_tm()) {
       vm_exit_during_initialization("RTM is not supported on this OS version.");
     }
-  }
 
-  if (UseRTMLocking) {
 #if INCLUDE_RTM_OPT
     if (!FLAG_IS_CMDLINE(UseRTMLocking)) {
       // RTM locking should be used only for applications with

@@ -37,7 +37,7 @@
 #include "gc/shared/memAllocator.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
-#include "memory/metaspace.hpp"
+#include "memory/classLoaderMetaspace.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceMirrorKlass.hpp"

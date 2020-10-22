@@ -27,6 +27,7 @@
 #include "gc/shenandoah/mode/shenandoahPassiveMode.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
+#include "runtime/globals_extension.hpp"
 
 void ShenandoahPassiveMode::initialize_flags() const {
   // Do not allow concurrent cycles.

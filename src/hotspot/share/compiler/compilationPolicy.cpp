@@ -36,6 +36,7 @@
 #include "oops/oop.inline.hpp"
 #include "prims/nativeLookup.hpp"
 #include "runtime/frame.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.hpp"
@@ -105,7 +106,7 @@ void CompilationPolicy::compile_if_required(const methodHandle& selected_method,
     }
     CompileBroker::compile_method(selected_method, InvocationEntryBci,
         CompilationPolicy::policy()->initial_compile_level(selected_method),
-        methodHandle(), 0, CompileTask::Reason_MustBeCompiled, CHECK);
+        methodHandle(), 0, CompileTask::Reason_MustBeCompiled, THREAD);
   }
 }
 
@@ -378,10 +379,10 @@ bool SimpleCompPolicy::is_mature(Method* method) {
 }
 
 nmethod* SimpleCompPolicy::event(const methodHandle& method, const methodHandle& inlinee, int branch_bci,
-                                    int bci, CompLevel comp_level, CompiledMethod* nm, JavaThread* thread) {
+                                    int bci, CompLevel comp_level, CompiledMethod* nm, TRAPS) {
   assert(comp_level == CompLevel_none, "This should be only called from the interpreter");
   NOT_PRODUCT(trace_frequency_counter_overflow(method, branch_bci, bci));
-  if (JvmtiExport::can_post_interpreter_events() && thread->is_interp_only_mode()) {
+  if (JvmtiExport::can_post_interpreter_events() && THREAD->as_Java_thread()->is_interp_only_mode()) {
     // If certain JVMTI events (e.g. frame pop event) are requested then the
     // thread is forced to remain in interpreted code. This is
     // implemented partly by a check in the run_compiled_code
@@ -407,7 +408,7 @@ nmethod* SimpleCompPolicy::event(const methodHandle& method, const methodHandle&
     // when code cache is full, compilation gets switched off, UseCompiler
     // is set to false
     if (!method->has_compiled_code() && UseCompiler) {
-      method_invocation_event(method, thread);
+      method_invocation_event(method, THREAD);
     } else {
       // Force counter overflow on method entry, even if no compilation
       // happened.  (The method_invocation_event call does this also.)
@@ -423,7 +424,7 @@ nmethod* SimpleCompPolicy::event(const methodHandle& method, const methodHandle&
     NOT_PRODUCT(trace_osr_request(method, osr_nm, bci));
     // when code cache is full, we should not compile any more...
     if (osr_nm == NULL && UseCompiler) {
-      method_back_branch_event(method, bci, thread);
+      method_back_branch_event(method, bci, THREAD);
       osr_nm = method->lookup_osr_nmethod_for(bci, CompLevel_highest_tier, true);
     }
     if (osr_nm == NULL) {
@@ -478,7 +479,7 @@ void SimpleCompPolicy::trace_osr_request(const methodHandle& method, nmethod* os
 }
 #endif // !PRODUCT
 
-void SimpleCompPolicy::method_invocation_event(const methodHandle& m, JavaThread* thread) {
+void SimpleCompPolicy::method_invocation_event(const methodHandle& m, TRAPS) {
   const int comp_level = CompLevel_highest_tier;
   const int hot_count = m->invocation_count();
   reset_counter_for_invocation_event(m);
@@ -486,17 +487,17 @@ void SimpleCompPolicy::method_invocation_event(const methodHandle& m, JavaThread
   if (is_compilation_enabled() && can_be_compiled(m, comp_level)) {
     CompiledMethod* nm = m->code();
     if (nm == NULL ) {
-      CompileBroker::compile_method(m, InvocationEntryBci, comp_level, m, hot_count, CompileTask::Reason_InvocationCount, thread);
+      CompileBroker::compile_method(m, InvocationEntryBci, comp_level, m, hot_count, CompileTask::Reason_InvocationCount, THREAD);
     }
   }
 }
 
-void SimpleCompPolicy::method_back_branch_event(const methodHandle& m, int bci, JavaThread* thread) {
+void SimpleCompPolicy::method_back_branch_event(const methodHandle& m, int bci, TRAPS) {
   const int comp_level = CompLevel_highest_tier;
   const int hot_count = m->backedge_count();
 
   if (is_compilation_enabled() && can_be_osr_compiled(m, comp_level)) {
-    CompileBroker::compile_method(m, bci, comp_level, m, hot_count, CompileTask::Reason_BackedgeCount, thread);
+    CompileBroker::compile_method(m, bci, comp_level, m, hot_count, CompileTask::Reason_BackedgeCount, THREAD);
     NOT_PRODUCT(trace_osr_completion(m->lookup_osr_nmethod_for(bci, comp_level, true));)
   }
 }

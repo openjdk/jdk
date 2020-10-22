@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8056174
+ * @bug 8056174 8242068
  * @summary Make sure JarSigner impl conforms to spec
  * @library /test/lib
  * @modules java.base/sun.security.tools.keytool
@@ -31,7 +31,7 @@
  *          jdk.jartool
  *          jdk.crypto.ec
  * @build jdk.test.lib.util.JarUtils
- * @run main/othervm -Djdk.sunec.disableNative=false Spec
+ * @run main/othervm Spec
  */
 
 import com.sun.jarsigner.ContentSigner;
@@ -125,7 +125,10 @@ public class Spec {
         iae(()->b1.setProperty("internalsf", "Hello"));
         npe(()->b1.setProperty("sectionsonly", null));
         iae(()->b1.setProperty("sectionsonly", "OK"));
+        npe(()->b1.setProperty("sectionsonly", null));
         npe(()->b1.setProperty("altsigner", null));
+        iae(()->b1.setProperty("directsign", "OK"));
+        npe(()->b1.setProperty("directsign", null));
         npe(()->b1.eventHandler(null));
 
         // default values
@@ -143,6 +146,7 @@ public class Spec {
         assertTrue(js2.getProperty("tsapolicyid") == null);
         assertTrue(js2.getProperty("internalsf").equals("false"));
         assertTrue(js2.getProperty("sectionsonly").equals("false"));
+        assertTrue(js2.getProperty("directsign").equals("false"));
         assertTrue(js2.getProperty("altsigner") == null);
         uoe(()->js2.getProperty("invalid"));
 
@@ -159,6 +163,7 @@ public class Spec {
                 .setProperty("tsapolicyid", "1.2.3.4")
                 .setProperty("internalsf", "true")
                 .setProperty("sectionsonly", "true")
+                .setProperty("directsign", "true")
                 .setProperty("altsigner", "MyContentSigner")
                 .eventHandler(myeh);
         JarSigner js3 = b3.build();
@@ -171,6 +176,7 @@ public class Spec {
         assertTrue(js3.getProperty("tsapolicyid").equals("1.2.3.4"));
         assertTrue(js3.getProperty("internalsf").equals("true"));
         assertTrue(js3.getProperty("sectionsonly").equals("true"));
+        assertTrue(js3.getProperty("directsign").equals("true"));
         assertTrue(js3.getProperty("altsigner").equals("MyContentSigner"));
         assertTrue(js3.getProperty("altsignerpath") == null);
 
@@ -190,7 +196,7 @@ public class Spec {
                 .equals("SHA256withDSA"));
 
         kpg = KeyPairGenerator.getInstance("EC");
-        kpg.initialize(192);
+        kpg.initialize(256);
         assertTrue(JarSigner.Builder
                 .getDefaultSignatureAlgorithm(kpg.generateKeyPair().getPrivate())
                 .equals("SHA256withECDSA"));
@@ -198,7 +204,7 @@ public class Spec {
         assertTrue(JarSigner.Builder
                 .getDefaultSignatureAlgorithm(kpg.generateKeyPair().getPrivate())
                 .equals("SHA384withECDSA"));
-        kpg.initialize(571);
+        kpg.initialize(521);
         assertTrue(JarSigner.Builder
                 .getDefaultSignatureAlgorithm(kpg.generateKeyPair().getPrivate())
                 .equals("SHA512withECDSA"));

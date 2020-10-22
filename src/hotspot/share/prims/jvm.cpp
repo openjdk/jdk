@@ -25,12 +25,14 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "classfile/classFileStream.hpp"
+#include "classfile/classListWriter.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/lambdaFormInvokers.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/packageEntry.hpp"
@@ -65,6 +67,7 @@
 #include "prims/stackwalk.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -3682,7 +3685,7 @@ jclass find_class_from_class_loader(JNIEnv* env, Symbol* name, jboolean init,
 JVM_ENTRY(jobject, JVM_InvokeMethod(JNIEnv *env, jobject method, jobject obj, jobjectArray args0))
   JVMWrapper("JVM_InvokeMethod");
   Handle method_handle;
-  if (thread->stack_available((address) &method_handle) >= JVMInvokeMethodSlack) {
+  if (thread->stack_overflow_state()->stack_available((address) &method_handle) >= JVMInvokeMethodSlack) {
     method_handle = Handle(THREAD, JNIHandles::resolve(method));
     Handle receiver(THREAD, JNIHandles::resolve(obj));
     objArrayHandle args(THREAD, objArrayOop(JNIHandles::resolve(args0)));
@@ -3740,7 +3743,7 @@ JVM_ENTRY(void, JVM_RegisterLambdaProxyClassForArchiving(JNIEnv* env,
                                               jclass lambdaProxyClass))
   JVMWrapper("JVM_RegisterLambdaProxyClassForArchiving");
 #if INCLUDE_CDS
-  if (!DynamicDumpSharedSpaces) {
+  if (!Arguments::is_dumping_archive()) {
     return;
   }
 
@@ -3775,7 +3778,7 @@ JVM_ENTRY(void, JVM_RegisterLambdaProxyClassForArchiving(JNIEnv* env,
   Symbol* instantiated_method_type = java_lang_invoke_MethodType::as_signature(instantiated_method_type_oop(), true);
 
   SystemDictionaryShared::add_lambda_proxy_class(caller_ik, lambda_ik, invoked_name, invoked_type,
-                                                 method_type, m, instantiated_method_type);
+                                                 method_type, m, instantiated_method_type, THREAD);
 #endif // INCLUDE_CDS
 JVM_END
 
@@ -3789,9 +3792,6 @@ JVM_ENTRY(jclass, JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env,
                                                         jboolean initialize))
   JVMWrapper("JVM_LookupLambdaProxyClassFromArchive");
 #if INCLUDE_CDS
-  if (!DynamicArchive::is_mapped()) {
-    return NULL;
-  }
 
   if (invokedName == NULL || invokedType == NULL || methodType == NULL ||
       implMethodMember == NULL || instantiatedMethodType == NULL) {
@@ -3833,17 +3833,17 @@ JVM_ENTRY(jclass, JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env,
 JVM_END
 
 JVM_ENTRY(jboolean, JVM_IsCDSDumpingEnabled(JNIEnv* env))
-    JVMWrapper("JVM_IsCDSDumpingEnable");
-    return DynamicDumpSharedSpaces;
+    JVMWrapper("JVM_IsCDSDumpingEnabled");
+    return Arguments::is_dumping_archive();
 JVM_END
 
-JVM_ENTRY(jboolean, JVM_IsCDSSharingEnabled(JNIEnv* env))
-    JVMWrapper("JVM_IsCDSSharingEnable");
+JVM_ENTRY(jboolean, JVM_IsSharingEnabled(JNIEnv* env))
+    JVMWrapper("JVM_IsSharingEnable");
     return UseSharedSpaces;
 JVM_END
 
-JVM_ENTRY_NO_ENV(jlong, JVM_GetRandomSeedForCDSDump())
-  JVMWrapper("JVM_GetRandomSeedForCDSDump");
+JVM_ENTRY_NO_ENV(jlong, JVM_GetRandomSeedForDumping())
+  JVMWrapper("JVM_GetRandomSeedForDumping");
   if (DumpSharedSpaces) {
     const char* release = Abstract_VM_Version::vm_release();
     const char* dbg_level = Abstract_VM_Version::jdk_debug_level();
@@ -3858,11 +3858,34 @@ JVM_ENTRY_NO_ENV(jlong, JVM_GetRandomSeedForCDSDump())
     if (seed == 0) { // don't let this ever be zero.
       seed = 0x87654321;
     }
-    log_debug(cds)("JVM_GetRandomSeedForCDSDump() = " JLONG_FORMAT, seed);
+    log_debug(cds)("JVM_GetRandomSeedForDumping() = " JLONG_FORMAT, seed);
     return seed;
   } else {
     return 0;
   }
+JVM_END
+
+JVM_ENTRY(jboolean, JVM_IsDumpingClassList(JNIEnv *env))
+  JVMWrapper("JVM_IsDumpingClassList");
+#if INCLUDE_CDS
+  return ClassListWriter::is_enabled();
+#else
+  return false;
+#endif // INCLUDE_CDS
+JVM_END
+
+JVM_ENTRY(void, JVM_LogLambdaFormInvoker(JNIEnv *env, jstring line))
+  JVMWrapper("JVM_LogLambdaFormInvoker");
+#if INCLUDE_CDS
+  assert(ClassListWriter::is_enabled(), "Should be set and open");
+  if (line != NULL) {
+    ResourceMark rm(THREAD);
+    Handle h_line (THREAD, JNIHandles::resolve_non_null(line));
+    char* c_line = java_lang_String::as_utf8_string(h_line());
+    ClassListWriter w;
+    w.stream()->print_cr("%s %s", LambdaFormInvokers::lambda_form_invoker_tag(), c_line);
+  }
+#endif // INCLUDE_CDS
 JVM_END
 
 // Returns an array of all live Thread objects (VM internal JavaThreads,

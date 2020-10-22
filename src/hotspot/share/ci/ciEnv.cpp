@@ -59,6 +59,7 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "prims/methodHandles.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/reflection.hpp"
@@ -241,6 +242,7 @@ bool ciEnv::cache_jvmti_state() {
   _jvmti_can_post_on_exceptions         = JvmtiExport::can_post_on_exceptions();
   _jvmti_can_pop_frame                  = JvmtiExport::can_pop_frame();
   _jvmti_can_get_owned_monitor_info     = JvmtiExport::can_get_owned_monitor_info();
+  _jvmti_can_walk_any_space             = JvmtiExport::can_walk_any_space();
   return _task != NULL && _task->method()->is_old();
 }
 
@@ -268,6 +270,10 @@ bool ciEnv::jvmti_state_changed() const {
   }
   if (!_jvmti_can_get_owned_monitor_info &&
       JvmtiExport::can_get_owned_monitor_info()) {
+    return true;
+  }
+  if (!_jvmti_can_walk_any_space &&
+      JvmtiExport::can_walk_any_space()) {
     return true;
   }
 
@@ -972,6 +978,18 @@ void ciEnv::register_method(ciMethod* target,
   VM_ENTRY_MARK;
   nmethod* nm = NULL;
   {
+    methodHandle method(THREAD, target->get_Method());
+
+    // We require method counters to store some method state (max compilation levels) required by the compilation policy.
+    if (method->get_method_counters(THREAD) == NULL) {
+      record_failure("can't create method counters");
+      // All buffers in the CodeBuffer are allocated in the CodeCache.
+      // If the code buffer is created on each compile attempt
+      // as in C2, then it must be freed.
+      code_buffer->free_blob();
+      return;
+    }
+
     // To prevent compile queue updates.
     MutexLocker locker(THREAD, MethodCompileQueue_lock);
 
@@ -1011,9 +1029,6 @@ void ciEnv::register_method(ciMethod* target,
       // Check for {class loads, evolution, breakpoints, ...} during compilation
       validate_compile_task_dependencies(target);
     }
-
-    methodHandle method(THREAD, target->get_Method());
-
 #if INCLUDE_RTM_OPT
     if (!failing() && (rtm_state != NoRTM) &&
         (method()->method_data() != NULL) &&

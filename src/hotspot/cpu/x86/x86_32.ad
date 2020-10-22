@@ -131,9 +131,7 @@ alloc_class chunk0( ECX,   EBX,   EBP,   EDI,   EAX,   EDX,   ESI, ESP,
 // Several register classes are automatically defined based upon information in
 // this architecture description.
 // 1) reg_class inline_cache_reg           ( /* as def'd in frame section */ )
-// 2) reg_class compiler_method_reg        ( /* as def'd in frame section */ )
-// 2) reg_class interpreter_method_reg     ( /* as def'd in frame section */ )
-// 3) reg_class stack_slots( /* one chunk of stack-based "registers" */ )
+// 2) reg_class stack_slots( /* one chunk of stack-based "registers" */ )
 //
 // Class for no registers (empty set).
 reg_class no_reg();
@@ -150,7 +148,6 @@ reg_class_dynamic any_reg(any_reg_no_ebp, any_reg_with_ebp, %{ PreserveFramePoin
 // Class for general registers
 reg_class int_reg_with_ebp(EAX, EDX, EBP, EDI, ESI, ECX, EBX);
 // Class for general registers (excluding EBP).
-// This register class can be used for implicit null checks on win95.
 // It is also safe for use by tailjumps (we don't want to allocate in ebp).
 // Used also if the PreserveFramePointer flag is true.
 reg_class int_reg_no_ebp(EAX, EDX, EDI, ESI, ECX, EBX);
@@ -1445,57 +1442,6 @@ const bool Matcher::rematerialize_float_constants = true;
 // piece-by-piece.  Only happens when passing doubles into C code as the
 // Java calling convention forces doubles to be aligned.
 const bool Matcher::misaligned_doubles_ok = true;
-
-
-void Matcher::pd_implicit_null_fixup(MachNode *node, uint idx) {
-  // Get the memory operand from the node
-  uint numopnds = node->num_opnds();        // Virtual call for number of operands
-  uint skipped  = node->oper_input_base();  // Sum of leaves skipped so far
-  assert( idx >= skipped, "idx too low in pd_implicit_null_fixup" );
-  uint opcnt     = 1;                 // First operand
-  uint num_edges = node->_opnds[1]->num_edges(); // leaves for first operand
-  while( idx >= skipped+num_edges ) {
-    skipped += num_edges;
-    opcnt++;                          // Bump operand count
-    assert( opcnt < numopnds, "Accessing non-existent operand" );
-    num_edges = node->_opnds[opcnt]->num_edges(); // leaves for next operand
-  }
-
-  MachOper *memory = node->_opnds[opcnt];
-  MachOper *new_memory = NULL;
-  switch (memory->opcode()) {
-  case DIRECT:
-  case INDOFFSET32X:
-    // No transformation necessary.
-    return;
-  case INDIRECT:
-    new_memory = new indirect_win95_safeOper( );
-    break;
-  case INDOFFSET8:
-    new_memory = new indOffset8_win95_safeOper(memory->disp(NULL, NULL, 0));
-    break;
-  case INDOFFSET32:
-    new_memory = new indOffset32_win95_safeOper(memory->disp(NULL, NULL, 0));
-    break;
-  case INDINDEXOFFSET:
-    new_memory = new indIndexOffset_win95_safeOper(memory->disp(NULL, NULL, 0));
-    break;
-  case INDINDEXSCALE:
-    new_memory = new indIndexScale_win95_safeOper(memory->scale());
-    break;
-  case INDINDEXSCALEOFFSET:
-    new_memory = new indIndexScaleOffset_win95_safeOper(memory->scale(), memory->disp(NULL, NULL, 0));
-    break;
-  case LOAD_LONG_INDIRECT:
-  case LOAD_LONG_INDOFFSET32:
-    // Does not use EBP as address register, use { EDX, EBX, EDI, ESI}
-    return;
-  default:
-    assert(false, "unexpected memory operand in pd_implicit_null_fixup()");
-    return;
-  }
-  node->_opnds[opcnt] = new_memory;
-}
 
 // Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
 const bool Matcher::strict_fp_requires_explicit_rounding = true;
@@ -3190,7 +3136,6 @@ frame %{
   // These three registers define part of the calling convention
   // between compiled code and the interpreter.
   inline_cache_reg(EAX);                // Inline Cache Register
-  interpreter_method_reg(EBX);          // Method Register when calling interpreter
 
   // Optional: name the operand used by cisc-spilling to access [stack_pointer + offset]
   cisc_spilling_operand_name(indOffset32);
@@ -3315,7 +3260,7 @@ operand immI() %{
 %}
 
 // Constant for test vs zero
-operand immI0() %{
+operand immI_0() %{
   predicate(n->get_int() == 0);
   match(ConI);
 
@@ -3325,7 +3270,7 @@ operand immI0() %{
 %}
 
 // Constant for increment
-operand immI1() %{
+operand immI_1() %{
   predicate(n->get_int() == 1);
   match(ConI);
 
@@ -3419,15 +3364,6 @@ operand immI_32_63() %{
   interface(CONST_INTER);
 %}
 
-operand immI_1() %{
-  predicate( n->get_int() == 1 );
-  match(ConI);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 operand immI_2() %{
   predicate( n->get_int() == 2 );
   match(ConI);
@@ -3439,6 +3375,26 @@ operand immI_2() %{
 
 operand immI_3() %{
   predicate( n->get_int() == 3 );
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immI_4()
+%{
+  predicate(n->get_int() == 4);
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immI_8()
+%{
+  predicate(n->get_int() == 8);
   match(ConI);
 
   op_cost(0);
@@ -3815,6 +3771,18 @@ operand eRegP() %{
   interface(REG_INTER);
 %}
 
+operand rRegP() %{
+  constraint(ALLOC_IN_RC(int_reg));
+  match(RegP);
+  match(eAXRegP);
+  match(eBXRegP);
+  match(eCXRegP);
+  match(eDIRegP);
+
+  format %{ %}
+  interface(REG_INTER);
+%}
+
 // On windows95, EBP is not safe to use for implicit null tests.
 operand eRegP_no_EBP() %{
   constraint(ALLOC_IN_RC(int_reg_no_ebp));
@@ -3948,6 +3916,15 @@ operand eADXRegL_low_only() %{
 %}
 
 // Flags register, used as output of compare instructions
+operand rFlagsReg() %{
+  constraint(ALLOC_IN_RC(int_flags));
+  match(RegFlags);
+
+  format %{ "EFLAGS" %}
+  interface(REG_INTER);
+%}
+
+// Flags register, used as output of compare instructions
 operand eFlagsReg() %{
   constraint(ALLOC_IN_RC(int_flags));
   match(RegFlags);
@@ -4077,6 +4054,14 @@ operand regF() %{
   interface(REG_INTER);
 %}
 
+operand legRegF() %{
+  predicate( UseSSE>=1 );
+  constraint(ALLOC_IN_RC(float_reg_legacy));
+  match(RegF);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
 // Float register operands
 operand vlRegF() %{
    constraint(ALLOC_IN_RC(float_reg_vl));
@@ -4096,6 +4081,14 @@ operand regD() %{
 %}
 
 // Double register operands
+operand legRegD() %{
+  predicate( UseSSE>=2 );
+  constraint(ALLOC_IN_RC(double_reg_legacy));
+  match(RegD);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
 operand vlRegD() %{
    constraint(ALLOC_IN_RC(double_reg_vl));
    match(RegD);
@@ -4353,98 +4346,6 @@ operand stackSlotL(sRegL reg) %{
     index(0x4);  // No Index
     scale(0x0);  // No Scale
     disp($reg);  // Stack Offset
-  %}
-%}
-
-//----------Memory Operands - Win95 Implicit Null Variants----------------
-// Indirect Memory Operand
-operand indirect_win95_safe(eRegP_no_EBP reg)
-%{
-  constraint(ALLOC_IN_RC(int_reg));
-  match(reg);
-
-  op_cost(100);
-  format %{ "[$reg]" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index(0x4);
-    scale(0x0);
-    disp(0x0);
-  %}
-%}
-
-// Indirect Memory Plus Short Offset Operand
-operand indOffset8_win95_safe(eRegP_no_EBP reg, immI8 off)
-%{
-  match(AddP reg off);
-
-  op_cost(100);
-  format %{ "[$reg + $off]" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index(0x4);
-    scale(0x0);
-    disp($off);
-  %}
-%}
-
-// Indirect Memory Plus Long Offset Operand
-operand indOffset32_win95_safe(eRegP_no_EBP reg, immI off)
-%{
-  match(AddP reg off);
-
-  op_cost(100);
-  format %{ "[$reg + $off]" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index(0x4);
-    scale(0x0);
-    disp($off);
-  %}
-%}
-
-// Indirect Memory Plus Index Register Plus Offset Operand
-operand indIndexOffset_win95_safe(eRegP_no_EBP reg, rRegI ireg, immI off)
-%{
-  match(AddP (AddP reg ireg) off);
-
-  op_cost(100);
-  format %{"[$reg + $off + $ireg]" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index($ireg);
-    scale(0x0);
-    disp($off);
-  %}
-%}
-
-// Indirect Memory Times Scale Plus Index Register
-operand indIndexScale_win95_safe(eRegP_no_EBP reg, rRegI ireg, immI2 scale)
-%{
-  match(AddP reg (LShiftI ireg scale));
-
-  op_cost(100);
-  format %{"[$reg + $ireg << $scale]" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index($ireg);
-    scale($scale);
-    disp(0x0);
-  %}
-%}
-
-// Indirect Memory Times Scale Plus Index Register Plus Offset Operand
-operand indIndexScaleOffset_win95_safe(eRegP_no_EBP reg, immI off, rRegI ireg, immI2 scale)
-%{
-  match(AddP (AddP reg (LShiftI ireg scale)) off);
-
-  op_cost(100);
-  format %{"[$reg + $off + $ireg << $scale]" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index($ireg);
-    scale($scale);
-    disp($off);
   %}
 %}
 
@@ -5846,6 +5747,46 @@ instruct loadKlass(eRegP dst, memory mem) %{
   ins_pipe( ialu_reg_mem );
 %}
 
+// Load Float
+instruct MoveF2LEG(legRegF dst, regF src) %{
+  match(Set dst src);
+  format %{ "movss $dst,$src\t# if src != dst load float (4 bytes)" %}
+  ins_encode %{
+    __ movflt($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Float
+instruct MoveLEG2F(regF dst, legRegF src) %{
+  match(Set dst src);
+  format %{ "movss $dst,$src\t# if src != dst load float (4 bytes)" %}
+  ins_encode %{
+    __ movflt($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Double
+instruct MoveD2LEG(legRegD dst, regD src) %{
+  match(Set dst src);
+  format %{ "movsd $dst,$src\t# if src != dst load double (8 bytes)" %}
+  ins_encode %{
+    __ movdbl($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Double
+instruct MoveLEG2D(regD dst, legRegD src) %{
+  match(Set dst src);
+  format %{ "movsd $dst,$src\t# if src != dst load double (8 bytes)" %}
+  ins_encode %{
+    __ movdbl($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
 // Load Double
 instruct loadDPR(regDPR dst, memory mem) %{
   predicate(UseSSE<=1);
@@ -5971,7 +5912,7 @@ instruct loadConI(rRegI dst, immI src) %{
 %}
 
 // Load Constant zero
-instruct loadConI0(rRegI dst, immI0 src, eFlagsReg cr) %{
+instruct loadConI0(rRegI dst, immI_0 src, eFlagsReg cr) %{
   match(Set dst src);
   effect(KILL cr);
 
@@ -7083,7 +7024,7 @@ instruct addI_eReg_imm(rRegI dst, immI src, eFlagsReg cr) %{
   ins_pipe( ialu_reg );
 %}
 
-instruct incI_eReg(rRegI dst, immI1 src, eFlagsReg cr) %{
+instruct incI_eReg(rRegI dst, immI_1 src, eFlagsReg cr) %{
   predicate(UseIncDec);
   match(Set dst (AddI dst src));
   effect(KILL cr);
@@ -7183,7 +7124,7 @@ instruct addI_mem_imm(memory dst, immI src, eFlagsReg cr) %{
   ins_pipe( ialu_mem_imm );
 %}
 
-instruct incI_mem(memory dst, immI1 src, eFlagsReg cr) %{
+instruct incI_mem(memory dst, immI_1 src, eFlagsReg cr) %{
   match(Set dst (StoreI dst (AddI (LoadI dst) src)));
   effect(KILL cr);
 
@@ -7552,7 +7493,7 @@ instruct subI_mem_eReg(memory dst, rRegI src, eFlagsReg cr) %{
 %}
 
 // Subtract from a pointer
-instruct subP_eReg(eRegP dst, rRegI src, immI0 zero, eFlagsReg cr) %{
+instruct subP_eReg(eRegP dst, rRegI src, immI_0 zero, eFlagsReg cr) %{
   match(Set dst (AddP dst (SubI zero src)));
   effect(KILL cr);
 
@@ -7563,7 +7504,7 @@ instruct subP_eReg(eRegP dst, rRegI src, immI0 zero, eFlagsReg cr) %{
   ins_pipe( ialu_reg_reg );
 %}
 
-instruct negI_eReg(rRegI dst, immI0 zero, eFlagsReg cr) %{
+instruct negI_eReg(rRegI dst, immI_0 zero, eFlagsReg cr) %{
   match(Set dst (SubI zero dst));
   effect(KILL cr);
 
@@ -8017,7 +7958,7 @@ instruct modL_eReg_imm32( eADXRegL dst, immL32 imm, rRegI tmp, rRegI tmp2, eFlag
 
 // Integer Shift Instructions
 // Shift Left by one
-instruct shlI_eReg_1(rRegI dst, immI1 shift, eFlagsReg cr) %{
+instruct shlI_eReg_1(rRegI dst, immI_1 shift, eFlagsReg cr) %{
   match(Set dst (LShiftI dst shift));
   effect(KILL cr);
 
@@ -8053,7 +7994,7 @@ instruct salI_eReg_CL(rRegI dst, eCXRegI shift, eFlagsReg cr) %{
 %}
 
 // Arithmetic shift right by one
-instruct sarI_eReg_1(rRegI dst, immI1 shift, eFlagsReg cr) %{
+instruct sarI_eReg_1(rRegI dst, immI_1 shift, eFlagsReg cr) %{
   match(Set dst (RShiftI dst shift));
   effect(KILL cr);
 
@@ -8065,7 +8006,7 @@ instruct sarI_eReg_1(rRegI dst, immI1 shift, eFlagsReg cr) %{
 %}
 
 // Arithmetic shift right by one
-instruct sarI_mem_1(memory dst, immI1 shift, eFlagsReg cr) %{
+instruct sarI_mem_1(memory dst, immI_1 shift, eFlagsReg cr) %{
   match(Set dst (StoreI dst (RShiftI (LoadI dst) shift)));
   effect(KILL cr);
   format %{ "SAR    $dst,$shift" %}
@@ -8110,7 +8051,7 @@ instruct sarI_eReg_CL(rRegI dst, eCXRegI shift, eFlagsReg cr) %{
 %}
 
 // Logical shift right by one
-instruct shrI_eReg_1(rRegI dst, immI1 shift, eFlagsReg cr) %{
+instruct shrI_eReg_1(rRegI dst, immI_1 shift, eFlagsReg cr) %{
   match(Set dst (URShiftI dst shift));
   effect(KILL cr);
 
@@ -8266,7 +8207,7 @@ instruct andnI_rReg_rReg_mem(rRegI dst, rRegI src1, memory src2, immI_M1 minus_1
   ins_pipe(ialu_reg_mem);
 %}
 
-instruct blsiI_rReg_rReg(rRegI dst, rRegI src, immI0 imm_zero, eFlagsReg cr) %{
+instruct blsiI_rReg_rReg(rRegI dst, rRegI src, immI_0 imm_zero, eFlagsReg cr) %{
   match(Set dst (AndI (SubI imm_zero src) src));
   predicate(UseBMI1Instructions);
   effect(KILL cr);
@@ -8279,7 +8220,7 @@ instruct blsiI_rReg_rReg(rRegI dst, rRegI src, immI0 imm_zero, eFlagsReg cr) %{
   ins_pipe(ialu_reg);
 %}
 
-instruct blsiI_rReg_mem(rRegI dst, memory src, immI0 imm_zero, eFlagsReg cr) %{
+instruct blsiI_rReg_mem(rRegI dst, memory src, immI_0 imm_zero, eFlagsReg cr) %{
   match(Set dst (AndI (SubI imm_zero (LoadI src) ) (LoadI src) ));
   predicate(UseBMI1Instructions);
   effect(KILL cr);
@@ -8431,7 +8372,7 @@ instruct orI_mem_imm(memory dst, immI src, eFlagsReg cr) %{
 
 // ROL/ROR
 // ROL expand
-instruct rolI_eReg_imm1(rRegI dst, immI1 shift, eFlagsReg cr) %{
+instruct rolI_eReg_imm1(rRegI dst, immI_1 shift, eFlagsReg cr) %{
   effect(USE_DEF dst, USE shift, KILL cr);
 
   format %{ "ROL    $dst, $shift" %}
@@ -8460,7 +8401,7 @@ instruct rolI_eReg_CL(ncxRegI dst, eCXRegI shift, eFlagsReg cr) %{
 // end of ROL expand
 
 // ROL 32bit by one once
-instruct rolI_eReg_i1(rRegI dst, immI1 lshift, immI_M1 rshift, eFlagsReg cr) %{
+instruct rolI_eReg_i1(rRegI dst, immI_1 lshift, immI_M1 rshift, eFlagsReg cr) %{
   match(Set dst ( OrI (LShiftI dst lshift) (URShiftI dst rshift)));
 
   expand %{
@@ -8479,7 +8420,7 @@ instruct rolI_eReg_i8(rRegI dst, immI8 lshift, immI8 rshift, eFlagsReg cr) %{
 %}
 
 // ROL 32bit var by var once
-instruct rolI_eReg_Var_C0(ncxRegI dst, eCXRegI shift, immI0 zero, eFlagsReg cr) %{
+instruct rolI_eReg_Var_C0(ncxRegI dst, eCXRegI shift, immI_0 zero, eFlagsReg cr) %{
   match(Set dst ( OrI (LShiftI dst shift) (URShiftI dst (SubI zero shift))));
 
   expand %{
@@ -8497,7 +8438,7 @@ instruct rolI_eReg_Var_C32(ncxRegI dst, eCXRegI shift, immI_32 c32, eFlagsReg cr
 %}
 
 // ROR expand
-instruct rorI_eReg_imm1(rRegI dst, immI1 shift, eFlagsReg cr) %{
+instruct rorI_eReg_imm1(rRegI dst, immI_1 shift, eFlagsReg cr) %{
   effect(USE_DEF dst, USE shift, KILL cr);
 
   format %{ "ROR    $dst, $shift" %}
@@ -8526,7 +8467,7 @@ instruct rorI_eReg_CL(ncxRegI dst, eCXRegI shift, eFlagsReg cr)%{
 // end of ROR expand
 
 // ROR right once
-instruct rorI_eReg_i1(rRegI dst, immI1 rshift, immI_M1 lshift, eFlagsReg cr) %{
+instruct rorI_eReg_i1(rRegI dst, immI_1 rshift, immI_M1 lshift, eFlagsReg cr) %{
   match(Set dst ( OrI (URShiftI dst rshift) (LShiftI dst lshift)));
 
   expand %{
@@ -8545,7 +8486,7 @@ instruct rorI_eReg_i8(rRegI dst, immI8 rshift, immI8 lshift, eFlagsReg cr) %{
 %}
 
 // ROR 32bit var by var once
-instruct rorI_eReg_Var_C0(ncxRegI dst, eCXRegI shift, immI0 zero, eFlagsReg cr) %{
+instruct rorI_eReg_Var_C0(ncxRegI dst, eCXRegI shift, immI_0 zero, eFlagsReg cr) %{
   match(Set dst ( OrI (URShiftI dst shift) (LShiftI dst (SubI zero shift))));
 
   expand %{
@@ -8713,7 +8654,7 @@ instruct cmpLTMask(eCXRegI dst, ncxRegI p, ncxRegI q, eFlagsReg cr) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct cmpLTMask0(rRegI dst, immI0 zero, eFlagsReg cr) %{
+instruct cmpLTMask0(rRegI dst, immI_0 zero, eFlagsReg cr) %{
   match(Set dst (CmpLTMask dst zero));
   effect(DEF dst, KILL cr);
   ins_cost(100);
@@ -8827,7 +8768,7 @@ instruct overflowSubI_rReg_imm(eFlagsReg cr, rRegI op1, immI op2)
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct overflowNegI_rReg(eFlagsReg cr, immI0 zero, eAXRegI op2)
+instruct overflowNegI_rReg(eFlagsReg cr, immI_0 zero, eAXRegI op2)
 %{
   match(Set cr (OverflowSubI zero op2));
   effect(DEF cr, USE_KILL op2);
@@ -11824,18 +11765,32 @@ instruct string_indexofUL(eDIRegP str1, eDXRegI cnt1, eSIRegP str2, eAXRegI cnt2
   ins_pipe( pipe_slow );
 %}
 
-instruct string_indexofU_char(eDIRegP str1, eDXRegI cnt1, eAXRegI ch,
+instruct string_indexof_char(eDIRegP str1, eDXRegI cnt1, eAXRegI ch,
                               eBXRegI result, regD vec1, regD vec2, regD vec3, eCXRegI tmp, eFlagsReg cr) %{
-  predicate(UseSSE42Intrinsics);
+  predicate(UseSSE42Intrinsics && (((StrIndexOfCharNode*)n)->encoding() == StrIntrinsicNode::U));
   match(Set result (StrIndexOfChar (Binary str1 cnt1) ch));
   effect(TEMP vec1, TEMP vec2, TEMP vec3, USE_KILL str1, USE_KILL cnt1, USE_KILL ch, TEMP tmp, KILL cr);
-  format %{ "String IndexOf char[] $str1,$cnt1,$ch -> $result   // KILL all" %}
+  format %{ "StringUTF16 IndexOf char[] $str1,$cnt1,$ch -> $result   // KILL all" %}
   ins_encode %{
     __ string_indexof_char($str1$$Register, $cnt1$$Register, $ch$$Register, $result$$Register,
                            $vec1$$XMMRegister, $vec2$$XMMRegister, $vec3$$XMMRegister, $tmp$$Register);
   %}
   ins_pipe( pipe_slow );
 %}
+
+instruct stringL_indexof_char(eDIRegP str1, eDXRegI cnt1, eAXRegI ch,
+                              eBXRegI result, regD vec1, regD vec2, regD vec3, eCXRegI tmp, eFlagsReg cr) %{
+  predicate(UseSSE42Intrinsics && (((StrIndexOfCharNode*)n)->encoding() == StrIntrinsicNode::L));
+  match(Set result (StrIndexOfChar (Binary str1 cnt1) ch));
+  effect(TEMP vec1, TEMP vec2, TEMP vec3, USE_KILL str1, USE_KILL cnt1, USE_KILL ch, TEMP tmp, KILL cr);
+  format %{ "StringLatin1 IndexOf char[] $str1,$cnt1,$ch -> $result   // KILL all" %}
+  ins_encode %{
+    __ stringL_indexof_char($str1$$Register, $cnt1$$Register, $ch$$Register, $result$$Register,
+                           $vec1$$XMMRegister, $vec2$$XMMRegister, $vec3$$XMMRegister, $tmp$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 
 // fast array equals
 instruct array_equalsB(eDIRegP ary1, eSIRegP ary2, eAXRegI result,
@@ -11965,7 +11920,7 @@ instruct compI_eReg_mem(eFlagsReg cr, rRegI op1, memory op2) %{
   ins_pipe( ialu_cr_reg_mem );
 %}
 
-instruct testI_reg( eFlagsReg cr, rRegI src, immI0 zero ) %{
+instruct testI_reg( eFlagsReg cr, rRegI src, immI_0 zero ) %{
   match(Set cr (CmpI src zero));
   effect( DEF cr, USE src );
 
@@ -11975,7 +11930,7 @@ instruct testI_reg( eFlagsReg cr, rRegI src, immI0 zero ) %{
   ins_pipe( ialu_cr_reg_imm );
 %}
 
-instruct testI_reg_imm( eFlagsReg cr, rRegI src, immI con, immI0 zero ) %{
+instruct testI_reg_imm( eFlagsReg cr, rRegI src, immI con, immI_0 zero ) %{
   match(Set cr (CmpI (AndI src con) zero));
 
   format %{ "TEST   $src,$con" %}
@@ -11984,7 +11939,7 @@ instruct testI_reg_imm( eFlagsReg cr, rRegI src, immI con, immI0 zero ) %{
   ins_pipe( ialu_cr_reg_imm );
 %}
 
-instruct testI_reg_mem( eFlagsReg cr, rRegI src, memory mem, immI0 zero ) %{
+instruct testI_reg_mem( eFlagsReg cr, rRegI src, memory mem, immI_0 zero ) %{
   match(Set cr (CmpI (AndI src mem) zero));
 
   format %{ "TEST   $src,$mem" %}
@@ -12034,7 +11989,7 @@ instruct compU_eReg_mem(eFlagsRegU cr, rRegI op1, memory op2) %{
 //  ins_encode( OpcP, RegMem( op1, op2) );
 //%}
 
-instruct testU_reg( eFlagsRegU cr, rRegI src, immI0 zero ) %{
+instruct testU_reg( eFlagsRegU cr, rRegI src, immI_0 zero ) %{
   match(Set cr (CmpU src zero));
 
   format %{ "TESTu  $src,$src" %}
@@ -12111,7 +12066,7 @@ instruct testP_reg( eFlagsReg cr, eRegP src, immP0 zero ) %{
 // Cisc-spilled version of testP_reg
 // This will generate a signed flags result. This should be ok
 // since any compare to a zero should be eq/neq.
-instruct testP_Reg_mem( eFlagsReg cr, memory op, immI0 zero ) %{
+instruct testP_Reg_mem( eFlagsReg cr, memory op, immI_0 zero ) %{
   match(Set cr (CmpP (LoadP op) zero));
 
   format %{ "TEST   $op,0xFFFFFFFF" %}
@@ -13482,7 +13437,7 @@ instruct tlsLoadP(eRegP dst, eFlagsReg cr) %{
 //   match(Set dst (CopyI src));
 // %}
 //
-// instruct incI_eReg(rRegI dst, immI1 src, eFlagsReg cr) %{
+// instruct incI_eReg(rRegI dst, immI_1 src, eFlagsReg cr) %{
 //   match(Set dst (AddI dst src));
 //   effect(KILL cr);
 // %}

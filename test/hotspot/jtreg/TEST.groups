@@ -77,7 +77,8 @@ hotspot_containers = \
 
 tier1_common = \
   sanity/BasicVMTest.java \
-  gtest/GTestWrapper.java
+  gtest/GTestWrapper.java \
+  gtest/MetaspaceGtests.java
 
 tier1_compiler = \
   :tier1_compiler_1 \
@@ -327,15 +328,20 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/javaldr/GCSharedStringsDuringDump.java \
  -runtime/cds/appcds/javaldr/HumongousDuringDump.java \
  -runtime/cds/appcds/javaldr/LockDuringDump.java \
+ -runtime/cds/appcds/methodHandles \
  -runtime/cds/appcds/sharedStrings \
  -runtime/cds/appcds/ArchiveRelocationTest.java \
+ -runtime/cds/appcds/BadBSM.java \
  -runtime/cds/appcds/DumpClassList.java \
+ -runtime/cds/appcds/DumpClassListWithLF.java \
  -runtime/cds/appcds/ExtraSymbols.java \
+ -runtime/cds/appcds/LambdaProxyClasslist.java \
  -runtime/cds/appcds/LongClassListPath.java \
  -runtime/cds/appcds/LotsOfClasses.java \
  -runtime/cds/appcds/NonExistClasspath.java \
  -runtime/cds/appcds/RelativePath.java \
  -runtime/cds/appcds/SharedArchiveConsistency.java \
+ -runtime/cds/appcds/StaticArchiveWithLambda.java \
  -runtime/cds/appcds/TestCombinedCompressedFlags.java \
  -runtime/cds/appcds/TestZGCWithCDS.java \
  -runtime/cds/appcds/UnusedCPDuringDump.java \
@@ -350,6 +356,15 @@ hotspot_cds_relocation = \
   runtime/NMT \
   serviceability/sa \
  -runtime/cds/DeterministicDump.java
+
+# needs -nativepath:<output>/images/test/hotspot/jtreg/native/
+hotspot_metaspace = \
+  gtest/MetaspaceGtests.java \
+  gc/metaspace \
+  gc/class_unloading \
+  runtime/Metaspace \
+  vmTestbase/metaspace \
+  runtime/SelectionResolution
 
 # A subset of AppCDS tests to be run in tier1
 tier1_runtime_appcds = \

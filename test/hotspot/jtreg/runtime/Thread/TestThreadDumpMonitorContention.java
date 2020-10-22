@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,14 +30,11 @@
  *
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- *          java.management
  * @run main/othervm TestThreadDumpMonitorContention
  */
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.lang.management.ManagementFactory;
-import java.lang.management.RuntimeMXBean;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -52,7 +49,7 @@ public class TestThreadDumpMonitorContention {
     // so use getTestJDKTool() instead of getCompileJDKTool() or even
     // getJDKTool() which can fall back to "compile.jdk".
     final static String JSTACK = JDKToolFinder.getTestJDKTool("jstack");
-    final static String PID = getPid();
+    final static String PID = Long.toString(ProcessHandle.current().pid());
 
     // looking for header lines with these patterns:
     // "ContendingThread-1" #19 prio=5 os_prio=64 tid=0x000000000079c000 nid=0x23 runnable [0xffff80ffb8b87000]
@@ -512,22 +509,6 @@ public class TestThreadDumpMonitorContention {
             System.err.println("WARNING: the primary scenario for 8036823" +
                 " has not been exercised by this test run.");
         }
-    }
-
-    // This helper relies on RuntimeMXBean.getName() returning a string
-    // that looks like this: 5436@mt-haku
-    //
-    // The testlibrary has tryFindJvmPid(), but that uses a separate
-    // process which is much more expensive for finding out your own PID.
-    //
-    static String getPid() {
-        RuntimeMXBean runtimebean = ManagementFactory.getRuntimeMXBean();
-        String vmname = runtimebean.getName();
-        int i = vmname.indexOf('@');
-        if (i != -1) {
-            vmname = vmname.substring(0, i);
-        }
-        return vmname;
     }
 
     static void usage() {

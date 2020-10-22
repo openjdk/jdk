@@ -41,8 +41,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
-#include "runtime/flags/jvmFlagConstraintList.hpp"
-#include "runtime/flags/jvmFlagRangeList.hpp"
+#include "runtime/flags/jvmFlagAccess.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.inline.hpp"
@@ -532,6 +531,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "PrintPreciseBiasedLockingStatistics", JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "InitialBootClassLoaderMetaspaceSize", JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "UseLargePagesInMetaspace",            JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+  { "CriticalJNINatives",                  JDK_Version::jdk(16), JDK_Version::jdk(17), JDK_Version::jdk(18) },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -554,6 +554,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "UseSemaphoreGCThreadsSynchronization", JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "ForceNUMA",                     JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "InsertMemBarAfterArraycopy",    JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+  { "Debugging",                     JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
 
 #ifdef TEST_VERIFY_SPECIAL_JVM_FLAGS
   // These entries will generate build errors.  Their purpose is to test the macros.
@@ -877,7 +878,7 @@ void Arguments::describe_range_error(ArgsRange errcode) {
 }
 
 static bool set_bool_flag(JVMFlag* flag, bool value, JVMFlag::Flags origin) {
-  if (JVMFlag::boolAtPut(flag, &value, origin) == JVMFlag::SUCCESS) {
+  if (JVMFlagAccess::boolAtPut(flag, &value, origin) == JVMFlag::SUCCESS) {
     return true;
   } else {
     return false;
@@ -892,7 +893,7 @@ static bool set_fp_numeric_flag(JVMFlag* flag, char* value, JVMFlag::Flags origi
     return false;
   }
 
-  if (JVMFlag::doubleAtPut(flag, &v, origin) == JVMFlag::SUCCESS) {
+  if (JVMFlagAccess::doubleAtPut(flag, &v, origin) == JVMFlag::SUCCESS) {
     return true;
   }
   return false;
@@ -924,35 +925,35 @@ static bool set_numeric_flag(JVMFlag* flag, char* value, JVMFlag::Flags origin) 
     if (is_neg) {
       int_v = -int_v;
     }
-    return JVMFlag::intAtPut(flag, &int_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::intAtPut(flag, &int_v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_uint()) {
     uint uint_v = (uint) v;
-    return JVMFlag::uintAtPut(flag, &uint_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::uintAtPut(flag, &uint_v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_intx()) {
     intx_v = (intx) v;
     if (is_neg) {
       intx_v = -intx_v;
     }
-    return JVMFlag::intxAtPut(flag, &intx_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::intxAtPut(flag, &intx_v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_uintx()) {
     uintx uintx_v = (uintx) v;
-    return JVMFlag::uintxAtPut(flag, &uintx_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::uintxAtPut(flag, &uintx_v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_uint64_t()) {
     uint64_t uint64_t_v = (uint64_t) v;
-    return JVMFlag::uint64_tAtPut(flag, &uint64_t_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::uint64_tAtPut(flag, &uint64_t_v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_size_t()) {
     size_t size_t_v = (size_t) v;
-    return JVMFlag::size_tAtPut(flag, &size_t_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::size_tAtPut(flag, &size_t_v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_double()) {
     double double_v = (double) v;
-    return JVMFlag::doubleAtPut(flag, &double_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::doubleAtPut(flag, &double_v, origin) == JVMFlag::SUCCESS;
   } else {
     return false;
   }
 }
 
 static bool set_string_flag(JVMFlag* flag, const char* value, JVMFlag::Flags origin) {
-  if (JVMFlag::ccstrAtPut(flag, &value, origin) != JVMFlag::SUCCESS) return false;
+  if (JVMFlagAccess::ccstrAtPut(flag, &value, origin) != JVMFlag::SUCCESS) return false;
   // Contract:  JVMFlag always returns a pointer that needs freeing.
   FREE_C_HEAP_ARRAY(char, value);
   return true;
@@ -960,7 +961,7 @@ static bool set_string_flag(JVMFlag* flag, const char* value, JVMFlag::Flags ori
 
 static bool append_to_string_flag(JVMFlag* flag, const char* new_value, JVMFlag::Flags origin) {
   const char* old_value = "";
-  if (JVMFlag::ccstrAt(flag, &old_value) != JVMFlag::SUCCESS) return false;
+  if (JVMFlagAccess::ccstrAt(flag, &old_value) != JVMFlag::SUCCESS) return false;
   size_t old_len = old_value != NULL ? strlen(old_value) : 0;
   size_t new_len = strlen(new_value);
   const char* value;
@@ -977,7 +978,7 @@ static bool append_to_string_flag(JVMFlag* flag, const char* new_value, JVMFlag:
     value = buf;
     free_this_too = buf;
   }
-  (void) JVMFlag::ccstrAtPut(flag, &value, origin);
+  (void) JVMFlagAccess::ccstrAtPut(flag, &value, origin);
   // JVMFlag always returns a pointer that needs freeing.
   FREE_C_HEAP_ARRAY(char, value);
   // JVMFlag made its own copy, so I must delete my own temp. buffer.
@@ -1355,7 +1356,7 @@ bool Arguments::process_argument(const char* arg,
       jio_fprintf(defaultStream::error_stream(),
                   "Did you mean '%s%s%s'? ",
                   (fuzzy_matched->is_bool()) ? "(+/-)" : "",
-                  fuzzy_matched->_name,
+                  fuzzy_matched->name(),
                   (fuzzy_matched->is_bool()) ? "" : "=<value>");
     }
   }
@@ -3232,7 +3233,6 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
   }
 
   UNSUPPORTED_OPTION(ProfileInterpreter);
-  NOT_PRODUCT(UNSUPPORTED_OPTION(TraceProfileInterpreter));
 #endif
 
 
@@ -3901,6 +3901,22 @@ bool Arguments::handle_deprecated_print_gc_flags() {
   return true;
 }
 
+static void apply_debugger_ergo() {
+  if (UseDebuggerErgo) {
+    // Turn on sub-flags
+    FLAG_SET_ERGO_IF_DEFAULT(UseDebuggerErgo1, true);
+    FLAG_SET_ERGO_IF_DEFAULT(UseDebuggerErgo2, true);
+  }
+
+  if (UseDebuggerErgo2) {
+    // Debugging with limited number of CPUs
+    FLAG_SET_ERGO_IF_DEFAULT(UseNUMA, false);
+    FLAG_SET_ERGO_IF_DEFAULT(ConcGCThreads, 1);
+    FLAG_SET_ERGO_IF_DEFAULT(ParallelGCThreads, 1);
+    FLAG_SET_ERGO_IF_DEFAULT(CICompilerCount, 2);
+  }
+}
+
 // Parse entry point called from JNI_CreateJavaVM
 
 jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
@@ -4097,6 +4113,8 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   }
 #endif
 
+  apply_debugger_ergo();
+
   return JNI_OK;
 }
 
@@ -4196,7 +4214,23 @@ jint Arguments::apply_ergo() {
   if (!UseBiasedLocking) {
     UseOptoBiasInlining = false;
   }
-#endif
+
+  if (!EnableVectorSupport) {
+    if (!FLAG_IS_DEFAULT(EnableVectorReboxing) && EnableVectorReboxing) {
+      warning("Disabling EnableVectorReboxing since EnableVectorSupport is turned off.");
+    }
+    FLAG_SET_DEFAULT(EnableVectorReboxing, false);
+
+    if (!FLAG_IS_DEFAULT(EnableVectorAggressiveReboxing) && EnableVectorAggressiveReboxing) {
+      if (!EnableVectorReboxing) {
+        warning("Disabling EnableVectorAggressiveReboxing since EnableVectorReboxing is turned off.");
+      } else {
+        warning("Disabling EnableVectorAggressiveReboxing since EnableVectorSupport is turned off.");
+      }
+    }
+    FLAG_SET_DEFAULT(EnableVectorAggressiveReboxing, false);
+  }
+#endif // COMPILER2
 
   if (FLAG_IS_CMDLINE(DiagnoseSyncOnPrimitiveWrappers)) {
     if (DiagnoseSyncOnPrimitiveWrappers == ObjectSynchronizer::LOG_WARNING && !log_is_enabled(Info, primitivewrappers)) {

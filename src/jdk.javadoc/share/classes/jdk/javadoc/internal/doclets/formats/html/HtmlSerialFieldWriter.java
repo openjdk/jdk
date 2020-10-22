@@ -196,13 +196,12 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
      */
     @Override
     public void addMemberTags(VariableElement field, Content contentTree) {
-        Content tagContent = new ContentBuilder();
-        TagletWriter.genTagOutput(configuration.tagletManager, field,
-                configuration.tagletManager.getBlockTaglets(field),
-                writer.getTagletWriterInstance(false), tagContent);
-        HtmlTree dl = HtmlTree.DL(HtmlStyle.notes);
-        dl.add(tagContent);
-        contentTree.add(dl);  // TODO: what if empty?
+        Content tagContent = writer.getBlockTagOutput(field);
+        if (!tagContent.isEmpty()) {
+            HtmlTree dl = HtmlTree.DL(HtmlStyle.notes);
+            dl.add(tagContent);
+            contentTree.add(dl);
+        }
     }
 
     /**
