@@ -33,21 +33,25 @@ import static java.lang.invoke.MethodHandleNatives.Constants.LM_TRUSTED;
 import static java.lang.invoke.MethodHandleNatives.Constants.REF_invokeStatic;
 import static java.lang.invoke.MethodHandleStatics.newInternalError;
 
-/** TODO */
+/**
+ * This class models a method handle to a native function. A native method handle is made up of a {@link NativeEntryPoint},
+ * which is used to capture the characteristics of the native call (such as calling convention to be used,
+ * or whether a native transition is required) and a <em>fallback</em> method handle, which can be used
+ * when intrinsification of this method handle is not possible.
+ */
 /*non-public*/ class NativeMethodHandle extends MethodHandle {
     final NativeEntryPoint nep;
     final MethodHandle fallback;
 
-    /**
-     * TODO
-     */
     private NativeMethodHandle(MethodType type, LambdaForm form, MethodHandle fallback, NativeEntryPoint nep) {
         super(type, form);
         this.fallback = fallback;
         this.nep = nep;
     }
 
-    /** TODO */
+    /**
+     * Creates a new native method handle with given {@link NativeEntryPoint} and <em>fallback</em> method handle.
+     */
     public static MethodHandle make(NativeEntryPoint nep, MethodHandle fallback) {
         MethodType type = nep.type();
         if (!allTypesPrimitive(type))
@@ -142,7 +146,6 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
      * Factored in an inner class to delay initialization until first usage.
      */
     private static class Lazy {
-        static Class<NativeMethodHandle> THIS_CLASS = NativeMethodHandle.class;
 
         static final NamedFunction
                 NF_internalNativeEntryPoint;
@@ -151,6 +154,7 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
 
         static {
             try {
+                Class<NativeMethodHandle> THIS_CLASS = NativeMethodHandle.class;
                 NamedFunction[] nfs = new NamedFunction[]{
                         NF_internalNativeEntryPoint = new NamedFunction(
                                 THIS_CLASS.getDeclaredMethod("internalNativeEntryPoint", Object.class)),

@@ -24,6 +24,8 @@
 #ifndef SHARE_PRIMS_FOREIGN_GLOBALS
 #define SHARE_PRIMS_FOREIGN_GLOBALS
 
+#include "utilities/macros.hpp"
+
 #include CPU_HEADER(foreign_globals)
 
 class ForeignGlobals {
