@@ -59,8 +59,8 @@ import java.nio.charset.StandardCharsets;
  * For byte array to formatted hexadecimal string conversions
  * the {@code formatHex} methods include {@link #formatHex(byte[]) formatHex(byte[])}
  * and {@link #formatHex(Appendable, byte[]) formatHex(Appendable, byte[])}.
- * The formatted output is a string or to {@link Appendable} types including
- * {@link StringBuilder}, {@link java.io.Writer}, and {@link java.io.PrintStream}.
+ * The formatted output is a string or is appended to an {@link Appendable} such as
+ * {@link StringBuilder} or {@link java.io.PrintStream}.
  * Each byte value is formatted as the prefix, two hexadecimal characters from the
  * uppercase or lowercase digits, and the suffix.
  * A delimiter appears after each formatted value, except the last.
@@ -121,7 +121,7 @@ import java.nio.charset.StandardCharsets;
  * ({@code ==}), identity hash code, or synchronization) on instances of
  * {@code HexFormat} may have unpredictable results and should be avoided.
  * The {@code equals} method should be used for comparisons.
- *
+ * <p>
  * This class is immutable and thread-safe.
  * <p>
  * Unless otherwise noted, passing a null argument to any method will cause a
