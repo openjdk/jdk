@@ -100,25 +100,38 @@ public abstract class AbstractNativeScope implements NativeScope {
         @Override
         public MemorySegment allocate(long bytesSize, long bytesAlignment) {
             checkOwnerThread();
-            if (bytesSize > MAX_ALLOC_SIZE) {
+            if (Utils.alignUp(bytesSize, bytesAlignment) > MAX_ALLOC_SIZE) {
                 MemorySegment segment = newSegment(bytesSize, bytesAlignment);
                 return segment.withAccessModes(SCOPE_MASK);
             }
-            for (int i = 0; i < 2; i++) {
-                long min = segment.address().toRawLongValue();
-                long start = Utils.alignUp(min + sp, bytesAlignment) - min;
-                try {
-                    MemorySegment slice = segment.asSlice(start, bytesSize)
-                            .withAccessModes(SCOPE_MASK);
-                    sp = start + bytesSize;
-                    size += Utils.alignUp(bytesSize, bytesAlignment);
-                    return slice;
-                } catch (IndexOutOfBoundsException ex) {
-                    sp = 0L;
-                    segment = newSegment(BLOCK_SIZE, 1L);
+            // try to slice from current segment first...
+            MemorySegment slice = trySlice(bytesSize, bytesAlignment);
+            if (slice == null) {
+                // ... if that fails, allocate a new segment and slice from there
+                sp = 0L;
+                segment = newSegment(BLOCK_SIZE, 1L);
+                slice = trySlice(bytesSize, bytesAlignment);
+                if (slice == null) {
+                    // this should not be possible - allocations that do not fit in BLOCK_SIZE should get their own
+                    // standalone segment (see above).
+                    throw new AssertionError("Cannot get here!");
                 }
             }
-            throw new AssertionError("Cannot get here!");
+            return slice;
+        }
+
+        private MemorySegment trySlice(long bytesSize, long bytesAlignment) {
+            long min = segment.address().toRawLongValue();
+            long start = Utils.alignUp(min + sp, bytesAlignment) - min;
+            if (segment.byteSize() - start < bytesSize) {
+                return null;
+            } else {
+                MemorySegment slice = segment.asSlice(start, bytesSize)
+                        .withAccessModes(SCOPE_MASK);
+                sp = start + bytesSize;
+                size += Utils.alignUp(bytesSize, bytesAlignment);
+                return slice;
+            }
         }
     }
 
