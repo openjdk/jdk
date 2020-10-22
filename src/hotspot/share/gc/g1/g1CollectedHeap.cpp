@@ -2260,12 +2260,7 @@ bool G1CollectedHeap::try_collect(GCCause::Cause cause) {
 }
 
 bool G1CollectedHeap::is_in(const void* p) const {
-  if (is_in_reserved(p) &&
-    _hrm->is_available(addr_to_region((HeapWord*)p))) {
-    return true;
-  } else {
-    return false;
-  }
+  return is_in_reserved(p) && _hrm->is_available(addr_to_region((HeapWord*)p));
 }
 
 // Iteration functions.
