@@ -27,6 +27,7 @@
 
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
+#include "gc/g1/g1FullCollector.hpp"
 #include "gc/g1/g1FullGCMarker.hpp"
 #include "gc/g1/g1FullGCOopClosures.inline.hpp"
 #include "gc/g1/g1StringDedup.hpp"
@@ -38,7 +39,6 @@
 #include "utilities/debug.hpp"
 
 inline bool G1FullGCMarker::mark_object(oop obj) {
-  // Not marking closed archive objects.
   if (G1ArchiveAllocator::is_closed_archive_object(obj)) {
     return false;
   }
@@ -52,7 +52,9 @@ inline bool G1FullGCMarker::mark_object(oop obj) {
   // Marked by us, preserve if needed.
   markWord mark = obj->mark();
   if (obj->mark_must_be_preserved(mark) &&
-      !G1ArchiveAllocator::is_open_archive_object(obj)) {
+      // It is not necessary to preserve marks for objects in pinned regions because
+      // we do not change their headers (i.e. forward them).
+      !G1CollectedHeap::heap()->heap_region_containing(obj)->is_pinned()) {
     preserved_stack()->push(obj, mark);
   }
 

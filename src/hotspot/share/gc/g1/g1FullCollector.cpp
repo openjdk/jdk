@@ -114,7 +114,8 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap, bool explicit_gc, bool c
     _is_alive(heap->concurrent_mark()->next_mark_bitmap()),
     _is_alive_mutator(heap->ref_processor_stw(), &_is_alive),
     _always_subject_to_discovery(),
-    _is_subject_mutator(heap->ref_processor_stw(), &_always_subject_to_discovery) {
+    _is_subject_mutator(heap->ref_processor_stw(), &_always_subject_to_discovery),
+    _region_attr_table() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
 
   _preserved_marks_set.init(_num_workers);
@@ -126,6 +127,7 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap, bool explicit_gc, bool c
     _oop_queue_set.register_queue(i, marker(i)->oop_stack());
     _array_queue_set.register_queue(i, marker(i)->objarray_stack());
   }
+  _region_attr_table.initialize(heap->reserved(), HeapRegion::GrainBytes);
 }
 
 G1FullCollector::~G1FullCollector() {
@@ -184,6 +186,10 @@ void G1FullCollector::complete_collection() {
 
   BiasedLocking::restore_marks();
 
+  _heap->concurrent_mark()->swap_mark_bitmaps();
+  // Prepare the bitmap for the next (potentially concurrent) marking.
+  _heap->concurrent_mark()->clear_next_bitmap(_heap->workers());
+
   _heap->prepare_heap_for_mutators();
 
   _heap->policy()->record_full_collection_end();
@@ -192,6 +198,19 @@ void G1FullCollector::complete_collection() {
   _heap->verify_after_full_collection();
 
   _heap->print_heap_after_full_collection(scope()->heap_transition());
+}
+
+void G1FullCollector::update_attribute_table(HeapRegion* hr) {
+  if (hr->is_free()) {
+    return;
+  }
+  if (hr->is_closed_archive()) {
+    _region_attr_table.set_closed_archive(hr->hrm_index());
+  } else if (hr->is_pinned()) {
+    _region_attr_table.set_pinned_or_closed(hr->hrm_index());
+  } else {
+    _region_attr_table.set_normal(hr->hrm_index());
+  }
 }
 
 void G1FullCollector::phase1_mark_live_objects() {

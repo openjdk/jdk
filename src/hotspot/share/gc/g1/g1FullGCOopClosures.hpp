@@ -75,8 +75,11 @@ public:
 };
 
 class G1AdjustClosure : public BasicOopIterateClosure {
-  template <class T> static inline void adjust_pointer(T* p);
+  G1FullCollector* _collector;
+
+  template <class T> inline void adjust_pointer(T* p);
 public:
+  G1AdjustClosure(G1FullCollector* collector) : _collector(collector) { }
   template <class T> void do_oop_work(T* p) { adjust_pointer(p); }
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);

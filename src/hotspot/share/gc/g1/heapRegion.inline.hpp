@@ -181,17 +181,43 @@ inline size_t HeapRegion::block_size(const HeapWord *addr) const {
   return block_size_using_bitmap(addr, G1CollectedHeap::heap()->concurrent_mark()->prev_mark_bitmap());
 }
 
-inline void HeapRegion::complete_compaction() {
-  // Reset space and bot after compaction is complete if needed.
+inline void HeapRegion::reset_after_compaction() {
+  set_top(compaction_top());
+  _compaction_top = bottom();
+}
+
+inline void HeapRegion::non_pinned_complete_compaction() {
+  assert(!is_pinned(), "must be");
+
   reset_after_compaction();
+  // After a compaction the mark bitmap in a non-pinned regions is invalid.
+  // We treat all objects as being above PTAMS.
+  zero_marked_bytes();
+  init_top_at_mark_start();
+
+  complete_compaction_common();
+}
+
+inline void HeapRegion::pinned_complete_compaction() {
+  assert(!is_free(), "should not have compacted free region");
+  assert(is_pinned(), "must be");
+
+  assert(compaction_top() == bottom(),
+         "region %u compaction_top " PTR_FORMAT " must not be different from bottom " PTR_FORMAT,
+         hrm_index(), p2i(compaction_top()), p2i(bottom()));
+
+  _prev_top_at_mark_start = top(); // Keep existing top and usage.
+  _prev_marked_bytes = used();
+  _next_top_at_mark_start = bottom();
+  _next_marked_bytes = 0;
+
+  complete_compaction_common();
+}
+
+inline void HeapRegion::complete_compaction_common() {
   if (is_empty()) {
     reset_bot();
   }
-
-  // After a compaction the mark bitmap is invalid, so we must
-  // treat all objects as being inside the unmarked area.
-  zero_marked_bytes();
-  init_top_at_mark_start();
 
   // Clear unused heap memory in debug builds.
   if (ZapUnusedHeapArea) {

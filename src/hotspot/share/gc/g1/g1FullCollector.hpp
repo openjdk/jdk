@@ -33,6 +33,7 @@
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/allocation.hpp"
+#include "oops/oopsHierarchy.hpp"
 
 class AbstractGangTask;
 class G1CMBitMap;
@@ -49,6 +50,44 @@ public:
   bool do_object_b(oop p) {
     assert(p != NULL, "must be");
     return true;
+  }
+};
+
+// This table is used to store some per-region attributes needed during collection.
+class G1FullGCHeapRegionAttrBiasedMappedArray : public G1BiasedMappedArray<uint8_t> {
+  static const uint8_t Normal = 0;
+  static const uint8_t Pinned = 1;
+  static const uint8_t ClosedArchive = 2;
+
+  static const uint8_t Invalid = 255;
+
+protected:
+  uint8_t default_value() const { return Invalid; }
+
+public:
+  void set_closed_archive(uint idx) { set_by_index(idx, ClosedArchive); }
+
+  bool is_closed_archive(HeapWord* obj) const {
+    assert(!is_invalid(obj), "not initialized yet");
+    return get_by_address(obj) == ClosedArchive;
+  }
+
+  void set_pinned_or_closed(uint idx) { set_by_index(idx, Pinned); }
+
+  bool is_pinned_or_closed(HeapWord* obj) const {
+    assert(!is_invalid(obj), "not initialized yet");
+    return get_by_address(obj) >= Pinned;
+  }
+
+  void set_normal(uint idx) { set_by_index(idx, Normal); }
+
+  bool is_normal(HeapWord* obj) const {
+    assert(!is_invalid(obj), "not initialized yet");
+    return get_by_address(obj) == Normal;
+  }
+
+  bool is_invalid(HeapWord* obj) const {
+    return get_by_address(obj) == Invalid;
   }
 };
 
@@ -71,6 +110,8 @@ class G1FullCollector : StackObj {
   G1FullGCSubjectToDiscoveryClosure _always_subject_to_discovery;
   ReferenceProcessorSubjectToDiscoveryMutator _is_subject_mutator;
 
+  G1FullGCHeapRegionAttrBiasedMappedArray _region_attr_table;
+
 public:
   G1FullCollector(G1CollectedHeap* heap, bool explicit_gc, bool clear_soft_refs);
   ~G1FullCollector();
@@ -89,6 +130,12 @@ public:
   G1FullGCCompactionPoint* serial_compaction_point() { return &_serial_compaction_point; }
   G1CMBitMap*              mark_bitmap();
   ReferenceProcessor*      reference_processor();
+
+  void update_attribute_table(HeapRegion* hr);
+
+  bool is_in_pinned_or_closed(oop obj) const { return _region_attr_table.is_pinned_or_closed(cast_from_oop<HeapWord*>(obj)); }
+  bool is_in_closed(oop obj) const { return _region_attr_table.is_closed_archive(cast_from_oop<HeapWord*>(obj)); }
+  bool is_in_invalid(oop obj) const { return _region_attr_table.is_invalid(cast_from_oop<HeapWord*>(obj)); }
 
 private:
   void phase1_mark_live_objects();

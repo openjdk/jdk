@@ -43,6 +43,7 @@ typedef GenericTaskQueueSet<OopQueue, mtGC>          OopQueueSet;
 typedef GenericTaskQueueSet<ObjArrayTaskQueue, mtGC> ObjArrayTaskQueueSet;
 
 class G1CMBitMap;
+class G1FullCollector;
 
 class G1FullGCMarker : public CHeapObj<mtGC> {
   uint               _worker_id;
