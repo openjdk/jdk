@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,30 @@
  *
  */
 
+/*
+ * halfsiphash code adapted from reference implementation
+ * (https://github.com/veorq/SipHash/blob/master/halfsiphash.c)
+ * which is distributed with the following copyright:
+ *
+ * SipHash reference C implementation
+ *
+ * Copyright (c) 2016 Jean-Philippe Aumasson <jeanphilippe.aumasson@gmail.com>
+ *
+ * To the extent possible under law, the author(s) have dedicated all copyright
+ * and related and neighboring rights to this software to the public domain
+ * worldwide. This software is distributed without any warranty.
+ *
+ * You should have received a copy of the CC0 Public Domain Dedication along
+ * with this software. If not, see
+ * <http://creativecommons.org/publicdomain/zero/1.0/>.
+ */
+
 #include "precompiled.hpp"
 #include "classfile/altHashing.hpp"
-#include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/os.hpp"
 
 // Get the hash code of the classes mirror if it exists, otherwise just
 // return a random number, which is one of the possible hash code used for
@@ -40,169 +57,182 @@ static intptr_t object_hash(Klass* k) {
 }
 
 // Seed value used for each alternative hash calculated.
-juint AltHashing::compute_seed() {
-  jlong nanos = os::javaTimeNanos();
-  jlong now = os::javaTimeMillis();
-  jint SEED_MATERIAL[8] = {
-            (jint) object_hash(SystemDictionary::String_klass()),
-            (jint) object_hash(SystemDictionary::System_klass()),
-            (jint) os::random(),  // current thread isn't a java thread
-            (jint) (((julong)nanos) >> 32),
-            (jint) nanos,
-            (jint) (((julong)now) >> 32),
-            (jint) now,
-            (jint) (os::javaTimeNanos() >> 2)
+uint64_t AltHashing::compute_seed() {
+  uint64_t nanos = os::javaTimeNanos();
+  uint64_t now = os::javaTimeMillis();
+  uint32_t SEED_MATERIAL[8] = {
+            (uint32_t) object_hash(SystemDictionary::String_klass()),
+            (uint32_t) object_hash(SystemDictionary::System_klass()),
+            (uint32_t) os::random(),  // current thread isn't a java thread
+            (uint32_t) (((uint64_t)nanos) >> 32),
+            (uint32_t) nanos,
+            (uint32_t) (((uint64_t)now) >> 32),
+            (uint32_t) now,
+            (uint32_t) (os::javaTimeNanos() >> 2)
   };
 
-  return murmur3_32(SEED_MATERIAL, 8);
+  return halfsiphash_64(SEED_MATERIAL, 8);
 }
 
-
-// Murmur3 hashing for Symbol
-juint AltHashing::murmur3_32(juint seed, const jbyte* data, int len) {
-  juint h1 = seed;
-  int count = len;
-  int offset = 0;
-
-  // body
-  while (count >= 4) {
-    juint k1 = (data[offset] & 0x0FF)
-        | (data[offset + 1] & 0x0FF) << 8
-        | (data[offset + 2] & 0x0FF) << 16
-        | data[offset + 3] << 24;
-
-    count -= 4;
-    offset += 4;
-
-    k1 *= 0xcc9e2d51;
-    k1 = Integer_rotateLeft(k1, 15);
-    k1 *= 0x1b873593;
-
-    h1 ^= k1;
-    h1 = Integer_rotateLeft(h1, 13);
-    h1 = h1 * 5 + 0xe6546b64;
-  }
-
-  // tail
-
-  if (count > 0) {
-    juint k1 = 0;
-
-    switch (count) {
-      case 3:
-        k1 ^= (data[offset + 2] & 0xff) << 16;
-      // fall through
-      case 2:
-        k1 ^= (data[offset + 1] & 0xff) << 8;
-      // fall through
-      case 1:
-        k1 ^= (data[offset] & 0xff);
-      // fall through
-      default:
-        k1 *= 0xcc9e2d51;
-        k1 = Integer_rotateLeft(k1, 15);
-        k1 *= 0x1b873593;
-        h1 ^= k1;
-    }
-  }
-
-  // finalization
-  h1 ^= len;
-
-  // finalization mix force all bits of a hash block to avalanche
-  h1 ^= h1 >> 16;
-  h1 *= 0x85ebca6b;
-  h1 ^= h1 >> 13;
-  h1 *= 0xc2b2ae35;
-  h1 ^= h1 >> 16;
-
-  return h1;
+// utility function copied from java/lang/Integer
+static uint32_t Integer_rotateLeft(uint32_t i, int distance) {
+  return (i << distance) | (i >> (32 - distance));
 }
 
-// Murmur3 hashing for Strings
-juint AltHashing::murmur3_32(juint seed, const jchar* data, int len) {
-  juint h1 = seed;
+static void halfsiphash_rounds(uint32_t v[4], int rounds) {
+  while (rounds-- > 0) {
+    v[0] += v[1];
+    v[1] = Integer_rotateLeft(v[1], 5);
+    v[1] ^= v[0];
+    v[0] = Integer_rotateLeft(v[0], 16);
+    v[2] += v[3];
+    v[3] = Integer_rotateLeft(v[3], 8);
+    v[3] ^= v[2];
+    v[0] += v[3];
+    v[3] = Integer_rotateLeft(v[3], 7);
+    v[3] ^= v[0];
+    v[2] += v[1];
+    v[1] = Integer_rotateLeft(v[1], 13);
+    v[1] ^= v[2];
+    v[2] = Integer_rotateLeft(v[2], 16);
+  }
+}
 
+static void halfsiphash_adddata(uint32_t v[4], uint32_t newdata, int rounds) {
+  v[3] ^= newdata;
+  halfsiphash_rounds(v, rounds);
+  v[0] ^= newdata;
+}
+
+static void halfsiphash_init32(uint32_t v[4], uint64_t seed) {
+  v[0] = seed & 0xffffffff;
+  v[1] = seed >> 32;
+  v[2] = 0x6c796765 ^ v[0];
+  v[3] = 0x74656462 ^ v[1];
+}
+
+static void halfsiphash_init64(uint32_t v[4], uint64_t seed) {
+  halfsiphash_init32(v, seed);
+  v[1] ^= 0xee;
+}
+
+uint32_t halfsiphash_finish32(uint32_t v[4], int rounds) {
+  v[2] ^= 0xff;
+  halfsiphash_rounds(v, rounds);
+  return (v[1] ^ v[3]);
+}
+
+static uint64_t halfsiphash_finish64(uint32_t v[4], int rounds) {
+  uint64_t rv;
+  v[2] ^= 0xee;
+  halfsiphash_rounds(v, rounds);
+  rv = v[1] ^ v[3];
+  v[1] ^= 0xdd;
+  halfsiphash_rounds(v, rounds);
+  rv |= (uint64_t)(v[1] ^ v[3]) << 32;
+  return rv;
+}
+
+// HalfSipHash-2-4 (32-bit output) for Symbols
+uint32_t AltHashing::halfsiphash_32(uint64_t seed, const uint8_t* data, int len) {
+  uint32_t v[4];
+  uint32_t newdata;
   int off = 0;
   int count = len;
 
+  halfsiphash_init32(v, seed);
+
   // body
-  while (count >= 2) {
-    jchar d1 = data[off++] & 0xFFFF;
-    jchar d2 = data[off++];
-    juint k1 = (d1 | d2 << 16);
+  while (count >= 4) {
 
-    count -= 2;
+    // Avoid sign extension with 0x0ff
+    newdata = (data[off] & 0x0FF)
+        | (data[off + 1] & 0x0FF) << 8
+        | (data[off + 2] & 0x0FF) << 16
+        | data[off + 3] << 24;
 
-    k1 *= 0xcc9e2d51;
-    k1 = Integer_rotateLeft(k1, 15);
-    k1 *= 0x1b873593;
+    count -= 4;
+    off += 4;
 
-    h1 ^= k1;
-    h1 = Integer_rotateLeft(h1, 13);
-    h1 = h1 * 5 + 0xe6546b64;
+    halfsiphash_adddata(v, newdata, 2);
   }
 
   // tail
+  newdata = ((uint32_t)len) << 24; // (Byte.SIZE / Byte.SIZE);
 
   if (count > 0) {
-    juint k1 = (juint)data[off];
-
-    k1 *= 0xcc9e2d51;
-    k1 = Integer_rotateLeft(k1, 15);
-    k1 *= 0x1b873593;
-    h1 ^= k1;
+    switch (count) {
+      case 3:
+        newdata |= (data[off + 2] & 0x0ff) << 16;
+      // fall through
+      case 2:
+        newdata |= (data[off + 1] & 0x0ff) << 8;
+      // fall through
+      case 1:
+        newdata |= (data[off] & 0x0ff);
+      // fall through
+    }
   }
 
+  halfsiphash_adddata(v, newdata, 2);
+
   // finalization
-  h1 ^= len * 2; // (Character.SIZE / Byte.SIZE);
-
-  // finalization mix force all bits of a hash block to avalanche
-  h1 ^= h1 >> 16;
-  h1 *= 0x85ebca6b;
-  h1 ^= h1 >> 13;
-  h1 *= 0xc2b2ae35;
-  h1 ^= h1 >> 16;
-
-  return h1;
+  return halfsiphash_finish32(v, 4);
 }
 
-// Hash used for the seed.
-juint AltHashing::murmur3_32(juint seed, const jint* data, int len) {
-  juint h1 = seed;
+// HalfSipHash-2-4 (32-bit output) for Strings
+uint32_t AltHashing::halfsiphash_32(uint64_t seed, const uint16_t* data, int len) {
+  uint32_t v[4];
+  uint32_t newdata;
+  int off = 0;
+  int count = len;
+
+  halfsiphash_init32(v, seed);
+
+  // body
+  while (count >= 2) {
+    uint16_t d1 = data[off++] & 0x0FFFF;
+    uint16_t d2 = data[off++];
+    newdata = (d1 | d2 << 16);
+
+    count -= 2;
+
+    halfsiphash_adddata(v, newdata, 2);
+  }
+
+  // tail
+  newdata = ((uint32_t)len * 2) << 24; // (Character.SIZE / Byte.SIZE);
+  if (count > 0) {
+    newdata |= (uint32_t)data[off];
+  }
+  halfsiphash_adddata(v, newdata, 2);
+
+  // finalization
+  return halfsiphash_finish32(v, 4);
+}
+
+// HalfSipHash-2-4 (64-bit output) for integers (used to create seed)
+uint64_t AltHashing::halfsiphash_64(uint64_t seed, const uint32_t* data, int len) {
+  uint32_t v[4];
 
   int off = 0;
   int end = len;
 
+  halfsiphash_init64(v, seed);
+
   // body
   while (off < end) {
-    juint k1 = (juint)data[off++];
-
-    k1 *= 0xcc9e2d51;
-    k1 = Integer_rotateLeft(k1, 15);
-    k1 *= 0x1b873593;
-
-    h1 ^= k1;
-    h1 = Integer_rotateLeft(h1, 13);
-    h1 = h1 * 5 + 0xe6546b64;
+    halfsiphash_adddata(v, (uint32_t)data[off++], 2);
   }
 
   // tail (always empty, as body is always 32-bit chunks)
 
   // finalization
-
-  h1 ^= len * 4; // (Integer.SIZE / Byte.SIZE);
-
-  // finalization mix force all bits of a hash block to avalanche
-  h1 ^= h1 >> 16;
-  h1 *= 0x85ebca6b;
-  h1 ^= h1 >> 13;
-  h1 *= 0xc2b2ae35;
-  h1 ^= h1 >> 16;
-
-  return h1;
+  halfsiphash_adddata(v, ((uint32_t)len * 4) << 24, 2); // (Integer.SIZE / Byte.SIZE);
+  return halfsiphash_finish64(v, 4);
 }
 
-juint AltHashing::murmur3_32(const jint* data, int len) {
-  return murmur3_32(0, data, len);
+// HalfSipHash-2-4 (64-bit output) for integers (used to create seed)
+uint64_t AltHashing::halfsiphash_64(const uint32_t* data, int len) {
+  return halfsiphash_64((uint64_t)0, data, len);
 }

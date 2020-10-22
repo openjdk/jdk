@@ -33,6 +33,7 @@
 #include "logging/logStream.hpp"
 #include "logging/logConfiguration.hpp"
 #include "memory/heapInspection.hpp"
+#include "memory/metaspace/metaspaceReporter.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/symbol.hpp"
@@ -184,7 +185,7 @@ void VM_PrintJNI::doit() {
 }
 
 void VM_PrintMetadata::doit() {
-  MetaspaceUtils::print_report(_out, _scale, _flags);
+  metaspace::MetaspaceReporter::print_report(_out, _scale, _flags);
 }
 
 VM_FindDeadlocks::~VM_FindDeadlocks() {

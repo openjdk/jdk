@@ -892,9 +892,9 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
                                                       ? Location::int_in_long : Location::normal ));
     } else if( t->base() == Type::NarrowOop ) {
       array->append(new_loc_value( C->regalloc(), regnum, Location::narrowoop ));
-    } else if ( t->base() == Type::VectorS || t->base() == Type::VectorD ||
-                t->base() == Type::VectorX || t->base() == Type::VectorY ||
-                t->base() == Type::VectorZ) {
+    } else if (t->base() == Type::VectorA || t->base() == Type::VectorS ||
+               t->base() == Type::VectorD || t->base() == Type::VectorX ||
+               t->base() == Type::VectorY || t->base() == Type::VectorZ) {
       array->append(new_loc_value( C->regalloc(), regnum, Location::vector ));
     } else {
       array->append(new_loc_value( C->regalloc(), regnum, C->regalloc()->is_oop(local) ? Location::oop : Location::normal ));
@@ -1003,6 +1003,8 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
   int safepoint_pc_offset = current_offset;
   bool is_method_handle_invoke = false;
   bool return_oop = false;
+  bool has_ea_local_in_scope = sfn->_has_ea_local_in_scope;
+  bool arg_escape = false;
 
   // Add the safepoint in the DebugInfoRecorder
   if( !mach->is_MachCall() ) {
@@ -1017,6 +1019,7 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
         assert(C->has_method_handle_invokes(), "must have been set during call generation");
         is_method_handle_invoke = true;
       }
+      arg_escape = mcall->as_MachCallJava()->_arg_escape;
     }
 
     // Check if a call returns an object.
@@ -1137,7 +1140,10 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
     // Now we can describe the scope.
     methodHandle null_mh;
     bool rethrow_exception = false;
-    C->debug_info()->describe_scope(safepoint_pc_offset, null_mh, scope_method, jvms->bci(), jvms->should_reexecute(), rethrow_exception, is_method_handle_invoke, return_oop, locvals, expvals, monvals);
+    C->debug_info()->describe_scope(safepoint_pc_offset, null_mh, scope_method, jvms->bci(),
+                                    jvms->should_reexecute(), rethrow_exception, is_method_handle_invoke,
+                                    return_oop, has_ea_local_in_scope, arg_escape,
+                                    locvals, expvals, monvals);
   } // End jvms loop
 
   // Mark the end of the scope set.

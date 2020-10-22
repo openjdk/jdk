@@ -1206,6 +1206,11 @@ JvmtiEnv::GetOwnedMonitorInfo(JavaThread* java_thread, jint* owned_monitor_count
   GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
       new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
 
+  EscapeBarrier eb(true, calling_thread, java_thread);
+  if (!eb.deoptimize_objects(MaxJavaStackTraceDepth)) {
+    return JVMTI_ERROR_OUT_OF_MEMORY;
+  }
+
   // It is only safe to perform the direct operation on the current
   // thread. All other usage needs to use a direct handshake for safety.
   if (java_thread == calling_thread) {
@@ -1250,6 +1255,11 @@ JvmtiEnv::GetOwnedMonitorStackDepthInfo(JavaThread* java_thread, jint* monitor_i
   // growable array of jvmti monitors info on the C-heap
   GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
          new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
+
+  EscapeBarrier eb(true, calling_thread, java_thread);
+  if (!eb.deoptimize_objects(MaxJavaStackTraceDepth)) {
+    return JVMTI_ERROR_OUT_OF_MEMORY;
+  }
 
   // It is only safe to perform the direct operation on the current
   // thread. All other usage needs to use a direct handshake for safety.
@@ -1666,6 +1676,13 @@ JvmtiEnv::PopFrame(JavaThread* java_thread) {
     }
   }
 
+  if (java_thread->frames_to_pop_failed_realloc() > 0) {
+    // VM is in the process of popping the top frame because it has scalar replaced objects which
+    // could not be reallocated on the heap.
+    // Return JVMTI_ERROR_OUT_OF_MEMORY to avoid interfering with the VM.
+    return JVMTI_ERROR_OUT_OF_MEMORY;
+  }
+
   {
     ResourceMark rm(current_thread);
     // Check if there are more than one Java frame in this thread, that the top two frames
@@ -1697,9 +1714,15 @@ JvmtiEnv::PopFrame(JavaThread* java_thread) {
     }
 
     // If any of the top 2 frames is a compiled one, need to deoptimize it
+    EscapeBarrier eb(!is_interpreted[0] || !is_interpreted[1], current_thread, java_thread);
     for (int i = 0; i < 2; i++) {
       if (!is_interpreted[i]) {
         Deoptimization::deoptimize_frame(java_thread, frame_sp[i]);
+        // Eagerly reallocate scalar replaced objects.
+        if (!eb.deoptimize_objects(frame_sp[i])) {
+          // Reallocation of scalar replaced objects failed -> return with error
+          return JVMTI_ERROR_OUT_OF_MEMORY;
+        }
       }
     }
 

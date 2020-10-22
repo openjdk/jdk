@@ -437,13 +437,16 @@ public final class PrettyWriter extends EventPrintWriter {
     private void printClassLoader(RecordedClassLoader cl, String postFix) {
         // Purposely not printing class loader name to avoid cluttered output
         RecordedClass clazz = cl.getType();
-        print(clazz == null ? "null" : clazz.getName());
         if (clazz != null) {
+            print(clazz.getName());
             print(" (");
             print("id = ");
             print(String.valueOf(cl.getId()));
-            println(")");
+            print(")");
+        } else {
+            print("null");
         }
+        println(postFix);
     }
 
     private void printJavaFrame(RecordedFrame f, String postFix) {
