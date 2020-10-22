@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zForwarding.inline.hpp"
+#include "gc/z/zForwardingAllocator.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "unittest.hpp"
@@ -157,14 +158,15 @@ public:
     const size_t live_bytes = live_objects * object_size;
     page.inc_live(live_objects, live_bytes);
 
+    // Setup allocator
+    ZForwardingAllocator allocator;
+    allocator.reset((sizeof(ZForwarding)) + (page.forwarding_entries() * sizeof(ZForwardingEntry)));
+
     // Setup forwarding
-    ZForwarding* const forwarding = ZForwarding::create(&page);
+    ZForwarding* const forwarding = ZForwarding::alloc(&allocator, &page);
 
     // Actual test function
     (*function)(forwarding);
-
-    // Teardown forwarding
-    ZForwarding::destroy(forwarding);
   }
 
   // Run the given function with a few different input values.

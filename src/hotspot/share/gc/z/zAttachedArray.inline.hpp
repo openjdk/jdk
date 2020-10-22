@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,11 +34,25 @@ inline size_t ZAttachedArray<ObjectT, ArrayT>::object_size() {
 }
 
 template <typename ObjectT, typename ArrayT>
+inline size_t ZAttachedArray<ObjectT, ArrayT>::array_size(size_t length) {
+  return sizeof(ArrayT) * length;
+}
+
+template <typename ObjectT, typename ArrayT>
+inline size_t ZAttachedArray<ObjectT, ArrayT>::size(size_t length) {
+  return object_size() + array_size(length);
+}
+
+template <typename ObjectT, typename ArrayT>
+inline void* ZAttachedArray<ObjectT, ArrayT>::alloc(void* placement, size_t length) {
+  ::new (reinterpret_cast<char*>(placement) + object_size()) ArrayT[length];
+  return placement;
+}
+
+template <typename ObjectT, typename ArrayT>
 inline void* ZAttachedArray<ObjectT, ArrayT>::alloc(size_t length) {
-  const size_t array_size = sizeof(ArrayT) * length;
-  char* const addr = AllocateHeap(object_size() + array_size, mtGC);
-  ::new (addr + object_size()) ArrayT[length];
-  return addr;
+  void* const placement = AllocateHeap(size(length), mtGC);
+  return alloc(placement, length);
 }
 
 template <typename ObjectT, typename ArrayT>

@@ -26,11 +26,27 @@
 
 #include "gc/z/zAttachedArray.inline.hpp"
 #include "gc/z/zForwarding.hpp"
+#include "gc/z/zForwardingAllocator.inline.hpp"
 #include "gc/z/zHash.inline.hpp"
 #include "gc/z/zHeap.hpp"
+#include "gc/z/zPage.inline.hpp"
 #include "gc/z/zVirtualMemory.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
+
+inline ZForwarding* ZForwarding::alloc(ZForwardingAllocator* allocator, ZPage* page) {
+  const size_t nentries = page->forwarding_entries();
+  void* const placement = allocator->alloc(AttachedArray::size(nentries));
+  return ::new (AttachedArray::alloc(placement, nentries)) ZForwarding(page, nentries);
+}
+
+inline ZForwarding::ZForwarding(ZPage* page, size_t nentries) :
+    _virtual(page->virtual_memory()),
+    _object_alignment_shift(page->object_alignment_shift()),
+    _entries(nentries),
+    _page(page),
+    _refcount(1),
+    _pinned(false) {}
 
 inline uintptr_t ZForwarding::start() const {
   return _virtual.start();
