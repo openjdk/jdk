@@ -231,35 +231,54 @@ Node *CastIINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Do not narrow the type of range check dependent CastIINodes to
   // avoid corruption of the graph if a CastII is replaced by TOP but
   // the corresponding range check is not removed.
-  if (can_reshape && !_range_check_dependency && !phase->C->major_progress()) {
-    const TypeInt* this_type = this->type()->is_int();
-    const TypeInt* in_type = phase->type(in(1))->isa_int();
-    if (in_type != NULL && this_type != NULL &&
-        (in_type->_lo != this_type->_lo ||
-         in_type->_hi != this_type->_hi)) {
-      jint lo1 = this_type->_lo;
-      jint hi1 = this_type->_hi;
-      int w1  = this_type->_widen;
+  if (can_reshape && !_range_check_dependency) {
+    if (phase->C->post_loop_opts_phase()) {
+      const TypeInt* this_type = this->type()->is_int();
+      const TypeInt* in_type = phase->type(in(1))->isa_int();
+      if (in_type != NULL && this_type != NULL &&
+          (in_type->_lo != this_type->_lo ||
+           in_type->_hi != this_type->_hi)) {
+        jint lo1 = this_type->_lo;
+        jint hi1 = this_type->_hi;
+        int w1  = this_type->_widen;
 
-      if (lo1 >= 0) {
-        // Keep a range assertion of >=0.
-        lo1 = 0;        hi1 = max_jint;
-      } else if (hi1 < 0) {
-        // Keep a range assertion of <0.
-        lo1 = min_jint; hi1 = -1;
-      } else {
-        lo1 = min_jint; hi1 = max_jint;
+        if (lo1 >= 0) {
+          // Keep a range assertion of >=0.
+          lo1 = 0;        hi1 = max_jint;
+        } else if (hi1 < 0) {
+          // Keep a range assertion of <0.
+          lo1 = min_jint; hi1 = -1;
+        } else {
+          lo1 = min_jint; hi1 = max_jint;
+        }
+        const TypeInt* wtype = TypeInt::make(MAX2(in_type->_lo, lo1),
+                                             MIN2(in_type->_hi, hi1),
+                                             MAX2((int)in_type->_widen, w1));
+        if (wtype != type()) {
+          set_type(wtype);
+          return this;
+        }
       }
-      const TypeInt* wtype = TypeInt::make(MAX2(in_type->_lo, lo1),
-                                           MIN2(in_type->_hi, hi1),
-                                           MAX2((int)in_type->_widen, w1));
-      if (wtype != type()) {
-        set_type(wtype);
-        return this;
-      }
+    } else {
+      phase->C->record_for_post_loop_opts_igvn(this);
     }
   }
   return NULL;
+}
+
+Node* CastIINode::Identity(PhaseGVN* phase) {
+  Node* progress = ConstraintCastNode::Identity(phase);
+  if (progress != this) {
+    return progress;
+  }
+  if (_range_check_dependency) {
+    if (phase->C->post_loop_opts_phase()) {
+      return this->in(1);
+    } else {
+      phase->C->record_for_post_loop_opts_igvn(this);
+    }
+  }
+  return this;
 }
 
 bool CastIINode::cmp(const Node &n) const {

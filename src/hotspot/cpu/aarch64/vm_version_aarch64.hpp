@@ -103,6 +103,7 @@ public:
     CPU_CRC32        = (1<<7),
     CPU_LSE          = (1<<8),
     CPU_DCPOP        = (1<<16),
+    CPU_SHA3         = (1<<17),
     CPU_SHA512       = (1<<21),
     CPU_SVE          = (1<<22),
     // flags above must follow Linux HWCAP

@@ -76,7 +76,7 @@ import static javax.swing.UIManager.getInstalledLookAndFeels;
 /**
  * @test
  * @key headful
- * @bug 8134947 8253977
+ * @bug 8134947 8253977 8240709
  * @library /test/lib
  * @run main/timeout=450/othervm UnninstallUIMemoryLeaks
  */
@@ -91,9 +91,7 @@ public final class UnninstallUIMemoryLeaks {
             List<Process> tasks = new ArrayList<>();
             for (LookAndFeelInfo laf : getInstalledLookAndFeels()) {
                 String name = laf.getName();
-                if (name.contains("OS X") || name.contains("Metal")) {
-                    tasks.add(runProcess(laf));
-                }
+                tasks.add(runProcess(laf));
             }
             for (Process p : tasks) {
                 if (!p.waitFor(end - System.nanoTime(), TimeUnit.NANOSECONDS)) {
