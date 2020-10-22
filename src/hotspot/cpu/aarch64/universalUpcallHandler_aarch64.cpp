@@ -124,7 +124,7 @@ addres ProgrammableUpcallHandler::generate_upcall_stub(jobject rec, jobject jabi
   ResourceMark rm;
   const ABIDescriptor abi = ForeignGlobals::parse_abi_descriptor(jabi);
   const BufferLayout layout = ForeignGlobals::parse_buffer_layout(jlayout);
-  
+
   CodeBuffer buffer("upcall_stub", 1024, upcall_stub_size);
 
   MacroAssembler* _masm = new MacroAssembler(&buffer);
