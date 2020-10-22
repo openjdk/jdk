@@ -29,7 +29,6 @@ import java.text.BreakIterator;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
@@ -76,6 +75,7 @@ import com.sun.tools.javac.tree.DCTree.DCSerial;
 import com.sun.tools.javac.tree.DCTree.DCSerialData;
 import com.sun.tools.javac.tree.DCTree.DCSerialField;
 import com.sun.tools.javac.tree.DCTree.DCSince;
+import com.sun.tools.javac.tree.DCTree.DCSpec;
 import com.sun.tools.javac.tree.DCTree.DCStartElement;
 import com.sun.tools.javac.tree.DCTree.DCSummary;
 import com.sun.tools.javac.tree.DCTree.DCSystemProperty;
@@ -422,6 +422,13 @@ public class DocTreeMaker implements DocTreeFactory {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public DCSince newSinceTree(List<? extends DocTree> text) {
         DCSince tree = new DCSince(cast(text));
+        tree.pos = pos;
+        return tree;
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCSpec newSpecTree(boolean inline, TextTree url, List<? extends DocTree> label) {
+        DCSpec tree = new DCSpec(inline, (DCText) url, cast(label));
         tree.pos = pos;
         return tree;
     }

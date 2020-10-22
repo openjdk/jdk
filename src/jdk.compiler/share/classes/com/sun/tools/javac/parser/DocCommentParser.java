@@ -269,11 +269,10 @@ public class DocCommentParser {
                     List<DCTree> content = blockContent();
                     return m.at(p).newUnknownBlockTagTree(name, content);
                 } else {
-                    switch (tp.getKind()) {
-                        case BLOCK:
-                            return tp.parse(p);
-                        case INLINE:
-                            return erroneous("dc.bad.inline.tag", p);
+                    if (tp.allowsBlock()) {
+                        return tp.parse(p, TagParser.Kind.BLOCK);
+                    } else {
+                        return erroneous("dc.bad.inline.tag", p);
                     }
                 }
             }
@@ -326,8 +325,8 @@ public class DocCommentParser {
                     if (!tp.retainWhiteSpace) {
                         skipWhitespace();
                     }
-                    if (tp.getKind() == TagParser.Kind.INLINE) {
-                        DCEndPosTree<?> tree = (DCEndPosTree<?>) tp.parse(p);
+                    if (tp.allowsInline()) {
+                        DCEndPosTree<?> tree = (DCEndPosTree<?>) tp.parse(p, TagParser.Kind.INLINE);
                         if (tree != null) {
                             return tree.setEndPos(bp);
                         }
@@ -1071,7 +1070,7 @@ public class DocCommentParser {
     }
 
     private static abstract class TagParser {
-        enum Kind { INLINE, BLOCK }
+        enum Kind { INLINE, BLOCK, EITHER }
 
         final Kind kind;
         final DCTree.Kind treeKind;
@@ -1089,15 +1088,28 @@ public class DocCommentParser {
             this.retainWhiteSpace = retainWhiteSpace;
         }
 
-        Kind getKind() {
-            return kind;
+        boolean allowsBlock() {
+            return kind != Kind.INLINE;
+        }
+
+        boolean allowsInline() {
+            return kind != Kind.BLOCK;
         }
 
         DCTree.Kind getTreeKind() {
             return treeKind;
         }
 
-        abstract DCTree parse(int pos) throws ParseException;
+        DCTree parse(int pos, Kind kind) throws ParseException {
+            if (kind != this.kind) {
+                throw new IllegalArgumentException(kind.toString());
+            }
+            return parse(pos);
+        }
+
+        DCTree parse(int pos) throws ParseException {
+            throw new UnsupportedOperationException();
+        }
     }
 
     /**
@@ -1365,6 +1377,35 @@ public class DocCommentParser {
                 public DCTree parse(int pos) {
                     List<DCTree> description = blockContent();
                     return m.at(pos).newSinceTree(description);
+                }
+            },
+
+            // @spec url label
+            // {@spec url label}
+            new TagParser(TagParser.Kind.EITHER, DCTree.Kind.SPEC) {
+                @Override
+                public DCTree parse(int pos, Kind kind) throws ParseException {
+                    skipWhitespace();
+                    DCText url = inlineWord();
+                    if (url == null || url.isBlank()) {
+                        throw new ParseException("dc.no.uri");
+                    }
+                    skipWhitespace();
+                    List<DCTree> label;
+                    switch (kind) {
+                        case BLOCK:
+                            label = blockContent();
+                            break;
+                        case INLINE:
+                            label = inlineContent();
+                            break;
+                        default:
+                            throw new IllegalArgumentException(kind.toString());
+                    }
+                    if (label.isEmpty() || DCTree.isBlank(label)) {
+                        throw new ParseException("dc.no.label");
+                    }
+                    return m.at(pos).newSpecTree(kind == Kind.INLINE, url, label);
                 }
             },
 

@@ -587,6 +587,19 @@ public class DocCommentTester {
                 return null;
             }
 
+            @Override
+            public Void visitSpec(SpecTree node, Void p) {
+                header(node);
+                indent(+1);
+                print("inline", String.valueOf(node.isInline()));
+                print("uri", node.getURI());
+                print("label", node.getLabel());
+                indent(-1);
+                indent();
+                out.println("]");
+                return null;
+            }
+
             public Void visitStartElement(StartElementTree node, Void p) {
                 header(node);
                 indent(+1);

@@ -144,6 +144,7 @@ public class Contents {
     public final Content noScriptMessage;
     public final Content openModuleLabel;
     public final Content openedTo;
+    public final Content otherSpecifications;
     public final Content overridesLabel;
     public final Content overviewLabel;
     public final Content packageHierarchies;
@@ -162,6 +163,7 @@ public class Contents {
     public final Content seeAlso;
     public final Content serializedForm;
     public final Content servicesLabel;
+    public final Content specificationLabel;
     public final Content specifiedByLabel;
     public final Content subclassesLabel;
     public final Content subinterfacesLabel;
@@ -278,6 +280,7 @@ public class Contents {
         noScriptMessage = getContent("doclet.No_Script_Message");
         openedTo = getContent("doclet.OpenedTo");
         openModuleLabel = getContent("doclet.Open_Module");
+        otherSpecifications = getContent("doclet.Other_Specifications");
         overridesLabel = getContent("doclet.Overrides");
         overviewLabel = getContent("doclet.Overview");
         packageHierarchies = getContent("doclet.Package_Hierarchies");
@@ -296,6 +299,7 @@ public class Contents {
         seeAlso = getContent("doclet.See_Also");
         serializedForm = getContent("doclet.Serialized_Form");
         servicesLabel = getContent("doclet.Services");
+        specificationLabel = getContent("doclet.Specification");
         specifiedByLabel = getContent("doclet.Specified_By");
         subclassesLabel = getContent("doclet.Subclasses");
         subinterfacesLabel = getContent("doclet.Subinterfaces");

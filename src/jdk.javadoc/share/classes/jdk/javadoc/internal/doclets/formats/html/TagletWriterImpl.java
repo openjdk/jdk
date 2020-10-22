@@ -25,6 +25,8 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 
 import javax.lang.model.element.Element;
@@ -40,7 +42,10 @@ import javax.lang.model.util.SimpleElementVisitor14;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.IndexTree;
 import com.sun.source.doctree.ParamTree;
+import com.sun.source.doctree.SpecTree;
 import com.sun.source.doctree.SystemPropertyTree;
+import com.sun.source.doctree.TextTree;
+import com.sun.source.util.DocTreePath;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -253,6 +258,19 @@ public class TagletWriterImpl extends TagletWriter {
                 HtmlTree.DD(body));
     }
 
+    String textOf(List<? extends DocTree> trees) {
+        StringBuilder sb = new StringBuilder();
+        for (DocTree dt : trees) {
+            if (dt instanceof TextTree) {
+                if (!sb.isEmpty()) {
+                    sb.append(" ");
+                }
+                sb.append(((TextTree) dt).getBody().trim());
+            }
+        }
+        return sb.toString();
+    }
+
     private void appendSeparatorIfNotEmpty(ContentBuilder body) {
         if (!body.isEmpty()) {
             body.add(", ");
@@ -276,6 +294,56 @@ public class TagletWriterImpl extends TagletWriter {
         return new ContentBuilder(
                 HtmlTree.DT(new RawHtml(header)),
                 HtmlTree.DD(body));
+    }
+
+    @Override
+    public Content specTagOutput(Element holder, List<? extends SpecTree> specTags) {
+        if (specTags.size() == 1 && specTags.get(0).isInline()) {
+            // used as an inline tag
+            SpecTree st = specTags.get(0);
+            return specTagToContent(holder, st);
+        } else {
+            // used as zero or more block tags
+            ContentBuilder body = new ContentBuilder();
+            for (SpecTree st : specTags) {
+                appendSeparatorIfNotEmpty(body);
+                body.add(specTagToContent(holder, st));
+            }
+            if (body.isEmpty())
+                return body;
+
+            return new ContentBuilder(
+                    HtmlTree.DT(contents.otherSpecifications),
+                    HtmlTree.DD(body));
+        }
+    }
+
+    private Content specTagToContent(Element holder, SpecTree specTree) {
+        Content label = createAnchorAndSearchIndex(holder,
+                textOf(specTree.getLabel()),
+                resources.getText("doclet.Other_Specification"),
+                specTree);
+        URI specURI;
+        try {
+            specURI = new URI(specTree.getURI().getBody());
+        } catch (URISyntaxException e) {
+            CommentHelper ch = utils.getCommentHelper(holder);
+            DocTreePath dtp = ch.getDocTreePath(specTree);
+            htmlWriter.messages.error(dtp, "doclet.Invalid_URI", e.getMessage());
+            return label;
+        }
+
+        if (!specURI.isAbsolute()) {
+            URI baseURI = configuration.getOptions().specBaseURI();
+            if (baseURI != null) {
+                if (!baseURI.isAbsolute() && !htmlWriter.pathToRoot.isEmpty()) {
+                    baseURI = URI.create(htmlWriter.pathToRoot.getPath() + "/").resolve(baseURI);
+                }
+                specURI = baseURI.resolve(specURI);
+            }
+        }
+
+        return HtmlTree.A(specURI, label);
     }
 
     @Override

@@ -89,6 +89,7 @@ JAVADOC_TAGS := \
     -tag since \
     -tag serialData \
     -tag factory \
+    -tag spec \
     -tag see \
     -taglet build.tools.taglet.ExtLink \
     -taglet build.tools.taglet.Incubating \

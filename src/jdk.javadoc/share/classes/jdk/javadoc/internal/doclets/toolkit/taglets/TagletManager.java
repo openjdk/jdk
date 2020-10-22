@@ -638,6 +638,7 @@ public class TagletManager {
         allTaglets.put(factoryTaglet.getName(), factoryTaglet);
 
         addStandardTaglet(new SeeTaglet());
+        addStandardTaglet(new SpecTaglet());
 
         // Standard inline tags
         addStandardTaglet(new DocRootTaglet());
@@ -733,7 +734,7 @@ public class TagletManager {
         taglets.addAll(allTaglets.values());
 
         for (Taglet t : taglets) {
-            String name = t.isInlineTag() ? "{@" + t.getName() + "}" : "@" + t.getName();
+            String name = t.isBlockTag() ? "@" + t.getName() : "{@" + t.getName() + "}";
             out.println(String.format("%20s", name) + ": "
                     + format(t.isBlockTag(), "block")+ " "
                     + format(t.inOverview(), "overview") + " "

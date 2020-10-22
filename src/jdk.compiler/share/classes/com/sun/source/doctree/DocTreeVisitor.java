@@ -288,6 +288,14 @@ public interface DocTreeVisitor<R,P> {
     R visitSince(SinceTree node, P p);
 
     /**
+     * Visits a SpecTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
+    R visitSpec(SpecTree node, P p);
+
+    /**
      * Visits a StartElementTree node.
      * @param node the node being visited
      * @param p a parameter value

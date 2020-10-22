@@ -96,6 +96,7 @@ public class Navigation {
         HELP,
         INDEX,
         MODULE,
+        OTHER_SPECS,
         OVERVIEW,
         PACKAGE,
         SERIALIZED_FORM,
@@ -327,6 +328,7 @@ public class Navigation {
             case ALL_CLASSES:
             case ALL_PACKAGES:
             case CONSTANT_VALUES:
+            case OTHER_SPECS:
             case SERIALIZED_FORM:
             case SYSTEM_PROPERTIES:
                 addOverviewLink(tree);

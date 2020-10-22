@@ -25,6 +25,8 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -68,6 +70,7 @@ import com.sun.source.doctree.InheritDocTree;
 import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.LiteralTree;
 import com.sun.source.doctree.SeeTree;
+import com.sun.source.doctree.SpecTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.SummaryTree;
 import com.sun.source.doctree.SystemPropertyTree;
@@ -1511,8 +1514,17 @@ public class HtmlDocletWriter {
 
                 @Override
                 public Boolean visitSee(SeeTree node, Content c) {
-                    // we need to pass the DocTreeImpl here, so ignore node
-                    result.add(seeTagToContent(element, tag));
+                    result.add(seeTagToContent(element, node));
+                    return false;
+                }
+
+                @Override
+                public Boolean visitSpec(SpecTree node, Content c) {
+                    Content output = getInlineTagOutput(element, holderTag, node,
+                            isFirstSentence, inSummary);
+                    if (output != null) {
+                        result.add(output);
+                    }
                     return false;
                 }
 

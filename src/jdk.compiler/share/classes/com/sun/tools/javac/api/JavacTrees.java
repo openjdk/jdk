@@ -291,8 +291,9 @@ public class JavacTrees extends DocTrees {
                             if (param.isTypeParameter && param.getDescription().isEmpty()) {
                                 correction = 1;
                             }
+                            // fall-through
                         case AUTHOR: case DEPRECATED: case RETURN: case SEE:
-                        case SERIAL: case SERIAL_DATA: case SERIAL_FIELD: case SINCE:
+                        case SERIAL: case SERIAL_DATA: case SERIAL_FIELD: case SINCE: case SPEC:
                         case THROWS: case UNKNOWN_BLOCK_TAG: case VERSION: {
                             DocTree last = getLastChild(tree);
 

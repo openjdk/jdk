@@ -27,6 +27,7 @@ package jdk.javadoc.internal.doclets.formats.html.markup;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -300,6 +301,7 @@ public class HtmlTree extends Content {
 
     /**
      * Creates an HTML {@code A} element.
+     * The {@code ref} argument will be URL-encoded for use as the attribute value.
      *
      * @param ref the value for the {@code href} attribute}
      * @param body the content for element
@@ -308,6 +310,22 @@ public class HtmlTree extends Content {
     public static HtmlTree A(String ref, Content body) {
         return new HtmlTree(TagName.A)
                 .put(HtmlAttr.HREF, encodeURL(ref))
+                .add(body);
+    }
+
+    /**
+     * Creates an HTML {@code A} element.
+     * The {@code ref} argument is assumed to be already suitably encoded,
+     * and will <i>not</i> be additionally URL-encoded, but will be
+     * {@link URI#toASCIIString() converted} to ASCII for use as the attribute value.
+     *
+     * @param ref the value for the {@code href} attribute}
+     * @param body the content for element
+     * @return the element
+     */
+    public static HtmlTree A(URI ref, Content body) {
+        return new HtmlTree(TagName.A)
+                .put(HtmlAttr.HREF, ref.toASCIIString())
                 .add(body);
     }
 

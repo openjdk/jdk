@@ -96,6 +96,7 @@ import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.DocTree.Kind;
 import com.sun.source.doctree.EndElementTree;
 import com.sun.source.doctree.ParamTree;
+import com.sun.source.doctree.SpecTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.UnknownBlockTagTree;
@@ -2798,6 +2799,12 @@ public class Utils {
 
     public List<? extends DocTree> getSerialFieldTrees(VariableElement field) {
         return getBlockTags(field, DocTree.Kind.SERIAL_FIELD);
+    }
+
+    public List<? extends SpecTree> getSpecTrees(Element element) {
+        return getBlockTags(element, SPEC).stream()
+                .map(dt -> (SpecTree) dt)
+                .collect(Collectors.toList());
     }
 
     public List<? extends DocTree> getThrowsTrees(Element element) {

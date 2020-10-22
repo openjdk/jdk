@@ -71,6 +71,14 @@ public abstract class DCTree implements DocTree {
         return new SimpleDiagnosticPosition(dc.comment.getSourcePos(pos));
     }
 
+    public boolean isBlank() {
+        return false;
+    }
+
+    public static boolean isBlank(List<? extends DCTree> list) {
+        return list.stream().allMatch(DCTree::isBlank);
+    }
+
     /** Convert a tree to a pretty-printed string. */
     @Override
     public String toString() {
@@ -829,6 +837,48 @@ public abstract class DCTree implements DocTree {
         }
     }
 
+    public static class DCSpec extends DCEndPosTree<DCSpec> implements SpecTree {
+        public final boolean inline;
+        public final DCText uri;
+        public final List<DCTree> label;
+
+        DCSpec(boolean inline, DCText uri, List<DCTree> label) {
+            this.inline = inline;
+            this.uri = uri;
+            this.label = label;
+        }
+
+        @Override
+        public String getTagName() {
+            return "spec";
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public Kind getKind() {
+            return Kind.SPEC;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
+            return v.visitSpec(this, d);
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public boolean isInline() {
+            return inline;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public TextTree getURI() {
+            return uri;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public List<? extends DocTree> getLabel() {
+            return label;
+        }
+    }
+
     public static class DCStartElement extends DCEndPosTree<DCStartElement> implements StartElementTree {
         public final Name name;
         public final List<DCTree> attrs;
@@ -917,6 +967,11 @@ public abstract class DCTree implements DocTree {
 
         DCText(String text) {
             this.text = text;
+        }
+
+        @Override
+        public boolean isBlank() {
+            return text.isBlank();
         }
 
         @Override @DefinedBy(Api.COMPILER_TREE)

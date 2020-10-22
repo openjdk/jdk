@@ -134,7 +134,7 @@ public class HtmlConfiguration extends BaseConfiguration {
     // Note: this should (eventually) be merged with Navigation.PageMode,
     // which performs a somewhat similar role
     public enum ConditionalPage {
-        CONSTANT_VALUES, DEPRECATED, SERIALIZED_FORM, SYSTEM_PROPERTIES
+        CONSTANT_VALUES, DEPRECATED, OTHER_SPECS, SERIALIZED_FORM, SYSTEM_PROPERTIES
     }
 
     /**

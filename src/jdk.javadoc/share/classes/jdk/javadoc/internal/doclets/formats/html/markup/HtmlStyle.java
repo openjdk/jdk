@@ -650,6 +650,11 @@ public enum HtmlStyle {
     moduleIndexPage,
 
     /**
+     * The class of the {@code body} element for the other-specifications page.
+     */
+    otherSpecsPage,
+
+    /**
      * The class of the {@code body} element for a package-declaration page.
      */
     packageDeclarationPage,

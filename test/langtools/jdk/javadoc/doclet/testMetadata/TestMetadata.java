@@ -154,6 +154,7 @@ public class TestMetadata extends JavadocTester {
         "index-redirect-page",
         "module-declaration-page",
         "module-index-page",
+        "other-specs-page",
         "package-declaration-page",
         "package-index-page",
         "package-tree-page",
@@ -220,6 +221,7 @@ public class TestMetadata extends JavadocTester {
             "IndexWriter",
             "ModuleIndexWriter",
             "ModuleWriterImpl",
+            "OtherSpecsWriter",
             "PackageIndexWriter",
             "PackageTreeWriter",
             "PackageUseWriter",
@@ -355,6 +357,10 @@ public class TestMetadata extends JavadocTester {
                 check(generator, content, content.startsWith("index"));
                 break;
 
+            case "OtherSpecsWriter":
+                check(generator, content, content.startsWith("other specifications"));
+                break;
+
             case "PackageTreeWriter":
             case "TreeWriter":
                 check(generator, content, content.contains("tree"));
@@ -392,7 +398,13 @@ public class TestMetadata extends JavadocTester {
             case PACKAGES:
                 tb.writeJavaFiles(src,
                     "/** Package pA. {@systemProperty exampleProperty} */ package pA;",
-                    "/** Class pA.CA. */ package pA; public class CA { @Deprecated public static final int ZERO = 0; }",
+                    """
+                        /** Class pA.CA. */
+                        package pA; public class CA {
+                            /** First sentence. This is an {@spec http://example.com example reference}. */
+                            @Deprecated public static final int ZERO = 0;
+                        }
+                        """,
                     "/** Anno pA.Anno, */ package pA; public @interface Anno { }",
                     "/** Serializable pA.Ser, */ package pA; public class Ser implements java.io.Serializable { }",
                     "/** Package pB. */ package pB;",
@@ -407,7 +419,14 @@ public class TestMetadata extends JavadocTester {
                 new ModuleBuilder(tb, "mA")
                         .exports("pA")
                         .classes("/** Package mA/pA. */ package pA;")
-                        .classes("/** Class mA/pA.CA. */ package pA; public class CA { @Deprecated public static int ZERO = 0; }")
+                        .classes("""
+                            /** Class mA/pA.CA. */
+                            package pA;
+                            public class CA {
+                                /** First sentence. This is an {@spec http://example.com example reference}. */
+                                @Deprecated public static int ZERO = 0;
+                            }
+                        """)
                         .write(src);
                 new ModuleBuilder(tb, "mB")
                         .exports("pB")

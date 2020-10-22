@@ -205,6 +205,14 @@ public interface DocTree {
         SINCE("since"),
 
         /**
+         * Used for instances of {@link SpecTree}
+         * representing an {@code @spec} tag.
+         *
+         * @since 16
+         */
+        SPEC("spec"),
+
+        /**
          * Used for instances of {@link EndElementTree}
          * representing the start of an HTML element.
          */

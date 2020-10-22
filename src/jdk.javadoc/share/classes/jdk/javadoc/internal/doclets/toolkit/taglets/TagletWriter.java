@@ -34,6 +34,7 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 
 import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.SpecTree;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.taglets.Taglet.UnsupportedTagletOperationException;
@@ -165,6 +166,15 @@ public abstract class TagletWriter {
      * @return the output
      */
     protected abstract Content simpleBlockTagOutput(Element element, List<? extends DocTree> simpleTags, String header);
+
+    /**
+     * Return the spec tag output.
+     *
+     * @param holder
+     * @param specTags the array of @spec tags.
+     * @return the output of the see tags.
+     */
+    protected abstract Content specTagOutput(Element holder, List<? extends SpecTree> specTags);
 
     /**
      * Returns the output for a {@code {@systemProperty...}} tag.
