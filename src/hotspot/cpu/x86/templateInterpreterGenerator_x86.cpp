@@ -1750,9 +1750,6 @@ address TemplateInterpreterGenerator::generate_earlyret_entry_for(TosState state
 // Helper for vtos entry point generation
 
 void TemplateInterpreterGenerator::set_vtos_entry_points(Template* t,
-                                                         address& bep,
-                                                         address& cep,
-                                                         address& sep,
                                                          address& aep,
                                                          address& iep,
                                                          address& lep,
@@ -1782,7 +1779,7 @@ void TemplateInterpreterGenerator::set_vtos_entry_points(Template* t,
   lep = __ pc();     // ltos entry point
       __ push_l();
       __ jmp(L);
-  bep = cep = sep = iep = __ pc();      // [bcsi]tos entry point
+  iep = __ pc();      // [bcsi]tos entry point
       __ push_i();
   vep = __ pc();    // vtos entry point
   __ bind(L);

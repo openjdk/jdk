@@ -68,10 +68,6 @@ void TemplateInterpreterGenerator::generate_all() {
     CodeletMark cm(_masm, "bytecode tracing support");
     Interpreter::_trace_code =
       EntryPoint(
-                 generate_trace_code(btos),
-                 generate_trace_code(ztos),
-                 generate_trace_code(ctos),
-                 generate_trace_code(stos),
                  generate_trace_code(atos),
                  generate_trace_code(itos),
                  generate_trace_code(ltos),
@@ -85,15 +81,10 @@ void TemplateInterpreterGenerator::generate_all() {
   { CodeletMark cm(_masm, "return entry points");
     Interpreter::_return_entry[0] = EntryPoint();
     for (int i = 1; i < Interpreter::number_of_return_entries; i++) {
-      address return_itos = generate_return_entry_for(itos, i, sizeof(u2));
       Interpreter::_return_entry[i] =
         EntryPoint(
-                   return_itos,
-                   return_itos,
-                   return_itos,
-                   return_itos,
                    generate_return_entry_for(atos, i, sizeof(u2)),
-                   return_itos,
+                   generate_return_entry_for(itos, i, sizeof(u2)),
                    generate_return_entry_for(ltos, i, sizeof(u2)),
                    generate_return_entry_for(ftos, i, sizeof(u2)),
                    generate_return_entry_for(dtos, i, sizeof(u2)),
@@ -113,7 +104,7 @@ void TemplateInterpreterGenerator::generate_all() {
     assert(invoke_length >= 0 && invoke_length < Interpreter::number_of_return_entries, "invariant");
     assert(invokeinterface_length >= 0 && invokeinterface_length < Interpreter::number_of_return_entries, "invariant");
 
-    for (int i = 4; i < Interpreter::number_of_return_addrs; i++) {
+    for (int i = itos; i < Interpreter::number_of_return_addrs; i++) {
       TosState state = states[i];
       assert(state != ilgl, "states array is wrong above");
 
@@ -123,12 +114,12 @@ void TemplateInterpreterGenerator::generate_all() {
 
       Interpreter::_invokedynamic_return_entry[i]   = generate_return_entry_for(state, invokedynamic_length, sizeof(u4));
     }
-    assert(states[4] == itos, "checking");
-    // patch in itos entry points for btos/ztos/ctos/stos
-    for (int i = 0; i < 4; i++) {
-      Interpreter::_invoke_return_entry[i]          = Interpreter::_invoke_return_entry[4];
-      Interpreter::_invokeinterface_return_entry[i] = Interpreter::_invokeinterface_return_entry[4];
-      Interpreter::_invokedynamic_return_entry[i]   = Interpreter::_invokedynamic_return_entry[4];
+
+    // set itos entry points for btos/ztos/ctos/stos
+    for (int i = 0; i < itos; i++) {
+      Interpreter::_invoke_return_entry[i]          = Interpreter::_invoke_return_entry[itos];
+      Interpreter::_invokeinterface_return_entry[i] = Interpreter::_invokeinterface_return_entry[itos];
+      Interpreter::_invokedynamic_return_entry[i]   = Interpreter::_invokedynamic_return_entry[itos];
     }
   }
 
@@ -136,12 +127,8 @@ void TemplateInterpreterGenerator::generate_all() {
     address earlyret_entry_itos = generate_earlyret_entry_for(itos);
     Interpreter::_earlyret_entry =
       EntryPoint(
-                 earlyret_entry_itos, /* btos */
-                 earlyret_entry_itos, /* ztos */
-                 earlyret_entry_itos, /* ctos */
-                 earlyret_entry_itos, /* stos */
                  generate_earlyret_entry_for(atos),
-                 earlyret_entry_itos, /* itos */
+                 generate_earlyret_entry_for(itos),
                  generate_earlyret_entry_for(ltos),
                  generate_earlyret_entry_for(ftos),
                  generate_earlyret_entry_for(dtos),
@@ -164,15 +151,10 @@ void TemplateInterpreterGenerator::generate_all() {
 
 
   { CodeletMark cm(_masm, "safepoint entry points");
-    address safept_entry_itos = generate_safept_entry_for(itos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint));
     Interpreter::_safept_entry =
       EntryPoint(
-                 safept_entry_itos, /* btos */
-                 safept_entry_itos, /* ztos */
-                 safept_entry_itos, /* ctos */
-                 safept_entry_itos, /* stos */
                  generate_safept_entry_for(atos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
-                 safept_entry_itos, /* itos */
+                 generate_safept_entry_for(itos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
                  generate_safept_entry_for(ltos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
                  generate_safept_entry_for(ftos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
                  generate_safept_entry_for(dtos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint)),
@@ -256,12 +238,8 @@ void TemplateInterpreterGenerator::generate_all() {
       address deopt_itos = generate_deopt_entry_for(itos, i);
       Interpreter::_deopt_entry[i] =
         EntryPoint(
-                   deopt_itos, /* btos */
-                   deopt_itos, /* ztos */
-                   deopt_itos, /* ctos */
-                   deopt_itos, /* stos */
                    generate_deopt_entry_for(atos, i),
-                   deopt_itos, /* itos */
+                   generate_deopt_entry_for(itos, i),
                    generate_deopt_entry_for(ltos, i),
                    generate_deopt_entry_for(ftos, i),
                    generate_deopt_entry_for(dtos, i),
