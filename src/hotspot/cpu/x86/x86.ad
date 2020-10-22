@@ -4424,9 +4424,9 @@ instruct insert8D(vec dst, vec src, regD val, immI idx, rRegL tmp, legVec vtmp) 
 
 // =======================Int Reduction==========================================
 
-instruct reductionI(rRegI dst, rRegI src1, vec src2, vec vtmp1, vec vtmp2) %{
+instruct reductionI(rRegI dst, rRegI src1, legVec src2, legVec vtmp1, legVec vtmp2) %{
   predicate(vector_element_basic_type(n->in(2)) == T_INT &&
-            vector_length(n->in(2)) < 16); // src2
+            vector_length(n->in(2)) <= 16); // src2
   match(Set dst (AddReductionVI src1 src2));
   match(Set dst (MulReductionVI src1 src2));
   match(Set dst (AndReductionV  src1 src2));
@@ -4441,26 +4441,6 @@ instruct reductionI(rRegI dst, rRegI src1, vec src2, vec vtmp1, vec vtmp2) %{
     int vlen = vector_length(this, $src2);
     __ reduceI(opcode, vlen, $dst$$Register, $src1$$Register, $src2$$XMMRegister, $vtmp1$$XMMRegister, $vtmp2$$XMMRegister);
   %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct reduction16I(rRegI dst, rRegI src1, legVec src2, legVec vtmp1, legVec vtmp2) %{
-  predicate(vector_element_basic_type(n->in(2)) == T_INT &&
-            vector_length(n->in(2)) == 16); // src2
-  match(Set dst (AddReductionVI src1 src2));
-  match(Set dst (MulReductionVI src1 src2));
-  match(Set dst (AndReductionV  src1 src2));
-  match(Set dst ( OrReductionV  src1 src2));
-  match(Set dst (XorReductionV  src1 src2));
-  match(Set dst (MinReductionV  src1 src2));
-  match(Set dst (MaxReductionV  src1 src2));
-  effect(TEMP vtmp1, TEMP vtmp2);
-  format %{ "vector_reduction_int $dst,$src1,$src2 ; using $vtmp1, $vtmp2 as TEMP" %}
-  ins_encode %{
-    int opcode = this->ideal_Opcode();
-    int vlen = vector_length(this, $src2);
-    __ reduceI(opcode, vlen, $dst$$Register, $src1$$Register, $src2$$XMMRegister, $vtmp1$$XMMRegister, $vtmp2$$XMMRegister);
-%}
   ins_pipe( pipe_slow );
 %}
 
