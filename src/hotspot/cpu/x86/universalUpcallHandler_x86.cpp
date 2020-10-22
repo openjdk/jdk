@@ -237,6 +237,7 @@ static address generate_upcall_stub(jobject rec, const ABIDescriptor& abi, const
 }
 
 jlong ProgrammableUpcallHandler::generate_upcall_stub(jobject rec, jobject jabi, jobject jlayout) {
+  ResourceMark rm;
   const ABIDescriptor abi = ForeignGlobals::parseABIDescriptor(jabi);
   const BufferLayout layout = ForeignGlobals::parseBufferLayout(jlayout);
 
