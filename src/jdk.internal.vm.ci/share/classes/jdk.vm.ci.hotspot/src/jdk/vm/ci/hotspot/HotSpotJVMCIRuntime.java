@@ -46,6 +46,7 @@ import java.util.ServiceLoader;
 import java.util.function.Predicate;
 
 import jdk.vm.ci.code.Architecture;
+import jdk.vm.ci.code.CompilationRequest;
 import jdk.vm.ci.code.CompilationRequestResult;
 import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.InstalledCode;
@@ -698,6 +699,19 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         return null;
     }
 
+    static class ErrorCreatingCompiler implements JVMCICompiler {
+        private final RuntimeException t;
+
+        ErrorCreatingCompiler(RuntimeException t) {
+            this.t = t;
+        }
+
+        @Override
+        public CompilationRequestResult compileMethod(CompilationRequest request) {
+            throw t;
+        }
+    }
+
     @Override
     public JVMCICompiler getCompiler() {
         if (compiler == null) {
@@ -705,10 +719,18 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
                 if (compiler == null) {
                     assert !creatingCompiler : "recursive compiler creation";
                     creatingCompiler = true;
-                    compiler = compilerFactory.createCompiler(this);
-                    creatingCompiler = false;
+                    try {
+                        compiler = compilerFactory.createCompiler(this);
+                    } catch (RuntimeException t) {
+                        compiler = new ErrorCreatingCompiler(t);
+                    } finally {
+                        creatingCompiler = false;
+                    }
                 }
             }
+        }
+        if (compiler instanceof ErrorCreatingCompiler) {
+            throw ((ErrorCreatingCompiler) compiler).t;
         }
         return compiler;
     }
