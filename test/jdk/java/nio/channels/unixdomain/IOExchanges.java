@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
 public class IOExchanges {
-    static boolean supported = true;
+    static boolean unixDomainSupported = true;
 
 
     @BeforeTest()
@@ -54,7 +54,7 @@ public class IOExchanges {
         try {
             SocketChannel.open(UNIX);
         } catch (IOException | UnsupportedOperationException e) {
-            supported = false;
+            unixDomainSupported = false;
             out.println("Unix domain channels not supported");
         }
     }
@@ -120,7 +120,7 @@ public class IOExchanges {
 
     @DataProvider(name = "family")
     public Object[][] family() {
-        return supported ?
+        return unixDomainSupported ?
                 new Object[][] {
                     { UNIX },
                     { INET }}

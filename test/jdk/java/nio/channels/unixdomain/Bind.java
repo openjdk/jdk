@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 8245194
+ * @library /test/lib
  * @run main/othervm Bind
  */
 
@@ -33,6 +34,7 @@ import java.nio.channels.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import jtreg.SkippedException;
 
 /**
  * Check that all bind variations work
@@ -46,10 +48,7 @@ public class Bind {
     static SocketChannel client, accept1;
 
     public static void main(String args[]) throws Exception {
-        if (!supported()) {
-            System.out.println("Unix domain channels not supported");
-            return;
-        }
+        checkSupported();
         spath = Path.of("server.sock");
         cpath = Path.of("client.sock");
         sAddr = UnixDomainSocketAddress.of(spath);
@@ -59,15 +58,14 @@ public class Bind {
         runTests();
     }
 
-    static boolean supported() {
+    static void checkSupported() {
         try {
             SocketChannel.open(StandardProtocolFamily.UNIX).close();
         } catch (UnsupportedOperationException e) {
-            return false;
+            throw new SkippedException("Unix domain channels not supported");
         } catch (Exception e) {
-            return true; // continue test to see what problem is
+            // continue test to see what problem is
         }
-        return true;
     }
 
     static interface ThrowingRunnable {

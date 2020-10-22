@@ -24,31 +24,30 @@
 /**
  * @test
  * @bug 8245194
+ * @library /test/lib
  * @run main/othervm NonBlockingAccept
  */
 
 import java.net.StandardProtocolFamily;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import jtreg.SkippedException;
 
 public class NonBlockingAccept {
 
-    static boolean supported() {
+    static void checkSupported() {
         try {
             SocketChannel.open(StandardProtocolFamily.UNIX).close();
         } catch (UnsupportedOperationException e) {
-            return false;
+            throw new SkippedException("Unix domain sockets not supported");
         } catch (Exception e) {
-            return true;
+            // continue
         }
-        return true;
     }
 
     public static void main(String[] args) throws Exception {
 
-        if (!supported()) {
-            return;
-        }
+        checkSupported();
 
         try (ServerSocketChannel serverSocketChannel =
                                  ServerSocketChannel.open(StandardProtocolFamily.UNIX)) {
@@ -57,7 +56,9 @@ public class NonBlockingAccept {
             serverSocketChannel.bind(null);
             SocketChannel socketChannel = serverSocketChannel.accept();
             System.out.println("The socketChannel is : expected Null " + socketChannel);
-            // exception could be thrown otherwise
+            if (socketChannel != null)
+                throw new RuntimeException("expected null");
+            // or exception could be thrown otherwise
         }
     }
 }

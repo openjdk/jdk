@@ -28,7 +28,6 @@
  * @run testng/othervm LengthTest
  */
 
-import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -42,19 +41,7 @@ import java.nio.channels.SocketChannel;
 import java.nio.file.Path;
 
 public class LengthTest {
-    static boolean supported = true;
     final int namelen = 100;    // length close to max
-
-    @BeforeTest
-    public void setup() {
-        try {
-            SocketChannel.open(UNIX);
-        }
-        catch (IOException | UnsupportedOperationException e) {
-            supported = false;
-            out.println("Unix domain channels not supported. Test not run.");
-        }
-    }
 
     @DataProvider(name = "strings")
     public Object[][] strings() {
@@ -71,32 +58,28 @@ public class LengthTest {
 
     @Test(dataProvider = "strings")
     public void expectPass(String s) {
-        if (supported) {
-            var addr = UnixDomainSocketAddress.of(s);
-            assertTrue(addr.getPath().toString().equals(s), "getPathName.equals(s)");
-            var p = Path.of(s);
-            addr = UnixDomainSocketAddress.of(p);
-            assertTrue(addr.getPath().equals(p), "getPath.equals(p)");
-        }
+        var addr = UnixDomainSocketAddress.of(s);
+        assertTrue(addr.getPath().toString().equals(s), "getPathName.equals(s)");
+        var p = Path.of(s);
+        addr = UnixDomainSocketAddress.of(p);
+        assertTrue(addr.getPath().equals(p), "getPath.equals(p)");
     }
 
     @Test
     public void expectNPE() {
-        if (supported) {
-            try {
-                String s = null;
-                UnixDomainSocketAddress.of(s);
-                throw new RuntimeException("Expected NPE");
-            } catch (NullPointerException npe) {
-                out.println("\tCaught expected exception: " + npe);
-            }
-            try {
-                Path p = null;
-                UnixDomainSocketAddress.of(p);
-                throw new RuntimeException("Expected NPE");
-            } catch (NullPointerException npe) {
-                out.println("\tCaught expected exception: " + npe);
-            }
+        try {
+            String s = null;
+            UnixDomainSocketAddress.of(s);
+            throw new RuntimeException("Expected NPE");
+        } catch (NullPointerException npe) {
+            out.println("\tCaught expected exception: " + npe);
+        }
+        try {
+            Path p = null;
+            UnixDomainSocketAddress.of(p);
+            throw new RuntimeException("Expected NPE");
+        } catch (NullPointerException npe) {
+            out.println("\tCaught expected exception: " + npe);
         }
     }
 }

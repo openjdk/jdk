@@ -131,7 +131,7 @@ JNIEXPORT jlong JNICALL Java_jdk_net_LinuxSocketOptions_getSoPeerCred0
             cred.uid = cred.gid = -1;
         }
     }
-    return (((long)cred.uid) << 32) | (cred.gid & 0xffffffffL);
+    return (((jlong)cred.uid) << 32) | (cred.gid & 0xffffffffL);
 }
 
 /*
