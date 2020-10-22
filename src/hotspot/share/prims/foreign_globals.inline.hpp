@@ -24,7 +24,6 @@
 #ifndef SHARE_PRIMS_FOREIGN_GLOBALS_INLINE_HPP
 #define SHARE_PRIMS_FOREIGN_GLOBALS_INLINE_HPP
 
-#include "precompiled.hpp"
 #include "prims/foreign_globals.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "oops/objArrayOop.hpp"
