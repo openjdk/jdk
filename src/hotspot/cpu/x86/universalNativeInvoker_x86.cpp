@@ -188,6 +188,7 @@ public:
 };
 
 jlong ProgrammableInvoker::generate_adapter(jobject jabi, jobject jlayout) {
+  ResourceMark rm;
   const ABIDescriptor abi = ForeignGlobals::parseABIDescriptor(jabi);
   const BufferLayout layout = ForeignGlobals::parseBufferLayout(jlayout);
 
