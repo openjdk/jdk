@@ -46,7 +46,7 @@ public class TestSpecTag extends JavadocTester {
     }
 
     ToolBox tb = new ToolBox();
-    
+
     enum PlaceKind { FIRST_SENTENCE, OTHER_INLINE, BLOCK }
     enum LinkKind { ABSOLUTE, RELATIVE }
 
@@ -130,13 +130,13 @@ public class TestSpecTag extends JavadocTester {
     public void testEncodedURI(Path base) throws IOException {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, """
-                package p; 
-                /** 
-                 * @spec http://example.com/a+b         space: plus 
+                package p;
+                /**
+                 * @spec http://example.com/a+b         space: plus
                  * @spec http://example.com/a%20b       space: percent
                  * @spec http://example.com/a§b         other: section; U+00A7, UTF-8 c2 a7
                  * @spec http://example.com/a\u00b1b    unicode: plus or minus; U+00B1, UTF-8 c2 b1
-                 */ 
+                 */
                 public class C { }
                 """);
 
@@ -183,10 +183,10 @@ public class TestSpecTag extends JavadocTester {
     public void testDuplicateRefs(Path base) throws IOException {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, """
-                package p; 
-                /** 
-                 * @spec http://example.com/ example 
-                 */ 
+                package p;
+                /**
+                 * @spec http://example.com/ example
+                 */
                 public class C {
                     /**
                      * @spec http://example.com/ example
@@ -236,9 +236,9 @@ public class TestSpecTag extends JavadocTester {
     public void testMultiple(Path base) throws IOException {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, """
-                package p; 
+                package p;
                 /**
-                 * First sentence. 
+                 * First sentence.
                  * First reference: {@spec http://example.com/1 example-1}.
                  * Another reference: {@spec http://example.com/2 example-2}.
                  * @spec http://example.com/3 example-3
@@ -285,7 +285,7 @@ public class TestSpecTag extends JavadocTester {
                     """);
 
     }
-    
+
     @Test
     public void testCombo(Path base) throws IOException {
         for (PlaceKind pk : PlaceKind.values()) {
@@ -294,7 +294,7 @@ public class TestSpecTag extends JavadocTester {
             }
         }
     }
-    
+
     void test(Path base, PlaceKind pk, LinkKind lk) throws IOException {
         Path dir = Files.createDirectories(base.resolve(pk.toString()).resolve(lk.toString()));
         Path src = genSource(dir, pk, lk);
@@ -333,7 +333,7 @@ public class TestSpecTag extends JavadocTester {
                         <div class="block"><code><a href="p/C.html##LK#reference">class p.C</a></code></div>"""
                         .replaceAll("#LK#", lk.toString().toLowerCase()));
     }
-    
+
     Path genSource(Path base, PlaceKind pk, LinkKind lk) throws IOException {
         Path src = base.resolve("src");
         String template = switch (pk) {
@@ -349,7 +349,7 @@ public class TestSpecTag extends JavadocTester {
                 """;
             case BLOCK ->  """
                 /**
-                 * First sentence. 
+                 * First sentence.
                  * @spec #SPEC#
                  */
                 """;
