@@ -25,8 +25,6 @@
 
 package com.sun.source.tree;
 
-import javax.lang.model.element.Name;
-
 /**
  * A binding pattern tree
  *
@@ -39,25 +37,5 @@ public interface BindingPatternTree extends PatternTree {
      * @return the binding variable
      */
     VariableTree getVariable();
-
-    /**
-     * Returns the type of the bind variable.
-     * @return the type
-     * @deprecated Use getVariable().getType()
-     */
-    @Deprecated(since="16")
-    default Tree getType() {
-        return getVariable().getType();
-    }
-
-    /**
-     * A binding variable name.
-     * @return the name of the binding variable
-     * @deprecated Use getVariable().getName()
-     */
-    @Deprecated(since="16")
-    default Name getBinding() {
-        return getVariable().getName();
-    }
 
 }
