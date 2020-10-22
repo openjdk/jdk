@@ -307,7 +307,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   jvmtiError get_owned_monitors(JavaThread *calling_thread, JavaThread* java_thread,
                                 GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list);
   static jvmtiError check_top_frame(Thread* current_thread, JavaThread* java_thread,
-                             jvalue value, TosState tos, Handle* ret_ob_h);
+                                    jvalue value, TosState tos, Handle* ret_ob_h);
   jvmtiError force_early_return(JavaThread* java_thread, jvalue value, TosState tos);
 };
 
@@ -358,7 +358,7 @@ public:
      _value(value),
      _tos(tos) {}
   void do_thread(Thread *target) {
-    doit(target, false);
+    doit(target, false /* self */);
   }
   void doit(Thread *target, bool self);
 };
@@ -373,7 +373,7 @@ public:
     : JvmtiHandshakeClosure("UpdateForPopTopFrame"),
      _state(state) {}
   void do_thread(Thread *target) {
-    doit(target, false);
+    doit(target, false /* self */);
   }
   void doit(Thread *target, bool self);
 };
@@ -392,7 +392,7 @@ public:
       _state(state),
       _depth(depth) {}
   void do_thread(Thread *target) {
-    doit(target, false);
+    doit(target, false /* self */);
   }
   void doit(Thread *target, bool self);
 };

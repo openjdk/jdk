@@ -1669,7 +1669,7 @@ JvmtiEnv::PopFrame(JavaThread* java_thread) {
   MutexLocker mu(JvmtiThreadState_lock);
   UpdateForPopTopFrameClosure op(state);
   if (java_thread == current_thread) {
-    op.doit(java_thread, true);
+    op.doit(java_thread, true /* self */);
   } else {
     Handshake::execute(&op, java_thread);
   }
@@ -1715,7 +1715,7 @@ JvmtiEnv::NotifyFramePop(JavaThread* java_thread, jint depth) {
   SetFramePopClosure op(this, state, depth);
   MutexLocker mu(JvmtiThreadState_lock);
   if (java_thread == JavaThread::current()) {
-    op.doit(java_thread, true);
+    op.doit(java_thread, true /* self */);
   } else {
     Handshake::execute(&op, java_thread);
   }

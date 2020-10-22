@@ -47,12 +47,10 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jfieldIDWorkaround.hpp"
 #include "runtime/jniHandles.inline.hpp"
-#include "runtime/objectMonitor.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
-#include "runtime/vframe.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframe_hp.hpp"
 #include "runtime/vmThread.hpp"
@@ -1395,7 +1393,7 @@ JvmtiEnvBase::force_early_return(JavaThread* java_thread, jvalue value, TosState
 
   SetForceEarlyReturn op(state, value, tos);
   if (java_thread == current_thread) {
-    op.doit(java_thread, true);
+    op.doit(java_thread, true /* self */);
   } else {
     Handshake::execute(&op, java_thread);
   }
@@ -1540,12 +1538,11 @@ UpdateForPopTopFrameClosure::doit(Thread *target, bool self) {
   Thread* current_thread  = Thread::current();
   HandleMark hm(current_thread);
   JavaThread* java_thread = target->as_Java_thread();
+  assert(java_thread == _state->get_thread(), "Must be");
 
-  if (!self) {
-    if (!java_thread->is_external_suspend()) {
-      _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
-      return;
-    }
+  if (!self && !java_thread->is_external_suspend()) {
+    _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
+    return;
   }
 
   // Check to see if a PopFrame was already in progress
@@ -1567,7 +1564,7 @@ UpdateForPopTopFrameClosure::doit(Thread *target, bool self) {
   }
 
   ResourceMark rm(current_thread);
-  // Check if there are more than one Java frame in this thread, that the top two frames
+  // Check if there is more than one Java frame in this thread, that the top two frames
   // are Java (not native) frames, and that there is no intervening VM frame
   int frame_count = 0;
   bool is_interpreted[2];
@@ -1617,11 +1614,7 @@ UpdateForPopTopFrameClosure::doit(Thread *target, bool self) {
   // It's fine to update the thread state here because no JVMTI events
   // shall be posted for this PopFrame.
 
-  // It is only safe to perform the direct operation on the current
-  // thread. All other usage needs to use a handshake for safety.
-  JavaThread* jt = _state->get_thread();
-  assert(jt == target, "just checking");
-  if (!jt->is_exiting() && jt->threadObj() != NULL) {
+  if (!java_thread->is_exiting() && java_thread->threadObj() != NULL) {
     _state->update_for_pop_top_frame();
     java_thread->set_popframe_condition(JavaThread::popframe_pending_bit);
     // Set pending step flag for this popframe and it is cleared when next
@@ -1638,11 +1631,9 @@ SetFramePopClosure::doit(Thread *target, bool self) {
 
   assert(_state->get_thread() == java_thread, "Must be");
 
-  if (!self) {
-    if (!java_thread->is_external_suspend()) {
-      _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
-      return;
-    }
+  if (!self && !java_thread->is_external_suspend()) {
+    _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
+    return;
   }
 
   vframe *vf = JvmtiEnvBase::vframeForNoProcess(java_thread, _depth);
@@ -1658,7 +1649,7 @@ SetFramePopClosure::doit(Thread *target, bool self) {
 
   assert(vf->frame_pointer() != NULL, "frame pointer mustn't be NULL");
   if (java_thread->is_exiting() || java_thread->threadObj() == NULL) {
-    return;
+    return; /* JVMTI_ERROR_THREAD_NOT_ALIVE (default) */
   }
   int frame_number = _state->count_frames() - _depth;
   _state->env_thread_state((JvmtiEnvBase*)_env)->set_frame_pop(frame_number);

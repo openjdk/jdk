@@ -1752,7 +1752,7 @@ void Deoptimization::deoptimize_frame_internal(JavaThread* thread, intptr_t* id,
   assert(thread == Thread::current() ||
          thread->is_handshake_safe_for(Thread::current()) ||
          SafepointSynchronize::is_at_safepoint(),
-         "can only deoptimize other thread at a safepoint");
+         "can only deoptimize other thread at a safepoint/handshake");
   // Compute frame and register map based on thread and sp.
   RegisterMap reg_map(thread, false);
   frame fr = thread->last_frame();

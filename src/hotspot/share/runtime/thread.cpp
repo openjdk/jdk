@@ -597,9 +597,7 @@ bool JavaThread::is_ext_suspend_completed() {
       // thread state. check_safepoint_and_suspend_for_native_trans()
       // will force the thread to self-suspend. If it hasn't gotten
       // there yet we may have caught the thread in-between the native
-      // code check above and the self-suspend. Lucky us. If we were
-      // called by wait_for_ext_suspend_completion(), then it
-      // will be doing the retries so we don't have to.
+      // code check above and the self-suspend.
       //
       // Since we use the saved thread state in the if-statement above,
       // there is a chance that the thread has already transitioned to
@@ -2335,9 +2333,7 @@ int JavaThread::java_suspend_self() {
   if (this->is_suspend_equivalent()) {
     // If we are self-suspending as a result of the lifting of a
     // suspend equivalent condition, then the suspend_equivalent
-    // flag is not cleared until we set the ext_suspended flag so
-    // that wait_for_ext_suspend_completion() returns consistent
-    // results.
+    // flag is not cleared until we set the ext_suspended flag.
     this->clear_suspend_equivalent();
   }
 
