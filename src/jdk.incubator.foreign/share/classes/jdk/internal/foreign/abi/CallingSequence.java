@@ -48,14 +48,6 @@ public class CallingSequence {
         this.argumentBindings = argumentBindings;
     }
 
-    public Stream<Binding> argBindings() {
-        return argumentBindings.stream().flatMap(List::stream);
-    }
-
-    public Stream<Binding> retBindings() {
-        return returnBindings().stream();
-    }
-
     public int argumentCount() {
         return argumentBindings.size();
     }

@@ -125,7 +125,7 @@ public class TestIntrinsics {
             for (int i = 0; i < args.length; i++) {
                 LibraryLookup.Symbol ma = lookup.lookup("invoke_high_arity" + i).orElseThrow();
                 MethodType mt = baseMT.changeReturnType(baseMT.parameterType(i));
-                FunctionDescriptor fd = baseFD.changeReturnLayout(baseFD.argumentLayouts().get(i));
+                FunctionDescriptor fd = baseFD.withReturnLayout(baseFD.argumentLayouts().get(i));
                 Object expected = args[i];
                 tests.add(abi.downcallHandle(ma, mt, fd), expected, args);
                 tests.add(abi.downcallHandle(ma, mt, fd.withAttribute(TRIVIAL_ATTRIBUTE_NAME, true)), expected, args);

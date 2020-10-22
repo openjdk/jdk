@@ -24,19 +24,19 @@
 #ifndef SHARE_PRIMS_FOREIGN_GLOBALS_INLINE_HPP
 #define SHARE_PRIMS_FOREIGN_GLOBALS_INLINE_HPP
 
-#include "precompiled.hpp"
 #include "prims/foreign_globals.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "oops/objArrayOop.hpp"
 
 template<typename T>
 static bool check_type(oop theOop) {
-  static_assert(false, "No check_type specialization found for this type");
+  static_assert(sizeof(T) == 0, "No check_type specialization found for this type");
+  return false;
 }
 template<>
-static bool check_type<objArrayOop>(oop theOop) { return theOop->is_objArray(); }
+inline bool check_type<objArrayOop>(oop theOop) { return theOop->is_objArray(); }
 template<>
-static bool check_type<typeArrayOop>(oop theOop) { return theOop->is_typeArray(); }
+inline bool check_type<typeArrayOop>(oop theOop) { return theOop->is_typeArray(); }
 
 template<typename R>
 R ForeignGlobals::cast(oop theOop) {

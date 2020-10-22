@@ -437,6 +437,11 @@ public class CheckGraalIntrinsics extends GraalTest {
                             "java/lang/Math.signum(D)D",
                             "java/lang/Math.signum(F)F",
                             "sun/security/provider/MD5.implCompress0([BI)V");
+
+            // Panama
+            add(toBeInvestigated,
+                    // Native method handle intrinsics
+                    "java/lang/invoke/MethodHandle.linkToNative*");
         }
 
         if (!config.inlineNotify()) {
@@ -607,6 +612,10 @@ public class CheckGraalIntrinsics extends GraalTest {
         }
         if (!config.useSHA512Intrinsics()) {
             add(ignore, "sun/security/provider/SHA5." + shaCompressName + "([BI)V");
+        }
+
+        if (isJDK16OrHigher()) {
+            add(toBeInvestigated, "sun/security/provider/SHA3." + shaCompressName + "([BI)V");
         }
     }
 

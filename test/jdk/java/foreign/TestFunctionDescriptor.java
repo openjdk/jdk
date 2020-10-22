@@ -88,7 +88,7 @@ public class TestFunctionDescriptor {
     public void testAppendArgumentLayouts() {
         FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_DOUBLE, C_LONGLONG)
                                                   .withAttribute(DUMMY_ATTR, true);
-        fd = fd.appendArgumentLayouts(C_POINTER);
+        fd = fd.withAppendedArgumentLayouts(C_POINTER);
 
         assertEquals(fd.argumentLayouts(), List.of(C_DOUBLE, C_LONGLONG, C_POINTER));
         Optional<MemoryLayout> returnLayoutOp = fd.returnLayout();
@@ -101,7 +101,7 @@ public class TestFunctionDescriptor {
     public void testChangeReturnLayout() {
         FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_DOUBLE, C_LONGLONG)
                                                   .withAttribute(DUMMY_ATTR, true);
-        fd = fd.changeReturnLayout(C_INT);
+        fd = fd.withReturnLayout(C_INT);
 
         assertEquals(fd.argumentLayouts(), List.of(C_DOUBLE, C_LONGLONG));
         Optional<MemoryLayout> returnLayoutOp = fd.returnLayout();
@@ -114,7 +114,7 @@ public class TestFunctionDescriptor {
     public void testDropReturnLayout() {
         FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_DOUBLE, C_LONGLONG)
                                                   .withAttribute(DUMMY_ATTR, true);
-        fd = fd.dropReturnLayout();
+        fd = fd.withVoidReturnLayout();
 
         assertEquals(fd.argumentLayouts(), List.of(C_DOUBLE, C_LONGLONG));
         Optional<MemoryLayout> returnLayoutOp = fd.returnLayout();
@@ -135,13 +135,13 @@ public class TestFunctionDescriptor {
     @Test(expectedExceptions = NullPointerException.class)
     public void testNullArgumentLayoutsAppend() {
         FunctionDescriptor fd = FunctionDescriptor.ofVoid(C_INT, C_LONGLONG);
-        fd.appendArgumentLayouts(C_DOUBLE, null); // should throw
+        fd.withAppendedArgumentLayouts(C_DOUBLE, null); // should throw
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void testNullReturnLayoutChange() {
         FunctionDescriptor fd = FunctionDescriptor.ofVoid(C_INT, C_LONGLONG);
-        fd.changeReturnLayout(null); // should throw
+        fd.withReturnLayout(null); // should throw
     }
 
 }

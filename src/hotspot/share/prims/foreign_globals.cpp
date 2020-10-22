@@ -24,8 +24,10 @@
 #include "precompiled.hpp"
 #include "foreign_globals.hpp"
 #include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/fieldDescriptor.hpp"
+#include "runtime/fieldDescriptor.inline.hpp"
 
 #define FOREIGN_ABI "jdk/internal/foreign/abi/"
 

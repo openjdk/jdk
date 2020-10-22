@@ -697,56 +697,6 @@ int ZeroInterpreter::empty_entry(Method* method, intptr_t UNUSED, TRAPS) {
   return 0;
 }
 
-// The new slots will be inserted before slot insert_before.
-// Slots < insert_before will have the same slot number after the insert.
-// Slots >= insert_before will become old_slot + num_slots.
-void ZeroInterpreter::insert_vmslots(int insert_before, int num_slots, TRAPS) {
-  JavaThread *thread = THREAD->as_Java_thread();
-  ZeroStack *stack = thread->zero_stack();
-
-  // Allocate the space
-  stack->overflow_check(num_slots, CHECK);
-  stack->alloc(num_slots * wordSize);
-  intptr_t *vmslots = stack->sp();
-
-  // Shuffle everything up
-  for (int i = 0; i < insert_before; i++)
-    SET_VMSLOTS_SLOT(VMSLOTS_SLOT(i + num_slots), i);
-}
-
-void ZeroInterpreter::remove_vmslots(int first_slot, int num_slots, TRAPS) {
-  JavaThread *thread = THREAD->as_Java_thread();
-  ZeroStack *stack = thread->zero_stack();
-  intptr_t *vmslots = stack->sp();
-
-  // Move everything down
-  for (int i = first_slot - 1; i >= 0; i--)
-    SET_VMSLOTS_SLOT(VMSLOTS_SLOT(i), i + num_slots);
-
-  // Deallocate the space
-  stack->set_sp(stack->sp() + num_slots);
-}
-
-BasicType ZeroInterpreter::result_type_of_handle(oop method_handle) {
-  oop method_type = java_lang_invoke_MethodHandle::type(method_handle);
-  oop return_type = java_lang_invoke_MethodType::rtype(method_type);
-  return java_lang_Class::as_BasicType(return_type, (Klass* *) NULL);
-}
-
-intptr_t* ZeroInterpreter::calculate_unwind_sp(ZeroStack* stack,
-                                              oop method_handle) {
-  oop method_type = java_lang_invoke_MethodHandle::type(method_handle);
-  int argument_slots = java_lang_invoke_MethodType::ptype_slot_count(method_type);
-
-  return stack->sp() + argument_slots;
-}
-
-JRT_ENTRY(void, ZeroInterpreter::throw_exception(JavaThread* thread,
-                                                Symbol*     name,
-                                                char*       message))
-  THROW_MSG(name, message);
-JRT_END
-
 InterpreterFrame *InterpreterFrame::build(Method* const method, TRAPS) {
   JavaThread *thread = THREAD->as_Java_thread();
   ZeroStack *stack = thread->zero_stack();

@@ -196,13 +196,13 @@ public class ProgrammableInvoker {
     }
 
     private Stream<Binding.VMStore> argMoveBindingsStream(CallingSequence callingSequence) {
-        return callingSequence.argBindings()
+        return callingSequence.argumentBindings()
                 .filter(Binding.VMStore.class::isInstance)
                 .map(Binding.VMStore.class::cast);
     }
 
     private Binding.VMLoad[] retMoveBindings(CallingSequence callingSequence) {
-        return callingSequence.retBindings()
+        return callingSequence.returnBindings().stream()
                 .filter(Binding.VMLoad.class::isInstance)
                 .map(Binding.VMLoad.class::cast)
                 .toArray(Binding.VMLoad[]::new);

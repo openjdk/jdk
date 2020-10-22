@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 #include "prims/foreign_globals.hpp"
 #include "prims/foreign_globals.inline.hpp"
 

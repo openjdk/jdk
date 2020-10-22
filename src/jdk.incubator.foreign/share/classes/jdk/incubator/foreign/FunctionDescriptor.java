@@ -57,7 +57,7 @@ public final class FunctionDescriptor implements Constable {
 
     private FunctionDescriptor(MemoryLayout resLayout, Map<String, Constable> attributes, MemoryLayout... argLayouts) {
         this.resLayout = resLayout;
-        this.attributes = Collections.unmodifiableMap(attributes);
+        this.attributes = attributes;
         this.argLayouts = argLayouts;
     }
 
@@ -97,7 +97,7 @@ public final class FunctionDescriptor implements Constable {
 
     /**
      * Returns the return layout associated with this function.
-     * @return the return
+     * @return the return layout.
      */
     public Optional<MemoryLayout> returnLayout() {
         return Optional.ofNullable(resLayout);
@@ -113,7 +113,7 @@ public final class FunctionDescriptor implements Constable {
 
     /**
      * Create a function descriptor with given return and argument layouts.
-     * @param resLayout the return
+     * @param resLayout the return layout.
      * @param argLayouts the argument layouts.
      * @return the new function descriptor.
      * @throws NullPointerException if any of the argument layouts, or the return layout is null.
@@ -142,7 +142,7 @@ public final class FunctionDescriptor implements Constable {
      * @return the new function descriptor.
      * @throws NullPointerException if any of the new argument layouts is null.
      */
-    public FunctionDescriptor appendArgumentLayouts(MemoryLayout... addedLayouts) {
+    public FunctionDescriptor withAppendedArgumentLayouts(MemoryLayout... addedLayouts) {
         Arrays.stream(addedLayouts).forEach(Objects::requireNonNull);
         MemoryLayout[] newLayouts = Arrays.copyOf(argLayouts, argLayouts.length + addedLayouts.length);
         System.arraycopy(addedLayouts, 0, newLayouts, argLayouts.length, addedLayouts.length);
@@ -155,7 +155,7 @@ public final class FunctionDescriptor implements Constable {
      * @return the new function descriptor.
      * @throws NullPointerException if the new return layout is null.
      */
-    public FunctionDescriptor changeReturnLayout(MemoryLayout newReturn) {
+    public FunctionDescriptor withReturnLayout(MemoryLayout newReturn) {
         Objects.requireNonNull(newReturn);
         return new FunctionDescriptor(newReturn, attributes, argLayouts);
     }
@@ -164,7 +164,7 @@ public final class FunctionDescriptor implements Constable {
      * Create a new function descriptor with the return layout dropped.
      * @return the new function descriptor.
      */
-    public FunctionDescriptor dropReturnLayout() {
+    public FunctionDescriptor withVoidReturnLayout() {
         return new FunctionDescriptor(null, attributes, argLayouts);
     }
 
