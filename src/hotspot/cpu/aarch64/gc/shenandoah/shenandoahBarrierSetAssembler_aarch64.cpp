@@ -262,7 +262,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier_not_null(MacroAssembl
   __ leave();
 }
 
-void ShenandoahBarrierSetAssembler::load_reference_barrier_native(MacroAssembler* masm, Register dst, Address load_addr, bool native) {
+void ShenandoahBarrierSetAssembler::load_reference_barrier_native(MacroAssembler* masm, Register dst, Address load_addr, bool maybe_narrow_oop) {
   if (!ShenandoahLoadRefBarrier) {
     return;
   }
@@ -286,7 +286,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier_native(MacroAssembler
 
   __ mov(rscratch2, dst);
   __ push_call_clobbered_registers();
-  if (UseCompressedOops && !native) {
+  if (UseCompressedOops && maybe_narrow_oop) {
     __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native_narrow));
   } else {
     __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native));
@@ -357,7 +357,7 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
     BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
 
     if (ShenandoahBarrierSet::use_load_reference_barrier_native(decorators, type)) {
-      load_reference_barrier_native(masm, dst, src, (decorators & IN_NATIVE) != 0);
+      load_reference_barrier_native(masm, dst, src, (decorators & IN_NATIVE) == 0);
     } else {
       load_reference_barrier(masm, dst, src);
     }
