@@ -45,9 +45,9 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build nsk.jdb.options.connect.connect004.connect004
- *        nsk.jdb.options.connect.connect004.connect004a
- * @run main/othervm PropertyResolvingWrapper nsk.jdb.options.connect.connect004.connect004
+ * @build nsk.jdb.options.connect.connect004.connect004a
+ * @run main/othervm
+ *      nsk.jdb.options.connect.connect004.connect004
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

@@ -101,6 +101,8 @@ protected:
                      uint32_t size);
 
 public:
+  static void sort();
+
   static uint32_t count() {
     return _count;
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -300,6 +300,9 @@ public abstract class SelectorProvider {
      * <p> The first invocation of this method creates the channel that is
      * returned. Subsequent invocations of this method return the same
      * channel. </p>
+     *
+     * @implSpec The default implementation of this method returns
+     * {@code null}.
      *
      * @return  The inherited channel, if any, otherwise {@code null}.
      *

@@ -50,10 +50,9 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build ExecDriver
- *        nsk.jvmti.scenarios.general_functions.GF06.gf06t001
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
- *      "-agentlib:gf06t001=-waittime=5 -verbose"
+ * @build nsk.jvmti.scenarios.general_functions.GF06.gf06t001
+ * @run main/othervm/native
+ *      -agentlib:gf06t001=-waittime=5,-verbose
  *      nsk.jvmti.scenarios.general_functions.GF06.gf06t001
  */
 

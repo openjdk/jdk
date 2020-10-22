@@ -63,14 +63,14 @@
  *          /test/lib
  * @build nsk.jdi.ThreadReference.status.status003.status003
  *        nsk.jdi.ThreadReference.status.status003.status003a
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ThreadReference.status.status003.status003
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
 
 package nsk.jdi.ThreadReference.status.status003;

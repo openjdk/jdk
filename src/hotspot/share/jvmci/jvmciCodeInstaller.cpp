@@ -30,6 +30,7 @@
 #include "jvmci/jvmciRuntime.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.inline.hpp"
+#include "prims/methodHandles.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -897,8 +898,14 @@ JVMCI::CodeInstallResult CodeInstaller::initialize_buffer(CodeBuffer& buffer, bo
           JVMCI_ERROR_OK("method contains safepoint, but has no deopt rescue slot");
         }
         if (JVMCIENV->equals(reason, jvmci_env()->get_site_InfopointReason_IMPLICIT_EXCEPTION())) {
-          JVMCI_event_4("implicit exception at %i", pc_offset);
-          _implicit_exception_table.add_deoptimize(pc_offset);
+          if (jvmci_env()->isa_site_ImplicitExceptionDispatch(site)) {
+            jint dispatch_offset = jvmci_env()->get_site_ImplicitExceptionDispatch_dispatchOffset(site);
+            JVMCI_event_4("implicit exception at %i, dispatch to %i", pc_offset, dispatch_offset);
+            _implicit_exception_table.append(pc_offset, dispatch_offset);
+          } else {
+            JVMCI_event_4("implicit exception at %i", pc_offset);
+            _implicit_exception_table.add_deoptimize(pc_offset);
+          }
         }
       } else {
         JVMCI_event_4("infopoint at %i", pc_offset);
@@ -1181,7 +1188,11 @@ void CodeInstaller::record_scope(jint pc_offset, JVMCIObject position, ScopeMode
     throw_exception = jvmci_env()->get_BytecodeFrame_rethrowException(frame) == JNI_TRUE;
   }
 
+  // has_ea_local_in_scope and arg_escape should be added to JVMCI
+  const bool has_ea_local_in_scope = false;
+  const bool arg_escape            = false;
   _debug_recorder->describe_scope(pc_offset, method, NULL, bci, reexecute, throw_exception, is_mh_invoke, return_oop,
+                                  has_ea_local_in_scope, arg_escape,
                                   locals_token, expressions_token, monitors_token);
 }
 

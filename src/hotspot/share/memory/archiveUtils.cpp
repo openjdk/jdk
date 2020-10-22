@@ -23,12 +23,17 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classListParser.hpp"
+#include "classfile/classListWriter.hpp"
+#include "classfile/systemDictionaryShared.hpp"
+#include "interpreter/bootstrapInfo.hpp"
 #include "memory/archiveUtils.hpp"
 #include "memory/dynamicArchive.hpp"
 #include "memory/filemap.hpp"
 #include "memory/heapShared.inline.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceShared.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
 
@@ -165,9 +170,9 @@ char* DumpRegion::expand_top_to(char* newtop) {
   return _top;
 }
 
-char* DumpRegion::allocate(size_t num_bytes, size_t alignment) {
-  char* p = (char*)align_up(_top, alignment);
-  char* newtop = p + align_up(num_bytes, alignment);
+char* DumpRegion::allocate(size_t num_bytes) {
+  char* p = (char*)align_up(_top, (size_t)SharedSpaceObjectAlignment);
+  char* newtop = p + align_up(num_bytes, (size_t)SharedSpaceObjectAlignment);
   expand_top_to(newtop);
   memset(p, 0, newtop - p);
   return p;
@@ -271,8 +276,8 @@ void ReadClosure::do_tag(int tag) {
 }
 
 void ReadClosure::do_oop(oop *p) {
-  narrowOop o = (narrowOop)nextPtr();
-  if (o == 0 || !HeapShared::open_archive_heap_region_mapped()) {
+  narrowOop o = CompressedOops::narrow_oop_cast(nextPtr());
+  if (CompressedOops::is_null(o) || !HeapShared::open_archive_heap_region_mapped()) {
     *p = NULL;
   } else {
     assert(HeapShared::is_heap_object_archiving_allowed(),
@@ -291,5 +296,26 @@ void ReadClosure::do_region(u_char* start, size_t size) {
     *(intptr_t*)start = nextPtr();
     start += sizeof(intptr_t);
     size -= sizeof(intptr_t);
+  }
+}
+
+fileStream* ClassListWriter::_classlist_file = NULL;
+
+void ArchiveUtils::log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) {
+  if (ClassListWriter::is_enabled()) {
+    if (SystemDictionaryShared::is_supported_invokedynamic(bootstrap_specifier)) {
+      ResourceMark rm(THREAD);
+      const constantPoolHandle& pool = bootstrap_specifier->pool();
+      int pool_index = bootstrap_specifier->bss_index();
+      ClassListWriter w;
+      w.stream()->print("%s %s", LAMBDA_PROXY_TAG, pool->pool_holder()->name()->as_C_string());
+      CDSIndyInfo cii;
+      ClassListParser::populate_cds_indy_info(pool, pool_index, &cii, THREAD);
+      GrowableArray<const char*>* indy_items = cii.items();
+      for (int i = 0; i < indy_items->length(); i++) {
+        w.stream()->print(" %s", indy_items->at(i));
+      }
+      w.stream()->cr();
+    }
   }
 }

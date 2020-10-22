@@ -856,7 +856,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(Register frame_
 
   // Compute the beginning of the protected zone minus the requested frame size.
   __ z_sgr(tmp1, tmp2);
-  __ add2reg(tmp1, JavaThread::stack_guard_zone_size());
+  __ add2reg(tmp1, StackOverflow::stack_guard_zone_size());
 
   // Add in the size of the frame (which is the same as subtracting it from the
   // SP, which would take another register.
@@ -2067,7 +2067,7 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // needs to be checked. Only true for non-native. For native, we only bang the last page.
   if (UseStackBanging) {
     const int page_size      = os::vm_page_size();
-    const int n_shadow_pages = (int)(JavaThread::stack_shadow_zone_size()/page_size);
+    const int n_shadow_pages = (int)(StackOverflow::stack_shadow_zone_size()/page_size);
     const int start_page_num = native_call ? n_shadow_pages : 1;
     for (int pages = start_page_num; pages <= n_shadow_pages; pages++) {
       __ bang_stack_with_offset(pages*page_size);

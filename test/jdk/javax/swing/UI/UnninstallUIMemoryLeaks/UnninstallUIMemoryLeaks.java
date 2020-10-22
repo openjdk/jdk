@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,47 +21,109 @@
  * questions.
  */
 
+import java.awt.Component;
+import java.awt.Container;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
-import javax.swing.*;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
+import javax.swing.JDesktopPane;
+import javax.swing.JEditorPane;
+import javax.swing.JFormattedTextField;
+import javax.swing.JFrame;
+import javax.swing.JInternalFrame;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JProgressBar;
+import javax.swing.JRadioButton;
+import javax.swing.JRadioButtonMenuItem;
+import javax.swing.JScrollBar;
+import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
+import javax.swing.JSlider;
+import javax.swing.JSpinner;
+import javax.swing.JSplitPane;
+import javax.swing.JTabbedPane;
+import javax.swing.JTable;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.JTextPane;
+import javax.swing.JToggleButton;
+import javax.swing.JToolBar;
+import javax.swing.JToolTip;
+import javax.swing.JTree;
+import javax.swing.JViewport;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager.LookAndFeelInfo;
+
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 import static javax.swing.UIManager.getInstalledLookAndFeels;
 
 /**
  * @test
  * @key headful
- * @bug 8134947
- * @author Sergey Bylokhov
- * @run main/timeout=300/othervm -Xmx12m -XX:+HeapDumpOnOutOfMemoryError UnninstallUIMemoryLeaks
+ * @bug 8134947 8253977 8240709
+ * @library /test/lib
+ * @run main/timeout=450/othervm UnninstallUIMemoryLeaks
  */
 public final class UnninstallUIMemoryLeaks {
 
     private static JFrame frame;
 
-    public static void main(final String[] args) throws Exception {
-        try {
-            createGUI();
-            for (final LookAndFeelInfo laf : getInstalledLookAndFeels()) {
-                final String name = laf.getName();
-                if (name.contains("OS X") || name.contains("Metal")) {
-                    SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
-                    SwingUtilities.invokeAndWait(() -> {
-                        for (int i = 0; i < 4000; ++i) {
-                            SwingUtilities.updateComponentTreeUI(frame);
-                        }
-                    });
+    public static void main(String[] args) throws Exception {
+        if (args.length == 0) {
+            long end = System.nanoTime() + TimeUnit.SECONDS.toNanos(400);
+            // run one task per look and feel
+            List<Process> tasks = new ArrayList<>();
+            for (LookAndFeelInfo laf : getInstalledLookAndFeels()) {
+                String name = laf.getName();
+                tasks.add(runProcess(laf));
+            }
+            for (Process p : tasks) {
+                if (!p.waitFor(end - System.nanoTime(), TimeUnit.NANOSECONDS)) {
+                    p.destroyForcibly();
                 }
             }
+            for (Process task : tasks) {
+                new OutputAnalyzer(task).shouldHaveExitValue(0)
+                                        .stderrShouldBeEmpty();
+            }
+            return;
+        }
+
+        try {
+            createGUI();
+            long end = System.nanoTime() + TimeUnit.SECONDS.toNanos(350);
+            SwingUtilities.invokeAndWait(() -> {
+                while (end > System.nanoTime()) {
+                    SwingUtilities.updateComponentTreeUI(frame);
+                }
+                checkListenersCount(frame);
+            });
         } finally {
-            if (frame != null) { EventQueue.invokeAndWait(() -> frame.dispose()); }
+            if (frame != null) {EventQueue.invokeAndWait(frame::dispose);}
         }
     }
 
     private static void createGUI() throws Exception {
         EventQueue.invokeAndWait(() -> {
             frame = new JFrame();
+            //TODO we sometimes generate unnecessary repaint events
+            frame.setIgnoreRepaint(true);
             frame.setLayout(new FlowLayout());
 
             frame.add(new JButton("JButton"));
@@ -121,13 +183,51 @@ public final class UnninstallUIMemoryLeaks {
         });
     }
 
-    private static void setLookAndFeel(final LookAndFeelInfo laf) {
-        try {
-            UIManager.setLookAndFeel(laf.getClassName());
-            System.out.println("LookAndFeel: " + laf.getClassName());
-        } catch (ClassNotFoundException | InstantiationException |
-                UnsupportedLookAndFeelException | IllegalAccessException e) {
-            throw new RuntimeException(e);
+    private static void checkListenersCount(Component comp) {
+        test(comp.getComponentListeners());
+        test(comp.getFocusListeners());
+        test(comp.getHierarchyListeners());
+        test(comp.getHierarchyBoundsListeners());
+        test(comp.getKeyListeners());
+        test(comp.getMouseListeners());
+        test(comp.getMouseMotionListeners());
+        test(comp.getMouseWheelListeners());
+        test(comp.getInputMethodListeners());
+        test(comp.getPropertyChangeListeners());
+        if (comp instanceof JComponent) {
+            test(((JComponent) comp).getAncestorListeners());
+            test(((JComponent) comp).getVetoableChangeListeners());
         }
+        if (comp instanceof JMenuItem) {
+            test(((JMenuItem) comp).getMenuKeyListeners());
+            test(((JMenuItem) comp).getMenuDragMouseListeners());
+        }
+        if (comp instanceof JMenu) {
+            test(((JMenu) comp).getMenuListeners());
+        }
+        if(comp instanceof Container) {
+            for(Component child: ((Container)comp).getComponents()){
+                checkListenersCount(child);
+            }
+        }
+    }
+
+    /**
+     * Checks the count of specific listeners, assumes that the proper
+     * implementation does not use more than 20 listeners.
+     */
+    private static void test(Object[] listeners) {
+        int length = listeners.length;
+        if (length > 20) {
+            throw new RuntimeException("The count of listeners is: " + length);
+        }
+    }
+
+    private static Process runProcess(LookAndFeelInfo laf) throws Exception {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                "-Dswing.defaultlaf=" + laf.getClassName(), "-mx9m",
+                "-XX:+HeapDumpOnOutOfMemoryError",
+                UnninstallUIMemoryLeaks.class.getSimpleName(), "mark");
+        return ProcessTools.startProcess(laf.getName(), pb);
     }
 }

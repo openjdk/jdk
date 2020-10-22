@@ -229,7 +229,7 @@ public class JlinkTask {
             List<String> remaining = optionsHelper.handleOptions(this, args);
             if (remaining.size() > 0 && !options.suggestProviders) {
                 throw taskHelper.newBadArgs("err.orphan.arguments",
-                                            remaining.stream().collect(Collectors.joining(" ")))
+                                                 remaining.stream().collect(Collectors.joining(" ")))
                                 .showUsage(true);
             }
             if (options.help) {
@@ -259,8 +259,8 @@ public class JlinkTask {
                 }
 
                 if (options.modulePath.isEmpty()) {
-                     throw taskHelper.newBadArgs("err.modulepath.must.be.specified")
-                                 .showUsage(true);
+                    throw taskHelper.newBadArgs("err.modulepath.must.be.specified")
+                            .showUsage(true);
                 }
             }
 
@@ -275,8 +275,12 @@ public class JlinkTask {
             }
 
             return EXIT_OK;
+        } catch (FindException e) {
+            log.println(taskHelper.getMessage("error.prefix") + " " + e.getMessage());
+            e.printStackTrace(log);
+            return EXIT_ERROR;
         } catch (PluginException | IllegalArgumentException |
-                 UncheckedIOException |IOException | FindException | ResolutionException e) {
+                 UncheckedIOException |IOException | ResolutionException e) {
             log.println(taskHelper.getMessage("error.prefix") + " " + e.getMessage());
             if (DEBUG) {
                 e.printStackTrace(log);

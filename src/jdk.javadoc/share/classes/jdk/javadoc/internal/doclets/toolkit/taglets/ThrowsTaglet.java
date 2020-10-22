@@ -153,7 +153,7 @@ public class ThrowsTaglet extends BaseTaglet
     }
 
     @Override
-    public Content getTagletOutput(Element holder, TagletWriter writer) {
+    public Content getAllBlockTagOutput(Element holder, TagletWriter writer) {
         Utils utils = writer.configuration().utils;
         ExecutableElement execHolder = (ExecutableElement) holder;
         ExecutableType instantiatedType = utils.asInstantiatedMethodType(

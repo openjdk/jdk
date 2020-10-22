@@ -93,8 +93,8 @@ public:
   template <class T>
   inline oop load_reference_barrier_mutator(oop obj, T* load_addr);
 
-  oop load_reference_barrier_native(oop obj, oop* load_addr);
-  oop load_reference_barrier_native(oop obj, narrowOop* load_addr);
+  template <class T>
+  inline oop load_reference_barrier_native(oop obj, T* load_addr);
 
 private:
   template <class T>
@@ -112,9 +112,6 @@ private:
   inline void arraycopy_work(T* src, size_t count);
 
   oop load_reference_barrier_impl(oop obj);
-
-  template <class T>
-  oop load_reference_barrier_native_impl(oop obj, T* load_addr);
 
   inline bool need_bulk_update(HeapWord* dst);
 public:

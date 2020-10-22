@@ -423,7 +423,7 @@ private:
     u4* _offsets_table;  // Location offset table
     u1* _location_bytes; // Location attributes
     u1* _string_bytes;   // String table
-    ImageModuleData *module_data;       // The ImageModuleData for this image
+    ImageModuleData *_module_data;       // The ImageModuleData for this image
 
     ImageFileReader(const char* name, bool big_endian);
     ~ImageFileReader();

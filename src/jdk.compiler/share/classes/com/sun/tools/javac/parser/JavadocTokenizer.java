@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,15 +29,15 @@ import com.sun.tools.javac.parser.Tokens.Comment;
 import com.sun.tools.javac.parser.Tokens.Comment.CommentStyle;
 import com.sun.tools.javac.util.*;
 
-import java.nio.*;
+import java.nio.CharBuffer;
+import java.util.Arrays;
 import java.util.regex.Pattern;
 
-import static com.sun.tools.javac.util.LayoutCharacters.*;
-
-/** An extension to the base lexical analyzer that captures
- *  and processes the contents of doc comments.  It does so by
- *  translating Unicode escape sequences and by stripping the
- *  leading whitespace and starts from each line of the comment.
+/**
+ * An extension to the base lexical analyzer (JavaTokenizer) that
+ * captures and processes the contents of doc comments. It does
+ * so by stripping the leading whitespace and comment starts from
+ * each line of the Javadoc comment.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
@@ -45,189 +45,107 @@ import static com.sun.tools.javac.util.LayoutCharacters.*;
  *  deletion without notice.</b>
  */
 public class JavadocTokenizer extends JavaTokenizer {
-
-    /** Create a scanner from the input buffer.  buffer must implement
-     *  array() and compact(), and remaining() must be less than limit().
+    /**
+     * The factory that created this Scanner.
      */
-    protected JavadocTokenizer(ScannerFactory fac, CharBuffer buffer) {
-        super(fac, buffer);
+    final ScannerFactory fac;
+
+    /**
+     * Create a tokenizer from the input character buffer. The input buffer
+     * content would typically be a Javadoc comment extracted by
+     * JavaTokenizer.
+     *
+     * @param fac  the factory which created this Scanner.
+     * @param cb   the input character buffer.
+     */
+    protected JavadocTokenizer(ScannerFactory fac, CharBuffer cb) {
+        super(fac, cb);
+        this.fac = fac;
     }
 
-    /** Create a scanner from the input array.  The array must have at
-     *  least a single character of extra space.
+    /**
+     * Create a tokenizer from the input array. The input buffer
+     * content would typically be a Javadoc comment extracted by
+     * JavaTokenizer.
+     *
+     * @param fac     factory which created this Scanner
+     * @param array   input character array.
+     * @param length  length of the meaningful content in the array.
      */
-    protected JavadocTokenizer(ScannerFactory fac, char[] input, int inputLength) {
-        super(fac, input, inputLength);
+    protected JavadocTokenizer(ScannerFactory fac, char[] array, int length) {
+        super(fac, array, length);
+        this.fac = fac;
     }
 
     @Override
     protected Comment processComment(int pos, int endPos, CommentStyle style) {
-        char[] buf = reader.getRawCharacters(pos, endPos);
-        return new JavadocComment(new DocReader(fac, buf, buf.length, pos), style);
+        char[] buf = getRawCharacters(pos, endPos);
+        return new JavadocComment(style, fac, buf, pos);
     }
 
     /**
-     * This is a specialized version of UnicodeReader that keeps track of the
-     * column position within a given character stream (used for Javadoc processing),
-     * and which builds a table for mapping positions in the comment string to
-     * positions in the source file.
+     * An extension of BasicComment used to extract the relevant portion
+     * of a Javadoc comment.
      */
-    static class DocReader extends UnicodeReader {
-
-         int col;
-         int startPos;
-
-         /**
-          * A buffer for building a table for mapping positions in {@link #sbuf}
-          * to positions in the source buffer.
-          *
-          * The array is organized as a series of pairs of integers: the first
-          * number in each pair specifies a position in the comment text,
-          * the second number in each pair specifies the corresponding position
-          * in the source buffer. The pairs are sorted in ascending order.
-          *
-          * Since the mapping function is generally continuous, with successive
-          * positions in the string corresponding to successive positions in the
-          * source buffer, the table only needs to record discontinuities in
-          * the mapping. The values of intermediate positions can be inferred.
-          *
-          * Discontinuities may occur in a number of places: when a newline
-          * is followed by whitespace and asterisks (which are ignored),
-          * when a tab is expanded into spaces, and when unicode escapes
-          * are used in the source buffer.
-          *
-          * Thus, to find the source position of any position, p, in the comment
-          * string, find the index, i, of the pair whose string offset
-          * ({@code pbuf[i] }) is closest to but not greater than p. Then,
-          * {@code sourcePos(p) = pbuf[i+1] + (p - pbuf[i]) }.
-          */
-         int[] pbuf = new int[128];
-
-         /**
-          * The index of the next empty slot in the pbuf buffer.
-          */
-         int pp = 0;
-
-         /** The buffer index of the last double backslash sequence
-          */
-         private int doubleBackslashBp = -1;
-
-         DocReader(ScannerFactory fac, char[] input, int inputLength, int startPos) {
-             super(fac, input, inputLength);
-             this.startPos = startPos;
-         }
-
-         @Override
-         protected void convertUnicode() {
-             if (ch == '\\' && unicodeConversionBp != bp) {
-                 bp++; ch = buf[bp]; col++;
-                 if (ch == 'u') {
-                     do {
-                         bp++; ch = buf[bp]; col++;
-                     } while (ch == 'u');
-                     int limit = bp + 3;
-                     if (limit < buflen) {
-                         int d = digit(bp, 16);
-                         int code = d;
-                         while (bp < limit && d >= 0) {
-                             bp++; ch = buf[bp]; col++;
-                             d = digit(bp, 16);
-                             code = (code << 4) + d;
-                         }
-                         if (d >= 0) {
-                             ch = (char)code;
-                             unicodeConversionBp = bp;
-                             return;
-                         }
-                     }
-                     // "illegal.Unicode.esc", reported by base scanner
-                 } else {
-                     bp--;
-                     ch = '\\';
-                     col--;
-                 }
-             }
-         }
-
-         @Override
-         protected void scanCommentChar() {
-             scanChar();
-             if (ch == '\\') {
-                 if (peekChar() == '\\' && !isUnicode()) {
-                     bp++; col++;
-                     doubleBackslashBp = bp;
-                 } else {
-                     convertUnicode();
-                 }
-             }
-         }
-
-         @Override
-         protected void scanChar() {
-             bp++;
-             ch = buf[bp];
-             switch (ch) {
-             case '\r': // return
-                 col = 0;
-                 break;
-             case '\n': // newline
-                 if (bp == 0 || buf[bp-1] != '\r') {
-                     col = 0;
-                 }
-                 break;
-             case '\t': // tab
-                 col = (col / TabInc * TabInc) + TabInc;
-                 break;
-             case '\\': // possible Unicode
-                 col++;
-                 convertUnicode();
-                 break;
-             default:
-                 col++;
-                 break;
-             }
-         }
-
-         @Override
-         public void putChar(char ch, boolean scan) {
-             // At this point, bp is the position of the current character in buf,
-             // and sp is the position in sbuf where this character will be put.
-             // Record a new entry in pbuf if pbuf is empty or if sp and its
-             // corresponding source position are not equidistant from the
-             // corresponding values in the latest entry in the pbuf array.
-             // (i.e. there is a discontinuity in the map function.)
-             if ((pp == 0)
-                     || (sp - pbuf[pp - 2] != (startPos + bp) - pbuf[pp - 1])) {
-                 if (pp + 1 >= pbuf.length) {
-                     int[] new_pbuf = new int[pbuf.length * 2];
-                     System.arraycopy(pbuf, 0, new_pbuf, 0, pbuf.length);
-                     pbuf = new_pbuf;
-                 }
-                 pbuf[pp] = sp;
-                 pbuf[pp + 1] = startPos + bp;
-                 pp += 2;
-             }
-             super.putChar(ch, scan);
-         }
-
-         /** Whether the ch represents a sequence of two backslashes. */
-         boolean isDoubleBackslash() {
-             return doubleBackslashBp == bp;
-         }
-
-
-     }
-
-     protected static class JavadocComment extends JavaTokenizer.BasicComment<DocReader> {
+    protected static class JavadocComment extends BasicComment {
+        /**
+         * Pattern used to detect a well formed @deprecated tag in a JaavDoc
+         * comment.
+         */
+        private static final Pattern DEPRECATED_PATTERN =
+            Pattern.compile("(?sm).*^\\s*@deprecated( |$).*");
 
         /**
-        * Translated and stripped contents of doc comment
-        */
+         * The relevant portion of the comment that is of interest to Javadoc.
+         * Produced by invoking scanDocComment.
+         */
         private String docComment = null;
-        private int[] docPosns = null;
 
-        JavadocComment(DocReader reader, CommentStyle cs) {
-            super(reader, cs);
+        /**
+         * StringBuilder used to extract the relevant portion of the Javadoc comment.
+         */
+        private final StringBuilder sb;
+
+        /**
+         * Map used to map the extracted Javadoc comment's character positions back to
+         * the original source.
+         */
+        OffsetMap offsetMap = new OffsetMap();
+
+        JavadocComment(CommentStyle cs, ScannerFactory sf, char[] array, int offset) {
+            super( cs, sf, array, offset);
+            this.sb = new StringBuilder();
+        }
+
+        /**
+         * Add a character to the extraction buffer.
+         *
+         * @param ch  character to add.
+         */
+        protected void put(char ch) {
+            offsetMap.add(sb.length(), offsetPosition());
+            sb.append(ch);
+        }
+
+        /**
+         * Add a code point to the extraction buffer.
+         *
+         * @param codePoint  code point to add.
+         */
+        protected void putCodePoint(int codePoint) {
+            offsetMap.add(sb.length(), offsetPosition());
+            sb.appendCodePoint(codePoint);
+        }
+
+        /**
+         * Add current character or code point to the extraction buffer.
+         */
+        protected void put() {
+            if (isSurrogate()) {
+                putCodePoint(getCodepoint());
+            } else {
+                put(get());
+            }
         }
 
         @Override
@@ -240,232 +158,292 @@ public class JavadocTokenizer extends JavaTokenizer {
 
         @Override
         public int getSourcePos(int pos) {
-            // Binary search to find the entry for which the string index is
-            // less than pos. Since docPosns is a list of pairs of integers
-            // we must make sure the index is always even.
-            // If we find an exact match for pos, the other item in the pair
-            // gives the source pos; otherwise, compute the source position
-            // relative to the best match found in the array.
-            if (pos == Position.NOPOS)
+            if (pos == Position.NOPOS) {
                 return Position.NOPOS;
-            if (pos < 0 || pos > docComment.length())
-                throw new StringIndexOutOfBoundsException(String.valueOf(pos));
-            if (docPosns == null)
-                return Position.NOPOS;
-            int start = 0;
-            int end = docPosns.length;
-            while (start < end - 2) {
-                // find an even index midway between start and end
-                int index = ((start  + end) / 4) * 2;
-                if (docPosns[index] < pos)
-                    start = index;
-                else if (docPosns[index] == pos)
-                    return docPosns[index + 1];
-                else
-                    end = index;
             }
-            return docPosns[start + 1] + (pos - docPosns[start]);
+
+            if (pos < 0 || pos > docComment.length()) {
+                throw new StringIndexOutOfBoundsException(String.valueOf(pos));
+            }
+
+            return offsetMap.getSourcePos(pos);
         }
 
         @Override
-        @SuppressWarnings("fallthrough")
         protected void scanDocComment() {
              try {
                  boolean firstLine = true;
 
-                 // Skip over first slash
-                 comment_reader.scanCommentChar();
-                 // Skip over first star
-                 comment_reader.scanCommentChar();
+                 // Skip over /*
+                 accept("/*");
 
-                 // consume any number of stars
-                 while (comment_reader.bp < comment_reader.buflen && comment_reader.ch == '*') {
-                     comment_reader.scanCommentChar();
-                 }
-                 // is the comment in the form /**/, /***/, /****/, etc. ?
-                 if (comment_reader.bp < comment_reader.buflen && comment_reader.ch == '/') {
+                 // Consume any number of stars
+                 skip('*');
+
+                 // Is the comment in the form /**/, /***/, /****/, etc. ?
+                 if (is('/')) {
                      docComment = "";
                      return;
                  }
 
-                 // skip a newline on the first line of the comment.
-                 if (comment_reader.bp < comment_reader.buflen) {
-                     if (comment_reader.ch == LF) {
-                         comment_reader.scanCommentChar();
-                         firstLine = false;
-                     } else if (comment_reader.ch == CR) {
-                         comment_reader.scanCommentChar();
-                         if (comment_reader.ch == LF) {
-                             comment_reader.scanCommentChar();
-                             firstLine = false;
-                         }
-                     }
+                 // Skip line terminator on the first line of the comment.
+                 if (isOneOf('\n', '\r')) {
+                     accept('\r');
+                     accept('\n');
+                     firstLine = false;
                  }
 
              outerLoop:
-
                  // The outerLoop processes the doc comment, looping once
                  // for each line.  For each line, it first strips off
                  // whitespace, then it consumes any stars, then it
-                 // puts the rest of the line into our buffer.
-                 while (comment_reader.bp < comment_reader.buflen) {
-                     int begin_bp = comment_reader.bp;
-                     char begin_ch = comment_reader.ch;
-                     // The wsLoop consumes whitespace from the beginning
-                     // of each line.
-                 wsLoop:
-
-                     while (comment_reader.bp < comment_reader.buflen) {
-                         switch(comment_reader.ch) {
-                         case ' ':
-                             comment_reader.scanCommentChar();
-                             break;
-                         case '\t':
-                             comment_reader.col = ((comment_reader.col - 1) / TabInc * TabInc) + TabInc;
-                             comment_reader.scanCommentChar();
-                             break;
-                         case FF:
-                             comment_reader.col = 0;
-                             comment_reader.scanCommentChar();
-                             break;
-         // Treat newline at beginning of line (blank line, no star)
-         // as comment text.  Old Javadoc compatibility requires this.
-         /*---------------------------------*
-                         case CR: // (Spec 3.4)
-                             doc_reader.scanCommentChar();
-                             if (ch == LF) {
-                                 col = 0;
-                                 doc_reader.scanCommentChar();
-                             }
-                             break;
-                         case LF: // (Spec 3.4)
-                             doc_reader.scanCommentChar();
-                             break;
-         *---------------------------------*/
-                         default:
-                             // we've seen something that isn't whitespace;
-                             // jump out.
-                             break wsLoop;
-                         }
-                     }
-
+                 // puts the rest of the line into the extraction buffer.
+                 while (isAvailable()) {
+                     int begin_pos = position();
+                     // Consume  whitespace from the beginning of each line.
+                     skipWhitespace();
                      // Are there stars here?  If so, consume them all
                      // and check for the end of comment.
-                     if (comment_reader.ch == '*') {
+                     if (is('*')) {
                          // skip all of the stars
-                         do {
-                             comment_reader.scanCommentChar();
-                         } while (comment_reader.ch == '*');
+                         skip('*');
 
                          // check for the closing slash.
-                         if (comment_reader.ch == '/') {
-                             // We're done with the doc comment
-                             // scanChar() and breakout.
+                         if (accept('/')) {
+                             // We're done with the Javadoc comment
                              break outerLoop;
                          }
-                     } else if (! firstLine) {
+                     } else if (!firstLine) {
                          // The current line does not begin with a '*' so we will
                          // treat it as comment
-                         comment_reader.bp = begin_bp;
-                         comment_reader.ch = begin_ch;
+                         reset(begin_pos);
                      }
-                     // The textLoop processes the rest of the characters
-                     // on the line, adding them to our buffer.
+
                  textLoop:
-                     while (comment_reader.bp < comment_reader.buflen) {
-                         switch (comment_reader.ch) {
-                         case '*':
-                             // Is this just a star?  Or is this the
-                             // end of a comment?
-                             comment_reader.scanCommentChar();
-                             if (comment_reader.ch == '/') {
-                                 // This is the end of the comment,
-                                 // set ch and return our buffer.
-                                 break outerLoop;
-                             }
-                             // This is just an ordinary star.  Add it to
-                             // the buffer.
-                             comment_reader.putChar('*', false);
-                             break;
-                         case '\\':
-                             comment_reader.putChar('\\', false);
-                             // If a double backslash was found, write two
-                             if (comment_reader.isDoubleBackslash()) {
-                                 comment_reader.putChar('\\', false);
-                             }
-                             comment_reader.scanCommentChar();
-                             break;
-                         case ' ':
-                         case '\t':
-                             comment_reader.putChar(comment_reader.ch, false);
-                             comment_reader.scanCommentChar();
-                             break;
-                         case FF:
-                             comment_reader.scanCommentChar();
-                             break textLoop; // treat as end of line
-                         case CR: // (Spec 3.4)
-                             comment_reader.scanCommentChar();
-                             if (comment_reader.ch != LF) {
-                                 // Canonicalize CR-only line terminator to LF
-                                 comment_reader.putChar((char)LF, false);
-                                 break textLoop;
-                             }
-                             /* fall through to LF case */
-                         case LF: // (Spec 3.4)
+                     // The textLoop processes the rest of the characters
+                     // on the line, adding them to the extraction buffer.
+                     while (isAvailable()) {
+                         if (accept("*/")) {
+                             // This is the end of the comment, return
+                             // the contents of the extraction buffer.
+                             break outerLoop;
+                         } else if (isOneOf('\n', '\r')) {
                              // We've seen a newline.  Add it to our
                              // buffer and break out of this loop,
                              // starting fresh on a new line.
-                             comment_reader.putChar(comment_reader.ch, false);
-                             comment_reader.scanCommentChar();
+                             put('\n');
+                             accept('\r');
+                             accept('\n');
                              break textLoop;
-                         default:
+                         } else if (is('\f')){
+                             next();
+                             break textLoop; // treat as end of line
+
+                         } else {
                              // Add the character to our buffer.
-                             comment_reader.putChar(comment_reader.ch, false);
-                             comment_reader.scanCommentChar();
+                             put();
+                             next();
                          }
                      } // end textLoop
                      firstLine = false;
                  } // end outerLoop
 
-                 if (comment_reader.sp > 0) {
-                     int i = comment_reader.sp - 1;
-                 trailLoop:
-                     while (i > -1) {
-                         switch (comment_reader.sbuf[i]) {
-                         case '*':
-                             i--;
-                             break;
-                         default:
-                             break trailLoop;
-                         }
+                 // If extraction buffer is not empty.
+                 if (sb.length() > 0) {
+                     // Remove trailing asterisks.
+                     int i = sb.length() - 1;
+                     while (i > -1 && sb.charAt(i) == '*') {
+                         i--;
                      }
-                     comment_reader.sp = i + 1;
+                     sb.setLength(i + 1) ;
 
                      // Store the text of the doc comment
-                    docComment = comment_reader.chars();
-                    docPosns = new int[comment_reader.pp];
-                    System.arraycopy(comment_reader.pbuf, 0, docPosns, 0, docPosns.length);
-                } else {
+                    docComment = sb.toString();
+                 } else {
                     docComment = "";
                 }
             } finally {
                 scanned = true;
-                comment_reader = null;
-                if (docComment != null &&
-                        DEPRECATED_PATTERN.matcher(docComment).matches()) {
+
+                // Check if comment contains @deprecated comment.
+                if (docComment != null && DEPRECATED_PATTERN.matcher(docComment).matches()) {
                     deprecatedFlag = true;
                 }
             }
         }
-        //where:
-            private static final Pattern DEPRECATED_PATTERN =
-                    Pattern.compile("(?sm).*^\\s*@deprecated( |$).*");
-
     }
 
+    /**
+     * Build a map for translating between line numbers and positions in the input.
+     * Overridden to expand tabs.
+     *
+     * @return a LineMap
+     */
     @Override
     public Position.LineMap getLineMap() {
-        char[] buf = reader.getRawCharacters();
+        char[] buf = getRawCharacters();
         return Position.makeLineMap(buf, buf.length, true);
+    }
+
+    /**
+     * Build an int table to mapping positions in extracted Javadoc comment
+     * to positions in the JavaTokenizer source buffer.
+     *
+     * The array is organized as a series of pairs of integers: the first
+     * number in each pair specifies a position in the comment text,
+     * the second number in each pair specifies the corresponding position
+     * in the source buffer. The pairs are sorted in ascending order.
+     *
+     * Since the mapping function is generally continuous, with successive
+     * positions in the string corresponding to successive positions in the
+     * source buffer, the table only needs to record discontinuities in
+     * the mapping. The values of intermediate positions can be inferred.
+     *
+     * Discontinuities may occur in a number of places: when a newline
+     * is followed by whitespace and asterisks (which are ignored),
+     * when a tab is expanded into spaces, and when unicode escapes
+     * are used in the source buffer.
+     *
+     * Thus, to find the source position of any position, p, in the comment
+     * string, find the index, i, of the pair whose string offset
+     * ({@code map[i * NOFFSETS + SB_OFFSET] }) is closest to but not greater
+     * than p. Then, {@code sourcePos(p) = map[i * NOFFSETS + POS_OFFSET] +
+     *                                (p - map[i * NOFFSETS + SB_OFFSET]) }.
+     */
+    static class OffsetMap {
+        /**
+         * map entry offset for comment offset member of pair.
+         */
+        private static final int SB_OFFSET = 0;
+
+        /**
+         * map entry offset of input offset member of pair.
+         */
+        private static final int POS_OFFSET = 1;
+
+        /**
+         * Number of elements in each entry.
+         */
+        private static final int NOFFSETS = 2;
+
+        /**
+         * Array storing entries in map.
+         */
+        private int[] map;
+
+        /**
+         * Logical size of map (number of valid entries.)
+         */
+        private int size;
+
+        /**
+         * Constructor.
+         */
+        OffsetMap() {
+            this.map = new int[128];
+            this.size = 0;
+        }
+
+        /**
+         * Returns true if it is worthwhile adding the entry pair to the map. That is
+         * if there is a change in relative offset.
+         *
+         * @param sbOffset  comment offset member of pair.
+         * @param posOffet  input offset member of pair.
+         *
+         * @return true if it is worthwhile adding the entry pair.
+         */
+        boolean shouldAdd(int sbOffset, int posOffet) {
+            return sbOffset - lastSBOffset() != posOffet - lastPosOffset();
+        }
+
+        /**
+         * Adds entry pair if worthwhile.
+         *
+         * @param sbOffset  comment offset member of pair.
+         * @param posOffet  input offset member of pair.
+         */
+        void add(int sbOffset, int posOffet) {
+            if (size == 0 || shouldAdd(sbOffset, posOffet)) {
+                ensure(NOFFSETS);
+                map[size + SB_OFFSET] = sbOffset;
+                map[size + POS_OFFSET] = posOffet;
+                size += NOFFSETS;
+            }
+        }
+
+        /**
+         * Returns the previous comment offset.
+         *
+         * @return the previous comment offset.
+         */
+        private int lastSBOffset() {
+            return size == 0 ? 0 : map[size - NOFFSETS + SB_OFFSET];
+        }
+
+        /**
+         * Returns the previous input offset.
+         *
+         * @return the previous input offset.
+         */
+        private int lastPosOffset() {
+            return size == 0 ? 0 : map[size - NOFFSETS + POS_OFFSET];
+        }
+
+        /**
+         * Ensures there is enough space for a new entry.
+         *
+         * @param need  number of array slots needed.
+         */
+        private void ensure(int need) {
+            need += size;
+            int grow = map.length;
+
+            while (need > grow) {
+                grow <<= 1;
+            }
+
+            // Handle overflow.
+            if (grow < map.length) {
+                throw new IndexOutOfBoundsException();
+            } else if (grow != map.length) {
+                map = Arrays.copyOf(map, grow);
+            }
+        }
+
+        /**
+         * Binary search to find the entry for which the string index is less
+         * than pos. Since the map is a list of pairs of integers we must make
+         * sure the index is always NOFFSETS scaled. If we find an exact match
+         * for pos, the other item in the pair gives the source pos; otherwise,
+         * compute the source position relative to the best match found in the
+         * array.
+         */
+        int getSourcePos(int pos) {
+            if (size == 0) {
+                return Position.NOPOS;
+            }
+
+            int start = 0;
+            int end = size / NOFFSETS;
+
+            while (start < end - 1) {
+                // find an index midway between start and end
+                int index = (start + end) / 2;
+                int indexScaled = index * NOFFSETS;
+
+                if (map[indexScaled + SB_OFFSET] < pos) {
+                    start = index;
+                } else if (map[indexScaled + SB_OFFSET] == pos) {
+                    return map[indexScaled + POS_OFFSET];
+                } else {
+                    end = index;
+                }
+            }
+
+            int startScaled = start * NOFFSETS;
+
+            return map[startScaled + POS_OFFSET] + (pos - map[startScaled + SB_OFFSET]);
+        }
     }
 }

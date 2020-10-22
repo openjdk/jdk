@@ -34,9 +34,11 @@
 #include "utilities/resourceHash.hpp"
 
 class CHeapBitMap;
-class Klass;
-class Symbol;
 class DumpAllocStats;
+class FileMapInfo;
+class Klass;
+class MemRegion;
+class Symbol;
 
 class ArchiveBuilder : public StackObj {
 public:
@@ -68,11 +70,18 @@ private:
     uintx _ptrmap_end;       // The bit-offset of the end   of this object (exclusive)
     bool _read_only;
     FollowMode _follow_mode;
+    int _size_in_bytes;
+    MetaspaceObj::Type _msotype;
     address _dumped_addr;    // Address this->obj(), as used by the dumped archive.
+    address _orig_obj;       // The value of the original object (_ref->obj()) when this
+                             // SourceObjInfo was created. Note that _ref->obj() may change
+                             // later if _ref is relocated.
 
   public:
     SourceObjInfo(MetaspaceClosure::Ref* ref, bool read_only, FollowMode follow_mode) :
-      _ref(ref), _ptrmap_start(0), _ptrmap_end(0), _read_only(read_only), _follow_mode(follow_mode) {
+      _ref(ref), _ptrmap_start(0), _ptrmap_end(0), _read_only(read_only), _follow_mode(follow_mode),
+      _size_in_bytes(ref->size() * BytesPerWord), _msotype(ref->msotype()),
+      _orig_obj(ref->obj()) {
       if (follow_mode == point_to_it) {
         _dumped_addr = ref->obj();
       } else {
@@ -93,8 +102,10 @@ private:
     uintx ptrmap_start()  const    { return _ptrmap_start; } // inclusive
     uintx ptrmap_end()    const    { return _ptrmap_end;   } // exclusive
     bool read_only()      const    { return _read_only;    }
-    int size_in_bytes()   const    { return _ref->size() * BytesPerWord; }
+    int size_in_bytes()   const    { return _size_in_bytes; }
+    address orig_obj()    const    { return _orig_obj; }
     address dumped_addr() const    { return _dumped_addr; }
+    MetaspaceObj::Type msotype() const { return _msotype; }
 
     // convenience accessor
     address obj() const { return ref()->obj(); }
@@ -127,9 +138,12 @@ private:
     }
   };
 
+  class CDSMapLogger;
+
   static const int INITIAL_TABLE_SIZE = 15889;
   static const int MAX_TABLE_SIZE     = 1000000;
 
+  DumpRegion* _mc_region;
   DumpRegion* _rw_region;
   DumpRegion* _ro_region;
 
@@ -180,18 +194,11 @@ private:
 
   bool is_excluded(Klass* k);
   void clean_up_src_obj_table();
-
 protected:
   virtual void iterate_roots(MetaspaceClosure* it, bool is_relocating_pointers) = 0;
 
   // Conservative estimate for number of bytes needed for:
-  size_t _estimated_metsapceobj_bytes;   // all archived MetsapceObj's.
-
-  void set_dump_regions(DumpRegion* rw_region, DumpRegion* ro_region) {
-    assert(_rw_region == NULL && _ro_region == NULL, "do not change");
-    _rw_region = rw_region;
-    _ro_region = ro_region;
-  }
+  size_t _estimated_metaspaceobj_bytes;   // all archived MetaspaceObj's.
 
 protected:
   DumpRegion* _current_dump_space;
@@ -225,7 +232,7 @@ public:
   }
 
 public:
-  ArchiveBuilder(DumpRegion* rw_region, DumpRegion* ro_region);
+  ArchiveBuilder(DumpRegion* mc_region, DumpRegion* rw_region, DumpRegion* ro_region);
   ~ArchiveBuilder();
 
   void gather_klasses_and_symbols();
@@ -240,6 +247,11 @@ public:
   void relocate_pointers();
   void relocate_well_known_klasses();
   void make_klasses_shareable();
+  void write_cds_map_to_log(FileMapInfo* mapinfo,
+                            GrowableArray<MemRegion> *closed_heap_regions,
+                            GrowableArray<MemRegion> *open_heap_regions,
+                            char* bitmap, size_t bitmap_size_in_bytes);
+
   address get_dumped_addr(address src_obj) const;
 
   // All klasses and symbols that will be copied into the archive

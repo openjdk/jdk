@@ -25,13 +25,12 @@
 #ifndef SHARE_CLASSFILE_VMSYMBOLS_HPP
 #define SHARE_CLASSFILE_VMSYMBOLS_HPP
 
-#include "jfr/support/jfrIntrinsics.hpp"
+#include "classfile/vmIntrinsics.hpp"
 #include "jvmci/vmSymbols_jvmci.hpp"
 #include "memory/iterator.hpp"
 #include "oops/symbol.hpp"
 #include "utilities/macros.hpp"
-#include "vmIntrinsics.hpp"
-
+#include "utilities/enumIterator.hpp"
 
 // The class vmSymbols is a name space for fast lookup of
 // symbols commonly used in the VM.
@@ -43,7 +42,8 @@
 
 // Useful sub-macros exported by this header file:
 
-#define VM_SYMBOL_ENUM_NAME(name)    name##_enum
+#define VM_SYMBOL_ENUM_NAME_(name)    name##_enum
+#define VM_SYMBOL_ENUM_NAME(name)    vmSymbolID::VM_SYMBOL_ENUM_NAME_(name)
 #define VM_INTRINSIC_IGNORE(id, class, name, sig, flags) /*ignored*/
 #define VM_SYMBOL_IGNORE(id, name)                       /*ignored*/
 #define VM_ALIAS_IGNORE(id, id2)                         /*ignored*/
@@ -81,6 +81,16 @@
   template(java_lang_Integer_IntegerCache,            "java/lang/Integer$IntegerCache")           \
   template(java_lang_Long,                            "java/lang/Long")                           \
   template(java_lang_Long_LongCache,                  "java/lang/Long$LongCache")                 \
+                                                                                                  \
+  template(jdk_internal_vm_vector_VectorSupport,      "jdk/internal/vm/vector/VectorSupport")               \
+  template(jdk_internal_vm_vector_VectorPayload,      "jdk/internal/vm/vector/VectorSupport$VectorPayload") \
+  template(jdk_internal_vm_vector_Vector,             "jdk/internal/vm/vector/VectorSupport$Vector")        \
+  template(jdk_internal_vm_vector_VectorMask,         "jdk/internal/vm/vector/VectorSupport$VectorMask")    \
+  template(jdk_internal_vm_vector_VectorShuffle,      "jdk/internal/vm/vector/VectorSupport$VectorShuffle") \
+  template(payload_name,                              "payload")                                            \
+  template(ETYPE_name,                                "ETYPE")                                              \
+  template(VLENGTH_name,                              "VLENGTH")                                            \
+                                                                                                  \
   template(java_lang_Shutdown,                        "java/lang/Shutdown")                       \
   template(java_lang_ref_Reference,                   "java/lang/ref/Reference")                  \
   template(java_lang_ref_SoftReference,               "java/lang/ref/SoftReference")              \
@@ -282,14 +292,17 @@
   template(base_name,                                 "base")                                     \
   /* Type Annotations (JDK 8 and above) */                                                        \
   template(type_annotations_name,                     "typeAnnotations")                          \
+  /* used by CDS */                                                                               \
+  template(jdk_internal_misc_CDS, "jdk/internal/misc/CDS")                                        \
+  template(generateLambdaFormHolderClasses, "generateLambdaFormHolderClasses")                    \
+  template(generateLambdaFormHolderClasses_signature, "([Ljava/lang/String;)[Ljava/lang/Object;") \
                                                                                                   \
   /* Intrinsic Annotation (JDK 9 and above) */                                                    \
-  template(jdk_internal_HotSpotIntrinsicCandidate_signature, "Ljdk/internal/HotSpotIntrinsicCandidate;") \
   template(jdk_internal_vm_annotation_DontInline_signature,  "Ljdk/internal/vm/annotation/DontInline;")  \
   template(jdk_internal_vm_annotation_ForceInline_signature, "Ljdk/internal/vm/annotation/ForceInline;") \
   template(jdk_internal_vm_annotation_Hidden_signature,      "Ljdk/internal/vm/annotation/Hidden;") \
+  template(jdk_internal_vm_annotation_IntrinsicCandidate_signature, "Ljdk/internal/vm/annotation/IntrinsicCandidate;") \
   template(jdk_internal_vm_annotation_Stable_signature,      "Ljdk/internal/vm/annotation/Stable;") \
-                                                                                                  \
   /* Support for JSR 292 & invokedynamic (JDK 1.7 and above) */                                   \
   template(java_lang_invoke_CallSite,                 "java/lang/invoke/CallSite")                \
   template(java_lang_invoke_ConstantCallSite,         "java/lang/invoke/ConstantCallSite")        \
@@ -675,38 +688,70 @@
                                                                                                                   \
   /*end*/
 
+// enum for figuring positions and size of Symbol::_vm_symbols[]
+enum class vmSymbolID : int {
+  // [FIRST_SID ... LAST_SID] is the iteration range for the *valid* symbols.
+  // NO_SID is used to indicate an invalid symbol. Some implementation code
+  // *may* read _vm_symbols[NO_SID], so it must be a valid array index.
+  NO_SID = 0,                // exclusive lower limit
 
+  #define VM_SYMBOL_ENUM(name, string) VM_SYMBOL_ENUM_NAME_(name),
+  VM_SYMBOLS_DO(VM_SYMBOL_ENUM, VM_ALIAS_IGNORE)
+  #undef VM_SYMBOL_ENUM
 
-// Class vmSymbols
+  SID_LIMIT,                 // exclusive upper limit
+
+  #define VM_ALIAS_ENUM(name, def) VM_SYMBOL_ENUM_NAME_(name) = VM_SYMBOL_ENUM_NAME_(def),
+  VM_SYMBOLS_DO(VM_SYMBOL_IGNORE, VM_ALIAS_ENUM)
+  #undef VM_ALIAS_ENUM
+
+  FIRST_SID = NO_SID + 1,    // inclusive lower limit
+  LAST_SID = SID_LIMIT - 1,  // inclusive upper limit
+};
+
+ENUMERATOR_RANGE(vmSymbolID, vmSymbolID::FIRST_SID, vmSymbolID::LAST_SID)
+constexpr EnumRange<vmSymbolID> vmSymbolsRange; // the default range of all valid vmSymbolIDs
+using vmSymbolsIterator = EnumIterator<vmSymbolID>; // convenience
 
 class vmSymbols: AllStatic {
   friend class vmIntrinsics;
   friend class VMStructs;
   friend class JVMCIVMStructs;
+
+  static const int NO_SID    = static_cast<int>(vmSymbolID::NO_SID);    // exclusive lower limit
+  static const int FIRST_SID = static_cast<int>(vmSymbolID::FIRST_SID); // inclusive lower limit
+  static const int LAST_SID  = static_cast<int>(vmSymbolID::FIRST_SID); // inclusive upper limit
+  static const int SID_LIMIT = static_cast<int>(vmSymbolID::SID_LIMIT); // exclusive upper limit
+
  public:
-  // enum for figuring positions and size of array holding Symbol*s
-  enum SID {
-    NO_SID = 0,
+  static constexpr bool is_valid_id(int id) {
+    return (id >= FIRST_SID && id < SID_LIMIT);
+  }
+  static constexpr bool is_valid_id(vmSymbolID sid) {
+    return is_valid_id(static_cast<int>(sid));
+  }
 
-    #define VM_SYMBOL_ENUM(name, string) VM_SYMBOL_ENUM_NAME(name),
-    VM_SYMBOLS_DO(VM_SYMBOL_ENUM, VM_ALIAS_IGNORE)
-    #undef VM_SYMBOL_ENUM
+  static constexpr vmSymbolID as_SID(int id) {
+    assert(is_valid_id(id), "must be");
+    return static_cast<vmSymbolID>(id);
+  }
 
-    SID_LIMIT,
+  static constexpr int as_int(vmSymbolID sid) {
+    assert(is_valid_id(sid), "must be");
+    return static_cast<int>(sid);
+  }
 
-    #define VM_ALIAS_ENUM(name, def) VM_SYMBOL_ENUM_NAME(name) = VM_SYMBOL_ENUM_NAME(def),
-    VM_SYMBOLS_DO(VM_SYMBOL_IGNORE, VM_ALIAS_ENUM)
-    #undef VM_ALIAS_ENUM
+  static constexpr int number_of_symbols() {
+    static_assert(NO_SID == 0, "must be a valid array index");
+    static_assert(FIRST_SID == 1, "must not be the same as NO_SID");
+    return SID_LIMIT;
+  }
 
-    FIRST_SID = NO_SID + 1
-  };
   enum {
     log2_SID_LIMIT = 11         // checked by an assert at start-up
   };
 
  private:
-  // The symbol array
-  static Symbol* _symbols[];
 
   // Field signatures indexed by BasicType.
   static Symbol* _type_signatures[T_VOID+1];
@@ -717,7 +762,7 @@ class vmSymbols: AllStatic {
   // Accessing
   #define VM_SYMBOL_DECLARE(name, ignore)                 \
     static Symbol* name() {                               \
-      return _symbols[VM_SYMBOL_ENUM_NAME(name)];         \
+      return Symbol::_vm_symbols[static_cast<int>(VM_SYMBOL_ENUM_NAME(name))]; \
     }
   VM_SYMBOLS_DO(VM_SYMBOL_DECLARE, VM_SYMBOL_DECLARE)
   #undef VM_SYMBOL_DECLARE
@@ -733,149 +778,18 @@ class vmSymbols: AllStatic {
     return _type_signatures[t];
   }
 
-  static Symbol* symbol_at(SID id) {
-    assert(id >= FIRST_SID && id < SID_LIMIT, "oob");
-    assert(_symbols[id] != NULL, "init");
-    return _symbols[id];
+  static Symbol* symbol_at(vmSymbolID id) {
+    return Symbol::vm_symbol_at(id);
   }
 
-  // Returns symbol's SID if one is assigned, else NO_SID.
-  static SID find_sid(const Symbol* symbol);
-  static SID find_sid(const char* symbol_name);
+  // Returns symbol's vmSymbolID if one is assigned, else vmSymbolID::NO_SID.
+  static vmSymbolID find_sid(const Symbol* symbol);
+  static vmSymbolID find_sid(const char* symbol_name);
 
 #ifndef PRODUCT
   // No need for this in the product:
-  static const char* name_for(SID sid);
+  static const char* name_for(vmSymbolID sid);
 #endif //PRODUCT
-};
-
-// VM Intrinsic ID's uniquely identify some very special methods
-class vmIntrinsics: AllStatic {
-  friend class vmSymbols;
-  friend class ciObjectFactory;
-
- public:
-  // Accessing
-  enum ID {
-    _none = 0,                      // not an intrinsic (default answer)
-
-    #define VM_INTRINSIC_ENUM(id, klass, name, sig, flags)  id,
-    VM_INTRINSICS_DO(VM_INTRINSIC_ENUM,
-                     VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE)
-    #undef VM_INTRINSIC_ENUM
-
-    ID_LIMIT,
-    LAST_COMPILER_INLINE = _getAndSetReference,
-    FIRST_MH_SIG_POLY    = _invokeGeneric,
-    FIRST_MH_STATIC      = _linkToVirtual,
-    LAST_MH_SIG_POLY     = _linkToInterface,
-
-    FIRST_ID = _none + 1
-  };
-
-  enum Flags {
-    // AccessFlags syndromes relevant to intrinsics.
-    F_none = 0,
-    F_R,                        // !static ?native !synchronized (R="regular")
-    F_S,                        //  static ?native !synchronized
-    F_Y,                        // !static ?native  synchronized
-    F_RN,                       // !static  native !synchronized
-    F_SN,                       //  static  native !synchronized
-    F_RNY,                      // !static  native  synchronized
-
-    FLAG_LIMIT
-  };
-  enum {
-    log2_FLAG_LIMIT = 4         // checked by an assert at start-up
-  };
-
-public:
-  static ID ID_from(int raw_id) {
-    assert(raw_id >= (int)_none && raw_id < (int)ID_LIMIT,
-           "must be a valid intrinsic ID");
-    return (ID)raw_id;
-  }
-
-  static const char* name_at(ID id);
-
-private:
-  static ID find_id_impl(vmSymbols::SID holder,
-                         vmSymbols::SID name,
-                         vmSymbols::SID sig,
-                         jshort flags);
-
-  // check if the intrinsic is disabled by course-grained flags.
-  static bool disabled_by_jvm_flags(vmIntrinsics::ID id);
-public:
-  static ID find_id(const char* name);
-  // Given a method's class, name, signature, and access flags, report its ID.
-  static ID find_id(vmSymbols::SID holder,
-                    vmSymbols::SID name,
-                    vmSymbols::SID sig,
-                    jshort flags) {
-    ID id = find_id_impl(holder, name, sig, flags);
-#ifdef ASSERT
-    // ID _none does not hold the following asserts.
-    if (id == _none)  return id;
-#endif
-    assert(    class_for(id) == holder, "correct id");
-    assert(     name_for(id) == name,   "correct id");
-    assert(signature_for(id) == sig,    "correct id");
-    return id;
-  }
-
-  static void verify_method(ID actual_id, Method* m) PRODUCT_RETURN;
-
-  // Find out the symbols behind an intrinsic:
-  static vmSymbols::SID     class_for(ID id);
-  static vmSymbols::SID      name_for(ID id);
-  static vmSymbols::SID signature_for(ID id);
-  static Flags              flags_for(ID id);
-
-  static const char* short_name_as_C_string(ID id, char* buf, int size);
-
-  // Wrapper object methods:
-  static ID for_boxing(BasicType type);
-  static ID for_unboxing(BasicType type);
-
-  // Raw conversion:
-  static ID for_raw_conversion(BasicType src, BasicType dest);
-
-  // The methods below provide information related to compiling intrinsics.
-
-  // (1) Information needed by the C1 compiler.
-
-  static bool preserves_state(vmIntrinsics::ID id);
-  static bool can_trap(vmIntrinsics::ID id);
-  static bool should_be_pinned(vmIntrinsics::ID id);
-
-  // (2) Information needed by the C2 compiler.
-
-  // Returns true if the intrinsic for method 'method' will perform a virtual dispatch.
-  static bool does_virtual_dispatch(vmIntrinsics::ID id);
-  // A return value larger than 0 indicates that the intrinsic for method
-  // 'method' requires predicated logic.
-  static int predicates_needed(vmIntrinsics::ID id);
-
-  // There are 2 kinds of JVM options to control intrinsics.
-  // 1. Disable/Control Intrinsic accepts a list of intrinsic IDs.
-  //    ControlIntrinsic is recommended. DisableIntrinic will be deprecated.
-  //    Currently, the DisableIntrinsic list prevails if an intrinsic appears on
-  //    both lists.
-  //
-  // 2. Explicit UseXXXIntrinsics options. eg. UseAESIntrinsics, UseCRC32Intrinsics etc.
-  //    Each option can control a group of intrinsics. The user can specify them but
-  //    their final values are subject to hardware inspection (VM_Version::initialize).
-  //    Stub generators are controlled by them.
-  //
-  // An intrinsic is enabled if and only if neither the fine-grained control(1) nor
-  // the corresponding coarse-grained control(2) disables it.
-  static bool is_disabled_by_flags(vmIntrinsics::ID id);
-
-  static bool is_disabled_by_flags(const methodHandle& method);
-  static bool is_intrinsic_available(vmIntrinsics::ID id) {
-    return !is_disabled_by_flags(id);
-  }
 };
 
 #endif // SHARE_CLASSFILE_VMSYMBOLS_HPP

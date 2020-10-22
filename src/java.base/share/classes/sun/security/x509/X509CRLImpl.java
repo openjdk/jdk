@@ -35,7 +35,6 @@ import java.security.cert.X509Certificate;
 import java.security.cert.X509CRLEntry;
 import java.security.cert.CRLException;
 import java.security.*;
-import java.security.spec.AlgorithmParameterSpec;
 import java.util.*;
 
 import javax.security.auth.x500.X500Principal;
@@ -457,16 +456,15 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
      * @param key the private key used for signing.
      * @param algorithm the name of the signature algorithm used.
      *
-     * @exception NoSuchAlgorithmException on unsupported signature
-     * algorithms.
+     * @exception NoSuchAlgorithmException on unsupported signature algorithms.
      * @exception InvalidKeyException on incorrect key.
      * @exception NoSuchProviderException on incorrect provider.
      * @exception SignatureException on signature errors.
      * @exception CRLException if any mandatory data was omitted.
      */
     public void sign(PrivateKey key, String algorithm)
-    throws CRLException, NoSuchAlgorithmException, InvalidKeyException,
-        NoSuchProviderException, SignatureException {
+            throws CRLException, NoSuchAlgorithmException, InvalidKeyException,
+                   NoSuchProviderException, SignatureException {
         sign(key, algorithm, null);
     }
 
@@ -475,41 +473,23 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
      *
      * @param key the private key used for signing.
      * @param algorithm the name of the signature algorithm used.
-     * @param provider the name of the provider.
+     * @param provider (optional) the name of the provider.
      *
-     * @exception NoSuchAlgorithmException on unsupported signature
-     * algorithms.
+     * @exception NoSuchAlgorithmException on unsupported signature algorithms.
      * @exception InvalidKeyException on incorrect key.
      * @exception NoSuchProviderException on incorrect provider.
      * @exception SignatureException on signature errors.
      * @exception CRLException if any mandatory data was omitted.
      */
     public void sign(PrivateKey key, String algorithm, String provider)
-    throws CRLException, NoSuchAlgorithmException, InvalidKeyException,
-        NoSuchProviderException, SignatureException {
+            throws CRLException, NoSuchAlgorithmException, InvalidKeyException,
+                   NoSuchProviderException, SignatureException {
         try {
             if (readOnly)
                 throw new CRLException("cannot over-write existing CRL");
-            Signature sigEngine = null;
-            if (provider == null || provider.isEmpty())
-                sigEngine = Signature.getInstance(algorithm);
-            else
-                sigEngine = Signature.getInstance(algorithm, provider);
 
-            AlgorithmParameterSpec params = AlgorithmId
-                    .getDefaultAlgorithmParameterSpec(algorithm, key);
-            try {
-                SignatureUtil.initSignWithParam(sigEngine, key, params, null);
-            } catch (InvalidAlgorithmParameterException e) {
-                throw new SignatureException(e);
-            }
-
-            if (params != null) {
-                sigAlgId = AlgorithmId.get(sigEngine.getParameters());
-            } else {
-                // in case the name is reset
-                sigAlgId = AlgorithmId.get(sigEngine.getAlgorithm());
-            }
+            Signature sigEngine = SignatureUtil.fromKey(algorithm, key, provider);
+            sigAlgId = SignatureUtil.fromSignature(sigEngine, key);
             infoSigAlgId = sigAlgId;
 
             DerOutputStream out = new DerOutputStream();

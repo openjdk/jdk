@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,8 +149,6 @@ class GCLocker: public AllStatic {
   // is set, the slow path is always taken, till _needs_gc is cleared.
   inline static void lock_critical(JavaThread* thread);
   inline static void unlock_critical(JavaThread* thread);
-
-  static address needs_gc_address() { return (address) &_needs_gc; }
 };
 
 #endif // SHARE_GC_SHARED_GCLOCKER_HPP

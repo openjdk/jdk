@@ -28,26 +28,35 @@
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-void* SafepointMechanism::_poll_armed_value;
-void* SafepointMechanism::_poll_disarmed_value;
+uintptr_t SafepointMechanism::_poll_word_armed_value;
+uintptr_t SafepointMechanism::_poll_word_disarmed_value;
+uintptr_t SafepointMechanism::_poll_page_armed_value;
+uintptr_t SafepointMechanism::_poll_page_disarmed_value;
 address SafepointMechanism::_polling_page;
 
 void SafepointMechanism::default_initialize() {
   // Poll bit values
-  intptr_t poll_armed_value = poll_bit();
-  intptr_t poll_disarmed_value = 0;
+  _poll_word_armed_value    = poll_bit();
+  _poll_word_disarmed_value = ~_poll_word_armed_value;
+
+  bool poll_bit_only = false;
 
 #ifdef USE_POLL_BIT_ONLY
-  if (!USE_POLL_BIT_ONLY)
+  poll_bit_only = USE_POLL_BIT_ONLY;
 #endif
-  {
+
+  if (poll_bit_only) {
+    _poll_page_armed_value    = poll_bit();
+    _poll_page_disarmed_value = 0;
+  } else {
     // Polling page
     const size_t page_size = os::vm_page_size();
     const size_t allocation_size = 2 * page_size;
-    char* polling_page = os::reserve_memory(allocation_size, page_size);
+    char* polling_page = os::reserve_memory(allocation_size);
     os::commit_memory_or_exit(polling_page, allocation_size, false, "Unable to commit Safepoint polling page");
     MemTracker::record_virtual_memory_type((address)polling_page, mtSafepoint);
 
@@ -58,17 +67,12 @@ void SafepointMechanism::default_initialize() {
     os::protect_memory(good_page, page_size, os::MEM_PROT_READ);
 
     log_info(os)("SafePoint Polling address, bad (protected) page:" INTPTR_FORMAT ", good (unprotected) page:" INTPTR_FORMAT, p2i(bad_page), p2i(good_page));
-    _polling_page = (address)(bad_page);
 
     // Poll address values
-    intptr_t bad_page_val  = reinterpret_cast<intptr_t>(bad_page),
-             good_page_val = reinterpret_cast<intptr_t>(good_page);
-    poll_armed_value    |= bad_page_val;
-    poll_disarmed_value |= good_page_val;
+    _poll_page_armed_value    = reinterpret_cast<uintptr_t>(bad_page);
+    _poll_page_disarmed_value = reinterpret_cast<uintptr_t>(good_page);
+    _polling_page = (address)bad_page;
   }
-
-  _poll_armed_value    = reinterpret_cast<void*>(poll_armed_value);
-  _poll_disarmed_value = reinterpret_cast<void*>(poll_disarmed_value);
 }
 
 void SafepointMechanism::process(JavaThread *thread) {
@@ -76,10 +80,51 @@ void SafepointMechanism::process(JavaThread *thread) {
     // Any load in ::block must not pass the global poll load.
     // Otherwise we might load an old safepoint counter (for example).
     OrderAccess::loadload();
-    SafepointSynchronize::block(thread);
+    SafepointSynchronize::block(thread); // Recursive
   }
-  if (thread->has_handshake()) {
-    thread->handshake_process_by_self();
+
+  // The call to start_processing fixes the thread's oops and the first few frames.
+  //
+  // The call has been carefully placed here to cater for a few situations:
+  // 1) After we exit from block after a global poll
+  // 2) After a thread races with the disarming of the global poll and transitions from native/blocked
+  // 3) Before the handshake code is run
+  StackWatermarkSet::start_processing(thread, StackWatermarkKind::gc);
+
+  if (thread->handshake_state()->should_process()) {
+    thread->handshake_state()->process_by_self();
+  }
+}
+
+uintptr_t SafepointMechanism::compute_poll_word(bool armed, uintptr_t stack_watermark) {
+  if (armed) {
+    log_debug(stackbarrier)("Computed armed for tid %d", Thread::current()->osthread()->thread_id());
+    return _poll_word_armed_value;
+  }
+  if (stack_watermark == 0) {
+    log_debug(stackbarrier)("Computed disarmed for tid %d", Thread::current()->osthread()->thread_id());
+    return _poll_word_disarmed_value;
+  }
+  log_debug(stackbarrier)("Computed watermark for tid %d", Thread::current()->osthread()->thread_id());
+  return stack_watermark;
+}
+
+void SafepointMechanism::update_poll_values(JavaThread* thread) {
+  for (;;) {
+    bool armed = global_poll() || thread->handshake_state()->has_operation();
+    uintptr_t stack_watermark = StackWatermarkSet::lowest_watermark(thread);
+    uintptr_t poll_page = armed ? _poll_page_armed_value
+                                : _poll_page_disarmed_value;
+    uintptr_t poll_word = compute_poll_word(armed, stack_watermark);
+    thread->poll_data()->set_polling_page(poll_page);
+    thread->poll_data()->set_polling_word(poll_word);
+    OrderAccess::fence();
+    if (!armed && (global_poll() || thread->handshake_state()->has_operation())) {
+      // We disarmed an old safepoint, but a new one is synchronizing.
+      // We need to arm the poll for the subsequent safepoint poll.
+      continue;
+    }
+    break;
   }
 }
 
@@ -89,18 +134,7 @@ void SafepointMechanism::process_if_requested_slow(JavaThread *thread) {
 
   // local poll already checked, if used.
   process(thread);
-
-  OrderAccess::loadload();
-
-  if (local_poll_armed(thread)) {
-    disarm_local_poll_release(thread);
-    // We might have disarmed next safepoint/handshake
-    OrderAccess::storeload();
-    if (global_poll() || thread->has_handshake()) {
-      arm_local_poll(thread);
-    }
-  }
-
+  update_poll_values(thread);
   OrderAccess::cross_modify_fence();
 }
 

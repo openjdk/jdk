@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @key stress randomness
  * @bug 8007898
  * @summary Incorrect optimization of Memory Barriers in Matcher::post_store_load_barrier().
  * @run main/othervm -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+IgnoreUnrecognizedVMOptions

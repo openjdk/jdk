@@ -34,6 +34,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvmtiDeferredUpdates.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -489,13 +490,10 @@ void ObjectMonitor::install_displaced_markword_in_object(const oop obj) {
 
   // Separate loads in is_being_async_deflated(), which is almost always
   // called before this function, from the load of dmw/header below.
-  if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
-    // A non-multiple copy atomic (nMCA) machine needs a bigger
-    // hammer to separate the loads before and the load below.
-    OrderAccess::fence();
-  } else {
-    OrderAccess::loadload();
-  }
+
+  // _contentions and dmw/header may get written by different threads.
+  // Make sure to observe them in the same order when having several observers.
+  OrderAccess::loadload_for_IRIW();
 
   const oop l_object = object_peek();
   if (l_object == NULL) {
@@ -1563,7 +1561,8 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   jt->set_current_waiting_monitor(NULL);
 
   guarantee(_recursions == 0, "invariant");
-  _recursions = save;     // restore the old recursion count
+  _recursions = save      // restore the old recursion count
+                + JvmtiDeferredUpdates::get_and_reset_relock_count_after_wait(jt); //  increased by the deferred relock count
   _waiters--;             // decrement the number of waiters
 
   // Verify a few postconditions
