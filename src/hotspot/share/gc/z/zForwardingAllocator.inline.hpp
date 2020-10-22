@@ -25,21 +25,31 @@
 #define SHARE_GC_Z_ZFORWARDINGALLOCATOR_INLINE_HPP
 
 #include "gc/z/zForwardingAllocator.hpp"
+#include "runtime/atomic.hpp"
 
 inline size_t ZForwardingAllocator::size() const {
   return _end - _start;
 }
 
 inline void* ZForwardingAllocator::alloc(size_t size) {
-  char* const new_top = _top + size;
-  if (new_top > _end) {
-    // Not enough space left
-    return NULL;
-  }
+  char* old_top = Atomic::load(&_top);
 
-  char* const old_top = _top;
-  _top = new_top;
-  return old_top;
+  for (;;) {
+    char* const new_top = old_top + size;
+    if (new_top > _end) {
+      // Not enough space left
+      return 0;
+    }
+
+    char* const prev_top = Atomic::cmpxchg(&_top, old_top, new_top);
+    if (prev_top == old_top) {
+      // Success
+      return old_top;
+    }
+
+    // Retry
+    old_top = prev_top;
+  }
 }
 
 #endif // SHARE_GC_Z_ZFORWARDINGALLOCATOR_INLINE_HPP
