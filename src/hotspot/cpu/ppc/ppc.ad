@@ -535,9 +535,7 @@ alloc_class chunk4 (
 // information in this architecture description.
 
 // 1) reg_class inline_cache_reg           ( as defined in frame section )
-// 2) reg_class compiler_method_reg        ( as defined in frame section )
-// 2) reg_class interpreter_method_reg     ( as defined in frame section )
-// 3) reg_class stack_slots( /* one chunk of stack-based "registers" */ )
+// 2) reg_class stack_slots( /* one chunk of stack-based "registers" */ )
 //
 
 // ----------------------------
@@ -2344,10 +2342,6 @@ const bool Matcher::rematerialize_float_constants = false;
 // Java calling convention forces doubles to be aligned.
 const bool Matcher::misaligned_doubles_ok = true;
 
-void Matcher::pd_implicit_null_fixup(MachNode *node, uint idx) {
- Unimplemented();
-}
-
 // Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
 const bool Matcher::strict_fp_requires_explicit_rounding = false;
 
@@ -3859,9 +3853,6 @@ frame %{
   // Inline Cache Register or method for I2C.
   inline_cache_reg(R19); // R19_method
 
-  // Method Register when calling interpreter.
-  interpreter_method_reg(R19); // R19_method
-
   // Optional: name the operand used by cisc-spilling to access
   // [stack_pointer + offset].
   cisc_spilling_operand_name(indOffset);
@@ -4764,20 +4755,6 @@ operand regF() %{
 // Method Register
 operand inline_cache_regP(iRegPdst reg) %{
   constraint(ALLOC_IN_RC(r19_bits64_reg)); // inline_cache_reg
-  match(reg);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand compiler_method_regP(iRegPdst reg) %{
-  constraint(ALLOC_IN_RC(rscratch1_bits64_reg)); // compiler_method_reg
-  match(reg);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand interpreter_method_regP(iRegPdst reg) %{
-  constraint(ALLOC_IN_RC(r19_bits64_reg)); // interpreter_method_reg
   match(reg);
   format %{ %}
   interface(REG_INTER);

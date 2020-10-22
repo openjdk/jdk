@@ -58,7 +58,7 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
     /**
      * The writer used to write the results.
      */
-    protected final ConstantsSummaryWriter writer;
+    protected ConstantsSummaryWriter writer;
 
     /**
      * The set of TypeElements that have constant fields.
@@ -89,12 +89,9 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
      * Construct a new ConstantsSummaryBuilder.
      *
      * @param context       the build context.
-     * @param writer        the writer for the summary.
      */
-    private ConstantsSummaryBuilder(Context context,
-            ConstantsSummaryWriter writer) {
+    private ConstantsSummaryBuilder(Context context) {
         super(context);
-        this.writer = writer;
         this.typeElementsWithConstFields = new HashSet<>();
         this.printedPackageHeaders = new TreeSet<>(utils.comparators.makePackageComparator());
     }
@@ -103,16 +100,20 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
      * Construct a ConstantsSummaryBuilder.
      *
      * @param context       the build context.
-     * @param writer        the writer for the summary.
      * @return the new ConstantsSummaryBuilder
      */
-    public static ConstantsSummaryBuilder getInstance(Context context,
-            ConstantsSummaryWriter writer) {
-        return new ConstantsSummaryBuilder(context, writer);
+    public static ConstantsSummaryBuilder getInstance(Context context) {
+        return new ConstantsSummaryBuilder(context);
     }
 
     @Override
     public void build() throws DocletException {
+        boolean anyConstants = configuration.packages.stream().anyMatch(this::hasConstantField);
+        if (!anyConstants) {
+            return;
+        }
+
+        writer = configuration.getWriterFactory().getConstantsSummaryWriter();
         if (writer == null) {
             //Doclet does not support this output.
             return;

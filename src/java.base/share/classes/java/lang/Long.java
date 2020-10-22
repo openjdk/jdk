@@ -1668,24 +1668,13 @@ public final class Long extends Number
      * @since 1.8
      */
     public static long divideUnsigned(long dividend, long divisor) {
-        if (divisor < 0L) { // signed comparison
-            // Answer must be 0 or 1 depending on relative magnitude
-            // of dividend and divisor.
-            return (compareUnsigned(dividend, divisor)) < 0 ? 0L :1L;
+        /* See Hacker's Delight (2nd ed), section 9.3 */
+        if (divisor >= 0) {
+            final long q = (dividend >>> 1) / divisor << 1;
+            final long r = dividend - q * divisor;
+            return q + ((r | ~(r - divisor)) >>> (Long.SIZE - 1));
         }
-
-        if (dividend > 0) //  Both inputs non-negative
-            return dividend/divisor;
-        else {
-            /*
-             * For simple code, leveraging BigInteger.  Longer and faster
-             * code written directly in terms of operations on longs is
-             * possible; see "Hacker's Delight" for divide and remainder
-             * algorithms.
-             */
-            return toUnsignedBigInteger(dividend).
-                divide(toUnsignedBigInteger(divisor)).longValue();
-        }
+        return (dividend & ~(dividend - divisor)) >>> (Long.SIZE - 1);
     }
 
     /**
@@ -1701,15 +1690,33 @@ public final class Long extends Number
      * @since 1.8
      */
     public static long remainderUnsigned(long dividend, long divisor) {
-        if (dividend > 0 && divisor > 0) { // signed comparisons
-            return dividend % divisor;
-        } else {
-            if (compareUnsigned(dividend, divisor) < 0) // Avoid explicit check for 0 divisor
-                return dividend;
-            else
-                return toUnsignedBigInteger(dividend).
-                    remainder(toUnsignedBigInteger(divisor)).longValue();
+        /* See Hacker's Delight (2nd ed), section 9.3 */
+        if (divisor >= 0) {
+            final long q = (dividend >>> 1) / divisor << 1;
+            final long r = dividend - q * divisor;
+            /*
+             * Here, 0 <= r < 2 * divisor
+             * (1) When 0 <= r < divisor, the remainder is simply r.
+             * (2) Otherwise the remainder is r - divisor.
+             *
+             * In case (1), r - divisor < 0. Applying ~ produces a long with
+             * sign bit 0, so >> produces 0. The returned value is thus r.
+             *
+             * In case (2), a similar reasoning shows that >> produces -1,
+             * so the returned value is r - divisor.
+             */
+            return r - ((~(r - divisor) >> (Long.SIZE - 1)) & divisor);
         }
+        /*
+         * (1) When dividend >= 0, the remainder is dividend.
+         * (2) Otherwise
+         *      (2.1) When dividend < divisor, the remainder is dividend.
+         *      (2.2) Otherwise the remainder is dividend - divisor
+         *
+         * A reasoning similar to the above shows that the returned value
+         * is as expected.
+         */
+        return dividend - (((dividend & ~(dividend - divisor)) >> (Long.SIZE - 1)) & divisor);
     }
 
     // Bit Twiddling
