@@ -47,10 +47,12 @@ public class BindingInterpreter {
        return stack.pop();
     }
 
+    @FunctionalInterface
     interface StoreFunc {
         void store(VMStorage storage, Class<?> type, Object o);
     }
 
+    @FunctionalInterface
     interface LoadFunc {
         Object load(VMStorage storage, Class<?> type);
     }

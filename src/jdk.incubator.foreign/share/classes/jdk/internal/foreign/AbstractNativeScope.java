@@ -39,8 +39,8 @@ public abstract class AbstractNativeScope implements NativeScope {
 
     private static final int SCOPE_MASK = MemorySegment.READ | MemorySegment.WRITE; // no terminal operations allowed
 
-    AbstractNativeScope(Thread ownerThread) {
-        this.ownerThread = ownerThread;
+    AbstractNativeScope() {
+        this.ownerThread = Thread.currentThread();
     }
 
     @Override
@@ -93,7 +93,7 @@ public abstract class AbstractNativeScope implements NativeScope {
         }
 
         public UnboundedNativeScope() {
-            super(Thread.currentThread());
+            super();
             this.segment = newSegment(BLOCK_SIZE);
         }
 
@@ -137,7 +137,7 @@ public abstract class AbstractNativeScope implements NativeScope {
         }
 
         public BoundedNativeScope(long size) {
-            super(Thread.currentThread());
+            super();
             this.segment = newSegment(size, 1);
         }
 

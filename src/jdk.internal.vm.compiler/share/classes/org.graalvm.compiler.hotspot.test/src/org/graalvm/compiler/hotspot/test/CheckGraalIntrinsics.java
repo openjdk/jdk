@@ -437,6 +437,11 @@ public class CheckGraalIntrinsics extends GraalTest {
                             "java/lang/Math.signum(D)D",
                             "java/lang/Math.signum(F)F",
                             "sun/security/provider/MD5.implCompress0([BI)V");
+
+            // Panama
+            add(toBeInvestigated,
+                    // Native method handle intrinsics
+                    "java/lang/invoke/MethodHandle.linkToNative*");
         }
 
         if (!config.inlineNotify()) {

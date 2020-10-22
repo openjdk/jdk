@@ -336,7 +336,7 @@ public class StdLibTest {
             FunctionDescriptor fd = printfBase;
             for (PrintfArg arg : args) {
                 mt = mt.appendParameterTypes(arg.carrier);
-                fd = fd.appendArgumentLayouts(arg.layout);
+                fd = fd.withAppendedArgumentLayouts(arg.layout);
             }
             MethodHandle mh = abi.downcallHandle(printfAddr, mt, fd);
             return mh.asSpreader(1, Object[].class, args.size());

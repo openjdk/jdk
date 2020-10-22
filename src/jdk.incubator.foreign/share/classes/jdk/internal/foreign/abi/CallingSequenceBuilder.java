@@ -59,7 +59,7 @@ public class CallingSequenceBuilder {
         verifyBindings(true, carrier, bindings);
         inputBindings.add(bindings);
         mt = mt.appendParameterTypes(carrier);
-        desc = desc.appendArgumentLayouts(layout);
+        desc = desc.withAppendedArgumentLayouts(layout);
         return this;
     }
 
@@ -68,7 +68,7 @@ public class CallingSequenceBuilder {
         verifyBindings(false, carrier, bindings);
         this.outputBindings = bindings;
         mt = mt.changeReturnType(carrier);
-        desc = desc.changeReturnLayout(layout);
+        desc = desc.withReturnLayout(layout);
         return this;
     }
 
@@ -91,7 +91,7 @@ public class CallingSequenceBuilder {
         }
     }
 
-    private static final Set<Binding.Tag> unboxTags = EnumSet.of(
+    private static final Set<Binding.Tag> UNBOX_TAGS = EnumSet.of(
         VM_STORE,
         //VM_LOAD,
         //BUFFER_STORE,
@@ -110,7 +110,7 @@ public class CallingSequenceBuilder {
         stack.push(inType);
 
         for (Binding b : bindings) {
-            if (!unboxTags.contains(b.tag()))
+            if (!UNBOX_TAGS.contains(b.tag()))
                 throw new IllegalArgumentException("Unexpected operator: " + b);
             b.verify(stack);
         }
@@ -120,7 +120,7 @@ public class CallingSequenceBuilder {
         }
     }
 
-    private static final Set<Binding.Tag> boxTags = EnumSet.of(
+    private static final Set<Binding.Tag> BOX_TAGS = EnumSet.of(
         //VM_STORE,
         VM_LOAD,
         BUFFER_STORE,
@@ -138,7 +138,7 @@ public class CallingSequenceBuilder {
         Deque<Class<?>> stack = new ArrayDeque<>();
 
         for (Binding b : bindings) {
-            if (!boxTags.contains(b.tag()))
+            if (!BOX_TAGS.contains(b.tag()))
                 throw new IllegalArgumentException("Unexpected operator: " + b);
             b.verify(stack);
         }

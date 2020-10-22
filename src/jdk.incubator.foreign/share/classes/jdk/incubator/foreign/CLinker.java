@@ -122,11 +122,13 @@ public interface CLinker {
      * Obtain a foreign method handle, with given type, which can be used to call a
      * target foreign function at a given address and featuring a given function descriptor.
      *
+     * @see LibraryLookup#lookup(String)
+     *
      * @param symbol   downcall symbol.
      * @param type     the method type.
      * @param function the function descriptor.
      * @return the downcall method handle.
-     * @throws IllegalArgumentException in the case of a carrier type and memory layout mismatch.
+     * @throws IllegalArgumentException in the case of a method type and function descriptor mismatch.
      */
     MethodHandle downcallHandle(Addressable symbol, MethodType type, FunctionDescriptor function);
 
@@ -142,7 +144,7 @@ public interface CLinker {
      * @param target   the target method handle.
      * @param function the function descriptor.
      * @return the native stub segment.
-     * @throws IllegalArgumentException in the case of a carrier type and memory layout mismatch.
+     * @throws IllegalArgumentException if the target's method type and the function descriptor mismatch.
      */
     MemorySegment upcallStub(MethodHandle target, FunctionDescriptor function);
 
@@ -198,8 +200,8 @@ public interface CLinker {
         return (T) PlatformLayouts.asVarArg(ml);
     }
 
-        /**
-     * Convert a Java string into a null-terminated C string, using the
+    /**
+     * Converts a Java string into a null-terminated C string, using the
      * platform's default charset, storing the result into a new native memory segment.
      * <p>
      * This method always replaces malformed-input and unmappable-character
@@ -209,7 +211,7 @@ public interface CLinker {
      *
      * @param str the Java string to be converted into a C string.
      * @return a new native memory segment containing the converted C string.
-     * @throws NullPointerException if either {@code str == null}.
+     * @throws NullPointerException if {@code str == null}.
      */
     static MemorySegment toCString(String str) {
         Objects.requireNonNull(str);
@@ -217,7 +219,7 @@ public interface CLinker {
     }
 
     /**
-     * Convert a Java string into a null-terminated C string, using the given {@linkplain java.nio.charset.Charset charset},
+     * Converts a Java string into a null-terminated C string, using the given {@link java.nio.charset.Charset charset},
      * storing the result into a new native memory segment.
      * <p>
      * This method always replaces malformed-input and unmappable-character
@@ -226,7 +228,7 @@ public interface CLinker {
      * control over the encoding process is required.
      *
      * @param str the Java string to be converted into a C string.
-     * @param charset The {@linkplain java.nio.charset.Charset} to be used to compute the contents of the C string.
+     * @param charset The {@link java.nio.charset.Charset} to be used to compute the contents of the C string.
      * @return a new native memory segment containing the converted C string.
      * @throws NullPointerException if either {@code str == null} or {@code charset == null}.
      */
@@ -237,7 +239,7 @@ public interface CLinker {
     }
 
     /**
-     * Convert a Java string into a null-terminated C string, using the platform's default charset,
+     * Converts a Java string into a null-terminated C string, using the platform's default charset,
      * storing the result into a native memory segment allocated using the provided scope.
      * <p>
      * This method always replaces malformed-input and unmappable-character
@@ -257,7 +259,7 @@ public interface CLinker {
     }
 
     /**
-     * Convert a Java string into a null-terminated C string, using the given {@linkplain java.nio.charset.Charset charset},
+     * Converts a Java string into a null-terminated C string, using the given {@link java.nio.charset.Charset charset},
      * storing the result into a new native memory segment native memory segment allocated using the provided scope.
      * <p>
      * This method always replaces malformed-input and unmappable-character
@@ -266,7 +268,7 @@ public interface CLinker {
      * control over the encoding process is required.
      *
      * @param str the Java string to be converted into a C string.
-     * @param charset The {@linkplain java.nio.charset.Charset} to be used to compute the contents of the C string.
+     * @param charset The {@link java.nio.charset.Charset} to be used to compute the contents of the C string.
      * @param scope the scope to be used for the native segment allocation.
      * @return a new native memory segment containing the converted C string.
      * @throws NullPointerException if either {@code str == null}, {@code charset == null} or {@code scope == null}.
@@ -279,7 +281,7 @@ public interface CLinker {
     }
 
     /**
-     * Convert a null-terminated C string stored at given address into a Java string, using the platform's default charset.
+     * Converts a null-terminated C string stored at given address into a Java string, using the platform's default charset.
      * <p>
      * This method always replaces malformed-input and unmappable-character
      * sequences with this charset's default replacement string.  The {@link
@@ -300,7 +302,7 @@ public interface CLinker {
     }
 
     /**
-     * Convert a null-terminated C string stored at given address into a Java string, using the given {@linkplain java.nio.charset.Charset charset}.
+     * Converts a null-terminated C string stored at given address into a Java string, using the given {@link java.nio.charset.Charset charset}.
      * <p>
      * This method always replaces malformed-input and unmappable-character
      * sequences with this charset's default replacement string.  The {@link
@@ -311,18 +313,20 @@ public interface CLinker {
      * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
      * restricted methods, and use safe and supported functionalities, where possible.
      * @param addr the address at which the string is stored.
-     * @param charset The {@linkplain java.nio.charset.Charset} to be used to compute the contents of the Java string.
+     * @param charset The {@link java.nio.charset.Charset} to be used to compute the contents of the Java string.
      * @return a Java string with the contents of the null-terminated C string at given address.
-     * @throws NullPointerException if {@code addr == null}
+     * @throws NullPointerException if {@code addr == null} or {@code charset == null}.
      * @throws IllegalArgumentException if the size of the native string is greater than {@code Integer.MAX_VALUE}.
      */
     static String toJavaStringRestricted(MemoryAddress addr, Charset charset) {
         Utils.checkRestrictedAccess("CLinker.toJavaStringRestricted");
+        Objects.requireNonNull(addr);
+        Objects.requireNonNull(charset);
         return SharedUtils.toJavaStringInternal(NativeMemorySegmentImpl.EVERYTHING, addr.toRawLongValue(), charset);
     }
 
     /**
-     * Convert a null-terminated C string stored at given address into a Java string, using the platform's default charset.
+     * Converts a null-terminated C string stored at given address into a Java string, using the platform's default charset.
      * <p>
      * This method always replaces malformed-input and unmappable-character
      * sequences with this charset's default replacement string.  The {@link
@@ -336,25 +340,28 @@ public interface CLinker {
      * associated with {@code addr}, or if {@code addr} is associated with a segment that is <em>not alive</em>.
      */
     static String toJavaString(MemorySegment addr) {
+        Objects.requireNonNull(addr);
         return SharedUtils.toJavaStringInternal(addr, 0L, Charset.defaultCharset());
     }
 
     /**
-     * Convert a null-terminated C string stored at given address into a Java string, using the given {@linkplain java.nio.charset.Charset charset}.
+     * Converts a null-terminated C string stored at given address into a Java string, using the given {@link java.nio.charset.Charset charset}.
      * <p>
      * This method always replaces malformed-input and unmappable-character
      * sequences with this charset's default replacement string.  The {@link
      * java.nio.charset.CharsetDecoder} class should be used when more control
      * over the decoding process is required.
      * @param addr the address at which the string is stored.
-     * @param charset The {@linkplain java.nio.charset.Charset} to be used to compute the contents of the Java string.
+     * @param charset The {@link java.nio.charset.Charset} to be used to compute the contents of the Java string.
      * @return a Java string with the contents of the null-terminated C string at given address.
-     * @throws NullPointerException if {@code addr == null}
+     * @throws NullPointerException if {@code addr == null} or {@code charset == null}.
      * @throws IllegalArgumentException if the size of the native string is greater than {@code Integer.MAX_VALUE}.
      * @throws IllegalStateException if the size of the native string is greater than the size of the segment
      * associated with {@code addr}, or if {@code addr} is associated with a segment that is <em>not alive</em>.
      */
     static String toJavaString(MemorySegment addr, Charset charset) {
+        Objects.requireNonNull(addr);
+        Objects.requireNonNull(charset);
         return SharedUtils.toJavaStringInternal(addr, 0L, charset);
     }
 
@@ -377,7 +384,7 @@ public interface CLinker {
     }
 
     /**
-     * Allocate memory of given size using malloc.
+     * Allocates memory of given size using malloc.
      * <p>
      * This method is <em>restricted</em>. Restricted method are unsafe, and, if used incorrectly, their use might crash
      * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
@@ -385,23 +392,31 @@ public interface CLinker {
      *
      * @param size memory size to be allocated
      * @return addr memory address of the allocated memory
+     * @throws OutOfMemoryError if malloc could not allocate the required amount of native memory.
      */
     static MemoryAddress allocateMemoryRestricted(long size) {
         Utils.checkRestrictedAccess("CLinker.allocateMemoryRestricted");
-        return SharedUtils.allocateMemoryInternal(size);
+        MemoryAddress addr = SharedUtils.allocateMemoryInternal(size);
+        if (addr.equals(MemoryAddress.NULL)) {
+            throw new OutOfMemoryError();
+        } else {
+            return addr;
+        }
     }
 
     /**
-     * Free the memory pointed by the given memory address.
+     * Frees the memory pointed by the given memory address.
      * <p>
      * This method is <em>restricted</em>. Restricted method are unsafe, and, if used incorrectly, their use might crash
      * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
      * restricted methods, and use safe and supported functionalities, where possible.
      *
      * @param addr memory address of the native memory to be freed
+     * @throws NullPointerException if {@code addr == null}.
      */
     static void freeMemoryRestricted(MemoryAddress addr) {
         Utils.checkRestrictedAccess("CLinker.freeMemoryRestricted");
+        Objects.requireNonNull(addr);
         SharedUtils.freeMemoryInternal(addr);
     }
 
@@ -600,7 +615,7 @@ public interface CLinker {
          * is called.
          * <p>
          * Note that when there are no elements added to the created va list,
-         * this method will return the same as {@linkplain #empty()}.
+         * this method will return the same as {@link #empty()}.
          *
          * @param actions a consumer for a builder (see {@link Builder}) which can be used to specify the elements
          *                of the underlying C {@code va_list}.
@@ -620,7 +635,7 @@ public interface CLinker {
          * will be managed by the given {@code NativeScope}, and will be released when the scope is closed.
          * <p>
          * Note that when there are no elements added to the created va list,
-         * this method will return the same as {@linkplain #empty()}.
+         * this method will return the same as {@link #empty()}.
          *
          * @param actions a consumer for a builder (see {@link Builder}) which can be used to specify the elements
          *                of the underlying C {@code va_list}.
