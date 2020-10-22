@@ -1172,7 +1172,7 @@ JRT_ENTRY(void, InterpreterRuntime::at_safepoint(JavaThread* thread))
   }
 JRT_END
 
-JRT_ENTRY(void, InterpreterRuntime::at_unwind(JavaThread* thread))
+JRT_LEAF(void, InterpreterRuntime::at_unwind(JavaThread* thread))
   // JRT_END does an implicit safepoint check, hence we are guaranteed to block
   // if this is called during a safepoint
 
