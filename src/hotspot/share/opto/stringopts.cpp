@@ -606,7 +606,7 @@ void PhaseStringOpts::eliminate_call(CallNode* call, CallProjections& projs) {
 void PhaseStringOpts::optimize_startsWith(CallJavaNode* substr, CallJavaNode* startsWith, Node* castpp, CallProjections& projs) {
   ciMethod* m = startsWith->method();
   ciInstanceKlass* holder = m->holder();
-  ciMethod* m2 = holder->find_method(m->name(), ciSymbol::make("(Ljava/lang/String;I)Z"));
+  ciMethod* m2 = holder->find_method(m->name(), ciSymbol::string_int_bool_signature());
 
   Node* s = startsWith->in(TypeFunc::Parms + 0);
   startsWith->replace_edge(s, substr->in(TypeFunc::Parms + 0));              // parent of substring
@@ -617,20 +617,39 @@ void PhaseStringOpts::optimize_startsWith(CallJavaNode* substr, CallJavaNode* st
   startsWith->set_override_symbolic_info(true);
   startsWith->jvms()->adapt_position(+1);
 
-  Node* iff = startsWith->in(TypeFunc::Control)->in(TypeFunc::Control);
-  if (iff->is_If()) {
-    iff->replace_edge(iff->in(1), C->top());
-    C->for_igvn()->push(iff);
+  Node* ctrl = startsWith->in(TypeFunc::Control);
+  Node* iff = nullptr;
+
+  if (ctrl->is_IfProj()) {
+    iff = ctrl->in(TypeFunc::Control);
   }
 
-  // rewrite defs using the defs of substr
-  for (node_idx_t idx = TypeFunc::Control; idx < TypeFunc::Parms; ++idx) {
-    startsWith->replace_edge(startsWith->in(idx), substr->in(idx));
+  if (iff != nullptr && iff->is_If()) {
+    ctrl = iff->find_exact_control(iff->in(TypeFunc::Control));
+
+    // if substr controls startsWith, hoist startsWith
+    if (ctrl == substr) {
+      iff->replace_edge(iff->in(1), C->top());
+      C->for_igvn()->push(iff);
+
+      // rewrite defs using the defs of substr
+      for (node_idx_t idx = TypeFunc::Control; idx < TypeFunc::Parms; ++idx) {
+        startsWith->replace_edge(startsWith->in(idx), substr->in(idx));
+      }
+    }
   }
 
-  if (castpp->outcnt() == 0 && !substr->is_top()) {
+  if (castpp->outcnt() == 0 && substr->outcnt() > 0) {
     eliminate_call(substr, projs);
-    NOT_PRODUCT(substring_eliminated++;)
+    assert(substr->outcnt() == 0, "failed to eliminate substring call");
+
+#ifndef PRODUCT
+    substring_eliminated++;
+    if (PrintOptimizeSubstring) {
+      tty->print_cr("eliminate substring:");
+      substr->dump(0);
+    }
+#endif
   }
 }
 
@@ -647,20 +666,20 @@ void PhaseStringOpts::optimize_for_substring() {
 
       if (substr != nullptr && substr->method() != nullptr &&
           substr->method()->is_string_substring()) {
+        substr->extract_projections(&projs, true);
 #ifndef PRODUCT
         if (PrintOptimizeSubstring) {
           tty->print_cr("[optimize_startsWith] before:");
-          call->dump(2);
+          call->dump(0);
         }
 #endif /*PRODUCT*/
 
-        substr->extract_projections(&projs, true);
         optimize_startsWith(substr, call, castpp, projs);
 
 #ifndef PRODUCT
         if (PrintOptimizeSubstring) {
           tty->print_cr("[optimize_startsWith] after:");
-          call->dump(2);
+          call->dump(0);
         }
 #endif /*PRODUCT*/
       }
