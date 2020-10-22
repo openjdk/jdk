@@ -41,7 +41,7 @@ bool ABIDescriptor::is_volatile_reg(FloatRegister reg) const {
 #define INTEGER_TYPE 0
 #define VECTOR_TYPE 1
 
-const ABIDescriptor ForeignGlobals::parseABIDescriptor_impl(jobject jabi) const {
+const ABIDescriptor ForeignGlobals::parse_abi_descriptor_impl(jobject jabi) const {
   oop abi_oop = JNIHandles::resolve_non_null(jabi);
   ABIDescriptor abi;
 
@@ -63,7 +63,7 @@ const ABIDescriptor ForeignGlobals::parseABIDescriptor_impl(jobject jabi) const 
   return abi;
 }
 
-const BufferLayout ForeignGlobals::parseBufferLayout_impl(jobject jlayout) const {
+const BufferLayout ForeignGlobals::parse_buffer_layout_impl(jobject jlayout) const {
   oop layout_oop = JNIHandles::resolve_non_null(jlayout);
   BufferLayout layout;
 

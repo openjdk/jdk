@@ -26,9 +26,9 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "code/vmreg.hpp"
 
-JVM_LEAF(jlong, NEP_vmStorageToVMReg(JNIEnv* env, jclass _unused, jint type, jint index))
+JNI_LEAF(jlong, NEP_vmStorageToVMReg(JNIEnv* env, jclass _unused, jint type, jint index))
   return VMRegImpl::vmStorageToVMReg(type, index)->value();
-JVM_END
+JNI_END
 
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &f)
@@ -37,8 +37,8 @@ static JNINativeMethod NEP_methods[] = {
   {CC "vmStorageToVMReg", CC "(II)J", FN_PTR(NEP_vmStorageToVMReg)},
 };
 
-JVM_LEAF(void, JVM_RegisterNativeEntryPointMethods(JNIEnv *env, jclass NEP_class))
+JNI_LEAF(void, JVM_RegisterNativeEntryPointMethods(JNIEnv *env, jclass NEP_class))
   int status = env->RegisterNatives(NEP_class, NEP_methods, sizeof(NEP_methods)/sizeof(JNINativeMethod));
   guarantee(status == JNI_OK && !env->ExceptionOccurred(),
             "register jdk.internal.invoke.NativeEntryPoint natives");
-JVM_END
+JNI_END

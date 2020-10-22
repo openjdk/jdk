@@ -29,16 +29,16 @@
 
 #define FOREIGN_ABI "jdk/internal/foreign/abi/"
 
-int ForeignGlobals::field_offset(InstanceKlass* cls, const char* fieldname, Symbol* sigsym) {
-  Symbol* fieldnamesym = SymbolTable::new_symbol(fieldname, (int)strlen(fieldname));
+static int field_offset(InstanceKlass* cls, const char* fieldname, Symbol* sigsym) {
+  TempNewSymbol fieldnamesym = SymbolTable::new_symbol(fieldname, (int)strlen(fieldname));
   fieldDescriptor fd;
   bool success = cls->find_field(fieldnamesym, sigsym, false, &fd);
   assert(success, "Field not found");
   return fd.offset();
 }
 
-InstanceKlass* ForeignGlobals::find_InstanceKlass(const char* name, TRAPS) {
-  Symbol* sym = SymbolTable::new_symbol(name, (int)strlen(name));
+static InstanceKlass* find_InstanceKlass(const char* name, TRAPS) {
+  TempNewSymbol sym = SymbolTable::new_symbol(name, (int)strlen(name));
   Klass* k = SystemDictionary::resolve_or_null(sym, Handle(), Handle(), THREAD);
   assert(k != nullptr, "Can not find class: %s", name);
   return InstanceKlass::cast(k);
@@ -49,11 +49,11 @@ const ForeignGlobals& ForeignGlobals::instance() {
   return globals;
 }
 
-const ABIDescriptor ForeignGlobals::parseABIDescriptor(jobject jabi) {
-  return instance().parseABIDescriptor_impl(jabi);
+const ABIDescriptor ForeignGlobals::parse_abi_descriptor(jobject jabi) {
+  return instance().parse_abi_descriptor_impl(jabi);
 }
-const BufferLayout ForeignGlobals::parseBufferLayout(jobject jlayout) {
-  return instance().parseBufferLayout_impl(jlayout);
+const BufferLayout ForeignGlobals::parse_buffer_layout(jobject jlayout) {
+  return instance().parse_buffer_layout_impl(jlayout);
 }
 
 ForeignGlobals::ForeignGlobals() {

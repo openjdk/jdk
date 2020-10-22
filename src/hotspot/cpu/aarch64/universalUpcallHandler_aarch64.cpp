@@ -120,8 +120,10 @@ static void upcall_helper(jobject rec, address buff) {
                          &args, thread);
 }
 
-static address generate_upcall_stub(jobject rec, const ABIDescriptor& abi,
-                                    const BufferLayout& layout) {
+addres ProgrammableUpcallHandler::generate_upcall_stub(jobject rec, jobject jabi, jobject jlayout) {
+  const ABIDescriptor abi = ForeignGlobals::parse_abi_descriptor(jabi);
+  const BufferLayout layout = ForeignGlobals::parse_buffer_layout(jlayout);
+
   ResourceMark rm;
   CodeBuffer buffer("upcall_stub", 1024, upcall_stub_size);
 
@@ -182,11 +184,4 @@ static address generate_upcall_stub(jobject rec, const ABIDescriptor& abi,
   BufferBlob* blob = BufferBlob::create("upcall_stub", &buffer);
 
   return blob->code_begin();
-}
-
-jlong ProgrammableUpcallHandler::generate_upcall_stub(jobject rec, jobject jabi, jobject jlayout) {
-  const ABIDescriptor abi = ForeignGlobals::parseABIDescriptor(jabi);
-  const BufferLayout layout = ForeignGlobals::parseBufferLayout(jlayout);
-
-  return (jlong) ::generate_upcall_stub(rec, abi, layout);
 }

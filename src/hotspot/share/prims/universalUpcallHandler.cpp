@@ -26,11 +26,11 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 
-JVM_ENTRY(jlong, PUH_AllocateUpcallStub(JNIEnv *env, jobject rec, jobject abi, jobject buffer_layout))
+JNI_ENTRY(jlong, PUH_AllocateUpcallStub(JNIEnv *env, jobject rec, jobject abi, jobject buffer_layout))
   Handle receiver(THREAD, JNIHandles::resolve(rec));
   jobject global_rec = JNIHandles::make_global(receiver);
-  return ProgrammableUpcallHandler::generate_upcall_stub(global_rec, abi, buffer_layout);
-JVM_END
+  return (jlong) ProgrammableUpcallHandler::generate_upcall_stub(global_rec, abi, buffer_layout);
+JNI_END
 
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &f)
@@ -45,8 +45,8 @@ static JNINativeMethod PUH_methods[] = {
 /**
  * This one function is exported, used by NativeLookup.
  */
-JVM_LEAF(void, JVM_RegisterProgrammableUpcallHandlerMethods(JNIEnv *env, jclass PUH_class))
+JNI_LEAF(void, JVM_RegisterProgrammableUpcallHandlerMethods(JNIEnv *env, jclass PUH_class))
   int status = env->RegisterNatives(PUH_class, PUH_methods, sizeof(PUH_methods)/sizeof(JNINativeMethod));
   guarantee(status == JNI_OK && !env->ExceptionOccurred(),
             "register jdk.internal.foreign.abi.ProgrammableUpcallHandler natives");
-JVM_END
+JNI_END

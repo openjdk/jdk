@@ -150,8 +150,8 @@ public:
 };
 
 jlong ProgrammableInvoker::generate_adapter(jobject jabi, jobject jlayout) {
-  const ABIDescriptor abi = ForeignGlobals::parseABIDescriptor(jabi);
-  const BufferLayout layout = ForeignGlobals::parseBufferLayout(jlayout);
+  const ABIDescriptor abi = ForeignGlobals::parse_abi_descriptor(jabi);
+  const BufferLayout layout = ForeignGlobals::parse_buffer_layout(jlayout);
 
   BufferBlob* _invoke_native_blob = BufferBlob::create("invoke_native_blob", native_invoker_size);
 
