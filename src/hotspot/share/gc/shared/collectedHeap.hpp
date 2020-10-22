@@ -553,12 +553,4 @@ class GCCauseSetter : StackObj {
   }
 };
 
-#define assert_object_is_in_heap(obj)       \
-  assert(Universe::heap()->is_in(obj),      \
-         "object not in heap " PTR_FORMAT,  \
-         p2i(obj))
-
-#define assert_object_is_in_heap_or_null(obj)                 \
-  debug_only(if (obj != NULL)) assert_object_is_in_heap(obj)
-
 #endif // SHARE_GC_SHARED_COLLECTEDHEAP_HPP

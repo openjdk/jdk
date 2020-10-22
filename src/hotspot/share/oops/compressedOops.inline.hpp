@@ -54,7 +54,7 @@ inline oop CompressedOops::decode_not_null(narrowOop v) {
   assert(!is_null(v), "narrow oop value can never be zero");
   oop result = decode_raw(v);
   assert(is_object_aligned(result), "address not aligned: " INTPTR_FORMAT, p2i((void*) result));
-  assert_object_is_in_heap(result);
+  assert(Universe::heap()->is_in(result), "object not in heap " PTR_FORMAT, p2i((void*) result));
   return result;
 }
 
@@ -78,12 +78,12 @@ inline narrowOop CompressedOops::encode(oop v) {
 }
 
 inline oop CompressedOops::decode_not_null(oop v) {
-  assert_object_is_in_heap(v);
+  assert(Universe::heap()->is_in(v), "object not in heap " PTR_FORMAT, p2i((void*) v));
   return v;
 }
 
 inline oop CompressedOops::decode(oop v) {
-  assert_object_is_in_heap_or_null(v);
+  assert(Universe::heap()->is_in_or_null(v), "object not in heap " PTR_FORMAT, p2i((void*) v));
   return v;
 }
 
