@@ -61,14 +61,11 @@ private:
   template<typename T, typename Func>
   void loadArray(objArrayOop jarray, int type_index, GrowableArray<T>& array, Func converter) const;
 
-  int field_offset(InstanceKlass* cls, const char* fieldname, Symbol* sigsym);
-  InstanceKlass* find_InstanceKlass(const char* name, TRAPS);
-
-  const ABIDescriptor parseABIDescriptor_impl(jobject jabi) const;
-  const BufferLayout parseBufferLayout_impl(jobject jlayout) const;
+  const ABIDescriptor parse_abi_descriptor_impl(jobject jabi) const;
+  const BufferLayout parse_buffer_layout_impl(jobject jlayout) const;
 public:
-  static const ABIDescriptor parseABIDescriptor(jobject jabi);
-  static const BufferLayout parseBufferLayout(jobject jlayout);
+  static const ABIDescriptor parse_abi_descriptor(jobject jabi);
+  static const BufferLayout parse_buffer_layout(jobject jlayout);
 };
 
 #endif // SHARE_PRIMS_FOREIGN_GLOBALS

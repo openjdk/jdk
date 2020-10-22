@@ -34,7 +34,7 @@
 
 class ProgrammableUpcallHandler : AllStatic {
 public:
-  static jlong generate_upcall_stub(jobject rec, jobject abi, jobject buffer_layout);
+  static address generate_upcall_stub(jobject rec, jobject abi, jobject buffer_layout);
 };
 
 #endif // SHARE_VM_PRIMS_UNIVERSALUPCALLHANDLER_HPP
