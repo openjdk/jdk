@@ -35,7 +35,7 @@ import java.util.Objects;
  * <p>
  * A DataInputStream is not safe for use by multiple concurrent
  * threads. If a DataInputStream is to be used by more than one
- * thread then access to the data output stream should be controlled
+ * thread then access to the data input stream should be controlled
  * by appropriate synchronization.
  *
  * @author  Arthur van Hoff
