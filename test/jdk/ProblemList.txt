@@ -852,8 +852,6 @@ com/sun/jdi/InvokeHangTest.java                                 8218463 linux-al
 
 # jdk_util
 
-java/util/stream/test/org/openjdk/tests/java/util/stream/SpliteratorTest.java 8254162 generic-i586
-
 ############################################################################
 
 # jdk_instrument
