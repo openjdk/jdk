@@ -24,8 +24,8 @@
 // This test was generated from this source and then modified:
 //    record recordNames(int x, String y) {}
 
-// This test has a Record attribute that is too short but its super class is
-// not java.lang.Record.  So, the bogus Record attribute should be ignored.
+// This test has a Record attribute that is too short and its super class is
+// not java.lang.Record.  The bad Record attribute should still be detected.
 class superNotJLRecord {
   0xCAFEBABE;
   65535; // minor version
