@@ -556,7 +556,11 @@ class CodeBuffer: public StackObj {
   static int locator_sect(int locator)  { return locator &  sect_mask; }
   static int locator(int pos, int sect) { return (pos << sect_bits) | sect; }
   int        locator(address addr) const;
-  address    locator_address(int locator) const;
+  address    locator_address(int locator) const {
+    if (locator < 0)  return NULL;
+    address start = code_section(locator_sect(locator))->start();
+    return start + locator_pos(locator);
+  }
 
   // Heuristic for pre-packing the taken/not-taken bit of a predicted branch.
   bool is_backward_branch(Label& L);
