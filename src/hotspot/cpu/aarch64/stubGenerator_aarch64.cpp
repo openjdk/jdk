@@ -4005,9 +4005,11 @@ class StubGenerator: public StubCodeGenerator {
 
     __ add(newArr, newArr, newIdx, Assembler::LSL, 2);
 
+    // left shift count
     __ movw(shiftRevCount, 32);
     __ subw(shiftRevCount, shiftRevCount, shiftCount);
 
+    // numIter too short, rolling back
     __ cmp(numIter, (u1)8);
     __ br(Assembler::LT, ShiftOneLoop);
 
@@ -4109,14 +4111,16 @@ class StubGenerator: public StubCodeGenerator {
     __ add(oldArrNext, oldArr, 4);
     __ add(newArr, newArr, newIdx, Assembler::LSL, 2);
 
+    // right shift count
     __ movw(shiftRevCount, 32);
     __ subw(shiftRevCount, shiftRevCount, shiftCount);
 
+    // numIter too short, rolling back
     __ cmp(numIter, (u1)8);
     __ br(Assembler::LT, ShiftOneLoop);
 
-    __ dup(shiftVCount,    __ T4S, shiftCount);
-    __ dup(shiftVRevCount, __ T4S, shiftRevCount);
+    __ dup(shiftVCount,     __ T4S, shiftCount);
+    __ dup(shiftVRevCount,  __ T4S, shiftRevCount);
     __ negr(shiftVRevCount, __ T4S, shiftVRevCount);
 
     __ BIND(ShiftSIMDLoop);
