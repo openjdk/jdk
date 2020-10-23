@@ -2314,12 +2314,12 @@ void MemoryGraphFixer::collect_memory_nodes() {
                   Node* m = _memory_nodes[c->in(k)->_idx];
                   assert(m != NULL, "expect memory state");
                   if (u->in(k) != m) {
-                    phi = NULL;
+                    phi = NodeSentinel;
                   }
                 }
               }
             }
-            if (phi == NULL) {
+            if (phi == NodeSentinel) {
               phi = new PhiNode(c, Type::MEMORY, _phase->C->get_adr_type(_alias));
               for (uint k = 1; k < c->req(); k++) {
                 Node* m = _memory_nodes[c->in(k)->_idx];
@@ -2328,8 +2328,11 @@ void MemoryGraphFixer::collect_memory_nodes() {
               }
             }
           }
-          assert(phi != NULL, "");
-          regions.map(c->_idx, phi);
+          if (phi != NULL) {
+            regions.map(c->_idx, phi);
+          } else {
+            assert(c->unique_ctrl_out()->Opcode() == Op_Halt, "expected memory state");
+          }
         }
         Node* current_region = regions[c->_idx];
         if (current_region != prev_region) {
@@ -2340,7 +2343,7 @@ void MemoryGraphFixer::collect_memory_nodes() {
         }
       } else if (prev_mem == NULL || prev_mem->is_Phi() || ctrl_or_self(prev_mem) != c) {
         Node* m = _memory_nodes[_phase->idom(c)->_idx];
-        assert(m != NULL, "expect memory state");
+        assert(m != NULL || c->Opcode() == Op_Halt, "expect memory state");
         if (m != prev_mem) {
           _memory_nodes.map(c->_idx, m);
           progress = true;
@@ -2364,7 +2367,8 @@ void MemoryGraphFixer::collect_memory_nodes() {
     Node* c = rpo_list.at(i);
     if (c->is_Region() && (_include_lsm || !c->is_OuterStripMinedLoop())) {
       Node* n = regions[c->_idx];
-      if (n->is_Phi() && n->_idx >= last && n->in(0) == c) {
+      assert(n != NULL || c->unique_ctrl_out()->Opcode() == Op_Halt, "expected memory state");
+      if (n != NULL && n->is_Phi() && n->_idx >= last && n->in(0) == c) {
         _phase->register_new_node(n, c);
       }
     }
@@ -2373,10 +2377,12 @@ void MemoryGraphFixer::collect_memory_nodes() {
     Node* c = rpo_list.at(i);
     if (c->is_Region() && (_include_lsm || !c->is_OuterStripMinedLoop())) {
       Node* n = regions[c->_idx];
+      assert(n != NULL || c->unique_ctrl_out()->Opcode() == Op_Halt, "expected memory state");
       for (DUIterator_Fast imax, i = c->fast_outs(imax); i < imax; i++) {
         Node* u = c->fast_out(i);
         if (u->is_Phi() && u->bottom_type() == Type::MEMORY &&
             u != n) {
+          assert(c->unique_ctrl_out()->Opcode() != Op_Halt, "expected memory state");
           if (u->adr_type() == TypePtr::BOTTOM) {
             fix_memory_uses(u, n, n, c);
           } else if (_phase->C->get_alias_index(u->adr_type()) == _alias) {
