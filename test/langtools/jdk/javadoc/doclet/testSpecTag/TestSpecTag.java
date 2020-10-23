@@ -31,6 +31,7 @@
  * @run main TestSpecTag
  */
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -74,7 +75,8 @@ public class TestSpecTag extends JavadocTester {
         checkExit(Exit.ERROR);
 
         checkOutput(Output.OUT, true,
-                "testBadSpecURI/src/p/C.java:1: error - invalid URI: Expected closing bracket for IPv6 address at index 8: http://[");
+                "testBadSpecURI/src/p/C.java:1:".replace('/', File.separatorChar)
+                    + " error - invalid URI: Expected closing bracket for IPv6 address at index 8: http://[");
 
         checkOutput("p/C.html", true,
                 """
@@ -128,19 +130,24 @@ public class TestSpecTag extends JavadocTester {
     @Test
     public void testEncodedURI(Path base) throws IOException {
         Path src = base.resolve("src");
+        // The default encoding for OpenJDK source files is ASCII.
+        // The following writes a file using UTF-8 containing a non-ASCII character (section)
+        // and a Unicode escape for another character (plus or minus)
         tb.writeJavaFiles(src, """
                 package p;
                 /**
                  * @spec http://example.com/a+b         space: plus
                  * @spec http://example.com/a%20b       space: percent
-                 * @spec http://example.com/a§b         other: section; U+00A7, UTF-8 c2 a7
-                 * @spec http://example.com/a\u00b1b    unicode: plus or minus; U+00B1, UTF-8 c2 b1
+                 * @spec http://example.com/a\u00A7b    other: section; U+00A7, UTF-8 c2 a7
+                 * @spec http://example.com/a\\u00B1b   unicode: plus or minus; U+00B1, UTF-8 c2 b1
                  */
                 public class C { }
                 """);
 
+        // Ensure the source file is read using UTF-8
         javadoc("-d", base.resolve("out").toString(),
                 "--source-path", src.toString(),
+                "-encoding", "UTF-8",
                 "p");
         checkExit(Exit.OK);
 
