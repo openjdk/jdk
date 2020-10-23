@@ -39,7 +39,6 @@ public:
   bool is_member_name() const { return true; }
 
   ciMethod* get_vmtarget() const;
-
 };
 
 #endif // SHARE_CI_CIMEMBERNAME_HPP
