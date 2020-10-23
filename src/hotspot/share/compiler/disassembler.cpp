@@ -48,12 +48,9 @@ bool        Disassembler::_library_usable        = false;
 
 // This routine is in the shared library:
 Disassembler::decode_func_virtual Disassembler::_decode_instructions_virtual = NULL;
-Disassembler::decode_func Disassembler::_decode_instructions = NULL;
 
 static const char hsdis_library_name[] = "hsdis-" HOTSPOT_LIB_ARCH;
 static const char decode_instructions_virtual_name[] = "decode_instructions_virtual";
-static const char decode_instructions_name[] = "decode_instructions";
-static bool use_new_version = true;
 #define COMMENT_COLUMN  52 LP64_ONLY(+8) /*could be an option*/
 #define BYTES_COMMENT   ";..."  /* funky byte display comment */
 
@@ -736,34 +733,22 @@ address decode_env::decode_instructions(address start, address end, address orig
     // This is mainly for debugging the library itself.
     FILE* out = stdout;
     FILE* xmlout = (_print_raw > 1 ? out : NULL);
-    return use_new_version ?
+    return
       (address)
       (*Disassembler::_decode_instructions_virtual)((uintptr_t)start, (uintptr_t)end,
                                                     start, end - start,
                                                     NULL, (void*) xmlout,
                                                     NULL, (void*) out,
-                                                    options(), 0/*nice new line*/)
-      :
-      (address)
-      (*Disassembler::_decode_instructions)(start, end,
-                                            NULL, (void*) xmlout,
-                                            NULL, (void*) out,
-                                            options());
+                                                    options(), 0/*nice new line*/);
   }
 
-  return use_new_version ?
+  return
     (address)
     (*Disassembler::_decode_instructions_virtual)((uintptr_t)start, (uintptr_t)end,
                                                   start, end - start,
                                                   &event_to_env,  (void*) this,
                                                   &printf_to_env, (void*) this,
-                                                  options(), 0/*nice new line*/)
-    :
-    (address)
-    (*Disassembler::_decode_instructions)(start, end,
-                                          &event_to_env,  (void*) this,
-                                          &printf_to_env, (void*) this,
-                                          options());
+                                                  options(), 0/*nice new line*/);
 }
 
 // ----------------------------------------------------------------------------
@@ -853,21 +838,13 @@ bool Disassembler::load_library(outputStream* st) {
     _library = os::dll_load(buf, ebuf, sizeof ebuf);
   }
 
-  // load the decoder function to use (new or old version).
+  // load the decoder function to use.
   if (_library != NULL) {
     _decode_instructions_virtual = CAST_TO_FN_PTR(Disassembler::decode_func_virtual,
                                           os::dll_lookup(_library, decode_instructions_virtual_name));
   }
-  if (_decode_instructions_virtual == NULL && _library != NULL) {
-    // could not spot in new version, try old version
-    _decode_instructions = CAST_TO_FN_PTR(Disassembler::decode_func,
-                                          os::dll_lookup(_library, decode_instructions_name));
-    use_new_version = false;
-  } else {
-    use_new_version = true;
-  }
   _tried_to_load_library = true;
-  _library_usable        = _decode_instructions_virtual != NULL || _decode_instructions != NULL;
+  _library_usable        = _decode_instructions_virtual != NULL;
 
   // Create a dummy environment to initialize PrintAssemblyOptions.
   // The PrintAssemblyOptions must be known for abstract disassemblies as well.
