@@ -451,46 +451,33 @@ extern "C" JNIEXPORT int JVM_handle_linux_signal(int signo, siginfo_t* siginfo,
                                                int abort_if_unrecognized);
 #endif
 
-#if defined(AIX)
-
-// Set thread signal mask (for some reason on AIX sigthreadmask() seems
-// to be the thing to call; documentation is not terribly clear about whether
-// pthread_sigmask also works, and if it does, whether it does the same.
-bool set_thread_signal_mask(int how, const sigset_t* set, sigset_t* oset) {
-  const int rc = ::pthread_sigmask(how, set, oset);
-  // return value semantics differ slightly for error case:
-  // pthread_sigmask returns error number, sigthreadmask -1 and sets global errno
-  // (so, pthread_sigmask is more theadsafe for error handling)
-  // But success is always 0.
-  return rc == 0 ? true : false;
-}
-
-// Function to unblock all signals which are, according
-// to POSIX, typical program error signals. If they happen while being blocked,
-// they typically will bring down the process immediately.
-bool unblock_program_error_signals() {
+// Unblock all signals whose delivery cannot be deferred and which, if they happen
+//  while delivery is blocked, would cause crashes or hangs (JDK-8252533).
+void PosixSignals::unblock_error_signals() {
   sigset_t set;
   sigemptyset(&set);
   sigaddset(&set, SIGILL);
   sigaddset(&set, SIGBUS);
   sigaddset(&set, SIGFPE);
   sigaddset(&set, SIGSEGV);
-  return set_thread_signal_mask(SIG_UNBLOCK, &set, NULL);
-}
-
+  // We also unblock SIGTRAP, which is not in the list of POSIX lists of signals
+  //  which would cause undefined behavior when blocked
+  //  (https://pubs.opengroup.org/onlinepubs/009695399/functions/sigprocmask.html)
+  //  but in our experience cause the same problems when occurring when blocked.
+  sigaddset(&set, SIGTRAP);
+  int rc = ::pthread_sigmask(SIG_UNBLOCK, &set, NULL);
+#ifdef ASSERT
+  if (rc != 0) {
+    log_warning(os)("pthread_sigmask failed (%d)", errno);
+  }
 #endif
+}
 
 // Renamed from 'signalHandler' to avoid collision with other shared libs.
 static void javaSignalHandler(int sig, siginfo_t* info, void* uc) {
   assert(info != NULL && uc != NULL, "it must be old kernel");
 
-// TODO: reconcile the differences between Linux/BSD vs AIX here!
-#if defined(AIX)
-  // Never leave program error signals blocked;
-  // on all our platforms they would bring down the process immediately when
-  // getting raised while being blocked.
-  unblock_program_error_signals();
-#endif
+  PosixSignals::unblock_error_signals();
 
   int orig_errno = errno;  // Preserve errno value over signal handler.
 #if defined(BSD)
@@ -702,24 +689,6 @@ void* os::signal(int signal_number, void* handler) {
   struct sigaction sigAct, oldSigAct;
 
   sigfillset(&(sigAct.sa_mask));
-
-#if defined(AIX)
-  // Do not block out synchronous signals in the signal handler.
-  // Blocking synchronous signals only makes sense if you can really
-  // be sure that those signals won't happen during signal handling,
-  // when the blocking applies. Normal signal handlers are lean and
-  // do not cause signals. But our signal handlers tend to be "risky"
-  // - secondary SIGSEGV, SIGILL, SIGBUS' may and do happen.
-  // On AIX, PASE there was a case where a SIGSEGV happened, followed
-  // by a SIGILL, which was blocked due to the signal mask. The process
-  // just hung forever. Better to crash from a secondary signal than to hang.
-  sigdelset(&(sigAct.sa_mask), SIGSEGV);
-  sigdelset(&(sigAct.sa_mask), SIGBUS);
-  sigdelset(&(sigAct.sa_mask), SIGILL);
-  sigdelset(&(sigAct.sa_mask), SIGFPE);
-  sigdelset(&(sigAct.sa_mask), SIGTRAP);
-#endif
-
   sigAct.sa_flags   = SA_RESTART|SA_SIGINFO;
   sigAct.sa_handler = CAST_TO_FN_PTR(sa_handler_t, handler);
 
@@ -1301,10 +1270,6 @@ bool PosixSignals::is_sig_ignored(int sig) {
   } else {
     return false;
   }
-}
-
-int PosixSignals::unblock_thread_signal_mask(const sigset_t *set) {
-  return pthread_sigmask(SIG_UNBLOCK, set, NULL);
 }
 
 address PosixSignals::ucontext_get_pc(const ucontext_t* ctx) {
