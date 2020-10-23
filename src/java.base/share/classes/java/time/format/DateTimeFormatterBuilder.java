@@ -1475,7 +1475,9 @@ public final class DateTimeFormatterBuilder {
      * {@code MINUTE_OF_HOUR} are resolved to the mid-point of the day period.
      * For example, if the parsed day period type is "night1" and the period defined
      * for it in the formatter locale is from 21:00 to 06:00, then {@code HOUR_OF_DAY}
-     * is set to '1' and {@code MINUTE_OF_HOUR} set to '30'.
+     * is set to '1' and {@code MINUTE_OF_HOUR} set to '30'. If any conflict occurs in
+     * {@link ResolverStyle#LENIENT LENIENT} mode, no exception is thrown and the day
+     * period is ignored.
      *
      * @param style the text style to use, not null
      * @return this, for chaining, not null
@@ -1684,6 +1686,15 @@ public final class DateTimeFormatterBuilder {
      *    N..N    1..n   appendValue(ChronoField.NANO_OF_DAY, n, 19, SignStyle.NOT_NEGATIVE)
      * </pre>
      * <p>
+     * <b>Day periods</b>: Pattern letters to output a day period.
+     * <pre>
+     *  Pattern  Count  Equivalent builder methods
+     *  -------  -----  --------------------------
+     *    B       1      appendDayPeriodText(TextStyle.SHORT)
+     *    BBBB    4      appendDayPeriodText(TextStyle.FULL)
+     *    BBBBB   5      appendDayPeriodText(TextStyle.NARROW)
+     * </pre>
+     * <p>
      * <b>Zone ID</b>: Pattern letters to output {@code ZoneId}.
      * <pre>
      *  Pattern  Count  Equivalent builder methods
@@ -1718,15 +1729,6 @@ public final class DateTimeFormatterBuilder {
      *    ZZZ     3      appendOffset("+HHMM","+0000")
      *    ZZZZ    4      appendLocalizedOffset(TextStyle.FULL)
      *    ZZZZZ   5      appendOffset("+HH:MM:ss","Z")
-     * </pre>
-     * <p>
-     * <b>Day periods</b>: Pattern letters to output a day period.
-     * <pre>
-     *  Pattern  Count  Equivalent builder methods
-     *  -------  -----  --------------------------
-     *    B       1      appendDayPeriodText(TextStyle.SHORT)
-     *    BBBB    4      appendDayPeriodText(TextStyle.FULL)
-     *    BBBBB   5      appendDayPeriodText(TextStyle.NARROW)
      * </pre>
      * <p>
      * <b>Modifiers</b>: Pattern letters that modify the rest of the pattern:
@@ -5032,6 +5034,7 @@ public final class DateTimeFormatterBuilder {
      */
     static final class DayPeriodPrinterParser implements DateTimePrinterParser {
         private final TextStyle textStyle;
+        private final static ConcurrentMap<Locale, LocaleStore> DAYPERIOD_LOCALESTORE = new ConcurrentHashMap<>();
 
         /**
          * Constructor.
@@ -5091,7 +5094,11 @@ public final class DateTimeFormatterBuilder {
             return "Text(DayPeriod," + textStyle + ")";
         }
 
-        private static final ConcurrentMap<Locale, LocaleStore> DAYPERIOD_LOCALESTORE = new ConcurrentHashMap<>();
+        /**
+         * Returns the day period locale store for the locale
+         * @param locale
+         * @return
+         */
         private static LocaleStore findDayPeriodStore(Locale locale) {
             return DAYPERIOD_LOCALESTORE.computeIfAbsent(locale, loc -> {
                 Map<TextStyle, Map<Long, String>> styleMap = new HashMap<>();
@@ -5123,18 +5130,45 @@ public final class DateTimeFormatterBuilder {
         }
     }
 
-    private final static Map<Locale, Map<DayPeriod, Long>> DAYPERIOD_CACHE = new ConcurrentHashMap<>();
     /**
-     * DayPeriod class that represents a DayPeriod defined in CLDR.
+     * DayPeriod class that represents a
+     * <a href="https://www.unicode.org/reports/tr35/tr35-dates.html#dayPeriods">DayPeriod</a> defined in CLDR.
      */
     static final class DayPeriod {
-        // comparator based on the duration of the day period.
-        private static final Comparator<DayPeriod> DPCOMPARATOR = (dp1, dp2) -> (int)(dp1.duration() - dp2.duration());
-
+        /**
+         *  DayPeriod cache
+         */
+        private final static Map<Locale, Map<DayPeriod, Long>> DAYPERIOD_CACHE = new ConcurrentHashMap<>();
+        /**
+         * comparator based on the duration of the day period.
+         */
+        private final static Comparator<DayPeriod> DPCOMPARATOR = (dp1, dp2) -> (int)(dp1.duration() - dp2.duration());
+        /**
+         * Pattern to parse day period rules
+         */
+        private final static Pattern RULE = Pattern.compile("(?<type>[a-z12]+):(?<from>\\d{2}):00(-(?<to>\\d{2}))*");
+        /**
+         * minute-of-day of "at" or "from" attribute
+         */
         private final long from;
+        /**
+         * minute-of-day of "before" attribute (exclusive), or if it is
+         * the same value with "from", it indicates this day period
+         * designates "fixed" periods, i.e, "midnight" or "noon"
+         */
         private final long to;
+        /**
+         * day period type index. (cf. {@link #mapToIndex})
+         */
         private final long index;
 
+        /**
+         * Sole constructor
+         *
+         * @param from "from" in minute-of-day
+         * @param to "to" in minute-of-day
+         * @param index day period type index
+         */
         DayPeriod(long from, long to, long index) {
             this.from = from;
             this.to = to;
@@ -5180,14 +5214,14 @@ public final class DateTimeFormatterBuilder {
         }
 
         /**
-         * Maps the day period key defined in LDML to the index to the am/pm array
+         * Maps the day period type defined in LDML to the index to the am/pm array
          * returned from the Calendar resource bundle.
          *
-         * @param period day period type defined in LDML
+         * @param type day period type defined in LDML
          * @return the array index
          */
-        static long mapToIndex(String period) {
-            return switch (period) {
+        static long mapToIndex(String type) {
+            return switch (type) {
                 case "am"           -> Calendar.AM;
                 case "pm"           -> Calendar.PM;
                 case "midnight"     -> 2;
@@ -5204,12 +5238,11 @@ public final class DateTimeFormatterBuilder {
             };
         }
 
-        private static final Pattern RULE = Pattern.compile("(?<type>[a-z12]+):(?<from>\\d{2}):00(-(?<to>\\d{2}))*");
         /**
          * Returns the DayPeriod to array index map for a locale.
          *
          * @param locale  the locale, not null
-         * @return the DayPeriod to index map
+         * @return the DayPeriod to type index map
          */
         static Map<DayPeriod, Long> getDayPeriodMap(Locale locale) {
             return DAYPERIOD_CACHE.computeIfAbsent(locale, l -> {
@@ -5250,7 +5283,7 @@ public final class DateTimeFormatterBuilder {
          * @return a DayPeriod instance
          */
         static DayPeriod ofLocale(Locale locale, long index) {
-            return DAYPERIOD_CACHE.get(locale).keySet().stream()
+            return getDayPeriodMap(locale).keySet().stream()
                 .filter(dp -> dp.getIndex() == index)
                 .findAny()
                 .orElseThrow();

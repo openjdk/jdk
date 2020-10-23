@@ -83,6 +83,7 @@ import java.time.format.DateTimeParseException;
 import java.time.format.FormatStyle;
 import java.time.format.SignStyle;
 import java.time.format.TextStyle;
+import java.time.temporal.ChronoField;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.util.HashMap;
@@ -705,7 +706,7 @@ public class TestDateTimeFormatterBuilder {
             throw new RuntimeException("DateTimeParseException should be thrown");
         } catch (DateTimeParseException e) {
             assertEquals(e.getCause().getMessage(),
-                    "Conflict found: hour-of-day/minute-of-hour conflict with day period");
+                    "Conflict found: " + HOUR_OF_DAY + " conflict with day period");
         }
     }
 
