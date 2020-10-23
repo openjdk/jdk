@@ -264,7 +264,7 @@ public final class EventControl {
         if (limit != null) {
             def = limit.value();
         }
-        type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_RATELIMIT, RateLimit.NAME, def, Collections.emptyList()));
+        type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_RATELIMIT, RateLimit.NAME, Integer.toString(def), Collections.emptyList()));
         return new Control(new RateLimitSetting(type), Integer.toString(def));
     }
 
