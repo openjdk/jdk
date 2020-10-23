@@ -156,7 +156,7 @@ public class BadHandshakeTest {
                 throw error;
             }
 
-            // get the debuggee some time to exit before forcibly terminate it
+            // give the debuggee some time to exit before forcibly terminating it
             debuggee.waitFor(10, TimeUnit.SECONDS);
         }
     }
