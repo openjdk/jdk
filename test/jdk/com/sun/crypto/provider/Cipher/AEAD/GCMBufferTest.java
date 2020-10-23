@@ -23,10 +23,13 @@
 
 /*
  * @test
- * @summary Use Cipher update with a mixture of byte[], bytebuffer, and offset
- * while verifying return values.
+ * @summary Use Cipher update and doFinal with a mixture of byte[], bytebuffer,
+ * and offset while verifying return values.  Also using different and
+ * in-place buffers.
  *
- * @run GCMBufferTest
+ * in-place is not tested with different buffer types as it is not a logical
+ * scenerio and is complicated by getOutputSize calculations.
+ *
  */
 
 import javax.crypto.Cipher;
@@ -108,17 +111,20 @@ public class GCMBufferTest {
         encrypt(algo, data, offset, false);
     }
 
-    void encrypt(String algo, Data data, int offset, boolean same) throws Exception {
+    void encrypt(String algo, Data data, int offset, boolean same)
+        throws Exception {
         byte[] input, output;
 
         System.out.print("\t input len: " + data.pt.length + "  offset: " +
             offset + "  in-place: ");
         Cipher cipher = Cipher.getInstance(algo);
-        cipher.init(Cipher.ENCRYPT_MODE, data.key, new GCMParameterSpec(data.tag.length * 8, data.iv));
+        cipher.init(Cipher.ENCRYPT_MODE, data.key, new GCMParameterSpec(
+            data.tag.length * 8, data.iv));
         input = data.pt;
         output = new byte[data.ct.length + data.tag.length];
         System.arraycopy(data.ct, 0, output, 0, data.ct.length);
-        System.arraycopy(data.tag, 0, output, data.ct.length, data.tag.length);
+        System.arraycopy(data.tag, 0, output, data.ct.length,
+            data.tag.length);
         if (!same) {
             System.out.println("different");
             crypto(cipher, true, offset, input, output, data.aad);
@@ -132,7 +138,8 @@ public class GCMBufferTest {
         decrypt(algo, data, offset, false);
     }
 
-    void decrypt(String algo, Data data, int offset, boolean same) throws Exception {
+    void decrypt(String algo, Data data, int offset, boolean same)
+        throws Exception {
         byte[] input, output;
 
         System.out.print("\t input len: " + data.pt.length + "  offset: " +
@@ -153,7 +160,8 @@ public class GCMBufferTest {
         }
     }
 
-    void crypto(Cipher cipher, boolean encrypt, int offset, byte[] input, byte[] output, byte[] aad) throws Exception {
+    void crypto(Cipher cipher, boolean encrypt, int offset, byte[] input,
+        byte[] output, byte[] aad) throws Exception {
         byte[] pt = new byte[input.length + offset];
         System.arraycopy(input, 0, pt, offset, input.length);
         int plen = input.length / ops.size(); // partial input length
@@ -282,8 +290,10 @@ public class GCMBufferTest {
         }
     }
 
-    void cryptoSameBuffer(Cipher cipher, boolean encrypt, int offset, byte[] input, byte[] output, byte[] aad) throws Exception {
-        byte[] data = new byte[(encrypt ? output.length : input.length) + offset], out;
+    void cryptoSameBuffer(Cipher cipher, boolean encrypt, int offset,
+        byte[] input, byte[] output, byte[] aad) throws Exception {
+        byte[] data =
+            new byte[(encrypt ? output.length : input.length) + offset], out;
         ByteBuffer bbin = null, bbout = null;
         System.arraycopy(input, 0, data, offset, input.length);
         cipher.updateAAD(aad);
@@ -331,7 +341,8 @@ public class GCMBufferTest {
                         rlen = cipher.update(data, inofs, plen, data, offset);
                     }
                     case HEAP, DIRECT -> {
-                        theorticallen = bbin.remaining() - (bbin.remaining() % AESBLOCK);
+                        theorticallen = bbin.remaining() -
+                            (bbin.remaining() % AESBLOCK);
                         rlen = cipher.update(bbin, bbout);
                     }
                     default -> throw new Exception("Unknown op: " + v.name());
@@ -355,7 +366,8 @@ public class GCMBufferTest {
                     case BYTE -> {
                         rlen = cipher.doFinal(data, dataoffset + inofs,
                             plen, data, len + inofs);
-                        out = Arrays.copyOfRange(data, inofs, len + rlen + inofs);
+                        out = Arrays.copyOfRange(data, inofs,
+                            len + rlen + inofs);
                     }
                     case HEAP, DIRECT -> {
                         rlen = cipher.doFinal(bbin, bbout);
@@ -369,7 +381,8 @@ public class GCMBufferTest {
                 len += rlen;
 
                 if (len != output.length ||
-                    Arrays.compare(out, 0, len, output, 0, output.length) != 0) {
+                    Arrays.compare(out, 0, len, output, 0,
+                        output.length) != 0) {
                     throw new Exception("Ciphertext mismatch (" + v.name() +
                         "):\nresult   (len=" + len + "):" +
                         byteToHex(out) +
@@ -394,13 +407,18 @@ public class GCMBufferTest {
         initTest();
 
         new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE));
-        new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE, dtype.BYTE));
+        new GCMBufferTest("AES/GCM/NoPadding",
+            List.of(dtype.BYTE, dtype.BYTE));
         new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.HEAP));
-        new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.HEAP, dtype.HEAP));
+        new GCMBufferTest("AES/GCM/NoPadding",
+            List.of(dtype.HEAP, dtype.HEAP));
         new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.DIRECT));
-        new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE, dtype.DIRECT), false);
-        new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.DIRECT, dtype.BYTE), false);
-        new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE, dtype.HEAP, dtype.DIRECT), false);
+        new GCMBufferTest("AES/GCM/NoPadding",
+            List.of(dtype.BYTE, dtype.DIRECT), false);
+        new GCMBufferTest("AES/GCM/NoPadding",
+            List.of(dtype.DIRECT, dtype.BYTE), false);
+        new GCMBufferTest("AES/GCM/NoPadding",
+            List.of(dtype.BYTE, dtype.HEAP, dtype.DIRECT), false);
     }
 
     private static byte[] HexToBytes(String hexVal) {
