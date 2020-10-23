@@ -2062,97 +2062,78 @@ static int frame_slots_bias(int reg_enc, PhaseRegAlloc* ra_) {
 }
 
 const bool Matcher::match_rule_supported(int opcode) {
-  if (!has_match_rule(opcode))
-    return false;
-
-  bool ret_value = true;
-  switch (opcode) {
-  case Op_SqrtD:
-    return VM_Version::has_fsqrt();
-  case Op_CountLeadingZerosI:
-  case Op_CountLeadingZerosL:
-    if (!UseCountLeadingZerosInstructionsPPC64)
-      return false;
-    break;
-  case Op_CountTrailingZerosI:
-  case Op_CountTrailingZerosL:
-    if (!UseCountLeadingZerosInstructionsPPC64 &&
-        !UseCountTrailingZerosInstructionsPPC64)
-      return false;
-    break;
-
-  case Op_PopCountI:
-  case Op_PopCountL:
-    return (UsePopCountInstruction && VM_Version::has_popcntw());
-
-  case Op_StrComp:
-    return SpecialStringCompareTo;
-  case Op_StrEquals:
-    return SpecialStringEquals;
-  case Op_StrIndexOf:
-  case Op_StrIndexOfChar:
-    return SpecialStringIndexOf;
-  case Op_AddVB:
-  case Op_AddVS:
-  case Op_AddVI:
-  case Op_AddVF:
-  case Op_AddVD:
-  case Op_SubVB:
-  case Op_SubVS:
-  case Op_SubVI:
-  case Op_SubVF:
-  case Op_SubVD:
-  case Op_MulVS:
-  case Op_MulVF:
-  case Op_MulVD:
-  case Op_DivVF:
-  case Op_DivVD:
-  case Op_AbsVF:
-  case Op_AbsVD:
-  case Op_NegVF:
-  case Op_NegVD:
-  case Op_SqrtVF:
-  case Op_SqrtVD:
-  case Op_AddVL:
-  case Op_SubVL:
-  case Op_MulVI:
-  case Op_RoundDoubleModeV:
-    return SuperwordUseVSX;
-  case Op_PopCountVI:
-    return (SuperwordUseVSX && UsePopCountInstruction);
-  case Op_FmaVF:
-  case Op_FmaVD:
-    return (SuperwordUseVSX && UseFMA);
-  case Op_Digit:
-    return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_isDigit);
-  case Op_LowerCase:
-    return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_isLowerCase);
-  case Op_UpperCase:
-    return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_isUpperCase);
-  case Op_Whitespace:
-    return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_isWhitespace);
-
-  case Op_CacheWB:
-  case Op_CacheWBPreSync:
-  case Op_CacheWBPostSync:
-    if (!VM_Version::supports_data_cache_line_flush()) {
-      ret_value = false;
-    }
-    break;
+  if (!has_match_rule(opcode)) {
+    return false; // no match rule present
   }
 
-  return ret_value;  // Per default match rules are supported.
+  switch (opcode) {
+    case Op_SqrtD:
+      return VM_Version::has_fsqrt();
+    case Op_CountLeadingZerosI:
+    case Op_CountLeadingZerosL:
+      return UseCountLeadingZerosInstructionsPPC64;
+    case Op_CountTrailingZerosI:
+    case Op_CountTrailingZerosL:
+      return (UseCountLeadingZerosInstructionsPPC64 || UseCountTrailingZerosInstructionsPPC64);
+    case Op_PopCountI:
+    case Op_PopCountL:
+      return (UsePopCountInstruction && VM_Version::has_popcntw());
+
+    case Op_AddVB:
+    case Op_AddVS:
+    case Op_AddVI:
+    case Op_AddVF:
+    case Op_AddVD:
+    case Op_SubVB:
+    case Op_SubVS:
+    case Op_SubVI:
+    case Op_SubVF:
+    case Op_SubVD:
+    case Op_MulVS:
+    case Op_MulVF:
+    case Op_MulVD:
+    case Op_DivVF:
+    case Op_DivVD:
+    case Op_AbsVF:
+    case Op_AbsVD:
+    case Op_NegVF:
+    case Op_NegVD:
+    case Op_SqrtVF:
+    case Op_SqrtVD:
+    case Op_AddVL:
+    case Op_SubVL:
+    case Op_MulVI:
+    case Op_RoundDoubleModeV:
+      return SuperwordUseVSX;
+    case Op_PopCountVI:
+      return (SuperwordUseVSX && UsePopCountInstruction);
+    case Op_FmaVF:
+    case Op_FmaVD:
+      return (SuperwordUseVSX && UseFMA);
+
+    case Op_Digit:
+      return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_isDigit);
+    case Op_LowerCase:
+      return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_isLowerCase);
+    case Op_UpperCase:
+      return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_isUpperCase);
+    case Op_Whitespace:
+      return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_isWhitespace);
+
+    case Op_CacheWB:
+    case Op_CacheWBPreSync:
+    case Op_CacheWBPostSync:
+      return VM_Version::supports_data_cache_line_flush();
+  }
+
+  return true; // Per default match rules are supported.
 }
 
 const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
-
-  // TODO
-  // identify extra cases that we might want to provide match rules for
-  // e.g. Op_ vector nodes and other intrinsics while guarding with vlen
-  bool ret_value = match_rule_supported(opcode);
-  // Add rules here.
-
-  return ret_value;  // Per default match rules are supported.
+  if (!match_rule_supported(opcode) || !vector_size_supported(bt, vlen)) {
+    return false;
+  }
+  return true; // Per default match rules are supported.
 }
 
 const bool Matcher::has_predicated_vectors(void) {
@@ -6567,6 +6548,23 @@ instruct storeV16(indirect mem, vecX src) %{
     __ stxvd2x($src$$VectorSRegister, $mem$$Register);
   %}
   ins_pipe(pipe_class_default);
+%}
+
+// Reinterpret: only one vector size used: either L or X
+instruct reinterpretL(iRegLdst dst) %{
+  match(Set dst (VectorReinterpret dst));
+  ins_cost(0);
+  format %{ "reinterpret $dst" %}
+  ins_encode( /*empty*/ );
+  ins_pipe(pipe_class_empty);
+%}
+
+instruct reinterpretX(vecX dst) %{
+  match(Set dst (VectorReinterpret dst));
+  ins_cost(0);
+  format %{ "reinterpret $dst" %}
+  ins_encode( /*empty*/ );
+  ins_pipe(pipe_class_empty);
 %}
 
 // Store Compressed Oop

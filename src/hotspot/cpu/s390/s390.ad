@@ -1511,60 +1511,28 @@ static Register reg_to_register_object(int register_encoding) {
 }
 
 const bool Matcher::match_rule_supported(int opcode) {
-  if (!has_match_rule(opcode)) return false;
+  if (!has_match_rule(opcode)) {
+    return false; // no match rule present
+  }
 
   switch (opcode) {
-    case Op_CountLeadingZerosI:
-    case Op_CountLeadingZerosL:
-    case Op_CountTrailingZerosI:
-    case Op_CountTrailingZerosL:
-      // Implementation requires FLOGR instruction, which is available since z9.
-      return true;
-
     case Op_ReverseBytesI:
     case Op_ReverseBytesL:
       return UseByteReverseInstruction;
-
-    // PopCount supported by H/W from z/Architecture G5 (z196) on.
     case Op_PopCountI:
     case Op_PopCountL:
-      return UsePopCountInstruction && VM_Version::has_PopCount();
-
-    case Op_StrComp:
-      return SpecialStringCompareTo;
-    case Op_StrEquals:
-      return SpecialStringEquals;
-    case Op_StrIndexOf:
-    case Op_StrIndexOfChar:
-      return SpecialStringIndexOf;
-
-    case Op_GetAndAddI:
-    case Op_GetAndAddL:
-      return true;
-      // return VM_Version::has_AtomicMemWithImmALUOps();
-    case Op_GetAndSetI:
-    case Op_GetAndSetL:
-    case Op_GetAndSetP:
-    case Op_GetAndSetN:
-      return true;  // General CAS implementation, always available.
-
-    default:
-      return true;  // Per default match rules are supported.
-                    // BUT: make sure match rule is not disabled by a false predicate!
+      // PopCount supported by H/W from z/Architecture G5 (z196) on.
+      return (UsePopCountInstruction && VM_Version::has_PopCount());
   }
 
-  return true;  // Per default match rules are supported.
-                // BUT: make sure match rule is not disabled by a false predicate!
+  return true; // Per default match rules are supported.
 }
 
 const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
-  // TODO
-  // Identify extra cases that we might want to provide match rules for
-  // e.g. Op_ vector nodes and other intrinsics while guarding with vlen.
-  bool ret_value = match_rule_supported(opcode);
-  // Add rules here.
-
-  return ret_value;  // Per default match rules are supported.
+  if (!match_rule_supported(opcode) || !vector_size_supported(bt, vlen)) {
+    return false;
+  }
+  return true; // Per default match rules are supported.
 }
 
 const bool Matcher::has_predicated_vectors(void) {
@@ -10807,7 +10775,7 @@ instruct Repl2F_imm0(iRegL dst, immFp0 src) %{
   ins_pipe(pipe_class_dummy);
 %}
 
-// Store
+// Load/Store vector
 
 // Store Aligned Packed Byte register to memory (8 Bytes).
 instruct storeA8B(memory mem, iRegL src) %{
@@ -10821,8 +10789,6 @@ instruct storeA8B(memory mem, iRegL src) %{
   ins_pipe(pipe_class_dummy);
 %}
 
-// Load
-
 instruct loadV8(iRegL dst, memory mem) %{
   match(Set dst (LoadVector mem));
   predicate(n->as_LoadVector()->memory_size() == 8);
@@ -10831,6 +10797,15 @@ instruct loadV8(iRegL dst, memory mem) %{
   format %{ "LG      $dst,$mem\t # L(packed8B)" %}
   opcode(LG_ZOPC, LG_ZOPC);
   ins_encode(z_form_rt_mem_opt(dst, mem));
+  ins_pipe(pipe_class_dummy);
+%}
+
+// Reinterpret: only one vector size used
+instruct reinterpret(iRegL dst) %{
+  match(Set dst (VectorReinterpret dst));
+  ins_cost(0);
+  format %{ "reinterpret $dst" %}
+  ins_encode( /*empty*/ );
   ins_pipe(pipe_class_dummy);
 %}
 
