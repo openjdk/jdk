@@ -1062,10 +1062,24 @@ public:
 private:
   void compare_eq(Register rn, Register rm, enum operand_size size);
 
+#ifdef ASSERT
+  // Template short-hand support to clean-up after a failed call to trampoline
+  // call generation (see trampoline_call() below),  when a set of Labels must
+  // be reset (before returning).
+  template<typename Label, typename... More>
+  void reset_labels(Label &lbl, More&... more) {
+    lbl.reset(); reset_labels(more...);
+  }
+  template<typename Label>
+  void reset_labels(Label &lbl) {
+    lbl.reset();
+  }
+#endif
+
 public:
   // Calls
 
-  address trampoline_call(Address entry, CodeBuffer *cbuf = NULL);
+  address trampoline_call(Address entry, CodeBuffer* cbuf = NULL);
 
   static bool far_branches() {
     return ReservedCodeCacheSize > branch_range || UseAOT;
@@ -1237,24 +1251,24 @@ public:
         Register table0, Register table1, Register table2, Register table3,
         bool upper = false);
 
-  void has_negatives(Register ary1, Register len, Register result);
+  address has_negatives(Register ary1, Register len, Register result);
 
-  void arrays_equals(Register a1, Register a2, Register result, Register cnt1,
-                     Register tmp1, Register tmp2, Register tmp3, int elem_size);
+  address arrays_equals(Register a1, Register a2, Register result, Register cnt1,
+                        Register tmp1, Register tmp2, Register tmp3, int elem_size);
 
   void string_equals(Register a1, Register a2, Register result, Register cnt1,
                      int elem_size);
 
   void fill_words(Register base, Register cnt, Register value);
   void zero_words(Register base, uint64_t cnt);
-  void zero_words(Register ptr, Register cnt);
+  address zero_words(Register ptr, Register cnt);
   void zero_dcache_blocks(Register base, Register cnt);
 
   static const int zero_words_block_size;
 
-  void byte_array_inflate(Register src, Register dst, Register len,
-                          FloatRegister vtmp1, FloatRegister vtmp2,
-                          FloatRegister vtmp3, Register tmp4);
+  address byte_array_inflate(Register src, Register dst, Register len,
+                             FloatRegister vtmp1, FloatRegister vtmp2,
+                             FloatRegister vtmp3, Register tmp4);
 
   void char_array_compress(Register src, Register dst, Register len,
                            FloatRegister tmp1Reg, FloatRegister tmp2Reg,

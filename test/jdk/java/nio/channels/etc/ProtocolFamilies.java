@@ -22,7 +22,6 @@
  */
 
 import jdk.test.lib.NetworkConfiguration;
-import jdk.test.lib.Platform;
 import jdk.test.lib.net.IPSupport;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
@@ -31,11 +30,8 @@ import org.testng.Assert.ThrowingRunnable;
 import java.io.IOException;
 import java.net.*;
 import java.nio.channels.*;
-import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
 import static java.lang.System.out;
-import static java.lang.System.getProperty;
-import static java.lang.Boolean.parseBoolean;
 import static java.net.StandardProtocolFamily.INET;
 import static java.net.StandardProtocolFamily.INET6;
 import static jdk.test.lib.net.IPSupport.*;
@@ -303,26 +299,6 @@ public class ProtocolFamilies {
         assertThrows(UOE, () -> SelectorProvider.provider().openSocketChannel(BAD_PF));
         assertThrows(UOE, () -> SelectorProvider.provider().openServerSocketChannel(BAD_PF));
         assertThrows(UOE, () -> SelectorProvider.provider().openDatagramChannel(BAD_PF));
-    }
-
-    // A concrete subclass of SelectorProvider, in order to test implSpec
-    static final SelectorProvider customerSelectorProvider = new SelectorProvider() {
-        @Override public DatagramChannel openDatagramChannel() { return null; }
-        @Override public DatagramChannel openDatagramChannel(ProtocolFamily family) { return null; }
-        @Override public Pipe openPipe() { return null; }
-        @Override public AbstractSelector openSelector() { return null; }
-        @Override public ServerSocketChannel openServerSocketChannel() { return null; }
-        @Override public SocketChannel openSocketChannel() { return null; }
-    };
-
-    // Tests the specified default implementation of SelectorProvider
-    @Test
-    public void testCustomProvider() {
-        assertThrows(NPE, () -> customerSelectorProvider.openSocketChannel(null));
-        assertThrows(NPE, () -> customerSelectorProvider.openServerSocketChannel(null));
-
-        assertThrows(UOE, () -> customerSelectorProvider.openSocketChannel(BAD_PF));
-        assertThrows(UOE, () -> customerSelectorProvider.openServerSocketChannel(BAD_PF));
     }
 
     // Helper methods

@@ -262,6 +262,8 @@ class Compile : public Phase {
                                                 // allocator i.e. locks, original deopt pc, etc.
   uintx                 _max_node_limit;        // Max unique node count during a single compilation.
 
+  bool                  _post_loop_opts_phase;  // Loop opts are finished.
+
   int                   _major_progress;        // Count of something big happening
   bool                  _inlining_progress;     // progress doing incremental inlining?
   bool                  _inlining_incrementally;// Are we doing incremental inlining (post parse)
@@ -313,8 +315,7 @@ class Compile : public Phase {
   GrowableArray<Node*>  _macro_nodes;           // List of nodes which need to be expanded before matching.
   GrowableArray<Node*>  _predicate_opaqs;       // List of Opaque1 nodes for the loop predicates.
   GrowableArray<Node*>  _expensive_nodes;       // List of nodes that are expensive to compute and that we'd better not let the GVN freely common
-  GrowableArray<Node*>  _range_check_casts;     // List of CastII nodes with a range check dependency
-  GrowableArray<Node*>  _opaque4_nodes;         // List of Opaque4 nodes that have a default value
+  GrowableArray<Node*>  _for_post_loop_igvn;    // List of nodes for IGVN after loop opts are over
   ConnectionGraph*      _congraph;
 #ifndef PRODUCT
   IdealGraphPrinter*    _printer;
@@ -660,9 +661,11 @@ class Compile : public Phase {
   int           macro_count()             const { return _macro_nodes.length(); }
   int           predicate_count()         const { return _predicate_opaqs.length();}
   int           expensive_count()         const { return _expensive_nodes.length(); }
+
   Node*         macro_node(int idx)       const { return _macro_nodes.at(idx); }
   Node*         predicate_opaque1_node(int idx) const { return _predicate_opaqs.at(idx);}
   Node*         expensive_node(int idx)   const { return _expensive_nodes.at(idx); }
+
   ConnectionGraph* congraph()                   { return _congraph;}
   void set_congraph(ConnectionGraph* congraph)  { _congraph = congraph;}
   void add_macro_node(Node * n) {
@@ -689,23 +692,12 @@ class Compile : public Phase {
     _predicate_opaqs.append(n);
   }
 
-  // Range check dependent CastII nodes that can be removed after loop optimizations
-  void add_range_check_cast(Node* n);
-  void remove_range_check_cast(Node* n) {
-    _range_check_casts.remove_if_existing(n);
-  }
-  Node* range_check_cast_node(int idx) const { return _range_check_casts.at(idx);  }
-  int   range_check_cast_count()       const { return _range_check_casts.length(); }
-  // Remove all range check dependent CastIINodes.
-  void  remove_range_check_casts(PhaseIterGVN &igvn);
+  bool     post_loop_opts_phase() { return _post_loop_opts_phase; }
+  void set_post_loop_opts_phase() { _post_loop_opts_phase = true; }
 
-  void add_opaque4_node(Node* n);
-  void remove_opaque4_node(Node* n) {
-    _opaque4_nodes.remove_if_existing(n);
-  }
-  Node* opaque4_node(int idx) const { return _opaque4_nodes.at(idx);  }
-  int   opaque4_count()       const { return _opaque4_nodes.length(); }
-  void  remove_opaque4_nodes(PhaseIterGVN &igvn);
+  void record_for_post_loop_opts_igvn(Node* n);
+  void remove_from_post_loop_opts_igvn(Node* n);
+  void process_for_post_loop_opts_igvn(PhaseIterGVN& igvn);
 
   void sort_macro_nodes();
 

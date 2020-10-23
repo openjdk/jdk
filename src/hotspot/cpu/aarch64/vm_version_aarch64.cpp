@@ -194,6 +194,7 @@ void VM_Version::initialize() {
   if (_features & CPU_AES)   strcat(buf, ", aes");
   if (_features & CPU_SHA1)  strcat(buf, ", sha1");
   if (_features & CPU_SHA2)  strcat(buf, ", sha256");
+  if (_features & CPU_SHA3) strcat(buf, ", sha3");
   if (_features & CPU_SHA512) strcat(buf, ", sha512");
   if (_features & CPU_LSE) strcat(buf, ", lse");
   if (_features & CPU_SVE) strcat(buf, ", sve");
@@ -275,7 +276,7 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseMD5Intrinsics, false);
   }
 
-  if (_features & (CPU_SHA1 | CPU_SHA2)) {
+  if (_features & (CPU_SHA1 | CPU_SHA2 | CPU_SHA3 | CPU_SHA512)) {
     if (FLAG_IS_DEFAULT(UseSHA)) {
       FLAG_SET_DEFAULT(UseSHA, true);
     }
@@ -302,6 +303,16 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA256Intrinsics, false);
   }
 
+  if (UseSHA && (_features & CPU_SHA3)) {
+    // Do not auto-enable UseSHA3Intrinsics until it has been fully tested on hardware
+    // if (FLAG_IS_DEFAULT(UseSHA3Intrinsics)) {
+      // FLAG_SET_DEFAULT(UseSHA3Intrinsics, true);
+    // }
+  } else if (UseSHA3Intrinsics) {
+    warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
+    FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
+  }
+
   if (UseSHA && (_features & CPU_SHA512)) {
     // Do not auto-enable UseSHA512Intrinsics until it has been fully tested on hardware
     // if (FLAG_IS_DEFAULT(UseSHA512Intrinsics)) {
@@ -312,7 +323,7 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
   }
 
-  if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) {
+  if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA3Intrinsics || UseSHA512Intrinsics)) {
     FLAG_SET_DEFAULT(UseSHA, false);
   }
 

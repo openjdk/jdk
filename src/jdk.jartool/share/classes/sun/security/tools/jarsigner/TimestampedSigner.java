@@ -33,8 +33,6 @@ import java.security.cert.X509Certificate;
 
 import com.sun.jarsigner.*;
 import sun.security.pkcs.PKCS7;
-import sun.security.util.*;
-import sun.security.x509.*;
 
 /**
  * This class implements a content signing service.
@@ -45,14 +43,9 @@ import sun.security.x509.*;
  *
  * @author Vincent Ryan
  */
+@Deprecated(since="16", forRemoval=true)
 @SuppressWarnings("removal")
 public final class TimestampedSigner extends ContentSigner {
-
-    /*
-     * Object identifier for the timestamping access descriptors.
-     */
-    private static final ObjectIdentifier AD_TIMESTAMPING_Id =
-            ObjectIdentifier.of(KnownOIDs.AD_TimeStamping);
 
     /**
      * Instantiates a content signer that supports timestamped signatures.
@@ -93,12 +86,6 @@ public final class TimestampedSigner extends ContentSigner {
             throw new NullPointerException();
         }
 
-        // Parse the signature algorithm to extract the digest
-        // algorithm. The expected format is:
-        //     "<digest>with<encryption>"
-        // or  "<digest>with<encryption>and<mgf>"
-        String signatureAlgorithm = params.getSignatureAlgorithm();
-
         X509Certificate[] signerChain = params.getSignerCertificateChain();
         byte[] signature = params.getSignature();
 
@@ -110,7 +97,7 @@ public final class TimestampedSigner extends ContentSigner {
             tsaURI = params.getTimestampingAuthority();
             if (tsaURI == null) {
                 // Examine TSA cert
-                tsaURI = getTimestampingURI(
+                tsaURI = PKCS7.getTimestampingURI(
                     params.getTimestampingAuthorityCertificate());
                 if (tsaURI == null) {
                     throw new CertificateException(
@@ -122,53 +109,5 @@ public final class TimestampedSigner extends ContentSigner {
                                         params.getSignatureAlgorithm(), tsaURI,
                                         params.getTSAPolicyID(),
                                         params.getTSADigestAlg());
-    }
-
-    /**
-     * Examine the certificate for a Subject Information Access extension
-     * (<a href="http://tools.ietf.org/html/rfc5280">RFC 5280</a>).
-     * The extension's {@code accessMethod} field should contain the object
-     * identifier defined for timestamping: 1.3.6.1.5.5.7.48.3 and its
-     * {@code accessLocation} field should contain an HTTP or HTTPS URL.
-     *
-     * @param tsaCertificate An X.509 certificate for the TSA.
-     * @return An HTTP or HTTPS URI or null if none was found.
-     */
-    public static URI getTimestampingURI(X509Certificate tsaCertificate) {
-
-        if (tsaCertificate == null) {
-            return null;
-        }
-        // Parse the extensions
-        try {
-            byte[] extensionValue = tsaCertificate.getExtensionValue
-                    (KnownOIDs.SubjectInfoAccess.value());
-            if (extensionValue == null) {
-                return null;
-            }
-            DerInputStream der = new DerInputStream(extensionValue);
-            der = new DerInputStream(der.getOctetString());
-            DerValue[] derValue = der.getSequence(5);
-            AccessDescription description;
-            GeneralName location;
-            URIName uri;
-            for (int i = 0; i < derValue.length; i++) {
-                description = new AccessDescription(derValue[i]);
-                if (description.getAccessMethod()
-                        .equals(AD_TIMESTAMPING_Id)) {
-                    location = description.getAccessLocation();
-                    if (location.getType() == GeneralNameInterface.NAME_URI) {
-                        uri = (URIName) location.getName();
-                        if (uri.getScheme().equalsIgnoreCase("http") ||
-                                uri.getScheme().equalsIgnoreCase("https")) {
-                            return uri.getURI();
-                        }
-                    }
-                }
-            }
-        } catch (IOException ioe) {
-            // ignore
-        }
-        return null;
     }
 }

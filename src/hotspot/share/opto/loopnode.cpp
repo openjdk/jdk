@@ -3705,6 +3705,8 @@ bool PhaseIdealLoop::only_has_infinite_loops() {
 // Create a PhaseLoop.  Build the ideal Loop tree.  Map each Ideal Node to
 // its corresponding LoopNode.  If 'optimize' is true, do some loop cleanups.
 void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
+  assert(!C->post_loop_opts_phase(), "no loop opts allowed");
+
   bool do_split_ifs = (mode == LoopOptsDefault);
   bool skip_loop_opts = (mode == LoopOptsNone);
 
