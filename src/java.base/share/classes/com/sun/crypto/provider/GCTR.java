@@ -60,8 +60,9 @@ final class GCTR extends CounterMode {
     GCTR(SymmetricCipher cipher, byte[] initialCounterBlk) {
         super(cipher);
         if (initialCounterBlk.length != AES_BLOCK_SIZE) {
-            throw new RuntimeException("length of initial counter block (" + initialCounterBlk.length +
-                                       ") not equal to AES_BLOCK_SIZE (" + AES_BLOCK_SIZE + ")");
+            throw new RuntimeException("length of initial counter block (" +
+                initialCounterBlk.length + ") not equal to AES_BLOCK_SIZE (" +
+                AES_BLOCK_SIZE + ")");
         }
 
         iv = initialCounterBlk;
