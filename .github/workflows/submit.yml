@@ -350,12 +350,23 @@ jobs:
         if: always()
         run: echo "logsuffix=`echo ${{ matrix.test }} | sed -e 's!/!_!'g -e 's! !_!'g`" >> $GITHUB_ENV
 
-      - name: Persist test logs
+      - name: Persist test results
         if: always()
         uses: actions/upload-artifact@v2
         with:
-          name: linux-x64${{ matrix.artifact }}_testlogs_${{ env.logsuffix }}
+          name: linux-x64${{ matrix.artifact }}_testresults_${{ env.logsuffix }}
           path: build/*/test-results
+        continue-on-error: true
+
+      - name: Persist test outputs
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: linux-x64${{ matrix.artifact }}_testoutputs_${{ env.logsuffix }}
+          path: |
+            build/*/test-support/**/*.jtr
+            build/*/test-support/**/hs_err*
+            build/*/test-support/**/replay*
         continue-on-error: true
 
   linux_x32_build:
@@ -734,12 +745,23 @@ jobs:
         if: always()
         run: echo ("logsuffix=" + ("${{ matrix.test }}" -replace "/", "_" -replace " ", "_")) | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
 
-      - name: Persist test logs
+      - name: Persist test results
         if: always()
         uses: actions/upload-artifact@v2
         with:
-          name: windows-x64${{ matrix.artifact }}_testlogs_${{ env.logsuffix }}
+          name: windows-x64${{ matrix.artifact }}_testresults_${{ env.logsuffix }}
           path: build/*/test-results
+        continue-on-error: true
+
+      - name: Persist test outputs
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: windows-x64${{ matrix.artifact }}_testoutputs_${{ env.logsuffix }}
+          path: |
+            build/*/test-support/**/*.jtr
+            build/*/test-support/**/hs_err*
+            build/*/test-support/**/replay*
         continue-on-error: true
 
   macos_x64_build:
@@ -989,12 +1011,23 @@ jobs:
         if: always()
         run: echo "logsuffix=`echo ${{ matrix.test }} | sed -e 's!/!_!'g -e 's! !_!'g`" >> $GITHUB_ENV
 
-      - name: Persist test logs
+      - name: Persist test results
         if: always()
         uses: actions/upload-artifact@v2
         with:
-          name: macos-x64${{ matrix.artifact }}_testlogs_${{ env.logsuffix }}
+          name: macos-x64${{ matrix.artifact }}_testresults_${{ env.logsuffix }}
           path: build/*/test-results
+        continue-on-error: true
+
+      - name: Persist test outputs
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: macos-x64${{ matrix.artifact }}_testoutputs_${{ env.logsuffix }}
+          path: |
+            build/*/test-support/**/*.jtr
+            build/*/test-support/**/hs_err*
+            build/*/test-support/**/replay*
         continue-on-error: true
 
   artifacts:
