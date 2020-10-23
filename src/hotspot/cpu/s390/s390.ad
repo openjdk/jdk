@@ -10154,13 +10154,29 @@ instruct string_compareUL(iRegP str1, iRegP str2, rarg2RegI cnt1, rarg5RegI cnt2
 instruct indexOfChar_U(iRegP haystack, iRegI haycnt, iRegI ch, iRegI result, roddRegL oddReg, revenRegL evenReg, flagsReg cr) %{
   match(Set result (StrIndexOfChar (Binary haystack haycnt) ch));
   effect(TEMP_DEF result, TEMP evenReg, TEMP oddReg, KILL cr); // R0, R1 are killed, too.
+  predicate(((StrIndexOfCharNode*)n)->encoding() == StrIntrinsicNode::U);
   ins_cost(200);
-  format %{ "String IndexOfChar [0..$haycnt]($haystack), $ch -> $result" %}
+  format %{ "StringUTF16 IndexOfChar [0..$haycnt]($haystack), $ch -> $result" %}
   ins_encode %{
     __ string_indexof_char($result$$Register,
                            $haystack$$Register, $haycnt$$Register,
                            $ch$$Register, 0 /* unused, ch is in register */,
                            $oddReg$$Register, $evenReg$$Register, false /*is_byte*/);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct indexOfChar_L(iRegP haystack, iRegI haycnt, iRegI ch, iRegI result, roddRegL oddReg, revenRegL evenReg, flagsReg cr) %{
+  match(Set result (StrIndexOfChar (Binary haystack haycnt) ch));
+  effect(TEMP_DEF result, TEMP evenReg, TEMP oddReg, KILL cr); // R0, R1 are killed, too.
+  predicate(((StrIndexOfCharNode*)n)->encoding() == StrIntrinsicNode::L);
+  ins_cost(200);
+  format %{ "StringLatin1 IndexOfChar [0..$haycnt]($haystack), $ch -> $result" %}
+  ins_encode %{
+    __ string_indexof_char($result$$Register,
+                           $haystack$$Register, $haycnt$$Register,
+                           $ch$$Register, 0 /* unused, ch is in register */,
+                           $oddReg$$Register, $evenReg$$Register, true /*is_byte*/);
   %}
   ins_pipe(pipe_class_dummy);
 %}
