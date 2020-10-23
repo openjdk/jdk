@@ -235,7 +235,7 @@ public class VarHandleTestExact {
             }
         }
     }
-    
+
     private static void assertMatches(String str, String pattern) {
         if (!str.matches(pattern)) {
             throw new AssertionError("'" + str + "' did not match the pattern '" + pattern + "'.");
