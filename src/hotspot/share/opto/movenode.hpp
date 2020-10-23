@@ -100,19 +100,18 @@ class CMoveNNode : public CMoveNode {
 //
 class MoveNode : public Node {
   protected:
-  MoveNode(Node* value) : Node(NULL, value) {}
+  MoveNode(Node* value) : Node(NULL, value) {
+    init_class_id(Class_Move);
+  }
 
   public:
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual Node* Identity(PhaseGVN* phase);
-//  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 class MoveI2FNode : public MoveNode {
   public:
-  MoveI2FNode(Node* value) : MoveNode(value) {
-    init_class_id(Class_Move);
-  }
+  MoveI2FNode(Node* value) : MoveNode(value) {}
   virtual int Opcode() const;
   virtual const Type* bottom_type() const { return Type::FLOAT; }
   virtual uint ideal_reg() const { return Op_RegF; }
@@ -122,9 +121,7 @@ class MoveI2FNode : public MoveNode {
 
 class MoveL2DNode : public MoveNode {
   public:
-  MoveL2DNode(Node* value) : MoveNode(value) {
-    init_class_id(Class_Move);
-  }
+  MoveL2DNode(Node* value) : MoveNode(value) {}
   virtual int Opcode() const;
   virtual const Type* bottom_type() const { return Type::DOUBLE; }
   virtual uint ideal_reg() const { return Op_RegD; }
@@ -134,9 +131,7 @@ class MoveL2DNode : public MoveNode {
 
 class MoveF2INode : public MoveNode {
   public:
-  MoveF2INode(Node* value) : MoveNode(value) {
-    init_class_id(Class_Move);
-  }
+  MoveF2INode(Node* value) : MoveNode(value) {}
   virtual int Opcode() const;
   virtual const Type* bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
@@ -146,9 +141,7 @@ class MoveF2INode : public MoveNode {
 
 class MoveD2LNode : public MoveNode {
   public:
-  MoveD2LNode(Node* value) : MoveNode(value) {
-    init_class_id(Class_Move);
-  }
+  MoveD2LNode(Node* value) : MoveNode(value) {}
   virtual int Opcode() const;
   virtual const Type* bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }

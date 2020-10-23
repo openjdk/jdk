@@ -356,12 +356,17 @@ Node *CMoveDNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
 Node* MoveNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (can_reshape) {
+    // Fold reinterpret cast into memory operation:
+    //    MoveX2Y (LoadX mem) => LoadY mem
     LoadNode* ld = in(1)->isa_Load();
-    if (ld != NULL && (ld->outcnt() == 1) && ld->has_reinterpret_variant()) {
-      if (phase->C->post_loop_opts_phase()) {
-        return ld->convert_to_reinterpret_load(*phase);
-      } else {
-        phase->C->record_for_post_loop_opts_igvn(this);
+    if (ld != NULL && (ld->outcnt() == 1)) { // replace only
+      const Type* rt = bottom_type();
+      if (ld->has_reinterpret_variant(rt)) {
+        if (phase->C->post_loop_opts_phase()) {
+          return ld->convert_to_reinterpret_load(*phase, rt);
+        } else {
+          phase->C->record_for_post_loop_opts_igvn(this); // attempt the transformation once loop opts are over
+        }
       }
     }
   }
@@ -370,8 +375,9 @@ Node* MoveNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
 Node* MoveNode::Identity(PhaseGVN* phase) {
   if (in(1)->is_Move()) {
+    // Back-to-back moves: MoveX2Y (MoveY2X v) => v
     assert(bottom_type() == in(1)->in(1)->bottom_type(), "sanity");
-    return in(1)->in(1); // back-to-back moves
+    return in(1)->in(1);
   }
   return this;
 }
