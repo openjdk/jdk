@@ -58,7 +58,8 @@ requires.properties= \
     vm.hasJFR \
     vm.jvmci \
     docker.support \
-    release.implementor
+    release.implementor \
+    jdk.containerized
 
 # Minimum jtreg version
 requiredVersion=5.1 b1
