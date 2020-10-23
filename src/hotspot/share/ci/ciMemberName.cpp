@@ -39,11 +39,6 @@ ciMethod* ciMemberName::get_vmtarget() const {
 
 ciMethod* ciMemberName::get_vmtarget_method(oop mname) {
   ASSERT_IN_VM;
-  Metadata* vmtarget = java_lang_invoke_MemberName::vmtarget(mname);
-  if (vmtarget->is_method()) {
-    return CURRENT_ENV->get_method((Method*) vmtarget);
-  } else {
-    fatal("vmtarget should be a method");
-    return NULL; // silence compiler warnings
-  }
+  Method* vmtarget = java_lang_invoke_MemberName::vmtarget(mname);
+  return CURRENT_ENV->get_method(vmtarget);
 }
