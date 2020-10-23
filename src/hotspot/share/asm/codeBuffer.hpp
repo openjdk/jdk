@@ -92,7 +92,6 @@ class CodeSection {
   relocInfo*  _locs_limit;      // first byte after relocation information buf
   address     _locs_point;      // last relocated position (grows upward)
   bool        _locs_own;        // did I allocate the locs myself?
-  bool        _frozen;          // no more expansion of this section
   bool        _scratch_emit;    // Buffer is used for scratch emit, don't relocate.
   char        _index;           // my section number (SECT_INST, etc.)
   CodeBuffer* _outer;           // enclosing CodeBuffer
@@ -109,7 +108,6 @@ class CodeSection {
     _locs_limit    = NULL;
     _locs_point    = NULL;
     _locs_own      = false;
-    _frozen        = false;
     _scratch_emit  = false;
     debug_only(_index = (char)-1);
     debug_only(_outer = (CodeBuffer*)badAddress);
@@ -161,12 +159,10 @@ class CodeSection {
   address     locs_point() const    { return _locs_point; }
   csize_t     locs_point_off() const{ return (csize_t)(_locs_point - _start); }
   csize_t     locs_capacity() const { return (csize_t)(_locs_limit - _locs_start); }
-  csize_t     locs_remaining()const { return (csize_t)(_locs_limit - _locs_end); }
 
   int         index() const         { return _index; }
   bool        is_allocated() const  { return _start != NULL; }
   bool        is_empty() const      { return _start == _end; }
-  bool        is_frozen() const     { return _frozen; }
   bool        has_locs() const      { return _locs_end != NULL; }
 
   // Mark scratch buffer.
@@ -184,8 +180,6 @@ class CodeSection {
   void    set_end(address pc)       { assert(allocates2(pc), "not in CodeBuffer memory: " INTPTR_FORMAT " <= " INTPTR_FORMAT " <= " INTPTR_FORMAT, p2i(_start), p2i(pc), p2i(_limit)); _end = pc; }
   void    set_mark(address pc)      { assert(contains2(pc), "not in codeBuffer");
                                       _mark = pc; }
-  void    set_mark_off(int offset)  { assert(contains2(offset+_start),"not in codeBuffer");
-                                      _mark = offset + _start; }
   void    set_mark()                { _mark = _end; }
   void    clear_mark()              { _mark = NULL; }
 
@@ -258,10 +252,6 @@ class CodeSection {
   static csize_t end_slop()         { return MAX2((int)sizeof(jdouble), (int)CodeEntryAlignment); }
 
   csize_t align_at_start(csize_t off) const { return (csize_t) align_up(off, alignment()); }
-
-  // Mark a section frozen.  Assign its remaining space to
-  // the following section.  It will never expand after this point.
-  inline void freeze();         //  { _outer->freeze_section(this); }
 
   // Ensure there's enough space left in the current section.
   // Return true if there was an expansion.
@@ -463,8 +453,6 @@ class CodeBuffer: public StackObj {
 
   void initialize_section_size(CodeSection* cs, csize_t size);
 
-  void freeze_section(CodeSection* cs);
-
   // helper for CodeBuffer::expand()
   void take_over_code_from(CodeBuffer* cs);
 
@@ -577,10 +565,8 @@ class CodeBuffer: public StackObj {
   address       insts_begin() const      { return _insts.start();      }
   address       insts_end() const        { return _insts.end();        }
   void      set_insts_end(address end)   {        _insts.set_end(end); }
-  address       insts_limit() const      { return _insts.limit();      }
   address       insts_mark() const       { return _insts.mark();       }
   void      set_insts_mark()             {        _insts.set_mark();   }
-  void    clear_insts_mark()             {        _insts.clear_mark(); }
 
   // is there anything in the buffer other than the current section?
   bool    is_pure() const                { return insts_size() == total_content_size(); }
@@ -652,12 +638,6 @@ class CodeBuffer: public StackObj {
       _code_strings.free(); // sets _strings Null as a side-effect.
     }
   }
-
-  // Print the comment associated with offset on stream, if there is one.
-  virtual void print_block_comment(outputStream* stream, address block_begin) {
-    intptr_t offset = (intptr_t)(block_begin - _total_start);  // I assume total_start is not correct for all code sections.
-    _code_strings.print_block_comment(stream, offset);
-  }
 #endif
 
   // Code generation
@@ -682,9 +662,6 @@ class CodeBuffer: public StackObj {
       oop_recorder()->copy_values_to(nm);
     }
   }
-
-  // Transform an address from the code in this code buffer to a specified code buffer
-  address transform_address(const CodeBuffer &cb, address addr) const;
 
   void block_comment(intptr_t offset, const char * comment) PRODUCT_RETURN;
   const char* code_string(const char* str) PRODUCT_RETURN_(return NULL;);
@@ -713,11 +690,6 @@ class CodeBuffer: public StackObj {
 #include CPU_HEADER(codeBuffer)
 
 };
-
-
-inline void CodeSection::freeze() {
-  _outer->freeze_section(this);
-}
 
 inline bool CodeSection::maybe_expand_to_ensure_remaining(csize_t amount) {
   if (remaining() < amount) { _outer->expand(this, amount); return true; }

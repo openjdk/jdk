@@ -176,28 +176,6 @@ void CodeBuffer::initialize_section_size(CodeSection* cs, csize_t size) {
   if (_insts.has_locs())  cs->initialize_locs(1);
 }
 
-void CodeBuffer::freeze_section(CodeSection* cs) {
-  CodeSection* next_cs = (cs == consts())? NULL: code_section(cs->index()+1);
-  csize_t frozen_size = cs->size();
-  if (next_cs != NULL) {
-    frozen_size = next_cs->align_at_start(frozen_size);
-  }
-  address old_limit = cs->limit();
-  address new_limit = cs->start() + frozen_size;
-  relocInfo* old_locs_limit = cs->locs_limit();
-  relocInfo* new_locs_limit = cs->locs_end();
-  // Patch the limits.
-  cs->_limit = new_limit;
-  cs->_locs_limit = new_locs_limit;
-  cs->_frozen = true;
-  if (next_cs != NULL && !next_cs->is_allocated() && !next_cs->is_frozen()) {
-    // Give remaining buffer space to the following section.
-    next_cs->initialize(new_limit, old_limit - new_limit);
-    next_cs->initialize_shared_locs(new_locs_limit,
-                                    old_locs_limit - new_locs_limit);
-  }
-}
-
 void CodeBuffer::set_blob(BufferBlob* blob) {
   _blob = blob;
   if (blob != NULL) {
@@ -501,18 +479,6 @@ void CodeBuffer::compute_final_layout(CodeBuffer* dest) const {
       } else {
         guarantee(padding == 0, "In first iteration no padding should be needed.");
       }
-      #ifdef ASSERT
-      if (prev_cs != NULL && prev_cs->is_frozen() && n < (SECT_LIMIT - 1)) {
-        // Make sure the ends still match up.
-        // This is important because a branch in a frozen section
-        // might target code in a following section, via a Label,
-        // and without a relocation record.  See Label::patch_instructions.
-        address dest_start = buf+buf_offset;
-        csize_t start2start = cs->start() - prev_cs->start();
-        csize_t dest_start2start = dest_start - prev_dest_cs->start();
-        assert(start2start == dest_start2start, "cannot stretch frozen sect");
-      }
-      #endif //ASSERT
       prev_dest_cs = dest_cs;
       prev_cs      = cs;
     }
@@ -891,9 +857,6 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
   // Resizing must be allowed
   {
     if (blob() == NULL)  return;  // caller must check for blob == NULL
-    for (int n = 0; n < (int)SECT_LIMIT; n++) {
-      guarantee(!code_section(n)->is_frozen(), "resizing not allowed when frozen");
-    }
   }
 
   // Figure new capacity for each section.
@@ -1219,9 +1182,8 @@ void CodeBuffer::decode() {
 
 void CodeSection::print(const char* name) {
   csize_t locs_size = locs_end() - locs_start();
-  tty->print_cr(" %7s.code = " PTR_FORMAT " : " PTR_FORMAT " : " PTR_FORMAT " (%d of %d)%s",
-                name, p2i(start()), p2i(end()), p2i(limit()), size(), capacity(),
-                is_frozen()? " [frozen]": "");
+  tty->print_cr(" %7s.code = " PTR_FORMAT " : " PTR_FORMAT " : " PTR_FORMAT " (%d of %d)",
+                name, p2i(start()), p2i(end()), p2i(limit()), size(), capacity());
   tty->print_cr(" %7s.locs = " PTR_FORMAT " : " PTR_FORMAT " : " PTR_FORMAT " (%d of %d) point=%d",
                 name, p2i(locs_start()), p2i(locs_end()), p2i(locs_limit()), locs_size, locs_capacity(), locs_point_off());
   if (PrintRelocations) {
