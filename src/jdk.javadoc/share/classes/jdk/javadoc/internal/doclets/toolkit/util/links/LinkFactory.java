@@ -206,7 +206,7 @@ public abstract class LinkFactory {
         linkInfo.typeElement = null;
         linkInfo.label = null;
         linkInfo.type = bound;
-        ((LinkInfoImpl) linkInfo).skipPreview = false;
+        linkInfo.skipPreview = false;
     }
 
     /**
