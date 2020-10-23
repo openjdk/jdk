@@ -447,7 +447,7 @@ class MemoryAccessVarHandleGenerator {
         return 1;
     }
 
-    private String internalName(Class<?> cls) {
+    private static String internalName(Class<?> cls) {
         return cls.getName().replace('.', '/');
     }
 
