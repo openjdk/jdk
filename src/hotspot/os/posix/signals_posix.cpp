@@ -62,7 +62,7 @@ static sigset_t check_signal_done;
 static bool check_signals = true;
 
 // This boolean allows users to forward their own non-matching signals
-// to JVM_handle_bsd_signal/JVM_handle_linux_signal, harmlessly.
+// to JVM_handle_posix_signal harmlessly.
 static bool signal_handlers_are_installed = false;
 
 debug_only(static bool signal_sets_initialized = false);
@@ -426,20 +426,9 @@ bool PosixSignals::chained_handler(int sig, siginfo_t* siginfo, void* context) {
 // Note that the VM will print warnings if it detects conflicting signal
 // handlers, unless invoked with the option "-XX:+AllowUserSignalHandlers".
 //
-
-#if defined(BSD)
-extern "C" JNIEXPORT int JVM_handle_bsd_signal(int signo, siginfo_t* siginfo,
-                                               void* ucontext,
-                                               int abort_if_unrecognized);
-#elif defined(AIX)
-extern "C" JNIEXPORT int JVM_handle_aix_signal(int signo, siginfo_t* siginfo,
-                                               void* ucontext,
-                                               int abort_if_unrecognized);
-#else
-extern "C" JNIEXPORT int JVM_handle_linux_signal(int signo, siginfo_t* siginfo,
-                                               void* ucontext,
-                                               int abort_if_unrecognized);
-#endif
+extern "C" JNIEXPORT int JVM_handle_posix_signal(int signo, siginfo_t* siginfo,
+                                                 void* ucontext,
+                                                 int abort_if_unrecognized);
 
 // Function to unblock all signals which are, according
 // to POSIX, typical program error signals. If they happen while being blocked,
@@ -464,13 +453,7 @@ static void javaSignalHandler(int sig, siginfo_t* info, void* uc) {
   unblock_program_error_signals();
 
   int orig_errno = errno;  // Preserve errno value over signal handler.
-#if defined(BSD)
-  JVM_handle_bsd_signal(sig, info, uc, true);
-#elif defined(AIX)
-  JVM_handle_aix_signal(sig, info, uc, true);
-#else
-  JVM_handle_linux_signal(sig, info, uc, true);
-#endif
+  JVM_handle_posix_signal(sig, info, uc, true);
   errno = orig_errno;
 }
 
