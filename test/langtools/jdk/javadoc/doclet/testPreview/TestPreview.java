@@ -46,7 +46,7 @@ public class TestPreview extends JavadocTester {
 
     @Test
     public void test() {
-        String doc = "file://" + Paths.get(testSrc, "doc").toAbsolutePath().toString();
+        String doc = Paths.get(testSrc, "doc").toUri().toString();
         javadoc("-d", "out",
                 "-XDforcePreview", "--enable-preview", "-source", System.getProperty("java.specification.version"),
                 "--patch-module", "java.base=" + Paths.get(testSrc, "api").toAbsolutePath().toString(),
@@ -78,7 +78,7 @@ public class TestPreview extends JavadocTester {
         checkOutput("m/pkg/TestPreviewDeclarationUse.html", true,
                     "<code><a href=\"TestPreviewDeclaration.html\" title=\"interface in pkg\">TestPreviewDeclaration</a><sup><a href=\"TestPreviewDeclaration.html#preview-pkg.TestPreviewDeclaration\">PREVIEW</a></sup></code>");
         checkOutput("m/pkg/TestPreviewAPIUse.html", true,
-                "<a href=\"" + doc + "/java.base/preview/Core.html\" title=\"class or interface in preview\" class=\"external-link\">Core</a><sup><a href=\"" + doc + "/java.base/preview/Core.html#preview-preview.Core\" title=\"class or interface in preview\" class=\"external-link\">PREVIEW</a>");
+                "<a href=\"" + doc + "java.base/preview/Core.html\" title=\"class or interface in preview\" class=\"external-link\">Core</a><sup><a href=\"" + doc + "java.base/preview/Core.html#preview-preview.Core\" title=\"class or interface in preview\" class=\"external-link\">PREVIEW</a>");
         checkOutput("m/pkg/DocAnnotation.html", true,
                 "<div class=\"preview-block\" id=\"preview-pkg.DocAnnotation\"><span class=\"preview-label\">");
         checkOutput("m/pkg/DocAnnotationUse1.html", true,
