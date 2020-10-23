@@ -27,10 +27,9 @@
  * @summary JDK-8226279 javadoc should support a new at-spec tag
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build toolbox.ToolBox toolbox.JavacTask javadoc.tester.*
+ * @build toolbox.ToolBox javadoc.tester.*
  * @run main TestSpecTag
  */
-
 
 import java.io.IOException;
 import java.nio.file.Files;

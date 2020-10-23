@@ -1142,6 +1142,12 @@ public class DPrinter {
             return visitBlockTag(node, null);
         }
 
+        public Void visitSpec(SpecTree node, Void p) {
+            printDocTree("uri", node.getURI());
+            printList("label", node.getLabel());
+            return visitBlockTag(node, null);
+        }
+
         public Void visitStartElement(StartElementTree node, Void p) {
             printName("name", node.getName());
             printList("attrs", node.getAttributes());
