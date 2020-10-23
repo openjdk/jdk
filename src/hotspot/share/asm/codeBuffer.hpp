@@ -561,10 +561,8 @@ class CodeBuffer: public StackObj {
   address       insts_begin() const      { return _insts.start();      }
   address       insts_end() const        { return _insts.end();        }
   void      set_insts_end(address end)   {        _insts.set_end(end); }
-  address       insts_limit() const      { return _insts.limit();      }
   address       insts_mark() const       { return _insts.mark();       }
   void      set_insts_mark()             {        _insts.set_mark();   }
-  void    clear_insts_mark()             {        _insts.clear_mark(); }
 
   // is there anything in the buffer other than the current section?
   bool    is_pure() const                { return insts_size() == total_content_size(); }
