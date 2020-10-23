@@ -23,12 +23,17 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classListParser.hpp"
+#include "classfile/classListWriter.hpp"
+#include "classfile/systemDictionaryShared.hpp"
+#include "interpreter/bootstrapInfo.hpp"
 #include "memory/archiveUtils.hpp"
 #include "memory/dynamicArchive.hpp"
 #include "memory/filemap.hpp"
 #include "memory/heapShared.inline.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceShared.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
 
@@ -36,10 +41,6 @@ CHeapBitMap* ArchivePtrMarker::_ptrmap = NULL;
 address* ArchivePtrMarker::_ptr_base;
 address* ArchivePtrMarker::_ptr_end;
 bool ArchivePtrMarker::_compacted;
-
-// Metaspace::allocate() requires that all blocks must be aligned with KlassAlignmentInBytes.
-// We enforce the same alignment rule in blocks allocated from the shared space.
-const int SharedSpaceObjectAlignment = KlassAlignmentInBytes;
 
 void ArchivePtrMarker::initialize(CHeapBitMap* ptrmap, address* ptr_base, address* ptr_end) {
   assert(_ptrmap == NULL, "initialize only once");
@@ -295,5 +296,26 @@ void ReadClosure::do_region(u_char* start, size_t size) {
     *(intptr_t*)start = nextPtr();
     start += sizeof(intptr_t);
     size -= sizeof(intptr_t);
+  }
+}
+
+fileStream* ClassListWriter::_classlist_file = NULL;
+
+void ArchiveUtils::log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) {
+  if (ClassListWriter::is_enabled()) {
+    if (SystemDictionaryShared::is_supported_invokedynamic(bootstrap_specifier)) {
+      ResourceMark rm(THREAD);
+      const constantPoolHandle& pool = bootstrap_specifier->pool();
+      int pool_index = bootstrap_specifier->bss_index();
+      ClassListWriter w;
+      w.stream()->print("%s %s", LAMBDA_PROXY_TAG, pool->pool_holder()->name()->as_C_string());
+      CDSIndyInfo cii;
+      ClassListParser::populate_cds_indy_info(pool, pool_index, &cii, THREAD);
+      GrowableArray<const char*>* indy_items = cii.items();
+      for (int i = 0; i < indy_items->length(); i++) {
+        w.stream()->print(" %s", indy_items->at(i));
+      }
+      w.stream()->cr();
+    }
   }
 }

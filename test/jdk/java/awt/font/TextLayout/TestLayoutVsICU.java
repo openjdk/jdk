@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * Copyright (C) 2013-2014 IBM Corporation and Others. All Rights Reserved.
  */
 

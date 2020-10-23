@@ -23,9 +23,10 @@
  */
 public class LambHello {
     public static void main(String[] args) {
+        doTest();
     }
 
-    public void doTest() {
+    static void doTest() {
         doit(() -> {
             System.out.println("Hello from doTest");
         });

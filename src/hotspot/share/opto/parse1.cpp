@@ -2254,23 +2254,7 @@ void Parse::return_current(Node* value) {
 
 //------------------------------add_safepoint----------------------------------
 void Parse::add_safepoint() {
-  // See if we can avoid this safepoint.  No need for a SafePoint immediately
-  // after a Call (except Leaf Call) or another SafePoint.
-  Node *proj = control();
   uint parms = TypeFunc::Parms+1;
-  if( proj->is_Proj() ) {
-    Node *n0 = proj->in(0);
-    if( n0->is_Catch() ) {
-      n0 = n0->in(0)->in(0);
-      assert( n0->is_Call(), "expect a call here" );
-    }
-    if( n0->is_Call() ) {
-      if( n0->as_Call()->guaranteed_safepoint() )
-        return;
-    } else if( n0->is_SafePoint() && n0->req() >= parms ) {
-      return;
-    }
-  }
 
   // Clear out dead values from the debug info.
   kill_dead_locals();

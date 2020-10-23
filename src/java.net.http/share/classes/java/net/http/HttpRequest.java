@@ -703,6 +703,8 @@ public abstract class HttpRequest {
          * @return An aggregate publisher that publishes a request body
          * logically equivalent to the concatenation of all bytes published
          * by each publisher in the sequence.
+         *
+         * @since 16
          */
         public static BodyPublisher concat(BodyPublisher... publishers) {
             return RequestPublishers.concat(Objects.requireNonNull(publishers));

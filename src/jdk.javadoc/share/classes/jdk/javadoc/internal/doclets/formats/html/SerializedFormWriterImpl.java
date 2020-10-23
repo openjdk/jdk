@@ -40,6 +40,7 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.SerializedFormWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 
 /**
  *  Generates the Serialized Form Information Page, <i>serialized-form.html</i>.
@@ -60,6 +61,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
     public SerializedFormWriterImpl(HtmlConfiguration configuration) {
         super(configuration, DocPaths.SERIALIZED_FORM);
         visibleClasses = configuration.getIncludedTypeElements();
+        configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.SERIALIZED_FORM);
     }
 
     /**
@@ -239,6 +241,11 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
     public void printDocument(Content serializedTree) throws DocFileIOException {
         serializedTree.add(bodyContents);
         printHtmlDocument(null, "serialized forms", serializedTree);
+
+        if (configuration.mainIndex != null) {
+            configuration.mainIndex.add(IndexItem.of(IndexItem.Category.TAGS,
+                    resources.getText("doclet.Serialized_Form"), path));
+        }
     }
 
     /**
