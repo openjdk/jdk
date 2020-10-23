@@ -140,7 +140,7 @@ CodeBuffer::~CodeBuffer() {
 
   // Claim is that stack allocation ensures resources are cleaned up.
   // This is resource clean up, let's hope that all were properly copied out.
-  free_strings();
+  NOT_PRODUCT(free_strings();)
 
 #ifdef ASSERT
   // Save allocation type to execute assert in ~ResourceObj()
@@ -267,13 +267,14 @@ bool CodeBuffer::is_backward_branch(Label& L) {
   return L.is_bound() && insts_end() <= locator_address(L.loc());
 }
 
+#ifndef PRODUCT
 address CodeBuffer::decode_begin() {
   address begin = _insts.start();
   if (_decode_begin != NULL && _decode_begin > begin)
     begin = _decode_begin;
   return begin;
 }
-
+#endif // !PRODUCT
 
 GrowableArray<int>* CodeBuffer::create_patch_overflow() {
   if (_overflow_arena == NULL) {
@@ -752,7 +753,7 @@ void CodeBuffer::copy_code_to(CodeBlob* dest_blob) {
   relocate_code_to(&dest);
 
   // transfer strings and comments from buffer to blob
-  dest_blob->set_strings(_code_strings);
+  NOT_PRODUCT(dest_blob->set_strings(_code_strings);)
 
   // Done moving code bytes; were they the right size?
   assert((int)align_up(dest.total_content_size(), oopSize) == dest_blob->content_size(), "sanity");
@@ -957,12 +958,11 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
   debug_only(Copy::fill_to_bytes(bxp->_total_start, bxp->_total_size,
                                  badCodeHeapFreeVal));
 
-  _decode_begin = NULL;  // sanity
-
   // Make certain that the new sections are all snugly inside the new blob.
   verify_section_allocation();
 
 #ifndef PRODUCT
+  _decode_begin = NULL;  // sanity
   if (PrintNMethods && (WizardMode || Verbose)) {
     tty->print("expanded CodeBuffer:");
     this->print();
@@ -1032,10 +1032,6 @@ void CodeBuffer::log_section_sizes(const char* name) {
 
 #ifndef PRODUCT
 
-void CodeSection::decode() {
-  Disassembler::decode(start(), end());
-}
-
 void CodeBuffer::block_comment(intptr_t offset, const char * comment) {
   if (_collect_comments) {
     _code_strings.add_comment(offset, comment);
@@ -1054,8 +1050,12 @@ class CodeString: public CHeapObj<mtCode> {
   CodeString*  _prev;
   intptr_t     _offset;
 
+  static long allocated_code_strings;
+
   ~CodeString() {
     assert(_next == NULL && _prev == NULL, "wrong interface for freeing list");
+    allocated_code_strings--;
+    log_trace(codestrings)("Freeing CodeString [%s] (%p)", _string, (void*)_string);
     os::free((void*)_string);
   }
 
@@ -1064,12 +1064,14 @@ class CodeString: public CHeapObj<mtCode> {
  public:
   CodeString(const char * string, intptr_t offset = -1)
     : _next(NULL), _prev(NULL), _offset(offset) {
+    allocated_code_strings++;
     _string = os::strdup(string, mtCode);
+    log_trace(codestrings)("Created CodeString [%s] (%p)", _string, (void*)_string);
   }
 
   const char * string() const { return _string; }
   intptr_t     offset() const { assert(_offset >= 0, "offset for non comment?"); return _offset;  }
-  CodeString* next()    const { return _next; }
+  CodeString*  next()   const { return _next; }
 
   void set_next(CodeString* next) {
     _next = next;
@@ -1094,6 +1096,10 @@ class CodeString: public CHeapObj<mtCode> {
   }
 };
 
+// For tracing statistics. Will use raw increment/decrement, so it might not be
+// exact
+long CodeString::allocated_code_strings = 0;
+
 CodeString* CodeStrings::find(intptr_t offset) const {
   CodeString* a = _strings->first_comment();
   while (a != NULL && a->offset() != offset) {
@@ -1116,7 +1122,7 @@ void CodeStrings::add_comment(intptr_t offset, const char * comment) {
   CodeString* c      = new CodeString(comment, offset);
   CodeString* inspos = (_strings == NULL) ? NULL : find_last(offset);
 
-  if (inspos) {
+  if (inspos != NULL) {
     // insert after already existing comments with same offset
     c->set_next(inspos->next());
     inspos->set_next(c);
@@ -1130,21 +1136,10 @@ void CodeStrings::add_comment(intptr_t offset, const char * comment) {
   }
 }
 
-void CodeStrings::assign(CodeStrings& other) {
-  other.check_valid();
-  assert(is_null(), "Cannot assign onto non-empty CodeStrings");
-  _strings = other._strings;
-  _strings_last = other._strings_last;
-#ifdef ASSERT
-  _defunct = false;
-#endif
-  other.set_null_and_invalidate();
-}
-
 // Deep copy of CodeStrings for consistent memory management.
-// Only used for actual disassembly so this is cheaper than reference counting
-// for the "normal" fastdebug case.
 void CodeStrings::copy(CodeStrings& other) {
+  log_debug(codestrings)("Copying %d Codestring(s)", other.count());
+
   other.check_valid();
   check_valid();
   assert(is_null(), "Cannot copy onto non-empty CodeStrings");
@@ -1152,7 +1147,11 @@ void CodeStrings::copy(CodeStrings& other) {
   CodeString** ps = &_strings;
   CodeString* prev = NULL;
   while (n != NULL) {
-    *ps = new CodeString(n->string(),n->offset());
+    if (n->is_comment()) {
+      *ps = new CodeString(n->string(), n->offset());
+    } else {
+      *ps = new CodeString(n->string());
+    }
     (*ps)->_prev = prev;
     prev = *ps;
     ps = &((*ps)->_next);
@@ -1161,13 +1160,6 @@ void CodeStrings::copy(CodeStrings& other) {
 }
 
 const char* CodeStrings::_prefix = " ;; ";  // default: can be changed via set_prefix
-
-// Check if any block comments are pending for the given offset.
-bool CodeStrings::has_block_comment(intptr_t offset) const {
-  if (_strings == NULL) return false;
-  CodeString* c = find(offset);
-  return c != NULL;
-}
 
 void CodeStrings::print_block_comment(outputStream* stream, intptr_t offset) const {
   check_valid();
@@ -1184,8 +1176,19 @@ void CodeStrings::print_block_comment(outputStream* stream, intptr_t offset) con
   }
 }
 
-// Also sets isNull()
+int CodeStrings::count() const {
+  int i = 0;
+  CodeString* s = _strings;
+  while (s != NULL) {
+    i++;
+    s = s->_next;
+  }
+  return i;
+}
+
+// Also sets is_null()
 void CodeStrings::free() {
+  log_debug(codestrings)("Freeing %d out of approx. %ld CodeString(s), ", count(), CodeString::allocated_code_strings);
   CodeString* n = _strings;
   while (n) {
     // unlink the node from the list saving a pointer to the next
@@ -1215,7 +1218,7 @@ const char* CodeStrings::add_string(const char * string) {
 
 void CodeBuffer::decode() {
   ttyLocker ttyl;
-  Disassembler::decode(decode_begin(), insts_end(), tty);
+  Disassembler::decode(decode_begin(), insts_end(), tty NOT_PRODUCT(COMMA &strings()));
   _decode_begin = insts_end();
 }
 
@@ -1244,12 +1247,6 @@ void CodeBuffer::print() {
     CodeSection* cs = code_section(n);
     cs->print(code_section_name(n));
   }
-}
-
-// Directly disassemble code buffer.
-void CodeBuffer::decode(address start, address end) {
-  ttyLocker ttyl;
-  Disassembler::decode(this, start, end, tty);
 }
 
 #endif // PRODUCT
