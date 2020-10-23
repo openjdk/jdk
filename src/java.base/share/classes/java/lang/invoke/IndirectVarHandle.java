@@ -53,12 +53,12 @@ import java.util.function.BiFunction;
     private final Class<?>[] coordinates;
 
     IndirectVarHandle(VarHandle target, Class<?> value, Class<?>[] coordinates, BiFunction<AccessMode, MethodHandle, MethodHandle> handleFactory) {
-        this(target, value, coordinates, handleFactory, new VarForm(value, coordinates));
+        this(target, value, coordinates, handleFactory, new VarForm(value, coordinates), false);
     }
 
     private IndirectVarHandle(VarHandle target, Class<?> value, Class<?>[] coordinates,
-                      BiFunction<AccessMode, MethodHandle, MethodHandle> handleFactory, VarForm form) {
-        super(form);
+                      BiFunction<AccessMode, MethodHandle, MethodHandle> handleFactory, VarForm form, boolean exact) {
+        super(form, exact);
         this.handleFactory = handleFactory;
         this.target = target;
         this.directTarget = target.asDirect();
@@ -78,7 +78,7 @@ import java.util.function.BiFunction;
 
     @Override
     MethodType accessModeTypeUncached(AccessMode accessMode) {
-        return accessMode.at.accessModeType(directTarget.getClass(), value, coordinates);
+        return accessMode.at.accessModeType(null, value, coordinates);
     }
 
     @Override
@@ -96,8 +96,13 @@ import java.util.function.BiFunction;
     }
 
     @Override
-    IndirectVarHandle withVarForm(VarForm varForm) {
-        return new IndirectVarHandle(target, value, coordinates, handleFactory, varForm);
+    public VarHandle asExact() {
+        return new IndirectVarHandle(target, value, coordinates, handleFactory, vform, true);
+    }
+
+    @Override
+    public VarHandle asGeneric() {
+        return new IndirectVarHandle(target, value, coordinates, handleFactory, vform, false);
     }
 
     @Override

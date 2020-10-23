@@ -45,12 +45,12 @@ final class VarHandle$Type$s {
 #end[Object]
 
         FieldInstanceReadOnly(Class<?> receiverType, long fieldOffset{#if[Object]?, Class<?> fieldType}) {
-            this(receiverType, fieldOffset{#if[Object]?, fieldType}, FieldInstanceReadOnly.FORM);
+            this(receiverType, fieldOffset{#if[Object]?, fieldType}, FieldInstanceReadOnly.FORM, false);
         }
 
         protected FieldInstanceReadOnly(Class<?> receiverType, long fieldOffset{#if[Object]?, Class<?> fieldType},
-                                        VarForm form) {
-            super(form);
+                                        VarForm form, boolean exact) {
+            super(form, exact);
             this.fieldOffset = fieldOffset;
             this.receiverType = receiverType;
 #if[Object]
@@ -59,8 +59,13 @@ final class VarHandle$Type$s {
         }
 
         @Override
-        FieldInstanceReadOnly withVarForm(VarForm varForm) {
-            return new FieldInstanceReadOnly(receiverType, fieldOffset{#if[Object]?, fieldType}, varForm);
+        public FieldInstanceReadOnly asExact() {
+            return new FieldInstanceReadOnly(receiverType, fieldOffset{#if[Object]?, fieldType}, vform, true);
+        }
+
+        @Override
+        public FieldInstanceReadOnly asGeneric() {
+            return new FieldInstanceReadOnly(receiverType, fieldOffset{#if[Object]?, fieldType}, vform, false);
         }
 
         @Override
@@ -115,27 +120,22 @@ final class VarHandle$Type$s {
     static final class FieldInstanceReadWrite extends FieldInstanceReadOnly {
 
         FieldInstanceReadWrite(Class<?> receiverType, long fieldOffset{#if[Object]?, Class<?> fieldType}) {
-            this(receiverType, fieldOffset{#if[Object]?, fieldType}, FieldInstanceReadWrite.FORM);
+            this(receiverType, fieldOffset{#if[Object]?, fieldType}, false);
         }
 
         private FieldInstanceReadWrite(Class<?> receiverType, long fieldOffset{#if[Object]?, Class<?> fieldType},
-                               VarForm form) {
-            super(receiverType, fieldOffset{#if[Object]?, fieldType}, form);
-        }
-
-        @Override
-        FieldInstanceReadWrite withVarForm(VarForm varForm) {
-            return new FieldInstanceReadWrite(receiverType, fieldOffset{#if[Object]?, fieldType}, varForm);
+                                       boolean exact) {
+            super(receiverType, fieldOffset{#if[Object]?, fieldType}, FieldInstanceReadWrite.FORM, exact);
         }
 
         @Override
         public FieldInstanceReadWrite asExact() {
-            return withVarForm(FORM_EXACT);
+            return new FieldInstanceReadWrite(receiverType, fieldOffset{#if[Object]?, fieldType}, true);
         }
 
         @Override
         public FieldInstanceReadWrite asGeneric() {
-            return withVarForm(FORM);
+            return new FieldInstanceReadWrite(receiverType, fieldOffset{#if[Object]?, fieldType}, false);
         }
 
         @ForceInline
@@ -370,7 +370,6 @@ final class VarHandle$Type$s {
 #end[Bitwise]
 
         static final VarForm FORM = new VarForm(FieldInstanceReadWrite.class, Object.class, $type$.class);
-        static final VarForm FORM_EXACT = FORM.asExact();
     }
 
 
@@ -382,12 +381,12 @@ final class VarHandle$Type$s {
 #end[Object]
 
         FieldStaticReadOnly(Object base, long fieldOffset{#if[Object]?, Class<?> fieldType}) {
-            this(base, fieldOffset{#if[Object]?, fieldType}, FieldStaticReadOnly.FORM);
+            this(base, fieldOffset{#if[Object]?, fieldType}, FieldStaticReadOnly.FORM, false);
         }
 
         protected FieldStaticReadOnly(Object base, long fieldOffset{#if[Object]?, Class<?> fieldType},
-                                      VarForm form) {
-            super(form);
+                                      VarForm form, boolean exact) {
+            super(form, exact);
             this.base = base;
             this.fieldOffset = fieldOffset;
 #if[Object]
@@ -396,8 +395,13 @@ final class VarHandle$Type$s {
         }
 
         @Override
-        FieldStaticReadOnly withVarForm(VarForm varForm) {
-            return new FieldStaticReadOnly(base, fieldOffset{#if[Object]?, fieldType}, varForm);
+        public FieldStaticReadOnly asExact() {
+            return new FieldStaticReadOnly(base, fieldOffset{#if[Object]?, fieldType}, vform, true);
+        }
+
+        @Override
+        public FieldStaticReadOnly asGeneric() {
+            return new FieldStaticReadOnly(base, fieldOffset{#if[Object]?, fieldType}, vform, false);
         }
 
         @Override
@@ -454,27 +458,22 @@ final class VarHandle$Type$s {
     static final class FieldStaticReadWrite extends FieldStaticReadOnly {
 
         FieldStaticReadWrite(Object base, long fieldOffset{#if[Object]?, Class<?> fieldType}) {
-            this(base, fieldOffset{#if[Object]?, fieldType}, FieldStaticReadWrite.FORM);
+            this(base, fieldOffset{#if[Object]?, fieldType}, false);
         }
 
         private FieldStaticReadWrite(Object base, long fieldOffset{#if[Object]?, Class<?> fieldType},
-                             VarForm form) {
-            super(base, fieldOffset{#if[Object]?, fieldType}, form);
+                                     boolean exact) {
+            super(base, fieldOffset{#if[Object]?, fieldType}, FieldStaticReadWrite.FORM, exact);
         }
 
         @Override
-        public FieldStaticReadWrite withVarForm(VarForm varForm) {
-            return new FieldStaticReadWrite(base, fieldOffset{#if[Object]?, fieldType}, varForm);
-        }
-
-       @Override
         public FieldStaticReadWrite asExact() {
-            return withVarForm(FORM_EXACT);
+            return new FieldStaticReadWrite(base, fieldOffset{#if[Object]?, fieldType}, true);
         }
 
         @Override
         public FieldStaticReadWrite asGeneric() {
-            return withVarForm(FORM);
+            return new FieldStaticReadWrite(base, fieldOffset{#if[Object]?, fieldType}, false);
         }
 
         @ForceInline
@@ -709,7 +708,6 @@ final class VarHandle$Type$s {
 #end[Bitwise]
 
         static final VarForm FORM = new VarForm(FieldStaticReadWrite.class, null, $type$.class);
-        static final VarForm FORM_EXACT = FORM.asExact();
     }
 
 
@@ -722,11 +720,11 @@ final class VarHandle$Type$s {
 #end[Object]
 
         Array(int abase, int ashift{#if[Object]?, Class<?> arrayType}) {
-            this(abase, ashift{#if[Object]?, arrayType}, Array.FORM);
+            this(abase, ashift{#if[Object]?, arrayType}, false);
         }
 
-        private Array(int abase, int ashift{#if[Object]?, Class<?> arrayType}, VarForm form) {
-            super(form);
+        private Array(int abase, int ashift{#if[Object]?, Class<?> arrayType}, boolean exact) {
+            super(Array.FORM, exact);
             this.abase = abase;
             this.ashift = ashift;
 #if[Object]
@@ -736,18 +734,13 @@ final class VarHandle$Type$s {
         }
 
         @Override
-        Array withVarForm(VarForm varForm) {
-            return new Array(abase, ashift{#if[Object]?, arrayType}, varForm);
-        }
-
-        @Override
         public Array asExact() {
-            return withVarForm(FORM_EXACT);
+            return new Array(abase, ashift{#if[Object]?, arrayType}, true);
         }
 
         @Override
         public Array asGeneric() {
-            return withVarForm(FORM);
+            return new Array(abase, ashift{#if[Object]?, arrayType}, false);
         }
 
         @Override
@@ -1149,6 +1142,5 @@ final class VarHandle$Type$s {
 #end[Bitwise]
 
         static final VarForm FORM = new VarForm(Array.class, {#if[Object]?Object[].class:$type$[].class}, {#if[Object]?Object.class:$type$.class}, int.class);
-        static final VarForm FORM_EXACT = FORM.asExact();
     }
 }

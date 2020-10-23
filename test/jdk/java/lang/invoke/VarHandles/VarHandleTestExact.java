@@ -73,7 +73,7 @@ public class VarHandleTestExact {
         final Long aLongField_RO = 1234L;
     }
 
-    @Test(dataProvider = "dataObjectAccess", expectedExceptions = WrongMethodTypeException.class)
+    @Test(dataProvider = "dataObjectAccess")
     public void testExactSet(String fieldBaseName, Class<?> fieldType, boolean ro, Object testValue,
                              SetX setter, GetX getter,
                              SetStaticX staticSetter, GetStaticX staticGetter)
@@ -90,10 +90,15 @@ public class VarHandleTestExact {
         }
 
         vh = vh.asExact();
-        setter.set(vh, w, testValue); // should throw
+        try {
+            setter.set(vh, w, testValue); // should throw
+            fail("Exception expected");
+        } catch (WrongMethodTypeException wmte) {
+            assertMatches(wmte.getMessage(),".*\\Qexpected (Widget," + fieldType.getSimpleName() + ")void \\E.*");
+        }
     }
 
-    @Test(dataProvider = "dataObjectAccess", expectedExceptions = WrongMethodTypeException.class)
+    @Test(dataProvider = "dataObjectAccess")
     public void testExactGet(String fieldBaseName, Class<?> fieldType, boolean ro, Object testValue,
                              SetX setter, GetX getter,
                              SetStaticX staticSetter, GetStaticX staticGetter)
@@ -109,10 +114,15 @@ public class VarHandleTestExact {
         }
 
         vh = vh.asExact();
-        getter.get(vh, w); // should throw
+        try {
+            getter.get(vh, w); // should throw
+            fail("Exception expected");
+        } catch (WrongMethodTypeException wmte) {
+            assertMatches(wmte.getMessage(),".*\\Qexpected (Widget)" + fieldType.getSimpleName() + " \\E.*");
+        }
     }
 
-    @Test(dataProvider = "dataObjectAccess", expectedExceptions = WrongMethodTypeException.class)
+    @Test(dataProvider = "dataObjectAccess")
     public void testExactSetStatic(String fieldBaseName, Class<?> fieldType, boolean ro, Object testValue,
                                    SetX setter, GetX getter,
                                    SetStaticX staticSetter, GetStaticX staticGetter)
@@ -128,10 +138,15 @@ public class VarHandleTestExact {
         }
 
         vh = vh.asExact();
-        staticSetter.set(vh, testValue); // should throw
+        try {
+            staticSetter.set(vh, testValue); // should throw
+            fail("Exception expected");
+        } catch (WrongMethodTypeException wmte) {
+            assertMatches(wmte.getMessage(),".*\\Qexpected (" + fieldType.getSimpleName() + ")void \\E.*");
+        }
     }
 
-    @Test(dataProvider = "dataObjectAccess", expectedExceptions = WrongMethodTypeException.class)
+    @Test(dataProvider = "dataObjectAccess")
     public void testExactGetStatic(String fieldBaseName, Class<?> fieldType, boolean ro, Object testValue,
                                    SetX setter, GetX getter,
                                    SetStaticX staticSetter, GetStaticX staticGetter)
@@ -146,10 +161,15 @@ public class VarHandleTestExact {
         }
 
         vh = vh.asExact();
-        staticGetter.get(vh); // should throw
+        try {
+            staticGetter.get(vh); // should throw
+            fail("Exception expected");
+        } catch (WrongMethodTypeException wmte) {
+            assertMatches(wmte.getMessage(),".*\\Qexpected ()" + fieldType.getSimpleName() + " \\E.*");
+        }
     }
 
-    @Test(dataProvider = "dataSetArray", expectedExceptions = WrongMethodTypeException.class)
+    @Test(dataProvider = "dataSetArray")
     public void testExactArraySet(Class<?> arrayClass, Object testValue, SetArrayX setter) {
         VarHandle vh = MethodHandles.arrayElementVarHandle(arrayClass);
         Object arr = Array.newInstance(arrayClass.componentType(), 1);
@@ -162,10 +182,16 @@ public class VarHandleTestExact {
         }
 
         vh = vh.asExact();
-        setter.set(vh, arr, testValue); // should throw
+        try {
+            setter.set(vh, arr, testValue); // should throw
+            fail("Exception expected");
+        } catch (WrongMethodTypeException wmte) {
+            assertMatches(wmte.getMessage(),
+                ".*\\Qexpected (" + arrayClass.getSimpleName() + ",int," + arrayClass.componentType().getSimpleName() + ")void \\E.*");
+        }
     }
 
-    @Test(dataProvider = "dataSetBuffer", expectedExceptions = WrongMethodTypeException.class)
+    @Test(dataProvider = "dataSetBuffer")
     public void testExactBufferSet(Class<?> arrayClass, Object testValue, SetBufferX setter) {
         VarHandle vh = MethodHandles.byteBufferViewVarHandle(arrayClass, ByteOrder.nativeOrder());
         ByteBuffer buff = ByteBuffer.allocateDirect(8);
@@ -178,10 +204,16 @@ public class VarHandleTestExact {
         }
 
         vh = vh.asExact();
-        setter.set(vh, buff, testValue); // should throw
+        try {
+            setter.set(vh, buff, testValue); // should throw
+            fail("Exception expected");
+        } catch (WrongMethodTypeException wmte) {
+            assertMatches(wmte.getMessage(),
+                ".*\\Qexpected (ByteBuffer,int," + arrayClass.componentType().getSimpleName() + ")void \\E.*");
+        }
     }
 
-    @Test(dataProvider = "dataSetMemorySegment", expectedExceptions = WrongMethodTypeException.class)
+    @Test(dataProvider = "dataSetMemorySegment")
     public void testExactSegmentSet(Class<?> carrier, Object testValue, SetSegmentX setter) {
         VarHandle vh = MemoryHandles.varHandle(carrier, ByteOrder.nativeOrder());
         try (MemorySegment seg = MemorySegment.allocateNative(8)) {
@@ -194,7 +226,19 @@ public class VarHandleTestExact {
             }
 
             vh = vh.asExact();
-            setter.set(vh, base, testValue); // should throw
+            try {
+                setter.set(vh, base, testValue); // should throw
+                fail("Exception expected");
+            } catch (WrongMethodTypeException wmte) {
+                assertMatches(wmte.getMessage(),
+                    ".*\\Qexpected (MemoryAddress," + carrier.getSimpleName() + ")void \\E.*");
+            }
+        }
+    }
+    
+    private static void assertMatches(String str, String pattern) {
+        if (!str.matches(pattern)) {
+            throw new AssertionError("'" + str + "' did not match the pattern '" + pattern + "'.");
         }
     }
 

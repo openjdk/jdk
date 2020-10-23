@@ -446,9 +446,15 @@ import static java.lang.invoke.MethodHandleStatics.UNSAFE;
  */
 public abstract class VarHandle implements Constable {
     final VarForm vform;
+    final boolean exact;
 
     VarHandle(VarForm vform) {
+        this(vform, false);
+    }
+
+    VarHandle(VarForm vform, boolean exact) {
         this.vform = vform;
+        this.exact = exact;
     }
 
     RuntimeException unsupported() {
@@ -466,16 +472,8 @@ public abstract class VarHandle implements Constable {
     VarHandle target() { return null; }
 
     boolean isExact() {
-        return vform.exact;
+        return exact;
     }
-
-    /**
-     *  Create a clone of this var handle, but with the given {@code VarForm}
-     *
-     * @param varForm the new {@code VarForm} to use
-     * @return the new var handle
-     */
-    abstract VarHandle withVarForm(VarForm varForm);
 
     // Plain accessors
 
@@ -1558,18 +1556,14 @@ public abstract class VarHandle implements Constable {
      * the type of this var handle exactly, and otherwise throws a {@link WrongMethodTypeException}
      * @return the exact var handle
      */
-    public VarHandle asExact() {
-        return withVarForm(vform.asExact());
-    }
+    public abstract VarHandle asExact();
 
     /**
      * Returns the a var handle that, upon use, checks whether the invocation type matches
      * the type of this var handle exactly, and otherwise throws a {@link WrongMethodTypeException}
      * @return the exact var handle
      */
-    public VarHandle asGeneric() {
-        return withVarForm(vform.asGeneric());
-    }
+    public abstract VarHandle asGeneric();
 
     enum AccessType {
         GET(Object.class),
@@ -1832,6 +1826,8 @@ public abstract class VarHandle implements Constable {
         GET_AND_BITWISE_XOR_ACQUIRE("getAndBitwiseXorAcquire", AccessType.GET_AND_UPDATE),
         ;
 
+        @Stable
+        static final AccessMode[] stableValues = values();
         static final Map<String, AccessMode> methodNameToAccessMode;
         static {
             AccessMode[] values = AccessMode.values();
@@ -1960,6 +1956,9 @@ public abstract class VarHandle implements Constable {
                     accessModeTypeUncached(accessMode);
         }
         return mt;
+    }
+    final MethodType accessModeType(int accessMode) {
+        return accessModeType(AccessMode.stableValues[accessMode]);
     }
     abstract MethodType accessModeTypeUncached(AccessMode accessMode);
 

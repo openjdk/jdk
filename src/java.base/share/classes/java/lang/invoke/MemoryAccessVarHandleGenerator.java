@@ -97,10 +97,10 @@ class MemoryAccessVarHandleGenerator {
     private final static MethodHandle MUL_OFFSETS_HANDLE;
 
     private final static MethodType CONSTR_TYPE = MethodType.methodType(void.class, VarForm.class,
-            boolean.class, long.class, long.class, long.class, long[].class);
+            boolean.class, long.class, long.class, long.class, boolean.class, long[].class);
     // MemoryAccessVarHandleBase
     private final static MethodType SUPER_CONTR_TYPE = MethodType.methodType(void.class, VarForm.class,
-            boolean.class, long.class, long.class, long.class);
+            boolean.class, long.class, long.class, long.class, boolean.class);
 
     static {
         helperClassCache = new HashMap<>();
@@ -208,7 +208,8 @@ class MemoryAccessVarHandleGenerator {
 
         addCarrierAccessor(cw);
 
-        addWithVarForm(cw);
+        addAsExact(cw);
+        addAsGeneric(cw);
 
         for (VarHandle.AccessMode mode : VarHandle.AccessMode.values()) {
             addAccessModeMethodIfNeeded(mode, cw);
@@ -265,18 +266,19 @@ class MemoryAccessVarHandleGenerator {
         mv.visitCode();
         //super call
         mv.visitVarInsn(ALOAD, 0);
-        mv.visitVarInsn(ALOAD, 1);
+        mv.visitVarInsn(ALOAD, 1); // vform
         mv.visitTypeInsn(CHECKCAST, Type.getInternalName(VarForm.class));
-        mv.visitVarInsn(ILOAD, 2);
-        mv.visitVarInsn(LLOAD, 3);
-        mv.visitVarInsn(LLOAD, 5);
-        mv.visitVarInsn(LLOAD, 7);
+        mv.visitVarInsn(ILOAD, 2); // be
+        mv.visitVarInsn(LLOAD, 3); // length
+        mv.visitVarInsn(LLOAD, 5); // offset
+        mv.visitVarInsn(LLOAD, 7); // alignmentMask
+        mv.visitVarInsn(ILOAD, 8); // exact
         mv.visitMethodInsn(INVOKESPECIAL, Type.getInternalName(BASE_CLASS), "<init>",
                 SUPER_CONTR_TYPE.toMethodDescriptorString(), false);
         //init dimensions
         for (int i = 0 ; i < dimensions ; i++) {
             mv.visitVarInsn(ALOAD, 0);
-            mv.visitVarInsn(ALOAD, 9);
+            mv.visitVarInsn(ALOAD, 10);
             mv.visitLdcInsn(i);
             mv.visitInsn(LALOAD);
             mv.visitFieldInsn(PUTFIELD, implClassName, "dim" + i, "J");
@@ -416,12 +418,21 @@ class MemoryAccessVarHandleGenerator {
         mv.visitEnd();
     }
 
-    private void addWithVarForm(ClassWriter cw) {
-        MethodVisitor mv = cw.visitMethod(ACC_FINAL, "withVarForm", "(Ljava/lang/invoke/VarForm;)Ljava/lang/invoke/VarHandle;", null, null);
+    private void addAsExact(ClassWriter cw) {
+        addAsExactOrAsGeneric(cw, "asExact", true);
+    }
+
+    private void addAsGeneric(ClassWriter cw) {
+        addAsExactOrAsGeneric(cw, "asGeneric", false);
+    }
+
+    private void addAsExactOrAsGeneric(ClassWriter cw, String name, boolean exact) {
+        MethodVisitor mv = cw.visitMethod(ACC_FINAL, name, "()Ljava/lang/invoke/VarHandle;", null, null);
         mv.visitCode();
         mv.visitTypeInsn(NEW, implClassName);
         mv.visitInsn(DUP);
-        mv.visitVarInsn(ALOAD, 1); // form
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitFieldInsn(GETFIELD, internalName(VarHandle.class), "vform", VarForm.class.descriptorString());
         mv.visitVarInsn(ALOAD, 0);
         mv.visitFieldInsn(GETFIELD, internalName(MemoryAccessVarHandleBase.class), "be", boolean.class.descriptorString());
         mv.visitVarInsn(ALOAD, 0);
@@ -430,6 +441,7 @@ class MemoryAccessVarHandleGenerator {
         mv.visitFieldInsn(GETFIELD, internalName(MemoryAccessVarHandleBase.class), "offset", long.class.descriptorString());
         mv.visitVarInsn(ALOAD, 0);
         mv.visitFieldInsn(GETFIELD, internalName(MemoryAccessVarHandleBase.class), "alignmentMask", long.class.descriptorString());
+        mv.visitIntInsn(BIPUSH, exact ? 1 : 0);
         mv.visitVarInsn(ALOAD, 0);
         mv.visitMethodInsn(INVOKEVIRTUAL, implClassName, "strides", "()[J", false);
         mv.visitMethodInsn(INVOKESPECIAL, implClassName, "<init>", CONSTR_TYPE.descriptorString(), false);

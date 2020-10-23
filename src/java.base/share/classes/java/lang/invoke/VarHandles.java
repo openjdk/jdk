@@ -31,8 +31,10 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Parameter;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -43,6 +45,8 @@ import java.util.stream.Stream;
 import static java.lang.invoke.MethodHandleStatics.UNSAFE;
 import static java.lang.invoke.MethodHandleStatics.VAR_HANDLE_IDENTITY_ADAPT;
 import static java.lang.invoke.MethodHandleStatics.newIllegalArgumentException;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 
 final class VarHandles {
 
@@ -331,7 +335,8 @@ final class VarHandles {
                             .generateHandleFactory());
 
         try {
-            return maybeAdapt((VarHandle)fac.invoke(be, size, offset, alignmentMask, strides));
+            boolean exact = false;
+            return maybeAdapt((VarHandle)fac.invoke(be, size, offset, alignmentMask, exact, strides));
         } catch (Throwable ex) {
             throw new IllegalStateException(ex);
         }
@@ -341,7 +346,7 @@ final class VarHandles {
         if (!VAR_HANDLE_IDENTITY_ADAPT) return target;
         target = filterValue(target,
                         MethodHandles.identity(target.varType()), MethodHandles.identity(target.varType()));
-        MethodType mtype = target.accessModeType(VarHandle.AccessMode.GET).dropParameterTypes(0, 1);
+        MethodType mtype = target.accessModeType(VarHandle.AccessMode.GET);
         for (int i = 0 ; i < mtype.parameterCount() ; i++) {
             target = filterCoordinates(target, i, MethodHandles.identity(mtype.parameterType(i)));
         }
@@ -638,305 +643,305 @@ final class VarHandles {
                 !Error.class.isAssignableFrom(clazz);
     }
 
-//    /**
-//     * A helper program to generate the VarHandleGuards class with a set of
-//     * static guard methods each of which corresponds to a particular shape and
-//     * performs a type check of the symbolic type descriptor with the VarHandle
-//     * type descriptor before linking/invoking to the underlying operation as
-//     * characterized by the operation member name on the VarForm of the
-//     * VarHandle.
-//     * <p>
-//     * The generated class essentially encapsulates pre-compiled LambdaForms,
-//     * one for each method, for the most set of common method signatures.
-//     * This reduces static initialization costs, footprint costs, and circular
-//     * dependencies that may arise if a class is generated per LambdaForm.
-//     * <p>
-//     * A maximum of L*T*S methods will be generated where L is the number of
-//     * access modes kinds (or unique operation signatures) and T is the number
-//     * of variable types and S is the number of shapes (such as instance field,
-//     * static field, or array access).
-//     * If there are 4 unique operation signatures, 5 basic types (Object, int,
-//     * long, float, double), and 3 shapes then a maximum of 60 methods will be
-//     * generated.  However, the number is likely to be less since there
-//     * be duplicate signatures.
-//     * <p>
-//     * Each method is annotated with @LambdaForm.Compiled to inform the runtime
-//     * that such methods should be treated as if a method of a class that is the
-//     * result of compiling a LambdaForm.  Annotation of such methods is
-//     * important for correct evaluation of certain assertions and method return
-//     * type profiling in HotSpot.
-//     */
-//    public static class GuardMethodGenerator {
-//
-//        static final String GUARD_METHOD_SIG_TEMPLATE = "<RETURN> <NAME>_<SIGNATURE>(<PARAMS>)";
-//
-//        static final String GUARD_METHOD_TEMPLATE =
-//                """
-//                @ForceInline
-//                @LambdaForm.Compiled
-//                @Hidden
-//                final static <METHOD> throws Throwable {
-//                    if (handle.vform.exact && handle.vform.methodType_table_exact[ad.type] != ad.symbolicMethodTypeExact) {
-//                        throw new WrongMethodTypeException("expected " + handle.vform.methodType_table_exact[ad.type] + " but found "
-//                                + ad.symbolicMethodTypeExact);
-//                    }
-//                    if (handle.isDirect() && handle.vform.methodType_table[ad.type] == ad.symbolicMethodTypeErased) {
-//                        <RESULT_ERASED>MethodHandle.linkToStatic(<LINK_TO_STATIC_ARGS>);<RETURN_ERASED>
-//                    } else {
-//                        MethodHandle mh = handle.getMethodHandle(ad.mode);
-//                        <RETURN>mh.asType(ad.symbolicMethodTypeInvoker).invokeBasic(<LINK_TO_INVOKER_ARGS>);
-//                    }
-//                }""";
-//
-//        static final String GUARD_METHOD_TEMPLATE_V =
-//                """
-//                @ForceInline
-//                @LambdaForm.Compiled
-//                @Hidden
-//                final static <METHOD> throws Throwable {
-//                    if (handle.vform.exact && handle.vform.methodType_table_exact[ad.type] != ad.symbolicMethodTypeExact) {
-//                        throw new WrongMethodTypeException("expected " + handle.vform.methodType_table_exact[ad.type] + " but found "
-//                                + ad.symbolicMethodTypeExact);
-//                    }
-//                    if (handle.isDirect() && handle.vform.methodType_table[ad.type] == ad.symbolicMethodTypeErased) {
-//                        MethodHandle.linkToStatic(<LINK_TO_STATIC_ARGS>);
-//                    } else if (handle.isDirect() && handle.vform.getMethodType_V(ad.type) == ad.symbolicMethodTypeErased) {
-//                        MethodHandle.linkToStatic(<LINK_TO_STATIC_ARGS>);
-//                    } else {
-//                        MethodHandle mh = handle.getMethodHandle(ad.mode);
-//                        mh.asType(ad.symbolicMethodTypeInvoker).invokeBasic(<LINK_TO_INVOKER_ARGS>);
-//                    }
-//                }""";
-//
-//        // A template for deriving the operations
-//        // could be supported by annotating VarHandle directly with the
-//        // operation kind and shape
-//        interface VarHandleTemplate {
-//            Object get();
-//
-//            void set(Object value);
-//
-//            boolean compareAndSet(Object actualValue, Object expectedValue);
-//
-//            Object compareAndExchange(Object actualValue, Object expectedValue);
-//
-//            Object getAndUpdate(Object value);
-//        }
-//
-//        static class HandleType {
-//            final Class<?> receiver;
-//            final Class<?>[] intermediates;
-//            final Class<?> value;
-//
-//            HandleType(Class<?> receiver, Class<?> value, Class<?>... intermediates) {
-//                this.receiver = receiver;
-//                this.intermediates = intermediates;
-//                this.value = value;
-//            }
-//        }
-//
-//        /**
-//         * @param args parameters
-//         */
-//        public static void main(String[] args) {
-//            System.out.println("package java.lang.invoke;");
-//            System.out.println();
-//            System.out.println("import jdk.internal.vm.annotation.ForceInline;");
-//            System.out.println("import jdk.internal.vm.annotation.Hidden;");
-//            System.out.println();
-//            System.out.println("// This class is auto-generated by " +
-//                               GuardMethodGenerator.class.getName() +
-//                               ". Do not edit.");
-//            System.out.println("final class VarHandleGuards {");
-//
-//            System.out.println();
-//
-//            // Declare the stream of shapes
-//            Stream<HandleType> hts = Stream.of(
-//                    // Object->Object
-//                    new HandleType(Object.class, Object.class),
-//                    // Object->int
-//                    new HandleType(Object.class, int.class),
-//                    // Object->long
-//                    new HandleType(Object.class, long.class),
-//                    // Object->float
-//                    new HandleType(Object.class, float.class),
-//                    // Object->double
-//                    new HandleType(Object.class, double.class),
-//
-//                    // <static>->Object
-//                    new HandleType(null, Object.class),
-//                    // <static>->int
-//                    new HandleType(null, int.class),
-//                    // <static>->long
-//                    new HandleType(null, long.class),
-//                    // <static>->float
-//                    new HandleType(null, float.class),
-//                    // <static>->double
-//                    new HandleType(null, double.class),
-//
-//                    // Array[int]->Object
-//                    new HandleType(Object.class, Object.class, int.class),
-//                    // Array[int]->int
-//                    new HandleType(Object.class, int.class, int.class),
-//                    // Array[int]->long
-//                    new HandleType(Object.class, long.class, int.class),
-//                    // Array[int]->float
-//                    new HandleType(Object.class, float.class, int.class),
-//                    // Array[int]->double
-//                    new HandleType(Object.class, double.class, int.class),
-//
-//                    // Array[long]->int
-//                    new HandleType(Object.class, int.class, long.class),
-//                    // Array[long]->long
-//                    new HandleType(Object.class, long.class, long.class)
-//            );
-//
-//            hts.flatMap(ht -> Stream.of(VarHandleTemplate.class.getMethods()).
-//                    map(m -> generateMethodType(m, ht.receiver, ht.value, ht.intermediates))).
-//                    distinct().
-//                    map(GuardMethodGenerator::generateMethod).
-//                    forEach(System.out::println);
-//
-//            System.out.println("}");
-//        }
-//
-//        static MethodType generateMethodType(Method m, Class<?> receiver, Class<?> value, Class<?>... intermediates) {
-//            Class<?> returnType = m.getReturnType() == Object.class
-//                                  ? value : m.getReturnType();
-//
-//            List<Class<?>> params = new ArrayList<>();
-//            if (receiver != null)
-//                params.add(receiver);
-//            for (int i = 0; i < intermediates.length; i++) {
-//                params.add(intermediates[i]);
-//            }
-//            for (Parameter p : m.getParameters()) {
-//                params.add(value);
-//            }
-//            return MethodType.methodType(returnType, params);
-//        }
-//
-//        static String generateMethod(MethodType mt) {
-//            Class<?> returnType = mt.returnType();
-//
-//            LinkedHashMap<String, Class<?>> params = new LinkedHashMap<>();
-//            params.put("handle", VarHandle.class);
-//            for (int i = 0; i < mt.parameterCount(); i++) {
-//                params.put("arg" + i, mt.parameterType(i));
-//            }
-//            params.put("ad", VarHandle.AccessDescriptor.class);
-//
-//            // Generate method signature line
-//            String RETURN = className(returnType);
-//            String NAME = "guard";
-//            String SIGNATURE = getSignature(mt);
-//            String PARAMS = params.entrySet().stream().
-//                    map(e -> className(e.getValue()) + " " + e.getKey()).
-//                    collect(joining(", "));
-//            String METHOD = GUARD_METHOD_SIG_TEMPLATE.
-//                    replace("<RETURN>", RETURN).
-//                    replace("<NAME>", NAME).
-//                    replace("<SIGNATURE>", SIGNATURE).
-//                    replace("<PARAMS>", PARAMS);
-//
-//            // Generate method
-//            params.remove("ad");
-//
-//            List<String> LINK_TO_STATIC_ARGS = params.keySet().stream().
-//                    collect(toList());
-//            LINK_TO_STATIC_ARGS.add("handle.vform.getMemberName(ad.mode)");
-//            List<String> LINK_TO_STATIC_ARGS_V = params.keySet().stream().
-//                    collect(toList());
-//            LINK_TO_STATIC_ARGS_V.add("handle.vform.getMemberName_V(ad.mode)");
-//
-//            List<String> LINK_TO_INVOKER_ARGS = params.keySet().stream().
-//                    collect(toList());
-//            LINK_TO_INVOKER_ARGS.set(0, LINK_TO_INVOKER_ARGS.get(0) + ".asDirect()");
-//
-//            RETURN = returnType == void.class
-//                     ? ""
-//                     : returnType == Object.class
-//                       ? "return "
-//                       : "return (" + returnType.getName() + ") ";
-//
-//            String RESULT_ERASED = returnType == void.class
-//                                   ? ""
-//                                   : returnType != Object.class
-//                                     ? "return (" + returnType.getName() + ") "
-//                                     : "Object r = ";
-//
-//            String RETURN_ERASED = returnType != Object.class
-//                                   ? ""
-//                                   : "\n        return ad.returnType.cast(r);";
-//
-//            String template = returnType == void.class
-//                              ? GUARD_METHOD_TEMPLATE_V
-//                              : GUARD_METHOD_TEMPLATE;
-//            return template.
-//                    replace("<METHOD>", METHOD).
-//                    replace("<NAME>", NAME).
-//                    replaceAll("<RETURN>", RETURN).
-//                    replace("<RESULT_ERASED>", RESULT_ERASED).
-//                    replace("<RETURN_ERASED>", RETURN_ERASED).
-//                    replaceAll("<LINK_TO_STATIC_ARGS>", LINK_TO_STATIC_ARGS.stream().
-//                            collect(joining(", "))).
-//                    replaceAll("<LINK_TO_STATIC_ARGS_V>", LINK_TO_STATIC_ARGS_V.stream().
-//                            collect(joining(", "))).
-//                    replace("<LINK_TO_INVOKER_ARGS>", LINK_TO_INVOKER_ARGS.stream().
-//                            collect(joining(", ")))
-//                    .indent(4);
-//        }
-//
-//        static String className(Class<?> c) {
-//            String n = c.getName();
-//            if (n.startsWith("java.lang.")) {
-//                n = n.replace("java.lang.", "");
-//                if (n.startsWith("invoke.")) {
-//                    n = n.replace("invoke.", "");
-//                }
-//            }
-//            return n.replace('$', '.');
-//        }
-//
-//        static String getSignature(MethodType m) {
-//            StringBuilder sb = new StringBuilder(m.parameterCount() + 1);
-//
-//            for (int i = 0; i < m.parameterCount(); i++) {
-//                Class<?> pt = m.parameterType(i);
-//                sb.append(getCharType(pt));
-//            }
-//
-//            sb.append('_').append(getCharType(m.returnType()));
-//
-//            return sb.toString();
-//        }
-//
-//        static char getCharType(Class<?> pt) {
-//            if (pt == void.class) {
-//                return 'V';
-//            }
-//            else if (!pt.isPrimitive()) {
-//                return 'L';
-//            }
-//            else if (pt == boolean.class) {
-//                return 'Z';
-//            }
-//            else if (pt == int.class) {
-//                return 'I';
-//            }
-//            else if (pt == long.class) {
-//                return 'J';
-//            }
-//            else if (pt == float.class) {
-//                return 'F';
-//            }
-//            else if (pt == double.class) {
-//                return 'D';
-//            }
-//            else {
-//                throw new IllegalStateException(pt.getName());
-//            }
-//        }
-//    }
+    /**
+     * A helper program to generate the VarHandleGuards class with a set of
+     * static guard methods each of which corresponds to a particular shape and
+     * performs a type check of the symbolic type descriptor with the VarHandle
+     * type descriptor before linking/invoking to the underlying operation as
+     * characterized by the operation member name on the VarForm of the
+     * VarHandle.
+     * <p>
+     * The generated class essentially encapsulates pre-compiled LambdaForms,
+     * one for each method, for the most set of common method signatures.
+     * This reduces static initialization costs, footprint costs, and circular
+     * dependencies that may arise if a class is generated per LambdaForm.
+     * <p>
+     * A maximum of L*T*S methods will be generated where L is the number of
+     * access modes kinds (or unique operation signatures) and T is the number
+     * of variable types and S is the number of shapes (such as instance field,
+     * static field, or array access).
+     * If there are 4 unique operation signatures, 5 basic types (Object, int,
+     * long, float, double), and 3 shapes then a maximum of 60 methods will be
+     * generated.  However, the number is likely to be less since there
+     * be duplicate signatures.
+     * <p>
+     * Each method is annotated with @LambdaForm.Compiled to inform the runtime
+     * that such methods should be treated as if a method of a class that is the
+     * result of compiling a LambdaForm.  Annotation of such methods is
+     * important for correct evaluation of certain assertions and method return
+     * type profiling in HotSpot.
+     */
+    public static class GuardMethodGenerator {
+
+        static final String GUARD_METHOD_SIG_TEMPLATE = "<RETURN> <NAME>_<SIGNATURE>(<PARAMS>)";
+
+        static final String GUARD_METHOD_TEMPLATE =
+                """
+                @ForceInline
+                @LambdaForm.Compiled
+                @Hidden
+                final static <METHOD> throws Throwable {
+                    if (handle.isExact() && handle.accessModeType(ad.mode) != ad.symbolicMethodTypeExact) {
+                        throw new WrongMethodTypeException("expected " + handle.accessModeType(ad.mode) + " but found "
+                                + ad.symbolicMethodTypeExact);
+                    }
+                    if (handle.isDirect() && handle.vform.methodType_table[ad.type] == ad.symbolicMethodTypeErased) {
+                        <RESULT_ERASED>MethodHandle.linkToStatic(<LINK_TO_STATIC_ARGS>);<RETURN_ERASED>
+                    } else {
+                        MethodHandle mh = handle.getMethodHandle(ad.mode);
+                        <RETURN>mh.asType(ad.symbolicMethodTypeInvoker).invokeBasic(<LINK_TO_INVOKER_ARGS>);
+                    }
+                }""";
+
+        static final String GUARD_METHOD_TEMPLATE_V =
+                """
+                @ForceInline
+                @LambdaForm.Compiled
+                @Hidden
+                final static <METHOD> throws Throwable {
+                    if (handle.isExact() && handle.accessModeType(ad.mode) != ad.symbolicMethodTypeExact) {
+                        throw new WrongMethodTypeException("expected " + handle.accessModeType(ad.mode) + " but found "
+                                + ad.symbolicMethodTypeExact);
+                    }
+                    if (handle.isDirect() && handle.vform.methodType_table[ad.type] == ad.symbolicMethodTypeErased) {
+                        MethodHandle.linkToStatic(<LINK_TO_STATIC_ARGS>);
+                    } else if (handle.isDirect() && handle.vform.getMethodType_V(ad.type) == ad.symbolicMethodTypeErased) {
+                        MethodHandle.linkToStatic(<LINK_TO_STATIC_ARGS>);
+                    } else {
+                        MethodHandle mh = handle.getMethodHandle(ad.mode);
+                        mh.asType(ad.symbolicMethodTypeInvoker).invokeBasic(<LINK_TO_INVOKER_ARGS>);
+                    }
+                }""";
+
+        // A template for deriving the operations
+        // could be supported by annotating VarHandle directly with the
+        // operation kind and shape
+        interface VarHandleTemplate {
+            Object get();
+
+            void set(Object value);
+
+            boolean compareAndSet(Object actualValue, Object expectedValue);
+
+            Object compareAndExchange(Object actualValue, Object expectedValue);
+
+            Object getAndUpdate(Object value);
+        }
+
+        static class HandleType {
+            final Class<?> receiver;
+            final Class<?>[] intermediates;
+            final Class<?> value;
+
+            HandleType(Class<?> receiver, Class<?> value, Class<?>... intermediates) {
+                this.receiver = receiver;
+                this.intermediates = intermediates;
+                this.value = value;
+            }
+        }
+
+        /**
+         * @param args parameters
+         */
+        public static void main(String[] args) {
+            System.out.println("package java.lang.invoke;");
+            System.out.println();
+            System.out.println("import jdk.internal.vm.annotation.ForceInline;");
+            System.out.println("import jdk.internal.vm.annotation.Hidden;");
+            System.out.println();
+            System.out.println("// This class is auto-generated by " +
+                               GuardMethodGenerator.class.getName() +
+                               ". Do not edit.");
+            System.out.println("final class VarHandleGuards {");
+
+            System.out.println();
+
+            // Declare the stream of shapes
+            Stream<HandleType> hts = Stream.of(
+                    // Object->Object
+                    new HandleType(Object.class, Object.class),
+                    // Object->int
+                    new HandleType(Object.class, int.class),
+                    // Object->long
+                    new HandleType(Object.class, long.class),
+                    // Object->float
+                    new HandleType(Object.class, float.class),
+                    // Object->double
+                    new HandleType(Object.class, double.class),
+
+                    // <static>->Object
+                    new HandleType(null, Object.class),
+                    // <static>->int
+                    new HandleType(null, int.class),
+                    // <static>->long
+                    new HandleType(null, long.class),
+                    // <static>->float
+                    new HandleType(null, float.class),
+                    // <static>->double
+                    new HandleType(null, double.class),
+
+                    // Array[int]->Object
+                    new HandleType(Object.class, Object.class, int.class),
+                    // Array[int]->int
+                    new HandleType(Object.class, int.class, int.class),
+                    // Array[int]->long
+                    new HandleType(Object.class, long.class, int.class),
+                    // Array[int]->float
+                    new HandleType(Object.class, float.class, int.class),
+                    // Array[int]->double
+                    new HandleType(Object.class, double.class, int.class),
+
+                    // Array[long]->int
+                    new HandleType(Object.class, int.class, long.class),
+                    // Array[long]->long
+                    new HandleType(Object.class, long.class, long.class)
+            );
+
+            hts.flatMap(ht -> Stream.of(VarHandleTemplate.class.getMethods()).
+                    map(m -> generateMethodType(m, ht.receiver, ht.value, ht.intermediates))).
+                    distinct().
+                    map(GuardMethodGenerator::generateMethod).
+                    forEach(System.out::println);
+
+            System.out.println("}");
+        }
+
+        static MethodType generateMethodType(Method m, Class<?> receiver, Class<?> value, Class<?>... intermediates) {
+            Class<?> returnType = m.getReturnType() == Object.class
+                                  ? value : m.getReturnType();
+
+            List<Class<?>> params = new ArrayList<>();
+            if (receiver != null)
+                params.add(receiver);
+            for (int i = 0; i < intermediates.length; i++) {
+                params.add(intermediates[i]);
+            }
+            for (Parameter p : m.getParameters()) {
+                params.add(value);
+            }
+            return MethodType.methodType(returnType, params);
+        }
+
+        static String generateMethod(MethodType mt) {
+            Class<?> returnType = mt.returnType();
+
+            LinkedHashMap<String, Class<?>> params = new LinkedHashMap<>();
+            params.put("handle", VarHandle.class);
+            for (int i = 0; i < mt.parameterCount(); i++) {
+                params.put("arg" + i, mt.parameterType(i));
+            }
+            params.put("ad", VarHandle.AccessDescriptor.class);
+
+            // Generate method signature line
+            String RETURN = className(returnType);
+            String NAME = "guard";
+            String SIGNATURE = getSignature(mt);
+            String PARAMS = params.entrySet().stream().
+                    map(e -> className(e.getValue()) + " " + e.getKey()).
+                    collect(joining(", "));
+            String METHOD = GUARD_METHOD_SIG_TEMPLATE.
+                    replace("<RETURN>", RETURN).
+                    replace("<NAME>", NAME).
+                    replace("<SIGNATURE>", SIGNATURE).
+                    replace("<PARAMS>", PARAMS);
+
+            // Generate method
+            params.remove("ad");
+
+            List<String> LINK_TO_STATIC_ARGS = params.keySet().stream().
+                    collect(toList());
+            LINK_TO_STATIC_ARGS.add("handle.vform.getMemberName(ad.mode)");
+            List<String> LINK_TO_STATIC_ARGS_V = params.keySet().stream().
+                    collect(toList());
+            LINK_TO_STATIC_ARGS_V.add("handle.vform.getMemberName_V(ad.mode)");
+
+            List<String> LINK_TO_INVOKER_ARGS = params.keySet().stream().
+                    collect(toList());
+            LINK_TO_INVOKER_ARGS.set(0, LINK_TO_INVOKER_ARGS.get(0) + ".asDirect()");
+
+            RETURN = returnType == void.class
+                     ? ""
+                     : returnType == Object.class
+                       ? "return "
+                       : "return (" + returnType.getName() + ") ";
+
+            String RESULT_ERASED = returnType == void.class
+                                   ? ""
+                                   : returnType != Object.class
+                                     ? "return (" + returnType.getName() + ") "
+                                     : "Object r = ";
+
+            String RETURN_ERASED = returnType != Object.class
+                                   ? ""
+                                   : "\n        return ad.returnType.cast(r);";
+
+            String template = returnType == void.class
+                              ? GUARD_METHOD_TEMPLATE_V
+                              : GUARD_METHOD_TEMPLATE;
+            return template.
+                    replace("<METHOD>", METHOD).
+                    replace("<NAME>", NAME).
+                    replaceAll("<RETURN>", RETURN).
+                    replace("<RESULT_ERASED>", RESULT_ERASED).
+                    replace("<RETURN_ERASED>", RETURN_ERASED).
+                    replaceAll("<LINK_TO_STATIC_ARGS>", LINK_TO_STATIC_ARGS.stream().
+                            collect(joining(", "))).
+                    replaceAll("<LINK_TO_STATIC_ARGS_V>", LINK_TO_STATIC_ARGS_V.stream().
+                            collect(joining(", "))).
+                    replace("<LINK_TO_INVOKER_ARGS>", LINK_TO_INVOKER_ARGS.stream().
+                            collect(joining(", ")))
+                    .indent(4);
+        }
+
+        static String className(Class<?> c) {
+            String n = c.getName();
+            if (n.startsWith("java.lang.")) {
+                n = n.replace("java.lang.", "");
+                if (n.startsWith("invoke.")) {
+                    n = n.replace("invoke.", "");
+                }
+            }
+            return n.replace('$', '.');
+        }
+
+        static String getSignature(MethodType m) {
+            StringBuilder sb = new StringBuilder(m.parameterCount() + 1);
+
+            for (int i = 0; i < m.parameterCount(); i++) {
+                Class<?> pt = m.parameterType(i);
+                sb.append(getCharType(pt));
+            }
+
+            sb.append('_').append(getCharType(m.returnType()));
+
+            return sb.toString();
+        }
+
+        static char getCharType(Class<?> pt) {
+            if (pt == void.class) {
+                return 'V';
+            }
+            else if (!pt.isPrimitive()) {
+                return 'L';
+            }
+            else if (pt == boolean.class) {
+                return 'Z';
+            }
+            else if (pt == int.class) {
+                return 'I';
+            }
+            else if (pt == long.class) {
+                return 'J';
+            }
+            else if (pt == float.class) {
+                return 'F';
+            }
+            else if (pt == double.class) {
+                return 'D';
+            }
+            else {
+                throw new IllegalStateException(pt.getName());
+            }
+        }
+    }
 }

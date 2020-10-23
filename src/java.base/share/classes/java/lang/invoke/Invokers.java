@@ -466,8 +466,8 @@ class Invokers {
     /*non-public*/
     @Hidden
     static MethodHandle checkVarHandleGenericType(VarHandle handle, VarHandle.AccessDescriptor ad) {
-        if (handle.isExact() && handle.vform.methodType_table_exact[ad.type] != ad.symbolicMethodTypeExact) {
-            throw new WrongMethodTypeException("expected " + handle.vform.methodType_table_exact[ad.type] + " but found "
+        if (handle.isExact() && handle.accessModeType(ad.mode) != ad.symbolicMethodTypeExact) {
+            throw new WrongMethodTypeException("expected " + handle.accessModeType(ad.mode) + " but found "
                     + ad.symbolicMethodTypeExact);
         }
         // Test for exact match on invoker types

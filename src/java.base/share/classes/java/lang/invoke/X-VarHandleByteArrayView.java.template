@@ -68,8 +68,8 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
     private static abstract class ByteArrayViewVarHandle extends VarHandle {
         final boolean be;
 
-        ByteArrayViewVarHandle(VarForm form, boolean be) {
-            super(form);
+        ByteArrayViewVarHandle(VarForm form, boolean be, boolean exact) {
+            super(form, exact);
             this.be = be;
         }
     }
@@ -77,26 +77,21 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
     static final class ArrayHandle extends ByteArrayViewVarHandle {
 
         ArrayHandle(boolean be) {
-            this(ArrayHandle.FORM, be);
+            this(be, false);
         }
 
-        private ArrayHandle(VarForm form, boolean be) {
-            super(form, be);
-        }
-
-        @Override
-        ArrayHandle withVarForm(VarForm varForm) {
-            return new ArrayHandle(varForm, be);
+        private ArrayHandle(boolean be, boolean exact) {
+            super(ArrayHandle.FORM, be, exact);
         }
 
         @Override
         public ArrayHandle asExact() {
-            return withVarForm(FORM_EXACT);
+            return new ArrayHandle(be, true);
         }
 
         @Override
         public ArrayHandle asGeneric() {
-            return withVarForm(FORM);
+            return new ArrayHandle(be, false);
         }
 
         @Override
@@ -568,33 +563,27 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
 #end[Bitwise]
 
         static final VarForm FORM = new VarForm(ArrayHandle.class, byte[].class, $type$.class, int.class);
-        static final VarForm FORM_EXACT = FORM.asExact();
     }
 
 
     static final class ByteBufferHandle extends ByteArrayViewVarHandle {
 
         ByteBufferHandle(boolean be) {
-            this(ByteBufferHandle.FORM, be);
+            this(be, false);
         }
 
-        private ByteBufferHandle(VarForm form, boolean be) {
-            super(form, be);
-        }
-
-        @Override
-        ByteBufferHandle withVarForm(VarForm varForm) {
-            return new ByteBufferHandle(varForm, be);
+        private ByteBufferHandle(boolean be, boolean exact) {
+            super(ByteBufferHandle.FORM, be, exact);
         }
 
         @Override
         public ByteBufferHandle asExact() {
-            return withVarForm(FORM_EXACT);
+            return new ByteBufferHandle(be, true);
         }
 
         @Override
         public ByteBufferHandle asGeneric() {
-            return withVarForm(FORM);
+            return new ByteBufferHandle(be, false);
         }
 
         @Override
@@ -1082,6 +1071,5 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
 #end[Bitwise]
 
         static final VarForm FORM = new VarForm(ByteBufferHandle.class, ByteBuffer.class, $type$.class, int.class);
-        static final VarForm FORM_EXACT = FORM.asExact();
     }
 }
