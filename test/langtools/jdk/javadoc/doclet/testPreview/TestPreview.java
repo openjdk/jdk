@@ -72,7 +72,6 @@ public class TestPreview extends JavadocTester {
                                       <div class="preview-comment">{3}</div>
                                       </div>""";
             String expected = MessageFormat.format(expectedTemplate, zero, one, two, three);
-            expected = expected.replace("\n", NL);
             checkOutput("m/pkg/TestPreviewDeclaration.html", true, expected);
         }
 

@@ -44,7 +44,6 @@ public enum HtmlAttr {
     CLASS,
     CLEAR,
     COLS,
-    COLSPAN,
     CONTENT,
     DISABLED,
     FOR,

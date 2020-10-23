@@ -140,7 +140,7 @@ public abstract class LinkFactory {
                         Content label = newContent();
                         label.add(utils.getTypeName(type, false));
                         linkInfo.label = label;
-                        ((LinkInfoImpl) linkInfo).skipPreview = true;
+                        linkInfo.skipPreview = true;
                         link.add(getClassLink(linkInfo));
                     } else {
                         // No need to link method type parameters.

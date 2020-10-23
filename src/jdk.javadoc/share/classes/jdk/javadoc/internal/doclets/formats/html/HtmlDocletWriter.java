@@ -112,7 +112,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.DeclarationPreviewLanguageFeatures;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.ElementFlag;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.PreviewSummary;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 
 import static com.sun.source.doctree.DocTree.Kind.CODE;
 import static com.sun.source.doctree.DocTree.Kind.COMMENT;
@@ -120,9 +119,6 @@ import static com.sun.source.doctree.DocTree.Kind.LINK;
 import static com.sun.source.doctree.DocTree.Kind.LINK_PLAIN;
 import static com.sun.source.doctree.DocTree.Kind.SEE;
 import static com.sun.source.doctree.DocTree.Kind.TEXT;
-import static javax.lang.model.element.ElementKind.METHOD;
-import static javax.lang.model.element.ElementKind.PACKAGE;
-import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import static jdk.javadoc.internal.doclets.toolkit.util.CommentHelper.SPACER;
 
 
@@ -1002,7 +998,7 @@ public class HtmlDocletWriter {
             return getLink(new LinkInfoImpl(configuration, context, typeElement)
                 .label(label)
                 .where(links.getAnchor(ee, isProperty))
-                .whereMember(element)
+                .targetMember(element)
                 .strong(strong));
         }
 
@@ -1010,7 +1006,7 @@ public class HtmlDocletWriter {
             return getLink(new LinkInfoImpl(configuration, context, typeElement)
                 .label(label)
                 .where(links.getName(element.getSimpleName().toString()))
-                .whereMember(element)
+                .targetMember(element)
                 .strong(strong));
         }
 
@@ -1037,10 +1033,10 @@ public class HtmlDocletWriter {
             return getLink(new LinkInfoImpl(configuration, context, typeElement)
                 .label(label)
                 .where(links.getAnchor(emd))
-                .whereMember(element));
+                .targetMember(element));
         } else if (utils.isVariableElement(element) || utils.isTypeElement(element)) {
             return getLink(new LinkInfoImpl(configuration, context, typeElement)
-                .label(label).where(links.getName(element.getSimpleName().toString())).whereMember(element));
+                .label(label).where(links.getName(element.getSimpleName().toString())).targetMember(element));
         } else {
             return label;
         }
@@ -1197,7 +1193,7 @@ public class HtmlDocletWriter {
     public void addInlineComment(Element element, DocTree tag, Content htmltree) {
         CommentHelper ch = utils.getCommentHelper(element);
         List<? extends DocTree> description = ch.getDescription(tag);
-        addCommentTags(element, tag, description, false, false, false, false, htmltree);
+        addCommentTags(element, tag, description, false, false, false, htmltree);
     }
 
     /**
@@ -1221,7 +1217,7 @@ public class HtmlDocletWriter {
      */
     public void addInlineDeprecatedComment(Element e, DocTree tag, Content htmltree) {
         CommentHelper ch = utils.getCommentHelper(e);
-        addCommentTags(e, ch.getBody(tag), true, false, false, false, htmltree);
+        addCommentTags(e, ch.getBody(tag), true, false, false, htmltree);
     }
 
     /**
@@ -1242,7 +1238,7 @@ public class HtmlDocletWriter {
      * @param htmltree the documentation tree to which the summary will be added
      */
     public void addPreviewComment(Element element, List<? extends DocTree> firstSentenceTags, Content htmltree) {
-        addCommentTags(element, firstSentenceTags, false, true, true, true, htmltree);
+        addCommentTags(element, firstSentenceTags, false, true, true, htmltree);
     }
 
     /**
@@ -1253,13 +1249,13 @@ public class HtmlDocletWriter {
      * @param htmltree the documentation tree to which the summary will be added
      */
     public void addSummaryComment(Element element, List<? extends DocTree> firstSentenceTags, Content htmltree) {
-        addCommentTags(element, firstSentenceTags, false, false, true, true, htmltree);
+        addCommentTags(element, firstSentenceTags, false, true, true, htmltree);
     }
 
     public void addSummaryDeprecatedComment(Element element, DocTree tag, Content htmltree) {
         CommentHelper ch = utils.getCommentHelper(element);
         List<? extends DocTree> body = ch.getBody(tag);
-        addCommentTags(element, ch.getFirstSentenceTrees(body), true, false, true, true, htmltree);
+        addCommentTags(element, ch.getFirstSentenceTrees(body), true, true, true, htmltree);
     }
 
     /**
@@ -1269,7 +1265,7 @@ public class HtmlDocletWriter {
      * @param htmltree the documentation tree to which the inline comments will be added
      */
     public void addInlineComment(Element element, Content htmltree) {
-        addCommentTags(element, utils.getFullBody(element), false, false, false, false, htmltree);
+        addCommentTags(element, utils.getFullBody(element), false, false, false, htmltree);
     }
 
     /**
@@ -1283,8 +1279,8 @@ public class HtmlDocletWriter {
      * @param htmltree the documentation tree to which the comment tags will be added
      */
     private void addCommentTags(Element element, List<? extends DocTree> tags, boolean depr,
-            boolean preview, boolean first, boolean inSummary, Content htmltree) {
-        addCommentTags(element, null, tags, depr, preview, first, inSummary, htmltree);
+            boolean first, boolean inSummary, Content htmltree) {
+        addCommentTags(element, null, tags, depr, first, inSummary, htmltree);
     }
 
     /**
@@ -1299,7 +1295,7 @@ public class HtmlDocletWriter {
      * @param htmltree the documentation tree to which the comment tags will be added
      */
     private void addCommentTags(Element element, DocTree holderTag, List<? extends DocTree> tags, boolean depr,
-            boolean preview, boolean first, boolean inSummary, Content htmltree) {
+            boolean first, boolean inSummary, Content htmltree) {
         if (options.noComment()){
             return;
         }
@@ -1307,9 +1303,6 @@ public class HtmlDocletWriter {
         Content result = commentTagsToContent(null, element, tags, first, inSummary);
         if (depr) {
             div = HtmlTree.DIV(HtmlStyle.deprecationComment, result);
-            htmltree.add(div);
-        } else if (preview) {
-            div = HtmlTree.DIV(HtmlStyle.block, result);
             htmltree.add(div);
         } else {
             div = HtmlTree.DIV(HtmlStyle.block, result);

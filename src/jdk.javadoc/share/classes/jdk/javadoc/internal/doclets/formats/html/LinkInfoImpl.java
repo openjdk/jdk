@@ -244,12 +244,7 @@ public class LinkInfoImpl extends LinkInfo {
     /**
      * The member this link points to (if any).
      */
-    public Element whereMember;
-
-    /**
-     * True iff the preview flags should be skipped for this link.
-     */
-    public boolean skipPreview;
+    public Element targetMember;
 
     /**
      * The value of the target.
@@ -356,8 +351,8 @@ public class LinkInfoImpl extends LinkInfo {
     /**
      * Set the member this link points to (if any).
      */
-    public LinkInfoImpl whereMember(Element el) {
-        this.whereMember = el;
+    public LinkInfoImpl targetMember(Element el) {
+        this.targetMember = el;
         return this;
     }
 

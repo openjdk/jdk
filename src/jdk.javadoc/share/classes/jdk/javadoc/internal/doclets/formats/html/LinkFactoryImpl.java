@@ -97,9 +97,9 @@ public class LinkFactoryImpl extends LinkFactory {
             flags = utils.elementFlags(typeElement);
             target = typeElement;
         } else if ((classLinkInfo.context == LinkInfoImpl.Kind.SEE_TAG || classLinkInfo.context == LinkInfoImpl.Kind.MEMBER_DEPRECATED_PREVIEW) &&
-                   classLinkInfo.whereMember != null && showPreview) {
-            flags = utils.elementFlags(classLinkInfo.whereMember);
-            target = classLinkInfo.whereMember;
+                   classLinkInfo.targetMember != null && showPreview) {
+            flags = utils.elementFlags(classLinkInfo.targetMember);
+            target = classLinkInfo.targetMember;
         } else {
             flags = EnumSet.noneOf(ElementFlag.class);
             target = null;
