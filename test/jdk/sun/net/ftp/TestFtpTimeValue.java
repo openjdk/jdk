@@ -92,9 +92,9 @@ public class TestFtpTimeValue {
             for (var it = client.listFiles(null); it.hasNext(); ) {
                 var e = it.next();
                 Asserts.assertEQ(TestCase.valueOf(e.getName()).expectedCreated, e.getCreated(),
-                        "wrong created date from MLSD for " + e);
+                        "wrong created date from MLSD for " + e.getName());
                 Asserts.assertEQ(TestCase.valueOf(e.getName()).expectedModified, e.getLastModified(),
-                        "wrong modified date from MLSD for " + e);
+                        "wrong modified date from MLSD for " + e.getName());
             }
         }
     }
