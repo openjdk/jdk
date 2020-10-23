@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,7 @@ import java.time.temporal.TemporalField;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -104,8 +105,11 @@ class DateTimeTextProvider {
     /** Cache. */
     private static final ConcurrentMap<Entry<TemporalField, Locale>, Object> CACHE = new ConcurrentHashMap<>(16, 0.75f, 2);
     /** Comparator. */
-    private static final Comparator<Entry<String, Long>> COMPARATOR = (obj1, obj2) -> {
-        return obj2.getKey().length() - obj1.getKey().length();  // longest to shortest
+    private static final Comparator<Entry<String, Long>> COMPARATOR = new Comparator<Entry<String, Long>>() {
+        @Override
+        public int compare(Entry<String, Long> obj1, Entry<String, Long> obj2) {
+            return obj2.getKey().length() - obj1.getKey().length();  // longest to shortest
+        }
     };
 
     // Singleton instance
@@ -273,7 +277,7 @@ class DateTimeTextProvider {
         List<Entry<String, Long>> list = new ArrayList<>(map.size());
         switch (fieldIndex) {
         case Calendar.ERA:
-            for (Entry<String, Integer> entry : map.entrySet()) {
+            for (Map.Entry<String, Integer> entry : map.entrySet()) {
                 int era = entry.getValue();
                 if (chrono == JapaneseChronology.INSTANCE) {
                     if (era == 0) {
@@ -286,17 +290,17 @@ class DateTimeTextProvider {
             }
             break;
         case Calendar.MONTH:
-            for (Entry<String, Integer> entry : map.entrySet()) {
+            for (Map.Entry<String, Integer> entry : map.entrySet()) {
                 list.add(createEntry(entry.getKey(), (long)(entry.getValue() + 1)));
             }
             break;
         case Calendar.DAY_OF_WEEK:
-            for (Entry<String, Integer> entry : map.entrySet()) {
+            for (Map.Entry<String, Integer> entry : map.entrySet()) {
                 list.add(createEntry(entry.getKey(), (long)toWeekDay(entry.getValue())));
             }
             break;
         default:
-            for (Entry<String, Integer> entry : map.entrySet()) {
+            for (Map.Entry<String, Integer> entry : map.entrySet()) {
                 list.add(createEntry(entry.getKey(), (long)entry.getValue()));
             }
             break;
@@ -540,21 +544,21 @@ class DateTimeTextProvider {
             this.valueTextMap = valueTextMap;
             Map<TextStyle, List<Entry<String, Long>>> map = new HashMap<>();
             List<Entry<String, Long>> allList = new ArrayList<>();
-            valueTextMap.forEach((key1, value1) -> {
+            for (Map.Entry<TextStyle, Map<Long, String>> vtmEntry : valueTextMap.entrySet()) {
                 Map<String, Entry<String, Long>> reverse = new HashMap<>();
-                for (Entry<Long, String> entry : value1.entrySet()) {
+                for (Map.Entry<Long, String> entry : vtmEntry.getValue().entrySet()) {
                     if (reverse.put(entry.getValue(), createEntry(entry.getValue(), entry.getKey())) != null) {
                         // TODO: BUG: this has no effect
                         continue;  // not parsable, try next style
                     }
                 }
                 List<Entry<String, Long>> list = new ArrayList<>(reverse.values());
-                list.sort(COMPARATOR);
-                map.put(key1, list);
+                Collections.sort(list, COMPARATOR);
+                map.put(vtmEntry.getKey(), list);
                 allList.addAll(list);
                 map.put(null, allList);
-            });
-            allList.sort(COMPARATOR);
+            }
+            Collections.sort(allList, COMPARATOR);
             this.parsable = map;
         }
 

@@ -61,6 +61,7 @@
  */
 package java.time.format;
 
+import static java.time.format.DateTimeFormatterBuilder.DayPeriod;
 import static java.time.temporal.ChronoField.AMPM_OF_DAY;
 import static java.time.temporal.ChronoField.CLOCK_HOUR_OF_AMPM;
 import static java.time.temporal.ChronoField.CLOCK_HOUR_OF_DAY;
@@ -158,7 +159,7 @@ final class Parsed implements TemporalAccessor {
     /**
      * The parsed day period.
      */
-    DateTimeFormatterBuilder.DayPeriod dayPeriod;
+    DayPeriod dayPeriod;
 
     /**
      * Creates an instance.
@@ -337,7 +338,23 @@ final class Parsed implements TemporalAccessor {
         }
     }
 
-    //-----------------------------------------------------------------------
+    private void updateCheckDayPeriodConflict(TemporalField changeField, Long changeValue) {
+        Long old = fieldValues.put(changeField, changeValue);
+        if (resolverStyle != ResolverStyle.LENIENT) {
+            if (old != null && old.longValue() != changeValue.longValue()) {
+                throw new DateTimeException("Conflict found: " + changeField + " " + old +
+                        " differs from " + changeField + " " + changeValue +
+                        " while resolving  " + dayPeriod);
+            }
+            long mod = fieldValues.get(HOUR_OF_DAY) * 60 +
+                    (fieldValues.containsKey(MINUTE_OF_HOUR) ? fieldValues.get(MINUTE_OF_HOUR) : 0);
+            if (!dayPeriod.includes(mod)) {
+                throw new DateTimeException("Conflict found: " + changeField + " conflict with day period");
+            }
+        }
+    }
+
+//-----------------------------------------------------------------------
     private void resolveInstantFields() {
         // resolve parsed instant seconds to date and time if zone available
         if (fieldValues.containsKey(INSTANT_SECONDS)) {
@@ -453,28 +470,31 @@ final class Parsed implements TemporalAccessor {
         }
         if (dayPeriod != null) {
             if (fieldValues.containsKey(HOUR_OF_DAY)) {
-                if (!dayPeriod.includes(fieldValues.get(HOUR_OF_DAY) * 60 +
-                        (fieldValues.containsKey(MINUTE_OF_HOUR) ? fieldValues.get(MINUTE_OF_HOUR) : 0))) {
-                    throw new DateTimeException("Conflict found: hour-of-day/minute-of-hour conflict with day period");
+                long hod = fieldValues.remove(HOUR_OF_DAY);
+                if (resolverStyle != ResolverStyle.LENIENT) {
+                    HOUR_OF_DAY.checkValidValue(hod);
                 }
+                updateCheckDayPeriodConflict(HOUR_OF_DAY, hod);
             } else if (fieldValues.containsKey(HOUR_OF_AMPM)) {
-                long hoap = fieldValues.get(HOUR_OF_AMPM);
-                long moh = fieldValues.containsKey(MINUTE_OF_HOUR) ? fieldValues.get(MINUTE_OF_HOUR) : 0;
-                if (dayPeriod.includes(hoap * 60 + moh)) {
-                    updateCheckConflict(HOUR_OF_AMPM, HOUR_OF_DAY, hoap);
-                } else if (dayPeriod.includes((hoap + 12) * 60 + moh)) {
-                    updateCheckConflict(HOUR_OF_AMPM, HOUR_OF_DAY, hoap + 12);
-                } else {
-                    throw new DateTimeException("Conflict found: hour-of-ampm conflicts with day period");
+                long hoap = fieldValues.remove(HOUR_OF_AMPM);
+                if (resolverStyle != ResolverStyle.LENIENT) {
+                    HOUR_OF_AMPM.checkValidValue(hoap);
                 }
+                if (dayPeriod.includes((hoap + 12) * 60)) {
+                    hoap += 12;
+                }
+                updateCheckDayPeriodConflict(HOUR_OF_DAY, hoap);
             } else {
                 long midpoint = dayPeriod.mid();
                 fieldValues.put(HOUR_OF_DAY, midpoint / 60);
                 fieldValues.put(MINUTE_OF_HOUR, midpoint % 60);
-                // dayPeriod precedes AmPm. Override it if exists without conflict
-                // checking as for, e.g., "at night" can either be "AM" or "PM".
+                // dayPeriod precedes AmPm. Override it if exists.
                 if (fieldValues.containsKey(AMPM_OF_DAY)) {
-                    updateCheckConflict(HOUR_OF_DAY, AMPM_OF_DAY, midpoint / 720);
+                    long ap = fieldValues.remove(AMPM_OF_DAY);
+                    if (resolverStyle != ResolverStyle.LENIENT) {
+                        AMPM_OF_DAY.checkValidValue(ap);
+                    }
+                    updateCheckDayPeriodConflict(AMPM_OF_DAY, midpoint / 720);
                 }
             }
         }

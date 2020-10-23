@@ -180,7 +180,7 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
                     } else {
                         int base = (field == DAY_OF_WEEK) ? 1 : 0;
                         // Duplicates can happen with AM_PM field. In such a case,
-                        // am/pm (index 0 and 1) have precedence over flexible day
+                        // am/pm (index 0 and 1) have precedence over day
                         // periods.
                         for (int i = strings.length - 1; i >= 0; i--) {
                             String name = strings[i];
