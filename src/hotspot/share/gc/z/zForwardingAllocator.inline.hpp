@@ -31,15 +31,10 @@ inline size_t ZForwardingAllocator::size() const {
 }
 
 inline void* ZForwardingAllocator::alloc(size_t size) {
-  char* const new_top = _top + size;
-  if (new_top > _end) {
-    // Not enough space left
-    return NULL;
-  }
-
-  char* const old_top = _top;
-  _top = new_top;
-  return old_top;
+  char* const addr = _top;
+  _top += size;
+  assert(_top <= _end, "Allocation should never fail");
+  return addr;
 }
 
 #endif // SHARE_GC_Z_ZFORWARDINGALLOCATOR_INLINE_HPP
