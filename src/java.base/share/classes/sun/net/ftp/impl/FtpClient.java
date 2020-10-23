@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -289,9 +289,6 @@ public class FtpClient extends sun.net.ftp.FtpClient {
     }
 
     private class MLSxParser implements FtpDirParser {
-
-        private SimpleDateFormat df = new SimpleDateFormat("yyyyMMddhhmmss");
-
         public FtpDirEntry parseLine(String line) {
             String name = null;
             int i = line.lastIndexOf(';');
@@ -326,22 +323,14 @@ public class FtpClient extends sun.net.ftp.FtpClient {
             }
             s = file.getFact("Modify");
             if (s != null) {
-                Date d = null;
-                try {
-                    d = df.parse(s);
-                } catch (ParseException ex) {
-                }
+                Date d = parseRfc3659TimeValue(s);
                 if (d != null) {
                     file.setLastModified(d);
                 }
             }
             s = file.getFact("Create");
             if (s != null) {
-                Date d = null;
-                try {
-                    d = df.parse(s);
-                } catch (ParseException ex) {
-                }
+                Date d = parseRfc3659TimeValue(s);
                 if (d != null) {
                     file.setCreated(d);
                 }
@@ -1749,15 +1738,17 @@ public class FtpClient extends sun.net.ftp.FtpClient {
         }
         return -1;
     }
-    private static String[] MDTMformats = {
-        "yyyyMMddHHmmss.SSS",
-        "yyyyMMddHHmmss"
-    };
-    private static SimpleDateFormat[] dateFormats = new SimpleDateFormat[MDTMformats.length];
+
+    private static final SimpleDateFormat[] dateFormats;
 
     static {
-        for (int i = 0; i < MDTMformats.length; i++) {
-            dateFormats[i] = new SimpleDateFormat(MDTMformats[i]);
+        String[] formats = {
+            "yyyyMMddHHmmss.SSS",
+            "yyyyMMddHHmmss"
+        };
+        dateFormats = new SimpleDateFormat[formats.length];
+        for (int i = 0; i < formats.length; ++i) {
+            dateFormats[i] = new SimpleDateFormat(formats[i]);
             dateFormats[i].setTimeZone(TimeZone.getTimeZone("GMT"));
         }
     }
@@ -1778,18 +1769,23 @@ public class FtpClient extends sun.net.ftp.FtpClient {
         issueCommandCheck("MDTM " + path);
         if (lastReplyCode == FtpReplyCode.FILE_STATUS) {
             String s = getResponseString().substring(4);
-            Date d = null;
-            for (SimpleDateFormat dateFormat : dateFormats) {
-                try {
-                    d = dateFormat.parse(s);
-                } catch (ParseException ex) {
-                }
-                if (d != null) {
-                    return d;
-                }
-            }
+            return parseRfc3659TimeValue(s);
         }
         return null;
+    }
+
+    private static Date parseRfc3659TimeValue(String s) {
+        Date d = null;
+        for (SimpleDateFormat dateFormat : dateFormats) {
+            try {
+                d = dateFormat.parse(s);
+            } catch (ParseException ex) {
+            }
+            if (d != null) {
+                return d;
+            }
+        }
+        return d;
     }
 
     /**
