@@ -438,22 +438,3 @@ JVMFlag::Error MaxMetaspaceSizeConstraintFunc(size_t value, bool verbose) {
   }
 }
 
-JVMFlag::Error SurvivorAlignmentInBytesConstraintFunc(intx value, bool verbose) {
-  if (value != 0) {
-    if (!is_power_of_2(value)) {
-      JVMFlag::printError(verbose,
-                          "SurvivorAlignmentInBytes (" INTX_FORMAT ") must be "
-                          "power of 2\n",
-                          value);
-      return JVMFlag::VIOLATES_CONSTRAINT;
-    }
-    if (value < ObjectAlignmentInBytes) {
-      JVMFlag::printError(verbose,
-                          "SurvivorAlignmentInBytes (" INTX_FORMAT ") must be "
-                          "greater than or equal to ObjectAlignmentInBytes (" INTX_FORMAT ")\n",
-                          value, ObjectAlignmentInBytes);
-      return JVMFlag::VIOLATES_CONSTRAINT;
-    }
-  }
-  return JVMFlag::SUCCESS;
-}
