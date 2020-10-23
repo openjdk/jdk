@@ -4008,12 +4008,12 @@ class StubGenerator: public StubCodeGenerator {
     __ movw(shiftRevCount, 32);
     __ subw(shiftRevCount, shiftRevCount, shiftCount);
 
-    __ cmp(numIter, (u1) 8);
+    __ cmp(numIter, (u1)8);
     __ br(Assembler::LT, ShiftOneLoop);
 
     __ dup(shiftVCount,    __ T4S, shiftCount);
     __ dup(shiftVRevCount, __ T4S, shiftRevCount);
-    __ negr(shiftVCount,    __ T4S, shiftVCount);
+    __ negr(shiftVCount,   __ T4S, shiftVCount);
 
     __ BIND(ShiftSIMDLoop);
     __ cmp(idx, (u1)4);
@@ -4112,7 +4112,7 @@ class StubGenerator: public StubCodeGenerator {
     __ movw(shiftRevCount, 32);
     __ subw(shiftRevCount, shiftRevCount, shiftCount);
 
-    __ cmp(numIter, (u1) 8);
+    __ cmp(numIter, (u1)8);
     __ br(Assembler::LT, ShiftOneLoop);
 
     __ dup(shiftVCount,    __ T4S, shiftCount);
