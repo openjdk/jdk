@@ -10156,7 +10156,7 @@ instruct indexOfChar_U(iRegP haystack, iRegI haycnt, iRegI ch, iRegI result, rod
   effect(TEMP_DEF result, TEMP evenReg, TEMP oddReg, KILL cr); // R0, R1 are killed, too.
   predicate(((StrIndexOfCharNode*)n)->encoding() == StrIntrinsicNode::U);
   ins_cost(200);
-  format %{ "String IndexOfChar [0..$haycnt]($haystack), $ch -> $result" %}
+  format %{ "StringUTF16 IndexOfChar [0..$haycnt]($haystack), $ch -> $result" %}
   ins_encode %{
     __ string_indexof_char($result$$Register,
                            $haystack$$Register, $haycnt$$Register,
@@ -10171,7 +10171,7 @@ instruct indexOfChar_L(iRegP haystack, iRegI haycnt, iRegI ch, iRegI result, rod
   effect(TEMP_DEF result, TEMP evenReg, TEMP oddReg, KILL cr); // R0, R1 are killed, too.
   predicate(((StrIndexOfCharNode*)n)->encoding() == StrIntrinsicNode::L);
   ins_cost(200);
-  format %{ "String IndexOfChar [0..$haycnt]($haystack), $ch -> $result" %}
+  format %{ "StringLatin1 IndexOfChar [0..$haycnt]($haystack), $ch -> $result" %}
   ins_encode %{
     __ string_indexof_char($result$$Register,
                            $haystack$$Register, $haycnt$$Register,
