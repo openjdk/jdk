@@ -369,6 +369,7 @@ class LinearScan : public CompilationResourceObj {
   void        print_lir(int level, const char* label, bool hir_valid = true);
   static void print_reg_num(int reg_num) { print_reg_num(tty, reg_num); }
   static void print_reg_num(outputStream* out, int reg_num);
+  static LIR_Opr get_operand(int reg_num);
 #endif
 
 #ifdef ASSERT
@@ -634,6 +635,8 @@ class Interval : public CompilationResourceObj {
 #ifndef PRODUCT
   void print() const { print_on(tty); }
   void print_on(outputStream* out) const;
+  // Special version for compatibility with C1 Visualizer.
+  void print_on(outputStream* out, bool is_cfg_printer) const;
 
   // Used for debugging
   void print_parent() const;
