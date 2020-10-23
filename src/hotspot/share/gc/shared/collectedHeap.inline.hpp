@@ -30,7 +30,6 @@
 #include "oops/oop.inline.hpp"
 #include "utilities/align.hpp"
 
-
 inline oop CollectedHeap::obj_allocate(Klass* klass, int size, TRAPS) {
   ObjAllocator allocator(klass, size, THREAD);
   return allocator.allocate();
