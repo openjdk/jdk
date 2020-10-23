@@ -69,14 +69,15 @@ public class ComboPopupTest {
     public ComboPopupTest() throws Exception {
         try {
             Robot robot = new Robot();
-            robot.setAutoDelay(200);
+            robot.setAutoDelay(100);
             SwingUtilities.invokeAndWait(() -> start());
             blockTillDisplayed(comboBox);
             robot.waitForIdle();
-            robot.mouseMove(p.x + d.width-1, p.y + d.height/2);
-            robot.mousePress(InputEvent.BUTTON1_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            robot.mouseMove(p.x + d.width/2, p.y + d.height/2);
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();
+            robot.delay(100);
 
             System.out.println("popmenu visible " + comboBox.isPopupVisible());
             if (!comboBox.isPopupVisible()) {
