@@ -41,10 +41,15 @@ static bool is_product_build() {
 #endif
 }
 
-void JVMFlag::set_origin(Flags origin) {
+void JVMFlag::set_origin(JVMFlagOrigin new_origin) {
+  int old_flags = _flags;
+  int origin = static_cast<int>(new_origin);
   assert((origin & VALUE_ORIGIN_MASK) == origin, "sanity");
-  Flags new_origin = Flags((origin == COMMAND_LINE) ? Flags(origin | ORIG_COMMAND_LINE) : origin);
-  _flags = Flags((_flags & ~VALUE_ORIGIN_MASK) | new_origin);
+  int was_in_cmdline = (new_origin == COMMAND_LINE) ? WAS_SET_IN_COMMAND_LINE : 0;
+  _flags = Flags((_flags & ~VALUE_ORIGIN_MASK) | origin | was_in_cmdline);
+  if ((old_flags & WAS_SET_IN_COMMAND_LINE) != 0) {
+    assert(_flags & WAS_SET_IN_COMMAND_LINE != 0, "once initialized, should never change");
+  }
 }
 
 /**
@@ -376,9 +381,8 @@ void JVMFlag::print_kind(outputStream* st, unsigned int width) const {
 }
 
 void JVMFlag::print_origin(outputStream* st, unsigned int width) const {
-  int origin = _flags & VALUE_ORIGIN_MASK;
   st->print("{");
-  switch(origin) {
+  switch(get_origin()) {
     case DEFAULT:
       st->print("default"); break;
     case COMMAND_LINE:
@@ -390,7 +394,7 @@ void JVMFlag::print_origin(outputStream* st, unsigned int width) const {
     case MANAGEMENT:
       st->print("management"); break;
     case ERGONOMIC:
-      if (_flags & ORIG_COMMAND_LINE) {
+      if (_flags & WAS_SET_IN_COMMAND_LINE) {
         st->print("command line, ");
       }
       st->print("ergonomic"); break;
@@ -495,7 +499,7 @@ static constexpr int flag_group(int flag_enum) {
 constexpr JVMFlag::JVMFlag(int flag_enum, FlagType type, const char* name,
                            void* addr, int flags, int extra_flags, const char* doc) :
   _addr(addr), _name(name), _flags(), _type(type) NOT_PRODUCT(COMMA _doc(doc)) {
-  flags = flags | extra_flags | JVMFlag::DEFAULT | flag_group(flag_enum);
+  flags = flags | extra_flags | static_cast<int>(JVMFlag::DEFAULT) | flag_group(flag_enum);
   if ((flags & JVMFlag::KIND_PRODUCT) != 0) {
     if (flags & (JVMFlag::KIND_DIAGNOSTIC | JVMFlag::KIND_MANAGEABLE | JVMFlag::KIND_EXPERIMENTAL)) {
       // Backwards compatibility. This will be relaxed in JDK-7123237.
@@ -653,7 +657,7 @@ void JVMFlag::printSetFlags(outputStream* out) {
 
   // Print
   for (size_t i = 0; i < length; i++) {
-    if (array[i]->get_origin() /* naked field! */) {
+    if (array[i]->get_origin() != DEFAULT) {
       array[i]->print_as_flag(out);
       out->print(" ");
     }

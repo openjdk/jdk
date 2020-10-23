@@ -876,7 +876,7 @@ void Arguments::describe_range_error(ArgsRange errcode) {
   }
 }
 
-static bool set_bool_flag(JVMFlag* flag, bool value, JVMFlag::Flags origin) {
+static bool set_bool_flag(JVMFlag* flag, bool value, JVMFlagOrigin origin) {
   if (JVMFlagAccess::boolAtPut(flag, &value, origin) == JVMFlag::SUCCESS) {
     return true;
   } else {
@@ -884,7 +884,7 @@ static bool set_bool_flag(JVMFlag* flag, bool value, JVMFlag::Flags origin) {
   }
 }
 
-static bool set_fp_numeric_flag(JVMFlag* flag, char* value, JVMFlag::Flags origin) {
+static bool set_fp_numeric_flag(JVMFlag* flag, char* value, JVMFlagOrigin origin) {
   char* end;
   errno = 0;
   double v = strtod(value, &end);
@@ -898,7 +898,7 @@ static bool set_fp_numeric_flag(JVMFlag* flag, char* value, JVMFlag::Flags origi
   return false;
 }
 
-static bool set_numeric_flag(JVMFlag* flag, char* value, JVMFlag::Flags origin) {
+static bool set_numeric_flag(JVMFlag* flag, char* value, JVMFlagOrigin origin) {
   julong v;
   int int_v;
   intx intx_v;
@@ -951,14 +951,14 @@ static bool set_numeric_flag(JVMFlag* flag, char* value, JVMFlag::Flags origin) 
   }
 }
 
-static bool set_string_flag(JVMFlag* flag, const char* value, JVMFlag::Flags origin) {
+static bool set_string_flag(JVMFlag* flag, const char* value, JVMFlagOrigin origin) {
   if (JVMFlagAccess::ccstrAtPut(flag, &value, origin) != JVMFlag::SUCCESS) return false;
   // Contract:  JVMFlag always returns a pointer that needs freeing.
   FREE_C_HEAP_ARRAY(char, value);
   return true;
 }
 
-static bool append_to_string_flag(JVMFlag* flag, const char* new_value, JVMFlag::Flags origin) {
+static bool append_to_string_flag(JVMFlag* flag, const char* new_value, JVMFlagOrigin origin) {
   const char* old_value = "";
   if (JVMFlagAccess::ccstrAt(flag, &old_value) != JVMFlag::SUCCESS) return false;
   size_t old_len = old_value != NULL ? strlen(old_value) : 0;
@@ -1059,7 +1059,7 @@ AliasedLoggingFlag Arguments::catch_logging_aliases(const char* name, bool on){
   return a;
 }
 
-bool Arguments::parse_argument(const char* arg, JVMFlag::Flags origin) {
+bool Arguments::parse_argument(const char* arg, JVMFlagOrigin origin) {
 
   // range of acceptable characters spelled out for portability reasons
 #define NAME_RANGE  "[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_]"
@@ -1274,7 +1274,7 @@ void Arguments::print_jvm_args_on(outputStream* st) {
 
 bool Arguments::process_argument(const char* arg,
                                  jboolean ignore_unrecognized,
-                                 JVMFlag::Flags origin) {
+                                 JVMFlagOrigin origin) {
   JDK_Version since = JDK_Version();
 
   if (parse_argument(arg, origin)) {
@@ -2455,7 +2455,7 @@ jint Arguments::parse_xss(const JavaVMOption* option, const char* tail, intx* ou
   return JNI_OK;
 }
 
-jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_mod_javabase, JVMFlag::Flags origin) {
+jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_mod_javabase, JVMFlagOrigin origin) {
   // For match_option to return remaining or value part of option string
   const char* tail;
 

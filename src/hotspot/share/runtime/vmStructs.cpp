@@ -2611,7 +2611,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   declare_constant(JVMFlag::INTERNAL)                                     \
   declare_constant(JVMFlag::JIMAGE_RESOURCE)                              \
   declare_constant(JVMFlag::VALUE_ORIGIN_MASK)                            \
-  declare_constant(JVMFlag::ORIG_COMMAND_LINE)
+  declare_constant(JVMFlag::WAS_SET_IN_COMMAND_LINE)
 
 //--------------------------------------------------------------------------------
 // VM_LONG_CONSTANTS

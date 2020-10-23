@@ -53,7 +53,7 @@ enum JVMFlagsEnum : int {
 
 #define FLAG_MEMBER_SETTER(name) Flag_##name##_set
 #define FLAG_MEMBER_SETTER_(type, name) \
-  inline JVMFlag::Error FLAG_MEMBER_SETTER(name)(type value, JVMFlag::Flags origin) { \
+  inline JVMFlag::Error FLAG_MEMBER_SETTER(name)(type value, JVMFlagOrigin origin) { \
     return JVMFlagAccess::set<JVM_FLAG_TYPE(type)>(FLAG_MEMBER_ENUM(name), value, origin); \
   }
 
