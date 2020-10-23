@@ -34,11 +34,16 @@
 // Return: MN.vmtarget
 ciMethod* ciMemberName::get_vmtarget() const {
   VM_ENTRY_MARK;
-  // FIXME: Share code with ciMethodHandle::get_vmtarget
-  Metadata* vmtarget = java_lang_invoke_MemberName::vmtarget(get_oop());
-  if (vmtarget->is_method())
+  return get_vmtarget_no_entry(get_oop());
+}
+
+ciMethod* ciMemberName::get_vmtarget_no_entry(oop mname) {
+  ASSERT_IN_VM;
+  Metadata* vmtarget = java_lang_invoke_MemberName::vmtarget(mname);
+  if (vmtarget->is_method()) {
     return CURRENT_ENV->get_method((Method*) vmtarget);
-  // FIXME: What if the vmtarget is a Klass?
-  assert(false, "");
-  return NULL;
+  } else {
+    fatal("vmtarget should be a method");
+    return NULL; // silence compiler warnings
+  }
 }
