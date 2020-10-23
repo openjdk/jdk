@@ -34,10 +34,10 @@
 // Return: MN.vmtarget
 ciMethod* ciMemberName::get_vmtarget() const {
   VM_ENTRY_MARK;
-  return get_vmtarget_no_entry(get_oop());
+  return get_vmtarget_method(get_oop());
 }
 
-ciMethod* ciMemberName::get_vmtarget_no_entry(oop mname) {
+ciMethod* ciMemberName::get_vmtarget_method(oop mname) {
   ASSERT_IN_VM;
   Metadata* vmtarget = java_lang_invoke_MemberName::vmtarget(mname);
   if (vmtarget->is_method()) {

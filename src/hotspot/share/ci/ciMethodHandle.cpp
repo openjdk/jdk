@@ -37,5 +37,5 @@ ciMethod* ciMethodHandle::get_vmtarget() const {
   VM_ENTRY_MARK;
   oop form_oop     = java_lang_invoke_MethodHandle::form(get_oop());
   oop vmentry_oop  = java_lang_invoke_LambdaForm::vmentry(form_oop);
-  return ciMemberName::get_vmtarget_no_entry(vmentry_oop);
+  return ciMemberName::get_vmtarget_method(vmentry_oop);
 }
