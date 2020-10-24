@@ -14,6 +14,7 @@ on:
 jobs:
   prerequisites:
     name: Prerequisites
+    id: prerequisites
     runs-on: "ubuntu-latest"
     outputs:
       should_run: ${{ steps.check_submit.outputs.should_run }}
@@ -1004,6 +1005,7 @@ jobs:
     if: always()
     continue-on-error: true
     needs:
+      - prerequisites
       - linux_x64_test
       - windows_x64_test
       - macos_x64_test
