@@ -205,29 +205,8 @@ void StatSampler::assert_system_property(const char* name, const char* value, TR
 }
 
 /*
- * The list of System Properties that have corresponding PerfData
- * string instrumentation created by retrieving the named property's
- * value from System.getProperty() and unconditionally creating a
- * PerfStringConstant object initialized to the retrieved value. This
- * is not an exhaustive list of Java properties with corresponding string
- * instrumentation as the create_system_property_instrumentation() method
- * creates other property based instrumentation conditionally.
- */
-
-// stable interface, supported counters in the JAVA_PROPERTY name space
-static const char* stable_java_property_counters[] = {
-  "java.vm.specification.version",
-  "java.vm.specification.vendor",
-  "java.vm.info",
-  "java.library.path",
-  "java.class.path",
-  "java.home",
-  NULL
-};
-
-/*
- * Adds a constant counter of the given property. Asserts if the value for the
- * system property differs from the value retrievable from System.getProperty
+ * Adds a constant counter of the given property. Asserts the value does not
+ * differ from the value retrievable from System.getProperty(name)
  */
 void StatSampler::add_property_constant(CounterNS name_space, const char* name, const char* value, TRAPS) {
   // the property must exist
@@ -240,8 +219,20 @@ void StatSampler::add_property_constant(CounterNS name_space, const char* name, 
 }
 
 /*
- * Method to create PerfData string instruments that contain the values
- * of various system properties.
+ * Adds a string constant of the given property. Retrieves the value via
+ * Arguments::get_property() and asserts the value for the does not differ from
+ * the value retrievable from System.getProperty()
+ */
+void StatSampler::add_property_constant(CounterNS name_space, const char* name, TRAPS) {
+  add_property_constant(name_space, name, Arguments::get_property(name), CHECK);
+}
+
+/*
+ * Method to create PerfStringConstants containing the values of various
+ * system properties. Constants are created from information known to HotSpot,
+ * but are initialized as-if getting the values from System.getProperty()
+ * during bootstrap.
+ *
  * Property counters have a counter name space prefix prepended to the
  * property name.
  */
@@ -259,14 +250,15 @@ void StatSampler::create_system_property_instrumentation(TRAPS) {
   // which does a linear search over the internal system properties list.
 
   // SUN_PROPERTY properties
-  add_property_constant(SUN_PROPERTY, "sun.boot.library.path", Arguments::get_property("sun.boot.library.path"), CHECK);
+  add_property_constant(SUN_PROPERTY, "sun.boot.library.path", CHECK);
 
   // JAVA_PROPERTY properties
-  for (int i = 0; stable_java_property_counters[i] != NULL; i++) {
-    const char* property_name = stable_java_property_counters[i];
-    const char* value = Arguments::get_property(property_name);
-    add_property_constant(JAVA_PROPERTY, property_name, value, CHECK);
-  }
+  add_property_constant(JAVA_PROPERTY, "java.vm.specification.version", CHECK);
+  add_property_constant(JAVA_PROPERTY, "java.vm.specification.vendor", CHECK);
+  add_property_constant(JAVA_PROPERTY, "java.vm.info", CHECK);
+  add_property_constant(JAVA_PROPERTY, "java.library.path", CHECK);
+  add_property_constant(JAVA_PROPERTY, "java.class.path", CHECK);
+  add_property_constant(JAVA_PROPERTY, "java.home", CHECK);
 }
 
 /*
