@@ -86,7 +86,7 @@ int VM_Version::get_current_sve_vector_length() {
   return prctl(PR_SVE_GET_VL);
 }
 
-int VM_Version::set_and_get_current_sve_vector_lenght(int length) {
+int VM_Version::set_and_get_current_sve_vector_length(int length) {
   assert(_features & CPU_SVE, "should not call this");
   int new_length = prctl(PR_SVE_SET_VL, length);
   return new_length;

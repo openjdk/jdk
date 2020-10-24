@@ -836,7 +836,7 @@ void VM_Version::determine_features() {
                   code_end-code, cbuf_size, cbuf_size-(code_end-code));
 
     // Use existing decode function. This enables the [MachCode] format which is needed to DecodeErrorFile.
-    Disassembler::decode(&cbuf, code, code_end, tty);
+    Disassembler::decode(code, code_end, tty);
   }
 
   // Prepare for detection code execution and clear work buffer.
