@@ -22,7 +22,5 @@
  */
 
 // key: compiler.err.expected3
-// key: compiler.warn.source.no.system.modules.path
-// options: -source 15
 
 int Expected3;

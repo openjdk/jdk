@@ -35,8 +35,12 @@ import jdk.internal.access.SharedSecrets;
 
 public class CDS {
     private static final boolean isDumpingClassList;
+    private static final boolean isDumpingArchive;
+    private static final boolean isSharingEnabled;
     static {
         isDumpingClassList = isDumpingClassList0();
+        isDumpingArchive = isDumpingArchive0();
+        isSharingEnabled = isSharingEnabled0();
     }
 
     /**
@@ -45,7 +49,23 @@ public class CDS {
     public static boolean isDumpingClassList() {
         return isDumpingClassList;
     }
+
+    /**
+      * Is the VM writing to a (static or dynamic) CDS archive.
+      */
+    public static boolean isDumpingArchive() {
+        return isDumpingArchive;
+    }
+
+    /**
+      * Is sharing enabled via the UseSharedSpaces flag.
+      */
+    public static boolean isSharingEnabled() {
+        return isSharingEnabled;
+    }
     private static native boolean isDumpingClassList0();
+    private static native boolean isDumpingArchive0();
+    private static native boolean isSharingEnabled0();
     private static native void logLambdaFormInvoker(String line);
 
     /**
@@ -71,16 +91,6 @@ public class CDS {
      * ImmutableCollections are always sorted the same order for the same VM build.
      */
     public static native long getRandomSeedForDumping();
-
-    /**
-     * Check if dynamic dumping is enabled via the DynamicDumpSharedSpaces flag.
-     */
-    public static native boolean isDynamicDumpingEnabled(); // will return false for static dumping.
-
-    /**
-     * Check if sharing is enabled via the UseSharedSpaces flag.
-     */
-    public static native boolean isSharingEnabled();
 
     /**
      * log lambda form invoker holder, name and method type

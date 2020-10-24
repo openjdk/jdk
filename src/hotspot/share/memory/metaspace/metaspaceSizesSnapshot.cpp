@@ -24,18 +24,18 @@
  */
 
 #include "precompiled.hpp"
-
 #include "memory/metaspace.hpp"
 #include "memory/metaspace/metaspaceSizesSnapshot.hpp"
 
 namespace metaspace {
 
-MetaspaceSizesSnapshot::MetaspaceSizesSnapshot()
-    : _used(MetaspaceUtils::used_bytes()),
-      _committed(MetaspaceUtils::committed_bytes()),
-      _non_class_used(MetaspaceUtils::used_bytes(Metaspace::NonClassType)),
-      _non_class_committed(MetaspaceUtils::committed_bytes(Metaspace::NonClassType)),
-      _class_used(MetaspaceUtils::used_bytes(Metaspace::ClassType)),
-      _class_committed(MetaspaceUtils::committed_bytes(Metaspace::ClassType)) { }
+MetaspaceSizesSnapshot::MetaspaceSizesSnapshot() :
+  _used(MetaspaceUtils::used_bytes()),
+  _committed(MetaspaceUtils::committed_bytes()),
+  _non_class_used(MetaspaceUtils::used_bytes(Metaspace::NonClassType)),
+  _non_class_committed(MetaspaceUtils::committed_bytes(Metaspace::NonClassType)),
+  _class_used(MetaspaceUtils::used_bytes(Metaspace::ClassType)),
+  _class_committed(MetaspaceUtils::committed_bytes(Metaspace::ClassType))
+{}
 
 } // namespace metaspace

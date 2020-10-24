@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug 8246774
- * @summary testing reflection APIs for record classes
+ * @compile --enable-preview --source ${jdk.version} recordReflectionTest.java
+ * @run main/othervm --enable-preview recordReflectionTest
  */
 
 

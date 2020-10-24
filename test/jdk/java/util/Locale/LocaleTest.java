@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @bug 4052404 4052440 4084688 4092475 4101316 4105828 4107014 4107953 4110613
  * 4118587 4118595 4122371 4126371 4126880 4135316 4135752 4139504 4139940 4143951
  * 4147315 4147317 4147552 4335196 4778440 4940539 5010672 6475525 6544471 6627549
- * 6786276 7066203 7085757 8008577 8030696 8170840
+ * 6786276 7066203 7085757 8008577 8030696 8170840 8255086
  * @summary test Locales
  * @library /java/text/testlib
  * @modules jdk.localedata
@@ -635,7 +635,7 @@ test commented out pending API-change approval
         // names, and other stuff like that.  This test just checks specific language
         // and country codes to make sure we have the correct names for them.
         String[] languageCodes = {"he", "id", "iu", "ug", "yi", "za"};
-        String[] languageNames = {"Hebrew", "Indonesian", "Inuktitut", "Uighur", "Yiddish",
+        String[] languageNames = {"Hebrew", "Indonesian", "Inuktitut", "Uyghur", "Yiddish",
             "Zhuang"};
 
         for (int i = 0; i < languageCodes.length; i++) {

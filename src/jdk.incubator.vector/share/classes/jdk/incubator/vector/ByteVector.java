@@ -423,7 +423,12 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     // comment <!--workaround--> for this.
 
     /**
-     * {@inheritDoc} <!--workaround-->
+     * Returns a vector of the given species
+     * where all lane elements are set to
+     * zero, the default primitive value.
+     *
+     * @param species species of the desired zero vector
+     * @return a zero vector
      */
     @ForceInline
     public static ByteVector zero(VectorSpecies<Byte> species) {
