@@ -14,7 +14,6 @@ on:
 jobs:
   prerequisites:
     name: Prerequisites
-    id: prerequisites
     runs-on: "ubuntu-latest"
     outputs:
       should_run: ${{ steps.check_submit.outputs.should_run }}
