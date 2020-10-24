@@ -25,7 +25,10 @@
 package java.util;
 
 import java.util.function.DoubleConsumer;
+import java.util.function.DoubleFunction;
+import java.util.function.DoublePredicate;
 import java.util.function.DoubleSupplier;
+import java.util.function.DoubleUnaryOperator;
 import java.util.function.Supplier;
 import java.util.stream.DoubleStream;
 
@@ -181,6 +184,80 @@ public final class OptionalDouble {
             action.accept(value);
         } else {
             emptyAction.run();
+        }
+    }
+
+    /**
+     * If a value is present, and the value matches the given predicate,
+     * returns an {@code OptionalDouble} describing the value, otherwise returns
+     * an empty {@code OptionalDouble}.
+     *
+     * @param predicate the predicate to apply to a value, if present
+     * @return an {@code OptionalDouble} describing the value of this
+     *         {@code OptionalDouble}, if a value is present and the value matches
+     *         the given predicate, otherwise an empty {@code OptionalDouble}
+     * @throws NullPointerException if the predicate is {@code null}
+     * @since 16
+     */
+    public OptionalDouble filter(DoublePredicate predicate) {
+        Objects.requireNonNull(predicate);
+        if (!isPresent()) {
+            return this;
+        } else {
+            return predicate.test(value) ? this : empty();
+        }
+    }
+
+    /**
+     * If a value is present, returns an {@code OptionalDouble} describing (as if
+     * by {@link #of}) the result of applying the given mapping function to
+     * the value, otherwise returns an empty {@code OptionalDouble}.
+     *
+     * @apiNote
+     * This method supports post-processing on {@code OptionalDouble} values,
+     * without the need to explicitly check for a return status.
+     *
+     * @param mapper the mapping function to apply to a value, if present
+     * @return an {@code OptionalDouble} describing the result of applying a
+     *         mapping function to the value of this {@code OptionalDouble},
+     *         if a value is present, otherwise an empty {@code OptionalDouble}
+     * @throws NullPointerException if the mapping function is {@code null}
+     * @since 16
+     */
+    public OptionalDouble map(DoubleUnaryOperator mapper) {
+        Objects.requireNonNull(mapper);
+        if (!isPresent()) {
+            return empty();
+        } else {
+            return OptionalDouble.of(mapper.applyAsDouble(value));
+        }
+    }
+
+    /**
+     * If a value is present, returns the result of applying the given
+     * {@code OptionalDouble}-bearing mapping function to the value, otherwise returns
+     * an empty {@code OptionalDouble}.
+     *
+     * <p>This method is similar to {@link #map(DoubleUnaryOperator)}, but the mapping
+     * function is one whose result is already an {@code OptionalDouble}, and if
+     * invoked, {@code flatMap} does not wrap it within an additional
+     * {@code OptionalDouble}.
+     *
+     * @param mapper the mapping function to apply to a value, if present
+     * @return the result of applying an {@code OptionalDouble}-bearing mapping
+     *         function to the value of this {@code OptionalDouble}, if a value is
+     *         present, otherwise an empty {@code OptionalDouble}
+     * @throws NullPointerException if the mapping function is {@code null} or
+     *         returns a {@code null} result
+     * @since 16
+     */
+    public OptionalDouble flatMap(DoubleFunction<? extends OptionalDouble> mapper) {
+        Objects.requireNonNull(mapper);
+        if (!isPresent()) {
+            return empty();
+        } else {
+            OptionalDouble r = mapper.apply(value);
+            return Objects.requireNonNull(r);
         }
     }
 

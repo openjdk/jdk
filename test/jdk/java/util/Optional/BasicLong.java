@@ -120,6 +120,41 @@ public class BasicLong {
     }
 
     @Test(groups = "unit")
+    public void testFilterEmpty() {
+        checkEmpty(OptionalLong.empty().filter(s -> {fail(); return true;}));
+    }
+
+    @Test(groups = "unit")
+    public void testFilterFalse() {
+        checkEmpty(OptionalLong.of(LONGVAL).filter(s -> s == UNEXPECTED));
+    }
+
+    @Test(groups = "unit")
+    public void testFilterTrue() {
+        checkPresent(OptionalLong.of(LONGVAL).filter(s -> s > 0), LONGVAL);
+    }
+
+    @Test(groups = "unit")
+    public void testMapEmpty() {
+        checkEmpty(OptionalLong.empty().map(s -> {fail(); return LONGVAL;}));
+    }
+
+    @Test(groups = "unit")
+    public void testMapPresent() {
+        checkPresent(OptionalLong.of(LONGVAL).map(s -> 0xC0FFEEL), 0xC0FFEEL);
+    }
+
+    @Test(groups = "unit")
+    public void testFlatMapEmpty() {
+        checkEmpty(OptionalLong.empty().flatMap(s -> {fail(); return OptionalLong.of(LONGVAL);}));
+    }
+
+    @Test(groups = "unit")
+    public void testFlatMapPresent() {
+        checkPresent(OptionalLong.of(LONGVAL).flatMap(s -> OptionalLong.of(0xC0FFEEL)), 0xC0FFEEL);
+    }
+
+    @Test(groups = "unit")
     public void testStreamEmpty() {
         assertEquals(OptionalLong.empty().stream().toArray(), new long[] { });
     }

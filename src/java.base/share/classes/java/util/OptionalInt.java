@@ -25,7 +25,10 @@
 package java.util;
 
 import java.util.function.IntConsumer;
+import java.util.function.IntFunction;
+import java.util.function.IntPredicate;
 import java.util.function.IntSupplier;
+import java.util.function.IntUnaryOperator;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
@@ -181,6 +184,80 @@ public final class OptionalInt {
             action.accept(value);
         } else {
             emptyAction.run();
+        }
+    }
+
+    /**
+     * If a value is present, and the value matches the given predicate,
+     * returns an {@code OptionalInt} describing the value, otherwise returns
+     * an empty {@code OptionalInt}.
+     *
+     * @param predicate the predicate to apply to a value, if present
+     * @return an {@code OptionalInt} describing the value of this
+     *         {@code OptionalInt}, if a value is present and the value matches
+     *         the given predicate, otherwise an empty {@code OptionalInt}
+     * @throws NullPointerException if the predicate is {@code null}
+     * @since 16
+     */
+    public OptionalInt filter(IntPredicate predicate) {
+        Objects.requireNonNull(predicate);
+        if (!isPresent()) {
+            return this;
+        } else {
+            return predicate.test(value) ? this : empty();
+        }
+    }
+
+    /**
+     * If a value is present, returns an {@code OptionalInt} describing (as if
+     * by {@link #of}) the result of applying the given mapping function to
+     * the value, otherwise returns an empty {@code OptionalInt}.
+     *
+     * @apiNote
+     * This method supports post-processing on {@code OptionalInt} values,
+     * without the need to explicitly check for a return status.
+     *
+     * @param mapper the mapping function to apply to a value, if present
+     * @return an {@code OptionalInt} describing the result of applying a
+     *         mapping function to the value of this {@code OptionalInt},
+     *         if a value is present, otherwise an empty {@code OptionalInt}
+     * @throws NullPointerException if the mapping function is {@code null}
+     * @since 16
+     */
+    public OptionalInt map(IntUnaryOperator mapper) {
+        Objects.requireNonNull(mapper);
+        if (!isPresent()) {
+            return empty();
+        } else {
+            return OptionalInt.of(mapper.applyAsInt(value));
+        }
+    }
+
+    /**
+     * If a value is present, returns the result of applying the given
+     * {@code OptionalInt}-bearing mapping function to the value, otherwise returns
+     * an empty {@code OptionalInt}.
+     *
+     * <p>This method is similar to {@link #map(IntUnaryOperator)}, but the mapping
+     * function is one whose result is already an {@code OptionalInt}, and if
+     * invoked, {@code flatMap} does not wrap it within an additional
+     * {@code OptionalInt}.
+     *
+     * @param mapper the mapping function to apply to a value, if present
+     * @return the result of applying an {@code OptionalInt}-bearing mapping
+     *         function to the value of this {@code OptionalInt}, if a value is
+     *         present, otherwise an empty {@code OptionalInt}
+     * @throws NullPointerException if the mapping function is {@code null} or
+     *         returns a {@code null} result
+     * @since 16
+     */
+    public OptionalInt flatMap(IntFunction<? extends OptionalInt> mapper) {
+        Objects.requireNonNull(mapper);
+        if (!isPresent()) {
+            return empty();
+        } else {
+            OptionalInt r = mapper.apply(value);
+            return Objects.requireNonNull(r);
         }
     }
 

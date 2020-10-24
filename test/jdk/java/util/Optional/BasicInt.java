@@ -121,6 +121,41 @@ public class BasicInt {
     }
 
     @Test(groups = "unit")
+    public void testFilterEmpty() {
+        checkEmpty(OptionalInt.empty().filter(s -> {fail(); return true;}));
+    }
+
+    @Test(groups = "unit")
+    public void testFilterFalse() {
+        checkEmpty(OptionalInt.of(INTVAL).filter(s -> s == UNEXPECTED));
+    }
+
+    @Test(groups = "unit")
+    public void testFilterTrue() {
+        checkPresent(OptionalInt.of(INTVAL).filter(s -> s > 0), INTVAL);
+    }
+
+    @Test(groups = "unit")
+    public void testMapEmpty() {
+        checkEmpty(OptionalInt.empty().map(s -> {fail(); return INTVAL;}));
+    }
+
+    @Test(groups = "unit")
+    public void testMapPresent() {
+        checkPresent(OptionalInt.of(INTVAL).map(s -> 0xC0FFEE), 0xC0FFEE);
+    }
+
+    @Test(groups = "unit")
+    public void testFlatMapEmpty() {
+        checkEmpty(OptionalInt.empty().flatMap(s -> {fail(); return OptionalInt.of(INTVAL);}));
+    }
+
+    @Test(groups = "unit")
+    public void testFlatMapPresent() {
+        checkPresent(OptionalInt.of(INTVAL).flatMap(s -> OptionalInt.of(0xC0FFEE)), 0xC0FFEE);
+    }
+
+    @Test(groups = "unit")
     public void testStreamEmpty() {
         assertEquals(OptionalInt.empty().stream().toArray(), new int[] { });
     }

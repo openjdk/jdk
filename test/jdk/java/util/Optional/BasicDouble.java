@@ -120,6 +120,41 @@ public class BasicDouble {
     }
 
     @Test(groups = "unit")
+    public void testFilterEmpty() {
+        checkEmpty(OptionalDouble.empty().filter(s -> {fail(); return true;}));
+    }
+
+    @Test(groups = "unit")
+    public void testFilterFalse() {
+        checkEmpty(OptionalDouble.of(DOUBLEVAL).filter(Double::isNaN));
+    }
+
+    @Test(groups = "unit")
+    public void testFilterTrue() {
+        checkPresent(OptionalDouble.of(DOUBLEVAL).filter(s -> s != UNEXPECTED), DOUBLEVAL);
+    }
+
+    @Test(groups = "unit")
+    public void testMapEmpty() {
+        checkEmpty(OptionalDouble.empty().map(s -> {fail(); return DOUBLEVAL;}));
+    }
+
+    @Test(groups = "unit")
+    public void testMapPresent() {
+        checkPresent(OptionalDouble.of(DOUBLEVAL).map(s -> Math.E), Math.E);
+    }
+
+    @Test(groups = "unit")
+    public void testFlatMapEmpty() {
+        checkEmpty(OptionalDouble.empty().flatMap(s -> {fail(); return OptionalDouble.of(DOUBLEVAL);}));
+    }
+
+    @Test(groups = "unit")
+    public void testFlatMapPresent() {
+        checkPresent(OptionalDouble.of(DOUBLEVAL).flatMap(s -> OptionalDouble.of(Math.E)), Math.E);
+    }
+
+    @Test(groups = "unit")
     public void testStreamEmpty() {
         assertEquals(OptionalDouble.empty().stream().toArray(), new double[] { });
     }
