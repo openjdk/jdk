@@ -375,14 +375,14 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v2
         with:
-          path: linux-x64${{ matrix.artifact }}_testresults_${{ env.logsuffix }}.zip
+          path: ~/linux-x64${{ matrix.artifact }}_testresults_${{ env.logsuffix }}.zip
         continue-on-error: true
 
       - name: Persist test outputs
         if: always()
         uses: actions/upload-artifact@v2
         with:
-          path: linux-x64${{ matrix.artifact }}_testsupport_${{ env.logsuffix }}.zip
+          path: ~/linux-x64${{ matrix.artifact }}_testsupport_${{ env.logsuffix }}.zip
         continue-on-error: true
 
   linux_x32_build:
@@ -788,14 +788,14 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v2
         with:
-          path: windows-x64${{ matrix.artifact }}_testresults_${{ env.logsuffix }}.zip
+          path: ~/windows-x64${{ matrix.artifact }}_testresults_${{ env.logsuffix }}.zip
         continue-on-error: true
 
       - name: Persist test outputs
         if: always()
         uses: actions/upload-artifact@v2
         with:
-          path: windows-x64${{ matrix.artifact }}_testsupport_${{ env.logsuffix }}.zip
+          path: ~/windows-x64${{ matrix.artifact }}_testsupport_${{ env.logsuffix }}.zip
         continue-on-error: true
 
   macos_x64_build:
@@ -1070,14 +1070,14 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v2
         with:
-          path: macos-x64${{ matrix.artifact }}_testresults_${{ env.logsuffix }}.zip
+          path: ~/macos-x64${{ matrix.artifact }}_testresults_${{ env.logsuffix }}.zip
         continue-on-error: true
 
       - name: Persist test outputs
         if: always()
         uses: actions/upload-artifact@v2
         with:
-          path: macos-x64${{ matrix.artifact }}_testsupport_${{ env.logsuffix }}.zip
+          path: ~/macos-x64${{ matrix.artifact }}_testsupport_${{ env.logsuffix }}.zip
         continue-on-error: true
 
   artifacts:
