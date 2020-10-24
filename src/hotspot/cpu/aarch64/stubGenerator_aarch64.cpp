@@ -4009,8 +4009,8 @@ class StubGenerator: public StubCodeGenerator {
     __ movw(shiftRevCount, 32);
     __ subw(shiftRevCount, shiftRevCount, shiftCount);
 
-    // numIter too short, rolling back
-    __ cmp(numIter, (u1)8);
+    // numIter too small to allow a 4-words SIMD loop, rolling back
+    __ cmp(numIter, (u1)4);
     __ br(Assembler::LT, ShiftOneLoop);
 
     __ dup(shiftVCount,    __ T4S, shiftCount);
@@ -4018,8 +4018,6 @@ class StubGenerator: public StubCodeGenerator {
     __ negr(shiftVCount,   __ T4S, shiftVCount);
 
     __ BIND(ShiftSIMDLoop);
-    __ cmp(idx, (u1)4);
-    __ br(Assembler::LT, ShiftTwoLoop);
 
     // Calculate the load addresses
     __ sub(idx, idx, 4);
@@ -4034,6 +4032,9 @@ class StubGenerator: public StubCodeGenerator {
     __ ushl(oldElem1, __ T4S,  oldElem1, shiftVRevCount);
     __ orr(newElem,   __ T16B, oldElem0, oldElem1);
     __ st1(newElem,   __ T4S,  Address(newArrCur));
+
+    __ cmp(idx, (u1)4);
+    __ br(Assembler::LT, ShiftTwoLoop);
     __ b(ShiftSIMDLoop);
 
     __ BIND(ShiftTwoLoop);
@@ -4115,8 +4116,8 @@ class StubGenerator: public StubCodeGenerator {
     __ movw(shiftRevCount, 32);
     __ subw(shiftRevCount, shiftRevCount, shiftCount);
 
-    // numIter too short, rolling back
-    __ cmp(numIter, (u1)8);
+    // numIter too small to allow a 4-words SIMD loop, rolling back
+    __ cmp(numIter, (u1)4);
     __ br(Assembler::LT, ShiftOneLoop);
 
     __ dup(shiftVCount,     __ T4S, shiftCount);
@@ -4124,8 +4125,6 @@ class StubGenerator: public StubCodeGenerator {
     __ negr(shiftVRevCount, __ T4S, shiftVRevCount);
 
     __ BIND(ShiftSIMDLoop);
-    __ cmp(numIter, (u1)4);
-    __ br(Assembler::LT, ShiftTwoLoop);
 
     // load 4 words and process
     __ ld1(oldElem0,  __ T4S,  __ post(oldArr, 16));
@@ -4135,6 +4134,9 @@ class StubGenerator: public StubCodeGenerator {
     __ orr(newElem,   __ T16B, oldElem0, oldElem1);
     __ st1(newElem,   __ T4S,  __ post(newArr, 16));
     __ sub(numIter,   numIter, 4);
+
+    __ cmp(numIter, (u1)4);
+    __ br(Assembler::LT, ShiftTwoLoop);
     __ b(ShiftSIMDLoop);
 
     __ BIND(ShiftTwoLoop);
