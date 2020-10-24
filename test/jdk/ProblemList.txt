@@ -897,7 +897,7 @@ java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter_1.java 7131438,802
 java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter_2.java 7131438,8022516 generic-all
 java/awt/Modal/WsDisabledStyle/CloseBlocker/CloseBlocker.java 7187741 generic-al
 java/awt/Component/UpdatingBootTime/UpdatingBootTime.html 7194219 linux-all
-java/awt/xembed/server/TestXEmbedServerJava.java 8001150,8004301 generic-all
+java/awt/xembed/server/TestXEmbedServerJava.java 8001150,8004031 generic-all
 java/awt/TextArea/MouseOverScrollbarWhenTyping/Test1.java 8005970 macosx-all,windows-all
 java/awt/font/TextLayout/TestJustification.html 8024409 macosx-all
 javax/swing/JTabbedPane/4209065/bug4209065.java 8024409 macosx-all
