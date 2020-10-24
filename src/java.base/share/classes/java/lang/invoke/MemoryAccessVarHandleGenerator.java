@@ -272,7 +272,7 @@ class MemoryAccessVarHandleGenerator {
         mv.visitVarInsn(LLOAD, 3); // length
         mv.visitVarInsn(LLOAD, 5); // offset
         mv.visitVarInsn(LLOAD, 7); // alignmentMask
-        mv.visitVarInsn(ILOAD, 8); // exact
+        mv.visitVarInsn(ILOAD, 9); // exact
         mv.visitMethodInsn(INVOKESPECIAL, Type.getInternalName(BASE_CLASS), "<init>",
                 SUPER_CONTR_TYPE.toMethodDescriptorString(), false);
         //init dimensions
