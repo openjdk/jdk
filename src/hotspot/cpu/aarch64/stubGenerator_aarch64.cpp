@@ -4062,12 +4062,12 @@ class StubGenerator: public StubCodeGenerator {
     __ add(oldArrNext, oldArr, idx, Assembler::LSL, 2);
     __ add(newArrCur,  newArr, idx, Assembler::LSL, 2);
     __ add(oldArrCur,  oldArrNext, 4);
-    __ ldrw(r5,  Address(oldArrCur));
-    __ ldrw(r6,  Address(oldArrNext));
-    __ lsrvw(r5, r5, shiftCount);
-    __ lslvw(r6, r6, shiftRevCount);
-    __ orrw(r7,  r5, r6);
-    __ strw(r7,  Address(newArrCur));
+    __ ldrw(r10,  Address(oldArrCur));
+    __ ldrw(r11,  Address(oldArrNext));
+    __ lsrvw(r10, r10, shiftCount);
+    __ lslvw(r11, r11, shiftRevCount);
+    __ orrw(r12,  r10, r11);
+    __ strw(r12,  Address(newArrCur));
     __ cbz(idx, Exit);
     __ b(ShiftOneLoop);
 
@@ -4155,12 +4155,12 @@ class StubGenerator: public StubCodeGenerator {
     __ b(ShiftTwoLoop);
 
     __ BIND(ShiftOneLoop);
-    __ ldrw(r5,  __ post(oldArr, 4));
-    __ ldrw(r6,  __ post(oldArrNext, 4));
-    __ lslvw(r5, r5, shiftCount);
-    __ lsrvw(r6, r6, shiftRevCount);
-    __ orrw(r7,  r5, r6);
-    __ strw(r7,  __ post(newArr, 4));
+    __ ldrw(r10,  __ post(oldArr, 4));
+    __ ldrw(r11,  __ post(oldArrNext, 4));
+    __ lslvw(r10, r10, shiftCount);
+    __ lsrvw(r11, r11, shiftRevCount);
+    __ orrw(r12,  r10, r11);
+    __ strw(r12,  __ post(newArr, 4));
     __ sub(numIter, numIter, 1);
     __ cbz(numIter, Exit);
     __ b(ShiftOneLoop);
