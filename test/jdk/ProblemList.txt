@@ -777,7 +777,6 @@ javax/swing/JPopupMenu/4870644/bug4870644.java 8194130 macosx-all,linux-all
 javax/swing/JFileChooser/6868611/bug6868611.java 7059834 windows-all
 javax/swing/SwingWorker/6493680/bug6493680.java 8198410 windows-all
 javax/swing/PopupFactory/6276087/NonOpaquePopupMenuTest.java 8065099,8208565 macosx-all,linux-all
-javax/swing/DataTransfer/8059739/bug8059739.java 8199074 generic-all
 javax/swing/SwingWorker/6432565/bug6432565.java 8199077 generic-all
 javax/swing/SwingWorker/6880336/NestedWorkers.java 8199049 windows-all
 javax/swing/text/DefaultCaret/6938583/bug6938583.java 8199058 generic-all
