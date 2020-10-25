@@ -759,7 +759,6 @@ javax/swing/JPopupMenu/6800513/bug6800513.java 7184956 macosx-all
 javax/swing/JPopupMenu/6675802/bug6675802.java 8196097 windows-all
 javax/swing/JTabbedPane/8007563/Test8007563.java 8051591 generic-all
 javax/swing/JTabbedPane/4624207/bug4624207.java 8064922 macosx-all
-javax/swing/JTabbedPane/7024235/Test7024235.java 8028281 macosx-all
 javax/swing/SwingUtilities/TestBadBreak/TestBadBreak.java 8160720 generic-all
 javax/swing/plaf/basic/Test6984643.java 8198340 windows-all
 javax/swing/text/CSSBorder/6796710/bug6796710.java 8196099 windows-all
