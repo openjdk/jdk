@@ -489,6 +489,7 @@ void JVMState::format(PhaseRegAlloc *regalloc, const Node *n, outputStream* st) 
         ciField* cifield;
         if (iklass != NULL) {
           st->print(" [");
+          iklass->nof_nonstatic_fields(); // FIXME: iklass->_nonstatic_fields == NULL
           cifield = iklass->nonstatic_field_at(0);
           cifield->print_name_on(st);
           format_helper(regalloc, st, fld_node, ":", 0, &scobjs);
