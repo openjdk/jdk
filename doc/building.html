@@ -78,6 +78,7 @@
 <li><a href="#native-libraries">Native Libraries</a></li>
 <li><a href="#creating-and-using-sysroots-with-qemu-deboostrap">Creating And Using Sysroots With qemu-deboostrap</a></li>
 <li><a href="#building-for-armaarch64">Building for ARM/aarch64</a></li>
+<li><a href="#building-for-musl">Building for musl</a></li>
 <li><a href="#verifying-the-build">Verifying the Build</a></li>
 </ul></li>
 <li><a href="#build-performance">Build Performance</a><ul>
@@ -224,6 +225,8 @@
 <pre><code>sudo apt-get install build-essential</code></pre>
 <p>For rpm-based distributions (Fedora, Red Hat, etc), try this:</p>
 <pre><code>sudo yum groupinstall &quot;Development Tools&quot;</code></pre>
+<p>For Alpine Linux, aside from basic tooling, install the GNU versions of some programs:</p>
+<pre><code>sudo apk add build-base bash grep zip</code></pre>
 <h3 id="aix">AIX</h3>
 <p>Please consult the AIX section of the <a href="https://wiki.openjdk.java.net/display/Build/Supported+Build+Platforms">Supported Build Platforms</a> OpenJDK Build Wiki page for details about which versions of AIX are supported.</p>
 <h2 id="native-compiler-toolchain-requirements">Native Compiler (Toolchain) Requirements</h2>
@@ -313,6 +316,7 @@
 <ul>
 <li>To install on an apt-based Linux, try running <code>sudo apt-get install libfreetype6-dev</code>.</li>
 <li>To install on an rpm-based Linux, try running <code>sudo yum install freetype-devel</code>.</li>
+<li>To install on Alpine Linux, try running <code>sudo apk add freetype-dev</code>.</li>
 </ul>
 <p>Use <code>--with-freetype-include=&lt;path&gt;</code> and <code>--with-freetype-lib=&lt;path&gt;</code> if <code>configure</code> does not automatically locate the platform FreeType files.</p>
 <h3 id="cups">CUPS</h3>
@@ -320,6 +324,7 @@
 <ul>
 <li>To install on an apt-based Linux, try running <code>sudo apt-get install libcups2-dev</code>.</li>
 <li>To install on an rpm-based Linux, try running <code>sudo yum install cups-devel</code>.</li>
+<li>To install on Alpine Linux, try running <code>sudo apk add cups-dev</code>.</li>
 </ul>
 <p>Use <code>--with-cups=&lt;path&gt;</code> if <code>configure</code> does not properly locate your CUPS files.</p>
 <h3 id="x11">X11</h3>
@@ -327,6 +332,7 @@
 <ul>
 <li>To install on an apt-based Linux, try running <code>sudo apt-get install libx11-dev libxext-dev libxrender-dev libxrandr-dev libxtst-dev libxt-dev</code>.</li>
 <li>To install on an rpm-based Linux, try running <code>sudo yum install libXtst-devel libXt-devel libXrender-devel libXrandr-devel libXi-devel</code>.</li>
+<li>To install on Alpine Linux, try running <code>sudo apk add libx11-dev libxext-dev libxrender-dev libxrandr-dev libxtst-dev libxt-dev</code>.</li>
 </ul>
 <p>Use <code>--with-x=&lt;path&gt;</code> if <code>configure</code> does not properly locate your X11 files.</p>
 <h3 id="alsa">ALSA</h3>
@@ -334,6 +340,7 @@
 <ul>
 <li>To install on an apt-based Linux, try running <code>sudo apt-get install libasound2-dev</code>.</li>
 <li>To install on an rpm-based Linux, try running <code>sudo yum install alsa-lib-devel</code>.</li>
+<li>To install on Alpine Linux, try running <code>sudo apk add alsa-lib-dev</code>.</li>
 </ul>
 <p>Use <code>--with-alsa=&lt;path&gt;</code> if <code>configure</code> does not properly locate your ALSA files.</p>
 <h3 id="libffi">libffi</h3>
@@ -341,6 +348,7 @@
 <ul>
 <li>To install on an apt-based Linux, try running <code>sudo apt-get install libffi-dev</code>.</li>
 <li>To install on an rpm-based Linux, try running <code>sudo yum install libffi-devel</code>.</li>
+<li>To install on Alpine Linux, try running <code>sudo apk add libffi-dev</code>.</li>
 </ul>
 <p>Use <code>--with-libffi=&lt;path&gt;</code> if <code>configure</code> does not properly locate your libffi files.</p>
 <h2 id="build-tools-requirements">Build Tools Requirements</h2>
@@ -349,6 +357,7 @@
 <ul>
 <li>To install on an apt-based Linux, try running <code>sudo apt-get install autoconf</code>.</li>
 <li>To install on an rpm-based Linux, try running <code>sudo yum install autoconf</code>.</li>
+<li>To install on Alpine Linux, try running <code>sudo apk add autoconf</code>.</li>
 <li>To install on macOS, try running <code>brew install autoconf</code>.</li>
 <li>To install on Windows, try running <code>&lt;path to Cygwin setup&gt;/setup-x86_64 -q -P autoconf</code>.</li>
 </ul>
@@ -688,6 +697,15 @@ ls build/linux-aarch64-normal-server-release/</code></pre>
 <p>Additional architectures might be supported by Debian/Ubuntu Ports.</p>
 <h3 id="building-for-armaarch64">Building for ARM/aarch64</h3>
 <p>A common cross-compilation target is the ARM CPU. When building for ARM, it is useful to set the ABI profile. A number of pre-defined ABI profiles are available using <code>--with-abi-profile</code>: arm-vfp-sflt, arm-vfp-hflt, arm-sflt, armv5-vfp-sflt, armv6-vfp-hflt. Note that soft-float ABIs are no longer properly supported by the JDK.</p>
+<h3 id="building-for-musl">Building for musl</h3>
+<p>Just like it's possible to cross-compile for a different CPU, it's possible to cross-compile for musl libc on a glibc-based <em>build</em> system. A devkit suitable for most target CPU architectures can be obtained from <a href="https://musl.cc">musl.cc</a>. After installing the required packages in the sysroot, configure the build with <code>--openjdk-target</code>:</p>
+<pre><code>sh ./configure --with-jvm-variants=server \
+--with-boot-jdk=$BOOT_JDK \
+--with-build-jdk=$BUILD_JDK \
+--openjdk-target=x86_64-unknown-linux-musl \
+--with-devkit=$DEVKIT \
+--with-sysroot=$SYSROOT</code></pre>
+<p>and run <code>make</code> normally.</p>
 <h3 id="verifying-the-build">Verifying the Build</h3>
 <p>The build will end up in a directory named like <code>build/linux-arm-normal-server-release</code>.</p>
 <p>Inside this build output directory, the <code>images/jdk</code> will contain the newly built JDK, for your <em>target</em> system.</p>

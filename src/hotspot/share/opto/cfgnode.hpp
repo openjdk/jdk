@@ -64,15 +64,20 @@ class PhaseIdealLoop;
 // correspond 1-to-1 with RegionNode inputs.  The zero input of a PhiNode is
 // the RegionNode, and the zero input of the RegionNode is itself.
 class RegionNode : public Node {
+private:
+  bool _is_unreachable_region;
+
+  bool is_possible_unsafe_loop(const PhaseGVN* phase) const;
+  bool is_unreachable_from_root(const PhaseGVN* phase) const;
 public:
   // Node layout (parallels PhiNode):
   enum { Region,                // Generally points to self.
          Control                // Control arcs are [1..len)
   };
 
-  RegionNode( uint required ) : Node(required) {
+  RegionNode(uint required) : Node(required), _is_unreachable_region(false) {
     init_class_id(Class_Region);
-    init_req(0,this);
+    init_req(0, this);
   }
 
   Node* is_copy() const {
@@ -84,18 +89,19 @@ public:
   PhiNode* has_phi() const;        // returns an arbitrary phi user, or NULL
   PhiNode* has_unique_phi() const; // returns the unique phi user, or NULL
   // Is this region node unreachable from root?
-  bool is_unreachable_region(PhaseGVN *phase) const;
+  bool is_unreachable_region(const PhaseGVN* phase);
   virtual int Opcode() const;
-  virtual bool pinned() const { return (const Node *)in(0) == this; }
-  virtual bool  is_CFG   () const { return true; }
-  virtual uint hash() const { return NO_HASH; }  // CFG nodes do not hash
+  virtual uint size_of() const { return sizeof(*this); }
+  virtual bool pinned() const { return (const Node*)in(0) == this; }
+  virtual bool is_CFG() const { return true; }
+  virtual uint hash() const { return NO_HASH; } // CFG nodes do not hash
   virtual bool depends_only_on_test() const { return false; }
-  virtual const Type *bottom_type() const { return Type::CONTROL; }
+  virtual const Type* bottom_type() const { return Type::CONTROL; }
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual const RegMask &out_RegMask() const;
-  bool try_clean_mem_phi(PhaseGVN *phase);
+  bool try_clean_mem_phi(PhaseGVN* phase);
   bool optimize_trichotomy(PhaseIterGVN* igvn);
 };
 
@@ -135,6 +141,7 @@ class PhiNode : public TypeNode {
   // Determine if CMoveNode::is_cmove_id can be used at this join point.
   Node* is_cmove_id(PhaseTransform* phase, int true_path);
   bool wait_for_region_igvn(PhaseGVN* phase);
+  bool is_data_loop(RegionNode* r, Node* uin, const PhaseGVN* phase);
 
 public:
   // Node layout (parallels RegionNode):

@@ -46,9 +46,10 @@ import jdk.test.lib.Utils;
 /**
  * The test verifies correctness of work {@link jdk.test.lib.Utils#getRandomInstance()}.
  * Test works in three modes: same seed provided, no seed provided and
- * different seed provided. In the first case the test expects that all random numbers
- * will be repeated in all next iterations. For other two modes test expects that
- * randomly generated numbers differ from original.
+ * different seed provided.
+ * In the first case, the test expects that all random numbers will be repeated in all next iterations.
+ * In the second case, the numbers are expected to be the same for promotable builds and different for other builds.
+ * In the last case, the test expects the randomly generated numbers differ from original.
  */
 public class RandomGeneratorTest {
     private static final String SEED_VM_OPTION = "-D" + Utils.SEED_PROPERTY_NAME + "=";
@@ -102,11 +103,21 @@ public class RandomGeneratorTest {
                 cmdLine[0] = getSeedOption();
                 super.verify(orig, cmdLine);
             }
+
+            @Override
+            protected boolean isOutputExpected(String orig, String output) {
+                return !output.equals(orig);
+            }
         },
         NO_SEED {
             @Override
             public String getSeedOption() {
                 return null;
+            }
+
+            @Override
+            protected boolean isOutputExpected(String orig, String output) {
+                return Runtime.version().build().orElse(0) > 0 ^ !output.equals(orig);
             }
         };
 
@@ -118,9 +129,7 @@ public class RandomGeneratorTest {
          */
         public abstract String getSeedOption();
 
-        protected boolean isOutputExpected(String orig, String output) {
-            return !output.equals(orig);
-        }
+        protected abstract boolean isOutputExpected(String orig, String output);
 
         /**
          * Verifies that the original output meets expectations

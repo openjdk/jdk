@@ -33,7 +33,8 @@
 // This hierarchy is a representation hierarchy, i.e. if A is a superclass
 // of B, A's representation is a prefix of B's representation.
 
-typedef juint narrowOop; // Offset instead of address for an oop within a java object
+// Global offset instead of address for an oop within a java object.
+enum class narrowOop : uint32_t { null = 0 };
 
 // If compressed klass pointers then use narrowKlass.
 typedef juint  narrowKlass;

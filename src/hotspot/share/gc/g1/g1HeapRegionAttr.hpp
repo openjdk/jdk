@@ -32,7 +32,13 @@
 // lookups for that information all over the place.
 struct G1HeapRegionAttr {
 public:
+#if defined(_M_ARM64)&& defined(_MSC_VER) && _MSC_VER <= 1927
+  // workaround for MSCV ARM64 bug
+  // https://developercommunity.visualstudio.com/content/problem/1079221/arm64-bad-code-generation-around-signed-char-arith.html
+  typedef int32_t region_type_t;
+#else
   typedef int8_t region_type_t;
+#endif
   typedef uint8_t needs_remset_update_t;
 
 private:

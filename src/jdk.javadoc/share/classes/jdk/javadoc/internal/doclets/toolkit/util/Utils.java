@@ -107,9 +107,9 @@ import com.sun.source.util.TreePath;
 import com.sun.tools.javac.model.JavacTypes;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
+import jdk.javadoc.internal.doclets.toolkit.CommentUtils;
 import jdk.javadoc.internal.doclets.toolkit.CommentUtils.DocCommentInfo;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
-import jdk.javadoc.internal.doclets.toolkit.WorkArounds;
 import jdk.javadoc.internal.doclets.toolkit.taglets.BaseTaglet;
 import jdk.javadoc.internal.doclets.toolkit.taglets.Taglet;
 import jdk.javadoc.internal.tool.DocEnvImpl;
@@ -282,8 +282,7 @@ public class Utils {
     }
 
     /**
-     * According to
-     * <cite>The Java Language Specification</cite>,
+     * According to <cite>The Java Language Specification</cite>,
      * all the outer classes and static inner classes are core classes.
      */
     public boolean isCoreClass(TypeElement e) {
@@ -1338,33 +1337,35 @@ public class Utils {
     }
 
     /**
-     * Given a TypeElement, return the name of its type (Class, Interface, etc.).
+     * Returns the name of the kind of a type element (Class, Interface, etc.).
      *
-     * @param te the TypeElement to check.
-     * @param lowerCaseOnly true if you want the name returned in lower case.
-     *                      If false, the first letter of the name is capitalized.
-     * @return
+     * @param te the type element
+     * @param lowerCaseOnly true if you want the name returned in lower case;
+     *                      if false, the first letter of the name is capitalized
+     * @return the name
      */
-    public String getTypeElementName(TypeElement te, boolean lowerCaseOnly) {
-        String typeName = "";
-        if (isInterface(te)) {
-            typeName = "doclet.Interface";
-        } else if (isException(te)) {
-            typeName = "doclet.Exception";
-        } else if (isError(te)) {
-            typeName = "doclet.Error";
-        } else if (isAnnotationType(te)) {
-            typeName = "doclet.AnnotationType";
-        } else if (isEnum(te)) {
-            typeName = "doclet.Enum";
-        } else if (isOrdinaryClass(te)) {
-            typeName = "doclet.Class";
-        }
-        typeName = lowerCaseOnly ? toLowerCase(typeName) : typeName;
-        return typeNameMap.computeIfAbsent(typeName, resources::getText);
+    public String getTypeElementKindName(TypeElement te, boolean lowerCaseOnly) {
+        String kindName = switch (te.getKind()) {
+            case ANNOTATION_TYPE ->
+                    "doclet.AnnotationType";
+            case ENUM ->
+                    "doclet.Enum";
+            case INTERFACE ->
+                    "doclet.Interface";
+            case RECORD ->
+                    "doclet.Record";
+            case CLASS ->
+                    isException(te) ? "doclet.Exception"
+                    : isError(te) ? "doclet.Error"
+                    : "doclet.Class";
+            default ->
+                    throw new IllegalArgumentException(te.getKind().toString());
+        };
+        kindName = lowerCaseOnly ? toLowerCase(kindName) : kindName;
+        return kindNameMap.computeIfAbsent(kindName, resources::getText);
     }
 
-    private final Map<String, String> typeNameMap = new HashMap<>();
+    private final Map<String, String> kindNameMap = new HashMap<>();
 
     public String getTypeName(TypeMirror t, boolean fullyQualified) {
         return new SimpleTypeVisitor9<String, Void>() {
@@ -2268,63 +2269,59 @@ public class Utils {
 
     private ConstantValueExpression cve = null;
 
-    public String constantValueExpresion(VariableElement ve) {
+    public String constantValueExpression(VariableElement ve) {
         if (cve == null)
             cve = new ConstantValueExpression();
-        return cve.constantValueExpression(configuration.workArounds, ve);
+        return cve.visit(ve.asType(), ve.getConstantValue());
     }
 
-    private static class ConstantValueExpression {
-        public String constantValueExpression(WorkArounds workArounds, VariableElement ve) {
-            return new TypeKindVisitor9<String, Object>() {
-                /* TODO: we need to fix this correctly.
-                 * we have a discrepancy here, note the use of getConstValue
-                 * vs. getConstantValue, at some point we need to use
-                 * getConstantValue.
-                 * In the legacy world byte and char primitives appear as Integer values,
-                 * thus a byte value of 127 will appear as 127, but in the new world,
-                 * a byte value appears as Byte thus 0x7f will be printed, similarly
-                 * chars will be  translated to \n, \r etc. however, in the new world,
-                 * they will be printed as decimal values. The new world is correct,
-                 * and we should fix this by using getConstantValue and the visitor to
-                 * address this in the future.
-                 */
-                @Override
-                public String visitPrimitiveAsBoolean(PrimitiveType t, Object val) {
-                    return (int)val == 0 ? "false" : "true";
-                }
-
-                @Override
-                public String visitPrimitiveAsDouble(PrimitiveType t, Object val) {
-                    return sourceForm(((Double)val), 'd');
-                }
-
-                @Override
-                public String visitPrimitiveAsFloat(PrimitiveType t, Object val) {
-                    return sourceForm(((Float)val).doubleValue(), 'f');
-                }
-
-                @Override
-                public String visitPrimitiveAsLong(PrimitiveType t, Object val) {
-                    return val + "L";
-                }
-
-                @Override
-                protected String defaultAction(TypeMirror e, Object val) {
-                    if (val == null)
-                        return null;
-                    else if (val instanceof Character)
-                        return sourceForm(((Character)val));
-                    else if (val instanceof Byte)
-                        return sourceForm(((Byte)val));
-                    else if (val instanceof String)
-                        return sourceForm((String)val);
-                    return val.toString(); // covers int, short
-                }
-            }.visit(ve.asType(), workArounds.getConstValue(ve));
+    // We could also use Elements.getConstantValueExpression, which provides
+    // similar functionality, but which also includes casts to provide valid
+    // compilable constants:  e.g. (byte) 0x7f
+    private static class ConstantValueExpression extends TypeKindVisitor9<String, Object> {
+        @Override
+        public String visitPrimitiveAsBoolean(PrimitiveType t, Object val) {
+            return ((boolean) val) ? "true" : "false";
         }
 
-        // where
+        @Override
+        public String visitPrimitiveAsByte(PrimitiveType t, Object val) {
+            return "0x" + Integer.toString(((Byte) val) & 0xff, 16);
+        }
+
+        @Override
+        public String visitPrimitiveAsChar(PrimitiveType t, Object val) {
+            StringBuilder buf = new StringBuilder(8);
+            buf.append('\'');
+            sourceChar((char) val, buf);
+            buf.append('\'');
+            return buf.toString();
+        }
+
+        @Override
+        public String visitPrimitiveAsDouble(PrimitiveType t, Object val) {
+            return sourceForm(((Double) val), 'd');
+        }
+
+        @Override
+        public String visitPrimitiveAsFloat(PrimitiveType t, Object val) {
+            return sourceForm(((Float) val).doubleValue(), 'f');
+        }
+
+        @Override
+        public String visitPrimitiveAsLong(PrimitiveType t, Object val) {
+            return val + "L";
+        }
+
+        @Override
+        protected String defaultAction(TypeMirror e, Object val) {
+            if (val == null)
+                return null;
+            else if (val instanceof String)
+                return sourceForm((String) val);
+            return val.toString(); // covers int, short
+        }
+
         private String sourceForm(double v, char suffix) {
             if (Double.isNaN(v))
                 return "0" + suffix + "/0" + suffix;
@@ -2335,22 +2332,10 @@ public class Utils {
             return v + (suffix == 'f' || suffix == 'F' ? "" + suffix : "");
         }
 
-        private  String sourceForm(char c) {
-            StringBuilder buf = new StringBuilder(8);
-            buf.append('\'');
-            sourceChar(c, buf);
-            buf.append('\'');
-            return buf.toString();
-        }
-
-        private String sourceForm(byte c) {
-            return "0x" + Integer.toString(c & 0xff, 16);
-        }
-
         private String sourceForm(String s) {
             StringBuilder buf = new StringBuilder(s.length() + 5);
             buf.append('\"');
-            for (int i=0; i<s.length(); i++) {
+            for (int i = 0; i < s.length(); i++) {
                 char c = s.charAt(i);
                 sourceChar(c, buf);
             }
@@ -2360,31 +2345,33 @@ public class Utils {
 
         private void sourceChar(char c, StringBuilder buf) {
             switch (c) {
-            case '\b': buf.append("\\b"); return;
-            case '\t': buf.append("\\t"); return;
-            case '\n': buf.append("\\n"); return;
-            case '\f': buf.append("\\f"); return;
-            case '\r': buf.append("\\r"); return;
-            case '\"': buf.append("\\\""); return;
-            case '\'': buf.append("\\\'"); return;
-            case '\\': buf.append("\\\\"); return;
-            default:
-                if (isPrintableAscii(c)) {
-                    buf.append(c); return;
+                case '\b' -> buf.append("\\b");
+                case '\t' -> buf.append("\\t");
+                case '\n' -> buf.append("\\n");
+                case '\f' -> buf.append("\\f");
+                case '\r' -> buf.append("\\r");
+                case '\"' -> buf.append("\\\"");
+                case '\'' -> buf.append("\\\'");
+                case '\\' -> buf.append("\\\\");
+                default -> {
+                    if (isPrintableAscii(c)) {
+                        buf.append(c);
+                        return;
+                    }
+                    unicodeEscape(c, buf);
                 }
-                unicodeEscape(c, buf);
-                return;
             }
         }
 
         private void unicodeEscape(char c, StringBuilder buf) {
             final String chars = "0123456789abcdef";
             buf.append("\\u");
-            buf.append(chars.charAt(15 & (c>>12)));
-            buf.append(chars.charAt(15 & (c>>8)));
-            buf.append(chars.charAt(15 & (c>>4)));
-            buf.append(chars.charAt(15 & (c>>0)));
+            buf.append(chars.charAt(15 & (c >> 12)));
+            buf.append(chars.charAt(15 & (c >> 8)));
+            buf.append(chars.charAt(15 & (c >> 4)));
+            buf.append(chars.charAt(15 & (c >> 0)));
         }
+
         private boolean isPrintableAscii(char c) {
             return c >= ' ' && c <= '~';
         }
@@ -2673,7 +2660,7 @@ public class Utils {
      * The entries may come from the AST and DocCommentParser, or may be autromatically
      * generated comments for mandated elements and JavaFX properties.
      *
-     * @see CommentUtils.dcInfoMap
+     * @see CommentUtils#dcInfoMap
      */
     private final Map<Element, DocCommentInfo> dcTreeCache = new LinkedHashMap<>();
 
@@ -2722,7 +2709,7 @@ public class Utils {
                     }
                 }
                 // run doclint even if docCommentTree is null, to trigger checks for missing comments
-                configuration.workArounds.runDocLint(path);
+                configuration.runDocLint(path);
             }
             dcTreeCache.put(element, info);
         }

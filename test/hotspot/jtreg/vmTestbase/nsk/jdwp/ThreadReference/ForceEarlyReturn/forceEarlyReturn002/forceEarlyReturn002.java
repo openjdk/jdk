@@ -66,8 +66,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.ThreadReference.ForceEarlyReturn.forceEarlyReturn002.forceEarlyReturn002
- * @run main/othervm/native PropertyResolvingWrapper
+ * @run main/othervm/native
  *      nsk.jdwp.ThreadReference.ForceEarlyReturn.forceEarlyReturn002.forceEarlyReturn002
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose
@@ -79,24 +78,28 @@
 
 package nsk.jdwp.ThreadReference.ForceEarlyReturn.forceEarlyReturn002;
 
-import java.io.*;
-
 import nsk.share.Consts;
-import nsk.share.jdwp.*;
+import nsk.share.jdwp.CommandPacket;
+import nsk.share.jdwp.EventPacket;
+import nsk.share.jdwp.JDWP;
 import nsk.share.jdwp.JDWP.Value;
+import nsk.share.jdwp.ReplyPacket;
+import nsk.share.jdwp.TestDebuggerType1;
 import nsk.share.jpda.AbstractDebuggeeTest;
 import nsk.share.jpda.StateTestThread;
+
+import java.io.PrintStream;
 
 public class forceEarlyReturn002 extends TestDebuggerType1 {
     protected String getDebugeeClassName() {
         return "nsk.jdwp.ThreadReference.ForceEarlyReturn.forceEarlyReturn002.forceEarlyReturn002a";
     }
 
-    public static void main(String argv[]) {
+    public static void main(String[] argv) {
         System.exit(run(argv, System.out) + Consts.JCK_STATUS_BASE);
     }
 
-    public static int run(String argv[], PrintStream out) {
+    public static int run(String[] argv, PrintStream out) {
         return new forceEarlyReturn002().runIt(argv, out);
     }
 

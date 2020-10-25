@@ -33,9 +33,8 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @build nsk.jdb.pop_exception.pop_exception001.pop_exception001
- *        nsk.jdb.pop_exception.pop_exception001.pop_exception001a
- * @run main/othervm PropertyResolvingWrapper
+ * @build nsk.jdb.pop_exception.pop_exception001.pop_exception001a
+ * @run main/othervm
  *      nsk.jdb.pop_exception.pop_exception001.pop_exception001
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5

@@ -30,9 +30,41 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/hashtable.inline.hpp"
 
+#define LAMBDA_PROXY_TAG "@lambda-proxy:"
+
 class ID2KlassTable : public KVHashtable<int, InstanceKlass*, mtInternal> {
 public:
   ID2KlassTable() : KVHashtable<int, InstanceKlass*, mtInternal>(1987) {}
+};
+
+class CDSIndyInfo {
+  GrowableArray<const char*>* _items;
+public:
+  CDSIndyInfo() : _items(NULL) {}
+  void add_item(const char* item) {
+    if (_items == NULL) {
+      _items = new GrowableArray<const char*>(9);
+    }
+    assert(_items != NULL, "sanity");
+    _items->append(item);
+  }
+  void add_ref_kind(int ref_kind) {
+    switch (ref_kind) {
+    case JVM_REF_getField         : _items->append("REF_getField"); break;
+    case JVM_REF_getStatic        : _items->append("REF_getStatic"); break;
+    case JVM_REF_putField         : _items->append("REF_putField"); break;
+    case JVM_REF_putStatic        : _items->append("REF_putStatic"); break;
+    case JVM_REF_invokeVirtual    : _items->append("REF_invokeVirtual"); break;
+    case JVM_REF_invokeStatic     : _items->append("REF_invokeStatic"); break;
+    case JVM_REF_invokeSpecial    : _items->append("REF_invokeSpecial"); break;
+    case JVM_REF_newInvokeSpecial : _items->append("REF_newInvokeSpecial"); break;
+    case JVM_REF_invokeInterface  : _items->append("REF_invokeInterface"); break;
+    default                       : ShouldNotReachHere();
+    }
+  }
+  GrowableArray<const char*>* items() {
+    return _items;
+  }
 };
 
 class ClassListParser : public StackObj {
@@ -61,6 +93,7 @@ class ClassListParser : public StackObj {
   int                 _line_len;              // Original length of the input line.
   int                 _line_no;               // Line number for current line being parsed
   const char*         _class_name;
+  GrowableArray<const char*>* _indy_items;    // items related to invoke dynamic for archiving lambda proxy classes
   int                 _id;
   int                 _super;
   GrowableArray<int>* _interfaces;
@@ -68,6 +101,7 @@ class ClassListParser : public StackObj {
   const char*         _source;
 
   bool parse_int_option(const char* option_name, int* value);
+  bool parse_uint_option(const char* option_name, int* value);
   InstanceKlass* load_class_from_source(Symbol* class_name, TRAPS);
   ID2KlassTable *table() {
     return &_id2klass_table;
@@ -75,6 +109,9 @@ class ClassListParser : public StackObj {
   InstanceKlass* lookup_class_by_id(int id);
   void print_specified_interfaces();
   void print_actual_interfaces(InstanceKlass *ik);
+  bool is_matching_cp_entry(constantPoolHandle &pool, int cp_index, TRAPS);
+
+  void resolve_indy(Symbol* class_name_symbol, TRAPS);
 public:
   ClassListParser(const char* file);
   ~ClassListParser();
@@ -83,10 +120,13 @@ public:
     return _instance;
   }
   bool parse_one_line();
+  void split_tokens_by_whitespace();
+  bool parse_at_tags();
   char* _token;
   void error(const char* msg, ...);
   void parse_int(int* value);
-  bool try_parse_int(int* value);
+  void parse_uint(int* value);
+  bool try_parse_uint(int* value);
   bool skip_token(const char* option_name);
   void skip_whitespaces();
   void skip_non_whitespaces();
@@ -126,5 +166,7 @@ public:
   // (in this->load_current_class()).
   InstanceKlass* lookup_super_for_current_class(Symbol* super_name);
   InstanceKlass* lookup_interface_for_current_class(Symbol* interface_name);
+
+  static void populate_cds_indy_info(const constantPoolHandle &pool, int cp_index, CDSIndyInfo* cii, TRAPS);
 };
 #endif // SHARE_CLASSFILE_CLASSLISTPARSER_HPP

@@ -231,8 +231,14 @@ AC_DEFUN([FLAGS_SETUP_OPTIMIZATION],
     # -D_FORTIFY_SOURCE=2 hardening option needs optimization (at least -O1) enabled
     # set for lower O-levels -U_FORTIFY_SOURCE to overwrite previous settings
     if test "x$OPENJDK_TARGET_OS" = xlinux -a "x$DEBUG_LEVEL" = "xfastdebug"; then
-      ENABLE_FORTIFY_CFLAGS="-D_FORTIFY_SOURCE=2"
       DISABLE_FORTIFY_CFLAGS="-U_FORTIFY_SOURCE"
+      # ASan doesn't work well with _FORTIFY_SOURCE
+      # See https://github.com/google/sanitizers/wiki/AddressSanitizer#faq
+      if test "x$ASAN_ENABLED" = xyes; then
+        ENABLE_FORTIFY_CFLAGS="${DISABLE_FORTIFY_CFLAGS}"
+      else
+        ENABLE_FORTIFY_CFLAGS="-D_FORTIFY_SOURCE=2"
+      fi
       C_O_FLAG_HIGHEST_JVM="${C_O_FLAG_HIGHEST_JVM} ${ENABLE_FORTIFY_CFLAGS}"
       C_O_FLAG_HIGHEST="${C_O_FLAG_HIGHEST} ${ENABLE_FORTIFY_CFLAGS}"
       C_O_FLAG_HI="${C_O_FLAG_HI} ${ENABLE_FORTIFY_CFLAGS}"
@@ -558,6 +564,11 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     fi
   fi
 
+  OS_CFLAGS="$OS_CFLAGS -DLIBC=$OPENJDK_TARGET_LIBC"
+  if test "x$OPENJDK_TARGET_LIBC" = xmusl; then
+    OS_CFLAGS="$OS_CFLAGS -DMUSL_LIBC"
+  fi
+
   # Where does this really belong??
   if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
     PICFLAG="-fPIC"
@@ -666,7 +677,9 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
 
   # toolchain dependend, per-cpu
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    if test "x$FLAGS_CPU" = xx86_64; then
+    if test "x$FLAGS_CPU" = xaarch64; then
+      $1_DEFINES_CPU_JDK="${$1_DEFINES_CPU_JDK} -D_ARM64_ -Darm64"
+    elif test "x$FLAGS_CPU" = xx86_64; then
       $1_DEFINES_CPU_JDK="${$1_DEFINES_CPU_JDK} -D_AMD64_ -Damd64"
     else
       $1_DEFINES_CPU_JDK="${$1_DEFINES_CPU_JDK} -D_X86_ -Dx86"
