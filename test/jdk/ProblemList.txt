@@ -780,7 +780,6 @@ javax/swing/PopupFactory/6276087/NonOpaquePopupMenuTest.java 8065099,8208565 mac
 javax/swing/SwingWorker/6432565/bug6432565.java 8199077 generic-all
 javax/swing/SwingWorker/6880336/NestedWorkers.java 8199049 windows-all
 javax/swing/text/DefaultCaret/6938583/bug6938583.java 8199058 generic-all
-javax/swing/text/html/parser/Parser/6990651/bug6990651.java 8199060 generic-all
 javax/swing/text/html/parser/Parser/HtmlCommentTagParseTest/HtmlCommentTagParseTest.java 8199073 generic-all
 javax/swing/text/StyledEditorKit/8016833/bug8016833.java 8199055 generic-all
 javax/swing/text/Utilities/8134721/bug8134721.java 8199062 generic-all
