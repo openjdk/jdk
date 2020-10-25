@@ -4425,8 +4425,7 @@ instruct insert8D(vec dst, vec src, regD val, immI idx, rRegL tmp, legVec vtmp) 
 // =======================Int Reduction==========================================
 
 instruct reductionI(rRegI dst, rRegI src1, legVec src2, legVec vtmp1, legVec vtmp2) %{
-  predicate(vector_element_basic_type(n->in(2)) == T_INT &&
-            vector_length(n->in(2)) <= 16); // src2
+  predicate(vector_element_basic_type(n->in(2)) == T_INT); // src2
   match(Set dst (AddReductionVI src1 src2));
   match(Set dst (MulReductionVI src1 src2));
   match(Set dst (AndReductionV  src1 src2));
@@ -4621,8 +4620,7 @@ instruct reduction64B(rRegI dst, rRegI src1, legVec src2, legVec vtmp1, legVec v
 // =======================Short Reduction==========================================
 
 instruct reductionS(rRegI dst, rRegI src1, legVec src2, legVec vtmp1, legVec vtmp2) %{
-  predicate(vector_element_basic_type(n->in(2)) == T_SHORT &&
-            vector_length(n->in(2)) <= 32); // src2
+  predicate(vector_element_basic_type(n->in(2)) == T_SHORT); // src2
   match(Set dst (AddReductionVI src1 src2));
   match(Set dst (MulReductionVI src1 src2));
   match(Set dst (AndReductionV  src1 src2));
