@@ -95,7 +95,7 @@ public:
     return _verify_fixed;
   }
 
-  virtual ZNMethodEntry nmethod_entry() const override {
+  virtual ZNMethodEntry nmethod_entry() const {
     // Verification performs its own verification
     return ZNMethodEntry::None;
   }

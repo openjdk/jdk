@@ -582,7 +582,7 @@ public:
     ZThreadLocalAllocBuffer::publish_statistics();
   }
 
-  virtual ZNMethodEntry nmethod_entry() const override {
+  virtual ZNMethodEntry nmethod_entry() const {
     // Only apply closure to armed nmethods, and then disarm them.
     return ZNMethodEntry::Disarm;
   }

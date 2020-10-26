@@ -67,21 +67,21 @@ public:
 
 class ZPhantomKeepAliveOopClosure : public ZRootsIteratorClosure {
 public:
-  virtual void do_oop(oop* p) override;
-  virtual void do_oop(narrowOop* p) override;
+  virtual void do_oop(oop* p);
+  virtual void do_oop(narrowOop* p);
 
-  virtual ZNMethodEntry nmethod_entry() const override {
-    return ZNMethodEntry::VerifyDisarmed;
+  virtual ZNMethodEntry nmethod_entry() const {
+    return ZNMethodEntry::None;
   }
 };
 
 class ZPhantomCleanOopClosure : public ZRootsIteratorClosure {
 public:
-  virtual void do_oop(oop* p) override;
-  virtual void do_oop(narrowOop* p) override;
+  virtual void do_oop(oop* p);
+  virtual void do_oop(narrowOop* p);
 
-  virtual ZNMethodEntry nmethod_entry() const override {
-    return ZNMethodEntry::VerifyDisarmed;
+  virtual ZNMethodEntry nmethod_entry() const {
+    return ZNMethodEntry::None;
   }
 };
 
