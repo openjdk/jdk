@@ -34,6 +34,6 @@
 // Return: MN.vmtarget
 ciMethod* ciMemberName::get_vmtarget() const {
   VM_ENTRY_MARK;
-  Method *vmtarget = java_lang_invoke_MemberName::vmtarget(get_oop());
+  Method* vmtarget = java_lang_invoke_MemberName::vmtarget(get_oop());
   return CURRENT_ENV->get_method(vmtarget);
 }
