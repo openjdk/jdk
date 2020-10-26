@@ -31,12 +31,10 @@
  * @provides jdk.random.L128X128MixRandom
  * @provides jdk.random.L128X256MixRandom
  * @provides jdk.random.L32X64MixRandom
- * @provides jdk.random.L32X64StarStarRandom
  * @provides jdk.random.L64X1024MixRandom
  * @provides jdk.random.L64X128MixRandom
  * @provides jdk.random.L64X128StarStarRandom
  * @provides jdk.random.L64X256MixRandom
- * @provides jdk.random.MRG32k3a
  * @provides jdk.random.Xoroshiro128PlusPlus
  * @provides jdk.random.Xoshiro256PlusPlus
  *
@@ -47,8 +45,6 @@
  * @since 16
  */
 module jdk.random {
-    exports jdk.random;
-
     uses java.util.random.RandomGenerator;
     uses java.util.random.RandomSupport;
 
