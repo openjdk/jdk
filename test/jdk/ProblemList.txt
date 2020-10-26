@@ -782,7 +782,6 @@ javax/swing/SwingWorker/6880336/NestedWorkers.java 8199049 windows-all
 javax/swing/text/DefaultCaret/6938583/bug6938583.java 8199058 generic-all
 javax/swing/text/html/parser/Parser/HtmlCommentTagParseTest/HtmlCommentTagParseTest.java 8199073 generic-all
 javax/swing/text/StyledEditorKit/8016833/bug8016833.java 8199055 generic-all
-javax/swing/text/Utilities/8134721/bug8134721.java 8199062 generic-all
 javax/swing/tree/DefaultTreeCellRenderer/7142955/bug7142955.java 8199076 generic-all
 javax/swing/UIDefaults/6302464/bug6302464.java 8199079 macosx-all
 javax/swing/UIDefaults/8149879/InternalResourceBundle.java 8199054 windows-all
