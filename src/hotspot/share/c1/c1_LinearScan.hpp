@@ -634,7 +634,9 @@ class Interval : public CompilationResourceObj {
   // printing
 #ifndef PRODUCT
   void print() const { print_on(tty); }
-  void print_on(outputStream* out) const;
+  void print_on(outputStream* out) const {
+    print_on(out, false);
+  }
   // Special version for compatibility with C1 Visualizer.
   void print_on(outputStream* out, bool is_cfg_printer) const;
 

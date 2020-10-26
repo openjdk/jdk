@@ -4604,10 +4604,6 @@ bool Interval::intersects_any_children_of(Interval* interval) const {
 
 
 #ifndef PRODUCT
-void Interval::print_on(outputStream* out) const {
-  print_on(out, false);
-}
-
 void Interval::print_on(outputStream* out, bool is_cfg_printer) const {
   const char* SpillState2Name[] = { "no definition", "no spill store", "one spill store", "store at definition", "start in memory", "no optimization" };
   const char* UseKind2Name[] = { "N", "L", "S", "M" };
