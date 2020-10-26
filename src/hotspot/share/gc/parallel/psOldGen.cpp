@@ -41,8 +41,7 @@
 PSOldGen::PSOldGen(ReservedSpace rs, size_t initial_size, size_t min_size,
                    size_t max_size, const char* perf_data_name, int level):
   _min_gen_size(min_size),
-  _max_gen_size(max_size),
-  _iterate_block_size(1024 * 1024) // 1M (HeapWord)
+  _max_gen_size(max_size)
 {
   initialize(rs, initial_size, GenAlignment, perf_data_name, level);
 }
@@ -174,7 +173,7 @@ HeapWord* PSOldGen::allocate(size_t word_size) {
 
 /*
  * Divide space into blocks, processes block begins at
- * bottom + block_index  * _iterate_block_size.
+ * bottom + block_index  * (_iterate_block_size / HeapWordSize).
  * NOTE:
  * - The initial block start address may not be a valid
  * object address, _start_array is used to correct it.
@@ -190,19 +189,20 @@ void PSOldGen::block_iterate(ObjectClosure* cl, uint block_index) {
   MutableSpace *space = object_space();
   HeapWord* bottom = space->bottom();
   HeapWord* top = space->top();
-  HeapWord* begin = bottom + block_index * _iterate_block_size;
+  size_t block_word_size = _iterate_block_size / HeapWordSize;
+  HeapWord* begin = bottom + block_index * block_word_size;
 
-  assert((_iterate_block_size % (ObjectStartArray::block_size)) == 0,
+  assert((block_word_size % (ObjectStartArray::block_size)) == 0,
          "BLOCK SIZE not a multiple of start_array block");
 
   // iterate objects in block.
-  HeapWord* end = MIN2(top, begin + _iterate_block_size);
-  // There can be no object between begin and end.
+  HeapWord* end = MIN2(top, begin + block_word_size);
+  // Only iterate if there are objects between begin and end.
   if (start_array()->object_starts_in_range(begin, end)) {
-    // There are objects in the range. Find the object of begin address.
-    // Note that object_start() can return the last object in previous block,
-    // and the object is processed by other worker. Here only focus objects that
-    // fall into the current block.
+    // Process objects in the range, start from finding object at the begining
+    // address. Note that object_start() can return the last object in previous
+    // block, and that object is processed by other worker scanning that block.
+    // So here only focus on objects that fall into the current block.
     HeapWord* start = start_array()->object_start(begin);
     if (start < begin) {
       start += oop(start)->size();

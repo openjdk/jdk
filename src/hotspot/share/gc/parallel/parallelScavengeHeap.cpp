@@ -540,55 +540,29 @@ void ParallelScavengeHeap::object_iterate(ObjectClosure* cl) {
 }
 
 void ParallelScavengeHeap::object_iterate_parallel(ObjectClosure* cl,
-                                                   uint worker_id,
                                                    HeapBlockClaimer* claimer) {
-  uint block_index;
+  int block_index;
   // Iterate until all blocks are claimed
   while (claimer->claim_and_get_block(&block_index)) {
-    if (block_index == HeapBlockClaimer::eden_index) {
+    if (block_index == HeapBlockClaimer::EdenIndex) {
       young_gen()->eden_space()->object_iterate(cl);
-    } else if (block_index == HeapBlockClaimer::survivor_index) {
+    } else if (block_index == HeapBlockClaimer::SurvivorIndex) {
       young_gen()->from_space()->object_iterate(cl);
       young_gen()->to_space()->object_iterate(cl);
     } else {
-      uint index = block_index - HeapBlockClaimer::num_inseparable_spaces;
-      old_gen()->block_iterate(cl, index);
+      old_gen()->block_iterate(cl, block_index);
     }
   }
 }
 
-HeapBlockClaimer::HeapBlockClaimer(uint n_workers) :
-    _n_workers(n_workers), _n_blocks(0), _claims(NULL) {
-  assert(n_workers > 0, "Need at least one worker.");
-  size_t old_gen_used = ParallelScavengeHeap::heap()->old_gen()->used_in_bytes();
-  size_t block_size = ParallelScavengeHeap::heap()->old_gen()->iterate_block_size();
-  uint n_blocks_in_old = old_gen_used / block_size + 1;
-  _n_blocks = n_blocks_in_old + num_inseparable_spaces;
-  _unclaimed_index = 0;
-  uint* new_claims = NEW_C_HEAP_ARRAY(uint, _n_blocks, mtGC);
-  memset(new_claims, Unclaimed, sizeof(*_claims) * _n_blocks);
-  _claims = new_claims;
-}
-
-HeapBlockClaimer::~HeapBlockClaimer() {
-   FREE_C_HEAP_ARRAY(uint, _claims);
-}
-
-bool HeapBlockClaimer::claim_and_get_block(uint* block_index) {
+bool HeapBlockClaimer::claim_and_get_block(int* block_index) {
   assert(block_index != NULL, "Invalid index pointer");
-  uint next_index = Atomic::load(&_unclaimed_index);
-  while (true) {
-    if (next_index >= _n_blocks) {
-      return false;
-    }
-    uint old_val = Atomic::cmpxchg(&_claims[next_index], Unclaimed, Claimed);
-    if (old_val == Unclaimed) {
-      *block_index = next_index;
-      Atomic::inc(&_unclaimed_index);
-      return true;
-    }
-    next_index = Atomic::load(&_unclaimed_index);
+  *block_index = Atomic::fetch_and_add(&_claimed_index, 1);
+  int itrable_blocks = ParallelScavengeHeap::heap()->old_gen()->iterable_blocks();
+  if (*block_index >= itrable_blocks) {
+    return false;
   }
+  return true;
 }
 
 class PSScavengeParallelObjectIterator : public ParallelObjectIterator {
@@ -601,10 +575,10 @@ public:
   PSScavengeParallelObjectIterator(uint thread_num) :
       _thread_num(thread_num),
       _heap(ParallelScavengeHeap::heap()),
-      _claimer(thread_num == 0 ? ParallelScavengeHeap::heap()->workers().active_workers() : thread_num) {}
+      _claimer() {}
 
   virtual void object_iterate(ObjectClosure* cl, uint worker_id) {
-    _heap->object_iterate_parallel(cl, worker_id, &_claimer);
+    _heap->object_iterate_parallel(cl, &_claimer);
   }
 };
 
