@@ -1774,7 +1774,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
         return null;
     }
 
-    private static Date parseRfc3659TimeValue(String s) {
+    private static synchronized Date parseRfc3659TimeValue(String s) {
         Date d = null;
         for (SimpleDateFormat dateFormat : dateFormats) {
             try {
