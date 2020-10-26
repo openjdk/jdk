@@ -63,16 +63,15 @@ import java.nio.charset.StandardCharsets;
  * {@link StringBuilder} or {@link java.io.PrintStream}.
  * Each byte value is formatted as the prefix, two hexadecimal characters from the
  * uppercase or lowercase digits, and the suffix.
- * A delimiter appears after each formatted value, except the last.
+ * A delimiter follows each formatted value, except the last.
  * For conversions producing uppercase hexadecimal strings use {@link #withUpperCase()}.
  *
  * <p>
  * For formatted hexadecimal string to byte array conversions the
  * {@code parseHex} methods include {@link #parseHex(CharSequence) parseHex(string)} and
  * {@link #parseHex(char[], int, int) parseHex(char[], offset, length)}.
- * Each byte value is parsed as the prefix, two hexadecimal characters from the
- * uppercase or lowercase digits, and the suffix.
- * The delimiter is required after each formatted value, except the last.
+ * Each byte value is parsed as the prefix, two case insensitive hexadecimal characters,
+ * and the suffix. A delimiter follows each formatted value, except the last.
  *
  * @apiNote
  * For example, an individual byte is converted to a string of hexadecimal digits using
@@ -104,7 +103,7 @@ import java.nio.charset.StandardCharsets;
  * }</pre>
  * <p>
  * For a fingerprint of byte values that uses the delimiter colon ({@code ":"})
- * and uppercase letters the {@code HexFormat} is:
+ * and uppercase characters the {@code HexFormat} is:
  * <pre>{@code
  *     HexFormat formatFingerprint = HexFormat.ofDelimiter(":").withUpperCase();
  *     byte[] bytes = {0, 1, 2, 3, 124, 125, 126, 127};
@@ -141,13 +140,13 @@ public final class HexFormat {
             '8', '9', 'A', 'B', 'C', 'D', 'E', 'F',
     };
     private static final byte[] LOWERCASE_DIGITS = {
-            '0' , '1' , '2' , '3' , '4' , '5' , '6' , '7',
-            '8' , '9' , 'a' , 'b' , 'c' , 'd' , 'e' , 'f',
+            '0', '1', '2', '3', '4', '5', '6', '7',
+            '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
     };
 
     /**
-     * Format each byte of an array as a pair of hex digits.
-     * The hex characters are from lowercase alpha digits.
+     * Format each byte of an array as a pair of hexadecimal digits.
+     * The hexadecimal characters are from lowercase alpha digits.
      */
     private static final HexFormat HEX_FORMAT =
             new HexFormat("", "", "", LOWERCASE_DIGITS);
@@ -176,20 +175,20 @@ public final class HexFormat {
 
     /**
      * Returns a hexadecimal formatter with no delimiter and lowercase characters.
-     * The hex characters are lowercase and the delimiter, prefix, and suffix are empty.
+     * The delimiter, prefix, and suffix are empty.
      * The methods {@link #withDelimiter(String) withDelimiter},
      * {@link #withUpperCase() withUpperCase}, {@link #withLowerCase() withLowerCase},
      * {@link #withPrefix(String) withPrefix}, and {@link #withSuffix(String) withSuffix}
      * return copies of formatters with new parameters.
      *
-     * @return a hex formatter
+     * @return a hexadecimal formatter with no delimiter and lowercase characters
      */
     public static HexFormat of() {
         return HEX_FORMAT;
     }
 
     /**
-     * Returns a hexadecimal formatter with a delimiter and lowercase letters.
+     * Returns a hexadecimal formatter with the delimiter and lowercase characters.
      * The prefix and suffix are empty.
      * The methods {@link #withDelimiter(String) withDelimiter},
      * {@link #withUpperCase() withUpperCase}, {@link #withLowerCase() withLowerCase},
@@ -197,7 +196,7 @@ public final class HexFormat {
      * return copies of formatters with new parameters.
      *
      * @param delimiter a delimiter, non-null, may be empty
-     * @return a {@link HexFormat} with the delimiter and lowercase letters
+     * @return a {@link HexFormat} with the delimiter and lowercase characters
      */
     public static HexFormat ofDelimiter(String delimiter) {
         return new HexFormat(delimiter, "", "", LOWERCASE_DIGITS);
@@ -233,7 +232,7 @@ public final class HexFormat {
     }
 
     /**
-     * Returns a copy of this {@code HexFormat} to use uppercase hex characters.
+     * Returns a copy of this {@code HexFormat} to use uppercase hexadecimal characters.
      * The uppercase hexadecimal characters are {@code "0-9", "A-F"}.
      *
      * @return a copy of this {@code HexFormat} with uppercase hexadecimal characters
@@ -243,10 +242,10 @@ public final class HexFormat {
     }
 
     /**
-     * Returns a copy of this {@code HexFormat} to use lowercase hex characters.
+     * Returns a copy of this {@code HexFormat} to use lowercase hexadecimal characters.
      * The lowercase hexadecimal characters are {@code "0-9", "a-f"}.
      *
-     * @return a copy of this {@code HexFormat} with lowercase hex characters
+     * @return a copy of this {@code HexFormat} with lowercase hexadecimal characters
      */
     public HexFormat withLowerCase() {
         return new HexFormat(this.delimiter, this.prefix, this.suffix, LOWERCASE_DIGITS);
@@ -255,7 +254,7 @@ public final class HexFormat {
     /**
      * Returns the delimiter between hexadecimal values in a formatted byte array.
      *
-     * @return return the delimiter, non-null, may be empty {@code ""}
+     * @return the delimiter, non-null, may be empty {@code ""}
      */
     public String delimiter() {
         return delimiter;
@@ -264,7 +263,7 @@ public final class HexFormat {
     /**
      * Returns the prefix used for each hexadecimal value in a formatted byte array.
      *
-     * @return returns the prefix
+     * @return the prefix
      */
     public String prefix() {
         return prefix;
@@ -273,16 +272,17 @@ public final class HexFormat {
     /**
      * Returns the suffix used for each hexadecimal value in a formatted byte array.
      *
-     * @return returns the suffix
+     * @return the suffix
      */
     public String suffix() {
         return suffix;
     }
 
     /**
-     * Returns {@code true} if the hexadecimal digits will be uppercase,
-     *          otherwise {@code false}.
-     * @return returns {@code true} if the hexadecimal digits will be uppercase,
+     * Returns {@code true} if the hexadecimal digits are uppercase,
+     * otherwise {@code false}.
+     *
+     * @return {@code true} if the hexadecimal digits are uppercase,
      *          otherwise {@code false}
      */
     public boolean isUpperCase() {
@@ -293,7 +293,7 @@ public final class HexFormat {
      * Returns a hexadecimal string formatted from a byte array.
      * Each byte value is formatted as the prefix, two hexadecimal characters
      * {@linkplain #isUpperCase selected from} uppercase or lowercase digits, and the suffix.
-     * A delimiter appears after each formatted value, except the last.
+     * A delimiter follows each formatted value, except the last.
      *
      * The behavior is equivalent to
      * {@link #formatHex(byte[], int, int) formatHex(bytes, 0, bytes.length))}.
@@ -309,12 +309,12 @@ public final class HexFormat {
      * Returns a hexadecimal string formatted from a byte array range.
      * Each byte value is formatted as the prefix, two hexadecimal characters
      * {@linkplain #isUpperCase selected from} uppercase or lowercase digits, and the suffix.
-     * A delimiter appears after each formatted value, except the last.
+     * A delimiter follows each formatted value, except the last.
      *
      * @param bytes a non-null array of bytes
      * @param index the starting index
      * @param length the number of bytes to format
-     * @return a string hex formatting each byte of the array range
+     * @return a string hexadecimal formatting each byte of the array range
      * @throws IndexOutOfBoundsException if the array range is out of bounds
      */
     public String formatHex(byte[] bytes, int index, int length) {
@@ -335,12 +335,11 @@ public final class HexFormat {
     }
 
     /**
-     * Appends a hexadecimal string formatted from a byte array to the {@link Appendable}.
+     * Appends formatted bytes from a byte array to the {@link Appendable}.
      * Each byte value is formatted as the prefix, two hexadecimal characters
      * {@linkplain #isUpperCase selected from} uppercase or lowercase digits, and the suffix.
-     * A delimiter appears after each formatted value, except the last.
-     * The behavior is equivalent to
-     * {@link #formatHex(byte[]) out.append(formatHex(bytes))}.
+     * A delimiter follows each formatted value, except the last.
+     * The formatted bytes are appended in zero or more calls to the {@link Appendable} methods.
      *
      * @param <A> The type of Appendable
      * @param out an Appendable, non-null
@@ -353,12 +352,11 @@ public final class HexFormat {
     }
 
     /**
-     * Appends a hexadecimal string formatted from a byte array range to the {@link Appendable}.
+     * Appends formatted bytes from a byte array range to the {@link Appendable}.
      * Each byte value is formatted as the prefix, two hexadecimal characters
      * {@linkplain #isUpperCase selected from} uppercase or lowercase digits, and the suffix.
-     * A delimiter appears after each formatted value, except the last.
-     * The behavior is equivalent to
-     * {@link #formatHex(byte[], int, int)  out.append(formatHex(bytes, index, length))}.
+     * A delimiter follows each formatted value, except the last.
+     * The formatted bytes are appended in zero or more calls to the {@link Appendable} methods.
      *
      * @param <A> The type of Appendable
      * @param out an Appendable, non-null
@@ -422,7 +420,7 @@ public final class HexFormat {
             }
         } else if (delimiter.length() == 1 && delimiter.charAt(0) < 256) {
             // Allocate the byte array and fill in the characters for the first byte
-            // Then insert the delimiter and hex characters for each of the remaining bytes
+            // Then insert the delimiter and hexadecimal characters for each of the remaining bytes
             char sep = delimiter.charAt(0);
             rep = new byte[length * 3 - 1];
             rep[0] = (byte) toHighHexDigit(bytes[index]);
@@ -447,18 +445,17 @@ public final class HexFormat {
     /**
      * Returns a byte array containing hexadecimal values parsed from the string.
      *
-     * Each byte value is parsed as the prefix, two hexadecimal characters from the
-     * uppercase or lowercase digits, and the suffix.
-     * A delimiters, prefixes, and suffixes appears after each formatted value, except the last.
+     * Each byte value is parsed as the prefix, two case insensitive hexadecimal characters,
+     * and the suffix. A delimiter follows each formatted value, except the last.
      * The delimiters, prefixes, and suffixes strings must be present; they may be empty strings.
      * A valid string consists only of the above format.
      *
      * @param string a string containing the byte values with prefix, hexadecimal digits, suffix,
      *            and delimiters
-     * @return a byte array
+     * @return a byte array with the values parsed from the string
      * @throws IllegalArgumentException if the prefix or suffix is not present for each byte value,
      *          the byte values are not hexadecimal characters, or if the delimiter is not present
-     *          after all but the last byte value.
+     *          after all but the last byte value
      */
     public byte[] parseHex(CharSequence string) {
         return parseHex(string, 0, string.length());
@@ -467,20 +464,19 @@ public final class HexFormat {
     /**
      * Returns a byte array containing hexadecimal values parsed from a range of the string.
      *
-     * Each byte value is parsed as the prefix, two hexadecimal characters from the
-     * uppercase or lowercase digits, and the suffix.
-     * A delimiter appears after each formatted value, except the last.
+     * Each byte value is parsed as the prefix, two case insensitive hexadecimal characters,
+     * and the suffix. A delimiter follows each formatted value, except the last.
      * The delimiters, prefixes, and suffixes strings must be present; they may be empty strings.
      * A valid string consists only of the above format.
      *
-     * @param string a string range containing hex digits,
+     * @param string a string range containing hexadecimal digits,
      *           delimiters, prefix, and suffix.
      * @param index of the start of the character range
      * @param length of the character range
-     * @return a byte array
-     * @throws IllegalArgumentException if the string length is not valid or
-     *          the string contains non-hex characters,
-     *          or the delimiter, prefix, or suffix are not found
+     * @return a byte array with the values parsed from the string range
+     * @throws IllegalArgumentException if the prefix or suffix is not present for each byte value,
+     *          the byte values are not hexadecimal characters, or if the delimiter is not present
+     *          after all but the last byte value
      * @throws IndexOutOfBoundsException if the string range is out of bounds
      */
     public byte[] parseHex(CharSequence string, int index, int length) {
@@ -500,7 +496,7 @@ public final class HexFormat {
         int stride = valueChars + delimiter.length();
         if (string.length() < valueChars || (string.length() - valueChars) % stride != 0)
             throw new IllegalArgumentException("extra or missing delimiters " +
-                    "or values consisting of prefix, two hex digits, and suffix");
+                    "or values consisting of prefix, two hexadecimal digits, and suffix");
 
         checkLiteral(string, 0, prefix);
         checkLiteral(string, string.length() - suffix.length(), suffix);
@@ -511,13 +507,13 @@ public final class HexFormat {
         for (i = 0, offset = prefix.length(); i < len - 1; i++, offset += 2 + between.length()) {
             int v = fromHexDigits(string, offset);
             if (v < 0)
-                throw new IllegalArgumentException("input contains non-hex characters");
+                throw new IllegalArgumentException("input contains non-hexadecimal characters");
             bytes[i] = (byte) v;
             checkLiteral(string, offset + 2, between);
         }
         int v = fromHexDigits(string, offset);
         if (v < 0)
-            throw new IllegalArgumentException("input contains non-hex characters");
+            throw new IllegalArgumentException("input contains non-hexadecimal characters");
         bytes[i] = (byte) v;
 
         return bytes;
@@ -527,21 +523,20 @@ public final class HexFormat {
      * Returns a byte array containing hexadecimal values parsed from
      * a range of the character array.
      *
-     * Each byte value is parsed as the prefix, two hexadecimal characters from the
-     * uppercase or lowercase digits, and the suffix.
-     * A delimiter appears after each formatted value, except the last.
+     * Each byte value is parsed as the prefix, two case insensitive hexadecimal characters,
+     * and the suffix. A delimiter follows each formatted value, except the last.
      * The delimiters, prefixes, and suffixes strings must be present; they may be empty strings.
-     * A valid string consists only of the above format.
+     * A valid character array range consists only of the above format.
      *
-     * @param chars a char array range containing an even number of hex digits,
+     * @param chars a character array range containing an even number of hexadecimal digits,
      *          delimiters, prefix, and suffix.
      * @param index the starting index
      * @param length the length to parse
-     * @return a byte array
-     * @throws IllegalArgumentException if the string length is not valid or
-     *          the character array contains non-hex characters,
-     *          or the delimiter, prefix, or suffix are not found
-     * @throws IndexOutOfBoundsException if the char array range is out of bounds
+     * @return a byte array with the values parsed from the character array range
+     * @throws IllegalArgumentException if the prefix or suffix is not present for each byte value,
+     *          the byte values are not hexadecimal characters, or if the delimiter is not present
+     *          after all but the last byte value
+     * @throws IndexOutOfBoundsException if the character array range is out of bounds
      */
     public byte[] parseHex(char[] chars, int index, int length) {
         Objects.requireNonNull(chars, "chars");
@@ -587,41 +582,41 @@ public final class HexFormat {
     }
 
     /**
-     * Returns the hex character for the low 4 bits of the value considering it to be a byte.
+     * Returns the hexadecimal character for the low 4 bits of the value considering it to be a byte.
      * If the parameter {@link #isUpperCase()} is {@code true} the
      * character returned for values {@code 10-15} is uppercase {@code "A-F"},
      * otherwise the character returned is lowercase {@code "a-f"}.
      * The values in the range {@code 0-9} are returned as {@code "0-9"}.
      *
      * @param value a value, only the low 4 bits {@code 0-3} of the value are used
-     * @return the hex character for the low 4 bits {@code 0-3} of the value
+     * @return the hexadecimal character for the low 4 bits {@code 0-3} of the value
      */
     public char toLowHexDigit(int value) {
         return (char)digits[value & 0xf];
     }
 
     /**
-     * Returns the hex character for the high 4 bits of the value considering it to be a byte.
+     * Returns the hexadecimal character for the high 4 bits of the value considering it to be a byte.
      * If the parameter {@link #isUpperCase()} is {@code true} the
      * character returned for values {@code 10-15} is uppercase {@code "A-F"},
      * otherwise the character returned is lowercase {@code "a-f"}.
      * The values in the range {@code 0-9} are returned as {@code "0-9"}.
      *
      * @param value a value, only bits {@code 4-7} of the value are used
-     * @return the hex character for the bits {@code 4-7} of the value are used
+     * @return the hexadecimal character for the bits {@code 4-7} of the value
      */
     public char toHighHexDigit(int value) {
         return (char)digits[(value >> 4) & 0xf];
     }
 
     /**
-     * Returns the two hex characters for the {@code byte} value.
+     * Returns the two hexadecimal characters for the {@code byte} value.
      * Each nibble (4 bits) from most significant to least significant of the value
      * is formatted as if by {@link #toLowHexDigit(int) toLowHexDigit(nibble)}.
      * The delimiter, prefix and suffix are not used.
      *
      * @param value a byte value
-     * @return the two hex characters for the byte value
+     * @return the two hexadecimal characters for the byte value
      */
     public String toHexDigits(byte value) {
         byte[] rep = new byte[2];
@@ -635,11 +630,11 @@ public final class HexFormat {
     }
 
     /**
-     * Appends two hex characters for the byte value to the {@link Appendable}.
+     * Appends two hexadecimal characters for the byte value to the {@link Appendable}.
      * Each nibble (4 bits) from most significant to least significant of the value
      * is formatted as if by {@link #toLowHexDigit(int) toLowHexDigit(nibble)}.
-     * The behavior is equivalent to
-     * {@link #toHexDigits(byte) out.append(toHexDigits((byte)value))}.
+     * The hexadecimal characters are appended in one or more calls to the
+     * {@link Appendable} methods.
      *
      * @param <A> The type of Appendable
      * @param out an Appendable, non-null
@@ -659,26 +654,26 @@ public final class HexFormat {
     }
 
     /**
-     * Returns the four hex characters for the {@code char} value.
+     * Returns the four hexadecimal characters for the {@code char} value.
      * Each nibble (4 bits) from most significant to least significant of the value
      * is formatted as if by {@link #toLowHexDigit(int) toLowHexDigit(nibble)}.
      * The delimiter, prefix and suffix are not used.
      *
      * @param value a {@code char} value
-     * @return the four hex characters for the {@code char} value
+     * @return the four hexadecimal characters for the {@code char} value
      */
     public String toHexDigits(char value) {
         return toHexDigits((short)value);
     }
 
     /**
-     * Returns the four hex characters for the {@code short} value.
+     * Returns the four hexadecimal characters for the {@code short} value.
      * Each nibble (4 bits) from most significant to least significant of the value
      * is formatted as if by {@link #toLowHexDigit(int) toLowHexDigit(nibble)}.
      * The delimiter, prefix and suffix are not used.
      *
      * @param value a {@code short} value
-     * @return the four hex characters for the {@code short} value
+     * @return the four hexadecimal characters for the {@code short} value
      */
     public String toHexDigits(short value) {
         byte[] rep = new byte[4];
@@ -695,13 +690,13 @@ public final class HexFormat {
     }
 
     /**
-     * Returns the eight hex characters for the {@code int} value.
+     * Returns the eight hexadecimal characters for the {@code int} value.
      * Each nibble (4 bits) from most significant to least significant of the value
      * is formatted as if by {@link #toLowHexDigit(int) toLowHexDigit(nibble)}.
      * The delimiter, prefix and suffix are not used.
      *
      * @param value an {@code int} value
-     * @return the eight hex characters for the {@code int} value
+     * @return the eight hexadecimal characters for the {@code int} value
      */
     public String toHexDigits(int value) {
         byte[] rep = new byte[8];
@@ -722,13 +717,14 @@ public final class HexFormat {
     }
 
     /**
-     * Returns the sixteen hex characters for the {@code long} value.
+     * Returns the sixteen hexadecimal characters for the {@code long} value
+     * considering it to be unsigned.
      * Each nibble (4 bits) from most significant to least significant of the value
      * is formatted as if by {@link #toLowHexDigit(int) toLowHexDigit(nibble)}.
      * The delimiter, prefix and suffix are not used.
      *
      * @param value a {@code long} value
-     * @return the sixteen hex characters for the {@code long} value
+     * @return the sixteen hexadecimal characters for the {@code long} value
      */
     public String toHexDigits(long value) {
         byte[] rep = new byte[16];
@@ -757,14 +753,14 @@ public final class HexFormat {
     }
 
     /**
-     * Returns up to sixteen hex characters for the {@code long} value.
+     * Returns up to sixteen hexadecimal characters for the {@code long} value.
      * Each nibble (4 bits) from most significant to least significant of the value
      * is formatted as if by {@link #toLowHexDigit(int) toLowHexDigit(nibble)}.
      * The delimiter, prefix and suffix are not used.
      *
-     * @param value an {@code long} value
+     * @param value a {@code long} value
      * @param digits the number of hexadecimal digits to return, 0 to 16
-     * @return the hex characters for the {@code long} value
+     * @return the hexadecimal characters for the {@code long} value
      * @throws  IllegalArgumentException if {@code digits} is negative or greater than 16
      */
     public String toHexDigits(long value, int digits) {
@@ -791,7 +787,7 @@ public final class HexFormat {
      * @param string a string containing an even number of only hex digits
      * @return a byte array
      * @throws IllegalArgumentException if the string length is not valid or
-     *          the string contains non-hex characters
+     *          the string contains non-hexadecimal characters
      */
     private byte[] parseNoDelimiter(CharSequence string) {
         if ((string.length() & 1) != 0)
@@ -807,7 +803,7 @@ public final class HexFormat {
         }
         // check if any character was an illegal character
         if (illegal < 0)
-            throw new IllegalArgumentException("input contains non-hex characters");
+            throw new IllegalArgumentException("input contains non-hexadecimal characters");
 
         return bytes;
     }
@@ -824,7 +820,7 @@ public final class HexFormat {
     }
 
     /**
-     * Returns {@code true} if the character is a valid hex character or codepoint.
+     * Returns {@code true} if the character is a valid hexadecimal character or codepoint.
      * A character is a valid hexadecimal character if
      * {@link Character#digit(int, int) Character.digit(int, 16)} returns
      * a positive value.
@@ -854,8 +850,8 @@ public final class HexFormat {
     }
 
     /**
-     * Returns a value parsed from two hex characters in a string.
-     * The characters in the range from {@code index} to {@code index + 1} ,
+     * Returns a value parsed from two hexadecimal characters in a string.
+     * The characters in the range from {@code index} to {@code index + 1},
      * inclusive, must be valid hex digits according to {@link #fromHexDigit(int)}.
      * The delimiter, prefix and suffix are not used.
      *
@@ -864,7 +860,7 @@ public final class HexFormat {
      * @return the value parsed from the string range
      * @throws  NumberFormatException if any of the characters in the range
      *          is not a hexadecimal character
-     * @throws  IndexOutOfBoundsException if the sub-range is out of bounds
+     * @throws  IndexOutOfBoundsException if the range is out of bounds
      *          for the {@code CharSequence}
      */
     private int fromHexDigits(CharSequence string, int index) {
@@ -880,7 +876,7 @@ public final class HexFormat {
      * using {@link #fromHexDigit(int)}.
      * The delimiter, prefix and suffix are not used.
      *
-     * @param string a CharSequence containing up to eight hex characters
+     * @param string a CharSequence containing up to eight hexadecimal characters
      * @return the value parsed from the string
      * @throws  IllegalArgumentException if the string length is greater than eight (8) or
      *      if any of the characters is not a hexadecimal character
@@ -907,7 +903,7 @@ public final class HexFormat {
      * @param index the index of the first character of the range
      * @param length the number of hexadecimal digits to parse
      * @return the value parsed from the string range
-     * @throws  IndexOutOfBoundsException if the sub-range is out of bounds
+     * @throws  IndexOutOfBoundsException if the range is out of bounds
      *          for the {@code CharSequence}
      * @throws  IllegalArgumentException if length is greater than eight (8) or if
      *          any of the characters is not a hexadecimal character
@@ -929,7 +925,7 @@ public final class HexFormat {
      * using {@link #fromHexDigit(int)}.
      * The delimiter, prefix and suffix are not used.
      *
-     * @param string a CharSequence containing up to sixteen hex characters
+     * @param string a CharSequence containing up to sixteen hexadecimal characters
      * @return the value parsed from the string
      * @throws  IllegalArgumentException if the string length is greater than sixteen (16) or
      *         if any of the characters is not a hexadecimal character
@@ -956,7 +952,7 @@ public final class HexFormat {
      * @param index the index of the first character of the range
      * @param length the number of hexadecimal digits to parse
      * @return the value parsed from the string range
-     * @throws  IndexOutOfBoundsException if the sub-range is out of bounds
+     * @throws  IndexOutOfBoundsException if the range is out of bounds
      *          for the {@code CharSequence}
      * @throws  IllegalArgumentException if {@code length} is greater than sixteen (16) or
      *          if any of the characters is not a hexadecimal character
@@ -1010,7 +1006,7 @@ public final class HexFormat {
      * Returns a description of the formatter parameters for uppercase,
      * delimiter, prefix, and suffix.
      *
-     * @return return a description of this {@code HexFormat}
+     * @return a description of this {@code HexFormat}
      */
     @Override
     public String toString() {
