@@ -39,6 +39,7 @@ jobs:
         if: steps.check_submit.outputs.should_run != 'false'
 
       - name: Determine unique bundle identifier
+        id: check_bundle_id
         run: echo "::set-output name=bundle_id::${GITHUB_ACTOR}_${GITHUB_SHA:0:8}"
         if: steps.check_submit.outputs.should_run != 'false'
 
@@ -1003,6 +1004,7 @@ jobs:
     if: always()
     continue-on-error: true
     needs:
+      - prerequisites
       - linux_x64_test
       - windows_x64_test
       - macos_x64_test
