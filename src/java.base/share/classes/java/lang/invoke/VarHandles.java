@@ -681,8 +681,8 @@ final class VarHandles {
 //                @LambdaForm.Compiled
 //                @Hidden
 //                final static <METHOD> throws Throwable {
-//                    if (handle.isExact() && handle.accessModeType(ad.mode) != ad.symbolicMethodTypeExact) {
-//                        throw new WrongMethodTypeException("expected " + handle.accessModeType(ad.mode) + " but found "
+//                    if (handle.isExact() && handle.accessModeType(ad.type) != ad.symbolicMethodTypeExact) {
+//                        throw new WrongMethodTypeException("expected " + handle.accessModeType(ad.type) + " but found "
 //                                + ad.symbolicMethodTypeExact);
 //                    }
 //                    if (handle.isDirect() && handle.vform.methodType_table[ad.type] == ad.symbolicMethodTypeErased) {
@@ -699,8 +699,8 @@ final class VarHandles {
 //                @LambdaForm.Compiled
 //                @Hidden
 //                final static <METHOD> throws Throwable {
-//                    if (handle.isExact() && handle.accessModeType(ad.mode) != ad.symbolicMethodTypeExact) {
-//                        throw new WrongMethodTypeException("expected " + handle.accessModeType(ad.mode) + " but found "
+//                    if (handle.isExact() && handle.accessModeType(ad.type) != ad.symbolicMethodTypeExact) {
+//                        throw new WrongMethodTypeException("expected " + handle.accessModeType(ad.type) + " but found "
 //                                + ad.symbolicMethodTypeExact);
 //                    }
 //                    if (handle.isDirect() && handle.vform.methodType_table[ad.type] == ad.symbolicMethodTypeErased) {
