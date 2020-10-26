@@ -47,12 +47,11 @@ import java.util.Spliterator;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.random.RandomGenerator;
-import java.util.random.RandomGenerator.RandomGeneratorProperty;
-import java.util.random.RandomSupport;
-import java.util.random.RandomSupport.AbstractSpliteratorGenerator;
-import java.util.random.RandomSupport.RandomIntsSpliterator;
-import java.util.random.RandomSupport.RandomLongsSpliterator;
-import java.util.random.RandomSupport.RandomDoublesSpliterator;
+import java.util.random.internal.RandomSupport;
+import java.util.random.internal.RandomSupport.AbstractSpliteratorGenerator;
+import java.util.random.internal.RandomSupport.RandomIntsSpliterator;
+import java.util.random.internal.RandomSupport.RandomLongsSpliterator;
+import java.util.random.internal.RandomSupport.RandomDoublesSpliterator;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
 

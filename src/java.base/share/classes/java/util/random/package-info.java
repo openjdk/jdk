@@ -481,7 +481,3 @@
  */
 package java.util.random;
 
-import java.util.random.RandomGenerator;
-import java.util.random.RandomGenerator.*;
-import java.util.random.RandomSupport.*;
-import java.util.stream.Stream;
