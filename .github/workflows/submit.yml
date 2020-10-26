@@ -775,7 +775,7 @@ jobs:
         if: always()
         working-directory: build/run-test-prebuilt/test-support/
         run: >
-          $env:Path = "$HOME\cygwin\cygwin64\bin;$HOME\cygwin\cygwin64\bin;$env:Path" ;
+          $env:Path = "$HOME\cygwin\cygwin64\bin;$env:Path" ;
           zip -r9
           "$HOME/windows-x64${{ matrix.artifact }}_testsupport_${{ env.logsuffix }}.zip"
           .
