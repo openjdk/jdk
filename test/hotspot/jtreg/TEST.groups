@@ -77,7 +77,8 @@ hotspot_containers = \
 
 tier1_common = \
   sanity/BasicVMTest.java \
-  gtest/GTestWrapper.java
+  gtest/GTestWrapper.java \
+  gtest/MetaspaceGtests.java
 
 tier1_compiler = \
   :tier1_compiler_1 \
@@ -355,6 +356,15 @@ hotspot_cds_relocation = \
   runtime/NMT \
   serviceability/sa \
  -runtime/cds/DeterministicDump.java
+
+# needs -nativepath:<output>/images/test/hotspot/jtreg/native/
+hotspot_metaspace = \
+  gtest/MetaspaceGtests.java \
+  gc/metaspace \
+  gc/class_unloading \
+  runtime/Metaspace \
+  vmTestbase/metaspace \
+  runtime/SelectionResolution
 
 # A subset of AppCDS tests to be run in tier1
 tier1_runtime_appcds = \

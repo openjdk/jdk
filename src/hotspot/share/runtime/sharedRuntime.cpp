@@ -2938,36 +2938,6 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
   }
 }
 
-JRT_ENTRY_NO_ASYNC(void, SharedRuntime::block_for_jni_critical(JavaThread* thread))
-  assert(thread == JavaThread::current(), "must be");
-  // The code is about to enter a JNI lazy critical native method and
-  // _needs_gc is true, so if this thread is already in a critical
-  // section then just return, otherwise this thread should block
-  // until needs_gc has been cleared.
-  if (thread->in_critical()) {
-    return;
-  }
-  // Lock and unlock a critical section to give the system a chance to block
-  GCLocker::lock_critical(thread);
-  GCLocker::unlock_critical(thread);
-JRT_END
-
-JRT_LEAF(oopDesc*, SharedRuntime::pin_object(JavaThread* thread, oopDesc* obj))
-  assert(Universe::heap()->supports_object_pinning(), "Why we are here?");
-  assert(obj != NULL, "Should not be null");
-  oop o(obj);
-  o = Universe::heap()->pin_object(thread, o);
-  assert(o != NULL, "Should not be null");
-  return o;
-JRT_END
-
-JRT_LEAF(void, SharedRuntime::unpin_object(JavaThread* thread, oopDesc* obj))
-  assert(Universe::heap()->supports_object_pinning(), "Why we are here?");
-  assert(obj != NULL, "Should not be null");
-  oop o(obj);
-  Universe::heap()->unpin_object(thread, o);
-JRT_END
-
 // -------------------------------------------------------------------------
 // Java-Java calling convention
 // (what you use when Java calls Java)
