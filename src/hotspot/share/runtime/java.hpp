@@ -65,7 +65,7 @@ class JDK_Version {
  private:
 
   static JDK_Version _current;
-  static const char* _short_version;
+  static const char* _java_version;
   static const char* _runtime_name;
   static const char* _runtime_version;
   static const char* _runtime_vendor_version;
@@ -131,11 +131,11 @@ class JDK_Version {
 
   void to_string(char* buffer, size_t buflen) const;
 
-  static const char* short_version() {
-    return _short_version;
+  static const char* java_version() {
+    return _java_version;
   }
-  static void set_short_version(const char* version) {
-    _short_version = version;
+  static void set_java_version(const char* version) {
+    _java_version = version;
   }
 
   static const char* runtime_name() {

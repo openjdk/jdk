@@ -240,7 +240,7 @@ void StatSampler::create_system_property_instrumentation(TRAPS) {
 
   // Non-writeable, constant properties
   add_property_constant(JAVA_PROPERTY, "java.vm.specification.name", "Java Virtual Machine Specification", CHECK);
-  add_property_constant(JAVA_PROPERTY, "java.version", JDK_Version::short_version(), CHECK);
+  add_property_constant(JAVA_PROPERTY, "java.version", JDK_Version::java_version(), CHECK);
   add_property_constant(JAVA_PROPERTY, "java.vm.version", VM_Version::vm_release(), CHECK);
   add_property_constant(JAVA_PROPERTY, "java.vm.name", VM_Version::vm_name(), CHECK);
   add_property_constant(JAVA_PROPERTY, "java.vm.vendor", VM_Version::vm_vendor(), CHECK);

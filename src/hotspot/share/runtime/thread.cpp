@@ -894,7 +894,7 @@ static void create_initial_thread(Handle thread_group, JavaThread* thread,
                                       java_lang_Thread::RUNNABLE);
 }
 
-char java_version[32] = "";
+char java_version[64] = "";
 char java_runtime_name[128] = "";
 char java_runtime_version[128] = "";
 char java_runtime_vendor_version[128] = "";
@@ -3406,7 +3406,7 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   call_initPhase1(CHECK);
 
   // get the Java runtime name, version, and vendor info after java.lang.System is initialized
-  JDK_Version::set_short_version(get_java_version(THREAD));
+  JDK_Version::set_java_version(get_java_version(THREAD));
   JDK_Version::set_runtime_name(get_java_runtime_name(THREAD));
   JDK_Version::set_runtime_version(get_java_runtime_version(THREAD));
   JDK_Version::set_runtime_vendor_version(get_java_runtime_vendor_version(THREAD));
