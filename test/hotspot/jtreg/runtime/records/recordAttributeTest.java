@@ -71,8 +71,13 @@ public class recordAttributeTest {
         // badly formed Record attribute. No exception should be thrown.
         Class newClass = Class.forName("oldRecordAttribute");
 
-        // Test that loading a class causes the Record attribute to get parsed
-        // even if its super class is not java.lang.Record
+        // Test that loading a class containing an ill-formed Record attribute causes a
+        // ClassFormatError exception even though its super class is not java.lang.Record.
         runTest("superNotJLRecord", "Truncated class file");
+
+        // Test that loading a class that contains a properly formed Record attribute
+        // does not cause a ClassFormatError exception even though its super class is not
+        // java.lang.Record.
+        Class superNoJLRClass = Class.forName("superNotJLRecordOK");
     }
 }
