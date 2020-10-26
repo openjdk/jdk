@@ -3990,10 +3990,11 @@ class StubGenerator: public StubCodeGenerator {
     Register shiftCount    = c_rarg3;
     Register numIter       = c_rarg4;
     Register idx           = numIter;
-    Register oldArrCur     = r13;
-    Register oldArrNext    = r14;
+
     Register newArrCur     = rscratch1;
     Register shiftRevCount = rscratch2;
+    Register oldArrCur     = r13;
+    Register oldArrNext    = r14;
 
     FloatRegister oldElem0        = v0;
     FloatRegister oldElem1        = v1;
@@ -4098,6 +4099,7 @@ class StubGenerator: public StubCodeGenerator {
     Register newIdx        = c_rarg2;
     Register shiftCount    = c_rarg3;
     Register numIter       = c_rarg4;
+
     Register shiftRevCount = rscratch1;
     Register oldArrNext    = rscratch2;
 
