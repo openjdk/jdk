@@ -5222,8 +5222,7 @@ assertEquals("xy", h3.invoke("x", "y", 1, "a", "b", "c"));
             return target;
         MethodType newType = oldType.changeReturnType(void.class);
         BoundMethodHandle result = target.rebind();
-        LambdaForm lform = result.form;
-        lform = lform.editor().filterReturnForm(V_TYPE, true);
+        LambdaForm lform = result.editor().filterReturnForm(V_TYPE, true);
         result = result.copyWith(newType, lform);
         return result;
     }
