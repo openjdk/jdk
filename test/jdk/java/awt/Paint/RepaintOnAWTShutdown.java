@@ -48,7 +48,7 @@ import javax.swing.SwingUtilities;
  * @run main/othervm -Dsun.java2d.uiScale=2    RepaintOnAWTShutdown
  * @run main/othervm -Dsun.java2d.uiScale=2.25 RepaintOnAWTShutdown
  * @run main/othervm -Dsun.java2d.uiScale=5    RepaintOnAWTShutdown
- * @run main/othervm -Dsun.java2d.uiScale=10    RepaintOnAWTShutdown
+ * @run main/othervm -Dsun.java2d.uiScale=10   RepaintOnAWTShutdown
  */
 public final class RepaintOnAWTShutdown implements Runnable {
 
