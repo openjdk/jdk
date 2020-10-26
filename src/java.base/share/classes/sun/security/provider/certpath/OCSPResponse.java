@@ -566,7 +566,8 @@ public final class OCSPResponse {
         if (signerCert != null) {
             // Check algorithm constraints specified in security property
             // "jdk.certpath.disabledAlgorithms".
-            AlgorithmChecker.check(signerCert.getPublicKey(), sigAlgId, variant);
+            AlgorithmChecker.check(signerCert.getPublicKey(), sigAlgId, variant,
+                    issuerInfo.getAnchor());
 
             if (!verifySignature(signerCert)) {
                 throw new CertPathValidatorException(
