@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6731685 8249783 8255393
+ * @bug 6731685 8249783
  * @summary CertificateFactory.generateCertificates throws IOException on PKCS7 cert chain
  * @modules java.base/sun.security.util:+open
  * @library /test/lib
