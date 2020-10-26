@@ -351,12 +351,39 @@ jobs:
         if: always()
         run: echo "logsuffix=`echo ${{ matrix.test }} | sed -e 's!/!_!'g -e 's! !_!'g`" >> $GITHUB_ENV
 
-      - name: Persist test logs
+      - name: Package test results
+        if: always()
+        working-directory: build/run-test-prebuilt/test-results/
+        run: >
+          zip -r9
+          "$HOME/linux-x64${{ matrix.artifact }}_testresults_${{ env.logsuffix }}.zip"
+          .
+        continue-on-error: true
+
+      - name: Package test support
+        if: always()
+        working-directory: build/run-test-prebuilt/test-support/
+        run: >
+          zip -r9
+          "$HOME/linux-x64${{ matrix.artifact }}_testsupport_${{ env.logsuffix }}.zip"
+          .
+          -i *.jtr
+          -i hs_err*
+          -i replay*
+        continue-on-error: true
+
+      - name: Persist test results
         if: always()
         uses: actions/upload-artifact@v2
         with:
-          name: linux-x64${{ matrix.artifact }}_testlogs_${{ env.logsuffix }}
-          path: build/*/test-results
+          path: ~/linux-x64${{ matrix.artifact }}_testresults_${{ env.logsuffix }}.zip
+        continue-on-error: true
+
+      - name: Persist test outputs
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          path: ~/linux-x64${{ matrix.artifact }}_testsupport_${{ env.logsuffix }}.zip
         continue-on-error: true
 
   linux_x32_build:
@@ -735,12 +762,41 @@ jobs:
         if: always()
         run: echo ("logsuffix=" + ("${{ matrix.test }}" -replace "/", "_" -replace " ", "_")) | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
 
-      - name: Persist test logs
+      - name: Package test results
+        if: always()
+        working-directory: build/run-test-prebuilt/test-results/
+        run: >
+          $env:Path = "$HOME\cygwin\cygwin64\bin;$env:Path" ;
+          zip -r9
+          "$HOME/windows-x64${{ matrix.artifact }}_testresults_${{ env.logsuffix }}.zip"
+          .
+        continue-on-error: true
+
+      - name: Package test support
+        if: always()
+        working-directory: build/run-test-prebuilt/test-support/
+        run: >
+          $env:Path = "$HOME\cygwin\cygwin64\bin;$env:Path" ;
+          zip -r9
+          "$HOME/windows-x64${{ matrix.artifact }}_testsupport_${{ env.logsuffix }}.zip"
+          .
+          -i *.jtr
+          -i hs_err*
+          -i replay*
+        continue-on-error: true
+
+      - name: Persist test results
         if: always()
         uses: actions/upload-artifact@v2
         with:
-          name: windows-x64${{ matrix.artifact }}_testlogs_${{ env.logsuffix }}
-          path: build/*/test-results
+          path: ~/windows-x64${{ matrix.artifact }}_testresults_${{ env.logsuffix }}.zip
+        continue-on-error: true
+
+      - name: Persist test outputs
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          path: ~/windows-x64${{ matrix.artifact }}_testsupport_${{ env.logsuffix }}.zip
         continue-on-error: true
 
   macos_x64_build:
@@ -990,12 +1046,39 @@ jobs:
         if: always()
         run: echo "logsuffix=`echo ${{ matrix.test }} | sed -e 's!/!_!'g -e 's! !_!'g`" >> $GITHUB_ENV
 
-      - name: Persist test logs
+      - name: Package test results
+        if: always()
+        working-directory: build/run-test-prebuilt/test-results/
+        run: >
+          zip -r9
+          "$HOME/macos-x64${{ matrix.artifact }}_testresults_${{ env.logsuffix }}.zip"
+          .
+        continue-on-error: true
+
+      - name: Package test support
+        if: always()
+        working-directory: build/run-test-prebuilt/test-support/
+        run: >
+          zip -r9
+          "$HOME/macos-x64${{ matrix.artifact }}_testsupport_${{ env.logsuffix }}.zip"
+          .
+          -i *.jtr
+          -i hs_err*
+          -i replay*
+        continue-on-error: true
+
+      - name: Persist test results
         if: always()
         uses: actions/upload-artifact@v2
         with:
-          name: macos-x64${{ matrix.artifact }}_testlogs_${{ env.logsuffix }}
-          path: build/*/test-results
+          path: ~/macos-x64${{ matrix.artifact }}_testresults_${{ env.logsuffix }}.zip
+        continue-on-error: true
+
+      - name: Persist test outputs
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          path: ~/macos-x64${{ matrix.artifact }}_testsupport_${{ env.logsuffix }}.zip
         continue-on-error: true
 
   artifacts:
