@@ -91,7 +91,7 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
 #endif
 }
 
-#define VECTOR_LOOP_SIMD 0 // Experimental vectorization which uses data from loop unrolling.
+static const bool _do_vector_loop_experimental = false; // Experimental vectorization which uses data from loop unrolling.
 
 //------------------------------transform_loop---------------------------
 void SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
@@ -472,8 +472,7 @@ void SuperWord::SLP_extract() {
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
   bool post_loop_allowed = (PostLoopMultiversioning && Matcher::has_predicated_vectors() && cl->is_post_loop());
   if (cl->is_main_loop()) {
-#if VECTOR_LOOP_SIMD
-    if (_do_vector_loop) {
+    if (_do_vector_loop_experimental) {
       if (mark_generations() != -1) {
         hoist_loads_in_graph(); // this only rebuild the graph; all basic structs need rebuild explicitly
 
@@ -498,7 +497,6 @@ void SuperWord::SLP_extract() {
       }
 #endif
     }
-#endif // VECTOR_LOOP_SIMD
 
     compute_vector_element_type();
 
@@ -512,8 +510,7 @@ void SuperWord::SLP_extract() {
 
     extend_packlist();
 
-#if VECTOR_LOOP_SIMD
-    if (_do_vector_loop) {
+    if (_do_vector_loop_experimental) {
       if (_packset.length() == 0) {
 #ifndef PRODUCT
         if (TraceSuperWord) {
@@ -523,7 +520,6 @@ void SuperWord::SLP_extract() {
         pack_parallel();
       }
     }
-#endif // VECTOR_LOOP_SIMD
 
     combine_packs();
 
@@ -3068,12 +3064,11 @@ bool SuperWord::construct_bb() {
   int ii_current = -1;
   unsigned int load_idx = (unsigned int)-1;
   // Build iterations order if needed
-  bool build_ii_order = _ii_order.is_empty();
+  bool build_ii_order = _do_vector_loop_experimental && _ii_order.is_empty();
   // Create real map of block indices for nodes
   for (int j = 0; j < _block.length(); j++) {
     Node* n = _block.at(j);
     set_bb_idx(n, j);
-#if VECTOR_LOOP_SIMD
     if (build_ii_order && n->is_Load()) {
       if (ii_current == -1) {
         ii_current = _clone_map.gen(n->_idx);
@@ -3084,7 +3079,6 @@ bool SuperWord::construct_bb() {
         _ii_order.push(ii_current);
       }
     }
-#endif // VECTOR_LOOP_SIMD
   }//for
 
   // Ensure extra info is allocated.
