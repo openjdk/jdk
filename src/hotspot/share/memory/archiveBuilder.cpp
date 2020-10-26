@@ -902,8 +902,8 @@ void ArchiveBuilder::update_method_trampolines() {
         MethodTrampolineInfo* info = _adapter_to_trampoline->get(ent);
         // m is the "copy" of the original Method, but its adapter() field is still valid because
         // we haven't called make_klasses_shareable() yet.
-        m->set_from_compiled_entry(to_target(info->c2i_entry_trampoline()));
-        m->set_adapter_trampoline(to_target(info->adapter_trampoline()));
+        m->set_from_compiled_entry(info->c2i_entry_trampoline());
+        m->set_adapter_trampoline(info->adapter_trampoline());
       }
     }
   }

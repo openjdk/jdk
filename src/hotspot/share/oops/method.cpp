@@ -1108,10 +1108,8 @@ void Method::unlink_method() {
   _from_interpreted_entry = _i2i_entry;
 
   assert(_from_compiled_entry != NULL, "sanity");
-  if (DumpSharedSpaces) {
-    assert(*((int*)_from_compiled_entry) == 0,
-           "must be NULL during dump time, to be initialized at run time");
-  }
+  assert(*((int*)_from_compiled_entry) == 0,
+         "must be NULL during dump time, to be initialized at run time");
 
   if (is_native()) {
     *native_function_addr() = NULL;
