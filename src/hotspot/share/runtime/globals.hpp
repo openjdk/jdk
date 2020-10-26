@@ -321,11 +321,8 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, InlineUnsafeOps, true, DIAGNOSTIC,                          \
           "Inline memory ops (native methods) from Unsafe")                 \
                                                                             \
-  product(bool, CriticalJNINatives, true,                                   \
-          "Check for critical JNI entry points")                            \
-                                                                            \
-  notproduct(bool, StressCriticalJNINatives, false,                         \
-          "Exercise register saving code in critical natives")              \
+  product(bool, CriticalJNINatives, false,                                  \
+          "(Deprecated) Check for critical JNI entry points")               \
                                                                             \
   product(bool, UseAESIntrinsics, false, DIAGNOSTIC,                        \
           "Use intrinsics for AES versions of crypto")                      \
@@ -346,6 +343,10 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, UseSHA512Intrinsics, false, DIAGNOSTIC,                     \
           "Use intrinsics for SHA-384 and SHA-512 crypto hash functions. "  \
+          "Requires that UseSHA is enabled.")                               \
+                                                                            \
+  product(bool, UseSHA3Intrinsics, false, DIAGNOSTIC,                       \
+          "Use intrinsics for SHA3 crypto hash function. "                  \
           "Requires that UseSHA is enabled.")                               \
                                                                             \
   product(bool, UseCRC32Intrinsics, false, DIAGNOSTIC,                      \
@@ -390,6 +391,29 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   notproduct(bool, WalkStackALot, false,                                    \
           "Trace stack (no print) at every exit from the runtime system")   \
+                                                                            \
+  develop(bool, DeoptimizeObjectsALot, false,                               \
+          "For testing purposes concurrent threads revert optimizations "   \
+          "based on escape analysis at intervals given with "               \
+          "DeoptimizeObjectsALotInterval=n. The thread count is given "     \
+          "with DeoptimizeObjectsALotThreadCountSingle and "                \
+          "DeoptimizeObjectsALotThreadCountAll.")                           \
+                                                                            \
+  develop(uint64_t, DeoptimizeObjectsALotInterval, 5,                       \
+          "Interval for DeoptimizeObjectsALot.")                            \
+          range(0, max_jlong)                                               \
+                                                                            \
+  develop(int, DeoptimizeObjectsALotThreadCountSingle, 1,                   \
+          "The number of threads that revert optimizations based on "       \
+          "escape analysis for a single thread if DeoptimizeObjectsALot "   \
+          "is enabled. The target thread is selected round robin." )        \
+          range(0, max_jint)                                                \
+                                                                            \
+  develop(int, DeoptimizeObjectsALotThreadCountAll, 1,                      \
+          "The number of threads that revert optimizations based on "       \
+          "escape analysis for all threads if DeoptimizeObjectsALot "       \
+          "is enabled." )                                                   \
+          range(0, max_jint)                                                \
                                                                             \
   notproduct(bool, VerifyLastFrame, false,                                  \
           "Verify oops on last frame on entry to VM")                       \
@@ -2182,6 +2206,17 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, UseNewCode3, false, DIAGNOSTIC,                             \
           "Testing Only: Use the new version while testing")                \
+                                                                            \
+  notproduct(bool, UseDebuggerErgo, false,                                  \
+          "Debugging Only: Adjust the VM to be more debugger-friendly. "    \
+          "Turns on the other UseDebuggerErgo* flags")                      \
+                                                                            \
+  notproduct(bool, UseDebuggerErgo1, false,                                 \
+          "Debugging Only: Enable workarounds for debugger induced "        \
+          "os::processor_id() >= os::processor_count() problems")           \
+                                                                            \
+  notproduct(bool, UseDebuggerErgo2, false,                                 \
+          "Debugging Only: Limit the number of spawned JVM threads")        \
                                                                             \
   /* flags for performance data collection */                               \
                                                                             \

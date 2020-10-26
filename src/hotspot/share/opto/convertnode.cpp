@@ -265,49 +265,49 @@ Node *ConvI2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   const TypeLong* this_type = this->type()->is_long();
   Node* this_changed = NULL;
 
-  // If _major_progress, then more loop optimizations follow.  Do NOT
-  // remove this node's type assertion until no more loop ops can happen.
-  // The progress bit is set in the major loop optimizations THEN comes the
-  // call to IterGVN and any chance of hitting this code.  Cf. Opaque1Node.
-  if (can_reshape && !phase->C->major_progress()) {
-    const TypeInt* in_type = phase->type(in(1))->isa_int();
-    if (in_type != NULL && this_type != NULL &&
-        (in_type->_lo != this_type->_lo ||
-         in_type->_hi != this_type->_hi)) {
-          // Although this WORSENS the type, it increases GVN opportunities,
-          // because I2L nodes with the same input will common up, regardless
-          // of slightly differing type assertions.  Such slight differences
-          // arise routinely as a result of loop unrolling, so this is a
-          // post-unrolling graph cleanup.  Choose a type which depends only
-          // on my input.  (Exception:  Keep a range assertion of >=0 or <0.)
-          jlong lo1 = this_type->_lo;
-          jlong hi1 = this_type->_hi;
-          int   w1  = this_type->_widen;
-          if (lo1 != (jint)lo1 ||
-              hi1 != (jint)hi1 ||
-              lo1 > hi1) {
-            // Overflow leads to wraparound, wraparound leads to range saturation.
-            lo1 = min_jint; hi1 = max_jint;
-          } else if (lo1 >= 0) {
-            // Keep a range assertion of >=0.
-            lo1 = 0;        hi1 = max_jint;
-          } else if (hi1 < 0) {
-            // Keep a range assertion of <0.
-            lo1 = min_jint; hi1 = -1;
-          } else {
-            lo1 = min_jint; hi1 = max_jint;
-          }
-          const TypeLong* wtype = TypeLong::make(MAX2((jlong)in_type->_lo, lo1),
-                                                 MIN2((jlong)in_type->_hi, hi1),
-                                                 MAX2((int)in_type->_widen, w1));
-          if (wtype != type()) {
-            set_type(wtype);
-            // Note: this_type still has old type value, for the logic below.
-            this_changed = this;
-          }
+  if (can_reshape) {
+    // Do NOT remove this node's type assertion until no more loop ops can happen.
+    if (phase->C->post_loop_opts_phase()) {
+      const TypeInt* in_type = phase->type(in(1))->isa_int();
+      if (in_type != NULL && this_type != NULL &&
+          (in_type->_lo != this_type->_lo ||
+           in_type->_hi != this_type->_hi)) {
+        // Although this WORSENS the type, it increases GVN opportunities,
+        // because I2L nodes with the same input will common up, regardless
+        // of slightly differing type assertions.  Such slight differences
+        // arise routinely as a result of loop unrolling, so this is a
+        // post-unrolling graph cleanup.  Choose a type which depends only
+        // on my input.  (Exception:  Keep a range assertion of >=0 or <0.)
+        jlong lo1 = this_type->_lo;
+        jlong hi1 = this_type->_hi;
+        int   w1  = this_type->_widen;
+        if (lo1 != (jint)lo1 ||
+            hi1 != (jint)hi1 ||
+            lo1 > hi1) {
+          // Overflow leads to wraparound, wraparound leads to range saturation.
+          lo1 = min_jint; hi1 = max_jint;
+        } else if (lo1 >= 0) {
+          // Keep a range assertion of >=0.
+          lo1 = 0;        hi1 = max_jint;
+        } else if (hi1 < 0) {
+          // Keep a range assertion of <0.
+          lo1 = min_jint; hi1 = -1;
+        } else {
+          lo1 = min_jint; hi1 = max_jint;
         }
+        const TypeLong* wtype = TypeLong::make(MAX2((jlong)in_type->_lo, lo1),
+                                               MIN2((jlong)in_type->_hi, hi1),
+                                               MAX2((int)in_type->_widen, w1));
+        if (wtype != type()) {
+          set_type(wtype);
+          // Note: this_type still has old type value, for the logic below.
+          this_changed = this;
+        }
+      }
+    } else {
+      phase->C->record_for_post_loop_opts_igvn(this);
+    }
   }
-
 #ifdef _LP64
   // Convert ConvI2L(AddI(x, y)) to AddL(ConvI2L(x), ConvI2L(y))
   // but only if x and y have subranges that cannot cause 32-bit overflow,

@@ -531,6 +531,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "PrintPreciseBiasedLockingStatistics", JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "InitialBootClassLoaderMetaspaceSize", JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "UseLargePagesInMetaspace",            JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+  { "CriticalJNINatives",                  JDK_Version::jdk(16), JDK_Version::jdk(17), JDK_Version::jdk(18) },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -3900,6 +3901,22 @@ bool Arguments::handle_deprecated_print_gc_flags() {
   return true;
 }
 
+static void apply_debugger_ergo() {
+  if (UseDebuggerErgo) {
+    // Turn on sub-flags
+    FLAG_SET_ERGO_IF_DEFAULT(UseDebuggerErgo1, true);
+    FLAG_SET_ERGO_IF_DEFAULT(UseDebuggerErgo2, true);
+  }
+
+  if (UseDebuggerErgo2) {
+    // Debugging with limited number of CPUs
+    FLAG_SET_ERGO_IF_DEFAULT(UseNUMA, false);
+    FLAG_SET_ERGO_IF_DEFAULT(ConcGCThreads, 1);
+    FLAG_SET_ERGO_IF_DEFAULT(ParallelGCThreads, 1);
+    FLAG_SET_ERGO_IF_DEFAULT(CICompilerCount, 2);
+  }
+}
+
 // Parse entry point called from JNI_CreateJavaVM
 
 jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
@@ -4095,6 +4112,8 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
     warning("CompilationMode has no effect in non-tiered VMs");
   }
 #endif
+
+  apply_debugger_ergo();
 
   return JNI_OK;
 }

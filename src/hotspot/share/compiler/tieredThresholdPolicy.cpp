@@ -294,7 +294,7 @@ void TieredThresholdPolicy::initialize() {
   // Some inlining tuning
 #ifdef X86
   if (FLAG_IS_DEFAULT(InlineSmallCode)) {
-    FLAG_SET_DEFAULT(InlineSmallCode, 2000);
+    FLAG_SET_DEFAULT(InlineSmallCode, 2500);
   }
 #endif
 

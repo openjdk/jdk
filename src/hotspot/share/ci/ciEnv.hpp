@@ -74,6 +74,7 @@ private:
   bool  _jvmti_can_post_on_exceptions;
   bool  _jvmti_can_pop_frame;
   bool  _jvmti_can_get_owned_monitor_info; // includes can_get_owned_monitor_stack_depth_info
+  bool  _jvmti_can_walk_any_space;
 
   // Cache DTrace flags
   bool  _dtrace_extended_probes;
@@ -349,6 +350,7 @@ public:
   bool  jvmti_can_hotswap_or_post_breakpoint() const { return _jvmti_can_hotswap_or_post_breakpoint; }
   bool  jvmti_can_post_on_exceptions()         const { return _jvmti_can_post_on_exceptions; }
   bool  jvmti_can_get_owned_monitor_info()     const { return _jvmti_can_get_owned_monitor_info; }
+  bool  jvmti_can_walk_any_space()             const { return _jvmti_can_walk_any_space; }
 
   // Cache DTrace flags
   void  cache_dtrace_flags();
