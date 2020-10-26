@@ -999,7 +999,7 @@ void InterpreterMacroAssembler::remove_activation(
   jmp(fast_path);
   bind(slow_path);
   push(state);
-  set_last_Java_frame(noreg, rbp, pc());
+  set_last_Java_frame(noreg, rbp, (address)pc());
   super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), rthread);
   reset_last_Java_frame(rthread, true);
   pop(state);
