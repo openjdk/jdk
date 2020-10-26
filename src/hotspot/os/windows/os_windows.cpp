@@ -3173,7 +3173,7 @@ char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int file_desc
 }
 
 char* os::reserve_memory_aligned(size_t size, size_t alignment) {
-  return map_or_reserve_memory_aligned(size, alignment, -1/*file_desc*/);
+  return map_or_reserve_memory_aligned(size, alignment, -1 /* file_desc */);
 }
 
 char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int fd) {
