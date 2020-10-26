@@ -52,7 +52,7 @@ import java.util.stream.Stream;
  * @since   16
  *
  */
-public class RandomGeneratorFactory<T> {
+public class RandomGeneratorFactory<T extends RandomGenerator> {
     /**
      * Map of provider classes.
      */
@@ -200,7 +200,7 @@ public class RandomGeneratorFactory<T> {
      *
      * @return Stream of matching Providers.
      */
-    static <T> Stream<RandomGeneratorFactory<T>> all(Class<? extends RandomGenerator> category) {
+    static <T extends RandomGenerator> Stream<RandomGeneratorFactory<T>> all(Class<? extends RandomGenerator> category) {
         Map<String, Provider<? extends RandomGenerator>> fm = getFactoryMap();
         return fm.values()
                  .stream()
@@ -238,7 +238,7 @@ public class RandomGeneratorFactory<T> {
      *
      * @throws IllegalArgumentException when either the name or category is null
      */
-    static <T> RandomGeneratorFactory<T> factoryOf(String name, Class<? extends RandomGenerator> category)
+    static <T extends RandomGenerator> RandomGeneratorFactory<T> factoryOf(String name, Class<? extends RandomGenerator> category)
             throws IllegalArgumentException {
         Provider<? extends RandomGenerator> uncheckedProvider = findProvider(name, category);
         return new RandomGeneratorFactory<>(uncheckedProvider);
