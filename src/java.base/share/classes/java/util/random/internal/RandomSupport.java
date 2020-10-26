@@ -39,26 +39,15 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 /**
- * {@preview Associated with random number generators, a preview feature of
- *           the Java core libraries.
- *
- *           This class is associated with <i>random number generators</i>,
- *           a preview feature of the Java core libraries. Programs can only use
- *           this class when preview features are enabled. Preview features
- *           may be removed in a future release, or upgraded to permanent
- *           features of the Java core libraries.}
- *
  * Low-level utility methods helpful for implementing (pseudo)random number
  * generators.
  *
  * <p> This class is mostly for library writers creating specific
- * implementations of the interface {@link RandomGenerator}.
+ * implementations of the interface {@link RandomGenerator}. As an
+ * internal package it is not intended for general use.
  *
  * @since   16
  *
- * @jdk.internal.PreviewFeature(feature= PreviewFeature.Feature.RANDOM_NUMBERS,
- *          essentialAPI=true)
- * @SuppressWarnings("preview")
  */
 public class RandomSupport {
 

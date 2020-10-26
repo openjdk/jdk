@@ -34,15 +34,6 @@ import java.util.random.internal.RandomSupport.AbstractSplittableWithBrineGenera
 
 
 /**
- * {@preview Associated with random number generators, a preview feature of
- *           the Java core libraries.
- *
- *           This class is associated with <i>random number generators</i>,
- *           a preview feature of the Java core libraries. Programs can only use
- *           this class when preview features are enabled. Preview features
- *           may be removed in a future release, or upgraded to permanent
- *           features of the Java core libraries.}
- *
  * A "splittable" pseudorandom number generator (PRNG) whose period
  * is roughly 2<sup>384</sup>.  Class {@link L128X256MixRandom} implements
  * interfaces {@link RandomGenerator} and {@link SplittableGenerator},
@@ -85,9 +76,6 @@ import java.util.random.internal.RandomSupport.AbstractSplittableWithBrineGenera
  *
  * @since   16
  *
- * @jdk.internal.PreviewFeature(feature= PreviewFeature.Feature.RANDOM_NUMBERS,
- *          essentialAPI=true)
- * @SuppressWarnings("preview")
  */
 public final class L128X256MixRandom extends AbstractSplittableWithBrineGenerator {
 
