@@ -3981,7 +3981,7 @@ class StubGenerator: public StubCodeGenerator {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this,  "StubRoutines", "bigIntegerRightShiftWorker");
     address start = __ pc();
-    
+
     Label ShiftSIMDLoop, ShiftTwoLoop, ShiftOneLoop, Exit;
 
     Register newArr        = c_rarg0;
@@ -4091,7 +4091,7 @@ class StubGenerator: public StubCodeGenerator {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this,  "StubRoutines", "bigIntegerLeftShiftWorker");
     address start = __ pc();
-    
+
     Label ShiftSIMDLoop, ShiftTwoLoop, ShiftOneLoop, Exit;
 
     Register newArr        = c_rarg0;
