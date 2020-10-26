@@ -471,7 +471,17 @@ public abstract class VarHandle implements Constable {
 
     VarHandle target() { return null; }
 
-    boolean isExact() {
+    /**
+     * Returns {@code true} if this var handle is <em>exact</em>. An exact var handle
+     * will check whether the type at the call site of one of it's signature-polymorphic
+     * methods, matches the expected type exactly, and throw a
+     * {@link WrongMethodTypeException} in case of a mismatch.
+     *
+     * @see #asExact()
+     *
+     * @return {@code true} if this var handle is exact.
+     */
+    public boolean isExact() {
         return exact;
     }
 
@@ -1552,16 +1562,25 @@ public abstract class VarHandle implements Constable {
     Object getAndBitwiseXorRelease(Object... args);
 
     /**
-     * Returns the a var handle that, upon use, checks whether the invocation type matches
-     * the type of this var handle exactly, and otherwise throws a {@link WrongMethodTypeException}
-     * @return the exact var handle
+     * Returns a var handle that, upon invocation of one of its signature-polymorphic methods,
+     * checks whether the invocation type matches the expected type of the invoked method exactly
+     * without performing <em>any</em> type adaptations. A {@link WrongMethodTypeException} is
+     * thrown in case of a mismatch.
+     *
+     * @see #asGeneric()
+     *
+     * @return an exact version of this var handle
      */
     public abstract VarHandle asExact();
 
     /**
-     * Returns the a var handle that, upon use, checks whether the invocation type matches
-     * the type of this var handle exactly, and otherwise throws a {@link WrongMethodTypeException}
-     * @return the exact var handle
+     * Returns a var handle that, upon invocation of one of its signature-polymorphic methods,
+     * will try to adapt the types of the argument(s) to the expected type of the invocation if
+     * possible, rather than throwing an exception in case of a mismatch.
+     *
+     * @see #asExact()
+     *
+     * @return an exact version of this var handle
      */
     public abstract VarHandle asGeneric();
 
