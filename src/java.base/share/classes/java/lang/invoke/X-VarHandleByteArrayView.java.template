@@ -95,8 +95,8 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
         }
 
         @Override
-        final MethodType accessModeTypeUncached(AccessMode accessMode) {
-            return accessMode.at.accessModeType(byte[].class, $type$.class, int.class);
+        final MethodType accessModeTypeUncached(AccessType at) {
+            return at.accessModeType(byte[].class, $type$.class, int.class);
         }
 
         @ForceInline
@@ -587,8 +587,8 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
         }
 
         @Override
-        final MethodType accessModeTypeUncached(AccessMode accessMode) {
-            return accessMode.at.accessModeType(ByteBuffer.class, $type$.class, int.class);
+        final MethodType accessModeTypeUncached(AccessType at) {
+            return at.accessModeType(ByteBuffer.class, $type$.class, int.class);
         }
 
         @ForceInline

@@ -77,8 +77,8 @@ import java.util.function.BiFunction;
     }
 
     @Override
-    MethodType accessModeTypeUncached(AccessMode accessMode) {
-        return accessMode.at.accessModeType(null, value, coordinates);
+    MethodType accessModeTypeUncached(AccessType at) {
+        return at.accessModeType(null, value, coordinates);
     }
 
     @Override

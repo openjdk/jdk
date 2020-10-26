@@ -289,11 +289,10 @@ class MemoryAccessVarHandleGenerator {
     }
 
     void addAccessModeTypeMethod(ClassWriter cw) {
-        MethodType modeMethType = MethodType.methodType(MethodType.class, VarHandle.AccessMode.class);
+        MethodType modeMethType = MethodType.methodType(MethodType.class, VarHandle.AccessType.class);
         MethodVisitor mv = cw.visitMethod(ACC_FINAL, "accessModeTypeUncached", modeMethType.toMethodDescriptorString(), null, null);
         mv.visitCode();
         mv.visitVarInsn(ALOAD, 1);
-        mv.visitFieldInsn(GETFIELD, Type.getInternalName(VarHandle.AccessMode.class), "at", VarHandle.AccessType.class.descriptorString());
         mv.visitLdcInsn(Type.getType(MemoryAddressProxy.class));
         mv.visitTypeInsn(CHECKCAST, Type.getInternalName(Class.class));
         mv.visitFieldInsn(GETSTATIC, implClassName, "carrier", Class.class.descriptorString());

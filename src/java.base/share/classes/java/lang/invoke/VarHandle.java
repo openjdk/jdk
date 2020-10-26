@@ -1845,8 +1845,6 @@ public abstract class VarHandle implements Constable {
         GET_AND_BITWISE_XOR_ACQUIRE("getAndBitwiseXorAcquire", AccessType.GET_AND_UPDATE),
         ;
 
-        @Stable
-        static final AccessMode[] stableValues = values();
         static final Map<String, AccessMode> methodNameToAccessMode;
         static {
             AccessMode[] values = AccessMode.values();
@@ -1968,18 +1966,25 @@ public abstract class VarHandle implements Constable {
      * @return the access mode type for the given access mode
      */
     public final MethodType accessModeType(AccessMode accessMode) {
+        return accessModeType(accessMode.at.ordinal());
+    }
+
+    @ForceInline
+    final MethodType accessModeType(int accessTypeOrdinal) {
         TypesAndInvokers tis = getTypesAndInvokers();
-        MethodType mt = tis.methodType_table[accessMode.at.ordinal()];
+        MethodType mt = tis.methodType_table[accessTypeOrdinal];
         if (mt == null) {
-            mt = tis.methodType_table[accessMode.at.ordinal()] =
-                    accessModeTypeUncached(accessMode);
+            mt = tis.methodType_table[accessTypeOrdinal] =
+                    accessModeTypeUncached(accessTypeOrdinal);
         }
         return mt;
     }
-    final MethodType accessModeType(int accessMode) {
-        return accessModeType(AccessMode.stableValues[accessMode]);
+
+    final MethodType accessModeTypeUncached(int accessTypeOrdinal) {
+        return accessModeTypeUncached(AccessType.values()[accessTypeOrdinal]);
     }
-    abstract MethodType accessModeTypeUncached(AccessMode accessMode);
+
+    abstract MethodType accessModeTypeUncached(AccessType accessMode);
 
     /**
      * Returns {@code true} if the given access mode is supported, otherwise

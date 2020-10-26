@@ -69,8 +69,8 @@ final class VarHandle$Type$s {
         }
 
         @Override
-        final MethodType accessModeTypeUncached(AccessMode accessMode) {
-            return accessMode.at.accessModeType(receiverType, {#if[Object]?fieldType:$type$.class});
+        final MethodType accessModeTypeUncached(AccessType at) {
+            return at.accessModeType(receiverType, {#if[Object]?fieldType:$type$.class});
         }
 
         @Override
@@ -420,8 +420,8 @@ final class VarHandle$Type$s {
         }
 
         @Override
-        final MethodType accessModeTypeUncached(AccessMode accessMode) {
-            return accessMode.at.accessModeType(null, {#if[Object]?fieldType:$type$.class});
+        final MethodType accessModeTypeUncached(AccessType at) {
+            return at.accessModeType(null, {#if[Object]?fieldType:$type$.class});
         }
 
         @ForceInline
@@ -753,8 +753,8 @@ final class VarHandle$Type$s {
         }
 
         @Override
-        final MethodType accessModeTypeUncached(AccessMode accessMode) {
-            return accessMode.at.accessModeType({#if[Object]?arrayType:$type$[].class}, {#if[Object]?arrayType.getComponentType():$type$.class}, int.class);
+        final MethodType accessModeTypeUncached(AccessType at) {
+            return at.accessModeType({#if[Object]?arrayType:$type$[].class}, {#if[Object]?arrayType.getComponentType():$type$.class}, int.class);
         }
 
 #if[Object]
