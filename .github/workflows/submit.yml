@@ -396,6 +396,7 @@ jobs:
       fail-fast: false
       matrix:
         flavor:
+          - build release
           - build debug
         include:
           - flavor: build debug
