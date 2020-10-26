@@ -1107,14 +1107,8 @@ void Method::unlink_method() {
   _i2i_entry = Interpreter::entry_for_cds_method(methodHandle(Thread::current(), this));
   _from_interpreted_entry = _i2i_entry;
 
-  if (DynamicDumpSharedSpaces) {
-    assert(_from_compiled_entry != NULL, "sanity");
-  } else {
-    // TODO: Simplify the adapter trampoline allocation for static archiving.
-    //       Remove the use of CDSAdapterHandlerEntry.
-    CDSAdapterHandlerEntry* cds_adapter = (CDSAdapterHandlerEntry*)adapter();
-    constMethod()->set_adapter_trampoline(cds_adapter->get_adapter_trampoline());
-    _from_compiled_entry = cds_adapter->get_c2i_entry_trampoline();
+  assert(_from_compiled_entry != NULL, "sanity");
+  if (DumpSharedSpaces) {
     assert(*((int*)_from_compiled_entry) == 0,
            "must be NULL during dump time, to be initialized at run time");
   }
