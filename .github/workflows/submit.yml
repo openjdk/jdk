@@ -9,7 +9,7 @@ on:
       platforms:
         description: "Platform(s) to execute on"
         required: true
-        default: "Linux x64, Windows x64, macOS x64"
+        default: "Linux x64, Linux x32, Windows x64, macOS x64"
 
 jobs:
   prerequisites:
