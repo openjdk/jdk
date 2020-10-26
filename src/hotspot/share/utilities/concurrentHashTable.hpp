@@ -192,9 +192,11 @@ class ConcurrentHashTable : public CHeapObj<F> {
   };
 
   // Used as default functor when no functor supplied for some methods.
+  // Note it only accepts the VALUE, and does not define methods with
+  // non-void VALUE returns. Doing so would require defining the neutral
+  // value for VALUE.
   struct NoOp {
     void operator()(VALUE*) {}
-    const VALUE& operator()() {}
     void operator()(bool, VALUE*) {}
   } noOp;
 
