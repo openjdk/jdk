@@ -45,7 +45,7 @@ void JVMFlag::set_origin(JVMFlagOrigin new_origin) {
   int old_flags = _flags;
   int origin = static_cast<int>(new_origin);
   assert((origin & VALUE_ORIGIN_MASK) == origin, "sanity");
-  int was_in_cmdline = (new_origin == COMMAND_LINE) ? WAS_SET_IN_COMMAND_LINE : 0;
+  int was_in_cmdline = (new_origin == JVMFlagOrigin::COMMAND_LINE) ? WAS_SET_IN_COMMAND_LINE : 0;
   _flags = Flags((_flags & ~VALUE_ORIGIN_MASK) | origin | was_in_cmdline);
   if ((old_flags & WAS_SET_IN_COMMAND_LINE) != 0) {
     assert(_flags & WAS_SET_IN_COMMAND_LINE != 0, "once initialized, should never change");
@@ -383,26 +383,26 @@ void JVMFlag::print_kind(outputStream* st, unsigned int width) const {
 void JVMFlag::print_origin(outputStream* st, unsigned int width) const {
   st->print("{");
   switch(get_origin()) {
-    case DEFAULT:
+    case JVMFlagOrigin::DEFAULT:
       st->print("default"); break;
-    case COMMAND_LINE:
+    case JVMFlagOrigin::COMMAND_LINE:
       st->print("command line"); break;
-    case ENVIRON_VAR:
+    case JVMFlagOrigin::ENVIRON_VAR:
       st->print("environment"); break;
-    case CONFIG_FILE:
+    case JVMFlagOrigin::CONFIG_FILE:
       st->print("config file"); break;
-    case MANAGEMENT:
+    case JVMFlagOrigin::MANAGEMENT:
       st->print("management"); break;
-    case ERGONOMIC:
+    case JVMFlagOrigin::ERGONOMIC:
       if (_flags & WAS_SET_IN_COMMAND_LINE) {
         st->print("command line, ");
       }
       st->print("ergonomic"); break;
-    case ATTACH_ON_DEMAND:
+    case JVMFlagOrigin::ATTACH_ON_DEMAND:
       st->print("attach"); break;
-    case INTERNAL:
+    case JVMFlagOrigin::INTERNAL:
       st->print("internal"); break;
-    case JIMAGE_RESOURCE:
+    case JVMFlagOrigin::JIMAGE_RESOURCE:
       st->print("jimage"); break;
   }
   st->print("}");
@@ -499,7 +499,7 @@ static constexpr int flag_group(int flag_enum) {
 constexpr JVMFlag::JVMFlag(int flag_enum, FlagType type, const char* name,
                            void* addr, int flags, int extra_flags, const char* doc) :
   _addr(addr), _name(name), _flags(), _type(type) NOT_PRODUCT(COMMA _doc(doc)) {
-  flags = flags | extra_flags | static_cast<int>(JVMFlag::DEFAULT) | flag_group(flag_enum);
+  flags = flags | extra_flags | static_cast<int>(JVMFlagOrigin::DEFAULT) | flag_group(flag_enum);
   if ((flags & JVMFlag::KIND_PRODUCT) != 0) {
     if (flags & (JVMFlag::KIND_DIAGNOSTIC | JVMFlag::KIND_MANAGEABLE | JVMFlag::KIND_EXPERIMENTAL)) {
       // Backwards compatibility. This will be relaxed in JDK-7123237.
@@ -657,7 +657,7 @@ void JVMFlag::printSetFlags(outputStream* out) {
 
   // Print
   for (size_t i = 0; i < length; i++) {
-    if (array[i]->get_origin() != DEFAULT) {
+    if (array[i]->get_origin() != JVMFlagOrigin::DEFAULT) {
       array[i]->print_as_flag(out);
       out->print(" ");
     }

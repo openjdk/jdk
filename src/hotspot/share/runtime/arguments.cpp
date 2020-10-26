@@ -1403,7 +1403,7 @@ bool Arguments::process_settings_file(const char* file_name, bool should_exist, 
         // this allows a way to include spaces in string-valued options
         token[pos] = '\0';
         logOption(token);
-        result &= process_argument(token, ignore_unrecognized, JVMFlag::CONFIG_FILE);
+        result &= process_argument(token, ignore_unrecognized, JVMFlagOrigin::CONFIG_FILE);
         build_jvm_flags(token);
         pos = 0;
         in_white_space = true;
@@ -1421,7 +1421,7 @@ bool Arguments::process_settings_file(const char* file_name, bool should_exist, 
   }
   if (pos > 0) {
     token[pos] = '\0';
-    result &= process_argument(token, ignore_unrecognized, JVMFlag::CONFIG_FILE);
+    result &= process_argument(token, ignore_unrecognized, JVMFlagOrigin::CONFIG_FILE);
     build_jvm_flags(token);
   }
   fclose(stream);
@@ -2291,27 +2291,27 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs *vm_options_args,
   set_mode_flags(_mixed);
 
   // Parse args structure generated from java.base vm options resource
-  jint result = parse_each_vm_init_arg(vm_options_args, &patch_mod_javabase, JVMFlag::JIMAGE_RESOURCE);
+  jint result = parse_each_vm_init_arg(vm_options_args, &patch_mod_javabase, JVMFlagOrigin::JIMAGE_RESOURCE);
   if (result != JNI_OK) {
     return result;
   }
 
   // Parse args structure generated from JAVA_TOOL_OPTIONS environment
   // variable (if present).
-  result = parse_each_vm_init_arg(java_tool_options_args, &patch_mod_javabase, JVMFlag::ENVIRON_VAR);
+  result = parse_each_vm_init_arg(java_tool_options_args, &patch_mod_javabase, JVMFlagOrigin::ENVIRON_VAR);
   if (result != JNI_OK) {
     return result;
   }
 
   // Parse args structure generated from the command line flags.
-  result = parse_each_vm_init_arg(cmd_line_args, &patch_mod_javabase, JVMFlag::COMMAND_LINE);
+  result = parse_each_vm_init_arg(cmd_line_args, &patch_mod_javabase, JVMFlagOrigin::COMMAND_LINE);
   if (result != JNI_OK) {
     return result;
   }
 
   // Parse args structure generated from the _JAVA_OPTIONS environment
   // variable (if present) (mimics classic VM)
-  result = parse_each_vm_init_arg(java_options_args, &patch_mod_javabase, JVMFlag::ENVIRON_VAR);
+  result = parse_each_vm_init_arg(java_options_args, &patch_mod_javabase, JVMFlagOrigin::ENVIRON_VAR);
   if (result != JNI_OK) {
     return result;
   }

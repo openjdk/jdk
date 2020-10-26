@@ -53,16 +53,6 @@ class JVMFlag {
   friend class VMStructs;
 
 public:
-  static const JVMFlagOrigin DEFAULT          = JVMFlagOrigin::DEFAULT;
-  static const JVMFlagOrigin COMMAND_LINE     = JVMFlagOrigin::COMMAND_LINE;
-  static const JVMFlagOrigin ENVIRON_VAR      = JVMFlagOrigin::ENVIRON_VAR;
-  static const JVMFlagOrigin CONFIG_FILE      = JVMFlagOrigin::CONFIG_FILE;
-  static const JVMFlagOrigin MANAGEMENT       = JVMFlagOrigin::MANAGEMENT;
-  static const JVMFlagOrigin ERGONOMIC        = JVMFlagOrigin::ERGONOMIC;
-  static const JVMFlagOrigin ATTACH_ON_DEMAND = JVMFlagOrigin::ATTACH_ON_DEMAND;
-  static const JVMFlagOrigin INTERNAL         = JVMFlagOrigin::INTERNAL;
-  static const JVMFlagOrigin JIMAGE_RESOURCE  = JVMFlagOrigin::JIMAGE_RESOURCE;
-
   enum Flags : int {
     VALUE_ORIGIN_BITS = 4,
     VALUE_ORIGIN_MASK = right_n_bits(VALUE_ORIGIN_BITS),
@@ -257,17 +247,17 @@ public:
   JVMFlagOrigin get_origin() const {  return JVMFlagOrigin(_flags & VALUE_ORIGIN_MASK);   }
   void set_origin(JVMFlagOrigin origin);
 
-  bool is_default() const         { return (get_origin() == DEFAULT);            }
-  bool is_ergonomic() const       { return (get_origin() == ERGONOMIC);          }
-  bool is_command_line() const    { return (_flags & WAS_SET_IN_COMMAND_LINE) != 0;   }
-  void set_command_line()         { _flags = Flags(_flags | WAS_SET_IN_COMMAND_LINE); }
-  bool is_jimage_resource() const { return (get_origin() == JIMAGE_RESOURCE);    }
-  bool is_product() const         { return (_flags & KIND_PRODUCT) != 0;         }
-  bool is_manageable() const      { return (_flags & KIND_MANAGEABLE) != 0;      }
-  bool is_diagnostic() const      { return (_flags & KIND_DIAGNOSTIC) != 0;      }
-  bool is_experimental() const    { return (_flags & KIND_EXPERIMENTAL) != 0;    }
-  bool is_notproduct() const      { return (_flags & KIND_NOT_PRODUCT) != 0;     }
-  bool is_develop() const         { return (_flags & KIND_DEVELOP) != 0;         }
+  bool is_default() const         { return (get_origin() == JVMFlagOrigin::DEFAULT);          }
+  bool is_ergonomic() const       { return (get_origin() == JVMFlagOrigin::ERGONOMIC);        }
+  bool is_command_line() const    { return (_flags & WAS_SET_IN_COMMAND_LINE) != 0;           }
+  void set_command_line()         { _flags = Flags(_flags | WAS_SET_IN_COMMAND_LINE);         }
+  bool is_jimage_resource() const { return (get_origin() == JVMFlagOrigin::JIMAGE_RESOURCE);  }
+  bool is_product() const         { return (_flags & KIND_PRODUCT) != 0;                      }
+  bool is_manageable() const      { return (_flags & KIND_MANAGEABLE) != 0;                   }
+  bool is_diagnostic() const      { return (_flags & KIND_DIAGNOSTIC) != 0;                   }
+  bool is_experimental() const    { return (_flags & KIND_EXPERIMENTAL) != 0;                 }
+  bool is_notproduct() const      { return (_flags & KIND_NOT_PRODUCT) != 0;                  }
+  bool is_develop() const         { return (_flags & KIND_DEVELOP) != 0;                      }
 
   bool is_constant_in_binary() const;
 

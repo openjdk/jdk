@@ -124,15 +124,15 @@ void JfrThreadGroupConstant::serialize(JfrCheckpointWriter& writer) {
 
 static const char* flag_value_origin_to_string(JVMFlagOrigin origin) {
   switch (origin) {
-    case JVMFlag::DEFAULT: return "Default";
-    case JVMFlag::COMMAND_LINE: return "Command line";
-    case JVMFlag::ENVIRON_VAR: return "Environment variable";
-    case JVMFlag::CONFIG_FILE: return "Config file";
-    case JVMFlag::MANAGEMENT: return "Management";
-    case JVMFlag::ERGONOMIC: return "Ergonomic";
-    case JVMFlag::ATTACH_ON_DEMAND: return "Attach on demand";
-    case JVMFlag::INTERNAL: return "Internal";
-    case JVMFlag::JIMAGE_RESOURCE: return "JImage resource";
+    case JVMFlagOrigin::DEFAULT: return "Default";
+    case JVMFlagOrigin::COMMAND_LINE: return "Command line";
+    case JVMFlagOrigin::ENVIRON_VAR: return "Environment variable";
+    case JVMFlagOrigin::CONFIG_FILE: return "Config file";
+    case JVMFlagOrigin::MANAGEMENT: return "Management";
+    case JVMFlagOrigin::ERGONOMIC: return "Ergonomic";
+    case JVMFlagOrigin::ATTACH_ON_DEMAND: return "Attach on demand";
+    case JVMFlagOrigin::INTERNAL: return "Internal";
+    case JVMFlagOrigin::JIMAGE_RESOURCE: return "JImage resource";
     default: ShouldNotReachHere(); return "";
   }
 }
