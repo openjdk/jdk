@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8027823
+ * @bug 8255398
  * @run testng TestDropReturn
  */
 
