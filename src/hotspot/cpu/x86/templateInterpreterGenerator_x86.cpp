@@ -1761,9 +1761,6 @@ void TemplateInterpreterGenerator::set_vtos_entry_points(Template* t,
                                                          address& vep) {
   assert(t->is_valid() && t->tos_in() == vtos, "illegal template");
   Label L;
-  aep = __ pc();     // atos entry point
-      __ push_ptr();
-      __ jmp(L);
 #ifndef _LP64
   fep = __ pc();     // ftos entry point
       __ push(ftos);
@@ -1782,7 +1779,7 @@ void TemplateInterpreterGenerator::set_vtos_entry_points(Template* t,
   lep = __ pc();     // ltos entry point
       __ push_l();
       __ jmp(L);
-  bep = cep = sep = iep = __ pc();      // [bcsi]tos entry point
+  aep = bep = cep = sep = iep = __ pc();      // [abcsi]tos entry point
       __ push_i();
   vep = __ pc();    // vtos entry point
   __ bind(L);
