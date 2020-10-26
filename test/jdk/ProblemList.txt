@@ -777,14 +777,11 @@ javax/swing/JPopupMenu/4870644/bug4870644.java 8194130 macosx-all,linux-all
 javax/swing/JFileChooser/6868611/bug6868611.java 7059834 windows-all
 javax/swing/SwingWorker/6493680/bug6493680.java 8198410 windows-all
 javax/swing/PopupFactory/6276087/NonOpaquePopupMenuTest.java 8065099,8208565 macosx-all,linux-all
-javax/swing/DataTransfer/8059739/bug8059739.java 8199074 generic-all
 javax/swing/SwingWorker/6432565/bug6432565.java 8199077 generic-all
 javax/swing/SwingWorker/6880336/NestedWorkers.java 8199049 windows-all
 javax/swing/text/DefaultCaret/6938583/bug6938583.java 8199058 generic-all
-javax/swing/text/html/parser/Parser/6990651/bug6990651.java 8199060 generic-all
 javax/swing/text/html/parser/Parser/HtmlCommentTagParseTest/HtmlCommentTagParseTest.java 8199073 generic-all
 javax/swing/text/StyledEditorKit/8016833/bug8016833.java 8199055 generic-all
-javax/swing/text/Utilities/8134721/bug8134721.java 8199062 generic-all
 javax/swing/tree/DefaultTreeCellRenderer/7142955/bug7142955.java 8199076 generic-all
 javax/swing/UIDefaults/6302464/bug6302464.java 8199079 macosx-all
 javax/swing/UIDefaults/8149879/InternalResourceBundle.java 8199054 windows-all
@@ -812,7 +809,6 @@ javax/swing/JMenuItem/ActionListenerCalledTwice/ActionListenerCalledTwiceTest.ja
 javax/swing/JMenuItem/6249972/bug6249972.java 8233640 macosx-all
 javax/swing/JMenuItem/4171437/bug4171437.java 8233641 macosx-all
 javax/swing/JMenu/4692443/bug4692443.java 8171998 macosx-all
-javax/swing/plaf/basic/BasicComboPopup/JComboBoxPopupLocation/JComboBoxPopupLocation.java 8238720 windows-all
 
 sanity/client/SwingSet/src/ToolTipDemoTest.java 8225012 windows-all,macosx-all
 sanity/client/SwingSet/src/ScrollPaneDemoTest.java 8225013 linux-all
