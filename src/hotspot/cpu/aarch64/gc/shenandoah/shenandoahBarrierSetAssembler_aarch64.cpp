@@ -477,7 +477,8 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
   bool is_narrow = UseCompressedOops;
   Assembler::operand_size size = is_narrow ? Assembler::word : Assembler::xword;
 
-  assert_different_registers(addr, expected, new_val, tmp1, tmp2);
+  assert_different_registers(addr, expected, tmp1, tmp2);
+  assert_different_registers(addr, new_val,  tmp1, tmp2);
 
   Label step4, done;
 

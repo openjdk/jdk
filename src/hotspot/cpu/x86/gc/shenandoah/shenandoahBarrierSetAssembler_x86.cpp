@@ -638,7 +638,8 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
                                                 bool exchange, Register tmp1, Register tmp2) {
   assert(ShenandoahCASBarrier, "Should only be used when CAS barrier is enabled");
   assert(oldval == rax, "must be in rax for implicit use in cmpxchg");
-  assert_different_registers(oldval, newval, tmp1, tmp2);
+  assert_different_registers(oldval, tmp1, tmp2);
+  assert_different_registers(newval, tmp1, tmp2);
 
   Label L_success, L_failure;
 
