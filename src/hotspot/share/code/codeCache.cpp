@@ -1559,16 +1559,17 @@ void CodeCache::log_state(outputStream* st) {
             unallocated_capacity());
 }
 
-void CodeCache::write_perf_map(outputStream* st) {
+#ifdef LINUX
+void CodeCache::write_perf_map() {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
+  // Perf expects to find the map file at /tmp/perf-<pid>.map.
   char fname[32];
   jio_snprintf(fname, sizeof(fname), "/tmp/perf-%d.map", os::current_process_id());
 
   fileStream fs(fname, "w");
   if (!fs.is_open()) {
     log_warning(codecache)("Failed to create %s for perf map", fname);
-    st->print_cr("Failed to create %s", fname);
     return;
   }
 
@@ -1583,9 +1584,8 @@ void CodeCache::write_perf_map(outputStream* st) {
                 (intptr_t)cb->code_begin(), (intptr_t)cb->code_size(),
                 method_name);
   }
-
-  st->print_cr("Written to %s", fname);
 }
+#endif // LINUX
 
 //---<  BEGIN  >--- CodeHeap State Analytics.
 

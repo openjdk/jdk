@@ -896,9 +896,11 @@ void CodeCacheDCmd::execute(DCmdSource source, TRAPS) {
   CodeCache::print_layout(output());
 }
 
+#ifdef LINUX
 void PerfMapDCmd::execute(DCmdSource source, TRAPS) {
-  CodeCache::write_perf_map(output());
+  CodeCache::write_perf_map();
 }
+#endif // LINUX
 
 //---<  BEGIN  >--- CodeHeap State Analytics.
 CodeHeapAnalyticsDCmd::CodeHeapAnalyticsDCmd(outputStream* output, bool heap) :

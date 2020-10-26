@@ -44,6 +44,7 @@ import jdk.test.lib.dcmd.JMXExecutor;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -54,22 +55,24 @@ import java.util.regex.Pattern;
  */
 public class PerfMapTest {
 
-    static final Pattern OUTPUT_PATTERN =
-        Pattern.compile("Written to (/tmp/perf-\\p{Digit}*\\.map)");
     static final Pattern LINE_PATTERN =
         Pattern.compile("^((?:0x)?\\p{XDigit}+)\\s+((?:0x)?\\p{XDigit}+)\\s+(.*)$");
 
     public void run(CommandExecutor executor) {
         OutputAnalyzer output = executor.execute("Compiler.perfmap");
-        String line = output.asLines().iterator().next();
-        Matcher m = OUTPUT_PATTERN.matcher(line);
 
-        Assert.assertTrue(m.matches(), "Did not print map file name, line = " + line);
+        output.stderrShouldBeEmpty();
+        output.stdoutShouldBeEmpty();
+
+        final long pid = ProcessHandle.current().pid();
+        final Path path = Paths.get(String.format("/tmp/perf-%d.map", pid));
+
+        Assert.assertTrue(Files.exists(path));
 
         // Sanity check the file contents
         try {
-            for (String entry : Files.readAllLines(Paths.get(m.group(1)))) {
-                m = LINE_PATTERN.matcher(entry);
+            for (String entry : Files.readAllLines(path)) {
+                Matcher m = LINE_PATTERN.matcher(entry);
                 Assert.assertTrue(m.matches(), "Invalid file format: " + entry);
             }
         } catch (IOException e) {

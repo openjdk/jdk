@@ -577,6 +577,7 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
+#ifdef LINUX
 class PerfMapDCmd : public DCmd {
 public:
   PerfMapDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
@@ -597,6 +598,7 @@ public:
   static int num_arguments() { return 0; }
   virtual void execute(DCmdSource source, TRAPS);
 };
+#endif // LINUX
 
 class CodeListDCmd : public DCmd {
 public:
