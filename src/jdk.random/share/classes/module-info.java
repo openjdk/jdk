@@ -23,6 +23,8 @@
  * questions.
  */
 
+import java.util.random.internal.RandomSupport;
+
 /**
  * Defines implementations of the
  * {@linkplain java.util.random.RandomGenerator RandomGenerator Interface}.
@@ -39,14 +41,17 @@
  * @provides jdk.random.Xoshiro256PlusPlus
  *
  * @use java.util.random.RandomGenerator
- * @use java.util.random.RandomSupport
+ * @use java.util.random.internal.RandomSupport
  *
  * @moduleGraph
  * @since 16
  */
 module jdk.random {
     uses java.util.random.RandomGenerator;
-    uses java.util.random.RandomSupport;
+    uses RandomSupport;
+
+    exports jdk.random to
+            java.base;
 
     provides java.util.random.RandomGenerator with
         jdk.random.L32X64MixRandom,

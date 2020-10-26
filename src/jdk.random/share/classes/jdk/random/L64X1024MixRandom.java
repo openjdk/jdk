@@ -29,9 +29,8 @@ import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.Map;
 import java.util.random.RandomGenerator;
-import java.util.random.RandomGenerator.RandomGeneratorProperty;
-import java.util.random.RandomSupport;
-import java.util.random.RandomSupport.AbstractSplittableWithBrineGenerator;
+import java.util.random.internal.RandomSupport;
+import java.util.random.internal.RandomSupport.AbstractSplittableWithBrineGenerator;
 
 /**
  * {@preview Associated with random number generators, a preview feature of

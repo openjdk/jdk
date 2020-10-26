@@ -348,7 +348,7 @@ module java.base {
         java.prefs;
     exports sun.util.resources to
         jdk.localedata;
-
+    exports java.util.random.internal;
 
     // the service types defined by the APIs in this module
 

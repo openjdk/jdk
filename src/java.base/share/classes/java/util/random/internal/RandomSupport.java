@@ -23,12 +23,13 @@
  * questions.
  */
 
-package java.util.random;
+package java.util.random.internal;
 
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
+import java.util.random.RandomGenerator;
 import java.util.random.RandomGenerator.SplittableGenerator;
 import java.util.Spliterator;
 import java.util.stream.DoubleStream;
@@ -1100,7 +1101,7 @@ public class RandomSupport {
         }
     }
 
-    /*
+    /**
      * Implementation support for the {@code nextExponential} method of
      * {@link java.util.random.RandomGenerator}.
      *
@@ -1120,7 +1121,7 @@ public class RandomSupport {
      * @return a nonnegative {@code double} value chosen (pseudo)randomly
      *         from an exponential distribution whose mean is 1
      */
-    static double computeNextExponential(RandomGenerator rng) {
+    public static double computeNextExponential(RandomGenerator rng) {
         /*
          * The tables themselves, as well as a number of associated parameters, are
          * defined in class java.util.DoubleZigguratTables, which is automatically
@@ -1203,7 +1204,7 @@ public class RandomSupport {
         }
     }
 
-    /*
+    /**
      * Implementation support for the {@code nextGaussian} methods of
      * {@link java.util.random.RandomGenerator}.
      *
@@ -1224,7 +1225,7 @@ public class RandomSupport {
      *         from a Gaussian (normal) distribution whose mean is 0 and whose
      *         standard deviation is 1.
      */
-    static double computeNextGaussian(RandomGenerator rng) {
+    public static double computeNextGaussian(RandomGenerator rng) {
         /*
          * The tables themselves, as well as a number of associated parameters, are
          * defined in class java.util.DoubleZigguratTables, which is automatically
@@ -1748,7 +1749,6 @@ public class RandomSupport {
      * class must provide concrete definitions for the methods
      * {@link RandomGenerator#nextInt() nextInt}(),
      * {@link RandomGenerator#nextLong() nextLong}(),
-     * {@link RandomGenerator#period() period}(), {@code copy()},
      * {@link AbstractArbitrarilyJumpableGenerator#jumps(double) jumps}(double),
      * {@link JumpableGenerator#defaultJumpDistance() defaultJumpDistance}(),
      * and
@@ -2254,7 +2254,6 @@ public class RandomSupport {
      * only to extend this class and provide implementations for the methods
      * {@link RandomGenerator#nextInt() nextInt}(),
      * {@link RandomGenerator#nextLong() nextLong}(),
-     * {@link RandomGenerator#period() period}(), and
      * {@link SplittableGenerator#split(SplittableGenerator) split}(splittable).
      *
      * <p> (If the (pseudo)random number generator also has the ability to jump
@@ -2610,7 +2609,6 @@ public class RandomSupport {
      * only to extend this class and provide implementations for the methods
      * {@link RandomGenerator#nextInt() nextInt}(),
      * {@link RandomGenerator#nextLong() nextLong}(),
-     * {@link RandomGenerator#period() period}(), and
      * {@link RandomSplitsSpliteratorWithSalt#split(SplittableGenerator, long) split}(splittable, brine).
      *
      * <p> The programmer should generally provide at least three constructors:
