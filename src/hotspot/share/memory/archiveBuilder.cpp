@@ -893,19 +893,18 @@ size_t ArchiveBuilder::allocate_method_trampoline_info() {
 void ArchiveBuilder::update_method_trampolines() {
   for (int i = 0; i < klasses()->length(); i++) {
     Klass* k = klasses()->at(i);
-    if (!k->is_instance_klass()) {
-      continue;
-    }
-    InstanceKlass* ik = InstanceKlass::cast(k);
-    Array<Method*>* methods = ik->methods();
-    for (int j = 0; j < methods->length(); j++) {
-      Method* m = methods->at(j);
-      AdapterHandlerEntry* ent = m->adapter();
-      MethodTrampolineInfo* info = _adapter_to_trampoline->get(ent);
-      // m is the "copy" of the original Method, but its adapter() field is still valid because
-      // we haven't called make_klasses_shareable() yet.
-      m->set_from_compiled_entry(to_target(info->c2i_entry_trampoline()));
-      m->set_adapter_trampoline(to_target(info->adapter_trampoline()));
+    if (k->is_instance_klass()) {
+      InstanceKlass* ik = InstanceKlass::cast(k);
+      Array<Method*>* methods = ik->methods();
+      for (int j = 0; j < methods->length(); j++) {
+        Method* m = methods->at(j);
+        AdapterHandlerEntry* ent = m->adapter();
+        MethodTrampolineInfo* info = _adapter_to_trampoline->get(ent);
+        // m is the "copy" of the original Method, but its adapter() field is still valid because
+        // we haven't called make_klasses_shareable() yet.
+        m->set_from_compiled_entry(to_target(info->c2i_entry_trampoline()));
+        m->set_adapter_trampoline(to_target(info->adapter_trampoline()));
+      }
     }
   }
 }
