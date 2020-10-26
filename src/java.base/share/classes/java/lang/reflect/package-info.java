@@ -45,6 +45,5 @@
  *
  * @since 1.1
  * @revised 9
- * @spec JPMS
  */
 package java.lang.reflect;

@@ -34,7 +34,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.math.BigInteger;
 import java.security.*;
-import java.security.spec.AlgorithmParameterSpec;
 import java.security.cert.*;
 import java.security.cert.Certificate;
 import java.util.*;
@@ -278,6 +277,9 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
      * Construct an initialized X509 Certificate. The certificate is stored
      * in raw form and has to be signed to be useful.
      *
+     * The ALGORITHM_ID attribute will be rewritten when signed. The initial
+     * value is ignored.
+     *
      * @param certInfo the X509CertificateInfo which the Certificate is to be
      *             created from.
      */
@@ -510,15 +512,14 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
      * @param algorithm the name of the signature algorithm used.
      *
      * @exception InvalidKeyException on incorrect key.
-     * @exception NoSuchAlgorithmException on unsupported signature
-     * algorithms.
+     * @exception NoSuchAlgorithmException on unsupported signature algorithms.
      * @exception NoSuchProviderException if there's no default provider.
      * @exception SignatureException on signature errors.
      * @exception CertificateException on encoding errors.
      */
     public void sign(PrivateKey key, String algorithm)
-    throws CertificateException, NoSuchAlgorithmException,
-        InvalidKeyException, NoSuchProviderException, SignatureException {
+            throws CertificateException, NoSuchAlgorithmException,
+            InvalidKeyException, NoSuchProviderException, SignatureException {
         sign(key, algorithm, null);
     }
 
@@ -530,79 +531,32 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
      *
      * @param key the private key used for signing.
      * @param algorithm the name of the signature algorithm used.
-     * @param provider the name of the provider.
+     * @param provider (optional) the name of the provider.
      *
-     * @exception NoSuchAlgorithmException on unsupported signature
-     * algorithms.
+     * @exception NoSuchAlgorithmException on unsupported signature algorithms.
      * @exception InvalidKeyException on incorrect key.
      * @exception NoSuchProviderException on incorrect provider.
      * @exception SignatureException on signature errors.
      * @exception CertificateException on encoding errors.
      */
     public void sign(PrivateKey key, String algorithm, String provider)
-    throws CertificateException, NoSuchAlgorithmException,
-        InvalidKeyException, NoSuchProviderException, SignatureException {
-        try {
-            sign(key, null, algorithm, provider);
-        } catch (InvalidAlgorithmParameterException e) {
-            // should not happen; re-throw just in case
-            throw new SignatureException(e);
-        }
-    }
-
-    /**
-     * Creates an X.509 certificate, and signs it using the given key
-     * (associating a signature algorithm and an X.500 name), signature
-     * parameters, and security provider. If the given provider name
-     * is null or empty, the implementation look up will be based on
-     * provider configurations.
-     * This operation is used to implement the certificate generation
-     * functionality of a certificate authority.
-     *
-     * @param key the private key used for signing
-     * @param signingParams the parameters used for signing
-     * @param algorithm the name of the signature algorithm used
-     * @param provider the name of the provider, may be null
-     *
-     * @exception NoSuchAlgorithmException on unsupported signature
-     *            algorithms
-     * @exception InvalidKeyException on incorrect key
-     * @exception InvalidAlgorithmParameterException on invalid signature
-     *            parameters
-     * @exception NoSuchProviderException on incorrect provider
-     * @exception SignatureException on signature errors
-     * @exception CertificateException on encoding errors
-     */
-    public void sign(PrivateKey key, AlgorithmParameterSpec signingParams,
-            String algorithm, String provider)
             throws CertificateException, NoSuchAlgorithmException,
-            InvalidKeyException, InvalidAlgorithmParameterException,
-            NoSuchProviderException, SignatureException {
+            InvalidKeyException, NoSuchProviderException, SignatureException {
         try {
             if (readOnly) {
                 throw new CertificateEncodingException(
                         "cannot over-write existing certificate");
             }
-            Signature sigEngine = null;
-            if (provider == null || provider.isEmpty()) {
-                sigEngine = Signature.getInstance(algorithm);
-            } else {
-                sigEngine = Signature.getInstance(algorithm, provider);
-            }
+            Signature sigEngine = SignatureUtil.fromKey(
+                    algorithm, key, provider);
+            algId = SignatureUtil.fromSignature(sigEngine, key);
 
-            SignatureUtil.initSignWithParam(sigEngine, key, signingParams,
-                    null);
-
-            if (signingParams != null) {
-                algId = AlgorithmId.get(sigEngine.getParameters());
-            } else {
-                // in case the name is reset
-                algId = AlgorithmId.get(sigEngine.getAlgorithm());
-            }
             DerOutputStream out = new DerOutputStream();
             DerOutputStream tmp = new DerOutputStream();
 
             // encode certificate info
+            info.set(X509CertInfo.ALGORITHM_ID,
+                    new CertificateAlgorithmId(algId));
             info.encode(tmp);
             byte[] rawCert = tmp.toByteArray();
 
@@ -621,7 +575,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
 
         } catch (IOException e) {
             throw new CertificateEncodingException(e.toString());
-      }
+        }
     }
 
     /**

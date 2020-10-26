@@ -14,14 +14,22 @@ public class ArtifactResolverException extends Exception {
     }
 
     public String toString() {
-        return super.toString() + ": " + getRootCause().toString();
+        Throwable root = getRootCause();
+        if (root != null) {
+            return super.toString() + ": " + root.toString();
+        } else {
+            return super.toString();
+        }
     }
 
     public Throwable getRootCause() {
-        Throwable rootCause = getCause();
-        while (rootCause.getCause() != null && rootCause.getCause() != rootCause) {
-            rootCause = rootCause.getCause();
+        Throwable root = getCause();
+        if (root == null) {
+            return null;
         }
-        return rootCause;
+        while (root.getCause() != null && root.getCause() != root) {
+            root = root.getCause();
+        }
+        return root;
     }
 }
