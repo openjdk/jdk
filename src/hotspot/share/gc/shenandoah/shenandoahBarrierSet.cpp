@@ -115,13 +115,13 @@ bool ShenandoahBarrierSet::need_keep_alive_barrier(DecoratorSet decorators,Basic
   return (on_weak_ref || unknown) && keep_alive;
 }
 
-ShenandoahBarrierSet::ShenandoahLRBKind ShenandoahBarrierSet::access_kind(DecoratorSet decorators, BasicType type) {
+ShenandoahBarrierSet::AccessKind ShenandoahBarrierSet::access_kind(DecoratorSet decorators, BasicType type) {
   if ((decorators & IN_NATIVE) != 0) {
-    return ShenandoahLRBKind::NATIVE;
+    return AccessKind::NATIVE;
   } else if ((decorators & (ON_WEAK_OOP_REF | ON_PHANTOM_OOP_REF)) != 0) {
-    return ShenandoahLRBKind::WEAK;
+    return AccessKind::WEAK;
   } else {
-    return ShenandoahLRBKind::NORMAL;
+    return AccessKind::NORMAL;
   }
 }
 

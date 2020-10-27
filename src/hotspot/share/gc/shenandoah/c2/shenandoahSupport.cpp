@@ -962,7 +962,7 @@ void ShenandoahBarrierC2Support::test_in_cset(Node*& ctrl, Node*& not_cset_ctrl,
 }
 
 void ShenandoahBarrierC2Support::call_lrb_stub(Node*& ctrl, Node*& val, Node* load_addr, Node*& result_mem, Node* raw_mem,
-                                               ShenandoahBarrierSet::ShenandoahLRBKind kind, PhaseIdealLoop* phase) {
+                                               ShenandoahBarrierSet::AccessKind kind, PhaseIdealLoop* phase) {
   IdealLoopTree*loop = phase->get_loop(ctrl);
   const TypePtr* obj_type = phase->igvn().type(val)->is_oopptr();
 
@@ -976,17 +976,17 @@ void ShenandoahBarrierC2Support::call_lrb_stub(Node*& ctrl, Node*& val, Node* lo
   address calladdr;
   const char* name;
   switch (kind) {
-    case ShenandoahBarrierSet::ShenandoahLRBKind::NATIVE:
+    case ShenandoahBarrierSet::AccessKind::NATIVE:
       calladdr = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native);
       name = "load_reference_barrier_native";
       break;
-    case ShenandoahBarrierSet::ShenandoahLRBKind::WEAK:
+    case ShenandoahBarrierSet::AccessKind::WEAK:
       calladdr = LP64_ONLY(UseCompressedOops) NOT_LP64(false) ?
                  CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native_narrow) :
                  CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native);
       name = "load_reference_barrier_weak";
       break;
-    case ShenandoahBarrierSet::ShenandoahLRBKind::NORMAL:
+    case ShenandoahBarrierSet::AccessKind::NORMAL:
       calladdr = LP64_ONLY(UseCompressedOops) NOT_LP64(false) ?
                  CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_narrow) :
                  CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier);
@@ -1359,7 +1359,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     // even for non-cset objects to prevent ressurrection of such objects.
     // Wires !in_cset(obj) to slot 2 of region and phis
     Node* not_cset_ctrl = NULL;
-    if (lrb->kind() == ShenandoahBarrierSet::ShenandoahLRBKind::NORMAL) {
+    if (lrb->kind() == ShenandoahBarrierSet::AccessKind::NORMAL) {
       test_in_cset(ctrl, not_cset_ctrl, val, raw_mem, phase);
     }
     if (not_cset_ctrl != NULL) {
@@ -2900,12 +2900,12 @@ void MemoryGraphFixer::fix_memory_uses(Node* mem, Node* replacement, Node* rep_p
   }
 }
 
-ShenandoahLoadReferenceBarrierNode::ShenandoahLoadReferenceBarrierNode(Node* ctrl, Node* obj, ShenandoahBarrierSet::ShenandoahLRBKind kind)
+ShenandoahLoadReferenceBarrierNode::ShenandoahLoadReferenceBarrierNode(Node* ctrl, Node* obj, ShenandoahBarrierSet::AccessKind kind)
 : Node(ctrl, obj), _kind(kind) {
   ShenandoahBarrierSetC2::bsc2()->state()->add_load_reference_barrier(this);
 }
 
-ShenandoahBarrierSet::ShenandoahLRBKind ShenandoahLoadReferenceBarrierNode::kind() const {
+ShenandoahBarrierSet::AccessKind ShenandoahLoadReferenceBarrierNode::kind() const {
   return _kind;
 }
 
@@ -2916,13 +2916,13 @@ uint ShenandoahLoadReferenceBarrierNode::size_of() const {
 uint ShenandoahLoadReferenceBarrierNode::hash() const {
   uint hash = Node::hash();
   switch (_kind) {
-    case ShenandoahBarrierSet::ShenandoahLRBKind::NORMAL:
+    case ShenandoahBarrierSet::AccessKind::NORMAL:
       hash += 0;
       break;
-    case ShenandoahBarrierSet::ShenandoahLRBKind::WEAK:
+    case ShenandoahBarrierSet::AccessKind::WEAK:
       hash += 1;
       break;
-    case ShenandoahBarrierSet::ShenandoahLRBKind::NATIVE:
+    case ShenandoahBarrierSet::AccessKind::NATIVE:
       hash += 2;
       break;
     default:

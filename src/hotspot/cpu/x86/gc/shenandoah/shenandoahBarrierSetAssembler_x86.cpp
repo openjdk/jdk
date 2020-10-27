@@ -875,13 +875,13 @@ void ShenandoahBarrierSetAssembler::gen_load_reference_barrier_stub(LIR_Assemble
   ce->store_parameter(res, 0);
   ce->store_parameter(addr, 1);
   switch (stub->kind()) {
-    case ShenandoahBarrierSet::ShenandoahLRBKind::NORMAL:
+    case ShenandoahBarrierSet::AccessKind::NORMAL:
       __ call(RuntimeAddress(bs->load_reference_barrier_normal_rt_code_blob()->code_begin()));
       break;
-    case ShenandoahBarrierSet::ShenandoahLRBKind::WEAK:
+    case ShenandoahBarrierSet::AccessKind::WEAK:
       __ call(RuntimeAddress(bs->load_reference_barrier_weakref_rt_code_blob()->code_begin()));
       break;
-    case ShenandoahBarrierSet::ShenandoahLRBKind::NATIVE:
+    case ShenandoahBarrierSet::AccessKind::NATIVE:
       __ call(RuntimeAddress(bs->load_reference_barrier_native_rt_code_blob()->code_begin()));
       break;
     default:
@@ -950,7 +950,7 @@ void ShenandoahBarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAss
   __ epilogue();
 }
 
-void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_stub(StubAssembler* sasm, ShenandoahBarrierSet::ShenandoahLRBKind kind) {
+void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_stub(StubAssembler* sasm, ShenandoahBarrierSet::AccessKind kind) {
   __ prologue("shenandoah_load_reference_barrier", false);
   // arg0 : object to be resolved
 
@@ -960,21 +960,21 @@ void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_s
   __ load_parameter(0, c_rarg0);
   __ load_parameter(1, c_rarg1);
   switch (kind) {
-    case ShenandoahBarrierSet::ShenandoahLRBKind::NORMAL:
+    case ShenandoahBarrierSet::AccessKind::NORMAL:
       if (UseCompressedOops) {
         __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_narrow), c_rarg0, c_rarg1);
       } else {
         __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier), c_rarg0, c_rarg1);
       }
       break;
-    case ShenandoahBarrierSet::ShenandoahLRBKind::WEAK:
+    case ShenandoahBarrierSet::AccessKind::WEAK:
       if (UseCompressedOops) {
         __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native_narrow), c_rarg0, c_rarg1);
       } else {
         __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native), c_rarg0, c_rarg1);
       }
       break;
-    case ShenandoahBarrierSet::ShenandoahLRBKind::NATIVE:
+    case ShenandoahBarrierSet::AccessKind::NATIVE:
       __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native), c_rarg0, c_rarg1);
       break;
     default:
@@ -984,11 +984,11 @@ void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_s
   __ load_parameter(0, rax);
   __ load_parameter(1, rbx);
   switch (kind) {
-    case ShenandoahBarrierSet::ShenandoahLRBKind::NORMAL:
+    case ShenandoahBarrierSet::AccessKind::NORMAL:
       __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier), rax, rbx);
       break;
-    case ShenandoahBarrierSet::ShenandoahLRBKind::WEAK:
-    case ShenandoahBarrierSet::ShenandoahLRBKind::NATIVE:
+    case ShenandoahBarrierSet::AccessKind::WEAK:
+    case ShenandoahBarrierSet::AccessKind::NATIVE:
       __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native), rax, rbx);
       break;
     default:

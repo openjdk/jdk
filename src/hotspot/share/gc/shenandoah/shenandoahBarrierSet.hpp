@@ -34,9 +34,14 @@ class ShenandoahBarrierSetAssembler;
 
 class ShenandoahBarrierSet: public BarrierSet {
 public:
-  enum class ShenandoahLRBKind {
+  enum class AccessKind {
+    // Regular in-heap access on reference fields
     NORMAL,
+
+    // Off-heap reference access
     NATIVE,
+
+    // In-heap reference access on referent fields of j.l.r.Reference objects
     WEAK
   };
 
@@ -61,7 +66,7 @@ public:
   static bool need_load_reference_barrier(DecoratorSet decorators, BasicType type);
   static bool use_load_reference_barrier_native(DecoratorSet decorators, BasicType type);
   static bool need_keep_alive_barrier(DecoratorSet decorators, BasicType type);
-  static ShenandoahLRBKind access_kind(DecoratorSet decorators, BasicType type);
+  static AccessKind access_kind(DecoratorSet decorators, BasicType type);
 
   void print_on(outputStream* st) const;
 
