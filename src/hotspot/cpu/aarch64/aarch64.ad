@@ -614,9 +614,7 @@ alloc_class chunk3(RFLAGS);
 // Several register classes are automatically defined based upon information in
 // this architecture description.
 // 1) reg_class inline_cache_reg           ( /* as def'd in frame section */ )
-// 2) reg_class compiler_method_reg        ( /* as def'd in frame section */ )
-// 2) reg_class interpreter_method_reg     ( /* as def'd in frame section */ )
-// 3) reg_class stack_slots( /* one chunk of stack-based "registers" */ )
+// 2) reg_class stack_slots( /* one chunk of stack-based "registers" */ )
 //
 
 // Class for all 32 bit general purpose registers
@@ -2608,11 +2606,6 @@ const bool Matcher::rematerialize_float_constants = false;
 // C code as the Java calling convention forces doubles to be aligned.
 const bool Matcher::misaligned_doubles_ok = true;
 
-// No-op on amd64
-void Matcher::pd_implicit_null_fixup(MachNode *node, uint idx) {
-  Unimplemented();
-}
-
 // Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
 const bool Matcher::strict_fp_requires_explicit_rounding = false;
 
@@ -3772,12 +3765,19 @@ encode %{
     if (!_method) {
       // A call to a runtime wrapper, e.g. new, new_typeArray_Java, uncommon_trap.
       call = __ trampoline_call(Address(addr, relocInfo::runtime_call_type), &cbuf);
+      if (call == NULL) {
+        ciEnv::current()->record_failure("CodeCache is full");
+        return;
+      }
     } else {
       int method_index = resolved_method_index(cbuf);
       RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
                                                   : static_call_Relocation::spec(method_index);
       call = __ trampoline_call(Address(addr, rspec), &cbuf);
-
+      if (call == NULL) {
+        ciEnv::current()->record_failure("CodeCache is full");
+        return;
+      }
       // Emit stub for static call
       address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
       if (stub == NULL) {
@@ -3785,10 +3785,8 @@ encode %{
         return;
       }
     }
-    if (call == NULL) {
-      ciEnv::current()->record_failure("CodeCache is full");
-      return;
-    } else if (UseSVE > 0 && Compile::current()->max_vector_size() >= 16) {
+
+    if (UseSVE > 0 && Compile::current()->max_vector_size() >= 16) {
       // Only non uncommon_trap calls need to reinitialize ptrue.
       if (uncommon_trap_request() == 0) {
         __ reinitialize_ptrue();
@@ -4089,9 +4087,6 @@ frame %{
 
   // Inline Cache Register or Method for I2C.
   inline_cache_reg(R12);
-
-  // Method Register when calling interpreter.
-  interpreter_method_reg(R12);
 
   // Number of stack slots consumed by locking an object
   sync_stack_slots(2);
@@ -5673,16 +5668,6 @@ operand rFlagsRegU()
 operand inline_cache_RegP(iRegP reg)
 %{
   constraint(ALLOC_IN_RC(method_reg)); // inline_cache_reg
-  match(reg);
-  match(iRegPNoSp);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand interpreter_method_RegP(iRegP reg)
-%{
-  constraint(ALLOC_IN_RC(method_reg)); // interpreter_method_reg
   match(reg);
   match(iRegPNoSp);
   op_cost(0);
@@ -14745,7 +14730,11 @@ instruct clearArray_reg_reg(iRegL_R11 cnt, iRegP_R10 base, Universe dummy, rFlag
   format %{ "ClearArray $cnt, $base" %}
 
   ins_encode %{
-    __ zero_words($base$$Register, $cnt$$Register);
+    address tpc = __ zero_words($base$$Register, $cnt$$Register);
+    if (tpc == NULL) {
+      ciEnv::current()->record_failure("CodeCache is full");
+      return;
+    }
   %}
 
   ins_pipe(pipe_class_memory);
@@ -16023,8 +16012,8 @@ instruct CallStaticJavaDirect(method meth)
 
   format %{ "call,static $meth \t// ==> " %}
 
-  ins_encode( aarch64_enc_java_static_call(meth),
-              aarch64_enc_call_epilog );
+  ins_encode(aarch64_enc_java_static_call(meth),
+             aarch64_enc_call_epilog);
 
   ins_pipe(pipe_class_call);
 %}
@@ -16042,8 +16031,8 @@ instruct CallDynamicJavaDirect(method meth)
 
   format %{ "CALL,dynamic $meth \t// ==> " %}
 
-  ins_encode( aarch64_enc_java_dynamic_call(meth),
-               aarch64_enc_call_epilog );
+  ins_encode(aarch64_enc_java_dynamic_call(meth),
+             aarch64_enc_call_epilog);
 
   ins_pipe(pipe_class_call);
 %}
@@ -16509,10 +16498,14 @@ instruct array_equalsB(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
 
   format %{ "Array Equals $ary1,ary2 -> $result    // KILL $tmp" %}
   ins_encode %{
-    __ arrays_equals($ary1$$Register, $ary2$$Register,
-                     $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
-                     $result$$Register, $tmp$$Register, 1);
-    %}
+    address tpc = __ arrays_equals($ary1$$Register, $ary2$$Register,
+                                   $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
+                                   $result$$Register, $tmp$$Register, 1);
+    if (tpc == NULL) {
+      ciEnv::current()->record_failure("CodeCache is full");
+      return;
+    }
+  %}
   ins_pipe(pipe_class_memory);
 %}
 
@@ -16526,9 +16519,13 @@ instruct array_equalsC(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
 
   format %{ "Array Equals $ary1,ary2 -> $result    // KILL $tmp" %}
   ins_encode %{
-    __ arrays_equals($ary1$$Register, $ary2$$Register,
-                     $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
-                     $result$$Register, $tmp$$Register, 2);
+    address tpc = __ arrays_equals($ary1$$Register, $ary2$$Register,
+                                   $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
+                                   $result$$Register, $tmp$$Register, 2);
+    if (tpc == NULL) {
+      ciEnv::current()->record_failure("CodeCache is full");
+      return;
+    }
   %}
   ins_pipe(pipe_class_memory);
 %}
@@ -16539,7 +16536,11 @@ instruct has_negatives(iRegP_R1 ary1, iRegI_R2 len, iRegI_R0 result, rFlagsReg c
   effect(USE_KILL ary1, USE_KILL len, KILL cr);
   format %{ "has negatives byte[] $ary1,$len -> $result" %}
   ins_encode %{
-    __ has_negatives($ary1$$Register, $len$$Register, $result$$Register);
+    address tpc = __ has_negatives($ary1$$Register, $len$$Register, $result$$Register);
+    if (tpc == NULL) {
+      ciEnv::current()->record_failure("CodeCache is full");
+      return;
+    }
   %}
   ins_pipe( pipe_slow );
 %}
@@ -16572,8 +16573,13 @@ instruct string_inflate(Universe dummy, iRegP_R0 src, iRegP_R1 dst, iRegI_R2 len
 
   format %{ "String Inflate $src,$dst    // KILL $tmp1, $tmp2" %}
   ins_encode %{
-    __ byte_array_inflate($src$$Register, $dst$$Register, $len$$Register,
-                          $tmp1$$FloatRegister, $tmp2$$FloatRegister, $tmp3$$FloatRegister, $tmp4$$Register);
+    address tpc = __ byte_array_inflate($src$$Register, $dst$$Register, $len$$Register,
+                                        $tmp1$$FloatRegister, $tmp2$$FloatRegister,
+                                        $tmp3$$FloatRegister, $tmp4$$Register);
+    if (tpc == NULL) {
+      ciEnv::current()->record_failure("CodeCache is full");
+      return;
+    }
   %}
   ins_pipe(pipe_class_memory);
 %}

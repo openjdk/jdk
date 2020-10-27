@@ -1251,6 +1251,7 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
       is_method_handle_invoke = call_java->is_method_handle_invoke();
       mcall_java->_method_handle_invoke = is_method_handle_invoke;
       mcall_java->_override_symbolic_info = call_java->override_symbolic_info();
+      mcall_java->_arg_escape = call_java->arg_escape();
       if (is_method_handle_invoke) {
         C->set_has_method_handle_invokes(true);
       }
@@ -1275,6 +1276,7 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
     msfpt = mn->as_MachSafePoint();
     cnt = TypeFunc::Parms;
   }
+  msfpt->_has_ea_local_in_scope = sfpt->has_ea_local_in_scope();
 
   // Advertise the correct memory effects (for anti-dependence computation).
   msfpt->set_adr_type(sfpt->adr_type());

@@ -119,9 +119,9 @@ class IntrinsicDescPair {
 };
 int Compile::intrinsic_insertion_index(ciMethod* m, bool is_virtual, bool& found) {
 #ifdef ASSERT
-  for (int i = 1; i < _intrinsics->length(); i++) {
-    CallGenerator* cg1 = _intrinsics->at(i-1);
-    CallGenerator* cg2 = _intrinsics->at(i);
+  for (int i = 1; i < _intrinsics.length(); i++) {
+    CallGenerator* cg1 = _intrinsics.at(i-1);
+    CallGenerator* cg2 = _intrinsics.at(i);
     assert(cg1->method() != cg2->method()
            ? cg1->method()     < cg2->method()
            : cg1->is_virtual() < cg2->is_virtual(),
@@ -129,28 +129,24 @@ int Compile::intrinsic_insertion_index(ciMethod* m, bool is_virtual, bool& found
   }
 #endif
   IntrinsicDescPair pair(m, is_virtual);
-  return _intrinsics->find_sorted<IntrinsicDescPair*, IntrinsicDescPair::compare>(&pair, found);
+  return _intrinsics.find_sorted<IntrinsicDescPair*, IntrinsicDescPair::compare>(&pair, found);
 }
 
 void Compile::register_intrinsic(CallGenerator* cg) {
-  if (_intrinsics == NULL) {
-    _intrinsics = new (comp_arena())GrowableArray<CallGenerator*>(comp_arena(), 60, 0, NULL);
-  }
-  int len = _intrinsics->length();
   bool found = false;
   int index = intrinsic_insertion_index(cg->method(), cg->is_virtual(), found);
   assert(!found, "registering twice");
-  _intrinsics->insert_before(index, cg);
+  _intrinsics.insert_before(index, cg);
   assert(find_intrinsic(cg->method(), cg->is_virtual()) == cg, "registration worked");
 }
 
 CallGenerator* Compile::find_intrinsic(ciMethod* m, bool is_virtual) {
   assert(m->is_loaded(), "don't try this on unloaded methods");
-  if (_intrinsics != NULL) {
+  if (_intrinsics.length() > 0) {
     bool found = false;
     int index = intrinsic_insertion_index(m, is_virtual, found);
      if (found) {
-      return _intrinsics->at(index);
+      return _intrinsics.at(index);
     }
   }
   // Lazily create intrinsics for intrinsic IDs well-known in the runtime.
@@ -168,9 +164,7 @@ CallGenerator* Compile::find_intrinsic(ciMethod* m, bool is_virtual) {
   return NULL;
 }
 
-// Compile:: register_library_intrinsics and make_vm_intrinsic are defined
-// in library_call.cpp.
-
+// Compile::make_vm_intrinsic is defined in library_call.cpp.
 
 #ifndef PRODUCT
 // statistics gathering...
@@ -352,6 +346,15 @@ void Compile::remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines
   inlines->trunc_to(inlines->length()-shift);
 }
 
+void Compile::remove_useless_nodes(GrowableArray<Node*>& node_list, Unique_Node_List& useful) {
+  for (int i = node_list.length() - 1; i >= 0; i--) {
+    Node* n = node_list.at(i);
+    if (!useful.member(n)) {
+      node_list.remove_if_existing(n);
+    }
+  }
+}
+
 // Disconnect all useless nodes by disconnecting those at the boundary.
 void Compile::remove_useless_nodes(Unique_Node_List &useful) {
   uint next = 0;
@@ -366,7 +369,7 @@ void Compile::remove_useless_nodes(Unique_Node_List &useful) {
     int max = n->outcnt();
     for (int j = 0; j < max; ++j) {
       Node* child = n->raw_out(j);
-      if (! useful.member(child)) {
+      if (!useful.member(child)) {
         assert(!child->is_top() || child != top(),
                "If top is cached in Compile object it is in useful list");
         // Only need to remove this out-edge to the useless node
@@ -379,34 +382,11 @@ void Compile::remove_useless_nodes(Unique_Node_List &useful) {
       record_for_igvn(n->unique_out());
     }
   }
-  // Remove useless macro and predicate opaq nodes
-  for (int i = C->macro_count()-1; i >= 0; i--) {
-    Node* n = C->macro_node(i);
-    if (!useful.member(n)) {
-      remove_macro_node(n);
-    }
-  }
-  // Remove useless CastII nodes with range check dependency
-  for (int i = range_check_cast_count() - 1; i >= 0; i--) {
-    Node* cast = range_check_cast_node(i);
-    if (!useful.member(cast)) {
-      remove_range_check_cast(cast);
-    }
-  }
-  // Remove useless expensive nodes
-  for (int i = C->expensive_count()-1; i >= 0; i--) {
-    Node* n = C->expensive_node(i);
-    if (!useful.member(n)) {
-      remove_expensive_node(n);
-    }
-  }
-  // Remove useless Opaque4 nodes
-  for (int i = opaque4_count() - 1; i >= 0; i--) {
-    Node* opaq = opaque4_node(i);
-    if (!useful.member(opaq)) {
-      remove_opaque4_node(opaq);
-    }
-  }
+
+  remove_useless_nodes(_macro_nodes,        useful); // remove useless macro and predicate opaq nodes
+  remove_useless_nodes(_expensive_nodes,    useful); // remove useless expensive nodes
+  remove_useless_nodes(_for_post_loop_igvn, useful); // remove useless node recorded for post loop opts IGVN pass
+
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   bs->eliminate_useless_gc_barriers(useful, this);
   // clean up the late inline lists
@@ -516,6 +496,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _stub_name(NULL),
                   _stub_entry_point(NULL),
                   _max_node_limit(MaxNodeLimit),
+                  _post_loop_opts_phase(false),
                   _inlining_progress(false),
                   _inlining_incrementally(false),
                   _do_cleanup(false),
@@ -533,6 +514,11 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _directive(directive),
                   _log(ci_env->log()),
                   _failure_reason(NULL),
+                  _intrinsics        (comp_arena(), 0, 0, NULL),
+                  _macro_nodes       (comp_arena(), 8, 0, NULL),
+                  _predicate_opaqs   (comp_arena(), 8, 0, NULL),
+                  _expensive_nodes   (comp_arena(), 8, 0, NULL),
+                  _for_post_loop_igvn(comp_arena(), 8, 0, NULL),
                   _congraph(NULL),
                   NOT_PRODUCT(_printer(NULL) COMMA)
                   _dead_node_list(comp_arena()),
@@ -817,6 +803,7 @@ Compile::Compile( ciEnv* ci_env,
     _stub_name(stub_name),
     _stub_entry_point(NULL),
     _max_node_limit(MaxNodeLimit),
+    _post_loop_opts_phase(false),
     _inlining_progress(false),
     _inlining_incrementally(false),
     _has_reserved_stack_access(false),
@@ -1015,13 +1002,6 @@ void Compile::Init(int aliaslevel) {
   // A NULL adr_type hits in the cache right away.  Preload the right answer.
   probe_alias_cache(NULL)->_index = AliasIdxTop;
 
-  _intrinsics = NULL;
-  _macro_nodes = new(comp_arena()) GrowableArray<Node*>(comp_arena(), 8,  0, NULL);
-  _predicate_opaqs = new(comp_arena()) GrowableArray<Node*>(comp_arena(), 8,  0, NULL);
-  _expensive_nodes = new(comp_arena()) GrowableArray<Node*>(comp_arena(), 8,  0, NULL);
-  _range_check_casts = new(comp_arena()) GrowableArray<Node*>(comp_arena(), 8,  0, NULL);
-  _opaque4_nodes = new(comp_arena()) GrowableArray<Node*>(comp_arena(), 8,  0, NULL);
-  register_library_intrinsics();
 #ifdef ASSERT
   _type_verify_symmetry = true;
   _phase_optimize_finished = false;
@@ -1792,46 +1772,30 @@ void Compile::cleanup_loop_predicates(PhaseIterGVN &igvn) {
   assert(predicate_count()==0, "should be clean!");
 }
 
-void Compile::add_range_check_cast(Node* n) {
-  assert(n->isa_CastII()->has_range_check(), "CastII should have range check dependency");
-  assert(!_range_check_casts->contains(n), "duplicate entry in range check casts");
-  _range_check_casts->append(n);
-}
-
-// Remove all range check dependent CastIINodes.
-void Compile::remove_range_check_casts(PhaseIterGVN &igvn) {
-  for (int i = range_check_cast_count(); i > 0; i--) {
-    Node* cast = range_check_cast_node(i-1);
-    assert(cast->isa_CastII()->has_range_check(), "CastII should have range check dependency");
-    igvn.replace_node(cast, cast->in(1));
+void Compile::record_for_post_loop_opts_igvn(Node* n) {
+  if (!n->for_post_loop_opts_igvn()) {
+    assert(!_for_post_loop_igvn.contains(n), "duplicate");
+    n->add_flag(Node::NodeFlags::Flag_for_post_loop_opts_igvn);
+    _for_post_loop_igvn.append(n);
   }
-  assert(range_check_cast_count() == 0, "should be empty");
 }
 
-void Compile::add_opaque4_node(Node* n) {
-  assert(n->Opcode() == Op_Opaque4, "Opaque4 only");
-  assert(!_opaque4_nodes->contains(n), "duplicate entry in Opaque4 list");
-  _opaque4_nodes->append(n);
+void Compile::remove_from_post_loop_opts_igvn(Node* n) {
+  n->remove_flag(Node::NodeFlags::Flag_for_post_loop_opts_igvn);
+  _for_post_loop_igvn.remove(n);
 }
 
-// Remove all Opaque4 nodes.
-void Compile::remove_opaque4_nodes(PhaseIterGVN &igvn) {
-  for (int i = opaque4_count(); i > 0; i--) {
-    Node* opaq = opaque4_node(i-1);
-    assert(opaq->Opcode() == Op_Opaque4, "Opaque4 only");
-    // With Opaque4 nodes, the expectation is that the test of input 1
-    // is always equal to the constant value of input 2. So we can
-    // remove the Opaque4 and replace it by input 2. In debug builds,
-    // leave the non constant test in instead to sanity check that it
-    // never fails (if it does, that subgraph was constructed so, at
-    // runtime, a Halt node is executed).
-#ifdef ASSERT
-    igvn.replace_node(opaq, opaq->in(1));
-#else
-    igvn.replace_node(opaq, opaq->in(2));
-#endif
+void Compile::process_for_post_loop_opts_igvn(PhaseIterGVN& igvn) {
+  if (_for_post_loop_igvn.length() == 0) {
+    return; // no work to do
   }
-  assert(opaque4_count() == 0, "should be empty");
+  while (_for_post_loop_igvn.length() > 0) {
+    Node* n = _for_post_loop_igvn.pop();
+    n->remove_flag(Node::NodeFlags::Flag_for_post_loop_opts_igvn);
+    igvn._worklist.push(n);
+  }
+  igvn.optimize();
+  assert(_for_post_loop_igvn.length() == 0, "no more delayed nodes allowed");
 }
 
 // StringOpts and late inlining of string methods
@@ -1988,9 +1952,9 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
 
 
 bool Compile::optimize_loops(PhaseIterGVN& igvn, LoopOptsMode mode) {
-  if(_loop_opts_cnt > 0) {
+  if (_loop_opts_cnt > 0) {
     debug_only( int cnt = 0; );
-    while(major_progress() && (_loop_opts_cnt > 0)) {
+    while (major_progress() && (_loop_opts_cnt > 0)) {
       TracePhase tp("idealLoop", &timers[_t_idealLoop]);
       assert( cnt++ < 40, "infinite cycle in loop optimization" );
       PhaseIdealLoop::optimize(igvn, mode);
@@ -2120,9 +2084,11 @@ void Compile::Optimize() {
       ResourceMark rm;
       PhaseRenumberLive prl = PhaseRenumberLive(initial_gvn(), for_igvn(), &new_worklist);
     }
+    Unique_Node_List* save_for_igvn = for_igvn();
     set_for_igvn(&new_worklist);
     igvn = PhaseIterGVN(initial_gvn());
     igvn.optimize();
+    set_for_igvn(save_for_igvn);
   }
 
   // Perform escape analysis
@@ -2231,12 +2197,6 @@ void Compile::Optimize() {
     PhaseIdealLoop::verify(igvn);
   }
 
-  if (range_check_cast_count() > 0) {
-    // No more loop optimizations. Remove all range check dependent CastIINodes.
-    C->remove_range_check_casts(igvn);
-    igvn.optimize();
-  }
-
 #ifdef ASSERT
   bs->verify_gc_barriers(this, BarrierSetC2::BeforeMacroExpand);
 #endif
@@ -2260,10 +2220,9 @@ void Compile::Optimize() {
     print_method(PHASE_BARRIER_EXPANSION, 2);
   }
 
-  if (opaque4_count() > 0) {
-    C->remove_opaque4_nodes(igvn);
-    igvn.optimize();
-  }
+  C->set_post_loop_opts_phase(); // no more loop opts allowed
+
+  process_for_post_loop_opts_igvn(igvn);
 
   if (C->max_vector_size() > 0) {
     C->optimize_logic_cones(igvn);
@@ -2271,6 +2230,7 @@ void Compile::Optimize() {
   }
 
   DEBUG_ONLY( _modified_nodes = NULL; )
+  assert(igvn._worklist.size() == 0, "not empty");
  } // (End scope of igvn; run destructor if necessary for asserts.)
 
  process_print_inlining();
@@ -3426,6 +3386,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     }
     break;
   case Op_Loop:
+    assert(!n->as_Loop()->is_transformed_long_loop() || _loop_opts_cnt == 0, "should have been turned into a counted loop");
   case Op_CountedLoop:
   case Op_OuterStripMinedLoop:
     if (n->as_Loop()->is_inner_loop()) {
@@ -3680,7 +3641,7 @@ bool Compile::final_graph_reshaping() {
   // be freely moved to the least frequent code path by gcm.
   assert(OptimizeExpensiveOps || expensive_count() == 0, "optimization off but list non empty?");
   for (int i = 0; i < expensive_count(); i++) {
-    _expensive_nodes->at(i)->set_req(0, NULL);
+    _expensive_nodes.at(i)->set_req(0, NULL);
   }
 
   Final_Reshape_Counts frc;
@@ -4101,8 +4062,6 @@ Node* Compile::constrained_convI2L(PhaseGVN* phase, Node* value, const TypeInt* 
     // ConvI2L node may be eliminated independently of the range check, causing the data path
     // to become TOP while the control path is still there (although it's unreachable).
     value->set_req(0, ctrl);
-    // Save CastII node to remove it after loop optimizations.
-    phase->C->add_range_check_cast(value);
     value = phase->transform(value);
   }
   const TypeLong* ltype = TypeLong::make(itype->_lo, itype->_hi, itype->_widen);
@@ -4332,13 +4291,13 @@ int Compile::cmp_expensive_nodes(Node** n1p, Node** n2p) {
 
 void Compile::sort_expensive_nodes() {
   if (!expensive_nodes_sorted()) {
-    _expensive_nodes->sort(cmp_expensive_nodes);
+    _expensive_nodes.sort(cmp_expensive_nodes);
   }
 }
 
 bool Compile::expensive_nodes_sorted() const {
-  for (int i = 1; i < _expensive_nodes->length(); i++) {
-    if (cmp_expensive_nodes(_expensive_nodes->adr_at(i), _expensive_nodes->adr_at(i-1)) < 0) {
+  for (int i = 1; i < _expensive_nodes.length(); i++) {
+    if (cmp_expensive_nodes(_expensive_nodes.adr_at(i), _expensive_nodes.adr_at(i-1)) < 0) {
       return false;
     }
   }
@@ -4346,7 +4305,7 @@ bool Compile::expensive_nodes_sorted() const {
 }
 
 bool Compile::should_optimize_expensive_nodes(PhaseIterGVN &igvn) {
-  if (_expensive_nodes->length() == 0) {
+  if (_expensive_nodes.length() == 0) {
     return false;
   }
 
@@ -4354,23 +4313,23 @@ bool Compile::should_optimize_expensive_nodes(PhaseIterGVN &igvn) {
 
   // Take this opportunity to remove dead nodes from the list
   int j = 0;
-  for (int i = 0; i < _expensive_nodes->length(); i++) {
-    Node* n = _expensive_nodes->at(i);
+  for (int i = 0; i < _expensive_nodes.length(); i++) {
+    Node* n = _expensive_nodes.at(i);
     if (!n->is_unreachable(igvn)) {
       assert(n->is_expensive(), "should be expensive");
-      _expensive_nodes->at_put(j, n);
+      _expensive_nodes.at_put(j, n);
       j++;
     }
   }
-  _expensive_nodes->trunc_to(j);
+  _expensive_nodes.trunc_to(j);
 
   // Then sort the list so that similar nodes are next to each other
   // and check for at least two nodes of identical kind with same data
   // inputs.
   sort_expensive_nodes();
 
-  for (int i = 0; i < _expensive_nodes->length()-1; i++) {
-    if (cmp_expensive_nodes(_expensive_nodes->adr_at(i), _expensive_nodes->adr_at(i+1)) == 0) {
+  for (int i = 0; i < _expensive_nodes.length()-1; i++) {
+    if (cmp_expensive_nodes(_expensive_nodes.adr_at(i), _expensive_nodes.adr_at(i+1)) == 0) {
       return true;
     }
   }
@@ -4379,7 +4338,7 @@ bool Compile::should_optimize_expensive_nodes(PhaseIterGVN &igvn) {
 }
 
 void Compile::cleanup_expensive_nodes(PhaseIterGVN &igvn) {
-  if (_expensive_nodes->length() == 0) {
+  if (_expensive_nodes.length() == 0) {
     return;
   }
 
@@ -4393,43 +4352,43 @@ void Compile::cleanup_expensive_nodes(PhaseIterGVN &igvn) {
   int identical = 0;
   int i = 0;
   bool modified = false;
-  for (; i < _expensive_nodes->length()-1; i++) {
+  for (; i < _expensive_nodes.length()-1; i++) {
     assert(j <= i, "can't write beyond current index");
-    if (_expensive_nodes->at(i)->Opcode() == _expensive_nodes->at(i+1)->Opcode()) {
+    if (_expensive_nodes.at(i)->Opcode() == _expensive_nodes.at(i+1)->Opcode()) {
       identical++;
-      _expensive_nodes->at_put(j++, _expensive_nodes->at(i));
+      _expensive_nodes.at_put(j++, _expensive_nodes.at(i));
       continue;
     }
     if (identical > 0) {
-      _expensive_nodes->at_put(j++, _expensive_nodes->at(i));
+      _expensive_nodes.at_put(j++, _expensive_nodes.at(i));
       identical = 0;
     } else {
-      Node* n = _expensive_nodes->at(i);
+      Node* n = _expensive_nodes.at(i);
       igvn.replace_input_of(n, 0, NULL);
       igvn.hash_insert(n);
       modified = true;
     }
   }
   if (identical > 0) {
-    _expensive_nodes->at_put(j++, _expensive_nodes->at(i));
-  } else if (_expensive_nodes->length() >= 1) {
-    Node* n = _expensive_nodes->at(i);
+    _expensive_nodes.at_put(j++, _expensive_nodes.at(i));
+  } else if (_expensive_nodes.length() >= 1) {
+    Node* n = _expensive_nodes.at(i);
     igvn.replace_input_of(n, 0, NULL);
     igvn.hash_insert(n);
     modified = true;
   }
-  _expensive_nodes->trunc_to(j);
+  _expensive_nodes.trunc_to(j);
   if (modified) {
     igvn.optimize();
   }
 }
 
 void Compile::add_expensive_node(Node * n) {
-  assert(!_expensive_nodes->contains(n), "duplicate entry in expensive list");
+  assert(!_expensive_nodes.contains(n), "duplicate entry in expensive list");
   assert(n->is_expensive(), "expensive nodes with non-null control here only");
   assert(!n->is_CFG() && !n->is_Mem(), "no cfg or memory nodes here");
   if (OptimizeExpensiveOps) {
-    _expensive_nodes->append(n);
+    _expensive_nodes.append(n);
   } else {
     // Clear control input and let IGVN optimize expensive nodes if
     // OptimizeExpensiveOps is off.
@@ -4607,8 +4566,8 @@ void Compile::sort_macro_nodes() {
     if (n->is_Allocate()) {
       if (i != allocates) {
         Node* tmp = macro_node(allocates);
-        _macro_nodes->at_put(allocates, n);
-        _macro_nodes->at_put(i, tmp);
+        _macro_nodes.at_put(allocates, n);
+        _macro_nodes.at_put(i, tmp);
       }
       allocates++;
     }

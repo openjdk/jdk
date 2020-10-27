@@ -526,7 +526,6 @@ public class DatagramSocket implements java.io.Closeable {
      * @see        SecurityManager#checkMulticast(InetAddress)
      * @see        SecurityManager#checkConnect
      * @revised 1.4
-     * @spec JSR-51
      */
     public void send(DatagramPacket p) throws IOException  {
         delegate().send(p);
@@ -563,7 +562,6 @@ public class DatagramSocket implements java.io.Closeable {
      * @see        java.net.DatagramPacket
      * @see        java.net.DatagramSocket
      * @revised 1.4
-     * @spec JSR-51
      */
     public void receive(DatagramPacket p) throws IOException {
         delegate().receive(p);
@@ -886,7 +884,6 @@ public class DatagramSocket implements java.io.Closeable {
      * as well.
      *
      * @revised 1.4
-     * @spec JSR-51
      */
     public void close() {
         delegate().close();
@@ -914,7 +911,6 @@ public class DatagramSocket implements java.io.Closeable {
      *          or {@code null} if this socket was not created for a channel
      *
      * @since 1.4
-     * @spec JSR-51
      */
     public DatagramChannel getChannel() {
         return null;

@@ -22,8 +22,8 @@
  *
  */
 #include "precompiled.hpp"
-
 #include "memory/allocation.hpp"
+#include "memory/metaspace.hpp"
 #include "services/mallocTracker.hpp"
 #include "services/memReporter.hpp"
 #include "services/threadStackTracker.hpp"
@@ -219,9 +219,10 @@ void MemSummaryReporter::report_metadata(Metaspace::MetadataType type) const {
   const char* scale = current_scale();
   size_t committed   = MetaspaceUtils::committed_bytes(type);
   size_t used = MetaspaceUtils::used_bytes(type);
-  size_t free = (MetaspaceUtils::capacity_bytes(type) - used)
-              + MetaspaceUtils::free_chunks_total_bytes(type)
-              + MetaspaceUtils::free_in_vs_bytes(type);
+
+  // The answer to "what is free" in metaspace is complex and cannot be answered with a single number.
+  // Free as in available to all loaders? Free, pinned to one loader? For now, keep it simple.
+  size_t free = committed - used;
 
   assert(committed >= used + free, "Sanity");
   size_t waste = committed - (used + free);

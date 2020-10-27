@@ -143,8 +143,7 @@ JVM_InternString
 JVM_Interrupt
 JVM_InvokeMethod
 JVM_IsArrayClass
-JVM_IsDynamicDumpingEnabled
-JVM_IsSharingEnabled
+JVM_IsCDSDumpingEnabled
 JVM_IsConstructorIx
 JVM_IsDumpingClassList
 JVM_IsHiddenClass
@@ -152,6 +151,7 @@ JVM_IsInterface
 JVM_IsPrimitiveClass
 JVM_IsRecord
 JVM_IsSameClassPackage
+JVM_IsSharingEnabled
 JVM_IsSupportedJNIVersion
 JVM_IsThreadAlive
 JVM_IsVMGeneratedMethodIx
