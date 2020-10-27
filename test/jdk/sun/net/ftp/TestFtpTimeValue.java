@@ -61,17 +61,17 @@ public class TestFtpTimeValue {
             calendar.set(year, month - 1, day, hrs, min, sec);
             calendar.set(Calendar.MILLISECOND, milliseconds);
             expectedCreated = calendar.getTime();
-            var s = String.format("%4d%2d%2d%2d%2d%2d", year, month, day, hrs, min, sec);
+            var s = String.format("%4d%02d%02d%02d%02d%02d", year, month, day, hrs, min, sec);
             if (milliseconds != 0) {
-                s += "." + String.format("%3d", milliseconds);
+                s += "." + String.format("%03d", milliseconds);
             }
             create = s;
 
             calendar.add(GregorianCalendar.SECOND, 1);
             expectedModified = calendar.getTime();
-            s = String.format("%4d%2d%2d%2d%2d%2d", year, month, day, hrs, min, sec + 1);
+            s = String.format("%4d%02d%02d%02d%02d%02d", year, month, day, hrs, min, sec + 1);
             if (milliseconds != 0) {
-                s += "." + String.format("%3d", milliseconds);
+                s += "." + String.format("%03d", milliseconds);
             }
             modify = s;
         }
