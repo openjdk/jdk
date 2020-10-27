@@ -3982,7 +3982,7 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this,  "StubRoutines", "bigIntegerRightShiftWorker");
     address start = __ pc();
 
-    Label ShiftSIMDLoop, ShiftTwoLoop, ShiftOneLoop, Exit;
+    Label ShiftSIMDLoop, ShiftTwoLoop, ShiftThree, ShiftTwo, ShiftOne, Exit;
 
     Register newArr        = c_rarg0;
     Register oldArr        = c_rarg1;
@@ -4012,7 +4012,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // numIter too small to allow a 4-words SIMD loop, rolling back
     __ cmp(numIter, (u1)4);
-    __ br(Assembler::LT, ShiftOneLoop);
+    __ br(Assembler::LT, ShiftThree);
 
     __ dup(shiftVCount,    __ T4S, shiftCount);
     __ dup(shiftVRevCount, __ T4S, shiftRevCount);
@@ -4041,7 +4041,7 @@ class StubGenerator: public StubCodeGenerator {
     __ BIND(ShiftTwoLoop);
     __ cbz(idx, Exit);
     __ cmp(idx, (u1)1);
-    __ br(Assembler::EQ, ShiftOneLoop);
+    __ br(Assembler::EQ, ShiftOne);
 
     // Calculate the load addresses
     __ sub(idx, idx, 2);
@@ -4058,19 +4058,31 @@ class StubGenerator: public StubCodeGenerator {
     __ st1(newElem,   __ T2S, Address(newArrCur));
     __ b(ShiftTwoLoop);
 
-    __ BIND(ShiftOneLoop);
-    __ sub(idx, idx, 1);
-    __ add(oldArrNext, oldArr, idx, Assembler::LSL, 2);
-    __ add(newArrCur,  newArr, idx, Assembler::LSL, 2);
-    __ add(oldArrCur,  oldArrNext, 4);
-    __ ldrw(r10,  Address(oldArrCur));
-    __ ldrw(r11,  Address(oldArrNext));
+    __ BIND(ShiftThree);
+    __ tbz(idx, 1, ShiftOne);
+    __ tbz(idx, 0, ShiftTwo);
+    __ ldrw(r10,  Address(oldArr, 12));
+    __ ldrw(r11,  Address(oldArr, 8));
     __ lsrvw(r10, r10, shiftCount);
     __ lslvw(r11, r11, shiftRevCount);
     __ orrw(r12,  r10, r11);
-    __ strw(r12,  Address(newArrCur));
-    __ cbz(idx, Exit);
-    __ b(ShiftOneLoop);
+    __ strw(r12,  Address(newArr, 8));
+
+    __ BIND(ShiftTwo);
+    __ ldrw(r10,  Address(oldArr, 8));
+    __ ldrw(r11,  Address(oldArr, 4));
+    __ lsrvw(r10, r10, shiftCount);
+    __ lslvw(r11, r11, shiftRevCount);
+    __ orrw(r12,  r10, r11);
+    __ strw(r12,  Address(newArr, 4));
+
+    __ BIND(ShiftOne);
+    __ ldrw(r10,  Address(oldArr, 4));
+    __ ldrw(r11,  Address(oldArr));
+    __ lsrvw(r10, r10, shiftCount);
+    __ lslvw(r11, r11, shiftRevCount);
+    __ orrw(r12,  r10, r11);
+    __ strw(r12,  Address(newArr));
 
     __ BIND(Exit);
     __ ret(lr);
@@ -4092,7 +4104,7 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this,  "StubRoutines", "bigIntegerLeftShiftWorker");
     address start = __ pc();
 
-    Label ShiftSIMDLoop, ShiftTwoLoop, ShiftOneLoop, Exit;
+    Label ShiftSIMDLoop, ShiftTwoLoop, ShiftThree, ShiftTwo, ShiftOne, Exit;
 
     Register newArr        = c_rarg0;
     Register oldArr        = c_rarg1;
@@ -4120,7 +4132,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // numIter too small to allow a 4-words SIMD loop, rolling back
     __ cmp(numIter, (u1)4);
-    __ br(Assembler::LT, ShiftOneLoop);
+    __ br(Assembler::LT, ShiftThree);
 
     __ dup(shiftVCount,     __ T4S, shiftCount);
     __ dup(shiftVRevCount,  __ T4S, shiftRevCount);
@@ -4144,7 +4156,7 @@ class StubGenerator: public StubCodeGenerator {
     __ BIND(ShiftTwoLoop);
     __ cbz(numIter, Exit);
     __ cmp(numIter, (u1)1);
-    __ br(Assembler::EQ, ShiftOneLoop);
+    __ br(Assembler::EQ, ShiftOne);
 
     // load 2 words and process
     __ ld1(oldElem0,  __ T2S,  __ post(oldArr, 8));
@@ -4156,16 +4168,31 @@ class StubGenerator: public StubCodeGenerator {
     __ sub(numIter,   numIter, 2);
     __ b(ShiftTwoLoop);
 
-    __ BIND(ShiftOneLoop);
+    __ BIND(ShiftThree);
     __ ldrw(r10,  __ post(oldArr, 4));
     __ ldrw(r11,  __ post(oldArrNext, 4));
     __ lslvw(r10, r10, shiftCount);
     __ lsrvw(r11, r11, shiftRevCount);
     __ orrw(r12,  r10, r11);
     __ strw(r12,  __ post(newArr, 4));
-    __ sub(numIter, numIter, 1);
-    __ cbz(numIter, Exit);
-    __ b(ShiftOneLoop);
+    __ tbz(numIter, 1, Exit);
+    __ tbz(numIter, 0, ShiftOne);
+
+    __ BIND(ShiftTwo);
+    __ ldrw(r10,  __ post(oldArr, 4));
+    __ ldrw(r11,  __ post(oldArrNext, 4));
+    __ lslvw(r10, r10, shiftCount);
+    __ lsrvw(r11, r11, shiftRevCount);
+    __ orrw(r12,  r10, r11);
+    __ strw(r12,  __ post(newArr, 4));
+
+    __ BIND(ShiftOne);
+    __ ldrw(r10,  Address(oldArr));
+    __ ldrw(r11,  Address(oldArrNext));
+    __ lslvw(r10, r10, shiftCount);
+    __ lsrvw(r11, r11, shiftRevCount);
+    __ orrw(r12,  r10, r11);
+    __ strw(r12,  Address(newArr));
 
     __ BIND(Exit);
     __ ret(lr);
