@@ -201,7 +201,7 @@ public class TestLayouts {
                 MemoryLayouts.JAVA_INT,
                 MemoryLayouts.JAVA_LONG
         );
-        assertEquals(struct.byteSize(), MemoryLayouts.ADDRESS.byteSize());
+        assertEquals(struct.byteSize(), 8);
         assertEquals(struct.byteAlignment(), MemoryLayouts.ADDRESS.byteAlignment());
     }
 
@@ -214,8 +214,10 @@ public class TestLayouts {
     public void testAlignmentString(MemoryLayout layout, long bitAlign) {
         long[] alignments = { 8, 16, 32, 64, 128 };
         for (long a : alignments) {
-            assertFalse(layout.toString().contains("%"));
-            assertEquals(layout.withBitAlignment(a).toString().contains("%"), a != bitAlign);
+            if (layout.bitAlignment() == layout.bitSize()) {
+                assertFalse(layout.toString().contains("%"));
+                assertEquals(layout.withBitAlignment(a).toString().contains("%"), a != bitAlign);
+            }
         }
     }
 
@@ -306,15 +308,11 @@ public class TestLayouts {
 
     @DataProvider(name = "layoutsAndAlignments")
     public Object[][] layoutsAndAlignments() {
-        Object[][] layoutsAndAlignments = new Object[basicLayouts.length * 5][];
+        Object[][] layoutsAndAlignments = new Object[basicLayouts.length * 4][];
         int i = 0;
         //add basic layouts
         for (MemoryLayout l : basicLayouts) {
             layoutsAndAlignments[i++] = new Object[] { l, l.bitAlignment() };
-        }
-        //add basic layouts wrapped in a sequence with unspecified size
-        for (MemoryLayout l : basicLayouts) {
-            layoutsAndAlignments[i++] = new Object[] { MemoryLayout.ofSequence(l), l.bitAlignment() };
         }
         //add basic layouts wrapped in a sequence with given size
         for (MemoryLayout l : basicLayouts) {
