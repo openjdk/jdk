@@ -26,16 +26,13 @@
  * @run testng TestLayouts
  */
 
-import jdk.incubator.foreign.MemoryLayouts;
-import jdk.incubator.foreign.MemoryLayout;
+import jdk.incubator.foreign.*;
 
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 import java.util.function.LongFunction;
 import java.util.stream.Stream;
 
-import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.SequenceLayout;
 import org.testng.annotations.*;
 import static org.testng.Assert.*;
 
@@ -174,7 +171,7 @@ public class TestLayouts {
                 MemoryLayouts.JAVA_LONG
         );
         assertEquals(struct.byteSize(), 1 + 1 + 2 + 4 + 8);
-        assertEquals(struct.byteAlignment(), 8);
+        assertEquals(struct.byteAlignment(), MemoryLayouts.ADDRESS.byteAlignment());
     }
 
     @Test(dataProvider="basicLayouts")
@@ -204,8 +201,8 @@ public class TestLayouts {
                 MemoryLayouts.JAVA_INT,
                 MemoryLayouts.JAVA_LONG
         );
-        assertEquals(struct.byteSize(), 8);
-        assertEquals(struct.byteAlignment(), 8);
+        assertEquals(struct.byteSize(), MemoryLayouts.ADDRESS.byteSize());
+        assertEquals(struct.byteAlignment(), MemoryLayouts.ADDRESS.byteAlignment());
     }
 
     @Test(dataProvider = "layoutKinds")
