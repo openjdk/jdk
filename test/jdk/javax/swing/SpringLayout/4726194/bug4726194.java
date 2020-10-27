@@ -25,13 +25,22 @@
  * @test
  * @bug 4726194 7124209
  * @summary Tests for 4726194
- * @author Phil Milne
  */
-import java.awt.*;
-import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+
+import java.awt.Font;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import javax.swing.*;
+
+import javax.swing.BorderFactory;
+import javax.swing.JTextField;
+import javax.swing.Spring;
+import javax.swing.SpringLayout;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
+
+import static javax.swing.UIManager.getInstalledLookAndFeels;
 
 public class bug4726194 {
 
@@ -40,22 +49,29 @@ public class bug4726194 {
     private static int[] FAIL = new int[3];
     private static boolean TEST_DUPLICATES = false;
 
-    public static void main(String[] args) {
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-                @Override
-                public void run() {
-                    int minLevel = 2;
-                    int maxLevel = 2;
-                    for (int i = minLevel; i <= maxLevel; i++) {
-                        test(i, true);
-                        test(i, false);
-                    }
+    public static void main(String[] args) throws Exception {
+        for (final UIManager.LookAndFeelInfo laf : getInstalledLookAndFeels()) {
+            SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
+            SwingUtilities.invokeAndWait(() -> {
+                int minLevel = 2;
+                int maxLevel = 2;
+                for (int i = minLevel; i <= maxLevel; i++) {
+                    test(i, true);
+                    test(i, false);
                 }
             });
-        } catch (InterruptedException | InvocationTargetException ex) {
-            ex.printStackTrace();
-            throw new RuntimeException("FAILED: SwingUtilities.invokeAndWait method failed!");
+        }
+    }
+
+    private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
+        try {
+            System.out.println("LookAndFeel: " + laf.getClassName());
+            UIManager.setLookAndFeel(laf.getClassName());
+        } catch (UnsupportedLookAndFeelException ignored){
+            System.out.println("Unsupported LookAndFeel: " + laf.getClassName());
+        } catch (ClassNotFoundException | InstantiationException |
+                IllegalAccessException e) {
+            throw new RuntimeException(e);
         }
     }
 
