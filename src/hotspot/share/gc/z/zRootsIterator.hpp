@@ -24,31 +24,17 @@
 #ifndef SHARE_GC_Z_ZROOTSITERATOR_HPP
 #define SHARE_GC_Z_ZROOTSITERATOR_HPP
 
-#include "gc/shared/oopStorageParState.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "gc/shared/oopStorageSetParState.hpp"
-#include "gc/shared/suspendibleThreadSet.hpp"
+#include "gc/z/zNMethod.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
-#include "runtime/thread.hpp"
 #include "runtime/threadSMR.hpp"
-#include "utilities/globalDefinitions.hpp"
 
 class ZRootsIteratorClosure;
 
-typedef OopStorage::ParState<true /* concurrent */, false /* is_const */> ZOopStorageIterator;
 typedef OopStorageSetStrongParState<true /* concurrent */, false /* is_const */> ZOopStorageSetStrongIterator;
 typedef OopStorageSetWeakParState<true /* concurrent */, false /* is_const */> ZOopStorageSetWeakIterator;
-
-template <typename T, void (T::*F)(ZRootsIteratorClosure*)>
-class ZSerialOopsDo {
-private:
-  T* const      _iter;
-  volatile bool _claimed;
-
-public:
-  ZSerialOopsDo(T* iter);
-  void oops_do(ZRootsIteratorClosure* cl);
-};
 
 template <typename T, void (T::*F)(ZRootsIteratorClosure*)>
 class ZParallelOopsDo {
@@ -72,24 +58,11 @@ public:
   void weak_oops_do(BoolObjectClosure* is_alive, ZRootsIteratorClosure* cl);
 };
 
-template <typename T, void (T::*F)(BoolObjectClosure*, ZRootsIteratorClosure*)>
-class ZParallelWeakOopsDo {
-private:
-  T* const      _iter;
-  volatile bool _completed;
-
-public:
-  ZParallelWeakOopsDo(T* iter);
-  void weak_oops_do(BoolObjectClosure* is_alive, ZRootsIteratorClosure* cl);
-};
-
 class ZRootsIteratorClosure : public OopClosure {
 public:
   virtual void do_thread(Thread* thread) {}
 
-  virtual bool should_disarm_nmethods() const {
-    return false;
-  }
+  virtual ZNMethodEntry nmethod_entry() const = 0;
 };
 
 class ZJavaThreadsIterator {
@@ -105,18 +78,9 @@ public:
   void threads_do(ThreadClosure* cl);
 };
 
-class ZRootsIterator {
-private:
-  const bool _visit_jvmti_weak_export;
-
-  void do_jvmti_weak_export(ZRootsIteratorClosure* cl);
-
-  ZSerialOopsDo<ZRootsIterator, &ZRootsIterator::do_jvmti_weak_export>   _jvmti_weak_export;
-
+class ZRelocateRoots : public AllStatic {
 public:
-  ZRootsIterator(bool visit_jvmti_weak_export = false);
-
-  void oops_do(ZRootsIteratorClosure* cl);
+  static void oops_do(OopClosure* cl);
 };
 
 class ZConcurrentRootsIterator {
@@ -168,7 +132,6 @@ private:
 
 public:
   ZWeakRootsIterator();
-  ~ZWeakRootsIterator();
 
   void weak_oops_do(BoolObjectClosure* is_alive, ZRootsIteratorClosure* cl);
   void oops_do(ZRootsIteratorClosure* cl);

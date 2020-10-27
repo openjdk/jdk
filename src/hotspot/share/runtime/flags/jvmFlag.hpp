@@ -27,8 +27,7 @@
 
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-
-enum JVMFlagsEnum : int;
+#include "utilities/vmEnums.hpp"
 
 class outputStream;
 

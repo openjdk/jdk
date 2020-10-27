@@ -72,7 +72,7 @@
 #include "gc/shenandoah/shenandoahJfrSupport.hpp"
 #endif
 
-#include "memory/metaspace.hpp"
+#include "memory/classLoaderMetaspace.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
@@ -1935,7 +1935,7 @@ private:
   ShenandoahVMWeakRoots<true /*concurrent*/> _vm_roots;
 
   // Roots related to concurrent class unloading
-  ShenandoahClassLoaderDataRoots<true /* concurrent */, false /* single thread*/>
+  ShenandoahClassLoaderDataRoots<true /* concurrent */, true /* single thread*/>
                                              _cld_roots;
   ShenandoahConcurrentNMethodIterator        _nmethod_itr;
   ShenandoahConcurrentStringDedupRoots       _dedup_roots;
@@ -2395,7 +2395,7 @@ void ShenandoahHeap::stw_unload_classes(bool full_gc) {
   }
   // Resize and verify metaspace
   MetaspaceGC::compute_new_size();
-  MetaspaceUtils::verify_metrics();
+  DEBUG_ONLY(MetaspaceUtils::verify();)
 }
 
 // Weak roots are either pre-evacuated (final mark) or updated (final updaterefs),

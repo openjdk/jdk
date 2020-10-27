@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
+#include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zMark.inline.hpp"
 #include "gc/z/zMarkCache.inline.hpp"
@@ -123,40 +124,6 @@ void ZMark::prepare_mark() {
   }
 }
 
-class ZMarkRootsIteratorClosure : public ZRootsIteratorClosure {
-public:
-  virtual void do_oop(oop* p) {
-    ZBarrier::mark_barrier_on_root_oop_field(p);
-  }
-
-  virtual void do_oop(narrowOop* p) {
-    ShouldNotReachHere();
-  }
-};
-
-class ZMarkRootsTask : public ZTask {
-private:
-  ZMark* const              _mark;
-  ZRootsIterator            _roots;
-  ZMarkRootsIteratorClosure _cl;
-
-public:
-  ZMarkRootsTask(ZMark* mark) :
-      ZTask("ZMarkRootsTask"),
-      _mark(mark),
-      _roots(false /* visit_jvmti_weak_export */) {}
-
-  virtual void work() {
-    _roots.oops_do(&_cl);
-
-    // Flush and free worker stacks. Needed here since
-    // the set of workers executing during root scanning
-    // can be different from the set of workers executing
-    // during mark.
-    _mark->flush_and_free();
-  }
-};
-
 void ZMark::start() {
   // Verification
   if (ZVerifyMarking) {
@@ -165,10 +132,6 @@ void ZMark::start() {
 
   // Prepare for concurrent mark
   prepare_mark();
-
-  // Mark roots
-  ZMarkRootsTask task(this);
-  _workers->run_parallel(&task);
 }
 
 void ZMark::prepare_work() {
@@ -619,8 +582,9 @@ public:
     ZThreadLocalAllocBuffer::publish_statistics();
   }
 
-  virtual bool should_disarm_nmethods() const {
-    return true;
+  virtual ZNMethodEntry nmethod_entry() const {
+    // Only apply closure to armed nmethods, and then disarm them.
+    return ZNMethodEntry::Disarm;
   }
 
   virtual void do_thread(Thread* thread) {
@@ -637,7 +601,6 @@ public:
     ShouldNotReachHere();
   }
 };
-
 
 class ZMarkConcurrentRootsTask : public ZTask {
 private:

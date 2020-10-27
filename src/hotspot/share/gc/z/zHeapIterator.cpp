@@ -31,7 +31,6 @@
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zOop.inline.hpp"
 #include "memory/iterator.inline.hpp"
-#include "runtime/stackWatermarkSet.hpp"
 #include "utilities/bitMap.inline.hpp"
 
 class ZHeapIteratorBitMap : public CHeapObj<mtGC> {
@@ -127,6 +126,17 @@ public:
     CodeBlobToOopClosure code_cl(this, false /* fix_oop_relocations */);
     thread->oops_do(this, &code_cl);
   }
+
+  virtual ZNMethodEntry nmethod_entry() const {
+    if (ClassUnloading) {
+      // All encountered nmethods should have been "entered" during stack walking
+      return ZNMethodEntry::VerifyDisarmed;
+    } else {
+      // All nmethods are considered roots and will be visited.
+      // Make sure that the unvisited gets fixed and disarmed before proceeding.
+      return ZNMethodEntry::PreBarrier;
+    }
+  }
 };
 
 template <bool VisitReferents>
@@ -161,12 +171,6 @@ public:
   virtual void do_oop(narrowOop* p) {
     ShouldNotReachHere();
   }
-
-#ifdef ASSERT
-  virtual bool should_verify_oops() {
-    return false;
-  }
-#endif
 };
 
 ZHeapIterator::ZHeapIterator(uint nworkers, bool visit_weaks) :
@@ -176,7 +180,6 @@ ZHeapIterator::ZHeapIterator(uint nworkers, bool visit_weaks) :
     _bitmaps_lock(),
     _queues(nworkers),
     _array_queues(nworkers),
-    _roots(),
     _concurrent_roots(),
     _weak_roots(),
     _concurrent_weak_roots(),
@@ -341,7 +344,6 @@ void ZHeapIterator::drain_and_steal(const ZHeapIteratorContext& context, ObjectC
 
 template <bool VisitWeaks>
 void ZHeapIterator::object_iterate_inner(const ZHeapIteratorContext& context, ObjectClosure* cl) {
-  push_roots<false /* Concurrent */, false /* Weak */>(context, _roots);
   push_roots<true  /* Concurrent */, false /* Weak */>(context, _concurrent_roots);
   if (VisitWeaks) {
     push_roots<false /* Concurrent */, true  /* Weak */>(context, _weak_roots);

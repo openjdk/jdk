@@ -23,7 +23,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
-#include "gc/z/zAddress.hpp"
+#include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zOop.hpp"
 #include "gc/z/zPageAllocator.hpp"
@@ -33,11 +33,17 @@
 #include "gc/z/zStat.hpp"
 #include "gc/z/zVerify.hpp"
 #include "memory/iterator.inline.hpp"
-#include "memory/resourceArea.inline.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/oop.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/globals.hpp"
+#include "runtime/handles.hpp"
+#include "runtime/safepoint.hpp"
 #include "runtime/stackWatermark.inline.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
+#include "runtime/thread.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/preserveException.hpp"
 
 #define BAD_OOP_ARG(o, p)   "Bad oop " PTR_FORMAT " found at " PTR_FORMAT, p2i(o), p2i(p)
@@ -87,6 +93,11 @@ public:
 
   bool verify_fixed() const {
     return _verify_fixed;
+  }
+
+  virtual ZNMethodEntry nmethod_entry() const {
+    // Verification performs its own verification
+    return ZNMethodEntry::None;
   }
 };
 
@@ -182,7 +193,7 @@ void ZVerifyRootClosure::do_thread(Thread* thread) {
   verify_stack.verify_frames();
 }
 
-class ZVerifyOopClosure : public ClaimMetadataVisitingOopIterateClosure, public ZRootsIteratorClosure  {
+class ZVerifyOopClosure : public ClaimMetadataVisitingOopIterateClosure {
 private:
   const bool _verify_weaks;
 
@@ -208,13 +219,6 @@ public:
   virtual ReferenceIterationMode reference_iteration_mode() {
     return _verify_weaks ? DO_FIELDS : DO_FIELDS_EXCEPT_REFERENT;
   }
-
-#ifdef ASSERT
-  // Verification handled by the closure itself
-  virtual bool should_verify_oops() {
-    return false;
-  }
-#endif
 };
 
 template <typename RootsIterator>
@@ -227,10 +231,6 @@ void ZVerify::roots(bool verify_fixed) {
     RootsIterator iter;
     iter.oops_do(&cl);
   }
-}
-
-void ZVerify::roots_strong() {
-  roots<ZRootsIterator>(true /* verify_fixed */);
 }
 
 void ZVerify::roots_weak() {
@@ -246,7 +246,6 @@ void ZVerify::roots_concurrent_weak() {
 }
 
 void ZVerify::roots(bool verify_concurrent_strong, bool verify_weaks) {
-  roots_strong();
   roots_concurrent_strong(verify_concurrent_strong);
   if (verify_weaks) {
     roots_weak();

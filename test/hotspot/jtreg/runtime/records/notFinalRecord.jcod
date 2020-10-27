@@ -24,8 +24,8 @@
 // This test was generated from this source and then modified:
 //    record recordNames(int x, String y) {}
 
-// This test is a Record but not marked final.  It should result in a
-// ClassFormatError exception.
+// This test is a Record but not marked final.  Loading this class should
+// not cause a ClassFormatError exception.
 class notFinalRecord {
   0xCAFEBABE;
   65535; // minor version
