@@ -191,11 +191,6 @@ class ConcurrentHashTable : public CHeapObj<F> {
     Bucket* get_bucket(size_t idx) { return &_buckets[idx]; }
   };
 
-  // For ignoring the supplied value.
-  struct IgnoreValue {
-    void operator()(VALUE*) {}
-  };
-
   // For materializing a supplied value.
   class LazyValueRetrieve {
    private:
@@ -427,7 +422,9 @@ class ConcurrentHashTable : public CHeapObj<F> {
   // Same without DELETE_FUNC.
   template <typename LOOKUP_FUNC>
   bool remove(Thread* thread, LOOKUP_FUNC& lookup_f) {
-    IgnoreValue ignore_del_f;
+    struct {
+      void operator()(VALUE*) {}
+    } ignore_del_f;
     return internal_remove(thread, lookup_f, ignore_del_f);
   }
 
