@@ -29,7 +29,7 @@
 #include "runtime/mutex.hpp"
 
 class G1ServiceTask : public CHeapObj<mtGC> {
-  // The next time this task should be executed.
+  // The next absolute time this task should be executed.
   double _time;
   // Name of the task.
   const char* _name;
@@ -84,8 +84,7 @@ public:
 //     remembered set lengths of the young generation.
 //   - check if a periodic GC should be scheduled.
 class G1ServiceThread: public ConcurrentGCThread {
-private:
-  // The monitor is used to ensure thread saftey for the task queue
+  // The monitor is used to ensure thread safety for the task queue
   // and allow other threads to signal the service thread to wake up.
   Monitor _monitor;
   G1ServiceTaskQueue _task_queue;

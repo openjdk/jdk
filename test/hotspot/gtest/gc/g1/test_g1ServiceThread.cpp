@@ -70,7 +70,8 @@ TEST_VM(G1ServiceThread, test_add) {
 // Test that a task that is added while the service thread is
 // waiting gets run in a timely manner.
 TEST_VM(G1ServiceThread, test_add_while_waiting) {
-  // Make sure default tasks use long intervals.
+  // Make sure default tasks use long intervals so that the service thread
+  // is doing a long wait for the next execution.
   AutoModifyRestore<uintx> f1(G1PeriodicGCInterval, 100000);
   AutoModifyRestore<uintx> f2(G1ConcRefinementServiceIntervalMillis, 100000);
 
@@ -78,6 +79,7 @@ TEST_VM(G1ServiceThread, test_add_while_waiting) {
   G1ServiceThread* st = new G1ServiceThread();
   os::naked_short_sleep(500);
 
+  // Register a new task that should run right away.
   CheckTask ct("AddWhileWaiting");
   st->register_task(&ct);
 
@@ -132,9 +134,9 @@ TEST_VM(G1ServiceTaskQueue, add_ordered) {
   }
 
   // Now fake a run-loop, that reschedules the tasks using a
-  // random multiplyer.
+  // random multiplier.
   for (double now = 0; now < 1000; now++) {
-    // Random multiplyier is at least 1 to ensure progress.
+    // Random multiplier is at least 1 to ensure progress.
     int multiplyer = 1 + os::random() % 10;
     while (queue.peek()->time() < now) {
       G1ServiceTask* task = queue.pop();
