@@ -32,6 +32,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/thread.hpp"
+#include "utilities/debug.hpp"
 
 template<class E, MEMFLAGS F, unsigned int N = TASKQUEUE_SIZE>
 class BufferedOverflowTaskQueue: public OverflowTaskQueue<E, F, N>
@@ -132,39 +133,44 @@ private:
 class ShenandoahMarkTask
 {
 private:
+  // Everything is encoded into this field...
   uintptr_t _obj;
 
-  enum {
-    chunk_bits   = 10,
-    pow_bits     = 5,
-    oop_bits     = sizeof(uintptr_t)*8 - chunk_bits - pow_bits
-  };
-  enum {
-    oop_shift    = 0,
-    pow_shift    = oop_shift + oop_bits,
-    chunk_shift  = pow_shift + pow_bits
-  };
+  // ...with these:
+  static const uint8_t chunk_bits  = 10;
+  static const uint8_t pow_bits    = 5;
+  static const uint8_t oop_bits    = sizeof(uintptr_t)*8 - chunk_bits - pow_bits;
 
-  static const uintptr_t oop_decode_mask = right_n_bits(oop_bits) - 3;
+  static const uint8_t oop_shift   = 0;
+  static const uint8_t pow_shift   = oop_bits;
+  static const uint8_t chunk_shift = oop_bits + pow_bits;
+
+  static const uintptr_t oop_extract_mask       = right_n_bits(oop_bits);
+  static const uintptr_t chunk_pow_extract_mask = ~right_n_bits(oop_bits);
+
+  static const int chunk_range_mask = right_n_bits(chunk_bits);
+  static const int pow_range_mask   = right_n_bits(pow_bits);
 
   inline oop decode_oop(uintptr_t val) const {
-    return (oop) reinterpret_cast<void*>((val >> oop_shift) & oop_decode_mask);
-  }
-
-  inline int decode_chunk(uintptr_t val) const {
-    return (int) ((val >> chunk_shift) & right_n_bits(chunk_bits));
-  }
-
-  inline int decode_pow(uintptr_t val) const {
-    return (int) ((val >> pow_shift) & right_n_bits(pow_bits));
+    STATIC_ASSERT(oop_shift == 0);
+    return cast_to_oop(val & oop_extract_mask);
   }
 
   inline bool decode_not_chunked(uintptr_t val) const {
-    return (val & ~right_n_bits(oop_bits + pow_bits)) == 0;
+    return (val & chunk_pow_extract_mask) == 0;
+  }
+
+  inline int decode_chunk(uintptr_t val) const {
+    return (int) ((val >> chunk_shift) & chunk_range_mask);
+  }
+
+  inline int decode_pow(uintptr_t val) const {
+    return (int) ((val >> pow_shift) & pow_range_mask);
   }
 
   inline uintptr_t encode_oop(oop obj) const {
-    return ((uintptr_t)(void*) obj) << oop_shift;
+    STATIC_ASSERT(oop_shift == 0);
+    return cast_from_oop<uintptr_t>(obj);
   }
 
   inline uintptr_t encode_chunk(int chunk) const {
