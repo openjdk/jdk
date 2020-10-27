@@ -435,6 +435,12 @@ public:
     return this->at(location);
   }
 
+  void swap(GrowableArrayWithAllocator<E, Derived>* other) {
+    ::swap(this->_data, other->_data);
+    ::swap(this->_len, other->_len);
+    ::swap(this->_max, other->_max);
+  }
+
   void clear_and_deallocate();
 };
 
@@ -687,7 +693,7 @@ class GrowableArrayCHeap : public GrowableArrayWithAllocator<E, GrowableArrayCHe
   }
 
 public:
-  GrowableArrayCHeap(int initial_max) :
+  GrowableArrayCHeap(int initial_max = 0) :
       GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, F> >(
           allocate(initial_max, F),
           initial_max) {}

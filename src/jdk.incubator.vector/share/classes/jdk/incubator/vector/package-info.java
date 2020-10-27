@@ -103,7 +103,7 @@
  * such as {@code a + b} for the
  * {@link VectorOperators#ADD ADD} operator token.
  * General lane-wise operation-token accepting methods, such as for a
- * {@link Vector#lanewise(VectorOperators.Unary) unary lane-wise}
+ * {@linkplain Vector#lanewise(VectorOperators.Unary) unary lane-wise}
  * operation, are provided on {@code Vector} and come in the same variants as
  * a full-service named operation.
  *

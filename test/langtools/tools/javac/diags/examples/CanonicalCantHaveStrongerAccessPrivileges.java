@@ -23,7 +23,10 @@
 
 // key: compiler.err.invalid.canonical.constructor.in.record
 // key: compiler.misc.canonical.must.not.have.stronger.access
+// key: compiler.note.preview.filename
+// key: compiler.note.preview.recompile
 // key: compiler.misc.canonical
+// options: --enable-preview -source ${jdk.version}
 
 public record CanonicalCantHaveStrongerAccessPrivileges() {
     private CanonicalCantHaveStrongerAccessPrivileges {}

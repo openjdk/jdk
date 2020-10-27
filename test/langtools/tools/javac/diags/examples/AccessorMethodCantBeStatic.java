@@ -23,6 +23,9 @@
 
 // key: compiler.err.invalid.accessor.method.in.record
 // key: compiler.misc.accessor.method.must.not.be.static
+// key: compiler.note.preview.filename
+// key: compiler.note.preview.recompile
+// options: --enable-preview -source ${jdk.version}
 
 record R(int x) {
     static final int j = 0;

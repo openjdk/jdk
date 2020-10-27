@@ -23,11 +23,11 @@
 
 /*
  * @test
- * @bug 8246774
  * @summary Basic tests for prohibited magic serialization methods
  * @library /test/lib
  * @modules java.base/jdk.internal.org.objectweb.asm
- * @run testng ProhibitedMethods
+ * @compile --enable-preview -source ${jdk.version} ProhibitedMethods.java
+ * @run testng/othervm --enable-preview ProhibitedMethods
  */
 
 import java.io.ByteArrayInputStream;
@@ -69,6 +69,7 @@ import static org.testng.Assert.fail;
  * record objects.
  */
 public class ProhibitedMethods {
+    private static final String VERSION = Integer.toString(Runtime.version().feature());
 
     public interface ThrowingExternalizable extends Externalizable {
         default void writeExternal(ObjectOutput out) {
@@ -105,7 +106,8 @@ public class ProhibitedMethods {
     public void setup() {
         {
             byte[] byteCode = InMemoryJavaCompiler.compile("Foo",
-                    "public record Foo () implements java.io.Serializable { }");
+                    "public record Foo () implements java.io.Serializable { }",
+                    "--enable-preview", "-source", VERSION);
             byteCode = addWriteObject(byteCode);
             byteCode = addReadObject(byteCode);
             byteCode = addReadObjectNoData(byteCode);
@@ -113,7 +115,8 @@ public class ProhibitedMethods {
         }
         {
             byte[] byteCode = InMemoryJavaCompiler.compile("Bar",
-                    "public record Bar (int x, int y) implements java.io.Serializable { }");
+                    "public record Bar (int x, int y) implements java.io.Serializable { }",
+                    "--enable-preview", "-source", VERSION);
             byteCode = addWriteObject(byteCode);
             byteCode = addReadObject(byteCode);
             byteCode = addReadObjectNoData(byteCode);
@@ -122,7 +125,8 @@ public class ProhibitedMethods {
         {
             byte[] byteCode = InMemoryJavaCompiler.compile("Baz",
                     "import java.io.Serializable;" +
-                    "public record Baz<U extends Serializable,V extends Serializable>(U u, V v) implements Serializable { }");
+                    "public record Baz<U extends Serializable,V extends Serializable>(U u, V v) implements Serializable { }",
+                    "--enable-preview", "-source", VERSION);
             byteCode = addWriteObject(byteCode);
             byteCode = addReadObject(byteCode);
             byteCode = addReadObjectNoData(byteCode);

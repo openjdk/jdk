@@ -80,6 +80,11 @@ inline void ZPhantomKeepAliveOopClosure::do_oop(oop* p) {
   ZBarrier::keep_alive_barrier_on_phantom_oop_field(p);
 }
 
+inline ZNMethodEntry ZPhantomKeepAliveOopClosure::nmethod_entry() const {
+  ShouldNotReachHere();
+  return ZNMethodEntry::None;
+}
+
 inline void ZPhantomKeepAliveOopClosure::do_oop(narrowOop* p) {
   ShouldNotReachHere();
 }
@@ -102,6 +107,11 @@ inline void ZPhantomCleanOopClosure::do_oop(oop* p) {
 
 inline void ZPhantomCleanOopClosure::do_oop(narrowOop* p) {
   ShouldNotReachHere();
+}
+
+inline ZNMethodEntry ZPhantomCleanOopClosure::nmethod_entry() const {
+  ShouldNotReachHere();
+  return ZNMethodEntry::None;
 }
 
 #endif // SHARE_GC_Z_ZOOPCLOSURES_INLINE_HPP

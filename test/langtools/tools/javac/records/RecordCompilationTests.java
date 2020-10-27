@@ -26,8 +26,7 @@
 /**
  * RecordCompilationTests
  *
- * @test
- * @bug 8250629 8252307 8247352 8241151 8246774
+ * @test 8250629 8252307 8247352 8241151
  * @summary Negative compilation tests, and positive compilation (smoke) tests for records
  * @library /lib/combo /tools/lib /tools/javac/lib
  * @modules
@@ -36,8 +35,9 @@
  *      jdk.compiler/com.sun.tools.javac.util
  *      jdk.jdeps/com.sun.tools.classfile
  * @build JavacTestingAbstractProcessor
- * @run testng/othervm -DuseAP=false RecordCompilationTests
- * @run testng/othervm -DuseAP=true RecordCompilationTests
+ * @compile --enable-preview -source ${jdk.version} RecordCompilationTests.java
+ * @run testng/othervm -DuseAP=false --enable-preview RecordCompilationTests
+ * @run testng/othervm -DuseAP=true --enable-preview RecordCompilationTests
  */
 
 import java.io.File;
@@ -119,7 +119,17 @@ import static org.testng.Assert.assertEquals;
 
 @Test
 public class RecordCompilationTests extends CompilationTestCase {
-    private static String[] OPTIONS_WITH_AP = {"-processor", SimplestAP.class.getName()};
+    // @@@ When records become a permanent feature, we don't need these any more
+    private static String[] PREVIEW_OPTIONS = {
+            "--enable-preview",
+            "-source", Integer.toString(Runtime.version().feature())
+    };
+
+    private static String[] PREVIEW_OPTIONS_WITH_AP = {
+            "--enable-preview",
+            "-source", Integer.toString(Runtime.version().feature()),
+            "-processor", SimplestAP.class.getName()
+    };
 
     private static final List<String> BAD_COMPONENT_NAMES = List.of(
             "clone", "finalize", "getClass", "hashCode",
@@ -140,9 +150,7 @@ public class RecordCompilationTests extends CompilationTestCase {
     public RecordCompilationTests() {
         useAP = System.getProperty("useAP", "false").equals("true");
         setDefaultFilename("R.java");
-        if (useAP) {
-            setCompileOptions(OPTIONS_WITH_AP);
-        }
+        setCompileOptions(useAP ? PREVIEW_OPTIONS_WITH_AP : PREVIEW_OPTIONS);
         System.out.println(useAP ? "running all tests using an annotation processor" : "running all tests without annotation processor");
     }
 
@@ -1002,7 +1010,7 @@ public class RecordCompilationTests extends CompilationTestCase {
         String[] previousOptions = getCompileOptions();
         String[] testOptions = {/* no options */};
         setCompileOptions(testOptions);
-        assertFail("compiler.err.illegal.start.of.type",
+        assertOKWithWarning("compiler.warn.restricted.type.not.allowed.preview",
                 "class R {\n" +
                 "    record RR(int i) {\n" +
                 "        return null;\n" +
@@ -1054,6 +1062,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         );
 
         String[] generalOptions = {
+                "--enable-preview",
+                "-source", Integer.toString(Runtime.version().feature()),
                 "-processor", Processor.class.getName(),
                 "-Atargets="
         };
