@@ -34,11 +34,11 @@
 
   //      Directives flag name,    type, default value, compile command name
   #define compilerdirectives_common_flags(cflags) \
-    cflags(Enable,                  bool, false, Enable) \
-    cflags(Exclude,                 bool, false, Exclude) \
+    cflags(Enable,                  bool, false, X) \
+    cflags(Exclude,                 bool, false, X) \
     cflags(BreakAtExecute,          bool, false, BreakAtExecute) \
     cflags(BreakAtCompile,          bool, false, BreakAtCompile) \
-    cflags(Log,                     bool, LogCompilation, Log) \
+    cflags(Log,                     bool, LogCompilation, X) \
     cflags(PrintAssembly,           bool, PrintAssembly, PrintAssembly) \
     cflags(PrintInlining,           bool, PrintInlining, PrintInlining) \
     cflags(PrintNMethods,           bool, PrintNMethods, PrintNMethods) \
