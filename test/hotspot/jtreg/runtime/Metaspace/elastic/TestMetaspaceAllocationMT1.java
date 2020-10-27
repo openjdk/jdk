@@ -87,8 +87,8 @@ public class TestMetaspaceAllocationMT1 {
             long commitLimit = (i == 1) ? 1024 * 256 : 0;
 
             // Note: reserve limit must be a multiple of Metaspace::reserve_alignment_words()
-            //  (512 K)
-            long reserveLimit = (i == 2) ? 1024 * 512 : 0;
+            //  (512K on 64bit, 1M on 32bit)
+            long reserveLimit = (i == 2) ? 1024 * 1024 : 0;
 
             System.out.println("#### Test: ");
             System.out.println("#### testAllocationCeiling: " + testAllocationCeiling);

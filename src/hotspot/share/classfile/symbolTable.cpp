@@ -96,7 +96,7 @@ static volatile bool _lookup_shared_first = false;
 // Static arena for symbols that are not deallocated
 Arena* SymbolTable::_arena = NULL;
 
-static juint murmur_seed = 0;
+static uint64_t _alt_hash_seed = 0;
 
 static inline void log_trace_symboltable_helper(Symbol* sym, const char* msg) {
 #ifndef PRODUCT
@@ -108,7 +108,7 @@ static inline void log_trace_symboltable_helper(Symbol* sym, const char* msg) {
 // Pick hashing algorithm.
 static uintx hash_symbol(const char* s, int len, bool useAlt) {
   return useAlt ?
-  AltHashing::murmur3_32(murmur_seed, (const jbyte*)s, len) :
+  AltHashing::halfsiphash_32(_alt_hash_seed, (const uint8_t*)s, len) :
   java_lang_String::hash_code((const jbyte*)s, len);
 }
 
@@ -785,7 +785,7 @@ void SymbolTable::rehash_table() {
     return;
   }
 
-  murmur_seed = AltHashing::compute_seed();
+  _alt_hash_seed = AltHashing::compute_seed();
 
   if (do_rehash()) {
     rehashed = true;

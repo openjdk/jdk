@@ -1409,12 +1409,8 @@ void PhaseIterGVN::remove_globally_dead_node( Node *dead ) {
       if (dead->is_expensive()) {
         C->remove_expensive_node(dead);
       }
-      CastIINode* cast = dead->isa_CastII();
-      if (cast != NULL && cast->has_range_check()) {
-        C->remove_range_check_cast(cast);
-      }
-      if (dead->Opcode() == Op_Opaque4) {
-        C->remove_opaque4_node(dead);
+      if (dead->for_post_loop_opts_igvn()) {
+        C->remove_from_post_loop_opts_igvn(dead);
       }
       BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
       bs->unregister_potential_barrier_node(dead);

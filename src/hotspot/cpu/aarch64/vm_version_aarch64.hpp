@@ -51,7 +51,7 @@ protected:
   // Sets the SVE length and returns a new actual value or negative on error.
   // If the len is larger than the system largest supported SVE vector length,
   // the function sets the largest supported value.
-  static int set_and_get_current_sve_vector_lenght(int len);
+  static int set_and_get_current_sve_vector_length(int len);
   static int get_current_sve_vector_length();
 
 public:
@@ -103,6 +103,7 @@ public:
     CPU_CRC32        = (1<<7),
     CPU_LSE          = (1<<8),
     CPU_DCPOP        = (1<<16),
+    CPU_SHA3         = (1<<17),
     CPU_SHA512       = (1<<21),
     CPU_SVE          = (1<<22),
     // flags above must follow Linux HWCAP

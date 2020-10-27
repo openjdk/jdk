@@ -412,7 +412,6 @@ public class ASN1Formatter implements HexPrinter.Formatter {
             // Look up the OID; if the class is not accessible just return the numeric form
             Class<?> cl = Class.forName("sun.security.util.KnownOIDs");
             Method findMatch = cl.getDeclaredMethod("findMatch", String.class);
-            findMatch.setAccessible(true);
             Object oid = findMatch.invoke(null, noid);
             return (oid == null) ? noid : noid + " (" + oid.toString() + ")";
         } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {

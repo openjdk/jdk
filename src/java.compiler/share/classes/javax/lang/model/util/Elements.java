@@ -203,7 +203,6 @@ public interface Elements {
      * @return the named module element, or {@code null} if it cannot be found
      * @see #getAllModuleElements
      * @since 9
-     * @spec JPMS
      */
     default ModuleElement getModuleElement(CharSequence name) {
         return null;
@@ -489,7 +488,6 @@ public interface Elements {
      * @param e the element being examined
      * @return the module of an element
      * @since 9
-     * @spec JPMS
      */
     default ModuleElement getModuleOf(Element e) {
         return null;

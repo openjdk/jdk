@@ -582,8 +582,9 @@ public:
     ZThreadLocalAllocBuffer::publish_statistics();
   }
 
-  virtual bool should_disarm_nmethods() const {
-    return true;
+  virtual ZNMethodEntry nmethod_entry() const {
+    // Only apply closure to armed nmethods, and then disarm them.
+    return ZNMethodEntry::Disarm;
   }
 
   virtual void do_thread(Thread* thread) {
