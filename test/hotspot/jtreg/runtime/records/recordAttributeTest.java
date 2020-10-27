@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,13 +54,11 @@ public class recordAttributeTest {
         runTest("twoRecordAttributes",
                 "Multiple Record attributes in class");
 
-        // Test loading a Record type marked abstract. This should throw ClassFormatError.
-        runTest("abstractRecord",
-                "Record attribute in non-final or abstract class");
+        // Test loading a Record type marked abstract. This should not throw ClassFormatError.
+        Class abstractClass = Class.forName("abstractRecord");
 
-        // Test loading a Record type that is not final. This should throw ClassFormatError.
-        runTest("notFinalRecord",
-                "Record attribute in non-final or abstract class");
+        // Test loading a Record type that is not final. This should not throw ClassFormatError.
+        Class notFinalClass = Class.forName("notFinalRecord");
 
         // Test loading a Record type that is badly formed. This should throw ClassFormatError.
         runTest("badRecordAttribute",
@@ -73,8 +71,13 @@ public class recordAttributeTest {
         // badly formed Record attribute. No exception should be thrown.
         Class newClass = Class.forName("oldRecordAttribute");
 
-        // Test that loading a class whose super class is not java.lang.Record
-        // ignores a badly formed Record attribute. No exception should be thrown.
-        newClass = Class.forName("superNotJLRecord");
+        // Test that loading a class containing an ill-formed Record attribute causes a
+        // ClassFormatError exception even though its super class is not java.lang.Record.
+        runTest("superNotJLRecord", "Truncated class file");
+
+        // Test that loading a class that contains a properly formed Record attribute
+        // does not cause a ClassFormatError exception even though its super class is not
+        // java.lang.Record.
+        Class superNoJLRClass = Class.forName("superNotJLRecordOK");
     }
 }

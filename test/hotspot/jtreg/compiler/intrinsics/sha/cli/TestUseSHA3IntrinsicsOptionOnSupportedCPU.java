@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Huawei Technologies Co. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,28 @@
  * questions.
  */
 
-/*
+/**
  * @test
- * @bug 8246774
- * @summary test logging of reasons for ignoring Record attribute
- * @library /test/lib
- * @compile superNotJLRecord.jcod
- * @run driver ignoreRecordAttribute
+ * @bug 8252204
+ * @summary Verify UseSHA3Intrinsics option processing on supported CPU.
+ * @library /test/lib testcases /
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ *
+ * @build sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI
+ *                   compiler.intrinsics.sha.cli.TestUseSHA3IntrinsicsOptionOnSupportedCPU
  */
 
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
+package compiler.intrinsics.sha.cli;
 
-public class ignoreRecordAttribute {
+import compiler.intrinsics.sha.cli.testcases.GenericTestCaseForSupportedCPU;
 
-    public static void main(String[] args) throws Exception {
-        String MAJOR_VERSION = Integer.toString(44 + Runtime.version().feature());
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-Xlog:class+record", "-Xshare:off", "superNotJLRecord");
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Ignoring Record attribute");
-        output.shouldContain("because super type is not java.lang.Record");
+public class TestUseSHA3IntrinsicsOptionOnSupportedCPU {
+    public static void main(String args[]) throws Throwable {
+        new DigestOptionsBase(new GenericTestCaseForSupportedCPU(
+                DigestOptionsBase.USE_SHA3_INTRINSICS_OPTION)).test();
     }
-
 }

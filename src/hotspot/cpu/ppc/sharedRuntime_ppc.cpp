@@ -1530,156 +1530,6 @@ void SharedRuntime::restore_native_result(MacroAssembler *masm, BasicType ret_ty
   }
 }
 
-static void save_or_restore_arguments(MacroAssembler* masm,
-                                      const int stack_slots,
-                                      const int total_in_args,
-                                      const int arg_save_area,
-                                      OopMap* map,
-                                      VMRegPair* in_regs,
-                                      BasicType* in_sig_bt) {
-  // If map is non-NULL then the code should store the values,
-  // otherwise it should load them.
-  int slot = arg_save_area;
-  // Save down double word first.
-  for (int i = 0; i < total_in_args; i++) {
-    if (in_regs[i].first()->is_FloatRegister() && in_sig_bt[i] == T_DOUBLE) {
-      int offset = slot * VMRegImpl::stack_slot_size;
-      slot += VMRegImpl::slots_per_word;
-      assert(slot <= stack_slots, "overflow (after DOUBLE stack slot)");
-      if (map != NULL) {
-        __ stfd(in_regs[i].first()->as_FloatRegister(), offset, R1_SP);
-      } else {
-        __ lfd(in_regs[i].first()->as_FloatRegister(), offset, R1_SP);
-      }
-    } else if (in_regs[i].first()->is_Register() &&
-        (in_sig_bt[i] == T_LONG || in_sig_bt[i] == T_ARRAY)) {
-      int offset = slot * VMRegImpl::stack_slot_size;
-      if (map != NULL) {
-        __ std(in_regs[i].first()->as_Register(), offset, R1_SP);
-        if (in_sig_bt[i] == T_ARRAY) {
-          map->set_oop(VMRegImpl::stack2reg(slot));
-        }
-      } else {
-        __ ld(in_regs[i].first()->as_Register(), offset, R1_SP);
-      }
-      slot += VMRegImpl::slots_per_word;
-      assert(slot <= stack_slots, "overflow (after LONG/ARRAY stack slot)");
-    }
-  }
-  // Save or restore single word registers.
-  for (int i = 0; i < total_in_args; i++) {
-    if (in_regs[i].first()->is_Register()) {
-      int offset = slot * VMRegImpl::stack_slot_size;
-      // Value lives in an input register. Save it on stack.
-      switch (in_sig_bt[i]) {
-        case T_BOOLEAN:
-        case T_CHAR:
-        case T_BYTE:
-        case T_SHORT:
-        case T_INT:
-          if (map != NULL) {
-            __ stw(in_regs[i].first()->as_Register(), offset, R1_SP);
-          } else {
-            __ lwa(in_regs[i].first()->as_Register(), offset, R1_SP);
-          }
-          slot++;
-          assert(slot <= stack_slots, "overflow (after INT or smaller stack slot)");
-          break;
-        case T_ARRAY:
-        case T_LONG:
-          // handled above
-          break;
-        case T_OBJECT:
-        default: ShouldNotReachHere();
-      }
-    } else if (in_regs[i].first()->is_FloatRegister()) {
-      if (in_sig_bt[i] == T_FLOAT) {
-        int offset = slot * VMRegImpl::stack_slot_size;
-        slot++;
-        assert(slot <= stack_slots, "overflow (after FLOAT stack slot)");
-        if (map != NULL) {
-          __ stfs(in_regs[i].first()->as_FloatRegister(), offset, R1_SP);
-        } else {
-          __ lfs(in_regs[i].first()->as_FloatRegister(), offset, R1_SP);
-        }
-      }
-    } else if (in_regs[i].first()->is_stack()) {
-      if (in_sig_bt[i] == T_ARRAY && map != NULL) {
-        int offset_in_older_frame = in_regs[i].first()->reg2stack() + SharedRuntime::out_preserve_stack_slots();
-        map->set_oop(VMRegImpl::stack2reg(offset_in_older_frame + stack_slots));
-      }
-    }
-  }
-}
-
-// Check GCLocker::needs_gc and enter the runtime if it's true. This
-// keeps a new JNI critical region from starting until a GC has been
-// forced. Save down any oops in registers and describe them in an
-// OopMap.
-static void check_needs_gc_for_critical_native(MacroAssembler* masm,
-                                               const int stack_slots,
-                                               const int total_in_args,
-                                               const int arg_save_area,
-                                               OopMapSet* oop_maps,
-                                               VMRegPair* in_regs,
-                                               BasicType* in_sig_bt,
-                                               Register tmp_reg ) {
-  __ block_comment("check GCLocker::needs_gc");
-  Label cont;
-  __ lbz(tmp_reg, (RegisterOrConstant)(intptr_t)GCLocker::needs_gc_address());
-  __ cmplwi(CCR0, tmp_reg, 0);
-  __ beq(CCR0, cont);
-
-  // Save down any values that are live in registers and call into the
-  // runtime to halt for a GC.
-  OopMap* map = new OopMap(stack_slots * 2, 0 /* arg_slots*/);
-  save_or_restore_arguments(masm, stack_slots, total_in_args,
-                            arg_save_area, map, in_regs, in_sig_bt);
-
-  __ mr(R3_ARG1, R16_thread);
-  __ set_last_Java_frame(R1_SP, noreg);
-
-  __ block_comment("block_for_jni_critical");
-  address entry_point = CAST_FROM_FN_PTR(address, SharedRuntime::block_for_jni_critical);
-#if defined(ABI_ELFv2)
-  __ call_c(entry_point, relocInfo::runtime_call_type);
-#else
-  __ call_c(CAST_FROM_FN_PTR(FunctionDescriptor*, entry_point), relocInfo::runtime_call_type);
-#endif
-  address start           = __ pc() - __ offset(),
-          calls_return_pc = __ last_calls_return_pc();
-  oop_maps->add_gc_map(calls_return_pc - start, map);
-
-  __ reset_last_Java_frame();
-
-  // Reload all the register arguments.
-  save_or_restore_arguments(masm, stack_slots, total_in_args,
-                            arg_save_area, NULL, in_regs, in_sig_bt);
-
-  __ BIND(cont);
-
-#ifdef ASSERT
-  if (StressCriticalJNINatives) {
-    // Stress register saving.
-    OopMap* map = new OopMap(stack_slots * 2, 0 /* arg_slots*/);
-    save_or_restore_arguments(masm, stack_slots, total_in_args,
-                              arg_save_area, map, in_regs, in_sig_bt);
-    // Destroy argument registers.
-    for (int i = 0; i < total_in_args; i++) {
-      if (in_regs[i].first()->is_Register()) {
-        const Register reg = in_regs[i].first()->as_Register();
-        __ neg(reg, reg);
-      } else if (in_regs[i].first()->is_FloatRegister()) {
-        __ fneg(in_regs[i].first()->as_FloatRegister(), in_regs[i].first()->as_FloatRegister());
-      }
-    }
-
-    save_or_restore_arguments(masm, stack_slots, total_in_args,
-                              arg_save_area, NULL, in_regs, in_sig_bt);
-  }
-#endif
-}
-
 static void move_ptr(MacroAssembler* masm, VMRegPair src, VMRegPair dst, Register r_caller_sp, Register r_temp) {
   if (src.first()->is_stack()) {
     if (dst.first()->is_stack()) {
@@ -1821,24 +1671,11 @@ static void gen_special_dispatch(MacroAssembler* masm,
 // Critical native functions are a shorthand for the use of
 // GetPrimtiveArrayCritical and disallow the use of any other JNI
 // functions.  The wrapper is expected to unpack the arguments before
-// passing them to the callee and perform checks before and after the
-// native call to ensure that they GCLocker
-// lock_critical/unlock_critical semantics are followed.  Some other
-// parts of JNI setup are skipped like the tear down of the JNI handle
+// passing them to the callee. Critical native functions leave the state _in_Java,
+// since they cannot stop for GC.
+// Some other parts of JNI setup are skipped like the tear down of the JNI handle
 // block and the check for pending exceptions it's impossible for them
 // to be thrown.
-//
-// They are roughly structured like this:
-//   if (GCLocker::needs_gc())
-//     SharedRuntime::block_for_jni_critical();
-//   tranistion to thread_in_native
-//   unpack arrray arguments and call native entry point
-//   check for safepoint in progress
-//   check if any thread suspend flags are set
-//     call into JVM and possible unlock the JNI critical
-//     if a GC was suppressed while in the critical native.
-//   transition back to thread_in_Java
-//   return to caller
 //
 nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
                                                 const methodHandle& method,
@@ -2146,11 +1983,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   OopMapSet *oop_maps = new OopMapSet();
   OopMap    *oop_map  = new OopMap(stack_slots * 2, 0 /* arg_slots*/);
 
-  if (is_critical_native) {
-    check_needs_gc_for_critical_native(masm, stack_slots, total_in_args, oop_handle_slot_offset,
-                                       oop_maps, in_regs, in_sig_bt, r_temp_1);
-  }
-
   // Move arguments from register/stack to register/stack.
   // --------------------------------------------------------------------------
   //
@@ -2351,18 +2183,19 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ bind(locked);
   }
 
-
-  // Publish thread state
-  // --------------------------------------------------------------------------
-
   // Use that pc we placed in r_return_pc a while back as the current frame anchor.
   __ set_last_Java_frame(R1_SP, r_return_pc);
 
-  // Transition from _thread_in_Java to _thread_in_native.
-  __ li(R0, _thread_in_native);
-  __ release();
-  // TODO: PPC port assert(4 == JavaThread::sz_thread_state(), "unexpected field size");
-  __ stw(R0, thread_(thread_state));
+  if (!is_critical_native) {
+    // Publish thread state
+    // --------------------------------------------------------------------------
+
+    // Transition from _thread_in_Java to _thread_in_native.
+    __ li(R0, _thread_in_native);
+    __ release();
+    // TODO: PPC port assert(4 == JavaThread::sz_thread_state(), "unexpected field size");
+    __ stw(R0, thread_(thread_state));
+  }
 
 
   // The JNI call
@@ -2422,6 +2255,22 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
       break;
   }
 
+  Label after_transition;
+
+  // If this is a critical native, check for a safepoint or suspend request after the call.
+  // If a safepoint is needed, transition to native, then to native_trans to handle
+  // safepoints like the native methods that are not critical natives.
+  if (is_critical_native) {
+    Label needs_safepoint;
+    Register sync_state      = r_temp_5;
+    __ safepoint_poll(needs_safepoint, sync_state);
+
+    Register suspend_flags   = r_temp_6;
+    __ lwz(suspend_flags, thread_(suspend_flags));
+    __ cmpwi(CCR1, suspend_flags, 0);
+    __ beq(CCR1, after_transition);
+    __ bind(needs_safepoint);
+  }
 
   // Publish thread state
   // --------------------------------------------------------------------------
@@ -2449,7 +2298,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
   // Block, if necessary, before resuming in _thread_in_Java state.
   // In order for GC to work, don't clear the last_Java_sp until after blocking.
-  Label after_transition;
   {
     Label no_block, sync;
 
@@ -2477,31 +2325,27 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ bind(sync);
     __ isync();
 
-    address entry_point = is_critical_native
-      ? CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans_and_transition)
-      : CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans);
+    address entry_point =
+      CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans);
     save_native_result(masm, ret_type, workspace_slot_offset);
     __ call_VM_leaf(entry_point, R16_thread);
     restore_native_result(masm, ret_type, workspace_slot_offset);
 
-    if (is_critical_native) {
-      __ b(after_transition); // No thread state transition here.
-    }
     __ bind(no_block);
+
+    // Publish thread state.
+    // --------------------------------------------------------------------------
+
+    // Thread state is thread_in_native_trans. Any safepoint blocking has
+    // already happened so we can now change state to _thread_in_Java.
+
+    // Transition from _thread_in_native_trans to _thread_in_Java.
+    __ li(R0, _thread_in_Java);
+    __ lwsync(); // Acquire safepoint and suspend state, release thread state.
+    // TODO: PPC port assert(4 == JavaThread::sz_thread_state(), "unexpected field size");
+    __ stw(R0, thread_(thread_state));
+    __ bind(after_transition);
   }
-
-  // Publish thread state.
-  // --------------------------------------------------------------------------
-
-  // Thread state is thread_in_native_trans. Any safepoint blocking has
-  // already happened so we can now change state to _thread_in_Java.
-
-  // Transition from _thread_in_native_trans to _thread_in_Java.
-  __ li(R0, _thread_in_Java);
-  __ lwsync(); // Acquire safepoint and suspend state, release thread state.
-  // TODO: PPC port assert(4 == JavaThread::sz_thread_state(), "unexpected field size");
-  __ stw(R0, thread_(thread_state));
-  __ bind(after_transition);
 
   // Reguard any pages if necessary.
   // --------------------------------------------------------------------------
@@ -2657,10 +2501,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
                                             (method_is_static ? in_ByteSize(klass_offset) : in_ByteSize(receiver_offset)),
                                             in_ByteSize(lock_offset),
                                             oop_maps);
-
-  if (is_critical_native) {
-    nm->set_lazy_critical_native(true);
-  }
 
   return nm;
 }

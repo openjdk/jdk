@@ -4541,7 +4541,8 @@ public class BidiBase {
 
         if (0 > start || start > limit || limit > text.length) {
             throw new IllegalArgumentException("Value start " + start +
-                      " is out of range 0 to " + limit);
+                      " is out of range 0 to " + limit + ", or limit " + limit +
+                      " is beyond the text length " + text.length);
         }
 
         for (int i = start; i < limit; ++i) {
