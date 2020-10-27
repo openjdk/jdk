@@ -88,11 +88,9 @@ class VMError : public AllStatic {
 
  public:
 
-  // reset signal handlers to the default exception filter
-  // to handle recursive crashes
-  static void rearm_signal_handlers();
-
-  static void clear_signal_handlers();
+  // set signal handlers on Solaris/Linux or the default exception filter
+  // on Windows, to handle recursive crashes.
+  static void reset_signal_handlers();
 
   // handle -XX:+ShowMessageBoxOnError. buf is used to format the message string
   static void show_message_box(char* buf, int buflen);
