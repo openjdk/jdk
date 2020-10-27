@@ -778,13 +778,14 @@ abstract class EATestCaseBaseTarget extends EATestCaseBaseShared implements Runn
         return value == null ? dflt : value;
     }
 
-    public static final boolean UseJVMCICompiler     = unbox(WB.getBooleanVMFlag("UseJVMCICompiler"), false); // read by debugger
-    public static final boolean DoEscapeAnalysis     = unbox(WB.getBooleanVMFlag("DoEscapeAnalysis"), UseJVMCICompiler);
-    public static final boolean EliminateAllocations = unbox(WB.getBooleanVMFlag("EliminateAllocations"), UseJVMCICompiler); // read by debugger
-    public static final boolean DeoptimizeObjectsALot   = WB.getBooleanVMFlag("DeoptimizeObjectsALot");                      // read by debugger
+    // Some of the fields are only read by the debugger
+    public static final boolean UseJVMCICompiler = unbox(WB.getBooleanVMFlag("UseJVMCICompiler"), false);
+    public static final boolean DoEscapeAnalysis = unbox(WB.getBooleanVMFlag("DoEscapeAnalysis"), UseJVMCICompiler);
+    public static final boolean EliminateAllocations = unbox(WB.getBooleanVMFlag("EliminateAllocations"), UseJVMCICompiler);
+    public static final boolean DeoptimizeObjectsALot = WB.getBooleanVMFlag("DeoptimizeObjectsALot");
     public static final long BiasedLockingBulkRebiasThreshold = WB.getIntxVMFlag("BiasedLockingBulkRebiasThreshold");
     public static final long BiasedLockingBulkRevokeThreshold = WB.getIntxVMFlag("BiasedLockingBulkRevokeThreshold");
-    public static final boolean ZGCIsSelected        = GC.Z.isSelected();
+    public static final boolean ZGCIsSelected = GC.Z.isSelected();
 
     public String testMethodName;
     public int testMethodDepth;
