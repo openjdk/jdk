@@ -29,15 +29,16 @@ import java.io.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-import java.util.TimeZone;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -1739,19 +1740,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
         return -1;
     }
 
-    private static final SimpleDateFormat[] dateFormats;
-
-    static {
-        String[] formats = {
-            "yyyyMMddHHmmss.SSS",
-            "yyyyMMddHHmmss"
-        };
-        dateFormats = new SimpleDateFormat[formats.length];
-        for (int i = 0; i < formats.length; ++i) {
-            dateFormats[i] = new SimpleDateFormat(formats[i]);
-            dateFormats[i].setTimeZone(TimeZone.getTimeZone("GMT"));
-        }
-    }
+    private static final DateTimeFormatter RFC3659_DATETIME_FORMAT = DateTimeFormatter.ofPattern("yyyyMMddHHmmss[.SSS]");
 
     /**
      * Issues the MDTM [path] command to the server to get the modification
@@ -1774,18 +1763,14 @@ public class FtpClient extends sun.net.ftp.FtpClient {
         return null;
     }
 
-    private static synchronized Date parseRfc3659TimeValue(String s) {
-        Date d = null;
-        for (SimpleDateFormat dateFormat : dateFormats) {
-            try {
-                d = dateFormat.parse(s);
-            } catch (ParseException ex) {
-            }
-            if (d != null) {
-                return d;
-            }
+    private static Date parseRfc3659TimeValue(String s) {
+        Date result = null;
+        try {
+            var d = LocalDateTime.parse(s, RFC3659_DATETIME_FORMAT);
+            result = Date.from(d.atZone(ZoneOffset.systemDefault()).toInstant());
+        } catch (DateTimeParseException ex) {
         }
-        return d;
+        return result;
     }
 
     /**
