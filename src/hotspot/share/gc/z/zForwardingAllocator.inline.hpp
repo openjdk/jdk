@@ -25,9 +25,14 @@
 #define SHARE_GC_Z_ZFORWARDINGALLOCATOR_INLINE_HPP
 
 #include "gc/z/zForwardingAllocator.hpp"
+#include "utilities/debug.hpp"
 
 inline size_t ZForwardingAllocator::size() const {
   return _end - _start;
+}
+
+inline bool ZForwardingAllocator::is_full() const {
+  return _top == _end;
 }
 
 inline void* ZForwardingAllocator::alloc(size_t size) {

@@ -27,6 +27,7 @@
 #include "gc/z/zRelocationSet.hpp"
 #include "gc/z/zStat.hpp"
 #include "memory/allocation.hpp"
+#include "utilities/debug.hpp"
 
 ZRelocationSet::ZRelocationSet() :
     _allocator(),
@@ -61,6 +62,8 @@ void ZRelocationSet::populate(ZPage* const* small, size_t nsmall,
   for (size_t i = 0; i < nsmall; i++) {
     _forwardings[j++] = ZForwarding::alloc(&_allocator, small[i]);
   }
+
+  assert(_allocator.is_full(), "Should be full");
 
   // Update statistics
   ZStatRelocation::set_at_populate_relocation_set(_allocator.size());
