@@ -352,6 +352,9 @@ public enum KnownOIDs {
 
     // OIW secsig 1.3.14.3.*
     OIW_DES_CBC("1.3.14.3.2.7", "DES/CBC"),
+    OIW_DES_ECB("1.3.14.3.2.6", "DES/ECB", "DES"),
+
+    DESede("1.3.14.3.2.17", "DESede"),
 
     OIW_DSA("1.3.14.3.2.12", "DSA") {
         @Override
