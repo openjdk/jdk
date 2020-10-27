@@ -848,12 +848,12 @@ void ShenandoahVerifier::verify_before_evacuation() {
 
   verify_at_safepoint(
           "Before Evacuation",
-          _verify_forwarded_none,                  // no forwarded references
+          _verify_forwarded_none,                    // no forwarded references
           _verify_marked_complete_except_references, // walk over marked objects too
-          _verify_cset_disable,                        // non-forwarded references to cset expected
-          _verify_liveness_complete,                // liveness data must be complete here
-          _verify_regions_disable,                  // trash regions not yet recycled
-          _verify_gcstate_stable,                   // mark should have stabilized the heap
+          _verify_cset_disable,                      // non-forwarded references to cset expected
+          _verify_liveness_complete,                 // liveness data must be complete here
+          _verify_regions_disable,                   // trash regions not yet recycled
+          _verify_gcstate_stable,                    // mark should have stabilized the heap
           verify_weak_roots
   );
 }
