@@ -9,7 +9,7 @@ on:
       platforms:
         description: "Platform(s) to execute on"
         required: true
-        default: "Linux x64, Linux x32, Windows x64, macOS x64"
+        default: "Linux x64, Linux x86, Windows x64, macOS x64"
 
 jobs:
   prerequisites:
@@ -18,7 +18,7 @@ jobs:
     outputs:
       should_run: ${{ steps.check_submit.outputs.should_run }}
       bundle_id: ${{ steps.check_bundle_id.outputs.bundle_id }}
-      platform_linux_x32: ${{ steps.check_platforms.outputs.platform_linux_x32 }}
+      platform_linux_x86: ${{ steps.check_platforms.outputs.platform_linux_x86 }}
       platform_linux_x64: ${{ steps.check_platforms.outputs.platform_linux_x64 }}
       platform_windows_x64: ${{ steps.check_platforms.outputs.platform_windows_x64 }}
       platform_macos_x64: ${{ steps.check_platforms.outputs.platform_macos_x64 }}
@@ -33,7 +33,7 @@ jobs:
         id: check_platforms
         run: |
           echo "::set-output name=platform_linux_x64::${{ contains(github.event.inputs.platforms, 'linux x64') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'linux x64'))) }}"
-          echo "::set-output name=platform_linux_x32::${{ contains(github.event.inputs.platforms, 'linux x32') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'linux x32'))) }}"
+          echo "::set-output name=platform_linux_x86::${{ contains(github.event.inputs.platforms, 'linux x86') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'linux x86'))) }}"
           echo "::set-output name=platform_windows_x64::${{ contains(github.event.inputs.platforms, 'windows x64') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'windows x64'))) }}"
           echo "::set-output name=platform_macos_x64::${{ contains(github.event.inputs.platforms, 'macos x64') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'macos x64'))) }}"
         if: steps.check_submit.outputs.should_run != 'false'
@@ -386,11 +386,11 @@ jobs:
           path: ~/linux-x64${{ matrix.artifact }}_testsupport_${{ env.logsuffix }}.zip
         continue-on-error: true
 
-  linux_x32_build:
-    name: Linux x32
+  linux_x86_build:
+    name: Linux x86
     runs-on: "ubuntu-latest"
     needs: prerequisites
-    if: needs.prerequisites.outputs.should_run != 'false' && needs.prerequisites.outputs.platform_linux_x32 != 'false'
+    if: needs.prerequisites.outputs.should_run != 'false' && needs.prerequisites.outputs.platform_linux_x86 != 'false'
 
     strategy:
       fail-fast: false
@@ -466,7 +466,7 @@ jobs:
       - name: Configure
         run: >
           bash configure
-          --with-conf-name=linux-x32
+          --with-conf-name=linux-x86
           --with-target-bits=32
           ${{ matrix.flags }}
           --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}
@@ -480,7 +480,7 @@ jobs:
         working-directory: jdk
 
       - name: Build
-        run: make CONF_NAME=linux-x32 ${{ matrix.build-target }}
+        run: make CONF_NAME=linux-x86 ${{ matrix.build-target }}
         working-directory: jdk
 
   windows_x64_build:
