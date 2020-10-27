@@ -28,6 +28,8 @@
 #include "gc/shared/concurrentGCThread.hpp"
 #include "runtime/mutex.hpp"
 
+class G1ServiceThread;
+
 class G1ServiceTask : public CHeapObj<mtGC> {
   // The next absolute time this task should be executed.
   jlong _time;
@@ -35,10 +37,13 @@ class G1ServiceTask : public CHeapObj<mtGC> {
   const char* _name;
   // Next task in the task queue.
   G1ServiceTask* _next;
+  // The service thread this task is associated with.
+  G1ServiceThread* _service_thread;
 
 public:
   G1ServiceTask(const char* name);
   const char* name();
+  void set_service_thread(G1ServiceThread* thread);
 
   void set_time(jlong time);
   jlong time();
@@ -46,20 +51,20 @@ public:
   void set_next(G1ServiceTask* next);
   G1ServiceTask* next();
 
-  // Do the actual work for the task.
+  // Do the actual work for the task. To get added back to the
+  // execution queue a task can call schedule(delay_ms).
   virtual void execute() = 0;
-  // Delay to the next invocation.
-  virtual uint64_t delay_ms() = 0;
-  // Return if the task should be rescheduled or not.
-  virtual bool should_reschedule() = 0;
+
+protected:
+  // Schedule the task on the associated service thread
+  // using the provided delay in milliseconds.
+  void schedule(jlong delay_ms);
 };
 
 class G1SentinelTask : public G1ServiceTask {
 public:
   G1SentinelTask();
   virtual void execute();
-  virtual uint64_t delay_ms();
-  virtual bool should_reschedule();
 };
 
 class G1ServiceTaskQueue {
@@ -102,12 +107,12 @@ class G1ServiceThread: public ConcurrentGCThread {
 
   G1ServiceTask* pop_due_task();
   void run_task(G1ServiceTask* task);
-  void reschedule_task(G1ServiceTask* task);
 
 public:
   G1ServiceThread();
   double vtime_accum() { return _vtime_accum; }
-  void register_task(G1ServiceTask* task);
+  void register_task(G1ServiceTask* task, jlong delay = 0);
+  void schedule_task(G1ServiceTask* task, jlong delay);
 };
 
 #endif // SHARE_GC_G1_G1SERVICETHREAD_HPP

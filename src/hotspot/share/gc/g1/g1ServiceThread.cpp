@@ -37,22 +37,12 @@
 #include "runtime/os.hpp"
 
 G1SentinelTask::G1SentinelTask() : G1ServiceTask("Sentinel Task") {
-  set_time(LLONG_MAX);
+  set_time(max_jlong);
   set_next(this);
 }
 
 void G1SentinelTask::execute() {
   guarantee(false, "Sentinel service task should never be executed.");
-}
-
-uint64_t G1SentinelTask::delay_ms() {
-  guarantee(false, "Sentinel service task should never be scheduled.");
-  return 0;
-}
-
-bool G1SentinelTask::should_reschedule() {
-  guarantee(false, "Sentinel service task should never be scheduled.");
-  return false;
 }
 
 // Task handling periodic GCs
@@ -102,18 +92,11 @@ public:
 
   virtual void execute() {
     check_for_periodic_gc();
-  }
-
-  virtual uint64_t delay_ms() {
     // G1PeriodicGCInterval is a manageable flag and can be updated
     // during runtime. If no value is set, wait a second and run it
     // again to see if the value has been updated. Otherwise use the
     // real value provided.
-    return G1PeriodicGCInterval == 0 ? 1000 : G1PeriodicGCInterval;
-  }
-
-  virtual bool should_reschedule() {
-    return true;
+    schedule(G1PeriodicGCInterval == 0 ? 1000 : G1PeriodicGCInterval);
   }
 };
 
@@ -182,14 +165,7 @@ public:
   G1RemSetSamplingTask(const char* name) : G1ServiceTask(name) { }
   virtual void execute() {
     sample_young_list_rs_length();
-  }
-
-  virtual uint64_t delay_ms() {
-    return G1ConcRefinementServiceIntervalMillis;
-  }
-
-  virtual bool should_reschedule() {
-    return true;
+    schedule(G1ConcRefinementServiceIntervalMillis);
   }
 };
 
@@ -205,15 +181,31 @@ G1ServiceThread::G1ServiceThread() :
   create_and_start();
 }
 
-void G1ServiceThread::register_task(G1ServiceTask* task) {
-  MonitorLocker ml(&_monitor, Mutex::_no_safepoint_check_flag);
-  _task_queue.add_ordered(task);
-
+void G1ServiceThread::register_task(G1ServiceTask* task, jlong delay) {
   log_debug(gc, task)("G1 Service Thread (%s) (register)", task->name());
+
+  // Associate the task with the service thread.
+  task->set_service_thread(this);
+
+  // Schedule the task to run after the given delay.
+  schedule_task(task, delay);
 
   // Notify the service thread that there is a new task, thread might
   // be waiting and the newly added task might be first in the list.
+  MonitorLocker ml(&_monitor, Mutex::_no_safepoint_check_flag);
   ml.notify();
+}
+
+void G1ServiceThread::schedule_task(G1ServiceTask* task, jlong delay_ms) {
+  // Schedule task by setting the task time and adding it to queue.
+  jlong delay = TimeHelper::millis_to_counter(delay_ms);
+  task->set_time(os::elapsed_counter() + delay);
+
+  MutexLocker ml(&_monitor, Mutex::_no_safepoint_check_flag);
+  _task_queue.add_ordered(task);
+
+  log_trace(gc, task)("G1 Service Thread (%s) (schedule) @%1.3fs",
+                      task->name(), TimeHelper::counter_to_seconds(task->time()));
 }
 
 int64_t G1ServiceThread::time_to_next_task_ms() {
@@ -247,22 +239,6 @@ void G1ServiceThread::sleep_before_next_cycle() {
       ml.wait(sleep_ms);
     }
   }
-}
-
-void G1ServiceThread::reschedule_task(G1ServiceTask* task) {
-  if (!task->should_reschedule()) {
-    log_trace(gc, task)("G1 Service Thread (%s) (done)", task->name());
-    return;
-  }
-
-  // Reschedule task by updating task time and add back to queue.
-  jlong delay = (jlong) TimeHelper::millis_to_counter((jlong) task->delay_ms());
-  task->set_time(os::elapsed_counter() + delay);
-
-  MutexLocker ml(&_monitor, Mutex::_no_safepoint_check_flag);
-  _task_queue.add_ordered(task);
-
-  log_trace(gc, task)("G1 Service Thread (%s) (schedule) @%1.3fs", task->name(), TimeHelper::counter_to_seconds(task->time()));
 }
 
 G1ServiceTask* G1ServiceThread::pop_due_task() {
@@ -299,7 +275,6 @@ void G1ServiceThread::run_service() {
     G1ServiceTask* task = pop_due_task();
     if (task != NULL) {
       run_task(task);
-      reschedule_task(task);
     }
 
     if (os::supports_vtime()) {
@@ -320,6 +295,14 @@ G1ServiceTask::G1ServiceTask(const char* name) :
   _time(),
   _name(name),
   _next(NULL) { }
+
+void G1ServiceTask::set_service_thread(G1ServiceThread* thread) {
+  _service_thread = thread;
+}
+
+void G1ServiceTask::schedule(jlong delay_ms) {
+  _service_thread->schedule_task(this, delay_ms);
+}
 
 const char* G1ServiceTask::name() {
   return _name;

@@ -38,9 +38,12 @@ public:
       G1ServiceTask(name),
       _execution_count(0),
       _reschedule(true) { }
-  virtual void execute() { _execution_count++; }
-  virtual uint64_t delay_ms() { return 100; }
-  virtual bool should_reschedule() { return _reschedule; }
+  virtual void execute() {
+    _execution_count++;
+    if (_reschedule) {
+      schedule(100);
+    }
+  }
 
   int execution_count() { return _execution_count;}
   void set_reschedule(bool reschedule) { _reschedule = reschedule; }
@@ -118,9 +121,8 @@ public:
       _delay_ms(delay) {
     set_time(delay);
   }
-  virtual void execute() { }
-  virtual uint64_t delay_ms() { return (uint64_t) _delay_ms; }
-  virtual bool should_reschedule() { return true; }
+  virtual void execute() {}
+  jlong delay_ms() { return _delay_ms; }
 };
 
 TEST_VM(G1ServiceTaskQueue, add_ordered) {
@@ -137,11 +139,12 @@ TEST_VM(G1ServiceTaskQueue, add_ordered) {
   // random multiplier.
   for (jlong now = 0; now < 1000000; now++) {
     // Random multiplier is at least 1 to ensure progress.
-    int multiplyer = 1 + os::random() % 10;
+    int multiplier = 1 + os::random() % 10;
     while (queue.peek()->time() < now) {
-      G1ServiceTask* task = queue.pop();
+      TestTask* task = (TestTask*) queue.pop();
+      // Update delay multiplier.
       task->execute();
-      task->set_time(now + (jlong) (task->delay_ms() * multiplyer));
+      task->set_time(now + (task->delay_ms() * multiplier));
       // All additions will verify that the queue is sorted.
       queue.add_ordered(task);
     }
