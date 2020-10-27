@@ -3913,9 +3913,7 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
             cfs->skip_u1(attribute_length, CHECK);
 
           } else if (_major_version >= JAVA_16_VERSION) {
-          if (tag == vmSymbols::tag_record()) {
-              // Skip over Record attribute if super class is not java.lang.Record.
-              if (cp->klass_name_at(_super_class_index) == vmSymbols::java_lang_Record()) {
+            if (tag == vmSymbols::tag_record()) {
               if (parsed_record_attribute) {
                 classfile_parse_error("Multiple Record attributes in class file %s", THREAD);
                 return;
@@ -3923,13 +3921,7 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
               parsed_record_attribute = true;
               record_attribute_start = cfs->current();
               record_attribute_length = attribute_length;
-            } else if (log_is_enabled(Info, class, record)) {
-              ResourceMark rm(THREAD);
-                log_info(class, record)(
-                  "Ignoring Record attribute in class %s because super type is not java.lang.Record",
-                  _class_name->as_C_string());
               }
-            }
             cfs->skip_u1(attribute_length, CHECK);
           } else {
             // Unknown attribute
