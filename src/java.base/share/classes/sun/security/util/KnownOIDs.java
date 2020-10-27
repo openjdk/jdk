@@ -351,8 +351,7 @@ public enum KnownOIDs {
     ECDH("1.3.132.1.12"),
 
     // OIW secsig 1.3.14.3.*
-    OIW_DES_CBC("1.3.14.3.2.7", "DES/CBC"),
-    OIW_DES_ECB("1.3.14.3.2.6", "DES/ECB", "DES"),
+    OIW_DES_CBC("1.3.14.3.2.7", "DES/CBC", "DES"),
 
     DESede("1.3.14.3.2.17", "DESede"),
 
