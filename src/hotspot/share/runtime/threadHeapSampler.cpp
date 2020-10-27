@@ -70,8 +70,6 @@ double ThreadHeapSampler::fast_log2(const double& d) {
   assert(FastLogNumBits <= 20, "FastLogNumBits should be less than 20.");
   const uint32_t y = x_high >> (20 - FastLogNumBits) & FastLogMask;
   const int32_t exponent = ((x_high >> 20) & 0x7FF) - 1023;
-
-  assert(_log_table_initialized, "log table should be initialized");
   return exponent + _log_table._values[y];
 }
 
