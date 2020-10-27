@@ -64,6 +64,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
         super(configuration, DocPaths.SERIALIZED_FORM);
         visibleClasses = configuration.getIncludedTypeElements();
         this.navBar = new Navigation(null, configuration, PageMode.SERIALIZED_FORM, path);
+        configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.SERIALIZED_FORM);
     }
 
     /**

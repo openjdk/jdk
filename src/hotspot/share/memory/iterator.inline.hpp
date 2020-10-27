@@ -27,7 +27,6 @@
 
 #include "classfile/classLoaderData.hpp"
 #include "memory/iterator.hpp"
-#include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.hpp"
@@ -51,22 +50,6 @@ inline void ClaimMetadataVisitingOopIterateClosure::do_klass(Klass* k) {
   ClassLoaderData* cld = k->class_loader_data();
   ClaimMetadataVisitingOopIterateClosure::do_cld(cld);
 }
-
-#ifdef ASSERT
-// This verification is applied to all visited oops.
-// The closures can turn is off by overriding should_verify_oops().
-template <typename T>
-void OopIterateClosure::verify(T* p) {
-  if (should_verify_oops()) {
-    T heap_oop = RawAccess<>::oop_load(p);
-    if (!CompressedOops::is_null(heap_oop)) {
-      oop o = CompressedOops::decode_not_null(heap_oop);
-      assert(Universe::heap()->is_in(o),
-             "should be in closed *p " PTR_FORMAT " " PTR_FORMAT, p2i(p), p2i(o));
-    }
-  }
-}
-#endif
 
 // Implementation of the non-virtual do_oop dispatch.
 //
@@ -124,15 +107,8 @@ call_do_oop(void (Receiver::*)(T*), void (Base::*)(T*), OopClosureType* closure,
 }
 
 template <typename OopClosureType, typename T>
-inline void Devirtualizer::do_oop_no_verify(OopClosureType* closure, T* p) {
-  call_do_oop<T>(&OopClosureType::do_oop, &OopClosure::do_oop, closure, p);
-}
-
-template <typename OopClosureType, typename T>
 inline void Devirtualizer::do_oop(OopClosureType* closure, T* p) {
-  debug_only(closure->verify(p));
-
-  do_oop_no_verify(closure, p);
+  call_do_oop<T>(&OopClosureType::do_oop, &OopClosure::do_oop, closure, p);
 }
 
 // Implementation of the non-virtual do_metadata dispatch.

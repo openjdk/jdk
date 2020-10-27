@@ -214,13 +214,6 @@ public:
   virtual ReferenceIterationMode reference_iteration_mode() {
     return _verify_weaks ? DO_FIELDS : DO_FIELDS_EXCEPT_REFERENT;
   }
-
-#ifdef ASSERT
-  // Verification handled by the closure itself
-  virtual bool should_verify_oops() {
-    return false;
-  }
-#endif
 };
 
 template <typename RootsIterator>

@@ -592,23 +592,6 @@ public:
   }
 };
 
-class ShenandoahGCStateResetter : public StackObj {
-private:
-  ShenandoahHeap* const _heap;
-  char _gc_state;
-
-public:
-  ShenandoahGCStateResetter() : _heap(ShenandoahHeap::heap()) {
-    _gc_state = _heap->gc_state();
-    _heap->_gc_state.clear();
-  }
-
-  ~ShenandoahGCStateResetter() {
-    _heap->_gc_state.set(_gc_state);
-    assert(_heap->gc_state() == _gc_state, "Should be restored");
-  }
-};
-
 void ShenandoahVerifier::verify_at_safepoint(const char *label,
                                              VerifyForwarded forwarded, VerifyMarked marked,
                                              VerifyCollectionSet cset,

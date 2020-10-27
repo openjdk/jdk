@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -310,6 +310,15 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
                 }
 
                 int handshakeBodyLen = Record.getInt24(handshakeFrag);
+                if (handshakeBodyLen > SSLConfiguration.maxHandshakeMessageSize) {
+                    throw new SSLProtocolException(
+                            "The size of the handshake message ("
+                            + handshakeBodyLen
+                            + ") exceeds the maximum allowed size ("
+                            + SSLConfiguration.maxHandshakeMessageSize
+                            + ")");
+                }
+
                 handshakeFrag.reset();
                 int handshakeMessageLen =
                         handshakeHeaderSize + handshakeBodyLen;

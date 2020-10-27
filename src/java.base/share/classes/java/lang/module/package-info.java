@@ -208,7 +208,6 @@
  * was enumerated by previous (or parent) resolution. </p>
  *
  * @since 9
- * @spec JPMS
  */
 
 package java.lang.module;

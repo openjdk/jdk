@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1524,7 +1524,8 @@ public class IndexColorModel extends ColorModel {
      *     See the specification for {@link Object#finalize()} for further
      *     information about migration options.
      */
-    @Deprecated(since="9")
+    @Deprecated(since = "9", forRemoval = true)
+    @SuppressWarnings("removal")
     public void finalize() {
     }
 
