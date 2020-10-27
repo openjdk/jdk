@@ -37,7 +37,7 @@
 #include "runtime/os.hpp"
 
 G1SentinelTask::G1SentinelTask() : G1ServiceTask("Sentinel Task") {
-  set_time(DBL_MAX);
+  set_time(LLONG_MAX);
   set_next(this);
 }
 
@@ -220,14 +220,14 @@ int64_t G1ServiceThread::time_to_next_task_ms() {
   assert(_monitor.owned_by_self(), "Must be owner of lock");
   assert(!_task_queue.is_empty(), "Should not be called for empty list");
 
-  double time_diff = _task_queue.peek()->time() - os::elapsedTime();
+  jlong time_diff = _task_queue.peek()->time() - os::elapsed_counter();
   if (time_diff < 0) {
     // Run without sleeping.
     return 0;
   }
 
   // Return sleep time in milliseconds.
-  return (int64_t) (time_diff * MILLIUNITS);
+  return (int64_t) TimeHelper::counter_to_millis(time_diff);
 }
 
 void G1ServiceThread::sleep_before_next_cycle() {
@@ -256,13 +256,13 @@ void G1ServiceThread::reschedule_task(G1ServiceTask* task) {
   }
 
   // Reschedule task by updating task time and add back to queue.
-  double delay = task->delay_ms() / 1000.0;
-  task->set_time(os::elapsedTime() + delay);
+  jlong delay = (jlong) TimeHelper::millis_to_counter((jlong) task->delay_ms());
+  task->set_time(os::elapsed_counter() + delay);
 
   MutexLocker ml(&_monitor, Mutex::_no_safepoint_check_flag);
   _task_queue.add_ordered(task);
 
-  log_trace(gc, task)("G1 Service Thread (%s) (schedule) @%1.3fs", task->name(), task->time());;
+  log_trace(gc, task)("G1 Service Thread (%s) (schedule) @%1.3fs", task->name(), TimeHelper::counter_to_seconds(task->time()));
 }
 
 G1ServiceTask* G1ServiceThread::pop_due_task() {
@@ -325,11 +325,11 @@ const char* G1ServiceTask::name() {
   return _name;
 }
 
-void G1ServiceTask::set_time(double time) {
+void G1ServiceTask::set_time(jlong time) {
   _time = time;
 }
 
-double G1ServiceTask::time() {
+jlong G1ServiceTask::time() {
   return _time;
 }
 
@@ -388,7 +388,7 @@ void G1ServiceTaskQueue::verify_task_queue() {
     G1ServiceTask* next = cur->next();
     assert(cur->time() <= next->time(),
            "Tasks out of order, prev: %s (%1.3fs), next: %s (%1.3fs)",
-           cur->name(), cur->time(), next->name(), next->time());
+           cur->name(), TimeHelper::counter_to_seconds(cur->time()), next->name(), TimeHelper::counter_to_seconds(next->time()));
 
     assert(cur != next, "Invariant");
     cur = next;

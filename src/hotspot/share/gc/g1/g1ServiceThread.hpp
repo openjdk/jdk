@@ -30,7 +30,7 @@
 
 class G1ServiceTask : public CHeapObj<mtGC> {
   // The next absolute time this task should be executed.
-  double _time;
+  jlong _time;
   // Name of the task.
   const char* _name;
   // Next task in the task queue.
@@ -40,8 +40,8 @@ public:
   G1ServiceTask(const char* name);
   const char* name();
 
-  void set_time(double time);
-  double time();
+  void set_time(jlong time);
+  jlong time();
 
   void set_next(G1ServiceTask* next);
   G1ServiceTask* next();

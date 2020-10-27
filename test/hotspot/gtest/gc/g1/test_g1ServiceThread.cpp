@@ -111,15 +111,15 @@ TEST_VM(G1ServiceThread, test_add_run_once) {
 }
 
 class TestTask : public G1ServiceTask {
-  int64_t _delay_ms;
+  jlong _delay_ms;
 public:
-  TestTask(int64_t delay) :
+  TestTask(jlong delay) :
       G1ServiceTask("TestTask"),
       _delay_ms(delay) {
-    set_time(delay / 1000.0);
+    set_time(delay);
   }
   virtual void execute() { }
-  virtual uint64_t delay_ms() { return _delay_ms; }
+  virtual uint64_t delay_ms() { return (uint64_t) _delay_ms; }
   virtual bool should_reschedule() { return true; }
 };
 
@@ -135,13 +135,13 @@ TEST_VM(G1ServiceTaskQueue, add_ordered) {
 
   // Now fake a run-loop, that reschedules the tasks using a
   // random multiplier.
-  for (double now = 0; now < 1000; now++) {
+  for (jlong now = 0; now < 1000000; now++) {
     // Random multiplier is at least 1 to ensure progress.
     int multiplyer = 1 + os::random() % 10;
     while (queue.peek()->time() < now) {
       G1ServiceTask* task = queue.pop();
       task->execute();
-      task->set_time(now + ((task->delay_ms() * multiplyer) / 1000.0));
+      task->set_time(now + (jlong) (task->delay_ms() * multiplyer));
       // All additions will verify that the queue is sorted.
       queue.add_ordered(task);
     }
