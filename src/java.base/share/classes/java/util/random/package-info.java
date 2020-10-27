@@ -24,15 +24,6 @@
  */
 
 /**
- * {@preview Associated with random number generators, a preview feature of
- *           the Java core libraries.
- *
- *           This package is associated with <i>random number generators</i>,
- *           a preview feature of the Java core libraries. Programs can only use
- *           this package when preview features are enabled. Preview features
- *           may be removed in a future release, or upgraded to permanent
- *           features of the Java core libraries.}
- *
  * Classes and interfaces that support the definition and use of "random
  * generators", a term that is meant to cover what have traditionally been
  * called "random number generators" as well as generators of other sorts of
