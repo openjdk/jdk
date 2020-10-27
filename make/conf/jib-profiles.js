@@ -406,10 +406,9 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_cpu: "x64",
             dependencies: ["devkit", "gtest", "graphviz", "pandoc", "graalunit_lib"],
             configure_args: concat(common.configure_args_64bit,
-                "--enable-full-docs", "--with-zlib=system",
+                "--with-zlib=system",
                 (isWsl(input) ? [ "--host=x86_64-unknown-linux-gnu",
                     "--build=x86_64-unknown-linux-gnu" ] : [])),
-            default_make_targets: ["docs-bundles"],
         },
 
         "linux-x86": {
@@ -680,20 +679,46 @@ var getJibProfilesProfiles = function (input, common, data) {
             common.debug_profile_artifacts(artifactData[name]));
     });
 
-    profilesArtifacts = {
-        "linux-x64": {
+    buildJdkDep = input.build_os + "-" + input.build_cpu + ".jdk";
+    docsProfiles = {
+        "docs": {
+            target_os: input.build_os,
+            target_cpu: input.build_cpu,
+            dependencies: [
+                "boot_jdk", "devkit", "graphviz", "pandoc", buildJdkDep,
+            ],
+            configure_args: [
+                "--enable-full-docs",
+                "--with-build-jdk=" + input.get(buildJdkDep, "home_path")
+                    + (input.build_os == "macosx" ? "/Contents/Home" : "")
+            ],
+            default_make_targets: ["all-docs-bundles"],
             artifacts: {
                 doc_api_spec: {
-                    local: "bundles/\\(jdk.*doc-api-spec.tar.gz\\)",
+                    local: "bundles/\\(jdk-" + data.version + ".*doc-api-spec.tar.gz\\)",
                     remote: [
                         "bundles/common/jdk-" + data.version + "_doc-api-spec.tar.gz",
+                        "bundles/common/\\1"
+                    ],
+                },
+                javase_doc_api_spec: {
+                    local: "bundles/\\(javase-" + data.version + ".*doc-api-spec.tar.gz\\)",
+                    remote: [
+                        "bundles/common/javase-" + data.version + "_doc-api-spec.tar.gz",
+                        "bundles/common/\\1"
+                    ],
+                },
+                reference_doc_api_spec: {
+                    local: "bundles/\\(jdk-reference-" + data.version + ".*doc-api-spec.tar.gz\\)",
+                    remote: [
+                        "bundles/common/jdk-reference-" + data.version + "_doc-api-spec.tar.gz",
                         "bundles/common/\\1"
                     ],
                 },
             }
         }
     };
-    profiles = concatObjects(profiles, profilesArtifacts);
+    profiles = concatObjects(profiles, docsProfiles);
 
     // Generate open only profiles for all the main and debug profiles.
     // Rewrite artifact remote paths by adding "openjdk/GPL".

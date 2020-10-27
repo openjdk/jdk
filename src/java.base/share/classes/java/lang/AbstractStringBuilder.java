@@ -1046,7 +1046,6 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      *          if {@code start} or {@code end} are negative,
      *          if {@code end} is greater than {@code length()},
      *          or if {@code start} is greater than {@code end}
-     * @spec JSR-51
      */
     @Override
     public CharSequence subSequence(int start, int end) {

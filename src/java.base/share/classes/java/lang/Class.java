@@ -520,7 +520,6 @@ public final class Class<T> implements java.io.Serializable,
      * @jls 12.2 Loading of Classes and Interfaces
      * @jls 12.3 Linking of Classes and Interfaces
      * @since 9
-     * @spec JPMS
      */
     @CallerSensitive
     public static Class<?> forName(Module module, String name) {
@@ -918,7 +917,6 @@ public final class Class<T> implements java.io.Serializable,
      * @return the module that this class or interface is a member of
      *
      * @since 9
-     * @spec JPMS
      */
     public Module getModule() {
         return module;
@@ -1034,7 +1032,6 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @return the package of this class.
      * @revised 9
-     * @spec JPMS
      */
     public Package getPackage() {
         if (isPrimitive() || isArray()) {
@@ -1069,7 +1066,6 @@ public final class Class<T> implements java.io.Serializable,
      * @return the fully qualified package name
      *
      * @since 9
-     * @spec JPMS
      * @jls 6.7 Fully Qualified Names
      */
     public String getPackageName() {
@@ -2765,7 +2761,6 @@ public final class Class<T> implements java.io.Serializable,
      * @see Module#getResourceAsStream(String)
      * @since  1.1
      * @revised 9
-     * @spec JPMS
      */
     @CallerSensitive
     public InputStream getResourceAsStream(String name) {
@@ -2862,7 +2857,6 @@ public final class Class<T> implements java.io.Serializable,
      * @throws NullPointerException If {@code name} is {@code null}
      * @since  1.1
      * @revised 9
-     * @spec JPMS
      */
     @CallerSensitive
     public URL getResource(String name) {

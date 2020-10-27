@@ -38,12 +38,34 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oopHandle.inline.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/hashtable.inline.hpp"
 
 ArchiveBuilder* ArchiveBuilder::_singleton = NULL;
 intx ArchiveBuilder::_buffer_to_target_delta = 0;
+
+class AdapterHandlerEntry;
+
+class MethodTrampolineInfo {
+  address _c2i_entry_trampoline;
+  AdapterHandlerEntry** _adapter_trampoline;
+public:
+  address c2i_entry_trampoline() { return _c2i_entry_trampoline; }
+  AdapterHandlerEntry** adapter_trampoline() { return _adapter_trampoline; }
+  void set_c2i_entry_trampoline(address addr) { _c2i_entry_trampoline = addr; }
+  void set_adapter_trampoline(AdapterHandlerEntry** entry) { _adapter_trampoline = entry; }
+};
+
+class AdapterToTrampoline : public ResourceHashtable<
+  AdapterHandlerEntry*, MethodTrampolineInfo,
+  primitive_hash<AdapterHandlerEntry*>,
+  primitive_equals<AdapterHandlerEntry*>,
+  941, // prime number
+  ResourceObj::C_HEAP> {};
+
+static AdapterToTrampoline* _adapter_to_trampoline = NULL;
 
 ArchiveBuilder::OtherROAllocMark::~OtherROAllocMark() {
   char* newtop = ArchiveBuilder::singleton()->_ro_region->top();
@@ -259,6 +281,8 @@ void ArchiveBuilder::gather_klasses_and_symbols() {
     // DynamicArchiveBuilder::sort_methods()).
     sort_symbols_and_fix_hash();
     sort_klasses();
+    allocate_method_trampoline_info();
+    allocate_method_trampolines();
   }
 }
 
@@ -797,4 +821,90 @@ void ArchiveBuilder::print_stats(int ro_all, int rw_all, int mc_all) {
 void ArchiveBuilder::clean_up_src_obj_table() {
   SrcObjTableCleaner cleaner;
   _src_obj_table.iterate(&cleaner);
+}
+
+void ArchiveBuilder::allocate_method_trampolines_for(InstanceKlass* ik) {
+  if (ik->methods() != NULL) {
+    for (int j = 0; j < ik->methods()->length(); j++) {
+      // Walk the methods in a deterministic order so that the trampolines are
+      // created in a deterministic order.
+      Method* m = ik->methods()->at(j);
+      AdapterHandlerEntry* ent = m->adapter(); // different methods can share the same AdapterHandlerEntry
+      MethodTrampolineInfo* info = _adapter_to_trampoline->get(ent);
+      if (info->c2i_entry_trampoline() == NULL) {
+        info->set_c2i_entry_trampoline(
+          (address)MetaspaceShared::misc_code_space_alloc(SharedRuntime::trampoline_size()));
+        info->set_adapter_trampoline(
+          (AdapterHandlerEntry**)MetaspaceShared::misc_code_space_alloc(sizeof(AdapterHandlerEntry*)));
+      }
+    }
+  }
+}
+
+void ArchiveBuilder::allocate_method_trampolines() {
+  for (int i = 0; i < _klasses->length(); i++) {
+    Klass* k = _klasses->at(i);
+    if (k->is_instance_klass()) {
+      InstanceKlass* ik = InstanceKlass::cast(k);
+      allocate_method_trampolines_for(ik);
+    }
+  }
+}
+
+// Allocate MethodTrampolineInfo for all Methods that will be archived. Also
+// return the total number of bytes needed by the method trampolines in the MC
+// region.
+size_t ArchiveBuilder::allocate_method_trampoline_info() {
+  size_t total = 0;
+  size_t each_method_bytes =
+    align_up(SharedRuntime::trampoline_size(), BytesPerWord) +
+    align_up(sizeof(AdapterHandlerEntry*), BytesPerWord);
+
+  if (_adapter_to_trampoline == NULL) {
+    _adapter_to_trampoline = new (ResourceObj::C_HEAP, mtClass)AdapterToTrampoline();
+  }
+  int count = 0;
+  for (int i = 0; i < _klasses->length(); i++) {
+    Klass* k = _klasses->at(i);
+    if (k->is_instance_klass()) {
+      InstanceKlass* ik = InstanceKlass::cast(k);
+      if (ik->methods() != NULL) {
+        for (int j = 0; j < ik->methods()->length(); j++) {
+          Method* m = ik->methods()->at(j);
+          AdapterHandlerEntry* ent = m->adapter(); // different methods can share the same AdapterHandlerEntry
+          bool is_created = false;
+          MethodTrampolineInfo* info = _adapter_to_trampoline->put_if_absent(ent, &is_created);
+          if (is_created) {
+            count++;
+          }
+        }
+      }
+    }
+  }
+  if (count == 0) {
+    // We have nothing to archive, but let's avoid having an empty region.
+    total = SharedRuntime::trampoline_size();
+  } else {
+    total = count * each_method_bytes;
+  }
+  return align_up(total, SharedSpaceObjectAlignment);
+}
+
+void ArchiveBuilder::update_method_trampolines() {
+  for (int i = 0; i < klasses()->length(); i++) {
+    Klass* k = klasses()->at(i);
+    if (k->is_instance_klass()) {
+      InstanceKlass* ik = InstanceKlass::cast(k);
+      Array<Method*>* methods = ik->methods();
+      for (int j = 0; j < methods->length(); j++) {
+        Method* m = methods->at(j);
+        AdapterHandlerEntry* ent = m->adapter();
+        MethodTrampolineInfo* info = _adapter_to_trampoline->get(ent);
+        // m is the "copy" of the original Method, but its adapter() field is still valid because
+        // we haven't called make_klasses_shareable() yet.
+        m->set_from_compiled_entry(info->c2i_entry_trampoline());
+        m->set_adapter_trampoline(info->adapter_trampoline());
+      }
+    }
+  }
 }
