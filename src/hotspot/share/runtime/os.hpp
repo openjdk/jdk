@@ -966,6 +966,8 @@ class os: AllStatic {
   };
 #endif // !WINDOWS
 
+  static address ucontext_get_pc(const ucontext_t* ctx);
+  static void    ucontext_set_pc(ucontext_t* ctx, address pc);
 
  protected:
   static volatile unsigned int _rand_seed;    // seed for random number generator

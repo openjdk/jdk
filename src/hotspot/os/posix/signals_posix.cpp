@@ -1263,30 +1263,6 @@ bool PosixSignals::unblock_thread_signal_mask(const sigset_t *set) {
   return rc == 0 ? true : false;
 }
 
-address PosixSignals::ucontext_get_pc(const ucontext_t* ctx) {
-#if defined(AIX)
-   return os::Aix::ucontext_get_pc(ctx);
-#elif defined(BSD)
-   return os::Bsd::ucontext_get_pc(ctx);
-#elif defined(LINUX)
-   return os::Linux::ucontext_get_pc(ctx);
-#else
-   VMError::report_and_die("unimplemented ucontext_get_pc");
-#endif
-}
-
-void PosixSignals::ucontext_set_pc(ucontext_t* ctx, address pc) {
-#if defined(AIX)
-   os::Aix::ucontext_set_pc(ctx, pc);
-#elif defined(BSD)
-   os::Bsd::ucontext_set_pc(ctx, pc);
-#elif defined(LINUX)
-   os::Linux::ucontext_set_pc(ctx, pc);
-#else
-   VMError::report_and_die("unimplemented ucontext_set_pc");
-#endif
-}
-
 void PosixSignals::signal_sets_init() {
   sigemptyset(&preinstalled_sigs);
 

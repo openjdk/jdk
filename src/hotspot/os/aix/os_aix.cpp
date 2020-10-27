@@ -3325,3 +3325,11 @@ int os::compare_file_modified_times(const char* file1, const char* file2) {
 bool os::supports_map_sync() {
   return false;
 }
+
+address os::ucontext_get_pc(const ucontext_t* ctx) {
+  return os::Aix::ucontext_get_pc(ctx);
+}
+
+void os::ucontext_set_pc(ucontext_t* ctx, address pc) {
+  os::Aix::ucontext_set_pc(ctx, pc);
+}

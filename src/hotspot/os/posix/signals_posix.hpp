@@ -50,10 +50,6 @@ public:
 
   static void print_signal_handler(outputStream* st, int sig, char* buf, size_t buflen);
 
-  static address ucontext_get_pc(const ucontext_t* ctx);
-  // Set PC into context. Needed for continuation after signal.
-  static void ucontext_set_pc(ucontext_t* ctx, address pc);
-
   // Suspend-resume
   static int SR_initialize();
   static bool do_suspend(OSThread* osthread);

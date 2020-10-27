@@ -5418,6 +5418,14 @@ bool os::supports_map_sync() {
   return true;
 }
 
+address os::ucontext_get_pc(const ucontext_t* ctx) {
+  return os::Linux::ucontext_get_pc(ctx);
+}
+
+void os::ucontext_set_pc(ucontext_t* ctx, address pc) {
+  os::Linux::ucontext_set_pc(ctx, pc);
+}
+
 /////////////// Unit tests ///////////////
 
 #ifndef PRODUCT
