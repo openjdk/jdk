@@ -907,7 +907,6 @@ java/awt/TrayIcon/DblClickActionEventTest/DblClickActionEventTest.html 8203867 m
 java/awt/Frame/FrameStateTest/FrameStateTest.html 8203920 macosx-all,linux-all
 javax/swing/SwingUtilities/TestTextPosInPrint.java 8227025 windows-all
 java/awt/print/PrinterJob/ScaledText/ScaledText.java 8231226 macosx-all
-java/awt/print/bug8023392/bug8023392.html 8231231 generic-all
 java/awt/font/TextLayout/TestJustification.html 8250791 macosx-all
 javax/swing/JTabbedPane/4209065/bug4209065.java 8251177 macosx-all
 java/awt/TrayIcon/DragEventSource/DragEventSource.java 8252242 macosx-all
