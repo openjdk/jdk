@@ -83,7 +83,7 @@ void SafepointMechanism::process(JavaThread *thread) {
     SafepointSynchronize::block(thread); // Recursive
   }
 
-  // The call to start_processing fixes the thread's oops and the first few frames.
+  // The call to on_safepoint fixes the thread's oops and the first few frames.
   //
   // The call has been carefully placed here to cater for a few situations:
   // 1) After we exit from block after a global poll

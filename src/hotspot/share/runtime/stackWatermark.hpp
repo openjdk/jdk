@@ -129,7 +129,7 @@ public:
   StackWatermark* next() const { return _next; }
   void set_next(StackWatermark* n) { _next = n; }
 
-  void link_watermark(StackWatermark* watermark) { _linked_watermark = watermark; }
+  void link_watermark(StackWatermark* watermark);
 
   uintptr_t watermark();
   uintptr_t last_processed();

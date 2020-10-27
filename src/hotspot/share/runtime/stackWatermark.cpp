@@ -248,6 +248,11 @@ void StackWatermark::process_one() {
   }
 }
 
+void StackWatermark::link_watermark(StackWatermark* watermark) {
+  assert(watermark == NULL || _linked_watermark == NULL, "nesting not supported");
+  _linked_watermark = watermark;
+}
+
 uintptr_t StackWatermark::watermark() {
   return Atomic::load_acquire(&_watermark);
 }
