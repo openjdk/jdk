@@ -785,7 +785,6 @@ javax/swing/tree/DefaultTreeCellRenderer/7142955/bug7142955.java 8199076 generic
 javax/swing/UIDefaults/6302464/bug6302464.java 8199079 macosx-all
 javax/swing/UIDefaults/8149879/InternalResourceBundle.java 8199054 windows-all
 javax/swing/PopupFactory/8048506/bug8048506.java 8202660 windows-all
-javax/swing/JTextArea/TextViewOOM/TextViewOOM.java 8167355 generic-all
 javax/swing/JPopupMenu/8075063/ContextMenuScrollTest.java 202880 linux-all
 javax/swing/dnd/8139050/NativeErrorsInTableDnD.java 8202765  macosx-all,linux-all
 javax/swing/Popup/TaskbarPositionTest.java 8065097 macosx-all,linux-all
