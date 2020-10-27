@@ -976,33 +976,6 @@ public class RecordCompilationTests extends CompilationTestCase {
         assertOK("record R(int x) { public R { Runnable r = () -> { return; };} }");
     }
 
-    public void staticMethodsInInnerClasses() {
-        // inner classes can contain static methods
-        assertOK(
-                """
-                class C {
-                    class Inner {
-                        // static method inside inner class
-                        static void m() {}
-                    }
-                }
-                """
-        );
-
-        assertOK(
-                """
-                class C {
-                     void m() {
-                         new Object() {
-                            // static method inside inner class
-                            static void m() {}
-                         };
-                     }
-                }
-                """
-        );
-    }
-
     public void testArgumentsAreNotFinalInCompact() {
         assertOK(
                 """
