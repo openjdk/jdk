@@ -35,7 +35,6 @@
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/powerOfTwo.hpp"
 
 inline uint8_t ZPage::type_from_size(size_t size) const {
   if (size == ZPageSizeSmall) {
@@ -211,18 +210,6 @@ inline uint32_t ZPage::live_objects() const {
 inline size_t ZPage::live_bytes() const {
   assert(is_marked(), "Should be marked");
   return _livemap.live_bytes();
-}
-
-inline uint32_t ZPage::forwarding_entries() const {
-  assert(live_objects() > 0, "Invalid value");
-
-  // The number returned by the function is used to size the hash table of
-  // forwarding entries for this page. This hash table uses linear probing.
-  // The size of the table must be a power of two to allow for quick and
-  // inexpensive indexing/masking. The table is also sized to have a load
-  // factor of 50%, i.e. sized to have double the number of entries actually
-  // inserted, to allow for good lookup/insert performance.
-  return round_up_power_of_2(live_objects() * 2);
 }
 
 inline void ZPage::object_iterate(ObjectClosure* cl) {

@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/z/zArray.inline.hpp"
+#include "gc/z/zForwarding.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zRelocationSet.hpp"
 #include "gc/z/zRelocationSetSelector.inline.hpp"
@@ -52,6 +53,7 @@ ZRelocationSetSelectorGroup::ZRelocationSetSelectorGroup(const char* name,
     _fragmentation_limit(page_size * (ZFragmentationLimit / 100)),
     _registered_pages(),
     _sorted_pages(NULL),
+    _nselected(0),
     _forwarding_entries(0),
     _stats() {}
 
@@ -153,7 +155,7 @@ void ZRelocationSetSelectorGroup::select_inner() {
     // Add page to the candidate relocation set
     ZPage* const page = _sorted_pages[from - 1];
     from_live_bytes += page->live_bytes();
-    from_forwarding_entries += page->forwarding_entries();
+    from_forwarding_entries += ZForwarding::nentries(page);
 
     // Calculate the maximum number of pages needed by the candidate relocation set.
     // By subtracting the object size limit from the pages size we get the maximum

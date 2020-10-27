@@ -98,7 +98,6 @@ public:
   void inc_live(uint32_t objects, size_t bytes);
   uint32_t live_objects() const;
   size_t live_bytes() const;
-  uint32_t forwarding_entries() const;
 
   void object_iterate(ObjectClosure* cl);
 

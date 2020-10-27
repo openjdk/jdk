@@ -160,7 +160,8 @@ public:
 
     // Setup allocator
     ZForwardingAllocator allocator;
-    allocator.reset((sizeof(ZForwarding)) + (page.forwarding_entries() * sizeof(ZForwardingEntry)));
+    const uint32_t nentries = ZForwarding::nentries(&page);
+    allocator.reset((sizeof(ZForwarding)) + (nentries * sizeof(ZForwardingEntry)));
 
     // Setup forwarding
     ZForwarding* const forwarding = ZForwarding::alloc(&allocator, &page);
