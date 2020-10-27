@@ -3137,7 +3137,7 @@ void os::split_reserved_memory(char *base, size_t size, size_t split) {
 // Multiple threads can race in this code but it's not possible to unmap small sections of
 // virtual space to get requested alignment, like posix-like os's.
 // Windows prevents multiple thread from remapping over each other so this loop is thread-safe.
-char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
+static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
   assert((alignment & (os::vm_allocation_granularity() - 1)) == 0,
          "Alignment must be a multiple of allocation granularity (page size)");
   assert((size & (alignment -1)) == 0, "size must be 'alignment' aligned");
@@ -3164,7 +3164,7 @@ char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int file_desc
     }
 
     aligned_base = file_desc != -1 ?
-      os::attempt_map_memory_to_file(aligned_base, size, file_desc) :
+      os::attempt_map_memory_to_file_at(aligned_base, size, file_desc) :
       os::attempt_reserve_memory_at(aligned_base, size);
 
   } while (aligned_base == NULL);
@@ -3217,7 +3217,7 @@ char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes) {
   return res;
 }
 
-char* os::pd_attempt_map_memory_to_file(char* requested_addr, size_t bytes, int file_desc) {
+char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, int file_desc) {
   assert(file_desc >= 0, "file_desc is not valid");
   return map_memory_to_file(requested_addr, bytes, file_desc);
 }

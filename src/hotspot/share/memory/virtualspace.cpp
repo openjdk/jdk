@@ -83,7 +83,7 @@ ReservedSpace::ReservedSpace(char* base, size_t size, size_t alignment,
 // Helper method
 static char* attempt_map_or_reserve_memory_at(char* base, size_t size, int fd) {
   if (fd != -1) {
-    return os::attempt_map_memory_to_file(base, size, fd);
+    return os::attempt_map_memory_to_file_at(base, size, fd);
   }
   return os::attempt_reserve_memory_at(base, size);
 }

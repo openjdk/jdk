@@ -307,6 +307,7 @@ static size_t calculate_aligned_extra_size(size_t size, size_t alignment) {
   return extra_size;
 }
 
+// After a bigger chunk was mapped, unmaps start and end parts to get the requested alignment.
 static char* chop_extra_memory(size_t size, size_t alignment, char* extra_base, size_t extra_size) {
   // Do manual alignment
   char* aligned_base = align_up(extra_base, alignment);

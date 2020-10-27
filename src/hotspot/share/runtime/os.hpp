@@ -130,7 +130,7 @@ class os: AllStatic {
   static bool   pd_uncommit_memory(char* addr, size_t bytes);
   static bool   pd_release_memory(char* addr, size_t bytes);
 
-  static char*  pd_attempt_map_memory_to_file(char* addr, size_t bytes, int file_desc);
+  static char*  pd_attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc);
 
   static char*  pd_map_memory(int fd, const char* file_name, size_t file_offset,
                            char *addr, size_t bytes, bool read_only = false,
@@ -369,7 +369,7 @@ class os: AllStatic {
   static char* map_memory_to_file(size_t size, int fd);
   static char* map_memory_to_file_aligned(size_t size, size_t alignment, int fd);
   static char* map_memory_to_file(char* base, size_t size, int fd);
-  static char* attempt_map_memory_to_file(char* base, size_t size, int fd);
+  static char* attempt_map_memory_to_file_at(char* base, size_t size, int fd);
   // Replace existing reserved memory with file mapping
   static char* replace_existing_mapping_with_file_mapping(char* base, size_t size, int fd);
 

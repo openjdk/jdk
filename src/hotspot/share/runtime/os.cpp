@@ -1741,8 +1741,8 @@ char* os::map_memory_to_file(size_t bytes, int file_desc) {
   return result;
 }
 
-char* os::attempt_map_memory_to_file(char* addr, size_t bytes, int file_desc) {
-  char* result = pd_attempt_map_memory_to_file(addr, bytes, file_desc);
+char* os::attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc) {
+  char* result = pd_attempt_map_memory_to_file_at(addr, bytes, file_desc);
   if (result != NULL) {
     MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC);
   }
