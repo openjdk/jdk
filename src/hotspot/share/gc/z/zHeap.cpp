@@ -362,6 +362,9 @@ void ZHeap::process_non_strong_references() {
 }
 
 void ZHeap::free_garbage_pages(ZRelocationSetSelector* selector, int bulk) {
+  // Freeing garbage pages in bulk is an optimization to avoid grabbing
+  // the page allocator lock, and trying to satisfy stalled allocations
+  // too frequently.
   if (selector->should_free_garbage_pages(bulk)) {
     free_pages(selector->garbage_pages(), true /* reclaimed */);
     selector->clear_garbage_pages();
