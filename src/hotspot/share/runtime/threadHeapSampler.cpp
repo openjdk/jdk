@@ -34,19 +34,18 @@ uint64_t ThreadHeapSampler::_rnd;
 // Default is 512kb.
 volatile int ThreadHeapSampler::_sampling_interval = 512 * 1024;
 
-// Ordering here is important: _log_table first, _log_table_initialized second.
-double ThreadHeapSampler::_log_table[1 << ThreadHeapSampler::FastLogNumBits] = {};
-
-// Force initialization of the log_table.
-bool ThreadHeapSampler::_log_table_initialized = init_log_table();
-
-bool ThreadHeapSampler::init_log_table() {
-  for (int i = 0; i < (1 << FastLogNumBits); i++) {
-    _log_table[i] = (log(1.0 + static_cast<double>(i+0.5) / (1 << FastLogNumBits))
+template<int N>
+struct FastLogTable {
+  constexpr FastLogTable() : _values() {
+    for (int i = 0; i < N; i++) {
+      _values[i] = (log(1.0 + static_cast<double>(i+0.5) / N)
                     / log(2.0));
+    }
   }
-  return true;
-}
+  double _values[N];
+};
+
+const FastLogTable<ThreadHeapSampler::FastLogCount> ThreadHeapSampler::_log_table;
 
 // Returns the next prng value.
 // pRNG is: aX+b mod c with a = 0x5DEECE66D, b =  0xB, c = 1<<48
@@ -73,7 +72,7 @@ double ThreadHeapSampler::fast_log2(const double& d) {
   const int32_t exponent = ((x_high >> 20) & 0x7FF) - 1023;
 
   assert(_log_table_initialized, "log table should be initialized");
-  return exponent + _log_table[y];
+  return exponent + _log_table._values[y];
 }
 
 // Generates a geometric variable with the specified mean (512K by default).
