@@ -1757,8 +1757,8 @@ public class FtpClient extends sun.net.ftp.FtpClient {
     public Date getLastModified(String path) throws sun.net.ftp.FtpProtocolException, IOException {
         issueCommandCheck("MDTM " + path);
         if (lastReplyCode == FtpReplyCode.FILE_STATUS) {
-            String s = getResponseString().substring(4);
-            return parseRfc3659TimeValue(s);
+            String s = getResponseString();
+            return parseRfc3659TimeValue(s.substring(4, s.length() - 1));
         }
         return null;
     }
