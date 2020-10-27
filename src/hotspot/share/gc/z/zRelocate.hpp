@@ -24,9 +24,9 @@
 #ifndef SHARE_GC_Z_ZRELOCATE_HPP
 #define SHARE_GC_Z_ZRELOCATE_HPP
 
+#include "gc/z/zRelocationSet.hpp"
+
 class ZForwarding;
-class ZRelocationSet;
-class ZRelocationSetParallelIterator;
 class ZWorkers;
 
 class ZRelocate {

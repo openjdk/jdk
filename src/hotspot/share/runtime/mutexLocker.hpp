@@ -45,6 +45,7 @@ extern Mutex*   JmethodIdCreation_lock;          // a lock on creating JNI metho
 extern Mutex*   JfieldIdCreation_lock;           // a lock on creating JNI static field identifiers
 extern Monitor* JNICritical_lock;                // a lock used while entering and exiting JNI critical regions, allows GC to sometimes get in
 extern Mutex*   JvmtiThreadState_lock;           // a lock on modification of JVMTI thread data
+extern Monitor* EscapeBarrier_lock;              // a lock to sync reallocating and relocking objects because of JVMTI access
 extern Monitor* Heap_lock;                       // a lock on the heap
 extern Mutex*   ExpandHeap_lock;                 // a lock on expanding the heap
 extern Mutex*   AdapterHandlerLibrary_lock;      // a lock on the AdapterHandlerLibrary
@@ -130,6 +131,7 @@ extern Mutex*   CDSClassFileStream_lock;         // FileMapInfo::open_stream_for
 extern Mutex*   DumpTimeTable_lock;              // SystemDictionaryShared::find_or_allocate_info_for
 extern Mutex*   CDSLambda_lock;                  // SystemDictionaryShared::get_shared_lambda_proxy_class
 extern Mutex*   DumpRegion_lock;                 // Symbol::operator new(size_t sz, int len)
+extern Mutex*   ClassListFile_lock;              // ClassListWriter()
 #endif // INCLUDE_CDS
 #if INCLUDE_JFR
 extern Mutex*   JfrStacktrace_lock;              // used to guard access to the JFR stacktrace table

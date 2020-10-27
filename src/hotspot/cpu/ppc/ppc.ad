@@ -535,9 +535,7 @@ alloc_class chunk4 (
 // information in this architecture description.
 
 // 1) reg_class inline_cache_reg           ( as defined in frame section )
-// 2) reg_class compiler_method_reg        ( as defined in frame section )
-// 2) reg_class interpreter_method_reg     ( as defined in frame section )
-// 3) reg_class stack_slots( /* one chunk of stack-based "registers" */ )
+// 2) reg_class stack_slots( /* one chunk of stack-based "registers" */ )
 //
 
 // ----------------------------
@@ -2064,97 +2062,78 @@ static int frame_slots_bias(int reg_enc, PhaseRegAlloc* ra_) {
 }
 
 const bool Matcher::match_rule_supported(int opcode) {
-  if (!has_match_rule(opcode))
-    return false;
-
-  bool ret_value = true;
-  switch (opcode) {
-  case Op_SqrtD:
-    return VM_Version::has_fsqrt();
-  case Op_CountLeadingZerosI:
-  case Op_CountLeadingZerosL:
-    if (!UseCountLeadingZerosInstructionsPPC64)
-      return false;
-    break;
-  case Op_CountTrailingZerosI:
-  case Op_CountTrailingZerosL:
-    if (!UseCountLeadingZerosInstructionsPPC64 &&
-        !UseCountTrailingZerosInstructionsPPC64)
-      return false;
-    break;
-
-  case Op_PopCountI:
-  case Op_PopCountL:
-    return (UsePopCountInstruction && VM_Version::has_popcntw());
-
-  case Op_StrComp:
-    return SpecialStringCompareTo;
-  case Op_StrEquals:
-    return SpecialStringEquals;
-  case Op_StrIndexOf:
-  case Op_StrIndexOfChar:
-    return SpecialStringIndexOf;
-  case Op_AddVB:
-  case Op_AddVS:
-  case Op_AddVI:
-  case Op_AddVF:
-  case Op_AddVD:
-  case Op_SubVB:
-  case Op_SubVS:
-  case Op_SubVI:
-  case Op_SubVF:
-  case Op_SubVD:
-  case Op_MulVS:
-  case Op_MulVF:
-  case Op_MulVD:
-  case Op_DivVF:
-  case Op_DivVD:
-  case Op_AbsVF:
-  case Op_AbsVD:
-  case Op_NegVF:
-  case Op_NegVD:
-  case Op_SqrtVF:
-  case Op_SqrtVD:
-  case Op_AddVL:
-  case Op_SubVL:
-  case Op_MulVI:
-  case Op_RoundDoubleModeV:
-    return SuperwordUseVSX;
-  case Op_PopCountVI:
-    return (SuperwordUseVSX && UsePopCountInstruction);
-  case Op_FmaVF:
-  case Op_FmaVD:
-    return (SuperwordUseVSX && UseFMA);
-  case Op_Digit:
-    return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_isDigit);
-  case Op_LowerCase:
-    return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_isLowerCase);
-  case Op_UpperCase:
-    return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_isUpperCase);
-  case Op_Whitespace:
-    return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_isWhitespace);
-
-  case Op_CacheWB:
-  case Op_CacheWBPreSync:
-  case Op_CacheWBPostSync:
-    if (!VM_Version::supports_data_cache_line_flush()) {
-      ret_value = false;
-    }
-    break;
+  if (!has_match_rule(opcode)) {
+    return false; // no match rule present
   }
 
-  return ret_value;  // Per default match rules are supported.
+  switch (opcode) {
+    case Op_SqrtD:
+      return VM_Version::has_fsqrt();
+    case Op_CountLeadingZerosI:
+    case Op_CountLeadingZerosL:
+      return UseCountLeadingZerosInstructionsPPC64;
+    case Op_CountTrailingZerosI:
+    case Op_CountTrailingZerosL:
+      return (UseCountLeadingZerosInstructionsPPC64 || UseCountTrailingZerosInstructionsPPC64);
+    case Op_PopCountI:
+    case Op_PopCountL:
+      return (UsePopCountInstruction && VM_Version::has_popcntw());
+
+    case Op_AddVB:
+    case Op_AddVS:
+    case Op_AddVI:
+    case Op_AddVF:
+    case Op_AddVD:
+    case Op_SubVB:
+    case Op_SubVS:
+    case Op_SubVI:
+    case Op_SubVF:
+    case Op_SubVD:
+    case Op_MulVS:
+    case Op_MulVF:
+    case Op_MulVD:
+    case Op_DivVF:
+    case Op_DivVD:
+    case Op_AbsVF:
+    case Op_AbsVD:
+    case Op_NegVF:
+    case Op_NegVD:
+    case Op_SqrtVF:
+    case Op_SqrtVD:
+    case Op_AddVL:
+    case Op_SubVL:
+    case Op_MulVI:
+    case Op_RoundDoubleModeV:
+      return SuperwordUseVSX;
+    case Op_PopCountVI:
+      return (SuperwordUseVSX && UsePopCountInstruction);
+    case Op_FmaVF:
+    case Op_FmaVD:
+      return (SuperwordUseVSX && UseFMA);
+
+    case Op_Digit:
+      return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_isDigit);
+    case Op_LowerCase:
+      return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_isLowerCase);
+    case Op_UpperCase:
+      return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_isUpperCase);
+    case Op_Whitespace:
+      return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_isWhitespace);
+
+    case Op_CacheWB:
+    case Op_CacheWBPreSync:
+    case Op_CacheWBPostSync:
+      return VM_Version::supports_data_cache_line_flush();
+  }
+
+  return true; // Per default match rules are supported.
 }
 
 const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
-
-  // TODO
-  // identify extra cases that we might want to provide match rules for
-  // e.g. Op_ vector nodes and other intrinsics while guarding with vlen
-  bool ret_value = match_rule_supported(opcode);
-  // Add rules here.
-
-  return ret_value;  // Per default match rules are supported.
+  if (!match_rule_supported(opcode) || !vector_size_supported(bt, vlen)) {
+    return false;
+  }
+  return true; // Per default match rules are supported.
 }
 
 const bool Matcher::has_predicated_vectors(void) {
@@ -2343,10 +2322,6 @@ const bool Matcher::rematerialize_float_constants = false;
 // piece-by-piece. Only happens when passing doubles into C code as the
 // Java calling convention forces doubles to be aligned.
 const bool Matcher::misaligned_doubles_ok = true;
-
-void Matcher::pd_implicit_null_fixup(MachNode *node, uint idx) {
- Unimplemented();
-}
 
 // Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
 const bool Matcher::strict_fp_requires_explicit_rounding = false;
@@ -3859,9 +3834,6 @@ frame %{
   // Inline Cache Register or method for I2C.
   inline_cache_reg(R19); // R19_method
 
-  // Method Register when calling interpreter.
-  interpreter_method_reg(R19); // R19_method
-
   // Optional: name the operand used by cisc-spilling to access
   // [stack_pointer + offset].
   cisc_spilling_operand_name(indOffset);
@@ -4764,20 +4736,6 @@ operand regF() %{
 // Method Register
 operand inline_cache_regP(iRegPdst reg) %{
   constraint(ALLOC_IN_RC(r19_bits64_reg)); // inline_cache_reg
-  match(reg);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand compiler_method_regP(iRegPdst reg) %{
-  constraint(ALLOC_IN_RC(rscratch1_bits64_reg)); // compiler_method_reg
-  match(reg);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand interpreter_method_regP(iRegPdst reg) %{
-  constraint(ALLOC_IN_RC(r19_bits64_reg)); // interpreter_method_reg
   match(reg);
   format %{ %}
   interface(REG_INTER);
@@ -6590,6 +6548,23 @@ instruct storeV16(indirect mem, vecX src) %{
     __ stxvd2x($src$$VectorSRegister, $mem$$Register);
   %}
   ins_pipe(pipe_class_default);
+%}
+
+// Reinterpret: only one vector size used: either L or X
+instruct reinterpretL(iRegLdst dst) %{
+  match(Set dst (VectorReinterpret dst));
+  ins_cost(0);
+  format %{ "reinterpret $dst" %}
+  ins_encode( /*empty*/ );
+  ins_pipe(pipe_class_empty);
+%}
+
+instruct reinterpretX(vecX dst) %{
+  match(Set dst (VectorReinterpret dst));
+  ins_cost(0);
+  format %{ "reinterpret $dst" %}
+  ins_encode( /*empty*/ );
+  ins_pipe(pipe_class_empty);
 %}
 
 // Store Compressed Oop
@@ -12622,15 +12597,35 @@ instruct indexOfChar_U(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt,
                        flagsRegCR0 cr0, flagsRegCR1 cr1, regCTR ctr) %{
   match(Set result (StrIndexOfChar (Binary haystack haycnt) ch));
   effect(TEMP tmp1, TEMP tmp2, KILL cr0, KILL cr1, KILL ctr);
+  predicate(((StrIndexOfCharNode*)n)->encoding() == StrIntrinsicNode::U);
   ins_cost(180);
 
-  format %{ "String IndexOfChar $haystack[0..$haycnt], $ch"
+  format %{ "StringUTF16 IndexOfChar $haystack[0..$haycnt], $ch"
             " -> $result \t// KILL $haycnt, $tmp1, $tmp2, $cr0, $cr1" %}
   ins_encode %{
     __ string_indexof_char($result$$Register,
                            $haystack$$Register, $haycnt$$Register,
                            $ch$$Register, 0 /* this is not used if the character is already in a register */,
                            $tmp1$$Register, $tmp2$$Register, false /*is_byte*/);
+  %}
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct indexOfChar_L(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt,
+                       iRegIsrc ch, iRegIdst tmp1, iRegIdst tmp2,
+                       flagsRegCR0 cr0, flagsRegCR1 cr1, regCTR ctr) %{
+  match(Set result (StrIndexOfChar (Binary haystack haycnt) ch));
+  effect(TEMP tmp1, TEMP tmp2, KILL cr0, KILL cr1, KILL ctr);
+  predicate(((StrIndexOfCharNode*)n)->encoding() == StrIntrinsicNode::L);
+  ins_cost(180);
+
+  format %{ "StringLatin1 IndexOfChar $haystack[0..$haycnt], $ch"
+            " -> $result \t// KILL $haycnt, $tmp1, $tmp2, $cr0, $cr1" %}
+  ins_encode %{
+    __ string_indexof_char($result$$Register,
+                           $haystack$$Register, $haycnt$$Register,
+                           $ch$$Register, 0 /* this is not used if the character is already in a register */,
+                           $tmp1$$Register, $tmp2$$Register, true /*is_byte*/);
   %}
   ins_pipe(pipe_class_compare);
 %}
