@@ -40,7 +40,6 @@ HeapWord* PSYoungPromotionLAB::allocate(size_t size) {
     assert(is_object_aligned(new_top), "checking alignment");
     return obj;
   } else {
-    set_top(obj);
     return NULL;
   }
 }
