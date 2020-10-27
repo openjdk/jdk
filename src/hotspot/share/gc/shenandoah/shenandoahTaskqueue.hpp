@@ -164,7 +164,7 @@ private:
   }
 
   inline uintptr_t encode_oop(oop obj) const {
-    return ((uintptr_t) (void *) obj) << oop_shift;
+    return ((uintptr_t)(void*) obj) << oop_shift;
   }
 
   inline uintptr_t encode_chunk(int chunk) const {
