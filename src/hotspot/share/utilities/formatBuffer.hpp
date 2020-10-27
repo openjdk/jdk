@@ -113,7 +113,25 @@ void FormatBuffer<bufsz>::append(const char* format, ...) {
   va_end(argp);
 }
 
-// Used to format messages.
-typedef FormatBuffer<> err_msg;
+template <size_t bufsz = FormatBufferBase::BufferSize>
+class FormatErrBuffer : public FormatBuffer<bufsz> {
+public:
+  inline FormatErrBuffer(const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
+
+  // Dummy overload preventing misuse of err_msg for a string without format arguments.
+  // If compilation fails because of ambiguity between this and real constructor, you
+  // could drop err_msg use at all.
+  inline FormatErrBuffer(const char* msg) { ShouldNotReachHere(); }
+};
+
+template <size_t bufsz>
+FormatErrBuffer<bufsz>::FormatErrBuffer(const char * format, ...) : FormatBuffer<bufsz>() {
+  va_list argp;
+  va_start(argp, format);
+  FormatBuffer<bufsz>::printv(format, argp);
+  va_end(argp);
+}
+
+typedef FormatErrBuffer<> err_msg;
 
 #endif // SHARE_UTILITIES_FORMATBUFFER_HPP
