@@ -360,7 +360,7 @@ char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int file_des
   char* aligned_base = chop_extra_memory(size, alignment, extra_base, extra_size);
   // After we have an aligned address, we can replace anonymous mapping with file mapping
   if (replace_existing_mapping_with_file_mapping(aligned_base, size, file_desc) == NULL) {
-    vm_exit_during_initialization(err_msg("Error in mapping Java heap at the given filesystem directory"));
+    vm_exit_during_initialization("Error in mapping Java heap at the given filesystem directory");
   }
   MemTracker::record_virtual_memory_commit((address)aligned_base, size, CALLER_PC);
   return aligned_base;

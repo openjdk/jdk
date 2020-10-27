@@ -3088,10 +3088,10 @@ char* os::map_memory_to_file(char* base, size_t size, int fd) {
 #endif
   if (fileMapping == NULL) {
     if (GetLastError() == ERROR_DISK_FULL) {
-      vm_exit_during_initialization(err_msg("Could not allocate sufficient disk space for Java heap"));
+      vm_exit_during_initialization("Could not allocate sufficient disk space for Java heap");
     }
     else {
-      vm_exit_during_initialization(err_msg("Error in mapping Java heap at the given filesystem directory"));
+      vm_exit_during_initialization("Error in mapping Java heap at the given filesystem directory");
     }
 
     return NULL;

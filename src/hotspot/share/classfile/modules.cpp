@@ -170,7 +170,7 @@ static void define_javabase_module(Handle module_handle, jstring version, jstrin
 
     if (pkg_str == NULL || pkg_str->klass() != SystemDictionary::String_klass()) {
       THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-                err_msg("Bad package name"));
+                "Bad package name");
     }
 
     int package_len;
@@ -327,7 +327,7 @@ void Modules::define_module(jobject module, jboolean is_open, jstring version,
     oop pkg_str = packages_h->obj_at(x);
     if (pkg_str == NULL || pkg_str->klass() != SystemDictionary::String_klass()) {
       THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-                err_msg("Bad package name"));
+                "Bad package name");
     }
 
     int package_len;

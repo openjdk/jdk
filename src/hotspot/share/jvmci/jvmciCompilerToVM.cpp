@@ -152,7 +152,7 @@ static JavaThread* get_current_thread(bool allow_null=true) {
   JavaThread* thread = get_current_thread();             \
   if (thread == NULL) {                                  \
     env->ThrowNew(JNIJVMCI::InternalError::clazz(),      \
-        err_msg("Cannot call into HotSpot from JVMCI shared library without attaching current thread")); \
+        "Cannot call into HotSpot from JVMCI shared library without attaching current thread"); \
     return;                                              \
   }                                                      \
   JVMCITraceMark jtm("CompilerToVM::" #name);            \
@@ -163,7 +163,7 @@ static JavaThread* get_current_thread(bool allow_null=true) {
   JavaThread* thread = get_current_thread();             \
   if (thread == NULL) {                                  \
     env->ThrowNew(JNIJVMCI::InternalError::clazz(),      \
-        err_msg("Cannot call into HotSpot from JVMCI shared library without attaching current thread")); \
+        "Cannot call into HotSpot from JVMCI shared library without attaching current thread"); \
     return result;                                       \
   }                                                      \
   JVMCITraceMark jtm("CompilerToVM::" #name);            \

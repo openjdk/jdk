@@ -2246,7 +2246,7 @@ char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, i
 
   if (result != NULL) {
     if (replace_existing_mapping_with_file_mapping(result, bytes, file_desc) == NULL) {
-      vm_exit_during_initialization(err_msg("Error in mapping Java heap at the given filesystem directory"));
+      vm_exit_during_initialization("Error in mapping Java heap at the given filesystem directory");
     }
   }
   return result;
