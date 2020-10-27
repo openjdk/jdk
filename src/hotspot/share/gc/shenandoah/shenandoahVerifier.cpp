@@ -47,6 +47,10 @@
 #undef verify_oop
 #endif
 
+static bool is_instance_ref_klass(Klass* k) {
+  return k->is_instance_klass() && InstanceKlass::cast(k)->reference_type() != REF_NONE;
+}
+
 class ShenandoahIgnoreReferenceDiscoverer : public ReferenceDiscoverer {
 public:
   virtual bool discover_reference(oop obj, ReferenceType type) {
@@ -94,7 +98,9 @@ private:
     T o = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
-      obj = ShenandoahForwarding::get_forwardee(obj);
+      if (is_instance_ref_klass(obj->klass())) {
+        obj = ShenandoahForwarding::get_forwardee(obj);
+      }
       // Single threaded verification can use faster non-atomic stack and bitmap
       // methods.
       //
@@ -571,10 +577,6 @@ public:
     }
 
     Atomic::add(&_processed, processed);
-  }
-
-  static bool is_instance_ref_klass(Klass* k) {
-    return k->is_instance_klass() && InstanceKlass::cast(k)->reference_type() != REF_NONE;
   }
 
   void verify_and_follow(HeapWord *addr, ShenandoahVerifierStack &stack, ShenandoahVerifyOopClosure &cl, size_t *processed) {
