@@ -157,6 +157,7 @@ private:
   }
 
   inline bool decode_not_chunked(uintptr_t val) const {
+    // No need to shift for a comparison to zero
     return (val & chunk_pow_extract_mask) == 0;
   }
 
@@ -184,10 +185,8 @@ private:
 public:
   ShenandoahMarkTask(oop o = NULL) {
     uintptr_t enc = encode_oop(o);
-    assert(decode_oop(enc) == o,
-           "oop encoding should work: " PTR_FORMAT, p2i(o));
-    assert(decode_not_chunked(enc),
-           "task should not be chunked");
+    assert(decode_oop(enc) == o,    "oop encoding should work: " PTR_FORMAT, p2i(o));
+    assert(decode_not_chunked(enc), "task should not be chunked");
     _obj = enc;
   }
 
@@ -196,14 +195,10 @@ public:
     uintptr_t enc_chunk = encode_chunk(chunk);
     uintptr_t enc_pow = encode_pow(pow);
     uintptr_t enc = enc_oop | enc_chunk | enc_pow;
-    assert(decode_oop(enc) == o,
-           "oop encoding should work: " PTR_FORMAT, p2i(o));
-    assert(decode_chunk(enc) == chunk,
-           "chunk encoding should work: %d", chunk);
-    assert(decode_pow(enc) == pow,
-           "pow encoding should work: %d", pow);
-    assert(!decode_not_chunked(enc),
-           "task should be chunked");
+    assert(decode_oop(enc) == o,       "oop encoding should work: " PTR_FORMAT, p2i(o));
+    assert(decode_chunk(enc) == chunk, "chunk encoding should work: %d", chunk);
+    assert(decode_pow(enc) == pow,     "pow encoding should work: %d", pow);
+    assert(!decode_not_chunked(enc),   "task should be chunked");
     _obj = enc;
   }
 
