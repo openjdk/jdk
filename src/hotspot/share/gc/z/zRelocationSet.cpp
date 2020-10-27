@@ -31,6 +31,7 @@
 #include "gc/z/zTask.hpp"
 #include "gc/z/zWorkers.hpp"
 #include "runtime/atomic.hpp"
+#include "utilities/debug.hpp"
 
 class ZRelocationSetInstallTask : public ZTask {
 private:
@@ -75,6 +76,10 @@ public:
 
     // Allocate relocation set
     _forwardings = new (_allocator->alloc(relocation_set_size)) ZForwarding*[_nforwardings];
+  }
+
+  ~ZRelocationSetInstallTask() {
+    assert(_allocator->is_full(), "Should be full");
   }
 
   virtual void work() {
