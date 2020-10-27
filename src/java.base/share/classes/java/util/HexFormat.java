@@ -312,23 +312,23 @@ public final class HexFormat {
      * A delimiter follows each formatted value, except the last.
      *
      * @param bytes a non-null array of bytes
-     * @param index the starting index
-     * @param length the number of bytes to format
+     * @param fromIndex the initial index of the range, inclusive
+     * @param toIndex the final index of the range, exclusive.
      * @return a string hexadecimal formatting each byte of the array range
      * @throws IndexOutOfBoundsException if the array range is out of bounds
      */
-    public String formatHex(byte[] bytes, int index, int length) {
+    public String formatHex(byte[] bytes, int fromIndex, int toIndex) {
         Objects.requireNonNull(bytes,"bytes");
-        Objects.checkFromIndexSize(index, length, bytes.length);
-        if (length == 0) {
+        Objects.checkFromToIndex(fromIndex, toIndex, bytes.length);
+        if (toIndex - fromIndex == 0) {
             return "";
         }
         // Format efficiently if possible
-        String s = formatOptDelimiter(bytes, index, length);
+        String s = formatOptDelimiter(bytes, fromIndex, toIndex);
         if (s == null) {
-            StringBuilder sb = new StringBuilder(length *
+            StringBuilder sb = new StringBuilder((toIndex - fromIndex) *
                     (delimiter.length() + prefix.length() + 2 + suffix.length()) - delimiter.length());
-            formatHex(sb, bytes, index, length);
+            formatHex(sb, bytes, fromIndex, toIndex);
             s = sb.toString();
         }
         return s;
@@ -361,30 +361,31 @@ public final class HexFormat {
      * @param <A> The type of Appendable
      * @param out an Appendable, non-null
      * @param bytes a byte array, non-null
-     * @param index the starting index
-     * @param length the number of bytes to format
+     * @param fromIndex the initial index of the range, inclusive
+     * @param toIndex the final index of the range, exclusive.
      * @return the {@code Appendable}
      * @throws IndexOutOfBoundsException if the array range is out of bounds
      * @throws UncheckedIOException if an I/O exception occurs appending to the output
      */
-    public <A extends Appendable> A formatHex(A out, byte[] bytes, int index, int length) {
+    public <A extends Appendable> A formatHex(A out, byte[] bytes, int fromIndex, int toIndex) {
         Objects.requireNonNull(out, "out");
         Objects.requireNonNull(bytes, "bytes");
-        Objects.checkFromIndexSize(index, length, bytes.length);
+        Objects.checkFromToIndex(fromIndex, toIndex, bytes.length);
 
+        int length = toIndex - fromIndex;
         if (length > 0) {
             try {
                 String between = suffix + delimiter + prefix;
                 out.append(prefix);
-                toHexDigits(out, bytes[index]);
+                toHexDigits(out, bytes[fromIndex]);
                 if (between.isEmpty()) {
                     for (int i = 1; i < length; i++) {
-                        toHexDigits(out, bytes[index + i]);
+                        toHexDigits(out, bytes[fromIndex + i]);
                     }
                 } else {
                     for (int i = 1; i < length; i++) {
                         out.append(between);
-                        toHexDigits(out, bytes[index + i]);
+                        toHexDigits(out, bytes[fromIndex + i]);
                     }
                 }
                 out.append(suffix);
@@ -402,33 +403,34 @@ public final class HexFormat {
      * must be empty or a single byte character, otherwise null is returned.
      *
      * @param bytes the bytes, non-null
-     * @param index the starting index
-     * @param length the length
+     * @param fromIndex the initial index of the range, inclusive
+     * @param toIndex the final index of the range, exclusive.
      * @return a String formatting or null for non-single byte formatting
-    */
-    private String formatOptDelimiter(byte[] bytes, int index, int length) {
+     */
+    private String formatOptDelimiter(byte[] bytes, int fromIndex, int toIndex) {
         byte[] rep;
         if (!prefix.isEmpty() || !suffix.isEmpty()) {
             return null;
         }
+        int length = toIndex - fromIndex;
         if (delimiter.isEmpty()) {
             // Allocate the byte array and fill in the hex pairs for each byte
             rep = new byte[length * 2];
             for (int i = 0; i < length; i++) {
-                rep[i * 2] = (byte)toHighHexDigit(bytes[index + i]);
-                rep[i * 2 + 1] = (byte)toLowHexDigit(bytes[index + i]);
+                rep[i * 2] = (byte)toHighHexDigit(bytes[fromIndex + i]);
+                rep[i * 2 + 1] = (byte)toLowHexDigit(bytes[fromIndex + i]);
             }
         } else if (delimiter.length() == 1 && delimiter.charAt(0) < 256) {
             // Allocate the byte array and fill in the characters for the first byte
             // Then insert the delimiter and hexadecimal characters for each of the remaining bytes
             char sep = delimiter.charAt(0);
             rep = new byte[length * 3 - 1];
-            rep[0] = (byte) toHighHexDigit(bytes[index]);
-            rep[1] = (byte) toLowHexDigit(bytes[index]);
+            rep[0] = (byte) toHighHexDigit(bytes[fromIndex]);
+            rep[1] = (byte) toLowHexDigit(bytes[fromIndex]);
             for (int i = 1; i < length; i++) {
                 rep[i * 3 - 1] = (byte) sep;
-                rep[i * 3    ] = (byte) toHighHexDigit(bytes[index + i]);
-                rep[i * 3 + 1] = (byte) toLowHexDigit(bytes[index + i]);
+                rep[i * 3    ] = (byte) toHighHexDigit(bytes[fromIndex + i]);
+                rep[i * 3 + 1] = (byte) toLowHexDigit(bytes[fromIndex + i]);
             }
         } else {
             // Delimiter formatting not to a single byte
@@ -471,20 +473,20 @@ public final class HexFormat {
      *
      * @param string a string range containing hexadecimal digits,
      *           delimiters, prefix, and suffix.
-     * @param index of the start of the character range
-     * @param length of the character range
+     * @param fromIndex the initial index of the range, inclusive
+     * @param toIndex the final index of the range, exclusive.
      * @return a byte array with the values parsed from the string range
      * @throws IllegalArgumentException if the prefix or suffix is not present for each byte value,
      *          the byte values are not hexadecimal characters, or if the delimiter is not present
      *          after all but the last byte value
      * @throws IndexOutOfBoundsException if the string range is out of bounds
      */
-    public byte[] parseHex(CharSequence string, int index, int length) {
+    public byte[] parseHex(CharSequence string, int fromIndex, int toIndex) {
         Objects.requireNonNull(string, "string");
-        Objects.checkFromIndexSize(index, length, string.length());
+        Objects.checkFromToIndex(fromIndex, toIndex, string.length());
 
-        if (index != 0 || length != string.length()) {
-            string = string.subSequence(index, index + length);
+        if (fromIndex != 0 || toIndex != string.length()) {
+            string = string.subSequence(fromIndex, toIndex);
         }
 
         if (string.length() == 0)
@@ -530,18 +532,18 @@ public final class HexFormat {
      *
      * @param chars a character array range containing an even number of hexadecimal digits,
      *          delimiters, prefix, and suffix.
-     * @param index the starting index
-     * @param length the length to parse
+     * @param fromIndex the initial index of the range, inclusive
+     * @param toIndex the final index of the range, exclusive.
      * @return a byte array with the values parsed from the character array range
      * @throws IllegalArgumentException if the prefix or suffix is not present for each byte value,
      *          the byte values are not hexadecimal characters, or if the delimiter is not present
      *          after all but the last byte value
      * @throws IndexOutOfBoundsException if the character array range is out of bounds
      */
-    public byte[] parseHex(char[] chars, int index, int length) {
+    public byte[] parseHex(char[] chars, int fromIndex, int toIndex) {
         Objects.requireNonNull(chars, "chars");
-        Objects.checkFromIndexSize(index, length, chars.length);
-        CharBuffer cb = CharBuffer.wrap(chars, index, length);
+        Objects.checkFromToIndex(fromIndex, toIndex, chars.length);
+        CharBuffer cb = CharBuffer.wrap(chars, fromIndex, toIndex - fromIndex);
         return parseHex(cb);
     }
 
@@ -811,12 +813,17 @@ public final class HexFormat {
     /**
      * Check the number of requested digits against a limit.
      *
-     * @param digits the number of digits requested
+     * @param fromIndex the initial index of the range, inclusive
+     * @param toIndex the final index of the range, exclusive.
      * @param limit the maximum allowed
+     * @return the length of the range
      */
-    private static void checkDigitCount(int digits, int limit) {
-        if (digits > limit)
-            throw new IllegalArgumentException("digits greater than " + limit + ": " + digits);
+    private static int checkDigitCount(int fromIndex, int toIndex, int limit) {
+        int length = toIndex - fromIndex;
+        if (length > limit)
+            throw new IllegalArgumentException("string length greater than " +
+                    limit + ": " + length);
+        return length;
     }
 
     /**
@@ -883,10 +890,9 @@ public final class HexFormat {
      */
     public int fromHexDigits(CharSequence string) {
         Objects.requireNonNull(string, "string");
-        int len = string.length();
-        checkDigitCount(len, 8);
+        int length = checkDigitCount(0, string.length(), 8);
         int value = 0;
-        for (int i = 0; i < len; i++) {
+        for (int i = 0; i < length; i++) {
             value = (value << 4) + fromHexDigit(string.charAt(i));
         }
         return value;
@@ -895,26 +901,26 @@ public final class HexFormat {
     /**
      * Returns the {@code int} value parsed from a string range of up to eight hexadecimal
      * characters.
-     * The characters in the range from {@code index} to {@code index + length - 1}, inclusive,
+     * The characters in the range {@code fromIndex} to {@code toIndex}, exclusive,
      * are parsed from most significant to least significant using {@link #fromHexDigit(int)}.
      * The delimiter, prefix and suffix are not used.
      *
      * @param string a CharSequence containing the characters
-     * @param index the index of the first character of the range
-     * @param length the number of hexadecimal digits to parse
+     * @param fromIndex the initial index of the range, inclusive
+     * @param toIndex the final index of the range, exclusive.
      * @return the value parsed from the string range
      * @throws  IndexOutOfBoundsException if the range is out of bounds
      *          for the {@code CharSequence}
-     * @throws  IllegalArgumentException if length is greater than eight (8) or if
-     *          any of the characters is not a hexadecimal character
+     * @throws  IllegalArgumentException if length of the range is greater than eight (8) or
+     *          if any of the characters is not a hexadecimal character
      */
-    public int fromHexDigits(CharSequence string, int index, int length) {
+    public int fromHexDigits(CharSequence string, int fromIndex, int toIndex) {
         Objects.requireNonNull(string, "string");
-        checkDigitCount(length, 8);
-        Objects.checkFromIndexSize(index, length, string.length());
+        Objects.checkFromToIndex(fromIndex, toIndex, string.length());
+        int length = checkDigitCount(fromIndex, toIndex, 8);
         int value = 0;
         for (int i = 0; i < length; i++) {
-            value = (value << 4) + fromHexDigit(string.charAt(index + i));
+            value = (value << 4) + fromHexDigit(string.charAt(fromIndex + i));
         }
         return value;
     }
@@ -932,38 +938,37 @@ public final class HexFormat {
      */
     public long fromHexDigitsToLong(CharSequence string) {
         Objects.requireNonNull(string, "string");
-        int len = string.length();
-        checkDigitCount(len, 16);
+        int length = checkDigitCount(0, string.length(), 16);
         long value = 0L;
-        for (int i = 0; i < len; i++) {
+        for (int i = 0; i < length; i++) {
             value = (value << 4) + fromHexDigit(string.charAt(i));
         }
         return value;
     }
 
     /**
-     * Returns the long value parsed parsed from a string range of up to sixteen hexadecimal
+     * Returns the long value parsed from a string range of up to sixteen hexadecimal
      * characters.
-     * The characters in the range from {@code index} to {@code index + length - 1}, inclusive,
+     * The characters in the range {@code fromIndex} to {@code toIndex}, exclusive,
      * are parsed from most significant to least significant using {@link #fromHexDigit(int)}.
      * The delimiter, prefix and suffix are not used.
      *
      * @param string a CharSequence containing the characters
-     * @param index the index of the first character of the range
-     * @param length the number of hexadecimal digits to parse
+     * @param fromIndex the initial index of the range, inclusive
+     * @param toIndex the final index of the range, exclusive.
      * @return the value parsed from the string range
      * @throws  IndexOutOfBoundsException if the range is out of bounds
      *          for the {@code CharSequence}
-     * @throws  IllegalArgumentException if {@code length} is greater than sixteen (16) or
+     * @throws  IllegalArgumentException if the length of the range is greater than sixteen (16) or
      *          if any of the characters is not a hexadecimal character
      */
-    public long fromHexDigitsToLong(CharSequence string, int index, int length) {
+    public long fromHexDigitsToLong(CharSequence string, int fromIndex, int toIndex) {
         Objects.requireNonNull(string, "string");
-        checkDigitCount(length, 16);
-        Objects.checkFromIndexSize(index, length, string.length());
+        Objects.checkFromToIndex(fromIndex, toIndex, string.length());
+        int length = checkDigitCount(fromIndex, toIndex, 16);
         long value = 0L;
         for (int i = 0; i < length; i++) {
-            value = (value << 4) + fromHexDigit(string.charAt(index + i));
+            value = (value << 4) + fromHexDigit(string.charAt(fromIndex + i));
         }
         return value;
     }

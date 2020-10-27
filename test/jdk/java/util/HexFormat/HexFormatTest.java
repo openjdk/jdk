@@ -94,24 +94,24 @@ public class HexFormatTest {
     @DataProvider(name = "BadBytesThrowing")
     Object[][] badBytesThrowing() {
         return new Object[][]{
-                {new byte[1], 0, 2},        // bad length
-                {new byte[1], 1, 1},        // bad offset + length
-                {new byte[1], -1, 2},       // bad length
-                {new byte[1], -1, 1},       // bad offset + length
-                {new byte[1], 0, -1},       // bad length
-                {new byte[1], 1, -1},       // bad offset + length
+                {new byte[1], 0, 2},        // bad toIndex
+                {new byte[1], 1, 2},        // bad fromIndex + toIndex
+                {new byte[1], -1, 2},       // bad fromIndex
+                {new byte[1], -1, 1},       // bad fromIndex
+                {new byte[1], 0, -1},       // bad toIndex
+                {new byte[1], 1, -1},       // bad toIndex
         };
     }
 
     @DataProvider(name = "BadParseHexThrowing")
     Object[][] badParseHexThrowing() {
         return new Object[][]{
-                {"a", 0, 2, IndexOutOfBoundsException.class},        // bad length
-                {"b", 1, 1, IndexOutOfBoundsException.class},        // bad offset + length
-                {"a", -1, 2, IndexOutOfBoundsException.class},       // bad length
-                {"b", -1, 1, IndexOutOfBoundsException.class},       // bad offset + length
-                {"a", 0, -1, IndexOutOfBoundsException.class},       // bad length
-                {"b", 1, -1, IndexOutOfBoundsException.class},       // bad offset + length
+                {"a", 0, 2, IndexOutOfBoundsException.class},        // bad toIndex
+                {"b", 1, 2, IndexOutOfBoundsException.class},        // bad toIndex
+                {"a", -1, 2, IndexOutOfBoundsException.class},       // bad fromIndex
+                {"b", -1, 1, IndexOutOfBoundsException.class},       // bad fromIndex
+                {"a", 0, -1, IndexOutOfBoundsException.class},       // bad toIndex
+                {"b", 1, -1, IndexOutOfBoundsException.class},       // bad fromIndex + toIndex
                 {"76543210", 0, 7, IllegalArgumentException.class},  // odd number of digits
                 {"zz00", 0, 4, IllegalArgumentException.class},      // non-hex digits
                 {"00zz", 0, 4, IllegalArgumentException.class},      // non-hex digits
@@ -121,12 +121,12 @@ public class HexFormatTest {
     @DataProvider(name = "BadFromHexDigitsThrowing")
     Object[][] badHexDigitsThrowing() {
         return new Object[][]{
-                {"a", 0, 2, IndexOutOfBoundsException.class},        // bad length
-                {"b", 1, 1, IndexOutOfBoundsException.class},        // bad offset + length
-                {"a", -1, 2, IndexOutOfBoundsException.class},       // bad length
-                {"b", -1, 1, IndexOutOfBoundsException.class},       // bad offset + length
-                {"a", 0, -1, IndexOutOfBoundsException.class},       // bad length
-                {"b", 1, -1, IndexOutOfBoundsException.class},       // bad offset + length
+                {"a", 0, 2, IndexOutOfBoundsException.class},        // bad toIndex
+                {"b", 1, 2, IndexOutOfBoundsException.class},        // bad fromIndex + toIndex
+                {"a", -1, 2, IndexOutOfBoundsException.class},       // bad toIndex
+                {"b", -1, 1, IndexOutOfBoundsException.class},       // bad fromIndex + toIndex
+                {"a", 0, -1, IndexOutOfBoundsException.class},       // bad toIndex
+                {"b", 1, -1, IndexOutOfBoundsException.class},       // bad fromIndex + toIndex
         };
     }
 
@@ -309,12 +309,12 @@ public class HexFormatTest {
     }
 
     @Test(dataProvider = "BadFromHexDigitsThrowing")
-    static void badFromHexDigits(String string, int offset, int length,
+    static void badFromHexDigits(String string, int fromIndex, int toIndex,
                            Class<? extends Throwable> exClass) {
         assertThrows(exClass,
-                () -> HexFormat.of().fromHexDigits(string, offset, length));
+                () -> HexFormat.of().fromHexDigits(string, fromIndex, toIndex));
         assertThrows(exClass,
-                () -> HexFormat.of().fromHexDigitsToLong(string, offset, length));
+                () -> HexFormat.of().fromHexDigitsToLong(string, fromIndex, toIndex));
     }
 
     // Verify IAE for strings that are too long for the target primitive type
@@ -392,7 +392,7 @@ public class HexFormatTest {
         System.out.println("    formatted subrange: " +
                 s.substring(low * stride, high * stride - delimiter.length()));
         byte[] actual = hex.parseHex(s, low * stride,
-                high * stride - delimiter.length() - low * stride);
+                high * stride - delimiter.length());
         System.out.println("    parsed as: " + Arrays.toString(actual));
 
         assertEquals(actual.length, (high - low), "array length");
@@ -417,7 +417,7 @@ public class HexFormatTest {
         byte[] expected = genBytes('A', 15);
         int low = 1;
         int high = expected.length - 2;
-        String s = hex.formatHex(expected, low, high - low);
+        String s = hex.formatHex(expected, low, high);
         System.out.println("    formatted: " + s);
 
         byte[] actual = hex.parseHex(s);
@@ -448,7 +448,7 @@ public class HexFormatTest {
         int low = 1;
         int high = expected.length - 2;
         StringBuilder sb = new StringBuilder();
-        StringBuilder s = hex.formatHex(sb, expected, low, high - low);
+        StringBuilder s = hex.formatHex(sb, expected, low, high);
         assertEquals(s, sb, "formatHex returned unknown StringBuilder");
         System.out.println("    formatted: " + s);
 
@@ -493,7 +493,7 @@ public class HexFormatTest {
                 s.substring(low * stride, high * stride - delimiter.length()));
         char[] chars = s.toCharArray();
         byte[] actual = hex.parseHex(chars, low * stride,
-                (high - low ) * stride - delimiter.length());
+                high * stride - delimiter.length());
         System.out.println("    parsed as: " + Arrays.toString(actual));
 
         assertEquals(actual.length, (high - low), "array length");
