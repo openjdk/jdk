@@ -1383,26 +1383,7 @@ class JavaThread: public Thread {
   // Check for async exception in addition to safepoint and suspend request.
   static void check_special_condition_for_native_trans(JavaThread *thread);
 
-  bool is_ext_suspend_completed(bool called_by_wait, int delay, uint32_t *bits);
-  bool is_ext_suspend_completed_with_lock(uint32_t *bits) {
-    MutexLocker ml(SR_lock(), Mutex::_no_safepoint_check_flag);
-    // Warning: is_ext_suspend_completed() may temporarily drop the
-    // SR_lock to allow the thread to reach a stable thread state if
-    // it is currently in a transient thread state.
-    return is_ext_suspend_completed(false /* !called_by_wait */,
-                                    SuspendRetryDelay, bits);
-  }
-
-  // We cannot allow wait_for_ext_suspend_completion() to run forever or
-  // we could hang. SuspendRetryCount and SuspendRetryDelay are normally
-  // passed as the count and delay parameters. Experiments with specific
-  // calls to wait_for_ext_suspend_completion() can be done by passing
-  // other values in the code. Experiments with all calls can be done
-  // via the appropriate -XX options.
-  bool wait_for_ext_suspend_completion(int count, int delay, uint32_t *bits);
-
-  // test for suspend - most (all?) of these should go away
-  bool is_thread_fully_suspended(bool wait_for_suspend, uint32_t *bits);
+  bool is_ext_suspend_completed();
 
   inline void set_external_suspend();
   inline void clear_external_suspend();

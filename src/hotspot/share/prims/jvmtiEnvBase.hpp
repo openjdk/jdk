@@ -286,9 +286,9 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
                                    javaVFrame *jvf,
                                    GrowableArray<jvmtiMonitorStackDepthInfo*>* owned_monitors_list,
                                    jint depth);
-  vframe* vframeForNoProcess(JavaThread* java_thread, jint depth);
-
  public:
+  static vframe* vframeForNoProcess(JavaThread* java_thread, jint depth);
+
   // get a field descriptor for the specified class and field
   static bool get_field_descriptor(Klass* k, jfieldID field, fieldDescriptor* fd);
 
@@ -306,8 +306,8 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
                                            jobject *monitor_ptr);
   jvmtiError get_owned_monitors(JavaThread *calling_thread, JavaThread* java_thread,
                                 GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list);
-  jvmtiError check_top_frame(JavaThread* current_thread, JavaThread* java_thread,
-                             jvalue value, TosState tos, Handle* ret_ob_h);
+  static jvmtiError check_top_frame(Thread* current_thread, JavaThread* java_thread,
+                                    jvalue value, TosState tos, Handle* ret_ob_h);
   jvmtiError force_early_return(JavaThread* java_thread, jvalue value, TosState tos);
 };
 
@@ -346,6 +346,23 @@ class JvmtiHandshakeClosure : public HandshakeClosure {
   jvmtiError result() { return _result; }
 };
 
+class SetForceEarlyReturn : public JvmtiHandshakeClosure {
+private:
+  JvmtiThreadState* _state;
+  jvalue _value;
+  TosState _tos;
+public:
+  SetForceEarlyReturn(JvmtiThreadState* state, jvalue value, TosState tos)
+    : JvmtiHandshakeClosure("SetForceEarlyReturn"),
+     _state(state),
+     _value(value),
+     _tos(tos) {}
+  void do_thread(Thread *target) {
+    doit(target, false /* self */);
+  }
+  void doit(Thread *target, bool self);
+};
+
 // HandshakeClosure to update for pop top frame.
 class UpdateForPopTopFrameClosure : public JvmtiHandshakeClosure {
 private:
@@ -354,8 +371,11 @@ private:
 public:
   UpdateForPopTopFrameClosure(JvmtiThreadState* state)
     : JvmtiHandshakeClosure("UpdateForPopTopFrame"),
-      _state(state) {}
-  void do_thread(Thread *target);
+     _state(state) {}
+  void do_thread(Thread *target) {
+    doit(target, false /* self */);
+  }
+  void doit(Thread *target, bool self);
 };
 
 // HandshakeClosure to set frame pop.
@@ -371,7 +391,10 @@ public:
       _env(env),
       _state(state),
       _depth(depth) {}
-  void do_thread(Thread *target);
+  void do_thread(Thread *target) {
+    doit(target, false /* self */);
+  }
+  void doit(Thread *target, bool self);
 };
 
 // HandshakeClosure to get monitor information with stack depth.
