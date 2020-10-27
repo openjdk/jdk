@@ -257,16 +257,18 @@ public:
       return;
     }
 
-    if (_entry == ZNMethodEntry::VerifyDisarmed) {
-      // Only verify
-      assert(!ZNMethod::is_armed(nm), "Must be disarmed");
-
-    } else if (_entry == ZNMethodEntry::Disarm) {
+    if (_entry == ZNMethodEntry::Disarm) {
       // Apply closure and disarm only armed nmethods
       if (ZNMethod::is_armed(nm)) {
         ZNMethod::nmethod_oops_do(nm, _cl);
         ZNMethod::disarm(nm);
       }
+      return;
+    }
+
+    if (_entry == ZNMethodEntry::VerifyDisarmed) {
+      // Only verify
+      assert(!ZNMethod::is_armed(nm), "Must be disarmed");
     }
 
     ZNMethod::nmethod_oops_do(nm, _cl);

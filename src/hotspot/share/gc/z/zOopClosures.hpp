@@ -70,9 +70,7 @@ public:
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
 
-  virtual ZNMethodEntry nmethod_entry() const {
-    return ZNMethodEntry::None;
-  }
+  virtual ZNMethodEntry nmethod_entry() const;
 };
 
 class ZPhantomCleanOopClosure : public ZRootsIteratorClosure {
@@ -80,9 +78,7 @@ public:
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
 
-  virtual ZNMethodEntry nmethod_entry() const {
-    return ZNMethodEntry::None;
-  }
+  virtual ZNMethodEntry nmethod_entry() const;
 };
 
 #endif // SHARE_GC_Z_ZOOPCLOSURES_HPP
