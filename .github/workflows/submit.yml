@@ -9,7 +9,7 @@ on:
       platforms:
         description: "Platform(s) to execute on"
         required: true
-        default: "Linux x64, Windows x64, macOS x64"
+        default: "Linux x64, Linux x86, Windows x64, macOS x64"
 
 jobs:
   prerequisites:
@@ -18,7 +18,7 @@ jobs:
     outputs:
       should_run: ${{ steps.check_submit.outputs.should_run }}
       bundle_id: ${{ steps.check_bundle_id.outputs.bundle_id }}
-      platform_linux_x32: ${{ steps.check_platforms.outputs.platform_linux_x32 }}
+      platform_linux_x86: ${{ steps.check_platforms.outputs.platform_linux_x86 }}
       platform_linux_x64: ${{ steps.check_platforms.outputs.platform_linux_x64 }}
       platform_windows_x64: ${{ steps.check_platforms.outputs.platform_windows_x64 }}
       platform_macos_x64: ${{ steps.check_platforms.outputs.platform_macos_x64 }}
@@ -33,7 +33,7 @@ jobs:
         id: check_platforms
         run: |
           echo "::set-output name=platform_linux_x64::${{ contains(github.event.inputs.platforms, 'linux x64') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'linux x64'))) }}"
-          echo "::set-output name=platform_linux_x32::${{ contains(github.event.inputs.platforms, 'linux x32') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'linux x32'))) }}"
+          echo "::set-output name=platform_linux_x86::${{ contains(github.event.inputs.platforms, 'linux x86') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'linux x86'))) }}"
           echo "::set-output name=platform_windows_x64::${{ contains(github.event.inputs.platforms, 'windows x64') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'windows x64'))) }}"
           echo "::set-output name=platform_macos_x64::${{ contains(github.event.inputs.platforms, 'macos x64') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'macos x64'))) }}"
         if: steps.check_submit.outputs.should_run != 'false'
@@ -386,16 +386,17 @@ jobs:
           path: ~/linux-x64${{ matrix.artifact }}_testsupport_${{ env.logsuffix }}.zip
         continue-on-error: true
 
-  linux_x32_build:
-    name: Linux x32
+  linux_x86_build:
+    name: Linux x86
     runs-on: "ubuntu-latest"
     needs: prerequisites
-    if: needs.prerequisites.outputs.should_run != 'false' && needs.prerequisites.outputs.platform_linux_x32 != 'false'
+    if: needs.prerequisites.outputs.should_run != 'false' && needs.prerequisites.outputs.platform_linux_x86 != 'false'
 
     strategy:
       fail-fast: false
       matrix:
         flavor:
+          - build release
           - build debug
         include:
           - flavor: build debug
@@ -466,7 +467,7 @@ jobs:
       - name: Configure
         run: >
           bash configure
-          --with-conf-name=linux-x32
+          --with-conf-name=linux-x86
           --with-target-bits=32
           ${{ matrix.flags }}
           --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}
@@ -480,8 +481,197 @@ jobs:
         working-directory: jdk
 
       - name: Build
-        run: make CONF_NAME=linux-x32 ${{ matrix.build-target }}
+        run: make CONF_NAME=linux-x86 ${{ matrix.build-target }}
         working-directory: jdk
+
+      - name: Persist test bundles
+        uses: actions/upload-artifact@v2
+        with:
+          name: transient_jdk-linux-x86${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
+          path: |
+            jdk/build/linux-x86/bundles/jdk-${{ env.JDK_VERSION }}-internal+0_linux-x86_bin${{ matrix.artifact }}.tar.gz
+            jdk/build/linux-x86/bundles/jdk-${{ env.JDK_VERSION }}-internal+0_linux-x86_bin-tests${{ matrix.artifact }}.tar.gz
+        if: matrix.build-target == false
+
+  linux_x86_test:
+    name: Linux x86
+    runs-on: "ubuntu-latest"
+    needs:
+      - prerequisites
+      - linux_x86_build
+
+    strategy:
+      fail-fast: false
+      matrix:
+        test:
+          - jdk/tier1 part 1
+          - jdk/tier1 part 2
+          - jdk/tier1 part 3
+          - langtools/tier1
+          - hs/tier1 common
+          - hs/tier1 compiler
+          - hs/tier1 gc
+          - hs/tier1 runtime
+          - hs/tier1 serviceability
+        include:
+          - test: jdk/tier1 part 1
+            suites: test/jdk/:tier1_part1
+          - test: jdk/tier1 part 2
+            suites: test/jdk/:tier1_part2
+          - test: jdk/tier1 part 3
+            suites: test/jdk/:tier1_part3
+          - test: langtools/tier1
+            suites: test/langtools/:tier1
+          - test: hs/tier1 common
+            suites: test/hotspot/jtreg/:tier1_common
+            artifact: -debug
+          - test: hs/tier1 compiler
+            suites: test/hotspot/jtreg/:tier1_compiler
+            artifact: -debug
+          - test: hs/tier1 gc
+            suites: test/hotspot/jtreg/:tier1_gc
+            artifact: -debug
+          - test: hs/tier1 runtime
+            suites: test/hotspot/jtreg/:tier1_runtime
+            artifact: -debug
+          - test: hs/tier1 serviceability
+            suites: test/hotspot/jtreg/:tier1_serviceability
+            artifact: -debug
+
+    # Reduced 32-bit build uses the same boot JDK as 64-bit build
+    env:
+      JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).DEFAULT_VERSION_FEATURE }}"
+      BOOT_JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).BOOT_JDK_VERSION }}"
+      BOOT_JDK_FILENAME: "${{ fromJson(needs.prerequisites.outputs.dependencies).LINUX_X64_BOOT_JDK_FILENAME }}"
+      BOOT_JDK_URL: "${{ fromJson(needs.prerequisites.outputs.dependencies).LINUX_X64_BOOT_JDK_URL }}"
+      BOOT_JDK_SHA256: "${{ fromJson(needs.prerequisites.outputs.dependencies).LINUX_X64_BOOT_JDK_SHA256 }}"
+
+    steps:
+      - name: Checkout the source
+        uses: actions/checkout@v2
+
+      - name: Restore boot JDK from cache
+        id: bootjdk
+        uses: actions/cache@v2
+        with:
+          path: ~/bootjdk/${{ env.BOOT_JDK_VERSION }}
+          key: bootjdk-${{ runner.os }}-${{ env.BOOT_JDK_VERSION }}-${{ env.BOOT_JDK_SHA256 }}-v1
+
+      - name: Download boot JDK
+        run: |
+          mkdir -p "${HOME}/bootjdk/${BOOT_JDK_VERSION}"
+          wget -O "${HOME}/bootjdk/${BOOT_JDK_FILENAME}" "${BOOT_JDK_URL}"
+          echo "${BOOT_JDK_SHA256} ${HOME}/bootjdk/${BOOT_JDK_FILENAME}" | sha256sum -c >/dev/null -
+          tar -xf "${HOME}/bootjdk/${BOOT_JDK_FILENAME}" -C "${HOME}/bootjdk/${BOOT_JDK_VERSION}"
+          mv "${HOME}/bootjdk/${BOOT_JDK_VERSION}/"*/* "${HOME}/bootjdk/${BOOT_JDK_VERSION}/"
+        if: steps.bootjdk.outputs.cache-hit != 'true'
+
+      - name: Restore jtreg artifact
+        id: jtreg_restore
+        uses: actions/download-artifact@v2
+        with:
+          name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
+          path: ~/jtreg/
+        continue-on-error: true
+
+      - name: Restore jtreg artifact (retry)
+        uses: actions/download-artifact@v2
+        with:
+          name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
+          path: ~/jtreg/
+        if: steps.jtreg_restore.outcome == 'failure'
+
+      - name: Restore build artifacts
+        id: build_restore
+        uses: actions/download-artifact@v2
+        with:
+          name: transient_jdk-linux-x86${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
+          path: ~/jdk-linux-x86${{ matrix.artifact }}
+        continue-on-error: true
+
+      - name: Restore build artifacts (retry)
+        uses: actions/download-artifact@v2
+        with:
+          name: transient_jdk-linux-x86${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
+          path: ~/jdk-linux-x86${{ matrix.artifact }}
+        if: steps.build_restore.outcome == 'failure'
+
+      - name: Unpack jdk
+        run: |
+          mkdir -p "${HOME}/jdk-linux-x86${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_linux-x86_bin${{ matrix.artifact }}"
+          tar -xf "${HOME}/jdk-linux-x86${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_linux-x86_bin${{ matrix.artifact }}.tar.gz" -C "${HOME}/jdk-linux-x86${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_linux-x86_bin${{ matrix.artifact }}"
+
+      - name: Unpack tests
+        run: |
+          mkdir -p "${HOME}/jdk-linux-x86${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_linux-x86_bin-tests${{ matrix.artifact }}"
+          tar -xf "${HOME}/jdk-linux-x86${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_linux-x86_bin-tests${{ matrix.artifact }}.tar.gz" -C "${HOME}/jdk-linux-x86${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_linux-x86_bin-tests${{ matrix.artifact }}"
+
+      - name: Find root of jdk image dir
+        run: |
+          imageroot=`find ${HOME}/jdk-linux-x86${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_linux-x86_bin${{ matrix.artifact }} -name release -type f`
+          echo "imageroot=`dirname ${imageroot}`" >> $GITHUB_ENV
+
+      - name: Run tests
+        run: >
+          JDK_IMAGE_DIR=${{ env.imageroot }}
+          TEST_IMAGE_DIR=${HOME}/jdk-linux-x86${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal+0_linux-x86_bin-tests${{ matrix.artifact }}
+          BOOT_JDK=${HOME}/bootjdk/${BOOT_JDK_VERSION}
+          JT_HOME=${HOME}/jtreg
+          make test-prebuilt
+          CONF_NAME=run-test-prebuilt
+          LOG_CMDLINES=true
+          JTREG_VERBOSE=fail,error,time
+          TEST="${{ matrix.suites }}"
+          TEST_OPTS_JAVA_OPTIONS=
+          JTREG_KEYWORDS="!headful"
+          JTREG="JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash"
+
+      - name: Check that all tests executed successfully
+        if: always()
+        run: >
+          if ! grep --include=test-summary.txt -lqr build/*/test-results -e "TEST SUCCESS" ; then
+            cat build/*/test-results/*/text/newfailures.txt ;
+            exit 1 ;
+          fi
+
+      - name: Create suitable test log artifact name
+        if: always()
+        run: echo "logsuffix=`echo ${{ matrix.test }} | sed -e 's!/!_!'g -e 's! !_!'g`" >> $GITHUB_ENV
+
+      - name: Package test results
+        if: always()
+        working-directory: build/run-test-prebuilt/test-results/
+        run: >
+          zip -r9
+          "$HOME/linux-x86${{ matrix.artifact }}_testresults_${{ env.logsuffix }}.zip"
+          .
+        continue-on-error: true
+
+      - name: Package test support
+        if: always()
+        working-directory: build/run-test-prebuilt/test-support/
+        run: >
+          zip -r9
+          "$HOME/linux-x86${{ matrix.artifact }}_testsupport_${{ env.logsuffix }}.zip"
+          .
+          -i *.jtr
+          -i hs_err*
+          -i replay*
+        continue-on-error: true
+
+      - name: Persist test results
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          path: ~/linux-x86${{ matrix.artifact }}_testresults_${{ env.logsuffix }}.zip
+        continue-on-error: true
+
+      - name: Persist test outputs
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          path: ~/linux-x86${{ matrix.artifact }}_testsupport_${{ env.logsuffix }}.zip
+        continue-on-error: true
 
   windows_x64_build:
     name: Windows x64
@@ -1089,6 +1279,7 @@ jobs:
     needs:
       - prerequisites
       - linux_x64_test
+      - linux_x86_test
       - windows_x64_test
       - macos_x64_test
 
