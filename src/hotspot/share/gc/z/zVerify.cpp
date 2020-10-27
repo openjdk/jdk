@@ -94,6 +94,11 @@ public:
   bool verify_fixed() const {
     return _verify_fixed;
   }
+
+  virtual ZNMethodEntry nmethod_entry() const {
+    // Verification performs its own verification
+    return ZNMethodEntry::None;
+  }
 };
 
 class ZVerifyCodeBlobClosure : public CodeBlobToOopClosure {
@@ -188,7 +193,7 @@ void ZVerifyRootClosure::do_thread(Thread* thread) {
   verify_stack.verify_frames();
 }
 
-class ZVerifyOopClosure : public ClaimMetadataVisitingOopIterateClosure, public ZRootsIteratorClosure  {
+class ZVerifyOopClosure : public ClaimMetadataVisitingOopIterateClosure {
 private:
   const bool _verify_weaks;
 
