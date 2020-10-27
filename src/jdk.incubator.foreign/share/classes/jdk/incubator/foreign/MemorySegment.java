@@ -830,8 +830,13 @@ allocateNative(bytesSize, 1);
      * @return a new confined mapped memory segment.
      * @throws IllegalArgumentException if {@code bytesOffset < 0}.
      * @throws IllegalArgumentException if {@code bytesSize < 0}.
-     * @throws UnsupportedOperationException if an unsupported map mode is specified.
+     * @throws UnsupportedOperationException if an unsupported map mode is specified, or if the {@code path} is associated
+     * with a provider that does not support creating file channels.
      * @throws IOException if the specified path does not point to an existing file, or if some other I/O error occurs.
+     * @throws  SecurityException If a security manager is installed and it denies an unspecified permission required by the implementation.
+     * In the case of the default provider, the {@link SecurityManager#checkRead(String)} method is invoked to check
+     * read access if the file is opened for reading. The {@link SecurityManager#checkWrite(String)} method is invoked to check
+     * write access if the file is opened for writing.
      */
     static MemorySegment mapFromPath(Path path, long bytesOffset, long bytesSize, FileChannel.MapMode mapMode) throws IOException {
         return MappedMemorySegmentImpl.makeMappedSegment(path, bytesOffset, bytesSize, mapMode);
