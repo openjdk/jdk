@@ -169,4 +169,13 @@ TEST_VM_ASSERT_MSG(G1ServiceTaskQueue, peek_empty,
   queue.peek();
 }
 
+TEST_VM_ASSERT_MSG(G1ServiceTaskQueue, set_time_in_queue,
+    "Not allowed to update time while in queue") {
+  G1ServiceTaskQueue queue;
+  TestTask a(100);
+  queue.add_ordered(&a);
+  // Not allowed to update time while in queue.
+  a.set_time(500);
+}
+
 #endif

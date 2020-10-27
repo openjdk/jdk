@@ -309,6 +309,7 @@ const char* G1ServiceTask::name() {
 }
 
 void G1ServiceTask::set_time(jlong time) {
+  assert(_next == NULL, "Not allowed to update time while in queue");
   _time = time;
 }
 
@@ -346,6 +347,7 @@ bool G1ServiceTaskQueue::is_empty() {
 }
 
 void G1ServiceTaskQueue::add_ordered(G1ServiceTask* task) {
+  assert(task != NULL, "not a valid task");
   assert(task->next() == NULL, "invariant");
   assert(task->time() != DBL_MAX, "invalid time for task");
 
