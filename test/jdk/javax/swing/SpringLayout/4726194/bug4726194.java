@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,7 @@ public class bug4726194 {
         String[] constraints = horizontal ? hConstraints : vConstraints;
         test(level, constraints, result, Arrays.asList(new Object[level]));
         JTextField tf = new JTextField("");
+        tf.setBorder(BorderFactory.createEmptyBorder());
         tf.setFont(new Font("Dialog", Font.PLAIN, 6));
         System.out.print("\t\t");
         for (int j = 0; j < constraints.length; j++) {
