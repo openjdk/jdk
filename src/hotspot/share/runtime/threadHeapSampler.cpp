@@ -34,6 +34,11 @@ uint64_t ThreadHeapSampler::_rnd;
 // Default is 512kb.
 volatile int ThreadHeapSampler::_sampling_interval = 512 * 1024;
 
+// Statics for the fast log
+static const int FastLogNumBits = 10;
+static const int FastLogCount = 1 << FastLogNumBits;
+static const int FastLogMask = FastLogCount - 1;
+
 template<int N>
 struct FastLogTable {
   constexpr FastLogTable() : _values() {
@@ -45,7 +50,7 @@ struct FastLogTable {
   double _values[N];
 };
 
-const FastLogTable<ThreadHeapSampler::FastLogCount> ThreadHeapSampler::_log_table;
+static constexpr FastLogTable<FastLogCount> log_table;
 
 // Returns the next prng value.
 // pRNG is: aX+b mod c with a = 0x5DEECE66D, b =  0xB, c = 1<<48
@@ -70,7 +75,7 @@ double ThreadHeapSampler::fast_log2(const double& d) {
   assert(FastLogNumBits <= 20, "FastLogNumBits should be less than 20.");
   const uint32_t y = x_high >> (20 - FastLogNumBits) & FastLogMask;
   const int32_t exponent = ((x_high >> 20) & 0x7FF) - 1023;
-  return exponent + _log_table._values[y];
+  return exponent + log_table._values[y];
 }
 
 // Generates a geometric variable with the specified mean (512K by default).
