@@ -549,8 +549,8 @@ public abstract class WComponentPeer extends WObjectPeer
     /**
      * Make sure that the native peer's coordinates are in sync with the target.
      */
-    void syncBounds(){
-        Rectangle r = ((Component)target).getBounds();
+    void syncBounds() {
+        Rectangle r = ((Component) target).getBounds();
         setBounds(r.x, r.y, r.width, r.height, SET_BOUNDS);
     }
 

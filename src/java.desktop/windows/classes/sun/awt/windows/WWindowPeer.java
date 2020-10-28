@@ -307,9 +307,10 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
         }
     }
 
-    final void syncBounds(){
-        // The Windows will take care of the top-level window/frame/dialog,
-        // and update the location/size when DPI changes.
+    @Override
+    final void syncBounds() {
+        // Windows will take care of the top-level window/frame/dialog, and
+        // update the location/size when DPI changes.
     }
 
     // Synchronize the insets members (here & in helper) with actual window
