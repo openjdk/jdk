@@ -224,12 +224,9 @@ public class DocLint extends com.sun.tools.doclint.DocLint {
             } else if (arg.startsWith(XCUSTOM_TAGS_PREFIX)) {
                 env.setCustomTags(arg.substring(arg.indexOf(":") + 1));
             } else if (arg.startsWith(XHTML_VERSION_PREFIX)) {
-                String argsVersion = arg.substring(arg.indexOf(":") + 1);
-                HtmlVersion htmlVersion = HtmlVersion.getHtmlVersion(argsVersion);
-                if (htmlVersion != null) {
-                    env.setHtmlVersion(htmlVersion);
-                } else {
-                    throw new BadArgs("dc.bad.value.for.option", arg, argsVersion);
+                String argVersion = arg.substring(arg.indexOf(":") + 1);
+                if (argVersion == null || !argVersion.equals("html5")) {
+                    throw new BadArgs("dc.bad.value.for.option", arg, argVersion);
                 }
             } else if (arg.equals("-h") || arg.equals("-help") || arg.equals("--help")
                     || arg.equals("-?") || arg.equals("-usage")) {
@@ -346,12 +343,9 @@ public class DocLint extends com.sun.tools.doclint.DocLint {
             } else if (arg.startsWith(XCUSTOM_TAGS_PREFIX)) {
                 env.setCustomTags(arg.substring(arg.indexOf(":") + 1));
             } else if (arg.startsWith(XHTML_VERSION_PREFIX)) {
-                String argsVersion = arg.substring(arg.indexOf(":") + 1);
-                HtmlVersion htmlVersion = HtmlVersion.getHtmlVersion(argsVersion);
-                if (htmlVersion != null) {
-                    env.setHtmlVersion(htmlVersion);
-                } else {
-                    throw new IllegalArgumentException(argsVersion);
+                String argVersion = arg.substring(arg.indexOf(":") + 1);
+                if (argVersion == null || !argVersion.equals("html5")) {
+                    throw new IllegalArgumentException(argVersion);
                 }
             } else if (arg.startsWith(XCHECK_PACKAGE)) {
                 env.setCheckPackages(arg.substring(arg.indexOf(":") + 1));

@@ -1,11 +1,26 @@
+AnchorTest.java:15: error: attribute not supported in HTML5: name
+     * <a name=foo></a>
+          ^
+AnchorTest.java:20: error: attribute not supported in HTML5: name
+     * <a name=foo></a>
+          ^
 AnchorTest.java:20: error: anchor already defined: "foo"
      * <a name=foo></a>
+          ^
+AnchorTest.java:25: error: attribute not supported in HTML5: name
+     * <a name=></a>
           ^
 AnchorTest.java:25: error: invalid name for anchor: ""
      * <a name=></a>
           ^
+AnchorTest.java:30: error: attribute not supported in HTML5: name
+     * <a name=123 ></a>
+          ^
 AnchorTest.java:30: error: invalid name for anchor: "123"
      * <a name=123 ></a>
+          ^
+AnchorTest.java:35: error: attribute not supported in HTML5: name
+     * <a name ></a>
           ^
 AnchorTest.java:35: error: no value given for anchor
      * <a name ></a>
@@ -46,4 +61,4 @@ AnchorTest.java:84: error: anchor already defined: "123"
 AnchorTest.java:89: error: no value given for anchor
      * <p id >text</p>
           ^
-16 errors
+21 errors

@@ -97,6 +97,9 @@ HtmlVersionTagsAttrsTest.java:36: error: attribute not supported in HTML5: char
 HtmlVersionTagsAttrsTest.java:36: error: attribute not supported in HTML5: charoff
      * <thead align="char" char="." charoff="2" valign="top">
                                     ^
+HtmlVersionTagsAttrsTest.java:36: error: attribute not supported in HTML5: valign
+     * <thead align="char" char="." charoff="2" valign="top">
+                                                ^
 HtmlVersionTagsAttrsTest.java:37: error: attribute not supported in HTML5: align
      * <tr align="char" char="." charoff="2" bgcolor="#EAEAEA" valign="top">
            ^
@@ -139,6 +142,9 @@ HtmlVersionTagsAttrsTest.java:42: error: attribute not supported in HTML5: char
 HtmlVersionTagsAttrsTest.java:42: error: attribute not supported in HTML5: charoff
      * <tfoot align="char" char="." charoff="2" valign="top">
                                     ^
+HtmlVersionTagsAttrsTest.java:42: error: attribute not supported in HTML5: valign
+     * <tfoot align="char" char="." charoff="2" valign="top">
+                                                ^
 HtmlVersionTagsAttrsTest.java:48: error: attribute not supported in HTML5: align
      * <tbody align="char" char="." charoff="2" valign="top">
               ^
@@ -148,6 +154,9 @@ HtmlVersionTagsAttrsTest.java:48: error: attribute not supported in HTML5: char
 HtmlVersionTagsAttrsTest.java:48: error: attribute not supported in HTML5: charoff
      * <tbody align="char" char="." charoff="2" valign="top">
                                     ^
+HtmlVersionTagsAttrsTest.java:48: error: attribute not supported in HTML5: valign
+     * <tbody align="char" char="." charoff="2" valign="top">
+                                                ^
 HtmlVersionTagsAttrsTest.java:50: error: attribute not supported in HTML5: align
      * <td align="char" char="." charoff="2" bgcolor="#EAEAEA" height="200" valign="top" width="200" nowrap>BodyCol1</td>
            ^
@@ -163,6 +172,9 @@ HtmlVersionTagsAttrsTest.java:50: error: attribute not supported in HTML5: bgcol
 HtmlVersionTagsAttrsTest.java:50: error: attribute not supported in HTML5: height
      * <td align="char" char="." charoff="2" bgcolor="#EAEAEA" height="200" valign="top" width="200" nowrap>BodyCol1</td>
                                                                ^
+HtmlVersionTagsAttrsTest.java:50: error: attribute not supported in HTML5: valign
+     * <td align="char" char="." charoff="2" bgcolor="#EAEAEA" height="200" valign="top" width="200" nowrap>BodyCol1</td>
+                                                                            ^
 HtmlVersionTagsAttrsTest.java:50: error: attribute not supported in HTML5: width
      * <td align="char" char="." charoff="2" bgcolor="#EAEAEA" height="200" valign="top" width="200" nowrap>BodyCol1</td>
                                                                                          ^
@@ -214,25 +226,22 @@ HtmlVersionTagsAttrsTest.java:72: error: attribute border for table only accepts
 HtmlVersionTagsAttrsTest.java:74: error: no summary or caption for table
      * </table>
        ^
-HtmlVersionTagsAttrsTest.java:94: error: tag not supported in the generated HTML version: big
+HtmlVersionTagsAttrsTest.java:94: error: tag not supported in HTML5: big
      * <p><big>Bigger text test</big></p>
           ^
 HtmlVersionTagsAttrsTest.java:94: warning: empty <p> tag
      * <p><big>Bigger text test</big></p>
                                      ^
-HtmlVersionTagsAttrsTest.java:95: error: tag not supported in the generated HTML version: center
+HtmlVersionTagsAttrsTest.java:95: error: tag not supported in HTML5: center
      * <center>Center text test</center>
        ^
-HtmlVersionTagsAttrsTest.java:96: error: tag not supported in the generated HTML version: font
+HtmlVersionTagsAttrsTest.java:96: error: tag not supported in HTML5: font
      * <font size="3">Font test</font>
        ^
-HtmlVersionTagsAttrsTest.java:96: error: attribute not supported in HTML5: size
-     * <font size="3">Font test</font>
-             ^
-HtmlVersionTagsAttrsTest.java:97: error: tag not supported in the generated HTML version: strike
+HtmlVersionTagsAttrsTest.java:97: error: tag not supported in HTML5: strike
      * <p>Text <strike>strike</strike></p>
                ^
-HtmlVersionTagsAttrsTest.java:98: error: tag not supported in the generated HTML version: tt
+HtmlVersionTagsAttrsTest.java:98: error: tag not supported in HTML5: tt
      * <p><tt>Teletype text</tt></p>
           ^
 HtmlVersionTagsAttrsTest.java:98: warning: empty <p> tag
@@ -295,5 +304,5 @@ HtmlVersionTagsAttrsTest.java:205: error: no summary or caption for table
 HtmlVersionTagsAttrsTest.java:208: error: no summary or caption for table
      * </table>
        ^
-97 errors
+100 errors
 2 warnings

@@ -1,6 +1,9 @@
 TrimmingEmptyTag.java:14: warning: empty <b> tag
  * <b></b>
       ^
+TrimmingEmptyTag.java:15: error: attribute not supported in HTML5: summary
+ * <table summary=description></table>
+          ^
 TrimmingEmptyTag.java:15: warning: empty <table> tag
  * <table summary=description></table>
                               ^
@@ -19,9 +22,9 @@ TrimmingEmptyTag.java:19: warning: empty <dt> tag
 TrimmingEmptyTag.java:19: warning: empty <dd> tag
  * <dl><dt></dt><dd></dd></dl>
                     ^
-TrimmingEmptyTag.java:20: warning: empty <font> tag
+TrimmingEmptyTag.java:20: error: tag not supported in HTML5: font
  * <font></font>
-         ^
+   ^
 TrimmingEmptyTag.java:21: warning: empty <i> tag
  * <i></i>
       ^
@@ -37,9 +40,9 @@ TrimmingEmptyTag.java:24: warning: empty <pre> tag
 TrimmingEmptyTag.java:25: warning: empty <span> tag
  * <span></span>
          ^
-TrimmingEmptyTag.java:26: warning: empty <tt> tag
+TrimmingEmptyTag.java:26: error: tag not supported in HTML5: tt
  * <tt></tt>
-       ^
+   ^
 TrimmingEmptyTag.java:27: warning: empty <ul> tag
  * <ul></ul>
        ^
@@ -49,4 +52,5 @@ TrimmingEmptyTag.java:31: warning: empty <p> tag
 TrimmingEmptyTag.java:33: warning: empty <p> tag
     /** <p> <ul><li>text</ul> */
         ^
-17 warnings
+3 errors
+15 warnings
