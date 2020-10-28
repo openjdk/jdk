@@ -476,6 +476,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         mv.visitMaxs(0, 0);
         mv.visitEnd();
     }
+
     /**
      * Generate a writeReplace method that supports serialization
      */

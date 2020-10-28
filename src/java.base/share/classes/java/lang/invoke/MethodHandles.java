@@ -310,7 +310,7 @@ public class MethodHandles {
      * @throws ClassCastException if the class data cannot be converted to
      * the specified {@code type}
      * @see Lookup#defineHiddenClassWithClassData(byte[], Object, boolean, Lookup.ClassOption...)
-     * @since 15
+     * @since 16
      * @jvms 5.5 Initialization
      */
      public static <T> T classData(Lookup caller, String name, Class<T> type) throws IllegalAccessException {
@@ -364,6 +364,7 @@ public class MethodHandles {
      * original caller access
      * @throws ClassCastException if the class data cannot be converted to
      * the specified {@code type}
+     * @since 16
      * @see #classData(Lookup, String, Class)
      */
     public static <T> T classDataAt(Lookup caller, String key, Class<T> type, Class<?> classDataType)
@@ -2041,7 +2042,7 @@ public class MethodHandles {
          * {@link #defineHiddenClass(byte[], boolean, ClassOption...) defineHiddenClass(bytes, initialize, options)}
          * as if the hidden class has a private static final unnamed field whose value
          * is initialized to {@code classData} as the first instruction of the class initializer.
-         * The newly created class is linked and initialized by the Java Virtual Machine.
+         * The newly created class is linked by the Java Virtual Machine.
          *
          * <p> The {@link MethodHandles#classData(Lookup, String, Class) MethodHandles::classData}
          * method can be used to retrieve the {@code classData}.
@@ -2070,11 +2071,22 @@ public class MethodHandles {
          * @throws LinkageError if the newly created class cannot be linked for any other reason
          * @throws NullPointerException if any parameter is {@code null}
          *
-         * @since 15
+         * @since 16
          * @see Lookup#defineHiddenClass(byte[], boolean, ClassOption...)
          * @see Class#isHidden()
+         * @see MethodHandles#classData(Lookup, String, Class)
+         * @jvms 4.2.1 Binary Class and Interface Names
+         * @jvms 4.2.2 Unqualified Names
+         * @jvms 4.7.28 The {@code NestHost} Attribute
+         * @jvms 4.7.29 The {@code NestMembers} Attribute
+         * @jvms 5.4.3.1 Class and Interface Resolution
+         * @jvms 5.4.4 Access Control
+         * @jvms 5.3.5 Deriving a {@code Class} from a {@code class} File Representation
+         * @jvms 5.4 Linking
+         * @jvms 5.5 Initialization
+         * @jls 12.7 Unloading of Classes and Interface
          */
-        /* package-private */ Lookup defineHiddenClassWithClassData(byte[] bytes, Object classData, boolean initialize, ClassOption... options)
+        public Lookup defineHiddenClassWithClassData(byte[] bytes, Object classData, boolean initialize, ClassOption... options)
                 throws IllegalAccessException
         {
             Objects.requireNonNull(bytes);
@@ -4164,7 +4176,7 @@ return mh1;
      *     {@code short}, {@code char}, {@code int}, {@code long},
      *     {@code float}, or {@code double} then numeric atomic update access
      *     modes are unsupported.
-     * <li>if the field type is anything other than {@code boolean},
+     * <li>if the component type is anything other than {@code boolean},
      *     {@code byte}, {@code short}, {@code char}, {@code int} or
      *     {@code long} then bitwise atomic update access modes are
      *     unsupported.
