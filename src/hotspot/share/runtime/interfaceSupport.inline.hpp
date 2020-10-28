@@ -128,22 +128,7 @@ class ThreadStateTransition : public StackObj {
 
 class ThreadInVMForHandshake : public ThreadStateTransition {
   const JavaThreadState _original_state;
-
-  void transition_back() {
-    // This can be invoked from transition states and must return to the original state properly
-    assert(_thread->thread_state() == _thread_in_vm, "should only call when leaving VM after handshake");
-
-    _thread->set_thread_state(_original_state);
-
-    if (_original_state != _thread_blocked_trans &&  _original_state != _thread_in_vm_trans &&
-        _thread->has_special_runtime_exit_condition()) {
-      _thread->handle_special_runtime_exit_condition(
-          !_thread->is_at_poll_safepoint() && (_original_state != _thread_in_native_trans));
-    }
-  }
-
  public:
-
   ThreadInVMForHandshake(JavaThread* thread) : ThreadStateTransition(thread),
       _original_state(thread->thread_state()) {
 
@@ -158,7 +143,8 @@ class ThreadInVMForHandshake : public ThreadStateTransition {
   }
 
   ~ThreadInVMForHandshake() {
-    transition_back();
+    assert(_thread->thread_state() == _thread_in_vm, "should only call when leaving VM after handshake");
+    _thread->set_thread_state(_original_state);
   }
 
 };
@@ -169,8 +155,8 @@ class ThreadInVMfromJava : public ThreadStateTransition {
     trans_from_java(_thread_in_vm);
   }
   ~ThreadInVMfromJava()  {
-    if (_thread->stack_yellow_reserved_zone_disabled()) {
-      _thread->enable_stack_yellow_reserved_zone();
+    if (_thread->stack_overflow_state()->stack_yellow_reserved_zone_disabled()) {
+      _thread->stack_overflow_state()->enable_stack_yellow_reserved_zone();
     }
     trans(_thread_in_vm, _thread_in_Java);
     // Check for pending. async. exceptions or suspends.
@@ -245,7 +231,6 @@ class ThreadBlockInVM : public ThreadStateTransition {
   }
   ~ThreadBlockInVM() {
     trans(_thread_blocked, _thread_in_vm);
-    OrderAccess::cross_modify_fence();
     // We don't need to clear_walkable because it will happen automagically when we return to java
   }
 };
@@ -295,7 +280,6 @@ class ThreadBlockInVMWithDeadlockCheck : public ThreadStateTransition {
     }
 
     _thread->set_thread_state(_thread_in_vm);
-    OrderAccess::cross_modify_fence();
   }
 };
 
@@ -309,8 +293,8 @@ class ThreadInVMfromJavaNoAsyncException : public ThreadStateTransition {
     trans_from_java(_thread_in_vm);
   }
   ~ThreadInVMfromJavaNoAsyncException()  {
-    if (_thread->stack_yellow_reserved_zone_disabled()) {
-      _thread->enable_stack_yellow_reserved_zone();
+    if (_thread->stack_overflow_state()->stack_yellow_reserved_zone_disabled()) {
+      _thread->stack_overflow_state()->enable_stack_yellow_reserved_zone();
     }
     trans(_thread_in_vm, _thread_in_Java);
     // NOTE: We do not check for pending. async. exceptions.

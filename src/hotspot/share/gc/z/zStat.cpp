@@ -25,10 +25,7 @@
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zCPU.inline.hpp"
 #include "gc/z/zGlobals.hpp"
-#include "gc/z/zHeap.inline.hpp"
-#include "gc/z/zLargePages.inline.hpp"
 #include "gc/z/zNMethodTable.hpp"
-#include "gc/z/zNUMA.hpp"
 #include "gc/z/zRelocationSetSelector.inline.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zTracer.inline.hpp"
@@ -38,7 +35,6 @@
 #include "runtime/os.hpp"
 #include "runtime/timer.hpp"
 #include "utilities/align.hpp"
-#include "utilities/compilerWarnings.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ticks.hpp"
 
@@ -1144,10 +1140,15 @@ void ZStatMark::print() {
 // Stat relocation
 //
 ZRelocationSetSelectorStats ZStatRelocation::_stats;
+size_t                      ZStatRelocation::_forwarding_usage;
 bool                        ZStatRelocation::_success;
 
 void ZStatRelocation::set_at_select_relocation_set(const ZRelocationSetSelectorStats& stats) {
   _stats = stats;
+}
+
+void ZStatRelocation::set_at_populate_relocation_set(size_t forwarding_usage) {
+  _forwarding_usage = forwarding_usage;
 }
 
 void ZStatRelocation::set_at_relocate_end(bool success) {
@@ -1173,6 +1174,7 @@ void ZStatRelocation::print() {
   }
   print("Large", _stats.large());
 
+  log_info(gc, reloc)("Forwarding Usage: " SIZE_FORMAT "M", _forwarding_usage / M);
   log_info(gc, reloc)("Relocation: %s", _success ? "Successful" : "Incomplete");
 }
 
@@ -1190,10 +1192,9 @@ void ZStatNMethods::print() {
 //
 void ZStatMetaspace::print() {
   log_info(gc, metaspace)("Metaspace: "
-                          SIZE_FORMAT "M used, " SIZE_FORMAT "M capacity, "
+                          SIZE_FORMAT "M used, "
                           SIZE_FORMAT "M committed, " SIZE_FORMAT "M reserved",
                           MetaspaceUtils::used_bytes() / M,
-                          MetaspaceUtils::capacity_bytes() / M,
                           MetaspaceUtils::committed_bytes() / M,
                           MetaspaceUtils::reserved_bytes() / M);
 }

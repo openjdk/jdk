@@ -43,6 +43,7 @@
 #include "opto/regmask.hpp"
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
+#include "opto/vectornode.hpp"
 #include "utilities/vmError.hpp"
 
 // Portions of code courtesy of Clifford Click
@@ -315,37 +316,60 @@ static bool check_compare_clipping( bool less_than, IfNode *iff, ConNode *limit,
 
 //------------------------------is_unreachable_region--------------------------
 // Find if the Region node is reachable from the root.
-bool RegionNode::is_unreachable_region(PhaseGVN *phase) const {
-  assert(req() == 2, "");
+bool RegionNode::is_unreachable_region(const PhaseGVN* phase) {
+  Node* top = phase->C->top();
+  assert(req() == 2 || (req() == 3 && in(1) != NULL && in(2) == top), "sanity check arguments");
+  if (_is_unreachable_region) {
+    // Return cached result from previous evaluation which should still be valid
+    assert(is_unreachable_from_root(phase), "walk the graph again and check if its indeed unreachable");
+    return true;
+  }
 
   // First, cut the simple case of fallthrough region when NONE of
   // region's phis references itself directly or through a data node.
+  if (is_possible_unsafe_loop(phase)) {
+    // If we have a possible unsafe loop, check if the region node is actually unreachable from root.
+    if (is_unreachable_from_root(phase)) {
+      _is_unreachable_region = true;
+      return true;
+    }
+  }
+  return false;
+}
+
+bool RegionNode::is_possible_unsafe_loop(const PhaseGVN* phase) const {
   uint max = outcnt();
   uint i;
   for (i = 0; i < max; i++) {
-    Node* phi = raw_out(i);
-    if (phi != NULL && phi->is_Phi()) {
-      assert(phase->eqv(phi->in(0), this) && phi->req() == 2, "");
-      if (phi->outcnt() == 0)
+    Node* n = raw_out(i);
+    if (n != NULL && n->is_Phi()) {
+      PhiNode* phi = n->as_Phi();
+      assert(phase->eqv(phi->in(0), this), "sanity check phi");
+      if (phi->outcnt() == 0) {
         continue; // Safe case - no loops
+      }
       if (phi->outcnt() == 1) {
         Node* u = phi->raw_out(0);
         // Skip if only one use is an other Phi or Call or Uncommon trap.
         // It is safe to consider this case as fallthrough.
-        if (u != NULL && (u->is_Phi() || u->is_CFG()))
+        if (u != NULL && (u->is_Phi() || u->is_CFG())) {
           continue;
+        }
       }
       // Check when phi references itself directly or through an other node.
-      if (phi->as_Phi()->simple_data_loop_check(phi->in(1)) >= PhiNode::Unsafe)
+      if (phi->as_Phi()->simple_data_loop_check(phi->in(1)) >= PhiNode::Unsafe) {
         break; // Found possible unsafe data loop.
+      }
     }
   }
-  if (i >= max)
+  if (i >= max) {
     return false; // An unsafe case was NOT found - don't need graph walk.
+  }
+  return true;
+}
 
-  // Unsafe case - check if the Region node is reachable from root.
+bool RegionNode::is_unreachable_from_root(const PhaseGVN* phase) const {
   ResourceMark rm;
-
   Node_List nstack;
   VectorSet visited;
 
@@ -367,7 +391,6 @@ bool RegionNode::is_unreachable_region(PhaseGVN *phase) const {
       }
     }
   }
-
   return true; // The Region node is unreachable - it is dead.
 }
 
@@ -818,8 +841,10 @@ bool RegionNode::optimize_trichotomy(PhaseIterGVN* igvn) {
   } else if (cmp1->Opcode() == Op_CmpF || cmp1->Opcode() == Op_CmpD ||
              cmp2->Opcode() == Op_CmpF || cmp2->Opcode() == Op_CmpD ||
              cmp1->Opcode() == Op_CmpP || cmp1->Opcode() == Op_CmpN ||
-             cmp2->Opcode() == Op_CmpP || cmp2->Opcode() == Op_CmpN) {
+             cmp2->Opcode() == Op_CmpP || cmp2->Opcode() == Op_CmpN ||
+             cmp1->is_SubTypeCheck() || cmp2->is_SubTypeCheck()) {
     // Floats and pointers don't exactly obey trichotomy. To be on the safe side, don't transform their tests.
+    // SubTypeCheck is not commutative
     return false;
   } else if (cmp1 != cmp2) {
     if (cmp1->in(1) == cmp2->in(2) &&
@@ -1927,16 +1952,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // Determine if this input is backedge of a loop.
     // (Skip new phis which have no uses and dead regions).
     if (outcnt() > 0 && r->in(0) != NULL) {
-      // First, take the short cut when we know it is a loop and
-      // the EntryControl data path is dead.
-      // Loop node may have only one input because entry path
-      // is removed in PhaseIdealLoop::Dominators().
-      assert(!r->is_Loop() || r->req() <= 3, "Loop node should have 3 or less inputs");
-      bool is_loop = (r->is_Loop() && r->req() == 3);
-      // Then, check if there is a data loop when phi references itself directly
-      // or through other data nodes.
-      if ((is_loop && !uin->eqv_uncast(in(LoopNode::EntryControl))) ||
-          (!is_loop && is_unsafe_data_reference(uin))) {
+      if (is_data_loop(r->as_Region(), uin, phase)) {
         // Break this data loop to avoid creation of a dead loop.
         if (can_reshape) {
           return top;
@@ -2372,7 +2388,64 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 #endif
 
+  // Phi (VB ... VB) => VB (Phi ...) (Phi ...)
+  if (EnableVectorReboxing && can_reshape && progress == NULL) {
+    PhaseIterGVN* igvn = phase->is_IterGVN();
+
+    bool all_inputs_are_equiv_vboxes = true;
+    for (uint i = 1; i < req(); ++i) {
+      Node* n = in(i);
+      if (in(i)->Opcode() != Op_VectorBox) {
+        all_inputs_are_equiv_vboxes = false;
+        break;
+      }
+      // Check that vector type of vboxes is equivalent
+      if (i != 1) {
+        if (Type::cmp(in(i-0)->in(VectorBoxNode::Value)->bottom_type(),
+                      in(i-1)->in(VectorBoxNode::Value)->bottom_type()) != 0) {
+          all_inputs_are_equiv_vboxes = false;
+          break;
+        }
+        if (Type::cmp(in(i-0)->in(VectorBoxNode::Box)->bottom_type(),
+                      in(i-1)->in(VectorBoxNode::Box)->bottom_type()) != 0) {
+          all_inputs_are_equiv_vboxes = false;
+          break;
+        }
+      }
+    }
+
+    if (all_inputs_are_equiv_vboxes) {
+      VectorBoxNode* vbox = static_cast<VectorBoxNode*>(in(1));
+      PhiNode* new_vbox_phi = new PhiNode(r, vbox->box_type());
+      PhiNode* new_vect_phi = new PhiNode(r, vbox->vec_type());
+      for (uint i = 1; i < req(); ++i) {
+        VectorBoxNode* old_vbox = static_cast<VectorBoxNode*>(in(i));
+        new_vbox_phi->set_req(i, old_vbox->in(VectorBoxNode::Box));
+        new_vect_phi->set_req(i, old_vbox->in(VectorBoxNode::Value));
+      }
+      igvn->register_new_node_with_optimizer(new_vbox_phi, this);
+      igvn->register_new_node_with_optimizer(new_vect_phi, this);
+      progress = new VectorBoxNode(igvn->C, new_vbox_phi, new_vect_phi, vbox->box_type(), vbox->vec_type());
+    }
+  }
+
   return progress;              // Return any progress
+}
+
+bool PhiNode::is_data_loop(RegionNode* r, Node* uin, const PhaseGVN* phase) {
+  // First, take the short cut when we know it is a loop and the EntryControl data path is dead.
+  // The loop node may only have one input because the entry path was removed in PhaseIdealLoop::Dominators().
+  // Then, check if there is a data loop when the phi references itself directly or through other data nodes.
+  assert(!r->is_Loop() || r->req() <= 3, "Loop node should have 3 or less inputs");
+  const bool is_loop = (r->is_Loop() && r->req() == 3);
+  const Node* top = phase->C->top();
+  if (is_loop) {
+    return !uin->eqv_uncast(in(LoopNode::EntryControl));
+  } else {
+    // We have a data loop either with an unsafe data reference or if a region is unreachable.
+    return is_unsafe_data_reference(uin)
+           || (r->req() == 3 && (r->in(1) != top && r->in(2) == top && r->is_unreachable_region(phase)));
+  }
 }
 
 //------------------------------is_tripcount-----------------------------------

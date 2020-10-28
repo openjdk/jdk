@@ -69,7 +69,7 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
   push(thread);
 #endif // _LP64
 
-  int call_offset;
+  int call_offset = -1;
   if (!align_stack) {
     set_last_Java_frame(thread, noreg, rbp, NULL);
   } else {
@@ -133,6 +133,8 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
   if (metadata_result->is_valid()) {
     get_vm_result_2(metadata_result, thread);
   }
+
+  assert(call_offset >= 0, "Should be set");
   return call_offset;
 }
 

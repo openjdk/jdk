@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/z/zArray.inline.hpp"
+#include "gc/z/zForwarding.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zRelocationSet.hpp"
 #include "gc/z/zRelocationSetSelector.inline.hpp"
@@ -53,6 +54,7 @@ ZRelocationSetSelectorGroup::ZRelocationSetSelectorGroup(const char* name,
     _registered_pages(),
     _sorted_pages(NULL),
     _nselected(0),
+    _forwarding_entries(0),
     _stats() {}
 
 ZRelocationSetSelectorGroup::~ZRelocationSetSelectorGroup() {
@@ -143,19 +145,23 @@ void ZRelocationSetSelectorGroup::select_inner() {
   const size_t npages = _registered_pages.length();
   size_t selected_from = 0;
   size_t selected_to = 0;
-  size_t from_size = 0;
+  size_t selected_forwarding_entries = 0;
+  size_t from_live_bytes = 0;
+  size_t from_forwarding_entries = 0;
 
   semi_sort();
 
   for (size_t from = 1; from <= npages; from++) {
     // Add page to the candidate relocation set
-    from_size += _sorted_pages[from - 1]->live_bytes();
+    ZPage* const page = _sorted_pages[from - 1];
+    from_live_bytes += page->live_bytes();
+    from_forwarding_entries += ZForwarding::nentries(page);
 
     // Calculate the maximum number of pages needed by the candidate relocation set.
     // By subtracting the object size limit from the pages size we get the maximum
     // number of pages that the relocation set is guaranteed to fit in, regardless
     // of in which order the objects are relocated.
-    const size_t to = ceil((double)(from_size) / (double)(_page_size - _object_size_limit));
+    const size_t to = ceil((double)(from_live_bytes) / (double)(_page_size - _object_size_limit));
 
     // Calculate the relative difference in reclaimable space compared to our
     // currently selected final relocation set. If this number is larger than the
@@ -167,22 +173,27 @@ void ZRelocationSetSelectorGroup::select_inner() {
     if (diff_reclaimable > ZFragmentationLimit) {
       selected_from = from;
       selected_to = to;
+      selected_forwarding_entries = from_forwarding_entries;
     }
 
-    log_trace(gc, reloc)("Candidate Relocation Set (%s Pages): "
-                         SIZE_FORMAT "->" SIZE_FORMAT ", %.1f%% relative defragmentation, %s",
-                         _name, from, to, diff_reclaimable, (selected_from == from) ? "Selected" : "Rejected");
+    log_trace(gc, reloc)("Candidate Relocation Set (%s Pages): " SIZE_FORMAT "->" SIZE_FORMAT ", "
+                         "%.1f%% relative defragmentation, " SIZE_FORMAT " forwarding entries, %s",
+                         _name, from, to, diff_reclaimable, from_forwarding_entries,
+                         (selected_from == from) ? "Selected" : "Rejected");
   }
 
   // Finalize selection
   _nselected = selected_from;
+  _forwarding_entries = selected_forwarding_entries;
 
   // Update statistics
   _stats._compacting_from = selected_from * _page_size;
   _stats._compacting_to = selected_to * _page_size;
 
-  log_trace(gc, reloc)("Relocation Set (%s Pages): " SIZE_FORMAT "->" SIZE_FORMAT ", " SIZE_FORMAT " skipped",
-                       _name, selected_from, selected_to, npages - _nselected);
+  log_trace(gc, reloc)("Relocation Set (%s Pages): " SIZE_FORMAT "->" SIZE_FORMAT ", "
+                       SIZE_FORMAT " skipped, " SIZE_FORMAT " forwarding entries",
+                       _name, selected_from, selected_to, npages - selected_from,
+                       selected_forwarding_entries);
 }
 
 void ZRelocationSetSelectorGroup::select() {
@@ -245,8 +256,9 @@ void ZRelocationSetSelector::select(ZRelocationSet* relocation_set) {
   _small.select();
 
   // Populate relocation set
-  relocation_set->populate(_medium.selected(), _medium.nselected(),
-                           _small.selected(), _small.nselected());
+  relocation_set->populate(_small.selected(), _small.nselected(),
+                           _medium.selected(), _medium.nselected(),
+                           forwarding_entries());
 
   // Send event
   event.commit(total(), empty(), compacting_from(), compacting_to());

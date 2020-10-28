@@ -36,6 +36,7 @@ class LIR_Assembler;
 class CodeEmitInfo;
 class CodeStub;
 class CodeStubList;
+class C1SafepointPollStub;
 class ArrayCopyStub;
 class LIR_Op;
 class ciType;
@@ -856,6 +857,7 @@ class    LIR_Op1;
 class      LIR_OpBranch;
 class      LIR_OpConvert;
 class      LIR_OpAllocObj;
+class      LIR_OpReturn;
 class      LIR_OpRoundFP;
 class    LIR_Op2;
 class    LIR_OpDelay;
@@ -1116,6 +1118,7 @@ class LIR_Op: public CompilationResourceObj {
   virtual LIR_OpAllocObj* as_OpAllocObj() { return NULL; }
   virtual LIR_OpRoundFP* as_OpRoundFP() { return NULL; }
   virtual LIR_OpBranch* as_OpBranch() { return NULL; }
+  virtual LIR_OpReturn* as_OpReturn() { return NULL; }
   virtual LIR_OpRTCall* as_OpRTCall() { return NULL; }
   virtual LIR_OpConvert* as_OpConvert() { return NULL; }
   virtual LIR_Op0* as_Op0() { return NULL; }
@@ -1439,6 +1442,18 @@ class LIR_OpBranch: public LIR_Op {
   virtual void print_instr(outputStream* out) const PRODUCT_RETURN;
 };
 
+class LIR_OpReturn: public LIR_Op1 {
+ friend class LIR_OpVisitState;
+
+ private:
+  C1SafepointPollStub* _stub;
+
+ public:
+  LIR_OpReturn(LIR_Opr opr);
+
+  C1SafepointPollStub* stub() const { return _stub; }
+  virtual LIR_OpReturn* as_OpReturn() { return this; }
+};
 
 class ConversionStub;
 
@@ -2094,9 +2109,8 @@ class LIR_List: public CompilationResourceObj {
   void metadata2reg  (Metadata* o, LIR_Opr reg)  { assert(reg->type() == T_METADATA, "bad reg"); append(new LIR_Op1(lir_move, LIR_OprFact::metadataConst(o), reg));   }
   void klass2reg_patch(Metadata* o, LIR_Opr reg, CodeEmitInfo* info);
 
-  void return_op(LIR_Opr result)                 { append(new LIR_Op1(lir_return, result)); }
-
   void safepoint(LIR_Opr tmp, CodeEmitInfo* info)  { append(new LIR_Op1(lir_safepoint, tmp, info)); }
+  void return_op(LIR_Opr result)                   { append(new LIR_OpReturn(result)); }
 
   void convert(Bytecodes::Code code, LIR_Opr left, LIR_Opr dst, ConversionStub* stub = NULL/*, bool is_32bit = false*/) { append(new LIR_OpConvert(code, left, dst, stub)); }
 

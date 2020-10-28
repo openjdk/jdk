@@ -266,27 +266,9 @@ public enum HtmlStyle {
 
     /**
      * The class for the {@code section} element containing a summary of
-     * the services provided by a module.
-     */
-    providesSummary,
-
-    /**
-     * The class for the {@code section} element containing a summary of
-     * the modules required by a module.
-     */
-    requiresSummary,
-
-    /**
-     * The class for the {@code section} element containing a summary of
      * the services provided or used by a module.
      */
     servicesSummary,
-
-    /**
-     * The class for the {@code section} element containing a summary of
-     * the services used by a module.
-     */
-    usesSummary,
 
     /**
      * The class for a {@code section} element on the "Constants Field Values" page,
@@ -294,37 +276,6 @@ public enum HtmlStyle {
      * the class for the {@code section} element for the enum constants of an enum class.
      */
     constantsSummary,
-
-    /**
-     * The class for a {@code section} element on the "Deprecated"
-     * page.
-     */
-    deprecatedSummary,
-
-    /**
-     * The class for the {@code section} element on the top-level page
-     * summarizing all the modules or packages that are documented.
-     */
-    overviewSummary,
-
-    /**
-     * The class for a {@code section} element on the "System Properties" page.
-     */
-    systemPropertiesSummary,
-
-    /**
-     * The class for the list of packages on the "All Packages" index page,
-     * <i>and</i>
-     * the class for the {@code section} element summarizing the types
-     * in a package.
-     */
-    typeSummary,
-
-    /**
-     * The class for {@code section} elements containing information
-     * about where a package, type or member is used within the API.
-     */
-    useSummary,
     //</editor-fold>
 
     //<editor-fold desc="details">
@@ -408,12 +359,30 @@ public enum HtmlStyle {
     // A module page has details tables containing the details of the directives.
 
     /**
-     * The class of a {@code table} element used to present details of a program element.
+     * The class of a {@code div} element whose content should be rendered as a table
+     * with two columns.
+     */
+    twoColumnSummary,
+
+    /**
+     * The class of a {@code div} element whose content should be rendered as a table
+     * with three columns.
+     */
+    threeColumnSummary,
+
+    /**
+     * The class of a {@code div} element whose content should be rendered as a table
+     * with four columns.
+     */
+    fourColumnSummary,
+
+    /**
+     * The class of a {@code div} element used to present details of a program element.
      */
     detailsTable,
 
     /**
-     * The class of a {@code table} element used to present a summary of the enclosed
+     * The class of a {@code div} element used to present a summary of the enclosed
      * elements of a program element.  A {@code summaryTable} typically references
      * items in a corresponding {@link #detailsList}.
      */
@@ -424,6 +393,17 @@ public enum HtmlStyle {
      * This is used when the table provides filtered views.
      */
     activeTableTab,
+
+    /**
+     * The class for the caption of a table. The caption is displayed as a single
+     * inactive tab above the table.
+     */
+    caption,
+
+    /**
+     * The class of an element that is part of a table header.
+     */
+    tableHeader,
 
     /**
      * The class of a "tab" that indicates an alternate view of the contents of a table.
@@ -472,21 +452,21 @@ public enum HtmlStyle {
 
     /**
      * A class used to provide the background for the rows of a table,
-     * to provide a "striped" effect. This class and {@link #rowColor}
+     * to provide a "striped" effect. This class and {@link #oddRowColor}
      * are used on alternating rows.
      * The classes are applied dynamically when table "tabs" are used
      * to filter the set of rows to be displayed
      */
-    altColor,
+    evenRowColor,
 
     /**
      * A class used to provide the background for the rows of a table,
-     * to provide a "striped" effect. This class and {@link #altColor}
+     * to provide a "striped" effect. This class and {@link #evenRowColor}
      * are used on alternating rows.
      * The classes are applied dynamically when table "tabs" are used
      * to filter the set of rows to be displayed
      */
-    rowColor,
+    oddRowColor,
     //</editor-fold>
 
     //<editor-fold desc="documentation comments">
@@ -504,7 +484,6 @@ public enum HtmlStyle {
     /**
      * The class of the element used to present the documentation comment for a module element,
      * excluding block tags.
-     * The content of the block tags will be in a sibling element with class {@link #moduleTags}.
      */
     moduleDescription,
 
@@ -651,6 +630,11 @@ public enum HtmlStyle {
     helpPage,
 
     /**
+     * The class of the {@code body} element for a page in either the "single" or "split index".
+     */
+    indexPage,
+
+    /**
      * The class of the {@code body} element for the top-level redirect page.
      */
     indexRedirectPage,
@@ -691,19 +675,9 @@ public enum HtmlStyle {
     serializedFormPage,
 
     /**
-     * The class of the {@code body} element for the full single index page.
-     */
-    singleIndexPage,
-
-    /**
      * The class of the {@code body} element for a page with the source code for a class.
      */
     sourcePage,
-
-    /**
-     * The class of the {@code body} element for a page in a "split index".
-     */
-    splitIndexPage,
 
     /**
      * The class of the {@code body} element for the system-properties page.

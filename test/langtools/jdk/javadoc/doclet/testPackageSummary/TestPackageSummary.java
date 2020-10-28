@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 8189841
+ * @bug 8189841 8253117
  * @summary Error in alternate row coloring in package-summary files
  * @library  ../../lib/
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -50,28 +50,16 @@ public class TestPackageSummary extends JavadocTester {
 
         checkOutput("pkg/package-summary.html", true,
                 """
-                    <tbody>
-                    <tr class="alt-color">
-                    <th class="col-first" scope="row"><a href="C0.html" title="class in pkg">C0</a></th>
-                    <td class="col-last">&nbsp;</td>
-                    </tr>
-                    <tr class="row-color">
-                    <th class="col-first" scope="row"><a href="C1.html" title="class in pkg">C1</a></th>
-                    <td class="col-last">&nbsp;</td>
-                    </tr>
-                    <tr class="alt-color">
-                    <th class="col-first" scope="row"><a href="C2.html" title="class in pkg">C2</a></th>
-                    <td class="col-last">&nbsp;</td>
-                    </tr>
-                    <tr class="row-color">
-                    <th class="col-first" scope="row"><a href="C3.html" title="class in pkg">C3</a></th>
-                    <td class="col-last">&nbsp;</td>
-                    </tr>
-                    <tr class="alt-color">
-                    <th class="col-first" scope="row"><a href="C4.html" title="class in pkg">C4</a></th>
-                    <td class="col-last">&nbsp;</td>
-                    </tr>
-                    </tbody>
+                    <div class="col-first even-row-color"><a href="C0.html" title="class in pkg">C0</a></div>
+                    <div class="col-last even-row-color">&nbsp;</div>
+                    <div class="col-first odd-row-color"><a href="C1.html" title="class in pkg">C1</a></div>
+                    <div class="col-last odd-row-color">&nbsp;</div>
+                    <div class="col-first even-row-color"><a href="C2.html" title="class in pkg">C2</a></div>
+                    <div class="col-last even-row-color">&nbsp;</div>
+                    <div class="col-first odd-row-color"><a href="C3.html" title="class in pkg">C3</a></div>
+                    <div class="col-last odd-row-color">&nbsp;</div>
+                    <div class="col-first even-row-color"><a href="C4.html" title="class in pkg">C4</a></div>
+                    <div class="col-last even-row-color">&nbsp;</div>
                     """
         );
     }

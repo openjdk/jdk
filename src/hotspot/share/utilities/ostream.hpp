@@ -239,8 +239,6 @@ class fileStream : public outputStream {
   void flush();
 };
 
-CDS_ONLY(extern fileStream*   classlist_file;)
-
 // unlike fileStream, fdStream does unbuffered I/O by calling
 // open() and write() directly. It is async-safe, but output
 // from multiple thread may be mixed together. Used by fatal
@@ -261,6 +259,7 @@ void ostream_init();
 void ostream_init_log();
 void ostream_exit();
 void ostream_abort();
+const char* make_log_name(const char* log_name, const char* force_directory);
 
 // In the non-fixed buffer case an underlying buffer will be created and
 // managed in C heap. Not MT-safe.

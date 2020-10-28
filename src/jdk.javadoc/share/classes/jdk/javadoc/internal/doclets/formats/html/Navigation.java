@@ -142,7 +142,7 @@ public class Navigation {
         this.documentedPage = page;
         this.path = path;
         this.pathToRoot = path.parent().invert();
-        this.links = new Links(path);
+        this.links = new Links(path, configuration.utils);
         this.rowListTitle = configuration.getDocResources().getText("doclet.Navigation");
         this.searchLabel = contents.getContent("doclet.search");
     }
@@ -308,8 +308,8 @@ public class Navigation {
                 addPageLabel(tree, contents.useLabel, options.classUse());
                 addTreeLink(tree);
                 if (documentedPage == PageMode.DEPRECATED) {
-                    addActivePageLink(tree, contents.deprecatedLabel, !(options.noDeprecated()
-                            || options.noDeprecatedList()));
+                    addActivePageLink(tree, contents.deprecatedLabel,
+                            configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.DEPRECATED));
                 } else {
                     addDeprecatedLink(tree);
                 }
@@ -863,7 +863,7 @@ public class Navigation {
     }
 
     private void addDeprecatedLink(Content tree) {
-        if (!(options.noDeprecated() || options.noDeprecatedList())) {
+        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.DEPRECATED)) {
             tree.add(HtmlTree.LI(links.createLink(pathToRoot.resolve(DocPaths.DEPRECATED_LIST),
                     contents.deprecatedLabel, "", "")));
         }

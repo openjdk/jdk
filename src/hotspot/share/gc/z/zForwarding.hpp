@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "gc/z/zForwardingEntry.hpp"
 #include "gc/z/zVirtualMemory.hpp"
 
+class ZForwardingAllocator;
 class ZPage;
 
 typedef size_t ZForwardingCursor;
@@ -57,8 +58,8 @@ private:
   ZForwarding(ZPage* page, size_t nentries);
 
 public:
-  static ZForwarding* create(ZPage* page);
-  static void destroy(ZForwarding* forwarding);
+  static uint32_t nentries(const ZPage* page);
+  static ZForwarding* alloc(ZForwardingAllocator* allocator, ZPage* page);
 
   uintptr_t start() const;
   size_t size() const;
