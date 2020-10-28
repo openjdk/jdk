@@ -1043,8 +1043,10 @@ void ShenandoahBarrierSetC2::verify_gc_barriers(Compile* compile, CompilePhase p
 #endif
 
 void ShenandoahBarrierSetC2::maybe_step_over_cmpp_inputs(Node*& in1, Node*& in2) const {
+  // If first input is NULL, then skip the LRB barriers (except native) on the second input
   if (in1->bottom_type() == TypePtr::NULL_PTR &&
-      (in2->Opcode() != Op_ShenandoahLoadReferenceBarrier || !((ShenandoahLoadReferenceBarrierNode*)in2)->is_native())) {
+      !((in2->Opcode() == Op_ShenandoahLoadReferenceBarrier) &&
+        ((ShenandoahLoadReferenceBarrierNode*)in2)->is_native())) {
     in2 = step_over_gc_barrier(in2);
   }
 }
