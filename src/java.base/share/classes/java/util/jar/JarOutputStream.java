@@ -58,6 +58,7 @@ public class JarOutputStream extends ZipOutputStream {
         if (man == null) {
             throw new NullPointerException("man");
         }
+        writeShebang(out);
         ZipEntry e = new ZipEntry(JarFile.MANIFEST_NAME);
         putNextEntry(e);
         man.write(new BufferedOutputStream(this));
@@ -71,6 +72,24 @@ public class JarOutputStream extends ZipOutputStream {
      */
     public JarOutputStream(OutputStream out) throws IOException {
         super(out);
+        writeShebang(out);
+    }
+
+    /**
+     * Writes a "shebang" to the output stream.
+     * <p>
+     * This is used on unix systems to identify how to execute a
+     * binary file, in this case using the java executable on the
+     * path, passing this file as a -jar argument.
+     */
+    private void writeShebang(OutputStream out) throws IOException {
+        // shebang = "#!java -jar\n"
+        byte[] shebangBytes = new byte[]{
+            0x23, 0x21, 0x6A, 0x61, // #!ja
+            0x76, 0x61, 0x20, 0x2D, // va -
+            0x6A, 0x61, 0x72, 0x0A  // jar\n
+        };
+        out.write(shebangBytes);
     }
 
     /**
