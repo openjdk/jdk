@@ -97,6 +97,7 @@ inline oop ShenandoahBarrierSet::load_reference_barrier_native(oop obj, T* load_
     // Since we are here and we know the load address, update the reference.
     ShenandoahHeap::cas_oop(fwd, load_addr, obj);
   }
+
   return fwd;
 }
 

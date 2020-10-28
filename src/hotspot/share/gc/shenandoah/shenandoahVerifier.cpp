@@ -820,7 +820,7 @@ void ShenandoahVerifier::verify_after_concmark() {
           _verify_cset_none,           // no references to cset anymore
           _verify_liveness_complete,   // liveness data must be complete here
           _verify_regions_disable,     // trash regions not yet recycled
-          _verify_gcstate_stable,       // mark should have stabilized the heap
+          _verify_gcstate_stable,      // mark should have stabilized the heap
           _verify_all_weak_roots
   );
 }
