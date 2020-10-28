@@ -605,6 +605,10 @@ void InterpreterMacroAssembler::push_i(Register r) {
   push(r);
 }
 
+void InterpreterMacroAssembler::push_i_or_ptr(Register r) {
+  push(r);
+}
+
 void InterpreterMacroAssembler::push_f(XMMRegister r) {
   subptr(rsp, wordSize);
   movflt(Address(rsp, 0), r);
