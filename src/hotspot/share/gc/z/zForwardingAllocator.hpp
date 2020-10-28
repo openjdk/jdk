@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,26 @@
  * questions.
  */
 
+#ifndef SHARE_GC_Z_ZFORWARDINGALLOCATOR_HPP
+#define SHARE_GC_Z_ZFORWARDINGALLOCATOR_HPP
 
-/*
- * @test
- * @modules java.base/jdk.internal.misc java.base/jdk.internal.org.objectweb.asm
- *
- * @summary converted from VM Testbase vm/mlvm/anonloader/func/finalSuperclass.
- * VM Testbase keywords: [feature_mlvm]
- * VM Testbase readme:
- * DESCRIPTION
- *     Try to load anonymous class derived from java.lang.System. The class file
- *     loader should reject such attempt and throw IncompatibleClassChangeError
- *     because java.lang.System is a final class.
- *
- * @library /vmTestbase
- *          /test/lib
- *
- * @comment build test class and indify classes
- * @build vm.mlvm.anonloader.share.ReplaceClassParentTest
- * @run driver vm.mlvm.share.IndifiedClassesBuilder
- *
- * @run main/othervm
- *      vm.mlvm.anonloader.share.ReplaceClassParentTest
- *      -newParent java/lang/System
- *      -requireExceptions java.lang.IncompatibleClassChangeError
- */
+#include "utilities/globalDefinitions.hpp"
 
+class ZForwardingAllocator {
+private:
+  char* _start;
+  char* _end;
+  char* _top;
+
+public:
+  ZForwardingAllocator();
+  ~ZForwardingAllocator();
+
+  void reset(size_t size);
+  size_t size() const;
+  bool is_full() const;
+
+  void* alloc(size_t size);
+};
+
+#endif // SHARE_GC_Z_ZFORWARDINGALLOCATOR_HPP

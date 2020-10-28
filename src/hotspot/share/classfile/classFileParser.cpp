@@ -4438,13 +4438,7 @@ void ClassFileParser::check_super_class_access(const InstanceKlass* this_klass, 
     const InstanceKlass* super_ik = InstanceKlass::cast(super);
 
     if (super->is_final()) {
-      ResourceMark rm(THREAD);
-      Exceptions::fthrow(
-        THREAD_AND_LOCATION,
-        vmSymbols::java_lang_VerifyError(),
-        "class %s cannot inherit from final class %s",
-        this_klass->external_name(),
-        super_ik->external_name());
+      classfile_icce_error("class %s cannot inherit from final class %s", super_ik, THREAD);
       return;
     }
 
@@ -4589,15 +4583,12 @@ static void check_final_method_override(const InstanceKlass* this_klass, TRAPS) 
             if (can_access) {
               // this class can access super final method and therefore override
               ResourceMark rm(THREAD);
-              Exceptions::fthrow(THREAD_AND_LOCATION,
-                                 vmSymbols::java_lang_VerifyError(),
-                                 "class %s overrides final method %s.%s%s",
-                                 this_klass->external_name(),
-                                 super_m->method_holder()->external_name(),
-                                 name->as_C_string(),
-                                 signature->as_C_string()
-                                 );
-              return;
+              THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(),
+                        err_msg("class %s overrides final method %s.%s%s",
+                                this_klass->external_name(),
+                                super_m->method_holder()->external_name(),
+                                name->as_C_string(),
+                                signature->as_C_string()));
             }
           }
 
