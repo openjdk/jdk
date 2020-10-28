@@ -3048,7 +3048,7 @@ void ShenandoahHeap::entry_weak_refs() {
   EventMark em("%s", msg);
 
   ShenandoahWorkerScope scope(workers(),
-                              ShenandoahWorkerPolicy::calc_workers_for_conc_root_processing(),
+                              ShenandoahWorkerPolicy::calc_workers_for_conc_refs_processing(),
                               "concurrent weak references");
 
   try_inject_alloc_failure();
