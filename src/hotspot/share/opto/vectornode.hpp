@@ -794,9 +794,6 @@ class StoreVectorMaskedNode : public StoreVectorNode {
     return idx > 1;
   }
   Node* Ideal(PhaseGVN* phase, bool can_reshape);
-
-  static StoreVectorMaskedNode* make(int opc, Node* ctl, Node* mem, Node* dst, Node* src,
-                                    const TypePtr* atype, Node* mask);
 };
 
 class LoadVectorMaskedNode : public LoadVectorNode {
@@ -815,10 +812,6 @@ class LoadVectorMaskedNode : public LoadVectorNode {
     return idx > 1;
   }
   Node* Ideal(PhaseGVN* phase, bool can_reshape);
-
-  static LoadVectorMaskedNode* make(int opc, Node* ctl, Node* mem, Node* src,
-                                const TypePtr* atype, const TypeVect* vt,
-                                Node* mask);
 };
 
 class VectorMaskGenNode : public TypeNode {
@@ -829,8 +822,8 @@ class VectorMaskGenNode : public TypeNode {
 
   virtual int Opcode() const;
   const Type* get_elem_type()  { return _elemType;}
+  virtual  uint  size_of() const { return sizeof(VectorMaskGenNode); }
 
-  static VectorMaskGenNode* make(int opc, Node* length, const Type* ty, const Type* ety);
   private:
    const Type* _elemType;
 };
