@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
  /*
  * @test
- * @bug 8145136 8202537 8221432
+ * @bug 8145136 8202537 8221432 8251317
  * @modules jdk.localedata
  * @summary Tests LikelySubtags is correctly reflected in JDK.
  * @run main/othervm -Djava.locale.providers=CLDR Bug8145136
@@ -37,7 +37,7 @@ public class Bug8145136 {
 
     public static void main(String[] args) {
         /* This golden data is names of all *.xml files which contain locale
-         * specific data in CLDR 35.1. With LikelySubtags,
+         * specific data in CLDR 38. With LikelySubtags,
          * these locales should be present in output of getAvailableLocales()
          * method.
          *
@@ -59,9 +59,9 @@ public class Bug8145136 {
             "bs", "ca-AD", "ca-ES-VALENCIA", "ca-ES", "ca-FR", "ca-IT", "ca",
             "ccp-BD", "ccp-IN", "ccp", "ceb-PH", "ceb",
             "ce-RU", "ce", "cgg-UG", "cgg", "chr-US", "chr", "ckb-IQ", "ckb-IR",
-            "ckb", "cs-CZ", "cs", "cu-RU", "cu", "cy-GB", "cy", "da-DK",
+            "ckb", "cs-CZ", "cs", "cy-GB", "cy", "da-DK",
             "da-GL", "dav-KE", "dav", "da", "de-AT", "de-BE", "de-CH", "de-DE", "de-IT",
-            "de-LI", "de-LU", "de", "dje-NE", "dje", "dsb-DE", "dsb", "dua-CM",
+            "de-LI", "de-LU", "de", "dje-NE", "dje", "doi-IN", "doi", "dsb-DE", "dsb", "dua-CM",
             "dua", "dyo-SN", "dyo", "dz-BT", "dz", "ebu-KE", "ebu", "ee-GH",
             "ee-TG", "ee", "el-CY", "el-GR", "el", "en-001", "en-150", "en-AE", "en-AG",
             "en-AI", "en-AS", "en-AT", "en-AU", "en-BB", "en-BE", "en-BI",
@@ -117,12 +117,12 @@ public class Bug8145136 {
             "nl-NL", "nl-SR", "nl-SX", "nl", "nmg-CM", "nmg", "nnh-CM", "nnh",
             "nn-NO", "nn", "nus-SS", "nus", "nyn-UG", "nyn", "om-ET", "om-KE",
             "om", "or-IN", "or", "os-GE", "os-RU", "os", "pa-Arab-PK", "pa-Arab",
-            "pa-Guru-IN", "pa-Guru", "pa", "pl-PL", "pl", "prg-001", "prg", "ps-AF", "ps-PK",
+            "pa-Guru-IN", "pa-Guru", "pa", "pl-PL", "pl", "ps-AF", "ps-PK",
             "ps", "pt-AO", "pt-BR", "pt-CH", "pt-CV", "pt-GQ", "pt-GW", "pt-LU",
             "pt-MO", "pt-MZ", "pt-PT", "pt-ST", "pt-TL", "pt", "qu-BO", "qu-EC",
             "qu-PE", "qu", "rm-CH", "rm", "rn-BI", "rn", "rof-TZ", "rof", "ro-MD",
             "ro-RO", "ro", "ru-BY", "ru-KG", "ru-KZ", "ru-MD", "ru-RU", "ru-UA",
-            "ru", "rwk-TZ", "rwk", "rw-RW", "rw", "sah-RU", "sah", "saq-KE",
+            "ru", "rwk-TZ", "rwk", "rw-RW", "rw", "sa-IN", "sa", "sah-RU", "sah", "saq-KE",
             "saq", "sbp-TZ", "sbp", "sd-PK", "sd", "se-FI", "seh-MZ", "seh", "se-NO", "se-SE",
             "ses-ML", "ses", "se", "sg-CF", "sg", "shi-Latn-MA", "shi-Latn",
             "shi-Tfng-MA", "shi-Tfng", "shi", "si-LK", "si", "sk-SK", "sk",
@@ -137,7 +137,7 @@ public class Bug8145136 {
             "ug-CN", "ug", "uk-UA", "uk", "ur-IN", "ur-PK", "ur", "uz-Arab-AF",
             "uz-Arab", "uz-Cyrl-UZ", "uz-Cyrl", "uz-Latn-UZ", "uz-Latn", "uz",
             "vai-Latn-LR", "vai-Latn", "vai-Vaii-LR", "vai-Vaii", "vai", "vi-VN",
-            "vi", "vo-001", "vo", "vun-TZ", "vun", "wae-CH", "wae", "wo-SN", "wo", "xh", "xh-ZA", "xog-UG",
+            "vi", "vun-TZ", "vun", "wae-CH", "wae", "wo-SN", "wo", "xh", "xh-ZA", "xog-UG",
             "xog", "yav-CM", "yav", "yi-001", "yi", "yo-BJ", "yo-NG", "yo", "yue-Hans-CN", "yue-Hans", "yue-Hant-HK", "yue-Hant",
             "yue", "zgh-MA", "zgh", "zh-Hans-CN", "zh-Hans-HK",
             "zh-Hans-MO", "zh-Hans-SG", "zh-Hans", "zh-Hant-HK", "zh-Hant-MO",

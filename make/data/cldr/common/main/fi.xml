@@ -120,7 +120,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="chp">chipewyan</language>
 			<language type="chr">cherokee</language>
 			<language type="chy">cheyenne</language>
-			<language type="ckb">sorani</language>
+			<language type="ckb">soranî</language>
 			<language type="ckb" alt="menu">kurdi – soranî</language>
 			<language type="co">korsika</language>
 			<language type="cop">kopti</language>
@@ -637,8 +637,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="zgh">vakioitu tamazight</language>
 			<language type="zh">kiina</language>
 			<language type="zh" alt="menu">kiina (mandariini)</language>
-			<language type="zh_Hans">yksinkertaistettu kiina</language>
-			<language type="zh_Hant">perinteinen kiina</language>
+			<language type="zh_Hans" alt="long">mandariinikiina (yksinkertaistettu)</language>
+			<language type="zh_Hant" alt="long">mandariinikiina (perinteinen)</language>
 			<language type="zu">zulu</language>
 			<language type="zun">zuni</language>
 			<language type="zxx">ei kielellistä sisältöä</language>
@@ -870,7 +870,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="039">Etelä-Eurooppa</territory>
 			<territory type="053">Australaasia</territory>
 			<territory type="054">Melanesia</territory>
-			<territory type="057">Mikronesia</territory>
+			<territory type="057">Mikronesian alue</territory>
 			<territory type="061">Polynesia</territory>
 			<territory type="142">Aasia</territory>
 			<territory type="143">Keski-Aasia</territory>
@@ -964,7 +964,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="FJ">Fidži</territory>
 			<territory type="FK">Falklandinsaaret</territory>
 			<territory type="FK" alt="variant">Falklandinsaaret (Malvinassaaret)</territory>
-			<territory type="FM">Mikronesian liittovaltio</territory>
+			<territory type="FM">Mikronesia</territory>
 			<territory type="FO">Färsaaret</territory>
 			<territory type="FR">Ranska</territory>
 			<territory type="GA">Gabon</territory>
@@ -982,12 +982,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="GP">Guadeloupe</territory>
 			<territory type="GQ">Päiväntasaajan Guinea</territory>
 			<territory type="GR">Kreikka</territory>
-			<territory type="GS">Etelä-Georgia ja Eteläiset Sandwichsaaret</territory>
+			<territory type="GS">Etelä-Georgia ja Eteläiset Sandwichinsaaret</territory>
 			<territory type="GT">Guatemala</territory>
 			<territory type="GU">Guam</territory>
 			<territory type="GW">Guinea-Bissau</territory>
 			<territory type="GY">Guyana</territory>
-			<territory type="HK">Hongkong – Kiinan e.h.a.</territory>
+			<territory type="HK">Hongkong – Kiinan erityishallintoalue</territory>
 			<territory type="HK" alt="short">Hongkong</territory>
 			<territory type="HM">Heard ja McDonaldinsaaret</territory>
 			<territory type="HN">Honduras</territory>
@@ -1042,7 +1042,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ML">Mali</territory>
 			<territory type="MM">Myanmar (Burma)</territory>
 			<territory type="MN">Mongolia</territory>
-			<territory type="MO">Macao – Kiinan e.h.a.</territory>
+			<territory type="MO">Macao – Kiinan erityishallintoalue</territory>
 			<territory type="MO" alt="short">Macao</territory>
 			<territory type="MP">Pohjois-Mariaanit</territory>
 			<territory type="MQ">Martinique</territory>
@@ -1078,13 +1078,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="PM">Saint-Pierre ja Miquelon</territory>
 			<territory type="PN">Pitcairn</territory>
 			<territory type="PR">Puerto Rico</territory>
-			<territory type="PS">Palestiinalaisalueet</territory>
+			<territory type="PS">Palestiinalaisalue</territory>
 			<territory type="PS" alt="short">Palestiina</territory>
 			<territory type="PT">Portugali</territory>
 			<territory type="PW">Palau</territory>
 			<territory type="PY">Paraguay</territory>
 			<territory type="QA">Qatar</territory>
-			<territory type="QO">ulkomeri</territory>
+			<territory type="QO">Oseanian erillissaaret</territory>
 			<territory type="RE">Réunion</territory>
 			<territory type="RO">Romania</territory>
 			<territory type="RS">Serbia</territory>
@@ -1098,7 +1098,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="SG">Singapore</territory>
 			<territory type="SH">Saint Helena</territory>
 			<territory type="SI">Slovenia</territory>
-			<territory type="SJ">Huippuvuoret ja Jan Mayen</territory>
+			<territory type="SJ">Svalbard ja Jan Mayen</territory>
 			<territory type="SK">Slovakia</territory>
 			<territory type="SL">Sierra Leone</territory>
 			<territory type="SM">San Marino</territory>
@@ -1110,12 +1110,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="SV">El Salvador</territory>
 			<territory type="SX">Sint Maarten</territory>
 			<territory type="SY">Syyria</territory>
-			<territory type="SZ">Swazimaa</territory>
-			<territory type="SZ" alt="variant">Eswatini</territory>
+			<territory type="SZ">Eswatini</territory>
+			<territory type="SZ" alt="variant">Swazimaa</territory>
 			<territory type="TA">Tristan da Cunha</territory>
 			<territory type="TC">Turks- ja Caicossaaret</territory>
 			<territory type="TD">Tšad</territory>
-			<territory type="TF">Ranskan eteläiset alueet</territory>
+			<territory type="TF">Ranskan eteläiset ja antarktiset alueet</territory>
 			<territory type="TG">Togo</territory>
 			<territory type="TH">Thaimaa</territory>
 			<territory type="TJ">Tadžikistan</territory>
@@ -1332,7 +1332,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="traditional">perinteinen järjestys</type>
 			<type key="collation" type="unihan">radikaali- ja piirtojärjestys</type>
 			<type key="collation" type="zhuyin">zhuyin-järjestys</type>
-			<type key="colNormalization" type="no">lajittelu ilman normalisoinrtia</type>
+			<type key="colNormalization" type="no">lajittelu ilman normalisointia</type>
 			<type key="colNormalization" type="yes">lajittelu Unicode-normalisoituna</type>
 			<type key="colNumeric" type="no">numero-numerolta lajittelu</type>
 			<type key="colNumeric" type="yes">numeroden lajittelu lukuina</type>
@@ -4281,6 +4281,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Aqtobe">
 				<exemplarCity>Aqtöbe</exemplarCity>
 			</zone>
+			<zone type="Asia/Qostanay">
+				<exemplarCity>Kostanai</exemplarCity>
+			</zone>
 			<zone type="Asia/Qyzylorda">
 				<exemplarCity>Qızılorda</exemplarCity>
 			</zone>
@@ -4548,9 +4551,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Kaliningrad">
 				<exemplarCity>Kaliningrad</exemplarCity>
 			</zone>
-			<zone type="Europe/Simferopol">
-				<exemplarCity>Simferopol</exemplarCity>
-			</zone>
 			<zone type="Europe/Moscow">
 				<exemplarCity>Moskova</exemplarCity>
 			</zone>
@@ -4745,6 +4745,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiova</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity>Simferopol</exemplarCity>
 			</zone>
 			<zone type="Europe/Zaporozhye">
 				<exemplarCity>Zaporižžja</exemplarCity>
@@ -5581,9 +5584,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<generic draft="contributed">Norfolkinsaaren aika</generic>
-					<standard draft="contributed">Norfolkinsaaren normaaliaika</standard>
-					<daylight draft="contributed">Norfolkinsaaren kesäaika</daylight>
+					<generic>Norfolkinsaaren aika</generic>
+					<standard>Norfolkinsaaren normaaliaika</standard>
+					<daylight>Norfolkinsaaren kesäaika</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -5875,6 +5878,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<percentSign>%</percentSign>
 			<plusSign draft="contributed">+</plusSign>
 			<minusSign>−</minusSign>
+			<approximatelySign>~</approximatelySign>
 			<exponential>E</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
@@ -7988,6 +7992,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>jotta{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>kibi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>mebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>gibi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>tebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>pebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>eksbi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>tsebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>jobi{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
@@ -8107,9 +8135,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} mmol/l</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
-				<displayName>ppm</displayName>
-				<unitPattern count="one">{0} ppm</unitPattern>
-				<unitPattern count="other">{0} ppm</unitPattern>
+				<displayName>miljoonasosat</displayName>
+				<unitPattern count="one">{0} miljoonasosa</unitPattern>
+				<unitPattern count="other">{0} miljoonasosaa</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>prosentit</displayName>
@@ -8210,6 +8238,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>vuosisadat</displayName>
 				<unitPattern count="one">{0} vuosisata</unitPattern>
 				<unitPattern count="other">{0} vuosisataa</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>vuosikymmenet</displayName>
+				<unitPattern count="one">{0} vuosikymmen</unitPattern>
+				<unitPattern count="other">{0} vuosikymmentä</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>vuodet</displayName>
@@ -8358,6 +8391,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} hertsi</unitPattern>
 				<unitPattern count="other">{0} hertsiä</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>piste</displayName>
+				<unitPattern count="one">{0} piste</unitPattern>
+				<unitPattern count="other">{0} pistettä</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>Maan säteet</displayName>
+				<unitPattern count="one">{0} Maan säde</unitPattern>
+				<unitPattern count="other">{0} Maan sädettä</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>kilometrit</displayName>
 				<unitPattern count="one">{0} kilometri</unitPattern>
@@ -8473,6 +8516,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} luksi</unitPattern>
 				<unitPattern count="other">{0} luksia</unitPattern>
 			</unit>
+			<unit type="light-candela">
+				<displayName>kandelat</displayName>
+				<unitPattern count="one">{0} kandela</unitPattern>
+				<unitPattern count="other">{0} kandelaa</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>luumenit</displayName>
+				<unitPattern count="one">{0} luumen</unitPattern>
+				<unitPattern count="other">{0} luumenia</unitPattern>
+			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>Auringon luminositeetit</displayName>
 				<unitPattern count="one">{0} Auringon luminositeetti</unitPattern>
@@ -8552,6 +8605,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} auringon massa</unitPattern>
 				<unitPattern count="other">{0} auringon massaa</unitPattern>
 			</unit>
+			<unit type="mass-grain">
+				<displayName>graanit</displayName>
+				<unitPattern count="one">{0} graani</unitPattern>
+				<unitPattern count="other">{0} graania</unitPattern>
+			</unit>
 			<unit type="power-gigawatt">
 				<displayName>gigawatit</displayName>
 				<unitPattern count="one">{0} gigawatti</unitPattern>
@@ -8584,8 +8642,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="pressure-millimeter-ofhg">
 				<displayName>elohopeamillimetrit</displayName>
-				<unitPattern count="one">{0} millimetri elohopeaa</unitPattern>
-				<unitPattern count="other">{0} millimetriä elohopeaa</unitPattern>
+				<unitPattern count="one">{0} elohopeamillimetri</unitPattern>
+				<unitPattern count="other">{0} elohopeamillimetriä</unitPattern>
 			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>paunat / neliötuuma</displayName>
@@ -8594,8 +8652,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="pressure-inch-ofhg">
 				<displayName>elohopeatuumat</displayName>
-				<unitPattern count="one">{0} tuuma elohopeaa</unitPattern>
-				<unitPattern count="other">{0} tuumaa elohopeaa</unitPattern>
+				<unitPattern count="one">{0} elohopeatuuma</unitPattern>
+				<unitPattern count="other">{0} elohopeatuumaa</unitPattern>
 			</unit>
 			<unit type="pressure-bar">
 				<displayName>baarit</displayName>
@@ -8821,6 +8879,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>barrelit</displayName>
 				<unitPattern count="one">{0} barreli</unitPattern>
 				<unitPattern count="other">{0} barrelia</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>jälkiruokalusikat</displayName>
+				<unitPattern count="one">{0} jälkiruokalusikka</unitPattern>
+				<unitPattern count="other">{0} jälkiruokalusikkaa</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>Imp. jälkiruokalusikat</displayName>
+				<unitPattern count="one">{0} imp. jälkiruokalusikka</unitPattern>
+				<unitPattern count="other">{0} imp. jälkiruokalusikkaa</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>tipat</displayName>
+				<unitPattern count="one">{0} tippa</unitPattern>
+				<unitPattern count="other">{0} tippaa</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>dramit</displayName>
+				<unitPattern count="one">{0} dram</unitPattern>
+				<unitPattern count="other">{0} dramia</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>jiggerit</displayName>
+				<unitPattern count="one">{0} jigger</unitPattern>
+				<unitPattern count="other">{0} jiggeriä</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>ripaus</displayName>
+				<unitPattern count="one">{0} ripaus</unitPattern>
+				<unitPattern count="other">{0} ripausta</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>Imp. neljännesgallonat</displayName>
+				<unitPattern count="one">{0} imp. neljännesgallona</unitPattern>
+				<unitPattern count="other">{0} imp. neljännesgallonaa</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>pääilmansuunta</displayName>
@@ -9195,6 +9288,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} Hz</unitPattern>
 				<unitPattern count="other">{0} Hz</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>piste</displayName>
+				<unitPattern count="one">{0} piste</unitPattern>
+				<unitPattern count="other">{0} pistettä</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
 				<unitPattern count="one">{0} km</unitPattern>
@@ -9383,6 +9481,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} M☉</unitPattern>
 				<unitPattern count="other">{0} M☉</unitPattern>
 			</unit>
+			<unit type="mass-grain">
+				<displayName>graanit</displayName>
+				<unitPattern count="one">{0} graani</unitPattern>
+				<unitPattern count="other">{0} graania</unitPattern>
+			</unit>
 			<unit type="power-gigawatt">
 				<displayName>GW</displayName>
 				<unitPattern count="one">{0} GW</unitPattern>
@@ -9414,9 +9517,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} hv</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-ofhg">
-				<displayName>mm Hg</displayName>
-				<unitPattern count="one">{0} mm Hg</unitPattern>
-				<unitPattern count="other">{0} mm Hg</unitPattern>
+				<displayName>mmHg</displayName>
+				<unitPattern count="one">{0} mmHg</unitPattern>
+				<unitPattern count="other">{0} mmHg</unitPattern>
 			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>psi</displayName>
@@ -9623,6 +9726,36 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-barrel">
 				<displayName>barrelit</displayName>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>jrkl</displayName>
+				<unitPattern count="one">{0} jrkl</unitPattern>
+				<unitPattern count="other">{0} jrkl</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>imp. jrkl</displayName>
+				<unitPattern count="one">{0} imp. jrkl</unitPattern>
+				<unitPattern count="other">{0} imp. jrkl</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>tipat</displayName>
+				<unitPattern count="one">{0} tippa</unitPattern>
+				<unitPattern count="other">{0} tippaa</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>dramit</displayName>
+				<unitPattern count="one">{0} dram</unitPattern>
+				<unitPattern count="other">{0} dramia</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>jiggerit</displayName>
+				<unitPattern count="one">{0} jigger</unitPattern>
+				<unitPattern count="other">{0} jiggeriä</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>ripaus</displayName>
+				<unitPattern count="one">{0} ripaus</unitPattern>
+				<unitPattern count="other">{0} ripausta</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>ilmansuunta</displayName>
@@ -10550,6 +10683,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabelPattern type="scripts">kirjoitusjärjestelmät – {0}</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="one">{0} piirtoviiva</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="other">{0} piirtoviivaa</characterLabelPattern>
+		<characterLabelPattern type="subscript">alaindeksi {0}</characterLabelPattern>
+		<characterLabelPattern type="superscript">yläindeksi {0}</characterLabelPattern>
 		<characterLabel type="activities">toiminta</characterLabel>
 		<characterLabel type="african_scripts">afrikkalaiset kirjoitusjärjestelmät</characterLabel>
 		<characterLabel type="american_scripts">amerikkalaiset kirjoitusjärjestelmät</characterLabel>
