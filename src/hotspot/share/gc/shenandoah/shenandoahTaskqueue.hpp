@@ -32,6 +32,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/thread.hpp"
+#include "utilities/debug.hpp"
 
 template<class E, MEMFLAGS F, unsigned int N = TASKQUEUE_SIZE>
 class BufferedOverflowTaskQueue: public OverflowTaskQueue<E, F, N>
@@ -60,7 +61,7 @@ private:
   E _elem;
 };
 
-// ObjArrayChunkedTask
+// ShenandoahMarkTask
 //
 // Encodes both regular oops, and the array oops plus chunking data for parallel array processing.
 // The design goal is to make the regular oop ops very fast, because that would be the prevailing
@@ -123,68 +124,54 @@ private:
 #endif
 
 #ifdef _LP64
-#define SHENANDOAH_OPTIMIZED_OBJTASK 1
+#define SHENANDOAH_OPTIMIZED_MARKTASK 1
 #else
-#define SHENANDOAH_OPTIMIZED_OBJTASK 0
+#define SHENANDOAH_OPTIMIZED_MARKTASK 0
 #endif
 
-#if SHENANDOAH_OPTIMIZED_OBJTASK
-class ObjArrayChunkedTask
+#if SHENANDOAH_OPTIMIZED_MARKTASK
+class ShenandoahMarkTask
 {
-public:
-  enum {
-    chunk_bits   = 10,
-    pow_bits     = 5,
-    oop_bits     = sizeof(uintptr_t)*8 - chunk_bits - pow_bits
-  };
-  enum {
-    oop_shift    = 0,
-    pow_shift    = oop_shift + oop_bits,
-    chunk_shift  = pow_shift + pow_bits
-  };
+private:
+  // Everything is encoded into this field...
+  uintptr_t _obj;
 
-  static const uintptr_t oop_decode_mask = right_n_bits(oop_bits) - 3;
-  // When lowest bit is set, don't count liveness.
-  static const uintptr_t count_liveness_decode_mask = 1;
-  // When 2nd bit is set, mark as finalizable
-  static const uintptr_t strong_decode_mask = 1 << 1;
+  // ...with these:
+  static const uint8_t chunk_bits  = 10;
+  static const uint8_t pow_bits    = 5;
+  static const uint8_t oop_bits    = sizeof(uintptr_t)*8 - chunk_bits - pow_bits;
 
-public:
-  ObjArrayChunkedTask(oop o = NULL, bool count_liveness = true, bool strong = true) {
-    assert(decode_oop(encode_oop(o, count_liveness, strong)) ==  o, "oop can be encoded: " PTR_FORMAT, p2i(o));
-    _obj = encode_oop(o, count_liveness, strong);
-  }
-  ObjArrayChunkedTask(oop o, bool count_liveness, bool strong, int chunk, int pow) {
-    assert(decode_oop(encode_oop(o, count_liveness, strong)) == o, "oop can be encoded: " PTR_FORMAT, p2i(o));
-    assert(decode_chunk(encode_chunk(chunk)) == chunk, "chunk can be encoded: %d", chunk);
-    assert(decode_pow(encode_pow(pow)) == pow, "pow can be encoded: %d", pow);
-    _obj = encode_oop(o, count_liveness, strong) | encode_chunk(chunk) | encode_pow(pow);
-  }
+  static const uint8_t oop_shift   = 0;
+  static const uint8_t pow_shift   = oop_bits;
+  static const uint8_t chunk_shift = oop_bits + pow_bits;
 
-  // Trivially copyable.
+  static const uintptr_t oop_extract_mask       = right_n_bits(oop_bits);
+  static const uintptr_t chunk_pow_extract_mask = ~right_n_bits(oop_bits);
+
+  static const int chunk_range_mask = right_n_bits(chunk_bits);
+  static const int pow_range_mask   = right_n_bits(pow_bits);
 
   inline oop decode_oop(uintptr_t val) const {
-    return (oop) reinterpret_cast<void*>((val >> oop_shift) & oop_decode_mask);
+    STATIC_ASSERT(oop_shift == 0);
+    return cast_to_oop(val & oop_extract_mask);
+  }
+
+  inline bool decode_not_chunked(uintptr_t val) const {
+    // No need to shift for a comparison to zero
+    return (val & chunk_pow_extract_mask) == 0;
   }
 
   inline int decode_chunk(uintptr_t val) const {
-    return (int) ((val >> chunk_shift) & right_n_bits(chunk_bits));
+    return (int) ((val >> chunk_shift) & chunk_range_mask);
   }
 
   inline int decode_pow(uintptr_t val) const {
-    return (int) ((val >> pow_shift) & right_n_bits(pow_bits));
+    return (int) ((val >> pow_shift) & pow_range_mask);
   }
 
-  inline uintptr_t encode_oop(oop obj, bool count_liveness, bool strong) const {
-    uintptr_t encoded_oop = ((uintptr_t)(void*) obj) << oop_shift;
-    assert((encoded_oop & (count_liveness_decode_mask | strong_decode_mask)) == 0, "need bit for encoding count-liveness and strong bits");
-    if (!count_liveness) {
-      encoded_oop |= count_liveness_decode_mask;
-    }
-    if (!strong) {
-      encoded_oop |= strong_decode_mask;
-    }
-    return encoded_oop;
+  inline uintptr_t encode_oop(oop obj) const {
+    STATIC_ASSERT(oop_shift == 0);
+    return cast_from_oop<uintptr_t>(obj);
   }
 
   inline uintptr_t encode_chunk(int chunk) const {
@@ -195,13 +182,36 @@ public:
     return ((uintptr_t) pow) << pow_shift;
   }
 
-  inline oop obj()   const { return decode_oop(_obj);   }
-  inline int chunk() const { return decode_chunk(_obj); }
-  inline int pow()   const { return decode_pow(_obj);   }
-  inline bool is_not_chunked() const { return (_obj & ~right_n_bits(oop_bits + pow_bits)) == 0; }
-  inline bool count_liveness() const { return (_obj & count_liveness_decode_mask) == 0; }
-  inline bool is_strong() const      { return (_obj & strong_decode_mask) == 0; }
-  DEBUG_ONLY(bool is_valid() const); // Tasks to be pushed/popped must be valid.
+public:
+  ShenandoahMarkTask(oop o = NULL) {
+    uintptr_t enc = encode_oop(o);
+    assert(decode_oop(enc) == o,    "oop encoding should work: " PTR_FORMAT, p2i(o));
+    assert(decode_not_chunked(enc), "task should not be chunked");
+    _obj = enc;
+  }
+
+  ShenandoahMarkTask(oop o, int chunk, int pow) {
+    uintptr_t enc_oop = encode_oop(o);
+    uintptr_t enc_chunk = encode_chunk(chunk);
+    uintptr_t enc_pow = encode_pow(pow);
+    uintptr_t enc = enc_oop | enc_chunk | enc_pow;
+    assert(decode_oop(enc) == o,       "oop encoding should work: " PTR_FORMAT, p2i(o));
+    assert(decode_chunk(enc) == chunk, "chunk encoding should work: %d", chunk);
+    assert(decode_pow(enc) == pow,     "pow encoding should work: %d", pow);
+    assert(!decode_not_chunked(enc),   "task should be chunked");
+    _obj = enc;
+  }
+
+  // Trivially copyable.
+
+public:
+  inline oop  obj()            const { return decode_oop(_obj);   }
+  inline int  chunk()          const { return decode_chunk(_obj); }
+  inline int  pow()            const { return decode_pow(_obj);   }
+
+  inline bool is_not_chunked() const { return decode_not_chunked(_obj); }
+
+  DEBUG_ONLY(bool is_valid() const;) // Tasks to be pushed/popped must be valid.
 
   static uintptr_t max_addressable() {
     return nth_bit(oop_bits);
@@ -210,25 +220,25 @@ public:
   static int chunk_size() {
     return nth_bit(chunk_bits);
   }
-
-private:
-  uintptr_t _obj;
 };
 #else
-class ObjArrayChunkedTask
+class ShenandoahMarkTask
 {
-public:
+private:
   enum {
     chunk_bits  = 10,
     pow_bits    = 5,
   };
+
+  oop _obj;
+  int _chunk;
+  int _pow;
+
 public:
-  ObjArrayChunkedTask(oop o = NULL, bool count_liveness = true, bool strong = true, int chunk = 0, int pow = 0):
-    _obj(o), _count_liveness(count_liveness), _strong(strong) {
+  ShenandoahMarkTask(oop o = NULL, int chunk = 0, int pow = 0):
+    _obj(o), _chunk(chunk), _pow(pow) {
     assert(0 <= chunk && chunk < nth_bit(chunk_bits), "chunk is sane: %d", chunk);
     assert(0 <= pow && pow < nth_bit(pow_bits), "pow is sane: %d", pow);
-    _chunk = chunk;
-    _pow = pow;
   }
 
   // Trivially copyable.
@@ -236,11 +246,9 @@ public:
   inline oop obj()             const { return _obj; }
   inline int chunk()           const { return _chunk; }
   inline int pow()             const { return _pow; }
-  inline bool is_strong()      const { return _strong; };
-  inline bool count_liveness() const { return _count_liveness; }
   inline bool is_not_chunked() const { return _chunk == 0; }
 
-  DEBUG_ONLY(bool is_valid() const); // Tasks to be pushed/popped must be valid.
+  DEBUG_ONLY(bool is_valid() const;) // Tasks to be pushed/popped must be valid.
 
   static size_t max_addressable() {
     return sizeof(oop);
@@ -249,21 +257,13 @@ public:
   static int chunk_size() {
     return nth_bit(chunk_bits);
   }
-
-private:
-  oop _obj;
-  bool _count_liveness;
-  bool _strong;
-  int _chunk;
-  int _pow;
 };
-#endif // SHENANDOAH_OPTIMIZED_OBJTASK
+#endif // SHENANDOAH_OPTIMIZED_MARKTASK
 
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
 
-typedef ObjArrayChunkedTask ShenandoahMarkTask;
 typedef BufferedOverflowTaskQueue<ShenandoahMarkTask, mtGC> ShenandoahBufferedOverflowTaskQueue;
 typedef Padded<ShenandoahBufferedOverflowTaskQueue> ShenandoahObjToScanQueue;
 
