@@ -148,8 +148,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   // push_i_or_ptr is provided for when explicitly allowing either a ptr or
   // an int might have some advantage, while still documenting the fact that a
-  // ptr might be pushed to the stack. This method will never do any
-  // verification of the oop.
+  // ptr might be pushed to the stack.
   void push_i_or_ptr(Register r = rax);
 
   void push_f(XMMRegister r);
