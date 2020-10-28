@@ -1042,6 +1042,13 @@ void ShenandoahBarrierSetC2::verify_gc_barriers(Compile* compile, CompilePhase p
 }
 #endif
 
+void ShenandoahBarrierSetC2::maybe_step_over_cmpp_inputs(Node*& in1, Node*& in2) const {
+  if (in1->bottom_type() == TypePtr::NULL_PTR &&
+      (in2->Opcode() != Op_ShenandoahLoadReferenceBarrier || !((ShenandoahLoadReferenceBarrierNode*)in2)->is_native())) {
+    in2 = step_over_gc_barrier(in2);
+  }
+}
+
 Node* ShenandoahBarrierSetC2::ideal_node(PhaseGVN* phase, Node* n, bool can_reshape) const {
   if (is_shenandoah_wb_pre_call(n)) {
     uint cnt = ShenandoahBarrierSetC2::write_ref_field_pre_entry_Type()->domain()->cnt();
@@ -1059,14 +1066,8 @@ Node* ShenandoahBarrierSetC2::ideal_node(PhaseGVN* phase, Node* n, bool can_resh
   if (n->Opcode() == Op_CmpP) {
     Node* in1 = n->in(1);
     Node* in2 = n->in(2);
-    if (in1->bottom_type() == TypePtr::NULL_PTR &&
-        (in1->Opcode() != Op_ShenandoahLoadReferenceBarrier || !((ShenandoahLoadReferenceBarrierNode*)in1)->is_native())) {
-      in2 = step_over_gc_barrier(in2);
-    }
-    if (in2->bottom_type() == TypePtr::NULL_PTR &&
-        (in2->Opcode() != Op_ShenandoahLoadReferenceBarrier || !((ShenandoahLoadReferenceBarrierNode*)in2)->is_native())) {
-      in1 = step_over_gc_barrier(in1);
-    }
+    maybe_step_over_cmpp_inputs(in1, in2);
+    maybe_step_over_cmpp_inputs(in2, in1);
     PhaseIterGVN* igvn = phase->is_IterGVN();
     if (in1 != n->in(1)) {
       if (igvn != NULL) {

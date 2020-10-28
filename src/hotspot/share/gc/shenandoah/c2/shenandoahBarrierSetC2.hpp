@@ -81,6 +81,8 @@ private:
 
   static bool clone_needs_barrier(Node* src, PhaseGVN& gvn);
 
+  void maybe_step_over_cmpp_inputs(Node*& in1, Node*& in2) const;
+
 protected:
   virtual Node* load_at_resolved(C2Access& access, const Type* val_type) const;
   virtual Node* store_at_resolved(C2Access& access, C2AccessValue& val) const;
