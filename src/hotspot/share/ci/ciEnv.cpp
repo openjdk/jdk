@@ -781,7 +781,7 @@ Method* ciEnv::lookup_method(ciInstanceKlass* accessor,
     case Bytecodes::_invokevirtual:
       return LinkResolver::linktime_resolve_virtual_method_or_null(link_info);
     default:
-      ShouldNotReachHere();
+      fatal("Unhandled bytecode: %s", Bytecodes::name(bc));
       return NULL; // silence compiler warnings
   }
 }
