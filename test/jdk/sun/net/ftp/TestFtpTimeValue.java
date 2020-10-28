@@ -28,7 +28,8 @@
  * @library /test/lib
  * @modules java.base/sun.net.ftp
  * @build jdk.test.lib.Asserts
- * @run main TestFtpTimeValue
+ * @run main/othervm -Duser.timezone=UTC TestFtpTimeValue
+ * @run main/othervm -Duser.timezone=America/Los_Angeles TestFtpTimeValue
  */
 
 import jdk.test.lib.Asserts;
@@ -78,6 +79,7 @@ public class TestFtpTimeValue {
     }
 
     public static void main(String[] args) throws Exception {
+        System.out.println("user.timezone: " + System.getProperty("user.timezone"));
         try (FtpServer server = new FtpServer();
              FtpClient client = FtpClient.create()) {
             (new Thread(server)).start();
