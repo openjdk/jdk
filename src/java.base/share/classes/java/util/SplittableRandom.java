@@ -26,8 +26,8 @@ package java.util;
 
 import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.random.internal.RandomSupport;
-import java.util.random.internal.RandomSupport.AbstractSplittableGenerator;
+import jdk.internal.util.random.RandomSupport;
+import jdk.internal.util.random.RandomSupport.AbstractSplittableGenerator;
 
 /**
  * A generator of uniform pseudorandom values (with period 2<sup>64</sup>)

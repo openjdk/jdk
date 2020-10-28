@@ -23,7 +23,7 @@
  * questions.
  */
 
-import java.util.random.internal.RandomSupport;
+import jdk.internal.util.random.RandomSupport;
 
 /**
  * Defines implementations of the
@@ -41,7 +41,7 @@ import java.util.random.internal.RandomSupport;
  * @provides jdk.random.Xoshiro256PlusPlus
  *
  * @use java.util.random.RandomGenerator
- * @use java.util.random.internal.RandomSupport
+ * @use jdk.internal.util.random.RandomSupport
  *
  * @moduleGraph
  * @since 16

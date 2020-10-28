@@ -247,6 +247,7 @@ module java.base {
         jdk.jfr;
     exports jdk.internal.util.xml.impl to
         jdk.jfr;
+    exports jdk.internal.util.random;
     exports sun.net to
         java.net.http,
         jdk.naming.dns;
@@ -352,7 +353,6 @@ module java.base {
         java.prefs;
     exports sun.util.resources to
         jdk.localedata;
-    exports java.util.random.internal;
 
     // the service types defined by the APIs in this module
 
