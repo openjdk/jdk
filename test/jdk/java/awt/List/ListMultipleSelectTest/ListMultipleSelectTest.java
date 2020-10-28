@@ -87,7 +87,7 @@ public final class ListMultipleSelectTest {
 
             for (int i = 0; i < aList.getItemCount(); i++) {
                 //select all items in the List
-                mousePress(p.x + listSize.height / 2, p.y + stepY / 2 + stepY * i);
+                mousePress(p.x + listSize.width / 2, p.y + stepY / 2 + stepY * i);
             }
 
             selected = aList.getSelectedIndexes();
@@ -119,7 +119,7 @@ public final class ListMultipleSelectTest {
 
             deselectAll();
             for (int i = aList.getItemCount() - 1; i >= 0; i--) {
-                mousePress(p.x + listSize.height / 2, p.y + stepY / 2 + stepY * i);
+                mousePress(p.x + listSize.width / 2, p.y + stepY / 2 + stepY * i);
             }
 
             System.out.println("Multiple mode is OFF");
