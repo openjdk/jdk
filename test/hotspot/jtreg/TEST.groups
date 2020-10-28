@@ -307,6 +307,7 @@ tier1_runtime = \
  -runtime/cds/CdsSameObjectAlignment.java \
  -runtime/cds/SharedBaseAddress.java \
  -runtime/Thread/CancellableThreadTest.java \
+ -runtime/Thread/ThreadCountLimit.java \
  -runtime/Thread/TestThreadDumpMonitorContention.java \
  -runtime/Unsafe/RangeCheck.java \
   sanity/ \

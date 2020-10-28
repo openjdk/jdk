@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8242293
+ * @bug 8242293 8246774
  * @summary allow for local interfaces and enums plus nested records, interfaces and enums
  * @library /tools/javac/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -31,12 +31,6 @@
  *          jdk.compiler/com.sun.tools.javac.util
  * @build combo.ComboTestHelper
  * @run main LocalStaticDeclarations
- */
-
-/** this test checks two thinks:
- *  1 - that static declarations are allowed inside inner classes
- *  2 - and in addtion that non-static variables can't be captured
- *      by static contexts
  */
 
 import javax.lang.model.element.Element;
@@ -53,6 +47,12 @@ import combo.ComboParameter;
 import combo.ComboTask;
 import combo.ComboTask.Result;
 import combo.ComboTestHelper;
+
+/** this test checks two thinks:
+ *  1 - that static declarations are allowed inside inner classes
+ *  2 - and in addtion that non-static variables can't be captured
+ *      by static contexts
+ */
 
 public class LocalStaticDeclarations extends ComboInstance<LocalStaticDeclarations> {
 
@@ -147,14 +147,14 @@ public class LocalStaticDeclarations extends ComboInstance<LocalStaticDeclaratio
     }
 
     enum Expression implements ComboParameter {
-        LITERAL("1"),
-        STATIC_FIELD("STATIC_FIELD"),
-        LOCAL_VARIABLE("LOCAL_VARIABLE"),
-        INSTANCE_FIELD("INSTANCE_FIELD");
+         LITERAL("1"),
+         STATIC_FIELD("STATIC_FIELD"),
+         LOCAL_VARIABLE("LOCAL_VARIABLE"),
+         INSTANCE_FIELD("INSTANCE_FIELD");
 
-        String expr;
+         String expr;
 
-        Expression(String expr) {
+         Expression(String expr) {
              this.expr = expr;
          }
 
