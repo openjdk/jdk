@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 // This test was generated from this source and then modified:
 //    record recordNames(int x, String y) {}
 
-// This test is a Record marked as abstract.  It should result in a
-// ClassFormatError exception.
+// This test is a Record marked as abstract.  Loading this class should
+// not cause a ClassFormatError exception.
 class abstractRecord {
   0xCAFEBABE;
   65535; // minor version

@@ -26,6 +26,7 @@
 
 #include "classfile/classLoaderDataGraph.hpp"
 #include "gc/shared/oopStorageSetParState.hpp"
+#include "gc/z/zNMethod.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 #include "runtime/threadSMR.hpp"
@@ -61,9 +62,7 @@ class ZRootsIteratorClosure : public OopClosure {
 public:
   virtual void do_thread(Thread* thread) {}
 
-  virtual bool should_disarm_nmethods() const {
-    return false;
-  }
+  virtual ZNMethodEntry nmethod_entry() const = 0;
 };
 
 class ZJavaThreadsIterator {
