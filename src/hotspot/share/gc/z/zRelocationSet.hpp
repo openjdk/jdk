@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZRELOCATIONSET_HPP
 
 #include "gc/z/zArray.hpp"
+#include "gc/z/zForwardingAllocator.hpp"
 #include "memory/allocation.hpp"
 
 class ZForwarding;
@@ -34,14 +35,16 @@ class ZRelocationSet {
   template <bool> friend class ZRelocationSetIteratorImpl;
 
 private:
-  ZForwarding** _forwardings;
-  size_t        _nforwardings;
+  ZForwardingAllocator _allocator;
+  ZForwarding**        _forwardings;
+  size_t               _nforwardings;
 
 public:
   ZRelocationSet();
 
-  void populate(ZPage* const* group0, size_t ngroup0,
-                ZPage* const* group1, size_t ngroup1);
+  void populate(ZPage* const* small, size_t nsmall,
+                ZPage* const* medium, size_t nmedium,
+                size_t forwarding_entries);
   void reset();
 };
 

@@ -31,6 +31,13 @@ class OopClosure;
 class ZReentrantLock;
 class ZWorkers;
 
+enum class ZNMethodEntry {
+  PreBarrier,
+  Disarm,
+  VerifyDisarmed,
+  None
+};
+
 class ZNMethod : public AllStatic {
 private:
   static void attach_gc_data(nmethod* nm);
@@ -52,7 +59,7 @@ public:
 
   static void oops_do_begin();
   static void oops_do_end();
-  static void oops_do(OopClosure* cl, bool should_disarm_nmethods);
+  static void oops_do(OopClosure* cl, ZNMethodEntry entry);
 
   static ZReentrantLock* lock_for_nmethod(nmethod* nm);
 

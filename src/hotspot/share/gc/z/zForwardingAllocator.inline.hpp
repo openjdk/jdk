@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,21 +19,27 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
-#include "ci/ciClassList.hpp"
-#include "ci/ciMemberName.hpp"
-#include "ci/ciUtilities.inline.hpp"
-#include "classfile/javaClasses.hpp"
+#ifndef SHARE_GC_Z_ZFORWARDINGALLOCATOR_INLINE_HPP
+#define SHARE_GC_Z_ZFORWARDINGALLOCATOR_INLINE_HPP
 
-// ------------------------------------------------------------------
-// ciMemberName::get_vmtarget
-//
-// Return: MN.vmtarget
-ciMethod* ciMemberName::get_vmtarget() const {
-  VM_ENTRY_MARK;
-  Method* vmtarget = java_lang_invoke_MemberName::vmtarget(get_oop());
-  return CURRENT_ENV->get_method(vmtarget);
+#include "gc/z/zForwardingAllocator.hpp"
+#include "utilities/debug.hpp"
+
+inline size_t ZForwardingAllocator::size() const {
+  return _end - _start;
 }
+
+inline bool ZForwardingAllocator::is_full() const {
+  return _top == _end;
+}
+
+inline void* ZForwardingAllocator::alloc(size_t size) {
+  char* const addr = _top;
+  _top += size;
+  assert(_top <= _end, "Allocation should never fail");
+  return addr;
+}
+
+#endif // SHARE_GC_Z_ZFORWARDINGALLOCATOR_INLINE_HPP
