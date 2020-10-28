@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -96,6 +96,7 @@ public class PKCS11Exception extends Exception {
             0x00000032,
             0x00000040,
             0x00000041,
+            0x00000042,
             0x00000050,
             0x00000051,
             0x00000054,
@@ -151,6 +152,7 @@ public class PKCS11Exception extends Exception {
             0x00000120,
             0x00000121,
             0x00000130,
+            0x00000140,
             0x00000150,
             0x00000160,
             0x00000170,
@@ -167,6 +169,8 @@ public class PKCS11Exception extends Exception {
             0x000001B8,
             0x000001B9,
             0x00000200,
+            0x00000201,
+            0x00000202,
             0x80000000,
         };
         String[] errorMessages = new String[] {
@@ -192,6 +196,7 @@ public class PKCS11Exception extends Exception {
             "CKR_DEVICE_REMOVED",
             "CKR_ENCRYPTED_DATA_INVALID",
             "CKR_ENCRYPTED_DATA_LEN_RANGE",
+            "CKR_AEAD_DECRYPT_FAILED",
             "CKR_FUNCTION_CANCELED",
             "CKR_FUNCTION_NOT_PARALLEL",
             "CKR_FUNCTION_NOT_SUPPORTED",
@@ -247,6 +252,7 @@ public class PKCS11Exception extends Exception {
             "CKR_RANDOM_SEED_NOT_SUPPORTED",
             "CKR_RANDOM_NO_RNG",
             "CKR_DOMAIN_PARAMS_INVALID",
+            "CKR_CURVE_NOT_SUPPORTED",
             "CKR_BUFFER_TOO_SMALL",
             "CKR_SAVED_STATE_INVALID",
             "CKR_INFORMATION_SENSITIVE",
@@ -263,6 +269,8 @@ public class PKCS11Exception extends Exception {
             "CKR_PIN_TOO_WEAK",
             "CKR_PUBLIC_KEY_INVALID",
             "CKR_FUNCTION_REJECTED",
+            "CKR_TOKEN_RESOURCE_EXCEEDED",
+            "CKR_OPERATION_CANCEL_FAILED",
             "CKR_VENDOR_DEFINED",
         };
         errorMap = new HashMap<Long,String>();
