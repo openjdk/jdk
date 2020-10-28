@@ -71,6 +71,8 @@ public class TestBFI {
             // Fork VMs to check their debug compiler output
             runTest("Color::<init>",        Color.instrCount,        Color.useBFI);
             runTest("ColorReverse::<init>", ColorReverse.instrCount, ColorReverse.useBFI);
+            runTest("ColorPlus::<init>",    ColorPlus.instrCount,    ColorPlus.useBFI);
+            runTest("ColorLongPlus::<init>",ColorLongPlus.instrCount,ColorLongPlus.useBFI);
             runTest("BigDecimal::mulsub",   BigDecimal.instrCount,   BigDecimal.useBFI);
         }
         if (args.length > 0) {
@@ -85,6 +87,16 @@ public class TestBFI {
             case "ColorReverse::<init>":
                 for (int i = 0; i < ITER; i++) {
                     new ColorReverse(i, i, i, i, 0);
+                }
+                break;
+            case "ColorPlus::<init>":
+                for (int i = 0; i < ITER; i++) {
+                    new ColorPlus(i, i, i, i);
+                }
+                break;
+            case "ColorLongPlus::<init>":
+                for (int i = 0; i < ITER; i++) {
+                    new ColorLongPlus(i, i, i, i);
                 }
                 break;
             case "BigDecimal::mulsub":
@@ -128,6 +140,40 @@ class ColorReverse {
                 ((r & 0xFF) << 8)   |
                 ((g & 0xFF) << 16)  |
                 ((b & 0xFF) << 24);
+    }
+    static int instrCount = 4;
+    static boolean useBFI = true;
+}
+
+// the same but PLUS instead of OR
+class ColorPlus {
+    int value;
+    public ColorPlus(int r, int g, int b, int a) {
+        // 1. lsl   w11, w5, #24
+        // 2. bfi   x11, x2, #16, #8
+        // 3. bfi   x11, x3, #8, #8
+        // 4. bfxil x11, x4, #0, #8
+        value = ((a & 0xFF) << 24) +
+                ((r & 0xFF) << 16) +
+                ((g & 0xFF) << 8)  +
+                ((b & 0xFF) << 0);
+    }
+    static int instrCount = 4;
+    static boolean useBFI = true;
+}
+
+// same for long type
+class ColorLongPlus {
+    long value;
+    public ColorLongPlus(long r, long g, long b, long a) {
+        // 1. lsl   w11, w5, #24
+        // 2. bfi   x11, x2, #16, #8
+        // 3. bfi   x11, x3, #8, #8
+        // 4. bfxil x11, x4, #0, #8
+        value = ((a & 0xFF) << 24) +
+                ((r & 0xFF) << 16) +
+                ((g & 0xFF) << 8)  +
+                ((b & 0xFF) << 0);
     }
     static int instrCount = 4;
     static boolean useBFI = true;

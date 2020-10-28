@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -235,6 +235,45 @@ const Type *AddNode::add_of_identity( const Type *t1, const Type *t2 ) const {
   return NULL;
 }
 
+//---------------------------Bitmask helper------------------------------------
+// Get a bitmask for expression: "(a & 0xFF) << 8" -> 0xFF00
+static juint get_bitmask(PhaseGVN *phase, Node* value) {
+  int opcode = value->Opcode();
+  if (opcode == Op_LShiftI && value->in(2)->is_Con()) {
+    int lshift = phase->type(value->in(2))->is_int()->get_con();
+    return get_bitmask(phase, value->in(1)) << lshift;
+  } else if (opcode == Op_AndI && value->in(2)->is_Con()) {
+    return phase->type(value->in(2))->is_int()->get_con();
+  } else if (opcode == Op_BitfieldInsertI) {
+    int width = value->in(3)->get_int();
+    int offset = value->in(4)->get_int();
+    int mask = ((1 << width) - 1) << offset;
+    return mask | get_bitmask(phase, value->in(1));
+  } else if (opcode == Op_OrI) {
+    return get_bitmask(phase, value->in(1)) |
+           get_bitmask(phase, value->in(2));
+  }
+  return 0xFFFFFFFF;
+}
+
+static julong get_bitmaskL(PhaseGVN *phase, Node* value) {
+  int opcode = value->Opcode();
+  if (opcode == Op_LShiftL && value->in(2)->is_Con()) {
+    int lshift = phase->type(value->in(2))->is_int()->get_con();
+    return get_bitmaskL(phase, value->in(1)) << lshift;
+  } else if (opcode == Op_AndL && value->in(2)->is_Con()) {
+    return value->in(2)->get_long();
+  } else if (opcode == Op_BitfieldInsertL) {
+    int width = value->in(3)->get_int();
+    int offset = value->in(4)->get_int();
+    julong mask = ((1L << width) - 1) << offset;
+    return mask | get_bitmaskL(phase, value->in(1));
+  } else if (opcode == Op_OrL) {
+    return get_bitmaskL(phase, value->in(1)) |
+           get_bitmaskL(phase, value->in(2));
+  }
+  return CONST64(0xFFFFFFFFFFFFFFFF);
+}
 
 //=============================================================================
 //------------------------------Idealize---------------------------------------
@@ -319,6 +358,13 @@ Node *AddINode::Ideal(PhaseGVN *phase, bool can_reshape) {
         return new URShiftINode( a, in1->in(2) );
       }
     }
+  }
+
+  // Convert "((a & 0xFF) << 8) + (b & 0xFF)" into "((a & 0xFF) << 8) | (b & 0xFF)"
+  int bitmask1 = get_bitmask(phase, in(1));
+  int bitmask2 = get_bitmask(phase, in(2));
+  if ((bitmask1 & bitmask2) == 0) {
+    return new OrINode(in(1), in(2));
   }
 
   return AddNode::Ideal(phase, can_reshape);
@@ -436,6 +482,13 @@ Node *AddLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       0 ) {
     Node *shift = phase->transform(new LShiftLNode(in1,phase->intcon(1)));
     return new AddLNode(shift,in2->in(2));
+  }
+
+  // Convert "((a & 0xFF) << 8) + (b & 0xFF)" into "((a & 0xFF) << 8) | (b & 0xFF)"
+  julong bitmask1 = get_bitmaskL(phase, in(1));
+  julong bitmask2 = get_bitmaskL(phase, in(2));
+  if ((bitmask1 & bitmask2) == 0) {
+    return new OrLNode(in(1), in(2));
   }
 
   return AddNode::Ideal(phase, can_reshape);
@@ -764,30 +817,6 @@ Node* rotate_shift(PhaseGVN* phase, Node* lshift, Node* rshift, int mask) {
   return NULL;
 }
 
-// Check if (offset,width) bitrange contains only zero bits in the value, the goal is
-// to prove that bitranges do not overlap in expressions like "((v1 & 0xFF) << 8) | (v2 & 0xFF)"
-static bool is_bitrange_zero(PhaseGVN *phase, Node* value, int offset, int width) {
-  int opcode = value->Opcode();
-  if (opcode == Op_LShiftI && value->in(2)->is_Con()) {
-    int lshift = value->in(2)->get_int();
-    return (lshift >= offset + width) || is_bitrange_zero(phase, value->in(1), offset - lshift, width);
-  } else if (opcode == Op_AndI && value->in(2)->is_Con()) {
-    int mask1 = value->in(2)->get_int();
-    int mask2 = ((1 << width) - 1) << offset;
-    return (mask1 & mask2) == 0;
-  } else if (opcode == Op_BitfieldInsertI) {
-    int width1 = value->in(3)->get_int();
-    int offset1 = value->in(4)->get_int();
-    if (offset >= offset1 + width1 || offset1 >= offset + width) {
-      return is_bitrange_zero(phase, value->in(1), offset, width);
-    }
-  } else if (opcode == Op_OrI) {
-    return is_bitrange_zero(phase, value->in(1), offset, width) &
-           is_bitrange_zero(phase, value->in(2), offset, width);
-  }
-  return false;
-}
-
 Node* OrINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   int lopcode = in(1)->Opcode();
   int ropcode = in(2)->Opcode();
@@ -828,7 +857,8 @@ Node* OrINode::Ideal(PhaseGVN* phase, bool can_reshape) {
       Node* mask  = andi->in(2);
       if (mask->is_Con() && is_power_of_2(mask->get_int() + 1)) {
         int width = exact_log2(mask->get_int() + 1);
-        if (width + offset <= 32 && is_bitrange_zero(phase, dst, offset, width)) {
+        int mask = ((1 << width) - 1) << offset;
+        if (width + offset <= 32 && ((get_bitmask(phase, dst) & mask) == 0)) {
           return new BitfieldInsertINode(dst, value, phase->intcon(offset), phase->intcon(width));
         }
       }
@@ -878,28 +908,6 @@ Node* OrLNode::Identity(PhaseGVN* phase) {
   return AddNode::Identity(phase);
 }
 
-static bool is_bitrangeL_zero(PhaseGVN *phase, Node* value, int offset, int width) {
-  int opcode = value->Opcode();
-  if (opcode == Op_LShiftL && value->in(2)->is_Con()) {
-    int lshift = value->in(2)->get_int();
-    return (lshift >= offset + width) || is_bitrangeL_zero(phase, value->in(1), offset - lshift, width);
-  } else if (opcode == Op_AndL && value->in(2)->is_Con()) {
-    jlong mask1 = value->in(2)->get_long();
-    jlong mask2 = ((1L << width) - 1) << offset;
-    return (mask1 & mask2) == 0;
-  } else if (opcode == Op_BitfieldInsertL) {
-    int width1 = value->in(3)->get_int();
-    int offset1 = value->in(4)->get_int();
-    if (offset >= offset1 + width1 || offset1 >= offset + width) {
-      return is_bitrangeL_zero(phase, value->in(1), offset, width);
-    }
-  } else if (opcode == Op_OrL) {
-    return is_bitrange_zero(phase, value->in(1), offset, width) &
-           is_bitrange_zero(phase, value->in(2), offset, width);
-  }
-  return false;
-}
-
 Node* OrLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   int lopcode = in(1)->Opcode();
   int ropcode = in(2)->Opcode();
@@ -937,8 +945,9 @@ Node* OrLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       Node* value = andl->in(1);
       Node* mask  = andl->in(2);
       if (mask->is_Con() && is_power_of_2(mask->get_long() + 1)) {
-        int width = exact_log2_long(mask->get_long() + 1);
-        if (width + offset <= 64 && is_bitrangeL_zero(phase, dst, offset, width)) {
+        julong width = exact_log2_long(mask->get_long() + 1);
+        julong mask = ((1L << width) - 1) << offset;
+        if (width + offset <= 64 && ((get_bitmaskL(phase, dst) & mask) == 0)) {
           return new BitfieldInsertLNode(dst, value, phase->intcon(offset), phase->intcon(width));
         }
       }
