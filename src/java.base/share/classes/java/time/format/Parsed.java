@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,7 @@
  */
 package java.time.format;
 
+import static java.time.format.DateTimeFormatterBuilder.DayPeriod;
 import static java.time.temporal.ChronoField.AMPM_OF_DAY;
 import static java.time.temporal.ChronoField.CLOCK_HOUR_OF_AMPM;
 import static java.time.temporal.ChronoField.CLOCK_HOUR_OF_DAY;
@@ -155,6 +156,10 @@ final class Parsed implements TemporalAccessor {
      * The excess period from time-only parsing.
      */
     Period excessDays = Period.ZERO;
+    /**
+     * The parsed day period.
+     */
+    DayPeriod dayPeriod;
 
     /**
      * Creates an instance.
@@ -172,6 +177,7 @@ final class Parsed implements TemporalAccessor {
         cloned.zone = this.zone;
         cloned.chrono = this.chrono;
         cloned.leapSecond = this.leapSecond;
+        cloned.dayPeriod= this.dayPeriod;
         return cloned;
     }
 
@@ -332,7 +338,23 @@ final class Parsed implements TemporalAccessor {
         }
     }
 
-    //-----------------------------------------------------------------------
+    private void updateCheckDayPeriodConflict(TemporalField changeField, Long changeValue) {
+        Long old = fieldValues.put(changeField, changeValue);
+        if (resolverStyle != ResolverStyle.LENIENT) {
+            if (old != null && old.longValue() != changeValue.longValue()) {
+                throw new DateTimeException("Conflict found: " + changeField + " " + old +
+                        " differs from " + changeField + " " + changeValue +
+                        " while resolving  " + dayPeriod);
+            }
+            long mod = fieldValues.get(HOUR_OF_DAY) * 60 +
+                    (fieldValues.containsKey(MINUTE_OF_HOUR) ? fieldValues.get(MINUTE_OF_HOUR) : 0);
+            if (!dayPeriod.includes(mod)) {
+                throw new DateTimeException("Conflict found: " + changeField + " conflict with day period");
+            }
+        }
+    }
+
+//-----------------------------------------------------------------------
     private void resolveInstantFields() {
         // resolve parsed instant seconds to date and time if zone available
         if (fieldValues.containsKey(INSTANT_SECONDS)) {
@@ -445,6 +467,36 @@ final class Parsed implements TemporalAccessor {
             }
             updateCheckConflict(MINUTE_OF_DAY, HOUR_OF_DAY, mod / 60);
             updateCheckConflict(MINUTE_OF_DAY, MINUTE_OF_HOUR, mod % 60);
+        }
+        if (dayPeriod != null) {
+            if (fieldValues.containsKey(HOUR_OF_DAY)) {
+                long hod = fieldValues.remove(HOUR_OF_DAY);
+                if (resolverStyle != ResolverStyle.LENIENT) {
+                    HOUR_OF_DAY.checkValidValue(hod);
+                }
+                updateCheckDayPeriodConflict(HOUR_OF_DAY, hod);
+            } else if (fieldValues.containsKey(HOUR_OF_AMPM)) {
+                long hoap = fieldValues.remove(HOUR_OF_AMPM);
+                if (resolverStyle != ResolverStyle.LENIENT) {
+                    HOUR_OF_AMPM.checkValidValue(hoap);
+                }
+                if (dayPeriod.includes((hoap + 12) * 60)) {
+                    hoap += 12;
+                }
+                updateCheckDayPeriodConflict(HOUR_OF_DAY, hoap);
+            } else {
+                long midpoint = dayPeriod.mid();
+                fieldValues.put(HOUR_OF_DAY, midpoint / 60);
+                fieldValues.put(MINUTE_OF_HOUR, midpoint % 60);
+                // dayPeriod precedes AmPm. Override it if exists.
+                if (fieldValues.containsKey(AMPM_OF_DAY)) {
+                    long ap = fieldValues.remove(AMPM_OF_DAY);
+                    if (resolverStyle != ResolverStyle.LENIENT) {
+                        AMPM_OF_DAY.checkValidValue(ap);
+                    }
+                    updateCheckDayPeriodConflict(AMPM_OF_DAY, midpoint / 720);
+                }
+            }
         }
 
         // combine partial second fields strictly, leaving lenient expansion to later
