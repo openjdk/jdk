@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8172474
+ * @bug 8172474 8247957
  * @summary javac should enable doclint checking for HTML 5
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -60,11 +60,12 @@ public class DocLintFormatTest {
             "/** This is an <mark>HTML 5</mark> comment. */ public class Test5 { }"
         );
 
-        test(src.resolve("Test4.java"), "html4");
+        test(src.resolve("Test4.java"), "html4",
+                "java.lang.IllegalArgumentException: html4");
         test(src.resolve("Test4.java"), "html5",
-                "Test4.java:1:16: compiler.err.proc.messager: tag not supported in the generated HTML version: tt");
+                "Test4.java:1:16: compiler.err.proc.messager: tag not supported in HTML5: tt");
         test(src.resolve("Test5.java"), "html4",
-                "Test5.java:1:16: compiler.err.proc.messager: tag not supported in the generated HTML version: mark");
+                "java.lang.IllegalArgumentException: html4");
         test(src.resolve("Test5.java"), "html5");
 
         if (errors > 0) {

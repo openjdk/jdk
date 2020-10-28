@@ -23,13 +23,13 @@
 
 /*
  * @test
- * @bug 8072945
+ * @bug 8072945 8247957
  * @summary test HTML version
  * @library ..
  * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
  * @run main DocLintTester -XhtmlVersion:html5 HtmlVersionTest.java
- * @run main DocLintTester -XhtmlVersion:html4 HtmlVersionTest.java
+ * @run main DocLintTester -badargs -XhtmlVersion:html4 HtmlVersionTest.java
  * @run main DocLintTester -badargs -XhtmlVersion: HtmlVersionTest.java
  * @run main DocLintTester HtmlVersionTest.java
  */

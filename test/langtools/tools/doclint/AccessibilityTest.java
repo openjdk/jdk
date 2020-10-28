@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8004832
+ * @bug 8004832 8247955 8247957
  * @summary Add new doclint package
  * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
@@ -60,6 +60,17 @@ public class AccessibilityTest {
     /**
      * <table><tr><th>head<tr><td>data</table>
      */
+    public void table_without_caption() { }
+
+    /**
+     * <table><tr><th>head<tr><td>data</table>
+     */
     public void table_without_summary_and_caption() { }
+
+    /**
+     * <table role="presentation"><tr><th>head<tr><td>data</table>
+     */
+    public void table_presentation() { }
+
 }
 
