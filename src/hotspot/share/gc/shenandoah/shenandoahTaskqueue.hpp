@@ -145,11 +145,14 @@ private:
   static const uint8_t pow_shift   = oop_bits;
   static const uint8_t chunk_shift = oop_bits + pow_bits;
 
-  static const uintptr_t oop_extract_mask       = right_n_bits(oop_bits);
+  static const uintptr_t oop_extract_mask       = right_n_bits(oop_bits) & ~((uintptr_t)3);
   static const uintptr_t chunk_pow_extract_mask = ~right_n_bits(oop_bits);
 
   static const int chunk_range_mask = right_n_bits(chunk_bits);
   static const int pow_range_mask   = right_n_bits(pow_bits);
+
+  static const uintptr_t count_liveness_decode_mask = 1 << 0;
+  static const uintptr_t strong_decode_mask         = 1 << 1;
 
   inline oop decode_oop(uintptr_t val) const {
     STATIC_ASSERT(oop_shift == 0);
@@ -169,9 +172,24 @@ private:
     return (int) ((val >> pow_shift) & pow_range_mask);
   }
 
-  inline uintptr_t encode_oop(oop obj) const {
+  inline bool decode_strong(uintptr_t val) const {
+    return (val & strong_decode_mask) != 0;
+  }
+
+  inline bool decode_count_liveness(uintptr_t val) const {
+    return (val & count_liveness_decode_mask) != 0;
+  }
+
+  inline uintptr_t encode_oop(oop obj, bool count_liveness, bool strong) const {
     STATIC_ASSERT(oop_shift == 0);
-    return cast_from_oop<uintptr_t>(obj);
+    uintptr_t encoded = cast_from_oop<uintptr_t>(obj);
+    if (count_liveness) {
+      encoded |= count_liveness_decode_mask;
+    }
+    if (strong) {
+      encoded |= strong_decode_mask;
+    }
+    return encoded;
   }
 
   inline uintptr_t encode_chunk(int chunk) const {
@@ -183,15 +201,17 @@ private:
   }
 
 public:
-  ShenandoahMarkTask(oop o = NULL) {
-    uintptr_t enc = encode_oop(o);
+  ShenandoahMarkTask(oop o = NULL, bool count_liveness = true, bool strong = true) {
+    uintptr_t enc = encode_oop(o, count_liveness, strong);
     assert(decode_oop(enc) == o,    "oop encoding should work: " PTR_FORMAT, p2i(o));
     assert(decode_not_chunked(enc), "task should not be chunked");
+    assert(decode_count_liveness(enc) == count_liveness, "count_liveness encoding should work");
+    assert(decode_strong(enc) == strong, "strong encoding should work");
     _obj = enc;
   }
 
-  ShenandoahMarkTask(oop o, int chunk, int pow) {
-    uintptr_t enc_oop = encode_oop(o);
+  ShenandoahMarkTask(oop o, bool count_liveness, bool strong, int chunk, int pow) {
+    uintptr_t enc_oop = encode_oop(o, count_liveness, strong);
     uintptr_t enc_chunk = encode_chunk(chunk);
     uintptr_t enc_pow = encode_pow(pow);
     uintptr_t enc = enc_oop | enc_chunk | enc_pow;
@@ -199,6 +219,8 @@ public:
     assert(decode_chunk(enc) == chunk, "chunk encoding should work: %d", chunk);
     assert(decode_pow(enc) == pow,     "pow encoding should work: %d", pow);
     assert(!decode_not_chunked(enc),   "task should be chunked");
+    assert(decode_count_liveness(enc) == count_liveness, "count_liveness encoding should work");
+    assert(decode_strong(enc) == strong, "strong encoding should work");
     _obj = enc;
   }
 
@@ -209,7 +231,9 @@ public:
   inline int  chunk()          const { return decode_chunk(_obj); }
   inline int  pow()            const { return decode_pow(_obj);   }
 
-  inline bool is_not_chunked() const { return decode_not_chunked(_obj); }
+  inline bool is_not_chunked() const { return decode_not_chunked(_obj);    }
+  inline bool is_strong()      const { return decode_strong(_obj);         }
+  inline bool count_liveness() const { return decode_count_liveness(_obj); }
 
   DEBUG_ONLY(bool is_valid() const;) // Tasks to be pushed/popped must be valid.
 
@@ -231,12 +255,14 @@ private:
   };
 
   oop _obj;
+  bool _count_liveness;
+  bool _strong;
   int _chunk;
   int _pow;
 
 public:
-  ShenandoahMarkTask(oop o = NULL, int chunk = 0, int pow = 0):
-    _obj(o), _chunk(chunk), _pow(pow) {
+  ShenandoahMarkTask(oop o = NULL, bool count_liveness = true, bool strong = true, int chunk = 0, int pow = 0):
+    _obj(o), _count_liveness(count_liveness), _strong(strong), _chunk(chunk), _pow(pow) {
     assert(0 <= chunk && chunk < nth_bit(chunk_bits), "chunk is sane: %d", chunk);
     assert(0 <= pow && pow < nth_bit(pow_bits), "pow is sane: %d", pow);
   }
@@ -247,6 +273,8 @@ public:
   inline int chunk()           const { return _chunk; }
   inline int pow()             const { return _pow; }
   inline bool is_not_chunked() const { return _chunk == 0; }
+  inline bool is_strong()      const { return _strong; }
+  inline bool count_liveness() const { return _count_liveness; }
 
   DEBUG_ONLY(bool is_valid() const;) // Tasks to be pushed/popped must be valid.
 
