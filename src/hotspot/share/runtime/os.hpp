@@ -116,7 +116,6 @@ class os: AllStatic {
   static char*  pd_reserve_memory(size_t bytes);
 
   static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes);
-  static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes, int file_desc);
 
   static bool   pd_commit_memory(char* addr, size_t bytes, bool executable);
   static bool   pd_commit_memory(char* addr, size_t size, size_t alignment_hint,
@@ -130,6 +129,8 @@ class os: AllStatic {
                                          bool executable, const char* mesg);
   static bool   pd_uncommit_memory(char* addr, size_t bytes);
   static bool   pd_release_memory(char* addr, size_t bytes);
+
+  static char*  pd_attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc);
 
   static char*  pd_map_memory(int fd, const char* file_name, size_t file_offset,
                            char *addr, size_t bytes, bool read_only = false,
@@ -313,19 +314,14 @@ class os: AllStatic {
   static int    vm_allocation_granularity();
 
   // Reserves virtual memory.
-  // alignment_hint - currently only used by AIX
   static char*  reserve_memory(size_t bytes, MEMFLAGS flags = mtOther);
 
-  // Reserves virtual memory.
-  // if file_desc != -1, also attaches the memory to the file.
-  static char*  reserve_memory_with_fd(size_t bytes, int file_desc);
-
   // Reserves virtual memory that starts at an address that is aligned to 'alignment'.
-  static char*  reserve_memory_aligned(size_t size, size_t alignment, int file_desc = -1);
+  static char*  reserve_memory_aligned(size_t size, size_t alignment);
 
   // Attempts to reserve the virtual memory at [addr, addr + bytes).
   // Does not overwrite existing mappings.
-  static char*  attempt_reserve_memory_at(char* addr, size_t bytes, int file_desc = -1);
+  static char*  attempt_reserve_memory_at(char* addr, size_t bytes);
 
   // Split a reserved memory region [base, base+size) into two regions [base, base+split) and
   //  [base+split, base+size).
@@ -370,7 +366,10 @@ class os: AllStatic {
   static int create_file_for_heap(const char* dir);
   // Map memory to the file referred by fd. This function is slightly different from map_memory()
   // and is added to be used for implementation of -XX:AllocateHeapAt
+  static char* map_memory_to_file(size_t size, int fd);
+  static char* map_memory_to_file_aligned(size_t size, size_t alignment, int fd);
   static char* map_memory_to_file(char* base, size_t size, int fd);
+  static char* attempt_map_memory_to_file_at(char* base, size_t size, int fd);
   // Replace existing reserved memory with file mapping
   static char* replace_existing_mapping_with_file_mapping(char* base, size_t size, int fd);
 

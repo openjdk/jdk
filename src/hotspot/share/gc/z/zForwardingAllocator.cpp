@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,30 +21,20 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZATTACHEDARRAY_HPP
-#define SHARE_GC_Z_ZATTACHEDARRAY_HPP
+#include "precompiled.hpp"
+#include "gc/z/zForwardingAllocator.hpp"
+#include "memory/allocation.inline.hpp"
 
-#include "utilities/globalDefinitions.hpp"
+ZForwardingAllocator::ZForwardingAllocator() :
+    _start(NULL),
+    _end(NULL),
+    _top(NULL) {}
 
-template <typename ObjectT, typename ArrayT>
-class ZAttachedArray {
-private:
-  const size_t _length;
+ZForwardingAllocator::~ZForwardingAllocator() {
+  FREE_C_HEAP_ARRAY(char, _start);
+}
 
-  static size_t object_size();
-  static size_t array_size(size_t length);
-
-public:
-  template <typename Allocator>
-  static void* alloc(Allocator* allocator, size_t length);
-
-  static void* alloc(size_t length);
-  static void free(ObjectT* obj);
-
-  ZAttachedArray(size_t length);
-
-  size_t length() const;
-  ArrayT* operator()(const ObjectT* obj) const;
-};
-
-#endif // SHARE_GC_Z_ZATTACHEDARRAY_HPP
+void ZForwardingAllocator::reset(size_t size) {
+  _start = _top = REALLOC_C_HEAP_ARRAY(char, _start, size, mtGC);
+  _end = _start + size;
+}

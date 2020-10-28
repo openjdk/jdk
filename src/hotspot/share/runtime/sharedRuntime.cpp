@@ -2454,15 +2454,12 @@ class AdapterHandlerTable : public BasicHashtable<mtCode> {
 
  public:
   AdapterHandlerTable()
-    : BasicHashtable<mtCode>(293, (DumpSharedSpaces ? sizeof(CDSAdapterHandlerEntry) : sizeof(AdapterHandlerEntry))) { }
+    : BasicHashtable<mtCode>(293, (sizeof(AdapterHandlerEntry))) { }
 
   // Create a new entry suitable for insertion in the table
   AdapterHandlerEntry* new_entry(AdapterFingerPrint* fingerprint, address i2c_entry, address c2i_entry, address c2i_unverified_entry, address c2i_no_clinit_check_entry) {
     AdapterHandlerEntry* entry = (AdapterHandlerEntry*)BasicHashtable<mtCode>::new_entry(fingerprint->compute_hash());
     entry->init(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry, c2i_no_clinit_check_entry);
-    if (DumpSharedSpaces) {
-      ((CDSAdapterHandlerEntry*)entry)->init();
-    }
     return entry;
   }
 
@@ -3129,17 +3126,6 @@ void AdapterHandlerEntry::print_adapter_on(outputStream* st) const {
   }
   st->cr();
 }
-
-#if INCLUDE_CDS
-
-void CDSAdapterHandlerEntry::init() {
-  assert(DumpSharedSpaces, "used during dump time only");
-  _c2i_entry_trampoline = (address)MetaspaceShared::misc_code_space_alloc(SharedRuntime::trampoline_size());
-  _adapter_trampoline = (AdapterHandlerEntry**)MetaspaceShared::misc_code_space_alloc(sizeof(AdapterHandlerEntry*));
-};
-
-#endif // INCLUDE_CDS
-
 
 #ifndef PRODUCT
 
