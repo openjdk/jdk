@@ -695,9 +695,7 @@ public:
     CodeBlob::print_block_comment(stream, block_begin);
 #endif
   }
-  bool has_block_comment(address block_begin) {
-    return CodeBlob::has_block_comment(block_begin);
-  }
+
   void print_nmethod_labels(outputStream* stream, address block_begin, bool print_section_labels=true) const;
   const char* nmethod_section_label(address pos) const;
 
