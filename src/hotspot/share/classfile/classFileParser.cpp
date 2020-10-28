@@ -3645,12 +3645,6 @@ bool ClassFileParser::supports_sealed_types() {
          Arguments::enable_preview();
 }
 
-bool ClassFileParser::supports_records() {
-  return _major_version == JVM_CLASSFILE_MAJOR_VERSION &&
-         _minor_version == JAVA_PREVIEW_MINOR_VERSION &&
-         Arguments::enable_preview();
-}
-
 void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cfs,
                                                  ConstantPool* cp,
                  ClassFileParser::ClassAnnotationCollector* parsed_annotations,
@@ -3898,9 +3892,28 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
                          "Nest-host class_info_index %u has bad constant type in class file %s",
                          class_info_index, CHECK);
           _nest_host = class_info_index;
-        } else if (_major_version >= JAVA_14_VERSION) {
-          if (tag == vmSymbols::tag_record()) {
-            if (supports_records()) { // Skip over Record attribute if not supported.
+
+        } else if (_major_version >= JAVA_15_VERSION) {
+          // Check for PermittedSubclasses tag
+          if (tag == vmSymbols::tag_permitted_subclasses()) {
+            if (supports_sealed_types()) {
+              if (parsed_permitted_subclasses_attribute) {
+                classfile_parse_error("Multiple PermittedSubclasses attributes in class file %s", CHECK);
+                return;
+              }
+              // Classes marked ACC_FINAL cannot have a PermittedSubclasses attribute.
+              if (_access_flags.is_final()) {
+                classfile_parse_error("PermittedSubclasses attribute in final class file %s", CHECK);
+                return;
+              }
+              parsed_permitted_subclasses_attribute = true;
+              permitted_subclasses_attribute_start = cfs->current();
+              permitted_subclasses_attribute_length = attribute_length;
+            }
+            cfs->skip_u1(attribute_length, CHECK);
+
+          } else if (_major_version >= JAVA_16_VERSION) {
+            if (tag == vmSymbols::tag_record()) {
               if (parsed_record_attribute) {
                 classfile_parse_error("Multiple Record attributes in class file %s", THREAD);
                 return;
@@ -3908,39 +3921,8 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
               parsed_record_attribute = true;
               record_attribute_start = cfs->current();
               record_attribute_length = attribute_length;
-            } else if (log_is_enabled(Info, class, record)) {
-              // Log why the Record attribute was ignored.  Note that if the
-              // class file version is JVM_CLASSFILE_MAJOR_VERSION.65535 and
-              // --enable-preview wasn't specified then a java.lang.UnsupportedClassVersionError
-              // exception would have been thrown.
-              ResourceMark rm(THREAD);
-              log_info(class, record)(
-                "Ignoring Record attribute in class %s because class file version is not %d.65535",
-                 _class_name->as_C_string(), JVM_CLASSFILE_MAJOR_VERSION);
-            }
-            cfs->skip_u1(attribute_length, CHECK);
-          } else if (_major_version >= JAVA_15_VERSION) {
-            // Check for PermittedSubclasses tag
-            if (tag == vmSymbols::tag_permitted_subclasses()) {
-              if (supports_sealed_types()) {
-                if (parsed_permitted_subclasses_attribute) {
-                  classfile_parse_error("Multiple PermittedSubclasses attributes in class file %s", THREAD);
-                  return;
-                }
-                // Classes marked ACC_FINAL cannot have a PermittedSubclasses attribute.
-                if (_access_flags.is_final()) {
-                  classfile_parse_error("PermittedSubclasses attribute in final class file %s", THREAD);
-                  return;
-                }
-                parsed_permitted_subclasses_attribute = true;
-                permitted_subclasses_attribute_start = cfs->current();
-                permitted_subclasses_attribute_length = attribute_length;
               }
-              cfs->skip_u1(attribute_length, CHECK);
-            } else {
-              // Unknown attribute
-              cfs->skip_u1(attribute_length, CHECK);
-            }
+            cfs->skip_u1(attribute_length, CHECK);
           } else {
             // Unknown attribute
             cfs->skip_u1(attribute_length, CHECK);
