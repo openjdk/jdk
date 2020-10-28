@@ -193,6 +193,14 @@ class JvmtiExport : public AllStatic {
   // dependency information is complete or not.
   static bool _all_dependencies_are_recorded;
 
+  static void post_method_exit_inner(JavaThread* thread,
+                                     methodHandle& mh,
+                                     JvmtiThreadState *state,
+                                     bool exception_exit,
+                                     frame& current_frame,
+                                     Handle& result,
+                                     jvalue& value);
+
  public:
   inline static bool has_redefined_a_class() {
     JVMTI_ONLY(return _redefinition_count != 0);

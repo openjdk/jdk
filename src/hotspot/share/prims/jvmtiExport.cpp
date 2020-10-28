@@ -1560,7 +1560,7 @@ void JvmtiExport::post_method_entry(JavaThread *thread, Method* method, frame cu
   }
 }
 
-void JvmtiExport::post_method_exit(JavaThread *thread, Method* method, frame current_frame) {
+void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame current_frame) {
   HandleMark hm(thread);
   methodHandle mh(thread, method);
 
@@ -1578,13 +1578,11 @@ void JvmtiExport::post_method_exit(JavaThread *thread, Method* method, frame cur
   // return a flag when a method terminates by throwing an exception
   // i.e. if an exception is thrown and it's not caught by the current method
   bool exception_exit = state->is_exception_detected() && !state->is_exception_caught();
-
+  Handle result;
+  jvalue value;
+  value.j = 0L;
 
   if (state->is_enabled(JVMTI_EVENT_METHOD_EXIT)) {
-    Handle result;
-    jvalue value;
-    value.j = 0L;
-
     // if the method hasn't been popped because of an exception then we populate
     // the return_value parameter for the callback. At this point we only have
     // the address of a "raw result" and we just call into the interpreter to
@@ -1596,7 +1594,33 @@ void JvmtiExport::post_method_exit(JavaThread *thread, Method* method, frame cur
         result = Handle(thread, oop_result);
       }
     }
+  }
 
+  if (exception_exit) {
+    post_method_exit_inner(thread, mh, state, exception_exit, current_frame, result, value);
+  } else {
+    // Deferred transition to VM, so we can stash away the return oop before GC
+    // Note that this transition is not needed when throwing an exception, because
+    // there is no oop to retain.
+    JRT_BLOCK
+      post_method_exit_inner(thread, mh, state, exception_exit, current_frame, result, value);
+    JRT_BLOCK_END
+  }
+
+  if (result.not_null() && !mh->is_native()) {
+    // We have to restore the oop on the stack for interpreter frames
+    *(oop*)current_frame.interpreter_frame_tos_address() = result();
+  }
+}
+
+void JvmtiExport::post_method_exit_inner(JavaThread* thread,
+                                         methodHandle& mh,
+                                         JvmtiThreadState *state,
+                                         bool exception_exit,
+                                         frame& current_frame,
+                                         Handle& result,
+                                         jvalue& value) {
+  if (state->is_enabled(JVMTI_EVENT_METHOD_EXIT)) {
     JvmtiEnvThreadStateIterator it(state);
     for (JvmtiEnvThreadState* ets = it.first(); ets != NULL; ets = it.next(ets)) {
       if (ets->is_enabled(JVMTI_EVENT_METHOD_EXIT)) {
