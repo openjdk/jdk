@@ -38,6 +38,7 @@ public:
 
   void reset(size_t size);
   size_t size() const;
+  bool is_full() const;
 
   void* alloc(size_t size);
 };

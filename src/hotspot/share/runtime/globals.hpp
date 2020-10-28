@@ -2207,6 +2207,17 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, UseNewCode3, false, DIAGNOSTIC,                             \
           "Testing Only: Use the new version while testing")                \
                                                                             \
+  notproduct(bool, UseDebuggerErgo, false,                                  \
+          "Debugging Only: Adjust the VM to be more debugger-friendly. "    \
+          "Turns on the other UseDebuggerErgo* flags")                      \
+                                                                            \
+  notproduct(bool, UseDebuggerErgo1, false,                                 \
+          "Debugging Only: Enable workarounds for debugger induced "        \
+          "os::processor_id() >= os::processor_count() problems")           \
+                                                                            \
+  notproduct(bool, UseDebuggerErgo2, false,                                 \
+          "Debugging Only: Limit the number of spawned JVM threads")        \
+                                                                            \
   /* flags for performance data collection */                               \
                                                                             \
   product(bool, UsePerfData, true,                                          \

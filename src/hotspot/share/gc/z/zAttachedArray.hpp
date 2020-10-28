@@ -35,8 +35,9 @@ private:
   static size_t array_size(size_t length);
 
 public:
-  static size_t size(size_t length);
-  static void* alloc(void* placement, size_t length);
+  template <typename Allocator>
+  static void* alloc(Allocator* allocator, size_t length);
+
   static void* alloc(size_t length);
   static void free(ObjectT* obj);
 

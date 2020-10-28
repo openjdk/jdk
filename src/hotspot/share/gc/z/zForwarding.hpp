@@ -58,6 +58,7 @@ private:
   ZForwarding(ZPage* page, size_t nentries);
 
 public:
+  static uint32_t nentries(const ZPage* page);
   static ZForwarding* alloc(ZForwardingAllocator* allocator, ZPage* page);
 
   uintptr_t start() const;

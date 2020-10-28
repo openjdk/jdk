@@ -33,11 +33,22 @@
 #include "gc/z/zVirtualMemory.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/powerOfTwo.hpp"
+
+inline uint32_t ZForwarding::nentries(const ZPage* page) {
+  // The number returned by the function is used to size the hash table of
+  // forwarding entries for this page. This hash table uses linear probing.
+  // The size of the table must be a power of two to allow for quick and
+  // inexpensive indexing/masking. The table is also sized to have a load
+  // factor of 50%, i.e. sized to have double the number of entries actually
+  // inserted, to allow for good lookup/insert performance.
+  return round_up_power_of_2(page->live_objects() * 2);
+}
 
 inline ZForwarding* ZForwarding::alloc(ZForwardingAllocator* allocator, ZPage* page) {
-  const size_t nentries = page->forwarding_entries();
-  void* const placement = allocator->alloc(AttachedArray::size(nentries));
-  return ::new (AttachedArray::alloc(placement, nentries)) ZForwarding(page, nentries);
+  const size_t nentries = ZForwarding::nentries(page);
+  void* const addr = AttachedArray::alloc(allocator, nentries);
+  return ::new (addr) ZForwarding(page, nentries);
 }
 
 inline ZForwarding::ZForwarding(ZPage* page, size_t nentries) :
