@@ -166,7 +166,11 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_loa
   oop value = Raw::oop_load_not_in_heap(addr);
   if (value != NULL) {
     ShenandoahBarrierSet *const bs = ShenandoahBarrierSet::barrier_set();
-    value = bs->load_reference_barrier_native(value, addr);
+    if (bs->use_load_reference_barrier_native(decorators, T_OBJECT)) {
+      value = bs->load_reference_barrier_native(value, addr);
+    } else {
+      value = bs->load_reference_barrier_not_null(value);
+    }
     if (value != NULL) {
       bs->keep_alive_if_weak<decorators>(value);
     }
