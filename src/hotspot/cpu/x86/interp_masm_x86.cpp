@@ -606,7 +606,7 @@ void InterpreterMacroAssembler::push_i(Register r) {
 }
 
 void InterpreterMacroAssembler::push_i_or_ptr(Register r) {
-  push_i(r);
+  push(r);
 }
 
 void InterpreterMacroAssembler::push_f(XMMRegister r) {
