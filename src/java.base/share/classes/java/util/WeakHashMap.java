@@ -399,11 +399,22 @@ public class WeakHashMap<K,V>
         int index = indexFor(h, tab.length);
         Entry<K,V> e = tab[index];
         while (e != null) {
-            if (e.hash == h && eq(k, e.get()))
+            if (e.hash == h && matchesKey(e, k))
                 return e.value;
             e = e.next;
         }
         return null;
+    }
+
+    private boolean matchesKey(Entry<K,V> e, Object key) {
+        if (e.refersTo(key)) return true;
+
+        /**
+         * Checks for equality of non-null reference x and possibly-null y.  By
+         * default uses Object.equals.
+         */
+        Object k = e.get();
+        return key == k || key.equals(k);
     }
 
     /**
@@ -428,7 +439,7 @@ public class WeakHashMap<K,V>
         Entry<K,V>[] tab = getTable();
         int index = indexFor(h, tab.length);
         Entry<K,V> e = tab[index];
-        while (e != null && !(e.hash == h && eq(k, e.get())))
+        while (e != null && !(e.hash == h && matchesKey(e, k))
             e = e.next;
         return e;
     }
@@ -452,7 +463,7 @@ public class WeakHashMap<K,V>
         int i = indexFor(h, tab.length);
 
         for (Entry<K,V> e = tab[i]; e != null; e = e.next) {
-            if (h == e.hash && eq(k, e.get())) {
+            if (h == e.hash && matchesKey(e, k)) {
                 V oldValue = e.value;
                 if (value != oldValue)
                     e.value = value;
@@ -515,8 +526,7 @@ public class WeakHashMap<K,V>
             src[j] = null;
             while (e != null) {
                 Entry<K,V> next = e.next;
-                Object key = e.get();
-                if (key == null) {
+                if (e.refersTo(null)) {
                     e.next = null;  // Help GC
                     e.value = null; //  "   "
                     size--;
@@ -597,7 +607,7 @@ public class WeakHashMap<K,V>
 
         while (e != null) {
             Entry<K,V> next = e.next;
-            if (h == e.hash && eq(k, e.get())) {
+            if (h == e.hash && matchesKey(e, k)) {
                 modCount++;
                 size--;
                 if (prev == e)
