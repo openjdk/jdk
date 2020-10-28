@@ -43,6 +43,9 @@
 ShenandoahGCStateResetter::ShenandoahGCStateResetter() :
   _gc_state(ShenandoahHeap::heap()->gc_state()),
   _concurrent_weak_root_in_progress(ShenandoahHeap::heap()->is_concurrent_weak_root_in_progress()) {
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  heap->_gc_state.clear();
+  heap->set_concurrent_weak_root_in_progress(false);
 }
 
 ShenandoahGCStateResetter::~ShenandoahGCStateResetter() {
