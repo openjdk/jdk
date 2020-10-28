@@ -806,7 +806,6 @@ javax/swing/JPopupMenu/4458079/bug4458079.java 8233556 macosx-all
 javax/swing/JMenuItem/ActionListenerCalledTwice/ActionListenerCalledTwiceTest.java 8233637 macosx-all
 javax/swing/JMenuItem/6249972/bug6249972.java 8233640 macosx-all
 javax/swing/JMenuItem/4171437/bug4171437.java 8233641 macosx-all
-javax/swing/JMenu/4692443/bug4692443.java 8171998 macosx-all
 
 sanity/client/SwingSet/src/ToolTipDemoTest.java 8225012 windows-all,macosx-all
 sanity/client/SwingSet/src/ScrollPaneDemoTest.java 8225013 linux-all
