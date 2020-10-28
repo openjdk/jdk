@@ -29,8 +29,8 @@ import java.io.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.text.DateFormat;
-import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -1740,7 +1740,8 @@ public class FtpClient extends sun.net.ftp.FtpClient {
         return -1;
     }
 
-    private static final DateTimeFormatter RFC3659_DATETIME_FORMAT = DateTimeFormatter.ofPattern("yyyyMMddHHmmss[.SSS]");
+    private static final DateTimeFormatter RFC3659_DATETIME_FORMAT = DateTimeFormatter.ofPattern("yyyyMMddHHmmss[.SSS]")
+                                                                                      .withZone(ZoneOffset.UTC);
 
     /**
      * Issues the MDTM [path] command to the server to get the modification
@@ -1766,8 +1767,8 @@ public class FtpClient extends sun.net.ftp.FtpClient {
     private static Date parseRfc3659TimeValue(String s) {
         Date result = null;
         try {
-            var d = LocalDateTime.parse(s, RFC3659_DATETIME_FORMAT);
-            result = Date.from(d.atZone(ZoneOffset.systemDefault()).toInstant());
+            var d = ZonedDateTime.parse(s, RFC3659_DATETIME_FORMAT);
+            result = Date.from(d.toInstant());
         } catch (DateTimeParseException ex) {
         }
         return result;
