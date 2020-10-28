@@ -1220,15 +1220,17 @@ public class Check {
                 boolean implicitlyStatic = !sym.isAnonymous() &&
                         ((flags & RECORD) != 0 || (flags & ENUM) != 0 || (flags & INTERFACE) != 0);
                 boolean staticOrImplicitlyStatic = (flags & STATIC) != 0 || implicitlyStatic;
+                // local statics are allowed only if records are allowed too
                 mask = staticOrImplicitlyStatic && allowRecords && (flags & ANNOTATION) == 0 ? StaticLocalFlags : LocalClassFlags;
                 implicit = implicitlyStatic ? STATIC : implicit;
             } else if (sym.owner.kind == TYP) {
+                // statics in inner classes are allowed only if records are allowed too
                 mask = ((flags & STATIC) != 0) && allowRecords ? ExtendedMemberStaticClassFlags : ExtendedMemberClassFlags;
                 if (sym.owner.owner.kind == PCK ||
-                    (sym.owner.flags_field & STATIC) != 0)
+                    (sym.owner.flags_field & STATIC) != 0) {
                     mask |= STATIC;
-                else if ((flags & ENUM) != 0 || (flags & RECORD) != 0) {
-                    //log.error(pos, Errors.StaticDeclarationNotAllowedInInnerClasses);
+                } else if (!allowRecords && ((flags & ENUM) != 0 || (flags & RECORD) != 0)) {
+                    log.error(pos, Errors.StaticDeclarationNotAllowedInInnerClasses);
                 }
                 // Nested interfaces and enums are always STATIC (Spec ???)
                 if ((flags & (INTERFACE | ENUM | RECORD)) != 0 ) implicit = STATIC;
@@ -1301,10 +1303,7 @@ public class Check {
                            SEALED | NON_SEALED)
                  && checkDisjoint(pos, flags,
                                 SEALED,
-                           FINAL | NON_SEALED)
-                 && checkDisjoint(pos, flags,
-                                RECORD,
-                                SEALED | NON_SEALED)  ) {
+                           FINAL | NON_SEALED)) {
             // skip
         }
         return flags & (mask | ~ExtendedStandardFlags) | implicit;

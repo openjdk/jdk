@@ -25,7 +25,8 @@
  * @test
  * @bug 8222035
  * @summary minimal inference context optimization is forcing resolution with incomplete constraints
- * @compile/fail/ref=MinContextOpTest.out -XDrawDiagnostics MinContextOpTest.java
+ * @compile/fail/ref=MinContextOpTest_A.out -XDrawDiagnostics -source 15 MinContextOpTest.java
+ * @compile/fail/ref=MinContextOpTest_B.out -XDrawDiagnostics MinContextOpTest.java
  */
 
 import java.util.Map;

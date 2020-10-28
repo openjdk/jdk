@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,12 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 4279339
- * @summary Verify that an anonymous class can contain a static field only if source >= 16
- * @author maddox
- *
- * @compile/fail/ref=AnonStaticMember_1.out -source 15 -XDrawDiagnostics AnonStaticMember_1.java
- * @compile AnonStaticMember_1.java
- */
+// key: compiler.err.icls.cant.have.static.decl
+// key: compiler.warn.source.no.system.modules.path
+// options: -source 15
 
-class AnonStaticMember_1 {
-    Object x = new Object() {
-        static int y;
-    };
+class InnerClassCantHaveStatic {
+    class Inner {
+        static int i;
+    }
 }
