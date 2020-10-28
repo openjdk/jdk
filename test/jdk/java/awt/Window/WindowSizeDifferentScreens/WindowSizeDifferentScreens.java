@@ -107,7 +107,7 @@ public final class WindowSizeDifferentScreens {
             case "window" -> new Window(null);
             case "dialog" -> new Dialog((Dialog) null);
             case "frame" -> new Frame();
-            default -> throw new IllegalStateException("Unexpected: " + top);
+            default -> throw new IllegalArgumentException("Unexpected: " + top);
         };
     }
 }
