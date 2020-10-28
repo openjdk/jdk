@@ -83,6 +83,7 @@ TEST_VM(StackOverflow, basics) {
   // Check bases.
   ASSERT_FALSE(so.in_stack_red_zone(so.stack_red_zone_base()));
   ASSERT_TRUE(so.in_stack_red_zone(so.stack_red_zone_base() - 1));
+  ASSERT_TRUE(so.in_stack_yellow_reserved_zone(so.stack_red_zone_base()));
   ASSERT_FALSE(so.in_stack_reserved_zone(so.stack_reserved_zone_base()));
   if (so.stack_reserved_zone_size() > 0) {
     ASSERT_TRUE(so.in_stack_reserved_zone(so.stack_reserved_zone_base() - 1));
