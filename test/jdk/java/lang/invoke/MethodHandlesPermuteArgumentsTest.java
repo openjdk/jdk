@@ -234,6 +234,7 @@ public class MethodHandlesPermuteArgumentsTest extends test.java.lang.invoke.Met
     private static void assertThrows(RunnableX r, Class<?> exceptionClass, String messagePattern) throws Throwable {
         try {
             r.run();
+            fail("Exception expected");
         } catch (Throwable e) {
             if (exceptionClass.isInstance(e)) {
                 assertMatches(e.getMessage(), messagePattern);
