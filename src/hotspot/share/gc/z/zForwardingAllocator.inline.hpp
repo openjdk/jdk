@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,30 +21,25 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZATTACHEDARRAY_HPP
-#define SHARE_GC_Z_ZATTACHEDARRAY_HPP
+#ifndef SHARE_GC_Z_ZFORWARDINGALLOCATOR_INLINE_HPP
+#define SHARE_GC_Z_ZFORWARDINGALLOCATOR_INLINE_HPP
 
-#include "utilities/globalDefinitions.hpp"
+#include "gc/z/zForwardingAllocator.hpp"
+#include "utilities/debug.hpp"
 
-template <typename ObjectT, typename ArrayT>
-class ZAttachedArray {
-private:
-  const size_t _length;
+inline size_t ZForwardingAllocator::size() const {
+  return _end - _start;
+}
 
-  static size_t object_size();
-  static size_t array_size(size_t length);
+inline bool ZForwardingAllocator::is_full() const {
+  return _top == _end;
+}
 
-public:
-  template <typename Allocator>
-  static void* alloc(Allocator* allocator, size_t length);
+inline void* ZForwardingAllocator::alloc(size_t size) {
+  char* const addr = _top;
+  _top += size;
+  assert(_top <= _end, "Allocation should never fail");
+  return addr;
+}
 
-  static void* alloc(size_t length);
-  static void free(ObjectT* obj);
-
-  ZAttachedArray(size_t length);
-
-  size_t length() const;
-  ArrayT* operator()(const ObjectT* obj) const;
-};
-
-#endif // SHARE_GC_Z_ZATTACHEDARRAY_HPP
+#endif // SHARE_GC_Z_ZFORWARDINGALLOCATOR_INLINE_HPP

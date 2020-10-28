@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,30 +21,26 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZATTACHEDARRAY_HPP
-#define SHARE_GC_Z_ZATTACHEDARRAY_HPP
+#ifndef SHARE_GC_Z_ZFORWARDINGALLOCATOR_HPP
+#define SHARE_GC_Z_ZFORWARDINGALLOCATOR_HPP
 
 #include "utilities/globalDefinitions.hpp"
 
-template <typename ObjectT, typename ArrayT>
-class ZAttachedArray {
+class ZForwardingAllocator {
 private:
-  const size_t _length;
-
-  static size_t object_size();
-  static size_t array_size(size_t length);
+  char* _start;
+  char* _end;
+  char* _top;
 
 public:
-  template <typename Allocator>
-  static void* alloc(Allocator* allocator, size_t length);
+  ZForwardingAllocator();
+  ~ZForwardingAllocator();
 
-  static void* alloc(size_t length);
-  static void free(ObjectT* obj);
+  void reset(size_t size);
+  size_t size() const;
+  bool is_full() const;
 
-  ZAttachedArray(size_t length);
-
-  size_t length() const;
-  ArrayT* operator()(const ObjectT* obj) const;
+  void* alloc(size_t size);
 };
 
-#endif // SHARE_GC_Z_ZATTACHEDARRAY_HPP
+#endif // SHARE_GC_Z_ZFORWARDINGALLOCATOR_HPP

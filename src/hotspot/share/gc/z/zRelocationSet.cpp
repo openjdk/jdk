@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,35 +22,53 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/z/zForwarding.hpp"
+#include "gc/z/zForwarding.inline.hpp"
+#include "gc/z/zForwardingAllocator.inline.hpp"
 #include "gc/z/zRelocationSet.hpp"
+#include "gc/z/zStat.hpp"
 #include "memory/allocation.hpp"
+#include "utilities/debug.hpp"
 
 ZRelocationSet::ZRelocationSet() :
+    _allocator(),
     _forwardings(NULL),
     _nforwardings(0) {}
 
-void ZRelocationSet::populate(ZPage* const* group0, size_t ngroup0,
-                              ZPage* const* group1, size_t ngroup1) {
-  _nforwardings = ngroup0 + ngroup1;
-  _forwardings = REALLOC_C_HEAP_ARRAY(ZForwarding*, _forwardings, _nforwardings, mtGC);
+void ZRelocationSet::populate(ZPage* const* small, size_t nsmall,
+                              ZPage* const* medium, size_t nmedium,
+                              size_t forwarding_entries) {
+  // Set relocation set length
+  _nforwardings = nsmall + nmedium;
 
+  // Initialize forwarding allocator to have room for the
+  // relocation set, all forwardings, and all forwarding entries.
+  const size_t relocation_set_size = _nforwardings * sizeof(ZForwarding*);
+  const size_t forwardings_size = _nforwardings * sizeof(ZForwarding);
+  const size_t forwarding_entries_size = forwarding_entries * sizeof(ZForwardingEntry);
+  _allocator.reset(relocation_set_size + forwardings_size + forwarding_entries_size);
+
+  // Allocate relocation set
+  _forwardings = new (_allocator.alloc(relocation_set_size)) ZForwarding*[_nforwardings];
+
+  // Populate relocation set array
   size_t j = 0;
 
-  // Populate group 0
-  for (size_t i = 0; i < ngroup0; i++) {
-    _forwardings[j++] = ZForwarding::create(group0[i]);
+  // Populate medium pages
+  for (size_t i = 0; i < nmedium; i++) {
+    _forwardings[j++] = ZForwarding::alloc(&_allocator, medium[i]);
   }
 
-  // Populate group 1
-  for (size_t i = 0; i < ngroup1; i++) {
-    _forwardings[j++] = ZForwarding::create(group1[i]);
+  // Populate small pages
+  for (size_t i = 0; i < nsmall; i++) {
+    _forwardings[j++] = ZForwarding::alloc(&_allocator, small[i]);
   }
+
+  assert(_allocator.is_full(), "Should be full");
+
+  // Update statistics
+  ZStatRelocation::set_at_populate_relocation_set(_allocator.size());
 }
 
 void ZRelocationSet::reset() {
-  for (size_t i = 0; i < _nforwardings; i++) {
-    ZForwarding::destroy(_forwardings[i]);
-    _forwardings[i] = NULL;
-  }
+  _nforwardings = 0;
 }
