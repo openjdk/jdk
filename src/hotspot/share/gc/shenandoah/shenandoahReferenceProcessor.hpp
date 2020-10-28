@@ -39,7 +39,7 @@ typedef size_t Counters[reference_type_count];
  *
  * Concurrent reference processing is made up of two main phases:
  * 1. Concurrent reference marking: Discover all j.l.r.Reference objects and determine reachability of all live objects.
- * 2. Concurrent reference processing: For all discoved j.l.r.References, determine whether or not to keep or clean
+ * 2. Concurrent reference processing: For all discoved j.l.r.References, determine whether to keep them alive or clean
  *    them. Also, clean and enqueue relevant references concurrently.
  *
  * Concurrent reference marking:
@@ -51,11 +51,11 @@ typedef size_t Counters[reference_type_count];
  *
  * These reachabilities are implemented in shenandoahMarkBitMap.*
  * Conceptually, marking starts with a strong wavefront at the GC roots. Whenever a Reference object is encountered,
- * that Reference is discovered, it may be discovered by the ShenandoahReferenceProcessor. If it is discovered, it
+ * it may be discovered by the ShenandoahReferenceProcessor. If it is discovered, it
  * gets added to the discovered list, and that wavefront stops there, except when it's a FinalReference, in which
- * case the wavefront switches to finalizable marking and marks through the refenent. When a Reference is not
+ * case the wavefront switches to finalizable marking and marks through the referent. When a Reference is not
  * discovered, e.g. if it's a SoftReference that is not eligible for discovery, then marking continues as if the
- * Reference were a regular object. Whenever a strong wavefront encounters an object that is already marked
+ * Reference was a regular object. Whenever a strong wavefront encounters an object that is already marked
  * finalizable, then the object's reachability is upgraded to strong.
  *
  * Concurrent reference processing:
