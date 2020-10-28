@@ -435,11 +435,11 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
     }
 
     /**
-     * Converts absolute coordinates from the user's space to the device space
-     * using appropriate device transformation.
+     * Converts coordinates from the user's space to the device space using
+     * appropriate device transformation.
      *
-     * @param  x absolute coordinate in the user's space
-     * @param  y absolute coordinate in the user's space
+     * @param  x coordinate in the user's space
+     * @param  y coordinate in the user's space
      * @return the point which uses device space(pixels)
      */
     public static Point toDeviceSpace(int x, int y) {
