@@ -558,7 +558,7 @@ void ParallelScavengeHeap::object_iterate_parallel(ObjectClosure* cl,
 bool HeapBlockClaimer::claim_and_get_block(int* block_index) {
   assert(block_index != NULL, "Invalid index pointer");
   *block_index = Atomic::fetch_and_add(&_claimed_index, 1);
-  int itrable_blocks = ParallelScavengeHeap::heap()->old_gen()->iterable_blocks();
+  int itrable_blocks = (int)ParallelScavengeHeap::heap()->old_gen()->iterable_blocks();
   if (*block_index >= itrable_blocks) {
     return false;
   }
