@@ -69,7 +69,8 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
   _nlist(arena(), 8, 0, NULL),            // scratch list of nodes
   _stk(arena(), 8, 0, NULL),              // scratch stack of nodes
   _lpt(NULL),                             // loop tree node
-  _lp(NULL),                              // LoopNode
+  _lp(NULL),                              // CountedLoopNode
+  _cached_pre_loop_end(NULL),             // Cached pre loop CountedLoopNodeEnd
   _bb(NULL),                              // basic block
   _iv(NULL),                              // induction var
   _race_possible(false),                  // cases where SDMU is true
@@ -156,9 +157,14 @@ void SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
   if (cl->is_main_loop()) {
     // Check for pre-loop ending with CountedLoopEnd(Bool(Cmp(x,Opaque1(limit))))
     CountedLoopEndNode* pre_end = get_pre_loop_end(cl);
-    if (pre_end == NULL) return;
-    Node *pre_opaq1 = pre_end->limit();
-    if (pre_opaq1->Opcode() != Op_Opaque1) return;
+    if (pre_end == NULL) {
+      return;
+    }
+    Node* pre_opaq1 = pre_end->limit();
+    if (pre_opaq1->Opcode() != Op_Opaque1) {
+      return;
+    }
+    set_cached_pre_loop_end(pre_end);
   }
 
   init(); // initialize data structures
@@ -911,7 +917,8 @@ bool SuperWord::ref_is_alignable(SWPointer& p) {
   if (!p.has_iv()) {
     return true;   // no induction variable
   }
-  CountedLoopEndNode* pre_end = get_pre_loop_end(lp()->as_CountedLoop());
+  CountedLoopEndNode* pre_end = cached_pre_loop_end();
+  assert(get_pre_loop_end(lp()), "pre loop end must still be found");
   assert(pre_end != NULL, "we must have a correct pre-loop");
   assert(pre_end->stride_is_con(), "pre loop stride is constant");
   int preloop_stride = pre_end->stride_con();
@@ -3431,21 +3438,21 @@ LoadNode::ControlDependency SuperWord::control_dependency(Node_List* p) {
 // to align_to_ref will be a position zero in the vector.
 //   (iv + k) mod vector_align == 0
 void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
-  CountedLoopNode *main_head = lp()->as_CountedLoop();
-  assert(main_head->is_main_loop(), "");
-  CountedLoopEndNode* pre_end = get_pre_loop_end(main_head);
+  assert(lp()->is_main_loop(), "");
+  CountedLoopEndNode* pre_end = cached_pre_loop_end();
+  assert(get_pre_loop_end(lp()), "pre loop end must still be found");
   assert(pre_end != NULL, "we must have a correct pre-loop");
-  Node *pre_opaq1 = pre_end->limit();
+  Node* pre_opaq1 = pre_end->limit();
   assert(pre_opaq1->Opcode() == Op_Opaque1, "");
-  Opaque1Node *pre_opaq = (Opaque1Node*)pre_opaq1;
-  Node *lim0 = pre_opaq->in(1);
+  Opaque1Node* pre_opaq = (Opaque1Node*)pre_opaq1;
+  Node* lim0 = pre_opaq->in(1);
 
   // Where we put new limit calculations
-  Node *pre_ctrl = pre_end->loopnode()->in(LoopNode::EntryControl);
+  Node* pre_ctrl = pre_end->loopnode()->in(LoopNode::EntryControl);
 
   // Ensure the original loop limit is available from the
   // pre-loop Opaque1 node.
-  Node *orig_limit = pre_opaq->original_loop_limit();
+  Node* orig_limit = pre_opaq->original_loop_limit();
   assert(orig_limit != NULL && _igvn.type(orig_limit) != Type::TOP, "");
 
   SWPointer align_to_ref_p(align_to_ref, this, NULL, false);
@@ -3786,9 +3793,23 @@ SWPointer::SWPointer(SWPointer* p) :
 
 bool SWPointer::invariant(Node* n) {
   NOT_PRODUCT(Tracer::Depth dd;)
-  Node *n_c = phase()->get_ctrl(n);
+  Node* n_c = phase()->get_ctrl(n);
   NOT_PRODUCT(_tracer.invariant_1(n, n_c);)
   return !lpt()->is_member(phase()->get_loop(n_c));
+}
+
+bool SWPointer::invariant_not_dominated_by_pre_loop_end(Node* n) {
+  NOT_PRODUCT(Tracer::Depth dd;)
+  Node* n_c = phase()->get_ctrl(n);
+  NOT_PRODUCT(_tracer.invariant_1(n, n_c);)
+  bool is_not_member = !lpt()->is_member(phase()->get_loop(n_c));
+  if (_slp->lp()->is_main_loop() && is_not_member) {
+    // Check that pre loop end node does not dominate n_c. If it does, then we cannot use n as invariant in the pre loop.
+    // This happens, for example, when n_c is a CastII node that prevents data nodes to flow above the main loop and into
+    // the pre loop. Use the cached version as the real pre loop end might not be found anymore with get_pre_loop_end().
+    return !phase()->is_dominator(_slp->cached_pre_loop_end(), n_c);
+  }
+  return is_not_member;
 }
 
 //------------------------scaled_iv_plus_offset--------------------
@@ -3851,7 +3872,7 @@ bool SWPointer::scaled_iv(Node* n) {
     NOT_PRODUCT(_tracer.scaled_iv_3(n, _scale);)
     return true;
   }
-  if (_analyze_only && (invariant(n) == false)) {
+  if (_analyze_only && (!invariant(n))) {
     _nstack->push(n, _stack_idx++);
   }
 
@@ -3937,17 +3958,17 @@ bool SWPointer::offset_plus_k(Node* n, bool negate) {
     return false;
   }
 
-  if (_analyze_only && (invariant(n) == false)) {
+  if (_analyze_only && !invariant(n)) {
     _nstack->push(n, _stack_idx++);
   }
   if (opc == Op_AddI) {
-    if (n->in(2)->is_Con() && invariant(n->in(1))) {
+    if (n->in(2)->is_Con() && invariant_not_dominated_by_pre_loop_end(n->in(1))) {
       _negate_invar = negate;
       _invar = n->in(1);
       _offset += negate ? -(n->in(2)->get_int()) : n->in(2)->get_int();
       NOT_PRODUCT(_tracer.offset_plus_k_6(n, _invar, _negate_invar, _offset);)
       return true;
-    } else if (n->in(1)->is_Con() && invariant(n->in(2))) {
+    } else if (n->in(1)->is_Con() && invariant_not_dominated_by_pre_loop_end(n->in(2))) {
       _offset += negate ? -(n->in(1)->get_int()) : n->in(1)->get_int();
       _negate_invar = negate;
       _invar = n->in(2);
@@ -3956,13 +3977,13 @@ bool SWPointer::offset_plus_k(Node* n, bool negate) {
     }
   }
   if (opc == Op_SubI) {
-    if (n->in(2)->is_Con() && invariant(n->in(1))) {
+    if (n->in(2)->is_Con() && invariant_not_dominated_by_pre_loop_end(n->in(1))) {
       _negate_invar = negate;
       _invar = n->in(1);
       _offset += !negate ? -(n->in(2)->get_int()) : n->in(2)->get_int();
       NOT_PRODUCT(_tracer.offset_plus_k_8(n, _invar, _negate_invar, _offset);)
       return true;
-    } else if (n->in(1)->is_Con() && invariant(n->in(2))) {
+    } else if (n->in(1)->is_Con() && invariant_not_dominated_by_pre_loop_end(n->in(2))) {
       _offset += negate ? -(n->in(1)->get_int()) : n->in(1)->get_int();
       _negate_invar = !negate;
       _invar = n->in(2);
@@ -3980,10 +4001,14 @@ bool SWPointer::offset_plus_k(Node* n, bool negate) {
         n = n->in(1);
       }
     }
-    _negate_invar = negate;
-    _invar = n;
-    NOT_PRODUCT(_tracer.offset_plus_k_10(n, _invar, _negate_invar, _offset);)
-    return true;
+
+    if (invariant_not_dominated_by_pre_loop_end(n)) {
+      _negate_invar = negate;
+      _invar = n;
+      NOT_PRODUCT(_tracer.offset_plus_k_10(n, _invar, _negate_invar, _offset);)
+      return true;
+    }
+    return false;
   }
 
   NOT_PRODUCT(_tracer.offset_plus_k_11(n);)

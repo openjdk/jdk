@@ -310,7 +310,8 @@ class SuperWord : public ResourceObj {
   bool     do_reserve_copy()       { return _do_reserve_copy; }
  private:
   IdealLoopTree* _lpt;             // Current loop tree node
-  LoopNode*      _lp;              // Current LoopNode
+  CountedLoopNode* _lp;            // Current CountedLoopNode
+  CountedLoopEndNode* _cached_pre_loop_end; // Current CountedLoopEndNode of the pre loop
   Node*          _bb;              // Current basic block
   PhiNode*       _iv;              // Induction var
   bool           _race_possible;   // In cases where SDMU is true
@@ -328,16 +329,29 @@ class SuperWord : public ResourceObj {
 
   // Accessors
   Arena* arena()                   { return _arena; }
-
   Node* bb()                       { return _bb; }
   void  set_bb(Node* bb)           { _bb = bb; }
-
   void set_lpt(IdealLoopTree* lpt) { _lpt = lpt; }
 
-  LoopNode* lp()                   { return _lp; }
-  void      set_lp(LoopNode* lp)   { _lp = lp;
-                                     _iv = lp->as_CountedLoop()->phi()->as_Phi(); }
-  int      iv_stride()             { return lp()->as_CountedLoop()->stride_con(); }
+  CountedLoopNode* lp()            { return _lp; }
+  void set_lp(CountedLoopNode* lp) {
+    _lp = lp;
+    _iv = lp->as_CountedLoop()->phi()->as_Phi();
+  }
+
+  CountedLoopEndNode* cached_pre_loop_end() {
+#ifdef ASSERT
+    Node* pre_end = get_pre_loop_end(_lp);
+    assert(_lp != NULL && (pre_end == NULL || pre_end == _cached_pre_loop_end) , "real CLE either not found anymore (NULL) or unchanged");
+    assert(_cached_pre_loop_end != NULL, "should be set when fetched");
+#endif
+    return _cached_pre_loop_end;
+  }
+  void set_cached_pre_loop_end(CountedLoopEndNode* cached_pre_loop_end) {
+    _cached_pre_loop_end = cached_pre_loop_end;
+  }
+
+  int      iv_stride()             { return lp()->stride_con(); }
 
   int vector_width(Node* n) {
     BasicType bt = velt_basic_type(n);
@@ -572,6 +586,7 @@ class SWPointer {
   PhiNode*        iv()    { return _slp->iv();  } // Induction var
 
   bool invariant(Node* n);
+  bool invariant_not_dominated_by_pre_loop_end(Node* n);
 
   // Match: k*iv + offset
   bool scaled_iv_plus_offset(Node* n);
