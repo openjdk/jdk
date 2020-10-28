@@ -1140,10 +1140,15 @@ void ZStatMark::print() {
 // Stat relocation
 //
 ZRelocationSetSelectorStats ZStatRelocation::_stats;
+size_t                      ZStatRelocation::_forwarding_usage;
 bool                        ZStatRelocation::_success;
 
 void ZStatRelocation::set_at_select_relocation_set(const ZRelocationSetSelectorStats& stats) {
   _stats = stats;
+}
+
+void ZStatRelocation::set_at_populate_relocation_set(size_t forwarding_usage) {
+  _forwarding_usage = forwarding_usage;
 }
 
 void ZStatRelocation::set_at_relocate_end(bool success) {
@@ -1169,6 +1174,7 @@ void ZStatRelocation::print() {
   }
   print("Large", _stats.large());
 
+  log_info(gc, reloc)("Forwarding Usage: " SIZE_FORMAT "M", _forwarding_usage / M);
   log_info(gc, reloc)("Relocation: %s", _success ? "Successful" : "Incomplete");
 }
 

@@ -3900,17 +3900,9 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
           _nest_host = class_info_index;
         } else if (_major_version >= JAVA_14_VERSION) {
           if (tag == vmSymbols::tag_record()) {
-            // Skip over Record attribute if not supported or if super class is
-            // not java.lang.Record.
-            if (supports_records() &&
-                cp->klass_name_at(_super_class_index) == vmSymbols::java_lang_Record()) {
+            if (supports_records()) { // Skip over Record attribute if not supported.
               if (parsed_record_attribute) {
                 classfile_parse_error("Multiple Record attributes in class file %s", THREAD);
-                return;
-              }
-              // Check that class is final and not abstract.
-              if (!_access_flags.is_final() || _access_flags.is_abstract()) {
-                classfile_parse_error("Record attribute in non-final or abstract class file %s", THREAD);
                 return;
               }
               parsed_record_attribute = true;
@@ -3922,15 +3914,9 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
               // --enable-preview wasn't specified then a java.lang.UnsupportedClassVersionError
               // exception would have been thrown.
               ResourceMark rm(THREAD);
-              if (supports_records()) {
-                log_info(class, record)(
-                  "Ignoring Record attribute in class %s because super type is not java.lang.Record",
-                  _class_name->as_C_string());
-              } else {
-                log_info(class, record)(
-                  "Ignoring Record attribute in class %s because class file version is not %d.65535",
-                   _class_name->as_C_string(), JVM_CLASSFILE_MAJOR_VERSION);
-              }
+              log_info(class, record)(
+                "Ignoring Record attribute in class %s because class file version is not %d.65535",
+                 _class_name->as_C_string(), JVM_CLASSFILE_MAJOR_VERSION);
             }
             cfs->skip_u1(attribute_length, CHECK);
           } else if (_major_version >= JAVA_15_VERSION) {
@@ -4452,13 +4438,7 @@ void ClassFileParser::check_super_class_access(const InstanceKlass* this_klass, 
     const InstanceKlass* super_ik = InstanceKlass::cast(super);
 
     if (super->is_final()) {
-      ResourceMark rm(THREAD);
-      Exceptions::fthrow(
-        THREAD_AND_LOCATION,
-        vmSymbols::java_lang_VerifyError(),
-        "class %s cannot inherit from final class %s",
-        this_klass->external_name(),
-        super_ik->external_name());
+      classfile_icce_error("class %s cannot inherit from final class %s", super_ik, THREAD);
       return;
     }
 
@@ -4603,15 +4583,12 @@ static void check_final_method_override(const InstanceKlass* this_klass, TRAPS) 
             if (can_access) {
               // this class can access super final method and therefore override
               ResourceMark rm(THREAD);
-              Exceptions::fthrow(THREAD_AND_LOCATION,
-                                 vmSymbols::java_lang_VerifyError(),
-                                 "class %s overrides final method %s.%s%s",
-                                 this_klass->external_name(),
-                                 super_m->method_holder()->external_name(),
-                                 name->as_C_string(),
-                                 signature->as_C_string()
-                                 );
-              return;
+              THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(),
+                        err_msg("class %s overrides final method %s.%s%s",
+                                this_klass->external_name(),
+                                super_m->method_holder()->external_name(),
+                                name->as_C_string(),
+                                signature->as_C_string()));
             }
           }
 

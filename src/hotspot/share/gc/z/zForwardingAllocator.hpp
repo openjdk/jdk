@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,26 +21,26 @@
  * questions.
  */
 
-/*
- * @test
- * @summary test logging of reasons for ignoring Record attribute
- * @library /test/lib
- * @compile recordIgnoredVersion.jcod
- * @run driver ignoreRecordAttribute
- */
+#ifndef SHARE_GC_Z_ZFORWARDINGALLOCATOR_HPP
+#define SHARE_GC_Z_ZFORWARDINGALLOCATOR_HPP
 
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
+#include "utilities/globalDefinitions.hpp"
 
-public class ignoreRecordAttribute {
+class ZForwardingAllocator {
+private:
+  char* _start;
+  char* _end;
+  char* _top;
 
-    public static void main(String[] args) throws Exception {
-        String MAJOR_VERSION = Integer.toString(44 + Runtime.version().feature());
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("--enable-preview",
-            "-Xlog:class+record", "-Xshare:off", "recordIgnoredVersion");
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Ignoring Record attribute");
-        output.shouldContain("because class file version is not " + MAJOR_VERSION + ".65535");
-    }
+public:
+  ZForwardingAllocator();
+  ~ZForwardingAllocator();
 
-}
+  void reset(size_t size);
+  size_t size() const;
+  bool is_full() const;
+
+  void* alloc(size_t size);
+};
+
+#endif // SHARE_GC_Z_ZFORWARDINGALLOCATOR_HPP
