@@ -87,8 +87,8 @@ CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& la
   _relocation_end(layout.relocation_end()),
   _oop_maps(oop_maps),
   _caller_must_gc_arguments(caller_must_gc_arguments),
-  _strings(CodeStrings()),
   _name(name)
+  NOT_PRODUCT(COMMA _strings(CodeStrings()))
 {
   assert(is_aligned(layout.size(),            oopSize), "unaligned size");
   assert(is_aligned(layout.header_size(),     oopSize), "unaligned size");
@@ -115,8 +115,8 @@ CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& la
   _relocation_begin(layout.relocation_begin()),
   _relocation_end(layout.relocation_end()),
   _caller_must_gc_arguments(caller_must_gc_arguments),
-  _strings(CodeStrings()),
   _name(name)
+  NOT_PRODUCT(COMMA _strings(CodeStrings()))
 {
   assert(is_aligned(_size,        oopSize), "unaligned size");
   assert(is_aligned(_header_size, oopSize), "unaligned size");
@@ -158,7 +158,7 @@ RuntimeBlob::RuntimeBlob(
 void CodeBlob::flush() {
   FREE_C_HEAP_ARRAY(unsigned char, _oop_maps);
   _oop_maps = NULL;
-  _strings.free();
+  NOT_PRODUCT(_strings.free();)
 }
 
 void CodeBlob::set_oop_maps(OopMapSet* p) {

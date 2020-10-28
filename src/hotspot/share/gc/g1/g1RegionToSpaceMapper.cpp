@@ -220,7 +220,7 @@ static bool map_nvdimm_space(ReservedSpace rs) {
     return false;
   }
   // commit this memory in nv-dimm
-  char* ret = os::attempt_reserve_memory_at(rs.base(), rs.size(), _backing_fd);
+  char* ret = os::attempt_map_memory_to_file_at(rs.base(), rs.size(), _backing_fd);
 
   if (ret != rs.base()) {
     if (ret != NULL) {

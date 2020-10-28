@@ -102,14 +102,6 @@ class OopIterateClosure : public OopClosure {
   virtual bool do_metadata() = 0;
   virtual void do_klass(Klass* k) = 0;
   virtual void do_cld(ClassLoaderData* cld) = 0;
-
-#ifdef ASSERT
-  // Default verification of each visited oop field.
-  template <typename T> void verify(T* p);
-
-  // Can be used by subclasses to turn off the default verification of oop fields.
-  virtual bool should_verify_oops() { return true; }
-#endif
 };
 
 // An OopIterateClosure that can be used when there's no need to visit the Metadata.
@@ -357,7 +349,6 @@ public:
 // a concrete implementation, otherwise a virtual call is taken.
 class Devirtualizer {
  public:
-  template <typename OopClosureType, typename T> static void do_oop_no_verify(OopClosureType* closure, T* p);
   template <typename OopClosureType, typename T> static void do_oop(OopClosureType* closure, T* p);
   template <typename OopClosureType>             static void do_klass(OopClosureType* closure, Klass* k);
   template <typename OopClosureType>             static void do_cld(OopClosureType* closure, ClassLoaderData* cld);
