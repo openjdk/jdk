@@ -27,8 +27,7 @@
 
 #include "memory/allStatic.hpp"
 #include "runtime/flags/jvmFlag.hpp"
-
-enum JVMFlagsEnum : int;
+#include "utilities/vmEnums.hpp"
 
 class FlagAccessImpl;
 class JVMFlagLimit;

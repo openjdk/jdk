@@ -131,9 +131,14 @@ public final class CGraphicsDevice extends GraphicsDevice
         return scale;
     }
 
-    public void invalidate(final int defaultDisplayID) {
+    /**
+     * Invalidates this device so it will point to some other "new" device.
+     *
+     * @param  device the new device, usually the main screen
+     */
+    public void invalidate(CGraphicsDevice device) {
         //TODO do we need to restore the full-screen window/modes on old device?
-        displayID = defaultDisplayID;
+        displayID = device.displayID;
     }
 
     @Override

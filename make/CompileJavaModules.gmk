@@ -348,7 +348,7 @@ jdk.dynalink_CLEAN += .properties
 
 ################################################################################
 
-jdk.javadoc_COPY += .xml .css .js .png
+jdk.javadoc_COPY += .xml .css .js .png .txt
 
 ################################################################################
 
@@ -545,6 +545,10 @@ jdk.localedata_KEEP_ALL_TRANSLATIONS := true
 jdk.jfr_DISABLED_WARNINGS += exports
 jdk.jfr_COPY := .xsd .xml .dtd
 jdk.jfr_JAVAC_FLAGS := -XDstringConcat=inline
+
+################################################################################
+
+jdk.incubator.vector_DOCLINT += -Xdoclint:all/protected
 
 ################################################################################
 # If this is an imported module that has prebuilt classes, only compile

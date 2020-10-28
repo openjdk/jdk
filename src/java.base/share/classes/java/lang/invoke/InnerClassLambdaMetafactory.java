@@ -25,6 +25,7 @@
 
 package java.lang.invoke;
 
+import jdk.internal.misc.CDS;
 import jdk.internal.org.objectweb.asm.*;
 import sun.invoke.util.BytecodeDescriptor;
 import sun.security.action.GetPropertyAction;
@@ -86,7 +87,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
 
     // Used to ensure that each spun class name is unique
-    private static final AtomicInteger counter = new AtomicInteger(0);
+    private static final AtomicInteger counter = new AtomicInteger();
 
     // For dumping generated classes to disk, for debugging purposes
     private static final ProxyClassesDumper dumper;
@@ -263,7 +264,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
      */
     private Class<?> spinInnerClass() throws LambdaConversionException {
         // include lambda proxy class in CDS archive at dump time
-        if (LambdaProxyClassArchive.isDumpArchive()) {
+        if (CDS.isDumpingArchive()) {
             Class<?> innerClass = generateInnerClass();
             LambdaProxyClassArchive.register(targetClass,
                                              samMethodName,
