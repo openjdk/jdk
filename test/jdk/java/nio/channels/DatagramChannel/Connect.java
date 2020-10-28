@@ -24,7 +24,6 @@
 /* @test
  * @bug 4313882 7183800
  * @summary Test DatagramChannel's send and receive methods
- * @author Mike McCloskey
  */
 
 import java.io.*;
@@ -49,7 +48,8 @@ public class Connect {
     static void test() throws Exception {
         ExecutorService threadPool = Executors.newCachedThreadPool();
         try (Reactor r = new Reactor();
-             Actor a = new Actor(r.port())) {
+             Actor a = new Actor(r.getSocketAddress())
+        ) {
             invoke(threadPool, a, r);
         } finally {
             threadPool.shutdown();
@@ -76,11 +76,11 @@ public class Connect {
     }
 
     public static class Actor implements AutoCloseable, Runnable {
-        final int port;
+        final SocketAddress socketAddress;
         final DatagramChannel dc;
 
-        Actor(int port) throws IOException {
-            this.port = port;
+        Actor(SocketAddress socketAddress) throws IOException {
+            this.socketAddress = socketAddress;
             dc = DatagramChannel.open();
         }
 
@@ -89,18 +89,18 @@ public class Connect {
                 ByteBuffer bb = ByteBuffer.allocateDirect(256);
                 bb.put("hello".getBytes());
                 bb.flip();
-                InetAddress address = InetAddress.getLoopbackAddress();
-                InetSocketAddress isa = new InetSocketAddress(address, port);
-                dc.connect(isa);
+                dc.connect(socketAddress);
 
                 // Send a message
-                log.println("Actor attempting to write to Reactor at " + isa.toString());
+                log.println("Actor attempting to write to Reactor at " + socketAddress.toString());
                 dc.write(bb);
 
                 // Try to send to some other address
                 try {
-                    InetSocketAddress otherAddress = new InetSocketAddress(address, (port == 3333 ? 3332 : 3333));
-                    log.println("Testing if Actor throws already connected exception when attempting to send to " + otherAddress.toString());
+                    int port = dc.socket().getLocalPort();
+                    InetAddress loopback = InetAddress.getLoopbackAddress();
+                    InetSocketAddress otherAddress = new InetSocketAddress(loopback, (port == 3333 ? 3332 : 3333));
+                    log.println("Testing if Actor throws AlreadyConnectedException" + otherAddress.toString());
                     dc.send(bb, otherAddress);
                     throw new RuntimeException("Actor allowed send to other address while already connected");
                 } catch (AlreadyConnectedException ace) {
@@ -114,7 +114,7 @@ public class Connect {
                 bb.flip();
                 CharBuffer cb = StandardCharsets.US_ASCII.
                         newDecoder().decode(bb);
-                log.println("Actor received from Reactor at " + isa + ": " + cb);
+                log.println("Actor received from Reactor at " + socketAddress + ": " + cb);
             } catch (Exception ex) {
                 log.println("Actor threw exception: " + ex);
                 throw new RuntimeException(ex);
@@ -136,8 +136,8 @@ public class Connect {
             dc = DatagramChannel.open().bind(new InetSocketAddress(0));
         }
 
-        int port() {
-            return dc.socket().getLocalPort();
+        SocketAddress getSocketAddress() throws IOException {
+            return dc.getLocalAddress();
         }
 
         public void run() {
