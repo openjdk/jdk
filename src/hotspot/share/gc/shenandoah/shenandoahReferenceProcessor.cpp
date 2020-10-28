@@ -161,6 +161,7 @@ ShenandoahRefProcThreadLocal::ShenandoahRefProcThreadLocal() :
 
 void ShenandoahRefProcThreadLocal::reset() {
   _discovered_list = NULL;
+  _mark_closure = NULL;
   for (uint i = 0; i < reference_type_count; i++) {
     _encountered_count[i] = 0;
     _discovered_count[i] = 0;
@@ -209,6 +210,10 @@ void ShenandoahReferenceProcessor::reset_thread_locals() {
   for (uint i = 0; i < max_workers; i++) {
     _ref_proc_thread_locals[i].reset();
   }
+}
+
+void ShenandoahReferenceProcessor::set_mark_closure(uint worker_id, ShenandoahMarkRefsSuperClosure* mark_closure) {
+  _ref_proc_thread_locals[worker_id].set_mark_closure(mark_closure);
 }
 
 void ShenandoahReferenceProcessor::set_soft_reference_policy(bool clear) {
@@ -330,7 +335,7 @@ bool ShenandoahReferenceProcessor::discover(oop reference, ReferenceType type, u
 
   if (type == REF_FINAL) {
     Thread* thread = Thread::current();
-    ShenandoahMarkRefsSuperClosure* cl = ShenandoahThreadLocalData::mark_closure(thread);
+    ShenandoahMarkRefsSuperClosure* cl = _ref_proc_thread_locals[worker_id].mark_closure();
     bool strong = cl->is_strong();
     cl->set_strong(false);
     if (UseCompressedOops) {

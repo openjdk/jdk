@@ -28,6 +28,7 @@
 #include "gc/shared/referenceDiscoverer.hpp"
 #include "memory/allocation.hpp"
 
+class ShenandoahMarkRefsSuperClosure;
 class WorkGang;
 
 static const size_t reference_type_count = REF_PHANTOM + 1;
@@ -70,10 +71,10 @@ typedef size_t Counters[reference_type_count];
  * referents, we employ a special barrier, the native LRB, which returns NULL when the referent is unreachable.
  */
 
-
 class ShenandoahRefProcThreadLocal : public CHeapObj<mtGC> {
 private:
   void* _discovered_list;
+  ShenandoahMarkRefsSuperClosure* _mark_closure;
   Counters _encountered_count;
   Counters _discovered_count;
   Counters _enqueued_count;
@@ -85,6 +86,14 @@ public:
   ShenandoahRefProcThreadLocal& operator=(const ShenandoahRefProcThreadLocal&) = delete; // non copyable
 
   void reset();
+
+  ShenandoahMarkRefsSuperClosure* mark_closure() const {
+    return _mark_closure;
+  }
+
+  void set_mark_closure(ShenandoahMarkRefsSuperClosure* mark_closure) {
+    _mark_closure = mark_closure;
+  }
 
   template<typename T>
   T* discovered_list_addr();
@@ -160,6 +169,7 @@ public:
   ShenandoahReferenceProcessor(uint max_workers);
 
   void reset_thread_locals();
+  void set_mark_closure(uint worker_id, ShenandoahMarkRefsSuperClosure* mark_closure);
 
   void set_soft_reference_policy(bool clear);
 

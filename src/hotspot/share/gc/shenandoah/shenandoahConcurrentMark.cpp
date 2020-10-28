@@ -572,7 +572,7 @@ void ShenandoahConcurrentMark::mark_loop_work(T* cl, ShenandoahLiveData* live_da
   ShenandoahObjToScanQueue* q;
   ShenandoahMarkTask t;
 
-  ShenandoahThreadLocalData::set_mark_closure(Thread::current(), cl);
+  _heap->ref_processor()->set_mark_closure(worker_id, cl);
 
   /*
    * Process outstanding queues, if any.

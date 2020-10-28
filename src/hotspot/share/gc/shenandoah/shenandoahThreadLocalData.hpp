@@ -34,8 +34,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/sizes.hpp"
 
-class ShenandoahMarkRefsSuperClosure;
-
 class ShenandoahThreadLocalData {
 public:
   static const uint INVALID_WORKER_ID = uint(-1);
@@ -52,7 +50,6 @@ private:
   bool _force_satb_flush;
   int  _disarmed_value;
   double _paced_time;
-  ShenandoahMarkRefsSuperClosure* _mark_closure;
 
   ShenandoahThreadLocalData() :
     _gc_state(0),
@@ -64,8 +61,7 @@ private:
     _worker_id(INVALID_WORKER_ID),
     _force_satb_flush(false),
     _disarmed_value(0),
-    _paced_time(0),
-    _mark_closure(NULL) {
+    _paced_time(0) {
 
     // At least on x86_64, nmethod entry barrier encodes _disarmed_value offset
     // in instruction as disp8 immed
@@ -192,14 +188,6 @@ public:
 
   static bool is_evac_allowed(Thread* thread) {
     return evac_oom_scope_level(thread) > 0;
-  }
-
-  static ShenandoahMarkRefsSuperClosure* mark_closure(Thread* thread) {
-    return data(thread)->_mark_closure;
-  }
-
-  static void set_mark_closure(Thread* thread, ShenandoahMarkRefsSuperClosure* mark_closure) {
-    data(thread)->_mark_closure = mark_closure;
   }
 
   // Offsets
