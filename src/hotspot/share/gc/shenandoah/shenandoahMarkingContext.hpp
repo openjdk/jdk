@@ -61,10 +61,10 @@ public:
   inline bool is_marked_final(oop obj) const;
   inline bool is_marked_strong_and_final(oop obj) const;
 
+  inline HeapWord* get_next_marked_addr(HeapWord* addr, HeapWord* limit) const;
+
   inline bool allocated_after_mark_start(oop obj) const;
   inline bool allocated_after_mark_start(HeapWord* addr) const;
-
-  inline const ShenandoahMarkBitMap* mark_bit_map();
 
   inline HeapWord* top_at_mark_start(ShenandoahHeapRegion* r) const;
   inline void capture_top_at_mark_start(ShenandoahHeapRegion* r);

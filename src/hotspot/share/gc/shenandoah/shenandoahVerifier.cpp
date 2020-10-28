@@ -548,19 +548,19 @@ public:
 
   virtual void work_regular(ShenandoahHeapRegion *r, ShenandoahVerifierStack &stack, ShenandoahVerifyOopClosure &cl) {
     size_t processed = 0;
-    const ShenandoahMarkBitMap* mark_bit_map = _heap->complete_marking_context()->mark_bit_map();
-    HeapWord* tams = _heap->complete_marking_context()->top_at_mark_start(r);
+    ShenandoahMarkingContext* ctx = _heap->complete_marking_context();
+    HeapWord* tams = ctx->top_at_mark_start(r);
 
     // Bitmaps, before TAMS
     if (tams > r->bottom()) {
       HeapWord* start = r->bottom();
-      HeapWord* addr = mark_bit_map->get_next_marked_addr(start, tams);
+      HeapWord* addr = ctx->get_next_marked_addr(start, tams);
 
       while (addr < tams) {
         verify_and_follow(addr, stack, cl, &processed);
         addr += 1;
         if (addr < tams) {
-          addr = mark_bit_map->get_next_marked_addr(addr, tams);
+          addr = ctx->get_next_marked_addr(addr, tams);
         }
       }
     }
