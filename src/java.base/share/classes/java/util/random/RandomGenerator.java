@@ -29,8 +29,9 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.random.internal.RandomSupport;
-import java.util.random.internal.RandomSupport.*;
+import jdk.internal.util.random.RandomSupport;
+import jdk.internal.util.random.RandomSupport.*;
+
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -227,7 +228,7 @@ public interface RandomGenerator {
      *           calls {@link RandomGenerator#nextDouble(double, double) nextDouble}(randomNumberOrigin, randomNumberBound).
      */
     default DoubleStream doubles(double randomNumberOrigin, double randomNumberBound) {
-        java.util.random.internal.RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
+        RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
 
         return DoubleStream.generate(() -> nextDouble(randomNumberOrigin, randomNumberBound)).sequential();
     }
@@ -247,7 +248,7 @@ public interface RandomGenerator {
      *           that repeatedly calls {@link RandomGenerator#nextDouble nextDouble()}.
      */
     default DoubleStream doubles(long streamSize) {
-        java.util.random.internal.RandomSupport.checkStreamSize(streamSize);
+        RandomSupport.checkStreamSize(streamSize);
 
         return doubles().limit(streamSize);
     }
@@ -275,8 +276,8 @@ public interface RandomGenerator {
      */
     default DoubleStream doubles(long streamSize, double randomNumberOrigin,
                 double randomNumberBound) {
-        java.util.random.internal.RandomSupport.checkStreamSize(streamSize);
-        java.util.random.internal.RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
+        RandomSupport.checkStreamSize(streamSize);
+        RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
 
         return doubles(randomNumberOrigin, randomNumberBound).limit(streamSize);
     }
@@ -318,7 +319,7 @@ public interface RandomGenerator {
      *           calls {@link RandomGenerator#nextInt(int, int) nextInt}(randomNumberOrigin, randomNumberBound).
      */
     default IntStream ints(int randomNumberOrigin, int randomNumberBound) {
-        java.util.random.internal.RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
+        RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
 
         return IntStream.generate(() -> nextInt(randomNumberOrigin, randomNumberBound)).sequential();
     }
@@ -338,7 +339,7 @@ public interface RandomGenerator {
      *           that repeatedly calls {@link RandomGenerator#nextInt() nextInt}().
      */
     default IntStream ints(long streamSize) {
-        java.util.random.internal.RandomSupport.checkStreamSize(streamSize);
+        RandomSupport.checkStreamSize(streamSize);
 
         return ints().limit(streamSize);
     }
@@ -364,8 +365,8 @@ public interface RandomGenerator {
      */
     default IntStream ints(long streamSize, int randomNumberOrigin,
               int randomNumberBound) {
-        java.util.random.internal.RandomSupport.checkStreamSize(streamSize);
-        java.util.random.internal.RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
+        RandomSupport.checkStreamSize(streamSize);
+        RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
 
         return ints(randomNumberOrigin, randomNumberBound).limit(streamSize);
     }
@@ -407,7 +408,7 @@ public interface RandomGenerator {
      *           calls {@link RandomGenerator#nextLong(long, long) nextLong}(randomNumberOrigin, randomNumberBound).
      */
     default LongStream longs(long randomNumberOrigin, long randomNumberBound) {
-        java.util.random.internal.RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
+        RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
 
         return LongStream.generate(() -> nextLong(randomNumberOrigin, randomNumberBound)).sequential();
     }
@@ -427,7 +428,7 @@ public interface RandomGenerator {
      * that repeatedly calls {@link RandomGenerator#nextLong() nextLong}().
      */
     default LongStream longs(long streamSize) {
-        java.util.random.internal.RandomSupport.checkStreamSize(streamSize);
+        RandomSupport.checkStreamSize(streamSize);
 
         return longs().limit(streamSize);
     }
@@ -453,8 +454,8 @@ public interface RandomGenerator {
      */
     default LongStream longs(long streamSize, long randomNumberOrigin,
                 long randomNumberBound) {
-        java.util.random.internal.RandomSupport.checkStreamSize(streamSize);
-        java.util.random.internal.RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
+        RandomSupport.checkStreamSize(streamSize);
+        RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
 
         return longs(randomNumberOrigin, randomNumberBound).limit(streamSize);
     }
@@ -523,13 +524,13 @@ public interface RandomGenerator {
      *         both positive and finite
      *
      * @implNote The default implementation simply calls
-     *           {@link java.util.random.internal.RandomSupport#checkBound checkBound}(bound) and then
-     *           {@link java.util.random.internal.RandomSupport#boundedNextFloat boundedNextFloat}(this, bound).
+     *           {@link RandomSupport#checkBound checkBound}(bound) and then
+     *           {@link RandomSupport#boundedNextFloat boundedNextFloat}(this, bound).
      */
     default float nextFloat(float bound) {
-        java.util.random.internal.RandomSupport.checkBound(bound);
+        RandomSupport.checkBound(bound);
 
-        return java.util.random.internal.RandomSupport.boundedNextFloat(this, bound);
+        return RandomSupport.boundedNextFloat(this, bound);
     }
 
     /**
@@ -547,13 +548,13 @@ public interface RandomGenerator {
      *         is greater than or equal to {@code bound}
      *
      * @implNote The default implementation simply calls
-     *           {@link java.util.random.internal.RandomSupport#checkBound checkBound}(bound) and then
-     *           {@link java.util.random.internal.RandomSupport#boundedNextFloat boundedNextFloat}(this, bound).
+     *           {@link RandomSupport#checkBound checkBound}(bound) and then
+     *           {@link RandomSupport#boundedNextFloat boundedNextFloat}(this, bound).
      */
     default float nextFloat(float origin, float bound) {
-        java.util.random.internal.RandomSupport.checkRange(origin, bound);
+        RandomSupport.checkRange(origin, bound);
 
-        return java.util.random.internal.RandomSupport.boundedNextFloat(this, origin, bound);
+        return RandomSupport.boundedNextFloat(this, origin, bound);
     }
 
     /**
@@ -584,13 +585,13 @@ public interface RandomGenerator {
      *         both positive and finite
      *
      * @implNote The default implementation simply calls
-     *           {@link java.util.random.internal.RandomSupport#checkBound checkBound}(bound) and then
-     *           {@link java.util.random.internal.RandomSupport#boundedNextDouble boundedNextDouble}(this, bound).
+     *           {@link RandomSupport#checkBound checkBound}(bound) and then
+     *           {@link RandomSupport#boundedNextDouble boundedNextDouble}(this, bound).
      */
     default double nextDouble(double bound) {
-        java.util.random.internal.RandomSupport.checkBound(bound);
+        RandomSupport.checkBound(bound);
 
-        return java.util.random.internal.RandomSupport.boundedNextDouble(this, bound);
+        return RandomSupport.boundedNextDouble(this, bound);
     }
 
     /**
@@ -608,13 +609,13 @@ public interface RandomGenerator {
      *         is greater than or equal to {@code bound}
      *
      * @implNote The default implementation simply calls
-     *           {@link java.util.random.internal.RandomSupport#checkBound checkBound}(bound) and then
-     *           {@link java.util.random.internal.RandomSupport#boundedNextDouble boundedNextDouble}(this, bound).
+     *           {@link RandomSupport#checkBound checkBound}(bound) and then
+     *           {@link RandomSupport#boundedNextDouble boundedNextDouble}(this, bound).
      */
     default double nextDouble(double origin, double bound) {
-        java.util.random.internal.RandomSupport.checkRange(origin, bound);
+        RandomSupport.checkRange(origin, bound);
 
-        return java.util.random.internal.RandomSupport.boundedNextDouble(this, origin, bound);
+        return RandomSupport.boundedNextDouble(this, origin, bound);
     }
 
     /**
@@ -641,13 +642,13 @@ public interface RandomGenerator {
      * @throws IllegalArgumentException if {@code bound} is not positive
      *
      * @implNote The default implementation simply calls
-     *           {@link java.util.random.internal.RandomSupport#checkBound checkBound}(bound) and then
-     *           {@link java.util.random.internal.RandomSupport#boundedNextInt boundedNextInt}(this, bound).
+     *           {@link RandomSupport#checkBound checkBound}(bound) and then
+     *           {@link RandomSupport#boundedNextInt boundedNextInt}(this, bound).
      */
     default int nextInt(int bound) {
-        java.util.random.internal.RandomSupport.checkBound(bound);
+        RandomSupport.checkBound(bound);
 
-        return java.util.random.internal.RandomSupport.boundedNextInt(this, bound);
+        return RandomSupport.boundedNextInt(this, bound);
     }
 
     /**
@@ -664,13 +665,13 @@ public interface RandomGenerator {
      *         or equal to {@code bound}
      *
      * @implNote The default implementation simply calls
-     *           {@link java.util.random.internal.RandomSupport#checkBound(long) checkBound}(bound) and then
-     *           {@link java.util.random.internal.RandomSupport#boundedNextInt(RandomGenerator, int) boundedNextInt}(this, bound).
+     *           {@link RandomSupport#checkBound(long) checkBound}(bound) and then
+     *           {@link RandomSupport#boundedNextInt(RandomGenerator, int) boundedNextInt}(this, bound).
      */
     default int nextInt(int origin, int bound) {
-        java.util.random.internal.RandomSupport.checkRange(origin, bound);
+        RandomSupport.checkRange(origin, bound);
 
-        return java.util.random.internal.RandomSupport.boundedNextInt(this, origin, bound);
+        return RandomSupport.boundedNextInt(this, origin, bound);
     }
 
     /**
@@ -692,13 +693,13 @@ public interface RandomGenerator {
      * @throws IllegalArgumentException if {@code bound} is not positive
      *
      * @implNote The default implementation simply calls
-     *           {@link java.util.random.internal.RandomSupport#checkBound checkBound}(bound) and then
-     *           {@link java.util.random.internal.RandomSupport#boundedNextLong boundedNextLong}(this, bound).
+     *           {@link RandomSupport#checkBound checkBound}(bound) and then
+     *           {@link RandomSupport#boundedNextLong boundedNextLong}(this, bound).
      */
     default long nextLong(long bound) {
-        java.util.random.internal.RandomSupport.checkBound(bound);
+        RandomSupport.checkBound(bound);
 
-        return java.util.random.internal.RandomSupport.boundedNextLong(this, bound);
+        return RandomSupport.boundedNextLong(this, bound);
     }
 
     /**
@@ -715,14 +716,14 @@ public interface RandomGenerator {
      *         or equal to {@code bound}
      *
      * @implNote The default implementation simply calls
-     *           {@link java.util.random.internal.RandomSupport#checkBound checkBound}(bound) and then
-     *           {@link java.util.random.internal.RandomSupport#boundedNextLong boundedNextLong}(this, bound).
+     *           {@link RandomSupport#checkBound checkBound}(bound) and then
+     *           {@link RandomSupport#boundedNextLong boundedNextLong}(this, bound).
      *
      */
     default long nextLong(long origin, long bound) {
         RandomSupport.checkRange(origin, bound);
 
-        return java.util.random.internal.RandomSupport.boundedNextLong(this, origin, bound);
+        return RandomSupport.boundedNextLong(this, origin, bound);
     }
 
     /**
@@ -733,7 +734,7 @@ public interface RandomGenerator {
      *         Gaussian distribution
      */
     default double nextGaussian() {
-        return java.util.random.internal.RandomSupport.computeNextGaussian(this);
+        return RandomSupport.computeNextGaussian(this);
     }
 
     /**
@@ -753,7 +754,7 @@ public interface RandomGenerator {
     default double nextGaussian(double mean, double stddev) {
         if (stddev < 0.0) throw new IllegalArgumentException("standard deviation must be non-negative");
 
-        return mean + stddev * java.util.random.internal.RandomSupport.computeNextGaussian(this);
+        return mean + stddev * RandomSupport.computeNextGaussian(this);
     }
 
     /**
@@ -764,7 +765,7 @@ public interface RandomGenerator {
      *         exponential distribution
      */
     default double nextExponential() {
-        return java.util.random.internal.RandomSupport.computeNextExponential(this);
+        return RandomSupport.computeNextExponential(this);
     }
 
     /**
@@ -893,7 +894,7 @@ public interface RandomGenerator {
          *           then limits its length to {@code streamSize}.
          */
         default Stream<RandomGenerator> rngs(long streamSize) {
-            java.util.random.internal.RandomSupport.checkStreamSize(streamSize);
+            RandomSupport.checkStreamSize(streamSize);
 
             return rngs().limit(streamSize);
         }

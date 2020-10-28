@@ -28,10 +28,10 @@ package java.util;
 import java.io.*;
 import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.random.internal.RandomSupport.AbstractSpliteratorGenerator;
-import java.util.random.internal.RandomSupport.RandomIntsSpliterator;
-import java.util.random.internal.RandomSupport.RandomLongsSpliterator;
-import java.util.random.internal.RandomSupport.RandomDoublesSpliterator;
+import jdk.internal.util.random.RandomSupport.AbstractSpliteratorGenerator;
+import jdk.internal.util.random.RandomSupport.RandomIntsSpliterator;
+import jdk.internal.util.random.RandomSupport.RandomLongsSpliterator;
+import jdk.internal.util.random.RandomSupport.RandomDoublesSpliterator;
 
 import jdk.internal.misc.Unsafe;
 

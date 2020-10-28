@@ -29,8 +29,8 @@ import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.Map;
 import java.util.random.RandomGenerator;
-import java.util.random.internal.RandomSupport;
-import java.util.random.internal.RandomSupport.AbstractSplittableWithBrineGenerator;
+import jdk.internal.util.random.RandomSupport;
+import jdk.internal.util.random.RandomSupport.AbstractSplittableWithBrineGenerator;
 
 
 /**

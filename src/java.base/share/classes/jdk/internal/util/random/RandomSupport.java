@@ -23,7 +23,7 @@
  * questions.
  */
 
-package java.util.random.internal;
+package jdk.internal.util.random;
 
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
