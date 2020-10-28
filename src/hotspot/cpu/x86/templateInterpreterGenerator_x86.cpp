@@ -1780,7 +1780,7 @@ void TemplateInterpreterGenerator::set_vtos_entry_points(Template* t,
       __ push_l();
       __ jmp(L);
   aep = bep = cep = sep = iep = __ pc();      // [abcsi]tos entry point
-      __ push_i();
+      __ push_i_or_ptr();
   vep = __ pc();    // vtos entry point
   __ bind(L);
   generate_and_dispatch(t);
