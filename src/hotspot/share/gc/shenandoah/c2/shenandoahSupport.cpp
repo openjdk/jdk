@@ -968,8 +968,8 @@ void ShenandoahBarrierC2Support::call_lrb_stub(Node*& ctrl, Node*& val, Node* lo
   mm->set_memory_at(Compile::AliasIdxRaw, raw_mem);
   phase->register_new_node(mm, ctrl);
 
-  address calladdr;
-  const char* name;
+  address calladdr = NULL;
+  const char* name = NULL;
   switch (kind) {
     case ShenandoahBarrierSet::AccessKind::NATIVE:
       calladdr = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native);
