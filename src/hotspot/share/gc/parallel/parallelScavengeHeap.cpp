@@ -567,13 +567,11 @@ bool HeapBlockClaimer::claim_and_get_block(int* block_index) {
 
 class PSScavengeParallelObjectIterator : public ParallelObjectIterator {
 private:
-  uint _thread_num;
   ParallelScavengeHeap*  _heap;
   HeapBlockClaimer      _claimer;
 
 public:
-  PSScavengeParallelObjectIterator(uint thread_num) :
-      _thread_num(thread_num),
+  PSScavengeParallelObjectIterator() :
       _heap(ParallelScavengeHeap::heap()),
       _claimer() {}
 
@@ -583,7 +581,7 @@ public:
 };
 
 ParallelObjectIterator* ParallelScavengeHeap::parallel_object_iterator(uint thread_num) {
-  return new PSScavengeParallelObjectIterator(thread_num);
+  return new PSScavengeParallelObjectIterator();
 }
 
 HeapWord* ParallelScavengeHeap::block_start(const void* addr) const {

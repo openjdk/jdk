@@ -173,7 +173,7 @@ HeapWord* PSOldGen::allocate(size_t word_size) {
 
 /*
  * Divide space into blocks, processes block begins at
- * bottom + block_index  * (_iterate_block_size / HeapWordSize).
+ * bottom + block_index  * (IterateBlockSize / HeapWordSize).
  * NOTE:
  * - The initial block start address may not be a valid
  * object address, _start_array is used to correct it.
@@ -189,7 +189,7 @@ void PSOldGen::block_iterate(ObjectClosure* cl, uint block_index) {
   MutableSpace *space = object_space();
   HeapWord* bottom = space->bottom();
   HeapWord* top = space->top();
-  size_t block_word_size = _iterate_block_size / HeapWordSize;
+  size_t block_word_size = IterateBlockSize / HeapWordSize;
   HeapWord* begin = bottom + block_index * block_word_size;
 
   assert((block_word_size % (ObjectStartArray::block_size)) == 0,

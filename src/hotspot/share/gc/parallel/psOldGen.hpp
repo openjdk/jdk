@@ -53,7 +53,7 @@ class PSOldGen : public CHeapObj<mtGC> {
   const size_t _max_gen_size;
 
   // Block size for parallel iteration
-  static const size_t _iterate_block_size = 1024 * 1024;
+  static const size_t IterateBlockSize = 1024 * 1024;
 
 #ifdef ASSERT
   void assert_block_in_covered_region(MemRegion new_memregion) {
@@ -166,7 +166,7 @@ class PSOldGen : public CHeapObj<mtGC> {
   void oop_iterate(OopIterateClosure* cl) { object_space()->oop_iterate(cl); }
   void object_iterate(ObjectClosure* cl) { object_space()->object_iterate(cl); }
   uint iterable_blocks() {
-    return (object_space()->used_in_bytes() + _iterate_block_size -1) / _iterate_block_size;
+    return (object_space()->used_in_bytes() + IterateBlockSize - 1) / IterateBlockSize;
   }
   // Iterate block with given block_index
   void block_iterate(ObjectClosure* cl, uint block_index);
