@@ -23,15 +23,48 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/os.hpp"
 
-stringStream* GCLogPrecious::_lines = NULL;
 stringStream* GCLogPrecious::_temp = NULL;
 Mutex* GCLogPrecious::_lock = NULL;
 
+class GCLogPreciousLine : public CHeapObj<mtGC> {
+  const char* const _line;
+  GCLogPreciousLine* volatile _next;
+
+public:
+  GCLogPreciousLine(const char* line) :
+      _line(line),
+      _next(NULL) {}
+
+  const char* line() const { return _line; }
+
+  GCLogPreciousLine* next() const { return Atomic::load_acquire(&_next); }
+  void set_next(GCLogPreciousLine* next) { Atomic::release_store(&_next, next); }
+};
+
+GCLogPreciousLine* volatile GCLogPrecious::_head = NULL;
+GCLogPreciousLine* GCLogPrecious::_tail = NULL;
+
+void GCLogPrecious::append_line(const char* const str) {
+  GCLogPreciousLine* line = new GCLogPreciousLine(str);
+
+  GCLogPreciousLine* head = _head;
+  GCLogPreciousLine* tail = _tail;
+
+  if (head == NULL) {
+    Atomic::release_store(&_head, line);
+  }
+  if (_tail != NULL) {
+    tail->set_next(line);
+  }
+  _tail = line;
+}
+
 void GCLogPrecious::initialize() {
-  _lines = new (ResourceObj::C_HEAP, mtGC) stringStream();
   _temp = new (ResourceObj::C_HEAP, mtGC) stringStream();
   _lock = new Mutex(Mutex::tty,
                     "GCLogPrecious Lock",
@@ -45,7 +78,7 @@ void GCLogPrecious::vwrite_inner(LogTargetHandle log, const char* format, va_lis
   _temp->vprint(format, args);
 
   // Save it in the precious lines buffer
-  _lines->print_cr(" %s", _temp->base());
+  append_line(os::strdup_check_oom(_temp->base(), mtGC));
 
   // Log it to UL
   log.print("%s", _temp->base());
@@ -77,11 +110,13 @@ void GCLogPrecious::vwrite_and_debug(LogTargetHandle log,
 }
 
 void GCLogPrecious::print_on_error(outputStream* st) {
-  if (_lines != NULL) {
-    MutexLocker locker(_lock, Mutex::_no_safepoint_check_flag);
-    if (_lines->size() > 0) {
-      st->print_cr("GC Precious Log:");
-      st->print_cr("%s", _lines->base());
+  GCLogPreciousLine* line = Atomic::load_acquire(&_head);
+  if (line != NULL) {
+    st->print_cr("GC Precious Log:");
+    while (line != NULL) {
+      st->print_cr(" %s", line->line());
+      line = line->next();
     }
+    st->print_cr("");
   }
 }

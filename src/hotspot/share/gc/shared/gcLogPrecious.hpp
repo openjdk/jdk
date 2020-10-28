@@ -29,6 +29,7 @@
 #include "memory/allocation.hpp"
 #include "utilities/debug.hpp"
 
+class GCLogPreciousLine;
 class Mutex;
 class stringStream;
 
@@ -54,11 +55,14 @@ class stringStream;
 class GCLogPrecious : public AllStatic {
 private:
   // Saved precious lines
-  static stringStream* _lines;
+  static GCLogPreciousLine* volatile _head;
+  static GCLogPreciousLine* _tail;
   // Temporary line buffer
   static stringStream* _temp;
   // Protects the buffers
   static Mutex* _lock;
+
+  static void append_line(const char* const line);
 
   static void vwrite_inner(LogTargetHandle log,
                            const char* format,
