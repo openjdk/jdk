@@ -43,7 +43,7 @@ public class bug5043626 {
     private static JFrame frame;
 
     public static void main(String[] args) throws Exception {
-	try {
+        try {
             robot = new Robot();
             robot.setAutoDelay(100);
 
@@ -64,7 +64,7 @@ public class bug5043626 {
             robot.waitForIdle();
 
             String test = getText();
- 
+
             if (!"1test".equals(test)) {
                 throw new RuntimeException("Begin line action set cursor inside <head> tag");
             }
@@ -77,15 +77,15 @@ public class bug5043626 {
             robot.waitForIdle();
 
             test = getText();
- 
+
             if (!"21test".equals(test)) {
                 throw new RuntimeException("Begin action set cursor inside <head> tag");
             }
-	} finally {
+        } finally {
             if (frame != null) {
                 SwingUtilities.invokeAndWait(frame::dispose);
-	    }
-	}
+            }
+        }
     }
 
     private static String getText() throws Exception {
