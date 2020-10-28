@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,141 +27,121 @@
 #define SHARE_MEMORY_METASPACE_VIRTUALSPACELIST_HPP
 
 #include "memory/allocation.hpp"
+#include "memory/metaspace/commitLimiter.hpp"
+#include "memory/metaspace/counters.hpp"
 #include "memory/metaspace/virtualSpaceNode.hpp"
+#include "memory/virtualspace.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+class outputStream;
 
 namespace metaspace {
 
 class Metachunk;
-class ChunkManager;
+class FreeChunkListVector;
 
-// List of VirtualSpaces for metadata allocation.
+// VirtualSpaceList manages a single (if its non-expandable) or
+//  a series of (if its expandable) virtual memory regions used
+//  for metaspace.
+//
+// Internally it holds a list of nodes (VirtualSpaceNode) each
+//  managing a single contiguous memory region. The first node of
+//  this list is the current node and used for allocation of new
+//  root chunks.
+//
+// Beyond access to those nodes and the ability to grow new nodes
+//  (if expandable) it allows for purging: purging this list means
+//  removing and unmapping all memory regions which are unused.
+
 class VirtualSpaceList : public CHeapObj<mtClass> {
-  friend class VirtualSpaceNode;
 
-  enum VirtualSpaceSizes {
-    VirtualSpaceSize = 256 * K
-  };
+  // Name
+  const char* const _name;
 
-  // Head of the list
-  VirtualSpaceNode* _virtual_space_list;
-  // virtual space currently being used for allocations
-  VirtualSpaceNode* _current_virtual_space;
+  // Head of the list.
+  VirtualSpaceNode* _first_node;
 
-  // Is this VirtualSpaceList used for the compressed class space
-  bool _is_class;
+  // Number of nodes (kept for statistics only).
+  IntCounter _nodes_counter;
 
-  // Sum of reserved and committed memory in the virtual spaces
-  size_t _reserved_words;
-  size_t _committed_words;
+  // Whether this list can expand by allocating new nodes.
+  const bool _can_expand;
 
-  // Number of virtual spaces
-  size_t _virtual_space_count;
+  // Used to check limits before committing memory.
+  CommitLimiter* const _commit_limiter;
 
-  // Optimization: we keep an address range to quickly exclude pointers
-  // which are clearly not pointing into metaspace. This is an optimization for
-  // VirtualSpaceList::contains().
-  address _envelope_lo;
-  address _envelope_hi;
+  // Statistics
 
-  bool is_within_envelope(address p) const {
-    return p >= _envelope_lo && p < _envelope_hi;
-  }
+  // Holds sum of reserved space, in words, over all list nodes.
+  SizeCounter _reserved_words_counter;
 
-  // Given a node, expand range such that it includes the node.
-  void expand_envelope_to_include_node(const VirtualSpaceNode* node);
+  // Holds sum of committed space, in words, over all list nodes.
+  SizeCounter _committed_words_counter;
 
-  ~VirtualSpaceList();
+  // Create a new node and append it to the list. After
+  // this function, _current_node shall point to a new empty node.
+  // List must be expandable for this to work.
+  void create_new_node();
 
-  VirtualSpaceNode* virtual_space_list() const { return _virtual_space_list; }
+public:
 
-  void set_virtual_space_list(VirtualSpaceNode* v) {
-    _virtual_space_list = v;
-  }
-  void set_current_virtual_space(VirtualSpaceNode* v) {
-    _current_virtual_space = v;
-  }
+  // Create a new, empty, expandable list.
+  VirtualSpaceList(const char* name, CommitLimiter* commit_limiter);
 
-  void link_vs(VirtualSpaceNode* new_entry);
+  // Create a new list. The list will contain one node only, which uses the given ReservedSpace.
+  // It will be not expandable beyond that first node.
+  VirtualSpaceList(const char* name, ReservedSpace rs, CommitLimiter* commit_limiter);
 
-  // Get another virtual space and add it to the list.  This
-  // is typically prompted by a failed attempt to allocate a chunk
-  // and is typically followed by the allocation of a chunk.
-  bool create_new_virtual_space(size_t vs_word_size);
+  virtual ~VirtualSpaceList();
 
-  // Chunk up the unused committed space in the current
-  // virtual space and add the chunks to the free list.
-  void retire_current_virtual_space();
+  // Allocate a root chunk from this list.
+  // Note: this just returns a chunk whose memory is reserved; no memory is committed yet.
+  // Hence, before using this chunk, it must be committed.
+  // May return NULL if vslist would need to be expanded to hold the new root node but
+  // the list cannot be expanded (in practice this means we reached CompressedClassSpaceSize).
+  Metachunk* allocate_root_chunk();
 
-  DEBUG_ONLY(bool contains_node(const VirtualSpaceNode* node) const;)
+  // Attempts to purge nodes. This will remove and delete nodes which only contain free chunks.
+  // The free chunks are removed from the freelists before the nodes are deleted.
+  // Return number of purged nodes.
+  int purge(FreeChunkListVector* freelists);
 
- public:
-  VirtualSpaceList(size_t word_size);
-  VirtualSpaceList(ReservedSpace rs);
+  //// Statistics ////
 
-  size_t free_bytes();
+  // Return sum of reserved words in all nodes.
+  size_t reserved_words() const     { return _reserved_words_counter.get(); }
 
-  Metachunk* get_new_chunk(size_t chunk_word_size,
-                           size_t suggested_commit_granularity);
+  // Return sum of committed words in all nodes.
+  size_t committed_words() const    { return _committed_words_counter.get(); }
 
-  bool expand_node_by(VirtualSpaceNode* node,
-                      size_t min_words,
-                      size_t preferred_words);
+  // Return number of nodes in this list.
+  int num_nodes() const             { return _nodes_counter.get(); }
 
-  bool expand_by(size_t min_words,
-                 size_t preferred_words);
+  //// Debug stuff ////
+  DEBUG_ONLY(void verify() const;)
+  DEBUG_ONLY(void verify_locked() const;)
 
-  VirtualSpaceNode* current_virtual_space() {
-    return _current_virtual_space;
-  }
+  // Print all nodes in this space list.
+  void print_on(outputStream* st) const;
 
-  bool is_class() const { return _is_class; }
+  // Returns true if this pointer is contained in one of our nodes.
+  bool contains(const MetaWord* p) const;
 
-  bool initialization_succeeded() { return _virtual_space_list != NULL; }
+  // Returns true if the list is not expandable and no more root chunks
+  // can be allocated.
+  bool is_full() const;
 
-  size_t reserved_words()  { return _reserved_words; }
-  size_t reserved_bytes()  { return reserved_words() * BytesPerWord; }
-  size_t committed_words() { return _committed_words; }
-  size_t committed_bytes() { return committed_words() * BytesPerWord; }
+  // Convenience methods to return the global class-space vslist
+  //  and non-class vslist, respectively.
+  static VirtualSpaceList* vslist_class();
+  static VirtualSpaceList* vslist_nonclass();
 
-  void inc_reserved_words(size_t v);
-  void dec_reserved_words(size_t v);
-  void inc_committed_words(size_t v);
-  void dec_committed_words(size_t v);
-  void inc_virtual_space_count();
-  void dec_virtual_space_count();
+  // These exist purely to print limits of the compressed class space;
+  // if we ever change the ccs to not use a degenerated-list-of-one-node this
+  // will go away.
+  MetaWord* base_of_first_node() const { return _first_node != NULL ? _first_node->base() : NULL; }
+  size_t word_size_of_first_node() const { return _first_node != NULL ? _first_node->word_size() : 0; }
 
-  VirtualSpaceNode* find_enclosing_space(const void* ptr);
-  bool contains(const void* ptr) { return find_enclosing_space(ptr) != NULL; }
-
-  // Unlink empty VirtualSpaceNodes and free it.
-  void purge(ChunkManager* chunk_manager);
-
-  void print_on(outputStream* st) const                 { print_on(st, K); }
-  void print_on(outputStream* st, size_t scale) const;
-  void print_map(outputStream* st) const;
-
-  DEBUG_ONLY(void verify(bool slow);)
-
-  class VirtualSpaceListIterator : public StackObj {
-    VirtualSpaceNode* _virtual_spaces;
-   public:
-    VirtualSpaceListIterator(VirtualSpaceNode* virtual_spaces) :
-      _virtual_spaces(virtual_spaces) {}
-
-    bool repeat() {
-      return _virtual_spaces != NULL;
-    }
-
-    VirtualSpaceNode* get_next() {
-      VirtualSpaceNode* result = _virtual_spaces;
-      if (_virtual_spaces != NULL) {
-        _virtual_spaces = _virtual_spaces->next();
-      }
-      return result;
-    }
-  };
 };
 
 } // namespace metaspace

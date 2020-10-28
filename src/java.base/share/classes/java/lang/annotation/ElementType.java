@@ -118,12 +118,22 @@ public enum ElementType {
     MODULE,
 
     /**
+     * {@preview Associated with records, a preview feature of the Java language.
+     *
+     *           This constant is associated with <i>records</i>, a preview
+     *           feature of the Java language. Programs can only use this
+     *           constant when preview features are enabled. Preview features
+     *           may be removed in a future release, or upgraded to permanent
+     *           features of the Java language.}
+     *
      * Record component
      *
      * @jls 8.10.3 Record Members
      * @jls 9.7.4 Where Annotations May Appear
      *
-     * @since 16
+     * @since 14
      */
+    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
+                                 essentialAPI=true)
     RECORD_COMPONENT;
 }

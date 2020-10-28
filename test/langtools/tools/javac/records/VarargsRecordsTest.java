@@ -33,10 +33,11 @@ import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
 /**
+ * VarargsRecordsTest
+ *
  * @test
- * @bug 8246774
- * @summary test for varargs record components
- * @run testng VarargsRecordsTest
+ * @compile --enable-preview -source ${jdk.version} VarargsRecordsTest.java
+ * @run testng/othervm --enable-preview VarargsRecordsTest
  */
 @Test
 public class VarargsRecordsTest {

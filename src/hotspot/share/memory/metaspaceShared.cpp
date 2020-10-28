@@ -770,11 +770,16 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   builder.relocate_well_known_klasses();
 
+  log_info(cds)("Update method trampolines");
+  builder.update_method_trampolines();
+
   log_info(cds)("Make classes shareable");
   builder.make_klasses_shareable();
 
   char* serialized_data = dump_read_only_tables();
   _ro_region.pack();
+
+  SystemDictionaryShared::adjust_lambda_proxy_class_dictionary();
 
   // The vtable clones contain addresses of the current process.
   // We don't want to write these addresses into the archive. Same for i2i buffer.

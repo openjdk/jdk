@@ -23,10 +23,9 @@
 
 /*
  * @test
- * @bug 8246774
  * @summary test logging of reasons for ignoring Record attribute
  * @library /test/lib
- * @compile superNotJLRecord.jcod
+ * @compile recordIgnoredVersion.jcod
  * @run driver ignoreRecordAttribute
  */
 
@@ -37,11 +36,11 @@ public class ignoreRecordAttribute {
 
     public static void main(String[] args) throws Exception {
         String MAJOR_VERSION = Integer.toString(44 + Runtime.version().feature());
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-Xlog:class+record", "-Xshare:off", "superNotJLRecord");
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("--enable-preview",
+            "-Xlog:class+record", "-Xshare:off", "recordIgnoredVersion");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Ignoring Record attribute");
-        output.shouldContain("because super type is not java.lang.Record");
+        output.shouldContain("because class file version is not " + MAJOR_VERSION + ".65535");
     }
 
 }
