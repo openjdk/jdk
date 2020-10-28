@@ -536,7 +536,7 @@ public abstract class WComponentPeer extends WObjectPeer
         var old = getGraphicsConfiguration().getDefaultTransform();
         winGraphicsConfig = (Win32GraphicsConfig)gc;
         if (gc != null && !old.equals(gc.getDefaultTransform())) {
-            syncBounds(); // the bound of the peer depends on the DPI
+            syncBounds(); // the bounds of the peer depend on the DPI
         }
         try {
             replaceSurfaceData();

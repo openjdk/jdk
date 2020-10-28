@@ -689,7 +689,8 @@ int AwtWin32GraphicsDevice::ClipRound(double value)
     return (int)ceil(value);
 }
 
-void AwtWin32GraphicsDevice::InitDesktopScales() {
+void AwtWin32GraphicsDevice::InitDesktopScales()
+{
     if (!disableScaleAutoRefresh) {
         float dpiX = -1.0f;
         float dpiY = -1.0f;
@@ -1488,4 +1489,3 @@ Java_sun_awt_Win32GraphicsDevice_initNativeScale
         device->InitDesktopScales();
     }
 }
-

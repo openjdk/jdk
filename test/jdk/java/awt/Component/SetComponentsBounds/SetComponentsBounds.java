@@ -99,7 +99,7 @@ public final class SetComponentsBounds {
                     throw new RuntimeException("Wrong bounds:" + bounds);
                 }
                 if (bounds.height > HEIGHT) {
-                    // different check for HEIGHT, it depends from the font
+                    // different check for HEIGHT, it depends on the font
                     throw new RuntimeException("Wrong height:" + bounds.height);
                 }
                 checkGC(gc, comp);

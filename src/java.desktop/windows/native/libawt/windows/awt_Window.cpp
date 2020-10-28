@@ -1208,7 +1208,7 @@ void AwtWindow::Reshape(int x, int y, int w, int h) {
     HMONITOR monitor = MonitorFromPoint(pt, MONITOR_DEFAULTTONEAREST);
     int screen = AwtWin32GraphicsDevice::GetScreenFromHMONITOR(monitor);
     AwtWin32GraphicsDevice *device = devices->GetDevice(screen);
-    // Try set the correct size and jump to the correct location, even if it is
+    // Try to set the correct size and jump to the correct location, even if it is
     // on the different monitor. Note that for the "size" we use the current
     // monitor, so the WM_DPICHANGED will adjust it for the "target" monitor.
     int scaleUpAbsX = device == NULL ? x : device->ScaleUpAbsX(x);
@@ -2194,7 +2194,7 @@ void AwtWindow::CheckIfOnNewScreen(BOOL force) {
 
 // The shared code is not ready to the top-level window which crosses a few
 // monitors with different DPI. Popup windows will start to use wrong screen,
-// will be placed in the wrong place and will be use wrong size, see 8249164
+// will be placed in the wrong place and will use the wrong size, see 8249164
 // So we will "JUMP TO" the new screen.
 void AwtWindow::CheckWindowDPIChange() {
     if (prevScaleRec.screen != -1 && prevScaleRec.screen != m_screenNum) {
