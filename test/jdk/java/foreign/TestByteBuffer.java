@@ -529,6 +529,16 @@ public class TestByteBuffer {
         assertEquals(bb.capacity(), segment.byteSize());
     }
 
+    @Test(dataProvider="bufferSources")
+    public void bufferProperties(ByteBuffer bb, Predicate<MemorySegment> _unused) {
+        try (MemorySegment segment = MemorySegment.ofByteBuffer(bb)) {
+            ByteBuffer buffer = segment.asByteBuffer();
+            assertEquals(buffer.position(), 0);
+            assertEquals(buffer.capacity(), segment.byteSize());
+            assertEquals(buffer.limit(), segment.byteSize());
+        }
+    }
+
     @Test
     public void testRoundTripAccess() {
         try(MemorySegment ms = MemorySegment.allocateNative(4)) {
@@ -546,6 +556,49 @@ public class TestByteBuffer {
         s1.close(); // memory freed
 
         MemoryAccess.setInt(s2, 10); // Dead access!
+    }
+
+    @Test(expectedExceptions = UnsupportedOperationException.class)
+    public void testIOOnSharedSegmentBuffer() throws IOException {
+        File tmp = File.createTempFile("tmp", "txt");
+        tmp.deleteOnExit();
+        try (FileChannel channel = FileChannel.open(tmp.toPath(), StandardOpenOption.WRITE)) {
+            MemorySegment segment = MemorySegment.allocateNative(10).share();
+            for (int i = 0; i < 10; i++) {
+                MemoryAccess.setByteAtIndex(segment, i, (byte) i);
+            }
+            ByteBuffer bb = segment.asByteBuffer();
+            segment.close();
+            channel.write(bb);
+        }
+    }
+
+    @Test(expectedExceptions = IllegalStateException.class)
+    public void testIOOnClosedConfinedSegmentBuffer() throws IOException {
+        File tmp = File.createTempFile("tmp", "txt");
+        tmp.deleteOnExit();
+        try (FileChannel channel = FileChannel.open(tmp.toPath(), StandardOpenOption.WRITE)) {
+            MemorySegment segment = MemorySegment.allocateNative(10);
+            for (int i = 0; i < 10; i++) {
+                MemoryAccess.setByteAtIndex(segment, i, (byte) i);
+            }
+            ByteBuffer bb = segment.asByteBuffer();
+            segment.close();
+            channel.write(bb);
+        }
+    }
+
+    public void testIOOnClosedConfinedSegment() throws IOException {
+        File tmp = File.createTempFile("tmp", "txt");
+        tmp.deleteOnExit();
+        try (FileChannel channel = FileChannel.open(tmp.toPath(), StandardOpenOption.WRITE)) {
+            MemorySegment segment = MemorySegment.allocateNative(10);
+            for (int i = 0; i < 10; i++) {
+                MemoryAccess.setByteAtIndex(segment, i, (byte) i);
+            }
+            ByteBuffer bb = segment.asByteBuffer();
+            channel.write(bb);
+        }
     }
 
     @DataProvider(name = "bufferOps")

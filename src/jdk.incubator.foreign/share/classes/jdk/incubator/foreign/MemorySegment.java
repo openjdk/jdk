@@ -551,11 +551,21 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * (see {@link ByteBuffer#isReadOnly()}. Additionally, if this is a native memory segment, the resulting buffer is
      * <em>direct</em> (see {@link ByteBuffer#isDirect()}).
      * <p>
+     * The returned buffer's position (see {@link ByteBuffer#position()} is initially set to zero, while
+     * the returned buffer's capacity and limit (see {@link ByteBuffer#capacity()} and {@link ByteBuffer#limit()}, respectively)
+     * are set to this segment' size (see {@link MemorySegment#byteSize()}). For this reason, a byte buffer cannot be
+     * returned if this segment' size is greater than {@link Integer#MAX_VALUE}.
+     * <p>
      * The life-cycle of the returned buffer will be tied to that of this segment. That means that if the this segment
      * is closed (see {@link MemorySegment#close()}, accessing the returned
      * buffer will throw an {@link IllegalStateException}.
      * <p>
-     * The resulting buffer's byte order is {@link java.nio.ByteOrder#BIG_ENDIAN}; this can be changed using
+     * If this segment is <em>shared</em>, calling certain I/O operations on the resulting buffer might result in
+     * an unspecified exception being thrown. Examples of such problematic operations are {@link FileChannel#read(ByteBuffer)},
+     * {@link FileChannel#write(ByteBuffer)}, {@link java.nio.channels.SocketChannel#read(ByteBuffer)} and
+     * {@link java.nio.channels.SocketChannel#write(ByteBuffer)}.
+     * <p>
+     * Finally, the resulting buffer's byte order is {@link java.nio.ByteOrder#BIG_ENDIAN}; this can be changed using
      * {@link ByteBuffer#order(java.nio.ByteOrder)}.
      *
      * @return a {@link ByteBuffer} view of this memory segment.

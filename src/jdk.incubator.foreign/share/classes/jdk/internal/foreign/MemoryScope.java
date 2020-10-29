@@ -164,7 +164,7 @@ abstract class MemoryScope implements ScopedMemoryAccess.Scope {
      * Returns "owner" thread of this scope.
      * @return owner thread (or null for a shared scope)
      */
-    abstract Thread ownerThread();
+    public abstract Thread ownerThread();
 
     /**
      * Returns true, if this scope is still alive. This method may be called in any thread.
@@ -221,7 +221,7 @@ abstract class MemoryScope implements ScopedMemoryAccess.Scope {
         }
 
         @Override
-        Thread ownerThread() {
+        public Thread ownerThread() {
             return owner;
         }
     }
@@ -261,7 +261,7 @@ abstract class MemoryScope implements ScopedMemoryAccess.Scope {
         }
 
         @Override
-        Thread ownerThread() {
+        public Thread ownerThread() {
             return null;
         }
 
