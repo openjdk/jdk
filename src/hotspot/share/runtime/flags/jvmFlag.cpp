@@ -45,10 +45,10 @@ void JVMFlag::set_origin(JVMFlagOrigin new_origin) {
   int old_flags = _flags;
   int origin = static_cast<int>(new_origin);
   assert((origin & VALUE_ORIGIN_MASK) == origin, "sanity");
-  int was_in_cmdline = (new_origin == JVMFlagOrigin::COMMAND_LINE) ? WAS_SET_IN_COMMAND_LINE : 0;
+  int was_in_cmdline = (new_origin == JVMFlagOrigin::COMMAND_LINE) ? WAS_SET_ON_COMMAND_LINE : 0;
   _flags = Flags((_flags & ~VALUE_ORIGIN_MASK) | origin | was_in_cmdline);
-  if ((old_flags & WAS_SET_IN_COMMAND_LINE) != 0) {
-    assert(_flags & WAS_SET_IN_COMMAND_LINE != 0, "once initialized, should never change");
+  if ((old_flags & WAS_SET_ON_COMMAND_LINE) != 0) {
+    assert(_flags & WAS_SET_ON_COMMAND_LINE != 0, "once initialized, should never change");
   }
 }
 
@@ -394,7 +394,7 @@ void JVMFlag::print_origin(outputStream* st, unsigned int width) const {
     case JVMFlagOrigin::MANAGEMENT:
       st->print("management"); break;
     case JVMFlagOrigin::ERGONOMIC:
-      if (_flags & WAS_SET_IN_COMMAND_LINE) {
+      if (_flags & WAS_SET_ON_COMMAND_LINE) {
         st->print("command line, ");
       }
       st->print("ergonomic"); break;

@@ -118,7 +118,7 @@ public class VM {
   public static int    Flags_INTERNAL;
   public static int    Flags_JIMAGE_RESOURCE;
   private static int   Flags_VALUE_ORIGIN_MASK;
-  private static int   Flags_WAS_SET_IN_COMMAND_LINE;
+  private static int   Flags_WAS_SET_ON_COMMAND_LINE;
   /** This is only present in a non-core build */
   private CodeCache    codeCache;
   /** This is only present in a C1 build */
@@ -195,7 +195,7 @@ public class VM {
             return "management";
         } else if (origin == Flags_ERGONOMIC) {
             String result = "";
-            if ((flags & Flags_WAS_SET_IN_COMMAND_LINE) == Flags_WAS_SET_IN_COMMAND_LINE) {
+            if ((flags & Flags_WAS_SET_ON_COMMAND_LINE) == Flags_WAS_SET_ON_COMMAND_LINE) {
                 result = "command line, ";
             }
             return result + "ergonomic";
@@ -500,7 +500,7 @@ public class VM {
     Flags_INTERNAL = db.lookupIntConstant("JVMFlagOrigin::INTERNAL").intValue();
     Flags_JIMAGE_RESOURCE = db.lookupIntConstant("JVMFlagOrigin::JIMAGE_RESOURCE").intValue();
     Flags_VALUE_ORIGIN_MASK = db.lookupIntConstant("JVMFlag::VALUE_ORIGIN_MASK").intValue();
-    Flags_WAS_SET_IN_COMMAND_LINE = db.lookupIntConstant("JVMFlag::WAS_SET_IN_COMMAND_LINE").intValue();
+    Flags_WAS_SET_ON_COMMAND_LINE = db.lookupIntConstant("JVMFlag::WAS_SET_ON_COMMAND_LINE").intValue();
     oopSize  = db.lookupIntConstant("oopSize").intValue();
 
     intType = db.lookupType("int");

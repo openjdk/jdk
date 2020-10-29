@@ -74,12 +74,12 @@ public:
     // Note the difference:
     // f->get_origin() == COMMAND_LINE
     //    f was mostly recently set by the command-line
-    // f->_flags & WAS_SET_IN_COMMAND_LINE
-    //    f was specified in the command-line (but may have since been updated by
+    // f->_flags & WAS_SET_ON_COMMAND_LINE
+    //    f was specified on the command-line (but may have since been updated by
     //    someone else like FLAG_SET_ERGO)
-    WAS_SET_IN_COMMAND_LINE = 1 << 17,
+    WAS_SET_ON_COMMAND_LINE = 1 << 17,
 
-    KIND_MASK = ~(VALUE_ORIGIN_MASK | WAS_SET_IN_COMMAND_LINE)
+    KIND_MASK = ~(VALUE_ORIGIN_MASK | WAS_SET_ON_COMMAND_LINE)
   };
 
   enum Error {
@@ -249,8 +249,8 @@ public:
 
   bool is_default() const         { return (get_origin() == JVMFlagOrigin::DEFAULT);          }
   bool is_ergonomic() const       { return (get_origin() == JVMFlagOrigin::ERGONOMIC);        }
-  bool is_command_line() const    { return (_flags & WAS_SET_IN_COMMAND_LINE) != 0;           }
-  void set_command_line()         { _flags = Flags(_flags | WAS_SET_IN_COMMAND_LINE);         }
+  bool is_command_line() const    { return (_flags & WAS_SET_ON_COMMAND_LINE) != 0;           }
+  void set_command_line()         { _flags = Flags(_flags | WAS_SET_ON_COMMAND_LINE);         }
   bool is_jimage_resource() const { return (get_origin() == JVMFlagOrigin::JIMAGE_RESOURCE);  }
   bool is_product() const         { return (_flags & KIND_PRODUCT) != 0;                      }
   bool is_manageable() const      { return (_flags & KIND_MANAGEABLE) != 0;                   }
