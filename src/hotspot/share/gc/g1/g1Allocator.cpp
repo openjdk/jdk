@@ -281,22 +281,9 @@ HeapWord* G1Allocator::old_attempt_allocation(size_t min_word_size,
   return result;
 }
 
-uint G1PLABAllocator::calc_survivor_alignment_bytes() {
-  assert(SurvivorAlignmentInBytes >= ObjectAlignmentInBytes, "sanity");
-  if (SurvivorAlignmentInBytes == ObjectAlignmentInBytes) {
-    // No need to align objects in the survivors differently, return 0
-    // which means "survivor alignment is not used".
-    return 0;
-  } else {
-    assert(SurvivorAlignmentInBytes > 0, "sanity");
-    return SurvivorAlignmentInBytes;
-  }
-}
-
 G1PLABAllocator::G1PLABAllocator(G1Allocator* allocator) :
   _g1h(G1CollectedHeap::heap()),
-  _allocator(allocator),
-  _survivor_alignment_bytes(calc_survivor_alignment_bytes()) {
+  _allocator(allocator) {
   for (region_type_t state = 0; state < G1HeapRegionAttr::Num; state++) {
     _direct_allocated[state] = 0;
     uint length = alloc_buffers_length(state);

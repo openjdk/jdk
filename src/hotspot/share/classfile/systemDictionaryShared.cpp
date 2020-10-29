@@ -1179,19 +1179,24 @@ InstanceKlass* SystemDictionaryShared::acquire_class_for_current_thread(
   return shared_klass;
 }
 
-static ResourceHashtable<
+class LoadedUnregisteredClassesTable : public ResourceHashtable<
   Symbol*, bool,
   primitive_hash<Symbol*>,
   primitive_equals<Symbol*>,
   6661,                             // prime number
-  ResourceObj::C_HEAP> _loaded_unregistered_classes;
+  ResourceObj::C_HEAP> {};
+
+static LoadedUnregisteredClassesTable* _loaded_unregistered_classes = NULL;
 
 bool SystemDictionaryShared::add_unregistered_class(InstanceKlass* k, TRAPS) {
   // We don't allow duplicated unregistered classes of the same name.
   assert(DumpSharedSpaces, "only when dumping");
   Symbol* name = k->name();
+  if (_loaded_unregistered_classes == NULL) {
+    _loaded_unregistered_classes = new (ResourceObj::C_HEAP, mtClass)LoadedUnregisteredClassesTable();
+  }
   bool created = false;
-  _loaded_unregistered_classes.put_if_absent(name, true, &created);
+  _loaded_unregistered_classes->put_if_absent(name, true, &created);
   if (created) {
     MutexLocker mu_r(THREAD, Compile_lock); // add_to_hierarchy asserts this.
     SystemDictionary::add_to_hierarchy(k, CHECK_false);
