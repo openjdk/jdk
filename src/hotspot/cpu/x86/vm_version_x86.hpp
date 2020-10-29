@@ -1023,7 +1023,7 @@ public:
   }
 
   constexpr static bool supports_stack_watermark_barrier() {
-    return LP64_ONLY(true) NOT_LP64(false);
+    return true;
   }
 
   // there are several insns to force cache line sync to memory which
