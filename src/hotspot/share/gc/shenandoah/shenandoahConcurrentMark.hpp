@@ -50,10 +50,10 @@ private:
   inline void do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveData* live_data, ShenandoahMarkTask* task);
 
   template <class T>
-  inline void do_chunked_array_start(ShenandoahObjToScanQueue* q, T* cl, oop array);
+  inline void do_chunked_array_start(ShenandoahObjToScanQueue* q, T* cl, oop array, bool strong);
 
   template <class T>
-  inline void do_chunked_array(ShenandoahObjToScanQueue* q, T* cl, oop array, int chunk, int pow);
+  inline void do_chunked_array(ShenandoahObjToScanQueue* q, T* cl, oop array, int chunk, int pow, bool strong);
 
   inline void count_liveness(ShenandoahLiveData* live_data, oop obj);
 
