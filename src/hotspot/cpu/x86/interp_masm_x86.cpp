@@ -1005,9 +1005,9 @@ void InterpreterMacroAssembler::remove_activation(
   push(state);
   set_last_Java_frame(rthread, noreg, rbp, (address)pc());
   super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), rthread);
+  NOT_LP64(get_thread(rthread);) // call_VM clobbered it, restore
   reset_last_Java_frame(rthread, true);
   pop(state);
-  NOT_LP64(get_thread(rthread);) // call_VM clobbered it, restore
   bind(fast_path);
 
   // get the value of _do_not_unlock_if_synchronized into rdx
