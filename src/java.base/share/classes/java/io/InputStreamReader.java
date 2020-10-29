@@ -103,7 +103,6 @@ public class InputStreamReader extends Reader {
      * @param  cs       A charset
      *
      * @since 1.4
-     * @spec JSR-51
      */
     public InputStreamReader(InputStream in, Charset cs) {
         super(in);
@@ -119,7 +118,6 @@ public class InputStreamReader extends Reader {
      * @param  dec      A charset decoder
      *
      * @since 1.4
-     * @spec JSR-51
      */
     public InputStreamReader(InputStream in, CharsetDecoder dec) {
         super(in);
@@ -146,7 +144,6 @@ public class InputStreamReader extends Reader {
      * @see java.nio.charset.Charset
      *
      * @revised 1.4
-     * @spec JSR-51
      */
     public String getEncoding() {
         return sd.getEncoding();
