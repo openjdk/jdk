@@ -59,6 +59,10 @@
 #define HWCAP_DCPOP (1<<16)
 #endif
 
+#ifndef HWCAP_SHA3
+#define HWCAP_SHA3 (1 << 17)
+#endif
+
 #ifndef HWCAP_SHA512
 #define HWCAP_SHA512 (1 << 21)
 #endif
@@ -82,7 +86,7 @@ int VM_Version::get_current_sve_vector_length() {
   return prctl(PR_SVE_GET_VL);
 }
 
-int VM_Version::set_and_get_current_sve_vector_lenght(int length) {
+int VM_Version::set_and_get_current_sve_vector_length(int length) {
   assert(_features & CPU_SVE, "should not call this");
   int new_length = prctl(PR_SVE_SET_VL, length);
   return new_length;
@@ -103,6 +107,7 @@ void VM_Version::get_os_cpu_info() {
   static_assert(CPU_CRC32   == HWCAP_CRC32);
   static_assert(CPU_LSE     == HWCAP_ATOMICS);
   static_assert(CPU_DCPOP   == HWCAP_DCPOP);
+  static_assert(CPU_SHA3    == HWCAP_SHA3);
   static_assert(CPU_SHA512  == HWCAP_SHA512);
   static_assert(CPU_SVE     == HWCAP_SVE);
   _features = auxv & (
@@ -116,6 +121,7 @@ void VM_Version::get_os_cpu_info() {
       HWCAP_CRC32   |
       HWCAP_ATOMICS |
       HWCAP_DCPOP   |
+      HWCAP_SHA3    |
       HWCAP_SHA512  |
       HWCAP_SVE);
 

@@ -31,12 +31,6 @@ class ZLoadBarrierOopClosure : public BasicOopIterateClosure {
 public:
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
-
-#ifdef ASSERT
-  virtual bool should_verify_oops() {
-    return false;
-  }
-#endif
 };
 
 class ZNMethodOopClosure : public OopClosure {
@@ -52,12 +46,6 @@ public:
 
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
-
-#ifdef ASSERT
-  virtual bool should_verify_oops() {
-    return false;
-  }
-#endif
 };
 
 class ZPhantomIsAliveObjectClosure : public BoolObjectClosure {
@@ -69,12 +57,16 @@ class ZPhantomKeepAliveOopClosure : public ZRootsIteratorClosure {
 public:
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
+
+  virtual ZNMethodEntry nmethod_entry() const;
 };
 
 class ZPhantomCleanOopClosure : public ZRootsIteratorClosure {
 public:
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
+
+  virtual ZNMethodEntry nmethod_entry() const;
 };
 
 #endif // SHARE_GC_Z_ZOOPCLOSURES_HPP

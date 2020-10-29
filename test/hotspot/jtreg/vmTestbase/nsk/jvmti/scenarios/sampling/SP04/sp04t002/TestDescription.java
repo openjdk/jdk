@@ -56,6 +56,8 @@
  *
  * @library /vmTestbase
  *          /test/lib
+ * @comment see JDK-8243962 for background on requires expression
+ * @requires !(vm.flightRecorder & vm.debug & os.family == "windows")
  * @run main/othervm/native
  *      -agentlib:sp04t002=-waittime=5,threads=10
  *      nsk.jvmti.scenarios.sampling.SP04.sp04t002

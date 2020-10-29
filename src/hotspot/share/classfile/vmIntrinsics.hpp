@@ -432,6 +432,10 @@ class methodHandle;
   do_class(sun_security_provider_sha5,                             "sun/security/provider/SHA5")                        \
   do_intrinsic(_sha5_implCompress, sun_security_provider_sha5, implCompress_name, implCompress_signature, F_R)          \
                                                                                                                         \
+  /* support for sun.security.provider.SHA3 */                                                                          \
+  do_class(sun_security_provider_sha3,                             "sun/security/provider/SHA3")                        \
+  do_intrinsic(_sha3_implCompress, sun_security_provider_sha3, implCompress_name, implCompress_signature, F_R)          \
+                                                                                                                        \
   /* support for sun.security.provider.DigestBase */                                                                    \
   do_class(sun_security_provider_digestbase,                       "sun/security/provider/DigestBase")                  \
   do_intrinsic(_digestBase_implCompressMB, sun_security_provider_digestbase, implCompressMB_name, implCompressMB_signature, F_R)   \
@@ -1036,12 +1040,11 @@ class vmIntrinsics : AllStatic {
     F_Y,                        // !static ?native  synchronized
     F_RN,                       // !static  native !synchronized
     F_SN,                       //  static  native !synchronized
-    F_RNY,                      // !static  native  synchronized
 
     FLAG_LIMIT
   };
   enum {
-    log2_FLAG_LIMIT = 4         // checked by an assert at start-up
+    log2_FLAG_LIMIT = 3         // checked by an assert at start-up
   };
 
 public:
@@ -1079,22 +1082,15 @@ public:
     return id;
   }
 
-  static void verify_method(ID actual_id, Method* m) PRODUCT_RETURN;
-
+#ifdef ASSERT
   // Find out the symbols behind an intrinsic:
   static vmSymbolID     class_for(ID id);
   static vmSymbolID      name_for(ID id);
   static vmSymbolID signature_for(ID id);
   static Flags              flags_for(ID id);
+#endif
 
   static const char* short_name_as_C_string(ID id, char* buf, int size);
-
-  // Wrapper object methods:
-  static ID for_boxing(BasicType type);
-  static ID for_unboxing(BasicType type);
-
-  // Raw conversion:
-  static ID for_raw_conversion(BasicType src, BasicType dest);
 
   // The methods below provide information related to compiling intrinsics.
 

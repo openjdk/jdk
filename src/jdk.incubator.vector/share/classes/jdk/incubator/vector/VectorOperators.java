@@ -227,7 +227,7 @@ public abstract class VectorOperators {
     /**
      * Type for all
      * <a href="Vector.html#lane-wise">lane-wise</a>
-     * unary operators,
+     * unary (one-argument) operators,
      * usable in expressions like {@code w = v0.}{@link
      * Vector#lanewise(VectorOperators.Unary)
      * lanewise}{@code (NEG)}.
@@ -243,7 +243,7 @@ public abstract class VectorOperators {
     /**
      * Type for all
      * <a href="Vector.html#lane-wise">lane-wise</a>
-     * binary operators,
+     * binary (two-argument) operators,
      * usable in expressions like {@code w = v0.}{@link
      * Vector#lanewise(VectorOperators.Binary,Vector)
      * lanewise}{@code (ADD, v1)}.
@@ -259,7 +259,7 @@ public abstract class VectorOperators {
     /**
      * Type for all
      * <a href="Vector.html#lane-wise">lane-wise</a>
-     * ternary operators,
+     * ternary (three-argument) operators,
      * usable in expressions like {@code w = v0.}{@link
      * Vector#lanewise(VectorOperators.Ternary,Vector,Vector)
      * lanewise}{@code (FMA, v1, v2)}.
