@@ -886,7 +886,6 @@ tools/jpackage/share/jdk/jpackage/tests/ModulePathTest3.java#id0    8248418 gene
 java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter_1.java 7131438,8022539 generic-all
 java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter_2.java 7131438,8022539 generic-all
 java/awt/Modal/WsDisabledStyle/CloseBlocker/CloseBlocker.java 7187741 linux-all,macosx-all
-java/awt/Component/UpdatingBootTime/UpdatingBootTime.html 7194219 linux-all
 java/awt/xembed/server/TestXEmbedServerJava.java 8001150,8004031 generic-all
 java/awt/TextArea/MouseOverScrollbarWhenTyping/Test1.java 8005970 macosx-all,windows-all
 javax/swing/JFileChooser/6698013/bug6698013.java 8024419 macosx-all
