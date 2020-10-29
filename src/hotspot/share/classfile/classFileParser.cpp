@@ -3902,7 +3902,6 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
             parsed_record_attribute = true;
             record_attribute_start = cfs->current();
             record_attribute_length = attribute_length;
-            cfs->skip_u1(attribute_length, CHECK);
           } else if (tag == vmSymbols::tag_permitted_subclasses()) {
             if (supports_sealed_types()) {
               if (parsed_permitted_subclasses_attribute) {
@@ -3918,11 +3917,9 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
               permitted_subclasses_attribute_start = cfs->current();
               permitted_subclasses_attribute_length = attribute_length;
             }
-            cfs->skip_u1(attribute_length, CHECK);
-          } else {
-            // Unknown attribute
-            cfs->skip_u1(attribute_length, CHECK);
           }
+          // Skip attribute_length for any attribute where major_verson >= JAVA_16_VERSION
+          cfs->skip_u1(attribute_length, CHECK);
         } else {
           // Unknown attribute
           cfs->skip_u1(attribute_length, CHECK);
