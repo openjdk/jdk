@@ -202,7 +202,6 @@ tier1_gc_2 = \
   -gc/g1/ \
   -gc/logging/TestUnifiedLoggingSwitchStress.java \
   -gc/stress \
-  -gc/survivorAlignment/TestPromotionFromSurvivorToTenuredAfterMinorGC.java \
   -gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java \
   -gc/shenandoah \
   -gc/nvdimm
@@ -307,6 +306,7 @@ tier1_runtime = \
  -runtime/cds/CdsSameObjectAlignment.java \
  -runtime/cds/SharedBaseAddress.java \
  -runtime/Thread/CancellableThreadTest.java \
+ -runtime/Thread/ThreadCountLimit.java \
  -runtime/Thread/TestThreadDumpMonitorContention.java \
  -runtime/Unsafe/RangeCheck.java \
   sanity/ \

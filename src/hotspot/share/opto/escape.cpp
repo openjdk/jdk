@@ -246,9 +246,6 @@ bool ConnectionGraph::compute_escape() {
     if (n->is_Allocate()) {
       n->as_Allocate()->_is_non_escaping = noescape;
     }
-    if (n->is_CallStaticJava()) {
-      n->as_CallStaticJava()->_is_non_escaping = noescape;
-    }
     if (noescape && ptn->scalar_replaceable()) {
       adjust_scalar_replaceable_state(ptn);
       if (ptn->scalar_replaceable()) {
@@ -1085,6 +1082,8 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
                   strcmp(call->as_CallLeaf()->_name, "sha256_implCompressMB") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "sha512_implCompress") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "sha512_implCompressMB") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "sha3_implCompress") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "sha3_implCompressMB") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "multiplyToLen") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "squareToLen") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "mulAdd") == 0 ||
@@ -3066,11 +3065,6 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
           // so it could be eliminated if it has no uses.
           alloc->as_Allocate()->_is_scalar_replaceable = true;
         }
-        if (alloc->is_CallStaticJava()) {
-          // Set the scalar_replaceable flag for boxing method
-          // so it could be eliminated if it has no uses.
-          alloc->as_CallStaticJava()->_is_scalar_replaceable = true;
-        }
         continue;
       }
       if (!n->is_CheckCastPP()) { // not unique CheckCastPP.
@@ -3118,11 +3112,6 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
         // Set the scalar_replaceable flag for allocation
         // so it could be eliminated.
         alloc->as_Allocate()->_is_scalar_replaceable = true;
-      }
-      if (alloc->is_CallStaticJava()) {
-        // Set the scalar_replaceable flag for boxing method
-        // so it could be eliminated.
-        alloc->as_CallStaticJava()->_is_scalar_replaceable = true;
       }
       set_escape_state(ptnode_adr(n->_idx), es); // CheckCastPP escape state
       // in order for an object to be scalar-replaceable, it must be:

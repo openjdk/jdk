@@ -147,6 +147,7 @@
                                                                                                   \
   /* Java runtime version access */                                                               \
   template(java_lang_VersionProps,                    "java/lang/VersionProps")                   \
+  template(java_version_name,                         "java_version")                             \
   template(java_runtime_name_name,                    "java_runtime_name")                        \
   template(java_runtime_version_name,                 "java_runtime_version")                     \
   template(java_runtime_vendor_version_name,          "VENDOR_VERSION")                           \

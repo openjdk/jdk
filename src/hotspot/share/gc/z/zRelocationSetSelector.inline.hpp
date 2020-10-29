@@ -74,8 +74,16 @@ inline size_t ZRelocationSetSelectorGroup::nselected() const {
   return _nselected;
 }
 
+inline size_t ZRelocationSetSelectorGroup::forwarding_entries() const {
+  return _forwarding_entries;
+}
+
 inline const ZRelocationSetSelectorGroupStats& ZRelocationSetSelectorGroup::stats() const {
   return _stats;
+}
+
+inline size_t ZRelocationSetSelector::forwarding_entries() const {
+  return _small.forwarding_entries() + _medium.forwarding_entries();
 }
 
 inline size_t ZRelocationSetSelector::total() const {

@@ -136,10 +136,6 @@ void G1FullGCCompactionPoint::add(HeapRegion* hr) {
   _compaction_regions->append(hr);
 }
 
-void G1FullGCCompactionPoint::merge(G1FullGCCompactionPoint* other) {
-   _compaction_regions->appendAll(other->regions());
-}
-
 HeapRegion* G1FullGCCompactionPoint::remove_last() {
   return _compaction_regions->pop();
 }
