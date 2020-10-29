@@ -273,7 +273,8 @@ public final class HelloApp {
             String... args) {
         AppOutputVerifier av = getVerifier(cmd, args);
         if (av != null) {
-            av.executeAndVerifyOutput(args);
+            // when running app launchers, clear users environment
+            av.executeAndVerifyOutput(true, args);
         }
     }
 
@@ -351,7 +352,11 @@ public final class HelloApp {
         }
 
         public void executeAndVerifyOutput(String... args) {
-            getExecutor(args).dumpOutput().execute();
+            executeAndVerifyOutput(false, args);
+        }
+
+        public void executeAndVerifyOutput(boolean removeEnv, String... args) {
+            getExecutor(args).dumpOutput().setRemoveEnv(removeEnv).execute();
 
             final List<String> launcherArgs = List.of(args);
             final List<String> appArgs;
