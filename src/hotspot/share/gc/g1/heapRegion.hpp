@@ -123,7 +123,9 @@ public:
   bool is_empty() const { return used() == 0; }
 
 private:
-  void reset_after_compaction();
+  void reset_compaction_top_after_compaction();
+
+  void reset_after_full_gc_common();
 
   void clear(bool mangle_space);
 
@@ -166,11 +168,10 @@ public:
   HeapWord* initialize_threshold();
   HeapWord* cross_threshold(HeapWord* start, HeapWord* end);
 
-  // Update heap region to be consistent after Full GC compaction for non-pinned
-  // regions.
-  void non_pinned_complete_compaction();
-  void pinned_complete_compaction();
-  void complete_compaction_common();
+  // Update heap region that has been compacted to be consistent after Full GC.
+  void reset_compacted_after_full_gc();
+  // Update pinned heap region (not compacted) to be consistent after Full GC.
+  void reset_pinned_after_full_gc();
 
   // All allocated blocks are occupied by objects in a HeapRegion
   bool block_is_obj(const HeapWord* p) const;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,24 +181,24 @@ inline size_t HeapRegion::block_size(const HeapWord *addr) const {
   return block_size_using_bitmap(addr, G1CollectedHeap::heap()->concurrent_mark()->prev_mark_bitmap());
 }
 
-inline void HeapRegion::reset_after_compaction() {
+inline void HeapRegion::reset_compaction_top_after_compaction() {
   set_top(compaction_top());
   _compaction_top = bottom();
 }
 
-inline void HeapRegion::non_pinned_complete_compaction() {
+inline void HeapRegion::reset_compacted_after_full_gc() {
   assert(!is_pinned(), "must be");
 
-  reset_after_compaction();
+  reset_compaction_top_after_compaction();
   // After a compaction the mark bitmap in a non-pinned regions is invalid.
   // We treat all objects as being above PTAMS.
   zero_marked_bytes();
   init_top_at_mark_start();
 
-  complete_compaction_common();
+  reset_after_full_gc_common();
 }
 
-inline void HeapRegion::pinned_complete_compaction() {
+inline void HeapRegion::reset_pinned_after_full_gc() {
   assert(!is_free(), "should not have compacted free region");
   assert(is_pinned(), "must be");
 
@@ -211,10 +211,10 @@ inline void HeapRegion::pinned_complete_compaction() {
   _next_top_at_mark_start = bottom();
   _next_marked_bytes = 0;
 
-  complete_compaction_common();
+  reset_after_full_gc_common();
 }
 
-inline void HeapRegion::complete_compaction_common() {
+inline void HeapRegion::reset_after_full_gc_common() {
   if (is_empty()) {
     reset_bot();
   }

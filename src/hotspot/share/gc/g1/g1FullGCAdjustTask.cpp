@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,9 +55,9 @@ class G1AdjustRegionClosure : public HeapRegionClosure {
   G1CMBitMap* _bitmap;
   uint _worker_id;
  public:
-  G1AdjustRegionClosure(G1FullCollector* collector, G1CMBitMap* bitmap, uint worker_id) :
+  G1AdjustRegionClosure(G1FullCollector* collector, uint worker_id) :
     _collector(collector),
-    _bitmap(bitmap),
+    _bitmap(collector->mark_bitmap()),
     _worker_id(worker_id) { }
 
   bool do_heap_region(HeapRegion* r) {
@@ -67,7 +67,7 @@ class G1AdjustRegionClosure : public HeapRegionClosure {
       // work distribution.
       oop obj = oop(r->humongous_start_region()->bottom());
       obj->oop_iterate(&cl, MemRegion(r->bottom(), r->top()));
-    } else if (!(r->is_closed_archive() || r->is_free())) {
+    } else if (!r->is_closed_archive() && !r->is_free()) {
       // Closed archive regions never change references and only contain
       // references into other closed regions and are always live. Free
       // regions do not contain objects to iterate. So skip both.
@@ -115,7 +115,7 @@ void G1FullGCAdjustTask::work(uint worker_id) {
   _string_dedup_cleaning_task.work(worker_id);
 
   // Now adjust pointers region by region
-  G1AdjustRegionClosure blk(collector(), collector()->mark_bitmap(), worker_id);
+  G1AdjustRegionClosure blk(collector(), worker_id);
   G1CollectedHeap::heap()->heap_region_par_iterate_from_worker_offset(&blk, &_hrclaimer, worker_id);
   log_task("Adjust task", worker_id, start);
 }

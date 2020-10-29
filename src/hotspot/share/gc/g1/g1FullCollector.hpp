@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_G1FULLCOLLECTOR_HPP
 
 #include "gc/g1/g1FullGCCompactionPoint.hpp"
+#include "gc/g1/g1FullGCHeapRegionAttr.hpp"
 #include "gc/g1/g1FullGCMarker.hpp"
 #include "gc/g1/g1FullGCOopClosures.hpp"
 #include "gc/g1/g1FullGCScope.hpp"
@@ -53,44 +54,6 @@ public:
   }
 };
 
-// This table is used to store some per-region attributes needed during collection.
-class G1FullGCHeapRegionAttrBiasedMappedArray : public G1BiasedMappedArray<uint8_t> {
-  static const uint8_t Normal = 0;
-  static const uint8_t Pinned = 1;
-  static const uint8_t ClosedArchive = 2;
-
-  static const uint8_t Invalid = 255;
-
-protected:
-  uint8_t default_value() const { return Invalid; }
-
-public:
-  void set_closed_archive(uint idx) { set_by_index(idx, ClosedArchive); }
-
-  bool is_closed_archive(HeapWord* obj) const {
-    assert(!is_invalid(obj), "not initialized yet");
-    return get_by_address(obj) == ClosedArchive;
-  }
-
-  void set_pinned_or_closed(uint idx) { set_by_index(idx, Pinned); }
-
-  bool is_pinned_or_closed(HeapWord* obj) const {
-    assert(!is_invalid(obj), "not initialized yet");
-    return get_by_address(obj) >= Pinned;
-  }
-
-  void set_normal(uint idx) { set_by_index(idx, Normal); }
-
-  bool is_normal(HeapWord* obj) const {
-    assert(!is_invalid(obj), "not initialized yet");
-    return get_by_address(obj) == Normal;
-  }
-
-  bool is_invalid(HeapWord* obj) const {
-    return get_by_address(obj) == Invalid;
-  }
-};
-
 // The G1FullCollector holds data associated with the current Full GC.
 class G1FullCollector : StackObj {
   G1CollectedHeap*          _heap;
@@ -110,7 +73,7 @@ class G1FullCollector : StackObj {
   G1FullGCSubjectToDiscoveryClosure _always_subject_to_discovery;
   ReferenceProcessorSubjectToDiscoveryMutator _is_subject_mutator;
 
-  G1FullGCHeapRegionAttrBiasedMappedArray _region_attr_table;
+  G1FullGCHeapRegionAttr _region_attr_table;
 
 public:
   G1FullCollector(G1CollectedHeap* heap, bool explicit_gc, bool clear_soft_refs);
@@ -135,7 +98,6 @@ public:
 
   bool is_in_pinned_or_closed(oop obj) const { return _region_attr_table.is_pinned_or_closed(cast_from_oop<HeapWord*>(obj)); }
   bool is_in_closed(oop obj) const { return _region_attr_table.is_closed_archive(cast_from_oop<HeapWord*>(obj)); }
-  bool is_in_invalid(oop obj) const { return _region_attr_table.is_invalid(cast_from_oop<HeapWord*>(obj)); }
 
 private:
   void phase1_mark_live_objects();

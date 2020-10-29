@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@ inline void G1AdjustClosure::do_oop(oop* p)       { do_oop_work(p); }
 inline void G1AdjustClosure::do_oop(narrowOop* p) { do_oop_work(p); }
 
 inline bool G1IsAliveClosure::do_object_b(oop p) {
-  return _bitmap->is_marked(p) || G1ArchiveAllocator::is_closed_archive_object(p);
+  return _bitmap->is_marked(p) || _collector->is_in_closed(p);
 }
 
 template<typename T>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@
 #include "utilities/debug.hpp"
 
 inline bool G1FullGCMarker::mark_object(oop obj) {
-  if (G1ArchiveAllocator::is_closed_archive_object(obj)) {
+  if (_collector->is_in_closed(obj)) {
     return false;
   }
 
@@ -54,7 +54,7 @@ inline bool G1FullGCMarker::mark_object(oop obj) {
   if (obj->mark_must_be_preserved(mark) &&
       // It is not necessary to preserve marks for objects in pinned regions because
       // we do not change their headers (i.e. forward them).
-      !G1CollectedHeap::heap()->heap_region_containing(obj)->is_pinned()) {
+      !_collector->is_in_pinned_or_closed(obj)) {
     preserved_stack()->push(obj, mark);
   }
 
@@ -73,7 +73,7 @@ template <class T> inline void G1FullGCMarker::mark_and_push(T* p) {
       _oop_stack.push(obj);
       assert(_bitmap->is_marked(obj), "Must be marked now - map self");
     } else {
-      assert(_bitmap->is_marked(obj) || G1ArchiveAllocator::is_closed_archive_object(obj),
+      assert(_bitmap->is_marked(obj) || _collector->is_in_closed(obj),
              "Must be marked by other or closed archive object");
     }
   }

@@ -69,7 +69,7 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/hashtable.inline.hpp"
 #if INCLUDE_G1GC
-#include "gc/g1/g1CollectedHeap.hpp"
+#include "gc/g1/g1CollectedHeap.inline.hpp"
 #endif
 
 ReservedSpace MetaspaceShared::_shared_rs;

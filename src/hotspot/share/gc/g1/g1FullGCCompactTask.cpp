@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ public:
     }
     assert(!r->is_starts_humongous() || _bitmap->is_marked((oop)r->bottom()),
            "must be, otherwise reclaimed earlier");
-    r->pinned_complete_compaction();
+    r->reset_pinned_after_full_gc();
     return false;
   }
 };
@@ -79,7 +79,7 @@ void G1FullGCCompactTask::compact_region(HeapRegion* hr) {
   if (G1VerifyBitmaps) {
     collector()->mark_bitmap()->clear_region(hr);
   }
-  hr->non_pinned_complete_compaction();
+  hr->reset_compacted_after_full_gc();
 }
 
 void G1FullGCCompactTask::work(uint worker_id) {

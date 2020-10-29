@@ -111,7 +111,7 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap, bool explicit_gc, bool c
     _array_queue_set(_num_workers),
     _preserved_marks_set(true),
     _serial_compaction_point(),
-    _is_alive(heap->concurrent_mark()->next_mark_bitmap()),
+    _is_alive(this, heap->concurrent_mark()->next_mark_bitmap()),
     _is_alive_mutator(heap->ref_processor_stw(), &_is_alive),
     _always_subject_to_discovery(),
     _is_subject_mutator(heap->ref_processor_stw(), &_always_subject_to_discovery),
@@ -122,7 +122,7 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap, bool explicit_gc, bool c
   _markers = NEW_C_HEAP_ARRAY(G1FullGCMarker*, _num_workers, mtGC);
   _compaction_points = NEW_C_HEAP_ARRAY(G1FullGCCompactionPoint*, _num_workers, mtGC);
   for (uint i = 0; i < _num_workers; i++) {
-    _markers[i] = new G1FullGCMarker(i, _preserved_marks_set.get(i), mark_bitmap());
+    _markers[i] = new G1FullGCMarker(this, i, _preserved_marks_set.get(i));
     _compaction_points[i] = new G1FullGCCompactionPoint();
     _oop_queue_set.register_queue(i, marker(i)->oop_stack());
     _array_queue_set.register_queue(i, marker(i)->objarray_stack());
@@ -139,6 +139,19 @@ G1FullCollector::~G1FullCollector() {
   FREE_C_HEAP_ARRAY(G1FullGCCompactionPoint*, _compaction_points);
 }
 
+class PrepareRegionsClosure : public HeapRegionClosure {
+  G1FullCollector* _collector;
+
+public:
+  PrepareRegionsClosure(G1FullCollector* collector) : _collector(collector) { }
+
+  bool do_heap_region(HeapRegion* hr) {
+    G1CollectedHeap::heap()->prepare_region_for_full_compaction(hr);
+    _collector->update_attribute_table(hr);
+    return false;
+  }
+};
+
 void G1FullCollector::prepare_collection() {
   _heap->policy()->record_full_collection_start();
 
@@ -150,6 +163,9 @@ void G1FullCollector::prepare_collection() {
 
   _heap->gc_prologue(true);
   _heap->prepare_heap_for_full_collection();
+
+  PrepareRegionsClosure cl(this);
+  _heap->heap_region_iterate(&cl);
 
   reference_processor()->enable_discovery();
   reference_processor()->setup_policy(scope()->should_clear_soft_refs());

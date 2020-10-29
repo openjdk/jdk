@@ -53,6 +53,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "utilities/bitMap.inline.hpp"
+#include "utilities/copy.hpp"
 #if INCLUDE_G1GC
 #include "gc/g1/g1CollectedHeap.hpp"
 #endif

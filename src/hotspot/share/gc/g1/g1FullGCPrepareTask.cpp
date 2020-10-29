@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ bool G1FullGCPrepareTask::has_freed_regions() {
 void G1FullGCPrepareTask::work(uint worker_id) {
   Ticks start = Ticks::now();
   G1FullGCCompactionPoint* compaction_point = collector()->compaction_point(worker_id);
-  G1CalculatePointersClosure closure(collector(), collector()->mark_bitmap(), compaction_point);
+  G1CalculatePointersClosure closure(collector(), compaction_point);
   G1CollectedHeap::heap()->heap_region_par_iterate_from_start(&closure, &_hrclaimer);
 
   // Update humongous region sets
@@ -99,16 +99,15 @@ void G1FullGCPrepareTask::work(uint worker_id) {
 }
 
 G1FullGCPrepareTask::G1CalculatePointersClosure::G1CalculatePointersClosure(G1FullCollector* collector,
-                                                                            G1CMBitMap* bitmap,
                                                                             G1FullGCCompactionPoint* cp) :
     _g1h(G1CollectedHeap::heap()),
     _collector(collector),
-    _bitmap(bitmap),
+    _bitmap(collector->mark_bitmap()),
     _cp(cp),
     _humongous_regions_removed(0) { }
 
 void G1FullGCPrepareTask::G1CalculatePointersClosure::free_humongous_region(HeapRegion* hr) {
-  assert(hr->is_humongous(), "handled elsewhere");
+  assert(hr->is_humongous(), "must be but region %u is %s", hr->hrm_index(), hr->get_short_type_str());
 
   FreeRegionList dummy_free_list("Humongous Dummy Free List for G1MarkSweep");
 
