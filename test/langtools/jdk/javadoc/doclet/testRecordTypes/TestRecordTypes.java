@@ -75,7 +75,7 @@ public class TestRecordTypes extends JavadocTester {
                 """
                     <h1 title="Record R" class="title">Record R</h1>""",
                 """
-                    public record<sup><a href="#preview-R">PREVIEW</a></sup> <span class="type-name-label">R</span>""",
+                    public record <span class="type-name-label">R</span>""",
                 """
                     <code><span class="member-name-link"><a href="#%3Cinit%3E(int)">R</a></span>&#8203;(int&nbsp;r1)</code>""");
     }
@@ -96,7 +96,7 @@ public class TestRecordTypes extends JavadocTester {
                 """
                     <h1 title="Record R" class="title">Record R</h1>""",
                 """
-                    public record<sup><a href="#preview-p.R">PREVIEW</a></sup> <span class="type-name-label">R</span>""",
+                    public record <span class="type-name-label">R</span>""",
                 """
                     <code><span class="member-name-link"><a href="#%3Cinit%3E(int)">R</a></span>&#8203;(int&nbsp;r1)</code>""");
     }
@@ -117,7 +117,7 @@ public class TestRecordTypes extends JavadocTester {
                 """
                     <h1 title="Record R" class="title">Record R</h1>""",
                 """
-                    public record<sup><a href="#preview-p.R">PREVIEW</a></sup> <span class="type-name-label">R</span>""",
+                    public record <span class="type-name-label">R</span>""",
                 """
                     <code><span class="member-name-link"><a href="#%3Cinit%3E()">R</a></span>()</code>""");
     }
@@ -142,7 +142,7 @@ public class TestRecordTypes extends JavadocTester {
                 """
                     <h1 title="Record R" class="title">Record R</h1>""",
                 """
-                    public record<sup><a href="#preview-p.R">PREVIEW</a></sup> <span class="type-name-label">R</span>""",
+                    public record <span class="type-name-label">R</span>""",
                 """
                     <dl class="notes">
                     <dt>Record Components:</dt>
@@ -173,7 +173,7 @@ public class TestRecordTypes extends JavadocTester {
                 """
                     <h1 title="Record R" class="title">Record R&lt;T&gt;</h1>""",
                 """
-                    public record<sup><a href="#preview-p.R">PREVIEW</a></sup> <span class="type-name-label">R&lt;T&gt;</span>""",
+                    public record <span class="type-name-label">R&lt;T&gt;</span>""",
                 """
                     <dl class="notes">
                     <dt>Type Parameters:</dt>
@@ -471,11 +471,11 @@ public class TestRecordTypes extends JavadocTester {
 
         checkOutput("p/R.html", true,
                 """
-                    <pre>public record<sup><a href="#preview-p.R">PREVIEW</a></sup> <span class="type-name-label">R</span>("""
+                    <pre>public record <span class="type-name-label">R</span>("""
                         + rcAnno
                         + """
                             int&nbsp;i)
-                            extends java.lang.Record<sup>PREVIEW</sup></pre>""",
+                            extends java.lang.Record</pre>""",
                 "<div class=\"member-signature\">"
                         + fAnno
                         + """

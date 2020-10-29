@@ -2938,10 +2938,6 @@ public class Utils {
     public Set<DeclarationPreviewLanguageFeatures> previewLanguageFeaturesUsed(Element e) {
         Set<DeclarationPreviewLanguageFeatures> result = new HashSet<>();
 
-        if (e.getKind() == ElementKind.RECORD) {
-            result.add(DeclarationPreviewLanguageFeatures.RECORD);
-        }
-
         if ((e.getKind().isClass() || e.getKind().isInterface()) &&
             e.getModifiers().contains(Modifier.SEALED)) {
             List<? extends TypeMirror> permits = ((TypeElement) e).getPermittedSubclasses();
@@ -2960,8 +2956,7 @@ public class Utils {
     public enum DeclarationPreviewLanguageFeatures {
 
         SEALED(List.of("sealed")),
-        SEALED_PERMITS(List.of("sealed", "permits")),
-        RECORD(List.of("record"));
+        SEALED_PERMITS(List.of("sealed", "permits"));
         public final List<String> features;
 
         private DeclarationPreviewLanguageFeatures(List<String> features) {

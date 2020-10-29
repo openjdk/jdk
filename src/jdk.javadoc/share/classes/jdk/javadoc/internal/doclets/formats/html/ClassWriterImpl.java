@@ -87,7 +87,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                      "java.io.Serializable");
 
     private static final Set<String> previewModifiers
-            = Set.of("record", "sealed", "non-sealed");
+            = Set.of("sealed", "non-sealed");
 
     protected final TypeElement typeElement;
 
