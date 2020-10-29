@@ -82,7 +82,7 @@ public class TestRecordLinks  extends JavadocTester {
                     """,
                 """
                     <div class="block"><a href="#foo()"><code>foo()</code></a>
-                     <a href="JavadocTest.Bar.html" title="class in example"><code>JavadocTest.Bar</code></a><sup><a href="JavadocTest.Bar.html#preview-example.JavadocTest.Bar">PREVIEW</a></sup></div>
+                     <a href="JavadocTest.Bar.html" title="class in example"><code>JavadocTest.Bar</code></a></div>
                     """);
 
         checkOutput("example/JavadocTest.Bar.html", true,
