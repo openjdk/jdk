@@ -108,6 +108,7 @@ class PhaseStringOpts : public Phase {
   void eliminate_call(CallNode* call, CallProjections& projs);
   void optimize_for_substring();
   void optimize_startsWith(CallJavaNode* substr, CallJavaNode* startsWith, Node* castpp, CallProjections& projs);
+  JVMState* clone_substr_jvms(CallJavaNode* call);
 
   PhaseGVN* gvn() { return _gvn; }
 

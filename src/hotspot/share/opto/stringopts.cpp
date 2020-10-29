@@ -603,15 +603,50 @@ void PhaseStringOpts::eliminate_call(CallNode* call, CallProjections& projs) {
   C->gvn_replace_by(call, C->top());
 }
 
-void PhaseStringOpts::optimize_startsWith(CallJavaNode* substr, CallJavaNode* startsWith, Node* castpp, CallProjections& projs) {
+JVMState* PhaseStringOpts::clone_substr_jvms(CallJavaNode* call) {
+  JVMState* jvms = call->jvms()->clone_shallow(C);
+  uint size = call->req();
+  SafePointNode* map = new SafePointNode(size, jvms);
+
+  // copy the control and memory state from the final call into our
+  // new starting state.  This allows any preceeding tests to feed
+  // into the new section of code.
+  for (uint i1 = 0; i1 < TypeFunc::Parms; i1++) {
+    map->init_req(i1, call->in(i1));
+  }
+
+  for (uint i1 = TypeFunc::Parms; i1 < jvms->debug_start(); i1++) {
+    map->init_req(i1, call->in(i1));
+  }
+
+  // Copy the rest of the inputs for the JVMState
+  for (uint i1 = jvms->debug_start(); i1 < call->req(); i1++) {
+    map->init_req(i1, call->in(i1));
+  }
+
+  // Make sure the memory state is a MergeMem for parsing.
+  if (!map->in(TypeFunc::Memory)->is_MergeMem()) {
+    map->set_req(TypeFunc::Memory, MergeMemNode::make(map->in(TypeFunc::Memory)));
+  }
+
+  jvms->set_map(map);
+  map->ensure_stack(jvms, jvms->method()->max_stack());
+  jvms->set_should_reexecute(true);
+  return jvms;
+}
+
+void PhaseStringOpts::optimize_startsWith(CallJavaNode* substr, CallJavaNode* startsWith,
+                                          Node* castpp, CallProjections& projs) {
   ciMethod* m = startsWith->method();
   ciInstanceKlass* holder = m->holder();
   ciMethod* m2 = holder->find_method(m->name(), ciSymbol::string_int_bool_signature());
 
-  Node* s = startsWith->in(TypeFunc::Parms + 0);
-  startsWith->replace_edge(s, substr->in(TypeFunc::Parms + 0));              // parent of substring
-  startsWith->ins_req(TypeFunc::Parms + 2, substr->in(TypeFunc::Parms + 1)); // offset of substring
+  Node* base = substr->in(TypeFunc::Parms + 0);
+  Node* beg_idx = substr->in(TypeFunc::Parms + 1);
+  Node* end_idx = substr->in(TypeFunc::Parms + 2);
 
+  startsWith->replace_edge(startsWith->in(TypeFunc::Parms + 0), base);
+  startsWith->ins_req(TypeFunc::Parms + 2, beg_idx);
   startsWith->set_tf(TypeFunc::make(m2));
   startsWith->set_method(m2);
   startsWith->set_override_symbolic_info(true);
@@ -626,7 +661,6 @@ void PhaseStringOpts::optimize_startsWith(CallJavaNode* substr, CallJavaNode* st
 
   if (iff != nullptr && iff->is_If()) {
     ctrl = iff->find_exact_control(iff->in(TypeFunc::Control));
-
     // if substr controls startsWith, hoist startsWith
     if (ctrl == substr) {
       iff->replace_edge(iff->in(1), C->top());
@@ -637,6 +671,45 @@ void PhaseStringOpts::optimize_startsWith(CallJavaNode* substr, CallJavaNode* st
         startsWith->replace_edge(startsWith->in(idx), substr->in(idx));
       }
     }
+  }
+
+  JVMState* jvms = clone_substr_jvms(substr);
+  GraphKit kit(jvms);
+
+  ctrl = startsWith->in(TypeFunc::Control);
+  kit.set_control(ctrl);
+  kit.push(base);
+  kit.push(beg_idx);
+  kit.push(end_idx);
+
+  Node* base_len = kit.load_String_length(base, false);
+  RegionNode* throwEx = new RegionNode(1);
+  kit.gvn().set_type(throwEx, Type::CONTROL);
+
+  // check IndexOutofBoundsException in java.lang.String::checkBoundsOffCount
+  // (begin < 0 || begin > end || end > length)
+  IfNode* check = kit.create_and_map_if(ctrl, __ Bool(__ CmpI(beg_idx, __ intcon(0)), BoolTest::lt),
+                                      PROB_MIN, COUNT_UNKNOWN);
+  throwEx->add_req(__ IfTrue(check));
+  check = kit.create_and_map_if(__ IfFalse(check), __ Bool(__ CmpI(beg_idx, end_idx), BoolTest::gt),
+                                      PROB_MIN, COUNT_UNKNOWN);
+  throwEx->add_req(__ IfTrue(check));
+  check = kit.create_and_map_if(__ IfFalse(check), __ Bool(__ CmpI(end_idx, base_len), BoolTest::gt),
+                                      PROB_MIN, COUNT_UNKNOWN);
+  throwEx->add_req(__ IfTrue(check));
+
+  Node* normal = __ IfFalse(check);
+  ctrl->replace_edge(startsWith, normal);
+  startsWith->set_req(TypeFunc::Control, normal);
+
+  {
+    // instead of constructing an IndexOutofBoundsException with offset index,
+    // just punt to interpreter and reexecute substring
+    PreserveJVMState pjvms(&kit);
+    kit.set_control(throwEx);
+    C->record_for_igvn(throwEx);
+    kit.uncommon_trap(Deoptimization::Reason_intrinsic,
+                      Deoptimization::Action_none);
   }
 
   if (castpp->outcnt() == 0 && substr->outcnt() > 0) {
