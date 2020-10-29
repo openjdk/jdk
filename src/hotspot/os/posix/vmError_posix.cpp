@@ -132,14 +132,9 @@ static void crash_handler(int sig, siginfo_t* info, void* ucVoid) {
 }
 
 void VMError::reset_signal_handlers() {
-  // install signal handlers for all synchronous program error signals
-  sigset_t newset;
-  sigemptyset(&newset);
-
   for (int i = 0; i < NUM_SIGNALS; i++) {
     save_signal(i, SIGNALS[i]);
     os::signal(SIGNALS[i], CAST_FROM_FN_PTR(void *, crash_handler));
-    sigaddset(&newset, SIGNALS[i]);
   }
 }
 
