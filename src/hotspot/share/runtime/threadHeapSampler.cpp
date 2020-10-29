@@ -24,6 +24,8 @@
  */
 
 #include "precompiled.hpp"
+#include "logging/log.hpp"
+#include "logging/logTag.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
