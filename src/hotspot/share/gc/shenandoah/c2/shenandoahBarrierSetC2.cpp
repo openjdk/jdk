@@ -1064,7 +1064,6 @@ Node* ShenandoahBarrierSetC2::ideal_node(PhaseGVN* phase, Node* n, bool can_resh
     if (in1->bottom_type() == TypePtr::NULL_PTR &&
         !((in2->Opcode() == Op_ShenandoahLoadReferenceBarrier) &&
           ((ShenandoahLoadReferenceBarrierNode*)in2)->kind() != ShenandoahBarrierSet::AccessKind::NORMAL)) {
-          ((ShenandoahLoadReferenceBarrierNode*)in2)->is_native())) {
       in2 = step_over_gc_barrier(in2);
     }
     if (in2->bottom_type() == TypePtr::NULL_PTR &&
