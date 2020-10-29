@@ -50,7 +50,7 @@ static void print_log_table() {
     assert(is_power_of_2(FastLogCount) && FastLogCount >= 4, "table size should be power of two and at least 4");
 
     log_info(heapsampling, generate)("FastLogCount = %d", FastLogCount);
-    log_info(heapsampling,generate)("static double log_table[FastLogCount] = {");
+    log_info(heapsampling,generate)("static const double log_table[FastLogCount] = {");
     int i = 0;
     for (; i < FastLogCount; i += 4) {
       log_info(heapsampling,generate)("  %.15f, %.15f, %.15f, %.15f,",
@@ -66,7 +66,7 @@ static void print_log_table() {
 static volatile bool log_table_printed = false;
 #endif
 
-static double log_table[FastLogCount] = {
+static const double log_table[FastLogCount] = {
   0.000704269011247, 0.002111776479852, 0.003517912108602, 0.004922678569045,
   0.006326078524934, 0.007728114632254, 0.009128789539256, 0.010528105886485,
   0.011926066306808, 0.013322673425448, 0.014717929860010, 0.016111838220512,
