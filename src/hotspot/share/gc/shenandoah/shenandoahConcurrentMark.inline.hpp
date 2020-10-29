@@ -257,14 +257,15 @@ inline void ShenandoahConcurrentMark::mark_through_ref(T *p, ShenandoahHeap* hea
       shenandoah_assert_not_forwarded(p, obj);
       shenandoah_assert_not_in_cset_except(p, obj, heap->cancelled_gc());
 
-      bool marked, marked_first;
+      bool skip_live = false;
+      bool marked;
       if (strong) {
-        marked = mark_context->mark_strong(obj, marked_first);
+        marked = mark_context->mark_strong(obj, /* was_upgraded = */ skip_live);
       } else {
-        marked = mark_context->mark_final(obj, marked_first);
+        marked = mark_context->mark_weak(obj);
       }
       if (marked) {
-        bool pushed = q->push(ShenandoahMarkTask(obj, marked_first, strong));
+        bool pushed = q->push(ShenandoahMarkTask(obj, skip_live, strong));
         assert(pushed, "overflow queue should always succeed pushing");
 
         if ((STRING_DEDUP == ENQUEUE_DEDUP) && ShenandoahStringDedup::is_candidate(obj)) {

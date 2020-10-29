@@ -79,9 +79,9 @@ private:
 //
 // By definition, chunk == 0 means "no chunk", i.e. chunking starts from 1.
 //
-// Lower bits of oop are reserved to handle "cnt_live" and "strong" properties. Since this encoding
-// stores uncompressed oops, those bits are always available. These bits default to zero for "count liveness"
-// and "strong" set, that is they are inverted from their natural meaning. This improves the frequent case
+// Lower bits of oop are reserved to handle "skip_live" and "strong" properties. Since this encoding
+// stores uncompressed oops, those bits are always available. These bits default to zero for "skip_live"
+// and "strong". For "strong", this inverts the natural boolean meaning. This improves the frequent case
 // by avoiding additional math for strong/counted-live references.
 //
 // This encoding gives a few interesting benefits:
@@ -151,7 +151,7 @@ private:
   static const uint8_t chunk_shift = oop_bits + pow_bits;
 
   static const uintptr_t oop_extract_mask       = right_n_bits(oop_bits) - 3;
-  static const uintptr_t cnt_live_extract_mask  = 1 << 0;
+  static const uintptr_t skip_live_extract_mask = 1 << 0;
   static const uintptr_t strong_extract_mask    = 1 << 1;
   static const uintptr_t chunk_pow_extract_mask = ~right_n_bits(oop_bits);
 
@@ -181,14 +181,14 @@ private:
   }
 
   inline bool decode_cnt_live(uintptr_t val) const {
-    return (val & cnt_live_extract_mask) == 0;
+    return (val & skip_live_extract_mask) == 0;
   }
 
-  inline uintptr_t encode_oop(oop obj, bool count_liveness, bool strong) const {
+  inline uintptr_t encode_oop(oop obj, bool skip_live, bool strong) const {
     STATIC_ASSERT(oop_shift == 0);
     uintptr_t encoded = cast_from_oop<uintptr_t>(obj);
-    if (!count_liveness) {
-      encoded |= cnt_live_extract_mask;
+    if (skip_live) {
+      encoded |= skip_live_extract_mask;
     }
     if (!strong) {
       encoded |= strong_extract_mask;
@@ -205,22 +205,22 @@ private:
   }
 
 public:
-  ShenandoahMarkTask(oop o = NULL, bool cnt_live = true, bool strong = true) {
-    uintptr_t enc = encode_oop(o, cnt_live, strong);
+  ShenandoahMarkTask(oop o = NULL, bool skip_live = false, bool strong = true) {
+    uintptr_t enc = encode_oop(o, skip_live, strong);
     assert(decode_oop(enc) == o,    "oop encoding should work: " PTR_FORMAT, p2i(o));
-    assert(decode_cnt_live(enc) == cnt_live, "cnt_live encoding should work");
+    assert(decode_cnt_live(enc) == !skip_live, "skip_live encoding should work");
     assert(decode_strong(enc) == strong, "strong encoding should work");
     assert(decode_not_chunked(enc), "task should not be chunked");
     _obj = enc;
   }
 
-  ShenandoahMarkTask(oop o, bool cnt_live, bool strong, int chunk, int pow) {
-    uintptr_t enc_oop = encode_oop(o, cnt_live, strong);
+  ShenandoahMarkTask(oop o, bool skip_live, bool strong, int chunk, int pow) {
+    uintptr_t enc_oop = encode_oop(o, skip_live, strong);
     uintptr_t enc_chunk = encode_chunk(chunk);
     uintptr_t enc_pow = encode_pow(pow);
     uintptr_t enc = enc_oop | enc_chunk | enc_pow;
     assert(decode_oop(enc) == o,       "oop encoding should work: " PTR_FORMAT, p2i(o));
-    assert(decode_cnt_live(enc) == cnt_live, "cnt_live encoding should work");
+    assert(decode_cnt_live(enc) == !skip_live, "skip_live encoding should work");
     assert(decode_strong(enc) == strong, "strong encoding should work");
     assert(decode_chunk(enc) == chunk, "chunk encoding should work: %d", chunk);
     assert(decode_pow(enc) == pow,     "pow encoding should work: %d", pow);
@@ -265,8 +265,8 @@ private:
   int _pow;
 
 public:
-  ShenandoahMarkTask(oop o = NULL, bool count_liveness = true, bool strong = true, int chunk = 0, int pow = 0):
-    _obj(o), _count_liveness(count_liveness), _strong(strong), _chunk(chunk), _pow(pow) {
+  ShenandoahMarkTask(oop o = NULL, bool skip_live = false, bool strong = true, int chunk = 0, int pow = 0):
+    _obj(o), _count_liveness(!skip_live), _strong(strong), _chunk(chunk), _pow(pow) {
     assert(0 <= chunk && chunk < nth_bit(chunk_bits), "chunk is sane: %d", chunk);
     assert(0 <= pow && pow < nth_bit(pow_bits), "pow is sane: %d", pow);
   }

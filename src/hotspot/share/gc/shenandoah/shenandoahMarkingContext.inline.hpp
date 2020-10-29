@@ -28,30 +28,26 @@
 #include "gc/shenandoah/shenandoahMarkBitMap.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.hpp"
 
-inline bool ShenandoahMarkingContext::mark_strong(oop obj, bool& marked_first) {
+inline bool ShenandoahMarkingContext::mark_strong(oop obj, bool& was_upgraded) {
   shenandoah_assert_not_forwarded(NULL, obj);
-  return (! allocated_after_mark_start(obj)) && _mark_bit_map.mark_strong(cast_from_oop<HeapWord*>(obj), marked_first);
+  return (! allocated_after_mark_start(obj)) && _mark_bit_map.mark_strong(cast_from_oop<HeapWord*>(obj), was_upgraded);
 }
 
-inline bool ShenandoahMarkingContext::mark_final(oop obj, bool& marked_first) {
+inline bool ShenandoahMarkingContext::mark_weak(oop obj) {
   shenandoah_assert_not_forwarded(NULL, obj);
-  return (! allocated_after_mark_start(obj)) && _mark_bit_map.mark_final(cast_from_oop<HeapWord*>(obj), marked_first);
+  return (! allocated_after_mark_start(obj)) && _mark_bit_map.mark_weak(cast_from_oop<HeapWord *>(obj));
 }
 
 inline bool ShenandoahMarkingContext::is_marked(oop obj) const {
-  return allocated_after_mark_start(obj) || _mark_bit_map.is_marked_strong_or_final(cast_from_oop<HeapWord*>(obj));
+  return allocated_after_mark_start(obj) || _mark_bit_map.is_marked(cast_from_oop<HeapWord *>(obj));
 }
 
 inline bool ShenandoahMarkingContext::is_marked_strong(oop obj) const {
   return allocated_after_mark_start(obj) || _mark_bit_map.is_marked_strong(cast_from_oop<HeapWord*>(obj));
 }
 
-inline bool ShenandoahMarkingContext::is_marked_final(oop obj) const {
-  return allocated_after_mark_start(obj) || _mark_bit_map.is_marked_final(cast_from_oop<HeapWord*>(obj));
-}
-
-inline bool ShenandoahMarkingContext::is_marked_strong_and_final(oop obj) const {
-  return allocated_after_mark_start(obj) || _mark_bit_map.is_marked_strong_and_final(cast_from_oop<HeapWord*>(obj));
+inline bool ShenandoahMarkingContext::is_marked_weak(oop obj) const {
+  return allocated_after_mark_start(obj) || _mark_bit_map.is_marked_weak(cast_from_oop<HeapWord *>(obj));
 }
 
 inline HeapWord* ShenandoahMarkingContext::get_next_marked_addr(HeapWord* start, HeapWord* limit) const {
