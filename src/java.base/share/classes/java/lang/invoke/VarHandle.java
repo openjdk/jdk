@@ -282,8 +282,8 @@ import static java.lang.invoke.MethodHandleStatics.UNSAFE;
  * match fails, it means that the access mode method which the caller is
  * invoking is not present on the individual VarHandle being invoked.
  *
- * <p>
- * Invocation of an access mode method behaves as if an invocation of
+ * <p id="invoke-behaviour">
+ * Invocation of an access mode method behaves, by default, as if an invocation of
  * {@link MethodHandle#invoke}, where the receiving method handle accepts the
  * VarHandle instance as the leading argument.  More specifically, the
  * following, where {@code {access-mode}} corresponds to the access mode method
@@ -328,6 +328,37 @@ import static java.lang.invoke.MethodHandleStatics.UNSAFE;
  * }</pre>
  * Where, in this case, the method handle is bound to the VarHandle instance.
  *
+ * <p id="invoke-exact-behaviour">
+ * A VarHandle's invocation behaviour can be adjusted (see {@link #withInvokeExactBehaviour}) such that invocation of
+ * an access mode method behaves as if invocation of {@link MethodHandle#invokeExact},
+ * where the receiving method handle accepts the VarHandle instance as the leading argument.
+ * More specifically, the following, where {@code {access-mode}} corresponds to the access mode method
+ * name:
+ * <pre> {@code
+ * VarHandle vh = ..
+ * R r = (R) vh.{access-mode}(p1, p2, ..., pN);
+ * }</pre>
+ * behaves as if:
+ * <pre> {@code
+ * VarHandle vh = ..
+ * VarHandle.AccessMode am = VarHandle.AccessMode.valueFromMethodName("{access-mode}");
+ * MethodHandle mh = MethodHandles.varHandleExactInvoker(
+ *                       am,
+ *                       vh.accessModeType(am));
+ *
+ * R r = (R) mh.invokeExact(vh, p1, p2, ..., pN)
+ * }</pre>
+ * (modulo access mode methods do not declare throwing of {@code Throwable}).
+ *
+ * More concisely, such behaviour is equivalent to:
+ * <pre> {@code
+ * VarHandle vh = ..
+ * VarHandle.AccessMode am = VarHandle.AccessMode.valueFromMethodName("{access-mode}");
+ * MethodHandle mh = vh.toMethodHandle(am);
+ *
+ * R r = (R) mh.invokeExact(p1, p2, ..., pN)
+ * }</pre>
+ * Where, in this case, the method handle is bound to the VarHandle instance.
  *
  * <h2>Invocation checking</h2>
  * In typical programs, VarHandle access mode type matching will usually
@@ -472,16 +503,14 @@ public abstract class VarHandle implements Constable {
     VarHandle target() { return null; }
 
     /**
-     * Returns {@code true} if this var handle is <em>exact</em>. An exact var handle
-     * will check whether the type at the call site of one of it's signature-polymorphic
-     * methods, matches the expected type exactly, and throw a
-     * {@link WrongMethodTypeException} in case of a mismatch.
+     * Returns {@code true} if this VarHandle has <a href="#invoke-exact-behaviour"><em>invoke-exact behaviour</em></a>.
      *
-     * @see #asExact()
-     *
-     * @return {@code true} if this var handle is exact.
+     * @see #withInvokeExactBehaviour()
+     * @see #withInvokeBehaviour()
+     * @return {@code true} if this VarHandle has <a href="#invoke-exact-behaviour"><em>invoke-exact behaviour</em></a>.
+     * @since 16
      */
-    public boolean isExact() {
+    public boolean hasInvokeExactBehaviour() {
         return exact;
     }
 
@@ -1562,27 +1591,36 @@ public abstract class VarHandle implements Constable {
     Object getAndBitwiseXorRelease(Object... args);
 
     /**
-     * Returns a var handle that, upon invocation of one of its signature-polymorphic methods,
-     * checks whether the invocation type matches the expected type of the invoked method exactly
-     * without performing <em>any</em> type adaptations. A {@link WrongMethodTypeException} is
-     * thrown in case of a mismatch.
+     * Returns a VarHandle, with access to the same variable(s) as this VarHandle, but whose
+     * invocation behaviour of access mode methods is adjusted to
+     * <a href="#invoke-exact-behaviour"><em>invoke-exact behaviour</em></a>.
+     * <p>
+     * If this VarHandle already has invoke-exact behaviour this VarHandle is returned.
+     * @apiNote
+     * Invoke-exact behaviour guarantees that that upon invocation of an access mode method
+     * the types an arity of the arguments must match the {@link #accessModeType(AccessMode) access mode type},
+     * otherwise a {@link WrongMethodTypeException} is thrown.
      *
-     * @see #asGeneric()
-     *
-     * @return an exact version of this var handle
+     * @see #withInvokeBehaviour()
+     * @see #hasInvokeExactBehaviour()
+     * @return a VarHandle with invoke-exact behaviour
+     * @since 16
      */
-    public abstract VarHandle asExact();
+    public abstract VarHandle withInvokeExactBehaviour();
 
     /**
-     * Returns a var handle that, upon invocation of one of its signature-polymorphic methods,
-     * will try to adapt the types of the argument(s) to the expected type of the invocation if
-     * possible, rather than throwing an exception in case of a mismatch.
+     * Returns a VarHandle, with access to the same variable(s) as this VarHandle, but whose
+     * invocation behaviour of access mode methods is adjusted to
+     * <a href="#invoke-behaviour"><em>invoke behaviour</em></a>.
+     * <p>
+     * If this VarHandle already has invoke behaviour this VarHandle is returned.
      *
-     * @see #asExact()
-     *
-     * @return an exact version of this var handle
+     * @see #withInvokeExactBehaviour()
+     * @see #hasInvokeExactBehaviour()
+     * @return a VarHandle with invoke behaviour
+     * @since 16
      */
-    public abstract VarHandle asGeneric();
+    public abstract VarHandle withInvokeBehaviour();
 
     enum AccessType {
         GET(Object.class),

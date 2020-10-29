@@ -59,12 +59,12 @@ final class VarHandle$Type$s {
         }
 
         @Override
-        public FieldInstanceReadOnly asExact() {
+        public FieldInstanceReadOnly withInvokeExactBehaviour() {
             return new FieldInstanceReadOnly(receiverType, fieldOffset{#if[Object]?, fieldType}, vform, true);
         }
 
         @Override
-        public FieldInstanceReadOnly asGeneric() {
+        public FieldInstanceReadOnly withInvokeBehaviour() {
             return new FieldInstanceReadOnly(receiverType, fieldOffset{#if[Object]?, fieldType}, vform, false);
         }
 
@@ -129,12 +129,12 @@ final class VarHandle$Type$s {
         }
 
         @Override
-        public FieldInstanceReadWrite asExact() {
+        public FieldInstanceReadWrite withInvokeExactBehaviour() {
             return new FieldInstanceReadWrite(receiverType, fieldOffset{#if[Object]?, fieldType}, true);
         }
 
         @Override
-        public FieldInstanceReadWrite asGeneric() {
+        public FieldInstanceReadWrite withInvokeBehaviour() {
             return new FieldInstanceReadWrite(receiverType, fieldOffset{#if[Object]?, fieldType}, false);
         }
 
@@ -395,12 +395,12 @@ final class VarHandle$Type$s {
         }
 
         @Override
-        public FieldStaticReadOnly asExact() {
+        public FieldStaticReadOnly withInvokeExactBehaviour() {
             return new FieldStaticReadOnly(base, fieldOffset{#if[Object]?, fieldType}, vform, true);
         }
 
         @Override
-        public FieldStaticReadOnly asGeneric() {
+        public FieldStaticReadOnly withInvokeBehaviour() {
             return new FieldStaticReadOnly(base, fieldOffset{#if[Object]?, fieldType}, vform, false);
         }
 
@@ -467,12 +467,12 @@ final class VarHandle$Type$s {
         }
 
         @Override
-        public FieldStaticReadWrite asExact() {
+        public FieldStaticReadWrite withInvokeExactBehaviour() {
             return new FieldStaticReadWrite(base, fieldOffset{#if[Object]?, fieldType}, true);
         }
 
         @Override
-        public FieldStaticReadWrite asGeneric() {
+        public FieldStaticReadWrite withInvokeBehaviour() {
             return new FieldStaticReadWrite(base, fieldOffset{#if[Object]?, fieldType}, false);
         }
 
@@ -734,12 +734,12 @@ final class VarHandle$Type$s {
         }
 
         @Override
-        public Array asExact() {
+        public Array withInvokeExactBehaviour() {
             return new Array(abase, ashift{#if[Object]?, arrayType}, true);
         }
 
         @Override
-        public Array asGeneric() {
+        public Array withInvokeBehaviour() {
             return new Array(abase, ashift{#if[Object]?, arrayType}, false);
         }
 

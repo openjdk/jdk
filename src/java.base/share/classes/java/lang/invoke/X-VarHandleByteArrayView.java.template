@@ -85,12 +85,12 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
         }
 
         @Override
-        public ArrayHandle asExact() {
+        public ArrayHandle withInvokeExactBehaviour() {
             return new ArrayHandle(be, true);
         }
 
         @Override
-        public ArrayHandle asGeneric() {
+        public ArrayHandle withInvokeBehaviour() {
             return new ArrayHandle(be, false);
         }
 
@@ -577,12 +577,12 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
         }
 
         @Override
-        public ByteBufferHandle asExact() {
+        public ByteBufferHandle withInvokeExactBehaviour() {
             return new ByteBufferHandle(be, true);
         }
 
         @Override
-        public ByteBufferHandle asGeneric() {
+        public ByteBufferHandle withInvokeBehaviour() {
             return new ByteBufferHandle(be, false);
         }
 

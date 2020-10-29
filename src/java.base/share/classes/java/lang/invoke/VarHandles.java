@@ -681,7 +681,7 @@ final class VarHandles {
 //                @LambdaForm.Compiled
 //                @Hidden
 //                final static <METHOD> throws Throwable {
-//                    if (handle.isExact() && handle.accessModeType(ad.type) != ad.symbolicMethodTypeExact) {
+//                    if (handle.hasInvokeExactBehaviour() && handle.accessModeType(ad.type) != ad.symbolicMethodTypeExact) {
 //                        throw new WrongMethodTypeException("expected " + handle.accessModeType(ad.type) + " but found "
 //                                + ad.symbolicMethodTypeExact);
 //                    }
@@ -699,7 +699,7 @@ final class VarHandles {
 //                @LambdaForm.Compiled
 //                @Hidden
 //                final static <METHOD> throws Throwable {
-//                    if (handle.isExact() && handle.accessModeType(ad.type) != ad.symbolicMethodTypeExact) {
+//                    if (handle.hasInvokeExactBehaviour() && handle.accessModeType(ad.type) != ad.symbolicMethodTypeExact) {
 //                        throw new WrongMethodTypeException("expected " + handle.accessModeType(ad.type) + " but found "
 //                                + ad.symbolicMethodTypeExact);
 //                    }

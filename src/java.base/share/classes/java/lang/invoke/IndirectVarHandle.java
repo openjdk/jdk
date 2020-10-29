@@ -96,12 +96,12 @@ import java.util.function.BiFunction;
     }
 
     @Override
-    public VarHandle asExact() {
+    public VarHandle withInvokeExactBehaviour() {
         return new IndirectVarHandle(target, value, coordinates, handleFactory, vform, true);
     }
 
     @Override
-    public VarHandle asGeneric() {
+    public VarHandle withInvokeBehaviour() {
         return new IndirectVarHandle(target, value, coordinates, handleFactory, vform, false);
     }
 

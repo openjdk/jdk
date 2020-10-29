@@ -84,12 +84,12 @@ public class VarHandleTestExact {
 
         try {
             vh.set(w, testValue);
-            vh.asGeneric().set(w, testValue);
+            vh.withInvokeBehaviour().set(w, testValue);
         } catch (WrongMethodTypeException wmte) {
             fail("Unexpected exception", wmte);
         }
 
-        vh = vh.asExact();
+        vh = vh.withInvokeExactBehaviour();
         try {
             setter.set(vh, w, testValue); // should throw
             fail("Exception expected");
@@ -108,12 +108,12 @@ public class VarHandleTestExact {
 
         try {
             Object o = vh.get(w);
-            Object o2 = vh.asGeneric().get(w);
+            Object o2 = vh.withInvokeBehaviour().get(w);
         } catch (WrongMethodTypeException wmte) {
             fail("Unexpected exception", wmte);
         }
 
-        vh = vh.asExact();
+        vh = vh.withInvokeExactBehaviour();
         try {
             getter.get(vh, w); // should throw
             fail("Exception expected");
@@ -132,12 +132,12 @@ public class VarHandleTestExact {
 
         try {
             vh.set(testValue);
-            vh.asGeneric().set(testValue);
+            vh.withInvokeBehaviour().set(testValue);
         } catch (WrongMethodTypeException wmte) {
             fail("Unexpected exception", wmte);
         }
 
-        vh = vh.asExact();
+        vh = vh.withInvokeExactBehaviour();
         try {
             staticSetter.set(vh, testValue); // should throw
             fail("Exception expected");
@@ -155,12 +155,12 @@ public class VarHandleTestExact {
 
         try {
             Object o = vh.get();
-            Object o2 = vh.asGeneric().get();
+            Object o2 = vh.withInvokeBehaviour().get();
         } catch (WrongMethodTypeException wmte) {
             fail("Unexpected exception", wmte);
         }
 
-        vh = vh.asExact();
+        vh = vh.withInvokeExactBehaviour();
         try {
             staticGetter.get(vh); // should throw
             fail("Exception expected");
@@ -176,12 +176,12 @@ public class VarHandleTestExact {
 
         try {
             vh.set(arr, 0, testValue);
-            vh.asGeneric().set(arr, 0, testValue);
+            vh.withInvokeBehaviour().set(arr, 0, testValue);
         } catch (WrongMethodTypeException wmte) {
             fail("Unexpected exception", wmte);
         }
 
-        vh = vh.asExact();
+        vh = vh.withInvokeExactBehaviour();
         try {
             setter.set(vh, arr, testValue); // should throw
             fail("Exception expected");
@@ -198,12 +198,12 @@ public class VarHandleTestExact {
 
         try {
             vh.set(buff, 0, testValue);
-            vh.asGeneric().set(buff, 0, testValue);
+            vh.withInvokeBehaviour().set(buff, 0, testValue);
         } catch (WrongMethodTypeException wmte) {
             fail("Unexpected exception", wmte);
         }
 
-        vh = vh.asExact();
+        vh = vh.withInvokeExactBehaviour();
         try {
             setter.set(vh, buff, testValue); // should throw
             fail("Exception expected");
@@ -220,12 +220,12 @@ public class VarHandleTestExact {
             MemoryAddress base = seg.baseAddress();
             try {
                 vh.set(base, testValue);
-                vh.asGeneric().set(base, testValue);
+                vh.withInvokeBehaviour().set(base, testValue);
             } catch (WrongMethodTypeException wmte) {
                 fail("Unexpected exception", wmte);
             }
 
-            vh = vh.asExact();
+            vh = vh.withInvokeExactBehaviour();
             try {
                 setter.set(vh, base, testValue); // should throw
                 fail("Exception expected");

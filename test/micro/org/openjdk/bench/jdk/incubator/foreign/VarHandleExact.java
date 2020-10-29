@@ -54,7 +54,7 @@ public class VarHandleExact {
 
     static {
         generic = MemoryHandles.withStride(MemoryHandles.varHandle(int.class, ByteOrder.nativeOrder()), 4);
-        exact = generic.asExact();
+        exact = generic.withInvokeExactBehaviour();
     }
 
     MemorySegment data;
