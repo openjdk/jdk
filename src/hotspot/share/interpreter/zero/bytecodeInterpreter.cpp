@@ -28,7 +28,6 @@
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/zero/bytecodeInterpreter.inline.hpp"
-#include "interpreter/zero/bytecodeInterpreterProfiling.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "logging/log.hpp"
@@ -416,8 +415,6 @@ BytecodeInterpreter::run(interpreterState istate) {
   static bool _jvmti_interp_events = 0;
 #endif
 
-  static int _compiling;  // (UseCompiler || CountCompiledCalls)
-
 #ifdef ASSERT
   if (istate->_msg != initialize) {
     assert(labs(istate->_stack_base - istate->_stack_limit) == (istate->_method->max_stack() + 1), "bad stack limit");
@@ -546,12 +543,14 @@ BytecodeInterpreter::run(interpreterState istate) {
          topOfStack < istate->stack_base(),
          "Stack top out of range");
 
+  assert(!UseCompiler, "Zero does not support compilers");
+  assert(!CountCompiledCalls, "Zero does not support counting compiled calls");
+
   const uint mdo_last_branch_taken_count = 0;
 
   switch (istate->msg()) {
     case initialize: {
       if (initialized++) ShouldNotReachHere(); // Only one initialize call.
-      _compiling = (UseCompiler || CountCompiledCalls);
 #ifdef VM_JVMTI
       _jvmti_interp_events = JvmtiExport::can_post_interpreter_events();
 #endif
@@ -562,11 +561,6 @@ BytecodeInterpreter::run(interpreterState istate) {
       THREAD->set_do_not_unlock();
       // count invocations
       assert(initialized, "Interpreter not initialized");
-      if (_compiling) {
-        // Get or create profile data. Check for pending (async) exceptions.
-        BI_PROFILE_GET_OR_CREATE_METHOD_DATA(handle_exception);
-        SAFEPOINT;
-      }
 
       if ((istate->_stack_base - istate->_stack_limit) != istate->method()->max_stack() + 1) {
         // initialize
@@ -689,12 +683,6 @@ BytecodeInterpreter::run(interpreterState istate) {
       // clear the message so we don't confuse ourselves later
       assert(THREAD->pop_frame_in_process(), "wrong frame pop state");
       istate->set_msg(no_request);
-      if (_compiling) {
-        // Set MDX back to the ProfileData of the invoke bytecode that will be
-        // restarted.
-        SET_MDX(NULL);
-        BI_PROFILE_GET_OR_CREATE_METHOD_DATA(handle_exception);
-      }
       THREAD->clr_pop_frame_in_process();
       goto run;
     }
@@ -716,11 +704,6 @@ BytecodeInterpreter::run(interpreterState istate) {
       if (THREAD->has_pending_exception()) goto handle_exception;
       // Update the pc by the saved amount of the invoke bytecode size
       UPDATE_PC(istate->bcp_advance());
-
-      if (_compiling) {
-        // Get or create profile data. Check for pending (async) exceptions.
-        BI_PROFILE_GET_OR_CREATE_METHOD_DATA(handle_exception);
-      }
       goto run;
     }
 
@@ -728,11 +711,6 @@ BytecodeInterpreter::run(interpreterState istate) {
       // Returned from an opcode that will reexecute. Deopt was
       // a result of a PopFrame request.
       //
-
-      if (_compiling) {
-        // Get or create profile data. Check for pending (async) exceptions.
-        BI_PROFILE_GET_OR_CREATE_METHOD_DATA(handle_exception);
-      }
       goto run;
     }
 
@@ -755,11 +733,6 @@ BytecodeInterpreter::run(interpreterState istate) {
       }
       UPDATE_PC(Bytecodes::length_at(METHOD, pc));
       if (THREAD->has_pending_exception()) goto handle_exception;
-
-      if (_compiling) {
-        // Get or create profile data. Check for pending (async) exceptions.
-        BI_PROFILE_GET_OR_CREATE_METHOD_DATA(handle_exception);
-      }
       goto run;
     }
     case got_monitors: {
@@ -1058,9 +1031,6 @@ run:
                   UPDATE_PC_AND_CONTINUE(6);
               }
               case Bytecodes::_ret:
-                  // Profile ret.
-                  BI_PROFILE_UPDATE_RET(/*bci=*/((int)(intptr_t)(LOCALS_ADDR(reg))));
-                  // Now, update the pc.
                   pc = istate->method()->code_base() + (intptr_t)(LOCALS_ADDR(reg));
                   UPDATE_PC_AND_CONTINUE(0);
               default:
@@ -1370,23 +1340,17 @@ run:
 
 #define COMPARISON_OP(name, comparison)                                      \
       CASE(_if_icmp##name): {                                                \
-          const bool cmp = (STACK_INT(-2) comparison STACK_INT(-1));         \
-          int skip = cmp                                                     \
+          int skip = (STACK_INT(-2) comparison STACK_INT(-1))                \
                       ? (int16_t)Bytes::get_Java_u2(pc + 1) : 3;             \
           address branch_pc = pc;                                            \
-          /* Profile branch. */                                              \
-          BI_PROFILE_UPDATE_BRANCH(/*is_taken=*/cmp);                        \
           UPDATE_PC_AND_TOS(skip, -2);                                       \
           DO_BACKEDGE_CHECKS(skip, branch_pc);                               \
           CONTINUE;                                                          \
       }                                                                      \
       CASE(_if##name): {                                                     \
-          const bool cmp = (STACK_INT(-1) comparison 0);                     \
-          int skip = cmp                                                     \
+          int skip = (STACK_INT(-1) comparison 0)                            \
                       ? (int16_t)Bytes::get_Java_u2(pc + 1) : 3;             \
           address branch_pc = pc;                                            \
-          /* Profile branch. */                                              \
-          BI_PROFILE_UPDATE_BRANCH(/*is_taken=*/cmp);                        \
           UPDATE_PC_AND_TOS(skip, -1);                                       \
           DO_BACKEDGE_CHECKS(skip, branch_pc);                               \
           CONTINUE;                                                          \
@@ -1395,12 +1359,9 @@ run:
 #define COMPARISON_OP2(name, comparison)                                     \
       COMPARISON_OP(name, comparison)                                        \
       CASE(_if_acmp##name): {                                                \
-          const bool cmp = (STACK_OBJECT(-2) comparison STACK_OBJECT(-1));   \
-          int skip = cmp                                                     \
+          int skip = (STACK_OBJECT(-2) comparison STACK_OBJECT(-1))          \
                        ? (int16_t)Bytes::get_Java_u2(pc + 1) : 3;            \
           address branch_pc = pc;                                            \
-          /* Profile branch. */                                              \
-          BI_PROFILE_UPDATE_BRANCH(/*is_taken=*/cmp);                        \
           UPDATE_PC_AND_TOS(skip, -2);                                       \
           DO_BACKEDGE_CHECKS(skip, branch_pc);                               \
           CONTINUE;                                                          \
@@ -1408,12 +1369,9 @@ run:
 
 #define NULL_COMPARISON_NOT_OP(name)                                         \
       CASE(_if##name): {                                                     \
-          const bool cmp = (!(STACK_OBJECT(-1) == NULL));                    \
-          int skip = cmp                                                     \
+          int skip = (!(STACK_OBJECT(-1) == NULL))                           \
                       ? (int16_t)Bytes::get_Java_u2(pc + 1) : 3;             \
           address branch_pc = pc;                                            \
-          /* Profile branch. */                                              \
-          BI_PROFILE_UPDATE_BRANCH(/*is_taken=*/cmp);                        \
           UPDATE_PC_AND_TOS(skip, -1);                                       \
           DO_BACKEDGE_CHECKS(skip, branch_pc);                               \
           CONTINUE;                                                          \
@@ -1421,12 +1379,9 @@ run:
 
 #define NULL_COMPARISON_OP(name)                                             \
       CASE(_if##name): {                                                     \
-          const bool cmp = ((STACK_OBJECT(-1) == NULL));                     \
-          int skip = cmp                                                     \
+          int skip = ((STACK_OBJECT(-1) == NULL))                            \
                       ? (int16_t)Bytes::get_Java_u2(pc + 1) : 3;             \
           address branch_pc = pc;                                            \
-          /* Profile branch. */                                              \
-          BI_PROFILE_UPDATE_BRANCH(/*is_taken=*/cmp);                        \
           UPDATE_PC_AND_TOS(skip, -1);                                       \
           DO_BACKEDGE_CHECKS(skip, branch_pc);                               \
           CONTINUE;                                                          \
@@ -1450,13 +1405,10 @@ run:
           int32_t  skip;
           key -= low;
           if (((uint32_t) key > (uint32_t)(high - low))) {
-            key = -1;
             skip = Bytes::get_Java_u4((address)&lpc[0]);
           } else {
             skip = Bytes::get_Java_u4((address)&lpc[key + 3]);
           }
-          // Profile switch.
-          BI_PROFILE_UPDATE_SWITCH(/*switch_index=*/key);
           // Does this really need a full backedge check (osr)?
           address branch_pc = pc;
           UPDATE_PC_AND_TOS(skip, -1);
@@ -1471,20 +1423,14 @@ run:
           int32_t  key  = STACK_INT(-1);
           int32_t  skip = Bytes::get_Java_u4((address) lpc); /* default amount */
           // Remember index.
-          int      index = -1;
-          int      newindex = 0;
           int32_t  npairs = Bytes::get_Java_u4((address) &lpc[1]);
           while (--npairs >= 0) {
             lpc += 2;
             if (key == (int32_t)Bytes::get_Java_u4((address)lpc)) {
               skip = Bytes::get_Java_u4((address)&lpc[1]);
-              index = newindex;
               break;
             }
-            newindex += 1;
           }
-          // Profile switch.
-          BI_PROFILE_UPDATE_SWITCH(/*switch_index=*/index);
           address branch_pc = pc;
           UPDATE_PC_AND_TOS(skip, -1);
           DO_BACKEDGE_CHECKS(skip, branch_pc);
@@ -1651,14 +1597,8 @@ run:
             //
             if (rhsKlass != elemKlass && !rhsKlass->is_subtype_of(elemKlass)) { // ebx->is...
               // Decrement counter if subtype check failed.
-              BI_PROFILE_SUBTYPECHECK_FAILED(rhsKlass);
               VM_JAVA_ERROR(vmSymbols::java_lang_ArrayStoreException(), "");
             }
-            // Profile checkcast with null_seen and receiver.
-            BI_PROFILE_UPDATE_CHECKCAST(/*null_seen=*/false, rhsKlass);
-          } else {
-            // Profile checkcast with null_seen and receiver.
-            BI_PROFILE_UPDATE_CHECKCAST(/*null_seen=*/true, NULL);
           }
           ((objArrayOop) arrObj)->obj_at_put(index, rhsObject);
           UPDATE_PC_AND_TOS_AND_CONTINUE(1, -3);
@@ -2169,26 +2109,17 @@ run:
             // Seems way more expensive now that we must dispatch.
             //
             if (objKlass != klassOf && !objKlass->is_subtype_of(klassOf)) {
-              // Decrement counter at checkcast.
-              BI_PROFILE_SUBTYPECHECK_FAILED(objKlass);
               ResourceMark rm(THREAD);
               char* message = SharedRuntime::generate_class_cast_message(
                 objKlass, klassOf);
               VM_JAVA_ERROR(vmSymbols::java_lang_ClassCastException(), message);
             }
-            // Profile checkcast with null_seen and receiver.
-            BI_PROFILE_UPDATE_CHECKCAST(/*null_seen=*/false, objKlass);
-          } else {
-            // Profile checkcast with null_seen and receiver.
-            BI_PROFILE_UPDATE_CHECKCAST(/*null_seen=*/true, NULL);
           }
           UPDATE_PC_AND_CONTINUE(3);
 
       CASE(_instanceof):
           if (STACK_OBJECT(-1) == NULL) {
             SET_STACK_INT(0, -1);
-            // Profile instanceof with null_seen and receiver.
-            BI_PROFILE_UPDATE_INSTANCEOF(/*null_seen=*/true, NULL);
           } else {
             VERIFY_OOP(STACK_OBJECT(-1));
             u2 index = Bytes::get_Java_u2(pc+1);
@@ -2207,11 +2138,7 @@ run:
               SET_STACK_INT(1, -1);
             } else {
               SET_STACK_INT(0, -1);
-              // Decrement counter at checkcast.
-              BI_PROFILE_SUBTYPECHECK_FAILED(objKlass);
             }
-            // Profile instanceof with null_seen and receiver.
-            BI_PROFILE_UPDATE_INSTANCEOF(/*null_seen=*/false, objKlass);
           }
           UPDATE_PC_AND_CONTINUE(3);
 
@@ -2386,9 +2313,6 @@ run:
         istate->set_callee_entry_point(method->from_interpreted_entry());
         istate->set_bcp_advance(5);
 
-        // Invokedynamic has got a call counter, just like an invokestatic -> increment!
-        BI_PROFILE_UPDATE_CALL();
-
         UPDATE_PC_AND_RETURN(0); // I'll be back...
       }
 
@@ -2417,9 +2341,6 @@ run:
         istate->set_callee_entry_point(method->from_interpreted_entry());
         istate->set_bcp_advance(3);
 
-        // Invokehandle has got a call counter, just like a final call -> increment!
-        BI_PROFILE_UPDATE_FINALCALL();
-
         UPDATE_PC_AND_RETURN(0); // I'll be back...
       }
 
@@ -2445,8 +2366,6 @@ run:
           CHECK_NULL(STACK_OBJECT(-(cache->parameter_size())));
           if (cache->is_vfinal()) {
             callee = cache->f2_as_vfinal_method();
-            // Profile 'special case of invokeinterface' final call.
-            BI_PROFILE_UPDATE_FINALCALL();
           } else {
             // Get receiver.
             int parms = cache->parameter_size();
@@ -2455,8 +2374,6 @@ run:
             VERIFY_OOP(rcvr);
             Klass* rcvrKlass = rcvr->klass();
             callee = (Method*) rcvrKlass->method_at_vtable(cache->f2_as_index());
-            // Profile 'special case of invokeinterface' virtual call.
-            BI_PROFILE_UPDATE_VIRTUALCALL(rcvrKlass);
           }
         } else if (cache->is_vfinal()) {
           // private interface method invocations
@@ -2543,9 +2460,6 @@ run:
                   handle_exception);
         }
 
-        // Profile virtual call.
-        BI_PROFILE_UPDATE_VIRTUALCALL(rcvr->klass());
-
         istate->set_callee(callee);
         istate->set_callee_entry_point(callee->from_interpreted_entry());
 #ifdef VM_JVMTI
@@ -2579,8 +2493,6 @@ run:
             CHECK_NULL(STACK_OBJECT(-(cache->parameter_size())));
             if (cache->is_vfinal()) {
               callee = cache->f2_as_vfinal_method();
-              // Profile final call.
-              BI_PROFILE_UPDATE_FINALCALL();
             } else {
               // get receiver
               int parms = cache->parameter_size();
@@ -2610,17 +2522,12 @@ run:
                   Because vtables have the same offset for ArrayKlass and InstanceKlass.
               */
               callee = (Method*) rcvrKlass->method_at_vtable(cache->f2_as_index());
-              // Profile virtual call.
-              BI_PROFILE_UPDATE_VIRTUALCALL(rcvrKlass);
             }
           } else {
             if ((Bytecodes::Code)opcode == Bytecodes::_invokespecial) {
               CHECK_NULL(STACK_OBJECT(-(cache->parameter_size())));
             }
             callee = cache->f1_as_method();
-
-            // Profile call.
-            BI_PROFILE_UPDATE_CALL();
           }
 
           istate->set_callee(callee);
@@ -2675,8 +2582,6 @@ run:
       CASE(_goto):
       {
           int16_t offset = (int16_t)Bytes::get_Java_u2(pc + 1);
-          // Profile jump.
-          BI_PROFILE_UPDATE_JUMP();
           address branch_pc = pc;
           UPDATE_PC(offset);
           DO_BACKEDGE_CHECKS(offset, branch_pc);
@@ -2693,8 +2598,6 @@ run:
       CASE(_goto_w):
       {
           int32_t offset = Bytes::get_Java_u4(pc + 1);
-          // Profile jump.
-          BI_PROFILE_UPDATE_JUMP();
           address branch_pc = pc;
           UPDATE_PC(offset);
           DO_BACKEDGE_CHECKS(offset, branch_pc);
@@ -2704,9 +2607,6 @@ run:
       /* return from a jsr or jsr_w */
 
       CASE(_ret): {
-          // Profile ret.
-          BI_PROFILE_UPDATE_RET(/*bci=*/((int)(intptr_t)(LOCALS_ADDR(pc[1]))));
-          // Now, update the pc.
           pc = istate->method()->code_base() + (intptr_t)(LOCALS_ADDR(pc[1]));
           UPDATE_PC_AND_CONTINUE(0);
       }
@@ -2789,9 +2689,6 @@ run:
       }
       // for AbortVMOnException flag
       Exceptions::debug_check_abort(except_oop);
-
-      // Update profiling data.
-      BI_PROFILE_ALIGN_TO_CURRENT_BCI();
       goto run;
     }
     if (log_is_enabled(Info, exceptions)) {
