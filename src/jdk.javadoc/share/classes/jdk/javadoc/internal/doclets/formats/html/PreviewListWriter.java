@@ -227,23 +227,25 @@ public class PreviewListWriter extends SubWriterHolderWriter {
 
     /**
      * Get list of all the preview elements.
-     * Then instantiate DeprecatedListWriter and generate File.
+     * Then instantiate PreviewListWriter and generate File.
      *
      * @param configuration the current configuration of the doclet.
-     * @throws DocFileIOException if there is a problem writing the deprecated list
+     * @throws DocFileIOException if there is a problem writing the preview list
      */
     public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
-        DocPath filename = DocPaths.PREVIEW_LIST;
-        PreviewListWriter depr = new PreviewListWriter(configuration, filename);
-        depr.generatePreviewListFile(
-               new PreviewAPIListBuilder(configuration));
+        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.DEPRECATED)) {
+            DocPath filename = DocPaths.PREVIEW_LIST;
+            PreviewListWriter depr = new PreviewListWriter(configuration, filename);
+            depr.generatePreviewListFile(
+                   new PreviewAPIListBuilder(configuration));
+        }
     }
 
     /**
-     * Generate the deprecated API list.
+     * Generate the preview API list.
      *
-     * @param previewapi list of deprecated API built already.
-     * @throws DocFileIOException if there is a problem writing the deprecated list
+     * @param previewapi list of preview API built already.
+     * @throws DocFileIOException if there is a problem writing the preview list
      */
     protected void generatePreviewListFile(PreviewAPIListBuilder previewapi)
             throws DocFileIOException {
@@ -268,7 +270,7 @@ public class PreviewListWriter extends SubWriterHolderWriter {
         htmlTree.add(navBar.getContent(Navigation.Position.BOTTOM));
         addBottom(htmlTree);
         bodyContents.setFooter(htmlTree);
-        String description = "deprecated elements";
+        String description = "preview elements";
         body.add(bodyContents);
         printHtmlDocument(null, description, body);
     }
@@ -276,7 +278,7 @@ public class PreviewListWriter extends SubWriterHolderWriter {
     /**
      * Add the index link.
      *
-     * @param builder the deprecated list builder
+     * @param builder the preview list builder
      * @param kind the kind of list being documented
      * @param contentTree the content tree to which the index link will be added
      */
@@ -292,7 +294,7 @@ public class PreviewListWriter extends SubWriterHolderWriter {
     /**
      * Get the contents list.
      *
-     * @param previewapi the deprecated list builder
+     * @param previewapi the preview list builder
      * @return a content tree for the contents list
      */
     public Content getContentsList(PreviewAPIListBuilder previewapi) {
@@ -312,7 +314,7 @@ public class PreviewListWriter extends SubWriterHolderWriter {
     }
 
     /**
-     * Get the header for the deprecated API Listing.
+     * Get the header for the preview API Listing.
      *
      * @return a content tree for the header
      */
@@ -328,25 +330,25 @@ public class PreviewListWriter extends SubWriterHolderWriter {
     }
 
     /**
-     * Add deprecated information to the documentation tree
+     * Add preview information to the documentation tree
      *
-     * @param deprList list of deprecated API elements
+     * @param previewList list of preview API elements
      * @param id the id attribute of the table
-     * @param headingKey the caption for the deprecated table
-     * @param tableSummary the summary for the deprecated table
-     * @param tableHeader table headers for the deprecated table
-     * @param contentTree the content tree to which the deprecated table will be added
+     * @param headingKey the caption for the preview table
+     * @param tableSummary the summary for the preview table
+     * @param tableHeader table headers for the preview table
+     * @param contentTree the content tree to which the preview table will be added
      */
-    protected void addPreviewAPI(SortedSet<Element> deprList, String id, String headingKey,
+    protected void addPreviewAPI(SortedSet<Element> previewList, String id, String headingKey,
             String tableSummary, TableHeader tableHeader, Content contentTree) {
-        if (deprList.size() > 0) {
+        if (previewList.size() > 0) {
             Content caption = contents.getContent(headingKey);
             Table table = new Table(HtmlStyle.summaryTable)
                     .setCaption(caption)
                     .setHeader(tableHeader)
                     .setId(id)
                     .setColumnStyles(HtmlStyle.colPreviewItemName, HtmlStyle.colLast);
-            for (Element e : deprList) {
+            for (Element e : previewList) {
                 Content link;
                 switch (e.getKind()) {
                     case MODULE:

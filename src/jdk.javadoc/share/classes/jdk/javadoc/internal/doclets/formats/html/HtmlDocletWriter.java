@@ -2212,14 +2212,8 @@ public class HtmlDocletWriter {
 
     public void addPreviewSummary(Element forWhat, Content target) {
         if (utils.isPreviewAPI(forWhat)) {
-            DocTree previewTree = utils.getPreviewTree(forWhat);
             Content div = HtmlTree.DIV(HtmlStyle.block);
-            if (previewTree != null) {
-                div.add(HtmlTree.SPAN(HtmlStyle.previewLabel,
-                                      new RawHtml(utils.getPreviewTreeSummaryOrDetails(previewTree, true))));
-            } else {
-                div.add(HtmlTree.SPAN(HtmlStyle.previewLabel, contents.previewPhrase));
-            }
+            div.add(HtmlTree.SPAN(HtmlStyle.previewLabel, contents.previewPhrase));
             target.add(div);
         }
     }
@@ -2229,41 +2223,38 @@ public class HtmlDocletWriter {
             //in Java platform:
             HtmlTree previewDiv = HtmlTree.DIV(HtmlStyle.previewBlock);
             previewDiv.setId(getPreviewSectionAnchor(forWhat));
-            DocTree previewTree = utils.getPreviewTree(forWhat);
-            if (previewTree != null) {
-                previewDiv.add(new RawHtml(utils.getPreviewTreeSummaryOrDetails(previewTree, false)));
-            } else {
-                String name = (switch (forWhat.getKind()) {
-                    case PACKAGE, MODULE ->
-                            ((QualifiedNameable) forWhat).getQualifiedName();
-                    case CONSTRUCTOR ->
-                            ((TypeElement) forWhat.getEnclosingElement()).getSimpleName();
-                    default -> forWhat.getSimpleName();
-                }).toString();
-                boolean isReflectivePreview = utils.isReflectivePreviewAPI(forWhat);
-                String leadingNoteKey =
-                        !isReflectivePreview ? "doclet.PreviewPlatformLeadingNote"
-                                             : "doclet.ReflectivePreviewPlatformLeadingNote";
-                RawHtml leadingNote =
-                        new RawHtml(resources.getText(leadingNoteKey, name));
-                previewDiv.add(HtmlTree.SPAN(HtmlStyle.previewLabel,
-                                             leadingNote));
-                if (!isReflectivePreview) {
-                    RawHtml note1 = new RawHtml(resources.getText("doclet.PreviewTrailingNote1", name));
-                    previewDiv.add(HtmlTree.DIV(HtmlStyle.previewComment, note1));
-                }
-                RawHtml note2 = new RawHtml(resources.getText("doclet.PreviewTrailingNote2", name));
-                previewDiv.add(HtmlTree.DIV(HtmlStyle.previewComment, note2));
+            String name = (switch (forWhat.getKind()) {
+                case PACKAGE, MODULE ->
+                        ((QualifiedNameable) forWhat).getQualifiedName();
+                case CONSTRUCTOR ->
+                        ((TypeElement) forWhat.getEnclosingElement()).getSimpleName();
+                default -> forWhat.getSimpleName();
+            }).toString();
+            Content nameCode = HtmlTree.CODE(new StringContent(name));
+            boolean isReflectivePreview = utils.isReflectivePreviewAPI(forWhat);
+            String leadingNoteKey =
+                    !isReflectivePreview ? "doclet.PreviewPlatformLeadingNote"
+                                         : "doclet.ReflectivePreviewPlatformLeadingNote";
+            Content leadingNote = 
+                    contents.getContent(leadingNoteKey, nameCode);
+            previewDiv.add(HtmlTree.SPAN(HtmlStyle.previewLabel,
+                                         leadingNote));
+            if (!isReflectivePreview) {
+                Content note1 = contents.getContent("doclet.PreviewTrailingNote1", nameCode);
+                previewDiv.add(HtmlTree.DIV(HtmlStyle.previewComment, note1));
             }
+            Content note2 = contents.getContent("doclet.PreviewTrailingNote2", nameCode);
+            previewDiv.add(HtmlTree.DIV(HtmlStyle.previewComment, note2));
             target.add(previewDiv);
         } else if (forWhat.getKind().isClass() || forWhat.getKind().isInterface()) {
             //in custom code:
             List<Content> previewNotes = getPreviewNotes((TypeElement) forWhat);
             if (!previewNotes.isEmpty()) {
                 Name name = forWhat.getSimpleName();
+                Content nameCode = HtmlTree.CODE(new StringContent(name));
                 HtmlTree previewDiv = HtmlTree.DIV(HtmlStyle.previewBlock);
                 previewDiv.setId(getPreviewSectionAnchor(forWhat));
-                RawHtml leadingNote = new RawHtml(resources.getText("doclet.PreviewLeadingNote", name));
+                Content leadingNote = contents.getContent("doclet.PreviewLeadingNote", nameCode);
                 previewDiv.add(HtmlTree.SPAN(HtmlStyle.previewLabel,
                                              leadingNote));
                 HtmlTree ul = new HtmlTree(TagName.UL);
@@ -2272,13 +2263,13 @@ public class HtmlDocletWriter {
                     ul.add(HtmlTree.LI(note));
                 }
                 previewDiv.add(ul);
-                RawHtml note1 =
-                        new RawHtml(resources.getText("doclet.PreviewTrailingNote1",
-                                    name));
+                Content note1 =
+                        contents.getContent("doclet.PreviewTrailingNote1",
+                                            nameCode);
                 previewDiv.add(HtmlTree.DIV(HtmlStyle.previewComment, note1));
-                RawHtml note2 =
-                        new RawHtml(resources.getText("doclet.PreviewTrailingNote2",
-                                    name));
+                Content note2 =
+                        contents.getContent("doclet.PreviewTrailingNote2",
+                                            name);
                 previewDiv.add(HtmlTree.DIV(HtmlStyle.previewComment, note2));
                 target.add(previewDiv);
             }
@@ -2316,17 +2307,8 @@ public class HtmlDocletWriter {
             for (DeclarationPreviewLanguageFeatures feature : previewLanguageFeatures) {
                 String featureDisplayName =
                         resources.getText("doclet.Declared_Using_Preview." + feature.name());
-                String featureCodes =
-                        feature.features
-                               .stream()
-                               .map(f -> "<code>" + f + "</code>")
-                               .collect(Collectors.joining(", "));
-                String text =
-                        resources.getText("doclet.Declared_Using_Preview",
-                                          className,
-                                          featureDisplayName,
-                                          featureCodes);
-                result.add(new RawHtml(text));
+                result.add(withPreviewFeatures("doclet.Declared_Using_Preview", className,
+                                               featureDisplayName, feature.features));
             }
         }
         if (!declaredUsingPreviewFeature.isEmpty()) {
@@ -2341,20 +2323,36 @@ public class HtmlDocletWriter {
         return result;
     }
 
-    private Content withLinks(String key, String className, Set<TypeElement> elements) {
-        return new RawHtml(resources.getText(key, className, elements.stream()
-                            .sorted((te1, te2) -> te1.getSimpleName().toString()
-                                       .compareTo(te2.getSimpleName().toString()))
-                            .distinct()
-                            .map(this::toLink)
-                            .map(link -> getLink(link).toString())
-                            .collect(Collectors.joining(", "))));
+    private Content withPreviewFeatures(String key, String className, String featureName, List<String> features) {
+        String[] sep = new String[] {""};
+        ContentBuilder featureCodes = new ContentBuilder();
+        features.stream()
+                .forEach(c -> {
+                    featureCodes.add(sep[0]);
+                    featureCodes.add(HtmlTree.CODE(new ContentBuilder().add(c)));
+                    sep[0] = ", ";
+                });
+        return contents.getContent(key,
+                                   HtmlTree.CODE(new StringContent(className)),
+                                   new HtmlTree(TagName.EM).add(featureName),
+                                   featureCodes);
     }
 
-    private LinkInfoImpl toLink(TypeElement te) {
-        return new LinkInfoImpl(configuration, LinkInfoImpl.Kind.CLASS, te)
-                .label(HtmlTree.CODE(new StringContent(te.getSimpleName())))
-                .skipPreview(true);
+    private Content withLinks(String key, String className, Set<TypeElement> elements) {
+        String[] sep = new String[] {""};
+        ContentBuilder links = new ContentBuilder();
+        elements.stream()
+                .sorted((te1, te2) -> te1.getSimpleName().toString().compareTo(te2.getSimpleName().toString()))
+                .distinct()
+                .map(te -> getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.CLASS, te).label(HtmlTree.CODE(new StringContent(te.getSimpleName()))).skipPreview(true)))
+                .forEach(c -> {
+                    links.add(sep[0]);
+                    links.add(c);
+                    sep[0] = ", ";
+                });
+        return contents.getContent(key,
+                                   HtmlTree.CODE(new StringContent(className)),
+                                   links);
     }
 
     public String getPreviewSectionAnchor(Element el) {
@@ -2365,4 +2363,5 @@ public class HtmlDocletWriter {
             default -> utils.getFullyQualifiedName(el, false);
         };
     }
+
 }

@@ -45,7 +45,7 @@ import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
  */
 public class PreviewAPIListBuilder {
     /**
-     * List of deprecated type Lists.
+     * List of preview type Lists.
      */
     private final Map<PreviewElementKind, SortedSet<Element>> previewMap;
     private final BaseConfiguration configuration;
@@ -76,17 +76,21 @@ public class PreviewAPIListBuilder {
         previewMap = new EnumMap<>(PreviewElementKind.class);
         for (PreviewElementKind kind : PreviewElementKind.values()) {
             previewMap.put(kind,
-                    new TreeSet<>(utils.comparators.makeDeprecatedComparator()));
+                    new TreeSet<>(utils.comparators.makeSummaryComparator()));
         }
-        buildDeprecatedAPIInfo();
+        buildPreviewAPIInfo();
+    }
+
+    public boolean isEmpty() {
+        return previewMap.values().stream().allMatch(Set::isEmpty);
     }
 
     /**
-     * Build the sorted list of all the deprecated APIs in this run.
-     * Build separate lists for deprecated modules, packages, classes, constructors,
+     * Build the sorted list of all the preview APIs in this run.
+     * Build separate lists for preview modules, packages, classes, constructors,
      * methods and fields.
      */
-    private void buildDeprecatedAPIInfo() {
+    private void buildPreviewAPIInfo() {
         SortedSet<ModuleElement> modules = configuration.modules;
         SortedSet<Element> mset = previewMap.get(PreviewElementKind.MODULE);
         for (Element me : modules) {
@@ -130,18 +134,18 @@ public class PreviewAPIListBuilder {
                         break;
                 }
             }
-            composeDeprecatedList(previewMap.get(PreviewElementKind.FIELD),
+            composePreviewList(previewMap.get(PreviewElementKind.FIELD),
                     utils.getFields(te));
-            composeDeprecatedList(previewMap.get(PreviewElementKind.METHOD),
+            composePreviewList(previewMap.get(PreviewElementKind.METHOD),
                     utils.getMethods(te));
-            composeDeprecatedList(previewMap.get(PreviewElementKind.CONSTRUCTOR),
+            composePreviewList(previewMap.get(PreviewElementKind.CONSTRUCTOR),
                     utils.getConstructors(te));
             if (utils.isEnum(e)) {
-                composeDeprecatedList(previewMap.get(PreviewElementKind.ENUM_CONSTANT),
+                composePreviewList(previewMap.get(PreviewElementKind.ENUM_CONSTANT),
                         utils.getEnumConstants(te));
             }
             if (utils.isAnnotationType(e)) {
-                composeDeprecatedList(previewMap.get(PreviewElementKind.ANNOTATION_TYPE_MEMBER),
+                composePreviewList(previewMap.get(PreviewElementKind.ANNOTATION_TYPE_MEMBER),
                         utils.getAnnotationMembers(te));
 
             }
@@ -149,13 +153,13 @@ public class PreviewAPIListBuilder {
     }
 
     /**
-     * Add the members into a single list of deprecated members.
+     * Add the members into a single list of preview members.
      *
-     * @param rset set of elements deprecated for removal.
-     * @param sset set of deprecated elements.
+     * @param rset set of elements preview for removal.
+     * @param sset set of preview elements.
      * @param members members to be added in the list.
      */
-    private void composeDeprecatedList(SortedSet<Element> sset, List<? extends Element> members) {
+    private void composePreviewList(SortedSet<Element> sset, List<? extends Element> members) {
         for (Element member : members) {
             if (utils.isPreviewAPI(member)) {
                 sset.add(member);
@@ -164,7 +168,7 @@ public class PreviewAPIListBuilder {
     }
 
     /**
-     * Return the list of deprecated elements of a given type.
+     * Return the list of preview elements of a given type.
      *
      * @param kind the PreviewElementKind
      * @return

@@ -322,7 +322,8 @@ public class Navigation {
                     addDeprecatedLink(tree);
                 }
                 if (documentedPage == PageMode.PREVIEW) {
-                    addActivePageLink(tree, contents.previewLabel, true); //TODO: option
+                    addActivePageLink(tree, contents.previewLabel,
+                            configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.DEPRECATED));
                 } else {
                     addPreviewLink(tree);
                 }
@@ -885,7 +886,7 @@ public class Navigation {
     }
 
     private void addPreviewLink(Content tree) {
-        if (configuration.getIncludedModuleElements().stream().anyMatch(m -> m.getQualifiedName().contentEquals("java.base"))) {
+        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.PREVIEW)) {
             tree.add(HtmlTree.LI(links.createLink(pathToRoot.resolve(DocPaths.PREVIEW_LIST),
                     contents.previewLabel, "", "")));
         }

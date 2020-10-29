@@ -59,9 +59,9 @@ public class TestPreview extends JavadocTester {
         ResourceBundle bundle = ResourceBundle.getBundle("jdk.javadoc.internal.doclets.formats.html.resources.standard", ModuleLayer.boot().findModule("jdk.javadoc").get());
 
         {
-            String zero = MessageFormat.format(bundle.getString("doclet.PreviewLeadingNote"), "TestPreviewDeclaration");
-            String one = MessageFormat.format(bundle.getString("doclet.Declared_Using_Preview"), "TestPreviewDeclaration", "Sealed Classes", "<code>sealed</code>");
-            String two = MessageFormat.format(bundle.getString("doclet.PreviewTrailingNote1"), "TestPreviewDeclaration");
+            String zero = MessageFormat.format(bundle.getString("doclet.PreviewLeadingNote"), "<code>TestPreviewDeclaration</code>");
+            String one = MessageFormat.format(bundle.getString("doclet.Declared_Using_Preview"), "<code>TestPreviewDeclaration</code>", "<em>Sealed Classes</em>", "<code>sealed</code>");
+            String two = MessageFormat.format(bundle.getString("doclet.PreviewTrailingNote1"), "<code>TestPreviewDeclaration</code>");
             String three = MessageFormat.format(bundle.getString("doclet.PreviewTrailingNote2"), new Object[0]);
             String expectedTemplate = """
                                       <div class="preview-block" id="preview-pkg.TestPreviewDeclaration"><span class="preview-label">{0}</span>

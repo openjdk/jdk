@@ -31,6 +31,7 @@ import java.util.List;
 import javax.lang.model.element.TypeElement;
 
 import com.sun.source.doctree.DocTree;
+import java.util.Set;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
@@ -44,6 +45,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
+import jdk.javadoc.internal.doclets.toolkit.util.Utils.ElementFlag;
 
 /**
  * Generate the file with list of all the classes in this run.
@@ -163,10 +165,11 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
         Content classLink = getLink(new LinkInfoImpl(
                 configuration, LinkInfoImpl.Kind.INDEX, klass));
         ContentBuilder description = new ContentBuilder();
-        if (utils.isPreviewAPI(klass)) {
+        Set<ElementFlag> flags = utils.elementFlags(klass);
+        if (flags.contains(ElementFlag.PREVIEW)) {
             description.add(contents.previewPhrase);
             addSummaryComment(klass, description);
-        } else if (utils.isDeprecated(klass)) {
+        } else if (flags.contains(ElementFlag.DEPRECATED)) {
             description.add(getDeprecatedPhrase(klass));
             List<? extends DocTree> tags = utils.getDeprecatedTrees(klass);
             if (!tags.isEmpty()) {

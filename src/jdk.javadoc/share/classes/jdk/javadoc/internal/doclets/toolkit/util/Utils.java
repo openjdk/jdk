@@ -2834,26 +2834,6 @@ public class Utils {
         return getBlockTags(element, USES);
     }
 
-    public DocTree getPreviewTree(Element element) {
-        return getBody(element).stream()
-                               .filter(t -> t.getKind() == Kind.UNKNOWN_INLINE_TAG)
-                               .filter(t -> "preview".equals(((UnknownInlineTagTree) t).getTagName()))
-                               .findAny()
-                               .orElse(null);
-    }
-
-    public String getPreviewTreeSummaryOrDetails(DocTree t, boolean summary) {
-        UnknownInlineTagTree previewTag = (UnknownInlineTagTree) t;
-        List<? extends DocTree> previewContent = previewTag.getContent();
-        String previewText = ((TextTree) previewContent.get(0)).getBody();
-        String[] summaryAndDetails = previewText.split("\n\r?\n\r?");
-        String rawHTML =
-               summary ? summaryAndDetails[0]
-                       : summaryAndDetails.length > 1 ? summaryAndDetails[1]
-                                                      : summaryAndDetails[0];
-        return rawHTML;
-    }
-
     public List<? extends DocTree> getFirstSentenceTrees(Element element) {
         DocCommentTree dcTree = getDocCommentTree(element);
         if (dcTree == null) {
@@ -3022,7 +3002,7 @@ public class Utils {
             }
             case MODULE, PACKAGE -> {
             }
-            default -> throw new IllegalStateException("Unexpected: " + el.getKind());
+            default -> throw new IllegalArgumentException("Unexpected: " + el.getKind());
         }
 
         Set<TypeElement> previewAPI = new HashSet<>();
@@ -3142,7 +3122,7 @@ public class Utils {
     /**
      * Checks whether the given Element should be marked as a preview API.
      *
-     * Note that is a type is marked as a preview, its members are not.
+     * Note that if a type is marked as a preview, its members are not.
      *
      * @param el the element to check
      * @return true if and only if the given element should be marked as a preview API
@@ -3157,13 +3137,32 @@ public class Utils {
         return !parentPreviewAPI && previewAPI;
     }
 
+    /**
+     * Checks whether the given Element should be marked as a reflective preview API.
+     *
+     * Note that if a type is marked as a preview, its members are not.
+     *
+     * @param el the element to check
+     * @return true if and only if the given element should be marked
+     *              as a reflective preview API
+     */
     public boolean isReflectivePreviewAPI(Element el) {
         return isPreviewAPI(el) && configuration.workArounds.isReflectivePreviewAPI(el);
     }
 
+    /**
+     * Return all flags for the given Element.
+     *
+     * @param el the element to test
+     * @return the set of all the element's flags.
+     */
     public Set<ElementFlag> elementFlags(Element el) {
         Set<ElementFlag> flags = EnumSet.noneOf(ElementFlag.class);
         PreviewSummary previewAPIs = declaredUsingPreviewAPIs(el);
+
+        if (isDeprecated(el)) {
+            flags.add(ElementFlag.DEPRECATED);
+        }
 
         if (!previewLanguageFeaturesUsed(el).isEmpty() ||
             configuration.workArounds.isPreviewAPI(el) ||
@@ -3176,7 +3175,12 @@ public class Utils {
         return flags;
     }
 
+    /**
+     * An element can have flags that place it into some sub-categories, like
+     * being a preview or a deprecated element.
+     */
     public enum ElementFlag {
+        DEPRECATED,
         PREVIEW;
     }
 

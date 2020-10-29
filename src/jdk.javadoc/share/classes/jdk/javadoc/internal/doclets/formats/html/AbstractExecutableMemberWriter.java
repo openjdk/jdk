@@ -86,19 +86,19 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
 
     @Override
     protected Content getDeprecatedOrPreviewLink(Element member) {
-        Content deprecatedLinkContent = new ContentBuilder();
-        deprecatedLinkContent.add(utils.getFullyQualifiedName(member));
+        Content content = new ContentBuilder();
+        content.add(utils.getFullyQualifiedName(member));
         if (!utils.isConstructor(member)) {
-            deprecatedLinkContent.add(".");
-            deprecatedLinkContent.add(member.getSimpleName());
+            content.add(".");
+            content.add(member.getSimpleName());
         }
         String signature = utils.flatSignature((ExecutableElement) member, typeElement);
         if (signature.length() > 2) {
-            deprecatedLinkContent.add(Entity.ZERO_WIDTH_SPACE);
+            content.add(Entity.ZERO_WIDTH_SPACE);
         }
-        deprecatedLinkContent.add(signature);
+        content.add(signature);
 
-        return writer.getDocLink(MEMBER_DEPRECATED_PREVIEW, utils.getEnclosingTypeElement(member), member, deprecatedLinkContent);
+        return writer.getDocLink(MEMBER_DEPRECATED_PREVIEW, utils.getEnclosingTypeElement(member), member, content);
     }
 
     /**

@@ -86,6 +86,9 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                      "java.lang.constant.ConstantDesc",
                      "java.io.Serializable");
 
+    private static final Set<String> previewModifiers
+            = Set.of("record", "sealed", "non-sealed");
+
     protected final TypeElement typeElement;
 
     protected final ClassTree classtree;
@@ -203,8 +206,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
             if (sep != null) {
                 pre.add(sep);
             }
-            if ("record".equals(modifiersPart) ||
-                "sealed".equals(modifiersPart) || "non-sealed".equals(modifiersPart)) {
+            if (previewModifiers.contains(modifiersPart)) {
                 pre.add(modifiersPart);
                 pre.add(new HtmlTree(TagName.SUP).add(links.createLink(getPreviewSectionAnchor(typeElement),
                                                       contents.previewMark)));

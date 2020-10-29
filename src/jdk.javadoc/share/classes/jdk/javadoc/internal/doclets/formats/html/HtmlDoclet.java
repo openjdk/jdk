@@ -46,6 +46,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
+import jdk.javadoc.internal.doclets.toolkit.util.PreviewAPIListBuilder;
 
 /**
  * The class with "start" method, calls individual Writers.
@@ -127,6 +128,11 @@ public class HtmlDoclet extends AbstractDoclet {
                 configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.DEPRECATED);
             }
         }
+        PreviewAPIListBuilder builder = new PreviewAPIListBuilder(configuration);
+        if (!builder.isEmpty()) {
+            configuration.previewAPIListBuilder = builder;
+            configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.PREVIEW);
+        }
 
         super.generateClassFiles(classTree);
     }
@@ -175,13 +181,7 @@ public class HtmlDoclet extends AbstractDoclet {
             DeprecatedListWriter.generate(configuration);
         }
 
-        boolean showPreviewTab =
-                configuration.getIncludedModuleElements()
-                             .stream()
-                             .anyMatch(m -> m.getQualifiedName()
-                                             .contentEquals("java.base"));
-
-        if (showPreviewTab) {
+        if (configuration.conditionalPages.contains((HtmlConfiguration.ConditionalPage.PREVIEW))) {
             PreviewListWriter.generate(configuration);
         }
 

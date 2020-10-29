@@ -243,6 +243,15 @@ public class HelpWriter extends HtmlDocletWriter {
             contentTree.add(section);
         }
 
+        // Preview
+        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.PREVIEW)) {
+            section = newHelpSection(contents.previewAPI);
+            Content previewBody = getContent("doclet.help.preview.body",
+                    links.createLink(DocPaths.PREVIEW_LIST, contents.previewAPI));
+            section.add(HtmlTree.P(previewBody));
+            contentTree.add(section);
+        }
+
         // Index
         if (options.createIndex()) {
             DocPath dp = options.splitIndex()
