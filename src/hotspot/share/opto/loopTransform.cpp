@@ -1045,16 +1045,6 @@ void IdealLoopTree::policy_unroll_slp_analysis(CountedLoopNode *cl, PhaseIdealLo
   }
 }
 
-//------------------------------policy_align-----------------------------------
-// Return TRUE or FALSE if the loop should be cache-line aligned.  Gather the
-// expression that does the alignment.  Note that only one array base can be
-// aligned in a loop (unless the VM guarantees mutual alignment).  Note that
-// if we vectorize short memory ops into longer memory ops, we may want to
-// increase alignment.
-bool IdealLoopTree::policy_align(PhaseIdealLoop *phase) const {
-  return false;
-}
-
 //------------------------------policy_range_check-----------------------------
 // Return TRUE or FALSE if the loop should be range-check-eliminated or not.
 // When TRUE, the estimated node budget is also requested.
@@ -3341,9 +3331,8 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
   uint est_peeling = estimate_peeling(phase);
   bool should_peel = 0 < est_peeling;
 
-  // Counted loops may be peeled, may need some iterations run up
-  // front for RCE, and may want to align loop refs to a cache
-  // line.  Thus we clone a full loop up front whose trip count is
+  // Counted loops may be peeled, or may need some iterations run up
+  // front for RCE. Thus we clone a full loop up front whose trip count is
   // at least 1 (if peeling), but may be several more.
 
   // The main loop will start cache-line aligned with at least 1
@@ -3355,27 +3344,25 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
 
   bool should_unroll = policy_unroll(phase);
   bool should_rce    = policy_range_check(phase);
-  // TODO: Remove align -- not used.
-  bool should_align  = policy_align(phase);
 
-  // If not RCE'ing  (iteration splitting) or Aligning, then we  do not need a
-  // pre-loop.  We may still need to peel an initial iteration but we will not
+  // If not RCE'ing (iteration splitting), then we do not need a pre-loop.
+  // We may still need to peel an initial iteration but we will not
   // be needing an unknown number of pre-iterations.
   //
-  // Basically, if may_rce_align reports FALSE first time through, we will not
-  // be able to later do RCE or Aligning on this loop.
-  bool may_rce_align = !policy_peel_only(phase) || should_rce || should_align;
+  // Basically, if peel_only reports TRUE first time through, we will not
+  // be able to later do RCE on this loop.
+  bool peel_only = policy_peel_only(phase) && !should_rce;
 
-  // If we have any of these conditions (RCE, alignment, unrolling) met, then
+  // If we have any of these conditions (RCE, unrolling) met, then
   // we switch to the pre-/main-/post-loop model.  This model also covers
   // peeling.
-  if (should_rce || should_align || should_unroll) {
+  if (should_rce || should_unroll) {
     if (cl->is_normal_loop()) { // Convert to 'pre/main/post' loops
       uint estimate = est_loop_clone_sz(3);
       if (!phase->may_require_nodes(estimate)) {
         return false;
       }
-      phase->insert_pre_post_loops(this, old_new, !may_rce_align);
+      phase->insert_pre_post_loops(this, old_new, peel_only);
     }
     // Adjust the pre- and main-loop limits to let the pre and  post loops run
     // with full checks, but the main-loop with no checks.  Remove said checks
@@ -3405,11 +3392,6 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
         phase->insert_vector_post_loop(this, old_new);
       }
       phase->do_unroll(this, old_new, true);
-    }
-
-    // Adjust the pre-loop limits to align the main body iterations.
-    if (should_align) {
-      Unimplemented();
     }
   } else {                      // Else we have an unchanged counted loop
     if (should_peel) {          // Might want to peel but do nothing else

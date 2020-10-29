@@ -1172,10 +1172,7 @@ JRT_ENTRY(void, InterpreterRuntime::at_safepoint(JavaThread* thread))
   }
 JRT_END
 
-JRT_ENTRY(void, InterpreterRuntime::at_unwind(JavaThread* thread))
-  // JRT_END does an implicit safepoint check, hence we are guaranteed to block
-  // if this is called during a safepoint
-
+JRT_LEAF(void, InterpreterRuntime::at_unwind(JavaThread* thread))
   // This function is called by the interpreter when the return poll found a reason
   // to call the VM. The reason could be that we are returning into a not yet safe
   // to access frame. We handle that below.
