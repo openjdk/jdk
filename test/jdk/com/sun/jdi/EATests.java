@@ -114,7 +114,7 @@
  *
  * @author Richard Reingruber richard DOT reingruber AT sap DOT com
  *
- * @requires ((vm.compMode == "Xmixed") & vm.jvmci)
+ * @requires ((vm.compMode == "Xmixed") & vm.graal.enabled)
  *
  * @library /test/lib /test/hotspot/jtreg
  *
