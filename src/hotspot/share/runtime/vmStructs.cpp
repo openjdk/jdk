@@ -887,7 +887,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   volatile_nonstatic_field(ObjectMonitor,      _recursions,                                   intx)                                  \
   nonstatic_field(BasicObjectLock,             _lock,                                         BasicLock)                             \
   nonstatic_field(BasicObjectLock,             _obj,                                          oop)                                   \
-  static_field(ObjectSynchronizer,             g_block_list,                                  PaddedObjectMonitor*)                  \
                                                                                                                                      \
   /*********************/                                                                                                            \
   /* Matcher (C2 only) */                                                                                                            \
@@ -1462,7 +1461,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   /************/                                                          \
                                                                           \
   declare_toplevel_type(ObjectMonitor)                                    \
-  declare_toplevel_type(PaddedObjectMonitor)                              \
   declare_toplevel_type(ObjectSynchronizer)                               \
   declare_toplevel_type(BasicLock)                                        \
   declare_toplevel_type(BasicObjectLock)                                  \
@@ -1993,7 +1991,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   declare_toplevel_type(nmethod*)                                         \
   COMPILER2_PRESENT(declare_unsigned_integer_type(node_idx_t))            \
   declare_toplevel_type(ObjectMonitor*)                                   \
-  declare_toplevel_type(PaddedObjectMonitor*)                             \
   declare_toplevel_type(oop*)                                             \
   declare_toplevel_type(OopMapCache*)                                     \
   declare_toplevel_type(VMReg)                                            \
@@ -2521,12 +2518,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   /******************/                                                    \
                                                                           \
   declare_constant(JNIHandleBlock::block_size_in_oops)                    \
-                                                                          \
-  /**********************/                                                \
-  /* ObjectSynchronizer */                                                \
-  /**********************/                                                \
-                                                                          \
-  declare_constant(ObjectSynchronizer::_BLOCKSIZE)                        \
                                                                           \
   /**********************/                                                \
   /* PcDesc             */                                                \

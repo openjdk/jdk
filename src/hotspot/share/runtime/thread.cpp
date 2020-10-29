@@ -262,11 +262,6 @@ Thread::Thread() {
   _current_pending_monitor_is_from_java = true;
   _current_waiting_monitor = NULL;
   _current_pending_raw_monitor = NULL;
-  om_free_list = NULL;
-  om_free_count = 0;
-  om_free_provision = 32;
-  om_in_use_list = NULL;
-  om_in_use_count = 0;
 
 #ifdef ASSERT
   _visited_for_critical_count = false;
@@ -2008,6 +2003,11 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     thread_name = os::strdup(get_thread_name());
   }
 
+  // We must flush any deferred card marks and other various GC barrier
+  // related buffers (e.g. G1 SATB buffer and G1 dirty card queue buffer)
+  // before removing a thread from the list of active threads.
+  BarrierSet::barrier_set()->on_thread_detach(this);
+
   log_info(os, thread)("JavaThread %s (tid: " UINTX_FORMAT ").",
     exit_type == JavaThread::normal_exit ? "exiting" : "detaching",
     os::current_thread_id());
@@ -2054,6 +2054,8 @@ void JavaThread::cleanup_failed_attach_current_thread(bool is_daemon) {
   if (UseTLAB) {
     tlab().retire();
   }
+
+  BarrierSet::barrier_set()->on_thread_detach(this);
 
   Threads::remove(this, is_daemon);
   this->smr_delete();
@@ -4241,20 +4243,9 @@ void Threads::add(JavaThread* p, bool force_daemon) {
 }
 
 void Threads::remove(JavaThread* p, bool is_daemon) {
-
-  // Reclaim the ObjectMonitors from the om_in_use_list and om_free_list of the moribund thread.
-  ObjectSynchronizer::om_flush(p);
-
   // Extra scope needed for Thread_lock, so we can check
   // that we do not remove thread without safepoint code notice
   { MonitorLocker ml(Threads_lock);
-
-    // We must flush any deferred card marks and other various GC barrier
-    // related buffers (e.g. G1 SATB buffer and G1 dirty card queue buffer)
-    // before removing a thread from the list of active threads.
-    // This must be done after ObjectSynchronizer::om_flush(), as GC barriers
-    // are used in om_flush().
-    BarrierSet::barrier_set()->on_thread_detach(p);
 
     assert(ThreadsSMRSupport::get_java_thread_list()->includes(p), "p must be present");
 
