@@ -226,7 +226,7 @@ void ObjectSampler::add(HeapWord* obj, size_t allocated, traceid thread_id, Java
   sample->set_object((oop)obj);
   sample->set_allocated(allocated);
   sample->set_allocation_time(JfrTicks::now());
-  sample->set_heap_used_at_last_gc(Universe::get_heap_used_at_last_gc());
+  sample->set_heap_used_at_last_gc(Universe::heap()->used_at_last_gc());
   _priority_queue->push(sample);
 }
 

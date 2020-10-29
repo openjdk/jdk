@@ -26,6 +26,7 @@
 #define SHARE_RUNTIME_GLOBALS_EXTENSION_HPP
 
 #include "runtime/flags/jvmFlag.hpp"
+#include "runtime/flags/jvmFlagAccess.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/macros.hpp"
 
@@ -34,113 +35,49 @@
 #define FLAG_MEMBER_ENUM(name) Flag_##name##_enum
 #define FLAG_MEMBER_ENUM_(name) FLAG_MEMBER_ENUM(name),
 
-#define FLAG_MEMBER_ENUM_PRODUCT(type, name, value, doc)      FLAG_MEMBER_ENUM_(name)
-#define FLAG_MEMBER_ENUM_PD_PRODUCT(type, name, doc)          FLAG_MEMBER_ENUM_(name)
-#define FLAG_MEMBER_ENUM_DIAGNOSTIC(type, name, value, doc)   FLAG_MEMBER_ENUM_(name)
-#define FLAG_MEMBER_ENUM_PD_DIAGNOSTIC(type, name, doc)       FLAG_MEMBER_ENUM_(name)
-#define FLAG_MEMBER_ENUM_EXPERIMENTAL(type, name, value, doc) FLAG_MEMBER_ENUM_(name)
-#define FLAG_MEMBER_ENUM_MANAGEABLE(type, name, value, doc)   FLAG_MEMBER_ENUM_(name)
-#define FLAG_MEMBER_ENUM_PRODUCT_RW(type, name, value, doc)   FLAG_MEMBER_ENUM_(name)
-#define FLAG_MEMBER_ENUM_DEVELOP(type, name, value, doc)      FLAG_MEMBER_ENUM_(name)
-#define FLAG_MEMBER_ENUM_PD_DEVELOP(type, name, doc)          FLAG_MEMBER_ENUM_(name)
-#define FLAG_MEMBER_ENUM_NOTPRODUCT(type, name, value, doc)   FLAG_MEMBER_ENUM_(name)
-#ifdef _LP64
-#define FLAG_MEMBER_ENUM_LP64_PRODUCT(type, name, value, doc) FLAG_MEMBER_ENUM_(name)
-#else
-#define FLAG_MEMBER_ENUM_LP64_PRODUCT(type, name, value, doc) /* flag is constant */
-#endif // _LP64
+#define DEFINE_FLAG_MEMBER_ENUM(type, name, ...)  FLAG_MEMBER_ENUM_(name)
 
-typedef enum {
-  ALL_FLAGS(FLAG_MEMBER_ENUM_DEVELOP,
-            FLAG_MEMBER_ENUM_PD_DEVELOP,
-            FLAG_MEMBER_ENUM_PRODUCT,
-            FLAG_MEMBER_ENUM_PD_PRODUCT,
-            FLAG_MEMBER_ENUM_DIAGNOSTIC,
-            FLAG_MEMBER_ENUM_PD_DIAGNOSTIC,
-            FLAG_MEMBER_ENUM_EXPERIMENTAL,
-            FLAG_MEMBER_ENUM_NOTPRODUCT,
-            FLAG_MEMBER_ENUM_MANAGEABLE,
-            FLAG_MEMBER_ENUM_PRODUCT_RW,
-            FLAG_MEMBER_ENUM_LP64_PRODUCT,
+enum JVMFlagsEnum : int {
+  INVALID_JVMFlagsEnum = -1,
+  ALL_FLAGS(DEFINE_FLAG_MEMBER_ENUM,
+            DEFINE_FLAG_MEMBER_ENUM,
+            DEFINE_FLAG_MEMBER_ENUM,
+            DEFINE_FLAG_MEMBER_ENUM,
+            DEFINE_FLAG_MEMBER_ENUM,
             IGNORE_RANGE,
             IGNORE_CONSTRAINT)
   NUM_JVMFlagsEnum
-} JVMFlagsEnum;
-
-// Can't put the following in JVMFlags because
-// of a circular dependency on the enum definition.
-class JVMFlagEx : JVMFlag {
- public:
-  static JVMFlag::Error boolAtPut(JVMFlagsEnum flag, bool value, JVMFlag::Flags origin);
-  static JVMFlag::Error intAtPut(JVMFlagsEnum flag, int value, JVMFlag::Flags origin);
-  static JVMFlag::Error uintAtPut(JVMFlagsEnum flag, uint value, JVMFlag::Flags origin);
-  static JVMFlag::Error intxAtPut(JVMFlagsEnum flag, intx value, JVMFlag::Flags origin);
-  static JVMFlag::Error uintxAtPut(JVMFlagsEnum flag, uintx value, JVMFlag::Flags origin);
-  static JVMFlag::Error uint64_tAtPut(JVMFlagsEnum flag, uint64_t value, JVMFlag::Flags origin);
-  static JVMFlag::Error size_tAtPut(JVMFlagsEnum flag, size_t value, JVMFlag::Flags origin);
-  static JVMFlag::Error doubleAtPut(JVMFlagsEnum flag, double value, JVMFlag::Flags origin);
-  // Contract:  Flag will make private copy of the incoming value
-  static JVMFlag::Error ccstrAtPut(JVMFlagsEnum flag, ccstr value, JVMFlag::Flags origin);
-  static JVMFlag::Error ccstrlistAtPut(JVMFlagsEnum flag, ccstr value, JVMFlag::Flags origin) {
-    return ccstrAtPut(flag, value, origin);
-  }
-
-  static bool is_default(JVMFlagsEnum flag);
-  static bool is_ergo(JVMFlagsEnum flag);
-  static bool is_cmdline(JVMFlagsEnum flag);
-  static bool is_jimage_resource(JVMFlagsEnum flag);
-
-  static void setOnCmdLine(JVMFlagsEnum flag);
-
-  static JVMFlag* flag_from_enum(JVMFlagsEnum flag);
 };
 
 // Construct set functions for all flags
 
-#define FLAG_MEMBER_SET(name) Flag_##name##_set
-#define FLAG_MEMBER_SET_(type, name) inline JVMFlag::Error FLAG_MEMBER_SET(name)(type value, JVMFlag::Flags origin) { return JVMFlagEx::type##AtPut(FLAG_MEMBER_ENUM(name), value, origin); }
+#define FLAG_MEMBER_SETTER(name) Flag_##name##_set
+#define FLAG_MEMBER_SETTER_(type, name) \
+  inline JVMFlag::Error FLAG_MEMBER_SETTER(name)(type value, JVMFlag::Flags origin) { \
+    return JVMFlagAccess::set<JVM_FLAG_TYPE(type)>(FLAG_MEMBER_ENUM(name), value, origin); \
+  }
 
-#define FLAG_MEMBER_SET_PRODUCT(type, name, value, doc)      FLAG_MEMBER_SET_(type, name)
-#define FLAG_MEMBER_SET_PD_PRODUCT(type, name, doc)          FLAG_MEMBER_SET_(type, name)
-#define FLAG_MEMBER_SET_DIAGNOSTIC(type, name, value, doc)   FLAG_MEMBER_SET_(type, name)
-#define FLAG_MEMBER_SET_PD_DIAGNOSTIC(type, name, doc)       FLAG_MEMBER_SET_(type, name)
-#define FLAG_MEMBER_SET_EXPERIMENTAL(type, name, value, doc) FLAG_MEMBER_SET_(type, name)
-#define FLAG_MEMBER_SET_MANAGEABLE(type, name, value, doc)   FLAG_MEMBER_SET_(type, name)
-#define FLAG_MEMBER_SET_PRODUCT_RW(type, name, value, doc)   FLAG_MEMBER_SET_(type, name)
-#define FLAG_MEMBER_SET_DEVELOP(type, name, value, doc)      FLAG_MEMBER_SET_(type, name)
-#define FLAG_MEMBER_SET_PD_DEVELOP(type, name, doc)          FLAG_MEMBER_SET_(type, name)
-#define FLAG_MEMBER_SET_NOTPRODUCT(type, name, value, doc)   FLAG_MEMBER_SET_(type, name)
-#ifdef _LP64
-#define FLAG_MEMBER_SET_LP64_PRODUCT(type, name, value, doc) FLAG_MEMBER_SET_(type, name)
-#else
-#define FLAG_MEMBER_SET_LP64_PRODUCT(type, name, value, doc) /* flag is constant */
-#endif // _LP64
+#define DEFINE_FLAG_MEMBER_SETTER(type, name, ...) FLAG_MEMBER_SETTER_(type, name)
 
-ALL_FLAGS(FLAG_MEMBER_SET_DEVELOP,
-          FLAG_MEMBER_SET_PD_DEVELOP,
-          FLAG_MEMBER_SET_PRODUCT,
-          FLAG_MEMBER_SET_PD_PRODUCT,
-          FLAG_MEMBER_SET_DIAGNOSTIC,
-          FLAG_MEMBER_SET_PD_DIAGNOSTIC,
-          FLAG_MEMBER_SET_EXPERIMENTAL,
-          FLAG_MEMBER_SET_NOTPRODUCT,
-          FLAG_MEMBER_SET_MANAGEABLE,
-          FLAG_MEMBER_SET_PRODUCT_RW,
-          FLAG_MEMBER_SET_LP64_PRODUCT,
+ALL_FLAGS(DEFINE_FLAG_MEMBER_SETTER,
+          DEFINE_FLAG_MEMBER_SETTER,
+          DEFINE_FLAG_MEMBER_SETTER,
+          DEFINE_FLAG_MEMBER_SETTER,
+          DEFINE_FLAG_MEMBER_SETTER,
           IGNORE_RANGE,
           IGNORE_CONSTRAINT)
 
-#define FLAG_IS_DEFAULT(name)         (JVMFlagEx::is_default(FLAG_MEMBER_ENUM(name)))
-#define FLAG_IS_ERGO(name)            (JVMFlagEx::is_ergo(FLAG_MEMBER_ENUM(name)))
-#define FLAG_IS_CMDLINE(name)         (JVMFlagEx::is_cmdline(FLAG_MEMBER_ENUM(name)))
-#define FLAG_IS_JIMAGE_RESOURCE(name) (JVMFlagEx::is_jimage_resource(FLAG_MEMBER_ENUM(name)))
+#define FLAG_IS_DEFAULT(name)         (JVMFlag::is_default(FLAG_MEMBER_ENUM(name)))
+#define FLAG_IS_ERGO(name)            (JVMFlag::is_ergo(FLAG_MEMBER_ENUM(name)))
+#define FLAG_IS_CMDLINE(name)         (JVMFlag::is_cmdline(FLAG_MEMBER_ENUM(name)))
+#define FLAG_IS_JIMAGE_RESOURCE(name) (JVMFlag::is_jimage_resource(FLAG_MEMBER_ENUM(name)))
 
 #define FLAG_SET_DEFAULT(name, value) ((name) = (value))
 
-#define FLAG_SET_CMDLINE(name, value) (JVMFlagEx::setOnCmdLine(FLAG_MEMBER_ENUM(name)), \
-                                       FLAG_MEMBER_SET(name)((value), JVMFlag::COMMAND_LINE))
-#define FLAG_SET_ERGO(name, value)    (FLAG_MEMBER_SET(name)((value), JVMFlag::ERGONOMIC))
-#define FLAG_SET_MGMT(name, value)    (FLAG_MEMBER_SET(name)((value), JVMFlag::MANAGEMENT))
+#define FLAG_SET_CMDLINE(name, value) (JVMFlag::setOnCmdLine(FLAG_MEMBER_ENUM(name)), \
+                                       FLAG_MEMBER_SETTER(name)((value), JVMFlag::COMMAND_LINE))
+#define FLAG_SET_ERGO(name, value)    (FLAG_MEMBER_SETTER(name)((value), JVMFlag::ERGONOMIC))
+#define FLAG_SET_MGMT(name, value)    (FLAG_MEMBER_SETTER(name)((value), JVMFlag::MANAGEMENT))
 
 #define FLAG_SET_ERGO_IF_DEFAULT(name, value) \
   do {                                        \

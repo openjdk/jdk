@@ -119,6 +119,7 @@ class OSThreadSampler : public os::SuspendedThreadTask {
                   JfrStackFrame *frames,
                   u4 max_frames) : os::SuspendedThreadTask((Thread*)thread),
     _success(false),
+    _thread_oop(thread->threadObj()),
     _stacktrace(frames, max_frames),
     _closure(closure),
     _suspend_time() {}
@@ -131,6 +132,7 @@ class OSThreadSampler : public os::SuspendedThreadTask {
 
  private:
   bool _success;
+  oop _thread_oop;
   JfrStackTrace _stacktrace;
   JfrThreadSampleClosure& _closure;
   JfrTicks _suspend_time;
@@ -172,7 +174,7 @@ void OSThreadSampler::do_task(const os::SuspendedThreadTaskContext& context) {
 * using a signal handler / __try block. Don't take locks, rely on destructors or
 * leave memory (in case of signal / exception) in an inconsistent state. */
 void OSThreadSampler::protected_task(const os::SuspendedThreadTaskContext& context) {
-  JavaThread* jth = (JavaThread*)context.thread();
+  JavaThread* jth = context.thread()->as_Java_thread();
   // Skip sample if we signaled a thread that moved to other state
   if (!thread_state_in_java(jth)) {
     return;
@@ -190,7 +192,7 @@ void OSThreadSampler::protected_task(const os::SuspendedThreadTaskContext& conte
       ev->set_starttime(_suspend_time);
       ev->set_endtime(_suspend_time); // fake to not take an end time
       ev->set_sampledThread(JFR_THREAD_ID(jth));
-      ev->set_state(java_lang_Thread::get_thread_status(jth->threadObj()));
+      ev->set_state(java_lang_Thread::get_thread_status(_thread_oop));
     }
   }
 }
@@ -202,7 +204,7 @@ void OSThreadSampler::take_sample() {
 class JfrNativeSamplerCallback : public os::CrashProtectionCallback {
  public:
   JfrNativeSamplerCallback(JfrThreadSampleClosure& closure, JavaThread* jt, JfrStackFrame* frames, u4 max_frames) :
-    _closure(closure), _jt(jt), _stacktrace(frames, max_frames), _success(false) {
+    _closure(closure), _jt(jt), _thread_oop(jt->threadObj()), _stacktrace(frames, max_frames), _success(false) {
   }
   virtual void call();
   bool success() { return _success; }
@@ -211,15 +213,16 @@ class JfrNativeSamplerCallback : public os::CrashProtectionCallback {
  private:
   JfrThreadSampleClosure& _closure;
   JavaThread* _jt;
+  oop _thread_oop;
   JfrStackTrace _stacktrace;
   bool _success;
 };
 
-static void write_native_event(JfrThreadSampleClosure& closure, JavaThread* jt) {
+static void write_native_event(JfrThreadSampleClosure& closure, JavaThread* jt, oop thread_oop) {
   EventNativeMethodSample *ev = closure.next_event_native();
   ev->set_starttime(JfrTicks::now());
   ev->set_sampledThread(JFR_THREAD_ID(jt));
-  ev->set_state(java_lang_Thread::get_thread_status(jt->threadObj()));
+  ev->set_state(java_lang_Thread::get_thread_status(thread_oop));
 }
 
 void JfrNativeSamplerCallback::call() {
@@ -241,7 +244,7 @@ void JfrNativeSamplerCallback::call() {
   topframe = first_java_frame;
   _success = _stacktrace.record_thread(*_jt, topframe);
   if (_success) {
-    write_native_event(_closure, _jt);
+    write_native_event(_closure, _jt, _thread_oop);
   }
 }
 
@@ -340,6 +343,7 @@ class JfrThreadSampler : public NonJavaThread {
   virtual void post_run();
  public:
   virtual char* name() const { return (char*)"JFR Thread Sampler"; }
+  bool is_JfrSampler_thread() const { return true; }
   void run();
   static Monitor* transition_block() { return JfrThreadSampler_lock; }
   static void on_javathread_suspend(JavaThread* thread);

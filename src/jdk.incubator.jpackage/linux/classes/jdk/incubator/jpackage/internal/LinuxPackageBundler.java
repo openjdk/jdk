@@ -27,6 +27,7 @@ package jdk.incubator.jpackage.internal;
 import java.io.IOException;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.nio.file.Files;
 import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.HashMap;
@@ -78,17 +79,24 @@ abstract class LinuxPackageBundler extends AbstractBundler {
             }
         }
 
-        withFindNeededPackages = LibProvidersLookup.supported();
-        if (!withFindNeededPackages) {
-            final String advice;
-            if ("deb".equals(getID())) {
-                advice = "message.deb-ldd-not-available.advice";
-            } else {
-                advice = "message.rpm-ldd-not-available.advice";
+        if (!isDefault()) {
+            withFindNeededPackages = false;
+            Log.verbose(MessageFormat.format(I18N.getString(
+                    "message.not-default-bundler-no-dependencies-lookup"),
+                    getName()));
+        } else {
+            withFindNeededPackages = LibProvidersLookup.supported();
+            if (!withFindNeededPackages) {
+                final String advice;
+                if ("deb".equals(getID())) {
+                    advice = "message.deb-ldd-not-available.advice";
+                } else {
+                    advice = "message.rpm-ldd-not-available.advice";
+                }
+                // Let user know package dependencies will not be generated.
+                Log.error(String.format("%s\n%s", I18N.getString(
+                        "message.ldd-not-available"), I18N.getString(advice)));
             }
-            // Let user know package dependencies will not be generated.
-            Log.error(String.format("%s\n%s", I18N.getString(
-                    "message.ldd-not-available"), I18N.getString(advice)));
         }
 
         // Packaging specific validation
@@ -182,13 +190,16 @@ abstract class LinuxPackageBundler extends AbstractBundler {
         }
 
         final List<String> neededLibPackages;
-        if (withFindNeededPackages) {
+        if (withFindNeededPackages && Files.exists(thePackage.sourceRoot())) {
             LibProvidersLookup lookup = new LibProvidersLookup();
             initLibProvidersLookup(params, lookup);
 
             neededLibPackages = lookup.execute(thePackage.sourceRoot());
         } else {
             neededLibPackages = Collections.emptyList();
+            if (!Files.exists(thePackage.sourceRoot())) {
+                Log.info(I18N.getString("warning.foreign-app-image"));
+            }
         }
 
         // Merge all package lists together.

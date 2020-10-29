@@ -32,7 +32,6 @@ import jdk.internal.org.objectweb.asm.ClassVisitor;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
@@ -45,12 +44,11 @@ import jdk.tools.jlink.plugin.ResourcePoolEntry;
  * We assume that the initialization code only has ldcs, method calls and
  * field instructions.
  */
-abstract class VersionPropsPlugin implements Plugin {
+abstract class VersionPropsPlugin extends AbstractPlugin {
 
     private static final String VERSION_PROPS_CLASS
         = "/java.base/java/lang/VersionProps.class";
 
-    private final String name;
     private final String field;
     private String value;
 
@@ -59,8 +57,8 @@ abstract class VersionPropsPlugin implements Plugin {
      * @param option The option name
      */
     protected VersionPropsPlugin(String field, String option) {
+        super(option);
         this.field = field;
-        this.name = option;
     }
 
     /**
@@ -71,16 +69,6 @@ abstract class VersionPropsPlugin implements Plugin {
      */
     protected VersionPropsPlugin(String field) {
         this(field, field.toLowerCase().replace('_', '-'));
-    }
-
-    @Override
-    public String getName() {
-        return name;
-    }
-
-    @Override
-    public String getDescription() {
-        return PluginsResourceBundle.getDescription(name);
     }
 
     @Override
@@ -99,13 +87,8 @@ abstract class VersionPropsPlugin implements Plugin {
     }
 
     @Override
-    public String getArgumentsDescription() {
-       return PluginsResourceBundle.getArgument(name);
-    }
-
-    @Override
     public void configure(Map<String, String> config) {
-        var v = config.get(name);
+        var v = config.get(getName());
         if (v == null)
             throw new AssertionError();
         value = v;

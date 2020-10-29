@@ -47,12 +47,25 @@ public class CPUInfoTest {
 
     static {
         if (Platform.isX86() || Platform.isX64()) {
+            // @formatter:off
+            // Checkstyle: stop
+            // See hotspot/cpu/x86/vm_version_x86.hpp for the list of supported features.
             wellKnownCPUFeatures = Set.of(
-                    "adx", "aes", "bmi1", "bmi2", "cmov", "cx8", "fxsr", "mmx", "clmul", "clflush", "clflushopt", "clwb",
-                    "sha", "fma", "popcnt", "vzeroupper", "erms", "rtm", "mmxext", "3dnowpref", "lzcnt", "ht",
-                    "tsc", "tscinvbit", "tscinv", "sse", "sse2", "sse3", "ssse3", "sse4.1", "sse4.2", "sse4a", "avx", "avx2",
-                    "avx512f", "avx512dq", "avx512pf", "avx512er", "avx512cd", "avx512bw", "avx512vl",
-                    "avx512_vpopcntdq", "avx512_vpclmulqdq", "avx512_vbmi2", "avx512_vaes", "avx512_vnni");
+                    "cx8",          "cmov",             "fxsr",              "ht",
+                    "mmx",          "3dnowpref",        "sse",               "sse2",
+                    "sse3",         "ssse3",            "sse4a",             "sse4.1",
+                    "sse4.2",       "popcnt",           "lzcnt",             "tsc",
+                    "tscinvbit",    "tscinv",           "avx",               "avx2",
+                    "aes",          "erms",             "clmul",             "bmi1",
+                    "bmi2",         "rtm",              "adx",               "avx512f",
+                    "avx512dq",     "avx512pf",         "avx512er",          "avx512cd",
+                    "avx512bw",     "avx512vl",         "sha",               "fma",
+                    "vzeroupper",   "avx512_vpopcntdq", "avx512_vpclmulqdq", "avx512_vaes",
+                    "avx512_vnni",  "clflush",          "clflushopt",        "clwb",
+                    "avx512_vmbi2", "avx512_vmbi",      "hv"
+                    );
+            // @formatter:on
+            // Checkstyle: resume
         } else {
             wellKnownCPUFeatures = null;
         }

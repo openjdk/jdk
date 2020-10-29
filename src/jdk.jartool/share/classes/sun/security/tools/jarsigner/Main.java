@@ -110,7 +110,7 @@ public class Main {
     private static final Set<CryptoPrimitive> SIG_PRIMITIVE_SET = Collections
             .unmodifiableSet(EnumSet.of(CryptoPrimitive.SIGNATURE));
 
-    private static boolean permsDetected;
+    private static boolean extraAttrsDetected;
 
     static final String VERSION = "1.0";
 
@@ -163,6 +163,7 @@ public class Main {
     boolean debug = false; // debug
     boolean signManifest = true; // "sign" the whole manifest
     boolean externalSF = true; // leave the .SF out of the PKCS7 block
+    boolean directSign = false; // sign SF directly or thru signedAttrs
     boolean strict = false;  // treat warnings as error
     boolean revocationCheck = false; // Revocation check flag
 
@@ -472,6 +473,8 @@ public class Main {
                 signManifest = false;
             } else if (collator.compare(flags, "-internalsf") ==0) {
                 externalSF = false;
+            } else if (collator.compare(flags, "-directsign") ==0) {
+                directSign = true;
             } else if (collator.compare(flags, "-verify") ==0) {
                 verify = true;
             } else if (collator.compare(flags, "-verbose") ==0) {
@@ -661,6 +664,9 @@ public class Main {
                 (".internalsf.include.the.SF.file.inside.the.signature.block"));
         System.out.println();
         System.out.println(rb.getString
+                (".directsign.sign.the.SF.file.directly.no.signerinfo.signedattributes"));
+        System.out.println();
+        System.out.println(rb.getString
                 (".sectionsonly.don.t.compute.hash.of.entire.manifest"));
         System.out.println();
         System.out.println(rb.getString
@@ -782,8 +788,8 @@ public class Main {
                     JarEntry je = e.nextElement();
                     String name = je.getName();
 
-                    if (!permsDetected && JUZFA.getPosixPerms(je) != -1) {
-                        permsDetected = true;
+                    if (!extraAttrsDetected && JUZFA.getExtraAttributes(je) != -1) {
+                        extraAttrsDetected = true;
                     }
                     hasSignature = hasSignature
                             || SignatureFileVerifier.isBlockOrSF(name);
@@ -955,9 +961,10 @@ public class Main {
                             SignerInfo si = p7.getSignerInfos()[0];
                             X509Certificate signer = si.getCertificate(p7);
                             String digestAlg = digestMap.get(s);
-                            String sigAlg = AlgorithmId.makeSigAlg(
-                                    si.getDigestAlgorithmId().getName(),
-                                    si.getDigestEncryptionAlgorithmId().getName());
+                            String sigAlg = SignerInfo.makeSigAlg(
+                                    si.getDigestAlgorithmId(),
+                                    si.getDigestEncryptionAlgorithmId(),
+                                    si.getAuthenticatedAttributes() == null);
                             PublicKey key = signer.getPublicKey();
                             PKCS7 tsToken = si.getTsToken();
                             if (tsToken != null) {
@@ -968,9 +975,10 @@ public class Main {
                                 TimestampToken tsTokenInfo = new TimestampToken(encTsTokenInfo);
                                 PublicKey tsKey = tsSigner.getPublicKey();
                                 String tsDigestAlg = tsTokenInfo.getHashAlgorithm().getName();
-                                String tsSigAlg = AlgorithmId.makeSigAlg(
-                                        tsSi.getDigestAlgorithmId().getName(),
-                                        tsSi.getDigestEncryptionAlgorithmId().getName());
+                                String tsSigAlg = SignerInfo.makeSigAlg(
+                                        tsSi.getDigestAlgorithmId(),
+                                        tsSi.getDigestEncryptionAlgorithmId(),
+                                        tsSi.getAuthenticatedAttributes() == null);
                                 Calendar c = Calendar.getInstance(
                                         TimeZone.getTimeZone("UTC"),
                                         Locale.getDefault(Locale.Category.FORMAT));
@@ -1247,8 +1255,8 @@ public class Main {
             }
         }
 
-        if (permsDetected) {
-            warnings.add(rb.getString("posix.attributes.detected"));
+        if (extraAttrsDetected) {
+            warnings.add(rb.getString("extra.attributes.detected"));
         }
 
         if ((strict) && (!errors.isEmpty())) {
@@ -1598,7 +1606,7 @@ public class Main {
 
     /**
      * Maps certificates (as keys) to alias names associated in the keystore
-     * {@link #store} (as values).
+     * {@link #keystore} (as values).
      */
     Hashtable<Certificate, String> storeHash = new Hashtable<>();
 
@@ -1725,7 +1733,7 @@ public class Main {
             tsaURI = new URI(tsaUrl);
         } else if (tsaAlias != null) {
             tsaCert = getTsaCert(tsaAlias);
-            tsaURI = TimestampedSigner.getTimestampingURI(tsaCert);
+            tsaURI = PKCS7.getTimestampingURI(tsaCert);
         }
 
         if (tsaURI != null) {
@@ -1765,6 +1773,7 @@ public class Main {
 
         builder.setProperty("sectionsOnly", Boolean.toString(!signManifest));
         builder.setProperty("internalSF", Boolean.toString(!externalSF));
+        builder.setProperty("directsign", Boolean.toString(directSign));
 
         FileOutputStream fos = null;
         try {
@@ -1777,8 +1786,8 @@ public class Main {
         String failedMessage = null;
 
         try {
-            Event.setReportListener(Event.ReporterCategory.POSIXPERMS,
-                    (t, o) -> permsDetected = true);
+            Event.setReportListener(Event.ReporterCategory.ZIPFILEATTRS,
+                    (t, o) -> extraAttrsDetected = true);
             builder.build().sign(zipFile, fos);
         } catch (JarSignerException e) {
             failedCause = e.getCause();
@@ -1813,7 +1822,7 @@ public class Main {
                 fos.close();
             }
 
-            Event.clearReportListener(Event.ReporterCategory.POSIXPERMS);
+            Event.clearReportListener(Event.ReporterCategory.ZIPFILEATTRS);
         }
 
         if (failedCause != null) {
@@ -1830,7 +1839,8 @@ public class Main {
         // validate it.
         try (JarFile check = new JarFile(signedJarFile)) {
             PKCS7 p7 = new PKCS7(check.getInputStream(check.getEntry(
-                    "META-INF/" + sigfile + "." + privateKey.getAlgorithm())));
+                    "META-INF/" + sigfile + "."
+                            + SignatureFileVerifier.getBlockExtension(privateKey))));
             Timestamp ts = null;
             try {
                 SignerInfo si = p7.getSignerInfos()[0];

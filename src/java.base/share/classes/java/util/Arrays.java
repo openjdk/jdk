@@ -25,8 +25,8 @@
 
 package java.util;
 
-import jdk.internal.HotSpotIntrinsicCandidate;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import java.io.Serializable;
 import java.lang.reflect.Array;
@@ -2577,7 +2577,7 @@ public class Arrays {
      * @param a2 the other array to be tested for equality
      * @return {@code true} if the two arrays are equal
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static boolean equals(char[] a, char[] a2) {
         if (a==a2)
             return true;
@@ -2650,7 +2650,7 @@ public class Arrays {
      * @param a2 the other array to be tested for equality
      * @return {@code true} if the two arrays are equal
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static boolean equals(byte[] a, byte[] a2) {
         if (a==a2)
             return true;
@@ -3504,7 +3504,7 @@ public class Arrays {
      *     an array of class {@code newType}
      * @since 1.6
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static <T,U> T[] copyOf(U[] original, int newLength, Class<? extends T[]> newType) {
         @SuppressWarnings("unchecked")
         T[] copy = ((Object)newType == (Object)Object[].class)
@@ -3774,7 +3774,7 @@ public class Arrays {
      *     an array of class {@code newType}.
      * @since 1.6
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static <T,U> T[] copyOfRange(U[] original, int from, int to, Class<? extends T[]> newType) {
         int newLength = to - from;
         if (newLength < 0)

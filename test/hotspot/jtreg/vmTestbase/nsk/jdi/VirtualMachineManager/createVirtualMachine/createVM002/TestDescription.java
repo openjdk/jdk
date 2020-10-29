@@ -44,13 +44,13 @@
  *          /test/lib
  * @build nsk.jdi.VirtualMachineManager.createVirtualMachine.createVM002
  *        nsk.jdi.VirtualMachineManager.createVirtualMachine.CreateVM002_TargetVM
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.VirtualMachineManager.createVirtualMachine.createVM002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
 

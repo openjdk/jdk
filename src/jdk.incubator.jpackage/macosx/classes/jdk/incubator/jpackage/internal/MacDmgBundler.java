@@ -82,9 +82,6 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
             if (appLocation != null && prepareConfigFiles(params)) {
                 Path configScript = getConfig_Script(params);
                 if (IOUtils.exists(configScript)) {
-                    Log.verbose(MessageFormat.format(
-                            I18N.getString("message.running-script"),
-                            configScript.toAbsolutePath().toString()));
                     IOUtils.run("bash", configScript);
                 }
 
@@ -476,15 +473,6 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
 
         //add license if needed
         if (Files.exists(getConfig_LicenseFile(params))) {
-            //hdiutil unflatten your_image_file.dmg
-            pb = new ProcessBuilder(
-                    hdiutil,
-                    "unflatten",
-                    finalDMG.toAbsolutePath().toString()
-            );
-            IOUtils.exec(pb);
-
-            //add license
             pb = new ProcessBuilder(
                     hdiutil,
                     "udifrez",
@@ -493,15 +481,6 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
                     getConfig_LicenseFile(params).toAbsolutePath().toString()
             );
             IOUtils.exec(pb);
-
-            //hdiutil flatten your_image_file.dmg
-            pb = new ProcessBuilder(
-                    hdiutil,
-                    "flatten",
-                    finalDMG.toAbsolutePath().toString()
-            );
-            IOUtils.exec(pb);
-
         }
 
         //Delete the temporary image

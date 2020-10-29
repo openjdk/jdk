@@ -91,8 +91,8 @@ G1AdaptiveIHOPControl::G1AdaptiveIHOPControl(double ihop_percent,
   _heap_reserve_percent(heap_reserve_percent),
   _heap_waste_percent(heap_waste_percent),
   _predictor(predictor),
-  _marking_times_s(10, 0.95),
-  _allocation_rate_s(10, 0.95),
+  _marking_times_s(10, 0.05),
+  _allocation_rate_s(10, 0.05),
   _last_unrestrained_young_size(0)
 {
 }

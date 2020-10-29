@@ -75,72 +75,64 @@ define_pd_global(bool, CompactStrings, true);
 define_pd_global(intx, InitArrayShortSize, 9*BytesPerLong);
 
 // Platform dependent flag handling: flags only defined on this platform.
-#define ARCH_FLAGS(develop,      \
-                   product,      \
-                   diagnostic,   \
-                   experimental, \
-                   notproduct,   \
-                   range,        \
-                   constraint)   \
+#define ARCH_FLAGS(develop,                                                 \
+                   product,                                                 \
+                   notproduct,                                              \
+                   range,                                                   \
+                   constraint)                                              \
                                                                             \
-  product(uintx, PowerArchitecturePPC64, 0,                                 \
+  product(uintx, PowerArchitecturePPC64, 0, DIAGNOSTIC,                     \
           "Specify the PowerPC family version in use. If not provided, "    \
           "HotSpot will determine it automatically. Host family version "   \
           "is the maximum value allowed (instructions are not emulated).")  \
                                                                             \
-  product(bool, SuperwordUseVSX, false,                                     \
-          "Use Power8 VSX instructions for superword optimization.")        \
-                                                                            \
   /* Reoptimize code-sequences of calls at runtime, e.g. replace an */      \
   /* indirect call by a direct call.                                */      \
-  product(bool, ReoptimizeCallSequences, true,                              \
+  product(bool, ReoptimizeCallSequences, true, DIAGNOSTIC,                  \
           "Reoptimize code-sequences of calls at runtime.")                 \
                                                                             \
   /* Power 8: Configure Data Stream Control Register. */                    \
-  product(uint64_t,DSCR_PPC64, (uintx)-1,                                   \
+  product(uint64_t, DSCR_PPC64, (uint64_t)-1,                               \
           "Power8 or later: Specify encoded value for Data Stream Control " \
           "Register")                                                       \
-  product(uint64_t,DSCR_DPFD_PPC64, 8,                                      \
+  product(uint64_t, DSCR_DPFD_PPC64, 8,                                     \
           "Power8 or later: DPFD (default prefetch depth) value of the "    \
           "Data Stream Control Register."                                   \
           " 0: hardware default, 1: none, 2-7: min-max, 8: don't touch")    \
-  product(uint64_t,DSCR_URG_PPC64, 8,                                       \
+  product(uint64_t, DSCR_URG_PPC64, 8,                                      \
           "Power8 or later: URG (depth attainment urgency) value of the "   \
           "Data Stream Control Register."                                   \
           " 0: hardware default, 1: none, 2-7: min-max, 8: don't touch")    \
                                                                             \
-  product(bool, UseLoadInstructionsForStackBangingPPC64, false,             \
+  product(bool, UseLoadInstructionsForStackBangingPPC64, false, DIAGNOSTIC, \
           "Use load instructions for stack banging.")                       \
                                                                             \
-  /* special instructions */                                                \
-  product(bool, UseByteReverseInstructions, false,                          \
-          "Use byte reverse instructions.")                                 \
-                                                                            \
-  product(bool, UseVectorByteReverseInstructionsPPC64, false,               \
-          "Use Power9 xxbr* vector byte reverse instructions.")             \
-                                                                            \
-  product(bool, UseCountLeadingZerosInstructionsPPC64, true,                \
-          "Use count leading zeros instructions.")                          \
-                                                                            \
-  product(bool, UseCountTrailingZerosInstructionsPPC64, false,              \
-          "Use count trailing zeros instructions.")                         \
-                                                                            \
-  product(bool, UseExtendedLoadAndReserveInstructionsPPC64, false,          \
-          "Use extended versions of load-and-reserve instructions.")        \
-                                                                            \
-  product(bool, UseRotateAndMaskInstructionsPPC64, true,                    \
-          "Use rotate and mask instructions.")                              \
-                                                                            \
-  product(bool, UseStaticBranchPredictionInCompareAndSwapPPC64, true,       \
+  product(bool, UseStaticBranchPredictionInCompareAndSwapPPC64, true, DIAGNOSTIC,\
           "Use static branch prediction hints in CAS operations.")          \
-  product(bool, UseStaticBranchPredictionForUncommonPathsPPC64, false,      \
+  product(bool, UseStaticBranchPredictionForUncommonPathsPPC64, false, DIAGNOSTIC,\
           "Use static branch prediction hints for uncommon paths.")         \
                                                                             \
-  product(bool, UsePower6SchedulerPPC64, false,                             \
-          "Use Power6 Scheduler.")                                          \
+  /* special instructions */                                                \
+  product(bool, SuperwordUseVSX, false,                                     \
+          "Use Power8 VSX instructions for superword optimization.")        \
                                                                             \
-  product(bool, InsertEndGroupPPC64, false,                                 \
-          "Insert EndGroup instructions to optimize for Power6.")           \
+  product(bool, UseByteReverseInstructions, false, DIAGNOSTIC,              \
+          "Use byte reverse instructions.")                                 \
+                                                                            \
+  product(bool, UseVectorByteReverseInstructionsPPC64, false, DIAGNOSTIC,   \
+          "Use Power9 xxbr* vector byte reverse instructions.")             \
+                                                                            \
+  product(bool, UseCountLeadingZerosInstructionsPPC64, true, DIAGNOSTIC,    \
+          "Use count leading zeros instructions.")                          \
+                                                                            \
+  product(bool, UseCountTrailingZerosInstructionsPPC64, false, DIAGNOSTIC,  \
+          "Use count trailing zeros instructions.")                         \
+                                                                            \
+  product(bool, UseExtendedLoadAndReserveInstructionsPPC64, false, DIAGNOSTIC,\
+          "Use extended versions of load-and-reserve instructions.")        \
+                                                                            \
+  product(bool, UseRotateAndMaskInstructionsPPC64, true, DIAGNOSTIC,        \
+          "Use rotate and mask instructions.")                              \
                                                                             \
   /* Trap based checks. */                                                  \
   /* Trap based checks use the ppc trap instructions to check certain */    \
@@ -149,19 +141,20 @@ define_pd_global(intx, InitArrayShortSize, 9*BytesPerLong);
   product(bool, UseSIGTRAP, true,                                           \
           "Allow trap instructions that make use of SIGTRAP. Use this to "  \
           "switch off all optimizations requiring SIGTRAP.")                \
-  product(bool, TrapBasedICMissChecks, true,                                \
+  product(bool, TrapBasedICMissChecks, true, DIAGNOSTIC,                    \
           "Raise and handle SIGTRAP if inline cache miss detected.")        \
-  product(bool, TraceTraps, false, "Trace all traps the signal handler"     \
-          "handles.")                                                       \
                                                                             \
-  product(bool, ZapMemory, false, "Write 0x0101... to empty memory."        \
-          " Use this to ease debugging.")                                   \
+  product(bool, TraceTraps, false, DIAGNOSTIC,                              \
+          "Trace all traps the signal handler handles.")                    \
+                                                                            \
+  develop(bool, ZapMemory, false,                                           \
+          "Write 0x0101... to empty memory. Use this to ease debugging.")   \
                                                                             \
   /* Use Restricted Transactional Memory for lock elision */                \
   product(bool, UseRTMLocking, false,                                       \
           "Enable RTM lock eliding for inflated locks in compiled code")    \
                                                                             \
-  experimental(bool, UseRTMForStackLocks, false,                            \
+  product(bool, UseRTMForStackLocks, false, EXPERIMENTAL,                   \
           "Enable RTM lock eliding for stack locks in compiled code")       \
                                                                             \
   product(bool, UseRTMDeopt, false,                                         \
@@ -171,33 +164,35 @@ define_pd_global(intx, InitArrayShortSize, 9*BytesPerLong);
           "Number of RTM retries on lock abort or busy")                    \
           range(0, max_jint)                                                \
                                                                             \
-  experimental(int, RTMSpinLoopCount, 100,                                  \
+  product(int, RTMSpinLoopCount, 100, EXPERIMENTAL,                         \
           "Spin count for lock to become free before RTM retry")            \
           range(0, 32767) /* immediate operand limit on ppc */              \
                                                                             \
-  experimental(int, RTMAbortThreshold, 1000,                                \
+  product(int, RTMAbortThreshold, 1000, EXPERIMENTAL,                       \
           "Calculate abort ratio after this number of aborts")              \
           range(0, max_jint)                                                \
                                                                             \
-  experimental(int, RTMLockingThreshold, 10000,                             \
+  product(int, RTMLockingThreshold, 10000, EXPERIMENTAL,                    \
           "Lock count at which to do RTM lock eliding without "             \
           "abort ratio calculation")                                        \
           range(0, max_jint)                                                \
                                                                             \
-  experimental(int, RTMAbortRatio, 50,                                      \
+  product(int, RTMAbortRatio, 50, EXPERIMENTAL,                             \
           "Lock abort ratio at which to stop use RTM lock eliding")         \
           range(0, 100) /* natural range */                                 \
                                                                             \
-  experimental(int, RTMTotalCountIncrRate, 64,                              \
+  product(int, RTMTotalCountIncrRate, 64, EXPERIMENTAL,                     \
           "Increment total RTM attempted lock count once every n times")    \
           range(1, 32767) /* immediate operand limit on ppc */              \
           constraint(RTMTotalCountIncrRateConstraintFunc,AfterErgo)         \
                                                                             \
-  experimental(intx, RTMLockingCalculationDelay, 0,                         \
+  product(intx, RTMLockingCalculationDelay, 0, EXPERIMENTAL,                \
           "Number of milliseconds to wait before start calculating aborts " \
           "for RTM locking")                                                \
                                                                             \
-  experimental(bool, UseRTMXendForLockBusy, true,                           \
-          "Use RTM Xend instead of Xabort when lock busy")                  \
+  product(bool, UseRTMXendForLockBusy, true, EXPERIMENTAL,                  \
+          "Use RTM Xend instead of Xabort when lock busy")
+
+// end of ARCH_FLAGS
 
 #endif // CPU_PPC_GLOBALS_PPC_HPP

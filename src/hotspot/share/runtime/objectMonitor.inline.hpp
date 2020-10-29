@@ -26,7 +26,9 @@
 #define SHARE_RUNTIME_OBJECTMONITOR_INLINE_HPP
 
 #include "logging/log.hpp"
+#include "oops/access.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/synchronizer.hpp"
 
 inline intptr_t ObjectMonitor::is_entered(TRAPS) const {
   if (THREAD == _owner || THREAD->is_lock_owned((address) _owner)) {
@@ -92,22 +94,13 @@ inline void ObjectMonitor::clear_common() {
   assert(contentions() <= 0, "must not be positive: contentions=%d", contentions());
   assert(_waiters == 0, "must be 0: waiters=%d", _waiters);
   assert(_recursions == 0, "must be 0: recursions=" INTX_FORMAT, _recursions);
-  assert(_object != NULL, "must be non-NULL");
 
   set_allocation_state(Free);
-  _object = NULL;
+  set_object(NULL);
 }
 
-inline void* ObjectMonitor::object() const {
-  return _object;
-}
-
-inline void* ObjectMonitor::object_addr() {
-  return (void *)(&_object);
-}
-
-inline void ObjectMonitor::set_object(void* obj) {
-  _object = obj;
+inline oop* ObjectMonitor::object_addr() {
+  return (oop*)&_object;
 }
 
 // Return number of threads contending for this monitor.
@@ -221,6 +214,10 @@ inline bool ObjectMonitor::is_old() const {
 
 inline bool ObjectMonitor::is_new() const {
   return _allocation_state == New;
+}
+
+inline bool ObjectMonitor::is_chainmarker() const {
+  return _allocation_state == ChainMarker;
 }
 
 // The _next_om field can be concurrently read and modified so we

@@ -376,7 +376,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     @Override
     public void addParamInfo(Content classInfoTree) {
         if (utils.hasBlockTag(typeElement, DocTree.Kind.PARAM)) {
-            Content paramInfo = (new ParamTaglet()).getTagletOutput(typeElement,
+            Content paramInfo = (new ParamTaglet()).getAllBlockTagOutput(typeElement,
                     getTagletWriterInstance(false));
             if (!paramInfo.isEmpty()) {
                 classInfoTree.add(HtmlTree.DL(HtmlStyle.notes, paramInfo));

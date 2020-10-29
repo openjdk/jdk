@@ -48,10 +48,6 @@ import org.junit.Test;
 
 import java.io.File;
 
-import jtreg.SkippedException;
-
-import sun.hotspot.gc.GC;
-
 public class MethodHandlesAsCollectorTest extends DynamicArchiveTestBase {
     @Test
     public void test() throws Exception {
@@ -64,7 +60,6 @@ public class MethodHandlesAsCollectorTest extends DynamicArchiveTestBase {
     private static final String ps = System.getProperty("path.separator");
     private static final String testPackageName = "test.java.lang.invoke";
     private static final String testClassName = "MethodHandlesAsCollectorTest";
-    private static final String skippedException = "jtreg.SkippedException: Unable to map shared archive: test did not complete";
 
     static void testImpl() throws Exception {
         String topArchiveName = getNewArchiveName();

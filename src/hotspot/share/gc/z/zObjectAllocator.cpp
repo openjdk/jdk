@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zHeuristics.hpp"
@@ -30,13 +29,10 @@
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zThread.inline.hpp"
-#include "gc/z/zUtils.inline.hpp"
 #include "gc/z/zValue.inline.hpp"
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.hpp"
-#include "runtime/threadSMR.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 
@@ -146,8 +142,7 @@ uintptr_t ZObjectAllocator::alloc_medium_object(size_t size, ZAllocationFlags fl
 }
 
 uintptr_t ZObjectAllocator::alloc_small_object_from_nonworker(size_t size, ZAllocationFlags flags) {
-  assert(ZThread::is_java() || ZThread::is_vm() || ZThread::is_runtime_worker(),
-         "Should be a Java, VM or Runtime worker thread");
+  assert(!ZThread::is_worker(), "Should not be a worker thread");
 
   // Non-worker small page allocation can never use the reserve
   flags.set_no_reserve();
@@ -208,9 +203,6 @@ uintptr_t ZObjectAllocator::alloc_object(size_t size) {
 }
 
 uintptr_t ZObjectAllocator::alloc_object_for_relocation(size_t size) {
-  assert(ZThread::is_java() || ZThread::is_vm() || ZThread::is_worker() || ZThread::is_runtime_worker(),
-         "Unknown thread");
-
   ZAllocationFlags flags;
   flags.set_relocation();
   flags.set_non_blocking();

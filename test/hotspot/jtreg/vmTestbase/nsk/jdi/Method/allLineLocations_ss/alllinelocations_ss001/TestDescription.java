@@ -91,13 +91,13 @@
  * @clean nsk.jdi.Method.allLineLocations_ss.alllinelocations_ss001a
  * @compile -g:lines,source,vars ../alllinelocations_ss001a.java
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.Method.allLineLocations_ss.alllinelocations_ss001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
 

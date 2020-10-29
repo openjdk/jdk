@@ -50,8 +50,6 @@ private:
   ciSignature(ciKlass* accessing_klass, const constantPoolHandle& cpool, ciSymbol* signature);
   ciSignature(ciKlass* accessing_klass,                           ciSymbol* signature, ciMethodType* method_type);
 
-  void get_all_klasses();
-
   Symbol* get_symbol() const                     { return _symbol->get_symbol(); }
 
 public:

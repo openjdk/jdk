@@ -28,7 +28,6 @@
 #include "gc/z/zForwardingTable.hpp"
 #include "gc/z/zMark.hpp"
 #include "gc/z/zObjectAllocator.hpp"
-#include "gc/z/zPage.hpp"
 #include "gc/z/zPageAllocator.hpp"
 #include "gc/z/zPageTable.hpp"
 #include "gc/z/zReferenceProcessor.hpp"
@@ -40,6 +39,7 @@
 #include "gc/z/zWorkers.hpp"
 
 class ThreadClosure;
+class ZPage;
 
 class ZHeap {
   friend class VMStructs;
@@ -141,6 +141,7 @@ public:
 
   // Iteration
   void object_iterate(ObjectClosure* cl, bool visit_weaks);
+  ParallelObjectIterator* parallel_object_iterator(uint nworkers, bool visit_weaks);
   void pages_do(ZPageClosure* cl);
 
   // Serviceability

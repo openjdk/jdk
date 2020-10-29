@@ -25,7 +25,6 @@
 #ifndef SHARE_CLASSFILE_SYSTEMDICTIONARY_HPP
 #define SHARE_CLASSFILE_SYSTEMDICTIONARY_HPP
 
-#include "classfile/vmSymbols.hpp"
 #include "oops/oopHandle.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/signature.hpp"
@@ -126,6 +125,7 @@ class TableStatistics;
   do_klass(ClassCastException_klass,                    java_lang_ClassCastException                          ) \
   do_klass(ArrayStoreException_klass,                   java_lang_ArrayStoreException                         ) \
   do_klass(VirtualMachineError_klass,                   java_lang_VirtualMachineError                         ) \
+  do_klass(InternalError_klass,                         java_lang_InternalError                               ) \
   do_klass(OutOfMemoryError_klass,                      java_lang_OutOfMemoryError                            ) \
   do_klass(StackOverflowError_klass,                    java_lang_StackOverflowError                          ) \
   do_klass(IllegalMonitorStateException_klass,          java_lang_IllegalMonitorStateException                ) \
@@ -187,10 +187,13 @@ class TableStatistics;
   do_klass(ByteArrayInputStream_klass,                  java_io_ByteArrayInputStream                          ) \
   do_klass(URL_klass,                                   java_net_URL                                          ) \
   do_klass(Jar_Manifest_klass,                          java_util_jar_Manifest                                ) \
+  do_klass(jdk_internal_loader_BuiltinClassLoader_klass,jdk_internal_loader_BuiltinClassLoader                ) \
   do_klass(jdk_internal_loader_ClassLoaders_klass,      jdk_internal_loader_ClassLoaders                      ) \
   do_klass(jdk_internal_loader_ClassLoaders_AppClassLoader_klass,      jdk_internal_loader_ClassLoaders_AppClassLoader) \
   do_klass(jdk_internal_loader_ClassLoaders_PlatformClassLoader_klass, jdk_internal_loader_ClassLoaders_PlatformClassLoader) \
   do_klass(CodeSource_klass,                            java_security_CodeSource                              ) \
+  do_klass(ConcurrentHashMap_klass,                     java_util_concurrent_ConcurrentHashMap                ) \
+  do_klass(ArrayList_klass,                             java_util_ArrayList                                   ) \
                                                                                                                 \
   do_klass(StackTraceElement_klass,                     java_lang_StackTraceElement                           ) \
                                                                                                                 \
@@ -221,6 +224,13 @@ class TableStatistics;
                                                                                                                 \
   /* support for records */                                                                                     \
   do_klass(RecordComponent_klass,                       java_lang_reflect_RecordComponent                     ) \
+                                                                                                                \
+  /* support for vectors*/                                                                                      \
+  do_klass(vector_VectorSupport_klass,                  jdk_internal_vm_vector_VectorSupport                  ) \
+  do_klass(vector_VectorPayload_klass,                  jdk_internal_vm_vector_VectorPayload                  ) \
+  do_klass(vector_Vector_klass,                         jdk_internal_vm_vector_Vector                         ) \
+  do_klass(vector_VectorMask_klass,                     jdk_internal_vm_vector_VectorMask                     ) \
+  do_klass(vector_VectorShuffle_klass,                  jdk_internal_vm_vector_VectorShuffle                  ) \
                                                                                                                 \
   /*end*/
 
@@ -620,9 +630,9 @@ public:
   // Return Symbol or throw exception if name given is can not be a valid Symbol.
   static Symbol* class_name_symbol(const char* name, Symbol* exception, TRAPS);
 
-protected:
   // Setup link to hierarchy
   static void add_to_hierarchy(InstanceKlass* k, TRAPS);
+protected:
 
   // Basic find on loaded classes
   static InstanceKlass* find_class(unsigned int hash,

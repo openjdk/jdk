@@ -40,6 +40,7 @@
 #include "logging/logTag.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/cppVtables.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/metaspaceShared.hpp"
@@ -645,7 +646,7 @@ bool Method::compute_has_loops_flag() {
   Bytecodes::Code bc;
 
   while ((bc = bcs.next()) >= 0) {
-    switch( bc ) {
+    switch (bc) {
       case Bytecodes::_ifeq:
       case Bytecodes::_ifnull:
       case Bytecodes::_iflt:
@@ -664,14 +665,42 @@ bool Method::compute_has_loops_flag() {
       case Bytecodes::_if_acmpne:
       case Bytecodes::_goto:
       case Bytecodes::_jsr:
-        if( bcs.dest() < bcs.next_bci() ) _access_flags.set_has_loops();
+        if (bcs.dest() < bcs.next_bci()) _access_flags.set_has_loops();
         break;
 
       case Bytecodes::_goto_w:
       case Bytecodes::_jsr_w:
-        if( bcs.dest_w() < bcs.next_bci() ) _access_flags.set_has_loops();
+        if (bcs.dest_w() < bcs.next_bci()) _access_flags.set_has_loops();
         break;
 
+      case Bytecodes::_lookupswitch: {
+        Bytecode_lookupswitch lookupswitch(this, bcs.bcp());
+        if (lookupswitch.default_offset() < 0) {
+          _access_flags.set_has_loops();
+        } else {
+          for (int i = 0; i < lookupswitch.number_of_pairs(); ++i) {
+            LookupswitchPair pair = lookupswitch.pair_at(i);
+            if (pair.offset() < 0) {
+              _access_flags.set_has_loops();
+              break;
+            }
+          }
+        }
+        break;
+      }
+      case Bytecodes::_tableswitch: {
+        Bytecode_tableswitch tableswitch(this, bcs.bcp());
+        if (tableswitch.default_offset() < 0) {
+          _access_flags.set_has_loops();
+        } else {
+          for (int i = 0; i < tableswitch.length(); ++i) {
+            if (tableswitch.dest_offset_at(i) < 0) {
+              _access_flags.set_has_loops();
+            }
+          }
+        }
+        break;
+      }
       default:
         break;
     }
@@ -1078,17 +1107,9 @@ void Method::unlink_method() {
   _i2i_entry = Interpreter::entry_for_cds_method(methodHandle(Thread::current(), this));
   _from_interpreted_entry = _i2i_entry;
 
-  if (DynamicDumpSharedSpaces) {
-    assert(_from_compiled_entry != NULL, "sanity");
-  } else {
-    // TODO: Simplify the adapter trampoline allocation for static archiving.
-    //       Remove the use of CDSAdapterHandlerEntry.
-    CDSAdapterHandlerEntry* cds_adapter = (CDSAdapterHandlerEntry*)adapter();
-    constMethod()->set_adapter_trampoline(cds_adapter->get_adapter_trampoline());
-    _from_compiled_entry = cds_adapter->get_c2i_entry_trampoline();
-    assert(*((int*)_from_compiled_entry) == 0,
-           "must be NULL during dump time, to be initialized at run time");
-  }
+  assert(_from_compiled_entry != NULL, "sanity");
+  assert(*((int*)_from_compiled_entry) == 0,
+         "must be NULL during dump time, to be initialized at run time");
 
   if (is_native()) {
     *native_function_addr() = NULL;
@@ -1595,14 +1616,14 @@ methodHandle Method::clone_with_new_data(const methodHandle& m, u_char* new_code
   return newm;
 }
 
-vmSymbols::SID Method::klass_id_for_intrinsics(const Klass* holder) {
+vmSymbolID Method::klass_id_for_intrinsics(const Klass* holder) {
   // if loader is not the default loader (i.e., != NULL), we can't know the intrinsics
   // because we are not loading from core libraries
   // exception: the AES intrinsics come from lib/ext/sunjce_provider.jar
   // which does not use the class default class loader so we check for its loader here
   const InstanceKlass* ik = InstanceKlass::cast(holder);
   if ((ik->class_loader() != NULL) && !SystemDictionary::is_platform_class_loader(ik->class_loader())) {
-    return vmSymbols::NO_SID;   // regardless of name, no intrinsics here
+    return vmSymbolID::NO_SID;   // regardless of name, no intrinsics here
   }
 
   // see if the klass name is well-known:
@@ -1617,20 +1638,20 @@ void Method::init_intrinsic_id() {
   assert(intrinsic_id_size_in_bytes() == sizeof(_intrinsic_id), "");
 
   // the klass name is well-known:
-  vmSymbols::SID klass_id = klass_id_for_intrinsics(method_holder());
-  assert(klass_id != vmSymbols::NO_SID, "caller responsibility");
+  vmSymbolID klass_id = klass_id_for_intrinsics(method_holder());
+  assert(klass_id != vmSymbolID::NO_SID, "caller responsibility");
 
   // ditto for method and signature:
-  vmSymbols::SID  name_id = vmSymbols::find_sid(name());
-  if (klass_id != vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_invoke_MethodHandle)
-      && klass_id != vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_invoke_VarHandle)
-      && name_id == vmSymbols::NO_SID) {
+  vmSymbolID name_id = vmSymbols::find_sid(name());
+  if (klass_id != VM_SYMBOL_ENUM_NAME(java_lang_invoke_MethodHandle)
+      && klass_id != VM_SYMBOL_ENUM_NAME(java_lang_invoke_VarHandle)
+      && name_id == vmSymbolID::NO_SID) {
     return;
   }
-  vmSymbols::SID   sig_id = vmSymbols::find_sid(signature());
-  if (klass_id != vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_invoke_MethodHandle)
-      && klass_id != vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_invoke_VarHandle)
-      && sig_id == vmSymbols::NO_SID) {
+  vmSymbolID sig_id = vmSymbols::find_sid(signature());
+  if (klass_id != VM_SYMBOL_ENUM_NAME(java_lang_invoke_MethodHandle)
+      && klass_id != VM_SYMBOL_ENUM_NAME(java_lang_invoke_VarHandle)
+      && sig_id == vmSymbolID::NO_SID) {
     return;
   }
   jshort flags = access_flags().as_short();
@@ -1647,14 +1668,14 @@ void Method::init_intrinsic_id() {
 
   // A few slightly irregular cases:
   switch (klass_id) {
-  case vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_StrictMath):
+  case VM_SYMBOL_ENUM_NAME(java_lang_StrictMath):
     // Second chance: check in regular Math.
     switch (name_id) {
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(min_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(max_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(sqrt_name):
+    case VM_SYMBOL_ENUM_NAME(min_name):
+    case VM_SYMBOL_ENUM_NAME(max_name):
+    case VM_SYMBOL_ENUM_NAME(sqrt_name):
       // pretend it is the corresponding method in the non-strict class:
-      klass_id = vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_Math);
+      klass_id = VM_SYMBOL_ENUM_NAME(java_lang_Math);
       id = vmIntrinsics::find_id(klass_id, name_id, sig_id, flags);
       break;
     default:
@@ -1663,8 +1684,8 @@ void Method::init_intrinsic_id() {
     break;
 
   // Signature-polymorphic methods: MethodHandle.invoke*, InvokeDynamic.*., VarHandle
-  case vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_invoke_MethodHandle):
-  case vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_invoke_VarHandle):
+  case VM_SYMBOL_ENUM_NAME(java_lang_invoke_MethodHandle):
+  case VM_SYMBOL_ENUM_NAME(java_lang_invoke_VarHandle):
     if (!is_native())  break;
     id = MethodHandles::signature_polymorphic_name_id(method_holder(), name());
     if (is_static() != MethodHandles::is_signature_polymorphic_static(id))
@@ -2185,9 +2206,9 @@ void Method::ensure_jmethod_ids(ClassLoaderData* loader_data, int capacity) {
   ClassLoaderData* cld = loader_data;
   if (!SafepointSynchronize::is_at_safepoint()) {
     // Have to add jmethod_ids() to class loader data thread-safely.
-    // Also have to add the method to the list safely, which the cld lock
+    // Also have to add the method to the list safely, which the lock
     // protects as well.
-    MutexLocker ml(cld->metaspace_lock(),  Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(JmethodIdCreation_lock,  Mutex::_no_safepoint_check_flag);
     if (cld->jmethod_ids() == NULL) {
       cld->set_jmethod_ids(new JNIMethodBlock(capacity));
     } else {
@@ -2209,9 +2230,9 @@ jmethodID Method::make_jmethod_id(ClassLoaderData* loader_data, Method* m) {
 
   if (!SafepointSynchronize::is_at_safepoint()) {
     // Have to add jmethod_ids() to class loader data thread-safely.
-    // Also have to add the method to the list safely, which the cld lock
+    // Also have to add the method to the list safely, which the lock
     // protects as well.
-    MutexLocker ml(cld->metaspace_lock(),  Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(JmethodIdCreation_lock,  Mutex::_no_safepoint_check_flag);
     if (cld->jmethod_ids() == NULL) {
       cld->set_jmethod_ids(new JNIMethodBlock());
     }
@@ -2303,7 +2324,7 @@ bool Method::is_valid_method(const Method* m) {
     // Quick sanity check on pointer.
     return false;
   } else if (m->is_shared()) {
-    return MetaspaceShared::is_valid_shared_method(m);
+    return CppVtables::is_valid_shared_method(m);
   } else if (Metaspace::contains_non_shared(m)) {
     return has_method_vptr((const void*)m);
   } else {

@@ -101,6 +101,8 @@ public class Resources extends java.util.ListResourceBundle {
                 "                            (This option is deprecated and will be removed in a future release.)"},
         {".internalsf.include.the.SF.file.inside.the.signature.block",
                 "[-internalsf]               include the .SF file inside the signature block"},
+        {".directsign.sign.the.SF.file.directly.no.signerinfo.signedattributes",
+                "[-directsign]               sign the .SF file directly (no SignerInfo signedAttributes)"},
         {".sectionsonly.don.t.compute.hash.of.entire.manifest",
                 "[-sectionsonly]             don't compute hash of entire manifest"},
         {".protected.keystore.has.protected.authentication.path",
@@ -170,7 +172,7 @@ public class Resources extends java.util.ListResourceBundle {
         {"key.bit.weak", "%d-bit key (weak)"},
         {"key.bit.disabled", "%d-bit key (disabled)"},
         {"unknown.size", "unknown size"},
-        {"posix.attributes.detected", "POSIX file permission attributes detected. These attributes are ignored when signing and are not protected by the signature."},
+        {"extra.attributes.detected", "POSIX file permission and/or symlink attributes detected. These attributes are ignored when signing and are not protected by the signature."},
 
         {"jarsigner.", "jarsigner: "},
         {"signature.filename.must.consist.of.the.following.characters.A.Z.0.9.or.",

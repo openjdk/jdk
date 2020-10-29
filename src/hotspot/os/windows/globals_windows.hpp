@@ -26,17 +26,17 @@
 #define OS_WINDOWS_GLOBALS_WINDOWS_HPP
 
 //
-// Defines Windows specific flags. They are not available on other platforms.
+// Declare Windows specific flags. They are not available on other platforms.
 //
-#define RUNTIME_OS_FLAGS(develop, \
-                         develop_pd, \
-                         product, \
-                         product_pd, \
-                         diagnostic, \
-                         diagnostic_pd, \
-                         notproduct, \
-                         range, \
+#define RUNTIME_OS_FLAGS(develop,     \
+                         develop_pd,  \
+                         product,     \
+                         product_pd,  \
+                         notproduct,  \
+                         range,       \
                          constraint)
+
+// end of RUNTIME_OS_FLAGS
 
 
 //

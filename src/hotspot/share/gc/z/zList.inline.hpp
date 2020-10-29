@@ -232,16 +232,4 @@ inline bool ZListRemoveIteratorImpl<T, Forward>::next(T** elem) {
   return *elem != NULL;
 }
 
-template <typename T>
-inline ZListIterator<T>::ZListIterator(const ZList<T>* list) :
-    ZListIteratorImpl<T, ZLIST_FORWARD>(list) {}
-
-template <typename T>
-inline ZListReverseIterator<T>::ZListReverseIterator(const ZList<T>* list) :
-    ZListIteratorImpl<T, ZLIST_REVERSE>(list) {}
-
-template <typename T>
-inline ZListRemoveIterator<T>::ZListRemoveIterator(ZList<T>* list) :
-    ZListRemoveIteratorImpl<T, ZLIST_FORWARD>(list) {}
-
 #endif // SHARE_GC_Z_ZLIST_INLINE_HPP

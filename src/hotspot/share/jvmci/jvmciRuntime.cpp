@@ -38,6 +38,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "prims/methodHandles.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/deoptimization.hpp"
@@ -76,10 +77,10 @@ static void deopt_caller() {
 }
 
 // Manages a scope for a JVMCI runtime call that attempts a heap allocation.
-// If there is a pending exception upon closing the scope and the runtime
+// If there is a pending nonasync exception upon closing the scope and the runtime
 // call is of the variety where allocation failure returns NULL without an
 // exception, the following action is taken:
-//   1. The pending exception is cleared
+//   1. The pending nonasync exception is cleared
 //   2. NULL is written to JavaThread::_vm_result
 //   3. Checks that an OutOfMemoryError is Universe::out_of_memory_error_retry().
 class RetryableAllocationMark: public StackObj {
@@ -101,7 +102,8 @@ class RetryableAllocationMark: public StackObj {
       JavaThread* THREAD = _thread;
       if (HAS_PENDING_EXCEPTION) {
         oop ex = PENDING_EXCEPTION;
-        CLEAR_PENDING_EXCEPTION;
+        // Do not clear probable async exceptions.
+        CLEAR_PENDING_NONASYNC_EXCEPTION;
         oop retry_oome = Universe::out_of_memory_error_retry();
         if (ex->is_a(retry_oome->klass()) && retry_oome != ex) {
           ResourceMark rm;
@@ -266,8 +268,7 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
   // Check the stack guard pages and reenable them if necessary and there is
   // enough space on the stack to do so.  Use fast exceptions only if the guard
   // pages are enabled.
-  bool guard_pages_enabled = thread->stack_guards_enabled();
-  if (!guard_pages_enabled) guard_pages_enabled = thread->reguard_stack();
+  bool guard_pages_enabled = thread->stack_overflow_state()->reguard_stack_if_needed();
 
   if (JvmtiExport::can_post_on_exceptions()) {
     // To ensure correct notification of exception catches and throws
@@ -644,10 +645,11 @@ void JVMCINMethodData::initialize(
 }
 
 void JVMCINMethodData::add_failed_speculation(nmethod* nm, jlong speculation) {
-  uint index = (speculation >> 32) & 0xFFFFFFFF;
-  int length = (int) speculation;
+  jlong index = speculation >> JVMCINMethodData::SPECULATION_LENGTH_BITS;
+  guarantee(index >= 0 && index <= max_jint, "Encoded JVMCI speculation index is not a positive Java int: " INTPTR_FORMAT, index);
+  int length = speculation & JVMCINMethodData::SPECULATION_LENGTH_MASK;
   if (index + length > (uint) nm->speculations_size()) {
-    fatal(INTPTR_FORMAT "[index: %d, length: %d] out of bounds wrt encoded speculations of length %u", speculation, index, length, nm->speculations_size());
+    fatal(INTPTR_FORMAT "[index: " JLONG_FORMAT ", length: %d out of bounds wrt encoded speculations of length %u", speculation, index, length, nm->speculations_size());
   }
   address data = nm->speculations_begin() + index;
   FailedSpeculation::add_failed_speculation(nm, _failed_speculations, data, length);
@@ -1326,29 +1328,23 @@ Method* JVMCIRuntime::lookup_method(InstanceKlass* accessor,
   // Accessibility checks are performed in JVMCIEnv::get_method_by_index_impl().
   assert(check_klass_accessibility(accessor, holder), "holder not accessible");
 
-  Method* dest_method;
-  LinkInfo link_info(holder, name, sig, accessor, LinkInfo::AccessCheck::required, LinkInfo::LoaderConstraintCheck::required, tag);
+  LinkInfo link_info(holder, name, sig, accessor,
+                     LinkInfo::AccessCheck::required,
+                     LinkInfo::LoaderConstraintCheck::required,
+                     tag);
   switch (bc) {
-  case Bytecodes::_invokestatic:
-    dest_method =
-      LinkResolver::resolve_static_call_or_null(link_info);
-    break;
-  case Bytecodes::_invokespecial:
-    dest_method =
-      LinkResolver::resolve_special_call_or_null(link_info);
-    break;
-  case Bytecodes::_invokeinterface:
-    dest_method =
-      LinkResolver::linktime_resolve_interface_method_or_null(link_info);
-    break;
-  case Bytecodes::_invokevirtual:
-    dest_method =
-      LinkResolver::linktime_resolve_virtual_method_or_null(link_info);
-    break;
-  default: ShouldNotReachHere();
+    case Bytecodes::_invokestatic:
+      return LinkResolver::resolve_static_call_or_null(link_info);
+    case Bytecodes::_invokespecial:
+      return LinkResolver::resolve_special_call_or_null(link_info);
+    case Bytecodes::_invokeinterface:
+      return LinkResolver::linktime_resolve_interface_method_or_null(link_info);
+    case Bytecodes::_invokevirtual:
+      return LinkResolver::linktime_resolve_virtual_method_or_null(link_info);
+    default:
+      fatal("Unhandled bytecode: %s", Bytecodes::name(bc));
+      return NULL; // silence compiler warnings
   }
-
-  return dest_method;
 }
 
 
@@ -1576,8 +1572,15 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
     nmethod_mirror_index = -1;
   }
 
-  JVMCI::CodeInstallResult result;
-  {
+  JVMCI::CodeInstallResult result(JVMCI::ok);
+
+  // We require method counters to store some method state (max compilation levels) required by the compilation policy.
+  if (method->get_method_counters(THREAD) == NULL) {
+    result = JVMCI::cache_full;
+    failure_detail = (char*) "can't create method counters";
+  }
+
+  if (result == JVMCI::ok) {
     // To prevent compile queue updates.
     MutexLocker locker(THREAD, MethodCompileQueue_lock);
 

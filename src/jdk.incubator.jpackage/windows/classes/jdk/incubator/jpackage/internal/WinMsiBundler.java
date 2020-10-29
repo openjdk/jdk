@@ -306,15 +306,22 @@ public class WinMsiBundler  extends AbstractBundler {
                 throws PackagerException, IOException {
         Path appImage = StandardBundlerParam.getPredefinedAppImage(params);
         Path appDir;
+        String appName;
 
         // we either have an application image or need to build one
         if (appImage != null) {
             appDir = MSI_IMAGE_DIR.fetchFrom(params).resolve(APP_NAME.fetchFrom(params));
             // copy everything from appImage dir into appDir/name
             IOUtils.copyRecursive(appImage, appDir);
+            try {
+                appName = AppImageFile.load(appDir).getLauncherName();
+            } catch (Exception e) {
+                appName = APP_NAME.fetchFrom(params);
+            }
         } else {
             appDir = appImageBundler.execute(params, MSI_IMAGE_DIR.fetchFrom(
                     params));
+            appName = APP_NAME.fetchFrom(params);
         }
 
         // Configure installer icon
@@ -331,7 +338,7 @@ public class WinMsiBundler  extends AbstractBundler {
             installerIcon = ApplicationLayout.windowsAppImage()
                     .resolveAt(appDir)
                     .launchersDirectory()
-                    .resolve(APP_NAME.fetchFrom(params) + ".exe");
+                    .resolve(appName + ".exe");
         }
         installerIcon = installerIcon.toAbsolutePath();
 
@@ -406,7 +413,9 @@ public class WinMsiBundler  extends AbstractBundler {
         data.put("JpAppDescription", DESCRIPTION.fetchFrom(params));
         data.put("JpAppVendor", VENDOR.fetchFrom(params));
         data.put("JpAppVersion", PRODUCT_VERSION.fetchFrom(params));
-        data.put("JpIcon", installerIcon.toString());
+        if (Files.exists(installerIcon)) {
+            data.put("JpIcon", installerIcon.toString());
+        }
 
         final Path configDir = CONFIG_ROOT.fetchFrom(params);
 

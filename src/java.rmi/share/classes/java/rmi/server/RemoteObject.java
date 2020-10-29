@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package java.rmi.server;
 
+import java.io.IOException;
 import java.rmi.Remote;
 import java.rmi.NoSuchObjectException;
 import java.lang.reflect.Proxy;
@@ -47,6 +48,7 @@ public abstract class RemoteObject implements Remote, java.io.Serializable {
     transient protected RemoteRef ref;
 
     /** indicate compatibility with JDK 1.1.x version of class */
+    @java.io.Serial
     private static final long serialVersionUID = -3215090123894869218L;
 
     /**
@@ -90,7 +92,7 @@ public abstract class RemoteObject implements Remote, java.io.Serializable {
      * the object has been exported.
      * @param obj the remote object whose stub is needed
      * @return the stub for the remote object, <code>obj</code>.
-     * @exception NoSuchObjectException if the stub for the
+     * @throws NoSuchObjectException if the stub for the
      * remote object could not be found.
      * @since 1.2
      */
@@ -357,7 +359,11 @@ public abstract class RemoteObject implements Remote, java.io.Serializable {
      * <code>"UnicastServerRef2"</code>, no data is written by the
      * <code>writeExternal</code> method or read by the
      * <code>readExternal</code> method.
+     *
+     * @param  out the {@code ObjectOutputStream} to which data is written
+     * @throws IOException if an I/O error occurs
      */
+    @java.io.Serial
     private void writeObject(java.io.ObjectOutputStream out)
         throws java.io.IOException
     {
@@ -418,7 +424,12 @@ public abstract class RemoteObject implements Remote, java.io.Serializable {
      * class corresponding to that external ref type name, in which
      * case this object's <code>ref</code> field will be set to an
      * instance of that implementation-specific class.
+     *
+     * @param  in the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
+    @java.io.Serial
     private void readObject(java.io.ObjectInputStream in)
         throws java.io.IOException, java.lang.ClassNotFoundException
     {

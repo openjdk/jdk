@@ -120,6 +120,7 @@ public class Attr extends JCTree.Visitor {
     final Annotate annotate;
     final ArgumentAttr argumentAttr;
     final MatchBindingsComputer matchBindingsComputer;
+    final AttrRecover attrRecover;
 
     public static Attr instance(Context context) {
         Attr instance = context.get(attrKey);
@@ -157,6 +158,7 @@ public class Attr extends JCTree.Visitor {
         dependencies = Dependencies.instance(context);
         argumentAttr = ArgumentAttr.instance(context);
         matchBindingsComputer = MatchBindingsComputer.instance(context);
+        attrRecover = AttrRecover.instance(context);
 
         Options options = Options.instance(context);
 
@@ -419,8 +421,9 @@ public class Attr extends JCTree.Visitor {
         JavaFileObject prev = log.useSource(env.toplevel.sourcefile);
         try {
             deferredAttr.attribSpeculative(root, env, resultInfo,
-                    null, DeferredAttr.AttributionMode.ANALYZER,
+                    null, DeferredAttr.AttributionMode.ATTRIB_TO_TREE,
                     argumentAttr.withLocalCacheContext());
+            attrRecover.doRecovery();
         } catch (BreakAttr b) {
             return b.env;
         } catch (AssertionError ae) {
@@ -738,6 +741,7 @@ public class Attr extends JCTree.Visitor {
         Env<AttrContext> analyzeEnv = analyzer.copyEnvIfNeeded(tree, env);
         Type result = attribTree(tree, env, statInfo);
         analyzer.analyzeIfNeeded(tree, analyzeEnv);
+        attrRecover.doRecovery();
         return result;
     }
 
@@ -2022,7 +2026,10 @@ public class Attr extends JCTree.Visitor {
             // both are known to be reference types.  The result is
             // lub(thentype,elsetype). This cannot fail, as it will
             // always be possible to infer "Object" if nothing better.
-            return types.lub(condTypes.stream().map(t -> t.baseType()).collect(List.collector()));
+            return types.lub(condTypes.stream()
+                        .map(t -> t.baseType())
+                        .filter(t -> !t.hasTag(BOT))
+                        .collect(List.collector()));
         }
 
     final static TypeTag[] primitiveTags = new TypeTag[]{
@@ -2092,6 +2099,7 @@ public class Attr extends JCTree.Visitor {
     }
 
         void preFlow(JCTree tree) {
+            attrRecover.doRecovery();
             new PostAttrAnalyzer() {
                 @Override
                 public void scan(JCTree tree) {
@@ -2102,6 +2110,26 @@ public class Attr extends JCTree.Visitor {
                         return;
                     }
                     super.scan(tree);
+                }
+
+                @Override
+                public void visitClassDef(JCClassDecl that) {
+                    if (that.sym != null) {
+                        // Method preFlow shouldn't visit class definitions
+                        // that have not been entered and attributed.
+                        // See JDK-8254557 and JDK-8203277 for more details.
+                        super.visitClassDef(that);
+                    }
+                }
+
+                @Override
+                public void visitLambda(JCLambda that) {
+                    if (that.type != null) {
+                        // Method preFlow shouldn't visit lambda expressions
+                        // that have not been entered and attributed.
+                        // See JDK-8254557 and JDK-8203277 for more details.
+                        super.visitLambda(that);
+                    }
                 }
             }.scan(tree);
         }
@@ -3114,6 +3142,7 @@ public class Attr extends JCTree.Visitor {
         }
 
         void preFlow(JCLambda tree) {
+            attrRecover.doRecovery();
             new PostAttrAnalyzer() {
                 @Override
                 public void scan(JCTree tree) {
@@ -4307,10 +4336,7 @@ public class Attr extends JCTree.Visitor {
                      Env<AttrContext> env,
                      ResultInfo resultInfo) {
             if (resultInfo.pkind.contains(KindSelector.POLY)) {
-                Type pt = resultInfo.pt.map(deferredAttr.new RecoveryDeferredTypeMap(AttrMode.SPECULATIVE, sym, env.info.pendingResolutionPhase));
-                Type owntype = checkIdInternal(tree, site, sym, pt, env, resultInfo);
-                resultInfo.pt.map(deferredAttr.new RecoveryDeferredTypeMap(AttrMode.CHECK, sym, env.info.pendingResolutionPhase));
-                return owntype;
+                return attrRecover.recoverMethodInvocation(tree, site, sym, env, resultInfo);
             } else {
                 return checkIdInternal(tree, site, sym, resultInfo.pt, env, resultInfo);
             }
@@ -4916,9 +4942,12 @@ public class Attr extends JCTree.Visitor {
     }
 
     public void visitErroneous(JCErroneous tree) {
-        if (tree.errs != null)
+        if (tree.errs != null) {
+            Env<AttrContext> errEnv = env.dup(env.tree);
+            errEnv.info.returnResult = unknownExprInfo;
             for (JCTree err : tree.errs)
-                attribTree(err, env, new ResultInfo(KindSelector.ERR, pt()));
+                attribTree(err, errEnv, new ResultInfo(KindSelector.ERR, pt()));
+        }
         result = tree.type = syms.errType;
     }
 
@@ -5342,8 +5371,8 @@ public class Attr extends JCTree.Visitor {
             }
 
             if (svuid == null) {
-                log.warning(LintCategory.SERIAL,
-                        tree.pos(), Warnings.MissingSVUID(c));
+                if (!c.isRecord())
+                    log.warning(LintCategory.SERIAL, tree.pos(), Warnings.MissingSVUID(c));
                 return;
             }
 

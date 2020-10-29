@@ -44,12 +44,6 @@
 
 #define __ _masm->
 
-// Platform-dependent initialization
-
-void TemplateTable::pd_initialize() {
-  // No aarch64 specific initialization
-}
-
 // Address computation: local variables
 
 static inline Address iaddress(int n) {
@@ -1912,7 +1906,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
   __ dispatch_only(vtos, /*generate_poll*/true);
 
   if (UseLoopCounter) {
-    if (ProfileInterpreter) {
+    if (ProfileInterpreter && !TieredCompilation) {
       // Out-of-line code to allocate method data oop.
       __ bind(profile_method);
       __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::profile_method));
@@ -3197,11 +3191,6 @@ void TemplateTable::fast_xaccess(TosState state)
 
 //-----------------------------------------------------------------------------
 // Calls
-
-void TemplateTable::count_calls(Register method, Register temp)
-{
-  __ call_Unimplemented();
-}
 
 void TemplateTable::prepare_invoke(int byte_no,
                                    Register method, // linked method (or i-klass)

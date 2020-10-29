@@ -347,7 +347,11 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
     VirtualMemorySummary::record_reserved_memory(size, flag);
     return _reserved_regions->add(rgn) != NULL;
   } else {
-    if (reserved_rgn->same_region(base_addr, size)) {
+    // Deal with recursive reservation
+    // os::reserve_memory() -> pd_reserve_memory() -> os::reserve_memory()
+    // See JDK-8198226.
+    if (reserved_rgn->same_region(base_addr, size) &&
+        (reserved_rgn->flag() == flag || reserved_rgn->flag() == mtNone)) {
       reserved_rgn->set_call_stack(stack);
       reserved_rgn->set_flag(flag);
       return true;
@@ -667,15 +671,14 @@ void MetaspaceSnapshot::snapshot(Metaspace::MetadataType type, MetaspaceSnapshot
   mss._committed_in_bytes[type]  = MetaspaceUtils::committed_bytes(type);
   mss._used_in_bytes[type]       = MetaspaceUtils::used_bytes(type);
 
-  size_t free_in_bytes = (MetaspaceUtils::capacity_bytes(type) - MetaspaceUtils::used_bytes(type))
-                       + MetaspaceUtils::free_chunks_total_bytes(type)
-                       + MetaspaceUtils::free_in_vs_bytes(type);
-  mss._free_in_bytes[type] = free_in_bytes;
+  // The answer to "what is free" in metaspace is complex and cannot be answered with a single number.
+  // Free as in available to all loaders? Free, pinned to one loader? For now, keep it simple.
+  mss._free_in_bytes[type] = mss._committed_in_bytes[type] - mss._used_in_bytes[type];
 }
 
 void MetaspaceSnapshot::snapshot(MetaspaceSnapshot& mss) {
-  snapshot(Metaspace::ClassType, mss);
+  snapshot(Metaspace::NonClassType, mss);
   if (Metaspace::using_class_space()) {
-    snapshot(Metaspace::NonClassType, mss);
+    snapshot(Metaspace::ClassType, mss);
   }
 }

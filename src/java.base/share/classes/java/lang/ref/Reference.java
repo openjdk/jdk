@@ -26,7 +26,7 @@
 package java.lang.ref;
 
 import jdk.internal.vm.annotation.ForceInline;
-import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.access.JavaLangRefAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.ref.Cleaner;
@@ -328,7 +328,7 @@ public abstract class Reference<T> {
      * @return   The object to which this reference refers, or
      *           {@code null} if this reference object has been cleared
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public T get() {
         return this.referent;
     }

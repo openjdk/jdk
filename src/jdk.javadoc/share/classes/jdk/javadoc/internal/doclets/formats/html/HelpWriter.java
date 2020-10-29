@@ -235,7 +235,7 @@ public class HelpWriter extends HtmlDocletWriter {
         }
 
         // Deprecated
-        if (!(options.noDeprecatedList() || options.noDeprecated())) {
+        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.DEPRECATED)) {
             section = newHelpSection(contents.deprecatedAPI);
             Content deprBody = getContent("doclet.help.deprecated.body",
                     links.createLink(DocPaths.DEPRECATED_LIST, resources.getText("doclet.Deprecated_API")));
@@ -255,34 +255,49 @@ public class HelpWriter extends HtmlDocletWriter {
         }
 
         // Serialized Form
-        section = newHelpSection(contents.serializedForm)
-                .add(HtmlTree.P(getContent("doclet.help.serial_form.body")));
-        contentTree.add(section);
+        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.SERIALIZED_FORM)) {
+            section = newHelpSection(contents.serializedForm)
+                    .add(HtmlTree.P(getContent("doclet.help.serial_form.body")));
+            contentTree.add(section);
+        }
 
         // Constant Field Values
-        section = newHelpSection(contents.constantsSummaryTitle);
-        Content constantsBody = getContent("doclet.help.constants.body",
-                links.createLink(DocPaths.CONSTANT_VALUES, resources.getText("doclet.Constants_Summary")));
-        section.add(HtmlTree.P(constantsBody));
-        contentTree.add(section);
+        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.CONSTANT_VALUES)) {
+            section = newHelpSection(contents.constantsSummaryTitle);
+            Content constantsBody = getContent("doclet.help.constants.body",
+                    links.createLink(DocPaths.CONSTANT_VALUES, resources.getText("doclet.Constants_Summary")));
+            section.add(HtmlTree.P(constantsBody));
+            contentTree.add(section);
+        }
+
+        // System Properties
+        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.SYSTEM_PROPERTIES)) {
+            section = newHelpSection(contents.systemPropertiesLabel);
+            Content sysPropsBody = getContent("doclet.help.systemProperties.body",
+                    links.createLink(DocPaths.SYSTEM_PROPERTIES, resources.getText("doclet.systemProperties")));
+            section.add(HtmlTree.P(sysPropsBody));
+            contentTree.add(section);
+        }
 
         // Search
-        section = newHelpSection(getContent("doclet.help.search.head"));
-        Content searchIntro = HtmlTree.P(getContent("doclet.help.search.intro"));
-        Content searchExamples = new HtmlTree(TagName.UL).setStyle(HtmlStyle.helpSectionList);
-        for (String[] example : SEARCH_EXAMPLES) {
-            searchExamples.add(HtmlTree.LI(
-                    getContent("doclet.help.search.example",
-                            HtmlTree.CODE(new StringContent(example[0])), example[1])));
+        if (options.createIndex()) {
+            section = newHelpSection(getContent("doclet.help.search.head"));
+            Content searchIntro = HtmlTree.P(getContent("doclet.help.search.intro"));
+            Content searchExamples = new HtmlTree(TagName.UL).setStyle(HtmlStyle.helpSectionList);
+            for (String[] example : SEARCH_EXAMPLES) {
+                searchExamples.add(HtmlTree.LI(
+                        getContent("doclet.help.search.example",
+                                HtmlTree.CODE(new StringContent(example[0])), example[1])));
+            }
+            Content searchSpecLink = HtmlTree.A(
+                    resources.getText("doclet.help.search.spec.url", configuration.getDocletVersion().feature()),
+                    getContent("doclet.help.search.spec.title"));
+            Content searchRefer = HtmlTree.P(getContent("doclet.help.search.refer", searchSpecLink));
+            section.add(searchIntro)
+                    .add(searchExamples)
+                    .add(searchRefer);
+            contentTree.add(section);
         }
-        Content searchSpecLink = HtmlTree.A(
-                resources.getText("doclet.help.search.spec.url", configuration.getDocletVersion().feature()),
-                getContent("doclet.help.search.spec.title"));
-        Content searchRefer = HtmlTree.P(getContent("doclet.help.search.refer", searchSpecLink));
-        section.add(searchIntro)
-            .add(searchExamples)
-            .add(searchRefer);
-        contentTree.add(section);
 
         contentTree.add(new HtmlTree(TagName.HR))
                 .add(HtmlTree.SPAN(HtmlStyle.helpFootnote,
