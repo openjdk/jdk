@@ -121,7 +121,9 @@ public:
   // Dummy overload preventing misuse of err_msg for a string without format arguments.
   // If compilation fails because of ambiguity between this and real constructor, you
   // could drop err_msg use at all.
-  inline FormatErrBuffer(const char* msg) { ShouldNotReachHere(); }
+  // It is also intentionally not defined to produce a link-time failure, in case of
+  // (not sane) compiler selects this by some way.
+  FormatErrBuffer(const char* msg);
 };
 
 template <size_t bufsz>
