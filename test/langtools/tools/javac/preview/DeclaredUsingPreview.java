@@ -6,7 +6,6 @@
  * @compile/ref=DeclaredUsingPreview-class.out -XDrawDiagnostics --enable-preview -source ${jdk.version} -Xlint:preview DeclaredUsingPreview.java
  */
 public class DeclaredUsingPreview {
-    DeclaredUsingPreviewDeclarations.R r;
     DeclaredUsingPreviewDeclarations.C c;
     DeclaredUsingPreviewDeclarations.C2 c2; //TODO: should cause warning?
 }

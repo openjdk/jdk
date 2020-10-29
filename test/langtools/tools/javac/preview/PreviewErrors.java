@@ -91,9 +91,10 @@ public class PreviewErrors extends ComboInstance<PreviewErrors> {
                   .replace("${reflective}", elementType.reflective);
     }
 
-    private static final String RECORD_DECLARATION = """
+    private static final String SEALED_DECLARATION = """
                                                      package user;
-                                                     public record R(int i) {}
+                                                     public sealed interface R {}
+                                                     final class C implements R {}
                                                      """;
 
     static Map<PreviewElementType, Map<Preview, Map<Suppress, Map<Lint, StringBuilder>>>> parts = new TreeMap<>();
@@ -126,7 +127,7 @@ public class PreviewErrors extends ComboInstance<PreviewErrors> {
                             out.write("<h2>" + petCount + ". Using an element declared using a preview feature</h2>\n");
                             out.write("Element declaration:\n");
                             out.write("<pre>\n");
-                            out.write(RECORD_DECLARATION);
+                            out.write(SEALED_DECLARATION);
                             out.write("\n</pre>\n");
                         }
                         case LANGUAGE -> {
@@ -230,7 +231,7 @@ public class PreviewErrors extends ComboInstance<PreviewErrors> {
                 task.withOption("-XDforcePreview=true");
             }
             case REFER_TO_DECLARATION_CLASS -> {
-                tb.writeJavaFiles(srcJavaBase, RECORD_DECLARATION);
+                tb.writeJavaFiles(srcJavaBase, SEALED_DECLARATION);
 
                 new JavacTask(tb)
                         .outdir(classesJavaBase)
@@ -247,7 +248,7 @@ public class PreviewErrors extends ComboInstance<PreviewErrors> {
                     .withOption("java.base/user=ALL-UNNAMED");
             }
             case REFER_TO_DECLARATION_SOURCE -> {
-                tb.writeJavaFiles(srcJavaBase, RECORD_DECLARATION);
+                tb.writeJavaFiles(srcJavaBase, SEALED_DECLARATION);
 
                 task.withOption("--patch-module")
                     .withOption("java.base=" + srcJavaBase.toString())
@@ -349,11 +350,13 @@ public class PreviewErrors extends ComboInstance<PreviewErrors> {
                         case REFER_TO_DECLARATION_SOURCE -> {
                             if (lint == Lint.ENABLE_PREVIEW) {
                                 if (suppress == Suppress.YES) {
-                                    expected = Set.of("2:8:compiler.warn.preview.feature.use.plural");
+                                    expected = Set.of("2:8:compiler.warn.preview.feature.use.plural",
+                                                      "3:26:compiler.warn.declared.using.preview");
                                 } else {
                                     expected = Set.of("5:13:compiler.warn.declared.using.preview",
                                                       "5:24:compiler.warn.declared.using.preview",
-                                                      "2:8:compiler.warn.preview.feature.use.plural");
+                                                      "2:8:compiler.warn.preview.feature.use.plural",
+                                                      "3:26:compiler.warn.declared.using.preview");
                                 }
                             } else {
                                 if (suppress == Suppress.YES) {
