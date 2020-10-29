@@ -74,10 +74,15 @@ private:
 // that the block has the size of 2^pow. This requires for pow to have only 5 bits (2^32) to encode
 // all possible arrays.
 //
-//    |---------oop---------|-pow-|--chunk---|
+//    |xx-------oop---------|-pow-|--chunk---|
 //    0                    49     54        64
 //
 // By definition, chunk == 0 means "no chunk", i.e. chunking starts from 1.
+//
+// Lower bits of oop are reserved to handle "cnt_live" and "strong" properties. Since this encoding
+// stores uncompressed oops, those bits are always available. These bits default to zero for "count liveness"
+// and "strong" set, that is they are inverted from their natural meaning. This improves the frequent case
+// by avoiding additional math for strong/counted-live references.
 //
 // This encoding gives a few interesting benefits:
 //
@@ -145,14 +150,13 @@ private:
   static const uint8_t pow_shift   = oop_bits;
   static const uint8_t chunk_shift = oop_bits + pow_bits;
 
-  static const uintptr_t oop_extract_mask       = right_n_bits(oop_bits) & ~((uintptr_t)3);
+  static const uintptr_t oop_extract_mask       = right_n_bits(oop_bits) - 3;
+  static const uintptr_t cnt_live_extract_mask  = 1 << 0;
+  static const uintptr_t strong_extract_mask    = 1 << 1;
   static const uintptr_t chunk_pow_extract_mask = ~right_n_bits(oop_bits);
 
   static const int chunk_range_mask = right_n_bits(chunk_bits);
   static const int pow_range_mask   = right_n_bits(pow_bits);
-
-  static const uintptr_t count_liveness_decode_mask = 1 << 0;
-  static const uintptr_t strong_decode_mask         = 1 << 1;
 
   inline oop decode_oop(uintptr_t val) const {
     STATIC_ASSERT(oop_shift == 0);
@@ -173,21 +177,21 @@ private:
   }
 
   inline bool decode_strong(uintptr_t val) const {
-    return (val & strong_decode_mask) != 0;
+    return (val & strong_extract_mask) == 0;
   }
 
-  inline bool decode_count_liveness(uintptr_t val) const {
-    return (val & count_liveness_decode_mask) != 0;
+  inline bool decode_cnt_live(uintptr_t val) const {
+    return (val & cnt_live_extract_mask) == 0;
   }
 
   inline uintptr_t encode_oop(oop obj, bool count_liveness, bool strong) const {
     STATIC_ASSERT(oop_shift == 0);
     uintptr_t encoded = cast_from_oop<uintptr_t>(obj);
-    if (count_liveness) {
-      encoded |= count_liveness_decode_mask;
+    if (!count_liveness) {
+      encoded |= cnt_live_extract_mask;
     }
-    if (strong) {
-      encoded |= strong_decode_mask;
+    if (!strong) {
+      encoded |= strong_extract_mask;
     }
     return encoded;
   }
@@ -201,26 +205,26 @@ private:
   }
 
 public:
-  ShenandoahMarkTask(oop o = NULL, bool count_liveness = true, bool strong = true) {
-    uintptr_t enc = encode_oop(o, count_liveness, strong);
+  ShenandoahMarkTask(oop o = NULL, bool cnt_live = true, bool strong = true) {
+    uintptr_t enc = encode_oop(o, cnt_live, strong);
     assert(decode_oop(enc) == o,    "oop encoding should work: " PTR_FORMAT, p2i(o));
-    assert(decode_not_chunked(enc), "task should not be chunked");
-    assert(decode_count_liveness(enc) == count_liveness, "count_liveness encoding should work");
+    assert(decode_cnt_live(enc) == cnt_live, "cnt_live encoding should work");
     assert(decode_strong(enc) == strong, "strong encoding should work");
+    assert(decode_not_chunked(enc), "task should not be chunked");
     _obj = enc;
   }
 
-  ShenandoahMarkTask(oop o, bool count_liveness, bool strong, int chunk, int pow) {
-    uintptr_t enc_oop = encode_oop(o, count_liveness, strong);
+  ShenandoahMarkTask(oop o, bool cnt_live, bool strong, int chunk, int pow) {
+    uintptr_t enc_oop = encode_oop(o, cnt_live, strong);
     uintptr_t enc_chunk = encode_chunk(chunk);
     uintptr_t enc_pow = encode_pow(pow);
     uintptr_t enc = enc_oop | enc_chunk | enc_pow;
     assert(decode_oop(enc) == o,       "oop encoding should work: " PTR_FORMAT, p2i(o));
+    assert(decode_cnt_live(enc) == cnt_live, "cnt_live encoding should work");
+    assert(decode_strong(enc) == strong, "strong encoding should work");
     assert(decode_chunk(enc) == chunk, "chunk encoding should work: %d", chunk);
     assert(decode_pow(enc) == pow,     "pow encoding should work: %d", pow);
     assert(!decode_not_chunked(enc),   "task should be chunked");
-    assert(decode_count_liveness(enc) == count_liveness, "count_liveness encoding should work");
-    assert(decode_strong(enc) == strong, "strong encoding should work");
     _obj = enc;
   }
 
@@ -233,7 +237,7 @@ public:
 
   inline bool is_not_chunked() const { return decode_not_chunked(_obj);    }
   inline bool is_strong()      const { return decode_strong(_obj);         }
-  inline bool count_liveness() const { return decode_count_liveness(_obj); }
+  inline bool count_liveness() const { return decode_cnt_live(_obj);       }
 
   DEBUG_ONLY(bool is_valid() const;) // Tasks to be pushed/popped must be valid.
 
