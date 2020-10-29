@@ -116,7 +116,7 @@ public final class AArch64HotSpotConstantRetrievalOp extends AArch64LIRInstructi
         }
 
         final int before = masm.position();
-        masm.bl(before);
+        masm.bl(0);
         final int after = masm.position();
         crb.recordDirectCall(before, after, callLinkage, frameState);
     }
