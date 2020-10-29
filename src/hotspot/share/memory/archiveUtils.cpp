@@ -319,3 +319,10 @@ void ArchiveUtils::log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) {
     }
   }
 }
+
+void ArchiveUtils::check_for_oom(oop exception) {
+  assert(exception != nullptr, "Sanity check");
+  if (exception->is_a(SystemDictionary::OutOfMemoryError_klass())) {
+    vm_exit_during_cds_dumping("Out of memory. Please run with a bigger Java heap");
+  }
+}
