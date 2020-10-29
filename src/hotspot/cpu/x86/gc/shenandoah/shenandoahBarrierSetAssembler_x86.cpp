@@ -522,7 +522,12 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
     BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
 
     if (ShenandoahBarrierSet::use_load_reference_barrier_native(decorators, type)) {
-      load_reference_barrier_native(masm, dst, src, (decorators & IN_NATIVE) == 0);
+      // API impedance: when used on native refs, lrb-native necessarily works with full oops,
+      // but when used for weak/phantom refs, it might need to work with narrow oops.
+      // Therefore, we need to ask barrier code to look back at UseCompressedOops and
+      // decide, when lrb-native is not IN_NATIVE. TODO: Resolve this API impedance.
+      bool maybe_narrow_oop = (decorators & IN_NATIVE) == 0;
+      load_reference_barrier_native(masm, dst, src, maybe_narrow_oop;
     } else {
       load_reference_barrier(masm, dst, src);
     }
