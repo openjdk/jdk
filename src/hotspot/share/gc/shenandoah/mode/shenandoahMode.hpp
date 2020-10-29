@@ -32,16 +32,16 @@ class ShenandoahHeuristics;
 #define SHENANDOAH_CHECK_FLAG_SET(name)                                     \
   do {                                                                      \
     if (!(name)) {                                                          \
-      const char* msg = "GC mode needs -XX:+" #name " to work correctly";   \
-      vm_exit_during_initialization("Error", msg);                          \
+      vm_exit_during_initialization("Error",                                \
+              "GC mode needs -XX:+" #name " to work correctly");            \
     }                                                                       \
   } while (0)
 
 #define SHENANDOAH_CHECK_FLAG_UNSET(name)                                   \
   do {                                                                      \
     if ((name)) {                                                           \
-      const char* msg = "GC mode needs -XX:-" #name " to work correctly";   \
-      vm_exit_during_initialization("Error", msg);                          \
+      vm_exit_during_initialization("Error",                                \
+              "GC mode needs -XX:-" #name " to work correctly");            \
     }                                                                       \
   } while (0)
 
