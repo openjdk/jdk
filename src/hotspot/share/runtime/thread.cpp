@@ -2499,8 +2499,9 @@ void JavaThread::check_safepoint_and_suspend_for_native_trans(JavaThread *thread
   assert(!thread->has_last_Java_frame() || thread->frame_anchor()->walkable(), "Unwalkable stack in native->vm transition");
 
   SafepointMechanism::process_if_requested(thread);
-
-  thread->handle_special_runtime_exit_condition(false);
+  if (thread->has_special_runtime_exit_condition()) {
+    thread->handle_special_runtime_exit_condition(false /* check asyncs */);
+  }
 }
 
 // Slow path when the native==>VM/Java barriers detect a safepoint is in
