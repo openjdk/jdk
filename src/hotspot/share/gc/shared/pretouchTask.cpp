@@ -28,13 +28,22 @@
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 
-PretouchTask::PretouchTask(const char* task_name, char* start_address, char* end_address, size_t page_size, size_t chunk_size) :
+PretouchTask::PretouchTask(const char* task_name,
+                           char* start_address,
+                           char* end_address,
+                           size_t page_size,
+                           size_t chunk_size) :
     AbstractGangTask(task_name),
     _cur_addr(start_address),
     _start_addr(start_address),
     _end_addr(end_address),
     _page_size(page_size),
-    _chunk_size(chunk_size) { }
+    _chunk_size(chunk_size) {
+
+  assert(chunk_size >= page_size,
+         "Chunk size " SIZE_FORMAT " is smaller than page size " SIZE_FORMAT,
+         chunk_size, page_size);
+}
 
 size_t PretouchTask::chunk_size() {
   return PreTouchParallelChunkSize;
