@@ -101,7 +101,8 @@ bool ShenandoahBarrierSet::use_load_reference_barrier_native(DecoratorSet decora
   bool on_native  = (decorators & IN_NATIVE) != 0;
   bool on_weak    = (decorators & ON_WEAK_OOP_REF) != 0;
   bool on_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
-  return on_native || on_weak || on_phantom;
+  bool on_unknown = (decorators & ON_UNKNOWN_OOP_REF) != 0;
+  return on_native || on_weak || on_phantom || on_unknown;
 }
 
 bool ShenandoahBarrierSet::need_keep_alive_barrier(DecoratorSet decorators,BasicType type) {
@@ -118,7 +119,7 @@ bool ShenandoahBarrierSet::need_keep_alive_barrier(DecoratorSet decorators,Basic
 ShenandoahBarrierSet::AccessKind ShenandoahBarrierSet::access_kind(DecoratorSet decorators, BasicType type) {
   if ((decorators & IN_NATIVE) != 0) {
     return AccessKind::NATIVE;
-  } else if ((decorators & (ON_WEAK_OOP_REF | ON_PHANTOM_OOP_REF)) != 0) {
+  } else if ((decorators & (ON_WEAK_OOP_REF | ON_PHANTOM_OOP_REF | ON_UNKNOWN_OOP_REF)) != 0) {
     return AccessKind::WEAK;
   } else {
     return AccessKind::NORMAL;

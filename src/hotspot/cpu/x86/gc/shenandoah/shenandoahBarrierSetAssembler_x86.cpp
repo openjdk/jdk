@@ -527,7 +527,7 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
       // Therefore, we need to ask barrier code to look back at UseCompressedOops and
       // decide, when lrb-native is not IN_NATIVE. TODO: Resolve this API impedance.
       bool maybe_narrow_oop = (decorators & IN_NATIVE) == 0;
-      load_reference_barrier_native(masm, dst, src, maybe_narrow_oop;
+      load_reference_barrier_native(masm, dst, src, maybe_narrow_oop);
     } else {
       load_reference_barrier(masm, dst, src);
     }
