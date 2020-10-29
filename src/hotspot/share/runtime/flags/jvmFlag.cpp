@@ -48,7 +48,7 @@ void JVMFlag::set_origin(JVMFlagOrigin new_origin) {
   int was_in_cmdline = (new_origin == JVMFlagOrigin::COMMAND_LINE) ? WAS_SET_ON_COMMAND_LINE : 0;
   _flags = Flags((_flags & ~VALUE_ORIGIN_MASK) | origin | was_in_cmdline);
   if ((old_flags & WAS_SET_ON_COMMAND_LINE) != 0) {
-    assert(_flags & WAS_SET_ON_COMMAND_LINE != 0, "once initialized, should never change");
+    assert((_flags & WAS_SET_ON_COMMAND_LINE) != 0, "once initialized, should never change");
   }
 }
 
