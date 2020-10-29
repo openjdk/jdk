@@ -66,7 +66,7 @@ public class Test6541987 implements Runnable {
                     throw new Error("found visible window: " + window.getName());
                 }
             }
-	} finally {
+        } finally {
             if (frame != null) {
                 SwingUtilities.invokeAndWait(frame::dispose);
             }
