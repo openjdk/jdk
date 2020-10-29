@@ -31,7 +31,6 @@ package java.util.regex;
  *
  * @author  unascribed
  * @since 1.4
- * @spec JSR-51
  */
 
 public class PatternSyntaxException

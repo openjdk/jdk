@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 
 /*
  * @test
+ * @bug 8246774
  * @summary Basic tests for writeReplace
- * @compile --enable-preview -source ${jdk.version} WriteReplaceTest.java
- * @run testng/othervm --enable-preview WriteReplaceTest
- * @run testng/othervm/java.security.policy=empty_security.policy --enable-preview WriteReplaceTest
+ * @run testng WriteReplaceTest
+ * @run testng/othervm/java.security.policy=empty_security.policy WriteReplaceTest
  */
 
 import java.io.ByteArrayInputStream;

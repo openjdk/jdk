@@ -87,7 +87,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
 
     // Used to ensure that each spun class name is unique
-    private static final AtomicInteger counter = new AtomicInteger(0);
+    private static final AtomicInteger counter = new AtomicInteger();
 
     // For dumping generated classes to disk, for debugging purposes
     private static final ProxyClassesDumper dumper;

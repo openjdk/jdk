@@ -122,7 +122,7 @@ void ZConcurrentRootsIterator::do_class_loader_data_graph(ZRootsIteratorClosure*
 
 void ZConcurrentRootsIterator::do_code_cache(ZRootsIteratorClosure* cl) {
   ZStatTimer timer(ZSubPhaseConcurrentRootsCodeCache);
-  ZNMethod::oops_do(cl, cl->should_disarm_nmethods());
+  ZNMethod::oops_do(cl, cl->nmethod_entry());
 }
 
 class ZConcurrentRootsIteratorThreadClosure : public ThreadClosure {

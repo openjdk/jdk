@@ -401,7 +401,7 @@ void VM_Version::initialize() {
       warning("SVE does not support vector length less than 16 bytes. Disabling SVE.");
       UseSVE = 0;
     } else if ((MaxVectorSize % 16) == 0 && is_power_of_2(MaxVectorSize)) {
-      int new_vl = set_and_get_current_sve_vector_lenght(MaxVectorSize);
+      int new_vl = set_and_get_current_sve_vector_length(MaxVectorSize);
       _initial_sve_vector_length = new_vl;
       // Update MaxVectorSize to the largest supported value.
       if (new_vl < 0) {

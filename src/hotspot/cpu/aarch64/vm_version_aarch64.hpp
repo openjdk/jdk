@@ -51,7 +51,7 @@ protected:
   // Sets the SVE length and returns a new actual value or negative on error.
   // If the len is larger than the system largest supported SVE vector length,
   // the function sets the largest supported value.
-  static int set_and_get_current_sve_vector_lenght(int len);
+  static int set_and_get_current_sve_vector_length(int len);
   static int get_current_sve_vector_length();
 
 public:

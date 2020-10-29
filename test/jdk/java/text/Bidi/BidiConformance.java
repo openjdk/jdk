@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6850113 8032446
+ * @bug 6850113 8032446 8255242
  * @summary confirm the behavior of new Bidi implementation. (Backward compatibility)
  * @modules java.desktop
  */
@@ -1397,6 +1397,12 @@ public class BidiConformance {
                 " when limit is textLength+1(too large).");
         }
         catch (IllegalArgumentException e) {
+            if (!e.getMessage().equals(
+                    "Value start 0 is out of range 0 to " + (textLength + 1) +
+                    ", or limit " + (textLength + 1) + " is beyond the text length " + textLength)) {
+                errorHandling("requiresBidi() should throw an IAE" +
+                        " mentioning limit is beyond the text length. Message: " + e.getMessage());
+            }
         }
         catch (ArrayIndexOutOfBoundsException e) {
             errorHandling("requiresBidi() should not throw an AIOoBE " +

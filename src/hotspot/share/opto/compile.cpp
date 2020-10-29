@@ -929,8 +929,6 @@ void Compile::Init(int aliaslevel) {
   set_max_inline_size(MaxInlineSize);
   set_freq_inline_size(FreqInlineSize);
   set_do_scheduling(OptoScheduling);
-  set_do_count_invocations(false);
-  set_do_method_data_update(false);
 
   set_do_vector_loop(false);
 
