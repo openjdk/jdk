@@ -59,4 +59,35 @@ class Semaphore : public CHeapObj<mtSynchronizer> {
   void wait_with_safepoint_check(JavaThread* thread);
 };
 
+// Small wrapper to provide semaphore version of a lock.
+// Useful for low-level leaf locks.
+class SemaphoreLock : public CHeapObj<mtSynchronizer> {
+  Semaphore _semaphore;
+
+public:
+  SemaphoreLock() : _semaphore(1) {}
+
+  void lock()    { _semaphore.wait(); }
+  void unlock()  { _semaphore.signal(); }
+  bool trylock() { return _semaphore.trywait(); }
+};
+
+// Convenience RAII class to lock a SemaphoreLock.
+class SemaphoreLocker : public StackObj {
+  SemaphoreLock* const _lock;
+
+public:
+  SemaphoreLocker(SemaphoreLock* lock) : _lock(lock) {
+    if (_lock != NULL) {
+      _lock->lock();
+    }
+  }
+
+  ~SemaphoreLocker() {
+    if (_lock != NULL) {
+      _lock->unlock();
+    }
+  }
+};
+
 #endif // SHARE_RUNTIME_SEMAPHORE_HPP

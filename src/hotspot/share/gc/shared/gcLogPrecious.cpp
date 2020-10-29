@@ -27,12 +27,12 @@
 
 stringStream* GCLogPrecious::_lines = NULL;
 stringStream* GCLogPrecious::_temp = NULL;
-Semaphore* GCLogPrecious::_lock = NULL;
+SemaphoreLock* GCLogPrecious::_lock = NULL;
 
 void GCLogPrecious::initialize() {
   _lines = new (ResourceObj::C_HEAP, mtGC) stringStream();
   _temp = new (ResourceObj::C_HEAP, mtGC) stringStream();
-  _lock = new Semaphore(1);
+  _lock = new SemaphoreLock();
 }
 
 void GCLogPrecious::vwrite_inner(LogTargetHandle log, const char* format, va_list args) {
@@ -50,9 +50,8 @@ void GCLogPrecious::vwrite_inner(LogTargetHandle log, const char* format, va_lis
 }
 
 void GCLogPrecious::vwrite(LogTargetHandle log, const char* format, va_list args) {
-  _lock->wait();
+  SemaphoreLocker sl(_lock);
   vwrite_inner(log, format, args);
-  _lock->signal();
 }
 
 void GCLogPrecious::vwrite_and_debug(LogTargetHandle log,
@@ -63,10 +62,9 @@ void GCLogPrecious::vwrite_and_debug(LogTargetHandle log,
   DEBUG_ONLY(const char* debug_message;)
 
   {
-    _lock->wait();
+    SemaphoreLocker sl(_lock);
     vwrite_inner(log, format, args);
     DEBUG_ONLY(debug_message = strdup(_temp->base()));
-   _lock->signal();
   }
 
   // report error outside lock scope, since report_vm_error will call print_on_error
@@ -75,20 +73,23 @@ void GCLogPrecious::vwrite_and_debug(LogTargetHandle log,
 }
 
 void GCLogPrecious::print_on_error(outputStream* st) {
+  st->print_cr("GC Precious Log:");
+
   if (_lines == NULL) {
+    st->print_cr("<Not initialized>\n");
     return;
   }
 
-  if (!_lock->trywait()) {
-      st->print_cr("GC Precious Log:");
-      st->print_cr(" ... skipping ...");
-      return;
+  if (!_lock->trylock()) {
+    st->print_cr("<Skipped>\n");
+    return;
   }
 
-  if (_lines->size() > 0) {
-    st->print_cr("GC Precious Log:");
+  if (_lines->size() == 0) {
+    st->print_cr("<Empty>\n");
+  } else {
     st->print_cr("%s", _lines->base());
   }
 
-  _lock->signal();
+  _lock->unlock();
 }
