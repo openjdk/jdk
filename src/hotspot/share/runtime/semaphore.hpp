@@ -67,9 +67,9 @@ class SemaphoreLock : public CHeapObj<mtSynchronizer> {
 public:
   SemaphoreLock() : _semaphore(1) {}
 
-  void lock()    { _semaphore.wait(); }
-  void unlock()  { _semaphore.signal(); }
-  bool trylock() { return _semaphore.trywait(); }
+  void lock()     { _semaphore.wait(); }
+  void unlock()   { _semaphore.signal(); }
+  bool try_lock() { return _semaphore.trywait(); }
 };
 
 // Convenience RAII class to lock a SemaphoreLock.

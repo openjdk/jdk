@@ -57,10 +57,8 @@ private:
   static stringStream* _lines;
   // Temporary line buffer
   static stringStream* _temp;
-  // Protects the buffers
-  // Note: Uses a SemaphoreLock instead of a Mutex because it:
-  // 1) provides trylock()
-  // 2) doesn't require a lock order (precious logging is a leaf operation)
+  // Protects the buffers - Uses a SemaphoreLock instead of a Mutex because
+  // it doesn't require a lock order (precious logging is a leaf operation)
   static SemaphoreLock* _lock;
 
   static void vwrite_inner(LogTargetHandle log,
