@@ -55,10 +55,11 @@ public class HttpPrincipal implements Principal {
      * and realm are equal to this object's username and realm. Returns {@code false}
      * otherwise.
      *
+     * @param another the object to compare this instance of {@code HttpPrincipal} against
      * @return {@code true} or {@code false} depending on whether objects are
      * equal or not
      */
-    public boolean equals (Object another) {
+    public boolean equals(Object another) {
         if (!(another instanceof HttpPrincipal)) {
             return false;
         }
@@ -97,7 +98,7 @@ public class HttpPrincipal implements Principal {
 
     /**
      * Returns a hashcode for this {@code HttpPrincipal}. This is calculated
-     * as <code>(getUsername()+getRealm().hashCode()</code>.
+     * as {@code (getUsername()+getRealm()).hashCode()}.
      *
      * @return the hashcode for this object
      */
