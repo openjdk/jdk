@@ -60,7 +60,7 @@ private:
 
   template <class T>
   inline void do_oop_work(T* p) {
-    ShenandoahConcurrentMark::mark_through_ref<T, UPDATE_REFS, NO_DEDUP>(p, _heap, _queue, _mark_context, true);
+    ShenandoahConcurrentMark::mark_through_ref<T, UPDATE_REFS, NO_DEDUP>(p, _heap, _queue, _mark_context, false);
   }
 
 public:
@@ -78,7 +78,7 @@ ShenandoahMarkRefsSuperClosure::ShenandoahMarkRefsSuperClosure(ShenandoahObjToSc
   _queue(q),
   _heap(ShenandoahHeap::heap()),
   _mark_context(_heap->marking_context()),
-  _strong(true)
+  _weak(false)
 { }
 
 template<UpdateRefsMode UPDATE_REFS>

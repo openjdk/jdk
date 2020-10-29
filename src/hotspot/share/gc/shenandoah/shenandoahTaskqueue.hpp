@@ -81,8 +81,7 @@ private:
 //
 // Lower bits of oop are reserved to handle "skip_live" and "strong" properties. Since this encoding
 // stores uncompressed oops, those bits are always available. These bits default to zero for "skip_live"
-// and "strong". For "strong", this inverts the natural boolean meaning. This improves the frequent case
-// by avoiding additional math for strong/counted-live references.
+// and "weak". This aligns with their frequent values: strong/counted-live references.
 //
 // This encoding gives a few interesting benefits:
 //
@@ -152,7 +151,7 @@ private:
 
   static const uintptr_t oop_extract_mask       = right_n_bits(oop_bits) - 3;
   static const uintptr_t skip_live_extract_mask = 1 << 0;
-  static const uintptr_t strong_extract_mask    = 1 << 1;
+  static const uintptr_t weak_extract_mask      = 1 << 1;
   static const uintptr_t chunk_pow_extract_mask = ~right_n_bits(oop_bits);
 
   static const int chunk_range_mask = right_n_bits(chunk_bits);
@@ -176,22 +175,22 @@ private:
     return (int) ((val >> pow_shift) & pow_range_mask);
   }
 
-  inline bool decode_strong(uintptr_t val) const {
-    return (val & strong_extract_mask) == 0;
+  inline bool decode_weak(uintptr_t val) const {
+    return (val & weak_extract_mask) != 0;
   }
 
   inline bool decode_cnt_live(uintptr_t val) const {
     return (val & skip_live_extract_mask) == 0;
   }
 
-  inline uintptr_t encode_oop(oop obj, bool skip_live, bool strong) const {
+  inline uintptr_t encode_oop(oop obj, bool skip_live, bool weak) const {
     STATIC_ASSERT(oop_shift == 0);
     uintptr_t encoded = cast_from_oop<uintptr_t>(obj);
     if (skip_live) {
       encoded |= skip_live_extract_mask;
     }
-    if (!strong) {
-      encoded |= strong_extract_mask;
+    if (weak) {
+      encoded |= weak_extract_mask;
     }
     return encoded;
   }
@@ -205,23 +204,23 @@ private:
   }
 
 public:
-  ShenandoahMarkTask(oop o = NULL, bool skip_live = false, bool strong = true) {
-    uintptr_t enc = encode_oop(o, skip_live, strong);
-    assert(decode_oop(enc) == o,    "oop encoding should work: " PTR_FORMAT, p2i(o));
+  ShenandoahMarkTask(oop o = NULL, bool skip_live = false, bool weak = false) {
+    uintptr_t enc = encode_oop(o, skip_live, weak);
+    assert(decode_oop(enc) == o,     "oop encoding should work: " PTR_FORMAT, p2i(o));
     assert(decode_cnt_live(enc) == !skip_live, "skip_live encoding should work");
-    assert(decode_strong(enc) == strong, "strong encoding should work");
-    assert(decode_not_chunked(enc), "task should not be chunked");
+    assert(decode_weak(enc) == weak, "weak encoding should work");
+    assert(decode_not_chunked(enc),  "task should not be chunked");
     _obj = enc;
   }
 
-  ShenandoahMarkTask(oop o, bool skip_live, bool strong, int chunk, int pow) {
-    uintptr_t enc_oop = encode_oop(o, skip_live, strong);
+  ShenandoahMarkTask(oop o, bool skip_live, bool weak, int chunk, int pow) {
+    uintptr_t enc_oop = encode_oop(o, skip_live, weak);
     uintptr_t enc_chunk = encode_chunk(chunk);
     uintptr_t enc_pow = encode_pow(pow);
     uintptr_t enc = enc_oop | enc_chunk | enc_pow;
     assert(decode_oop(enc) == o,       "oop encoding should work: " PTR_FORMAT, p2i(o));
-    assert(decode_cnt_live(enc) == !skip_live, "skip_live encoding should work");
-    assert(decode_strong(enc) == strong, "strong encoding should work");
+    assert(decode_cnt_live(enc) == !skip_live, "skip_live should be true for chunked tasks");
+    assert(decode_weak(enc) == weak,   "weak encoding should work");
     assert(decode_chunk(enc) == chunk, "chunk encoding should work: %d", chunk);
     assert(decode_pow(enc) == pow,     "pow encoding should work: %d", pow);
     assert(!decode_not_chunked(enc),   "task should be chunked");
@@ -235,9 +234,9 @@ public:
   inline int  chunk()          const { return decode_chunk(_obj); }
   inline int  pow()            const { return decode_pow(_obj);   }
 
-  inline bool is_not_chunked() const { return decode_not_chunked(_obj);    }
-  inline bool is_strong()      const { return decode_strong(_obj);         }
-  inline bool count_liveness() const { return decode_cnt_live(_obj);       }
+  inline bool is_not_chunked() const { return decode_not_chunked(_obj); }
+  inline bool is_weak()        const { return decode_weak(_obj);        }
+  inline bool count_liveness() const { return decode_cnt_live(_obj);    }
 
   DEBUG_ONLY(bool is_valid() const;) // Tasks to be pushed/popped must be valid.
 
@@ -259,14 +258,14 @@ private:
   };
 
   oop _obj;
-  bool _count_liveness;
-  bool _strong;
+  bool _skip_live;
+  bool _weak;
   int _chunk;
   int _pow;
 
 public:
-  ShenandoahMarkTask(oop o = NULL, bool skip_live = false, bool strong = true, int chunk = 0, int pow = 0):
-    _obj(o), _count_liveness(!skip_live), _strong(strong), _chunk(chunk), _pow(pow) {
+  ShenandoahMarkTask(oop o = NULL, bool skip_live = false, bool weak = false, int chunk = 0, int pow = 0):
+    _obj(o), _skip_live(skip_live), _weak(weak), _chunk(chunk), _pow(pow) {
     assert(0 <= chunk && chunk < nth_bit(chunk_bits), "chunk is sane: %d", chunk);
     assert(0 <= pow && pow < nth_bit(pow_bits), "pow is sane: %d", pow);
   }
@@ -277,8 +276,8 @@ public:
   inline int chunk()           const { return _chunk; }
   inline int pow()             const { return _pow; }
   inline bool is_not_chunked() const { return _chunk == 0; }
-  inline bool is_strong()      const { return _strong; }
-  inline bool count_liveness() const { return _count_liveness; }
+  inline bool is_weak()        const { return _weak; }
+  inline bool count_liveness() const { return !_skip_live; }
 
   DEBUG_ONLY(bool is_valid() const;) // Tasks to be pushed/popped must be valid.
 

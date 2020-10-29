@@ -334,16 +334,15 @@ bool ShenandoahReferenceProcessor::discover(oop reference, ReferenceType type, u
   }
 
   if (type == REF_FINAL) {
-    Thread* thread = Thread::current();
     ShenandoahMarkRefsSuperClosure* cl = _ref_proc_thread_locals[worker_id].mark_closure();
-    bool strong = cl->is_strong();
-    cl->set_strong(false);
+    bool weak = cl->is_weak();
+    cl->set_weak(true);
     if (UseCompressedOops) {
       cl->do_oop(reinterpret_cast<narrowOop*>(java_lang_ref_Reference::referent_addr_raw(reference)));
     } else {
       cl->do_oop(reinterpret_cast<oop*>(java_lang_ref_Reference::referent_addr_raw(reference)));
     }
-    cl->set_strong(strong);
+    cl->set_weak(weak);
   }
 
   // Add reference to discovered list

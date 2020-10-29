@@ -45,8 +45,10 @@ void ShenandoahConcurrentMark::do_task(ShenandoahObjToScanQueue* q, T* cl, Shena
   shenandoah_assert_marked(NULL, obj);
   shenandoah_assert_not_in_cset_except(NULL, obj, _heap->cancelled_gc());
 
-  bool strong = task->is_strong();
-  cl->set_strong(strong);
+  // Are we in weak subgraph scan?
+  bool weak = task->is_weak();
+  cl->set_weak(weak);
+
   if (task->is_not_chunked()) {
     if (obj->is_instance()) {
       // Case 1: Normal oop, process as usual.
@@ -54,7 +56,7 @@ void ShenandoahConcurrentMark::do_task(ShenandoahObjToScanQueue* q, T* cl, Shena
     } else if (obj->is_objArray()) {
       // Case 2: Object array instance and no chunk is set. Must be the first
       // time we visit it, start the chunked processing.
-      do_chunked_array_start<T>(q, cl, obj, strong);
+      do_chunked_array_start<T>(q, cl, obj, weak);
     } else {
       // Case 3: Primitive array. Do nothing, no oops there. We use the same
       // performance tweak TypeArrayKlass::oop_oop_iterate_impl is using:
@@ -70,7 +72,7 @@ void ShenandoahConcurrentMark::do_task(ShenandoahObjToScanQueue* q, T* cl, Shena
     }
   } else {
     // Case 4: Array chunk, has sensible chunk id. Process it.
-    do_chunked_array<T>(q, cl, obj, task->chunk(), task->pow(), strong);
+    do_chunked_array<T>(q, cl, obj, task->chunk(), task->pow(), weak);
   }
 }
 
@@ -104,7 +106,7 @@ inline void ShenandoahConcurrentMark::count_liveness(ShenandoahLiveData* live_da
 }
 
 template <class T>
-inline void ShenandoahConcurrentMark::do_chunked_array_start(ShenandoahObjToScanQueue* q, T* cl, oop obj, bool strong) {
+inline void ShenandoahConcurrentMark::do_chunked_array_start(ShenandoahObjToScanQueue* q, T* cl, oop obj, bool weak) {
   assert(obj->is_objArray(), "expect object array");
   objArrayOop array = objArrayOop(obj);
   int len = array->length();
@@ -135,7 +137,7 @@ inline void ShenandoahConcurrentMark::do_chunked_array_start(ShenandoahObjToScan
       pow--;
       chunk = 2;
       last_idx = (1 << pow);
-      bool pushed = q->push(ShenandoahMarkTask(array, false, strong, 1, pow));
+      bool pushed = q->push(ShenandoahMarkTask(array, true, weak, 1, pow));
       assert(pushed, "overflow queue should always succeed pushing");
     }
 
@@ -148,7 +150,7 @@ inline void ShenandoahConcurrentMark::do_chunked_array_start(ShenandoahObjToScan
       int right_chunk = chunk*2;
       int left_chunk_end = left_chunk * (1 << pow);
       if (left_chunk_end < len) {
-        bool pushed = q->push(ShenandoahMarkTask(array, false, strong, left_chunk, pow));
+        bool pushed = q->push(ShenandoahMarkTask(array, true, weak, left_chunk, pow));
         assert(pushed, "overflow queue should always succeed pushing");
         chunk = right_chunk;
         last_idx = left_chunk_end;
@@ -166,7 +168,7 @@ inline void ShenandoahConcurrentMark::do_chunked_array_start(ShenandoahObjToScan
 }
 
 template <class T>
-inline void ShenandoahConcurrentMark::do_chunked_array(ShenandoahObjToScanQueue* q, T* cl, oop obj, int chunk, int pow, bool strong) {
+inline void ShenandoahConcurrentMark::do_chunked_array(ShenandoahObjToScanQueue* q, T* cl, oop obj, int chunk, int pow, bool weak) {
   assert(obj->is_objArray(), "expect object array");
   objArrayOop array = objArrayOop(obj);
 
@@ -177,7 +179,7 @@ inline void ShenandoahConcurrentMark::do_chunked_array(ShenandoahObjToScanQueue*
   while ((1 << pow) > (int)ObjArrayMarkingStride && (chunk*2 < ShenandoahMarkTask::chunk_size())) {
     pow--;
     chunk *= 2;
-    bool pushed = q->push(ShenandoahMarkTask(array, false, strong, chunk - 1, pow));
+    bool pushed = q->push(ShenandoahMarkTask(array, true, weak, chunk - 1, pow));
     assert(pushed, "overflow queue should always succeed pushing");
   }
 
@@ -221,13 +223,13 @@ public:
   void do_buffer_impl(void **buffer, size_t size) {
     for (size_t i = 0; i < size; ++i) {
       oop *p = (oop *) &buffer[i];
-      ShenandoahConcurrentMark::mark_through_ref<oop, NONE, STRING_DEDUP>(p, _heap, _queue, _mark_context, true);
+      ShenandoahConcurrentMark::mark_through_ref<oop, NONE, STRING_DEDUP>(p, _heap, _queue, _mark_context, false);
     }
   }
 };
 
 template<class T, UpdateRefsMode UPDATE_REFS, StringDedupMode STRING_DEDUP>
-inline void ShenandoahConcurrentMark::mark_through_ref(T *p, ShenandoahHeap* heap, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, bool strong) {
+inline void ShenandoahConcurrentMark::mark_through_ref(T *p, ShenandoahHeap* heap, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, bool weak) {
   T o = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(o)) {
     oop obj = CompressedOops::decode_not_null(o);
@@ -260,13 +262,13 @@ inline void ShenandoahConcurrentMark::mark_through_ref(T *p, ShenandoahHeap* hea
 
       bool skip_live = false;
       bool marked;
-      if (strong) {
-        marked = mark_context->mark_strong(obj, /* was_upgraded = */ skip_live);
-      } else {
+      if (weak) {
         marked = mark_context->mark_weak(obj);
+      } else {
+        marked = mark_context->mark_strong(obj, /* was_upgraded = */ skip_live);
       }
       if (marked) {
-        bool pushed = q->push(ShenandoahMarkTask(obj, skip_live, strong));
+        bool pushed = q->push(ShenandoahMarkTask(obj, skip_live, weak));
         assert(pushed, "overflow queue should always succeed pushing");
 
         if ((STRING_DEDUP == ENQUEUE_DEDUP) && ShenandoahStringDedup::is_candidate(obj)) {

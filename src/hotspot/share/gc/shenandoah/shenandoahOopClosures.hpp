@@ -49,7 +49,7 @@ private:
   ShenandoahObjToScanQueue* _queue;
   ShenandoahHeap* _heap;
   ShenandoahMarkingContext* const _mark_context;
-  bool _strong;
+  bool _weak;
 
 protected:
   template <class T, UpdateRefsMode UPDATE_MODE, StringDedupMode STRING_DEDUP>
@@ -58,12 +58,12 @@ protected:
 public:
   ShenandoahMarkRefsSuperClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp);
 
-  bool is_strong() const {
-    return _strong;
+  bool is_weak() const {
+    return _weak;
   }
 
-  void set_strong(bool strong) {
-    _strong = strong;
+  void set_weak(bool weak) {
+    _weak = weak;
   }
 };
 

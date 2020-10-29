@@ -74,7 +74,7 @@ public:
   }
 
   template<class T, UpdateRefsMode UPDATE_REFS, StringDedupMode STRING_DEDUP>
-  static inline void mark_through_ref(T* p, ShenandoahHeap* heap, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, bool strong);
+  static inline void mark_through_ref(T* p, ShenandoahHeap* heap, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, bool weak);
 
   void mark_from_roots();
   void finish_mark_from_roots(bool full_gc);
