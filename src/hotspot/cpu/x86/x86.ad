@@ -4446,9 +4446,8 @@ instruct reductionI(rRegI dst, rRegI src1, legVec src2, legVec vtmp1, legVec vtm
 // =======================Long Reduction==========================================
 
 #ifdef _LP64
-instruct reductionL(rRegL dst, rRegL src1, vec src2, vec vtmp1, vec vtmp2) %{
-  predicate(vector_element_basic_type(n->in(2)) == T_LONG &&
-            vector_length(n->in(2)) < 8); // src2
+instruct reductionL(rRegL dst, rRegL src1, legVec src2, legVec vtmp1, legVec vtmp2) %{
+  predicate(vector_element_basic_type(n->in(2)) == T_LONG && !VM_Version::supports_avx512dq());
   match(Set dst (AddReductionVL src1 src2));
   match(Set dst (MulReductionVL src1 src2));
   match(Set dst (AndReductionV  src1 src2));
@@ -4466,9 +4465,8 @@ instruct reductionL(rRegL dst, rRegL src1, vec src2, vec vtmp1, vec vtmp2) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct reduction8L(rRegL dst, rRegL src1, legVec src2, legVec vtmp1, legVec vtmp2) %{
-  predicate(vector_element_basic_type(n->in(2)) == T_LONG &&
-            vector_length(n->in(2)) == 8); // src2
+instruct reductionL_avx512dq(rRegL dst, rRegL src1, vec src2, vec vtmp1, vec vtmp2) %{
+  predicate(vector_element_basic_type(n->in(2)) == T_LONG && VM_Version::supports_avx512dq());
   match(Set dst (AddReductionVL src1 src2));
   match(Set dst (MulReductionVL src1 src2));
   match(Set dst (AndReductionV  src1 src2));
@@ -4578,9 +4576,8 @@ instruct reduction8D(regD dst, legVec src, legVec vtmp1, legVec vtmp2) %{
 // =======================Byte Reduction==========================================
 
 #ifdef _LP64
-instruct reductionB(rRegI dst, rRegI src1, vec src2, vec vtmp1, vec vtmp2) %{
-  predicate(vector_element_basic_type(n->in(2)) == T_BYTE &&
-            vector_length(n->in(2)) <= 32); // src2
+instruct reductionB(rRegI dst, rRegI src1, legVec src2, legVec vtmp1, legVec vtmp2) %{
+  predicate(vector_element_basic_type(n->in(2)) == T_BYTE && !VM_Version::supports_avx512bw());
   match(Set dst (AddReductionVI src1 src2));
   match(Set dst (AndReductionV  src1 src2));
   match(Set dst ( OrReductionV  src1 src2));
@@ -4597,9 +4594,8 @@ instruct reductionB(rRegI dst, rRegI src1, vec src2, vec vtmp1, vec vtmp2) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct reduction64B(rRegI dst, rRegI src1, legVec src2, legVec vtmp1, legVec vtmp2) %{
-  predicate(vector_element_basic_type(n->in(2)) == T_BYTE &&
-            vector_length(n->in(2)) == 64); // src2
+instruct reductionB_avx512bw(rRegI dst, rRegI src1, vec src2, vec vtmp1, vec vtmp2) %{
+  predicate(vector_element_basic_type(n->in(2)) == T_BYTE && VM_Version::supports_avx512bw());
   match(Set dst (AddReductionVI src1 src2));
   match(Set dst (AndReductionV  src1 src2));
   match(Set dst ( OrReductionV  src1 src2));
@@ -5450,7 +5446,7 @@ instruct vmulL_mem(vec dst, vec src, memory mem) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct mul2L_reg(vec dst, vec src2, vec tmp) %{
+instruct mul2L_reg(vec dst, vec src2, legVec tmp) %{
   predicate(vector_length(n) == 2 && !VM_Version::supports_avx512dq());
   match(Set dst (MulVL dst src2));
   effect(TEMP dst, TEMP tmp);
@@ -5476,7 +5472,7 @@ instruct mul2L_reg(vec dst, vec src2, vec tmp) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct vmul4L_reg_avx(vec dst, vec src1, vec src2, vec tmp, vec tmp1) %{
+instruct vmul4L_reg_avx(vec dst, vec src1, vec src2, legVec tmp, legVec tmp1) %{
   predicate(vector_length(n) == 4 && !VM_Version::supports_avx512dq());
   match(Set dst (MulVL src1 src2));
   effect(TEMP tmp1, TEMP tmp);

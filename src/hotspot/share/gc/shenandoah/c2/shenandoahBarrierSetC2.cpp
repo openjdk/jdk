@@ -1059,16 +1059,20 @@ Node* ShenandoahBarrierSetC2::ideal_node(PhaseGVN* phase, Node* n, bool can_resh
   if (n->Opcode() == Op_CmpP) {
     Node* in1 = n->in(1);
     Node* in2 = n->in(2);
+
+    // If one input is NULL, then step over the barriers (except LRB native) on the other input
     if (in1->bottom_type() == TypePtr::NULL_PTR &&
-        (in2->Opcode() != Op_ShenandoahLoadReferenceBarrier ||
-         ((ShenandoahLoadReferenceBarrierNode*)in2)->kind() == ShenandoahBarrierSet::AccessKind::NORMAL)) {
+        !((in2->Opcode() == Op_ShenandoahLoadReferenceBarrier) &&
+          ((ShenandoahLoadReferenceBarrierNode*)in2)->kind() != ShenandoahBarrierSet::AccessKind::NORMAL)) {
+          ((ShenandoahLoadReferenceBarrierNode*)in2)->is_native())) {
       in2 = step_over_gc_barrier(in2);
     }
     if (in2->bottom_type() == TypePtr::NULL_PTR &&
-        (in1->Opcode() != Op_ShenandoahLoadReferenceBarrier ||
-         ((ShenandoahLoadReferenceBarrierNode*)in1)->kind() == ShenandoahBarrierSet::AccessKind::NORMAL)) {
+        !((in1->Opcode() == Op_ShenandoahLoadReferenceBarrier) &&
+          ((ShenandoahLoadReferenceBarrierNode*)in1)->kind() != ShenandoahBarrierSet::AccessKind::NORMAL)) {
       in1 = step_over_gc_barrier(in1);
     }
+
     PhaseIterGVN* igvn = phase->is_IterGVN();
     if (in1 != n->in(1)) {
       if (igvn != NULL) {
