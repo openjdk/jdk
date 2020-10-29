@@ -35,15 +35,7 @@ G1BiasedMappedArrayBase::G1BiasedMappedArrayBase() :
   _shift_by(0) { }
 
 G1BiasedMappedArrayBase::~G1BiasedMappedArrayBase() {
-  if (_alloc_base != NULL) {
-    FREE_C_HEAP_ARRAY(u_char, _alloc_base);
-    _alloc_base = NULL;
-    _base = NULL;
-    _length = 0;
-    _biased_base = NULL;
-    _bias = 0;
-    _shift_by = 0;
-  }
+  FreeHeap(_alloc_base);
 }
 
 // Allocate a new array, generic version.
