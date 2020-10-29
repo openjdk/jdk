@@ -1083,9 +1083,9 @@ ifneq ($(COMPILE_TYPE), cross)
   exploded-image: exploded-image-optimize
 endif
 
-# The runnable-buildjdk target guarantees that the BUILD_JDK is done
+# The runnable-buildjdk target guarantees that the buildjdk is done
 # building and ready to be used. The exact set of dependencies it needs
-# depends on what kind of BUILDJDK is used for the current configuration.
+# depends on what kind of buildjdk is used for the current configuration.
 runnable-buildjdk:
 ifeq ($(CREATE_BUILDJDK), true)
   ifneq ($(CREATING_BUILDJDK), true)
