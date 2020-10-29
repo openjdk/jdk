@@ -115,13 +115,6 @@ bool ClassListParser::parse_one_line() {
       _line_len = len;
     }
 
-    // Check if the line is output TRACE_RESOLVE
-    if (strncmp(_line, LambdaFormInvokers::lambda_form_invoker_tag(),
-                strlen(LambdaFormInvokers::lambda_form_invoker_tag())) == 0) {
-      LambdaFormInvokers::append(os::strdup((const char*)_line, mtInternal));
-      continue;
-    }
-
     // valid line
     break;
   }
@@ -133,6 +126,7 @@ bool ClassListParser::parse_one_line() {
   _source = NULL;
   _interfaces_specified = false;
   _indy_items->clear();
+  _lambda_form_line = false;
 
   if (_line[0] == '@') {
     return parse_at_tags();
@@ -213,6 +207,15 @@ bool ClassListParser::parse_at_tags() {
     }
     // set the class name
     _class_name = _indy_items->at(1);
+    return true;
+  } else if (strcmp(_indy_items->at(0), LAMBDA_FORM_TAG) == 0) {
+    for (int i = _line_len; i >= 0; i--) {
+      if (_line[i] == '\0') {
+        _line[i] = ' ';
+      }
+    }
+    LambdaFormInvokers::append(os::strdup((const char*)_line, mtInternal));
+    _lambda_form_line = true;
     return true;
   } else {
     error("Invalid @ tag at the beginning of line \"%s\" line #%d", _line, _line_no);

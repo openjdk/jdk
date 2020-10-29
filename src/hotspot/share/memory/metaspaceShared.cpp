@@ -1096,6 +1096,9 @@ int MetaspaceShared::preload_classes(const char* class_list_path, TRAPS) {
   int class_count = 0;
 
   while (parser.parse_one_line()) {
+    if (parser.lambda_form_line()) {
+      continue;
+    }
     Klass* klass = parser.load_current_class(THREAD);
     if (HAS_PENDING_EXCEPTION) {
       if (klass == NULL &&

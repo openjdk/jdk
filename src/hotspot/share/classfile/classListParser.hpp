@@ -30,7 +30,8 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/hashtable.inline.hpp"
 
-#define LAMBDA_PROXY_TAG "@lambda-proxy:"
+#define LAMBDA_PROXY_TAG "@lambda-proxy"
+#define LAMBDA_FORM_TAG  "@lambda-form-invoker"
 
 class ID2KlassTable : public KVHashtable<int, InstanceKlass*, mtInternal> {
 public:
@@ -99,6 +100,7 @@ class ClassListParser : public StackObj {
   GrowableArray<int>* _interfaces;
   bool                _interfaces_specified;
   const char*         _source;
+  bool                _lambda_form_line;
 
   bool parse_int_option(const char* option_name, int* value);
   bool parse_uint_option(const char* option_name, int* value);
@@ -161,6 +163,8 @@ public:
   Klass* load_current_class(TRAPS);
 
   bool is_loading_from_source();
+
+  bool lambda_form_line() { return _lambda_form_line; }
 
   // Look up the super or interface of the current class being loaded
   // (in this->load_current_class()).
