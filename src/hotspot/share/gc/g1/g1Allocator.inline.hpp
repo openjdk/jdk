@@ -105,11 +105,7 @@ inline HeapWord* G1PLABAllocator::plab_allocate(G1HeapRegionAttr dest,
                                                 size_t word_sz,
                                                 uint node_index) {
   PLAB* buffer = alloc_buffer(dest, node_index);
-  if (_survivor_alignment_bytes == 0 || !dest.is_young()) {
-    return buffer->allocate(word_sz);
-  } else {
-    return buffer->allocate_aligned(word_sz, _survivor_alignment_bytes);
-  }
+  return buffer->allocate(word_sz);
 }
 
 inline HeapWord* G1PLABAllocator::allocate(G1HeapRegionAttr dest,
