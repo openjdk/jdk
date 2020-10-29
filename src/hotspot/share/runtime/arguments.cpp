@@ -1659,10 +1659,6 @@ void set_object_alignment() {
 
   // Oop encoding heap max
   OopEncodingHeapMax = (uint64_t(max_juint) + 1) << LogMinObjAlignmentInBytes;
-
-  if (SurvivorAlignmentInBytes == 0) {
-    SurvivorAlignmentInBytes = ObjectAlignmentInBytes;
-  }
 }
 
 size_t Arguments::max_heap_for_compressed_oops() {
