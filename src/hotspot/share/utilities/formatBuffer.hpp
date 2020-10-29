@@ -58,8 +58,8 @@ class FormatBuffer : public FormatBufferBase {
   inline void print(const char* format, ...)  ATTRIBUTE_PRINTF(2, 3);
   inline void printv(const char* format, va_list ap) ATTRIBUTE_PRINTF(2, 0);
 
-  char* buffer() { return _buf; }
-  int size() { return bufsz; }
+  char* buffer() const { return _buf; }
+  int size() const { return bufsz; }
 
  private:
   FormatBuffer(const FormatBuffer &); // prevent copies
@@ -114,9 +114,11 @@ void FormatBuffer<bufsz>::append(const char* format, ...) {
 }
 
 template <size_t bufsz = FormatBufferBase::BufferSize>
-class FormatErrBuffer : public FormatBuffer<bufsz> {
+class FormatErrBuffer : private FormatBuffer<bufsz> {
 public:
   inline FormatErrBuffer(const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
+
+  operator const char *() const { return FormatBuffer<bufsz>::buffer(); }
 
   // Dummy overload preventing misuse of err_msg for a string without format arguments.
   // If compilation fails because of ambiguity between this and real constructor, you

@@ -160,7 +160,7 @@ void CodeCache::check_heap_sizes(size_t non_nmethod_size, size_t profiled_size, 
   size_t total_size = non_nmethod_size + profiled_size + non_profiled_size;
   // Prepare error message
   const char* error = "Invalid code heap sizes";
-  err_msg message("NonNMethodCodeHeapSize (" SIZE_FORMAT "K) + ProfiledCodeHeapSize (" SIZE_FORMAT "K)"
+  FormatBuffer<> message("NonNMethodCodeHeapSize (" SIZE_FORMAT "K) + ProfiledCodeHeapSize (" SIZE_FORMAT "K)"
                   " + NonProfiledCodeHeapSize (" SIZE_FORMAT "K) = " SIZE_FORMAT "K",
           non_nmethod_size/K, profiled_size/K, non_profiled_size/K, total_size/K);
 

@@ -37,7 +37,7 @@ static constexpr T max_alignment() {
   return max ^ (max >> 1);
 }
 
-#define log(...) SCOPED_TRACE(err_msg(__VA_ARGS__).buffer())
+#define log(...) SCOPED_TRACE((const char*)err_msg(__VA_ARGS__))
 
 struct StaticTestAlignmentsResult {
   uint64_t _value;

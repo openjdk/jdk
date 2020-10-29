@@ -177,7 +177,7 @@ void OopStorageParIterPerf::show_task(const Task* task, Tickspan duration, uint 
 
 void OopStorageParIterPerf::run_test(uint nthreads) {
   if (nthreads <= _num_workers) {
-    SCOPED_TRACE(err_msg("Running test with %u threads", nthreads).buffer());
+    SCOPED_TRACE((const char*)err_msg("Running test with %u threads", nthreads));
     Closure closure;
     Task task(&_storage, &closure, nthreads);
     Tickspan t = run_task(&task, nthreads);
