@@ -219,11 +219,8 @@ public interface ElementVisitor<R, P> {
      * @param e  the element to visit
      * @param p  a visitor-specified parameter
      * @return a visitor-specified result
-     * @since 14
+     * @since 16
      */
-    @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.RECORDS,
-                                 reflective=true)
-    @SuppressWarnings("preview")
     default R visitRecordComponent(RecordComponentElement e, P p) {
         return visitUnknown(e, p);
     }

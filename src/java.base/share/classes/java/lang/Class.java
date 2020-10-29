@@ -2374,11 +2374,8 @@ public final class Class<T> implements java.io.Serializable,
      *          </ul>
      *
      * @jls 8.10 Record Types
-     * @since 14
+     * @since 16
      */
-    @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.RECORDS,
-                                 reflective=true)
-    @SuppressWarnings("preview")
     @CallerSensitive
     public RecordComponent[] getRecordComponents() {
         SecurityManager sm = System.getSecurityManager();
@@ -3687,10 +3684,8 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @return true if and only if this class is a record class, otherwise false
      * @jls 8.10 Record Types
-     * @since 14
+     * @since 16
      */
-    @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.RECORDS,
-                                 reflective=true)
     public boolean isRecord() {
         return getSuperclass() == JAVA_LANG_RECORD_CLASS && isRecord0();
     }

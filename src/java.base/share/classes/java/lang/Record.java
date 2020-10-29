@@ -78,10 +78,8 @@ package java.lang;
  * <a href="{@docRoot}/java.base/java/io/ObjectInputStream.html#record-serialization">record serialization</a>.
  *
  * @jls 8.10 Record Types
- * @since 14
+ * @since 16
  */
-@jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.RECORDS,
-                             reflective=false)
 public abstract class Record {
     /**
      * Constructor for record classes to call.

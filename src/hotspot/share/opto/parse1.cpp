@@ -483,9 +483,6 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   // Accumulate total sum of decompilations, also.
   C->set_decompile_count(C->decompile_count() + md->decompile_count());
 
-  _count_invocations = C->do_count_invocations();
-  _method_data_update = C->do_method_data_update();
-
   if (log != NULL && method()->has_exception_handlers()) {
     log->elem("observe that='has_exception_handlers'");
   }
@@ -1228,10 +1225,6 @@ void Parse::do_method_entry() {
   // Feed profiling data for parameters to the type system so it can
   // propagate it as speculative types
   record_profiled_parameters_for_speculation();
-
-  if (depth() == 1) {
-    increment_and_test_invocation_counter(Tier2CompileThreshold);
-  }
 }
 
 //------------------------------init_blocks------------------------------------

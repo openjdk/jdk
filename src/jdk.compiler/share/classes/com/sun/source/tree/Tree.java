@@ -644,11 +644,8 @@ public interface Tree {
 
         /**
          * Used for instances of {@link ClassTree} representing records.
-         *
-         * @since 14
+         * @since 16
          */
-        @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.RECORDS,
-                                           reflective=true)
         RECORD(ClassTree.class),
 
         /**

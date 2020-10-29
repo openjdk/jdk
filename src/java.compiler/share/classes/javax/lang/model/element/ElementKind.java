@@ -110,18 +110,14 @@ public enum ElementKind {
 
     /**
      * A record type.
-     * @since 14
+     * @since 16
      */
-    @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.RECORDS,
-                                 reflective=true)
     RECORD,
 
     /**
      * A record component of a {@code record}.
-     * @since 14
+     * @since 16
      */
-    @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.RECORDS,
-                                 reflective=true)
     RECORD_COMPONENT,
 
     /**

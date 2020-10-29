@@ -44,9 +44,8 @@ import java.util.Objects;
  * Java compiler implementations to implement the bodies of {@link Object}
  * methods for record classes.
  *
- * @since 14
+ * @since 16
  */
-@jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.RECORDS)
 public class ObjectMethods {
 
     private ObjectMethods() { }

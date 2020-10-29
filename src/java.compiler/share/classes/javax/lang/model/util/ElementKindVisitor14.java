@@ -59,10 +59,8 @@ import javax.lang.model.SourceVersion;
  * @see ElementKindVisitor7
  * @see ElementKindVisitor8
  * @see ElementKindVisitor9
- * @since 14
+ * @since 16
  */
-@jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.RECORDS,
-                             reflective=true)
 @SupportedSourceVersion(RELEASE_16)
 public class ElementKindVisitor14<R, P> extends ElementKindVisitor9<R, P> {
     /**
@@ -92,7 +90,6 @@ public class ElementKindVisitor14<R, P> extends ElementKindVisitor9<R, P> {
      * @param p a visitor-specified parameter
      * @return  the result of {@code defaultAction}
      */
-    @SuppressWarnings("preview")
     @Override
     public R visitRecordComponent(RecordComponentElement e, P p) {
         return defaultAction(e, p);

@@ -28,10 +28,8 @@ package javax.lang.model.element;
 /**
  * Represents a record component.
  *
- * @since 14
+ * @since 16
  */
-@jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.RECORDS,
-                             reflective=true)
 public interface RecordComponentElement extends Element {
     /**
      * Returns the enclosing element of this record component.

@@ -115,11 +115,8 @@ public class ElementFilter {
      * Returns a list of record components in {@code elements}.
      * @return a list of record components in {@code elements}
      * @param elements the elements to filter
-     * @since 14
+     * @since 16
      */
-    @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.RECORDS,
-                                 reflective=true)
-    @SuppressWarnings("preview")
     public static List<RecordComponentElement>
         recordComponentsIn(Iterable<? extends Element> elements) {
         return listFilter(elements, RECORD_COMPONENT_KIND, RecordComponentElement.class);
@@ -129,11 +126,8 @@ public class ElementFilter {
      * Returns a set of record components in {@code elements}.
      * @return a set of record components in {@code elements}
      * @param elements the elements to filter
-     * @since 14
+     * @since 16
      */
-    @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.RECORDS,
-                                 reflective=true)
-    @SuppressWarnings("preview")
     public static Set<RecordComponentElement>
     recordComponentsIn(Set<? extends Element> elements) {
         return setFilter(elements, RECORD_COMPONENT_KIND, RecordComponentElement.class);

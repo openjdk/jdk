@@ -112,6 +112,7 @@ class MemBarNode;
 class MemBarStoreStoreNode;
 class MemNode;
 class MergeMemNode;
+class MoveNode;
 class MulNode;
 class MultiNode;
 class MultiBranchNode;
@@ -721,10 +722,11 @@ public:
     DEFINE_CLASS_ID(Vector,   Node, 13)
       DEFINE_CLASS_ID(VectorMaskCmp, Vector, 0)
     DEFINE_CLASS_ID(ClearArray, Node, 14)
-    DEFINE_CLASS_ID(Halt, Node, 15)
-    DEFINE_CLASS_ID(Opaque1, Node, 16)
+    DEFINE_CLASS_ID(Halt,     Node, 15)
+    DEFINE_CLASS_ID(Opaque1,  Node, 16)
+    DEFINE_CLASS_ID(Move,     Node, 17)
 
-    _max_classes  = ClassMask_Opaque1
+    _max_classes  = ClassMask_Move
   };
   #undef DEFINE_CLASS_ID
 
@@ -870,6 +872,7 @@ public:
   DEFINE_CLASS_QUERY(MemBar)
   DEFINE_CLASS_QUERY(MemBarStoreStore)
   DEFINE_CLASS_QUERY(MergeMem)
+  DEFINE_CLASS_QUERY(Move)
   DEFINE_CLASS_QUERY(Mul)
   DEFINE_CLASS_QUERY(Multi)
   DEFINE_CLASS_QUERY(MultiBranch)

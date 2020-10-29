@@ -92,10 +92,8 @@ public final class TypeAnnotation {
         METHOD_FORMAL_PARAMETER,
         THROWS,
         /**
-         * @since 14
+         * @since 16
          */
-        @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.RECORDS,
-                                     reflective=true)
         RECORD_COMPONENT;
     }
 

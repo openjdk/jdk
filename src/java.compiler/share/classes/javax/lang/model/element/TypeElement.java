@@ -189,11 +189,8 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
      * @return the record components, or an empty list if there are
      * none
      *
-     * @since 14
+     * @since 16
      */
-    @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.RECORDS,
-                                 reflective=true)
-    @SuppressWarnings("preview")
     default List<? extends RecordComponentElement> getRecordComponents() {
         return List.of();
     }

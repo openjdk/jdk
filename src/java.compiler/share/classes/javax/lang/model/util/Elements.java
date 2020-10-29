@@ -646,11 +646,8 @@ public interface Elements {
      * @param accessor the method for which the record component should be found.
      * @return the record component, or null if the given method is not an record
      * component accessor
-     * @since 14
+     * @since 16
      */
-    @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.RECORDS,
-                                 reflective=true)
-    @SuppressWarnings("preview")
     default RecordComponentElement recordComponentFor(ExecutableElement accessor) {
         if (accessor.getEnclosingElement().getKind() == ElementKind.RECORD) {
             for (RecordComponentElement rec : ElementFilter.recordComponentsIn(accessor.getEnclosingElement().getEnclosedElements())) {

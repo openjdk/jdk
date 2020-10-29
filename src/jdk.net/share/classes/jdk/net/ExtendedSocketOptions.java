@@ -180,6 +180,25 @@ public final class ExtendedSocketOptions {
     public static final SocketOption<Integer> SO_INCOMING_NAPI_ID
             = new ExtSocketOption<Integer>("SO_INCOMING_NAPI_ID", Integer.class);
 
+    /**
+     * Unix Domain peer credentials.
+     *
+     * <p> The value of this socket option is a {@link UnixDomainPrincipal} that
+     * represents the credentials of a peer connected to a Unix Domain socket.
+     * The credentials are those that applied at the time the socket was first
+     * connected or accepted.
+     *
+     * <p> The socket option is read-only and an attempt to set the socket option
+     * will throw {@code SocketException}. {@code SocketException} is also thrown
+     * when attempting to get the value of the socket option on an unconnected Unix
+     * Domain socket.
+     *
+     * @since 16
+     */
+    public static final SocketOption<UnixDomainPrincipal> SO_PEERCRED
+        = new ExtSocketOption<UnixDomainPrincipal>
+            ("SO_PEERCRED", UnixDomainPrincipal.class);
+
     private static final PlatformSocketOptions platformSocketOptions =
             PlatformSocketOptions.get();
 
@@ -187,6 +206,8 @@ public final class ExtendedSocketOptions {
             platformSocketOptions.quickAckSupported();
     private static final boolean keepAliveOptSupported =
             platformSocketOptions.keepAliveOptionsSupported();
+    private static final boolean peerCredentialsSupported =
+            platformSocketOptions.peerCredentialsSupported();
     private static final boolean incomingNapiIdOptSupported  =
             platformSocketOptions.incomingNapiIdSupported();
     private static final Set<SocketOption<?>> extendedOptions = options();
@@ -201,6 +222,9 @@ public final class ExtendedSocketOptions {
         }
         if (keepAliveOptSupported) {
             options.addAll(Set.of(TCP_KEEPCOUNT, TCP_KEEPIDLE, TCP_KEEPINTERVAL));
+        }
+        if (peerCredentialsSupported) {
+            options.add(SO_PEERCRED);
         }
         return Collections.unmodifiableSet(options);
     }
@@ -233,6 +257,8 @@ public final class ExtendedSocketOptions {
                         throw new UnsupportedOperationException("Attempt to set unsupported option " + option);
                     else
                         throw new SocketException("Attempt to set read only option " + option);
+                } else if (option == SO_PEERCRED) {
+                    throw new SocketException("SO_PEERCRED cannot be set ");
                 } else {
                     throw new InternalError("Unexpected option " + option);
                 }
@@ -255,6 +281,8 @@ public final class ExtendedSocketOptions {
                     return getTcpKeepAliveTime(fd);
                 } else if (option == TCP_KEEPINTERVAL) {
                     return getTcpKeepAliveIntvl(fd);
+                } else if (option == SO_PEERCRED) {
+                    return getSoPeerCred(fd);
                 } else if (option == SO_INCOMING_NAPI_ID) {
                     return getIncomingNapiId(fd);
                 } else {
@@ -270,6 +298,11 @@ public final class ExtendedSocketOptions {
     private static void setQuickAckOption(FileDescriptor fd, boolean enable)
             throws SocketException {
         platformSocketOptions.setQuickAck(fdAccess.get(fd), enable);
+    }
+
+    private static Object getSoPeerCred(FileDescriptor fd)
+            throws SocketException {
+        return platformSocketOptions.getSoPeerCred(fdAccess.get(fd));
     }
 
     private static Object getQuickAckOption(FileDescriptor fd)
@@ -345,6 +378,10 @@ public final class ExtendedSocketOptions {
             return instance;
         }
 
+        boolean peerCredentialsSupported() {
+            return false;
+        }
+
         void setQuickAck(int fd, boolean on) throws SocketException {
             throw new UnsupportedOperationException("unsupported TCP_QUICKACK option");
         }
@@ -367,6 +404,10 @@ public final class ExtendedSocketOptions {
 
         void setTcpKeepAliveTime(int fd, final int value) throws SocketException {
             throw new UnsupportedOperationException("unsupported TCP_KEEPIDLE option");
+        }
+
+        UnixDomainPrincipal getSoPeerCred(int fd) throws SocketException {
+            throw new UnsupportedOperationException("unsupported SO_PEERCRED option");
         }
 
         void setTcpKeepAliveIntvl(int fd, final int value) throws SocketException {

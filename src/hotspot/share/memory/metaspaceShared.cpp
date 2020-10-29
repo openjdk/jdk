@@ -770,6 +770,9 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   builder.relocate_well_known_klasses();
 
+  log_info(cds)("Update method trampolines");
+  builder.update_method_trampolines();
+
   log_info(cds)("Make classes shareable");
   builder.make_klasses_shareable();
 

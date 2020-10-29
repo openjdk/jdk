@@ -74,10 +74,8 @@ import static javax.lang.model.SourceVersion.*;
  * @see ElementScanner7
  * @see ElementScanner8
  * @see ElementScanner9
- * @since 14
+ * @since 16
  */
-@jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.RECORDS,
-                             reflective=true)
 @SupportedSourceVersion(RELEASE_16)
 public class ElementScanner14<R, P> extends ElementScanner9<R, P> {
     /**
@@ -149,7 +147,6 @@ public class ElementScanner14<R, P> extends ElementScanner9<R, P> {
      * @param p a visitor-specified parameter
      * @return  the result of the scan
      */
-    @SuppressWarnings("preview")
     @Override
     public R visitRecordComponent(RecordComponentElement e, P p) {
         return scan(e.getEnclosedElements(), p);
