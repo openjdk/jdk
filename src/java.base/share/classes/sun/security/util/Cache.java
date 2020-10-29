@@ -265,8 +265,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
         else
             this.queue = null;
 
-        int buckets = (int)(maxSize / LOAD_FACTOR) + 1;
-        cacheMap = new LinkedHashMap<>(buckets, LOAD_FACTOR, true);
+        cacheMap = new LinkedHashMap<>(1, LOAD_FACTOR, true);
     }
 
     /**
