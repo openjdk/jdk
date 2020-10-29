@@ -60,15 +60,18 @@ public class TwoHash {
             throw new RuntimeException("Should be verified");
         }
 
-        // Modify the SHA256withECDSA signature algorithm to
-        // SHA384withECDSA. This does not matter because HASH here
-        // is not used at all.
+        // Modify the SHA256withECDSA signature algorithm (OID encoded as
+        // "06 08 2A 86 48 CE 3D 04 03 02") to SHA384withECDSA (OID encoded as
+        // "06 08 2A 86 48 CE 3D 04 03 03"). ISO_8859_1 charset is chosen
+        // because it's a strictly one byte per char encoding.
         String s = new String(signature, StandardCharsets.ISO_8859_1);
-        String s1 = s.replace("\u002A\u0086\u0048\u00CE\u003D\u0004\u0003\u0002",
-                "\u002A\u0086\u0048\u00CE\u003D\u0004\u0003\u0003");
+        String s1 = s.replace(
+                "\u0006\u0008\u002A\u0086\u0048\u00CE\u003D\u0004\u0003\u0002",
+                "\u0006\u0008\u002A\u0086\u0048\u00CE\u003D\u0004\u0003\u0003");
         byte[] modified = s1.getBytes(StandardCharsets.ISO_8859_1);
 
-        // The modified signature should still verify.
+        // The modified signature should still verify because the HASH
+        // part of signature algorithm is ignored.
         if (new PKCS7(modified).verify(content) == null) {
             throw new RuntimeException("Should be verified");
         }
