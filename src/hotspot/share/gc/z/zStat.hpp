@@ -423,12 +423,14 @@ public:
 class ZStatRelocation : public AllStatic {
 private:
   static ZRelocationSetSelectorStats _stats;
+  static size_t                      _forwarding_usage;
   static bool                        _success;
 
   static void print(const char* name, const ZRelocationSetSelectorGroupStats& group);
 
 public:
   static void set_at_select_relocation_set(const ZRelocationSetSelectorStats& stats);
+  static void set_at_populate_relocation_set(size_t forwarding_usage);
   static void set_at_relocate_end(bool success);
 
   static void print();

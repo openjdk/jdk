@@ -679,20 +679,6 @@ class AdapterHandlerEntry : public BasicHashtableEntry<mtCode> {
   void print_adapter_on(outputStream* st) const;
 };
 
-// This class is used only with DumpSharedSpaces==true. It holds extra information
-// that's used only during CDS dump time.
-// For details, see comments around Method::link_method()
-class CDSAdapterHandlerEntry: public AdapterHandlerEntry {
-  address               _c2i_entry_trampoline;   // allocated from shared spaces "MC" region
-  AdapterHandlerEntry** _adapter_trampoline;     // allocated from shared spaces "MD" region
-
-public:
-  address get_c2i_entry_trampoline()             const { return _c2i_entry_trampoline; }
-  AdapterHandlerEntry** get_adapter_trampoline() const { return _adapter_trampoline; }
-  void init() NOT_CDS_RETURN;
-};
-
-
 class AdapterHandlerLibrary: public AllStatic {
  private:
   static BufferBlob* _buffer; // the temporary code buffer in CodeCache

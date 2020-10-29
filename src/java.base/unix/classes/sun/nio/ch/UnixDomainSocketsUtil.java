@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,39 +25,41 @@
 
 package sun.nio.ch;
 
-import java.nio.channels.SocketChannel;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.spi.SelectorProvider;
-import java.io.FileDescriptor;
-import java.io.IOException;
+import java.nio.charset.Charset;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import sun.net.NetProperties;
+import jdk.internal.util.StaticProperty;
 
 /**
- * Provides access to implementation private constructors and methods.
+ * Platform specific utility functions
  */
+class UnixDomainSocketsUtil {
+    private UnixDomainSocketsUtil() { }
 
-public final class Secrets {
-    private Secrets() { }
-
-    private static SelectorProvider provider() {
-        SelectorProvider p = SelectorProvider.provider();
-        if (!(p instanceof SelectorProviderImpl))
-            throw new UnsupportedOperationException();
-        return p;
+    static Charset getCharset() {
+        return Charset.defaultCharset();
     }
 
-    public static SocketChannel newSocketChannel(FileDescriptor fd) {
-        try {
-            return new SocketChannelImpl(provider(), fd, false);
-        } catch (IOException ioe) {
-            throw new AssertionError(ioe);
-        }
-    }
-
-    public static ServerSocketChannel newServerSocketChannel(FileDescriptor fd) {
-        try {
-            return new ServerSocketChannelImpl(provider(), fd, false);
-        } catch (IOException ioe) {
-            throw new AssertionError(ioe);
-        }
+    /**
+     * Return the temp directory for storing automatically bound
+     * server sockets.
+     *
+     * On UNIX we search the following directories in sequence:
+     *
+     * 1. ${jdk.net.unixdomain.tmpdir} if set as system property
+     * 2. ${jdk.net.unixdomain.tmpdir} if set as net property
+     * 3. ${java.io.tmpdir} system property
+     */
+    static String getTempDir() {
+        PrivilegedAction<String> action = () -> {
+            String s = NetProperties.get("jdk.net.unixdomain.tmpdir");
+            if (s != null && s.length() > 0) {
+                return s;
+            } else {
+                return StaticProperty.javaIoTmpDir();
+            }
+        };
+        return AccessController.doPrivileged(action);
     }
 }

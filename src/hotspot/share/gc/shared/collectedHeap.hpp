@@ -310,12 +310,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   virtual size_t min_dummy_object_size() const;
   size_t tlab_alloc_reserve() const;
 
-  // Return the address "addr" aligned by "alignment_in_bytes" if such
-  // an address is below "end".  Return NULL otherwise.
-  inline static HeapWord* align_allocation_or_fail(HeapWord* addr,
-                                                   HeapWord* end,
-                                                   unsigned short alignment_in_bytes);
-
   // Some heaps may offer a contiguous region for shared non-blocking
   // allocation, via inlined code (by exporting the address of the top and
   // end fields defining the extent of the contiguous allocation region.)
