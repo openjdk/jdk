@@ -103,3 +103,31 @@ TEST(Semaphore, trywait) {
     }
   }
 }
+
+TEST(SemaphoreLock, lock_unlock) {
+  SemaphoreLock lock;
+  lock.lock();
+  lock.unlock();
+}
+
+TEST(SemaphoreLock, try_lock) {
+  SemaphoreLock lock;
+  lock.lock();
+  ASSERT_EQ(lock.try_lock(), false);
+  lock.unlock();
+
+  ASSERT_EQ(lock.try_lock(), true);
+  lock.unlock();
+}
+
+TEST(SemaphoreLocker, sanity) {
+  SemaphoreLock lock;
+
+  {
+    SemaphoreLocker sl(&lock);
+    ASSERT_EQ(lock.try_lock(), false);
+  }
+
+  ASSERT_EQ(lock.try_lock(), true);
+  lock.unlock();
+}
