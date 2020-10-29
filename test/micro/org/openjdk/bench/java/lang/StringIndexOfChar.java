@@ -31,6 +31,7 @@ import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.infra.Blackhole;
 
 import java.util.concurrent.TimeUnit;
 
@@ -53,14 +54,14 @@ public class StringIndexOfChar {
     private int rngSeed;
 
     private Random rng;
-    private String [] latn1_short;
-    private String [] latn1_sse4;
-    private String [] latn1_avx2;
-    private String [] latn1_mixedLength;
-    private String [] utf16_short;
-    private String [] utf16_sse4;
-    private String [] utf16_avx2;
-    private String [] utf16_mixedLength;
+    private String[] latn1_short;
+    private String[] latn1_sse4;
+    private String[] latn1_avx2;
+    private String[] latn1_mixedLength;
+    private String[] utf16_short;
+    private String[] utf16_sse4;
+    private String[] utf16_avx2;
+    private String[] utf16_mixedLength;
 
     @Setup
     public void setup() {
@@ -102,148 +103,116 @@ public class StringIndexOfChar {
 
 
     @Benchmark
-    public int latin1_mixed_char() {
-        int ret = 0;
+    public void latin1_mixed_char(Blackhole bh) {
         for (String what : latn1_mixedLength) {
-            ret += what.indexOf('a');
+            bh.consume(what.indexOf('a'));
         }
-        return ret;
     }
 
     @Benchmark
-    public int utf16_mixed_char() {
-        int ret = 0;
+    public void utf16_mixed_char(Blackhole bh) {
         for (String what : utf16_mixedLength) {
-            ret += what.indexOf('a');
+            bh.consume(what.indexOf('a'));
         }
-        return ret;
     }
 
     @Benchmark
-    public int latin1_mixed_String() {
-        int ret = 0;
+    public void latin1_mixed_String(Blackhole bh) {
         for (String what : latn1_mixedLength) {
-            ret += what.indexOf("a");
+            bh.consume(what.indexOf("a"));
         }
-        return ret;
     }
 
     @Benchmark
-    public int utf16_mixed_String() {
-        int ret = 0;
+    public void utf16_mixed_String(Blackhole bh) {
         for (String what : utf16_mixedLength) {
-            ret += what.indexOf("a");
+            bh.consume(what.indexOf("a"));
         }
-        return ret;
     }
 
     ////////// more detailed code path dependent tests //////////
 
     @Benchmark
-    public int latin1_Short_char() {
-        int ret = 0;
+    public void latin1_Short_char(Blackhole bh) {
         for (String what : latn1_short) {
-            ret += what.indexOf('a');
+            bh.consume(what.indexOf('a'));
         }
-        return ret;
     }
 
     @Benchmark
-    public int latin1_SSE4_char() {
-        int ret = 0;
+    public void latin1_SSE4_char(Blackhole bh) {
         for (String what : latn1_sse4) {
-            ret += what.indexOf('a');
+            bh.consume(what.indexOf('a'));
         }
-        return ret;
     }
 
     @Benchmark
-    public int latin1_AVX2_char() {
-        int ret = 0;
+    public void latin1_AVX2_char(Blackhole bh) {
         for (String what : latn1_avx2) {
-            ret += what.indexOf('a');
+            bh.consume(what.indexOf('a'));
         }
-        return ret;
     }
 
     @Benchmark
-    public int utf16_Short_char() {
-        int ret = 0;
+    public void utf16_Short_char(Blackhole bh) {
         for (String what : utf16_short) {
-            ret += what.indexOf('a');
+            bh.consume(what.indexOf('a'));
         }
-        return ret;
     }
 
     @Benchmark
-    public int utf16_SSE4_char() {
-        int ret = 0;
+    public void utf16_SSE4_char(Blackhole bh) {
         for (String what : utf16_sse4) {
-            ret += what.indexOf('a');
+            bh.consume(what.indexOf('a'));
         }
-        return ret;
     }
 
     @Benchmark
-    public int utf16_AVX2_char() {
-        int ret = 0;
+    public void utf16_AVX2_char(Blackhole bh) {
         for (String what : utf16_avx2) {
-            ret += what.indexOf('a');
+            bh.consume(what.indexOf('a'));
         }
-        return ret;
     }
 
     @Benchmark
-    public int latin1_Short_String() {
-        int ret = 0;
+    public void latin1_Short_String(Blackhole bh) {
         for (String what : latn1_short) {
-            ret += what.indexOf("a");
+            bh.consume(what.indexOf("a"));
         }
-        return ret;
     }
 
     @Benchmark
-    public int latin1_SSE4_String() {
-        int ret = 0;
+    public void latin1_SSE4_String(Blackhole bh) {
         for (String what : latn1_sse4) {
-            ret += what.indexOf("a");
+            bh.consume(what.indexOf("a"));
         }
-        return ret;
     }
 
     @Benchmark
-    public int latin1_AVX2_String() {
-        int ret = 0;
+    public void latin1_AVX2_String(Blackhole bh) {
         for (String what : latn1_avx2) {
-            ret += what.indexOf("a");
+            bh.consume(what.indexOf("a"));
         }
-        return ret;
     }
 
     @Benchmark
-    public int utf16_Short_String() {
-        int ret = 0;
+    public void utf16_Short_String(Blackhole bh) {
         for (String what : utf16_short) {
-            ret += what.indexOf("a");
+            bh.consume(what.indexOf("a"));
         }
-        return ret;
     }
 
     @Benchmark
-    public int utf16_SSE4_String() {
-        int ret = 0;
+    public void utf16_SSE4_String(Blackhole bh) {
         for (String what : utf16_sse4) {
-            ret += what.indexOf("a");
+            bh.consume(what.indexOf("a"));
         }
-        return ret;
     }
 
     @Benchmark
-    public int utf16_AVX2_String() {
-        int ret = 0;
+    public void utf16_AVX2_String(Blackhole bh) {
         for (String what : utf16_avx2) {
-            ret += what.indexOf("a");
+            bh.consume(what.indexOf("a"));
         }
-        return ret;
     }
 }
