@@ -635,6 +635,9 @@ JVMState* PhaseStringOpts::clone_substr_jvms(CallJavaNode* call) {
   return jvms;
 }
 
+// api-level substitution
+// transform from s=substring(base, beg, end); s.startsWith(prefix)
+// to substring(base, beg, end)| base.startsWith(prefix, beg)
 void PhaseStringOpts::optimize_startsWith(CallJavaNode* substr, CallJavaNode* startsWith,
                                           Node* castpp, CallProjections& projs) {
   ciMethod* m = startsWith->method();
@@ -663,6 +666,7 @@ void PhaseStringOpts::optimize_startsWith(CallJavaNode* substr, CallJavaNode* st
     ctrl = iff->find_exact_control(iff->in(TypeFunc::Control));
     // if substr controls startsWith, hoist startsWith
     if (ctrl == substr) {
+      // invalidate the nullcheck of substring
       iff->replace_edge(iff->in(1), C->top());
       C->for_igvn()->push(iff);
 
@@ -704,7 +708,7 @@ void PhaseStringOpts::optimize_startsWith(CallJavaNode* substr, CallJavaNode* st
 
   {
     // instead of constructing an IndexOutofBoundsException with offset index,
-    // just punt to interpreter and reexecute substring
+    // just punt to the interpreter and reexecute substring()
     PreserveJVMState pjvms(&kit);
     kit.set_control(throwEx);
     C->record_for_igvn(throwEx);
