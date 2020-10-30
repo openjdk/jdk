@@ -282,7 +282,7 @@ import static java.lang.invoke.MethodHandleStatics.UNSAFE;
  * match fails, it means that the access mode method which the caller is
  * invoking is not present on the individual VarHandle being invoked.
  *
- * <p id="invoke-behaviour">
+ * <p id="invoke-behavior">
  * Invocation of an access mode method behaves, by default, as if an invocation of
  * {@link MethodHandle#invoke}, where the receiving method handle accepts the
  * VarHandle instance as the leading argument.  More specifically, the
@@ -318,7 +318,7 @@ import static java.lang.invoke.MethodHandleStatics.UNSAFE;
  * widen primitive values, as if by {@link MethodHandle#asType asType} (see also
  * {@link MethodHandles#varHandleInvoker}).
  *
- * More concisely, such behaviour is equivalent to:
+ * More concisely, such behavior is equivalent to:
  * <pre> {@code
  * VarHandle vh = ..
  * VarHandle.AccessMode am = VarHandle.AccessMode.valueFromMethodName("{access-mode}");
@@ -328,8 +328,8 @@ import static java.lang.invoke.MethodHandleStatics.UNSAFE;
  * }</pre>
  * Where, in this case, the method handle is bound to the VarHandle instance.
  *
- * <p id="invoke-exact-behaviour">
- * A VarHandle's invocation behaviour can be adjusted (see {@link #withInvokeExactBehavior}) such that invocation of
+ * <p id="invoke-exact-behavior">
+ * A VarHandle's invocation behavior can be adjusted (see {@link #withInvokeExactBehavior}) such that invocation of
  * an access mode method behaves as if invocation of {@link MethodHandle#invokeExact},
  * where the receiving method handle accepts the VarHandle instance as the leading argument.
  * More specifically, the following, where {@code {access-mode}} corresponds to the access mode method
@@ -350,7 +350,7 @@ import static java.lang.invoke.MethodHandleStatics.UNSAFE;
  * }</pre>
  * (modulo access mode methods do not declare throwing of {@code Throwable}).
  *
- * More concisely, such behaviour is equivalent to:
+ * More concisely, such behavior is equivalent to:
  * <pre> {@code
  * VarHandle vh = ..
  * VarHandle.AccessMode am = VarHandle.AccessMode.valueFromMethodName("{access-mode}");
@@ -456,7 +456,7 @@ import static java.lang.invoke.MethodHandleStatics.UNSAFE;
  * {@link java.lang.invoke.MethodHandles#varHandleInvoker}.  The
  * {@link java.lang.invoke.MethodHandles.Lookup#findVirtual Lookup.findVirtual}
  * API is also able to return a method handle to call an access mode method for
- * any specified access mode type and is equivalent in behaviour to
+ * any specified access mode type and is equivalent in behavior to
  * {@link java.lang.invoke.MethodHandles#varHandleInvoker}.
  *
  * <h2>Interoperation between VarHandles and Java generics</h2>
@@ -503,11 +503,11 @@ public abstract class VarHandle implements Constable {
     VarHandle target() { return null; }
 
     /**
-     * Returns {@code true} if this VarHandle has <a href="#invoke-exact-behaviour"><em>invoke-exact behaviour</em></a>.
+     * Returns {@code true} if this VarHandle has <a href="#invoke-exact-behavior"><em>invoke-exact behavior</em></a>.
      *
      * @see #withInvokeExactBehavior()
      * @see #withInvokeBehavior()
-     * @return {@code true} if this VarHandle has <a href="#invoke-exact-behaviour"><em>invoke-exact behaviour</em></a>.
+     * @return {@code true} if this VarHandle has <a href="#invoke-exact-behavior"><em>invoke-exact behavior</em></a>.
      * @since 16
      */
     public boolean hasInvokeExactBehavior() {
@@ -1592,32 +1592,32 @@ public abstract class VarHandle implements Constable {
 
     /**
      * Returns a VarHandle, with access to the same variable(s) as this VarHandle, but whose
-     * invocation behaviour of access mode methods is adjusted to
-     * <a href="#invoke-exact-behaviour"><em>invoke-exact behaviour</em></a>.
+     * invocation behavior of access mode methods is adjusted to
+     * <a href="#invoke-exact-behavior"><em>invoke-exact behavior</em></a>.
      * <p>
-     * If this VarHandle already has invoke-exact behaviour this VarHandle is returned.
+     * If this VarHandle already has invoke-exact behavior this VarHandle is returned.
      * @apiNote
-     * Invoke-exact behaviour guarantees that that upon invocation of an access mode method
+     * Invoke-exact behavior guarantees that that upon invocation of an access mode method
      * the types an arity of the arguments must match the {@link #accessModeType(AccessMode) access mode type},
      * otherwise a {@link WrongMethodTypeException} is thrown.
      *
      * @see #withInvokeBehavior()
      * @see #hasInvokeExactBehavior()
-     * @return a VarHandle with invoke-exact behaviour
+     * @return a VarHandle with invoke-exact behavior
      * @since 16
      */
     public abstract VarHandle withInvokeExactBehavior();
 
     /**
      * Returns a VarHandle, with access to the same variable(s) as this VarHandle, but whose
-     * invocation behaviour of access mode methods is adjusted to
-     * <a href="#invoke-behaviour"><em>invoke behaviour</em></a>.
+     * invocation behavior of access mode methods is adjusted to
+     * <a href="#invoke-behavior"><em>invoke behavior</em></a>.
      * <p>
-     * If this VarHandle already has invoke behaviour this VarHandle is returned.
+     * If this VarHandle already has invoke behavior this VarHandle is returned.
      *
      * @see #withInvokeExactBehavior()
      * @see #hasInvokeExactBehavior()
-     * @return a VarHandle with invoke behaviour
+     * @return a VarHandle with invoke behavior
      * @since 16
      */
     public abstract VarHandle withInvokeBehavior();
