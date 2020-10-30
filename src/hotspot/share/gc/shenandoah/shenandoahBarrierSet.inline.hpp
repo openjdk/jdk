@@ -82,6 +82,7 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(oop obj) {
   }
   if (_heap->has_forwarded_objects() &&
       _heap->in_collection_set(obj)) { // Subsumes NULL-check
+    assert(obj != NULL, "cset check must have subsumed NULL-check");
     oop fwd = resolve_forwarded_not_null(obj);
     // TODO: It should not be necessary to check evac-in-progress here.
     // We do it for mark-compact, which may have forwarded objects,
