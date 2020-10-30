@@ -120,7 +120,7 @@ static void upcall_helper(jobject rec, address buff) {
                          &args, thread);
 }
 
-addres ProgrammableUpcallHandler::generate_upcall_stub(jobject rec, jobject jabi, jobject jlayout) {
+address ProgrammableUpcallHandler::generate_upcall_stub(jobject rec, jobject jabi, jobject jlayout) {
   ResourceMark rm;
   const ABIDescriptor abi = ForeignGlobals::parse_abi_descriptor(jabi);
   const BufferLayout layout = ForeignGlobals::parse_buffer_layout(jlayout);
