@@ -1817,7 +1817,7 @@ public final class DateTimeFormatterBuilder {
                     } else if (count == 4) {
                         appendGenericZoneText(TextStyle.FULL);
                     } else {
-                        throw new IllegalArgumentException("Wrong number of  pattern letters: " + cur);
+                        throw new IllegalArgumentException("Wrong number of pattern letters: " + cur);
                     }
                 } else if (cur == 'Z') {
                     if (count < 4) {
@@ -1872,7 +1872,7 @@ public final class DateTimeFormatterBuilder {
                         case 1 -> appendDayPeriodText(TextStyle.SHORT);
                         case 4 -> appendDayPeriodText(TextStyle.FULL);
                         case 5 -> appendDayPeriodText(TextStyle.NARROW);
-                        default -> throw new IllegalArgumentException("Too many pattern letters: " + cur);
+                        default -> throw new IllegalArgumentException("Wrong number of pattern letters: " + cur);
                     }
                 } else {
                     throw new IllegalArgumentException("Unknown pattern letter: " + cur);
