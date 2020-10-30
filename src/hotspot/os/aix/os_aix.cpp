@@ -2585,11 +2585,7 @@ bool os::bind_to_processor(uint processor_id) {
 }
 
 void os::SuspendedThreadTask::internal_do_task() {
-  if (PosixSignals::do_suspend(_thread->osthread())) {
-    SuspendedThreadTaskContext context(_thread, _thread->osthread()->ucontext());
-    do_task(context);
-    PosixSignals::do_resume(_thread->osthread());
-  }
+  PosixSignals::do_task(_thread, this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

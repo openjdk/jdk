@@ -1608,3 +1608,11 @@ void PosixSignals::do_resume(OSThread* osthread) {
 
   guarantee(osthread->sr.is_running(), "Must be running!");
 }
+
+void PosixSignals::do_task(Thread* thread, os::SuspendedThreadTask* task) {
+  if (PosixSignals::do_suspend(thread->osthread())) {
+    os::SuspendedThreadTaskContext context(thread, thread->osthread()->ucontext());
+    task->do_task(context);
+    PosixSignals::do_resume(thread->osthread());
+  }
+}

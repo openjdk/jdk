@@ -35,6 +35,7 @@ typedef sigset_t sigset_t;
 class outputStream;
 class Thread;
 class OSThread;
+class SuspendedThreadTask;
 
 class PosixSignals : public AllStatic {
 
@@ -60,6 +61,7 @@ public:
   static int SR_initialize();
   static bool do_suspend(OSThread* osthread);
   static void do_resume(OSThread* osthread);
+  static void do_task(Thread* thread, os::SuspendedThreadTask* task);
 
   // For signal-chaining
   static bool chained_handler(int sig, siginfo_t* siginfo, void* context);
