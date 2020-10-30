@@ -75,7 +75,7 @@ public class HttpPrincipal implements Principal {
      * @return the contents of this principal in the form realm:username
      */
     public String getName() {
-        return String.format("%s:%s", username, realm);
+        return String.format("%s:%s", realm, username);
     }
 
     /**

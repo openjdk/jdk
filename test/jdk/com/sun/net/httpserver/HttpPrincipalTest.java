@@ -41,7 +41,7 @@ public class HttpPrincipalTest {
 
         assertEquals(principal.getUsername(), "test");
         assertEquals(principal.getRealm(), "123");
-        assertEquals(principal.getName(), "test:123");
+        assertEquals(principal.getName(), "123:test");
         assertEquals(principal.toString(), principal.getName());
         assertEquals(("test"+"123").hashCode(), principal.hashCode());
     }
