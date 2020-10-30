@@ -122,7 +122,8 @@ public:
     return _instance;
   }
   bool parse_one_line();
-  void split_tokens_by_whitespace();
+  void split_tokens_by_whitespace(int offset);
+  int split_at_tag_from_line();
   bool parse_at_tags();
   char* _token;
   void error(const char* msg, ...);
