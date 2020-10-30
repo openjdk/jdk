@@ -99,18 +99,19 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(oop obj) {
   return obj;
 }
 
-template <class T>
-inline oop ShenandoahBarrierSet::load_reference_barrier_native(oop obj, T* load_addr) {
-  if (CompressedOops::is_null(obj)) {
-    return NULL;
-  }
+template <DecoratorSet decorators, class T>
+inline oop ShenandoahBarrierSet::load_reference_barrier(oop obj, T* load_addr) {
 
-  ShenandoahMarkingContext* const marking_context = _heap->marking_context();
-  if (_heap->is_concurrent_weak_root_in_progress() && !marking_context->is_marked(obj)) {
+  // Prevent resurrection of unreachable non-strorg references.
+  if (!HasDecorator<decorators, ON_STRONG_OOP_REF>::value && obj != NULL &&
+      _heap->is_concurrent_weak_root_in_progress() &&
+      !_heap->marking_context()->is_marked(obj)) {
     Thread* thr = Thread::current();
     if (thr->is_Java_thread()) {
       return NULL;
     } else {
+      // This path is sometimes (rarely) taken by GC threads.
+      // See e.g.: https://bugs.openjdk.java.net/browse/JDK-8237874
       return obj;
     }
   }
@@ -186,7 +187,7 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_loa
   oop value = Raw::oop_load_not_in_heap(addr);
   if (value != NULL) {
     ShenandoahBarrierSet *const bs = ShenandoahBarrierSet::barrier_set();
-    value = bs->load_reference_barrier_native(value, addr);
+    value = bs->load_reference_barrier<decorators, T>(value, addr);
     bs->keep_alive_if_weak<decorators>(value);
   }
   return value;

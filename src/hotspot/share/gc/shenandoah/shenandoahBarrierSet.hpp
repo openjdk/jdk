@@ -92,8 +92,8 @@ public:
   template <class T>
   inline oop load_reference_barrier_mutator(oop obj, T* load_addr);
 
-  template <class T>
-  inline oop load_reference_barrier_native(oop obj, T* load_addr);
+  template <DecoratorSet decorators, class T>
+  inline oop load_reference_barrier(oop obj, T* load_addr);
 
 private:
   template <class T>
