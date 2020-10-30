@@ -54,6 +54,7 @@ public:
   static void hotspot_sigmask(Thread* thread);
 
   static void print_signal_handler(outputStream* st, int sig, char* buf, size_t buflen);
+  static void print_signal_handlers(outputStream* st, char* buf, size_t buflen);
 
   // Suspend-resume
   static int SR_initialize();

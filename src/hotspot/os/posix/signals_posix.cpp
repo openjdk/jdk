@@ -720,7 +720,7 @@ void os::run_periodic_checks() {
   do_signal_check(SIGBUS);
   do_signal_check(SIGPIPE);
   do_signal_check(SIGXFSZ);
-#if defined(PPC64)
+#if defined(PPC64) || defined(AIX)
   do_signal_check(SIGTRAP);
 #endif
 
@@ -1243,6 +1243,28 @@ void PosixSignals::print_signal_handler(outputStream* st, int sig,
     }
   }
   st->cr();
+}
+
+void PosixSignals::print_signal_handlers(outputStream* st, char* buf, size_t buflen) {
+  st->print_cr("Signal Handlers:");
+  PosixSignals::print_signal_handler(st, SIGSEGV, buf, buflen);
+  PosixSignals::print_signal_handler(st, SIGBUS , buf, buflen);
+  PosixSignals::print_signal_handler(st, SIGFPE , buf, buflen);
+  PosixSignals::print_signal_handler(st, SIGPIPE, buf, buflen);
+  PosixSignals::print_signal_handler(st, SIGXFSZ, buf, buflen);
+  PosixSignals::print_signal_handler(st, SIGILL , buf, buflen);
+  PosixSignals::print_signal_handler(st, PosixSignals::SR_signum, buf, buflen);
+  PosixSignals::print_signal_handler(st, SHUTDOWN1_SIGNAL, buf, buflen);
+  PosixSignals::print_signal_handler(st, SHUTDOWN2_SIGNAL , buf, buflen);
+  PosixSignals::print_signal_handler(st, SHUTDOWN3_SIGNAL , buf, buflen);
+  PosixSignals::print_signal_handler(st, BREAK_SIGNAL, buf, buflen);
+#if defined(AIX)
+  // We also want to know if someone else adds a SIGDANGER handler because
+  // that will interfere with OOM killling.
+  PosixSignals::print_signal_handler(st, SIGDANGER, buf, buflen);
+#elif defined(PPC64) || defined(AIX)
+  PosixSignals::print_signal_handler(st, SIGTRAP, buf, buflen);
+#endif
 }
 
 bool PosixSignals::is_sig_ignored(int sig) {
