@@ -63,40 +63,6 @@ public:
   static jint set_minimum_stack_sizes();
   static size_t get_initial_stack_size(ThreadType thr_type, size_t req_stack_size);
 
-  // Returns true if signal is valid.
-  static bool is_valid_signal(int sig);
-  static bool is_sig_ignored(int sig);
-
-  // Helper function, returns a string (e.g. "SIGILL") for a signal.
-  // Returned string is a constant. For unknown signals "UNKNOWN" is returned.
-  static const char* get_signal_name(int sig, char* out, size_t outlen);
-
-  // Helper function, returns a signal number for a given signal name, e.g. 11
-  // for "SIGSEGV". Name can be given with or without "SIG" prefix, so both
-  // "SEGV" or "SIGSEGV" work. Name must be uppercase.
-  // Returns -1 for an unknown signal name.
-  static int get_signal_number(const char* signal_name);
-
-  // Returns one-line short description of a signal set in a user provided buffer.
-  static const char* describe_signal_set_short(const sigset_t* set, char* buffer, size_t size);
-
-  // Prints a short one-line description of a signal set.
-  static void print_signal_set_short(outputStream* st, const sigset_t* set);
-
-  // unblocks the signal masks for current thread
-  static int unblock_thread_signal_mask(const sigset_t *set);
-
-  // Writes a one-line description of a combination of sigaction.sa_flags
-  // into a user provided buffer. Returns that buffer.
-  static const char* describe_sa_flags(int flags, char* buffer, size_t size);
-
-  // Prints a one-line description of a combination of sigaction.sa_flags.
-  static void print_sa_flags(outputStream* st, int flags);
-
-  static address ucontext_get_pc(const ucontext_t* ctx);
-  // Set PC into context. Needed for continuation after signal.
-  static void ucontext_set_pc(ucontext_t* ctx, address pc);
-
   // Helper function; describes pthread attributes as short string. String is written
   // to buf with len buflen; buf is returned.
   static char* describe_pthread_attr(char* buf, size_t buflen, const pthread_attr_t* attr);
@@ -117,9 +83,6 @@ public:
   // Returns true if either given uid is effective uid and given gid is
   // effective gid, or if given uid is root.
   static bool matches_effective_uid_and_gid_or_root(uid_t uid, gid_t gid);
-
-  static struct sigaction *get_preinstalled_handler(int);
-  static void save_preinstalled_handler(int, struct sigaction&);
 
   static void print_umask(outputStream* st, mode_t umsk);
 
@@ -143,10 +106,14 @@ public:
 #endif
 
   static void to_RTC_abstime(timespec* abstime, int64_t millis);
+
+  static bool handle_stack_overflow(JavaThread* thread, address addr, address pc,
+                                    const void* ucVoid,
+                                    address* stub);
 };
 
 /*
- * Crash protection for the watcher thread. Wrap the callback
+ * Crash protection for the JfrSampler thread. Wrap the callback
  * with a sigsetjmp and in case of a SIGSEGV/SIGBUS we siglongjmp
  * back.
  * To be able to use this - don't take locks, don't rely on destructors,
@@ -167,7 +134,6 @@ public:
 private:
   static Thread* _protected_thread;
   static ThreadCrashProtection* _crash_protection;
-  static volatile intptr_t _crash_mux;
   void restore();
   sigjmp_buf _jmpbuf;
 };

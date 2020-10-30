@@ -994,7 +994,7 @@ void MacroAssembler::arm_stack_overflow_check(int frame_size_in_bytes, Register 
   if (UseStackBanging) {
     const int page_size = os::vm_page_size();
 
-    sub_slow(tmp, SP, JavaThread::stack_shadow_zone_size());
+    sub_slow(tmp, SP, StackOverflow::stack_shadow_zone_size());
     strb(R0, Address(tmp));
     for (; frame_size_in_bytes >= page_size; frame_size_in_bytes -= 0xff0) {
       strb(R0, Address(tmp, -0xff0, pre_indexed));
@@ -1007,7 +1007,7 @@ void MacroAssembler::arm_stack_overflow_check(Register Rsize, Register tmp) {
     Label loop;
 
     mov(tmp, SP);
-    add_slow(Rsize, Rsize, JavaThread::stack_shadow_zone_size() - os::vm_page_size());
+    add_slow(Rsize, Rsize, StackOverflow::stack_shadow_zone_size() - os::vm_page_size());
     bind(loop);
     subs(Rsize, Rsize, 0xff0);
     strb(R0, Address(tmp, -0xff0, pre_indexed));
@@ -1914,7 +1914,7 @@ void MacroAssembler::resolve(DecoratorSet decorators, Register obj) {
 }
 
 void MacroAssembler::safepoint_poll(Register tmp1, Label& slow_path) {
-  ldr_u32(tmp1, Address(Rthread, Thread::polling_page_offset()));
+  ldr_u32(tmp1, Address(Rthread, Thread::polling_word_offset()));
   tst(tmp1, exact_log2(SafepointMechanism::poll_bit()));
   b(slow_path, eq);
 }

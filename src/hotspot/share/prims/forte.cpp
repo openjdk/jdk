@@ -91,7 +91,7 @@ static bool is_decipherable_interpreted_frame(JavaThread* thread,
 
 vframeStreamForte::vframeStreamForte(JavaThread *jt,
                                      frame fr,
-                                     bool stop_at_java_call_stub) : vframeStreamCommon(jt) {
+                                     bool stop_at_java_call_stub) : vframeStreamCommon(jt, false /* process_frames */) {
 
   _stop_at_java_call_stub = stop_at_java_call_stub;
   _frame = fr;

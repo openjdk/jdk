@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,13 @@
 #include "gc/z/zForwarding.inline.hpp"
 #include "gc/z/zHeap.hpp"
 #include "gc/z/zOopClosures.inline.hpp"
-#include "gc/z/zPage.hpp"
+#include "gc/z/zPage.inline.hpp"
 #include "gc/z/zRelocate.hpp"
 #include "gc/z/zRelocationSet.inline.hpp"
 #include "gc/z/zRootsIterator.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zTask.hpp"
 #include "gc/z/zThread.inline.hpp"
-#include "gc/z/zThreadLocalAllocBuffer.hpp"
 #include "gc/z/zWorkers.hpp"
 #include "logging/log.hpp"
 
@@ -43,23 +42,8 @@ static const ZStatCounter ZCounterRelocationContention("Contention", "Relocation
 ZRelocate::ZRelocate(ZWorkers* workers) :
     _workers(workers) {}
 
-class ZRelocateRootsIteratorClosure : public ZRootsIteratorClosure {
+class ZRelocateRootsIteratorClosure : public OopClosure {
 public:
-  virtual void do_thread(Thread* thread) {
-    // Update thread local address bad mask
-    ZThreadLocalData::set_address_bad_mask(thread, ZAddressBadMask);
-
-    // Relocate invisible root
-    ZThreadLocalData::do_invisible_root(thread, ZBarrier::relocate_barrier_on_root_oop_field);
-
-    // Remap TLAB
-    ZThreadLocalAllocBuffer::remap(thread);
-  }
-
-  virtual bool should_disarm_nmethods() const {
-    return true;
-  }
-
   virtual void do_oop(oop* p) {
     ZBarrier::relocate_barrier_on_root_oop_field(p);
   }
@@ -71,24 +55,26 @@ public:
 
 class ZRelocateRootsTask : public ZTask {
 private:
-  ZRootsIterator                _roots;
   ZRelocateRootsIteratorClosure _cl;
 
 public:
   ZRelocateRootsTask() :
-      ZTask("ZRelocateRootsTask"),
-      _roots(true /* visit_jvmti_weak_export */) {}
+      ZTask("ZRelocateRootsTask") {}
 
   virtual void work() {
+    // Allocation path assumes that relocating GC threads are ZWorkers
+    assert(ZThread::is_worker(), "Relocation code needs to be run as a worker");
+    assert(ZThread::worker_id() == 0, "No multi-thread support");
+
     // During relocation we need to visit the JVMTI
     // export weak roots to rehash the JVMTI tag map
-    _roots.oops_do(&_cl);
+    ZRelocateRoots::oops_do(&_cl);
   }
 };
 
 void ZRelocate::start() {
   ZRelocateRootsTask task;
-  _workers->run_parallel(&task);
+  _workers->run_serial(&task);
 }
 
 uintptr_t ZRelocate::relocate_object_inner(ZForwarding* forwarding, uintptr_t from_index, uintptr_t from_offset) const {

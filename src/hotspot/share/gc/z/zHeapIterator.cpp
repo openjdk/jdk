@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,41 +23,79 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
-#include "classfile/classLoaderDataGraph.hpp"
+#include "gc/shared/taskqueue.inline.hpp"
 #include "gc/z/zAddress.inline.hpp"
-#include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zGranuleMap.inline.hpp"
 #include "gc/z/zHeapIterator.hpp"
+#include "gc/z/zLock.inline.hpp"
 #include "gc/z/zOop.inline.hpp"
-#include "gc/z/zRootsIterator.hpp"
-#include "gc/z/zStat.hpp"
 #include "memory/iterator.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
-#include "utilities/stack.inline.hpp"
 
 class ZHeapIteratorBitMap : public CHeapObj<mtGC> {
 private:
-  CHeapBitMap _map;
+  CHeapBitMap _bitmap;
 
 public:
   ZHeapIteratorBitMap(size_t size_in_bits) :
-      _map(size_in_bits) {}
+      _bitmap(size_in_bits, mtGC) {}
 
   bool try_set_bit(size_t index) {
-    if (_map.at(index)) {
-      return false;
-    }
+    return _bitmap.par_set_bit(index);
+  }
+};
 
-    _map.set_bit(index);
-    return true;
+class ZHeapIteratorContext {
+private:
+  ZHeapIterator* const           _iter;
+  ZHeapIteratorQueue* const      _queue;
+  ZHeapIteratorArrayQueue* const _array_queue;
+  const uint                     _worker_id;
+  ZStatTimerDisable              _timer_disable;
+
+public:
+  ZHeapIteratorContext(ZHeapIterator* iter, uint worker_id) :
+      _iter(iter),
+      _queue(_iter->_queues.queue(worker_id)),
+      _array_queue(_iter->_array_queues.queue(worker_id)),
+      _worker_id(worker_id) {}
+
+  void mark_and_push(oop obj) const {
+    if (_iter->mark_object(obj)) {
+      _queue->push(obj);
+    }
+  }
+
+  void push_array(const ObjArrayTask& array) const {
+    _array_queue->push(array);
+  }
+
+  bool pop(oop& obj) const {
+    return _queue->pop_overflow(obj) || _queue->pop_local(obj);
+  }
+
+  bool pop_array(ObjArrayTask& array) const {
+    return _array_queue->pop_overflow(array) || _array_queue->pop_local(array);
+  }
+
+  bool steal(oop& obj) const {
+    return _iter->_queues.steal(_worker_id, obj);
+  }
+
+  bool steal_array(ObjArrayTask& array) const {
+    return _iter->_array_queues.steal(_worker_id, array);
+  }
+
+  bool is_drained() const {
+    return _queue->is_empty() && _array_queue->is_empty();
   }
 };
 
 template <bool Concurrent, bool Weak>
 class ZHeapIteratorRootOopClosure : public ZRootsIteratorClosure {
 private:
-  ZHeapIterator* const _iter;
+  const ZHeapIteratorContext& _context;
 
   oop load_oop(oop* p) {
     if (Weak) {
@@ -72,24 +110,29 @@ private:
   }
 
 public:
-  ZHeapIteratorRootOopClosure(ZHeapIterator* iter) :
-      _iter(iter) {}
+  ZHeapIteratorRootOopClosure(const ZHeapIteratorContext& context) :
+      _context(context) {}
 
   virtual void do_oop(oop* p) {
     const oop obj = load_oop(p);
-    _iter->push(obj);
+    _context.mark_and_push(obj);
   }
 
   virtual void do_oop(narrowOop* p) {
     ShouldNotReachHere();
+  }
+
+  virtual void do_thread(Thread* thread) {
+    CodeBlobToOopClosure code_cl(this, false /* fix_oop_relocations */);
+    thread->oops_do(this, &code_cl);
   }
 };
 
 template <bool VisitReferents>
 class ZHeapIteratorOopClosure : public ClaimMetadataVisitingOopIterateClosure {
 private:
-  ZHeapIterator* const _iter;
-  const oop            _base;
+  const ZHeapIteratorContext& _context;
+  const oop                   _base;
 
   oop load_oop(oop* p) {
     if (VisitReferents) {
@@ -100,9 +143,9 @@ private:
   }
 
 public:
-  ZHeapIteratorOopClosure(ZHeapIterator* iter, oop base) :
+  ZHeapIteratorOopClosure(const ZHeapIteratorContext& context, oop base) :
       ClaimMetadataVisitingOopIterateClosure(ClassLoaderData::_claim_other),
-      _iter(iter),
+      _context(context),
       _base(base) {}
 
   virtual ReferenceIterationMode reference_iteration_mode() {
@@ -111,7 +154,7 @@ public:
 
   virtual void do_oop(oop* p) {
     const oop obj = load_oop(p);
-    _iter->push(obj);
+    _context.mark_and_push(obj);
   }
 
   virtual void do_oop(narrowOop* p) {
@@ -125,16 +168,49 @@ public:
 #endif
 };
 
-ZHeapIterator::ZHeapIterator() :
-    _visit_stack(),
-    _visit_map(ZAddressOffsetMax) {}
+ZHeapIterator::ZHeapIterator(uint nworkers, bool visit_weaks) :
+    _visit_weaks(visit_weaks),
+    _timer_disable(),
+    _bitmaps(ZAddressOffsetMax),
+    _bitmaps_lock(),
+    _queues(nworkers),
+    _array_queues(nworkers),
+    _concurrent_roots(),
+    _weak_roots(),
+    _concurrent_weak_roots(),
+    _terminator(nworkers, &_queues) {
+
+  // Create queues
+  for (uint i = 0; i < _queues.size(); i++) {
+    ZHeapIteratorQueue* const queue = new ZHeapIteratorQueue();
+    queue->initialize();
+    _queues.register_queue(i, queue);
+  }
+
+  // Create array queues
+  for (uint i = 0; i < _array_queues.size(); i++) {
+    ZHeapIteratorArrayQueue* const array_queue = new ZHeapIteratorArrayQueue();
+    array_queue->initialize();
+    _array_queues.register_queue(i, array_queue);
+  }
+}
 
 ZHeapIterator::~ZHeapIterator() {
-  ZVisitMapIterator iter(&_visit_map);
-  for (ZHeapIteratorBitMap* map; iter.next(&map);) {
-    delete map;
+  // Destroy bitmaps
+  ZHeapIteratorBitMapsIterator iter(&_bitmaps);
+  for (ZHeapIteratorBitMap* bitmap; iter.next(&bitmap);) {
+    delete bitmap;
   }
-  ClassLoaderDataGraph::clear_claimed_marks(ClassLoaderData::_claim_other);
+
+  // Destroy array queues
+  for (uint i = 0; i < _array_queues.size(); i++) {
+    delete _array_queues.queue(i);
+  }
+
+  // Destroy queues
+  for (uint i = 0; i < _queues.size(); i++) {
+    delete _queues.queue(i);
+  }
 }
 
 static size_t object_index_max() {
@@ -148,75 +224,136 @@ static size_t object_index(oop obj) {
   return (offset & mask) >> ZObjectAlignmentSmallShift;
 }
 
-ZHeapIteratorBitMap* ZHeapIterator::object_map(oop obj) {
+ZHeapIteratorBitMap* ZHeapIterator::object_bitmap(oop obj) {
   const uintptr_t offset = ZAddress::offset(ZOop::to_address(obj));
-  ZHeapIteratorBitMap* map = _visit_map.get(offset);
-  if (map == NULL) {
-    map = new ZHeapIteratorBitMap(object_index_max());
-    _visit_map.put(offset, map);
+  ZHeapIteratorBitMap* bitmap = _bitmaps.get_acquire(offset);
+  if (bitmap == NULL) {
+    ZLocker<ZLock> locker(&_bitmaps_lock);
+    bitmap = _bitmaps.get(offset);
+    if (bitmap == NULL) {
+      // Install new bitmap
+      bitmap = new ZHeapIteratorBitMap(object_index_max());
+      _bitmaps.release_put(offset, bitmap);
+    }
   }
 
-  return map;
+  return bitmap;
 }
 
-void ZHeapIterator::push(oop obj) {
+bool ZHeapIterator::mark_object(oop obj) {
   if (obj == NULL) {
-    // Ignore
-    return;
+    return false;
   }
 
-  ZHeapIteratorBitMap* const map = object_map(obj);
+  ZHeapIteratorBitMap* const bitmap = object_bitmap(obj);
   const size_t index = object_index(obj);
-  if (!map->try_set_bit(index)) {
-    // Already pushed
-    return;
-  }
-
-  // Push
-  _visit_stack.push(obj);
+  return bitmap->try_set_bit(index);
 }
 
-template <typename RootsIterator, bool Concurrent, bool Weak>
-void ZHeapIterator::push_roots() {
-  ZHeapIteratorRootOopClosure<Concurrent, Weak> cl(this);
-  RootsIterator roots;
-  roots.oops_do(&cl);
+template <bool Concurrent, bool Weak, typename RootsIterator>
+void ZHeapIterator::push_roots(const ZHeapIteratorContext& context, RootsIterator& iter) {
+  ZHeapIteratorRootOopClosure<Concurrent, Weak> cl(context);
+  iter.oops_do(&cl);
 }
 
 template <bool VisitReferents>
-void ZHeapIterator::push_fields(oop obj) {
-  ZHeapIteratorOopClosure<VisitReferents> cl(this, obj);
+void ZHeapIterator::follow_object(const ZHeapIteratorContext& context, oop obj) {
+  ZHeapIteratorOopClosure<VisitReferents> cl(context, obj);
   obj->oop_iterate(&cl);
 }
 
-template <bool VisitWeaks>
-void ZHeapIterator::objects_do(ObjectClosure* cl) {
-  ZStatTimerDisable disable;
+void ZHeapIterator::follow_array(const ZHeapIteratorContext& context, oop obj) {
+  // Follow klass
+  ZHeapIteratorOopClosure<false /* VisitReferents */> cl(context, obj);
+  cl.do_klass(obj->klass());
 
-  // Push roots to visit
-  push_roots<ZRootsIterator,                     false /* Concurrent */, false /* Weak */>();
-  push_roots<ZConcurrentRootsIteratorClaimOther, true  /* Concurrent */, false /* Weak */>();
-  if (VisitWeaks) {
-    push_roots<ZWeakRootsIterator,           false /* Concurrent */, true  /* Weak */>();
-    push_roots<ZConcurrentWeakRootsIterator, true  /* Concurrent */, true  /* Weak */>();
+  // Push array chunk
+  context.push_array(ObjArrayTask(obj, 0 /* index */));
+}
+
+void ZHeapIterator::follow_array_chunk(const ZHeapIteratorContext& context, const ObjArrayTask& array) {
+  const objArrayOop obj = objArrayOop(array.obj());
+  const int length = obj->length();
+  const int start = array.index();
+  const int stride = MIN2<int>(length - start, ObjArrayMarkingStride);
+  const int end = start + stride;
+
+  // Push remaining array chunk first
+  if (end < length) {
+    context.push_array(ObjArrayTask(obj, end));
   }
 
-  // Drain stack
-  while (!_visit_stack.is_empty()) {
-    const oop obj = _visit_stack.pop();
+  // Follow array chunk
+  ZHeapIteratorOopClosure<false /* VisitReferents */> cl(context, obj);
+  obj->oop_iterate_range(&cl, start, end);
+}
 
-    // Visit object
-    cl->do_object(obj);
+template <bool VisitWeaks>
+void ZHeapIterator::visit_and_follow(const ZHeapIteratorContext& context, ObjectClosure* cl, oop obj) {
+  // Visit
+  cl->do_object(obj);
 
-    // Push fields to visit
-    push_fields<VisitWeaks>(obj);
+  // Follow
+  if (obj->is_objArray()) {
+    follow_array(context, obj);
+  } else {
+    follow_object<VisitWeaks>(context, obj);
   }
 }
 
-void ZHeapIterator::objects_do(ObjectClosure* cl, bool visit_weaks) {
-  if (visit_weaks) {
-    objects_do<true /* VisitWeaks */>(cl);
+template <bool VisitWeaks>
+void ZHeapIterator::drain(const ZHeapIteratorContext& context, ObjectClosure* cl) {
+  ObjArrayTask array;
+  oop obj;
+
+  do {
+    while (context.pop(obj)) {
+      visit_and_follow<VisitWeaks>(context, cl, obj);
+    }
+
+    if (context.pop_array(array)) {
+      follow_array_chunk(context, array);
+    }
+  } while (!context.is_drained());
+}
+
+template <bool VisitWeaks>
+void ZHeapIterator::steal(const ZHeapIteratorContext& context, ObjectClosure* cl) {
+  ObjArrayTask array;
+  oop obj;
+
+  if (context.steal_array(array)) {
+    follow_array_chunk(context, array);
+  } else if (context.steal(obj)) {
+    visit_and_follow<VisitWeaks>(context, cl, obj);
+  }
+}
+
+template <bool VisitWeaks>
+void ZHeapIterator::drain_and_steal(const ZHeapIteratorContext& context, ObjectClosure* cl) {
+  do {
+    drain<VisitWeaks>(context, cl);
+    steal<VisitWeaks>(context, cl);
+  } while (!context.is_drained() || !_terminator.offer_termination());
+}
+
+template <bool VisitWeaks>
+void ZHeapIterator::object_iterate_inner(const ZHeapIteratorContext& context, ObjectClosure* cl) {
+  push_roots<true  /* Concurrent */, false /* Weak */>(context, _concurrent_roots);
+  if (VisitWeaks) {
+    push_roots<false /* Concurrent */, true  /* Weak */>(context, _weak_roots);
+    push_roots<true  /* Concurrent */, true  /* Weak */>(context, _concurrent_weak_roots);
+  }
+
+  drain_and_steal<VisitWeaks>(context, cl);
+}
+
+void ZHeapIterator::object_iterate(ObjectClosure* cl, uint worker_id) {
+  ZHeapIteratorContext context(this, worker_id);
+
+  if (_visit_weaks) {
+    object_iterate_inner<true /* VisitWeaks */>(context, cl);
   } else {
-    objects_do<false /* VisitWeaks */>(cl);
+    object_iterate_inner<false /* VisitWeaks */>(context, cl);
   }
 }

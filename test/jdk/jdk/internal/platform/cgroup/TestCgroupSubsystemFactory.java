@@ -56,6 +56,7 @@ public class TestCgroupSubsystemFactory {
     private Path cgroupv2MntInfoZeroHierarchy;
     private Path cgroupv1CgInfoNonZeroHierarchy;
     private Path cgroupv1MntInfoNonZeroHierarchy;
+    private Path cgroupv1MntInfoSystemdOnly;
     private String mntInfoEmpty = "";
     private String cgroupsZeroHierarchy =
             "#subsys_name hierarchy num_cgroups enabled\n" +
@@ -98,6 +99,9 @@ public class TestCgroupSubsystemFactory {
             "pids    3   80  1";
     private String mntInfoCgroupsV2Only =
             "28 21 0:25 / /sys/fs/cgroup rw,nosuid,nodev,noexec,relatime shared:4 - cgroup2 cgroup2 rw,seclabel,nsdelegate";
+    private String mntInfoCgroupsV1SystemdOnly =
+            "35 26 0:26 / /sys/fs/cgroup/systemd rw,nosuid,nodev,noexec,relatime - cgroup systemd rw,name=systemd\n" +
+            "26 18 0:19 / /sys/fs/cgroup rw,relatime - tmpfs none rw,size=4k,mode=755\n";
 
     @Before
     public void setup() {
@@ -118,6 +122,9 @@ public class TestCgroupSubsystemFactory {
 
             cgroupv1MntInfoNonZeroHierarchy = Paths.get(existingDirectory.toString(), "mountinfo_non_zero");
             Files.writeString(cgroupv1MntInfoNonZeroHierarchy, mntInfoHybrid);
+
+            cgroupv1MntInfoSystemdOnly = Paths.get(existingDirectory.toString(), "mountinfo_cgroupv1_systemd_only");
+            Files.writeString(cgroupv1MntInfoSystemdOnly, mntInfoCgroupsV1SystemdOnly);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -130,6 +137,15 @@ public class TestCgroupSubsystemFactory {
         } catch (IOException e) {
             System.err.println("Teardown failed. " + e.getMessage());
         }
+    }
+
+    @Test
+    public void testCgroupv1SystemdOnly() throws IOException {
+        String cgroups = cgroupv1CgInfoZeroHierarchy.toString();
+        String mountInfo = cgroupv1MntInfoSystemdOnly.toString();
+        Optional<CgroupTypeResult> result = CgroupSubsystemFactory.determineType(mountInfo, cgroups);
+
+        assertTrue("zero hierarchy ids with no *relevant* controllers mounted", result.isEmpty());
     }
 
     @Test

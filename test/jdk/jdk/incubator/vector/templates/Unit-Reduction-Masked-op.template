@@ -1,0 +1,6 @@
+    @Test(dataProvider = "$type$UnaryOpMaskProvider")
+    static void [[TEST]]Reduce$vectorteststype$Masked(IntFunction<$type$[]> fa, IntFunction<boolean[]> fm) {
+[[KERNEL]]
+        assertReductionArraysEqualsMasked(a, r, ra, mask,
+                $vectorteststype$::[[TEST]]ReduceMasked, $vectorteststype$::[[TEST]]ReduceAllMasked);
+    }

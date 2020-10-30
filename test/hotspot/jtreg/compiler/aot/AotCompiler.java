@@ -268,6 +268,7 @@ public class AotCompiler {
             }
         } catch (ArtifactResolverException e) {
             System.err.println("artifact resolution error: " + e);
+            e.printStackTrace(System.err);
             // let jaotc try to find linker
             return null;
         }

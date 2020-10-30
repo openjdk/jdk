@@ -26,7 +26,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef __GLIBC__
 #include <gnu/libc-version.h>
+#endif
 
 // Declare the thread local variable(s) in the main executable. This can be
 // used to demonstrate the issues associated with the on-stack static TLS blocks
@@ -54,6 +57,7 @@ JNIEnv* create_vm(JavaVM **jvm, char* argTLS) {
     return env;
 }
 
+#ifdef __GLIBC__
 // glibc 2.15 introduced __pthread_get_minstack
 int glibc_has_pthread_get_minstack() {
   const char* glibc_vers = gnu_get_libc_version();
@@ -66,6 +70,11 @@ int glibc_has_pthread_get_minstack() {
   printf("This version does not provide __pthread_get_minstack\n");
   return 0;
 }
+#else
+int glibc_has_pthread_get_minstack() {
+  return 0;
+}
+#endif
 
 int run(jboolean addTLS) {
     JavaVM *jvm;

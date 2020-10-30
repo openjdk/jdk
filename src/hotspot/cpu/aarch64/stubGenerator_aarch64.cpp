@@ -611,6 +611,16 @@ class StubGenerator: public StubCodeGenerator {
 
   void array_overlap_test(Label& L_no_overlap, Address::sxtw sf) { __ b(L_no_overlap); }
 
+  // Generate indices for iota vector.
+  address generate_iota_indices(const char *stub_name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", stub_name);
+    address start = __ pc();
+    __ emit_data64(0x0706050403020100, relocInfo::none);
+    __ emit_data64(0x0F0E0D0C0B0A0908, relocInfo::none);
+    return start;
+  }
+
   // The inner part of zero_words().  This is the bulk operation,
   // zeroing words in blocks, possibly using DC ZVA to do it.  The
   // caller is responsible for zeroing the last few words.
@@ -1092,7 +1102,7 @@ class StubGenerator: public StubCodeGenerator {
     Label copy4, copy8, copy16, copy32, copy80, copy_big, finish;
     const Register t2 = r5, t3 = r6, t4 = r7, t5 = r8;
     const Register t6 = r9, t7 = r10, t8 = r11, t9 = r12;
-    const Register send = r17, dend = r18;
+    const Register send = r17, dend = r16;
 
     if (PrefetchCopyIntervalInBytes > 0)
       __ prfm(Address(s, 0), PLDL1KEEP);
@@ -1282,11 +1292,15 @@ class StubGenerator: public StubCodeGenerator {
 
   void clobber_registers() {
 #ifdef ASSERT
+    RegSet clobbered
+      = MacroAssembler::call_clobbered_registers() - rscratch1;
     __ mov(rscratch1, (uint64_t)0xdeadbeef);
     __ orr(rscratch1, rscratch1, rscratch1, Assembler::LSL, 32);
-    for (Register r = r3; r <= r18; r++)
-      if (r != rscratch1) __ mov(r, rscratch1);
+    for (RegSetIterator it = clobbered.begin(); *it != noreg; ++it) {
+      __ mov(*it, rscratch1);
+    }
 #endif
+
   }
 
   // Scan over array at a for count oops, verifying each one.
@@ -1719,10 +1733,10 @@ class StubGenerator: public StubCodeGenerator {
     RegSet wb_pre_saved_regs = RegSet::range(c_rarg0, c_rarg4);
     RegSet wb_post_saved_regs = RegSet::of(count);
 
-    // Registers used as temps (r18, r19, r20 are save-on-entry)
+    // Registers used as temps (r19, r20, r21, r22 are save-on-entry)
+    const Register copied_oop  = r22;       // actual oop copied
     const Register count_save  = r21;       // orig elementscount
     const Register start_to    = r20;       // destination array start address
-    const Register copied_oop  = r18;       // actual oop copied
     const Register r19_klass   = r19;       // oop._klass
 
     //---------------------------------------------------------------
@@ -1759,8 +1773,7 @@ class StubGenerator: public StubCodeGenerator {
 
      // Empty array:  Nothing to do.
     __ cbz(count, L_done);
-
-    __ push(RegSet::of(r18, r19, r20, r21), sp);
+    __ push(RegSet::of(r19, r20, r21, r22), sp);
 
 #ifdef ASSERT
     BLOCK_COMMENT("assert consistent ckoff/ckval");
@@ -1829,7 +1842,7 @@ class StubGenerator: public StubCodeGenerator {
     bs->arraycopy_epilogue(_masm, decorators, is_oop, start_to, count_save, rscratch1, wb_post_saved_regs);
 
     __ bind(L_done_pop);
-    __ pop(RegSet::of(r18, r19, r20, r21), sp);
+    __ pop(RegSet::of(r19, r20, r21, r22), sp);
     inc_counter_np(SharedRuntime::_checkcast_array_copy_ctr);
 
     __ bind(L_done);
@@ -2006,7 +2019,7 @@ class StubGenerator: public StubCodeGenerator {
     // registers used as temp
     const Register scratch_length    = r16; // elements count to copy
     const Register scratch_src_klass = r17; // array klass
-    const Register lh                = r18; // layout helper
+    const Register lh                = r15; // layout helper
 
     //  if (length < 0) return -1;
     __ movw(scratch_length, length);        // length (elements count, 32-bits value)
@@ -2077,7 +2090,7 @@ class StubGenerator: public StubCodeGenerator {
     //
 
     const Register rscratch1_offset = rscratch1;    // array offset
-    const Register r18_elsize = lh; // element size
+    const Register r15_elsize = lh; // element size
 
     __ ubfx(rscratch1_offset, lh, Klass::_lh_header_size_shift,
            exact_log2(Klass::_lh_header_size_mask+1));   // array_offset
@@ -2098,8 +2111,8 @@ class StubGenerator: public StubCodeGenerator {
     // The possible values of elsize are 0-3, i.e. exact_log2(element
     // size in bytes).  We do a simple bitwise binary search.
   __ BIND(L_copy_bytes);
-    __ tbnz(r18_elsize, 1, L_copy_ints);
-    __ tbnz(r18_elsize, 0, L_copy_shorts);
+    __ tbnz(r15_elsize, 1, L_copy_ints);
+    __ tbnz(r15_elsize, 0, L_copy_shorts);
     __ lea(from, Address(src, src_pos));// src_addr
     __ lea(to,   Address(dst, dst_pos));// dst_addr
     __ movw(count, scratch_length); // length
@@ -2112,7 +2125,7 @@ class StubGenerator: public StubCodeGenerator {
     __ b(RuntimeAddress(short_copy_entry));
 
   __ BIND(L_copy_ints);
-    __ tbnz(r18_elsize, 0, L_copy_longs);
+    __ tbnz(r15_elsize, 0, L_copy_longs);
     __ lea(from, Address(src, src_pos, Address::lsl(2)));// src_addr
     __ lea(to,   Address(dst, dst_pos, Address::lsl(2)));// dst_addr
     __ movw(count, scratch_length); // length
@@ -2123,8 +2136,8 @@ class StubGenerator: public StubCodeGenerator {
     {
       BLOCK_COMMENT("assert long copy {");
       Label L;
-      __ andw(lh, lh, Klass::_lh_log2_element_size_mask); // lh -> r18_elsize
-      __ cmpw(r18_elsize, LogBytesPerLong);
+      __ andw(lh, lh, Klass::_lh_log2_element_size_mask); // lh -> r15_elsize
+      __ cmpw(r15_elsize, LogBytesPerLong);
       __ br(Assembler::EQ, L);
       __ stop("must be long copy, but elsize is wrong");
       __ bind(L);
@@ -2142,8 +2155,8 @@ class StubGenerator: public StubCodeGenerator {
 
     Label L_plain_copy, L_checkcast_copy;
     //  test array classes for subtyping
-    __ load_klass(r18, dst);
-    __ cmp(scratch_src_klass, r18); // usual case is exact equality
+    __ load_klass(r15, dst);
+    __ cmp(scratch_src_klass, r15); // usual case is exact equality
     __ br(Assembler::NE, L_checkcast_copy);
 
     // Identically typed arrays can be copied without element-wise checks.
@@ -2159,17 +2172,17 @@ class StubGenerator: public StubCodeGenerator {
     __ b(RuntimeAddress(oop_copy_entry));
 
   __ BIND(L_checkcast_copy);
-    // live at this point:  scratch_src_klass, scratch_length, r18 (dst_klass)
+    // live at this point:  scratch_src_klass, scratch_length, r15 (dst_klass)
     {
       // Before looking at dst.length, make sure dst is also an objArray.
-      __ ldrw(rscratch1, Address(r18, lh_offset));
+      __ ldrw(rscratch1, Address(r15, lh_offset));
       __ movw(rscratch2, objArray_lh);
       __ eorw(rscratch1, rscratch1, rscratch2);
       __ cbnzw(rscratch1, L_failed);
 
       // It is safe to examine both src.length and dst.length.
       arraycopy_range_checks(src, src_pos, dst, dst_pos, scratch_length,
-                             r18, L_failed);
+                             r15, L_failed);
 
       __ load_klass(dst_klass, dst); // reload
 
@@ -3285,6 +3298,225 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     __ st1(v8, v9, v10, v11, __ T2D, state);
+
+    __ ldpd(v14, v15, Address(sp, 48));
+    __ ldpd(v12, v13, Address(sp, 32));
+    __ ldpd(v10, v11, Address(sp, 16));
+    __ ldpd(v8, v9, __ post(sp, 64));
+
+    __ ret(lr);
+
+    return start;
+  }
+
+  // Arguments:
+  //
+  // Inputs:
+  //   c_rarg0   - byte[]  source+offset
+  //   c_rarg1   - byte[]   SHA.state
+  //   c_rarg2   - int     digest_length
+  //   c_rarg3   - int     offset
+  //   c_rarg4   - int     limit
+  //
+  address generate_sha3_implCompress(bool multi_block, const char *name) {
+    static const uint64_t round_consts[24] = {
+      0x0000000000000001L, 0x0000000000008082L, 0x800000000000808AL,
+      0x8000000080008000L, 0x000000000000808BL, 0x0000000080000001L,
+      0x8000000080008081L, 0x8000000000008009L, 0x000000000000008AL,
+      0x0000000000000088L, 0x0000000080008009L, 0x000000008000000AL,
+      0x000000008000808BL, 0x800000000000008BL, 0x8000000000008089L,
+      0x8000000000008003L, 0x8000000000008002L, 0x8000000000000080L,
+      0x000000000000800AL, 0x800000008000000AL, 0x8000000080008081L,
+      0x8000000000008080L, 0x0000000080000001L, 0x8000000080008008L
+    };
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", name);
+    address start = __ pc();
+
+    Register buf           = c_rarg0;
+    Register state         = c_rarg1;
+    Register digest_length = c_rarg2;
+    Register ofs           = c_rarg3;
+    Register limit         = c_rarg4;
+
+    Label sha3_loop, rounds24_loop;
+    Label sha3_512, sha3_384_or_224, sha3_256;
+
+    __ stpd(v8, v9, __ pre(sp, -64));
+    __ stpd(v10, v11, Address(sp, 16));
+    __ stpd(v12, v13, Address(sp, 32));
+    __ stpd(v14, v15, Address(sp, 48));
+
+    // load state
+    __ add(rscratch1, state, 32);
+    __ ld1(v0, v1, v2,  v3,  __ T1D, state);
+    __ ld1(v4, v5, v6,  v7,  __ T1D, __ post(rscratch1, 32));
+    __ ld1(v8, v9, v10, v11, __ T1D, __ post(rscratch1, 32));
+    __ ld1(v12, v13, v14, v15, __ T1D, __ post(rscratch1, 32));
+    __ ld1(v16, v17, v18, v19, __ T1D, __ post(rscratch1, 32));
+    __ ld1(v20, v21, v22, v23, __ T1D, __ post(rscratch1, 32));
+    __ ld1(v24, __ T1D, rscratch1);
+
+    __ BIND(sha3_loop);
+
+    // 24 keccak rounds
+    __ movw(rscratch2, 24);
+
+    // load round_constants base
+    __ lea(rscratch1, ExternalAddress((address) round_consts));
+
+    // load input
+    __ ld1(v25, v26, v27, v28, __ T8B, __ post(buf, 32));
+    __ ld1(v29, v30, v31, __ T8B, __ post(buf, 24));
+    __ eor(v0, __ T8B, v0, v25);
+    __ eor(v1, __ T8B, v1, v26);
+    __ eor(v2, __ T8B, v2, v27);
+    __ eor(v3, __ T8B, v3, v28);
+    __ eor(v4, __ T8B, v4, v29);
+    __ eor(v5, __ T8B, v5, v30);
+    __ eor(v6, __ T8B, v6, v31);
+
+    // digest_length == 64, SHA3-512
+    __ tbnz(digest_length, 6, sha3_512);
+
+    __ ld1(v25, v26, v27, v28, __ T8B, __ post(buf, 32));
+    __ ld1(v29, v30, __ T8B, __ post(buf, 16));
+    __ eor(v7, __ T8B, v7, v25);
+    __ eor(v8, __ T8B, v8, v26);
+    __ eor(v9, __ T8B, v9, v27);
+    __ eor(v10, __ T8B, v10, v28);
+    __ eor(v11, __ T8B, v11, v29);
+    __ eor(v12, __ T8B, v12, v30);
+
+    // digest_length == 28, SHA3-224;  digest_length == 48, SHA3-384
+    __ tbnz(digest_length, 4, sha3_384_or_224);
+
+    // SHA3-256
+    __ ld1(v25, v26, v27, v28, __ T8B, __ post(buf, 32));
+    __ eor(v13, __ T8B, v13, v25);
+    __ eor(v14, __ T8B, v14, v26);
+    __ eor(v15, __ T8B, v15, v27);
+    __ eor(v16, __ T8B, v16, v28);
+    __ b(rounds24_loop);
+
+    __ BIND(sha3_384_or_224);
+    __ tbz(digest_length, 2, rounds24_loop); // bit 2 cleared? SHA-384
+
+    // SHA3-224
+    __ ld1(v25, v26, v27, v28, __ T8B, __ post(buf, 32));
+    __ ld1(v29, __ T8B, __ post(buf, 8));
+    __ eor(v13, __ T8B, v13, v25);
+    __ eor(v14, __ T8B, v14, v26);
+    __ eor(v15, __ T8B, v15, v27);
+    __ eor(v16, __ T8B, v16, v28);
+    __ eor(v17, __ T8B, v17, v29);
+    __ b(rounds24_loop);
+
+    __ BIND(sha3_512);
+    __ ld1(v25, v26, __ T8B, __ post(buf, 16));
+    __ eor(v7, __ T8B, v7, v25);
+    __ eor(v8, __ T8B, v8, v26);
+
+    __ BIND(rounds24_loop);
+    __ subw(rscratch2, rscratch2, 1);
+
+    __ eor3(v29, __ T16B, v4, v9, v14);
+    __ eor3(v26, __ T16B, v1, v6, v11);
+    __ eor3(v28, __ T16B, v3, v8, v13);
+    __ eor3(v25, __ T16B, v0, v5, v10);
+    __ eor3(v27, __ T16B, v2, v7, v12);
+    __ eor3(v29, __ T16B, v29, v19, v24);
+    __ eor3(v26, __ T16B, v26, v16, v21);
+    __ eor3(v28, __ T16B, v28, v18, v23);
+    __ eor3(v25, __ T16B, v25, v15, v20);
+    __ eor3(v27, __ T16B, v27, v17, v22);
+
+    __ rax1(v30, __ T2D, v29, v26);
+    __ rax1(v26, __ T2D, v26, v28);
+    __ rax1(v28, __ T2D, v28, v25);
+    __ rax1(v25, __ T2D, v25, v27);
+    __ rax1(v27, __ T2D, v27, v29);
+
+    __ eor(v0, __ T16B, v0, v30);
+    __ xar(v29, __ T2D, v1,  v25, (64 - 1));
+    __ xar(v1,  __ T2D, v6,  v25, (64 - 44));
+    __ xar(v6,  __ T2D, v9,  v28, (64 - 20));
+    __ xar(v9,  __ T2D, v22, v26, (64 - 61));
+    __ xar(v22, __ T2D, v14, v28, (64 - 39));
+    __ xar(v14, __ T2D, v20, v30, (64 - 18));
+    __ xar(v31, __ T2D, v2,  v26, (64 - 62));
+    __ xar(v2,  __ T2D, v12, v26, (64 - 43));
+    __ xar(v12, __ T2D, v13, v27, (64 - 25));
+    __ xar(v13, __ T2D, v19, v28, (64 - 8));
+    __ xar(v19, __ T2D, v23, v27, (64 - 56));
+    __ xar(v23, __ T2D, v15, v30, (64 - 41));
+    __ xar(v15, __ T2D, v4,  v28, (64 - 27));
+    __ xar(v28, __ T2D, v24, v28, (64 - 14));
+    __ xar(v24, __ T2D, v21, v25, (64 - 2));
+    __ xar(v8,  __ T2D, v8,  v27, (64 - 55));
+    __ xar(v4,  __ T2D, v16, v25, (64 - 45));
+    __ xar(v16, __ T2D, v5,  v30, (64 - 36));
+    __ xar(v5,  __ T2D, v3,  v27, (64 - 28));
+    __ xar(v27, __ T2D, v18, v27, (64 - 21));
+    __ xar(v3,  __ T2D, v17, v26, (64 - 15));
+    __ xar(v25, __ T2D, v11, v25, (64 - 10));
+    __ xar(v26, __ T2D, v7,  v26, (64 - 6));
+    __ xar(v30, __ T2D, v10, v30, (64 - 3));
+
+    __ bcax(v20, __ T16B, v31, v22, v8);
+    __ bcax(v21, __ T16B, v8,  v23, v22);
+    __ bcax(v22, __ T16B, v22, v24, v23);
+    __ bcax(v23, __ T16B, v23, v31, v24);
+    __ bcax(v24, __ T16B, v24, v8,  v31);
+
+    __ ld1r(v31, __ T2D, __ post(rscratch1, 8));
+
+    __ bcax(v17, __ T16B, v25, v19, v3);
+    __ bcax(v18, __ T16B, v3,  v15, v19);
+    __ bcax(v19, __ T16B, v19, v16, v15);
+    __ bcax(v15, __ T16B, v15, v25, v16);
+    __ bcax(v16, __ T16B, v16, v3,  v25);
+
+    __ bcax(v10, __ T16B, v29, v12, v26);
+    __ bcax(v11, __ T16B, v26, v13, v12);
+    __ bcax(v12, __ T16B, v12, v14, v13);
+    __ bcax(v13, __ T16B, v13, v29, v14);
+    __ bcax(v14, __ T16B, v14, v26, v29);
+
+    __ bcax(v7, __ T16B, v30, v9,  v4);
+    __ bcax(v8, __ T16B, v4,  v5,  v9);
+    __ bcax(v9, __ T16B, v9,  v6,  v5);
+    __ bcax(v5, __ T16B, v5,  v30, v6);
+    __ bcax(v6, __ T16B, v6,  v4,  v30);
+
+    __ bcax(v3, __ T16B, v27, v0,  v28);
+    __ bcax(v4, __ T16B, v28, v1,  v0);
+    __ bcax(v0, __ T16B, v0,  v2,  v1);
+    __ bcax(v1, __ T16B, v1,  v27, v2);
+    __ bcax(v2, __ T16B, v2,  v28, v27);
+
+    __ eor(v0, __ T16B, v0, v31);
+
+    __ cbnzw(rscratch2, rounds24_loop);
+
+    if (multi_block) {
+      // block_size =  200 - 2 * digest_length, ofs += block_size
+      __ add(ofs, ofs, 200);
+      __ sub(ofs, ofs, digest_length, Assembler::LSL, 1);
+
+      __ cmp(ofs, limit);
+      __ br(Assembler::LE, sha3_loop);
+      __ mov(c_rarg0, ofs); // return ofs
+    }
+
+    __ st1(v0, v1, v2,  v3,  __ T1D, __ post(state, 32));
+    __ st1(v4, v5, v6,  v7,  __ T1D, __ post(state, 32));
+    __ st1(v8, v9, v10, v11, __ T1D, __ post(state, 32));
+    __ st1(v12, v13, v14, v15, __ T1D, __ post(state, 32));
+    __ st1(v16, v17, v18, v19, __ T1D, __ post(state, 32));
+    __ st1(v20, v21, v22, v23, __ T1D, __ post(state, 32));
+    __ st1(v24, __ T1D, state);
 
     __ ldpd(v14, v15, Address(sp, 48));
     __ ldpd(v12, v13, Address(sp, 32));
@@ -5066,42 +5298,42 @@ class StubGenerator: public StubCodeGenerator {
 
       // Register allocation
 
-      Register reg = c_rarg0;
-      Pa_base = reg;       // Argument registers
+      RegSetIterator regs = (RegSet::range(r0, r26) - r18_tls).begin();
+      Pa_base = *regs;       // Argument registers
       if (squaring)
         Pb_base = Pa_base;
       else
-        Pb_base = ++reg;
-      Pn_base = ++reg;
-      Rlen= ++reg;
-      inv = ++reg;
-      Pm_base = ++reg;
+        Pb_base = *++regs;
+      Pn_base = *++regs;
+      Rlen= *++regs;
+      inv = *++regs;
+      Pm_base = *++regs;
 
                           // Working registers:
-      Ra =  ++reg;        // The current digit of a, b, n, and m.
-      Rb =  ++reg;
-      Rm =  ++reg;
-      Rn =  ++reg;
+      Ra =  *++regs;        // The current digit of a, b, n, and m.
+      Rb =  *++regs;
+      Rm =  *++regs;
+      Rn =  *++regs;
 
-      Pa =  ++reg;        // Pointers to the current/next digit of a, b, n, and m.
-      Pb =  ++reg;
-      Pm =  ++reg;
-      Pn =  ++reg;
+      Pa =  *++regs;        // Pointers to the current/next digit of a, b, n, and m.
+      Pb =  *++regs;
+      Pm =  *++regs;
+      Pn =  *++regs;
 
-      t0 =  ++reg;        // Three registers which form a
-      t1 =  ++reg;        // triple-precision accumuator.
-      t2 =  ++reg;
+      t0 =  *++regs;        // Three registers which form a
+      t1 =  *++regs;        // triple-precision accumuator.
+      t2 =  *++regs;
 
-      Ri =  ++reg;        // Inner and outer loop indexes.
-      Rj =  ++reg;
+      Ri =  *++regs;        // Inner and outer loop indexes.
+      Rj =  *++regs;
 
-      Rhi_ab = ++reg;     // Product registers: low and high parts
-      Rlo_ab = ++reg;     // of a*b and m*n.
-      Rhi_mn = ++reg;
-      Rlo_mn = ++reg;
+      Rhi_ab = *++regs;     // Product registers: low and high parts
+      Rlo_ab = *++regs;     // of a*b and m*n.
+      Rhi_mn = *++regs;
+      Rlo_mn = *++regs;
 
       // r19 and up are callee-saved.
-      _toSave = RegSet::range(r19, reg) + Pm_base;
+      _toSave = RegSet::range(r19, *regs) + Pm_base;
     }
 
   private:
@@ -5955,6 +6187,8 @@ class StubGenerator: public StubCodeGenerator {
                                                 SharedRuntime::
                                                 throw_NullPointerException_at_call));
 
+    StubRoutines::aarch64::_vector_iota_indices    = generate_iota_indices("iota_indices");
+
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
 
@@ -6032,6 +6266,10 @@ class StubGenerator: public StubCodeGenerator {
     if (UseSHA512Intrinsics) {
       StubRoutines::_sha512_implCompress   = generate_sha512_implCompress(false, "sha512_implCompress");
       StubRoutines::_sha512_implCompressMB = generate_sha512_implCompress(true,  "sha512_implCompressMB");
+    }
+    if (UseSHA3Intrinsics) {
+      StubRoutines::_sha3_implCompress     = generate_sha3_implCompress(false,   "sha3_implCompress");
+      StubRoutines::_sha3_implCompressMB   = generate_sha3_implCompress(true,    "sha3_implCompressMB");
     }
 
     // generate Adler32 intrinsics code

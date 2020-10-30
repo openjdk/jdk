@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,10 @@
 package javax.print.attribute.standard;
 
 import java.awt.Window;
+
 import javax.print.attribute.Attribute;
 import javax.print.attribute.PrintRequestAttribute;
+
 import sun.print.DialogOwnerAccessor;
 
 /**
@@ -59,6 +61,9 @@ public final class DialogOwner implements PrintRequestAttribute {
 
     private static final long serialVersionUID = -1901909867156076547L;
 
+    /**
+     * The owner of the dialog.
+     */
     private Window owner;
     private transient long id;
 
