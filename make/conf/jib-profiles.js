@@ -687,11 +687,12 @@ var getJibProfilesProfiles = function (input, common, data) {
             dependencies: [
                 "boot_jdk", "devkit", "graphviz", "pandoc", buildJdkDep,
             ],
-            configure_args: [
+            configure_args: concat(
                 "--enable-full-docs",
+                versionArgs(input, common),
                 "--with-build-jdk=" + input.get(buildJdkDep, "home_path")
                     + (input.build_os == "macosx" ? "/Contents/Home" : "")
-            ],
+            ),
             default_make_targets: ["all-docs-bundles"],
             artifacts: {
                 doc_api_spec: {
