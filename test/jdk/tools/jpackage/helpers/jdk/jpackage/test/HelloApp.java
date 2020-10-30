@@ -281,7 +281,7 @@ public final class HelloApp {
     public static Executor.Result executeLauncher(JPackageCommand cmd,
             String... args) {
         AppOutputVerifier av = getVerifier(cmd, args);
-        return av.executeOnly(args);
+        return av.executeOnly(true, args);
     }
 
     private static AppOutputVerifier getVerifier(JPackageCommand cmd,
@@ -355,8 +355,8 @@ public final class HelloApp {
             executeAndVerifyOutput(false, args);
         }
 
-        public void executeAndVerifyOutput(boolean removeEnv, String... args) {
-            getExecutor(args).dumpOutput().setRemoveEnv(removeEnv).execute();
+        public void executeAndVerifyOutput(boolean removePath, String... args) {
+            getExecutor(args).dumpOutput().setRemovePath(removePath).execute();
 
             final List<String> launcherArgs = List.of(args);
             final List<String> appArgs;
@@ -370,8 +370,11 @@ public final class HelloApp {
             verifyOutputFile(outputFile, appArgs, params);
         }
 
-        public Executor.Result executeOnly(String...args) {
-            return getExecutor(args).saveOutput().executeWithoutExitCodeCheck();
+        public Executor.Result executeOnly(boolean removePath, String...args) {
+            return getExecutor(args)
+                    .saveOutput()
+                    .setRemovePath(removePath)
+                    .executeWithoutExitCodeCheck();
         }
 
         private Executor getExecutor(String...args) {
