@@ -127,8 +127,8 @@ public class bug6796710 {
 
         BufferedImage pnBottomImage = getPnBottomImage();
         if (!Util.compareBufferedImages(bufferedImage, pnBottomImage)) {
-            ImageIO.write(bufferedImage, "png", new File("bufferedImage"));
-            ImageIO.write(pnBottomImage, "png", new File("pnBottomImage"));
+            ImageIO.write(bufferedImage, "png", new File("bufferedImage.png"));
+            ImageIO.write(pnBottomImage, "png", new File("pnBottomImage.png"));
             throw new RuntimeException("The test failed");
         }
 
