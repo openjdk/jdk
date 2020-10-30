@@ -2393,11 +2393,6 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, WhiteBoxAPI, false, DIAGNOSTIC,                             \
           "Enable internal testing APIs")                                   \
                                                                             \
-  product(intx, SurvivorAlignmentInBytes, 0, EXPERIMENTAL,                  \
-           "Default survivor space alignment in bytes")                     \
-           range(8, 256)                                                    \
-           constraint(SurvivorAlignmentInBytesConstraintFunc,AfterErgo)     \
-                                                                            \
   product(ccstr, DumpLoadedClassList, NULL,                                 \
           "Dump the names all loaded classes, that could be stored into "   \
           "the CDS archive, in the specified file")                         \

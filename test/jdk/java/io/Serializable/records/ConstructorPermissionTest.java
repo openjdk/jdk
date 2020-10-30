@@ -23,10 +23,10 @@
 
 /*
  * @test
+ * @bug 8246774
  * @summary Verifies that privileged operations performed in the record
  *          constructor throw, when run without the required permissions
- * @compile --enable-preview -source ${jdk.version} ConstructorPermissionTest.java
- * @run testng/othervm/java.security.policy=empty_security.policy --enable-preview ConstructorPermissionTest
+ * @run testng/othervm/java.security.policy=empty_security.policy ConstructorPermissionTest
  */
 
 import java.io.ByteArrayInputStream;
