@@ -466,7 +466,7 @@ class Invokers {
     /*non-public*/
     @Hidden
     static MethodHandle checkVarHandleGenericType(VarHandle handle, VarHandle.AccessDescriptor ad) {
-        if (handle.hasInvokeExactBehaviour() && handle.accessModeType(ad.type) != ad.symbolicMethodTypeExact) {
+        if (handle.hasInvokeExactBehavior() && handle.accessModeType(ad.type) != ad.symbolicMethodTypeExact) {
             throw new WrongMethodTypeException("expected " + handle.accessModeType(ad.type) + " but found "
                     + ad.symbolicMethodTypeExact);
         }

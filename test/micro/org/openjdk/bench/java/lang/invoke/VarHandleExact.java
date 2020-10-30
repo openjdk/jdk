@@ -53,7 +53,7 @@ public class VarHandleExact {
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
-        exact = generic.withInvokeExactBehaviour();
+        exact = generic.withInvokeExactBehavior();
     }
 
     Data data;

@@ -329,7 +329,7 @@ import static java.lang.invoke.MethodHandleStatics.UNSAFE;
  * Where, in this case, the method handle is bound to the VarHandle instance.
  *
  * <p id="invoke-exact-behaviour">
- * A VarHandle's invocation behaviour can be adjusted (see {@link #withInvokeExactBehaviour}) such that invocation of
+ * A VarHandle's invocation behaviour can be adjusted (see {@link #withInvokeExactBehavior}) such that invocation of
  * an access mode method behaves as if invocation of {@link MethodHandle#invokeExact},
  * where the receiving method handle accepts the VarHandle instance as the leading argument.
  * More specifically, the following, where {@code {access-mode}} corresponds to the access mode method
@@ -505,12 +505,12 @@ public abstract class VarHandle implements Constable {
     /**
      * Returns {@code true} if this VarHandle has <a href="#invoke-exact-behaviour"><em>invoke-exact behaviour</em></a>.
      *
-     * @see #withInvokeExactBehaviour()
-     * @see #withInvokeBehaviour()
+     * @see #withInvokeExactBehavior()
+     * @see #withInvokeBehavior()
      * @return {@code true} if this VarHandle has <a href="#invoke-exact-behaviour"><em>invoke-exact behaviour</em></a>.
      * @since 16
      */
-    public boolean hasInvokeExactBehaviour() {
+    public boolean hasInvokeExactBehavior() {
         return exact;
     }
 
@@ -1601,12 +1601,12 @@ public abstract class VarHandle implements Constable {
      * the types an arity of the arguments must match the {@link #accessModeType(AccessMode) access mode type},
      * otherwise a {@link WrongMethodTypeException} is thrown.
      *
-     * @see #withInvokeBehaviour()
-     * @see #hasInvokeExactBehaviour()
+     * @see #withInvokeBehavior()
+     * @see #hasInvokeExactBehavior()
      * @return a VarHandle with invoke-exact behaviour
      * @since 16
      */
-    public abstract VarHandle withInvokeExactBehaviour();
+    public abstract VarHandle withInvokeExactBehavior();
 
     /**
      * Returns a VarHandle, with access to the same variable(s) as this VarHandle, but whose
@@ -1615,12 +1615,12 @@ public abstract class VarHandle implements Constable {
      * <p>
      * If this VarHandle already has invoke behaviour this VarHandle is returned.
      *
-     * @see #withInvokeExactBehaviour()
-     * @see #hasInvokeExactBehaviour()
+     * @see #withInvokeExactBehavior()
+     * @see #hasInvokeExactBehavior()
      * @return a VarHandle with invoke behaviour
      * @since 16
      */
-    public abstract VarHandle withInvokeBehaviour();
+    public abstract VarHandle withInvokeBehavior();
 
     enum AccessType {
         GET(Object.class),

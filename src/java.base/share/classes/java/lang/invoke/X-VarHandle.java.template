@@ -59,13 +59,17 @@ final class VarHandle$Type$s {
         }
 
         @Override
-        public FieldInstanceReadOnly withInvokeExactBehaviour() {
-            return new FieldInstanceReadOnly(receiverType, fieldOffset{#if[Object]?, fieldType}, vform, true);
+        public FieldInstanceReadOnly withInvokeExactBehavior() {
+            return hasInvokeExactBehavior()
+                ? this
+                : new FieldInstanceReadOnly(receiverType, fieldOffset{#if[Object]?, fieldType}, vform, true);
         }
 
         @Override
-        public FieldInstanceReadOnly withInvokeBehaviour() {
-            return new FieldInstanceReadOnly(receiverType, fieldOffset{#if[Object]?, fieldType}, vform, false);
+        public FieldInstanceReadOnly withInvokeBehavior() {
+            return !hasInvokeExactBehavior()
+                ? this
+                : new FieldInstanceReadOnly(receiverType, fieldOffset{#if[Object]?, fieldType}, vform, false);
         }
 
         @Override
@@ -129,13 +133,17 @@ final class VarHandle$Type$s {
         }
 
         @Override
-        public FieldInstanceReadWrite withInvokeExactBehaviour() {
-            return new FieldInstanceReadWrite(receiverType, fieldOffset{#if[Object]?, fieldType}, true);
+        public FieldInstanceReadWrite withInvokeExactBehavior() {
+            return hasInvokeExactBehavior()
+                ? this
+                : new FieldInstanceReadWrite(receiverType, fieldOffset{#if[Object]?, fieldType}, true);
         }
 
         @Override
-        public FieldInstanceReadWrite withInvokeBehaviour() {
-            return new FieldInstanceReadWrite(receiverType, fieldOffset{#if[Object]?, fieldType}, false);
+        public FieldInstanceReadWrite withInvokeBehavior() {
+            return !hasInvokeExactBehavior()
+                ? this
+                : new FieldInstanceReadWrite(receiverType, fieldOffset{#if[Object]?, fieldType}, false);
         }
 
         @ForceInline
@@ -395,13 +403,17 @@ final class VarHandle$Type$s {
         }
 
         @Override
-        public FieldStaticReadOnly withInvokeExactBehaviour() {
-            return new FieldStaticReadOnly(base, fieldOffset{#if[Object]?, fieldType}, vform, true);
+        public FieldStaticReadOnly withInvokeExactBehavior() {
+            return hasInvokeExactBehavior()
+                ? this
+                : new FieldStaticReadOnly(base, fieldOffset{#if[Object]?, fieldType}, vform, true);
         }
 
         @Override
-        public FieldStaticReadOnly withInvokeBehaviour() {
-            return new FieldStaticReadOnly(base, fieldOffset{#if[Object]?, fieldType}, vform, false);
+        public FieldStaticReadOnly withInvokeBehavior() {
+            return !hasInvokeExactBehavior()
+                ? this
+                : new FieldStaticReadOnly(base, fieldOffset{#if[Object]?, fieldType}, vform, false);
         }
 
         @Override
@@ -467,13 +479,17 @@ final class VarHandle$Type$s {
         }
 
         @Override
-        public FieldStaticReadWrite withInvokeExactBehaviour() {
-            return new FieldStaticReadWrite(base, fieldOffset{#if[Object]?, fieldType}, true);
+        public FieldStaticReadWrite withInvokeExactBehavior() {
+            return hasInvokeExactBehavior()
+                ? this
+                : new FieldStaticReadWrite(base, fieldOffset{#if[Object]?, fieldType}, true);
         }
 
         @Override
-        public FieldStaticReadWrite withInvokeBehaviour() {
-            return new FieldStaticReadWrite(base, fieldOffset{#if[Object]?, fieldType}, false);
+        public FieldStaticReadWrite withInvokeBehavior() {
+            return !hasInvokeExactBehavior()
+                ? this
+                : new FieldStaticReadWrite(base, fieldOffset{#if[Object]?, fieldType}, false);
         }
 
         @ForceInline
@@ -734,13 +750,17 @@ final class VarHandle$Type$s {
         }
 
         @Override
-        public Array withInvokeExactBehaviour() {
-            return new Array(abase, ashift{#if[Object]?, arrayType}, true);
+        public Array withInvokeExactBehavior() {
+            return hasInvokeExactBehavior()
+                ? this
+                : new Array(abase, ashift{#if[Object]?, arrayType}, true);
         }
 
         @Override
-        public Array withInvokeBehaviour() {
-            return new Array(abase, ashift{#if[Object]?, arrayType}, false);
+        public Array withInvokeBehavior() {
+            return !hasInvokeExactBehavior()
+                ? this
+                : new Array(abase, ashift{#if[Object]?, arrayType}, false);
         }
 
         @Override
