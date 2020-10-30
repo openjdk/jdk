@@ -232,6 +232,12 @@ private:
   BarrierSetNMethod* const _bs_nm;
   const bool               _verify_fixed;
 
+  bool trust_nmethod_state() const {
+    // The root iterator will visit non-processed
+    // nmethods class unloading is turned off.
+    return ClassUnloading || _verify_fixed;
+  }
+
 public:
   ZVerifyNMethodClosure(OopClosure* cl, bool verify_fixed) :
       _cl(cl),
@@ -239,7 +245,7 @@ public:
       _verify_fixed(verify_fixed) {}
 
   virtual void do_nmethod(nmethod* nm) {
-    assert(!_verify_fixed | !_bs_nm->is_armed(nm), "Should not encounter any armed nmethods");
+    assert(!trust_nmethod_state() || !_bs_nm->is_armed(nm), "Should not encounter any armed nmethods");
 
     ZNMethod::nmethod_oops_do(nm, _cl);
   }
