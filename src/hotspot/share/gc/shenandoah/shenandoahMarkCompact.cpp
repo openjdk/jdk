@@ -28,17 +28,19 @@
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"
-#include "gc/shenandoah/shenandoahConcurrentMark.inline.hpp"
+#include "gc/shenandoah/shenandoahConcurrentMark.hpp"
 #include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
+#include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkCompact.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
+#include "gc/shenandoah/shenandoahSTWMark.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
@@ -113,14 +115,14 @@ void ShenandoahMarkCompact::do_it(GCCause::Cause gc_cause) {
 
     // b. Cancel concurrent mark, if in progress
     if (heap->is_concurrent_mark_in_progress()) {
-      heap->concurrent_mark()->cancel();
+      ShenandoahConcurrentMark::cancel();
       heap->set_concurrent_mark_in_progress(false);
     }
     assert(!heap->is_concurrent_mark_in_progress(), "sanity");
 
     // c. Update roots if this full GC is due to evac-oom, which may carry from-space pointers in roots.
     if (has_forwarded_objects) {
-      heap->concurrent_mark()->update_roots(ShenandoahPhaseTimings::full_gc_update_roots);
+      ShenandoahConcurrentMark::update_roots(ShenandoahPhaseTimings::full_gc_update_roots);
     }
 
     // d. Reset the bitmaps for new marking
@@ -128,16 +130,10 @@ void ShenandoahMarkCompact::do_it(GCCause::Cause gc_cause) {
     assert(heap->marking_context()->is_bitmap_clear(), "sanity");
     assert(!heap->marking_context()->is_complete(), "sanity");
 
-    // e. Abandon reference discovery and clear all discovered references.
-    ReferenceProcessor* rp = heap->ref_processor();
-    rp->disable_discovery();
-    rp->abandon_partial_discovery();
-    rp->verify_no_references_recorded();
-
-    // f. Set back forwarded objects bit back, in case some steps above dropped it.
+    // e. Set back forwarded objects bit back, in case some steps above dropped it.
     heap->set_has_forwarded_objects(has_forwarded_objects);
 
-    // g. Sync pinned region status from the CP marks
+    // f. Sync pinned region status from the CP marks
     heap->sync_pinned_region_status();
 
     // The rest of prologue:
@@ -239,19 +235,12 @@ void ShenandoahMarkCompact::phase1_mark_heap() {
   ShenandoahPrepareForMarkClosure cl;
   heap->heap_region_iterate(&cl);
 
-  ShenandoahConcurrentMark* cm = heap->concurrent_mark();
-
   heap->set_process_references(heap->heuristics()->can_process_references());
   heap->set_unload_classes(heap->heuristics()->can_unload_classes());
 
-  ReferenceProcessor* rp = heap->ref_processor();
-  // enable ("weak") refs discovery
-  rp->enable_discovery(true /*verify_no_refs*/);
-  rp->setup_policy(true); // forcefully purge all soft references
-  rp->set_active_mt_degree(heap->workers()->active_workers());
+  ShenandoahSTWMark mark(true /*full_gc*/);
+  mark.mark();
 
-  cm->mark_roots(ShenandoahPhaseTimings::full_gc_scan_roots);
-  cm->finish_mark_from_roots(/* full_gc = */ true);
   heap->mark_complete_marking_context();
   heap->parallel_cleaning(true /* full_gc */);
 }

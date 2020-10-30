@@ -24,12 +24,13 @@
 
 #include "precompiled.hpp"
 
-#include "gc/shenandoah/shenandoahConcurrentMark.inline.hpp"
+#include "gc/shenandoah/shenandoahConcurrentMark.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahControlThread.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
@@ -397,18 +398,27 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   // Reset for upcoming marking
   heap->entry_reset();
 
-  // Start initial mark under STW
-  heap->vmop_entry_init_mark();
+  // Mark
+  {
+    ShenandoahConcurrentMark mark;
 
-  // Continue concurrent mark
-  heap->entry_mark();
-  if (check_cancellation_or_degen(ShenandoahHeap::_degenerated_mark)) return;
+    // Start initial mark under STW
+    heap->vmop_entry_init_mark(&mark);
 
-  // If not cancelled, can try to concurrently pre-clean
-  heap->entry_preclean();
+    // Concurrent mark roots
+    heap->entry_mark_roots(&mark);
+    if (check_cancellation_or_degen(ShenandoahHeap::_degenerated_outside_cycle)) return;
 
-  // Complete marking under STW, and start evacuation
-  heap->vmop_entry_final_mark();
+    // Continue concurrent mark
+    heap->entry_mark(&mark);
+    if (check_cancellation_or_degen(ShenandoahHeap::_degenerated_mark)) return;
+
+    // If not cancelled, can try to concurrently pre-clean
+    heap->entry_preclean(&mark);
+
+    // Complete marking under STW, and start evacuation
+    heap->vmop_entry_final_mark(&mark);
+  }
 
   // Process weak roots that might still point to regions that would be broken by cleanup
   if (heap->is_concurrent_weak_root_in_progress()) {

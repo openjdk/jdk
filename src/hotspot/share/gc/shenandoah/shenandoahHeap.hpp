@@ -370,8 +370,8 @@ public:
 public:
   // Entry points to STW GC operations, these cause a related safepoint, that then
   // call the entry method below
-  void vmop_entry_init_mark();
-  void vmop_entry_final_mark();
+  void vmop_entry_init_mark(ShenandoahConcurrentMark* mark);
+  void vmop_entry_final_mark(ShenandoahConcurrentMark* mark);
   void vmop_entry_init_updaterefs();
   void vmop_entry_final_updaterefs();
   void vmop_entry_full(GCCause::Cause cause);
@@ -379,8 +379,8 @@ public:
 
   // Entry methods to normally STW GC operations. These set up logging, monitoring
   // and workers for net VM operation
-  void entry_init_mark();
-  void entry_final_mark();
+  void entry_init_mark(ShenandoahConcurrentMark* mark);
+  void entry_final_mark(ShenandoahConcurrentMark* mark);
   void entry_init_updaterefs();
   void entry_final_updaterefs();
   void entry_full(GCCause::Cause cause);
@@ -389,8 +389,9 @@ public:
   // Entry methods to normally concurrent GC operations. These set up logging, monitoring
   // for concurrent operation.
   void entry_reset();
-  void entry_mark();
-  void entry_preclean();
+  void entry_mark_roots(ShenandoahConcurrentMark* mark);
+  void entry_mark(ShenandoahConcurrentMark* mark);
+  void entry_preclean(ShenandoahConcurrentMark* mark);
   void entry_weak_roots();
   void entry_class_unloading();
   void entry_strong_roots();
@@ -404,8 +405,8 @@ public:
 
 private:
   // Actual work for the phases
-  void op_init_mark();
-  void op_final_mark();
+  void op_init_mark(ShenandoahConcurrentMark* mark);
+  void op_final_mark(ShenandoahConcurrentMark* mark);
   void op_init_updaterefs();
   void op_final_updaterefs();
   void op_full(GCCause::Cause cause);
@@ -414,8 +415,9 @@ private:
   void op_degenerated_futile();
 
   void op_reset();
-  void op_mark();
-  void op_preclean();
+  void op_mark_roots(ShenandoahConcurrentMark* mark);
+  void op_mark(ShenandoahConcurrentMark* mark);
+  void op_preclean(ShenandoahConcurrentMark* mark);
   void op_weak_roots();
   void op_class_unloading();
   void op_strong_roots();
@@ -439,28 +441,31 @@ private:
 
 // ---------- GC subsystems
 //
+// Mark support
+private:
+  ShenandoahObjToScanQueueSet* _task_queues;
+
+public:
+  ShenandoahObjToScanQueueSet* task_queues() const { return _task_queues; }
+
 private:
   ShenandoahControlThread*   _control_thread;
   ShenandoahCollectorPolicy* _shenandoah_policy;
   ShenandoahMode*            _gc_mode;
   ShenandoahHeuristics*      _heuristics;
   ShenandoahFreeSet*         _free_set;
-  ShenandoahConcurrentMark*  _scm;
-  ShenandoahMarkCompact*     _full_gc;
   ShenandoahPacer*           _pacer;
   ShenandoahVerifier*        _verifier;
 
   ShenandoahPhaseTimings*    _phase_timings;
 
   ShenandoahControlThread*   control_thread()          { return _control_thread;    }
-  ShenandoahMarkCompact*     full_gc()                 { return _full_gc;           }
 
 public:
   ShenandoahCollectorPolicy* shenandoah_policy() const { return _shenandoah_policy; }
   ShenandoahMode*            mode()              const { return _gc_mode;           }
   ShenandoahHeuristics*      heuristics()        const { return _heuristics;        }
   ShenandoahFreeSet*         free_set()          const { return _free_set;          }
-  ShenandoahConcurrentMark*  concurrent_mark()         { return _scm;               }
   ShenandoahPacer*           pacer()             const { return _pacer;             }
 
   ShenandoahPhaseTimings*    phase_timings()     const { return _phase_timings;     }

@@ -43,12 +43,12 @@ void VM_ShenandoahReferenceOperation::doit_epilogue() {
 
 void VM_ShenandoahInitMark::doit() {
   ShenandoahGCPauseMark mark(_gc_id, SvcGCMarker::CONCURRENT);
-  ShenandoahHeap::heap()->entry_init_mark();
+  ShenandoahHeap::heap()->entry_init_mark(_mark);
 }
 
 void VM_ShenandoahFinalMarkStartEvac::doit() {
   ShenandoahGCPauseMark mark(_gc_id, SvcGCMarker::CONCURRENT);
-  ShenandoahHeap::heap()->entry_final_mark();
+  ShenandoahHeap::heap()->entry_final_mark(_mark);
 }
 
 void VM_ShenandoahFullGC::doit() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2015, 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,13 @@
  *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTMARK_INLINE_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTMARK_INLINE_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHMARK_INLINE_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHMARK_INLINE_HPP
 
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
-#include "gc/shenandoah/shenandoahConcurrentMark.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahMark.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahStringDedup.inline.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
@@ -38,7 +38,17 @@
 #include "runtime/prefetch.inline.hpp"
 
 template <class T>
-void ShenandoahConcurrentMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveData* live_data, ShenandoahMarkTask* task) {
+void ShenandoahInitMarkRootsClosure::do_oop_work(T* p) {
+  ShenandoahMark::mark_through_ref<T, NONE, NO_DEDUP>(p, _heap, _queue, _mark_context);
+}
+
+template <class T>
+void ShenandoahCMKeepAliveClosure::do_oop_work(T* p) {
+  ShenandoahMark::mark_through_ref<T, NONE, NO_DEDUP>(p, _heap, _queue, _mark_context);
+}
+
+template <class T>
+void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveData* live_data, ShenandoahMarkTask* task) {
   oop obj = task->obj();
 
   shenandoah_assert_not_forwarded(NULL, obj);
@@ -68,7 +78,7 @@ void ShenandoahConcurrentMark::do_task(ShenandoahObjToScanQueue* q, T* cl, Shena
   }
 }
 
-inline void ShenandoahConcurrentMark::count_liveness(ShenandoahLiveData* live_data, oop obj) {
+inline void ShenandoahMark::count_liveness(ShenandoahLiveData* live_data, oop obj) {
   size_t region_idx = _heap->heap_region_index_containing(obj);
   ShenandoahHeapRegion* region = _heap->get_region(region_idx);
   size_t size = obj->size();
@@ -98,7 +108,7 @@ inline void ShenandoahConcurrentMark::count_liveness(ShenandoahLiveData* live_da
 }
 
 template <class T>
-inline void ShenandoahConcurrentMark::do_chunked_array_start(ShenandoahObjToScanQueue* q, T* cl, oop obj) {
+inline void ShenandoahMark::do_chunked_array_start(ShenandoahObjToScanQueue* q, T* cl, oop obj) {
   assert(obj->is_objArray(), "expect object array");
   objArrayOop array = objArrayOop(obj);
   int len = array->length();
@@ -160,7 +170,7 @@ inline void ShenandoahConcurrentMark::do_chunked_array_start(ShenandoahObjToScan
 }
 
 template <class T>
-inline void ShenandoahConcurrentMark::do_chunked_array(ShenandoahObjToScanQueue* q, T* cl, oop obj, int chunk, int pow) {
+inline void ShenandoahMark::do_chunked_array(ShenandoahObjToScanQueue* q, T* cl, oop obj, int chunk, int pow) {
   assert(obj->is_objArray(), "expect object array");
   objArrayOop array = objArrayOop(obj);
 
@@ -215,13 +225,13 @@ public:
   void do_buffer_impl(void **buffer, size_t size) {
     for (size_t i = 0; i < size; ++i) {
       oop *p = (oop *) &buffer[i];
-      ShenandoahConcurrentMark::mark_through_ref<oop, NONE, STRING_DEDUP>(p, _heap, _queue, _mark_context);
+      ShenandoahMark::mark_through_ref<oop, NONE, STRING_DEDUP>(p, _heap, _queue, _mark_context);
     }
   }
 };
 
 template<class T, UpdateRefsMode UPDATE_REFS, StringDedupMode STRING_DEDUP>
-inline void ShenandoahConcurrentMark::mark_through_ref(T *p, ShenandoahHeap* heap, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context) {
+inline void ShenandoahMark::mark_through_ref(T *p, ShenandoahHeap* heap, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context) {
   T o = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(o)) {
     oop obj = CompressedOops::decode_not_null(o);
@@ -267,4 +277,16 @@ inline void ShenandoahConcurrentMark::mark_through_ref(T *p, ShenandoahHeap* hea
   }
 }
 
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTMARK_INLINE_HPP
+ShenandoahObjToScanQueueSet* ShenandoahMark::task_queues() const {
+  return _task_queues;
+}
+
+ShenandoahObjToScanQueue* ShenandoahMark::get_queue(uint index) const {
+  return _task_queues->queue(index);
+}
+
+ShenandoahHeap* ShenandoahMark::heap() const {
+  return _heap;
+}
+
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHMARK_INLINE_HPP

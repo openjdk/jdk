@@ -194,11 +194,28 @@ private:
   void roots_do(uint worker_id, OopClosure* oops, CodeBlobClosure* code, ThreadClosure* tc = NULL);
 };
 
-template <bool CONCURRENT>
-class ShenandoahConcurrentRootScanner {
+// STW root scanner
+class ShenandoahSTWRootScanner : public ShenandoahRootProcessor {
 private:
-  ShenandoahVMRoots<CONCURRENT>            _vm_roots;
-  ShenandoahClassLoaderDataRoots<CONCURRENT, false /* single-threaded*/>
+  ShenandoahThreadRoots           _thread_roots;
+  ShenandoahCodeCacheRoots        _code_roots;
+  ShenandoahClassLoaderDataRoots<false /*concurrent*/, false /* single_thread*/>
+                                  _cld_roots;
+  ShenandoahVMRoots<false /*concurrent*/>
+                                  _vm_roots;
+  ShenandoahStringDedupRoots      _dedup_roots;
+  const bool                      _unload_classes;
+public:
+  ShenandoahSTWRootScanner(ShenandoahPhaseTimings::Phase phase);
+
+  template <typename T>
+  void roots_do(T* oops, uint worker_id);
+};
+
+class ShenandoahConcurrentRootScanner : public ShenandoahRootProcessor {
+private:
+  ShenandoahVMRoots<true /*concurrent*/>    _vm_roots;
+  ShenandoahClassLoaderDataRoots<true /*concurrent*/, false /* single-threaded*/>
                                            _cld_roots;
   ShenandoahConcurrentStringDedupRoots     _dedup_roots;
   ShenandoahNMethodTableSnapshot*          _codecache_snapshot;
@@ -208,7 +225,7 @@ public:
   ShenandoahConcurrentRootScanner(uint n_workers, ShenandoahPhaseTimings::Phase phase);
   ~ShenandoahConcurrentRootScanner();
 
-  void oops_do(OopClosure* oops, uint worker_id);
+  void roots_do(OopClosure* oops, uint worker_id);
 };
 
 // This scanner is only for SH::object_iteration() and only supports single-threaded
