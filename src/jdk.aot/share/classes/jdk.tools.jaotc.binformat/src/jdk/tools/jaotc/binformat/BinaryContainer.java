@@ -586,7 +586,7 @@ public final class BinaryContainer implements SymbolTable {
                 break;
             default:
                 if (osName.startsWith("Windows")) {
-                    JPECoffRelocObject pecoffobj = new JPECoffRelocObject(this, outputFileName);
+                    JPECoffRelocObject pecoffobj = JPECoffRelocObject.newInstance(this, outputFileName);
                     pecoffobj.createPECoffRelocObject(relocationTable, symbolTable.values());
                     break;
                 } else {

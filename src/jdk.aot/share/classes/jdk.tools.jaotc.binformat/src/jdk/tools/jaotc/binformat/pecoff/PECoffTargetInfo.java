@@ -52,6 +52,8 @@ final class PECoffTargetInfo {
 
         if (archStr.equals("amd64") || archStr.equals("x86_64")) {
             arch = IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_AMD64;
+        } else if (archStr.equals("aarch64")) {
+            arch = IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_ARM64;
         } else {
             System.out.println("Unsupported architecture " + archStr);
             arch = IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_UNKNOWN;

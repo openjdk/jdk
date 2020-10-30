@@ -27,7 +27,7 @@ package jdk.tools.jaotc.binformat.pecoff;
 
 /**
  *
- * Support for the creation of Coff files. Current support is limited to 64 bit x86_64.
+ * Support for the creation of Coff files. Current support is limited to 64 bit x86_64 and ARM64.
  *
  */
 
@@ -64,6 +64,7 @@ final class PECoff {
          */
         static final char IMAGE_FILE_MACHINE_UNKNOWN = 0x0;
         static final char IMAGE_FILE_MACHINE_AMD64   = 0x8664;
+        static final char IMAGE_FILE_MACHINE_ARM64   = 0xaa64;
 
     }
 
@@ -202,6 +203,12 @@ final class PECoff {
         static final int IMAGE_REL_AMD64_REL32_4  = 0x8;
         static final int IMAGE_REL_AMD64_REL32_5  = 0x9;
 
+        static final int IMAGE_REL_ARM64_ABSOLUTE       = 0x0;
+        static final int IMAGE_REL_ARM64_BRANCH26       = 0x3;
+        static final int IMAGE_REL_ARM64_PAGEBASE_REL21 = 0x4;
+        static final int IMAGE_REL_ARM64_REL21          = 0x5;
+        static final int IMAGE_REL_ARM64_PAGEOFFSET_12A = 0x6;
+        static final int IMAGE_REL_ARM64_ADDR64         = 0xe;
     }
     //@formatter:on
 }

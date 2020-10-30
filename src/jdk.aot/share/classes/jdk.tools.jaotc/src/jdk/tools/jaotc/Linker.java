@@ -196,6 +196,8 @@ final class Linker {
     }
 
     private static Path getVC141AndNewerLinker() throws Exception {
+        String archStr = System.getProperty("os.arch").toLowerCase();
+
         String programFilesX86 = System.getenv("ProgramFiles(x86)");
         if (programFilesX86 == null) {
             throw new IllegalStateException("Could not read the ProgramFiles(x86) environment variable");
@@ -206,8 +208,9 @@ final class Linker {
             throw new IllegalStateException("Could not find " + vswherePath);
         }
 
+        String vcarch = archStr.equals("aarch64") ? "arm64" : "x86.x64";
         ProcessBuilder processBuilder = new ProcessBuilder(vswhere.toString(), "-requires",
-                        "Microsoft.VisualStudio.Component.VC.Tools.x86.x64", "-property", "installationPath", "-latest");
+                        "Microsoft.VisualStudio.Component.VC.Tools." + vcarch, "-property", "installationPath", "-latest");
         processBuilder.redirectOutput(ProcessBuilder.Redirect.PIPE);
         processBuilder.redirectError(ProcessBuilder.Redirect.PIPE);
         Process process = processBuilder.start();
@@ -227,7 +230,14 @@ final class Linker {
             throw new IllegalStateException(vcToolsVersionFilePath.toString() + " is empty");
         }
         String vcToolsVersion = vcToolsVersionFileLines.get(0);
-        Path linkPath = Paths.get(installationPath, "VC\\Tools\\MSVC", vcToolsVersion, "bin\\Hostx64\\x64\\link.exe");
+
+        Path linkPath = null;
+        if (archStr.equals("aarch64")) {
+            /* run binaries via xtajit */
+            linkPath = Paths.get(installationPath, "VC\\Tools\\MSVC", vcToolsVersion, "bin\\Hostx86\\arm64\\link.exe");
+        } else {
+            linkPath = Paths.get(installationPath, "VC\\Tools\\MSVC", vcToolsVersion, "bin\\Hostx64\\x64\\link.exe");
+        }
         if (!Files.exists(linkPath)) {
             throw new IllegalStateException("Linker at path " + linkPath.toString() + " does not exist");
         }
@@ -239,7 +249,9 @@ final class Linker {
     enum VSVERSIONS {
         VS2013("VS120COMNTOOLS", "C:\\Program Files (x86)\\Microsoft Visual Studio 12.0\\VC\\bin\\amd64\\link.exe"),
         VS2015("VS140COMNTOOLS", "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\bin\\amd64\\link.exe"),
-        VS2012("VS110COMNTOOLS", "C:\\Program Files (x86)\\Microsoft Visual Studio 11.0\\VC\\bin\\amd64\\link.exe");
+        VS2012("VS110COMNTOOLS", "C:\\Program Files (x86)\\Microsoft Visual Studio 11.0\\VC\\bin\\amd64\\link.exe"),
+        /* TODO: hack when `ProgramFiles(x86)` is not exported properly */
+        VS2017("ASDF", "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Tools\\MSVC\\14.27.29110\\bin\\Hostx86\\arm64\\link.exe");
 
         private final String envvariable;
         private final String wkp;

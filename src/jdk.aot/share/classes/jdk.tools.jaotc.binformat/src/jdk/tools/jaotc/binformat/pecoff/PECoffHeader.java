@@ -35,7 +35,7 @@ final class PECoffHeader {
     PECoffHeader() {
         header = PECoffByteBuffer.allocate(IMAGE_FILE_HEADER.totalsize);
 
-        header.putChar(IMAGE_FILE_HEADER.Machine.off, IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_AMD64);
+        header.putChar(IMAGE_FILE_HEADER.Machine.off, PECoffTargetInfo.getPECoffArch());
         header.putInt(IMAGE_FILE_HEADER.TimeDateStamp.off, (int) (System.currentTimeMillis() / 1000));
         header.putInt(IMAGE_FILE_HEADER.PointerToSymbolTable.off, 0);
         header.putInt(IMAGE_FILE_HEADER.NumberOfSymbols.off, 0);
