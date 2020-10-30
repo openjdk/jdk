@@ -575,6 +575,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "MaxInlineSize",                JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
   { "FreqInlineSize",               JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
   { "MaxTrivialSize",               JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
+  { "UseRDPCForConstantTableBase",  JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(16) },
 #endif
 
   { NULL, JDK_Version(0), JDK_Version(0) }
