@@ -1051,11 +1051,6 @@ void HeapShared::init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
 void HeapShared::init_subgraph_entry_fields(Thread* THREAD) {
   assert(is_heap_object_archiving_allowed(), "Sanity check");
   _dump_time_subgraph_info_table = new (ResourceObj::C_HEAP, mtClass)DumpTimeKlassSubGraphInfoTable();
-
-  if (_dump_time_subgraph_info_table == nullptr) {
-    vm_exit_out_of_memory(sizeof(DumpTimeKlassSubGraphInfoTable), OOM_MALLOC_ERROR,
-                          "Out of Memory at creating DumpTimeKlassSubGraphInfoTable");
-  }
   init_subgraph_entry_fields(closed_archive_subgraph_entry_fields,
                              num_closed_archive_subgraph_entry_fields,
                              THREAD);
@@ -1072,10 +1067,6 @@ void HeapShared::init_subgraph_entry_fields(Thread* THREAD) {
 void HeapShared::init_for_dumping(Thread* THREAD) {
   if (is_heap_object_archiving_allowed()) {
     _dumped_interned_strings = new (ResourceObj::C_HEAP, mtClass)DumpedInternedStrings();
-    if (_dumped_interned_strings == nullptr) {
-      vm_exit_out_of_memory(sizeof(DumpedInternedStrings), OOM_MALLOC_ERROR,
-                            "Out of Memory at creating DumpedInternedStrings");
-    }
     init_subgraph_entry_fields(THREAD);
   }
 }
