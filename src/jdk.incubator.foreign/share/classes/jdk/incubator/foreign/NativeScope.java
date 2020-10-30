@@ -38,7 +38,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 /**
- * This class provides a scope, within which several allocations can be performed. An native scope is backed
+ * A native scope is an abstraction which provides shared temporal bounds for one or more allocations, backed
  * by off-heap memory. Native scopes can be either <em>bounded</em> or <em>unbounded</em>, depending on whether the size
  * of the native scope is known statically. If an application knows before-hand how much memory it needs to allocate,
  * then using a <em>bounded</em> native scope will typically provide better performance than independently allocating the memory
@@ -53,6 +53,10 @@ import java.util.stream.Stream;
  * (see {@link MemorySegment#handoff(NativeScope)}). This might be useful to allow one or more segments which were independently
  * created to share the same life-cycle as a given native scope - which in turns enables a client to group all memory
  * allocation and usage under a single <em>try-with-resources block</em>.
+ *
+ * @apiNote In the future, if the Java language permits, {@link NativeScope}
+ * may become a {@code sealed} interface, which would prohibit subclassing except by
+ * explicitly permitted types.
  */
 public interface NativeScope extends AutoCloseable {
 
@@ -87,6 +91,24 @@ public interface NativeScope extends AutoCloseable {
      */
     default MemorySegment allocate(ValueLayout layout, byte value) {
         VarHandle handle = layout.varHandle(byte.class);
+        MemorySegment addr = allocate(layout);
+        handle.set(addr, value);
+        return addr;
+    }
+
+    /**
+     * Allocate a block of memory in this native scope with given layout and initialize it with given char value.
+     * The segment returned by this method is associated with a segment which cannot be closed. Moreover, the returned
+     * segment must conform to the layout alignment constraints.
+     * @param layout the layout of the block of memory to be allocated.
+     * @param value the value to be set on the newly allocated memory block.
+     * @return a segment for the newly allocated memory block.
+     * @throws OutOfMemoryError if there is not enough space left in this native scope, that is, if this is a
+     * bounded allocation scope, and {@code byteSize().getAsLong() - allocatedBytes() < layout.byteSize()}.
+     * @throws IllegalArgumentException if {@code layout.byteSize()} does not conform to the size of a char value.
+     */
+    default MemorySegment allocate(ValueLayout layout, char value) {
+        VarHandle handle = layout.varHandle(char.class);
         MemorySegment addr = allocate(layout);
         handle.set(addr, value);
         return addr;

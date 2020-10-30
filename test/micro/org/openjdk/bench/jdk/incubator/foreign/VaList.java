@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
 
 import static jdk.incubator.foreign.CLinker.C_DOUBLE;
 import static jdk.incubator.foreign.CLinker.C_INT;
-import static jdk.incubator.foreign.CLinker.C_LONGLONG;
+import static jdk.incubator.foreign.CLinker.C_LONG_LONG;
 import static jdk.incubator.foreign.CLinker.C_VA_LIST;
 import static jdk.incubator.foreign.CLinker.asVarArg;
 
@@ -61,7 +61,7 @@ public class VaList {
     static {
         MH_ellipsis = linker.downcallHandle(lookup.lookup("ellipsis").get(),
                 MethodType.methodType(void.class, int.class, int.class, double.class, long.class),
-                FunctionDescriptor.ofVoid(C_INT, asVarArg(C_INT), asVarArg(C_DOUBLE), asVarArg(C_LONGLONG)));
+                FunctionDescriptor.ofVoid(C_INT, asVarArg(C_INT), asVarArg(C_DOUBLE), asVarArg(C_LONG_LONG)));
         MH_vaList = linker.downcallHandle(lookup.lookup("vaList").get(),
                 MethodType.methodType(void.class, int.class, VaList.class),
                 FunctionDescriptor.ofVoid(C_INT, C_VA_LIST));
@@ -78,7 +78,7 @@ public class VaList {
         try (CLinker.VaList vaList = CLinker.VaList.make(b ->
             b.vargFromInt(C_INT, 1)
              .vargFromDouble(C_DOUBLE, 2D)
-             .vargFromLong(C_LONGLONG, 3L)
+             .vargFromLong(C_LONG_LONG, 3L)
         )) {
             MH_vaList.invokeExact(3,
                                   vaList);

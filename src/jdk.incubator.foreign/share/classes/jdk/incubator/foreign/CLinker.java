@@ -165,9 +165,9 @@ public interface CLinker {
      */
     ValueLayout C_LONG = pick(SysV.C_LONG, Win64.C_LONG, AArch64.C_LONG);
     /**
-     * The {@code long long} native type.
+     * The layout for the {@code long long} C type.
      */
-    ValueLayout C_LONGLONG = pick(SysV.C_LONGLONG, Win64.C_LONGLONG, AArch64.C_LONGLONG);
+    ValueLayout C_LONG_LONG = pick(SysV.C_LONG_LONG, Win64.C_LONG_LONG, AArch64.C_LONG_LONG);
     /**
      * The layout for the {@code float} C type
      */
@@ -177,9 +177,9 @@ public interface CLinker {
      */
     ValueLayout C_DOUBLE = pick(SysV.C_DOUBLE, Win64.C_DOUBLE, AArch64.C_DOUBLE);
     /**
-     * The {@code long double} native type.
+     * The layout for the {@code long double} C type.
      */
-    ValueLayout C_LONGDOUBLE = pick(SysV.C_LONGDOUBLE, Win64.C_LONGDOUBLE, AArch64.C_LONGDOUBLE);
+    ValueLayout C_LONG_DOUBLE = pick(SysV.C_LONG_DOUBLE, Win64.C_LONG_DOUBLE, AArch64.C_LONG_DOUBLE);
     /**
      * The {@code T*} native type.
      */

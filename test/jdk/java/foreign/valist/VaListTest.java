@@ -55,7 +55,7 @@ import java.util.stream.IntStream;
 import static jdk.incubator.foreign.CLinker.C_DOUBLE;
 import static jdk.incubator.foreign.CLinker.C_FLOAT;
 import static jdk.incubator.foreign.CLinker.C_INT;
-import static jdk.incubator.foreign.CLinker.C_LONGLONG;
+import static jdk.incubator.foreign.CLinker.C_LONG_LONG;
 import static jdk.incubator.foreign.CLinker.C_POINTER;
 import static jdk.incubator.foreign.CLinker.C_VA_LIST;
 import static jdk.incubator.foreign.MemoryLayout.PathElement.groupElement;
@@ -84,10 +84,10 @@ public class VaListTest {
             FunctionDescriptor.of(C_INT, C_VA_LIST));
     private static final MethodHandle MH_sumBigStruct = link("sumBigStruct",
             MethodType.methodType(long.class, VaList.class),
-            FunctionDescriptor.of(C_LONGLONG, C_VA_LIST));
+            FunctionDescriptor.of(C_LONG_LONG, C_VA_LIST));
     private static final MethodHandle MH_sumHugeStruct = link("sumHugeStruct",
             MethodType.methodType(long.class, VaList.class),
-            FunctionDescriptor.of(C_LONGLONG, C_VA_LIST));
+            FunctionDescriptor.of(C_LONG_LONG, C_VA_LIST));
     private static final MethodHandle MH_sumFloatStruct = link("sumFloatStruct",
             MethodType.methodType(float.class, VaList.class),
             FunctionDescriptor.of(C_FLOAT, C_VA_LIST));
@@ -294,10 +294,10 @@ public class VaListTest {
                     BigPoint_LAYOUT, VH_BigPoint_x, VH_BigPoint_y  };
         };
         return new Object[][]{
-                argsFact.apply(winVaListFactory,      Win64.C_LONGLONG,   sumStructJavaFact),
-                argsFact.apply(sysvVaListFactory,     SysV.C_LONGLONG,    sumStructJavaFact),
-                argsFact.apply(aarch64VaListFactory,  AArch64.C_LONGLONG, sumStructJavaFact),
-                argsFact.apply(platformVaListFactory, C_LONGLONG,         sumStructNativeFact),
+                argsFact.apply(winVaListFactory,      Win64.C_LONG_LONG,   sumStructJavaFact),
+                argsFact.apply(sysvVaListFactory,     SysV.C_LONG_LONG,    sumStructJavaFact),
+                argsFact.apply(aarch64VaListFactory,  AArch64.C_LONG_LONG, sumStructJavaFact),
+                argsFact.apply(platformVaListFactory, C_LONG_LONG,         sumStructNativeFact),
         };
     }
 
@@ -405,10 +405,10 @@ public class VaListTest {
                     HugePoint_LAYOUT, VH_HugePoint_x, VH_HugePoint_y, VH_HugePoint_z  };
         };
         return new Object[][]{
-                argsFact.apply(winVaListFactory,      Win64.C_LONGLONG,   sumStructJavaFact),
-                argsFact.apply(sysvVaListFactory,     SysV.C_LONGLONG,    sumStructJavaFact),
-                argsFact.apply(aarch64VaListFactory,  AArch64.C_LONGLONG, sumStructJavaFact),
-                argsFact.apply(platformVaListFactory, C_LONGLONG,         sumStructNativeFact),
+                argsFact.apply(winVaListFactory,      Win64.C_LONG_LONG,   sumStructJavaFact),
+                argsFact.apply(sysvVaListFactory,     SysV.C_LONG_LONG,    sumStructJavaFact),
+                argsFact.apply(aarch64VaListFactory,  AArch64.C_LONG_LONG, sumStructJavaFact),
+                argsFact.apply(platformVaListFactory, C_LONG_LONG,         sumStructNativeFact),
         };
     }
 
@@ -458,10 +458,10 @@ public class VaListTest {
             }
         };
         return new Object[][]{
-                { winVaListFactory,      sumStackJavaFact.apply(Win64.C_LONGLONG, Win64.C_DOUBLE),     Win64.C_LONGLONG,   Win64.C_DOUBLE   },
-                { sysvVaListFactory,     sumStackJavaFact.apply(SysV.C_LONGLONG, SysV.C_DOUBLE),       SysV.C_LONGLONG,    SysV.C_DOUBLE    },
-                { aarch64VaListFactory,  sumStackJavaFact.apply(AArch64.C_LONGLONG, AArch64.C_DOUBLE), AArch64.C_LONGLONG, AArch64.C_DOUBLE },
-                { platformVaListFactory, sumStackNative,                                               C_LONGLONG,         C_DOUBLE         },
+                { winVaListFactory,      sumStackJavaFact.apply(Win64.C_LONG_LONG, Win64.C_DOUBLE),     Win64.C_LONG_LONG,   Win64.C_DOUBLE   },
+                { sysvVaListFactory,     sumStackJavaFact.apply(SysV.C_LONG_LONG, SysV.C_DOUBLE),       SysV.C_LONG_LONG,    SysV.C_DOUBLE    },
+                { aarch64VaListFactory,  sumStackJavaFact.apply(AArch64.C_LONG_LONG, AArch64.C_DOUBLE), AArch64.C_LONG_LONG, AArch64.C_DOUBLE },
+                { platformVaListFactory, sumStackNative, C_LONG_LONG,         C_DOUBLE         },
         };
     }
 
@@ -648,8 +648,8 @@ public class VaListTest {
     @DataProvider
     public static Object[][] upcalls() {
         GroupLayout BigPoint_LAYOUT = MemoryLayout.ofStruct(
-                C_LONGLONG.withName("x"),
-                C_LONGLONG.withName("y")
+                C_LONG_LONG.withName("x"),
+                C_LONG_LONG.withName("y")
         );
         VarHandle VH_BigPoint_x = BigPoint_LAYOUT.varHandle(long.class, groupElement("x"));
         VarHandle VH_BigPoint_y = BigPoint_LAYOUT.varHandle(long.class, groupElement("y"));
@@ -666,9 +666,9 @@ public class VaListTest {
         VarHandle VH_FloatPoint_x = FloatPoint_LAYOUT.varHandle(float.class, groupElement("x"));
         VarHandle VH_FloatPoint_y = FloatPoint_LAYOUT.varHandle(float.class, groupElement("y"));
         GroupLayout HugePoint_LAYOUT = MemoryLayout.ofStruct(
-                C_LONGLONG.withName("x"),
-                C_LONGLONG.withName("y"),
-                C_LONGLONG.withName("z")
+                C_LONG_LONG.withName("x"),
+                C_LONG_LONG.withName("y"),
+                C_LONG_LONG.withName("z")
         );
         VarHandle VH_HugePoint_x = HugePoint_LAYOUT.varHandle(long.class, groupElement("x"));
         VarHandle VH_HugePoint_y = HugePoint_LAYOUT.varHandle(long.class, groupElement("y"));
@@ -735,7 +735,7 @@ public class VaListTest {
                 { linkVaListCB("upcallStack"), VaListConsumer.mh(vaList -> {
                     // skip all registers
                     for (long l = 1; l <= 16; l++) {
-                        assertEquals(vaList.vargAsLong(C_LONGLONG), l);
+                        assertEquals(vaList.vargAsLong(C_LONG_LONG), l);
                     }
                     for (double d = 1; d <= 16; d++) {
                         assertEquals(vaList.vargAsDouble(C_DOUBLE), d);
@@ -746,14 +746,14 @@ public class VaListTest {
                     assertEquals((char) vaList.vargAsInt(C_INT), 'a');
                     assertEquals((short) vaList.vargAsInt(C_INT), (short) 3);
                     assertEquals(vaList.vargAsInt(C_INT), 4);
-                    assertEquals(vaList.vargAsLong(C_LONGLONG), 5L);
+                    assertEquals(vaList.vargAsLong(C_LONG_LONG), 5L);
                     assertEquals((float) vaList.vargAsDouble(C_DOUBLE), 6.0F);
                     assertEquals(vaList.vargAsDouble(C_DOUBLE), 7.0D);
                     assertEquals((byte) vaList.vargAsInt(C_INT), (byte) 8);
                     assertEquals((char) vaList.vargAsInt(C_INT), 'b');
                     assertEquals((short) vaList.vargAsInt(C_INT), (short) 10);
                     assertEquals(vaList.vargAsInt(C_INT), 11);
-                    assertEquals(vaList.vargAsLong(C_LONGLONG), 12L);
+                    assertEquals(vaList.vargAsLong(C_LONG_LONG), 12L);
                     assertEquals((float) vaList.vargAsDouble(C_DOUBLE), 13.0F);
                     assertEquals(vaList.vargAsDouble(C_DOUBLE), 14.0D);
 
@@ -779,11 +779,11 @@ public class VaListTest {
                 })},
                 // test skip
                 { linkVaListCB("upcallStack"), VaListConsumer.mh(vaList -> {
-                    vaList.skip(C_LONGLONG, C_LONGLONG, C_LONGLONG, C_LONGLONG);
-                    assertEquals(vaList.vargAsLong(C_LONGLONG), 5L);
-                    vaList.skip(C_LONGLONG, C_LONGLONG, C_LONGLONG, C_LONGLONG);
-                    assertEquals(vaList.vargAsLong(C_LONGLONG), 10L);
-                    vaList.skip(C_LONGLONG, C_LONGLONG, C_LONGLONG, C_LONGLONG, C_LONGLONG, C_LONGLONG);
+                    vaList.skip(C_LONG_LONG, C_LONG_LONG, C_LONG_LONG, C_LONG_LONG);
+                    assertEquals(vaList.vargAsLong(C_LONG_LONG), 5L);
+                    vaList.skip(C_LONG_LONG, C_LONG_LONG, C_LONG_LONG, C_LONG_LONG);
+                    assertEquals(vaList.vargAsLong(C_LONG_LONG), 10L);
+                    vaList.skip(C_LONG_LONG, C_LONG_LONG, C_LONG_LONG, C_LONG_LONG, C_LONG_LONG, C_LONG_LONG);
                     assertEquals(vaList.vargAsDouble(C_DOUBLE), 1.0D);
                     vaList.skip(C_DOUBLE, C_DOUBLE, C_DOUBLE, C_DOUBLE);
                     assertEquals(vaList.vargAsDouble(C_DOUBLE), 6.0D);

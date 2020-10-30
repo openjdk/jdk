@@ -176,7 +176,7 @@ public class StdLibTest {
 
         final static MethodHandle qsort = abi.downcallHandle(lookup.lookup("qsort").get(),
                 MethodType.methodType(void.class, MemoryAddress.class, long.class, long.class, MemoryAddress.class),
-                FunctionDescriptor.ofVoid(C_POINTER, C_LONGLONG, C_LONGLONG, C_POINTER));
+                FunctionDescriptor.ofVoid(C_POINTER, C_LONG_LONG, C_LONG_LONG, C_POINTER));
 
         final static FunctionDescriptor qsortComparFunction = FunctionDescriptor.of(C_INT, C_POINTER, C_POINTER);
 

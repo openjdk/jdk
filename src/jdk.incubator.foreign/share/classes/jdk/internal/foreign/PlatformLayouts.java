@@ -131,7 +131,7 @@ public class PlatformLayouts {
         /**
          * The {@code long long} native type.
          */
-        public static final ValueLayout C_LONGLONG = ofLongLong(LITTLE_ENDIAN, 64);
+        public static final ValueLayout C_LONG_LONG = ofLongLong(LITTLE_ENDIAN, 64);
 
         /**
          * The {@code float} native type.
@@ -146,7 +146,7 @@ public class PlatformLayouts {
         /**
          * The {@code long double} native type.
          */
-        public static final ValueLayout C_LONGDOUBLE = ofLongDouble(LITTLE_ENDIAN, 128);
+        public static final ValueLayout C_LONG_DOUBLE = ofLongDouble(LITTLE_ENDIAN, 128);
 
         /**
          * The {@code T*} native type.
@@ -196,7 +196,7 @@ public class PlatformLayouts {
         /**
          * The {@code long long} native type.
          */
-        public static final ValueLayout C_LONGLONG = ofLongLong(LITTLE_ENDIAN, 64);
+        public static final ValueLayout C_LONG_LONG = ofLongLong(LITTLE_ENDIAN, 64);
 
         /**
          * The {@code float} native type.
@@ -211,7 +211,7 @@ public class PlatformLayouts {
         /**
          * The {@code long double} native type.
          */
-        public static final ValueLayout C_LONGDOUBLE = ofLongDouble(LITTLE_ENDIAN, 64);
+        public static final ValueLayout C_LONG_DOUBLE = ofLongDouble(LITTLE_ENDIAN, 64);
 
         /**
          * The {@code T*} native type.
@@ -266,7 +266,7 @@ public class PlatformLayouts {
         /**
          * The {@code long long} native type.
          */
-        public static final ValueLayout C_LONGLONG = ofLongLong(LITTLE_ENDIAN, 64);
+        public static final ValueLayout C_LONG_LONG = ofLongLong(LITTLE_ENDIAN, 64);
 
         /**
          * The {@code float} native type.
@@ -281,7 +281,7 @@ public class PlatformLayouts {
         /**
          * The {@code long double} native type.
          */
-        public static final ValueLayout C_LONGDOUBLE = ofLongDouble(LITTLE_ENDIAN, 128);
+        public static final ValueLayout C_LONG_DOUBLE = ofLongDouble(LITTLE_ENDIAN, 128);
 
         /**
          * The {@code T*} native type.

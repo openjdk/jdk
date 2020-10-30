@@ -43,7 +43,7 @@ import java.util.concurrent.TimeUnit;
 
 import static jdk.incubator.foreign.CLinker.C_DOUBLE;
 import static jdk.incubator.foreign.CLinker.C_INT;
-import static jdk.incubator.foreign.CLinker.C_LONGLONG;
+import static jdk.incubator.foreign.CLinker.C_LONG_LONG;
 import static jdk.incubator.foreign.CLinker.C_POINTER;
 
 @BenchmarkMode(Mode.AverageTime)
@@ -66,7 +66,7 @@ public class CallOverhead {
     static final MethodHandle identity_trivial;
 
     static final MemoryLayout POINT_LAYOUT = MemoryLayout.ofStruct(
-        C_LONGLONG, C_LONGLONG
+            C_LONG_LONG, C_LONG_LONG
     );
 
     static final MemorySegment point = MemorySegment.allocateNative(POINT_LAYOUT);
@@ -97,12 +97,12 @@ public class CallOverhead {
                 FunctionDescriptor.of(C_POINTER, C_POINTER));
         args5 = abi.downcallHandle(ll.lookup("args5").get(),
                 MethodType.methodType(void.class, long.class, double.class, long.class, double.class, long.class),
-                FunctionDescriptor.ofVoid(C_LONGLONG, C_DOUBLE, C_LONGLONG, C_DOUBLE, C_LONGLONG));
+                FunctionDescriptor.ofVoid(C_LONG_LONG, C_DOUBLE, C_LONG_LONG, C_DOUBLE, C_LONG_LONG));
         args10 = abi.downcallHandle(ll.lookup("args10").get(),
                 MethodType.methodType(void.class, long.class, double.class, long.class, double.class, long.class,
                                                   double.class, long.class, double.class, long.class, double.class),
-                FunctionDescriptor.ofVoid(C_LONGLONG, C_DOUBLE, C_LONGLONG, C_DOUBLE, C_LONGLONG,
-                                          C_DOUBLE, C_LONGLONG, C_DOUBLE, C_LONGLONG, C_DOUBLE));
+                FunctionDescriptor.ofVoid(C_LONG_LONG, C_DOUBLE, C_LONG_LONG, C_DOUBLE, C_LONG_LONG,
+                                          C_DOUBLE, C_LONG_LONG, C_DOUBLE, C_LONG_LONG, C_DOUBLE));
     }
 
     static native void blank();

@@ -100,8 +100,8 @@ public class TestIntrinsics {
         tests.add(linkIndentity("identity_short", short.class, C_SHORT, true), (short) 10, (short) 10);
         tests.add(linkIndentity("identity_int", int.class, C_INT, false), 10, 10);
         tests.add(linkIndentity("identity_int", int.class, C_INT, true), 10, 10);
-        tests.add(linkIndentity("identity_long", long.class, C_LONGLONG, false), 10L, 10L);
-        tests.add(linkIndentity("identity_long", long.class, C_LONGLONG, true), 10L, 10L);
+        tests.add(linkIndentity("identity_long", long.class, C_LONG_LONG, false), 10L, 10L);
+        tests.add(linkIndentity("identity_long", long.class, C_LONG_LONG, true), 10L, 10L);
         tests.add(linkIndentity("identity_float", float.class, C_FLOAT, false), 10F, 10F);
         tests.add(linkIndentity("identity_float", float.class, C_FLOAT, true), 10F, 10F);
         tests.add(linkIndentity("identity_double", double.class, C_DOUBLE, false), 10D, 10D);
@@ -111,7 +111,7 @@ public class TestIntrinsics {
             LibraryLookup.Symbol ma = lookup.lookup("identity_va").orElseThrow();
             MethodType mt = methodType(int.class, int.class, double.class, int.class, float.class, long.class);
             FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_INT, asVarArg(C_DOUBLE),
-                    asVarArg(C_INT), asVarArg(C_FLOAT), asVarArg(C_LONGLONG));
+                    asVarArg(C_INT), asVarArg(C_FLOAT), asVarArg(C_LONG_LONG));
             tests.add(abi.downcallHandle(ma, mt, fd), 1, 1, 10D, 2, 3F, 4L);
             tests.add(abi.downcallHandle(ma, mt, fd.withAttribute(TRIVIAL_ATTRIBUTE_NAME, true)), 1, 1, 10D, 2, 3F, 4L);
         }
@@ -119,7 +119,7 @@ public class TestIntrinsics {
         { // high_arity
             MethodType baseMT = methodType(void.class, int.class, double.class, long.class, float.class, byte.class,
                     short.class, char.class);
-            FunctionDescriptor baseFD = FunctionDescriptor.ofVoid(C_INT, C_DOUBLE, C_LONGLONG, C_FLOAT, C_CHAR,
+            FunctionDescriptor baseFD = FunctionDescriptor.ofVoid(C_INT, C_DOUBLE, C_LONG_LONG, C_FLOAT, C_CHAR,
                     C_SHORT, C_SHORT);
             Object[] args = {1, 10D, 2L, 3F, (byte) 0, (short) 13, 'a'};
             for (int i = 0; i < args.length; i++) {

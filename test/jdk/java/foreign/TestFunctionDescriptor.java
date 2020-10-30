@@ -32,15 +32,13 @@ import jdk.incubator.foreign.MemoryLayout;
 import org.testng.annotations.Test;
 
 import java.lang.constant.Constable;
-import java.lang.constant.ConstantDesc;
-import java.lang.invoke.MethodHandles;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static jdk.incubator.foreign.CLinker.C_DOUBLE;
 import static jdk.incubator.foreign.CLinker.C_INT;
-import static jdk.incubator.foreign.CLinker.C_LONGLONG;
+import static jdk.incubator.foreign.CLinker.C_LONG_LONG;
 import static jdk.incubator.foreign.CLinker.C_POINTER;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -52,9 +50,9 @@ public class TestFunctionDescriptor {
 
     @Test
     public void testOf() {
-        FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_DOUBLE, C_LONGLONG);
+        FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_DOUBLE, C_LONG_LONG);
 
-        assertEquals(fd.argumentLayouts(), List.of(C_DOUBLE, C_LONGLONG));
+        assertEquals(fd.argumentLayouts(), List.of(C_DOUBLE, C_LONG_LONG));
         Optional<MemoryLayout> returnLayoutOp = fd.returnLayout();
         assertTrue(returnLayoutOp.isPresent());
         assertEquals(returnLayoutOp.get(), C_INT);
@@ -62,19 +60,19 @@ public class TestFunctionDescriptor {
 
     @Test
     public void testOfVoid() {
-        FunctionDescriptor fd = FunctionDescriptor.ofVoid(C_DOUBLE, C_LONGLONG);
+        FunctionDescriptor fd = FunctionDescriptor.ofVoid(C_DOUBLE, C_LONG_LONG);
 
-        assertEquals(fd.argumentLayouts(), List.of(C_DOUBLE, C_LONGLONG));
+        assertEquals(fd.argumentLayouts(), List.of(C_DOUBLE, C_LONG_LONG));
         Optional<MemoryLayout> returnLayoutOp = fd.returnLayout();
         assertFalse(returnLayoutOp.isPresent());
     }
 
     @Test
     public void testAttribute() {
-        FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_DOUBLE, C_LONGLONG);
+        FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_DOUBLE, C_LONG_LONG);
         fd = fd.withAttribute(DUMMY_ATTR, true);
 
-        assertEquals(fd.argumentLayouts(), List.of(C_DOUBLE, C_LONGLONG));
+        assertEquals(fd.argumentLayouts(), List.of(C_DOUBLE, C_LONG_LONG));
         Optional<MemoryLayout> returnLayoutOp = fd.returnLayout();
         assertTrue(returnLayoutOp.isPresent());
         assertEquals(returnLayoutOp.get(), C_INT);
@@ -86,11 +84,11 @@ public class TestFunctionDescriptor {
 
     @Test
     public void testAppendArgumentLayouts() {
-        FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_DOUBLE, C_LONGLONG)
+        FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_DOUBLE, C_LONG_LONG)
                                                   .withAttribute(DUMMY_ATTR, true);
         fd = fd.withAppendedArgumentLayouts(C_POINTER);
 
-        assertEquals(fd.argumentLayouts(), List.of(C_DOUBLE, C_LONGLONG, C_POINTER));
+        assertEquals(fd.argumentLayouts(), List.of(C_DOUBLE, C_LONG_LONG, C_POINTER));
         Optional<MemoryLayout> returnLayoutOp = fd.returnLayout();
         assertTrue(returnLayoutOp.isPresent());
         assertEquals(returnLayoutOp.get(), C_INT);
@@ -99,11 +97,11 @@ public class TestFunctionDescriptor {
 
     @Test
     public void testChangeReturnLayout() {
-        FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_DOUBLE, C_LONGLONG)
+        FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_DOUBLE, C_LONG_LONG)
                                                   .withAttribute(DUMMY_ATTR, true);
         fd = fd.withReturnLayout(C_INT);
 
-        assertEquals(fd.argumentLayouts(), List.of(C_DOUBLE, C_LONGLONG));
+        assertEquals(fd.argumentLayouts(), List.of(C_DOUBLE, C_LONG_LONG));
         Optional<MemoryLayout> returnLayoutOp = fd.returnLayout();
         assertTrue(returnLayoutOp.isPresent());
         assertEquals(returnLayoutOp.get(), C_INT);
@@ -112,11 +110,11 @@ public class TestFunctionDescriptor {
 
     @Test
     public void testDropReturnLayout() {
-        FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_DOUBLE, C_LONGLONG)
+        FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_DOUBLE, C_LONG_LONG)
                                                   .withAttribute(DUMMY_ATTR, true);
         fd = fd.withVoidReturnLayout();
 
-        assertEquals(fd.argumentLayouts(), List.of(C_DOUBLE, C_LONGLONG));
+        assertEquals(fd.argumentLayouts(), List.of(C_DOUBLE, C_LONG_LONG));
         Optional<MemoryLayout> returnLayoutOp = fd.returnLayout();
         assertFalse(returnLayoutOp.isPresent());
         assertEquals(fd.attributes().collect(Collectors.toList()), List.of(DUMMY_ATTR));
@@ -124,23 +122,23 @@ public class TestFunctionDescriptor {
 
     @Test(expectedExceptions = NullPointerException.class)
     public void testNullArgumentLayout() {
-        FunctionDescriptor.ofVoid(C_INT, null, C_LONGLONG);
+        FunctionDescriptor.ofVoid(C_INT, null, C_LONG_LONG);
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void testNullReturnLayout() {
-        FunctionDescriptor.of(null, C_INT, C_LONGLONG);
+        FunctionDescriptor.of(null, C_INT, C_LONG_LONG);
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void testNullArgumentLayoutsAppend() {
-        FunctionDescriptor fd = FunctionDescriptor.ofVoid(C_INT, C_LONGLONG);
+        FunctionDescriptor fd = FunctionDescriptor.ofVoid(C_INT, C_LONG_LONG);
         fd.withAppendedArgumentLayouts(C_DOUBLE, null); // should throw
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void testNullReturnLayoutChange() {
-        FunctionDescriptor fd = FunctionDescriptor.ofVoid(C_INT, C_LONGLONG);
+        FunctionDescriptor fd = FunctionDescriptor.ofVoid(C_INT, C_LONG_LONG);
         fd.withReturnLayout(null); // should throw
     }
 

@@ -113,7 +113,7 @@ public class TestWindowsCallArranger extends CallArrangerTestBase {
         MethodType mt = MethodType.methodType(void.class,
                 long.class, long.class, float.class, float.class, long.class, long.class, float.class, float.class);
         FunctionDescriptor fd = FunctionDescriptor.ofVoid(
-                C_LONGLONG, C_LONGLONG, C_FLOAT, C_FLOAT, C_LONGLONG, C_LONGLONG, C_FLOAT, C_FLOAT);
+                C_LONG_LONG, C_LONG_LONG, C_FLOAT, C_FLOAT, C_LONG_LONG, C_LONG_LONG, C_FLOAT, C_FLOAT);
         CallArranger.Bindings bindings = CallArranger.getBindings(mt, fd, false);
 
         assertFalse(bindings.isInMemoryReturn);
@@ -208,7 +208,7 @@ public class TestWindowsCallArranger extends CallArrangerTestBase {
      */
     @Test
     public void testStructRegister() {
-        MemoryLayout struct = MemoryLayout.ofStruct(C_LONGLONG);
+        MemoryLayout struct = MemoryLayout.ofStruct(C_LONG_LONG);
 
         MethodType mt = MethodType.methodType(void.class, MemorySegment.class);
         FunctionDescriptor fd = FunctionDescriptor.ofVoid(struct);
@@ -237,7 +237,7 @@ public class TestWindowsCallArranger extends CallArrangerTestBase {
      */
     @Test
     public void testStructReference() {
-        MemoryLayout struct = MemoryLayout.ofStruct(C_LONGLONG, C_LONGLONG);
+        MemoryLayout struct = MemoryLayout.ofStruct(C_LONG_LONG, C_LONG_LONG);
 
         MethodType mt = MethodType.methodType(void.class, MemorySegment.class);
         FunctionDescriptor fd = FunctionDescriptor.ofVoid(struct);
@@ -288,7 +288,7 @@ public class TestWindowsCallArranger extends CallArrangerTestBase {
 
     @Test
     public void testReturnRegisterStruct() {
-        MemoryLayout struct = MemoryLayout.ofStruct(C_LONGLONG);
+        MemoryLayout struct = MemoryLayout.ofStruct(C_LONG_LONG);
 
         MethodType mt = MethodType.methodType(MemorySegment.class);
         FunctionDescriptor fd = FunctionDescriptor.of(struct);
@@ -310,7 +310,7 @@ public class TestWindowsCallArranger extends CallArrangerTestBase {
 
     @Test
     public void testIMR() {
-        MemoryLayout struct = MemoryLayout.ofStruct(C_LONGLONG, C_LONGLONG);
+        MemoryLayout struct = MemoryLayout.ofStruct(C_LONG_LONG, C_LONG_LONG);
 
         MethodType mt = MethodType.methodType(MemorySegment.class);
         FunctionDescriptor fd = FunctionDescriptor.of(struct);
