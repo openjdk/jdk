@@ -22,15 +22,28 @@
  *
  */
 
-#ifndef SHARE_UTILITIES_VMENUMS_HPP
-#define SHARE_UTILITIES_VMENUMS_HPP
+#ifndef SHARE_RUNTIME_KEEPSTACKGCPROCESSED_HPP
+#define SHARE_RUNTIME_KEEPSTACKGCPROCESSED_HPP
 
-// Include this header file if you just need the following enum types and
-// you don't use their members directly. This way you don't need to include the
-// complex header files that have the full definitions of these enums.
+#include "memory/allocation.hpp"
+#include "runtime/stackWatermark.hpp"
+#include "runtime/stackWatermarkKind.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 
-enum class JVMFlagOrigin : int;
-enum JVMFlagsEnum : int;
-enum class vmSymbolID : int;
+// Use this class to mark a remote thread you are currently interested
+// in examining the entire stack, without it slipping into an unprocessed
+// state at safepoint polls.
+class KeepStackGCProcessedMark : public StackObj {
+  friend class StackWatermark;
+  bool _active;
+  JavaThread* _jt;
 
-#endif // SHARE_UTILITIES_VMENUMS_HPP
+  void finish_processing();
+
+public:
+  KeepStackGCProcessedMark(JavaThread* jt);
+  ~KeepStackGCProcessedMark();
+};
+
+
+#endif // SHARE_RUNTIME_KEEPSTACKGCPROCESSED_HPP

@@ -19,18 +19,44 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ */
+
+/**
+ * @test
+ * @bug 8255466
+ * @summary unsafe access to static field causes crash
+ * @modules java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xcomp -XX:CompileCommand=compileonly,TestUnsafeStaticFieldAccess::* TestUnsafeStaticFieldAccess
  *
  */
 
-#ifndef SHARE_UTILITIES_VMENUMS_HPP
-#define SHARE_UTILITIES_VMENUMS_HPP
+import jdk.internal.misc.Unsafe;
+import java.lang.reflect.Field;
 
-// Include this header file if you just need the following enum types and
-// you don't use their members directly. This way you don't need to include the
-// complex header files that have the full definitions of these enums.
+public class TestUnsafeStaticFieldAccess {
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+    private static final long offset;
+    private static volatile Class<?> clazz;
 
-enum class JVMFlagOrigin : int;
-enum JVMFlagsEnum : int;
-enum class vmSymbolID : int;
+    private static int field;
 
-#endif // SHARE_UTILITIES_VMENUMS_HPP
+    static {
+        long o = 0;
+        for (Field f : TestUnsafeStaticFieldAccess.class.getDeclaredFields()) {
+            if (f.getName().equals("field")) {
+                o = UNSAFE.staticFieldOffset(f);
+                break;
+            }
+        }
+        offset = o;
+        clazz = TestUnsafeStaticFieldAccess.class;
+    }
+
+
+    public static void main(String[] args) {
+        for (int i = 0; i < 12000; i++) {
+            UNSAFE.getInt(clazz, offset);
+        }
+    }
+}
