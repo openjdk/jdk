@@ -352,7 +352,7 @@ public class TestStylesheet extends JavadocTester {
                 "method-summary",
                 // the following provide the ability to optionally override components of the
                 // memberSignature structure
-                "member-name",
+                "name",
                 "modifiers",
                 "packages",
                 "return-type",

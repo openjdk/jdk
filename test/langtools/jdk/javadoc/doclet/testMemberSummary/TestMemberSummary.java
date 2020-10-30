@@ -61,7 +61,7 @@ public class TestMemberSummary extends JavadocTester {
                 """
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
                     lass="return-type"><a href="PublicChild.html" title="class in pkg">PublicChild</\
-                    a></span>&nbsp;<span class="member-name">returnTypeTest</span>()</div>""",
+                    a></span>&nbsp;<span class="element-name">returnTypeTest</span>()</div>""",
                 """
                     <div class="col-constructor-name even-row-color"><code><span class="member-name-link"\
                     ><a href="#%3Cinit%3E()">PublicChild</a></span>()</code></div>

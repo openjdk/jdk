@@ -833,14 +833,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     @Override
     public void addModuleSignature(Content moduleContentTree) {
         moduleContentTree.add(new HtmlTree(TagName.HR));
-        Content pre = new HtmlTree(TagName.PRE);
-        addAnnotationInfo(mdle, pre);
-        String label = mdle.isOpen() && (configuration.docEnv.getModuleMode() == ModuleMode.ALL)
-                ? "open module" : "module";
-        pre.add(label);
-        pre.add(" ");
-        pre.add(mdle.getQualifiedName().toString());
-        moduleContentTree.add(pre);
+        moduleContentTree.add(Signatures.getModuleSignature(mdle, this));
     }
 
     @Override

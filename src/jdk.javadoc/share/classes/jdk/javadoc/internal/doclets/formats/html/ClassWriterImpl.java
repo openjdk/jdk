@@ -194,7 +194,10 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
 
     @Override @SuppressWarnings("preview")
     public void addClassSignature(String modifiers, Content classInfoTree) {
-        new Signatures.TypeSignature(typeElement, this).addClassSignature(modifiers, classInfoTree);
+        classInfoTree.add(new HtmlTree(TagName.HR));
+        classInfoTree.add(new Signatures.TypeSignature(typeElement, this)
+                .setModifiers(new StringContent(modifiers))
+                .toContent());
     }
 
 

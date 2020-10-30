@@ -588,20 +588,16 @@ public class TestOrdering extends JavadocTester {
                     "<h2>Field Details</h2>",
                     """
                         <div class="member-signature"><span class="modifiers">static final</span>&nbsp;<\
-                        span class="return-type">int</span>&nbsp;<span class="member-name">one</span></d\
-                        iv>""",
+                        span class="return-type">int</span>&nbsp;<span class="element-name">one</span></div>""",
                     """
                         <div class="member-signature"><span class="modifiers">static final</span>&nbsp;<\
-                        span class="return-type">int</span>&nbsp;<span class="member-name">two</span></d\
-                        iv>""",
+                        span class="return-type">int</span>&nbsp;<span class="element-name">two</span></div>""",
                     """
                         <div class="member-signature"><span class="modifiers">static final</span>&nbsp;<\
-                        span class="return-type">int</span>&nbsp;<span class="member-name">three</span><\
-                        /div>""",
+                        span class="return-type">int</span>&nbsp;<span class="element-name">three</span></div>""",
                     """
                         <div class="member-signature"><span class="modifiers">static final</span>&nbsp;<\
-                        span class="return-type">int</span>&nbsp;<span class="member-name">four</span></\
-                        div>""");
+                        span class="return-type">int</span>&nbsp;<span class="element-name">four</span></div>""");
 
             checkOrder("pkg5/AnnoOptionalTest.html",
                     "<h2>Optional Element Summary</h2>",

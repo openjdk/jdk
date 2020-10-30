@@ -99,7 +99,8 @@ public class FieldWriterImpl extends AbstractMemberWriter
     @Override
     public Content getSignature(VariableElement field) {
         return new Signatures.MemberSignature(field, this)
-                .addType(utils.asInstantiatedFieldType(typeElement, field))
+                .setType(utils.asInstantiatedFieldType(typeElement, field))
+                .setAnnotations(writer.getAnnotationInfo(field, true))
                 .toContent();
     }
 

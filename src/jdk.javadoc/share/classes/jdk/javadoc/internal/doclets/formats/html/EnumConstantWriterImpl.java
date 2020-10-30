@@ -99,7 +99,8 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
     @Override
     public Content getSignature(VariableElement enumConstant) {
         return new Signatures.MemberSignature(enumConstant, this)
-                .addType(enumConstant.asType())
+                .setType(enumConstant.asType())
+                .setAnnotations(writer.getAnnotationInfo(enumConstant, true))
                 .toContent();
     }
 

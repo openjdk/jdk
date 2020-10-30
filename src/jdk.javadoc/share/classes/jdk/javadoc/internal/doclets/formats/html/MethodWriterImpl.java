@@ -123,10 +123,11 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     @Override
     public Content getSignature(ExecutableElement method) {
         return new Signatures.MemberSignature(method, this)
-                .addTypeParameters(getTypeParameters(method))
-                .addReturnType(getReturnType(method))
-                .addParameters(getParameters(method, true))
-                .addExceptions(getExceptions(method))
+                .setTypeParameters(getTypeParameters(method))
+                .setReturnType(getReturnType(method))
+                .setParameters(getParameters(method, true))
+                .setExceptions(getExceptions(method))
+                .setAnnotations(writer.getAnnotationInfo(method, true))
                 .toContent();
     }
 

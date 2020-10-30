@@ -73,8 +73,8 @@ public class TestPrivateClasses extends JavadocTester {
                 // Method is documented as though it is declared in the inheriting method.
                 """
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
-                    lass="return-type">void</span>&nbsp;<span class="member-name">methodInheritedFro\
-                    mParent</span>&#8203;<span class="parameters">(int&nbsp;p1)</span>
+                    lass="return-type">void</span>&nbsp;<span class="element-name">methodInheritedFromParent\
+                    </span>&#8203;<span class="parameters">(int&nbsp;p1)</span>
                                                    throws <span class="exceptions">java.lang.Exception</span></div>""",
                 """
                     <dl class="notes">
@@ -191,7 +191,8 @@ public class TestPrivateClasses extends JavadocTester {
                     blicInterface</a></code></dd>
                     </dl>""",
                 """
-                    <pre>public class <span class="type-name-label">PublicChild</span>""");
+                    <div class="type-signature"><span class="modifiers">public class </span><span cl\
+                    ass="element-name type-name-label">PublicChild</span>""");
 
         checkOutput("pkg/PublicInterface.html", true,
                 // Field inheritence from non-public superinterface.
@@ -235,10 +236,12 @@ public class TestPrivateClasses extends JavadocTester {
                 //Make sure when no modifier appear in the class signature, the
                 //signature is displayed correctly without extra space at the beginning.
                 """
-                    <pre>class <span class="type-name-label">PrivateParent</span>""");
+                    <div class="type-signature"><span class="modifiers">class </span><span class="el\
+                    ement-name type-name-label">PrivateParent</span>""");
 
         checkOutput("pkg/PrivateParent.html", false,
                 """
-                    <pre> class <span class="type-name-label">PrivateParent</span>""");
+                    <div class="type-signature"><span class="modifiers"> class </span><span class="el\
+                    ement-name type-name-label">PrivateParent</span>""");
     }
 }

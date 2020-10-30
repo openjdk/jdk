@@ -75,7 +75,7 @@ public class TestRecordTypes extends JavadocTester {
                 """
                     <h1 title="Record R" class="title">Record R</h1>""",
                 """
-                    public record <span class="type-name-label">R</span>""",
+                    <span class="modifiers">public record </span><span class="element-name type-name-label">R</span>""",
                 """
                     <code><span class="member-name-link"><a href="#%3Cinit%3E(int)">R</a></span>&#8203;(int&nbsp;r1)</code>""");
     }
@@ -96,7 +96,7 @@ public class TestRecordTypes extends JavadocTester {
                 """
                     <h1 title="Record R" class="title">Record R</h1>""",
                 """
-                    public record <span class="type-name-label">R</span>""",
+                    <span class="modifiers">public record </span><span class="element-name type-name-label">R</span>""",
                 """
                     <code><span class="member-name-link"><a href="#%3Cinit%3E(int)">R</a></span>&#8203;(int&nbsp;r1)</code>""");
     }
@@ -117,7 +117,7 @@ public class TestRecordTypes extends JavadocTester {
                 """
                     <h1 title="Record R" class="title">Record R</h1>""",
                 """
-                    public record <span class="type-name-label">R</span>""",
+                    <span class="modifiers">public record </span><span class="element-name type-name-label">R</span>""",
                 """
                     <code><span class="member-name-link"><a href="#%3Cinit%3E()">R</a></span>()</code>""");
     }
@@ -142,7 +142,7 @@ public class TestRecordTypes extends JavadocTester {
                 """
                     <h1 title="Record R" class="title">Record R</h1>""",
                 """
-                    public record <span class="type-name-label">R</span>""",
+                    <span class="modifiers">public record </span><span class="element-name type-name-label">R</span>""",
                 """
                     <dl class="notes">
                     <dt>Record Components:</dt>
@@ -173,7 +173,7 @@ public class TestRecordTypes extends JavadocTester {
                 """
                     <h1 title="Record R" class="title">Record R&lt;T&gt;</h1>""",
                 """
-                    public record <span class="type-name-label">R&lt;T&gt;</span>""",
+                    <span class="modifiers">public record </span><span class="element-name type-name-label">R&lt;T&gt;</span>""",
                 """
                     <dl class="notes">
                     <dt>Type Parameters:</dt>
@@ -226,22 +226,22 @@ public class TestRecordTypes extends JavadocTester {
                 "Returns a string representation of this record.",
                 "Method Details",
                 """
-                    <span class="member-name">toString</span>""",
+                    <span class="element-name">toString</span>""",
                 "Returns a string representation of this record. The representation "
                 + "contains the name of the type, followed by the name and value of "
                 + "each of the record components.",
                 """
-                    <span class="member-name">hashCode</span>""",
+                    <span class="element-name">hashCode</span>""",
                 "Returns a hash code value for this object. The value is derived "
                 + "from the hash code of each of the record components.",
                 """
-                    <span class="member-name">equals</span>""",
+                    <span class="element-name">equals</span>""",
                 """
                     Indicates whether some other object is "equal to" this one. The objects are equa\
                     l if the other object is of the same class and if all the record components are \
                     equal. All components in this record are compared with '=='.""",
                 """
-                    <span class="member-name">r1</span>""",
+                    <span class="element-name">r1</span>""",
                 """
                     Returns the value of the <a href="#param-r1"><code>r1</code></a> record component."""
         );
@@ -289,22 +289,22 @@ public class TestRecordTypes extends JavadocTester {
                 "Returns a string representation of this record.",
                 "Method Details",
                 """
-                    <span class="member-name">toString</span>""",
+                    <span class="element-name">toString</span>""",
                 "Returns a string representation of this record. The representation "
                 + "contains the name of the type, followed by the name and value of "
                 + "each of the record components.",
                 """
-                    <span class="member-name">hashCode</span>""",
+                    <span class="element-name">hashCode</span>""",
                 "Returns a hash code value for this object. The value is derived "
                 + "from the hash code of each of the record components.",
                 """
-                    <span class="member-name">equals</span>""",
+                    <span class="element-name">equals</span>""",
                 """
                     Indicates whether some other object is "equal to" this one. The objects are equa\
                     l if the other object is of the same class and if all the record components are \
                     equal. All components in this record are compared with '=='.""",
                 """
-                    <span class="member-name">r1</span>""",
+                    <span class="element-name">r1</span>""",
                 """
                     Returns the value of the <a href="#param-r1"><code>r1</code></a> record component."""
         );
@@ -471,26 +471,27 @@ public class TestRecordTypes extends JavadocTester {
 
         checkOutput("p/R.html", true,
                 """
-                    <pre>public record <span class="type-name-label">R</span>("""
+                    <div class="type-signature"><span class="modifiers">public record </span><span c\
+                    lass="element-name type-name-label">R</span>("""
                         + rcAnno
                         + """
                             int&nbsp;i)
-                            extends java.lang.Record</pre>""",
+                            <span class="extends-implements">extends java.lang.Record</span></div>""",
                 "<div class=\"member-signature\">"
                         + fAnno
                         + """
                             <span class="modifiers">private final</span>&nbsp;<span class="return-type">int<\
-                            /span>&nbsp;<span class="member-name">i</span></div>""",
+                            /span>&nbsp;<span class="element-name">i</span></div>""",
                 """
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
-                    lass="member-name">R</span>&#8203;<span class="parameters">("""
+                    lass="element-name">R</span>&#8203;<span class="parameters">("""
                         + pAnno
                         + "int&nbsp;i)</span></div>",
                 "<div class=\"member-signature\">"
                         + mAnno
                         + """
                             <span class="modifiers">public</span>&nbsp;<span class="return-type">int</span>&\
-                            nbsp;<span class="member-name">i</span>()</div>""");
+                            nbsp;<span class="element-name">i</span>()</div>""");
 
     }
 }

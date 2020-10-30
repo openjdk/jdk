@@ -67,8 +67,7 @@ public class TestAnnotationTypes extends JavadocTester {
                     <section class="detail" id="DEFAULT_NAME">
                     <h3>DEFAULT_NAME</h3>
                     <div class="member-signature"><span class="modifiers">static final</span>&nbsp;<\
-                    span class="return-type">java.lang.String</span>&nbsp;<span class="member-name">\
-                    DEFAULT_NAME</span></div>
+                    span class="return-type">java.lang.String</span>&nbsp;<span class="element-name">DEFAULT_NAME</span></div>
                     """);
 
         checkOutput("pkg/AnnotationType.html", true,
@@ -94,7 +93,7 @@ public class TestAnnotationTypes extends JavadocTester {
                         <section class="detail" id="value()">""",
                     "<h3>value</h3>\n",
                     """
-                        <div class="member-signature"><span class="return-type">int</span>&nbsp;<span class="member-name">value</span></div>""");
+                        <div class="member-signature"><span class="return-type">int</span>&nbsp;<span class="element-name">value</span></div>""");
 
         checkOutput("pkg/AnnotationType.html", false,
                 """
@@ -124,10 +123,10 @@ public class TestAnnotationTypes extends JavadocTester {
 
         checkOutput("pkg/AnnotationType.html", true,
                 """
-                    public @interface <a href="../src-html/pkg/AnnotationType.html#line.31">AnnotationType</a></pre>""");
+                    <span class="modifiers">public @interface </span><span class="element-name"><a href="../src-html/pkg/AnnotationType.html#line.31">AnnotationType</a></span></div>""");
 
         checkOutput("pkg/AnnotationTypeField.html", true,
                 """
-                    public @interface <a href="../src-html/pkg/AnnotationTypeField.html#line.31">AnnotationTypeField</a></pre>""");
+                    <span class="modifiers">public @interface </span><span class="element-name"><a href="../src-html/pkg/AnnotationTypeField.html#line.31">AnnotationTypeField</a></span></div>""");
     }
 }

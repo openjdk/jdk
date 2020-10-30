@@ -55,7 +55,7 @@ public class TestProperty extends JavadocTester {
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                     span class="return-type"><a href="ObjectProperty.html" title="class in pkg">Obje\
                     ctProperty</a>&lt;<a href="MyObj.html" title="class in pkg">MyObj</a>&gt;</span>\
-                    &nbsp;<span class="member-name">goodProperty</span></div>
+                    &nbsp;<span class="element-name">goodProperty</span></div>
                     <div class="block">This is an Object property where the Object is a single Object.</div>
                     <dl class="notes">
                     <dt>See Also:</dt>
@@ -67,7 +67,7 @@ public class TestProperty extends JavadocTester {
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                     span class="return-type"><a href="ObjectProperty.html" title="class in pkg">Obje\
                     ctProperty</a>&lt;<a href="MyObj.html" title="class in pkg">MyObj</a>[]&gt;</spa\
-                    n>&nbsp;<span class="member-name">badProperty</span></div>
+                    n>&nbsp;<span class="element-name">badProperty</span></div>
                     <div class="block">This is an Object property where the Object is an array.</div>
                     <dl class="notes">
                     <dt>See Also:</dt>
@@ -100,8 +100,8 @@ public class TestProperty extends JavadocTester {
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
                     span class="return-type"><a href="ObjectProperty.html" title="class in pkg">Obje\
                     ctProperty</a>&lt;java.util.List&lt;<a href="MyClassT.html" title="type paramete\
-                    r in MyClassT">T</a>&gt;&gt;</span>&nbsp;<span class="member-name">listProperty<\
-                    /span></div>
+                    r in MyClassT">T</a>&gt;&gt;</span>&nbsp;<span class="element-name">listProperty</span><\
+                    /div>
                     <div class="block">This is an Object property where the Object is a single <code>List&lt;T&gt;</code>.</div>
                     <dl class="notes">
                     <dt>See Also:</dt>

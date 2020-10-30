@@ -254,11 +254,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
     @Override
     public void addPackageSignature(Content packageContentTree) {
         packageContentTree.add(new HtmlTree(TagName.HR));
-        Content pre = new HtmlTree(TagName.PRE);
-        addAnnotationInfo(packageElement, pre);
-        pre.add("package ");
-        pre.add(packageElement.getQualifiedName().toString());
-        packageContentTree.add(pre);
+        packageContentTree.add(Signatures.getPackageSignature(packageElement, this));
     }
 
     @Override

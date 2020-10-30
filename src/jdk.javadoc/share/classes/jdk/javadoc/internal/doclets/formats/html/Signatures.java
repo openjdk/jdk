@@ -1,18 +1,20 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
+import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.toolkit.ClassWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.ModuleElement;
+import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.RecordComponentElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
@@ -29,12 +31,43 @@ import static javax.lang.model.element.Modifier.SYNCHRONIZED;
 
 public class Signatures {
 
+    public static Content getModuleSignature(ModuleElement mdle, ModuleWriterImpl moduleWriter) {
+        Content signature = HtmlTree.DIV(HtmlStyle.moduleSignature);
+        Content annotations = moduleWriter.getAnnotationInfo(mdle, true);
+        if (!annotations.isEmpty()) {
+            signature.add(HtmlTree.SPAN(HtmlStyle.annotations, annotations));
+        }
+        DocletEnvironment docEnv = moduleWriter.configuration.docEnv;
+        String label = mdle.isOpen() && (docEnv.getModuleMode() == DocletEnvironment.ModuleMode.ALL)
+                ? "open module" : "module";
+        signature.add(label);
+        signature.add(" ");
+        HtmlTree nameSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.elementName);
+        nameSpan.add(mdle.getQualifiedName().toString());
+        signature.add(nameSpan);
+        return signature;
+    }
+
+    public static Content getPackageSignature(PackageElement pkg, PackageWriterImpl pkgWriter) {
+        Content signature = HtmlTree.DIV(HtmlStyle.packageSignature);
+        Content annotations = pkgWriter.getAnnotationInfo(pkg, true);
+        if (!annotations.isEmpty()) {
+            signature.add(HtmlTree.SPAN(HtmlStyle.annotations, annotations));
+        }
+        signature.add("package ");
+        HtmlTree nameSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.elementName);
+        nameSpan.add(pkg.getQualifiedName().toString());
+        signature.add(nameSpan);
+        return signature;
+    }
+
     static class TypeSignature {
 
         private final TypeElement typeElement;
         private final ClassWriterImpl classWriter;
         private final Utils utils;
         private final HtmlConfiguration configuration;
+        private Content modifiers;
 
         TypeSignature(TypeElement typeElement, ClassWriterImpl classWriter) {
             this.typeElement = typeElement;
@@ -43,40 +76,49 @@ public class Signatures {
             this.configuration = classWriter.configuration;
         }
 
+        public TypeSignature setModifiers(Content modifiers) {
+            this.modifiers = modifiers;
+            return this;
+        }
+
         @SuppressWarnings("preview")
-        public void addClassSignature(String modifiers, Content classInfoTree) {
-            Content hr = new HtmlTree(TagName.HR);
-            classInfoTree.add(hr);
-            Content pre = new HtmlTree(TagName.PRE);
-            classWriter.addAnnotationInfo(typeElement, pre);
-            pre.add(modifiers);
+        public Content toContent() {
+            Content content = new ContentBuilder();
+            Content annotationInfo = classWriter.getAnnotationInfo(typeElement, true);
+            if (!annotationInfo.isEmpty()) {
+                content.add(HtmlTree.SPAN(HtmlStyle.annotations, annotationInfo));
+            }
+            content.add(HtmlTree.SPAN(HtmlStyle.modifiers, modifiers));
+
+            HtmlTree nameSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.elementName);
+            Content className = new StringContent(utils.getSimpleName(typeElement));
+            if (classWriter.options.linkSource()) {
+                classWriter.addSrcLink(typeElement, className, nameSpan);
+            } else {
+                nameSpan.addStyle(HtmlStyle.typeNameLabel).add(className);
+            }
             LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
                     LinkInfoImpl.Kind.CLASS_SIGNATURE, typeElement);
             //Let's not link to ourselves in the signature.
             linkInfo.linkToSelf = false;
-            Content className = new StringContent(utils.getSimpleName(typeElement));
-            Content parameterLinks = classWriter.getTypeParameterLinks(linkInfo);
-            if (classWriter.options.linkSource()) {
-                classWriter.addSrcLink(typeElement, className, pre);
-                pre.add(parameterLinks);
-            } else {
-                Content span = HtmlTree.SPAN(HtmlStyle.typeNameLabel, className);
-                span.add(parameterLinks);
-                pre.add(span);
-            }
+            nameSpan.add(classWriter.getTypeParameterLinks(linkInfo));
+            content.add(nameSpan);
+
             if (utils.isRecord(typeElement)) {
-                pre.add(getRecordComponents());
+                content.add(getRecordComponents());
             }
             if (!utils.isAnnotationType(typeElement)) {
+                Content extendsImplements = new HtmlTree(TagName.SPAN)
+                        .setStyle(HtmlStyle.extendsImplements);
                 if (!utils.isInterface(typeElement)) {
                     TypeMirror superclass = utils.getFirstVisibleSuperClass(typeElement);
                     if (superclass != null) {
-                        pre.add(DocletConstants.NL);
-                        pre.add("extends ");
+                        content.add(DocletConstants.NL);
+                        extendsImplements.add("extends ");
                         Content link = classWriter.getLink(new LinkInfoImpl(configuration,
                                 LinkInfoImpl.Kind.CLASS_SIGNATURE_PARENT_NAME,
                                 superclass));
-                        pre.add(link);
+                        extendsImplements.add(link);
                     }
                 }
                 List<? extends TypeMirror> interfaces = typeElement.getInterfaces();
@@ -88,17 +130,20 @@ public class Signatures {
                             continue;
                         }
                         if (isFirst) {
-                            pre.add(DocletConstants.NL);
-                            pre.add(utils.isInterface(typeElement) ? "extends " : "implements ");
+                            extendsImplements.add(DocletConstants.NL);
+                            extendsImplements.add(utils.isInterface(typeElement) ? "extends " : "implements ");
                             isFirst = false;
                         } else {
-                            pre.add(", ");
+                            extendsImplements.add(", ");
                         }
                         Content link = classWriter.getLink(new LinkInfoImpl(configuration,
                                 LinkInfoImpl.Kind.CLASS_SIGNATURE_PARENT_NAME,
                                 type));
-                        pre.add(link);
+                        extendsImplements.add(link);
                     }
+                }
+                if (!extendsImplements.isEmpty()) {
+                    content.add(extendsImplements);
                 }
             }
             List<? extends TypeMirror> permits = typeElement.getPermittedSubclasses();
@@ -106,28 +151,29 @@ public class Signatures {
                     .filter(t -> utils.isLinkable(utils.asTypeElement(t)))
                     .collect(Collectors.toList());
             if (!linkablePermits.isEmpty()) {
+                Content permitsSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.permits);
                 boolean isFirst = true;
                 for (TypeMirror type : linkablePermits) {
-                    TypeElement tDoc = utils.asTypeElement(type);
                     if (isFirst) {
-                        pre.add(DocletConstants.NL);
-                        pre.add("permits ");
+                        content.add(DocletConstants.NL);
+                        permitsSpan.add("permits ");
                         isFirst = false;
                     } else {
-                        pre.add(", ");
+                        permitsSpan.add(", ");
                     }
                     Content link = classWriter.getLink(new LinkInfoImpl(configuration,
                             LinkInfoImpl.Kind.PERMITTED_SUBCLASSES,
                             type));
-                    pre.add(link);
+                    permitsSpan.add(link);
                 }
                 if (linkablePermits.size() < permits.size()) {
                     Content c = new StringContent(classWriter.resources.getText("doclet.not.exhaustive"));
-                    pre.add(" ");
-                    pre.add(HtmlTree.SPAN(HtmlStyle.permitsNote, c));
+                    permitsSpan.add(" ");
+                    permitsSpan.add(HtmlTree.SPAN(HtmlStyle.permitsNote, c));
                 }
+                content.add(permitsSpan);
             }
-            classInfoTree.add(pre);
+            return HtmlTree.DIV(HtmlStyle.typeSignature, content);
         }
 
         @SuppressWarnings("preview")
@@ -138,7 +184,7 @@ public class Signatures {
             for (RecordComponentElement e : typeElement.getRecordComponents()) {
                 content.add(sep);
                 classWriter.getAnnotations(e.getAnnotationMirrors(), false)
-                        .forEach(a -> { content.add(a); content.add(" "); });
+                        .forEach(a -> { content.add(a).add(" "); });
                 Content link = classWriter.getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.RECORD_COMPONENT,
                         e.asType()));
                 content.add(link);
@@ -156,10 +202,11 @@ public class Signatures {
      */
     static class MemberSignature {
 
-        private final AbstractMemberWriter writer;
+        private final AbstractMemberWriter memberWriter;
         private final Utils utils;
 
         private final Element element;
+        private Content annotations;
         private Content typeParameters;
         private Content returnType;
         private Content parameters;
@@ -176,65 +223,77 @@ public class Signatures {
          * Creates a new member signature builder.
          *
          * @param element the element for which to create a signature
+         * @param memberWriter the member writer
          */
-        MemberSignature(Element element, AbstractMemberWriter writer) {
+        MemberSignature(Element element, AbstractMemberWriter memberWriter) {
             this.element = element;
-            this.writer = writer;
-            this.utils = writer.utils;
+            this.memberWriter = memberWriter;
+            this.utils = memberWriter.utils;
         }
 
         /**
-         * Adds the type parameters for an executable member.
+         * Set the type parameters for an executable member.
          *
          * @param typeParameters the content tree containing the type parameters to add.
          * @return this instance
          */
-        MemberSignature addTypeParameters(Content typeParameters) {
+        MemberSignature setTypeParameters(Content typeParameters) {
             this.typeParameters = typeParameters;
             return this;
         }
 
         /**
-         * Adds the return type for an executable member.
+         * Set the return type for an executable member.
          *
          * @param returnType the content tree containing the return type to add.
          * @return this instance
          */
-        MemberSignature addReturnType(Content returnType) {
+        MemberSignature setReturnType(Content returnType) {
             this.returnType = returnType;
             return this;
         }
 
         /**
-         * Adds the type information for a non-executable member.
+         * Set the type information for a non-executable member.
          *
          * @param type the type of the member.
          * @return this instance
          */
-        MemberSignature addType(TypeMirror type) {
-            this.returnType = writer.writer.getLink(new LinkInfoImpl(writer.configuration, LinkInfoImpl.Kind.MEMBER, type));
+        MemberSignature setType(TypeMirror type) {
+            this.returnType = memberWriter.writer.getLink(new LinkInfoImpl(memberWriter.configuration, LinkInfoImpl.Kind.MEMBER, type));
             return this;
         }
 
         /**
-         * Adds the parameter information of an executable member.
+         * Set the parameter information of an executable member.
          *
          * @param paramTree the content tree containing the parameter information.
          * @return this instance
          */
-        MemberSignature addParameters(Content paramTree) {
+        MemberSignature setParameters(Content paramTree) {
             this.parameters = paramTree;
             return this;
         }
 
         /**
-         * Adds the exception information of an executable member.
+         * Set the exception information of an executable member.
          *
          * @param exceptionTree the content tree containing the exception information
          * @return this instance
          */
-        MemberSignature addExceptions(Content exceptionTree) {
+        MemberSignature setExceptions(Content exceptionTree) {
             this.exceptions = exceptionTree;
+            return this;
+        }
+
+        /**
+         * Set the annotation information of a member.
+         *
+         * @param annotationTree the content tree containing the exception information
+         * @return this instance
+         */
+        MemberSignature setAnnotations(Content annotationTree) {
+            this.annotations = annotationTree;
             return this;
         }
 
@@ -249,9 +308,8 @@ public class Signatures {
             int lastLineSeparator = 0;
 
             // Annotations
-            Content annotationInfo = writer.writer.getAnnotationInfo(element.getAnnotationMirrors(), true);
-            if (!annotationInfo.isEmpty()) {
-                content.add(HtmlTree.SPAN(HtmlStyle.annotations, annotationInfo));
+            if (annotations != null && !annotations.isEmpty()) {
+                content.add(HtmlTree.SPAN(HtmlStyle.annotations, annotations));
                 lastLineSeparator = content.charCount();
             }
 
@@ -270,13 +328,12 @@ public class Signatures {
             }
 
             // Name
-            HtmlTree nameSpan = new HtmlTree(TagName.SPAN);
-            nameSpan.setStyle(HtmlStyle.memberName);
-            if (writer.options.linkSource()) {
-                Content name = new StringContent(writer.name(element));
-                writer.writer.addSrcLink(element, name, nameSpan);
+            HtmlTree nameSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.elementName);
+            if (memberWriter.options.linkSource()) {
+                Content name = new StringContent(memberWriter.name(element));
+                memberWriter.writer.addSrcLink(element, name, nameSpan);
             } else {
-                nameSpan.add(writer.name(element));
+                nameSpan.add(memberWriter.name(element));
             }
             content.add(nameSpan);
 
