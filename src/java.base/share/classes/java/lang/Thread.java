@@ -981,7 +981,6 @@ public class Thread implements Runnable {
      *          if the current thread cannot modify this thread
      *
      * @revised 6.0, 14
-     * @spec JSR-51
      */
     public void interrupt() {
         if (this != Thread.currentThread()) {

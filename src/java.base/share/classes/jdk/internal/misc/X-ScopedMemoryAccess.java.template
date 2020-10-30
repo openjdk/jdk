@@ -99,6 +99,8 @@ public class ScopedMemoryAccess {
     public interface Scope {
         void checkValidState();
 
+        Thread ownerThread();
+
         /**
          * Error thrown when memory access fails because the memory has already been released.
          * Note: for performance reasons, this exception is never created by client; instead a shared instance

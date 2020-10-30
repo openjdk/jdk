@@ -1268,6 +1268,59 @@ Node* LoadNode::convert_to_signed_load(PhaseGVN& gvn) {
                         is_unaligned_access(), is_mismatched_access());
 }
 
+bool LoadNode::has_reinterpret_variant(const Type* rt) {
+  BasicType bt = rt->basic_type();
+  switch (Opcode()) {
+    case Op_LoadI: return (bt == T_FLOAT);
+    case Op_LoadL: return (bt == T_DOUBLE);
+    case Op_LoadF: return (bt == T_INT);
+    case Op_LoadD: return (bt == T_LONG);
+
+    default: return false;
+  }
+}
+
+Node* LoadNode::convert_to_reinterpret_load(PhaseGVN& gvn, const Type* rt) {
+  BasicType bt = rt->basic_type();
+  assert(has_reinterpret_variant(rt), "no reinterpret variant: %s %s", Name(), type2name(bt));
+  bool is_mismatched = is_mismatched_access();
+  const TypeRawPtr* raw_type = gvn.type(in(MemNode::Memory))->isa_rawptr();
+  if (raw_type == NULL) {
+    is_mismatched = true; // conservatively match all non-raw accesses as mismatched
+  }
+  return LoadNode::make(gvn, in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address),
+                        raw_adr_type(), rt, bt, _mo, _control_dependency,
+                        is_unaligned_access(), is_mismatched);
+}
+
+bool StoreNode::has_reinterpret_variant(const Type* vt) {
+  BasicType bt = vt->basic_type();
+  switch (Opcode()) {
+    case Op_StoreI: return (bt == T_FLOAT);
+    case Op_StoreL: return (bt == T_DOUBLE);
+    case Op_StoreF: return (bt == T_INT);
+    case Op_StoreD: return (bt == T_LONG);
+
+    default: return false;
+  }
+}
+
+Node* StoreNode::convert_to_reinterpret_store(PhaseGVN& gvn, Node* val, const Type* vt) {
+  BasicType bt = vt->basic_type();
+  assert(has_reinterpret_variant(vt), "no reinterpret variant: %s %s", Name(), type2name(bt));
+  StoreNode* st = StoreNode::make(gvn, in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address), raw_adr_type(), val, bt, _mo);
+
+  bool is_mismatched = is_mismatched_access();
+  const TypeRawPtr* raw_type = gvn.type(in(MemNode::Memory))->isa_rawptr();
+  if (raw_type == NULL) {
+    is_mismatched = true; // conservatively match all non-raw accesses as mismatched
+  }
+  if (is_mismatched) {
+    st->set_mismatched_access();
+  }
+  return st;
+}
+
 // We're loading from an object which has autobox behaviour.
 // If this object is result of a valueOf call we'll have a phi
 // merging a newly allocated object and a load from the cache.
@@ -2548,6 +2601,7 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   Node* mem     = in(MemNode::Memory);
   Node* address = in(MemNode::Address);
+  Node* value   = in(MemNode::ValueIn);
   // Back-to-back stores to same address?  Fold em up.  Generally
   // unsafe if I have intervening uses...  Also disallowed for StoreCM
   // since they must follow each StoreP operation.  Redundant StoreCMs
@@ -2607,6 +2661,19 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         // %%% hack to ensure that Ideal returns a new node:
         mem = MergeMemNode::make(mem);
         return mem;             // fold me away
+      }
+    }
+  }
+
+  // Fold reinterpret cast into memory operation:
+  //    StoreX mem (MoveY2X v) => StoreY mem v
+  if (value->is_Move()) {
+    const Type* vt = value->in(1)->bottom_type();
+    if (has_reinterpret_variant(vt)) {
+      if (phase->C->post_loop_opts_phase()) {
+        return convert_to_reinterpret_store(*phase, value->in(1), vt);
+      } else {
+        phase->C->record_for_post_loop_opts_igvn(this); // attempt the transformation once loop opts are over
       }
     }
   }

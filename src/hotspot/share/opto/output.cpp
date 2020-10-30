@@ -1386,10 +1386,10 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
   uint nblocks  = C->cfg()->number_of_blocks();
   // Count and start of implicit null check instructions
   uint inct_cnt = 0;
-  uint *inct_starts = NEW_RESOURCE_ARRAY(uint, nblocks+1);
+  uint* inct_starts = NEW_RESOURCE_ARRAY(uint, nblocks+1);
 
   // Count and start of calls
-  uint *call_returns = NEW_RESOURCE_ARRAY(uint, nblocks+1);
+  uint* call_returns = NEW_RESOURCE_ARRAY(uint, nblocks+1);
 
   uint  return_offset = 0;
   int nop_size = (new MachNopNode())->size(C->regalloc());
@@ -1407,7 +1407,7 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
 
   // Create an array of unused labels, one for each basic block, if printing is enabled
 #if defined(SUPPORT_OPTO_ASSEMBLY)
-  int *node_offsets      = NULL;
+  int* node_offsets      = NULL;
   uint node_offset_limit = C->unique();
 
   if (C->print_assembly()) {
@@ -1427,15 +1427,13 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
   }
 
   // Create an array of labels, one for each basic block
-  Label *blk_labels = NEW_RESOURCE_ARRAY(Label, nblocks+1);
-  for (uint i=0; i <= nblocks; i++) {
+  Label* blk_labels = NEW_RESOURCE_ARRAY(Label, nblocks+1);
+  for (uint i = 0; i <= nblocks; i++) {
     blk_labels[i].init();
   }
 
-  // ------------------
   // Now fill in the code buffer
-  Node *delay_slot = NULL;
-
+  Node* delay_slot = NULL;
   for (uint i = 0; i < nblocks; i++) {
     Block* block = C->cfg()->get_block(i);
     _block = block;
@@ -1689,11 +1687,12 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
         node_offsets[n->_idx] = cb->insts_size();
       }
 #endif
+      assert(!C->failing(), "Should not reach here if failing.");
 
       // "Normal" instruction case
-      DEBUG_ONLY( uint instr_offset = cb->insts_size(); )
+      DEBUG_ONLY(uint instr_offset = cb->insts_size());
       n->emit(*cb, C->regalloc());
-      current_offset  = cb->insts_size();
+      current_offset = cb->insts_size();
 
       assert(!is_mcall || (call_returns[block->_pre_order] == (uint) current_offset), "ret_addr_offset() did not match size of emitted code");
 
@@ -1882,8 +1881,7 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
       // be sure to tag this tty output with the compile ID.
       if (xtty != NULL) {
         xtty->head("opto_assembly compile_id='%d'%s", C->compile_id(),
-                   C->is_osr_compilation()    ? " compile_kind='osr'" :
-                   "");
+                   C->is_osr_compilation() ? " compile_kind='osr'" : "");
       }
       if (C->method() != NULL) {
         tty->print_cr("----------------------- MetaData before Compile_id = %d ------------------------", C->compile_id());

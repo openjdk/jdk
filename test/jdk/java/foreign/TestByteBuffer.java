@@ -529,6 +529,16 @@ public class TestByteBuffer {
         assertEquals(bb.capacity(), segment.byteSize());
     }
 
+    @Test(dataProvider="bufferSources")
+    public void bufferProperties(ByteBuffer bb, Predicate<MemorySegment> _unused) {
+        try (MemorySegment segment = MemorySegment.ofByteBuffer(bb)) {
+            ByteBuffer buffer = segment.asByteBuffer();
+            assertEquals(buffer.position(), 0);
+            assertEquals(buffer.capacity(), segment.byteSize());
+            assertEquals(buffer.limit(), segment.byteSize());
+        }
+    }
+
     @Test
     public void testRoundTripAccess() {
         try(MemorySegment ms = MemorySegment.allocateNative(4)) {
@@ -546,6 +556,49 @@ public class TestByteBuffer {
         s1.close(); // memory freed
 
         MemoryAccess.setInt(s2, 10); // Dead access!
+    }
+
+    @Test(expectedExceptions = UnsupportedOperationException.class)
+    public void testIOOnSharedSegmentBuffer() throws IOException {
+        File tmp = File.createTempFile("tmp", "txt");
+        tmp.deleteOnExit();
+        try (FileChannel channel = FileChannel.open(tmp.toPath(), StandardOpenOption.WRITE)) {
+            MemorySegment segment = MemorySegment.allocateNative(10).share();
+            for (int i = 0; i < 10; i++) {
+                MemoryAccess.setByteAtIndex(segment, i, (byte) i);
+            }
+            ByteBuffer bb = segment.asByteBuffer();
+            segment.close();
+            channel.write(bb);
+        }
+    }
+
+    @Test(expectedExceptions = IllegalStateException.class)
+    public void testIOOnClosedConfinedSegmentBuffer() throws IOException {
+        File tmp = File.createTempFile("tmp", "txt");
+        tmp.deleteOnExit();
+        try (FileChannel channel = FileChannel.open(tmp.toPath(), StandardOpenOption.WRITE)) {
+            MemorySegment segment = MemorySegment.allocateNative(10);
+            for (int i = 0; i < 10; i++) {
+                MemoryAccess.setByteAtIndex(segment, i, (byte) i);
+            }
+            ByteBuffer bb = segment.asByteBuffer();
+            segment.close();
+            channel.write(bb);
+        }
+    }
+
+    public void testIOOnClosedConfinedSegment() throws IOException {
+        File tmp = File.createTempFile("tmp", "txt");
+        tmp.deleteOnExit();
+        try (FileChannel channel = FileChannel.open(tmp.toPath(), StandardOpenOption.WRITE)) {
+            MemorySegment segment = MemorySegment.allocateNative(10);
+            for (int i = 0; i < 10; i++) {
+                MemoryAccess.setByteAtIndex(segment, i, (byte) i);
+            }
+            ByteBuffer bb = segment.asByteBuffer();
+            channel.write(bb);
+        }
     }
 
     @DataProvider(name = "bufferOps")
@@ -606,34 +659,34 @@ public class TestByteBuffer {
     @DataProvider(name = "resizeOps")
     public Object[][] resizeOps() {
         Consumer<MemorySegment> byteInitializer =
-                (base) -> initBytes(base, bytes, (addr, pos) -> MemoryAccess.setByteAtIndex_BE(addr, pos, (byte)(long)pos));
+                (base) -> initBytes(base, bytes, (addr, pos) -> MemoryAccess.setByteAtIndex(addr, pos, ByteOrder.BIG_ENDIAN, (byte)(long)pos));
         Consumer<MemorySegment> charInitializer =
-                (base) -> initBytes(base, chars, (addr, pos) -> MemoryAccess.setCharAtIndex_BE(addr, pos, (char)(long)pos));
+                (base) -> initBytes(base, chars, (addr, pos) -> MemoryAccess.setCharAtIndex(addr, pos, ByteOrder.BIG_ENDIAN, (char)(long)pos));
         Consumer<MemorySegment> shortInitializer =
-                (base) -> initBytes(base, shorts, (addr, pos) -> MemoryAccess.setShortAtIndex_BE(addr, pos, (short)(long)pos));
+                (base) -> initBytes(base, shorts, (addr, pos) -> MemoryAccess.setShortAtIndex(addr, pos, ByteOrder.BIG_ENDIAN, (short)(long)pos));
         Consumer<MemorySegment> intInitializer =
-                (base) -> initBytes(base, ints, (addr, pos) -> MemoryAccess.setIntAtIndex_BE(addr, pos, (int)(long)pos));
+                (base) -> initBytes(base, ints, (addr, pos) -> MemoryAccess.setIntAtIndex(addr, pos, ByteOrder.BIG_ENDIAN, (int)(long)pos));
         Consumer<MemorySegment> floatInitializer =
-                (base) -> initBytes(base, floats, (addr, pos) -> MemoryAccess.setFloatAtIndex_BE(addr, pos, (float)(long)pos));
+                (base) -> initBytes(base, floats, (addr, pos) -> MemoryAccess.setFloatAtIndex(addr, pos, ByteOrder.BIG_ENDIAN, (float)(long)pos));
         Consumer<MemorySegment> longInitializer =
-                (base) -> initBytes(base, longs, (addr, pos) -> MemoryAccess.setLongAtIndex_BE(addr, pos, (long)pos));
+                (base) -> initBytes(base, longs, (addr, pos) -> MemoryAccess.setLongAtIndex(addr, pos, ByteOrder.BIG_ENDIAN, (long)pos));
         Consumer<MemorySegment> doubleInitializer =
-                (base) -> initBytes(base, doubles, (addr, pos) -> MemoryAccess.setDoubleAtIndex_BE(addr, pos, (double)(long)pos));
+                (base) -> initBytes(base, doubles, (addr, pos) -> MemoryAccess.setDoubleAtIndex(addr, pos, ByteOrder.BIG_ENDIAN, (double)(long)pos));
 
         Consumer<MemorySegment> byteChecker =
-                (base) -> checkBytes(base, bytes, Function.identity(), MemoryAccess::getByteAtIndex_BE, ByteBuffer::get);
+                (base) -> checkBytes(base, bytes, Function.identity(), (addr, pos) -> MemoryAccess.getByteAtIndex(addr, pos, ByteOrder.BIG_ENDIAN), ByteBuffer::get);
         Consumer<MemorySegment> charChecker =
-                (base) -> checkBytes(base, chars, ByteBuffer::asCharBuffer, MemoryAccess::getCharAtIndex_BE, CharBuffer::get);
+                (base) -> checkBytes(base, chars, ByteBuffer::asCharBuffer, (addr, pos) -> MemoryAccess.getCharAtIndex(addr, pos, ByteOrder.BIG_ENDIAN), CharBuffer::get);
         Consumer<MemorySegment> shortChecker =
-                (base) -> checkBytes(base, shorts, ByteBuffer::asShortBuffer, MemoryAccess::getShortAtIndex_BE, ShortBuffer::get);
+                (base) -> checkBytes(base, shorts, ByteBuffer::asShortBuffer, (addr, pos) -> MemoryAccess.getShortAtIndex(addr, pos, ByteOrder.BIG_ENDIAN), ShortBuffer::get);
         Consumer<MemorySegment> intChecker =
-                (base) -> checkBytes(base, ints, ByteBuffer::asIntBuffer, MemoryAccess::getIntAtIndex_BE, IntBuffer::get);
+                (base) -> checkBytes(base, ints, ByteBuffer::asIntBuffer, (addr, pos) -> MemoryAccess.getIntAtIndex(addr, pos, ByteOrder.BIG_ENDIAN), IntBuffer::get);
         Consumer<MemorySegment> floatChecker =
-                (base) -> checkBytes(base, floats, ByteBuffer::asFloatBuffer, MemoryAccess::getFloatAtIndex_BE, FloatBuffer::get);
+                (base) -> checkBytes(base, floats, ByteBuffer::asFloatBuffer, (addr, pos) -> MemoryAccess.getFloatAtIndex(addr, pos, ByteOrder.BIG_ENDIAN), FloatBuffer::get);
         Consumer<MemorySegment> longChecker =
-                (base) -> checkBytes(base, longs, ByteBuffer::asLongBuffer, MemoryAccess::getLongAtIndex_BE, LongBuffer::get);
+                (base) -> checkBytes(base, longs, ByteBuffer::asLongBuffer, (addr, pos) -> MemoryAccess.getLongAtIndex(addr, pos, ByteOrder.BIG_ENDIAN), LongBuffer::get);
         Consumer<MemorySegment> doubleChecker =
-                (base) -> checkBytes(base, doubles, ByteBuffer::asDoubleBuffer, MemoryAccess::getDoubleAtIndex_BE, DoubleBuffer::get);
+                (base) -> checkBytes(base, doubles, ByteBuffer::asDoubleBuffer, (addr, pos) -> MemoryAccess.getDoubleAtIndex(addr, pos, ByteOrder.BIG_ENDIAN), DoubleBuffer::get);
 
         return new Object[][]{
                 {byteChecker, byteInitializer, bytes},

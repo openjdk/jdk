@@ -75,10 +75,10 @@ private:
   const size_t                     _page_size;
   const size_t                     _object_size_limit;
   const size_t                     _fragmentation_limit;
-
   ZArray<ZPage*>                   _registered_pages;
   ZPage**                          _sorted_pages;
   size_t                           _nselected;
+  size_t                           _forwarding_entries;
   ZRelocationSetSelectorGroupStats _stats;
 
   bool is_disabled();
@@ -99,6 +99,7 @@ public:
 
   ZPage* const* selected() const;
   size_t nselected() const;
+  size_t forwarding_entries() const;
 
   const ZRelocationSetSelectorGroupStats& stats() const;
 };
@@ -109,6 +110,7 @@ private:
   ZRelocationSetSelectorGroup _medium;
   ZRelocationSetSelectorGroup _large;
 
+  size_t forwarding_entries() const;
   size_t total() const;
   size_t empty() const;
   size_t compacting_from() const;

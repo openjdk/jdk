@@ -86,7 +86,6 @@ jfieldID graphicsConfigID;
 extern jobject currentX11InputMethodInstance;
 extern Boolean awt_x11inputmethod_lookupString(XKeyPressedEvent *, KeySym *);
 Boolean awt_UseType4Patch = False;
-/* how about HEADLESS */
 Boolean awt_ServerDetected = False;
 Boolean awt_XKBDetected = False;
 Boolean awt_IsXsun = False;

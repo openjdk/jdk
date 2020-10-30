@@ -88,7 +88,7 @@ public abstract class MappedByteBuffer
     // determines the behavior of force operations.
     private final boolean isSync;
 
-    static ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
+    static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 
     // This should only be invoked by the DirectByteBuffer constructors
     //

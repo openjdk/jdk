@@ -29,6 +29,7 @@
 // you don't use their members directly. This way you don't need to include the
 // complex header files that have the full definitions of these enums.
 
+enum class JVMFlagOrigin : int;
 enum JVMFlagsEnum : int;
 enum class vmSymbolID : int;
 

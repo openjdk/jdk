@@ -579,11 +579,21 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * (see {@link ByteBuffer#isReadOnly()}. Additionally, if this is a native memory segment, the resulting buffer is
      * <em>direct</em> (see {@link ByteBuffer#isDirect()}).
      * <p>
+     * The returned buffer's position (see {@link ByteBuffer#position()} is initially set to zero, while
+     * the returned buffer's capacity and limit (see {@link ByteBuffer#capacity()} and {@link ByteBuffer#limit()}, respectively)
+     * are set to this segment' size (see {@link MemorySegment#byteSize()}). For this reason, a byte buffer cannot be
+     * returned if this segment' size is greater than {@link Integer#MAX_VALUE}.
+     * <p>
      * The life-cycle of the returned buffer will be tied to that of this segment. That means that if the this segment
      * is closed (see {@link MemorySegment#close()}, accessing the returned
      * buffer will throw an {@link IllegalStateException}.
      * <p>
-     * The resulting buffer's byte order is {@link java.nio.ByteOrder#BIG_ENDIAN}; this can be changed using
+     * If this segment is <em>shared</em>, calling certain I/O operations on the resulting buffer might result in
+     * an unspecified exception being thrown. Examples of such problematic operations are {@link FileChannel#read(ByteBuffer)},
+     * {@link FileChannel#write(ByteBuffer)}, {@link java.nio.channels.SocketChannel#read(ByteBuffer)} and
+     * {@link java.nio.channels.SocketChannel#write(ByteBuffer)}.
+     * <p>
+     * Finally, the resulting buffer's byte order is {@link java.nio.ByteOrder#BIG_ENDIAN}; this can be changed using
      * {@link ByteBuffer#order(java.nio.ByteOrder)}.
      *
      * @return a {@link ByteBuffer} view of this memory segment.
@@ -858,8 +868,13 @@ allocateNative(bytesSize, 1);
      * @return a new confined mapped memory segment.
      * @throws IllegalArgumentException if {@code bytesOffset < 0}.
      * @throws IllegalArgumentException if {@code bytesSize < 0}.
-     * @throws UnsupportedOperationException if an unsupported map mode is specified.
+     * @throws UnsupportedOperationException if an unsupported map mode is specified, or if the {@code path} is associated
+     * with a provider that does not support creating file channels.
      * @throws IOException if the specified path does not point to an existing file, or if some other I/O error occurs.
+     * @throws  SecurityException If a security manager is installed and it denies an unspecified permission required by the implementation.
+     * In the case of the default provider, the {@link SecurityManager#checkRead(String)} method is invoked to check
+     * read access if the file is opened for reading. The {@link SecurityManager#checkWrite(String)} method is invoked to check
+     * write access if the file is opened for writing.
      */
     static MemorySegment mapFromPath(Path path, long bytesOffset, long bytesSize, FileChannel.MapMode mapMode) throws IOException {
         return MappedMemorySegmentImpl.makeMappedSegment(path, bytesOffset, bytesSize, mapMode);
