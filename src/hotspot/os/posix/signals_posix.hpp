@@ -25,18 +25,23 @@
 #ifndef OS_POSIX_SIGNALS_POSIX_HPP
 #define OS_POSIX_SIGNALS_POSIX_HPP
 
-#include "memory/allocation.hpp"
-#include "utilities/globalDefinitions.hpp"
+#include "memory/allStatic.hpp"
 
-#include <signal.h>
+// Forward declarations to be independent of the include structure.
 
-// Signal number used to suspend/resume a thread
-// do not use any signal number less than SIGSEGV, see 4355769
-static int SR_signum = SIGUSR2;
+typedef siginfo_t siginfo_t;
+typedef sigset_t sigset_t;
+
+class outputStream;
+class Thread;
+class OSThread;
 
 class PosixSignals : public AllStatic {
 
 public:
+
+  // Signal number used to suspend/resume a thread
+  static int SR_signum;
 
   static bool are_signal_handlers_installed();
   static void install_signal_handlers();

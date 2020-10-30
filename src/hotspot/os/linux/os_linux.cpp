@@ -975,7 +975,7 @@ void os::free_thread(OSThread* osthread) {
   sigset_t current;
   sigemptyset(&current);
   pthread_sigmask(SIG_SETMASK, NULL, &current);
-  assert(!sigismember(&current, SR_signum), "SR signal should not be blocked!");
+  assert(!sigismember(&current, PosixSignals::SR_signum), "SR signal should not be blocked!");
 #endif
 
   // Restore caller's signal mask
@@ -2608,7 +2608,7 @@ void os::print_signal_handlers(outputStream* st, char* buf, size_t buflen) {
   PosixSignals::print_signal_handler(st, SIGPIPE, buf, buflen);
   PosixSignals::print_signal_handler(st, SIGXFSZ, buf, buflen);
   PosixSignals::print_signal_handler(st, SIGILL , buf, buflen);
-  PosixSignals::print_signal_handler(st, SR_signum, buf, buflen);
+  PosixSignals::print_signal_handler(st, PosixSignals::SR_signum, buf, buflen);
   PosixSignals::print_signal_handler(st, SHUTDOWN1_SIGNAL, buf, buflen);
   PosixSignals::print_signal_handler(st, SHUTDOWN2_SIGNAL , buf, buflen);
   PosixSignals::print_signal_handler(st, SHUTDOWN3_SIGNAL , buf, buflen);

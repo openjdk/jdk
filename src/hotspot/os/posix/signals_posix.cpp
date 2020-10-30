@@ -36,6 +36,8 @@
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
 
+#include <signal.h>
+
 // Various signal related mechanism are laid out in the following order:
 //
 // sun.misc.Signal
@@ -83,6 +85,10 @@ int sigflags[NSIG];
 #else
   static PosixSemaphore sr_semaphore;
 #endif
+
+// Signal number used to suspend/resume a thread
+// do not use any signal number less than SIGSEGV, see 4355769
+int PosixSignals::SR_signum = SIGUSR2;
 
 // sun.misc.Signal support
 static Semaphore* sig_semaphore = NULL;
@@ -608,7 +614,7 @@ static void check_signal_handler(int sig) {
     break;
 
   default:
-    if (sig == SR_signum) {
+    if (sig == PosixSignals::SR_signum) {
       jvmHandler = CAST_FROM_FN_PTR(address, (sa_sigaction_t)SR_handler);
     } else {
       return;
@@ -727,7 +733,7 @@ void os::run_periodic_checks() {
     do_signal_check(BREAK_SIGNAL);
   }
 
-  do_signal_check(SR_signum);
+  do_signal_check(PosixSignals::SR_signum);
 }
 
 // Helper function for PosixSignals::print_siginfo_...():
@@ -1436,7 +1442,7 @@ static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context) {
 
       // get current set of blocked signals and unblock resume signal
       pthread_sigmask(SIG_BLOCK, NULL, &suspend_set);
-      sigdelset(&suspend_set, SR_signum);
+      sigdelset(&suspend_set, PosixSignals::SR_signum);
 
       sr_semaphore.signal();
 
@@ -1510,7 +1516,7 @@ int PosixSignals::SR_initialize() {
 }
 
 static int sr_notify(OSThread* osthread) {
-  int status = pthread_kill(osthread->pthread_id(), SR_signum);
+  int status = pthread_kill(osthread->pthread_id(), PosixSignals::SR_signum);
   assert_status(status == 0, status, "pthread_kill");
   return status;
 }
