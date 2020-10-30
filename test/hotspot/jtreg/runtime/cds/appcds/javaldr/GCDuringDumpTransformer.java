@@ -105,7 +105,7 @@ public class GCDuringDumpTransformer implements ClassFileTransformer {
 
     public static void makeGarbage() {
         for (int x=0; x<10; x++) {
-            Object[] a = new Object[40000];
+            Object[] a = new Object[10000];
         }
     }
 

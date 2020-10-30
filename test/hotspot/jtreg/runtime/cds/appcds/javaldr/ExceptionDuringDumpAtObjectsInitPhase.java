@@ -81,6 +81,6 @@ public class ExceptionDuringDumpAtObjectsInitPhase {
                         "-Xlog:cds,class+load",
                         "-Xmx12M",
                         gcLog).shouldNotHaveExitValue(0)
-                              .shouldContain("Out of memory. Please run with a bigger Java heap");
+                              .shouldContain("Out of memory. Please run with a larger Java heap, current MaxHeapSize");
     }
 }
