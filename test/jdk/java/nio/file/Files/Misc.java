@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 6838333 8005566 8032220 8215467
+ * @bug 4313887 6838333 8005566 8032220 8215467 8255576
  * @summary Unit test for miscellenous methods in java.nio.file.Files
  * @library ..
  */
@@ -87,6 +87,13 @@ public class Misc {
      * Tests isHidden
      */
     static void testIsHidden(Path tmpdir) throws IOException {
+        // an empty path must not throw an AIOOB
+        try {
+            isHidden(Path.of(""));
+        } catch (ArrayIndexOutOfBoundsException exception) {
+            throw new AssertionError("8255576", exception);
+        }
+
         assertTrue(!isHidden(tmpdir));
 
         Path file = tmpdir.resolve(".foo");
