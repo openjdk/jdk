@@ -2765,7 +2765,7 @@ void MacroAssembler::safepoint_poll(Label& slow_path, Register thread_reg, bool 
   if (at_return) {
     // Note that when in_nmethod is set, the stack pointer is incremented before the poll. Therefore,
     // we may safely use rsp instead to perform the stack watermark check.
-    cmpq(Address(thread_reg, Thread::polling_word_offset()), in_nmethod ? rsp : rbp);
+    cmpq(in_nmethod ? rsp : rbp, Address(thread_reg, Thread::polling_word_offset()));
     jcc(Assembler::above, slow_path);
     return;
   }
@@ -4084,6 +4084,9 @@ class ControlWord {
       case 1: rc = "round down"; break;
       case 2: rc = "round up  "; break;
       case 3: rc = "chop      "; break;
+      default:
+        rc = NULL; // silence compiler warnings
+        fatal("Unknown rounding control: %d", rounding_control());
     };
     // precision control
     const char* pc;
@@ -4092,6 +4095,9 @@ class ControlWord {
       case 1: pc = "reserved"; break;
       case 2: pc = "53 bits "; break;
       case 3: pc = "64 bits "; break;
+      default:
+        pc = NULL; // silence compiler warnings
+        fatal("Unknown precision control: %d", precision_control());
     };
     // flags
     char f[9];

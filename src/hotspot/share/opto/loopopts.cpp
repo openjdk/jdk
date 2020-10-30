@@ -1038,7 +1038,9 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
 
   // Do not clone the trip counter through on a CountedLoop
   // (messes up the canonical shape).
-  if( n_blk->is_CountedLoop() && n->Opcode() == Op_AddI ) return n;
+  if ((n_blk->is_CountedLoop() || (n_blk->is_Loop() && n_blk->as_Loop()->is_transformed_long_loop())) && n->Opcode() == Op_AddI) {
+    return n;
+  }
 
   // Check for having no control input; not pinned.  Allow
   // dominating control.

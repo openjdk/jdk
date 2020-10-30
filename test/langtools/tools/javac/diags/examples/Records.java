@@ -22,7 +22,8 @@
  */
 
 // key: compiler.misc.feature.records
-// key: compiler.warn.preview.feature.use.plural
-// options: --enable-preview -source ${jdk.version} -Xlint:preview
+// key: compiler.err.feature.not.supported.in.source.plural
+// key: compiler.warn.source.no.system.modules.path
+// options: -source 15
 
 record R() {}

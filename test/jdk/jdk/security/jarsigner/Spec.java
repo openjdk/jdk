@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8056174
+ * @bug 8056174 8242068 8255536
  * @summary Make sure JarSigner impl conforms to spec
  * @library /test/lib
  * @modules java.base/sun.security.tools.keytool
@@ -70,6 +70,9 @@ public class Spec {
         sun.security.tools.keytool.Main.main(
                 ("-keystore ks -storepass changeit -keypass changeit -dname" +
                         " CN=DSA -alias d -genkeypair -keyalg dsa").split(" "));
+        sun.security.tools.keytool.Main.main(
+                ("-keystore ks -storepass changeit -keypass changeit -dname" +
+                        " CN=Ed25519 -alias e -genkeypair -keyalg Ed25519").split(" "));
 
         char[] pass = "changeit".toCharArray();
 
@@ -125,6 +128,7 @@ public class Spec {
         iae(()->b1.setProperty("internalsf", "Hello"));
         npe(()->b1.setProperty("sectionsonly", null));
         iae(()->b1.setProperty("sectionsonly", "OK"));
+        npe(()->b1.setProperty("sectionsonly", null));
         npe(()->b1.setProperty("altsigner", null));
         npe(()->b1.eventHandler(null));
 
@@ -202,6 +206,14 @@ public class Spec {
         assertTrue(JarSigner.Builder
                 .getDefaultSignatureAlgorithm(kpg.generateKeyPair().getPrivate())
                 .equals("SHA512withECDSA"));
+
+        // altsigner does not support modern algorithms
+        JarSigner.Builder b4 = new JarSigner.Builder(
+                (PrivateKey)ks.getKey("e", pass),
+                CertificateFactory.getInstance("X.509")
+                        .generateCertPath(Arrays.asList(ks.getCertificateChain("e"))));
+        b4.setProperty("altsigner", "MyContentSigner");
+        iae(() -> b4.build());
     }
 
     interface RunnableWithException {

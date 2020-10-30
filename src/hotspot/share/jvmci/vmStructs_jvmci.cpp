@@ -33,6 +33,7 @@
 #include "jvmci/vmStructs_jvmci.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "runtime/deoptimization.hpp"
+#include "runtime/flags/jvmFlag.hpp"
 #include "runtime/sharedRuntime.hpp"
 #if INCLUDE_G1GC
 #include "gc/g1/g1CardTable.hpp"
@@ -391,6 +392,7 @@
   declare_constant(HeapWordSize)                                          \
   declare_constant(InvocationEntryBci)                                    \
   declare_constant(LogKlassAlignmentInBytes)                              \
+  declare_constant(JVMCINMethodData::SPECULATION_LENGTH_BITS)             \
                                                                           \
   declare_constant(JVM_ACC_WRITTEN_FLAGS)                                 \
   declare_constant(JVM_ACC_MONITOR_MATCH)                                 \
@@ -407,6 +409,7 @@
   declare_preprocessor_constant("JVM_ACC_ENUM", JVM_ACC_ENUM)             \
   declare_preprocessor_constant("JVM_ACC_SYNTHETIC", JVM_ACC_SYNTHETIC)   \
   declare_preprocessor_constant("JVM_ACC_INTERFACE", JVM_ACC_INTERFACE)   \
+  declare_preprocessor_constant("JVM_ACC_FIELD_INITIALIZED_FINAL_UPDATE", JVM_ACC_FIELD_INITIALIZED_FINAL_UPDATE) \
                                                                           \
   declare_constant(JVM_CONSTANT_Utf8)                                     \
   declare_constant(JVM_CONSTANT_Unicode)                                  \

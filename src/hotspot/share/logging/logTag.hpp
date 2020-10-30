@@ -51,6 +51,7 @@
   LOG_TAG(classhisto) \
   LOG_TAG(cleanup) \
   LOG_TAG(codecache) \
+  NOT_PRODUCT(LOG_TAG(codestrings)) \
   LOG_TAG(compaction) \
   LOG_TAG(compilation) \
   LOG_TAG(condy) \
