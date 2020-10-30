@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  *
  * The test launches the "echo service" with arguments to instruct the
  * service to close the channel after it receives a small message. The
- * service then delays/lingers for 15 seconds before shuting down. To
+ * service then delays/lingers for 15 seconds before shutting down. To
  * prove that the close works we check that we see EOF (meaning the
  * peer has closed the connection) in less than 15 seconds.
  */
@@ -54,8 +54,7 @@ public class CloseTest {
         service_args[0] = String.valueOf(msg.length());
         service_args[1] = String.valueOf( Utils.adjustTimeout(15*1000) );
 
-
-        SocketChannel sc = Launcher.launchWithSocketChannel("EchoService", service_args);
+        SocketChannel sc = Launcher.launchWithInetSocketChannel("EchoService", null, service_args);
 
         // send message - service will echo the message and close the connection.
 

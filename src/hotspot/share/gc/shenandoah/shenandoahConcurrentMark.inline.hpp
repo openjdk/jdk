@@ -133,7 +133,7 @@ inline void ShenandoahConcurrentMark::do_chunked_array_start(ShenandoahObjToScan
       assert(pushed, "overflow queue should always succeed pushing");
     }
 
-    // Split out tasks, as suggested in ObjArrayChunkedTask docs. Record the last
+    // Split out tasks, as suggested in ShenandoahMarkTask docs. Record the last
     // successful right boundary to figure out the irregular tail.
     while ((1 << pow) > (int)ObjArrayMarkingStride &&
            (chunk*2 < ShenandoahMarkTask::chunk_size())) {
@@ -166,7 +166,7 @@ inline void ShenandoahConcurrentMark::do_chunked_array(ShenandoahObjToScanQueue*
 
   assert (ObjArrayMarkingStride > 0, "sanity");
 
-  // Split out tasks, as suggested in ObjArrayChunkedTask docs. Avoid pushing tasks that
+  // Split out tasks, as suggested in ShenandoahMarkTask docs. Avoid pushing tasks that
   // are known to start beyond the array.
   while ((1 << pow) > (int)ObjArrayMarkingStride && (chunk*2 < ShenandoahMarkTask::chunk_size())) {
     pow--;
