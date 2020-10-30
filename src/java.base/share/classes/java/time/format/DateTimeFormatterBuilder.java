@@ -1485,8 +1485,11 @@ public final class DateTimeFormatterBuilder {
      */
     public DateTimeFormatterBuilder appendDayPeriodText(TextStyle style) {
         Objects.requireNonNull(style, "style");
-        if (style != TextStyle.FULL && style != TextStyle.SHORT && style != TextStyle.NARROW) {
-            throw new IllegalArgumentException("Style must be either full, short, or narrow");
+        switch (style) {
+            // Stand-alone is not applicable. Convert to standard text style
+            case FULL_STANDALONE -> style = TextStyle.FULL;
+            case SHORT_STANDALONE -> style = TextStyle.SHORT;
+            case NARROW_STANDALONE -> style = TextStyle.NARROW;
         }
         appendInternal(new DayPeriodPrinterParser(style));
         return this;
@@ -1866,7 +1869,7 @@ public final class DateTimeFormatterBuilder {
                     }
                 } else if (cur == 'B') {
                     switch (count) {
-                        case 1, 2, 3 -> appendDayPeriodText(TextStyle.SHORT);
+                        case 1 -> appendDayPeriodText(TextStyle.SHORT);
                         case 4 -> appendDayPeriodText(TextStyle.FULL);
                         case 5 -> appendDayPeriodText(TextStyle.NARROW);
                         default -> throw new IllegalArgumentException("Too many pattern letters: " + cur);
@@ -5091,7 +5094,7 @@ public final class DateTimeFormatterBuilder {
 
         @Override
         public String toString() {
-            return "Text(DayPeriod," + textStyle + ")";
+            return "DayPeriod(" + textStyle + ")";
         }
 
         /**
@@ -5133,6 +5136,7 @@ public final class DateTimeFormatterBuilder {
     /**
      * DayPeriod class that represents a
      * <a href="https://www.unicode.org/reports/tr35/tr35-dates.html#dayPeriods">DayPeriod</a> defined in CLDR.
+     * This is a value-based class.
      */
     static final class DayPeriod {
         /**
@@ -5169,7 +5173,7 @@ public final class DateTimeFormatterBuilder {
          * @param to "to" in minute-of-day
          * @param index day period type index
          */
-        DayPeriod(long from, long to, long index) {
+        private DayPeriod(long from, long to, long index) {
             this.from = from;
             this.to = to;
             this.index = index;
@@ -5249,7 +5253,7 @@ public final class DateTimeFormatterBuilder {
                 LocaleResources lr = LocaleProviderAdapter.getResourceBundleBased()
                         .getLocaleResources(CalendarDataUtility.findRegionOverride(l));
                 String dayPeriodRules = lr.getRules()[1];
-                final Map<DayPeriod, Long> pm = new ConcurrentHashMap<>();
+                final Map<DayPeriod, Long> periodMap = new ConcurrentHashMap<>();
                 Arrays.stream(dayPeriodRules.split(";"))
                     .forEach(rule -> {
                         Matcher m = RULE.matcher(rule);
@@ -5260,7 +5264,7 @@ public final class DateTimeFormatterBuilder {
                             if (to == null) {
                                 to = from;
                             }
-                            pm.putIfAbsent(
+                            periodMap.putIfAbsent(
                                 new DayPeriod(
                                     Long.parseLong(from) * 60,
                                     Long.parseLong(to) * 60,
@@ -5270,9 +5274,9 @@ public final class DateTimeFormatterBuilder {
                     });
 
                 // add am/pm
-                pm.putIfAbsent(new DayPeriod(0, 720, 0), 0L);
-                pm.putIfAbsent(new DayPeriod(720, 1_440, 1), 1L);
-                return pm;
+                periodMap.putIfAbsent(new DayPeriod(0, 720, 0), 0L);
+                periodMap.putIfAbsent(new DayPeriod(720, 1_440, 1), 1L);
+                return periodMap;
             });
         }
 
@@ -5286,7 +5290,9 @@ public final class DateTimeFormatterBuilder {
             return getDayPeriodMap(locale).keySet().stream()
                 .filter(dp -> dp.getIndex() == index)
                 .findAny()
-                .orElseThrow();
+                .orElseThrow(() -> new DateTimeException(
+                    "DayPeriod could not be determined for the locale " +
+                    locale + " at type index " + index));
         }
 
         @Override
@@ -5302,6 +5308,12 @@ public final class DateTimeFormatterBuilder {
         @Override
         public int hashCode() {
             return Objects.hash(from, to, index);
+        }
+
+        @Override
+        public String toString() {
+            return "DayPeriod(%02d:%02d".formatted(from / 60, from % 60) +
+                    (from == to ? ")" : "-%02d:%02d)".formatted(to / 60, to % 60));
         }
     }
 }

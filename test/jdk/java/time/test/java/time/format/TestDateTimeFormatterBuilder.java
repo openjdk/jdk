@@ -81,6 +81,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.time.format.FormatStyle;
+import java.time.format.ResolverStyle;
 import java.time.format.SignStyle;
 import java.time.format.TextStyle;
 import java.time.temporal.ChronoField;
@@ -537,7 +538,7 @@ public class TestDateTimeFormatterBuilder {
     public void test_appendDayPeriodText_1arg() throws Exception {
         builder.appendDayPeriodText(TextStyle.FULL);
         DateTimeFormatter f = builder.toFormatter();
-        assertEquals(f.toString(), "Text(DayPeriod,FULL)");
+        assertEquals(f.toString(), "DayPeriod(FULL)");
     }
 
     @Test(expectedExceptions=NullPointerException.class)
@@ -667,46 +668,77 @@ public class TestDateTimeFormatterBuilder {
     @DataProvider(name="dayPeriodParseInvalid")
     Object[][] data_dayPeriodParseInvalid() {
         return new Object[][] {
-                {TextStyle.FULL, Locale.US, "00:01 midnight"},
-                {TextStyle.FULL, Locale.US, "06:01 at night"},
-                {TextStyle.FULL, Locale.US, "05:59 in the morning"},
-                {TextStyle.FULL, Locale.US, "11:59 noon"},
-                {TextStyle.FULL, Locale.US, "18:00 in the afternoon"},
-                {TextStyle.FULL, Locale.US, "17:59 in the evening"},
-                {TextStyle.NARROW, Locale.US, "00:01 mi"},
-                {TextStyle.NARROW, Locale.US, "06:01 at night"},
-                {TextStyle.NARROW, Locale.US, "05:59 in the morning"},
-                {TextStyle.NARROW, Locale.US, "11:59 n"},
-                {TextStyle.NARROW, Locale.US, "18:00 in the afternoon"},
-                {TextStyle.NARROW, Locale.US, "17:59 in the evening"},
+                {TextStyle.FULL, ResolverStyle.SMART, Locale.US, "00:01 midnight", "00:00"},
+                {TextStyle.FULL, ResolverStyle.SMART, Locale.US, "06:01 at night", "21:00-06:00"},
+                {TextStyle.FULL, ResolverStyle.SMART, Locale.US, "05:59 in the morning", "06:00-12:00"},
+                {TextStyle.FULL, ResolverStyle.SMART, Locale.US, "11:59 noon", "12:00"},
+                {TextStyle.FULL, ResolverStyle.SMART, Locale.US, "18:00 in the afternoon", "12:00-18:00"},
+                {TextStyle.FULL, ResolverStyle.SMART, Locale.US, "17:59 in the evening", "18:00-21:00"},
+                {TextStyle.NARROW, ResolverStyle.SMART, Locale.US, "00:01 mi", "00:00"},
+                {TextStyle.NARROW, ResolverStyle.SMART, Locale.US, "06:01 at night", "21:00-06:00"},
+                {TextStyle.NARROW, ResolverStyle.SMART, Locale.US, "05:59 in the morning", "06:00-12:00"},
+                {TextStyle.NARROW, ResolverStyle.SMART, Locale.US, "11:59 n", "12:00"},
+                {TextStyle.NARROW, ResolverStyle.SMART, Locale.US, "18:00 in the afternoon", "12:00-18:00"},
+                {TextStyle.NARROW, ResolverStyle.SMART, Locale.US, "17:59 in the evening", "18:00-21:00"},
 
-                {TextStyle.FULL, Locale.JAPAN, "00:01 \u771f\u591c\u4e2d"},
-                {TextStyle.FULL, Locale.JAPAN, "04:00 \u591c\u4e2d"},
-                {TextStyle.FULL, Locale.JAPAN, "03:59 \u671d"},
-                {TextStyle.FULL, Locale.JAPAN, "12:01 \u6b63\u5348"},
-                {TextStyle.FULL, Locale.JAPAN, "16:00 \u663c"},
-                {TextStyle.FULL, Locale.JAPAN, "19:01 \u5915\u65b9"},
-                {TextStyle.FULL, Locale.JAPAN, "23:00 \u591c"},
-                {TextStyle.NARROW, Locale.JAPAN, "00:01 \u771f\u591c\u4e2d"},
-                {TextStyle.NARROW, Locale.JAPAN, "04:00 \u591c\u4e2d"},
-                {TextStyle.NARROW, Locale.JAPAN, "03:59 \u671d"},
-                {TextStyle.NARROW, Locale.JAPAN, "12:01 \u6b63\u5348"},
-                {TextStyle.NARROW, Locale.JAPAN, "16:00 \u663c"},
-                {TextStyle.NARROW, Locale.JAPAN, "19:01 \u5915\u65b9"},
-                {TextStyle.NARROW, Locale.JAPAN, "23:00 \u591c"},
+                {TextStyle.FULL, ResolverStyle.SMART, Locale.JAPAN, "00:01 \u771f\u591c\u4e2d", "00:00"},
+                {TextStyle.FULL, ResolverStyle.SMART, Locale.JAPAN, "04:00 \u591c\u4e2d", "23:00-04:00"},
+                {TextStyle.FULL, ResolverStyle.SMART, Locale.JAPAN, "03:59 \u671d", "04:00-12:00"},
+                {TextStyle.FULL, ResolverStyle.SMART, Locale.JAPAN, "12:01 \u6b63\u5348", "12:00"},
+                {TextStyle.FULL, ResolverStyle.SMART, Locale.JAPAN, "16:00 \u663c", "12:00-16:00"},
+                {TextStyle.FULL, ResolverStyle.SMART, Locale.JAPAN, "19:01 \u5915\u65b9", "16:00-19:00"},
+                {TextStyle.FULL, ResolverStyle.SMART, Locale.JAPAN, "23:00 \u591c", "19:00-23:00"},
+                {TextStyle.NARROW, ResolverStyle.SMART, Locale.JAPAN, "00:01 \u771f\u591c\u4e2d", "00:00"},
+                {TextStyle.NARROW, ResolverStyle.SMART, Locale.JAPAN, "04:00 \u591c\u4e2d", "23:00-04:00"},
+                {TextStyle.NARROW, ResolverStyle.SMART, Locale.JAPAN, "03:59 \u671d", "04:00-12:00"},
+                {TextStyle.NARROW, ResolverStyle.SMART, Locale.JAPAN, "12:01 \u6b63\u5348", "12:00"},
+                {TextStyle.NARROW, ResolverStyle.SMART, Locale.JAPAN, "16:00 \u663c", "12:00-16:00"},
+                {TextStyle.NARROW, ResolverStyle.SMART, Locale.JAPAN, "19:01 \u5915\u65b9", "16:00-19:00"},
+                {TextStyle.NARROW, ResolverStyle.SMART, Locale.JAPAN, "23:00 \u591c", "19:00-23:00"},
+
+                {TextStyle.FULL, ResolverStyle.LENIENT, Locale.US, "00:01 midnight", "00:00"},
+                {TextStyle.FULL, ResolverStyle.LENIENT, Locale.US, "06:01 at night", "21:00-06:00"},
+                {TextStyle.FULL, ResolverStyle.LENIENT, Locale.US, "05:59 in the morning", "06:00-12:00"},
+                {TextStyle.FULL, ResolverStyle.LENIENT, Locale.US, "11:59 noon", "12:00"},
+                {TextStyle.FULL, ResolverStyle.LENIENT, Locale.US, "18:00 in the afternoon", "12:00-18:00"},
+                {TextStyle.FULL, ResolverStyle.LENIENT, Locale.US, "17:59 in the evening", "18:00-21:00"},
+                {TextStyle.NARROW, ResolverStyle.LENIENT, Locale.US, "00:01 mi", "00:00"},
+                {TextStyle.NARROW, ResolverStyle.LENIENT, Locale.US, "06:01 at night", "21:00-06:00"},
+                {TextStyle.NARROW, ResolverStyle.LENIENT, Locale.US, "05:59 in the morning", "06:00-12:00"},
+                {TextStyle.NARROW, ResolverStyle.LENIENT, Locale.US, "11:59 n", "12:00"},
+                {TextStyle.NARROW, ResolverStyle.LENIENT, Locale.US, "18:00 in the afternoon", "12:00-18:00"},
+                {TextStyle.NARROW, ResolverStyle.LENIENT, Locale.US, "17:59 in the evening", "18:00-21:00"},
+
+                {TextStyle.FULL, ResolverStyle.LENIENT, Locale.JAPAN, "00:01 \u771f\u591c\u4e2d", "00:00"},
+                {TextStyle.FULL, ResolverStyle.LENIENT, Locale.JAPAN, "04:00 \u591c\u4e2d", "23:00-04:00"},
+                {TextStyle.FULL, ResolverStyle.LENIENT, Locale.JAPAN, "03:59 \u671d", "04:00-12:00"},
+                {TextStyle.FULL, ResolverStyle.LENIENT, Locale.JAPAN, "12:01 \u6b63\u5348", "12:00"},
+                {TextStyle.FULL, ResolverStyle.LENIENT, Locale.JAPAN, "16:00 \u663c", "12:00-16:00"},
+                {TextStyle.FULL, ResolverStyle.LENIENT, Locale.JAPAN, "19:01 \u5915\u65b9", "16:00-19:00"},
+                {TextStyle.FULL, ResolverStyle.LENIENT, Locale.JAPAN, "23:00 \u591c", "19:00-23:00"},
+                {TextStyle.NARROW, ResolverStyle.LENIENT, Locale.JAPAN, "00:01 \u771f\u591c\u4e2d", "00:00"},
+                {TextStyle.NARROW, ResolverStyle.LENIENT, Locale.JAPAN, "04:00 \u591c\u4e2d", "23:00-04:00"},
+                {TextStyle.NARROW, ResolverStyle.LENIENT, Locale.JAPAN, "03:59 \u671d", "04:00-12:00"},
+                {TextStyle.NARROW, ResolverStyle.LENIENT, Locale.JAPAN, "12:01 \u6b63\u5348", "12:00"},
+                {TextStyle.NARROW, ResolverStyle.LENIENT, Locale.JAPAN, "16:00 \u663c", "12:00-16:00"},
+                {TextStyle.NARROW, ResolverStyle.LENIENT, Locale.JAPAN, "19:01 \u5915\u65b9", "16:00-19:00"},
+                {TextStyle.NARROW, ResolverStyle.LENIENT, Locale.JAPAN, "23:00 \u591c", "19:00-23:00"},
         };
     }
     @Test (dataProvider="dayPeriodParseInvalid")
-    public void test_dayPeriodParseInvalid(TextStyle ts, Locale l, String dayPeriod) throws Exception {
+    public void test_dayPeriodParseInvalid(TextStyle ts, ResolverStyle rs, Locale l, String dayPeriod, String periodRange) throws Exception {
         try {
             builder.append(ISO_LOCAL_TIME).appendLiteral(' ').appendDayPeriodText(ts)
                     .toFormatter()
                     .withLocale(l)
                     .parse(dayPeriod);
-            throw new RuntimeException("DateTimeParseException should be thrown");
+            if (rs != ResolverStyle.LENIENT) {
+                throw new RuntimeException("DateTimeParseException should be thrown");
+            }
         } catch (DateTimeParseException e) {
             assertEquals(e.getCause().getMessage(),
-                    "Conflict found: " + HOUR_OF_DAY + " conflict with day period");
+                    "Conflict found: Resolved time " + dayPeriod.substring(0, 5) + " conflicts with " +
+                    "DayPeriod(" + periodRange + ")");
         }
     }
 
@@ -977,11 +1009,9 @@ public class TestDateTimeFormatterBuilder {
             {"ww", "Localized(WeekOfWeekBasedYear,2)"},
             {"W", "Localized(WeekOfMonth,1)"},
 
-            {"B", "Text(DayPeriod,SHORT)"},
-            {"BB", "Text(DayPeriod,SHORT)"},
-            {"BBB", "Text(DayPeriod,SHORT)"},
-            {"BBBB", "Text(DayPeriod,FULL)"},
-            {"BBBBB", "Text(DayPeriod,NARROW)"},
+            {"B", "DayPeriod(SHORT)"},
+            {"BBBB", "DayPeriod(FULL)"},
+            {"BBBBB", "DayPeriod(NARROW)"},
         };
     }
 
@@ -1058,6 +1088,8 @@ public class TestDateTimeFormatterBuilder {
             {"www"},
             {"WW"},
 
+            {"BB"},
+            {"BBB"},
             {"BBBBBB"},
         };
     }

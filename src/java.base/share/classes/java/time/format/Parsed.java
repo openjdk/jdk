@@ -344,12 +344,14 @@ final class Parsed implements TemporalAccessor {
             if (old != null && old.longValue() != changeValue.longValue()) {
                 throw new DateTimeException("Conflict found: " + changeField + " " + old +
                         " differs from " + changeField + " " + changeValue +
-                        " while resolving  " + dayPeriod);
+                        " while resolving " + dayPeriod);
             }
-            long mod = fieldValues.get(HOUR_OF_DAY) * 60 +
-                    (fieldValues.containsKey(MINUTE_OF_HOUR) ? fieldValues.get(MINUTE_OF_HOUR) : 0);
+            long hod = fieldValues.get(HOUR_OF_DAY);
+            long moh = fieldValues.containsKey(MINUTE_OF_HOUR) ? fieldValues.get(MINUTE_OF_HOUR) : 0;
+            long mod =  hod * 60 + moh;
             if (!dayPeriod.includes(mod)) {
-                throw new DateTimeException("Conflict found: " + changeField + " conflict with day period");
+                throw new DateTimeException("Conflict found: Resolved time %02d:%02d".formatted(hod, moh) +
+                        " conflicts with " + dayPeriod);
             }
         }
     }
