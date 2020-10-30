@@ -32,9 +32,10 @@ class PretouchTask : public AbstractGangTask {
   char* const _start_addr;
   char* const _end_addr;
   size_t _page_size;
+  size_t _chunk_size;
 
 public:
-  PretouchTask(const char* task_name, char* start_address, char* end_address, size_t page_size);
+  PretouchTask(const char* task_name, char* start_address, char* end_address, size_t page_size, size_t chunk_size);
 
   virtual void work(uint worker_id);
 
