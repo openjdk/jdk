@@ -29,7 +29,6 @@
  * @library ../../../regtesthelpers
  * @build Util
  * @run main/othervm -Dsun.java2d.uiScale=1 bug6796710
- * @run main/othervm -Dsun.java2d.uiScale=2 bug6796710
  */
 
 import java.awt.BorderLayout;
