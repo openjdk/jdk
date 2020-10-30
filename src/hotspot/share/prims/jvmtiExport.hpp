@@ -197,8 +197,7 @@ class JvmtiExport : public AllStatic {
                                      methodHandle& mh,
                                      JvmtiThreadState *state,
                                      bool exception_exit,
-                                     frame& current_frame,
-                                     Handle& result,
+                                     frame current_frame,
                                      jvalue& value);
 
  public:

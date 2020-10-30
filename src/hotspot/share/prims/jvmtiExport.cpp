@@ -1564,17 +1564,7 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
   HandleMark hm(thread);
   methodHandle mh(thread, method);
 
-  EVT_TRIG_TRACE(JVMTI_EVENT_METHOD_EXIT, ("[%s] Trg Method Exit triggered %s.%s",
-                     JvmtiTrace::safe_get_thread_name(thread),
-                     (mh() == NULL) ? "NULL" : mh()->klass_name()->as_C_string(),
-                     (mh() == NULL) ? "NULL" : mh()->name()->as_C_string() ));
-
   JvmtiThreadState *state = thread->jvmti_thread_state();
-  if (state == NULL || !state->is_interp_only_mode()) {
-    // for any thread that actually wants method exit, interp_only_mode is set
-    return;
-  }
-
   // return a flag when a method terminates by throwing an exception
   // i.e. if an exception is thrown and it's not caught by the current method
   bool exception_exit = state->is_exception_detected() && !state->is_exception_caught();
@@ -1592,20 +1582,17 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
       BasicType type = current_frame.interpreter_frame_result(&oop_result, &value);
       if (is_reference_type(type)) {
         result = Handle(thread, oop_result);
+        value.l = JNIHandles::make_local(thread, result());
       }
     }
   }
 
-  if (exception_exit) {
-    post_method_exit_inner(thread, mh, state, exception_exit, current_frame, result, value);
-  } else {
-    // Deferred transition to VM, so we can stash away the return oop before GC
-    // Note that this transition is not needed when throwing an exception, because
-    // there is no oop to retain.
-    JRT_BLOCK
-      post_method_exit_inner(thread, mh, state, exception_exit, current_frame, result, value);
-    JRT_BLOCK_END
-  }
+  // Deferred transition to VM, so we can stash away the return oop before GC
+  // Note that this transition is not needed when throwing an exception, because
+  // there is no oop to retain.
+  JRT_BLOCK
+    post_method_exit_inner(thread, mh, state, exception_exit, current_frame, value);
+  JRT_BLOCK_END
 
   if (result.not_null() && !mh->is_native()) {
     // We have to restore the oop on the stack for interpreter frames
@@ -1617,9 +1604,18 @@ void JvmtiExport::post_method_exit_inner(JavaThread* thread,
                                          methodHandle& mh,
                                          JvmtiThreadState *state,
                                          bool exception_exit,
-                                         frame& current_frame,
-                                         Handle& result,
+                                         frame current_frame,
                                          jvalue& value) {
+  EVT_TRIG_TRACE(JVMTI_EVENT_METHOD_EXIT, ("[%s] Trg Method Exit triggered %s.%s",
+                                           JvmtiTrace::safe_get_thread_name(thread),
+                                           (mh() == NULL) ? "NULL" : mh()->klass_name()->as_C_string(),
+                                           (mh() == NULL) ? "NULL" : mh()->name()->as_C_string() ));
+
+  if (state == NULL || !state->is_interp_only_mode()) {
+    // for any thread that actually wants method exit, interp_only_mode is set
+    return;
+  }
+
   if (state->is_enabled(JVMTI_EVENT_METHOD_EXIT)) {
     JvmtiEnvThreadStateIterator it(state);
     for (JvmtiEnvThreadState* ets = it.first(); ets != NULL; ets = it.next(ets)) {
@@ -1631,9 +1627,6 @@ void JvmtiExport::post_method_exit_inner(JavaThread* thread,
 
         JvmtiEnv *env = ets->get_env();
         JvmtiMethodEventMark jem(thread, mh);
-        if (result.not_null()) {
-          value.l = JNIHandles::make_local(thread, result());
-        }
         JvmtiJavaThreadEventTransition jet(thread);
         jvmtiEventMethodExit callback = env->callbacks()->MethodExit;
         if (callback != NULL) {
@@ -1825,7 +1818,9 @@ void JvmtiExport::notice_unwind_due_to_exception(JavaThread *thread, Method* met
       if(state->is_interp_only_mode()) {
         // method exit and frame pop events are posted only in interp mode.
         // When these events are enabled code should be in running in interp mode.
-        JvmtiExport::post_method_exit(thread, method, thread->last_frame());
+        jvalue no_value;
+        no_value.j = 0L;
+        JvmtiExport::post_method_exit_inner(thread, mh, state, true, thread->last_frame(), no_value);
         // The cached cur_stack_depth might have changed from the
         // operations of frame pop or method exit. We are not 100% sure
         // the cached cur_stack_depth is still valid depth so invalidate
