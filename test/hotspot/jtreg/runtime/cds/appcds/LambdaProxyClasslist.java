@@ -73,5 +73,12 @@ public class LambdaProxyClasslist {
         TestCommon.list("LambHello",
                         "@lambda-proxy LambHello run ()Ljava/lang/Runnable; ()V REF_invokeStatic LambHello lambda$doTest$0 ()V ()V "));
     out.shouldHaveExitValue(0);
+
+    // 6. Error on invalid @lambda-proxy tag
+    out = TestCommon.dump(appJar,
+        TestCommon.list("LambHello",
+                        "@lambda-proxy: LambHello run ()Ljava/lang/Runnable; ()V REF_invokeStatic LambHello lambda$doTest$0 ()V ()V"));
+    out.shouldContain("Invalid @ tag at the beginning of line \"@lambda-proxy:\" line #2")
+       .shouldHaveExitValue(1);
   }
 }
