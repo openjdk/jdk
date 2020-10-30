@@ -250,13 +250,15 @@ public:
       _bs_nm(BarrierSet::barrier_set()->barrier_set_nmethod()) {}
 
   virtual void do_nmethod(nmethod* nm) {
-    assert(!ClassUnloading, "Only used if class unloading is turned off");
+    if (!ClassUnloading) {
+      // ClassUnloading is turned off, all nmethods are considered strong,
+      // not only those on the call stacks. The heap iteration might happen
+      // before the concurrent processign of the code cache, make sure that
+      // all nmethods have been processed before visiting the oops.
+      _bs_nm->nmethod_entry_barrier(nm);
+    }
 
-    // ClassUnloading is turned off, all nmethods are considered strong,
-    // not only those on the call stacks. The heap iteration might happen
-    // before the concurrent processign of the code cache, make sure that
-    // all nmethods have been processed before visiting the oops.
-    _bs_nm->nmethod_entry_barrier(nm);
+    assert(!_bs_nm->is_armed(nm), "Must have been processed before oops are visited");
 
     ZNMethod::nmethod_oops_do(nm, _cl);
   }
@@ -264,27 +266,16 @@ public:
 
 class ZHeapIteratorThreadClosure : public ThreadClosure {
 private:
-  OopClosure* const _cl;
-
-  class NMethodVisitor : public CodeBlobToOopClosure {
-  public:
-    NMethodVisitor(OopClosure* cl) :
-        CodeBlobToOopClosure(cl, false /* fix_oop_relocations */) {}
-
-    void do_code_blob(CodeBlob* cb) {
-      assert(!cb->is_nmethod() || !ZNMethod::is_armed(cb->as_nmethod()),
-          "NMethods on stack should have been fixed and disarmed");
-
-      CodeBlobToOopClosure::do_code_blob(cb);
-    }
-  };
+  OopClosure* const        _cl;
+  CodeBlobToNMethodClosure _cb_cl;
 
 public:
-  ZHeapIteratorThreadClosure(OopClosure* cl) : _cl(cl) {}
+  ZHeapIteratorThreadClosure(OopClosure* cl, NMethodClosure* nm_cl) :
+      _cl(cl),
+      _cb_cl(nm_cl) {}
 
   void do_thread(Thread* thread) {
-    NMethodVisitor code_cl(_cl);
-    thread->oops_do(_cl, &code_cl);
+    thread->oops_do(_cl, &_cb_cl);
   }
 };
 
@@ -292,7 +283,7 @@ void ZHeapIterator::push_strong_roots(const ZHeapIteratorContext& context) {
   ZHeapIteratorRootOopClosure<false /* Weak */> cl(context);
   ZHeapIteratorCLDCLosure cld_cl(&cl);
   ZHeapIteratorNMethodClosure nm_cl(&cl);
-  ZHeapIteratorThreadClosure thread_cl(&cl);
+  ZHeapIteratorThreadClosure thread_cl(&cl, &nm_cl);
 
   _concurrent_roots.apply(&cl,
                           &cld_cl,
