@@ -171,15 +171,6 @@ class MetadataVisitingOopIterateClosure: public ClaimMetadataVisitingOopIterateC
   MetadataVisitingOopIterateClosure(ReferenceDiscoverer* rd = NULL);
 };
 
-class ThreadToOopClosure : public ThreadClosure {
-private:
-  OopClosure* const _cl;
-
-public:
-  ThreadToOopClosure(OopClosure* cl) : _cl(cl) {}
-  void do_thread(Thread* thread);
-};
-
 // ObjectClosure is used for iterating through an object space
 
 class ObjectClosure : public Closure {

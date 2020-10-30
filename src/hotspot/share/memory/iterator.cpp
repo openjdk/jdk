@@ -27,7 +27,6 @@
 #include "code/nmethod.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -35,11 +34,6 @@ DoNothingClosure do_nothing_cl;
 
 void CLDToOopClosure::do_cld(ClassLoaderData* cld) {
   cld->oops_do(_oop_closure, _cld_claim);
-}
-
-void ThreadToOopClosure::do_thread(Thread* thread) {
-  CodeBlobToOopClosure code_cl(_cl, false /* fix_oop_relocations */);
-  thread->oops_do(_cl, &code_cl);
 }
 
 void ObjectToOopClosure::do_object(oop obj) {

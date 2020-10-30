@@ -262,7 +262,31 @@ public:
   }
 };
 
-typedef ThreadToOopClosure ZHeapIteratorThreadClosure;
+class ZHeapIteratorThreadClosure : public ThreadClosure {
+private:
+  OopClosure* const _cl;
+
+  class NMethodVisitor : public CodeBlobToOopClosure {
+  public:
+    NMethodVisitor(OopClosure* cl) :
+        CodeBlobToOopClosure(cl, false /* fix_oop_relocations */) {}
+
+    void do_code_blob(CodeBlob* cb) {
+      assert(!cb->is_nmethod() || !ZNMethod::is_armed(cb->as_nmethod()),
+          "NMethods on stack should have been fixed and disarmed");
+
+      CodeBlobToOopClosure::do_code_blob(cb);
+    }
+  };
+
+public:
+  ZHeapIteratorThreadClosure(OopClosure* cl) : _cl(cl) {}
+
+  void do_thread(Thread* thread) {
+    NMethodVisitor code_cl(_cl);
+    thread->oops_do(_cl, &code_cl);
+  }
+};
 
 void ZHeapIterator::push_strong_roots(const ZHeapIteratorContext& context) {
   ZHeapIteratorRootOopClosure<false /* Weak */> cl(context);
