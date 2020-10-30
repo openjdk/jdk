@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,11 @@
 
 /*
  * @test
- * @bug 8227415
- * @run main p.SuperMethodTest
+ * @bug 8227415 8254975
+ * @run testng/othervm p.SuperMethodTest
  * @summary method reference to a protected method inherited from its
- *          superclass in a different package must be accessed via
- *          a bridge method.  Lambda proxy class has no access to it.
+ *          superclass in a different runtime package where
+ *          lambda proxy class has no access to it.
  */
 
 package p;
@@ -35,12 +35,24 @@ package p;
 import q.I;
 import q.J;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.function.Function;
 
+import org.testng.annotations.Test;
+import static org.testng.Assert.*;
+
 public class SuperMethodTest  {
-    public static void main(String... args) {
+    @Test
+    public static void remotePackageSameLoader() {
         Sub_I sub = new Sub_I();
         sub.test(Paths.get("test"));
     }
@@ -60,6 +72,70 @@ public class SuperMethodTest  {
              */
             Sub_J c = new Sub_J(this::filename);
             c.check(path);
+        }
+    }
+
+    @Test
+    public static void splitPackage() throws Throwable {
+        ClassLoader parent = new Loader("loader-A", null, A.class);
+        ClassLoader loader = new Loader("loader-B", parent, B.class);
+        Class<?> aClass = Class.forName(A.class.getName(), false, loader);
+        Class<?> bClass = Class.forName(B.class.getName(), false, loader);
+        assertTrue(aClass.getClassLoader() == parent);
+        assertTrue(bClass.getClassLoader() == loader);
+        assertEquals(aClass.getPackageName(), bClass.getPackageName());
+
+        Object b = bClass.getDeclaredConstructor().newInstance();
+
+        // verify subclass can access a protected member inherited from
+        // its superclass in a split package
+        MethodHandle test = MethodHandles.lookup()
+                .findVirtual(bClass, "test", MethodType.methodType(void.class));
+        test.invoke(b);
+
+        // verify lambda can access a protected member inherited from
+        // a superclass of the host class where the superclass is in
+        // a split package (not the same runtime package as the host class)
+        MethodHandle get = MethodHandles.lookup()
+                .findVirtual(bClass, "get", MethodType.methodType(Runnable.class));
+        ((Runnable) get.invoke(b)).run();
+    }
+
+    static class Loader extends URLClassLoader {
+        static final Path CLASSES_DIR = Paths.get(System.getProperty("test.class.path"));
+        private final Class<?> c;
+        Loader(String name, ClassLoader parent, Class<?> c) {
+            super(name, new URL[]{}, parent);
+            this.c = c;
+        }
+
+        @Override
+        protected Class<?> findClass(String name) throws ClassNotFoundException {
+            if (name.equals(c.getName())) {
+                try {
+                    String path = name.replace('.', '/') + ".class";
+                    byte[] bytes = Files.readAllBytes(CLASSES_DIR.resolve(path));
+                    return defineClass(name, bytes, 0, bytes.length);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            }
+
+            return super.findClass(name);
+        }
+
+    }
+
+    public static class A {
+        protected void func() { }
+    }
+
+    public static class B extends A {
+        public Runnable get() {
+            return this::func;
+        }
+        public void test() {
+            func();
         }
     }
 }
