@@ -40,34 +40,6 @@ volatile int ThreadHeapSampler::_sampling_interval = 512 * 1024;
 static const int FastLogNumBits = 10;
 static const int FastLogCount = 1 << FastLogNumBits;
 static const int FastLogMask = FastLogCount - 1;
-
-#ifndef PRODUCT
-// Print the log_table below by running -Xlog:heapsampling+generate::none
-static double log_table_value(int i) {
-  return (log(1.0 + static_cast<double>(i + 0.5) / FastLogCount) / log(2.0));
-}
-
-static void print_log_table() {
-  if (log_is_enabled(Info, heapsampling,generate)) {
-    assert(is_power_of_2(FastLogCount) && FastLogCount >= 4, "table size should be power of two and at least 4");
-
-    log_info(heapsampling, generate)("FastLogCount = %d", FastLogCount);
-    log_info(heapsampling,generate)("static const double log_table[FastLogCount] = {");
-    int i = 0;
-    for (; i < FastLogCount; i += 4) {
-      log_info(heapsampling,generate)("  %.15f, %.15f, %.15f, %.15f,",
-                                      log_table_value(i),     log_table_value(i + 1),
-                                      log_table_value(i + 2), log_table_value(i + 3));
-    }
-    log_info(heapsampling,generate)("};");
-
-    assert(i == FastLogCount, "invariant");
-  }
-}
-// Ensure initialization happen during bootstrap
-static volatile bool log_table_printed = false;
-#endif
-
 static const double log_table[FastLogCount] = {
   0.000704269011247, 0.002111776479852, 0.003517912108602, 0.004922678569045,
   0.006326078524934, 0.007728114632254, 0.009128789539256, 0.010528105886485,
@@ -327,6 +299,43 @@ static const double log_table[FastLogCount] = {
   0.997532347526366, 0.998237821888046, 0.998942951443085, 0.999647736528371,
 };
 
+#ifndef PRODUCT
+static double log_table_value(int i) {
+  return (log(1.0 + static_cast<double>(i + 0.5) / FastLogCount) / log(2.0));
+}
+
+// Ensure initialization checks only happen once during bootstrap
+static volatile bool log_table_checked = false;
+
+// Sanity check all log_table values or print it out if running
+// -Xlog:heapsampling+generate::none
+static void verify_or_generate_log_table() {
+  log_table_checked = true;
+  assert(is_power_of_2(FastLogCount) && FastLogCount >= 4, "table size should be power of two and at least 4");
+  if (log_is_enabled(Info,heapsampling,generate)) {
+    log_info(heapsampling,generate)("FastLogCount = %d", FastLogCount);
+    log_info(heapsampling,generate)("static const double log_table[FastLogCount] = {");
+    int i = 0;
+    for (; i < FastLogCount; i += 4) {
+      double v1 = log_table_value(i);
+      double v2 = log_table_value(i + 1);
+      double v3 = log_table_value(i + 2);
+      double v4 = log_table_value(i + 3);
+      log_info(heapsampling,generate)("  %.15f, %.15f, %.15f, %.15f,", v1, v2, v3, v4);
+    }
+    log_info(heapsampling,generate)("};");
+    assert(i == FastLogCount, "post-loop invariant");
+  } else {
+    // sanity check log_table - disabled when generating
+    for (int i = 0; i < FastLogCount; i++) {
+    assert(abs(log_table_value(i) - log_table[i]) < 0.0001,
+      "log_table deviates too much at index: %d %.15f %.15f",
+      i, log_table_value(i), log_table[i]);
+    }
+  }
+}
+#endif
+
 // Returns the next prng value.
 // pRNG is: aX+b mod c with a = 0x5DEECE66D, b =  0xB, c = 1<<48
 // This is the lrand64 generator.
@@ -391,9 +400,8 @@ void ThreadHeapSampler::pick_next_geometric_sample() {
 
 void ThreadHeapSampler::pick_next_sample(size_t overflowed_bytes) {
 #ifndef PRODUCT
-  if (!log_table_printed) {
-    log_table_printed = true;
-    print_log_table();
+  if (!log_table_checked) {
+    verify_or_generate_log_table();
   }
 #endif
   // Explicitly test if the sampling interval is 0, return 0 to sample every
