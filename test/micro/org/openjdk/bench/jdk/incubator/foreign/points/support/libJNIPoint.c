@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+#ifdef _LP64
 #include <jni.h>
 #include <stdlib.h>
 
@@ -59,3 +60,4 @@ JNIEXPORT void JNICALL Java_org_openjdk_bench_jdk_incubator_foreign_points_suppo
     Point* point = (Point*) thisPoint;
     point->y = value;
 }
+#endif
