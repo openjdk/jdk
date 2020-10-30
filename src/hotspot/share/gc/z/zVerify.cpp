@@ -230,14 +230,16 @@ class ZVerifyNMethodClosure : public NMethodClosure {
 private:
   OopClosure* const        _cl;
   BarrierSetNMethod* const _bs_nm;
+  const bool               _verify_fixed;
 
 public:
-  ZVerifyNMethodClosure(OopClosure* cl) :
+  ZVerifyNMethodClosure(OopClosure* cl, bool verify_fixed) :
       _cl(cl),
-      _bs_nm(BarrierSet::barrier_set()->barrier_set_nmethod()) {}
+      _bs_nm(BarrierSet::barrier_set()->barrier_set_nmethod()),
+      _verify_fixed(verify_fixed) {}
 
   virtual void do_nmethod(nmethod* nm) {
-    assert(!_bs_nm->is_armed(nm), "Should not encounter any armed nmethods");
+    assert(!_verify_fixed | !_bs_nm->is_armed(nm), "Should not encounter any armed nmethods");
 
     ZNMethod::nmethod_oops_do(nm, _cl);
   }
@@ -247,7 +249,7 @@ void ZVerify::roots_concurrent_strong(bool verify_fixed) {
   ZVerifyRootClosure cl(verify_fixed);
   ZVerifyCLDClosure cld_cl(&cl);
   ZVerifyThreadClosure thread_cl(&cl);
-  ZVerifyNMethodClosure nm_cl(&cl);
+  ZVerifyNMethodClosure nm_cl(&cl, verify_fixed);
 
   ZConcurrentRootsIterator iter(ClassLoaderData::_claim_none);
   iter.apply(&cl,
