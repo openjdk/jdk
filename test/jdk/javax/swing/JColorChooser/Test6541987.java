@@ -103,5 +103,6 @@ public class Test6541987 implements Runnable {
             throw new Error("unexpected color: " + color);
         }
         frame.setVisible(false);
+        frame.dispose();
     }
 }
