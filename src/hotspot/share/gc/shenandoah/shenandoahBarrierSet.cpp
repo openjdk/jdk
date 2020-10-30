@@ -87,7 +87,7 @@ bool ShenandoahBarrierSet::need_load_reference_barrier(DecoratorSet decorators, 
   return is_reference_type(type);
 }
 
-bool ShenandoahBarrierSet::use_load_reference_barrier_native(DecoratorSet decorators, BasicType type) {
+bool ShenandoahBarrierSet::use_load_reference_barrier_weak(DecoratorSet decorators, BasicType type) {
   assert(need_load_reference_barrier(decorators, type), "Should be subset of LRB");
   assert(is_reference_type(type), "Why we here?");
   // Native load reference barrier is only needed for concurrent root processing
