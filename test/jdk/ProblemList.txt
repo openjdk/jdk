@@ -741,7 +741,6 @@ javax/swing/JWindow/ShapedAndTranslucentWindows/TranslucentJComboBox.java 802462
 # The next test below is an intermittent failure
 javax/swing/JComboBox/8033069/bug8033069ScrollBar.java 8163367 generic-all
 javax/swing/JColorChooser/Test6827032.java 8197825 windows-all
-javax/swing/JColorChooser/Test6541987.java 8143021 windows-all,linux-all,macosx-all
 javax/swing/JTable/4235420/bug4235420.java     8079127 generic-all
 javax/swing/JSplitPane/4201995/bug4201995.java 8079127 generic-all
 javax/swing/JTree/DnD/LastNodeLowerHalfDrop.java 8159131 linux-all
@@ -769,7 +768,6 @@ javax/swing/text/JTextComponent/5074573/bug5074573.java 8196100 windows-all
 javax/swing/JFileChooser/6798062/bug6798062.java 8146446 windows-all
 javax/swing/JComboBox/8182031/ComboPopupTest.java 8196465 linux-all,macosx-all
 javax/swing/JFileChooser/6738668/bug6738668.java 8194946 generic-all
-javax/swing/JFileChooser/8021253/bug8021253.java 8169954 windows-all,linux-all,macosx-all
 javax/swing/JFileChooser/8062561/bug8062561.java 8196466 linux-all,macosx-all
 javax/swing/JInternalFrame/Test6325652.java 8224977 macosx-all
 javax/swing/JInternalFrame/8146321/JInternalFrameIconTest.java 8225045 linux-all

@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "classfile/classFileStream.hpp"
+#include "classfile/classListParser.hpp"
 #include "classfile/classListWriter.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
@@ -32,7 +33,6 @@
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "classfile/javaClasses.inline.hpp"
-#include "classfile/lambdaFormInvokers.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/packageEntry.hpp"
@@ -3883,7 +3883,7 @@ JVM_ENTRY(void, JVM_LogLambdaFormInvoker(JNIEnv *env, jstring line))
     Handle h_line (THREAD, JNIHandles::resolve_non_null(line));
     char* c_line = java_lang_String::as_utf8_string(h_line());
     ClassListWriter w;
-    w.stream()->print_cr("%s %s", LambdaFormInvokers::lambda_form_invoker_tag(), c_line);
+    w.stream()->print_cr("%s %s", LAMBDA_FORM_TAG, c_line);
   }
 #endif // INCLUDE_CDS
 JVM_END
