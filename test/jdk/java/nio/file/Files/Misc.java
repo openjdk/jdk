@@ -87,12 +87,8 @@ public class Misc {
      * Tests isHidden
      */
     static void testIsHidden(Path tmpdir) throws IOException {
-        // an empty path must not throw an AIOOB
-        try {
-            isHidden(Path.of(""));
-        } catch (ArrayIndexOutOfBoundsException exception) {
-            throw new AssertionError("8255576", exception);
-        }
+        // passing an empty path must not throw any runtime exception
+        isHidden(Path.of(""));
 
         assertTrue(!isHidden(tmpdir));
 
