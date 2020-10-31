@@ -38,23 +38,14 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * {@preview Associated with records, a preview feature of the Java language.
- *
- *           This class is associated with <i>records</i>, a preview
- *           feature of the Java language. Preview features
- *           may be removed in a future release, or upgraded to permanent
- *           features of the Java language.}
- *
  * A {@code RecordComponent} provides information about, and dynamic access to, a
  * component of a record class.
  *
  * @see Class#getRecordComponents()
  * @see java.lang.Record
  * @jls 8.10 Record Types
- * @since 14
+ * @since 16
  */
-@jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
-                             essentialAPI=false)
 public final class RecordComponent implements AnnotatedElement {
     // declaring class
     private Class<?> clazz;

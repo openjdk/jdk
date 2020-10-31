@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,8 +44,6 @@ import static org.testng.Assert.*;
  */
 public class AbstractTest {
 
-    private static final String VERSION = Integer.toString(Runtime.version().feature());
-
     static final String TEST_SRC = System.getProperty("test.src", ".");
     static final String TEST_CLASSES = System.getProperty("test.classes", ".");
     static final Path TEST_CLASSES_DIR = Path.of(TEST_CLASSES);
@@ -59,11 +57,9 @@ public class AbstractTest {
     @BeforeTest
     public void setup() throws IOException {
         assertTrue(CompilerUtils.compile(PLAIN_SRC_DIR, PLAIN_DEST_DIR,
-                   "--enable-preview", "-source", VERSION,
                    "--class-path", TEST_CLASSES_DIR.toString()));
 
         assertTrue(CompilerUtils.compile(RECORD_SRC_DIR, RECORD_DEST_DIR,
-                   "--enable-preview", "-source", VERSION,
                    "--class-path", TEST_CLASSES_DIR.toString()));
     }
 

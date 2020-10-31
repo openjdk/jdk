@@ -297,37 +297,18 @@ char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, in
   return map_memory_to_file(base, size, fd);
 }
 
-// Multiple threads can race in this code, and can remap over each other with MAP_FIXED,
-// so on posix, unmap the section at the start and at the end of the chunk that we mapped
-// rather than unmapping and remapping the whole chunk to get requested alignment.
-char* os::reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
+static size_t calculate_aligned_extra_size(size_t size, size_t alignment) {
   assert((alignment & (os::vm_allocation_granularity() - 1)) == 0,
       "Alignment must be a multiple of allocation granularity (page size)");
   assert((size & (alignment -1)) == 0, "size must be 'alignment' aligned");
 
   size_t extra_size = size + alignment;
   assert(extra_size >= size, "overflow, size is too large to allow alignment");
+  return extra_size;
+}
 
-  char* extra_base;
-  if (file_desc != -1) {
-    // For file mapping, we do not call os:reserve_memory_with_fd since:
-    // - we later chop away parts of the mapping using os::release_memory and that could fail if the
-    //   original mmap call had been tied to an fd.
-    // - The memory API os::reserve_memory uses is an implementation detail. It may (and usually is)
-    //   mmap but it also may System V shared memory which cannot be uncommitted as a whole, so
-    //   chopping off and unmapping excess bits back and front (see below) would not work.
-    extra_base = reserve_mmapped_memory(extra_size, NULL);
-    if (extra_base != NULL) {
-      MemTracker::record_virtual_memory_reserve((address)extra_base, extra_size, CALLER_PC);
-    }
-  } else {
-    extra_base = os::reserve_memory(extra_size);
-  }
-
-  if (extra_base == NULL) {
-    return NULL;
-  }
-
+// After a bigger chunk was mapped, unmaps start and end parts to get the requested alignment.
+static char* chop_extra_memory(size_t size, size_t alignment, char* extra_base, size_t extra_size) {
   // Do manual alignment
   char* aligned_base = align_up(extra_base, alignment);
 
@@ -349,13 +330,39 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
       os::release_memory(extra_base + begin_offset + size, end_offset);
   }
 
-  if (file_desc != -1) {
-    // After we have an aligned address, we can replace anonymous mapping with file mapping
-    if (replace_existing_mapping_with_file_mapping(aligned_base, size, file_desc) == NULL) {
-      vm_exit_during_initialization(err_msg("Error in mapping Java heap at the given filesystem directory"));
-    }
-    MemTracker::record_virtual_memory_commit((address)aligned_base, size, CALLER_PC);
+  return aligned_base;
+}
+
+// Multiple threads can race in this code, and can remap over each other with MAP_FIXED,
+// so on posix, unmap the section at the start and at the end of the chunk that we mapped
+// rather than unmapping and remapping the whole chunk to get requested alignment.
+char* os::reserve_memory_aligned(size_t size, size_t alignment) {
+  size_t extra_size = calculate_aligned_extra_size(size, alignment);
+  char* extra_base = os::reserve_memory(extra_size);
+  if (extra_base == NULL) {
+    return NULL;
   }
+  return chop_extra_memory(size, alignment, extra_base, extra_size);
+}
+
+char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int file_desc) {
+  size_t extra_size = calculate_aligned_extra_size(size, alignment);
+  // For file mapping, we do not call os:map_memory_to_file(size,fd) since:
+  // - we later chop away parts of the mapping using os::release_memory and that could fail if the
+  //   original mmap call had been tied to an fd.
+  // - The memory API os::reserve_memory uses is an implementation detail. It may (and usually is)
+  //   mmap but it also may System V shared memory which cannot be uncommitted as a whole, so
+  //   chopping off and unmapping excess bits back and front (see below) would not work.
+  char* extra_base = reserve_mmapped_memory(extra_size, NULL);
+  if (extra_base == NULL) {
+    return NULL;
+  }
+  char* aligned_base = chop_extra_memory(size, alignment, extra_base, extra_size);
+  // After we have an aligned address, we can replace anonymous mapping with file mapping
+  if (replace_existing_mapping_with_file_mapping(aligned_base, size, file_desc) == NULL) {
+    vm_exit_during_initialization(err_msg("Error in mapping Java heap at the given filesystem directory"));
+  }
+  MemTracker::record_virtual_memory_commit((address)aligned_base, size, CALLER_PC);
   return aligned_base;
 }
 
