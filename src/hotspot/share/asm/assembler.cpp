@@ -199,19 +199,6 @@ void Label::patch_instructions(MacroAssembler* masm) {
       continue;
     }
 
-#ifdef ASSERT
-    // Cross-section branches only work if the
-    // intermediate section boundaries are frozen.
-    if (target_sect != branch_sect) {
-      for (int n = MIN2(target_sect, branch_sect),
-               nlimit = (target_sect + branch_sect) - n;
-           n < nlimit; n++) {
-        CodeSection* cs = cb->code_section(n);
-        assert(cs->is_frozen(), "cross-section branch needs stable offsets");
-      }
-    }
-#endif //ASSERT
-
     // Push the target offset into the branch instruction.
     masm->pd_patch_instruction(branch, target, file, line);
   }

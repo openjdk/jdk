@@ -175,6 +175,16 @@ void ShenandoahAsserts::assert_in_heap(void* interior_loc, oop obj, const char *
   }
 }
 
+void ShenandoahAsserts::assert_in_heap_or_null(void* interior_loc, oop obj, const char *file, int line) {
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+
+  if (obj != NULL && !heap->is_in(obj)) {
+    print_failure(_safe_unknown, obj, interior_loc, NULL, "Shenandoah assert_in_heap_or_null failed",
+                  "oop must point to a heap address",
+                  file, line);
+  }
+}
+
 void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* file, int line) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 

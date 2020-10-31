@@ -1612,6 +1612,8 @@ Rule	Hungary	1946	only	-	Oct	 7	 2:00	0	-
 # https://library.hungaricana.hu/hu/view/Zala_1948_09/?pg=64
 # https://library.hungaricana.hu/hu/view/SatoraljaujhelyiLeveltar_ZempleniNepujsag_1948/?pg=53
 # https://library.hungaricana.hu/hu/view/SatoraljaujhelyiLeveltar_ZempleniNepujsag_1948/?pg=160
+# https://library.hungaricana.hu/hu/view/UjSzo_1949_01-04/?pg=102
+# https://library.hungaricana.hu/hu/view/KeletMagyarorszag_1949_03/?pg=96
 # https://library.hungaricana.hu/hu/view/Delmagyarorszag_1949_09/?pg=94
 Rule	Hungary	1947	1949	-	Apr	Sun>=4	 2:00s	1:00	S
 Rule	Hungary	1947	1949	-	Oct	Sun>=1	 2:00s	0	-
@@ -1627,9 +1629,10 @@ Rule	Hungary	1955	only	-	Oct	 2	 3:00	0	-
 # https://library.hungaricana.hu/hu/view/PestMegyeiHirlap_1957_09/?pg=143
 Rule	Hungary	1956	1957	-	Jun	Sun>=1	 2:00	1:00	S
 Rule	Hungary	1956	1957	-	Sep	lastSun	 3:00	0	-
-# https://library.hungaricana.hu/hu/view/DTT_KOZL_TanacsokKozlonye_1980/?pg=1227
+# https://library.hungaricana.hu/hu/view/DTT_KOZL_TanacsokKozlonye_1980/?pg=189
 Rule	Hungary	1980	only	-	Apr	 6	 0:00	1:00	S
 Rule	Hungary	1980	only	-	Sep	28	 1:00	0	-
+# https://library.hungaricana.hu/hu/view/DTT_KOZL_TanacsokKozlonye_1980/?pg=1227
 # https://library.hungaricana.hu/hu/view/Delmagyarorszag_1981_01/?pg=79
 # https://library.hungaricana.hu/hu/view/DTT_KOZL_TanacsokKozlonye_1982/?pg=115
 # https://library.hungaricana.hu/hu/view/DTT_KOZL_TanacsokKozlonye_1983/?pg=85
@@ -1640,6 +1643,7 @@ Rule	Hungary	1981	1983	-	Sep	lastSun	 1:00	0	-
 Zone	Europe/Budapest	1:16:20 -	LMT	1890 Nov  1
 			1:00	C-Eur	CE%sT	1918
 # https://library.hungaricana.hu/hu/view/OGYK_RT_1941/?pg=1204
+# https://library.hungaricana.hu/hu/view/OGYK_RT_1942/?pg=3955
 			1:00	Hungary	CE%sT	1941 Apr  7 23:00
 			1:00	C-Eur	CE%sT	1945
 			1:00	Hungary	CE%sT	1984

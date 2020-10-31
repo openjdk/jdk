@@ -727,14 +727,14 @@ instruct $1(vReg dst, vReg shift) %{
   ins_pipe(pipe_slow);
 %}')dnl
 dnl
-dnl VSHIFT_IMM_UNPREDICATE($1,        $2,      $3,   $4,          $5  )
-dnl VSHIFT_IMM_UNPREDICATE(insn_name, op_name, size, min_vec_len, insn)
+dnl VSHIFT_IMM_UNPREDICATE($1,        $2,      $3,       $4,   $5,          $6  )
+dnl VSHIFT_IMM_UNPREDICATE(insn_name, op_name, op_name2, size, min_vec_len, insn)
 define(`VSHIFT_IMM_UNPREDICATE', `
 instruct $1(vReg dst, vReg src, immI shift) %{
-  predicate(UseSVE > 0 && n->as_Vector()->length() >= $4);
-  match(Set dst ($2 src shift));
+  predicate(UseSVE > 0 && n->as_Vector()->length() >= $5);
+  match(Set dst ($2 src ($3 shift)));
   ins_cost(SVE_COST);
-  format %{ "$5 $dst, $src, $shift\t# vector (sve) ($3)" %}
+  format %{ "$6 $dst, $src, $shift\t# vector (sve) ($4)" %}
   ins_encode %{
     int con = (int)$shift$$constant;dnl
 ifelse(eval(index(`$1', `vasr') == 0 || index(`$1', `vlsr') == 0), 1, `
@@ -743,16 +743,21 @@ ifelse(eval(index(`$1', `vasr') == 0 || index(`$1', `vlsr') == 0), 1, `
            as_FloatRegister($src$$reg));
       return;
     }')dnl
-ifelse(eval(index(`$1', `vasr') == 0), 1, `ifelse(eval(index(`$3', `B') == 0), 1, `
-    if (con >= 8) con = 7;')ifelse(eval(index(`$3', `H') == 0), 1, `
+ifelse(eval(index(`$1', `vasr') == 0), 1, `ifelse(eval(index(`$4', `B') == 0), 1, `
+    if (con >= 8) con = 7;')ifelse(eval(index(`$4', `H') == 0), 1, `
     if (con >= 16) con = 15;')')dnl
-ifelse(eval((index(`$1', `vlsl') == 0 || index(`$1', `vlsr') == 0) && (index(`$3', `B') == 0 || index(`$3', `H') == 0)), 1, `
+ifelse(eval(index(`$1', `vlsl') == 0  || index(`$1', `vlsr') == 0), 1, `ifelse(eval(index(`$4', `B') == 0), 1, `
     if (con >= 8) {
       __ sve_eor(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg),
            as_FloatRegister($src$$reg));
       return;
-    }')
-    __ $5(as_FloatRegister($dst$$reg), __ $3,
+    }')ifelse(eval(index(`$4', `H') == 0), 1, `
+    if (con >= 16) {
+      __ sve_eor(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg),
+           as_FloatRegister($src$$reg));
+      return;
+    }')')
+    __ $6(as_FloatRegister($dst$$reg), __ $4,
          as_FloatRegister($src$$reg), con);
   %}
   ins_pipe(pipe_slow);
@@ -786,18 +791,18 @@ VSHIFT_TRUE_PREDICATE(vlsrB, URShiftVB, B, 16, sve_lsr)
 VSHIFT_TRUE_PREDICATE(vlsrS, URShiftVS, H,  8, sve_lsr)
 VSHIFT_TRUE_PREDICATE(vlsrI, URShiftVI, S,  4, sve_lsr)
 VSHIFT_TRUE_PREDICATE(vlsrL, URShiftVL, D,  2, sve_lsr)
-VSHIFT_IMM_UNPREDICATE(vasrB_imm, RShiftVB,  B, 16, sve_asr)
-VSHIFT_IMM_UNPREDICATE(vasrS_imm, RShiftVS,  H,  8, sve_asr)
-VSHIFT_IMM_UNPREDICATE(vasrI_imm, RShiftVI,  S,  4, sve_asr)
-VSHIFT_IMM_UNPREDICATE(vasrL_imm, RShiftVL,  D,  2, sve_asr)
-VSHIFT_IMM_UNPREDICATE(vlsrB_imm, URShiftVB, B, 16, sve_lsr)
-VSHIFT_IMM_UNPREDICATE(vlsrS_imm, URShiftVS, H,  8, sve_lsr)
-VSHIFT_IMM_UNPREDICATE(vlsrI_imm, URShiftVI, S,  4, sve_lsr)
-VSHIFT_IMM_UNPREDICATE(vlsrL_imm, URShiftVL, D,  2, sve_lsr)
-VSHIFT_IMM_UNPREDICATE(vlslB_imm, LShiftVB,  B, 16, sve_lsl)
-VSHIFT_IMM_UNPREDICATE(vlslS_imm, LShiftVS,  H,  8, sve_lsl)
-VSHIFT_IMM_UNPREDICATE(vlslI_imm, LShiftVI,  S,  4, sve_lsl)
-VSHIFT_IMM_UNPREDICATE(vlslL_imm, LShiftVL,  D,  2, sve_lsl)
+VSHIFT_IMM_UNPREDICATE(vasrB_imm, RShiftVB,  RShiftCntV, B, 16, sve_asr)
+VSHIFT_IMM_UNPREDICATE(vasrS_imm, RShiftVS,  RShiftCntV, H,  8, sve_asr)
+VSHIFT_IMM_UNPREDICATE(vasrI_imm, RShiftVI,  RShiftCntV, S,  4, sve_asr)
+VSHIFT_IMM_UNPREDICATE(vasrL_imm, RShiftVL,  RShiftCntV, D,  2, sve_asr)
+VSHIFT_IMM_UNPREDICATE(vlsrB_imm, URShiftVB, RShiftCntV, B, 16, sve_lsr)
+VSHIFT_IMM_UNPREDICATE(vlsrS_imm, URShiftVS, RShiftCntV, H,  8, sve_lsr)
+VSHIFT_IMM_UNPREDICATE(vlsrI_imm, URShiftVI, RShiftCntV, S,  4, sve_lsr)
+VSHIFT_IMM_UNPREDICATE(vlsrL_imm, URShiftVL, RShiftCntV, D,  2, sve_lsr)
+VSHIFT_IMM_UNPREDICATE(vlslB_imm, LShiftVB,  LShiftCntV, B, 16, sve_lsl)
+VSHIFT_IMM_UNPREDICATE(vlslS_imm, LShiftVS,  LShiftCntV, H,  8, sve_lsl)
+VSHIFT_IMM_UNPREDICATE(vlslI_imm, LShiftVI,  LShiftCntV, S,  4, sve_lsl)
+VSHIFT_IMM_UNPREDICATE(vlslL_imm, LShiftVL,  LShiftCntV, D,  2, sve_lsl)
 VSHIFT_COUNT(vshiftcntB, B, 16, T_BYTE)
 VSHIFT_COUNT(vshiftcntS, H,  8, T_SHORT)
 VSHIFT_COUNT(vshiftcntI, S,  4, T_INT)

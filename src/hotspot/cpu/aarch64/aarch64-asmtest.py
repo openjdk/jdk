@@ -1110,6 +1110,44 @@ class SHA512SIMDOp(Instruction):
                     + ('\t%s, %s, %s.2D' % (self.reg[0].astr("q"),
                        self.reg[1].astr("q"), self.reg[2].astr("v"))))
 
+class SHA3SIMDOp(Instruction):
+
+    def generate(self):
+        if ((self._name == 'eor3') or (self._name == 'bcax')):
+            self.reg = [FloatRegister().generate(), FloatRegister().generate(),
+                        FloatRegister().generate(), FloatRegister().generate()]
+        else:
+            self.reg = [FloatRegister().generate(), FloatRegister().generate(),
+                        FloatRegister().generate()]
+            if (self._name == 'xar'):
+                self.imm6 = random.randint(0, 63)
+        return self
+
+    def cstr(self):
+        if ((self._name == 'eor3') or (self._name == 'bcax')):
+            return (super(SHA3SIMDOp, self).cstr()
+                    + ('%s, __ T16B, %s, %s, %s);' % (self.reg[0], self.reg[1], self.reg[2], self.reg[3])))
+        elif (self._name == 'rax1'):
+            return (super(SHA3SIMDOp, self).cstr()
+                    + ('%s, __ T2D, %s, %s);' % (self.reg[0], self.reg[1], self.reg[2])))
+        else:
+            return (super(SHA3SIMDOp, self).cstr()
+                    + ('%s, __ T2D, %s, %s, %s);' % (self.reg[0], self.reg[1], self.reg[2], self.imm6)))
+
+    def astr(self):
+        if ((self._name == 'eor3') or (self._name == 'bcax')):
+            return (super(SHA3SIMDOp, self).astr()
+                    + ('\t%s.16B, %s.16B, %s.16B, %s.16B' % (self.reg[0].astr("v"), self.reg[1].astr("v"),
+                        self.reg[2].astr("v"), self.reg[3].astr("v"))))
+        elif (self._name == 'rax1'):
+            return (super(SHA3SIMDOp, self).astr()
+                    + ('\t%s.2D, %s.2D, %s.2D') % (self.reg[0].astr("v"), self.reg[1].astr("v"),
+                        self.reg[2].astr("v")))
+        else:
+            return (super(SHA3SIMDOp, self).astr()
+                    + ('\t%s.2D, %s.2D, %s.2D, #%s') % (self.reg[0].astr("v"), self.reg[1].astr("v"),
+                        self.reg[2].astr("v"), self.imm6))
+
 class LSEOp(Instruction):
     def __init__(self, args):
         self._name, self.asmname, self.size, self.suffix = args
@@ -1441,8 +1479,6 @@ generate(ThreeRegNEONOp,
           ["fcmge", "fcmge", "2D"],
           ])
 
-generate(SHA512SIMDOp, ["sha512h", "sha512h2", "sha512su0", "sha512su1"])
-
 generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",                "ccmn\txzr, xzr, #3, LE"],
                         ["ccmnw",  "__ ccmnw(zr, zr, 5u, Assembler::EQ);",               "ccmn\twzr, wzr, #5, EQ"],
                         ["ccmp",   "__ ccmp(zr, 1, 4u, Assembler::NE);",                 "ccmp\txzr, 1, #4, NE"],
@@ -1517,6 +1553,11 @@ for size in ("x", "w"):
                          ["ldumin", "ldumin", size, suffix],
                          ["ldumax", "ldumax", size, suffix]]);
 
+# ARMv8.2A
+generate(SHA3SIMDOp, ["bcax", "eor3", "rax1", "xar"])
+
+generate(SHA512SIMDOp, ["sha512h", "sha512h2", "sha512su0", "sha512su1"])
+
 generate(SVEVectorOp, [["add", "ZZZ"],
                        ["sub", "ZZZ"],
                        ["fadd", "ZZZ"],
@@ -1565,8 +1606,8 @@ outfile.write("forth:\n")
 
 outfile.close()
 
-# compile for sve with 8.1 and sha2 because of lse atomics and sha512 crypto extension.
-subprocess.check_call([AARCH64_AS, "-march=armv8.1-a+sha2+sve", "aarch64ops.s", "-o", "aarch64ops.o"])
+# compile for sve with 8.2 and sha3 because of SHA3 crypto extension.
+subprocess.check_call([AARCH64_AS, "-march=armv8.2-a+sha3+sve", "aarch64ops.s", "-o", "aarch64ops.o"])
 
 print
 print "/*"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,11 @@
 
 /*
  * @test
- * @bug 8149411
+ * @bug 8149411 8007632
  * @summary Get AES key from keystore (uses SecretKeySpec not SecretKeyFactory)
+ * @run main P12SecretKey pkcs12 AES 128
+ * @run main P12SecretKey pkcs12 DES 56
+ * @run main P12SecretKey pkcs12 DESede 168
  */
 
 import java.io.File;
@@ -43,20 +46,19 @@ public class P12SecretKey {
 
     public static void main(String[] args) throws Exception {
         P12SecretKey testp12 = new P12SecretKey();
-        String keystoreType = "pkcs12";
-        if (args != null && args.length > 0) {
-            keystoreType = args[0];
-        }
-        testp12.run(keystoreType);
+        String keystoreType = args[0];
+        String algName = args[1];
+        int keySize = Integer.parseInt(args[2]);
+        testp12.run(keystoreType, algName, keySize);
     }
 
-    private void run(String keystoreType) throws Exception {
+    private void run(String keystoreType, String algName, int keySize) throws Exception {
         char[] pw = "password".toCharArray();
         KeyStore ks = KeyStore.getInstance(keystoreType);
         ks.load(null, pw);
 
-        KeyGenerator kg = KeyGenerator.getInstance("AES");
-        kg.init(128);
+        KeyGenerator kg = KeyGenerator.getInstance(algName);
+        kg.init(keySize);
         SecretKey key = kg.generateKey();
 
         KeyStore.SecretKeyEntry ske = new KeyStore.SecretKeyEntry(key);
