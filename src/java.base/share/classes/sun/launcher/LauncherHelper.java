@@ -94,13 +94,6 @@ public final class LauncherHelper {
     // No instantiation
     private LauncherHelper() {}
 
-    // used to identify JavaFX applications
-    private static final String JAVAFX_APPLICATION_MARKER =
-            "JavaFX-Application-Class";
-    private static final String JAVAFX_APPLICATION_CLASS_NAME =
-            "javafx.application.Application";
-    private static final String JAVAFX_FXHELPER_CLASS_NAME_SUFFIX =
-            "sun.launcher.LauncherHelper$FXHelper";
     private static final String LAUNCHER_AGENT_CLASS = "Launcher-Agent-Class";
     private static final String MAIN_CLASS = "Main-Class";
     private static final String ADD_EXPORTS = "Add-Exports";
@@ -580,17 +573,6 @@ public final class LauncherHelper {
                 addExportsOrOpens(opens, true);
             }
 
-            /*
-             * Hand off to FXHelper if it detects a JavaFX application
-             * This must be done after ensuring a Main-Class entry
-             * exists to enforce compliance with the jar specification
-             */
-            if (mainAttrs.containsKey(
-                    new Attributes.Name(JAVAFX_APPLICATION_MARKER))) {
-                FXHelper.setFXLaunchParameters(jarname, LM_JAR);
-                return FXHelper.class.getName();
-            }
-
             return mainValue.trim();
         } catch (IOException ioe) {
             abort(ioe, "java.launcher.jar.error1", jarname);
@@ -649,8 +631,6 @@ public final class LauncherHelper {
      * This method:
      * 1. Loads the main class from the module or class path
      * 2. Checks the public static void main method.
-     * 3. If the main class extends FX Application then call on FXHelper to
-     * perform the launch.
      *
      * @param printToStderr if set, all output will be routed to stderr
      * @param mode LaunchMode as determined by the arguments passed on the
@@ -679,18 +659,6 @@ public final class LauncherHelper {
         // record the real main class for UI purposes
         // neither method above can return null, they will abort()
         appClass = mainClass;
-
-        /*
-         * Check if FXHelper can launch it using the FX launcher. In an FX app,
-         * the main class may or may not have a main method, so do this before
-         * validating the main class.
-         */
-        if (JAVAFX_FXHELPER_CLASS_NAME_SUFFIX.equals(mainClass.getName()) ||
-            doesExtendFXApplication(mainClass)) {
-            // Will abort() if there are problems with FX runtime
-            FXHelper.setFXLaunchParameters(what, mode);
-            mainClass = FXHelper.class;
-        }
 
         validateMainClass(mainClass);
         return mainClass;
@@ -814,30 +782,14 @@ public final class LauncherHelper {
         return appClass;
     }
 
-    /*
-     * Check if the given class is a JavaFX Application class. This is done
-     * in a way that does not cause the Application class to load or throw
-     * ClassNotFoundException if the JavaFX runtime is not available.
-     */
-    private static boolean doesExtendFXApplication(Class<?> mainClass) {
-        for (Class<?> sc = mainClass.getSuperclass(); sc != null;
-                sc = sc.getSuperclass()) {
-            if (sc.getName().equals(JAVAFX_APPLICATION_CLASS_NAME)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     // Check the existence and signature of main and abort if incorrect
     static void validateMainClass(Class<?> mainClass) {
         Method mainMethod = null;
         try {
             mainMethod = mainClass.getMethod("main", String[].class);
         } catch (NoSuchMethodException nsme) {
-            // invalid main or not FX application, abort with an error
-            abort(null, "java.launcher.cls.error4", mainClass.getName(),
-                  JAVAFX_APPLICATION_CLASS_NAME);
+            // invalid main, abort with an error
+            abort(null, "java.launcher.cls.error4", mainClass.getName());
         } catch (Throwable e) {
             if (mainClass.getModule().isNamed()) {
                 abort(e, "java.launcher.module.error5",
@@ -964,112 +916,6 @@ public final class LauncherHelper {
         }
         public String toString() {
             return "StdArg{" + "arg=" + arg + ", needsExpansion=" + needsExpansion + '}';
-        }
-    }
-
-    static final class FXHelper {
-
-        private static final String JAVAFX_GRAPHICS_MODULE_NAME =
-                "javafx.graphics";
-
-        private static final String JAVAFX_LAUNCHER_CLASS_NAME =
-                "com.sun.javafx.application.LauncherImpl";
-
-        /*
-         * The launch method used to invoke the JavaFX launcher. These must
-         * match the strings used in the launchApplication method.
-         *
-         * Command line                 JavaFX-App-Class  Launch mode  FX Launch mode
-         * java -cp fxapp.jar FXClass   N/A               LM_CLASS     "LM_CLASS"
-         * java -cp somedir FXClass     N/A               LM_CLASS     "LM_CLASS"
-         * java -jar fxapp.jar          Present           LM_JAR       "LM_JAR"
-         * java -jar fxapp.jar          Not Present       LM_JAR       "LM_JAR"
-         * java -m module/class [1]     N/A               LM_MODULE    "LM_MODULE"
-         * java -m module               N/A               LM_MODULE    "LM_MODULE"
-         *
-         * [1] - JavaFX-Application-Class is ignored when modular args are used, even
-         * if present in a modular jar
-         */
-        private static final String JAVAFX_LAUNCH_MODE_CLASS = "LM_CLASS";
-        private static final String JAVAFX_LAUNCH_MODE_JAR = "LM_JAR";
-        private static final String JAVAFX_LAUNCH_MODE_MODULE = "LM_MODULE";
-
-        /*
-         * FX application launcher and launch method, so we can launch
-         * applications with no main method.
-         */
-        private static String fxLaunchName = null;
-        private static String fxLaunchMode = null;
-
-        private static Class<?> fxLauncherClass    = null;
-        private static Method   fxLauncherMethod   = null;
-
-        /*
-         * Set the launch params according to what was passed to LauncherHelper
-         * so we can use the same launch mode for FX. Abort if there is any
-         * issue with loading the FX runtime or with the launcher method.
-         */
-        private static void setFXLaunchParameters(String what, int mode) {
-
-            // find the module with the FX launcher
-            Optional<Module> om = ModuleLayer.boot().findModule(JAVAFX_GRAPHICS_MODULE_NAME);
-            if (!om.isPresent()) {
-                abort(null, "java.launcher.cls.error5");
-            }
-
-            // load the FX launcher class
-            fxLauncherClass = Class.forName(om.get(), JAVAFX_LAUNCHER_CLASS_NAME);
-            if (fxLauncherClass == null) {
-                abort(null, "java.launcher.cls.error5");
-            }
-
-            try {
-                /*
-                 * signature must be:
-                 * public static void launchApplication(String launchName,
-                 *     String launchMode, String[] args);
-                 */
-                fxLauncherMethod = fxLauncherClass.getMethod("launchApplication",
-                        String.class, String.class, String[].class);
-
-                // verify launcher signature as we do when validating the main method
-                int mod = fxLauncherMethod.getModifiers();
-                if (!Modifier.isStatic(mod)) {
-                    abort(null, "java.launcher.javafx.error1");
-                }
-                if (fxLauncherMethod.getReturnType() != java.lang.Void.TYPE) {
-                    abort(null, "java.launcher.javafx.error1");
-                }
-            } catch (NoSuchMethodException ex) {
-                abort(ex, "java.launcher.cls.error5", ex);
-            }
-
-            fxLaunchName = what;
-            switch (mode) {
-                case LM_CLASS:
-                    fxLaunchMode = JAVAFX_LAUNCH_MODE_CLASS;
-                    break;
-                case LM_JAR:
-                    fxLaunchMode = JAVAFX_LAUNCH_MODE_JAR;
-                    break;
-                case LM_MODULE:
-                    fxLaunchMode = JAVAFX_LAUNCH_MODE_MODULE;
-                    break;
-                default:
-                    // should not have gotten this far...
-                    throw new InternalError(mode + ": Unknown launch mode");
-            }
-        }
-
-        public static void main(String... args) throws Exception {
-            if (fxLauncherMethod == null
-                    || fxLaunchMode == null
-                    || fxLaunchName == null) {
-                throw new RuntimeException("Invalid JavaFX launch parameters");
-            }
-            // launch appClass via fxLauncherMethod
-            fxLauncherMethod.invoke(null,
-                    new Object[] {fxLaunchName, fxLaunchMode, args});
         }
     }
 
