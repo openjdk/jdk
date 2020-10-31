@@ -519,6 +519,8 @@ class Assembler : public AbstractAssembler {
     LVSR_OPCODE    = (31u << OPCODE_SHIFT |   38u << 1),
 
     // Vector-Scalar (VSX) instruction support.
+    LXVX_OPCODE    = (31u << OPCODE_SHIFT |  268u << 1),
+    STXVX_OPCODE   = (31u << OPCODE_SHIFT |  396u << 1),
     LXVD2X_OPCODE  = (31u << OPCODE_SHIFT |  844u << 1),
     STXVD2X_OPCODE = (31u << OPCODE_SHIFT |  972u << 1),
     MTVSRD_OPCODE  = (31u << OPCODE_SHIFT |  179u << 1),
@@ -2235,6 +2237,10 @@ class Assembler : public AbstractAssembler {
   inline void mfvscr(   VectorRegister d);
 
   // Vector-Scalar (VSX) instructions.
+  inline void lxvx(     VectorSRegister d, Register a);
+  inline void lxvx(     VectorSRegister d, Register a, Register b);
+  inline void stxvx(    VectorSRegister d, Register b);
+  inline void stxvx(    VectorSRegister d, Register a, Register b);
   inline void lxvd2x(   VectorSRegister d, Register a);
   inline void lxvd2x(   VectorSRegister d, Register a, Register b);
   inline void stxvd2x(  VectorSRegister d, Register a);

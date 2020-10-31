@@ -1706,7 +1706,11 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
       if (cbuf) {
         C2_MacroAssembler _masm(cbuf);
         __ addi(R0, R1_SP, dst_offset);
-        __ stxvd2x(Rsrc, R0);
+        if (VM_Version::has_brw()) {
+          __ stxvx(Rsrc, R0);
+        } else {
+          __ stxvd2x(Rsrc, R0);
+        }
       }
       size += 8;
     }
@@ -1717,7 +1721,11 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
       if (cbuf) {
         C2_MacroAssembler _masm(cbuf);
         __ addi(R0, R1_SP, src_offset);
-        __ lxvd2x(Rdst, R0);
+        if (VM_Version::has_brw()) {
+          __ lxvx(Rdst, R0);
+        } else {
+          __ lxvd2x(Rdst, R0);
+        }
       }
       size += 8;
     }
@@ -5560,7 +5568,7 @@ instruct loadV8(iRegLdst dst, memoryAlg4 mem) %{
 
 // Load Aligned Packed Byte
 instruct loadV16(vecX dst, indirect mem) %{
-  predicate(n->as_LoadVector()->memory_size() == 16);
+  predicate(n->as_LoadVector()->memory_size() == 16 && !VM_Version::has_brw());
   match(Set dst (LoadVector mem));
   ins_cost(MEMORY_REF_COST);
 
@@ -5568,6 +5576,19 @@ instruct loadV16(vecX dst, indirect mem) %{
   size(4);
   ins_encode %{
     __ lxvd2x($dst$$VectorSRegister, $mem$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct loadV16_lxvx(vecX dst, indirect mem) %{
+  predicate(n->as_LoadVector()->memory_size() == 16 && VM_Version::has_brw());
+  match(Set dst (LoadVector mem));
+  ins_cost(MEMORY_REF_COST);
+
+  format %{ "LXVX     $dst, $mem \t// load 16 byte Vector" %}
+  size(4);
+  ins_encode %{
+    __ lxvx($dst$$VectorSRegister, $mem$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -6538,7 +6559,7 @@ instruct storeA8B(memoryAlg4 mem, iRegLsrc src) %{
 
 // Store Packed Byte long register to memory
 instruct storeV16(indirect mem, vecX src) %{
-  predicate(n->as_StoreVector()->memory_size() == 16);
+  predicate(n->as_StoreVector()->memory_size() == 16 && !VM_Version::has_brw());
   match(Set mem (StoreVector mem src));
   ins_cost(MEMORY_REF_COST);
 
@@ -6546,6 +6567,19 @@ instruct storeV16(indirect mem, vecX src) %{
   size(4);
   ins_encode %{
     __ stxvd2x($src$$VectorSRegister, $mem$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct storeV16_stxvx(indirect mem, vecX src) %{
+  predicate(n->as_StoreVector()->memory_size() == 16 && VM_Version::has_brw());
+  match(Set mem (StoreVector mem src));
+  ins_cost(MEMORY_REF_COST);
+
+  format %{ "STXVX     $mem, $src \t// store 16-byte Vector" %}
+  size(4);
+  ins_encode %{
+    __ stxvx($src$$VectorSRegister, $mem$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}
