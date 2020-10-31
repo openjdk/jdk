@@ -1691,109 +1691,9 @@ void ShenandoahHeap::op_final_mark(ShenandoahConcurrentMark* mark) {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Should be at safepoint");
   assert(!has_forwarded_objects(), "No forwarded objects on this path");
 
-  // It is critical that we
-  // evacuate roots right after finishing marking, so that we don't
-  // get unmarked objects in the roots.
-
   if (!cancelled_gc()) {
-    mark->finish_mark();
-    // Marking is completed, deactivate SATB barrier
-    set_concurrent_mark_in_progress(false);
-    mark_complete_marking_context();
-
-    parallel_cleaning(false /* full gc*/);
-
-    if (ShenandoahVerify) {
-      verifier()->verify_roots_no_forwarded();
-    }
-
-    {
-      ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_update_region_states);
-      ShenandoahFinalMarkUpdateRegionStateClosure cl;
-      parallel_heap_region_iterate(&cl);
-
-      assert_pinned_region_status();
-    }
-
-    // Retire the TLABs, which will force threads to reacquire their TLABs after the pause.
-    // This is needed for two reasons. Strong one: new allocations would be with new freeset,
-    // which would be outside the collection set, so no cset writes would happen there.
-    // Weaker one: new allocations would happen past update watermark, and so less work would
-    // be needed for reference updates (would update the large filler instead).
-    if (UseTLAB) {
-      ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_manage_labs);
-      tlabs_retire(false);
-    }
-
-    {
-      ShenandoahGCPhase phase(ShenandoahPhaseTimings::choose_cset);
-      ShenandoahHeapLocker locker(lock());
-      _collection_set->clear();
-      heuristics()->choose_collection_set(_collection_set);
-    }
-
-    {
-      ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_rebuild_freeset);
-      ShenandoahHeapLocker locker(lock());
-      _free_set->rebuild();
-    }
-
-    if (!is_degenerated_gc_in_progress()) {
-      prepare_concurrent_roots();
-      prepare_concurrent_unloading();
-    }
-
-    // If collection set has candidates, start evacuation.
-    // Otherwise, bypass the rest of the cycle.
-    if (!collection_set()->is_empty()) {
-      ShenandoahGCPhase init_evac(ShenandoahPhaseTimings::init_evac);
-
-      if (ShenandoahVerify) {
-        verifier()->verify_before_evacuation();
-      }
-
-      set_evacuation_in_progress(true);
-      // From here on, we need to update references.
-      set_has_forwarded_objects(true);
-
-      if (!is_degenerated_gc_in_progress()) {
-        if (ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
-          ShenandoahCodeRoots::arm_nmethods();
-        }
-        evacuate_and_update_roots();
-      }
-
-      if (ShenandoahPacing) {
-        pacer()->setup_for_evac();
-      }
-
-      if (ShenandoahVerify) {
-        // If OOM while evacuating/updating of roots, there is no guarantee of their consistencies
-        if (!cancelled_gc()) {
-          ShenandoahRootVerifier::RootTypes types = ShenandoahRootVerifier::None;
-          if (ShenandoahConcurrentRoots::should_do_concurrent_roots()) {
-            types = ShenandoahRootVerifier::combine(ShenandoahRootVerifier::JNIHandleRoots, ShenandoahRootVerifier::WeakRoots);
-            types = ShenandoahRootVerifier::combine(types, ShenandoahRootVerifier::CLDGRoots);
-            types = ShenandoahRootVerifier::combine(types, ShenandoahRootVerifier::StringDedupRoots);
-          }
-
-          if (ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
-            types = ShenandoahRootVerifier::combine(types, ShenandoahRootVerifier::CodeRoots);
-          }
-          verifier()->verify_roots_no_forwarded_except(types);
-        }
-        verifier()->verify_during_evacuation();
-      }
-    } else {
-      if (ShenandoahVerify) {
-        verifier()->verify_after_concmark();
-      }
-
-      if (VerifyAfterGC) {
-        Universe::verify();
-      }
-    }
-
+    finish_mark(mark);
+    prepare_evacuation();
   } else {
     // If this cycle was updating references, we need to keep the has_forwarded_objects
     // flag on, for subsequent phases to deal with it.
@@ -1847,6 +1747,110 @@ void ShenandoahHeap::op_cleanup_early() {
 
 void ShenandoahHeap::op_cleanup_complete() {
   free_set()->recycle_trash();
+}
+
+// Helpers
+void ShenandoahHeap::finish_mark(ShenandoahConcurrentMark* mark) {
+  assert(!cancelled_gc(), "Should not continue");
+  mark->finish_mark();
+  // Marking is completed, deactivate SATB barrier
+  set_concurrent_mark_in_progress(false);
+  mark_complete_marking_context();
+}
+
+void ShenandoahHeap::prepare_evacuation() {
+  if (ShenandoahVerify) {
+    verifier()->verify_roots_no_forwarded();
+  }
+
+  parallel_cleaning(false /* full gc*/);
+
+  {
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_update_region_states);
+    ShenandoahFinalMarkUpdateRegionStateClosure cl;
+    parallel_heap_region_iterate(&cl);
+
+    assert_pinned_region_status();
+  }
+
+  // Retire the TLABs, which will force threads to reacquire their TLABs after the pause.
+  // This is needed for two reasons. Strong one: new allocations would be with new freeset,
+  // which would be outside the collection set, so no cset writes would happen there.
+  // Weaker one: new allocations would happen past update watermark, and so less work would
+  // be needed for reference updates (would update the large filler instead).
+  if (UseTLAB) {
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_manage_labs);
+    tlabs_retire(false);
+  }
+
+  {
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::choose_cset);
+    ShenandoahHeapLocker locker(lock());
+    _collection_set->clear();
+    heuristics()->choose_collection_set(_collection_set);
+  }
+
+  {
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_rebuild_freeset);
+    ShenandoahHeapLocker locker(lock());
+    _free_set->rebuild();
+  }
+
+  if (!is_degenerated_gc_in_progress()) {
+    prepare_concurrent_roots();
+    prepare_concurrent_unloading();
+  }
+
+  // If collection set has candidates, start evacuation.
+  // Otherwise, bypass the rest of the cycle.
+  if (!collection_set()->is_empty()) {
+    ShenandoahGCPhase init_evac(ShenandoahPhaseTimings::init_evac);
+
+    if (ShenandoahVerify) {
+      verifier()->verify_before_evacuation();
+    }
+
+    set_evacuation_in_progress(true);
+    // From here on, we need to update references.
+    set_has_forwarded_objects(true);
+
+    if (!is_degenerated_gc_in_progress()) {
+      if (ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
+        ShenandoahCodeRoots::arm_nmethods();
+      }
+      evacuate_and_update_roots();
+    }
+
+    if (ShenandoahPacing) {
+      pacer()->setup_for_evac();
+    }
+
+    if (ShenandoahVerify) {
+      // If OOM while evacuating/updating of roots, there is no guarantee of their consistencies
+      if (!cancelled_gc()) {
+        ShenandoahRootVerifier::RootTypes types = ShenandoahRootVerifier::None;
+        if (ShenandoahConcurrentRoots::should_do_concurrent_roots()) {
+          types = ShenandoahRootVerifier::combine(ShenandoahRootVerifier::JNIHandleRoots, ShenandoahRootVerifier::WeakRoots);
+          types = ShenandoahRootVerifier::combine(types, ShenandoahRootVerifier::CLDGRoots);
+          types = ShenandoahRootVerifier::combine(types, ShenandoahRootVerifier::StringDedupRoots);
+        }
+
+        if (ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
+          types = ShenandoahRootVerifier::combine(types, ShenandoahRootVerifier::CodeRoots);
+        }
+        verifier()->verify_roots_no_forwarded_except(types);
+      }
+      verifier()->verify_during_evacuation();
+    }
+  } else {
+    if (ShenandoahVerify) {
+      verifier()->verify_after_concmark();
+    }
+
+    if (VerifyAfterGC) {
+      Universe::verify();
+    }
+  }
 }
 
 class ShenandoahConcurrentRootsEvacUpdateTask : public AbstractGangTask {
@@ -2150,11 +2154,10 @@ void ShenandoahHeap::op_degenerated(ShenandoahDegenPoint point) {
     case _degenerated_mark:
       if (point == _degenerated_mark) {
         ShenandoahConcurrentMark mark;
-        mark.finish_mark();
-        // Marking is completed, deactivate SATB barrier
-        set_concurrent_mark_in_progress(false);
-        mark_complete_marking_context();
+        finish_mark(&mark);
       }
+      prepare_evacuation();
+
       if (cancelled_gc()) {
         op_degenerated_fail();
         return;

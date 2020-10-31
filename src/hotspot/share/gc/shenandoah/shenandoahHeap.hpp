@@ -439,6 +439,10 @@ private:
   const char* conc_mark_event_message() const;
   const char* degen_event_message(ShenandoahDegenPoint point) const;
 
+// Helpers
+  void finish_mark(ShenandoahConcurrentMark* mark);
+  void prepare_evacuation();
+
 // ---------- GC subsystems
 //
 // Mark support
