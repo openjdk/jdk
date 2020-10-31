@@ -70,8 +70,9 @@ public class TestOptimizeSubstring {
 
     private static void check(boolean enabled) {
         OutputAnalyzer oa;
-        String newStringAlloc = "call,static  wrapper for: _new_array_nozero_Java";
-
+        // ideally, we should check the opcode 'call' as well, but x86_32.ad uses all CAPITAL opcodes.
+        // the feature is 'CALL, static  wrapper for: _new_array_nozero_Java' on i686.
+        String newStringAlloc = /*call ,*/"static  wrapper for: _new_array_nozero_Java";
         try {
             oa = ProcessTools.executeTestJvm("-XX:+UnlockDiagnosticVMOptions", "-Xbootclasspath/a:.",
                     "-XX:" + (enabled ? "+" : "-") + "OptimizeSubstring",
