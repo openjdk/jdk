@@ -37,6 +37,7 @@
 #include "interpreter/linkResolver.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
+#include "memory/archiveUtils.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.hpp"
@@ -572,6 +573,7 @@ Klass* ClassListParser::load_current_class(TRAPS) {
       klass = java_lang_Class::as_Klass(obj);
     } else { // load classes in bootclasspath/a
       if (HAS_PENDING_EXCEPTION) {
+        ArchiveUtils::check_for_oom(PENDING_EXCEPTION); // exit on OOM
         CLEAR_PENDING_EXCEPTION;
       }
 
@@ -582,6 +584,8 @@ Klass* ClassListParser::load_current_class(TRAPS) {
         } else {
           if (!HAS_PENDING_EXCEPTION) {
             THROW_NULL(vmSymbols::java_lang_ClassNotFoundException());
+          } else {
+            ArchiveUtils::check_for_oom(PENDING_EXCEPTION); // exit on OOM
           }
         }
       }
@@ -590,6 +594,9 @@ Klass* ClassListParser::load_current_class(TRAPS) {
     // If "source:" tag is specified, all super class and super interfaces must be specified in the
     // class list file.
     klass = load_class_from_source(class_name_symbol, CHECK_NULL);
+    if (HAS_PENDING_EXCEPTION) {
+      ArchiveUtils::check_for_oom(PENDING_EXCEPTION); // exit on OOM
+    }
   }
 
   if (klass != NULL && klass->is_instance_klass() && is_id_specified()) {
