@@ -473,15 +473,6 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
 
         //add license if needed
         if (Files.exists(getConfig_LicenseFile(params))) {
-            //hdiutil unflatten your_image_file.dmg
-            pb = new ProcessBuilder(
-                    hdiutil,
-                    "unflatten",
-                    finalDMG.toAbsolutePath().toString()
-            );
-            IOUtils.exec(pb);
-
-            //add license
             pb = new ProcessBuilder(
                     hdiutil,
                     "udifrez",
@@ -490,15 +481,6 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
                     getConfig_LicenseFile(params).toAbsolutePath().toString()
             );
             IOUtils.exec(pb);
-
-            //hdiutil flatten your_image_file.dmg
-            pb = new ProcessBuilder(
-                    hdiutil,
-                    "flatten",
-                    finalDMG.toAbsolutePath().toString()
-            );
-            IOUtils.exec(pb);
-
         }
 
         //Delete the temporary image

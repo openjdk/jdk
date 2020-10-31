@@ -94,6 +94,11 @@ public:
   bool verify_fixed() const {
     return _verify_fixed;
   }
+
+  virtual ZNMethodEntry nmethod_entry() const {
+    // Verification performs its own verification
+    return ZNMethodEntry::None;
+  }
 };
 
 class ZVerifyCodeBlobClosure : public CodeBlobToOopClosure {
@@ -188,7 +193,7 @@ void ZVerifyRootClosure::do_thread(Thread* thread) {
   verify_stack.verify_frames();
 }
 
-class ZVerifyOopClosure : public ClaimMetadataVisitingOopIterateClosure, public ZRootsIteratorClosure  {
+class ZVerifyOopClosure : public ClaimMetadataVisitingOopIterateClosure {
 private:
   const bool _verify_weaks;
 
@@ -214,13 +219,6 @@ public:
   virtual ReferenceIterationMode reference_iteration_mode() {
     return _verify_weaks ? DO_FIELDS : DO_FIELDS_EXCEPT_REFERENT;
   }
-
-#ifdef ASSERT
-  // Verification handled by the closure itself
-  virtual bool should_verify_oops() {
-    return false;
-  }
-#endif
 };
 
 template <typename RootsIterator>

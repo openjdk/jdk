@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8192920 8204588
+ * @bug 8192920 8204588 8246774
  * @summary Test source launcher
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -299,7 +299,7 @@ public class SourceLauncherTest extends TestRunner {
             file + ":1: error: illegal character: '#'\n" +
             "#!/usr/bin/java --source " + thisVersion + "\n" +
             "^\n" +
-            file + ":1: error: class, interface, or enum expected\n" +
+            file + ":1: error: class, interface, enum, or record expected\n" +
             "#!/usr/bin/java --source " + thisVersion + "\n" +
             "  ^\n" +
             "2 errors\n",
@@ -505,7 +505,7 @@ public class SourceLauncherTest extends TestRunner {
             file + ":1: error: illegal character: '#'\n" +
             "#/usr/bin/java --source " + thisVersion + "\n" +
             "^\n" +
-            file + ":1: error: class, interface, or enum expected\n" +
+            file + ":1: error: class, interface, enum, or record expected\n" +
             "#/usr/bin/java --source " + thisVersion + "\n" +
             "  ^\n" +
             "2 errors\n",

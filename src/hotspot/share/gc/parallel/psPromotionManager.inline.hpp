@@ -97,9 +97,6 @@ class PSPushContentsClosure: public BasicOopIterateClosure {
 
   virtual void do_oop(oop* p)       { do_oop_nv(p); }
   virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
-
-  // Don't use the oop verification code in the oop_oop_iterate framework.
-  debug_only(virtual bool should_verify_oops() { return false; })
 };
 
 //

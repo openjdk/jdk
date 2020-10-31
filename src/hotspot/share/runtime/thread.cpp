@@ -894,10 +894,33 @@ static void create_initial_thread(Handle thread_group, JavaThread* thread,
                                       java_lang_Thread::RUNNABLE);
 }
 
+char java_version[64] = "";
 char java_runtime_name[128] = "";
 char java_runtime_version[128] = "";
 char java_runtime_vendor_version[128] = "";
 char java_runtime_vendor_vm_bug_url[128] = "";
+
+// extract the JRE version string from java.lang.VersionProps.java_version
+static const char* get_java_version(TRAPS) {
+  Klass* k = SystemDictionary::find(vmSymbols::java_lang_VersionProps(),
+                                    Handle(), Handle(), CHECK_AND_CLEAR_NULL);
+  fieldDescriptor fd;
+  bool found = k != NULL &&
+               InstanceKlass::cast(k)->find_local_field(vmSymbols::java_version_name(),
+                                                        vmSymbols::string_signature(), &fd);
+  if (found) {
+    oop name_oop = k->java_mirror()->obj_field(fd.offset());
+    if (name_oop == NULL) {
+      return NULL;
+    }
+    const char* name = java_lang_String::as_utf8_string(name_oop,
+                                                        java_version,
+                                                        sizeof(java_version));
+    return name;
+  } else {
+    return NULL;
+  }
+}
 
 // extract the JRE name from java.lang.VersionProps.java_runtime_name
 static const char* get_java_runtime_name(TRAPS) {
@@ -3383,6 +3406,7 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   call_initPhase1(CHECK);
 
   // get the Java runtime name, version, and vendor info after java.lang.System is initialized
+  JDK_Version::set_java_version(get_java_version(THREAD));
   JDK_Version::set_runtime_name(get_java_runtime_name(THREAD));
   JDK_Version::set_runtime_version(get_java_runtime_version(THREAD));
   JDK_Version::set_runtime_vendor_version(get_java_runtime_vendor_version(THREAD));
