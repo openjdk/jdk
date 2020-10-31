@@ -88,7 +88,7 @@ public class Misc {
      */
     static void testIsHidden(Path tmpdir) throws IOException {
         // passing an empty path must not throw any runtime exception
-        isHidden(Path.of(""));
+        assertTrue(!isHidden(Path.of("")));
 
         assertTrue(!isHidden(tmpdir));
 
