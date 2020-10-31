@@ -110,9 +110,7 @@ void LogConfiguration::initialize(jlong vm_start_time) {
 }
 
 void LogConfiguration::finalize() {
-  for (size_t i = _n_outputs; i > 0; i--) {
-    disable_output(i - 1);
-  }
+  disable_outputs();
   FREE_C_HEAP_ARRAY(LogOutput*, _outputs);
 }
 
@@ -272,28 +270,30 @@ void LogConfiguration::configure_output(size_t idx, const LogSelectionList& sele
   assert(strlen(output->config_string()) > 0, "should always have a config description");
 }
 
-void LogConfiguration::disable_output(size_t idx) {
-  assert(idx < _n_outputs, "invalid index: " SIZE_FORMAT " (_n_outputs: " SIZE_FORMAT ")", idx, _n_outputs);
-  LogOutput* out = _outputs[idx];
+void LogConfiguration::disable_outputs() {
+  for (size_t idx = _n_outputs; idx > 0; idx--) {
+    LogOutput* out = _outputs[idx];
 
-  // Remove the output from all tagsets.
-  for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
-    ts->set_output_level(out, LogLevel::Off);
-    ts->update_decorators();
-  }
+    // Remove the output from all tagsets.
+    for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+      ts->set_output_level(out, LogLevel::Off);
+    }
 
-  // Delete the output unless stdout or stderr (idx 0 or 1)
-  if (idx > 1) {
-    delete_output(idx);
-  } else {
-    out->set_config_string("all=off");
+    // Delete the output unless stdout or stderr (idx 0 or 1)
+    if (idx > 1) {
+      delete_output(idx);
+    } else {
+      out->set_config_string("all=off");
+    }
   }
 }
 
 void LogConfiguration::disable_logging() {
   ConfigurationLock cl;
-  for (size_t i = _n_outputs; i > 0; i--) {
-    disable_output(i - 1);
+  disable_outputs();
+  // Update the decorators on all tagsets to get rid of unused decorators
+  for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+    ts->update_decorators();
   }
   notify_update_listeners();
 }
