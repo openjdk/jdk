@@ -745,7 +745,6 @@ javax/swing/JTable/4235420/bug4235420.java     8079127 generic-all
 javax/swing/JSplitPane/4201995/bug4201995.java 8079127 generic-all
 javax/swing/JTree/DnD/LastNodeLowerHalfDrop.java 8159131 linux-all
 javax/swing/JTree/4633594/JTreeFocusTest.java 8173125 macosx-all
-javax/swing/JFileChooser/8041694/bug8041694.java 8196302 windows-all,macosx-all
 javax/swing/AbstractButton/6711682/bug6711682.java 8060765 windows-all,macosx-all
 javax/swing/Action/8133039/bug8133039.java 8196089 windows-all,macosx-all
 javax/swing/JComboBox/6559152/bug6559152.java 8196090 windows-all,macosx-all
