@@ -1786,27 +1786,7 @@ void MethodData::clean_method_data(bool always_clean) {
 // methods out of MethodData for all methods.
 void MethodData::clean_weak_method_links() {
   ResourceMark rm;
-  for (ProfileData* data = first_data();
-       is_valid(data);
-       data = next_data(data)) {
-    data->clean_weak_method_links();
-  }
-
   CleanExtraDataMethodClosure cl;
   clean_extra_data(&cl);
   verify_extra_data_clean(&cl);
 }
-
-#ifdef ASSERT
-void MethodData::verify_clean_weak_method_links() {
-  ResourceMark rm;
-  for (ProfileData* data = first_data();
-       is_valid(data);
-       data = next_data(data)) {
-    data->verify_clean_weak_method_links();
-  }
-
-  CleanExtraDataMethodClosure cl;
-  verify_extra_data_clean(&cl);
-}
-#endif // ASSERT

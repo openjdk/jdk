@@ -238,10 +238,6 @@ public:
 
   // GC support
   void clean_weak_klass_links(bool always_clean);
-
-  // Redefinition support
-  void clean_weak_method_links();
-  DEBUG_ONLY(void verify_clean_weak_method_links();)
 };
 
 
@@ -454,10 +450,6 @@ public:
 
   // GC support
   virtual void clean_weak_klass_links(bool always_clean) {}
-
-  // Redefinition support
-  virtual void clean_weak_method_links() {}
-  DEBUG_ONLY(virtual void verify_clean_weak_method_links() {})
 
   // CI translation: ProfileData can represent both MethodDataOop data
   // as well as CIMethodData data. This function is provided for translating
