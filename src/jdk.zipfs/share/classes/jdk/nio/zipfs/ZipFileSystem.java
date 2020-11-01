@@ -2975,7 +2975,7 @@ class ZipFileSystem extends FileSystem {
                     // wait until all of the CEN extra data fields have been processed
                     // prior to reading the LOC extra data field in order to obtain
                     // the Info-ZIP Extended Timestamp.
-                    if(locoff != ZIP64_MINVAL) {
+                    if (locoff != ZIP64_MINVAL) {
                         readLocEXTT(zipfs);
                     } else {
                         hasZip64LocOffset = true;
@@ -2990,7 +2990,7 @@ class ZipFileSystem extends FileSystem {
 
             // We need to read the LOC extra data and the LOC offset was obtained
             // from the EXTID_ZIP64 field.
-            if(hasZip64LocOffset) {
+            if (hasZip64LocOffset) {
                 readLocEXTT(zipfs);
             }
 
