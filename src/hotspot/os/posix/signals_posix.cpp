@@ -71,10 +71,6 @@ extern "C" {
 static sigset_t check_signal_done;
 static bool check_signals = true;
 
-// This boolean allows users to forward their own non-matching signals
-// to JVM_handle_bsd_signal/JVM_handle_linux_signal, harmlessly.
-static bool signal_handlers_are_installed = false;
-
 debug_only(static bool signal_sets_initialized = false);
 static sigset_t unblocked_sigs, vm_sigs, preinstalled_sigs;
 struct sigaction sigact[NSIG];
@@ -261,6 +257,8 @@ static const struct {
   { -1, NULL }
 };
 
+static const char* get_signal_name(int sig, char* out, size_t outlen);
+
 ////////////////////////////////////////////////////////////////////////////////
 // sun.misc.Signal support
 
@@ -440,15 +438,21 @@ bool PosixSignals::chained_handler(int sig, siginfo_t* siginfo, void* context) {
 #if defined(BSD)
 extern "C" JNIEXPORT int JVM_handle_bsd_signal(int signo, siginfo_t* siginfo,
                                                void* ucontext,
-                                               int abort_if_unrecognized);
+                                               int abort_if_unrecognized) {
+  return 0;
+}
 #elif defined(AIX)
 extern "C" JNIEXPORT int JVM_handle_aix_signal(int signo, siginfo_t* siginfo,
                                                void* ucontext,
-                                               int abort_if_unrecognized);
+                                               int abort_if_unrecognized) {
+  return 0;
+}
 #else
 extern "C" JNIEXPORT int JVM_handle_linux_signal(int signo, siginfo_t* siginfo,
                                                void* ucontext,
-                                               int abort_if_unrecognized);
+                                               int abort_if_unrecognized) {
+  return 0;
+}
 #endif
 
 
@@ -504,21 +508,98 @@ void PosixSignals::unblock_error_signals() {
   ::pthread_sigmask(SIG_UNBLOCK, &set, NULL);
 }
 
-// Renamed from 'signalHandler' to avoid collision with other shared libs.
-static void javaSignalHandler(int sig, siginfo_t* info, void* uc) {
-  assert(info != NULL && uc != NULL, "it must be old kernel");
+class ErrnoPreserver: public StackObj {
+  const int _saved;
+public:
+  ErrnoPreserver() : _saved(errno) {}
+  ~ErrnoPreserver() { errno = _saved; }
+};
 
+// Renamed from 'signalHandler' to avoid collision with other shared libs.
+static void javaSignalHandler(int sig, siginfo_t* info, void* ucVoid) {
+  assert(info != NULL && ucVoid != NULL, "sanity");
+
+  // Note: it's not uncommon that JNI code uses signal/sigset to install,
+  // then restore certain signal handler (e.g. to temporarily block SIGPIPE,
+  // or have a SIGILL handler when detecting CPU type). When that happens,
+  // this handler might be invoked with junk info/ucVoid. To avoid unnecessary
+  // crash when libjsig is not preloaded, try handle signals that do not require
+  // siginfo/ucontext first.
+
+  // Preserve errno value over signal handler.
+  //  (note: RAII ok here, even with JFR thread crash protection, see below).
+  ErrnoPreserver ep;
+
+  // Unblock all synchronous error signals (see JDK-8252533)
   PosixSignals::unblock_error_signals();
 
-  int orig_errno = errno;  // Preserve errno value over signal handler.
-#if defined(BSD)
-  JVM_handle_bsd_signal(sig, info, uc, true);
-#elif defined(AIX)
-  JVM_handle_aix_signal(sig, info, uc, true);
-#else
-  JVM_handle_linux_signal(sig, info, uc, true);
+  ucontext_t* const uc = (ucontext_t*) ucVoid;
+  Thread* const t = Thread::current_or_null_safe();
+  JavaThread* const jt = (t != NULL && t->is_Java_thread()) ? (JavaThread*) t : NULL;
+
+  // Handle JFR thread crash protection.
+  //  Note: this may cause us to longjmp away. Do not use any code before this
+  //  point which really needs any form of epilogue code running, eg RAII objects.
+  os::ThreadCrashProtection::check_crash_protection(sig, t);
+
+  bool signal_was_handled = false;
+
+  // Handle assertion poison page accesses.
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+  if ((sig == SIGSEGV || sig == SIGBUS) && info != NULL && info->si_addr == g_assert_poison) {
+    signal_was_handled = handle_assert_poison_fault(ucVoid, info->si_addr);
+  }
 #endif
-  errno = orig_errno;
+
+  // Ignore SIGPIPE and SIGXFSZ (4229104, 6499219).
+  if (sig == SIGPIPE || sig == SIGXFSZ) {
+    PosixSignals::chained_handler(sig, info, ucVoid);
+    signal_was_handled = true; // unconditionally.
+  }
+
+  // Call platform dependent signal handler.
+  if (!signal_was_handled) {
+    signal_was_handled = PosixSignals::pd_hotspot_signal_handler(sig, info, uc, jt);
+  }
+
+  // From here on, if the signal had not been handled, it is a fatal error.
+
+  // Give the chained signal handler - should it exist - a shot.
+  if (!signal_was_handled) {
+    signal_was_handled = PosixSignals::chained_handler(sig, info, ucVoid);
+  }
+
+  // Invoke fatal error handling.
+  if (!signal_was_handled) {
+    // Extract pc from context for the error handler to display.
+    address pc = NULL;
+    if (uc != NULL) {
+      // prepare fault pc address for error reporting.
+      if (sig == SIGILL || sig == SIGFPE) {
+        pc = (address)info->si_addr;
+      } else {
+        pc = PosixSignals::ucontext_get_pc(uc);
+      }
+    }
+#if defined(ZERO) && !defined(PRODUCT)
+    char buf[20];
+    VMError::report_and_die(t, sig, pc, info, ucVoid,
+          "\n#"
+          "\n#    /--------------------\\"
+          "\n#    |      %-7s       |"
+          "\n#    \\---\\ /--------------/"
+          "\n#        /"
+          "\n#    [-]        |\\_/|    "
+          "\n#    (+)=C      |o o|__  "
+          "\n#    | |        =-*-=__\\ "
+          "\n#    OOO        c_c_(___)",
+          get_signal_name(sig, buf, sizeof(buf)));
+#else
+    VMError::report_and_die(t, sig, pc, info, ucVoid);
+#endif
+    // VMError should not return.
+    ShouldNotReachHere();
+  }
 }
 
 static void UserHandler(int sig, void *siginfo, void *context) {
@@ -937,7 +1018,6 @@ static bool is_valid_signal(int sig) {
 #endif
 }
 
-// Returned string is a constant. For unknown signals "UNKNOWN" is returned.
 static const char* get_signal_name(int sig, char* out, size_t outlen) {
 
   const char* ret = NULL;
@@ -1140,85 +1220,77 @@ void set_signal_handler(int sig, bool set_installed) {
 
 // install signal handlers for signals that HotSpot needs to
 // handle in order to support Java-level exception handling.
-
-bool PosixSignals::are_signal_handlers_installed() {
-  return signal_handlers_are_installed;
-}
-
-// install signal handlers for signals that HotSpot needs to
-// handle in order to support Java-level exception handling.
 void PosixSignals::install_signal_handlers() {
-  if (!signal_handlers_are_installed) {
-    signal_handlers_are_installed = true;
+  static bool done = false;
+  assert(!done, "Only call once");
 
-    // signal-chaining
-    typedef void (*signal_setting_t)();
-    signal_setting_t begin_signal_setting = NULL;
-    signal_setting_t end_signal_setting = NULL;
-    begin_signal_setting = CAST_TO_FN_PTR(signal_setting_t,
-                                          dlsym(RTLD_DEFAULT, "JVM_begin_signal_setting"));
-    if (begin_signal_setting != NULL) {
-      end_signal_setting = CAST_TO_FN_PTR(signal_setting_t,
-                                          dlsym(RTLD_DEFAULT, "JVM_end_signal_setting"));
-      get_signal_action = CAST_TO_FN_PTR(get_signal_t,
-                                         dlsym(RTLD_DEFAULT, "JVM_get_signal_action"));
-      libjsig_is_loaded = true;
-      assert(UseSignalChaining, "should enable signal-chaining");
-    }
-    if (libjsig_is_loaded) {
-      // Tell libjsig jvm is setting signal handlers
-      (*begin_signal_setting)();
-    }
+  // signal-chaining
+  typedef void (*signal_setting_t)();
+  signal_setting_t begin_signal_setting = NULL;
+  signal_setting_t end_signal_setting = NULL;
+  begin_signal_setting = CAST_TO_FN_PTR(signal_setting_t,
+                                        dlsym(RTLD_DEFAULT, "JVM_begin_signal_setting"));
+  if (begin_signal_setting != NULL) {
+    end_signal_setting = CAST_TO_FN_PTR(signal_setting_t,
+                                        dlsym(RTLD_DEFAULT, "JVM_end_signal_setting"));
+    get_signal_action = CAST_TO_FN_PTR(get_signal_t,
+                                       dlsym(RTLD_DEFAULT, "JVM_get_signal_action"));
+    libjsig_is_loaded = true;
+    assert(UseSignalChaining, "should enable signal-chaining");
+  }
+  if (libjsig_is_loaded) {
+    // Tell libjsig jvm is setting signal handlers
+    (*begin_signal_setting)();
+  }
 
-    set_signal_handler(SIGSEGV, true);
-    set_signal_handler(SIGPIPE, true);
-    set_signal_handler(SIGBUS, true);
-    set_signal_handler(SIGILL, true);
-    set_signal_handler(SIGFPE, true);
+  set_signal_handler(SIGSEGV, true);
+  set_signal_handler(SIGPIPE, true);
+  set_signal_handler(SIGBUS, true);
+  set_signal_handler(SIGILL, true);
+  set_signal_handler(SIGFPE, true);
 #if defined(PPC64) || defined(AIX)
-    set_signal_handler(SIGTRAP, true);
+  set_signal_handler(SIGTRAP, true);
 #endif
-    set_signal_handler(SIGXFSZ, true);
+  set_signal_handler(SIGXFSZ, true);
 
 #if defined(__APPLE__)
-    // In Mac OS X 10.4, CrashReporter will write a crash log for all 'fatal' signals, including
-    // signals caught and handled by the JVM. To work around this, we reset the mach task
-    // signal handler that's placed on our process by CrashReporter. This disables
-    // CrashReporter-based reporting.
-    //
-    // This work-around is not necessary for 10.5+, as CrashReporter no longer intercedes
-    // on caught fatal signals.
-    //
-    // Additionally, gdb installs both standard BSD signal handlers, and mach exception
-    // handlers. By replacing the existing task exception handler, we disable gdb's mach
-    // exception handling, while leaving the standard BSD signal handlers functional.
-    kern_return_t kr;
-    kr = task_set_exception_ports(mach_task_self(),
-                                  EXC_MASK_BAD_ACCESS | EXC_MASK_ARITHMETIC,
-                                  MACH_PORT_NULL,
-                                  EXCEPTION_STATE_IDENTITY,
-                                  MACHINE_THREAD_STATE);
+  // In Mac OS X 10.4, CrashReporter will write a crash log for all 'fatal' signals, including
+  // signals caught and handled by the JVM. To work around this, we reset the mach task
+  // signal handler that's placed on our process by CrashReporter. This disables
+  // CrashReporter-based reporting.
+  //
+  // This work-around is not necessary for 10.5+, as CrashReporter no longer intercedes
+  // on caught fatal signals.
+  //
+  // Additionally, gdb installs both standard BSD signal handlers, and mach exception
+  // handlers. By replacing the existing task exception handler, we disable gdb's mach
+  // exception handling, while leaving the standard BSD signal handlers functional.
+  kern_return_t kr;
+  kr = task_set_exception_ports(mach_task_self(),
+                                EXC_MASK_BAD_ACCESS | EXC_MASK_ARITHMETIC,
+                                MACH_PORT_NULL,
+                                EXCEPTION_STATE_IDENTITY,
+                                MACHINE_THREAD_STATE);
 
-    assert(kr == KERN_SUCCESS, "could not set mach task signal handler");
+  assert(kr == KERN_SUCCESS, "could not set mach task signal handler");
 #endif
 
-    if (libjsig_is_loaded) {
-      // Tell libjsig jvm finishes setting signal handlers
-      (*end_signal_setting)();
-    }
+  if (libjsig_is_loaded) {
+    // Tell libjsig jvm finishes setting signal handlers
+    (*end_signal_setting)();
+  }
 
-    // We don't activate signal checker if libjsig is in place, we trust ourselves
-    // and if UserSignalHandler is installed all bets are off.
-    // Log that signal checking is off only if -verbose:jni is specified.
-    if (CheckJNICalls) {
-      if (libjsig_is_loaded) {
-        log_debug(jni, resolve)("Info: libjsig is activated, all active signal checking is disabled");
-        check_signals = false;
-      }
-      if (AllowUserSignalHandlers) {
-        log_debug(jni, resolve)("Info: AllowUserSignalHandlers is activated, all active signal checking is disabled");
-        check_signals = false;
-      }
+  // We don't activate signal checker if libjsig is in place, we trust ourselves
+  // and if UserSignalHandler is installed all bets are off.
+  // Log that signal checking is off only if -verbose:jni is specified.
+  if (CheckJNICalls) {
+    if (libjsig_is_loaded) {
+      log_debug(jni, resolve)("Info: libjsig is activated, all active signal checking is disabled");
+      check_signals = false;
+    }
+    if (AllowUserSignalHandlers) {
+      log_debug(jni, resolve)("Info: AllowUserSignalHandlers is activated, all active signal checking is disabled");
+      check_signals = false;
     }
   }
 }
