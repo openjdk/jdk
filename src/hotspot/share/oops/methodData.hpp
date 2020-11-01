@@ -2072,20 +2072,10 @@ private:
     // avoid SEGV on this edge case
     if (data_size() == 0)
       return NULL;
-    int hint = hint_di();
-    DataLayout* layout = data_layout_at(hint);
+    DataLayout* layout = data_layout_at(hint_di());
     if (layout->bci() <= bci)
       return layout;
     return data_layout_at(first_di());
-  }
-  ProfileData* data_before(int bci) {
-    // avoid SEGV on this edge case
-    if (data_size() == 0)
-      return NULL;
-    int hint = hint_di();
-    if (data_layout_at(hint)->bci() <= bci)
-      return data_at(hint);
-    return first_data();
   }
 
   // What is the index of the first data entry?

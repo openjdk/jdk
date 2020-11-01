@@ -1372,11 +1372,11 @@ address MethodData::bci_to_dp(int bci) {
 
 // Translate a bci to its corresponding data, or NULL.
 ProfileData* MethodData::bci_to_data(int bci) {
-  ProfileData* data = data_before(bci);
-  for ( ; is_valid(data); data = next_data(data)) {
+  DataLayout* data = data_layout_before(bci);
+  for ( ; is_valid(data); data = next_data_layout(data)) {
     if (data->bci() == bci) {
-      set_hint_di(dp_to_di(data->dp()));
-      return data;
+      set_hint_di(dp_to_di((address)data));
+      return data->data_in();
     } else if (data->bci() > bci) {
       break;
     }
