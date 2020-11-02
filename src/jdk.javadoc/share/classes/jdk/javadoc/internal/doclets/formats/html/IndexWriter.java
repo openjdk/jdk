@@ -37,7 +37,7 @@ import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
-import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.DeprecatedTree;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
@@ -300,13 +300,12 @@ public class IndexWriter extends HtmlDocletWriter {
      * @param contentTree the content tree to which the comment will be added
      */
     protected void addComment(Element element, Content contentTree) {
-        List<? extends DocTree> tags;
         Content span = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(element));
         HtmlTree div = new HtmlTree(TagName.DIV);
         div.setStyle(HtmlStyle.deprecationBlock);
         if (utils.isDeprecated(element)) {
             div.add(span);
-            tags = utils.getBlockTags(element, DocTree.Kind.DEPRECATED);
+            List<? extends DeprecatedTree> tags = utils.getDeprecatedTrees(element);
             if (!tags.isEmpty())
                 addInlineDeprecatedComment(element, tags.get(0), div);
             contentTree.add(div);

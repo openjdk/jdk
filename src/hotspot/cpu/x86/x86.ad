@@ -6957,6 +6957,7 @@ instruct extractI(rRegI dst, legVec src, immU8 idx) %{
 #ifdef _LP64
   match(Set dst (ExtractB src idx));
 #endif
+  format %{ "extractI $dst,$src,$idx\t!" %}
   ins_encode %{
     assert($idx$$constant < (int)vector_length(this, $src), "out of bounds");
 
@@ -6975,6 +6976,7 @@ instruct vextractI(rRegI dst, legVec src, immI idx, legVec vtmp) %{
   match(Set dst (ExtractB src idx));
 #endif
   effect(TEMP vtmp);
+  format %{ "vextractI $dst,$src,$idx\t! using $vtmp as TEMP" %}
   ins_encode %{
     assert($idx$$constant < (int)vector_length(this, $src), "out of bounds");
 
@@ -6989,6 +6991,7 @@ instruct vextractI(rRegI dst, legVec src, immI idx, legVec vtmp) %{
 instruct extractL(rRegL dst, legVec src, immU8 idx) %{
   predicate(vector_length(n->in(1)) <= 2); // src
   match(Set dst (ExtractL src idx));
+  format %{ "extractL $dst,$src,$idx\t!" %}
   ins_encode %{
     assert(UseSSE >= 4, "required");
     assert($idx$$constant < (int)vector_length(this, $src), "out of bounds");
@@ -7003,6 +7006,7 @@ instruct vextractL(rRegL dst, legVec src, immU8 idx, legVec vtmp) %{
             vector_length(n->in(1)) == 8);  // src
   match(Set dst (ExtractL src idx));
   effect(TEMP vtmp);
+  format %{ "vextractL $dst,$src,$idx\t! using $vtmp as TEMP" %}
   ins_encode %{
     assert($idx$$constant < (int)vector_length(this, $src), "out of bounds");
 
@@ -7017,6 +7021,7 @@ instruct extractF(legRegF dst, legVec src, immU8 idx, rRegI tmp, legVec vtmp) %{
   predicate(vector_length(n->in(1)) <= 4);
   match(Set dst (ExtractF src idx));
   effect(TEMP dst, TEMP tmp, TEMP vtmp);
+  format %{ "extractF $dst,$src,$idx\t! using $tmp, $vtmp as TEMP" %}
   ins_encode %{
     assert($idx$$constant < (int)vector_length(this, $src), "out of bounds");
 
@@ -7030,6 +7035,7 @@ instruct vextractF(legRegF dst, legVec src, immU8 idx, rRegI tmp, legVec vtmp) %
             vector_length(n->in(1)/*src*/) == 16);
   match(Set dst (ExtractF src idx));
   effect(TEMP tmp, TEMP vtmp);
+  format %{ "vextractF $dst,$src,$idx\t! using $tmp, $vtmp as TEMP" %}
   ins_encode %{
     assert($idx$$constant < (int)vector_length(this, $src), "out of bounds");
 
@@ -7042,6 +7048,7 @@ instruct vextractF(legRegF dst, legVec src, immU8 idx, rRegI tmp, legVec vtmp) %
 instruct extractD(legRegD dst, legVec src, immU8 idx) %{
   predicate(vector_length(n->in(1)) == 2); // src
   match(Set dst (ExtractD src idx));
+  format %{ "extractD $dst,$src,$idx\t!" %}
   ins_encode %{
     assert($idx$$constant < (int)vector_length(this, $src), "out of bounds");
 
@@ -7055,6 +7062,7 @@ instruct vextractD(legRegD dst, legVec src, immU8 idx, legVec vtmp) %{
             vector_length(n->in(1)) == 8);  // src
   match(Set dst (ExtractD src idx));
   effect(TEMP vtmp);
+  format %{ "vextractD $dst,$src,$idx\t! using $vtmp as TEMP" %}
   ins_encode %{
     assert($idx$$constant < (int)vector_length(this, $src), "out of bounds");
 

@@ -66,9 +66,7 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
   int len = _lambdaform_lines->length();
   objArrayHandle list_lines = oopFactory::new_objArray_handle(SystemDictionary::String_klass(), len, CHECK);
   for (int i = 0; i < len; i++) {
-    char* record = _lambdaform_lines->at(i);
-    record += strlen(lambda_form_invoker_tag()) + 1; // skip the @lambda_form_invoker prefix
-    Handle h_line = java_lang_String::create_from_str(record, CHECK);
+    Handle h_line = java_lang_String::create_from_str(_lambdaform_lines->at(i), CHECK);
     list_lines->obj_at_put(i, h_line());
   }
 

@@ -133,7 +133,7 @@ public class Connect {
         final DatagramChannel dc;
 
         Reactor() throws IOException {
-            dc = DatagramChannel.open().bind(new InetSocketAddress(0));
+            dc = DatagramChannel.open().bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
         }
 
         SocketAddress getSocketAddress() throws IOException {

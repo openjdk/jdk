@@ -27,11 +27,12 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import javax.lang.model.element.TypeElement;
 
 import com.sun.source.doctree.DocTree;
-import java.util.Set;
+import com.sun.source.doctree.DeprecatedTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
@@ -171,7 +172,7 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
             addSummaryComment(klass, description);
         } else if (flags.contains(ElementFlag.DEPRECATED)) {
             description.add(getDeprecatedPhrase(klass));
-            List<? extends DocTree> tags = utils.getDeprecatedTrees(klass);
+            List<? extends DeprecatedTree> tags = utils.getDeprecatedTrees(klass);
             if (!tags.isEmpty()) {
                 addSummaryDeprecatedComment(klass, tags.get(0), description);
             }
