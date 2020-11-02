@@ -44,11 +44,11 @@ public:
   // Signal number used to suspend/resume a thread
   static int SR_signum;
 
+  static int init();
+
   static bool are_signal_handlers_installed();
-  static void install_signal_handlers();
 
   static bool is_sig_ignored(int sig);
-  static void signal_sets_init();
 
   // unblocks the signal masks for current thread
   static bool unblock_thread_signal_mask(const sigset_t *set);
@@ -58,16 +58,12 @@ public:
   static void print_signal_handlers(outputStream* st, char* buf, size_t buflen);
 
   // Suspend-resume
-  static int SR_initialize();
   static bool do_suspend(OSThread* osthread);
   static void do_resume(OSThread* osthread);
   static void do_task(Thread* thread, os::SuspendedThreadTask* task);
 
   // For signal-chaining
   static bool chained_handler(int sig, siginfo_t* siginfo, void* context);
-
-  // sun.misc.Signal support
-  static void jdk_misc_signal_init();
 };
 
 #endif // OS_POSIX_SIGNALS_POSIX_HPP

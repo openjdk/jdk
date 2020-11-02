@@ -260,7 +260,7 @@ static const struct {
 ////////////////////////////////////////////////////////////////////////////////
 // sun.misc.Signal support
 
-void PosixSignals::jdk_misc_signal_init() {
+void jdk_misc_signal_init() {
   // Initialize signal structures
   ::memset((void*)pending_signals, 0, sizeof(pending_signals));
 
@@ -1098,7 +1098,7 @@ bool PosixSignals::are_signal_handlers_installed() {
 
 // install signal handlers for signals that HotSpot needs to
 // handle in order to support Java-level exception handling.
-void PosixSignals::install_signal_handlers() {
+void install_signal_handlers() {
   if (!signal_handlers_are_installed) {
     signal_handlers_are_installed = true;
 
@@ -1291,7 +1291,7 @@ bool PosixSignals::unblock_thread_signal_mask(const sigset_t *set) {
   return rc == 0 ? true : false;
 }
 
-void PosixSignals::signal_sets_init() {
+void signal_sets_init() {
   sigemptyset(&preinstalled_sigs);
 
   // Should also have an assertion stating we are still single-threaded.
@@ -1317,7 +1317,7 @@ void PosixSignals::signal_sets_init() {
   #if defined(PPC64) || defined(AIX)
     sigaddset(&unblocked_sigs, SIGTRAP);
   #endif
-  sigaddset(&unblocked_sigs, SR_signum);
+  sigaddset(&unblocked_sigs, PosixSignals::SR_signum);
 
   if (!ReduceSignalUsage) {
     if (!PosixSignals::is_sig_ignored(SHUTDOWN1_SIGNAL)) {
@@ -1500,7 +1500,7 @@ static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context) {
   errno = old_errno;
 }
 
-int PosixSignals::SR_initialize() {
+int SR_initialize() {
   struct sigaction act;
   char *s;
   // Get signal number to use for suspend/resume
@@ -1508,18 +1508,18 @@ int PosixSignals::SR_initialize() {
     int sig = ::strtol(s, 0, 10);
     if (sig > MAX2(SIGSEGV, SIGBUS) &&  // See 4355769.
         sig < NSIG) {                   // Must be legal signal and fit into sigflags[].
-      SR_signum = sig;
+      PosixSignals::SR_signum = sig;
     } else {
       warning("You set _JAVA_SR_SIGNUM=%d. It must be in range [%d, %d]. Using %d instead.",
-              sig, MAX2(SIGSEGV, SIGBUS)+1, NSIG-1, SR_signum);
+              sig, MAX2(SIGSEGV, SIGBUS)+1, NSIG-1, PosixSignals::SR_signum);
     }
   }
 
-  assert(SR_signum > SIGSEGV && SR_signum > SIGBUS,
+  assert(PosixSignals::SR_signum > SIGSEGV && PosixSignals::SR_signum > SIGBUS,
          "SR_signum must be greater than max(SIGSEGV, SIGBUS), see 4355769");
 
   sigemptyset(&SR_sigset);
-  sigaddset(&SR_sigset, SR_signum);
+  sigaddset(&SR_sigset, PosixSignals::SR_signum);
 
   // Set up signal handler for suspend/resume
   act.sa_flags = SA_RESTART|SA_SIGINFO;
@@ -1528,12 +1528,12 @@ int PosixSignals::SR_initialize() {
   // SR_signum is blocked by default.
   pthread_sigmask(SIG_BLOCK, NULL, &act.sa_mask);
 
-  if (sigaction(SR_signum, &act, 0) == -1) {
+  if (sigaction(PosixSignals::SR_signum, &act, 0) == -1) {
     return -1;
   }
 
   // Save signal flag
-  set_our_sigflags(SR_signum, act.sa_flags);
+  set_our_sigflags(PosixSignals::SR_signum, act.sa_flags);
   return 0;
 }
 
@@ -1615,4 +1615,23 @@ void PosixSignals::do_task(Thread* thread, os::SuspendedThreadTask* task) {
     task->do_task(context);
     PosixSignals::do_resume(thread->osthread());
   }
+}
+
+int PosixSignals::init() {
+  // initialize suspend/resume support - must do this before signal_sets_init()
+  if (SR_initialize() != 0) {
+    perror("SR_initialize failed");
+    return JNI_ERR;
+  }
+
+  signal_sets_init();
+
+  install_signal_handlers();
+
+  // Initialize data for jdk.internal.misc.Signal
+  if (!ReduceSignalUsage) {
+    jdk_misc_signal_init();
+  }
+
+  return JNI_OK;
 }
