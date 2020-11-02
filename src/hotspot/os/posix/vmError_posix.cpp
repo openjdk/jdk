@@ -27,12 +27,12 @@
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
+#include "signals_posix.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/vmError.hpp"
 
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <signal.h>
 
 #ifdef LINUX
 #include <sys/syscall.h>
@@ -109,11 +109,11 @@ static void crash_handler(int sig, siginfo_t* info, void* ucVoid) {
   for (int i = 0; i < NUM_SIGNALS; i++) {
     sigaddset(&newset, SIGNALS[i]);
   }
-  os::Posix::unblock_thread_signal_mask(&newset);
+  PosixSignals::unblock_thread_signal_mask(&newset);
 
   // support safefetch faults in error handling
   ucontext_t* const uc = (ucontext_t*) ucVoid;
-  address pc = (uc != NULL) ? os::Posix::ucontext_get_pc(uc) : NULL;
+  address pc = (uc != NULL) ? PosixSignals::ucontext_get_pc(uc) : NULL;
 
   // Correct pc for SIGILL, SIGFPE (see JDK-8176872)
   if (sig == SIGILL || sig == SIGFPE) {
@@ -122,7 +122,7 @@ static void crash_handler(int sig, siginfo_t* info, void* ucVoid) {
 
   // Needed to make it possible to call SafeFetch.. APIs in error handling.
   if (uc && pc && StubRoutines::is_safefetch_fault(pc)) {
-    os::Posix::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
+    PosixSignals::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
     return;
   }
 
@@ -148,8 +148,7 @@ void VMError::reset_signal_handlers() {
     os::signal(SIGNALS[i], CAST_FROM_FN_PTR(void *, crash_handler));
     sigaddset(&newset, SIGNALS[i]);
   }
-  os::Posix::unblock_thread_signal_mask(&newset);
-
+  PosixSignals::unblock_thread_signal_mask(&newset);
 }
 
 // Write a hint to the stream in case siginfo relates to a segv/bus error
@@ -170,4 +169,3 @@ void VMError::check_failing_cds_access(outputStream* st, const void* siginfo) {
   }
 #endif
 }
-

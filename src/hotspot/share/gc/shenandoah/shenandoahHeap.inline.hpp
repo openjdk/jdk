@@ -149,14 +149,14 @@ inline oop ShenandoahHeap::cas_oop(oop n, oop* addr, oop c) {
 inline oop ShenandoahHeap::cas_oop(oop n, narrowOop* addr, narrowOop c) {
   assert(is_aligned(addr, sizeof(narrowOop)), "Address should be aligned: " PTR_FORMAT, p2i(addr));
   narrowOop val = CompressedOops::encode(n);
-  return CompressedOops::decode((narrowOop) Atomic::cmpxchg(addr, c, val));
+  return CompressedOops::decode(Atomic::cmpxchg(addr, c, val));
 }
 
 inline oop ShenandoahHeap::cas_oop(oop n, narrowOop* addr, oop c) {
   assert(is_aligned(addr, sizeof(narrowOop)), "Address should be aligned: " PTR_FORMAT, p2i(addr));
   narrowOop cmp = CompressedOops::encode(c);
   narrowOop val = CompressedOops::encode(n);
-  return CompressedOops::decode((narrowOop) Atomic::cmpxchg(addr, cmp, val));
+  return CompressedOops::decode(Atomic::cmpxchg(addr, cmp, val));
 }
 
 template <class T>

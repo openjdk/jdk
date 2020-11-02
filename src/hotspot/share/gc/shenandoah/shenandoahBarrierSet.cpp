@@ -109,41 +109,6 @@ bool ShenandoahBarrierSet::need_keep_alive_barrier(DecoratorSet decorators,Basic
   return (on_weak_ref || unknown) && keep_alive;
 }
 
-oop ShenandoahBarrierSet::load_reference_barrier_not_null(oop obj) {
-  if (ShenandoahLoadRefBarrier && _heap->has_forwarded_objects()) {
-    return load_reference_barrier_impl(obj);
-  } else {
-    return obj;
-  }
-}
-
-oop ShenandoahBarrierSet::load_reference_barrier(oop obj) {
-  if (obj != NULL) {
-    return load_reference_barrier_not_null(obj);
-  } else {
-    return obj;
-  }
-}
-
-oop ShenandoahBarrierSet::load_reference_barrier_impl(oop obj) {
-  assert(ShenandoahLoadRefBarrier, "should be enabled");
-  if (!CompressedOops::is_null(obj)) {
-    bool evac_in_progress = _heap->is_evacuation_in_progress();
-    oop fwd = resolve_forwarded_not_null(obj);
-    if (evac_in_progress &&
-        _heap->in_collection_set(obj) &&
-        obj == fwd) {
-      Thread *t = Thread::current();
-      ShenandoahEvacOOMScope oom_evac_scope(t);
-      return _heap->evacuate_object(obj, t);
-    } else {
-      return fwd;
-    }
-  } else {
-    return obj;
-  }
-}
-
 void ShenandoahBarrierSet::on_thread_create(Thread* thread) {
   // Create thread local data
   ShenandoahThreadLocalData::create(thread);
@@ -177,39 +142,6 @@ void ShenandoahBarrierSet::on_thread_detach(Thread *thread) {
       gclab->retire();
     }
   }
-}
-
-oop ShenandoahBarrierSet::load_reference_barrier_native(oop obj, oop* load_addr) {
-  return load_reference_barrier_native_impl(obj, load_addr);
-}
-
-oop ShenandoahBarrierSet::load_reference_barrier_native(oop obj, narrowOop* load_addr) {
-  return load_reference_barrier_native_impl(obj, load_addr);
-}
-
-template <class T>
-oop ShenandoahBarrierSet::load_reference_barrier_native_impl(oop obj, T* load_addr) {
-  if (CompressedOops::is_null(obj)) {
-    return NULL;
-  }
-
-  ShenandoahMarkingContext* const marking_context = _heap->marking_context();
-  if (_heap->is_concurrent_weak_root_in_progress() && !marking_context->is_marked(obj)) {
-    Thread* thr = Thread::current();
-    if (thr->is_Java_thread()) {
-      return NULL;
-    } else {
-      return obj;
-    }
-  }
-
-  oop fwd = load_reference_barrier_not_null(obj);
-  if (ShenandoahSelfFixing && load_addr != NULL && fwd != obj) {
-    // Since we are here and we know the load address, update the reference.
-    ShenandoahHeap::cas_oop(fwd, load_addr, obj);
-  }
-
-  return fwd;
 }
 
 void ShenandoahBarrierSet::clone_barrier_runtime(oop src) {

@@ -66,121 +66,95 @@ public class TestHtmlTableTags extends JavadocTester {
         //Package summary
         checkOutput("pkg1/package-summary.html", true,
                 """
-                    <div class="type-summary">
-                    <table class="summary-table">""",
+                    <div class="summary-table two-column-summary">""",
                 """
-                    <div class="type-summary">
-                    <table class="summary-table">""");
+                    <div class="summary-table two-column-summary">""");
 
         checkOutput("pkg2/package-summary.html", true,
                 """
-                    <div class="type-summary">
-                    <table class="summary-table">""",
+                    <div class="summary-table two-column-summary">""",
                 """
-                    <div class="type-summary">
-                    <table class="summary-table">""");
+                    <div class="summary-table two-column-summary">""");
 
         // Class documentation
         checkOutput("pkg1/C1.html", true,
                 """
-                    <div class="member-summary">
-                    <table class="summary-table">""",
+                    <div class="summary-table three-column-summary">""",
                 """
-                    <div class="member-summary">
-                    <table class="summary-table">""");
+                    <div class="summary-table three-column-summary" aria-labelledby="method-summary-table-tab0">""");
 
         checkOutput("pkg2/C2.html", true,
                 """
-                    <div class="member-summary">
-                    <table class="summary-table">""",
+                    <div class="summary-table three-column-summary">""",
                 """
-                    <div class="member-summary">
-                    <table class="summary-table">""");
+                    <div class="summary-table three-column-summary" aria-labelledby="method-summary-table-tab0">""");
 
         checkOutput("pkg2/C2.ModalExclusionType.html", true,
                 """
-                    <div class="member-summary">
-                    <table class="summary-table">""");
+                    <div class="summary-table two-column-summary">""");
 
         checkOutput("pkg2/C3.html", true,
                 """
-                    <div class="member-summary">
-                    <table class="summary-table">""");
+                    <div class="summary-table three-column-summary">""");
 
         checkOutput("pkg2/C4.html", true,
                 """
-                    <div class="member-summary">
-                    <table class="summary-table">""");
+                    <div class="summary-table three-column-summary">""");
 
         // Class use documentation
         checkOutput("pkg1/class-use/I1.html", true,
                 """
-                    <div class="use-summary">
-                    <table class="summary-table">""");
+                    <div class="summary-table two-column-summary">""");
 
         checkOutput("pkg1/class-use/C1.html", true,
                 """
-                    <div class="use-summary">
-                    <table class="summary-table">""",
+                    <div class="summary-table two-column-summary">""",
                 """
-                    <div class="use-summary">
-                    <table class="summary-table">""");
+                    <div class="summary-table two-column-summary">""");
 
         checkOutput("pkg2/class-use/C2.html", true,
                 """
-                    <div class="use-summary">
-                    <table class="summary-table">""",
+                    <div class="summary-table two-column-summary">""",
                 """
-                    <div class="use-summary">
-                    <table class="summary-table">""");
+                    <div class="summary-table two-column-summary">""");
 
         checkOutput("pkg2/class-use/C2.ModalExclusionType.html", true,
                 """
-                    <div class="use-summary">
-                    <table class="summary-table">""");
+                    <div class="summary-table two-column-summary">""");
 
         checkOutput("pkg2/class-use/C2.ModalExclusionType.html", true,
                 """
-                    <div class="use-summary">
-                    <table class="summary-table">""");
+                    <div class="summary-table two-column-summary">""");
 
         // Package use documentation
         checkOutput("pkg1/package-use.html", true,
                 """
-                    <div class="use-summary">
-                    <table class="summary-table">""",
+                    <div class="summary-table two-column-summary">""",
                 """
-                    <div class="use-summary">
-                    <table class="summary-table">""");
+                    <div class="summary-table two-column-summary">""");
 
         checkOutput("pkg2/package-use.html", true,
                 """
-                    <div class="use-summary">
-                    <table class="summary-table">""",
+                    <div class="summary-table two-column-summary">""",
                 """
-                    <div class="use-summary">
-                    <table class="summary-table">""");
+                    <div class="summary-table two-column-summary">""");
 
         // Deprecated
         checkOutput("deprecated-list.html", true,
                 """
-                    <div class="deprecated-summary" id="field">
-                    <table class="summary-table">""",
+                    <div class="summary-table two-column-summary">""",
                 """
-                    <div class="deprecated-summary" id="method">
-                    <table class="summary-table">""");
+                    <div class="summary-table two-column-summary">""");
 
         // Constant values
         checkOutput("constant-values.html", true,
                 """
-                    <div class="constants-summary">
-                    <table class="summary-table">""");
+                    <div class="summary-table three-column-summary">""");
 
         // Overview Summary
         checkOutput("index.html", true,
                 """
-                    <div class="overview-summary" id="all-packages-table">
-                    <table class="summary-table">""");
+                    <div class="summary-table two-column-summary">""");
     }
 
     /*
@@ -313,98 +287,105 @@ public class TestHtmlTableTags extends JavadocTester {
     void checkHtmlTableCaptions() {
         //Package summary
         checkOutput("pkg1/package-summary.html", true,
-                "<caption><span>Class Summary</span></caption>",
-                "<caption><span>Interface Summary</span></caption>");
+                "<div class=\"caption\"><span>Class Summary</span></div>",
+                "<div class=\"caption\"><span>Interface Summary</span></div>");
 
         checkOutput("pkg2/package-summary.html", true,
-                "<caption><span>Enum Summary</span></caption>",
-                "<caption><span>Annotation Types Summary</span></caption>");
+                "<div class=\"caption\"><span>Enum Summary</span></div>",
+                "<div class=\"caption\"><span>Annotation Types Summary</span></div>");
 
         // Class documentation
         checkOutput("pkg1/C1.html", true,
-                "<caption><span>Fields</span></caption>",
+                "<div class=\"caption\"><span>Fields</span></div>",
                 """
-                    <div class="table-tabs" role="tablist" aria-orientation="horizontal"><button rol\
-                    e="tab" aria-selected="true" aria-controls="method-summary-table.tabpanel" tabin\
-                    dex="0" onkeydown="switchTab(event)" id="t0" class="active-table-tab">All Method\
-                    s</button><button role="tab" aria-selected="false" aria-controls="method-summary\
-                    -table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="t2" class="table\
-                    -tab" onclick="show(2);">Instance Methods</button><button role="tab" aria-select\
-                    ed="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown\
-                    ="switchTab(event)" id="t4" class="table-tab" onclick="show(8);">Concrete Method\
-                    s</button><button role="tab" aria-selected="false" aria-controls="method-summary\
-                    -table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" id="t6" class="table\
-                    -tab" onclick="show(32);">Deprecated Methods</button></div>
+                    <div class="table-tabs" role="tablist" aria-orientation="horizontal">\
+                    <button id="method-summary-table-tab0" role="tab" aria-selected="true" aria-cont\
+                    rols="method-summary-table.tabpanel" tabindex="0" onkeydown="switchTab(event)" o\
+                    nclick="show('method-summary-table', 'method-summary-table', 3)" class="active-t\
+                    able-tab">All Methods</button>\
+                    <button id="method-summary-table-tab2" role="tab" aria-selected="false" aria-con\
+                    trols="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)"\
+                     onclick="show('method-summary-table', 'method-summary-table-tab2', 3)" class="t\
+                    able-tab">Instance Methods</button>\
+                    <button id="method-summary-table-tab4" role="tab" aria-selected="false" aria-con\
+                    trols="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)"\
+                     onclick="show('method-summary-table', 'method-summary-table-tab4', 3)" class="t\
+                    able-tab">Concrete Methods</button>\
+                    <button id="method-summary-table-tab6" role="tab" aria-selected="false" aria-con\
+                    trols="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)"\
+                     onclick="show('method-summary-table', 'method-summary-table-tab6', 3)" class="t\
+                    able-tab">Deprecated Methods</button>\
+                    </div>
                     """);
 
         checkOutput("pkg2/C2.html", true,
-                "<caption><span>Nested Classes</span></caption>",
-                "<caption><span>Constructors</span></caption>");
+                "<div class=\"caption\"><span>Nested Classes</span></div>",
+                "<div class=\"caption\"><span>Constructors</span></div>");
 
         checkOutput("pkg2/C2.ModalExclusionType.html", true,
-                "<caption><span>Enum Constants</span></caption>");
+                "<div class=\"caption\"><span>Enum Constants</span></div>");
 
         checkOutput("pkg2/C3.html", true,
-                "<caption><span>Required Elements</span></caption>");
+                "<div class=\"caption\"><span>Required Elements</span></div>");
 
         checkOutput("pkg2/C4.html", true,
-                "<caption><span>Optional Elements</span></caption>");
+                "<div class=\"caption\"><span>Optional Elements</span></div>");
 
         // Class use documentation
         checkOutput("pkg1/class-use/I1.html", true,
                 """
-                    <caption><span>Packages that use <a href="../I1.html" title="interface in pkg1">I1</a></span></caption>""");
+                    <div class="caption"><span>Packages that use <a href="../I1.html" title="interface in pkg1">I1</a></span></div>""");
 
         checkOutput("pkg1/class-use/C1.html", true,
                 """
-                    <caption><span>Fields in <a href="../../pkg2/package-summary.html">pkg2</a> decl\
-                    ared as <a href="../C1.html" title="class in pkg1">C1</a></span></caption>""",
+                    <div class="caption"><span>Fields in <a href="../../pkg2/package-summary.html">pkg2</a> decl\
+                    ared as <a href="../C1.html" title="class in pkg1">C1</a></span></div>""",
                 """
-                    <caption><span>Methods in <a href="../../pkg2/package-summary.html">pkg2</a> tha\
-                    t return <a href="../C1.html" title="class in pkg1">C1</a></span></caption>""");
+                    <div class="caption"><span>Methods in <a href="../../pkg2/package-summary.html">pkg2</a> tha\
+                    t return <a href="../C1.html" title="class in pkg1">C1</a></span></div>""");
 
         checkOutput("pkg2/class-use/C2.html", true,
                 """
-                    <caption><span>Fields in <a href="../../pkg1/package-summary.html">pkg1</a> decl\
-                    ared as <a href="../C2.html" title="class in pkg2">C2</a></span></caption>""",
+                    <div class="caption"><span>Fields in <a href="../../pkg1/package-summary.html">pkg1</a> decl\
+                    ared as <a href="../C2.html" title="class in pkg2">C2</a></span></div>""",
                 """
-                    <caption><span>Methods in <a href="../../pkg1/package-summary.html">pkg1</a> tha\
-                    t return <a href="../C2.html" title="class in pkg2">C2</a></span></caption>""");
+                    <div class="caption"><span>Methods in <a href="../../pkg1/package-summary.html">pkg1</a> tha\
+                    t return <a href="../C2.html" title="class in pkg2">C2</a></span></div>""");
 
         checkOutput("pkg2/class-use/C2.ModalExclusionType.html", true,
                 """
-                    <caption><span>Methods in <a href="../package-summary.html">pkg2</a> that return\
+                    <div class="caption"><span>Methods in <a href="../package-summary.html">pkg2</a> that return\
                      <a href="../C2.ModalExclusionType.html" title="enum in pkg2">C2.ModalExclusionT\
-                    ype</a></span></caption>""");
+                    ype</a></span></div>""");
 
         // Package use documentation
         checkOutput("pkg1/package-use.html", true,
                 """
-                    <caption><span>Packages that use <a href="package-summary.html">pkg1</a></span></caption>""",
+                    <div class="caption"><span>Packages that use <a href="package-summary.html">pkg1</a></span></div>""",
                 """
-                    <caption><span>Classes in <a href="package-summary.html">pkg1</a> used by <a hre\
-                    f="package-summary.html">pkg1</a></span></caption>""");
+                    <div class="caption"><span>Classes in <a href="package-summary.html">pkg1</a> used by <a hre\
+                    f="package-summary.html">pkg1</a></span></div>""");
 
         checkOutput("pkg2/package-use.html", true,
                 """
-                    <caption><span>Packages that use <a href="package-summary.html">pkg2</a></span></caption>""",
+                    <div class="caption"><span>Packages that use <a href="package-summary.html">pkg2</a></span></div>""",
                 """
-                    <caption><span>Classes in <a href="package-summary.html">pkg2</a> used by <a hre\
-                    f="../pkg1/package-summary.html">pkg1</a></span></caption>""");
+                    <div class="caption"><span>Classes in <a href="package-summary.html">pkg2</a> used by <a hre\
+                    f="../pkg1/package-summary.html">pkg1</a></span></div>""");
 
         // Deprecated
         checkOutput("deprecated-list.html", true,
-                "<caption><span>Fields</span></caption>",
-                "<caption><span>Methods</span></caption>");
+                "<div class=\"caption\"><span>Fields</span></div>",
+                "<div class=\"caption\"><span>Methods</span></div>");
 
         // Constant values
         checkOutput("constant-values.html", true,
                 """
-                    <caption><span>pkg1.<a href="pkg1/C1.html" title="class in pkg1">C1</a></span></caption>""");
+                    <div class="caption"><span>pkg1.<a href="pkg1/C1.html" title="class in pkg1">C1</a></span></div>""");
 
         // Overview Summary
         checkOutput("index.html", true,
-                "<caption><span>Packages</span></caption>");
+                "<div class=\"caption\"><span>Packages</span></div>");
     }
 
     /*
@@ -414,129 +395,129 @@ public class TestHtmlTableTags extends JavadocTester {
         //Package summary
         checkOutput("pkg1/package-summary.html", true,
                 """
-                    <th class="col-first" scope="col">Class</th>
-                    <th class="col-last" scope="col">Description</th>""",
+                    <div class="table-header col-first">Class</div>
+                    <div class="table-header col-last">Description</div>""",
                 """
-                    <th class="col-first" scope="col">Interface</th>
-                    <th class="col-last" scope="col">Description</th>""");
+                    <div class="table-header col-first">Interface</div>
+                    <div class="table-header col-last">Description</div>""");
 
         checkOutput("pkg2/package-summary.html", true,
                 """
-                    <th class="col-first" scope="col">Enum</th>
-                    <th class="col-last" scope="col">Description</th>""",
+                    <div class="table-header col-first">Enum</div>
+                    <div class="table-header col-last">Description</div>""",
                 """
-                    <th class="col-first" scope="col">Annotation Type</th>
-                    <th class="col-last" scope="col">Description</th>""");
+                    <div class="table-header col-first">Annotation Type</div>
+                    <div class="table-header col-last">Description</div>""");
 
         // Class documentation
         checkOutput("pkg1/C1.html", true,
                 """
-                    <th class="col-first" scope="col">Modifier and Type</th>
-                    <th class="col-second" scope="col">Field</th>
-                    <th class="col-last" scope="col">Description</th>""",
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Field</div>
+                    <div class="table-header col-last">Description</div>""",
                 """
-                    <th class="col-first" scope="col">Modifier and Type</th>
-                    <th class="col-second" scope="col">Method</th>
-                    <th class="col-last" scope="col">Description</th>""");
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Method</div>
+                    <div class="table-header col-last">Description</div>""");
 
         checkOutput("pkg2/C2.html", true,
                 """
-                    <th class="col-first" scope="col">Modifier and Type</th>
-                    <th class="col-second" scope="col">Class</th>
-                    <th class="col-last" scope="col">Description</th>""",
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Class</div>
+                    <div class="table-header col-last">Description</div>""",
                 """
-                    <th class="col-first" scope="col">Constructor</th>
-                    <th class="col-last" scope="col">Description</th>""");
+                    <div class="table-header col-first">Constructor</div>
+                    <div class="table-header col-last">Description</div>""");
 
         checkOutput("pkg2/C2.ModalExclusionType.html", true,
                 """
-                    <th class="col-first" scope="col">Enum Constant</th>
-                    <th class="col-last" scope="col">Description</th>""");
+                    <div class="table-header col-first">Enum Constant</div>
+                    <div class="table-header col-last">Description</div>""");
 
         checkOutput("pkg2/C3.html", true,
                 """
-                    <th class="col-first" scope="col">Modifier and Type</th>
-                    <th class="col-second" scope="col">Required Element</th>
-                    <th class="col-last" scope="col">Description</th>""");
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Required Element</div>
+                    <div class="table-header col-last">Description</div>""");
 
         checkOutput("pkg2/C4.html", true,
                 """
-                    <th class="col-first" scope="col">Modifier and Type</th>
-                    <th class="col-second" scope="col">Optional Element</th>
-                    <th class="col-last" scope="col">Description</th>""");
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Optional Element</div>
+                    <div class="table-header col-last">Description</div>""");
 
         // Class use documentation
         checkOutput("pkg1/class-use/I1.html", true,
                 """
-                    <th class="col-first" scope="col">Package</th>
-                    <th class="col-last" scope="col">Description</th>""");
+                    <div class="table-header col-first">Package</div>
+                    <div class="table-header col-last">Description</div>""");
 
         checkOutput("pkg1/class-use/C1.html", true,
                 """
-                    <th class="col-first" scope="col">Modifier and Type</th>
-                    <th class="col-second" scope="col">Field</th>
-                    <th class="col-last" scope="col">Description</th>""",
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Field</div>
+                    <div class="table-header col-last">Description</div>""",
                 """
-                    <th class="col-first" scope="col">Modifier and Type</th>
-                    <th class="col-second" scope="col">Method</th>
-                    <th class="col-last" scope="col">Description</th>""");
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Method</div>
+                    <div class="table-header col-last">Description</div>""");
 
         checkOutput("pkg2/class-use/C2.html", true,
                 """
-                    <th class="col-first" scope="col">Modifier and Type</th>
-                    <th class="col-second" scope="col">Field</th>
-                    <th class="col-last" scope="col">Description</th>""",
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Field</div>
+                    <div class="table-header col-last">Description</div>""",
                 """
-                    <th class="col-first" scope="col">Modifier and Type</th>
-                    <th class="col-second" scope="col">Method</th>
-                    <th class="col-last" scope="col">Description</th>""");
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Method</div>
+                    <div class="table-header col-last">Description</div>""");
 
         checkOutput("pkg2/class-use/C2.ModalExclusionType.html", true,
                 """
-                    <th class="col-first" scope="col">Package</th>
-                    <th class="col-last" scope="col">Description</th>""",
+                    <div class="table-header col-first">Package</div>
+                    <div class="table-header col-last">Description</div>""",
                 """
-                    <th class="col-first" scope="col">Modifier and Type</th>
-                    <th class="col-second" scope="col">Method</th>
-                    <th class="col-last" scope="col">Description</th>""");
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Method</div>
+                    <div class="table-header col-last">Description</div>""");
 
         // Package use documentation
         checkOutput("pkg1/package-use.html", true,
                 """
-                    <th class="col-first" scope="col">Package</th>
-                    <th class="col-last" scope="col">Description</th>""",
+                    <div class="table-header col-first">Package</div>
+                    <div class="table-header col-last">Description</div>""",
                 """
-                    <th class="col-first" scope="col">Class</th>
-                    <th class="col-last" scope="col">Description</th>""");
+                    <div class="table-header col-first">Class</div>
+                    <div class="table-header col-last">Description</div>""");
 
         checkOutput("pkg2/package-use.html", true,
                 """
-                    <th class="col-first" scope="col">Package</th>
-                    <th class="col-last" scope="col">Description</th>""",
+                    <div class="table-header col-first">Package</div>
+                    <div class="table-header col-last">Description</div>""",
                 """
-                    <th class="col-first" scope="col">Class</th>
-                    <th class="col-last" scope="col">Description</th>""");
+                    <div class="table-header col-first">Class</div>
+                    <div class="table-header col-last">Description</div>""");
 
         // Deprecated
         checkOutput("deprecated-list.html", true,
                 """
-                    <th class="col-first" scope="col">Field</th>
-                    <th class="col-last" scope="col">Description</th>""",
+                    <div class="table-header col-first">Field</div>
+                    <div class="table-header col-last">Description</div>""",
                 """
-                    <th class="col-first" scope="col">Method</th>
-                    <th class="col-last" scope="col">Description</th>""");
+                    <div class="table-header col-first">Method</div>
+                    <div class="table-header col-last">Description</div>""");
 
         // Constant values
         checkOutput("constant-values.html", true,
                 """
-                    <th class="col-first" scope="col">Modifier and Type</th>
-                    <th class="col-second" scope="col">Constant Field</th>
-                    <th class="col-last" scope="col">Value</th>""");
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Constant Field</div>
+                    <div class="table-header col-last">Value</div>""");
 
         // Overview Summary
         checkOutput("index.html", true,
                 """
-                    <th class="col-first" scope="col">Package</th>
-                    <th class="col-last" scope="col">Description</th>""");
+                    <div class="table-header col-first">Package</div>
+                    <div class="table-header col-last">Description</div>""");
     }
 }

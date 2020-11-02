@@ -39,15 +39,20 @@ protected:
   static int _variant;
   static int _revision;
   static int _stepping;
-  static bool _dcpop;
+
+  static int _zva_length;
+  static int _dcache_line_size;
+  static int _icache_line_size;
   static int _initial_sve_vector_length;
 
-  struct PsrInfo {
-    uint32_t dczid_el0;
-    uint32_t ctr_el0;
-  };
-  static PsrInfo _psr_info;
-  static void get_processor_features();
+  // Read additional info using OS-specific interfaces
+  static void get_os_cpu_info();
+
+  // Sets the SVE length and returns a new actual value or negative on error.
+  // If the len is larger than the system largest supported SVE vector length,
+  // the function sets the largest supported value.
+  static int set_and_get_current_sve_vector_length(int len);
+  static int get_current_sve_vector_length();
 
 public:
   // Initialization
@@ -97,8 +102,14 @@ public:
     CPU_SHA2         = (1<<6),
     CPU_CRC32        = (1<<7),
     CPU_LSE          = (1<<8),
-    CPU_STXR_PREFETCH= (1 << 29),
-    CPU_A53MAC       = (1 << 30),
+    CPU_DCPOP        = (1<<16),
+    CPU_SHA3         = (1<<17),
+    CPU_SHA512       = (1<<21),
+    CPU_SVE          = (1<<22),
+    // flags above must follow Linux HWCAP
+    CPU_SVE2         = (1<<28),
+    CPU_STXR_PREFETCH= (1<<29),
+    CPU_A53MAC       = (1<<30),
   };
 
   static int cpu_family()                     { return _cpu; }
@@ -106,27 +117,19 @@ public:
   static int cpu_model2()                     { return _model2; }
   static int cpu_variant()                    { return _variant; }
   static int cpu_revision()                   { return _revision; }
-  static bool supports_dcpop()                { return _dcpop; }
-  static int get_initial_sve_vector_length()  { return _initial_sve_vector_length; };
-  static ByteSize dczid_el0_offset() { return byte_offset_of(PsrInfo, dczid_el0); }
-  static ByteSize ctr_el0_offset()   { return byte_offset_of(PsrInfo, ctr_el0); }
-  static bool is_zva_enabled() {
-    // Check the DZP bit (bit 4) of dczid_el0 is zero
-    // and block size (bit 0~3) is not zero.
-    return ((_psr_info.dczid_el0 & 0x10) == 0 &&
-            (_psr_info.dczid_el0 & 0xf) != 0);
-  }
+
+  static bool is_zva_enabled() { return 0 <= _zva_length; }
   static int zva_length() {
     assert(is_zva_enabled(), "ZVA not available");
-    return 4 << (_psr_info.dczid_el0 & 0xf);
+    return _zva_length;
   }
-  static int icache_line_size() {
-    return (1 << (_psr_info.ctr_el0 & 0x0f)) * 4;
-  }
-  static int dcache_line_size() {
-    return (1 << ((_psr_info.ctr_el0 >> 16) & 0x0f)) * 4;
-  }
+
+  static int icache_line_size() { return _icache_line_size; }
+  static int dcache_line_size() { return _dcache_line_size; }
+  static int get_initial_sve_vector_length()  { return _initial_sve_vector_length; };
+
   static bool supports_fast_class_init_checks() { return true; }
+  constexpr static bool supports_stack_watermark_barrier() { return true; }
 };
 
 #endif // CPU_AARCH64_VM_VERSION_AARCH64_HPP

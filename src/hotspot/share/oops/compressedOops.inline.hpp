@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,11 @@
 // offset from the heap base.  Saving the check for null can save instructions
 // in inner GC loops so these are separated.
 
+inline oop CompressedOops::decode_raw_not_null(narrowOop v) {
+  assert(!is_null(v), "narrow oop value can never be zero");
+  return decode_raw(v);
+}
+
 inline oop CompressedOops::decode_raw(narrowOop v) {
   return (oop)(void*)((uintptr_t)base() + ((uintptr_t)v << shift()));
 }
@@ -49,6 +54,7 @@ inline oop CompressedOops::decode_not_null(narrowOop v) {
   assert(!is_null(v), "narrow oop value can never be zero");
   oop result = decode_raw(v);
   assert(is_object_aligned(result), "address not aligned: " INTPTR_FORMAT, p2i((void*) result));
+  assert(Universe::heap()->is_in(result), "object not in heap " PTR_FORMAT, p2i((void*) result));
   return result;
 }
 
@@ -62,14 +68,48 @@ inline narrowOop CompressedOops::encode_not_null(oop v) {
   assert(is_in(v), "address not in heap range: " PTR_FORMAT, p2i((void*)v));
   uint64_t  pd = (uint64_t)(pointer_delta((void*)v, (void*)base(), 1));
   assert(OopEncodingHeapMax > pd, "change encoding max if new encoding");
-  uint64_t result = pd >> shift();
-  assert((result & CONST64(0xffffffff00000000)) == 0, "narrow oop overflow");
-  assert(decode(result) == v, "reversibility");
-  return (narrowOop)result;
+  narrowOop result = narrow_oop_cast(pd >> shift());
+  assert(decode_raw(result) == v, "reversibility");
+  return result;
 }
 
 inline narrowOop CompressedOops::encode(oop v) {
-  return is_null(v) ? (narrowOop)0 : encode_not_null(v);
+  return is_null(v) ? narrowOop::null : encode_not_null(v);
+}
+
+inline oop CompressedOops::decode_not_null(oop v) {
+  assert(Universe::heap()->is_in(v), "object not in heap " PTR_FORMAT, p2i((void*) v));
+  return v;
+}
+
+inline oop CompressedOops::decode(oop v) {
+  assert(Universe::heap()->is_in_or_null(v), "object not in heap " PTR_FORMAT, p2i((void*) v));
+  return v;
+}
+
+inline narrowOop CompressedOops::encode_not_null(narrowOop v) {
+  return v;
+}
+
+inline narrowOop CompressedOops::encode(narrowOop v) {
+  return v;
+}
+
+inline uint32_t CompressedOops::narrow_oop_value(oop o) {
+  return narrow_oop_value(encode(o));
+}
+
+inline uint32_t CompressedOops::narrow_oop_value(narrowOop o) {
+  return static_cast<uint32_t>(o);
+}
+
+template<typename T>
+inline narrowOop CompressedOops::narrow_oop_cast(T i) {
+  static_assert(std::is_integral<T>::value, "precondition");
+  uint32_t narrow_value = static_cast<uint32_t>(i);
+  // Ensure no bits lost in conversion to uint32_t.
+  assert(i == static_cast<T>(narrow_value), "narrowOop overflow");
+  return static_cast<narrowOop>(narrow_value);
 }
 
 static inline bool check_alignment(Klass* v) {

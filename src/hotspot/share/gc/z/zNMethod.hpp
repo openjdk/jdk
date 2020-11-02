@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,13 @@ class OopClosure;
 class ZReentrantLock;
 class ZWorkers;
 
+enum class ZNMethodEntry {
+  PreBarrier,
+  Disarm,
+  VerifyDisarmed,
+  None
+};
+
 class ZNMethod : public AllStatic {
 private:
   static void attach_gc_data(nmethod* nm);
@@ -52,7 +59,7 @@ public:
 
   static void oops_do_begin();
   static void oops_do_end();
-  static void oops_do(OopClosure* cl);
+  static void oops_do(OopClosure* cl, ZNMethodEntry entry);
 
   static ZReentrantLock* lock_for_nmethod(nmethod* nm);
 

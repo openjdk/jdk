@@ -30,7 +30,7 @@ import java.util.List;
 
 import javax.lang.model.element.TypeElement;
 
-import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.DeprecatedTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
@@ -120,9 +120,8 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
      * @param content HtmlTree content to which the links will be added
      */
     protected void addContents(Content content) {
-        Table table = new Table(HtmlStyle.typeSummary, HtmlStyle.summaryTable)
+        Table table = new Table(HtmlStyle.summaryTable)
                 .setHeader(new TableHeader(contents.classLabel, contents.descriptionLabel))
-                .setRowScopeColumn(1)
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
                 .setId("all-classes-table")
                 .setDefaultTab(resources.getText("doclet.All_Classes"))
@@ -131,15 +130,13 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
                 .addTab(resources.enumSummary, utils::isEnum)
                 .addTab(resources.exceptionSummary, e -> utils.isException((TypeElement)e))
                 .addTab(resources.errorSummary, e -> utils.isError((TypeElement)e))
-                .addTab(resources.annotationTypeSummary, utils::isAnnotationType)
-                .setTabScript(i -> "show(" + i + ");");
-        for (Character unicode : indexBuilder.keys()) {
-            for (IndexItem indexItem : indexBuilder.getMemberList(unicode)) {
+                .addTab(resources.annotationTypeSummary, utils::isAnnotationType);
+        for (Character unicode : indexBuilder.getFirstCharacters()) {
+            for (IndexItem indexItem : indexBuilder.getItems(unicode)) {
                 TypeElement typeElement = (TypeElement) indexItem.getElement();
-                if (typeElement == null || !utils.isCoreClass(typeElement)) {
-                    continue;
+                if (typeElement != null && utils.isCoreClass(typeElement)) {
+                    addTableRow(table, typeElement);
                 }
-                addTableRow(table, typeElement);
             }
         }
         Content titleContent = contents.allClassesLabel;
@@ -168,7 +165,7 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
         ContentBuilder description = new ContentBuilder();
         if (utils.isDeprecated(klass)) {
             description.add(getDeprecatedPhrase(klass));
-            List<? extends DocTree> tags = utils.getDeprecatedTrees(klass);
+            List<? extends DeprecatedTree> tags = utils.getDeprecatedTrees(klass);
             if (!tags.isEmpty()) {
                 addSummaryDeprecatedComment(klass, tags.get(0), description);
             }

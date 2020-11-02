@@ -23,15 +23,14 @@
 
 /*
  * @test
- * @bug 8242293
+ * @bug 8242293 8246774
  * @summary allow for local interfaces and enums plus nested records, interfaces and enums
  * @library /tools/javac/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.util
  * @build combo.ComboTestHelper
- * @compile --enable-preview -source ${jdk.version} LocalStaticDeclarations.java
- * @run main/othervm --enable-preview LocalStaticDeclarations
+ * @run main LocalStaticDeclarations
  */
 
 import javax.lang.model.element.Element;
@@ -175,7 +174,6 @@ public class LocalStaticDeclarations extends ComboInstance<LocalStaticDeclaratio
     @Override
     public void doWork() throws Throwable {
         newCompilationTask()
-                .withOptions(new String[]{"--enable-preview", "-source", Integer.toString(Runtime.version().feature())})
                 .withSourceFromTemplate("Test", sourceTemplate)
                 .generate(this::check);
     }

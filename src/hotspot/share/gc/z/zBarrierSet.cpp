@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "gc/z/zBarrierSetNMethod.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeap.inline.hpp"
+#include "gc/z/zStackWatermark.hpp"
 #include "gc/z/zThreadLocalData.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/macros.hpp"
@@ -40,20 +41,11 @@
 class ZBarrierSetC1;
 class ZBarrierSetC2;
 
-static BarrierSetNMethod* make_barrier_set_nmethod() {
-  // NMethod barriers are only used when class unloading is enabled
-  if (!ClassUnloading) {
-    return NULL;
-  }
-
-  return new ZBarrierSetNMethod();
-}
-
 ZBarrierSet::ZBarrierSet() :
     BarrierSet(make_barrier_set_assembler<ZBarrierSetAssembler>(),
                make_barrier_set_c1<ZBarrierSetC1>(),
                make_barrier_set_c2<ZBarrierSetC2>(),
-               make_barrier_set_nmethod(),
+               new ZBarrierSetNMethod(),
                BarrierSet::FakeRtti(BarrierSet::ZBarrierSet)) {}
 
 ZBarrierSetAssembler* ZBarrierSet::assembler() {
@@ -89,6 +81,11 @@ void ZBarrierSet::on_thread_destroy(Thread* thread) {
 void ZBarrierSet::on_thread_attach(Thread* thread) {
   // Set thread local address bad mask
   ZThreadLocalData::set_address_bad_mask(thread, ZAddressBadMask);
+  if (thread->is_Java_thread()) {
+    JavaThread* const jt = thread->as_Java_thread();
+    StackWatermark* const watermark = new ZStackWatermark(jt);
+    StackWatermarkSet::add_watermark(jt, watermark);
+  }
 }
 
 void ZBarrierSet::on_thread_detach(Thread* thread) {

@@ -113,10 +113,10 @@ class os: AllStatic {
     _page_sizes[1] = 0; // sentinel
   }
 
-  static char*  pd_reserve_memory(size_t bytes, char* addr = 0,
-                                  size_t alignment_hint = 0);
-  static char*  pd_attempt_reserve_memory_at(size_t bytes, char* addr);
-  static char*  pd_attempt_reserve_memory_at(size_t bytes, char* addr, int file_desc);
+  static char*  pd_reserve_memory(size_t bytes);
+
+  static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes);
+
   static bool   pd_commit_memory(char* addr, size_t bytes, bool executable);
   static bool   pd_commit_memory(char* addr, size_t size, size_t alignment_hint,
                                  bool executable);
@@ -129,6 +129,8 @@ class os: AllStatic {
                                          bool executable, const char* mesg);
   static bool   pd_uncommit_memory(char* addr, size_t bytes);
   static bool   pd_release_memory(char* addr, size_t bytes);
+
+  static char*  pd_attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc);
 
   static char*  pd_map_memory(int fd, const char* file_name, size_t file_offset,
                            char *addr, size_t bytes, bool read_only = false,
@@ -310,13 +312,16 @@ class os: AllStatic {
                                                   const size_t size);
 
   static int    vm_allocation_granularity();
-  static char*  reserve_memory(size_t bytes, char* addr = 0,
-                               size_t alignment_hint = 0, int file_desc = -1);
-  static char*  reserve_memory(size_t bytes, char* addr,
-                               size_t alignment_hint, MEMFLAGS flags);
-  static char*  reserve_memory_aligned(size_t size, size_t alignment, int file_desc = -1);
-  static char*  attempt_reserve_memory_at(size_t bytes, char* addr, int file_desc = -1);
 
+  // Reserves virtual memory.
+  static char*  reserve_memory(size_t bytes, MEMFLAGS flags = mtOther);
+
+  // Reserves virtual memory that starts at an address that is aligned to 'alignment'.
+  static char*  reserve_memory_aligned(size_t size, size_t alignment);
+
+  // Attempts to reserve the virtual memory at [addr, addr + bytes).
+  // Does not overwrite existing mappings.
+  static char*  attempt_reserve_memory_at(char* addr, size_t bytes);
 
   // Split a reserved memory region [base, base+size) into two regions [base, base+split) and
   //  [base+split, base+size).
@@ -361,7 +366,10 @@ class os: AllStatic {
   static int create_file_for_heap(const char* dir);
   // Map memory to the file referred by fd. This function is slightly different from map_memory()
   // and is added to be used for implementation of -XX:AllocateHeapAt
+  static char* map_memory_to_file(size_t size, int fd);
+  static char* map_memory_to_file_aligned(size_t size, size_t alignment, int fd);
   static char* map_memory_to_file(char* base, size_t size, int fd);
+  static char* attempt_map_memory_to_file_at(char* base, size_t size, int fd);
   // Replace existing reserved memory with file mapping
   static char* replace_existing_mapping_with_file_mapping(char* base, size_t size, int fd);
 
@@ -473,6 +481,7 @@ class os: AllStatic {
 
   static address    fetch_frame_from_context(const void* ucVoid, intptr_t** sp, intptr_t** fp);
   static frame      fetch_frame_from_context(const void* ucVoid);
+  static frame      fetch_compiled_frame_from_context(const void* ucVoid);
 
   static void breakpoint();
   static bool start_debugging(char *buf, int buflen);
@@ -677,7 +686,11 @@ class os: AllStatic {
   // return current frame. pc() and sp() are set to NULL on failure.
   static frame      current_frame();
 
-  static void print_hex_dump(outputStream* st, address start, address end, int unitsize);
+  static void print_hex_dump(outputStream* st, address start, address end, int unitsize,
+                             int bytes_per_line, address logical_start);
+  static void print_hex_dump(outputStream* st, address start, address end, int unitsize) {
+    print_hex_dump(st, start, end, unitsize, /*bytes_per_line=*/16, /*logical_start=*/start);
+  }
 
   // returns a string to describe the exception/signal;
   // returns NULL if exception_code is not an OS exception/signal.
@@ -756,6 +769,7 @@ class os: AllStatic {
 
   // random number generation
   static int random();                     // return 32bit pseudorandom number
+  static int next_random(unsigned int rand_seed); // pure version of random()
   static void init_random(unsigned int initval);    // initialize random sequence
 
   // Structured OS Exception support

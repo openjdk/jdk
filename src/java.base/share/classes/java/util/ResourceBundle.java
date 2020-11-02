@@ -372,7 +372,6 @@ import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
  * @see ResourceBundleProvider
  * @since 1.1
  * @revised 9
- * @spec JPMS
  */
 public abstract class ResourceBundle {
 
@@ -893,7 +892,6 @@ public abstract class ResourceBundle {
      *         if this method is called in a named module
      * @since 1.6
      * @revised 9
-     * @spec JPMS
      */
     @CallerSensitive
     public static final ResourceBundle getBundle(String baseName,
@@ -953,7 +951,6 @@ public abstract class ResourceBundle {
      *         specified module
      * @return a resource bundle for the given base name and the default locale
      * @since 9
-     * @spec JPMS
      * @see ResourceBundleProvider
      * @see <a href="#default_behavior">Resource Bundle Search and Loading Strategy</a>
      * @see <a href="#resource-bundle-modules">Resource Bundles and Named Modules</a>
@@ -1007,7 +1004,6 @@ public abstract class ResourceBundle {
      *         be found in the specified {@code module}
      * @return a resource bundle for the given base name and locale in the module
      * @since 9
-     * @spec JPMS
      * @see <a href="#default_behavior">Resource Bundle Search and Loading Strategy</a>
      * @see <a href="#resource-bundle-modules">Resource Bundles and Named Modules</a>
      */
@@ -1056,7 +1052,6 @@ public abstract class ResourceBundle {
      *         if this method is called in a named module
      * @since 1.6
      * @revised 9
-     * @spec JPMS
      */
     @CallerSensitive
     public static final ResourceBundle getBundle(String baseName, Locale targetLocale,
@@ -1270,7 +1265,6 @@ public abstract class ResourceBundle {
      *        if no resource bundle for the specified base name can be found
      * @since 1.2
      * @revised 9
-     * @spec JPMS
      * @see <a href="#resource-bundle-modules">Resource Bundles and Named Modules</a>
      */
     @CallerSensitive
@@ -1496,7 +1490,6 @@ public abstract class ResourceBundle {
      *         if this method is called in a named module
      * @since 1.6
      * @revised 9
-     * @spec JPMS
      */
     @CallerSensitive
     public static ResourceBundle getBundle(String baseName, Locale targetLocale,
@@ -2234,7 +2227,6 @@ public abstract class ResourceBundle {
      *
      * @since 1.6
      * @revised 9
-     * @spec JPMS
      * @see ResourceBundle.Control#getTimeToLive(String,Locale)
      */
     @CallerSensitive
@@ -2524,7 +2516,6 @@ public abstract class ResourceBundle {
      *
      * @since 1.6
      * @revised 9
-     * @spec JPMS
      * @see java.util.spi.ResourceBundleProvider
      */
     public static class Control {
@@ -3154,7 +3145,6 @@ public abstract class ResourceBundle {
          *        any I/O operations
          * @see java.util.spi.ResourceBundleProvider#getBundle(String, Locale)
          * @revised 9
-         * @spec JPMS
          */
         public ResourceBundle newBundle(String baseName, Locale locale, String format,
                                         ClassLoader loader, boolean reload)

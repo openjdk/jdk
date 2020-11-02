@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,6 @@
  * questions.
  */
 
-
-
-import java.lang.management.ManagementFactory;
-
 /*
  * @test
  * @summary Suicide test
@@ -34,13 +30,12 @@ public class Suicide {
     public static void main(String[] args) {
         String cmd = null;
         try {
-            String pidStr = ManagementFactory.getRuntimeMXBean().getName()
-                    .split("@")[0];
+            long pid = ProcessHandle.current().pid();
             String osName = System.getProperty("os.name");
             if (osName.contains("Windows")) {
-                cmd = "taskkill.exe /F /PID " + pidStr;
+                cmd = "taskkill.exe /F /PID " + pid;
             } else {
-                cmd = "kill -9 " + pidStr;
+                cmd = "kill -9 " + pid;
             }
 
             System.out.printf("executing `%s'%n", cmd);

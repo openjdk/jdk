@@ -35,6 +35,7 @@
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "gc/shenandoah/shenandoahUnload.hpp"
+#include "memory/metaspace.hpp"
 #include "services/memoryManager.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.hpp"
@@ -396,6 +397,7 @@ public:
   void entry_cleanup_early();
   void entry_rendezvous_roots();
   void entry_evac();
+  void entry_update_thread_roots();
   void entry_updaterefs();
   void entry_cleanup_complete();
   void entry_uncommit(double shrink_before, size_t shrink_until);
@@ -421,6 +423,7 @@ private:
   void op_rendezvous_roots();
   void op_conc_evac();
   void op_stw_evac();
+  void op_update_thread_roots();
   void op_updaterefs();
   void op_cleanup_complete();
   void op_uncommit(double shrink_before, size_t shrink_until);
@@ -605,9 +608,6 @@ public:
                                                Metaspace::MetadataType mdtype);
 
   void notify_mutator_alloc_words(size_t words, bool waste);
-
-  // Shenandoah supports TLAB allocation
-  bool supports_tlab_allocation() const { return true; }
 
   HeapWord* allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size);
   size_t tlab_capacity(Thread *thr) const;

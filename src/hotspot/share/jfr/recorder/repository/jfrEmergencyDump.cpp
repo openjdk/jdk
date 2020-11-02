@@ -423,7 +423,6 @@ const char* JfrEmergencyDump::chunk_path(const char* repository_path) {
 */
 static bool prepare_for_emergency_dump(Thread* thread) {
   assert(thread != NULL, "invariant");
-  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(thread));
   if (thread->is_Watcher_thread()) {
     // need WatcherThread as a safeguard against potential deadlocks
     return false;
@@ -454,12 +453,8 @@ static bool prepare_for_emergency_dump(Thread* thread) {
     Heap_lock->unlock();
   }
 
-  if (VMOperationQueue_lock->owned_by_self()) {
-    VMOperationQueue_lock->unlock();
-  }
-
-  if (VMOperationRequest_lock->owned_by_self()) {
-    VMOperationRequest_lock->unlock();
+  if (VMOperation_lock->owned_by_self()) {
+    VMOperation_lock->unlock();
   }
 
   if (Service_lock->owned_by_self()) {

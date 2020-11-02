@@ -128,8 +128,8 @@ public class HtmlOptions extends BaseOptions {
     private String helpFile = "";
 
     /**
-     * Argument for command-line option {@code -nodeprecated}.
-     * True if command-line option "-nodeprecated" is used. Default value is
+     * Argument for command-line option {@code -nodeprecatedlist}.
+     * True if command-line option "-nodeprecatedlist" is used. Default value is
      * false.
      */
     private boolean noDeprecatedList = false;
@@ -411,7 +411,7 @@ public class HtmlOptions extends BaseOptions {
                             messages.error("doclet.Option_doclint_no_qualifiers");
                             return false;
                         }
-                        if (!DocLint.isValidOption(dopt)) {
+                        if (!DocLint.newDocLint().isValidOption(dopt)) {
                             messages.error("doclet.Option_doclint_invalid_arg");
                             return false;
                         }
@@ -424,7 +424,7 @@ public class HtmlOptions extends BaseOptions {
                     @Override
                     public boolean process(String opt,  List<String> args) {
                         String dopt = opt.replace("-Xdoclint/package:", DocLint.XCHECK_PACKAGE);
-                        if (!DocLint.isValidOption(dopt)) {
+                        if (!DocLint.newDocLint().isValidOption(dopt)) {
                             messages.error("doclet.Option_doclint_package_invalid_arg");
                             return false;
                         }

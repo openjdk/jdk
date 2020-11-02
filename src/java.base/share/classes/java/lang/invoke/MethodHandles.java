@@ -153,7 +153,6 @@ public class MethodHandles {
      * @return a lookup object which is trusted minimally
      *
      * @revised 9
-     * @spec JPMS
      */
     public static Lookup publicLookup() {
         return Lookup.PUBLIC_LOOKUP;
@@ -217,7 +216,6 @@ public class MethodHandles {
      * @throws SecurityException if denied by the security manager
      * @throws IllegalAccessException if any of the other access checks specified above fails
      * @since 9
-     * @spec JPMS
      * @see Lookup#dropLookupMode
      * @see <a href="MethodHandles.Lookup.html#cross-module-lookup">Cross-module lookups</a>
      */
@@ -1330,7 +1328,6 @@ public class MethodHandles {
          *  previous lookup class} is always {@code null}.
          *
          *  @since 9
-         *  @spec JPMS
          */
         public static final int MODULE = PACKAGE << 1;
 
@@ -1349,7 +1346,6 @@ public class MethodHandles {
          *  previous lookup class} is always {@code null}.
          *
          *  @since 9
-         *  @spec JPMS
          *  @see #publicLookup()
          */
         public static final int UNCONDITIONAL = PACKAGE << 2;
@@ -1438,7 +1434,6 @@ public class MethodHandles {
          *  @see #dropLookupMode
          *
          *  @revised 9
-         *  @spec JPMS
          */
         public int lookupModes() {
             return allowedModes & ALL_MODES;
@@ -1518,7 +1513,6 @@ public class MethodHandles {
          * @throws NullPointerException if the argument is null
          *
          * @revised 9
-         * @spec JPMS
          * @see #accessClass(Class)
          * @see <a href="#cross-module-lookup">Cross-module lookups</a>
          */
@@ -1665,7 +1659,6 @@ public class MethodHandles {
          *                           <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
          * @throws NullPointerException if {@code bytes} is {@code null}
          * @since 9
-         * @spec JPMS
          * @see Lookup#privateLookupIn
          * @see Lookup#dropLookupMode
          * @see ClassLoader#defineClass(String,byte[],int,int,ProtectionDomain)
@@ -2317,7 +2310,6 @@ public class MethodHandles {
          * @see #in
          *
          * @revised 9
-         * @spec JPMS
          */
         @Override
         public String toString() {
@@ -4747,23 +4739,24 @@ assert((int)twice.invokeExact(21) == 42);
         if (newType.returnType() != oldType.returnType())
             throw newIllegalArgumentException("return types do not match",
                     oldType, newType);
-        if (reorder.length == oldType.parameterCount()) {
-            int limit = newType.parameterCount();
-            boolean bad = false;
-            for (int j = 0; j < reorder.length; j++) {
-                int i = reorder[j];
-                if (i < 0 || i >= limit) {
-                    bad = true; break;
-                }
-                Class<?> src = newType.parameterType(i);
-                Class<?> dst = oldType.parameterType(j);
-                if (src != dst)
-                    throw newIllegalArgumentException("parameter types do not match after reorder",
-                            oldType, newType);
+        if (reorder.length != oldType.parameterCount())
+            throw newIllegalArgumentException("old type parameter count and reorder array length do not match",
+                    oldType, Arrays.toString(reorder));
+
+        int limit = newType.parameterCount();
+        for (int j = 0; j < reorder.length; j++) {
+            int i = reorder[j];
+            if (i < 0 || i >= limit) {
+                throw newIllegalArgumentException("index is out of bounds for new type",
+                        i, newType);
             }
-            if (!bad)  return true;
+            Class<?> src = newType.parameterType(i);
+            Class<?> dst = oldType.parameterType(j);
+            if (src != dst)
+                throw newIllegalArgumentException("parameter types do not match after reorder",
+                        oldType, newType);
         }
-        throw newIllegalArgumentException("bad reorder array: "+Arrays.toString(reorder));
+        return true;
     }
 
     /**

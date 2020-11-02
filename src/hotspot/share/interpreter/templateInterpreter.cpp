@@ -104,6 +104,19 @@ EntryPoint::EntryPoint(address bentry, address zentry, address centry, address s
   _entry[vtos] = ventry;
 }
 
+EntryPoint::EntryPoint(address aentry, address ientry, address lentry, address fentry, address dentry, address ventry) {
+  assert(number_of_states == 10, "check the code below");
+  _entry[btos] = ientry;
+  _entry[ztos] = ientry;
+  _entry[ctos] = ientry;
+  _entry[stos] = ientry;
+  _entry[atos] = aentry;
+  _entry[itos] = ientry;
+  _entry[ltos] = lentry;
+  _entry[ftos] = fentry;
+  _entry[dtos] = dentry;
+  _entry[vtos] = ventry;
+}
 
 void EntryPoint::set_entry(TosState state, address entry) {
   assert(0 <= state && state < number_of_states, "state out of bounds");

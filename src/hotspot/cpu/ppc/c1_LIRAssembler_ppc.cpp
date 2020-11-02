@@ -1324,7 +1324,7 @@ void LIR_Assembler::reg2mem(LIR_Opr from_reg, LIR_Opr dest, BasicType type,
 }
 
 
-void LIR_Assembler::return_op(LIR_Opr result) {
+void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
   const Register return_pc        = R31;  // Must survive C-call to enable_stack_reserved_zone().
   const Register polling_page     = R12;
 

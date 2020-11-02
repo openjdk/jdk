@@ -59,9 +59,8 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @build nsk.jdwp.Event.CLASS_PREPARE.clsprepare001
- *        nsk.jdwp.Event.CLASS_PREPARE.clsprepare001a
- * @run main/othervm PropertyResolvingWrapper
+ * @build nsk.jdwp.Event.CLASS_PREPARE.clsprepare001a
+ * @run main/othervm
  *      nsk.jdwp.Event.CLASS_PREPARE.clsprepare001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

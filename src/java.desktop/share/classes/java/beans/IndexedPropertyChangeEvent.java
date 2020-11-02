@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.beans;
 
 /**
@@ -41,8 +42,12 @@ package java.beans;
  * @author Mark Davidson
  */
 public class IndexedPropertyChangeEvent extends PropertyChangeEvent {
+
     private static final long serialVersionUID = -320227448495806870L;
 
+    /**
+     * The index of the property element that was changed.
+     */
     private int index;
 
     /**

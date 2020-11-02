@@ -23,6 +23,10 @@
  * questions.
  */
 
+#ifdef HEADLESS
+    #error This file should not be included in headless library
+#endif
+
 #include "gtk_interface.h"
 #include "com_sun_java_swing_plaf_gtk_GTKEngine.h"
 #include <jni_util.h>

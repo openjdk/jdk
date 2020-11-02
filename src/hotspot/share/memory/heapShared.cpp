@@ -36,6 +36,7 @@
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
 #include "logging/logStream.hpp"
+#include "memory/archiveBuilder.hpp"
 #include "memory/archiveUtils.hpp"
 #include "memory/filemap.hpp"
 #include "memory/heapShared.inline.hpp"
@@ -191,7 +192,7 @@ oop HeapShared::archive_heap_object(oop obj, Thread* THREAD) {
     // identity_hash for all shared objects, so they are less likely to be written
     // into during run time, increasing the potential of memory sharing.
     int hash_original = obj->identity_hash();
-    archived_oop->set_mark_raw(markWord::prototype().copy_set_hash(hash_original));
+    archived_oop->set_mark(markWord::prototype().copy_set_hash(hash_original));
     assert(archived_oop->mark().is_unlocked(), "sanity");
 
     DEBUG_ONLY(int hash_archived = archived_oop->identity_hash());
@@ -258,15 +259,6 @@ void HeapShared::run_full_gc_in_vm_thread() {
 
 void HeapShared::archive_java_heap_objects(GrowableArray<MemRegion> *closed,
                                            GrowableArray<MemRegion> *open) {
-  if (!is_heap_object_archiving_allowed()) {
-    log_info(cds)(
-      "Archived java heap is not supported as UseG1GC, "
-      "UseCompressedOops and UseCompressedClassPointers are required."
-      "Current settings: UseG1GC=%s, UseCompressedOops=%s, UseCompressedClassPointers=%s.",
-      BOOL_TO_STR(UseG1GC), BOOL_TO_STR(UseCompressedOops),
-      BOOL_TO_STR(UseCompressedClassPointers));
-    return;
-  }
 
   G1HeapVerifier::verify_ready_for_archiving();
 
@@ -382,7 +374,7 @@ void KlassSubGraphInfo::add_subgraph_entry_field(
       new(ResourceObj::C_HEAP, mtClass) GrowableArray<juint>(10, mtClass);
   }
   _subgraph_entry_fields->append((juint)static_field_offset);
-  _subgraph_entry_fields->append(CompressedOops::encode(v));
+  _subgraph_entry_fields->append(CompressedOops::narrow_oop_value(v));
   _subgraph_entry_fields->append(is_closed_archive ? 1 : 0);
 }
 
@@ -398,7 +390,7 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k, Klass *relocate
       new(ResourceObj::C_HEAP, mtClass) GrowableArray<Klass*>(50, mtClass);
   }
 
-  assert(relocated_k->is_shared(), "must be a shared class");
+  assert(ArchiveBuilder::singleton()->is_in_buffer_space(relocated_k), "must be a shared class");
 
   if (_k == relocated_k) {
     // Don't add the Klass containing the sub-graph to it's own klass
@@ -590,7 +582,7 @@ void HeapShared::initialize_from_archived_subgraph(Klass* k, TRAPS) {
       assert(efr_len % 3 == 0, "sanity");
       for (i = 0; i < efr_len;) {
         int field_offset = entry_field_records->at(i);
-        narrowOop nv = entry_field_records->at(i+1);
+        narrowOop nv = CompressedOops::narrow_oop_cast(entry_field_records->at(i+1));
         int is_closed_archive = entry_field_records->at(i+2);
         oop v;
         if (is_closed_archive == 0) {
@@ -1034,7 +1026,13 @@ void HeapShared::init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
     TempNewSymbol field_name =  SymbolTable::new_symbol(info->field_name);
 
     Klass* k = SystemDictionary::resolve_or_null(klass_name, THREAD);
-    assert(k != NULL && !HAS_PENDING_EXCEPTION, "class must exist");
+    if (HAS_PENDING_EXCEPTION) {
+      ResourceMark rm(THREAD);
+      ArchiveUtils::check_for_oom(PENDING_EXCEPTION); // exit on OOM
+      log_info(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
+                    java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
+      vm_exit_during_initialization("VM exits due to exception, use -Xlog:cds,exceptions=trace for detail");
+    }
     InstanceKlass* ik = InstanceKlass::cast(k);
     assert(InstanceKlass::cast(ik)->is_shared_boot_class(),
            "Only support boot classes");
@@ -1051,8 +1049,8 @@ void HeapShared::init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
 }
 
 void HeapShared::init_subgraph_entry_fields(Thread* THREAD) {
+  assert(is_heap_object_archiving_allowed(), "Sanity check");
   _dump_time_subgraph_info_table = new (ResourceObj::C_HEAP, mtClass)DumpTimeKlassSubGraphInfoTable();
-
   init_subgraph_entry_fields(closed_archive_subgraph_entry_fields,
                              num_closed_archive_subgraph_entry_fields,
                              THREAD);
@@ -1067,8 +1065,10 @@ void HeapShared::init_subgraph_entry_fields(Thread* THREAD) {
 }
 
 void HeapShared::init_for_dumping(Thread* THREAD) {
-  _dumped_interned_strings = new (ResourceObj::C_HEAP, mtClass)DumpedInternedStrings();
-  init_subgraph_entry_fields(THREAD);
+  if (is_heap_object_archiving_allowed()) {
+    _dumped_interned_strings = new (ResourceObj::C_HEAP, mtClass)DumpedInternedStrings();
+    init_subgraph_entry_fields(THREAD);
+  }
 }
 
 void HeapShared::archive_object_subgraphs(ArchivableStaticFieldInfo fields[],
@@ -1149,9 +1149,6 @@ class FindEmbeddedNonNullPointers: public BasicOopIterateClosure {
   FindEmbeddedNonNullPointers(narrowOop* start, BitMap* oopmap)
     : _start(start), _oopmap(oopmap), _num_total_oops(0),  _num_null_oops(0) {}
 
-  virtual bool should_verify_oops(void) {
-    return false;
-  }
   virtual void do_oop(narrowOop* p) {
     _num_total_oops ++;
     narrowOop v = *p;

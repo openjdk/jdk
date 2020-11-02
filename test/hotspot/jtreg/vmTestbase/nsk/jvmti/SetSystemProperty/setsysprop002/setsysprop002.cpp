@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ static PropertyDesc propDescList[PROPERTIES_COUNT] = {
     {
         "nsk.jvmti.test.property",
         {
-            "initial value of nsk.jvmti.test.property",
+            "initial_value_of_nsk.jvmti.test.property",
             "OnLoad phase value of nsk.jvmti.test.property",
             "live phase value of nsk.jvmti.test.property"
         }
@@ -61,7 +61,7 @@ static PropertyDesc propDescList[PROPERTIES_COUNT] = {
     {
         "nsk.jvmti.test.property.empty.new",
         {
-            "initial value of nsk.jvmti.test.property.empty.new",
+            "initial_value_of_nsk.jvmti.test.property.empty.new",
             "",
             "live phase value of nsk.jvmti.test.property.empty.new"
         }

@@ -50,6 +50,7 @@
 #include "prims/whitebox.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/escapeBarrier.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
@@ -798,19 +799,98 @@ Handle CompileBroker::create_thread_oop(const char* name, TRAPS) {
                        CHECK_NH);
 }
 
+#if defined(ASSERT) && COMPILER2_OR_JVMCI
+// Stress testing. Dedicated threads revert optimizations based on escape analysis concurrently to
+// the running java application.  Configured with vm options DeoptimizeObjectsALot*.
+class DeoptimizeObjectsALotThread : public JavaThread {
 
-JavaThread* CompileBroker::make_thread(jobject thread_handle, CompileQueue* queue, AbstractCompiler* comp, Thread* THREAD) {
+  static void deopt_objs_alot_thread_entry(JavaThread* thread, TRAPS);
+  void deoptimize_objects_alot_loop_single();
+  void deoptimize_objects_alot_loop_all();
+
+public:
+  DeoptimizeObjectsALotThread() : JavaThread(&deopt_objs_alot_thread_entry) { }
+
+  bool is_hidden_from_external_view() const      { return true; }
+};
+
+// Entry for DeoptimizeObjectsALotThread. The threads are started in
+// CompileBroker::init_compiler_sweeper_threads() iff DeoptimizeObjectsALot is enabled
+void DeoptimizeObjectsALotThread::deopt_objs_alot_thread_entry(JavaThread* thread, TRAPS) {
+    DeoptimizeObjectsALotThread* dt = ((DeoptimizeObjectsALotThread*) thread);
+    bool enter_single_loop;
+    {
+      MonitorLocker ml(dt, EscapeBarrier_lock, Mutex::_no_safepoint_check_flag);
+      static int single_thread_count = 0;
+      enter_single_loop = single_thread_count++ < DeoptimizeObjectsALotThreadCountSingle;
+    }
+    if (enter_single_loop) {
+      dt->deoptimize_objects_alot_loop_single();
+    } else {
+      dt->deoptimize_objects_alot_loop_all();
+    }
+  }
+
+// Execute EscapeBarriers in an endless loop to revert optimizations based on escape analysis. Each
+// barrier targets a single thread which is selected round robin.
+void DeoptimizeObjectsALotThread::deoptimize_objects_alot_loop_single() {
+  HandleMark hm(this);
+  while (true) {
+    for (JavaThreadIteratorWithHandle jtiwh; JavaThread *deoptee_thread = jtiwh.next(); ) {
+      { // Begin new scope for escape barrier
+        HandleMarkCleaner hmc(this);
+        ResourceMark rm(this);
+        EscapeBarrier eb(true, this, deoptee_thread);
+        eb.deoptimize_objects(100);
+      }
+      // Now sleep after the escape barriers destructor resumed deoptee_thread.
+      sleep(DeoptimizeObjectsALotInterval);
+    }
+  }
+}
+
+// Execute EscapeBarriers in an endless loop to revert optimizations based on escape analysis. Each
+// barrier targets all java threads in the vm at once.
+void DeoptimizeObjectsALotThread::deoptimize_objects_alot_loop_all() {
+  HandleMark hm(this);
+  while (true) {
+    { // Begin new scope for escape barrier
+      HandleMarkCleaner hmc(this);
+      ResourceMark rm(this);
+      EscapeBarrier eb(true, this);
+      eb.deoptimize_objects_all_threads();
+    }
+    // Now sleep after the escape barriers destructor resumed the java threads.
+    sleep(DeoptimizeObjectsALotInterval);
+  }
+}
+#endif // defined(ASSERT) && COMPILER2_OR_JVMCI
+
+
+JavaThread* CompileBroker::make_thread(ThreadType type, jobject thread_handle, CompileQueue* queue, AbstractCompiler* comp, Thread* THREAD) {
   JavaThread* new_thread = NULL;
   {
     MutexLocker mu(THREAD, Threads_lock);
-    if (comp != NULL) {
-      if (!InjectCompilerCreationFailure || comp->num_compiler_threads() == 0) {
-        CompilerCounters* counters = new CompilerCounters();
-        new_thread = new CompilerThread(queue, counters);
-      }
-    } else {
-      new_thread = new CodeCacheSweeperThread();
+    switch (type) {
+      case compiler_t:
+        assert(comp != NULL, "Compiler instance missing.");
+        if (!InjectCompilerCreationFailure || comp->num_compiler_threads() == 0) {
+          CompilerCounters* counters = new CompilerCounters();
+          new_thread = new CompilerThread(queue, counters);
+        }
+        break;
+      case sweeper_t:
+        new_thread = new CodeCacheSweeperThread();
+        break;
+#if defined(ASSERT) && COMPILER2_OR_JVMCI
+      case deoptimizer_t:
+        new_thread = new DeoptimizeObjectsALotThread();
+        break;
+#endif // ASSERT
+      default:
+        ShouldNotReachHere();
     }
+
     // At this point the new CompilerThread data-races with this startup
     // thread (which I believe is the primoridal thread and NOT the VM
     // thread).  This means Java bytecodes being executed at startup can
@@ -852,7 +932,7 @@ JavaThread* CompileBroker::make_thread(jobject thread_handle, CompileQueue* queu
       java_lang_Thread::set_daemon(JNIHandles::resolve_non_null(thread_handle));
 
       new_thread->set_threadObj(JNIHandles::resolve_non_null(thread_handle));
-      if (comp != NULL) {
+      if (type == compiler_t) {
         new_thread->as_CompilerThread()->set_compiler(comp);
       }
       Threads::add(new_thread);
@@ -862,7 +942,7 @@ JavaThread* CompileBroker::make_thread(jobject thread_handle, CompileQueue* queu
 
   // First release lock before aborting VM.
   if (new_thread == NULL || new_thread->osthread() == NULL) {
-    if (UseDynamicNumberOfCompilerThreads && comp != NULL && comp->num_compiler_threads() > 0) {
+    if (UseDynamicNumberOfCompilerThreads && type == compiler_t && comp->num_compiler_threads() > 0) {
       if (new_thread != NULL) {
         new_thread->smr_delete();
       }
@@ -917,7 +997,7 @@ void CompileBroker::init_compiler_sweeper_threads() {
     _compiler2_logs[i] = NULL;
 
     if (!UseDynamicNumberOfCompilerThreads || i == 0) {
-      JavaThread *ct = make_thread(thread_handle, _c2_compile_queue, _compilers[1], THREAD);
+      JavaThread *ct = make_thread(compiler_t, thread_handle, _c2_compile_queue, _compilers[1], THREAD);
       assert(ct != NULL, "should have been handled for initial thread");
       _compilers[1]->set_num_compiler_threads(i + 1);
       if (TraceCompilerThreads) {
@@ -937,7 +1017,7 @@ void CompileBroker::init_compiler_sweeper_threads() {
     _compiler1_logs[i] = NULL;
 
     if (!UseDynamicNumberOfCompilerThreads || i == 0) {
-      JavaThread *ct = make_thread(thread_handle, _c1_compile_queue, _compilers[0], THREAD);
+      JavaThread *ct = make_thread(compiler_t, thread_handle, _c1_compile_queue, _compilers[0], THREAD);
       assert(ct != NULL, "should have been handled for initial thread");
       _compilers[0]->set_num_compiler_threads(i + 1);
       if (TraceCompilerThreads) {
@@ -956,8 +1036,20 @@ void CompileBroker::init_compiler_sweeper_threads() {
     // Initialize the sweeper thread
     Handle thread_oop = create_thread_oop("Sweeper thread", CHECK);
     jobject thread_handle = JNIHandles::make_local(THREAD, thread_oop());
-    make_thread(thread_handle, NULL, NULL, THREAD);
+    make_thread(sweeper_t, thread_handle, NULL, NULL, THREAD);
   }
+
+#if defined(ASSERT) && COMPILER2_OR_JVMCI
+  if (DeoptimizeObjectsALot) {
+    // Initialize and start the object deoptimizer threads
+    const int total_count = DeoptimizeObjectsALotThreadCountSingle + DeoptimizeObjectsALotThreadCountAll;
+    for (int count = 0; count < total_count; count++) {
+      Handle thread_oop = create_thread_oop("Deoptimize objects a lot single mode", CHECK);
+      jobject thread_handle = JNIHandles::make_local(THREAD, thread_oop());
+      make_thread(deoptimizer_t, thread_handle, NULL, NULL, THREAD);
+    }
+  }
+#endif // defined(ASSERT) && COMPILER2_OR_JVMCI
 }
 
 void CompileBroker::possibly_add_compiler_threads(Thread* THREAD) {
@@ -1011,7 +1103,7 @@ void CompileBroker::possibly_add_compiler_threads(Thread* THREAD) {
         _compiler2_objects[i] = thread_handle;
       }
 #endif
-      JavaThread *ct = make_thread(compiler2_object(i), _c2_compile_queue, _compilers[1], THREAD);
+      JavaThread *ct = make_thread(compiler_t, compiler2_object(i), _c2_compile_queue, _compilers[1], THREAD);
       if (ct == NULL) break;
       _compilers[1]->set_num_compiler_threads(i + 1);
       if (TraceCompilerThreads) {
@@ -1031,7 +1123,7 @@ void CompileBroker::possibly_add_compiler_threads(Thread* THREAD) {
         (int)(available_cc_p / (128*K)));
 
     for (int i = old_c1_count; i < new_c1_count; i++) {
-      JavaThread *ct = make_thread(compiler1_object(i), _c1_compile_queue, _compilers[0], THREAD);
+      JavaThread *ct = make_thread(compiler_t, compiler1_object(i), _c1_compile_queue, _compilers[0], THREAD);
       if (ct == NULL) break;
       _compilers[0]->set_num_compiler_threads(i + 1);
       if (TraceCompilerThreads) {
@@ -2764,42 +2856,59 @@ void CompileBroker::print_heapinfo(outputStream* out, const char* function, size
   }
 
   // We hold the CodeHeapStateAnalytics_lock all the time, from here until we leave this function.
-  // That prevents another thread from destroying our view on the CodeHeap.
+  // That prevents other threads from destroying (making inconsistent) our view on the CodeHeap.
   // When we request individual parts of the analysis via the jcmd interface, it is possible
   // that in between another thread (another jcmd user or the vm running into CodeCache OOM)
-  // updated the aggregated data. That's a tolerable tradeoff because we can't hold a lock
-  // across user interaction.
-  // Acquire this lock before acquiring the CodeCache_lock.
-  // CodeHeapStateAnalytics_lock could be held by a concurrent thread for a long time,
-  // leading to an unnecessarily long hold time of the CodeCache_lock.
+  // updated the aggregated data. We will then see a modified, but again consistent, view
+  // on the CodeHeap. That's a tolerable tradeoff we have to accept because we can't hold
+  // a lock across user interaction.
+
+  // We should definitely acquire this lock before acquiring Compile_lock and CodeCache_lock.
+  // CodeHeapStateAnalytics_lock may be held by a concurrent thread for a long time,
+  // leading to an unnecessarily long hold time of the other locks we acquired before.
   ts.update(); // record starting point
-  MutexLocker mu1(CodeHeapStateAnalytics_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker mu0(CodeHeapStateAnalytics_lock, Mutex::_safepoint_check_flag);
   out->print_cr("\n__ CodeHeapStateAnalytics lock wait took %10.3f seconds _________\n", ts.seconds());
 
-  // If we serve an "allFun" call, it is beneficial to hold the CodeCache_lock
-  // for the entire duration of aggregation and printing. That makes sure
-  // we see a consistent picture and do not run into issues caused by
-  // the CodeHeap being altered concurrently.
-  Mutex* global_lock   = allFun ? CodeCache_lock : NULL;
-  Mutex* function_lock = allFun ? NULL : CodeCache_lock;
+  // Holding the CodeCache_lock protects from concurrent alterations of the CodeCache.
+  // Unfortunately, such protection is not sufficient:
+  // When a new nmethod is created via ciEnv::register_method(), the
+  // Compile_lock is taken first. After some initializations,
+  // nmethod::new_nmethod() takes over, grabbing the CodeCache_lock
+  // immediately (after finalizing the oop references). To lock out concurrent
+  // modifiers, we have to grab both locks as well in the described sequence.
+  //
+  // If we serve an "allFun" call, it is beneficial to hold CodeCache_lock and Compile_lock
+  // for the entire duration of aggregation and printing. That makes sure we see
+  // a consistent picture and do not run into issues caused by concurrent alterations.
+  bool should_take_Compile_lock   = !SafepointSynchronize::is_at_safepoint() &&
+                                    !Compile_lock->owned_by_self();
+  bool should_take_CodeCache_lock = !SafepointSynchronize::is_at_safepoint() &&
+                                    !CodeCache_lock->owned_by_self();
+  Mutex*   global_lock_1   = allFun ? (should_take_Compile_lock   ? Compile_lock   : NULL) : NULL;
+  Monitor* global_lock_2   = allFun ? (should_take_CodeCache_lock ? CodeCache_lock : NULL) : NULL;
+  Mutex*   function_lock_1 = allFun ? NULL : (should_take_Compile_lock   ? Compile_lock    : NULL);
+  Monitor* function_lock_2 = allFun ? NULL : (should_take_CodeCache_lock ? CodeCache_lock  : NULL);
   ts_global.update(); // record starting point
-  MutexLocker mu2(global_lock, Mutex::_no_safepoint_check_flag);
-  if (global_lock != NULL) {
-    out->print_cr("\n__ CodeCache (global) lock wait took %10.3f seconds _________\n", ts_global.seconds());
+  MutexLocker mu1(global_lock_1, Mutex::_safepoint_check_flag);
+  MutexLocker mu2(global_lock_2, Mutex::_no_safepoint_check_flag);
+  if ((global_lock_1 != NULL) || (global_lock_2 != NULL)) {
+    out->print_cr("\n__ Compile & CodeCache (global) lock wait took %10.3f seconds _________\n", ts_global.seconds());
     ts_global.update(); // record starting point
   }
 
   if (aggregate) {
     ts.update(); // record starting point
-    MutexLocker mu3(function_lock, Mutex::_no_safepoint_check_flag);
-    if (function_lock != NULL) {
-      out->print_cr("\n__ CodeCache (function) lock wait took %10.3f seconds _________\n", ts.seconds());
+    MutexLocker mu11(function_lock_1, Mutex::_safepoint_check_flag);
+    MutexLocker mu22(function_lock_2, Mutex::_no_safepoint_check_flag);
+    if ((function_lock_1 != NULL) || (function_lock_1 != NULL)) {
+      out->print_cr("\n__ Compile & CodeCache (function) lock wait took %10.3f seconds _________\n", ts.seconds());
     }
 
     ts.update(); // record starting point
     CodeCache::aggregate(out, granularity);
-    if (function_lock != NULL) {
-      out->print_cr("\n__ CodeCache (function) lock hold took %10.3f seconds _________\n", ts.seconds());
+    if ((function_lock_1 != NULL) || (function_lock_1 != NULL)) {
+      out->print_cr("\n__ Compile & CodeCache (function) lock hold took %10.3f seconds _________\n", ts.seconds());
     }
   }
 
@@ -2809,15 +2918,18 @@ void CompileBroker::print_heapinfo(outputStream* out, const char* function, size
   if (methodSpace) CodeCache::print_space(out);
   if (methodAge) CodeCache::print_age(out);
   if (methodNames) {
-    // print_names() has shown to be sensitive to concurrent CodeHeap modifications.
-    // Therefore, request  the CodeCache_lock before calling...
-    MutexLocker mu3(function_lock, Mutex::_no_safepoint_check_flag);
-    CodeCache::print_names(out);
+    if (allFun) {
+      // print_names() can only be used safely if the locks have been continuously held
+      // since aggregation begin. That is true only for function "all".
+      CodeCache::print_names(out);
+    } else {
+      out->print_cr("\nCodeHeapStateAnalytics: Function 'MethodNames' is only available as part of function 'all'");
+    }
   }
   if (discard) CodeCache::discard(out);
 
-  if (global_lock != NULL) {
-    out->print_cr("\n__ CodeCache (global) lock hold took %10.3f seconds _________\n", ts_global.seconds());
+  if ((global_lock_1 != NULL) || (global_lock_2 != NULL)) {
+    out->print_cr("\n__ Compile & CodeCache (global) lock hold took %10.3f seconds _________\n", ts_global.seconds());
   }
   out->print_cr("\n__ CodeHeapStateAnalytics total duration %10.3f seconds _________\n", ts_total.seconds());
 }
