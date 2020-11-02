@@ -1598,7 +1598,7 @@ public abstract class VarHandle implements Constable {
      * If this VarHandle already has invoke-exact behavior this VarHandle is returned.
      * @apiNote
      * Invoke-exact behavior guarantees that that upon invocation of an access mode method
-     * the types an arity of the arguments must match the {@link #accessModeType(AccessMode) access mode type},
+     * the types and arity of the arguments must match the {@link #accessModeType(AccessMode) access mode type},
      * otherwise a {@link WrongMethodTypeException} is thrown.
      *
      * @see #withInvokeBehavior()
