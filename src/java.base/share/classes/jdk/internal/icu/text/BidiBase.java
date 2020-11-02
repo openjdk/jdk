@@ -4590,13 +4590,13 @@ public class BidiBase {
         }
         if (0 > objectStart || objects.length <= objectStart) {
             throw new IllegalArgumentException("Value objectStart " +
-                      levelStart + " is out of range 0 to " +
+                      objectStart + " is out of range 0 to " +
                       (objects.length-1));
         }
         if (0 > count || objects.length < (objectStart+count)) {
             throw new IllegalArgumentException("Value count " +
-                      levelStart + " is out of range 0 to " +
-                      (objects.length - objectStart));
+                      count + " is less than zero, or objectStart + count" +
+                      " is beyond objects length " + objects.length);
         }
 
         byte[] reorderLevels = new byte[count];
