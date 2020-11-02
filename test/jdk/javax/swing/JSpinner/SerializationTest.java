@@ -38,6 +38,7 @@ import static javax.swing.UIManager.getInstalledLookAndFeels;
 /**
  * @test
  * @bug 7124397
+ * @summary Verifies that JSpinner can be serialized/deserialized correctly.
  */
 public final class SerializationTest {
 
