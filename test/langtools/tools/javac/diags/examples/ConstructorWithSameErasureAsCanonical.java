@@ -23,10 +23,7 @@
 
 // key: compiler.err.invalid.canonical.constructor.in.record
 // key: compiler.misc.type.must.be.identical.to.corresponding.record.component.type
-// key: compiler.note.preview.filename
-// key: compiler.note.preview.recompile
 // key: compiler.misc.canonical
-// options: --enable-preview -source ${jdk.version}
 
 import java.util.List;
 

@@ -44,21 +44,21 @@ public class bug4171437 {
 
     public static void main(String[] args) throws Exception {
         try {
+            Robot robot = new Robot();
+            robot.setAutoDelay(100);
             SwingUtilities.invokeAndWait(new Runnable() {
                 public void run() {
                     createAndShowGUI();
                 }
             });
 
-            Robot robot = new Robot();
-            robot.setAutoDelay(50);
             robot.waitForIdle();
+            robot.delay(1000);
 
             Util.hitMnemonics(robot, KeyEvent.VK_F);
             Util.hitKeys(robot, KeyEvent.VK_C);
 
             robot.waitForIdle();
-            Thread.sleep(1000);
 
             if (!closeActivated || customActivated) {
                 throw new RuntimeException("Didn't pass the muster");
@@ -109,6 +109,7 @@ public class bug4171437 {
         frame.setSize(300, 300);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 }

@@ -605,6 +605,10 @@ void InterpreterMacroAssembler::push_i(Register r) {
   push(r);
 }
 
+void InterpreterMacroAssembler::push_i_or_ptr(Register r) {
+  push(r);
+}
+
 void InterpreterMacroAssembler::push_f(XMMRegister r) {
   subptr(rsp, wordSize);
   movflt(Address(rsp, 0), r);
@@ -999,9 +1003,11 @@ void InterpreterMacroAssembler::remove_activation(
   jmp(fast_path);
   bind(slow_path);
   push(state);
-  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind));
-  pop(state);
+  set_last_Java_frame(rthread, noreg, rbp, (address)pc());
+  super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), rthread);
   NOT_LP64(get_thread(rthread);) // call_VM clobbered it, restore
+  reset_last_Java_frame(rthread, true);
+  pop(state);
   bind(fast_path);
 
   // get the value of _do_not_unlock_if_synchronized into rdx

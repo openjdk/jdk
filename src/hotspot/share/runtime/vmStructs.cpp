@@ -2600,17 +2600,17 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   /******************************/                                        \
   /*  -XX flags (value origin)  */                                        \
   /******************************/                                        \
-  declare_constant(JVMFlag::DEFAULT)                                      \
-  declare_constant(JVMFlag::COMMAND_LINE)                                 \
-  declare_constant(JVMFlag::ENVIRON_VAR)                                  \
-  declare_constant(JVMFlag::CONFIG_FILE)                                  \
-  declare_constant(JVMFlag::MANAGEMENT)                                   \
-  declare_constant(JVMFlag::ERGONOMIC)                                    \
-  declare_constant(JVMFlag::ATTACH_ON_DEMAND)                             \
-  declare_constant(JVMFlag::INTERNAL)                                     \
-  declare_constant(JVMFlag::JIMAGE_RESOURCE)                              \
+  declare_constant(JVMFlagOrigin::DEFAULT)                                \
+  declare_constant(JVMFlagOrigin::COMMAND_LINE)                           \
+  declare_constant(JVMFlagOrigin::ENVIRON_VAR)                            \
+  declare_constant(JVMFlagOrigin::CONFIG_FILE)                            \
+  declare_constant(JVMFlagOrigin::MANAGEMENT)                             \
+  declare_constant(JVMFlagOrigin::ERGONOMIC)                              \
+  declare_constant(JVMFlagOrigin::ATTACH_ON_DEMAND)                       \
+  declare_constant(JVMFlagOrigin::INTERNAL)                               \
+  declare_constant(JVMFlagOrigin::JIMAGE_RESOURCE)                        \
   declare_constant(JVMFlag::VALUE_ORIGIN_MASK)                            \
-  declare_constant(JVMFlag::ORIG_COMMAND_LINE)
+  declare_constant(JVMFlag::WAS_SET_ON_COMMAND_LINE)
 
 //--------------------------------------------------------------------------------
 // VM_LONG_CONSTANTS
