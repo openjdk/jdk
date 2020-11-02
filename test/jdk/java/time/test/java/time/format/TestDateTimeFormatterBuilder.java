@@ -70,7 +70,6 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 
 import java.text.ParsePosition;
-import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.YearMonth;
@@ -84,7 +83,6 @@ import java.time.format.FormatStyle;
 import java.time.format.ResolverStyle;
 import java.time.format.SignStyle;
 import java.time.format.TextStyle;
-import java.time.temporal.ChronoField;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.util.HashMap;
@@ -739,6 +737,44 @@ public class TestDateTimeFormatterBuilder {
             assertEquals(e.getCause().getMessage(),
                     "Conflict found: Resolved time " + dayPeriod.substring(0, 5) + " conflicts with " +
                     "DayPeriod(" + periodRange + ")");
+        }
+    }
+
+    @DataProvider(name="dayPeriodParsePatternInvalid")
+    Object[][] data_dayPeriodParsePatternInvalid() {
+        return new Object[][] {
+                {"H B", ResolverStyle.SMART, "47 at night", 23},
+                {"H B", ResolverStyle.SMART, "51 at night", 3},
+                {"K B", ResolverStyle.SMART, "59 at night", 23},
+                {"K B", ResolverStyle.SMART, "51 at night", 3},
+                {"K B", ResolverStyle.SMART, "59 in the morning", 11},
+                {"h B", ResolverStyle.SMART, "59 at night", 23},
+                {"h B", ResolverStyle.SMART, "51 at night", 3},
+                {"h B", ResolverStyle.SMART, "59 in the morning", 11},
+
+                {"H B", ResolverStyle.LENIENT, "47 at night", 23},
+                {"H B", ResolverStyle.LENIENT, "51 at night", 3},
+                {"K B", ResolverStyle.LENIENT, "59 at night", 23},
+                {"K B", ResolverStyle.LENIENT, "51 at night", 3},
+                {"K B", ResolverStyle.LENIENT, "59 in the morning", 11},
+                {"h B", ResolverStyle.LENIENT, "59 at night", 23},
+                {"h B", ResolverStyle.LENIENT, "51 at night", 3},
+                {"h B", ResolverStyle.LENIENT, "59 in the morning", 11},
+        };
+    }
+
+    @Test (dataProvider="dayPeriodParsePatternInvalid")
+    public void test_dayPeriodParsePatternInvalid(String pattern, ResolverStyle rs, String hourDayPeriod, long expected) throws Exception {
+        try {
+            builder.appendPattern(pattern);
+            DateTimeFormatter f = builder.toFormatter().withLocale(Locale.US).withResolverStyle(rs);
+            var p = f.parse(hourDayPeriod);
+            if (rs != ResolverStyle.LENIENT) {
+                throw new RuntimeException("DateTimeParseException should be thrown");
+            }
+            assertEquals(p.getLong(HOUR_OF_DAY), expected);
+        } catch (DateTimeParseException e) {
+            // exception successfully thrown
         }
     }
 

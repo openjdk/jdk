@@ -482,7 +482,7 @@ final class Parsed implements TemporalAccessor {
                 if (resolverStyle != ResolverStyle.LENIENT) {
                     HOUR_OF_AMPM.checkValidValue(hoap);
                 }
-                if (dayPeriod.includes((hoap + 12) * 60)) {
+                if (dayPeriod.includes((hoap % 24 + 12) * 60)) {
                     hoap += 12;
                 }
                 updateCheckDayPeriodConflict(HOUR_OF_DAY, hoap);
