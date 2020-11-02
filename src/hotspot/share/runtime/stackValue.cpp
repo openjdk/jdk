@@ -33,7 +33,7 @@
 #include "gc/z/zBarrier.inline.hpp"
 #endif
 #if INCLUDE_SHENANDOAHGC
-#include "gc/shenandoah/shenandoahBarrierSet.hpp"
+#include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #endif
 
 StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* reg_map, ScopeValue* sv) {
