@@ -42,7 +42,7 @@ import static java.lang.String.format;
  * @summary Test that Zip FS can access the LOC offset from the Zip64 extra field
  * @modules jdk.zipfs
  * @requires (os.family == "linux") | (os.family == "mac")
- * @run testng/othervm TestLocOffsetFromZip64EF
+ * @run testng/manual TestLocOffsetFromZip64EF
  */
 public class TestLocOffsetFromZip64EF {
 
