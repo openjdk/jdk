@@ -2068,6 +2068,7 @@ private:
     assert(!out_of_bounds(di), "hint_di out of bounds");
     _hint_di = di;
   }
+
   DataLayout* data_layout_before(int bci) {
     // avoid SEGV on this edge case
     if (data_size() == 0)
@@ -2260,7 +2261,7 @@ public:
   ProfileData* next_data(ProfileData* current) const;
   DataLayout*  next_data_layout(DataLayout* current) const;
   bool is_valid(ProfileData* current) const { return current != NULL; }
-  bool is_valid(DataLayout* current) const { return current != NULL; }
+  bool is_valid(DataLayout*  current) const { return current != NULL; }
 
   // Convert a dp (data pointer) to a di (data index).
   int dp_to_di(address dp) const {

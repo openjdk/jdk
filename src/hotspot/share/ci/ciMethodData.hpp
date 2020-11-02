@@ -445,6 +445,7 @@ private:
     assert(!out_of_bounds(di), "hint_di out of bounds");
     _hint_di = di;
   }
+
   DataLayout* data_layout_before(int bci) {
     // avoid SEGV on this edge case
     if (data_size() == 0)

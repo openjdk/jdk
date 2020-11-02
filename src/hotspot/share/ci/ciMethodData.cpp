@@ -378,6 +378,7 @@ ciProfileData* ciMethodData::next_data(ciProfileData* current) {
   ciProfileData* next = data_at(next_index);
   return next;
 }
+
 DataLayout* ciMethodData::next_data_layout(DataLayout* current) {
   int current_index = dp_to_di((address)current);
   int next_index = current_index + current->size_in_bytes();

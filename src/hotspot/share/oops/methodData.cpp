@@ -1175,6 +1175,7 @@ ProfileData* MethodData::next_data(ProfileData* current) const {
   ProfileData* next = data_at(next_index);
   return next;
 }
+
 DataLayout* MethodData::next_data_layout(DataLayout* current) const {
   int current_index = dp_to_di((address)current);
   int next_index = current_index + current->size_in_bytes();
