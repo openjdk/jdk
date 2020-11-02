@@ -250,15 +250,11 @@ public:
       _bs_nm(BarrierSet::barrier_set()->barrier_set_nmethod()) {}
 
   virtual void do_nmethod(nmethod* nm) {
-    if (!ClassUnloading) {
-      // ClassUnloading is turned off, all nmethods are considered strong,
-      // not only those on the call stacks. The heap iteration might happen
-      // before the concurrent processign of the code cache, make sure that
-      // all nmethods have been processed before visiting the oops.
-      _bs_nm->nmethod_entry_barrier(nm);
-    }
-
-    assert(!_bs_nm->is_armed(nm), "Must have been processed before oops are visited");
+    // If ClassUnloading is turned off, all nmethods are considered strong,
+    // not only those on the call stacks. The heap iteration might happen
+    // before the concurrent processign of the code cache, make sure that
+    // all nmethods have been processed before visiting the oops.
+    _bs_nm->nmethod_entry_barrier(nm);
 
     ZNMethod::nmethod_oops_do(nm, _cl);
   }
