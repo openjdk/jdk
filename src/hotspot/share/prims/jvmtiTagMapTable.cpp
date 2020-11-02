@@ -42,11 +42,7 @@ oop JvmtiTagMapEntry::object() {
 }
 
 oop JvmtiTagMapEntry::object_no_keepalive() {
-  // The AS_NO_KEEPALIVE peeks at the oop without keeping it alive.
-  // This is dangerous in general but is okay if the loaded oop does
-  // not leak out past a thread transition where a safepoint can happen.
-  // A subsequent oop_load without AS_NO_KEEPALIVE (the object() accessor)
-  // keeps the oop alive before doing so.
+  // Just peek at the object without keeping it alive.
   return literal().peek();
 }
 
@@ -78,8 +74,8 @@ JvmtiTagMapEntry* JvmtiTagMapTable::new_entry(unsigned int hash, WeakHandle w, j
 
 void JvmtiTagMapTable::free_entry(JvmtiTagMapEntry* entry) {
   unlink_entry(entry);
-  entry->literal().release(JvmtiExport::weak_tag_storage()); // release OopStorage
-  FREE_C_HEAP_ARRAY(char, entry); // C_Heap free.
+  entry->literal().release(JvmtiExport::weak_tag_storage()); // release to OopStorage
+  FREE_C_HEAP_ARRAY(char, entry);
 }
 
 unsigned int JvmtiTagMapTable::compute_hash(oop obj) {
@@ -88,6 +84,8 @@ unsigned int JvmtiTagMapTable::compute_hash(oop obj) {
 }
 
 JvmtiTagMapEntry* JvmtiTagMapTable::find(int index, unsigned int hash, oop obj) {
+  assert(obj != NULL, "Cannot search for a NULL object");
+
   for (JvmtiTagMapEntry* p = bucket(index); p != NULL; p = p->next()) {
     if (p->hash() == hash) {
 
@@ -95,7 +93,7 @@ JvmtiTagMapEntry* JvmtiTagMapTable::find(int index, unsigned int hash, oop obj) 
       oop target = p->object_no_keepalive();
 
       // The obj is in the table as a target already
-      if (target != NULL && target == obj) {
+      if (target == obj) {
         ResourceMark rm;
         log_trace(jvmti, table)("JvmtiTagMap entry found for %s index %d",
                                 obj->print_value_string(), index);
@@ -119,8 +117,7 @@ JvmtiTagMapEntry* JvmtiTagMapTable::add(oop obj, jlong tag) {
   unsigned int hash = compute_hash(obj);
   int index = hash_to_index(hash);
   // One was added while acquiring the lock
-  JvmtiTagMapEntry* entry = find(index, hash, obj);
-  assert (entry == NULL, "shouldn't already be present");
+  assert (find(index, hash, obj) == NULL, "shouldn't already be present");
 
   // obj was read with AS_NO_KEEPALIVE, or equivalent.
   // The object needs to be kept alive when it is published.

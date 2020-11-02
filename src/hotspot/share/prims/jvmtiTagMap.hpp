@@ -53,8 +53,8 @@ class JvmtiTagMap :  public CHeapObj<mtInternal> {
 
   void entry_iterate(JvmtiTagMapEntryClosure* closure);
   void post_dead_object_on_vm_thread();
- public:
 
+ public:
   // indicates if this tag map is locked
   bool is_locked()                          { return lock()->is_locked(); }
 

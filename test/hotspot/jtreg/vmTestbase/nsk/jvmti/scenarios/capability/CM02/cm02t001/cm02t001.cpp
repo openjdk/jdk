@@ -61,7 +61,7 @@ static jlong timeout = 0;
 static jthread thread = NULL;
 static jclass klass = NULL;
 static jobject testedObject = NULL;
-const jlong TESTED_TAG_VALUE = (5555555L);
+const jlong TESTED_TAG_VALUE = 5555555L;
 static bool testedObjectNotified = false;
 
 

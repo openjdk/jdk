@@ -39,23 +39,6 @@ const double uninitialized_time = -1.0;
 static bool is_initialized_time(double t) { return t >= 0.0; }
 #endif // ASSERT
 
-static void reset_times(double* times, size_t ntimes) {
-  for (size_t i = 0; i < ntimes; ++i) {
-    times[i] = uninitialized_time;
-  }
-}
-
-static void reset_items(size_t* items, size_t nitems) {
-  for (size_t i = 0; i < nitems; ++i) {
-    items[i] = 0;
-  }
-}
-
-void WeakProcessorPhaseTimes::reset_phase_data() {
-  reset_times(_phase_times_sec, ARRAY_SIZE(_phase_times_sec));
-  reset_items(_phase_dead_items, ARRAY_SIZE(_phase_dead_items));
-  reset_items(_phase_total_items, ARRAY_SIZE(_phase_total_items));
-}
 
 WeakProcessorPhaseTimes::WeakProcessorPhaseTimes(uint max_threads) :
   _max_threads(max_threads),
@@ -64,8 +47,6 @@ WeakProcessorPhaseTimes::WeakProcessorPhaseTimes(uint max_threads) :
   _worker_data()
 {
   assert(_max_threads > 0, "max_threads must not be zero");
-
-  reset_phase_data();
 
   WorkerDataArray<double>** wpt = _worker_data;
   OopStorageSet::Iterator it = OopStorageSet::weak_iterator();
@@ -103,7 +84,6 @@ void WeakProcessorPhaseTimes::set_active_workers(uint n) {
 void WeakProcessorPhaseTimes::reset() {
   _active_workers = 0;
   _total_time_sec = uninitialized_time;
-  reset_phase_data();
   for (size_t i = 0; i < ARRAY_SIZE(_worker_data); ++i) {
     _worker_data[i]->reset();
   }

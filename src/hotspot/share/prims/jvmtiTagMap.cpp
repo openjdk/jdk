@@ -120,15 +120,15 @@ bool JvmtiTagMap::is_empty() {
 }
 
 void JvmtiTagMap::check_hashmap(bool post_events) {
+  assert(is_locked(), "checking");
+
   // The table cleaning, posting and rehashing can race for
   // concurrent GCs. So fix it here once we have a lock or are
   // at a safepoint.
-  // SetTag and GetTag should not post events!
   if (is_empty()) { return; }
 
   // Operating on the hashmap must always be locked, since concurrent GC threads may
   // notify while running through a safepoint.
-  assert(is_locked(), "checking");
   if (post_events && env()->is_enabled(JVMTI_EVENT_OBJECT_FREE)) {
     log_info(jvmti, table)("TagMap table needs posting before heap walk");
     hashmap()->unlink_and_post(env());
@@ -141,22 +141,21 @@ void JvmtiTagMap::check_hashmap(bool post_events) {
 }
 
 // This checks for posting and rehashing and is called from the heap walks.
-// The ZDriver may be walking the hashmaps concurrently so all these locks are needed.
 void JvmtiTagMap::check_hashmaps_for_heapwalk() {
-
   assert(SafepointSynchronize::is_at_safepoint(), "called from safepoints");
+
   // Verify that the tag map tables are valid and unconditionally post events
   // that are expected to be posted before gc_notification.
   JvmtiEnvIterator it;
   for (JvmtiEnv* env = it.first(); env != NULL; env = it.next(env)) {
     JvmtiTagMap* tag_map = env->tag_map_acquire();
     if (tag_map != NULL) {
+      // The ZDriver may be walking the hashmaps concurrently so this lock is needed.
       MutexLocker ml(tag_map->lock(), Mutex::_no_safepoint_check_flag);
       tag_map->check_hashmap(/*post_events*/ true);
     }
   }
 }
-
 
 // Return the tag value for an object, or 0 if the object is
 // not tagged
@@ -341,7 +340,9 @@ class TwoOopCallbackWrapper : public CallbackWrapper {
 void JvmtiTagMap::set_tag(jobject object, jlong tag) {
   MutexLocker ml(lock(), Mutex::_no_safepoint_check_flag);
 
-  // Check if we have to process for concurrent GCs.
+  // SetTag should not post events because the JavaThread has to
+  // transition to native for the callback and this cannot stop for
+  // safepoints with the hashmap lock held.
   check_hashmap(false);
 
   // resolve the object
@@ -374,7 +375,9 @@ void JvmtiTagMap::set_tag(jobject object, jlong tag) {
 jlong JvmtiTagMap::get_tag(jobject object) {
   MutexLocker ml(lock(), Mutex::_no_safepoint_check_flag);
 
-  // Check if we have to processing for concurrent GCs.
+  // GetTag should not post events because the JavaThread has to
+  // transition to native for the callback and this cannot stop for
+  // safepoints with the hashmap lock held.
   check_hashmap(false);
 
   // resolve the object
@@ -1149,7 +1152,7 @@ void JvmtiTagMap::iterate_through_heap(jint heap_filter,
 
 void JvmtiTagMap::unlink_and_post_locked() {
   MutexLocker ml(lock(), Mutex::_no_safepoint_check_flag);
-  log_info(jvmti, table)("TagMap table needs posting before GetObjectTags");
+  log_info(jvmti, table)("TagMap table needs posting before GetObjectsWithTags");
   hashmap()->unlink_and_post(env());
 }
 
@@ -1276,7 +1279,7 @@ jvmtiError JvmtiTagMap::get_objects_with_tags(const jlong* tags,
     MutexLocker ml(lock(), Mutex::_no_safepoint_check_flag);
     // Can't post ObjectFree events here from a JavaThread, so this
     // will race with the gc_notification thread in the tiny
-    // window where the oop is not marked but hasn't been notified that
+    // window where the object is not marked but hasn't been notified that
     // it is collected yet.
     entry_iterate(&collector);
   }
@@ -2972,14 +2975,11 @@ void JvmtiTagMap::follow_references(jint heap_filter,
   VMThread::execute(&op);
 }
 
-// Concurrent GC needs to call this in relocation pause, so after the oops are moved
+// Concurrent GC needs to call this in relocation pause, so after the objects are moved
 // and have their new addresses, the table can be rehashed.
 void JvmtiTagMap::set_needs_processing() {
   assert(SafepointSynchronize::is_at_safepoint(), "called in gc pause");
   assert(Thread::current()->is_VM_thread(), "should be the VM thread");
-
-  // Hopefully quick exit.
-  if (!JvmtiEnv::environments_might_exist()) { return; }
 
   JvmtiEnvIterator it;
   for (JvmtiEnv* env = it.first(); env != NULL; env = it.next(env)) {
@@ -2991,11 +2991,6 @@ void JvmtiTagMap::set_needs_processing() {
 }
 
 void JvmtiTagMap::gc_notification(size_t num_dead_entries) {
-
-  // No locks during VM bring-up (0 threads) and no safepoints after main
-  // thread creation and before VMThread creation (1 thread); initial GC
-  // verification can happen in that window which gets to here.
-  if (!JvmtiEnv::environments_might_exist()) { return; }
 
   bool is_vm_thread = Thread::current()->is_VM_thread();
   if (!is_vm_thread) {
@@ -3017,9 +3012,10 @@ void JvmtiTagMap::gc_notification(size_t num_dead_entries) {
     for (JvmtiEnv* env = it.first(); env != NULL; env = it.next(env)) {
       JvmtiTagMap* tag_map = env->tag_map_acquire();
       if (tag_map != NULL && !tag_map->is_empty()) {
-        if (num_dead_entries > 0) {
+        if (num_dead_entries != 0) {
           tag_map->hashmap()->unlink_and_post(tag_map->env());
         }
+        // Later GC code will relocate the oops, so defer rehashing until then.
         tag_map->_needs_rehashing = true;
       }
     }

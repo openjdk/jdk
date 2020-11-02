@@ -43,12 +43,6 @@ class WeakProcessorPhaseTimes : public CHeapObj<mtGC> {
   // Total time for weak processor.
   double _total_time_sec;
 
-  // why is this an array?
-  double _phase_times_sec[1];
-  size_t _phase_dead_items[1];
-  size_t _phase_total_items[1];
-  void reset_phase_data();
-
   // Per-worker times and linked items.
   static const uint worker_data_count = WeakProcessorPhases::oopstorage_phase_count;
   WorkerDataArray<double>* _worker_data[worker_data_count];

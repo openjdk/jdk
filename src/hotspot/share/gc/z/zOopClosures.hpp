@@ -53,7 +53,7 @@ public:
   virtual bool do_object_b(oop o);
 };
 
-class ZPhantomCleanOopClosure : public ZRootsIteratorClosure {
+class ZPhantomKeepAliveOopClosure : public ZRootsIteratorClosure {
 public:
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
@@ -61,7 +61,7 @@ public:
   virtual ZNMethodEntry nmethod_entry() const;
 };
 
-class ZPhantomKeepAliveOopClosure : public ZRootsIteratorClosure {
+class ZPhantomCleanOopClosure : public ZRootsIteratorClosure {
 public:
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);

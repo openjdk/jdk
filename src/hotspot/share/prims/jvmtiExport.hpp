@@ -401,9 +401,6 @@ class JvmtiExport : public AllStatic {
   static void cleanup_thread             (JavaThread* thread) NOT_JVMTI_RETURN;
   static void clear_detected_exception   (JavaThread* thread) NOT_JVMTI_RETURN;
 
-  // Delete me and all my callers!
-  static void weak_oops_do(BoolObjectClosure* b, OopClosure* f) {}
-
   static void transition_pending_onload_raw_monitors() NOT_JVMTI_RETURN;
 
 #if INCLUDE_SERVICES
