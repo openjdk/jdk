@@ -240,5 +240,53 @@ tuning on how the cache is operating.</P>
 <P>Since these 2 properties are part of the security policy, they are
 not set by either the -D option or the {@code System.setProperty()} API,
 instead they are set as security properties.</P>
+<a id="Unixdomain"></a>
+<H2>Unix domain sockets</H2>
+<P>There are a number of system (and networking) properties that affect the behavior of
+channels to <i>Unix domain</i> server sockets when binding <i>automatically</i>.
+<p>
+Automatic binding of a server socket occurs when {@link 
+java.nio.channels.ServerSocketChannel#bind(SocketAddress,int) ServerSocketChannel.bind}
+is called with a {@code null} address parameter. In this case, the system
+is requested to choose a unique path for the socket in some predefined system temporary
+directory.
+<p>
+Bearing in mind that Unix domain socket addresses are limited in length to
+approximately 100 bytes, it is important to ensure that the temporary directory's name
+together with the filename used for the socket (currently a name of the form
+{@code socket_1679697142}) does not exceed this limit. The following properties
+can be used to control the selection of this directory:
+<p>
+<ul>
+	<LI><P><B>{@systemProperty jdk.net.unixdomain.tmpdir}</b> This can be set as 
+	a networking property in {@code conf/net.properties} If set, this specifies the 
+	directory to use for automatically bound server socket addresses. On some platforms,
+	(eg some Unix systems) this will have a predefined default value. On others,
+	(eg Windows) there is no default value. Either way, it is always possible
+	to override the networking property with a system property of the same name
+	set on the command line. If neither of the networking nor system property
+	are set, then some systems may check a commonly used environment variable as temporary
+	directory.
+	<LI><P><B>{@systemProperty java.io.tmpdir}</b> If the previous step fails to locate
+	a directory to use, then the directory identified by the system property
+	{@code java.io.tmpdir} is used.
+</ul>
+More information about the platform specific behavior can be seen in the 
+{@code conf/net.properties} configuration file.
+
+<a id="EnhancedExceptions"></a>
+<H2>Enhanced exception messages</H2>
+By default, for security reasons, exception messages do not include potentially sensitive
+security information such as hostnames or Unix domain socket address paths.
+The following property can be used to relax this restriction, for debugging and other
+purposes.
+<ul>
+	<LI><P><B>{@systemProperty jdk.includeInExceptions}</b> This is typically set to
+	a comma separated list of keywords that refer to exception types whose messages
+	may be enhanced with more detailed information. If the value includes the string
+	{@code hostInfo} then socket addresses will be included in exception message
+	texts (eg hostnames, Unix domain socket address paths).
+</ul>
+
 </BODY>
 </HTML>

@@ -151,6 +151,9 @@ public class Security {
                 call(() -> {
                     client.connect(saddr);
                 }, null);
+                try (final SocketChannel acc1 = server.accept()) {
+                    // Should succeed
+                }
             }
         } finally {
             Files.deleteIfExists(servername);
