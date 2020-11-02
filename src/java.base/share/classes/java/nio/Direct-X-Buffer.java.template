@@ -481,11 +481,9 @@ class Direct$Type$Buffer$RW$$BO$
                                           (long)1 << $LG_BYTES_PER_VALUE$);
                 else
 #end[!byte]
-                    SCOPED_MEMORY_ACCESS.copyMemory(scope(), null, src,
-                                      srcOffset,
-                                      null,
-                                      ix(index),
-                                      (long)length << $LG_BYTES_PER_VALUE$);
+                    SCOPED_MEMORY_ACCESS.copyMemory(
+                            scope(), null, src,
+                            srcOffset, null, ix(index), (long)length << $LG_BYTES_PER_VALUE$);
             } finally {
                 Reference.reachabilityFence(this);
             }
@@ -505,7 +503,8 @@ class Direct$Type$Buffer$RW$$BO$
         assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
         try {
-            SCOPED_MEMORY_ACCESS.copyMemory(scope(), null, null, ix(pos), null, ix(0), (long)rem << $LG_BYTES_PER_VALUE$);
+            SCOPED_MEMORY_ACCESS.copyMemory(scope(), null, null,
+                    ix(pos), null, ix(0), (long)rem << $LG_BYTES_PER_VALUE$);
         } finally {
             Reference.reachabilityFence(this);
         }

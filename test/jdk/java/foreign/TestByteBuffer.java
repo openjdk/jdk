@@ -228,12 +228,12 @@ public class TestByteBuffer {
 
     @Test
     public void testDefaultAccessModesMappedSegment() throws Throwable {
-        try (MemorySegment segment = MemorySegment.mapFromPath(tempPath, 0L, 8, FileChannel.MapMode.READ_WRITE)) {
+        try (MemorySegment segment = MemorySegment.mapFile(tempPath, 0L, 8, FileChannel.MapMode.READ_WRITE)) {
             assertTrue(segment.hasAccessModes(ALL_ACCESS));
             assertEquals(segment.accessModes(), ALL_ACCESS);
         }
 
-        try (MemorySegment segment = MemorySegment.mapFromPath(tempPath, 0L, 8, FileChannel.MapMode.READ_ONLY)) {
+        try (MemorySegment segment = MemorySegment.mapFile(tempPath, 0L, 8, FileChannel.MapMode.READ_ONLY)) {
             assertTrue(segment.hasAccessModes(ALL_ACCESS & ~WRITE));
             assertEquals(segment.accessModes(), ALL_ACCESS & ~WRITE);
         }
@@ -246,13 +246,13 @@ public class TestByteBuffer {
         f.deleteOnExit();
 
         //write to channel
-        try (MemorySegment segment = MemorySegment.mapFromPath(f.toPath(), 0L, tuples.byteSize(), FileChannel.MapMode.READ_WRITE)) {
+        try (MemorySegment segment = MemorySegment.mapFile(f.toPath(), 0L, tuples.byteSize(), FileChannel.MapMode.READ_WRITE)) {
             initTuples(segment, tuples.elementCount().getAsLong());
             MappedMemorySegments.force(segment);
         }
 
         //read from channel
-        try (MemorySegment segment = MemorySegment.mapFromPath(f.toPath(), 0L, tuples.byteSize(), FileChannel.MapMode.READ_ONLY)) {
+        try (MemorySegment segment = MemorySegment.mapFile(f.toPath(), 0L, tuples.byteSize(), FileChannel.MapMode.READ_ONLY)) {
             checkTuples(segment, segment.asByteBuffer(), tuples.elementCount().getAsLong());
         }
     }
@@ -263,8 +263,8 @@ public class TestByteBuffer {
         f.createNewFile();
         f.deleteOnExit();
 
-        MemorySegment segment = MemorySegment.mapFromPath(f.toPath(), 0L, 8, FileChannel.MapMode.READ_WRITE);
-        assertTrue(segment.fileDescriptor().isPresent());
+        MemorySegment segment = MemorySegment.mapFile(f.toPath(), 0L, 8, FileChannel.MapMode.READ_WRITE);
+        assertTrue(segment.isMapped());
         segment.close();
         mappedBufferOp.apply(segment);
     }
@@ -280,7 +280,7 @@ public class TestByteBuffer {
         // write one at a time
         for (int i = 0 ; i < tuples.byteSize() ; i += tupleLayout.byteSize()) {
             //write to channel
-            try (MemorySegment segment = MemorySegment.mapFromPath(f.toPath(), i, tuples.byteSize(), FileChannel.MapMode.READ_WRITE)) {
+            try (MemorySegment segment = MemorySegment.mapFile(f.toPath(), i, tuples.byteSize(), FileChannel.MapMode.READ_WRITE)) {
                 initTuples(segment, 1);
                 MappedMemorySegments.force(segment);
             }
@@ -289,7 +289,7 @@ public class TestByteBuffer {
         // check one at a time
         for (int i = 0 ; i < tuples.byteSize() ; i += tupleLayout.byteSize()) {
             //read from channel
-            try (MemorySegment segment = MemorySegment.mapFromPath(f.toPath(), 0L, tuples.byteSize(), FileChannel.MapMode.READ_ONLY)) {
+            try (MemorySegment segment = MemorySegment.mapFile(f.toPath(), 0L, tuples.byteSize(), FileChannel.MapMode.READ_ONLY)) {
                 checkTuples(segment, segment.asByteBuffer(), 1);
             }
         }
@@ -453,7 +453,7 @@ public class TestByteBuffer {
         File f = new File("testNeg1.out");
         f.createNewFile();
         f.deleteOnExit();
-        MemorySegment.mapFromPath(f.toPath(), 0L, -1, FileChannel.MapMode.READ_WRITE);
+        MemorySegment.mapFile(f.toPath(), 0L, -1, FileChannel.MapMode.READ_WRITE);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
@@ -461,14 +461,14 @@ public class TestByteBuffer {
         File f = new File("testNeg2.out");
         f.createNewFile();
         f.deleteOnExit();
-        MemorySegment.mapFromPath(f.toPath(), -1, 1, FileChannel.MapMode.READ_WRITE);
+        MemorySegment.mapFile(f.toPath(), -1, 1, FileChannel.MapMode.READ_WRITE);
     }
 
     public void testMapZeroSize() throws IOException {
         File f = new File("testPos1.out");
         f.createNewFile();
         f.deleteOnExit();
-        try (MemorySegment segment = MemorySegment.mapFromPath(f.toPath(), 0L, 0L, FileChannel.MapMode.READ_WRITE)) {
+        try (MemorySegment segment = MemorySegment.mapFile(f.toPath(), 0L, 0L, FileChannel.MapMode.READ_WRITE)) {
             assertEquals(segment.byteSize(), 0);
         }
     }
@@ -659,7 +659,7 @@ public class TestByteBuffer {
     @DataProvider(name = "resizeOps")
     public Object[][] resizeOps() {
         Consumer<MemorySegment> byteInitializer =
-                (base) -> initBytes(base, bytes, (addr, pos) -> MemoryAccess.setByteAtIndex(addr, pos, ByteOrder.BIG_ENDIAN, (byte)(long)pos));
+                (base) -> initBytes(base, bytes, (addr, pos) -> MemoryAccess.setByteAtIndex(addr, pos, (byte)(long)pos));
         Consumer<MemorySegment> charInitializer =
                 (base) -> initBytes(base, chars, (addr, pos) -> MemoryAccess.setCharAtIndex(addr, pos, ByteOrder.BIG_ENDIAN, (char)(long)pos));
         Consumer<MemorySegment> shortInitializer =
@@ -674,7 +674,7 @@ public class TestByteBuffer {
                 (base) -> initBytes(base, doubles, (addr, pos) -> MemoryAccess.setDoubleAtIndex(addr, pos, ByteOrder.BIG_ENDIAN, (double)(long)pos));
 
         Consumer<MemorySegment> byteChecker =
-                (base) -> checkBytes(base, bytes, Function.identity(), (addr, pos) -> MemoryAccess.getByteAtIndex(addr, pos, ByteOrder.BIG_ENDIAN), ByteBuffer::get);
+                (base) -> checkBytes(base, bytes, Function.identity(), (addr, pos) -> MemoryAccess.getByteAtIndex(addr, pos), ByteBuffer::get);
         Consumer<MemorySegment> charChecker =
                 (base) -> checkBytes(base, chars, ByteBuffer::asCharBuffer, (addr, pos) -> MemoryAccess.getCharAtIndex(addr, pos, ByteOrder.BIG_ENDIAN), CharBuffer::get);
         Consumer<MemorySegment> shortChecker =
