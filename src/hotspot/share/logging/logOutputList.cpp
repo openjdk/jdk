@@ -69,14 +69,17 @@ LogOutputList::LogOutputNode* LogOutputList::find(const LogOutput* output) const
 }
 
 void LogOutputList::clear() {
-  // Remove links from _level_start first
+  // Grab the linked list
+  LogOutputNode* cur = _level_start[LogLevel::Last];
+
+  // Clear _level_start
   for (uint level = LogLevel::First; level < LogLevel::Count; level++) {
     _level_start[level] = NULL;
   }
-  // Now remove it from the linked list
-  LogOutputNode* cur = _level_start[LogLevel::Last];
+
+  // Delete all nodes from the linked list
   while (cur != NULL) {
-    LogOutputNode* next = cur->next;
+    LogOutputNode* next = cur->_next;
     delete cur;
     cur = next;
   }
