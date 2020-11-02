@@ -28,17 +28,21 @@
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 
-PretouchTask::PretouchTask(const char* task_name, char* start_address, char* end_address, size_t page_size) :
+PretouchTask::PretouchTask(const char* task_name,
+                           char* start_address,
+                           char* end_address,
+                           size_t page_size,
+                           size_t chunk_size) :
     AbstractGangTask(task_name),
     _cur_addr(start_address),
     _start_addr(start_address),
     _end_addr(end_address),
-    _page_size(0) {
-#ifdef LINUX
-  _page_size = UseTransparentHugePages ? (size_t)os::vm_page_size(): page_size;
-#else
-  _page_size = page_size;
-#endif
+    _page_size(page_size),
+    _chunk_size(chunk_size) {
+
+  assert(chunk_size >= page_size,
+         "Chunk size " SIZE_FORMAT " is smaller than page size " SIZE_FORMAT,
+         chunk_size, page_size);
 }
 
 size_t PretouchTask::chunk_size() {
@@ -46,15 +50,13 @@ size_t PretouchTask::chunk_size() {
 }
 
 void PretouchTask::work(uint worker_id) {
-  size_t const actual_chunk_size = MAX2(chunk_size(), _page_size);
-
   while (true) {
-    char* touch_addr = Atomic::fetch_and_add(&_cur_addr, actual_chunk_size);
+    char* touch_addr = Atomic::fetch_and_add(&_cur_addr, _chunk_size);
     if (touch_addr < _start_addr || touch_addr >= _end_addr) {
       break;
     }
 
-    char* end_addr = touch_addr + MIN2(actual_chunk_size, pointer_delta(_end_addr, touch_addr, sizeof(char)));
+    char* end_addr = touch_addr + MIN2(_chunk_size, pointer_delta(_end_addr, touch_addr, sizeof(char)));
 
     os::pretouch_memory(touch_addr, end_addr, _page_size);
   }
@@ -62,13 +64,25 @@ void PretouchTask::work(uint worker_id) {
 
 void PretouchTask::pretouch(const char* task_name, char* start_address, char* end_address,
                             size_t page_size, WorkGang* pretouch_gang) {
-  PretouchTask task(task_name, start_address, end_address, page_size);
+
+#ifdef LINUX
+  // When using THP we need to always pre-touch using small pages as the OS will
+  // initially always use small pages.
+  page_size = UseTransparentHugePages ? (size_t)os::vm_page_size() : page_size;
+#endif
+  size_t chunk_size = MAX2(PretouchTask::chunk_size(), page_size);
+
+  PretouchTask task(task_name, start_address, end_address, page_size, chunk_size);
   size_t total_bytes = pointer_delta(end_address, start_address, sizeof(char));
 
-  if (pretouch_gang != NULL) {
-    size_t num_chunks = MAX2((size_t)1, total_bytes / MAX2(PretouchTask::chunk_size(), page_size));
+  if (total_bytes == 0) {
+    return;
+  }
 
-    uint num_workers = MIN2((uint)num_chunks, pretouch_gang->total_workers());
+  if (pretouch_gang != NULL) {
+    size_t num_chunks = (total_bytes + chunk_size - 1) / chunk_size;
+
+    uint num_workers = (uint)MIN2(num_chunks, (size_t)pretouch_gang->total_workers());
     log_debug(gc, heap)("Running %s with %u workers for " SIZE_FORMAT " work units pre-touching " SIZE_FORMAT "B.",
                         task.name(), num_workers, num_chunks, total_bytes);
 

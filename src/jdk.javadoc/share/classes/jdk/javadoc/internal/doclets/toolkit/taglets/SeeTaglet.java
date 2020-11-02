@@ -31,6 +31,7 @@ import java.util.List;
 import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.SeeTree;
 import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
@@ -54,7 +55,7 @@ public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
 
     @Override
     public void inherit(DocFinder.Input input, DocFinder.Output output) {
-        List<? extends DocTree> tags = input.utils.getSeeTrees(input.element);
+        List<? extends SeeTree> tags = input.utils.getSeeTrees(input.element);
         if (!tags.isEmpty()) {
             CommentHelper ch =  input.utils.getCommentHelper(input.element);
             output.holder = input.element;
@@ -68,7 +69,7 @@ public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
     @Override
     public Content getAllBlockTagOutput(Element holder, TagletWriter writer) {
         Utils utils = writer.configuration().utils;
-        List<? extends DocTree> tags = utils.getSeeTrees(holder);
+        List<? extends SeeTree> tags = utils.getSeeTrees(holder);
         Element e = holder;
         if (tags.isEmpty() && utils.isExecutableElement(holder)) {
             Input input = new DocFinder.Input(utils, holder, this);

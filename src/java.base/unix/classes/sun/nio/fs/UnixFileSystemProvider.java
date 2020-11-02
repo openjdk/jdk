@@ -352,7 +352,14 @@ public abstract class UnixFileSystemProvider
         UnixPath name = file.getFileName();
         if (name == null)
             return false;
-        return (name.asByteArray()[0] == '.');
+
+        byte[] path;
+        if (name.isEmpty()) { // corner case for empty paths
+            path = name.getFileSystem().defaultDirectory();
+        } else {
+            path = name.asByteArray();
+        }
+        return path[0] == '.';
     }
 
     /**

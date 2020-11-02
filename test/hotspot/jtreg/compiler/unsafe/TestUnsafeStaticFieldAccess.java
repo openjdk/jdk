@@ -19,31 +19,44 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ */
+
+/**
+ * @test
+ * @bug 8255466
+ * @summary unsafe access to static field causes crash
+ * @modules java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xcomp -XX:CompileCommand=compileonly,TestUnsafeStaticFieldAccess::* TestUnsafeStaticFieldAccess
  *
  */
 
-#ifndef SHARE_GC_SHARED_PRETOUCH_HPP
-#define SHARE_GC_SHARED_PRETOUCH_HPP
+import jdk.internal.misc.Unsafe;
+import java.lang.reflect.Field;
 
-#include "gc/shared/workgroup.hpp"
+public class TestUnsafeStaticFieldAccess {
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+    private static final long offset;
+    private static volatile Class<?> clazz;
 
-class PretouchTask : public AbstractGangTask {
-  char* volatile _cur_addr;
-  char* const _start_addr;
-  char* const _end_addr;
-  size_t _page_size;
-  size_t _chunk_size;
+    private static int field;
 
-public:
-  PretouchTask(const char* task_name, char* start_address, char* end_address, size_t page_size, size_t chunk_size);
+    static {
+        long o = 0;
+        for (Field f : TestUnsafeStaticFieldAccess.class.getDeclaredFields()) {
+            if (f.getName().equals("field")) {
+                o = UNSAFE.staticFieldOffset(f);
+                break;
+            }
+        }
+        offset = o;
+        clazz = TestUnsafeStaticFieldAccess.class;
+    }
 
-  virtual void work(uint worker_id);
 
-  static size_t chunk_size();
-
-  static void pretouch(const char* task_name, char* start_address, char* end_address,
-                       size_t page_size, WorkGang* pretouch_gang);
-
-};
-
-#endif // SHARE_GC_SHARED_PRETOUCH_HPP
+    public static void main(String[] args) {
+        for (int i = 0; i < 12000; i++) {
+            UNSAFE.getInt(clazz, offset);
+        }
+    }
+}

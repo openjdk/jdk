@@ -22,28 +22,28 @@
  *
  */
 
-#ifndef SHARE_GC_SHARED_PRETOUCH_HPP
-#define SHARE_GC_SHARED_PRETOUCH_HPP
+#ifndef SHARE_RUNTIME_KEEPSTACKGCPROCESSED_HPP
+#define SHARE_RUNTIME_KEEPSTACKGCPROCESSED_HPP
 
-#include "gc/shared/workgroup.hpp"
+#include "memory/allocation.hpp"
+#include "runtime/stackWatermark.hpp"
+#include "runtime/stackWatermarkKind.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 
-class PretouchTask : public AbstractGangTask {
-  char* volatile _cur_addr;
-  char* const _start_addr;
-  char* const _end_addr;
-  size_t _page_size;
-  size_t _chunk_size;
+// Use this class to mark a remote thread you are currently interested
+// in examining the entire stack, without it slipping into an unprocessed
+// state at safepoint polls.
+class KeepStackGCProcessedMark : public StackObj {
+  friend class StackWatermark;
+  bool _active;
+  JavaThread* _jt;
+
+  void finish_processing();
 
 public:
-  PretouchTask(const char* task_name, char* start_address, char* end_address, size_t page_size, size_t chunk_size);
-
-  virtual void work(uint worker_id);
-
-  static size_t chunk_size();
-
-  static void pretouch(const char* task_name, char* start_address, char* end_address,
-                       size_t page_size, WorkGang* pretouch_gang);
-
+  KeepStackGCProcessedMark(JavaThread* jt);
+  ~KeepStackGCProcessedMark();
 };
 
-#endif // SHARE_GC_SHARED_PRETOUCH_HPP
+
+#endif // SHARE_RUNTIME_KEEPSTACKGCPROCESSED_HPP
