@@ -23,7 +23,8 @@
 
 /**
  * @test
- * @summary
+ * @bug 8255400
+ * @summary C2 failures after JDK-8255000
  * @requires vm.gc.Shenandoah
  * @modules java.base/jdk.internal.misc:+open
  *
