@@ -57,14 +57,13 @@ public class BlitRotateClippedArea {
         var ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         var gc = ge.getDefaultScreenDevice().getDefaultConfiguration();
 
+        var gold = gc.createCompatibleImage(1000, 1000, TRANSLUCENT);
         var dstVI2BI = gc.createCompatibleImage(1000, 1000, TRANSLUCENT);
         var dstVI2VI = gc.createCompatibleVolatileImage(1000, 1000, TRANSLUCENT);
         var dstBI2VI = gc.createCompatibleVolatileImage(1000, 1000, TRANSLUCENT);
 
         var srcBI = gc.createCompatibleImage(2000, 2000, TRANSLUCENT);
         var srcVI = gc.createCompatibleVolatileImage(2000, 2000, TRANSLUCENT);
-        // init the gold image
-        var gold = gc.createCompatibleImage(1000, 1000, TRANSLUCENT);
 
         int attempt = 0;
         BufferedImage snapshotVI2VI;
