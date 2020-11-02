@@ -57,7 +57,7 @@ public class UnexpectedDeoptimizationAllTest implements Runnable {
     public void run() {
         Helper.WHITE_BOX.deoptimizeAll();
         try {
-            Thread.sleep(10);
+            Thread.sleep(100);
         } catch (Exception e) {
         }
     }

@@ -27,7 +27,9 @@ import jdk.test.lib.TimeLimitedRunner;
 import jdk.test.lib.Utils;
 
 public class CodeCacheStressRunner {
+    private static long end_time;
     private final Runnable action;
+
     public CodeCacheStressRunner(Runnable action) {
         this.action = action;
     }
@@ -35,9 +37,11 @@ public class CodeCacheStressRunner {
     protected final void runTest() {
         Helper.startInfiniteLoopThread(action);
         try {
-            // adjust timeout and substract vm init and exit time
+            // Adjust timeout and substract vm init and exit time
+            // Runs with fixed workload that is capped by the TimeLimitedRunner
+            end_time = System.nanoTime() + 60 * 1000 * 1000 * 1000L;
             long timeout = Utils.adjustTimeout(Utils.DEFAULT_TEST_TIMEOUT);
-            timeout *= 0.8;
+            timeout *= 0.75;
             new TimeLimitedRunner(timeout, 2.0d, this::test).call();
         } catch (Exception e) {
             throw new Error("Exception occurred during test execution", e);
@@ -47,7 +51,7 @@ public class CodeCacheStressRunner {
     private boolean test() {
         Helper.TestCase obj = Helper.TestCase.get();
         Helper.callMethod(obj.getCallable(), obj.expectedValue());
-        return true;
+        return end_time > System.nanoTime();
     }
 
 }

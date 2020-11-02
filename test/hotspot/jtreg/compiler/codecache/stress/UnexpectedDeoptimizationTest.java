@@ -60,6 +60,11 @@ public class UnexpectedDeoptimizationTest implements Runnable {
     @Override
     public void run() {
         Helper.WHITE_BOX.deoptimizeFrames(rng.nextBoolean());
+        try {
+            Thread.sleep(10);
+        } catch (Exception e) {
+        }
+
     }
 
 }
