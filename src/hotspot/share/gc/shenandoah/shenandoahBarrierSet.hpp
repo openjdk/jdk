@@ -87,8 +87,7 @@ public:
 
   inline void enqueue(oop obj);
 
-  oop load_reference_barrier(oop obj);
-  oop load_reference_barrier_not_null(oop obj);
+  inline oop load_reference_barrier(oop obj);
 
   template <class T>
   inline oop load_reference_barrier_mutator(oop obj, T* load_addr);
@@ -110,8 +109,6 @@ private:
 
   template <class T, bool HAS_FWD, bool EVAC, bool ENQUEUE>
   inline void arraycopy_work(T* src, size_t count);
-
-  oop load_reference_barrier_impl(oop obj);
 
   inline bool need_bulk_update(HeapWord* dst);
 public:

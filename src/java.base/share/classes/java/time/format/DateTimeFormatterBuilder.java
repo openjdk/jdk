@@ -1556,11 +1556,11 @@ public final class DateTimeFormatterBuilder {
      *    GGGGG   5      appendText(ChronoField.ERA, TextStyle.NARROW)
      *
      *    u       1      appendValue(ChronoField.YEAR, 1, 19, SignStyle.NORMAL)
-     *    uu      2      appendValueReduced(ChronoField.YEAR, 2, 2000)
+     *    uu      2      appendValueReduced(ChronoField.YEAR, 2, 2, 2000)
      *    uuu     3      appendValue(ChronoField.YEAR, 3, 19, SignStyle.NORMAL)
      *    u..u    4..n   appendValue(ChronoField.YEAR, n, 19, SignStyle.EXCEEDS_PAD)
      *    y       1      appendValue(ChronoField.YEAR_OF_ERA, 1, 19, SignStyle.NORMAL)
-     *    yy      2      appendValueReduced(ChronoField.YEAR_OF_ERA, 2, 2000)
+     *    yy      2      appendValueReduced(ChronoField.YEAR_OF_ERA, 2, 2, 2000)
      *    yyy     3      appendValue(ChronoField.YEAR_OF_ERA, 3, 19, SignStyle.NORMAL)
      *    y..y    4..n   appendValue(ChronoField.YEAR_OF_ERA, n, 19, SignStyle.EXCEEDS_PAD)
      *    Y       1      append special localized WeekFields element for numeric week-based-year
