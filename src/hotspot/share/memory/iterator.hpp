@@ -143,6 +143,12 @@ class CLDToOopClosure : public CLDClosure {
   void do_cld(ClassLoaderData* cld);
 };
 
+template <int claim>
+class ClaimingCLDToOopClosure : public CLDToOopClosure {
+public:
+  ClaimingCLDToOopClosure(OopClosure* cl) : CLDToOopClosure(cl, claim) {}
+};
+
 class ClaimMetadataVisitingOopIterateClosure : public OopIterateClosure {
  protected:
   const int _claim;
