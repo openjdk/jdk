@@ -272,10 +272,11 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   __ blr(lr);
   __ mov(rscratch1, r0);
   __ pop_call_clobbered_registers();
-  __ mov(result_dst, rscratch1);
+  __ mov(r0, rscratch1);
 
   __ bind(not_cset);
 
+  __ mov(result_dst, r0);
   __ pop(to_save, sp);
 
   __ bind(not_fwded);
