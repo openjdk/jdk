@@ -57,20 +57,20 @@ final public class BsdAARCH64CFrame extends BasicCFrame {
       AARCH64ThreadContext context = (AARCH64ThreadContext) thread.getContext();
       Address rsp = context.getRegisterAsAddress(AARCH64ThreadContext.SP);
 
-      if ( (fp == null) || fp.lessThan(rsp) ) {
+      if ((fp == null) || fp.lessThan(rsp)) {
         return null;
       }
 
       // Check alignment of fp
-      if (dbg.getAddressValue(fp) % ADDRESS_SIZE != 0) {
+      if (dbg.getAddressValue(fp) % (2 * ADDRESS_SIZE) != 0) {
         return null;
       }
 
-      Address nextFP = fp.getAddressAt( 0 * ADDRESS_SIZE);
+      Address nextFP = fp.getAddressAt(0 * ADDRESS_SIZE);
       if (nextFP == null || nextFP.lessThanOrEqual(fp)) {
         return null;
       }
-      Address nextPC  = fp.getAddressAt( 1 * ADDRESS_SIZE);
+      Address nextPC  = fp.getAddressAt(1 * ADDRESS_SIZE);
       if (nextPC == null) {
         return null;
       }

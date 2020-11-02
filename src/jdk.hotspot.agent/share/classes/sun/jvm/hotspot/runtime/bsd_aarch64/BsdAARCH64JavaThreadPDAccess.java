@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +33,6 @@ import sun.jvm.hotspot.debugger.bsd.BsdDebugger;
 import sun.jvm.hotspot.debugger.bsd.BsdDebuggerLocal;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.runtime.aarch64.*;
-import sun.jvm.hotspot.runtime.x86.*;
 import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.*;
 import sun.jvm.hotspot.utilities.Observable;
@@ -70,19 +70,19 @@ public class BsdAARCH64JavaThreadPDAccess implements JavaThreadPDAccess {
     osThreadUniqueThreadIDField = osThreadType.getCIntegerField("_unique_thread_id");
   }
 
-  public    Address getLastJavaFP(Address addr) {
+  public Address getLastJavaFP(Address addr) {
     return lastJavaFPField.getValue(addr.addOffsetTo(sun.jvm.hotspot.runtime.JavaThread.getAnchorField().getOffset()));
   }
 
-  public    Address getLastJavaPC(Address addr) {
+  public Address getLastJavaPC(Address addr) {
     return null;
   }
 
-  public    Address getBaseOfStackPointer(Address addr) {
+  public Address getBaseOfStackPointer(Address addr) {
     return null;
   }
 
-  public    Frame getLastFramePD(JavaThread thread, Address addr) {
+  public Frame getLastFramePD(JavaThread thread, Address addr) {
     Address fp = thread.getLastJavaFP();
     if (fp == null) {
       return null; // no information
@@ -90,11 +90,11 @@ public class BsdAARCH64JavaThreadPDAccess implements JavaThreadPDAccess {
     return new AARCH64Frame(thread.getLastJavaSP(), fp);
   }
 
-  public    RegisterMap newRegisterMap(JavaThread thread, boolean updateMap) {
+  public RegisterMap newRegisterMap(JavaThread thread, boolean updateMap) {
     return new AARCH64RegisterMap(thread, updateMap);
   }
 
-  public    Frame getCurrentFrameGuess(JavaThread thread, Address addr) {
+  public Frame getCurrentFrameGuess(JavaThread thread, Address addr) {
     ThreadProxy t = getThreadProxy(addr);
     AARCH64ThreadContext context = (AARCH64ThreadContext) t.getContext();
     AARCH64CurrentFrameGuess guesser = new AARCH64CurrentFrameGuess(context, thread);
@@ -108,23 +108,23 @@ public class BsdAARCH64JavaThreadPDAccess implements JavaThreadPDAccess {
     }
   }
 
-  public    void printThreadIDOn(Address addr, PrintStream tty) {
+  public void printThreadIDOn(Address addr, PrintStream tty) {
     tty.print(getThreadProxy(addr));
   }
 
-  public    void printInfoOn(Address threadAddr, PrintStream tty) {
+  public void printInfoOn(Address threadAddr, PrintStream tty) {
     tty.print("Thread id: ");
     printThreadIDOn(threadAddr, tty);
 //    tty.println("\nPostJavaState: " + getPostJavaState(threadAddr));
   }
 
-  public    Address getLastSP(Address addr) {
+  public Address getLastSP(Address addr) {
     ThreadProxy t = getThreadProxy(addr);
     AARCH64ThreadContext context = (AARCH64ThreadContext) t.getContext();
     return context.getRegisterAsAddress(AARCH64ThreadContext.SP);
   }
 
-  public    ThreadProxy getThreadProxy(Address addr) {
+  public ThreadProxy getThreadProxy(Address addr) {
     // Addr is the address of the JavaThread.
     // Fetch the OSThread (for now and for simplicity, not making a
     // separate "OSThread" class in this package)
