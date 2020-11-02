@@ -49,7 +49,7 @@ public class BlitRotateClippedArea {
      * 4. If the source image is painted as-is to the destination then the
      *    pattern in the source will be ignored, but the test sets some
      *    specific rotation that the pattern will hit the source.
-     * Note that rotation is used not s scale/translate.
+     * Note that rotation is used not a scale/translate.
      */
     public static void main(String[] args) throws Exception {
         // the test check the exact pixels location
