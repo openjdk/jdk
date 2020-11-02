@@ -1399,7 +1399,6 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
       // Done with outputs.
       igvn->hash_delete(dead);
       igvn->_worklist.remove(dead);
-      igvn->C->remove_modified_node(dead);
       igvn->set_type(dead, Type::TOP);
       if (dead->is_macro()) {
         igvn->C->remove_macro_node(dead);
@@ -1435,6 +1434,7 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
           }
         }
       }
+      igvn->C->remove_modified_node(dead);
     } // (dead->outcnt() == 0)
   }   // while (nstack.size() > 0) for outputs
   return;

@@ -328,12 +328,9 @@ static Node* long_by_long_mulhi(PhaseGVN* phase, Node* dividend, jlong magic_con
   // Remove the bogus extra edges used to keep things alive
   PhaseIterGVN* igvn = phase->is_IterGVN();
   if (igvn != NULL) {
-    igvn->remove_dead_node(hook);
-  } else {
-    for (int i = 0; i < 4; i++) {
-      hook->set_req(i, NULL);
-    }
+    igvn->_worklist.remove(hook);
   }
+  hook->destruct();
 
   return new AddLNode(temp1, temp2);
 }
@@ -913,10 +910,9 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
       // Now remove the bogus extra edges used to keep things alive
       if (can_reshape) {
-        phase->is_IterGVN()->remove_dead_node(hook);
-      } else {
-        hook->set_req(0, NULL);   // Just yank bogus edge during Parse phase
+        phase->is_IterGVN()->_worklist.remove(hook);
       }
+      hook->destruct();
       return cmov2;
     }
   }
@@ -969,10 +965,9 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Now remove the bogus extra edges used to keep things alive
   if (can_reshape) {
-    phase->is_IterGVN()->remove_dead_node(hook);
-  } else {
-    hook->set_req(0, NULL);       // Just yank bogus edge during Parse phase
+    phase->is_IterGVN()->_worklist.remove(hook);
   }
+  hook->destruct();
 
   // return the value
   return result;
@@ -1086,10 +1081,9 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
       // Now remove the bogus extra edges used to keep things alive
       if (can_reshape) {
-        phase->is_IterGVN()->remove_dead_node(hook);
-      } else {
-        hook->set_req(0, NULL);   // Just yank bogus edge during Parse phase
+        phase->is_IterGVN()->_worklist.remove(hook);
       }
+      hook->destruct();
       return cmov2;
     }
   }
@@ -1142,10 +1136,9 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Now remove the bogus extra edges used to keep things alive
   if (can_reshape) {
-    phase->is_IterGVN()->remove_dead_node(hook);
-  } else {
-    hook->set_req(0, NULL);       // Just yank bogus edge during Parse phase
+    phase->is_IterGVN()->_worklist.remove(hook);
   }
+  hook->destruct();
 
   // return the value
   return result;

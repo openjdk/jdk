@@ -1400,8 +1400,6 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*& loop) {
   assert(x->Opcode() == Op_Loop, "regular loops only");
   C->print_method(PHASE_BEFORE_CLOOPS, 3);
 
-  Node *hook = new Node(6);
-
   // ===================================================
   // Generate loop limit check to avoid integer overflow
   // in cases like next (cyclic loops):
@@ -1690,9 +1688,6 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*& loop) {
       }
     }
   }
-
-  // Free up intermediate goo
-  _igvn.remove_dead_node(hook);
 
 #ifdef ASSERT
   assert(l->is_valid_counted_loop(), "counted loop shape is messed up");

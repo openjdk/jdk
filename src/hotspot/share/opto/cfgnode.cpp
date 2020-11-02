@@ -2303,11 +2303,9 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           mms.set_memory(phase->transform(phi));
         }
         if (igvn) { // Unhook.
-          igvn->hash_delete(hook);
-          for (uint i = 1; i < hook->req(); i++) {
-            hook->set_req(i, NULL);
-          }
+          igvn->_worklist.remove(hook);
         }
+        hook->destruct();
         // Replace self with the result.
         return result;
       }
