@@ -157,6 +157,10 @@ static void do_test_print_hex_dump(address addr, size_t len, int unitsize, const
   char buf[256];
   buf[0] = '\0';
   stringStream ss(buf, sizeof(buf));
+
+  // missing transition to vm state
+  Thread::WXWriteFromExecSetter wx_write;
+
   os::print_hex_dump(&ss, addr, addr + len, unitsize);
 //  tty->print_cr("expected: %s", expected);
 //  tty->print_cr("result: %s", buf);

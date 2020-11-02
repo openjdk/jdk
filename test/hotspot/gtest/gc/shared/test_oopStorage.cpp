@@ -147,6 +147,9 @@ static bool process_deferred_updates(OopStorage& storage) {
 }
 
 static void release_entry(OopStorage& storage, oop* entry, bool process_deferred = true) {
+  // missing transition to vm state
+  Thread::WXWriteFromExecSetter wx_write;
+
   *entry = NULL;
   storage.release(entry);
   if (process_deferred) {
@@ -469,11 +472,17 @@ public:
       QuickSort::sort(to_release, nrelease, PointerCompare(), false);
     }
 
-    _storage.release(to_release, nrelease);
-    EXPECT_EQ(_max_entries - nrelease, _storage.allocation_count());
+    {
+      // missing transition to vm state
+      Thread::WXWriteFromExecSetter wx_write;
+      _storage.release(to_release, nrelease);
+      EXPECT_EQ(_max_entries - nrelease, _storage.allocation_count());
+    }
 
     for (size_t i = 0; i < nrelease; ++i) {
       release_entry(_storage, _entries[2 * i + 1], false);
+      // missing transition to vm state
+      Thread::WXWriteFromExecSetter wx_write;
       EXPECT_EQ(_max_entries - nrelease - (i + 1), _storage.allocation_count());
     }
     EXPECT_TRUE(process_deferred_updates(_storage));
@@ -501,6 +510,8 @@ TEST_VM_F(OopStorageTest, invalid_pointer) {
   {
     char* mem = NEW_C_HEAP_ARRAY(char, 1000, mtInternal);
     oop* ptr = reinterpret_cast<oop*>(align_down(mem + 250, sizeof(oop)));
+    // missing transition to vm state
+    Thread::WXWriteFromExecSetter wx_write;
     // Predicate returns false for some malloc'ed block.
     EXPECT_EQ(OopStorage::INVALID_ENTRY, _storage.allocation_status(ptr));
     FREE_C_HEAP_ARRAY(char, mem);
@@ -509,6 +520,8 @@ TEST_VM_F(OopStorageTest, invalid_pointer) {
   {
     oop obj;
     oop* ptr = &obj;
+    // missing transition to vm state
+    Thread::WXWriteFromExecSetter wx_write;
     // Predicate returns false for some "random" location.
     EXPECT_EQ(OopStorage::INVALID_ENTRY, _storage.allocation_status(ptr));
   }
@@ -1027,11 +1040,16 @@ TEST_VM_F(OopStorageTestWithAllocation, allocation_status) {
   oop* garbage = reinterpret_cast<oop*>(1024 * 1024);
   release_entry(_storage, released);
 
-  EXPECT_EQ(OopStorage::ALLOCATED_ENTRY, _storage.allocation_status(retained));
-  EXPECT_EQ(OopStorage::UNALLOCATED_ENTRY, _storage.allocation_status(released));
+  {
+    // missing transition to vm state
+    Thread::WXWriteFromExecSetter wx_write;
+
+    EXPECT_EQ(OopStorage::ALLOCATED_ENTRY, _storage.allocation_status(retained));
+    EXPECT_EQ(OopStorage::UNALLOCATED_ENTRY, _storage.allocation_status(released));
 #ifndef DISABLE_GARBAGE_ALLOCATION_STATUS_TESTS
-  EXPECT_EQ(OopStorage::INVALID_ENTRY, _storage.allocation_status(garbage));
+    EXPECT_EQ(OopStorage::INVALID_ENTRY, _storage.allocation_status(garbage));
 #endif
+  }
 
   for (size_t i = 0; i < _max_entries; ++i) {
     if ((_entries[i] != retained) && (_entries[i] != released)) {
@@ -1042,13 +1060,19 @@ TEST_VM_F(OopStorageTestWithAllocation, allocation_status) {
 
   {
     ThreadInVMfromNative invm(JavaThread::current());
+    Thread::WXWriteFromExecSetter wx_write;
     while (_storage.delete_empty_blocks()) {}
   }
-  EXPECT_EQ(OopStorage::ALLOCATED_ENTRY, _storage.allocation_status(retained));
+
+  {
+    // missing transition to vm state
+    Thread::WXWriteFromExecSetter wx_write;
+    EXPECT_EQ(OopStorage::ALLOCATED_ENTRY, _storage.allocation_status(retained));
 #ifndef DISABLE_GARBAGE_ALLOCATION_STATUS_TESTS
-  EXPECT_EQ(OopStorage::INVALID_ENTRY, _storage.allocation_status(released));
-  EXPECT_EQ(OopStorage::INVALID_ENTRY, _storage.allocation_status(garbage));
+    EXPECT_EQ(OopStorage::INVALID_ENTRY, _storage.allocation_status(released));
+    EXPECT_EQ(OopStorage::INVALID_ENTRY, _storage.allocation_status(garbage));
 #endif // DISABLE_GARBAGE_ALLOCATION_STATUS_TESTS
+  }
 }
 
 TEST_VM_F(OopStorageTest, usage_info) {

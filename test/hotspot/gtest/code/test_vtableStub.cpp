@@ -30,6 +30,7 @@
 TEST_VM(code, vtableStubs) {
   // Should be in VM to use locks
   ThreadInVMfromNative ThreadInVMfromNative(JavaThread::current());
+  Thread::WXWriteFromExecSetter wx_exec;
 
   VtableStubs::find_vtable_stub(0); // min vtable index
   for (int i = 0; i < 15; i++) {
@@ -42,6 +43,7 @@ TEST_VM(code, vtableStubs) {
 TEST_VM(code, itableStubs) {
   // Should be in VM to use locks
   ThreadInVMfromNative ThreadInVMfromNative(JavaThread::current());
+  Thread::WXWriteFromExecSetter wx_exec;
 
   VtableStubs::find_itable_stub(0); // min itable index
   for (int i = 0; i < 15; i++) {
