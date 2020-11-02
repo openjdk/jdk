@@ -454,7 +454,7 @@ Node *SubFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (IdealizedNumerics && !phase->C->method()->is_strict() &&
       in(2)->is_Add() && in(1) == in(2)->in(1)) {
     // Convert "x - (x+y)" into "-y"
-    return new SubFNode(phase->makecon(TypeF::ZERO),in(2)->in(2));
+    return new SubFNode(phase->makecon(TypeF::ZERO), in(2)->in(2));
   }
 
   // Cannot replace 0.0-X with -X because a 'fsub' bytecode computes
