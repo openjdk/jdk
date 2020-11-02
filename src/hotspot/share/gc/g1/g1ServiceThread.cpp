@@ -182,6 +182,9 @@ G1ServiceThread::G1ServiceThread() :
 }
 
 void G1ServiceThread::register_task(G1ServiceTask* task, jlong delay) {
+  guarantee(!task->is_registered(), "Task already registered");
+  guarantee(task->next() == NULL, "Task already in queue");
+
   log_debug(gc, task)("G1 Service Thread (%s) (register)", task->name());
 
   // Associate the task with the service thread.
@@ -197,6 +200,9 @@ void G1ServiceThread::register_task(G1ServiceTask* task, jlong delay) {
 }
 
 void G1ServiceThread::schedule_task(G1ServiceTask* task, jlong delay_ms) {
+  guarantee(task->is_registered(), "Must be registered before scheduled");
+  guarantee(task->next() == NULL, "Task already in queue");
+
   // Schedule task by setting the task time and adding it to queue.
   jlong delay = TimeHelper::millis_to_counter(delay_ms);
   task->set_time(os::elapsed_counter() + delay);
@@ -251,13 +257,16 @@ G1ServiceTask* G1ServiceThread::pop_due_task() {
 }
 
 void G1ServiceThread::run_task(G1ServiceTask* task) {
-  double start = os::elapsedVTime();
+  double start = os::elapsedTime();
+  double vstart = os::elapsedVTime();
 
   log_debug(gc, task, start)("G1 Service Thread (%s) (run)", task->name());
   task->execute();
 
   double duration = os::elapsedVTime() - start;
-  log_debug(gc, task)("G1 Service Thread (%s) (run) %1.3fms", task->name(), duration * MILLIUNITS);
+  double vduration = os::elapsedVTime() - vstart;
+  log_debug(gc, task)("G1 Service Thread (%s) (run) %1.3fms (cpu: %1.3fms)",
+                      task->name(), duration * MILLIUNITS, vduration * MILLIUNITS);
 }
 
 void G1ServiceThread::run_service() {
@@ -294,10 +303,15 @@ void G1ServiceThread::stop_service() {
 G1ServiceTask::G1ServiceTask(const char* name) :
   _time(),
   _name(name),
-  _next(NULL) { }
+  _next(NULL),
+  _service_thread(NULL) { }
 
 void G1ServiceTask::set_service_thread(G1ServiceThread* thread) {
   _service_thread = thread;
+}
+
+bool G1ServiceTask::is_registered() {
+  return _service_thread != NULL;
 }
 
 void G1ServiceTask::schedule(jlong delay_ms) {
@@ -349,7 +363,7 @@ bool G1ServiceTaskQueue::is_empty() {
 void G1ServiceTaskQueue::add_ordered(G1ServiceTask* task) {
   assert(task != NULL, "not a valid task");
   assert(task->next() == NULL, "invariant");
-  assert(task->time() != DBL_MAX, "invalid time for task");
+  assert(task->time() != max_jlong, "invalid time for task");
 
   G1ServiceTask* current = &_sentinel;
   while (task->time() >= current->next()->time()) {

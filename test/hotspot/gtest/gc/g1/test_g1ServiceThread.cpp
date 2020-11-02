@@ -122,7 +122,9 @@ public:
     set_time(delay);
   }
   virtual void execute() {}
-  jlong delay_ms() { return _delay_ms; }
+  void update_time(jlong now, int multiplier) {
+    set_time(now + (_delay_ms * multiplier));
+  }
 };
 
 TEST_VM(G1ServiceTaskQueue, add_ordered) {
@@ -144,7 +146,7 @@ TEST_VM(G1ServiceTaskQueue, add_ordered) {
       TestTask* task = (TestTask*) queue.pop();
       // Update delay multiplier.
       task->execute();
-      task->set_time(now + (task->delay_ms() * multiplier));
+      task->update_time(now, multiplier);
       // All additions will verify that the queue is sorted.
       queue.add_ordered(task);
     }
@@ -175,7 +177,7 @@ TEST_VM_ASSERT_MSG(G1ServiceTaskQueue, set_time_in_queue,
   TestTask a(100);
   queue.add_ordered(&a);
   // Not allowed to update time while in queue.
-  a.set_time(500);
+  a.update_time(500, 1);
 }
 
 #endif
