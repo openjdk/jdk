@@ -100,7 +100,7 @@ bool ShenandoahBarrierSet::use_load_reference_barrier_weak(DecoratorSet decorato
     return false;
   }
 
-  return ((decorators & IN_NATIVE) != 0) && ((decorators & ON_STRONG_OOP_REF) == 0);
+  return (decorators & ON_STRONG_OOP_REF) == 0;
 }
 
 bool ShenandoahBarrierSet::need_keep_alive_barrier(DecoratorSet decorators,BasicType type) {
