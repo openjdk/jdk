@@ -652,6 +652,8 @@ public class TestDateTimeFormatterBuilder {
             {"h B", "11 at night", 23},
             {"h B", "3 at night", 3},
             {"h B", "11 in the morning", 11},
+            {"a", "AM", 6},
+            {"a", "PM", 18},
         };
     }
 

@@ -99,6 +99,7 @@ import java.time.temporal.TemporalQuery;
 import java.time.temporal.UnsupportedTemporalTypeException;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -416,15 +417,27 @@ final class Parsed implements TemporalAccessor {
             }
             updateCheckConflict(CLOCK_HOUR_OF_AMPM, HOUR_OF_AMPM, ch == 12 ? 0 : ch);
         }
-        if (fieldValues.containsKey(AMPM_OF_DAY) && fieldValues.containsKey(HOUR_OF_AMPM)) {
-            long ap = fieldValues.remove(AMPM_OF_DAY);
-            long hap = fieldValues.remove(HOUR_OF_AMPM);
-            if (resolverStyle == ResolverStyle.LENIENT) {
-                updateCheckConflict(AMPM_OF_DAY, HOUR_OF_DAY, Math.addExact(Math.multiplyExact(ap, 12), hap));
-            } else {  // STRICT or SMART
-                AMPM_OF_DAY.checkValidValue(ap);
-                HOUR_OF_AMPM.checkValidValue(hap);
-                updateCheckConflict(AMPM_OF_DAY, HOUR_OF_DAY, ap * 12 + hap);
+        if (fieldValues.containsKey(AMPM_OF_DAY)) {
+            if (fieldValues.containsKey(HOUR_OF_AMPM)) {
+                long ap = fieldValues.remove(AMPM_OF_DAY);
+                long hap = fieldValues.remove(HOUR_OF_AMPM);
+                if (resolverStyle == ResolverStyle.LENIENT) {
+                    updateCheckConflict(AMPM_OF_DAY, HOUR_OF_DAY, Math.addExact(Math.multiplyExact(ap, 12), hap));
+                } else {  // STRICT or SMART
+                    AMPM_OF_DAY.checkValidValue(ap);
+                    HOUR_OF_AMPM.checkValidValue(hap);
+                    updateCheckConflict(AMPM_OF_DAY, HOUR_OF_DAY, ap * 12 + hap);
+                }
+            } else if (dayPeriod == null) {
+                // Convert to DayPeriod for later resolution. Locale does not care, so
+                // just use the default, whose DayPeriod instance may already be cached.
+                long ap = fieldValues.remove(AMPM_OF_DAY);
+                if (resolverStyle == ResolverStyle.LENIENT) {
+                    ap = Math.abs(ap) % 2;
+                } else {  // STRICT or SMART
+                    AMPM_OF_DAY.checkValidValue(ap);
+                }
+                dayPeriod = DayPeriod.ofLocale(Locale.getDefault(Locale.Category.FORMAT), ap);
             }
         }
         if (fieldValues.containsKey(NANO_OF_DAY)) {
