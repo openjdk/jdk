@@ -1550,7 +1550,7 @@ threadControl_suspendAll(void)
             suspendAllCount++;
         }
 
-    err: ;
+    err:
         jvmtiDeallocate(threads);
 
     } END_WITH_LOCAL_REFS(env)
