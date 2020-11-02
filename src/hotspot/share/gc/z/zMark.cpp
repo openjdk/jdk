@@ -23,12 +23,15 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
+#include "code/nmethod.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zBarrier.inline.hpp"
+#include "gc/z/zLock.inline.hpp"
 #include "gc/z/zMark.inline.hpp"
 #include "gc/z/zMarkCache.inline.hpp"
 #include "gc/z/zMarkStack.inline.hpp"
 #include "gc/z/zMarkTerminate.inline.hpp"
+#include "gc/z/zNMethod.hpp"
 #include "gc/z/zOopClosures.inline.hpp"
 #include "gc/z/zPage.hpp"
 #include "gc/z/zPageTable.inline.hpp"
@@ -572,27 +575,7 @@ void ZMark::work(uint64_t timeout_in_micros) {
   stacks->free(&_allocator);
 }
 
-class ZMarkConcurrentRootsIteratorClosure : public ZRootsIteratorClosure {
-public:
-  ZMarkConcurrentRootsIteratorClosure() {
-    ZThreadLocalAllocBuffer::reset_statistics();
-  }
-
-  ~ZMarkConcurrentRootsIteratorClosure() {
-    ZThreadLocalAllocBuffer::publish_statistics();
-  }
-
-  virtual ZNMethodEntry nmethod_entry() const {
-    // Only apply closure to armed nmethods, and then disarm them.
-    return ZNMethodEntry::Disarm;
-  }
-
-  virtual void do_thread(Thread* thread) {
-    JavaThread* const jt = thread->as_Java_thread();
-    StackWatermarkSet::finish_processing(jt, this, StackWatermarkKind::gc);
-    ZThreadLocalAllocBuffer::update_stats(jt);
-  }
-
+class ZMarkOopClosure : public OopClosure {
   virtual void do_oop(oop* p) {
     ZBarrier::mark_barrier_on_oop_field(p, false /* finalizable */);
   }
@@ -602,20 +585,69 @@ public:
   }
 };
 
+class ZMarkThreadClosure : public ThreadClosure {
+private:
+  OopClosure* const _cl;
+
+public:
+  ZMarkThreadClosure(OopClosure* cl) :
+      _cl(cl) {
+    ZThreadLocalAllocBuffer::reset_statistics();
+  }
+  ~ZMarkThreadClosure() {
+    ZThreadLocalAllocBuffer::publish_statistics();
+  }
+  virtual void do_thread(Thread* thread) {
+    JavaThread* const jt = thread->as_Java_thread();
+    StackWatermarkSet::finish_processing(jt, _cl, StackWatermarkKind::gc);
+    ZThreadLocalAllocBuffer::update_stats(jt);
+  }
+};
+
+class ZMarkNMethodClosure : public NMethodClosure {
+private:
+  OopClosure* const _cl;
+
+public:
+  ZMarkNMethodClosure(OopClosure* cl) :
+      _cl(cl) {}
+
+  virtual void do_nmethod(nmethod* nm) {
+    ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
+    if (!nm->is_alive()) {
+      return;
+    }
+
+    if (ZNMethod::is_armed(nm)) {
+      ZNMethod::nmethod_oops_do_inner(nm, _cl);
+      ZNMethod::disarm(nm);
+    }
+  }
+};
+
+typedef ClaimingCLDToOopClosure<ClassLoaderData::_claim_strong> ZMarkCLDClosure;
+
 class ZMarkConcurrentRootsTask : public ZTask {
 private:
-  ZMark* const                        _mark;
-  SuspendibleThreadSetJoiner          _sts_joiner;
-  ZConcurrentRootsIteratorClaimStrong _roots;
-  ZMarkConcurrentRootsIteratorClosure _cl;
+  ZMark* const               _mark;
+  SuspendibleThreadSetJoiner _sts_joiner;
+  ZConcurrentRootsIterator   _roots;
+
+  ZMarkOopClosure            _cl;
+  ZMarkCLDClosure            _cld_cl;
+  ZMarkThreadClosure         _thread_cl;
+  ZMarkNMethodClosure        _nm_cl;
 
 public:
   ZMarkConcurrentRootsTask(ZMark* mark) :
       ZTask("ZMarkConcurrentRootsTask"),
       _mark(mark),
       _sts_joiner(),
-      _roots(),
-      _cl() {
+      _roots(ClassLoaderData::_claim_strong),
+      _cl(),
+      _cld_cl(&_cl),
+      _thread_cl(&_cl),
+      _nm_cl(&_cl) {
     ClassLoaderDataGraph_lock->lock();
   }
 
@@ -624,7 +656,10 @@ public:
   }
 
   virtual void work() {
-    _roots.oops_do(&_cl);
+    _roots.apply(&_cl,
+                 &_cld_cl,
+                 &_thread_cl,
+                 &_nm_cl);
 
     // Flush and free worker stacks. Needed here since
     // the set of workers executing during root scanning

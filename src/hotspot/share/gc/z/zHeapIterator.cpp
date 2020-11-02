@@ -23,12 +23,14 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zGranuleMap.inline.hpp"
 #include "gc/z/zHeapIterator.hpp"
 #include "gc/z/zLock.inline.hpp"
+#include "gc/z/zNMethod.hpp"
 #include "gc/z/zOop.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -92,8 +94,8 @@ public:
   }
 };
 
-template <bool Concurrent, bool Weak>
-class ZHeapIteratorRootOopClosure : public ZRootsIteratorClosure {
+template <bool Weak>
+class ZHeapIteratorRootOopClosure : public OopClosure {
 private:
   const ZHeapIteratorContext& _context;
 
@@ -102,11 +104,7 @@ private:
       return NativeAccess<AS_NO_KEEPALIVE | ON_PHANTOM_OOP_REF>::oop_load(p);
     }
 
-    if (Concurrent) {
-      return NativeAccess<AS_NO_KEEPALIVE>::oop_load(p);
-    }
-
-    return RawAccess<>::oop_load(p);
+    return NativeAccess<AS_NO_KEEPALIVE>::oop_load(p);
   }
 
 public:
@@ -120,22 +118,6 @@ public:
 
   virtual void do_oop(narrowOop* p) {
     ShouldNotReachHere();
-  }
-
-  virtual void do_thread(Thread* thread) {
-    CodeBlobToOopClosure code_cl(this, false /* fix_oop_relocations */);
-    thread->oops_do(this, &code_cl);
-  }
-
-  virtual ZNMethodEntry nmethod_entry() const {
-    if (ClassUnloading) {
-      // All encountered nmethods should have been "entered" during stack walking
-      return ZNMethodEntry::VerifyDisarmed;
-    } else {
-      // All nmethods are considered roots and will be visited.
-      // Make sure that the unvisited gets fixed and disarmed before proceeding.
-      return ZNMethodEntry::PreBarrier;
-    }
   }
 };
 
@@ -180,7 +162,7 @@ ZHeapIterator::ZHeapIterator(uint nworkers, bool visit_weaks) :
     _bitmaps_lock(),
     _queues(nworkers),
     _array_queues(nworkers),
-    _concurrent_roots(),
+    _concurrent_roots(ClassLoaderData::_claim_other),
     _weak_roots(),
     _concurrent_weak_roots(),
     _terminator(nworkers, &_queues) {
@@ -255,10 +237,83 @@ bool ZHeapIterator::mark_object(oop obj) {
   return bitmap->try_set_bit(index);
 }
 
-template <bool Concurrent, bool Weak, typename RootsIterator>
-void ZHeapIterator::push_roots(const ZHeapIteratorContext& context, RootsIterator& iter) {
-  ZHeapIteratorRootOopClosure<Concurrent, Weak> cl(context);
-  iter.oops_do(&cl);
+typedef ClaimingCLDToOopClosure<ClassLoaderData::_claim_other> ZHeapIteratorCLDCLosure;
+
+class ZHeapIteratorNMethodClosure : public NMethodClosure {
+private:
+  OopClosure* const        _cl;
+  BarrierSetNMethod* const _bs_nm;
+
+public:
+  ZHeapIteratorNMethodClosure(OopClosure* cl) :
+      _cl(cl),
+      _bs_nm(BarrierSet::barrier_set()->barrier_set_nmethod()) {}
+
+  virtual void do_nmethod(nmethod* nm) {
+    assert(!ClassUnloading, "Only used if class unloading is turned off");
+
+    // ClassUnloading is turned off, all nmethods are considered strong,
+    // not only those on the call stacks. The heap iteration might happen
+    // before the concurrent processign of the code cache, make sure that
+    // all nmethods have been processed before visiting the oops.
+    _bs_nm->nmethod_entry_barrier(nm);
+
+    ZNMethod::nmethod_oops_do(nm, _cl);
+  }
+};
+
+class ZHeapIteratorThreadClosure : public ThreadClosure {
+private:
+  OopClosure* const _cl;
+
+  class NMethodVisitor : public CodeBlobToOopClosure {
+  public:
+    NMethodVisitor(OopClosure* cl) :
+        CodeBlobToOopClosure(cl, false /* fix_oop_relocations */) {}
+
+    void do_code_blob(CodeBlob* cb) {
+      assert(!cb->is_nmethod() || !ZNMethod::is_armed(cb->as_nmethod()),
+          "NMethods on stack should have been fixed and disarmed");
+
+      CodeBlobToOopClosure::do_code_blob(cb);
+    }
+  };
+
+public:
+  ZHeapIteratorThreadClosure(OopClosure* cl) : _cl(cl) {}
+
+  void do_thread(Thread* thread) {
+    NMethodVisitor code_cl(_cl);
+    thread->oops_do(_cl, &code_cl);
+  }
+};
+
+void ZHeapIterator::push_strong_roots(const ZHeapIteratorContext& context) {
+  ZHeapIteratorRootOopClosure<false /* Weak */> cl(context);
+  ZHeapIteratorCLDCLosure cld_cl(&cl);
+  ZHeapIteratorNMethodClosure nm_cl(&cl);
+  ZHeapIteratorThreadClosure thread_cl(&cl);
+
+  _concurrent_roots.apply(&cl,
+                          &cld_cl,
+                          &thread_cl,
+                          &nm_cl);
+}
+
+void ZHeapIterator::push_weak_roots(const ZHeapIteratorContext& context) {
+  ZHeapIteratorRootOopClosure<true  /* Weak */> cl(context);
+  _concurrent_weak_roots.apply(&cl);
+
+  AlwaysTrueClosure is_alive;
+  _weak_roots.apply(&is_alive, &cl);
+}
+
+template <bool VisitWeaks>
+void ZHeapIterator::push_roots(const ZHeapIteratorContext& context) {
+  push_strong_roots(context);
+  if (VisitWeaks) {
+    push_weak_roots(context);
+  }
 }
 
 template <bool VisitReferents>
@@ -343,14 +398,9 @@ void ZHeapIterator::drain_and_steal(const ZHeapIteratorContext& context, ObjectC
 }
 
 template <bool VisitWeaks>
-void ZHeapIterator::object_iterate_inner(const ZHeapIteratorContext& context, ObjectClosure* cl) {
-  push_roots<true  /* Concurrent */, false /* Weak */>(context, _concurrent_roots);
-  if (VisitWeaks) {
-    push_roots<false /* Concurrent */, true  /* Weak */>(context, _weak_roots);
-    push_roots<true  /* Concurrent */, true  /* Weak */>(context, _concurrent_weak_roots);
-  }
-
-  drain_and_steal<VisitWeaks>(context, cl);
+void ZHeapIterator::object_iterate_inner(const ZHeapIteratorContext& context, ObjectClosure* object_cl) {
+  push_roots<VisitWeaks>(context);
+  drain_and_steal<VisitWeaks>(context, object_cl);
 }
 
 void ZHeapIterator::object_iterate(ObjectClosure* cl, uint worker_id) {
