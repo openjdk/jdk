@@ -251,6 +251,8 @@ var getJibProfilesCommon = function (input, data) {
         configure_args: concat("--enable-jtreg-failure-handler",
             "--with-exclude-translations=de,es,fr,it,ko,pt_BR,sv,ca,tr,cs,sk,ja_JP_A,ja_JP_HA,ja_JP_HI,ja_JP_I,zh_TW,zh_HK",
             "--disable-manpages",
+            "--disable-jvm-feature-aot",
+            "--disable-jvm-feature-graal",
             "--disable-jvm-feature-shenandoahgc",
             versionArgs(input, common))
     };
@@ -404,7 +406,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "linux-x64": {
             target_os: "linux",
             target_cpu: "x64",
-            dependencies: ["devkit", "gtest", "graphviz", "pandoc", "graalunit_lib"],
+            dependencies: ["devkit", "gtest", "graphviz", "pandoc"],
             configure_args: concat(common.configure_args_64bit,
                 "--with-zlib=system", "--disable-dtrace",
                 (isWsl(input) ? [ "--host=x86_64-unknown-linux-gnu",
@@ -423,7 +425,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "macosx-x64": {
             target_os: "macosx",
             target_cpu: "x64",
-            dependencies: ["devkit", "gtest", "pandoc", "graalunit_lib"],
+            dependencies: ["devkit", "gtest", "pandoc"],
             configure_args: concat(common.configure_args_64bit, "--with-zlib=system",
                 "--with-macosx-version-max=10.9.0",
                 // Use system SetFile instead of the one in the devkit as the
@@ -434,7 +436,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "windows-x64": {
             target_os: "windows",
             target_cpu: "x64",
-            dependencies: ["devkit", "gtest", "pandoc", "graalunit_lib"],
+            dependencies: ["devkit", "gtest", "pandoc"],
             configure_args: concat(common.configure_args_64bit),
         },
 
@@ -454,8 +456,6 @@ var getJibProfilesProfiles = function (input, common, data) {
             configure_args: [
                 "--openjdk-target=aarch64-linux-gnu",
 		"--disable-jvm-feature-jvmci",
-		"--disable-jvm-feature-graal",
-		"--disable-jvm-feature-aot",
             ],
         },
 
@@ -1150,15 +1150,6 @@ var getJibProfilesDependencies = function (input, common) {
             ext: "zip",
             revision: "1.7.1+1.0",
             configure_args: "",
-        },
-
-        graalunit_lib: {
-            organization: common.organization,
-            ext: "zip",
-            revision: "619_Apr_12_2018",
-            module: "graalunit-lib",
-            configure_args: "--with-graalunit-lib=" + input.get("graalunit_lib", "install_path"),
-            environment_name: "GRAALUNIT_LIB"
         },
 
         gtest: {
