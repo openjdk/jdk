@@ -187,7 +187,7 @@ HeapWord* PSOldGen::allocate(size_t word_size) {
  * which the object starts.
  *
  */
-void PSOldGen::block_iterate(ObjectClosure* cl, uint block_index) {
+void PSOldGen::block_iterate(ObjectClosure* cl, size_t block_index) {
   MutableSpace *space = object_space();
   HeapWord* bottom = space->bottom();
   HeapWord* top = space->top();
@@ -209,8 +209,9 @@ void PSOldGen::block_iterate(ObjectClosure* cl, uint block_index) {
     if (start < begin) {
       start += oop(start)->size();
     }
-    assert(begin <= start && start < end,
-           "object %p must in the range of [%p, %p)\n", start, begin, end);
+    assert(begin <= start,
+           "object address" PTR_FORMAT " must be larger or equal to block address at " PTR_FORMAT "\n",
+           start, begin);
     for (HeapWord* p = start; p < end; p += oop(p)->size()) {
       cl->do_object(oop(p));
     }

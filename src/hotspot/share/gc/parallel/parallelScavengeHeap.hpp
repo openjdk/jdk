@@ -54,7 +54,6 @@ class PSHeapSummary;
 
 class ParallelScavengeHeap : public CollectedHeap {
   friend class VMStructs;
-  friend class HeapBlockClaimer;
  private:
   static PSYoungGen* _young_gen;
   static PSOldGen*   _old_gen;
@@ -288,21 +287,6 @@ class AdaptiveSizePolicyOutput : AllStatic {
       size_policy->print();
     }
   }
-};
-
-// The HeapBlockClaimer is used during parallel iteration over heap,
-// allowing workers to claim heap blocks, gaining exclusive rights to these blocks.
-// The eden and survivor spaces are treated as single blocks as it is hard to divide
-// these spaces.
-// The old spaces are divided into serveral fixed-size blocks.
-class HeapBlockClaimer : public StackObj {
-  int _claimed_index;
- public:
-  HeapBlockClaimer() : _claimed_index(EdenIndex) { }
-  // Claim the block and get the block index.
-  bool claim_and_get_block(int* block_index);
-  static const int EdenIndex = -2;
-  static const int SurvivorIndex = -1;
 };
 
 #endif // SHARE_GC_PARALLEL_PARALLELSCAVENGEHEAP_HPP

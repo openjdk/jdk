@@ -539,9 +539,35 @@ void ParallelScavengeHeap::object_iterate(ObjectClosure* cl) {
   old_gen()->object_iterate(cl);
 }
 
+// The HeapBlockClaimer is used during parallel iteration over the heap,
+// allowing workers to claim heap blocks, gaining exclusive rights to these blocks.
+// The eden and survivor spaces are treated as single blocks as it is hard to divide
+// these spaces.
+// The old spaces are divided into serveral fixed-size blocks.
+class HeapBlockClaimer : public StackObj {
+  // Index of iterable block, negative values for indexes of young generation spaces,
+  // zero and positive values for indexes of blocks in old generation space.
+  ssize_t _claimed_index;
+ public:
+  static const ssize_t EdenIndex = -2;
+  static const ssize_t SurvivorIndex = -1;
+
+  HeapBlockClaimer() : _claimed_index(EdenIndex) { }
+  // Claim the block and get the block index.
+  bool claim_and_get_block(ssize_t* block_index) {
+    assert(block_index != NULL, "Invalid index pointer");
+    *block_index = Atomic::fetch_and_add(&_claimed_index, 1);
+    ssize_t iterable_blocks = (ssize_t)ParallelScavengeHeap::heap()->old_gen()->iterable_blocks();
+    if (*block_index >= iterable_blocks) {
+      return false;
+    }
+    return true;
+  }
+};
+
 void ParallelScavengeHeap::object_iterate_parallel(ObjectClosure* cl,
                                                    HeapBlockClaimer* claimer) {
-  int block_index;
+  ssize_t block_index;
   // Iterate until all blocks are claimed
   while (claimer->claim_and_get_block(&block_index)) {
     if (block_index == HeapBlockClaimer::EdenIndex) {
@@ -550,19 +576,9 @@ void ParallelScavengeHeap::object_iterate_parallel(ObjectClosure* cl,
       young_gen()->from_space()->object_iterate(cl);
       young_gen()->to_space()->object_iterate(cl);
     } else {
-      old_gen()->block_iterate(cl, block_index);
+      old_gen()->block_iterate(cl, (size_t)block_index);
     }
   }
-}
-
-bool HeapBlockClaimer::claim_and_get_block(int* block_index) {
-  assert(block_index != NULL, "Invalid index pointer");
-  *block_index = Atomic::fetch_and_add(&_claimed_index, 1);
-  int itrable_blocks = (int)ParallelScavengeHeap::heap()->old_gen()->iterable_blocks();
-  if (*block_index >= itrable_blocks) {
-    return false;
-  }
-  return true;
 }
 
 class PSScavengeParallelObjectIterator : public ParallelObjectIterator {

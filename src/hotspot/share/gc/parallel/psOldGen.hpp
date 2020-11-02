@@ -169,8 +169,7 @@ class PSOldGen : public CHeapObj<mtGC> {
     return (object_space()->used_in_bytes() + IterateBlockSize - 1) / IterateBlockSize;
   }
   // Iterate block with given block_index
-  void block_iterate(ObjectClosure* cl, uint block_index);
-
+  void block_iterate(ObjectClosure* cl, size_t block_index);
 
   // Debugging - do not use for time critical operations
   void print() const;
