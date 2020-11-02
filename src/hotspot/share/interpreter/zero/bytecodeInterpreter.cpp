@@ -2266,6 +2266,7 @@ run:
             break;
 
           case JVM_CONSTANT_Dynamic:
+          case JVM_CONSTANT_DynamicInError:
             {
               CALL_VM(InterpreterRuntime::resolve_ldc(THREAD, (Bytecodes::Code) opcode), handle_exception);
               oop result = THREAD->vm_result();
@@ -2307,6 +2308,7 @@ run:
             break;
 
           case JVM_CONSTANT_Dynamic:
+          case JVM_CONSTANT_DynamicInError:
             {
               CALL_VM(InterpreterRuntime::resolve_ldc(THREAD, (Bytecodes::Code) opcode), handle_exception);
               oop result = THREAD->vm_result();
