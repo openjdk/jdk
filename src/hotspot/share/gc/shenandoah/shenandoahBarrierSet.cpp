@@ -87,7 +87,7 @@ bool ShenandoahBarrierSet::need_load_reference_barrier(DecoratorSet decorators, 
   return is_reference_type(type);
 }
 
-bool ShenandoahBarrierSet::use_load_reference_barrier_native(DecoratorSet decorators, BasicType type) {
+bool ShenandoahBarrierSet::use_load_reference_barrier_weak(DecoratorSet decorators, BasicType type) {
   assert(need_load_reference_barrier(decorators, type), "Should be subset of LRB");
   assert(is_reference_type(type), "Why we here?");
   // Native load reference barrier is only needed for concurrent root processing
@@ -95,7 +95,7 @@ bool ShenandoahBarrierSet::use_load_reference_barrier_native(DecoratorSet decora
     return false;
   }
 
-  return (decorators & IN_NATIVE) != 0;
+  return ((decorators & IN_NATIVE) != 0) && ((decorators & ON_STRONG_OOP_REF) == 0);
 }
 
 bool ShenandoahBarrierSet::need_keep_alive_barrier(DecoratorSet decorators,BasicType type) {

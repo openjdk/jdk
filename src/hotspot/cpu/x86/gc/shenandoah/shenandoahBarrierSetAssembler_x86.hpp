@@ -70,11 +70,11 @@ public:
   void gen_pre_barrier_stub(LIR_Assembler* ce, ShenandoahPreBarrierStub* stub);
   void gen_load_reference_barrier_stub(LIR_Assembler* ce, ShenandoahLoadReferenceBarrierStub* stub);
   void generate_c1_pre_barrier_runtime_stub(StubAssembler* sasm);
-  void generate_c1_load_reference_barrier_runtime_stub(StubAssembler* sasm, bool is_native);
+  void generate_c1_load_reference_barrier_runtime_stub(StubAssembler* sasm, bool is_weak);
 #endif
 
   void load_reference_barrier(MacroAssembler* masm, Register dst, Address src);
-  void load_reference_barrier_native(MacroAssembler* masm, Register dst, Address src);
+  void load_reference_barrier_weak(MacroAssembler* masm, Register dst, Address src);
 
   void cmpxchg_oop(MacroAssembler* masm,
                    Register res, Address addr, Register oldval, Register newval,
