@@ -333,7 +333,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
 #endif
   assert(slot == 0, "must use all slots");
 
-  Register tmp2 = dst == c_rarg1 ? c_rarg2 : c_rarg1;
+  Register tmp2 = dst == rsi ? rdx : rsi;
   assert_different_registers(dst, tmp2);
   __ lea(tmp2, src);
 
