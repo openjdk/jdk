@@ -786,9 +786,7 @@ javax/swing/JRadioButton/ButtonGroupFocus/ButtonGroupFocusTest.java 8233555 maco
 javax/swing/JRadioButton/8075609/bug8075609.java 8233555 macosx-all
 javax/swing/JRadioButton/8033699/bug8033699.java 8233555 macosx-all
 javax/swing/JPopupMenu/4634626/bug4634626.java 8017175 macosx-all
-javax/swing/JMenuItem/ActionListenerCalledTwice/ActionListenerCalledTwiceTest.java 8233637 macosx-all
 javax/swing/JMenuItem/6249972/bug6249972.java 8233640 macosx-all
-javax/swing/JMenuItem/4171437/bug4171437.java 8233641 macosx-all
 
 sanity/client/SwingSet/src/ToolTipDemoTest.java 8225012 windows-all,macosx-all
 sanity/client/SwingSet/src/ScrollPaneDemoTest.java 8225013 linux-all
