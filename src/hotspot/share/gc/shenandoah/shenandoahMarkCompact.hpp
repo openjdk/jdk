@@ -52,7 +52,7 @@
 
 class PreservedMarksSet;
 
-class ShenandoahMarkCompact : public CHeapObj<mtGC> {
+class ShenandoahMarkCompact : public StackObj {
   friend class ShenandoahPrepareForCompactionObjectClosure;
 private:
   GCTimer* _gc_timer;

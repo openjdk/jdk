@@ -1619,7 +1619,6 @@ void ShenandoahHeap::op_init_mark(ShenandoahConcurrentMark* mark) {
   OrderAccess::fence();
   mark->mark_stw_roots();
 
-
   if (ShenandoahPacing) {
     pacer()->setup_for_mark();
   }
