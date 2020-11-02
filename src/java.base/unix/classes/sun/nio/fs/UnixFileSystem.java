@@ -257,13 +257,11 @@ abstract class UnixFileSystem
 
     @Override
     public final Path getPath(String first, String... more) {
+        Objects.requireNonNull(first);
         String path;
         if (more.length == 0) {
             path = first;
         } else {
-            if (first == null) {
-                throw new NullPointerException();
-            }
             StringBuilder sb = new StringBuilder();
             sb.append(first);
             for (String segment: more) {
