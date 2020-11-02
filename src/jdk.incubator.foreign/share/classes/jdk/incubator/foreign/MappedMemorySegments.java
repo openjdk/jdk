@@ -43,7 +43,8 @@ import java.nio.MappedByteBuffer;
  * {@link MemoryAddress#ofLong(long)} and {@link MemoryAddress#asSegmentRestricted(long, Runnable, Object)}.
  *
  * @implNote
- * The behavior of the methods in this class is highly platform-dependent; as a result, calling these methods might
+ * The behavior of some the methods in this class (see {@link #load(MemorySegment)}, {@link #unload(MemorySegment)} and
+ * {@link #isLoaded(MemorySegment)}) is highly platform-dependent; as a result, calling these methods might
  * be a no-op on certain platforms.
  */
 public final class MappedMemorySegments {
