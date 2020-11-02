@@ -280,8 +280,6 @@ void LogConfiguration::disable_outputs() {
 
   while (idx > 0) {
     LogOutput* out = _outputs[--idx];
-
-
     // Delete the output unless stdout or stderr (idx 0 or 1)
     if (idx > 1) {
       delete_output(idx);
