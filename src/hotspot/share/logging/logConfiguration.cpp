@@ -272,13 +272,15 @@ void LogConfiguration::configure_output(size_t idx, const LogSelectionList& sele
 
 void LogConfiguration::disable_outputs() {
   size_t idx = _n_outputs;
+
+  // Remove all outputs from all tagsets.
+  for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+    ts->clear();
+  }
+
   while (idx > 0) {
     LogOutput* out = _outputs[--idx];
 
-    // Remove the output from all tagsets.
-    for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
-      ts->set_output_level(out, LogLevel::Off);
-    }
 
     // Delete the output unless stdout or stderr (idx 0 or 1)
     if (idx > 1) {
