@@ -244,9 +244,9 @@ JVM_handle_linux_signal(int sig,
   char exc_buf[32];
 
   if (os::exception_name(sig, exc_buf, sizeof(exc_buf))) {
+    bool sent_by_kill = (info != NULL && os::signal_sent_by_kill(info));
     snprintf(buf, sizeof(buf), "caught unhandled signal: %s %s",
-            exc_buf,
-            (info != NULL && os::signal_sent_by_kill(info)) ? "(sent by kill)" : "");
+             exc_buf, sent_by_kill ? "(sent by kill)" : "");
   } else {
     snprintf(buf, sizeof(buf), "caught unhandled signal: %d", sig);
   }
