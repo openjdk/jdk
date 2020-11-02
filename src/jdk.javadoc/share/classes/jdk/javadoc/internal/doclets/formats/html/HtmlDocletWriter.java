@@ -2235,7 +2235,7 @@ public class HtmlDocletWriter {
             String leadingNoteKey =
                     !isReflectivePreview ? "doclet.PreviewPlatformLeadingNote"
                                          : "doclet.ReflectivePreviewPlatformLeadingNote";
-            Content leadingNote = 
+            Content leadingNote =
                     contents.getContent(leadingNoteKey, nameCode);
             previewDiv.add(HtmlTree.SPAN(HtmlStyle.previewLabel,
                                          leadingNote));
