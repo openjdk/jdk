@@ -1099,6 +1099,40 @@ ProfileData* MethodData::data_at(int data_index) const {
   return data_layout->data_in();
 }
 
+int DataLayout::cell_count() {
+  switch (tag()) {
+  case DataLayout::no_tag:
+  default:
+    ShouldNotReachHere();
+    return 0;
+  case DataLayout::bit_data_tag:
+    return BitData::static_cell_count();
+  case DataLayout::counter_data_tag:
+    return CounterData::static_cell_count();
+  case DataLayout::jump_data_tag:
+    return JumpData::static_cell_count();
+  case DataLayout::receiver_type_data_tag:
+    return ReceiverTypeData::static_cell_count();
+  case DataLayout::virtual_call_data_tag:
+    return VirtualCallData::static_cell_count();
+  case DataLayout::ret_data_tag:
+    return RetData::static_cell_count();
+  case DataLayout::branch_data_tag:
+    return BranchData::static_cell_count();
+  case DataLayout::multi_branch_data_tag:
+    return ((new MultiBranchData(this))->cell_count());
+  case DataLayout::arg_info_data_tag:
+    return ((new ArgInfoData(this))->cell_count());
+  case DataLayout::call_type_data_tag:
+    return ((new CallTypeData(this))->cell_count());
+  case DataLayout::virtual_call_type_data_tag:
+    return ((new VirtualCallTypeData(this))->cell_count());
+  case DataLayout::parameters_type_data_tag:
+    return ((new ParametersTypeData(this))->cell_count());
+  case DataLayout::speculative_trap_data_tag:
+    return SpeculativeTrapData::static_cell_count();
+  }
+}
 ProfileData* DataLayout::data_in() {
   switch (tag()) {
   case DataLayout::no_tag:
@@ -1139,6 +1173,16 @@ ProfileData* MethodData::next_data(ProfileData* current) const {
   int current_index = dp_to_di(current->dp());
   int next_index = current_index + current->size_in_bytes();
   ProfileData* next = data_at(next_index);
+  return next;
+}
+
+DataLayout* MethodData::next_data_layout(DataLayout* current) const {
+  int current_index = dp_to_di((address)current);
+  int next_index = current_index + current->size_in_bytes();
+  if (out_of_bounds(next_index)) {
+    return NULL;
+  }
+  DataLayout* next = data_layout_at(next_index);
   return next;
 }
 
@@ -1314,13 +1358,13 @@ bool MethodData::is_mature() const {
 // Translate a bci to its corresponding data index (di).
 address MethodData::bci_to_dp(int bci) {
   ResourceMark rm;
-  ProfileData* data = data_before(bci);
-  ProfileData* prev = NULL;
-  for ( ; is_valid(data); data = next_data(data)) {
+  DataLayout* data = data_layout_before(bci);
+  DataLayout* prev = NULL;
+  for ( ; is_valid(data); data = next_data_layout(data)) {
     if (data->bci() >= bci) {
-      if (data->bci() == bci)  set_hint_di(dp_to_di(data->dp()));
-      else if (prev != NULL)   set_hint_di(dp_to_di(prev->dp()));
-      return data->dp();
+      if (data->bci() == bci)  set_hint_di(dp_to_di((address)data));
+      else if (prev != NULL)   set_hint_di(dp_to_di((address)prev));
+      return (address)data;
     }
     prev = data;
   }
@@ -1329,11 +1373,11 @@ address MethodData::bci_to_dp(int bci) {
 
 // Translate a bci to its corresponding data, or NULL.
 ProfileData* MethodData::bci_to_data(int bci) {
-  ProfileData* data = data_before(bci);
-  for ( ; is_valid(data); data = next_data(data)) {
+  DataLayout* data = data_layout_before(bci);
+  for ( ; is_valid(data); data = next_data_layout(data)) {
     if (data->bci() == bci) {
-      set_hint_di(dp_to_di(data->dp()));
-      return data;
+      set_hint_di(dp_to_di((address)data));
+      return data->data_in();
     } else if (data->bci() > bci) {
       break;
     }
