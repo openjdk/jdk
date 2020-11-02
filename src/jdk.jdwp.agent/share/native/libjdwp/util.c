@@ -962,16 +962,6 @@ jvmtiMicroVersion(void)
                     >> JVMTI_VERSION_SHIFT_MICRO;
 }
 
-jboolean
-canSuspendResumeThreadLists(void)
-{
-    jvmtiError error;
-    jvmtiCapabilities cap;
-
-    error = jvmtiGetCapabilities(&cap);
-    return (error == JVMTI_ERROR_NONE && cap.can_suspend);
-}
-
 jvmtiError
 getSourceDebugExtension(jclass clazz, char **extensionPtr)
 {
