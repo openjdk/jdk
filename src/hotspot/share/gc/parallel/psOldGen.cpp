@@ -211,7 +211,7 @@ void PSOldGen::block_iterate(ObjectClosure* cl, size_t block_index) {
     }
     assert(begin <= start,
            "object address" PTR_FORMAT " must be larger or equal to block address at " PTR_FORMAT "\n",
-           start, begin);
+           p2i(start), p2i(begin));
     for (HeapWord* p = start; p < end; p += oop(p)->size()) {
       cl->do_object(oop(p));
     }
