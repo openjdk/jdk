@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @requires sun.arch.data.model == "64"
  * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @run testng/othervm TestCircularInit2
  */

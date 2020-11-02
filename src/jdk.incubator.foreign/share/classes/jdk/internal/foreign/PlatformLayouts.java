@@ -141,7 +141,7 @@ public class PlatformLayouts {
         /**
          * The {@code T*} native type.
          */
-        public static final ValueLayout C_POINTER = ofPointer(LITTLE_ENDIAN, ADDRESS.bitSize());
+        public static final ValueLayout C_POINTER = ofPointer(LITTLE_ENDIAN, 64);
 
         /**
          * The {@code va_list} native type, as it is passed to a function.
@@ -201,7 +201,7 @@ public class PlatformLayouts {
         /**
          * The {@code T*} native type.
          */
-        public static final ValueLayout C_POINTER = ofPointer(LITTLE_ENDIAN, ADDRESS.bitSize());
+        public static final ValueLayout C_POINTER = ofPointer(LITTLE_ENDIAN, 64);
 
         /**
          * The {@code va_list} native type, as it is passed to a function.
@@ -266,7 +266,7 @@ public class PlatformLayouts {
         /**
          * The {@code T*} native type.
          */
-        public static final ValueLayout C_POINTER = ofPointer(LITTLE_ENDIAN, ADDRESS.bitSize());
+        public static final ValueLayout C_POINTER = ofPointer(LITTLE_ENDIAN, 64);
 
         /**
          * The {@code va_list} native type, as it is passed to a function.

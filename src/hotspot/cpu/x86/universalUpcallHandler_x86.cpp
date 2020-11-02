@@ -45,6 +45,7 @@ address ProgrammableUpcallHandler::generate_upcall_stub(jobject rec, jobject jab
   int register_size = sizeof(uintptr_t);
   int buffer_alignment = xmm_reg_size;
 
+#ifdef _LP64
   // stub code
   __ enter();
 
@@ -133,6 +134,9 @@ address ProgrammableUpcallHandler::generate_upcall_stub(jobject rec, jobject jab
 
   __ leave();
   __ ret(0);
+#else
+  __ hlt(); // NYI
+#endif
 
   _masm->flush();
 

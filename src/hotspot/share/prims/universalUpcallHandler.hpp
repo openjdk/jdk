@@ -40,7 +40,7 @@ private:
 
   static const ProgrammableUpcallHandler& instance();
 
-  static void upcall_helper(JNIEnv* env, jobject rec, address buff);
+  static void upcall_helper(jobject rec, address buff);
   static void attach_thread_and_do_upcall(jobject rec, address buff);
 public:
   static address generate_upcall_stub(jobject rec, jobject abi, jobject buffer_layout);

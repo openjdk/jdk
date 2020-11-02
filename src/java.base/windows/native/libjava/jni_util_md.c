@@ -49,7 +49,7 @@ void* findEntryInProcess(const char* name) {
 
     // first come, first served
     if (EnumProcessModules(hProcess, hMods, sizeof(hMods), &cbNeeded)) {
-        for (int i = 0; i < (cbNeeded / sizeof(HMODULE)); i++) {
+        for (size_t i = 0; i < (cbNeeded / sizeof(HMODULE)); i++) {
             HMODULE mod = hMods[i];
             FARPROC proc = GetProcAddress(mod, name);
             if(proc != NULL) {

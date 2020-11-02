@@ -77,7 +77,7 @@
 // On Linux NULL is defined as a special type '__null'. Assigning __null to
 // integer variable will cause gcc warning. Use NULL_WORD in places where a
 // pointer is stored as integer value.
-#define NULL_WORD NULL
+#define NULL_WORD (intptr_t) NULL
 
 #ifdef _WIN64
 typedef int64_t ssize_t;

@@ -430,6 +430,11 @@ class RuntimeHistogramElement : public HistogramElement {
 
 // Definitions for JNI
 
+#define JNI_ENTRY_BASE(result_type, header, thread)                  \
+  ThreadInVMfromNative __tiv(thread);                                \
+  debug_only(VMNativeEntryWrapper __vew;)                            \
+  VM_ENTRY_BASE(result_type, header, thread)
+
 #define JNI_ENTRY(result_type, header)                               \
     JNI_ENTRY_NO_PRESERVE(result_type, header)                       \
     WeakPreserveExceptionMark __wem(thread);
@@ -439,9 +444,13 @@ extern "C" {                                                         \
   result_type JNICALL header {                                       \
     JavaThread* thread=JavaThread::thread_from_jni_environment(env); \
     assert( !VerifyJNIEnvThread || (thread == Thread::current()), "JNIEnv is only valid in same thread"); \
-    ThreadInVMfromNative __tiv(thread);                              \
-    debug_only(VMNativeEntryWrapper __vew;)                          \
-    VM_ENTRY_BASE(result_type, header, thread)
+    JNI_ENTRY_BASE(result_type, header, thread)
+
+#define JNI_ENTRY_CPP_NOENV(result_type, header)                     \
+  result_type header { {                                             \
+    JavaThread* thread = JavaThread::current();                      \
+    JNI_ENTRY_BASE(result_type, header, thread)                      \
+    WeakPreserveExceptionMark __wem(thread);
 
 
 #define JNI_LEAF(result_type, header)                                \

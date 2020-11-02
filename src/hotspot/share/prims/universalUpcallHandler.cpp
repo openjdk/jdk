@@ -33,7 +33,7 @@
 
 extern struct JavaVM_ main_vm;
 
-JNI_ENTRY(void, ProgrammableUpcallHandler::upcall_helper(JNIEnv* env, jobject rec, address buff))
+JNI_ENTRY_CPP_NOENV(void, ProgrammableUpcallHandler::upcall_helper(jobject rec, address buff))
   const UpcallMethod& upcall_method = instance().upcall_method;
 
   ResourceMark rm(thread);
@@ -49,18 +49,16 @@ JNI_END
 void ProgrammableUpcallHandler::attach_thread_and_do_upcall(jobject rec, address buff) {
   Thread* thread = Thread::current_or_null();
   bool should_detach = false;
-  JNIEnv* p_env = nullptr;
   if (thread == nullptr) {
     JavaVM_ *vm = (JavaVM *)(&main_vm);
+    JNIEnv* p_env = nullptr; // unused
     jint result = vm->functions->AttachCurrentThread(vm, (void**) &p_env, nullptr);
     guarantee(result == JNI_OK, "Could not attach thread for upcall. JNI error code: %d", result);
     should_detach = true;
     thread = Thread::current();
-  } else {
-    p_env = thread->as_Java_thread()->jni_environment();
   }
 
-  upcall_helper(p_env, rec, buff);
+  upcall_helper(rec, buff);
 
   if (should_detach) {
     JavaVM_ *vm = (JavaVM *)(&main_vm);

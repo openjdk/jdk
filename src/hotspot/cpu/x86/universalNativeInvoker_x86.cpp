@@ -30,6 +30,7 @@
 #define __ _masm->
 
 void ProgrammableInvoker::Generator::generate() {
+#ifdef _LP64
   __ enter();
 
   // Put the context pointer in ebx/rbx - it's going to be heavily used below both before and after the call
@@ -127,6 +128,9 @@ void ProgrammableInvoker::Generator::generate() {
 
   __ leave();
   __ ret(0);
+#else
+  __ hlt(); // NYI
+#endif
 
   __ flush();
 }
