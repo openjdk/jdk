@@ -58,6 +58,11 @@ public:
     return get_by_address(obj) >= Pinned;
   }
 
+  bool is_pinned(HeapWord* obj) const {
+    assert(!is_invalid(obj), "not initialized yet");
+    return get_by_address(obj) == Pinned;
+  }
+
   void set_normal(uint idx) { set_by_index(idx, Normal); }
 
   bool is_normal(HeapWord* obj) const {

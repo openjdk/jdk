@@ -511,7 +511,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   virtual void unpin_object(JavaThread* thread, oop obj);
 
   // Is the given object inside a CDS archive area?
-  virtual bool is_archived_object(oop object) const { return false; }
+  virtual bool is_archived_object(oop object) const;
 
   // Deduplicate the string, iff the GC supports string deduplication.
   virtual void deduplicate_string(oop str);

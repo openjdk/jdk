@@ -96,8 +96,9 @@ public:
 
   void update_attribute_table(HeapRegion* hr);
 
-  bool is_in_pinned_or_closed(oop obj) const { return _region_attr_table.is_pinned_or_closed(cast_from_oop<HeapWord*>(obj)); }
-  bool is_in_closed(oop obj) const { return _region_attr_table.is_closed_archive(cast_from_oop<HeapWord*>(obj)); }
+  inline bool is_in_pinned_or_closed(oop obj) const;
+  inline bool is_in_pinned(oop obj) const;
+  inline bool is_in_closed(oop obj) const;
 
 private:
   void phase1_mark_live_objects();

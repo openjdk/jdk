@@ -27,7 +27,7 @@
 
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
-#include "gc/g1/g1FullCollector.hpp"
+#include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCMarker.hpp"
 #include "gc/g1/g1FullGCOopClosures.inline.hpp"
 #include "gc/g1/g1StringDedup.hpp"
@@ -54,7 +54,7 @@ inline bool G1FullGCMarker::mark_object(oop obj) {
   if (obj->mark_must_be_preserved(mark) &&
       // It is not necessary to preserve marks for objects in pinned regions because
       // we do not change their headers (i.e. forward them).
-      !_collector->is_in_pinned_or_closed(obj)) {
+      !_collector->is_in_pinned(obj)) {
     preserved_stack()->push(obj, mark);
   }
 
