@@ -496,7 +496,6 @@ final class Parsed implements TemporalAccessor {
                     if (resolverStyle != ResolverStyle.LENIENT) {
                         AMPM_OF_DAY.checkValidValue(ap);
                     }
-                    updateCheckDayPeriodConflict(AMPM_OF_DAY, midpoint / 720);
                 }
             }
         }
