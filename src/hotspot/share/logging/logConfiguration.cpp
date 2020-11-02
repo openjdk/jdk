@@ -275,7 +275,7 @@ void LogConfiguration::disable_outputs() {
 
   // Remove all outputs from all tagsets.
   for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
-    ts->clear();
+    ts->disable_outputs();
   }
 
   while (idx > 0) {
