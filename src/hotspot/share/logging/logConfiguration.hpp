@@ -69,7 +69,7 @@ class LogConfiguration : public AllStatic {
   // Output should be completely disabled before it is deleted.
   static void delete_output(size_t idx);
 
-  // Disable all outputs. All outputs except stdout/stderr will be removed.
+  // Disable all logging to all outputs. All outputs except stdout/stderr will be deleted.
   static void disable_outputs();
 
   // Get output index by name. Returns SIZE_MAX if output not found.
