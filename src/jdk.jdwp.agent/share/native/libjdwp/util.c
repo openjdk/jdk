@@ -699,12 +699,12 @@ methodClass(jmethodID method, jclass *pclazz)
     jvmtiError error;
 
     *pclazz = NULL;
-    error = FUNC_PTR(gdata->jvmti,GetMethodDeclaringClass)
+    error = JVMTI_FUNC_PTR(gdata->jvmti,GetMethodDeclaringClass)
                                 (gdata->jvmti, method, pclazz);
     return error;
 }
 
-/* Returns a local ref to the declaring class for a method, or NULL. */
+/* Returns the start and end locations of the specified method. */
 jvmtiError
 methodLocation(jmethodID method, jlocation *ploc1, jlocation *ploc2)
 {
@@ -727,7 +727,7 @@ methodSignature(jmethodID method,
     char *signature = NULL;
     char *generic_signature = NULL;
 
-    error = FUNC_PTR(gdata->jvmti,GetMethodName)
+    error = JVMTI_FUNC_PTR(gdata->jvmti,GetMethodName)
             (gdata->jvmti, method, &name, &signature, &generic_signature);
 
     if ( pname != NULL ) {
@@ -1009,7 +1009,7 @@ debugMonitorEnter(jrawMonitorID monitor)
 {
     jvmtiError error;
     while (JNI_TRUE) {
-        error = FUNC_PTR(gdata->jvmti,RawMonitorEnter)
+        error = JVMTI_FUNC_PTR(gdata->jvmti,RawMonitorEnter)
                         (gdata->jvmti, monitor);
         error = ignore_vm_death(error);
         if (error == JVMTI_ERROR_INTERRUPT) {
@@ -1028,7 +1028,7 @@ debugMonitorExit(jrawMonitorID monitor)
 {
     jvmtiError error;
 
-    error = FUNC_PTR(gdata->jvmti,RawMonitorExit)
+    error = JVMTI_FUNC_PTR(gdata->jvmti,RawMonitorExit)
                 (gdata->jvmti, monitor);
     error = ignore_vm_death(error);
     if (error != JVMTI_ERROR_NONE) {
@@ -1040,7 +1040,7 @@ void
 debugMonitorWait(jrawMonitorID monitor)
 {
     jvmtiError error;
-    error = FUNC_PTR(gdata->jvmti,RawMonitorWait)
+    error = JVMTI_FUNC_PTR(gdata->jvmti,RawMonitorWait)
         (gdata->jvmti, monitor, ((jlong)(-1)));
 
     /*
@@ -1085,7 +1085,7 @@ void
 debugMonitorTimedWait(jrawMonitorID monitor, jlong millis)
 {
     jvmtiError error;
-    error = FUNC_PTR(gdata->jvmti,RawMonitorWait)
+    error = JVMTI_FUNC_PTR(gdata->jvmti,RawMonitorWait)
         (gdata->jvmti, monitor, millis);
     if (error == JVMTI_ERROR_INTERRUPT) {
         /* See comment above */
@@ -1103,7 +1103,7 @@ debugMonitorNotify(jrawMonitorID monitor)
 {
     jvmtiError error;
 
-    error = FUNC_PTR(gdata->jvmti,RawMonitorNotify)
+    error = JVMTI_FUNC_PTR(gdata->jvmti,RawMonitorNotify)
                 (gdata->jvmti, monitor);
     error = ignore_vm_death(error);
     if (error != JVMTI_ERROR_NONE) {
@@ -1116,7 +1116,7 @@ debugMonitorNotifyAll(jrawMonitorID monitor)
 {
     jvmtiError error;
 
-    error = FUNC_PTR(gdata->jvmti,RawMonitorNotifyAll)
+    error = JVMTI_FUNC_PTR(gdata->jvmti,RawMonitorNotifyAll)
                 (gdata->jvmti, monitor);
     error = ignore_vm_death(error);
     if (error != JVMTI_ERROR_NONE) {
@@ -1130,7 +1130,7 @@ debugMonitorCreate(char *name)
     jrawMonitorID monitor;
     jvmtiError error;
 
-    error = FUNC_PTR(gdata->jvmti,CreateRawMonitor)
+    error = JVMTI_FUNC_PTR(gdata->jvmti,CreateRawMonitor)
                 (gdata->jvmti, name, &monitor);
     if (error != JVMTI_ERROR_NONE) {
         EXIT_ERROR(error, "on creation of a raw monitor");
@@ -1143,7 +1143,7 @@ debugMonitorDestroy(jrawMonitorID monitor)
 {
     jvmtiError error;
 
-    error = FUNC_PTR(gdata->jvmti,DestroyRawMonitor)
+    error = JVMTI_FUNC_PTR(gdata->jvmti,DestroyRawMonitor)
                 (gdata->jvmti, monitor);
     error = ignore_vm_death(error);
     if (error != JVMTI_ERROR_NONE) {
@@ -1202,7 +1202,7 @@ classSignature(jclass clazz, char **psignature, char **pgeneric_signature)
      * pgeneric_signature can be NULL, and GetClassSignature
      * accepts NULL.
      */
-    error = FUNC_PTR(gdata->jvmti,GetClassSignature)
+    error = JVMTI_FUNC_PTR(gdata->jvmti,GetClassSignature)
                 (gdata->jvmti, clazz, &signature, pgeneric_signature);
 
     if ( psignature != NULL ) {
@@ -1774,7 +1774,7 @@ jvmtiAllocate(jint numBytes)
     if ( numBytes == 0 ) {
         return NULL;
     }
-    error = FUNC_PTR(gdata->jvmti,Allocate)
+    error = JVMTI_FUNC_PTR(gdata->jvmti,Allocate)
                 (gdata->jvmti, numBytes, (unsigned char**)&ptr);
     if (error != JVMTI_ERROR_NONE ) {
         EXIT_ERROR(error, "Can't allocate jvmti memory");
@@ -1789,7 +1789,7 @@ jvmtiDeallocate(void *ptr)
     if ( ptr == NULL ) {
         return;
     }
-    error = FUNC_PTR(gdata->jvmti,Deallocate)
+    error = JVMTI_FUNC_PTR(gdata->jvmti,Deallocate)
                 (gdata->jvmti, ptr);
     if (error != JVMTI_ERROR_NONE ) {
         EXIT_ERROR(error, "Can't deallocate jvmti memory");
