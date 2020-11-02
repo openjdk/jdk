@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @requires sun.arch.data.model == "64"
  * @run testng TestFunctionDescriptor
  */
 
