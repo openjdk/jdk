@@ -27,6 +27,8 @@ package java.lang.reflect;
 
 import jdk.internal.HotSpotIntrinsicCandidate;
 
+import java.lang.Class;
+
 /**
  * The {@code Array} class provides static methods to dynamically create and
  * access Java arrays.
@@ -116,31 +118,38 @@ class Array {
 
     /**
      * Returns the length of the specified array object, as an {@code int}.
+     * fixme
+     *      返回 array[] 的长度，如果array不是数组[]、则抛异常。
      *
      * @param array the array
      * @return the length of the array
-     * @throws    IllegalArgumentException if the object argument is not
-     * an array
+     * @throws    IllegalArgumentException if the object argument is not an array
      */
     @HotSpotIntrinsicCandidate
     public static native int getLength(Object array)
         throws IllegalArgumentException;
 
     /**
-     * Returns the value of the indexed component in the specified
-     * array object.  The value is automatically wrapped in an object
-     * if it has a primitive type.
+     * Returns the value of the indexed component in the specified array object.
+     * The value is automatically wrapped in an object if it has a primitive type.
+     * 经常先使用{@link java.lang.Class#isArray()}判断后，在使用该方法从中取值。
+     * {@link #getLength(Object)}可以获取到该对象的长度。
      *
      * @param array the array
      * @param index the index
-     * @return the (possibly wrapped) value of the indexed component in
-     * the specified array
+     * @return the (possibly wrapped) value of the indexed component in the specified array
+     *              指定下标的数组元素。
+     *
      * @throws    NullPointerException If the specified object is null
-     * @throws    IllegalArgumentException If the specified object is not
-     * an array
+     *            如果 array对象为null
+     *
+     * @throws    IllegalArgumentException If the specified object is not an array
+     *            fixme array不是数组类型
+     *
      * @throws    ArrayIndexOutOfBoundsException If the specified {@code index}
-     * argument is negative, or if it is greater than or equal to the
-     * length of the specified array
+     *            argument is negative, or if it is greater than or equal to the
+     *            length of the specified array
+     *            fixme index 等于或超过数组大小(index从0开始的)
      */
     public static native Object get(Object array, int index)
         throws IllegalArgumentException, ArrayIndexOutOfBoundsException;

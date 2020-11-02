@@ -4900,6 +4900,8 @@ public class Collections {
 
     /**
      * @serial include
+     *
+     * 单个元素的、不可修改的、可序列化的单元素集合。
      */
     private static class SingletonList<E>
         extends AbstractList<E>
@@ -4932,6 +4934,10 @@ public class Collections {
         public void forEach(Consumer<? super E> action) {
             action.accept(element);
         }
+
+        /**
+         *  ================================ 修改方法都不能用 ================================
+         */
         @Override
         public boolean removeIf(Predicate<? super E> filter) {
             throw new UnsupportedOperationException();
@@ -4940,6 +4946,10 @@ public class Collections {
         public void replaceAll(UnaryOperator<E> operator) {
             throw new UnsupportedOperationException();
         }
+        /**
+         *  ================================ 修改方法都不能用 ================================
+         */
+
         @Override
         public void sort(Comparator<? super E> c) {
         }

@@ -44,6 +44,10 @@ import java.util.function.Consumer;
  * variable-size the programmer must additionally override the
  * {@link #add(int, Object) add(int, E)} and {@link #remove(int)} methods.
  *
+ * 该对象的set()方法默认抛出 UnsupportedOperationException，因此可变的实现必须重写这两个方法。
+ * 如果方法是可变长度的，则需要重写 add() 和 remove()。
+ *
+ *
  * <p>The programmer should generally provide a void (no argument) and collection
  * constructor, as per the recommendation in the {@link Collection} interface
  * specification.

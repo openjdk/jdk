@@ -25,6 +25,7 @@
 
 package java.lang;
 
+import java.lang.Object;
 import java.lang.annotation.Annotation;
 import java.lang.constant.ClassDesc;
 import java.lang.invoke.TypeDescriptor;
@@ -728,9 +729,13 @@ public final class Class<T> implements java.io.Serializable,
 
     /**
      * Determines if this {@code Class} object represents an array class.
+     * 检测当前对象是否是数组、即[]。
+     * 经常和 {@link java.lang.reflect.Array#get(java.lang.Object, int)} 合用：
+     *      判断一个对象是否是数组后取值
      *
      * @return  {@code true} if this {@code Class} object represents an array class;
      *          {@code false} otherwise.
+     *
      * @since   1.1
      */
     @HotSpotIntrinsicCandidate
