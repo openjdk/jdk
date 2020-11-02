@@ -135,8 +135,8 @@
 #else
 #define DO_UPDATE_INSTRUCTION_COUNT(opcode)                                                          \
 {                                                                                                    \
-    BytecodeCounter::_counter_value++;                                                               \
-    BytecodeHistogram::_counters[(Bytecodes::Code)opcode]++;                                         \
+    if (CountBytecodes || TraceBytecodes || StopInterpreterAt) BytecodeCounter::_counter_value++;    \
+    if (PrintBytecodeHistogram) BytecodeHistogram::_counters[(Bytecodes::Code)opcode]++;             \
     if (StopInterpreterAt && StopInterpreterAt == BytecodeCounter::_counter_value) os::breakpoint(); \
     if (TraceBytecodes) {                                                                            \
       CALL_VM((void)InterpreterRuntime::trace_bytecode(THREAD, 0,                    \
