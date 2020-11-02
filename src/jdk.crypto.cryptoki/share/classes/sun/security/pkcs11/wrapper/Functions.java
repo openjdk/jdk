@@ -638,6 +638,7 @@ public class Functions {
         addMapping(mgfNames, mgfIds, id, name);
     }
 
+    // The ordering here follows the PKCS11Constants class
     static {
         addMech(CKM_RSA_PKCS_KEY_PAIR_GEN,      "CKM_RSA_PKCS_KEY_PAIR_GEN");
         addMech(CKM_RSA_PKCS,                   "CKM_RSA_PKCS");
@@ -681,6 +682,28 @@ public class Functions {
         addMech(CKM_SHA512_RSA_PKCS_PSS,        "CKM_SHA512_RSA_PKCS_PSS");
         addMech(CKM_SHA224_RSA_PKCS,            "CKM_SHA224_RSA_PKCS");
         addMech(CKM_SHA224_RSA_PKCS_PSS,        "CKM_SHA224_RSA_PKCS_PSS");
+
+        addMech(CKM_SHA512_224,                 "CKM_SHA512_224");
+        addMech(CKM_SHA512_224_HMAC,            "CKM_SHA512_224_HMAC");
+        addMech(CKM_SHA512_224_HMAC_GENERAL,    "CKM_SHA512_224_HMAC_GENERAL");
+        addMech(CKM_SHA512_224_KEY_DERIVATION,  "CKM_SHA512_224_KEY_DERIVATION");
+        addMech(CKM_SHA512_256,                 "CKM_SHA512_256");
+        addMech(CKM_SHA512_256_HMAC,            "CKM_SHA512_256_HMAC");
+        addMech(CKM_SHA512_256_HMAC_GENERAL,    "CKM_SHA512_256_HMAC_GENERAL");
+        addMech(CKM_SHA512_256_KEY_DERIVATION,  "CKM_SHA512_256_KEY_DERIVATION");
+        addMech(CKM_SHA512_T,                   "CKM_SHA512_T");
+        addMech(CKM_SHA512_T_HMAC,              "CKM_SHA512_T_HMAC");
+        addMech(CKM_SHA512_T_HMAC_GENERAL,      "CKM_SHA512_T_HMAC_GENERAL");
+        addMech(CKM_SHA512_T_KEY_DERIVATION,    "CKM_SHA512_T_KEY_DERIVATION");
+
+        addMech(CKM_SHA3_256_RSA_PKCS,          "CKM_SHA3_256_RSA_PKCS");
+        addMech(CKM_SHA3_384_RSA_PKCS,          "CKM_SHA3_384_RSA_PKCS");
+        addMech(CKM_SHA3_512_RSA_PKCS,          "CKM_SHA3_512_RSA_PKCS");
+        addMech(CKM_SHA3_256_RSA_PKCS_PSS,      "CKM_SHA3_256_RSA_PKCS_PSS");
+        addMech(CKM_SHA3_384_RSA_PKCS_PSS,      "CKM_SHA3_384_RSA_PKCS_PSS");
+        addMech(CKM_SHA3_512_RSA_PKCS_PSS,      "CKM_SHA3_512_RSA_PKCS_PSS");
+        addMech(CKM_SHA3_224_RSA_PKCS,          "CKM_SHA3_224_RSA_PKCS");
+        addMech(CKM_SHA3_224_RSA_PKCS_PSS,      "CKM_SHA3_224_RSA_PKCS_PSS");
 
         addMech(CKM_RC2_KEY_GEN,                "CKM_RC2_KEY_GEN");
         addMech(CKM_RC2_ECB,                    "CKM_RC2_ECB");
@@ -769,28 +792,6 @@ public class Functions {
         addMech(CKM_SHA3_512_HMAC,              "CKM_SHA3_512_HMAC");
         addMech(CKM_SHA3_512_HMAC_GENERAL,      "CKM_SHA3_512_HMAC_GENERAL");
         addMech(CKM_SHA3_512_KEY_GEN,           "CKM_SHA3_512_KEY_GEN");
-
-        addMech(CKM_SHA512_224,                 "CKM_SHA512_224");
-        addMech(CKM_SHA512_224_HMAC,            "CKM_SHA512_224_HMAC");
-        addMech(CKM_SHA512_224_HMAC_GENERAL,    "CKM_SHA512_224_HMAC_GENERAL");
-        addMech(CKM_SHA512_224_KEY_DERIVATION,  "CKM_SHA512_224_KEY_DERIVATION");
-        addMech(CKM_SHA512_256,                 "CKM_SHA512_256");
-        addMech(CKM_SHA512_256_HMAC,            "CKM_SHA512_256_HMAC");
-        addMech(CKM_SHA512_256_HMAC_GENERAL,    "CKM_SHA512_256_HMAC_GENERAL");
-        addMech(CKM_SHA512_256_KEY_DERIVATION,  "CKM_SHA512_256_KEY_DERIVATION");
-        addMech(CKM_SHA512_T,                   "CKM_SHA512_T");
-        addMech(CKM_SHA512_T_HMAC,              "CKM_SHA512_T_HMAC");
-        addMech(CKM_SHA512_T_HMAC_GENERAL,      "CKM_SHA512_T_HMAC_GENERAL");
-        addMech(CKM_SHA512_T_KEY_DERIVATION,    "CKM_SHA512_T_KEY_DERIVATION");
-
-        addMech(CKM_SHA3_256_RSA_PKCS,          "CKM_SHA3_256_RSA_PKCS");
-        addMech(CKM_SHA3_384_RSA_PKCS,          "CKM_SHA3_384_RSA_PKCS");
-        addMech(CKM_SHA3_512_RSA_PKCS,          "CKM_SHA3_512_RSA_PKCS");
-        addMech(CKM_SHA3_256_RSA_PKCS_PSS,      "CKM_SHA3_256_RSA_PKCS_PSS");
-        addMech(CKM_SHA3_384_RSA_PKCS_PSS,      "CKM_SHA3_384_RSA_PKCS_PSS");
-        addMech(CKM_SHA3_512_RSA_PKCS_PSS,      "CKM_SHA3_512_RSA_PKCS_PSS");
-        addMech(CKM_SHA3_224_RSA_PKCS,          "CKM_SHA3_224_RSA_PKCS");
-        addMech(CKM_SHA3_224_RSA_PKCS_PSS,      "CKM_SHA3_224_RSA_PKCS_PSS");
 
         addMech(CKM_CAST_KEY_GEN,               "CKM_CAST_KEY_GEN");
         addMech(CKM_CAST_ECB,                   "CKM_CAST_ECB");

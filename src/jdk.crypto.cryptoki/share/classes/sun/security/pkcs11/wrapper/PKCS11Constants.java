@@ -1267,29 +1267,30 @@ public interface PKCS11Constants {
     public static final long  CKA_NETSCAPE_DB         = 0xD5A0DB00L;
 
     // base number of NSS private attributes
-    public static final long  CKA_NETSCAPE_BASE       = 0x80000000L + 0x4E534350L;
+    public static final long  CKA_NETSCAPE_BASE /*0x80000000L + 0x4E534350L*/
+                                                      = 0xCE534350L;
 
     // object type for NSS trust
-    public static final long  CKO_NETSCAPE_TRUST      = CKA_NETSCAPE_BASE + 3;
+    public static final long  CKO_NETSCAPE_TRUST      = 0xCE534353L;
 
     // base number for NSS trust attributes
-    public static final long  CKA_NETSCAPE_TRUST_BASE = CKA_NETSCAPE_BASE + 0x2000;
+    public static final long  CKA_NETSCAPE_TRUST_BASE = 0xCE536350L;
 
     // attributes for NSS trust
-    public static final long  CKA_NETSCAPE_TRUST_SERVER_AUTH      = CKA_NETSCAPE_TRUST_BASE +   8;
-    public static final long  CKA_NETSCAPE_TRUST_CLIENT_AUTH      = CKA_NETSCAPE_TRUST_BASE +   9;
-    public static final long  CKA_NETSCAPE_TRUST_CODE_SIGNING     = CKA_NETSCAPE_TRUST_BASE +  10;
-    public static final long  CKA_NETSCAPE_TRUST_EMAIL_PROTECTION = CKA_NETSCAPE_TRUST_BASE +  11;
-    public static final long  CKA_NETSCAPE_CERT_SHA1_HASH         = CKA_NETSCAPE_TRUST_BASE + 100;
-    public static final long  CKA_NETSCAPE_CERT_MD5_HASH          = CKA_NETSCAPE_TRUST_BASE + 101;
+    public static final long  CKA_NETSCAPE_TRUST_SERVER_AUTH      = 0xCE536358L;
+    public static final long  CKA_NETSCAPE_TRUST_CLIENT_AUTH      = 0xCE536359L;
+    public static final long  CKA_NETSCAPE_TRUST_CODE_SIGNING     = 0xCE53635AL;
+    public static final long  CKA_NETSCAPE_TRUST_EMAIL_PROTECTION = 0xCE53635BL;
+    public static final long  CKA_NETSCAPE_CERT_SHA1_HASH         = 0xCE5363B4L;
+    public static final long  CKA_NETSCAPE_CERT_MD5_HASH          = 0xCE5363B5L;
 
     // trust values for each of the NSS trust attributes
-    public static final long  CKT_NETSCAPE_TRUSTED           = CKA_NETSCAPE_BASE + 1;
-    public static final long  CKT_NETSCAPE_TRUSTED_DELEGATOR = CKA_NETSCAPE_BASE + 2;
-    public static final long  CKT_NETSCAPE_UNTRUSTED         = CKA_NETSCAPE_BASE + 3;
-    public static final long  CKT_NETSCAPE_MUST_VERIFY       = CKA_NETSCAPE_BASE + 4;
-    public static final long  CKT_NETSCAPE_TRUST_UNKNOWN     = CKA_NETSCAPE_BASE + 5; /* default */
-    public static final long  CKT_NETSCAPE_VALID             = CKA_NETSCAPE_BASE + 10;
-    public static final long  CKT_NETSCAPE_VALID_DELEGATOR   = CKA_NETSCAPE_BASE + 11;
-
+    public static final long  CKT_NETSCAPE_TRUSTED           = 0xCE534351L;
+    public static final long  CKT_NETSCAPE_TRUSTED_DELEGATOR = 0xCE534352L;
+    public static final long  CKT_NETSCAPE_UNTRUSTED         = 0xCE534353L;
+    public static final long  CKT_NETSCAPE_MUST_VERIFY       = 0xCE534354L;
+    public static final long  CKT_NETSCAPE_TRUST_UNKNOWN /* default */
+                                                             = 0xCE534355L;
+    public static final long  CKT_NETSCAPE_VALID             = 0xCE53435AL;
+    public static final long  CKT_NETSCAPE_VALID_DELEGATOR   = 0xCE53435BL;
 }
