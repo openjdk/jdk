@@ -262,7 +262,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier_not_null(MacroAssembl
   __ leave();
 }
 
-void ShenandoahBarrierSetAssembler::load_reference_barrier_native(MacroAssembler* masm, Register dst, Address load_addr, bool maybe_narrow_oop) {
+void ShenandoahBarrierSetAssembler::load_reference_barrier_weak(MacroAssembler* masm, Register dst, Address load_addr, bool maybe_narrow_oop) {
   if (!ShenandoahLoadRefBarrier) {
     return;
   }
@@ -272,7 +272,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier_native(MacroAssembler
   Label is_null;
   Label done;
 
-  __ block_comment("load_reference_barrier_native { ");
+  __ block_comment("load_reference_barrier_weak { ");
 
   __ cbz(dst, is_null);
 
@@ -287,9 +287,9 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier_native(MacroAssembler
   __ mov(rscratch2, dst);
   __ push_call_clobbered_registers();
   if (UseCompressedOops && maybe_narrow_oop) {
-    __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native_narrow));
+    __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak_narrow));
   } else {
-    __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native));
+    __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak));
   }
   __ lea(r1, load_addr);
   __ mov(r0, rscratch2);
@@ -301,7 +301,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier_native(MacroAssembler
   __ bind(done);
   __ leave();
   __ bind(is_null);
-  __ block_comment("} load_reference_barrier_native");
+  __ block_comment("} load_reference_barrier_weak");
 }
 
 void ShenandoahBarrierSetAssembler::storeval_barrier(MacroAssembler* masm, Register dst, Register tmp) {

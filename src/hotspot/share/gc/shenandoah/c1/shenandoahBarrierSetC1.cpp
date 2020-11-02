@@ -278,8 +278,8 @@ void ShenandoahBarrierSetC1::generate_c1_runtime_stubs(BufferBlob* buffer_blob) 
 
     C1ShenandoahLoadReferenceBarrierCodeGenClosure lrb_native_code_gen_cl(ShenandoahBarrierSet::AccessKind::NATIVE);
     _load_reference_barrier_native_rt_code_blob = Runtime1::generate_blob(buffer_blob, -1,
-                                                                   "shenandoah_load_reference_barrier_native_slow",
-                                                                   false, &lrb_native_code_gen_cl);
+                                                                          "shenandoah_load_reference_barrier_native_slow",
+                                                                          false, &lrb_native_code_gen_cl);
 
     C1ShenandoahLoadReferenceBarrierCodeGenClosure lrb_weakref_code_gen_cl(ShenandoahBarrierSet::AccessKind::WEAK);
     _load_reference_barrier_weakref_rt_code_blob = Runtime1::generate_blob(buffer_blob, -1,

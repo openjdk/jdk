@@ -972,13 +972,13 @@ void ShenandoahBarrierC2Support::call_lrb_stub(Node*& ctrl, Node*& val, Node* lo
   const char* name = NULL;
   switch (kind) {
     case ShenandoahBarrierSet::AccessKind::NATIVE:
-      calladdr = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native);
+      calladdr = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak);
       name = "load_reference_barrier_native";
       break;
     case ShenandoahBarrierSet::AccessKind::WEAK:
       calladdr = LP64_ONLY(UseCompressedOops) NOT_LP64(false) ?
-                 CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native_narrow) :
-                 CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native);
+                 CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak_narrow) :
+                 CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak);
       name = "load_reference_barrier_weak";
       break;
     case ShenandoahBarrierSet::AccessKind::NORMAL:
