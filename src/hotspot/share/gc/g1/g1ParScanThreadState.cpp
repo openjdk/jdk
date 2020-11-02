@@ -518,6 +518,9 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
       return obj;
     }
 
+    // StringDedup::is_enabled() and java_lang_String::is_instance_inline
+    // test of the obj, combined into a single comparison, using the klass
+    // already in hand and avoiding the null check in is_instance.
     if (klass == _string_klass_or_null) {
       const bool is_from_young = region_attr.is_young();
       const bool is_to_young = dest_attr.is_young();
