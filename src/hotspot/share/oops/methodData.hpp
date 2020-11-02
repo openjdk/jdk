@@ -2407,7 +2407,6 @@ public:
 
   void clean_method_data(bool always_clean);
   void clean_weak_method_links();
-  DEBUG_ONLY(void verify_clean_weak_method_links();)
   Mutex* extra_data_lock() { return &_extra_data_lock; }
 };
 
