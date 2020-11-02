@@ -216,9 +216,6 @@ class WindowsFileSystem
         if (more.length == 0) {
             path = first;
         } else {
-            if (first == null) {
-                throw new NullPointerException();
-            }
             StringBuilder sb = new StringBuilder();
             sb.append(first);
             for (String segment: more) {
