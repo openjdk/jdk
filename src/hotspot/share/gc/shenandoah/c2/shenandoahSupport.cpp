@@ -956,7 +956,7 @@ void ShenandoahBarrierC2Support::test_in_cset(Node*& ctrl, Node*& not_cset_ctrl,
   phase->register_new_node(cset_bool,      old_ctrl);
 }
 
-void ShenandoahBarrierC2Support::call_lrb_stub(Node*& ctrl, Node*& val, Node* load_addr, Node*& result_mem, Node* raw_mem, bool is_native, PhaseIdealLoop* phase) {
+void ShenandoahBarrierC2Support::call_lrb_stub(Node*& ctrl, Node*& val, Node* load_addr, Node*& result_mem, Node* raw_mem, bool is_weak, PhaseIdealLoop* phase) {
   IdealLoopTree*loop = phase->get_loop(ctrl);
   const TypePtr* obj_type = phase->igvn().type(val)->is_oopptr();
 
@@ -971,9 +971,9 @@ void ShenandoahBarrierC2Support::call_lrb_stub(Node*& ctrl, Node*& val, Node* lo
           CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_narrow) :
           CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier);
 
-  address calladdr = is_native ? CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak)
-                               : target;
-  const char* name = is_native ? "load_reference_barrier_native" : "load_reference_barrier";
+  address calladdr = is_weak ? CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak)
+                             : target;
+  const char* name = is_weak ? "load_reference_barrier_native" : "load_reference_barrier";
   Node* call = new CallLeafNode(ShenandoahBarrierSetC2::shenandoah_load_reference_barrier_Type(), calladdr, name, TypeRawPtr::BOTTOM);
 
   call->init_req(TypeFunc::Control, ctrl);
