@@ -554,54 +554,54 @@ public enum HtmlStyle {
     memberSignature,
 
     /**
-     * The class of a {@code span} element for any annotations in the signature of an element.
+     * The class of a {@code span} element containing any annotations in the signature of an element.
      */
     annotations,
 
     /**
-     * The class of a {@code span} element for any exceptions in a signature of an executable element.
+     * The class of a {@code span} element containing any exceptions in a signature of an executable element.
      */
     exceptions,
 
     /**
-     * The class of a {@code span} element for the {@code extends} or {@code implements} section
+     * The class of a {@code span} element containing the {@code extends} or {@code implements} section
      * in a signature of a type element.
      */
     extendsImplements,
 
     /**
-     * The class of a {@code span} for the member name in the signature of an element.
+     * The class of a {@code span} containing the element name in the element's signature.
      */
     elementName,
 
     /**
-     * The class of a {@code span} for any modifiers in the signature of an element.
+     * The class of a {@code span} containing any modifiers in the signature of an element.
      */
     modifiers,
 
     /**
-     * The class of a {@code span} for any parameters in the signature of an executable element.
+     * The class of a {@code span} containing any parameters in the signature of an executable element.
      */
     parameters,
 
     /**
-     * The class of a {@code span} for the {@code permits} section of a sealed class element.
+     * The class of a {@code span} containing the {@code permits} section of a sealed class element.
      */
     permits,
 
     /**
-     * The class of a {@code span} for the return type in the signature of an method element.
+     * The class of a {@code span} containing the return type in the signature of a method element.
      */
     returnType,
 
     /**
-     * The class of a {@code span} for type parameters in the signature of an element,
+     * The class of a {@code span} containing type parameters in the signature of an element,
      * used when the type parameters should reasonably be displayed inline.
      */
     typeParameters,
 
     /**
-     * The class of a {@code span} for type parameters in the signature of an element,
+     * The class of a {@code span} containing type parameters in the signature of an element,
      * used when the type parameters are too long to be displayed inline.
      * @implNote
      * The threshold for choosing between {@code typeParameters} and {@code typeParametersLong}
