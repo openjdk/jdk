@@ -70,7 +70,7 @@ void set_oop_field<narrowOop>(narrowOop* field, oop value) {
 
 static oop lrb(oop obj) {
   if (obj != NULL && ShenandoahHeap::heap()->marking_context()->is_marked(obj)) {
-    return ShenandoahBarrierSet::barrier_set()->load_reference_barrier_not_null(obj);
+    return ShenandoahBarrierSet::barrier_set()->load_reference_barrier(obj);
   } else {
     return obj;
   }
