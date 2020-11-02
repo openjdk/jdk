@@ -259,15 +259,6 @@ void HeapShared::run_full_gc_in_vm_thread() {
 
 void HeapShared::archive_java_heap_objects(GrowableArray<MemRegion> *closed,
                                            GrowableArray<MemRegion> *open) {
-  if (!is_heap_object_archiving_allowed()) {
-    log_info(cds)(
-      "Archived java heap is not supported as UseG1GC, "
-      "UseCompressedOops and UseCompressedClassPointers are required."
-      "Current settings: UseG1GC=%s, UseCompressedOops=%s, UseCompressedClassPointers=%s.",
-      BOOL_TO_STR(UseG1GC), BOOL_TO_STR(UseCompressedOops),
-      BOOL_TO_STR(UseCompressedClassPointers));
-    return;
-  }
 
   G1HeapVerifier::verify_ready_for_archiving();
 
@@ -1035,7 +1026,13 @@ void HeapShared::init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
     TempNewSymbol field_name =  SymbolTable::new_symbol(info->field_name);
 
     Klass* k = SystemDictionary::resolve_or_null(klass_name, THREAD);
-    assert(k != NULL && !HAS_PENDING_EXCEPTION, "class must exist");
+    if (HAS_PENDING_EXCEPTION) {
+      ResourceMark rm(THREAD);
+      ArchiveUtils::check_for_oom(PENDING_EXCEPTION); // exit on OOM
+      log_info(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
+                    java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
+      vm_exit_during_initialization("VM exits due to exception, use -Xlog:cds,exceptions=trace for detail");
+    }
     InstanceKlass* ik = InstanceKlass::cast(k);
     assert(InstanceKlass::cast(ik)->is_shared_boot_class(),
            "Only support boot classes");
@@ -1052,8 +1049,8 @@ void HeapShared::init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
 }
 
 void HeapShared::init_subgraph_entry_fields(Thread* THREAD) {
+  assert(is_heap_object_archiving_allowed(), "Sanity check");
   _dump_time_subgraph_info_table = new (ResourceObj::C_HEAP, mtClass)DumpTimeKlassSubGraphInfoTable();
-
   init_subgraph_entry_fields(closed_archive_subgraph_entry_fields,
                              num_closed_archive_subgraph_entry_fields,
                              THREAD);
@@ -1068,8 +1065,10 @@ void HeapShared::init_subgraph_entry_fields(Thread* THREAD) {
 }
 
 void HeapShared::init_for_dumping(Thread* THREAD) {
-  _dumped_interned_strings = new (ResourceObj::C_HEAP, mtClass)DumpedInternedStrings();
-  init_subgraph_entry_fields(THREAD);
+  if (is_heap_object_archiving_allowed()) {
+    _dumped_interned_strings = new (ResourceObj::C_HEAP, mtClass)DumpedInternedStrings();
+    init_subgraph_entry_fields(THREAD);
+  }
 }
 
 void HeapShared::archive_object_subgraphs(ArchivableStaticFieldInfo fields[],

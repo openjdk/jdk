@@ -282,8 +282,6 @@ class Compile : public Phase {
   bool                  _do_inlining;           // True if we intend to do inlining
   bool                  _do_scheduling;         // True if we intend to do scheduling
   bool                  _do_freq_based_layout;  // True if we intend to do frequency based block layout
-  bool                  _do_count_invocations;  // True if we generate code to count invocations
-  bool                  _do_method_data_update; // True if we generate code to update MethodData*s
   bool                  _do_vector_loop;        // True if allowed to execute loop in parallel iterations
   bool                  _use_cmove;             // True if CMove should be used without profitability analysis
   bool                  _age_code;              // True if we need to profile code age (decrement the aging counter)
@@ -571,10 +569,6 @@ class Compile : public Phase {
   void          set_do_scheduling(bool z)       { _do_scheduling = z; }
   bool              do_freq_based_layout() const{ return _do_freq_based_layout; }
   void          set_do_freq_based_layout(bool z){ _do_freq_based_layout = z; }
-  bool              do_count_invocations() const{ return _do_count_invocations; }
-  void          set_do_count_invocations(bool z){ _do_count_invocations = z; }
-  bool              do_method_data_update() const { return _do_method_data_update; }
-  void          set_do_method_data_update(bool z) { _do_method_data_update = z; }
   bool              do_vector_loop() const      { return _do_vector_loop; }
   void          set_do_vector_loop(bool z)      { _do_vector_loop = z; }
   bool              use_cmove() const           { return _use_cmove; }

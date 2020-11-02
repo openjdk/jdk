@@ -30,6 +30,7 @@
 
 class ShenandoahGCStateResetter : public StackObj {
 private:
+  ShenandoahHeap* const _heap;
   const char _gc_state;
   const bool _concurrent_weak_root_in_progress;
 

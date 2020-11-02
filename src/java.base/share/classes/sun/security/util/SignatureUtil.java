@@ -283,6 +283,32 @@ public class SignatureUtil {
     }
 
     /**
+     * Extracts the key algorithm name from a signature
+     * algorithm name in either the "DIGESTwithENCRYPTION" or the
+     * "DIGESTwithENCRYPTIONandWHATEVER" format.
+     *
+     * @return the key algorithm name, or null if the input
+     *      is not in either of the formats.
+     */
+    public static String extractKeyAlgFromDwithE(String signatureAlgorithm) {
+        signatureAlgorithm = signatureAlgorithm.toUpperCase(Locale.ENGLISH);
+        int with = signatureAlgorithm.indexOf("WITH");
+        String keyAlgorithm = null;
+        if (with > 0) {
+            int and = signatureAlgorithm.indexOf("AND", with + 4);
+            if (and > 0) {
+                keyAlgorithm = signatureAlgorithm.substring(with + 4, and);
+            } else {
+                keyAlgorithm = signatureAlgorithm.substring(with + 4);
+            }
+            if (keyAlgorithm.equalsIgnoreCase("ECDSA")) {
+                keyAlgorithm = "EC";
+            }
+        }
+        return keyAlgorithm;
+    }
+
+    /**
      * Returns default AlgorithmParameterSpec for a key used in a signature.
      * This is only useful for RSASSA-PSS now, which is the only algorithm
      * that must be initialized with a AlgorithmParameterSpec now.

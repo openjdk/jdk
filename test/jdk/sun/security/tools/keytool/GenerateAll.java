@@ -108,10 +108,9 @@ public class GenerateAll {
             oa.shouldHaveExitValue(0);
             kt("-alias " + alias + " -export -file " + alias + ".crt");
             byte[] crt = Files.readAllBytes(Path.of(alias + ".crt"));
-            ObjectIdentifier oid = oid(expected);
-            DerUtils.checkAlg(crt, "020", oid);     // tbsCertificate.signature
-            DerUtils.checkAlg(crt, "0600", oid);    // tbsCertificate.subjectPublicKeyInfo.algorithm
-            DerUtils.checkAlg(crt, "10", oid);      // signatureAlgorithm
+            DerUtils.checkAlg(crt, "020", expected);     // tbsCertificate.signature
+            DerUtils.checkAlg(crt, "0600", expected);    // tbsCertificate.subjectPublicKeyInfo.algorithm
+            DerUtils.checkAlg(crt, "10", expected);      // signatureAlgorithm
         }
     }
 
@@ -179,18 +178,18 @@ public class GenerateAll {
         }
 
         byte[] crt = read(alias + ".self");
-        DerUtils.checkAlg(crt, "020", oid(sigAlg));  // tbsCertificate.signature
-        DerUtils.checkAlg(crt, "0600", oid(keyAlg)); // tbsCertificate.subjectPublicKeyInfo.algorithm
+        DerUtils.checkAlg(crt, "020", sigAlg);  // tbsCertificate.signature
+        DerUtils.checkAlg(crt, "0600", keyAlg); // tbsCertificate.subjectPublicKeyInfo.algorithm
         assertEquals(
                 DerUtils.innerDerValue(crt, "02"),   // tbsCertificate.signature
                 DerUtils.innerDerValue(crt, "1"));   // signatureAlgorithm
 
         byte[] req = read(alias + ".req");
-        DerUtils.checkAlg(req, "10", oid(sigAlg));   // signatureAlgorithm
-        DerUtils.checkAlg(req, "0200", oid(keyAlg)); // certificationRequestInfo.subjectPKInfo.algorithm
+        DerUtils.checkAlg(req, "10", sigAlg);   // signatureAlgorithm
+        DerUtils.checkAlg(req, "0200", keyAlg); // certificationRequestInfo.subjectPKInfo.algorithm
 
         byte[] crl = read(alias + ".crl");
-        DerUtils.checkAlg(crl, "000", oid(sigAlg));  // tbsCertList.signature
+        DerUtils.checkAlg(crl, "000", sigAlg);  // tbsCertList.signature
         assertEquals(
                 DerUtils.innerDerValue(crl, "00"),   // tbsCertList.signature
                 DerUtils.innerDerValue(crl, "1"));   // signatureAlgorithm
@@ -200,13 +199,13 @@ public class GenerateAll {
                     "META-INF/" + alias.toUpperCase() + "." + ext);
             byte[] p7 = jf.getInputStream(je).readAllBytes();
             // SignerInfo.digestAlgorithm
-            DerUtils.checkAlg(p7, "104020", oid(expDigAlg));
+            DerUtils.checkAlg(p7, "104020", expDigAlg);
             // SignerInfo.signatureAlgorithm
             if (DerUtils.innerDerValue(p7, "10403").isContextSpecific()) {
                 // SignerInfo has signedAttributes at 104030
-                DerUtils.checkAlg(p7, "104040", oid(expEncAlg));
+                DerUtils.checkAlg(p7, "104040", expEncAlg);
             } else {
-                DerUtils.checkAlg(p7, "104030", oid(expEncAlg));
+                DerUtils.checkAlg(p7, "104030", expEncAlg);
             }
         }
     }
@@ -214,14 +213,6 @@ public class GenerateAll {
     @AfterTest
     public void afterTest() throws Exception {
         js("-verify a.jar -verbose -certs");
-    }
-
-    static ObjectIdentifier oid(String name) {
-        return ObjectIdentifier.of(KnownOIDs.findMatch(name));
-    }
-
-    static ObjectIdentifier oid(KnownOIDs ko) {
-        return ObjectIdentifier.of(ko);
     }
 
     static byte[] read(String f) throws IOException {

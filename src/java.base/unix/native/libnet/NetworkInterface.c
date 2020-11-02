@@ -205,7 +205,6 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByName0
     jboolean isCopy;
     const char* name_utf;
     char *colonP;
-    char searchName[IFNAMESIZE];
     jobject obj = NULL;
 
     if (name != NULL) {
@@ -229,15 +228,11 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByName0
 
     // search the list of interfaces based on name,
     // if it is virtual sub interface search with parent first.
-    strncpy(searchName, name_utf, IFNAMESIZE);
-    searchName[IFNAMESIZE - 1] = '\0';
-    colonP = strchr(searchName, ':');
-    if (colonP != NULL) {
-        *colonP = '\0';
-    }
+    colonP = strchr(name_utf, ':');
+    size_t limit = colonP != NULL ? (size_t)(colonP - name_utf) : strlen(name_utf);
     curr = ifs;
     while (curr != NULL) {
-        if (strcmp(searchName, curr->name) == 0) {
+        if (strlen(curr->name) == limit && memcmp(name_utf, curr->name, limit) == 0) {
             break;
         }
         curr = curr->next;
