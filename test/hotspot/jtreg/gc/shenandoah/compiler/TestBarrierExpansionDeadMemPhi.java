@@ -29,7 +29,7 @@
  * @modules java.base/jdk.internal.misc:+open
  *
  * @run main/othervm -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:-TieredCompilation -XX:+UseShenandoahGC TestBarrierExpansionDeadMemPhi
- *                   
+ *
  *
  */
 
@@ -67,7 +67,7 @@ public class TestBarrierExpansionDeadMemPhi {
     static public void main(String[] args) {
         Object[] array = new Object[100];
         Arrays.fill(array, new A());
-        
+
         for (int i = 0; i < 20000; i++) {
             test(array);
         }
