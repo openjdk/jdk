@@ -42,6 +42,7 @@ public interface Supplier<T> {
 
     /**
      * Gets a result.
+     * 可用做异步任务、回调；
      *
      * @return a result
      */

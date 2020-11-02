@@ -26,9 +26,10 @@
 package java.lang;
 
 /**
- * The {@code Void} class is an uninstantiable placeholder class to hold a
- * reference to the {@code Class} object representing the Java keyword
- * void.
+ * The {@code Void} class is an uninstantiable(不可实例化的) placeholder(占位符) class
+ * to hold a reference to the {@code Class} object representing the Java keyword void.
+ *
+ * Void是一个不可实例化的占位符类，用来指向 void 的引用。
  *
  * @author  unascribed
  * @since   1.1
@@ -37,8 +38,9 @@ public final
 class Void {
 
     /**
-     * The {@code Class} object representing the pseudo-type corresponding to
-     * the keyword {@code void}.
+     * The {@code Class} object representing the pseudo-type(伪类型) corresponding to the keyword {@code void}.
+     *
+     * Class<Void>：表示与关键字 void 对应的伪类型的 Class对象。
      */
     @SuppressWarnings("unchecked")
     public static final Class<Void> TYPE = (Class<Void>) Class.getPrimitiveClass("void");

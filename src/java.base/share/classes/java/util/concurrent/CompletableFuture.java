@@ -45,6 +45,16 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
+ * https://cloud.tencent.com/developer/article/1352540
+ * https://dzone.com/articles/20-examples-of-using-javas-completablefuture
+ *
+ * 1. runXX 不支持返回值；CompletetableFuture<Void>;
+ * 2. supplyXX 可以有返回值：CompletetableFuture<T>;
+ * 3. handleXX 处理正常返回和有异常的情况；
+ * 4. thenApplyXX 处理正常结束的情况；
+ * 5. exceptionally 处理异常情况，并返回新值；
+ *
+ *
  * A {@link Future} that may be explicitly completed (setting its
  * value and status), and may be used as a {@link CompletionStage},
  * supporting dependent functions and actions that trigger upon its
@@ -322,7 +332,11 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
                              new CompletionException(x));
     }
 
-    /** Completes with an exceptional result, unless already completed. */
+    /**
+     * Completes with an exceptional result, unless already completed.
+     *
+     * 以给定的异常作为结果，除非任务已经完成。
+     */
     final boolean completeThrowable(Throwable x) {
         return RESULT.compareAndSet(this, null, encodeThrowable(x));
     }
@@ -443,12 +457,14 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
      * Default executor -- ForkJoinPool.commonPool() unless it cannot
      * support parallelism.
      */
-    private static final Executor ASYNC_POOL = USE_COMMON_POOL ?
-        ForkJoinPool.commonPool() : new ThreadPerTaskExecutor();
+    private static final Executor ASYNC_POOL = USE_COMMON_POOL ? ForkJoinPool.commonPool() : new ThreadPerTaskExecutor();
 
     /**
      * Fallback if ForkJoinPool.commonPool() cannot support parallelism
-     */
+     *
+     * 如果 ForkJoinPool.commonPool() 不能用来支持并行，则使用该对象来应急：新建线程执行任务。
+     *
+     * */
     static final class ThreadPerTaskExecutor implements Executor {
         public void execute(Runnable r) {
             new Thread(r).start();
@@ -496,8 +512,8 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
     }
 
     /**
-     * Pops and tries to trigger all reachable dependents.  Call only
-     * when known to be done.
+     * Pops and tries to trigger all reachable dependents.
+     * Call only when known to be done.
      */
     final void postComplete() {
         /*
@@ -505,10 +521,12 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
          * and run.  It is extended along only one path at a time,
          * pushing others to avoid unbounded recursion.
          */
-        CompletableFuture<?> f = this; Completion h;
+        CompletableFuture<?> f = this;
+        Completion h;
         while ((h = f.stack) != null ||
-               (f != this && (h = (f = this).stack) != null)) {
-            CompletableFuture<?> d; Completion t;
+                (f != this && (h = (f = this).stack) != null)) {
+            CompletableFuture<?> d;
+            Completion t;
             if (STACK.compareAndSet(f, h, t = h.next)) {
                 if (t != null) {
                     if (f != this) {
@@ -628,21 +646,32 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
 
     @SuppressWarnings("serial")
     static final class UniApply<T,V> extends UniCompletion<T,V> {
-        Function<? super T,? extends V> fn;
+        Function<? super T, ? extends V> fn;
+
         UniApply(Executor executor, CompletableFuture<V> dep,
                  CompletableFuture<T> src,
-                 Function<? super T,? extends V> fn) {
-            super(executor, dep, src); this.fn = fn;
+                 Function<? super T, ? extends V> fn) {
+            super(executor, dep, src);
+            this.fn = fn;
         }
+
         final CompletableFuture<V> tryFire(int mode) {
-            CompletableFuture<V> d; CompletableFuture<T> a;
-            Object r; Throwable x; Function<? super T,? extends V> f;
-            if ((a = src) == null || (r = a.result) == null
-                || (d = dep) == null || (f = fn) == null)
+            CompletableFuture<V> d;
+            CompletableFuture<T> a;
+            Object r;
+            Throwable x;
+            Function<? super T, ? extends V> f;
+            if ((a = src) == null
+                    || (r = a.result) == null
+                    || (d = dep) == null
+                    || (f = fn) == null) {
                 return null;
-            tryComplete: if (d.result == null) {
+            }
+
+            tryComplete:
+            if (d.result == null) {
                 if (r instanceof AltResult) {
-                    if ((x = ((AltResult)r).ex) != null) {
+                    if ((x = ((AltResult) r).ex) != null) {
                         d.completeThrowable(x, r);
                         break tryComplete;
                     }
@@ -659,19 +688,26 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
                     d.completeThrowable(ex);
                 }
             }
-            src = null; dep = null; fn = null;
+            src = null;
+            dep = null;
+            fn = null;
             return d.postFire(a, mode);
         }
     }
 
-    private <V> CompletableFuture<V> uniApplyStage(
-        Executor e, Function<? super T,? extends V> f) {
-        if (f == null) throw new NullPointerException();
+    private <V> CompletableFuture<V> uniApplyStage(Executor e, Function<? super T, ? extends V> f) {
+
+        if (f == null){
+            throw new NullPointerException();
+        }
+
         Object r;
-        if ((r = result) != null)
+        if ((r = result) != null){
             return uniApplyNow(r, e, f);
+        }
+
         CompletableFuture<V> d = newIncompleteFuture();
-        unipush(new UniApply<T,V>(e, d, this, f));
+        unipush(new UniApply<T, V>(e, d, this, f));
         return d;
     }
 
@@ -737,12 +773,24 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         }
     }
 
-    private CompletableFuture<Void> uniAcceptStage(Executor e,
-                                                   Consumer<? super T> f) {
-        if (f == null) throw new NullPointerException();
+    /**
+     *
+     * @param e
+     * @param f
+     * @return
+     */
+    private CompletableFuture<Void> uniAcceptStage(Executor e, Consumer<? super T> f) {
+        // 处理函数不可为null
+        if (f == null){
+            throw new NullPointerException();
+        }
+
         Object r;
-        if ((r = result) != null)
+        if ((r = result) != null){
             return uniAcceptNow(r, e, f);
+        }
+
+        // 创建一个新的 未完成 的 CompletableFuture对象。
         CompletableFuture<Void> d = newIncompleteFuture();
         unipush(new UniAccept<T>(e, d, this, f));
         return d;
@@ -886,17 +934,17 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         return true;
     }
 
-    private CompletableFuture<T> uniWhenCompleteStage(Executor e, BiConsumer<? super T, ? super Throwable> f) {
+    private CompletableFuture<T> uniWhenCompleteStage(Executor executor, BiConsumer<? super T, ? super Throwable> f) {
         if (f == null) throw new NullPointerException();
         CompletableFuture<T> d = newIncompleteFuture();
         Object r;
         if ((r = result) == null)
-            unipush(new UniWhenComplete<T>(e, d, this, f));
-        else if (e == null)
+            unipush(new UniWhenComplete<T>(executor, d, this, f));
+        else if (executor == null)
             d.uniWhenComplete(r, f, null);
         else {
             try {
-                e.execute(new UniWhenComplete<T>(null, d, this, f));
+                executor.execute(new UniWhenComplete<T>(null, d, this, f));
             } catch (Throwable ex) {
                 d.result = encodeThrowable(ex);
             }
@@ -970,19 +1018,27 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
     @SuppressWarnings("serial")
     static final class UniExceptionally<T> extends UniCompletion<T,T> {
         Function<? super Throwable, ? extends T> fn;
+
         UniExceptionally(Executor executor,
-                         CompletableFuture<T> dep, CompletableFuture<T> src,
+                         CompletableFuture<T> dep,
+                         CompletableFuture<T> src,
                          Function<? super Throwable, ? extends T> fn) {
-            super(executor, dep, src); this.fn = fn;
+            super(executor, dep, src);
+            this.fn = fn;
         }
+
         final CompletableFuture<T> tryFire(int mode) {
-            CompletableFuture<T> d; CompletableFuture<T> a;
-            Object r; Function<? super Throwable, ? extends T> f;
+            CompletableFuture<T> d;
+            CompletableFuture<T> a;
+            Object r;
+            Function<? super Throwable, ? extends T> f;
             if ((a = src) == null || (r = a.result) == null
-                || (d = dep) == null || (f = fn) == null
-                || !d.uniExceptionally(r, f, mode > 0 ? null : this))
+                    || (d = dep) == null || (f = fn) == null
+                    || !d.uniExceptionally(r, f, mode > 0 ? null : this))
                 return null;
-            src = null; dep = null; fn = null;
+            src = null;
+            dep = null;
+            fn = null;
             return d.postFire(a, mode);
         }
     }
@@ -1006,18 +1062,27 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         return true;
     }
 
-    private CompletableFuture<T> uniExceptionallyStage(
-        Executor e, Function<Throwable, ? extends T> f) {
-        if (f == null) throw new NullPointerException();
+    /**
+     *
+     * @param executor 线程池
+     * @param function  R apply(T t);
+     * @return
+     */
+    private CompletableFuture<T> uniExceptionallyStage(Executor executor, Function<Throwable, ? extends T> function) {
+        if (function == null) {
+            throw new NullPointerException();
+        }
+
         CompletableFuture<T> d = newIncompleteFuture();
+
         Object r;
         if ((r = result) == null)
-            unipush(new UniExceptionally<T>(e, d, this, f));
-        else if (e == null)
-            d.uniExceptionally(r, f, null);
-        else {
+            unipush(new UniExceptionally<T>(executor, d, this, function));
+        else if (executor == null) {
+            d.uniExceptionally(r, function, null);
+        } else {
             try {
-                e.execute(new UniExceptionally<T>(null, d, this, f));
+                executor.execute(new UniExceptionally<T>(null, d, this, function));
             } catch (Throwable ex) {
                 d.result = encodeThrowable(ex);
             }
@@ -1756,23 +1821,51 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
 
     /* ------------- Zero-input Async forms -------------- */
 
+    /**
+     * 将 CompletableFuture 包装为一个异步任务。
+     *
+     * @param <T> 任务返回值类型。
+     */
     @SuppressWarnings("serial")
-    static final class AsyncSupply<T> extends ForkJoinTask<Void>
-        implements Runnable, AsynchronousCompletionTask {
-        CompletableFuture<T> dep; Supplier<? extends T> fn;
+    static final class AsyncSupply<T>
+            extends ForkJoinTask<Void>
+            implements Runnable, AsynchronousCompletionTask {
+
+        // 用来保存任务结果
+        CompletableFuture<T> dep;
+
+        // 任务逻辑
+        Supplier<? extends T> fn;
+
         AsyncSupply(CompletableFuture<T> dep, Supplier<? extends T> fn) {
-            this.dep = dep; this.fn = fn;
+            this.dep = dep;
+            this.fn = fn;
         }
 
-        public final Void getRawResult() { return null; }
-        public final void setRawResult(Void v) {}
-        public final boolean exec() { run(); return false; }
+        public final Void getRawResult() {
+            return null;
+        }
+
+        public final void setRawResult(Void v) {
+        }
+
+        public final boolean exec() {
+            run();
+            return false;
+        }
 
         public void run() {
-            CompletableFuture<T> d; Supplier<? extends T> f;
+            CompletableFuture<T> d;
+            Supplier<? extends T> f;
             if ((d = dep) != null && (f = fn) != null) {
-                dep = null; fn = null;
+                dep = null;
+                fn = null;
                 if (d.result == null) {
+                    /**
+                     * 顺利执行完业务逻辑，则将结果设置为 f.get() 的值。
+                     *
+                     * 如果有异常，则将异常设置为结果。
+                     */
                     try {
                         d.completeValue(f.get());
                     } catch (Throwable ex) {
@@ -1784,11 +1877,13 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         }
     }
 
-    static <U> CompletableFuture<U> asyncSupplyStage(Executor e,
-                                                     Supplier<U> f) {
-        if (f == null) throw new NullPointerException();
+    static <U> CompletableFuture<U> asyncSupplyStage(Executor e, Supplier<U> supplier) {
+        if (supplier == null){
+            throw new NullPointerException();
+        }
+
         CompletableFuture<U> d = new CompletableFuture<U>();
-        e.execute(new AsyncSupply<U>(d, f));
+        e.execute(new AsyncSupply<U>(d, supplier));
         return d;
     }
 
@@ -1967,6 +2062,8 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
 
     /**
      * Creates a new incomplete CompletableFuture.
+     *
+     * 创建一个新的 未完成 的 CompletableFuture对象。
      */
     public CompletableFuture() {
     }
@@ -1985,6 +2082,8 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
      * by a task running in the {@link ForkJoinPool#commonPool()} with
      * the value obtained by calling the given Supplier.
      *
+     * 使用默认线程值执行异步任务 supplier。
+     *
      * @param supplier a function returning the value to be used
      * to complete the returned CompletableFuture
      * @param <U> the function's return type
@@ -1999,14 +2098,22 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
      * by a task running in the given executor with the value obtained
      * by calling the given Supplier.
      *
+     * 返回一个CompletableFuture，其值为在给定的线程池中运行的任务(supplier)。
+     *
+     *
      * @param supplier a function returning the value to be used
-     * to complete the returned CompletableFuture
+     *                 to complete the returned CompletableFuture
+     *                 T get(); 异步任务逻辑
+     *
      * @param executor the executor to use for asynchronous execution
+     *                 异步执行任务的线程池
+     *
      * @param <U> the function's return type
+     *           函数的返回值类型
+     *
      * @return the new CompletableFuture
      */
-    public static <U> CompletableFuture<U> supplyAsync(Supplier<U> supplier,
-                                                       Executor executor) {
+    public static <U> CompletableFuture<U> supplyAsync(Supplier<U> supplier, Executor executor) {
         return asyncSupplyStage(screenExecutor(executor), supplier);
     }
 
@@ -2192,13 +2299,23 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         return triggered;
     }
 
-    public <U> CompletableFuture<U> thenApply(
-        Function<? super T,? extends U> fn) {
+    /**
+     *  ================== thenApply 只可以执行正常的任务，任务出现异常则不执行 thenApply 方法。==================
+     */
+
+    public <U> CompletableFuture<U> thenApply(Function<? super T,? extends U> fn) {
         return uniApplyStage(null, fn);
     }
 
-    public <U> CompletableFuture<U> thenApplyAsync(
-        Function<? super T,? extends U> fn) {
+    /**
+     * 使用 fn 对结果在进行处理。
+     *
+     * @param fn  R apply(T t): t 是 this的结果，R是处理后的返回值。
+     *
+     * @param <U>
+     * @return
+     */
+    public <U> CompletableFuture<U> thenApplyAsync(Function<? super T,? extends U> fn) {
         return uniApplyStage(defaultExecutor(), fn);
     }
 
@@ -2207,6 +2324,17 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         return uniApplyStage(screenExecutor(executor), fn);
     }
 
+    /**
+     *  ============================================ end of thenApply =================================================
+     */
+
+
+    /**
+     * 如果执行成功，则使用 action 对结果进行进一步的处理(不修改引用指向的对象)
+     *
+     * @param action 'void accept(T t)'
+     * @return 什么都不返回。
+     */
     public CompletableFuture<Void> thenAccept(Consumer<? super T> action) {
         return uniAcceptStage(null, action);
     }
@@ -2350,7 +2478,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
     }
 
     /**
-     * 任务完成时、在同一个线程进一步的执行一些动作。
+     * 任务完成时、在同一个线程进一步的执行一些动作、没有有效的返回值(void)。
      *
      * @param action  accept(T t, U u)：任务完成时执行的动作、使用完成任务的线程。
      */
@@ -2367,20 +2495,24 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         return uniWhenCompleteStage(screenExecutor(executor), action);
     }
 
-    public <U> CompletableFuture<U> handle(
-        BiFunction<? super T, Throwable, ? extends U> fn) {
+    /**
+     *  ==================================== R apply(T t, U u)：不管是异常还是正常结束，都进一步处理 ==============================
+     */
+
+    public <U> CompletableFuture<U> handle(BiFunction<? super T, Throwable, ? extends U> fn) {
         return uniHandleStage(null, fn);
     }
 
-    public <U> CompletableFuture<U> handleAsync(
-        BiFunction<? super T, Throwable, ? extends U> fn) {
+    public <U> CompletableFuture<U> handleAsync(BiFunction<? super T, Throwable, ? extends U> fn) {
         return uniHandleStage(defaultExecutor(), fn);
     }
 
-    public <U> CompletableFuture<U> handleAsync(
-        BiFunction<? super T, Throwable, ? extends U> fn, Executor executor) {
+    public <U> CompletableFuture<U> handleAsync(BiFunction<? super T, Throwable, ? extends U> fn, Executor executor) {
         return uniHandleStage(screenExecutor(executor), fn);
     }
+    /**
+     *  ==================================== end of handle ==================================================================
+     */
 
     /**
      * Returns this CompletableFuture.
@@ -2391,8 +2523,13 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         return this;
     }
 
-    public CompletableFuture<T> exceptionally(
-        Function<Throwable, ? extends T> fn) {
+    /**
+     * 如果异常结束，则使用指定的函数处理异常、并返回结果
+     *
+     * @param fn 处理函数
+     * @return 包含新结果的异步任务。
+     */
+    public CompletableFuture<T> exceptionally(Function<Throwable, ? extends T> fn) {
         return uniExceptionallyStage(null, fn);
     }
 
@@ -2638,7 +2775,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
     // jdk9 additions
 
     /**
-     * Returns a new incomplete CompletableFuture of the type to be
+     * Returns a new incomplete(未完成) CompletableFuture of the type to be
      * returned by a CompletionStage method. Subclasses should
      * normally override this method to return an instance of the same
      * class as this CompletableFuture. The default implementation
