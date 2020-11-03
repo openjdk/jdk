@@ -22,48 +22,41 @@
  */
 #include <jni.h>
 #include <stdlib.h>
+#include "jlong.h"
 
 #include "points.h"
-
-#ifdef _LP64
-#define JLONG_TO_PTR(value, type) ((type*) (value))
-#define PTR_TO_JLONG(value) ((jlong) (value))
-#else
-#define JLONG_TO_PTR(value, type) ((type*) (jint) (value))
-#define PTR_TO_JLONG(value) ((jlong) (jint) (value))
-#endif
 
 JNIEXPORT jlong JNICALL Java_org_openjdk_bench_jdk_incubator_foreign_points_support_JNIPoint_allocate
   (JNIEnv *env, jclass nativePointClass) {
     Point* p = malloc(sizeof *p);
-    return PTR_TO_JLONG(p);
+    return ptr_to_jlong(p);
 }
 
 JNIEXPORT void JNICALL Java_org_openjdk_bench_jdk_incubator_foreign_points_support_JNIPoint_free
   (JNIEnv *env, jclass cls, jlong thisPoint) {
-    free(JLONG_TO_PTR(thisPoint, Point));
+    free(jlong_to_ptr(thisPoint));
 }
 
 JNIEXPORT jint JNICALL Java_org_openjdk_bench_jdk_incubator_foreign_points_support_JNIPoint_getX
   (JNIEnv *env, jclass cls, jlong thisPoint) {
-    Point* point = JLONG_TO_PTR(thisPoint, Point);
+    Point* point = jlong_to_ptr(thisPoint);
     return point->x;
 }
 
 JNIEXPORT void JNICALL Java_org_openjdk_bench_jdk_incubator_foreign_points_support_JNIPoint_setX
   (JNIEnv *env, jclass cls, jlong thisPoint, jint value) {
-    Point* point = JLONG_TO_PTR(thisPoint, Point);
+    Point* point = jlong_to_ptr(thisPoint);
     point->x = value;
 }
 
 JNIEXPORT jint JNICALL Java_org_openjdk_bench_jdk_incubator_foreign_points_support_JNIPoint_getY
   (JNIEnv *env, jclass cls, jlong thisPoint) {
-    Point* point = JLONG_TO_PTR(thisPoint, Point);
+    Point* point = jlong_to_ptr(thisPoint);
     return point->y;
 }
 
 JNIEXPORT void JNICALL Java_org_openjdk_bench_jdk_incubator_foreign_points_support_JNIPoint_setY
   (JNIEnv *env, jclass cls, jlong thisPoint, jint value) {
-    Point* point = JLONG_TO_PTR(thisPoint, Point);
+    Point* point = jlong_to_ptr(thisPoint);
     point->y = value;
 }
