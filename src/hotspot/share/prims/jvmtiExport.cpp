@@ -1565,6 +1565,12 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
   methodHandle mh(thread, method);
 
   JvmtiThreadState *state = thread->jvmti_thread_state();
+
+  if (state == NULL || !state->is_interp_only_mode()) {
+    // for any thread that actually wants method exit, interp_only_mode is set
+    return;
+  }
+
   // return a flag when a method terminates by throwing an exception
   // i.e. if an exception is thrown and it's not caught by the current method
   bool exception_exit = state->is_exception_detected() && !state->is_exception_caught();
