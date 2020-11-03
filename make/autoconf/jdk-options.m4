@@ -704,3 +704,30 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
   AC_SUBST(SOURCE_DATE)
   AC_SUBST(ENABLE_REPRODUCIBLE_BUILD)
 ])
+
+################################################################################
+#
+# Determine if hsdis should be built, and if so, with which backend.
+#
+AC_DEFUN_ONCE([JDKOPT_SETUP_HSDIS],
+[
+  AC_ARG_WITH([hsdis], [AS_HELP_STRING([--with-hsdis],
+      [what hsdis backend to use ('none', 'bfd') @<:@none@:>@])])
+
+  AC_MSG_CHECKING([what hsdis backend to use])
+
+  if test "x$with_hsdis" = xyes; then
+    AC_MSG_ERROR([--with-hsdis must have a value])
+  elif test "x$with_hsdis" = xnone || test "x$with_hsdis" = x; then
+    HSDIS_BACKEND=none
+    AC_MSG_RESULT(['none', hsdis will not be built])
+  elif test "x$with_hsdis" = xbfd; then
+    HSDIS_BACKEND=bfd
+    AC_MSG_RESULT(['bfd'])
+  else
+    AC_MSG_RESULT([invalid])
+    AC_MSG_ERROR([Incorrect hsdis backend "$with_hsdis"])
+  fi
+
+  AC_SUBST(HSDIS_BACKEND)
+])
