@@ -3276,7 +3276,6 @@ BytecodeInterpreter::print() {
     char *method_name = _method->name_and_sig_as_C_string();
     tty->print_cr("method: " INTPTR_FORMAT "[ %s ]",  (uintptr_t) this->_method, method_name);
   }
-  tty->print_cr("mdx: " INTPTR_FORMAT, (uintptr_t) this->_mdx);
   tty->print_cr("stack: " INTPTR_FORMAT, (uintptr_t) this->_stack);
   tty->print_cr("msg: %s", C_msg(this->_msg));
   tty->print_cr("result_to_call._callee: " INTPTR_FORMAT, (uintptr_t) this->_result._to_call._callee);
