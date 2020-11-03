@@ -2904,7 +2904,9 @@ run:
     // a NULL oop in it and then overwrite the oop later as needed. This isn't
     // unfortunately isn't possible.
 
-    THREAD->clear_pending_exception();
+    if (THREAD->has_pending_exception()) {
+      THREAD->clear_pending_exception();
+    }
 
     //
     // As far as we are concerned we have returned. If we have a pending exception
