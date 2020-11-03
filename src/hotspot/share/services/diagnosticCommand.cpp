@@ -364,8 +364,8 @@ int JVMTIAgentLoadDCmd::num_arguments() {
     return 0;
   }
 }
-#endif // INCLUDE_SERVICES
 #endif // INCLUDE_JVMTI
+#endif // INCLUDE_SERVICES
 
 void PrintSystemPropertiesDCmd::execute(DCmdSource source, TRAPS) {
   // load VMSupport
