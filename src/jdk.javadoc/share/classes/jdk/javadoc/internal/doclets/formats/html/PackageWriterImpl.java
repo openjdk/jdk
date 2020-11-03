@@ -32,6 +32,7 @@ import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
+import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
@@ -142,7 +143,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
      * @param div the content tree to which the deprecation information will be added
      */
     public void addDeprecationInfo(Content div) {
-        List<? extends DocTree> deprs = utils.getBlockTags(packageElement, DocTree.Kind.DEPRECATED);
+        List<? extends DeprecatedTree> deprs = utils.getDeprecatedTrees(packageElement);
         if (utils.isDeprecated(packageElement)) {
             CommentHelper ch = utils.getCommentHelper(packageElement);
             HtmlTree deprDiv = new HtmlTree(TagName.DIV);
@@ -223,7 +224,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
                 ContentBuilder description = new ContentBuilder();
                 if (utils.isDeprecated(klass)) {
                     description.add(getDeprecatedPhrase(klass));
-                    List<? extends DocTree> tags = utils.getDeprecatedTrees(klass);
+                    List<? extends DeprecatedTree> tags = utils.getDeprecatedTrees(klass);
                     if (!tags.isEmpty()) {
                         addSummaryDeprecatedComment(klass, tags.get(0), description);
                     }

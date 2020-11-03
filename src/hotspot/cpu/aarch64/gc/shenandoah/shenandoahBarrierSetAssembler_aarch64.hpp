@@ -59,7 +59,7 @@ private:
   void resolve_forward_pointer_not_null(MacroAssembler* masm, Register dst, Register tmp = noreg);
   void load_reference_barrier(MacroAssembler* masm, Register dst, Address load_addr);
   void load_reference_barrier_not_null(MacroAssembler* masm, Register dst, Address load_addr);
-  void load_reference_barrier_native(MacroAssembler* masm, Register dst, Address load_addr);
+  void load_reference_barrier_weak(MacroAssembler* masm, Register dst, Address load_addr);
 
   address generate_shenandoah_lrb(StubCodeGenerator* cgen);
 
@@ -72,7 +72,7 @@ public:
   void gen_pre_barrier_stub(LIR_Assembler* ce, ShenandoahPreBarrierStub* stub);
   void gen_load_reference_barrier_stub(LIR_Assembler* ce, ShenandoahLoadReferenceBarrierStub* stub);
   void generate_c1_pre_barrier_runtime_stub(StubAssembler* sasm);
-  void generate_c1_load_reference_barrier_runtime_stub(StubAssembler* sasm, bool is_native);
+  void generate_c1_load_reference_barrier_runtime_stub(StubAssembler* sasm, bool is_weak);
 #endif
 
   virtual void arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
