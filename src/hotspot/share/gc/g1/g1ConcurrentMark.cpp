@@ -1166,6 +1166,8 @@ void G1ConcurrentMark::remark() {
     assert(!restart_for_overflow(), "sanity");
     // Completely reset the marking state since marking completed
     reset_at_marking_complete();
+
+    _g1h->uncommit_heap_if_necessary();
   } else {
     // We overflowed.  Restart concurrent marking.
     _restart_for_overflow = true;

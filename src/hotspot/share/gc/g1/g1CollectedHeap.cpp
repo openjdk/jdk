@@ -64,6 +64,7 @@
 #include "gc/g1/g1Trace.hpp"
 #include "gc/g1/g1YCTypes.hpp"
 #include "gc/g1/g1ServiceThread.hpp"
+#include "gc/g1/g1UncommitRegionTask.hpp"
 #include "gc/g1/g1VMOperations.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
@@ -810,6 +811,8 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion* ranges, size_t count) {
   if (shrink_count != 0) {
     log_debug(gc, ergo, heap)("Attempt heap shrinking (archive regions). Total size: " SIZE_FORMAT "B",
                               HeapRegion::GrainWords * HeapWordSize * shrink_count);
+    // Explicit uncommit.
+    _hrm->uncommit_inactive_regions((uint) shrink_count);
   }
   decrease_used(size_used);
 }
@@ -2657,6 +2660,12 @@ void G1CollectedHeap::gc_epilogue(bool full) {
   _numa->print_statistics();
 
   _collection_pause_end = Ticks::now();
+}
+
+void G1CollectedHeap::uncommit_heap_if_necessary() {
+  if (hrm()->has_inactive_regions()) {
+    G1UncommitRegionTask::activate();
+  }
 }
 
 void G1CollectedHeap::verify_numa_regions(const char* desc) {

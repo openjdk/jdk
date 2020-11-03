@@ -192,6 +192,8 @@ void G1FullCollector::complete_collection() {
   _heap->verify_after_full_collection();
 
   _heap->print_heap_after_full_collection(scope()->heap_transition());
+
+  _heap->uncommit_heap_if_necessary();
 }
 
 void G1FullCollector::phase1_mark_live_objects() {
