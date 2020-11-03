@@ -131,7 +131,9 @@ public class XMLEventAllocatorImpl implements XMLEventAllocator {
                 } else {
                     sdEvent.setDeclaredEncoding(false);
                 }
-                sdEvent.setStandalone(streamReader.isStandalone());
+                if (streamReader.standaloneSet()) {
+                    sdEvent.setStandalone(streamReader.isStandalone());
+                }
                 sdEvent.setLocation(streamReader.getLocation());
                 event = sdEvent;
                 break;
