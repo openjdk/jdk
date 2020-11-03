@@ -292,7 +292,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   __ jcc(Assembler::zero, heap_stable);
 
   Register tmp1 = noreg;
-  if (kind != ShenandoahBarrierSet::AccessKind::NORMAL) {
+  if (kind == ShenandoahBarrierSet::AccessKind::NORMAL) {
     // Test for object in cset
     // Allocate tmp-reg.
     for (int i = 0; i < 8; i++) {
@@ -382,7 +382,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
 
   __ bind(not_cset);
 
-  if  (kind != ShenandoahBarrierSet::AccessKind::NORMAL) {
+  if  (kind == ShenandoahBarrierSet::AccessKind::NORMAL) {
     __ pop(tmp1);
   }
 

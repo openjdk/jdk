@@ -252,7 +252,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   __ mov(r0, dst);
 
   // Test for in-cset
-  if (kind != ShenandoahBarrierSet::AccessKind::NORMAL) {
+  if (kind == ShenandoahBarrierSet::AccessKind::NORMAL) {
     __ mov(rscratch2, ShenandoahHeap::in_cset_fast_test_addr());
     __ lsr(rscratch1, r0, ShenandoahHeapRegion::region_size_bytes_shift_jint());
     __ ldrb(rscratch2, Address(rscratch2, rscratch1));
