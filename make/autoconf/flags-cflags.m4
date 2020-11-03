@@ -663,14 +663,10 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
   $1_DEFINES_CPU_JDK="${$1_DEFINES_CPU_JDK} -DARCH='\"$FLAGS_CPU_LEGACY\"' \
       -D$FLAGS_CPU_LEGACY"
 
-  if test "x$FLAGS_CPU_BITS" = x64; then
-    if test "x$FLAGS_OS" = xlinux || test "x$FLAGS_OS" = xmacosx || test "x$FLAGS_OS" = xwindows; then
-      $1_DEFINES_CPU_JDK="${$1_DEFINES_CPU_JDK} -D_LP64=1"
-    fi
-    if test "x$FLAGS_OS" != xaix; then
-      # xlc on AIX defines _LP64=1 by default and issues a warning if we redefine it.
-      $1_DEFINES_CPU_JVM="${$1_DEFINES_CPU_JVM} -D_LP64=1"
-    fi
+  if test "x$FLAGS_CPU_BITS" = x64 && test "x$FLAGS_OS" != xaix; then
+    # xlc on AIX defines _LP64=1 by default and issues a warning if we redefine it.
+    $1_DEFINES_CPU_JDK="${$1_DEFINES_CPU_JDK} -D_LP64=1"
+    $1_DEFINES_CPU_JVM="${$1_DEFINES_CPU_JVM} -D_LP64=1"
   fi
 
   # toolchain dependend, per-cpu
