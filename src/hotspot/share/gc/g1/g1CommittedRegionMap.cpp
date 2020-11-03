@@ -30,6 +30,12 @@
 #include "runtime/safepoint.hpp"
 #include "utilities/debug.hpp"
 
+HeapRegionRange::HeapRegionRange(uint start, uint end) :
+    _start(start),
+    _end(end) {
+  assert(start <= end, "Invariant");
+}
+
 G1CommittedRegionMap::G1CommittedRegionMap() :
   _active(mtGC),
   _inactive(mtGC),

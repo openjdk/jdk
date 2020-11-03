@@ -61,10 +61,6 @@ public:
   const char* get_description() { return "Free Regions"; }
 };
 
-HeapRegionRange::HeapRegionRange(uint start, uint end) : _start(start), _end(end) {
-  assert(start <= end, "Invariant");
-}
-
 HeapRegionManager::HeapRegionManager() :
   _bot_mapper(NULL),
   _cardtable_mapper(NULL),
