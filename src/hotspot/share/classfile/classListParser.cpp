@@ -37,6 +37,7 @@
 #include "interpreter/linkResolver.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
+#include "memory/archiveUtils.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.hpp"
@@ -115,13 +116,6 @@ bool ClassListParser::parse_one_line() {
       _line_len = len;
     }
 
-    // Check if the line is output TRACE_RESOLVE
-    if (strncmp(_line, LambdaFormInvokers::lambda_form_invoker_tag(),
-                strlen(LambdaFormInvokers::lambda_form_invoker_tag())) == 0) {
-      LambdaFormInvokers::append(os::strdup((const char*)_line, mtInternal));
-      continue;
-    }
-
     // valid line
     break;
   }
@@ -133,6 +127,7 @@ bool ClassListParser::parse_one_line() {
   _source = NULL;
   _interfaces_specified = false;
   _indy_items->clear();
+  _lambda_form_line = false;
 
   if (_line[0] == '@') {
     return parse_at_tags();
@@ -185,8 +180,8 @@ bool ClassListParser::parse_one_line() {
   return true;
 }
 
-void ClassListParser::split_tokens_by_whitespace() {
-  int start = 0;
+void ClassListParser::split_tokens_by_whitespace(int offset) {
+  int start = offset;
   int end;
   bool done = false;
   while (!done) {
@@ -203,19 +198,40 @@ void ClassListParser::split_tokens_by_whitespace() {
   }
 }
 
+int ClassListParser::split_at_tag_from_line() {
+  _token = _line;
+  char* ptr;
+  if ((ptr = strchr(_line, ' ')) == NULL) {
+    error("Too few items following the @ tag \"%s\" line #%d", _line, _line_no);
+    return 0;
+  }
+  *ptr++ = '\0';
+  while (*ptr == ' ' || *ptr == '\t') ptr++;
+  return (int)(ptr - _line);
+}
+
 bool ClassListParser::parse_at_tags() {
   assert(_line[0] == '@', "must be");
-  split_tokens_by_whitespace();
-  if (strcmp(_indy_items->at(0), LAMBDA_PROXY_TAG) == 0) {
-    if (_indy_items->length() < 3) {
-      error("Line with @ tag has too few items \"%s\" line #%d", _line, _line_no);
+  int offset;
+  if ((offset = split_at_tag_from_line()) == 0) {
+    return false;
+  }
+
+  if (strcmp(_token, LAMBDA_PROXY_TAG) == 0) {
+    split_tokens_by_whitespace(offset);
+    if (_indy_items->length() < 2) {
+      error("Line with @ tag has too few items \"%s\" line #%d", _token, _line_no);
       return false;
     }
     // set the class name
-    _class_name = _indy_items->at(1);
+    _class_name = _indy_items->at(0);
+    return true;
+  } else if (strcmp(_token, LAMBDA_FORM_TAG) == 0) {
+    LambdaFormInvokers::append(os::strdup((const char*)(_line + offset), mtInternal));
+    _lambda_form_line = true;
     return true;
   } else {
-    error("Invalid @ tag at the beginning of line \"%s\" line #%d", _line, _line_no);
+    error("Invalid @ tag at the beginning of line \"%s\" line #%d", _token, _line_no);
     return false;
   }
 }
@@ -432,7 +448,7 @@ bool ClassListParser::is_matching_cp_entry(constantPoolHandle &pool, int cp_inde
   CDSIndyInfo cii;
   populate_cds_indy_info(pool, cp_index, &cii, THREAD);
   GrowableArray<const char*>* items = cii.items();
-  int indy_info_offset = 2;
+  int indy_info_offset = 1;
   if (_indy_items->length() - indy_info_offset != items->length()) {
     return false;
   }
@@ -557,6 +573,7 @@ Klass* ClassListParser::load_current_class(TRAPS) {
       klass = java_lang_Class::as_Klass(obj);
     } else { // load classes in bootclasspath/a
       if (HAS_PENDING_EXCEPTION) {
+        ArchiveUtils::check_for_oom(PENDING_EXCEPTION); // exit on OOM
         CLEAR_PENDING_EXCEPTION;
       }
 
@@ -567,6 +584,8 @@ Klass* ClassListParser::load_current_class(TRAPS) {
         } else {
           if (!HAS_PENDING_EXCEPTION) {
             THROW_NULL(vmSymbols::java_lang_ClassNotFoundException());
+          } else {
+            ArchiveUtils::check_for_oom(PENDING_EXCEPTION); // exit on OOM
           }
         }
       }
@@ -575,6 +594,9 @@ Klass* ClassListParser::load_current_class(TRAPS) {
     // If "source:" tag is specified, all super class and super interfaces must be specified in the
     // class list file.
     klass = load_class_from_source(class_name_symbol, CHECK_NULL);
+    if (HAS_PENDING_EXCEPTION) {
+      ArchiveUtils::check_for_oom(PENDING_EXCEPTION); // exit on OOM
+    }
   }
 
   if (klass != NULL && klass->is_instance_klass() && is_id_specified()) {

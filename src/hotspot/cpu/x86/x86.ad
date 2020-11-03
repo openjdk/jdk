@@ -4425,8 +4425,7 @@ instruct insert8D(vec dst, vec src, regD val, immI idx, rRegL tmp, legVec vtmp) 
 // =======================Int Reduction==========================================
 
 instruct reductionI(rRegI dst, rRegI src1, legVec src2, legVec vtmp1, legVec vtmp2) %{
-  predicate(vector_element_basic_type(n->in(2)) == T_INT &&
-            vector_length(n->in(2)) <= 16); // src2
+  predicate(vector_element_basic_type(n->in(2)) == T_INT); // src2
   match(Set dst (AddReductionVI src1 src2));
   match(Set dst (MulReductionVI src1 src2));
   match(Set dst (AndReductionV  src1 src2));
@@ -4447,9 +4446,8 @@ instruct reductionI(rRegI dst, rRegI src1, legVec src2, legVec vtmp1, legVec vtm
 // =======================Long Reduction==========================================
 
 #ifdef _LP64
-instruct reductionL(rRegL dst, rRegL src1, vec src2, vec vtmp1, vec vtmp2) %{
-  predicate(vector_element_basic_type(n->in(2)) == T_LONG &&
-            vector_length(n->in(2)) < 8); // src2
+instruct reductionL(rRegL dst, rRegL src1, legVec src2, legVec vtmp1, legVec vtmp2) %{
+  predicate(vector_element_basic_type(n->in(2)) == T_LONG && !VM_Version::supports_avx512dq());
   match(Set dst (AddReductionVL src1 src2));
   match(Set dst (MulReductionVL src1 src2));
   match(Set dst (AndReductionV  src1 src2));
@@ -4467,9 +4465,8 @@ instruct reductionL(rRegL dst, rRegL src1, vec src2, vec vtmp1, vec vtmp2) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct reduction8L(rRegL dst, rRegL src1, legVec src2, legVec vtmp1, legVec vtmp2) %{
-  predicate(vector_element_basic_type(n->in(2)) == T_LONG &&
-            vector_length(n->in(2)) == 8); // src2
+instruct reductionL_avx512dq(rRegL dst, rRegL src1, vec src2, vec vtmp1, vec vtmp2) %{
+  predicate(vector_element_basic_type(n->in(2)) == T_LONG && VM_Version::supports_avx512dq());
   match(Set dst (AddReductionVL src1 src2));
   match(Set dst (MulReductionVL src1 src2));
   match(Set dst (AndReductionV  src1 src2));
@@ -4579,9 +4576,8 @@ instruct reduction8D(regD dst, legVec src, legVec vtmp1, legVec vtmp2) %{
 // =======================Byte Reduction==========================================
 
 #ifdef _LP64
-instruct reductionB(rRegI dst, rRegI src1, vec src2, vec vtmp1, vec vtmp2) %{
-  predicate(vector_element_basic_type(n->in(2)) == T_BYTE &&
-            vector_length(n->in(2)) <= 32); // src2
+instruct reductionB(rRegI dst, rRegI src1, legVec src2, legVec vtmp1, legVec vtmp2) %{
+  predicate(vector_element_basic_type(n->in(2)) == T_BYTE && !VM_Version::supports_avx512bw());
   match(Set dst (AddReductionVI src1 src2));
   match(Set dst (AndReductionV  src1 src2));
   match(Set dst ( OrReductionV  src1 src2));
@@ -4598,9 +4594,8 @@ instruct reductionB(rRegI dst, rRegI src1, vec src2, vec vtmp1, vec vtmp2) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct reduction64B(rRegI dst, rRegI src1, legVec src2, legVec vtmp1, legVec vtmp2) %{
-  predicate(vector_element_basic_type(n->in(2)) == T_BYTE &&
-            vector_length(n->in(2)) == 64); // src2
+instruct reductionB_avx512bw(rRegI dst, rRegI src1, vec src2, vec vtmp1, vec vtmp2) %{
+  predicate(vector_element_basic_type(n->in(2)) == T_BYTE && VM_Version::supports_avx512bw());
   match(Set dst (AddReductionVI src1 src2));
   match(Set dst (AndReductionV  src1 src2));
   match(Set dst ( OrReductionV  src1 src2));
@@ -4621,8 +4616,7 @@ instruct reduction64B(rRegI dst, rRegI src1, legVec src2, legVec vtmp1, legVec v
 // =======================Short Reduction==========================================
 
 instruct reductionS(rRegI dst, rRegI src1, legVec src2, legVec vtmp1, legVec vtmp2) %{
-  predicate(vector_element_basic_type(n->in(2)) == T_SHORT &&
-            vector_length(n->in(2)) <= 32); // src2
+  predicate(vector_element_basic_type(n->in(2)) == T_SHORT); // src2
   match(Set dst (AddReductionVI src1 src2));
   match(Set dst (MulReductionVI src1 src2));
   match(Set dst (AndReductionV  src1 src2));
@@ -5452,7 +5446,7 @@ instruct vmulL_mem(vec dst, vec src, memory mem) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct mul2L_reg(vec dst, vec src2, vec tmp) %{
+instruct mul2L_reg(vec dst, vec src2, legVec tmp) %{
   predicate(vector_length(n) == 2 && !VM_Version::supports_avx512dq());
   match(Set dst (MulVL dst src2));
   effect(TEMP dst, TEMP tmp);
@@ -5478,7 +5472,7 @@ instruct mul2L_reg(vec dst, vec src2, vec tmp) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct vmul4L_reg_avx(vec dst, vec src1, vec src2, vec tmp, vec tmp1) %{
+instruct vmul4L_reg_avx(vec dst, vec src1, vec src2, legVec tmp, legVec tmp1) %{
   predicate(vector_length(n) == 4 && !VM_Version::supports_avx512dq());
   match(Set dst (MulVL src1 src2));
   effect(TEMP tmp1, TEMP tmp);
@@ -6963,6 +6957,7 @@ instruct extractI(rRegI dst, legVec src, immU8 idx) %{
 #ifdef _LP64
   match(Set dst (ExtractB src idx));
 #endif
+  format %{ "extractI $dst,$src,$idx\t!" %}
   ins_encode %{
     assert($idx$$constant < (int)vector_length(this, $src), "out of bounds");
 
@@ -6981,6 +6976,7 @@ instruct vextractI(rRegI dst, legVec src, immI idx, legVec vtmp) %{
   match(Set dst (ExtractB src idx));
 #endif
   effect(TEMP vtmp);
+  format %{ "vextractI $dst,$src,$idx\t! using $vtmp as TEMP" %}
   ins_encode %{
     assert($idx$$constant < (int)vector_length(this, $src), "out of bounds");
 
@@ -6995,6 +6991,7 @@ instruct vextractI(rRegI dst, legVec src, immI idx, legVec vtmp) %{
 instruct extractL(rRegL dst, legVec src, immU8 idx) %{
   predicate(vector_length(n->in(1)) <= 2); // src
   match(Set dst (ExtractL src idx));
+  format %{ "extractL $dst,$src,$idx\t!" %}
   ins_encode %{
     assert(UseSSE >= 4, "required");
     assert($idx$$constant < (int)vector_length(this, $src), "out of bounds");
@@ -7009,6 +7006,7 @@ instruct vextractL(rRegL dst, legVec src, immU8 idx, legVec vtmp) %{
             vector_length(n->in(1)) == 8);  // src
   match(Set dst (ExtractL src idx));
   effect(TEMP vtmp);
+  format %{ "vextractL $dst,$src,$idx\t! using $vtmp as TEMP" %}
   ins_encode %{
     assert($idx$$constant < (int)vector_length(this, $src), "out of bounds");
 
@@ -7023,6 +7021,7 @@ instruct extractF(legRegF dst, legVec src, immU8 idx, rRegI tmp, legVec vtmp) %{
   predicate(vector_length(n->in(1)) <= 4);
   match(Set dst (ExtractF src idx));
   effect(TEMP dst, TEMP tmp, TEMP vtmp);
+  format %{ "extractF $dst,$src,$idx\t! using $tmp, $vtmp as TEMP" %}
   ins_encode %{
     assert($idx$$constant < (int)vector_length(this, $src), "out of bounds");
 
@@ -7036,6 +7035,7 @@ instruct vextractF(legRegF dst, legVec src, immU8 idx, rRegI tmp, legVec vtmp) %
             vector_length(n->in(1)/*src*/) == 16);
   match(Set dst (ExtractF src idx));
   effect(TEMP tmp, TEMP vtmp);
+  format %{ "vextractF $dst,$src,$idx\t! using $tmp, $vtmp as TEMP" %}
   ins_encode %{
     assert($idx$$constant < (int)vector_length(this, $src), "out of bounds");
 
@@ -7048,6 +7048,7 @@ instruct vextractF(legRegF dst, legVec src, immU8 idx, rRegI tmp, legVec vtmp) %
 instruct extractD(legRegD dst, legVec src, immU8 idx) %{
   predicate(vector_length(n->in(1)) == 2); // src
   match(Set dst (ExtractD src idx));
+  format %{ "extractD $dst,$src,$idx\t!" %}
   ins_encode %{
     assert($idx$$constant < (int)vector_length(this, $src), "out of bounds");
 
@@ -7061,6 +7062,7 @@ instruct vextractD(legRegD dst, legVec src, immU8 idx, legVec vtmp) %{
             vector_length(n->in(1)) == 8);  // src
   match(Set dst (ExtractD src idx));
   effect(TEMP vtmp);
+  format %{ "vextractD $dst,$src,$idx\t! using $vtmp as TEMP" %}
   ins_encode %{
     assert($idx$$constant < (int)vector_length(this, $src), "out of bounds");
 
