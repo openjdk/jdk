@@ -40,6 +40,11 @@ protected:
   static int _revision;
   static int _stepping;
 
+  // Used to decide CPU_A53MAC feature of some single-core CPUs. Note this
+  // value may be bigger than os::processor_count, which is number of online
+  // cores on Linux, see JDK-8255716.
+  static int _max_cpu_cores;
+
   static int _zva_length;
   static int _dcache_line_size;
   static int _icache_line_size;

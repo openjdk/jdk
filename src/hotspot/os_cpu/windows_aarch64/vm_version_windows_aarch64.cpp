@@ -96,4 +96,6 @@ void VM_Version::get_os_cpu_info() {
       _revision = si.wProcessorRevision & 0xFF;
     }
   }
+
+  _max_cpu_cores = os::processor_count();
 }
