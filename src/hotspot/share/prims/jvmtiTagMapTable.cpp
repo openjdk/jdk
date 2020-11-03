@@ -49,7 +49,6 @@ oop JvmtiTagMapEntry::object_no_keepalive() {
 JvmtiTagMapTable::JvmtiTagMapTable()
   : Hashtable<WeakHandle, mtServiceability>(_table_size, sizeof(JvmtiTagMapEntry)) {}
 
-
 JvmtiTagMapTable::~JvmtiTagMapTable() {
   // Delete this table
   log_debug(jvmti, table)("JvmtiTagMapTable deleted");
@@ -162,6 +161,7 @@ void JvmtiTagMapTable::entry_iterate(JvmtiTagMapEntryClosure* closure) {
     }
   }
 }
+
 const int _resize_load_trigger = 5;       // load factor that will trigger the resize
 static bool _resizable = true;
 
@@ -221,7 +221,6 @@ void JvmtiTagMapTable::unlink_and_post(JvmtiEnv* env) {
 
 // Rehash oops in the table
 void JvmtiTagMapTable::rehash() {
-
   ResourceMark rm;
   GrowableArray<JvmtiTagMapEntry*> moved_entries;
 
@@ -255,7 +254,7 @@ void JvmtiTagMapTable::rehash() {
 
   int rehash_len = moved_entries.length();
   // Now add back in the entries that were removed.
-  for (int i = 0; i < moved_entries.length(); i++) {
+  for (int i = 0; i < rehash_len; i++) {
     JvmtiTagMapEntry* moved_entry = moved_entries.at(i);
     int index = hash_to_index(moved_entry->hash());
     Hashtable<WeakHandle, mtServiceability>::add_entry(index, moved_entry);

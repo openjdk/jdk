@@ -653,7 +653,6 @@ static int checkGeneratedEvents() {
     if (!NSK_VERIFY(GarbageCollectionFinishEventsCount != 0))
         result = NSK_FALSE;
 
-    printf("Object free events %d\n", ObjectFreeEventsCount);
     NSK_DISPLAY1("ObjectFree events received: %d\n",
         ObjectFreeEventsCount);
     if (!NSK_VERIFY(ObjectFreeEventsCount != 0))

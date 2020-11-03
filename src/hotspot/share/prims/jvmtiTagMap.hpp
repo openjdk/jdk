@@ -110,7 +110,7 @@ class JvmtiTagMap :  public CHeapObj<mtInternal> {
   void unlink_and_post_locked();
 
   static void check_hashmaps_for_heapwalk();
-  static void set_needs_processing() NOT_JVMTI_RETURN;
+  static void set_needs_rehashing() NOT_JVMTI_RETURN;
   static void gc_notification(size_t num_dead_entries) NOT_JVMTI_RETURN;
 };
 

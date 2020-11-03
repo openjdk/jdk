@@ -1756,7 +1756,7 @@ void ShenandoahHeap::op_final_mark() {
       }
 
       // Notify JVMTI that oops are changed.
-      JvmtiTagMap::set_needs_processing();
+      JvmtiTagMap::set_needs_rehashing();
 
       if (ShenandoahPacing) {
         pacer()->setup_for_evac();

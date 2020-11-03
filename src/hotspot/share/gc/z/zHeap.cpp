@@ -417,7 +417,7 @@ void ZHeap::relocate_start() {
   ZStatHeap::set_at_relocate_start(capacity(), allocated(), used());
 
   // Notify JVMTI
-  JvmtiTagMap::set_needs_processing();
+  JvmtiTagMap::set_needs_rehashing();
 }
 
 void ZHeap::relocate() {

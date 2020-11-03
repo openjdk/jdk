@@ -343,7 +343,7 @@ void JvmtiTagMap::set_tag(jobject object, jlong tag) {
   // SetTag should not post events because the JavaThread has to
   // transition to native for the callback and this cannot stop for
   // safepoints with the hashmap lock held.
-  check_hashmap(false);
+  check_hashmap(/*post_events*/ false);
 
   // resolve the object
   oop o = JNIHandles::resolve_non_null(object);
@@ -378,7 +378,7 @@ jlong JvmtiTagMap::get_tag(jobject object) {
   // GetTag should not post events because the JavaThread has to
   // transition to native for the callback and this cannot stop for
   // safepoints with the hashmap lock held.
-  check_hashmap(false);
+  check_hashmap(/*post_events*/ false);
 
   // resolve the object
   oop o = JNIHandles::resolve_non_null(object);
@@ -1036,7 +1036,7 @@ void IterateThroughHeapObjectClosure::do_object(oop obj) {
   if (is_filtered_by_klass_filter(obj, klass())) return;
 
   // skip if object is a dormant shared object whose mirror hasn't been loaded
-  if (obj != NULL && obj->klass()->java_mirror() == NULL) {
+  if (obj != NULL &&   obj->klass()->java_mirror() == NULL) {
     log_debug(cds, heap)("skipped dormant archived object " INTPTR_FORMAT " (%s)", p2i(obj),
                          obj->klass()->external_name());
     return;
@@ -1152,7 +1152,6 @@ void JvmtiTagMap::iterate_through_heap(jint heap_filter,
 
 void JvmtiTagMap::unlink_and_post_locked() {
   MutexLocker ml(lock(), Mutex::_no_safepoint_check_flag);
-  log_info(jvmti, table)("TagMap table needs posting before GetObjectsWithTags");
   hashmap()->unlink_and_post(env());
 }
 
@@ -1162,6 +1161,7 @@ class VM_JvmtiPostObjectFree: public VM_Operation {
   VM_JvmtiPostObjectFree(JvmtiTagMap* tag_map) : _tag_map(tag_map) {}
   VMOp_Type type() const { return VMOp_Cleanup; }
   void doit() {
+    log_info(jvmti, table)("TagMap table needs posting before GetObjectsWithTags");
     _tag_map->unlink_and_post_locked();
   }
 
@@ -2977,7 +2977,7 @@ void JvmtiTagMap::follow_references(jint heap_filter,
 
 // Concurrent GC needs to call this in relocation pause, so after the objects are moved
 // and have their new addresses, the table can be rehashed.
-void JvmtiTagMap::set_needs_processing() {
+void JvmtiTagMap::set_needs_rehashing() {
   assert(SafepointSynchronize::is_at_safepoint(), "called in gc pause");
   assert(Thread::current()->is_VM_thread(), "should be the VM thread");
 
@@ -3000,8 +3000,7 @@ void JvmtiTagMap::gc_notification(size_t num_dead_entries) {
         JvmtiTagMap* tag_map = env->tag_map_acquire();
         if (tag_map != NULL) {
           // Lock each hashmap from concurrent posting and cleaning
-          MutexLocker ml(tag_map->lock(), Mutex::_no_safepoint_check_flag);
-          tag_map->hashmap()->unlink_and_post(tag_map->env());
+          tag_map->unlink_and_post_locked();
         }
       }
       // there's another callback for needs_rehashing

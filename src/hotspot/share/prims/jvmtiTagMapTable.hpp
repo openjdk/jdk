@@ -72,6 +72,7 @@ private:
   JvmtiTagMapEntry* find(int index, unsigned int hash, oop obj);
 
   void resize_if_needed();
+
 public:
   JvmtiTagMapTable();
   ~JvmtiTagMapTable();
@@ -96,6 +97,5 @@ class JvmtiTagMapEntryClosure {
  public:
   virtual void do_entry(JvmtiTagMapEntry* entry) = 0;
 };
-
 
 #endif // SHARE_VM_PRIMS_TAGMAPTABLE_HPP
