@@ -714,8 +714,12 @@ void MacroAssembler::movptr(Register dst, ArrayAddress src) {
 
 // src should NEVER be a real pointer. Use AddressLiteral for true pointers
 void MacroAssembler::movptr(Address dst, intptr_t src) {
-  mov64(rscratch1, src);
-  movq(dst, rscratch1);
+  if (is_simm32(src)) {
+    movptr(dst, checked_cast<int32_t>(src));
+  } else {
+    mov64(rscratch1, src);
+    movq(dst, rscratch1);
+  }
 }
 
 // These are mostly for initializing NULL
