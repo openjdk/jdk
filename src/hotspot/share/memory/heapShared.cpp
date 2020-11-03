@@ -1031,7 +1031,7 @@ void HeapShared::init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
       ArchiveUtils::check_for_oom(PENDING_EXCEPTION); // exit on OOM
       log_info(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
                     java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
-      vm_exit_during_initialization("VM exits due to exception, use -Xlog:cds,exceptions=trace for detail");
+      vm_direct_exit(-1, "VM exits due to exception, use -Xlog:cds,exceptions=trace for detail");
     }
     InstanceKlass* ik = InstanceKlass::cast(k);
     assert(InstanceKlass::cast(ik)->is_shared_boot_class(),
