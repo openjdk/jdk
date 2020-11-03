@@ -505,11 +505,8 @@ static void swap(intptr_t *tos);      /* swap top two elements */
 
 // umm don't like this method modifies its object
 
-// The Interpreter used when
+template<bool JVMTI_ENABLED>
 static void run(interpreterState istate);
-// The interpreter used if JVMTI needs interpreter events
-static void runWithChecks(interpreterState istate);
-static void End_Of_Interpreter(void);
 
 // Inline static functions for Java Stack and Local manipulation
 

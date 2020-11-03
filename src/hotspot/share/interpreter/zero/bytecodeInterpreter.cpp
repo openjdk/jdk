@@ -52,6 +52,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/threadCritical.hpp"
 #include "utilities/exceptions.hpp"
+#include "utilities/macros.hpp"
 
 // no precompiled headers
 
@@ -153,7 +154,7 @@
 #endif
 
 #undef DEBUGGER_SINGLE_STEP_NOTIFY
-#ifdef VM_JVMTI
+#if INCLUDE_JVMTI
 /* NOTE: (kbr) This macro must be called AFTER the PC has been
    incremented. JvmtiExport::at_single_stepping_point() may cause a
    breakpoint opcode to get inserted at the current PC to allow the
@@ -165,7 +166,7 @@
 */
 #define DEBUGGER_SINGLE_STEP_NOTIFY()                                            \
 {                                                                                \
-      if (_jvmti_interp_events) {                                                \
+      if (JVMTI_ENABLED) {                                                       \
         if (JvmtiExport::should_post_single_step()) {                            \
           DECACHE_STATE();                                                       \
           SET_LAST_JAVA_FRAME();                                                 \
@@ -189,7 +190,7 @@
 }
 #else
 #define DEBUGGER_SINGLE_STEP_NOTIFY()
-#endif
+#endif // INCLUDE_JVMTI
 
 /*
  * CONTINUE - Macro for executing the next opcode.
@@ -387,22 +388,18 @@
 
 /*
  * BytecodeInterpreter::run(interpreterState istate)
- * BytecodeInterpreter::runWithChecks(interpreterState istate)
  *
  * The real deal. This is where byte codes actually get interpreted.
  * Basically it's a big while loop that iterates until we return from
  * the method passed in.
- *
- * The runWithChecks is used if JVMTI is enabled.
- *
  */
-#if defined(VM_JVMTI)
-void
-BytecodeInterpreter::runWithChecks(interpreterState istate) {
-#else
-void
-BytecodeInterpreter::run(interpreterState istate) {
-#endif
+
+// Instantiate two variants of the method for future linking.
+template void BytecodeInterpreter::run<true>(interpreterState istate);
+template void BytecodeInterpreter::run<false>(interpreterState istate);
+
+template<bool JVMTI_ENABLED>
+void BytecodeInterpreter::run(interpreterState istate) {
 
   // In order to simplify some tests based on switches set at runtime
   // we invoke the interpreter a single time after switches are enabled
@@ -417,9 +414,6 @@ BytecodeInterpreter::run(interpreterState istate) {
   if (checkit && *c_addr != c_value) {
     os::breakpoint();
   }
-#ifdef VM_JVMTI
-  static bool _jvmti_interp_events = 0;
-#endif
 
 #ifdef ASSERT
   if (istate->_msg != initialize) {
@@ -555,9 +549,6 @@ BytecodeInterpreter::run(interpreterState istate) {
   switch (istate->msg()) {
     case initialize: {
       if (initialized++) ShouldNotReachHere(); // Only one initialize call.
-#ifdef VM_JVMTI
-      _jvmti_interp_events = JvmtiExport::can_post_interpreter_events();
-#endif
       return;
     }
     break;
@@ -668,8 +659,7 @@ BytecodeInterpreter::run(interpreterState istate) {
       THREAD->clr_do_not_unlock();
 
       // Notify jvmti
-#ifdef VM_JVMTI
-      if (_jvmti_interp_events) {
+      if (JVMTI_ENABLED) {
         // Whenever JVMTI puts a thread in interp_only_mode, method
         // entry/exit events are sent for that thread to track stack depth.
         if (THREAD->is_interp_only_mode()) {
@@ -677,7 +667,6 @@ BytecodeInterpreter::run(interpreterState istate) {
                   handle_exception);
         }
       }
-#endif /* VM_JVMTI */
 
       goto run;
     }
@@ -1800,8 +1789,7 @@ run:
             cache = cp->entry_at(index);
           }
 
-#ifdef VM_JVMTI
-          if (_jvmti_interp_events) {
+          if (JVMTI_ENABLED) {
             int *count_addr;
             oop obj;
             // Check to see if a field modification watch has been set
@@ -1820,7 +1808,6 @@ run:
                                           handle_exception);
             }
           }
-#endif /* VM_JVMTI */
 
           oop obj;
           if ((Bytecodes::Code)opcode == Bytecodes::_getstatic) {
@@ -1898,8 +1885,7 @@ run:
             cache = cp->entry_at(index);
           }
 
-#ifdef VM_JVMTI
-          if (_jvmti_interp_events) {
+          if (JVMTI_ENABLED) {
             int *count_addr;
             oop obj;
             // Check to see if a field modification watch has been set
@@ -1925,7 +1911,6 @@ run:
                                           handle_exception);
             }
           }
-#endif /* VM_JVMTI */
 
           // QQQ Need to make this as inlined as possible. Probably need to split all the bytecode cases
           // out so c++ compiler has a chance for constant prop to fold everything possible away.
@@ -2404,11 +2389,9 @@ run:
         if (callee != NULL) {
           istate->set_callee(callee);
           istate->set_callee_entry_point(callee->from_interpreted_entry());
-#ifdef VM_JVMTI
-          if (JvmtiExport::can_post_interpreter_events() && THREAD->is_interp_only_mode()) {
+          if (JVMTI_ENABLED && THREAD->is_interp_only_mode()) {
             istate->set_callee_entry_point(callee->interpreter_entry());
           }
-#endif /* VM_JVMTI */
           istate->set_bcp_advance(5);
           UPDATE_PC_AND_RETURN(0); // I'll be back...
         }
@@ -2466,11 +2449,9 @@ run:
 
         istate->set_callee(callee);
         istate->set_callee_entry_point(callee->from_interpreted_entry());
-#ifdef VM_JVMTI
-        if (JvmtiExport::can_post_interpreter_events() && THREAD->is_interp_only_mode()) {
+        if (JVMTI_ENABLED && THREAD->is_interp_only_mode()) {
           istate->set_callee_entry_point(callee->interpreter_entry());
         }
-#endif /* VM_JVMTI */
         istate->set_bcp_advance(5);
         UPDATE_PC_AND_RETURN(0); // I'll be back...
       }
@@ -2536,11 +2517,9 @@ run:
 
           istate->set_callee(callee);
           istate->set_callee_entry_point(callee->from_interpreted_entry());
-#ifdef VM_JVMTI
-          if (JvmtiExport::can_post_interpreter_events() && THREAD->is_interp_only_mode()) {
+          if (JVMTI_ENABLED && THREAD->is_interp_only_mode()) {
             istate->set_callee_entry_point(callee->interpreter_entry());
           }
-#endif /* VM_JVMTI */
           istate->set_bcp_advance(3);
           UPDATE_PC_AND_RETURN(0); // I'll be back...
         }
@@ -2963,25 +2942,19 @@ run:
     // (with this note) in anticipation of changing the vm and the tests
     // simultaneously.
 
-
-    //
     suppress_exit_event = suppress_exit_event || illegal_state_oop() != NULL;
 
-
-
-#ifdef VM_JVMTI
-      if (_jvmti_interp_events) {
-        // Whenever JVMTI puts a thread in interp_only_mode, method
-        // entry/exit events are sent for that thread to track stack depth.
-        if ( !suppress_exit_event && THREAD->is_interp_only_mode() ) {
-          {
-            // Prevent any HandleMarkCleaner from freeing our live handles
-            HandleMark __hm(THREAD);
-            CALL_VM_NOCHECK(InterpreterRuntime::post_method_exit(THREAD));
-          }
+    if (JVMTI_ENABLED) {
+      // Whenever JVMTI puts a thread in interp_only_mode, method
+      // entry/exit events are sent for that thread to track stack depth.
+      if ( !suppress_exit_event && THREAD->is_interp_only_mode() ) {
+        {
+          // Prevent any HandleMarkCleaner from freeing our live handles
+          HandleMark __hm(THREAD);
+          CALL_VM_NOCHECK(InterpreterRuntime::post_method_exit(THREAD));
         }
       }
-#endif /* VM_JVMTI */
+    }
 
     //
     // See if we are returning any exception
@@ -3031,13 +3004,6 @@ finish:
 
   return;
 }
-
-/*
- * All the code following this point is only produced once and is not present
- * in the JVMTI version of the interpreter
-*/
-
-#ifndef VM_JVMTI
 
 // This constructor should only be used to contruct the object to signal
 // interpreter initialization. All other instances should be created by
@@ -3307,5 +3273,3 @@ extern "C" {
   }
 }
 #endif // PRODUCT
-
-#endif // JVMTI
