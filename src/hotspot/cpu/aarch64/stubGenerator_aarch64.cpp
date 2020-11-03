@@ -5438,10 +5438,10 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ pc();
 
     Register src   = c_rarg0;  // source array
-    Register sp    = c_rarg1;  // source start offset
-    Register sl    = c_rarg2;  // source end offset
+    Register soff  = c_rarg1;  // source start offset
+    Register send  = c_rarg2;  // source end offset
     Register dst   = c_rarg3;  // dest array
-    Register dp    = c_rarg4;  // position for writing to dest array
+    Register doff  = c_rarg4;  // position for writing to dest array
     Register isURL = c_rarg5;  // Base64 or URL chracter set
 
     Register codec  = rscratch1;
@@ -5449,34 +5449,9 @@ class StubGenerator: public StubCodeGenerator {
 
     Label ProcessData, Process48B, Process24B, Process3B, SIMDExit, Exit;
 
-    #define BASE64_ENCODE_SIMD_ROUND(in0, in1, in2, out0, out1, out2, out3, SZ) \
-      __ ld3(in0,  in1, in2, __ T##SZ##B, __ post(src, 3 * SZ));                \
-                                                                                \
-      __ ushr(v20, __ T##SZ##B, in0, 2);                                        \
-                                                                                \
-      __ ushr(v21, __ T##SZ##B, in1, 2);                                        \
-      __ shl(in0,  __ T##SZ##B, in0, 6);                                        \
-      __ orr(v21,  __ T##SZ##B, v21, in0);                                      \
-      __ ushr(v21, __ T##SZ##B, v21, 2);                                        \
-                                                                                \
-      __ ushr(v22, __ T##SZ##B, in2, 4);                                        \
-      __ shl(in1,  __ T##SZ##B, in1, 4);                                        \
-      __ orr(v22,  __ T##SZ##B, in1, v22);                                      \
-      __ ushr(v22, __ T##SZ##B, v22, 2);                                        \
-                                                                                \
-      __ shl(v23,  __ T##SZ##B, in2, 2);                                        \
-      __ ushr(v23, __ T##SZ##B, v23, 2);                                        \
-                                                                                \
-      __ tbl(out0, __ T##SZ##B, v0,  4, v20);                                   \
-      __ tbl(out1, __ T##SZ##B, v0,  4, v21);                                   \
-      __ tbl(out2, __ T##SZ##B, v0,  4, v22);                                   \
-      __ tbl(out3, __ T##SZ##B, v0,  4, v23);                                   \
-                                                                                \
-      __ st4(out0, out1, out2, out3, __ T##SZ##B, __ post(dst, 4 * SZ));        \
-
-    __ add(src, src, sp);
-    __ add(dst, dst, dp);
-    __ sub(length, sl, sp);
+    __ add(src, src, soff);
+    __ add(dst, dst, doff);
+    __ sub(length, send, soff);
 
     // load the codec base address
     __ lea(codec, ExternalAddress((address) toBase64));
@@ -5494,16 +5469,55 @@ class StubGenerator: public StubCodeGenerator {
     __ BIND(Process48B);
     __ cmp(length, (u1)48);
     __ br(Assembler::LT, Process24B);
-    BASE64_ENCODE_SIMD_ROUND(v4, v5, v6, v16, v17, v18, v19, 16);
+    // load data
+    __ ld3(v4,  v5, v6, __ T16B, __ post(src, 48));
+    // calculate indices
+    __ ushr(v20, __ T16B, v4,  2);
+    __ ushr(v21, __ T16B, v5,  2);
+    __ shl(v4,   __ T16B, v4,  6);
+    __ orr(v21,  __ T16B, v21, v4);
+    __ ushr(v21, __ T16B, v21, 2);
+    __ ushr(v22, __ T16B, v6,  4);
+    __ shl(v5,   __ T16B, v5,  4);
+    __ orr(v22,  __ T16B, v5,  v22);
+    __ ushr(v22, __ T16B, v22, 2);
+    __ shl(v23,  __ T16B, v6,  2);
+    __ ushr(v23, __ T16B, v23, 2);
+    // lookup codec
+    __ tbl(v16,  __ T16B, v0,  4, v20);
+    __ tbl(v17,  __ T16B, v0,  4, v21);
+    __ tbl(v18,  __ T16B, v0,  4, v22);
+    __ tbl(v19,  __ T16B, v0,  4, v23);
+    // store result
+    __ st4(v16, v17, v18, v19, __ T16B, __ post(dst, 64));
     __ sub(length, length, 48);
     __ b(Process48B);
 
     __ BIND(Process24B);
     __ cmp(length, (u1)24);
     __ br(Assembler::LT, SIMDExit);
-    BASE64_ENCODE_SIMD_ROUND(v4, v5, v6, v16, v17, v18, v19, 8);
+    // load data
+    __ ld3(v4,  v5, v6, __ T8B, __ post(src, 24));
+    // calculate indices
+    __ ushr(v20, __ T8B, v4,  2);
+    __ ushr(v21, __ T8B, v5,  2);
+    __ shl(v4,   __ T8B, v4,  6);
+    __ orr(v21,  __ T8B, v21, v4);
+    __ ushr(v21, __ T8B, v21, 2);
+    __ ushr(v22, __ T8B, v6,  4);
+    __ shl(v5,   __ T8B, v5,  4);
+    __ orr(v22,  __ T8B, v5,  v22);
+    __ ushr(v22, __ T8B, v22, 2);
+    __ shl(v23,  __ T8B, v6,  2);
+    __ ushr(v23, __ T8B, v23, 2);
+    // lookup codec
+    __ tbl(v16,  __ T8B, v0,  4, v20);
+    __ tbl(v17,  __ T8B, v0,  4, v21);
+    __ tbl(v18,  __ T8B, v0,  4, v22);
+    __ tbl(v19,  __ T8B, v0,  4, v23);
+    // store result
+    __ st4(v16, v17, v18, v19, __ T8B, __ post(dst, 32));
     __ sub(length, length, 24);
-
     __ BIND(SIMDExit);
     __ cbz(length, Exit);
 
