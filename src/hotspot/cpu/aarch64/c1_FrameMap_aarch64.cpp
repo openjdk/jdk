@@ -183,7 +183,7 @@ void FrameMap::initialize() {
   map_register(i, r17); r17_opr = LIR_OprFact::single_cpu(i); i++;
 #ifndef R18_RESERVED
   // See comment in register_aarch64.hpp
-  map_register(i, r18_tls); r18_opr = LIR_OprFact::single_cpu(i); i++;
+  map_register(i, r18_reserved); r18_opr = LIR_OprFact::single_cpu(i); i++;
 #endif
   map_register(i, r19); r19_opr = LIR_OprFact::single_cpu(i); i++;
   map_register(i, r20); r20_opr = LIR_OprFact::single_cpu(i); i++;
@@ -204,7 +204,7 @@ void FrameMap::initialize() {
 
 #ifdef R18_RESERVED
   // See comment in register_aarch64.hpp
-  map_register(i, r18_tls); r18_opr = LIR_OprFact::single_cpu(i); i++;
+  map_register(i, r18_reserved); r18_opr = LIR_OprFact::single_cpu(i); i++;
 #endif
 
   rscratch1_opr = r8_opr;
@@ -264,7 +264,7 @@ void FrameMap::initialize() {
   r15_oop_opr = as_oop_opr(r15);
   r16_oop_opr = as_oop_opr(r16);
   r17_oop_opr = as_oop_opr(r17);
-  r18_oop_opr = as_oop_opr(r18_tls);
+  r18_oop_opr = as_oop_opr(r18_reserved);
   r19_oop_opr = as_oop_opr(r19);
   r20_oop_opr = as_oop_opr(r20);
   r21_oop_opr = as_oop_opr(r21);

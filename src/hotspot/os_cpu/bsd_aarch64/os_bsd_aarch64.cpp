@@ -111,6 +111,7 @@
 #define context_sp   uc_mcontext->DU3_PREFIX(ss,sp)
 #define context_pc   uc_mcontext->DU3_PREFIX(ss,pc)
 #define context_cpsr uc_mcontext->DU3_PREFIX(ss,cpsr)
+#define context_esr  uc_mcontext->DU3_PREFIX(es,esr)
 
 address os::current_stack_pointer() {
 #if defined(__clang__) || defined(__llvm__)
@@ -463,6 +464,50 @@ PRAGMA_DIAG_POP
     }
   }
 
+#if defined(ASSERT) && defined(__APPLE__)
+  // Execution protection violation
+  //
+  // This should be kept as the last step in the triage.  We don't
+  // have a dedicated trap number for a no-execute fault, so be
+  // conservative and allow other handlers the first shot.
+  if (UnguardOnExecutionViolation > 0 &&
+      (sig == SIGBUS)) {
+    static __thread address last_addr = (address) -1;
+
+    address addr = (address) info->si_addr;
+    address pc = os::Bsd::ucontext_get_pc(uc);
+
+    if (pc != addr && uc->context_esr == 0x9200004F) { //TODO: figure out what this value means
+      // We are faulting trying to write a R-X page
+      pthread_jit_write_protect_np(false);
+
+      log_debug(os)("Writing protection violation "
+                    "at " INTPTR_FORMAT
+                    ", unprotecting", p2i(addr));
+
+      stub = pc;
+
+      last_addr = (address) -1;
+    } else if (pc == addr && uc->context_esr == 0x8200000f) { //TODO: figure out what this value means
+      // We are faulting trying to execute a RW- page
+
+      if (addr != last_addr) {
+        pthread_jit_write_protect_np(true);
+
+        log_debug(os)("Execution protection violation "
+                      "at " INTPTR_FORMAT
+                      ", protecting", p2i(addr));
+
+        stub = pc;
+
+        // Set last_addr so if we fault again at the same address, we don't end
+        // up in an endless loop.
+        last_addr = addr;
+      }
+    }
+  }
+#endif
+
   if (stub != NULL) {
     // save all thread context in case we need to restore it
     if (thread != NULL) thread->set_saved_exception_pc(pc);
@@ -754,6 +799,10 @@ void os::verify_stack_alignment() {
 int os::extra_bang_size_in_bytes() {
   // AArch64 does not require the additional stack bang.
   return 0;
+}
+
+void os::current_thread_enable_wx_impl(WXMode mode) {
+  pthread_jit_write_protect_np(mode == WXExec);
 }
 
 extern "C" {

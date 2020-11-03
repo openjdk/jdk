@@ -2233,7 +2233,7 @@ const intx ObjectAlignmentInBytes = 8;
           "Bypass Win32 file system criteria checks (Windows Only)")        \
                                                                             \
   product(intx, UnguardOnExecutionViolation, 0,                             \
-          "Unguard page and retry on no-execute fault (Win32 only) "        \
+          "Unguard page and retry on no-execute fault "                     \
           "0=off, 1=conservative, 2=aggressive")                            \
           range(0, 2)                                                       \
                                                                             \

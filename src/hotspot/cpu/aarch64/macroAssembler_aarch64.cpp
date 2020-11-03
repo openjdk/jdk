@@ -2648,7 +2648,7 @@ void MacroAssembler::debug64(char* msg, int64_t pc, int64_t regs[])
 RegSet MacroAssembler::call_clobbered_registers() {
   RegSet regs = RegSet::range(r0, r17) - RegSet::of(rscratch1, rscratch2);
 #ifndef R18_RESERVED
-  regs += r18_tls;
+  regs += r18_reserved;
 #endif
   return regs;
 }

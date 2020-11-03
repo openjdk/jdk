@@ -103,7 +103,7 @@ CONSTANT_REGISTER_DECLARATION(Register, r17,  (17));
 // It's easier to avoid allocating r18 altogether.
 //
 // See https://docs.microsoft.com/en-us/cpp/build/arm64-windows-abi-conventions?view=vs-2019#integer-registers
-CONSTANT_REGISTER_DECLARATION(Register, r18_tls,  (18));
+CONSTANT_REGISTER_DECLARATION(Register, r18_reserved,  (18));
 CONSTANT_REGISTER_DECLARATION(Register, r19,  (19));
 CONSTANT_REGISTER_DECLARATION(Register, r20,  (20));
 CONSTANT_REGISTER_DECLARATION(Register, r21,  (21));

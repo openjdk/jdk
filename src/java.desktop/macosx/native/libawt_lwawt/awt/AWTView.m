@@ -31,7 +31,6 @@
 #import "JavaTextAccessibility.h"
 #import "JavaAccessibilityUtilities.h"
 #import "GeomUtilities.h"
-#import "OSVersion.h"
 #import "ThreadUtilities.h"
 
 #import <Carbon/Carbon.h>
@@ -51,13 +50,6 @@
 // Uncomment this line to see fprintfs of each InputMethod API being called on this View
 //#define IM_DEBUG TRUE
 //#define EXTRA_DEBUG
-
-static BOOL shouldUsePressAndHold() {
-    static int shouldUsePressAndHold = -1;
-    if (shouldUsePressAndHold != -1) return shouldUsePressAndHold;
-    shouldUsePressAndHold = !isSnowLeopardOrLower();
-    return shouldUsePressAndHold;
-}
 
 @implementation AWTView
 
@@ -81,7 +73,7 @@ static BOOL shouldUsePressAndHold() {
     fKeyEventsNeeded = NO;
     fProcessingKeystroke = NO;
 
-    fEnablePressAndHold = shouldUsePressAndHold();
+    fEnablePressAndHold = YES; // always true since Snow Leopard
     fInPressAndHold = NO;
     fPAHNeedsToSelect = NO;
 

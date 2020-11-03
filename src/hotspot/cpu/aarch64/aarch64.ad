@@ -114,8 +114,8 @@ reg_def R16     ( SOC, SOC, Op_RegI, 16, r16->as_VMReg()        );
 reg_def R16_H   ( SOC, SOC, Op_RegI, 16, r16->as_VMReg()->next());
 reg_def R17     ( SOC, SOC, Op_RegI, 17, r17->as_VMReg()        );
 reg_def R17_H   ( SOC, SOC, Op_RegI, 17, r17->as_VMReg()->next());
-reg_def R18     ( SOC, SOC, Op_RegI, 18, r18_tls->as_VMReg()        );
-reg_def R18_H   ( SOC, SOC, Op_RegI, 18, r18_tls->as_VMReg()->next());
+reg_def R18     ( SOC, SOC, Op_RegI, 18, r18_reserved->as_VMReg()        );
+reg_def R18_H   ( SOC, SOC, Op_RegI, 18, r18_reserved->as_VMReg()->next());
 reg_def R19     ( SOC, SOE, Op_RegI, 19, r19->as_VMReg()        );
 reg_def R19_H   ( SOC, SOE, Op_RegI, 19, r19->as_VMReg()->next());
 reg_def R20     ( SOC, SOE, Op_RegI, 20, r20->as_VMReg()        ); // caller esp

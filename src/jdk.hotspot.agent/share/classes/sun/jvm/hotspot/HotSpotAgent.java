@@ -621,8 +621,10 @@ public class HotSpotAgent {
 
         if (cpu.equals("amd64") || cpu.equals("x86_64")) {
             machDesc = new MachineDescriptionAMD64();
+        } else if (cpu.equals("aarch64")) {
+            machDesc = new MachineDescriptionAArch64();
         } else {
-            throw new DebuggerException("Darwin only supported on x86_64. Current arch: " + cpu);
+            throw new DebuggerException("Darwin only supported on x86_64/aarch64. Current arch: " + cpu);
         }
 
         BsdDebuggerLocal dbg = new BsdDebuggerLocal(machDesc, !isServer);

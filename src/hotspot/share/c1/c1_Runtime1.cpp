@@ -1269,6 +1269,8 @@ JRT_END
 void Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_id) {
   NOT_PRODUCT(_patch_code_slowcase_cnt++);
 
+  Thread::WXWriteFromExecSetter wx_write;
+
   if (TracePatching) {
     tty->print_cr("Deoptimizing because patch is needed");
   }

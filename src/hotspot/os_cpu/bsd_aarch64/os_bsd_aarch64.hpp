@@ -36,7 +36,7 @@
 
 private:
 
-  static void current_thread_enable_wx_impl(WXMode mode) { }
+  static void current_thread_enable_wx_impl(WXMode mode);
 
 public:
 
