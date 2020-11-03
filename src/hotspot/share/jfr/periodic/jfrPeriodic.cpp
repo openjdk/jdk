@@ -285,7 +285,7 @@ TRACE_REQUEST_FUNC(ThreadContextSwitchRate) {
           Event ## eventType event;                               \
           event.set_name(flag->name());                           \
           event.set_value(flag->get_ ## flagType());              \
-          event.set_origin(flag->get_origin());                   \
+          event.set_origin(static_cast<u8>(flag->get_origin()));  \
           event.commit();                                         \
         }                                                         \
       }                                                           \

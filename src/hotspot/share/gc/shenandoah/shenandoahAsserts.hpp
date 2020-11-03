@@ -54,6 +54,7 @@ public:
                                const char *file, int line);
 
   static void assert_in_heap(void* interior_loc, oop obj, const char* file, int line);
+  static void assert_in_heap_or_null(void* interior_loc, oop obj, const char* file, int line);
   static void assert_in_correct_region(void* interior_loc, oop obj, const char* file, int line);
 
   static void assert_correct(void* interior_loc, oop obj, const char* file, int line);
@@ -76,6 +77,8 @@ public:
 #ifdef ASSERT
 #define shenandoah_assert_in_heap(interior_loc, obj) \
                     ShenandoahAsserts::assert_in_heap(interior_loc, obj, __FILE__, __LINE__)
+#define shenandoah_assert_in_heap_or_null(interior_loc, obj) \
+                    ShenandoahAsserts::assert_in_heap_or_null(interior_loc, obj, __FILE__, __LINE__)
 #define shenandoah_assert_in_correct_region(interior_loc, obj) \
                     ShenandoahAsserts::assert_in_correct_region(interior_loc, obj, __FILE__, __LINE__)
 
@@ -149,6 +152,7 @@ public:
                     ShenandoahAsserts::assert_heaplocked_or_safepoint(__FILE__, __LINE__)
 #else
 #define shenandoah_assert_in_heap(interior_loc, obj)
+#define shenandoah_assert_in_heap_or_null(interior_loc, obj)
 #define shenandoah_assert_in_correct_region(interior_loc, obj)
 
 #define shenandoah_assert_correct_if(interior_loc, obj, condition)

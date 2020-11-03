@@ -41,6 +41,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.SimpleElementVisitor8;
 
+import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
@@ -507,7 +508,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
 
     @Override
     public void addClassDeprecationInfo(Content classInfoTree) {
-        List<? extends DocTree> deprs = utils.getBlockTags(typeElement, DocTree.Kind.DEPRECATED);
+        List<? extends DeprecatedTree> deprs = utils.getDeprecatedTrees(typeElement);
         if (utils.isDeprecated(typeElement)) {
             Content deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(typeElement));
             Content div = HtmlTree.DIV(HtmlStyle.deprecationBlock, deprLabel);

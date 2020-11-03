@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,30 +19,31 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-#include "precompiled.hpp"
-#include "gc/z/zForwarding.inline.hpp"
-#include "gc/z/zForwardingTable.inline.hpp"
-#include "gc/z/zGlobals.hpp"
-#include "gc/z/zGranuleMap.inline.hpp"
-#include "utilities/debug.hpp"
+#ifndef SHARE_RUNTIME_KEEPSTACKGCPROCESSED_HPP
+#define SHARE_RUNTIME_KEEPSTACKGCPROCESSED_HPP
 
-ZForwardingTable::ZForwardingTable() :
-    _map(ZAddressOffsetMax) {}
+#include "memory/allocation.hpp"
+#include "runtime/stackWatermark.hpp"
+#include "runtime/stackWatermarkKind.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 
-void ZForwardingTable::insert(ZForwarding* forwarding) {
-  const uintptr_t offset = forwarding->start();
-  const size_t size = forwarding->size();
+// Use this class to mark a remote thread you are currently interested
+// in examining the entire stack, without it slipping into an unprocessed
+// state at safepoint polls.
+class KeepStackGCProcessedMark : public StackObj {
+  friend class StackWatermark;
+  bool _active;
+  JavaThread* _jt;
 
-  assert(_map.get(offset) == NULL, "Invalid entry");
-  _map.put(offset, size, forwarding);
-}
+  void finish_processing();
 
-void ZForwardingTable::remove(ZForwarding* forwarding) {
-  const uintptr_t offset = forwarding->start();
-  const size_t size = forwarding->size();
+public:
+  KeepStackGCProcessedMark(JavaThread* jt);
+  ~KeepStackGCProcessedMark();
+};
 
-  assert(_map.get(offset) == forwarding, "Invalid entry");
-  _map.put(offset, size, NULL);
-}
+
+#endif // SHARE_RUNTIME_KEEPSTACKGCPROCESSED_HPP
