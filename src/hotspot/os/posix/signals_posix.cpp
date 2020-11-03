@@ -1294,11 +1294,12 @@ void PosixSignals::print_signal_handlers(outputStream* st, char* buf, size_t buf
   PosixSignals::print_signal_handler(st, SHUTDOWN2_SIGNAL , buf, buflen);
   PosixSignals::print_signal_handler(st, SHUTDOWN3_SIGNAL , buf, buflen);
   PosixSignals::print_signal_handler(st, BREAK_SIGNAL, buf, buflen);
-#if defined(AIX)
+#if defined(SIGDANGER)
   // We also want to know if someone else adds a SIGDANGER handler because
   // that will interfere with OOM killling.
   PosixSignals::print_signal_handler(st, SIGDANGER, buf, buflen);
-#elif defined(PPC64) || defined(AIX)
+#endif
+#if defined(SIGTRAP)
   PosixSignals::print_signal_handler(st, SIGTRAP, buf, buflen);
 #endif
 }
