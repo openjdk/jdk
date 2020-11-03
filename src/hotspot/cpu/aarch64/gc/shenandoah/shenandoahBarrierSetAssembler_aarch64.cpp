@@ -737,13 +737,13 @@ void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_s
       break;
     case ShenandoahBarrierSet::AccessKind::WEAK:
       if (UseCompressedOops) {
-        __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native_narrow));
+        __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak_narrow));
       } else {
-        __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native));
+        __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak));
       }
       break;
     case ShenandoahBarrierSet::AccessKind::NATIVE:
-      __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native));
+      __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak));
       break;
    default:
       ShouldNotReachHere();
