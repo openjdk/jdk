@@ -54,31 +54,6 @@ ZRelocationSetSelectorGroup::ZRelocationSetSelectorGroup(const char* name,
     _forwarding_entries(0),
     _stats() {}
 
-void ZRelocationSetSelectorGroup::register_live_page(ZPage* page) {
-  const uint8_t type = page->type();
-  const size_t size = page->size();
-  const size_t live = page->live_bytes();
-  const size_t garbage = size - live;
-
-  if (garbage > _fragmentation_limit) {
-    _registered_pages.append(page);
-  }
-
-  _stats._npages++;
-  _stats._total += size;
-  _stats._live += live;
-  _stats._garbage += garbage;
-}
-
-void ZRelocationSetSelectorGroup::register_garbage_page(ZPage* page) {
-  const size_t size = page->size();
-
-  _stats._npages++;
-  _stats._total += size;
-  _stats._garbage += size;
-  _stats._empty += size;
-}
-
 bool ZRelocationSetSelectorGroup::is_disabled() {
   // Medium pages are disabled when their page size is zero
   return _page_type == ZPageTypeMedium && _page_size == 0;
@@ -205,31 +180,8 @@ void ZRelocationSetSelectorGroup::select() {
 ZRelocationSetSelector::ZRelocationSetSelector() :
     _small("Small", ZPageTypeSmall, ZPageSizeSmall, ZObjectSizeLimitSmall),
     _medium("Medium", ZPageTypeMedium, ZPageSizeMedium, ZObjectSizeLimitMedium),
-    _large("Large", ZPageTypeLarge, 0 /* page_size */, 0 /* object_size_limit */) {}
-
-void ZRelocationSetSelector::register_live_page(ZPage* page) {
-  const uint8_t type = page->type();
-
-  if (type == ZPageTypeSmall) {
-    _small.register_live_page(page);
-  } else if (type == ZPageTypeMedium) {
-    _medium.register_live_page(page);
-  } else {
-    _large.register_live_page(page);
-  }
-}
-
-void ZRelocationSetSelector::register_garbage_page(ZPage* page) {
-  const uint8_t type = page->type();
-
-  if (type == ZPageTypeSmall) {
-    _small.register_garbage_page(page);
-  } else if (type == ZPageTypeMedium) {
-    _medium.register_garbage_page(page);
-  } else {
-    _large.register_garbage_page(page);
-  }
-}
+    _large("Large", ZPageTypeLarge, 0 /* page_size */, 0 /* object_size_limit */),
+    _garbage_pages() {}
 
 void ZRelocationSetSelector::select() {
   // Select pages to relocate. The resulting relocation set will be

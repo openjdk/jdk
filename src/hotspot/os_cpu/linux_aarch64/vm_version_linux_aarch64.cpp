@@ -142,7 +142,6 @@ void VM_Version::get_os_cpu_info() {
     _zva_length = 4 << (dczid_el0 & 0xf);
   }
 
-  int cpu_lines = 0;
   if (FILE *f = fopen("/proc/cpuinfo", "r")) {
     // need a large buffer as the flags line may include lots of text
     char buf[1024], *p;
@@ -151,7 +150,6 @@ void VM_Version::get_os_cpu_info() {
         long v = strtol(p+1, NULL, 0);
         if (strncmp(buf, "CPU implementer", sizeof "CPU implementer" - 1) == 0) {
           _cpu = v;
-          cpu_lines++;
         } else if (strncmp(buf, "CPU variant", sizeof "CPU variant" - 1) == 0) {
           _variant = v;
         } else if (strncmp(buf, "CPU part", sizeof "CPU part" - 1) == 0) {
@@ -168,5 +166,4 @@ void VM_Version::get_os_cpu_info() {
     }
     fclose(f);
   }
-  guarantee(cpu_lines == os::processor_count(), "core count should be consistent");
 }

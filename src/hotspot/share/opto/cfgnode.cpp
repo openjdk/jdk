@@ -344,7 +344,7 @@ bool RegionNode::is_possible_unsafe_loop(const PhaseGVN* phase) const {
     Node* n = raw_out(i);
     if (n != NULL && n->is_Phi()) {
       PhiNode* phi = n->as_Phi();
-      assert(phase->eqv(phi->in(0), this), "sanity check phi");
+      assert(phi->in(0) == this, "sanity check phi");
       if (phi->outcnt() == 0) {
         continue; // Safe case - no loops
       }
@@ -383,7 +383,7 @@ bool RegionNode::is_unreachable_from_root(const PhaseGVN* phase) const {
     for (uint i = 0; i < max; i++) {
       Node* m = n->raw_out(i);
       if (m != NULL && m->is_CFG()) {
-        if (phase->eqv(m, this)) {
+        if (m == this) {
           return false; // We reached the Region node - it is not dead.
         }
         if (!visited.test_set(m->_idx))
@@ -568,7 +568,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         for (j = outs(); has_out(j); j++) {
           Node *n = out(j);
           if( n->is_Phi() ) {
-            assert( igvn->eqv(n->in(0), this), "" );
+            assert(n->in(0) == this, "");
             assert( n->req() == 2 &&  n->in(1) != NULL, "Only one data input expected" );
             // Break dead loop data path.
             // Eagerly replace phis with top to avoid regionless phis.
@@ -619,7 +619,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         // The fallthrough case since we already checked dead loops above.
         parent_ctrl = in(1);
         assert(parent_ctrl != NULL, "Region is a copy of some non-null control");
-        assert(!igvn->eqv(parent_ctrl, this), "Close dead loop");
+        assert(parent_ctrl != this, "Close dead loop");
       }
       if (!add_to_worklist)
         igvn->add_users_to_worklist(this); // Check for further allowed opts
@@ -641,7 +641,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           igvn->replace_node(n, in);
         }
         else if( n->is_Region() ) { // Update all incoming edges
-          assert( !igvn->eqv(n, this), "Must be removed from DefUse edges");
+          assert(n != this, "Must be removed from DefUse edges");
           uint uses_found = 0;
           for( uint k=1; k < n->req(); k++ ) {
             if( n->in(k) == this ) {
@@ -654,12 +654,12 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           }
         }
         else {
-          assert( igvn->eqv(n->in(0), this), "Expect RegionNode to be control parent");
+          assert(n->in(0) == this, "Expect RegionNode to be control parent");
           n->set_req(0, parent_ctrl);
         }
 #ifdef ASSERT
         for( uint k=0; k < n->req(); k++ ) {
-          assert( !igvn->eqv(n->in(k), this), "All uses of RegionNode should be gone");
+          assert(n->in(k) != this, "All uses of RegionNode should be gone");
         }
 #endif
       }
@@ -2078,7 +2078,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (can_reshape) {
     opt = split_flow_path(phase, this);
     // This optimization only modifies phi - don't need to check for dead loop.
-    assert(opt == NULL || phase->eqv(opt, this), "do not elide phi");
+    assert(opt == NULL || opt == this, "do not elide phi");
     if (opt != NULL)  return opt;
   }
 
@@ -2194,7 +2194,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       if (ii->is_MergeMem()) {
         MergeMemNode* n = ii->as_MergeMem();
         merge_width = MAX2(merge_width, n->req());
-        saw_self = saw_self || phase->eqv(n->base_memory(), this);
+        saw_self = saw_self || (n->base_memory() == this);
       }
     }
 
