@@ -933,7 +933,7 @@ void ThreadSafepointState::handle_polling_page_exception() {
     // Process pending operation
     SafepointMechanism::process_if_requested(self);
     if (self->has_special_runtime_exit_condition()) {
-      self->handle_special_runtime_exit_condition();
+      self->handle_special_runtime_exit_condition(true /* check asyncs */);
     }
 
     // restore oop result, if any
