@@ -39,8 +39,6 @@ class StubCodeGenerator;
 class ShenandoahBarrierSetAssembler: public BarrierSetAssembler {
 private:
 
-  static address _shenandoah_lrb;
-
   void satb_write_barrier_pre(MacroAssembler* masm,
                               Register obj,
                               Register pre_val,
@@ -58,14 +56,9 @@ private:
 
   void resolve_forward_pointer(MacroAssembler* masm, Register dst, Register tmp = noreg);
   void resolve_forward_pointer_not_null(MacroAssembler* masm, Register dst, Register tmp = noreg);
-  void load_reference_barrier(MacroAssembler* masm, Register dst, Address load_addr);
-  void load_reference_barrier_not_null(MacroAssembler* masm, Register dst, Address load_addr);
-  void load_reference_barrier_weak(MacroAssembler* masm, Register dst, Address load_addr, bool maybe_narrow_oop);
-
-  address generate_shenandoah_lrb(StubCodeGenerator* cgen);
+  void load_reference_barrier(MacroAssembler* masm, Register dst, Address load_addr, ShenandoahBarrierSet::AccessKind kind);
 
 public:
-  static address shenandoah_lrb();
 
   void storeval_barrier(MacroAssembler* masm, Register dst, Register tmp);
 
@@ -86,8 +79,6 @@ public:
                                              Register obj, Register tmp, Label& slowpath);
   void cmpxchg_oop(MacroAssembler* masm, Register addr, Register expected, Register new_val,
                    bool acquire, bool release, bool is_cae, Register result);
-
-  virtual void barrier_stubs_init();
 };
 
 #endif // CPU_AARCH64_GC_SHENANDOAH_SHENANDOAHBARRIERSETASSEMBLER_AARCH64_HPP

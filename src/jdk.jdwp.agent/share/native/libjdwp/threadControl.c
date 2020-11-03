@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -836,6 +836,7 @@ threadControl_onHook(void)
                  */
                 node->isStarted = JNI_TRUE;
             }
+            jvmtiDeallocate(threads);
         }
 
     } END_WITH_LOCAL_REFS(env)
@@ -1515,22 +1516,9 @@ threadControl_suspendAll(void)
             error = AGENT_ERROR_OUT_OF_MEMORY;
             goto err;
         }
-        if (canSuspendResumeThreadLists()) {
-            error = commonSuspendList(env, count, threads);
-            if (error != JVMTI_ERROR_NONE) {
-                goto err;
-            }
-        } else {
-
-            int i;
-
-            for (i = 0; i < count; i++) {
-                error = commonSuspend(env, threads[i], JNI_FALSE);
-
-                if (error != JVMTI_ERROR_NONE) {
-                    goto err;
-                }
-            }
+        error = commonSuspendList(env, count, threads);
+        if (error != JVMTI_ERROR_NONE) {
+            goto err;
         }
 
         /*
@@ -1549,7 +1537,8 @@ threadControl_suspendAll(void)
             suspendAllCount++;
         }
 
-    err: ;
+    err:
+        jvmtiDeallocate(threads);
 
     } END_WITH_LOCAL_REFS(env)
 
@@ -1588,12 +1577,7 @@ threadControl_resumeAll(void)
      * no need to get the whole thread list from JVMTI (unlike
      * suspendAll).
      */
-    if (canSuspendResumeThreadLists()) {
-        error = commonResumeList(env);
-    } else {
-        error = enumerateOverThreadList(env, &runningThreads,
-                                        resumeHelper, NULL);
-    }
+    error = commonResumeList(env);
     if ((error == JVMTI_ERROR_NONE) && (otherThreads.first != NULL)) {
         error = enumerateOverThreadList(env, &otherThreads,
                                         resumeHelper, NULL);

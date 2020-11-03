@@ -64,7 +64,6 @@ public:
   }
 
   static bool need_load_reference_barrier(DecoratorSet decorators, BasicType type);
-  static bool use_load_reference_barrier_weak(DecoratorSet decorators, BasicType type);
   static bool need_keep_alive_barrier(DecoratorSet decorators, BasicType type);
   static AccessKind access_kind(DecoratorSet decorators, BasicType type);
 

@@ -252,10 +252,11 @@ public:
 class ShenandoahMarkTask
 {
 private:
-  enum {
-    chunk_bits  = 10,
-    pow_bits    = 5,
-  };
+  static const uint8_t chunk_bits  = 10;
+  static const uint8_t pow_bits    = 5;
+
+  static const int chunk_max       = nth_bit(chunk_bits) - 1;
+  static const int pow_max         = nth_bit(pow_bits) - 1;
 
   oop _obj;
   bool _skip_live;
@@ -266,8 +267,8 @@ private:
 public:
   ShenandoahMarkTask(oop o = NULL, bool skip_live = false, bool weak = false, int chunk = 0, int pow = 0):
     _obj(o), _skip_live(skip_live), _weak(weak), _chunk(chunk), _pow(pow) {
-    assert(0 <= chunk && chunk < nth_bit(chunk_bits), "chunk is sane: %d", chunk);
-    assert(0 <= pow && pow < nth_bit(pow_bits), "pow is sane: %d", pow);
+    assert(0 <= chunk && chunk <= chunk_max, "chunk is in range: %d", chunk);
+    assert(0 <= pow && pow <= pow_max, "pow is in range: %d", pow);
   }
 
   // Trivially copyable.
