@@ -53,7 +53,7 @@ ShenandoahBarrierSetC1::ShenandoahBarrierSetC1() :
   _pre_barrier_c1_runtime_code_blob(NULL),
   _load_reference_barrier_normal_rt_code_blob(NULL),
   _load_reference_barrier_native_rt_code_blob(NULL),
-  _load_reference_barrier_weakref_rt_code_blob(NULL) {}
+  _load_reference_barrier_weak_rt_code_blob(NULL) {}
 
 void ShenandoahBarrierSetC1::pre_barrier(LIRGenerator* gen, CodeEmitInfo* info, DecoratorSet decorators, LIR_Opr addr_opr, LIR_Opr pre_val) {
   // First we test whether marking is in progress.
@@ -281,9 +281,9 @@ void ShenandoahBarrierSetC1::generate_c1_runtime_stubs(BufferBlob* buffer_blob) 
                                                                           "shenandoah_load_reference_barrier_native_slow",
                                                                           false, &lrb_native_code_gen_cl);
 
-    C1ShenandoahLoadReferenceBarrierCodeGenClosure lrb_weakref_code_gen_cl(ShenandoahBarrierSet::AccessKind::WEAK);
-    _load_reference_barrier_weakref_rt_code_blob = Runtime1::generate_blob(buffer_blob, -1,
-                                                                           "shenandoah_load_reference_barrier_weakref_slow",
-                                                                           false, &lrb_weakref_code_gen_cl);
+    C1ShenandoahLoadReferenceBarrierCodeGenClosure lrb_weak_code_gen_cl(ShenandoahBarrierSet::AccessKind::WEAK);
+    _load_reference_barrier_weak_rt_code_blob = Runtime1::generate_blob(buffer_blob, -1,
+                                                                           "shenandoah_load_reference_barrier_weak_slow",
+                                                                           false, &lrb_weak_code_gen_cl);
   }
 }

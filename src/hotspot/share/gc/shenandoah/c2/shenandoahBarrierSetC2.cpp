@@ -1060,7 +1060,7 @@ Node* ShenandoahBarrierSetC2::ideal_node(PhaseGVN* phase, Node* n, bool can_resh
     Node* in1 = n->in(1);
     Node* in2 = n->in(2);
 
-    // If one input is NULL, then step over the barriers (except LRB native) on the other input
+    // If one input is NULL, then step over the barriers normal LRB barriers on the other input
     if (in1->bottom_type() == TypePtr::NULL_PTR &&
         !((in2->Opcode() == Op_ShenandoahLoadReferenceBarrier) &&
           ((ShenandoahLoadReferenceBarrierNode*)in2)->kind() != ShenandoahBarrierSet::AccessKind::NORMAL)) {

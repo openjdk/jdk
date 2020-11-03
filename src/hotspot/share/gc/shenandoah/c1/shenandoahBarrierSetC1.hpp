@@ -192,7 +192,7 @@ private:
   CodeBlob* _pre_barrier_c1_runtime_code_blob;
   CodeBlob* _load_reference_barrier_normal_rt_code_blob;
   CodeBlob* _load_reference_barrier_native_rt_code_blob;
-  CodeBlob* _load_reference_barrier_weakref_rt_code_blob;
+  CodeBlob* _load_reference_barrier_weak_rt_code_blob;
 
   void pre_barrier(LIRGenerator* gen, CodeEmitInfo* info, DecoratorSet decorators, LIR_Opr addr_opr, LIR_Opr pre_val);
 
@@ -221,9 +221,9 @@ public:
     return _load_reference_barrier_native_rt_code_blob;
   }
 
-  CodeBlob* load_reference_barrier_weakref_rt_code_blob() {
-    assert(_load_reference_barrier_weakref_rt_code_blob != NULL, "");
-    return _load_reference_barrier_weakref_rt_code_blob;
+  CodeBlob* load_reference_barrier_weak_rt_code_blob() {
+    assert(_load_reference_barrier_weak_rt_code_blob != NULL, "");
+    return _load_reference_barrier_weak_rt_code_blob;
   }
 protected:
 

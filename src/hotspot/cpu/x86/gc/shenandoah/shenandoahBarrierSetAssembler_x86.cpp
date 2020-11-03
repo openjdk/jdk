@@ -835,7 +835,7 @@ void ShenandoahBarrierSetAssembler::gen_load_reference_barrier_stub(LIR_Assemble
       __ call(RuntimeAddress(bs->load_reference_barrier_normal_rt_code_blob()->code_begin()));
       break;
     case ShenandoahBarrierSet::AccessKind::WEAK:
-      __ call(RuntimeAddress(bs->load_reference_barrier_weakref_rt_code_blob()->code_begin()));
+      __ call(RuntimeAddress(bs->load_reference_barrier_weak_rt_code_blob()->code_begin()));
       break;
     case ShenandoahBarrierSet::AccessKind::NATIVE:
       __ call(RuntimeAddress(bs->load_reference_barrier_native_rt_code_blob()->code_begin()));
