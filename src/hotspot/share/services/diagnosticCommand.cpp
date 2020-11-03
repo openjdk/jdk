@@ -304,6 +304,7 @@ void JVMTIDataDumpDCmd::execute(DCmdSource source, TRAPS) {
 }
 
 #if INCLUDE_SERVICES
+#if INCLUDE_JVMTI
 JVMTIAgentLoadDCmd::JVMTIAgentLoadDCmd(outputStream* output, bool heap) :
                                        DCmdWithParser(output, heap),
   _libpath("library path", "Absolute path of the JVMTI agent to load.",
@@ -364,6 +365,7 @@ int JVMTIAgentLoadDCmd::num_arguments() {
   }
 }
 #endif // INCLUDE_SERVICES
+#endif // INCLUDE_JVMTI
 
 void PrintSystemPropertiesDCmd::execute(DCmdSource source, TRAPS) {
   // load VMSupport
