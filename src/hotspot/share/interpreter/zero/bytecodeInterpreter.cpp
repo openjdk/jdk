@@ -546,8 +546,6 @@ BytecodeInterpreter::run(interpreterState istate) {
   assert(!UseCompiler, "Zero does not support compilers");
   assert(!CountCompiledCalls, "Zero does not support counting compiled calls");
 
-  const uint mdo_last_branch_taken_count = 0;
-
   switch (istate->msg()) {
     case initialize: {
       if (initialized++) ShouldNotReachHere(); // Only one initialize call.
