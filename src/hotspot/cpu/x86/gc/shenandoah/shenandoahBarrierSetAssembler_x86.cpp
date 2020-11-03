@@ -295,10 +295,11 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   if (!weak) {
     // Test for object in cset
     // Allocate tmp-reg.
-    for (int i = 0; i < 8 && !tmp1->is_valid(); i++) {
+    for (int i = 0; i < 8; i++) {
       Register r = as_Register(i);
       if (r != rsp && r != rbp && r != dst && r != src.base() && r != src.index()) {
         tmp1 = r;
+        break;
       }
     }
     __ push(tmp1);
@@ -332,7 +333,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
 #endif
   assert(slot == 0, "must use all slots");
 
-  Register tmp2 = dst == rsi ? rdx : rsi;
+  Register tmp2 = (dst == rsi) ? rdx : rsi;
   assert_different_registers(dst, tmp2);
   __ lea(tmp2, src);
 
