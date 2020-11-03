@@ -196,9 +196,7 @@ public class TestZoneInfo310 {
                 zid.equals("Europe/Dublin") || // uses "Eire" rule
                 zid.equals("Europe/Prague") ||
                 zid.equals("Asia/Tehran") || // last rule mismatch
-                zid.equals("Iran") || // last rule mismatch
-                zid.equals("Asia/Gaza") || // last rule mismatch
-                zid.equals("Asia/Hebron")) { // last rule mismatch
+                zid.equals("Iran")) { // last rule mismatch
                     continue;
             }
             if (! zi.equalsTo(ziOLD)) {
