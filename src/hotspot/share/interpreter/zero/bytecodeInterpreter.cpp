@@ -133,17 +133,23 @@
 #ifdef PRODUCT
 #define DO_UPDATE_INSTRUCTION_COUNT(opcode)
 #else
-#define DO_UPDATE_INSTRUCTION_COUNT(opcode)                                                          \
-{                                                                                                    \
-    BytecodeCounter::_counter_value++;                                                               \
-    BytecodeHistogram::_counters[(Bytecodes::Code)opcode]++;                                         \
-    if (StopInterpreterAt && StopInterpreterAt == BytecodeCounter::_counter_value) os::breakpoint(); \
-    if (TraceBytecodes) {                                                                            \
-      CALL_VM((void)InterpreterRuntime::trace_bytecode(THREAD, 0,                    \
-                                        topOfStack[Interpreter::expr_index_at(1)],   \
-                                        topOfStack[Interpreter::expr_index_at(2)]),  \
-                                        handle_exception);                           \
-    }                                                                                \
+#define DO_UPDATE_INSTRUCTION_COUNT(opcode)                                            \
+{                                                                                      \
+    if (PrintBytecodeHistogram) {                                                      \
+      BytecodeHistogram::_counters[(Bytecodes::Code)opcode]++;                         \
+    }                                                                                  \
+    if (CountBytecodes || TraceBytecodes || StopInterpreterAt > 0) {                   \
+      BytecodeCounter::_counter_value++;                                               \
+      if (StopInterpreterAt == BytecodeCounter::_counter_value) {                      \
+        os::breakpoint();                                                              \
+      }                                                                                \
+      if (TraceBytecodes) {                                                            \
+        CALL_VM((void)InterpreterRuntime::trace_bytecode(THREAD, 0,                    \
+                                          topOfStack[Interpreter::expr_index_at(1)],   \
+                                          topOfStack[Interpreter::expr_index_at(2)]),  \
+                                          handle_exception);                           \
+      }                                                                                \
+    }                                                                                  \
 }
 #endif
 
