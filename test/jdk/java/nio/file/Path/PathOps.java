@@ -2048,6 +2048,12 @@ public class PathOps {
         } catch (NullPointerException npe) {
         }
 
+        try {
+            Path.of("foo", null);
+            throw new RuntimeException("NullPointerException not thrown");
+        } catch (NullPointerException npe) {
+        }
+
         Path path = FileSystems.getDefault().getPath("foo");
 
         try {
