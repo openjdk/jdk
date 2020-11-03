@@ -3738,7 +3738,7 @@ class StubGenerator: public StubCodeGenerator {
     VectorRegister  r                       = VR8;  // reuse eq_special_case_char's register
     VectorRegister  gathered                = VR9;  // reuse offsets's register
 
-    Label not_URL, calculate_size, unrolled_loop_start, skip_xxsel[loop_unrolls], unrolled_loop_exit, return_zero;
+    Label not_URL, calculate_size, unrolled_loop_start, unrolled_loop_exit, return_zero;
 
     // The upper 32 bits of the non-pointer parameter registers are not
     // guaranteed to be zero, so mask off those upper bits.
@@ -3842,24 +3842,12 @@ class StubGenerator: public StubCodeGenerator {
         __ xxperm(offsets->to_vsr(), offsetLUT, higher_nibble->to_vsr());
 
         // Find out which elements are the special case character (isURL ? '/' : '-')
-        __ vcmpequb_(eq_special_case_char, input, vec_special_case_char);
-        //
-        // There's a (63/64)^16 = 77.7% chance that there are no special
-        // case chars in this 16 bytes of input.  When we detect this case
-        // (CCR6-EQ, all comparisons are false), we can skip the xxsel
-        // step.
-        __ beq_predict_taken(CCR6, skip_xxsel[unroll_cnt]);
+        __ vcmpequb(eq_special_case_char, input, vec_special_case_char);
 
         // For each character in the input which is a special case
         // character, replace its offset with one that is special for that
         // character.
         __ xxsel(offsets->to_vsr(), offsets->to_vsr(), vec_special_case_offset, eq_special_case_char->to_vsr());
-
-        // Note that skip_xxsel is indexed because this code is contained
-        // in a C++ loop (the emitted code in this unroll loop doesn't
-        // loop).  The indexing allows the creation of a unique labels for
-        // each iteration of the unrolled loop.
-        __ bind(skip_xxsel[unroll_cnt]);
 
         // Use the lower_nibble to select a mask "M" from the lookup table.
         __ xxperm(M, maskLUT, lower_nibble);
