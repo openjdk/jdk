@@ -198,7 +198,7 @@ public class ICC_ColorSpace extends ColorSpace {
             synchronized (this) {
                 if (this2srgb == null) {
                     ColorTransform[] transforms = new ColorTransform[2];
-                    var srgb = (ICC_ColorSpace) ColorSpace.getInstance(CS_sRGB);
+                    var srgb = (ICC_ColorSpace) getInstance(CS_sRGB);
                     PCMM mdl = CMSManager.getModule();
                     transforms[0] = mdl.createTransform(thisProfile,
                                     ColorTransform.Any, ColorTransform.In);
@@ -250,7 +250,7 @@ public class ICC_ColorSpace extends ColorSpace {
             synchronized (this) {
                 if (srgb2this == null) {
                     ColorTransform[] transforms = new ColorTransform[2];
-                    var srgb = (ICC_ColorSpace) ColorSpace.getInstance(CS_sRGB);
+                    var srgb = (ICC_ColorSpace) getInstance(CS_sRGB);
                     PCMM mdl = CMSManager.getModule();
                     transforms[0] = mdl.createTransform(srgb.getProfile(),
                                     ColorTransform.Any, ColorTransform.In);
@@ -382,7 +382,7 @@ public class ICC_ColorSpace extends ColorSpace {
             synchronized (this) {
                 if (this2xyz == null) {
                     ColorTransform[] transforms = new ColorTransform[2];
-                    var xyz = (ICC_ColorSpace)ColorSpace.getInstance(CS_CIEXYZ);
+                    var xyz = (ICC_ColorSpace) getInstance(CS_CIEXYZ);
                     PCMM mdl = CMSManager.getModule();
                     try {
                         transforms[0] = mdl.createTransform(thisProfile,
@@ -522,7 +522,7 @@ public class ICC_ColorSpace extends ColorSpace {
             synchronized (this) {
                 if (xyz2this == null) {
                     ColorTransform[] transforms = new ColorTransform[2];
-                    var xyz = (ICC_ColorSpace)ColorSpace.getInstance(CS_CIEXYZ);
+                    var xyz = (ICC_ColorSpace) getInstance(CS_CIEXYZ);
                     PCMM mdl = CMSManager.getModule();
                     transforms[0] = mdl.createTransform(xyz.getProfile(),
                                     ColorTransform.Any, ColorTransform.In);
