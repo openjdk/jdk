@@ -3653,7 +3653,7 @@ class StubGenerator: public StubCodeGenerator {
 
     static const unsigned char VEC_ALIGN p10_pack_permute_val[16] = {
       ARRAY_TO_LXV_ORDER(
-       0,  0,  0,  0,  7,  6,  5,  4, 
+       0,  0,  0,  0,  7,  6,  5,  4,
        3,  2, 15, 14, 13, 12, 11, 10 ) };
 
     // loop_unrolls needs to be a power of two so that the rounding can be
@@ -3887,7 +3887,6 @@ class StubGenerator: public StubCodeGenerator {
         // * || is a concatenate operator.
         // * Strings of 0's are a field of zeros with the shown length, and
         //   likewise for strings of 1's.
-        //  
 
         if (PowerArchitecturePPC64 >= 10) {
             // Note that only e8..e15 are shown here because the extract bit
