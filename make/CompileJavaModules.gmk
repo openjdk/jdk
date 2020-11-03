@@ -184,10 +184,6 @@ ifeq ($(call isTargetOs, windows), true)
   java.desktop_EXCLUDES += com/sun/java/swing/plaf/gtk
 endif
 
-ifdef BUILD_HEADLESS_ONLY
-  java.desktop_EXCLUDES += sun/applet
-endif
-
 ifeq ($(call isTargetOs, windows macosx), false)
   java.desktop_EXCLUDE_FILES += sun/awt/AWTCharset.java
 endif

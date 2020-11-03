@@ -478,6 +478,12 @@ void before_exit(JavaThread* thread) {
     BytecodeHistogram::print();
   }
 
+#ifdef LINUX
+  if (DumpPerfMapAtExit) {
+    CodeCache::write_perf_map();
+  }
+#endif
+
   if (JvmtiExport::should_post_thread_life()) {
     JvmtiExport::post_thread_end(thread);
   }
@@ -688,6 +694,7 @@ void vm_shutdown_during_initialization(const char* error, const char* message) {
 }
 
 JDK_Version JDK_Version::_current;
+const char* JDK_Version::_java_version;
 const char* JDK_Version::_runtime_name;
 const char* JDK_Version::_runtime_version;
 const char* JDK_Version::_runtime_vendor_version;

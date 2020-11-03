@@ -149,13 +149,6 @@ private:
 
   PLAB** _alloc_buffers[G1HeapRegionAttr::Num];
 
-  // The survivor alignment in effect in bytes.
-  // == 0 : don't align survivors
-  // != 0 : align survivors to that alignment
-  // These values were chosen to favor the non-alignment case since some
-  // architectures have a special compare against zero instructions.
-  const uint _survivor_alignment_bytes;
-
   // Number of words allocated directly (not counting PLAB allocation).
   size_t _direct_allocated[G1HeapRegionAttr::Num];
 
@@ -167,10 +160,6 @@ private:
   // There is only 1 buffer for Old while Young may have multiple buffers depending on
   // active NUMA nodes.
   inline uint alloc_buffers_length(region_type_t dest) const;
-
-  // Calculate the survivor space object alignment in bytes. Returns that or 0 if
-  // there are no restrictions on survivor alignment.
-  static uint calc_survivor_alignment_bytes();
 
   bool may_throw_away_buffer(size_t const allocation_word_sz, size_t const buffer_size) const;
 public:

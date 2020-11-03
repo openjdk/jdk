@@ -1653,17 +1653,9 @@ JvmtiEnv::PopFrame(JavaThread* java_thread) {
   // Eagerly reallocate scalar replaced objects.
   JavaThread* current_thread = JavaThread::current();
   EscapeBarrier eb(true, current_thread, java_thread);
-  if (eb.barrier_active()) {
-    if (java_thread->frames_to_pop_failed_realloc() > 0) {
-      // VM is in the process of popping the top frame because it has scalar replaced objects which
-      // could not be reallocated on the heap.
-      // Return JVMTI_ERROR_OUT_OF_MEMORY to avoid interfering with the VM.
-      return JVMTI_ERROR_OUT_OF_MEMORY;
-    }
-    if (!eb.deoptimize_objects(1)) {
-      // Reallocation of scalar replaced objects failed -> return with error
-      return JVMTI_ERROR_OUT_OF_MEMORY;
-    }
+  if (!eb.deoptimize_objects(1)) {
+    // Reallocation of scalar replaced objects failed -> return with error
+    return JVMTI_ERROR_OUT_OF_MEMORY;
   }
 
   MutexLocker mu(JvmtiThreadState_lock);

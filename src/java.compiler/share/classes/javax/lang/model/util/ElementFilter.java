@@ -112,42 +112,22 @@ public class ElementFilter {
     }
 
     /**
-     * {@preview Associated with records, a preview feature of the Java language.
-     *
-     *           This method is associated with <i>records</i>, a preview
-     *           feature of the Java language. Preview features
-     *           may be removed in a future release, or upgraded to permanent
-     *           features of the Java language.}
-     *
      * Returns a list of record components in {@code elements}.
      * @return a list of record components in {@code elements}
      * @param elements the elements to filter
-     * @since 14
+     * @since 16
      */
-    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
-                                 essentialAPI=false)
-    @SuppressWarnings("preview")
     public static List<RecordComponentElement>
         recordComponentsIn(Iterable<? extends Element> elements) {
         return listFilter(elements, RECORD_COMPONENT_KIND, RecordComponentElement.class);
     }
 
     /**
-     * {@preview Associated with records, a preview feature of the Java language.
-     *
-     *           This method is associated with <i>records</i>, a preview
-     *           feature of the Java language. Preview features
-     *           may be removed in a future release, or upgraded to permanent
-     *           features of the Java language.}
-     *
      * Returns a set of record components in {@code elements}.
      * @return a set of record components in {@code elements}
      * @param elements the elements to filter
-     * @since 14
+     * @since 16
      */
-    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
-                                 essentialAPI=false)
-    @SuppressWarnings("preview")
     public static Set<RecordComponentElement>
     recordComponentsIn(Set<? extends Element> elements) {
         return setFilter(elements, RECORD_COMPONENT_KIND, RecordComponentElement.class);

@@ -26,9 +26,6 @@
  * @key headful
  * @bug 5043626
  * @summary  Tests pressing Home or Ctrl+Home set cursor to invisible element <head>
- * @author Alexander Potochkin
- * @library ../../../../regtesthelpers
- * @build Util
  * @run main bug5043626
  */
 
@@ -43,38 +40,51 @@ public class bug5043626 {
 
     private static Document doc;
     private static Robot robot;
+    private static JFrame frame;
 
     public static void main(String[] args) throws Exception {
-        robot = new Robot();
+        try {
+            robot = new Robot();
+            robot.setAutoDelay(100);
 
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                createAndShowGUI();
+            SwingUtilities.invokeAndWait(new Runnable() {
+                public void run() {
+                    createAndShowGUI();
+                }
+            });
+
+            robot.waitForIdle();
+            robot.delay(1000);
+
+            robot.keyPress(KeyEvent.VK_HOME);
+            robot.keyRelease(KeyEvent.VK_HOME);
+            robot.keyPress(KeyEvent.VK_1);
+            robot.keyRelease(KeyEvent.VK_1);
+
+            robot.waitForIdle();
+
+            String test = getText();
+
+            if (!"1test".equals(test)) {
+                throw new RuntimeException("Begin line action set cursor inside <head> tag");
             }
-        });
 
-        robot.waitForIdle();
+            robot.keyPress(KeyEvent.VK_HOME);
+            robot.keyRelease(KeyEvent.VK_HOME);
+            robot.keyPress(KeyEvent.VK_2);
+            robot.keyRelease(KeyEvent.VK_2);
 
-        Util.hitKeys(robot, KeyEvent.VK_HOME);
-        Util.hitKeys(robot, KeyEvent.VK_1);
+            robot.waitForIdle();
 
-        robot.waitForIdle();
+            test = getText();
 
-        String test = getText();
-
-        if (!"1test".equals(test)) {
-            throw new RuntimeException("Begin line action set cursor inside <head> tag");
-        }
-
-        Util.hitKeys(robot, KeyEvent.VK_HOME);
-        Util.hitKeys(robot, KeyEvent.VK_2);
-
-        robot.waitForIdle();
-
-        test = getText();
-
-        if (!"21test".equals(test)) {
-            throw new RuntimeException("Begin action set cursor inside <head> tag");
+            if (!"21test".equals(test)) {
+                throw new RuntimeException("Begin action set cursor inside <head> tag");
+            }
+        } finally {
+            if (frame != null) {
+                SwingUtilities.invokeAndWait(frame::dispose);
+            }
         }
     }
 
@@ -95,7 +105,7 @@ public class bug5043626 {
     }
 
     private static void createAndShowGUI() {
-        JFrame frame = new JFrame();
+        frame = new JFrame();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         JEditorPane editorPane = new JEditorPane();
@@ -104,6 +114,7 @@ public class bug5043626 {
         editorPane.setEditable(true);
         frame.add(editorPane);
         frame.pack();
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
         doc = editorPane.getDocument();
         editorPane.setCaretPosition(doc.getLength());
