@@ -263,7 +263,7 @@ void G1ServiceThread::run_task(G1ServiceTask* task) {
   log_debug(gc, task, start)("G1 Service Thread (%s) (run)", task->name());
   task->execute();
 
-  double duration = os::elapsedVTime() - start;
+  double duration = os::elapsedTime() - start;
   double vduration = os::elapsedVTime() - vstart;
   log_debug(gc, task)("G1 Service Thread (%s) (run) %1.3fms (cpu: %1.3fms)",
                       task->name(), duration * MILLIUNITS, vduration * MILLIUNITS);
