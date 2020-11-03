@@ -165,11 +165,14 @@ class PSOldGen : public CHeapObj<mtGC> {
   // Iteration.
   void oop_iterate(OopIterateClosure* cl) { object_space()->oop_iterate(cl); }
   void object_iterate(ObjectClosure* cl) { object_space()->object_iterate(cl); }
-  size_t iterable_blocks() {
-    return (object_space()->used_in_bytes() + IterateBlockSize - 1) / IterateBlockSize;
-  }
-  // Iterate block with given block_index
-  void block_iterate(ObjectClosure* cl, size_t block_index);
+
+  // Number of blocks to be iterated over in the used part of old gen.
+  size_t num_iterable_blocks() const;
+  // Iterate the objects starting in block block_index within [bottom, top) of the
+  // old gen. The object just reaching into this block is not iterated over.
+  // A block is an evenly sized non-overlapping part of the old gen of
+  // IterateBlockSize bytes.
+  void object_iterate_block(ObjectClosure* cl, size_t block_index);
 
   // Debugging - do not use for time critical operations
   void print() const;

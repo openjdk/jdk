@@ -173,48 +173,35 @@ HeapWord* PSOldGen::allocate(size_t word_size) {
   return res;
 }
 
-/*
- * Divide space into blocks, processes block begins at
- * bottom + block_index  * (IterateBlockSize / HeapWordSize).
- * NOTE:
- * - The initial block start address may not be a valid
- * object address, _start_array is used to correct it.
- *
- * - The end address is not necessary to be object address.
- *
- * - If there is an object that crosses blocks, it is
- * processed by the worker that owns the block within
- * which the object starts.
- *
- */
-void PSOldGen::block_iterate(ObjectClosure* cl, size_t block_index) {
-  MutableSpace *space = object_space();
-  HeapWord* bottom = space->bottom();
-  HeapWord* top = space->top();
+size_t PSOldGen::num_iterable_blocks() const {
+  return (object_space()->used_in_bytes() + IterateBlockSize - 1) / IterateBlockSize;
+}
+
+void PSOldGen::object_iterate_block(ObjectClosure* cl, size_t block_index) {
   size_t block_word_size = IterateBlockSize / HeapWordSize;
-  HeapWord* begin = bottom + block_index * block_word_size;
-
   assert((block_word_size % (ObjectStartArray::block_size)) == 0,
-         "BLOCK SIZE not a multiple of start_array block");
+         "Block size not a multiple of start_array block");
 
-  // iterate objects in block.
-  HeapWord* end = MIN2(top, begin + block_word_size);
-  // Only iterate if there are objects between begin and end.
-  if (start_array()->object_starts_in_range(begin, end)) {
-    // Process objects in the range, start from finding object at the begining
-    // address. Note that object_start() can return the last object in previous
-    // block, and that object is processed by other worker scanning that block.
-    // So here only focus on objects that fall into the current block.
-    HeapWord* start = start_array()->object_start(begin);
-    if (start < begin) {
-      start += oop(start)->size();
-    }
-    assert(begin <= start,
-           "object address " PTR_FORMAT " must be larger or equal to block address at " PTR_FORMAT,
-           p2i(start), p2i(begin));
-    for (HeapWord* p = start; p < end; p += oop(p)->size()) {
-      cl->do_object(oop(p));
-    }
+  MutableSpace *space = object_space();
+
+  HeapWord* begin = space->bottom() + block_index * block_word_size;
+  HeapWord* end = MIN2(space->top(), begin + block_word_size);
+
+  if (!start_array()->object_starts_in_range(begin, end)) {
+    return;
+  }
+
+  // Get object starting at or reaching into this block.
+  HeapWord* start = start_array()->object_start(begin);
+  if (start < begin) {
+    start += oop(start)->size();
+  }
+  assert(start >= begin,
+         "Object address" PTR_FORMAT " must be larger or equal to block address at " PTR_FORMAT,
+         p2i(start), p2i(begin));
+  // Iterate all objects until the end.
+  for (HeapWord* p = start; p < end; p += oop(p)->size()) {
+    cl->do_object(oop(p));
   }
 }
 
