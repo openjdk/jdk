@@ -136,9 +136,6 @@ void ShenandoahRootVerifier::roots_do(OopClosure* oops) {
   JNIHandles::oops_do(oops);
   Universe::vm_global()->oops_do(oops);
 
-  AlwaysTrueClosure always_true;
-  WeakProcessor::weak_oops_do(&always_true, oops);
-
   if (ShenandoahStringDedup::is_enabled()) {
     ShenandoahStringDedup::oops_do_slow(oops);
   }
