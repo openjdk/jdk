@@ -33,6 +33,7 @@ import javax.swing.SwingUtilities;
 import java.awt.AWTException;
 import java.awt.AlphaComposite;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
@@ -52,13 +53,14 @@ import java.io.File;
  * @library /lib/client/
  * @build Util
  * @build ExtendedRobot
- * @run main/othervm -Dsun.java2d.uiScale=1 bug7154030
+ * @run main bug7154030
  */
 
 public class bug7154030 {
 
     private static JButton button = null;
     private static JFrame frame;
+    private static int locx, locy;
 
     public static void main(String[] args) throws Exception {
         try {
@@ -88,14 +90,17 @@ public class bug7154030 {
 
                     frame.setContentPane(desktop);
                     frame.setSize(300, 300);
-                    frame.setLocation(0, 0);
+                    Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+                    locx = screenSize.width/2;
+                    locy = screenSize.height/2;
+                    frame.setLocation(locx, locy);
                     frame.setVisible(true);
                     frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
                 }
             });
 
             robot.waitForIdle(1000);
-            imageInit = robot.createScreenCapture(new Rectangle(0, 0, 300, 300));
+            imageInit = robot.createScreenCapture(new Rectangle(locx, locy, 300, 300));
 
             SwingUtilities.invokeAndWait(new Runnable() {
 
@@ -106,7 +111,7 @@ public class bug7154030 {
             });
 
             robot.waitForIdle(500);
-            imageShow = robot.createScreenCapture(new Rectangle(0, 0, 300, 300));
+            imageShow = robot.createScreenCapture(new Rectangle(locx, locy, 300, 300));
             if (Util.compareBufferedImages(imageInit, imageShow)) {
                 ImageIO.write(imageInit, "png", new File("imageInit.png"));
                 ImageIO.write(imageShow, "png", new File("imageShow.png"));
@@ -123,7 +128,7 @@ public class bug7154030 {
             });
 
             robot.waitForIdle(500);
-            imageHide = robot.createScreenCapture(new Rectangle(0, 0, 300, 300));
+            imageHide = robot.createScreenCapture(new Rectangle(locx, locy, 300, 300));
 
             if (!Util.compareBufferedImages(imageInit, imageHide)) {
                 ImageIO.write(imageInit, "png", new File("imageInit.png"));
@@ -142,7 +147,7 @@ public class bug7154030 {
             });
 
             robot.waitForIdle(500);
-            imageInit = robot.createScreenCapture(new Rectangle(0, 0, 300, 300));
+            imageInit = robot.createScreenCapture(new Rectangle(locx, locy, 300, 300));
 
             SwingUtilities.invokeAndWait(new Runnable() {
 
@@ -153,7 +158,7 @@ public class bug7154030 {
             });
 
             robot.waitForIdle(500);
-            imageShow = robot.createScreenCapture(new Rectangle(0, 0, 300, 300));
+            imageShow = robot.createScreenCapture(new Rectangle(locx, locy, 300, 300));
 
             SwingUtilities.invokeAndWait(new Runnable() {
 
@@ -170,7 +175,7 @@ public class bug7154030 {
             }
 
             robot.waitForIdle(500);
-            imageHide = robot.createScreenCapture(new Rectangle(0, 0, 300, 300));
+            imageHide = robot.createScreenCapture(new Rectangle(locx, locy, 300, 300));
 
             if (!Util.compareBufferedImages(imageInit, imageHide)) {
                 ImageIO.write(imageInit, "png", new File("imageInit.png"));
