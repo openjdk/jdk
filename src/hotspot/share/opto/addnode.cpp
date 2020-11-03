@@ -236,41 +236,47 @@ const Type *AddNode::add_of_identity( const Type *t1, const Type *t2 ) const {
 }
 
 //---------------------------Bitmask helper------------------------------------
-// Get a bitmask for expression: "(a & 0xFF) << 8" -> 0xFF00
-static juint get_bitmask(PhaseGVN *phase, Node* value) {
+// Assuming only And, Or and Shift (and also their replacement BitfieldInsert) are involved
+// in the expression, compute a bit mask covering all possible values of the expression.
+// Mask information can be used in
+// - Add into Or conversion (when value range masks of Add arguments do not intersect)
+// - Or(And+Shift,And+Shift) into BitfieldInsert conversion (when masks of Or arguments do not intersect)
+static juint value_range_mask(PhaseGVN *phase, Node* value) {
   int opcode = value->Opcode();
   if (opcode == Op_LShiftI && value->in(2)->is_Con()) {
     int lshift = phase->type(value->in(2))->is_int()->get_con();
-    return get_bitmask(phase, value->in(1)) << lshift;
+    return value_range_mask(phase, value->in(1)) << lshift;
   } else if (opcode == Op_AndI && value->in(2)->is_Con()) {
     return phase->type(value->in(2))->is_int()->get_con();
   } else if (opcode == Op_BitfieldInsertI) {
     int width = value->in(3)->get_int();
     int offset = value->in(4)->get_int();
     int mask = ((1 << width) - 1) << offset;
-    return mask | get_bitmask(phase, value->in(1));
+    return mask | value_range_mask(phase, value->in(1));
   } else if (opcode == Op_OrI) {
-    return get_bitmask(phase, value->in(1)) |
-           get_bitmask(phase, value->in(2));
+    return value_range_mask(phase, value->in(1)) |
+           value_range_mask(phase, value->in(2));
   }
   return 0xFFFFFFFF;
 }
 
-static julong get_bitmaskL(PhaseGVN *phase, Node* value) {
+// Assuming only AndL, OrL and ShiftL (and also their replacement BitfieldInsertL) are involved
+// in the expression, compute a bit mask covering all possible values of the expression.
+static julong value_range_maskL(PhaseGVN *phase, Node* value) {
   int opcode = value->Opcode();
   if (opcode == Op_LShiftL && value->in(2)->is_Con()) {
     int lshift = phase->type(value->in(2))->is_int()->get_con();
-    return get_bitmaskL(phase, value->in(1)) << lshift;
+    return value_range_maskL(phase, value->in(1)) << lshift;
   } else if (opcode == Op_AndL && value->in(2)->is_Con()) {
     return value->in(2)->get_long();
   } else if (opcode == Op_BitfieldInsertL) {
     int width = value->in(3)->get_int();
     int offset = value->in(4)->get_int();
     julong mask = ((1L << width) - 1) << offset;
-    return mask | get_bitmaskL(phase, value->in(1));
+    return mask | value_range_maskL(phase, value->in(1));
   } else if (opcode == Op_OrL) {
-    return get_bitmaskL(phase, value->in(1)) |
-           get_bitmaskL(phase, value->in(2));
+    return value_range_maskL(phase, value->in(1)) |
+           value_range_maskL(phase, value->in(2));
   }
   return CONST64(0xFFFFFFFFFFFFFFFF);
 }
@@ -360,10 +366,10 @@ Node *AddINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  // Convert "((a & 0xFF) << 8) + (b & 0xFF)" into "((a & 0xFF) << 8) | (b & 0xFF)"
-  int bitmask1 = get_bitmask(phase, in(1));
-  int bitmask2 = get_bitmask(phase, in(2));
-  if ((bitmask1 & bitmask2) == 0) {
+  // Convert "a + b" into "a | b" when value range masks do not intersect
+  int mask1 = value_range_mask(phase, in(1));
+  int mask2 = value_range_mask(phase, in(2));
+  if ((mask1 & mask2) == 0) {
     return new OrINode(in(1), in(2));
   }
 
@@ -484,10 +490,10 @@ Node *AddLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return new AddLNode(shift,in2->in(2));
   }
 
-  // Convert "((a & 0xFF) << 8) + (b & 0xFF)" into "((a & 0xFF) << 8) | (b & 0xFF)"
-  julong bitmask1 = get_bitmaskL(phase, in(1));
-  julong bitmask2 = get_bitmaskL(phase, in(2));
-  if ((bitmask1 & bitmask2) == 0) {
+  // Convert "a + b" into "a | b" when value range masks do not intersect
+  julong mask1 = value_range_maskL(phase, in(1));
+  julong mask2 = value_range_maskL(phase, in(2));
+  if ((mask1 & mask2) == 0) {
     return new OrLNode(in(1), in(2));
   }
 
@@ -845,7 +851,9 @@ Node* OrINode::Ideal(PhaseGVN* phase, bool can_reshape) {
     Node *dst = in(1);
     Node *src = in(2);
     int offset = 0;
-    // Convert Or(v1, Shift(And(v2, 0xFF), shift)) into BitfieldInsert(dst, src, width, offset)
+    // Perform the following transformations if the Or argument value range masks do not overlap:
+    //   "dst | (value & shift)" into BitfieldInsert(dst, value, width, 0)
+    //   "dst | ((value & shift) << offset)" into BitfieldInsert(dst, value, width, offset)
     if (src->Opcode() == Op_LShiftI && src->in(1)->Opcode() == Op_AndI && src->in(2)->is_Con()) {
       andi   = src->in(1);
       offset = src->in(2)->get_int();
@@ -858,7 +866,7 @@ Node* OrINode::Ideal(PhaseGVN* phase, bool can_reshape) {
       if (mask->is_Con() && is_power_of_2(mask->get_int() + 1)) {
         int width = exact_log2(mask->get_int() + 1);
         int mask = ((1 << width) - 1) << offset;
-        if (width + offset <= 32 && ((get_bitmask(phase, dst) & mask) == 0)) {
+        if (width + offset <= 32 && ((value_range_mask(phase, dst) & mask) == 0)) {
           return new BitfieldInsertINode(dst, value, phase->intcon(offset), phase->intcon(width));
         }
       }
@@ -947,7 +955,7 @@ Node* OrLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       if (mask->is_Con() && is_power_of_2(mask->get_long() + 1)) {
         julong width = exact_log2_long(mask->get_long() + 1);
         julong mask = ((1L << width) - 1) << offset;
-        if (width + offset <= 64 && ((get_bitmaskL(phase, dst) & mask) == 0)) {
+        if (width + offset <= 64 && ((value_range_maskL(phase, dst) & mask) == 0)) {
           return new BitfieldInsertLNode(dst, value, phase->intcon(offset), phase->intcon(width));
         }
       }
