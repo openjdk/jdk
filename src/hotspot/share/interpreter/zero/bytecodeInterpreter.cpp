@@ -1422,7 +1422,6 @@ run:
           jint* lpc  = (jint*)VMalignWordUp(pc+1);
           int32_t  key  = STACK_INT(-1);
           int32_t  skip = Bytes::get_Java_u4((address) lpc); /* default amount */
-          // Remember index.
           int32_t  npairs = Bytes::get_Java_u4((address) &lpc[1]);
           while (--npairs >= 0) {
             lpc += 2;
@@ -1596,7 +1595,6 @@ run:
             // Seems way more expensive now that we must dispatch
             //
             if (rhsKlass != elemKlass && !rhsKlass->is_subtype_of(elemKlass)) { // ebx->is...
-              // Decrement counter if subtype check failed.
               VM_JAVA_ERROR(vmSymbols::java_lang_ArrayStoreException(), "");
             }
           }
