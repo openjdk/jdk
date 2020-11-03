@@ -1305,14 +1305,14 @@ class StubGenerator: public StubCodeGenerator {
 
   // Scan over array at a for count oops, verifying each one.
   // Preserves a and count, clobbers rscratch1 and rscratch2.
-  void verify_oop_array (size_t size, Register a, Register count, Register temp) {
+  void verify_oop_array (int size, Register a, Register count, Register temp) {
     Label loop, end;
     __ mov(rscratch1, a);
     __ mov(rscratch2, zr);
     __ bind(loop);
     __ cmp(rscratch2, count);
     __ br(Assembler::HS, end);
-    if (size == (size_t)wordSize) {
+    if (size == wordSize) {
       __ ldr(temp, Address(a, rscratch2, Address::lsl(exact_log2(size))));
       __ verify_oop(temp);
     } else {
@@ -1343,7 +1343,7 @@ class StubGenerator: public StubCodeGenerator {
   //   disjoint_int_copy_entry is set to the no-overlap entry point
   //   used by generate_conjoint_int_oop_copy().
   //
-  address generate_disjoint_copy(size_t size, bool aligned, bool is_oop, address *entry,
+  address generate_disjoint_copy(int size, bool aligned, bool is_oop, address *entry,
                                   const char *name, bool dest_uninitialized = false) {
     Register s = c_rarg0, d = c_rarg1, count = c_rarg2;
     RegSet saved_reg = RegSet::of(s, d, count);
@@ -1409,7 +1409,7 @@ class StubGenerator: public StubCodeGenerator {
   // the hardware handle it.  The two dwords within qwords that span
   // cache line boundaries will still be loaded and stored atomicly.
   //
-  address generate_conjoint_copy(size_t size, bool aligned, bool is_oop, address nooverlap_target,
+  address generate_conjoint_copy(int size, bool aligned, bool is_oop, address nooverlap_target,
                                  address *entry, const char *name,
                                  bool dest_uninitialized = false) {
     Register s = c_rarg0, d = c_rarg1, count = c_rarg2;
@@ -1660,7 +1660,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_disjoint_oop_copy(bool aligned, address *entry,
                                      const char *name, bool dest_uninitialized) {
     const bool is_oop = true;
-    const size_t size = UseCompressedOops ? sizeof (jint) : sizeof (jlong);
+    const int size = UseCompressedOops ? sizeof (jint) : sizeof (jlong);
     return generate_disjoint_copy(size, aligned, is_oop, entry, name, dest_uninitialized);
   }
 
@@ -1678,7 +1678,7 @@ class StubGenerator: public StubCodeGenerator {
                                      address nooverlap_target, address *entry,
                                      const char *name, bool dest_uninitialized) {
     const bool is_oop = true;
-    const size_t size = UseCompressedOops ? sizeof (jint) : sizeof (jlong);
+    const int size = UseCompressedOops ? sizeof (jint) : sizeof (jlong);
     return generate_conjoint_copy(size, aligned, is_oop, nooverlap_target, entry,
                                   name, dest_uninitialized);
   }

@@ -1830,7 +1830,7 @@ bool MacroAssembler::try_merge_ldst(Register rt, const Address &adr, size_t size
     return true;
   } else {
     assert(size_in_bytes == 8 || size_in_bytes == 4, "only 8 bytes or 4 bytes load/store is supported.");
-    const unsigned mask = size_in_bytes - 1;
+    const uint64_t mask = size_in_bytes - 1;
     if (adr.getMode() == Address::base_plus_offset &&
         (adr.offset() & mask) == 0) { // only supports base_plus_offset.
       code()->set_last_insn(pc());
@@ -2894,7 +2894,7 @@ void MacroAssembler::merge_ldst(Register rt,
   // Overwrite previous generated binary.
   code_section()->set_end(prev);
 
-  const int sz = prev_ldst->size_in_bytes();
+  const size_t sz = prev_ldst->size_in_bytes();
   assert(sz == 8 || sz == 4, "only supports 64/32bit merging.");
   if (!is_store) {
     BLOCK_COMMENT("merged ldr pair");

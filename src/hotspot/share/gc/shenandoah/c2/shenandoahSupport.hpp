@@ -60,7 +60,7 @@ private:
   static void test_null(Node*& ctrl, Node* val, Node*& null_ctrl, PhaseIdealLoop* phase);
   static void test_gc_state(Node*& ctrl, Node* raw_mem, Node*& heap_stable_ctrl,
                             PhaseIdealLoop* phase, int flags);
-  static void call_lrb_stub(Node*& ctrl, Node*& val, Node* load_addr, Node*& result_mem, Node* raw_mem, bool is_native, PhaseIdealLoop* phase);
+  static void call_lrb_stub(Node*& ctrl, Node*& val, Node* load_addr, Node*& result_mem, Node* raw_mem, bool is_weak, PhaseIdealLoop* phase);
   static void test_in_cset(Node*& ctrl, Node*& not_cset_ctrl, Node* val, Node* raw_mem, PhaseIdealLoop* phase);
   static void move_gc_state_test_out_of_loop(IfNode* iff, PhaseIdealLoop* phase);
   static void merge_back_to_back_tests(Node* n, PhaseIdealLoop* phase);
@@ -229,12 +229,12 @@ public:
   };
 
 private:
-  bool _native;
+  bool _weak;
 
 public:
   ShenandoahLoadReferenceBarrierNode(Node* ctrl, Node* val, bool native);
 
-  bool is_native() const;
+  bool is_weak() const;
   virtual int Opcode() const;
   virtual const Type* bottom_type() const;
   virtual const Type* Value(PhaseGVN* phase) const;

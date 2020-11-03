@@ -305,7 +305,7 @@ bool ShenandoahBarrierSetC2::is_shenandoah_lrb_call(Node* call) {
   address entry_point = call->as_CallLeaf()->entry_point();
   return (entry_point == CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier)) ||
          (entry_point == CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_narrow)) ||
-         (entry_point == CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native));
+         (entry_point == CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak));
 }
 
 bool ShenandoahBarrierSetC2::is_shenandoah_marking_if(PhaseTransform *phase, Node* n) {
@@ -547,7 +547,7 @@ Node* ShenandoahBarrierSetC2::load_at_resolved(C2Access& access, const Type* val
   if (ShenandoahBarrierSet::need_load_reference_barrier(decorators, type)) {
     load = new ShenandoahLoadReferenceBarrierNode(NULL,
                                                   load,
-                                                  ShenandoahBarrierSet::use_load_reference_barrier_native(decorators, type));
+                                                  ShenandoahBarrierSet::use_load_reference_barrier_weak(decorators, type));
     if (access.is_parse_access()) {
       load = static_cast<C2ParseAccess &>(access).kit()->gvn().transform(load);
     } else {
@@ -1063,12 +1063,12 @@ Node* ShenandoahBarrierSetC2::ideal_node(PhaseGVN* phase, Node* n, bool can_resh
     // If one input is NULL, then step over the barriers (except LRB native) on the other input
     if (in1->bottom_type() == TypePtr::NULL_PTR &&
         !((in2->Opcode() == Op_ShenandoahLoadReferenceBarrier) &&
-          ((ShenandoahLoadReferenceBarrierNode*)in2)->is_native())) {
+          ((ShenandoahLoadReferenceBarrierNode*)in2)->is_weak())) {
       in2 = step_over_gc_barrier(in2);
     }
     if (in2->bottom_type() == TypePtr::NULL_PTR &&
         !((in1->Opcode() == Op_ShenandoahLoadReferenceBarrier) &&
-          ((ShenandoahLoadReferenceBarrierNode*)in1)->is_native())) {
+          ((ShenandoahLoadReferenceBarrierNode*)in1)->is_weak())) {
       in1 = step_over_gc_barrier(in1);
     }
 

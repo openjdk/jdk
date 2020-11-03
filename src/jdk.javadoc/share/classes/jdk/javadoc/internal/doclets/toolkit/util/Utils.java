@@ -91,14 +91,23 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileManager.Location;
 import javax.tools.StandardLocation;
 
+import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.DocTree.Kind;
 import com.sun.source.doctree.EndElementTree;
 import com.sun.source.doctree.ParamTree;
+import com.sun.source.doctree.ProvidesTree;
+import com.sun.source.doctree.ReturnTree;
+import com.sun.source.doctree.SeeTree;
+import com.sun.source.doctree.SerialDataTree;
+import com.sun.source.doctree.SerialFieldTree;
+import com.sun.source.doctree.SerialTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
+import com.sun.source.doctree.ThrowsTree;
 import com.sun.source.doctree.UnknownBlockTagTree;
+import com.sun.source.doctree.UsesTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.LineMap;
 import com.sun.source.util.DocSourcePositions;
@@ -945,8 +954,8 @@ public class Utils {
         return set;
     }
 
-    public List<? extends DocTree> getSerialDataTrees(ExecutableElement member) {
-        return getBlockTags(member, SERIAL_DATA);
+    public List<? extends SerialDataTree> getSerialDataTrees(ExecutableElement member) {
+        return getBlockTags(member, SERIAL_DATA, SerialDataTree.class);
     }
 
     public FileObject getFileObject(TypeElement te) {
@@ -2591,8 +2600,20 @@ public class Utils {
                 .collect(Collectors.toList());
     }
 
+    public <T extends DocTree> List<? extends T> getBlockTags(Element element, Predicate<DocTree> filter, Class<T> tClass) {
+        return getBlockTags(element).stream()
+                .filter(t -> t.getKind() != ERRONEOUS)
+                .filter(filter)
+                .map(t -> tClass.cast(t))
+                .collect(Collectors.toList());
+    }
+
     public List<? extends DocTree> getBlockTags(Element element, DocTree.Kind kind) {
         return getBlockTags(element, t -> t.getKind() == kind);
+    }
+
+    public <T extends DocTree> List<? extends T> getBlockTags(Element element, DocTree.Kind kind, Class<T> tClass) {
+        return getBlockTags(element, t -> t.getKind() == kind, tClass);
     }
 
     public List<? extends DocTree> getBlockTags(Element element, DocTree.Kind kind, DocTree.Kind altKind) {
@@ -2780,28 +2801,30 @@ public class Utils {
                 : docCommentTree.getFullBody();
     }
 
-    public List<? extends DocTree> getDeprecatedTrees(Element element) {
-        return getBlockTags(element, DEPRECATED);
+    public List<? extends DeprecatedTree> getDeprecatedTrees(Element element) {
+        return getBlockTags(element, DEPRECATED, DeprecatedTree.class);
     }
 
-    public List<? extends DocTree> getProvidesTrees(Element element) {
-        return getBlockTags(element, PROVIDES);
+    public List<? extends ProvidesTree> getProvidesTrees(Element element) {
+        return getBlockTags(element, PROVIDES, ProvidesTree.class);
     }
 
-    public List<? extends DocTree> getSeeTrees(Element element) {
-        return getBlockTags(element, SEE);
+    public List<? extends SeeTree> getSeeTrees(Element element) {
+        return getBlockTags(element, SEE, SeeTree.class);
     }
 
-    public List<? extends DocTree> getSerialTrees(Element element) {
-        return getBlockTags(element, SERIAL);
+    public List<? extends SerialTree> getSerialTrees(Element element) {
+        return getBlockTags(element, SERIAL, SerialTree.class);
     }
 
-    public List<? extends DocTree> getSerialFieldTrees(VariableElement field) {
-        return getBlockTags(field, DocTree.Kind.SERIAL_FIELD);
+    public List<? extends SerialFieldTree> getSerialFieldTrees(VariableElement field) {
+        return getBlockTags(field, DocTree.Kind.SERIAL_FIELD, SerialFieldTree.class);
     }
 
-    public List<? extends DocTree> getThrowsTrees(Element element) {
-        return getBlockTags(element, DocTree.Kind.EXCEPTION, DocTree.Kind.THROWS);
+    public List<? extends ThrowsTree> getThrowsTrees(Element element) {
+        return getBlockTags(element,
+                t -> switch (t.getKind()) { case EXCEPTION, THROWS -> true; default -> false; },
+                ThrowsTree.class);
     }
 
     public List<? extends ParamTree> getTypeParamTrees(Element element) {
@@ -2813,22 +2836,17 @@ public class Utils {
     }
 
     private  List<? extends ParamTree> getParamTrees(Element element, boolean isTypeParameters) {
-        List<ParamTree> out = new ArrayList<>();
-        for (DocTree dt : getBlockTags(element, PARAM)) {
-            ParamTree pt = (ParamTree) dt;
-            if (pt.isTypeParameter() == isTypeParameters) {
-                out.add(pt);
-            }
-        }
-        return out;
+        return getBlockTags(element,
+                t -> t.getKind() == PARAM && ((ParamTree) t).isTypeParameter() == isTypeParameters,
+                ParamTree.class);
     }
 
-    public  List<? extends DocTree> getReturnTrees(Element element) {
-        return new ArrayList<>(getBlockTags(element, RETURN));
+    public  List<? extends ReturnTree> getReturnTrees(Element element) {
+        return new ArrayList<>(getBlockTags(element, RETURN, ReturnTree.class));
     }
 
-    public List<? extends DocTree> getUsesTrees(Element element) {
-        return getBlockTags(element, USES);
+    public List<? extends UsesTree> getUsesTrees(Element element) {
+        return getBlockTags(element, USES, UsesTree.class);
     }
 
     public List<? extends DocTree> getFirstSentenceTrees(Element element) {
