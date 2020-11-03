@@ -51,12 +51,8 @@ public final class MTICC_ColorSpaceToFrom {
         // Will run the test no more than 15 seconds
         endtime = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
         for (int i = 0; i < 1000 && !isComplete(); i++) {
-            for (Method method : new Method[]{
-                    Method.FROM_RGB,
-                    Method.FROM_XYZ,
-                    Method.TO_RGB,
-                    Method.TO_XYZ
-            }) {
+            for (Method method : new Method[]{Method.FROM_RGB, Method.FROM_XYZ,
+                                              Method.TO_RGB, Method.TO_XYZ}) {
                 test(new ICC_ColorSpace(srgb), method);
                 test(new ICC_ColorSpace(gray), method);
                 test(new ICC_ColorSpace(xyz), method);
