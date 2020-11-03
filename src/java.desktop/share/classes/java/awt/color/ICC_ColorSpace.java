@@ -197,17 +197,17 @@ public class ICC_ColorSpace extends ColorSpace {
         if (this2srgb == null) {
             synchronized (this) {
                 if (this2srgb == null) {
-                    ColorTransform[] transformList = new ColorTransform[2];
+                    ColorTransform[] transforms = new ColorTransform[2];
                     var srgb = (ICC_ColorSpace) ColorSpace.getInstance(CS_sRGB);
                     PCMM mdl = CMSManager.getModule();
-                    transformList[0] = mdl.createTransform(thisProfile,
-                                       ColorTransform.Any, ColorTransform.In);
-                    transformList[1] = mdl.createTransform(srgb.getProfile(),
-                                       ColorTransform.Any, ColorTransform.Out);
+                    transforms[0] = mdl.createTransform(thisProfile,
+                                    ColorTransform.Any, ColorTransform.In);
+                    transforms[1] = mdl.createTransform(srgb.getProfile(),
+                                    ColorTransform.Any, ColorTransform.Out);
                     if (needScaleInit) {
                         setComponentScaling();
                     }
-                    this2srgb = mdl.createTransform(transformList);
+                    this2srgb = mdl.createTransform(transforms);
                 }
             }
         }
@@ -249,17 +249,17 @@ public class ICC_ColorSpace extends ColorSpace {
         if (srgb2this == null) {
             synchronized (this) {
                 if (srgb2this == null) {
-                    ColorTransform[] transformList = new ColorTransform[2];
+                    ColorTransform[] transforms = new ColorTransform[2];
                     var srgb = (ICC_ColorSpace) ColorSpace.getInstance(CS_sRGB);
                     PCMM mdl = CMSManager.getModule();
-                    transformList[0] = mdl.createTransform(srgb.getProfile(),
-                                       ColorTransform.Any, ColorTransform.In);
-                    transformList[1] = mdl.createTransform(thisProfile,
-                                       ColorTransform.Any, ColorTransform.Out);
+                    transforms[0] = mdl.createTransform(srgb.getProfile(),
+                                    ColorTransform.Any, ColorTransform.In);
+                    transforms[1] = mdl.createTransform(thisProfile,
+                                    ColorTransform.Any, ColorTransform.Out);
                     if (needScaleInit) {
                         setComponentScaling();
                     }
-                    srgb2this = mdl.createTransform(transformList);
+                    srgb2this = mdl.createTransform(transforms);
                 }
             }
         }
@@ -381,24 +381,23 @@ public class ICC_ColorSpace extends ColorSpace {
         if (this2xyz == null) {
             synchronized (this) {
                 if (this2xyz == null) {
-                    ColorTransform[] transformList = new ColorTransform[2];
+                    ColorTransform[] transforms = new ColorTransform[2];
                     var xyz = (ICC_ColorSpace)ColorSpace.getInstance(CS_CIEXYZ);
                     PCMM mdl = CMSManager.getModule();
                     try {
-                        transformList[0] = mdl.createTransform(thisProfile,
-                                           ICC_Profile.icRelativeColorimetric,
-                                           ColorTransform.In);
+                        transforms[0] = mdl.createTransform(thisProfile,
+                                        ICC_Profile.icRelativeColorimetric,
+                                        ColorTransform.In);
                     } catch (CMMException e) {
-                        transformList[0] = mdl.createTransform(thisProfile,
-                                           ColorTransform.Any,
-                                           ColorTransform.In);
+                        transforms[0] = mdl.createTransform(thisProfile,
+                                        ColorTransform.Any, ColorTransform.In);
                     }
-                    transformList[1] = mdl.createTransform(xyz.getProfile(),
-                                       ColorTransform.Any, ColorTransform.Out);
+                    transforms[1] = mdl.createTransform(xyz.getProfile(),
+                                    ColorTransform.Any, ColorTransform.Out);
                     if (needScaleInit) {
                         setComponentScaling();
                     }
-                    this2xyz = mdl.createTransform(transformList);
+                    this2xyz = mdl.createTransform(transforms);
                 }
             }
         }
@@ -522,24 +521,23 @@ public class ICC_ColorSpace extends ColorSpace {
         if (xyz2this == null) {
             synchronized (this) {
                 if (xyz2this == null) {
-                    ColorTransform[] transformList = new ColorTransform[2];
+                    ColorTransform[] transforms = new ColorTransform[2];
                     var xyz = (ICC_ColorSpace)ColorSpace.getInstance(CS_CIEXYZ);
                     PCMM mdl = CMSManager.getModule();
-                    transformList[0] = mdl.createTransform(xyz.getProfile(),
-                                       ColorTransform.Any, ColorTransform.In);
+                    transforms[0] = mdl.createTransform(xyz.getProfile(),
+                                    ColorTransform.Any, ColorTransform.In);
                     try {
-                        transformList[1] = mdl.createTransform(thisProfile,
-                                           ICC_Profile.icRelativeColorimetric,
-                                           ColorTransform.Out);
+                        transforms[1] = mdl.createTransform(thisProfile,
+                                        ICC_Profile.icRelativeColorimetric,
+                                        ColorTransform.Out);
                     } catch (CMMException e) {
-                        transformList[1] = mdl.createTransform(thisProfile,
-                                           ColorTransform.Any,
-                                           ColorTransform.Out);
+                        transforms[1] = mdl.createTransform(thisProfile,
+                                        ColorTransform.Any, ColorTransform.Out);
                     }
                     if (needScaleInit) {
                         setComponentScaling();
                     }
-                    xyz2this = mdl.createTransform(transformList);
+                    xyz2this = mdl.createTransform(transforms);
                 }
             }
         }
