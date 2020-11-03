@@ -242,18 +242,19 @@ not set by either the -D option or the {@code System.setProperty()} API,
 instead they are set as security properties.</P>
 <a id="Unixdomain"></a>
 <H2>Unix domain sockets</H2>
-<P>There are a number of system (and networking) properties that affect the behavior of
-channels to <i>Unix domain</i> server sockets when binding <i>automatically</i>.
+<p><i>Automatic</i> binding of {@link java.nio.channels.ServerSocketChannel ServerSocketChannel}s
 <p>
-Automatic binding of a server socket occurs when {@link 
+Automatic binding of a channel to a server socket occurs when {@link 
 java.nio.channels.ServerSocketChannel#bind(SocketAddress,int) ServerSocketChannel.bind}
 is called with a {@code null} address parameter. In this case, the system
 is requested to choose a unique path for the socket in some predefined system temporary
 directory.
+<P>There are a number of system (and networking) properties that affect the behavior of
+channels to <i>Unix domain</i> server sockets when binding automatically.
 <p>
-Bearing in mind that Unix domain socket addresses are limited in length to
-approximately 100 bytes, it is important to ensure that the temporary directory's name
-together with the filename used for the socket (currently a name of the form
+Bearing in mind that Unix domain socket addresses are limited in length to approximately 100 
+bytes (depending on the platform), it is important to ensure that the temporary directory's name
+together with the filename used for the socket (currently a name similar to
 {@code socket_1679697142}) does not exceed this limit. The following properties
 can be used to control the selection of this directory:
 <p>
@@ -265,15 +266,22 @@ can be used to control the selection of this directory:
 	(eg Windows) there is no default value. Either way, it is always possible
 	to override the networking property with a system property of the same name
 	set on the command line. If neither of the networking nor system property
-	are set, then some systems may check a commonly used environment variable as temporary
-	directory.
+	are set, then some systems (eg Windows)  may check a commonly used environment 
+	variable as temporary directory.
 	<LI><P><B>{@systemProperty java.io.tmpdir}</b> If the previous step fails to locate
 	a directory to use, then the directory identified by the system property
 	{@code java.io.tmpdir} is used.
 </ul>
 More information about the platform specific behavior can be seen in the 
 {@code conf/net.properties} configuration file.
-
+<p>
+<i>Implicit</i> binding of {@link java.nio.channels.SocketChannel SocketChannel}s
+<p>
+If a client socket is connected to a remote destination without calling {@code bind} first,
+then the socket is <i>implicitly</i> bound. In this case, <i>Unix domain</i> sockets 
+are <i>unnamed</i> (ie. their path is empty). This behavior is not affected by any
+system or networking properties.
+<p>
 <a id="EnhancedExceptions"></a>
 <H2>Enhanced exception messages</H2>
 By default, for security reasons, exception messages do not include potentially sensitive
