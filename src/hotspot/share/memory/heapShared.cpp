@@ -206,7 +206,9 @@ oop HeapShared::archive_heap_object(oop obj, Thread* THREAD) {
     log_error(cds, heap)(
       "Cannot allocate space for object " PTR_FORMAT " in archived heap region",
       p2i(obj));
-    vm_exit(1);
+    vm_direct_exit(-1,
+      err_msg("Out of memory. Please run with a larger Java heap, current MaxHeapSize = "
+              SIZE_FORMAT "M", MaxHeapSize/M));
   }
   return archived_oop;
 }
@@ -725,7 +727,7 @@ oop HeapShared::archive_reachable_objects_from(int level,
     // these objects that are referenced (directly or indirectly) by static fields.
     ResourceMark rm;
     log_error(cds, heap)("Cannot archive object of class %s", orig_obj->klass()->external_name());
-    vm_exit(1);
+    vm_direct_exit(1);
   }
 
   // java.lang.Class instances cannot be included in an archived object sub-graph. We only support
@@ -735,7 +737,7 @@ oop HeapShared::archive_reachable_objects_from(int level,
   // object that is referenced (directly or indirectly) by static fields.
   if (java_lang_Class::is_instance(orig_obj)) {
     log_error(cds, heap)("(%d) Unknown java.lang.Class object is in the archived sub-graph", level);
-    vm_exit(1);
+    vm_direct_exit(1);
   }
 
   oop archived_obj = find_archived_heap_object(orig_obj);
@@ -771,7 +773,7 @@ oop HeapShared::archive_reachable_objects_from(int level,
         // We don't know how to handle an object that has been archived, but some of its reachable
         // objects cannot be archived. Bail out for now. We might need to fix this in the future if
         // we have a real use case.
-        vm_exit(1);
+        vm_direct_exit(1);
       }
     }
 
