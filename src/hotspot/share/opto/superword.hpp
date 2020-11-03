@@ -291,11 +291,11 @@ class SuperWord : public ResourceObj {
   void unrolling_analysis(int &local_loop_unroll_factor);
 
   // Accessors for SWPointer
-  PhaseIdealLoop* phase()          { return _phase; }
-  IdealLoopTree* lpt()             { return _lpt; }
-  PhiNode* iv()                    { return _iv; }
+  PhaseIdealLoop* phase() const    { return _phase; }
+  IdealLoopTree* lpt() const       { return _lpt; }
+  PhiNode* iv() const              { return _iv; }
 
-  bool early_return()              { return _early_return; }
+  bool early_return() const        { return _early_return; }
 
 #ifndef PRODUCT
   bool     is_debug()              { return _vector_loop_debug > 0; }
@@ -311,7 +311,8 @@ class SuperWord : public ResourceObj {
  private:
   IdealLoopTree* _lpt;             // Current loop tree node
   CountedLoopNode* _lp;            // Current CountedLoopNode
-  CountedLoopEndNode* _cached_pre_loop_end; // Current CountedLoopEndNode of the pre loop
+  CountedLoopNode* _pre_loop_head; // Current CountedLoopNode of pre loop
+  CountedLoopEndNode* _pre_loop_end; // Current CountedLoopEndNode of pre loop
   Node*          _bb;              // Current basic block
   PhiNode*       _iv;              // Induction var
   bool           _race_possible;   // In cases where SDMU is true
@@ -329,29 +330,39 @@ class SuperWord : public ResourceObj {
 
   // Accessors
   Arena* arena()                   { return _arena; }
-  Node* bb()                       { return _bb; }
-  void  set_bb(Node* bb)           { _bb = bb; }
-  void set_lpt(IdealLoopTree* lpt) { _lpt = lpt; }
 
-  CountedLoopNode* lp()            { return _lp; }
+  Node* bb()                       { return _bb; }
+  void set_bb(Node* bb)            { _bb = bb; }
+  void set_lpt(IdealLoopTree* lpt) { _lpt = lpt; }
+  CountedLoopNode* lp() const      { return _lp; }
   void set_lp(CountedLoopNode* lp) {
     _lp = lp;
     _iv = lp->as_CountedLoop()->phi()->as_Phi();
   }
+  int iv_stride() const            { return lp()->stride_con(); }
 
-  CountedLoopEndNode* cached_pre_loop_end() {
+  void set_pre_loop_head(CountedLoopNode* pre_loop_head) {
+    assert(pre_loop_head != NULL, "must be valid");
+    _pre_loop_head = pre_loop_head;
+  }
+  CountedLoopNode* pre_loop_head() const {
+    assert(_pre_loop_head != NULL, "should be set when fetched");
+    return _pre_loop_head;
+  }
+  void set_pre_loop_end(CountedLoopEndNode* pre_loop_end) {
+    assert(pre_loop_end, "must be valid");
+    _pre_loop_end = pre_loop_end;
+  }
+  CountedLoopEndNode* pre_loop_end() const {
 #ifdef ASSERT
-    Node* pre_end = get_pre_loop_end(_lp);
-    assert(_lp != NULL && (pre_end == NULL || pre_end == _cached_pre_loop_end) , "real CLE either not found anymore (NULL) or unchanged");
-    assert(_cached_pre_loop_end != NULL, "should be set when fetched");
+    assert(_lp != NULL, "sanity");
+    assert(_pre_loop_end != NULL, "should be set when fetched");
+    Node* found_pre_end = find_pre_loop_end(_lp);
+    assert(_pre_loop_end == found_pre_end && _pre_loop_end == pre_loop_head()->loopexit(),
+           "should find the pre loop end and must be the same result");
 #endif
-    return _cached_pre_loop_end;
+    return _pre_loop_end;
   }
-  void set_cached_pre_loop_end(CountedLoopEndNode* cached_pre_loop_end) {
-    _cached_pre_loop_end = cached_pre_loop_end;
-  }
-
-  int      iv_stride()             { return lp()->stride_con(); }
 
   int vector_width(Node* n) {
     BasicType bt = velt_basic_type(n);
@@ -545,7 +556,7 @@ class SuperWord : public ResourceObj {
   // to align_to_ref will be a position zero in the vector.
   void align_initial_loop_index(MemNode* align_to_ref);
   // Find pre loop end from main loop.  Returns null if none.
-  CountedLoopEndNode* get_pre_loop_end(CountedLoopNode *cl);
+  CountedLoopEndNode* find_pre_loop_end(CountedLoopNode *cl) const;
   // Is the use of d1 in u1 at the same operand position as d2 in u2?
   bool opnd_positions_match(Node* d1, Node* u1, Node* d2, Node* u2);
   void init();
@@ -581,12 +592,12 @@ class SWPointer {
   bool        _analyze_only; // Used in loop unrolling only for swpointer trace
   uint        _stack_idx;    // Used in loop unrolling only for swpointer trace
 
-  PhaseIdealLoop* phase() { return _slp->phase(); }
-  IdealLoopTree*  lpt()   { return _slp->lpt(); }
-  PhiNode*        iv()    { return _slp->iv();  } // Induction var
+  PhaseIdealLoop* phase() const { return _slp->phase(); }
+  IdealLoopTree*  lpt() const   { return _slp->lpt(); }
+  PhiNode*        iv() const    { return _slp->iv();  } // Induction var
 
-  bool invariant(Node* n);
-  bool invariant_not_dominated_by_pre_loop_end(Node* n);
+  bool is_main_loop_member(Node* n) const;
+  bool invariant(Node* n) const;
 
   // Match: k*iv + offset
   bool scaled_iv_plus_offset(Node* n);
@@ -653,7 +664,7 @@ class SWPointer {
     SuperWord*   _slp;
     static int   _depth;
     int _depth_save;
-    void print_depth();
+    void print_depth() const;
     int  depth() const    { return _depth; }
     void set_depth(int d) { _depth = d; }
     void inc_depth()      { _depth++;}
@@ -679,7 +690,7 @@ class SWPointer {
     void ctor_5(Node* adr, Node* base,  int i);
     void ctor_6(Node* mem);
 
-    void invariant_1(Node *n, Node *n_c);
+    void invariant_1(Node *n, Node *n_c) const;
 
     void scaled_iv_plus_offset_1(Node* n);
     void scaled_iv_plus_offset_2(Node* n);
