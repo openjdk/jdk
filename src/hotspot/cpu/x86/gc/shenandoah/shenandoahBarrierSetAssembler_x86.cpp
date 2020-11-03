@@ -271,7 +271,7 @@ void ShenandoahBarrierSetAssembler::satb_write_barrier_pre(MacroAssembler* masm,
 void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm, Register dst, Address src, bool weak) {
   assert(ShenandoahLoadRefBarrier, "Should be enabled");
 
-  Label not_fwded, not_cset;
+  Label heap_stable, not_cset;
 
   __ block_comment("load_reference_barrier { ");
 
@@ -289,7 +289,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
 
   Address gc_state(thread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
   __ testb(gc_state, ShenandoahHeap::HAS_FORWARDED);
-  __ jcc(Assembler::zero, not_fwded);
+  __ jcc(Assembler::zero, heap_stable);
 
   Register tmp1 = noreg;
   if (!weak) {
@@ -302,9 +302,8 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
       }
     }
     __ push(tmp1);
-    assert(tmp1 != dst, "");
-    assert(tmp1 != src.base(), "");
-    assert(tmp1 != src.index(), "");
+    assert_different_registers(tmp1, src.base(), src.index());
+    assert_different_registers(tmp1, dst);
 
     // Optimized cset-test
     __ movptr(tmp1, dst);
@@ -374,7 +373,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
     __ pop(tmp1);
   }
 
-  __ bind(not_fwded);
+  __ bind(heap_stable);
 
   __ block_comment("} load_reference_barrier");
 

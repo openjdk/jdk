@@ -230,13 +230,13 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   assert(dst != rscratch2, "need rscratch2");
   assert_different_registers(load_addr.base(), load_addr.index(), rscratch1, rscratch2);
 
-  Label not_fwded, not_cset;
+  Label heap_stable, not_cset;
   __ enter();
   Address gc_state(rthread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
   __ ldrb(rscratch2, gc_state);
 
   // Check for heap stability
-  __ tbz(rscratch2, ShenandoahHeap::HAS_FORWARDED_BITPOS, not_fwded);
+  __ tbz(rscratch2, ShenandoahHeap::HAS_FORWARDED_BITPOS, heap_stable);
 
   // use r1 for load address
   Register result_dst = dst;
@@ -279,7 +279,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   __ mov(result_dst, r0);
   __ pop(to_save, sp);
 
-  __ bind(not_fwded);
+  __ bind(heap_stable);
   __ leave();
 }
 
