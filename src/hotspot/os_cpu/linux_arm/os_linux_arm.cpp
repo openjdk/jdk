@@ -243,7 +243,7 @@ address check_mp_ext_fault_instr = NULL;
 
 // Utility functions
 
-extern "C" int JVM_handle_posix_signal(int sig, siginfo_t* info,
+extern "C" int JVM_handle_linux_signal(int sig, siginfo_t* info,
                                        void* ucVoid, int abort_if_unrecognized) {
   ucontext_t* uc = (ucontext_t*) ucVoid;
 
@@ -270,7 +270,7 @@ extern "C" int JVM_handle_posix_signal(int sig, siginfo_t* info,
   // Note: it's not uncommon that JNI code uses signal/sigset to install
   // then restore certain signal handler (e.g. to temporarily block SIGPIPE,
   // or have a SIGILL handler when detecting CPU type). When that happens,
-  // JVM_handle_posix_signal() might be invoked with junk info/ucVoid. To
+  // JVM_handle_linux_signal() might be invoked with junk info/ucVoid. To
   // avoid unnecessary crash when libjsig is not preloaded, try handle signals
   // that do not require siginfo/ucontext first.
 

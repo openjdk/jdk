@@ -107,7 +107,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ pldw(Address(R0));
     // Return true if instruction caused no signals
     __ mov(R0, 1);
-    // JVM_handle_posix_signal moves PC here if SIGILL happens
+    // JVM_handle_linux_signal moves PC here if SIGILL happens
     __ bx(LR);
 
     return start;
