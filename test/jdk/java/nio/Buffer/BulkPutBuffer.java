@@ -323,8 +323,7 @@ public class BulkPutBuffer {
         return args.toArray(Object[][]::new);
     }
 
-    private static void expectThrows(Class exClass,
-        Assert.ThrowingRunnable r) {
+    private static void expectThrows(Class<?> exClass, Assert.ThrowingRunnable r) {
         try {
             r.run();
         } catch(Throwable e) {
