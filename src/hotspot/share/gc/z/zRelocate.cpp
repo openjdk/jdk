@@ -36,8 +36,10 @@
 #include "gc/z/zThread.inline.hpp"
 #include "gc/z/zWorkers.hpp"
 #include "logging/log.hpp"
+#include "prims/jvmtiTagMap.hpp"
 
 static const ZStatCounter ZCounterRelocationContention("Contention", "Relocation Contention", ZStatUnitOpsPerSecond);
+static const ZStatSubPhase ZSubPhasePauseRootsJVMTITagMap("Pause Roots JVMTITagMap");
 
 ZRelocate::ZRelocate(ZWorkers* workers) :
     _workers(workers) {}

@@ -44,7 +44,7 @@ public:
 
   virtual void work() {
     ZPhantomCleanOopClosure cl;
-    _concurrent_weak_roots.oops_do(&cl);
+    _concurrent_weak_roots.apply(&cl);
   }
 };
 
