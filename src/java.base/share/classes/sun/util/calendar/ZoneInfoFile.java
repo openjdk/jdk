@@ -577,8 +577,8 @@ public final class ZoneInfoFile {
                     // will not work for Asia/Gaza and Asia/Hebron which follow
                     // Palestine DST rules.
                     if (dom < 0 || dom >= 24 &&
-				    !(zoneId.equals("Asia/Gaza") ||
-				      zoneId.equals("Asia/Hebron"))) {
+                                   !(zoneId.equals("Asia/Gaza") ||
+                                     zoneId.equals("Asia/Hebron"))) {
                         params[1] = -1;
                         params[2] = toCalendarDOW[dow];
                     } else {
@@ -601,8 +601,8 @@ public final class ZoneInfoFile {
                 } else {
                     // hacking: see comment above
                     if (dom < 0 || dom >= 24 &&
-                                    !(zoneId.equals("Asia/Gaza") ||
-                                      zoneId.equals("Asia/Hebron"))) {
+                                   !(zoneId.equals("Asia/Gaza") ||
+                                     zoneId.equals("Asia/Hebron"))) {
                         params[6] = -1;
                         params[7] = toCalendarDOW[dow];
                     } else {
