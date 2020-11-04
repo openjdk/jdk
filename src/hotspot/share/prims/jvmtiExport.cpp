@@ -1617,11 +1617,6 @@ void JvmtiExport::post_method_exit_inner(JavaThread* thread,
                                            (mh() == NULL) ? "NULL" : mh()->klass_name()->as_C_string(),
                                            (mh() == NULL) ? "NULL" : mh()->name()->as_C_string() ));
 
-  if (state == NULL || !state->is_interp_only_mode()) {
-    // for any thread that actually wants method exit, interp_only_mode is set
-    return;
-  }
-
   if (state->is_enabled(JVMTI_EVENT_METHOD_EXIT)) {
     JvmtiEnvThreadStateIterator it(state);
     for (JvmtiEnvThreadState* ets = it.first(); ets != NULL; ets = it.next(ets)) {
