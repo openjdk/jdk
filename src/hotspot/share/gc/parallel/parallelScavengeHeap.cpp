@@ -548,10 +548,9 @@ class HeapBlockClaimer : public StackObj {
   size_t _claimed_index;
 
 public:
+  static const size_t InvalidIndex = (size_t)SIZE_MAX;
   static const size_t EdenIndex = 0;
   static const size_t SurvivorIndex = 1;
-  // Use max_size_t as the invalid claim index
-  static const size_t InvalidIndex = (size_t)-1;
   static const size_t NumNonOldGenClaims = 2;
 
   HeapBlockClaimer() : _claimed_index(EdenIndex) { }
@@ -571,15 +570,17 @@ void ParallelScavengeHeap::object_iterate_parallel(ObjectClosure* cl,
                                                    HeapBlockClaimer* claimer) {
   size_t block_index = claimer->claim_and_get_block();
   // Iterate until all blocks are claimed
+  if (block_index == HeapBlockClaimer::EdenIndex) {
+    young_gen()->eden_space()->object_iterate(cl);
+    block_index = claimer->claim_and_get_block();
+  }
+  if (block_index == HeapBlockClaimer::SurvivorIndex) {
+    young_gen()->from_space()->object_iterate(cl);
+    young_gen()->to_space()->object_iterate(cl);
+    block_index = claimer->claim_and_get_block();
+  }
   while (block_index != HeapBlockClaimer::InvalidIndex) {
-    if (block_index == HeapBlockClaimer::EdenIndex) {
-      young_gen()->eden_space()->object_iterate(cl);
-    } else if (block_index == HeapBlockClaimer::SurvivorIndex) {
-      young_gen()->from_space()->object_iterate(cl);
-      young_gen()->to_space()->object_iterate(cl);
-    } else {
-      old_gen()->object_iterate_block(cl, block_index - HeapBlockClaimer::NumNonOldGenClaims);
-    }
+    old_gen()->object_iterate_block(cl, block_index - HeapBlockClaimer::NumNonOldGenClaims);
     block_index = claimer->claim_and_get_block();
   }
 }
