@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,28 +24,10 @@
  */
 
 #include "jvm.h"
-#include "java_lang_ref_Reference.h"
-
-JNIEXPORT jobject JNICALL
-Java_java_lang_ref_Reference_getAndClearReferencePendingList(JNIEnv *env, jclass ignore)
-{
-    return JVM_GetAndClearReferencePendingList(env);
-}
+#include "java_lang_ref_PhantomReference.h"
 
 JNIEXPORT jboolean JNICALL
-Java_java_lang_ref_Reference_hasReferencePendingList(JNIEnv *env, jclass ignore)
+Java_java_lang_ref_PhantomReference_refersTo0(JNIEnv *env, jobject ref, jobject o)
 {
-    return JVM_HasReferencePendingList(env);
-}
-
-JNIEXPORT void JNICALL
-Java_java_lang_ref_Reference_waitForReferencePendingList(JNIEnv *env, jclass ignore)
-{
-    JVM_WaitForReferencePendingList(env);
-}
-
-JNIEXPORT jboolean JNICALL
-Java_java_lang_ref_Reference_refersTo0(JNIEnv *env, jobject ref, jobject o)
-{
-    return JVM_ReferenceRefersTo(env, ref, o);
+    return JVM_PhantomReferenceRefersTo(env, ref, o);
 }
