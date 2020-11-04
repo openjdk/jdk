@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
@@ -75,10 +76,17 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _old_gen_is_full(false),
     _partial_objarray_chunk_size(ParGCArrayScanChunk),
     _partial_array_stepper(n_workers),
+    _string_klass_or_null(G1StringDedup::is_enabled()
+                          ? SystemDictionary::String_klass()
+                          : nullptr),
     _num_optional_regions(optional_cset_length),
     _numa(g1h->numa()),
     _obj_alloc_stat(NULL)
 {
+  // Verify klass comparison with _string_klass_or_null is sufficient
+  // to determine whether dedup is enabled and the object is a String.
+  assert(SystemDictionary::String_klass()->is_final(), "precondition");
+
   // We allocate number of young gen regions in the collection set plus one
   // entries, since entry 0 keeps track of surviving bytes for non-young regions.
   // We also add a few elements at the beginning and at the end in
@@ -510,7 +518,10 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
       return obj;
     }
 
-    if (G1StringDedup::is_enabled()) {
+    // StringDedup::is_enabled() and java_lang_String::is_instance_inline
+    // test of the obj, combined into a single comparison, using the klass
+    // already in hand and avoiding the null check in is_instance.
+    if (klass == _string_klass_or_null) {
       const bool is_from_young = region_attr.is_young();
       const bool is_to_young = dest_attr.is_young();
       assert(is_from_young == from_region->is_young(),
