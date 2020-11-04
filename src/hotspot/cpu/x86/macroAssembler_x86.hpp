@@ -651,10 +651,6 @@ class MacroAssembler: public Assembler {
   // Check for reserved stack access in method being exited (for JIT)
   void reserved_stack_check();
 
-  virtual RegisterOrConstant delayed_value_impl(intptr_t* delayed_value_addr,
-                                                Register tmp,
-                                                int offset);
-
   void safepoint_poll(Label& slow_path, Register thread_reg, bool at_return, bool in_nmethod);
 
   void verify_tlab();
