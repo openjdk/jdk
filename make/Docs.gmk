@@ -72,7 +72,6 @@ JAVADOC_TAGS := \
     -tag beaninfo:X \
     -tag revised:X \
     -tag since.unbundled:X \
-    -tag spec:X \
     -tag specdefault:X \
     -tag Note:X \
     -tag ToDo:X \
