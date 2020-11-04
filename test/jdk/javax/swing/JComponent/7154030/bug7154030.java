@@ -33,7 +33,7 @@ import javax.swing.SwingUtilities;
 import java.awt.AWTException;
 import java.awt.AlphaComposite;
 import java.awt.Color;
-import java.awt.Dimension;
+import java.awt.GraphicsEnvironment;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
@@ -90,9 +90,11 @@ public class bug7154030 {
 
                     frame.setContentPane(desktop);
                     frame.setSize(300, 300);
-                    Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-                    locx = screenSize.width/2;
-                    locy = screenSize.height/2;
+                    Rectangle rect = GraphicsEnvironment.getLocalGraphicsEnvironment().
+                                      getDefaultScreenDevice().getDefaultConfiguration().
+                                      getBounds();
+                    locx = rect.width/2;
+                    locy = rect.height/2;
                     frame.setLocation(locx, locy);
                     frame.setVisible(true);
                     frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
