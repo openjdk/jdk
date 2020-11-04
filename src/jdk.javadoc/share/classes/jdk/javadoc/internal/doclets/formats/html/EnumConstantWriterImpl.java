@@ -176,7 +176,7 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
     }
 
     @Override
-    protected Content getDeprecatedOrPreviewLink(Element member) {
+    protected Content getSummaryLink(Element member) {
         String name = utils.getFullyQualifiedName(member) + "." + member.getSimpleName();
         return writer.getDocLink(LinkInfoImpl.Kind.MEMBER_DEPRECATED_PREVIEW, member, name);
     }

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8226585
+ * @bug 8226585 8250768
  * @summary Verify behavior w.r.t. preview feature API errors and warnings
  * @library /tools/lib /tools/javac/lib
  * @modules
@@ -35,7 +35,6 @@
  *      jdk.jdeps/com.sun.tools.classfile
  * @build toolbox.ToolBox toolbox.JavacTask
  * @build combo.ComboTestHelper
- * @compile PreviewErrors.java
  * @run main PreviewErrors
  */
 

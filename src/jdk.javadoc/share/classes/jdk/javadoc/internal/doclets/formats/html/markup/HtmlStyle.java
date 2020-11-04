@@ -427,12 +427,6 @@ public enum HtmlStyle {
     colConstructorName,
 
     /**
-     * The class of the cells in a table column used to display the name
-     * of a deprecated item.
-     */
-    colDeprecatedItemName,
-
-    /**
      * The class of the first column of cells in a table.
      * This is typically the "type and modifiers" column, where the type is
      * the type of a field or the return type of a method.
@@ -448,9 +442,9 @@ public enum HtmlStyle {
 
     /**
      * The class of the cells in a table column used to display the name
-     * of a deprecated item.
+     * of a summary item.
      */
-    colPreviewItemName,
+    colSummaryItemName,
 
     /**
      * The class of the second column of cells in a table.

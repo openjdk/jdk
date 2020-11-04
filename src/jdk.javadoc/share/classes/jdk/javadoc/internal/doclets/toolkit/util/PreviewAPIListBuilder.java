@@ -25,14 +25,6 @@
 
 package jdk.javadoc.internal.doclets.toolkit.util;
 
-import java.util.*;
-
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.ModuleElement;
-import javax.lang.model.element.PackageElement;
-import javax.lang.model.element.TypeElement;
-
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 
 /**
@@ -43,146 +35,14 @@ import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public class PreviewAPIListBuilder {
-    /**
-     * List of preview type Lists.
-     */
-    private final Map<PreviewElementKind, SortedSet<Element>> previewMap;
-    private final BaseConfiguration configuration;
-    private final Utils utils;
-    public enum PreviewElementKind {
-        MODULE,
-        PACKAGE,
-        INTERFACE,
-        CLASS,
-        ENUM,
-        EXCEPTION,              // no ElementKind mapping
-        ERROR,                  // no ElementKind mapping
-        ANNOTATION_TYPE,
-        FIELD,
-        METHOD,
-        CONSTRUCTOR,
-        ENUM_CONSTANT,
-        ANNOTATION_TYPE_MEMBER // no ElementKind mapping
-    };
+public class PreviewAPIListBuilder extends SummaryAPIListBuilder {
+
     /**
      * Constructor.
      *
      * @param configuration the current configuration of the doclet
      */
     public PreviewAPIListBuilder(BaseConfiguration configuration) {
-        this.configuration = configuration;
-        this.utils = configuration.utils;
-        previewMap = new EnumMap<>(PreviewElementKind.class);
-        for (PreviewElementKind kind : PreviewElementKind.values()) {
-            previewMap.put(kind,
-                    new TreeSet<>(utils.comparators.makeSummaryComparator()));
-        }
-        buildPreviewAPIInfo();
-    }
-
-    public boolean isEmpty() {
-        return previewMap.values().stream().allMatch(Set::isEmpty);
-    }
-
-    /**
-     * Build the sorted list of all the preview APIs in this run.
-     * Build separate lists for preview modules, packages, classes, constructors,
-     * methods and fields.
-     */
-    private void buildPreviewAPIInfo() {
-        SortedSet<ModuleElement> modules = configuration.modules;
-        SortedSet<Element> mset = previewMap.get(PreviewElementKind.MODULE);
-        for (Element me : modules) {
-            if (utils.isPreviewAPI(me)) {
-                mset.add(me);
-            }
-        }
-        SortedSet<PackageElement> packages = configuration.packages;
-        SortedSet<Element> pset = previewMap.get(PreviewElementKind.PACKAGE);
-        for (Element pe : packages) {
-            if (utils.isPreviewAPI(pe)) {
-                pset.add(pe);
-            }
-        }
-        for (Element e : configuration.getIncludedTypeElements()) {
-            TypeElement te = (TypeElement)e;
-            SortedSet<Element> eset;
-            if (utils.isPreviewAPI(e)) {
-                switch (e.getKind()) {
-                    case ANNOTATION_TYPE:
-                        eset = previewMap.get(PreviewElementKind.ANNOTATION_TYPE);
-                        eset.add(e);
-                        break;
-                    case CLASS:
-                        if (utils.isError(te)) {
-                            eset = previewMap.get(PreviewElementKind.ERROR);
-                        } else if (utils.isException(te)) {
-                            eset = previewMap.get(PreviewElementKind.EXCEPTION);
-                        } else {
-                            eset = previewMap.get(PreviewElementKind.CLASS);
-                        }
-                        eset.add(e);
-                        break;
-                    case INTERFACE:
-                        eset = previewMap.get(PreviewElementKind.INTERFACE);
-                        eset.add(e);
-                        break;
-                    case ENUM:
-                        eset = previewMap.get(PreviewElementKind.ENUM);
-                        eset.add(e);
-                        break;
-                }
-            }
-            composePreviewList(previewMap.get(PreviewElementKind.FIELD),
-                    utils.getFields(te));
-            composePreviewList(previewMap.get(PreviewElementKind.METHOD),
-                    utils.getMethods(te));
-            composePreviewList(previewMap.get(PreviewElementKind.CONSTRUCTOR),
-                    utils.getConstructors(te));
-            if (utils.isEnum(e)) {
-                composePreviewList(previewMap.get(PreviewElementKind.ENUM_CONSTANT),
-                        utils.getEnumConstants(te));
-            }
-            if (utils.isAnnotationType(e)) {
-                composePreviewList(previewMap.get(PreviewElementKind.ANNOTATION_TYPE_MEMBER),
-                        utils.getAnnotationMembers(te));
-
-            }
-        }
-    }
-
-    /**
-     * Add the members into a single list of preview members.
-     *
-     * @param rset set of elements preview for removal.
-     * @param sset set of preview elements.
-     * @param members members to be added in the list.
-     */
-    private void composePreviewList(SortedSet<Element> sset, List<? extends Element> members) {
-        for (Element member : members) {
-            if (utils.isPreviewAPI(member)) {
-                sset.add(member);
-            }
-        }
-    }
-
-    /**
-     * Return the list of preview elements of a given type.
-     *
-     * @param kind the PreviewElementKind
-     * @return
-     */
-    public SortedSet<Element> getSet(PreviewElementKind kind) {
-        return previewMap.get(kind);
-    }
-
-    /**
-     * Return true if the list of a given type has size greater than 0.
-     *
-     * @param kind the type of list being checked.
-     */
-    public boolean hasDocumentation(PreviewElementKind kind) {
-        return !previewMap.get(kind).isEmpty();
+        super(configuration, e -> configuration.utils.isPreviewAPI(e));
     }
 }

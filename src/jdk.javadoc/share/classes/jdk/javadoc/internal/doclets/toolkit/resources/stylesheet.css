@@ -439,7 +439,7 @@ div.table-tabs > button.table-tab {
     text-align:left;
     padding: 8px 3px 3px 7px;
 }
-.col-first, .col-second, .col-last, .col-constructor-name, .col-deprecated-item-name, .col-preview-item-name {
+.col-first, .col-second, .col-last, .col-constructor-name, .col-summary-item-name {
     vertical-align:top;
     padding-right:0;
     padding-top:8px;
@@ -452,7 +452,7 @@ div.table-tabs > button.table-tab {
 .col-first, .col-first {
     font-size:13px;
 }
-.col-second, .col-second, .col-last, .col-constructor-name, .col-deprecated-item-name, .col-last {
+.col-second, .col-second, .col-last, .col-constructor-name, .col-summary-item-name, .col-last {
     font-size:13px;
 }
 .col-first, .col-second, .col-constructor-name {
@@ -467,7 +467,7 @@ div.table-tabs > button.table-tab {
 .col-first a:link, .col-first a:visited,
 .col-second a:link, .col-second a:visited,
 .col-constructor-name a:link, .col-constructor-name a:visited,
-.col-deprecated-item-name a:link, .col-deprecated-item-name a:visited,
+.col-summary-item-name a:link, .col-summary-item-name a:visited,
 .constant-values-container a:link, .constant-values-container a:visited,
 .all-classes-container a:link, .all-classes-container a:visited,
 .all-packages-container a:link, .all-packages-container a:visited {

@@ -209,7 +209,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
             }
             if (previewModifiers.contains(modifiersPart)) {
                 pre.add(modifiersPart);
-                pre.add(new HtmlTree(TagName.SUP).add(links.createLink(getPreviewSectionAnchor(typeElement),
+                pre.add(HtmlTree.SUP(links.createLink(getPreviewSectionAnchor(typeElement),
                                                       contents.previewMark)));
             } else {
                 pre.add(modifiersPart);
@@ -281,7 +281,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                 if (isFirst) {
                     pre.add(DocletConstants.NL);
                     pre.add("permits");
-                    pre.add(new HtmlTree(TagName.SUP).add(links.createLink(getPreviewSectionAnchor(typeElement),
+                    pre.add(HtmlTree.SUP(links.createLink(getPreviewSectionAnchor(typeElement),
                                                           contents.previewMark)));
                     pre.add(" ");
                     isFirst = false;

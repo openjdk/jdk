@@ -118,7 +118,7 @@ public class LinkFactoryImpl extends LinkFactory {
                                 title,
                                 classLinkInfo.target));
                         if (flags.contains(ElementFlag.PREVIEW)) {
-                            link.add(new HtmlTree(TagName.SUP).add(m_writer.links.createLink(
+                            link.add(HtmlTree.SUP(m_writer.links.createLink(
                                     filename.fragment(m_writer.getPreviewSectionAnchor(target)),
                                     m_writer.contents.previewMark)));
                         }
@@ -135,7 +135,7 @@ public class LinkFactoryImpl extends LinkFactory {
             if (crossLink != null) {
                 link.add(crossLink);
                 if (flags.contains(ElementFlag.PREVIEW)) {
-                    link.add(new HtmlTree(TagName.SUP).add(m_writer.getCrossClassLink(
+                    link.add(HtmlTree.SUP(m_writer.getCrossClassLink(
                         typeElement,
                         m_writer.getPreviewSectionAnchor(target),
                         m_writer.contents.previewMark,
@@ -150,7 +150,7 @@ public class LinkFactoryImpl extends LinkFactory {
         // Can't link so just write label.
         link.add(label);
         if (flags.contains(ElementFlag.PREVIEW)) {
-            link.add(new HtmlTree(TagName.SUP).add(m_writer.contents.previewMark));
+            link.add(HtmlTree.SUP(m_writer.contents.previewMark));
         }
         if (noLabel && !classLinkInfo.excludeTypeParameterLinks) {
             link.add(getTypeParameterLinks(linkInfo));

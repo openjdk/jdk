@@ -45,7 +45,7 @@ public class TestPreview extends JavadocTester {
     }
 
     @Test
-    public void test() {
+    public void testUserJavadoc() {
         String doc = Paths.get(testSrc, "doc").toUri().toString();
         javadoc("-d", "out",
                 "-XDforcePreview", "--enable-preview", "-source", System.getProperty("java.specification.version"),
@@ -85,5 +85,39 @@ public class TestPreview extends JavadocTester {
                 "<div class=\"preview-block\" id=\"preview-pkg.DocAnnotationUse1\"><span class=\"preview-label\">");
         checkOutput("m/pkg/DocAnnotationUse2.html", true,
                 "<div class=\"preview-block\" id=\"preview-pkg.DocAnnotationUse2\"><span class=\"preview-label\">");
+    }
+
+    @Test
+    public void testPreviewAPIJavadoc() {
+        javadoc("-d", "out",
+                "--patch-module", "java.base=" + Paths.get(testSrc, "api").toAbsolutePath().toString(),
+                "--add-exports", "java.base/preview=m",
+                "--source-path", Paths.get(testSrc, "api").toAbsolutePath().toString(),
+                "--show-packages=all",
+                "preview");
+        checkExit(Exit.OK);
+
+        checkOutput("preview-list.html", true,
+                    """
+                    <div id="record">
+                    <div class="caption"><span>Records</span></div>
+                    <div class="summary-table two-column-summary">
+                    <div class="table-header col-first">Record</div>
+                    <div class="table-header col-last">Description</div>
+                    <div class="col-summary-item-name even-row-color"><a href="java.base/preview/CoreRecord.html" title="class in preview">preview.CoreRecord</a><sup><a href="java.base/preview/CoreRecord.html#preview-preview.CoreRecord">PREVIEW</a></sup></div>
+                    <div class="col-last even-row-color"></div>
+                    </div>
+                    """,
+                    """
+                    <div id="method">
+                    <div class="caption"><span>Methods</span></div>
+                    <div class="summary-table two-column-summary">
+                    <div class="table-header col-first">Method</div>
+                    <div class="table-header col-last">Description</div>
+                    <div class="col-summary-item-name even-row-color"><a href="java.base/preview/CoreRecordComponent.html#i()">preview.CoreRecordComponent.i()</a><sup><a href="java.base/preview/CoreRecordComponent.html#preview-i()">PREVIEW</a></sup></div>
+                    <div class="col-last even-row-color">
+                    <div class="block">Returns the value of the <code>i</code> record component.</div>
+                    </div>
+                    """);
     }
 }

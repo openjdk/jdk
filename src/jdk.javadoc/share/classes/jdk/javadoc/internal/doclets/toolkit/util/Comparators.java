@@ -127,7 +127,8 @@ public class Comparators {
     private Comparator<Element> summaryComparator = null;
 
     /**
-     * Returns a Comparator for deprecated items listed on deprecated list page, by comparing the
+     * Returns a Comparator for items listed on summary list pages
+     * (like deprecated or preview summary pages), by comparing the
      * fully qualified names, and if those are equal the names of the enclosing modules.
      *
      * @return a Comparator

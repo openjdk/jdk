@@ -784,6 +784,17 @@ public class HtmlTree extends Content {
     }
 
     /**
+     * Creates an HTML {@code SUP} element with the given content.
+     *
+     * @param body  the content
+     * @return the element
+     */
+    public static HtmlTree SUP(Content body) {
+        return new HtmlTree(TagName.SUP)
+                .add(body);
+    }
+
+    /**
      * Creates an HTML {@code TD} element with the given style and some content.
      *
      * @param style the style

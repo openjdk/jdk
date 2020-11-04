@@ -654,8 +654,7 @@ public class HtmlDocletWriter {
             if (flags.contains(ElementFlag.PREVIEW)) {
                 return new ContentBuilder(
                     links.createLink(targetLink, label),
-                    new HtmlTree(TagName.SUP)
-                            .add(links.createLink(targetLink.withFragment(getPreviewSectionAnchor(packageElement)),
+                    HtmlTree.SUP(links.createLink(targetLink.withFragment(getPreviewSectionAnchor(packageElement)),
                                                   contents.previewMark))
                 );
             }
@@ -664,7 +663,7 @@ public class HtmlDocletWriter {
             if (flags.contains(ElementFlag.PREVIEW)) {
                 return new ContentBuilder(
                     label,
-                    new HtmlTree(TagName.SUP).add(contents.previewMark)
+                    HtmlTree.SUP(contents.previewMark)
                 );
             }
             return label;
@@ -688,8 +687,7 @@ public class HtmlDocletWriter {
             if (flags.contains(ElementFlag.PREVIEW) && label != contents.moduleLabel) {
                 link = new ContentBuilder(
                         link,
-                        new HtmlTree(TagName.SUP)
-                                .add(links.createLink(targetLink.withFragment(getPreviewSectionAnchor(mdle)),
+                        HtmlTree.SUP(links.createLink(targetLink.withFragment(getPreviewSectionAnchor(mdle)),
                                                       contents.previewMark))
                 );
             }
@@ -698,7 +696,7 @@ public class HtmlDocletWriter {
         if (flags.contains(ElementFlag.PREVIEW)) {
             return new ContentBuilder(
                 label,
-                new HtmlTree(TagName.SUP).add(contents.previewMark)
+                HtmlTree.SUP(contents.previewMark)
             );
         }
         return label;

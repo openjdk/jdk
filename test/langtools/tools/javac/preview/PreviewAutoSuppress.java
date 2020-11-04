@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8250768
  * @library /tools/lib
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api

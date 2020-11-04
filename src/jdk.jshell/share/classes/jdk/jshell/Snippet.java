@@ -242,7 +242,6 @@ public abstract class Snippet {
          * @since 14
          *
          */
-        @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.RECORDS)
         RECORD_SUBKIND(Kind.TYPE_DECL),
 
         /**

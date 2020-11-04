@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Table;
 import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 
@@ -35,8 +34,6 @@ import javax.lang.model.element.ModuleElement;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;

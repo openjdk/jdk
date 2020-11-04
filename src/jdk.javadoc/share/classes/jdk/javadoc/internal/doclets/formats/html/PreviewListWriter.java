@@ -25,31 +25,19 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.Table;
-import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
-
-import java.util.EnumMap;
 import java.util.List;
-import java.util.SortedSet;
 
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ModuleElement;
-import javax.lang.model.element.PackageElement;
 
 import com.sun.source.doctree.DocTree;
-import javax.lang.model.element.ElementKind;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
+
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.PreviewAPIListBuilder;
-import jdk.javadoc.internal.doclets.toolkit.util.PreviewAPIListBuilder.PreviewElementKind;
 
 /**
  * Generate File to list all the preview elements with the
@@ -62,143 +50,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.PreviewAPIListBuilder.PreviewEl
  *
  * @see java.util.List
  */
-public class PreviewListWriter extends SubWriterHolderWriter {
-
-    private String getAnchorName(PreviewElementKind kind) {
-        switch (kind) {
-            case MODULE:
-                return "module";
-            case PACKAGE:
-                return "package";
-            case INTERFACE:
-                return "interface";
-            case CLASS:
-                return "class";
-            case ENUM:
-                return "enum";
-            case EXCEPTION:
-                return "exception";
-            case ERROR:
-                return "error";
-            case ANNOTATION_TYPE:
-                return "annotation.type";
-            case FIELD:
-                return "field";
-            case METHOD:
-                return "method";
-            case CONSTRUCTOR:
-                return "constructor";
-            case ENUM_CONSTANT:
-                return "enum.constant";
-            case ANNOTATION_TYPE_MEMBER:
-                return "annotation.type.member";
-            default:
-                throw new AssertionError("unknown kind: " + kind);
-        }
-    }
-
-    private String getHeadingKey(PreviewElementKind kind) {
-        switch (kind) {
-            case MODULE:
-                return "doclet.Modules";
-            case PACKAGE:
-                return "doclet.Packages";
-            case INTERFACE:
-                return "doclet.Interfaces";
-            case CLASS:
-                return "doclet.Classes";
-            case ENUM:
-                return "doclet.Enums";
-            case EXCEPTION:
-                return "doclet.Exceptions";
-            case ERROR:
-                return "doclet.Errors";
-            case ANNOTATION_TYPE:
-                return "doclet.Annotation_Types";
-            case FIELD:
-                return "doclet.Fields";
-            case METHOD:
-                return "doclet.Methods";
-            case CONSTRUCTOR:
-                return "doclet.Constructors";
-            case ENUM_CONSTANT:
-                return "doclet.Enum_Constants";
-            case ANNOTATION_TYPE_MEMBER:
-                return "doclet.Annotation_Type_Members";
-            default:
-                throw new AssertionError("unknown kind: " + kind);
-        }
-    }
-
-    private String getSummaryKey(PreviewElementKind kind) {
-        switch (kind) {
-            case MODULE:
-                return "doclet.modules";
-            case PACKAGE:
-                return "doclet.packages";
-            case INTERFACE:
-                return "doclet.interfaces";
-            case CLASS:
-                return "doclet.classes";
-            case ENUM:
-                return "doclet.enums";
-            case EXCEPTION:
-                return "doclet.exceptions";
-            case ERROR:
-                return "doclet.errors";
-            case ANNOTATION_TYPE:
-                return "doclet.annotation_types";
-            case FIELD:
-                return "doclet.fields";
-            case METHOD:
-                return "doclet.methods";
-            case CONSTRUCTOR:
-                return "doclet.constructors";
-            case ENUM_CONSTANT:
-                return "doclet.enum_constants";
-            case ANNOTATION_TYPE_MEMBER:
-                return "doclet.annotation_type_members";
-            default:
-                throw new AssertionError("unknown kind: " + kind);
-        }
-    }
-
-    private String getHeaderKey(PreviewElementKind kind) {
-        switch (kind) {
-            case MODULE:
-                return "doclet.Module";
-            case PACKAGE:
-                return "doclet.Package";
-            case INTERFACE:
-                return "doclet.Interface";
-            case CLASS:
-                return "doclet.Class";
-            case ENUM:
-                return "doclet.Enum";
-            case EXCEPTION:
-                return "doclet.Exceptions";
-            case ERROR:
-                return "doclet.Errors";
-            case ANNOTATION_TYPE:
-                return "doclet.AnnotationType";
-            case FIELD:
-                return "doclet.Field";
-            case METHOD:
-                return "doclet.Method";
-            case CONSTRUCTOR:
-                return "doclet.Constructor";
-            case ENUM_CONSTANT:
-                return "doclet.Enum_Constant";
-            case ANNOTATION_TYPE_MEMBER:
-                return "doclet.Annotation_Type_Member";
-            default:
-                throw new AssertionError("unknown kind: " + kind);
-        }
-    }
-
-    private EnumMap<PreviewElementKind, AbstractMemberWriter> writerMap;
-
-    private final Navigation navBar;
+public class PreviewListWriter extends SummaryListWriter<PreviewAPIListBuilder> {
 
     /**
      * Constructor.
@@ -208,21 +60,8 @@ public class PreviewListWriter extends SubWriterHolderWriter {
      */
 
     public PreviewListWriter(HtmlConfiguration configuration, DocPath filename) {
-        super(configuration, filename);
-        this.navBar = new Navigation(null, configuration, PageMode.PREVIEW, path);
-        NestedClassWriterImpl classW = new NestedClassWriterImpl(this);
-        writerMap = new EnumMap<>(PreviewElementKind.class);
-        for (PreviewElementKind kind : PreviewElementKind.values()) {
-           writerMap.put(kind, switch (kind) {
-                case MODULE, PACKAGE, INTERFACE, CLASS, ENUM,
-                     EXCEPTION, ERROR, ANNOTATION_TYPE -> classW;
-                case FIELD -> new FieldWriterImpl(this);
-                case METHOD -> new MethodWriterImpl(this);
-                case CONSTRUCTOR -> new ConstructorWriterImpl(this);
-                case ENUM_CONSTANT -> new EnumConstantWriterImpl(this);
-                case ANNOTATION_TYPE_MEMBER -> new AnnotationTypeOptionalMemberWriterImpl(this, null);
-            });
-        }
+        super(configuration, filename, PageMode.PREVIEW, "preview elements",
+              configuration.contents.previewAPI, "doclet.Window_Preview_List");
     }
 
     /**
@@ -233,173 +72,22 @@ public class PreviewListWriter extends SubWriterHolderWriter {
      * @throws DocFileIOException if there is a problem writing the preview list
      */
     public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
-        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.DEPRECATED)) {
+        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.PREVIEW)) {
             DocPath filename = DocPaths.PREVIEW_LIST;
             PreviewListWriter depr = new PreviewListWriter(configuration, filename);
-            depr.generatePreviewListFile(
+            depr.generateSummaryListFile(
                    new PreviewAPIListBuilder(configuration));
         }
     }
 
-    /**
-     * Generate the preview API list.
-     *
-     * @param previewapi list of preview API built already.
-     * @throws DocFileIOException if there is a problem writing the preview list
-     */
-    protected void generatePreviewListFile(PreviewAPIListBuilder previewapi)
-            throws DocFileIOException {
-        HtmlTree body = getHeader();
-        bodyContents.addMainContent(getContentsList(previewapi));
-        String memberTableSummary;
-        Content content = new ContentBuilder();
-        for (PreviewElementKind kind : PreviewElementKind.values()) {
-            if (previewapi.hasDocumentation(kind)) {
-                memberTableSummary = resources.getText("doclet.Member_Table_Summary",
-                        resources.getText(getHeadingKey(kind)),
-                        resources.getText(getSummaryKey(kind)));
-                TableHeader memberTableHeader = new TableHeader(
-                        contents.getContent(getHeaderKey(kind)), contents.descriptionLabel);
-                addPreviewAPI(previewapi.getSet(kind), getAnchorName(kind),
-                            getHeadingKey(kind), memberTableSummary, memberTableHeader, content);
-            }
-        }
-        bodyContents.addMainContent(content);
-        HtmlTree htmlTree = HtmlTree.FOOTER();
-        navBar.setUserFooter(getUserHeaderFooter(false));
-        htmlTree.add(navBar.getContent(Navigation.Position.BOTTOM));
-        addBottom(htmlTree);
-        bodyContents.setFooter(htmlTree);
-        String description = "preview elements";
-        body.add(bodyContents);
-        printHtmlDocument(null, description, body);
-    }
-
-    /**
-     * Add the index link.
-     *
-     * @param builder the preview list builder
-     * @param kind the kind of list being documented
-     * @param contentTree the content tree to which the index link will be added
-     */
-    private void addIndexLink(PreviewAPIListBuilder builder,
-            PreviewElementKind kind, Content contentTree) {
-        if (builder.hasDocumentation(kind)) {
-            Content li = HtmlTree.LI(links.createLink(getAnchorName(kind),
-                    contents.getContent(getHeadingKey(kind))));
-            contentTree.add(li);
+    @Override
+    protected void addComments(Element e, Content desc) {
+        List<? extends DocTree> tags = utils.getFirstSentenceTrees(e);
+        if (!tags.isEmpty()) {
+            addPreviewComment(e, tags, desc);
+        } else {
+            desc.add(HtmlTree.EMPTY);
         }
     }
 
-    /**
-     * Get the contents list.
-     *
-     * @param previewapi the preview list builder
-     * @return a content tree for the contents list
-     */
-    public Content getContentsList(PreviewAPIListBuilder previewapi) {
-        Content headContent = contents.previewAPI;
-        Content heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
-                HtmlStyle.title, headContent);
-        Content div = HtmlTree.DIV(HtmlStyle.header, heading);
-        Content headingContent = contents.contentsHeading;
-        div.add(HtmlTree.HEADING_TITLE(Headings.CONTENT_HEADING,
-                headingContent));
-        Content ul = new HtmlTree(TagName.UL);
-        for (PreviewElementKind kind : PreviewElementKind.values()) {
-            addIndexLink(previewapi, kind, ul);
-        }
-        div.add(ul);
-        return div;
-    }
-
-    /**
-     * Get the header for the preview API Listing.
-     *
-     * @return a content tree for the header
-     */
-    public HtmlTree getHeader() {
-        String title = resources.getText("doclet.Window_Preview_List");
-        HtmlTree bodyTree = getBody(getWindowTitle(title));
-        Content headerContent = new ContentBuilder();
-        addTop(headerContent);
-        navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(Navigation.Position.TOP));
-        bodyContents.setHeader(headerContent);
-        return bodyTree;
-    }
-
-    /**
-     * Add preview information to the documentation tree
-     *
-     * @param previewList list of preview API elements
-     * @param id the id attribute of the table
-     * @param headingKey the caption for the preview table
-     * @param tableSummary the summary for the preview table
-     * @param tableHeader table headers for the preview table
-     * @param contentTree the content tree to which the preview table will be added
-     */
-    protected void addPreviewAPI(SortedSet<Element> previewList, String id, String headingKey,
-            String tableSummary, TableHeader tableHeader, Content contentTree) {
-        if (previewList.size() > 0) {
-            Content caption = contents.getContent(headingKey);
-            Table table = new Table(HtmlStyle.summaryTable)
-                    .setCaption(caption)
-                    .setHeader(tableHeader)
-                    .setId(id)
-                    .setColumnStyles(HtmlStyle.colPreviewItemName, HtmlStyle.colLast);
-            for (Element e : previewList) {
-                Content link;
-                switch (e.getKind()) {
-                    case MODULE:
-                        ModuleElement m = (ModuleElement) e;
-                        link = getModuleLink(m, new StringContent(m.getQualifiedName()));
-                        break;
-                    case PACKAGE:
-                        PackageElement pkg = (PackageElement) e;
-                        link = getPackageLink(pkg, getPackageName(pkg));
-                        break;
-                    default:
-                        link = getPreviewLink(e);
-                }
-                Content desc = new ContentBuilder();
-                List<? extends DocTree> tags = utils.getFirstSentenceTrees(e);
-                if (!tags.isEmpty()) {
-                    addPreviewComment(e, tags, desc);
-                } else {
-                    desc.add(HtmlTree.EMPTY);
-                }
-                table.addRow(link, desc);
-            }
-            // note: singleton list
-            contentTree.add(HtmlTree.UL(HtmlStyle.blockList, HtmlTree.LI(table)));
-        }
-    }
-
-    protected Content getPreviewLink(Element e) {
-        AbstractMemberWriter writer;
-        switch (e.getKind()) {
-            case INTERFACE:
-            case CLASS:
-            case ENUM:
-            case ANNOTATION_TYPE:
-                writer = new NestedClassWriterImpl(this);
-                break;
-            case FIELD:
-                writer = new FieldWriterImpl(this);
-                break;
-            case METHOD:
-                writer = new MethodWriterImpl(this);
-                break;
-            case CONSTRUCTOR:
-                writer = new ConstructorWriterImpl(this);
-                break;
-            case ENUM_CONSTANT:
-                writer = new EnumConstantWriterImpl(this);
-                break;
-            default:
-                writer = new AnnotationTypeOptionalMemberWriterImpl(this, null);
-        }
-        return writer.getDeprecatedOrPreviewLink(e);
-    }
 }

@@ -56,6 +56,7 @@ import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import javax.lang.model.AnnotatedConstruct;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
@@ -82,6 +83,7 @@ import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.ElementKindVisitor14;
 import javax.lang.model.util.Elements;
+import javax.lang.model.util.SimpleAnnotationValueVisitor14;
 import javax.lang.model.util.SimpleElementVisitor14;
 import javax.lang.model.util.SimpleTypeVisitor9;
 import javax.lang.model.util.TypeKindVisitor9;
@@ -128,8 +130,6 @@ import static javax.lang.model.element.Modifier.*;
 import static javax.lang.model.type.TypeKind.*;
 
 import static com.sun.source.doctree.DocTree.Kind.*;
-import javax.lang.model.AnnotatedConstruct;
-import javax.lang.model.util.SimpleAnnotationValueVisitor14;
 import static jdk.javadoc.internal.doclets.toolkit.builders.ConstantsSummaryBuilder.MAX_CONSTANT_VALUE_INDEX_LENGTH;
 
 /**

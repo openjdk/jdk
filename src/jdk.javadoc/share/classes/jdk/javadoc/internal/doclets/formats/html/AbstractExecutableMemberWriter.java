@@ -85,7 +85,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
     }
 
     @Override
-    protected Content getDeprecatedOrPreviewLink(Element member) {
+    protected Content getSummaryLink(Element member) {
         Content content = new ContentBuilder();
         content.add(utils.getFullyQualifiedName(member));
         if (!utils.isConstructor(member)) {

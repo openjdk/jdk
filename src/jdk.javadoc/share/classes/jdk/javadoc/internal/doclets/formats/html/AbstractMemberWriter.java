@@ -184,13 +184,13 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
             Element member, Content linksTree);
 
     /**
-     * Returns the deprecated link.
+     * Returns a link for summary (deprecated, preview) pages.
      *
      * @param member the member being linked to
      *
      * @return a content tree representing the link
      */
-    protected abstract Content getDeprecatedOrPreviewLink(Element member);
+    protected abstract Content getSummaryLink(Element member);
 
     /**
      * Adds the modifier and type for the member in the member summary.
