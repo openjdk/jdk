@@ -304,6 +304,48 @@ public abstract class HttpRequest {
     }
 
     /**
+     * Creates a {@code Builder} seeded from a {@code HttpRequest}.
+     *
+     * <p> This method can be used to build a new request equivalent to the
+     * given request, but with some parts of its state altered.
+     *
+     * @param request the request
+     * @return a new request builder
+     * @throws IllegalArgumentException if a new builder cannot be seeded from
+     *         the given request (for instance, if the request contains illegal
+     *         parameters)
+     * @since TBD
+     */
+    public static Builder newBuilder(HttpRequest request) {
+        Objects.requireNonNull(request);
+        try {
+            final HttpRequest.Builder builder = HttpRequest.newBuilder();
+            builder.uri(request.uri());
+            builder.expectContinue(request.expectContinue());
+            request.headers().map().forEach((name, values) -> values.forEach(value -> builder.header(name, value)));
+
+            request.version().ifPresent(builder::version);
+            request.timeout().ifPresent(builder::timeout);
+            var method = request.method();
+            request.bodyPublisher().ifPresentOrElse(
+                    bodyPublisher -> builder.method(method, bodyPublisher),
+                    () -> {
+                        switch (method) {
+                            case "GET" -> builder.GET();
+                            case "DELETE" -> builder.DELETE();
+                            default -> builder.method(method, HttpRequest.BodyPublishers.noBody());
+                        }
+                    }
+            );
+            return builder;
+        } catch (SecurityException | IllegalArgumentException ex) {
+            throw ex;
+        } catch (RuntimeException r) {
+            throw new IllegalArgumentException("Illegal request parameters", r);
+        }
+    }
+
+    /**
      * Creates an {@code HttpRequest} builder.
      *
      * @return a new request builder
