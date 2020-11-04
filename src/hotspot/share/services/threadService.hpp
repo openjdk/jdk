@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -196,7 +196,7 @@ private:
   OopHandle   _threadObj;
   JavaThreadStatus _thread_status;
 
-  bool    _is_ext_suspended;
+  bool    _is_suspended;
   bool    _is_in_native;
 
   jlong   _contended_enter_ticks;
@@ -229,7 +229,7 @@ public:
 
   void        set_next(ThreadSnapshot* n) { _next = n; }
 
-  bool        is_ext_suspended()          { return _is_ext_suspended; }
+  bool        is_suspended()              { return _is_suspended; }
   bool        is_in_native()              { return _is_in_native; }
 
   jlong       contended_enter_count()     { return _contended_enter_count; }

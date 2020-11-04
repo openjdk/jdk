@@ -272,8 +272,6 @@ Thread::Thread() {
   _visited_for_critical_count = false;
 #endif
 
-  _SR_lock = new Monitor(Mutex::suspend_resume, "SR_lock", true,
-                         Monitor::_safepoint_check_sometimes);
   _suspend_flags = 0;
 
   // thread-specific hashCode stream generator state - Marsaglia shift-xor form
@@ -451,11 +449,6 @@ Thread::~Thread() {
   delete handle_area();
   delete metadata_handles();
 
-  // SR_handler uses this as a termination indicator -
-  // needs to happen before os::free_thread()
-  delete _SR_lock;
-  _SR_lock = NULL;
-
   // osthread() can be NULL, if creation of thread failed.
   if (osthread() != NULL) os::free_thread(osthread());
 
@@ -574,119 +567,6 @@ void Thread::send_async_exception(oop java_thread, oop java_throwable) {
   JavaThread* target = java_lang_Thread::thread(java_thread);
   InstallAsyncExceptionClosure vm_stop(throwable);
   Handshake::execute(&vm_stop, target);
-}
-
-
-// Check if an external suspend request has completed (or has been
-// cancelled). Returns true if the thread is externally suspended and
-// false otherwise.
-bool JavaThread::is_ext_suspend_completed() {
-  bool did_trans_retry = false;  // only do thread_in_native_trans retry once
-  bool do_trans_retry;           // flag to force the retry
-
-  do {
-    do_trans_retry = false;
-
-    if (is_exiting()) {
-      // Thread is in the process of exiting. This is always checked
-      // first to reduce the risk of dereferencing a freed JavaThread.
-      return false;
-    }
-
-    if (!is_external_suspend()) {
-      // Suspend request is cancelled. This is always checked before
-      // is_ext_suspended() to reduce the risk of a rogue resume
-      // confusing the thread that made the suspend request.
-      return false;
-    }
-
-    if (is_ext_suspended()) {
-      // thread is suspended
-      return true;
-    }
-
-    // Now that we no longer do hard suspends of threads running
-    // native code, the target thread can be changing thread state
-    // while we are in this routine:
-    //
-    //   _thread_in_native -> _thread_in_native_trans -> _thread_blocked
-    //
-    // We save a copy of the thread state as observed at this moment
-    // and make our decision about suspend completeness based on the
-    // copy. This closes the race where the thread state is seen as
-    // _thread_in_native_trans in the if-thread_blocked check, but is
-    // seen as _thread_blocked in if-thread_in_native_trans check.
-    JavaThreadState save_state = thread_state();
-
-    if (save_state == _thread_blocked && is_suspend_equivalent()) {
-      // If the thread's state is _thread_blocked and this blocking
-      // condition is known to be equivalent to a suspend, then we can
-      // consider the thread to be externally suspended. This means that
-      // the code that sets _thread_blocked has been modified to do
-      // self-suspension if the blocking condition releases. We also
-      // used to check for CONDVAR_WAIT here, but that is now covered by
-      // the _thread_blocked with self-suspension check.
-      //
-      // Return true since we wouldn't be here unless there was still an
-      // external suspend request.
-      return true;
-    } else if (save_state == _thread_in_native && frame_anchor()->walkable()) {
-      // Threads running native code will self-suspend on native==>VM/Java
-      // transitions. If its stack is walkable (should always be the case
-      // unless this function is called before the actual java_suspend()
-      // call), then the wait is done.
-      return true;
-    } else if (!did_trans_retry &&
-               save_state == _thread_in_native_trans &&
-               frame_anchor()->walkable()) {
-      // The thread is transitioning from thread_in_native to another
-      // thread state. check_safepoint_and_suspend_for_native_trans()
-      // will force the thread to self-suspend. If it hasn't gotten
-      // there yet we may have caught the thread in-between the native
-      // code check above and the self-suspend.
-      //
-      // Since we use the saved thread state in the if-statement above,
-      // there is a chance that the thread has already transitioned to
-      // _thread_blocked by the time we get here. In that case, we will
-      // make a single unnecessary pass through the logic below. This
-      // doesn't hurt anything since we still do the trans retry.
-
-      // Once the thread leaves thread_in_native_trans for another
-      // thread state, we break out of this retry loop. We shouldn't
-      // need this flag to prevent us from getting back here, but
-      // sometimes paranoia is good.
-      did_trans_retry = true;
-
-      // We wait for the thread to transition to a more usable state.
-      for (int i = 1; i <= SuspendRetryCount; i++) {
-        // We used to do an "os::yield_all(i)" call here with the intention
-        // that yielding would increase on each retry. However, the parameter
-        // is ignored on Linux which means the yield didn't scale up. Waiting
-        // on the SR_lock below provides a much more predictable scale up for
-        // the delay. It also provides a simple/direct point to check for any
-        // safepoint requests from the VMThread
-
-        // temporarily drops SR_lock while doing wait with safepoint check
-        // (if we're a JavaThread - the WatcherThread can also call this)
-        // and increase delay with each retry
-        if (Thread::current()->is_Java_thread()) {
-          SR_lock()->wait(i * SuspendRetryDelay);
-        } else {
-          SR_lock()->wait_without_safepoint_check(i * SuspendRetryDelay);
-        }
-
-        // check the actual thread state instead of what we saved above
-        if (thread_state() != _thread_in_native_trans) {
-          // the thread has transitioned to another thread state so
-          // try all the checks (except this one) one more time.
-          do_trans_retry = true;
-          break;
-        }
-      } // end retry loop
-    }
-  } while (do_trans_retry);
-
-  return false;
 }
 
 // GC Support
@@ -1183,7 +1063,6 @@ JavaThread::JavaThread() :
   _saved_exception_pc(nullptr),
 
   _terminated(_not_terminated),
-  _suspend_equivalent(false),
   _in_deopt_handler(0),
   _doing_unsafe_access(false),
   _do_not_unlock_if_synchronized(false),
@@ -1213,6 +1092,9 @@ JavaThread::JavaThread() :
 
   _handshake(this),
 
+  _suspended(false),
+  _suspend_requested(false),
+
   _popframe_preserved_args(nullptr),
   _popframe_preserved_args_size(0),
 
@@ -1228,6 +1110,8 @@ JavaThread::JavaThread() :
 
   _SleepEvent(ParkEvent::Allocate(this))
 {
+  _util_lock = new Monitor(Mutex::suspend_resume, "Util_lock", true,
+                         Monitor::_safepoint_check_sometimes);
 
   set_jni_functions(jni_functions());
 
@@ -1391,6 +1275,11 @@ JavaThread::~JavaThread() {
     FREE_C_HEAP_ARRAY(jlong, _jvmci_counters);
   }
 #endif // INCLUDE_JVMCI
+
+  // SR_handler uses this as a termination indicator -
+  // needs to happen before os::free_thread()
+  delete _util_lock;
+  _util_lock = NULL;
 }
 
 
@@ -1553,34 +1442,10 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     if (JvmtiExport::should_post_thread_life()) {
       JvmtiExport::post_thread_end(this);
     }
+    
+    _handshake.thread_exit();
+    ThreadService::current_thread_exiting(this, is_daemon(threadObj()));
 
-    // We have notified the agents that we are exiting, before we go on,
-    // we must check for a pending external suspend request and honor it
-    // in order to not surprise the thread that made the suspend request.
-    while (true) {
-      {
-        MutexLocker ml(SR_lock(), Mutex::_no_safepoint_check_flag);
-        if (!is_external_suspend()) {
-          set_terminated(_thread_exiting);
-          ThreadService::current_thread_exiting(this, is_daemon(threadObj()));
-          break;
-        }
-        // Implied else:
-        // Things get a little tricky here. We have a pending external
-        // suspend request, but we are holding the SR_lock so we
-        // can't just self-suspend. So we temporarily drop the lock
-        // and then self-suspend.
-      }
-
-      ThreadBlockInVM tbivm(this);
-      java_suspend_self();
-
-      // We're done with this suspend request, but we have to loop around
-      // and check again. Eventually we will get SR_lock without a pending
-      // external suspend request and will be able to mark ourselves as
-      // exiting.
-    }
-    // no more external suspends are allowed at this point
   } else {
     assert(!is_terminated() && !is_exiting(), "must not be exiting");
     // before_exit() has already posted JVMTI THREAD_END events
@@ -1854,12 +1719,6 @@ void JavaThread::check_and_handle_async_exceptions(bool check_unsafe_error) {
 
 void JavaThread::handle_special_runtime_exit_condition(bool check_asyncs) {
 
-  // Check for pending external suspend.
-  if (is_external_suspend_with_lock()) {
-    frame_anchor()->make_walkable(this);
-    java_suspend_self_with_safepoint_check();
-  }
-
   if (is_obj_deopt_suspend()) {
     frame_anchor()->make_walkable(this);
     wait_for_object_deoptimization();
@@ -1921,150 +1780,73 @@ void JavaThread::send_thread_stop(oop java_throwable)  {
   this->interrupt();
 }
 
-// External suspension mechanism.
-//
-// Tell the VM to suspend a thread when ever it knows that it does not hold on
-// to any VM_locks and it is at a transition
-// Self-suspension will happen on the transition out of the vm.
-// Catch "this" coming in from JNIEnv pointers when the thread has been freed
-//
-// Guarantees on return:
-//   + Target thread will not execute any new bytecode (that's why we need to
-//     force a safepoint)
-//   + Target thread will not enter any new monitors
-//
-void JavaThread::java_suspend() {
+class ThreadSuspensionHandshake : public AsyncHandshakeClosure {
+ public:
+  ThreadSuspensionHandshake() : AsyncHandshakeClosure("ThreadSuspension") {}
+  void do_thread(Thread* thr) {
+    JavaThread* target = thr->as_Java_thread();
+    target->handshake_state()->suspend_in_handshake();
+  }
+};
+
+class SuspendThreadHandshake : public HandshakeClosure {
+  bool _did_suspend;
+public:
+  SuspendThreadHandshake() : HandshakeClosure("SuspendThread"), _did_suspend(false) {}
+  void do_thread(Thread* thr) {
+    JavaThread* target = thr->as_Java_thread();
+    if(target->is_exiting() ||
+       target->threadObj() == NULL) {
+      log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " exiting", p2i(target));
+      return;
+    }
+    assert(java_lang_Thread::thread(target->threadObj()) != NULL, "BAD");
+    if (target->is_suspend_requested()) {
+      if(target->is_suspended()) {
+        // Target suspended
+        log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " already suspeneded", p2i(target));
+        return;
+      } else {
+        // Target is going to wake up and leave suspension.
+        // Let's just stop the thread from doing that.
+        log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " re-suspened", p2i(target));
+        target->set_suspend(true);
+        _did_suspend = true;
+        return;
+      }
+    }
+    // no suspend requst
+    assert(!target->is_suspended(), "cannot not be suspended without a suspend request");
+    // Thread is safe, so it must execute the request, thus we can count it as suspended
+    // from this point.
+    target->set_suspend(true);
+    _did_suspend = true;
+    target->set_suspend_requested(true);
+    log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " suspened, arming ThreadSuspension", p2i(target));
+    ThreadSuspensionHandshake* ts = new ThreadSuspensionHandshake();
+    Handshake::execute(ts, target);
+  }
+  bool did_suspend() { return _did_suspend; }
+};
+
+bool JavaThread::java_suspend() {
   ThreadsListHandle tlh;
-  if (!tlh.includes(this) || threadObj() == NULL || is_exiting()) {
-    return;
+  if (!tlh.includes(this)) {
+    log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " not on threadslist, no suspension", p2i(this));
+    return false;
   }
-
-  { MutexLocker ml(SR_lock(), Mutex::_no_safepoint_check_flag);
-    if (!is_external_suspend()) {
-      // a racing resume has cancelled us; bail out now
-      return;
-    }
-
-    // suspend is done
-
-    // Warning: is_ext_suspend_completed() may temporarily drop the
-    // SR_lock to allow the thread to reach a stable thread state if
-    // it is currently in a transient thread state.
-    if (is_ext_suspend_completed()) {
-      return;
-    }
-  }
-
-  if (Thread::current() == this) {
-    // Safely self-suspend.
-    // If we don't do this explicitly it will implicitly happen
-    // before we transition back to Java, and on some other thread-state
-    // transition paths, but not as we exit a JVM TI SuspendThread call.
-    // As SuspendThread(current) must not return (until resumed) we must
-    // self-suspend here.
-    ThreadBlockInVM tbivm(this);
-    java_suspend_self();
-  } else {
-    VM_ThreadSuspend vm_suspend;
-    VMThread::execute(&vm_suspend);
-  }
+  SuspendThreadHandshake st;
+  Handshake::execute(&st, this);
+  return st.did_suspend();
 }
 
-// Part II of external suspension.
-// A JavaThread self suspends when it detects a pending external suspend
-// request. This is usually on transitions. It is also done in places
-// where continuing to the next transition would surprise the caller,
-// e.g., monitor entry.
-//
-// Returns the number of times that the thread self-suspended.
-//
-// Note: DO NOT call java_suspend_self() when you just want to block current
-//       thread. java_suspend_self() is the second stage of cooperative
-//       suspension for external suspend requests and should only be used
-//       to complete an external suspend request.
-//
-int JavaThread::java_suspend_self() {
-  assert(thread_state() == _thread_blocked, "wrong state for java_suspend_self()");
-  int ret = 0;
-
-  // we are in the process of exiting so don't suspend
-  if (is_exiting()) {
-    clear_external_suspend();
-    return ret;
+bool JavaThread::java_resume() {
+  ThreadsListHandle tlh;
+  if (!tlh.includes(this)) {
+    log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " not on threadslist, nothing to resume", p2i(this));
+    return false;
   }
-
-  assert(_anchor.walkable() || !has_last_Java_frame(),
-         "must have walkable stack");
-
-  MonitorLocker ml(SR_lock(), Mutex::_no_safepoint_check_flag);
-
-  assert(!this->is_ext_suspended(),
-         "a thread trying to self-suspend should not already be suspended");
-
-  if (this->is_suspend_equivalent()) {
-    // If we are self-suspending as a result of the lifting of a
-    // suspend equivalent condition, then the suspend_equivalent
-    // flag is not cleared until we set the ext_suspended flag.
-    this->clear_suspend_equivalent();
-  }
-
-  // A racing resume may have cancelled us before we grabbed SR_lock
-  // above. Or another external suspend request could be waiting for us
-  // by the time we return from SR_lock()->wait(). The thread
-  // that requested the suspension may already be trying to walk our
-  // stack and if we return now, we can change the stack out from under
-  // it. This would be a "bad thing (TM)" and cause the stack walker
-  // to crash. We stay self-suspended until there are no more pending
-  // external suspend requests.
-  while (is_external_suspend()) {
-    ret++;
-    this->set_ext_suspended();
-
-    // _ext_suspended flag is cleared by java_resume()
-    while (is_ext_suspended()) {
-      ml.wait();
-    }
-  }
-  return ret;
-}
-
-// Helper routine to set up the correct thread state before calling java_suspend_self.
-// This is called when regular thread-state transition helpers can't be used because
-// we can be in various states, in particular _thread_in_native_trans.
-// We have to set the thread state directly to _thread_blocked so that it will
-// be seen to be safepoint/handshake safe whilst suspended. This is also
-// necessary to allow a thread in is_ext_suspend_completed, that observed the
-// _thread_in_native_trans state, to proceed.
-// The problem with setting thread state directly is that a
-// safepoint could happen just after java_suspend_self() returns after being resumed,
-// and the VM thread will see the _thread_blocked state. So we must check for a safepoint
-// after restoring the state to make sure we won't leave while a safepoint is in progress.
-// However, not all initial-states are allowed when performing a safepoint check, as we
-// should never be blocking at a safepoint whilst in those states(*). Of these 'bad' states
-// only _thread_in_native is possible when executing this code (based on our two callers).
-// A thread that is _thread_in_native is already safepoint-safe and so it doesn't matter
-// whether the VMThread sees the _thread_blocked state, or the _thread_in_native state,
-// and so we don't need the explicit safepoint check.
-// (*) See switch statement in SafepointSynchronize::block() for thread states that are
-// allowed when performing a safepoint check.
-
-void JavaThread::java_suspend_self_with_safepoint_check() {
-  assert(this == Thread::current(), "invariant");
-  JavaThreadState state = thread_state();
-
-  do {
-    set_thread_state(_thread_blocked);
-    java_suspend_self();
-    // The current thread could have been suspended again. We have to check for
-    // suspend after restoring the saved state. Without this the current thread
-    // might return to _thread_in_Java and execute bytecodes for an arbitrary
-    // long time.
-    set_thread_state_fence(state);
-
-    if (state != _thread_in_native) {
-      SafepointMechanism::process_if_requested(this);
-    }
-  } while (is_external_suspend());
+  return this->handshake_state()->resume();
 }
 
 // Wait for another thread to perform object reallocation and relocking on behalf of
@@ -2090,10 +1872,6 @@ void JavaThread::wait_for_object_deoptimization() {
   bool spin_wait = os::is_MP();
   do {
     set_thread_state(_thread_blocked);
-    // Check if _external_suspend was set in the previous loop iteration.
-    if (is_external_suspend()) {
-      java_suspend_self();
-    }
     // Wait for object deoptimization if requested.
     if (spin_wait) {
       // A single deoptimization is typically very short. Microbenchmarks
@@ -2121,7 +1899,7 @@ void JavaThread::wait_for_object_deoptimization() {
     }
     // A handshake for obj. deoptimization suspend could have been processed so
     // we must check after processing.
-  } while (is_obj_deopt_suspend() || is_external_suspend());
+  } while (is_obj_deopt_suspend());
 }
 
 #ifdef ASSERT
@@ -2168,29 +1946,6 @@ void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
     // We are in _thread_in_native_trans state, don't handle unsafe
     // access error since that may block.
     thread->check_and_handle_async_exceptions(false);
-  }
-}
-
-// We need to guarantee the Threads_lock here, since resumes are not
-// allowed during safepoint synchronization
-// Can only resume from an external suspension
-void JavaThread::java_resume() {
-  assert_locked_or_safepoint(Threads_lock);
-
-  // Sanity check: thread is gone, has started exiting or the thread
-  // was not externally suspended.
-  ThreadsListHandle tlh;
-  if (!tlh.includes(this) || is_exiting() || !is_external_suspend()) {
-    return;
-  }
-
-  MutexLocker ml(SR_lock(), Mutex::_no_safepoint_check_flag);
-
-  clear_external_suspend();
-
-  if (is_ext_suspended()) {
-    clear_ext_suspended();
-    SR_lock()->notify_all();
   }
 }
 
@@ -2759,15 +2514,7 @@ bool JavaThread::sleep(jlong millis) {
     {
       ThreadBlockInVM tbivm(this);
       OSThreadWaitState osts(this->osthread(), false /* not Object.wait() */);
-
-      this->set_suspend_equivalent();
-      // cleared by handle_special_suspend_equivalent_condition() or
-      // java_suspend_self() via check_and_wait_while_suspended()
-
       slp->park(millis);
-
-      // were we externally suspended while we were waiting?
-      this->check_and_wait_while_suspended();
     }
 
     // Update elapsed time tracking
@@ -3689,11 +3436,11 @@ bool Threads::destroy_vm() {
   _vm_complete = false;
 #endif
   // Wait until we are the last non-daemon thread to execute
-  { MonitorLocker nu(Threads_lock);
+  {
+    MonitorLocker nu(Threads_lock);
     while (Threads::number_of_non_daemon_threads() > 1)
-      // This wait should make safepoint checks, wait without a timeout,
-      // and wait as a suspend-equivalent condition.
-      nu.wait(0, Mutex::_as_suspend_equivalent_flag);
+      // This wait should make safepoint checks, wait without a timeout.
+      nu.wait(0);
   }
 
   EventShutdown e;
@@ -3864,7 +3611,7 @@ void Threads::remove(JavaThread* p, bool is_daemon) {
     // the thread might mess around with locks after this point. This can cause it
     // to do callbacks into the safepoint code. However, the safepoint code is not aware
     // of this thread since it is removed from the queue.
-    p->set_terminated_value();
+    p->set_terminated();
 
     // Notify threads waiting in EscapeBarriers
     EscapeBarrier::thread_removed(p);

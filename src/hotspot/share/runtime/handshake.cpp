@@ -400,8 +400,6 @@ HandshakeState::HandshakeState(JavaThread* target) :
 
 void HandshakeState::add_operation(HandshakeOperation* op) {
   // Adds are done lock free and so is arming.
-  // Calling this method with lock held is considered an error.
-  assert(!_lock.owned_by_self(), "Lock should not be held");
   _queue.push(op);
   SafepointMechanism::arm_local_poll_release(_handshakee);
 }
@@ -428,22 +426,21 @@ HandshakeOperation* HandshakeState::pop() {
   return _queue.pop(non_self_queue_filter);
 };
 
-void HandshakeState::process_by_self() {
+bool HandshakeState::process_by_self() {
   assert(Thread::current() == _handshakee, "should call from _handshakee");
   assert(!_handshakee->is_terminated(), "should not be a terminated thread");
   assert(_handshakee->thread_state() != _thread_blocked, "should not be in a blocked state");
   assert(_handshakee->thread_state() != _thread_in_native, "should not be in native");
   ThreadInVMForHandshake tivm(_handshakee);
   {
+    ttyLocker::break_tty_lock_for_safepoint(os::current_thread_id());
     NoSafepointVerifier nsv;
-    process_self_inner();
+    return process_self_inner();
   }
 }
 
-void HandshakeState::process_self_inner() {
+bool HandshakeState::process_self_inner() {
   while (should_process()) {
-    HandleMark hm(_handshakee);
-    PreserveExceptionMark pem(_handshakee);
     MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
     HandshakeOperation* op = pop_for_self();
     if (op != NULL) {
@@ -452,13 +449,23 @@ void HandshakeState::process_self_inner() {
       log_trace(handshake)("Proc handshake %s " INTPTR_FORMAT " on " INTPTR_FORMAT " by self",
                            async ? "asynchronous" : "synchronous", p2i(op), p2i(_handshakee));
       op->prepare(_handshakee, _handshakee);
-      op->do_handshake(_handshakee);
-      if (async) {
+      if (!async) {
+        HandleMark hm(_handshakee);
+        PreserveExceptionMark pem(_handshakee);
+        op->do_handshake(_handshakee);
+      } else {
+        // Asynchronous may block so they may not execute ~PreserveExceptionMark before safepointing
+        // in outer loop.
+        op->do_handshake(_handshakee);
         log_handshake_info(((AsyncHandshakeOperation*)op)->start_time(), op->name(), 1, 0, "asynchronous");
         delete op;
+        return false; // Must check for safepoints
       }
-    }
+    } else {
+      return true;
+    } 
   }
+  return true;
 }
 
 bool HandshakeState::can_process_handshake() {
@@ -561,4 +568,58 @@ HandshakeState::ProcessResult HandshakeState::try_process(HandshakeOperation* ma
                        p2i(current_thread), executed, p2i(_handshakee),
                        pr_ret == HandshakeState::_succeeded ? "including" : "excluding", p2i(match_op));
   return pr_ret;
+}
+
+void HandshakeState::lock() {
+  _lock.lock_without_safepoint_check();
+}
+
+void HandshakeState::unlock() {
+  _lock.unlock();
+}
+
+void HandshakeState::thread_exit() {
+  assert(JavaThread::current() == _handshakee, "Must be");
+  while (true) {
+    {
+      MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
+      if (!_handshakee->is_suspend_requested()) {
+        _handshakee->set_exiting();
+        return;
+      }
+    }
+    ThreadBlockInVM tbivm(_handshakee);
+  }
+}
+
+void HandshakeState::suspend_in_handshake() {
+  assert(Thread::current() == _handshakee, "should call from _handshakee");
+  assert(_lock.owned_by_self(), "Lock must be held");
+  assert(!_handshakee->has_last_Java_frame() || _handshakee->frame_anchor()->walkable(), "should have walkable stack");
+  JavaThreadState jts = _handshakee->thread_state();
+  while (_handshakee->_suspended) {
+    _handshakee->set_thread_state(_thread_blocked);
+    log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " suspened", p2i(_handshakee));
+    _lock.wait_without_safepoint_check();
+  }
+  _handshakee->set_thread_state(jts);
+  _handshakee->set_suspend_requested(false);
+  log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " resumed", p2i(_handshakee));
+}
+
+bool HandshakeState::resume() {
+  // Can't be suspened if there is no suspend requst.
+  if (!_handshakee->is_suspend_requested()) {
+    return false;
+  }
+  MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
+  // Can't be suspened if there is no suspend requst.
+  if (!_handshakee->is_suspend_requested()) {
+    assert(!_handshakee->is_suspended(), "cannot not be suspended without a suspend request");
+    return false;
+  }
+  // Resume the thread.
+  _handshakee->set_suspend(false);
+  _lock.notify();
+  return true;
 }

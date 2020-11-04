@@ -1571,8 +1571,6 @@ void Parker::park(bool isAbsolute, jlong time) {
   }
 
   OSThreadWaitState osts(jt->osthread(), false /* not Object.wait() */);
-  jt->set_suspend_equivalent();
-  // cleared by handle_special_suspend_equivalent_condition() or java_suspend_self()
 
   assert(_cur_index == -1, "invariant");
   if (time == 0) {
@@ -1595,11 +1593,6 @@ void Parker::park(bool isAbsolute, jlong time) {
   // Paranoia to ensure our locked and lock-free paths interact
   // correctly with each other and Java-level accesses.
   OrderAccess::fence();
-
-  // If externally suspended while waiting, re-suspend
-  if (jt->handle_special_suspend_equivalent_condition()) {
-    jt->java_suspend_self();
-  }
 }
 
 void Parker::unpark() {

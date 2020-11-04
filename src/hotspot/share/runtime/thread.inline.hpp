@@ -94,20 +94,6 @@ inline void Thread::set_threads_hazard_ptr(ThreadsList* new_list) {
   Atomic::release_store_fence(&_threads_hazard_ptr, new_list);
 }
 
-inline void JavaThread::set_ext_suspended() {
-  set_suspend_flag (_ext_suspended);
-}
-inline void JavaThread::clear_ext_suspended() {
-  clear_suspend_flag(_ext_suspended);
-}
-
-inline void JavaThread::set_external_suspend() {
-  set_suspend_flag(_external_suspend);
-}
-inline void JavaThread::clear_external_suspend() {
-  clear_suspend_flag(_external_suspend);
-}
-
 inline void JavaThread::set_pending_async_exception(oop e) {
   _pending_async_exception = e;
   _special_runtime_exit_condition = _async_exception;
@@ -182,13 +168,8 @@ inline bool JavaThread::is_terminated() const {
   return check_is_terminated(l_terminated);
 }
 
-inline void JavaThread::set_terminated(TerminatedTypes t) {
-  // use release-store so the setting of _terminated is seen more quickly
-  Atomic::release_store((volatile jint *) &_terminated, (jint) t);
-}
-
 // special for Threads::remove() which is static:
-inline void JavaThread::set_terminated_value() {
+inline void JavaThread::set_terminated() {
   // use release-store so the setting of _terminated is seen more quickly
   Atomic::release_store((volatile jint *) &_terminated, (jint) _thread_terminated);
 }
