@@ -3057,7 +3057,9 @@ class StubGenerator: public StubCodeGenerator {
     // entry points that are platform specific
 
     // support for verify_oop (must happen after universe_init)
-    StubRoutines::_verify_oop_subroutine_entry     = generate_verify_oop();
+    if (VerifyOops) {
+      StubRoutines::_verify_oop_subroutine_entry = generate_verify_oop();
+    }
 
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
