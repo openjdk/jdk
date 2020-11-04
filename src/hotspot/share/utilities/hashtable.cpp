@@ -149,17 +149,15 @@ const int _large_table_sizes[] =  { 4801, 76831, 307261, 614563, 1228891,
 const int _large_array_size = sizeof(_large_table_sizes)/sizeof(int);
 
 // Calculate next "good" hashtable size based on requested count
-template <MEMFLAGS F> int BasicHashtable<F>::calculate_resize(bool use_large_table_sizes) {
+template <MEMFLAGS F> int BasicHashtable<F>::calculate_resize(bool use_large_table_sizes) const {
   int requested = (int)(_resize_factor*number_of_entries());
   const int* primelist = use_large_table_sizes ? _large_table_sizes : _small_table_sizes;
   int arraysize =  use_large_table_sizes ? _large_array_size  : _small_array_size;
-  int newsize = primelist[0];
-  int index = 0;
-  for (newsize = primelist[index]; index < (arraysize - 1);
-       newsize = primelist[++index]) {
-    if (requested <= newsize) {
+  int newsize;
+  for (int i = 0; i < arraysize; i++) {
+    newsize = primelist[i];
+    if (newsize >= requested)
       break;
-    }
   }
   return newsize;
 }

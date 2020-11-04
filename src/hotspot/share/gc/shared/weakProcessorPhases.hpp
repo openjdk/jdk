@@ -38,8 +38,6 @@ class WeakProcessorPhases : AllStatic {
 public:
   class Iterator;
 
-  typedef void (*Processor)(BoolObjectClosure*, OopClosure*);
-
   static const uint oopstorage_phase_start = 0;
   static const uint oopstorage_phase_count = OopStorageSet::weak_count;
   static const uint phase_count = oopstorage_phase_count;
