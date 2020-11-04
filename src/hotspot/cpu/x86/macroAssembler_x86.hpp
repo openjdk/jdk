@@ -594,9 +594,9 @@ class MacroAssembler: public Assembler {
       _verify_oop(reg, s, file, line);
     }
   }
-  void _verify_oop_addr_checked(Register reg, const char* s, const char* file, int line) {
+  void _verify_oop_addr_checked(Address reg, const char* s, const char* file, int line) {
     if (VerifyOops) {
-      _verify_oop(reg, s, file, line);
+      _verify_oop_addr(reg, s, file, line);
     }
   }
 
