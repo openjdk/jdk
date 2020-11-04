@@ -1463,7 +1463,7 @@ public final class DateTimeFormatterBuilder {
      * optionally {@code MINUTE_OF_HOUR} if exist. It will be mapped to a day period
      * type defined in LDML, such as "morning1" and then it will be translated into
      * text. Mapping to a day period type and its translation both depend on the
-     * locale in the formatter.
+     * locale in the formatter. "midnight" type designates "00:00".
      * <p>
      * During parsing, the text will be parsed into a day period type first. If
      * {@code HOUR_OF_DAY}, and optionally {@code MINUTE_OF_HOUR} exists,
@@ -1475,9 +1475,10 @@ public final class DateTimeFormatterBuilder {
      * {@code MINUTE_OF_HOUR} are resolved to the mid-point of the day period.
      * For example, if the parsed day period type is "night1" and the period defined
      * for it in the formatter locale is from 21:00 to 06:00, then {@code HOUR_OF_DAY}
-     * is set to '1' and {@code MINUTE_OF_HOUR} set to '30'. If any conflict occurs in
-     * {@link ResolverStyle#LENIENT LENIENT} mode, no exception is thrown and the day
-     * period is ignored.
+     * is set to '1' and {@code MINUTE_OF_HOUR} set to '30'. If {@code AMPM_OF_DAY} exists
+     * and no {@code HOUR_OF_DAY} is resolved, the parsed day period takes the precedence.
+     * If any conflict occurs in {@link ResolverStyle#LENIENT LENIENT} mode, no
+     * exception is thrown and the day period is ignored.
      *
      * @param style the text style to use, not null
      * @return this, for chaining, not null
