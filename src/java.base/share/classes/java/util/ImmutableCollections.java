@@ -93,26 +93,27 @@ class ImmutableCollections {
     private static Object[] archivedObjects;
 
     private static final Object EMPTY;
-
     static final ListN<?> EMPTY_LIST;
-
+    static final ListN<?> EMPTY_LIST_NULLS;
     static final SetN<?> EMPTY_SET;
-
     static final MapN<?,?> EMPTY_MAP;
 
     static {
         CDS.initializeFromArchive(ImmutableCollections.class);
         if (archivedObjects == null) {
             EMPTY = new Object();
-            EMPTY_LIST = new ListN<>(new Object[0]);
+            EMPTY_LIST = new ListN<>(new Object[0], false);
+            EMPTY_LIST_NULLS = new ListN<>(new Object[0], true);
             EMPTY_SET = new SetN<>();
             EMPTY_MAP = new MapN<>();
-            archivedObjects = new Object[] { EMPTY, EMPTY_LIST, EMPTY_SET, EMPTY_MAP };
+            archivedObjects =
+                new Object[] { EMPTY, EMPTY_LIST, EMPTY_LIST_NULLS, EMPTY_SET, EMPTY_MAP };
         } else {
             EMPTY = archivedObjects[0];
             EMPTY_LIST = (ListN)archivedObjects[1];
-            EMPTY_SET = (SetN)archivedObjects[2];
-            EMPTY_MAP = (MapN)archivedObjects[3];
+            EMPTY_LIST_NULLS = (ListN)archivedObjects[2];
+            EMPTY_SET = (SetN)archivedObjects[3];
+            EMPTY_MAP = (MapN)archivedObjects[4];
         }
     }
 
@@ -186,7 +187,7 @@ class ImmutableCollections {
         for (int i = 0; i < input.length; i++) {
             tmp[i] = Objects.requireNonNull(input[i]);
         }
-        return new ListN<>(tmp);
+        return new ListN<>(tmp, false);
     }
 
     /**
@@ -204,11 +205,11 @@ class ImmutableCollections {
      */
     @SuppressWarnings("unchecked")
     static <E> List<E> listFromTrustedArray(Object... input) {
-        for (Object o : input) {
+        for (Object o : input) { // implicit null check of 'input' array
             Objects.requireNonNull(o);
         }
 
-        switch (input.length) { // implicit null check of elements
+        switch (input.length) {
             case 0:
                 return (List<E>) ImmutableCollections.EMPTY_LIST;
             case 1:
@@ -216,7 +217,7 @@ class ImmutableCollections {
             case 2:
                 return (List<E>) new List12<>(input[0], input[1]);
             default:
-                return (List<E>) new ListN<>(input);
+                return (List<E>) new ListN<>(input, false);
         }
     }
 
@@ -237,9 +238,9 @@ class ImmutableCollections {
     @SuppressWarnings("unchecked")
     static <E> List<E> listFromTrustedArrayNullsAllowed(Object... input) {
         if (input.length == 0) {
-            return (List<E>) EMPTY_LIST;
+            return (List<E>) EMPTY_LIST_NULLS;
         } else {
-            return new ListNNullsAllowed<>((E[])input);
+            return new ListN<>((E[])input, true);
         }
     }
 
@@ -611,14 +612,19 @@ class ImmutableCollections {
         }
     }
 
-    static class ListN<E> extends AbstractImmutableList<E>
+    static final class ListN<E> extends AbstractImmutableList<E>
             implements Serializable {
 
         @Stable
         private final E[] elements;
 
-        private ListN(E[] array) {
-            elements = array;
+        @Stable
+        private final boolean allowNulls;
+
+        // caller must ensure that elements has no nulls if allowNulls is false
+        private ListN(E[] elements, boolean allowNulls) {
+            this.elements = elements;
+            this.allowNulls = allowNulls;
         }
 
         @Override
@@ -642,13 +648,8 @@ class ImmutableCollections {
         }
 
         @java.io.Serial
-        private void readObjectNoData() throws ObjectStreamException {
-            throw new InvalidObjectException("not serial proxy");
-        }
-
-        @java.io.Serial
         private Object writeReplace() {
-            return new CollSer(CollSer.IMM_LIST, elements);
+            return new CollSer(allowNulls ? CollSer.IMM_LIST_NULLS : CollSer.IMM_LIST, elements);
         }
 
         @Override
@@ -670,27 +671,16 @@ class ImmutableCollections {
             }
             return a;
         }
-    }
-
-    static final class ListNNullsAllowed<E> extends ListN<E> {
-        private ListNNullsAllowed(E[] array) {
-            super(array);
-        }
 
         @Override
         public int indexOf(Object o) {
-            Object[] es = ((ListN)this).elements;
-            if (o == null) {
-                for (int i = 0; i < es.length; i++) {
-                    if (es[i] == null) {
-                        return i;
-                    }
-                }
-            } else {
-                for (int i = 0; i < es.length; i++) {
-                    if (o.equals(es[i])) {
-                        return i;
-                    }
+            if (!allowNulls && o == null) {
+                throw new NullPointerException();
+            }
+            Object[] es = elements;
+            for (int i = 0; i < es.length; i++) {
+                if (Objects.equals(o, es[i])) {
+                    return i;
                 }
             }
             return -1;
@@ -698,31 +688,16 @@ class ImmutableCollections {
 
         @Override
         public int lastIndexOf(Object o) {
-            Object[] es = ((ListN)this).elements;
-            if (o == null) {
-                for (int i = es.length - 1; i >= 0; i--) {
-                    if (es[i] == null) {
-                        return i;
-                    }
-                }
-            } else {
-                for (int i = es.length - 1; i >= 0; i--) {
-                    if (o.equals(es[i])) {
-                        return i;
-                    }
+            if (!allowNulls && o == null) {
+                throw new NullPointerException();
+            }
+            Object[] es = elements;
+            for (int i = es.length - 1; i >= 0; i--) {
+                if (Objects.equals(o, es[i])) {
+                    return i;
                 }
             }
             return -1;
-        }
-
-        @java.io.Serial
-        private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
-            throw new InvalidObjectException("not serial proxy");
-        }
-
-        @java.io.Serial
-        private Object writeReplace() {
-            return new CollSer(CollSer.IMM_LIST_NULLS, ((ListN) this).elements);
         }
     }
 
@@ -1465,7 +1440,7 @@ final class CollSer implements Serializable {
      * @throws ObjectStreamException if another serialization error has occurred
      * @since 9
      */
-   @java.io.Serial
+    @java.io.Serial
     private Object readResolve() throws ObjectStreamException {
         try {
             if (array == null) {
