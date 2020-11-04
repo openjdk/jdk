@@ -557,7 +557,7 @@ public:
   // Claim the block and get the block index.
   size_t claim_and_get_block() {
     size_t block_index;
-    block_index = Atomic::fetch_and_add(&_claimed_index, (size_t)1);
+    block_index = Atomic::fetch_and_add(&_claimed_index, 1u);
 
     PSOldGen* old_gen = ParallelScavengeHeap::heap()->old_gen();
     size_t num_claims = old_gen->num_iterable_blocks() + NumNonOldGenClaims;
