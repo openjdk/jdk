@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ get_time_stamp(char *tbuf, size_t ltbuf)
     (void)strftime(timestamp_timezone, TZ_SIZE,
                 "%Z", localtime(&t));
     (void)snprintf(tbuf, ltbuf,
-                   "%s.%.3d %s", timestamp_date_time,
+                   "%.19s.%.3d %.50s", timestamp_date_time,
                    (int)(millisecs), timestamp_timezone);
 }
 
