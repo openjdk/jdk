@@ -440,21 +440,43 @@ static bool javaSignalHandler_inner(int sig, siginfo_t* info, void* ucVoid, bool
 
 extern "C" JNIEXPORT int
 #if defined(BSD)
-                         JVM_handle_bsd_signal
+JVM_handle_bsd_signal
 #elif defined(AIX)
-                         JVM_handle_aix_signal
+JVM_handle_aix_signal
 #elif defined(LINUX)
-                         JVM_handle_linux_signal
+JVM_handle_linux_signal
 #else
 #error who are you?
 #endif
-                                                  (int signo, siginfo_t* siginfo,
-                                                   void* ucontext,
-                                                   int abort_if_unrecognized)
+  (int signo, siginfo_t* siginfo, void* ucontext, int abort_if_unrecognized)
 {
-  return javaSignalHandler_inner(signo, siginfo, ucontext, abort_if_unrecognized);
+  int rc = 0;
+  assert(AllowUserSignalHandlers, "Only valid to call for -XX:+AllowUserSignalHandlers.");
+  // We only allow those signals which had been in the original "contract" (see comment above).
+  switch (signo) {
+    //  Of those signals, we only pass those to the handler which it would
+    //  have gotten anyway had it been properly installed:
+    case SIGSEGV:
+    case SIGILL:
+    case SIGBUS:
+    case SIGFPE:
+    case SIGPIPE:
+    case SIGXFSZ:
+    PPC64_ONLY(case SIGTRAP:)
+      rc = javaSignalHandler_inner(signo, siginfo, ucontext, abort_if_unrecognized);
+      break;
+    // Ignore these to keep backward compatibility:
+    case SIGQUIT:
+    case SIGUSR1:
+      rc = 0;
+      break;
+    // Invalid according to contract:
+    default:
+      ShouldNotReachHere();
+      rc = 0;
+  }
+  return rc;
 }
-
 
 ///// Synchronous (non-deferrable) error signals (ILL, SEGV, FPE, BUS, TRAP):
 
@@ -578,7 +600,7 @@ static bool javaSignalHandler_inner(int sig, siginfo_t* info, void* ucVoid, bool
     address pc = NULL;
     if (uc != NULL) {
       // prepare fault pc address for error reporting.
-      if (sig == SIGILL || sig == SIGFPE) {
+      if (S390_ONLY(sig == SIGILL || sig == SIGFPE) NOT_S390(false)) {
         pc = (address)info->si_addr;
       } else {
         pc = PosixSignals::ucontext_get_pc(uc);
@@ -855,9 +877,7 @@ void os::run_periodic_checks() {
   do_signal_check(SIGBUS);
   do_signal_check(SIGPIPE);
   do_signal_check(SIGXFSZ);
-#if defined(PPC64)
-  do_signal_check(SIGTRAP);
-#endif
+  PPC64_ONLY(do_signal_check(SIGTRAP);)
 
   // ReduceSignalUsage allows the user to override these handlers
   // see comments at the very top and jvm_md.h
@@ -1252,9 +1272,7 @@ void PosixSignals::install_signal_handlers() {
   set_signal_handler(SIGBUS, true);
   set_signal_handler(SIGILL, true);
   set_signal_handler(SIGFPE, true);
-#if defined(PPC64) || defined(AIX)
-  set_signal_handler(SIGTRAP, true);
-#endif
+  PPC64_ONLY(set_signal_handler(SIGTRAP, true);)
   set_signal_handler(SIGXFSZ, true);
 
 #if defined(__APPLE__)
@@ -1432,9 +1450,7 @@ void PosixSignals::signal_sets_init() {
   sigaddset(&unblocked_sigs, SIGSEGV);
   sigaddset(&unblocked_sigs, SIGBUS);
   sigaddset(&unblocked_sigs, SIGFPE);
-  #if defined(PPC64) || defined(AIX)
-    sigaddset(&unblocked_sigs, SIGTRAP);
-  #endif
+  PPC64_ONLY(sigaddset(&unblocked_sigs, SIGTRAP);)
   sigaddset(&unblocked_sigs, SR_signum);
 
   if (!ReduceSignalUsage) {
