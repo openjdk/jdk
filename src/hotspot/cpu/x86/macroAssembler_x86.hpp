@@ -583,14 +583,11 @@ class MacroAssembler: public Assembler {
   // method handles (JSR 292)
   Address argument_address(RegisterOrConstant arg_slot, int extra_slot_offset = 0);
 
-  //----
-  void set_word_if_not_zero(Register reg); // sets reg to 1 if not zero, otherwise 0
-
   // Debugging
 
   // only if +VerifyOops
-  void _verify_oop(Register reg, const char* s, const char* file, int line);
-  void _verify_oop_addr(Address addr, const char* s, const char* file, int line);
+  void _verify_oop(Register reg, const char* s, const char* file, int line) PRODUCT_RETURN;
+  void _verify_oop_addr(Address addr, const char* s, const char* file, int line) PRODUCT_RETURN;
 
   // TODO: verify method and klass metadata (compare against vptr?)
   void _verify_method_ptr(Register reg, const char * msg, const char * file, int line) {}

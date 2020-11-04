@@ -370,11 +370,6 @@ void MacroAssembler::pushptr(AddressLiteral src) {
   }
 }
 
-void MacroAssembler::set_word_if_not_zero(Register dst) {
-  xorl(dst, dst);
-  set_byte_if_not_zero(dst);
-}
-
 static void pass_arg0(MacroAssembler* masm, Register arg) {
   masm->push(arg);
 }
@@ -3894,6 +3889,7 @@ void MacroAssembler::cmov32(Condition cc, Register dst, Register src) {
   }
 }
 
+#ifndef PRODUCT
 void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, int line) {
   if (!VerifyOops) return;
 
@@ -3922,6 +3918,7 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
   // Caller pops the arguments (oop, message) and restores rax, r10
   BLOCK_COMMENT("} verify_oop");
 }
+#endif
 
 void MacroAssembler::vallones(XMMRegister dst, int vector_len) {
   if (UseAVX > 2 && (vector_len == Assembler::AVX_512bit || VM_Version::supports_avx512vl())) {
@@ -3991,7 +3988,7 @@ Address MacroAssembler::argument_address(RegisterOrConstant arg_slot,
   return Address(rsp, scale_reg, scale_factor, offset);
 }
 
-
+#ifndef PRODUCT
 void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* file, int line) {
   if (!VerifyOops) return;
 
@@ -4031,6 +4028,7 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
   call(rax);
   // Caller pops the arguments (addr, message) and restores rax, r10.
 }
+#endif
 
 void MacroAssembler::verify_tlab() {
 #ifdef ASSERT
