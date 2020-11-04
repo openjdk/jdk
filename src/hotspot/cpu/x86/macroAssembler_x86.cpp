@@ -370,11 +370,6 @@ void MacroAssembler::pushptr(AddressLiteral src) {
   }
 }
 
-void MacroAssembler::set_word_if_not_zero(Register dst) {
-  xorl(dst, dst);
-  set_byte_if_not_zero(dst);
-}
-
 static void pass_arg0(MacroAssembler* masm, Register arg) {
   masm->push(arg);
 }
@@ -3992,7 +3987,6 @@ Address MacroAssembler::argument_address(RegisterOrConstant arg_slot,
   offset += wordSize;           // return PC is on stack
   return Address(rsp, scale_reg, scale_factor, offset);
 }
-
 
 void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* file, int line) {
   if (!VerifyOops) return;
