@@ -29,6 +29,7 @@
 #include "gc/shared/workgroup.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
+#include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
@@ -63,6 +64,11 @@ ShenandoahSTWMark::ShenandoahSTWMark(bool full_gc) :
 }
 
 void ShenandoahSTWMark::mark() {
+  // Weak reference processing
+  ShenandoahReferenceProcessor* rp = heap()->ref_processor();
+  rp->reset_thread_locals();
+  rp->set_soft_reference_policy(heap()->soft_ref_policy()->should_clear_all_soft_refs());
+
   // Init mark, do not expect forwarded pointers in roots
   if (ShenandoahVerify) {
     assert(Thread::current()->is_VM_thread(), "Must be");
@@ -72,19 +78,6 @@ void ShenandoahSTWMark::mark() {
   uint nworkers = heap()->workers()->active_workers();
   task_queues()->reserve(nworkers);
 
-  ReferenceProcessor* rp = NULL;
-  if (heap()->process_references()) {
-    rp = heap()->ref_processor();
-    rp->set_active_mt_degree(nworkers);
-
-    // enable ("weak") refs discovery
-    rp->enable_discovery(true /*verify_no_refs*/);
-    rp->setup_policy(_heap->soft_ref_policy()->should_clear_all_soft_refs());
-  }
-
-  shenandoah_assert_rp_isalive_not_installed();
-  ShenandoahIsAliveSelector is_alive;
-  ReferenceProcessorIsAliveMutator fix_isalive(rp, is_alive.is_alive_closure());
 
   {
     // Mark
@@ -95,8 +88,10 @@ void ShenandoahSTWMark::mark() {
     assert(task_queues()->is_empty(), "Should be empty");
   }
 
+  heap()->mark_complete_marking_context();
+
   // Weak reference processing
-  process_weak_refs(_full_gc /*full gc*/);
+  heap()->ref_processor()->process_references(heap()->workers(), false /*concurrent*/);
 
   assert(task_queues()->is_empty(), "Should be empty");
   TASKQUEUE_STATS_ONLY(task_queues()->print_taskqueue_stats());
@@ -112,11 +107,7 @@ void ShenandoahSTWMark::mark_roots(uint worker_id) {
 void ShenandoahSTWMark::finish_mark(uint worker_id) {
   ShenandoahPhaseTimings::Phase phase = _full_gc ? ShenandoahPhaseTimings::full_gc_mark : ShenandoahPhaseTimings::degen_gc_stw_mark;
   ShenandoahWorkerTimingsTracker timer(phase, ShenandoahPhaseTimings::ParallelMark, worker_id);
-
-  ReferenceProcessor* rp = NULL;
-  if (heap()->process_references()) {
-    rp = heap()->ref_processor();
-  }
+  ShenandoahReferenceProcessor* rp = heap()->ref_processor();
 
   mark_loop(worker_id, &_terminator, rp,
             false, // not cancellable

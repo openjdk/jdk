@@ -39,6 +39,7 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
+#include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
@@ -130,10 +131,14 @@ void ShenandoahMarkCompact::do_it(GCCause::Cause gc_cause) {
     assert(heap->marking_context()->is_bitmap_clear(), "sanity");
     assert(!heap->marking_context()->is_complete(), "sanity");
 
-    // e. Set back forwarded objects bit back, in case some steps above dropped it.
+    // e. Abandon reference discovery and clear all discovered references.
+    ShenandoahReferenceProcessor* rp = heap->ref_processor();
+    rp->abandon_partial_discovery();
+
+    // f. Set back forwarded objects bit back, in case some steps above dropped it.
     heap->set_has_forwarded_objects(has_forwarded_objects);
 
-    // f. Sync pinned region status from the CP marks
+    // g. Sync pinned region status from the CP marks
     heap->sync_pinned_region_status();
 
     // The rest of prologue:
@@ -235,13 +240,17 @@ void ShenandoahMarkCompact::phase1_mark_heap() {
   ShenandoahPrepareForMarkClosure cl;
   heap->heap_region_iterate(&cl);
 
-  heap->set_process_references(heap->heuristics()->can_process_references());
   heap->set_unload_classes(heap->heuristics()->can_unload_classes());
+
+  ShenandoahReferenceProcessor* rp = heap->ref_processor();
+  // enable ("weak") refs discovery
+  rp->set_soft_reference_policy(true); // forcefully purge all soft references
+
 
   ShenandoahSTWMark mark(true /*full_gc*/);
   mark.mark();
-
   heap->mark_complete_marking_context();
+  rp->process_references(heap->workers(), false /* concurrent */);
   heap->parallel_cleaning(true /* full_gc */);
 }
 

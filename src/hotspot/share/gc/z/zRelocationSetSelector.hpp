@@ -104,6 +104,7 @@ private:
   ZRelocationSetSelectorGroup _small;
   ZRelocationSetSelectorGroup _medium;
   ZRelocationSetSelectorGroup _large;
+  ZArray<ZPage*>              _garbage_pages;
 
   size_t total() const;
   size_t empty() const;
@@ -115,6 +116,10 @@ public:
 
   void register_live_page(ZPage* page);
   void register_garbage_page(ZPage* page);
+
+  bool should_free_garbage_pages(int bulk) const;
+  const ZArray<ZPage*>* garbage_pages() const;
+  void clear_garbage_pages();
 
   void select();
 

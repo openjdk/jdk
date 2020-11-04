@@ -30,7 +30,7 @@
 
 template<class T, UpdateRefsMode UPDATE_REFS, StringDedupMode STRING_DEDUP>
 inline void ShenandoahMarkRefsSuperClosure::work(T *p) {
-  ShenandoahMark::mark_through_ref<T, UPDATE_REFS, STRING_DEDUP>(p, _heap, _queue, _mark_context);
+  ShenandoahMark::mark_through_ref<T, UPDATE_REFS, STRING_DEDUP>(p, _heap, _queue, _mark_context, _weak);
 }
 
 template <class T>

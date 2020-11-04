@@ -48,25 +48,6 @@ public:
   void do_oop(oop* p)       { do_oop_work(p); }
 };
 
-class ShenandoahCMKeepAliveClosure : public OopClosure {
-private:
-  ShenandoahObjToScanQueue* _queue;
-  ShenandoahHeap* _heap;
-  ShenandoahMarkingContext* const _mark_context;
-
-  template <class T>
-  inline void do_oop_work(T* p);
-
-public:
-  ShenandoahCMKeepAliveClosure(ShenandoahObjToScanQueue* q) :
-    _queue(q),
-    _heap(ShenandoahHeap::heap()),
-    _mark_context(_heap->marking_context()) {}
-
-  void do_oop(narrowOop* p) { do_oop_work(p); }
-  void do_oop(oop* p)       { do_oop_work(p); }
-};
-
 // Base class for mark
 // Mark class does not maintain states. Instead, mark states are
 // maintained by task queues, mark bitmap and SATB buffers (concurrent mark)
@@ -82,7 +63,7 @@ protected:
 
 public:
   template<class T, UpdateRefsMode UPDATE_REFS, StringDedupMode STRING_DEDUP>
-  static inline void mark_through_ref(T* p, ShenandoahHeap* heap, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context);
+  static inline void mark_through_ref(T* p, ShenandoahHeap* heap, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, bool weak);
 
   static void clear();
 
@@ -96,10 +77,10 @@ private:
   inline void do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveData* live_data, ShenandoahMarkTask* task);
 
   template <class T>
-  inline void do_chunked_array_start(ShenandoahObjToScanQueue* q, T* cl, oop array);
+  inline void do_chunked_array_start(ShenandoahObjToScanQueue* q, T* cl, oop array, bool weak);
 
   template <class T>
-  inline void do_chunked_array(ShenandoahObjToScanQueue* q, T* cl, oop array, int chunk, int pow);
+  inline void do_chunked_array(ShenandoahObjToScanQueue* q, T* cl, oop array, int chunk, int pow, bool weak);
 
   inline void count_liveness(ShenandoahLiveData* live_data, oop obj);
 
@@ -107,15 +88,11 @@ private:
   void mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, TaskTerminator *t);
 
   template <bool CANCELLABLE>
-  void mark_loop_prework(uint worker_id, TaskTerminator *terminator, ReferenceProcessor *rp, bool strdedup);
+  void mark_loop_prework(uint worker_id, TaskTerminator *terminator, ShenandoahReferenceProcessor *rp, bool strdedup);
 
 protected:
-  void mark_loop(uint worker_id, TaskTerminator* terminator, ReferenceProcessor *rp,
+  void mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahReferenceProcessor *rp,
                  bool cancellable, bool strdedup);
-
-  // Reference processing
-  void process_weak_refs(bool full_gc);
-  void process_weak_refs_work(bool full_gc);
 
   inline ShenandoahHeap* heap() const;
 };

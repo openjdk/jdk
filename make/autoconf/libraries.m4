@@ -43,9 +43,11 @@ AC_DEFUN_ONCE([LIB_DETERMINE_DEPENDENCIES],
   if test "x$OPENJDK_TARGET_OS" = xwindows || test "x$OPENJDK_TARGET_OS" = xmacosx; then
     # No X11 support on windows or macosx
     NEEDS_LIB_X11=false
+  elif test "x$ENABLE_HEADLESS_ONLY" = xtrue; then
+    # No X11 support needed when building headless only
+    NEEDS_LIB_X11=false
   else
-    # All other instances need X11, even if building headless only, libawt still
-    # needs X11 headers.
+    # All other instances need X11
     NEEDS_LIB_X11=true
   fi
 

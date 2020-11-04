@@ -31,9 +31,8 @@
 #include "gc/shenandoah/shenandoahOopClosures.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 
-class ShenandoahConcurrentMarkingTask;
-class ShenandoahFinalMarkingTask;
-class ShenandoahPrecleanCompleteGCClosure;
+class ShenandoahStrDedupQueue;
+class ShenandoahReferenceProcessor;
 
 class ShenandoahConcurrentMark: public ShenandoahMark {
   friend class ShenandoahConcurrentMarkingTask;
@@ -52,8 +51,6 @@ public:
   // Finish mark at a safepoint
   void finish_mark();
 
-  // Reference processing
-  void preclean_weak_refs();
 
   static void cancel();
 
