@@ -56,7 +56,6 @@ import static javax.lang.model.SourceVersion.*;
  * @see SimpleElementVisitor8
  * @see SimpleElementVisitor14
  * @since 9
- * @spec JPMS
  */
 @SupportedSourceVersion(RELEASE_14)
 public class SimpleElementVisitor9<R, P> extends SimpleElementVisitor8<R, P> {

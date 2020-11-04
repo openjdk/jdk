@@ -1304,7 +1304,7 @@ void G1RemSet::cleanup_after_scan_heap_roots() {
 inline void check_card_ptr(CardTable::CardValue* card_ptr, G1CardTable* ct) {
 #ifdef ASSERT
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  assert(g1h->is_in_exact(ct->addr_for(card_ptr)),
+  assert(g1h->is_in(ct->addr_for(card_ptr)),
          "Card at " PTR_FORMAT " index " SIZE_FORMAT " representing heap at " PTR_FORMAT " (%u) must be in committed heap",
          p2i(card_ptr),
          ct->index_for(ct->addr_for(card_ptr)),

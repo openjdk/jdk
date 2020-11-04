@@ -179,9 +179,15 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
     /**
      * Begins writing a new ZIP file entry and positions the stream to the
      * start of the entry data. Closes the current entry if still active.
+     * <p>
      * The default compression method will be used if no compression method
-     * was specified for the entry, and the current time will be used if
-     * the entry has no set modification time.
+     * was specified for the entry. When writing a compressed (DEFLATED)
+     * entry, and the compressed size has not been explicitly set with the
+     * {@link ZipEntry#setCompressedSize(long)} method, then the compressed
+     * size will be set to the actual compressed size after deflation.
+     * <p>
+     * The current time will be used if the entry has no set modification time.
+     *
      * @param     e the ZIP entry to be written
      * @throws    ZipException if a ZIP format error has occurred
      * @throws    IOException if an I/O error has occurred
@@ -203,11 +209,14 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         e.flag = 0;
         switch (e.method) {
         case DEFLATED:
-            // store size, compressed size, and crc-32 in data descriptor
-            // immediately following the compressed entry data
-            if (e.size  == -1 || e.csize == -1 || e.crc   == -1)
+            // If not set, store size, compressed size, and crc-32 in data
+            // descriptor immediately following the compressed entry data.
+            // Ignore the compressed size of a ZipEntry if it was implcitely set
+            // while reading that ZipEntry from a  ZipFile or ZipInputStream because
+            // we can't know the compression level of the source zip file/stream.
+            if (e.size  == -1 || e.csize == -1 || e.crc   == -1 || !e.csizeSet) {
                 e.flag = 8;
-
+            }
             break;
         case STORED:
             // compressed size, uncompressed size, and crc-32 must all be

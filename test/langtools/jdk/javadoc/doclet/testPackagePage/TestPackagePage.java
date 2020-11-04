@@ -70,10 +70,6 @@ public class TestPackagePage extends JavadocTester {
                 <li><a href="com/pkg/package-summary.html">Package</a></li>""");
     }
 
-    private static final String[][] TEST1 = {
-    };
-
-
     @Test
     public void testMultiplePackages() {
         javadoc("-d", "out-2",

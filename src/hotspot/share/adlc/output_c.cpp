@@ -1150,10 +1150,9 @@ static void check_peepconstraints(FILE *fp, FormDict &globals, PeepMatch *pmatch
       //
       // Check for equivalence
       //
-      // fprintf(fp, "phase->eqv( ");
-      // fprintf(fp, "inst%d->in(%d+%d) /* %s */, inst%d->in(%d+%d) /* %s */",
-      //         left_index,  left_op_base,  left_op_index,  left_op,
-      //         right_index, right_op_base, right_op_index, right_op );
+      // fprintf(fp, "(inst%d->_opnds[%d]->reg(ra_,inst%d%s)  /* %d.%s */ == /* %d.%s */ inst%d->_opnds[%d]->reg(ra_,inst%d%s)",
+      //         left_index, left_op_index, left_index, left_reg_index, left_index, left_op
+      //         right_index, right_op, right_index, right_op_index, right_index, right_reg_index);
       // fprintf(fp, ")");
       //
       switch( left_interface_type ) {
@@ -4192,14 +4191,7 @@ void ArchDesc::buildFrameMethods(FILE *fp_cpp) {
   fprintf(fp_cpp,"int Matcher::inline_cache_reg_encode() {");
   fprintf(fp_cpp," return _regEncode[inline_cache_reg()]; }\n\n");
 
-  // Interpreter's Method Register, mask definition, and encoding
-  fprintf(fp_cpp,"OptoReg::Name Matcher::interpreter_method_reg() {");
-  fprintf(fp_cpp," return OptoReg::Name(%s_num); }\n\n",
-          _frame->_interpreter_method_reg);
-  fprintf(fp_cpp,"int Matcher::interpreter_method_reg_encode() {");
-  fprintf(fp_cpp," return _regEncode[interpreter_method_reg()]; }\n\n");
-
-  // Interpreter's Frame Pointer Register, mask definition, and encoding
+  // Interpreter's Frame Pointer Register
   fprintf(fp_cpp,"OptoReg::Name Matcher::interpreter_frame_pointer_reg() {");
   if (_frame->_interpreter_frame_pointer_reg == NULL)
     fprintf(fp_cpp," return OptoReg::Bad; }\n\n");

@@ -120,8 +120,6 @@ JVM_handle_linux_signal(int sig,
 
   Thread* t = Thread::current_or_null_safe();
 
-  SignalHandlerMark shm(t);
-
   // handle SafeFetch faults
   if (sig == SIGSEGV || sig == SIGBUS) {
     sigjmp_buf* const pjb = get_jmp_buf_for_continuation();
@@ -242,9 +240,16 @@ JVM_handle_linux_signal(int sig,
   }
 #endif // !PRODUCT
 
-  char buf[64];
+  char buf[128];
+  char exc_buf[32];
 
-  sprintf(buf, "caught unhandled signal %d", sig);
+  if (os::exception_name(sig, exc_buf, sizeof(exc_buf))) {
+    bool sent_by_kill = (info != NULL && os::signal_sent_by_kill(info));
+    snprintf(buf, sizeof(buf), "caught unhandled signal: %s %s",
+             exc_buf, sent_by_kill ? "(sent by kill)" : "");
+  } else {
+    snprintf(buf, sizeof(buf), "caught unhandled signal: %d", sig);
+  }
 
 // Silence -Wformat-security warning for fatal()
 PRAGMA_DIAG_PUSH
@@ -481,7 +486,7 @@ extern "C" {
     long long unsigned int oldval,
     long long unsigned int newval) {
     ShouldNotCallThis();
-    return 0; // silence compiler compiler warnings
+    return 0; // silence compiler warnings
   }
 };
 #endif // !_LP64
