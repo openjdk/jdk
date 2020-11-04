@@ -548,7 +548,7 @@ class HeapBlockClaimer : public StackObj {
   size_t _claimed_index;
 
 public:
-  static const size_t InvalidIndex = (size_t)SIZE_MAX;
+  static const size_t InvalidIndex = SIZE_MAX;
   static const size_t EdenIndex = 0;
   static const size_t SurvivorIndex = 1;
   static const size_t NumNonOldGenClaims = 2;
