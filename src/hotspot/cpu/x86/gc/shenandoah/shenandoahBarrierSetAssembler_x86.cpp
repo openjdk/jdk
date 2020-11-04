@@ -333,28 +333,38 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
 #endif
   assert(slot == 0, "must use all slots");
 
-  Register tmp2 = (dst == rsi) ? rdx : rsi;
-  assert_different_registers(dst, tmp2);
-  __ lea(tmp2, src);
+  // Shuffle registers such that dst is in c_rarg0 and addr in c_rarg1.
+#ifdef _LP64
+  Register arg0 = c_rarg0, arg1 = c_rarg1;
+#else
+  Register arg0 = rdi, arg1 = rsi;
+#endif
+  if (dst == arg1) {
+    __ lea(arg0, src);
+    __ xchgptr(arg1, arg0);
+  } else {
+    __ lea(arg1, src);
+    __ movptr(arg0, dst);
+  }
 
   save_xmm_registers(masm);
   switch (kind) {
     case ShenandoahBarrierSet::AccessKind::NORMAL:
       if (UseCompressedOops) {
-        __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_narrow), dst, tmp2);
+        __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_narrow), arg0, arg1);
       } else {
-        __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier), dst, tmp2);
+        __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier), arg0, arg1);
       }
       break;
     case ShenandoahBarrierSet::AccessKind::WEAK:
       if (UseCompressedOops) {
-        __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak_narrow), dst, tmp2);
+        __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak_narrow), arg0, arg1);
       } else {
-        __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak), dst, tmp2);
+        __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak), arg0, arg1);
       }
       break;
     case ShenandoahBarrierSet::AccessKind::NATIVE:
-      __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak), dst, tmp2);
+      __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak), arg0, arg1);
       break;
     default:
       ShouldNotReachHere();
