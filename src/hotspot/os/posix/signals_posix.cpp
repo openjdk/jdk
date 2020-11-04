@@ -1227,8 +1227,6 @@ void set_signal_handler(int sig, bool set_installed) {
 // install signal handlers for signals that HotSpot needs to
 // handle in order to support Java-level exception handling.
 void PosixSignals::install_signal_handlers() {
-  static bool done = false;
-  assert(!done, "Only call once");
 
   // signal-chaining
   typedef void (*signal_setting_t)();
