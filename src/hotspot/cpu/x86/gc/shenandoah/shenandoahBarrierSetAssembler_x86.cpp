@@ -351,9 +351,9 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   switch (kind) {
     case ShenandoahBarrierSet::AccessKind::NORMAL:
       if (UseCompressedOops) {
-        __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_narrow), arg0, arg1);
+        __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_narrow), arg0, arg1);
       } else {
-        __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier), arg0, arg1);
+        __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier), arg0, arg1);
       }
       break;
     case ShenandoahBarrierSet::AccessKind::WEAK:
@@ -364,7 +364,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
       }
       break;
     case ShenandoahBarrierSet::AccessKind::NATIVE:
-      __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak), arg0, arg1);
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak), arg0, arg1);
       break;
     default:
       ShouldNotReachHere();
