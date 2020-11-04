@@ -249,8 +249,10 @@ void ShenandoahMarkCompact::phase1_mark_heap() {
 
   ShenandoahSTWMark mark(true /*full_gc*/);
   mark.mark();
-  heap->mark_complete_marking_context();
-  rp->process_references(heap->workers(), false /* concurrent */);
+  {
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_weakrefs);
+    rp->process_references(heap->workers(), false /* concurrent */);
+  }
   heap->parallel_cleaning(true /* full_gc */);
 }
 

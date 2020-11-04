@@ -142,7 +142,6 @@ class outputStream;
   f(full_gc_mark,                                   "  Mark")                          \
   SHENANDOAH_PAR_PHASE_DO(full_gc_mark_,            "    FM: ", f)                     \
   f(full_gc_weakrefs,                               "    Weak References")             \
-  f(full_gc_weakrefs_process,                       "      Process")                   \
   f(full_gc_purge,                                  "    System Purge")                \
   f(full_gc_purge_class_unload,                     "      Unload Classes")            \
   SHENANDOAH_PAR_PHASE_DO(full_gc_purge_cu_par_,    "        CU: ", f)                 \

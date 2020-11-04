@@ -2173,8 +2173,7 @@ void ShenandoahHeap::op_degenerated(ShenandoahDegenPoint point) {
       }
 
       {
-        ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_refs_work);
-        ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_weak_refs_work);
+        ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_weakrefs);
         ref_processor()->process_references(workers(), false /* concurrent */);
       }
 
