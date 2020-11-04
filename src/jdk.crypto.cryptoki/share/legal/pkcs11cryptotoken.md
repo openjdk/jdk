@@ -1,9 +1,9 @@
-## OASIS PKCS #11 Cryptographic Token Interface v2.40
+## OASIS PKCS #11 Cryptographic Token Interface v3.0
 
 ### OASIS PKCS #11 Cryptographic Token Interface License
 ```
 
-Copyright (c) OASIS Open 2016. All Rights Reserved.
+Copyright (c) OASIS Open 2019. All Rights Reserved.
 
 All capitalized terms in the following text have the meanings assigned to them in the OASIS
 Intellectual Property Rights Policy (the "OASIS IPR Policy"). The full Policy may be found at the

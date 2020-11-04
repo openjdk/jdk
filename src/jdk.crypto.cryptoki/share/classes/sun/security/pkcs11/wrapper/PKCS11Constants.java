@@ -62,11 +62,15 @@ package sun.security.pkcs11.wrapper;
  *   CK_ULONG ...................................... long
  *   CK_LONG ....................................... long
  *   CK_FLAGS ...................................... long
+ *   CK_BYTE_PTR ................................... byte[]
+ *   CK_CHAR_PTR ................................... char[]
+ *   CK_UTF8CHAR_PTR ............................... char[]
+ *   CK_ULONG_PTR .................................. long[]
+ *   CK_VOID_PTR ................................... Object[]
  *   CK_NOTIFICATION ............................... long
  *   CK_SLOT_ID .................................... long
  *   CK_SESSION_HANDLE ............................. long
  *   CK_USER_TYPE .................................. long
- *   CK_SESSION_HANDLE ............................. long
  *   CK_STATE ...................................... long
  *   CK_OBJECT_HANDLE .............................. long
  *   CK_OBJECT_CLASS ............................... long
@@ -74,21 +78,27 @@ package sun.security.pkcs11.wrapper;
  *   CK_KEY_TYPE ................................... long
  *   CK_CERTIFICATE_TYPE ........................... long
  *   CK_ATTRIBUTE_TYPE ............................. long
- *   CK_VOID_PTR ................................... Object[]
- *   CK_BYTE_PTR ................................... byte[]
- *   CK_CHAR_PTR ................................... char[]
- *   CK_UTF8CHAR_PTR ............................... char[]
  *   CK_MECHANISM_TYPE ............................. long
  *   CK_RV ......................................... long
- *   CK_RSA_PKCS_OAEP_MGF_TYPE ..................... long
+ *   CK_RSA_PKCS_MGF_TYPE .......................... long
  *   CK_RSA_PKCS_OAEP_SOURCE_TYPE .................. long
+ *   CK_EC_KDF_TYPE ................................ long
+ *   CK_X9_42_DH_KDF_TYPE .......................... long
  *   CK_RC2_PARAMS ................................. long
  *   CK_MAC_GENERAL_PARAMS ......................... long
  *   CK_EXTRACT_PARAMS ............................. long
  *   CK_PKCS5_PBKD2_PSEUDO_RANDOM_FUNCTION_TYPE .... long
  *   CK_PKCS5_PBKDF2_SALT_SOURCE_TYPE .............. long
- *   CK_EC_KDF_TYPE ................................ long
- *   CK_X9_42_DH_KDF_TYPE .......................... long
+ *   CK_OTP_PARAM_TYPE / CK_PARAM_TYPE ............. long
+ *   CK_GENERATOR_FUNCTION ......................... long
+ *   CK_JAVA_MIDP_SECURITY_DOMAIN .................. long
+ *   CK_CERTIFICATE_CATEGORY ....................... long
+ *   CK_PROFILE_ID ................................. long
+ *   CK_PRF_DATA_TYPE .............................. long
+ *   CK_SP800_108_DKM_LENGTH_METHOD ................ long
+ *   CK_X3DH_KDF_TYPE .............................. long
+ *   CK_X2RATCHET_KDF_TYPE ......................... long
+ *   CK_XEDDSA_HASH_TYPE ........................... long
  * </pre>
  *
  * @author <a href="mailto:Karl.Scheibelhofer@iaik.at"> Karl Scheibelhofer </a>
