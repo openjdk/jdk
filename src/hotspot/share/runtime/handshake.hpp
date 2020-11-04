@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@
 
 class HandshakeOperation;
 class JavaThread;
+class ThreadSuspensionHandshake;
+class SuspendThreadHandshake;
 
 // A handshake closure is a callback that is executed for a JavaThread
 // while it is in a safepoint/handshake-safe state. Depending on the
@@ -43,9 +45,9 @@ class HandshakeClosure : public ThreadClosure, public CHeapObj<mtThread> {
   const char* const _name;
  public:
   HandshakeClosure(const char* name) : _name(name) {}
-  virtual ~HandshakeClosure() {}
-  const char* name() const    { return _name; }
-  virtual bool is_async()     { return false; }
+  virtual ~HandshakeClosure()                      {}
+  const char* name() const                         { return _name; }
+  virtual bool is_async()                          { return false; }
   virtual void do_thread(Thread* thread) = 0;
 };
 
@@ -61,32 +63,42 @@ class Handshake : public AllStatic {
   // Execution of handshake operation
   static void execute(HandshakeClosure*       hs_cl);
   static void execute(HandshakeClosure*       hs_cl, JavaThread* target);
-  static void execute(AsyncHandshakeClosure* hs_cl, JavaThread* target);
+  static void execute(AsyncHandshakeClosure*  hs_cl, JavaThread* target);
 };
+
+class JvmtiRawMonitor;
 
 // The HandshakeState keeps track of an ongoing handshake for this JavaThread.
 // VMThread/Handshaker and JavaThread are serialized with _lock making sure the
 // operation is only done by either VMThread/Handshaker on behalf of the
 // JavaThread or by the target JavaThread itself.
 class HandshakeState {
+  friend JvmtiRawMonitor;
+  friend ThreadSuspensionHandshake;
+  friend SuspendThreadHandshake;
+  friend JavaThread;
   // This a back reference to the JavaThread,
   // the target for all operation in the queue.
   JavaThread* _handshakee;
   // The queue containing handshake operations to be performed on _handshakee.
   FilterQueue<HandshakeOperation*> _queue;
-  // Provides mutual exclusion to this state and queue.
-  Mutex   _lock;
+  // Provides mutual exclusion to this state and queue. Also used for
+  // JavaThread suspend/resume operations.
+  Monitor _lock;
   // Set to the thread executing the handshake operation.
   Thread* _active_handshaker;
 
   bool claim_handshake();
   bool possibly_can_process_handshake();
   bool can_process_handshake();
-  void process_self_inner();
+  bool process_self_inner();
 
   bool have_non_self_executable_operation();
   HandshakeOperation* pop_for_self();
   HandshakeOperation* pop();
+
+  void lock();
+  void unlock();
 
  public:
   HandshakeState(JavaThread* thread);
@@ -110,7 +122,7 @@ class HandshakeState {
     return !_queue.is_empty() || _lock.is_locked();
   }
 
-  void process_by_self();
+  bool process_by_self();
 
   enum ProcessResult {
     _no_operation = 0,
@@ -123,6 +135,27 @@ class HandshakeState {
   ProcessResult try_process(HandshakeOperation* match_op);
 
   Thread* active_handshaker() const { return _active_handshaker; }
+
+  // Suspend/resume support
+ private:
+  volatile bool _suspended;
+  volatile bool _suspend_requested;
+
+  // Called from the suspend handshake.
+  bool handshake_suspend();
+  // Called from the async handshake (the trap)
+  // to stop a thread from continuing executing when suspended.
+  void suspend_in_handshake();
+
+  bool is_suspended()                 { return Atomic::load(&_suspended); }
+  void set_suspend(bool to)           { return Atomic::store(&_suspended, to); }
+  bool is_suspend_requested()         { return Atomic::load(&_suspend_requested); }
+  void set_suspend_requested(bool to) { return Atomic::store(&_suspend_requested, to); }
+
+  bool suspend();
+  bool resume();
+  void thread_exit();
+  bool suspend_request_pending();
 };
 
 #endif // SHARE_RUNTIME_HANDSHAKE_HPP

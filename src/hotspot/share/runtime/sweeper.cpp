@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -266,15 +266,14 @@ void NMethodSweeper::force_sweep() {
  */
 void NMethodSweeper::handle_safepoint_request() {
   JavaThread* thread = JavaThread::current();
-  if (SafepointMechanism::should_process(thread)) {
-    if (PrintMethodFlushing && Verbose) {
-      tty->print_cr("### Sweep at %d out of %d, yielding to safepoint", _seen, CodeCache::nmethod_count());
-    }
-    MutexUnlocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-
-    ThreadBlockInVM tbivm(thread);
-    thread->java_suspend_self();
+  if (!SafepointMechanism::should_process(thread)) {
+    return; // Avoid unlocking and keep processing.
   }
+  if (PrintMethodFlushing && Verbose) {
+    tty->print_cr("### Sweep at %d out of %d, yielding to safepoint", _seen, CodeCache::nmethod_count());
+  }
+  MutexUnlocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+  ThreadBlockInVM tbiv(JavaThread::current());
 }
 
 void NMethodSweeper::sweep() {

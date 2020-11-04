@@ -402,29 +402,34 @@ bool ObjectMonitor::enter(JavaThread* current) {
     }
 
     OSThreadContendState osts(current->osthread());
-    ThreadBlockInVM tbivm(current);
 
-    // TODO-FIXME: change the following for(;;) loop to straight-line code.
+    assert(current->thread_state() == _thread_in_vm, "invariant");
+
+    current->frame_anchor()->make_walkable(current);
+    OrderAccess::storestore();
     for (;;) {
-      current->set_suspend_equivalent();
-      // cleared by handle_special_suspend_equivalent_condition()
-      // or java_suspend_self()
-
+      current->set_thread_state(_thread_blocked);
       EnterI(current);
-
-      if (!current->handle_special_suspend_equivalent_condition()) break;
-
-      // We have acquired the contended monitor, but while we were
-      // waiting another thread suspended us. We don't want to enter
-      // the monitor while suspended because that would surprise the
-      // thread that suspended us.
-      //
-      _recursions = 0;
-      _succ = NULL;
-      exit(false, current);
-
-      current->java_suspend_self();
+      current->set_thread_state_fence(_thread_blocked_trans);
+      if (SafepointMechanism::should_process(current) &&
+        current->suspend_request_pending()) {
+        // We have acquired the contended monitor, but while we were
+        // waiting another thread suspended us. We don't want to enter
+        // the monitor while suspended because that would surprise the
+        // thread that suspended us.
+        _recursions = 0;
+        _succ = NULL;
+        exit(false, current);
+        SafepointMechanism::process_if_requested(current);
+        // Since we are going to _thread_blocked we skip setting _thread_in_vm here.
+      } else {
+        // Only exit path from for loop
+        SafepointMechanism::process_if_requested(current);
+        current->set_thread_state(_thread_in_vm);
+        break;
+      }
     }
+
     current->set_current_pending_monitor(NULL);
 
     // We cleared the pending monitor info since we've just gotten past
@@ -953,25 +958,24 @@ void ObjectMonitor::ReenterI(JavaThread* current, ObjectWaiter* currentNode) {
     if (TryLock(current) > 0) break;
     if (TrySpin(current) > 0) break;
 
-    // State transition wrappers around park() ...
-    // ReenterI() wisely defers state transitions until
-    // it's clear we must park the thread.
     {
       OSThreadContendState osts(current->osthread());
-      ThreadBlockInVM tbivm(current);
 
-      // cleared by handle_special_suspend_equivalent_condition()
-      // or java_suspend_self()
-      current->set_suspend_equivalent();
+      assert(current->thread_state() == _thread_in_vm, "invariant");
+
+      current->frame_anchor()->make_walkable(current);
+      OrderAccess::storestore();
+      current->set_thread_state(_thread_blocked);
       current->_ParkEvent->park();
-
-      // were we externally suspended while we were waiting?
-      for (;;) {
-        if (!current->handle_special_suspend_equivalent_condition()) break;
-        if (_succ == current) { _succ = NULL; OrderAccess::fence(); }
-        current->java_suspend_self();
-        current->set_suspend_equivalent();
+      current->set_thread_state_fence(_thread_blocked_trans);
+      if (SafepointMechanism::should_process(current)) {
+        if (_succ == current) {
+            _succ = NULL;
+            OrderAccess::fence();
+        }
+        SafepointMechanism::process_if_requested(current);
       }
+      current->set_thread_state(_thread_in_vm);
     }
 
     // Try again, but just so we distinguish between futile wakeups and
@@ -1525,11 +1529,13 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   { // State transition wrappers
     OSThread* osthread = current->osthread();
     OSThreadWaitState osts(osthread, true);
-    {
-      ThreadBlockInVM tbivm(current);
-      // Thread is in thread_blocked state and oop access is unsafe.
-      current->set_suspend_equivalent();
 
+    assert(current->thread_state() == _thread_in_vm, "invariant");
+
+    {
+      current->frame_anchor()->make_walkable(current);
+      OrderAccess::storestore();
+      current->set_thread_state(_thread_blocked);
       if (interrupted || HAS_PENDING_EXCEPTION) {
         // Intentionally empty
       } else if (node._notified == 0) {
@@ -1539,14 +1545,16 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
           ret = current->_ParkEvent->park(millis);
         }
       }
-
-      // were we externally suspended while we were waiting?
-      if (current->handle_special_suspend_equivalent_condition()) {
-        // TODO-FIXME: add -- if succ == current then succ = null.
-        current->java_suspend_self();
+      current->set_thread_state_fence(_thread_blocked_trans);
+      if (SafepointMechanism::should_process(current)) {
+        if (_succ == current) {
+            _succ = NULL;
+            OrderAccess::fence();
+        }
+        SafepointMechanism::process_if_requested(current);
       }
-
-    } // Exit thread safepoint: transition _thread_blocked -> _thread_in_vm
+      current->set_thread_state(_thread_in_vm);
+    }
 
     // Node may be on the WaitSet, the EntryList (or cxq), or in transition
     // from the WaitSet to the EntryList.
