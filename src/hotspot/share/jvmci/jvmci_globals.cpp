@@ -23,13 +23,14 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/gcConfig.hpp"
 #include "jvm.h"
 #include "jvmci/jvmci_globals.hpp"
-#include "gc/shared/gcConfig.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/flags/jvmFlagAccess.hpp"
+#include "runtime/globals_extension.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/ostream.hpp"
-#include "runtime/arguments.hpp"
-#include "runtime/globals_extension.hpp"
 
 fileStream* JVMCIGlobals::_jni_config_file = NULL;
 
@@ -157,7 +158,7 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
 }
 
 // Convert JVMCI flags from experimental to product
-bool JVMCIGlobals::enable_jvmci_product_mode(JVMFlag::Flags origin) {
+bool JVMCIGlobals::enable_jvmci_product_mode(JVMFlagOrigin origin) {
   const char *JVMCIFlags[] = {
     "EnableJVMCI",
     "EnableJVMCIProduct",
@@ -187,7 +188,7 @@ bool JVMCIGlobals::enable_jvmci_product_mode(JVMFlag::Flags origin) {
 
   bool value = true;
   JVMFlag *jvmciEnableFlag = JVMFlag::find_flag("EnableJVMCIProduct");
-  if (JVMFlag::boolAtPut(jvmciEnableFlag, &value, origin) != JVMFlag::SUCCESS) {
+  if (JVMFlagAccess::boolAtPut(jvmciEnableFlag, &value, origin) != JVMFlag::SUCCESS) {
     return false;
   }
 

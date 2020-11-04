@@ -202,6 +202,13 @@ define SetupJavaCompilationBody
       # If unspecified, default to the new jdk we're building
       $1_TARGET_RELEASE := $$(TARGET_RELEASE_BOOTJDK)
     endif
+  else ifeq ($$($1_COMPILER), buildjdk)
+    $1_JAVAC_CMD := $$(BUILD_JAVAC)
+
+    ifeq ($$($1_TARGET_RELEASE), )
+      # If unspecified, default to the new jdk we're building
+      $1_TARGET_RELEASE := $$(TARGET_RELEASE_NEWJDK)
+    endif
   else ifeq ($$($1_COMPILER), interim)
     # Use java server if it is enabled, and the user does not want a specialized
     # class path.
@@ -304,9 +311,11 @@ define SetupJavaCompilationBody
   ifneq ($$($1_KEEP_DUPS), true)
     # Remove duplicate source files by keeping the first found of each duplicate.
     # This allows for automatic overrides with custom or platform specific versions
-    # source files.
+    # source files. Need to call DoubleDollar as we have java classes with '$' in
+    # their names.
     $1_SRCS := $$(strip $$(foreach s, $$($1_SRCS), \
-        $$(eval relative_src := $$(call remove-prefixes, $$($1_SRC), $$(s))) \
+        $$(eval relative_src := $$(call remove-prefixes, $$($1_SRC), \
+            $$(call DoubleDollar, $$(s)))) \
         $$(if $$($1_$$(relative_src)), \
           , \
           $$(eval $1_$$(relative_src) := 1) $$(s))))

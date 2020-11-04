@@ -211,7 +211,7 @@ void VMError::print_stack_trace(outputStream* st, JavaThread* jt,
     st->cr();
 
     // Print the frames
-    StackFrameStream sfs(jt);
+    StackFrameStream sfs(jt, true /* update */, true /* process_frames */);
     for(int i = 0; !sfs.is_done(); sfs.next(), i++) {
       sfs.current()->zero_print_on_error(i, st, buf, buflen);
       st->cr();
@@ -224,7 +224,7 @@ void VMError::print_stack_trace(outputStream* st, JavaThread* jt,
 #else
   if (jt->has_last_Java_frame()) {
     st->print_cr("Java frames: (J=compiled Java code, j=interpreted, Vv=VM code)");
-    for(StackFrameStream sfs(jt); !sfs.is_done(); sfs.next()) {
+    for (StackFrameStream sfs(jt, true /* update */, true /* process_frames */); !sfs.is_done(); sfs.next()) {
       sfs.current()->print_on_error(st, buf, buflen, verbose);
       st->cr();
     }
@@ -749,8 +749,9 @@ void VMError::report(outputStream* st, bool _verbose) {
 
      // printing Java thread stack trace if it is involved in GC crash
      if (_verbose && _thread && (_thread->is_Named_thread())) {
-       JavaThread*  jt = ((NamedThread *)_thread)->processed_thread();
-       if (jt != NULL) {
+       Thread* thread = ((NamedThread *)_thread)->processed_thread();
+       if (thread != NULL && thread->is_Java_thread()) {
+         JavaThread* jt = thread->as_Java_thread();
          st->print_cr("JavaThread " PTR_FORMAT " (nid = %d) was being processed", p2i(jt), jt->osthread()->thread_id());
          print_stack_trace(st, jt, buf, sizeof(buf), true);
        }
@@ -1318,19 +1319,6 @@ void VMError::report_and_die(Thread* thread, unsigned int sig, address pc, void*
 void VMError::report_and_die(Thread* thread, unsigned int sig, address pc, void* siginfo, void* context)
 {
   report_and_die(thread, sig, pc, siginfo, context, "%s", "");
-}
-
-void VMError::report_and_die(const char* message, const char* detail_fmt, ...)
-{
-  va_list detail_args;
-  va_start(detail_args, detail_fmt);
-  report_and_die(INTERNAL_ERROR, message, detail_fmt, detail_args, NULL, NULL, NULL, NULL, NULL, 0, 0);
-  va_end(detail_args);
-}
-
-void VMError::report_and_die(const char* message)
-{
-  report_and_die(message, "%s", "");
 }
 
 void VMError::report_and_die(Thread* thread, void* context, const char* filename, int lineno, const char* message,

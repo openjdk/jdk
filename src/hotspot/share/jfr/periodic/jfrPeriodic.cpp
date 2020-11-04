@@ -279,13 +279,13 @@ TRACE_REQUEST_FUNC(ThreadContextSwitchRate) {
 #define SEND_FLAGS_OF_TYPE(eventType, flagType)                   \
   do {                                                            \
     JVMFlag *flag = JVMFlag::flags;                               \
-    while (flag->_name != NULL) {                                 \
+    while (flag->name() != NULL) {                                \
       if (flag->is_ ## flagType()) {                              \
         if (flag->is_unlocked()) {                                \
           Event ## eventType event;                               \
-          event.set_name(flag->_name);                            \
+          event.set_name(flag->name());                           \
           event.set_value(flag->get_ ## flagType());              \
-          event.set_origin(flag->get_origin());                   \
+          event.set_origin(static_cast<u8>(flag->get_origin()));  \
           event.commit();                                         \
         }                                                         \
       }                                                           \

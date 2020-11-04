@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,9 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zOopClosures.inline.hpp"
-#include "gc/z/zStat.hpp"
 #include "gc/z/zTask.hpp"
-#include "gc/z/zThread.hpp"
-#include "runtime/jniHandles.hpp"
+#include "gc/z/zWorkers.hpp"
 
 ZWeakRootsProcessor::ZWeakRootsProcessor(ZWorkers* workers) :
     _workers(workers) {}
@@ -44,13 +41,13 @@ public:
   virtual void work() {
     ZPhantomIsAliveObjectClosure is_alive;
     ZPhantomKeepAliveOopClosure keep_alive;
-    _weak_roots.weak_oops_do(&is_alive, &keep_alive);
+    _weak_roots.apply(&is_alive, &keep_alive);
   }
 };
 
 void ZWeakRootsProcessor::process_weak_roots() {
   ZProcessWeakRootsTask task;
-  _workers->run_parallel(&task);
+  _workers->run_serial(&task);
 }
 
 class ZProcessConcurrentWeakRootsTask : public ZTask {
@@ -68,7 +65,7 @@ public:
 
   virtual void work() {
     ZPhantomCleanOopClosure cl;
-    _concurrent_weak_roots.oops_do(&cl);
+    _concurrent_weak_roots.apply(&cl);
   }
 };
 

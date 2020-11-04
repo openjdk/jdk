@@ -29,7 +29,9 @@
 #include "jvmtifiles/jvmti.h"
 #include "oops/oop.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/symbol.hpp"
 #include "runtime/os.hpp"
+#include "utilities/vmEnums.hpp"
 
 class RecordComponent;
 
@@ -47,6 +49,7 @@ class RecordComponent;
   f(java_lang_Throwable) \
   f(java_lang_Thread) \
   f(java_lang_ThreadGroup) \
+  f(java_lang_InternalError) \
   f(java_lang_AssertionStatusDirectives) \
   f(java_lang_ref_SoftReference) \
   f(java_lang_invoke_MethodHandle) \
@@ -75,6 +78,7 @@ class RecordComponent;
   f(java_util_concurrent_locks_AbstractOwnableSynchronizer) \
   f(jdk_internal_misc_UnsafeConstants) \
   f(java_lang_boxing_object) \
+  f(vector_VectorPayload) \
   //end
 
 #define BASIC_JAVA_CLASSES_DO(f) \
@@ -317,6 +321,8 @@ class java_lang_Class : AllStatic {
   static void set_signers(oop java_class, objArrayOop signers);
   static oop  class_data(oop java_class);
   static void set_class_data(oop java_class, oop classData);
+
+  static int component_mirror_offset() { return _component_mirror_offset; }
 
   static oop class_loader(oop java_class);
   static void set_module(oop java_class, oop module);
@@ -898,8 +904,9 @@ class java_lang_ref_Reference: AllStatic {
 
  public:
   // Accessors
-  static inline oop referent(oop ref);
-  static inline void set_referent(oop ref, oop value);
+  static inline oop weak_referent_no_keepalive(oop ref);
+  static inline oop phantom_referent_no_keepalive(oop ref);
+  static inline oop unknown_referent_no_keepalive(oop ref);
   static inline void set_referent_raw(oop ref, oop value);
   static inline HeapWord* referent_addr_raw(oop ref);
   static inline oop next(oop ref);
@@ -1563,6 +1570,24 @@ class jdk_internal_misc_UnsafeConstants : AllStatic {
   static void serialize_offsets(SerializeClosure* f) { }
 };
 
+// Interface to jdk.internal.vm.vector.VectorSupport.VectorPayload objects
+
+class vector_VectorPayload : AllStatic {
+ private:
+  static int _payload_offset;
+ public:
+  static void set_payload(oop o, oop val);
+
+  static void compute_offsets();
+  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
+
+  // Testers
+  static bool is_subclass(Klass* klass) {
+    return klass->is_subclass_of(SystemDictionary::vector_VectorPayload_klass());
+  }
+  static bool is_instance(oop obj);
+};
+
 class java_lang_Integer : AllStatic {
 public:
   static jint value(oop obj);
@@ -1651,6 +1676,22 @@ class java_lang_Byte_ByteCache : AllStatic {
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
 };
 
+
+// Interface to java.lang.InternalError objects
+
+#define INTERNALERROR_INJECTED_FIELDS(macro)                      \
+  macro(java_lang_InternalError, during_unsafe_access, bool_signature, false)
+
+class java_lang_InternalError : AllStatic {
+ private:
+  static int _during_unsafe_access_offset;
+ public:
+  static jboolean during_unsafe_access(oop internal_error);
+  static void set_during_unsafe_access(oop internal_error);
+  static void compute_offsets();
+  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
+};
+
 // Use to declare fields that need to be injected into Java classes
 // for the JVM to use.  The name_index and signature_index are
 // declared in vmSymbols.  The may_be_java flag is used to declare
@@ -1663,8 +1704,8 @@ class java_lang_Byte_ByteCache : AllStatic {
 class InjectedField {
  public:
   const SystemDictionary::WKID klass_id;
-  const vmSymbols::SID name_index;
-  const vmSymbols::SID signature_index;
+  const vmSymbolID name_index;
+  const vmSymbolID signature_index;
   const bool           may_be_java;
 
 
@@ -1675,8 +1716,8 @@ class InjectedField {
   int compute_offset();
 
   // Find the Symbol for this index
-  static Symbol* lookup_symbol(int symbol_index) {
-    return vmSymbols::symbol_at((vmSymbols::SID)symbol_index);
+  static Symbol* lookup_symbol(vmSymbolID symbol_index) {
+    return Symbol::vm_symbol_at(symbol_index);
   }
 };
 
@@ -1690,7 +1731,9 @@ class InjectedField {
   MEMBERNAME_INJECTED_FIELDS(macro)         \
   CALLSITECONTEXT_INJECTED_FIELDS(macro)    \
   STACKFRAMEINFO_INJECTED_FIELDS(macro)     \
-  MODULE_INJECTED_FIELDS(macro)
+  MODULE_INJECTED_FIELDS(macro)             \
+  INTERNALERROR_INJECTED_FIELDS(macro)
+
 
 // Interface to hard-coded offset checking
 

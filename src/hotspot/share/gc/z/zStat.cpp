@@ -25,10 +25,7 @@
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zCPU.inline.hpp"
 #include "gc/z/zGlobals.hpp"
-#include "gc/z/zHeap.inline.hpp"
-#include "gc/z/zLargePages.inline.hpp"
 #include "gc/z/zNMethodTable.hpp"
-#include "gc/z/zNUMA.hpp"
 #include "gc/z/zRelocationSetSelector.inline.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zTracer.inline.hpp"
@@ -38,7 +35,6 @@
 #include "runtime/os.hpp"
 #include "runtime/timer.hpp"
 #include "utilities/align.hpp"
-#include "utilities/compilerWarnings.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ticks.hpp"
 
@@ -390,22 +386,35 @@ ZStatIterableValue<T>::ZStatIterableValue(const char* group,
 
 template <typename T>
 T* ZStatIterableValue<T>::insert() const {
-  T** current = &_first;
-
-  while (*current != NULL) {
-    // First sort by group, then by name
-    const int group_cmp = strcmp((*current)->group(), group());
-    const int name_cmp = strcmp((*current)->name(), name());
-    if ((group_cmp > 0) || (group_cmp == 0 && name_cmp > 0)) {
-      break;
-    }
-
-    current = &(*current)->_next;
-  }
-
-  T* const next = *current;
-  *current = (T*)this;
+  T* const next = _first;
+  _first = (T*)this;
   return next;
+}
+
+template <typename T>
+void ZStatIterableValue<T>::sort() {
+  T* first_unsorted = _first;
+  _first = NULL;
+
+  while (first_unsorted != NULL) {
+    T* const value = first_unsorted;
+    first_unsorted = value->_next;
+    value->_next = NULL;
+
+    T** current = &_first;
+
+    while (*current != NULL) {
+      // First sort by group, then by name
+      const int group_cmp = strcmp((*current)->group(), value->group());
+      if ((group_cmp > 0) || (group_cmp == 0 && strcmp((*current)->name(), value->name()) > 0)) {
+        break;
+      }
+
+      current = &(*current)->_next;
+    }
+    value->_next = *current;
+    *current = value;
+  }
 }
 
 //
@@ -882,6 +891,8 @@ void ZStat::run_service() {
   ZStatSamplerHistory* const history = new ZStatSamplerHistory[ZStatSampler::count()];
   LogTarget(Info, gc, stats) log;
 
+  ZStatSampler::sort();
+
   // Main loop
   while (_metronome.wait_for_tick()) {
     sample_and_collect(history);
@@ -1129,10 +1140,15 @@ void ZStatMark::print() {
 // Stat relocation
 //
 ZRelocationSetSelectorStats ZStatRelocation::_stats;
+size_t                      ZStatRelocation::_forwarding_usage;
 bool                        ZStatRelocation::_success;
 
 void ZStatRelocation::set_at_select_relocation_set(const ZRelocationSetSelectorStats& stats) {
   _stats = stats;
+}
+
+void ZStatRelocation::set_at_install_relocation_set(size_t forwarding_usage) {
+  _forwarding_usage = forwarding_usage;
 }
 
 void ZStatRelocation::set_at_relocate_end(bool success) {
@@ -1158,6 +1174,7 @@ void ZStatRelocation::print() {
   }
   print("Large", _stats.large());
 
+  log_info(gc, reloc)("Forwarding Usage: " SIZE_FORMAT "M", _forwarding_usage / M);
   log_info(gc, reloc)("Relocation: %s", _success ? "Successful" : "Incomplete");
 }
 
@@ -1175,10 +1192,9 @@ void ZStatNMethods::print() {
 //
 void ZStatMetaspace::print() {
   log_info(gc, metaspace)("Metaspace: "
-                          SIZE_FORMAT "M used, " SIZE_FORMAT "M capacity, "
+                          SIZE_FORMAT "M used, "
                           SIZE_FORMAT "M committed, " SIZE_FORMAT "M reserved",
                           MetaspaceUtils::used_bytes() / M,
-                          MetaspaceUtils::capacity_bytes() / M,
                           MetaspaceUtils::committed_bytes() / M,
                           MetaspaceUtils::reserved_bytes() / M);
 }

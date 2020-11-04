@@ -85,6 +85,7 @@ public class InheritedChannelTest {
             // These system properties are passed to the launched service as options:
             // java [-options] class [args...]
 
+
             { "StateTest run with " + POLICY_PASS, List.of(StateTest.class.getName(),
                                                            "-Djava.security.manager",
                                                            "-Djava.security.policy="

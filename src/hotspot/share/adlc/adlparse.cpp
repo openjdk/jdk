@@ -1002,7 +1002,12 @@ void ADLParser::frame_parse(void) {
         skipws();
       }
       if (strcmp(token,"interpreter_method_oop_reg")==0) {
-        interpreter_method_oop_parse(frame, false);
+        parse_err(WARN, "Using obsolete Token, interpreter_method_oop_reg");
+        skipws();
+      }
+      if (strcmp(token,"interpreter_method_reg")==0) {
+        parse_err(WARN, "Using obsolete Token, interpreter_method_reg");
+        skipws();
       }
       if (strcmp(token,"cisc_spilling_operand_name")==0) {
         cisc_spilling_operand_name_parse(frame, false);
@@ -1128,11 +1133,6 @@ void ADLParser::interpreter_frame_pointer_parse(FrameForm *frame, bool native) {
 //------------------------------inline_cache_parse-----------------------------
 void ADLParser::inline_cache_parse(FrameForm *frame, bool native) {
   frame->_inline_cache_reg = parse_one_arg("inline cache reg entry");
-}
-
-//------------------------------interpreter_method_oop_parse------------------
-void ADLParser::interpreter_method_oop_parse(FrameForm *frame, bool native) {
-  frame->_interpreter_method_oop_reg = parse_one_arg("method reg entry");
 }
 
 //------------------------------cisc_spilling_operand_parse---------------------

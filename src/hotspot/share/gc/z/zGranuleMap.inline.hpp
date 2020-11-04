@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,11 @@
 #ifndef SHARE_GC_Z_ZGRANULEMAP_INLINE_HPP
 #define SHARE_GC_Z_ZGRANULEMAP_INLINE_HPP
 
+#include "gc/z/zArray.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zGranuleMap.hpp"
 #include "memory/allocation.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 
@@ -46,7 +48,6 @@ template <typename T>
 inline size_t ZGranuleMap<T>::index_for_offset(uintptr_t offset) const {
   const size_t index = offset >> ZGranuleSizeShift;
   assert(index < _size, "Invalid index");
-
   return index;
 }
 
@@ -74,30 +75,19 @@ inline void ZGranuleMap<T>::put(uintptr_t offset, size_t size, T value) {
 }
 
 template <typename T>
-inline ZGranuleMapIterator<T>::ZGranuleMapIterator(const ZGranuleMap<T>* map) :
-    _map(map),
-    _next(0) {}
-
-template <typename T>
-inline bool ZGranuleMapIterator<T>::next(T* value) {
-  if (_next < _map->_size) {
-    *value = _map->_map[_next++];
-    return true;
-  }
-
-  // End of map
-  return false;
+inline T ZGranuleMap<T>::get_acquire(uintptr_t offset) const {
+  const size_t index = index_for_offset(offset);
+  return Atomic::load_acquire(_map + index);
 }
 
 template <typename T>
-inline bool ZGranuleMapIterator<T>::next(T** value) {
-  if (_next < _map->_size) {
-    *value = _map->_map + _next++;
-    return true;
-  }
-
-  // End of map
-  return false;
+inline void ZGranuleMap<T>::release_put(uintptr_t offset, T value) {
+  const size_t index = index_for_offset(offset);
+  Atomic::release_store(_map + index, value);
 }
+
+template <typename T>
+inline ZGranuleMapIterator<T>::ZGranuleMapIterator(const ZGranuleMap<T>* granule_map) :
+    ZArrayIteratorImpl<T, false /* Parallel */>(granule_map->_map, granule_map->_size) {}
 
 #endif // SHARE_GC_Z_ZGRANULEMAP_INLINE_HPP

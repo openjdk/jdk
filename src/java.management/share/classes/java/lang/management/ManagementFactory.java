@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -465,7 +465,7 @@ public class ManagementFactory {
      *         MXBeans are registered into the platform {@code MBeanServer}
      *         at the first time this method is called.
      *
-     * @exception SecurityException if there is a security manager
+     * @throws SecurityException if there is a security manager
      * and the caller does not have the permission required by
      * {@link javax.management.MBeanServerFactory#createMBeanServer}.
      *

@@ -34,6 +34,12 @@
 
 // Power of two convenience library.
 
+template <typename T, ENABLE_IF(std::is_integral<T>::value)>
+constexpr T max_power_of_2() {
+  T max_val = std::numeric_limits<T>::max();
+  return max_val - (max_val >> 1);
+}
+
 // Returns true iff there exists integer i such that (T(1) << i) == x.
 template <typename T, ENABLE_IF(std::is_integral<T>::value)>
 constexpr bool is_power_of_2(T x) {
@@ -71,8 +77,7 @@ inline T round_down_power_of_2(T value) {
 template<typename T, ENABLE_IF(std::is_integral<T>::value)>
 inline T round_up_power_of_2(T value) {
   assert(value > 0, "Invalid value");
-  const T max_value = std::numeric_limits<T>::max();
-  assert(value <= (max_value - (max_value >> 1)), "Overflow");
+  assert(value <= max_power_of_2<T>(), "Overflow");
   if (is_power_of_2(value)) {
     return value;
   }

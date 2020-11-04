@@ -67,7 +67,7 @@
 // sort of balanced binary tree.
 
 GrowableArray<ciMetadata*>* ciObjectFactory::_shared_ci_metadata = NULL;
-ciSymbol*                 ciObjectFactory::_shared_ci_symbols[vmSymbols::SID_LIMIT];
+ciSymbol*                 ciObjectFactory::_shared_ci_symbols[vmSymbols::number_of_symbols()];
 int                       ciObjectFactory::_shared_ident_limit = 0;
 volatile bool             ciObjectFactory::_initialized = false;
 
@@ -126,18 +126,19 @@ void ciObjectFactory::init_shared_objects() {
 
   {
     // Create the shared symbols, but not in _shared_ci_metadata.
-    int i;
-    for (i = vmSymbols::FIRST_SID; i < vmSymbols::SID_LIMIT; i++) {
-      Symbol* vmsym = vmSymbols::symbol_at((vmSymbols::SID) i);
-      assert(vmSymbols::find_sid(vmsym) == i, "1-1 mapping");
-      ciSymbol* sym = new (_arena) ciSymbol(vmsym, (vmSymbols::SID) i);
+    for (vmSymbolsIterator it = vmSymbolsRange.begin(); it != vmSymbolsRange.end(); ++it) {
+      vmSymbolID index = *it;
+      Symbol* vmsym = vmSymbols::symbol_at(index);
+      assert(vmSymbols::find_sid(vmsym) == index, "1-1 mapping");
+      ciSymbol* sym = new (_arena) ciSymbol(vmsym, index);
       init_ident_of(sym);
-      _shared_ci_symbols[i] = sym;
+      _shared_ci_symbols[vmSymbols::as_int(index)] = sym;
     }
 #ifdef ASSERT
-    for (i = vmSymbols::FIRST_SID; i < vmSymbols::SID_LIMIT; i++) {
-      Symbol* vmsym = vmSymbols::symbol_at((vmSymbols::SID) i);
-      ciSymbol* sym = vm_symbol_at((vmSymbols::SID) i);
+    for (vmSymbolsIterator it = vmSymbolsRange.begin(); it != vmSymbolsRange.end(); ++it) {
+      vmSymbolID index = *it;
+      Symbol* vmsym = vmSymbols::symbol_at(index);
+      ciSymbol* sym = vm_symbol_at(index);
       assert(sym->get_symbol() == vmsym, "oop must match");
     }
     assert(ciSymbol::void_class_signature()->get_symbol() == vmSymbols::void_class_signature(), "spot check");
@@ -208,14 +209,14 @@ void ciObjectFactory::init_shared_objects() {
 
 
 ciSymbol* ciObjectFactory::get_symbol(Symbol* key) {
-  vmSymbols::SID sid = vmSymbols::find_sid(key);
-  if (sid != vmSymbols::NO_SID) {
+  vmSymbolID sid = vmSymbols::find_sid(key);
+  if (sid != vmSymbolID::NO_SID) {
     // do not pollute the main cache with it
     return vm_symbol_at(sid);
   }
 
-  assert(vmSymbols::find_sid(key) == vmSymbols::NO_SID, "");
-  ciSymbol* s = new (arena()) ciSymbol(key, vmSymbols::NO_SID);
+  assert(vmSymbols::find_sid(key) == vmSymbolID::NO_SID, "");
+  ciSymbol* s = new (arena()) ciSymbol(key, vmSymbolID::NO_SID);
   _symbols->push(s);
   return s;
 }
@@ -678,8 +679,8 @@ void ciObjectFactory::insert_non_perm(ciObjectFactory::NonPermObject* &where, oo
 // ------------------------------------------------------------------
 // ciObjectFactory::vm_symbol_at
 // Get the ciSymbol corresponding to some index in vmSymbols.
-ciSymbol* ciObjectFactory::vm_symbol_at(int index) {
-  assert(index >= vmSymbols::FIRST_SID && index < vmSymbols::SID_LIMIT, "oob");
+ciSymbol* ciObjectFactory::vm_symbol_at(vmSymbolID sid) {
+  int index = vmSymbols::as_int(sid);
   return _shared_ci_symbols[index];
 }
 

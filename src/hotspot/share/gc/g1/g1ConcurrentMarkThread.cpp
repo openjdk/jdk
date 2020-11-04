@@ -42,6 +42,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/ticks.hpp"
 
 G1ConcurrentMarkThread::G1ConcurrentMarkThread(G1ConcurrentMark* cm) :
@@ -107,7 +108,7 @@ void G1ConcurrentMarkThread::delay_to_keep_mmu(bool remark) {
       jlong sleep_time_ms = ceil(sleep_time_sec * MILLIUNITS);
       if (sleep_time_ms <= 0) {
         break;                  // Passed end time.
-      } else if (ml.wait(sleep_time_ms, Monitor::_no_safepoint_check_flag)) {
+      } else if (ml.wait(sleep_time_ms)) {
         break;                  // Timeout => reached end time.
       }
       // Other (possibly spurious) wakeup.  Retry with updated sleep time.
@@ -135,13 +136,22 @@ void G1ConcurrentMarkThread::run_service() {
   _vtime_start = os::elapsedVTime();
 
   while (wait_for_next_cycle()) {
+    assert(in_progress(), "must be");
 
     GCIdMark gc_id_mark;
-    GCTraceConcTime(Info, gc) tt("Concurrent Cycle");
+    GCTraceConcTime(Info, gc) tt(FormatBuffer<128>("Concurrent %s Cycle",
+                                                   _state == FullMark ? "Mark" : "Undo"));
 
     concurrent_cycle_start();
-    full_concurrent_cycle_do();
-    concurrent_cycle_end();
+
+    if (_state == FullMark) {
+      concurrent_mark_cycle_do();
+    } else {
+      assert(_state == UndoMark, "Must do undo mark but is %d", _state);
+      concurrent_undo_cycle_do();
+    }
+
+    concurrent_cycle_end(_state == FullMark && !_cm->has_aborted());
 
     _vtime_accum = (os::elapsedVTime() - _vtime_start);
   }
@@ -154,15 +164,9 @@ void G1ConcurrentMarkThread::stop_service() {
 }
 
 bool G1ConcurrentMarkThread::wait_for_next_cycle() {
-  assert(!in_progress(), "should have been cleared");
-
   MonitorLocker ml(CGC_lock, Mutex::_no_safepoint_check_flag);
-  while (!started() && !should_terminate()) {
+  while (!in_progress() && !should_terminate()) {
     ml.wait();
-  }
-
-  if (started()) {
-    set_in_progress();
   }
 
   return !should_terminate();
@@ -269,7 +273,7 @@ void G1ConcurrentMarkThread::concurrent_cycle_start() {
   _cm->concurrent_cycle_start();
 }
 
-void G1ConcurrentMarkThread::full_concurrent_cycle_do() {
+void G1ConcurrentMarkThread::concurrent_mark_cycle_do() {
   HandleMark hm(Thread::current());
   ResourceMark rm;
 
@@ -289,6 +293,9 @@ void G1ConcurrentMarkThread::full_concurrent_cycle_do() {
   //
   // For the same reason ConcurrentGCBreakpoints (in the phase methods) before
   // here risk deadlock, because a young GC must wait for root region scanning.
+  //
+  // We can not easily abort before root region scan either because of the
+  // reasons mentioned in G1CollectedHeap::abort_concurrent_cycle().
 
   // Phase 2: Scan root regions.
   if (phase_scan_root_regions()) return;
@@ -309,14 +316,26 @@ void G1ConcurrentMarkThread::full_concurrent_cycle_do() {
   phase_clear_bitmap_for_next_mark();
 }
 
-void G1ConcurrentMarkThread::concurrent_cycle_end() {
+void G1ConcurrentMarkThread::concurrent_undo_cycle_do() {
+  HandleMark hm(Thread::current());
+  ResourceMark rm;
+
+  // We can (and should) abort if there has been a concurrent cycle abort for
+  // some reason.
+  if (_cm->has_aborted()) { return; }
+
+  // Phase 1: Clear bitmap for next mark.
+  phase_clear_bitmap_for_next_mark();
+}
+
+void G1ConcurrentMarkThread::concurrent_cycle_end(bool mark_cycle_completed) {
   // Update the number of full collections that have been
   // completed. This will also notify the G1OldGCCount_lock in case a
   // Java thread is waiting for a full GC to happen (e.g., it
   // called System.gc() with +ExplicitGCInvokesConcurrent).
   SuspendibleThreadSetJoiner sts_join;
   G1CollectedHeap::heap()->increment_old_marking_cycles_completed(true /* concurrent */,
-                                                                  !_cm->has_aborted());
+                                                                  mark_cycle_completed /* heap_examined */);
 
   _cm->concurrent_cycle_end();
   ConcurrentGCBreakpoints::notify_active_to_idle();

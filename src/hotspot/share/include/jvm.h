@@ -201,10 +201,16 @@ JNIEXPORT jboolean JNICALL
 JVM_IsCDSDumpingEnabled(JNIEnv* env);
 
 JNIEXPORT jboolean JNICALL
-JVM_IsCDSSharingEnabled(JNIEnv* env);
+JVM_IsSharingEnabled(JNIEnv* env);
+
+JNIEXPORT jboolean JNICALL
+JVM_IsDumpingClassList(JNIEnv* env);
 
 JNIEXPORT jlong JNICALL
-JVM_GetRandomSeedForCDSDump();
+JVM_GetRandomSeedForDumping();
+
+JNIEXPORT void JNICALL
+JVM_LogLambdaFormInvoker(JNIEnv* env, jstring line);
 
 /*
  * java.lang.Throwable
@@ -323,6 +329,15 @@ JVM_HasReferencePendingList(JNIEnv *env);
 
 JNIEXPORT void JNICALL
 JVM_WaitForReferencePendingList(JNIEnv *env);
+
+JNIEXPORT jboolean JNICALL
+JVM_ReferenceRefersTo(JNIEnv *env, jobject ref, jobject o);
+
+/*
+ * java.lang.ref.PhantomReference
+ */
+JNIEXPORT jboolean JNICALL
+JVM_PhantomReferenceRefersTo(JNIEnv *env, jobject ref, jobject o);
 
 /*
  * java.io.ObjectInputStream

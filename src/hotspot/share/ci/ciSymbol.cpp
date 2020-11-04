@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,13 @@
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "memory/oopFactory.hpp"
+#include "prims/methodHandles.hpp"
 
 // ------------------------------------------------------------------
 // ciSymbol::ciSymbol
 //
 // Preallocated symbol variant.  Used with symbols from vmSymbols.
-ciSymbol::ciSymbol(Symbol* s, vmSymbols::SID sid)
+ciSymbol::ciSymbol(Symbol* s, vmSymbolID sid)
   : _symbol(s), _sid(sid)
 {
   assert(_symbol != NULL, "adding null symbol");
@@ -42,7 +43,7 @@ ciSymbol::ciSymbol(Symbol* s, vmSymbols::SID sid)
 
 // Normal case for non-famous symbols.
 ciSymbol::ciSymbol(Symbol* s)
-  : _symbol(s), _sid(vmSymbols::NO_SID)
+  : _symbol(s), _sid(vmSymbolID::NO_SID)
 {
   assert(_symbol != NULL, "adding null symbol");
   _symbol->increment_refcount();  // increment ref count

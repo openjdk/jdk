@@ -94,7 +94,6 @@ public class ClassUseWriter extends SubWriterHolderWriter {
     final ConstructorWriterImpl constrSubWriter;
     final FieldWriterImpl fieldSubWriter;
     final NestedClassWriterImpl classSubWriter;
-    private final Navigation navBar;
 
     /**
      * Constructor.
@@ -144,9 +143,9 @@ public class ClassUseWriter extends SubWriterHolderWriter {
 
         methodSubWriter = new MethodWriterImpl(this);
         constrSubWriter = new ConstructorWriterImpl(this);
+        constrSubWriter.setFoundNonPubConstructor(true);
         fieldSubWriter = new FieldWriterImpl(this);
         classSubWriter = new NestedClassWriterImpl(this);
-        this.navBar = new Navigation(typeElement, configuration, PageMode.USE, path);
     }
 
     /**
@@ -226,11 +225,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
                     utils.getFullyQualifiedName(typeElement)));
         }
         bodyContents.addMainContent(mainContent);
-        HtmlTree footer = HtmlTree.FOOTER();
-        navBar.setUserFooter(getUserHeaderFooter(false));
-        footer.add(navBar.getContent(Navigation.Position.BOTTOM));
-        addBottom(footer);
-        bodyContents.setFooter(footer);
+        bodyContents.setFooter(getFooter());
         body.add(bodyContents);
         String description = getDescription("use", typeElement);
         printHtmlDocument(null, description, body);
@@ -261,7 +256,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
                 "doclet.ClassUse_Packages.that.use.0",
                 getLink(new LinkInfoImpl(configuration,
                         LinkInfoImpl.Kind.CLASS_USE_HEADER, typeElement)));
-        Table table = new Table(HtmlStyle.useSummary, HtmlStyle.summaryTable)
+        Table table = new Table(HtmlStyle.summaryTable)
                 .setCaption(caption)
                 .setHeader(getPackageTableHeader())
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
@@ -287,7 +282,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
                 getLink(new LinkInfoImpl(configuration,
                         LinkInfoImpl.Kind.CLASS_USE_HEADER, typeElement)));
 
-        Table table = new Table(HtmlStyle.useSummary, HtmlStyle.summaryTable)
+        Table table = new Table(HtmlStyle.summaryTable)
                 .setCaption(caption)
                 .setHeader(getPackageTableHeader())
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
@@ -424,17 +419,6 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         String title = resources.getText("doclet.Window_ClassUse_Header",
                 cltype, clname);
         HtmlTree bodyTree = getBody(getWindowTitle(title));
-        Content headerContent = new ContentBuilder();
-        addTop(headerContent);
-        Content mdleLinkContent = getModuleLink(utils.elementUtils.getModuleOf(typeElement),
-                contents.moduleLabel);
-        navBar.setNavLinkModule(mdleLinkContent);
-        Content classLinkContent = getLink(new LinkInfoImpl(
-                configuration, LinkInfoImpl.Kind.CLASS_USE_HEADER, typeElement)
-                .label(resources.getText("doclet.Class")));
-        navBar.setNavLinkClass(classLinkContent);
-        navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(Navigation.Position.TOP));
         ContentBuilder headingContent = new ContentBuilder();
         headingContent.add(contents.getContent("doclet.ClassUse_Title", cltype));
         headingContent.add(new HtmlTree(TagName.BR));
@@ -442,7 +426,19 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         Content heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, headingContent);
         Content div = HtmlTree.DIV(HtmlStyle.header, heading);
-        bodyContents.setHeader(headerContent).addMainContent(div);
+        bodyContents.setHeader(getHeader(PageMode.USE, typeElement)).addMainContent(div);
         return bodyTree;
+    }
+
+    @Override
+    protected Navigation getNavBar(PageMode pageMode, Element element) {
+        Content mdleLinkContent = getModuleLink(utils.elementUtils.getModuleOf(typeElement),
+                contents.moduleLabel);
+        Content classLinkContent = getLink(new LinkInfoImpl(
+                configuration, LinkInfoImpl.Kind.CLASS_USE_HEADER, typeElement)
+                .label(resources.getText("doclet.Class")));
+        return super.getNavBar(pageMode, element)
+                .setNavLinkModule(mdleLinkContent)
+                .setNavLinkClass(classLinkContent);
     }
 }

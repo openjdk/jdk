@@ -335,7 +335,10 @@ ciProfileData* ciMethodData::data_at(int data_index) {
     return NULL;
   }
   DataLayout* data_layout = data_layout_at(data_index);
+  return data_from(data_layout);
+}
 
+ciProfileData* ciMethodData::data_from(DataLayout* data_layout) {
   switch (data_layout->tag()) {
   case DataLayout::no_tag:
   default:
@@ -376,6 +379,16 @@ ciProfileData* ciMethodData::next_data(ciProfileData* current) {
   return next;
 }
 
+DataLayout* ciMethodData::next_data_layout(DataLayout* current) {
+  int current_index = dp_to_di((address)current);
+  int next_index = current_index + current->size_in_bytes();
+  if (out_of_bounds(next_index)) {
+    return NULL;
+  }
+  DataLayout* next = data_layout_at(next_index);
+  return next;
+}
+
 ciProfileData* ciMethodData::bci_to_extra_data(int bci, ciMethod* m, bool& two_free_slots) {
   DataLayout* dp  = extra_data_base();
   DataLayout* end = args_data_limit();
@@ -413,12 +426,12 @@ ciProfileData* ciMethodData::bci_to_extra_data(int bci, ciMethod* m, bool& two_f
 ciProfileData* ciMethodData::bci_to_data(int bci, ciMethod* m) {
   // If m is not NULL we look for a SpeculativeTrapData entry
   if (m == NULL) {
-    ciProfileData* data = data_before(bci);
-    for ( ; is_valid(data); data = next_data(data)) {
-      if (data->bci() == bci) {
-        set_hint_di(dp_to_di(data->dp()));
-        return data;
-      } else if (data->bci() > bci) {
+    DataLayout* data_layout = data_layout_before(bci);
+    for ( ; is_valid(data_layout); data_layout = next_data_layout(data_layout)) {
+      if (data_layout->bci() == bci) {
+        set_hint_di(dp_to_di((address)data_layout));
+        return data_from(data_layout);
+      } else if (data_layout->bci() > bci) {
         break;
       }
     }

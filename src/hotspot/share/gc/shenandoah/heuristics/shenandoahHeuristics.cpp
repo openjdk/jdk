@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-
 #include "gc/shared/gcCause.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
@@ -33,6 +32,7 @@
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
+#include "runtime/globals_extension.hpp"
 
 int ShenandoahHeuristics::compare_by_garbage(RegionData a, RegionData b) {
   if (a._garbage > b._garbage)
@@ -255,18 +255,6 @@ void ShenandoahHeuristics::record_requested_gc() {
   // Assume users call System.gc() when external state changes significantly,
   // which forces us to re-learn the GC timings and allocation rates.
   _gc_times_learned = 0;
-}
-
-bool ShenandoahHeuristics::can_process_references() {
-  if (ShenandoahRefProcFrequency == 0) return false;
-  return true;
-}
-
-bool ShenandoahHeuristics::should_process_references() {
-  if (!can_process_references()) return false;
-  size_t cycle = ShenandoahHeap::heap()->shenandoah_policy()->cycle_counter();
-  // Process references every Nth GC cycle.
-  return cycle % ShenandoahRefProcFrequency == 0;
 }
 
 bool ShenandoahHeuristics::can_unload_classes() {

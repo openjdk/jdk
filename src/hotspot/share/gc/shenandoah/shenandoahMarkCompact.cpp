@@ -38,6 +38,7 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
+#include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
@@ -129,10 +130,8 @@ void ShenandoahMarkCompact::do_it(GCCause::Cause gc_cause) {
     assert(!heap->marking_context()->is_complete(), "sanity");
 
     // e. Abandon reference discovery and clear all discovered references.
-    ReferenceProcessor* rp = heap->ref_processor();
-    rp->disable_discovery();
+    ShenandoahReferenceProcessor* rp = heap->ref_processor();
     rp->abandon_partial_discovery();
-    rp->verify_no_references_recorded();
 
     // f. Set back forwarded objects bit back, in case some steps above dropped it.
     heap->set_has_forwarded_objects(has_forwarded_objects);
@@ -241,18 +240,16 @@ void ShenandoahMarkCompact::phase1_mark_heap() {
 
   ShenandoahConcurrentMark* cm = heap->concurrent_mark();
 
-  heap->set_process_references(heap->heuristics()->can_process_references());
   heap->set_unload_classes(heap->heuristics()->can_unload_classes());
 
-  ReferenceProcessor* rp = heap->ref_processor();
+  ShenandoahReferenceProcessor* rp = heap->ref_processor();
   // enable ("weak") refs discovery
-  rp->enable_discovery(true /*verify_no_refs*/);
-  rp->setup_policy(true); // forcefully purge all soft references
-  rp->set_active_mt_degree(heap->workers()->active_workers());
+  rp->set_soft_reference_policy(true); // forcefully purge all soft references
 
   cm->mark_roots(ShenandoahPhaseTimings::full_gc_scan_roots);
   cm->finish_mark_from_roots(/* full_gc = */ true);
   heap->mark_complete_marking_context();
+  rp->process_references(heap->workers(), false /* concurrent */);
   heap->parallel_cleaning(true /* full_gc */);
 }
 
@@ -323,7 +320,7 @@ public:
     // Object fits into current region, record new location:
     assert(_compact_point + obj_size <= _to_region->end(), "must fit");
     shenandoah_assert_not_forwarded(NULL, p);
-    _preserved_marks->push_if_necessary(p, p->mark_raw());
+    _preserved_marks->push_if_necessary(p, p->mark());
     p->forward_to(oop(_compact_point));
     _compact_point += obj_size;
   }
@@ -431,7 +428,7 @@ void ShenandoahMarkCompact::calculate_target_humongous_objects() {
 
       if (start >= to_begin && start != r->index()) {
         // Fits into current window, and the move is non-trivial. Record the move then, and continue scan.
-        _preserved_marks->get(0)->push_if_necessary(old_obj, old_obj->mark_raw());
+        _preserved_marks->get(0)->push_if_necessary(old_obj, old_obj->mark());
         old_obj->forward_to(oop(heap->get_region(start)->bottom()));
         to_end = start;
         continue;
@@ -806,7 +803,7 @@ public:
       HeapWord* compact_to = cast_from_oop<HeapWord*>(p->forwardee());
       Copy::aligned_conjoint_words(compact_from, compact_to, size);
       oop new_obj = oop(compact_to);
-      new_obj->init_mark_raw();
+      new_obj->init_mark();
     }
   }
 };
@@ -922,7 +919,7 @@ void ShenandoahMarkCompact::compact_humongous_objects() {
                                    ShenandoahHeapRegion::region_size_words()*num_regions);
 
       oop new_obj = oop(heap->get_region(new_start)->bottom());
-      new_obj->init_mark_raw();
+      new_obj->init_mark();
 
       {
         for (size_t c = old_start; c <= old_end; c++) {

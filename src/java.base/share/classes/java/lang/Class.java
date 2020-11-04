@@ -66,7 +66,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import jdk.internal.HotSpotIntrinsicCandidate;
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.misc.Unsafe;
@@ -76,6 +75,7 @@ import jdk.internal.reflect.ConstantPool;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.reflect.ReflectionFactory;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 import sun.invoke.util.Wrapper;
 import sun.reflect.generics.factory.CoreReflectionFactory;
 import sun.reflect.generics.factory.GenericsFactory;
@@ -520,7 +520,6 @@ public final class Class<T> implements java.io.Serializable,
      * @jls 12.2 Loading of Classes and Interfaces
      * @jls 12.3 Linking of Classes and Interfaces
      * @since 9
-     * @spec JPMS
      */
     @CallerSensitive
     public static Class<?> forName(Module module, String name) {
@@ -682,7 +681,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @since 1.1
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public native boolean isInstance(Object obj);
 
 
@@ -711,7 +710,7 @@ public final class Class<T> implements java.io.Serializable,
      *            null.
      * @since     1.1
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public native boolean isAssignableFrom(Class<?> cls);
 
 
@@ -722,7 +721,7 @@ public final class Class<T> implements java.io.Serializable,
      * @return  {@code true} if this {@code Class} object represents an interface;
      *          {@code false} otherwise.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public native boolean isInterface();
 
 
@@ -733,7 +732,7 @@ public final class Class<T> implements java.io.Serializable,
      *          {@code false} otherwise.
      * @since   1.1
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public native boolean isArray();
 
 
@@ -765,7 +764,7 @@ public final class Class<T> implements java.io.Serializable,
      * @see     java.lang.Void#TYPE
      * @since 1.1
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public native boolean isPrimitive();
 
     /**
@@ -918,7 +917,6 @@ public final class Class<T> implements java.io.Serializable,
      * @return the module that this class or interface is a member of
      *
      * @since 9
-     * @spec JPMS
      */
     public Module getModule() {
         return module;
@@ -976,7 +974,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @return the direct superclass of the class represented by this {@code Class} object
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public native Class<? super T> getSuperclass();
 
 
@@ -1034,7 +1032,6 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @return the package of this class.
      * @revised 9
-     * @spec JPMS
      */
     public Package getPackage() {
         if (isPrimitive() || isArray()) {
@@ -1069,7 +1066,6 @@ public final class Class<T> implements java.io.Serializable,
      * @return the fully qualified package name
      *
      * @since 9
-     * @spec JPMS
      * @jls 6.7 Fully Qualified Names
      */
     public String getPackageName() {
@@ -1275,7 +1271,7 @@ public final class Class<T> implements java.io.Serializable,
      * @see     java.lang.reflect.Modifier
      * @since 1.1
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public native int getModifiers();
 
 
@@ -2342,13 +2338,6 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     /**
-     * {@preview Associated with records, a preview feature of the Java language.
-     *
-     *           This method is associated with <i>records</i>, a preview
-     *           feature of the Java language. Preview features
-     *           may be removed in a future release, or upgraded to permanent
-     *           features of the Java language.}
-     *
      * Returns an array of {@code RecordComponent} objects representing all the
      * record components of this record class, or {@code null} if this class is
      * not a record class.
@@ -2385,11 +2374,8 @@ public final class Class<T> implements java.io.Serializable,
      *          </ul>
      *
      * @jls 8.10 Record Types
-     * @since 14
+     * @since 16
      */
-    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
-                                 essentialAPI=false)
-    @SuppressWarnings("preview")
     @CallerSensitive
     public RecordComponent[] getRecordComponents() {
         SecurityManager sm = System.getSecurityManager();
@@ -2765,7 +2751,6 @@ public final class Class<T> implements java.io.Serializable,
      * @see Module#getResourceAsStream(String)
      * @since  1.1
      * @revised 9
-     * @spec JPMS
      */
     @CallerSensitive
     public InputStream getResourceAsStream(String name) {
@@ -2862,7 +2847,6 @@ public final class Class<T> implements java.io.Serializable,
      * @throws NullPointerException If {@code name} is {@code null}
      * @since  1.1
      * @revised 9
-     * @spec JPMS
      */
     @CallerSensitive
     public URL getResource(String name) {
@@ -3688,13 +3672,6 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     /**
-     * {@preview Associated with records, a preview feature of the Java language.
-     *
-     *           This method is associated with <i>records</i>, a preview
-     *           feature of the Java language. Preview features
-     *           may be removed in a future release, or upgraded to permanent
-     *           features of the Java language.}
-     *
      * Returns {@code true} if and only if this class is a record class.
      *
      * <p> The {@linkplain #getSuperclass() direct superclass} of a record
@@ -3707,10 +3684,8 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @return true if and only if this class is a record class, otherwise false
      * @jls 8.10 Record Types
-     * @since 14
+     * @since 16
      */
-    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
-                                 essentialAPI=false)
     public boolean isRecord() {
         return getSuperclass() == JAVA_LANG_RECORD_CLASS && isRecord0();
     }
@@ -3810,7 +3785,7 @@ public final class Class<T> implements java.io.Serializable,
      * @since 1.5
      */
     @SuppressWarnings("unchecked")
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public T cast(Object obj) {
         if (obj != null && !isInstance(obj))
             throw new ClassCastException(cannotCastMsg(obj));
@@ -4381,7 +4356,7 @@ public final class Class<T> implements java.io.Serializable,
      * @since 15
      * @see MethodHandles.Lookup#defineHiddenClass
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public native boolean isHidden();
 
     /**

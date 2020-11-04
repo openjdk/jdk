@@ -35,9 +35,9 @@
 #include "gc/z/zServiceability.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zUtils.inline.hpp"
+#include "memory/classLoaderMetaspace.hpp"
 #include "memory/iterator.hpp"
 #include "memory/universe.hpp"
-#include "runtime/mutexLocker.hpp"
 #include "utilities/align.hpp"
 
 ZCollectedHeap* ZCollectedHeap::heap() {
@@ -205,10 +205,6 @@ void ZCollectedHeap::do_full_collection(bool clear_all_soft_refs) {
   ShouldNotReachHere();
 }
 
-bool ZCollectedHeap::supports_tlab_allocation() const {
-  return true;
-}
-
 size_t ZCollectedHeap::tlab_capacity(Thread* ignored) const {
   return _heap.tlab_capacity();
 }
@@ -225,20 +221,8 @@ size_t ZCollectedHeap::unsafe_max_tlab_alloc(Thread* ignored) const {
   return _heap.unsafe_max_tlab_alloc();
 }
 
-bool ZCollectedHeap::can_elide_tlab_store_barriers() const {
-  return false;
-}
-
-bool ZCollectedHeap::can_elide_initializing_store_barrier(oop new_obj) {
-  // Not supported
-  ShouldNotReachHere();
+bool ZCollectedHeap::uses_stack_watermark_barrier() const {
   return true;
-}
-
-bool ZCollectedHeap::card_mark_must_follow_store() const {
-  // Not supported
-  ShouldNotReachHere();
-  return false;
 }
 
 GrowableArray<GCMemoryManager*> ZCollectedHeap::memory_managers() {
@@ -251,6 +235,10 @@ GrowableArray<MemoryPool*> ZCollectedHeap::memory_pools() {
 
 void ZCollectedHeap::object_iterate(ObjectClosure* cl) {
   _heap.object_iterate(cl, true /* visit_weaks */);
+}
+
+ParallelObjectIterator* ZCollectedHeap::parallel_object_iterator(uint nworkers) {
+  return _heap.parallel_object_iterator(nworkers, true /* visit_weaks */);
 }
 
 void ZCollectedHeap::keep_alive(oop obj) {

@@ -39,14 +39,14 @@
  *          /test/lib
  * @build nsk.jdi.VMOutOfMemoryException.VMOutOfMemoryException001.VMOutOfMemoryException001
  *        nsk.jdi.VMOutOfMemoryException.VMOutOfMemoryException001.VMOutOfMemoryException001t
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.VMOutOfMemoryException.VMOutOfMemoryException001.VMOutOfMemoryException001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=-Xmx256M ${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="-Xmx256M ${test.vm.opts} ${test.java.opts}"
  */
 
 package nsk.jdi.VMOutOfMemoryException.VMOutOfMemoryException001;

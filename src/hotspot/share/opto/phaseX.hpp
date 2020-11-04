@@ -282,11 +282,6 @@ public:
   // in a faster or cheaper fashion.
   virtual Node *transform( Node *n ) = 0;
 
-  // Return whether two Nodes are equivalent.
-  // Must not be recursive, since the recursive version is built from this.
-  // For pessimistic optimizations this is simply pointer equivalence.
-  bool eqv(const Node* n1, const Node* n2) const { return n1 == n2; }
-
   // For pessimistic passes, the return type must monotonically narrow.
   // For optimistic  passes, the return type must monotonically widen.
   // It is possible to get into a "death march" in either type of pass,
@@ -458,8 +453,8 @@ private:
 
 protected:
 
-  // Warm up hash table, type table and initial worklist
-  void init_worklist( Node *a_root );
+  // Shuffle worklist, for stress testing
+  void shuffle_worklist();
 
   virtual const Type* saturate(const Type* new_type, const Type* old_type,
                                const Type* limit_type) const;

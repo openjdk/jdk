@@ -111,12 +111,6 @@ public class HtmlOptions extends BaseOptions {
      */
     private String docTitle = "";
 
-
-    /**
-     * Argument for command-line option {@code -footer}.
-     */
-    private String footer = "";
-
     /**
      * Argument for command-line option {@code -header}.
      */
@@ -128,8 +122,8 @@ public class HtmlOptions extends BaseOptions {
     private String helpFile = "";
 
     /**
-     * Argument for command-line option {@code -nodeprecated}.
-     * True if command-line option "-nodeprecated" is used. Default value is
+     * Argument for command-line option {@code -nodeprecatedlist}.
+     * True if command-line option "-nodeprecatedlist" is used. Default value is
      * false.
      */
     private boolean noDeprecatedList = false;
@@ -235,7 +229,7 @@ public class HtmlOptions extends BaseOptions {
                 new Option(resources, "-footer", 1) {
                     @Override
                     public boolean process(String opt, List<String> args) {
-                        footer = args.get(0);
+                        messages.warning("doclet.footer_specified");
                         return true;
                     }
                 },
@@ -411,7 +405,7 @@ public class HtmlOptions extends BaseOptions {
                             messages.error("doclet.Option_doclint_no_qualifiers");
                             return false;
                         }
-                        if (!DocLint.isValidOption(dopt)) {
+                        if (!DocLint.newDocLint().isValidOption(dopt)) {
                             messages.error("doclet.Option_doclint_invalid_arg");
                             return false;
                         }
@@ -424,7 +418,7 @@ public class HtmlOptions extends BaseOptions {
                     @Override
                     public boolean process(String opt,  List<String> args) {
                         String dopt = opt.replace("-Xdoclint/package:", DocLint.XCHECK_PACKAGE);
-                        if (!DocLint.isValidOption(dopt)) {
+                        if (!DocLint.newDocLint().isValidOption(dopt)) {
                             messages.error("doclet.Option_doclint_package_invalid_arg");
                             return false;
                         }
@@ -499,7 +493,6 @@ public class HtmlOptions extends BaseOptions {
         // to be handled here.
         Utils utils = config.utils;
         utils.checkJavaScriptInOption("-header", header);
-        utils.checkJavaScriptInOption("-footer", footer);
         utils.checkJavaScriptInOption("-top", top);
         utils.checkJavaScriptInOption("-bottom", bottom);
         utils.checkJavaScriptInOption("-doctitle", docTitle);
@@ -591,13 +584,6 @@ public class HtmlOptions extends BaseOptions {
      */
     String docTitle() {
         return docTitle;
-    }
-
-    /**
-     * Argument for command-line option {@code -footer}.
-     */
-    String footer() {
-        return footer;
     }
 
     /**

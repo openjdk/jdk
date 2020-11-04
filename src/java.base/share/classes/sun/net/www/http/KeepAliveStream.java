@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,8 @@ class KeepAliveStream extends MeteredStream implements Hurryable {
     boolean hurried;
 
     // has this KeepAliveStream been put on the queue for asynchronous cleanup.
-    protected boolean queuedForCleanup = false;
+    // This flag is read from within KeepAliveCleanerEntry outside of any lock.
+    protected volatile boolean queuedForCleanup = false;
 
     private static final KeepAliveStreamCleaner queue = new KeepAliveStreamCleaner();
     private static Thread cleanerThread; // null
@@ -64,15 +65,8 @@ class KeepAliveStream extends MeteredStream implements Hurryable {
      * Attempt to cache this connection
      */
     public void close() throws IOException  {
-        // If the inputstream is closed already, just return.
-        if (closed) {
-            return;
-        }
-
-        // If this stream has already been queued for cleanup.
-        if (queuedForCleanup) {
-            return;
-        }
+        // If the inputstream is queued for cleanup, just return.
+        if (queuedForCleanup) return;
 
         // Skip past the data that's left in the Inputstream because
         // some sort of error may have occurred.
@@ -81,34 +75,45 @@ class KeepAliveStream extends MeteredStream implements Hurryable {
         // to hang around for nothing. So if we can't skip without blocking
         // we just close the socket and, therefore, terminate the keepAlive
         // NOTE: Don't close super class
+        // For consistency, access to `expected` and `count` should be
+        // protected by readLock
+        lock();
         try {
-            if (expected > count) {
-                long nskip = expected - count;
-                if (nskip <= available()) {
-                    do {} while ((nskip = (expected - count)) > 0L
-                                 && skip(Math.min(nskip, available())) > 0L);
-                } else if (expected <= KeepAliveStreamCleaner.MAX_DATA_REMAINING && !hurried) {
-                    //put this KeepAliveStream on the queue so that the data remaining
-                    //on the socket can be cleanup asyncronously.
-                    queueForCleanup(new KeepAliveCleanerEntry(this, hc));
-                } else {
-                    hc.closeServer();
+            // If the inputstream is closed already, or if this stream
+            // has already been queued for cleanup, just return.
+            if (closed || queuedForCleanup) return;
+            try {
+                if (expected > count) {
+                    long nskip = expected - count;
+                    if (nskip <= available()) {
+                        do {
+                        } while ((nskip = (expected - count)) > 0L
+                                && skip(Math.min(nskip, available())) > 0L);
+                    } else if (expected <= KeepAliveStreamCleaner.MAX_DATA_REMAINING && !hurried) {
+                        //put this KeepAliveStream on the queue so that the data remaining
+                        //on the socket can be cleanup asyncronously.
+                        queueForCleanup(new KeepAliveCleanerEntry(this, hc));
+                    } else {
+                        hc.closeServer();
+                    }
+                }
+                if (!closed && !hurried && !queuedForCleanup) {
+                    hc.finished();
+                }
+            } finally {
+                if (pi != null)
+                    pi.finishTracking();
+
+                if (!queuedForCleanup) {
+                    // nulling out the underlying inputstream as well as
+                    // httpClient to let gc collect the memories faster
+                    in = null;
+                    hc = null;
+                    closed = true;
                 }
             }
-            if (!closed && !hurried && !queuedForCleanup) {
-                hc.finished();
-            }
         } finally {
-            if (pi != null)
-                pi.finishTracking();
-
-            if (!queuedForCleanup) {
-                // nulling out the underlying inputstream as well as
-                // httpClient to let gc collect the memories faster
-                in = null;
-                hc = null;
-                closed = true;
-            }
+            unlock();
         }
     }
 
@@ -124,7 +129,8 @@ class KeepAliveStream extends MeteredStream implements Hurryable {
         throw new IOException("mark/reset not supported");
     }
 
-    public synchronized boolean hurry() {
+    public boolean hurry() {
+        lock();
         try {
             /* CASE 0: we're actually already done */
             if (closed || count >= expected) {
@@ -147,11 +153,14 @@ class KeepAliveStream extends MeteredStream implements Hurryable {
         } catch (IOException e) {
             // e.printStackTrace();
             return false;
+        } finally {
+            unlock();
         }
     }
 
     private static void queueForCleanup(KeepAliveCleanerEntry kace) {
-        synchronized(queue) {
+        queue.lock();
+        try {
             if(!kace.getQueuedForCleanup()) {
                 if (!queue.offer(kace)) {
                     kace.getHttpClient().closeServer();
@@ -159,7 +168,7 @@ class KeepAliveStream extends MeteredStream implements Hurryable {
                 }
 
                 kace.setQueuedForCleanup();
-                queue.notifyAll();
+                queue.signalAll();
             }
 
             boolean startCleanupThread = (cleanerThread == null);
@@ -181,14 +190,20 @@ class KeepAliveStream extends MeteredStream implements Hurryable {
                     }
                 });
             }
-        } // queue
+        } finally {
+            queue.unlock();
+        }
     }
 
+    // Only called from KeepAliveStreamCleaner
     protected long remainingToRead() {
+        assert isLockHeldByCurrentThread();
         return expected - count;
     }
 
+    // Only called from KeepAliveStreamCleaner
     protected void setClosed() {
+        assert isLockHeldByCurrentThread();
         in = null;
         hc = null;
         closed = true;
