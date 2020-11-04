@@ -96,25 +96,6 @@ public abstract class SummaryListWriter<L extends SummaryAPIListBuilder> extends
         };
     }
 
-    private String getSummaryKey(SummaryElementKind kind) {
-        return switch (kind) {
-            case MODULE -> "doclet.modules";
-            case PACKAGE -> "doclet.packages";
-            case INTERFACE -> "doclet.interfaces";
-            case CLASS -> "doclet.classes";
-            case ENUM -> "doclet.enums";
-            case EXCEPTION -> "doclet.exceptions";
-            case ERROR -> "doclet.errors";
-            case ANNOTATION_TYPE -> "doclet.annotation_types";
-            case FIELD -> "doclet.fields";
-            case METHOD -> "doclet.methods";
-            case CONSTRUCTOR -> "doclet.constructors";
-            case ENUM_CONSTANT -> "doclet.enum_constants";
-            case ANNOTATION_TYPE_MEMBER -> "doclet.annotation_type_members";
-            case RECORD -> "doclet.record";
-        };
-    }
-
     private String getHeaderKey(SummaryElementKind kind) {
         return switch (kind) {
             case MODULE -> "doclet.Module";
@@ -173,8 +154,7 @@ public abstract class SummaryListWriter<L extends SummaryAPIListBuilder> extends
         for (SummaryElementKind kind : SummaryElementKind.values()) {
             if (summaryapi.hasDocumentation(kind)) {
                 addSummaryAPI(summaryapi.getSet(kind), getAnchorName(kind),
-                            getHeadingKey(kind), getSummaryKey(kind),
-                            getHeaderKey(kind), content);
+                            getHeadingKey(kind), getHeaderKey(kind), content);
             }
         }
         bodyContents.addMainContent(content);
@@ -244,14 +224,11 @@ public abstract class SummaryListWriter<L extends SummaryAPIListBuilder> extends
      * @param contentTree the content tree to which the summary table will be added
      */
     protected void addSummaryAPI(SortedSet<Element> apiList, String id,
-                                 String headingKey, String summaryKey,
-                                 String headerKey, Content contentTree) {
+                                 String headingKey, String headerKey,
+                                 Content contentTree) {
         if (apiList.size() > 0) {
-                String tableSummary = resources.getText("doclet.Member_Table_Summary",
-                        resources.getText(headingKey),
-                        resources.getText(summaryKey));
-                TableHeader tableHeader = new TableHeader(
-                        contents.getContent(headerKey), contents.descriptionLabel);
+            TableHeader tableHeader = new TableHeader(
+                    contents.getContent(headerKey), contents.descriptionLabel);
 
             Content caption = contents.getContent(headingKey);
             Table table = new Table(HtmlStyle.summaryTable)
