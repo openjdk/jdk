@@ -52,6 +52,7 @@ public class TestReferenceRefersTo {
         }
     }
 
+    private static volatile TestObject testObjectNone = null;
     private static volatile TestObject testObject1 = null;
     private static volatile TestObject testObject2 = null;
     private static volatile TestObject testObject3 = null;
@@ -66,6 +67,7 @@ public class TestReferenceRefersTo {
     private static WeakReference<TestObject> testWeak4 = null;
 
     private static void setup() {
+        testObjectNone = new TestObject(0);
         testObject1 = new TestObject(1);
         testObject2 = new TestObject(2);
         testObject3 = new TestObject(3);
@@ -90,6 +92,7 @@ public class TestReferenceRefersTo {
     }
 
     private static void gcUntilOld() throws Exception {
+        gcUntilOld(testObjectNone);
         gcUntilOld(testObject1);
         gcUntilOld(testObject2);
         gcUntilOld(testObject3);
@@ -112,6 +115,7 @@ public class TestReferenceRefersTo {
 
     private static void expectCleared(Reference<TestObject> ref,
                                       String which) throws Exception {
+        expectNotValue(ref, testObjectNone, which);
         if (!ref.refersTo(null)) {
             fail("expected " + which + " to be cleared");
         }
@@ -119,6 +123,7 @@ public class TestReferenceRefersTo {
 
     private static void expectNotCleared(Reference<TestObject> ref,
                                          String which) throws Exception {
+        expectNotValue(ref, testObjectNone, which);
         if (ref.refersTo(null)) {
             fail("expected " + which + " to not be cleared");
         }
@@ -127,12 +132,10 @@ public class TestReferenceRefersTo {
     private static void expectValue(Reference<TestObject> ref,
                                     TestObject value,
                                     String which) throws Exception {
+        expectNotValue(ref, testObjectNone, which);
+        expectNotCleared(ref, which);
         if (!ref.refersTo(value)) {
-            if (ref.refersTo(null)) {
-                fail("expected " + which + " to not be cleared");
-            } else {
-                fail(which + " refers to unexpected value");
-            }
+            fail(which + " doesn't refer to expected value");
         }
     }
 
@@ -152,6 +155,7 @@ public class TestReferenceRefersTo {
     }
 
     private static void discardStrongReferences() {
+        // testObjectNone not dropped
         testObject1 = null;
         testObject2 = null;
         // testObject3 not dropped
@@ -178,11 +182,7 @@ public class TestReferenceRefersTo {
 
             progress("fetch test objects, possibly keeping some alive");
             expectNotCleared(testPhantom1, "testPhantom1");
-
             expectNotCleared(testWeak2, "testWeak2");
-            expectNotCleared(testWeak3, "testWeak3");
-
-            expectNotValue(testWeak2, testObject3, "testWeak2");
             expectValue(testWeak3, testObject3, "testWeak3");
 
             // For some collectors, calling get() will keep testObject4 alive.
@@ -196,12 +196,9 @@ public class TestReferenceRefersTo {
             progress("verify expected clears");
             expectCleared(testPhantom1, "testPhantom1");
             expectCleared(testWeak2, "testWeak2");
-            expectNotCleared(testWeak3, "testWeak3");
-            expectNotCleared(testWeak4, "testWeak4");
-
-            expectNotValue(testPhantom1, testObject3, "testPhantom1");
             expectValue(testWeak3, testObject3, "testWeak3");
-            expectNotValue(testWeak4, testObject3, "testWeak4");
+            // This is true for all currently supported concurrent collectors.
+            expectNotCleared(testWeak4, "testWeak4");
 
             progress("verify get returns expected values");
             if (testWeak2.get() != null) {
@@ -278,11 +275,8 @@ public class TestReferenceRefersTo {
         progress("verify expected clears");
         expectCleared(testPhantom1, "testPhantom1");
         expectCleared(testWeak2, "testWeak2");
-        expectNotCleared(testWeak3, "testWeak3");
-        expectNotCleared(testWeak4, "testWeak4");
-
-        expectNotValue(testWeak2, testObject3, "testWeak2");
         expectValue(testWeak3, testObject3, "testWeak3");
+        expectNotCleared(testWeak4, "testWeak4");
 
         progress("verify get returns expected values");
         if (testWeak2.get() != null) {

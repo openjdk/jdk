@@ -131,7 +131,9 @@ void PSOldGen::initialize_work(const char* perf_data_name, int level) {
   _object_space = new MutableSpace(virtual_space()->alignment());
   object_space()->initialize(cmr,
                              SpaceDecorator::Clear,
-                             SpaceDecorator::Mangle);
+                             SpaceDecorator::Mangle,
+                             MutableSpace::SetupPages,
+                             &ParallelScavengeHeap::heap()->workers());
 
   // Update the start_array
   start_array()->set_covered_region(cmr);
@@ -351,10 +353,15 @@ void PSOldGen::post_resize() {
   start_array()->set_covered_region(new_memregion);
   ParallelScavengeHeap::heap()->card_table()->resize_covered_region(new_memregion);
 
+  WorkGang* workers = Thread::current()->is_VM_thread() ?
+                      &ParallelScavengeHeap::heap()->workers() : NULL;
+
   // ALWAYS do this last!!
   object_space()->initialize(new_memregion,
                              SpaceDecorator::DontClear,
-                             SpaceDecorator::DontMangle);
+                             SpaceDecorator::DontMangle,
+                             MutableSpace::SetupPages,
+                             workers);
 
   assert(new_word_size == heap_word_size(object_space()->capacity_in_bytes()),
     "Sanity");

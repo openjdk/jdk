@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,11 @@
 
 /**
  * @test
- * @bug 8155740
+ * @bug 8160266 8225790
  * @key headful
  * @summary See <rdar://problem/3429130>: Events: actionPerformed() method not
  *              called when it is button is clicked (system load related)
- * @summary com.apple.junit.java.awt.Frame
- * @library ../../../regtesthelpers
- * @build VisibilityValidator
- * @build Util
- * @build Waypoint
- * @run main NestedModelessDialogTest -Xlog:exception
+ * @run main NestedModelessDialogTest
  */
 
 /////////////////////////////////////////////////////////////////////////////
@@ -43,26 +38,53 @@
 // are successfully able to write into this Nested Modeless Dialog
 /////////////////////////////////////////////////////////////////////////////
 // classes necessary for this test
-import java.awt.*;
-import java.awt.event.*;
-import java.util.Enumeration;
 
-import test.java.awt.regtesthelpers.Util;
-import test.java.awt.regtesthelpers.VisibilityValidator;
-import test.java.awt.regtesthelpers.Waypoint;
+import java.awt.Button;
+import java.awt.Component;
+import java.awt.Dialog;
+import java.awt.Frame;
+import java.awt.GridBagLayout;
+import java.awt.Panel;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.TextField;
+import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 
 public class NestedModelessDialogTest {
-
-    Waypoint[] event_checkpoint = new Waypoint[3];
-    VisibilityValidator[] win_checkpoint = new VisibilityValidator[2];
-
-    IntermediateDialog interDiag;
-    TextDialog txtDiag;
+    private static Frame frame;
+    private static IntermediateDialog interDiag;
+    private static TextDialog txtDiag;
 
     // Global variables so the robot thread can locate things.
-    Button[] robot_button = new Button[2];
-    TextField robot_text = null;
-    static Robot _robot = null;
+    private static Button[] robot_button = new Button[2];
+    private static TextField robot_text = null;
+    private static Robot robot;
+
+    private static void blockTillDisplayed(Component comp) {
+        Point p = null;
+        while (p == null) {
+            try {
+                p = comp.getLocationOnScreen();
+            } catch (IllegalStateException e) {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException ie) {
+                }
+            }
+        }
+    }
+
+    private static void clickOnComp(Component comp) {
+        Rectangle bounds = new Rectangle(comp.getLocationOnScreen(), comp.getSize());
+        robot.mouseMove(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+        robot.waitForIdle();
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        robot.waitForIdle();
+    }
 
     /**
      * Get called by test harness
@@ -70,111 +92,56 @@ public class NestedModelessDialogTest {
      * @throws Exception
      */
     public void testModelessDialogs() throws Exception {
-        Frame frame = null;
-        String result = "";
-        Robot robot = getRobot();
-
-        event_checkpoint[0] = new Waypoint(); // "-Launch 1-"
-        event_checkpoint[1] = new Waypoint(); // "-Launch 2-"
-
-        // launch first frame with fistButton
-        frame = new StartFrame();
-        VisibilityValidator.setVisibleAndConfirm(frame);
-        Util.clickOnComp(robot_button[0], robot);
-
-        // Dialog must be created and onscreen before we proceed.
-        //   The event_checkpoint waits for the Dialog to be created.
-        //   The win_checkpoint waits for the Dialog to be visible.
-        event_checkpoint[0].requireClear();
-        win_checkpoint[0].requireVisible();
-        Util.clickOnComp(robot_button[1], robot);
-
-        // Again, the Dialog must be created and onscreen before we proceed.
-        //   The event_checkpoint waits for the Dialog to be created.
-        //   The win_checkpoint waits for the Dialog to be visible.
-        event_checkpoint[1].requireClear();
-        win_checkpoint[1].requireVisible();
-        Util.clickOnComp(robot_text, robot);
-
-        // I'm really not sure whether the click is needed for focus
-        // but since it's asynchronous, as is the actually gaining of focus
-        // we might as well do our best
         try {
-            EventQueue.invokeAndWait(new Runnable() {
-                public void run() {
-                }
-            });
-        } catch (Exception e) {
-        }
+            robot = new Robot();
+            robot.setAutoDelay(100);
 
-        robot.keyPress(KeyEvent.VK_SHIFT);
+            // launch first frame with fistButton
+            frame = new StartFrame();
+            robot.waitForIdle();
+            blockTillDisplayed(frame);
+            clickOnComp(robot_button[0]);
 
-        robot.keyPress(KeyEvent.VK_H);
-        robot.waitForIdle();
-        robot.keyRelease(KeyEvent.VK_H);
+            // Dialog must be created and onscreen before we proceed.
+            blockTillDisplayed(interDiag);
+            clickOnComp(robot_button[1]);
 
-        robot.keyRelease(KeyEvent.VK_SHIFT);
+            // Again, the Dialog must be created and onscreen before we proceed.
+            blockTillDisplayed(robot_text);
+            clickOnComp(robot_text);
 
-        robot.keyPress(KeyEvent.VK_E);
-        robot.waitForIdle();
-        robot.keyRelease(KeyEvent.VK_E);
+            robot.keyPress(KeyEvent.VK_SHIFT);
+            robot.keyPress(KeyEvent.VK_H);
+            robot.keyRelease(KeyEvent.VK_H);
+            robot.keyRelease(KeyEvent.VK_SHIFT);
+            robot.waitForIdle();
 
-        robot.keyPress(KeyEvent.VK_L);
-        robot.waitForIdle();
-        robot.keyRelease(KeyEvent.VK_L);
+            robot.keyPress(KeyEvent.VK_E);
+            robot.keyRelease(KeyEvent.VK_E);
+            robot.waitForIdle();
 
-        robot.keyPress(KeyEvent.VK_L);
-        robot.waitForIdle();
-        robot.keyRelease(KeyEvent.VK_L);
+            robot.keyPress(KeyEvent.VK_L);
+            robot.keyRelease(KeyEvent.VK_L);
+            robot.waitForIdle();
 
-        robot.keyPress(KeyEvent.VK_O);
-        robot.waitForIdle();
-        robot.keyRelease(KeyEvent.VK_O);
+            robot.keyPress(KeyEvent.VK_L);
+            robot.keyRelease(KeyEvent.VK_L);
+            robot.waitForIdle();
 
-        //
-        // NOTE THAT WE MAY HAVE MORE SYNCHRONIZATION WORK TO DO HERE.
-        // CURRENTLY THERE IS NO GUARANTEE THAT THE KEYEVENT THAT THAT
-        // TYPES THE 'O' HAS BEEN PROCESSED BEFORE WE GET THE RESULT
-        //
-        // This is a (lame) attempt at waiting for the last typeKey events to
-        // propagate. It's not quite right because robot uses
-        // CGRemoteOperations, which are asynchronous. But that's why I put in
-        // the Thread.sleep
-        try {
-            EventQueue.invokeAndWait(new Runnable() {
-                public void run() {
-                }
-            });
-        } catch (Exception e) {
-        }
-
-        // Need to call this before the dialog that robot_text is in is disposed
-        result = robot_text.getText();
-
-        Thread.sleep(50); // Thread.sleep adds stability
-        // Click Close box of modeless dialog with textField
-        Util.clickOnComp(txtDiag, robot);
-
-        Thread.sleep(50); // Thread.sleep adds stability
-        // Click Close box of intermediate modal dialog
-        Util.clickOnComp(interDiag, robot);
-
-        Thread.sleep(50); // Thread.sleep adds stability
-        // Click Close box of intermediate modal dialog
-        Util.clickOnComp(frame, robot);
-
-        String expected = "Hello";
-    }
-
-    private static Robot getRobot() {
-        if (_robot == null) {
-            try {
-                _robot = new Robot();
-            } catch (AWTException e) {
-                throw new RuntimeException("Robot creation failed");
+            robot.keyPress(KeyEvent.VK_O);
+            robot.keyRelease(KeyEvent.VK_O);
+            robot.waitForIdle();
+        } finally {
+            if (frame != null) {
+                frame.dispose();
+            }
+            if (interDiag != null) {
+                interDiag.dispose();
+            }
+            if (txtDiag != null) {
+                txtDiag.dispose();
             }
         }
-        return _robot;
     }
 
     //////////////////// Start Frame ///////////////////
@@ -195,26 +162,19 @@ public class NestedModelessDialogTest {
             but.addActionListener(new java.awt.event.ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     interDiag = new IntermediateDialog(StartFrame.this);
-                    win_checkpoint[0] = new VisibilityValidator(interDiag);
                     interDiag.setSize(300, 200);
 
                     // may need listener to watch this move.
                     interDiag.setLocation(getLocationOnScreen());
                     interDiag.pack();
-                    event_checkpoint[0].clear();
                     interDiag.setVisible(true);
                 }
             });
             Panel pan = new Panel();
             pan.add(but);
             add(pan);
+            setVisible(true);
             robot_button[0] = but;
-            addWindowListener(new WindowAdapter() {
-                public void windowClosing(WindowEvent e) {
-                    setVisible(false);
-                    dispose();
-                }
-            });
         }
     }
 
@@ -231,9 +191,7 @@ public class NestedModelessDialogTest {
             but.addActionListener(new java.awt.event.ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     txtDiag = new TextDialog(m_parent);
-                    win_checkpoint[1] = new VisibilityValidator(txtDiag);
                     txtDiag.setSize(300, 100);
-                    event_checkpoint[1].clear();
                     txtDiag.setVisible(true);
                 }
             });
@@ -241,12 +199,6 @@ public class NestedModelessDialogTest {
             pan.add(but);
             add(pan);
             pack();
-            addWindowListener(new WindowAdapter() {
-                public void windowClosing(WindowEvent e) {
-                    setVisible(false);
-                    dispose();
-                }
-            });
 
             // The robot needs to know about us, so set global
             robot_button[1] = but;
@@ -263,12 +215,6 @@ public class NestedModelessDialogTest {
             pan.add(txt);
             add(pan);
             pack();
-            addWindowListener(new WindowAdapter() {
-                public void windowClosing(WindowEvent e) {
-                    setVisible(false);
-                    dispose();
-                }
-            });
 
             // The robot needs to know about us, so set global
             robot_text = txt;
