@@ -35,7 +35,7 @@ import java.util.Map;
  * Some databases do not allow multiple client info properties to be set
  * atomically.  For those databases, it is possible that some of the client
  * info properties had been set even though the {@code Connection.setClientInfo}
- * method threw an exception.  An application can use the {@code getFailedProperties }
+ * method threw an exception.  An application can use the {@code getFailedProperties}
  * method to retrieve a list of client info properties that were not set.  The
  * properties are identified by passing a
  * {@code Map<String,ClientInfoStatus>} to

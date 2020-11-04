@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,7 +122,7 @@ public class SQLNonTransientConnectionException extends java.sql.SQLNonTransient
     }
 
     /**
-     * Constructs a {@code SQLTransientException} object
+     * Constructs a {@code SQLNonTransientConnectionException} object
      * with a given
      * {@code reason} and  {@code cause}.
      * The {@code SQLState} is  initialized to {@code null}

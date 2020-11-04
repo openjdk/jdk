@@ -278,7 +278,7 @@ public class BatchUpdateException extends SQLException {
    * </p>
    * @param reason a description of the exception
    * @param updateCounts an array of {@code int}, with each element
-   *indicating the update count, {@code Statement.SUCCESS_NO_INFO} or
+   * indicating the update count, {@code Statement.SUCCESS_NO_INFO} or
    * {@code Statement.EXECUTE_FAILED} for each SQL command in
    * the batch for JDBC drivers that continue processing
    * after a command failure; an update count or
