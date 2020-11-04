@@ -206,19 +206,19 @@ bool PhaseMacroExpand::generate_partial_inlining_block(Node** ctrl, MergeMemNode
   Node* is_lt64bytes_tp = NULL;
   Node* is_lt64bytes_fp = NULL;
 
-  int con_len = -1;
+  int const_len = -1;
   const TypeInt* lty = NULL;
   uint shift  = exact_log2(type2aelembytes(type));
   if (length->Opcode() == Op_ConvI2L && (lty = _igvn.type(length->in(1))->isa_int()) && lty->is_con()) {
-    con_len = lty->get_con() << shift;
+    const_len = lty->get_con() << shift;
   } else if ((lty = _igvn.type(length)->isa_int()) && lty->is_con()) {
-    con_len = lty->get_con() << shift;
+    const_len = lty->get_con() << shift;
   }
 
   // Return if copy length is greater than partial inline size limit or
   // target does not supports masked load/stores.
-  int lane_count = ArrayCopyNode::get_partial_inline_vector_lane_count(type, con_len);
-  if ( con_len > ArrayCopyPartialInlineSize ||
+  int lane_count = ArrayCopyNode::get_partial_inline_vector_lane_count(type, const_len);
+  if ( const_len > ArrayCopyPartialInlineSize ||
       !Matcher::match_rule_supported_vector(Op_LoadVectorMasked, lane_count, type)  ||
       !Matcher::match_rule_supported_vector(Op_StoreVectorMasked, lane_count, type) ||
       !Matcher::match_rule_supported_vector(Op_VectorMaskGen, lane_count, type)) {
@@ -227,7 +227,7 @@ bool PhaseMacroExpand::generate_partial_inlining_block(Node** ctrl, MergeMemNode
 
   Node* inline_block = NULL;
   // Emit length comparison check for non-constant length.
-  if (con_len < 0) {
+  if (const_len < 0) {
     Node* copy_bytes = new LShiftXNode(length, intcon(shift));
     transform_later(copy_bytes);
 
@@ -264,7 +264,7 @@ bool PhaseMacroExpand::generate_partial_inlining_block(Node** ctrl, MergeMemNode
   transform_later(masked_store);
 
   // Stub region is created for non-constant copy length.
-  if (con_len < 0) {
+  if (const_len < 0) {
     // Region containing stub calling node.
     Node* stub_block = is_lt64bytes_fp;
 
@@ -1211,7 +1211,7 @@ bool PhaseMacroExpand::generate_unchecked_arraycopy(Node** ctrl, MergeMemNode** 
   RegionNode* exit_block = NULL;
   bool gen_stub_call = true;
   if (ArrayCopyPartialInlineSize > 0 && is_subword_type(basic_elem_type) &&
-    Matcher::vector_width_in_bytes(basic_elem_type) >= 32) {
+    Matcher::vector_width_in_bytes(basic_elem_type) >= 16) {
     gen_stub_call = generate_partial_inlining_block(ctrl, mem, adr_type, &exit_block, &result_memory,
                                                     copy_length, src_start, dest_start, basic_elem_type);
   }

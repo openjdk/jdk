@@ -1406,16 +1406,18 @@ void VM_Version::get_processor_features() {
          ArrayCopyPartialInlineSize != 0 &&
          ArrayCopyPartialInlineSize != 32 &&
          ArrayCopyPartialInlineSize != 64)) {
-      int pi_size = 0;
-      if (MaxVectorSize > 32 && AVX3Threshold == 0) {
-        pi_size = 64;
+      int inline_size = 0;
+      if (MaxVectorSize >= 64 && AVX3Threshold == 0) {
+        inline_size = 64;
       } else if (MaxVectorSize >= 32) {
-        pi_size = 32;
+        inline_size = 32;
+      } else if (MaxVectorSize >= 16) {
+        inline_size = 16;
       }
       if(!FLAG_IS_DEFAULT(ArrayCopyPartialInlineSize)) {
-        warning("Setting ArrayCopyPartialInlineSize as %d", pi_size);
+        warning("Setting ArrayCopyPartialInlineSize as %d", inline_size);
       }
-      ArrayCopyPartialInlineSize = pi_size;
+      ArrayCopyPartialInlineSize = inline_size;
     }
 
     if (ArrayCopyPartialInlineSize > MaxVectorSize) {

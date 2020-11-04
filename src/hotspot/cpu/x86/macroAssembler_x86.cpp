@@ -8052,8 +8052,8 @@ void MacroAssembler::byte_array_inflate(Register src, Register dst, Register len
 }
 
 
-void MacroAssembler::evmovdqu(BasicType typ, KRegister kmask, XMMRegister dst, Address src, int vector_len) {
-  switch(typ) {
+void MacroAssembler::evmovdqu(BasicType type, KRegister kmask, XMMRegister dst, Address src, int vector_len) {
+  switch(type) {
     case T_BYTE:
     case T_BOOLEAN:
       evmovdqub(dst, kmask, src, false, vector_len);
@@ -8071,13 +8071,13 @@ void MacroAssembler::evmovdqu(BasicType typ, KRegister kmask, XMMRegister dst, A
       evmovdquq(dst, kmask, src, false, vector_len);
       break;
     default:
-      assert(false,"Should not reach here.");
+      fatal("Unexpected type argument %s", type2name(type));
       break;
   }
 }
 
-void MacroAssembler::evmovdqu(BasicType typ, KRegister kmask, Address dst, XMMRegister src, int vector_len) {
-  switch(typ) {
+void MacroAssembler::evmovdqu(BasicType type, KRegister kmask, Address dst, XMMRegister src, int vector_len) {
+  switch(type) {
     case T_BYTE:
     case T_BOOLEAN:
       evmovdqub(dst, kmask, src, true, vector_len);
@@ -8095,7 +8095,7 @@ void MacroAssembler::evmovdqu(BasicType typ, KRegister kmask, Address dst, XMMRe
       evmovdquq(dst, kmask, src, true, vector_len);
       break;
     default:
-      assert(false,"Should not reach here.");
+      fatal("Unexpected type argument %s", type2name(type));
       break;
   }
 }
