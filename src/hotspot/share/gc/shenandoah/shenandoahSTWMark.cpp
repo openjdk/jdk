@@ -90,9 +90,6 @@ void ShenandoahSTWMark::mark() {
 
   heap()->mark_complete_marking_context();
 
-  // Weak reference processing
-  heap()->ref_processor()->process_references(heap()->workers(), false /*concurrent*/);
-
   assert(task_queues()->is_empty(), "Should be empty");
   TASKQUEUE_STATS_ONLY(task_queues()->print_taskqueue_stats());
   TASKQUEUE_STATS_ONLY(task_queues()->reset_taskqueue_stats());
