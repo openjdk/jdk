@@ -29,7 +29,9 @@
 #include "jvmtifiles/jvmti.h"
 #include "oops/oop.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/symbol.hpp"
 #include "runtime/os.hpp"
+#include "utilities/vmEnums.hpp"
 
 class RecordComponent;
 
@@ -319,6 +321,8 @@ class java_lang_Class : AllStatic {
   static void set_signers(oop java_class, objArrayOop signers);
   static oop  class_data(oop java_class);
   static void set_class_data(oop java_class, oop classData);
+
+  static int component_mirror_offset() { return _component_mirror_offset; }
 
   static oop class_loader(oop java_class);
   static void set_module(oop java_class, oop module);
@@ -1700,8 +1704,8 @@ class java_lang_InternalError : AllStatic {
 class InjectedField {
  public:
   const SystemDictionary::WKID klass_id;
-  const vmSymbols::SID name_index;
-  const vmSymbols::SID signature_index;
+  const vmSymbolID name_index;
+  const vmSymbolID signature_index;
   const bool           may_be_java;
 
 
@@ -1712,8 +1716,8 @@ class InjectedField {
   int compute_offset();
 
   // Find the Symbol for this index
-  static Symbol* lookup_symbol(int symbol_index) {
-    return vmSymbols::symbol_at((vmSymbols::SID)symbol_index);
+  static Symbol* lookup_symbol(vmSymbolID symbol_index) {
+    return Symbol::vm_symbol_at(symbol_index);
   }
 };
 

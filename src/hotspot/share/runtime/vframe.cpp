@@ -82,6 +82,11 @@ vframe* vframe::new_vframe(const frame* f, const RegisterMap* reg_map, JavaThrea
     }
   }
 
+  // Entry frame
+  if (f->is_entry_frame()) {
+    return new entryVFrame(f, reg_map, thread);
+  }
+
   // External frame
   return new externalVFrame(f, reg_map, thread);
 }

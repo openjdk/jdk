@@ -25,13 +25,14 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "classfile/classFileStream.hpp"
+#include "classfile/classListParser.hpp"
+#include "classfile/classListWriter.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "classfile/javaClasses.inline.hpp"
-#include "classfile/lambdaFormInvokers.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/packageEntry.hpp"
@@ -3760,7 +3761,7 @@ JVM_ENTRY(void, JVM_RegisterLambdaProxyClassForArchiving(JNIEnv* env,
                                               jclass lambdaProxyClass))
   JVMWrapper("JVM_RegisterLambdaProxyClassForArchiving");
 #if INCLUDE_CDS
-  if (!DynamicDumpSharedSpaces) {
+  if (!Arguments::is_dumping_archive()) {
     return;
   }
 
@@ -3795,7 +3796,7 @@ JVM_ENTRY(void, JVM_RegisterLambdaProxyClassForArchiving(JNIEnv* env,
   Symbol* instantiated_method_type = java_lang_invoke_MethodType::as_signature(instantiated_method_type_oop(), true);
 
   SystemDictionaryShared::add_lambda_proxy_class(caller_ik, lambda_ik, invoked_name, invoked_type,
-                                                 method_type, m, instantiated_method_type);
+                                                 method_type, m, instantiated_method_type, THREAD);
 #endif // INCLUDE_CDS
 JVM_END
 
@@ -3809,9 +3810,6 @@ JVM_ENTRY(jclass, JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env,
                                                         jboolean initialize))
   JVMWrapper("JVM_LookupLambdaProxyClassFromArchive");
 #if INCLUDE_CDS
-  if (!DynamicArchive::is_mapped()) {
-    return NULL;
-  }
 
   if (invokedName == NULL || invokedType == NULL || methodType == NULL ||
       implMethodMember == NULL || instantiatedMethodType == NULL) {
@@ -3852,9 +3850,9 @@ JVM_ENTRY(jclass, JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env,
 #endif // INCLUDE_CDS
 JVM_END
 
-JVM_ENTRY(jboolean, JVM_IsDynamicDumpingEnabled(JNIEnv* env))
-    JVMWrapper("JVM_IsDynamicDumpingEnable");
-    return DynamicDumpSharedSpaces;
+JVM_ENTRY(jboolean, JVM_IsCDSDumpingEnabled(JNIEnv* env))
+    JVMWrapper("JVM_IsCDSDumpingEnabled");
+    return Arguments::is_dumping_archive();
 JVM_END
 
 JVM_ENTRY(jboolean, JVM_IsSharingEnabled(JNIEnv* env))
@@ -3888,7 +3886,7 @@ JVM_END
 JVM_ENTRY(jboolean, JVM_IsDumpingClassList(JNIEnv *env))
   JVMWrapper("JVM_IsDumpingClassList");
 #if INCLUDE_CDS
-  return DumpLoadedClassList != NULL && classlist_file != NULL && classlist_file->is_open();
+  return ClassListWriter::is_enabled();
 #else
   return false;
 #endif // INCLUDE_CDS
@@ -3897,12 +3895,13 @@ JVM_END
 JVM_ENTRY(void, JVM_LogLambdaFormInvoker(JNIEnv *env, jstring line))
   JVMWrapper("JVM_LogLambdaFormInvoker");
 #if INCLUDE_CDS
-  assert(DumpLoadedClassList != NULL && classlist_file->is_open(), "Should be set and open");
+  assert(ClassListWriter::is_enabled(), "Should be set and open");
   if (line != NULL) {
     ResourceMark rm(THREAD);
     Handle h_line (THREAD, JNIHandles::resolve_non_null(line));
     char* c_line = java_lang_String::as_utf8_string(h_line());
-    classlist_file->print_cr("%s %s", LambdaFormInvokers::lambda_form_invoker_tag(), c_line);
+    ClassListWriter w;
+    w.stream()->print_cr("%s %s", LAMBDA_FORM_TAG, c_line);
   }
 #endif // INCLUDE_CDS
 JVM_END

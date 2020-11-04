@@ -303,7 +303,7 @@ static jint set_flag(AttachOperation* op, outputStream* out) {
 
   FormatBuffer<80> err_msg("%s", "");
 
-  int ret = WriteableFlags::set_flag(op->arg(0), op->arg(1), JVMFlag::ATTACH_ON_DEMAND, err_msg);
+  int ret = WriteableFlags::set_flag(op->arg(0), op->arg(1), JVMFlagOrigin::ATTACH_ON_DEMAND, err_msg);
   if (ret != JVMFlag::SUCCESS) {
     if (ret == JVMFlag::NON_WRITABLE) {
       // if the flag is not manageable try to change it through

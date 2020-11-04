@@ -88,7 +88,7 @@ public class TestModuleDirs extends JavadocTester {
     public void testModuleDirs(Path base) throws IOException {
         Path src = base.resolve("src");
         new ModuleBuilder(tb, "ma")
-                .classes("package pa; public class A {}")
+                .classes("package pa; @Deprecated public class A {}")
                 .exports("pa")
                 .write(src);
         new ModuleBuilder(tb, "mb")

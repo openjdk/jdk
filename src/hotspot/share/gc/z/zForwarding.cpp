@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,32 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/z/zForwarding.inline.hpp"
-#include "gc/z/zPage.inline.hpp"
-#include "memory/allocation.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/powerOfTwo.hpp"
-
-ZForwarding* ZForwarding::create(ZPage* page) {
-  // Allocate table for linear probing. The size of the table must be
-  // a power of two to allow for quick and inexpensive indexing/masking.
-  // The table is sized to have a load factor of 50%, i.e. sized to have
-  // double the number of entries actually inserted.
-  assert(page->live_objects() > 0, "Invalid value");
-  const size_t nentries = round_up_power_of_2(page->live_objects() * 2);
-  return ::new (AttachedArray::alloc(nentries)) ZForwarding(page, nentries);
-}
-
-void ZForwarding::destroy(ZForwarding* forwarding) {
-  AttachedArray::free(forwarding);
-}
-
-ZForwarding::ZForwarding(ZPage* page, size_t nentries) :
-    _virtual(page->virtual_memory()),
-    _object_alignment_shift(page->object_alignment_shift()),
-    _entries(nentries),
-    _page(page),
-    _refcount(1),
-    _pinned(false) {}
 
 void ZForwarding::verify() const {
   guarantee(_refcount > 0, "Invalid refcount");

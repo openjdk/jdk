@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "ci/ciClassList.hpp"
 #include "ci/ciObject.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/vmEnums.hpp"
 
 // ciObjectFactory
 //
@@ -104,7 +105,7 @@ public:
   ciSymbol* get_symbol(Symbol* key);
 
   // Get the ciSymbol corresponding to one of the vmSymbols.
-  static ciSymbol* vm_symbol_at(int index);
+  static ciSymbol* vm_symbol_at(vmSymbolID index);
 
   // Get the ciMethod representing an unloaded/unfound method.
   ciMethod* get_unloaded_method(ciInstanceKlass* holder,

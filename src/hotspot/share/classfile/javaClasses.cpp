@@ -85,7 +85,7 @@
 #endif
 
 #define DECLARE_INJECTED_FIELD(klass, name, signature, may_be_java)           \
-  { SystemDictionary::WK_KLASS_ENUM_NAME(klass), vmSymbols::VM_SYMBOL_ENUM_NAME(name##_name), vmSymbols::VM_SYMBOL_ENUM_NAME(signature), may_be_java },
+  { SystemDictionary::WK_KLASS_ENUM_NAME(klass), VM_SYMBOL_ENUM_NAME(name##_name), VM_SYMBOL_ENUM_NAME(signature), may_be_java },
 
 InjectedField JavaClasses::_injected_fields[] = {
   ALL_INJECTED_FIELDS(DECLARE_INJECTED_FIELD)
@@ -113,8 +113,8 @@ int JavaClasses::compute_injected_offset(InjectedFieldID id) {
 InjectedField* JavaClasses::get_injected(Symbol* class_name, int* field_count) {
   *field_count = 0;
 
-  vmSymbols::SID sid = vmSymbols::find_sid(class_name);
-  if (sid == vmSymbols::NO_SID) {
+  vmSymbolID sid = vmSymbols::find_sid(class_name);
+  if (sid == vmSymbolID::NO_SID) {
     // Only well known classes can inject fields
     return NULL;
   }
@@ -123,7 +123,7 @@ InjectedField* JavaClasses::get_injected(Symbol* class_name, int* field_count) {
   int start = -1;
 
 #define LOOKUP_INJECTED_FIELD(klass, name, signature, may_be_java) \
-  if (sid == vmSymbols::VM_SYMBOL_ENUM_NAME(klass)) {              \
+  if (sid == VM_SYMBOL_ENUM_NAME(klass)) {                         \
     count++;                                                       \
     if (start == -1) start = klass##_##name##_enum;                \
   }

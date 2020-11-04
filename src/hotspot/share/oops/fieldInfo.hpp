@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,9 @@
 #define SHARE_OOPS_FIELDINFO_HPP
 
 #include "oops/constantPool.hpp"
+#include "oops/symbol.hpp"
 #include "oops/typeArrayOop.hpp"
-#include "classfile/vmSymbols.hpp"
+#include "utilities/vmEnums.hpp"
 
 // This class represents the field information contained in the fields
 // array of an InstanceKlass.  Currently it's laid on top an array of
@@ -250,7 +251,7 @@ class FieldInfo {
 
   Symbol* lookup_symbol(int symbol_index) const {
     assert(is_internal(), "only internal fields");
-    return vmSymbols::symbol_at((vmSymbols::SID)symbol_index);
+    return Symbol::vm_symbol_at(static_cast<vmSymbolID>(symbol_index));
   }
 };
 

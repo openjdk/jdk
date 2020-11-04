@@ -30,6 +30,7 @@ import java.util.LinkedList;
 import sun.net.NetProperties;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -115,7 +116,7 @@ class KeepAliveStreamCleaner
                     long before = System.currentTimeMillis();
                     long timeout = TIMEOUT;
                     while ((kace = poll()) == null) {
-                        waiter.wait(timeout);
+                        waiter.await(timeout, TimeUnit.MILLISECONDS);
 
                         long after = System.currentTimeMillis();
                         long elapsed = after - before;

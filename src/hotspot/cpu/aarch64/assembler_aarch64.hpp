@@ -217,7 +217,7 @@ public:
 
   static void patch(address a, int msb, int lsb, uint64_t val) {
     int nbits = msb - lsb + 1;
-    guarantee(val < (1U << nbits), "Field too big for insn");
+    guarantee(val < (1ULL << nbits), "Field too big for insn");
     assert_cond(msb >= lsb);
     unsigned mask = (1U << nbits) - 1;
     val <<= lsb;
@@ -445,8 +445,8 @@ class Address {
   }
 
   Register base() const {
-    guarantee((_mode == base_plus_offset | _mode == base_plus_offset_reg
-               | _mode == post | _mode == post_reg),
+    guarantee((_mode == base_plus_offset || _mode == base_plus_offset_reg
+               || _mode == post || _mode == post_reg),
               "wrong mode");
     return _base;
   }
@@ -2547,6 +2547,40 @@ public:
   }
 
   INSN(sha512su0, 0b1100111011000000100000);
+
+#undef INSN
+
+#define INSN(NAME, opc)                                                                                   \
+  void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm, FloatRegister Va) { \
+    starti;                                                                                               \
+    assert(T == T16B, "arrangement must be T16B");                                                        \
+    f(0b11001110, 31, 24), f(opc, 23, 21), rf(Vm, 16), f(0b0, 15, 15), rf(Va, 10), rf(Vn, 5), rf(Vd, 0);  \
+  }
+
+  INSN(eor3, 0b000);
+  INSN(bcax, 0b001);
+
+#undef INSN
+
+#define INSN(NAME, opc)                                                                               \
+  void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm, unsigned imm) { \
+    starti;                                                                                           \
+    assert(T == T2D, "arrangement must be T2D");                                                      \
+    f(0b11001110, 31, 24), f(opc, 23, 21), rf(Vm, 16), f(imm, 15, 10), rf(Vn, 5), rf(Vd, 0);          \
+  }
+
+  INSN(xar, 0b100);
+
+#undef INSN
+
+#define INSN(NAME, opc)                                                                           \
+  void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm) {           \
+    starti;                                                                                       \
+    assert(T == T2D, "arrangement must be T2D");                                                  \
+    f(0b11001110, 31, 24), f(opc, 23, 21), rf(Vm, 16), f(0b100011, 15, 10), rf(Vn, 5), rf(Vd, 0); \
+  }
+
+  INSN(rax1, 0b011);
 
 #undef INSN
 

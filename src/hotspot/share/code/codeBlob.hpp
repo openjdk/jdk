@@ -110,9 +110,11 @@ protected:
 
   ImmutableOopMapSet* _oop_maps;                 // OopMap for this CodeBlob
   bool                _caller_must_gc_arguments;
-  CodeStrings         _strings;
+
   const char*         _name;
   S390_ONLY(int       _ctable_offset;)
+
+  NOT_PRODUCT(CodeStrings _strings;)
 
   CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, int frame_complete_offset, int frame_size, ImmutableOopMapSet* oop_maps, bool caller_must_gc_arguments);
   CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, CodeBuffer* cb, int frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments);
@@ -231,29 +233,20 @@ public:
   void dump_for_addr(address addr, outputStream* st, bool verbose) const;
   void print_code();
 
-  bool has_block_comment(address block_begin) const {
-    intptr_t offset = (intptr_t)(block_begin - code_begin());
-    return _strings.has_block_comment(offset);
-  }
   // Print the comment associated with offset on stream, if there is one
   virtual void print_block_comment(outputStream* stream, address block_begin) const {
+  #ifndef PRODUCT
     intptr_t offset = (intptr_t)(block_begin - code_begin());
     _strings.print_block_comment(stream, offset);
+  #endif
   }
 
-  // Transfer ownership of comments to this CodeBlob
+#ifndef PRODUCT
   void set_strings(CodeStrings& strings) {
     assert(!is_aot(), "invalid on aot");
-    _strings.assign(strings);
+    _strings.copy(strings);
   }
-
-  static ByteSize name_field_offset() {
-    return byte_offset_of(CodeBlob, _name);
-  }
-
-  static ByteSize oop_maps_field_offset() {
-    return byte_offset_of(CodeBlob, _oop_maps);
-  }
+#endif
 };
 
 class CodeBlobLayout : public StackObj {

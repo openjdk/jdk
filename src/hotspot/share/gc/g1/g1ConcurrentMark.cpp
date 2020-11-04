@@ -594,15 +594,19 @@ private:
       HeapWord* const end = r->end();
 
       while (cur < end) {
+        // Abort iteration if necessary.
+        if (_cm != NULL) {
+          _cm->do_yield_check();
+          if (_cm->has_aborted()) {
+            return true;
+          }
+        }
+
         MemRegion mr(cur, MIN2(cur + chunk_size_in_words, end));
         _bitmap->clear_range(mr);
 
         cur += chunk_size_in_words;
 
-        // Abort iteration if after yielding the marking has been aborted.
-        if (_cm != NULL && _cm->do_yield_check() && _cm->has_aborted()) {
-          return true;
-        }
         // Repeat the asserts from before the start of the closure. We will do them
         // as asserts here to minimize their overhead on the product. However, we
         // will have them as guarantees at the beginning / end of the bitmap
