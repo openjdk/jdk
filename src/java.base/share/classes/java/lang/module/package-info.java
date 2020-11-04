@@ -147,7 +147,7 @@
  * <p> Otherwise, resolution succeeds, and the result of resolution is the
  * readability graph.
  *
- * <h3> Root modules </h3>
+ * <h3><a id="root-modules"></a> Root modules </h3>
  *
  * <p> The set of root modules at compile-time is usually the set of modules
  * being compiled. At run-time, the set of root modules is usually the

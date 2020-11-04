@@ -37,8 +37,6 @@ public:
 
   virtual bool should_start_gc() const;
 
-  virtual bool should_process_references();
-
   virtual bool should_unload_classes();
 
   virtual const char* name()     { return "Aggressive"; }

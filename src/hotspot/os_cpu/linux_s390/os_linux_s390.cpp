@@ -227,7 +227,7 @@ JVM_handle_linux_signal(int sig,
   // avoid unnecessary crash when libjsig is not preloaded, try handle signals
   // that do not require siginfo/ucontext first.
 
-  if (sig == SIGPIPE) {
+  if (sig == SIGPIPE || sig == SIGXFSZ) {
     if (PosixSignals::chained_handler(sig, info, ucVoid)) {
       return true;
     } else {
