@@ -2302,10 +2302,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           Node* phi = mms.memory();
           mms.set_memory(phase->transform(phi));
         }
-        if (igvn) { // Unhook.
-          igvn->_worklist.remove(hook);
-        }
-        hook->destruct();
+        hook->destruct(igvn);
         // Replace self with the result.
         return result;
       }

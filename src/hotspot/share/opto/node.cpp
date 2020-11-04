@@ -581,8 +581,11 @@ void Node::setup_is_top() {
 
 //------------------------------~Node------------------------------------------
 // Fancy destructor; eagerly attempt to reclaim Node numberings and storage
-void Node::destruct() {
-  Compile* compile = Compile::current();
+void Node::destruct(PhaseValues* phase) {
+  Compile* compile = (phase != NULL) ? phase->C : Compile::current();
+  if (phase != NULL && phase->is_IterGVN()) {
+    phase->is_IterGVN()->_worklist.remove(this);
+  }
   // If this is the most recently created node, reclaim its index. Otherwise,
   // record the node as dead to keep liveness information accurate.
   if ((uint)_idx+1 == compile->unique()) {

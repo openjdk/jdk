@@ -749,7 +749,7 @@ ConNode* PhaseValues::uncached_makecon(const Type *t) {
       loc->clear(); // do not put debug info on constants
     }
   } else {
-    x->destruct();              // Hit, destroy duplicate constant
+    x->destruct(this);          // Hit, destroy duplicate constant
     x = k;                      // use existing constant
   }
   return x;
@@ -1472,8 +1472,7 @@ void PhaseIterGVN::subsume_node( Node *old, Node *nn ) {
     }
   }
 #endif
-  _worklist.remove(temp);   // this can be necessary
-  temp->destruct();         // reuse the _idx of this little guy
+  temp->destruct(this);     // reuse the _idx of this little guy
 }
 
 //------------------------------add_users_to_worklist--------------------------

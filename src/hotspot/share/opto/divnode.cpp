@@ -326,11 +326,7 @@ static Node* long_by_long_mulhi(PhaseGVN* phase, Node* dividend, jlong magic_con
   Node* temp2 = phase->transform(new RShiftLNode(w1, phase->intcon(N / 2)));
 
   // Remove the bogus extra edges used to keep things alive
-  PhaseIterGVN* igvn = phase->is_IterGVN();
-  if (igvn != NULL) {
-    igvn->_worklist.remove(hook);
-  }
-  hook->destruct();
+  hook->destruct(phase);
 
   return new AddLNode(temp1, temp2);
 }
@@ -909,10 +905,7 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // cmov2 is now the mod
 
       // Now remove the bogus extra edges used to keep things alive
-      if (can_reshape) {
-        phase->is_IterGVN()->_worklist.remove(hook);
-      }
-      hook->destruct();
+      hook->destruct(phase);
       return cmov2;
     }
   }
@@ -964,10 +957,7 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Now remove the bogus extra edges used to keep things alive
-  if (can_reshape) {
-    phase->is_IterGVN()->_worklist.remove(hook);
-  }
-  hook->destruct();
+  hook->destruct(phase);
 
   // return the value
   return result;
@@ -1080,10 +1070,7 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // cmov2 is now the mod
 
       // Now remove the bogus extra edges used to keep things alive
-      if (can_reshape) {
-        phase->is_IterGVN()->_worklist.remove(hook);
-      }
-      hook->destruct();
+      hook->destruct(phase);
       return cmov2;
     }
   }
@@ -1135,10 +1122,7 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Now remove the bogus extra edges used to keep things alive
-  if (can_reshape) {
-    phase->is_IterGVN()->_worklist.remove(hook);
-  }
-  hook->destruct();
+  hook->destruct(phase);
 
   // return the value
   return result;

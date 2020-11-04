@@ -2651,7 +2651,7 @@ void IdealLoopTree::split_fall_in( PhaseIdealLoop *phase, int fall_in_cnt ) {
       // with the CSE to avoid O(N^2) node blow-up.
       Node *p2 = igvn.hash_find_insert(p); // Look for a CSE
       if( p2 ) {                // Found CSE
-        p->destruct();          // Recover useless new node
+        p->destruct(&igvn);     // Recover useless new node
         p = p2;                 // Use old node
       } else {
         igvn.register_new_node_with_optimizer(p, old_phi);
