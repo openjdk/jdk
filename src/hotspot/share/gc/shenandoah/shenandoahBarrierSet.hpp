@@ -33,8 +33,19 @@
 class ShenandoahBarrierSetAssembler;
 
 class ShenandoahBarrierSet: public BarrierSet {
-private:
+public:
+  enum class AccessKind {
+    // Regular in-heap access on reference fields
+    NORMAL,
 
+    // Off-heap reference access
+    NATIVE,
+
+    // In-heap reference access on referent fields of j.l.r.Reference objects
+    WEAK
+  };
+
+private:
   ShenandoahHeap* _heap;
   BufferNode::Allocator _satb_mark_queue_buffer_allocator;
   ShenandoahSATBMarkQueueSet _satb_mark_queue_set;
@@ -53,8 +64,8 @@ public:
   }
 
   static bool need_load_reference_barrier(DecoratorSet decorators, BasicType type);
-  static bool use_load_reference_barrier_weak(DecoratorSet decorators, BasicType type);
   static bool need_keep_alive_barrier(DecoratorSet decorators, BasicType type);
+  static AccessKind access_kind(DecoratorSet decorators, BasicType type);
 
   void print_on(outputStream* st) const;
 

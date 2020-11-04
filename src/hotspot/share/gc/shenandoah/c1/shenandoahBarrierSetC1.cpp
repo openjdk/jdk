@@ -51,7 +51,9 @@ void ShenandoahLoadReferenceBarrierStub::emit_code(LIR_Assembler* ce) {
 
 ShenandoahBarrierSetC1::ShenandoahBarrierSetC1() :
   _pre_barrier_c1_runtime_code_blob(NULL),
-  _load_reference_barrier_rt_code_blob(NULL) {}
+  _load_reference_barrier_normal_rt_code_blob(NULL),
+  _load_reference_barrier_native_rt_code_blob(NULL),
+  _load_reference_barrier_weak_rt_code_blob(NULL) {}
 
 void ShenandoahBarrierSetC1::pre_barrier(LIRGenerator* gen, CodeEmitInfo* info, DecoratorSet decorators, LIR_Opr addr_opr, LIR_Opr pre_val) {
   // First we test whether marking is in progress.
@@ -107,15 +109,15 @@ void ShenandoahBarrierSetC1::pre_barrier(LIRGenerator* gen, CodeEmitInfo* info, 
   __ branch_destination(slow->continuation());
 }
 
-LIR_Opr ShenandoahBarrierSetC1::load_reference_barrier(LIRGenerator* gen, LIR_Opr obj, LIR_Opr addr, bool is_native) {
+LIR_Opr ShenandoahBarrierSetC1::load_reference_barrier(LIRGenerator* gen, LIR_Opr obj, LIR_Opr addr, ShenandoahBarrierSet::AccessKind kind) {
   if (ShenandoahLoadRefBarrier) {
-    return load_reference_barrier_impl(gen, obj, addr, is_native);
+    return load_reference_barrier_impl(gen, obj, addr, kind);
   } else {
     return obj;
   }
 }
 
-LIR_Opr ShenandoahBarrierSetC1::load_reference_barrier_impl(LIRGenerator* gen, LIR_Opr obj, LIR_Opr addr, bool is_native) {
+LIR_Opr ShenandoahBarrierSetC1::load_reference_barrier_impl(LIRGenerator* gen, LIR_Opr obj, LIR_Opr addr, ShenandoahBarrierSet::AccessKind kind) {
   assert(ShenandoahLoadRefBarrier, "Should be enabled");
 
   obj = ensure_in_register(gen, obj, T_OBJECT);
@@ -148,7 +150,7 @@ LIR_Opr ShenandoahBarrierSetC1::load_reference_barrier_impl(LIRGenerator* gen, L
   }
   __ cmp(lir_cond_notEqual, flag_val, LIR_OprFact::intConst(0));
 
-  CodeStub* slow = new ShenandoahLoadReferenceBarrierStub(obj, addr, result, tmp1, tmp2, is_native);
+  CodeStub* slow = new ShenandoahLoadReferenceBarrierStub(obj, addr, result, tmp1, tmp2, kind);
   __ branch(lir_cond_notEqual, slow);
   __ branch_destination(slow->continuation());
 
@@ -211,8 +213,8 @@ void ShenandoahBarrierSetC1::load_at_resolved(LIRAccess& access, LIR_Opr result)
   if (ShenandoahBarrierSet::need_load_reference_barrier(decorators, type)) {
     LIR_Opr tmp = gen->new_register(T_OBJECT);
     BarrierSetC1::load_at_resolved(access, tmp);
-    bool is_weak = ShenandoahBarrierSet::use_load_reference_barrier_weak(decorators, type);
-    tmp = load_reference_barrier(gen, tmp, access.resolved_addr(), is_weak);
+    ShenandoahBarrierSet::AccessKind kind = ShenandoahBarrierSet::access_kind(decorators, type);
+    tmp = load_reference_barrier(gen, tmp, access.resolved_addr(), kind);
     __ move(tmp, result);
   } else {
     BarrierSetC1::load_at_resolved(access, result);
@@ -251,14 +253,14 @@ class C1ShenandoahPreBarrierCodeGenClosure : public StubAssemblerCodeGenClosure 
 
 class C1ShenandoahLoadReferenceBarrierCodeGenClosure : public StubAssemblerCodeGenClosure {
 private:
-  const bool _is_weak;
+  const ShenandoahBarrierSet::AccessKind _kind;
 
 public:
-  C1ShenandoahLoadReferenceBarrierCodeGenClosure(bool is_weak) : _is_weak(is_weak) {}
+  C1ShenandoahLoadReferenceBarrierCodeGenClosure(ShenandoahBarrierSet::AccessKind kind) : _kind(kind) {}
 
   virtual OopMapSet* generate_code(StubAssembler* sasm) {
     ShenandoahBarrierSetAssembler* bs = (ShenandoahBarrierSetAssembler*)BarrierSet::barrier_set()->barrier_set_assembler();
-    bs->generate_c1_load_reference_barrier_runtime_stub(sasm, _is_weak);
+    bs->generate_c1_load_reference_barrier_runtime_stub(sasm, _kind);
     return NULL;
   }
 };
@@ -269,14 +271,19 @@ void ShenandoahBarrierSetC1::generate_c1_runtime_stubs(BufferBlob* buffer_blob) 
                                                               "shenandoah_pre_barrier_slow",
                                                               false, &pre_code_gen_cl);
   if (ShenandoahLoadRefBarrier) {
-    C1ShenandoahLoadReferenceBarrierCodeGenClosure lrb_code_gen_cl(false);
-    _load_reference_barrier_rt_code_blob = Runtime1::generate_blob(buffer_blob, -1,
+    C1ShenandoahLoadReferenceBarrierCodeGenClosure lrb_code_gen_cl(ShenandoahBarrierSet::AccessKind::NORMAL);
+    _load_reference_barrier_normal_rt_code_blob = Runtime1::generate_blob(buffer_blob, -1,
                                                                   "shenandoah_load_reference_barrier_slow",
                                                                   false, &lrb_code_gen_cl);
 
-    C1ShenandoahLoadReferenceBarrierCodeGenClosure lrb_weak_code_gen_cl(true);
+    C1ShenandoahLoadReferenceBarrierCodeGenClosure lrb_native_code_gen_cl(ShenandoahBarrierSet::AccessKind::NATIVE);
+    _load_reference_barrier_native_rt_code_blob = Runtime1::generate_blob(buffer_blob, -1,
+                                                                          "shenandoah_load_reference_barrier_native_slow",
+                                                                          false, &lrb_native_code_gen_cl);
+
+    C1ShenandoahLoadReferenceBarrierCodeGenClosure lrb_weak_code_gen_cl(ShenandoahBarrierSet::AccessKind::WEAK);
     _load_reference_barrier_weak_rt_code_blob = Runtime1::generate_blob(buffer_blob, -1,
-                                                                   "shenandoah_load_reference_barrier_weak_slow",
-                                                                   false, &lrb_weak_code_gen_cl);
+                                                                           "shenandoah_load_reference_barrier_weak_slow",
+                                                                           false, &lrb_weak_code_gen_cl);
   }
 }

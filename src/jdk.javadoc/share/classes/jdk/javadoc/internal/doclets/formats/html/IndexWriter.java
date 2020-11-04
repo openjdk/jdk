@@ -123,28 +123,19 @@ public class IndexWriter extends HtmlDocletWriter {
                 ? resources.getText("doclet.Window_Split_Index", displayFirstCharacters.get(0))
                 : resources.getText("doclet.Window_Single_Index");
         HtmlTree body = getBody(getWindowTitle(title));
-        Content headerContent = new ContentBuilder();
-        addTop(headerContent);
-        Navigation navBar = new Navigation(null, configuration, PageMode.INDEX, path);
-        navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(Navigation.Position.TOP));
         Content mainContent = new ContentBuilder();
         addLinksForIndexes(allFirstCharacters, mainContent);
         for (Character ch : displayFirstCharacters) {
             addContents(ch, mainIndex.getItems(ch), mainContent);
         }
         addLinksForIndexes(allFirstCharacters, mainContent);
-        HtmlTree footer = HtmlTree.FOOTER();
-        navBar.setUserFooter(getUserHeaderFooter(false));
-        footer.add(navBar.getContent(Navigation.Position.BOTTOM));
-        addBottom(footer);
         body.add(new BodyContents()
-                .setHeader(headerContent)
+                .setHeader(getHeader(PageMode.INDEX))
                 .addMainContent(HtmlTree.DIV(HtmlStyle.header,
                         HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
                                 contents.getContent("doclet.Index"))))
                 .addMainContent(mainContent)
-                .setFooter(footer));
+                .setFooter(getFooter()));
 
         String description = splitIndex ? "index: " + displayFirstCharacters.get(0) : "index";
         printHtmlDocument(null, description, body);
