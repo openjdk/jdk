@@ -294,7 +294,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   Register tmp1 = noreg, tmp2 = noreg;
   if (kind == ShenandoahBarrierSet::AccessKind::NORMAL) {
     // Test for object in cset
-    // Allocate tmp-reg.
+    // Allocate temporary registers
     for (int i = 0; i < 8; i++) {
       Register r = as_Register(i);
       if (r != rsp && r != rbp && r != dst && r != src.base() && r != src.index()) {
@@ -306,10 +306,13 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
         }
       }
     }
+    assert(tmp1 != noreg, "tmp1 allocated");
+    assert(tmp2 != noreg, "tmp2 allocated");
+    assert_different_registers(tmp1, tmp2, src.base(), src.index());
+    assert_different_registers(tmp1, tmp2, dst);
+
     __ push(tmp1);
     __ push(tmp2);
-    assert_different_registers(tmp1, src.base(), src.index());
-    assert_different_registers(tmp1, dst);
 
     // Optimized cset-test
     __ movptr(tmp1, dst);
