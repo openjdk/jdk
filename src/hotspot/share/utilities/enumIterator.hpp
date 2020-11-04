@@ -210,6 +210,10 @@ public:
   constexpr Iterator end() const {
     return Iterator(static_cast<T>(_end));
   }
+
+  constexpr size_t size() const {
+    return static_cast<size_t>(_end - _start); // _end is exclusive
+  }
 };
 
 #endif // SHARE_UTILITIES_ENUMITERATOR_HPP

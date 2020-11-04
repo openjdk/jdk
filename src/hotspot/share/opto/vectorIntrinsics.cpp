@@ -100,7 +100,10 @@ static bool is_vector_shuffle(ciKlass* klass) {
 }
 
 static bool is_klass_initialized(const TypeInstPtr* vec_klass) {
-  assert(vec_klass->const_oop()->as_instance()->java_lang_Class_klass(), "klass instance expected");
+  if (vec_klass->const_oop() == NULL) {
+    return false; // uninitialized or some kind of unsafe access
+  }
+  assert(vec_klass->const_oop()->as_instance()->java_lang_Class_klass() != NULL, "klass instance expected");
   ciInstanceKlass* klass =  vec_klass->const_oop()->as_instance()->java_lang_Class_klass()->as_instance_klass();
   return klass->is_initialized();
 }

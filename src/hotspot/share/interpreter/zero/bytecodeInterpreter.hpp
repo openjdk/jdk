@@ -26,7 +26,6 @@
 #define SHARE_INTERPRETER_BYTECODEINTERPRETER_HPP
 
 #include "memory/allocation.hpp"
-#include "oops/methodData.hpp"
 #include "oops/method.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/frame.hpp"
@@ -110,7 +109,6 @@ private:
     ConstantPoolCache*    _constants;     // constant pool cache
     Method*               _method;        // method being executed
     oop                   _mirror;        // mirror to klass containing method
-    DataLayout*           _mdx;           // compiler profiling data for current bytecode
     intptr_t*             _stack;         // expression stack
     messages              _msg;           // frame manager <-> interpreter message
     frame_manager_message _result;        // result to frame manager
@@ -188,8 +186,6 @@ inline intptr_t* locals() { return _locals; }
 
 inline ConstantPoolCache* constants() { return _constants; }
 inline Method* method() { return _method; }
-inline DataLayout* mdx() { return _mdx; }
-inline void set_mdx(DataLayout *new_mdx) { _mdx = new_mdx; }
 
 inline messages msg() { return _msg; }
 inline void set_msg(messages new_msg) { _msg = new_msg; }
