@@ -3662,23 +3662,23 @@ class StubGenerator: public StubCodeGenerator {
     // The amount of loop unrolling was determined by running a benchmark
     // that decodes a 20k block of Base64 data on a Power9 machine:
     // loop_unrolls = 1 :
-    // (min, avg, max) = (102011.070, 103007.654, 103385.576), stdev = 274.914
+    // (min, avg, max) = (108639.215, 110530.479, 110779.920), stdev = 568.437
     // loop_unrolls = 2 :
-    // (min, avg, max) = (105869.171, 106268.478, 106641.559), stdev = 240.833
+    // (min, avg, max) = (108259.029, 110174.202, 110399.642), stdev = 561.729
     // loop_unrolls = 4 :
-    // (min, avg, max) = (96981.562, 107306.291, 108382.325), stdev = 2720.824
+    // (min, avg, max) = (106514.175, 108373.110, 108514.786), stdev = 392.237
     // loop_unrolls = 8 :
-    // (min, avg, max) = (107385.501, 108192.973, 108580.890), stdev = 304.418
+    // (min, avg, max) = (106281.283, 108316.668, 108539.953), stdev = 553.938
     // loop_unrolls = 16 :
-    // (min, avg, max) = (108151.519, 108408.000, 108636.058), stdev = 139.843
+    // (min, avg, max) = (108580.768, 110631.161, 110766.237), stdev = 430.510
     //
-    // Comparing only the max values, there's a clear bend in the curve at 4.
-    // The performance goes up slightly at 8, but is essentially flat at
-    // 16.  Since it's desirable to have a loop_unrolls value on the
-    // smaller side to help have smaller buffers be able to take advantage
-    // of the decodeBlock intrinsic, the value 4 was chosen, which gives a
-    // minimum src buffer size of 64 bytes.
-    const unsigned loop_unrolls = 4;
+    // Comparing only the max values, there's no reason to go past
+    // loop_unrolls = 1.  Performance at loop_unrolls = 16 is similar but
+    // has the disadvantage of requiring a larger minimum block of data to
+    // work with.  A value of 1 gives a minimum of (16 + 12) = 28 bytes
+    // before intrinsic will decode any data.  See the reason for the +12
+    // in the following logic.
+    const unsigned loop_unrolls = 1;
 
     const unsigned vec_size = 16; // size of vector registers in bytes
     const unsigned block_size = vec_size * loop_unrolls;  // number of bytes to process in each pass through the loop
