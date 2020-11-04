@@ -101,15 +101,14 @@ button {
  */
 .clear {
     clear:both;
-    height:0px;
+    height:0;
     overflow:hidden;
 }
 .about-language {
     float:right;
-    padding:0 8px 8px 8px;
+    padding:0 21px 8px 8px;
     font-size:11px;
     margin-top:-9px;
-    text-align:right;
     height:2.9em;
 }
 .legal-copy {
@@ -801,7 +800,7 @@ table.striped > tbody > tr > th {
         font-size: 11px;
     }
     .about-language {
-        font-size: 10px;
+        padding-right: 16px;
     }
     ul.nav-list li,
     .sub-nav .nav-list-search {
@@ -833,6 +832,7 @@ table.striped > tbody > tr > th {
         font-size: 10px;
     }
     .about-language {
-        font-size: 9px;
+        font-size: 10px;
+        padding-right: 12px;
     }
 }
