@@ -1694,7 +1694,7 @@ void ShenandoahHeap::op_final_mark(ShenandoahConcurrentMark* mark) {
 
   if (!cancelled_gc()) {
     finish_mark(mark);
-    prepare_evacuation();
+    prepare_evacuation(true /*concurrent*/);
   } else {
     // If this cycle was updating references, we need to keep the has_forwarded_objects
     // flag on, for subsequent phases to deal with it.
@@ -1759,15 +1759,16 @@ void ShenandoahHeap::finish_mark(ShenandoahConcurrentMark* mark) {
   mark_complete_marking_context();
 }
 
-void ShenandoahHeap::prepare_evacuation() {
+void ShenandoahHeap::prepare_evacuation(bool concurrent) {
   if (ShenandoahVerify) {
     verifier()->verify_roots_no_forwarded();
   }
 
-  parallel_cleaning(false /* full gc*/);
+  parallel_cleaning(false /* full gc*/, concurrent);
 
   {
-    ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_update_region_states);
+    ShenandoahGCPhase phase(concurrent ? ShenandoahPhaseTimings::final_update_region_states :
+                                         ShenandoahPhaseTimings::degen_final_update_region_states);
     ShenandoahFinalMarkUpdateRegionStateClosure cl;
     parallel_heap_region_iterate(&cl);
 
@@ -1780,19 +1781,22 @@ void ShenandoahHeap::prepare_evacuation() {
   // Weaker one: new allocations would happen past update watermark, and so less work would
   // be needed for reference updates (would update the large filler instead).
   if (UseTLAB) {
-    ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_manage_labs);
+    ShenandoahGCPhase phase(concurrent ? ShenandoahPhaseTimings::final_manage_labs :
+                                         ShenandoahPhaseTimings::degen_final_manage_labs);
     tlabs_retire(false);
   }
 
   {
-    ShenandoahGCPhase phase(ShenandoahPhaseTimings::choose_cset);
+    ShenandoahGCPhase phase(concurrent ? ShenandoahPhaseTimings::choose_cset :
+                                         ShenandoahPhaseTimings::degen_choose_cset);
     ShenandoahHeapLocker locker(lock());
     _collection_set->clear();
     heuristics()->choose_collection_set(_collection_set);
   }
 
   {
-    ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_rebuild_freeset);
+    ShenandoahGCPhase phase(concurrent ? ShenandoahPhaseTimings::final_rebuild_freeset :
+                                         ShenandoahPhaseTimings::degen_final_rebuild_freeset);
     ShenandoahHeapLocker locker(lock());
     _free_set->rebuild();
   }
@@ -1805,7 +1809,6 @@ void ShenandoahHeap::prepare_evacuation() {
   // If collection set has candidates, start evacuation.
   // Otherwise, bypass the rest of the cycle.
   if (!collection_set()->is_empty()) {
-    ShenandoahGCPhase init_evac(ShenandoahPhaseTimings::init_evac);
 
     if (ShenandoahVerify) {
       verifier()->verify_before_evacuation();
@@ -1819,6 +1822,7 @@ void ShenandoahHeap::prepare_evacuation() {
       if (ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
         ShenandoahCodeRoots::arm_nmethods();
       }
+      ShenandoahGCPhase init_evac(ShenandoahPhaseTimings::init_evac);
       evacuate_and_update_roots();
     }
 
@@ -2158,7 +2162,7 @@ void ShenandoahHeap::op_degenerated(ShenandoahDegenPoint point) {
         ShenandoahConcurrentMark mark;
         finish_mark(&mark);
       }
-      prepare_evacuation();
+      prepare_evacuation(false /*concurrent*/);
 
       if (cancelled_gc()) {
         op_degenerated_fail();
@@ -2404,7 +2408,7 @@ void ShenandoahHeap::stw_unload_classes(bool full_gc) {
   {
     ShenandoahGCPhase phase(full_gc ?
                             ShenandoahPhaseTimings::full_gc_purge_class_unload :
-                            ShenandoahPhaseTimings::purge_class_unload);
+                            ShenandoahPhaseTimings::degen_purge_class_unload);
     bool purged_class = SystemDictionary::do_unloading(gc_timer());
 
     ShenandoahIsAliveSelector is_alive;
@@ -2416,7 +2420,7 @@ void ShenandoahHeap::stw_unload_classes(bool full_gc) {
   {
     ShenandoahGCPhase phase(full_gc ?
                             ShenandoahPhaseTimings::full_gc_purge_cldg :
-                            ShenandoahPhaseTimings::purge_cldg);
+                            ShenandoahPhaseTimings::degen_purge_cldg);
     ClassLoaderDataGraph::purge(/*at_safepoint*/true);
   }
   // Resize and verify metaspace
@@ -2428,14 +2432,16 @@ void ShenandoahHeap::stw_unload_classes(bool full_gc) {
 // so they should not have forwarded oops.
 // However, we do need to "null" dead oops in the roots, if can not be done
 // in concurrent cycles.
-void ShenandoahHeap::stw_process_weak_roots(bool full_gc) {
+void ShenandoahHeap::stw_process_weak_roots(bool full_gc, bool concurrent) {
   ShenandoahGCPhase root_phase(full_gc ?
                                ShenandoahPhaseTimings::full_gc_purge :
-                               ShenandoahPhaseTimings::purge);
+                               concurrent ? ShenandoahPhaseTimings::purge :
+                                            ShenandoahPhaseTimings::degen_purge);
   uint num_workers = _workers->active_workers();
   ShenandoahPhaseTimings::Phase timing_phase = full_gc ?
                                                ShenandoahPhaseTimings::full_gc_purge_weak_par :
-                                               ShenandoahPhaseTimings::purge_weak_par;
+                                               concurrent ? ShenandoahPhaseTimings::purge_weak_par :
+                                                            ShenandoahPhaseTimings::degen_purge_weak_par;
   ShenandoahGCPhase phase(timing_phase);
   ShenandoahGCWorkerPhase worker_phase(timing_phase);
 
@@ -2460,9 +2466,9 @@ void ShenandoahHeap::stw_process_weak_roots(bool full_gc) {
   }
 }
 
-void ShenandoahHeap::parallel_cleaning(bool full_gc) {
+void ShenandoahHeap::parallel_cleaning(bool full_gc, bool concurrent) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
-  stw_process_weak_roots(full_gc);
+  stw_process_weak_roots(full_gc, concurrent);
   if (!ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
     stw_unload_classes(full_gc);
   }
@@ -2687,7 +2693,9 @@ void ShenandoahHeap::op_init_updaterefs() {
   // make them parsable for update code to work correctly. Plus, we can compute new sizes
   // for future GCLABs here.
   if (UseTLAB) {
-    ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_update_refs_manage_gclabs);
+    ShenandoahGCPhase phase(is_degenerated_gc_in_progress() ?
+                             ShenandoahPhaseTimings::degen_init_update_refs_manage_gclabs :
+                             ShenandoahPhaseTimings::init_update_refs_manage_gclabs);
     gclabs_retire(ResizeTLAB);
   }
 
@@ -2740,10 +2748,13 @@ void ShenandoahHeap::op_final_updaterefs() {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at safepoint");
 
   finish_concurrent_unloading();
+  const bool  is_degen_gc = is_degenerated_gc_in_progress();
 
   // Check if there is left-over work, and finish it
   if (_update_refs_iterator.has_next()) {
-    ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_update_refs_finish_work);
+    ShenandoahGCPhase phase(is_degen_gc ?
+                            ShenandoahPhaseTimings::degen_final_update_refs_finish_work :
+                            ShenandoahPhaseTimings::final_update_refs_finish_work);
 
     // Finish updating references where we left off.
     clear_cancelled_gc();
@@ -2761,7 +2772,7 @@ void ShenandoahHeap::op_final_updaterefs() {
     verifier()->verify_roots_in_to_space_except(ShenandoahRootVerifier::ThreadRoots);
   }
 
-  if (is_degenerated_gc_in_progress()) {
+  if (is_degen_gc) {
     ShenandoahConcurrentMark::update_roots(ShenandoahPhaseTimings::degen_gc_update_roots);
   }
 
@@ -2771,7 +2782,9 @@ void ShenandoahHeap::op_final_updaterefs() {
   }
 
   {
-    ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_update_refs_update_region_states);
+    ShenandoahGCPhase phase(is_degen_gc ?
+                            ShenandoahPhaseTimings::degen_final_update_refs_update_region_states :
+                            ShenandoahPhaseTimings::final_update_refs_update_region_states);
     ShenandoahFinalUpdateRefsUpdateRegionStateClosure cl;
     parallel_heap_region_iterate(&cl);
 
@@ -2779,7 +2792,9 @@ void ShenandoahHeap::op_final_updaterefs() {
   }
 
   {
-    ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_update_refs_trash_cset);
+    ShenandoahGCPhase phase(is_degen_gc ?
+                            ShenandoahPhaseTimings::degen_final_update_refs_trash_cset :
+                            ShenandoahPhaseTimings::final_update_refs_trash_cset);
     trash_cset_regions();
   }
 
@@ -2795,7 +2810,9 @@ void ShenandoahHeap::op_final_updaterefs() {
   }
 
   {
-    ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_update_refs_rebuild_freeset);
+    ShenandoahGCPhase phase(is_degen_gc ?
+                            ShenandoahPhaseTimings::degen_final_update_refs_rebuild_freeset :
+                            ShenandoahPhaseTimings::final_update_refs_rebuild_freeset);
     ShenandoahHeapLocker locker(lock());
     _free_set->rebuild();
   }

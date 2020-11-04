@@ -441,7 +441,7 @@ private:
 
 // Helpers
   void finish_mark(ShenandoahConcurrentMark* mark);
-  void prepare_evacuation();
+  void prepare_evacuation(bool concurrent);
 
 // ---------- GC subsystems
 //
@@ -519,11 +519,11 @@ public:
   bool unload_classes() const;
 
   // Perform STW class unloading and weak root cleaning
-  void parallel_cleaning(bool full_gc);
+  void parallel_cleaning(bool full_gc, bool concurrent);
 
 private:
   void stw_unload_classes(bool full_gc);
-  void stw_process_weak_roots(bool full_gc);
+  void stw_process_weak_roots(bool full_gc, bool concurrent);
 
   // Prepare concurrent root processing
   void prepare_concurrent_roots();
