@@ -291,25 +291,31 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   __ testb(gc_state, ShenandoahHeap::HAS_FORWARDED);
   __ jcc(Assembler::zero, heap_stable);
 
-  Register tmp1 = noreg;
+  Register tmp1 = noreg, tmp2 = noreg;
   if (kind == ShenandoahBarrierSet::AccessKind::NORMAL) {
     // Test for object in cset
     // Allocate tmp-reg.
     for (int i = 0; i < 8; i++) {
       Register r = as_Register(i);
       if (r != rsp && r != rbp && r != dst && r != src.base() && r != src.index()) {
-        tmp1 = r;
-        break;
+        if (tmp1 == noreg) {
+          tmp1 = r;
+        } else {
+          tmp2 = r;
+          break;
+        }
       }
     }
     __ push(tmp1);
+    __ push(tmp2);
     assert_different_registers(tmp1, src.base(), src.index());
     assert_different_registers(tmp1, dst);
 
     // Optimized cset-test
     __ movptr(tmp1, dst);
     __ shrptr(tmp1, ShenandoahHeapRegion::region_size_bytes_shift_jint());
-    __ movbool(tmp1, Address(tmp1, (intptr_t) ShenandoahHeap::in_cset_fast_test_addr(), Address::times_1));
+    __ movptr(tmp2, (intptr_t) ShenandoahHeap::in_cset_fast_test_addr());
+    __ movbool(tmp1, Address(tmp1, tmp2, Address::times_1));
     __ testbool(tmp1);
     __ jcc(Assembler::zero, not_cset);
   }
@@ -393,6 +399,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   __ bind(not_cset);
 
   if  (kind == ShenandoahBarrierSet::AccessKind::NORMAL) {
+    __ pop(tmp2);
     __ pop(tmp1);
   }
 
