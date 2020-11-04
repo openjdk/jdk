@@ -38,6 +38,10 @@ class WeakProcessorPhases : AllStatic {
 public:
   class Iterator;
 
+  enum Phase {
+    // Implicit phase values for oopstorages.
+  };
+
   static const uint oopstorage_phase_start = 0;
   static const uint oopstorage_phase_count = OopStorageSet::weak_count;
   static const uint phase_count = oopstorage_phase_count;
@@ -45,7 +49,7 @@ public:
   static Iterator oopstorage_iterator();
 };
 
-typedef uint WeakProcessorPhase;
+typedef WeakProcessorPhases::Phase WeakProcessorPhase;
 
 class WeakProcessorPhases::Iterator {
   friend class WeakProcessorPhases;
