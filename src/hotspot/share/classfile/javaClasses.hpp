@@ -322,6 +322,8 @@ class java_lang_Class : AllStatic {
   static oop  class_data(oop java_class);
   static void set_class_data(oop java_class, oop classData);
 
+  static int component_mirror_offset() { return _component_mirror_offset; }
+
   static oop class_loader(oop java_class);
   static void set_module(oop java_class, oop module);
   static oop module(oop java_class);
@@ -902,8 +904,9 @@ class java_lang_ref_Reference: AllStatic {
 
  public:
   // Accessors
-  static inline oop referent(oop ref);
-  static inline void set_referent(oop ref, oop value);
+  static inline oop weak_referent_no_keepalive(oop ref);
+  static inline oop phantom_referent_no_keepalive(oop ref);
+  static inline oop unknown_referent_no_keepalive(oop ref);
   static inline void set_referent_raw(oop ref, oop value);
   static inline HeapWord* referent_addr_raw(oop ref);
   static inline oop next(oop ref);

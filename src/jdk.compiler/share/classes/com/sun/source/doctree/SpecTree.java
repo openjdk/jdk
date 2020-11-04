@@ -35,7 +35,7 @@ import java.util.List;
  *    &#064;spec uri label
  * </pre>
  *
- * @since 1.16
+ * @since 16
  */
 public interface SpecTree extends BlockTagTree, InlineTagTree {
     /**

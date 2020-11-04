@@ -51,6 +51,7 @@
   LOG_TAG(classhisto) \
   LOG_TAG(cleanup) \
   LOG_TAG(codecache) \
+  NOT_PRODUCT(LOG_TAG(codestrings)) \
   LOG_TAG(compaction) \
   LOG_TAG(compilation) \
   LOG_TAG(condy) \
@@ -76,9 +77,11 @@
   LOG_TAG(free) \
   LOG_TAG(freelist) \
   LOG_TAG(gc) \
+  NOT_PRODUCT(LOG_TAG(generate)) \
   LOG_TAG(handshake) \
   LOG_TAG(hashtables) \
   LOG_TAG(heap) \
+  NOT_PRODUCT(LOG_TAG(heapsampling)) \
   LOG_TAG(humongous) \
   LOG_TAG(ihop) \
   LOG_TAG(iklass) \

@@ -40,12 +40,12 @@ import org.testng.annotations.DataProvider;
 public class SegmentTestDataProvider {
 
     static VarHandle BYTE_HANDLE = MemoryLayouts.JAVA_BYTE.varHandle(byte.class);
-    static VarHandle CHAR_HANDLE = MemoryLayouts.JAVA_CHAR.varHandle(char.class);
-    static VarHandle SHORT_HANDLE = MemoryLayouts.JAVA_SHORT.varHandle(short.class);
-    static VarHandle INT_HANDLE = MemoryLayouts.JAVA_INT.varHandle(int.class);
-    static VarHandle LONG_HANDLE = MemoryLayouts.JAVA_LONG.varHandle(long.class);
-    static VarHandle FLOAT_HANDLE = MemoryLayouts.JAVA_FLOAT.varHandle(float.class);
-    static VarHandle DOUBLE_HANDLE = MemoryLayouts.JAVA_DOUBLE.varHandle(double.class);
+    static VarHandle CHAR_HANDLE = MemoryLayouts.JAVA_CHAR.withBitAlignment(8).varHandle(char.class);
+    static VarHandle SHORT_HANDLE = MemoryLayouts.JAVA_SHORT.withBitAlignment(8).varHandle(short.class);
+    static VarHandle INT_HANDLE = MemoryLayouts.JAVA_INT.withBitAlignment(8).varHandle(int.class);
+    static VarHandle LONG_HANDLE = MemoryLayouts.JAVA_LONG.withBitAlignment(8).varHandle(long.class);
+    static VarHandle FLOAT_HANDLE = MemoryLayouts.JAVA_FLOAT.withBitAlignment(8).varHandle(float.class);
+    static VarHandle DOUBLE_HANDLE = MemoryLayouts.JAVA_DOUBLE.withBitAlignment(8).varHandle(double.class);
 
     static boolean compareSegmentsByte(Collection<MemorySegment> segments1, Collection<MemorySegment> segments2, boolean isOrdered) {
         Function<MemorySegment, Byte> mapper = segment -> (byte)BYTE_HANDLE.get(segment.baseAddress());

@@ -2338,13 +2338,6 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     /**
-     * {@preview Associated with records, a preview feature of the Java language.
-     *
-     *           This method is associated with <i>records</i>, a preview
-     *           feature of the Java language. Preview features
-     *           may be removed in a future release, or upgraded to permanent
-     *           features of the Java language.}
-     *
      * Returns an array of {@code RecordComponent} objects representing all the
      * record components of this record class, or {@code null} if this class is
      * not a record class.
@@ -2381,11 +2374,8 @@ public final class Class<T> implements java.io.Serializable,
      *          </ul>
      *
      * @jls 8.10 Record Types
-     * @since 14
+     * @since 16
      */
-    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
-                                 essentialAPI=false)
-    @SuppressWarnings("preview")
     @CallerSensitive
     public RecordComponent[] getRecordComponents() {
         SecurityManager sm = System.getSecurityManager();
@@ -3682,13 +3672,6 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     /**
-     * {@preview Associated with records, a preview feature of the Java language.
-     *
-     *           This method is associated with <i>records</i>, a preview
-     *           feature of the Java language. Preview features
-     *           may be removed in a future release, or upgraded to permanent
-     *           features of the Java language.}
-     *
      * Returns {@code true} if and only if this class is a record class.
      *
      * <p> The {@linkplain #getSuperclass() direct superclass} of a record
@@ -3701,10 +3684,8 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @return true if and only if this class is a record class, otherwise false
      * @jls 8.10 Record Types
-     * @since 14
+     * @since 16
      */
-    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
-                                 essentialAPI=false)
     public boolean isRecord() {
         return getSuperclass() == JAVA_LANG_RECORD_CLASS && isRecord0();
     }

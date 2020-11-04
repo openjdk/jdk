@@ -41,13 +41,13 @@ public:
   virtual void work() {
     ZPhantomIsAliveObjectClosure is_alive;
     ZPhantomKeepAliveOopClosure keep_alive;
-    _weak_roots.weak_oops_do(&is_alive, &keep_alive);
+    _weak_roots.apply(&is_alive, &keep_alive);
   }
 };
 
 void ZWeakRootsProcessor::process_weak_roots() {
   ZProcessWeakRootsTask task;
-  _workers->run_parallel(&task);
+  _workers->run_serial(&task);
 }
 
 class ZProcessConcurrentWeakRootsTask : public ZTask {
@@ -65,7 +65,7 @@ public:
 
   virtual void work() {
     ZPhantomCleanOopClosure cl;
-    _concurrent_weak_roots.oops_do(&cl);
+    _concurrent_weak_roots.apply(&cl);
   }
 };
 

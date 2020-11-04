@@ -306,7 +306,7 @@ public interface DocTreeFactory {
     /**
      * Creates a new {@code SpecTree} object, to represent a {@code @spec} tag.
      *
-     * @param inline whether this is instance is as an inline tag
+     * @param inline whether this is instance is an inline tag
      * @param uri    the uri
      * @param label  the label
      *

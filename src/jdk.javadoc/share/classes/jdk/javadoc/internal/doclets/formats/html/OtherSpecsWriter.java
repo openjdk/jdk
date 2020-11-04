@@ -100,28 +100,20 @@ public class OtherSpecsWriter extends HtmlDocletWriter {
     }
 
     /**
-     * Prints all the system properties to the file.
+     * Prints all the "other specs" to the file.
      */
     protected void buildOtherSpecsPage() throws DocFileIOException {
         String title = resources.getText("doclet.Other_Specifications");
         HtmlTree body = getBody(getWindowTitle(title));
-        Content headerContent = new ContentBuilder();
-        addTop(headerContent);
-        navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(Navigation.Position.TOP));
         Content mainContent = new ContentBuilder();
         addOtherSpecs(mainContent);
-        Content footer = HtmlTree.FOOTER();
-        navBar.setUserFooter(getUserHeaderFooter(false));
-        footer.add(navBar.getContent(Navigation.Position.BOTTOM));
-        addBottom(footer);
         body.add(new BodyContents()
-                .setHeader(headerContent)
+                .setHeader(getHeader(PageMode.OTHER_SPECS))
                 .addMainContent(HtmlTree.DIV(HtmlStyle.header,
                         HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
-                                contents.getContent("doclet.Other_Specifications"))))
+                                contents.getContent("doclet.otherSpecs"))))
                 .addMainContent(mainContent)
-                .setFooter(footer));
+                .setFooter(getFooter()));
         printHtmlDocument(null, "other specifications", body);
 
         if (configuration.mainIndex != null) {

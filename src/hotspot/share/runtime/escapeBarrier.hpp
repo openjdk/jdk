@@ -61,6 +61,12 @@ class EscapeBarrier : StackObj {
   // Deoptimize the given frame and deoptimize objects with optimizations based on escape analysis.
   bool deoptimize_objects_internal(JavaThread* deoptee, intptr_t* fr_id);
 
+  // Deoptimize objects, i.e. reallocate and relock them. The target frames are deoptimized.
+  // The methods return false iff at least one reallocation failed.
+  bool deoptimize_objects(intptr_t* fr_id) {
+    return deoptimize_objects_internal(deoptee_thread(), fr_id);
+  }
+
 public:
   // Revert ea based optimizations for given deoptee thread
   EscapeBarrier(bool barrier_active, JavaThread* calling_thread, JavaThread* deoptee_thread)
@@ -89,13 +95,17 @@ public:
   bool barrier_active() const                        { return false; }
 #endif // COMPILER2_OR_JVMCI
 
-  // Deoptimize objects, i.e. reallocate and relock them. The target frames are deoptimized.
-  // The methods return false iff at least one reallocation failed.
-  bool deoptimize_objects(intptr_t* fr_id) {
-    return true COMPILER2_OR_JVMCI_PRESENT(&& deoptimize_objects_internal(deoptee_thread(), fr_id));
+  // Deoptimize objects of frames of the target thread up to the given depth.
+  // Deoptimize objects of caller frames if they passed references to ArgEscape objects as arguments.
+  // Return false in the case of a reallocation failure and true otherwise.
+  bool deoptimize_objects(int depth) {
+    return deoptimize_objects(0, depth);
   }
 
-  bool deoptimize_objects(int depth)                           NOT_COMPILER2_OR_JVMCI_RETURN_(true);
+  // Deoptimize objects of frames of the target thread at depth >= d1 and depth <= d2.
+  // Deoptimize objects of caller frames if they passed references to ArgEscape objects as arguments.
+  // Return false in the case of a reallocation failure and true otherwise.
+  bool deoptimize_objects(int d1, int d2)                      NOT_COMPILER2_OR_JVMCI_RETURN_(true);
 
   // Find and deoptimize non escaping objects and the holding frames on all stacks.
   bool deoptimize_objects_all_threads()                        NOT_COMPILER2_OR_JVMCI_RETURN_(true);
