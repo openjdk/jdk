@@ -70,7 +70,11 @@ void ZeroInterpreter::initialize_code() {
 
   // Allow c++ interpreter to do one initialization now that switches are set, etc.
   BytecodeInterpreter start_msg(BytecodeInterpreter::initialize);
-  BytecodeInterpreter::run<false>(&start_msg);
+  if (JvmtiExport::can_post_interpreter_events()) {
+    BytecodeInterpreter::run<true>(istate);
+  } else {
+    BytecodeInterpreter::run<false>(istate);
+  }
 }
 
 void ZeroInterpreter::invoke_method(Method* method, address entry_point, TRAPS) {
