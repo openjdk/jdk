@@ -66,14 +66,10 @@ class outputStream;
   f(update_roots,                                   "  Update Roots")                  \
   SHENANDOAH_PAR_PHASE_DO(update_,                  "    U: ", f)                      \
   f(finish_queues,                                  "  Finish Queues")                 \
-  f(weakrefs,                                       "  Weak References")               \
-  f(weakrefs_process,                               "    Process")                     \
   f(purge,                                          "  System Purge")                  \
-  f(purge_class_unload,                             "    Unload Classes")              \
   SHENANDOAH_PAR_PHASE_DO(purge_cu_par_,            "      CU: ", f)                   \
   f(purge_weak_par,                                 "    Weak Roots")                  \
   SHENANDOAH_PAR_PHASE_DO(purge_weak_par_,          "      WR: ", f)                   \
-  f(purge_cldg,                                     "    CLDG")                        \
   f(final_update_region_states,                     "  Update Region States")          \
   f(final_manage_labs,                              "  Manage GC/TLABs")               \
   f(choose_cset,                                    "  Choose Collection Set")         \
@@ -108,14 +104,11 @@ class outputStream;
   f(init_update_refs,                               "Pause Init  Update Refs (N)")     \
   f(init_update_refs_manage_gclabs,                 "  Manage GCLABs")                 \
                                                                                        \
-  f(conc_update_thread_roots,                       "Concurrent Update Thread Roots")  \
   f(conc_update_refs,                               "Concurrent Update Refs")          \
+  f(conc_update_thread_roots,                       "Concurrent Update Thread Roots")  \
                                                                                        \
   f(final_update_refs_gross,                        "Pause Final Update Refs (G)")     \
   f(final_update_refs,                              "Pause Final Update Refs (N)")     \
-  f(final_update_refs_finish_work,                  "  Finish Work")                   \
-  f(final_update_refs_roots,                        "  Update Roots")                  \
-  SHENANDOAH_PAR_PHASE_DO(final_update_,            "    UR: ", f)                     \
   f(final_update_refs_update_region_states,         "  Update Region States")          \
   f(final_update_refs_trash_cset,                   "  Trash Collection Set")          \
   f(final_update_refs_rebuild_freeset,              "  Rebuild Free Set")              \
