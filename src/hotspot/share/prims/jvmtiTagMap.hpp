@@ -52,7 +52,7 @@ class JvmtiTagMap :  public CHeapObj<mtInternal> {
   void check_hashmap(bool post_events);
 
   void entry_iterate(JvmtiTagMapEntryClosure* closure);
-  void post_dead_object_on_vm_thread();
+  void post_dead_objects_on_vm_thread();
 
  public:
   // indicates if this tag map is locked

@@ -116,7 +116,7 @@ JvmtiTagMapEntry* JvmtiTagMapTable::add(oop obj, jlong tag) {
   unsigned int hash = compute_hash(obj);
   int index = hash_to_index(hash);
   // One was added while acquiring the lock
-  assert (find(index, hash, obj) == NULL, "shouldn't already be present");
+  assert(find(index, hash, obj) == NULL, "shouldn't already be present");
 
   // obj was read with AS_NO_KEEPALIVE, or equivalent.
   // The object needs to be kept alive when it is published.

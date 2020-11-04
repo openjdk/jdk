@@ -138,7 +138,7 @@ static int literal_size(WeakHandle v) {
 }
 
 const double _resize_factor    = 2.0;     // by how much we will resize using current number of entries
-const int _small_table_sizes[] = {107, 1009, 2017, 4049, 5051, 10103, 20201, 40423 } ;
+const int _small_table_sizes[] = { 107, 1009, 2017, 4049, 5051, 10103, 20201, 40423 } ;
 const int _small_array_size = sizeof(_small_table_sizes)/sizeof(int);
 
 // possible hashmap sizes - odd primes that roughly double in size.

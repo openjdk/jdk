@@ -119,6 +119,9 @@ bool JvmtiTagMap::is_empty() {
   return hashmap()->is_empty();
 }
 
+// This checks for posting and rehashing before operations that
+// this tagmap table.  The calls from a JavaThread only rehash, posting is
+// only done before heap walks.
 void JvmtiTagMap::check_hashmap(bool post_events) {
   assert(is_locked(), "checking");
 
@@ -1170,7 +1173,7 @@ class VM_JvmtiPostObjectFree: public VM_Operation {
 };
 
 // PostObjectFree can't be called by JavaThread, so call it from the VM thread.
-void JvmtiTagMap::post_dead_object_on_vm_thread() {
+void JvmtiTagMap::post_dead_objects_on_vm_thread() {
   VM_JvmtiPostObjectFree op(this);
   VMThread::execute(&op);
 }
@@ -1183,7 +1186,7 @@ class TagObjectCollector : public JvmtiTagMapEntryClosure {
   JavaThread* _thread;
   jlong* _tags;
   jint _tag_count;
-  bool _some_dead;
+  bool _some_dead_found;
 
   GrowableArray<jobject>* _object_results;  // collected objects (JNI weak refs)
   GrowableArray<uint64_t>* _tag_results;    // collected tags
@@ -1194,7 +1197,7 @@ class TagObjectCollector : public JvmtiTagMapEntryClosure {
     _thread(JavaThread::current()),
     _tags((jlong*)tags),
     _tag_count(tag_count),
-    _some_dead(false),
+    _some_dead_found(false),
     _object_results(new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jobject>(1, mtServiceability)),
     _tag_results(new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<uint64_t>(1, mtServiceability)) { }
 
@@ -1203,7 +1206,7 @@ class TagObjectCollector : public JvmtiTagMapEntryClosure {
     delete _tag_results;
   }
 
-  bool some_dead() const { return _some_dead; }
+  bool some_dead_found() const { return _some_dead_found; }
 
   // for each tagged object check if the tag value matches
   // - if it matches then we create a JNI local reference to the object
@@ -1218,7 +1221,7 @@ class TagObjectCollector : public JvmtiTagMapEntryClosure {
         // achieved by using a phantom load in the object() accessor.
         oop o = entry->object();
         if (o == NULL) {
-          _some_dead = true;
+          _some_dead_found = true;
           // skip this whole entry
           return;
         }
@@ -1283,8 +1286,8 @@ jvmtiError JvmtiTagMap::get_objects_with_tags(const jlong* tags,
     // it is collected yet.
     entry_iterate(&collector);
   }
-  if (collector.some_dead() && env()->is_enabled(JVMTI_EVENT_OBJECT_FREE)) {
-    post_dead_object_on_vm_thread();
+  if (collector.some_dead_found() && env()->is_enabled(JVMTI_EVENT_OBJECT_FREE)) {
+    post_dead_objects_on_vm_thread();
   }
   return collector.result(count_ptr, object_result_ptr, tag_result_ptr);
 }
