@@ -108,7 +108,7 @@ void NotificationThread::notification_thread_entry(JavaThread* jt, TRAPS) {
               (has_gc_notification_event = GCNotifier::has_event()))
              == 0) {
         // Wait as a suspend equalent until notified that there is some work to do.
-        ml.wait(0, true);
+        ml.wait(0);
       }
 
     }

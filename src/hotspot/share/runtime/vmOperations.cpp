@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -355,7 +355,7 @@ int VM_Exit::set_vm_exited() {
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thr = jtiwh.next(); ) {
     if (thr!=thr_cur && thr->thread_state() == _thread_in_native) {
       ++num_active;
-      thr->set_terminated(JavaThread::_vm_exited);  // per-thread flag
+      thr->set_vm_exited();  // per-thread flag
     }
   }
 

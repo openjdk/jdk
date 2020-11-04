@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,6 @@ public class Thread extends VMObject {
 
   private static CIntegerField suspendFlagsField;
   // Thread::SuspendFlags enum constants
-  private static int EXTERNAL_SUSPEND;
-  private static int EXT_SUSPENDED;
   private static int HAS_ASYNC_EXCEPTION;
 
   private static AddressField activeHandlesField;
@@ -57,8 +55,6 @@ public class Thread extends VMObject {
     Type type = db.lookupType("Thread");
 
     suspendFlagsField = type.getCIntegerField("_suspend_flags");
-    EXTERNAL_SUSPEND = db.lookupIntConstant("Thread::_external_suspend").intValue();
-    EXT_SUSPENDED = db.lookupIntConstant("Thread::_ext_suspended").intValue();
     HAS_ASYNC_EXCEPTION = db.lookupIntConstant("Thread::_has_async_exception").intValue();
 
     tlabFieldOffset    = type.getField("_tlab").getOffset();
@@ -74,23 +70,6 @@ public class Thread extends VMObject {
 
   public int suspendFlags() {
     return (int) suspendFlagsField.getValue(addr);
-  }
-
-  public boolean isExternalSuspend() {
-    return (suspendFlags() & EXTERNAL_SUSPEND) != 0;
-  }
-
-  public boolean isExtSuspended() {
-    return (suspendFlags() & EXT_SUSPENDED) != 0;
-  }
-
-  public boolean isBeingExtSuspended() {
-    return isExtSuspended() || isExternalSuspend();
-  }
-
-  // historical usage: checked for VM or external suspension
-  public boolean isAnySuspended() {
-    return isExtSuspended();
   }
 
   public boolean hasAsyncException() {

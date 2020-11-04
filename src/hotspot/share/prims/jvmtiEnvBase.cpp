@@ -1181,8 +1181,7 @@ MultipleStackTracesCollector::fill_frames(jthread jt, JavaThread *thr, oop threa
   }
 
   if (thr != NULL) {    // add more state bits if there is a JavaThead to query
-    // same as is_being_ext_suspended() but without locking
-    if (thr->is_ext_suspended() || thr->is_external_suspend()) {
+    if (thr->is_suspended()) {
       state |= JVMTI_THREAD_STATE_SUSPENDED;
     }
     JavaThreadState jts = thr->thread_state();
@@ -1400,7 +1399,7 @@ SetForceEarlyReturn::doit(Thread *target, bool self) {
   HandleMark   hm(current_thread);
 
   if (!self) {
-    if (!java_thread->is_external_suspend()) {
+    if (!java_thread->is_suspended()) {
       _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
       return;
     }
@@ -1533,7 +1532,7 @@ UpdateForPopTopFrameClosure::doit(Thread *target, bool self) {
   JavaThread* java_thread = target->as_Java_thread();
   assert(java_thread == _state->get_thread(), "Must be");
 
-  if (!self && !java_thread->is_external_suspend()) {
+  if (!self && !java_thread->is_suspended()) {
     _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
     return;
   }
@@ -1624,7 +1623,7 @@ SetFramePopClosure::doit(Thread *target, bool self) {
 
   assert(_state->get_thread() == java_thread, "Must be");
 
-  if (!self && !java_thread->is_external_suspend()) {
+  if (!self && !java_thread->is_suspended()) {
     _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
     return;
   }

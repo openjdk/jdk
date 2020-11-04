@@ -294,11 +294,6 @@ int JvmtiThreadState::cur_stack_depth() {
   return _cur_stack_depth;
 }
 
-bool JvmtiThreadState::may_be_walked() {
-  return (get_thread()->is_being_ext_suspended() || (JavaThread::current() == get_thread()));
-}
-
-
 void JvmtiThreadState::process_pending_step_for_popframe() {
   // We are single stepping as the last part of the PopFrame() dance
   // so we have some house keeping to do.

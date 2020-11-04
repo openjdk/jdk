@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,9 +43,9 @@ class HandshakeClosure : public ThreadClosure, public CHeapObj<mtThread> {
   const char* const _name;
  public:
   HandshakeClosure(const char* name) : _name(name) {}
-  virtual ~HandshakeClosure() {}
-  const char* name() const    { return _name; }
-  virtual bool is_async()     { return false; }
+  virtual ~HandshakeClosure()                      {}
+  const char* name() const                         { return _name; }
+  virtual bool is_async()                          { return false; }
   virtual void do_thread(Thread* thread) = 0;
 };
 
@@ -61,37 +61,45 @@ class Handshake : public AllStatic {
   // Execution of handshake operation
   static void execute(HandshakeClosure*       hs_cl);
   static void execute(HandshakeClosure*       hs_cl, JavaThread* target);
-  static void execute(AsyncHandshakeClosure* hs_cl, JavaThread* target);
+  static void execute(AsyncHandshakeClosure*  hs_cl, JavaThread* target);
 };
+
+class JvmtiRawMonitor;
 
 // The HandshakeState keeps track of an ongoing handshake for this JavaThread.
 // VMThread/Handshaker and JavaThread are serialized with _lock making sure the
 // operation is only done by either VMThread/Handshaker on behalf of the
 // JavaThread or by the target JavaThread itself.
 class HandshakeState {
+  friend JvmtiRawMonitor;
   // This a back reference to the JavaThread,
   // the target for all operation in the queue.
   JavaThread* _handshakee;
   // The queue containing handshake operations to be performed on _handshakee.
   FilterQueue<HandshakeOperation*> _queue;
   // Provides mutual exclusion to this state and queue.
-  Mutex   _lock;
+  Monitor _lock;
   // Set to the thread executing the handshake operation.
   Thread* _active_handshaker;
 
   bool claim_handshake();
   bool possibly_can_process_handshake();
   bool can_process_handshake();
-  void process_self_inner();
+  bool process_self_inner();
 
   bool have_non_self_executable_operation();
   HandshakeOperation* pop_for_self();
   HandshakeOperation* pop();
 
+  void lock();
+  void unlock();
+
  public:
   HandshakeState(JavaThread* thread);
 
   void add_operation(HandshakeOperation* op);
+
+  void thread_exit();
 
   bool has_operation() {
     return !_queue.is_empty();
@@ -108,7 +116,7 @@ class HandshakeState {
     return !_queue.is_empty() || _lock.is_locked();
   }
 
-  void process_by_self();
+  bool process_by_self();
 
   enum ProcessResult {
     _no_operation = 0,
@@ -121,6 +129,9 @@ class HandshakeState {
   ProcessResult try_process(HandshakeOperation* match_op);
 
   Thread* active_handshaker() const { return _active_handshaker; }
+
+  void suspend_in_handshake();
+  bool resume();
 };
 
 #endif // SHARE_RUNTIME_HANDSHAKE_HPP
