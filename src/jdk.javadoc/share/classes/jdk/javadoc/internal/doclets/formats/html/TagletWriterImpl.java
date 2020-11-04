@@ -28,6 +28,7 @@ package jdk.javadoc.internal.doclets.formats.html;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -263,16 +264,10 @@ public class TagletWriterImpl extends TagletWriter {
     }
 
     String textOf(List<? extends DocTree> trees) {
-        StringBuilder sb = new StringBuilder();
-        for (DocTree dt : trees) {
-            if (dt instanceof TextTree) {
-                if (!sb.isEmpty()) {
-                    sb.append(" ");
-                }
-                sb.append(((TextTree) dt).getBody().trim());
-            }
-        }
-        return sb.toString();
+        return trees.stream()
+                .filter(dt -> dt instanceof TextTree)
+                .map(dt -> ((TextTree) dt).getBody().trim())
+                .collect(Collectors.joining(" "));
     }
 
     private void appendSeparatorIfNotEmpty(ContentBuilder body) {

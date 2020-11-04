@@ -1101,7 +1101,7 @@ public class DocCommentParser {
         }
 
         DCTree parse(int pos, Kind kind) throws ParseException {
-            if (kind != this.kind) {
+            if (kind != this.kind && this.kind != Kind.EITHER) {
                 throw new IllegalArgumentException(kind.toString());
             }
             return parse(pos);

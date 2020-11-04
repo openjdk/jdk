@@ -111,7 +111,7 @@ public class OtherSpecsWriter extends HtmlDocletWriter {
                 .setHeader(getHeader(PageMode.OTHER_SPECS))
                 .addMainContent(HtmlTree.DIV(HtmlStyle.header,
                         HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
-                                contents.getContent("doclet.otherSpecs"))))
+                                contents.getContent("doclet.Other_Specifications"))))
                 .addMainContent(mainContent)
                 .setFooter(getFooter()));
         printHtmlDocument(null, "other specifications", body);

@@ -175,18 +175,19 @@ public abstract class TagletWriter {
     protected abstract Content simpleBlockTagOutput(Element element, List<? extends DocTree> simpleTags, String header);
 
     /**
-     * Return the spec tag output.
+     * Returns the output for one or more {@code @spec} tags.
      *
-     * @param holder
+     * @param element  the element that owns the doc comment
      * @param specTags the array of @spec tags.
-     * @return the output of the see tags.
+     *
+     * @return the output
      */
-    protected abstract Content specTagOutput(Element holder, List<? extends SpecTree> specTags);
+    protected abstract Content specTagOutput(Element element, List<? extends SpecTree> specTags);
 
     /**
      * Returns the output for a {@code {@systemProperty...}} tag.
      *
-     * @param element           The element that owns the doc comment
+     * @param element           the element that owns the doc comment
      * @param systemPropertyTag the system property tag
      *
      * @return the output
