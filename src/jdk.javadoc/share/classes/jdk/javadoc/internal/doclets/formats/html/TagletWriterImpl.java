@@ -321,6 +321,7 @@ public class TagletWriterImpl extends TagletWriter {
     private Content specTagToContent(Element holder, SpecTree specTree) {
         Content label = createAnchorAndSearchIndex(holder,
                 textOf(specTree.getLabel()),
+                htmlWriter.commentTagsToContent(specTree, holder, specTree.getLabel(), isFirstSentence),
                 resources.getText("doclet.Other_Specification"),
                 specTree);
         URI specURI;
@@ -433,11 +434,15 @@ public class TagletWriterImpl extends TagletWriter {
         return htmlWriter.getCurrentPageElement();
     }
 
-    @SuppressWarnings("preview")
     private Content createAnchorAndSearchIndex(Element element, String tagText, String desc, DocTree tree) {
+        return createAnchorAndSearchIndex(element, tagText, new StringContent(tagText), desc, tree);
+    }
+
+    @SuppressWarnings("preview")
+    private Content createAnchorAndSearchIndex(Element element, String tagText, Content tagContent, String desc, DocTree tree) {
         Content result = null;
         if (isFirstSentence && inSummary) {
-            result = new StringContent(tagText);
+            result = tagContent;
         } else {
             String anchorName = htmlWriter.links.getName(tagText);
             int count = htmlWriter.indexAnchorTable
@@ -445,7 +450,7 @@ public class TagletWriterImpl extends TagletWriter {
             if (count > 0) {
                 anchorName += "-" + count;
             }
-            result = HtmlTree.SPAN(anchorName, HtmlStyle.searchTagResult, new StringContent(tagText));
+            result = HtmlTree.SPAN(anchorName, HtmlStyle.searchTagResult, tagContent);
             if (options.createIndex() && !tagText.isEmpty()) {
                 String holder = new SimpleElementVisitor14<String, Void>() {
 
