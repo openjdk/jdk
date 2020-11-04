@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,34 @@
 #define SHARE_GC_Z_ZFORWARDINGTABLE_INLINE_HPP
 
 #include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zForwarding.inline.hpp"
 #include "gc/z/zForwardingTable.hpp"
+#include "gc/z/zGlobals.hpp"
 #include "gc/z/zGranuleMap.inline.hpp"
+#include "utilities/debug.hpp"
+
+inline ZForwardingTable::ZForwardingTable() :
+    _map(ZAddressOffsetMax) {}
 
 inline ZForwarding* ZForwardingTable::get(uintptr_t addr) const {
   assert(!ZAddress::is_null(addr), "Invalid address");
   return _map.get(ZAddress::offset(addr));
+}
+
+inline void ZForwardingTable::insert(ZForwarding* forwarding) {
+  const uintptr_t offset = forwarding->start();
+  const size_t size = forwarding->size();
+
+  assert(_map.get(offset) == NULL, "Invalid entry");
+  _map.put(offset, size, forwarding);
+}
+
+inline void ZForwardingTable::remove(ZForwarding* forwarding) {
+  const uintptr_t offset = forwarding->start();
+  const size_t size = forwarding->size();
+
+  assert(_map.get(offset) == forwarding, "Invalid entry");
+  _map.put(offset, size, NULL);
 }
 
 #endif // SHARE_GC_Z_ZFORWARDINGTABLE_INLINE_HPP

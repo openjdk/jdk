@@ -1559,6 +1559,34 @@ void CodeCache::log_state(outputStream* st) {
             unallocated_capacity());
 }
 
+#ifdef LINUX
+void CodeCache::write_perf_map() {
+  MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+
+  // Perf expects to find the map file at /tmp/perf-<pid>.map.
+  char fname[32];
+  jio_snprintf(fname, sizeof(fname), "/tmp/perf-%d.map", os::current_process_id());
+
+  fileStream fs(fname, "w");
+  if (!fs.is_open()) {
+    log_warning(codecache)("Failed to create %s for perf map", fname);
+    return;
+  }
+
+  AllCodeBlobsIterator iter(AllCodeBlobsIterator::only_alive_and_not_unloading);
+  while (iter.next()) {
+    CodeBlob *cb = iter.method();
+    ResourceMark rm;
+    const char* method_name =
+      cb->is_compiled() ? cb->as_compiled_method()->method()->external_name()
+                        : cb->name();
+    fs.print_cr(INTPTR_FORMAT " " INTPTR_FORMAT " %s",
+                (intptr_t)cb->code_begin(), (intptr_t)cb->code_size(),
+                method_name);
+  }
+}
+#endif // LINUX
+
 //---<  BEGIN  >--- CodeHeap State Analytics.
 
 void CodeCache::aggregate(outputStream *out, size_t granularity) {

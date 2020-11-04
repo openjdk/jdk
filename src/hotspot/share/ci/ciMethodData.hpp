@@ -379,7 +379,7 @@ private:
   // Data entries
   intptr_t* _data;
 
-  // Cached hint for data_before()
+  // Cached hint for data_layout_before()
   int _hint_di;
 
   // Is data attached?  And is it mature?
@@ -445,16 +445,16 @@ private:
     assert(!out_of_bounds(di), "hint_di out of bounds");
     _hint_di = di;
   }
-  ciProfileData* data_before(int bci) {
+
+  DataLayout* data_layout_before(int bci) {
     // avoid SEGV on this edge case
     if (data_size() == 0)
       return NULL;
-    int hint = hint_di();
-    if (data_layout_at(hint)->bci() <= bci)
-      return data_at(hint);
-    return first_data();
+    DataLayout* layout = data_layout_at(hint_di());
+    if (layout->bci() <= bci)
+      return layout;
+    return data_layout_at(first_di());
   }
-
 
   // What is the index of the first data entry?
   int first_di() { return 0; }
@@ -469,6 +469,7 @@ private:
   template<class T> void dump_replay_data_call_type_helper(outputStream* out, int round, int& count, T* call_type_data);
   template<class T> void dump_replay_data_receiver_type_helper(outputStream* out, int round, int& count, T* call_type_data);
   void dump_replay_data_extra_data_helper(outputStream* out, int round, int& count);
+  ciProfileData* data_from(DataLayout* data_layout);
 
 public:
   bool is_method_data() const { return true; }
@@ -519,7 +520,9 @@ public:
   // Walk through the data in order.
   ciProfileData* first_data() { return data_at(first_di()); }
   ciProfileData* next_data(ciProfileData* current);
+  DataLayout* next_data_layout(DataLayout* current);
   bool is_valid(ciProfileData* current) { return current != NULL; }
+  bool is_valid(DataLayout* current)    { return current != NULL; }
 
   DataLayout* extra_data_base() const  { return data_layout_at(data_size()); }
   DataLayout* args_data_limit() const  { return data_layout_at(data_size() + extra_data_size() -
