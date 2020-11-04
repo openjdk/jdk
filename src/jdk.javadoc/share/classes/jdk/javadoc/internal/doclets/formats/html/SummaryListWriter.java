@@ -134,7 +134,6 @@ public abstract class SummaryListWriter<L extends SummaryAPIListBuilder> extends
         };
     }
 
-    private final Navigation navBar;
     private final String description;
     private final Content headContent;
     private final String titleKey;
@@ -154,7 +153,6 @@ public abstract class SummaryListWriter<L extends SummaryAPIListBuilder> extends
                              PageMode pageMode, String description,
                              Content headContent, String titleKey) {
         super(configuration, filename);
-        this.navBar = new Navigation(null, configuration, pageMode, path);
         this.description = description;
         this.headContent = headContent;
         this.titleKey = titleKey;
@@ -180,11 +178,7 @@ public abstract class SummaryListWriter<L extends SummaryAPIListBuilder> extends
             }
         }
         bodyContents.addMainContent(content);
-        HtmlTree htmlTree = HtmlTree.FOOTER();
-        navBar.setUserFooter(getUserHeaderFooter(false));
-        htmlTree.add(navBar.getContent(Navigation.Position.BOTTOM));
-        addBottom(htmlTree);
-        bodyContents.setFooter(htmlTree);
+        bodyContents.setFooter(getFooter());
         body.add(bodyContents);
         printHtmlDocument(null, description, body);
     }
@@ -235,11 +229,7 @@ public abstract class SummaryListWriter<L extends SummaryAPIListBuilder> extends
     public HtmlTree getHeader() {
         String title = resources.getText(titleKey);
         HtmlTree bodyTree = getBody(getWindowTitle(title));
-        Content headerContent = new ContentBuilder();
-        addTop(headerContent);
-        navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(Navigation.Position.TOP));
-        bodyContents.setHeader(headerContent);
+        bodyContents.setHeader(getHeader(PageMode.DEPRECATED));
         return bodyTree;
     }
 

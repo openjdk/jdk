@@ -47,7 +47,7 @@ public class TestPreview extends JavadocTester {
     @Test
     public void testUserJavadoc() {
         String doc = Paths.get(testSrc, "doc").toUri().toString();
-        javadoc("-d", "out",
+        javadoc("-d", "out-user-javadoc",
                 "-XDforcePreview", "--enable-preview", "-source", System.getProperty("java.specification.version"),
                 "--patch-module", "java.base=" + Paths.get(testSrc, "api").toAbsolutePath().toString(),
                 "--add-exports", "java.base/preview=m",
@@ -89,7 +89,7 @@ public class TestPreview extends JavadocTester {
 
     @Test
     public void testPreviewAPIJavadoc() {
-        javadoc("-d", "out",
+        javadoc("-d", "out-preview-api",
                 "--patch-module", "java.base=" + Paths.get(testSrc, "api").toAbsolutePath().toString(),
                 "--add-exports", "java.base/preview=m",
                 "--source-path", Paths.get(testSrc, "api").toAbsolutePath().toString(),

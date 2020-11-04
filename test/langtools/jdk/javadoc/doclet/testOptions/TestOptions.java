@@ -44,19 +44,16 @@ public class TestOptions extends JavadocTester {
     }
 
     @Test
-    public void testHeaderFooter() {
+    public void testHeader() {
         javadoc("-d", "out-1",
                 "-header", "Test header",
-                "-footer", "Test footer",
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);
 
         checkOutput("pkg/package-summary.html", true,
                 """
-                    <div class="about-language">Test header</div>""",
-                """
-                    <div class="about-language">Test footer</div>""");
+                    <div class="about-language">Test header</div>""");
     }
 
     @Test
