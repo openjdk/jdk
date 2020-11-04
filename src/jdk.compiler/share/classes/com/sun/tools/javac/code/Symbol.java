@@ -1785,7 +1785,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
          */
         private final int pos;
 
-        private boolean isVarargs;
+        private final boolean isVarargs;
 
         /**
          * Construct a record component, given its flags, name, type and owner.

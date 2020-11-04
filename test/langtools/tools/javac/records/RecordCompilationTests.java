@@ -1691,7 +1691,7 @@ public class RecordCompilationTests extends CompilationTestCase {
                 @Target({ElementType.TYPE_USE})
                 @interface Simple {}
 
-                record R(@Simple int ...val) {
+                record R(@Simple int... val) {
                     static void test() {
                         R rec = new R(10, 20);
                     }
@@ -1709,7 +1709,7 @@ public class RecordCompilationTests extends CompilationTestCase {
                 @Target({ElementType.TYPE_USE})
                 @interface Simple {}
 
-                record R(@Simple int ...val) {
+                record R(@Simple int... val) {
                     static void test() {
                         R rec = new R(10, 20);
                     }
