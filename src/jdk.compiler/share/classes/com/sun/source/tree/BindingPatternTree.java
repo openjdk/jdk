@@ -30,8 +30,6 @@ package com.sun.source.tree;
  *
  * @since 16
  */
-@jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.PATTERN_MATCHING_IN_INSTANCEOF,
-                                   reflective=true)
 public interface BindingPatternTree extends PatternTree {
 
     /**

@@ -72,7 +72,5 @@ public interface InstanceOfTree extends ExpressionTree {
      * @return the tested pattern, or null if this instanceof does not use a pattern
      * @since 16
      */
-    @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.PATTERN_MATCHING_IN_INSTANCEOF,
-                                       reflective=true)
     PatternTree getPattern();
 }

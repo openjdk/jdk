@@ -264,8 +264,6 @@ public interface TreeVisitor<R,P> {
      * @return a result value
      * @since 16
      */
-    @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.PATTERN_MATCHING_IN_INSTANCEOF,
-                                       reflective=true)
     R visitBindingPattern(BindingPatternTree node, P p);
 
     /**
