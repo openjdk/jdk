@@ -2,7 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8231827
  * @summary Clashing bindings are reported correctly
- * @compile/fail/ref=BindingsExistTest.out -XDrawDiagnostics --enable-preview -source ${jdk.version} BindingsExistTest.java
+ * @compile/fail/ref=BindingsExistTest.out -XDrawDiagnostics BindingsExistTest.java
  */
 public class BindingsExistTest {
     public void t(Object o1, Object o2) {
