@@ -95,10 +95,7 @@ public class BreakAndLoops extends ComboInstance<BreakAndLoops> {
                         case "NESTED" -> brk;
                         case "BODY" -> innerLabel;
                         default -> throw new UnsupportedOperationException(pname);
-                    })
-                .withOption("--enable-preview")
-                .withOption("-source")
-                .withOption(String.valueOf(Runtime.version().feature()));
+                    });
 
         task.generate(result -> {
             boolean shouldPass;
