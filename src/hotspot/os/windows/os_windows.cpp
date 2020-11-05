@@ -3173,6 +3173,8 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
 
   } while (aligned_base == NULL && safety > 0);
 
+  assert(safety > 0, "Heyhey");
+
   return aligned_base;
 }
 
