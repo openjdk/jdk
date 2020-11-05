@@ -47,8 +47,8 @@
  * <p> An important subsidiary interface is
  * {@link RandomGenerator.StreamableGenerator}, which provides methods for
  * creating spliterator-based streams of {@link RandomGenerator} objects,
- * allowing for allowing for parallel processing of these objects using multiple
- * threads. Unlike {@link java.util.Random}, most implementations of
+ * allowing for parallel processing of these objects using multiple threads.
+ * Unlike {@link java.util.Random}, most implementations of
  * {@link RandomGenerator} are <i>not</i> thread-safe. The intent is that
  * instances should not be shared among threads; rather, each thread should have
  * its own random generator(s) to use. The various pseudorandom algorithms
