@@ -1401,28 +1401,35 @@ void VM_Version::get_processor_features() {
       FLAG_SET_DEFAULT(AllocatePrefetchInstr, 3);
     }
 #ifdef COMPILER2
-    if (FLAG_IS_DEFAULT(ArrayCopyPartialInlineSize) ||
-        (!FLAG_IS_DEFAULT(ArrayCopyPartialInlineSize) &&
-         ArrayCopyPartialInlineSize != 0 &&
-         ArrayCopyPartialInlineSize != 32 &&
-         ArrayCopyPartialInlineSize != 64)) {
-      int inline_size = 0;
-      if (MaxVectorSize >= 64 && AVX3Threshold == 0) {
-        inline_size = 64;
-      } else if (MaxVectorSize >= 32) {
-        inline_size = 32;
-      } else if (MaxVectorSize >= 16) {
-        inline_size = 16;
+    if (UseAVX > 2) {
+      if (FLAG_IS_DEFAULT(ArrayCopyPartialInlineSize) ||
+          (!FLAG_IS_DEFAULT(ArrayCopyPartialInlineSize) &&
+           ArrayCopyPartialInlineSize != 0 &&
+           ArrayCopyPartialInlineSize != 32 &&
+           ArrayCopyPartialInlineSize != 16 &&
+           ArrayCopyPartialInlineSize != 64)) {
+        int inline_size = 0;
+        if (MaxVectorSize >= 64 && AVX3Threshold == 0) {
+          inline_size = 64;
+        } else if (MaxVectorSize >= 32) {
+          inline_size = 32;
+        } else if (MaxVectorSize >= 16) {
+          inline_size = 16;
+        }
+        if(!FLAG_IS_DEFAULT(ArrayCopyPartialInlineSize)) {
+          warning("Setting ArrayCopyPartialInlineSize as %d", inline_size);
+        }
+        ArrayCopyPartialInlineSize = inline_size;
       }
-      if(!FLAG_IS_DEFAULT(ArrayCopyPartialInlineSize)) {
-        warning("Setting ArrayCopyPartialInlineSize as %d", inline_size);
-      }
-      ArrayCopyPartialInlineSize = inline_size;
-    }
 
-    if (ArrayCopyPartialInlineSize > MaxVectorSize) {
-      ArrayCopyPartialInlineSize = MaxVectorSize;
-      warning("Setting ArrayCopyPartialInlineSize as MaxVectorSize");
+      if (ArrayCopyPartialInlineSize > MaxVectorSize) {
+        ArrayCopyPartialInlineSize = MaxVectorSize >= 16 ? MaxVectorSize : 0;
+        if (ArrayCopyPartialInlineSize) {
+          warning("Setting ArrayCopyPartialInlineSize as MaxVectorSize" INTX_FORMAT ")", MaxVectorSize);
+        } else {
+          warning("Setting ArrayCopyPartialInlineSize as " INTX_FORMAT, ArrayCopyPartialInlineSize);
+        }
+      }
     }
 #endif
   }

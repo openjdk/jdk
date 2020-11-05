@@ -1944,6 +1944,15 @@ void C2_MacroAssembler::reduce8D(int opcode, XMMRegister dst, XMMRegister src, X
   reduce4D(opcode, dst, vtmp1, vtmp1, vtmp2);
 }
 
+void C2_MacroAssembler::evmovdqu(BasicType type, KRegister kmask, XMMRegister dst, Address src, int vector_len) {
+  MacroAssembler::evmovdqu(type, kmask, dst, src, vector_len);
+}
+
+void C2_MacroAssembler::evmovdqu(BasicType type, KRegister kmask, Address dst, XMMRegister src, int vector_len) {
+  MacroAssembler::evmovdqu(type, kmask, dst, src, vector_len);
+}
+
+
 void C2_MacroAssembler::reduceFloatMinMax(int opcode, int vlen, bool is_dst_valid,
                                           XMMRegister dst, XMMRegister src,
                                           XMMRegister tmp, XMMRegister atmp, XMMRegister btmp,
@@ -2121,14 +2130,6 @@ void C2_MacroAssembler::evpcmp(BasicType typ, KRegister kdmask, KRegister ksmask
       assert(false,"Should not reach here.");
       break;
   }
-}
-
-void C2_MacroAssembler::evmovdqu(BasicType typ, KRegister kmask, XMMRegister dst, Address src, int vector_len) {
-  MacroAssembler::evmovdqu(typ, kmask, dst, src, vector_len);
-}
-
-void C2_MacroAssembler::evmovdqu(BasicType typ, KRegister kmask, Address dst, XMMRegister src, int vector_len) {
-  MacroAssembler::evmovdqu(typ, kmask, dst, src, vector_len);
 }
 
 void C2_MacroAssembler::evpblend(BasicType typ, XMMRegister dst, KRegister kmask, XMMRegister src1, XMMRegister src2, bool merge, int vector_len) {
