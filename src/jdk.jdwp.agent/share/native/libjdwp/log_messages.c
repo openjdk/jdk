@@ -78,16 +78,11 @@ get_time_stamp(char *tbuf, size_t ltbuf)
                 "%d.%m.%Y %T", localtime(&t));
     (void)strftime(timestamp_timezone, TZ_SIZE,
                 "%Z", localtime(&t));
-#if 0
-    (void)snprintf(tbuf, ltbuf,
-                   "%.19s.%.3d %.50s", timestamp_date_time,
-                   (int)(millisecs), timestamp_timezone);
-#endif
-     // Truncate milliseconds in buffer large enough to hold the
-     // value which is always < 1000
-     char tmp[10 + 1];
-     snprintf(tmp, sizeof(tmp), "%d", millisecs);
-     snprintf(tbuf, ltbuf, "%s.%.3s %s", timestamp_date_time, tmp, timestamp_timezone);
+    // Truncate milliseconds in buffer large enough to hold the
+    // value which is always < 1000
+    char tmp[10 + 1];
+    snprintf(tmp, sizeof(tmp), "%d", millisecs);
+    snprintf(tbuf, ltbuf, "%s.%.3s %s", timestamp_date_time, tmp, timestamp_timezone);
 }
 
 /* Get basename of filename */
