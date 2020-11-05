@@ -26,27 +26,35 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodySubscriber;
+import java.net.http.HttpResponse.BodySubscribers;
+import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Flow;
 import java.util.function.BiConsumer;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 
 import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 /**
 * @test
 * @bug 8252304
-* @summary HttpRequest.NewBuilder(HttpRequest) API and behaviour checks
-* @compile --enable-preview -source ${jdk.version} HttpRequestNewBuilderTest.java
-* @run testng/othervm --enable-preview HttpRequestNewBuilderTest
+* @summary HttpRequest.newBuilder(HttpRequest) API and behaviour checks
+* @run testng/othervm HttpRequestNewBuilderTest
 */
 public class HttpRequestNewBuilderTest {
    static final Class<NullPointerException> NPE = NullPointerException.class;
@@ -55,11 +63,14 @@ public class HttpRequestNewBuilderTest {
    record NamedAssertion (String name, BiConsumer<HttpRequest,HttpRequest> test) { }
    List<NamedAssertion> REQUEST_ASSERTIONS = List.of(
            new NamedAssertion("uri",            (r1,r2) -> assertEquals(r1.uri(), r2.uri())),
-           new NamedAssertion("method",         (r1,r2) -> assertEquals(r1.method(), r2.method())),
            new NamedAssertion("timeout",        (r1,r2) -> assertEquals(r1.timeout(), r2.timeout())),
            new NamedAssertion("version",        (r1,r2) -> assertEquals(r1.version(), r2.version())),
            new NamedAssertion("headers",        (r1,r2) -> assertEquals(r1.headers(), r2.headers())),
-           new NamedAssertion("expectContinue", (r1,r2) -> assertEquals(r1.expectContinue(), r2.expectContinue()))
+           new NamedAssertion("expectContinue", (r1,r2) -> assertEquals(r1.expectContinue(), r2.expectContinue())),
+           new NamedAssertion("method",  (r1,r2) -> {
+               assertEquals(r1.method(), r2.method());
+               assertBodyPublisherEqual(r1, r2);
+           })
    );
 
    @DataProvider(name = "testRequests")
@@ -94,6 +105,41 @@ public class HttpRequestNewBuilderTest {
                        .timeout(Duration.ofSeconds(1)).header("testName", "testValue").build() },
        };
    }
+
+    void assertBodyPublisherEqual(HttpRequest r1, HttpRequest r2) {
+        if (r1.bodyPublisher().isPresent()) {
+            assertTrue(r2.bodyPublisher().isPresent());
+            var bp1 = r1.bodyPublisher().get();
+            var bp2 = r2.bodyPublisher().get();
+
+            assertTrue(bp1.getClass()      == bp2.getClass());
+            assertTrue(bp1.contentLength() == bp2.contentLength());
+
+            final class TestSubscriber implements Flow.Subscriber<ByteBuffer> {
+                final BodySubscriber<String> s;
+                TestSubscriber(BodySubscriber<String> s) { this.s = s; }
+                @Override
+                public void onSubscribe(Flow.Subscription subscription) { s.onSubscribe(subscription); }
+                @Override
+                public void onNext(ByteBuffer item) { s.onNext(List.of(item)); }
+                @Override
+                public void onError(Throwable throwable) { fail("TestSubscriber failed"); }
+                @Override
+                public void onComplete() { s.onComplete(); }
+            }
+            var bs1 = BodySubscribers.ofString(UTF_8);
+            bp1.subscribe(new TestSubscriber(bs1));
+            var x1 = bs1.getBody().toCompletableFuture().join().getBytes();
+
+            var bs2 = BodySubscribers.ofString(UTF_8);
+            bp2.subscribe(new TestSubscriber(bs2));
+            var x2 = bs2.getBody().toCompletableFuture().join().getBytes();
+
+            assertEquals(x1, x2);
+        } else {
+            assertFalse(r2.bodyPublisher().isPresent());
+        }
+    }
 
    void assertAllOtherElementsEqual(HttpRequest r1, HttpRequest r2, String... except) {
        var ignoreList = Arrays.asList(except);

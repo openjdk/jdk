@@ -304,7 +304,7 @@ public abstract class HttpRequest {
     }
 
     /**
-     * Creates a {@code Builder} seeded from a {@code HttpRequest}.
+     * Creates a {@code Builder} seeded from an {@code HttpRequest}.
      *
      * <p> This method can be used to build a new request equivalent to the
      * given request, but with some parts of its state altered.
@@ -314,7 +314,7 @@ public abstract class HttpRequest {
      * @throws IllegalArgumentException if a new builder cannot be seeded from
      *         the given request (for instance, if the request contains illegal
      *         parameters)
-     * @since TBD
+     * @since 16
      */
     public static Builder newBuilder(HttpRequest request) {
         Objects.requireNonNull(request);
@@ -328,7 +328,10 @@ public abstract class HttpRequest {
             request.timeout().ifPresent(builder::timeout);
             var method = request.method();
             request.bodyPublisher().ifPresentOrElse(
+                    // if body is present, set it
                     bodyPublisher -> builder.method(method, bodyPublisher),
+                    // otherwise, the body is absent, special case for GET/DELETE,
+                    // or else use empty body
                     () -> {
                         switch (method) {
                             case "GET" -> builder.GET();
