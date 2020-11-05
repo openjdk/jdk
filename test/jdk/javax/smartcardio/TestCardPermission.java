@@ -25,39 +25,49 @@
  * @test
  * @bug 6293767 6469513
  * @summary Test for the CardPermission class
+ * @library /test/lib
  * @author Andreas Sterbenz
  */
 
 import javax.smartcardio.*;
+import java.security.Permission;
+
+import static jdk.test.lib.Asserts.assertFalse;
+import static jdk.test.lib.Asserts.assertTrue;
 
 public class TestCardPermission {
 
     public static void main(String[] args) throws Exception {
-        CardPermission perm;
+        testAction("*");
+        testAction("connect");
+        testAction("reset");
+        testAction("exclusive");
+        testAction("transmitControl");
+        testAction("getBasicChannel");
+        testAction("openLogicalChannel");
 
-        test("*");
-        test("connect");
-        test("reset");
-        test("exclusive");
-        test("transmitControl");
-        test("getBasicChannel");
-        test("openLogicalChannel");
+        testAction("connect,reset");
+        testAction("Reset,coNnect", "connect,reset");
+        testAction("exclusive,*,connect", "*");
+        testAction("connect,reset,exclusive,transmitControl,getBasicChannel,openLogicalChannel", "*");
+        testAction(null, null);
 
-        test("connect,reset");
-        test("Reset,coNnect", "connect,reset");
-        test("exclusive,*,connect", "*");
-        test("connect,reset,exclusive,transmitControl,getBasicChannel,openLogicalChannel", "*");
-        test(null, null);
+        invalidAction("");
+        invalidAction("foo");
+        invalidAction("connect, reset");
+        invalidAction("connect,,reset");
+        invalidAction("connect,");
+        invalidAction(",connect");
 
-        invalid("");
-        invalid("foo");
-        invalid("connect, reset");
-        invalid("connect,,reset");
-        invalid("connect,");
-        invalid(",connect");
+
+        testImpliesNotCardPermission("connect");
+        testImpliesNotSubsetCardPermission();
+        testImpliesNameEqualsAll();
+        testImpliesBothSameNameNotAll();
+        testImpliesNameNotSameNotAll();
     }
 
-    private static void invalid(String s) throws Exception {
+    private static void invalidAction(String s) throws Exception {
         try {
             CardPermission c = new CardPermission("*", s);
             throw new Exception("Created invalid action: " + c);
@@ -66,11 +76,11 @@ public class TestCardPermission {
         }
     }
 
-    private static void test(String actions) throws Exception {
-        test(actions, actions);
+    private static void testAction(String actions) throws Exception {
+        testAction(actions, actions);
     }
 
-    private static void test(String actions, String canon) throws Exception {
+    private static void testAction(String actions, String canon) throws Exception {
         CardPermission p = new CardPermission("*", actions);
         System.out.println(p);
         String a = p.getActions();
@@ -78,5 +88,41 @@ public class TestCardPermission {
             throw new Exception("Canonical actions mismatch: " + canon + " != " + a);
         }
     }
+
+    private static void testImpliesNotCardPermission(String actions) {
+        CardPermission p1 = new CardPermission("*", actions);
+        Permission p2 = new Permission(actions) {
+            @Override public boolean implies(Permission permission) { return false; }
+            @Override public boolean equals(Object obj) { return false; }
+            @Override public int hashCode() { return 0; }
+            @Override public String getActions() { return null; }
+        };
+        assertFalse(p1.implies(p2));
+    }
+
+    private static void testImpliesNotSubsetCardPermission() {
+        CardPermission p1 = new CardPermission("*", "connect,reset");
+        CardPermission p2 = new CardPermission("*", "transmitControl");
+        assertFalse(p1.implies(p2));
+    }
+
+    private static void testImpliesNameEqualsAll() {
+        CardPermission p1 = new CardPermission("*", "connect,reset");
+        CardPermission p2 = new CardPermission("None", "reset");
+        assertTrue(p1.implies(p2));
+    }
+
+    private static void testImpliesBothSameNameNotAll() {
+        CardPermission p1 = new CardPermission("None", "connect,reset");
+        CardPermission p2 = new CardPermission("None", "reset");
+        assertTrue(p1.implies(p2));
+    }
+
+    private static void testImpliesNameNotSameNotAll() {
+        CardPermission p1 = new CardPermission("None", "connect,reset");
+        CardPermission p2 = new CardPermission("Other", "reset");
+        assertFalse(p1.implies(p2));
+    }
+
 
 }

@@ -67,5 +67,6 @@ public class ResponseAPDUTest {
         assertEquals(RAPDU.getSW(), expectedSw);
         assertEquals(RAPDU.getSW1(), expectedSw1);
         assertEquals(RAPDU.getSW2(), expectedSw2);
+        assertEquals(RAPDU.toString(), "ResponseAPDU: " + R1.length + " bytes, SW=9000");
     }
 }
