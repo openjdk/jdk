@@ -89,10 +89,6 @@ public class CheckIndex {
         return l.toArray(Object[][]::new);
     }
 
-    interface X {
-        int apply(int a, int b, int c);
-    }
-
     @Test(dataProvider = "checkIndexProvider")
     public void testCheckIndex(int index, int length, boolean withinBounds) {
         String expectedMessage = withinBounds

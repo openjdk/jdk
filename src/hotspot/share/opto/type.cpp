@@ -1347,10 +1347,7 @@ bool TypeD::empty(void) const {
 
 const TypeInteger* TypeInteger::make(jlong lo, jlong hi, int w, BasicType bt) {
   if (bt == T_INT) {
-    jint int_lo = (jint)lo;
-    jint int_hi = (jint)hi;
-    assert(((jlong)int_lo) == lo && ((jlong)int_hi) == hi, "bounds are not ints");
-    return TypeInt::make(int_lo, int_hi, w);
+    return TypeInt::make(checked_cast<jint>(lo), checked_cast<jint>(hi), w);
   }
   assert(bt == T_LONG, "basic type not an int or long");
   return TypeLong::make(lo, hi, w);

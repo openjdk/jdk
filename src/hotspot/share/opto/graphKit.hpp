@@ -105,9 +105,9 @@ class GraphKit : public Phase {
   Node* longcon(jlong con)      const { return _gvn.longcon(con); }
   Node* integercon(jlong con, BasicType bt)   const {
     if (bt == T_INT) {
-      assert((jlong)(jint)con == con, "not an int");
-      return intcon((jint) con);
+      return intcon(checked_cast<jint>(con));
     }
+    assert(bt == T_LONG, "basic type not an int or long");
     return longcon(con);
   }
   Node* makecon(const Type *t)  const { return _gvn.makecon(t); }
