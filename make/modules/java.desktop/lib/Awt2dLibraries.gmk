@@ -492,7 +492,7 @@ else
         maybe-uninitialized class-memaccess, \
       DISABLED_WARNINGS_clang := unused-value incompatible-pointer-types \
         tautological-constant-out-of-range-compare int-to-pointer-cast \
-        undef missing-field-initializers, \
+        undef missing-field-initializers range-loop-analysis, \
       DISABLED_WARNINGS_microsoft := 4267 4244 4090 4146 4334 4819 4101 4068 4805 4138, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
