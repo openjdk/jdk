@@ -98,6 +98,9 @@ class G1Policy: public CHeapObj<mtGC> {
 
   uint _free_regions_at_end_of_collection;
 
+  size_t _predicted_survival_bytes_from_survivor;
+  size_t _predicted_survival_bytes_from_old;
+
   size_t _rs_length;
 
   size_t _rs_length_prediction;
@@ -345,6 +348,8 @@ public:
                                                  double time_remaining_ms,
                                                  uint& num_optional_regions);
 
+  bool can_mutator_consume_free_regions(uint region_count);
+  void calculate_required_regions_for_next_collect();
 private:
   // Set the state to start a concurrent marking cycle and clear
   // _initiate_conc_mark_if_possible because it has now been

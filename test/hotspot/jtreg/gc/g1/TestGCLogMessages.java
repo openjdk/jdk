@@ -314,16 +314,17 @@ public class TestGCLogMessages {
     static class GCTestWithEvacuationFailure {
         private static byte[] garbage;
         private static byte[] largeObject;
-        private static Object[] holder = new Object[200]; // Must be larger than G1EvacuationFailureALotCount
+        private static Object[] holder = new Object[800]; // Must be larger than G1EvacuationFailureALotCount
 
         public static void main(String [] args) {
             largeObject = new byte[16*1024*1024];
             System.out.println("Creating garbage");
-            // Create 16 MB of garbage. This should result in at least one GC,
+            // Create 64 MB of garbage. This should result in at least one GC,
             // (Heap size is 32M, we use 17MB for the large object above)
-            // which is larger than G1EvacuationFailureALotInterval.
+            // which is larger than G1EvacuationFailureALotInterval and enough
+            // will survive to cause the evacuation failure.
             for (int i = 0; i < 16 * 1024; i++) {
-                holder[i % holder.length] = new byte[1024];
+                holder[i % holder.length] = new byte[4096];
             }
             System.out.println("Done");
         }
