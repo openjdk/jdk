@@ -714,10 +714,10 @@ AC_DEFUN([JDKOPT_BUILD_BINUTILS],
   BINUTILS_SRC="$with_binutils_src"
 
   if ! test -d $BINUTILS_SRC; then
-    AC_MSG_ERROR[--with-binutils-src is not pointing to a directory]
+    AC_MSG_ERROR([--with-binutils-src is not pointing to a directory])
   fi
   if ! test -x $BINUTILS_SRC/configure; then
-    AC_MSG_ERROR[--with-binutils-src does not look like a binutils source directory]
+    AC_MSG_ERROR([--with-binutils-src does not look like a binutils source directory])
   fi
 
   if test -e $BINUTILS_SRC/bfd/libbfd.a && \
