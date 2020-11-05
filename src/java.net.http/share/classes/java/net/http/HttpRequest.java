@@ -318,34 +318,29 @@ public abstract class HttpRequest {
      */
     public static Builder newBuilder(HttpRequest request) {
         Objects.requireNonNull(request);
-        try {
-            final HttpRequest.Builder builder = HttpRequest.newBuilder();
-            builder.uri(request.uri());
-            builder.expectContinue(request.expectContinue());
-            request.headers().map().forEach((name, values) -> values.forEach(value -> builder.header(name, value)));
 
-            request.version().ifPresent(builder::version);
-            request.timeout().ifPresent(builder::timeout);
-            var method = request.method();
-            request.bodyPublisher().ifPresentOrElse(
-                    // if body is present, set it
-                    bodyPublisher -> builder.method(method, bodyPublisher),
-                    // otherwise, the body is absent, special case for GET/DELETE,
-                    // or else use empty body
-                    () -> {
-                        switch (method) {
-                            case "GET" -> builder.GET();
-                            case "DELETE" -> builder.DELETE();
-                            default -> builder.method(method, HttpRequest.BodyPublishers.noBody());
-                        }
+        final HttpRequest.Builder builder = HttpRequest.newBuilder();
+        builder.uri(request.uri());
+        builder.expectContinue(request.expectContinue());
+        request.headers().map().forEach((name, values) -> values.forEach(value -> builder.header(name, value)));
+
+        request.version().ifPresent(builder::version);
+        request.timeout().ifPresent(builder::timeout);
+        var method = request.method();
+        request.bodyPublisher().ifPresentOrElse(
+                // if body is present, set it
+                bodyPublisher -> builder.method(method, bodyPublisher),
+                // otherwise, the body is absent, special case for GET/DELETE,
+                // or else use empty body
+                () -> {
+                    switch (method) {
+                        case "GET" -> builder.GET();
+                        case "DELETE" -> builder.DELETE();
+                        default -> builder.method(method, HttpRequest.BodyPublishers.noBody());
                     }
-            );
-            return builder;
-        } catch (SecurityException | IllegalArgumentException ex) {
-            throw ex;
-        } catch (RuntimeException r) {
-            throw new IllegalArgumentException("Illegal request parameters", r);
-        }
+                }
+        );
+        return builder;
     }
 
     /**
