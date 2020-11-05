@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,24 @@
  * questions.
  */
 
-// key: compiler.err.illegal.generic.type.for.instof
-
-import java.util.*;
-
-class IllegalInstanceof {
-    List o;
-    boolean b = (o instanceof List<String>);
+/*
+ * @test
+ * @bug 8231827
+ * @summary Pattern variables are non-final.
+ * @compile/fail/ref=PatternVariablesAreNonFinal.out -XDrawDiagnostics PatternVariablesAreNonFinal.java
+ */
+public class PatternVariablesAreNonFinal {
+    public static void main(String[] args) {
+        Object o = 32;
+        if (o instanceof String s) {
+            s = "hello again";
+            new Runnable() {
+                @Override
+                public void run() {
+                    System.err.println(s);
+                }
+            };
+        }
+        System.out.println("test complete");
+    }
 }
