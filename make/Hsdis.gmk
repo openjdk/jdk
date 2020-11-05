@@ -42,10 +42,12 @@ $(eval $(call SetupJdkLibrary, BUILD_HSDIS, \
     EXCLUDE_FILES := hsdis-demo.c, \
     OUTPUT_DIR := $(HSDIS_OUTPUT_DIR), \
     OBJECT_DIR := $(HSDIS_OUTPUT_DIR), \
+    DISABLED_WARNINGS_gcc := undef format-nonliteral sign-compare, \
     DISABLED_WARNINGS_clang := undef format-nonliteral, \
     CFLAGS := $(CFLAGS_JDKLIB) $(HSDIS_CFLAGS), \
     LDFLAGS := $(LDFLAGS_JDKLIB), \
     LIBS := $(HSDIS_LIBS), \
+    LIBS_linux := -ldl, \
 ))
 
 build: $(BUILD_HSDIS)
