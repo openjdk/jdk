@@ -43,6 +43,8 @@ import jdk.test.lib.NetworkConfiguration;
 public class UniqueMacAddressesTest {
 
     static PrintStream log = System.err;
+
+    // A record pair (NetworkInterface::name,  NetworkInterface::hardwareAddress)
     record NetIfPair(String interfaceName, byte[] address) {}
 
     public static void main(String[] args) throws Exception {
