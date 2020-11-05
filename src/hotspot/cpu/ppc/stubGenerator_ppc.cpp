@@ -3676,8 +3676,8 @@ class StubGenerator: public StubCodeGenerator {
     // loop_unrolls = 1.  Performance at loop_unrolls = 16 is similar but
     // has the disadvantage of requiring a larger minimum block of data to
     // work with.  A value of 1 gives a minimum of (16 + 12) = 28 bytes
-    // before intrinsic will decode any data.  See the reason for the +12
-    // in the following logic.
+    // before the intrinsic will decode any data.  See the reason for the
+    // +12 in the following logic.
     const unsigned loop_unrolls = 1;
 
     const unsigned vec_size = 16; // size of vector registers in bytes
