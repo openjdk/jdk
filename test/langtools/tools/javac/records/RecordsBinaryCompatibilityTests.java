@@ -93,7 +93,7 @@ public class RecordsBinaryCompatibilityTests extends TestRunner {
                         System.out.println(r.i());
                     }
                 }
-                        """,
+                """,
                 true,
                 "java.lang.NoSuchMethodError"
         );
@@ -123,7 +123,7 @@ public class RecordsBinaryCompatibilityTests extends TestRunner {
                         System.out.println(r.i());
                     }
                 }
-                        """,
+                """,
                 true,
                 "java.lang.NoSuchMethodError"
         );
@@ -149,7 +149,7 @@ public class RecordsBinaryCompatibilityTests extends TestRunner {
                         System.out.println(r.i());
                     }
                 }
-                        """,
+                """,
                 true,
                 "java.lang.NoSuchMethodError"
         );
@@ -175,7 +175,7 @@ public class RecordsBinaryCompatibilityTests extends TestRunner {
                         System.out.println(r.i());
                     }
                 }
-                        """,
+                """,
                 true,
                 "java.lang.NoSuchMethodError"
         );
