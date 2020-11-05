@@ -168,12 +168,12 @@ public class AbsPathsInImage {
 
     private void scanFile(Path file, List<byte[]> searchPatterns) throws IOException {
         List<String> matches = scanBytes(Files.readAllBytes(file), searchPatterns);
-        // For the same reason as the *.dll above, the jdk.incubator.jpackage module
+        // For the same reason as the *.dll above, the jdk.jpackage module
         // contains some unavoidable header references in the launcher which is
         // stored as a java resource inside the modules file.
         if (IS_WINDOWS && file.toString().endsWith("modules")) {
             matches = matches.stream()
-                .filter(f -> !f.matches(".*jdk\\.incubator\\.jpackage.*\\.h.*"))
+                .filter(f -> !f.matches(".*jdk\\.jpackage.*\\.h.*"))
                 .collect(Collectors.toList());
         }
         if (matches.size() > 0) {
