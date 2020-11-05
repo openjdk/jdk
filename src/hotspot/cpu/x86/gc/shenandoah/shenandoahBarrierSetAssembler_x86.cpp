@@ -291,25 +291,34 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   __ testb(gc_state, ShenandoahHeap::HAS_FORWARDED);
   __ jcc(Assembler::zero, heap_stable);
 
-  Register tmp1 = noreg;
+  Register tmp1 = noreg, tmp2 = noreg;
   if (kind == ShenandoahBarrierSet::AccessKind::NORMAL) {
     // Test for object in cset
-    // Allocate tmp-reg.
+    // Allocate temporary registers
     for (int i = 0; i < 8; i++) {
       Register r = as_Register(i);
       if (r != rsp && r != rbp && r != dst && r != src.base() && r != src.index()) {
-        tmp1 = r;
-        break;
+        if (tmp1 == noreg) {
+          tmp1 = r;
+        } else {
+          tmp2 = r;
+          break;
+        }
       }
     }
+    assert(tmp1 != noreg, "tmp1 allocated");
+    assert(tmp2 != noreg, "tmp2 allocated");
+    assert_different_registers(tmp1, tmp2, src.base(), src.index());
+    assert_different_registers(tmp1, tmp2, dst);
+
     __ push(tmp1);
-    assert_different_registers(tmp1, src.base(), src.index());
-    assert_different_registers(tmp1, dst);
+    __ push(tmp2);
 
     // Optimized cset-test
     __ movptr(tmp1, dst);
     __ shrptr(tmp1, ShenandoahHeapRegion::region_size_bytes_shift_jint());
-    __ movbool(tmp1, Address(tmp1, (intptr_t) ShenandoahHeap::in_cset_fast_test_addr(), Address::times_1));
+    __ movptr(tmp2, (intptr_t) ShenandoahHeap::in_cset_fast_test_addr());
+    __ movbool(tmp1, Address(tmp1, tmp2, Address::times_1));
     __ testbool(tmp1);
     __ jcc(Assembler::zero, not_cset);
   }
@@ -333,28 +342,38 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
 #endif
   assert(slot == 0, "must use all slots");
 
-  Register tmp2 = (dst == rsi) ? rdx : rsi;
-  assert_different_registers(dst, tmp2);
-  __ lea(tmp2, src);
+  // Shuffle registers such that dst is in c_rarg0 and addr in c_rarg1.
+#ifdef _LP64
+  Register arg0 = c_rarg0, arg1 = c_rarg1;
+#else
+  Register arg0 = rdi, arg1 = rsi;
+#endif
+  if (dst == arg1) {
+    __ lea(arg0, src);
+    __ xchgptr(arg1, arg0);
+  } else {
+    __ lea(arg1, src);
+    __ movptr(arg0, dst);
+  }
 
   save_xmm_registers(masm);
   switch (kind) {
     case ShenandoahBarrierSet::AccessKind::NORMAL:
       if (UseCompressedOops) {
-        __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_narrow), dst, tmp2);
+        __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_narrow), arg0, arg1);
       } else {
-        __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier), dst, tmp2);
+        __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier), arg0, arg1);
       }
       break;
     case ShenandoahBarrierSet::AccessKind::WEAK:
       if (UseCompressedOops) {
-        __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak_narrow), dst, tmp2);
+        __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak_narrow), arg0, arg1);
       } else {
-        __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak), dst, tmp2);
+        __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak), arg0, arg1);
       }
       break;
     case ShenandoahBarrierSet::AccessKind::NATIVE:
-      __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak), dst, tmp2);
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak), arg0, arg1);
       break;
     default:
       ShouldNotReachHere();
@@ -383,6 +402,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   __ bind(not_cset);
 
   if  (kind == ShenandoahBarrierSet::AccessKind::NORMAL) {
+    __ pop(tmp2);
     __ pop(tmp1);
   }
 
