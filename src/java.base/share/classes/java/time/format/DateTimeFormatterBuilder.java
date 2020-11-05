@@ -1476,7 +1476,7 @@ public final class DateTimeFormatterBuilder {
      * For example, if the parsed day period type is "night1" and the period defined
      * for it in the formatter locale is from 21:00 to 06:00, then {@code HOUR_OF_DAY}
      * is set to '1' and {@code MINUTE_OF_HOUR} set to '30'. If {@code AMPM_OF_DAY} exists
-     * and no {@code HOUR_OF_DAY} is resolved, the parsed day period takes the precedence.
+     * and no {@code HOUR_OF_DAY} is resolved, the parsed day period takes precedence.
      * If any conflict occurs in {@link ResolverStyle#LENIENT LENIENT} mode, no
      * exception is thrown and the day period is ignored.
      *

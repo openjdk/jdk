@@ -177,7 +177,7 @@ final class Parsed implements TemporalAccessor {
         cloned.zone = this.zone;
         cloned.chrono = this.chrono;
         cloned.leapSecond = this.leapSecond;
-        cloned.dayPeriod= this.dayPeriod;
+        cloned.dayPeriod = this.dayPeriod;
         return cloned;
     }
 
