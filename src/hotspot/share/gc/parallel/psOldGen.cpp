@@ -173,6 +173,38 @@ HeapWord* PSOldGen::allocate(size_t word_size) {
   return res;
 }
 
+size_t PSOldGen::num_iterable_blocks() const {
+  return (object_space()->used_in_bytes() + IterateBlockSize - 1) / IterateBlockSize;
+}
+
+void PSOldGen::object_iterate_block(ObjectClosure* cl, size_t block_index) {
+  size_t block_word_size = IterateBlockSize / HeapWordSize;
+  assert((block_word_size % (ObjectStartArray::block_size)) == 0,
+         "Block size not a multiple of start_array block");
+
+  MutableSpace *space = object_space();
+
+  HeapWord* begin = space->bottom() + block_index * block_word_size;
+  HeapWord* end = MIN2(space->top(), begin + block_word_size);
+
+  if (!start_array()->object_starts_in_range(begin, end)) {
+    return;
+  }
+
+  // Get object starting at or reaching into this block.
+  HeapWord* start = start_array()->object_start(begin);
+  if (start < begin) {
+    start += oop(start)->size();
+  }
+  assert(start >= begin,
+         "Object address" PTR_FORMAT " must be larger or equal to block address at " PTR_FORMAT,
+         p2i(start), p2i(begin));
+  // Iterate all objects until the end.
+  for (HeapWord* p = start; p < end; p += oop(p)->size()) {
+    cl->do_object(oop(p));
+  }
+}
+
 HeapWord* PSOldGen::expand_and_allocate(size_t word_size) {
   expand(word_size*HeapWordSize);
   if (GCExpandToAllocateDelayMillis > 0) {

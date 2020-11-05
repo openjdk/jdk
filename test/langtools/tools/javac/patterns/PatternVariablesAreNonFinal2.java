@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,24 @@
  * questions.
  */
 
-// key: compiler.err.pattern.binding.may.not.be.assigned
-// key: compiler.note.preview.filename
-// key: compiler.note.preview.recompile
-// options: --enable-preview -source ${jdk.version}
-
-class ResourceMayNotBeAssigned {
-    void m(Object o) {
+/*
+ * @test
+ * @bug 8231827
+ * @summary Pattern variables can be effectivelly final so should be allowed to be referenced in an inner class
+ * @compile PatternVariablesAreNonFinal2.java
+ * @run main PatternVariablesAreNonFinal2
+ */
+public class PatternVariablesAreNonFinal2 {
+    public static void main(String[] args) {
+        Object o = "42";
         if (o instanceof String s) {
-            s = "";
+            new Object() {
+                void run() { System.err.println(s); }
+            }.run();
+        }
+        if (o instanceof String s) {
+            s = "hello again";
+            System.out.println(s);
         }
     }
 }

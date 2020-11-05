@@ -3049,150 +3049,11 @@ BytecodeInterpreter::BytecodeInterpreter(messages msg) {
   _prev_link = NULL;
 }
 
-// Inline static functions for Java Stack and Local manipulation
-
-// The implementations are platform dependent. We have to worry about alignment
-// issues on some machines which can change on the same platform depending on
-// whether it is an LP64 machine also.
-address BytecodeInterpreter::stack_slot(intptr_t *tos, int offset) {
-  return (address) tos[Interpreter::expr_index_at(-offset)];
-}
-
-jint BytecodeInterpreter::stack_int(intptr_t *tos, int offset) {
-  return *((jint*) &tos[Interpreter::expr_index_at(-offset)]);
-}
-
-jfloat BytecodeInterpreter::stack_float(intptr_t *tos, int offset) {
-  return *((jfloat *) &tos[Interpreter::expr_index_at(-offset)]);
-}
-
-oop BytecodeInterpreter::stack_object(intptr_t *tos, int offset) {
-  return cast_to_oop(tos [Interpreter::expr_index_at(-offset)]);
-}
-
-jdouble BytecodeInterpreter::stack_double(intptr_t *tos, int offset) {
-  return ((VMJavaVal64*) &tos[Interpreter::expr_index_at(-offset)])->d;
-}
-
-jlong BytecodeInterpreter::stack_long(intptr_t *tos, int offset) {
-  return ((VMJavaVal64 *) &tos[Interpreter::expr_index_at(-offset)])->l;
-}
-
-// only used for value types
-void BytecodeInterpreter::set_stack_slot(intptr_t *tos, address value,
-                                                        int offset) {
-  *((address *)&tos[Interpreter::expr_index_at(-offset)]) = value;
-}
-
-void BytecodeInterpreter::set_stack_int(intptr_t *tos, int value,
-                                                       int offset) {
-  *((jint *)&tos[Interpreter::expr_index_at(-offset)]) = value;
-}
-
-void BytecodeInterpreter::set_stack_float(intptr_t *tos, jfloat value,
-                                                         int offset) {
-  *((jfloat *)&tos[Interpreter::expr_index_at(-offset)]) = value;
-}
-
-void BytecodeInterpreter::set_stack_object(intptr_t *tos, oop value,
-                                                          int offset) {
-  *((oop *)&tos[Interpreter::expr_index_at(-offset)]) = value;
-}
-
-// needs to be platform dep for the 32 bit platforms.
-void BytecodeInterpreter::set_stack_double(intptr_t *tos, jdouble value,
-                                                          int offset) {
-  ((VMJavaVal64*)&tos[Interpreter::expr_index_at(-offset)])->d = value;
-}
-
-void BytecodeInterpreter::set_stack_double_from_addr(intptr_t *tos,
-                                              address addr, int offset) {
-  (((VMJavaVal64*)&tos[Interpreter::expr_index_at(-offset)])->d =
-                        ((VMJavaVal64*)addr)->d);
-}
-
-void BytecodeInterpreter::set_stack_long(intptr_t *tos, jlong value,
-                                                        int offset) {
-  ((VMJavaVal64*)&tos[Interpreter::expr_index_at(-offset+1)])->l = 0xdeedbeeb;
-  ((VMJavaVal64*)&tos[Interpreter::expr_index_at(-offset)])->l = value;
-}
-
-void BytecodeInterpreter::set_stack_long_from_addr(intptr_t *tos,
-                                            address addr, int offset) {
-  ((VMJavaVal64*)&tos[Interpreter::expr_index_at(-offset+1)])->l = 0xdeedbeeb;
-  ((VMJavaVal64*)&tos[Interpreter::expr_index_at(-offset)])->l =
-                        ((VMJavaVal64*)addr)->l;
-}
-
-// Locals
-
-address BytecodeInterpreter::locals_slot(intptr_t* locals, int offset) {
-  return (address)locals[Interpreter::local_index_at(-offset)];
-}
-jint BytecodeInterpreter::locals_int(intptr_t* locals, int offset) {
-  return (jint)locals[Interpreter::local_index_at(-offset)];
-}
-jfloat BytecodeInterpreter::locals_float(intptr_t* locals, int offset) {
-  return (jfloat)locals[Interpreter::local_index_at(-offset)];
-}
-oop BytecodeInterpreter::locals_object(intptr_t* locals, int offset) {
-  return cast_to_oop(locals[Interpreter::local_index_at(-offset)]);
-}
-jdouble BytecodeInterpreter::locals_double(intptr_t* locals, int offset) {
-  return ((VMJavaVal64*)&locals[Interpreter::local_index_at(-(offset+1))])->d;
-}
-jlong BytecodeInterpreter::locals_long(intptr_t* locals, int offset) {
-  return ((VMJavaVal64*)&locals[Interpreter::local_index_at(-(offset+1))])->l;
-}
-
-// Returns the address of locals value.
-address BytecodeInterpreter::locals_long_at(intptr_t* locals, int offset) {
-  return ((address)&locals[Interpreter::local_index_at(-(offset+1))]);
-}
-address BytecodeInterpreter::locals_double_at(intptr_t* locals, int offset) {
-  return ((address)&locals[Interpreter::local_index_at(-(offset+1))]);
-}
-
-// Used for local value or returnAddress
-void BytecodeInterpreter::set_locals_slot(intptr_t *locals,
-                                   address value, int offset) {
-  *((address*)&locals[Interpreter::local_index_at(-offset)]) = value;
-}
-void BytecodeInterpreter::set_locals_int(intptr_t *locals,
-                                   jint value, int offset) {
-  *((jint *)&locals[Interpreter::local_index_at(-offset)]) = value;
-}
-void BytecodeInterpreter::set_locals_float(intptr_t *locals,
-                                   jfloat value, int offset) {
-  *((jfloat *)&locals[Interpreter::local_index_at(-offset)]) = value;
-}
-void BytecodeInterpreter::set_locals_object(intptr_t *locals,
-                                   oop value, int offset) {
-  *((oop *)&locals[Interpreter::local_index_at(-offset)]) = value;
-}
-void BytecodeInterpreter::set_locals_double(intptr_t *locals,
-                                   jdouble value, int offset) {
-  ((VMJavaVal64*)&locals[Interpreter::local_index_at(-(offset+1))])->d = value;
-}
-void BytecodeInterpreter::set_locals_long(intptr_t *locals,
-                                   jlong value, int offset) {
-  ((VMJavaVal64*)&locals[Interpreter::local_index_at(-(offset+1))])->l = value;
-}
-void BytecodeInterpreter::set_locals_double_from_addr(intptr_t *locals,
-                                   address addr, int offset) {
-  ((VMJavaVal64*)&locals[Interpreter::local_index_at(-(offset+1))])->d = ((VMJavaVal64*)addr)->d;
-}
-void BytecodeInterpreter::set_locals_long_from_addr(intptr_t *locals,
-                                   address addr, int offset) {
-  ((VMJavaVal64*)&locals[Interpreter::local_index_at(-(offset+1))])->l = ((VMJavaVal64*)addr)->l;
-}
-
 void BytecodeInterpreter::astore(intptr_t* tos,    int stack_offset,
                           intptr_t* locals, int locals_offset) {
   intptr_t value = tos[Interpreter::expr_index_at(-stack_offset)];
   locals[Interpreter::local_index_at(-locals_offset)] = value;
 }
-
 
 void BytecodeInterpreter::copy_stack_slot(intptr_t *tos, int from_offset,
                                    int to_offset) {
@@ -3203,6 +3064,7 @@ void BytecodeInterpreter::copy_stack_slot(intptr_t *tos, int from_offset,
 void BytecodeInterpreter::dup(intptr_t *tos) {
   copy_stack_slot(tos, -1, 0);
 }
+
 void BytecodeInterpreter::dup2(intptr_t *tos) {
   copy_stack_slot(tos, -2, 0);
   copy_stack_slot(tos, -1, 1);
