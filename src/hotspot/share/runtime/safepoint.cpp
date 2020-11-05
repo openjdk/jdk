@@ -931,10 +931,7 @@ void ThreadSafepointState::handle_polling_page_exception() {
     StackWatermarkSet::after_unwind(self);
 
     // Process pending operation
-    SafepointMechanism::process_if_requested(self);
-    if (self->has_special_runtime_exit_condition()) {
-      self->handle_special_runtime_exit_condition(true /* check asyncs */);
-    }
+    SafepointMechanism::process_if_requested_with_exit_check(self, true /* check asyncs */);
 
     // restore oop result, if any
     if (return_oop) {
@@ -950,15 +947,12 @@ void ThreadSafepointState::handle_polling_page_exception() {
 
     set_at_poll_safepoint(true);
     // Process pending operation
-    SafepointMechanism::process_if_requested(self);
-    if (self->has_special_runtime_exit_condition()) {
-      // We never deliver an async exception at a polling point as the
-      // compiler may not have an exception handler for it. The polling
-      // code will notice the async and deoptimize and the exception will
-      // be delivered. (Polling at a return point is ok though). Sure is
-      // a lot of bother for a deprecated feature...
-      self->handle_special_runtime_exit_condition(false /* check asyncs */);
-    }
+    // We never deliver an async exception at a polling point as the
+    // compiler may not have an exception handler for it. The polling
+    // code will notice the async and deoptimize and the exception will
+    // be delivered. (Polling at a return point is ok though). Sure is
+    // a lot of bother for a deprecated feature...
+    SafepointMechanism::process_if_requested_with_exit_check(self, false /* check asyncs */);
     set_at_poll_safepoint(false);
 
     // If we have a pending async exception deoptimize the frame
