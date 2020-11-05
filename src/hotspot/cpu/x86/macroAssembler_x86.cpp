@@ -370,11 +370,6 @@ void MacroAssembler::pushptr(AddressLiteral src) {
   }
 }
 
-void MacroAssembler::set_word_if_not_zero(Register dst) {
-  xorl(dst, dst);
-  set_byte_if_not_zero(dst);
-}
-
 static void pass_arg0(MacroAssembler* masm, Register arg) {
   masm->push(arg);
 }
@@ -714,8 +709,12 @@ void MacroAssembler::movptr(Register dst, ArrayAddress src) {
 
 // src should NEVER be a real pointer. Use AddressLiteral for true pointers
 void MacroAssembler::movptr(Address dst, intptr_t src) {
-  mov64(rscratch1, src);
-  movq(dst, rscratch1);
+  if (is_simm32(src)) {
+    movptr(dst, checked_cast<int32_t>(src));
+  } else {
+    mov64(rscratch1, src);
+    movq(dst, rscratch1);
+  }
 }
 
 // These are mostly for initializing NULL
@@ -3988,7 +3987,6 @@ Address MacroAssembler::argument_address(RegisterOrConstant arg_slot,
   offset += wordSize;           // return PC is on stack
   return Address(rsp, scale_reg, scale_factor, offset);
 }
-
 
 void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* file, int line) {
   if (!VerifyOops) return;

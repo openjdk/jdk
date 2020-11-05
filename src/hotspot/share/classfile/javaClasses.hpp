@@ -904,8 +904,9 @@ class java_lang_ref_Reference: AllStatic {
 
  public:
   // Accessors
-  static inline oop referent(oop ref);
-  static inline void set_referent(oop ref, oop value);
+  static inline oop weak_referent_no_keepalive(oop ref);
+  static inline oop phantom_referent_no_keepalive(oop ref);
+  static inline oop unknown_referent_no_keepalive(oop ref);
   static inline void set_referent_raw(oop ref, oop value);
   static inline HeapWord* referent_addr_raw(oop ref);
   static inline oop next(oop ref);
