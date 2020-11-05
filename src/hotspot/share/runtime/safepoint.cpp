@@ -949,9 +949,9 @@ void ThreadSafepointState::handle_polling_page_exception() {
     // Process pending operation
     // We never deliver an async exception at a polling point as the
     // compiler may not have an exception handler for it. The polling
-    // code will notice the async and deoptimize and the exception will
-    // be delivered. (Polling at a return point is ok though). Sure is
-    // a lot of bother for a deprecated feature...
+    // code will notice the pending async exception, deoptimize and
+    // the exception will be delivered. (Polling at a return point
+    // is ok though). Sure is a lot of bother for a deprecated feature...
     SafepointMechanism::process_if_requested_with_exit_check(self, false /* check asyncs */);
     set_at_poll_safepoint(false);
 
