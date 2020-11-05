@@ -3147,6 +3147,8 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
 
   char* aligned_base = NULL;
 
+  int safety = 20;
+
   do {
     char* extra_base = file_desc != -1 ?
       os::map_memory_to_file(extra_size, file_desc) :
@@ -3167,7 +3169,9 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
       os::attempt_map_memory_to_file_at(aligned_base, size, file_desc) :
       os::attempt_reserve_memory_at(aligned_base, size);
 
-  } while (aligned_base == NULL);
+    safety --;
+
+  } while (aligned_base == NULL && safety > 0);
 
   return aligned_base;
 }
@@ -3392,7 +3396,12 @@ bool os::pd_uncommit_memory(char* addr, size_t bytes) {
 }
 
 bool os::pd_release_memory(char* addr, size_t bytes) {
-  return VirtualFree(addr, 0, MEM_RELEASE) != 0;
+  BOOL res = VirtualFree(addr, 0, MEM_RELEASE);
+  if (res == FALSE) {
+    log_warning(os)("Failed to release region [" PTR_FORMAT ", " PTR_FORMAT "), GetLastError=%u",
+		 addr, addr + bytes, (unsigned) ::GetLastError());
+  }
+  return res != 0;
 }
 
 bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
