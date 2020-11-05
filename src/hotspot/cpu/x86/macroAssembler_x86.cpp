@@ -3929,44 +3929,6 @@ void MacroAssembler::vallones(XMMRegister dst, int vector_len) {
   }
 }
 
-RegisterOrConstant MacroAssembler::delayed_value_impl(intptr_t* delayed_value_addr,
-                                                      Register tmp,
-                                                      int offset) {
-  intptr_t value = *delayed_value_addr;
-  if (value != 0)
-    return RegisterOrConstant(value + offset);
-
-  // load indirectly to solve generation ordering problem
-  movptr(tmp, ExternalAddress((address) delayed_value_addr));
-
-#ifdef ASSERT
-  { Label L;
-    testptr(tmp, tmp);
-    if (WizardMode) {
-      const char* buf = NULL;
-      {
-        ResourceMark rm;
-        stringStream ss;
-        ss.print("DelayedValue=" INTPTR_FORMAT, delayed_value_addr[1]);
-        buf = code_string(ss.as_string());
-      }
-      jcc(Assembler::notZero, L);
-      STOP(buf);
-    } else {
-      jccb(Assembler::notZero, L);
-      hlt();
-    }
-    bind(L);
-  }
-#endif
-
-  if (offset != 0)
-    addptr(tmp, offset);
-
-  return RegisterOrConstant(tmp);
-}
-
-
 Address MacroAssembler::argument_address(RegisterOrConstant arg_slot,
                                          int extra_slot_offset) {
   // cf. TemplateTable::prepare_invoke(), if (load_receiver).
