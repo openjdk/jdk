@@ -575,8 +575,9 @@ static SpecialFlag const special_jvm_flags[] = {
   { "MaxInlineSize",                JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
   { "FreqInlineSize",               JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
   { "MaxTrivialSize",               JDK_Version::undefined(), JDK_Version::jdk(15), JDK_Version::jdk(16) },
-  { "UseRDPCForConstantTableBase",  JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(16) },
-#endif
+#else
+  { "UseRDPCForConstantTableBase",  JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+#endif /*COMPILER2*/
 
   { NULL, JDK_Version(0), JDK_Version(0) }
 };
@@ -990,8 +991,11 @@ static bool append_to_string_flag(JVMFlag* flag, const char* new_value, JVMFlagO
 const char* Arguments::handle_aliases_and_deprecation(const char* arg, bool warn) {
   const char* real_name = real_flag_name(arg);
   JDK_Version since = JDK_Version();
+
   switch (is_deprecated_flag(arg, &since)) {
-  case -1: {
+    case  0:
+    /*fall through*/
+    case -1: {
       // Obsolete or expired, so don't process normally,
       // but allow for an obsolete flag we're still
       // temporarily allowing.
@@ -1002,8 +1006,6 @@ const char* Arguments::handle_aliases_and_deprecation(const char* arg, bool warn
       // as obsoletion must come first.
       return NULL;
     }
-    case 0:
-      return real_name;
     case 1: {
       if (warn) {
         char version[256];
