@@ -35,7 +35,7 @@ import jdk.test.lib.NetworkConfiguration;
 /*
  * @test
  * @bug 8021372
- * @summary Tests that the MAC addresses returned by NetworkConfiguration.probe() are unique for each adapter.
+ * @summary Tests that the MAC addresses returned by NetworkInterface.getNetworkInterfaces are unique for each adapter.
  * @library /test/lib
  * @build jdk.test.lib.NetworkConfiguration
  * @run main/othervm UniqueMacAddressesTest
@@ -43,6 +43,7 @@ import jdk.test.lib.NetworkConfiguration;
 public class UniqueMacAddressesTest {
 
     static PrintStream log = System.err;
+    record NetIfPair(String interfaceName, byte[] address) {}
 
     public static void main(String[] args) throws Exception {
         new UniqueMacAddressesTest().execute();
@@ -104,6 +105,4 @@ public class UniqueMacAddressesTest {
                 .collect(Collectors.filtering(netIfPair -> netIfPair.address != null,
                         Collectors.toCollection(ArrayList::new)));
     }
-
-    record NetIfPair(String interfaceName, byte[] address) {}
 }
