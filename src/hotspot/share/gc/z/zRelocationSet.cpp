@@ -22,51 +22,106 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/z/zArray.inline.hpp"
 #include "gc/z/zForwarding.inline.hpp"
 #include "gc/z/zForwardingAllocator.inline.hpp"
 #include "gc/z/zRelocationSet.hpp"
+#include "gc/z/zRelocationSetSelector.inline.hpp"
 #include "gc/z/zStat.hpp"
-#include "memory/allocation.hpp"
+#include "gc/z/zTask.hpp"
+#include "gc/z/zWorkers.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 
-ZRelocationSet::ZRelocationSet() :
+class ZRelocationSetInstallTask : public ZTask {
+private:
+  ZForwardingAllocator* const    _allocator;
+  ZForwarding**                  _forwardings;
+  const size_t                   _nforwardings;
+  ZArrayParallelIterator<ZPage*> _small_iter;
+  ZArrayParallelIterator<ZPage*> _medium_iter;
+  volatile size_t                _small_next;
+  volatile size_t                _medium_next;
+
+  void install(ZForwarding* forwarding, volatile size_t* next) {
+    const size_t index = Atomic::fetch_and_add(next, 1u);
+    assert(index < _nforwardings, "Invalid index");
+    _forwardings[index] = forwarding;
+  }
+
+  void install_small(ZForwarding* forwarding) {
+    install(forwarding, &_small_next);
+  }
+
+  void install_medium(ZForwarding* forwarding) {
+    install(forwarding, &_medium_next);
+  }
+
+public:
+  ZRelocationSetInstallTask(ZForwardingAllocator* allocator, const ZRelocationSetSelector* selector) :
+      ZTask("ZRelocationSetInstallTask"),
+      _allocator(allocator),
+      _forwardings(NULL),
+      _nforwardings(selector->small()->length() + selector->medium()->length()),
+      _small_iter(selector->small()),
+      _medium_iter(selector->medium()),
+      _small_next(selector->medium()->length()),
+      _medium_next(0) {
+
+    // Reset the allocator to have room for the relocation
+    // set, all forwardings, and all forwarding entries.
+    const size_t relocation_set_size = _nforwardings * sizeof(ZForwarding*);
+    const size_t forwardings_size = _nforwardings * sizeof(ZForwarding);
+    const size_t forwarding_entries_size = selector->forwarding_entries() * sizeof(ZForwardingEntry);
+    _allocator->reset(relocation_set_size + forwardings_size + forwarding_entries_size);
+
+    // Allocate relocation set
+    _forwardings = new (_allocator->alloc(relocation_set_size)) ZForwarding*[_nforwardings];
+  }
+
+  ~ZRelocationSetInstallTask() {
+    assert(_allocator->is_full(), "Should be full");
+  }
+
+  virtual void work() {
+    // Allocate and install forwardings for small pages
+    for (ZPage* page; _small_iter.next(&page);) {
+      ZForwarding* const forwarding = ZForwarding::alloc(_allocator, page);
+      install_small(forwarding);
+    }
+
+    // Allocate and install forwardings for medium pages
+    for (ZPage* page; _medium_iter.next(&page);) {
+      ZForwarding* const forwarding = ZForwarding::alloc(_allocator, page);
+      install_medium(forwarding);
+    }
+  }
+
+  ZForwarding** forwardings() const {
+    return _forwardings;
+  }
+
+  size_t nforwardings() const {
+    return _nforwardings;
+  }
+};
+
+ZRelocationSet::ZRelocationSet(ZWorkers* workers) :
+    _workers(workers),
     _allocator(),
     _forwardings(NULL),
     _nforwardings(0) {}
 
-void ZRelocationSet::populate(ZPage* const* small, size_t nsmall,
-                              ZPage* const* medium, size_t nmedium,
-                              size_t forwarding_entries) {
-  // Set relocation set length
-  _nforwardings = nsmall + nmedium;
+void ZRelocationSet::install(const ZRelocationSetSelector* selector) {
+  // Install relocation set
+  ZRelocationSetInstallTask task(&_allocator, selector);
+  _workers->run_concurrent(&task);
 
-  // Initialize forwarding allocator to have room for the
-  // relocation set, all forwardings, and all forwarding entries.
-  const size_t relocation_set_size = _nforwardings * sizeof(ZForwarding*);
-  const size_t forwardings_size = _nforwardings * sizeof(ZForwarding);
-  const size_t forwarding_entries_size = forwarding_entries * sizeof(ZForwardingEntry);
-  _allocator.reset(relocation_set_size + forwardings_size + forwarding_entries_size);
-
-  // Allocate relocation set
-  _forwardings = new (_allocator.alloc(relocation_set_size)) ZForwarding*[_nforwardings];
-
-  // Populate relocation set array
-  size_t j = 0;
-
-  // Populate medium pages
-  for (size_t i = 0; i < nmedium; i++) {
-    _forwardings[j++] = ZForwarding::alloc(&_allocator, medium[i]);
-  }
-
-  // Populate small pages
-  for (size_t i = 0; i < nsmall; i++) {
-    _forwardings[j++] = ZForwarding::alloc(&_allocator, small[i]);
-  }
-
-  assert(_allocator.is_full(), "Should be full");
+  _forwardings = task.forwardings();
+  _nforwardings = task.nforwardings();
 
   // Update statistics
-  ZStatRelocation::set_at_populate_relocation_set(_allocator.size());
+  ZStatRelocation::set_at_install_relocation_set(_allocator.size());
 }
 
 void ZRelocationSet::reset() {

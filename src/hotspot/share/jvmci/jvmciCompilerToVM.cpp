@@ -1995,6 +1995,14 @@ C2V_VMENTRY_NULL(jobject, readFieldValue, (JNIEnv* env, jobject, jobject object,
     JVMCI_THROW_MSG_NULL(IllegalArgumentException,
                          err_msg("Unexpected type: %s", JVMCIENV->klass_name(base)));
   }
+
+  if (displacement == java_lang_Class::component_mirror_offset() && java_lang_Class::is_instance(obj()) &&
+      !java_lang_Class::as_Klass(obj())->is_array_klass()) {
+    // Class.componentType for non-array classes can transiently contain an int[] that's
+    // used for locking so always return null to mimic Class.getComponentType()
+    return JVMCIENV->get_jobject(JVMCIENV->get_JavaConstant_NULL_POINTER());
+  }
+
   jlong value = 0;
   JVMCIObject kind;
   switch (constant_type) {
@@ -2220,6 +2228,13 @@ C2V_VMENTRY_NULL(jobject, getObject, (JNIEnv* env, jobject, jobject x, long disp
     JVMCI_THROW_0(NullPointerException);
   }
   Handle xobj = JVMCIENV->asConstant(JVMCIENV->wrap(x), JVMCI_CHECK_0);
+  if (displacement == java_lang_Class::component_mirror_offset() && java_lang_Class::is_instance(xobj()) &&
+      !java_lang_Class::as_Klass(xobj())->is_array_klass()) {
+    // Class.componentType for non-array classes can transiently contain an int[] that's
+    // used for locking so always return null to mimic Class.getComponentType()
+    return JVMCIENV->get_jobject(JVMCIENV->get_JavaConstant_NULL_POINTER());
+  }
+
   oop res = xobj->obj_field(displacement);
   JVMCIObject result = JVMCIENV->get_object_constant(res);
   return JVMCIENV->get_jobject(result);

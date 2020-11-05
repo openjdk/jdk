@@ -1245,7 +1245,7 @@ static bool SetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value) {
   const char* flag_name = env->GetStringUTFChars(name, NULL);
   CHECK_JNI_EXCEPTION_(env, false);
   JVMFlag* flag = JVMFlag::find_flag(flag_name);
-  JVMFlag::Error result = JVMFlagAccess::set<T, type_enum>(flag, value, JVMFlag::INTERNAL);
+  JVMFlag::Error result = JVMFlagAccess::set<T, type_enum>(flag, value, JVMFlagOrigin::INTERNAL);
   env->ReleaseStringUTFChars(name, flag_name);
   return (result == JVMFlag::SUCCESS);
 }

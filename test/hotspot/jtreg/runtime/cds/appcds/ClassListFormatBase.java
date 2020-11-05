@@ -41,7 +41,7 @@ public class ClassListFormatBase {
         System.out.println("------------------------------");
 
         try {
-            OutputAnalyzer output = TestCommon.dump(appJar, appClasses);
+            OutputAnalyzer output = TestCommon.dump(appJar, appClasses, "-Xlog:cds+lambda=debug");
             output.shouldHaveExitValue(1);
             for (String s : expected_errors) {
                 output.shouldContain(s);
@@ -63,7 +63,7 @@ public class ClassListFormatBase {
         System.out.println("------------------------------");
 
         try {
-            OutputAnalyzer output = TestCommon.dump(appJar, appClasses, "-Xlog:cds");
+            OutputAnalyzer output = TestCommon.dump(appJar, appClasses, "-Xlog:cds", "-Xlog:cds+lambda=debug");
             output.shouldHaveExitValue(0);
             output.shouldContain("Dumping");
             for (String s : expected_msgs) {
