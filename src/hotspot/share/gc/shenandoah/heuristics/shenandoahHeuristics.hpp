@@ -120,9 +120,6 @@ public:
 
   virtual void choose_collection_set(ShenandoahCollectionSet* collection_set);
 
-  virtual bool can_process_references();
-  virtual bool should_process_references();
-
   virtual bool can_unload_classes();
   virtual bool can_unload_classes_normal();
   virtual bool should_unload_classes();

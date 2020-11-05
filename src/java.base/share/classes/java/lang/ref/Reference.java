@@ -325,13 +325,39 @@ public abstract class Reference<T> {
      * been cleared, either by the program or by the garbage collector, then
      * this method returns {@code null}.
      *
+     * @apiNote
+     * This method returns a strong reference to the referent. This may cause
+     * the garbage collector to treat it as strongly reachable until some later
+     * collection cycle.  The {@link #refersTo(Object) refersTo} method can be
+     * used to avoid such strengthening when testing whether some object is
+     * the referent of a reference object; that is, use {@code ref.refersTo(obj)}
+     * rather than {@code ref.get() == obj}.
+     *
      * @return   The object to which this reference refers, or
      *           {@code null} if this reference object has been cleared
+     * @see refersTo
      */
     @IntrinsicCandidate
     public T get() {
         return this.referent;
     }
+
+    /**
+     * Tests if the referent of this reference object is {@code obj}.
+     * Using a {@code null} {@code obj} returns {@code true} if the
+     * reference object has been cleared.
+     *
+     * @param  obj the object to compare with this reference object's referent
+     * @return {@code true} if {@code obj} is the referent of this reference object
+     * @since 16
+     */
+    public final boolean refersTo(T obj) {
+        return refersTo0(obj);
+    }
+
+    /* Implementation of refersTo(), overridden for phantom references.
+     */
+    native boolean refersTo0(Object o);
 
     /**
      * Clears this reference object.  Invoking this method will not cause this

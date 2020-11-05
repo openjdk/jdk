@@ -326,14 +326,7 @@ static Node* long_by_long_mulhi(PhaseGVN* phase, Node* dividend, jlong magic_con
   Node* temp2 = phase->transform(new RShiftLNode(w1, phase->intcon(N / 2)));
 
   // Remove the bogus extra edges used to keep things alive
-  PhaseIterGVN* igvn = phase->is_IterGVN();
-  if (igvn != NULL) {
-    igvn->remove_dead_node(hook);
-  } else {
-    for (int i = 0; i < 4; i++) {
-      hook->set_req(i, NULL);
-    }
-  }
+  hook->destruct(phase);
 
   return new AddLNode(temp1, temp2);
 }
@@ -505,8 +498,9 @@ const Type* DivINode::Value(PhaseGVN* phase) const {
   if( t2 == Type::TOP ) return Type::TOP;
 
   // x/x == 1 since we always generate the dynamic divisor check for 0.
-  if( phase->eqv( in(1), in(2) ) )
+  if (in(1) == in(2)) {
     return TypeInt::ONE;
+  }
 
   // Either input is BOTTOM ==> the result is the local BOTTOM
   const Type *bot = bottom_type();
@@ -610,8 +604,9 @@ const Type* DivLNode::Value(PhaseGVN* phase) const {
   if( t2 == Type::TOP ) return Type::TOP;
 
   // x/x == 1 since we always generate the dynamic divisor check for 0.
-  if( phase->eqv( in(1), in(2) ) )
+  if (in(1) == in(2)) {
     return TypeLong::ONE;
+  }
 
   // Either input is BOTTOM ==> the result is the local BOTTOM
   const Type *bot = bottom_type();
@@ -685,9 +680,10 @@ const Type* DivFNode::Value(PhaseGVN* phase) const {
   // x/x == 1, we ignore 0/0.
   // Note: if t1 and t2 are zero then result is NaN (JVMS page 213)
   // Does not work for variables because of NaN's
-  if( phase->eqv( in(1), in(2) ) && t1->base() == Type::FloatCon)
-    if (!g_isnan(t1->getf()) && g_isfinite(t1->getf()) && t1->getf() != 0.0) // could be negative ZERO or NaN
-      return TypeF::ONE;
+  if (in(1) == in(2) && t1->base() == Type::FloatCon &&
+      !g_isnan(t1->getf()) && g_isfinite(t1->getf()) && t1->getf() != 0.0) { // could be negative ZERO or NaN
+    return TypeF::ONE;
+  }
 
   if( t2 == TypeF::ONE )
     return t1;
@@ -773,9 +769,10 @@ const Type* DivDNode::Value(PhaseGVN* phase) const {
   // x/x == 1, we ignore 0/0.
   // Note: if t1 and t2 are zero then result is NaN (JVMS page 213)
   // Does not work for variables because of NaN's
-  if( phase->eqv( in(1), in(2) ) && t1->base() == Type::DoubleCon)
-    if (!g_isnan(t1->getd()) && g_isfinite(t1->getd()) && t1->getd() != 0.0) // could be negative ZERO or NaN
-      return TypeD::ONE;
+  if (in(1) == in(2) && t1->base() == Type::DoubleCon &&
+      !g_isnan(t1->getd()) && g_isfinite(t1->getd()) && t1->getd() != 0.0) { // could be negative ZERO or NaN
+    return TypeD::ONE;
+  }
 
   if( t2 == TypeD::ONE )
     return t1;
@@ -912,11 +909,7 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // cmov2 is now the mod
 
       // Now remove the bogus extra edges used to keep things alive
-      if (can_reshape) {
-        phase->is_IterGVN()->remove_dead_node(hook);
-      } else {
-        hook->set_req(0, NULL);   // Just yank bogus edge during Parse phase
-      }
+      hook->destruct(phase);
       return cmov2;
     }
   }
@@ -968,11 +961,7 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Now remove the bogus extra edges used to keep things alive
-  if (can_reshape) {
-    phase->is_IterGVN()->remove_dead_node(hook);
-  } else {
-    hook->set_req(0, NULL);       // Just yank bogus edge during Parse phase
-  }
+  hook->destruct(phase);
 
   // return the value
   return result;
@@ -990,7 +979,9 @@ const Type* ModINode::Value(PhaseGVN* phase) const {
   // 0 MOD X is 0
   if( t1 == TypeInt::ZERO ) return TypeInt::ZERO;
   // X MOD X is 0
-  if( phase->eqv( in(1), in(2) ) ) return TypeInt::ZERO;
+  if (in(1) == in(2)) {
+    return TypeInt::ZERO;
+  }
 
   // Either input is BOTTOM ==> the result is the local BOTTOM
   const Type *bot = bottom_type();
@@ -1085,11 +1076,7 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // cmov2 is now the mod
 
       // Now remove the bogus extra edges used to keep things alive
-      if (can_reshape) {
-        phase->is_IterGVN()->remove_dead_node(hook);
-      } else {
-        hook->set_req(0, NULL);   // Just yank bogus edge during Parse phase
-      }
+      hook->destruct(phase);
       return cmov2;
     }
   }
@@ -1141,11 +1128,7 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Now remove the bogus extra edges used to keep things alive
-  if (can_reshape) {
-    phase->is_IterGVN()->remove_dead_node(hook);
-  } else {
-    hook->set_req(0, NULL);       // Just yank bogus edge during Parse phase
-  }
+  hook->destruct(phase);
 
   // return the value
   return result;
@@ -1163,7 +1146,9 @@ const Type* ModLNode::Value(PhaseGVN* phase) const {
   // 0 MOD X is 0
   if( t1 == TypeLong::ZERO ) return TypeLong::ZERO;
   // X MOD X is 0
-  if( phase->eqv( in(1), in(2) ) ) return TypeLong::ZERO;
+  if (in(1) == in(2)) {
+    return TypeLong::ZERO;
+  }
 
   // Either input is BOTTOM ==> the result is the local BOTTOM
   const Type *bot = bottom_type();
