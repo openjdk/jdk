@@ -25,28 +25,19 @@
 
 package com.sun.source.tree;
 
-import javax.lang.model.element.Name;
-
 /**
  * A binding pattern tree
  *
- * @since 14
+ * @since 16
  */
 @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.PATTERN_MATCHING_IN_INSTANCEOF,
                                    reflective=true)
 public interface BindingPatternTree extends PatternTree {
 
     /**
-     * Returns the type of the bind variable.
-     * @return the type
+     * Returns the binding variable.
+     * @return the binding variable
      */
-    Tree getType();
-
-    /**
-     * A binding variable name.
-     * @return the name of the binding variable
-     */
-    Name getBinding();
+    VariableTree getVariable();
 
 }
-

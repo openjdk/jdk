@@ -222,7 +222,7 @@ public interface Tree {
         /**
          * Used for instances of {@link BindingPatternTree}.
          *
-         * @since 14
+         * @since 16
          */
         @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.PATTERN_MATCHING_IN_INSTANCEOF,
                                            reflective=true)

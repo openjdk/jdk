@@ -121,11 +121,9 @@ public enum ElementKind {
     RECORD_COMPONENT,
 
     /**
-     * A binding variable in a pattern .
-     * @since 14
+     * A binding variable in a pattern.
+     * @since 16
      */
-    @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.PATTERN_MATCHING_IN_INSTANCEOF,
-                                 reflective=true)
     BINDING_VARIABLE;
 
     /**

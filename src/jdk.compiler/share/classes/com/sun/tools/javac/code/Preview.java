@@ -183,8 +183,6 @@ public class Preview {
      */
     public boolean isPreview(Feature feature) {
         return switch (feature) {
-            case PATTERN_MATCHING_IN_INSTANCEOF -> true;
-            case REIFIABLE_TYPES_INSTANCEOF -> true;
             case SEALED_CLASSES -> true;
 
             //Note: this is a backdoor which allows to optionally treat all features as 'preview' (for testing).

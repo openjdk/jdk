@@ -49,6 +49,7 @@ public interface InstanceOfTree extends ExpressionTree {
     /**
      * Returns the type for which to check.
      * @return the type
+     * @see #getPattern()
      */
     Tree getType();
 
@@ -69,7 +70,7 @@ public interface InstanceOfTree extends ExpressionTree {
      * returns null.
      *
      * @return the tested pattern, or null if this instanceof does not use a pattern
-     * @since 14
+     * @since 16
      */
     @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.PATTERN_MATCHING_IN_INSTANCEOF,
                                        reflective=true)

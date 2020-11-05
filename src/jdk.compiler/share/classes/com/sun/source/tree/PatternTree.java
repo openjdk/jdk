@@ -27,9 +27,9 @@ package com.sun.source.tree;
 
 /**
  * A tree node used as the base class for the different kinds of
- * statements.
+ * patterns.
  *
- * @since 14
+ * @since 16
  */
 @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.PATTERN_MATCHING_IN_INSTANCEOF,
                                    reflective=true)
