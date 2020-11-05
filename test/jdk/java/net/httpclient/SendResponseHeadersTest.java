@@ -35,6 +35,7 @@ import com.sun.net.httpserver.HttpServer;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -83,19 +84,20 @@ public class SendResponseHeadersTest {
 
     static class TestHandler implements HttpHandler {
         public void handle(HttpExchange exchange) throws IOException {
-            exchange.sendResponseHeaders(200, 0);
+            try (InputStream is = exchange.getRequestBody();
+                 OutputStream os = exchange.getResponseBody()) {
 
-            OutputStream os = exchange.getResponseBody();
-            try {
-                IOException io = expectThrows(IOException.class,
-                        () -> exchange.sendResponseHeaders(200, "failMsg".getBytes().length));
-                System.out.println("Got expected exception: " + io);
-            } catch (Throwable t) {
-                // unexpected exception thrown, return error to client
-                t.printStackTrace();
-                os.write(("Unexpected error: " + t).getBytes());
-            } finally {
-                os.close();
+                is.readAllBytes();
+                exchange.sendResponseHeaders(200, 0);
+                try {
+                    IOException io = expectThrows(IOException.class,
+                            () -> exchange.sendResponseHeaders(200, "failMsg".getBytes().length));
+                    System.out.println("Got expected exception: " + io);
+                } catch (Throwable t) {
+                    // unexpected exception thrown, return error to client
+                    t.printStackTrace();
+                    os.write(("Unexpected error: " + t).getBytes());
+                }
             }
         }
     }
