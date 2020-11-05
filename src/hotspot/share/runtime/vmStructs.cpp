@@ -86,6 +86,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/monitorDeflationThread.hpp"
 #include "runtime/notificationThread.hpp"
 #include "runtime/os.hpp"
 #include "runtime/perfMemory.hpp"
@@ -1337,6 +1338,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
         declare_type(WatcherThread, NonJavaThread)                        \
       declare_type(JavaThread, Thread)                                    \
         declare_type(JvmtiAgentThread, JavaThread)                        \
+        declare_type(MonitorDeflationThread, JavaThread)                  \
         declare_type(ServiceThread, JavaThread)                           \
         declare_type(NotificationThread, JavaThread)                      \
         declare_type(CompilerThread, JavaThread)                          \

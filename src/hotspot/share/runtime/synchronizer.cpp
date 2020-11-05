@@ -24,9 +24,8 @@
 
 #include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "logging/log.hpp"
-#include "logging/logStream.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/padded.hpp"
@@ -79,26 +78,33 @@ size_t MonitorList::max() const {
   return Atomic::load(&_max);
 }
 
-void MonitorList::unlink_deflated(Thread* self,
-                                  GrowableArray<ObjectMonitor*>* unlinked_list) {
-  size_t deleted = 0;
+// Walk the in-use list and unlink (at most MonitorDeflationMax) deflated
+// ObjectMonitors. Returns the number of unlinked ObjectMonitors.
+size_t MonitorList::unlink_deflated(Thread* self, LogStream* ls,
+                                    elapsedTimer* timer_p,
+                                    GrowableArray<ObjectMonitor*>* unlinked_list) {
+  size_t unlinked_count = 0;
   ObjectMonitor* prev = NULL;
   ObjectMonitor* head = Atomic::load_acquire(&_head);
   ObjectMonitor* m = head;
   while (m != NULL) {
     if (m->is_being_async_deflated()) {
-      // Find next live monitor.
+      // Find next live ObjectMonitor.
       ObjectMonitor* next = m;
       while (next != NULL && next->is_being_async_deflated()) {
         ObjectMonitor* next_next = next->next_om();
-        deleted++;
+        unlinked_count++;
         unlinked_list->append(next);
         next = next_next;
+        if (unlinked_count >= (size_t)MonitorDeflationMax) {
+          // Reached the max so bail out on the gathering loop.
+          break;
+        }
       }
       if (prev == NULL) {
         ObjectMonitor* prev_head = Atomic::cmpxchg(&_head, head, next);
         if (prev_head != head) {
-          // Find new prev monitor that just got inserted.
+          // Find new prev ObjectMonitor that just got inserted.
           for (ObjectMonitor* n = prev_head; n != m; n = n->next_om()) {
             prev = n;
           }
@@ -107,18 +113,37 @@ void MonitorList::unlink_deflated(Thread* self,
       } else {
         prev->set_next_om(next);
       }
+      if (unlinked_count >= (size_t)MonitorDeflationMax) {
+        // Reached the max so bail out on the searching loop.
+        break;
+      }
       m = next;
     } else {
       prev = m;
       m = m->next_om();
     }
+
     if (self->is_Java_thread() &&
         SafepointMechanism::should_process(self->as_Java_thread())) {
+      // A safepoint/handshake has started.
+      if (ls != NULL) {
+        timer_p->stop();
+        ls->print_cr("pausing unlinking: unlinked_count=" SIZE_FORMAT ", in_use_list stats: ceiling=" SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
+                     unlinked_count, ObjectSynchronizer::in_use_list_ceiling(), count(), max());
+      }
+
       // Honor block request.
       ThreadBlockInVM tbivm(self->as_Java_thread());
+
+      if (ls != NULL) {
+        ls->print_cr("resuming unlinking: in_use_list stats: ceiling=" SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
+                     ObjectSynchronizer::in_use_list_ceiling(), count(), max());
+        timer_p->start();
+      }
     }
   }
-  Atomic::sub(&_count, deleted);
+  Atomic::sub(&_count, unlinked_count);
+  return unlinked_count;
 }
 
 MonitorList::Iterator MonitorList::iterator() const {
@@ -193,6 +218,8 @@ int dtrace_waited_probe(ObjectMonitor* monitor, Handle obj, Thread* thr) {
 static volatile intptr_t gInflationLocks[NINFLATIONLOCKS];
 
 MonitorList ObjectSynchronizer::_in_use_list;
+// Start the ceiling with one thread:
+jint ObjectSynchronizer::_in_use_list_ceiling = AvgMonitorsPerThreadEstimate;
 bool volatile ObjectSynchronizer::_is_async_deflation_requested = false;
 bool volatile ObjectSynchronizer::_is_final_audit = false;
 jlong ObjectSynchronizer::_last_async_deflation_time_ns = 0;
@@ -1099,16 +1126,34 @@ void ObjectSynchronizer::monitors_iterate(MonitorClosure* closure) {
 }
 
 static bool monitors_used_above_threshold(MonitorList* list) {
-  size_t population = list->max();
-  if (population == 0) {
+  // Start with ceiling based on a per-thread estimate:
+  size_t ceiling = ObjectSynchronizer::in_use_list_ceiling();
+  if (ceiling < list->max()) {
+    // The max used by the system has exceeded the ceiling so use that:
+    ceiling = list->max();
+  }
+  if (ceiling == 0) {
     return false;
   }
   if (MonitorUsedDeflationThreshold > 0) {
     size_t monitors_used = list->count();
-    size_t monitor_usage = (monitors_used * 100LL) / population;
+    size_t monitor_usage = (monitors_used * 100LL) / ceiling;
     return int(monitor_usage) > MonitorUsedDeflationThreshold;
   }
   return false;
+}
+
+void ObjectSynchronizer::dec_in_use_list_ceiling() {
+  Atomic::add(&_in_use_list_ceiling, (jint)-AvgMonitorsPerThreadEstimate);
+#ifdef ASSERT
+  size_t l_in_use_list_ceiling = in_use_list_ceiling();
+#endif
+  assert(l_in_use_list_ceiling > 0, "in_use_list_ceiling=" SIZE_FORMAT
+         ": must be > 0", l_in_use_list_ceiling);
+}
+
+void ObjectSynchronizer::inc_in_use_list_ceiling() {
+  Atomic::add(&_in_use_list_ceiling, (jint)AvgMonitorsPerThreadEstimate);
 }
 
 bool ObjectSynchronizer::is_async_deflation_needed() {
@@ -1122,7 +1167,7 @@ bool ObjectSynchronizer::is_async_deflation_needed() {
     // It's been longer than our specified deflate interval and there
     // are too many monitors in use. We don't deflate more frequently
     // than AsyncDeflationInterval (unless is_async_deflation_requested)
-    // in order to not swamp the ServiceThread.
+    // in order to not swamp the MonitorDeflationThread.
     return true;
   }
   return false;
@@ -1135,7 +1180,7 @@ bool ObjectSynchronizer::request_deflate_idle_monitors() {
   jlong last_time = last_async_deflation_time_ns();
   set_is_async_deflation_requested(true);
   {
-    MonitorLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+    MonitorLocker ml(MonitorDeflation_lock, Mutex::_no_safepoint_check_flag);
     ml.notify_all();
   }
   const int N_CHECKS = 5;
@@ -1361,23 +1406,39 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* self, oop object,
   }
 }
 
-// Walk the in use list and deflate idle ObjectMonitors.
-// Returns the number of deflated ObjectMonitors.
-// If self is a JavaThread and a safepoint/handshake has
-// started, then we honor the block request.
-size_t ObjectSynchronizer::deflate_monitor_list(Thread *self) {
+// Walk the in-use list and deflate (at most MonitorDeflationMax) idle
+// ObjectMonitors. Returns the number of deflated ObjectMonitors.
+size_t ObjectSynchronizer::deflate_monitor_list(Thread *self, LogStream* ls,
+                                                elapsedTimer* timer_p) {
   MonitorList::Iterator iter = _in_use_list.iterator();
   size_t deflated_count = 0;
 
   while (iter.has_next()) {
+    if (deflated_count >= (size_t)MonitorDeflationMax) {
+      break;
+    }
     ObjectMonitor* mid = iter.next();
     if (mid->deflate_monitor()) {
       deflated_count++;
     }
+
     if (self->is_Java_thread() &&
         SafepointMechanism::should_process(self->as_Java_thread())) {
+      // A safepoint/handshake has started.
+      if (ls != NULL) {
+        timer_p->stop();
+        ls->print_cr("pausing deflation: deflated_count=" SIZE_FORMAT ", in_use_list stats: ceiling=" SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
+                     deflated_count, in_use_list_ceiling(), _in_use_list.count(), _in_use_list.max());
+      }
+
       // Honor block request.
       ThreadBlockInVM tbivm(self->as_Java_thread());
+
+      if (ls != NULL) {
+        ls->print_cr("resuming deflation: in_use_list stats: ceiling=" SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
+                     in_use_list_ceiling(), _in_use_list.count(), _in_use_list.max());
+        timer_p->start();
+      }
     }
   }
 
@@ -1394,9 +1455,10 @@ class HandshakeForDeflation : public HandshakeClosure {
   }
 };
 
-// This function is called by the ServiceThread to deflate monitors.
-// It is also called by do_final_audit_and_print_stats() by the VMThread.
-void ObjectSynchronizer::deflate_idle_monitors() {
+// This function is called by the MonitorDeflationThread to deflate
+// ObjectMonitors. It is also called via do_final_audit_and_print_stats()
+// by the VMThread.
+size_t ObjectSynchronizer::deflate_idle_monitors() {
   Thread* self = Thread::current();
   if (self->is_Java_thread()) {
     // The async deflation request has been processed.
@@ -1404,53 +1466,97 @@ void ObjectSynchronizer::deflate_idle_monitors() {
     set_is_async_deflation_requested(false);
   }
 
-  elapsedTimer timer;
-  if (log_is_enabled(Info, monitorinflation)) {
-    timer.start();
-  }
-
-  // Deflate any global idle monitors.
-  size_t deflated = deflate_monitor_list(self);
-  if (deflated > 0) {
-    // There are monitors that have been deflated. Unlink them from the in use list.
-    ResourceMark rm;
-    GrowableArray<ObjectMonitor*> delete_list((int)deflated);
-    _in_use_list.unlink_deflated(self, &delete_list);
-    if (self->is_Java_thread()) {
-      // A JavaThread needs to handshake in order to safely free the
-      // monitors that were deflated in this cycle.
-      HandshakeForDeflation hfd_hc;
-      Handshake::execute(&hfd_hc);
-    }
-    // After the handshake, safely free the monitors that were deflated in this cycle.
-    for (ObjectMonitor* monitor: delete_list) {
-      delete monitor;
-      if (self->is_Java_thread() &&
-          SafepointMechanism::should_process(self->as_Java_thread())) {
-        // Honor block request.
-        ThreadBlockInVM tbivm(self->as_Java_thread());
-      }
-    }
-  }
-  timer.stop();
-
-  OM_PERFDATA_OP(MonExtant, set_value(_in_use_list.count()));
-  OM_PERFDATA_OP(Deflations, inc(deflated));
-
   LogStreamHandle(Debug, monitorinflation) lsh_debug;
   LogStreamHandle(Info, monitorinflation) lsh_info;
   LogStream* ls = NULL;
   if (log_is_enabled(Debug, monitorinflation)) {
     ls = &lsh_debug;
-  } else if (deflated != 0 && log_is_enabled(Info, monitorinflation)) {
+  } else if (log_is_enabled(Info, monitorinflation)) {
     ls = &lsh_info;
   }
+
+  elapsedTimer timer;
   if (ls != NULL) {
-    ls->print_cr("deflating idle monitors, %3.7f secs, " SIZE_FORMAT " monitors", timer.seconds(), deflated);
+    ls->print_cr("begin deflating: in_use_list stats: ceiling=" SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
+                 in_use_list_ceiling(), _in_use_list.count(), _in_use_list.max());
+    timer.start();
   }
-  log_info(monitorinflation)("global_population=" SIZE_FORMAT, _in_use_list.count());
+
+  // Deflate some idle ObjectMonitors.
+  size_t deflated_count = deflate_monitor_list(self, ls, &timer);
+  if (deflated_count > 0 || is_final_audit()) {
+    // There are ObjectMonitors that have been deflated or this is the
+    // final audit and all the remaining ObjectMonitors have been
+    // deflated, BUT the MonitorDeflationThread blocked for the final
+    // safepoint during unlinking.
+
+    // Unlink deflated ObjectMonitors from the in-use list.
+    ResourceMark rm;
+    GrowableArray<ObjectMonitor*> delete_list((int)deflated_count);
+    size_t unlinked_count = _in_use_list.unlink_deflated(self, ls, &timer,
+                                                         &delete_list);
+    if (self->is_Java_thread()) {
+      if (ls != NULL) {
+        timer.stop();
+        ls->print_cr("before handshaking: unlinked_count=" SIZE_FORMAT ", in_use_list stats: ceiling=" SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
+                     unlinked_count, in_use_list_ceiling(), _in_use_list.count(), _in_use_list.max());
+      }
+
+      // A JavaThread needs to handshake in order to safely free the
+      // ObjectMonitors that were deflated in this cycle.
+      HandshakeForDeflation hfd_hc;
+      Handshake::execute(&hfd_hc);
+
+      if (ls != NULL) {
+        ls->print_cr("after handshaking: in_use_list stats: ceiling=" SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
+                     in_use_list_ceiling(), _in_use_list.count(), _in_use_list.max());
+        timer.start();
+      }
+    }
+
+    // After the handshake, safely free the ObjectMonitors that were
+    // deflated in this cycle.
+    size_t deleted_count = 0;
+    for (ObjectMonitor* monitor: delete_list) {
+      delete monitor;
+      deleted_count++;
+      if (self->is_Java_thread() &&
+          SafepointMechanism::should_process(self->as_Java_thread())) {
+        // A safepoint/handshake has started.
+        if (ls != NULL) {
+          timer.stop();
+          ls->print_cr("pausing deletion: deleted_count=" SIZE_FORMAT ", in_use_list stats: ceiling=" SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
+                       deleted_count, in_use_list_ceiling(), _in_use_list.count(), _in_use_list.max());
+        }
+
+        // Honor block request.
+        ThreadBlockInVM tbivm(self->as_Java_thread());
+
+        if (ls != NULL) {
+          ls->print_cr("resuming deletion: in_use_list stats: ceiling=" SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
+                       in_use_list_ceiling(), _in_use_list.count(), _in_use_list.max());
+          timer.start();
+        }
+      }
+    }
+  }
+
+  if (ls != NULL) {
+    timer.stop();
+    if (deflated_count != 0 || log_is_enabled(Debug, monitorinflation)) {
+      ls->print_cr("deflated " SIZE_FORMAT " monitors in %3.7f secs",
+                   deflated_count, timer.seconds());
+    }
+    ls->print_cr("end deflating: in_use_list stats: ceiling=" SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
+                 in_use_list_ceiling(), _in_use_list.count(), _in_use_list.max());
+  }
+
+  OM_PERFDATA_OP(MonExtant, set_value(_in_use_list.count()));
+  OM_PERFDATA_OP(Deflations, inc(deflated_count));
 
   GVars.stw_random = os::random();
+
+  return deflated_count;
 }
 
 // Monitor cleanup on JavaThread::exit
@@ -1542,7 +1648,9 @@ void ObjectSynchronizer::do_final_audit_and_print_stats() {
     // Do a deflation in order to reduce the in-use monitor population
     // that is reported by ObjectSynchronizer::log_in_use_monitor_details()
     // which is called by ObjectSynchronizer::audit_and_print_stats().
-    ObjectSynchronizer::deflate_idle_monitors();
+    while (ObjectSynchronizer::deflate_idle_monitors() != 0) {
+      ; // empty
+    }
     // The other audit_and_print_stats() call is done at the Debug
     // level at a safepoint in ObjectSynchronizer::do_safepoint_work().
     ObjectSynchronizer::audit_and_print_stats(true /* on_exit */);
@@ -1636,6 +1744,12 @@ void ObjectSynchronizer::chk_in_use_list(outputStream* out, int *error_cnt_p) {
 // Check an in-use monitor entry; log any errors.
 void ObjectSynchronizer::chk_in_use_entry(ObjectMonitor* n, outputStream* out,
                                           int* error_cnt_p) {
+  if (n->owner_is_DEFLATER_MARKER()) {
+    // This should not happen, but if it does, it is not fatal.
+    out->print_cr("WARNING: monitor=" INTPTR_FORMAT ": in-use monitor is "
+                  "deflated.", p2i(n));
+    return;
+  }
   if (n->header().value() == 0) {
     out->print_cr("ERROR: monitor=" INTPTR_FORMAT ": in-use monitor must "
                   "have non-NULL _header field.", p2i(n));

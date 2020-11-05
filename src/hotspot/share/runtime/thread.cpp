@@ -81,6 +81,7 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/jniPeriodicChecker.hpp"
 #include "runtime/memprofiler.hpp"
+#include "runtime/monitorDeflationThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/orderAccess.hpp"
@@ -2003,11 +2004,6 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     thread_name = os::strdup(get_thread_name());
   }
 
-  // We must flush any deferred card marks and other various GC barrier
-  // related buffers (e.g. G1 SATB buffer and G1 dirty card queue buffer)
-  // before removing a thread from the list of active threads.
-  BarrierSet::barrier_set()->on_thread_detach(this);
-
   log_info(os, thread)("JavaThread %s (tid: " UINTX_FORMAT ").",
     exit_type == JavaThread::normal_exit ? "exiting" : "detaching",
     os::current_thread_id());
@@ -2054,8 +2050,6 @@ void JavaThread::cleanup_failed_attach_current_thread(bool is_daemon) {
   if (UseTLAB) {
     tlab().retire();
   }
-
-  BarrierSet::barrier_set()->on_thread_detach(this);
 
   Threads::remove(this, is_daemon);
   this->smr_delete();
@@ -3693,6 +3687,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // and other cleanups.  Needs to start before the compilers start posting events.
   ServiceThread::initialize();
 
+  // Start the monitor deflation thread:
+  MonitorDeflationThread::initialize();
+
   // initialize compiler(s)
 #if defined(COMPILER1) || COMPILER2_OR_JVMCI
 #if INCLUDE_JVMCI
@@ -4235,6 +4232,9 @@ void Threads::add(JavaThread* p, bool force_daemon) {
   // Maintain fast thread list
   ThreadsSMRSupport::add_thread(p);
 
+  // Increase the ObjectMonitor ceiling for the new thread.
+  ObjectSynchronizer::inc_in_use_list_ceiling();
+
   // Possible GC point.
   Events::log(p, "Thread added: " INTPTR_FORMAT, p2i(p));
 
@@ -4246,6 +4246,12 @@ void Threads::remove(JavaThread* p, bool is_daemon) {
   // Extra scope needed for Thread_lock, so we can check
   // that we do not remove thread without safepoint code notice
   { MonitorLocker ml(Threads_lock);
+
+    // BarrierSet state must be destroyed after the last thread transition
+    // before the thread terminates. Thread transitions result in calls to
+    // StackWatermarkSet::on_safepoint(), which performs GC processing,
+    // requiring the GC state to be alive.
+    BarrierSet::barrier_set()->on_thread_detach(p);
 
     assert(ThreadsSMRSupport::get_java_thread_list()->includes(p), "p must be present");
 
@@ -4273,6 +4279,9 @@ void Threads::remove(JavaThread* p, bool is_daemon) {
     // Notify threads waiting in EscapeBarriers
     EscapeBarrier::thread_removed(p);
   } // unlock Threads_lock
+
+  // Reduce the ObjectMonitor ceiling for the exiting thread.
+  ObjectSynchronizer::dec_in_use_list_ceiling();
 
   // Since Events::log uses a lock, we grab it outside the Threads_lock
   Events::log(p, "Thread exited: " INTPTR_FORMAT, p2i(p));

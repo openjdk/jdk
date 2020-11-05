@@ -171,7 +171,7 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
   jint  _contentions;               // Number of active contentions in enter(). It is used by is_busy()
                                     // along with other fields to determine if an ObjectMonitor can be
                                     // deflated. It is also used by the async deflation protocol. See
-                                    // ObjectSynchronizer::deflate_monitor().
+                                    // ObjectMonitor::deflate_monitor().
  protected:
   ObjectWaiter* volatile _WaitSet;  // LL of threads wait()ing on the monitor
   volatile jint  _waiters;          // number of waiting threads

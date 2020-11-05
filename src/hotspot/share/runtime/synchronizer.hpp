@@ -25,6 +25,7 @@
 #ifndef SHARE_RUNTIME_SYNCHRONIZER_HPP
 #define SHARE_RUNTIME_SYNCHRONIZER_HPP
 
+#include "logging/logStream.hpp"
 #include "memory/padded.hpp"
 #include "oops/markWord.hpp"
 #include "runtime/basicLock.hpp"
@@ -41,8 +42,8 @@ class MonitorList {
 
 public:
   void add(ObjectMonitor* monitor);
-  void unlink_deflated(Thread* self,
-                       GrowableArray<ObjectMonitor*>* unlinked_list);
+  size_t unlink_deflated(Thread* self, LogStream* ls, elapsedTimer* timer_p,
+                         GrowableArray<ObjectMonitor*>* unlinked_list);
   size_t count() const;
   size_t max() const;
 
@@ -61,8 +62,6 @@ public:
 
 class ObjectSynchronizer : AllStatic {
   friend class VMStructs;
-
-  static MonitorList _in_use_list;
 
  public:
   typedef enum {
@@ -141,12 +140,15 @@ class ObjectSynchronizer : AllStatic {
   static void monitors_iterate(MonitorClosure* m);
 
   // GC: we current use aggressive monitor deflation policy
-  // Basically we deflate all monitors that are not busy.
-  // An adaptive profile-based deflation policy could be used if needed
-  static void deflate_idle_monitors();
+  // Basically we try to deflate all monitors that are not busy.
+  static size_t deflate_idle_monitors();
 
-  // For a given monitor list: global or per-thread, deflate idle monitors
-  static size_t deflate_monitor_list(Thread* self);
+  // Deflate idle monitors:
+  static size_t deflate_monitor_list(Thread* self, LogStream* ls,
+                                     elapsedTimer* timer_p);
+  static size_t in_use_list_ceiling() { return (size_t)_in_use_list_ceiling; }
+  static void dec_in_use_list_ceiling();
+  static void inc_in_use_list_ceiling();
   static bool is_async_deflation_needed();
   static bool is_async_deflation_requested() { return _is_async_deflation_requested; }
   static bool is_final_audit() { return _is_final_audit; }
@@ -167,6 +169,8 @@ class ObjectSynchronizer : AllStatic {
  private:
   friend class SynchronizerTest;
 
+  static MonitorList   _in_use_list;
+  static jint          _in_use_list_ceiling;
   static volatile bool _is_async_deflation_requested;
   static volatile bool _is_final_audit;
   static jlong         _last_async_deflation_time_ns;
