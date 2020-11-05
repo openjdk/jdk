@@ -1959,7 +1959,7 @@ void InterpreterMacroAssembler::profile_switch_case(Register index,
 
 void InterpreterMacroAssembler::_interp_verify_oop(Register reg, TosState state, const char* file, int line) {
   if (state == atos) {
-    MacroAssembler::_verify_oop(reg, "broken oop", file, line);
+    MacroAssembler::_verify_oop_checked(reg, "broken oop", file, line);
   }
 }
 

@@ -532,9 +532,6 @@ const intx ObjectAlignmentInBytes = 8;
           "error log in case of a crash.")                                  \
           range(0, (uint64_t)max_jlong/1000)                                \
                                                                             \
-  product_pd(bool, UseOSErrorReporting,                                     \
-          "Let VM fatal error propagate to the OS (ie. WER on Windows)")    \
-                                                                            \
   product(bool, SuppressFatalErrorMessage, false,                           \
           "Report NO fatal error message (avoid deadlock)")                 \
                                                                             \

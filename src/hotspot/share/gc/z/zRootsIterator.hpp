@@ -24,45 +24,56 @@
 #ifndef SHARE_GC_Z_ZROOTSITERATOR_HPP
 #define SHARE_GC_Z_ZROOTSITERATOR_HPP
 
-#include "classfile/classLoaderDataGraph.hpp"
 #include "gc/shared/oopStorageSetParState.hpp"
-#include "gc/z/zNMethod.hpp"
-#include "memory/allocation.hpp"
+#include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "runtime/threadSMR.hpp"
 
-class ZRootsIteratorClosure;
-
-typedef OopStorageSetStrongParState<true /* concurrent */, false /* is_const */> ZOopStorageSetStrongIterator;
-typedef OopStorageSetWeakParState<true /* concurrent */, false /* is_const */> ZOopStorageSetWeakIterator;
-
-template <typename T, void (T::*F)(ZRootsIteratorClosure*)>
-class ZParallelOopsDo {
+template <typename Iterator>
+class ZParallelApply {
 private:
-  T* const      _iter;
+  Iterator      _iter;
   volatile bool _completed;
 
 public:
-  ZParallelOopsDo(T* iter);
-  void oops_do(ZRootsIteratorClosure* cl);
+  ZParallelApply() :
+      _iter(),
+      _completed(false) {}
+
+  template <typename ClosureType>
+  void apply(ClosureType* cl);
+
+  Iterator& iter() {
+    return _iter;
+  }
 };
 
-template <typename T, void (T::*F)(BoolObjectClosure*, ZRootsIteratorClosure*)>
-class ZSerialWeakOopsDo {
+template <typename Iterator>
+class ZSerialWeakApply {
 private:
-  T* const      _iter;
+  Iterator      _iter;
   volatile bool _claimed;
 
 public:
-  ZSerialWeakOopsDo(T* iter);
-  void weak_oops_do(BoolObjectClosure* is_alive, ZRootsIteratorClosure* cl);
+  ZSerialWeakApply() :
+      _iter(),
+      _claimed(false) {}
+
+  void apply(BoolObjectClosure* is_alive, OopClosure* cl);
 };
 
-class ZRootsIteratorClosure : public OopClosure {
-public:
-  virtual void do_thread(Thread* thread) {}
+class ZStrongOopStorageSetIterator {
+  OopStorageSetStrongParState<true /* concurrent */, false /* is_const */> _iter;
 
-  virtual ZNMethodEntry nmethod_entry() const = 0;
+public:
+  ZStrongOopStorageSetIterator();
+
+  void apply(OopClosure* cl);
+};
+
+class ZStrongCLDsIterator {
+public:
+  void apply(CLDClosure* cl);
 };
 
 class ZJavaThreadsIterator {
@@ -75,80 +86,66 @@ private:
 public:
   ZJavaThreadsIterator();
 
-  void threads_do(ThreadClosure* cl);
+  void apply(ThreadClosure* cl);
 };
 
-class ZRelocateRoots : public AllStatic {
+class ZNMethodsIterator {
 public:
-  static void oops_do(OopClosure* cl);
+  ZNMethodsIterator();
+  ~ZNMethodsIterator();
+
+  void apply(NMethodClosure* cl);
 };
 
 class ZConcurrentRootsIterator {
 private:
-  ZOopStorageSetStrongIterator _oop_storage_set_iter;
-  ZJavaThreadsIterator         _java_threads_iter;
-  const int                    _cld_claim;
-
-  void do_oop_storage_set(ZRootsIteratorClosure* cl);
-  void do_java_threads(ZRootsIteratorClosure* cl);
-  void do_class_loader_data_graph(ZRootsIteratorClosure* cl);
-  void do_code_cache(ZRootsIteratorClosure* cl);
-
-  ZParallelOopsDo<ZConcurrentRootsIterator, &ZConcurrentRootsIterator::do_oop_storage_set>         _oop_storage_set;
-  ZParallelOopsDo<ZConcurrentRootsIterator, &ZConcurrentRootsIterator::do_class_loader_data_graph> _class_loader_data_graph;
-  ZParallelOopsDo<ZConcurrentRootsIterator, &ZConcurrentRootsIterator::do_java_threads>            _java_threads;
-  ZParallelOopsDo<ZConcurrentRootsIterator, &ZConcurrentRootsIterator::do_code_cache>              _code_cache;
+  ZParallelApply<ZStrongOopStorageSetIterator> _oop_storage_set;
+  ZParallelApply<ZStrongCLDsIterator>          _class_loader_data_graph;
+  ZParallelApply<ZJavaThreadsIterator>         _java_threads;
+  ZParallelApply<ZNMethodsIterator>            _nmethods;
 
 public:
   ZConcurrentRootsIterator(int cld_claim);
-  ~ZConcurrentRootsIterator();
 
-  void oops_do(ZRootsIteratorClosure* cl);
+  void apply(OopClosure* cl,
+             CLDClosure* cld_cl,
+             ThreadClosure* thread_cl,
+             NMethodClosure* nm_cl);
 };
 
-class ZConcurrentRootsIteratorClaimStrong : public ZConcurrentRootsIterator {
+class ZWeakOopStorageSetIterator {
+private:
+  OopStorageSetWeakParState<true /* concurrent */, false /* is_const */> _iter;
+
 public:
-  ZConcurrentRootsIteratorClaimStrong() :
-      ZConcurrentRootsIterator(ClassLoaderData::_claim_strong) {}
+  ZWeakOopStorageSetIterator();
+
+  void apply(OopClosure* cl);
+
+  void report_num_dead();
 };
 
-class ZConcurrentRootsIteratorClaimOther : public ZConcurrentRootsIterator {
+class ZJVMTITagMapIterator {
 public:
-  ZConcurrentRootsIteratorClaimOther() :
-      ZConcurrentRootsIterator(ClassLoaderData::_claim_other) {}
-};
-
-class ZConcurrentRootsIteratorClaimNone : public ZConcurrentRootsIterator {
-public:
-  ZConcurrentRootsIteratorClaimNone() :
-      ZConcurrentRootsIterator(ClassLoaderData::_claim_none) {}
+  void apply(BoolObjectClosure* is_alive, OopClosure* cl);
 };
 
 class ZWeakRootsIterator {
 private:
-  void do_jvmti_weak_export(BoolObjectClosure* is_alive, ZRootsIteratorClosure* cl);
-
-  ZSerialWeakOopsDo<ZWeakRootsIterator, &ZWeakRootsIterator::do_jvmti_weak_export> _jvmti_weak_export;
+  ZSerialWeakApply<ZJVMTITagMapIterator> _jvmti_tag_map;
 
 public:
   ZWeakRootsIterator();
 
-  void weak_oops_do(BoolObjectClosure* is_alive, ZRootsIteratorClosure* cl);
-  void oops_do(ZRootsIteratorClosure* cl);
+  void apply(BoolObjectClosure* is_alive, OopClosure* cl);
 };
 
 class ZConcurrentWeakRootsIterator {
 private:
-  ZOopStorageSetWeakIterator _oop_storage_set_iter;
-
-  void do_oop_storage_set(ZRootsIteratorClosure* cl);
-
-  ZParallelOopsDo<ZConcurrentWeakRootsIterator, &ZConcurrentWeakRootsIterator::do_oop_storage_set> _oop_storage_set;
+  ZParallelApply<ZWeakOopStorageSetIterator> _oop_storage_set;
 
 public:
-  ZConcurrentWeakRootsIterator();
-
-  void oops_do(ZRootsIteratorClosure* cl);
+  void apply(OopClosure* cl);
 
   void report_num_dead();
 };
