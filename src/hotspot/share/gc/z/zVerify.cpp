@@ -25,6 +25,7 @@
 #include "classfile/classLoaderData.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
+#include "gc/z/zNMethod.hpp"
 #include "gc/z/zOop.hpp"
 #include "gc/z/zPageAllocator.hpp"
 #include "gc/z/zResurrection.hpp"
@@ -66,7 +67,7 @@ static void z_verify_possibly_weak_oop(oop* p) {
   }
 }
 
-class ZVerifyRootClosure : public ZRootsIteratorClosure {
+class ZVerifyRootClosure : public OopClosure {
 private:
   const bool _verify_fixed;
 
@@ -89,15 +90,8 @@ public:
     ShouldNotReachHere();
   }
 
-  virtual void do_thread(Thread* thread);
-
   bool verify_fixed() const {
     return _verify_fixed;
-  }
-
-  virtual ZNMethodEntry nmethod_entry() const {
-    // Verification performs its own verification
-    return ZNMethodEntry::None;
   }
 };
 
@@ -181,18 +175,6 @@ public:
   }
 };
 
-void ZVerifyRootClosure::do_thread(Thread* thread) {
-  thread->oops_do_no_frames(this, NULL);
-
-  JavaThread* const jt = thread->as_Java_thread();
-  if (!jt->has_last_Java_frame()) {
-    return;
-  }
-
-  ZVerifyStack verify_stack(this, jt);
-  verify_stack.verify_frames();
-}
-
 class ZVerifyOopClosure : public ClaimMetadataVisitingOopIterateClosure {
 private:
   const bool _verify_weaks;
@@ -221,35 +203,90 @@ public:
   }
 };
 
-template <typename RootsIterator>
-void ZVerify::roots(bool verify_fixed) {
+typedef ClaimingCLDToOopClosure<ClassLoaderData::_claim_none> ZVerifyCLDClosure;
+
+class ZVerifyThreadClosure : public ThreadClosure {
+private:
+  ZVerifyRootClosure* const _cl;
+
+public:
+  ZVerifyThreadClosure(ZVerifyRootClosure* cl) :
+      _cl(cl) {}
+
+  virtual void do_thread(Thread* thread) {
+    thread->oops_do_no_frames(_cl, NULL);
+
+    JavaThread* const jt = thread->as_Java_thread();
+    if (!jt->has_last_Java_frame()) {
+      return;
+    }
+
+    ZVerifyStack verify_stack(_cl, jt);
+    verify_stack.verify_frames();
+  }
+};
+
+class ZVerifyNMethodClosure : public NMethodClosure {
+private:
+  OopClosure* const        _cl;
+  BarrierSetNMethod* const _bs_nm;
+  const bool               _verify_fixed;
+
+  bool trust_nmethod_state() const {
+    // The root iterator will visit non-processed
+    // nmethods class unloading is turned off.
+    return ClassUnloading || _verify_fixed;
+  }
+
+public:
+  ZVerifyNMethodClosure(OopClosure* cl, bool verify_fixed) :
+      _cl(cl),
+      _bs_nm(BarrierSet::barrier_set()->barrier_set_nmethod()),
+      _verify_fixed(verify_fixed) {}
+
+  virtual void do_nmethod(nmethod* nm) {
+    assert(!trust_nmethod_state() || !_bs_nm->is_armed(nm), "Should not encounter any armed nmethods");
+
+    ZNMethod::nmethod_oops_do(nm, _cl);
+  }
+};
+
+void ZVerify::roots_concurrent_strong(bool verify_fixed) {
+  ZVerifyRootClosure cl(verify_fixed);
+  ZVerifyCLDClosure cld_cl(&cl);
+  ZVerifyThreadClosure thread_cl(&cl);
+  ZVerifyNMethodClosure nm_cl(&cl, verify_fixed);
+
+  ZConcurrentRootsIterator iter(ClassLoaderData::_claim_none);
+  iter.apply(&cl,
+             &cld_cl,
+             &thread_cl,
+             &nm_cl);
+}
+
+void ZVerify::roots_weak() {
+  AlwaysTrueClosure is_alive;
+  ZVerifyRootClosure cl(true /* verify_fixed */);
+  ZWeakRootsIterator iter;
+  iter.apply(&is_alive, &cl);
+}
+
+void ZVerify::roots_concurrent_weak() {
+  ZVerifyRootClosure cl(true /* verify_fixed */);
+  ZConcurrentWeakRootsIterator iter;
+  iter.apply(&cl);
+}
+
+void ZVerify::roots(bool verify_concurrent_strong, bool verify_weaks) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
   assert(!ZResurrection::is_blocked(), "Invalid phase");
 
   if (ZVerifyRoots) {
-    ZVerifyRootClosure cl(verify_fixed);
-    RootsIterator iter;
-    iter.oops_do(&cl);
-  }
-}
-
-void ZVerify::roots_weak() {
-  roots<ZWeakRootsIterator>(true /* verify_fixed */);
-}
-
-void ZVerify::roots_concurrent_strong(bool verify_fixed) {
-  roots<ZConcurrentRootsIteratorClaimNone>(verify_fixed);
-}
-
-void ZVerify::roots_concurrent_weak() {
-  roots<ZConcurrentWeakRootsIterator>(true /* verify_fixed */);
-}
-
-void ZVerify::roots(bool verify_concurrent_strong, bool verify_weaks) {
-  roots_concurrent_strong(verify_concurrent_strong);
-  if (verify_weaks) {
-    roots_weak();
-    roots_concurrent_weak();
+    roots_concurrent_strong(verify_concurrent_strong);
+    if (verify_weaks) {
+      roots_weak();
+      roots_concurrent_weak();
+    }
   }
 }
 

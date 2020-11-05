@@ -33,6 +33,7 @@
 #include "runtime/handles.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/keepStackGCProcessed.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/registerMap.hpp"
 #include "runtime/stackValue.hpp"
@@ -62,29 +63,37 @@ bool EscapeBarrier::objs_are_deoptimized(JavaThread* thread, intptr_t* fr_id) {
   return result;
 }
 
-// Object references of frames up to the given depth are about to be
-// accessed. Frames with optimizations based on escape state that is potentially
-// changed by the accesses need to be deoptimized and the referenced objects
-// need to be reallocated and relocked.  Up to depth this is done for frames
-// with not escaping objects in scope. For deeper frames it is done only if
-// they pass not escaping objects as arguments because they potentially escape
-// from callee frames within the given depth.
-// The search for deeper frames is ended if an entry frame is found because
-// arguments to native methods are considered to escape globally.
-bool EscapeBarrier::deoptimize_objects(int depth) {
-  if (barrier_active() && deoptee_thread()->has_last_Java_frame()) {
+// Deoptimize objects of frames of the target thread at depth >= d1 and depth <= d2.
+// Deoptimize objects of caller frames if they passed references to ArgEscape objects as arguments.
+// Return false in the case of a reallocation failure and true otherwise.
+bool EscapeBarrier::deoptimize_objects(int d1, int d2) {
+  if (!barrier_active()) return true;
+  if (d1 < deoptee_thread()->frames_to_pop_failed_realloc()) {
+    // The deoptee thread has frames with reallocation failures on top of its stack.
+    // These frames are about to be removed. We must not interfere with that and signal failure.
+    return false;
+  }
+  if (deoptee_thread()->has_last_Java_frame()) {
     assert(calling_thread() == Thread::current(), "should be");
+    KeepStackGCProcessedMark ksgcpm(deoptee_thread());
     ResourceMark rm(calling_thread());
     HandleMark   hm(calling_thread());
     RegisterMap  reg_map(deoptee_thread(), false /* update_map */, false /* process_frames */);
     vframe* vf = deoptee_thread()->last_java_vframe(&reg_map);
     int cur_depth = 0;
-    while (vf != NULL && ((cur_depth <= depth) || !vf->is_entry_frame())) {
+
+    // Skip frames at depth < d1
+    while (vf != NULL && cur_depth < d1) {
+      cur_depth++;
+      vf = vf->sender();
+    }
+
+    while (vf != NULL && ((cur_depth <= d2) || !vf->is_entry_frame())) {
       if (vf->is_compiled_frame()) {
         compiledVFrame* cvf = compiledVFrame::cast(vf);
         // Deoptimize frame and local objects if any exist.
         // If cvf is deeper than depth, then we deoptimize iff local objects are passed as args.
-        bool should_deopt = cur_depth <= depth ? cvf->has_ea_local_in_scope() : cvf->arg_escape();
+        bool should_deopt = cur_depth <= d2 ? cvf->has_ea_local_in_scope() : cvf->arg_escape();
         if (should_deopt && !deoptimize_objects(cvf->fr().id())) {
           // reallocation of scalar replaced objects failed because heap is exhausted
           return false;
@@ -109,7 +118,13 @@ bool EscapeBarrier::deoptimize_objects_all_threads() {
   if (!barrier_active()) return true;
   ResourceMark rm(calling_thread());
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
+    if (jt->frames_to_pop_failed_realloc() > 0) {
+      // The deoptee thread jt has frames with reallocation failures on top of its stack.
+      // These frames are about to be removed. We must not interfere with that and signal failure.
+      return false;
+    }
     if (jt->has_last_Java_frame()) {
+      KeepStackGCProcessedMark ksgcpm(jt);
       RegisterMap reg_map(jt, false /* update_map */, false /* process_frames */);
       vframe* vf = jt->last_java_vframe(&reg_map);
       assert(jt->frame_anchor()->walkable(),
@@ -297,7 +312,7 @@ static void set_objs_are_deoptimized(JavaThread* thread, intptr_t* fr_id) {
 // frame is replaced with interpreter frames.  Returns false iff at least one
 // reallocation failed.
 bool EscapeBarrier::deoptimize_objects_internal(JavaThread* deoptee, intptr_t* fr_id) {
-  if (!barrier_active()) return true;
+  assert(barrier_active(), "should not call");
 
   JavaThread* ct = calling_thread();
   bool realloc_failures = false;
@@ -307,11 +322,7 @@ bool EscapeBarrier::deoptimize_objects_internal(JavaThread* deoptee, intptr_t* f
     compiledVFrame* last_cvf;
     bool fr_is_deoptimized;
     do {
-      if (!self_deopt()) {
-        // Process stack of deoptee thread as we will access oops during object deoptimization.
-        StackWatermarkSet::start_processing(deoptee, StackWatermarkKind::gc);
-      }
-      StackFrameStream fst(deoptee, true /* update */, true /* process_frames */);
+      StackFrameStream fst(deoptee, true /* update */, false /* process_frames */);
       while (fst.current()->id() != fr_id && !fst.is_done()) {
         fst.next();
       }

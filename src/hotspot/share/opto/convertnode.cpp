@@ -403,8 +403,7 @@ Node *ConvI2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     Node *hook = new Node(1);
     hook->init_req(0, cx);  // Add a use to cx to prevent him from dying
     Node* cy = phase->C->constrained_convI2L(phase, y, TypeInt::make(rylo, ryhi, widen), NULL);
-    hook->del_req(0);  // Just yank bogus edge
-    hook->destruct();
+    hook->destruct(phase);
     switch (op) {
       case Op_AddI:  return new AddLNode(cx, cy);
       case Op_SubI:  return new SubLNode(cx, cy);

@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8246774
  * @summary test for javax.lang.model.util.Elements::recordComponentFor
  * @modules jdk.compiler
  */
@@ -51,8 +52,7 @@ public class MapAccessorToComponent {
     public void run() throws IOException {
         String code = "record R(int val1, int val2) {}";
         JavaCompiler c = ToolProvider.getSystemJavaCompiler();
-        JavacTask t = (JavacTask) c.getTask(null, null, null,
-                List.of("--enable-preview", "-source", Integer.toString(Runtime.version().feature())), null,
+        JavacTask t = (JavacTask) c.getTask(null, null, null, null, null,
                 List.of(new MyFileObject(code)));
         TypeElement record = (TypeElement) t.analyze().iterator().next();
         for (RecordComponentElement rce : ElementFilter.recordComponentsIn(record.getEnclosedElements())) {

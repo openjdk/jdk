@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ public abstract class ExtendedSocketOptions {
     private final Set<SocketOption<?>> datagramOptions;
     private final Set<SocketOption<?>> clientStreamOptions;
     private final Set<SocketOption<?>> serverStreamOptions;
+    private final Set<SocketOption<?>> unixDomainClientOptions;
 
     /** Tells whether or not the option is supported. */
     public final boolean isOptionSupported(SocketOption<?> option) {
@@ -74,6 +75,19 @@ public abstract class ExtendedSocketOptions {
     }
 
     /**
+     * Return the, possibly empty, set of extended socket options available for
+     * Unix domain client sockets. Note, there are no extended
+     * Unix domain server options.
+     */
+    private final Set<SocketOption<?>> unixDomainClientOptions() {
+        return unixDomainClientOptions;
+    }
+
+    public static Set<SocketOption<?>> unixDomainSocketOptions() {
+        return getInstance().unixDomainClientOptions();
+    }
+
+    /**
      * Returns the (possibly empty) set of extended socket options for
      * datagram-oriented sockets.
      */
@@ -82,14 +96,22 @@ public abstract class ExtendedSocketOptions {
     }
 
     private static boolean isDatagramOption(SocketOption<?> option) {
-        return !option.name().startsWith("TCP_");
+        if (option.name().startsWith("TCP_") || isUnixDomainOption(option)) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    private static boolean isUnixDomainOption(SocketOption<?> option) {
+        return option.name().equals("SO_PEERCRED");
     }
 
     private static boolean isStreamOption(SocketOption<?> option, boolean server) {
-        if (server && "SO_FLOW_SLA".equals(option.name())) {
+        if (option.name().startsWith("UDP_") || isUnixDomainOption(option)) {
             return false;
         } else {
-            return !option.name().startsWith("UDP_");
+            return true;
         }
     }
 
@@ -122,6 +144,7 @@ public abstract class ExtendedSocketOptions {
         var datagramOptions = new HashSet<SocketOption<?>>();
         var serverStreamOptions = new HashSet<SocketOption<?>>();
         var clientStreamOptions = new HashSet<SocketOption<?>>();
+        var unixDomainClientOptions = new HashSet<SocketOption<?>>();
         for (var option : options) {
             if (isDatagramOption(option)) {
                 datagramOptions.add(option);
@@ -132,10 +155,14 @@ public abstract class ExtendedSocketOptions {
             if (isStreamOption(option, false)) {
                 clientStreamOptions.add(option);
             }
+            if (isUnixDomainOption(option)) {
+                unixDomainClientOptions.add(option);
+            }
         }
         this.datagramOptions = Set.copyOf(datagramOptions);
         this.serverStreamOptions = Set.copyOf(serverStreamOptions);
         this.clientStreamOptions = Set.copyOf(clientStreamOptions);
+        this.unixDomainClientOptions = Set.copyOf(unixDomainClientOptions);
     }
 
     private static volatile ExtendedSocketOptions instance;
