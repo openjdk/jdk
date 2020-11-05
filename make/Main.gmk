@@ -527,8 +527,14 @@ $(eval $(call SetupTarget, update-x11wrappers, \
 ))
 
 ifneq ($(HSDIS_BACKEND), none)
-  $(eval $(call SetupTarget, hsdis, \
-      MAKEFILE := CompileHsdis, \
+  $(eval $(call SetupTarget, build-hsdis, \
+      MAKEFILE := Hsdis, \
+      TARGET := build, \
+  ))
+
+  $(eval $(call SetupTarget, install-hsdis, \
+      MAKEFILE := Hsdis, \
+      TARGET := install, \
   ))
 endif
 

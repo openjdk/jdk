@@ -707,12 +707,77 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
 
 ################################################################################
 #
+# Helper function to build binutils from source.
+#
+AC_DEFUN([JDKOPT_BUILD_BINUTILS],
+[
+  BINUTILS_SRC="$with_binutils_src"
+
+  if ! test -d $BINUTILS_SRC; then
+    AC_MSG_ERROR[--with-binutils-src is not pointing to a directory]
+  fi
+  if ! test -x $BINUTILS_SRC/configure; then
+    AC_MSG_ERROR[--with-binutils-src does not look like a binutils source directory]
+  fi
+
+  if test -e $BINUTILS_SRC/bfd/libbfd.a && \
+      test -e $BINUTILS_SRC/opcodes/libopcodes.a && \
+      test -e $BINUTILS_SRC/libiberty/libiberty.a; then
+    AC_MSG_NOTICE([Found binutils binaries in binutils source directory -- not building])
+  else
+    if test "x$OPENJDK_BUILD_OS" = xwindows; then
+      target_base="x86_64-w64-mingw32"
+      binutils_cc="$target_base-gcc"
+      binutils_target="--host=$target_base --target=$target_base"
+      compiler_version=`$binutils_cc --version`
+      if ! [[[$compiler_version =~ GCC]]]; then
+        AC_MSG_NOTICE([Could not find correct mingw compiler $binutils_cc.])
+        AC_MSG_NOTICE([Please install 'mingw64-x86_64-gcc-core' and 'gcc-core' and try again.])
+        AC_MSG_ERROR([Cannot continue])
+      else
+        AC_MSG_NOTICE([Using compiler $binutils_cc with version $compiler_version])
+      fi
+    else
+      binutils_cc="$CC"
+      binutils_target=""
+    fi
+    binutils_cflags="$MACHINE_FLAG $JVM_PICFLAG $C_O_FLAG_NORM"
+
+    AC_MSG_NOTICE([Running binutils configure])
+    saved_dir=`pwd`
+    cd "$BINUTILS_SRC"
+    ./configure --disable-nls CC="$binutils_cc" CFLAGS="$binutils_cflags" $binutils_target
+    if test $? -ne 0 || ! test -e $BINUTILS_SRC/Makefile; then
+      AC_MSG_NOTICE([Automatic building of binutils failed on configure. Try building it manually])
+      AC_MSG_ERROR([Cannot continue])
+    fi
+    AC_MSG_NOTICE([Running binutils make])
+    $MAKE all-opcodes
+    if test $? -ne 0;  then
+      AC_MSG_NOTICE([Automatic building of binutils failed on make. Try building it manually])
+      AC_MSG_ERROR([Cannot continue])
+    fi
+    cd $saved_dir
+    AC_MSG_NOTICE([Building of binutils done])
+  fi
+
+  BINUTILS_DIR="$BINUTILS_SRC"
+])
+
+################################################################################
+#
 # Determine if hsdis should be built, and if so, with which backend.
 #
 AC_DEFUN_ONCE([JDKOPT_SETUP_HSDIS],
 [
   AC_ARG_WITH([hsdis], [AS_HELP_STRING([--with-hsdis],
-      [what hsdis backend to use ('none', 'bfd') @<:@none@:>@])])
+      [what hsdis backend to use ('none', 'binutils') @<:@none@:>@])])
+
+  AC_ARG_WITH([binutils], [AS_HELP_STRING([--with-binutils],
+      [where to find the binutils files needed for hsdis/binutils])])
+
+  AC_ARG_WITH([binutils-src], [AS_HELP_STRING([--with-binutils-src],
+      [where to find the binutils source for building])])
 
   AC_MSG_CHECKING([what hsdis backend to use])
 
@@ -721,13 +786,46 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_HSDIS],
   elif test "x$with_hsdis" = xnone || test "x$with_hsdis" = x; then
     HSDIS_BACKEND=none
     AC_MSG_RESULT(['none', hsdis will not be built])
-  elif test "x$with_hsdis" = xbfd; then
-    HSDIS_BACKEND=bfd
-    AC_MSG_RESULT(['bfd'])
+  elif test "x$with_hsdis" = xbinutils; then
+    HSDIS_BACKEND=binutils
+    AC_MSG_RESULT(['binutils'])
+
+    # We need the binutils static libs and includes.
+    if test "x$with_binutils_src" != x; then
+      # Try building the source first. If it succeeds, it sets $BINUTILS_DIR.
+      JDKOPT_BUILD_BINUTILS
+    fi
+
+    if test "x$with_binutils" != x; then
+      BINUTILS_DIR="$with_binutils"
+    fi
+
+    AC_MSG_CHECKING([for binutils to use with hsdis])
+    if test "x$BINUTILS_DIR" != x; then
+      if test -e $BINUTILS_DIR/bfd/libbfd.a && \
+          test -e $BINUTILS_DIR/opcodes/libopcodes.a && \
+          test -e $BINUTILS_DIR/libiberty/libiberty.a; then
+        AC_MSG_RESULT([$BINUTILS_DIR])
+        HSDIS_CFLAGS="-I$BINUTILS_DIR/include -I$BINUTILS_DIR/bfd -DLIBARCH_$OPENJDK_TARGET_CPU_LEGACY_LIB"
+        HSDIS_LIBS="$BINUTILS_DIR/bfd/libbfd.a $BINUTILS_DIR/opcodes/libopcodes.a $BINUTILS_DIR/libiberty/libiberty.a $BINUTILS_DIR/zlib/libz.a"
+      else
+        AC_MSG_RESULT([invalid])
+        AC_MSG_ERROR([$BINUTILS_DIR does not contain a proper binutils installation])
+      fi
+    else
+      AC_MSG_RESULT([missing])
+      AC_MSG_NOTICE([--with-hsdis=binutils requires specifying a binutils installation.])
+      AC_MSG_NOTICE([Download binutils from https://www.gnu.org/software/binutils and unpack it,])
+      AC_MSG_NOTICE([and point --with-binutils-src to the resulting directory, or use])
+      AC_MSG_NOTICE([--with-binutils to point to a pre-built binutils installation.])
+      AC_MSG_ERROR([Cannot continue])
+    fi
   else
     AC_MSG_RESULT([invalid])
     AC_MSG_ERROR([Incorrect hsdis backend "$with_hsdis"])
   fi
 
   AC_SUBST(HSDIS_BACKEND)
+  AC_SUBST(HSDIS_CFLAGS)
+  AC_SUBST(HSDIS_LIBS)
 ])
