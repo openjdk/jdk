@@ -167,7 +167,7 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
      * @param constructorDocTree the content tree to which the documentation will be added
      */
     protected void buildPreviewInfo(Content constructorDocTree) {
-        writer.addDeprecated(currentConstructor, constructorDocTree);
+        writer.addPreview(currentConstructor, constructorDocTree);
     }
 
     /**
