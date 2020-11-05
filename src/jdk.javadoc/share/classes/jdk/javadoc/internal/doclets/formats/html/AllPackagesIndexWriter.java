@@ -74,27 +74,18 @@ public class AllPackagesIndexWriter extends HtmlDocletWriter {
      */
     protected void buildAllPackagesFile() throws DocFileIOException {
         String label = resources.getText("doclet.All_Packages");
-        Content headerContent = new ContentBuilder();
-        Navigation navBar = new Navigation(null, configuration, PageMode.ALL_PACKAGES, path);
-        addTop(headerContent);
-        navBar.setUserHeader(getUserHeaderFooter(true));
-        headerContent.add(navBar.getContent(Navigation.Position.TOP));
         Content mainContent = new ContentBuilder();
         addPackages(mainContent);
         Content titleContent = contents.allPackagesLabel;
         Content pHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, titleContent);
         Content headerDiv = HtmlTree.DIV(HtmlStyle.header, pHeading);
-        Content footer = HtmlTree.FOOTER();
-        navBar.setUserFooter(getUserHeaderFooter(false));
-        footer.add(navBar.getContent(Navigation.Position.BOTTOM));
-        addBottom(footer);
         HtmlTree bodyTree = getBody(getWindowTitle(label));
         bodyTree.add(new BodyContents()
-                .setHeader(headerContent)
+                .setHeader(getHeader(PageMode.ALL_PACKAGES))
                 .addMainContent(headerDiv)
                 .addMainContent(mainContent)
-                .setFooter(footer));
+                .setFooter(getFooter()));
         printHtmlDocument(null, "package index", bodyTree);
     }
 

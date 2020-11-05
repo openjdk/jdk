@@ -578,6 +578,13 @@ void vm_direct_exit(int code) {
   os::exit(code);
 }
 
+void vm_direct_exit(int code, const char* message) {
+  if (message != nullptr) {
+    tty->print_cr("%s", message);
+  }
+  vm_direct_exit(code);
+}
+
 void vm_perform_shutdown_actions() {
   if (is_init_completed()) {
     Thread* thread = Thread::current_or_null();

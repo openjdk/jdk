@@ -749,7 +749,6 @@ InterpreterFrame *InterpreterFrame::build(Method* const method, TRAPS) {
   istate->set_constants(method->constants()->cache());
   istate->set_msg(BytecodeInterpreter::method_entry);
   istate->set_oop_temp(NULL);
-  istate->set_mdx(NULL);
   istate->set_callee(NULL);
 
   istate->set_monitor_base((BasicObjectLock *) stack->sp());

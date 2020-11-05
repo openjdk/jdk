@@ -225,7 +225,7 @@ void ShenandoahBarrierSetAssembler::resolve_forward_pointer_not_null(MacroAssemb
   }
 }
 
-void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm, Register dst, Address load_addr, bool weak) {
+void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm, Register dst, Address load_addr, ShenandoahBarrierSet::AccessKind kind) {
   assert(ShenandoahLoadRefBarrier, "Should be enabled");
   assert(dst != rscratch2, "need rscratch2");
   assert_different_registers(load_addr.base(), load_addr.index(), rscratch1, rscratch2);
@@ -252,7 +252,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   __ mov(r0, dst);
 
   // Test for in-cset
-  if (!weak) {
+  if (kind == ShenandoahBarrierSet::AccessKind::NORMAL) {
     __ mov(rscratch2, ShenandoahHeap::in_cset_fast_test_addr());
     __ lsr(rscratch1, r0, ShenandoahHeapRegion::region_size_bytes_shift_jint());
     __ ldrb(rscratch2, Address(rscratch2, rscratch1));
@@ -260,14 +260,26 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   }
 
   __ push_call_clobbered_registers();
-  if (weak) {
-    __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak));
-  } else {
-    if (UseCompressedOops) {
-      __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_narrow));
-    } else {
-      __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier));
-    }
+  switch (kind) {
+    case ShenandoahBarrierSet::AccessKind::NORMAL:
+      if (UseCompressedOops) {
+        __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_narrow));
+      } else {
+        __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier));
+      }
+      break;
+    case ShenandoahBarrierSet::AccessKind::WEAK:
+      if (UseCompressedOops) {
+        __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak_narrow));
+      } else {
+        __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak));
+      }
+      break;
+    case ShenandoahBarrierSet::AccessKind::NATIVE:
+      __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak));
+      break;
+    default:
+      ShouldNotReachHere();
   }
   __ blr(lr);
   __ mov(rscratch1, r0);
@@ -326,8 +338,8 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
 
     BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
 
-    bool weak = ShenandoahBarrierSet::use_load_reference_barrier_weak(decorators, type);
-    load_reference_barrier(masm, dst, src, weak);
+    ShenandoahBarrierSet::AccessKind kind = ShenandoahBarrierSet::access_kind(decorators, type);
+    load_reference_barrier(masm, dst, src, kind);
 
     if (dst != result_dst) {
       __ mov(result_dst, dst);
@@ -641,10 +653,18 @@ void ShenandoahBarrierSetAssembler::gen_load_reference_barrier_stub(LIR_Assemble
   __ bind(slow_path);
   ce->store_parameter(res, 0);
   ce->store_parameter(addr, 1);
-  if (stub->is_weak()) {
-    __ far_call(RuntimeAddress(bs->load_reference_barrier_weak_rt_code_blob()->code_begin()));
-  } else {
-    __ far_call(RuntimeAddress(bs->load_reference_barrier_rt_code_blob()->code_begin()));
+  switch (stub->kind()) {
+    case ShenandoahBarrierSet::AccessKind::NORMAL:
+      __ far_call(RuntimeAddress(bs->load_reference_barrier_normal_rt_code_blob()->code_begin()));
+      break;
+    case ShenandoahBarrierSet::AccessKind::WEAK:
+      __ far_call(RuntimeAddress(bs->load_reference_barrier_weak_rt_code_blob()->code_begin()));
+      break;
+    case ShenandoahBarrierSet::AccessKind::NATIVE:
+      __ far_call(RuntimeAddress(bs->load_reference_barrier_native_rt_code_blob()->code_begin()));
+      break;
+    default:
+      ShouldNotReachHere();
   }
 
   __ b(*stub->continuation());
@@ -700,19 +720,33 @@ void ShenandoahBarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAss
   __ epilogue();
 }
 
-void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_stub(StubAssembler* sasm, bool is_weak) {
+void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_stub(StubAssembler* sasm, ShenandoahBarrierSet::AccessKind kind) {
   __ prologue("shenandoah_load_reference_barrier", false);
   // arg0 : object to be resolved
 
   __ push_call_clobbered_registers();
   __ load_parameter(0, r0);
   __ load_parameter(1, r1);
-  if (is_weak) {
-    __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak));
-  } else if (UseCompressedOops) {
-    __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_narrow));
-  } else {
-    __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier));
+  switch (kind) {
+    case ShenandoahBarrierSet::AccessKind::NORMAL:
+      if (UseCompressedOops) {
+        __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_narrow));
+      } else {
+        __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier));
+      }
+      break;
+    case ShenandoahBarrierSet::AccessKind::WEAK:
+      if (UseCompressedOops) {
+        __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak_narrow));
+      } else {
+        __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak));
+      }
+      break;
+    case ShenandoahBarrierSet::AccessKind::NATIVE:
+      __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak));
+      break;
+   default:
+      ShouldNotReachHere();
   }
   __ blr(lr);
   __ mov(rscratch1, r0);
