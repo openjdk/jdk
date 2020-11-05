@@ -117,7 +117,7 @@ class HeapRegionManager: public CHeapObj<mtGC> {
   // Checks the G1MemoryNodeManager to see if this region is on the preferred node.
   bool is_on_preferred_index(uint region_index, uint preferred_node_index);
 
-  // Clear the auziliary data structures by notifying them that the mapping has
+  // Clear the auxiliary data structures by notifying them that the mapping has
   // changed. The structures that needs to be cleared will than clear. This is
   // used to allow reuse regions scheduled for uncommit without uncommiting and
   // then committing them.

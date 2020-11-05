@@ -36,6 +36,7 @@ package gc.stress;
  */
 
 import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -48,8 +49,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import com.sun.management.ThreadMXBean;
 
+import jdk.test.lib.Asserts;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
+
 import sun.hotspot.WhiteBox;
 
 public class TestStressG1Uncommit {
@@ -86,6 +89,7 @@ class StressUncommit {
 
     private static final WhiteBox wb = WhiteBox.getWhiteBox();
     private static final ThreadMXBean threadBean = (ThreadMXBean) ManagementFactory.getThreadMXBean();
+    private static final MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
     private static ConcurrentLinkedQueue<Object> globalKeepAlive;
 
     public static void main(String args[]) throws InterruptedException {
@@ -105,34 +109,38 @@ class StressUncommit {
 
         log("Using " + numWorkers + " workers, each allocating: ~" + (workerAllocation / M) + "M");
         ExecutorService workers = Executors.newFixedThreadPool(numWorkers);
+        try {
+            int iteration = 1;
+            // Run for 60 seconds.
+            while (uptime() < 60) {
+                log("Interation: " + iteration++);
+                globalKeepAlive = new ConcurrentLinkedQueue<>();
+                // Submit work to executor.
+                CountDownLatch workersRunning = new CountDownLatch(numWorkers);
+                for (int j = 0; j < numWorkers; j++) {
+                    // Submit worker task.
+                    workers.submit(() -> {
+                    allocateToLimit(workerAllocation);
+                    workersRunning.countDown();
+                    });
+                }
 
-        int iteration = 1;
-        // Run for 60 seconds.
-        while (uptime() < 60) {
-            log("Interation: " + iteration++);
-            globalKeepAlive = new ConcurrentLinkedQueue<>();
-            // Submit work to executor.
-            CountDownLatch workersRunning = new CountDownLatch(numWorkers);
-            for (int j = 0; j < numWorkers; j++) {
-                // Submit worker task.
-                workers.submit(() -> {
-                allocateToLimit(workerAllocation);
-                workersRunning.countDown();
-                });
+                // Wait for tasks to complete.
+                workersRunning.await();
+                long committedBefore = memoryBean.getHeapMemoryUsage().getCommitted();
+
+                // Clear the reference holding all task allocations alive.
+                globalKeepAlive = null;
+
+                // Do a GC that should shrink the heap.
+                gc.invoke();
+                long committedAfter = memoryBean.getHeapMemoryUsage().getCommitted();
+                Asserts.assertLessThan(committedAfter, committedBefore);
             }
-
-            // Wait for tasks to complete.
-            workersRunning.await();
-
-            // Clear the reference holding all task allocations alive.
-            globalKeepAlive = null;
-
-            // Do a GC that should shrink the heap.
-            gc.invoke();
+        } finally {
+            workers.shutdown();
+            workers.awaitTermination(5, TimeUnit.SECONDS);
         }
-
-        workers.shutdown();
-        workers.awaitTermination(5, TimeUnit.SECONDS);
     }
 
     private static void allocateToLimit(long limit) {
