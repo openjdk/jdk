@@ -219,12 +219,19 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
   // Process debug uses at safepoints
   Unique_Node_List safepoints(C->comp_arena());
 
-  for (DUIterator_Fast imax, i = vec_box->fast_outs(imax); i < imax; i++) {
-    Node* use = vec_box->fast_out(i);
-    if (use->is_SafePoint()) {
-      SafePointNode* sfpt = use->as_SafePoint();
-      if (!sfpt->is_Call() || !sfpt->as_Call()->has_non_debug_use(vec_box)) {
-        safepoints.push(sfpt);
+  Unique_Node_List worklist(C->comp_arena());
+  worklist.push(vec_box);
+  while (worklist.size() > 0) {
+    Node* n = worklist.pop();
+    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+      Node* use = n->fast_out(i);
+      if (use->is_SafePoint()) {
+        SafePointNode* sfpt = use->as_SafePoint();
+        if (!sfpt->is_Call() || !sfpt->as_Call()->has_non_debug_use(n)) {
+          safepoints.push(sfpt);
+        }
+      } else if (use->is_ConstraintCast()) {
+        worklist.push(use); // reversed version of Node::uncast()
       }
     }
   }
@@ -251,11 +258,13 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
 
     jvms->set_endoff(sfpt->req());
     // Now make a pass over the debug information replacing any references
-    // to the allocated object with "sobj"
-    int start = jvms->debug_start();
-    int end   = jvms->debug_end();
-    sfpt->replace_edges_in_range(vec_box, sobj, start, end);
-
+    // to the allocated object with vector value.
+    for (uint i = jvms->debug_start(); i < jvms->debug_end(); i++) {
+      Node* debug = sfpt->in(i);
+      if (debug != NULL && debug->uncast(/*keep_deps*/false) == vec_box) {
+        sfpt->set_req(i, sobj);
+      }
+    }
     C->record_for_igvn(sfpt);
   }
 }
