@@ -88,10 +88,6 @@ public class CheckLongIndex {
         return l.toArray(Object[][]::new);
     }
 
-    interface X {
-        long apply(long a, long b, long c);
-    }
-
     @Test(dataProvider = "checkIndexProvider")
     public void testCheckIndex(long index, long length, boolean withinBounds) {
         String expectedMessage = withinBounds
