@@ -27,7 +27,7 @@
  * @summary FileSystemView.isDrive(File) memory leak on "C:\" file reference
  * @modules java.desktop/sun.awt.shell
  * @requires (os.family == "windows")
- * @run main/othervm -Xmx8m FileSystemViewMemoryLeak
+ * @run main/othervm/timeout=320 -Xmx8m FileSystemViewMemoryLeak
  */
 import java.io.File;
 import java.text.NumberFormat;
@@ -41,8 +41,8 @@ public class FileSystemViewMemoryLeak {
         test();
     }
 
-    // Will run the test no more than 90 seconds
-    static long endtime = System.nanoTime() + TimeUnit.SECONDS.toNanos(90);
+    // Will run the test no more than 300 seconds
+    static long endtime = System.nanoTime() + TimeUnit.SECONDS.toNanos(300);
 
     private static void test() {
 
