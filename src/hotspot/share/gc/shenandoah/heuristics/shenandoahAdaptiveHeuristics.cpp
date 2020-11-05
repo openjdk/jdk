@@ -110,33 +110,61 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() const {
   size_t soft_tail = max_capacity - capacity;
   available = (available > soft_tail) ? (available - soft_tail) : 0;
 
+  if (is_available_below_min_threshold(capacity, available)) {
+    return true;
+  }
+
+  if (is_learning_necessary(capacity, available)) {
+    return true;
+  }
+
+  if (is_allocation_headroom_low(capacity, available)) {
+    return true;
+  }
+
+  return ShenandoahHeuristics::should_start_gc();
+}
+
+bool ShenandoahAdaptiveHeuristics::is_available_below_min_threshold(size_t capacity,
+                                                                    size_t available) const {
   // Check if we are falling below the worst limit, time to trigger the GC, regardless of
   // anything else.
   size_t min_threshold = capacity / 100 * ShenandoahMinFreeThreshold;
   if (available < min_threshold) {
-    log_info(gc)("Trigger: Free (" SIZE_FORMAT "%s) is below minimum threshold (" SIZE_FORMAT "%s)",
-                 byte_size_in_proper_unit(available),     proper_unit_for_byte_size(available),
-                 byte_size_in_proper_unit(min_threshold), proper_unit_for_byte_size(min_threshold));
+    if (log_is_enabled(Info, gc)) {
+      log_info(gc)("Trigger: Free (" SIZE_FORMAT "%s) is below minimum threshold (" SIZE_FORMAT "%s)",
+                   byte_size_in_proper_unit(available),     proper_unit_for_byte_size(available),
+                   byte_size_in_proper_unit(min_threshold), proper_unit_for_byte_size(min_threshold));
+    }
     return true;
   }
+  return false;
+}
 
-  // Check if are need to learn a bit about the application
+bool ShenandoahAdaptiveHeuristics::is_learning_necessary(size_t capacity,
+                                                         size_t available) const {
   const size_t max_learn = ShenandoahLearningSteps;
   if (_gc_times_learned < max_learn) {
     size_t init_threshold = capacity / 100 * ShenandoahInitFreeThreshold;
     if (available < init_threshold) {
-      log_info(gc)("Trigger: Learning " SIZE_FORMAT " of " SIZE_FORMAT ". Free (" SIZE_FORMAT "%s) is below initial threshold (" SIZE_FORMAT "%s)",
-                   _gc_times_learned + 1, max_learn,
-                   byte_size_in_proper_unit(available),      proper_unit_for_byte_size(available),
-                   byte_size_in_proper_unit(init_threshold), proper_unit_for_byte_size(init_threshold));
+      if (log_is_enabled(Info, gc)) {
+        log_info(gc)("Trigger: Learning " SIZE_FORMAT " of " SIZE_FORMAT ". Free (" SIZE_FORMAT "%s) is below initial threshold (" SIZE_FORMAT "%s)",
+                     _gc_times_learned + 1, max_learn,
+                     byte_size_in_proper_unit(available),      proper_unit_for_byte_size(available),
+                     byte_size_in_proper_unit(init_threshold), proper_unit_for_byte_size(init_threshold));
+      }
       return true;
     }
   }
+  return false;
+}
 
+bool ShenandoahAdaptiveHeuristics::is_allocation_headroom_low(size_t capacity,
+                                                              size_t available) const {
   // Check if allocation headroom is still okay. This also factors in:
   //   1. Some space to absorb allocation spikes
   //   2. Accumulated penalties from Degenerated and Full GC
-
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
   size_t allocation_headroom = available;
 
   size_t spike_headroom = capacity / 100 * ShenandoahAllocSpikeFactor;
@@ -157,12 +185,12 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() const {
                  byte_size_in_proper_unit(allocation_rate),     proper_unit_for_byte_size(allocation_rate),
                  byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom));
     log_info(gc, ergo)("Free headroom: " SIZE_FORMAT "%s (free) - " SIZE_FORMAT "%s (spike) - " SIZE_FORMAT "%s (penalties) = " SIZE_FORMAT "%s",
-                 byte_size_in_proper_unit(available),           proper_unit_for_byte_size(available),
-                 byte_size_in_proper_unit(spike_headroom),      proper_unit_for_byte_size(spike_headroom),
-                 byte_size_in_proper_unit(penalties),           proper_unit_for_byte_size(penalties),
-                 byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom));
+                       byte_size_in_proper_unit(available),           proper_unit_for_byte_size(available),
+                       byte_size_in_proper_unit(spike_headroom),      proper_unit_for_byte_size(spike_headroom),
+                       byte_size_in_proper_unit(penalties),           proper_unit_for_byte_size(penalties),
+                       byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom));
     return true;
   }
 
-  return ShenandoahHeuristics::should_start_gc();
+  return false;
 }

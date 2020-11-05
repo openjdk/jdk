@@ -50,7 +50,7 @@ ShenandoahHeuristics::ShenandoahHeuristics() :
   _last_cycle_end(0),
   _gc_times_learned(0),
   _gc_time_penalties(0),
-  _gc_time_history(new TruncatedSeq(5)),
+  _gc_time_history(new TruncatedSeq(10, ShenandoahReactiveDecayFactor)),
   _metaspace_oom()
 {
   // No unloading during concurrent mark? Communicate that to heuristics

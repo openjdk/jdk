@@ -46,6 +46,11 @@ public:
   virtual const char* name()     { return "Adaptive"; }
   virtual bool is_diagnostic()   { return false; }
   virtual bool is_experimental() { return false; }
+
+ protected:
+  bool is_available_below_min_threshold(size_t capacity, size_t available) const;
+  bool is_learning_necessary(size_t capacity, size_t available) const;
+  bool is_allocation_headroom_low(size_t capacity, size_t available) const;
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHADAPTIVEHEURISTICS_HPP
