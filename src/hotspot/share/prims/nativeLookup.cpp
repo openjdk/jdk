@@ -51,27 +51,114 @@
 #include "jfr/jfr.hpp"
 #endif
 
-static void mangle_name_on(outputStream* st, Symbol* name, int begin, int end) {
+/*
+
+The JNI specification defines the mapping from a Java native method name to
+a C native library implementation function name as follows:
+
+  The mapping produces a native method name by concatenating the following components
+  derived from a `native` method declaration:
+
+  1. the prefix Java_
+  2. given the binary name, in internal form, of the class which declares the native method:
+     the result of escaping the name.
+  3. an underscore ("_")
+  4. the escaped method name
+  5. if the native method declaration is overloaded: two underscores ("__") followed by the
+   escaped parameter descriptor (JVMS 4.3.3) of the method declaration.
+
+  Escaping leaves every alphanumeric ASCII character (A-Za-z0-9) unchanged, and replaces each
+  UTF-16 code unit n the table below with the corresponding escape sequence. If the name to be
+  escaped contains a surrogate pair, then the high-surrogate code unit and the low-surrogate code
+  unit are escaped separately. The result of escaping is a string consisting only of the ASCII
+  characters A-Za-z0-9 and underscore.
+
+  ------------------------------                  ------------------------------------
+  UTF-16 code unit                                Escape sequence
+  ------------------------------                  ------------------------------------
+  Forward slash (/, U+002F)                       _
+  Underscore (_, U+005F)                          _1
+  Semicolon (;, U+003B)                           _2
+  Left square bracket ([, U+005B)                 _3
+  Any UTF-16 code unit \u_WXYZ_ that does not     _0wxyz where w, x, y, and z are the lower-case
+  represent alphanumeric ASCII (A-Za-z0-9),       forms of the hexadecimal digits W, X, Y, and Z.
+  forward slash, underscore, semicolon,           (For example, U+ABCD becomes _0abcd.)
+  or left square bracket
+  ------------------------------                  ------------------------------------
+
+  Note that escape sequences can safely begin _0, _1, etc, because class and method
+  names in Java source code never begin with a number. However, that is not the case in
+  class files that were not generated from Java source code.
+
+  To preserve the 1:1 mapping to a native method name, the VM checks the resulting name as
+  follows. If the process of escaping any precursor string from the native  method declaration
+  (class or method name, or argument type) causes a "0", "1", "2", or "3" character
+  from the precursor string to appear unchanged in the result *either* immediately after an
+  underscore *or* at the beginning of the escaped string (where it will follow an underscore
+  in the fully assembled name), then the escaping process is said to have "failed".
+  In such cases, no native library search is performed, and the attempt to link the native
+  method invocation will throw UnsatisfiedLinkError.
+
+
+For example:
+
+  package/my_class/method
+
+and
+
+  package/my/1class/method
+
+both map to
+
+  Java_package_my_1class_method
+
+To address this potential conflict we need only check if the character after
+/ is a digit 0..3, or if the first character after an injected '_' seperator
+is a digit 0..3. If we encounter an invalid identifier we reset the
+stringStream and return false. Otherwise the stringStream contains the mapped
+name and we return true.
+
+*/
+static bool map_escaped_name_on(stringStream* st, Symbol* name, int begin, int end) {
   char* bytes = (char*)name->bytes() + begin;
   char* end_bytes = (char*)name->bytes() + end;
+  bool check_escape_char = true; // initially true as first character here follows '_'
   while (bytes < end_bytes) {
     jchar c;
     bytes = UTF8::next(bytes, &c);
     if (c <= 0x7f && isalnum(c)) {
+      if (check_escape_char && (c >= '0' && c <= '3')) {
+        // This is a non-Java identifier and we won't escape it to
+        // ensure no name collisions with a Java identifier.
+        if (log_is_enabled(Debug, jni, resolve)) {
+          ResourceMark rm;
+          log_debug(jni, resolve)("[Lookup of native method with non-Java identifier rejected: %s]",
+                                  name->as_C_string());
+        }
+        st->reset();  // restore to "" on error
+        return false;
+      }
       st->put((char) c);
+      check_escape_char = false;
     } else {
-           if (c == '_') st->print("_1");
-      else if (c == '/') st->print("_");
+      check_escape_char = false;
+      if (c == '_') st->print("_1");
+      else if (c == '/') {
+        st->print("_");
+        // Following a / we must have non-escape character
+        check_escape_char = true;
+      }
       else if (c == ';') st->print("_2");
       else if (c == '[') st->print("_3");
       else               st->print("_%.5x", c);
     }
   }
+  return true;
 }
 
 
-static void mangle_name_on(outputStream* st, Symbol* name) {
-  mangle_name_on(st, name, 0, name->utf8_length());
+static bool map_escaped_name_on(stringStream* st, Symbol* name) {
+  return map_escaped_name_on(st, name, 0, name->utf8_length());
 }
 
 
@@ -80,10 +167,14 @@ char* NativeLookup::pure_jni_name(const methodHandle& method) {
   // Prefix
   st.print("Java_");
   // Klass name
-  mangle_name_on(&st, method->klass_name());
+  if (!map_escaped_name_on(&st, method->klass_name())) {
+    return NULL;
+  }
   st.print("_");
   // Method name
-  mangle_name_on(&st, method->name());
+  if (!map_escaped_name_on(&st, method->name())) {
+    return NULL;
+  }
   return st.as_string();
 }
 
@@ -93,16 +184,20 @@ char* NativeLookup::critical_jni_name(const methodHandle& method) {
   // Prefix
   st.print("JavaCritical_");
   // Klass name
-  mangle_name_on(&st, method->klass_name());
+  if (!map_escaped_name_on(&st, method->klass_name())) {
+    return NULL;
+  }
   st.print("_");
   // Method name
-  mangle_name_on(&st, method->name());
+  if (!map_escaped_name_on(&st, method->name())) {
+    return NULL;
+  }
   return st.as_string();
 }
 
 
 char* NativeLookup::long_jni_name(const methodHandle& method) {
-  // Signature ignore the wrapping parenteses and the trailing return type
+  // Signatures ignore the wrapping parentheses and the trailing return type
   stringStream st;
   Symbol* signature = method->signature();
   st.print("__");
@@ -110,7 +205,10 @@ char* NativeLookup::long_jni_name(const methodHandle& method) {
   int end;
   for (end = 0; end < signature->utf8_length() && signature->char_at(end) != JVM_SIGNATURE_ENDFUNC; end++);
   // skip first '('
-  mangle_name_on(&st, signature, 1, end);
+  if (!map_escaped_name_on(&st, signature, 1, end)) {
+    return NULL;
+  }
+
   return st.as_string();
 }
 
@@ -233,6 +331,11 @@ address NativeLookup::lookup_entry(const methodHandle& method, bool& in_base_lib
   in_base_library = false;
   // Compute pure name
   char* pure_name = pure_jni_name(method);
+  if (pure_name == NULL) {
+    // JNI name mapping rejected this method so return
+    // NULL to indicate UnsatisfiedLinkError should be thrown.
+    return NULL;
+  }
 
   // Compute argument size
   int args_size = 1                             // JNIEnv
@@ -245,6 +348,11 @@ address NativeLookup::lookup_entry(const methodHandle& method, bool& in_base_lib
 
   // Compute long name
   char* long_name = long_jni_name(method);
+  if (long_name == NULL) {
+    // JNI name mapping rejected this method so return
+    // NULL to indicate UnsatisfiedLinkError should be thrown.
+    return NULL;
+  }
 
   // 2) Try JNI long style
   entry = lookup_style(method, pure_name, long_name, args_size, true,  in_base_library, CHECK_NULL);
@@ -326,6 +434,11 @@ void* NativeLookup::dll_load(const methodHandle& method) {
 address NativeLookup::lookup_critical_style(void* dll, const methodHandle& method, int args_size) {
   address entry = NULL;
   const char* critical_name = critical_jni_name(method);
+  if (critical_name == NULL) {
+    // JNI name mapping rejected this method so return
+    // NULL to indicate UnsatisfiedLinkError should be thrown.
+    return NULL;
+  }
 
   // 1) Try JNI short style
   entry = lookup_critical_style(dll, critical_name, "",        args_size, true);
@@ -334,6 +447,11 @@ address NativeLookup::lookup_critical_style(void* dll, const methodHandle& metho
   }
 
   const char* long_name = long_jni_name(method);
+  if (long_name == NULL) {
+    // JNI name mapping rejected this method so return
+    // NULL to indicate UnsatisfiedLinkError should be thrown.
+    return NULL;
+  }
 
   // 2) Try JNI long style
   entry = lookup_critical_style(dll, critical_name, long_name, args_size, true);

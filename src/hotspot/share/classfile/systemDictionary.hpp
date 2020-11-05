@@ -25,7 +25,6 @@
 #ifndef SHARE_CLASSFILE_SYSTEMDICTIONARY_HPP
 #define SHARE_CLASSFILE_SYSTEMDICTIONARY_HPP
 
-#include "classfile/vmSymbols.hpp"
 #include "oops/oopHandle.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/signature.hpp"

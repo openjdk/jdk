@@ -61,12 +61,6 @@ bool ShenandoahAggressiveHeuristics::should_start_gc() const {
   return true;
 }
 
-bool ShenandoahAggressiveHeuristics::should_process_references() {
-  if (!can_process_references()) return false;
-  // Randomly process refs with 50% chance.
-  return (os::random() & 1) == 1;
-}
-
 bool ShenandoahAggressiveHeuristics::should_unload_classes() {
   if (!can_unload_classes_normal()) return false;
   if (has_metaspace_oom()) return true;

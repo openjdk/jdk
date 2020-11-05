@@ -32,10 +32,13 @@ import java.net.InetAddress;
 import java.net.Inet6Address;
 import java.net.InetSocketAddress;
 import java.net.ProtocolFamily;
+import java.net.SocketAddress;
+import java.net.UnixDomainSocketAddress;
 import java.nio.channels.Channel;
 import java.nio.channels.spi.SelectorProvider;
 import static java.net.StandardProtocolFamily.INET6;
 import static java.net.StandardProtocolFamily.INET;
+import static java.net.StandardProtocolFamily.UNIX;
 
 class InheritedChannel {
 
@@ -45,10 +48,10 @@ class InheritedChannel {
     private static final int SOCK_DGRAM         = 2;
 
     // socket address type
-    private static final int AF_UNKNOWN         = -1;
-    private static final int AF_INET            = 1;
-    private static final int AF_INET6           = 2;
-    private static final int AF_UNIX            = 3;
+    static final int AF_UNKNOWN         = -1;
+    static final int AF_INET            = 1;
+    static final int AF_INET6           = 2;
+    static final int AF_UNIX            = 3;
 
     // oflag values when opening a file
     private static final int O_RDONLY           = 0;
@@ -75,6 +78,24 @@ class InheritedChannel {
         }
     }
 
+    static ProtocolFamily protocolFamily(SocketAddress sa) {
+        if (sa instanceof UnixDomainSocketAddress) {
+            return UNIX;
+        } else {
+            InetSocketAddress isa = (InetSocketAddress) sa;
+            return (isa.getAddress() instanceof Inet6Address) ? INET6 : INET;
+        }
+    }
+
+    static ProtocolFamily protocolFamily(int family) {
+        return switch (family) {
+            case AF_INET -> INET;
+            case AF_INET6 -> INET6;
+            case AF_UNIX -> UNIX;
+            default -> throw new IllegalArgumentException();
+        };
+    }
+
     /*
      * Override the implCloseSelectableChannel for each channel type - this
      * allows us to "detach" the standard streams after closing and ensures
@@ -82,16 +103,12 @@ class InheritedChannel {
      */
     public static class InheritedSocketChannelImpl extends SocketChannelImpl {
 
-        static ProtocolFamily family(InetSocketAddress isa) {
-            return (isa.getAddress() instanceof Inet6Address) ? INET6 : INET;
-        }
-
         InheritedSocketChannelImpl(SelectorProvider sp,
                                    FileDescriptor fd,
-                                   InetSocketAddress remote)
+                                   SocketAddress remote)
             throws IOException
         {
-            super(sp, family(remote), fd, remote);
+            super(sp, protocolFamily(remote), fd, remote);
         }
 
         protected void implCloseSelectableChannel() throws IOException {
@@ -100,39 +117,24 @@ class InheritedChannel {
         }
     }
 
-    public static class InheritedUnixChannelImpl extends UnixDomainSocketChannelImpl {
-
-        InheritedUnixChannelImpl(FileDescriptor fd)
-            throws IOException
-        {
-            super(fd);
-        }
-
-        protected void implCloseSelectableChannel() throws IOException {
-            super.implCloseChannel();
-            detachIOStreams();
-        }
-    }
-
-    public static class InheritedServerSocketChannelImpl extends
-        ServerSocketChannelImpl {
+    public static class InheritedServerSocketChannelImpl extends ServerSocketChannelImpl {
 
         InheritedServerSocketChannelImpl(SelectorProvider sp,
+                                         ProtocolFamily family,
                                          FileDescriptor fd)
             throws IOException
         {
-            super(sp, fd, true);
+            super(sp, family, fd, true);
         }
 
+        @Override
         protected void implCloseSelectableChannel() throws IOException {
             super.implCloseSelectableChannel();
             detachIOStreams();
         }
-
     }
 
-    public static class InheritedDatagramChannelImpl extends
-        DatagramChannelImpl {
+    public static class InheritedDatagramChannelImpl extends DatagramChannelImpl {
 
         InheritedDatagramChannelImpl(SelectorProvider sp,
                                      FileDescriptor fd)
@@ -151,15 +153,12 @@ class InheritedChannel {
      * If there's a SecurityManager then check for the appropriate
      * RuntimePermission.
      */
-    private static void checkAccess(Channel c) {
+    private static void checkAccess() {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            sm.checkPermission(
-                new RuntimePermission("inheritedChannel")
-            );
+            sm.checkPermission(new RuntimePermission("inheritedChannel"));
         }
     }
-
 
     /*
      * If standard inherited channel is connected to a socket then return a Channel
@@ -197,7 +196,7 @@ class InheritedChannel {
 
 
         // Now create the channel. If the socket is a streams socket then
-        // we see if tthere is a peer (ie: connected). If so, then we
+        // we see if there is a peer (ie: connected). If so, then we
         // create a SocketChannel, otherwise a ServerSocketChannel.
         // If the socket is a datagram socket then create a DatagramChannel
 
@@ -209,19 +208,21 @@ class InheritedChannel {
             int family = addressFamily(fdVal);
             if (family == AF_UNKNOWN)
                 return null;
+            ProtocolFamily pfamily = protocolFamily(family);
             if (family == AF_UNIX) {
                 if (isConnected(fdVal)) {
-                    return new InheritedUnixChannelImpl(fd);
+                    var sa = UnixDomainSocketAddress.of(unixPeerAddress(fdVal));
+                    return new InheritedSocketChannelImpl(provider, fd, sa);
                 } else {
-                    // listener. unsupported.
-                    return null;
+                    return new InheritedServerSocketChannelImpl(provider, pfamily, fd);
                 }
             }
-            InetAddress ia = peerAddress0(fdVal);
+            InetAddress ia = inetPeerAddress0(fdVal);
             if (ia == null) {
-               c = new InheritedServerSocketChannelImpl(provider, fd);
+               c = new InheritedServerSocketChannelImpl(provider, pfamily, fd);
             } else {
                int port = peerPort0(fdVal);
+
                assert port > 0;
                InetSocketAddress isa = new InetSocketAddress(ia, port);
                c = new InheritedSocketChannelImpl(provider, fd, isa);
@@ -253,11 +254,15 @@ class InheritedChannel {
         // if there is a channel then do the security check before
         // returning it.
         if (channel != null) {
-            checkAccess(channel);
+            checkAccess();
         }
         return channel;
     }
 
+    private static String unixPeerAddress(int fd) throws IOException {
+        byte[] bytes = unixPeerAddress0(fd);
+        return new String(bytes);
+    }
 
     // -- Native methods --
 
@@ -268,7 +273,8 @@ class InheritedChannel {
     private static native void close0(int fd) throws IOException;
     private static native int soType0(int fd);
     private static native int addressFamily(int fd);
-    private static native InetAddress peerAddress0(int fd);
+    private static native InetAddress inetPeerAddress0(int fd);
+    private static native byte[] unixPeerAddress0(int fd);
     private static native int peerPort0(int fd);
 
     // return true if socket is connected to a peer
