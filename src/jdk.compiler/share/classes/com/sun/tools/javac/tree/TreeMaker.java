@@ -476,8 +476,8 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
-    public JCBindingPattern BindingPattern(Name name, JCTree vartype) {
-        JCBindingPattern tree = new JCBindingPattern(name, null, vartype);
+    public JCBindingPattern BindingPattern(JCVariableDecl var) {
+        JCBindingPattern tree = new JCBindingPattern(var);
         tree.pos = pos;
         return tree;
     }

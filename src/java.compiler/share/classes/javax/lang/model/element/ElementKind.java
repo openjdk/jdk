@@ -121,20 +121,9 @@ public enum ElementKind {
     RECORD_COMPONENT,
 
     /**
-     * {@preview Associated with pattern matching for {@code
-     * instanceof}, a preview feature of the Java language.
-     *
-     *           This enum constant is associated with <i>pattern
-     *           matching for {@code instanceof}</i>, a preview
-     *           feature of the Java language. Preview features
-     *           may be removed in a future release, or upgraded to permanent
-     *           features of the Java language.}
-     *
-     * A binding variable in a pattern .
-     * @since 14
+     * A binding variable in a pattern.
+     * @since 16
      */
-    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.PATTERN_MATCHING_IN_INSTANCEOF,
-                                 essentialAPI=false)
     BINDING_VARIABLE;
 
     /**

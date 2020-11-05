@@ -65,8 +65,8 @@ private:
 
   // Candidate selection policies, returns true if the given object is
   // candidate for string deduplication.
-  static bool is_candidate_from_mark(oop obj);
-  static bool is_candidate_from_evacuation(bool from_young, bool to_young, oop obj);
+  static bool is_candidate_from_mark(oop java_string);
+  static bool is_candidate_from_evacuation(bool from_young, bool to_young, oop java_string);
 
 public:
   // Initialize string deduplication.
@@ -75,6 +75,7 @@ public:
   // Enqueues a deduplication candidate for later processing by the deduplication
   // thread. Before enqueuing, these functions apply the appropriate candidate
   // selection policy to filters out non-candidates.
+  // Precondition for both is that java_string is a String.
   static void enqueue_from_mark(oop java_string, uint worker_id);
   static void enqueue_from_evacuation(bool from_young, bool to_young,
                                       unsigned int queue, oop java_string);

@@ -487,46 +487,61 @@ public class HtmlDocletWriter {
     }
 
     /**
-     * Get user specified header and the footer.
+     * Returns a {@code <header>} element, containing the user "top" text, if any,
+     * amd the main navigation bar.
      *
-     * @param header if true print the user provided header else print the
-     * user provided footer.
+     * @param pageMode the pageMode used to configure the navigation bar
+     *
+     * @return the {@code <header>} element
      */
-    public Content getUserHeaderFooter(boolean header) {
-        String content;
-        if (header) {
-            content = replaceDocRootDir(options.header());
-        } else {
-            if (options.footer().length() != 0) {
-                content = replaceDocRootDir(options.footer());
-            } else {
-                content = replaceDocRootDir(options.header());
-            }
-        }
-        Content rawContent = new RawHtml(content);
-        return rawContent;
+    protected HtmlTree getHeader(Navigation.PageMode pageMode) {
+        return getHeader(pageMode, null);
     }
 
     /**
-     * Adds the user specified top.
+     * Returns a {@code <header>} element, containing the user "top" text, if any,
+     * amd the main navigation bar.
      *
-     * @param htmlTree the content tree to which user specified top will be added
+     * @param pageMode the page mode used to configure the navigation bar
+     * @param element  the element used to configure the navigation bar
+     *
+     * @return the {@code <header>} element
      */
-    public void addTop(Content htmlTree) {
-        Content top = new RawHtml(replaceDocRootDir(options.top()));
-        htmlTree.add(top);
+    protected HtmlTree getHeader(Navigation.PageMode pageMode, Element element) {
+        return HtmlTree.HEADER()
+                .add(new RawHtml(replaceDocRootDir(options.top())))
+                .add(getNavBar(pageMode, element).getContent());
     }
 
     /**
-     * Adds the user specified bottom.
+     * Returns a basic navigation bar for a kind of page and element.
      *
-     * @param htmlTree the content tree to which user specified bottom will be added
+     * @apiNote the result may be further configured by overriding this method
+     *
+     * @param pageMode the page mode
+     * @param element  the defining element for the navigation bar, or {@code null} if none
+     * @return the basic navigation bar
      */
-    public void addBottom(Content htmlTree) {
-        Content bottom = new RawHtml(replaceDocRootDir(options.bottom()));
-        Content small = HtmlTree.SMALL(bottom);
-        Content p = HtmlTree.P(HtmlStyle.legalCopy, small);
-        htmlTree.add(p);
+    protected Navigation getNavBar(Navigation.PageMode pageMode, Element element) {
+        return new Navigation(element, configuration, pageMode, path)
+                .setUserHeader(new RawHtml(replaceDocRootDir(options.header())));
+    }
+
+    /**
+     * Returns a {@code <footer>} element containing the user's "bottom" text,
+     * or {@code null} if there is no such text.
+     *
+     * @return the {@code <footer>} element or {@code null}.
+     */
+    public HtmlTree getFooter() {
+        String bottom = options.bottom();
+        return (bottom == null || bottom.isEmpty())
+                ? null
+                : HtmlTree.FOOTER()
+                    .add(new HtmlTree(TagName.HR))
+                    .add(HtmlTree.P(HtmlStyle.legalCopy,
+                            HtmlTree.SMALL(
+                                    new RawHtml(replaceDocRootDir(bottom)))));
     }
 
     /**
