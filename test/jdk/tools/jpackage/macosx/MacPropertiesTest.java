@@ -38,7 +38,7 @@ import jdk.jpackage.test.Annotations.Parameter;
  * @library ../helpers
  * @build jdk.jpackage.test.*
  * @requires (os.family == "mac")
- * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
+ * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile MacPropertiesTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=MacPropertiesTest

@@ -1785,6 +1785,8 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
          */
         private final int pos;
 
+        private final boolean isVarargs;
+
         /**
          * Construct a record component, given its flags, name, type and owner.
          */
@@ -1792,12 +1794,18 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             super(PUBLIC, fieldDecl.sym.name, fieldDecl.sym.type, fieldDecl.sym.owner);
             this.originalAnnos = annotations;
             this.pos = fieldDecl.pos;
+            /* it is better to store the original information for this one, instead of relying
+             * on the info in the type of the symbol. This is because on the presence of APs
+             * the symbol will be blown out and we won't be able to know if the original
+             * record component was declared varargs or not.
+             */
+            this.isVarargs = type.hasTag(TypeTag.ARRAY) && ((ArrayType)type).isVarargs();
         }
 
         public List<JCAnnotation> getOriginalAnnos() { return originalAnnos; }
 
         public boolean isVarargs() {
-            return type.hasTag(TypeTag.ARRAY) && ((ArrayType)type).isVarargs();
+            return isVarargs;
         }
 
         @Override @DefinedBy(Api.LANGUAGE_MODEL)

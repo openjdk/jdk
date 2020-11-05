@@ -27,6 +27,8 @@
 
 #include "asm/macroAssembler.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
+#include "gc/shenandoah/shenandoahBarrierSet.hpp"
+
 #ifdef COMPILER1
 class LIR_Assembler;
 class ShenandoahPreBarrierStub;
@@ -62,10 +64,10 @@ public:
   void gen_pre_barrier_stub(LIR_Assembler* ce, ShenandoahPreBarrierStub* stub);
   void gen_load_reference_barrier_stub(LIR_Assembler* ce, ShenandoahLoadReferenceBarrierStub* stub);
   void generate_c1_pre_barrier_runtime_stub(StubAssembler* sasm);
-  void generate_c1_load_reference_barrier_runtime_stub(StubAssembler* sasm, bool is_weak);
+  void generate_c1_load_reference_barrier_runtime_stub(StubAssembler* sasm, ShenandoahBarrierSet::AccessKind kind);
 #endif
 
-  void load_reference_barrier(MacroAssembler* masm, Register dst, Address src, bool weak);
+  void load_reference_barrier(MacroAssembler* masm, Register dst, Address src, ShenandoahBarrierSet::AccessKind kind);
 
   void cmpxchg_oop(MacroAssembler* masm,
                    Register res, Address addr, Register oldval, Register newval,
