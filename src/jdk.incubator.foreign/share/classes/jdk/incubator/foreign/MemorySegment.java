@@ -76,9 +76,8 @@ import java.util.Spliterator;
  * by native memory.
  * <p>
  * Finally, it is also possible to obtain a memory segment backed by a memory-mapped file using the factory method
- * {@link MemorySegment#mapFromPath(Path, long, long, FileChannel.MapMode)}. Such memory segments are called <em>mapped memory segments</em>;
- * mapped memory segments are associated with a {@link FileDescriptor} instance which can be obtained calling the
- * {@link #fileDescriptor()} method. For more operations on mapped memory segments, please refer to the
+ * {@link MemorySegment#mapFile(Path, long, long, FileChannel.MapMode)}. Such memory segments are called <em>mapped memory segments</em>;
+ * mapped memory segments are associated with an underlying file descriptor. For more operations on mapped memory segments, please refer to the
  * {@link MappedMemorySegments} class.
  * <p>
  * Array and buffer segments are effectively <em>views</em> over existing memory regions which might outlive the
@@ -377,12 +376,12 @@ public interface MemorySegment extends Addressable, AutoCloseable {
     }
 
     /**
-     * Obtain the file descriptor with this memory segment, assuming this segment is a mapped memory segment,
-     * created using the {@link #mapFromPath(Path, long, long, FileChannel.MapMode)} factory, or a buffer segment
+     * Is this a mapped segment? Returns true if this segment is a mapped memory segment,
+     * created using the {@link #mapFile(Path, long, long, FileChannel.MapMode)} factory, or a buffer segment
      * derived from a {@link java.nio.MappedByteBuffer} using the {@link #ofByteBuffer(ByteBuffer)} factory.
-     * @return the file descriptor associated with this memory segment (if any).
+     * @return {@code true} if this segment is a mapped segment.
      */
-    Optional<FileDescriptor> fileDescriptor();
+    boolean isMapped();
 
     /**
      * Is this segment alive?
@@ -392,10 +391,20 @@ public interface MemorySegment extends Addressable, AutoCloseable {
     boolean isAlive();
 
     /**
-     * Closes this memory segment. This is a <em>terminal operation</em>; as a side-effect, this segment will be marked
-     * as <em>not alive</em>, and subsequent operations on this segment will fail with {@link IllegalStateException}.
+     * Closes this memory segment. This is a <em>terminal operation</em>; as a side-effect, if this operation completes
+     * without exceptions, this segment will be marked as <em>not alive</em>, and subsequent operations on this segment
+     * will fail with {@link IllegalStateException}.
+     * <p>
      * Depending on the kind of memory segment being closed, calling this method further triggers deallocation of all the resources
      * associated with the memory segment.
+     *
+     * @apiNote This operation is not idempotent; that is, closing an already closed segment <em>always</em> results in an
+     * exception being thrown. This reflects a deliberate design choice: segment state transitions should be
+     * manifest in the client code; a failure in any of these transitions reveals a bug in the underlying application
+     * logic. This is especially useful when reasoning about the lifecycle of dependent segment views (see {@link #asSlice(MemoryAddress)},
+     * where closing one segment might side-effect multiple segments. In such cases it might in fact not be obvious, looking
+     * at the code, as to whether a given segment is alive or not.
+     *
      * @throws IllegalStateException if this segment is not <em>alive</em>, or if access occurs from a thread other than the
      * thread owning this segment, or if this segment is shared and the segment is concurrently accessed while this method is
      * called.
@@ -408,8 +417,9 @@ public interface MemorySegment extends Addressable, AutoCloseable {
      * be confined on the specified thread, and will feature the same spatial bounds and access modes (see {@link #accessModes()})
      * as this segment.
      * <p>
-     * This is a <em>terminal operation</em>; as a side-effect, this segment will be
-     * marked as <em>not alive</em>, and subsequent operations on this segment will fail with {@link IllegalStateException}.
+     * This is a <em>terminal operation</em>; as a side-effect, if this operation completes
+     * without exceptions, this segment will be marked as <em>not alive</em>, and subsequent operations on this segment
+     * will fail with {@link IllegalStateException}.
      * <p>
      * In case where the owner thread of the returned segment differs from that of this segment, write accesses to this
      * segment's content <a href="../../../java/util/concurrent/package-summary.html#MemoryVisibility"><i>happens-before</i></a>
@@ -459,8 +469,9 @@ public interface MemorySegment extends Addressable, AutoCloseable {
      * returned segment will feature the same spatial bounds and access modes (see {@link #accessModes()})
      * as this segment.
      * <p>
-     * This is a <em>terminal operation</em>; as a side-effect, this segment will be
-     * marked as <em>not alive</em>, and subsequent operations on this segment will fail with {@link IllegalStateException}.
+     * This is a <em>terminal operation</em>; as a side-effect, if this operation completes
+     * without exceptions, this segment will be marked as <em>not alive</em>, and subsequent operations on this segment
+     * will fail with {@link IllegalStateException}.
      * <p>
      * Write accesses to this segment's content <a href="../../../java/util/concurrent/package-summary.html#MemoryVisibility"><i>happens-before</i></a>
      * hand-over from the current owner thread to the new owner thread, which in turn <i>happens before</i> read accesses
@@ -469,7 +480,6 @@ public interface MemorySegment extends Addressable, AutoCloseable {
      * @return a new memory shared segment backed by the same underlying memory region as this segment.
      * @throws IllegalStateException if this segment is not <em>alive</em>, or if access occurs from a thread other than the
      * thread owning this segment.
-     * @throws NullPointerException if {@code thread == null}
      */
     MemorySegment share();
 
@@ -480,8 +490,9 @@ public interface MemorySegment extends Addressable, AutoCloseable {
      * will be associated with the specified {@link Cleaner} object; this allows for the segment to be closed
      * as soon as it becomes <em>unreachable</em>, which might be helpful in preventing native memory leaks.
      * <p>
-     * This is a <em>terminal operation</em>; as a side-effect, this segment will be
-     * marked as <em>not alive</em>, and subsequent operations on this segment will fail with {@link IllegalStateException}.
+     * This is a <em>terminal operation</em>; as a side-effect, if this operation completes
+     * without exceptions, this segment will be marked as <em>not alive</em>, and subsequent operations on this segment
+     * will fail with {@link IllegalStateException}.
      * <p>
      * The implicit deallocation behavior associated with the returned segment will be preserved under terminal
      * operations such as {@link #handoff(Thread)} and {@link #share()}.
@@ -492,7 +503,6 @@ public interface MemorySegment extends Addressable, AutoCloseable {
      * @throws IllegalStateException if this segment is not <em>alive</em>, or if access occurs from a thread other than the
      * thread owning this segment, or if this segment is already associated with a cleaner.
      * @throws UnsupportedOperationException if this segment does not support the {@link #CLOSE} access mode.
-     * @throws NullPointerException if {@code thread == null}
      */
     MemorySegment registerCleaner(Cleaner cleaner);
 
@@ -534,7 +544,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * <p>
      * The result of a bulk copy is unspecified if, in the uncommon case, the source segment and this segment
      * do not overlap, but refer to overlapping regions of the same backing storage using different addresses.
-     * For example, this may occur if the same file is {@link MemorySegment#mapFromPath mapped} to two segments.
+     * For example, this may occur if the same file is {@link MemorySegment#mapFile mapped} to two segments.
      *
      * @param src the source segment.
      * @throws IndexOutOfBoundsException if {@code src.byteSize() > this.byteSize()}.
@@ -876,7 +886,7 @@ allocateNative(bytesSize, 1);
      * read access if the file is opened for reading. The {@link SecurityManager#checkWrite(String)} method is invoked to check
      * write access if the file is opened for writing.
      */
-    static MemorySegment mapFromPath(Path path, long bytesOffset, long bytesSize, FileChannel.MapMode mapMode) throws IOException {
+    static MemorySegment mapFile(Path path, long bytesOffset, long bytesSize, FileChannel.MapMode mapMode) throws IOException {
         return MappedMemorySegmentImpl.makeMappedSegment(path, bytesOffset, bytesSize, mapMode);
     }
 

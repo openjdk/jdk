@@ -165,9 +165,7 @@ public class Preview {
      * @return true, if given feature is a preview feature.
      */
     public boolean isPreview(Feature feature) {
-        if (feature == Feature.PATTERN_MATCHING_IN_INSTANCEOF ||
-            feature == Feature.REIFIABLE_TYPES_INSTANCEOF ||
-            feature == Feature.SEALED_CLASSES)
+        if (feature == Feature.SEALED_CLASSES)
             return true;
         //Note: this is a backdoor which allows to optionally treat all features as 'preview' (for testing).
         //When real preview features will be added, this method can be implemented to return 'true'

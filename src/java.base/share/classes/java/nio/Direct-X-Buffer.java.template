@@ -421,6 +421,15 @@ class Direct$Type$Buffer$RW$$BO$
 #end[rw]
     }
 
+    public $Type$Buffer put(int index, $Type$Buffer src, int offset, int length) {
+#if[rw]
+        super.put(index, src, offset, length);
+        return this;
+#else[rw]
+        throw new ReadOnlyBufferException();
+#end[rw]
+    }
+
     public $Type$Buffer put($type$[] src, int offset, int length) {
 #if[rw]
         if (((long)length << $LG_BYTES_PER_VALUE$) > Bits.JNI_COPY_FROM_ARRAY_THRESHOLD) {
@@ -481,11 +490,9 @@ class Direct$Type$Buffer$RW$$BO$
                                           (long)1 << $LG_BYTES_PER_VALUE$);
                 else
 #end[!byte]
-                    SCOPED_MEMORY_ACCESS.copyMemory(scope(), null, src,
-                                      srcOffset,
-                                      null,
-                                      ix(index),
-                                      (long)length << $LG_BYTES_PER_VALUE$);
+                    SCOPED_MEMORY_ACCESS.copyMemory(
+                            scope(), null, src,
+                            srcOffset, null, ix(index), (long)length << $LG_BYTES_PER_VALUE$);
             } finally {
                 Reference.reachabilityFence(this);
             }
@@ -505,7 +512,8 @@ class Direct$Type$Buffer$RW$$BO$
         assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
         try {
-            SCOPED_MEMORY_ACCESS.copyMemory(scope(), null, null, ix(pos), null, ix(0), (long)rem << $LG_BYTES_PER_VALUE$);
+            SCOPED_MEMORY_ACCESS.copyMemory(scope(), null, null,
+                    ix(pos), null, ix(0), (long)rem << $LG_BYTES_PER_VALUE$);
         } finally {
             Reference.reachabilityFence(this);
         }

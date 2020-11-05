@@ -25,8 +25,8 @@
  * @test
  * @bug 8231827
  * @summary Basic tests for bindings from instanceof
- * @compile --enable-preview -source ${jdk.version} BindingsTest1.java
- * @run main/othervm --enable-preview BindingsTest1
+ * @compile BindingsTest1.java
+ * @run main BindingsTest1
  */
 
 public class BindingsTest1 {

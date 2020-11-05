@@ -22,6 +22,7 @@
  */
 #include <jni.h>
 #include <stdlib.h>
+#include "jlong.h"
 #include <math.h>
 
 #include "points.h"
@@ -35,42 +36,42 @@ double distance(Point p1, Point p2) {
 JNIEXPORT jlong JNICALL Java_org_openjdk_bench_jdk_incubator_foreign_points_support_JNIPoint_allocate
   (JNIEnv *env, jclass nativePointClass) {
     Point* p = malloc(sizeof *p);
-    return (jlong) p;
+    return ptr_to_jlong(p);
 }
 
 JNIEXPORT void JNICALL Java_org_openjdk_bench_jdk_incubator_foreign_points_support_JNIPoint_free
   (JNIEnv *env, jclass cls, jlong thisPoint) {
-    free((Point*) thisPoint);
+    free(jlong_to_ptr(thisPoint));
 }
 
 JNIEXPORT jint JNICALL Java_org_openjdk_bench_jdk_incubator_foreign_points_support_JNIPoint_getX
   (JNIEnv *env, jclass cls, jlong thisPoint) {
-    Point* point = (Point*) thisPoint;
+    Point* point = jlong_to_ptr(thisPoint);
     return point->x;
 }
 
 JNIEXPORT void JNICALL Java_org_openjdk_bench_jdk_incubator_foreign_points_support_JNIPoint_setX
   (JNIEnv *env, jclass cls, jlong thisPoint, jint value) {
-    Point* point = (Point*) thisPoint;
+    Point* point = jlong_to_ptr(thisPoint);
     point->x = value;
 }
 
 JNIEXPORT jint JNICALL Java_org_openjdk_bench_jdk_incubator_foreign_points_support_JNIPoint_getY
   (JNIEnv *env, jclass cls, jlong thisPoint) {
-    Point* point = (Point*) thisPoint;
+    Point* point = jlong_to_ptr(thisPoint);
     return point->y;
 }
 
 JNIEXPORT void JNICALL Java_org_openjdk_bench_jdk_incubator_foreign_points_support_JNIPoint_setY
   (JNIEnv *env, jclass cls, jlong thisPoint, jint value) {
-    Point* point = (Point*) thisPoint;
+    Point* point = jlong_to_ptr(thisPoint);
     point->y = value;
 }
 
 JNIEXPORT jdouble JNICALL Java_org_openjdk_bench_jdk_incubator_foreign_points_support_JNIPoint_distance
   (JNIEnv *env, jclass cls, jlong thisPoint, jlong other) {
-    Point* p1 = (Point*) thisPoint;
-    Point* p2 = (Point*) other;
+    Point* p1 = jlong_to_ptr(thisPoint);
+    Point* p2 = jlong_to_ptr(other);
     return distance(*p1, *p2);
 }
 

@@ -80,8 +80,8 @@ public class MappedMemorySegmentImpl extends NativeMemorySegmentImpl {
     }
 
     @Override
-    public Optional<FileDescriptor> fileDescriptor() {
-        return Optional.of(unmapper.fileDescriptor());
+    public boolean isMapped() {
+        return true;
     }
 
     // support for mapped segments

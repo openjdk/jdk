@@ -54,9 +54,6 @@ class MacroAssembler : public Assembler {
   void bang_stack_with_offset(int offset);
   bool needs_explicit_null_check(intptr_t offset);
   bool uses_implicit_null_check(void* address);
-  RegisterOrConstant delayed_value_impl(intptr_t* delayed_value_addr,
-                                        Register tmp, int offset);
- public:
   void advance(int bytes);
   void store_oop(jobject obj);
   void store_Metadata(Metadata* obj);

@@ -339,8 +339,8 @@ public abstract class AbstractMemorySegmentImpl implements MemorySegment, Memory
     }
 
     @Override
-    public Optional<FileDescriptor> fileDescriptor() {
-        return Optional.empty();
+    public boolean isMapped() {
+        return false;
     }
 
     @Override

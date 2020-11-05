@@ -1002,8 +1002,14 @@ void os::print_date_and_time(outputStream *st, char* buf, size_t buflen) {
 
   struct tm tz;
   if (localtime_pd(&tloc, &tz) != NULL) {
-    ::strftime(buf, buflen, "%Z", &tz);
-    st->print("Time: %s %s", timestring, buf);
+    wchar_t w_buf[80];
+    size_t n = ::wcsftime(w_buf, 80, L"%Z", &tz);
+    if (n > 0) {
+      ::wcstombs(buf, w_buf, buflen);
+      st->print("Time: %s %s", timestring, buf);
+    } else {
+      st->print("Time: %s", timestring);
+    }
   } else {
     st->print("Time: %s", timestring);
   }

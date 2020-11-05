@@ -1311,8 +1311,12 @@ Node* SafePointNode::Identity(PhaseGVN* phase) {
 
 //------------------------------Value------------------------------------------
 const Type* SafePointNode::Value(PhaseGVN* phase) const {
-  if( phase->type(in(0)) == Type::TOP ) return Type::TOP;
-  if( phase->eqv( in(0), this ) ) return Type::TOP; // Dead infinite loop
+  if (phase->type(in(0)) == Type::TOP) {
+    return Type::TOP;
+  }
+  if (in(0) == this) {
+    return Type::TOP; // Dead infinite loop
+  }
   return Type::CONTROL;
 }
 

@@ -298,7 +298,7 @@ class MutexUnlocker: StackObj {
  public:
   MutexUnlocker(Mutex* mutex, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
     _mutex(mutex),
-    _no_safepoint_check(flag) {
+    _no_safepoint_check(flag == Mutex::_no_safepoint_check_flag) {
     _mutex->unlock();
   }
 

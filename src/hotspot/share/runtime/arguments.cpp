@@ -3213,6 +3213,11 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
     set_mode_flags(_int);
   }
 
+#ifdef ZERO
+  // Zero always runs in interpreted mode
+  set_mode_flags(_int);
+#endif
+
   // eventually fix up InitialTenuringThreshold if only MaxTenuringThreshold is set
   if (FLAG_IS_DEFAULT(InitialTenuringThreshold) && (InitialTenuringThreshold > MaxTenuringThreshold)) {
     FLAG_SET_ERGO(InitialTenuringThreshold, MaxTenuringThreshold);

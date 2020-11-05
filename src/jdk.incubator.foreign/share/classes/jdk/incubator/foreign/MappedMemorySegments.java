@@ -43,7 +43,8 @@ import java.nio.MappedByteBuffer;
  * {@link MemoryAddress#ofLong(long)} and {@link MemoryAddress#asSegmentRestricted(long, Runnable, Object)}.
  *
  * @implNote
- * The behavior of the methods in this class is highly platform-dependent; as a result, calling these methods might
+ * The behavior of some the methods in this class (see {@link #load(MemorySegment)}, {@link #unload(MemorySegment)} and
+ * {@link #isLoaded(MemorySegment)}) is highly platform-dependent; as a result, calling these methods might
  * be a no-op on certain platforms.
  */
 public final class MappedMemorySegments {
@@ -73,7 +74,7 @@ public final class MappedMemorySegments {
      * @throws IllegalStateException if the given segment is not alive, or if the given segment is confined
      * and this method is called from a thread other than the segment's owner thread.
      * @throws UnsupportedOperationException if the given segment is not a mapped memory segment, e.g. if
-     * {@code segment.fileDescriptor().isEmpty()}.
+     * {@code segment.isMapped() == false}.
      */
     public static boolean isLoaded(MemorySegment segment) {
         return toMappedSegment(segment).isLoaded();
@@ -92,7 +93,7 @@ public final class MappedMemorySegments {
      * @throws IllegalStateException if the given segment is not alive, or if the given segment is confined
      * and this method is called from a thread other than the segment's owner thread.
      * @throws UnsupportedOperationException if the given segment is not a mapped memory segment, e.g. if
-     * {@code segment.fileDescriptor().isEmpty()}.
+     * {@code segment.isMapped() == false}.
      */
     public static void load(MemorySegment segment) {
         toMappedSegment(segment).load();
@@ -111,7 +112,7 @@ public final class MappedMemorySegments {
      * @throws IllegalStateException if the given segment is not alive, or if the given segment is confined
      * and this method is called from a thread other than the segment's owner thread.
      * @throws UnsupportedOperationException if the given segment is not a mapped memory segment, e.g. if
-     * {@code segment.fileDescriptor().isEmpty()}.
+     * {@code segment.isMapped() == false}.
      */
     public static void unload(MemorySegment segment) {
         toMappedSegment(segment).unload();
@@ -119,7 +120,7 @@ public final class MappedMemorySegments {
 
     /**
      * Forces any changes made to the contents of the given segment to be written to the
-     * storage device described by the segment's file descriptor (see {@link MemorySegment#fileDescriptor()}).
+     * storage device described by the mapped segment's file descriptor.
      *
      * <p> If this mapping's file descriptor resides on a local storage
      * device then when this method returns it is guaranteed that all changes
@@ -143,7 +144,7 @@ public final class MappedMemorySegments {
      * @throws IllegalStateException if the given segment is not alive, or if the given segment is confined
      * and this method is called from a thread other than the segment's owner thread.
      * @throws UnsupportedOperationException if the given segment is not a mapped memory segment, e.g. if
-     * {@code segment.fileDescriptor().isEmpty()}.
+     * {@code segment.isMapped() == false}.
      */
     public static void force(MemorySegment segment) {
         toMappedSegment(segment).force();
