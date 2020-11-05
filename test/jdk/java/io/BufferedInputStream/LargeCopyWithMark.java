@@ -26,7 +26,6 @@
  * @requires (sun.arch.data.model == "64"  & os.maxMemory > 4g)
  * @summary BufferedInputStream calculates negative array size with large
  *          streams and mark
- * @library /test/lib
  * @run main/othervm -Xmx4G LargeCopyWithMark
  */
 
