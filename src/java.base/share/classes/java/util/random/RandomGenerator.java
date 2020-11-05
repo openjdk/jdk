@@ -769,21 +769,21 @@ public interface RandomGenerator {
     }
 
     /**
-     * The property returned by {$link RandomGeneratorFactory#period() period}()
+     * The property returned by {@link RandomGeneratorFactory#period() period}()
      * if the period is unknown.
      */
     BigInteger UNKNOWN_PERIOD = BigInteger.ZERO;
 
     /**
      * The (negative) value returned by the
-     * {$link RandomGeneratorFactory#period() period}() if this generator has no
+     * {@link RandomGeneratorFactory#period() period}() if this generator has no
      * period because it is truly random rather than just pseudorandom.
      */
     BigInteger TRULY_RANDOM = BigInteger.valueOf(-1);
 
     /**
      * The (negative) value that may be returned by the
-     * {$link RandomGeneratorFactory#period() period}() if this generator has a
+     * {@link RandomGeneratorFactory#period() period}() if this generator has a
      * huge period (larger than 2**(2**16)).
      */
     BigInteger HUGE_PERIOD = BigInteger.valueOf(-2);
