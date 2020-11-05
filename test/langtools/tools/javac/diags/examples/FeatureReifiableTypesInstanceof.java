@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,13 @@
  * questions.
  */
 
+// key: compiler.err.feature.not.supported.in.source.plural
 // key: compiler.misc.feature.reifiable.types.instanceof
-// key: compiler.warn.preview.feature.use.plural
-// options: --enable-preview -source ${jdk.version} -Xlint:preview
+// options: -source 15 -Xlint:-options
 
-class PatternMatchingInstanceof {
-    boolean m(I<String> i) {
-        return i instanceof C<String>;
-    }
-    interface I<T> {}
-    class C<T> implements I<T> {}
+import java.util.*;
+
+class FeatureReifiableTypesInstanceof {
+    List o;
+    boolean b = (o instanceof List<String>);
 }
