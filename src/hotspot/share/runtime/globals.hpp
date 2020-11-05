@@ -532,9 +532,6 @@ const intx ObjectAlignmentInBytes = 8;
           "error log in case of a crash.")                                  \
           range(0, (uint64_t)max_jlong/1000)                                \
                                                                             \
-  product_pd(bool, UseOSErrorReporting,                                     \
-          "Let VM fatal error propagate to the OS (ie. WER on Windows)")    \
-                                                                            \
   product(bool, SuppressFatalErrorMessage, false,                           \
           "Report NO fatal error message (avoid deadlock)")                 \
                                                                             \
@@ -2392,11 +2389,6 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, WhiteBoxAPI, false, DIAGNOSTIC,                             \
           "Enable internal testing APIs")                                   \
-                                                                            \
-  product(intx, SurvivorAlignmentInBytes, 0, EXPERIMENTAL,                  \
-           "Default survivor space alignment in bytes")                     \
-           range(8, 256)                                                    \
-           constraint(SurvivorAlignmentInBytesConstraintFunc,AfterErgo)     \
                                                                             \
   product(ccstr, DumpLoadedClassList, NULL,                                 \
           "Dump the names all loaded classes, that could be stored into "   \

@@ -1005,9 +1005,9 @@ void InterpreterMacroAssembler::remove_activation(
   push(state);
   set_last_Java_frame(rthread, noreg, rbp, (address)pc());
   super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), rthread);
+  NOT_LP64(get_thread(rthread);) // call_VM clobbered it, restore
   reset_last_Java_frame(rthread, true);
   pop(state);
-  NOT_LP64(get_thread(rthread);) // call_VM clobbered it, restore
   bind(fast_path);
 
   // get the value of _do_not_unlock_if_synchronized into rdx
@@ -1959,7 +1959,7 @@ void InterpreterMacroAssembler::profile_switch_case(Register index,
 
 void InterpreterMacroAssembler::_interp_verify_oop(Register reg, TosState state, const char* file, int line) {
   if (state == atos) {
-    MacroAssembler::_verify_oop(reg, "broken oop", file, line);
+    MacroAssembler::_verify_oop_checked(reg, "broken oop", file, line);
   }
 }
 

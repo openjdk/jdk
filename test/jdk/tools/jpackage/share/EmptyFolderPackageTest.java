@@ -22,7 +22,7 @@
  */
 
 import java.nio.file.Path;
-import jdk.incubator.jpackage.internal.ApplicationLayout;
+import jdk.jpackage.internal.ApplicationLayout;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
@@ -39,7 +39,7 @@ import jdk.jpackage.test.TKit;
  * @key jpackagePlatformPackage
  * @build EmptyFolderBase
  * @build jdk.jpackage.test.*
- * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
+ * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm/timeout=720 -Xmx512m EmptyFolderPackageTest
  */
 public class EmptyFolderPackageTest {

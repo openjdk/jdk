@@ -691,7 +691,7 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
      */
     @Override
     public R visitBindingPattern(BindingPatternTree node, P p) {
-        return scan(node.getType(), p);
+        return scan(node.getVariable(), p);
     }
 
     /**
