@@ -106,9 +106,11 @@ void VM_G1TryInitiateConcMark::doit() {
 VM_G1CollectForAllocation::VM_G1CollectForAllocation(size_t         word_size,
                                                      uint           gc_count_before,
                                                      GCCause::Cause gc_cause,
-                                                     double         target_pause_time_ms) :
+                                                     double         target_pause_time_ms,
+                                                     bool           force_gc) :
   VM_CollectForAllocation(word_size, gc_count_before, gc_cause),
   _gc_succeeded(false),
+  _force_gc(force_gc),
   _target_pause_time_ms(target_pause_time_ms) {
 
   guarantee(target_pause_time_ms > 0.0,
@@ -120,7 +122,7 @@ VM_G1CollectForAllocation::VM_G1CollectForAllocation(size_t         word_size,
 void VM_G1CollectForAllocation::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-  if (_word_size > 0) {
+  if (_word_size > 0 && !_force_gc) {
     // An allocation has been requested. So, try to do that first.
     _result = g1h->attempt_allocation_at_safepoint(_word_size,
                                                    false /* expect_null_cur_alloc_region */);

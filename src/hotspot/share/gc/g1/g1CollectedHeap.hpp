@@ -761,7 +761,8 @@ private:
   HeapWord* do_collection_pause(size_t         word_size,
                                 uint           gc_count_before,
                                 bool*          succeeded,
-                                GCCause::Cause gc_cause);
+                                GCCause::Cause gc_cause,
+                                bool           force_gc);
 
   void wait_for_root_region_scanning();
 

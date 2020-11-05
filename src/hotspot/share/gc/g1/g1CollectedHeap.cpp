@@ -420,25 +420,30 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
   HeapWord* result = NULL;
   for (uint try_count = 1, gclocker_retry_count = 0; /* we'll return */; try_count += 1) {
     bool should_try_gc;
+    bool force_gc = false;
     uint gc_count_before;
 
     {
       MutexLocker x(Heap_lock);
-      result = _allocator->attempt_allocation_locked(word_size);
-      if (result != NULL) {
-        return result;
-      }
-
-      // If the GCLocker is active and we are bound for a GC, try expanding young gen.
-      // This is different to when only GCLocker::needs_gc() is set: try to avoid
-      // waiting because the GCLocker is active to not wait too long.
-      if (GCLocker::is_active_and_needs_gc() && policy()->can_expand_young_list()) {
-        // No need for an ergo message here, can_expand_young_list() does this when
-        // it returns true.
-        result = _allocator->attempt_allocation_force(word_size);
+      if (policy()->can_mutator_consume_free_regions(1)) {
+        result = _allocator->attempt_allocation_locked(word_size);
         if (result != NULL) {
           return result;
         }
+
+        // If the GCLocker is active and we are bound for a GC, try expanding young gen.
+        // This is different to when only GCLocker::needs_gc() is set: try to avoid
+        // waiting because the GCLocker is active to not wait too long.
+        if (GCLocker::is_active_and_needs_gc() && policy()->can_expand_young_list()) {
+          // No need for an ergo message here, can_expand_young_list() does this when
+          // it returns true.
+          result = _allocator->attempt_allocation_force(word_size);
+          if (result != NULL) {
+            return result;
+          }
+        }
+      } else {
+        force_gc = true;
       }
       // Only try a GC if the GCLocker does not signal the need for a GC. Wait until
       // the GCLocker initiated GC has been performed and then retry. This includes
@@ -451,7 +456,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
     if (should_try_gc) {
       bool succeeded;
       result = do_collection_pause(word_size, gc_count_before, &succeeded,
-                                   GCCause::_g1_inc_collection_pause);
+                                   GCCause::_g1_inc_collection_pause, force_gc);
       if (result != NULL) {
         assert(succeeded, "only way to get back a non-NULL result");
         log_trace(gc, alloc)("%s: Successfully scheduled collection returning " PTR_FORMAT,
@@ -844,21 +849,26 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
   HeapWord* result = NULL;
   for (uint try_count = 1, gclocker_retry_count = 0; /* we'll return */; try_count += 1) {
     bool should_try_gc;
+    bool force_gc = false;
     uint gc_count_before;
 
 
     {
       MutexLocker x(Heap_lock);
 
-      // Given that humongous objects are not allocated in young
-      // regions, we'll first try to do the allocation without doing a
-      // collection hoping that there's enough space in the heap.
-      result = humongous_obj_allocate(word_size);
-      if (result != NULL) {
-        size_t size_in_regions = humongous_obj_size_in_regions(word_size);
-        policy()->old_gen_alloc_tracker()->
-          add_allocated_humongous_bytes_since_last_gc(size_in_regions * HeapRegion::GrainBytes);
-        return result;
+      size_t size_in_regions = humongous_obj_size_in_regions(word_size);
+      if (policy()->can_mutator_consume_free_regions((uint)size_in_regions)) {
+        // Given that humongous objects are not allocated in young
+        // regions, we'll first try to do the allocation without doing a
+        // collection hoping that there's enough space in the heap.
+        result = humongous_obj_allocate(word_size);
+        if (result != NULL) {
+          policy()->old_gen_alloc_tracker()->
+            add_allocated_humongous_bytes_since_last_gc(size_in_regions * HeapRegion::GrainBytes);
+          return result;
+        }
+      } else {
+        force_gc = true;
       }
 
       // Only try a GC if the GCLocker does not signal the need for a GC. Wait until
@@ -872,7 +882,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
     if (should_try_gc) {
       bool succeeded;
       result = do_collection_pause(word_size, gc_count_before, &succeeded,
-                                   GCCause::_g1_humongous_allocation);
+                                   GCCause::_g1_humongous_allocation, force_gc);
       if (result != NULL) {
         assert(succeeded, "only way to get back a non-NULL result");
         log_trace(gc, alloc)("%s: Successfully scheduled collection returning " PTR_FORMAT,
@@ -2635,12 +2645,14 @@ void G1CollectedHeap::verify_numa_regions(const char* desc) {
 HeapWord* G1CollectedHeap::do_collection_pause(size_t word_size,
                                                uint gc_count_before,
                                                bool* succeeded,
-                                               GCCause::Cause gc_cause) {
+                                               GCCause::Cause gc_cause,
+                                               bool force_gc) {
   assert_heap_not_locked_and_not_at_safepoint();
   VM_G1CollectForAllocation op(word_size,
                                gc_count_before,
                                gc_cause,
-                               policy()->max_pause_time_ms());
+                               policy()->max_pause_time_ms(),
+                               force_gc);
   VMThread::execute(&op);
 
   HeapWord* result = op.result();
