@@ -69,6 +69,7 @@ LogOutputList::LogOutputNode* LogOutputList::find(const LogOutput* output) const
 }
 
 void LogOutputList::clear() {
+
   // Grab the linked list
   LogOutputNode* cur = _level_start[LogLevel::Last];
 
@@ -78,6 +79,7 @@ void LogOutputList::clear() {
   }
 
   // Delete all nodes from the linked list
+  wait_until_no_readers();
   while (cur != NULL) {
     LogOutputNode* next = cur->_next;
     delete cur;
