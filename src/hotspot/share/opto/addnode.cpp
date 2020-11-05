@@ -847,27 +847,45 @@ Node* OrINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   }
   // major_progress() check postpones the transformation after loop optimization
   if (can_reshape && !phase->C->major_progress() && Matcher::match_rule_supported(Op_BitfieldInsertI)) {
+    // If the right input of this Or is an And with mask or an LShifted
+    // And with mask with constant shift and the left and right inputs
+    // can be determined to construct values lying in disjoint bit ranges
+    // then the Or can be replaced with BitfieldInsert.
+    //
+    // There are two substitution rules:
+    //
+    // 1) (Or left (And value mask)) => (BitfieldInsert left value width 0))
+    //    where width == bitcount(mask) AND
+    //          (value_range_mask(left) & mask) == 0
+    //
+    // 2) (Or left (LShift (And value mask) offset) => (BitfieldInsert left value width 0)
+    //    where width == bitcount(mask) AND
+    //          (value_range_mask(left) & (mask << offset)) == 0
+    // n.b.
+    // mask is an integer constant comprising a contiguous sequence of 1s
+    // value_range_mask(node) computes a mask identifying the range of bits
+    // that could be set by its argument
+
+    Node *left = in(1);
+    Node *right = in(2);
     Node *andi = NULL;
-    Node *dst = in(1);
-    Node *src = in(2);
     int offset = 0;
-    // Perform the following transformations if the Or argument value range masks do not overlap:
-    //   "dst | (value & shift)" into BitfieldInsert(dst, value, width, 0)
-    //   "dst | ((value & shift) << offset)" into BitfieldInsert(dst, value, width, offset)
-    if (src->Opcode() == Op_LShiftI && src->in(1)->Opcode() == Op_AndI && src->in(2)->is_Con()) {
-      andi   = src->in(1);
-      offset = src->in(2)->get_int();
-    } else if (src->Opcode() == Op_AndI) {
-      andi = src;
+
+    if (right->Opcode() == Op_LShiftI && right->in(1)->Opcode() == Op_AndI && right->in(2)->is_Con()) {
+      andi   = right->in(1);
+      offset = right->in(2)->get_int();
+    } else if (right->Opcode() == Op_AndI) {
+      andi = right;
     }
+
     if (andi != NULL) {
-      Node* value = andi->in(1);
-      Node* mask  = andi->in(2);
+      Node* mask = andi->in(2);
       if (mask->is_Con() && is_power_of_2(mask->get_int() + 1)) {
+        Node* value = andi->in(1);
         int width = exact_log2(mask->get_int() + 1);
-        int mask = ((1 << width) - 1) << offset;
-        if (width + offset <= 32 && ((value_range_mask(phase, dst) & mask) == 0)) {
-          return new BitfieldInsertINode(dst, value, phase->intcon(offset), phase->intcon(width));
+        int maskval = ((1 << width) - 1) << offset;
+        if (width + offset <= 32 && ((value_range_mask(phase, left) & maskval) == 0)) {
+          return new BitfieldInsertINode(left, value, phase->intcon(offset), phase->intcon(width));
         }
       }
     }
@@ -939,24 +957,29 @@ Node* OrLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     }
   }
   if (can_reshape && !phase->C->major_progress() && Matcher::match_rule_supported(Op_BitfieldInsertL)) {
+    // OrL can be replaced with BitfieldInsertL if the right and left inputs
+    // can be determined to construct values lying in disjoint bit ranges.
+    // See OrINode::Ideal for details.
+    Node *left = in(1);
+    Node *right = in(2);
     Node *andl = NULL;
-    Node *dst = in(1);
-    Node *src = in(2);
     int offset = 0;
-    if (src->Opcode() == Op_LShiftL && src->in(1)->Opcode() == Op_AndL && src->in(2)->is_Con()) {
-      andl   = src->in(1);
-      offset = src->in(2)->get_int();
-    } else if (src->Opcode() == Op_AndL) {
-      andl = src;
+
+    if (right->Opcode() == Op_LShiftL && right->in(1)->Opcode() == Op_AndL && right->in(2)->is_Con()) {
+      andl   = right->in(1);
+      offset = right->in(2)->get_int();
+    } else if (right->Opcode() == Op_AndL) {
+      andl = right;
     }
+
     if (andl != NULL) {
-      Node* value = andl->in(1);
-      Node* mask  = andl->in(2);
+      Node* mask = andl->in(2);
       if (mask->is_Con() && is_power_of_2(mask->get_long() + 1)) {
+        Node* value = andl->in(1);
         julong width = exact_log2_long(mask->get_long() + 1);
-        julong mask = ((1L << width) - 1) << offset;
-        if (width + offset <= 64 && ((value_range_maskL(phase, dst) & mask) == 0)) {
-          return new BitfieldInsertLNode(dst, value, phase->intcon(offset), phase->intcon(width));
+        julong maskval = ((1L << width) - 1) << offset;
+        if (width + offset <= 64 && ((value_range_maskL(phase, left) & maskval) == 0)) {
+          return new BitfieldInsertLNode(left, value, phase->intcon(offset), phase->intcon(width));
         }
       }
     }
