@@ -46,62 +46,62 @@ import jdk.management.jfr.RemoteRecordingStream;
  * @run main/othervm jdk.jfr.jmx.streaming.TestSetSettings
  */
 public class TestSetSettings {
-	
-	@Enabled(false)
-	@StackTrace(false)
-	@Name("Event1")
-	static class Event1 extends Event {
-	}
-	@Enabled(false)
-	@StackTrace(false)
-	@Name("Event2")
-	static class Event2 extends Event {
-	}
 
-	public static void main(String...  args) throws Exception {
-		CountDownLatch latch1 = new CountDownLatch(1);
-		CountDownLatch latch2 = new CountDownLatch(1);
+        @Enabled(false)
+        @StackTrace(false)
+        @Name("Event1")
+        static class Event1 extends Event {
+        }
+        @Enabled(false)
+        @StackTrace(false)
+        @Name("Event2")
+        static class Event2 extends Event {
+        }
 
-		MBeanServerConnection conn = ManagementFactory.getPlatformMBeanServer();
-		try (RemoteRecordingStream r = new RemoteRecordingStream(conn)) {
-			r.onEvent("Event1", e-> {
-				System.out.println("Found event: " + e.getEventType().getName());
-				if (e.getStackTrace() == null) {
-					System.out.println("Missing strack trace");
-					return;
-				}
-				latch1.countDown();
-			});
-			r.onEvent("Event2", e-> {
-				System.out.println("Found event: " + e.getEventType().getName());
-				if (e.getStackTrace() == null) {
-					System.out.println("Missing strack trace");
-					return;
-				}
-				latch2.countDown();
-			});
-			// Set settings before start
-			Map<String, String> settings = new HashMap<>();
-			settings.put("Event1#enabled", "true");
-			settings.put("Event1#stackTrace", "true");
-			r.setSettings(settings);
-			
-			r.startAsync();
-			
-			Event1 e1 = new Event1();
-			e1.commit();
-			System.out.println("Awaiting latch 1");
-			latch1.await();
-			
-			// Set settings when running
-			settings = new HashMap<>();
-			settings.put("Event2#enabled", "true");
-			settings.put("Event2#stackTrace", "true");
-			r.setSettings(settings);
-			Event2 e2 = new Event2();
-			e2.commit();
-			System.out.println("Awaiting latch 2");
-			latch2.await();
-		}
-	}
+        public static void main(String...  args) throws Exception {
+                CountDownLatch latch1 = new CountDownLatch(1);
+                CountDownLatch latch2 = new CountDownLatch(1);
+
+                MBeanServerConnection conn = ManagementFactory.getPlatformMBeanServer();
+                try (RemoteRecordingStream r = new RemoteRecordingStream(conn)) {
+                        r.onEvent("Event1", e-> {
+                                System.out.println("Found event: " + e.getEventType().getName());
+                                if (e.getStackTrace() == null) {
+                                        System.out.println("Missing strack trace");
+                                        return;
+                                }
+                                latch1.countDown();
+                        });
+                        r.onEvent("Event2", e-> {
+                                System.out.println("Found event: " + e.getEventType().getName());
+                                if (e.getStackTrace() == null) {
+                                        System.out.println("Missing strack trace");
+                                        return;
+                                }
+                                latch2.countDown();
+                        });
+                        // Set settings before start
+                        Map<String, String> settings = new HashMap<>();
+                        settings.put("Event1#enabled", "true");
+                        settings.put("Event1#stackTrace", "true");
+                        r.setSettings(settings);
+
+                        r.startAsync();
+
+                        Event1 e1 = new Event1();
+                        e1.commit();
+                        System.out.println("Awaiting latch 1");
+                        latch1.await();
+
+                        // Set settings when running
+                        settings = new HashMap<>();
+                        settings.put("Event2#enabled", "true");
+                        settings.put("Event2#stackTrace", "true");
+                        r.setSettings(settings);
+                        Event2 e2 = new Event2();
+                        e2.commit();
+                        System.out.println("Awaiting latch 2");
+                        latch2.await();
+                }
+        }
 }

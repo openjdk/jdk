@@ -44,26 +44,26 @@ import jdk.management.jfr.RemoteRecordingStream;
  */
 public class TestMultipleChunks {
 
-	static class Snake extends Event {
-	}
+        static class Snake extends Event {
+        }
 
-	public static void main(String... args) throws Exception {
-		CountDownLatch latch = new CountDownLatch(5);
-		MBeanServerConnection conn = ManagementFactory.getPlatformMBeanServer();
-		try (RemoteRecordingStream s = new RemoteRecordingStream(conn)) {
-			s.onEvent(e -> latch.countDown());
-			s.startAsync();
-			for (int i = 0; i < 5; i++) {
-				Snake snake = new Snake();
-				snake.commit();
-				rotate();
-			}
-		}
-	}
+        public static void main(String... args) throws Exception {
+                CountDownLatch latch = new CountDownLatch(5);
+                MBeanServerConnection conn = ManagementFactory.getPlatformMBeanServer();
+                try (RemoteRecordingStream s = new RemoteRecordingStream(conn)) {
+                        s.onEvent(e -> latch.countDown());
+                        s.startAsync();
+                        for (int i = 0; i < 5; i++) {
+                                Snake snake = new Snake();
+                                snake.commit();
+                                rotate();
+                        }
+                }
+        }
 
-	private static void rotate() {
-		try (Recording r = new Recording()) {
-			r.start();
-		}
-	}
+        private static void rotate() {
+                try (Recording r = new Recording()) {
+                        r.start();
+                }
+        }
 }

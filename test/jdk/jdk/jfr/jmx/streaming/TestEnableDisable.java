@@ -44,42 +44,42 @@ import jdk.management.jfr.RemoteRecordingStream;
  * @run main/othervm jdk.jfr.jmx.streaming.TestEnableDisable
  */
 public class TestEnableDisable {
-	@Name("Zebra")
-	@Enabled(false)
-	static class Zebra extends Event {
-	}
+        @Name("Zebra")
+        @Enabled(false)
+        static class Zebra extends Event {
+        }
 
-	@Name("Tiger")
-	@Enabled(true)
-	static class Tiger extends Event {
-	}
+        @Name("Tiger")
+        @Enabled(true)
+        static class Tiger extends Event {
+        }
 
-	public static void main(String... args) throws Exception {
-		CountDownLatch zebraLatch = new CountDownLatch(1);
-		MBeanServerConnection conn = ManagementFactory.getPlatformMBeanServer();
-		try (RemoteRecordingStream stream = new RemoteRecordingStream(conn)) {
-			stream.enable("Zebra");
-			stream.disable("Tiger");
+        public static void main(String... args) throws Exception {
+                CountDownLatch zebraLatch = new CountDownLatch(1);
+                MBeanServerConnection conn = ManagementFactory.getPlatformMBeanServer();
+                try (RemoteRecordingStream stream = new RemoteRecordingStream(conn)) {
+                        stream.enable("Zebra");
+                        stream.disable("Tiger");
 
-			stream.onEvent("Zebra", e -> {
-				System.out.println(e);
-				zebraLatch.countDown();
-			});
-			stream.onEvent("Tiger", e -> {
-				System.out.println(e);
-				throw new RuntimeException("Unexpected Tiger"); // will close stream
-			});
+                        stream.onEvent("Zebra", e -> {
+                                System.out.println(e);
+                                zebraLatch.countDown();
+                        });
+                        stream.onEvent("Tiger", e -> {
+                                System.out.println(e);
+                                throw new RuntimeException("Unexpected Tiger"); // will close stream
+                        });
 
-			stream.startAsync();
+                        stream.startAsync();
 
-			Tiger t = new Tiger();
-			t.commit();
+                        Tiger t = new Tiger();
+                        t.commit();
 
-			Zebra z = new Zebra();
-			z.commit();
+                        Zebra z = new Zebra();
+                        z.commit();
 
-			zebraLatch.await();
-		}
+                        zebraLatch.await();
+                }
 
-	}
+        }
 }

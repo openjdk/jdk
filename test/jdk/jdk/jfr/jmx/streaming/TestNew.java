@@ -49,91 +49,91 @@ import jdk.management.jfr.RemoteRecordingStream;
  */
 public class TestNew {
 
-	private final static ObjectName MXBEAN = createObjectName();
-	
-	public static void main(String... args) throws Exception {
-		testNullArguments();
-		testMissingDirectory();
-		testNotDirectory();
-		testDefaultDIrectory();
-		TestUserDefinedDirectory();
-		
-		testMissingFlightRecorderMXBean();
-	}
+        private final static ObjectName MXBEAN = createObjectName();
 
-	private static void TestUserDefinedDirectory() throws IOException {
-		Path p = Paths.get("user-repository-" + System.currentTimeMillis());
-		Files.createDirectory(p);
-		MBeanServerConnection conn = ManagementFactory.getPlatformMBeanServer();
-		try (RemoteRecordingStream s = new RemoteRecordingStream(conn, p)) {
-			// success
-		}
-	}
+        public static void main(String... args) throws Exception {
+                testNullArguments();
+                testMissingDirectory();
+                testNotDirectory();
+                testDefaultDIrectory();
+                TestUserDefinedDirectory();
 
-	private static void testDefaultDIrectory() throws IOException {
-		MBeanServerConnection conn = ManagementFactory.getPlatformMBeanServer();
-		try (RemoteRecordingStream s = new RemoteRecordingStream(conn)) {
-			// success
-		}
-	}
+                testMissingFlightRecorderMXBean();
+        }
 
-	private static void testNotDirectory() throws Exception {
-		Path p = Paths.get("file.txt");
-		RandomAccessFile raf = new RandomAccessFile(p.toFile(), "rw");
-		raf.close();
-		MBeanServerConnection conn = ManagementFactory.getPlatformMBeanServer();
-		try (var s = new RemoteRecordingStream(conn, p)){ 
-			throw new Exception("Expected IOException");
-		} catch (IOException ioe) {
-			if (!ioe.getMessage().contains("Download location must be a directory")) {
-				throw new Exception("Unexpected message " + ioe.getMessage());
-			}
-		}
-	}
+        private static void TestUserDefinedDirectory() throws IOException {
+                Path p = Paths.get("user-repository-" + System.currentTimeMillis());
+                Files.createDirectory(p);
+                MBeanServerConnection conn = ManagementFactory.getPlatformMBeanServer();
+                try (RemoteRecordingStream s = new RemoteRecordingStream(conn, p)) {
+                        // success
+                }
+        }
 
-	private static void testMissingDirectory() throws Exception {
-		Path p = Paths.get("/missing");
-		MBeanServerConnection conn = ManagementFactory.getPlatformMBeanServer();
-		try (var s = new RemoteRecordingStream(conn, p)){ 
-			throw new Exception("Expected IOException");
-		} catch (IOException ioe) {
-			if (!ioe.getMessage().contains("Download directory doesn't exist")) {
-				throw new Exception("Unexpected message " + ioe.getMessage());
-			}
-		}
-	}
+        private static void testDefaultDIrectory() throws IOException {
+                MBeanServerConnection conn = ManagementFactory.getPlatformMBeanServer();
+                try (RemoteRecordingStream s = new RemoteRecordingStream(conn)) {
+                        // success
+                }
+        }
 
-	private static void testNullArguments() throws Exception {
-		try (var s = new RemoteRecordingStream(null)){ 
-			throw new Exception("Expected NullPointerException");
-		} catch (NullPointerException npe) {
-			// as expected
-		}
-		MBeanServerConnection conn = ManagementFactory.getPlatformMBeanServer();
-		try (var s = new RemoteRecordingStream(conn, null)){ 
-			throw new Exception("Expected NullPointerException");
-		} catch (NullPointerException npe) {
-			// as expected
-		}
-	}
+        private static void testNotDirectory() throws Exception {
+                Path p = Paths.get("file.txt");
+                RandomAccessFile raf = new RandomAccessFile(p.toFile(), "rw");
+                raf.close();
+                MBeanServerConnection conn = ManagementFactory.getPlatformMBeanServer();
+                try (var s = new RemoteRecordingStream(conn, p)){
+                        throw new Exception("Expected IOException");
+                } catch (IOException ioe) {
+                        if (!ioe.getMessage().contains("Download location must be a directory")) {
+                                throw new Exception("Unexpected message " + ioe.getMessage());
+                        }
+                }
+        }
 
-	private static void testMissingFlightRecorderMXBean() throws Exception {
-		
-		MBeanServerConnection conn = ManagementFactory.getPlatformMBeanServer();
-		conn.unregisterMBean(MXBEAN);
-		try (var s = new RemoteRecordingStream(conn)){ 
-			throw new Exception("Expected IOException");
-		} catch (IOException npe) {
-			// as expected
-		}		
-	}
-	
-	private static ObjectName createObjectName() {
-		try {
-			return new ObjectName(FlightRecorderMXBean.MXBEAN_NAME);
-		} catch (Exception e) {
-			throw new InternalError("Unexpected exception", e);
-		}
-	}
+        private static void testMissingDirectory() throws Exception {
+                Path p = Paths.get("/missing");
+                MBeanServerConnection conn = ManagementFactory.getPlatformMBeanServer();
+                try (var s = new RemoteRecordingStream(conn, p)){
+                        throw new Exception("Expected IOException");
+                } catch (IOException ioe) {
+                        if (!ioe.getMessage().contains("Download directory doesn't exist")) {
+                                throw new Exception("Unexpected message " + ioe.getMessage());
+                        }
+                }
+        }
+
+        private static void testNullArguments() throws Exception {
+                try (var s = new RemoteRecordingStream(null)){
+                        throw new Exception("Expected NullPointerException");
+                } catch (NullPointerException npe) {
+                        // as expected
+                }
+                MBeanServerConnection conn = ManagementFactory.getPlatformMBeanServer();
+                try (var s = new RemoteRecordingStream(conn, null)){
+                        throw new Exception("Expected NullPointerException");
+                } catch (NullPointerException npe) {
+                        // as expected
+                }
+        }
+
+        private static void testMissingFlightRecorderMXBean() throws Exception {
+
+                MBeanServerConnection conn = ManagementFactory.getPlatformMBeanServer();
+                conn.unregisterMBean(MXBEAN);
+                try (var s = new RemoteRecordingStream(conn)){
+                        throw new Exception("Expected IOException");
+                } catch (IOException npe) {
+                        // as expected
+                }
+        }
+
+        private static ObjectName createObjectName() {
+                try {
+                        return new ObjectName(FlightRecorderMXBean.MXBEAN_NAME);
+                } catch (Exception e) {
+                        throw new InternalError("Unexpected exception", e);
+                }
+        }
 
 }
