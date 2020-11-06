@@ -37,7 +37,6 @@ import java.util.stream.Stream;
 
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
@@ -61,11 +60,8 @@ import jdk.tools.jlink.plugin.ResourcePoolEntry;
  * feeding that into jlink using {@code --generate-jli-classes=@trace_file} can
  * help improve startup time.
  */
-public final class GenerateJLIClassesPlugin implements Plugin {
+public final class GenerateJLIClassesPlugin extends AbstractPlugin {
 
-    private static final String NAME = "generate-jli-classes";
-
-    private static final String DESCRIPTION = PluginsResourceBundle.getDescription(NAME);
 
     private static final String DEFAULT_TRACE_FILE = "default_jli_trace.txt";
 
@@ -76,16 +72,7 @@ public final class GenerateJLIClassesPlugin implements Plugin {
     private Stream<String> traceFileStream;
 
     public GenerateJLIClassesPlugin() {
-    }
-
-    @Override
-    public String getName() {
-        return NAME;
-    }
-
-    @Override
-    public String getDescription() {
-        return DESCRIPTION;
+        super("generate-jli-classes");
     }
 
     @Override
@@ -99,13 +86,8 @@ public final class GenerateJLIClassesPlugin implements Plugin {
     }
 
     @Override
-    public String getArgumentsDescription() {
-       return PluginsResourceBundle.getArgument(NAME);
-    }
-
-    @Override
     public void configure(Map<String, String> config) {
-        mainArgument = config.get(NAME);
+        mainArgument = config.get(getName());
     }
 
     public void initialize(ResourcePool in) {

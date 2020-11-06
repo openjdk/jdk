@@ -76,7 +76,6 @@ import java.util.stream.Stream;
  *
  * @see ModuleReference
  * @since 9
- * @spec JPMS
  */
 
 public interface ModuleReader extends Closeable {

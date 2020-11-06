@@ -224,9 +224,8 @@ int JvmtiThreadState::count_frames() {
 #ifdef ASSERT
   Thread *current_thread = Thread::current();
 #endif
-  assert(current_thread == get_thread() ||
-         SafepointSynchronize::is_at_safepoint() ||
-         current_thread == get_thread()->active_handshaker(),
+  assert(SafepointSynchronize::is_at_safepoint() ||
+         get_thread()->is_handshake_safe_for(current_thread),
          "call by myself / at safepoint / at handshake");
 
   if (!get_thread()->has_last_Java_frame()) return 0;  // no Java frames
@@ -246,8 +245,7 @@ int JvmtiThreadState::count_frames() {
 
 void JvmtiThreadState::invalidate_cur_stack_depth() {
   assert(SafepointSynchronize::is_at_safepoint() ||
-         JavaThread::current() == get_thread() ||
-         Thread::current() == get_thread()->active_handshaker(),
+         get_thread()->is_handshake_safe_for(Thread::current()),
          "bad synchronization with owner thread");
 
   _cur_stack_depth = UNKNOWN_STACK_DEPTH;
@@ -277,8 +275,8 @@ void JvmtiThreadState::decr_cur_stack_depth() {
 }
 
 int JvmtiThreadState::cur_stack_depth() {
-  JavaThread *current = JavaThread::current();
-  guarantee(current == get_thread() || current == get_thread()->active_handshaker(),
+  Thread *current = Thread::current();
+  guarantee(get_thread()->is_handshake_safe_for(current),
             "must be current thread or direct handshake");
 
   if (!is_interp_only_mode() || _cur_stack_depth == UNKNOWN_STACK_DEPTH) {

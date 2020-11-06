@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ package sun.net.util;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.net.InetSocketAddress;
+import java.net.UnixDomainSocketAddress;
+import java.net.SocketAddress;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
@@ -51,17 +53,38 @@ public final class SocketExceptions {
      *
      * Only specific IOException subtypes are supported.
      */
-    public static IOException of(IOException e, InetSocketAddress address) {
-        if (!enhancedExceptionText || address == null)
+    public static IOException of(IOException e, SocketAddress addr) {
+        if (!enhancedExceptionText || addr == null) {
             return e;
-        int port = address.getPort();
-        String host = address.getHostString();
+        }
+        if (addr instanceof UnixDomainSocketAddress) {
+            return ofUnixDomain(e, (UnixDomainSocketAddress)addr);
+        } else if (addr instanceof InetSocketAddress) {
+            return ofInet(e, (InetSocketAddress)addr);
+        } else {
+            return e;
+        }
+    }
+
+    private static IOException ofInet(IOException e, InetSocketAddress addr) {
+        int port = addr.getPort();
+        String host = addr.getHostString();
         StringBuilder sb = new StringBuilder();
         sb.append(e.getMessage());
         sb.append(": ");
         sb.append(host);
         sb.append(':');
         sb.append(Integer.toString(port));
+        String enhancedMsg = sb.toString();
+        return create(e, enhancedMsg);
+    }
+
+    private static IOException ofUnixDomain(IOException e, UnixDomainSocketAddress addr) {
+        String path = addr.getPath().toString();
+        StringBuilder sb = new StringBuilder();
+        sb.append(e.getMessage());
+        sb.append(": ");
+        sb.append(path);
         String enhancedMsg = sb.toString();
         return create(e, enhancedMsg);
     }

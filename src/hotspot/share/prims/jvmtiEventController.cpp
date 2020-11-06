@@ -194,9 +194,10 @@ JvmtiEnvEventEnable::~JvmtiEnvEventEnable() {
 //
 
 class EnterInterpOnlyModeClosure : public HandshakeClosure {
-
-public:
-  EnterInterpOnlyModeClosure() : HandshakeClosure("EnterInterpOnlyMode") { }
+ private:
+  bool _completed;
+ public:
+  EnterInterpOnlyModeClosure() : HandshakeClosure("EnterInterpOnlyMode"), _completed(false) { }
   void do_thread(Thread* th) {
     JavaThread* jt = th->as_Java_thread();
     JvmtiThreadState* state = jt->jvmti_thread_state();
@@ -214,12 +215,16 @@ public:
       // interpreted-only mode is enabled the first time for a given
       // thread (nothing to do if no Java frames yet).
       ResourceMark resMark;
-      for (StackFrameStream fst(jt, false); !fst.is_done(); fst.next()) {
+      for (StackFrameStream fst(jt, false /* update */, false /* process_frames */); !fst.is_done(); fst.next()) {
         if (fst.current()->can_be_deoptimized()) {
           Deoptimization::deoptimize(jt, *fst.current());
         }
       }
     }
+    _completed = true;
+  }
+  bool completed() {
+    return _completed;
   }
 };
 
@@ -333,11 +338,11 @@ void JvmtiEventControllerPrivate::enter_interp_only_mode(JvmtiThreadState *state
   EnterInterpOnlyModeClosure hs;
   JavaThread *target = state->get_thread();
   Thread *current = Thread::current();
-  if (target == current || target->active_handshaker() == current) {
+  if (target->is_handshake_safe_for(current)) {
     hs.do_thread(target);
   } else {
-    bool executed = Handshake::execute_direct(&hs, target);
-    guarantee(executed, "Direct handshake failed. Target thread is not alive?");
+    Handshake::execute(&hs, target);
+    guarantee(hs.completed(), "Handshake failed: Target thread is not alive?");
   }
 }
 

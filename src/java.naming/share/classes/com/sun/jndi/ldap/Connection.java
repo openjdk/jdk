@@ -169,6 +169,13 @@ public final class Connection implements Runnable, HandshakeCompletedListener {
 
     int readTimeout;
     int connectTimeout;
+
+    // Is connection upgraded to SSL via STARTTLS extended operation
+    private volatile boolean isUpgradedToStartTls;
+
+    // Lock to maintain isUpgradedToStartTls state
+    final Object startTlsLock = new Object();
+
     private static final boolean IS_HOSTNAME_VERIFICATION_DISABLED
             = hostnameVerificationDisabledValue();
 
@@ -697,6 +704,23 @@ public final class Connection implements Runnable, HandshakeCompletedListener {
         outStream = newOut;
     }
 
+    /*
+     * Replace streams and set isUpdradedToStartTls flag to the provided value
+     */
+    synchronized public void replaceStreams(InputStream newIn, OutputStream newOut, boolean isStartTls) {
+        synchronized (startTlsLock) {
+            replaceStreams(newIn, newOut);
+            isUpgradedToStartTls = isStartTls;
+        }
+    }
+
+    /*
+     * Returns true if connection was upgraded to SSL with STARTTLS extended operation
+     */
+    public boolean isUpgradedToStartTls() {
+        return isUpgradedToStartTls;
+    }
+
     /**
      * Used by Connection thread to read inStream into a local variable.
      * This ensures that there is no contention between the main thread
@@ -851,6 +875,11 @@ public final class Connection implements Runnable, HandshakeCompletedListener {
                     // is equal to & 0x80 (i.e. length byte with high bit off).
                     if ((seqlen & 0x80) == 0x80) {
                         seqlenlen = seqlen & 0x7f;  // number of length bytes
+                        // Check the length of length field, since seqlen is int
+                        // the number of bytes can't be greater than 4
+                        if (seqlenlen > 4) {
+                            throw new IOException("Length coded with too many bytes: " + seqlenlen);
+                        }
 
                         bytesread = 0;
                         eos = false;
@@ -878,6 +907,13 @@ public final class Connection implements Runnable, HandshakeCompletedListener {
                         offset += bytesread;
                     }
 
+                    if (seqlenlen > bytesread) {
+                        throw new IOException("Unexpected EOF while reading length");
+                    }
+
+                    if (seqlen < 0) {
+                        throw new IOException("Length too big: " + (((long) seqlen) & 0xFFFFFFFFL));
+                    }
                     // read in seqlen bytes
                     byte[] left = readFully(in, seqlen);
                     inbuf = Arrays.copyOf(inbuf, offset + left.length);

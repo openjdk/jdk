@@ -48,14 +48,16 @@ public class TestTypeParameters extends JavadocTester {
     public void test1() {
         javadoc("-d", "out-1",
                 "-use",
+                "--no-platform-links",
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);
 
         checkOutput("pkg/C.html", true,
                 """
-                    <td class="col-first"><code>&lt;W extends java.lang.String,&#8203;
-                    V extends java.util.List&gt;<br>java.lang.Object</code></td>""",
+                    <div class="col-first odd-row-color method-summary-table-tab2 method-summary-table-t\
+                    ab4 method-summary-table"><code>&lt;W extends java.lang.String,&#8203;
+                    V extends java.util.List&gt;<br>java.lang.Object</code></div>""",
                 "<code>&lt;T&gt;&nbsp;java.lang.Object</code>");
 
         checkOutput("pkg/package-summary.html", true,
@@ -80,6 +82,7 @@ public class TestTypeParameters extends JavadocTester {
     public void test2() {
         javadoc("-d", "out-2",
                 "-linksource",
+                "--no-platform-links",
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);

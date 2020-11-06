@@ -27,7 +27,6 @@
 
 #include "jni.h"
 #include "classfile/classLoaderData.hpp"
-#include "classfile/vmSymbols.hpp"
 #include "oops/oopHandle.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/jniHandles.hpp"

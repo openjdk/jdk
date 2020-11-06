@@ -52,17 +52,23 @@ public class Test7194184 {
     private static Robot robot;
 
     public static void main(String[] args) throws Exception {
-        robot = new Robot();
-        robot.setAutoWaitForIdle(true);
-        createUI();
-        accessRecentSwatch();
-        runRobot();
-        testColorChooser();
-        cleanUpUI();
+        try {
+            robot = new Robot();
+            robot.setAutoDelay(100);
+            createUI();
+            robot.waitForIdle();
+            robot.delay(1000);
+            accessRecentSwatch();
+            robot.waitForIdle();
+            runRobot();
+            testColorChooser();
+        } finally {
+            cleanUpUI();
+        }
     }
 
     private static void createUI() throws Exception {
-        SwingUtilities.invokeLater(new Runnable() {
+        SwingUtilities.invokeAndWait(new Runnable() {
             @Override
             public void run() {
                 String title = getClass().getName();
@@ -71,12 +77,13 @@ public class Test7194184 {
                 frame.add(colorChooser);
                 frame.pack();
                 frame.setVisible(true);
+                frame.setLocationRelativeTo(null);
             }
         });
     }
 
     private static void accessRecentSwatch() throws Exception {
-        SwingUtilities.invokeLater(new Runnable() {
+        SwingUtilities.invokeAndWait(new Runnable() {
             @Override
             public void run() {
                 Component recentSwatchPanel = Util.findSubComponent(colorChooser, "RecentSwatchPanel");

@@ -90,6 +90,7 @@ class GCHeapLog : public EventLogBase<GCMessage> {
 class ParallelObjectIterator : public CHeapObj<mtGC> {
 public:
   virtual void object_iterate(ObjectClosure* cl, uint worker_id) = 0;
+  virtual ~ParallelObjectIterator() {}
 };
 
 //
@@ -309,12 +310,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   virtual size_t min_dummy_object_size() const;
   size_t tlab_alloc_reserve() const;
 
-  // Return the address "addr" aligned by "alignment_in_bytes" if such
-  // an address is below "end".  Return NULL otherwise.
-  inline static HeapWord* align_allocation_or_fail(HeapWord* addr,
-                                                   HeapWord* end,
-                                                   unsigned short alignment_in_bytes);
-
   // Some heaps may offer a contiguous region for shared non-blocking
   // allocation, via inlined code (by exporting the address of the top and
   // end fields defining the extent of the contiguous allocation region.)
@@ -368,6 +363,11 @@ class CollectedHeap : public CHeapObj<mtInternal> {
     guarantee(false, "thread-local allocation buffers not supported");
     return 0;
   }
+
+  // If a GC uses a stack watermark barrier, the stack processing is lazy, concurrent,
+  // incremental and cooperative. In order for that to work well, mechanisms that stop
+  // another thread might want to ensure its roots are in a sane state.
+  virtual bool uses_stack_watermark_barrier() const { return false; }
 
   // Perform a collection of the heap; intended for use in implementing
   // "System.gc".  This probably implies as full a collection as the

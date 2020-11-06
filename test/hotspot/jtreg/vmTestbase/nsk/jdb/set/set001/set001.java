@@ -53,7 +53,8 @@
  * @clean nsk.jdb.set.set001.set001a
  * @compile -g:lines,source,vars set001a.java
  *
- * @run main/othervm PropertyResolvingWrapper nsk.jdb.set.set001.set001
+ * @run main/othervm
+ *      nsk.jdb.set.set001.set001
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

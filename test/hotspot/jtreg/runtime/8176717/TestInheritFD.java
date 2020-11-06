@@ -30,6 +30,7 @@ import static java.util.stream.Collectors.toList;
 import static jdk.test.lib.process.ProcessTools.createJavaProcessBuilder;
 import static jdk.test.lib.Platform.isWindows;
 import jdk.test.lib.Utils;
+import jdk.test.lib.Platform;
 import jtreg.SkippedException;
 
 import java.io.BufferedReader;
@@ -193,7 +194,14 @@ public class TestInheritFD {
     }
 
     static boolean findOpenLogFile(Collection<String> fileNames) {
+        String pid = Long.toString(ProcessHandle.current().pid());
+        String[] command = lsofCommand().orElseThrow(() ->
+                new RuntimeException("lsof like command not found"));
+        String lsof = command[0];
+        boolean isBusybox = Platform.isBusybox(lsof);
         return fileNames.stream()
+            // lsof from busybox does not support "-p" option
+            .filter(fileName -> !isBusybox || fileName.contains(pid))
             .filter(fileName -> fileName.contains(LOG_SUFFIX))
             .findAny()
             .isPresent();

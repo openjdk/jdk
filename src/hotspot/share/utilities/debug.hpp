@@ -152,6 +152,10 @@ enum VMErrorType {
   OOM_MMAP_ERROR   = 0xe0000002
 };
 
+// Set to suppress secondary error reporting.
+// Really should have a qualified name or something.
+extern bool Debugging;
+
 // error reporting helper functions
 void report_vm_error(const char* file, int line, const char* error_msg);
 void report_vm_error(const char* file, int line, const char* error_msg,

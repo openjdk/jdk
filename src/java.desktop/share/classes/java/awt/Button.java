@@ -25,14 +25,20 @@
 
 package java.awt;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.peer.ButtonPeer;
 import java.beans.BeanProperty;
-import java.util.EventListener;
-import java.awt.event.*;
-import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
 import java.io.IOException;
-import javax.accessibility.*;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.EventListener;
+
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleAction;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
+import javax.accessibility.AccessibleValue;
 
 /**
  * This class creates a labeled button. The application can cause
@@ -428,9 +434,8 @@ public class Button extends Component implements Accessible {
 
     /* Serialization support.
      */
-
-    /*
-     * Button Serial Data Version.
+    /**
+     * Serialized data version.
      * @serial
      */
     private int buttonSerializedDataVersion = 1;
@@ -449,7 +454,8 @@ public class Button extends Component implements Accessible {
      *   {@code actionListenerK} indicating an
      *     {@code ActionListener} object
      *
-     * @param s the {@code ObjectOutputStream} to write
+     * @param  s the {@code ObjectOutputStream} to write
+     * @throws IOException if an I/O error occurs
      * @see AWTEventMulticaster#save(ObjectOutputStream, String, EventListener)
      * @see java.awt.Component#actionListenerK
      * @see #readObject(ObjectInputStream)
@@ -469,10 +475,12 @@ public class Button extends Component implements Accessible {
      * receive action events fired by the button.
      * Unrecognized keys or values will be ignored.
      *
-     * @param s the {@code ObjectInputStream} to read
-     * @exception HeadlessException if
-     *   {@code GraphicsEnvironment.isHeadless} returns
-     *   {@code true}
+     * @param  s the {@code ObjectInputStream} to read
+     * @throws ClassNotFoundException if the class of a serialized object could
+     *         not be found
+     * @throws IOException if an I/O error occurs
+     * @throws HeadlessException if {@code GraphicsEnvironment.isHeadless()}
+     *         returns {@code true}
      * @serial
      * @see #removeActionListener(ActionListener)
      * @see #addActionListener(ActionListener)

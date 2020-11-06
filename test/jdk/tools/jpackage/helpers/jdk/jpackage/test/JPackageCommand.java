@@ -46,8 +46,8 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.incubator.jpackage.internal.AppImageFile;
-import jdk.incubator.jpackage.internal.ApplicationLayout;
+import jdk.jpackage.internal.AppImageFile;
+import jdk.jpackage.internal.ApplicationLayout;
 import jdk.jpackage.test.Functional.ThrowingConsumer;
 import jdk.jpackage.test.Functional.ThrowingFunction;
 import jdk.jpackage.test.Functional.ThrowingSupplier;
@@ -791,11 +791,11 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         }
     }
 
-    public CfgFile readLaunherCfgFile() {
-        return readLaunherCfgFile(null);
+    public CfgFile readLauncherCfgFile() {
+        return readLauncherCfgFile(null);
     }
 
-    public CfgFile readLaunherCfgFile(String launcherName) {
+    public CfgFile readLauncherCfgFile(String launcherName) {
         verifyIsOfType(PackageType.IMAGE);
         if (isRuntime()) {
             return null;
@@ -833,15 +833,6 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
             }
             return str;
         }).collect(Collectors.joining(" "));
-    }
-
-    public static Stream<String> filterOutput(Stream<String> jpackageOutput) {
-        // Skip "WARNING: Using incubator ..." first line of output
-        return jpackageOutput.skip(1);
-    }
-
-    public static List<String> filterOutput(List<String> jpackageOutput) {
-        return filterOutput(jpackageOutput.stream()).collect(Collectors.toList());
     }
 
     @Override
