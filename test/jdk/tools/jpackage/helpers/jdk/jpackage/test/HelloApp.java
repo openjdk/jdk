@@ -31,7 +31,6 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
-import static java.util.Locale.filter;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -45,8 +44,6 @@ import java.util.zip.ZipFile;
 import jdk.jpackage.test.Functional.ThrowingConsumer;
 import jdk.jpackage.test.Functional.ThrowingFunction;
 import jdk.jpackage.test.Functional.ThrowingSupplier;
-import static jdk.jpackage.test.TKit.trace;
-import static jdk.jpackage.test.TKit.workDir;
 
 public final class HelloApp {
 
