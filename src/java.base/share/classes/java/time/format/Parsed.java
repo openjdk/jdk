@@ -499,7 +499,7 @@ final class Parsed implements TemporalAccessor {
             long ap = fieldValues.remove(AMPM_OF_DAY);
             if (resolverStyle == ResolverStyle.LENIENT) {
                 updateCheckConflict(AMPM_OF_DAY, HOUR_OF_DAY, Math.addExact(Math.multiplyExact(ap, 12), 6));
-            } else {  // STRICT or SMART
+            } else {  // SMART
                 AMPM_OF_DAY.checkValidValue(ap);
                 updateCheckConflict(AMPM_OF_DAY, HOUR_OF_DAY, ap * 12 + 6);
             }
