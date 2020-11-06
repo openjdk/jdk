@@ -279,9 +279,9 @@ public abstract class AbstractEventStream implements EventStream {
         counter.incrementAndGet();
         return "JFR Event Stream " + counter;
     }
-    
 
-	@Override
+
+        @Override
 	public void onMetadata(Consumer<MetadataEvent> action) {
 		Objects.requireNonNull(action);
 		synchronized (configuration) {
