@@ -99,7 +99,7 @@ public final class Boolean implements java.io.Serializable,
      * Also consider using the final fields {@link #TRUE} and {@link #FALSE}
      * if possible.
      */
-    @Deprecated(since="9")
+    @Deprecated(since="9", forRemoval = true)
     public Boolean(boolean value) {
         this.value = value;
     }
@@ -119,7 +119,7 @@ public final class Boolean implements java.io.Serializable,
      * {@code boolean} primitive, or use {@link #valueOf(String)}
      * to convert a string to a {@code Boolean} object.
      */
-    @Deprecated(since="9")
+    @Deprecated(since="9", forRemoval = true)
     public Boolean(String s) {
         this(parseBoolean(s));
     }

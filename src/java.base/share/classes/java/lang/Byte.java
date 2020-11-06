@@ -338,7 +338,7 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
      * {@link #valueOf(byte)} is generally a better choice, as it is
      * likely to yield significantly better space and time performance.
      */
-    @Deprecated(since="9")
+    @Deprecated(since="9", forRemoval = true)
     public Byte(byte value) {
         this.value = value;
     }
@@ -361,7 +361,7 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
      * {@code byte} primitive, or use {@link #valueOf(String)}
      * to convert a string to a {@code Byte} object.
      */
-    @Deprecated(since="9")
+    @Deprecated(since="9", forRemoval = true)
     public Byte(String s) throws NumberFormatException {
         this.value = parseByte(s, 10);
     }

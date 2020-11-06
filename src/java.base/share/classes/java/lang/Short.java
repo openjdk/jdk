@@ -343,7 +343,7 @@ public final class Short extends Number implements Comparable<Short>, Constable 
      * {@link #valueOf(short)} is generally a better choice, as it is
      * likely to yield significantly better space and time performance.
      */
-    @Deprecated(since="9")
+    @Deprecated(since="9", forRemoval = true)
     public Short(short value) {
         this.value = value;
     }
@@ -366,7 +366,7 @@ public final class Short extends Number implements Comparable<Short>, Constable 
      * {@code short} primitive, or use {@link #valueOf(String)}
      * to convert a string to a {@code Short} object.
      */
-    @Deprecated(since="9")
+    @Deprecated(since="9", forRemoval = true)
     public Short(String s) throws NumberFormatException {
         this.value = parseShort(s, 10);
     }

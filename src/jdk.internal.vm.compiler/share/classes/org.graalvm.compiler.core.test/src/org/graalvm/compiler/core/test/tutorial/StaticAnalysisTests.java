@@ -114,7 +114,7 @@ public class StaticAnalysisTests {
         assertEquals(m(sa, B.class, "foo").getFormalReturn(), t(Data.class));
     }
 
-    @SuppressWarnings({"deprecation", "unused"})
+    @SuppressWarnings({"deprecation", "removal", "unused"})
     static void test03Entry() {
         Data data = new Data();
         data.f = new Integer(42);
@@ -142,7 +142,7 @@ public class StaticAnalysisTests {
         assertEquals(m(sa, B.class, "foo").getFormalReturn(), t(Data.class), t(Integer.class));
     }
 
-    @SuppressWarnings({"deprecation", "unused"})
+    @SuppressWarnings({"deprecation", "removal", "unused"})
     static void test04Entry() {
         Data data = null;
         for (int i = 0; i < 2; i++) {

@@ -386,13 +386,13 @@ public class GraalHotSpotVMConfigAccess {
             // overhead when running with assertions enabled.
             T sentinel;
             if (type == Boolean.class) {
-                sentinel = type.cast(new Boolean(false));
+                sentinel = type.cast(false);
             } else if (type == Byte.class) {
-                sentinel = type.cast(new Byte((byte) 123));
+                sentinel = type.cast((byte) 123);
             } else if (type == Integer.class) {
-                sentinel = type.cast(new Integer(1234567890));
+                sentinel = type.cast(1234567890);
             } else if (type == Long.class) {
-                sentinel = type.cast(new Long(1234567890987654321L));
+                sentinel = type.cast(1234567890987654321L);
             } else if (type == String.class) {
                 sentinel = type.cast(new String("1234567890987654321"));
             } else {
