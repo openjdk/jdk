@@ -60,8 +60,8 @@ public abstract class AbstractEventStream implements EventStream {
     private final AccessControlContext accessControllerContext;
     private final StreamConfiguration configuration = new StreamConfiguration();
     private final PlatformRecording recording;
-    private final List<Configuration> configurations;
-
+	private final List<Configuration> configurations;
+	
     private volatile Thread thread;
     private Dispatcher dispatcher;
 

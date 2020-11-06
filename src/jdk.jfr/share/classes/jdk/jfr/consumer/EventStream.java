@@ -52,11 +52,12 @@ import jdk.jfr.internal.consumer.FileAccess;
  * {@link #onEvent(Consumer)} method. To filter the stream for an event with a
  * specific name, use {@link #onEvent(String, Consumer)} method.
  * <p>
- * By default, the same {@code RecordedEvent} object can be used to represent
- * two or more distinct events. That object can be delivered multiple times to
- * the same action as well as to other actions. To use an event object after the
- * action is completed, the {@link #setReuse(boolean)} method should be set to
- * {@code false} so a new object is allocated for each event.
+ * By default, the same {@code RecordedEvent} object can be used to
+ * represent two or more distinct events. That object can be delivered
+ * multiple times to the same action as well as to other actions. To use an
+ * event object after the action is completed, the
+ * {@link #setReuse(boolean)} method should be set to {@code false} so a
+ * new object is allocated for each event.
  * <p>
  * Events are delivered in batches. To receive a notification when a batch is
  * complete, register an action using the {@link #onFlush(Runnable)} method.
@@ -94,8 +95,7 @@ import jdk.jfr.internal.consumer.FileAccess;
  * The following example shows how an {@code EventStream} can be used to listen
  * to events on a JVM running Flight Recorder
  *
- * <pre>
- * {@literal
+ * <pre>{@literal
  * try (var es = EventStream.openRepository()) {
  *   es.onEvent("jdk.CPULoad", event -> {
  *     System.out.println("CPU Load " + event.getEndTime());
@@ -113,8 +113,7 @@ import jdk.jfr.internal.consumer.FileAccess;
  *   });
  *   es.start();
  * }
- * }
- * </pre>
+ * }</pre>
  * <p>
  * To start recording together with the stream, see {@link RecordingStream}.
  *
@@ -125,38 +124,39 @@ public interface EventStream extends AutoCloseable {
      * Creates a stream from the repository of the current Java Virtual Machine
      * (JVM).
      * <p>
-     * By default, the stream starts with the next event flushed by Flight Recorder.
+     * By default, the stream starts with the next event flushed by Flight
+     * Recorder.
      *
      * @return an event stream, not {@code null}
      *
-     * @throws IOException       if a stream can't be opened, or an I/O error occurs
-     *                           when trying to access the repository
+     * @throws IOException if a stream can't be opened, or an I/O error occurs
+     *         when trying to access the repository
      *
-     * @throws SecurityException if a security manager exists and the caller does
-     *                           not have
-     *                           {@code FlightRecorderPermission("accessFlightRecorder")}
+     * @throws SecurityException if a security manager exists and the caller
+     *         does not have
+     *         {@code FlightRecorderPermission("accessFlightRecorder")}
      */
     public static EventStream openRepository() throws IOException {
         Utils.checkAccessFlightRecorder();
-        return new EventDirectoryStream(AccessController.getContext(), null, SecuritySupport.PRIVILEGED, null,
-                Collections.emptyList());
+        return new EventDirectoryStream(AccessController.getContext(), null, SecuritySupport.PRIVILEGED, null, Collections.emptyList());
     }
 
     /**
      * Creates an event stream from a disk repository.
      * <p>
-     * By default, the stream starts with the next event flushed by Flight Recorder.
+     * By default, the stream starts with the next event flushed by Flight
+     * Recorder.
      *
      * @param directory location of the disk repository, not {@code null}
      *
      * @return an event stream, not {@code null}
      *
-     * @throws IOException       if a stream can't be opened, or an I/O error occurs
-     *                           when trying to access the repository
+     * @throws IOException if a stream can't be opened, or an I/O error occurs
+     *         when trying to access the repository
      *
      * @throws SecurityException if a security manager exists and its
-     *                           {@code checkRead} method denies read access to the
-     *                           directory, or files in the directory.
+     *         {@code checkRead} method denies read access to the directory, or
+     *         files in the directory.
      */
     public static EventStream openRepository(Path directory) throws IOException {
         Objects.nonNull(directory);
@@ -173,12 +173,11 @@ public interface EventStream extends AutoCloseable {
      *
      * @return an event stream, not {@code null}
      *
-     * @throws IOException       if the file can't be opened, or an I/O error occurs
-     *                           during reading
+     * @throws IOException if the file can't be opened, or an I/O error occurs
+     *         during reading
      *
      * @throws SecurityException if a security manager exists and its
-     *                           {@code checkRead} method denies read access to the
-     *                           file
+     *         {@code checkRead} method denies read access to the file
      */
     static EventStream openFile(Path file) throws IOException {
         return new EventFileStream(AccessController.getContext(), file);
@@ -197,14 +196,14 @@ public interface EventStream extends AutoCloseable {
      * @throws IllegalStateException if an action is added after the stream has
      *                               started
      */
-    default void onMetadata(Consumer<MetadataEvent> action) {
-    }
+	default void onMetadata(Consumer<MetadataEvent> action) {
+	}
 
     /**
      * Registers an action to perform on all events in the stream.
      *
      * @param action an action to perform on each {@code RecordedEvent}, not
-     *               {@code null}
+     *        {@code null}
      */
     void onEvent(Consumer<RecordedEvent> action);
 
@@ -213,16 +212,16 @@ public interface EventStream extends AutoCloseable {
      *
      * @param eventName the name of the event, not {@code null}
      *
-     * @param action    an action to perform on each {@code RecordedEvent} matching
-     *                  the event name, not {@code null}
+     * @param action an action to perform on each {@code RecordedEvent} matching
+     *        the event name, not {@code null}
      */
     void onEvent(String eventName, Consumer<RecordedEvent> action);
 
     /**
      * Registers an action to perform after the stream has been flushed.
      *
-     * @param action an action to perform after the stream has been flushed, not
-     *               {@code null}
+     * @param action an action to perform after the stream has been
+     *        flushed, not {@code null}
      */
     void onFlush(Runnable action);
 
@@ -235,20 +234,22 @@ public interface EventStream extends AutoCloseable {
      * Registering an action overrides the default behavior. If multiple actions
      * have been registered, they are performed in the order of registration.
      * <p>
-     * If this method itself throws an exception, resulting behavior is undefined.
+     * If this method itself throws an exception, resulting behavior is
+     * undefined.
      *
-     * @param action an action to perform if an exception occurs, not {@code null}
+     * @param action an action to perform if an exception occurs, not
+     *        {@code null}
      */
     void onError(Consumer<Throwable> action);
 
     /**
      * Registers an action to perform when the stream is closed.
      * <p>
-     * If the stream is already closed, the action will be performed immediately in
-     * the current thread.
+     * If the stream is already closed, the action will be performed immediately
+     * in the current thread.
      *
      * @param action an action to perform after the stream is closed, not
-     *               {@code null}
+     *        {@code null}
      * @see #close()
      */
     void onClose(Runnable action);
@@ -257,8 +258,8 @@ public interface EventStream extends AutoCloseable {
      * Releases all resources associated with this stream.
      * <p>
      * If a stream is started, asynchronously or synchronously, it is stopped
-     * immediately or after the next flush. This method does <em>NOT</em> guarantee
-     * that all registered actions are completed before return.
+     * immediately or after the next flush. This method does <em>NOT</em>
+     * guarantee that all registered actions are completed before return.
      * <p>
      * Closing a previously closed stream has no effect.
      */
@@ -272,7 +273,8 @@ public interface EventStream extends AutoCloseable {
      *
      * @param action the action to unregister, not {@code null}
      *
-     * @return {@code true} if the action was unregistered, {@code false} otherwise
+     * @return {@code true} if the action was unregistered, {@code false}
+     *         otherwise
      *
      * @see #onEvent(Consumer)
      * @see #onEvent(String, Consumer)
@@ -283,23 +285,23 @@ public interface EventStream extends AutoCloseable {
     boolean remove(Object action);
 
     /**
-     * Specifies that the event object in an {@link #onEvent(Consumer)} action can
-     * be reused.
+     * Specifies that the event object in an {@link #onEvent(Consumer)} action
+     * can be reused.
      * <p>
-     * If reuse is set to {@code true}, an action should not keep a reference to the
-     * event object after the action has completed.
+     * If reuse is set to {@code true}, an action should not keep a reference
+     * to the event object after the action has completed.
      *
      * @param reuse {@code true} if an event object can be reused, {@code false}
-     *              otherwise
+     * otherwise
      */
     void setReuse(boolean reuse);
 
     /**
-     * Specifies that events arrives in chronological order, sorted by the time they
-     * were committed to the stream.
+     * Specifies that events arrives in chronological order, sorted by the time
+     * they were committed to the stream.
      *
      * @param ordered if event objects arrive in chronological order to
-     *                {@link #onEvent(Consumer)}
+     *        {@link #onEvent(Consumer)}
      */
     void setOrdered(boolean ordered);
 
@@ -363,7 +365,7 @@ public interface EventStream extends AutoCloseable {
      * @param timeout the maximum time to wait, not {@code null}
      *
      * @throws IllegalArgumentException if timeout is negative
-     * @throws InterruptedException     if interrupted while waiting
+     * @throws InterruptedException if interrupted while waiting
      *
      * @see #start()
      * @see #startAsync()

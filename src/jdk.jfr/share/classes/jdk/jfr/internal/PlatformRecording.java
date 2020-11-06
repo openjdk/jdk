@@ -87,7 +87,7 @@ public final class PlatformRecording implements AutoCloseable {
     private Duration flushInterval = Duration.ofSeconds(1);
     private long finalStartChunkNanos = Long.MIN_VALUE;
     private long startNanos = -1;
-
+    
     PlatformRecording(PlatformRecorder recorder, long id) {
         // Typically the access control context is taken
         // when you call dump(Path) or setDestination(Path),
@@ -104,7 +104,7 @@ public final class PlatformRecording implements AutoCloseable {
     public long start() {
         RecordingState oldState;
         RecordingState newState;
-
+       
         synchronized (recorder) {
             oldState = getState();
             if (!Utils.isBefore(state, RecordingState.RUNNING)) {
@@ -828,7 +828,7 @@ public final class PlatformRecording implements AutoCloseable {
     }
     
     public long getStartNanos() {
-        return startNanos;
+    	return startNanos;
     }
 
     public long getFinalChunkStartNanos() {

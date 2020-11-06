@@ -98,41 +98,36 @@ public final class RecordingStream implements AutoCloseable, EventStream {
     }
 
     private List<Configuration> configurations() {
-        try {
-            return Configuration.getConfigurations();
-        } catch (Exception e) {
-            return Collections.emptyList();
-        }
-    }
+    	try {
+    		return Configuration.getConfigurations();
+    	} catch (Exception e) {
+    		return Collections.emptyList();
+    	}
+	}
 
-    /**
+	/**
      * Creates a recording stream using settings from a configuration.
      * <p>
      * The following example shows how to create a recording stream that uses a
      * predefined configuration.
      *
-     * <pre>
-     * {
-     *     &#64;literal
-     *     var c = Configuration.getConfiguration("default");
-     *     try (var rs = new RecordingStream(c)) {
-     *         rs.onEvent(System.out::println);
-     *         rs.start();
-     *     }
+     * <pre>{@literal
+     * var c = Configuration.getConfiguration("default");
+     * try (var rs = new RecordingStream(c)) {
+     *   rs.onEvent(System.out::println);
+     *   rs.start();
      * }
-     * </pre>
+     * }</pre>
      *
-     * @param configuration configuration that contains the settings to use, not
-     *                      {@code null}
+     * @param configuration configuration that contains the settings to use,
+     *        not {@code null}
      *
      * @throws IllegalStateException if Flight Recorder can't be created (for
-     *                               example, if the Java Virtual Machine (JVM)
-     *                               lacks Flight Recorder support, or if the file
-     *                               repository can't be created or accessed)
+     *         example, if the Java Virtual Machine (JVM) lacks Flight Recorder
+     *         support, or if the file repository can't be created or accessed)
      *
-     * @throws SecurityException     if a security manager is used and
-     *                               FlightRecorderPermission "accessFlightRecorder"
-     *                               is not set.
+     * @throws SecurityException if a security manager is used and
+     *         FlightRecorderPermission "accessFlightRecorder" is not set.
      *
      * @see Configuration
      */
