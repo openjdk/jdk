@@ -133,13 +133,16 @@ class outputStream;
   f(degen_final_manage_labs,                        "  Manage GC/TLABs")               \
   f(degen_choose_cset,                              "  Choose Collection Set")         \
   f(degen_final_rebuild_freeset,                    "  Rebuild Free Set")              \
+  f(degen_gc_stw_evac,                              "  Evacuation")                    \
   f(degen_init_update_refs_manage_gclabs,           "  Manage GCLABs")                 \
+  f(degen_gc_updaterefs,                            "  Update References")             \
   f(degen_final_update_refs_finish_work,            "  Finish Work")                   \
   f(degen_final_update_refs_update_region_states,   "  Update Region States")          \
   f(degen_final_update_refs_trash_cset,             "  Trash Collection Set")          \
   f(degen_final_update_refs_rebuild_freeset,        "  Rebuild Free Set")              \
   f(degen_gc_update_roots,                          "  Degen Update Roots")            \
   SHENANDOAH_PAR_PHASE_DO(degen_gc_update_,         "    DU: ", f)                     \
+  f(degen_gc_cleanup_complete,                      "  Cleanup")                       \
                                                                                        \
   f(full_gc_gross,                                  "Pause Full GC (G)")               \
   f(full_gc,                                        "Pause Full GC (N)")               \

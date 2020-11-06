@@ -35,6 +35,7 @@
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkCompact.hpp"
+#include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
@@ -42,7 +43,6 @@
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
-#include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
@@ -55,16 +55,58 @@
 #include "runtime/biasedLocking.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/thread.hpp"
+#include "runtime/vmThread.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/growableArray.hpp"
 #include "gc/shared/workgroup.hpp"
 
 ShenandoahMarkCompact::ShenandoahMarkCompact() :
-  _gc_timer(NULL),
+  _gc_timer(ShenandoahHeap::heap()->gc_timer()),
   _preserved_marks(new PreservedMarksSet(true)) {}
 
-void ShenandoahMarkCompact::initialize(GCTimer* gc_timer) {
-  _gc_timer = gc_timer;
+bool ShenandoahMarkCompact::collect(GCCause::Cause cause) {
+  vmop_entry_full(cause);
+  // Always success
+  return true;
+}
+
+void ShenandoahMarkCompact::vmop_entry_full(GCCause::Cause cause) {
+  TraceCollectorStats tcs(heap()->monitoring_support()->full_stw_collection_counters());
+  ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::full_gc_gross);
+
+  heap()->try_inject_alloc_failure();
+  VM_ShenandoahFullGC op(cause, this);
+  VMThread::execute(&op);
+}
+
+void ShenandoahMarkCompact::entry_full(GCCause::Cause cause) {
+  static const char* msg = "Pause Full";
+  ShenandoahPausePhase gc_phase(msg, ShenandoahPhaseTimings::full_gc, true /* log_heap_usage */);
+  EventMark em("%s", msg);
+
+  ShenandoahWorkerScope scope(heap()->workers(),
+                              ShenandoahWorkerPolicy::calc_workers_for_fullgc(),
+                              "full gc");
+
+  op_full(cause);
+}
+
+void ShenandoahMarkCompact::op_full(GCCause::Cause cause) {
+  ShenandoahMetricsSnapshot metrics;
+  metrics.snap_before();
+
+  // Perform full GC
+  do_it(cause);
+
+  metrics.snap_after();
+
+  if (metrics.is_good_progress()) {
+    heap()->notify_gc_progress();
+  } else {
+    // Nothing to do. Tell the allocation path that we have failed to make
+    // progress, and it can finally fail.
+    heap()->notify_gc_no_progress();
+  }
 }
 
 void ShenandoahMarkCompact::do_it(GCCause::Cause gc_cause) {
