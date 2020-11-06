@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8253005
+ * @library /test/lib
  * @summary Check that sendResponseHeaders throws an IOException when headers
  *  have already been sent
  * @run testng/othervm SendResponseHeadersTest
@@ -32,6 +33,7 @@
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import jdk.test.lib.net.URIBuilder;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
@@ -51,6 +53,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static org.testng.Assert.expectThrows;
 import static org.testng.Assert.fail;
 
@@ -63,22 +66,25 @@ public class SendResponseHeadersTest {
     public void setUp() throws IOException, URISyntaxException {
         var loopback = InetAddress.getLoopbackAddress();
         var addr = new InetSocketAddress(loopback, 0);
-        var path = "/test/foo.html";
         server = HttpServer.create(addr, 0);
         server.createContext("/test", new TestHandler());
         executor = Executors.newCachedThreadPool();
         server.setExecutor(executor);
         server.start();
 
-        uri = new URI("http", null,
-                loopback.getHostName(),
-                server.getAddress().getPort(),
-                path, null, null);
+        uri = URIBuilder.newBuilder()
+                .scheme("http")
+                .host(loopback)
+                .port(server.getAddress().getPort())
+                .path("/test/foo.html")
+                .build();
     }
 
     @Test
     public void testSend() throws Exception {
-        HttpClient client = HttpClient.newHttpClient();
+        HttpClient client = HttpClient.newBuilder()
+                .proxy(NO_PROXY)
+                .build();
         HttpRequest request = HttpRequest.newBuilder(uri)
                 .GET()
                 .build();
@@ -90,7 +96,7 @@ public class SendResponseHeadersTest {
 
     @AfterTest
     public void tearDown() {
-        server.stop(2);
+        server.stop(0);
         executor.shutdown();
     }
 
