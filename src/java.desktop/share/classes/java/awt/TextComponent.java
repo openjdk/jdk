@@ -240,21 +240,18 @@ public class TextComponent extends Component implements Accessible {
      * @see         java.awt.TextComponent#getText
      */
     public synchronized void setText(String t) {
-        if (t == null) {
-            t = "";
-        }
-        TextComponentPeer peer = (TextComponentPeer)this.peer;
-        if (peer != null) {
-            text = peer.getText();
+        text = (t != null) ? t : "";
+        int selectionStart = getSelectionStart();
+        int selectionEnd = getSelectionEnd();
+        TextComponentPeer peer = (TextComponentPeer) this.peer;
+        if (peer != null && !text.equals(peer.getText())) {
             // Please note that we do not want to post an event
             // if TextArea.setText() or TextField.setText() replaces text
             // by same text, that is, if component's text remains unchanged.
-            if (!t.equals(text)) {
-                text = t;
-                peer.setText(text);
-            }
-        } else {
-            text = t;
+            peer.setText(text);
+        }
+        if (selectionStart != selectionEnd) {
+            select(selectionStart, selectionEnd);
         }
     }
 
