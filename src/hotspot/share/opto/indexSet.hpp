@@ -60,8 +60,8 @@ class IndexSet : public ResourceObj {
   // membership of the element in the set.
 
   // The lengths of the index bitfields
-  enum { bit_index_length = 5,
-         word_index_length = 3,
+  enum { bit_index_length  = LP64_ONLY(6) NOT_LP64(5),
+         word_index_length = LP64_ONLY(2) NOT_LP64(3),
          block_index_length = 8 // not used
   };
 
@@ -88,7 +88,7 @@ class IndexSet : public ResourceObj {
     return mask_bits(element >> word_index_offset,word_index_mask);
   }
   static uint get_bit_index(uint element) {
-    return mask_bits(element,bit_index_mask);
+    return mask_bits(element, bit_index_mask);
   }
 
   //------------------------------ class BitBlock ----------------------------
@@ -102,17 +102,17 @@ class IndexSet : public ResourceObj {
     // All of BitBlocks fields and methods are declared private.  We limit
     // access to IndexSet and IndexSetIterator.
 
-    // A BitBlock is composed of some number of 32 bit words.  When a BitBlock
+    // A BitBlock is composed of some number of 64 bit words.  When a BitBlock
     // is not in use by any IndexSet, it is stored on a free list.  The next field
-    // is used by IndexSet to mainting this free list.
+    // is used by IndexSet to maintain this free list.
 
     union {
-      uint32_t _words[words_per_block];
+      uintptr_t _words[words_per_block];
       BitBlock *_next;
     } _data;
 
     // accessors
-    uint32_t* words() { return _data._words; }
+    uintptr_t* words() { return _data._words; }
     void set_next(BitBlock *next) { _data._next = next; }
     BitBlock *next() { return _data._next; }
 
@@ -121,32 +121,32 @@ class IndexSet : public ResourceObj {
     // not assume that the block index has been masked out.
 
     void clear() {
-      memset(words(), 0, sizeof(uint32_t) * words_per_block);
+      memset(words(), 0, sizeof(uintptr_t) * words_per_block);
     }
 
     bool member(uint element) {
       uint word_index = IndexSet::get_word_index(element);
-      uint bit_index = IndexSet::get_bit_index(element);
+      uintptr_t bit_index = IndexSet::get_bit_index(element);
 
-      return ((words()[word_index] & (uint32_t)(0x1 << bit_index)) != 0);
+      return ((words()[word_index] & (uintptr_t(1) << bit_index)) != 0);
     }
 
     bool insert(uint element) {
       uint word_index = IndexSet::get_word_index(element);
-      uint bit_index = IndexSet::get_bit_index(element);
+      uintptr_t bit_index = IndexSet::get_bit_index(element);
 
-      uint32_t bit = (0x1 << bit_index);
-      uint32_t before = words()[word_index];
+      uintptr_t bit = uintptr_t(1) << bit_index;
+      uintptr_t before = words()[word_index];
       words()[word_index] = before | bit;
       return ((before & bit) != 0);
     }
 
     bool remove(uint element) {
       uint word_index = IndexSet::get_word_index(element);
-      uint bit_index = IndexSet::get_bit_index(element);
+      uintptr_t bit_index = IndexSet::get_bit_index(element);
 
-      uint32_t bit = (0x1 << bit_index);
-      uint32_t before = words()[word_index];
+      uintptr_t bit = uintptr_t(1) << bit_index;
+      uintptr_t before = words()[word_index];
       words()[word_index] = before & ~bit;
       return ((before & bit) != 0);
     }
@@ -376,7 +376,7 @@ class IndexSetIterator {
 
  private:
   // The current word we are inspecting
-  uint32_t              _current;
+  uintptr_t             _current;
 
   // What element number are we currently on?
   uint                  _value;
@@ -391,7 +391,7 @@ class IndexSetIterator {
   uint                  _max_blocks;
 
   // A pointer to the contents of the current block
-  uint32_t             *_words;
+  uintptr_t*            _words;
 
   // A pointer to the blocks in our set
   IndexSet::BitBlock **_blocks;
@@ -447,7 +447,7 @@ class IndexSetIterator {
 
   // Return the next element of the set.
   uint next_value() {
-    uint current = _current;
+    uintptr_t current = _current;
     assert(current != 0, "sanity");
     uint advance = count_trailing_zeros(current);
     assert(((current >> advance) & 0x1) == 1, "sanity");

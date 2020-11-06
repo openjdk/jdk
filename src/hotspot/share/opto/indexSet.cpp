@@ -241,7 +241,7 @@ IndexSet::IndexSet (IndexSet *set) {
       set_block(i, &_empty_block);
     } else {
       BitBlock *new_block = alloc_block();
-      memcpy(new_block->words(), block->words(), sizeof(uint32_t) * words_per_block);
+      memcpy(new_block->words(), block->words(), sizeof(uintptr_t) * words_per_block);
       set_block(i, new_block);
     }
   }
