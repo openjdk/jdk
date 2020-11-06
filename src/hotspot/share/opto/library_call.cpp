@@ -1004,6 +1004,7 @@ bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
     return false;
   }
 
+  // check that length is positive
   Node* len_pos_cmp = _gvn.transform(CmpNode::make(length, integercon(0, bt), bt));
   Node* len_pos_bol = _gvn.transform(new BoolNode(len_pos_cmp, BoolTest::ge));
 
@@ -1013,6 +1014,7 @@ bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
                   Deoptimization::Action_make_not_entrant);
   }
 
+  // length is now known postive, add a cast node to make this explicit
   jlong upper_bound = _gvn.type(length)->is_integer(bt)->hi_as_long();
   Node* casted_length = ConstraintCastNode::make(control(), length, TypeInteger::make(0, upper_bound, Type::WidenMax, bt), bt);
   casted_length = _gvn.transform(casted_length);
@@ -1023,6 +1025,7 @@ bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
     return false;
   }
 
+  // Use an unsigned comparison for the range check itself
   Node* rc_cmp = _gvn.transform(CmpNode::make(index, length, bt, true));
   BoolTest::mask btest = BoolTest::lt;
   Node* rc_bool = _gvn.transform(new BoolNode(rc_cmp, btest));
@@ -1043,6 +1046,7 @@ bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
     return false;
   }
 
+  // index is now known to be >= 0 and < length, cast it
   Node* result = ConstraintCastNode::make(control(), index, TypeInteger::make(0, upper_bound, Type::WidenMax, bt), bt);
   result = _gvn.transform(result);
   set_result(result);
