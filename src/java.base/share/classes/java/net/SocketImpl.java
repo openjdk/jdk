@@ -60,7 +60,6 @@ import sun.nio.ch.NioSocketImpl;
  * to use the old implementation. The property and old implementation will be
  * removed in a future version.
  *
- * @author  unascribed
  * @since   1.0
  */
 public abstract class SocketImpl implements SocketOptions {
