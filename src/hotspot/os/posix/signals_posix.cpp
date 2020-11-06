@@ -26,6 +26,7 @@
 
 #include "jvm.h"
 #include "logging/log.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.hpp"
@@ -311,6 +312,8 @@ static int check_pending_signals() {
       }
     } while (threadIsSuspended);
   }
+  ShouldNotReachHere();
+  return 0; // Satisfy compiler
 }
 
 int os::signal_wait() {
@@ -406,78 +409,6 @@ bool PosixSignals::chained_handler(int sig, siginfo_t* siginfo, void* context) {
   return chained;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// signal handling (except suspend/resume)
-
-// This routine may be used by user applications as a "hook" to catch signals.
-// The user-defined signal handler must pass unrecognized signals to this
-// routine, and if it returns true (non-zero), then the signal handler must
-// return immediately.  If the flag "abort_if_unrecognized" is true, then this
-// routine will never retun false (zero), but instead will execute a VM panic
-// routine kill the process.
-//
-// If this routine returns false, it is OK to call it again.  This allows
-// the user-defined signal handler to perform checks either before or after
-// the VM performs its own checks.  Naturally, the user code would be making
-// a serious error if it tried to handle an exception (such as a null check
-// or breakpoint) that the VM was generating for its own correct operation.
-//
-// This routine may recognize any of the following kinds of signals:
-//    SIGBUS, SIGSEGV, SIGILL, SIGFPE, SIGQUIT, SIGPIPE, SIGXFSZ, SIGUSR1.
-// It should be consulted by handlers for any of those signals.
-//
-// The caller of this routine must pass in the three arguments supplied
-// to the function referred to in the "sa_sigaction" (not the "sa_handler")
-// field of the structure passed to sigaction().  This routine assumes that
-// the sa_flags field passed to sigaction() includes SA_SIGINFO and SA_RESTART.
-//
-// Note that the VM will print warnings if it detects conflicting signal
-// handlers, unless invoked with the option "-XX:+AllowUserSignalHandlers".
-//
-
-static void javaSignalHandler(int sig, siginfo_t* info, void* ucVoid);
-static bool javaSignalHandler_inner(int sig, siginfo_t* info, void* ucVoid, bool abort_if_unrecognized);
-
-extern "C" JNIEXPORT int
-#if defined(BSD)
-JVM_handle_bsd_signal
-#elif defined(AIX)
-JVM_handle_aix_signal
-#elif defined(LINUX)
-JVM_handle_linux_signal
-#else
-#error who are you?
-#endif
-  (int signo, siginfo_t* siginfo, void* ucontext, int abort_if_unrecognized)
-{
-  int rc = 0;
-  assert(AllowUserSignalHandlers, "Only valid to call for -XX:+AllowUserSignalHandlers.");
-  // We only allow those signals which had been in the original "contract" (see comment above).
-  switch (signo) {
-    //  Of those signals, we only pass those to the handler which it would
-    //  have gotten anyway had it been properly installed:
-    case SIGSEGV:
-    case SIGILL:
-    case SIGBUS:
-    case SIGFPE:
-    case SIGPIPE:
-    case SIGXFSZ:
-    PPC64_ONLY(case SIGTRAP:)
-      rc = javaSignalHandler_inner(signo, siginfo, ucontext, abort_if_unrecognized);
-      break;
-    // Ignore these to keep backward compatibility:
-    case SIGQUIT:
-    case SIGUSR1:
-      rc = 0;
-      break;
-    // Invalid according to contract:
-    default:
-      ShouldNotReachHere();
-      rc = 0;
-  }
-  return rc;
-}
-
 ///// Synchronous (non-deferrable) error signals (ILL, SEGV, FPE, BUS, TRAP):
 
 // These signals are special because they cannot be deferred and, if they
@@ -535,13 +466,53 @@ public:
   ~ErrnoPreserver() { errno = _saved; }
 };
 
-// Entry point for the hotspot signal handler.
-static void javaSignalHandler(int sig, siginfo_t* info, void* ucVoid) {
-  // Do not add any code here. Add code to javaSignalHandler_inner.
-  (void)javaSignalHandler_inner(sig, info, ucVoid, true);
-}
+////////////////////////////////////////////////////////////////////////////////
+// JVM_handle_(linux|aix|bsd)_signal()
 
-static bool javaSignalHandler_inner(int sig, siginfo_t* info, void* ucVoid, bool abort_if_unrecognized) {
+// This routine is the shared part of the central hotspot signal handler. It can
+// also be called by a user application, if a user application prefers to do
+// signal handling itself - in that case it needs to pass signals the hotspot
+// internally uses on to the hotspot first.
+//
+// The user-defined signal handler must pass unrecognized signals to this
+// routine, and if it returns true (non-zero), then the signal handler must
+// return immediately.  If the flag "abort_if_unrecognized" is true, then this
+// routine will never retun false (zero), but instead will execute a VM panic
+// routine kill the process.
+//
+// If this routine returns false, it is OK to call it again.  This allows
+// the user-defined signal handler to perform checks either before or after
+// the VM performs its own checks.  Naturally, the user code would be making
+// a serious error if it tried to handle an exception (such as a null check
+// or breakpoint) that the VM was generating for its own correct operation.
+//
+// This routine may recognize any of the following kinds of signals:
+//    SIGBUS, SIGSEGV, SIGILL, SIGFPE, SIGQUIT, SIGPIPE, SIGXFSZ, SIGUSR1.
+// It should be consulted by handlers for any of those signals.
+//
+// The caller of this routine must pass in the three arguments supplied
+// to the function referred to in the "sa_sigaction" (not the "sa_handler")
+// field of the structure passed to sigaction().  This routine assumes that
+// the sa_flags field passed to sigaction() includes SA_SIGINFO and SA_RESTART.
+//
+// Note that the VM will print warnings if it detects conflicting signal
+// handlers, unless invoked with the option "-XX:+AllowUserSignalHandlers".
+//
+
+#if defined(BSD)
+#define JVM_HANDLE_XXX_SIGNAL JVM_handle_bsd_signal
+#elif defined(AIX)
+#define JVM_HANDLE_XXX_SIGNAL JVM_handle_aix_signal
+#elif defined(LINUX)
+#define JVM_HANDLE_XXX_SIGNAL JVM_handle_linux_signal
+#else
+#error who are you?
+#endif
+
+extern "C" JNIEXPORT
+int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
+                          void* ucVoid, int abort_if_unrecognized)
+{
   assert(info != NULL && ucVoid != NULL, "sanity");
 
   // Note: it's not uncommon that JNI code uses signal/sigset to install,
@@ -560,7 +531,6 @@ static bool javaSignalHandler_inner(int sig, siginfo_t* info, void* ucVoid, bool
 
   ucontext_t* const uc = (ucontext_t*) ucVoid;
   Thread* const t = Thread::current_or_null_safe();
-  JavaThread* const jt = (t != NULL && t->is_Java_thread()) ? (JavaThread*) t : NULL;
 
   // Handle JFR thread crash protection.
   //  Note: this may cause us to longjmp away. Do not use any code before this
@@ -584,6 +554,7 @@ static bool javaSignalHandler_inner(int sig, siginfo_t* info, void* ucVoid, bool
 
   // Call platform dependent signal handler.
   if (!signal_was_handled) {
+    JavaThread* const jt = (t != NULL && t->is_Java_thread()) ? (JavaThread*) t : NULL;
     signal_was_handled = PosixSignals::pd_hotspot_signal_handler(sig, info, uc, jt);
   }
 
@@ -607,7 +578,7 @@ static bool javaSignalHandler_inner(int sig, siginfo_t* info, void* ucVoid, bool
       }
     }
 #if defined(ZERO) && !defined(PRODUCT)
-    char buf[20];
+    char buf[64];
     VMError::report_and_die(t, sig, pc, info, ucVoid,
           "\n#"
           "\n#    /--------------------\\"
@@ -625,9 +596,14 @@ static bool javaSignalHandler_inner(int sig, siginfo_t* info, void* ucVoid, bool
     // VMError should not return.
     ShouldNotReachHere();
   }
-
   return signal_was_handled;
+}
 
+// Entry point for the hotspot signal handler.
+static void javaSignalHandler(int sig, siginfo_t* info, void* ucVoid) {
+  // Do not add any code here!
+  // Only add code to either JVM_HANDLE_XXX_SIGNAL or PosixSignals::pd_hotspot_signal_handler.
+  (void)JVM_HANDLE_XXX_SIGNAL(sig, info, ucVoid, true);
 }
 
 static void UserHandler(int sig, void *siginfo, void *context) {
@@ -1183,7 +1159,7 @@ int os::get_signal_number(const char* signal_name) {
   return -1;
 }
 
-void set_signal_handler(int sig, bool set_installed) {
+void set_signal_handler(int sig) {
   // Check for overwrite.
   struct sigaction oldAct;
   sigaction(sig, (struct sigaction*)NULL, &oldAct);
@@ -1194,7 +1170,7 @@ void set_signal_handler(int sig, bool set_installed) {
   if (oldhand != CAST_FROM_FN_PTR(void*, SIG_DFL) &&
       oldhand != CAST_FROM_FN_PTR(void*, SIG_IGN) &&
       oldhand != CAST_FROM_FN_PTR(void*, (sa_sigaction_t)javaSignalHandler)) {
-    if (AllowUserSignalHandlers || !set_installed) {
+    if (AllowUserSignalHandlers) {
       // Do not overwrite; user takes responsibility to forward to us.
       return;
     } else if (UseSignalChaining) {
@@ -1211,13 +1187,8 @@ void set_signal_handler(int sig, bool set_installed) {
   struct sigaction sigAct;
   sigfillset(&(sigAct.sa_mask));
   remove_error_signals_from_set(&(sigAct.sa_mask));
-  sigAct.sa_handler = SIG_DFL;
-  if (!set_installed) {
-    sigAct.sa_flags = SA_SIGINFO|SA_RESTART;
-  } else {
-    sigAct.sa_sigaction = javaSignalHandler;
-    sigAct.sa_flags = SA_SIGINFO|SA_RESTART;
-  }
+  sigAct.sa_sigaction = javaSignalHandler;
+  sigAct.sa_flags = SA_SIGINFO|SA_RESTART;
 #if defined(__APPLE__)
   // Needed for main thread as XNU (Mac OS X kernel) will only deliver SIGSEGV
   // (which starts as SIGBUS) on main thread with faulting address inside "stack+guard pages"
@@ -1267,13 +1238,13 @@ void PosixSignals::install_signal_handlers() {
     (*begin_signal_setting)();
   }
 
-  set_signal_handler(SIGSEGV, true);
-  set_signal_handler(SIGPIPE, true);
-  set_signal_handler(SIGBUS, true);
-  set_signal_handler(SIGILL, true);
-  set_signal_handler(SIGFPE, true);
-  PPC64_ONLY(set_signal_handler(SIGTRAP, true);)
-  set_signal_handler(SIGXFSZ, true);
+  set_signal_handler(SIGSEGV);
+  set_signal_handler(SIGPIPE);
+  set_signal_handler(SIGBUS);
+  set_signal_handler(SIGILL);
+  set_signal_handler(SIGFPE);
+  PPC64_ONLY(set_signal_handler(SIGTRAP);)
+  set_signal_handler(SIGXFSZ);
 
 #if defined(__APPLE__)
   // In Mac OS X 10.4, CrashReporter will write a crash log for all 'fatal' signals, including
