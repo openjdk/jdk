@@ -42,7 +42,11 @@ import jdk.test.lib.process.ProcessTools;
  * @build jdk.test.lib.hprof.model.*
  * @build jdk.test.lib.hprof.parser.*
  * @build jdk.test.lib.hprof.util.*
- * @run main/timeout=240 BasicJMapTest
+ * @run main/othervm/timeout=240 -XX:+UseParallelGC BasicJMapTest
+ * @run main/othervm/timeout=240 -XX:+UseG1GC BasicJMapTest
+ * @run main/othervm/timeout=240 -XX:+UseShenandoahGC BasicJMapTest
+ * @run main/othervm/timeout=240 -XX:+UseZGC BasicJMapTest
+ * @run main/othervm/timeout=240 -XX:+UseSerialGC BasicJMapTest
  */
 public class BasicJMapTest {
 
