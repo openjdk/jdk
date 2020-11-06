@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,73 +23,77 @@
 
 /**
  * @test
- * @bug 6293767 6469513
+ * @bug 6293767 6469513 8255546
  * @summary Test for the CardPermission class
- * @library /test/lib
  * @author Andreas Sterbenz
+ * @run testng TestCardPermission
  */
+
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
 
 import javax.smartcardio.*;
 import java.security.Permission;
 
-import static jdk.test.lib.Asserts.assertFalse;
-import static jdk.test.lib.Asserts.assertTrue;
+import static org.testng.Assert.*;
 
 public class TestCardPermission {
 
-    public static void main(String[] args) throws Exception {
-        testAction("*");
-        testAction("connect");
-        testAction("reset");
-        testAction("exclusive");
-        testAction("transmitControl");
-        testAction("getBasicChannel");
-        testAction("openLogicalChannel");
-
-        testAction("connect,reset");
-        testAction("Reset,coNnect", "connect,reset");
-        testAction("exclusive,*,connect", "*");
-        testAction("connect,reset,exclusive,transmitControl,getBasicChannel,openLogicalChannel", "*");
-        testAction(null, null);
-
-        invalidAction("");
-        invalidAction("foo");
-        invalidAction("connect, reset");
-        invalidAction("connect,,reset");
-        invalidAction("connect,");
-        invalidAction(",connect");
-
-
-        testImpliesNotCardPermission("connect");
-        testImpliesNotSubsetCardPermission();
-        testImpliesNameEqualsAll();
-        testImpliesBothSameNameNotAll();
-        testImpliesNameNotSameNotAll();
+    @DataProvider(name = "actions")
+    Object[][] getActions() {
+        return new Object[][]{
+                {"*"},
+                {"connect"},
+                {"reset"},
+                {"exclusive"},
+                {"transmitControl"},
+                {"getBasicChannel"},
+                {"openLogicalChannel"},
+                {"connect,reset"}
+        };
     }
 
-    private static void invalidAction(String s) throws Exception {
-        try {
-            CardPermission c = new CardPermission("*", s);
-            throw new Exception("Created invalid action: " + c);
-        } catch (IllegalArgumentException e) {
-            System.out.println("OK: " + e);
-        }
+    @DataProvider(name = "actionsCanon")
+    Object[][] getActionsCanon() {
+        return new Object[][]{
+                {"Reset,coNnect", "connect,reset"},
+                {"exclusive,*,connect", "*"},
+                {"connect,reset,exclusive,transmitControl,getBasicChannel,openLogicalChannel", "*"},
+                {null, null}
+        };
     }
 
-    private static void testAction(String actions) throws Exception {
-        testAction(actions, actions);
+    @DataProvider(name = "invalidActions")
+    Object[][] getInvalidActions() {
+        return new Object[][]{
+                {""},
+                {"foo"},
+                {"connect, reset"},
+                {"connect,,reset"},
+                {"connect,"},
+                {",connect"}
+        };
     }
 
-    private static void testAction(String actions, String canon) throws Exception {
-        CardPermission p = new CardPermission("*", actions);
-        System.out.println(p);
-        String a = p.getActions();
-        if (canon != null && canon.equals(a) == false) {
-            throw new Exception("Canonical actions mismatch: " + canon + " != " + a);
-        }
+    @Test(dataProvider = "actions")
+    public void testActions(String actions) throws Exception {
+        testActions(actions, actions);
     }
 
-    private static void testImpliesNotCardPermission(String actions) {
+    @Test(dataProvider = "actionsCanon")
+    public void testActionsCanon(String actions, String canon) throws Exception {
+        testActions(actions, canon);
+    }
+
+    @Test(dataProvider = "invalidActions")
+    public void testInvalidActions(String actions) {
+        assertThrows(IllegalArgumentException.class, () -> new CardPermission("*", actions));
+    }
+
+    // Should return false since p2 is not a CardPermission instance
+    @Test
+    public void testImpliesNotCardPermissionInstance() {
+        String actions = "connect";
         CardPermission p1 = new CardPermission("*", actions);
         Permission p2 = new Permission(actions) {
             @Override public boolean implies(Permission permission) { return false; }
@@ -100,29 +104,44 @@ public class TestCardPermission {
         assertFalse(p1.implies(p2));
     }
 
-    private static void testImpliesNotSubsetCardPermission() {
+    // Should return false since p2 actions are not a subset of p1
+    @Test
+    public void testImpliesNotSubsetCardPermission() {
         CardPermission p1 = new CardPermission("*", "connect,reset");
         CardPermission p2 = new CardPermission("*", "transmitControl");
         assertFalse(p1.implies(p2));
     }
 
-    private static void testImpliesNameEqualsAll() {
+    // Should return true since p1 name is * and p2 actions are a subset of p1
+    @Test
+    public void testImpliesNameEqualsAll() {
         CardPermission p1 = new CardPermission("*", "connect,reset");
         CardPermission p2 = new CardPermission("None", "reset");
         assertTrue(p1.implies(p2));
     }
 
-    private static void testImpliesBothSameNameNotAll() {
+    // Should return true since p1 and p2 names are equal
+    @Test
+    public void testImpliesBothSameNameNotAll() {
         CardPermission p1 = new CardPermission("None", "connect,reset");
         CardPermission p2 = new CardPermission("None", "reset");
         assertTrue(p1.implies(p2));
     }
 
-    private static void testImpliesNameNotSameNotAll() {
+    // Should return false since p1 and p2 names are not equal
+    @Test
+    public void testImpliesNameNotSameNotAll() {
         CardPermission p1 = new CardPermission("None", "connect,reset");
         CardPermission p2 = new CardPermission("Other", "reset");
         assertFalse(p1.implies(p2));
     }
 
-
+    private void testActions(String actions, String canon) throws Exception {
+        CardPermission p = new CardPermission("*", actions);
+        System.out.println(p);
+        String a = p.getActions();
+        if (canon != null && !canon.equals(a)) {
+            throw new Exception("Canonical actions mismatch: " + canon + " != " + a);
+        }
+    }
 }
