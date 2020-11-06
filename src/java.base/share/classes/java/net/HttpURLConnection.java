@@ -511,7 +511,7 @@ public abstract class HttpURLConnection extends URLConnection {
      */
     public int getResponseCode() throws IOException {
         /*
-         * We're got the response code already
+         * We've got the response code already
          */
         if (responseCode != -1) {
             return responseCode;
@@ -530,7 +530,7 @@ public abstract class HttpURLConnection extends URLConnection {
         }
 
         /*
-         * If we can't a status-line then re-throw any exception
+         * If we can't find a status-line then re-throw any exception
          * that getInputStream threw.
          */
         String statusLine = getHeaderField(0);
