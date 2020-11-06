@@ -80,7 +80,7 @@ public class RecordedObject {
             public RecordedClass newRecordedClass(ObjectContext objectContext, long id, Object[] values) {
                 return new RecordedClass(objectContext, id, values);
             }
-            
+
             @Override
             public RecordedClassLoader newRecordedClassLoader(ObjectContext objectContext, long id, Object[] values) {
                 return new RecordedClassLoader(objectContext, id, values);
@@ -147,11 +147,11 @@ public class RecordedObject {
                 es.setChunkCompleteHandler(consumer);
             }
 
-			@Override
-			public MetadataEvent newMetadataEvent(List<EventType> previous, List<EventType> current,
-					List<Configuration> configurations) {
-				return new MetadataEvent(previous, current, configurations);
-			}
+            @Override
+            public MetadataEvent newMetadataEvent(List<EventType> previous, List<EventType> current,
+                    List<Configuration> configurations) {
+                return new MetadataEvent(previous, current, configurations);
+            }
         };
         JdkJfrConsumer.setAccess(access);
     }
