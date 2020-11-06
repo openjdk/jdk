@@ -653,8 +653,9 @@ void MachEpilogNode::format( PhaseRegAlloc *ra_, outputStream* st ) const {
   }
   st->print_cr("POPL   EBP"); st->print("\t");
   if (do_polling() && C->is_method_compilation()) {
-    st->print("TEST   PollPage,EAX\t! Poll Safepoint");
-    st->cr(); st->print("\t");
+    st->print("CMPL     rsp, poll_offset[thread]  \n\t"
+              "JA       #safepoint_stub\t"
+              "# Safepoint: poll for GC");
   }
 }
 #endif
@@ -697,12 +698,16 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   }
 
   if (do_polling() && C->is_method_compilation()) {
-    Register pollReg = as_Register(EBX_enc);
+    Register thread = as_Register(EBX_enc);
     MacroAssembler masm(&cbuf);
-    masm.get_thread(pollReg);
-    masm.movl(pollReg, Address(pollReg, in_bytes(Thread::polling_page_offset())));
-    masm.relocate(relocInfo::poll_return_type);
-    masm.testl(rax, Address(pollReg, 0));
+    __ get_thread(thread);
+    Label dummy_label;
+    Label* code_stub = &dummy_label;
+    if (!C->output()->in_scratch_emit_size()) {
+      code_stub = &C->output()->safepoint_poll_table()->add_safepoint(__ offset());
+    }
+    __ relocate(relocInfo::poll_return_type);
+    __ safepoint_poll(*code_stub, thread, true /* at_return */, true /* in_nmethod */);
   }
 }
 

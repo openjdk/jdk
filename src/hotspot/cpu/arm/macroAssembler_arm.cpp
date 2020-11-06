@@ -85,20 +85,6 @@ void AddressLiteral::set_rspec(relocInfo::relocType rtype) {
   }
 }
 
-// Initially added to the Assembler interface as a pure virtual:
-//   RegisterConstant delayed_value(..)
-// for:
-//   6812678 macro assembler needs delayed binding of a few constants (for 6655638)
-// this was subsequently modified to its present name and return type
-RegisterOrConstant MacroAssembler::delayed_value_impl(intptr_t* delayed_value_addr,
-                                                      Register tmp,
-                                                      int offset) {
-  ShouldNotReachHere();
-  return RegisterOrConstant(-1);
-}
-
-
-
 
 // virtual method calling
 void MacroAssembler::lookup_virtual_method(Register recv_klass,

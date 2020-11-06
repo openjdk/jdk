@@ -956,7 +956,8 @@ void ShenandoahBarrierC2Support::test_in_cset(Node*& ctrl, Node*& not_cset_ctrl,
   phase->register_new_node(cset_bool,      old_ctrl);
 }
 
-void ShenandoahBarrierC2Support::call_lrb_stub(Node*& ctrl, Node*& val, Node* load_addr, Node*& result_mem, Node* raw_mem, bool is_native, PhaseIdealLoop* phase) {
+void ShenandoahBarrierC2Support::call_lrb_stub(Node*& ctrl, Node*& val, Node* load_addr, Node*& result_mem, Node* raw_mem,
+                                               ShenandoahBarrierSet::AccessKind kind, PhaseIdealLoop* phase) {
   IdealLoopTree*loop = phase->get_loop(ctrl);
   const TypePtr* obj_type = phase->igvn().type(val)->is_oopptr();
 
@@ -967,13 +968,28 @@ void ShenandoahBarrierC2Support::call_lrb_stub(Node*& ctrl, Node*& val, Node* lo
   mm->set_memory_at(Compile::AliasIdxRaw, raw_mem);
   phase->register_new_node(mm, ctrl);
 
-  address target = LP64_ONLY(UseCompressedOops) NOT_LP64(false) ?
-          CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_narrow) :
-          CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier);
-
-  address calladdr = is_native ? CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_native)
-                               : target;
-  const char* name = is_native ? "load_reference_barrier_native" : "load_reference_barrier";
+  address calladdr = NULL;
+  const char* name = NULL;
+  switch (kind) {
+    case ShenandoahBarrierSet::AccessKind::NATIVE:
+      calladdr = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak);
+      name = "load_reference_barrier_native";
+      break;
+    case ShenandoahBarrierSet::AccessKind::WEAK:
+      calladdr = LP64_ONLY(UseCompressedOops) NOT_LP64(false) ?
+                 CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak_narrow) :
+                 CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak);
+      name = "load_reference_barrier_weak";
+      break;
+    case ShenandoahBarrierSet::AccessKind::NORMAL:
+      calladdr = LP64_ONLY(UseCompressedOops) NOT_LP64(false) ?
+                 CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_narrow) :
+                 CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier);
+      name = "load_reference_barrier";
+      break;
+    default:
+      ShouldNotReachHere();
+  }
   Node* call = new CallLeafNode(ShenandoahBarrierSetC2::shenandoah_load_reference_barrier_Type(), calladdr, name, TypeRawPtr::BOTTOM);
 
   call->init_req(TypeFunc::Control, ctrl);
@@ -1338,7 +1354,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     // even for non-cset objects to prevent ressurrection of such objects.
     // Wires !in_cset(obj) to slot 2 of region and phis
     Node* not_cset_ctrl = NULL;
-    if (!lrb->is_native()) {
+    if (lrb->kind() == ShenandoahBarrierSet::AccessKind::NORMAL) {
       test_in_cset(ctrl, not_cset_ctrl, val, raw_mem, phase);
     }
     if (not_cset_ctrl != NULL) {
@@ -1389,7 +1405,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
         }
       }
     }
-    call_lrb_stub(ctrl, val, addr, result_mem, raw_mem, lrb->is_native(), phase);
+    call_lrb_stub(ctrl, val, addr, result_mem, raw_mem, lrb->kind(), phase);
     region->init_req(_evac_path, ctrl);
     val_phi->init_req(_evac_path, val);
     raw_mem_phi->init_req(_evac_path, result_mem);
@@ -2314,12 +2330,12 @@ void MemoryGraphFixer::collect_memory_nodes() {
                   Node* m = _memory_nodes[c->in(k)->_idx];
                   assert(m != NULL, "expect memory state");
                   if (u->in(k) != m) {
-                    phi = NULL;
+                    phi = NodeSentinel;
                   }
                 }
               }
             }
-            if (phi == NULL) {
+            if (phi == NodeSentinel) {
               phi = new PhiNode(c, Type::MEMORY, _phase->C->get_adr_type(_alias));
               for (uint k = 1; k < c->req(); k++) {
                 Node* m = _memory_nodes[c->in(k)->_idx];
@@ -2328,8 +2344,11 @@ void MemoryGraphFixer::collect_memory_nodes() {
               }
             }
           }
-          assert(phi != NULL, "");
-          regions.map(c->_idx, phi);
+          if (phi != NULL) {
+            regions.map(c->_idx, phi);
+          } else {
+            assert(c->unique_ctrl_out()->Opcode() == Op_Halt, "expected memory state");
+          }
         }
         Node* current_region = regions[c->_idx];
         if (current_region != prev_region) {
@@ -2340,7 +2359,7 @@ void MemoryGraphFixer::collect_memory_nodes() {
         }
       } else if (prev_mem == NULL || prev_mem->is_Phi() || ctrl_or_self(prev_mem) != c) {
         Node* m = _memory_nodes[_phase->idom(c)->_idx];
-        assert(m != NULL, "expect memory state");
+        assert(m != NULL || c->Opcode() == Op_Halt, "expect memory state");
         if (m != prev_mem) {
           _memory_nodes.map(c->_idx, m);
           progress = true;
@@ -2358,13 +2377,14 @@ void MemoryGraphFixer::collect_memory_nodes() {
   while (dead_phis.size() > 0) {
     Node* n = dead_phis.pop();
     n->replace_by(_phase->C->top());
-    n->destruct();
+    n->destruct(&_phase->igvn());
   }
   for (int i = rpo_list.size() - 1; i >= 0; i--) {
     Node* c = rpo_list.at(i);
     if (c->is_Region() && (_include_lsm || !c->is_OuterStripMinedLoop())) {
       Node* n = regions[c->_idx];
-      if (n->is_Phi() && n->_idx >= last && n->in(0) == c) {
+      assert(n != NULL || c->unique_ctrl_out()->Opcode() == Op_Halt, "expected memory state");
+      if (n != NULL && n->is_Phi() && n->_idx >= last && n->in(0) == c) {
         _phase->register_new_node(n, c);
       }
     }
@@ -2373,10 +2393,12 @@ void MemoryGraphFixer::collect_memory_nodes() {
     Node* c = rpo_list.at(i);
     if (c->is_Region() && (_include_lsm || !c->is_OuterStripMinedLoop())) {
       Node* n = regions[c->_idx];
+      assert(n != NULL || c->unique_ctrl_out()->Opcode() == Op_Halt, "expected memory state");
       for (DUIterator_Fast imax, i = c->fast_outs(imax); i < imax; i++) {
         Node* u = c->fast_out(i);
         if (u->is_Phi() && u->bottom_type() == Type::MEMORY &&
             u != n) {
+          assert(c->unique_ctrl_out()->Opcode() != Op_Halt, "expected memory state");
           if (u->adr_type() == TypePtr::BOTTOM) {
             fix_memory_uses(u, n, n, c);
           } else if (_phase->C->get_alias_index(u->adr_type()) == _alias) {
@@ -2879,13 +2901,13 @@ void MemoryGraphFixer::fix_memory_uses(Node* mem, Node* replacement, Node* rep_p
   }
 }
 
-ShenandoahLoadReferenceBarrierNode::ShenandoahLoadReferenceBarrierNode(Node* ctrl, Node* obj, bool native)
-: Node(ctrl, obj), _native(native) {
+ShenandoahLoadReferenceBarrierNode::ShenandoahLoadReferenceBarrierNode(Node* ctrl, Node* obj, ShenandoahBarrierSet::AccessKind kind)
+: Node(ctrl, obj), _kind(kind) {
   ShenandoahBarrierSetC2::bsc2()->state()->add_load_reference_barrier(this);
 }
 
-bool ShenandoahLoadReferenceBarrierNode::is_native() const {
-  return _native;
+ShenandoahBarrierSet::AccessKind ShenandoahLoadReferenceBarrierNode::kind() const {
+  return _kind;
 }
 
 uint ShenandoahLoadReferenceBarrierNode::size_of() const {
@@ -2893,12 +2915,26 @@ uint ShenandoahLoadReferenceBarrierNode::size_of() const {
 }
 
 uint ShenandoahLoadReferenceBarrierNode::hash() const {
-  return Node::hash() + (_native ? 1 : 0);
+  uint hash = Node::hash();
+  switch (_kind) {
+    case ShenandoahBarrierSet::AccessKind::NORMAL:
+      hash += 0;
+      break;
+    case ShenandoahBarrierSet::AccessKind::WEAK:
+      hash += 1;
+      break;
+    case ShenandoahBarrierSet::AccessKind::NATIVE:
+      hash += 2;
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+  return hash;
 }
 
 bool ShenandoahLoadReferenceBarrierNode::cmp( const Node &n ) const {
   return Node::cmp(n) && n.Opcode() == Op_ShenandoahLoadReferenceBarrier &&
-         _native == ((const ShenandoahLoadReferenceBarrierNode&)n)._native;
+         _kind == ((const ShenandoahLoadReferenceBarrierNode&)n)._kind;
 }
 
 const Type* ShenandoahLoadReferenceBarrierNode::bottom_type() const {

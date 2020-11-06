@@ -200,7 +200,6 @@ private:
   ShenandoahVMRoots<CONCURRENT>            _vm_roots;
   ShenandoahClassLoaderDataRoots<CONCURRENT, false /* single-threaded*/>
                                            _cld_roots;
-  ShenandoahConcurrentStringDedupRoots     _dedup_roots;
   ShenandoahNMethodTableSnapshot*          _codecache_snapshot;
   ShenandoahPhaseTimings::Phase            _phase;
 
