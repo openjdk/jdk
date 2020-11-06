@@ -185,20 +185,20 @@ public interface EventStream extends AutoCloseable {
 
     /**
      * Registers an action to perform when new metadata arrives in the stream.
-     * 
+     *
      * The event type of an event always arrives sometime before the actual event.
      * The action must be registered before the stream is started.
-     * 
+     *
      * @implSpec The default implementation of this method is empty.
-     * 
+     *
      * @param action to perform, not {@code null}
-     * 
+     *
      * @throws IllegalStateException if an action is added after the stream has
      *                               started
      */
 	default void onMetadata(Consumer<MetadataEvent> action) {
 	}
- 	
+
     /**
      * Registers an action to perform on all events in the stream.
      *
