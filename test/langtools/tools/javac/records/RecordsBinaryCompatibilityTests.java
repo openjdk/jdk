@@ -79,23 +79,23 @@ public class RecordsBinaryCompatibilityTests extends TestRunner {
                 base,
                 """
                 package pkg;
-                public record R(int i) {}
+                public record R(String i) {}
                 """,
                 """
                 package pkg;
-                public record R(int i, int j) {}
+                public record R(String i, String j) {}
                 """,
                 """
                 package pkg;
                 public class Client {
                     public static void main(String... args) {
-                        R r = new R(0);
+                        R r = new R("Hello World!");
                         System.out.println(r.i());
                     }
                 }
                 """,
                 true,
-                "java.lang.NoSuchMethodError"
+                NoSuchMethodError.class
         );
     }
 
@@ -105,27 +105,27 @@ public class RecordsBinaryCompatibilityTests extends TestRunner {
                 base,
                 """
                 package pkg;
-                public record R(int i, int j) {
-                    public R(int j) {
-                        this(0, j);
+                public record R(String i, String j) {
+                    public R(String j) {
+                        this("Hello World!", j);
                     }
                 }
                 """,
                 """
                 package pkg;
-                public record R(int j) {}
+                public record R(String j) {}
                 """,
                 """
                 package pkg;
                 public class Client {
                     public static void main(String... args) {
-                        R r = new R(2);
+                        R r = new R("Hi");
                         System.out.println(r.i());
                     }
                 }
                 """,
                 true,
-                "java.lang.NoSuchMethodError"
+                NoSuchMethodError.class
         );
     }
 
@@ -135,23 +135,23 @@ public class RecordsBinaryCompatibilityTests extends TestRunner {
                 base,
                 """
                 package pkg;
-                public record R(int i, int j) {}
+                public record R(String i, double j) {}
                 """,
                 """
                 package pkg;
-                public record R(int i, String j) {}
+                public record R(String i, int j) {}
                 """,
                 """
                 package pkg;
                 public class Client {
                     public static void main(String... args) {
-                        R r = new R(0, 1);
+                        R r = new R("Hello World!", 1);
                         System.out.println(r.i());
                     }
                 }
                 """,
                 true,
-                "java.lang.NoSuchMethodError"
+                NoSuchMethodError.class
         );
     }
 
@@ -161,23 +161,23 @@ public class RecordsBinaryCompatibilityTests extends TestRunner {
                 base,
                 """
                 package pkg;
-                public record R(int i, String j) {}
+                public record R(String i, int j) {}
                 """,
                 """
                 package pkg;
-                public record R(String j, int i) {}
+                public record R(int j, String i) {}
                 """,
                 """
                 package pkg;
                 public class Client {
                     public static void main(String... args) {
-                        R r = new R(0, "");
+                        R r = new R("Hello World!", 1);
                         System.out.println(r.i());
                     }
                 }
                 """,
                 true,
-                "java.lang.NoSuchMethodError"
+                NoSuchMethodError.class
         );
     }
 
@@ -187,25 +187,25 @@ public class RecordsBinaryCompatibilityTests extends TestRunner {
                 base,
                 """
                 package pkg;
-                public record R(int j) {
-                    public static int i() { return 0; }
+                public record R(String j) {
+                    public static String i() { return "Hello World!"; }
                 }
                 """,
                 """
                 package pkg;
-                public record R(int i) {}
+                public record R(String i) {}
                 """,
                 """
                 package pkg;
                 public class Client {
                     public static void main(String... args) {
-                        R r = new R(0);
+                        R r = new R("Hello World!");
                         System.out.println(r.i());
                     }
                 }
                 """,
                 true,
-                "java.lang.IncompatibleClassChangeError"
+                IncompatibleClassChangeError.class
         );
     }
 
@@ -215,24 +215,24 @@ public class RecordsBinaryCompatibilityTests extends TestRunner {
                 base,
                 """
                 package pkg;
-                public record R(int i) {
+                public record R(String i) {
                 }
                 """,
                 """
                 package pkg;
-                public record R(int j) {}
+                public record R(String j) {}
                 """,
                 """
                 package pkg;
                 public class Client {
                     public static void main(String... args) {
-                        R r = new R(0);
+                        R r = new R("Hello World!");
                         System.out.println(r.i());
                     }
                 }
                 """,
                 true,
-                "java.lang.NoSuchMethodError"
+                NoSuchMethodError.class
         );
     }
 
@@ -248,7 +248,7 @@ public class RecordsBinaryCompatibilityTests extends TestRunner {
             String recordCode2,
             String clientCode,
             boolean shouldFail,
-            String expectedError) throws Exception {
+            Class<?> expectedError) throws Exception {
         Path src = base.resolve("src");
         Path pkg = src.resolve("pkg");
         Path recordSrc = pkg.resolve("R");
@@ -274,7 +274,7 @@ public class RecordsBinaryCompatibilityTests extends TestRunner {
                 .getOutput(Task.OutputKind.STDOUT);
 
         // let's first check that it runs wo issues
-        if (!output.contains("0")) {
+        if (!output.contains("Hello World!")) {
             throw new AssertionError("execution of Client didn't finish");
         }
 
@@ -294,8 +294,8 @@ public class RecordsBinaryCompatibilityTests extends TestRunner {
                     .run(Task.Expect.FAIL)
                     .writeAll()
                     .getOutput(Task.OutputKind.STDERR);
-            if (!output.startsWith("Exception in thread \"main\" " + expectedError)) {
-                throw new AssertionError(expectedError + " expected");
+            if (!output.startsWith("Exception in thread \"main\" " + expectedError.getName())) {
+                throw new AssertionError(expectedError.getName() + " expected");
             }
         } else {
             new JavaTask(tb)
