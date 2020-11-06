@@ -80,8 +80,8 @@ get_time_stamp(char *tbuf, size_t ltbuf)
                 "%Z", localtime(&t));
 
     // Truncate milliseconds in buffer large enough to hold the
-    // value which is always < 1000 (and so a maximum of 3 digits for "%.3s")
-    char tmp[10 + 1];
+    // value which is always < 1000 (and so a maximum of 3 digits for "%.3d")
+    char tmp[20];
     snprintf(tmp, sizeof(tmp), "%.3d", millisecs);
     snprintf(tbuf, ltbuf, "%s.%s %s", timestamp_date_time, tmp, timestamp_timezone);
 }
