@@ -257,18 +257,6 @@ void ShenandoahHeuristics::record_requested_gc() {
   _gc_times_learned = 0;
 }
 
-bool ShenandoahHeuristics::can_process_references() {
-  if (ShenandoahRefProcFrequency == 0) return false;
-  return true;
-}
-
-bool ShenandoahHeuristics::should_process_references() {
-  if (!can_process_references()) return false;
-  size_t cycle = ShenandoahHeap::heap()->shenandoah_policy()->cycle_counter();
-  // Process references every Nth GC cycle.
-  return cycle % ShenandoahRefProcFrequency == 0;
-}
-
 bool ShenandoahHeuristics::can_unload_classes() {
   if (!ClassUnloading) return false;
   return true;

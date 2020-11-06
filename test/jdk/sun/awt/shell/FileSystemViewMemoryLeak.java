@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,12 @@
  * @summary FileSystemView.isDrive(File) memory leak on "C:\" file reference
  * @modules java.desktop/sun.awt.shell
  * @requires (os.family == "windows")
- * @run main/othervm  -Xmx8m FileSystemViewMemoryLeak
+ * @run main/othervm/timeout=320 -Xmx8m FileSystemViewMemoryLeak
  */
 import java.io.File;
 import java.text.NumberFormat;
+import java.util.concurrent.TimeUnit;
+
 import javax.swing.filechooser.FileSystemView;
 
 public class FileSystemViewMemoryLeak {
@@ -38,6 +40,9 @@ public class FileSystemViewMemoryLeak {
     public static void main(String[] args) {
         test();
     }
+
+    // Will run the test no more than 300 seconds
+    static long endtime = System.nanoTime() + TimeUnit.SECONDS.toNanos(300);
 
     private static void test() {
 
@@ -52,6 +57,10 @@ public class FileSystemViewMemoryLeak {
         int iMax = 50000;
         long lastPercentFinished = 0L;
         for (int i = 0; i < iMax; i++) {
+            if (isComplete()) {
+                System.out.println("Time is over");
+                return;
+            }
 
             long percentFinished = Math.round(((i * 1000d) / (double) iMax));
 
@@ -76,6 +85,10 @@ public class FileSystemViewMemoryLeak {
             // "isDrive()" seems to be the painful method...
             boolean drive = fileSystemView.isDrive(root);
         }
+    }
+
+    private static boolean isComplete() {
+        return endtime - System.nanoTime() < 0;
     }
 }
 

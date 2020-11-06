@@ -44,8 +44,6 @@ public:
   static bool is_sig_ignored(int sig);
   static void signal_sets_init();
 
-  // unblocks the signal masks for current thread
-  static int unblock_thread_signal_mask(const sigset_t *set);
   static void hotspot_sigmask(Thread* thread);
 
   static void print_signal_handler(outputStream* st, int sig, char* buf, size_t buflen);
@@ -64,6 +62,11 @@ public:
 
   // sun.misc.Signal support
   static void jdk_misc_signal_init();
+
+  // Unblock all signals whose delivery cannot be deferred and which, if they happen
+  //  while delivery is blocked, would cause crashes or hangs (see JDK-8252533).
+  static void unblock_error_signals();
+
 };
 
 #endif // OS_POSIX_SIGNALS_POSIX_HPP

@@ -1147,7 +1147,7 @@ void ZStatRelocation::set_at_select_relocation_set(const ZRelocationSetSelectorS
   _stats = stats;
 }
 
-void ZStatRelocation::set_at_populate_relocation_set(size_t forwarding_usage) {
+void ZStatRelocation::set_at_install_relocation_set(size_t forwarding_usage) {
   _forwarding_usage = forwarding_usage;
 }
 
