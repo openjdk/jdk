@@ -57,8 +57,8 @@ static unsigned int find_highest_bit(uintptr_t mask) {
 class RegMask {
 
   enum {
-    _WordBits    = BitsPerLong,
-    _LogWordBits = LogBitsPerLong,
+    _WordBits    = BitsPerWord,
+    _LogWordBits = LogBitsPerWord,
     _RM_SIZE     = LP64_ONLY(align_up(RM_SIZE, 2) >> 1) NOT_LP64(RM_SIZE)
   };
 
