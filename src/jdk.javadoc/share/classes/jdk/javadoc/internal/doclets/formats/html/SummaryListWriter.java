@@ -115,6 +115,7 @@ public abstract class SummaryListWriter<L extends SummaryAPIListBuilder> extends
         };
     }
 
+    private final PageMode pageMode;
     private final String description;
     private final Content headContent;
     private final String titleKey;
@@ -134,6 +135,7 @@ public abstract class SummaryListWriter<L extends SummaryAPIListBuilder> extends
                              PageMode pageMode, String description,
                              Content headContent, String titleKey) {
         super(configuration, filename);
+        this.pageMode = pageMode;
         this.description = description;
         this.headContent = headContent;
         this.titleKey = titleKey;
@@ -209,7 +211,7 @@ public abstract class SummaryListWriter<L extends SummaryAPIListBuilder> extends
     public HtmlTree getHeader() {
         String title = resources.getText(titleKey);
         HtmlTree bodyTree = getBody(getWindowTitle(title));
-        bodyContents.setHeader(getHeader(PageMode.DEPRECATED));
+        bodyContents.setHeader(getHeader(pageMode));
         return bodyTree;
     }
 

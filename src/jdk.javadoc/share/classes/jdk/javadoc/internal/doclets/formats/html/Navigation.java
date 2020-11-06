@@ -296,7 +296,7 @@ public class Navigation {
                 }
                 if (documentedPage == PageMode.PREVIEW) {
                     addActivePageLink(tree, contents.previewLabel,
-                            configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.DEPRECATED));
+                            configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.PREVIEW));
                 } else {
                     addPreviewLink(tree);
                 }
