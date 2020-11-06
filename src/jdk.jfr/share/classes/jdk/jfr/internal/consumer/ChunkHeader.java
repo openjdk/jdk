@@ -59,8 +59,8 @@ public final class ChunkHeader {
     private long durationNanos;
     private long absoluteChunkEnd;
     private boolean isFinished;
-    private boolean finished;
     private boolean finalChunk;
+    private boolean finished;
 
     public ChunkHeader(RecordingInput input) throws IOException {
         this(input, 0, 0);
@@ -109,7 +109,7 @@ public final class ChunkHeader {
         input.position(absoluteEventStart);
     }
 
-    void refresh() throws IOException {
+    public void refresh() throws IOException {
         while (true) {
             byte fileState1;
             input.positionPhysical(absoluteChunkStart + FILE_STATE_POSITION);
@@ -161,6 +161,14 @@ public final class ChunkHeader {
                 }
             }
         }
+    }
+
+    public boolean readHeader(byte[] bytes, int count) throws IOException {
+        input.position(absoluteChunkStart);
+        for (int i = 0; i< count; i++) {
+            bytes[i] = input.readPhysicalByte();
+        }
+        return bytes[(int)FILE_STATE_POSITION] != UPDATING_CHUNK_HEADER;
     }
 
     public void awaitFinished() throws IOException {

@@ -26,9 +26,15 @@
 package jdk.jfr.internal.consumer;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Consumer;
 
+import jdk.jfr.Configuration;
+import jdk.jfr.EventType;
+import jdk.jfr.consumer.EventStream;
+import jdk.jfr.consumer.MetadataEvent;
 import jdk.jfr.consumer.RecordedClass;
 import jdk.jfr.consumer.RecordedClassLoader;
 import jdk.jfr.consumer.RecordedEvent;
@@ -40,6 +46,7 @@ import jdk.jfr.consumer.RecordedThread;
 import jdk.jfr.consumer.RecordedThreadGroup;
 import jdk.jfr.consumer.RecordingFile;
 import jdk.jfr.internal.Type;
+
 /*
  * Purpose of this class is to give package private access to
  * the jdk.jfr.consumer package
@@ -98,4 +105,9 @@ public abstract class JdkJfrConsumer {
     public abstract void setEndTicks(RecordedEvent event, long endTicks);
 
     public abstract Object[] eventValues(RecordedEvent event);
+
+    public abstract void setOnChunkCompleteHandler(EventStream stream, Consumer<Long> consumer);
+
+	public abstract MetadataEvent newMetadataEvent(List<EventType> previous, List<EventType> current, List<Configuration> configuration);
+
 }

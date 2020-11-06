@@ -34,4 +34,6 @@ module jdk.jfr {
     exports jdk.jfr.consumer;
 
     exports jdk.jfr.internal.management to jdk.management.jfr;
+	exports jdk.jfr.internal.consumer to jdk.management.jfr;
+	exports jdk.jfr.internal to jdk.management.jfr;
 }

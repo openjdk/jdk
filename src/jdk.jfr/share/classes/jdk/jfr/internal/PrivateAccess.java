@@ -31,12 +31,14 @@ import java.util.Map;
 
 import jdk.jfr.AnnotationElement;
 import jdk.jfr.Configuration;
+import jdk.jfr.EventSettings;
 import jdk.jfr.EventType;
 import jdk.jfr.FlightRecorderPermission;
 import jdk.jfr.Recording;
 import jdk.jfr.SettingControl;
 import jdk.jfr.SettingDescriptor;
 import jdk.jfr.ValueDescriptor;
+import jdk.jfr.internal.management.EventSettingsModifier;
 
 /**
  * Provides access to package private function in jdk.jfr.
@@ -98,4 +100,6 @@ public abstract class PrivateAccess {
     public abstract PlatformRecorder getPlatformRecorder();
 
     public abstract AccessControlContext getContext(SettingControl sc);
+
+    public abstract EventSettings newEventSettings(EventSettingsModifier esm);
 }

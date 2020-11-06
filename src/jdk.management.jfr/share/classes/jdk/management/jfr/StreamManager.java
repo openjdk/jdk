@@ -27,18 +27,19 @@ package jdk.management.jfr;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Instant;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Timer;
 import java.util.concurrent.TimeUnit;
 
+import jdk.jfr.Recording;
+
 final class StreamManager {
 
-    public static final long TIME_OUT = TimeUnit.MINUTES.toMillis(2);
+    public static final long TIME_OUT = TimeUnit.MINUTES.toMillis(200);
     public static final int DEFAULT_BLOCK_SIZE = 50000;
-
-    private static long idCounter = 0;
 
     private final Map<Long, Stream> streams = new HashMap<>();
     private Timer timer;
@@ -51,9 +52,26 @@ final class StreamManager {
         return stream;
     }
 
+    public synchronized Stream createOngoing(Recording recording, int blockSize, Instant startTime, Instant endTime) {
+        long startTimeNanos = 0;
+        long endTimeNanos = Long.MAX_VALUE;
+        if (!startTime.equals(Instant.MIN)) {
+           startTimeNanos = startTime.getEpochSecond() * 1_000_000_000L; 
+           startTimeNanos += startTime.getNano();
+        }
+        if (!endTime.equals(Instant.MAX)) {
+            endTimeNanos =  endTime.getEpochSecond() * 1_000_000_000L;
+            endTimeNanos+= endTime.getNano();
+
+         }
+        Stream stream = new OngoingStream(recording, blockSize, startTimeNanos, endTimeNanos);
+        streams.put(stream.getId(), stream);
+        scheduleAbort(stream, System.currentTimeMillis() + TIME_OUT);
+        return stream;
+    }
+
     public synchronized Stream create(InputStream is, int blockSize) {
-        idCounter++;
-        Stream stream = new Stream(is, idCounter, blockSize);
+        Stream stream = new FinishedStream(is, blockSize);
         streams.put(stream.getId(), stream);
 
         scheduleAbort(stream, System.currentTimeMillis() + TIME_OUT);

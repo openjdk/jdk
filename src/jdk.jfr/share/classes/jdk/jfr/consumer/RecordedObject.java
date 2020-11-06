@@ -34,15 +34,19 @@ import java.time.OffsetDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 
+import jdk.jfr.Configuration;
+import jdk.jfr.EventType;
 import jdk.jfr.Timespan;
 import jdk.jfr.Timestamp;
 import jdk.jfr.ValueDescriptor;
-import jdk.jfr.internal.consumer.JdkJfrConsumer;
-import jdk.jfr.internal.consumer.ObjectFactory;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.Type;
+import jdk.jfr.internal.consumer.EventDirectoryStream;
+import jdk.jfr.internal.consumer.JdkJfrConsumer;
 import jdk.jfr.internal.consumer.ObjectContext;
+import jdk.jfr.internal.consumer.ObjectFactory;
 import jdk.jfr.internal.tool.PrettyWriter;
 
 /**
@@ -76,7 +80,7 @@ public class RecordedObject {
             public RecordedClass newRecordedClass(ObjectContext objectContext, long id, Object[] values) {
                 return new RecordedClass(objectContext, id, values);
             }
-
+            
             @Override
             public RecordedClassLoader newRecordedClassLoader(ObjectContext objectContext, long id, Object[] values) {
                 return new RecordedClassLoader(objectContext, id, values);
@@ -136,6 +140,18 @@ public class RecordedObject {
             public Object[] eventValues(RecordedEvent event) {
                 return event.objects;
             }
+
+            @Override
+            public void setOnChunkCompleteHandler(EventStream stream, Consumer<Long> consumer) {
+                EventDirectoryStream es = (EventDirectoryStream)stream;
+                es.setChunkCompleteHandler(consumer);
+            }
+
+			@Override
+			public MetadataEvent newMetadataEvent(List<EventType> previous, List<EventType> current,
+					List<Configuration> configurations) {
+				return new MetadataEvent(previous, current, configurations);
+			}
         };
         JdkJfrConsumer.setAccess(access);
     }

@@ -103,8 +103,8 @@ class JfrChunkHeadWriter : public StackObj {
     _writer->be_write(PAD);
   }
 
-  void write_next_generation() {
-    _writer->be_write(_chunk->next_generation());
+  void write_next_generation(bool finalize) {
+    _writer->be_write(finalize ? COMPLETE : _chunk->next_generation());
     _writer->be_write(PAD);
   }
 
@@ -199,9 +199,9 @@ int64_t JfrChunkWriter::write_chunk_header_checkpoint(bool flushpoint) {
   const int64_t chunk_size_offset = reserve(sizeof(int64_t)); // size to be decided when we are done
   be_write(event_size_offset); // last checkpoint offset will be this checkpoint
   head.write_metadata();
-  head.write_time(false);
+  head.write_time(!flushpoint);
   head.write_cpu_frequency();
-  head.write_next_generation();
+  head.write_next_generation(!flushpoint);
   head.write_flags();
   assert(current_offset() - header_content_pos == HEADER_SIZE, "invariant");
   const u4 checkpoint_size = current_offset() - event_size_offset;

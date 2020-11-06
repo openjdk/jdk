@@ -147,6 +147,11 @@ final class FlightRecorderMXBeanImpl extends StandardEmitterMBean implements Fli
         Instant starttime = MBeanUtils.parseTimestamp(s.get("startTime"), Instant.MIN);
         Instant endtime = MBeanUtils.parseTimestamp(s.get("endTime"), Instant.MAX);
         int blockSize = MBeanUtils.parseBlockSize(s.get("blockSize"), StreamManager.DEFAULT_BLOCK_SIZE);
+        if (options.containsKey("streamVersion")) {
+            Recording r = getRecording(id);
+            return streamHandler.createOngoing(r, blockSize, starttime, endtime).getId();
+        }
+
         InputStream is = getExistingRecording(id).getStream(starttime, endtime);
         if (is == null) {
             throw new IOException("No recording data available");

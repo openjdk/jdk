@@ -31,12 +31,15 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import jdk.jfr.EventType;
+import jdk.jfr.consumer.MetadataEvent;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.internal.LongMap;
 import jdk.jfr.internal.consumer.ChunkParser.ParserConfiguration;
 
 final class Dispatcher {
 
+	public final static RecordedEvent FLUSH_MARKER = JdkJfrConsumer.instance().newRecordedEvent(null, null, 0L, 0L);
+	
     final static class EventDispatcher {
         private final static EventDispatcher[] NO_DISPATCHERS = new EventDispatcher[0];
 
@@ -62,6 +65,7 @@ final class Dispatcher {
     }
 
     private final Consumer<Throwable>[] errorActions;
+	private final Consumer<MetadataEvent>[] metadataActions;
     private final Runnable[] flushActions;
     private final Runnable[] closeActions;
     private final EventDispatcher[] dispatchers;
@@ -81,23 +85,40 @@ final class Dispatcher {
         this.flushActions = c.flushActions.toArray(new Runnable[0]);
         this.closeActions = c.closeActions.toArray(new Runnable[0]);
         this.errorActions = c.errorActions.toArray(new Consumer[0]);
+        this.metadataActions = c.metadataActions.toArray(new Consumer[0]);
         this.dispatchers = c.eventActions.toArray(new EventDispatcher[0]);
         this.parserConfiguration = new ParserConfiguration(0, Long.MAX_VALUE, c.reuse, c.ordered, buildFilter(dispatchers));
         this.startTime = c.startTime;
         this.endTime = c.endTime;
         this.startNanos = c.startNanos;
         this.endNanos = c.endNanos;
+        EventDispatcher[] ed = new EventDispatcher[1];
+        ed[0] = new EventDispatcher(null, e -> {
+        	runFlushActions();
+        });
+        dispatcherLookup.put(1L, ed);
+    }
+    
+    public void runMetadataActions(MetadataEvent event) {
+    	 Consumer<MetadataEvent>[] metadataActions = this.metadataActions;
+         for (int i = 0; i < metadataActions.length; i++) {
+             try {
+            	 metadataActions[i].accept(event);
+             } catch (Exception e) {
+                 handleError(e);
+             }
+         }
     }
 
     public void runFlushActions() {
-        Runnable[] flushActions = this.flushActions;
-        for (int i = 0; i < flushActions.length; i++) {
-            try {
-                flushActions[i].run();
-            } catch (Exception e) {
-                handleError(e);
-            }
-        }
+    	 Runnable[] flushActions = this.flushActions;
+         for (int i = 0; i < flushActions.length; i++) {
+             try {
+                 flushActions[i].run();
+             } catch (Exception e) {
+                 handleError(e);
+             }
+         }
     }
 
     public void runCloseActions() {
@@ -185,4 +206,8 @@ final class Dispatcher {
     private void defaultErrorHandler(Throwable e) {
         e.printStackTrace();
     }
+
+	public boolean hasMetadataHandler() {
+		return metadataActions.length > 0;
+	}
 }

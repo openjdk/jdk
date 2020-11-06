@@ -28,6 +28,8 @@ package jdk.jfr;
 import java.time.Duration;
 import java.util.Map;
 
+import jdk.jfr.internal.management.EventSettingsModifier;
+
 /**
  * Convenience class for applying event settings to a recording.
  * <p>
@@ -55,6 +57,26 @@ import java.util.Map;
  */
 public abstract class EventSettings {
 
+    // Used to provide EventSettings for jdk.management.jfr module
+    static class ModifierSettings extends EventSettings {
+        private final EventSettingsModifier modifier;
+
+        ModifierSettings(EventSettingsModifier modigfier) {
+            this.modifier = modigfier;
+        }
+        
+        @Override
+        public EventSettings with(String name, String value) {
+             modifier.with(name, value);
+             return this;
+        }
+
+        @Override
+        Map<String, String> toMap() {
+            return modifier.toMap();
+        }
+    }
+    
     // package private
     EventSettings() {
     }

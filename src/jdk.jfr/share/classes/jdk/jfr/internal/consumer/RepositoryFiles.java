@@ -61,7 +61,7 @@ public final class RepositoryFiles {
 
     private volatile boolean closed;
 
-    RepositoryFiles(FileAccess fileAccess, Path repository) {
+    public RepositoryFiles(FileAccess fileAccess, Path repository) {
         this.repository = repository;
         this.fileAccess = fileAccess;
         this.waitObject = repository == null ? WAIT_OBJECT : new Object();
@@ -71,14 +71,14 @@ public final class RepositoryFiles {
         return pathLookup.get(p);
     }
 
-    Path lastPath() {
+    public Path lastPath() {
         if (waitForPaths()) {
             return pathSet.lastEntry().getValue();
         }
         return null; // closed
     }
 
-    Path firstPath(long startTimeNanos) {
+    public Path firstPath(long startTimeNanos) {
         if (waitForPaths()) {
             // Pick closest chunk before timestamp
             Long time = pathSet.floorKey(startTimeNanos);
@@ -108,7 +108,7 @@ public final class RepositoryFiles {
         return !closed;
     }
 
-    Path nextPath(long startTimeNanos) {
+    public Path nextPath(long startTimeNanos) {
         if (closed) {
             return null;
         }
@@ -207,6 +207,7 @@ public final class RepositoryFiles {
                     pathSet.put(startNanos, p);
                     pathLookup.put(p, startNanos);
                     foundNew = true;
+                    System.out.println("Repository File:" + startNanos + ":" + p.toAbsolutePath());
                 }
             }
             return foundNew;

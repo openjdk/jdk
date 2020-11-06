@@ -86,7 +86,8 @@ public final class PlatformRecording implements AutoCloseable {
     private boolean shouldWriteActiveRecordingEvent = true;
     private Duration flushInterval = Duration.ofSeconds(1);
     private long finalStartChunkNanos = Long.MIN_VALUE;
-
+    private long startNanos = -1;
+    
     PlatformRecording(PlatformRecorder recorder, long id) {
         // Typically the access control context is taken
         // when you call dump(Path) or setDestination(Path),
@@ -103,7 +104,7 @@ public final class PlatformRecording implements AutoCloseable {
     public long start() {
         RecordingState oldState;
         RecordingState newState;
-        long startNanos = -1;
+       
         synchronized (recorder) {
             oldState = getState();
             if (!Utils.isBefore(state, RecordingState.RUNNING)) {
@@ -823,6 +824,10 @@ public final class PlatformRecording implements AutoCloseable {
             return Long.MAX_VALUE;
         }
     }
+    
+    public long getStartNanos() {
+    	return startNanos;
+    }
 
     public long getFinalChunkStartNanos() {
         return finalStartChunkNanos;
@@ -830,5 +835,19 @@ public final class PlatformRecording implements AutoCloseable {
 
     public void setFinalStartnanos(long chunkStartNanos) {
        this.finalStartChunkNanos = chunkStartNanos;
+    }
+
+    public void removeBefore(Instant timestamp) {
+        synchronized (recorder) {
+            while (!chunks.isEmpty()) {
+                RepositoryChunk oldestChunk = chunks.peek();
+                if (!oldestChunk.getEndTime().isBefore(timestamp)) {
+                    return;
+                }
+                chunks.removeFirst();
+                removed(oldestChunk);
+            }
+        }
+
     }
 }

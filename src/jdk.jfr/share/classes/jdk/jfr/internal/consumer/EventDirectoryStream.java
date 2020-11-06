@@ -28,11 +28,16 @@ package jdk.jfr.internal.consumer;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.security.AccessControlContext;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 
+import jdk.jfr.Configuration;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.PlatformRecording;
@@ -56,9 +61,13 @@ public class EventDirectoryStream extends AbstractEventStream {
     private long currentChunkStartNanos;
     private RecordedEvent[] sortedCache;
     private int threadExclusionLevel = 0;
+    protected volatile long maxSize;
+    protected volatile Duration maxAge;
 
-    public EventDirectoryStream(AccessControlContext acc, Path p, FileAccess fileAccess, PlatformRecording recording) throws IOException {
-        super(acc, recording);
+    private volatile Consumer<Long> onCompleteHandler;
+
+    public EventDirectoryStream(AccessControlContext acc, Path p, FileAccess fileAccess, PlatformRecording recording, List<Configuration> configurations) throws IOException {
+        super(acc, recording, configurations);
         this.fileAccess = Objects.requireNonNull(fileAccess);
         this.recording = recording;
         this.repositoryFiles = new RepositoryFiles(fileAccess, p);
@@ -71,8 +80,21 @@ public class EventDirectoryStream extends AbstractEventStream {
         repositoryFiles.close();
         if (currentParser != null) {
             currentParser.close();
+            onComplete(currentParser.getEndNanos());
         }
     }
+    
+    public void setChunkCompleteHandler(Consumer<Long> handler) {
+        onCompleteHandler = handler;
+    }
+
+    private void onComplete(long epochNanos) {
+        Consumer<Long> handler = onCompleteHandler;
+        if (handler != null) {
+            handler.accept(epochNanos);
+        }
+    }
+
 
     @Override
     public void start() {
@@ -119,12 +141,13 @@ public class EventDirectoryStream extends AbstractEventStream {
         }
         currentChunkStartNanos = repositoryFiles.getTimestamp(path);
         try (RecordingInput input = new RecordingInput(path.toFile(), fileAccess)) {
-            currentParser = new ChunkParser(input, disp.parserConfiguration);
-            long segmentStart = currentParser.getStartNanos() + currentParser.getChunkDuration();
-            long filterStart = validStartTime ? disp.startNanos : segmentStart;
-            long filterEnd = disp.endTime != null ? disp.endNanos: Long.MAX_VALUE;
+			currentParser = new ChunkParser(input, disp.parserConfiguration);
+			long segmentStart = currentParser.getStartNanos() + currentParser.getChunkDuration();
+			long filterStart = validStartTime ? disp.startNanos : segmentStart;
+			long filterEnd = disp.endTime != null ? disp.endNanos : Long.MAX_VALUE;
 
             while (!isClosed()) {
+                emitMetadataEvent(currentParser);
                 while (!isClosed() && !currentParser.isChunkFinished()) {
                     disp = dispatcher();
                     if (disp != lastDisp) {
@@ -159,6 +182,7 @@ public class EventDirectoryStream extends AbstractEventStream {
                     return;
                 }
                 long durationNanos = currentParser.getChunkDuration();
+                long endChunkNanos = currentParser.getEndNanos();
                 if (durationNanos == 0) {
                     // Avoid reading the same chunk again and again if
                     // duration is 0 ns
@@ -169,7 +193,9 @@ public class EventDirectoryStream extends AbstractEventStream {
                     return; // stream closed
                 }
                 currentChunkStartNanos = repositoryFiles.getTimestamp(path);
+                
                 input.setFile(path);
+                onComplete(endChunkNanos);
                 currentParser = currentParser.newChunkParser();
                 // TODO: Optimization. No need filter when we reach new chunk
                 // Could set start = 0;
@@ -199,6 +225,7 @@ public class EventDirectoryStream extends AbstractEventStream {
             }
             sortedCache[index++] = e;
         }
+        emitMetadataEvent(currentParser);
         // no events found
         if (index == 0 && currentParser.isChunkFinished()) {
             return;
@@ -217,6 +244,7 @@ public class EventDirectoryStream extends AbstractEventStream {
         while (true) {
             RecordedEvent e = currentParser.readStreamingEvent();
             if (e == null) {
+            	emitMetadataEvent(currentParser);
                 return true;
             } else {
                 c.dispatch(e);
@@ -224,4 +252,11 @@ public class EventDirectoryStream extends AbstractEventStream {
         }
     }
 
+    public void setMaxSize(long maxSize)  {
+        this.maxSize = maxSize;
+    }
+    
+    public void setMaxAge(Duration maxAge)  {
+        this.maxAge = maxAge;
+    }
 }

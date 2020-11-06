@@ -31,11 +31,16 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
+import jdk.jfr.Configuration;
+import jdk.jfr.EventType;
 import jdk.jfr.consumer.EventStream;
+import jdk.jfr.consumer.MetadataEvent;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
@@ -47,7 +52,7 @@ import jdk.jfr.internal.SecuritySupport;
  * Purpose of this class is to simplify the implementation of
  * an event stream.
  */
-abstract class AbstractEventStream implements EventStream {
+public abstract class AbstractEventStream implements EventStream {
     private final static AtomicLong counter = new AtomicLong(0);
 
     private final Object terminated = new Object();
@@ -55,15 +60,17 @@ abstract class AbstractEventStream implements EventStream {
     private final AccessControlContext accessControllerContext;
     private final StreamConfiguration configuration = new StreamConfiguration();
     private final PlatformRecording recording;
-
+	private final List<Configuration> configurations;
+	
     private volatile Thread thread;
     private Dispatcher dispatcher;
 
     private volatile boolean closed;
 
-    AbstractEventStream(AccessControlContext acc, PlatformRecording recording) throws IOException {
+    AbstractEventStream(AccessControlContext acc, PlatformRecording recording, List<Configuration> configurations) throws IOException {
         this.accessControllerContext = Objects.requireNonNull(acc);
         this.recording = recording;
+        this.configurations = configurations;
     }
 
     @Override
@@ -272,4 +279,30 @@ abstract class AbstractEventStream implements EventStream {
         counter.incrementAndGet();
         return "JFR Event Stream " + counter;
     }
+    
+
+	@Override
+	public void onMetadata(Consumer<MetadataEvent> action) {
+		Objects.requireNonNull(action);
+		synchronized (configuration) {
+			if (configuration.started) {
+				throw new IllegalStateException("Stream is already started");
+			}
+		}
+	    configuration.addMetadataAction(action);
+	}
+
+	protected final void emitMetadataEvent(ChunkParser parser) {
+		if (parser.hasStaleMetadata()) {
+			if (dispatcher.hasMetadataHandler()) {
+				List<EventType> ce = parser.getEventTypes();
+				List<EventType> pe = parser.getPreviousEventTypes();
+				if  (ce != pe)  {
+					MetadataEvent me = JdkJfrConsumer.instance().newMetadataEvent(pe, ce, configurations);
+					dispatcher.runMetadataActions(me);
+				} 
+				parser.setStaleMetadata(false);
+			}
+		}
+	}
 }

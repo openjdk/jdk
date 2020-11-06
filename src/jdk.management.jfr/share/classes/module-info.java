@@ -30,7 +30,7 @@
  * @since 9
  */
 module jdk.management.jfr {
-    requires jdk.jfr;
+    requires transitive jdk.jfr;
     requires jdk.management;
 
     requires transitive java.management;

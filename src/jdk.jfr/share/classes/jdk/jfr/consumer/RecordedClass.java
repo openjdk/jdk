@@ -25,6 +25,7 @@
 
 package jdk.jfr.consumer;
 
+import jdk.jfr.EventType;
 import jdk.jfr.internal.consumer.ObjectContext;
 
 /**

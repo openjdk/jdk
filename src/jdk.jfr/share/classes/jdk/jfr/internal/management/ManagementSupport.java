@@ -28,12 +28,18 @@ package jdk.jfr.internal.management;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 
+import jdk.jfr.Configuration;
+import jdk.jfr.EventSettings;
 import jdk.jfr.EventType;
 import jdk.jfr.Recording;
+import jdk.jfr.consumer.EventStream;
 import jdk.jfr.internal.JVMSupport;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
@@ -43,6 +49,7 @@ import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.Utils;
 import jdk.jfr.internal.WriteableUserPath;
+import jdk.jfr.internal.consumer.JdkJfrConsumer;
 import jdk.jfr.internal.instrument.JDKEvents;
 
 /**
@@ -92,6 +99,11 @@ public final class ManagementSupport {
     public static void logError(String message) {
         Logger.log(LogTag.JFR, LogLevel.ERROR, message);
     }
+    
+    // Reuse internal logging mechanism
+    public static void logDebug(String message) {
+        Logger.log(LogTag.JFR, LogLevel.DEBUG, message);
+    }
 
     // Get the textual representation when the destination was set, which
     // requires access to jdk.jfr.internal.PlatformRecording
@@ -108,4 +120,28 @@ public final class ManagementSupport {
             pr.checkSetDestination(wup);
         }
     }
+    
+    public static EventSettings newEventSettings(EventSettingsModifier esm) {
+        return PrivateAccess.getInstance().newEventSettings(esm);
+    }
+
+    public static void removeBefore(Recording recording, Instant timestamp) {
+        PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
+        pr.removeBefore(timestamp);
+        
+    }
+    public static void setOnChunkCompleteHandler(EventStream stream, Consumer<Long> consumer) {
+        JdkJfrConsumer.instance().setOnChunkCompleteHandler(stream, consumer);
+    }
+
+	public static long getStartTimeNanos(Recording recording) {
+		PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
+		return pr.getStartNanos();
+	}
+
+	public static Configuration newConfiguration(String name, String label, String description, String provider,
+			Map<String, String> settings, String contents) {
+		return PrivateAccess.getInstance().newConfiguration(name, label, description, provider, settings, contents);
+	}
+
 }

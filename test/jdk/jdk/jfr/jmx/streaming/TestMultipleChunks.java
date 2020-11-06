@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,34 +23,47 @@
  * questions.
  */
 
-package jdk.management.jfr;
+package jdk.jfr.jmx.streaming;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.util.concurrent.atomic.AtomicLong;
+import java.lang.management.ManagementFactory;
+import java.util.concurrent.CountDownLatch;
 
-abstract class Stream implements Closeable {
+import javax.management.MBeanServerConnection;
 
-    private static AtomicLong idCounter = new AtomicLong();;
+import jdk.jfr.Event;
+import jdk.jfr.Recording;
+import jdk.management.jfr.RemoteRecordingStream;
 
-    private final long identifier;
-    private volatile long time;
-    public Stream() {
-        this.identifier = idCounter.incrementAndGet();
-    }
+/**
+ * @test
+ * @key jfr
+ * @summary Tests that a RemoteRecordingStream can be closed
+ * @requires vm.hasJFR
+ * @library /test/lib /test/jdk
+ * @run main/othervm jdk.jfr.jmx.streaming.TestMultipleChunks
+ */
+public class TestMultipleChunks {
 
-    final protected void touch() {
-        time = System.currentTimeMillis();
-    }
+	static class Snake extends Event {
+	}
 
-    final public long getLastTouched() {
-        return time;
-    }
+	public static void main(String... args) throws Exception {
+		CountDownLatch latch = new CountDownLatch(5);
+		MBeanServerConnection conn = ManagementFactory.getPlatformMBeanServer();
+		try (RemoteRecordingStream s = new RemoteRecordingStream(conn)) {
+			s.onEvent(e -> latch.countDown());
+			s.startAsync();
+			for (int i = 0; i < 5; i++) {
+				Snake snake = new Snake();
+				snake.commit();
+				rotate();
+			}
+		}
+	}
 
-    abstract public byte[] read() throws IOException;
-
-    final public long getId() {
-        return identifier;
-
-    }
+	private static void rotate() {
+		try (Recording r = new Recording()) {
+			r.start();
+		}
+	}
 }
