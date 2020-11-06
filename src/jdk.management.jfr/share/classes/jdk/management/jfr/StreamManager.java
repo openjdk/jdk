@@ -56,7 +56,7 @@ final class StreamManager {
         long startTimeNanos = 0;
         long endTimeNanos = Long.MAX_VALUE;
         if (!startTime.equals(Instant.MIN)) {
-           startTimeNanos = startTime.getEpochSecond() * 1_000_000_000L; 
+           startTimeNanos = startTime.getEpochSecond() * 1_000_000_000L;
            startTimeNanos += startTime.getNano();
         }
         if (!endTime.equals(Instant.MAX)) {

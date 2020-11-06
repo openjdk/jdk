@@ -99,7 +99,7 @@ public final class ManagementSupport {
     public static void logError(String message) {
         Logger.log(LogTag.JFR, LogLevel.ERROR, message);
     }
-    
+
     // Reuse internal logging mechanism
     public static void logDebug(String message) {
         Logger.log(LogTag.JFR, LogLevel.DEBUG, message);
@@ -120,7 +120,7 @@ public final class ManagementSupport {
             pr.checkSetDestination(wup);
         }
     }
-    
+
     public static EventSettings newEventSettings(EventSettingsModifier esm) {
         return PrivateAccess.getInstance().newEventSettings(esm);
     }
@@ -128,20 +128,20 @@ public final class ManagementSupport {
     public static void removeBefore(Recording recording, Instant timestamp) {
         PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
         pr.removeBefore(timestamp);
-        
+
     }
     public static void setOnChunkCompleteHandler(EventStream stream, Consumer<Long> consumer) {
         JdkJfrConsumer.instance().setOnChunkCompleteHandler(stream, consumer);
     }
 
-	public static long getStartTimeNanos(Recording recording) {
-		PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
-		return pr.getStartNanos();
-	}
+        public static long getStartTimeNanos(Recording recording) {
+                PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
+                return pr.getStartNanos();
+        }
 
-	public static Configuration newConfiguration(String name, String label, String description, String provider,
-			Map<String, String> settings, String contents) {
-		return PrivateAccess.getInstance().newConfiguration(name, label, description, provider, settings, contents);
-	}
+        public static Configuration newConfiguration(String name, String label, String description, String provider,
+                        Map<String, String> settings, String contents) {
+                return PrivateAccess.getInstance().newConfiguration(name, label, description, provider, settings, contents);
+        }
 
 }

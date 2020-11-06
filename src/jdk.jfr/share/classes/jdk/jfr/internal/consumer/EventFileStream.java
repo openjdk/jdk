@@ -90,7 +90,7 @@ public final class EventFileStream extends AbstractEventStream {
 
         currentParser = new ChunkParser(input, disp.parserConfiguration);
         while (!isClosed()) {
-        	emitMetadataEvent(currentParser);
+                emitMetadataEvent(currentParser);
             if (currentParser.getStartNanos() > end) {
                 close();
                 return;
@@ -121,15 +121,15 @@ public final class EventFileStream extends AbstractEventStream {
         while (true) {
             event = currentParser.readEvent();
             if (event == Dispatcher.FLUSH_MARKER) {
-            	emitMetadataEvent(currentParser);
-            	dispatchOrdered(c, index);
+                emitMetadataEvent(currentParser);
+                dispatchOrdered(c, index);
                 index = 0;
                 continue;
             }
-            
+
             if (event == null) {
-            	emitMetadataEvent(currentParser);
-            	dispatchOrdered(c, index);
+                emitMetadataEvent(currentParser);
+                dispatchOrdered(c, index);
                 return;
             }
             if (index == cacheSorted.length) {
@@ -141,18 +141,18 @@ public final class EventFileStream extends AbstractEventStream {
         }
     }
 
-	private void dispatchOrdered(Dispatcher c, int index) {
-		Arrays.sort(cacheSorted, 0, index, EVENT_COMPARATOR);
-		for (int i = 0; i < index; i++) {
-		    c.dispatch(cacheSorted[i]);
-		}
-	}
+        private void dispatchOrdered(Dispatcher c, int index) {
+                Arrays.sort(cacheSorted, 0, index, EVENT_COMPARATOR);
+                for (int i = 0; i < index; i++) {
+                    c.dispatch(cacheSorted[i]);
+                }
+        }
 
     private void processUnordered(Dispatcher c) throws IOException {
         while (!isClosed()) {
             RecordedEvent event = currentParser.readEvent();
             if (event == null) {
-            	emitMetadataEvent(currentParser);
+                emitMetadataEvent(currentParser);
                 return;
             }
             if (event != Dispatcher.FLUSH_MARKER) {

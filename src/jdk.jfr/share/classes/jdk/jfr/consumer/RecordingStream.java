@@ -98,14 +98,14 @@ public final class RecordingStream implements AutoCloseable, EventStream {
     }
 
     private List<Configuration> configurations() {
-    	try {
-    		return Configuration.getConfigurations();
-    	} catch (Exception e) {
-    		return Collections.emptyList();
-    	}
-	}
+        try {
+                return Configuration.getConfigurations();
+        } catch (Exception e) {
+                return Collections.emptyList();
+        }
+        }
 
-	/**
+        /**
      * Creates a recording stream using settings from a configuration.
      * <p>
      * The following example shows how to create a recording stream that uses a
@@ -375,8 +375,8 @@ public final class RecordingStream implements AutoCloseable, EventStream {
         directoryStream.awaitTermination();
     }
 
-	@Override
-	public void onMetadata(Consumer<MetadataEvent> action) {
-		directoryStream.onMetadata(action);
-	}
+        @Override
+        public void onMetadata(Consumer<MetadataEvent> action) {
+                directoryStream.onMetadata(action);
+        }
 }

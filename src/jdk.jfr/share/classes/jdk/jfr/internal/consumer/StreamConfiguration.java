@@ -40,7 +40,7 @@ final class StreamConfiguration {
     final List<Runnable> flushActions = new ArrayList<>();
     final List<EventDispatcher> eventActions = new ArrayList<>();
     final List<Consumer<Throwable>> errorActions = new ArrayList<>();
-	final List<Consumer<MetadataEvent>> metadataActions = new ArrayList<>();
+        final List<Consumer<MetadataEvent>> metadataActions = new ArrayList<>();
 
     boolean reuse = true;
     boolean ordered = true;
@@ -88,7 +88,7 @@ final class StreamConfiguration {
         errorActions.add(action);
         changed = true;
     }
-    
+
     public synchronized void addMetadataAction(Consumer<MetadataEvent> action) {
         metadataActions.add(action);
         changed = true;

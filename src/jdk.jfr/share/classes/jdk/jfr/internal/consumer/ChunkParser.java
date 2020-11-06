@@ -109,8 +109,8 @@ public final class ChunkParser {
     private volatile boolean closed;
     private MetadataDescriptor previousMetadata;
     private MetadataDescriptor metadata;
-	private boolean staleMetadata = true;
-    
+        private boolean staleMetadata = true;
+
     public ChunkParser(RecordingInput input) throws IOException {
         this(input, new ParserConfiguration());
     }
@@ -166,7 +166,7 @@ public final class ChunkParser {
 
     void updateConfiguration(ParserConfiguration configuration, boolean resetEventCache) {
         this.configuration = configuration;
-        
+
         parsers.forEach(p -> {
             if (p instanceof EventParser) {
                 EventParser ep = (EventParser) p;
@@ -231,7 +231,7 @@ public final class ChunkParser {
         return null;
     }
 
-	/**
+        /**
      * Reads an event and returns null when the chunk ends
      */
     public RecordedEvent readEvent() throws IOException {
@@ -433,14 +433,14 @@ public final class ChunkParser {
         return metadata.getEventTypes();
     }
 
-	public List<EventType> getPreviousEventTypes() {
-		if (previousMetadata == null) {
-			return Collections.emptyList();
-		} else {
-			return previousMetadata.getEventTypes();
-		}
-	}
-    
+        public List<EventType> getPreviousEventTypes() {
+                if (previousMetadata == null) {
+                        return Collections.emptyList();
+                } else {
+                        return previousMetadata.getEventTypes();
+                }
+        }
+
     public boolean isLastChunk() throws IOException {
         return chunkHeader.isLastChunk();
     }
@@ -477,13 +477,13 @@ public final class ChunkParser {
     public long getEndNanos() {
         return getStartNanos() + getChunkDuration();
     }
-    
 
-	public void setStaleMetadata(boolean stale) {
-		this.staleMetadata = stale;
-	}
 
-	public boolean hasStaleMetadata() {
-		return staleMetadata;
-	}
+        public void setStaleMetadata(boolean stale) {
+                this.staleMetadata = stale;
+        }
+
+        public boolean hasStaleMetadata() {
+                return staleMetadata;
+        }
 }

@@ -83,7 +83,7 @@ public class EventDirectoryStream extends AbstractEventStream {
             onComplete(currentParser.getEndNanos());
         }
     }
-    
+
     public void setChunkCompleteHandler(Consumer<Long> handler) {
         onCompleteHandler = handler;
     }
@@ -141,10 +141,10 @@ public class EventDirectoryStream extends AbstractEventStream {
         }
         currentChunkStartNanos = repositoryFiles.getTimestamp(path);
         try (RecordingInput input = new RecordingInput(path.toFile(), fileAccess)) {
-			currentParser = new ChunkParser(input, disp.parserConfiguration);
-			long segmentStart = currentParser.getStartNanos() + currentParser.getChunkDuration();
-			long filterStart = validStartTime ? disp.startNanos : segmentStart;
-			long filterEnd = disp.endTime != null ? disp.endNanos : Long.MAX_VALUE;
+                        currentParser = new ChunkParser(input, disp.parserConfiguration);
+                        long segmentStart = currentParser.getStartNanos() + currentParser.getChunkDuration();
+                        long filterStart = validStartTime ? disp.startNanos : segmentStart;
+                        long filterEnd = disp.endTime != null ? disp.endNanos : Long.MAX_VALUE;
 
             while (!isClosed()) {
                 emitMetadataEvent(currentParser);
@@ -193,7 +193,7 @@ public class EventDirectoryStream extends AbstractEventStream {
                     return; // stream closed
                 }
                 currentChunkStartNanos = repositoryFiles.getTimestamp(path);
-                
+
                 input.setFile(path);
                 onComplete(endChunkNanos);
                 currentParser = currentParser.newChunkParser();
@@ -244,7 +244,7 @@ public class EventDirectoryStream extends AbstractEventStream {
         while (true) {
             RecordedEvent e = currentParser.readStreamingEvent();
             if (e == null) {
-            	emitMetadataEvent(currentParser);
+                emitMetadataEvent(currentParser);
                 return true;
             } else {
                 c.dispatch(e);
@@ -255,7 +255,7 @@ public class EventDirectoryStream extends AbstractEventStream {
     public void setMaxSize(long maxSize)  {
         this.maxSize = maxSize;
     }
-    
+
     public void setMaxAge(Duration maxAge)  {
         this.maxAge = maxAge;
     }

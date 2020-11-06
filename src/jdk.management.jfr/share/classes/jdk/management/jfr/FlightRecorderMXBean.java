@@ -348,7 +348,7 @@ public interface FlightRecorderMXBean extends PlatformManagedObject {
      * </tr>
      * <tr>
      * <th scope="row">{@code streamVersion}</th>
-     * <td>Specifies format to use when reading data from a running recording 
+     * <td>Specifies format to use when reading data from a running recording
      * </td>
      * <td>{@code "1.0"}</td>
      * <td>A version number with a major and minor.<br>

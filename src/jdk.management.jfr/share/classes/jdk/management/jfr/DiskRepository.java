@@ -277,7 +277,7 @@ final class DiskRepository implements Closeable {
             Duration d = Duration.ofNanos(durationNanos);
             currentChunk.endTime = currentChunk.startTime.plus(d);
         }
-        raf.seek(position); 
+        raf.seek(position);
     }
 
     private void flush() throws IOException {
@@ -391,37 +391,37 @@ final class DiskRepository implements Closeable {
          }
         cleanUpDeadChunk(count + 10);
     }
-    
-	public synchronized void onChunkComplete(Instant timestamp) {
-		int count = 0;
-		while (!activeChunks.isEmpty()) {
-			DiskChunk oldestChunk = activeChunks.peek();
-			if (oldestChunk.startTime.isBefore(timestamp)) {
-				System.out.println("Remove chunk " + oldestChunk.path.toAbsolutePath());
-				removeOldestChunk();
-				count++;
-			} else {
-				break;
-			}
-		}
-		cleanUpDeadChunk(count + 10);
-	}
-    
-	private void addChunk(DiskChunk chunk) {
-		if (maxAge != null) {
-			trimToAge(chunk.endTime.minus(maxAge));
-		}
-		activeChunks.push(chunk);
-		size += chunk.size;
-		trimToSize();
-	}
-    
+
+        public synchronized void onChunkComplete(Instant timestamp) {
+                int count = 0;
+                while (!activeChunks.isEmpty()) {
+                        DiskChunk oldestChunk = activeChunks.peek();
+                        if (oldestChunk.startTime.isBefore(timestamp)) {
+                                System.out.println("Remove chunk " + oldestChunk.path.toAbsolutePath());
+                                removeOldestChunk();
+                                count++;
+                        } else {
+                                break;
+                        }
+                }
+                cleanUpDeadChunk(count + 10);
+        }
+
+        private void addChunk(DiskChunk chunk) {
+                if (maxAge != null) {
+                        trimToAge(chunk.endTime.minus(maxAge));
+                }
+                activeChunks.push(chunk);
+                size += chunk.size;
+                trimToSize();
+        }
+
     private void removeOldestChunk() {
         DiskChunk chunk = activeChunks.poll();
         deadChunks.add(chunk);
         size-=chunk.size;
     }
-    
+
     private void cleanUpDeadChunk(int maxCount) {
         int count = 0;
         Iterator<DiskChunk> iterator = deadChunks.iterator();
@@ -440,6 +440,6 @@ final class DiskRepository implements Closeable {
         }
     }
 
-   
+
 
 }

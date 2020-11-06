@@ -38,8 +38,8 @@ import jdk.jfr.internal.consumer.ChunkParser.ParserConfiguration;
 
 final class Dispatcher {
 
-	public final static RecordedEvent FLUSH_MARKER = JdkJfrConsumer.instance().newRecordedEvent(null, null, 0L, 0L);
-	
+        public final static RecordedEvent FLUSH_MARKER = JdkJfrConsumer.instance().newRecordedEvent(null, null, 0L, 0L);
+
     final static class EventDispatcher {
         private final static EventDispatcher[] NO_DISPATCHERS = new EventDispatcher[0];
 
@@ -65,7 +65,7 @@ final class Dispatcher {
     }
 
     private final Consumer<Throwable>[] errorActions;
-	private final Consumer<MetadataEvent>[] metadataActions;
+        private final Consumer<MetadataEvent>[] metadataActions;
     private final Runnable[] flushActions;
     private final Runnable[] closeActions;
     private final EventDispatcher[] dispatchers;
@@ -94,16 +94,16 @@ final class Dispatcher {
         this.endNanos = c.endNanos;
         EventDispatcher[] ed = new EventDispatcher[1];
         ed[0] = new EventDispatcher(null, e -> {
-        	runFlushActions();
+                runFlushActions();
         });
         dispatcherLookup.put(1L, ed);
     }
-    
+
     public void runMetadataActions(MetadataEvent event) {
-    	 Consumer<MetadataEvent>[] metadataActions = this.metadataActions;
+         Consumer<MetadataEvent>[] metadataActions = this.metadataActions;
          for (int i = 0; i < metadataActions.length; i++) {
              try {
-            	 metadataActions[i].accept(event);
+                 metadataActions[i].accept(event);
              } catch (Exception e) {
                  handleError(e);
              }
@@ -111,7 +111,7 @@ final class Dispatcher {
     }
 
     public void runFlushActions() {
-    	 Runnable[] flushActions = this.flushActions;
+         Runnable[] flushActions = this.flushActions;
          for (int i = 0; i < flushActions.length; i++) {
              try {
                  flushActions[i].run();
@@ -207,7 +207,7 @@ final class Dispatcher {
         e.printStackTrace();
     }
 
-	public boolean hasMetadataHandler() {
-		return metadataActions.length > 0;
-	}
+        public boolean hasMetadataHandler() {
+                return metadataActions.length > 0;
+        }
 }

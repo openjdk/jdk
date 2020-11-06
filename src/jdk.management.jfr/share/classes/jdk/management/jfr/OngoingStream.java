@@ -34,7 +34,7 @@ final class OngoingStream extends Stream {
     private long startTimeNanos;
     private Path path;
 
-	private boolean first = true;
+        private boolean first = true;
 
     public OngoingStream(Recording recording, int blockSize, long startTimeNanos, long endTimeNanos) {
         super();
@@ -44,38 +44,38 @@ final class OngoingStream extends Stream {
         this.endTimeNanos = endTimeNanos;
         this.repositoryFiles = new RepositoryFiles(SecuritySupport.PRIVILEGED, null);
     }
-    
+
     public synchronized byte[] read() throws IOException  {
-    	try {
-        	return readBytes();
-    	} catch (IOException ioe) {
-    		if (recording.getState() == RecordingState.CLOSED) {
-    			// Recording closed, return null;
-    			return null;
-    		}
-    		// Something unexpected has happened.
-    		throw ioe;
-    	}
+        try {
+                return readBytes();
+        } catch (IOException ioe) {
+                if (recording.getState() == RecordingState.CLOSED) {
+                        // Recording closed, return null;
+                        return null;
+                }
+                // Something unexpected has happened.
+                throw ioe;
+        }
     }
 
     public synchronized byte[] readBytes() throws IOException {
         touch();
         while (true) {
-        	if (recording.getState() == RecordingState.NEW) {
-        		return EMPTY_ARRAY;
-        	}
-        	
-        	if (recording.getState() == RecordingState.DELAYED) {
-        		return EMPTY_ARRAY;
-        	}
-        	
-        	if (first) {
-        		// In case stream starts before recording
-        		long s = ManagementSupport.getStartTimeNanos(recording);
-        		startTimeNanos = Math.max(s, startTimeNanos);
-        		first = false;
-        	}
-        	
+                if (recording.getState() == RecordingState.NEW) {
+                        return EMPTY_ARRAY;
+                }
+
+                if (recording.getState() == RecordingState.DELAYED) {
+                        return EMPTY_ARRAY;
+                }
+
+                if (first) {
+                        // In case stream starts before recording
+                        long s = ManagementSupport.getStartTimeNanos(recording);
+                        startTimeNanos = Math.max(s, startTimeNanos);
+                        first = false;
+                }
+
             if (startTimeNanos > endTimeNanos) {
                 return null;
             }
@@ -105,7 +105,7 @@ final class OngoingStream extends Stream {
                 header.refresh();
                 if (position >= header.getChunkSize()) {
                     return EMPTY_ARRAY;
-                }                
+                }
             }
         }
     }
@@ -162,7 +162,7 @@ final class OngoingStream extends Stream {
                     buffer.putLong(16, 0);
                     // 24-31: metadata offset
                     buffer.putLong(24, 0);
-                    // 32-39: chunk start nanos 
+                    // 32-39: chunk start nanos
                     // 40-47 duration
                     buffer.putLong(40, 0);
                     // 48-55: chunk start ticks
