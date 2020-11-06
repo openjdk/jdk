@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import java.util.Vector;
 
 public class OwnedWindowsLeak
 {
-    public static void main(String[] args)
+    public static void main(String[] args) throws Exception
     {
         Frame owner = new Frame("F");
 
@@ -70,9 +70,10 @@ public class OwnedWindowsLeak
         // Third, make sure all the weak references are null
         for (WeakReference<Window> ref : children)
         {
-            if (ref.get() != null)
-            {
-                throw new RuntimeException("Test FAILED: some of child windows are not GCed");
+            while (ref.get() != null) {
+                System.out.println("ref.get() = " + ref.get());
+                System.gc();
+                Thread.sleep(100);
             }
         }
 
@@ -86,11 +87,6 @@ public class OwnedWindowsLeak
             {
                 throw new RuntimeException("Test FAILED: some of the child windows are not removed from owner's children list");
             }
-        }
-        catch (NoSuchFieldException z)
-        {
-            System.out.println("Test PASSED: no 'ownedWindowList' field in Window class");
-            return;
         }
         catch (Exception z)
         {
