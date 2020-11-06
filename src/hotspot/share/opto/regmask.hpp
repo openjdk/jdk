@@ -39,7 +39,7 @@ static unsigned int find_lowest_bit(uintptr_t mask) {
 }
 // Find highest 1, undefined if empty/0
 static unsigned int find_highest_bit(uintptr_t mask) {
-  return count_leading_zeros(mask) ^ 63U;
+  return count_leading_zeros(mask) ^ (BitsPerWord - 1U);
 }
 
 //------------------------------RegMask----------------------------------------
