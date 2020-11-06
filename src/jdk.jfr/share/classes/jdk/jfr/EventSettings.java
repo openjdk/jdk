@@ -64,7 +64,7 @@ public abstract class EventSettings {
         ModifierSettings(EventSettingsModifier modigfier) {
             this.modifier = modigfier;
         }
-        
+
         @Override
         public EventSettings with(String name, String value) {
              modifier.with(name, value);
@@ -76,7 +76,7 @@ public abstract class EventSettings {
             return modifier.toMap();
         }
     }
-    
+
     // package private
     EventSettings() {
     }
