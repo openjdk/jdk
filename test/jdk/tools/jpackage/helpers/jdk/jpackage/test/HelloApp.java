@@ -31,15 +31,22 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import static java.util.Locale.filter;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import jdk.jpackage.test.Functional.ThrowingConsumer;
 import jdk.jpackage.test.Functional.ThrowingFunction;
 import jdk.jpackage.test.Functional.ThrowingSupplier;
+import static jdk.jpackage.test.TKit.trace;
+import static jdk.jpackage.test.TKit.workDir;
 
 public final class HelloApp {
 
@@ -225,7 +232,7 @@ public final class HelloApp {
     public static Path createBundle(JavaAppDesc appDesc, Path outputDir) {
         String jmodFileName = appDesc.jmodFileName();
         if (jmodFileName != null) {
-            final Path jmodFilePath = outputDir.resolve(jmodFileName);
+            final Path jmodPath = outputDir.resolve(jmodFileName);
             TKit.withTempDirectory("jmod-workdir", jmodWorkDir -> {
                 var jarAppDesc = JavaAppDesc.parse(appDesc.toString())
                         .setBundleFileName("tmp.jar");
@@ -233,8 +240,7 @@ public final class HelloApp {
                 Executor exec = new Executor()
                         .setToolProvider(JavaTool.JMOD)
                         .addArguments("create", "--class-path")
-                        .addArgument(jarPath)
-                        .addArgument(jmodFilePath);
+                        .addArgument(jarPath);
 
                 if (appDesc.isWithMainClass()) {
                     exec.addArguments("--main-class", appDesc.className());
@@ -244,11 +250,50 @@ public final class HelloApp {
                     exec.addArguments("--module-version", appDesc.moduleVersion());
                 }
 
-                Files.createDirectories(jmodFilePath.getParent());
+                final Path jmodFilePath;
+                if (appDesc.isExplodedModule()) {
+                    jmodFilePath = jmodWorkDir.resolve("tmp.jmod");
+                    exec.addArgument(jmodFilePath);
+                    TKit.deleteDirectoryRecursive(jmodPath);
+                } else {
+                    jmodFilePath = jmodPath;
+                    exec.addArgument(jmodFilePath);
+                    TKit.deleteIfExists(jmodPath);
+                }
+
+                Files.createDirectories(jmodPath.getParent());
                 exec.execute();
+
+                if (appDesc.isExplodedModule()) {
+                    TKit.trace(String.format("Explode [%s] module file...",
+                            jmodFilePath.toAbsolutePath().normalize()));
+                    // Explode contents of the root `classes` directory of
+                    // temporary .jmod file
+                    final Path jmodRootDir = Path.of("classes");
+                    try (var archive = new ZipFile(jmodFilePath.toFile())) {
+                        archive.stream()
+                        .filter(Predicate.not(ZipEntry::isDirectory))
+                        .sequential().forEachOrdered(ThrowingConsumer.toConsumer(
+                            entry -> {
+                                try (var in = archive.getInputStream(entry)) {
+                                    Path entryName = Path.of(entry.getName());
+                                    if (entryName.startsWith(jmodRootDir)) {
+                                        entryName = jmodRootDir.relativize(entryName);
+                                    }
+                                    final Path fileName = jmodPath.resolve(entryName);
+                                    TKit.trace(String.format(
+                                            "Save [%s] zip entry in [%s] file...",
+                                            entry.getName(),
+                                            fileName.toAbsolutePath().normalize()));
+                                    Files.createDirectories(fileName.getParent());
+                                    Files.copy(in, fileName);
+                                }
+                            }));
+                    }
+                }
             });
 
-            return jmodFilePath;
+            return jmodPath;
         }
 
         final JavaAppDesc jarAppDesc;
