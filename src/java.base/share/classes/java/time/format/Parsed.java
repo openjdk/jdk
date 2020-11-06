@@ -486,14 +486,15 @@ final class Parsed implements TemporalAccessor {
                     hoap += 12;
                 }
                 updateCheckDayPeriodConflict(HOUR_OF_DAY, hoap);
-            } else {
+            } else if (resolverStyle != ResolverStyle.STRICT){
                 long midpoint = dayPeriod.mid();
                 fieldValues.put(HOUR_OF_DAY, midpoint / 60);
                 fieldValues.put(MINUTE_OF_HOUR, midpoint % 60);
             }
-        } else if (fieldValues.containsKey(AMPM_OF_DAY) && !fieldValues.containsKey(HOUR_OF_DAY)) {
-            // If no day period exists and ampm-of-day is not resolved yet,
-            // give the midpoint time 06:00 and 18:00 for am/pm respectively, unless
+        } else if (fieldValues.containsKey(AMPM_OF_DAY) && !fieldValues.containsKey(HOUR_OF_DAY) &&
+                    resolverStyle != ResolverStyle.STRICT) {
+            // If no day period exists, ampm-of-day is not resolved yet, and in non-STRICT mode,
+            // set the midpoint time 06:00 and 18:00 for am/pm respectively, unless
             // hour-of-day is resolved at this point.
             long ap = fieldValues.remove(AMPM_OF_DAY);
             if (resolverStyle == ResolverStyle.LENIENT) {

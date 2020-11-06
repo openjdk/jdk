@@ -854,15 +854,15 @@ public class TCKDateTimeParseResolver {
     @DataProvider(name="resolveAmPm")
     Object[][] data_resolveAmPm() {
         return new Object[][]{
-                {STRICT, 0, LocalTime.of(6, 0), 0},
-                {STRICT, 1, LocalTime.of(18, 0), 1},
-                {STRICT, -1, null, -1},
-                {STRICT, 2, null, 2},
+                {STRICT, 0, null, 0},
+                {STRICT, 1, null, 1},
+                {STRICT, -1, null, null},
+                {STRICT, 2, null, null},
 
                 {SMART, 0, LocalTime.of(6, 0), 0},
                 {SMART, 1, LocalTime.of(18, 0), 1},
-                {SMART, -1, null, -1},
-                {SMART, 2, null, -2},
+                {SMART, -1, null, null},
+                {SMART, 2, null, null},
 
                 {LENIENT, 0, LocalTime.of(6, 0), 0},
                 {LENIENT, 1, LocalTime.of(18, 0), 1},
@@ -876,7 +876,7 @@ public class TCKDateTimeParseResolver {
         String str = Long.toString(value);
         DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(AMPM_OF_DAY).toFormatter();
 
-        if (expectedTime != null) {
+        if (expectedValue != null) {
             TemporalAccessor accessor = f.withResolverStyle(style).parse(str);
             assertEquals(accessor.query(TemporalQueries.localDate()), null);
             assertEquals(accessor.query(TemporalQueries.localTime()), expectedTime);

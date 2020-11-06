@@ -1472,7 +1472,8 @@ public final class DateTimeFormatterBuilder {
      * is thrown. If {@code HOUR_OF_AMPM} exists and validated with the day period,
      * {@code HOUR_OF_DAY} is derived from the parsed day period. If neither
      * {@code HOUR_OF_DAY} nor {@code HOUR_OF_AMPM} exists, {@code HOUR_OF_DAY} and
-     * {@code MINUTE_OF_HOUR} are resolved to the mid-point of the day period.
+     * {@code MINUTE_OF_HOUR} are resolved to the mid-point of the day period in
+     * {@link ResolverStyle#SMART SMART} or {@link ResolverStyle#LENIENT LENIENT} mode.
      * For example, if the parsed day period type is "night1" and the period defined
      * for it in the formatter locale is from 21:00 to 06:00, then {@code HOUR_OF_DAY}
      * is set to '1' and {@code MINUTE_OF_HOUR} set to '30'. If {@code AMPM_OF_DAY} exists
@@ -5052,9 +5053,14 @@ public final class DateTimeFormatterBuilder {
 
         @Override
         public boolean format(DateTimePrintContext context, StringBuilder buf) {
-            Long value = context.getValue(MINUTE_OF_DAY);
-            if (value == null) {
+            Long hod = context.getValue(HOUR_OF_DAY);
+            if (hod == null) {
                 return false;
+            }
+            Long moh = context.getValue(MINUTE_OF_HOUR);
+            Long value = (hod * 60 + (moh != null ? moh : 0)) % 1_440;
+            if (value < 0) {
+                value += 1_440;
             }
             Locale locale = context.getLocale();
             LocaleStore store = findDayPeriodStore(locale);

@@ -780,6 +780,13 @@ public class TestDateTimeFormatterBuilder {
         }
     }
 
+    @Test (expectedExceptions = DateTimeParseException.class)
+    public void test_dayPeriodParseStrictNoTime() {
+        builder.appendPattern("B");
+        DateTimeFormatter f = builder.toFormatter().withLocale(Locale.US).withResolverStyle(ResolverStyle.STRICT);
+        LocalTime.parse("at night", f);
+    }
+
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
