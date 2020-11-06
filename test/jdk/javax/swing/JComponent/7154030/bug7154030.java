@@ -33,7 +33,6 @@ import javax.swing.SwingUtilities;
 import java.awt.AWTException;
 import java.awt.AlphaComposite;
 import java.awt.Color;
-import java.awt.GraphicsEnvironment;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
@@ -90,18 +89,18 @@ public class bug7154030 {
 
                     frame.setContentPane(desktop);
                     frame.setSize(300, 300);
-                    Rectangle rect = GraphicsEnvironment.getLocalGraphicsEnvironment().
-                                      getDefaultScreenDevice().getDefaultConfiguration().
-                                      getBounds();
-                    locx = rect.width/2;
-                    locy = rect.height/2;
-                    frame.setLocation(locx, locy);
+                    frame.setLocationRelativeTo(null);
                     frame.setVisible(true);
                     frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
                 }
             });
 
             robot.waitForIdle(1000);
+
+            Rectangle bounds = frame.getBounds();
+            locx = bounds.x;
+            locy = bounds.y;
+
             imageInit = robot.createScreenCapture(new Rectangle(locx, locy, 300, 300));
 
             SwingUtilities.invokeAndWait(new Runnable() {
