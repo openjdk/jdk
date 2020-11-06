@@ -1539,10 +1539,6 @@ void os::print_memory_info(outputStream* st) {
   st->cr();
 }
 
-void os::print_signal_handlers(outputStream* st, char* buf, size_t buflen) {
-  PosixSignals::print_signal_handlers(st, buf, buflen);
-}
-
 static char saved_jvm_path[MAXPATHLEN] = {0};
 
 // Find the full path to the current module, libjvm
@@ -2259,10 +2255,6 @@ void os::set_native_thread_name(const char *name) {
 bool os::bind_to_processor(uint processor_id) {
   // Not yet implemented.
   return false;
-}
-
-void os::SuspendedThreadTask::internal_do_task() {
-  PosixSignals::do_task(_thread, this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -1281,7 +1281,7 @@ void PosixSignals::print_signal_handler(outputStream* st, int sig,
   st->cr();
 }
 
-void PosixSignals::print_signal_handlers(outputStream* st, char* buf, size_t buflen) {
+void os::print_signal_handlers(outputStream* st, char* buf, size_t buflen) {
   st->print_cr("Signal Handlers:");
   PosixSignals::print_signal_handler(st, SIGSEGV, buf, buflen);
   PosixSignals::print_signal_handler(st, SIGBUS , buf, buflen);
@@ -1638,11 +1638,11 @@ void PosixSignals::do_resume(OSThread* osthread) {
   guarantee(osthread->sr.is_running(), "Must be running!");
 }
 
-void PosixSignals::do_task(Thread* thread, os::SuspendedThreadTask* task) {
-  if (PosixSignals::do_suspend(thread->osthread())) {
-    os::SuspendedThreadTaskContext context(thread, thread->osthread()->ucontext());
-    task->do_task(context);
-    PosixSignals::do_resume(thread->osthread());
+void os::SuspendedThreadTask::internal_do_task() {
+  if (PosixSignals::do_suspend(_thread->osthread())) {
+    os::SuspendedThreadTaskContext context(_thread, _thread->osthread()->ucontext());
+    do_task(context);
+    PosixSignals::do_resume(_thread->osthread());
   }
 }
 

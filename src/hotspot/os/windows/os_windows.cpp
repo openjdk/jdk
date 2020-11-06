@@ -1872,10 +1872,6 @@ bool os::signal_thread(Thread* thread, int sig, const char* reason) {
   return false;
 }
 
-void os::print_signal_handlers(outputStream* st, char* buf, size_t buflen) {
-  // do nothing
-}
-
 static char saved_jvm_path[MAX_PATH] = {0};
 
 // Find the full path to the current module, jvm.dll
