@@ -94,12 +94,12 @@ char* os::non_memory_address_word() {
   return (char *) -1;
 }
 
-address os::Bsd::ucontext_get_pc(const ucontext_t* uc) {
+address os::Posix::ucontext_get_pc(const ucontext_t* uc) {
   ShouldNotCallThis();
   return NULL;
 }
 
-void os::Bsd::ucontext_set_pc(ucontext_t * uc, address pc) {
+void os::Posix::ucontext_set_pc(ucontext_t * uc, address pc) {
   ShouldNotCallThis();
 }
 

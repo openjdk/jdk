@@ -97,7 +97,7 @@ char* os::non_memory_address_word() {
 // Frame information (pc, sp, fp) retrieved via ucontext
 // always looks like a C-frame according to the frame
 // conventions in frame_ppc64.hpp.
-address os::Linux::ucontext_get_pc(const ucontext_t * uc) {
+address os::Posix::ucontext_get_pc(const ucontext_t * uc) {
   // On powerpc64, ucontext_t is not selfcontained but contains
   // a pointer to an optional substructure (mcontext_t.regs) containing the volatile
   // registers - NIP, among others.
@@ -115,7 +115,7 @@ address os::Linux::ucontext_get_pc(const ucontext_t * uc) {
 // modify PC in ucontext.
 // Note: Only use this for an ucontext handed down to a signal handler. See comment
 // in ucontext_get_pc.
-void os::Linux::ucontext_set_pc(ucontext_t * uc, address pc) {
+void os::Posix::ucontext_set_pc(ucontext_t * uc, address pc) {
   guarantee(uc->uc_mcontext.regs != NULL, "only use ucontext_set_pc in sigaction context");
   uc->uc_mcontext.regs->nip = (unsigned long)pc;
 }
@@ -143,7 +143,7 @@ address os::fetch_frame_from_context(const void* ucVoid,
   const ucontext_t* uc = (const ucontext_t*)ucVoid;
 
   if (uc != NULL) {
-    epc = os::Linux::ucontext_get_pc(uc);
+    epc = os::Posix::ucontext_get_pc(uc);
     if (ret_sp) *ret_sp = os::Linux::ucontext_get_sp(uc);
     if (ret_fp) *ret_fp = os::Linux::ucontext_get_fp(uc);
   } else {
@@ -163,7 +163,7 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
 }
 
 bool os::Linux::get_frame_at_stack_banging_point(JavaThread* thread, ucontext_t* uc, frame* fr) {
-  address pc = (address) os::Linux::ucontext_get_pc(uc);
+  address pc = (address) os::Posix::ucontext_get_pc(uc);
   if (Interpreter::contains(pc)) {
     // Interpreter performs stack banging after the fixed frame header has
     // been generated while the compilers perform it before. To maintain
@@ -291,9 +291,9 @@ JVM_handle_linux_signal(int sig,
   // Moved SafeFetch32 handling outside thread!=NULL conditional block to make
   // it work if no associated JavaThread object exists.
   if (uc) {
-    address const pc = os::Linux::ucontext_get_pc(uc);
+    address const pc = os::Posix::ucontext_get_pc(uc);
     if (pc && StubRoutines::is_safefetch_fault(pc)) {
-      os::Linux::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
+      os::Posix::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
       return true;
     }
   }
@@ -303,7 +303,7 @@ JVM_handle_linux_signal(int sig,
   address pc   = NULL;
 
   if (info != NULL && uc != NULL && thread != NULL) {
-    pc = (address) os::Linux::ucontext_get_pc(uc);
+    pc = (address) os::Posix::ucontext_get_pc(uc);
 
     // Handle ALL stack overflow variations here
     if (sig == SIGSEGV) {
@@ -504,7 +504,7 @@ JVM_handle_linux_signal(int sig,
             next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
           }
           next_pc = SharedRuntime::handle_unsafe_access(thread, next_pc);
-          os::Linux::ucontext_set_pc(uc, next_pc);
+          os::Posix::ucontext_set_pc(uc, next_pc);
           return true;
         }
       }
@@ -525,7 +525,7 @@ JVM_handle_linux_signal(int sig,
           next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
         }
         next_pc = SharedRuntime::handle_unsafe_access(thread, next_pc);
-        os::Linux::ucontext_set_pc(uc, next_pc);
+        os::Posix::ucontext_set_pc(uc, next_pc);
         return true;
       }
     }
@@ -543,7 +543,7 @@ JVM_handle_linux_signal(int sig,
   if (stub != NULL) {
     // Save all thread context in case we need to restore it.
     if (thread != NULL) thread->set_saved_exception_pc(pc);
-    os::Linux::ucontext_set_pc(uc, stub);
+    os::Posix::ucontext_set_pc(uc, stub);
     return true;
   }
 
@@ -558,7 +558,7 @@ JVM_handle_linux_signal(int sig,
   }
 
   if (pc == NULL && uc != NULL) {
-    pc = os::Linux::ucontext_get_pc(uc);
+    pc = os::Posix::ucontext_get_pc(uc);
   }
 
 report_and_die:
@@ -634,7 +634,7 @@ void os::print_context(outputStream *st, const void *context) {
   // Note: it may be unsafe to inspect memory near pc. For example, pc may
   // point to garbage if entry point in an nmethod is corrupted. Leave
   // this at the end, and hope for the best.
-  address pc = os::Linux::ucontext_get_pc(uc);
+  address pc = os::Posix::ucontext_get_pc(uc);
   print_instructions(st, pc, /*instrsize=*/4);
   st->cr();
 }

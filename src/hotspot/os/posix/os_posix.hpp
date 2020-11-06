@@ -88,6 +88,10 @@ public:
 
   static void print_user_info(outputStream* st);
 
+  // Set PC into context. Needed for continuation after signal.
+  static address ucontext_get_pc(const ucontext_t* ctx);
+  static void    ucontext_set_pc(ucontext_t* ctx, address pc);
+
 #ifdef SUPPORTS_CLOCK_MONOTONIC
 
 private:
