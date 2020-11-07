@@ -91,7 +91,7 @@ public:
   result = op;                                              \
   if (result <= 0) {                                        \
     jio_fprintf(defaultStream::error_stream(),              \
-                "Could not write log: %s\n", name());  b    \
+                "Could not write log: %s\n", name());       \
     return -1;                                              \
   }                                                         \
   total += result;
