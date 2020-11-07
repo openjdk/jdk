@@ -168,7 +168,7 @@ public abstract class PerfDataBufferImpl {
         if (filename != null) {
             File f = new File(filename);
             try {
-                aliasURL = f.toURL();
+                aliasURL = f.toURI().toURL();
 
             } catch (MalformedURLException e) {
                 throw new IllegalArgumentException(e);

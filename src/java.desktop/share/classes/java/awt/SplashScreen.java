@@ -223,9 +223,9 @@ public final class SplashScreen {
                     String jarName = _getImageJarName(splashPtr);
                     if (fileName != null) {
                         if (jarName != null) {
-                            imageURL = new URL("jar:"+(new File(jarName).toURL().toString())+"!/"+fileName);
+                            imageURL = new URL("jar:"+(new File(jarName).toURI().toURL().toString())+"!/"+fileName);
                         } else {
-                            imageURL = new File(fileName).toURL();
+                            imageURL = new File(fileName).toURI().toURL();
                         }
                     }
                 }
