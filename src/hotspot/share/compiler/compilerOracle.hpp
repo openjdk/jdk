@@ -33,6 +33,11 @@ class methodHandle;
 // CompilerOracle is an interface for turning on and off compilation
 // for some methods
 
+enum class CompilerOracleOption {
+    CompilerThresholdScaling,
+    End,
+};
+
 class CompilerOracle : AllStatic {
  private:
   static bool _quiet;
@@ -74,6 +79,9 @@ class CompilerOracle : AllStatic {
   template<typename T>
   static bool has_option_value(const methodHandle& method, const char* option, T& value);
 
+  template<typename T>
+  static bool update_option(const methodHandle& method, CompilerOracleOption option, T& value);
+
   // Fast check if there is any option available that compile control needs to know about
   static bool has_any_option();
 
@@ -85,6 +93,7 @@ class CompilerOracle : AllStatic {
 
   // Tells whether there are any methods to print for print_method_statistics()
   static bool should_print_methods();
+
 };
 
 #endif // SHARE_COMPILER_COMPILERORACLE_HPP

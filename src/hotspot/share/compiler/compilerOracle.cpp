@@ -115,6 +115,7 @@ class TypedMethodOptionMatcher : public MethodMatcher {
  private:
   TypedMethodOptionMatcher* _next;
   const char*   _option;
+  CompilerOracleOption _option_enum;
   OptionType    _type;
  public:
 
@@ -263,12 +264,12 @@ TypedMethodOptionMatcher* TypedMethodOptionMatcher::parse_method_pattern(char*& 
   return tom;
 }
 
-TypedMethodOptionMatcher* TypedMethodOptionMatcher::match(const methodHandle& method, const char* opt, OptionType type) {
+TypedMethodOptionMatcher* TypedMethodOptionMatcher::match(const methodHandle& method, const char* option, OptionType type) {
   TypedMethodOptionMatcher* current = this;
   while (current != NULL) {
     // Fastest compare first.
     if (current->type() == type) {
-      if (strcmp(current->_option, opt) == 0) {
+      if (strcmp(current->_option, option) == 0) {
         if (current->matches(method)) {
           return current;
         }
@@ -278,6 +279,22 @@ TypedMethodOptionMatcher* TypedMethodOptionMatcher::match(const methodHandle& me
   }
   return NULL;
 }
+
+TypedMethodOptionMatcher* TypedMethodOptionMatcher::match_enum_option(const methodHandle& method, CompilerOracleOption option, OptionType type) {
+  TypedMethodOptionMatcher* current = this;
+  while (current != NULL) {
+    // Fastest compare first.
+      if (current->_option_enum != option) {
+        if (current->matches(method)) {
+          return current;
+        }
+      }
+    }
+    current = current->next();
+  }
+  return NULL;
+}
+
 
 template<typename T>
 static void add_option_string(TypedMethodOptionMatcher* matcher,
@@ -322,9 +339,29 @@ bool CompilerOracle::has_option_value(const methodHandle& method, const char* op
   return false;
 }
 
+template<typename T>
+bool CompilerOracle::option_update(const methodHandle& method, CompilerOracleOption option, T& value) {
+  if (option_list != NULL) {
+    TypedMethodOptionMatcher* m = option_list->match(method, option, get_type_for<T>());
+    if (m != NULL) {
+      value = m->value<T>();
+      return true;
+    }
+  }
+  return false;
+}
+
 bool CompilerOracle::has_any_option() {
   return any_set;
 }
+
+
+// Explicit instantiation for all OptionTypes supported.
+template bool CompilerOracle::option_update<intx>(const methodHandle& method, CompilerOracleOption option, intx& value);
+template bool CompilerOracle::option_update<uintx>(const methodHandle& method, CompilerOracleOption option, uintx& value);
+template bool CompilerOracle::option_update<bool>(const methodHandle& method, CompilerOracleOption option, bool& value);
+template bool CompilerOracle::option_update<ccstr>(const methodHandle& method, CompilerOracleOption option, ccstr& value);
+template bool CompilerOracle::option_update<double>(const methodHandle& method, CompilerOracleOption option, double& value);
 
 // Explicit instantiation for all OptionTypes supported.
 template bool CompilerOracle::has_option_value<intx>(const methodHandle& method, const char* option, intx& value);
