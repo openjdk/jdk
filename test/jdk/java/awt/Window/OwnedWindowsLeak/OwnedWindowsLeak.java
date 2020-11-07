@@ -49,6 +49,7 @@ public class OwnedWindowsLeak
         for (int i = 0; i < 1000; i++)
         {
             Window child = new Window(owner);
+            child.setName("window_" +  i);
             children.add(new WeakReference<Window>(child));
         }
 
@@ -73,24 +74,19 @@ public class OwnedWindowsLeak
             while (ref.get() != null) {
                 System.out.println("ref.get() = " + ref.get());
                 System.gc();
-                Thread.sleep(100);
+                Thread.sleep(1000);
             }
         }
 
         // Fourth, make sure owner's children list contains no elements
-        try
+        Field f = Window.class.getDeclaredField("ownedWindowList");
+        f.setAccessible(true);
+        Vector ownersChildren = (Vector)f.get(owner);
+        while (ownersChildren.size() > 0)
         {
-            Field f = Window.class.getDeclaredField("ownedWindowList");
-            f.setAccessible(true);
-            Vector ownersChildren = (Vector)f.get(owner);
-            if (ownersChildren.size() > 0)
-            {
-                throw new RuntimeException("Test FAILED: some of the child windows are not removed from owner's children list");
-            }
-        }
-        catch (Exception z)
-        {
-            throw new RuntimeException("Test FAILED: unexpected exception", z);
+            System.out.println("ownersChildren = " + ownersChildren);
+            System.gc();
+            Thread.sleep(1000);
         }
 
         // Test passed
