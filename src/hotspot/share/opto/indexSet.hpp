@@ -61,8 +61,10 @@ class IndexSet : public ResourceObj {
 
   // The lengths of the index bitfields
   enum {
-         block_index_length = 8, // Each block consists of 256 addressable bits
-         word_index_length  = block_index_length - LogBitsPerWord, // 64-bit: 2, 32-bit: 3
+         // Each block consists of 256 bits
+         block_index_length = 8,
+         // Split over 4 or 8 words depending on bitness
+         word_index_length  = block_index_length - LogBitsPerWord,
          bit_index_length   = block_index_length - word_index_length,
   };
 
