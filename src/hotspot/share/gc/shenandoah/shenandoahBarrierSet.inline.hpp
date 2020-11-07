@@ -105,7 +105,8 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(oop obj, T* load_addr) {
   // Prevent resurrection of unreachable non-strorg references.
   if (!HasDecorator<decorators, ON_STRONG_OOP_REF>::value && obj != NULL &&
       _heap->is_concurrent_weak_root_in_progress() &&
-      !_heap->marking_context()->is_marked(obj)) {
+      (HasDecorator<decorators, ON_PHANTOM_OOP_REF>::value ? !_heap->marking_context()->is_marked(obj)
+                                                           : !_heap->marking_context()->is_marked_strong(obj))) {
     Thread* thr = Thread::current();
     if (thr->is_Java_thread()) {
       return NULL;
