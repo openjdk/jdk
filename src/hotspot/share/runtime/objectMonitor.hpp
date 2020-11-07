@@ -142,7 +142,7 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
   // Separate _header and _owner on different cache lines since both can
   // have busy multi-threaded access. _header and _object are set at initial
   // inflation. The _object does not change, so it is a good choice to share
-  // its the cache line with _header.
+  // its cache line with _header.
   DEFINE_PAD_MINUS_SIZE(0, OM_CACHE_LINE_SIZE, sizeof(volatile markWord) +
                         sizeof(WeakHandle));
   // Used by async deflation as a marker in the _owner field:

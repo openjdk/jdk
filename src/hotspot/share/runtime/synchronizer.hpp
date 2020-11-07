@@ -170,6 +170,16 @@ class ObjectSynchronizer : AllStatic {
   friend class SynchronizerTest;
 
   static MonitorList   _in_use_list;
+  // The ratio of the current _in_use_list count to the ceiling is used
+  // to determine if we are above MonitorUsedDeflationThreshold and need
+  // to do an async monitor deflation cycle. The ceiling is increased by
+  // AvgMonitorsPerThreadEstimate when a thread is added to the system
+  // and is decreased by AvgMonitorsPerThreadEstimate when a thread is
+  // removed from the system.
+  // Note: If the _in_use_list max exceeds the ceiling, then
+  // monitors_used_above_threshold() will use the in_use_list max instead
+  // of the thread count derived ceiling because we have used more
+  // ObjectMonitors than the estimated average.
   static jint          _in_use_list_ceiling;
   static volatile bool _is_async_deflation_requested;
   static volatile bool _is_final_audit;

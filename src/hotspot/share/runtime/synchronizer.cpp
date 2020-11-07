@@ -57,13 +57,12 @@
 #include "utilities/preserveException.hpp"
 
 void MonitorList::add(ObjectMonitor* m) {
-  for (;;) {
-    ObjectMonitor* head = Atomic::load(&_head);
+  ObjectMonitor* head;
+  do {
+    head = Atomic::load(&_head);
     m->set_next_om(head);
-    if (Atomic::cmpxchg(&_head, head, m) == head) {
-      break;
-    }
-  }
+  } while (Atomic::cmpxchg(&_head, head, m) != head);
+
   size_t count = Atomic::add(&_count, 1u);
   if (count > max()) {
     Atomic::inc(&_max);
@@ -218,7 +217,7 @@ int dtrace_waited_probe(ObjectMonitor* monitor, Handle obj, Thread* thr) {
 static volatile intptr_t gInflationLocks[NINFLATIONLOCKS];
 
 MonitorList ObjectSynchronizer::_in_use_list;
-// Start the ceiling with one thread:
+// Start the ceiling with the estimate for one thread:
 jint ObjectSynchronizer::_in_use_list_ceiling = AvgMonitorsPerThreadEstimate;
 bool volatile ObjectSynchronizer::_is_async_deflation_requested = false;
 bool volatile ObjectSynchronizer::_is_final_audit = false;
@@ -1498,8 +1497,11 @@ size_t ObjectSynchronizer::deflate_idle_monitors() {
     if (self->is_Java_thread()) {
       if (ls != NULL) {
         timer.stop();
-        ls->print_cr("before handshaking: unlinked_count=" SIZE_FORMAT ", in_use_list stats: ceiling=" SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
-                     unlinked_count, in_use_list_ceiling(), _in_use_list.count(), _in_use_list.max());
+        ls->print_cr("before handshaking: unlinked_count=" SIZE_FORMAT
+                     ", in_use_list stats: ceiling=" SIZE_FORMAT ", count="
+                     SIZE_FORMAT ", max=" SIZE_FORMAT,
+                     unlinked_count, in_use_list_ceiling(),
+                     _in_use_list.count(), _in_use_list.max());
       }
 
       // A JavaThread needs to handshake in order to safely free the
@@ -1508,7 +1510,8 @@ size_t ObjectSynchronizer::deflate_idle_monitors() {
       Handshake::execute(&hfd_hc);
 
       if (ls != NULL) {
-        ls->print_cr("after handshaking: in_use_list stats: ceiling=" SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
+        ls->print_cr("after handshaking: in_use_list stats: ceiling="
+                     SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
                      in_use_list_ceiling(), _in_use_list.count(), _in_use_list.max());
         timer.start();
       }
