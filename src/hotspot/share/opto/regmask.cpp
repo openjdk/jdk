@@ -107,10 +107,10 @@ static const uintptr_t fives = all/3;        // 0x5555..55
 
 // only indices of power 2 are accessed, so index 3 is only filled in for storage.
 static const uintptr_t low_bits[5] = { fives, // 0x5555..55
-                                       all/15,        // 0x1111..11,
-                                       all/255,       // 0x0101..01,
-                                       zero,          // 0x0000..00
-                                       (all/255)/5 }; // 0x0001..01
+                                       all/0xF,        // 0x1111..11,
+                                       all/0xFF,       // 0x0101..01,
+                                       zero,           // 0x0000..00
+                                       all/0xFFFF };   // 0x0001..01
 
 // Clear out partial bits; leave only bit pairs
 void RegMask::clear_to_pairs() {
