@@ -59,7 +59,6 @@ import sun.awt.OSInfo;
  * version of Swing.  A future release of Swing will provide support for
  * long term persistence.
  *
- * @author unattributed
  * @deprecated The Motif Look and Feel is deprecated with the intent to remove
  *             it in some future release. It is recommended to use
  *             {@link javax.swing.plaf.metal.MetalLookAndFeel} instead.
