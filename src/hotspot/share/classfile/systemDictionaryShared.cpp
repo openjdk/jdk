@@ -40,6 +40,7 @@
 #include "interpreter/bootstrapInfo.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.hpp"
 #include "memory/archiveUtils.hpp"
 #include "memory/dynamicArchive.hpp"
@@ -1924,26 +1925,28 @@ bool SystemDictionaryShared::check_linking_constraints(InstanceKlass* klass, TRA
 }
 
 bool SystemDictionaryShared::is_supported_invokedynamic(BootstrapInfo* bsi) {
+  LogTarget(Debug, cds, lambda) log;
   if (bsi->arg_values() == NULL || !bsi->arg_values()->is_objArray()) {
-    DEBUG_ONLY(
-      tty->print_cr("bsi check failed");
-      tty->print_cr("    bsi->arg_values().not_null() %d", bsi->arg_values().not_null());
+    if (log.is_enabled()) {
+      LogStream log_stream(log);
+      log.print("bsi check failed");
+      log.print("    bsi->arg_values().not_null() %d", bsi->arg_values().not_null());
       if (bsi->arg_values().not_null()) {
-        tty->print_cr("    bsi->arg_values()->is_objArray() %d", bsi->arg_values()->is_objArray());
-        bsi->print();
+        log.print("    bsi->arg_values()->is_objArray() %d", bsi->arg_values()->is_objArray());
+        bsi->print_msg_on(&log_stream);
       }
-    )
+    }
     return false;
   }
 
   Handle bsm = bsi->bsm();
   if (bsm.is_null() || !java_lang_invoke_DirectMethodHandle::is_instance(bsm())) {
-    DEBUG_ONLY(
-      tty->print_cr("bsm check failed");
-      tty->print_cr("    bsm.is_null() %d", bsm.is_null());
-      tty->print_cr("    java_lang_invoke_DirectMethodHandle::is_instance(bsm()) %d",
+    if (log.is_enabled()) {
+      log.print("bsm check failed");
+      log.print("    bsm.is_null() %d", bsm.is_null());
+      log.print("    java_lang_invoke_DirectMethodHandle::is_instance(bsm()) %d",
         java_lang_invoke_DirectMethodHandle::is_instance(bsm()));
-    )
+    }
     return false;
   }
 
@@ -1954,13 +1957,13 @@ bool SystemDictionaryShared::is_supported_invokedynamic(BootstrapInfo* bsi) {
       method->signature()->equals("(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;")) {
       return true;
   } else {
-    DEBUG_ONLY(
+    if (log.is_enabled()) {
       ResourceMark rm;
-      tty->print_cr("method check failed");
-      tty->print_cr("    klass_name() %s", method->klass_name()->as_C_string());
-      tty->print_cr("    name() %s", method->name()->as_C_string());
-      tty->print_cr("    signature() %s", method->signature()->as_C_string());
-    )
+      log.print("method check failed");
+      log.print("    klass_name() %s", method->klass_name()->as_C_string());
+      log.print("    name() %s", method->name()->as_C_string());
+      log.print("    signature() %s", method->signature()->as_C_string());
+    }
   }
 
   return false;

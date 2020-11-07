@@ -46,23 +46,26 @@ class ZHeapIterator : public ParallelObjectIterator {
   friend class ZHeapIteratorContext;
 
 private:
-  const bool                         _visit_weaks;
-  ZStatTimerDisable                  _timer_disable;
-  ZHeapIteratorBitMaps               _bitmaps;
-  ZLock                              _bitmaps_lock;
-  ZHeapIteratorQueues                _queues;
-  ZHeapIteratorArrayQueues           _array_queues;
-  ZConcurrentRootsIteratorClaimOther _concurrent_roots;
-  ZWeakRootsIterator                 _weak_roots;
-  ZConcurrentWeakRootsIterator       _concurrent_weak_roots;
-  TaskTerminator                     _terminator;
+  const bool                   _visit_weaks;
+  ZStatTimerDisable            _timer_disable;
+  ZHeapIteratorBitMaps         _bitmaps;
+  ZLock                        _bitmaps_lock;
+  ZHeapIteratorQueues          _queues;
+  ZHeapIteratorArrayQueues     _array_queues;
+  ZConcurrentRootsIterator     _concurrent_roots;
+  ZWeakRootsIterator           _weak_roots;
+  ZConcurrentWeakRootsIterator _concurrent_weak_roots;
+  TaskTerminator               _terminator;
 
   ZHeapIteratorBitMap* object_bitmap(oop obj);
 
   bool mark_object(oop obj);
 
-  template <bool Concurrent, bool Weak, typename RootsIterator>
-  void push_roots(const ZHeapIteratorContext& context, RootsIterator& iter);
+  void push_strong_roots(const ZHeapIteratorContext& context);
+  void push_weak_roots(const ZHeapIteratorContext& context);
+
+  template <bool VisitWeaks>
+  void push_roots(const ZHeapIteratorContext& context);
 
   template <bool VisitReferents>
   void follow_object(const ZHeapIteratorContext& context, oop obj);

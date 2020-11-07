@@ -1321,19 +1321,6 @@ void VMError::report_and_die(Thread* thread, unsigned int sig, address pc, void*
   report_and_die(thread, sig, pc, siginfo, context, "%s", "");
 }
 
-void VMError::report_and_die(const char* message, const char* detail_fmt, ...)
-{
-  va_list detail_args;
-  va_start(detail_args, detail_fmt);
-  report_and_die(INTERNAL_ERROR, message, detail_fmt, detail_args, NULL, NULL, NULL, NULL, NULL, 0, 0);
-  va_end(detail_args);
-}
-
-void VMError::report_and_die(const char* message)
-{
-  report_and_die(message, "%s", "");
-}
-
 void VMError::report_and_die(Thread* thread, void* context, const char* filename, int lineno, const char* message,
                              const char* detail_fmt, va_list detail_args)
 {
@@ -1433,10 +1420,12 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     // are handled properly.
     reset_signal_handlers();
   } else {
-    // If UseOsErrorReporting we call this for each level of the call stack
+#if defined(_WINDOWS)
+    // If UseOSErrorReporting we call this for each level of the call stack
     // while searching for the exception handler.  Only the first level needs
     // to be reported.
     if (UseOSErrorReporting && log_done) return;
+#endif
 
     // This is not the first error, see if it happened in a different thread
     // or in the same thread during error reporting.
@@ -1626,7 +1615,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     OnError = NULL;
   }
 
-  if (!UseOSErrorReporting) {
+  if (WINDOWS_ONLY(!UseOSErrorReporting) NOT_WINDOWS(true)) {
     // os::abort() will call abort hooks, try it first.
     static bool skip_os_abort = false;
     if (!skip_os_abort) {

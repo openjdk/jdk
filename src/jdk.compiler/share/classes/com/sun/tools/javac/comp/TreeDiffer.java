@@ -257,13 +257,10 @@ public class TreeDiffer extends TreeScanner {
     @Override
     public void visitBindingPattern(JCBindingPattern tree) {
         JCBindingPattern that = (JCBindingPattern) parameter;
-        result =
-                scan(tree.vartype, that.vartype)
-                        && tree.name == that.name;
+        result = scan(tree.var, that.var);
         if (!result) {
             return;
         }
-        equiv.put(tree.symbol, that.symbol);
     }
 
     @Override
