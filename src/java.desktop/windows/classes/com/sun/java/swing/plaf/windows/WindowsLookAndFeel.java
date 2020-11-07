@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,8 +90,6 @@ import com.sun.java.swing.plaf.windows.WindowsIconFactory.VistaMenuItemCheckIcon
  * for short term storage or RMI between applications running the same
  * version of Swing.  A future release of Swing will provide support for
  * long term persistence.
- *
- * @author unattributed
  */
 @SuppressWarnings("serial") // Superclass is not serializable across versions
 public class WindowsLookAndFeel extends BasicLookAndFeel
