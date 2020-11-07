@@ -63,28 +63,29 @@ bool RegMask::is_vector(uint ireg) {
 }
 
 int RegMask::num_registers(uint ireg) {
-    switch(ireg) {
-      case Op_VecZ:
-        return SlotsPerVecZ;
-      case Op_VecY:
-        return SlotsPerVecY;
-      case Op_VecX:
-        return SlotsPerVecX;
-      case Op_VecD:
-        return SlotsPerVecD;
-      case Op_RegD:
-      case Op_RegL:
+  switch(ireg) {
+    case Op_VecZ:
+      return SlotsPerVecZ;
+    case Op_VecY:
+      return SlotsPerVecY;
+    case Op_VecX:
+      return SlotsPerVecX;
+    case Op_VecD:
+      return SlotsPerVecD;
+    case Op_RegD:
+    case Op_RegL:
 #ifdef _LP64
-      case Op_RegP:
+    case Op_RegP:
 #endif
-        return 2;
-      case Op_VecA:
-        assert(Matcher::supports_scalable_vector(), "does not support scalable vector");
-        return SlotsPerVecA;
-      default:
-        // Op_VecS and the rest ideal registers.
-        return 1;
-    }
+      return 2;
+    case Op_VecA:
+      assert(Matcher::supports_scalable_vector(), "does not support scalable vector");
+      return SlotsPerVecA;
+    default:
+      // Op_VecS and the rest ideal registers.
+      assert(ireg == Op_VecS || !is_vector(ireg), "unexpected, possibly multi-slot register");
+      return 1;
+  }
 }
 
 int RegMask::num_registers(uint ireg, LRG &lrg) {
@@ -100,30 +101,24 @@ int RegMask::num_registers(uint ireg, LRG &lrg) {
   return n_regs;
 }
 
+static const uintptr_t ZERO_BITS = uintptr_t(0);  // 0x00..00
+static const uintptr_t ALL_BITS = ~uintptr_t(0);  // 0xFF..FF
+static const uintptr_t EVERY_TWO_LOW_BITS = ALL_BITS/3;        // 0x5555..55
+
 // only indices of power 2 are accessed, so index 3 is only filled in for storage.
-#ifdef _LP64
-static const uintptr_t EVERY_TWO_LOW_BITS = 0x5555555555555555ULL;
-static const uintptr_t low_bits[5] = { EVERY_TWO_LOW_BITS,
-                                       0x1111111111111111ULL,
-                                       0x0101010101010101ULL,
-                                       0x0000000000000000ULL,
-                                       0x0001000100010001ULL };
-#else
-static const uintptr_t EVERY_TWO_LOW_BITS = 0x55555555U;
-static const uintptr_t low_bits[5] = { EVERY_TWO_LOW_BITS,
-                                       0x11111111U,
-                                       0x01010101U,
-                                       0x00000000U,
-                                       0x00010001U };
-#endif
+static const uintptr_t low_bits[5] = { EVERY_TWO_LOW_BITS, // 0x5555..55
+                                       ALL_BITS/15,        // 0x1111..11,
+                                       ALL_BITS/255,       // 0x0101..01,
+                                       ZERO_BITS,          // 0x0000..00
+                                       (ALL_BITS/255)/5 }; // 0x0001..01
 
 // Clear out partial bits; leave only bit pairs
 void RegMask::clear_to_pairs() {
   assert(valid_watermarks(), "sanity");
   for (unsigned i = _lwm; i <= _hwm; i++) {
     uintptr_t bits = _RM_UP[i];
-    bits &= ((bits & EVERY_TWO_LOW_BITS) << uintptr_t(1)); // 1 hi-bit set for each pair
-    bits |= (bits >> uintptr_t(1));          // Smear 1 hi-bit into a pair
+    bits &= ((bits & EVERY_TWO_LOW_BITS) << 1U); // 1 hi-bit set for each pair
+    bits |= (bits >> 1U);          // Smear 1 hi-bit into a pair
     _RM_UP[i] = bits;
   }
   assert(is_aligned_pairs(), "mask is not aligned, adjacent pairs");
@@ -160,11 +155,11 @@ bool RegMask::is_bound1() const {
 // Return TRUE if the mask contains an adjacent pair of bits and no other bits.
 bool RegMask::is_bound_pair() const {
   if (is_AllStack()) return false;
-  uintptr_t bit = ~uintptr_t(0);               // Set to hold the one bit allowed
+  uintptr_t bit = ALL_BITS;               // Set to hold the one bit allowed
   assert(valid_watermarks(), "sanity");
   for (unsigned i = _lwm; i <= _hwm; i++) {
     if (_RM_UP[i]) {               // Found some bits
-      if (bit != ~uintptr_t(0)) return false; // Already had bits, so fail
+      if (bit != ALL_BITS) return false; // Already had bits, so fail
       bit = uintptr_t(1) << find_lowest_bit(_RM_UP[i]); // Extract lowest bit from mask
       if ((bit << 1U) != 0) {      // Bit pair stays in same word?
         if ((bit | (bit << 1U)) != _RM_UP[i])
@@ -313,10 +308,10 @@ bool RegMask::is_bound_set(const unsigned int size) const {
   if (is_AllStack()) return false;
   assert(1 <= size && size <= 16, "update low bits table");
   assert(valid_watermarks(), "sanity");
-  uintptr_t bit = ~uintptr_t(0);         // Set to hold the one bit allowed
+  uintptr_t bit = ALL_BITS;         // Set to hold the one bit allowed
   for (unsigned i = _lwm; i <= _hwm; i++) {
     if (_RM_UP[i] ) {           // Found some bits
-      if (bit != ~uintptr_t(0))
+      if (bit != ALL_BITS)
         return false;           // Already had bits, so fail
       unsigned bit_index = find_lowest_bit(_RM_UP[i]);
       bit = uintptr_t(1) << bit_index;
@@ -326,7 +321,7 @@ bool RegMask::is_bound_set(const unsigned int size) const {
         if (set != _RM_UP[i])
           return false;         // Require adjacent bit set and no more bits
       } else {                  // Else its a split-set case
-        if (((~uintptr_t(0)) & ~(bit-1)) != _RM_UP[i])
+        if ((ALL_BITS & ~(bit-1)) != _RM_UP[i])
           return false;         // Found many bits, so fail
         i++;                    // Skip iteration forward and check high part
         // The lower (BitsPerWord - size) bits should be 1 since it is split case.

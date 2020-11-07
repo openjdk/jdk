@@ -60,9 +60,10 @@ class IndexSet : public ResourceObj {
   // membership of the element in the set.
 
   // The lengths of the index bitfields
-  enum { bit_index_length  = LP64_ONLY(6) NOT_LP64(5),
-         word_index_length = LP64_ONLY(2) NOT_LP64(3),
-         block_index_length = 8 // not used
+  enum {
+         block_index_length = 8, // Each block consists of 256 addressable bits
+         word_index_length  = block_index_length - LogBitsPerWord, // 64-bit: 2, 32-bit: 3
+         bit_index_length   = block_index_length - word_index_length,
   };
 
   // Derived constants used for manipulating the index bitfields
@@ -102,7 +103,7 @@ class IndexSet : public ResourceObj {
     // All of BitBlocks fields and methods are declared private.  We limit
     // access to IndexSet and IndexSetIterator.
 
-    // A BitBlock is composed of some number of 64 bit words.  When a BitBlock
+    // A BitBlock is composed of some number of 32- or 64-bit words.  When a BitBlock
     // is not in use by any IndexSet, it is stored on a free list.  The next field
     // is used by IndexSet to maintain this free list.
 
