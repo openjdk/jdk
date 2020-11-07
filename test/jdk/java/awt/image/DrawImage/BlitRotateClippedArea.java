@@ -91,8 +91,8 @@ public class BlitRotateClippedArea {
 
             snapshotVI2VI = dstVI2VI.getSnapshot();
             snapshotBI2VI = dstBI2VI.getSnapshot();
-        } while (dstVI2VI.contentsLost() && dstBI2VI.contentsLost()
-                && srcVI.contentsLost());
+        } while (dstVI2VI.contentsLost() || dstBI2VI.contentsLost()
+                || srcVI.contentsLost());
 
         validate(gold, snapshotVI2VI);
         validate(gold, snapshotBI2VI);
