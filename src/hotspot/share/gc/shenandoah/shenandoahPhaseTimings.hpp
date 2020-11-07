@@ -57,15 +57,14 @@ class outputStream;
   f(scan_roots,                                     "  Scan Roots")                    \
   SHENANDOAH_PAR_PHASE_DO(scan_,                    "    S: ", f)                      \
                                                                                        \
-  f(conc_mark,                                      "Concurrent Marking")              \
   f(conc_mark_roots,                                "  Roots ")                        \
   SHENANDOAH_PAR_PHASE_DO(conc_mark_roots,          "    CM: ", f)                     \
+  f(conc_mark,                                      "Concurrent Marking")              \
                                                                                        \
   f(final_mark_gross,                               "Pause Final Mark (G)")            \
   f(final_mark,                                     "Pause Final Mark (N)")            \
-  f(update_roots,                                   "  Update Roots")                  \
-  SHENANDOAH_PAR_PHASE_DO(update_,                  "    U: ", f)                      \
-  f(finish_queues,                                  "  Finish Queues")                 \
+  f(finish_mark,                                    "  Finish Mark")                   \
+  SHENANDOAH_PAR_PHASE_DO(finish_mark_,             "    FM: ", f)                     \
   f(purge,                                          "  System Purge")                  \
   SHENANDOAH_PAR_PHASE_DO(purge_cu_par_,            "      CU: ", f)                   \
   f(purge_weak_par,                                 "    Weak Roots")                  \

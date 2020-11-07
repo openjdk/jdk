@@ -123,6 +123,7 @@ void ShenandoahDegenGC::op_degenerated() {
 
       /* Degen select Collection Set. etc. */
       op_prepare_evacuation();
+
       op_cleanup_early();
 
     case _degenerated_evac:
@@ -164,10 +165,6 @@ void ShenandoahDegenGC::op_degenerated() {
           op_degenerated_fail();
           return;
         }
-      } else {
-        // Disarm nmethods that armed for concurrent mark. On normal cycle, it would
-        // be disarmed while conc-roots phase is running.
-        ShenandoahCodeRoots::disarm_nmethods();
       }
 
       // If heuristics thinks we should do the cycle, this flag would be set,
@@ -182,6 +179,12 @@ void ShenandoahDegenGC::op_degenerated() {
         op_updaterefs();
         op_update_roots();
         assert(!heap()->cancelled_gc(), "STW reference update can not OOM");
+      }
+
+      if (ShenandoahConcurrentRoots::can_do_concurrent_class_unloading()) {
+         // Disarm nmethods that armed in concurrent cycle.
+         // In above case, update roots should disarm them
+         ShenandoahCodeRoots::disarm_nmethods();
       }
 
       op_cleanup_complete();
@@ -274,18 +277,27 @@ void ShenandoahDegenGC::op_evacuate() {
 
 void ShenandoahDegenGC::op_init_updaterefs() {
   // Evacuation has completed
+  heap()->set_evacuation_in_progress(false);
+  heap()->set_concurrent_weak_root_in_progress(false);
+  heap()->set_concurrent_strong_root_in_progress(false);
+
   heap()->prepare_update_heap_references(false /*concurrent*/);
+  heap()->set_update_refs_in_progress(true);
 }
 
 void ShenandoahDegenGC::op_updaterefs() {
   ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_updaterefs);
   // Handed over from concurrent update references phase
   heap()->update_heap_references(false /*concurrent*/);
+
+  heap()->set_update_refs_in_progress(false);
+  heap()->set_has_forwarded_objects(false);
 }
 
 void ShenandoahDegenGC::op_update_roots() {
-  ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_update_roots);
   update_roots(false /*full_gc*/);
+
+  heap()->update_heap_region_states(false /*concurrent*/);
 }
 
 void ShenandoahDegenGC::op_cleanup_complete() {

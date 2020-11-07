@@ -364,12 +364,10 @@ void ShenandoahConcurrentMark::concurrent_mark() {
 void ShenandoahConcurrentMark::finish_mark() {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
   assert(Thread::current()->is_VM_thread(), "Must by VM Thread");
-  assert(!heap()->cancelled_gc(), "Should not continue");
   finish_mark_work();
   assert(task_queues()->is_empty(), "Should be empty");
   TASKQUEUE_STATS_ONLY(task_queues()->print_taskqueue_stats());
   TASKQUEUE_STATS_ONLY(task_queues()->reset_taskqueue_stats());
-  assert(!heap()->cancelled_gc(), "STW mark cannot OOM");
 
   heap()->set_concurrent_mark_in_progress(false);
   heap()->mark_complete_marking_context();
@@ -383,7 +381,7 @@ void ShenandoahConcurrentMark::finish_mark_work() {
   // - For mark-compact GC, it starts out with the task queues seeded by initial
   //   root scan, and completes the closure, thus marking through all live objects
   // The implementation is the same, so it's shared here.
-  ShenandoahGCPhase phase(ShenandoahPhaseTimings::finish_queues);
+  ShenandoahGCPhase phase(ShenandoahPhaseTimings::finish_mark);
   uint nworkers = _heap->workers()->active_workers();
   task_queues()->reserve(nworkers);
 

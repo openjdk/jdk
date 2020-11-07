@@ -252,6 +252,7 @@ inline HeapWord* ShenandoahHeap::allocate_from_gclab(Thread* thread, size_t size
 }
 
 inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
+  assert(marking_context()->is_marked_strong(p), "Not strongly marked");
   if (ShenandoahThreadLocalData::is_oom_during_evac(Thread::current())) {
     // This thread went through the OOM during evac protocol and it is safe to return
     // the forward pointer. It must not attempt to evacuate any more.
@@ -328,7 +329,7 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
 
 inline bool ShenandoahHeap::requires_marking(const void* entry) const {
   oop obj = oop(entry);
-  return !_marking_context->is_marked(obj);
+  return !_marking_context->is_marked_strong(obj);
 }
 
 inline bool ShenandoahHeap::in_collection_set(oop p) const {
@@ -448,7 +449,7 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
         assert (slots[c] < limit, "only objects below limit here: " PTR_FORMAT " (" PTR_FORMAT ")", p2i(slots[c]), p2i(limit));
         oop obj = oop(slots[c]);
         assert(oopDesc::is_oop(obj), "sanity");
-        assert(ctx->is_marked(obj), "object expected to be marked");
+        assert(ctx->is_marked_strong(obj), "object expected to be marked");
         cl->do_object(obj);
       }
     } while (avail > 0);
@@ -458,7 +459,7 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
       assert (cb < limit, "only objects below limit here: " PTR_FORMAT " (" PTR_FORMAT ")", p2i(cb), p2i(limit));
       oop obj = oop(cb);
       assert(oopDesc::is_oop(obj), "sanity");
-      assert(ctx->is_marked(obj), "object expected to be marked");
+      assert(ctx->is_marked_strong(obj), "object expected to be marked");
       cl->do_object(obj);
       cb += skip_bitmap_delta;
       if (cb < limit_bitmap) {
@@ -476,7 +477,7 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
     assert (cs < limit, "only objects below limit here: " PTR_FORMAT " (" PTR_FORMAT ")", p2i(cs), p2i(limit));
     oop obj = oop(cs);
     assert(oopDesc::is_oop(obj), "sanity");
-    assert(ctx->is_marked(obj), "object expected to be marked");
+    assert(ctx->is_marked_strong(obj), "object expected to be marked");
     int size = obj->size();
     cl->do_object(obj);
     cs += size;

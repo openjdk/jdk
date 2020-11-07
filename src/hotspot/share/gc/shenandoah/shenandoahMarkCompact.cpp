@@ -339,7 +339,7 @@ public:
 
   void do_object(oop p) {
     assert(_from_region != NULL, "must set before work");
-    assert(_heap->complete_marking_context()->is_marked(p), "must be marked");
+    assert(_heap->complete_marking_context()->is_marked_strong(p), "must be marked");
     assert(!_heap->complete_marking_context()->allocated_after_mark_start(p), "must be truly marked");
 
     size_t obj_size = p->size();
@@ -523,7 +523,7 @@ public:
   void heap_region_do(ShenandoahHeapRegion* r) {
     if (r->is_humongous_start()) {
       oop humongous_obj = oop(r->bottom());
-      if (!_ctx->is_marked(humongous_obj)) {
+      if (!_ctx->is_marked_strong(humongous_obj)) {
         assert(!r->has_live(),
                "Region " SIZE_FORMAT " is not marked, should not have live", r->index());
         _heap->trash_humongous_region_at(r);
@@ -733,7 +733,7 @@ private:
     T o = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
-      assert(_ctx->is_marked(obj), "must be marked");
+      assert(_ctx->is_marked_strong(obj), "must be marked");
       if (obj->is_forwarded()) {
         oop forw = obj->forwardee();
         RawAccess<IS_NOT_NULL>::oop_store(p, forw);
@@ -760,7 +760,7 @@ public:
     _heap(ShenandoahHeap::heap()) {
   }
   void do_object(oop p) {
-    assert(_heap->complete_marking_context()->is_marked(p), "must be marked");
+    assert(_heap->complete_marking_context()->is_marked_strong(p), "must be marked");
     p->oop_iterate(&_cl);
   }
 };
@@ -841,7 +841,7 @@ public:
     _heap(ShenandoahHeap::heap()), _worker_id(worker_id) {}
 
   void do_object(oop p) {
-    assert(_heap->complete_marking_context()->is_marked(p), "must be marked");
+    assert(_heap->complete_marking_context()->is_marked_strong(p), "must be marked");
     size_t size = (size_t)p->size();
     if (p->is_forwarded()) {
       HeapWord* compact_from = cast_from_oop<HeapWord*>(p);

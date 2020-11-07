@@ -1266,7 +1266,7 @@ private:
     T o = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
-      if (_heap->is_concurrent_weak_root_in_progress() && !_marking_context->is_marked(obj)) {
+      if (_heap->is_concurrent_weak_root_in_progress() && !_marking_context->is_marked_strong(obj)) {
         // There may be dead oops in weak roots in concurrent root phase, do not touch them.
         return;
       }
@@ -1375,7 +1375,7 @@ private:
     T o = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
-      if (_heap->is_concurrent_weak_root_in_progress() && !_marking_context->is_marked(obj)) {
+      if (_heap->is_concurrent_weak_root_in_progress() && !_marking_context->is_marked_strong(obj)) {
         // There may be dead oops in weak roots in concurrent root phase, do not touch them.
         return;
       }
@@ -1589,13 +1589,17 @@ void ShenandoahHeap::prepare_concurrent_roots() {
   assert(!is_stw_gc_in_progress(), "Only concurrent GC");
   set_concurrent_strong_root_in_progress(!collection_set()->is_empty());
   set_concurrent_weak_root_in_progress(true);
-  _unloader.prepare();
+  if (ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
+    _unloader.prepare();
+  }
 }
 
 void ShenandoahHeap::finish_concurrent_roots() {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
   assert(!is_stw_gc_in_progress(), "Only concurrent GC");
-  _unloader.finish();
+  if (ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
+    _unloader.finish();
+  }
 }
 
 void ShenandoahHeap::rendezvous_threads() {
