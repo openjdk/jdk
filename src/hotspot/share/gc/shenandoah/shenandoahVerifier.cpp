@@ -219,15 +219,15 @@ private:
         // skip
         break;
       case ShenandoahVerifier::_verify_marked_incomplete:
-        check(ShenandoahAsserts::_safe_all, obj, _heap->marking_context()->is_marked_strong(obj),
+        check(ShenandoahAsserts::_safe_all, obj, _heap->marking_context()->is_marked(obj),
                "Must be marked in incomplete bitmap");
         break;
       case ShenandoahVerifier::_verify_marked_complete:
-        check(ShenandoahAsserts::_safe_all, obj, _heap->complete_marking_context()->is_marked_strong(obj),
+        check(ShenandoahAsserts::_safe_all, obj, _heap->complete_marking_context()->is_marked(obj),
                "Must be marked in complete bitmap");
         break;
       case ShenandoahVerifier::_verify_marked_complete_except_references:
-        check(ShenandoahAsserts::_safe_all, obj, _heap->complete_marking_context()->is_marked_strong(obj),
+        check(ShenandoahAsserts::_safe_all, obj, _heap->complete_marking_context()->is_marked(obj),
               "Must be marked in complete bitmap, except j.l.r.Reference referents");
         break;
       default:
@@ -540,7 +540,7 @@ public:
   virtual void work_humongous(ShenandoahHeapRegion *r, ShenandoahVerifierStack& stack, ShenandoahVerifyOopClosure& cl) {
     size_t processed = 0;
     HeapWord* obj = r->bottom();
-    if (_heap->complete_marking_context()->is_marked_strong((oop)obj)) {
+    if (_heap->complete_marking_context()->is_marked((oop)obj)) {
       verify_and_follow(obj, stack, cl, &processed);
     }
     Atomic::add(&_processed, processed);
@@ -968,7 +968,7 @@ private:
       oop obj = CompressedOops::decode_not_null(o);
       ShenandoahHeap* heap = ShenandoahHeap::heap();
 
-      if (!heap->marking_context()->is_marked_strong(obj)) {
+      if (!heap->marking_context()->is_marked(obj)) {
         ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, NULL,
                 "Verify Roots In To-Space", "Should be marked", __FILE__, __LINE__);
       }

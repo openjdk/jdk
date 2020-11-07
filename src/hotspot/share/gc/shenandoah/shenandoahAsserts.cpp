@@ -309,7 +309,7 @@ void ShenandoahAsserts::assert_marked(void *interior_loc, oop obj, const char *f
   assert_correct(interior_loc, obj, file, line);
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  if (!heap->marking_context()->is_marked_strong(obj)) {
+  if (!heap->marking_context()->is_marked(obj)) {
     print_failure(_safe_all, obj, interior_loc, NULL, "Shenandoah assert_marked failed",
                   "Object should be marked",
                   file, line);

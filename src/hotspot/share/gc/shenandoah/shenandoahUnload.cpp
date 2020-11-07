@@ -63,7 +63,7 @@ public:
 
     const oop o = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(o) &&
-        !_marking_context->is_marked_strong(o)) {
+        !_marking_context->is_marked(o)) {
       _is_unloading = true;
     }
   }
