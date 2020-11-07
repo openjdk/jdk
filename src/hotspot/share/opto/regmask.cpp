@@ -101,23 +101,23 @@ int RegMask::num_registers(uint ireg, LRG &lrg) {
   return n_regs;
 }
 
-static const uintptr_t ZERO_BITS = uintptr_t(0);  // 0x00..00
-static const uintptr_t ALL_BITS = ~uintptr_t(0);  // 0xFF..FF
-static const uintptr_t EVERY_TWO_LOW_BITS = ALL_BITS/3;        // 0x5555..55
+static const uintptr_t zero  = uintptr_t(0);  // 0x00..00
+static const uintptr_t all   = ~uintptr_t(0);  // 0xFF..FF
+static const uintptr_t fives = all/3;        // 0x5555..55
 
 // only indices of power 2 are accessed, so index 3 is only filled in for storage.
-static const uintptr_t low_bits[5] = { EVERY_TWO_LOW_BITS, // 0x5555..55
-                                       ALL_BITS/15,        // 0x1111..11,
-                                       ALL_BITS/255,       // 0x0101..01,
-                                       ZERO_BITS,          // 0x0000..00
-                                       (ALL_BITS/255)/5 }; // 0x0001..01
+static const uintptr_t low_bits[5] = { fives, // 0x5555..55
+                                       all/15,        // 0x1111..11,
+                                       all/255,       // 0x0101..01,
+                                       zero,          // 0x0000..00
+                                       (all/255)/5 }; // 0x0001..01
 
 // Clear out partial bits; leave only bit pairs
 void RegMask::clear_to_pairs() {
   assert(valid_watermarks(), "sanity");
   for (unsigned i = _lwm; i <= _hwm; i++) {
     uintptr_t bits = _RM_UP[i];
-    bits &= ((bits & EVERY_TWO_LOW_BITS) << 1U); // 1 hi-bit set for each pair
+    bits &= ((bits & fives) << 1U); // 1 hi-bit set for each pair
     bits |= (bits >> 1U);          // Smear 1 hi-bit into a pair
     _RM_UP[i] = bits;
   }
@@ -136,11 +136,11 @@ bool RegMask::is_aligned_pairs() const {
     while (bits) {              // Check bits for pairing
       uintptr_t bit = uintptr_t(1) << find_lowest_bit(bits); // Extract low bit
       // Low bit is not odd means its mis-aligned.
-      if ((bit & EVERY_TWO_LOW_BITS) == 0) return false;
+      if ((bit & fives) == 0) return false;
       bits -= bit;              // Remove bit from mask
       // Check for aligned adjacent bit
-      if ((bits & (bit << uintptr_t(1))) == 0) return false;
-      bits -= (bit << uintptr_t(1)); // Remove other halve of pair
+      if ((bits & (bit << 1U)) == 0) return false;
+      bits -= (bit << 1U); // Remove other halve of pair
     }
   }
   return true;
@@ -155,11 +155,11 @@ bool RegMask::is_bound1() const {
 // Return TRUE if the mask contains an adjacent pair of bits and no other bits.
 bool RegMask::is_bound_pair() const {
   if (is_AllStack()) return false;
-  uintptr_t bit = ALL_BITS;               // Set to hold the one bit allowed
+  uintptr_t bit = all;               // Set to hold the one bit allowed
   assert(valid_watermarks(), "sanity");
   for (unsigned i = _lwm; i <= _hwm; i++) {
     if (_RM_UP[i]) {               // Found some bits
-      if (bit != ALL_BITS) return false; // Already had bits, so fail
+      if (bit != all) return false; // Already had bits, so fail
       bit = uintptr_t(1) << find_lowest_bit(_RM_UP[i]); // Extract lowest bit from mask
       if ((bit << 1U) != 0) {      // Bit pair stays in same word?
         if ((bit | (bit << 1U)) != _RM_UP[i])
@@ -308,10 +308,10 @@ bool RegMask::is_bound_set(const unsigned int size) const {
   if (is_AllStack()) return false;
   assert(1 <= size && size <= 16, "update low bits table");
   assert(valid_watermarks(), "sanity");
-  uintptr_t bit = ALL_BITS;         // Set to hold the one bit allowed
+  uintptr_t bit = all;         // Set to hold the one bit allowed
   for (unsigned i = _lwm; i <= _hwm; i++) {
     if (_RM_UP[i] ) {           // Found some bits
-      if (bit != ALL_BITS)
+      if (bit != all)
         return false;           // Already had bits, so fail
       unsigned bit_index = find_lowest_bit(_RM_UP[i]);
       bit = uintptr_t(1) << bit_index;
@@ -321,7 +321,7 @@ bool RegMask::is_bound_set(const unsigned int size) const {
         if (set != _RM_UP[i])
           return false;         // Require adjacent bit set and no more bits
       } else {                  // Else its a split-set case
-        if ((ALL_BITS & ~(bit-1)) != _RM_UP[i])
+        if ((all & ~(bit-1)) != _RM_UP[i])
           return false;         // Found many bits, so fail
         i++;                    // Skip iteration forward and check high part
         // The lower (BitsPerWord - size) bits should be 1 since it is split case.
