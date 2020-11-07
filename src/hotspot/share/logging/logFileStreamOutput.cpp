@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "logging/logFileStreamOutput.hpp"
 #include "logging/logMessageBuffer.hpp"
 #include "memory/allocation.inline.hpp"
+#include "utilities/defaultStream.hpp"
 
 static bool initialized;
 static union {
@@ -72,36 +73,79 @@ int LogFileStreamOutput::write_decorations(const LogDecorations& decorations) {
   return total_written;
 }
 
+class FileLocker : public StackObj {
+private:
+  FILE *_file;
+
+public:
+  FileLocker(FILE *file) : _file(file) {
+    os::flockfile(_file);
+  }
+
+  ~FileLocker() {
+    os::funlockfile(_file);
+  }
+};
+
+#define WRITE_LOG_WITH_RESULT_CHECK(result, op, total)      \
+  result = op;                                              \
+  if (result <= 0) {                                        \
+    jio_fprintf(defaultStream::error_stream(),              \
+                "Could not write log: %s\n", name());  b    \
+    return -1;                                              \
+  }                                                         \
+  total += result;
+
+static bool fflush_error_is_shown = false;
+
 int LogFileStreamOutput::write(const LogDecorations& decorations, const char* msg) {
   const bool use_decorations = !_decorators.is_empty();
 
-  int written = 0;
-  os::flockfile(_stream);
+  int written;
+  int total_written = 0;
+  FileLocker flocker(_stream);
   if (use_decorations) {
-    written += write_decorations(decorations);
-    written += jio_fprintf(_stream, " ");
+    WRITE_LOG_WITH_RESULT_CHECK(written, write_decorations(decorations), total_written);
+    WRITE_LOG_WITH_RESULT_CHECK(written, jio_fprintf(_stream, " "), total_written);
   }
-  written += jio_fprintf(_stream, "%s\n", msg);
-  fflush(_stream);
-  os::funlockfile(_stream);
+  WRITE_LOG_WITH_RESULT_CHECK(written, jio_fprintf(_stream, "%s\n", msg), total_written);
+  if (fflush(_stream) != 0) {
+    if (!fflush_error_is_shown) {
+      jio_fprintf(defaultStream::error_stream(),
+                  "Could not flush log: %s (%s (%d))\n", name(), os::strerror(errno), errno);
+      fflush_error_is_shown = true;
+    }
+    return -1;
+  }
 
-  return written;
+  return total_written;
 }
 
 int LogFileStreamOutput::write(LogMessageBuffer::Iterator msg_iterator) {
   const bool use_decorations = !_decorators.is_empty();
 
-  int written = 0;
-  os::flockfile(_stream);
+  int written;
+  int total_written = 0;
+  FileLocker flocker(_stream);
   for (; !msg_iterator.is_at_end(); msg_iterator++) {
     if (use_decorations) {
-      written += write_decorations(msg_iterator.decorations());
-      written += jio_fprintf(_stream, " ");
+      WRITE_LOG_WITH_RESULT_CHECK(written,
+                                  write_decorations(msg_iterator.decorations()),
+                                  total_written);
+      WRITE_LOG_WITH_RESULT_CHECK(written, jio_fprintf(_stream, " "), total_written);
     }
-    written += jio_fprintf(_stream, "%s\n", msg_iterator.message());
+    WRITE_LOG_WITH_RESULT_CHECK(written,
+                                jio_fprintf(_stream, "%s\n", msg_iterator.message()),
+                                total_written);
   }
-  fflush(_stream);
-  os::funlockfile(_stream);
+  if (fflush(_stream) != 0) {
+    if (!fflush_error_is_shown) {
+      jio_fprintf(defaultStream::error_stream(),
+                  "Could not flush log: %s (%s (%d))\n", name(), os::strerror(errno), errno);
+      fflush_error_is_shown = true;
+    }
+    return -1;
+  }
 
-  return written;
+  return total_written;
 }
