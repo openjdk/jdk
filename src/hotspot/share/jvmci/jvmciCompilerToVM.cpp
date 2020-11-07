@@ -2295,6 +2295,7 @@ C2V_VMENTRY_NULL(jlongArray, registerNativeMethods, (JNIEnv* env, jobject, jclas
       // 1) Try JNI short style
       stringStream st;
       char* pure_name = NativeLookup::pure_jni_name(method);
+      guarantee(pure_name != NULL, "Illegal native method name encountered");
       os::print_jni_name_prefix_on(&st, args_size);
       st.print_raw(pure_name);
       os::print_jni_name_suffix_on(&st, args_size);
@@ -2305,6 +2306,7 @@ C2V_VMENTRY_NULL(jlongArray, registerNativeMethods, (JNIEnv* env, jobject, jclas
         // 2) Try JNI long style
         st.reset();
         char* long_name = NativeLookup::long_jni_name(method);
+        guarantee(long_name != NULL, "Illegal native method name encountered");
         os::print_jni_name_prefix_on(&st, args_size);
         st.print_raw(pure_name);
         st.print_raw(long_name);
