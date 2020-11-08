@@ -27,37 +27,26 @@ package com.sun.java.swing.plaf.motif;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.Insets;
 import java.awt.event.KeyEvent;
-import java.awt.event.InputEvent;
-import java.util.*;
 
-import javax.swing.*;
-import javax.swing.plaf.*;
-import javax.swing.border.*;
-import javax.swing.text.JTextComponent;
-import javax.swing.text.DefaultEditorKit;
-
-import javax.swing.plaf.basic.BasicLookAndFeel;
+import javax.swing.JTextField;
+import javax.swing.UIDefaults;
+import javax.swing.border.Border;
+import javax.swing.plaf.BorderUIResource;
+import javax.swing.plaf.ColorUIResource;
+import javax.swing.plaf.FontUIResource;
+import javax.swing.plaf.InsetsUIResource;
 import javax.swing.plaf.basic.BasicBorders;
-import javax.swing.plaf.basic.BasicComboBoxRenderer;
-import javax.swing.plaf.basic.BasicComboBoxEditor;
+import javax.swing.plaf.basic.BasicLookAndFeel;
+import javax.swing.text.DefaultEditorKit;
 
 import sun.swing.SwingAccessor;
 import sun.swing.SwingUtilities2;
-import sun.awt.OSInfo;
 
 /**
  * Implements the Motif Look and Feel.
  * UI classes not implemented specifically for Motif will
  * default to those implemented in Basic.
- * <p>
- * <strong>Warning:</strong>
- * Serialized objects of this class will not be compatible with
- * future Swing releases.  The current serialization support is appropriate
- * for short term storage or RMI between applications running the same
- * version of Swing.  A future release of Swing will provide support for
- * long term persistence.
  *
  * @deprecated The Motif Look and Feel is deprecated with the intent to remove
  *             it in some future release. It is recommended to use
