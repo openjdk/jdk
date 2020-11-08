@@ -178,8 +178,10 @@ class RegMask {
   // Get highest-numbered register from mask, or BAD if mask is empty.
   OptoReg::Name find_last_elem() const {
     assert(valid_watermarks(), "sanity");
-    for (unsigned i = _hwm; i >= _lwm; i--) {
-      uintptr_t bits = _RM_UP[i];
+    // Careful not to overflow if _lwm == 0
+    unsigned i = _hwm + 1;
+    while (i > _lwm) {
+      uintptr_t bits = _RM_UP[--i];
       if (bits) {
         return OptoReg::Name((i<<_LogWordBits) + find_highest_bit(bits));
       }
