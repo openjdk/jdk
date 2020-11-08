@@ -1,5 +1,5 @@
 /*
- * Copyright © 2018  Google, Inc.
+ * Copyright © 2019  Ebrahim Byagowi
  *
  *  This is part of HarfBuzz, a text shaping library.
  *
@@ -20,21 +20,24 @@
  * FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
  * ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
  * PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
- *
- * Google Author(s): Garret Rieger
  */
 
-#ifndef HB_SUBSET_GLYF_HH
-#define HB_SUBSET_GLYF_HH
+#ifndef HB_H_IN
+#error "Include <hb.h> instead."
+#endif
 
-#include "hb.hh"
+#ifndef HB_STYLE_H
+#define HB_STYLE_H
 
-#include "hb-subset.hh"
+#include "hb.h"
 
-HB_INTERNAL bool
-hb_subset_glyf_and_loca (hb_subset_plan_t *plan,
-                         bool             *use_short_loca, /* OUT */
-                         hb_blob_t       **glyf_prime      /* OUT */,
-                         hb_blob_t       **loca_prime      /* OUT */);
+HB_BEGIN_DECLS
 
-#endif /* HB_SUBSET_GLYF_HH */
+#ifdef HB_EXPERIMENTAL_API
+HB_EXTERN float
+hb_style_get_value (hb_font_t *font, hb_tag_t style_tag);
+#endif
+
+HB_END_DECLS
+
+#endif /* HB_STYLE_H */
