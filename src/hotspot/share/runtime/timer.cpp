@@ -47,22 +47,6 @@ jlong TimeHelper::micros_to_counter(jlong micros) {
   return micros * freq;
 }
 
-elapsedTimer::elapsedTimer(jlong time, jlong timeUnitsPerSecond) {
-  _active = false;
-  jlong osTimeUnitsPerSecond = os::elapsed_frequency();
-  assert(osTimeUnitsPerSecond % 1000 == 0, "must be");
-  assert(timeUnitsPerSecond % 1000 == 0, "must be");
-  while (osTimeUnitsPerSecond < timeUnitsPerSecond) {
-    timeUnitsPerSecond /= 1000;
-    time *= 1000;
-  }
-  while (osTimeUnitsPerSecond > timeUnitsPerSecond) {
-    timeUnitsPerSecond *= 1000;
-    time /= 1000;
-  }
-  _counter = time;
-}
-
 void elapsedTimer::add(elapsedTimer t) {
   _counter += t._counter;
 }
