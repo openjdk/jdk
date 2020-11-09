@@ -63,6 +63,8 @@ typedef __int32 int32_t;
 typedef unsigned __int32 uint32_t;
 typedef __int64 int64_t;
 typedef unsigned __int64 uint64_t;
+#elif defined (__KERNEL__)
+#  include <linux/types.h>
 #else
 #  include <stdint.h>
 #endif
@@ -357,6 +359,22 @@ typedef enum
   /*11.0*/HB_SCRIPT_OLD_SOGDIAN                 = HB_TAG ('S','o','g','o'),
   /*11.0*/HB_SCRIPT_SOGDIAN                     = HB_TAG ('S','o','g','d'),
 
+  /*
+   * Since 2.4.0
+   */
+  /*12.0*/HB_SCRIPT_ELYMAIC                     = HB_TAG ('E','l','y','m'),
+  /*12.0*/HB_SCRIPT_NANDINAGARI                 = HB_TAG ('N','a','n','d'),
+  /*12.0*/HB_SCRIPT_NYIAKENG_PUACHUE_HMONG      = HB_TAG ('H','m','n','p'),
+  /*12.0*/HB_SCRIPT_WANCHO                      = HB_TAG ('W','c','h','o'),
+
+  /*
+   * Since 2.6.7
+   */
+  /*13.0*/HB_SCRIPT_CHORASMIAN                  = HB_TAG ('C','h','r','s'),
+  /*13.0*/HB_SCRIPT_DIVES_AKURU                 = HB_TAG ('D','i','a','k'),
+  /*13.0*/HB_SCRIPT_KHITAN_SMALL_SCRIPT         = HB_TAG ('K','i','t','s'),
+  /*13.0*/HB_SCRIPT_YEZIDI                      = HB_TAG ('Y','e','z','i'),
+
   /* No script set. */
   HB_SCRIPT_INVALID                             = HB_TAG_NONE,
 
@@ -415,6 +433,21 @@ typedef void (*hb_destroy_func_t) (void *user_data);
  */
 #define HB_FEATURE_GLOBAL_END   ((unsigned int) -1)
 
+/**
+ * hb_feature_t:
+ * @tag: a feature tag
+ * @value: 0 disables the feature, non-zero (usually 1) enables the feature.
+ * For features implemented as lookup type 3 (like 'salt') the @value is a one
+ * based index into the alternates.
+ * @start: the cluster to start applying this feature setting (inclusive).
+ * @end: the cluster to end applying this feature setting (exclusive).
+ *
+ * The #hb_feature_t is the structure that holds information about requested
+ * feature application. The feature will be applied with the given value to all
+ * glyphs which are in clusters between @start (inclusive) and @end (exclusive).
+ * Setting start to @HB_FEATURE_GLOBAL_START and end to @HB_FEATURE_GLOBAL_END
+ * specifies that the feature always applies to the entire buffer.
+ */
 typedef struct hb_feature_t {
   hb_tag_t      tag;
   uint32_t      value;
@@ -459,39 +492,21 @@ typedef uint32_t hb_color_t;
 
 #define HB_COLOR(b,g,r,a) ((hb_color_t) HB_TAG ((b),(g),(r),(a)))
 
-/**
- * hb_color_get_alpha:
- *
- *
- *
- * Since: 2.1.0
- */
+HB_EXTERN uint8_t
+hb_color_get_alpha (hb_color_t color);
 #define hb_color_get_alpha(color)       ((color) & 0xFF)
-/**
- * hb_color_get_red:
- *
- *
- *
- * Since: 2.1.0
- */
-#define hb_color_get_red(color)         (((color) >> 8) & 0xFF)
-/**
- * hb_color_get_green:
- *
- *
- *
- * Since: 2.1.0
- */
-#define hb_color_get_green(color)       (((color) >> 16) & 0xFF)
-/**
- * hb_color_get_blue:
- *
- *
- *
- * Since: 2.1.0
- */
-#define hb_color_get_blue(color)        (((color) >> 24) & 0xFF)
 
+HB_EXTERN uint8_t
+hb_color_get_red (hb_color_t color);
+#define hb_color_get_red(color)         (((color) >> 8) & 0xFF)
+
+HB_EXTERN uint8_t
+hb_color_get_green (hb_color_t color);
+#define hb_color_get_green(color)       (((color) >> 16) & 0xFF)
+
+HB_EXTERN uint8_t
+hb_color_get_blue (hb_color_t color);
+#define hb_color_get_blue(color)        (((color) >> 24) & 0xFF)
 
 HB_END_DECLS
 

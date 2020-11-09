@@ -25,6 +25,7 @@ package nsk.jvmti.ResourceExhausted;
 import java.io.PrintStream;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import jdk.test.lib.Platform;
 import nsk.share.Consts;
 import nsk.share.test.Stresser;
 import jtreg.SkippedException;
@@ -42,6 +43,11 @@ public class resexhausted001 {
 
     public static int run(String args[], PrintStream out) {
 
+        // Check platform here (instead of @requires) as this test is also called from resexhausted004
+        if (Platform.isWindows()) {
+            throw new SkippedException("Cannot get JVMTI_RESOURCE_EXHAUSTED_THREADS on Windows");
+        }
+
         Stresser stress = new Stresser(args);
 
         int count = 0;
@@ -56,14 +62,15 @@ public class resexhausted001 {
                 makeThread();
             }
 
-            System.out.println("Can't reproduce OOME due to a limit on iterations/execution time. Test was useless.");
+            System.out.println("Can't reproduce OOME due to a limit on iterations/execution time. Test was useless."
+                    + " threadCount=" + threadCount.get());
             throw new SkippedException("Test did not get an OutOfMemory error");
 
         } catch (OutOfMemoryError e) {
             count = threadCount.get();
         } finally {
-            threadsDone = true;
             synchronized (hanger) {
+                threadsDone = true;
                 hanger.notifyAll();
             }
             stress.finish();
@@ -74,7 +81,8 @@ public class resexhausted001 {
         }
 
         System.gc();
-        if (!Helper.checkResult("creating " + count + " threads")) {
+        System.out.println("got OOME with threadCount=" + count);
+        if (!Helper.checkResult(Helper.JVMTI_RESOURCE_EXHAUSTED_THREADS, "creating " + count + " threads")) {
             return Consts.TEST_FAILED;
         }
 
@@ -85,16 +93,17 @@ public class resexhausted001 {
         final Thread thr = new Thread(new Runnable() {
             public void run() {
                 threadCount.getAndIncrement();
-                while (!threadsDone) {
-                    try {
-                        synchronized (hanger) {
+                synchronized (hanger) {
+                    while (!threadsDone) {
+                        try {
                             hanger.wait();
-                        }
-                    } catch (InterruptedException ignored) {}
+                        } catch (InterruptedException ignored) {}
+                    }
                 }
                 threadCount.getAndDecrement();
             }
         }, "fleece");
+        thr.setDaemon(true);
         thr.start();
         return thr;
     }
