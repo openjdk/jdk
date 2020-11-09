@@ -102,7 +102,7 @@ template <enum hb_shaper_order_t order, typename Object> struct hb_shaper_object
           static void destroy (Type *p) { HB_SHAPER_DATA_DESTROY_FUNC (shaper, object) (p); } \
         }; \
         \
-        static_assert (true, "") /* Require semicolon. */
+        static_assert (true, "") /* Require semicolon after. */
 
 
 template <typename Object>

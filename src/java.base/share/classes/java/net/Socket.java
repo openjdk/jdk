@@ -96,7 +96,6 @@ import java.util.Collections;
  * </blockquote>
  * Additional (implementation specific) options may also be supported.
  *
- * @author  unascribed
  * @see     java.net.Socket#setSocketImplFactory(java.net.SocketImplFactory)
  * @see     java.net.SocketImpl
  * @see     java.nio.channels.SocketChannel

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012  Google, Inc.
+ * Copyright © 2018  Ebrahim Byagowi
  *
  *  This is part of HarfBuzz, a text shaping library.
  *
@@ -20,18 +20,16 @@
  * FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
  * ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
  * PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
- *
- * Google Author(s): Behdad Esfahbod
  */
+
+#ifndef HB_OT_METRICS_HH
+#define HB_OT_METRICS_HH
 
 #include "hb.hh"
 
-#if defined(HB_ATOMIC_INT_NIL)
-#error "Could not find any system to define atomic_int macros, library WILL NOT be thread-safe"
-#error "Check hb-atomic.hh for possible resolutions."
-#endif
+HB_INTERNAL bool
+_hb_ot_metrics_get_position_common (hb_font_t           *font,
+                                    hb_ot_metrics_tag_t  metrics_tag,
+                                    hb_position_t       *position     /* OUT.  May be NULL. */);
 
-#if defined(HB_MUTEX_IMPL_NIL)
-#error "Could not find any system to define mutex macros, library WILL NOT be thread-safe"
-#error "Check hb-mutex.hh for possible resolutions."
-#endif
+#endif /* HB_OT_METRICS_HH */

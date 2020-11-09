@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,9 +125,14 @@ void SetupThreadGraphicsInfo(JNIEnv *env, GDIWinSDOps *wsdo) {
             // First, init the HDC object
             AwtComponent *comp = GDIWindowSurfaceData_GetComp(env, wsdo);
             if (comp == NULL) {
+                // wsdo->invalid is set by GDIWindowSurfaceData_GetComp
                 return;
             }
             hDC = comp->GetDCFromComponent();
+            if (hDC == NULL) {
+                wsdo->invalid = JNI_TRUE;
+                return;
+            }
             if (hDC != NULL && wsdo->device != NULL) {
                 ::SelectObject(hDC, nullbrush);
                 ::SelectObject(hDC, nullpen);
