@@ -377,6 +377,9 @@ bool ObjectMonitor::enter(TRAPS) {
   EventJavaMonitorEnter event;
   if (event.should_commit()) {
     event.set_monitorClass(object()->klass());
+    // Set an address that is 'unique enough', such that events close in
+    // time and with the same address are likely (but not guaranteed) to
+    // belong to the same object.
     event.set_address((uintptr_t)this);
   }
 
@@ -1469,6 +1472,9 @@ static void post_monitor_wait_event(EventJavaMonitorWait* event,
   assert(monitor != NULL, "invariant");
   event->set_monitorClass(monitor->object()->klass());
   event->set_timeout(timeout);
+  // Set an address that is 'unique enough', such that events close in
+  // time and with the same address are likely (but not guaranteed) to
+  // belong to the same object.
   event->set_address((uintptr_t)monitor);
   event->set_notifier(notifier_tid);
   event->set_timedOut(timedout);
