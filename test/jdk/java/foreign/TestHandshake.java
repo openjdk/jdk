@@ -93,7 +93,11 @@ public class TestHandshake {
                 try {
                     doAccess();
                 } catch (IllegalStateException ex) {
+                    long delay = System.currentTimeMillis() - start.get();
+                    System.out.println("Accessor #" + id + " suspending - delay (ms): " + delay);
                     backoff();
+                    delay = System.currentTimeMillis() - start.get();
+                    System.out.println("Accessor #" + id + " resuming - delay (ms): " + delay);
                     continue outer;
                 }
             }
