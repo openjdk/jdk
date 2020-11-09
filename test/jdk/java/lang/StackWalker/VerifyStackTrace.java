@@ -60,7 +60,7 @@ public class VerifyStackTrace {
         // Note: line numbers and lambda hashes will be erased when
         //       comparing stack traces. However, the stack may change
         //       if some methods are being renamed in the code base.
-        // If the JDK code base changes and the test fails because of that,
+        // If the  JDKcode base changes and the test fails because of that,
         // then after validating that the actual stack trace obtained
         // is indeed correct (no frames are skipped that shouldn't)
         // then you can cut & paste the <-- actual --> stack printed in the
@@ -130,24 +130,22 @@ public class VerifyStackTrace {
         // then you can cut & paste the <-- actual --> stack printed in the
         // test output in here (don't forget the final \n):
         private final String expected =
-            "1: VerifyStackTrace.lambda$test$1(VerifyStackTrace.java:250)\n" +
-            "2: java.base/java.lang.invoke.DirectMethodHandle$Holder.invokeStatic(DirectMethodHandle$Holder)\n" +
-            "3: java.base/java.lang.invoke.Invokers$Holder.invokeExact_MT(Invokers$Holder)\n" +
-            "4: VerifyStackTrace$$Lambda$1/0x0000000800b8f470.run(Unknown Source)\n" +
-            "5: VerifyStackTrace$Handle.execute(VerifyStackTrace.java:176)\n" +
-            "6: java.base/java.lang.invoke.DirectMethodHandle$Holder.invokeVirtual(DirectMethodHandle$Holder)\n" +
-            "7: java.base/java.lang.invoke.Invokers$Holder.invoke_MT(Invokers$Holder)\n" +
-            "8: VerifyStackTrace$Handle.run(VerifyStackTrace.java:189)\n" +
-            "9: VerifyStackTrace.invoke(VerifyStackTrace.java:229)\n" +
-            "10: java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n" +
-            "11: java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:64)\n" +
-            "12: java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n" +
-            "13: java.base/java.lang.reflect.Method.invoke(Method.java:564)\n" +
-            "14: VerifyStackTrace$1.run(VerifyStackTrace.java:262)\n" +
-            "15: java.base/java.security.AccessController.executePrivileged(AccessController.java:753)\n" +
-            "16: java.base/java.security.AccessController.doPrivileged(AccessController.java:312)\n" +
-            "17: VerifyStackTrace.test(VerifyStackTrace.java:271)\n" +
-            "18: VerifyStackTrace.main(VerifyStackTrace.java:224)\n";
+            "1: VerifyStackTrace.lambda$test$1(VerifyStackTrace.java:213)\n" +
+            "2: VerifyStackTrace$$Lambda$1/0x00000007c0089430.run(Unknown Source)\n" +
+            "3: VerifyStackTrace$Handle.execute(VerifyStackTrace.java:149)\n" +
+            "4: java.base/java.lang.invoke.LambdaForm$DMH/0x00000007c008a830.invokeVirtual_LL_V(LambdaForm$DMH)\n" +
+            "5: java.base/java.lang.invoke.LambdaForm$MH/0x00000007c008a830.invoke_MT(LambdaForm$MH)\n" +
+            "6: VerifyStackTrace$Handle.run(VerifyStackTrace.java:162)\n" +
+            "7: VerifyStackTrace.invoke(VerifyStackTrace.java:192)\n" +
+            "8: java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n" +
+            "9: java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n" +
+            "10: java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n" +
+            "11: java.base/java.lang.reflect.Method.invoke(Method.java:520)\n" +
+            "12: VerifyStackTrace$1.run(VerifyStackTrace.java:222)\n" +
+            "13: java.base/java.security.AccessController.executePrivileged(AccessController.java:759)\n" +
+            "14: java.base/java.security.AccessController.doPrivileged(AccessController.java:310)\n" +
+            "15: VerifyStackTrace.test(VerifyStackTrace.java:231)\n" +
+            "16: VerifyStackTrace.main(VerifyStackTrace.java:188)\n";
 
         @Override public StackWalker walker() { return walker;}
         @Override public String description() { return description;}

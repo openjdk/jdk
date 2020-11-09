@@ -53,14 +53,8 @@ public class HiddenFrameTest {
         if (fs.length < 2) {
             throw new RuntimeException("Exception should have at least two frames", e);
         }
-        int i=0;
-        while (framesAreHidden
-                && i < fs.length
-                && fs[i].getClassName().startsWith("java.lang.invoke.")) {
-            i++;
-        }
 
-        assertContains("someMethod(Unknown Source)", fs[i].toString(), e, framesAreHidden);
+        assertContains("someMethod(Unknown Source)", fs[0].toString(), e, framesAreHidden);
     }
 
     public static void main(String[] args) throws Exception {

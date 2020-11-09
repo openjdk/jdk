@@ -28,8 +28,7 @@
  *   are hidden in the backtrace/stackTrace.
  * @bug 8218628
  * @library /test/lib
- * @compile -g NPEInHidd
- * enTopFrameTest.java
+ * @compile -g NPEInHiddenTopFrameTest.java
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-ShowHiddenFrames -XX:+ShowCodeDetailsInExceptionMessages NPEInHiddenTopFrameTest hidden
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+ShowHiddenFrames -XX:+ShowCodeDetailsInExceptionMessages NPEInHiddenTopFrameTest visible
  */
@@ -68,7 +67,6 @@ public class NPEInHiddenTopFrameTest {
                 concatter.someMethod(nullString, "validString");
             }
         } catch (NullPointerException e) {
-            e.printStackTrace();
             checkMessage("concatter.someMethod(nullString, \"validString\");", e.getMessage(),
                          framesAreHidden ?
                          // This is the message that would be printed if the wrong method/bci are used:
@@ -80,6 +78,7 @@ public class NPEInHiddenTopFrameTest {
                          // This is the correct message, but it describes code generated on-the-fly.
                          // You get it if you disable hiding frames (-XX:+ShowHiddenframes).
                          "Cannot invoke \"String.concat(String)\" because \"<parameter1>\" is null" );
+            e.printStackTrace();
         }
     }
 }
