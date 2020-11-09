@@ -181,10 +181,6 @@ void VM_Version::initialize() {
   }
 
   if (_cpu == CPU_ARM && (_model == 0xd07 || _model2 == 0xd07)) _features |= CPU_STXR_PREFETCH;
-  // If an olde style /proc/cpuinfo (cores == 1) then if _model is an A57 (0xd07)
-  // we assume the worst and assume we could be on a big little system and have
-  // undisclosed A53 cores which we could be swapped to at any stage
-  if (_cpu == CPU_ARM && os::processor_count() == 1 && _model == 0xd07) _features |= CPU_A53MAC;
 
   char buf[512];
   sprintf(buf, "0x%02x:0x%x:0x%03x:%d", _cpu, _variant, _model, _revision);
