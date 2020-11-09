@@ -1706,7 +1706,6 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
 
     // Remember how many oops we encountered and compute allocation type
     const FieldAllocationType atype = fac->update(is_static, type);
-    field->set_allocation_type(atype);
 
     // After field is initialized with type, we can augment it with aux info
     if (parsed_annotations.has_any_annotations()) {
@@ -1751,7 +1750,6 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
 
       // Remember how many oops we encountered and compute allocation type
       const FieldAllocationType atype = fac->update(false, type);
-      field->set_allocation_type(atype);
       index++;
     }
   }
