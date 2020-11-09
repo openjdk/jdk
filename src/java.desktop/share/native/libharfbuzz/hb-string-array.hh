@@ -37,6 +37,7 @@
 #define HB_STRING_ARRAY_TYPE_NAME       HB_PASTE(HB_STRING_ARRAY_NAME, _msgstr_t)
 #define HB_STRING_ARRAY_POOL_NAME       HB_PASTE(HB_STRING_ARRAY_NAME, _msgstr)
 #define HB_STRING_ARRAY_OFFS_NAME       HB_PASTE(HB_STRING_ARRAY_NAME, _msgidx)
+#define HB_STRING_ARRAY_LENG_NAME       HB_PASTE(HB_STRING_ARRAY_NAME, _length)
 
 static const union HB_STRING_ARRAY_TYPE_NAME {
   struct {
@@ -48,7 +49,7 @@ static const union HB_STRING_ARRAY_TYPE_NAME {
 #include HB_STRING_ARRAY_LIST
 #undef _S
   } st;
-  char str[VAR];
+  char str[HB_VAR_ARRAY];
 }
 HB_STRING_ARRAY_POOL_NAME =
 {
@@ -66,6 +67,8 @@ static const unsigned int HB_STRING_ARRAY_OFFS_NAME[] =
   sizeof (HB_STRING_ARRAY_TYPE_NAME)
 };
 
+static const unsigned int HB_STRING_ARRAY_LENG_NAME = ARRAY_LENGTH_CONST (HB_STRING_ARRAY_OFFS_NAME) - 1;
+
 static inline hb_bytes_t
 HB_STRING_ARRAY_NAME (unsigned int i)
 {
@@ -77,5 +80,6 @@ HB_STRING_ARRAY_NAME (unsigned int i)
 #undef HB_STRING_ARRAY_TYPE_NAME
 #undef HB_STRING_ARRAY_POOL_NAME
 #undef HB_STRING_ARRAY_OFFS_NAME
+#undef HB_STRING_ARRAY_LENG_NAME
 
 #endif /* HB_STRING_ARRAY_HH */

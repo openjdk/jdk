@@ -93,6 +93,17 @@ hb_ot_tags_to_script_and_language (hb_tag_t       script_tag,
 HB_EXTERN hb_bool_t
 hb_ot_layout_has_glyph_classes (hb_face_t *face);
 
+/**
+ * hb_ot_layout_glyph_class_t:
+ * @HB_OT_LAYOUT_GLYPH_CLASS_UNCLASSIFIED: Glyphs not matching the other classifications
+ * @HB_OT_LAYOUT_GLYPH_CLASS_BASE_GLYPH: Spacing, single characters, capable of accepting marks
+ * @HB_OT_LAYOUT_GLYPH_CLASS_LIGATURE: Glyphs that represent ligation of multiple characters
+ * @HB_OT_LAYOUT_GLYPH_CLASS_MARK: Non-spacing, combining glyphs that represent marks
+ * @HB_OT_LAYOUT_GLYPH_CLASS_COMPONENT: Spacing glyphs that represent part of a single character
+ *
+ * The GDEF classes defined for glyphs.
+ *
+ **/
 typedef enum {
   HB_OT_LAYOUT_GLYPH_CLASS_UNCLASSIFIED = 0,
   HB_OT_LAYOUT_GLYPH_CLASS_BASE_GLYPH   = 1,
@@ -109,7 +120,6 @@ HB_EXTERN void
 hb_ot_layout_get_glyphs_in_class (hb_face_t                  *face,
                                   hb_ot_layout_glyph_class_t  klass,
                                   hb_set_t                   *glyphs /* OUT */);
-
 
 /* Not that useful.  Provides list of attach points for a glyph that a
  * client may want to cache */
@@ -150,7 +160,7 @@ HB_EXTERN hb_bool_t
 hb_ot_layout_table_find_script (hb_face_t    *face,
                                 hb_tag_t      table_tag,
                                 hb_tag_t      script_tag,
-                                unsigned int *script_index);
+                                unsigned int *script_index /* OUT */);
 
 HB_EXTERN hb_bool_t
 hb_ot_layout_table_select_script (hb_face_t      *face,
@@ -188,15 +198,15 @@ hb_ot_layout_language_get_required_feature_index (hb_face_t    *face,
                                                   hb_tag_t      table_tag,
                                                   unsigned int  script_index,
                                                   unsigned int  language_index,
-                                                  unsigned int *feature_index);
+                                                  unsigned int *feature_index /* OUT */);
 
 HB_EXTERN hb_bool_t
 hb_ot_layout_language_get_required_feature (hb_face_t    *face,
                                             hb_tag_t      table_tag,
                                             unsigned int  script_index,
                                             unsigned int  language_index,
-                                            unsigned int *feature_index,
-                                            hb_tag_t     *feature_tag);
+                                            unsigned int *feature_index /* OUT */,
+                                            hb_tag_t     *feature_tag /* OUT */);
 
 HB_EXTERN unsigned int
 hb_ot_layout_language_get_feature_indexes (hb_face_t    *face,
@@ -222,7 +232,7 @@ hb_ot_layout_language_find_feature (hb_face_t    *face,
                                     unsigned int  script_index,
                                     unsigned int  language_index,
                                     hb_tag_t      feature_tag,
-                                    unsigned int *feature_index);
+                                    unsigned int *feature_index /* OUT */);
 
 HB_EXTERN unsigned int
 hb_ot_layout_feature_get_lookups (hb_face_t    *face,
@@ -313,6 +323,14 @@ hb_ot_layout_feature_with_variations_get_lookups (hb_face_t    *face,
 HB_EXTERN hb_bool_t
 hb_ot_layout_has_substitution (hb_face_t *face);
 
+HB_EXTERN unsigned
+hb_ot_layout_lookup_get_glyph_alternates (hb_face_t      *face,
+                                          unsigned        lookup_index,
+                                          hb_codepoint_t  glyph,
+                                          unsigned        start_offset,
+                                          unsigned       *alternate_count /* IN/OUT */,
+                                          hb_codepoint_t *alternate_glyphs /* OUT */);
+
 HB_EXTERN hb_bool_t
 hb_ot_layout_lookup_would_substitute (hb_face_t            *face,
                                       unsigned int          lookup_index,
@@ -390,6 +408,54 @@ hb_ot_layout_feature_get_characters (hb_face_t      *face,
                                      unsigned int    start_offset,
                                      unsigned int   *char_count    /* IN/OUT.  May be NULL */,
                                      hb_codepoint_t *characters    /* OUT.     May be NULL */);
+
+/*
+ * BASE
+ */
+
+/**
+ * hb_ot_layout_baseline_tag_t:
+ * @HB_OT_LAYOUT_BASELINE_TAG_ROMAN: The baseline used by alphabetic scripts such as Latin, Cyrillic and Greek.
+ * In vertical writing mode, the alphabetic baseline for characters rotated 90 degrees clockwise.
+ * (This would not apply to alphabetic characters that remain upright in vertical writing mode, since these
+ * characters are not rotated.)
+ * @HB_OT_LAYOUT_BASELINE_TAG_HANGING: The hanging baseline. In horizontal direction, this is the horizontal
+ * line from which syllables seem, to hang in Tibetan and other similar scripts. In vertical writing mode,
+ * for Tibetan (or some other similar script) characters rotated 90 degrees clockwise.
+ * @HB_OT_LAYOUT_BASELINE_TAG_IDEO_FACE_BOTTOM_OR_LEFT: Ideographic character face bottom or left edge,
+ * if the direction is horizontal or vertical, respectively.
+ * @HB_OT_LAYOUT_BASELINE_TAG_IDEO_FACE_TOP_OR_RIGHT: Ideographic character face top or right edge,
+ * if the direction is horizontal or vertical, respectively.
+ * @HB_OT_LAYOUT_BASELINE_TAG_IDEO_EMBOX_BOTTOM_OR_LEFT: Ideographic em-box bottom or left edge,
+ * if the direction is horizontal or vertical, respectively.
+ * @HB_OT_LAYOUT_BASELINE_TAG_IDEO_EMBOX_TOP_OR_RIGHT: Ideographic em-box top or right edge baseline,
+ * if the direction is horizontal or vertical, respectively.
+ * @HB_OT_LAYOUT_BASELINE_TAG_MATH: The baseline about which mathematical characters are centered.
+ * In vertical writing mode when mathematical characters rotated 90 degrees clockwise, are centered.
+ *
+ * Baseline tags from https://docs.microsoft.com/en-us/typography/opentype/spec/baselinetags
+ *
+ * Since: 2.6.0
+ */
+typedef enum {
+  HB_OT_LAYOUT_BASELINE_TAG_ROMAN                       = HB_TAG ('r','o','m','n'),
+  HB_OT_LAYOUT_BASELINE_TAG_HANGING                     = HB_TAG ('h','a','n','g'),
+  HB_OT_LAYOUT_BASELINE_TAG_IDEO_FACE_BOTTOM_OR_LEFT    = HB_TAG ('i','c','f','b'),
+  HB_OT_LAYOUT_BASELINE_TAG_IDEO_FACE_TOP_OR_RIGHT      = HB_TAG ('i','c','f','t'),
+  HB_OT_LAYOUT_BASELINE_TAG_IDEO_EMBOX_BOTTOM_OR_LEFT   = HB_TAG ('i','d','e','o'),
+  HB_OT_LAYOUT_BASELINE_TAG_IDEO_EMBOX_TOP_OR_RIGHT     = HB_TAG ('i','d','t','p'),
+  HB_OT_LAYOUT_BASELINE_TAG_MATH                        = HB_TAG ('m','a','t','h'),
+
+  _HB_OT_LAYOUT_BASELINE_TAG_MAX_VALUE = HB_TAG_MAX_SIGNED /*< skip >*/
+} hb_ot_layout_baseline_tag_t;
+
+HB_EXTERN hb_bool_t
+hb_ot_layout_get_baseline (hb_font_t                   *font,
+                           hb_ot_layout_baseline_tag_t  baseline_tag,
+                           hb_direction_t               direction,
+                           hb_tag_t                     script_tag,
+                           hb_tag_t                     language_tag,
+                           hb_position_t               *coord        /* OUT.  May be NULL. */);
 
 HB_END_DECLS
 

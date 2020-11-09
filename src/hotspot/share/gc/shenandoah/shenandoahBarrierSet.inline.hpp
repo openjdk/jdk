@@ -255,7 +255,7 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_ato
 
   // Note: We don't need a keep-alive-barrier here. We already enqueue any loaded reference for SATB anyway,
   // because it must be the previous value.
-  res = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(res);
+  res = ShenandoahBarrierSet::barrier_set()->load_reference_barrier<decorators, T>(res, NULL);
   bs->satb_enqueue(res);
   return res;
 }
@@ -281,7 +281,7 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_ato
 
   // Note: We don't need a keep-alive-barrier here. We already enqueue any loaded reference for SATB anyway,
   // because it must be the previous value.
-  previous = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(previous);
+  previous = ShenandoahBarrierSet::barrier_set()->load_reference_barrier<decorators, T>(previous, NULL);
   bs->satb_enqueue(previous);
   return previous;
 }
