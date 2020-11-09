@@ -42,6 +42,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -55,12 +56,15 @@ public class TestHandshake {
     static final int MAX_EXECUTOR_WAIT_SECONDS = 10;
     static final int MAX_THREAD_SPIN_WAIT_MILLIS = 200;
 
+    static final AtomicLong start = new AtomicLong();
+
     @Test(dataProvider = "accessors")
     public void testHandshake(String testName, AccessorFactory accessorFactory) throws InterruptedException {
         for (int it = 0 ; it < ITERATIONS ; it++) {
             MemorySegment segment = MemorySegment.allocateNative(SEGMENT_SIZE).share();
             System.out.println("ITERATION " + it);
             ExecutorService accessExecutor = Executors.newCachedThreadPool();
+            start.set(System.currentTimeMillis());
             for (int i = 0; i < Runtime.getRuntime().availableProcessors() ; i++) {
                 accessExecutor.execute(accessorFactory.make(i, segment));
             }
@@ -85,7 +89,6 @@ public class TestHandshake {
 
         @Override
         public final void run() {
-            long prev = System.currentTimeMillis();
             outer: while (segment.isAlive()) {
                 try {
                     doAccess();
@@ -94,7 +97,7 @@ public class TestHandshake {
                     continue outer;
                 }
             }
-            long delay = System.currentTimeMillis() - prev;
+            long delay = System.currentTimeMillis() - start.get();
             System.out.println("Accessor #" + id + " terminated - delay (ms): " + delay);
         }
 
@@ -222,7 +225,6 @@ public class TestHandshake {
 
         @Override
         public void run() {
-            long prev = System.currentTimeMillis();
             while (true) {
                 try {
                     segment.close();
@@ -231,7 +233,7 @@ public class TestHandshake {
                     Thread.onSpinWait();
                 }
             }
-            long delay = System.currentTimeMillis() - prev;
+            long delay = System.currentTimeMillis() - start.get();
             System.out.println("Segment closed - delay (ms): " + delay);
         }
     }
