@@ -1976,6 +1976,8 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       Node* cast = NULL;
       if (phi_type->isa_int()) {
         cast = ConstraintCastNode::make_cast(Op_CastII, r, uin, phi_type, true);
+      } else if (phi_type->isa_long()) {
+        cast = ConstraintCastNode::make_cast(Op_CastLL, r, uin, phi_type, true);
       } else {
         const Type* uin_type = phase->type(uin);
         if (!phi_type->isa_oopptr() && !uin_type->isa_oopptr()) {

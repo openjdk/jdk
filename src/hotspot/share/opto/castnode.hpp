@@ -95,8 +95,8 @@ class CastIINode: public ConstraintCastNode {
 
 class CastLLNode: public ConstraintCastNode {
 public:
-  CastLLNode(Node* n, const Type* t)
-          : ConstraintCastNode(n, t, false){
+  CastLLNode(Node* n, const Type* t, bool carry_dependency = false)
+          : ConstraintCastNode(n, t, carry_dependency){
     init_class_id(Class_CastLL);
   }
   virtual int Opcode() const;
