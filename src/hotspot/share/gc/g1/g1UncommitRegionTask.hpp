@@ -30,7 +30,9 @@
 #include "utilities/ticks.hpp"
 
 class G1UncommitRegionTask : public G1ServiceTask {
-  static const uint UncommitChunkSize = 64;
+  // Limit a single execution of the task to uncommit at most
+  // this many regions.
+  static const uint UncommitRegionLimit = 32;
 
   static G1UncommitRegionTask* _instance;
   static void initialize();

@@ -100,34 +100,17 @@ void G1UncommitRegionTask::clear_summary() {
 void G1UncommitRegionTask::execute() {
   assert(_state == TaskState::active, "Must be active");
 
+  // Prevent from running during a GC pause.
+  SuspendibleThreadSetJoiner sts;
   HeapRegionManager* hrm = G1CollectedHeap::heap()->hrm();
 
-  uint regions_left = UncommitChunkSize;
-  uint total_regions = 0;
-  uint total_size = 0;
+  Ticks start = Ticks::now();
+  uint uncommit_count = hrm->uncommit_inactive_regions(UncommitRegionLimit);
+  Tickspan uncommit_time = (Ticks::now() - start);
 
-  SuspendibleThreadSetJoiner sts;
-  Tickspan total_time;
-
-  do {
-    if (sts.should_yield()) {
-      sts.yield();
-    }
-
-    Ticks start = Ticks::now();
-    uint uncommit_count = hrm->uncommit_inactive_regions(regions_left);
-    Tickspan chunk_time = (Ticks::now() - start);
-
-    regions_left -= uncommit_count;
-    total_regions += uncommit_count;
-    total_time += chunk_time;
-
-    if (uncommit_count == 0) {
-      break;
-    }
-  } while (regions_left > 0);
-
-  report_execution(total_time, total_regions);
+  if (uncommit_count > 0) {
+    report_execution(uncommit_time, uncommit_count);
+  }
 
   // Reschedule if there are more regions to uncommit, otherwise
   // change state to inactive.
