@@ -26,6 +26,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1UncommitRegionTask.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
+#include "runtime/globals.hpp"
 #include "utilities/ticks.hpp"
 
 G1UncommitRegionTask* G1UncommitRegionTask::_instance = NULL;
@@ -58,8 +59,11 @@ void G1UncommitRegionTask::activate() {
 
   G1UncommitRegionTask* uncommit_task = instance();
   if (!uncommit_task->is_active()) {
+    // Change state to active and schedule with no delay.
     uncommit_task->set_state(TaskState::active);
     uncommit_task->schedule(0);
+    // Notify service thread to avoid unnecesarry waiting.
+    G1CollectedHeap::heap()->service_thread()->notify();
   }
 }
 
@@ -70,7 +74,6 @@ bool G1UncommitRegionTask::is_active() {
 void G1UncommitRegionTask::set_state(TaskState state) {
   assert(_state != state, "Must do a state change");
   _state = state;
-  log_trace(gc, heap)("%s, new state: %s", name(), is_active() ? "active" : "inactive");
 }
 
 void G1UncommitRegionTask::report_execution(Tickspan time, uint regions) {
@@ -100,12 +103,15 @@ void G1UncommitRegionTask::clear_summary() {
 void G1UncommitRegionTask::execute() {
   assert(_state == TaskState::active, "Must be active");
 
+  // Each execution is limited to uncommit at most 256M worth of regions.
+  static const uint region_limit = (uint) (256 * M / G1HeapRegionSize);
+
   // Prevent from running during a GC pause.
   SuspendibleThreadSetJoiner sts;
   HeapRegionManager* hrm = G1CollectedHeap::heap()->hrm();
 
   Ticks start = Ticks::now();
-  uint uncommit_count = hrm->uncommit_inactive_regions(UncommitRegionLimit);
+  uint uncommit_count = hrm->uncommit_inactive_regions(region_limit);
   Tickspan uncommit_time = (Ticks::now() - start);
 
   if (uncommit_count > 0) {

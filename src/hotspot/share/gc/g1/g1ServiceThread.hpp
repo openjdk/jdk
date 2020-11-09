@@ -133,6 +133,9 @@ public:
   // Register a task with the service thread and schedule it. If
   // no delay is specified the task is scheduled to run directly.
   void register_task(G1ServiceTask* task, jlong delay = 0);
+  // Notify a change to the service thread. Used to stop either
+  // stop the service or to force check for new tasks.
+  void notify();
 };
 
 #endif // SHARE_GC_G1_G1SERVICETHREAD_HPP

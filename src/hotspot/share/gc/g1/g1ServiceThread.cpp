@@ -210,8 +210,7 @@ void G1ServiceThread::register_task(G1ServiceTask* task, jlong delay) {
 
   // Notify the service thread that there is a new task, thread might
   // be waiting and the newly added task might be first in the list.
-  MonitorLocker ml(&_monitor, Mutex::_no_safepoint_check_flag);
-  ml.notify();
+  notify();
 }
 
 void G1ServiceThread::schedule_task(G1ServiceTask* task, jlong delay_ms) {
@@ -241,6 +240,11 @@ int64_t G1ServiceThread::time_to_next_task_ms() {
 
   // Return sleep time in milliseconds.
   return (int64_t) TimeHelper::counter_to_millis(time_diff);
+}
+
+void G1ServiceThread::notify() {
+  MonitorLocker ml(&_monitor, Mutex::_no_safepoint_check_flag);
+  ml.notify();
 }
 
 void G1ServiceThread::sleep_before_next_cycle() {
@@ -309,8 +313,7 @@ void G1ServiceThread::run_service() {
 }
 
 void G1ServiceThread::stop_service() {
-  MonitorLocker ml(&_monitor, Mutex::_no_safepoint_check_flag);
-  ml.notify();
+  notify();
 }
 
 G1ServiceTask::G1ServiceTask(const char* name) :

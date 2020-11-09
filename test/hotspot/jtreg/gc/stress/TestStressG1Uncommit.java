@@ -30,8 +30,6 @@ package gc.stress;
  * @requires vm.gc.G1
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver/timeout=1300 gc.stress.TestStressG1Uncommit
  */
 
@@ -53,26 +51,13 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
-import sun.hotspot.WhiteBox;
-
 public class TestStressG1Uncommit {
     public static void main(String[] args) throws Exception {
-        runTest("Full");
-        runTest("Concurrent");
-    }
-
-    // Run the test with explicit arguments to make sure heap is not
-    // fixed and that we get the expected log tags.
-    private static void runTest(String gcType) throws Exception{
         ArrayList<String> options = new ArrayList<>();
         Collections.addAll(options,
-            "-Xbootclasspath/a:.",
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:+WhiteBoxAPI",
             "-Xlog:gc,gc+heap+region=debug",
             "-XX:+UseG1GC",
-            StressUncommit.class.getName(),
-            gcType
+            StressUncommit.class.getName()
         );
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(options);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
@@ -87,18 +72,11 @@ class StressUncommit {
     private static final long G = 1024 * M;
     private static final Instant StartTime = Instant.now();
 
-    private static final WhiteBox wb = WhiteBox.getWhiteBox();
     private static final ThreadMXBean threadBean = (ThreadMXBean) ManagementFactory.getThreadMXBean();
     private static final MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
     private static ConcurrentLinkedQueue<Object> globalKeepAlive;
 
     public static void main(String args[]) throws InterruptedException {
-        // Get GC type for this run.
-        if (args.length != 1) {
-            throw new IllegalArgumentException("Missing argument: <type of GC> Full or Concurrent");
-        }
-        GCType gc = GCType.valueOf(args[0]);
-
         // Leave 20% head room to try to avoid Full GCs.
         long allocationSize = (long) (Runtime.getRuntime().maxMemory() * 0.8);
 
@@ -127,13 +105,13 @@ class StressUncommit {
 
                 // Wait for tasks to complete.
                 workersRunning.await();
-                long committedBefore = memoryBean.getHeapMemoryUsage().getCommitted();
 
                 // Clear the reference holding all task allocations alive.
                 globalKeepAlive = null;
 
                 // Do a GC that should shrink the heap.
-                gc.invoke();
+                long committedBefore = memoryBean.getHeapMemoryUsage().getCommitted();
+                System.gc();
                 long committedAfter = memoryBean.getHeapMemoryUsage().getCommitted();
                 Asserts.assertLessThan(committedAfter, committedBefore);
             }
@@ -167,43 +145,5 @@ class StressUncommit {
 
     private static void log(String text) {
         System.out.println(uptime() + "s: " + text);
-    }
-
-    private enum GCType {
-        Full {
-            public void invoke() {
-                log("  Full GC");
-                System.gc();
-            }
-        },
-        Concurrent {
-            public void invoke() {
-                // First wait for any ergonomically started cycles.
-                if (wb.g1InConcurrentMark()) {
-                    waitForConcurrentCycleToFinish();
-                }
-                log("  Concurrent GC");
-                wb.g1StartConcMarkCycle();
-                waitForConcurrentCycleToFinish();
-                // Trigger mixed GCs to compact old a bit.
-                wb.youngGC();
-                wb.youngGC();
-                wb.youngGC();
-                // A second cycle to ensure we free up enough regions.
-                wb.g1StartConcMarkCycle();
-                waitForConcurrentCycleToFinish();
-            }
-        };
-        public abstract void invoke();
-    }
-
-    private static void waitForConcurrentCycleToFinish() {
-        while (wb.g1InConcurrentMark()) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
     }
 }
