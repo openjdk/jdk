@@ -872,10 +872,6 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, StressLdcRewrite, false,                                    \
           "Force ldc -> ldc_w rewrite during RedefineClasses")              \
                                                                             \
-  /* change to false by default sometime after Mustang */                   \
-  product(bool, VerifyMergedCPBytecodes, true,                              \
-          "Verify bytecodes after RedefineClasses constant pool merging")   \
-                                                                            \
   product(bool, AllowRedefinitionToAddDeleteMethods, false,                 \
           "(Deprecated) Allow redefinition to add and delete private "      \
           "static or final methods for compatibility with old releases")    \
