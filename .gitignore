@@ -2,7 +2,9 @@
 /dist/
 /.idea/
 /.vscode/
-/nbproject/
+nbproject/private/
+nbproject/configurations.xml
+nbproject/project.xml
 /webrev
 /.src-rev
 /.jib/
