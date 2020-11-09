@@ -5211,6 +5211,10 @@ public final class DateTimeFormatterBuilder {
          * @return true if {@code mod} is within this day period
          */
         boolean includes(long mod) {
+            // special check for 24:00 for midnight in hour-of-day
+            if (from == 0 && to == 0 && mod == 1_440) {
+                return true;
+            }
             return (from == mod && to == mod || // midnight/noon
                     from <= mod && mod < to || // contiguous from-to
                     from > to && (from <= mod || to > mod)); // beyond midnight

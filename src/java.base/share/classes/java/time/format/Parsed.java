@@ -470,40 +470,6 @@ final class Parsed implements TemporalAccessor {
             updateCheckConflict(MINUTE_OF_DAY, HOUR_OF_DAY, mod / 60);
             updateCheckConflict(MINUTE_OF_DAY, MINUTE_OF_HOUR, mod % 60);
         }
-        if (dayPeriod != null) {
-            if (fieldValues.containsKey(HOUR_OF_DAY)) {
-                long hod = fieldValues.remove(HOUR_OF_DAY);
-                if (resolverStyle != ResolverStyle.LENIENT) {
-                    HOUR_OF_DAY.checkValidValue(hod);
-                }
-                updateCheckDayPeriodConflict(HOUR_OF_DAY, hod);
-            } else if (fieldValues.containsKey(HOUR_OF_AMPM)) {
-                long hoap = fieldValues.remove(HOUR_OF_AMPM);
-                if (resolverStyle != ResolverStyle.LENIENT) {
-                    HOUR_OF_AMPM.checkValidValue(hoap);
-                }
-                if (dayPeriod.includes((hoap % 24 + 12) * 60)) {
-                    hoap += 12;
-                }
-                updateCheckDayPeriodConflict(HOUR_OF_DAY, hoap);
-            } else if (resolverStyle != ResolverStyle.STRICT){
-                long midpoint = dayPeriod.mid();
-                fieldValues.put(HOUR_OF_DAY, midpoint / 60);
-                fieldValues.put(MINUTE_OF_HOUR, midpoint % 60);
-            }
-        } else if (fieldValues.containsKey(AMPM_OF_DAY) && !fieldValues.containsKey(HOUR_OF_DAY) &&
-                    resolverStyle != ResolverStyle.STRICT) {
-            // If no day period exists, ampm-of-day is not resolved yet, and in non-STRICT mode,
-            // set the midpoint time 06:00 and 18:00 for am/pm respectively, unless
-            // hour-of-day is resolved at this point.
-            long ap = fieldValues.remove(AMPM_OF_DAY);
-            if (resolverStyle == ResolverStyle.LENIENT) {
-                updateCheckConflict(AMPM_OF_DAY, HOUR_OF_DAY, Math.addExact(Math.multiplyExact(ap, 12), 6));
-            } else {  // SMART
-                AMPM_OF_DAY.checkValidValue(ap);
-                updateCheckConflict(AMPM_OF_DAY, HOUR_OF_DAY, ap * 12 + 6);
-            }
-        }
 
         // combine partial second fields strictly, leaving lenient expansion to later
         if (fieldValues.containsKey(NANO_OF_SECOND)) {
@@ -526,6 +492,18 @@ final class Parsed implements TemporalAccessor {
                 }
                 updateCheckConflict(MILLI_OF_SECOND, NANO_OF_SECOND, los * 1_000_000L + (nos % 1_000_000L));
             }
+        }
+
+        if (dayPeriod != null && fieldValues.containsKey(HOUR_OF_AMPM)) {
+            long hoap = fieldValues.remove(HOUR_OF_AMPM);
+            if (resolverStyle != ResolverStyle.LENIENT) {
+                HOUR_OF_AMPM.checkValidValue(hoap);
+            }
+            if (dayPeriod.includes((hoap % 24 + 12) * 60)) {
+                hoap += 12;
+            }
+            updateCheckDayPeriodConflict(HOUR_OF_DAY, hoap);
+            dayPeriod = null;
         }
 
         // convert to time if all four fields available (optimization)
@@ -564,9 +542,32 @@ final class Parsed implements TemporalAccessor {
                 fieldValues.put(NANO_OF_SECOND, cos * 1_000L);
             }
 
+            // Set the hour-of-day, if not exist and not in STRICT, to the mid point of the day period or am/pm.
+            if (!fieldValues.containsKey(HOUR_OF_DAY) && resolverStyle != ResolverStyle.STRICT) {
+                if (dayPeriod != null) {
+                    long midpoint = dayPeriod.mid();
+                    fieldValues.put(HOUR_OF_DAY, midpoint / 60);
+                    fieldValues.put(MINUTE_OF_HOUR, midpoint % 60);
+                } else if (fieldValues.containsKey(AMPM_OF_DAY)) {
+                    // Set the midpoint time 06:00 and 18:00 for am/pm respectively
+                    long ap = fieldValues.remove(AMPM_OF_DAY);
+                    if (resolverStyle == ResolverStyle.LENIENT) {
+                        updateCheckConflict(AMPM_OF_DAY, HOUR_OF_DAY, Math.addExact(Math.multiplyExact(ap, 12), 6));
+                    } else {  // SMART
+                        AMPM_OF_DAY.checkValidValue(ap);
+                        updateCheckConflict(AMPM_OF_DAY, HOUR_OF_DAY, ap * 12 + 6);
+                    }
+                }
+            }
+
             // merge hour/minute/second/nano leniently
             Long hod = fieldValues.get(HOUR_OF_DAY);
             if (hod != null) {
+                if (dayPeriod != null) {
+                    // Check whether the hod is within the day period
+                    updateCheckDayPeriodConflict(HOUR_OF_DAY, hod);
+                }
+
                 Long moh = fieldValues.get(MINUTE_OF_HOUR);
                 Long som = fieldValues.get(SECOND_OF_MINUTE);
                 Long nos = fieldValues.get(NANO_OF_SECOND);

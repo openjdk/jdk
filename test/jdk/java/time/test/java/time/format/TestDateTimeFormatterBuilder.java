@@ -665,6 +665,23 @@ public class TestDateTimeFormatterBuilder {
         assertEquals(p.getLong(HOUR_OF_DAY), expected);
     }
 
+    @DataProvider(name="dayPeriodParseMidnight")
+    Object[][] data_dayPeriodParseMidnight() {
+        return new Object[][] {
+            {"u-M-d H:m B", "2020-11-07 00:00 midnight", 7, 0},
+            {"u-M-d H:m B", "2020-11-07 24:00 midnight", 8, 0},
+        };
+    }
+
+    @Test (dataProvider="dayPeriodParseMidnight")
+    public void test_dayPeriodParseMidnight(String pattern, String dateTime, long expectedDOM, long expectedHOD) throws Exception {
+        builder.appendPattern(pattern);
+        DateTimeFormatter f = builder.toFormatter().withLocale(Locale.US);
+        var p = f.parse(dateTime);
+        assertEquals(p.getLong(DAY_OF_MONTH), expectedDOM);
+        assertEquals(p.getLong(HOUR_OF_DAY), expectedHOD);
+    }
+
     @DataProvider(name="dayPeriodParseInvalid")
     Object[][] data_dayPeriodParseInvalid() {
         return new Object[][] {
