@@ -444,6 +444,8 @@ public class RandomGeneratorFactory<T extends RandomGenerator> {
      * @param seed byte array random seed value.
      *
      * @return new in instance of {@link RandomGenerator}.
+     *
+     * @throws NullPointerException if seed is null.
      */
     public T create(byte[] seed) {
         try {
