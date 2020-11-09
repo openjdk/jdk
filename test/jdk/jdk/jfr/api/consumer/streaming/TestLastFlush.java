@@ -45,38 +45,38 @@ import jdk.jfr.consumer.EventStream;
  */
 public class TestLastFlush {
 
-        static class FileEvent extends Event {
-        }
+	static class FileEvent extends Event {
+	}
 
-        public static void main(String... args) throws Exception {
+	public static void main(String... args) throws Exception {
 
-                Path tp = Paths.get("recording.jfr");
-                try (Recording r = new Recording()) {
-                        r.start();
-                        for (int i = 0; i < 20; i++) {
-                                for (int j = 0; j < 5; j++) {
-                                        FileEvent e = new FileEvent();
-                                        e.commit();
-                                }
-                                Thread.sleep(300);
-                        }
-                        r.stop();
-                        r.dump(tp);
-                }
-                AtomicBoolean lastFlush = new AtomicBoolean();
-                try (EventStream es = EventStream.openFile(tp)) {
-                        es.onEvent(e -> {
-                                lastFlush.set(false);
-                                System.out.println("onEvent " + Instant.now());
-                        });
-                        es.onFlush(() -> {
-                                lastFlush.set(true);
-                                System.out.println("onFlush " + Instant.now());
-                        });
-                        es.start();
-                }
-                if (!lastFlush.get()) {
-                        throw new Exception("EventStream::onFlush not emitted at recording end.");
-                }
-        }
+		Path tp = Paths.get("recording.jfr");
+		try (Recording r = new Recording()) {
+			r.start();
+			for (int i = 0; i < 20; i++) {
+				for (int j = 0; j < 5; j++) {
+					FileEvent e = new FileEvent();
+					e.commit();
+				}
+				Thread.sleep(300);
+			}
+			r.stop();
+			r.dump(tp);
+		}
+		AtomicBoolean lastFlush = new AtomicBoolean();
+		try (EventStream es = EventStream.openFile(tp)) {
+			es.onEvent(e -> {
+				lastFlush.set(false);
+				System.out.println("onEvent " + Instant.now());
+			});
+			es.onFlush(() -> {
+				lastFlush.set(true);
+				System.out.println("onFlush " + Instant.now());
+			});
+			es.start();
+		}
+		if (!lastFlush.get()) {
+			throw new Exception("EventStream::onFlush not emitted at recording end.");
+		}
+	}
 }

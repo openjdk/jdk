@@ -26,7 +26,6 @@
 package jdk.jfr.internal.consumer;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
@@ -108,6 +107,6 @@ public abstract class JdkJfrConsumer {
 
     public abstract void setOnChunkCompleteHandler(EventStream stream, Consumer<Long> consumer);
 
-        public abstract MetadataEvent newMetadataEvent(List<EventType> previous, List<EventType> current, List<Configuration> configuration);
+    public abstract MetadataEvent newMetadataEvent(List<EventType> previous, List<EventType> current, List<Configuration> configuration);
 
 }

@@ -134,14 +134,14 @@ public final class ManagementSupport {
         JdkJfrConsumer.instance().setOnChunkCompleteHandler(stream, consumer);
     }
 
-        public static long getStartTimeNanos(Recording recording) {
-                PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
-                return pr.getStartNanos();
-        }
+    public static long getStartTimeNanos(Recording recording) {
+        PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
+        return pr.getStartNanos();
+    }
 
-        public static Configuration newConfiguration(String name, String label, String description, String provider,
-                        Map<String, String> settings, String contents) {
-                return PrivateAccess.getInstance().newConfiguration(name, label, description, provider, settings, contents);
-        }
+    public static Configuration newConfiguration(String name, String label, String description, String provider,
+            Map<String, String> settings, String contents) {
+        return PrivateAccess.getInstance().newConfiguration(name, label, description, provider, settings, contents);
+    }
 
 }

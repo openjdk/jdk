@@ -207,7 +207,6 @@ public final class RepositoryFiles {
                     pathSet.put(startNanos, p);
                     pathLookup.put(p, startNanos);
                     foundNew = true;
-                    System.out.println("Repository File:" + startNanos + ":" + p.toAbsolutePath());
                 }
             }
             return foundNew;

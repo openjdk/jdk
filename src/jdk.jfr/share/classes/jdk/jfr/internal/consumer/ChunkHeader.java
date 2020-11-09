@@ -59,8 +59,8 @@ public final class ChunkHeader {
     private long durationNanos;
     private long absoluteChunkEnd;
     private boolean isFinished;
-    private boolean finalChunk;
     private boolean finished;
+    private boolean finalChunk;
 
     public ChunkHeader(RecordingInput input) throws IOException {
         this(input, 0, 0);

@@ -196,8 +196,8 @@ public interface EventStream extends AutoCloseable {
      * @throws IllegalStateException if an action is added after the stream has
      *                               started
      */
-        default void onMetadata(Consumer<MetadataEvent> action) {
-        }
+     default void onMetadata(Consumer<MetadataEvent> action) {
+     }
 
     /**
      * Registers an action to perform on all events in the stream.

@@ -32,9 +32,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Objects;
-import java.util.function.Consumer;
-
-import jdk.jfr.consumer.MetadataEvent;
 import jdk.jfr.consumer.RecordedEvent;
 
 /**
@@ -90,7 +87,7 @@ public final class EventFileStream extends AbstractEventStream {
 
         currentParser = new ChunkParser(input, disp.parserConfiguration);
         while (!isClosed()) {
-                emitMetadataEvent(currentParser);
+            emitMetadataEvent(currentParser);
             if (currentParser.getStartNanos() > end) {
                 close();
                 return;
@@ -141,12 +138,12 @@ public final class EventFileStream extends AbstractEventStream {
         }
     }
 
-        private void dispatchOrdered(Dispatcher c, int index) {
-                Arrays.sort(cacheSorted, 0, index, EVENT_COMPARATOR);
-                for (int i = 0; i < index; i++) {
-                    c.dispatch(cacheSorted[i]);
-                }
+    private void dispatchOrdered(Dispatcher c, int index) {
+        Arrays.sort(cacheSorted, 0, index, EVENT_COMPARATOR);
+        for (int i = 0; i < index; i++) {
+            c.dispatch(cacheSorted[i]);
         }
+    }
 
     private void processUnordered(Dispatcher c) throws IOException {
         while (!isClosed()) {

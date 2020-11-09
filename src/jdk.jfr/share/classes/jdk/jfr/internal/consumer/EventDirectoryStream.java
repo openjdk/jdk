@@ -31,7 +31,6 @@ import java.security.AccessControlContext;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -95,7 +94,6 @@ public class EventDirectoryStream extends AbstractEventStream {
         }
     }
 
-
     @Override
     public void start() {
         start(Utils.timeToNanos(Instant.now()));
@@ -141,10 +139,10 @@ public class EventDirectoryStream extends AbstractEventStream {
         }
         currentChunkStartNanos = repositoryFiles.getTimestamp(path);
         try (RecordingInput input = new RecordingInput(path.toFile(), fileAccess)) {
-                        currentParser = new ChunkParser(input, disp.parserConfiguration);
-                        long segmentStart = currentParser.getStartNanos() + currentParser.getChunkDuration();
-                        long filterStart = validStartTime ? disp.startNanos : segmentStart;
-                        long filterEnd = disp.endTime != null ? disp.endNanos : Long.MAX_VALUE;
+            currentParser = new ChunkParser(input, disp.parserConfiguration);
+            long segmentStart = currentParser.getStartNanos() + currentParser.getChunkDuration();
+            long filterStart = validStartTime ? disp.startNanos : segmentStart;
+            long filterEnd = disp.endTime != null ? disp.endNanos : Long.MAX_VALUE;
 
             while (!isClosed()) {
                 emitMetadataEvent(currentParser);
@@ -193,7 +191,6 @@ public class EventDirectoryStream extends AbstractEventStream {
                     return; // stream closed
                 }
                 currentChunkStartNanos = repositoryFiles.getTimestamp(path);
-
                 input.setFile(path);
                 onComplete(endChunkNanos);
                 currentParser = currentParser.newChunkParser();

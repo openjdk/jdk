@@ -280,29 +280,28 @@ public abstract class AbstractEventStream implements EventStream {
         return "JFR Event Stream " + counter;
     }
 
-
-        @Override
-        public void onMetadata(Consumer<MetadataEvent> action) {
-                Objects.requireNonNull(action);
-                synchronized (configuration) {
-                        if (configuration.started) {
-                                throw new IllegalStateException("Stream is already started");
-                        }
-                }
-            configuration.addMetadataAction(action);
+    @Override
+    public void onMetadata(Consumer<MetadataEvent> action) {
+        Objects.requireNonNull(action);
+        synchronized (configuration) {
+            if (configuration.started) {
+                throw new IllegalStateException("Stream is already started");
+            }
         }
+        configuration.addMetadataAction(action);
+    }
 
-        protected final void emitMetadataEvent(ChunkParser parser) {
-                if (parser.hasStaleMetadata()) {
-                        if (dispatcher.hasMetadataHandler()) {
-                                List<EventType> ce = parser.getEventTypes();
-                                List<EventType> pe = parser.getPreviousEventTypes();
-                                if  (ce != pe)  {
-                                        MetadataEvent me = JdkJfrConsumer.instance().newMetadataEvent(pe, ce, configurations);
-                                        dispatcher.runMetadataActions(me);
-                                }
-                                parser.setStaleMetadata(false);
-                        }
+    protected final void emitMetadataEvent(ChunkParser parser) {
+        if (parser.hasStaleMetadata()) {
+            if (dispatcher.hasMetadataHandler()) {
+                List<EventType> ce = parser.getEventTypes();
+                List<EventType> pe = parser.getPreviousEventTypes();
+                if (ce != pe) {
+                    MetadataEvent me = JdkJfrConsumer.instance().newMetadataEvent(pe, ce, configurations);
+                    dispatcher.runMetadataActions(me);
                 }
+                parser.setStaleMetadata(false);
+            }
         }
+    }
 }

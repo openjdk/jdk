@@ -44,160 +44,160 @@ import jdk.management.jfr.RemoteRecordingStream;
  */
 public class TestDelegated {
 
-        private static MBeanServerConnection CONNECTION = ManagementFactory.getPlatformMBeanServer();
+	private static MBeanServerConnection CONNECTION = ManagementFactory.getPlatformMBeanServer();
 
-        static class TestDelegatedEvent extends Event {
-        }
+	static class TestDelegatedEvent extends Event {
+	}
 
-        // The assumption here is that the following methods don't
-        // need t be tested fully since they all delegate to the
-        // same implementation class that is tested elsewhere.
+	// The assumption here is that the following methods don't
+	// need t be tested fully since they all delegate to the
+	// same implementation class that is tested elsewhere.
 
-        public static void main(String[] args) throws Exception {
-                testRemove();
-                testReuse();
-            testOrdered();
-                testOnEvent();
-        testOnEventName();
-                testOnFlush();
-                testOnError();
-                testOnClose();
-                testSetMaxAge();
-                testAwaitTermination();
-                testAwaitTerminationWithDuration();
-        }
+	public static void main(String[] args) throws Exception {
+		testRemove();
+		testReuse();
+		testOrdered();
+		testOnEvent();
+		testOnEventName();
+		testOnFlush();
+		testOnError();
+		testOnClose();
+		testSetMaxAge();
+		testAwaitTermination();
+		testAwaitTerminationWithDuration();
+	}
 
-        private static void testSetMaxAge() throws Exception {
-                try (RemoteRecordingStream stream = new RemoteRecordingStream(CONNECTION)) {
-                        try {
-                                stream.setMaxAge(null);
-                                throw new Exception("Expected NullPointerException");
-                        } catch (NullPointerException npe) {
-                                // As expected
-                        }
-                }
-        }
+	private static void testSetMaxAge() throws Exception {
+		try (RemoteRecordingStream stream = new RemoteRecordingStream(CONNECTION)) {
+			try {
+				stream.setMaxAge(null);
+				throw new Exception("Expected NullPointerException");
+			} catch (NullPointerException npe) {
+				// As expected
+			}
+		}
+	}
 
-        private static void testAwaitTerminationWithDuration() throws Exception {
-                try (RemoteRecordingStream rs = new RemoteRecordingStream(CONNECTION)) {
-                        rs.onEvent(e -> {
-                                rs.close();
-                        });
-                        rs.startAsync();
-                        TestDelegatedEvent e = new TestDelegatedEvent();
-                        e.commit();
-                        rs.awaitTermination(Duration.ofDays(1));
-                }
-        }
+	private static void testAwaitTerminationWithDuration() throws Exception {
+		try (RemoteRecordingStream rs = new RemoteRecordingStream(CONNECTION)) {
+			rs.onEvent(e -> {
+				rs.close();
+			});
+			rs.startAsync();
+			TestDelegatedEvent e = new TestDelegatedEvent();
+			e.commit();
+			rs.awaitTermination(Duration.ofDays(1));
+		}
+	}
 
-        private static void testAwaitTermination() throws Exception {
-                try (RemoteRecordingStream rs = new RemoteRecordingStream(CONNECTION)) {
-                        rs.onEvent(e -> {
-                                rs.close();
-                        });
-                        rs.startAsync();
-                        TestDelegatedEvent e = new TestDelegatedEvent();
-                        e.commit();
-                        rs.awaitTermination();
-                }
-        }
+	private static void testAwaitTermination() throws Exception {
+		try (RemoteRecordingStream rs = new RemoteRecordingStream(CONNECTION)) {
+			rs.onEvent(e -> {
+				rs.close();
+			});
+			rs.startAsync();
+			TestDelegatedEvent e = new TestDelegatedEvent();
+			e.commit();
+			rs.awaitTermination();
+		}
+	}
 
-        private static void testOnClose() throws Exception {
-                CountDownLatch latch = new CountDownLatch(1);
-                try (RemoteRecordingStream rs = new RemoteRecordingStream(CONNECTION)) {
-                        rs.onClose(() -> {
-                                latch.countDown();
-                        });
-                        rs.startAsync();
-                        rs.close();
-                        latch.await();
-                }
-        }
+	private static void testOnClose() throws Exception {
+		CountDownLatch latch = new CountDownLatch(1);
+		try (RemoteRecordingStream rs = new RemoteRecordingStream(CONNECTION)) {
+			rs.onClose(() -> {
+				latch.countDown();
+			});
+			rs.startAsync();
+			rs.close();
+			latch.await();
+		}
+	}
 
-        private static void testOnError() throws Exception {
-                CountDownLatch latch = new CountDownLatch(1);
-                try (RemoteRecordingStream rs = new RemoteRecordingStream(CONNECTION)) {
-                        rs.onEvent(TestDelegatedEvent.class.getName(), e -> {
-                                throw new RuntimeException("Testing");
-                        });
-                        rs.onError(t -> {
-                                latch.countDown();
-                        });
-                        rs.startAsync();
-                        TestDelegatedEvent e = new TestDelegatedEvent();
-                        e.commit();
-                        latch.await();
-                }
-        }
+	private static void testOnError() throws Exception {
+		CountDownLatch latch = new CountDownLatch(1);
+		try (RemoteRecordingStream rs = new RemoteRecordingStream(CONNECTION)) {
+			rs.onEvent(TestDelegatedEvent.class.getName(), e -> {
+				throw new RuntimeException("Testing");
+			});
+			rs.onError(t -> {
+				latch.countDown();
+			});
+			rs.startAsync();
+			TestDelegatedEvent e = new TestDelegatedEvent();
+			e.commit();
+			latch.await();
+		}
+	}
 
-        private static void testOnFlush() throws Exception {
-                CountDownLatch latch = new CountDownLatch(1);
-                try (RemoteRecordingStream rs = new RemoteRecordingStream(CONNECTION)) {
-                        rs.onFlush(() -> {
-                                latch.countDown();
-                        });
-                        rs.startAsync();
-                        TestDelegatedEvent e = new TestDelegatedEvent();
-                        e.commit();
-                        latch.await();
-                }
-        }
+	private static void testOnFlush() throws Exception {
+		CountDownLatch latch = new CountDownLatch(1);
+		try (RemoteRecordingStream rs = new RemoteRecordingStream(CONNECTION)) {
+			rs.onFlush(() -> {
+				latch.countDown();
+			});
+			rs.startAsync();
+			TestDelegatedEvent e = new TestDelegatedEvent();
+			e.commit();
+			latch.await();
+		}
+	}
 
-        private static void testOnEventName() throws Exception {
-                CountDownLatch latch = new CountDownLatch(1);
-                try (RemoteRecordingStream rs = new RemoteRecordingStream(CONNECTION)) {
-                        rs.onEvent(TestDelegatedEvent.class.getName(), e -> {
-                                latch.countDown();
-                        });
-                        rs.startAsync();
-                        TestDelegatedEvent e = new TestDelegatedEvent();
-                        e.commit();
-                        latch.await();
-                }
-        }
+	private static void testOnEventName() throws Exception {
+		CountDownLatch latch = new CountDownLatch(1);
+		try (RemoteRecordingStream rs = new RemoteRecordingStream(CONNECTION)) {
+			rs.onEvent(TestDelegatedEvent.class.getName(), e -> {
+				latch.countDown();
+			});
+			rs.startAsync();
+			TestDelegatedEvent e = new TestDelegatedEvent();
+			e.commit();
+			latch.await();
+		}
+	}
 
-        private static void testOnEvent() throws Exception {
-                CountDownLatch latch = new CountDownLatch(1);
-                try (RemoteRecordingStream rs = new RemoteRecordingStream(CONNECTION)) {
-                        rs.onEvent(e -> {
-                                System.out.println(e);
-                                latch.countDown();
-                        });
-                        rs.startAsync();
-                        TestDelegatedEvent e = new TestDelegatedEvent();
-                        e.commit();
-                        latch.await();
-                }
+	private static void testOnEvent() throws Exception {
+		CountDownLatch latch = new CountDownLatch(1);
+		try (RemoteRecordingStream rs = new RemoteRecordingStream(CONNECTION)) {
+			rs.onEvent(e -> {
+				System.out.println(e);
+				latch.countDown();
+			});
+			rs.startAsync();
+			TestDelegatedEvent e = new TestDelegatedEvent();
+			e.commit();
+			latch.await();
+		}
 
-        }
+	}
 
-        private static void testOrdered() throws Exception {
-                try (RemoteRecordingStream rs = new RemoteRecordingStream(CONNECTION)) {
-                        rs.setOrdered(true);
-                        rs.setOrdered(false);
-                }
-        }
+	private static void testOrdered() throws Exception {
+		try (RemoteRecordingStream rs = new RemoteRecordingStream(CONNECTION)) {
+			rs.setOrdered(true);
+			rs.setOrdered(false);
+		}
+	}
 
-        private static void testReuse() throws Exception {
-                try (RemoteRecordingStream rs = new RemoteRecordingStream(CONNECTION)) {
-                        rs.setReuse(true);
-                        rs.setReuse(false);
-                }
-        }
+	private static void testReuse() throws Exception {
+		try (RemoteRecordingStream rs = new RemoteRecordingStream(CONNECTION)) {
+			rs.setReuse(true);
+			rs.setReuse(false);
+		}
+	}
 
-        private static void testRemove() throws Exception {
-                try (RemoteRecordingStream rs = new RemoteRecordingStream(CONNECTION)) {
-                        Runnable r1 = () -> {
-                        };
-                        Runnable r2 = () -> {
-                        };
-                        rs.onFlush(r1);
-                        if (!rs.remove(r1)) {
-                                throw new Exception("Expected remove to return true");
-                        }
-                        if (rs.remove(r2)) {
-                                throw new Exception("Expected remove to return false");
-                        }
-                }
-        }
+	private static void testRemove() throws Exception {
+		try (RemoteRecordingStream rs = new RemoteRecordingStream(CONNECTION)) {
+			Runnable r1 = () -> {
+			};
+			Runnable r2 = () -> {
+			};
+			rs.onFlush(r1);
+			if (!rs.remove(r1)) {
+				throw new Exception("Expected remove to return true");
+			}
+			if (rs.remove(r2)) {
+				throw new Exception("Expected remove to return false");
+			}
+		}
+	}
 }
