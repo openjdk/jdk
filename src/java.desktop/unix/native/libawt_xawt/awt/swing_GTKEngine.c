@@ -350,7 +350,7 @@ Java_com_sun_java_swing_plaf_gtk_GTKEngine_nativeFinishPainting(
 JNIEXPORT void JNICALL Java_com_sun_java_swing_plaf_gtk_GTKEngine_native_1switch_1theme(
         JNIEnv *env, jobject this)
 {
-    // Note that gtk->flush_event_loop takes care of locks (7053002)
+    // Note that gtk->flush_event_loop takes care of locks (7053002), gdk_threads_enter/gdk_threads_leave should not be used.
     gtk->flush_event_loop();
 }
 
