@@ -111,51 +111,14 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
   return frame(NULL, NULL); // silence compile warnings
 }
 
-extern "C" JNIEXPORT int
-JVM_handle_linux_signal(int sig,
-                        siginfo_t* info,
-                        void* ucVoid,
-                        int abort_if_unrecognized) {
-  ucontext_t* uc = (ucontext_t*) ucVoid;
-
-  Thread* t = Thread::current_or_null_safe();
+bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
+                                             ucontext_t* uc, JavaThread* thread) {
 
   // handle SafeFetch faults
   if (sig == SIGSEGV || sig == SIGBUS) {
     sigjmp_buf* const pjb = get_jmp_buf_for_continuation();
     if (pjb) {
       siglongjmp(*pjb, 1);
-    }
-  }
-
-  // Note: it's not uncommon that JNI code uses signal/sigset to
-  // install then restore certain signal handler (e.g. to temporarily
-  // block SIGPIPE, or have a SIGILL handler when detecting CPU
-  // type). When that happens, JVM_handle_linux_signal() might be
-  // invoked with junk info/ucVoid. To avoid unnecessary crash when
-  // libjsig is not preloaded, try handle signals that do not require
-  // siginfo/ucontext first.
-
-  if (sig == SIGPIPE || sig == SIGXFSZ) {
-    // allow chained handler to go first
-    if (PosixSignals::chained_handler(sig, info, ucVoid)) {
-      return true;
-    } else {
-      // Ignoring SIGPIPE/SIGXFSZ - see bugs 4229104 or 6499219
-      return true;
-    }
-  }
-
-  JavaThread* thread = NULL;
-  VMThread* vmthread = NULL;
-  if (PosixSignals::are_signal_handlers_installed()) {
-    if (t != NULL ){
-      if(t->is_Java_thread()) {
-        thread = t->as_Java_thread();
-      }
-      else if(t->is_VM_thread()){
-        vmthread = (VMThread *)t;
-      }
     }
   }
 
@@ -216,47 +179,8 @@ JVM_handle_linux_signal(int sig,
     }*/
   }
 
-  // signal-chaining
-  if (PosixSignals::chained_handler(sig, info, ucVoid)) {
-     return true;
-  }
+  return false; // Fatal error
 
-  if (!abort_if_unrecognized) {
-    // caller wants another chance, so give it to him
-    return false;
-  }
-
-#ifndef PRODUCT
-  if (sig == SIGSEGV) {
-    fatal("\n#"
-          "\n#    /--------------------\\"
-          "\n#    | segmentation fault |"
-          "\n#    \\---\\ /--------------/"
-          "\n#        /"
-          "\n#    [-]        |\\_/|    "
-          "\n#    (+)=C      |o o|__  "
-          "\n#    | |        =-*-=__\\ "
-          "\n#    OOO        c_c_(___)");
-  }
-#endif // !PRODUCT
-
-  char buf[128];
-  char exc_buf[32];
-
-  if (os::exception_name(sig, exc_buf, sizeof(exc_buf))) {
-    bool sent_by_kill = (info != NULL && os::signal_sent_by_kill(info));
-    snprintf(buf, sizeof(buf), "caught unhandled signal: %s %s",
-             exc_buf, sent_by_kill ? "(sent by kill)" : "");
-  } else {
-    snprintf(buf, sizeof(buf), "caught unhandled signal: %d", sig);
-  }
-
-// Silence -Wformat-security warning for fatal()
-PRAGMA_DIAG_PUSH
-PRAGMA_FORMAT_NONLITERAL_IGNORED
-  fatal(buf);
-PRAGMA_DIAG_POP
-  return true; // silence compiler warnings
 }
 
 void os::Linux::init_thread_fpu_state(void) {

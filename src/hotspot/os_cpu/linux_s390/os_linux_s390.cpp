@@ -204,59 +204,8 @@ frame os::current_frame() {
   }
 }
 
-// Utility functions
-
-extern "C" JNIEXPORT int
-JVM_handle_linux_signal(int sig,
-                        siginfo_t* info,
-                        void* ucVoid,
-                        int abort_if_unrecognized) {
-  ucontext_t* uc = (ucontext_t*) ucVoid;
-
-  Thread* t = Thread::current_or_null_safe();
-
-  // If crash protection is installed we may longjmp away and no destructors
-  // for objects in this scope will be run.
-  // So don't use any RAII utilities before crash protection is checked.
-  os::ThreadCrashProtection::check_crash_protection(sig, t);
-
-  // Note: it's not uncommon that JNI code uses signal/sigset to install
-  // then restore certain signal handler (e.g. to temporarily block SIGPIPE,
-  // or have a SIGILL handler when detecting CPU type). When that happens,
-  // JVM_handle_linux_signal() might be invoked with junk info/ucVoid. To
-  // avoid unnecessary crash when libjsig is not preloaded, try handle signals
-  // that do not require siginfo/ucontext first.
-
-  if (sig == SIGPIPE || sig == SIGXFSZ) {
-    if (PosixSignals::chained_handler(sig, info, ucVoid)) {
-      return true;
-    } else {
-      if (PrintMiscellaneous && (WizardMode || Verbose)) {
-        warning("Ignoring SIGPIPE - see bug 4229104");
-      }
-      return true;
-    }
-  }
-
-#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
-  if ((sig == SIGSEGV || sig == SIGBUS) && info != NULL && info->si_addr == g_assert_poison) {
-    if (handle_assert_poison_fault(ucVoid, info->si_addr)) {
-      return 1;
-    }
-  }
-#endif
-
-  JavaThread* thread = NULL;
-  VMThread* vmthread = NULL;
-  if (PosixSignals::are_signal_handlers_installed()) {
-    if (t != NULL) {
-      if(t->is_Java_thread()) {
-        thread = t->as_Java_thread();
-      } else if(t->is_VM_thread()) {
-        vmthread = (VMThread *)t;
-      }
-    }
-  }
+bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
+                                             ucontext_t* uc, JavaThread* thread) {
 
   // Moved SafeFetch32 handling outside thread!=NULL conditional block to make
   // it work if no associated JavaThread object exists.
@@ -294,7 +243,7 @@ JVM_handle_linux_signal(int sig,
       if (thread->is_in_full_stack(addr)) {
         // stack overflow
         if (os::Posix::handle_stack_overflow(thread, addr, pc, uc, &stub)) {
-          return 1; // continue
+          return true; // continue
         }
       }
     }
@@ -418,38 +367,8 @@ JVM_handle_linux_signal(int sig,
     return true;
   }
 
-  // signal-chaining
-  if (PosixSignals::chained_handler(sig, info, ucVoid)) {
-    return true;
-  }
-
-  if (!abort_if_unrecognized) {
-    // caller wants another chance, so give it to him
-    return false;
-  }
-
-  if (pc == NULL && uc != NULL) {
-    pc = os::Linux::ucontext_get_pc(uc);
-  }
-
-  // unmask current signal
-  sigset_t newset;
-  sigemptyset(&newset);
-  sigaddset(&newset, sig);
-  sigprocmask(SIG_UNBLOCK, &newset, NULL);
-
-  // Hand down correct pc for SIGILL, SIGFPE. pc from context
-  // usually points to the instruction after the failing instruction.
-  // Note: this should be combined with the trap_pc handling above,
-  // because it handles the same issue.
-  if (sig == SIGILL || sig == SIGFPE) {
-    pc = (address)info->si_addr;
-  }
-
-  VMError::report_and_die(t, sig, pc, info, ucVoid);
-
-  ShouldNotReachHere();
   return false;
+
 }
 
 void os::Linux::init_thread_fpu_state(void) {

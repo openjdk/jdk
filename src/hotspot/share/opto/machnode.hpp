@@ -434,7 +434,6 @@ public:
 
   virtual void emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const;
   virtual uint size(PhaseRegAlloc* ra_) const;
-  virtual bool pinned() const { return UseRDPCForConstantTableBase; }
 
   static const RegMask& static_out_RegMask() { return _out_RegMask; }
   virtual const RegMask& out_RegMask() const { return static_out_RegMask(); }

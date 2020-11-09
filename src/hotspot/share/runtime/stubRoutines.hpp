@@ -207,9 +207,6 @@ class StubRoutines: AllStatic {
   static address _arrayof_jshort_fill;
   static address _arrayof_jint_fill;
 
-  // zero heap space aligned to jlong (8 bytes)
-  static address _zero_aligned_words;
-
   static address _aescrypt_encryptBlock;
   static address _aescrypt_decryptBlock;
   static address _cipherBlockChaining_encryptAESCrypt;
@@ -441,8 +438,6 @@ class StubRoutines: AllStatic {
   static address dtan()                { return _dtan; }
 
   static address select_fill_function(BasicType t, bool aligned, const char* &name);
-
-  static address zero_aligned_words()  { return _zero_aligned_words; }
 
   //
   // Safefetch stub support

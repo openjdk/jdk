@@ -54,6 +54,15 @@ hb_subset_input_unicode_set (hb_subset_input_t *subset_input);
 HB_EXTERN hb_set_t *
 hb_subset_input_glyph_set (hb_subset_input_t *subset_input);
 
+HB_EXTERN hb_set_t *
+hb_subset_input_nameid_set (hb_subset_input_t *subset_input);
+
+HB_EXTERN hb_set_t *
+hb_subset_input_namelangid_set (hb_subset_input_t *subset_input);
+
+HB_EXTERN hb_set_t *
+hb_subset_input_drop_tables_set (hb_subset_input_t *subset_input);
+
 HB_EXTERN void
 hb_subset_input_set_drop_hints (hb_subset_input_t *subset_input,
                                 hb_bool_t drop_hints);
@@ -61,16 +70,22 @@ HB_EXTERN hb_bool_t
 hb_subset_input_get_drop_hints (hb_subset_input_t *subset_input);
 
 HB_EXTERN void
-hb_subset_input_set_drop_layout (hb_subset_input_t *subset_input,
-                                 hb_bool_t drop_layout);
-HB_EXTERN hb_bool_t
-hb_subset_input_get_drop_layout (hb_subset_input_t *subset_input);
-
-HB_EXTERN void
 hb_subset_input_set_desubroutinize (hb_subset_input_t *subset_input,
-        hb_bool_t desubroutinize);
+                                    hb_bool_t desubroutinize);
 HB_EXTERN hb_bool_t
 hb_subset_input_get_desubroutinize (hb_subset_input_t *subset_input);
+
+HB_EXTERN void
+hb_subset_input_set_retain_gids (hb_subset_input_t *subset_input,
+                                 hb_bool_t retain_gids);
+HB_EXTERN hb_bool_t
+hb_subset_input_get_retain_gids (hb_subset_input_t *subset_input);
+
+HB_EXTERN void
+hb_subset_input_set_name_legacy (hb_subset_input_t *subset_input,
+                                 hb_bool_t name_legacy);
+HB_EXTERN hb_bool_t
+hb_subset_input_get_name_legacy (hb_subset_input_t *subset_input);
 
 /* hb_subset () */
 HB_EXTERN hb_face_t *
