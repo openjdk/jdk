@@ -167,8 +167,8 @@ public class Beans {
      * <a href="../../java/applet/package-summary.html"> java.applet package
      * documentation</a> for further information.
      */
-    @Deprecated(since = "9")
-    @SuppressWarnings({"deprecation", "removal"})
+    @Deprecated(since = "9", forRemoval = true)
+    @SuppressWarnings("removal")
     public static Object instantiate(ClassLoader cls, String beanName,
                                      BeanContext beanContext,
                                      AppletInitializer initializer)
@@ -517,8 +517,8 @@ class ObjectInputStreamWithLoader extends ObjectInputStream
  * Package private support class.  This provides a default AppletContext
  * for beans which are applets.
  */
-@Deprecated(since="9", forRemoval=true)
-@SuppressWarnings({"deprecation", "removal"})
+@Deprecated(since = "9", forRemoval = true)
+@SuppressWarnings("removal")
 class BeansAppletContext implements AppletContext {
     Applet target;
     Hashtable<URL,Object> imageCache = new Hashtable<>();
@@ -603,8 +603,8 @@ class BeansAppletContext implements AppletContext {
  * Package private support class.  This provides an AppletStub
  * for beans which are applets.
  */
-@Deprecated(since="9", forRemoval=true)
-@SuppressWarnings({"deprecation", "removal"})
+@Deprecated(since = "9", forRemoval = true)
+@SuppressWarnings("removal")
 class BeansAppletStub implements AppletStub {
     transient boolean active;
     transient Applet target;

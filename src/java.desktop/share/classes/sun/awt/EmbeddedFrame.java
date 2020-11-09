@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -504,8 +504,8 @@ public abstract class EmbeddedFrame extends Frame
      * <a href="../../java/applet/package-summary.html"> java.applet package
      * documentation</a> for further information.
      */
-    @Deprecated(since="9", forRemoval=true)
-    @SuppressWarnings({"deprecation", "removal"})
+    @Deprecated(since = "9", forRemoval = true)
+    @SuppressWarnings("removal")
     public static Applet getAppletIfAncestorOf(Component comp) {
         Container parent = comp.getParent();
         Applet applet = null;
