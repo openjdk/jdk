@@ -38,54 +38,10 @@
  * hb_ot_face_t
  */
 
-#define HB_OT_TABLES \
-    /* OpenType fundamentals. */ \
-    HB_OT_TABLE(OT, head) \
-    HB_OT_ACCELERATOR(OT, cmap) \
-    HB_OT_ACCELERATOR(OT, hmtx) \
-    HB_OT_ACCELERATOR(OT, vmtx) \
-    HB_OT_ACCELERATOR(OT, post) \
-    HB_OT_TABLE(OT, kern) \
-    HB_OT_ACCELERATOR(OT, glyf) \
-    HB_OT_ACCELERATOR(OT, cff1) \
-    HB_OT_ACCELERATOR(OT, cff2) \
-    HB_OT_TABLE(OT, VORG) \
-    HB_OT_ACCELERATOR(OT, name) \
-    HB_OT_TABLE(OT, OS2) \
-    HB_OT_TABLE(OT, STAT) \
-    /* OpenType shaping. */ \
-    HB_OT_ACCELERATOR(OT, GDEF) \
-    HB_OT_ACCELERATOR(OT, GSUB) \
-    HB_OT_ACCELERATOR(OT, GPOS) \
-    HB_OT_TABLE(OT, BASE) \
-    HB_OT_TABLE(OT, JSTF) \
-    /* AAT shaping. */ \
-    HB_OT_TABLE(AAT, mort) \
-    HB_OT_TABLE(AAT, morx) \
-    HB_OT_TABLE(AAT, kerx) \
-    HB_OT_TABLE(AAT, ankr) \
-    HB_OT_TABLE(AAT, trak) \
-    HB_OT_TABLE(AAT, lcar) \
-    HB_OT_TABLE(AAT, ltag) \
-    HB_OT_TABLE(AAT, feat) \
-    /* OpenType variations. */ \
-    HB_OT_TABLE(OT, fvar) \
-    HB_OT_TABLE(OT, avar) \
-    HB_OT_TABLE(OT, MVAR) \
-    /* OpenType math. */ \
-    HB_OT_TABLE(OT, MATH) \
-    /* OpenType color fonts. */ \
-    HB_OT_TABLE(OT, COLR) \
-    HB_OT_TABLE(OT, CPAL) \
-    HB_OT_ACCELERATOR(OT, CBDT) \
-    HB_OT_ACCELERATOR(OT, sbix) \
-    HB_OT_ACCELERATOR(OT, SVG) \
-    /* */
-
 /* Declare tables. */
 #define HB_OT_TABLE(Namespace, Type) namespace Namespace { struct Type; }
 #define HB_OT_ACCELERATOR(Namespace, Type) HB_OT_TABLE (Namespace, Type##_accelerator_t)
-HB_OT_TABLES
+#include "hb-ot-face-table-list.hh"
 #undef HB_OT_ACCELERATOR
 #undef HB_OT_TABLE
 
@@ -100,9 +56,7 @@ struct hb_ot_face_t
   {
     ORDER_ZERO,
 #define HB_OT_TABLE(Namespace, Type) HB_OT_TABLE_ORDER (Namespace, Type),
-#define HB_OT_ACCELERATOR(Namespace, Type) HB_OT_TABLE (Namespace, Type)
-    HB_OT_TABLES
-#undef HB_OT_ACCELERATOR
+#include "hb-ot-face-table-list.hh"
 #undef HB_OT_TABLE
   };
 
@@ -111,7 +65,7 @@ struct hb_ot_face_t
   hb_table_lazy_loader_t<Namespace::Type, HB_OT_TABLE_ORDER (Namespace, Type)> Type;
 #define HB_OT_ACCELERATOR(Namespace, Type) \
   hb_face_lazy_loader_t<Namespace::Type##_accelerator_t, HB_OT_TABLE_ORDER (Namespace, Type)> Type;
-  HB_OT_TABLES
+#include "hb-ot-face-table-list.hh"
 #undef HB_OT_ACCELERATOR
 #undef HB_OT_TABLE
 };

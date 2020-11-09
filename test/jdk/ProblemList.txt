@@ -254,6 +254,7 @@ java/awt/image/DrawImage/IncorrectAlphaSurface2SW.java 8056077 generic-all
 java/awt/image/DrawImage/IncorrectClipXorModeSW2Surface.java 8196025 windows-all
 java/awt/image/DrawImage/IncorrectClipXorModeSurface2Surface.java 8196025 windows-all
 java/awt/image/DrawImage/IncorrectSourceOffset.java 8196086 windows-all
+java/awt/image/DrawImage/BlitRotateClippedArea.java 8255724 linux-all
 java/awt/image/MultiResolutionImage/MultiResolutionDrawImageWithTransformTest.java 8198390 generic-all
 java/awt/image/multiresolution/MultiresolutionIconTest.java 8169187 macosx-all,windows-all
 java/awt/print/Headless/HeadlessPrinterJob.java 8196088 windows-all
