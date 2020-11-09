@@ -143,7 +143,7 @@ class RegMask {
     assert(reg < CHUNK_SIZE, "");
 
     unsigned r = (unsigned)reg;
-    return _RM_UP[r >> _LogWordBits] & (1ULL <<(r & (_WordBits - 1U)));
+    return _RM_UP[r >> _LogWordBits] & (uintptr_t(1) <<(r & (_WordBits - 1U)));
   }
 
   // The last bit in the register mask indicates that the mask should repeat
@@ -285,7 +285,7 @@ class RegMask {
     unsigned index = r >> _LogWordBits;
     if (index > _hwm) _hwm = index;
     if (index < _lwm) _lwm = index;
-    _RM_UP[index] |= (1ULL<<(r & (_WordBits - 1U)));
+    _RM_UP[index] |= (uintptr_t(1) << (r & (_WordBits - 1U)));
     assert(valid_watermarks(), "post-condition");
   }
 
@@ -293,7 +293,7 @@ class RegMask {
   void Remove(OptoReg::Name reg) {
     assert(reg < CHUNK_SIZE, "");
     unsigned r = (unsigned)reg;
-    _RM_UP[r >> _LogWordBits] &= ~(1ULL << (r & (_WordBits-1U)));
+    _RM_UP[r >> _LogWordBits] &= ~(uintptr_t(1) << (r & (_WordBits-1U)));
   }
 
   // OR 'rm' into 'this'
