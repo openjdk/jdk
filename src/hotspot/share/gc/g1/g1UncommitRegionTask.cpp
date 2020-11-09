@@ -32,7 +32,9 @@ G1UncommitRegionTask* G1UncommitRegionTask::_instance = NULL;
 
 G1UncommitRegionTask::G1UncommitRegionTask() :
     G1ServiceTask("G1 Uncommit Region Task"),
-    _state(TaskState::inactive) { }
+    _state(TaskState::inactive),
+    _summary_duration(),
+    _summary_region_count(0) { }
 
 void G1UncommitRegionTask::initialize() {
   assert(_instance == NULL, "Already initialized");
@@ -71,6 +73,30 @@ void G1UncommitRegionTask::set_state(TaskState state) {
   log_trace(gc, heap)("%s, new state: %s", name(), is_active() ? "active" : "inactive");
 }
 
+void G1UncommitRegionTask::report_execution(Tickspan time, uint regions) {
+  _summary_region_count += regions;
+  _summary_duration += time;
+
+  log_trace(gc, heap)("Concurrent Uncommit: " SIZE_FORMAT "%s, %u regions, %1.3fms",
+                      byte_size_in_proper_unit(regions * HeapRegion::GrainBytes),
+                      proper_unit_for_byte_size(regions * HeapRegion::GrainBytes),
+                      regions,
+                      time.seconds() * 1000);
+}
+
+void G1UncommitRegionTask::report_summary() {
+  log_debug(gc, heap)("Concurrent Uncommit Summary: " SIZE_FORMAT "%s, %u regions, %1.3fms",
+                      byte_size_in_proper_unit(_summary_region_count * HeapRegion::GrainBytes),
+                      proper_unit_for_byte_size(_summary_region_count * HeapRegion::GrainBytes),
+                      _summary_region_count,
+                      _summary_duration.seconds() * 1000);
+}
+
+void G1UncommitRegionTask::clear_summary() {
+  _summary_duration = Tickspan();
+  _summary_region_count = 0;
+}
+
 void G1UncommitRegionTask::execute() {
   assert(_state == TaskState::active, "Must be active");
 
@@ -101,11 +127,7 @@ void G1UncommitRegionTask::execute() {
     }
   } while (regions_left > 0);
 
-  log_debug(gc, heap)("Concurrent uncommit: regions %u, " SIZE_FORMAT "%s, %1.3fms",
-                      total_regions,
-                      byte_size_in_proper_unit(total_regions * HeapRegion::GrainBytes),
-                      proper_unit_for_byte_size(total_regions * HeapRegion::GrainBytes),
-                      total_time.seconds() * 1000);
+  report_execution(total_time, total_regions);
 
   // Reschedule if there are more regions to uncommit, otherwise
   // change state to inactive.
@@ -115,5 +137,7 @@ void G1UncommitRegionTask::execute() {
     schedule(0);
   } else {
     set_state(TaskState::inactive);
+    report_summary();
+    clear_summary();
   }
 }

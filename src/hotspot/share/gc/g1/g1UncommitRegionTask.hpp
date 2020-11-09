@@ -27,6 +27,7 @@
 
 #include "gc/g1/g1ServiceThread.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ticks.hpp"
 
 class G1UncommitRegionTask : public G1ServiceTask {
   static const uint UncommitChunkSize = 64;
@@ -43,9 +44,18 @@ class G1UncommitRegionTask : public G1ServiceTask {
   enum class TaskState { active, inactive };
   TaskState _state;
 
+  // Members to keep a summary of the current concurrent uncommit
+  // work. Used for printing when no more work is available.
+  Tickspan _summary_duration;
+  uint _summary_region_count;
+
   G1UncommitRegionTask();
   bool is_active();
   void set_state(TaskState state);
+
+  void report_execution(Tickspan time, uint regions);
+  void report_summary();
+  void clear_summary();
 
 public:
   static void activate();
