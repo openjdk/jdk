@@ -151,7 +151,7 @@ public:
   virtual int  index_position() const;  // index edge position, or -1
 
   // Access the TypeKlassPtr of operands with a base==RegI and disp==RegP
-  // Only returns non-null value for i486.ad's indOffset32X
+  // Only returns non-null value for x86_32.ad's indOffset32X
   virtual const TypePtr *disp_as_type() const { return NULL; }
 
   // Return the label

@@ -340,7 +340,7 @@ JVM_handle_linux_signal(int sig,
         int op = pc[0];
         if (op == 0xDB) {
           // FIST
-          // TODO: The encoding of D2I in i486.ad can cause an exception
+          // TODO: The encoding of D2I in x86_32.ad can cause an exception
           // prior to the fist instruction if there was an invalid operation
           // pending. We want to dismiss that exception. From the win_32
           // side it also seems that if it really was the fist causing
