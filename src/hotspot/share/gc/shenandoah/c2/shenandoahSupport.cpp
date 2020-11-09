@@ -2945,7 +2945,11 @@ const Type* ShenandoahLoadReferenceBarrierNode::bottom_type() const {
   if (t == TypePtr::NULL_PTR) {
     return t;
   }
-  return t->is_oopptr();
+  const Type* type = t->is_oopptr();
+  if (kind() != ShenandoahBarrierSet::AccessKind::NORMAL) {
+    type = type->meet(TypePtr::NULL_PTR);
+  }
+  return type;
 }
 
 const Type* ShenandoahLoadReferenceBarrierNode::Value(PhaseGVN* phase) const {
@@ -2958,6 +2962,9 @@ const Type* ShenandoahLoadReferenceBarrierNode::Value(PhaseGVN* phase) const {
   }
 
   const Type* type = t2->is_oopptr();
+  if (kind() != ShenandoahBarrierSet::AccessKind::NORMAL) {
+    type = type->meet(TypePtr::NULL_PTR);
+  }
   return type;
 }
 
