@@ -24,6 +24,8 @@
         <string>@@BUILD_VERSION@@</string>
         <key>NSMicrophoneUsageDescription</key>
         <string>The application is requesting access to the microphone.</string>
+        <key>NSSupportsAutomaticGraphicsSwitching</key>
+        <true/>
         <key>JavaVM</key>
         <dict>
                 <key>JVMCapabilities</key>
