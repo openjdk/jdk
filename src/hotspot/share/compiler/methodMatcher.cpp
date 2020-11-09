@@ -352,22 +352,23 @@ void MethodMatcher::print_base(outputStream* st) {
   }
 }
 
-BasicMatcher* BasicMatcher::parse_method_pattern(char* line, const char*& error_msg) {
+BasicMatcher* BasicMatcher::parse_method_pattern(char* line, const char*& error_msg, bool expect_trailing_chars) {
   assert(error_msg == NULL, "Don't call here with error_msg already set");
-  BasicMatcher* bm = new BasicMatcher();
+  BasicMatcher *bm = new BasicMatcher();
   MethodMatcher::parse_method_pattern(line, error_msg, bm);
   if (error_msg != NULL) {
     delete bm;
     return NULL;
   }
-
-  // check for bad trailing characters
-  int bytes_read = 0;
-  sscanf(line, "%*[ \t]%n", &bytes_read);
-  if (line[bytes_read] != '\0') {
-    error_msg = "Unrecognized trailing text after method pattern";
-    delete bm;
-    return NULL;
+  if (!expect_trailing_chars) {
+    // check for bad trailing characters
+    int bytes_read = 0;
+    sscanf(line, "%*[ \t]%n", &bytes_read);
+    if (line[bytes_read] != '\0') {
+      error_msg = "Unrecognized trailing text after method pattern";
+      delete bm;
+      return NULL;
+    }
   }
   return bm;
 }

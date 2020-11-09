@@ -33,9 +33,57 @@ class methodHandle;
 // CompilerOracle is an interface for turning on and off compilation
 // for some methods
 
-enum class CompilerOracleOption {
-    CompilerThresholdScaling,
-    End,
+// Basic option:   break,<method pattern>
+// Trivial option: quiet
+// Legacy option: option,<method pattern>,type,<option name>,<value>
+// Standard option: <comamnd>,<method pattern>,<value>
+
+//       CommandCommand option, type, simple
+#define COMPILECOMMAND_OPTIONS(option) \
+  option(Break, "break", Basic) \
+  option(Print, "print", Basic) \
+  option(Exclude, "exclude", Basic) \
+  option(Inline, "inline", Basic) \
+  option(DontInline, "dontinline", Basic) \
+  option(CompileOnly, "compileonly", Basic) \
+  option(Log, "log", Basic) \
+  option(Option, "option", Legacy) \
+  option(Quiet, "quiet", Trivial) \
+  option(Help, "help", Trivial) \
+  option(CompileThresholdScaling, "CompileThresholdScaling", Standard) \
+  option(ControlIntrinsic, "ControlIntrinsic", Standard) \
+  option(DisableIntrinsic, "DisableIntrinsic", Standard) \
+  option(NoRTMLockEliding, "NoRTMLockEliding", Standard) \
+  option(UseRTMLockEliding, "UseRTMLockEliding", Standard) \
+  option(PrintDebugInfo, "PrintDebugInfo", Standard) \
+  option(PrintRelocations, "PrintRelocations", Standard) \
+  option(PrintDependencies, "PrintDependencies", Standard)
+
+enum class CompileCommand {
+  Unknown = -1,
+  #define enum_of_options(option, name, ctype) option,
+    COMPILECOMMAND_OPTIONS(enum_of_options)
+  #undef enum_of_options
+  Count
+};
+
+static const char * command_names[] = {
+  #define enum_of_options(option, name, ctype) name,
+    COMPILECOMMAND_OPTIONS(enum_of_options)
+  #undef enum_of_options
+};
+
+enum class CompileCommandType {
+  Trivial,
+  Basic,
+  Legacy,
+  Standard
+};
+
+static enum CompileCommandType command2types[] = {
+#define enum_of_options(option, name, ctype) CompileCommandType::ctype,
+        COMPILECOMMAND_OPTIONS(enum_of_options)
+#undef enum_of_options
 };
 
 class CompilerOracle : AllStatic {
@@ -72,15 +120,12 @@ class CompilerOracle : AllStatic {
   static bool should_break_at(const methodHandle& method);
 
   // Check to see if this method has option set for it
-  static bool has_option_string(const methodHandle& method, const char * option);
+  static bool has_option(const methodHandle& method, enum CompileCommand option);
 
   // Check if method has option and value set. If yes, overwrite value and return true,
   // otherwise leave value unchanged and return false.
   template<typename T>
-  static bool has_option_value(const methodHandle& method, const char* option, T& value);
-
-  template<typename T>
-  static bool update_option(const methodHandle& method, CompilerOracleOption option, T& value);
+  static bool has_option_value(const methodHandle& method, enum CompileCommand option, T& value);
 
   // Fast check if there is any option available that compile control needs to know about
   static bool has_any_option();
@@ -94,6 +139,9 @@ class CompilerOracle : AllStatic {
   // Tells whether there are any methods to print for print_method_statistics()
   static bool should_print_methods();
 
+  // convert a string to a proper option - used from whitebox.
+  // returns CompileCommand::Unknown on names not matching an option.
+  static enum CompileCommand string_to_option(const char *name);
 };
 
 #endif // SHARE_COMPILER_COMPILERORACLE_HPP
