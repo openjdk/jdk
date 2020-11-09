@@ -696,7 +696,7 @@ compare_bin_file() {
         # pdb files.
         PDB_DIRS="$(ls -d \
             {$OTHER,$THIS}/support/modules_{cmds,libs}/{*,*/*} \
-            {$OTHER,$THIS}/support/native/jdk.incubator.jpackage/* \
+            {$OTHER,$THIS}/support/native/jdk.jpackage/* \
             )"
         export _NT_SYMBOL_PATH="$(echo $PDB_DIRS | tr ' ' ';')"
     fi

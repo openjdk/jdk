@@ -66,12 +66,6 @@ void MacroAssembler::advance(int bytes) {
   code_section()->set_end(code_section()->end() + bytes);
 }
 
-RegisterOrConstant MacroAssembler::delayed_value_impl(
-  intptr_t* delayed_value_addr, Register tmpl, int offset) {
-  ShouldNotCallThis();
-  return RegisterOrConstant();
-}
-
 void MacroAssembler::store_oop(jobject obj) {
   code_section()->relocate(pc(), oop_Relocation::spec_for_immediate());
   emit_address((address) obj);

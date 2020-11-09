@@ -30,13 +30,13 @@ import java.util.List;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-import jdk.incubator.jpackage.internal.AppImageFile;
+import jdk.jpackage.internal.AppImageFile;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.TKit;
-import jdk.incubator.jpackage.internal.AppImageFile;
+import jdk.jpackage.internal.AppImageFile;
 import org.w3c.dom.Document;
 
 /*
@@ -44,7 +44,7 @@ import org.w3c.dom.Document;
  * @summary jpackage application version testing
  * @library ../../../../helpers
  * @build jdk.jpackage.test.*
- * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
+ * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile AppVersionTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=jdk.jpackage.tests.AppVersionTest

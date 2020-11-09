@@ -137,12 +137,15 @@ class StackOverflow {
     return _stack_red_zone_size;
   }
 
+  // Returns base of red zone (one-beyond the highest red zone address, so
+  //  itself outside red zone and the highest address of the yellow zone).
   address stack_red_zone_base() const {
     return (address)(stack_end() + stack_red_zone_size());
   }
 
+  // Returns true if address points into the red zone.
   bool in_stack_red_zone(address a) const {
-    return a <= stack_red_zone_base() && a >= stack_end();
+    return a < stack_red_zone_base() && a >= stack_end();
   }
 
   static size_t stack_yellow_zone_size() {
@@ -155,20 +158,25 @@ class StackOverflow {
     return _stack_reserved_zone_size;
   }
 
+  // Returns base of the reserved zone (one-beyond the highest reserved zone address).
   address stack_reserved_zone_base() const {
     return (address)(stack_end() +
                      (stack_red_zone_size() + stack_yellow_zone_size() + stack_reserved_zone_size()));
   }
+
+  // Returns true if address points into the reserved zone.
   bool in_stack_reserved_zone(address a) const {
-    return (a <= stack_reserved_zone_base()) &&
+    return (a < stack_reserved_zone_base()) &&
            (a >= (address)((intptr_t)stack_reserved_zone_base() - stack_reserved_zone_size()));
   }
 
   static size_t stack_yellow_reserved_zone_size() {
     return _stack_yellow_zone_size + _stack_reserved_zone_size;
   }
+
+  // Returns true if a points into either yellow or reserved zone.
   bool in_stack_yellow_reserved_zone(address a) const {
-    return (a <= stack_reserved_zone_base()) && (a >= stack_red_zone_base());
+    return (a < stack_reserved_zone_base()) && (a >= stack_red_zone_base());
   }
 
   // Size of red + yellow + reserved zones.

@@ -236,7 +236,7 @@ public:
   // Delete is a NOP
   void operator delete( void *ptr ) {}
   // Fancy destructor; eagerly attempt to reclaim Node numberings and storage
-  void destruct();
+  void destruct(PhaseValues* phase);
 
   // Create a new Node.  Required is the number is of inputs required for
   // semantic correctness.

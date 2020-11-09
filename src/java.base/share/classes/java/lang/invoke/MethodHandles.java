@@ -4928,23 +4928,24 @@ assert((int)twice.invokeExact(21) == 42);
         if (newType.returnType() != oldType.returnType())
             throw newIllegalArgumentException("return types do not match",
                     oldType, newType);
-        if (reorder.length == oldType.parameterCount()) {
-            int limit = newType.parameterCount();
-            boolean bad = false;
-            for (int j = 0; j < reorder.length; j++) {
-                int i = reorder[j];
-                if (i < 0 || i >= limit) {
-                    bad = true; break;
-                }
-                Class<?> src = newType.parameterType(i);
-                Class<?> dst = oldType.parameterType(j);
-                if (src != dst)
-                    throw newIllegalArgumentException("parameter types do not match after reorder",
-                            oldType, newType);
+        if (reorder.length != oldType.parameterCount())
+            throw newIllegalArgumentException("old type parameter count and reorder array length do not match",
+                    oldType, Arrays.toString(reorder));
+
+        int limit = newType.parameterCount();
+        for (int j = 0; j < reorder.length; j++) {
+            int i = reorder[j];
+            if (i < 0 || i >= limit) {
+                throw newIllegalArgumentException("index is out of bounds for new type",
+                        i, newType);
             }
-            if (!bad)  return true;
+            Class<?> src = newType.parameterType(i);
+            Class<?> dst = oldType.parameterType(j);
+            if (src != dst)
+                throw newIllegalArgumentException("parameter types do not match after reorder",
+                        oldType, newType);
         }
-        throw newIllegalArgumentException("bad reorder array: "+Arrays.toString(reorder));
+        return true;
     }
 
     /**
@@ -5391,6 +5392,28 @@ assertEquals("xy", h3.invoke("x", "y", 1, "a", "b", "c"));
         Objects.requireNonNull(target);
         Objects.requireNonNull(newTypes);
         return dropArgumentsToMatch(target, skip, newTypes, pos, false);
+    }
+
+    /**
+     * Drop the return value of the target handle (if any).
+     * The returned method handle will have a {@code void} return type.
+     *
+     * @param target the method handle to adapt
+     * @return a possibly adapted method handle
+     * @throws NullPointerException if {@code target} is null
+     * @since 16
+     */
+    public static MethodHandle dropReturn(MethodHandle target) {
+        Objects.requireNonNull(target);
+        MethodType oldType = target.type();
+        Class<?> oldReturnType = oldType.returnType();
+        if (oldReturnType == void.class)
+            return target;
+        MethodType newType = oldType.changeReturnType(void.class);
+        BoundMethodHandle result = target.rebind();
+        LambdaForm lform = result.editor().filterReturnForm(V_TYPE, true);
+        result = result.copyWith(newType, lform);
+        return result;
     }
 
     /**
