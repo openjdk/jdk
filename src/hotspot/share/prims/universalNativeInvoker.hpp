@@ -24,28 +24,27 @@
 #ifndef SHARE_VM_PRIMS_UNIVERSALNATIVEINVOKER_HPP
 #define SHARE_VM_PRIMS_UNIVERSALNATIVEINVOKER_HPP
 
-#include "classfile/javaClasses.hpp"
-#include "classfile/vmSymbols.hpp"
-#include "include/jvm.h"
-#include "runtime/frame.inline.hpp"
-#include "runtime/globals.hpp"
-#include "utilities/macros.hpp"
+#include "runtime/stubCodeGenerator.hpp"
 #include "prims/foreign_globals.hpp"
 
-#ifdef ZERO
-# include "entry_zero.hpp"
-#endif
-
-class MacroAssembler;
-class Label;
-class ShuffleRecipe;
-
-typedef void (*ProgrammableStub)(address);
-
 class ProgrammableInvoker: AllStatic {
+private:
+  static constexpr CodeBuffer::csize_t native_invoker_size = 1024;
+
+  class Generator : StubCodeGenerator {
+  private:
+    const ABIDescriptor* _abi;
+    const BufferLayout* _layout;
+  public:
+    Generator(CodeBuffer* code, const ABIDescriptor* abi, const BufferLayout* layout);
+
+    void generate();
+  };
 public:
-  static void invoke_native(ProgrammableStub stub, address buff, JavaThread* thread);
-  static jlong generate_adapter(jobject abi, jobject layout);
+  using Stub = void(*)(address);
+
+  static void invoke_native(Stub stub, address buff, JavaThread* thread);
+  static address generate_adapter(jobject abi, jobject layout);
 };
 
 #endif // SHARE_VM_PRIMS_UNIVERSALNATIVEINVOKER_HPP

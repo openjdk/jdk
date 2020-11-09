@@ -25,6 +25,66 @@
 #include "prims/universalUpcallHandler.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaCalls.hpp"
+#include "classfile/symbolTable.hpp"
+
+#define FOREIGN_ABI "jdk/internal/foreign/abi/"
+
+extern struct JavaVM_ main_vm;
+
+JNI_ENTRY(void, ProgrammableUpcallHandler::upcall_helper(JNIEnv* env, jobject rec, address buff))
+  const UpcallMethod& upcall_method = instance().upcall_method;
+
+  ResourceMark rm(thread);
+  JavaValue result(T_VOID);
+  JavaCallArguments args(2); // long = 2 slots
+
+  args.push_jobject(rec);
+  args.push_long((jlong) buff);
+
+  JavaCalls::call_static(&result, upcall_method.klass, upcall_method.name, upcall_method.sig, &args, thread);
+JNI_END
+
+void ProgrammableUpcallHandler::attach_thread_and_do_upcall(jobject rec, address buff) {
+  Thread* thread = Thread::current_or_null();
+  bool should_detach = false;
+  JNIEnv* p_env = nullptr;
+  if (thread == nullptr) {
+    JavaVM_ *vm = (JavaVM *)(&main_vm);
+    vm->functions->AttachCurrentThread(vm, (void**) &p_env, nullptr);
+    should_detach = true;
+    thread = Thread::current();
+  } else {
+    p_env = thread->as_Java_thread()->jni_environment();
+  }
+
+  upcall_helper(p_env, rec, buff);
+
+  if (should_detach) {
+    JavaVM_ *vm = (JavaVM *)(&main_vm);
+    vm->functions->DetachCurrentThread(vm);
+  }
+}
+
+const ProgrammableUpcallHandler& ProgrammableUpcallHandler::instance() {
+  static ProgrammableUpcallHandler handler;
+  return handler;
+}
+
+ProgrammableUpcallHandler::ProgrammableUpcallHandler() {
+  Symbol* sym = SymbolTable::new_symbol(FOREIGN_ABI "ProgrammableUpcallHandler");
+  Thread* THREAD = Thread::current();
+  Klass* k = SystemDictionary::resolve_or_null(sym, Handle(), Handle(), CATCH);
+  k->initialize(CATCH);
+
+  upcall_method.klass = k;
+  upcall_method.name = SymbolTable::new_symbol("invoke");
+  upcall_method.sig = SymbolTable::new_symbol("(L" FOREIGN_ABI "ProgrammableUpcallHandler;J)V");
+
+  assert(upcall_method.klass->lookup_method(upcall_method.name, upcall_method.sig) != nullptr,
+    "Could not find upcall method: %s.%s%s", upcall_method.klass->external_name(),
+    upcall_method.name->as_C_string(), upcall_method.sig->as_C_string());
+}
 
 JNI_ENTRY(jlong, PUH_AllocateUpcallStub(JNIEnv *env, jobject rec, jobject abi, jobject buffer_layout))
   Handle receiver(THREAD, JNIHandles::resolve(rec));
@@ -34,12 +94,9 @@ JNI_END
 
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &f)
-#define LANG "Ljava/lang/"
-
-#define FOREIGN_ABI "Ljdk/internal/foreign/abi"
 
 static JNINativeMethod PUH_methods[] = {
-  {CC "allocateUpcallStub", CC "(" FOREIGN_ABI "/ABIDescriptor;" FOREIGN_ABI "/BufferLayout;" ")J", FN_PTR(PUH_AllocateUpcallStub)},
+  {CC "allocateUpcallStub", CC "(L" FOREIGN_ABI "ABIDescriptor;L" FOREIGN_ABI "BufferLayout;" ")J", FN_PTR(PUH_AllocateUpcallStub)},
 };
 
 /**
