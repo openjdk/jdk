@@ -755,7 +755,7 @@ const intx ObjectAlignmentInBytes = 8;
           "tables")                                                         \
                                                                             \
   product(bool, AllowUserSignalHandlers, false,                             \
-          "Do not complain if the application installs signal handlers "    \
+          "Application will install primary signal handlers for the JVM "   \
           "(Unix only)")                                                    \
                                                                             \
   product(bool, UseSignalChaining, true,                                    \
