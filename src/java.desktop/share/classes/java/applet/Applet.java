@@ -59,7 +59,8 @@ import com.sun.media.sound.JavaSoundAudioClip;
  * @since 1.0
  * @deprecated The Applet API is deprecated, no replacement.
  */
-@Deprecated(since = "9")
+@Deprecated(since="9", forRemoval=true)
+@SuppressWarnings({"deprecation", "removal"})
 public class Applet extends Panel {
 
     /**

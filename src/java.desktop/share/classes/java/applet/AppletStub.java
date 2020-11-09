@@ -38,7 +38,8 @@ import java.net.URL;
  * @since 1.0
  * @deprecated The Applet API is deprecated, no replacement.
  */
-@Deprecated(since = "9")
+@Deprecated(since="9", forRemoval=true)
+@SuppressWarnings({"deprecation", "removal"})
 public interface AppletStub {
 
     /**

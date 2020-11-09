@@ -1630,7 +1630,7 @@ public abstract class ColorModel implements Transparency{
      *     See the specification for {@link Object#finalize()} for further
      *     information about migration options.
      */
-    @Deprecated(since = "9", forRemoval = true)
+    @Deprecated(since="9", forRemoval=true)
     @SuppressWarnings("removal")
     public void finalize() {
     }

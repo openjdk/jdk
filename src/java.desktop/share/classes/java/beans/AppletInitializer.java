@@ -43,7 +43,7 @@ import java.beans.beancontext.BeanContext;
  * <a href="../applet/package-summary.html"> java.applet package
  * documentation</a> for further information.
  */
-@Deprecated(since = "9")
+@Deprecated(since="9", forRemoval=true)
 public interface AppletInitializer {
 
     /**
@@ -73,6 +73,7 @@ public interface AppletInitializer {
      * @param bCtxt          The BeanContext intended for this Applet, or
      *                       null.
      */
+    @SuppressWarnings({"deprecation", "removal"})
     void initialize(Applet newAppletBean, BeanContext bCtxt);
 
     /**
@@ -84,5 +85,6 @@ public interface AppletInitializer {
      *
      * @param newApplet  The newly instantiated JavaBean
      */
+    @SuppressWarnings({"deprecation", "removal"})
     void activate(Applet newApplet);
 }

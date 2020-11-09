@@ -932,7 +932,7 @@ public class BasicPopupMenuUI extends PopupMenuUI {
             }
         }
 
-        @SuppressWarnings("deprecation")
+        @SuppressWarnings({"deprecation", "removal"})
         boolean isInPopup(Component src) {
             for (Component c=src; c!=null; c=c.getParent()) {
                 if (c instanceof Applet || c instanceof Window) {
@@ -1150,7 +1150,7 @@ public class BasicPopupMenuUI extends PopupMenuUI {
             }
         }
 
-        @SuppressWarnings("deprecation")
+        @SuppressWarnings({"deprecation", "removal"})
         public void stateChanged(ChangeEvent ev) {
             if (!(UIManager.getLookAndFeel() instanceof BasicLookAndFeel)) {
                 uninstall();

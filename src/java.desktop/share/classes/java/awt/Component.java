@@ -4045,7 +4045,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
          * {@code true}.
          * @see #createBuffers(int, BufferCapabilities)
          */
-        @SuppressWarnings("deprecation")
+        @SuppressWarnings({"deprecation", "removal"})
         protected FlipBufferStrategy(int numBuffers, BufferCapabilities caps)
             throws AWTException
         {
@@ -8177,7 +8177,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
         return res;
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"deprecation", "removal"})
     final Component getNextFocusCandidate() {
         Container rootAncestor = getTraversalRoot();
         Component comp = this;

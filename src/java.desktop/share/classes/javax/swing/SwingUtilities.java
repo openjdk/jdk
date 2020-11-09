@@ -422,7 +422,7 @@ public class SwingUtilities implements SwingConstants
      * @param p  a Point object (converted to the new coordinate system)
      * @param c  a Component object
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"deprecation", "removal"})
     public static void convertPointToScreen(Point p,Component c) {
             Rectangle b;
             int x,y;
@@ -462,7 +462,7 @@ public class SwingUtilities implements SwingConstants
      * @param p  a Point object (converted to the new coordinate system)
      * @param c  a Component object
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"deprecation", "removal"})
     public static void convertPointFromScreen(Point p,Component c) {
         Rectangle b;
         int x,y;
@@ -1663,7 +1663,7 @@ public class SwingUtilities implements SwingConstants
      * @param c the component
      * @return the first ancestor of c that's a Window or the last Applet ancestor
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"deprecation", "removal"})
     public static Component getRoot(Component c) {
         Component applet = null;
         for(Component p = c; p != null; p = p.getParent()) {
@@ -1704,7 +1704,7 @@ public class SwingUtilities implements SwingConstants
      * @return true if a binding has found and processed
      * @since 1.4
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"deprecation", "removal"})
     public static boolean processKeyBindings(KeyEvent event) {
         if (event != null) {
             if (event.isConsumed()) {
@@ -2219,7 +2219,7 @@ public class SwingUtilities implements SwingConstants
      * @see java.awt.Component#isVisible()
      * @since 1.7
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"deprecation", "removal"})
     static Container getValidateRoot(Container c, boolean visibleOnly) {
         Container root = null;
 

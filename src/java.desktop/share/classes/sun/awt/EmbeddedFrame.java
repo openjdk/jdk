@@ -504,7 +504,8 @@ public abstract class EmbeddedFrame extends Frame
      * <a href="../../java/applet/package-summary.html"> java.applet package
      * documentation</a> for further information.
      */
-    @Deprecated(since = "9")
+    @Deprecated(since="9", forRemoval=true)
+    @SuppressWarnings({"deprecation", "removal"})
     public static Applet getAppletIfAncestorOf(Component comp) {
         Container parent = comp.getParent();
         Applet applet = null;

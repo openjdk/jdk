@@ -6028,7 +6028,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             this.focusManager = fm;
         }
 
-        @SuppressWarnings("deprecation")
+        @SuppressWarnings({"deprecation", "removal"})
         public void propertyChange(PropertyChangeEvent ev) {
             if (!isEditing() || getClientProperty("terminateEditOnFocusLost") != Boolean.TRUE) {
                 return;

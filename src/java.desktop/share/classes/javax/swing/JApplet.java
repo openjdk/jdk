@@ -96,10 +96,10 @@ import javax.accessibility.AccessibleContext;
  *
  * @deprecated The Applet API is deprecated, no replacement.
  */
-@Deprecated(since = "9")
+@Deprecated(since="9", forRemoval=true)
 @JavaBean(defaultProperty = "JMenuBar", description = "Swing's Applet subclass.")
 @SwingContainer(delegate = "getContentPane")
-@SuppressWarnings("serial") // Same-version serialization only
+@SuppressWarnings({"serial", "deprecation", "removal"}) // Same-version serialization only
 public class JApplet extends Applet implements Accessible,
                                                RootPaneContainer,
                                TransferHandler.HasGetTransferHandler

@@ -420,7 +420,7 @@ public class RepaintManager
      *
      * @see JComponent#repaint
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"deprecation", "removal"})
     private void addDirtyRegion0(Container c, int x, int y, int w, int h) {
         /* Special cases we don't have to bother with.
          */
@@ -539,11 +539,12 @@ public class RepaintManager
      * documentation</a> for further information.
      */
     @Deprecated(since = "9")
+    @SuppressWarnings({"deprecation", "removal"})
     public void addDirtyRegion(Applet applet, int x, int y, int w, int h) {
         addDirtyRegion0(applet, x, y, w, h);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"deprecation", "removal"})
     void scheduleHeavyWeightPaints() {
         Map<Container,Rectangle> hws;
 
