@@ -1008,16 +1008,9 @@ void
 debugMonitorEnter(jrawMonitorID monitor)
 {
     jvmtiError error;
-    while (JNI_TRUE) {
-        error = JVMTI_FUNC_PTR(gdata->jvmti,RawMonitorEnter)
-                        (gdata->jvmti, monitor);
-        error = ignore_vm_death(error);
-        if (error == JVMTI_ERROR_INTERRUPT) {
-            handleInterrupt();
-        } else {
-            break;
-        }
-    }
+    error = JVMTI_FUNC_PTR(gdata->jvmti,RawMonitorEnter)
+            (gdata->jvmti, monitor);
+    error = ignore_vm_death(error);
     if (error != JVMTI_ERROR_NONE) {
         EXIT_ERROR(error, "on raw monitor enter");
     }
