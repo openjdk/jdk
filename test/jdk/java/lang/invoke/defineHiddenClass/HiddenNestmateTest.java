@@ -72,6 +72,7 @@ public class HiddenNestmateTest {
         Lookup lookup = MethodHandles.lookup().defineHiddenClass(bytes, false);
         Class<?> c = lookup.lookupClass();
         assertTrue(lookup.hasFullPrivilegeAccess());
+        assertTrue((lookup.lookupModes() & ORIGINAL) == ORIGINAL);
         assertTrue(c.getNestHost() == c);  // host of its own nest
         assertTrue(c.isHidden());
 
@@ -137,6 +138,8 @@ public class HiddenNestmateTest {
         // Teleport to a hidden nestmate
         Lookup lc =  MethodHandles.lookup().in(lookup.lookupClass());
         assertTrue((lc.lookupModes() & PRIVATE) != 0);
+        assertTrue((lc.lookupModes() & ORIGINAL) == 0);
+
         Lookup lc2 = lc.defineHiddenClass(bytes, false, NESTMATE);
         assertNestmate(lc2);
     }

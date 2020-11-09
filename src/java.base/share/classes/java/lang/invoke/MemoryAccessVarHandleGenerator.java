@@ -45,8 +45,8 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
-import static jdk.internal.org.objectweb.asm.Opcodes.AALOAD;
 import static jdk.internal.org.objectweb.asm.Opcodes.ACC_FINAL;
 import static jdk.internal.org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static jdk.internal.org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -54,16 +54,12 @@ import static jdk.internal.org.objectweb.asm.Opcodes.ACC_STATIC;
 import static jdk.internal.org.objectweb.asm.Opcodes.ACC_SUPER;
 import static jdk.internal.org.objectweb.asm.Opcodes.ALOAD;
 import static jdk.internal.org.objectweb.asm.Opcodes.ARETURN;
-import static jdk.internal.org.objectweb.asm.Opcodes.ASTORE;
 import static jdk.internal.org.objectweb.asm.Opcodes.BIPUSH;
 import static jdk.internal.org.objectweb.asm.Opcodes.CHECKCAST;
+import static jdk.internal.org.objectweb.asm.Opcodes.DUP;
 import static jdk.internal.org.objectweb.asm.Opcodes.GETFIELD;
-import static jdk.internal.org.objectweb.asm.Opcodes.GETSTATIC;
 import static jdk.internal.org.objectweb.asm.Opcodes.H_INVOKESTATIC;
 import static jdk.internal.org.objectweb.asm.Opcodes.ICONST_0;
-import static jdk.internal.org.objectweb.asm.Opcodes.ICONST_1;
-import static jdk.internal.org.objectweb.asm.Opcodes.ICONST_2;
-import static jdk.internal.org.objectweb.asm.Opcodes.ICONST_3;
 import static jdk.internal.org.objectweb.asm.Opcodes.ILOAD;
 import static jdk.internal.org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static jdk.internal.org.objectweb.asm.Opcodes.INVOKESTATIC;
@@ -73,9 +69,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.LASTORE;
 import static jdk.internal.org.objectweb.asm.Opcodes.LLOAD;
 import static jdk.internal.org.objectweb.asm.Opcodes.NEWARRAY;
 import static jdk.internal.org.objectweb.asm.Opcodes.PUTFIELD;
-import static jdk.internal.org.objectweb.asm.Opcodes.PUTSTATIC;
 import static jdk.internal.org.objectweb.asm.Opcodes.RETURN;
-import static jdk.internal.org.objectweb.asm.Opcodes.DUP;
 import static jdk.internal.org.objectweb.asm.Opcodes.SIPUSH;
 import static jdk.internal.org.objectweb.asm.Opcodes.T_LONG;
 import static jdk.internal.org.objectweb.asm.Opcodes.V14;
@@ -95,6 +89,11 @@ class MemoryAccessVarHandleGenerator {
     private final static MethodHandle ADD_OFFSETS_HANDLE;
     private final static MethodHandle MUL_OFFSETS_HANDLE;
 
+    private static final ConstantDynamic CARRIER_CONDY;
+    private static final ConstantDynamic INTERMEDIATE_CONDY;
+    private static final ConstantDynamic ADD_HANDLE_CONDY;
+    private static final ConstantDynamic MUL_HANDLE_CONDY;
+
     static {
         helperClassCache = new HashMap<>();
         helperClassCache.put(byte.class, MemoryAccessVarHandleByteHelper.class);
@@ -107,12 +106,22 @@ class MemoryAccessVarHandleGenerator {
 
         OFFSET_OP_TYPE = MethodType.methodType(long.class, long.class, long.class, MemoryAddressProxy.class);
 
+        MethodHandles.Lookup lookup = MethodHandles.lookup();
         try {
-            ADD_OFFSETS_HANDLE = MethodHandles.Lookup.IMPL_LOOKUP.findStatic(MemoryAddressProxy.class, "addOffsets", OFFSET_OP_TYPE);
-            MUL_OFFSETS_HANDLE = MethodHandles.Lookup.IMPL_LOOKUP.findStatic(MemoryAddressProxy.class, "multiplyOffsets", OFFSET_OP_TYPE);
+            ADD_OFFSETS_HANDLE = lookup.findStatic(MemoryAddressProxy.class, "addOffsets", OFFSET_OP_TYPE);
+            MUL_OFFSETS_HANDLE = lookup.findStatic(MemoryAddressProxy.class, "multiplyOffsets", OFFSET_OP_TYPE);
         } catch (Throwable ex) {
             throw new ExceptionInInitializerError(ex);
         }
+
+        MethodType classDataMtype = MethodType.methodType(Object.class, MethodHandles.Lookup.class, String.class, Class.class, int.class);
+        Handle classDataBsm = new Handle(H_INVOKESTATIC, Type.getInternalName(MethodHandles.class), "classDataAt",
+                                         classDataMtype.descriptorString(), false);
+
+        CARRIER_CONDY = new ConstantDynamic("carrier", Class.class.descriptorString(), classDataBsm, 0);
+        INTERMEDIATE_CONDY = new ConstantDynamic("intermediate", Class[].class.descriptorString(), classDataBsm, 1);
+        ADD_HANDLE_CONDY = new ConstantDynamic("addHandle", MethodHandle.class.descriptorString(), classDataBsm, 2);
+        MUL_HANDLE_CONDY = new ConstantDynamic("mulHandle", MethodHandle.class.descriptorString(), classDataBsm, 3);
     }
 
     private static final File DEBUG_DUMP_CLASSES_DIR;
@@ -131,7 +140,7 @@ class MemoryAccessVarHandleGenerator {
     private final Class<?> carrier;
     private final Class<?> helperClass;
     private final VarForm form;
-    private final Object[] classData;
+    private final List<Object> classData;
 
     MemoryAccessVarHandleGenerator(Class<?> carrier, int dims) {
         this.dimensions = dims;
@@ -144,7 +153,7 @@ class MemoryAccessVarHandleGenerator {
         // live constants
         Class<?>[] intermediate = new Class<?>[dimensions];
         Arrays.fill(intermediate, long.class);
-        this.classData = new Object[] { carrier, intermediate, ADD_OFFSETS_HANDLE, MUL_OFFSETS_HANDLE };
+        this.classData = List.of(carrier, intermediate, ADD_OFFSETS_HANDLE, MUL_OFFSETS_HANDLE);
     }
 
     /*
@@ -192,8 +201,6 @@ class MemoryAccessVarHandleGenerator {
             cw.visitField(ACC_PRIVATE | ACC_FINAL, "dim" + i, "J", null, null);
         }
 
-        addStaticInitializer(cw);
-
         addConstructor(cw);
 
         addAccessModeTypeMethod(cw);
@@ -208,48 +215,6 @@ class MemoryAccessVarHandleGenerator {
 
         cw.visitEnd();
         return cw.toByteArray();
-    }
-
-    void addStaticInitializer(ClassWriter cw) {
-        // carrier and intermediate
-        cw.visitField(ACC_PRIVATE | ACC_STATIC | ACC_FINAL, "carrier", Class.class.descriptorString(), null, null);
-        cw.visitField(ACC_PRIVATE | ACC_STATIC | ACC_FINAL, "intermediate", Class[].class.descriptorString(), null, null);
-        cw.visitField(ACC_PRIVATE | ACC_STATIC | ACC_FINAL, "addHandle", MethodHandle.class.descriptorString(), null, null);
-        cw.visitField(ACC_PRIVATE | ACC_STATIC | ACC_FINAL, "mulHandle", MethodHandle.class.descriptorString(), null, null);
-
-        MethodVisitor mv = cw.visitMethod(Opcodes.ACC_STATIC, "<clinit>", "()V", null, null);
-        mv.visitCode();
-        // extract class data in static final fields
-        MethodType mtype = MethodType.methodType(Object.class, MethodHandles.Lookup.class, String.class, Class.class);
-        Handle bsm = new Handle(H_INVOKESTATIC, Type.getInternalName(MethodHandles.class), "classData",
-                    mtype.descriptorString(), false);
-        ConstantDynamic dynamic = new ConstantDynamic("classData", Object[].class.descriptorString(), bsm);
-        mv.visitLdcInsn(dynamic);
-        mv.visitTypeInsn(CHECKCAST, Type.getInternalName(Object[].class));
-        mv.visitVarInsn(ASTORE, 0);
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitInsn(ICONST_0);
-        mv.visitInsn(AALOAD);
-        mv.visitTypeInsn(CHECKCAST, Type.getInternalName(Class.class));
-        mv.visitFieldInsn(PUTSTATIC, implClassName, "carrier", Class.class.descriptorString());
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitInsn(ICONST_1);
-        mv.visitInsn(AALOAD);
-        mv.visitTypeInsn(CHECKCAST, Type.getInternalName(Class[].class));
-        mv.visitFieldInsn(PUTSTATIC, implClassName, "intermediate", Class[].class.descriptorString());
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitInsn(ICONST_2);
-        mv.visitInsn(AALOAD);
-        mv.visitTypeInsn(CHECKCAST, Type.getInternalName(MethodHandle.class));
-        mv.visitFieldInsn(PUTSTATIC, implClassName, "addHandle", MethodHandle.class.descriptorString());
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitInsn(ICONST_3);
-        mv.visitInsn(AALOAD);
-        mv.visitTypeInsn(CHECKCAST, Type.getInternalName(MethodHandle.class));
-        mv.visitFieldInsn(PUTSTATIC, implClassName, "mulHandle", MethodHandle.class.descriptorString());
-        mv.visitInsn(Opcodes.RETURN);
-        mv.visitMaxs(0, 0);
-        mv.visitEnd();
     }
 
     void addConstructor(ClassWriter cw) {
@@ -287,8 +252,8 @@ class MemoryAccessVarHandleGenerator {
         mv.visitFieldInsn(GETFIELD, Type.getInternalName(VarHandle.AccessMode.class), "at", VarHandle.AccessType.class.descriptorString());
         mv.visitLdcInsn(Type.getType(MemoryAddressProxy.class));
         mv.visitTypeInsn(CHECKCAST, Type.getInternalName(Class.class));
-        mv.visitFieldInsn(GETSTATIC, implClassName, "carrier", Class.class.descriptorString());
-        mv.visitFieldInsn(GETSTATIC, implClassName, "intermediate", Class[].class.descriptorString());
+        mv.visitLdcInsn(CARRIER_CONDY);
+        mv.visitLdcInsn(INTERMEDIATE_CONDY);
 
         mv.visitMethodInsn(INVOKEVIRTUAL, Type.getInternalName(VarHandle.AccessType.class),
                 "accessModeType", MethodType.methodType(MethodType.class, Class.class, Class.class, Class[].class).toMethodDescriptorString(), false);
@@ -331,14 +296,14 @@ class MemoryAccessVarHandleGenerator {
             mv.visitFieldInsn(GETFIELD, Type.getInternalName(BASE_CLASS), "offset", "J");
             for (int i = 0 ; i < dimensions ; i++) {
                 // load ADD MH
-                mv.visitFieldInsn(GETSTATIC, implClassName, "addHandle", MethodHandle.class.descriptorString());
+                mv.visitLdcInsn(ADD_HANDLE_CONDY);
 
                 //fixup stack so that ADD MH ends up bottom
                 mv.visitInsn(Opcodes.DUP_X2);
                 mv.visitInsn(Opcodes.POP);
 
                 // load MUL MH
-                mv.visitFieldInsn(GETSTATIC, implClassName, "mulHandle", MethodHandle.class.descriptorString());
+                mv.visitLdcInsn(MUL_HANDLE_CONDY);
                 mv.visitTypeInsn(CHECKCAST, Type.getInternalName(MethodHandle.class));
 
                 mv.visitVarInsn(ALOAD, 0); // load recv
@@ -403,7 +368,7 @@ class MemoryAccessVarHandleGenerator {
     void addCarrierAccessor(ClassWriter cw) {
         MethodVisitor mv = cw.visitMethod(ACC_FINAL, "carrier", "()Ljava/lang/Class;", null, null);
         mv.visitCode();
-        mv.visitFieldInsn(GETSTATIC, implClassName, "carrier", Class.class.descriptorString());
+        mv.visitLdcInsn(CARRIER_CONDY);
         mv.visitInsn(ARETURN);
         mv.visitMaxs(0, 0);
         mv.visitEnd();

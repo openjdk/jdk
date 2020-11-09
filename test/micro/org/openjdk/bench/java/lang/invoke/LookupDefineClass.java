@@ -230,7 +230,7 @@ public class LookupDefineClass {
         private static final MethodHandles.Lookup lookup =
                 defineHostClass(new Loader("anonymous-class-loader"),"foo.AnonymousHost", FOO_HOST_BYTES);
 
-        @SuppressWarnings("deprecation")
+        @SuppressWarnings("removal")
         @Benchmark
         public Class<?> load() throws ClassNotFoundException {
             return unsafe.defineAnonymousClass(lookup.lookupClass(), X_BYTECODE, null);

@@ -684,8 +684,10 @@ class MethodHandleNatives {
 
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
     /*
-     * A convenient method for LambdaForms to get the class data of a given class.
-     * LambdaForms cannot use condy via MethodHandles.classData
+     * Returns the class data set by the VM in the Class::classData field.
+     *
+     * This is also invoked by LambdaForms as it cannot use condy via
+     * MethodHandles.classData due to bootstrapping issue.
      */
     static Object classData(Class<?> c) {
         UNSAFE.ensureClassInitialized(c);

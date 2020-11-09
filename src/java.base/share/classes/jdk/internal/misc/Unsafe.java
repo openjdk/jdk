@@ -1345,6 +1345,7 @@ public final class Unsafe {
      * @param data      bytes of a class file
      * @param cpPatches where non-null entries exist, they replace corresponding CP entries in data
      */
+    @Deprecated(since = "15", forRemoval = true)
     public Class<?> defineAnonymousClass(Class<?> hostClass, byte[] data, Object[] cpPatches) {
         if (hostClass == null || data == null) {
             throw new NullPointerException();

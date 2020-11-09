@@ -39,6 +39,7 @@ import static org.testng.Assert.*;
 
 @Test
 public class PrivateLookupInTests {
+    private static final int ALL_ACCESS = MethodHandles.lookup().lookupModes();
 
     /**
      * A public and non-public types in the test module but in a different
@@ -74,7 +75,8 @@ public class PrivateLookupInTests {
     public void testAllAccessCallerSameModule() throws Throwable {
         Lookup lookup = MethodHandles.privateLookupIn(nonPublicType, MethodHandles.lookup());
         assertTrue(lookup.lookupClass() == nonPublicType);
-        assertTrue(lookup.hasFullPrivilegeAccess());
+        assertTrue((lookup.lookupModes() & (ALL_ACCESS & ~ORIGINAL)) == (ALL_ACCESS & ~ORIGINAL));
+        assertFalse(lookup.hasFullPrivilegeAccess());
 
         // get obj field
         MethodHandle mh = lookup.findStaticGetter(nonPublicType, "obj", Object.class);
@@ -88,6 +90,7 @@ public class PrivateLookupInTests {
         assertTrue((caller.lookupModes() & PRIVATE) == 0);
         assertTrue((caller.lookupModes() & PACKAGE) == 0);
         assertTrue((caller.lookupModes() & MODULE) != 0);
+        assertTrue((caller.lookupModes() & ORIGINAL) == 0);
 
         Lookup lookup = MethodHandles.privateLookupIn(nonPublicType, caller);
     }
@@ -113,8 +116,9 @@ public class PrivateLookupInTests {
 
         Lookup lookup = MethodHandles.privateLookupIn(clazz, MethodHandles.lookup());
         assertTrue(lookup.lookupClass() == clazz);
-        assertTrue((lookup.lookupModes() & PRIVATE) != 0);
         assertFalse(lookup.hasFullPrivilegeAccess());
+        int privateAccess = ALL_ACCESS & ~(ORIGINAL|MODULE);
+        assertTrue((lookup.lookupModes() & privateAccess) == privateAccess);
 
         // get obj field
         MethodHandle mh = lookup.findStaticGetter(clazz, "obj", Object.class);
@@ -138,7 +142,8 @@ public class PrivateLookupInTests {
         thisModule.addReads(clazz.getModule());
         Lookup lookup = MethodHandles.privateLookupIn(clazz, MethodHandles.lookup());
         assertTrue(lookup.lookupClass() == clazz);
-        assertTrue((lookup.lookupModes() & PRIVATE) != 0);
+        int privateAccess = ALL_ACCESS & ~(ORIGINAL|MODULE);
+        assertTrue((lookup.lookupModes() & privateAccess) == privateAccess);
     }
 
     // test does not read m2, m2 opens p2 to test

@@ -63,6 +63,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.lang.invoke.LambdaForm.BasicType.V_TYPE;
 import static java.lang.invoke.MethodHandleImpl.Intrinsic;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import static java.lang.invoke.MethodHandleStatics.newIllegalArgumentException;
@@ -173,8 +174,8 @@ public class MethodHandles {
      * <li>If there is a security manager, its {@code checkPermission} method is
      * called to check {@code ReflectPermission("suppressAccessChecks")} and
      * that must return normally.
-     * <li>The caller lookup object must have {@linkplain Lookup#hasFullPrivilegeAccess()
-     * full privilege access}.  Specifically:
+     * <li>The caller lookup object must have {@linkplain Lookup#PRIVATE private} and
+     * {@linkplain Lookup#MODULE module} access.  Specifically:
      *   <ul>
      *     <li>The caller lookup object must have the {@link Lookup#MODULE MODULE} lookup mode.
      *         (This is because otherwise there would be no way to ensure the original lookup
@@ -200,14 +201,13 @@ public class MethodHandles {
      * exception.
      * <p>
      * Otherwise, if {@code M1} and {@code M2} are the same module, this method
-     * returns a {@code Lookup} on {@code targetClass} with
-     * {@linkplain Lookup#hasFullPrivilegeAccess() full privilege access} and
-     * {@code null} previous lookup class.
+     * returns a {@code Lookup} on {@code targetClass} with {@code PRIVATE}
+     * and {@code MODULE} access with {@code null} previous lookup class.
      * <p>
      * Otherwise, {@code M1} and {@code M2} are two different modules.  This method
      * returns a {@code Lookup} on {@code targetClass} that records
-     * the lookup class of the caller as the new previous lookup class and
-     * drops {@code MODULE} access from the full privilege access.
+     * the lookup class of the caller as the new previous lookup class with
+     * {@code PRIVATE} access but no {@code MODULE} access.
      *
      * @param targetClass the target class
      * @param caller the caller lookup object
@@ -232,7 +232,8 @@ public class MethodHandles {
         if (targetClass.isArray())
             throw new IllegalArgumentException(targetClass + " is an array class");
         // Ensure that we can reason accurately about private and module access.
-        if (!caller.hasFullPrivilegeAccess())
+        int requireAccess = Lookup.PRIVATE|Lookup.MODULE;
+        if ((caller.lookupModes() & requireAccess) != requireAccess)
             throw new IllegalAccessException("caller does not have PRIVATE and MODULE lookup mode");
 
         // previous lookup class is never set if it has MODULE access
@@ -242,7 +243,7 @@ public class MethodHandles {
         Module callerModule = callerClass.getModule();  // M1
         Module targetModule = targetClass.getModule();  // M2
         Class<?> newPreviousClass = null;
-        int newModes = Lookup.FULL_POWER_MODES;
+        int newModes = Lookup.FULL_POWER_MODES & ~Lookup.ORIGINAL;
 
         if (targetModule != callerModule) {
             if (!callerModule.canRead(targetModule))
@@ -274,29 +275,29 @@ public class MethodHandles {
      *
      * <p> A hidden class with class data can be created by calling
      * {@link Lookup#defineHiddenClassWithClassData(byte[], Object, boolean, Lookup.ClassOption...)
-     * Lookup::defineHiddenClassWithClassData}.  The class data
-     * is associated with the hidden class as if assigned to a private
-     * static final unnamed field.  This method is equivalent as if calling
-     * {@link ConstantBootstraps#getStaticFinal(Lookup, String, Class)} to
-     * obtain the value of such field corresponding to the class data.
+     * Lookup::defineHiddenClassWithClassData}.
      * This method will cause the static class initializer of the lookup
      * class of the given {@code caller} lookup object be executed if
      * it has not been initialized.
      *
      * <p> The {@linkplain Lookup#lookupModes() lookup modes} for this lookup
-     * must have full privilege access in order to retrieve the class data.
+     * must have {@linkplain Lookup#hasFullPrivilegeAccess() full privilege access}
+     * in order to retrieve the class data.
      *
      * @apiNote
      * This method can be called as a bootstrap method for a dynamically computed
      * constant.  A framework can create a hidden class with class data, for
-     * example that can be {@code List.of(o1, o2, o3....)} containing more than
-     * one live object.  The class data is accessible only to the lookup object
+     * example that can be {@code Class} or {@code MethodHandle} object.
+     * The class data is accessible only to the lookup object
      * created by the original caller but inaccessible to other members
-     * in the same nest.  If a framework passes security sensitive live objects
+     * in the same nest.  If a framework passes security sensitive objects
      * to a hidden class via class data, it is recommended to load the value
      * of class data as a dynamically computed constant instead of storing
-     * the live objects in private fields which are accessible to other
-     * nestmates.
+     * the class data in private static field(s) which are accessible to
+     * other nestmates.  If there are more than one objects to be injected
+     * in a hidden class, a class data can be an unmodifiable list and
+     * {@link #classDataAt(Lookup, String, Class, int)} can be used to load
+     * the element at a specified index as a dynamically computed constant.
      *
      * @param <T> the type to cast the class data object to
      * @param caller the lookup context describing the class performing the
@@ -306,95 +307,106 @@ public class MethodHandles {
      * @return the value of the class data if present in the lookup class;
      * otherwise {@code null}
      * @throws IllegalAccessException if the lookup context does not have
-     * original caller access
+     * full privilege access
      * @throws ClassCastException if the class data cannot be converted to
-     * the specified {@code type}
+     * the given {@code type}
      * @see Lookup#defineHiddenClassWithClassData(byte[], Object, boolean, Lookup.ClassOption...)
+     * @see #classDataAt(Lookup, String, Class, int)
      * @since 16
      * @jvms 5.5 Initialization
      */
      public static <T> T classData(Lookup caller, String name, Class<T> type) throws IllegalAccessException {
-        Objects.requireNonNull(name);
-        Objects.requireNonNull(type);
+         Objects.requireNonNull(name);
+         Objects.requireNonNull(type);
 
-        if (!caller.hasFullPrivilegeAccess()) {
-            throw new IllegalAccessException(caller + " does not have full privilege access");
-        }
-        try {
-            Object result = MethodHandleNatives.classData(caller.lookupClass);
-            return BootstrapMethodInvoker.widenAndCast(result, type);
-        } catch (Throwable e) {
-            throw new InternalError(e);
-        }
+         if (!caller.hasFullPrivilegeAccess()) {
+             throw new IllegalAccessException(caller + " does not have full privilege access");
+         }
+
+         Object classdata = MethodHandleNatives.classData(caller.lookupClass());
+         if (classdata == null) return null;
+
+         try {
+             return BootstrapMethodInvoker.widenAndCast(classdata, type);
+         } catch (ClassCastException e) {
+             throw e;
+         } catch (Throwable e) {
+             throw new InternalError(e);
+         }
     }
 
     /**
-     * Returns the value associated with the given key contained in the
-     * {@linkplain #classData(Lookup, String, Class) class data}.
-     * If the class data is not present in this lookup class, this method returns
-     * {@code null}.  Otherwise, if the class data is of {@code List} type, then
-     * the given key is the index of the element in the list
-     * and this method is equivalent to calling
-     * <blockquote>
-     * {@code classData(caller, key, List.class).get(Integer.parseInt(key)}
-     * </blockquote>
-     * If the class data is of {@code Map} type and the given key is used to
-     * map to a value and this method is equivalent to calling
-     * <blockquote>
-     * {@code classData(caller, key, Map.class).get(key))}
-     * </blockquote>
+     * Returns the element at the specified index in the
+     * {@linkplain #classData(Lookup, String, Class) class data},
+     * whose type is a {@code List}, associated with the lookup class
+     * of the given {@code caller} lookup object.
+     * If the class data is not present in this lookup class, this method
+     * returns {@code null}.
+     *
+     * <p> A hidden class with class data can be created by calling
+     * {@link Lookup#defineHiddenClassWithClassData(byte[], Object, boolean, Lookup.ClassOption...)
+     * Lookup::defineHiddenClassWithClassData}.
+     * This method will cause the static class initializer of the lookup
+     * class of the given {@code caller} lookup object be executed if
+     * it has not been initialized.
      *
      * <p> The {@linkplain Lookup#lookupModes() lookup modes} for this lookup
-     * must have full privilege access in order to retrieve
-     * the class data.
+     * must have {@linkplain Lookup#hasFullPrivilegeAccess() full privilege access}
+     * in order to retrieve the class data.
+     *
+     * @apiNote
+     * This method can be called as a bootstrap method for a dynamically computed
+     * constant.  A framework can create a hidden class with class data, for
+     * example that can be {@code List.of(o1, o2, o3....)} containing more than
+     * one object and use this method to load one element at a specific index.
+     * The class data is accessible only to the lookup object
+     * created by the original caller but inaccessible to other members
+     * in the same nest.  If a framework passes security sensitive objects
+     * to a hidden class via class data, it is recommended to load the value
+     * of class data as a dynamically computed constant instead of storing
+     * the class data in private static field(s) which are accessible to other
+     * nestmates.
      *
      * @param <T> the type to cast the result object to
      * @param caller the lookup context describing the class performing the
      * operation (normally stacked by the JVM)
-     * @param key the key whose associated value contained in the class data
-     *            to be returned.
-     * @param type the type of the value associated with the given key
-     * @param classDataType the type of the class data
-     * @return the value represented by the given key contained in the class data
-     * if present in the lookup class; otherwise {@code null}
-     * @throws IllegalArgumentException if the class data is not of type {@code List},
-     * not of type {@code Map} type or the key is not an integer if {@code classDataType}
-     * is a {@code List}
+     * @param name unused
+     * @param type the type of the element at the given index in the class data
+     * @param index index of the element in the class data
+     * @return the element at the given index in the class data
+     * if present; otherwise {@code null}
      * @throws IllegalAccessException if the lookup context does not have
-     * original caller access
-     * @throws ClassCastException if the class data cannot be converted to
-     * the specified {@code type}
+     * full privilege access
+     * @throws ClassCastException if the class data cannot be converted to {@code List}
+     * or the element at the specified index cannot be converted to the given type
+     * @throws IndexOutOfBoundsException if the index is out of range
+     * @throws NullPointerException if the element at the given index is null
+     * and unboxing operation may fail because the original reference is null,
+     *
      * @since 16
      * @see #classData(Lookup, String, Class)
+     * @see Lookup#defineHiddenClassWithClassData(byte[], Object, boolean, Lookup.ClassOption...)
      */
-    public static <T> T classDataAt(Lookup caller, String key, Class<T> type, Class<?> classDataType)
+    public static <T> T classDataAt(Lookup caller, String name, Class<T> type, int index)
             throws IllegalAccessException
     {
-        Objects.requireNonNull(key);
         Objects.requireNonNull(type);
-        Objects.requireNonNull(classDataType);
 
         if (!caller.hasFullPrivilegeAccess()) {
             throw new IllegalAccessException(caller + " does not have full privilege access");
         }
-        if (!List.class.isAssignableFrom(classDataType) && !Map.class.isAssignableFrom(classDataType)) {
-            throw new IllegalArgumentException("type must be List or Map: " + classDataType);
-        }
+
+        Object classdata = MethodHandleNatives.classData(caller.lookupClass());
+        if (classdata == null) return null;
+
+        @SuppressWarnings("unchecked")
+        List<T> classData = List.class.cast(classdata);
+        Object element = classData.get(index);
 
         try {
-            Object classdata = MethodHandleNatives.classData(caller.lookupClass);
-            if (classdata == null) return null;
-
-            if (List.class.isAssignableFrom(classDataType)) {
-                int index = Integer.parseInt(key);
-                @SuppressWarnings("unchecked")
-                List<T> classData = List.class.cast(classdata);
-                return BootstrapMethodInvoker.widenAndCast(classData.get(index), type);
-            } else {
-                @SuppressWarnings("unchecked")
-                Map<?,T> classData = Map.class.cast(classdata);
-                return BootstrapMethodInvoker.widenAndCast(classData.get(key), type);
-            }
+            return BootstrapMethodInvoker.widenAndCast(element, type);
+        } catch (ClassCastException|NullPointerException e) {
+            throw e;
         } catch (Throwable e) {
             throw new InternalError(e);
         }
@@ -892,6 +904,7 @@ public class MethodHandles {
      * <thead>
      * <tr>
      * <th scope="col">Lookup object</th>
+     * <th style="text-align:center">original</th>
      * <th style="text-align:center">protected</th>
      * <th style="text-align:center">private</th>
      * <th style="text-align:center">package</th>
@@ -902,6 +915,7 @@ public class MethodHandles {
      * <tbody>
      * <tr>
      * <th scope="row" style="text-align:left">{@code CL = MethodHandles.lookup()} in {@code C}</th>
+     * <td style="text-align:center">ORI</td>
      * <td style="text-align:center">PRO</td>
      * <td style="text-align:center">PRI</td>
      * <td style="text-align:center">PAC</td>
@@ -912,12 +926,14 @@ public class MethodHandles {
      * <th scope="row" style="text-align:left">{@code CL.in(C1)} same package</th>
      * <td></td>
      * <td></td>
+     * <td></td>
      * <td style="text-align:center">PAC</td>
      * <td style="text-align:center">MOD</td>
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
      * <th scope="row" style="text-align:left">{@code CL.in(C1)} same module</th>
+     * <td></td>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -930,6 +946,7 @@ public class MethodHandles {
      * <td></td>
      * <td></td>
      * <td></td>
+     * <td></td>
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
@@ -938,10 +955,12 @@ public class MethodHandles {
      * <td></td>
      * <td></td>
      * <td></td>
+     * <td></td>
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
      * <td>{@code PRI1 = privateLookupIn(C1,CL)}</td>
+     * <td></td>
      * <td style="text-align:center">PRO</td>
      * <td style="text-align:center">PRI</td>
      * <td style="text-align:center">PAC</td>
@@ -950,6 +969,7 @@ public class MethodHandles {
      * </tr>
      * <tr>
      * <td>{@code PRI1a = privateLookupIn(C,PRI1)}</td>
+     * <td></td>
      * <td style="text-align:center">PRO</td>
      * <td style="text-align:center">PRI</td>
      * <td style="text-align:center">PAC</td>
@@ -960,12 +980,14 @@ public class MethodHandles {
      * <td>{@code PRI1.in(C1)} same package</td>
      * <td></td>
      * <td></td>
+     * <td></td>
      * <td style="text-align:center">PAC</td>
      * <td style="text-align:center">MOD</td>
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
      * <td>{@code PRI1.in(C1)} different package</td>
+     * <td></td>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -978,10 +1000,12 @@ public class MethodHandles {
      * <td></td>
      * <td></td>
      * <td></td>
+     * <td></td>
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
      * <td>{@code PRI1.dropLookupMode(PROTECTED)}</td>
+     * <td></td>
      * <td></td>
      * <td style="text-align:center">PRI</td>
      * <td style="text-align:center">PAC</td>
@@ -992,12 +1016,14 @@ public class MethodHandles {
      * <td>{@code PRI1.dropLookupMode(PRIVATE)}</td>
      * <td></td>
      * <td></td>
+     * <td></td>
      * <td style="text-align:center">PAC</td>
      * <td style="text-align:center">MOD</td>
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
      * <td>{@code PRI1.dropLookupMode(PACKAGE)}</td>
+     * <td></td>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1010,6 +1036,7 @@ public class MethodHandles {
      * <td></td>
      * <td></td>
      * <td></td>
+     * <td></td>
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
@@ -1018,9 +1045,11 @@ public class MethodHandles {
      * <td></td>
      * <td></td>
      * <td></td>
+     * <td></td>
      * <td style="text-align:center">none</td>
      * <tr>
      * <td>{@code PRI2 = privateLookupIn(D,CL)}</td>
+     * <td></td>
      * <td style="text-align:center">PRO</td>
      * <td style="text-align:center">PRI</td>
      * <td style="text-align:center">PAC</td>
@@ -1029,6 +1058,7 @@ public class MethodHandles {
      * </tr>
      * <tr>
      * <td>{@code privateLookupIn(D,PRI1)}</td>
+     * <td></td>
      * <td style="text-align:center">PRO</td>
      * <td style="text-align:center">PRI</td>
      * <td style="text-align:center">PAC</td>
@@ -1041,10 +1071,12 @@ public class MethodHandles {
      * <td></td>
      * <td></td>
      * <td></td>
+     * <td></td>
      * <td style="text-align:center">IAE</td>
      * </tr>
      * <tr>
      * <td>{@code PRI2.in(D2)} same package</td>
+     * <td></td>
      * <td></td>
      * <td></td>
      * <td style="text-align:center">PAC</td>
@@ -1057,10 +1089,12 @@ public class MethodHandles {
      * <td></td>
      * <td></td>
      * <td></td>
+     * <td></td>
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
      * <td>{@code PRI2.in(C1)} hop back to module</td>
+     * <td></td>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1073,10 +1107,12 @@ public class MethodHandles {
      * <td></td>
      * <td></td>
      * <td></td>
+     * <td></td>
      * <td style="text-align:center">none</td>
      * </tr>
      * <tr>
      * <td>{@code PRI2.dropLookupMode(PROTECTED)}</td>
+     * <td></td>
      * <td></td>
      * <td style="text-align:center">PRI</td>
      * <td style="text-align:center">PAC</td>
@@ -1085,6 +1121,7 @@ public class MethodHandles {
      * </tr>
      * <tr>
      * <td>{@code PRI2.dropLookupMode(PRIVATE)}</td>
+     * <td></td>
      * <td></td>
      * <td></td>
      * <td style="text-align:center">PAC</td>
@@ -1097,10 +1134,12 @@ public class MethodHandles {
      * <td></td>
      * <td></td>
      * <td></td>
+     * <td></td>
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
      * <td>{@code PRI2.dropLookupMode(MODULE)}</td>
+     * <td></td>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1113,10 +1152,12 @@ public class MethodHandles {
      * <td></td>
      * <td></td>
      * <td></td>
+     * <td></td>
      * <td style="text-align:center">none</td>
      * </tr>
      * <tr>
      * <td>{@code CL.dropLookupMode(PROTECTED)}</td>
+     * <td></td>
      * <td></td>
      * <td style="text-align:center">PRI</td>
      * <td style="text-align:center">PAC</td>
@@ -1127,12 +1168,14 @@ public class MethodHandles {
      * <td>{@code CL.dropLookupMode(PRIVATE)}</td>
      * <td></td>
      * <td></td>
+     * <td></td>
      * <td style="text-align:center">PAC</td>
      * <td style="text-align:center">MOD</td>
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
      * <td>{@code CL.dropLookupMode(PACKAGE)}</td>
+     * <td></td>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1145,10 +1188,12 @@ public class MethodHandles {
      * <td></td>
      * <td></td>
      * <td></td>
+     * <td></td>
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
      * <td>{@code CL.dropLookupMode(PUBLIC)}</td>
+     * <td></td>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1161,10 +1206,12 @@ public class MethodHandles {
      * <td></td>
      * <td></td>
      * <td></td>
+     * <td></td>
      * <td style="text-align:center">U</td>
      * </tr>
      * <tr>
      * <td>{@code PUB.in(D)} different module</td>
+     * <td></td>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1177,10 +1224,12 @@ public class MethodHandles {
      * <td></td>
      * <td></td>
      * <td></td>
+     * <td></td>
      * <td style="text-align:center">U</td>
      * </tr>
      * <tr>
      * <td>{@code PUB.dropLookupMode(UNCONDITIONAL)}</td>
+     * <td></td>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1193,10 +1242,12 @@ public class MethodHandles {
      * <td></td>
      * <td></td>
      * <td></td>
+     * <td></td>
      * <td style="text-align:center">IAE</td>
      * </tr>
      * <tr>
      * <td>{@code ANY.in(X)}, for inaccessible {@code X}</td>
+     * <td></td>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1213,7 +1264,8 @@ public class MethodHandles {
      *     but {@code D} and {@code D2} are in module {@code M2}, and {@code E}
      *     is in module {@code M3}. {@code X} stands for class which is inaccessible
      *     to the lookup. {@code ANY} stands for any of the example lookups.</li>
-     * <li>{@code PRO} indicates {@link #PROTECTED} bit set,
+     * <li>{@code ORI} indicates {@link #ORIGINAL} bit set,
+     *     {@code PRO} indicates {@link #PROTECTED} bit set,
      *     {@code PRI} indicates {@link #PRIVATE} bit set,
      *     {@code PAC} indicates {@link #PACKAGE} bit set,
      *     {@code MOD} indicates {@link #MODULE} bit set,
@@ -1263,8 +1315,7 @@ public class MethodHandles {
      * (If a class or other type is being accessed,
      * the {@code refc} and {@code defc} values are the class itself.)
      * The value {@code lookc} is defined as <em>not present</em>
-     * if the current lookup object does not have
-     * {@linkplain #hasFullPrivilegeAccess() full privilege access}.
+     * if the current lookup object does not have private and module access.
      * The calls are made according to the following rules:
      * <ul>
      * <li><b>Step 1:</b>
@@ -1298,7 +1349,10 @@ public class MethodHandles {
      * <p>
      * If a security manager is present and the current lookup object does not have
      * {@linkplain #hasFullPrivilegeAccess() full privilege access}, then
-     * {@link #defineClass(byte[]) defineClass}
+     * {@link #defineClass(byte[]) defineClass},
+     * {@link #defineHiddenClass(byte[], boolean, ClassOption...) defineHiddenClass},
+     * {@link #defineHiddenClassWithClassData(byte[], Object, boolean, ClassOption...)
+     * defineHiddenClassWithClassData}
      * calls {@link SecurityManager#checkPermission smgr.checkPermission}
      * with {@code RuntimePermission("defineClass")}.
      *
@@ -1432,16 +1486,32 @@ public class MethodHandles {
          */
         public static final int UNCONDITIONAL = PACKAGE << 2;
 
-        private static final int ALL_MODES = (PUBLIC | PRIVATE | PROTECTED | PACKAGE | MODULE | UNCONDITIONAL);
+        /** A single-bit mask representing {@code original} access
+         *  which may contribute to the result of {@link #lookupModes lookupModes}.
+         *  The value is {@code 0x40}, which does not correspond meaningfully to
+         *  any particular {@linkplain java.lang.reflect.Modifier modifier bit}.
+         *
+         *  <p>
+         *  If this lookup mode is set, the {@code Lookup} object must be
+         *  created by the original lookup class by calling
+         *  {@link MethodHandles#lookup()} method or by a bootstrap method
+         *  invoked by the VM.  The {@code Lookup} object with this lookup
+         *  mode has {@linkplain #hasFullPrivilegeAccess() full privilege access}.
+         *
+         *  @since 16
+         */
+        public static final int ORIGINAL = PACKAGE << 3;
+
+        private static final int ALL_MODES = (PUBLIC | PRIVATE | PROTECTED | PACKAGE | MODULE | UNCONDITIONAL | ORIGINAL);
         private static final int FULL_POWER_MODES = (ALL_MODES & ~UNCONDITIONAL);
         private static final int TRUSTED   = -1;
 
         /*
-         * Adjust PUBLIC => PUBLIC|MODULE|UNCONDITIONAL
+         * Adjust PUBLIC => PUBLIC|MODULE|ORIGINAL|UNCONDITIONAL
          * Adjust 0 => PACKAGE
          */
         private static int fixmods(int mods) {
-            mods &= (ALL_MODES - PACKAGE - MODULE - UNCONDITIONAL);
+            mods &= (ALL_MODES - PACKAGE - MODULE - ORIGINAL - UNCONDITIONAL);
             if (Modifier.isPublic(mods))
                 mods |= UNCONDITIONAL;
             return (mods != 0) ? mods : PACKAGE;
@@ -1497,7 +1567,8 @@ public class MethodHandles {
          *  {@linkplain #PROTECTED PROTECTED (0x04)},
          *  {@linkplain #PACKAGE PACKAGE (0x08)},
          *  {@linkplain #MODULE MODULE (0x10)},
-         *  and {@linkplain #UNCONDITIONAL UNCONDITIONAL (0x20)}.
+         *  {@linkplain #UNCONDITIONAL UNCONDITIONAL (0x20)},
+         *  and {@linkplain #ORIGINAL ORIGINAL (0x40)}.
          *  <p>
          *  A freshly-created lookup object
          *  on the {@linkplain java.lang.invoke.MethodHandles#lookup() caller's class} has
@@ -1554,6 +1625,8 @@ public class MethodHandles {
          * However, the resulting {@code Lookup} object is guaranteed
          * to have no more access capabilities than the original.
          * In particular, access capabilities can be lost as follows:<ul>
+         * <li>If the new lookup class is different from the old lookup class,
+         * i.e. {@link #ORIGINAL ORIGINAL} access is lost.
          * <li>If the new lookup class is in a different module from the old one,
          * i.e. {@link #MODULE MODULE} access is lost.
          * <li>If the new lookup class is in a different package
@@ -1609,7 +1682,7 @@ public class MethodHandles {
                 return new Lookup(requestedLookupClass, null, FULL_POWER_MODES);
             if (requestedLookupClass == this.lookupClass)
                 return this;  // keep same capabilities
-            int newModes = (allowedModes & FULL_POWER_MODES);
+            int newModes = (allowedModes & FULL_POWER_MODES) & ~ORIGINAL;
             Module fromModule = this.lookupClass.getModule();
             Module targetModule = requestedLookupClass.getModule();
             Class<?> plc = this.previousLookupClass();
@@ -1650,7 +1723,8 @@ public class MethodHandles {
          * finds members, but with a lookup mode that has lost the given lookup mode.
          * The lookup mode to drop is one of {@link #PUBLIC PUBLIC}, {@link #MODULE
          * MODULE}, {@link #PACKAGE PACKAGE}, {@link #PROTECTED PROTECTED},
-         * {@link #PRIVATE PRIVATE}, or {@link #UNCONDITIONAL UNCONDITIONAL}.
+         * {@link #PRIVATE PRIVATE}, {@link #ORIGINAL ORIGINAL}, or
+         * {@link #UNCONDITIONAL UNCONDITIONAL}.
          *
          * <p> If this lookup is a {@linkplain MethodHandles#publicLookup() public lookup},
          * this lookup has {@code UNCONDITIONAL} mode set and it has no other mode set.
@@ -1659,8 +1733,9 @@ public class MethodHandles {
          *
          * <p> If this lookup is not a public lookup, then the following applies
          * regardless of its {@linkplain #lookupModes() lookup modes}.
-         * {@link #PROTECTED PROTECTED} is always dropped and so the resulting lookup
-         * mode will never have this access capability. When dropping {@code PACKAGE}
+         * {@link #PROTECTED PROTECTED} and {@link #ORIGINAL ORIGINAL} are always
+         * dropped and so the resulting lookup mode will never have these access
+         * capability. When dropping {@code PACKAGE}
          * then the resulting lookup will not have {@code PACKAGE} or {@code PRIVATE}
          * access. When dropping {@code MODULE} then the resulting lookup will not
          * have {@code MODULE}, {@code PACKAGE}, or {@code PRIVATE} access.
@@ -1681,19 +1756,21 @@ public class MethodHandles {
          * @param modeToDrop the lookup mode to drop
          * @return a lookup object which lacks the indicated mode, or the same object if there is no change
          * @throws IllegalArgumentException if {@code modeToDrop} is not one of {@code PUBLIC},
-         * {@code MODULE}, {@code PACKAGE}, {@code PROTECTED}, {@code PRIVATE} or {@code UNCONDITIONAL}
+         * {@code MODULE}, {@code PACKAGE}, {@code PROTECTED}, {@code PRIVATE}, {@code ORIGINAL}
+         * or {@code UNCONDITIONAL}
          * @see MethodHandles#privateLookupIn
          * @since 9
          */
         public Lookup dropLookupMode(int modeToDrop) {
             int oldModes = lookupModes();
-            int newModes = oldModes & ~(modeToDrop | PROTECTED);
+            int newModes = oldModes & ~(modeToDrop | PROTECTED | ORIGINAL);
             switch (modeToDrop) {
                 case PUBLIC: newModes &= ~(FULL_POWER_MODES); break;
                 case MODULE: newModes &= ~(PACKAGE | PRIVATE); break;
                 case PACKAGE: newModes &= ~(PRIVATE); break;
                 case PROTECTED:
                 case PRIVATE:
+                case ORIGINAL:
                 case UNCONDITIONAL: break;
                 default: throw new IllegalArgumentException(modeToDrop + " is not a valid mode to drop");
             }
@@ -2040,12 +2117,14 @@ public class MethodHandles {
          *
          * <p> This method is equivalent to calling
          * {@link #defineHiddenClass(byte[], boolean, ClassOption...) defineHiddenClass(bytes, initialize, options)}
-         * as if the hidden class has a private static final unnamed field whose value
-         * is initialized to {@code classData} as the first instruction of the class initializer.
+         * as if the hidden class is injected with a private static final <i>unnamed</i>
+         * field which is initialized with the given {@code classData} at
+         * the first instruction of the class initializer.
          * The newly created class is linked by the Java Virtual Machine.
          *
          * <p> The {@link MethodHandles#classData(Lookup, String, Class) MethodHandles::classData}
-         * method can be used to retrieve the {@code classData}.
+         * and {@link MethodHandles#classDataAt(Lookup, String, Class, int)
+         * MethodHandles::classDataAt} methods can be used to retrieve the {@code classData}.
          *
          * @param bytes     the class bytes
          * @param classData pre-initialized class data
@@ -2075,6 +2154,7 @@ public class MethodHandles {
          * @see Lookup#defineHiddenClass(byte[], boolean, ClassOption...)
          * @see Class#isHidden()
          * @see MethodHandles#classData(Lookup, String, Class)
+         * @see MethodHandles#classDataAt(Lookup, String, Class, int)
          * @jvms 4.2.1 Binary Class and Interface Names
          * @jvms 4.2.2 Unqualified Names
          * @jvms 4.7.28 The {@code NestHost} Attribute
@@ -2384,14 +2464,18 @@ public class MethodHandles {
          * <li>If only public and module access are allowed, the suffix is "/module".
          * <li>If public and package access are allowed, the suffix is "/package".
          * <li>If public, package, and private access are allowed, the suffix is "/private".
+         * <li>If public, package, private and protected access are allowed, the suffix is "/allaccess".
          * </ul>
-         * If none of the above cases apply, it is the case that full access
-         * (public, module, package, private, and protected) is allowed.
+         * If none of the above cases apply, it is the case that
+         * {@linkplain #hasFullPrivilegeAccess() full privilege access}
+         * (public, module, package, private, protected and original) is allowed.
          * In this case, no suffix is added.
          * This is true only of an object obtained originally from
          * {@link java.lang.invoke.MethodHandles#lookup MethodHandles.lookup}.
-         * Objects created by {@link java.lang.invoke.MethodHandles.Lookup#in Lookup.in}
-         * always have restricted access, and will display a suffix.
+         * Objects created by {@link java.lang.invoke.MethodHandles.Lookup#in Lookup::in}
+         * and {@link java.lang.invoke.MethodHandles#privateLookupIn(Class, Lookup)
+         * MethodHandles::privateLookupIn} always have restricted access,
+         * and will display a suffix.
          * <p>
          * (It may seem strange that protected access should be
          * stronger than private access.  Viewed independently from
@@ -2419,12 +2503,14 @@ public class MethodHandles {
             case PUBLIC|PACKAGE:
             case PUBLIC|MODULE|PACKAGE:
                 return cname + "/package";
-            case FULL_POWER_MODES & (~PROTECTED):
-            case FULL_POWER_MODES & ~(PROTECTED|MODULE):
-                return cname + "/private";
+            case PUBLIC|PACKAGE|PRIVATE:
+            case PUBLIC|MODULE|PACKAGE|PRIVATE:
+                    return cname + "/private";
+            case PUBLIC|PACKAGE|PRIVATE|PROTECTED:
+            case PUBLIC|MODULE|PACKAGE|PRIVATE|PROTECTED:
+                    return cname + "/allaccess";
             case FULL_POWER_MODES:
-            case FULL_POWER_MODES & (~MODULE):
-                return cname;
+                    return cname;
             case TRUSTED:
                 return "/trusted";  // internal only; not exported
             default:  // Should not happen, but it's a bitfield...
@@ -3598,16 +3684,22 @@ return mh1;
 
         /**
          * Returns {@code true} if this lookup has <em>full privilege access</em>,
-         * i.e. {@code PRIVATE} and {@code MODULE} access.
+         * i.e. {@code PRIVATE}, {@code MODULE} and {@code ORIGINAL} access.
          * A {@code Lookup} object must have full privilege access in order to
-         * access all members that are allowed to the {@linkplain #lookupClass() lookup class}.
+         * access all members that are allowed to the
+         * {@linkplain #lookupClass() lookup class}.
+         *
+         * <p>
+         * A lookup object with full privilege access is created by the original
+         * lookup class via {@link MethodHandles#lookup()} method or by
+         * a bootstrap method invocation.
          *
          * @return {@code true} if this lookup has full privilege access.
          * @since 14
          * @see <a href="MethodHandles.Lookup.html#privacc">private and module access</a>
          */
         public boolean hasFullPrivilegeAccess() {
-            return (allowedModes & (PRIVATE|MODULE)) == (PRIVATE|MODULE);
+            return (allowedModes & (PRIVATE|MODULE|ORIGINAL)) == (PRIVATE|MODULE|ORIGINAL);
         }
 
         /**
@@ -3621,14 +3713,15 @@ return mh1;
             if (smgr == null)  return;
 
             // Step 1:
-            boolean fullPowerLookup = hasFullPrivilegeAccess();
-            if (!fullPowerLookup ||
+            boolean allAccess =
+                    (lookupModes() & (FULL_POWER_MODES & ~ORIGINAL)) == (FULL_POWER_MODES & ~ORIGINAL);
+            if (!allAccess ||
                 !VerifyAccess.classLoaderIsAncestor(lookupClass, refc)) {
                 ReflectUtil.checkPackageAccess(refc);
             }
 
             // Step 2b:
-            if (!fullPowerLookup) {
+            if (!allAccess) {
                 smgr.checkPermission(SecurityConstants.GET_CLASSLOADER_PERMISSION);
             }
         }
@@ -3636,7 +3729,11 @@ return mh1;
         /**
          * Perform steps 1, 2a and 3 <a href="MethodHandles.Lookup.html#secmgr">access checks</a>.
          * Determines a trustable caller class to compare with refc, the symbolic reference class.
-         * If this lookup object has full privilege access, then the caller class is the lookupClass.
+         * If this lookup object has full privilege access except original access,
+         * then the caller class is the lookupClass.
+         *
+         * Lookup object created by {@link MethodHandles#privateLookupIn(Class, Lookup)}
+         * from the same module skips the security permission check.
          */
         void checkSecurityManager(Class<?> refc, MemberName m) {
             Objects.requireNonNull(refc);
@@ -3648,21 +3745,22 @@ return mh1;
             if (smgr == null)  return;
 
             // Step 1:
-            boolean fullPowerLookup = hasFullPrivilegeAccess();
-            if (!fullPowerLookup ||
+            boolean allAccess =
+                    (lookupModes() & (FULL_POWER_MODES & ~ORIGINAL)) == (FULL_POWER_MODES & ~ORIGINAL);
+            if (!allAccess ||
                 !VerifyAccess.classLoaderIsAncestor(lookupClass, refc)) {
                 ReflectUtil.checkPackageAccess(refc);
             }
 
             // Step 2a:
             if (m.isPublic()) return;
-            if (!fullPowerLookup) {
+            if (!allAccess) {
                 smgr.checkPermission(SecurityConstants.CHECK_MEMBER_ACCESS_PERMISSION);
             }
 
             // Step 3:
             Class<?> defc = m.getDeclaringClass();
-            if (!fullPowerLookup && defc != refc) {
+            if (!allAccess && defc != refc) {
                 ReflectUtil.checkPackageAccess(defc);
             }
         }

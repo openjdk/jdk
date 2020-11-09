@@ -39,6 +39,7 @@ public class VerifyAccess {
     private VerifyAccess() { }  // cannot instantiate
 
     private static final int UNCONDITIONAL_ALLOWED = java.lang.invoke.MethodHandles.Lookup.UNCONDITIONAL;
+    private static final int ORIGINAL_ALLOWED = java.lang.invoke.MethodHandles.Lookup.ORIGINAL;
     private static final int MODULE_ALLOWED = java.lang.invoke.MethodHandles.Lookup.MODULE;
     private static final int PACKAGE_ONLY = 0;
     private static final int PACKAGE_ALLOWED = java.lang.invoke.MethodHandles.Lookup.PACKAGE;
@@ -99,7 +100,7 @@ public class VerifyAccess {
                                              Class<?> prevLookupClass,
                                              int      allowedModes) {
         if (allowedModes == 0)  return false;
-        assert((allowedModes & ~(ALL_ACCESS_MODES|PACKAGE_ALLOWED|MODULE_ALLOWED|UNCONDITIONAL_ALLOWED)) == 0);
+        assert((allowedModes & ~(ALL_ACCESS_MODES|PACKAGE_ALLOWED|MODULE_ALLOWED|UNCONDITIONAL_ALLOWED|ORIGINAL_ALLOWED)) == 0);
         // The symbolic reference class (refc) must always be fully verified.
         if (!isClassAccessible(refc, lookupClass, prevLookupClass, allowedModes)) {
             return false;
@@ -189,7 +190,7 @@ public class VerifyAccess {
                                             Class<?> prevLookupClass,
                                             int allowedModes) {
         if (allowedModes == 0)  return false;
-        assert((allowedModes & ~(ALL_ACCESS_MODES|PACKAGE_ALLOWED|MODULE_ALLOWED|UNCONDITIONAL_ALLOWED)) == 0);
+        assert((allowedModes & ~(ALL_ACCESS_MODES|PACKAGE_ALLOWED|MODULE_ALLOWED|UNCONDITIONAL_ALLOWED|ORIGINAL_ALLOWED)) == 0);
 
         if ((allowedModes & PACKAGE_ALLOWED) != 0 &&
             isSamePackage(lookupClass, refc))
