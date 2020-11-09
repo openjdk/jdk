@@ -52,6 +52,7 @@ public final class Executor extends CommandArguments<Executor> {
 
     public Executor() {
         saveOutputType = new HashSet<>(Set.of(SaveOutputType.NONE));
+        removePath = false;
     }
 
     public Executor setExecutable(String v) {
@@ -81,6 +82,11 @@ public final class Executor extends CommandArguments<Executor> {
 
     public Executor setExecutable(JavaTool v) {
         return setExecutable(v.getPath());
+    }
+
+    public Executor setRemovePath(boolean value) {
+        removePath = value;
+        return this;
     }
 
     /**
@@ -289,6 +295,11 @@ public final class Executor extends CommandArguments<Executor> {
             builder.directory(directory.toFile());
             sb.append(String.format("; in directory [%s]", directory));
         }
+        if (removePath) {
+            // run this with cleared Path in Environment
+            TKit.trace("Clearing PATH in environment");
+            builder.environment().remove("PATH");
+        }
 
         trace("Execute " + sb.toString() + "...");
         Process process = builder.start();
@@ -414,6 +425,7 @@ public final class Executor extends CommandArguments<Executor> {
     private Path executable;
     private Set<SaveOutputType> saveOutputType;
     private Path directory;
+    private boolean removePath;
 
     private static enum SaveOutputType {
         NONE, FULL, FIRST_LINE, DUMP
