@@ -1562,7 +1562,7 @@ void MachUEPNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
   /* WARNING these NOPs are critical so that verified entry point is properly
      4 bytes aligned for patching by NativeJump::patch_verified_entry() */
   int nops_cnt = 4 - ((cbuf.insts_size() - insts_size) & 0x3);
-  if (OptoBreakpoint) {
+  if (OptoBreakpoint || BreakAtCompileId) {
     // Leave space for int3
     nops_cnt -= 1;
   }

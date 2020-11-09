@@ -374,9 +374,10 @@ void PhaseOutput::Output() {
 
   // Break before main entry point
   if ((C->method() && C->directive()->BreakAtExecuteOption) ||
-      (OptoBreakpoint && C->is_method_compilation())       ||
-      (OptoBreakpointOSR && C->is_osr_compilation())       ||
-      (OptoBreakpointC2R && !C->method())                   ) {
+      (OptoBreakpoint && C->is_method_compilation())        ||
+      (OptoBreakpointOSR && C->is_osr_compilation())        ||
+      (OptoBreakpointC2R && !C->method())                   ||
+      (BreakAtCompileId  == C->compile_id())                 ) {
     // checking for C->method() means that OptoBreakpoint does not apply to
     // runtime stubs or frame converters
     C->cfg()->insert( entry, 1, new MachBreakpointNode() );

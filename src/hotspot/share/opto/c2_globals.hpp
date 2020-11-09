@@ -137,6 +137,9 @@
   notproduct(intx, BreakAtNode, 0,                                          \
           "Break at construction of this Node (either _idx or _debug_idx)") \
                                                                             \
+  notproduct(intx, BreakAtCompileId, 0,                                     \
+          "Break at compile id")                                            \
+                                                                            \
   notproduct(bool, OptoBreakpointC2R, false,                                \
           "insert breakpoint at runtime stub entry")                        \
                                                                             \
