@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,6 @@
 
 package com.sun.java.swing.plaf.motif;
 
-import sun.swing.SwingUtilities2;
-import javax.swing.*;
-import javax.swing.border.*;
-import javax.swing.plaf.*;
-
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -40,15 +35,21 @@ import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Rectangle;
 
+import javax.swing.AbstractButton;
+import javax.swing.ButtonModel;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JInternalFrame;
+import javax.swing.JMenuBar;
+import javax.swing.JPopupMenu;
+import javax.swing.UIManager;
+import javax.swing.border.AbstractBorder;
+import javax.swing.plaf.UIResource;
+
+import sun.swing.SwingUtilities2;
+
 /**
  * Factory object that can vend Icons appropriate for the basic {@literal L & F}.
- * <p>
- * <strong>Warning:</strong>
- * Serialized objects of this class will not be compatible with
- * future Swing releases.  The current serialization support is appropriate
- * for short term storage or RMI between applications running the same
- * version of Swing.  A future release of Swing will provide support for
- * long term persistence.
  *
  * @author Amy Fowler
  */
