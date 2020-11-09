@@ -58,8 +58,8 @@ class FieldInfo {
   //    [--contention_group--]....................10  - contended field with contention group
   //    [------------------offset----------------]01  - real field offset
 
-  // Bit O indicates if the packed field contains an offset (O=1) or not (O=1)
-  // Bit C indicates if the field is contended (C=1) or not (C=1)
+  // Bit O indicates if the packed field contains an offset (O=1) or not (O=0)
+  // Bit C indicates if the field is contended (C=1) or not (C=0)
   //       (if it is contended, the high packed field contains the contention group)
 
   enum FieldOffset {
