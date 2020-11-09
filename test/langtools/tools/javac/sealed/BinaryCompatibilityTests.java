@@ -77,9 +77,13 @@ public class BinaryCompatibilityTests extends TestRunner {
 
     @Test
     public void testCompatibilityAfterMakingSuperclassSealed(Path base) throws Exception {
-        // sealing a super class which was not sealed, should fail with IncompatibleClassChangeError
+        /* If a class that was not declared sealed is changed to be declared sealed, then an
+         * IncompatibleClassChangeError is thrown if a binary of a pre-existing subclass of
+         * this class is loaded that is not contained in its permits clause
+         */
         testCompatibilityAfterModifyingSupertype(
                 base,
+                true,
                 """
                 package pkg;
                 public class Super {
@@ -103,16 +107,16 @@ public class BinaryCompatibilityTests extends TestRunner {
                 """
                 package pkg;
                 class Sub extends Super {}
-                """,
-                true
+                """
         );
     }
 
     @Test
     public void testCompatibilityAfterMakingSuperInterfaceSealed(Path base) throws Exception {
-        // sealing a super interface which was not sealed, should fail with IncompatibleClassChangeError
+        // test similar to testCompatibilityAfterMakingSuperclassSealed but with interfaces
         testCompatibilityAfterModifyingSupertype(
                 base,
+                true,
                 """
                 package pkg;
                 public interface Super {
@@ -136,8 +140,7 @@ public class BinaryCompatibilityTests extends TestRunner {
                 """
                 package pkg;
                 class Sub implements Super {}
-                """,
-                true
+                """
         );
     }
 
@@ -149,18 +152,17 @@ public class BinaryCompatibilityTests extends TestRunner {
      */
     private void testCompatibilityAfterModifyingSupertype(
             Path base,
+            boolean shouldFail,
             String superClassCode1,
             String superClassCode2,
-            String subClassCode,
-            boolean shouldFail) throws Exception {
+            String... subClassesCode) throws Exception {
         Path src = base.resolve("src");
         Path pkg = src.resolve("pkg");
         Path superClass = pkg.resolve("Super");
         Path sub = pkg.resolve("Sub");
 
-        // super class initially not sealed
         tb.writeJavaFiles(superClass, superClassCode1);
-        tb.writeJavaFiles(sub, subClassCode);
+        tb.writeJavaFiles(sub, subClassesCode);
 
         Path out = base.resolve("out");
         Files.createDirectories(out);
@@ -220,9 +222,12 @@ public class BinaryCompatibilityTests extends TestRunner {
 
     @Test
     public void testRemoveSealedModifierToClass(Path base) throws Exception {
-        // should execute without error
+        /* Changing a class that is declared sealed to no longer be declared
+         * sealed does not break compatibility with pre-existing binaries.
+         */
         testCompatibilityAfterModifyingSupertype(
                 base,
+                false,
                 """
                 package pkg;
                 public sealed class Super permits pkg.Sub {
@@ -244,16 +249,16 @@ public class BinaryCompatibilityTests extends TestRunner {
                 """
                 package pkg;
                 final class Sub extends Super {}
-                """,
-                false
+                """
         );
     }
 
     @Test
     public void testRemoveSealedModifierToInterface(Path base) throws Exception {
-        // should execute without error
+        // same as testRemoveSealedModifierToClass but with an interface
         testCompatibilityAfterModifyingSupertype(
                 base,
+                false,
                 """
                 package pkg;
                 public sealed interface Super permits pkg.Sub {
@@ -275,14 +280,15 @@ public class BinaryCompatibilityTests extends TestRunner {
                 """
                 package pkg;
                 final class Sub implements Super {}
-                """,
-                false
+                """
         );
     }
 
     @Test
     public void testAddNonSealedModifierToClass(Path base) throws Exception {
-        // should execute without error
+        /* Changing a class that is not declared non-sealed to be declared
+         * non-sealed does not break compatibility with pre-existing binaries
+         */
         testCompatibilityOKAfterSubclassChange(
                 base,
                 """
@@ -307,7 +313,7 @@ public class BinaryCompatibilityTests extends TestRunner {
 
     @Test
     public void testAddNonSealedModifierToInterface(Path base) throws Exception {
-        // should execute without error
+        // same as `testAddNonSealedModifierToClass` but with interfaces
         testCompatibilityOKAfterSubclassChange(
                 base,
                 """
@@ -332,7 +338,9 @@ public class BinaryCompatibilityTests extends TestRunner {
 
     @Test
     public void testRemoveNonSealedModifier(Path base) throws Exception {
-        // should execute without error
+        /* Changing a class that is declared non-sealed to no longer be declared
+         * non-sealed does not break compatibility with pre-existing binaries
+         */
         testCompatibilityOKAfterSubclassChange(
                 base,
                 """
@@ -357,7 +365,7 @@ public class BinaryCompatibilityTests extends TestRunner {
 
     @Test
     public void testRemoveNonSealedModifierFromInterface(Path base) throws Exception {
-        // should execute without error
+        // same as `testRemoveNonSealedModifier` but with interfaces
         testCompatibilityOKAfterSubclassChange(
                 base,
                 """
@@ -452,9 +460,13 @@ public class BinaryCompatibilityTests extends TestRunner {
 
     @Test
     public void testAfterChangingPermitsClause(Path base) throws Exception {
-        // the VM will throw IncompatibleClassChangeError
+        /* If a class is removed from the set of permitted direct subclasses of
+         * a sealed class then an IncompatibleClassChangeError is thrown if the
+         * pre-existing binary of the removed class is loaded
+         */
         testCompatibilityAfterModifyingSupertype(
                 base,
+                true,
                 """
                 package pkg;
                 public sealed class Super permits pkg.Sub1, Sub2 {
@@ -480,8 +492,139 @@ public class BinaryCompatibilityTests extends TestRunner {
                 """
                 package pkg;
                 final class Sub1 extends Super {}
-                """,
-                true
+                """
         );
+    }
+
+    @Test
+    public void testAfterChangingPermitsClause2(Path base) throws Exception {
+        /* If a class is removed from the set of permitted direct subclasses of
+         * a sealed class then an IncompatibleClassChangeError is thrown if the
+         * pre-existing binary of the removed class is loaded
+         */
+        testCompatibilityAfterModifyingSupertype(
+                base,
+                true,
+                """
+                package pkg;
+                public sealed class Super permits pkg.Sub1, pkg.Sub2 {
+                    public static void main(String... args) {
+                        pkg.Sub1 sub1 = new pkg.Sub1();
+                        pkg.Sub2 sub2 = new pkg.Sub2();
+                        System.out.println("done");
+                    }
+                }
+                """,
+                """
+                package pkg;
+                public sealed class Super permits pkg.Sub1 {
+                    public static void main(String... args) {
+                        pkg.Sub1 sub1 = new pkg.Sub1();
+                        pkg.Sub2 sub2 = new pkg.Sub2();
+                        System.out.println("done");
+                    }
+                }
+                """,
+                """
+                package pkg;
+                final class Sub1 extends Super {}
+                """,
+                """
+                package pkg;
+                final class Sub2 extends Super {}
+                """
+        );
+    }
+
+    @Test
+    public void testAfterChangingPermitsClause3(Path base) throws Exception {
+        /* Changing the set of permitted direct subclasses of a sealed class will
+         * not break compatibility with pre-existing binaries, provided that the
+         * total set of permitted direct subclasses of the sealed class loses no
+         * members
+         */
+        String superClassCode1 =
+                """
+                package pkg;
+                public sealed class Super permits pkg.Sub1 {
+                    public static void main(String... args) {
+                        pkg.Sub1 sub1 = new pkg.Sub1();
+                        System.out.println("done");
+                    }
+                }
+                """;
+        String subClass1Code =
+                """
+                package pkg;
+                final class Sub1 extends Super {}
+                """;
+
+        String superClassCode2 =
+                """
+                package pkg;
+                public sealed class Super permits pkg.Sub1, pkg.Sub2 {
+                    public static void main(String... args) {
+                        pkg.Sub1 sub1 = new pkg.Sub1();
+                        pkg.Sub2 sub2 = new pkg.Sub2();
+                        System.out.println("done");
+                    }
+                }
+                """;
+        String subClass2Code =
+                """
+                package pkg;
+                final class Sub2 extends Super {}
+                """;
+
+        Path src = base.resolve("src");
+        Path pkg = src.resolve("pkg");
+        Path superClass = pkg.resolve("Super");
+        Path sub1 = pkg.resolve("Sub1");
+
+        tb.writeJavaFiles(superClass, superClassCode1);
+        tb.writeJavaFiles(sub1, subClass1Code);
+
+        Path out = base.resolve("out");
+        Files.createDirectories(out);
+
+        new JavacTask(tb)
+                .options("--enable-preview",
+                        "-source", Integer.toString(Runtime.version().feature()))
+                .outdir(out)
+                .files(findJavaFiles(pkg))
+                .run();
+
+        // let's execute to check that it's working
+        String output = new JavaTask(tb)
+                .vmOptions("--enable-preview")
+                .classpath(out.toString())
+                .classArgs("pkg.Super")
+                .run()
+                .writeAll()
+                .getOutput(Task.OutputKind.STDOUT);
+
+        // let's first check that it runs wo issues
+        if (!output.contains("done")) {
+            throw new AssertionError("execution of Super didn't finish");
+        }
+
+        // now lets change the super class
+        tb.writeJavaFiles(superClass, superClassCode2);
+        Path sub2 = pkg.resolve("Sub2");
+        tb.writeJavaFiles(sub2, subClass2Code);
+
+        new JavacTask(tb)
+                .options("--enable-preview",
+                        "-source", Integer.toString(Runtime.version().feature()))
+                .classpath(out)
+                .outdir(out)
+                .files(findJavaFiles(superClass)[0], findJavaFiles(sub2)[0])
+                .run();
+
+        new JavaTask(tb)
+                .vmOptions("--enable-preview")
+                .classpath(out.toString())
+                .classArgs("pkg.Super")
+                .run(Task.Expect.SUCCESS);
     }
 }

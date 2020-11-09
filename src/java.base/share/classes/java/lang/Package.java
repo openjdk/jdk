@@ -221,6 +221,10 @@ public class Package extends NamedPackage implements java.lang.reflect.Annotated
     /**
      * Returns true if this package is sealed.
      *
+     * @apiNote
+     * This method reports on a distinct concept of sealing from
+     * {@link Class#isSealed() Class::isSealed}.
+     *
      * @return true if the package is sealed, false otherwise
      */
     public boolean isSealed() {

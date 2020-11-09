@@ -21,11 +21,10 @@
  * questions.
  */
 
-// This class has entries in its PermittedSubclasses attribute that do not exist.
-// Test that this does not prevent JVM_GetPermittedSubclasses() from returning
-// their names.
+// This class has an entry in its PermittedSubclasses attribute that does not exist.
+// Test that JVM_GetPermittedSubclasses() only returns the existing class.
 //
-// sealed class NoLoadSubclasses permits iDontExist, I/Dont/Exist/Either { }
+// sealed class NoLoadSubclasses permits OldClassFile, I/Dont/Exist/Either { }
 //
 class NoLoadSubclasses {
   0xCAFEBABE;
@@ -47,7 +46,7 @@ class NoLoadSubclasses {
     Utf8 "NoLoadSubclasses.java"; // #12     at 0x73
     Utf8 "PermittedSubclasses"; // #13     at 0x89
     class #15; // #14     at 0x9D
-    Utf8 "iDontExist"; // #15     at 0xA0
+    Utf8 "OldClassFile"; // #15     at 0xA0
     class #17; // #16     at 0xAA
     Utf8 "I/Dont/Exist/Either"; // #17     at 0xAD
   } // Constant Pool

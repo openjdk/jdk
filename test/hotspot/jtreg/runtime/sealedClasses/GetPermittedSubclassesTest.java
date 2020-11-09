@@ -50,7 +50,7 @@ public class GetPermittedSubclassesTest {
     final class Final4 {}
 
     public static void testSealedInfo(Class<?> c, String[] expected) {
-        Object[] permitted = c.permittedSubclasses();
+        Object[] permitted = c.getPermittedSubclasses();
 
         if (permitted.length != expected.length) {
             throw new RuntimeException(
@@ -65,7 +65,7 @@ public class GetPermittedSubclassesTest {
             // Create ArrayList of permitted subclasses class names.
             ArrayList<String> permittedNames = new ArrayList<String>();
             for (int i = 0; i < permitted.length; i++) {
-                permittedNames.add(((ClassDesc)permitted[i]).descriptorString());
+                permittedNames.add(((Class)permitted[i]).getName());
             }
 
             if (permittedNames.size() != expected.length) {
@@ -102,10 +102,11 @@ public class GetPermittedSubclassesTest {
     }
 
     public static void main(String... args) throws Throwable {
-        testSealedInfo(SealedI1.class, new String[] {"LGetPermittedSubclassesTest$NotSealed;",
-                                                     "LGetPermittedSubclassesTest$Sub1;",
-                                                     "LGetPermittedSubclassesTest$Extender;"});
-        testSealedInfo(Sealed1.class, new String[] {"LGetPermittedSubclassesTest$Sub1;"});
+        testSealedInfo(SealedI1.class, new String[] {"GetPermittedSubclassesTest$NotSealed",
+                                                     "GetPermittedSubclassesTest$Sub1",
+                                                     "GetPermittedSubclassesTest$Extender"});
+
+        testSealedInfo(Sealed1.class, new String[] {"GetPermittedSubclassesTest$Sub1"});
         testSealedInfo(Final4.class, new String[] { });
         testSealedInfo(NotSealed.class, new String[] { });
 
@@ -115,8 +116,8 @@ public class GetPermittedSubclassesTest {
         // Test class with an empty PermittedSubclasses attribute.
         testBadSealedClass("NoSubclasses", "PermittedSubclasses attribute is empty");
 
-        // Test returning names of non-existing classes.
-        testSealedInfo(NoLoadSubclasses.class, new String[]{"LiDontExist;", "LI/Dont/Exist/Either;"});
+        // Test returning only names of existing classes.
+        testSealedInfo(NoLoadSubclasses.class, new String[]{"OldClassFile" });
 
         // Test that loading a class with a corrupted PermittedSubclasses attribute
         // causes a ClassFormatError.
