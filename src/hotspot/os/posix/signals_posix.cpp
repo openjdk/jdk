@@ -471,14 +471,14 @@ public:
 
 // This routine is the shared part of the central hotspot signal handler. It can
 // also be called by a user application, if a user application prefers to do
-// signal handling itself - in that case it needs to pass signals the hotspot
-// internally uses on to the hotspot first.
+// signal handling itself - in that case it needs to pass signals the VM
+// internally uses on to the VM first.
 //
 // The user-defined signal handler must pass unrecognized signals to this
 // routine, and if it returns true (non-zero), then the signal handler must
 // return immediately.  If the flag "abort_if_unrecognized" is true, then this
-// routine will never retun false (zero), but instead will execute a VM panic
-// routine kill the process.
+// routine will never return false (zero), but instead will execute a VM panic
+// routine to kill the process.
 //
 // If this routine returns false, it is OK to call it again.  This allows
 // the user-defined signal handler to perform checks either before or after
