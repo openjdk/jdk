@@ -42,7 +42,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -57,15 +56,17 @@ public class TestHandshake {
     static final int MAX_THREAD_SPIN_WAIT_MILLIS = 200;
 
     @Test(dataProvider = "accessors")
-    public void testHandshake(Function<MemorySegment, Runnable> accessorFactory) throws InterruptedException {
+    public void testHandshake(String testName, AccessorFactory accessorFactory) throws InterruptedException {
         for (int it = 0 ; it < ITERATIONS ; it++) {
             MemorySegment segment = MemorySegment.allocateNative(SEGMENT_SIZE).share();
-            System.err.println("ITERATION " + it);
+            System.out.println("ITERATION " + it);
             ExecutorService accessExecutor = Executors.newCachedThreadPool();
             for (int i = 0; i < Runtime.getRuntime().availableProcessors() ; i++) {
-                accessExecutor.execute(accessorFactory.apply(segment));
+                accessExecutor.execute(accessorFactory.make(i, segment));
             }
-            Thread.sleep(ThreadLocalRandom.current().nextInt(MAX_DELAY_MILLIS));
+            int delay = ThreadLocalRandom.current().nextInt(MAX_DELAY_MILLIS);
+            System.out.println("Starting handshaker with delay set to " + delay + " millis");
+            Thread.sleep(delay);
             accessExecutor.execute(new Handshaker(segment));
             accessExecutor.shutdown();
             assertTrue(accessExecutor.awaitTermination(MAX_EXECUTOR_WAIT_SECONDS, TimeUnit.SECONDS));
@@ -75,13 +76,16 @@ public class TestHandshake {
 
     static abstract class AbstractSegmentAccessor implements Runnable {
         final MemorySegment segment;
+        final int id;
 
-        AbstractSegmentAccessor(MemorySegment segment) {
+        AbstractSegmentAccessor(int id, MemorySegment segment) {
+            this.id = id;
             this.segment = segment;
         }
 
         @Override
         public final void run() {
+            long prev = System.currentTimeMillis();
             outer: while (segment.isAlive()) {
                 try {
                     doAccess();
@@ -90,6 +94,8 @@ public class TestHandshake {
                     continue outer;
                 }
             }
+            long delay = System.currentTimeMillis() - prev;
+            System.out.println("Accessor #" + id + " terminated - delay (ms): " + delay);
         }
 
         abstract void doAccess();
@@ -106,16 +112,16 @@ public class TestHandshake {
     static abstract class AbstractBufferAccessor extends AbstractSegmentAccessor {
         final ByteBuffer bb;
 
-        AbstractBufferAccessor(MemorySegment segment) {
-            super(segment);
+        AbstractBufferAccessor(int id, MemorySegment segment) {
+            super(id, segment);
             this.bb = segment.asByteBuffer();
         }
     }
 
     static class SegmentAccessor extends AbstractSegmentAccessor {
 
-        SegmentAccessor(MemorySegment segment) {
-            super(segment);
+        SegmentAccessor(int id, MemorySegment segment) {
+            super(id, segment);
         }
 
         @Override
@@ -132,8 +138,8 @@ public class TestHandshake {
         MemorySegment first, second;
 
 
-        SegmentCopyAccessor(MemorySegment segment) {
-            super(segment);
+        SegmentCopyAccessor(int id, MemorySegment segment) {
+            super(id, segment);
             long split = segment.byteSize() / 2;
             first = segment.asSlice(0, split);
             second = segment.asSlice(split);
@@ -147,8 +153,8 @@ public class TestHandshake {
 
     static class SegmentFillAccessor extends AbstractSegmentAccessor {
 
-        SegmentFillAccessor(MemorySegment segment) {
-            super(segment);
+        SegmentFillAccessor(int id, MemorySegment segment) {
+            super(id, segment);
         }
 
         @Override
@@ -161,8 +167,8 @@ public class TestHandshake {
 
         final MemorySegment copy;
 
-        SegmentMismatchAccessor(MemorySegment segment) {
-            super(segment);
+        SegmentMismatchAccessor(int id, MemorySegment segment) {
+            super(id, segment);
             this.copy = MemorySegment.allocateNative(SEGMENT_SIZE).share();
             copy.copyFrom(segment);
             MemoryAccess.setByteAtOffset(copy, ThreadLocalRandom.current().nextInt(SEGMENT_SIZE), (byte)42);
@@ -176,8 +182,8 @@ public class TestHandshake {
 
     static class BufferAccessor extends AbstractBufferAccessor {
 
-        BufferAccessor(MemorySegment segment) {
-            super(segment);
+        BufferAccessor(int id, MemorySegment segment) {
+            super(id, segment);
         }
 
         @Override
@@ -193,8 +199,8 @@ public class TestHandshake {
 
         static VarHandle handle = MethodHandles.byteBufferViewVarHandle(short[].class, ByteOrder.nativeOrder());
 
-        public BufferHandleAccessor(MemorySegment segment) {
-            super(segment);
+        public BufferHandleAccessor(int id, MemorySegment segment) {
+            super(id, segment);
         }
 
         @Override
@@ -230,15 +236,19 @@ public class TestHandshake {
         }
     }
 
+    interface AccessorFactory {
+        AbstractSegmentAccessor make(int id, MemorySegment segment);
+    }
+
     @DataProvider
     static Object[][] accessors() {
         return new Object[][] {
-                { (Function<MemorySegment, Runnable>)SegmentAccessor::new },
-                { (Function<MemorySegment, Runnable>)SegmentCopyAccessor::new },
-                { (Function<MemorySegment, Runnable>)SegmentMismatchAccessor::new },
-                { (Function<MemorySegment, Runnable>)SegmentFillAccessor::new },
-                { (Function<MemorySegment, Runnable>)BufferAccessor::new },
-                { (Function<MemorySegment, Runnable>)BufferHandleAccessor::new }
+                { "SegmentAccessor", (AccessorFactory)SegmentAccessor::new },
+                { "SegmentCopyAccessor", (AccessorFactory)SegmentCopyAccessor::new },
+                { "SegmentMismatchAccesor", (AccessorFactory)SegmentMismatchAccessor::new },
+                { "SegmentFillAccessor", (AccessorFactory)SegmentFillAccessor::new },
+                { "BufferAccessor", (AccessorFactory)BufferAccessor::new },
+                { "BufferHandleAccessor", (AccessorFactory)BufferHandleAccessor::new }
         };
     }
 }
