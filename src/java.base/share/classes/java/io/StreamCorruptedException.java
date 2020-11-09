@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ package java.io;
  * Thrown when control information that was read from an object stream
  * violates internal consistency checks.
  *
- * @author  unascribed
  * @since   1.1
  */
 public class StreamCorruptedException extends ObjectStreamException {

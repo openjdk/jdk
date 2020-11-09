@@ -956,6 +956,76 @@ public abstract class $Type$Buffer
         if (n > limit() - pos)
             throw new BufferOverflowException();
 
+        putBuffer(pos, src, srcPos, n);
+
+        position(pos + n);
+        src.position(srcPos + n);
+
+        return this;
+    }
+
+    /**
+     * Absolute bulk <i>put</i> method&nbsp;&nbsp;<i>(optional operation)</i>.
+     *
+     * <p> This method transfers {@code length} $type$s into this buffer from
+     * the given source buffer, starting at the given {@code offset} in the
+     * source buffer and the given {@code index} in this buffer. The positions
+     * of both buffers are unchanged.
+     *
+     * <p> In other words, an invocation of this method of the form
+     * <code>dst.put(index,&nbsp;src,&nbsp;offset,&nbsp;length)</code>
+     * has exactly the same effect as the loop
+     *
+     * <pre>{@code
+     * for (int i = offset, j = index; i < offset + length; i++, j++)
+     *     dst.put(j, src.get(i));
+     * }</pre>
+     *
+     * except that it first checks the consistency of the supplied parameters
+     * and it is potentially much more efficient.  If this buffer and
+     * the source buffer share the same backing array or memory, then the
+     * result will be as if the source elements were first copied to an
+     * intermediate location before being written into this buffer.
+     *
+     * @param index
+     *        The index in this buffer at which the first $type$ will be
+     *        written; must be non-negative and less than {@code limit()}
+     *
+     * @param src
+     *        The buffer from which $type$s are to be read
+     *
+     * @param offset
+     *        The index within the source buffer of the first $type$ to be
+     *        read; must be non-negative and less than {@code src.limit()}
+     *
+     * @param length
+     *        The number of $type$s to be read from the given buffer;
+     *        must be non-negative and no larger than the smaller of
+     *        {@code limit() - index} and {@code src.limit() - offset}
+     *
+     * @return This buffer
+     *
+     * @throws IndexOutOfBoundsException
+     *         If the preconditions on the {@code index}, {@code offset}, and
+     *         {@code length} parameters do not hold
+     *
+     * @throws ReadOnlyBufferException
+     *         If this buffer is read-only
+     *
+     * @since 16
+     */
+    public $Type$Buffer put(int index, $Type$Buffer src, int offset, int length) {
+        Objects.checkFromIndexSize(index, length, limit());
+        Objects.checkFromIndexSize(offset, length, src.limit());
+        if (isReadOnly())
+            throw new ReadOnlyBufferException();
+
+        putBuffer(index, src, offset, length);
+
+        return this;
+    }
+
+    void putBuffer(int pos, $Type$Buffer src, int srcPos, int n) {
         Object srcBase = src.base();
 
 #if[char]
@@ -999,18 +1069,14 @@ public abstract class $Type$Buffer
                 }
             }
 #end[!byte]
-
-            position(pos + n);
-            src.position(srcPos + n);
 #if[char]
         } else { // src.isAddressable() == false
             assert StringCharBuffer.class.isInstance(src);
-            for (int i = 0; i < n; i++)
-                put(src.get());
+            int posMax = pos + n;
+            for (int i = pos, j = srcPos; i < posMax; i++, j++)
+                put(i, src.get(j));
         }
 #end[char]
-
-        return this;
     }
 
     /**

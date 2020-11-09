@@ -27,9 +27,9 @@
 #ifndef HB_OT_CFF2_TABLE_HH
 #define HB_OT_CFF2_TABLE_HH
 
-#include "hb-ot-head-table.hh"
 #include "hb-ot-cff-common.hh"
 #include "hb-subset-cff2.hh"
+#include "hb-draw.hh"
 
 namespace CFF {
 
@@ -43,7 +43,6 @@ typedef CFFIndex<HBUINT32>  CFF2Index;
 template <typename Type> struct CFF2IndexOf : CFFIndexOf<HBUINT32, Type> {};
 
 typedef CFF2Index         CFF2CharStrings;
-typedef FDArray<HBUINT32> CFF2FDArray;
 typedef Subrs<HBUINT32>   CFF2Subrs;
 
 typedef FDSelect3_4<HBUINT32, HBUINT16> FDSelect4;
@@ -51,62 +50,63 @@ typedef FDSelect3_4_Range<HBUINT32, HBUINT16> FDSelect4_Range;
 
 struct CFF2FDSelect
 {
-  bool sanitize (hb_sanitize_context_t *c, unsigned int fdcount) const
-  {
-    TRACE_SANITIZE (this);
-
-    return_trace (likely (c->check_struct (this) && (format == 0 || format == 3 || format == 4) &&
-                          (format == 0)?
-                          u.format0.sanitize (c, fdcount):
-                            ((format == 3)?
-                            u.format3.sanitize (c, fdcount):
-                            u.format4.sanitize (c, fdcount))));
-  }
-
   bool serialize (hb_serialize_context_t *c, const CFF2FDSelect &src, unsigned int num_glyphs)
   {
     TRACE_SERIALIZE (this);
     unsigned int size = src.get_size (num_glyphs);
     CFF2FDSelect *dest = c->allocate_size<CFF2FDSelect> (size);
-    if (unlikely (dest == nullptr)) return_trace (false);
+    if (unlikely (!dest)) return_trace (false);
     memcpy (dest, &src, size);
     return_trace (true);
   }
 
-  unsigned int calculate_serialized_size (unsigned int num_glyphs) const
-  { return get_size (num_glyphs); }
-
   unsigned int get_size (unsigned int num_glyphs) const
   {
-    unsigned int size = format.static_size;
-    if (format == 0)
-      size += u.format0.get_size (num_glyphs);
-    else if (format == 3)
-      size += u.format3.get_size ();
-    else
-      size += u.format4.get_size ();
-    return size;
+    switch (format)
+    {
+    case 0: return format.static_size + u.format0.get_size (num_glyphs);
+    case 3: return format.static_size + u.format3.get_size ();
+    case 4: return format.static_size + u.format4.get_size ();
+    default:return 0;
+    }
   }
 
   hb_codepoint_t get_fd (hb_codepoint_t glyph) const
   {
-    if (this == &Null(CFF2FDSelect))
+    if (this == &Null (CFF2FDSelect))
       return 0;
-    if (format == 0)
-      return u.format0.get_fd (glyph);
-    else if (format == 3)
-      return u.format3.get_fd (glyph);
-    else
-      return u.format4.get_fd (glyph);
+
+    switch (format)
+    {
+    case 0: return u.format0.get_fd (glyph);
+    case 3: return u.format3.get_fd (glyph);
+    case 4: return u.format4.get_fd (glyph);
+    default:return 0;
+    }
+  }
+
+  bool sanitize (hb_sanitize_context_t *c, unsigned int fdcount) const
+  {
+    TRACE_SANITIZE (this);
+    if (unlikely (!c->check_struct (this)))
+      return_trace (false);
+
+    switch (format)
+    {
+    case 0: return_trace (u.format0.sanitize (c, fdcount));
+    case 3: return_trace (u.format3.sanitize (c, fdcount));
+    case 4: return_trace (u.format4.sanitize (c, fdcount));
+    default:return_trace (false);
+    }
   }
 
   HBUINT8       format;
   union {
-    FDSelect0   format0;
-    FDSelect3   format3;
-    FDSelect4   format4;
+  FDSelect0     format0;
+  FDSelect3     format3;
+  FDSelect4     format4;
   } u;
-
+  public:
   DEFINE_SIZE_MIN (2);
 };
 
@@ -123,7 +123,7 @@ struct CFF2VariationStore
     TRACE_SERIALIZE (this);
     unsigned int size_ = varStore->get_size ();
     CFF2VariationStore *dest = c->allocate_size<CFF2VariationStore> (size_);
-    if (unlikely (dest == nullptr)) return_trace (false);
+    if (unlikely (!dest)) return_trace (false);
     memcpy (dest, varStore, size_);
     return_trace (true);
   }
@@ -145,26 +145,6 @@ struct cff2_top_dict_values_t : top_dict_values_t<>
     FDSelectOffset = 0;
   }
   void fini () { top_dict_values_t<>::fini (); }
-
-  unsigned int calculate_serialized_size () const
-  {
-    unsigned int size = 0;
-    for (unsigned int i = 0; i < get_count (); i++)
-    {
-      op_code_t op = get_value (i).op;
-      switch (op)
-      {
-        case OpCode_vstore:
-        case OpCode_FDSelect:
-          size += OpCode_Size (OpCode_longintdict) + 4 + OpCode_Size (op);
-          break;
-        default:
-          size += top_dict_values_t<>::calculate_serialized_op_size (get_value (i));
-          break;
-      }
-    }
-    return size;
-  }
 
   unsigned int  vstoreOffset;
   unsigned int  FDSelectOffset;
@@ -252,21 +232,10 @@ struct cff2_private_dict_values_base_t : dict_values_t<VAL>
   {
     dict_values_t<VAL>::init ();
     subrsOffset = 0;
-    localSubrs = &Null(CFF2Subrs);
+    localSubrs = &Null (CFF2Subrs);
     ivs = 0;
   }
   void fini () { dict_values_t<VAL>::fini (); }
-
-  unsigned int calculate_serialized_size () const
-  {
-    unsigned int size = 0;
-    for (unsigned int i = 0; i < dict_values_t<VAL>::get_count; i++)
-      if (dict_values_t<VAL>::get_value (i).op == OpCode_Subrs)
-        size += OpCode_Size (OpCode_shortint) + 2 + OpCode_Size (OpCode_Subrs);
-      else
-        size += dict_values_t<VAL>::get_value (i).str.length;
-    return size;
-  }
 
   unsigned int      subrsOffset;
   const CFF2Subrs   *localSubrs;
@@ -400,6 +369,14 @@ struct cff2_private_dict_opset_subset_t : dict_opset_t
 typedef dict_interpreter_t<cff2_top_dict_opset_t, cff2_top_dict_values_t> cff2_top_dict_interpreter_t;
 typedef dict_interpreter_t<cff2_font_dict_opset_t, cff2_font_dict_values_t> cff2_font_dict_interpreter_t;
 
+struct CFF2FDArray : FDArray<HBUINT32>
+{
+  /* FDArray::serialize does not compile without this partial specialization */
+  template <typename ITER, typename OP_SERIALIZER>
+  bool serialize (hb_serialize_context_t *c, ITER it, OP_SERIALIZER& opszr)
+  { return FDArray<HBUINT32>::serialize<cff2_font_dict_values_t, table_info_t> (c, it, opszr); }
+};
+
 } /* namespace CFF */
 
 namespace OT {
@@ -434,7 +411,7 @@ struct cff2
 
       const OT::cff2 *cff2 = this->blob->template as<OT::cff2> ();
 
-      if (cff2 == &Null(OT::cff2))
+      if (cff2 == &Null (OT::cff2))
       { fini (); return; }
 
       { /* parse top dict */
@@ -452,11 +429,11 @@ struct cff2
       fdArray = &StructAtOffsetOrNull<CFF2FDArray> (cff2, topDict.FDArrayOffset);
       fdSelect = &StructAtOffsetOrNull<CFF2FDSelect> (cff2, topDict.FDSelectOffset);
 
-      if (((varStore != &Null(CFF2VariationStore)) && unlikely (!varStore->sanitize (&sc))) ||
-          (charStrings == &Null(CFF2CharStrings)) || unlikely (!charStrings->sanitize (&sc)) ||
-          (globalSubrs == &Null(CFF2Subrs)) || unlikely (!globalSubrs->sanitize (&sc)) ||
-          (fdArray == &Null(CFF2FDArray)) || unlikely (!fdArray->sanitize (&sc)) ||
-          (((fdSelect != &Null(CFF2FDSelect)) && unlikely (!fdSelect->sanitize (&sc, fdArray->count)))))
+      if (((varStore != &Null (CFF2VariationStore)) && unlikely (!varStore->sanitize (&sc))) ||
+          (charStrings == &Null (CFF2CharStrings)) || unlikely (!charStrings->sanitize (&sc)) ||
+          (globalSubrs == &Null (CFF2Subrs)) || unlikely (!globalSubrs->sanitize (&sc)) ||
+          (fdArray == &Null (CFF2FDArray)) || unlikely (!fdArray->sanitize (&sc)) ||
+          (((fdSelect != &Null (CFF2FDSelect)) && unlikely (!fdSelect->sanitize (&sc, fdArray->count)))))
       { fini (); return; }
 
       num_glyphs = charStrings->count;
@@ -464,7 +441,8 @@ struct cff2
       { fini (); return; }
 
       fdCount = fdArray->count;
-      privateDicts.resize (fdCount);
+      if (!privateDicts.resize (fdCount))
+      { fini (); return; }
 
       /* parse font dicts and gather private dicts */
       for (unsigned int i = 0; i < fdCount; i++)
@@ -475,7 +453,7 @@ struct cff2
         cff2_font_dict_interpreter_t font_interp;
         font_interp.env.init (fontDictStr);
         font = fontDicts.push ();
-        if (unlikely (font == &Crap(cff2_font_dict_values_t))) { fini (); return; }
+        if (unlikely (font == &Crap (cff2_font_dict_values_t))) { fini (); return; }
         font->init ();
         if (unlikely (!font_interp.interpret (*font))) { fini (); return; }
 
@@ -487,7 +465,7 @@ struct cff2
         if (unlikely (!priv_interp.interpret (privateDicts[i]))) { fini (); return; }
 
         privateDicts[i].localSubrs = &StructAtOffsetOrNull<CFF2Subrs> (&privDictStr[0], privateDicts[i].subrsOffset);
-        if (privateDicts[i].localSubrs != &Null(CFF2Subrs) &&
+        if (privateDicts[i].localSubrs != &Null (CFF2Subrs) &&
           unlikely (!privateDicts[i].localSubrs->sanitize (&sc)))
         { fini (); return; }
       }
@@ -503,7 +481,7 @@ struct cff2
       blob = nullptr;
     }
 
-    bool is_valid () const { return blob != nullptr; }
+    bool is_valid () const { return blob; }
 
     protected:
     hb_blob_t                   *blob;
@@ -529,27 +507,14 @@ struct cff2
     HB_INTERNAL bool get_extents (hb_font_t *font,
                                   hb_codepoint_t glyph,
                                   hb_glyph_extents_t *extents) const;
+#ifdef HB_EXPERIMENTAL_API
+    HB_INTERNAL bool get_path (hb_font_t *font, hb_codepoint_t glyph, draw_helper_t &draw_helper) const;
+#endif
   };
 
   typedef accelerator_templ_t<cff2_private_dict_opset_subset_t, cff2_private_dict_values_subset_t> accelerator_subset_t;
 
-  bool subset (hb_subset_plan_t *plan) const
-  {
-    hb_blob_t *cff2_prime = nullptr;
-
-    bool success = true;
-    if (hb_subset_cff2 (plan, &cff2_prime)) {
-      success = success && plan->add_table (HB_OT_TAG_cff2, cff2_prime);
-      hb_blob_t *head_blob = hb_sanitize_context_t().reference_table<head> (plan->source);
-      success = success && head_blob && plan->add_table (HB_OT_TAG_head, head_blob);
-      hb_blob_destroy (head_blob);
-    } else {
-      success = false;
-    }
-    hb_blob_destroy (cff2_prime);
-
-    return success;
-  }
+  bool subset (hb_subset_context_t *c) const { return hb_subset_cff2 (c); }
 
   public:
   FixedVersion<HBUINT8>         version;        /* Version of CFF2 table. set to 0x0200u */

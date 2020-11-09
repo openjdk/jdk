@@ -218,11 +218,6 @@ static bool eliminate_allocations(JavaThread* thread, int exec_mode, CompiledMet
       Thread* THREAD = thread;
       // Clear pending OOM if reallocation fails and return true indicating allocation failure
       realloc_failures = Deoptimization::realloc_objects(thread, &deoptee, &map, objects, CHECK_AND_CLEAR_(true));
-      // Make sure the deoptee frame gets processed after a potential safepoint during
-      // object reallocation. This is necessary because (a) deoptee_thread can be
-      // different from the current thread and (b) the deoptee frame does not need to be
-      // the top frame.
-      StackWatermarkSet::finish_processing(deoptee_thread, NULL /* context */, StackWatermarkKind::gc);
       deoptimized_objects = true;
     } else {
       JRT_BLOCK
@@ -1749,8 +1744,10 @@ address Deoptimization::deoptimize_for_missing_exception_handler(CompiledMethod*
 #endif
 
 void Deoptimization::deoptimize_frame_internal(JavaThread* thread, intptr_t* id, DeoptReason reason) {
-  assert(thread == Thread::current() || SafepointSynchronize::is_at_safepoint(),
-         "can only deoptimize other thread at a safepoint");
+  assert(thread == Thread::current() ||
+         thread->is_handshake_safe_for(Thread::current()) ||
+         SafepointSynchronize::is_at_safepoint(),
+         "can only deoptimize other thread at a safepoint/handshake");
   // Compute frame and register map based on thread and sp.
   RegisterMap reg_map(thread, false);
   frame fr = thread->last_frame();
@@ -1762,7 +1759,8 @@ void Deoptimization::deoptimize_frame_internal(JavaThread* thread, intptr_t* id,
 
 
 void Deoptimization::deoptimize_frame(JavaThread* thread, intptr_t* id, DeoptReason reason) {
-  if (thread == Thread::current()) {
+  Thread* current = Thread::current();
+  if (thread == current || thread->is_handshake_safe_for(current)) {
     Deoptimization::deoptimize_frame_internal(thread, id, reason);
   } else {
     VM_DeoptimizeFrame deopt(thread, id, reason);

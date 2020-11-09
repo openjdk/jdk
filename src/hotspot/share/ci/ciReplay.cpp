@@ -494,7 +494,7 @@ class CompileReplay : public StackObj {
     return true;
   }
 
-  // compile <klass> <name> <signature> <entry_bci> <comp_level> inline <count> <depth> <bci> <klass> <name> <signature> ...
+  // compile <klass> <name> <signature> <entry_bci> <comp_level> inline <count> (<depth> <bci> <klass> <name> <signature>)*
   void* process_inline(ciMethod* imethod, Method* m, int entry_bci, int comp_level, TRAPS) {
     _imethod    = m;
     _iklass     = imethod->holder();
@@ -524,7 +524,7 @@ class CompileReplay : public StackObj {
     return NULL;
   }
 
-  // compile <klass> <name> <signature> <entry_bci> <comp_level> inline <count> <depth> <bci> <klass> <name> <signature> ...
+  // compile <klass> <name> <signature> <entry_bci> <comp_level> inline <count> (<depth> <bci> <klass> <name> <signature>)*
   void process_compile(TRAPS) {
     Method* method = parse_method(CHECK);
     if (had_error()) return;
@@ -606,8 +606,6 @@ class CompileReplay : public StackObj {
   }
 
   // ciMethod <klass> <name> <signature> <invocation_counter> <backedge_counter> <interpreter_invocation_count> <interpreter_throwout_count> <instructions_size>
-  //
-  //
   void process_ciMethod(TRAPS) {
     Method* method = parse_method(CHECK);
     if (had_error()) return;
@@ -619,7 +617,7 @@ class CompileReplay : public StackObj {
     rec->_instructions_size = parse_int("instructions_size");
   }
 
-  // ciMethodData <klass> <name> <signature> <state> <current mileage> orig <length> # # ... data <length> # # ... oops <length> # ... methods <length>
+  // ciMethodData <klass> <name> <signature> <state> <current_mileage> orig <length> <byte>* data <length> <ptr>* oops <length> (<offset> <klass>)* methods <length> (<offset> <klass> <name> <signature>)*
   void process_ciMethodData(TRAPS) {
     Method* method = parse_method(CHECK);
     if (had_error()) return;
@@ -694,7 +692,7 @@ class CompileReplay : public StackObj {
     Klass* k = parse_klass(CHECK);
   }
 
-  // ciInstanceKlass <name> <is_linked> <is_initialized> <length> tag # # # ...
+  // ciInstanceKlass <name> <is_linked> <is_initialized> <length> tag*
   //
   // Load the klass 'name' and link or initialize it.  Verify that the
   // constant pool is the same length as 'length' and make sure the
@@ -789,10 +787,12 @@ class CompileReplay : public StackObj {
     }
   }
 
+  // staticfield <klass> <name> <signature> <value>
+  //
   // Initialize a class and fill in the value for a static field.
   // This is useful when the compile was dependent on the value of
   // static fields but it's impossible to properly rerun the static
-  // initiailizer.
+  // initializer.
   void process_staticfield(TRAPS) {
     InstanceKlass* k = (InstanceKlass *)parse_klass(CHECK);
 
@@ -906,6 +906,7 @@ class CompileReplay : public StackObj {
   }
 
 #if INCLUDE_JVMTI
+  // JvmtiExport <field> <value>
   void process_JvmtiExport(TRAPS) {
     const char* field = parse_string();
     bool value = parse_int("JvmtiExport flag") != 0;

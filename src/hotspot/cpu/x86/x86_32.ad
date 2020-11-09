@@ -653,8 +653,9 @@ void MachEpilogNode::format( PhaseRegAlloc *ra_, outputStream* st ) const {
   }
   st->print_cr("POPL   EBP"); st->print("\t");
   if (do_polling() && C->is_method_compilation()) {
-    st->print("TEST   PollPage,EAX\t! Poll Safepoint");
-    st->cr(); st->print("\t");
+    st->print("CMPL     rsp, poll_offset[thread]  \n\t"
+              "JA       #safepoint_stub\t"
+              "# Safepoint: poll for GC");
   }
 }
 #endif
@@ -697,12 +698,16 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   }
 
   if (do_polling() && C->is_method_compilation()) {
-    Register pollReg = as_Register(EBX_enc);
+    Register thread = as_Register(EBX_enc);
     MacroAssembler masm(&cbuf);
-    masm.get_thread(pollReg);
-    masm.movl(pollReg, Address(pollReg, in_bytes(Thread::polling_page_offset())));
-    masm.relocate(relocInfo::poll_return_type);
-    masm.testl(rax, Address(pollReg, 0));
+    __ get_thread(thread);
+    Label dummy_label;
+    Label* code_stub = &dummy_label;
+    if (!C->output()->in_scratch_emit_size()) {
+      code_stub = &C->output()->safepoint_poll_table()->add_safepoint(__ offset());
+    }
+    __ relocate(relocInfo::poll_return_type);
+    __ safepoint_poll(*code_stub, thread, true /* at_return */, true /* in_nmethod */);
   }
 }
 
@@ -13087,6 +13092,28 @@ instruct cmovLL_reg_LEGT(cmpOp_commute cmp, flagsReg_long_LEGT flags, eRegL dst,
 %}
 
 instruct cmovLL_mem_LEGT(cmpOp_commute cmp, flagsReg_long_LEGT flags, eRegL dst, load_long_memory src) %{
+  match(Set dst (CMoveL (Binary cmp flags) (Binary dst (LoadL src))));
+  predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt ));
+  ins_cost(500);
+  format %{ "CMOV$cmp $dst.lo,$src.lo\n\t"
+            "CMOV$cmp $dst.hi,$src.hi+4" %}
+  opcode(0x0F,0x40);
+  ins_encode( enc_cmov(cmp), RegMem(dst, src), enc_cmov(cmp), RegMem_Hi(dst, src) );
+  ins_pipe( pipe_cmov_reg_long );
+%}
+
+instruct cmovLL_reg_LEGT_U(cmpOpU_commute cmp, flagsReg_ulong_LEGT flags, eRegL dst, eRegL src) %{
+  match(Set dst (CMoveL (Binary cmp flags) (Binary dst src)));
+  predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt ));
+  ins_cost(400);
+  format %{ "CMOV$cmp $dst.lo,$src.lo\n\t"
+            "CMOV$cmp $dst.hi,$src.hi" %}
+  opcode(0x0F,0x40);
+  ins_encode( enc_cmov(cmp), RegReg_Lo2( dst, src ), enc_cmov(cmp), RegReg_Hi2( dst, src ) );
+  ins_pipe( pipe_cmov_reg_long );
+%}
+
+instruct cmovLL_mem_LEGT_U(cmpOpU_commute cmp, flagsReg_ulong_LEGT flags, eRegL dst, load_long_memory src) %{
   match(Set dst (CMoveL (Binary cmp flags) (Binary dst (LoadL src))));
   predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt ));
   ins_cost(500);

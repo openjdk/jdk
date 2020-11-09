@@ -321,11 +321,8 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, InlineUnsafeOps, true, DIAGNOSTIC,                          \
           "Inline memory ops (native methods) from Unsafe")                 \
                                                                             \
-  product(bool, CriticalJNINatives, true,                                   \
-          "Check for critical JNI entry points")                            \
-                                                                            \
-  notproduct(bool, StressCriticalJNINatives, false,                         \
-          "Exercise register saving code in critical natives")              \
+  product(bool, CriticalJNINatives, false,                                  \
+          "(Deprecated) Check for critical JNI entry points")               \
                                                                             \
   product(bool, UseAESIntrinsics, false, DIAGNOSTIC,                        \
           "Use intrinsics for AES versions of crypto")                      \
@@ -346,6 +343,10 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, UseSHA512Intrinsics, false, DIAGNOSTIC,                     \
           "Use intrinsics for SHA-384 and SHA-512 crypto hash functions. "  \
+          "Requires that UseSHA is enabled.")                               \
+                                                                            \
+  product(bool, UseSHA3Intrinsics, false, DIAGNOSTIC,                       \
+          "Use intrinsics for SHA3 crypto hash function. "                  \
           "Requires that UseSHA is enabled.")                               \
                                                                             \
   product(bool, UseCRC32Intrinsics, false, DIAGNOSTIC,                      \
@@ -530,9 +531,6 @@ const intx ObjectAlignmentInBytes = 8;
           "Timeout, in seconds, to limit the time spent on writing an "     \
           "error log in case of a crash.")                                  \
           range(0, (uint64_t)max_jlong/1000)                                \
-                                                                            \
-  product_pd(bool, UseOSErrorReporting,                                     \
-          "Let VM fatal error propagate to the OS (ie. WER on Windows)")    \
                                                                             \
   product(bool, SuppressFatalErrorMessage, false,                           \
           "Report NO fatal error message (avoid deadlock)")                 \
@@ -2206,6 +2204,17 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, UseNewCode3, false, DIAGNOSTIC,                             \
           "Testing Only: Use the new version while testing")                \
                                                                             \
+  notproduct(bool, UseDebuggerErgo, false,                                  \
+          "Debugging Only: Adjust the VM to be more debugger-friendly. "    \
+          "Turns on the other UseDebuggerErgo* flags")                      \
+                                                                            \
+  notproduct(bool, UseDebuggerErgo1, false,                                 \
+          "Debugging Only: Enable workarounds for debugger induced "        \
+          "os::processor_id() >= os::processor_count() problems")           \
+                                                                            \
+  notproduct(bool, UseDebuggerErgo2, false,                                 \
+          "Debugging Only: Limit the number of spawned JVM threads")        \
+                                                                            \
   /* flags for performance data collection */                               \
                                                                             \
   product(bool, UsePerfData, true,                                          \
@@ -2380,11 +2389,6 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, WhiteBoxAPI, false, DIAGNOSTIC,                             \
           "Enable internal testing APIs")                                   \
-                                                                            \
-  product(intx, SurvivorAlignmentInBytes, 0, EXPERIMENTAL,                  \
-           "Default survivor space alignment in bytes")                     \
-           range(8, 256)                                                    \
-           constraint(SurvivorAlignmentInBytesConstraintFunc,AfterErgo)     \
                                                                             \
   product(ccstr, DumpLoadedClassList, NULL,                                 \
           "Dump the names all loaded classes, that could be stored into "   \
