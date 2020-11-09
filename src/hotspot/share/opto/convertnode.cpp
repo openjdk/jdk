@@ -259,19 +259,19 @@ static inline bool long_ranges_overlap(jlong lo1, jlong hi1,
   return (lo2 <= lo1 && lo1 <= hi2) || (lo1 <= lo2 && lo2 <= hi1);
 }
 
-// If the given node has a ConvI2LNode user of the given type, return it.
-// Otherwise, create and return a new one, postponing its optimization to avoid
-// an explosion of recursive Ideal() calls when compiling long AddI chains.
-static Node* find_or_make_convI2L(PhaseIterGVN* igvn, Node* value,
-                                  const TypeLong* ltype) {
-  for (DUIterator_Fast imax, i = value->fast_outs(imax); i < imax; i++) {
-    Node* n = value->fast_out(i);
-    if (n->Opcode() == Op_ConvI2L &&
-        static_cast<TypeNode*>(n)->type()->is_long()->eq(ltype)) {
-      return n;
-    }
+// If there is an existing ConvI2L node with the given parent and type, return
+// it. Otherwise, create and return a new one. Both reusing existing ConvI2L
+// nodes and postponing the idealization of new ones are needed to avoid an
+// explosion of recursive Ideal() calls when compiling long AddI chains.
+static Node* find_or_make_convI2L(PhaseIterGVN* igvn, Node* parent,
+                                  const TypeLong* type) {
+  Node* n = new ConvI2LNode(parent, type);
+  Node* existing = igvn->hash_find_insert(n);
+  if (existing != NULL) {
+    n->destruct(igvn);
+    return existing;
   }
-  return igvn->register_new_node_with_optimizer(new ConvI2LNode(value, ltype));
+  return igvn->register_new_node_with_optimizer(n);
 }
 #endif
 
