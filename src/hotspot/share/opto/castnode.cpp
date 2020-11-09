@@ -97,8 +97,7 @@ Node* ConstraintCastNode::make_cast(int opcode, Node* c, Node *n, const Type *t,
     return cast;
   }
   case Op_CastLL: {
-    assert(!carry_dependency, "carry dependency not supported");
-    Node* cast = new CastLLNode(n, t);
+    Node* cast = new CastLLNode(n, t, carry_dependency);
     cast->set_req(0, c);
     return cast;
   }
