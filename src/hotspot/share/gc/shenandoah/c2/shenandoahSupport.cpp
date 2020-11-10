@@ -2377,7 +2377,7 @@ void MemoryGraphFixer::collect_memory_nodes() {
   while (dead_phis.size() > 0) {
     Node* n = dead_phis.pop();
     n->replace_by(_phase->C->top());
-    n->destruct();
+    n->destruct(&_phase->igvn());
   }
   for (int i = rpo_list.size() - 1; i >= 0; i--) {
     Node* c = rpo_list.at(i);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ package java.lang;
  * file and determines that the file is malformed or otherwise cannot
  * be interpreted as a class file.
  *
- * @author  unascribed
  * @since   1.0
  */
 public class ClassFormatError extends LinkageError {

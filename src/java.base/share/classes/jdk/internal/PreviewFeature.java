@@ -54,7 +54,6 @@ public @interface PreviewFeature {
     public boolean essentialAPI() default false;
 
     public enum Feature {
-        PATTERN_MATCHING_IN_INSTANCEOF,
         // 8242284:
         // The TEXT_BLOCKS enum constant is not used in the JDK 15 codebase, but
         // exists to support the bootcycle build of JDK 15. The bootcycle build
