@@ -40,12 +40,12 @@
  *
  * @run main/othervm -Xmx128m
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:TieredStopAtLevel=1
+ *                   -Xbatch -XX:TieredStopAtLevel=1
  *                   -javaagent:basicAgent.jar GetObjectSizeIntrinsicsTest GetObjectSizeIntrinsicsTest
  *
  * @run main/othervm -Xmx128m
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:-TieredCompilation
+ *                   -Xbatch -XX:-TieredCompilation
  *                   -javaagent:basicAgent.jar GetObjectSizeIntrinsicsTest GetObjectSizeIntrinsicsTest
  */
 
@@ -68,12 +68,12 @@
  *
  * @run main/othervm -Xmx4g
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:TieredStopAtLevel=1
+ *                   -Xbatch -XX:TieredStopAtLevel=1
  *                   -javaagent:basicAgent.jar GetObjectSizeIntrinsicsTest GetObjectSizeIntrinsicsTest
  *
  * @run main/othervm -Xmx4g
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:-TieredCompilation
+ *                   -Xbatch -XX:-TieredCompilation
  *                   -javaagent:basicAgent.jar GetObjectSizeIntrinsicsTest GetObjectSizeIntrinsicsTest
  */
 
@@ -96,12 +96,12 @@
  *
  * @run main/othervm -Xmx128m -XX:-UseCompressedOops
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:TieredStopAtLevel=1
+ *                   -Xbatch -XX:TieredStopAtLevel=1
  *                   -javaagent:basicAgent.jar GetObjectSizeIntrinsicsTest GetObjectSizeIntrinsicsTest
  *
  * @run main/othervm -Xmx128m -XX:-UseCompressedOops
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:-TieredCompilation
+ *                   -Xbatch -XX:-TieredCompilation
  *                   -javaagent:basicAgent.jar GetObjectSizeIntrinsicsTest GetObjectSizeIntrinsicsTest
  */
 
@@ -126,13 +126,13 @@
  * @run main/othervm -Xmx128m
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   -XX:FastAllocateSizeLimit=0
- *                   -XX:TieredStopAtLevel=1
+ *                   -Xbatch -XX:TieredStopAtLevel=1
  *                   -javaagent:basicAgent.jar GetObjectSizeIntrinsicsTest GetObjectSizeIntrinsicsTest
  *
  * @run main/othervm -Xmx128m
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   -XX:FastAllocateSizeLimit=0
- *                   -XX:-TieredCompilation
+ *                   -Xbatch -XX:-TieredCompilation
  *                   -javaagent:basicAgent.jar GetObjectSizeIntrinsicsTest GetObjectSizeIntrinsicsTest
  */
 
@@ -158,13 +158,13 @@
  * @run main/othervm -Xmx4g
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   -XX:FastAllocateSizeLimit=0
- *                   -XX:TieredStopAtLevel=1
+ *                   -Xbatch -XX:TieredStopAtLevel=1
  *                   -javaagent:basicAgent.jar GetObjectSizeIntrinsicsTest GetObjectSizeIntrinsicsTest
  *
  * @run main/othervm -Xmx4g
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   -XX:FastAllocateSizeLimit=0
- *                   -XX:-TieredCompilation
+ *                   -Xbatch -XX:-TieredCompilation
  *                   -javaagent:basicAgent.jar GetObjectSizeIntrinsicsTest GetObjectSizeIntrinsicsTest
  */
 
@@ -190,13 +190,13 @@
  * @run main/othervm -Xmx128m -XX:-UseCompressedOops
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   -XX:FastAllocateSizeLimit=0
- *                   -XX:TieredStopAtLevel=1
+ *                   -Xbatch -XX:TieredStopAtLevel=1
  *                   -javaagent:basicAgent.jar GetObjectSizeIntrinsicsTest GetObjectSizeIntrinsicsTest
  *
  * @run main/othervm -Xmx128m -XX:-UseCompressedOops
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   -XX:FastAllocateSizeLimit=0
- *                   -XX:-TieredCompilation
+ *                   -Xbatch -XX:-TieredCompilation
  *                   -javaagent:basicAgent.jar GetObjectSizeIntrinsicsTest GetObjectSizeIntrinsicsTest
  */
 
@@ -222,13 +222,13 @@
  * @run main/othervm -Xmx128m
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   -XX:ObjectAlignmentInBytes=32
- *                   -XX:TieredStopAtLevel=1
+ *                   -Xbatch -XX:TieredStopAtLevel=1
  *                   -javaagent:basicAgent.jar GetObjectSizeIntrinsicsTest GetObjectSizeIntrinsicsTest
  *
  * @run main/othervm -Xmx128m
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   -XX:ObjectAlignmentInBytes=32
- *                   -XX:-TieredCompilation
+ *                   -Xbatch -XX:-TieredCompilation
  *                   -javaagent:basicAgent.jar GetObjectSizeIntrinsicsTest GetObjectSizeIntrinsicsTest
  */
 
@@ -254,13 +254,13 @@
  * @run main/othervm -Xmx4g
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   -XX:ObjectAlignmentInBytes=32
- *                   -XX:TieredStopAtLevel=1
+ *                   -Xbatch -XX:TieredStopAtLevel=1
  *                   -javaagent:basicAgent.jar GetObjectSizeIntrinsicsTest GetObjectSizeIntrinsicsTest
  *
  * @run main/othervm -Xmx4g
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   -XX:ObjectAlignmentInBytes=32
- *                   -XX:-TieredCompilation
+ *                   -Xbatch -XX:-TieredCompilation
  *                   -javaagent:basicAgent.jar GetObjectSizeIntrinsicsTest GetObjectSizeIntrinsicsTest
  */
 
@@ -285,7 +285,7 @@ public class GetObjectSizeIntrinsicsTest extends ASimpleInstrumentationTestCase 
         new GetObjectSizeIntrinsicsTest(args[0]).runTest();
     }
 
-    public static final int ITERS = 1_000_000;
+    public static final int ITERS = 200_000;
 
     public static void assertEquals(long expected, long actual) {
         if (expected != actual) {
