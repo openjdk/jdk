@@ -155,7 +155,6 @@
           "Larger values give more weight to recent values.")               \
           range(0,1.0)                                                      \
                                                                             \
-                                                                            \
   product(uintx, ShenandoahGuaranteedGCInterval, 5*60*1000, EXPERIMENTAL,   \
           "Many heuristics would guarantee a concurrent GC cycle at "       \
           "least with this interval. This is useful when large idle "       \

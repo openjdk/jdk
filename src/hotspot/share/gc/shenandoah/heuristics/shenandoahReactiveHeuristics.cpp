@@ -115,32 +115,28 @@ bool ShenandoahReactiveHeuristics::is_allocation_rate_too_high(size_t capacity,
   double average_cycle_seconds = _gc_time_history->davg() + (_margin_of_error_sd * _gc_time_history->dsd());
   double bytes_allocated_per_second = _allocation_rate.upper_bound(_margin_of_error_sd);
   if (average_cycle_seconds > allocation_headroom / bytes_allocated_per_second) {
-    if (log_is_enabled(Info, gc)) {
-      log_info(gc)("Trigger: Average GC time (%.2f ms) is above the time for allocation rate (%.0f %sB/s) to deplete free headroom (" SIZE_FORMAT "%s) (margin of error = %.2f)",
-                   average_cycle_seconds * 1000,
-                   byte_size_in_proper_unit(bytes_allocated_per_second), proper_unit_for_byte_size(bytes_allocated_per_second),
-                   byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom),
-                   _margin_of_error_sd);
-    }
-    if (log_is_enabled(Info, gc, ergo)) {
-      log_info(gc, ergo)("Free headroom: " SIZE_FORMAT "%s (free) - " SIZE_FORMAT "%s (spike) - " SIZE_FORMAT "%s (penalties) = " SIZE_FORMAT "%s",
+    log_info(gc)("Trigger: Average GC time (%.2f ms) is above the time for allocation rate (%.0f %sB/s) to deplete free headroom (" SIZE_FORMAT "%s) (margin of error = %.2f)",
+                 average_cycle_seconds * 1000,
+                 byte_size_in_proper_unit(bytes_allocated_per_second), proper_unit_for_byte_size(bytes_allocated_per_second),
+                 byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom),
+                 _margin_of_error_sd);
+
+    log_info(gc, ergo)("Free headroom: " SIZE_FORMAT "%s (free) - " SIZE_FORMAT "%s (spike) - " SIZE_FORMAT "%s (penalties) = " SIZE_FORMAT "%s",
                          byte_size_in_proper_unit(available),           proper_unit_for_byte_size(available),
                          byte_size_in_proper_unit(spike_headroom),      proper_unit_for_byte_size(spike_headroom),
                          byte_size_in_proper_unit(penalties),           proper_unit_for_byte_size(penalties),
                          byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom));
-    }
+
     const_cast<ShenandoahReactiveHeuristics *>(this)->_last_trigger = RATE;
     return true;
   }
 
   double instantaneous_rate = _allocation_rate.instantaneous_rate(bytes_allocated_since_gc_start);
   if (_allocation_rate.is_spiking(instantaneous_rate) && average_cycle_seconds > allocation_headroom / instantaneous_rate) {
-    if (log_is_enabled(Info, gc)) {
-      log_info(gc)("Trigger: Instantaneous allocation rate (%.0f %sB/s) will deplete free headroom (" SIZE_FORMAT "%s) before average time (%.2f ms) to complete GC cycle.",
-                   byte_size_in_proper_unit(instantaneous_rate), proper_unit_for_byte_size(instantaneous_rate),
-                   byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom),
-                   average_cycle_seconds * 1000);
-    }
+    log_info(gc)("Trigger: Instantaneous allocation rate (%.0f %sB/s) will deplete free headroom (" SIZE_FORMAT "%s) before average time (%.2f ms) to complete GC cycle.",
+                 byte_size_in_proper_unit(instantaneous_rate), proper_unit_for_byte_size(instantaneous_rate),
+                 byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom),
+                 average_cycle_seconds * 1000);
     const_cast<ShenandoahReactiveHeuristics *>(this)->_last_trigger = SPIKE;
     return true;
   }
@@ -159,13 +155,11 @@ void ShenandoahReactiveHeuristics::record_success_concurrent() {
     z_score = (available - _available.avg()) / _available.sd();
   }
 
-  if (log_is_enabled(Debug, gc, ergo)) {
-    log_debug(gc, ergo)("Available: " SIZE_FORMAT " %sB, z-score=%.3f. Average available: %.1f %sB +/- %.1f %sB.",
-                         byte_size_in_proper_unit(size_t(available)), proper_unit_for_byte_size(size_t(available)),
-                         z_score,
-                         byte_size_in_proper_unit(_available.avg()), proper_unit_for_byte_size(_available.avg()),
-                         byte_size_in_proper_unit(_available.sd()), proper_unit_for_byte_size(_available.sd()));
-  }
+  log_debug(gc, ergo)("Available: " SIZE_FORMAT " %sB, z-score=%.3f. Average available: %.1f %sB +/- %.1f %sB.",
+                       byte_size_in_proper_unit(size_t(available)), proper_unit_for_byte_size(size_t(available)),
+                       z_score,
+                       byte_size_in_proper_unit(_available.avg()), proper_unit_for_byte_size(_available.avg()),
+                       byte_size_in_proper_unit(_available.sd()), proper_unit_for_byte_size(_available.sd()));
 
   // In the case when a concurrent GC cycle completes successfully but with an
   // unusually small amount of available memory we will adjust our trigger
@@ -216,34 +210,33 @@ void ShenandoahReactiveHeuristics::record_success_full() {
   adjust_spike_threshold(FULL_PENALTY_SD);
 }
 
-static double safe_adjust(double value, double adjustment, double min, double max) {
-  value += adjustment;
-  if (value < min) {
-    return min;
-  }
-  if (value > max) {
-    return max;
-  }
-
-  return value;
+static double saturate(double value, double min, double max) {
+  return MAX2(MIN2(value, max), min);
 }
 
 void ShenandoahReactiveHeuristics::adjust_last_trigger_parameters(double amount) {
-  if (_last_trigger == RATE) {
-    adjust_margin_of_error(amount);
-  } else if (_last_trigger == SPIKE) {
-    adjust_spike_threshold(amount);
+  switch (_last_trigger) {
+    case RATE:
+      adjust_margin_of_error(amount);
+      break;
+    case SPIKE:
+      adjust_spike_threshold(amount);
+      break;
+    case OTHER:
+      // nothing to adjust here.
+      break;
+    default:
+      ShouldNotReachHere();
   }
 }
 
-
 void ShenandoahReactiveHeuristics::adjust_margin_of_error(double amount) {
-  _margin_of_error_sd = safe_adjust(_margin_of_error_sd, amount, MINIMUM_CONFIDENCE, MAXIMUM_CONFIDENCE);
+  _margin_of_error_sd = saturate(_margin_of_error_sd + amount, MINIMUM_CONFIDENCE, MAXIMUM_CONFIDENCE);
   log_debug(gc, ergo)("Margin of error now %.2f", _margin_of_error_sd);
 }
 
 void ShenandoahReactiveHeuristics::adjust_spike_threshold(double amount) {
-  _spike_threshold_sd = safe_adjust(_spike_threshold_sd, -amount, MINIMUM_CONFIDENCE, MAXIMUM_CONFIDENCE);
+  _spike_threshold_sd = saturate(_spike_threshold_sd - amount, MINIMUM_CONFIDENCE, MAXIMUM_CONFIDENCE);
   log_debug(gc, ergo)("Spike threshold now: %.2f", _spike_threshold_sd);
 }
 
