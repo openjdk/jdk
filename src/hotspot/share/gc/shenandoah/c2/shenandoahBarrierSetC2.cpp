@@ -1060,15 +1060,15 @@ Node* ShenandoahBarrierSetC2::ideal_node(PhaseGVN* phase, Node* n, bool can_resh
     Node* in1 = n->in(1);
     Node* in2 = n->in(2);
 
-    // If one input is NULL, then step over the barriers normal LRB barriers on the other input
+    // If one input is NULL, then step over the strong LRB barriers on the other input
     if (in1->bottom_type() == TypePtr::NULL_PTR &&
         !((in2->Opcode() == Op_ShenandoahLoadReferenceBarrier) &&
-          (((ShenandoahLoadReferenceBarrierNode*)in2)->decorators() & ON_STRONG_OOP_REF) == 0)) {
+          ShenandoahBarrierSet::is_strong_access(((ShenandoahLoadReferenceBarrierNode*)in2)->decorators()))) {
       in2 = step_over_gc_barrier(in2);
     }
     if (in2->bottom_type() == TypePtr::NULL_PTR &&
         !((in1->Opcode() == Op_ShenandoahLoadReferenceBarrier) &&
-          (((ShenandoahLoadReferenceBarrierNode*)in1)->decorators() & ON_STRONG_OOP_REF) == 0)) {
+          ShenandoahBarrierSet::is_strong_access(((ShenandoahLoadReferenceBarrierNode*)in1)->decorators()))) {
       in1 = step_over_gc_barrier(in1);
     }
 
