@@ -64,7 +64,6 @@ package java.time.format;
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
 import static java.time.temporal.ChronoField.HOUR_OF_DAY;
 import static java.time.temporal.ChronoField.INSTANT_SECONDS;
-import static java.time.temporal.ChronoField.MINUTE_OF_DAY;
 import static java.time.temporal.ChronoField.MINUTE_OF_HOUR;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static java.time.temporal.ChronoField.NANO_OF_SECOND;
@@ -1463,7 +1462,7 @@ public final class DateTimeFormatterBuilder {
      * optionally {@code MINUTE_OF_HOUR} if exist. It will be mapped to a day period
      * type defined in LDML, such as "morning1" and then it will be translated into
      * text. Mapping to a day period type and its translation both depend on the
-     * locale in the formatter. "midnight" type designates "00:00".
+     * locale in the formatter.
      * <p>
      * During parsing, the text will be parsed into a day period type first. If
      * {@code HOUR_OF_DAY}, and optionally {@code MINUTE_OF_HOUR} exists,
@@ -1480,6 +1479,9 @@ public final class DateTimeFormatterBuilder {
      * and no {@code HOUR_OF_DAY} is resolved, the parsed day period takes precedence.
      * If any conflict occurs in {@link ResolverStyle#LENIENT LENIENT} mode, no
      * exception is thrown and the day period is ignored.
+     * <p>
+     * "midnight" type allows both "00:00" as the start-of-day and "24:00" as the
+     * end-of-day, as long as they are valid with the resolved hour field.
      *
      * @param style the text style to use, not null
      * @return this, for chaining, not null
@@ -5058,7 +5060,7 @@ public final class DateTimeFormatterBuilder {
                 return false;
             }
             Long moh = context.getValue(MINUTE_OF_HOUR);
-            Long value = (hod * 60 + (moh != null ? moh : 0)) % 1_440;
+            long value = (hod * 60 + (moh != null ? moh : 0)) % 1_440;
             if (value < 0) {
                 value += 1_440;
             }
@@ -5106,8 +5108,8 @@ public final class DateTimeFormatterBuilder {
 
         /**
          * Returns the day period locale store for the locale
-         * @param locale
-         * @return
+         * @param locale locale to be examined
+         * @return locale store for the locale
          */
         private static LocaleStore findDayPeriodStore(Locale locale) {
             return DAYPERIOD_LOCALESTORE.computeIfAbsent(locale, loc -> {
