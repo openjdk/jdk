@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.util.regex.Matcher;
 
 import nsk.share.Consts;
 import nsk.share.test.Stresser;
+import jtreg.SkippedException;
 
 public class resexhausted003 {
 
@@ -115,7 +116,7 @@ public class resexhausted003 {
             }
 
             System.out.println("Can't reproduce OOME due to a limit on iterations/execution time. Test was useless.");
-            return Consts.TEST_PASSED;
+            throw new SkippedException("Test did not get an OutOfMemory error");
 
         } catch (OutOfMemoryError e) {
             // that is what we are waiting for
@@ -124,8 +125,10 @@ public class resexhausted003 {
         }
 
         System.gc();
-        if ( ! Helper.checkResult("loading " + count + " classes of " + bloatBytes.length + " bytes") )
+        if (!Helper.checkResult(Helper.JVMTI_RESOURCE_EXHAUSTED_OOM_ERROR,
+                                "loading " + count + " classes of " + bloatBytes.length + " bytes")) {
             return Consts.TEST_FAILED;
+        }
 
         return Consts.TEST_PASSED;
     }

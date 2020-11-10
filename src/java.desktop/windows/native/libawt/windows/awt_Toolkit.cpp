@@ -1067,12 +1067,8 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
               AwtClipboard::LostOwnership((JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2));
           return 0;
       }
-      case WM_CHANGECBCHAIN: {
-          AwtClipboard::WmChangeCbChain(wParam, lParam);
-          return 0;
-      }
-      case WM_DRAWCLIPBOARD: {
-          AwtClipboard::WmDrawClipboard((JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2), wParam, lParam);
+      case WM_CLIPBOARDUPDATE: {
+          AwtClipboard::WmClipboardUpdate((JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2));
           return 0;
       }
       case WM_AWT_LIST_SETMULTISELECT: {

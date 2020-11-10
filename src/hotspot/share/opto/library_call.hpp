@@ -279,10 +279,10 @@ class LibraryCallKit : public GraphKit {
   bool inline_digestBase_implCompress(vmIntrinsics::ID id);
   bool inline_digestBase_implCompressMB(int predicate);
   bool inline_digestBase_implCompressMB(Node* digestBaseObj, ciInstanceKlass* instklass,
-                                        bool long_state, address stubAddr, const char *stubName,
+                                        const char* state_type, address stubAddr, const char *stubName,
                                         Node* src_start, Node* ofs, Node* limit);
-  Node* get_state_from_digest_object(Node *digestBase_object);
-  Node* get_long_state_from_digest_object(Node *digestBase_object);
+  Node* get_state_from_digest_object(Node *digestBase_object, const char* state_type);
+  Node* get_digest_length_from_digest_object(Node *digestBase_object);
   Node* inline_digestBase_implCompressMB_predicate(int predicate);
   bool inline_encodeISOArray();
   bool inline_updateCRC32();

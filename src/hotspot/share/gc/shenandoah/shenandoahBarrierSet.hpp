@@ -33,8 +33,19 @@
 class ShenandoahBarrierSetAssembler;
 
 class ShenandoahBarrierSet: public BarrierSet {
-private:
+public:
+  enum class AccessKind {
+    // Regular in-heap access on reference fields
+    NORMAL,
 
+    // Off-heap reference access
+    NATIVE,
+
+    // In-heap reference access on referent fields of j.l.r.Reference objects
+    WEAK
+  };
+
+private:
   ShenandoahHeap* _heap;
   BufferNode::Allocator _satb_mark_queue_buffer_allocator;
   ShenandoahSATBMarkQueueSet _satb_mark_queue_set;
@@ -53,8 +64,8 @@ public:
   }
 
   static bool need_load_reference_barrier(DecoratorSet decorators, BasicType type);
-  static bool use_load_reference_barrier_native(DecoratorSet decorators, BasicType type);
   static bool need_keep_alive_barrier(DecoratorSet decorators, BasicType type);
+  static AccessKind access_kind(DecoratorSet decorators, BasicType type);
 
   void print_on(outputStream* st) const;
 
@@ -87,14 +98,13 @@ public:
 
   inline void enqueue(oop obj);
 
-  oop load_reference_barrier(oop obj);
-  oop load_reference_barrier_not_null(oop obj);
+  inline oop load_reference_barrier(oop obj);
 
   template <class T>
   inline oop load_reference_barrier_mutator(oop obj, T* load_addr);
 
-  template <class T>
-  inline oop load_reference_barrier_native(oop obj, T* load_addr);
+  template <DecoratorSet decorators, class T>
+  inline oop load_reference_barrier(oop obj, T* load_addr);
 
 private:
   template <class T>
@@ -110,8 +120,6 @@ private:
 
   template <class T, bool HAS_FWD, bool EVAC, bool ENQUEUE>
   inline void arraycopy_work(T* src, size_t count);
-
-  oop load_reference_barrier_impl(oop obj);
 
   inline bool need_bulk_update(HeapWord* dst);
 public:

@@ -39,6 +39,7 @@ import static org.testng.Assert.*;
 /*
  * @test
  * @summary ASN.1 formatting
+ * @modules java.base/sun.security.util
  * @library /test/lib
  * @compile ASN1FormatterTest.java
  * @run testng jdk.test.lib.hexdump.ASN1FormatterTest

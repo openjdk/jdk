@@ -2260,28 +2260,8 @@ bool G1CollectedHeap::try_collect(GCCause::Cause cause) {
 }
 
 bool G1CollectedHeap::is_in(const void* p) const {
-  if (_hrm->reserved().contains(p)) {
-    // Given that we know that p is in the reserved space,
-    // heap_region_containing() should successfully
-    // return the containing region.
-    HeapRegion* hr = heap_region_containing(p);
-    return hr->is_in(p);
-  } else {
-    return false;
-  }
+  return is_in_reserved(p) && _hrm->is_available(addr_to_region((HeapWord*)p));
 }
-
-#ifdef ASSERT
-bool G1CollectedHeap::is_in_exact(const void* p) const {
-  bool contains = reserved().contains(p);
-  bool available = _hrm->is_available(addr_to_region((HeapWord*)p));
-  if (contains && available) {
-    return true;
-  } else {
-    return false;
-  }
-}
-#endif
 
 // Iteration functions.
 
@@ -2457,10 +2437,11 @@ void G1CollectedHeap::print_heap_regions() const {
 }
 
 void G1CollectedHeap::print_on(outputStream* st) const {
+  size_t heap_used = Heap_lock->owned_by_self() ? used() : used_unlocked();
   st->print(" %-20s", "garbage-first heap");
   if (_hrm != NULL) {
     st->print(" total " SIZE_FORMAT "K, used " SIZE_FORMAT "K",
-              capacity()/K, used_unlocked()/K);
+              capacity()/K, heap_used/K);
     st->print(" [" PTR_FORMAT ", " PTR_FORMAT ")",
               p2i(_hrm->reserved().start()),
               p2i(_hrm->reserved().end()));

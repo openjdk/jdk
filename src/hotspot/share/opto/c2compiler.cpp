@@ -626,6 +626,7 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_sha_implCompress:
   case vmIntrinsics::_sha2_implCompress:
   case vmIntrinsics::_sha5_implCompress:
+  case vmIntrinsics::_sha3_implCompress:
   case vmIntrinsics::_digestBase_implCompressMB:
   case vmIntrinsics::_multiplyToLen:
   case vmIntrinsics::_squareToLen:

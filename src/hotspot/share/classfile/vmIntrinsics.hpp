@@ -432,6 +432,10 @@ class methodHandle;
   do_class(sun_security_provider_sha5,                             "sun/security/provider/SHA5")                        \
   do_intrinsic(_sha5_implCompress, sun_security_provider_sha5, implCompress_name, implCompress_signature, F_R)          \
                                                                                                                         \
+  /* support for sun.security.provider.SHA3 */                                                                          \
+  do_class(sun_security_provider_sha3,                             "sun/security/provider/SHA3")                        \
+  do_intrinsic(_sha3_implCompress, sun_security_provider_sha3, implCompress_name, implCompress_signature, F_R)          \
+                                                                                                                        \
   /* support for sun.security.provider.DigestBase */                                                                    \
   do_class(sun_security_provider_digestbase,                       "sun/security/provider/DigestBase")                  \
   do_intrinsic(_digestBase_implCompressMB, sun_security_provider_digestbase, implCompressMB_name, implCompressMB_signature, F_R)   \

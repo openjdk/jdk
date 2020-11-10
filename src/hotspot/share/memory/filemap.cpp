@@ -1737,7 +1737,7 @@ address FileMapInfo::decode_start_address(FileMapRegion* spc, bool with_current_
   size_t offset = spc->mapping_offset();
   narrowOop n = CompressedOops::narrow_oop_cast(offset);
   if (with_current_oop_encoding_mode) {
-    return cast_from_oop<address>(CompressedOops::decode_not_null(n));
+    return cast_from_oop<address>(CompressedOops::decode_raw_not_null(n));
   } else {
     return cast_from_oop<address>(HeapShared::decode_from_archive(n));
   }
