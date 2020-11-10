@@ -268,8 +268,14 @@ void ShenandoahBarrierSetAssembler::satb_write_barrier_pre(MacroAssembler* masm,
   __ bind(done);
 }
 
-void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm, Register dst, Address src, ShenandoahBarrierSet::AccessKind kind) {
+void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm, Register dst, Address src, DecoratorSet decorators) {
   assert(ShenandoahLoadRefBarrier, "Should be enabled");
+
+  bool is_strong  = ShenandoahBarrierSet::is_strong_access(decorators);
+  bool is_weak    = ShenandoahBarrierSet::is_weak_access(decorators);
+  bool is_phantom = ShenandoahBarrierSet::is_phantom_access(decorators);
+  bool is_native  = ShenandoahBarrierSet::is_native_access(decorators);
+  bool is_narrow  = LP64_ONLY(UseCompressedOops &&) !is_native;
 
   Label heap_stable, not_cset;
 
@@ -292,7 +298,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   __ jcc(Assembler::zero, heap_stable);
 
   Register tmp1 = noreg, tmp2 = noreg;
-  if (kind == ShenandoahBarrierSet::AccessKind::NORMAL) {
+  if (is_strong) {
     // Test for object in cset
     // Allocate temporary registers
     for (int i = 0; i < 8; i++) {
@@ -357,26 +363,22 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   }
 
   save_xmm_registers(masm);
-  switch (kind) {
-    case ShenandoahBarrierSet::AccessKind::NORMAL:
-      if (UseCompressedOops) {
-        __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_narrow), arg0, arg1);
-      } else {
-        __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier), arg0, arg1);
-      }
-      break;
-    case ShenandoahBarrierSet::AccessKind::WEAK:
-      if (UseCompressedOops) {
-        __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak_narrow), arg0, arg1);
-      } else {
-        __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak), arg0, arg1);
-      }
-      break;
-    case ShenandoahBarrierSet::AccessKind::NATIVE:
-      __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak), arg0, arg1);
-      break;
-    default:
-      ShouldNotReachHere();
+  if (is_strong) {
+    if (is_narrow) {
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong_narrow), arg0, arg1);
+    } else {
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong), arg0, arg1);
+    }
+  } else if (is_weak) {
+    if (is_narrow) {
+      __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak_narrow), arg0, arg1);
+    } else {
+      __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak), arg0, arg1);
+    }
+  } else {
+    assert(is_phantom, "only remaining strength");
+    assert(!is_narrow, "phantom access cannot be narrow");
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom), arg0, arg1);
   }
   restore_xmm_registers(masm);
 
@@ -401,7 +403,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
 
   __ bind(not_cset);
 
-  if  (kind == ShenandoahBarrierSet::AccessKind::NORMAL) {
+  if  (is_strong) {
     __ pop(tmp2);
     __ pop(tmp1);
   }
@@ -499,8 +501,7 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
 
     BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
 
-    ShenandoahBarrierSet::AccessKind kind = ShenandoahBarrierSet::access_kind(decorators, type);
-    load_reference_barrier(masm, dst, src, kind);
+    load_reference_barrier(masm, dst, src, decorators);
 
     // Move loaded oop to final destination
     if (dst != result_dst) {
@@ -850,18 +851,17 @@ void ShenandoahBarrierSetAssembler::gen_load_reference_barrier_stub(LIR_Assemble
   __ bind(slow_path);
   ce->store_parameter(res, 0);
   ce->store_parameter(addr, 1);
-  switch (stub->kind()) {
-    case ShenandoahBarrierSet::AccessKind::NORMAL:
-      __ call(RuntimeAddress(bs->load_reference_barrier_normal_rt_code_blob()->code_begin()));
-      break;
-    case ShenandoahBarrierSet::AccessKind::WEAK:
-      __ call(RuntimeAddress(bs->load_reference_barrier_weak_rt_code_blob()->code_begin()));
-      break;
-    case ShenandoahBarrierSet::AccessKind::NATIVE:
-      __ call(RuntimeAddress(bs->load_reference_barrier_native_rt_code_blob()->code_begin()));
-      break;
-    default:
-      ShouldNotReachHere();
+  DecoratorSet decorators = stub->decorators();
+  bool is_strong  = ShenandoahBarrierSet::is_strong_access(decorators);
+  bool is_weak    = ShenandoahBarrierSet::is_weak_access(decorators);
+  bool is_phantom = ShenandoahBarrierSet::is_phantom_access(decorators);
+  if (is_strong) {
+    __ call(RuntimeAddress(bs->load_reference_barrier_strong_rt_code_blob()->code_begin()));
+  } else if (is_weak) {
+    __ call(RuntimeAddress(bs->load_reference_barrier_weak_rt_code_blob()->code_begin()));
+  } else {
+    assert(is_phantom, "only remaining strenght");
+    __ call(RuntimeAddress(bs->load_reference_barrier_phantom_rt_code_blob()->code_begin()));
   }
   __ jmp(*stub->continuation());
 }
@@ -926,7 +926,7 @@ void ShenandoahBarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAss
   __ epilogue();
 }
 
-void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_stub(StubAssembler* sasm, ShenandoahBarrierSet::AccessKind kind) {
+void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_stub(StubAssembler* sasm, DecoratorSet decorators) {
   __ prologue("shenandoah_load_reference_barrier", false);
   // arg0 : object to be resolved
 
@@ -935,26 +935,26 @@ void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_s
 #ifdef _LP64
   __ load_parameter(0, c_rarg0);
   __ load_parameter(1, c_rarg1);
-  switch (kind) {
-    case ShenandoahBarrierSet::AccessKind::NORMAL:
-      if (UseCompressedOops) {
-        __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_narrow), c_rarg0, c_rarg1);
-      } else {
-        __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier), c_rarg0, c_rarg1);
-      }
-      break;
-    case ShenandoahBarrierSet::AccessKind::WEAK:
-      if (UseCompressedOops) {
-        __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak_narrow), c_rarg0, c_rarg1);
-      } else {
-        __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak), c_rarg0, c_rarg1);
-      }
-      break;
-    case ShenandoahBarrierSet::AccessKind::NATIVE:
+  bool is_strong  = ShenandoahBarrierSet::is_strong_access(decorators);
+  bool is_weak    = ShenandoahBarrierSet::is_weak_access(decorators);
+  bool is_phantom = ShenandoahBarrierSet::is_phantom_access(decorators);
+  if (is_strong) {
+    if (UseCompressedOops) {
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong_narrow), c_rarg0,
+                      c_rarg1);
+    } else {
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong), c_rarg0, c_rarg1);
+    }
+  } else if (is_weak) {
+    if (UseCompressedOops) {
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak_narrow), c_rarg0,
+                      c_rarg1);
+    } else {
       __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak), c_rarg0, c_rarg1);
-      break;
-    default:
-      ShouldNotReachHere();
+    }
+  } else {
+    assert(is_phantom, "only remaining strength");
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak), c_rarg0, c_rarg1);
   }
 #else
   __ load_parameter(0, rax);
