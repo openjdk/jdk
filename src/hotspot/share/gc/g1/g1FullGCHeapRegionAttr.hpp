@@ -34,6 +34,8 @@ class G1FullGCHeapRegionAttr : public G1BiasedMappedArray<uint8_t> {
   static const uint8_t Pinned = 1;
   static const uint8_t ClosedArchive = 2;
 
+  STATIC_ASSERT(ClosedArchive > Pinned);
+
   static const uint8_t Invalid = 255;
 
   bool is_invalid(HeapWord* obj) const {
