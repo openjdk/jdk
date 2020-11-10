@@ -354,7 +354,7 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
      *
      * @param  config the graphics configuration which bounds are requested
      * @return the bounds of the area covered by this
-     *         {@code GraphicsConfiguration} in device space(pixels).
+     *         {@code GraphicsConfiguration} in device space (pixels)
      */
     public static Rectangle getGCDeviceBounds(GraphicsConfiguration config) {
         AffineTransform tx = config.getDefaultTransform();
@@ -365,7 +365,7 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
     }
 
     /**
-     * Converts the size(w,h) from the device space to the user's space using
+     * Converts the size (w, h) from the device space to the user's space using
      * passed graphics configuration.
      *
      * @param  gc the graphics configuration to be used for transformation
@@ -388,7 +388,7 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
      *
      * @param  x absolute coordinate in the user's space
      * @param  y absolute coordinate in the user's space
-     * @return the point which uses device space(pixels)
+     * @return the point which uses device space (pixels)
      */
     public static Point toDeviceSpaceAbs(int x, int y) {
         GraphicsConfiguration gc = getLocalGraphicsEnvironment()
@@ -402,7 +402,7 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
      * appropriate device transformation.
      *
      * @param  rect the rectangle in the user's space
-     * @return the rectangle which uses device space(pixels)
+     * @return the rectangle which uses device space (pixels)
      */
     public static Rectangle toDeviceSpaceAbs(Rectangle rect) {
         GraphicsConfiguration gc = getLocalGraphicsEnvironment()
@@ -412,7 +412,7 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
     }
 
     /**
-     * Converts absolute coordinates(x,y) and the size(w,h) from the user's
+     * Converts absolute coordinates (x, y) and the size (w, h) from the user's
      * space to the device space using passed graphics configuration.
      *
      * @param  gc the graphics configuration to be used for transformation
@@ -420,7 +420,7 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
      * @param  y absolute coordinate in the user's space
      * @param  w the width in the user's space
      * @param  h the height in the user's space
-     * @return the rectangle which uses device space(pixels)
+     * @return the rectangle which uses device space (pixels)
      */
     public static Rectangle toDeviceSpaceAbs(GraphicsConfiguration gc,
                                              int x, int y, int w, int h) {
@@ -440,7 +440,7 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
      *
      * @param  x coordinate in the user's space
      * @param  y coordinate in the user's space
-     * @return the point which uses device space(pixels)
+     * @return the point which uses device space (pixels)
      */
     public static Point toDeviceSpace(int x, int y) {
         GraphicsConfiguration gc = getLocalGraphicsEnvironment()
@@ -450,7 +450,7 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
     }
 
     /**
-     * Converts coordinates(x,y) and the size(w,h) from the user's
+     * Converts coordinates (x, y) and the size (w, h) from the user's
      * space to the device space using passed graphics configuration.
      *
      * @param  gc the graphics configuration to be used for transformation
@@ -458,7 +458,7 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
      * @param  y coordinate in the user's space
      * @param  w the width in the user's space
      * @param  h the height in the user's space
-     * @return the rectangle which uses device space(pixels)
+     * @return the rectangle which uses device space (pixels)
      */
     public static Rectangle toDeviceSpace(GraphicsConfiguration gc,
                                           int x, int y, int w, int h) {
