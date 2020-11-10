@@ -948,7 +948,7 @@ inline Metadata* Dependencies::DepStream::recorded_metadata_at(int i) {
 
 inline oop Dependencies::DepStream::recorded_oop_at(int i) {
   return (_code != NULL)
-         ? _code->oop_at_phantom(i)
+         ? _code->oop_at(i)
     : JNIHandles::resolve(_deps->oop_recorder()->oop_at(i));
 }
 
