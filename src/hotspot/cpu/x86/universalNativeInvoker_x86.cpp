@@ -23,9 +23,9 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
-#include "prims/universalNativeInvoker.hpp"
-#include "memory/resourceArea.hpp"
 #include "code/codeBlob.hpp"
+#include "memory/resourceArea.hpp"
+#include "prims/universalNativeInvoker.hpp"
 
 void ProgrammableInvoker::Generator::generate() {
   __ enter();
