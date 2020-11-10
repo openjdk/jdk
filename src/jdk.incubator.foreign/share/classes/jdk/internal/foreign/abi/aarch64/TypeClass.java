@@ -43,9 +43,9 @@ enum TypeClass {
 
     private static TypeClass classifyValueType(ValueLayout type) {
         return switch (PlatformLayouts.getKind(type)) {
-            case CHAR, SHORT, INT, LONG, LONGLONG -> INTEGER;
+            case CHAR, SHORT, INT, LONG, LONG_LONG -> INTEGER;
             case POINTER -> POINTER;
-            case FLOAT, DOUBLE, LONGDOUBLE -> FLOAT;
+            case FLOAT, DOUBLE -> FLOAT;
         };
     }
 

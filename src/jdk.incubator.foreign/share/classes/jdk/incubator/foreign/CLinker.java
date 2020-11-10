@@ -177,10 +177,6 @@ public interface CLinker {
      */
     ValueLayout C_DOUBLE = pick(SysV.C_DOUBLE, Win64.C_DOUBLE, AArch64.C_DOUBLE);
     /**
-     * The layout for the {@code long double} C type.
-     */
-    ValueLayout C_LONG_DOUBLE = pick(SysV.C_LONG_DOUBLE, Win64.C_LONG_DOUBLE, AArch64.C_LONG_DOUBLE);
-    /**
      * The {@code T*} native type.
      */
     ValueLayout C_POINTER = pick(SysV.C_POINTER, Win64.C_POINTER, AArch64.C_POINTER);
@@ -294,7 +290,7 @@ public interface CLinker {
      * @param addr the address at which the string is stored.
      * @return a Java string with the contents of the null-terminated C string at given address.
      * @throws NullPointerException if {@code addr == null}
-     * @throws IllegalArgumentException if the size of the native string is greater than {@code Integer.MAX_VALUE}.
+     * @throws IllegalArgumentException if the size of the native string is greater than the largest string supported by the platform.
      */
     static String toJavaStringRestricted(MemoryAddress addr) {
         Utils.checkRestrictedAccess("CLinker.toJavaStringRestricted");
@@ -316,7 +312,7 @@ public interface CLinker {
      * @param charset The {@link java.nio.charset.Charset} to be used to compute the contents of the Java string.
      * @return a Java string with the contents of the null-terminated C string at given address.
      * @throws NullPointerException if {@code addr == null} or {@code charset == null}.
-     * @throws IllegalArgumentException if the size of the native string is greater than {@code Integer.MAX_VALUE}.
+     * @throws IllegalArgumentException if the size of the native string is greater than the largest string supported by the platform.
      */
     static String toJavaStringRestricted(MemoryAddress addr, Charset charset) {
         Utils.checkRestrictedAccess("CLinker.toJavaStringRestricted");
@@ -335,7 +331,7 @@ public interface CLinker {
      * @param addr the address at which the string is stored.
      * @return a Java string with the contents of the null-terminated C string at given address.
      * @throws NullPointerException if {@code addr == null}
-     * @throws IllegalArgumentException if the size of the native string is greater than {@code Integer.MAX_VALUE}.
+     * @throws IllegalArgumentException if the size of the native string is greater than the largest string supported by the platform.
      * @throws IllegalStateException if the size of the native string is greater than the size of the segment
      * associated with {@code addr}, or if {@code addr} is associated with a segment that is <em>not alive</em>.
      */
@@ -355,7 +351,7 @@ public interface CLinker {
      * @param charset The {@link java.nio.charset.Charset} to be used to compute the contents of the Java string.
      * @return a Java string with the contents of the null-terminated C string at given address.
      * @throws NullPointerException if {@code addr == null} or {@code charset == null}.
-     * @throws IllegalArgumentException if the size of the native string is greater than {@code Integer.MAX_VALUE}.
+     * @throws IllegalArgumentException if the size of the native string is greater than the largest string supported by the platform.
      * @throws IllegalStateException if the size of the native string is greater than the size of the segment
      * associated with {@code addr}, or if {@code addr} is associated with a segment that is <em>not alive</em>.
      */
@@ -727,39 +723,35 @@ public interface CLinker {
      */
     enum TypeKind {
         /**
-         * A kind corresponding to the C {@code char} type
+         * A kind corresponding to the <em>integral</em> C {@code char} type
          */
         CHAR(true),
         /**
-         * A kind corresponding to the C {@code short} type
+         * A kind corresponding to the <em>integral</em> C {@code short} type
          */
         SHORT(true),
         /**
-         * A kind corresponding to the C {@code int} type
+         * A kind corresponding to the <em>integral</em> C {@code int} type
          */
         INT(true),
         /**
-         * A kind corresponding to the C {@code long} type
+         * A kind corresponding to the <em>integral</em> C {@code long} type
          */
         LONG(true),
         /**
-         * A kind corresponding to the C {@code long long} type
+         * A kind corresponding to the <em>integral</em> C {@code long long} type
          */
-        LONGLONG(true),
+        LONG_LONG(true),
         /**
-         * A kind corresponding to the C {@code float} type
+         * A kind corresponding to the <em>floating-point</em> C {@code float} type
          */
         FLOAT(false),
         /**
-         * A kind corresponding to the C {@code double} type
+         * A kind corresponding to the <em>floating-point</em> C {@code double} type
          */
         DOUBLE(false),
         /**
-         * A kind corresponding to the C {@code long double} type
-         */
-        LONGDOUBLE(false),
-        /**
-         * A kind corresponding to the a C pointer type
+         * A kind corresponding to the an <em>integral</em> C pointer type
          */
         POINTER(false);
 

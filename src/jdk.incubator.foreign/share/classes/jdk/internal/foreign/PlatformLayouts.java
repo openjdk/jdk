@@ -72,7 +72,7 @@ public class PlatformLayouts {
 
     private static ValueLayout ofLongLong(ByteOrder order, long bitSize) {
         return MemoryLayout.ofValueBits(bitSize, order)
-                .withAttribute(CLinker.TypeKind.ATTR_NAME, CLinker.TypeKind.LONGLONG);
+                .withAttribute(CLinker.TypeKind.ATTR_NAME, CLinker.TypeKind.LONG_LONG);
     }
 
     private static ValueLayout ofFloat(ByteOrder order, long bitSize) {
@@ -83,11 +83,6 @@ public class PlatformLayouts {
     private static ValueLayout ofDouble(ByteOrder order, long bitSize) {
         return MemoryLayout.ofValueBits(bitSize, order)
                 .withAttribute(CLinker.TypeKind.ATTR_NAME, CLinker.TypeKind.DOUBLE);
-    }
-
-    private static ValueLayout ofLongDouble(ByteOrder order, long bitSize) {
-        return MemoryLayout.ofValueBits(bitSize, order)
-                .withAttribute(CLinker.TypeKind.ATTR_NAME, CLinker.TypeKind.LONGDOUBLE);
     }
 
     private static ValueLayout ofPointer(ByteOrder order, long bitSize) {
@@ -142,11 +137,6 @@ public class PlatformLayouts {
          * The {@code double} native type.
          */
         public static final ValueLayout C_DOUBLE = ofDouble(LITTLE_ENDIAN, 64);
-
-        /**
-         * The {@code long double} native type.
-         */
-        public static final ValueLayout C_LONG_DOUBLE = ofLongDouble(LITTLE_ENDIAN, 128);
 
         /**
          * The {@code T*} native type.
@@ -207,11 +197,6 @@ public class PlatformLayouts {
          * The {@code double} native type.
          */
         public static final ValueLayout C_DOUBLE = ofDouble(LITTLE_ENDIAN, 64);
-
-        /**
-         * The {@code long double} native type.
-         */
-        public static final ValueLayout C_LONG_DOUBLE = ofLongDouble(LITTLE_ENDIAN, 64);
 
         /**
          * The {@code T*} native type.
@@ -277,11 +262,6 @@ public class PlatformLayouts {
          * The {@code double} native type.
          */
         public static final ValueLayout C_DOUBLE = ofDouble(LITTLE_ENDIAN, 64);
-
-        /**
-         * The {@code long double} native type.
-         */
-        public static final ValueLayout C_LONG_DOUBLE = ofLongDouble(LITTLE_ENDIAN, 128);
 
         /**
          * The {@code T*} native type.

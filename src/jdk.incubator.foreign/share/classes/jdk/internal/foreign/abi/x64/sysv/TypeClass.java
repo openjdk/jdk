@@ -108,9 +108,8 @@ class TypeClass {
 
     private static ArgumentClassImpl argumentClassFor(MemoryLayout layout) {
         return switch (PlatformLayouts.getKind(layout)) {
-            case CHAR, SHORT, INT, LONG, LONGLONG -> ArgumentClassImpl.INTEGER;
+            case CHAR, SHORT, INT, LONG, LONG_LONG -> ArgumentClassImpl.INTEGER;
             case FLOAT, DOUBLE -> ArgumentClassImpl.SSE;
-            case LONGDOUBLE -> ArgumentClassImpl.X87;
             case POINTER -> ArgumentClassImpl.POINTER;
         };
     }
