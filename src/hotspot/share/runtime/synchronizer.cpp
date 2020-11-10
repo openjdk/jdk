@@ -90,7 +90,7 @@ size_t MonitorList::unlink_deflated(Thread* self, LogStream* ls,
     if (m->is_being_async_deflated()) {
       // Find next live ObjectMonitor.
       ObjectMonitor* next = m;
-      while (next != NULL && next->is_being_async_deflated()) {
+      do {
         ObjectMonitor* next_next = next->next_om();
         unlinked_count++;
         unlinked_list->append(next);
@@ -99,7 +99,7 @@ size_t MonitorList::unlink_deflated(Thread* self, LogStream* ls,
           // Reached the max so bail out on the gathering loop.
           break;
         }
-      }
+      } while (next != NULL && next->is_being_async_deflated());
       if (prev == NULL) {
         ObjectMonitor* prev_head = Atomic::cmpxchg(&_head, head, next);
         if (prev_head != head) {
