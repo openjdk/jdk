@@ -44,27 +44,27 @@ import jdk.management.jfr.RemoteRecordingStream;
  */
 public class TestClose {
 
-	static class TestCloseEvent extends Event {
-	}
+    static class TestCloseEvent extends Event {
+    }
 
-	public static void main(String... args) throws Exception {
-		MBeanServerConnection conn = ManagementFactory.getPlatformMBeanServer();
-		Path p = Files.createDirectory(Paths.get("test-close-" + System.currentTimeMillis()));
+    public static void main(String... args) throws Exception {
+        MBeanServerConnection conn = ManagementFactory.getPlatformMBeanServer();
+        Path p = Files.createDirectory(Paths.get("test-close-" + System.currentTimeMillis()));
 
-		RemoteRecordingStream e = new RemoteRecordingStream(conn);
-		e.startAsync();
-		// Produce enough to generate multiple chunks
-		for (int i = 0; i < 200_000; i++) {
-			TestCloseEvent event = new TestCloseEvent();
-			event.commit();
-		}
-		e.onFlush(() -> {
-			e.close();
-		});
-		e.awaitTermination();
+        RemoteRecordingStream e = new RemoteRecordingStream(conn);
+        e.startAsync();
+        // Produce enough to generate multiple chunks
+        for (int i = 0; i < 200_000; i++) {
+            TestCloseEvent event = new TestCloseEvent();
+            event.commit();
+        }
+        e.onFlush(() -> {
+            e.close();
+        });
+        e.awaitTermination();
 
-		if (Files.list(p).count() > 0) {
-			throw new Exception("Expected repository to be empty");
-		}
-	}
+        if (Files.list(p).count() > 0) {
+            throw new Exception("Expected repository to be empty");
+        }
+    }
 }

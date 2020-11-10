@@ -47,71 +47,71 @@ import jdk.management.jfr.RemoteRecordingStream;
  */
 public class TestMaxSize {
 
-	static class Monkey extends Event {
-	}
+    static class Monkey extends Event {
+    }
 
-	public static void main(String... args) throws Exception {
-		MBeanServerConnection conn = ManagementFactory.getPlatformMBeanServer();
-		Path dir = Files.createDirectories(Paths.get("max-size-" + System.currentTimeMillis()));
-		System.out.println(dir);
-		AtomicBoolean finished = new AtomicBoolean();
-		try (RemoteRecordingStream e = new RemoteRecordingStream(conn, dir)) {
-			e.startAsync();
-			e.onEvent(ev -> {
-				if (finished.get()) {
-					return;
-				}
-				// Consumer some events, but give back control
-				// to stream so it can be closed.
-				try {
-					Thread.sleep(10);
-				} catch (InterruptedException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-			});
-			while (directorySize(dir) < 50_000_000) {
-				emitEvents(500_000);
-			}
-			e.setMaxSize(1_000_000);
-			long count = fileCount(dir);
-			if (count > 2) {
-				// Two chunks can happen when header of new chunk is written and previous
-				// chunk is not finalized.
-				throw new Exception("Expected only one or two chunks with setMaxSize(1_000_000). Found " + count);
-			}
-			finished.set(true);
-		}
-	}
+    public static void main(String... args) throws Exception {
+        MBeanServerConnection conn = ManagementFactory.getPlatformMBeanServer();
+        Path dir = Files.createDirectories(Paths.get("max-size-" + System.currentTimeMillis()));
+        System.out.println(dir);
+        AtomicBoolean finished = new AtomicBoolean();
+        try (RemoteRecordingStream e = new RemoteRecordingStream(conn, dir)) {
+            e.startAsync();
+            e.onEvent(ev -> {
+                if (finished.get()) {
+                    return;
+                }
+                // Consumer some events, but give back control
+                // to stream so it can be closed.
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e1) {
+                    // TODO Auto-generated catch block
+                    e1.printStackTrace();
+                }
+            });
+            while (directorySize(dir) < 50_000_000) {
+                emitEvents(500_000);
+            }
+            e.setMaxSize(1_000_000);
+            long count = fileCount(dir);
+            if (count > 2) {
+                // Two chunks can happen when header of new chunk is written and previous
+                // chunk is not finalized.
+                throw new Exception("Expected only one or two chunks with setMaxSize(1_000_000). Found " + count);
+            }
+            finished.set(true);
+        }
+    }
 
-	private static void emitEvents(int count) throws InterruptedException {
-		for (int i = 0; i < count; i++) {
-			Monkey m = new Monkey();
-			m.commit();
-		}
-		System.out.println("Emitted " + count + " events");
-		Thread.sleep(1000);
-	}
+    private static void emitEvents(int count) throws InterruptedException {
+        for (int i = 0; i < count; i++) {
+            Monkey m = new Monkey();
+            m.commit();
+        }
+        System.out.println("Emitted " + count + " events");
+        Thread.sleep(1000);
+    }
 
-	private static int fileCount(Path dir) throws IOException {
-		System.out.println("Files:");
-		AtomicInteger count = new AtomicInteger();
-		Files.list(dir).forEach(p -> {
-			System.out.println(p);
-			count.incrementAndGet();
-		});
-		return count.get();
-	}
+    private static int fileCount(Path dir) throws IOException {
+        System.out.println("Files:");
+        AtomicInteger count = new AtomicInteger();
+        Files.list(dir).forEach(p -> {
+            System.out.println(p);
+            count.incrementAndGet();
+        });
+        return count.get();
+    }
 
-	private static long directorySize(Path dir) throws IOException {
-		long p = Files.list(dir).mapToLong(f -> {
-			try {
-				return Files.size(f);
-			} catch (IOException e) {
-				return 0;
-			}
-		}).sum();
-		System.out.println("Directory size: " + p);
-		return p;
-	}
+    private static long directorySize(Path dir) throws IOException {
+        long p = Files.list(dir).mapToLong(f -> {
+            try {
+                return Files.size(f);
+            } catch (IOException e) {
+                return 0;
+            }
+        }).sum();
+        System.out.println("Directory size: " + p);
+        return p;
+    }
 }
