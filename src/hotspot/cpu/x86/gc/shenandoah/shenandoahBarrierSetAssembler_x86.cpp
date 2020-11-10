@@ -275,7 +275,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   bool is_weak    = ShenandoahBarrierSet::is_weak_access(decorators);
   bool is_phantom = ShenandoahBarrierSet::is_phantom_access(decorators);
   bool is_native  = ShenandoahBarrierSet::is_native_access(decorators);
-  bool is_narrow  = LP64_ONLY(UseCompressedOops &&) !is_native;
+  bool is_narrow  = UseCompressedOops && is_native;
 
   Label heap_stable, not_cset;
 
@@ -932,12 +932,13 @@ void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_s
 
   __ save_live_registers_no_oop_map(true);
 
-#ifdef _LP64
-  __ load_parameter(0, c_rarg0);
-  __ load_parameter(1, c_rarg1);
   bool is_strong  = ShenandoahBarrierSet::is_strong_access(decorators);
   bool is_weak    = ShenandoahBarrierSet::is_weak_access(decorators);
   bool is_phantom = ShenandoahBarrierSet::is_phantom_access(decorators);
+
+#ifdef _LP64
+  __ load_parameter(0, c_rarg0);
+  __ load_parameter(1, c_rarg1);
   if (is_strong) {
     if (UseCompressedOops) {
       __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong_narrow), c_rarg0, c_rarg1);
@@ -957,16 +958,13 @@ void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_s
 #else
   __ load_parameter(0, rax);
   __ load_parameter(1, rbx);
-  switch (kind) {
-    case ShenandoahBarrierSet::AccessKind::NORMAL:
-      __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier), rax, rbx);
-      break;
-    case ShenandoahBarrierSet::AccessKind::WEAK:
-    case ShenandoahBarrierSet::AccessKind::NATIVE:
-      __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak), rax, rbx);
-      break;
-    default:
-      ShouldNotReachHere();
+  if (is_strong) {
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong), rax, rbx);
+  } else if (is_weak) {
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak), rax, rbx);
+  } else {
+    assert(is_phantom, "only remaining strength");
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom), rax, rbx);
   }
 #endif
 

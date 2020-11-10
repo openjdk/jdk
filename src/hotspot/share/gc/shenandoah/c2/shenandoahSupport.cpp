@@ -974,7 +974,7 @@ void ShenandoahBarrierC2Support::call_lrb_stub(Node*& ctrl, Node*& val, Node* lo
   bool is_weak    = ShenandoahBarrierSet::is_weak_access(decorators);
   bool is_phantom = ShenandoahBarrierSet::is_phantom_access(decorators);
   bool is_native  = ShenandoahBarrierSet::is_native_access(decorators);
-  bool is_narrow  = LP64_ONLY(UseCompressedOops &&) !is_native;
+  bool is_narrow  = UseCompressedOops && !is_native;
   if (is_strong) {
     if (is_narrow) {
       calladdr = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong_narrow);
