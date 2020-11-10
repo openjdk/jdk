@@ -48,7 +48,7 @@ void* findEntryInProcess(const char* name) {
     DWORD cbNeeded; // array size in bytes
 
     // first come, first served
-    if(EnumProcessModules(hProcess, hMods, sizeof(hMods), &cbNeeded)) {
+    if (EnumProcessModules(hProcess, hMods, sizeof(hMods), &cbNeeded)) {
         for (int i = 0; i < (cbNeeded / sizeof(HMODULE)); i++) {
             HMODULE mod = hMods[i];
             FARPROC proc = GetProcAddress(mod, name);
