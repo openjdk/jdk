@@ -11,6 +11,4 @@ MatchBindingScopeTest.java:56:48: compiler.err.cant.resolve.location: kindname.v
 MatchBindingScopeTest.java:57:32: compiler.err.cant.resolve.location: kindname.variable, j, , , (compiler.misc.location: kindname.class, MatchBindingScopeTest, null)
 MatchBindingScopeTest.java:62:23: compiler.err.cant.resolve.location: kindname.variable, j, , , (compiler.misc.location: kindname.class, MatchBindingScopeTest, null)
 MatchBindingScopeTest.java:65:23: compiler.err.cant.resolve.location: kindname.variable, j, , , (compiler.misc.location: kindname.class, MatchBindingScopeTest, null)
-- compiler.note.preview.filename: MatchBindingScopeTest.java
-- compiler.note.preview.recompile
 13 errors

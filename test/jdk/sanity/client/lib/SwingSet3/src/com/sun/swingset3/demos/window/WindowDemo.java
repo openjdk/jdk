@@ -152,6 +152,7 @@ public final class WindowDemo extends JPanel {
             WindowDemo demo = new WindowDemo();
             frame.add(demo);
             frame.pack();
+            frame.setLocationRelativeTo(null);
             frame.setVisible(true);
             demo.start();
         });

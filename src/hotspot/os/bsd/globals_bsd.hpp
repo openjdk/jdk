@@ -44,7 +44,6 @@
 //
 define_pd_global(bool, UseLargePages, false);
 define_pd_global(bool, UseLargePagesIndividualAllocation, false);
-define_pd_global(bool, UseOSErrorReporting, false);
 define_pd_global(bool, UseThreadPriorities, true) ;
 
 #endif // OS_BSD_GLOBALS_BSD_HPP

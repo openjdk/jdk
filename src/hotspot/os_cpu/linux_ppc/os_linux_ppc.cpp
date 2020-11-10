@@ -188,32 +188,8 @@ frame os::current_frame() {
   return os::get_sender_for_C_frame(&tmp);
 }
 
-// Utility functions
-
-extern "C" JNIEXPORT int
-JVM_handle_linux_signal(int sig,
-                        siginfo_t* info,
-                        void* ucVoid,
-                        int abort_if_unrecognized) {
-  ucontext_t* uc = (ucontext_t*) ucVoid;
-
-  Thread* t = Thread::current_or_null_safe();
-
-  // Note: it's not uncommon that JNI code uses signal/sigset to install
-  // then restore certain signal handler (e.g. to temporarily block SIGPIPE,
-  // or have a SIGILL handler when detecting CPU type). When that happens,
-  // JVM_handle_linux_signal() might be invoked with junk info/ucVoid. To
-  // avoid unnecessary crash when libjsig is not preloaded, try handle signals
-  // that do not require siginfo/ucontext first.
-
-  if (sig == SIGPIPE || sig == SIGXFSZ) {
-    if (PosixSignals::chained_handler(sig, info, ucVoid)) {
-      return true;
-    } else {
-      // Ignoring SIGPIPE - see bugs 4229104
-      return true;
-    }
-  }
+bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
+                                             ucontext_t* uc, JavaThread* thread) {
 
   // Make the signal handler transaction-aware by checking the existence of a
   // second (transactional) context with MSR TS bits active. If the signal is
@@ -234,26 +210,6 @@ JVM_handle_linux_signal(int sig,
       }
       // Return control to the HTM abort handler.
       return true;
-    }
-  }
-
-#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
-  if ((sig == SIGSEGV || sig == SIGBUS) && info != NULL && info->si_addr == g_assert_poison) {
-    if (handle_assert_poison_fault(ucVoid, info->si_addr)) {
-      return 1;
-    }
-  }
-#endif
-
-  JavaThread* thread = NULL;
-  VMThread* vmthread = NULL;
-  if (PosixSignals::are_signal_handlers_installed()) {
-    if (t != NULL) {
-      if(t->is_Java_thread()) {
-        thread = t->as_Java_thread();
-      } else if(t->is_VM_thread()) {
-        vmthread = (VMThread *)t;
-      }
     }
   }
 
@@ -297,7 +253,7 @@ JVM_handle_linux_signal(int sig,
       if (thread->is_in_full_stack(addr)) {
         // stack overflow
         if (os::Posix::handle_stack_overflow(thread, addr, pc, uc, &stub)) {
-          return 1; // continue
+          return true; // continue
         }
       }
     }
@@ -305,17 +261,6 @@ JVM_handle_linux_signal(int sig,
     if (thread->thread_state() == _thread_in_Java) {
       // Java thread running in Java code => find exception handler if any
       // a fault inside compiled code, the interpreter, or a stub
-
-      // A VM-related SIGILL may only occur if we are not in the zero page.
-      // On AIX, we get a SIGILL if we jump to 0x0 or to somewhere else
-      // in the zero page, because it is filled with 0x0. We ignore
-      // explicit SIGILLs in the zero page.
-      if (sig == SIGILL && (pc < (address) 0x200)) {
-        if (TraceTraps) {
-          tty->print_raw_cr("SIGILL happened inside zero page.");
-        }
-        goto report_and_die;
-      }
 
       CodeBlob *cb = NULL;
       int stop_type = -1;
@@ -404,10 +349,7 @@ JVM_handle_linux_signal(int sig,
           tty->print_cr("trap: %s: %s (SIGTRAP, stop type %d)", msg, detail_msg, stop_type);
         }
 
-        va_list detail_args;
-        VMError::report_and_die(INTERNAL_ERROR, msg, detail_msg, detail_args, thread,
-                                pc, info, ucVoid, NULL, 0, 0);
-        va_end(detail_args);
+        return false; // Fatal error
       }
 
       else if (sig == SIGBUS) {
@@ -465,31 +407,8 @@ JVM_handle_linux_signal(int sig,
     return true;
   }
 
-  // signal-chaining
-  if (PosixSignals::chained_handler(sig, info, ucVoid)) {
-    return true;
-  }
-
-  if (!abort_if_unrecognized) {
-    // caller wants another chance, so give it to him
-    return false;
-  }
-
-  if (pc == NULL && uc != NULL) {
-    pc = os::Linux::ucontext_get_pc(uc);
-  }
-
-report_and_die:
-  // unmask current signal
-  sigset_t newset;
-  sigemptyset(&newset);
-  sigaddset(&newset, sig);
-  sigprocmask(SIG_UNBLOCK, &newset, NULL);
-
-  VMError::report_and_die(t, sig, pc, info, ucVoid);
-
-  ShouldNotReachHere();
   return false;
+
 }
 
 void os::Linux::init_thread_fpu_state(void) {

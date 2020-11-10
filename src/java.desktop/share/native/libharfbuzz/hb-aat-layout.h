@@ -85,7 +85,7 @@ typedef enum
   HB_AAT_LAYOUT_FEATURE_TYPE_LANGUAGE_TAG_TYPE                  = 39,
   HB_AAT_LAYOUT_FEATURE_TYPE_CJK_ROMAN_SPACING_TYPE             = 103,
 
-  _HB_AAT_LAYOUT_FEATURE_TYPE_MAX_VALUE= 0x7FFFFFFFu, /*< skip >*/
+  _HB_AAT_LAYOUT_FEATURE_TYPE_MAX_VALUE = HB_TAG_MAX_SIGNED /*< skip >*/
 } hb_aat_layout_feature_type_t;
 
 /**
@@ -424,7 +424,7 @@ typedef enum
   HB_AAT_LAYOUT_FEATURE_SELECTOR_DEFAULT_CJK_ROMAN              = 2,
   HB_AAT_LAYOUT_FEATURE_SELECTOR_FULL_WIDTH_CJK_ROMAN           = 3,
 
-  _HB_AAT_LAYOUT_FEATURE_SELECTOR_MAX_VALUE= 0x7FFFFFFFu, /*< skip >*/
+  _HB_AAT_LAYOUT_FEATURE_SELECTOR_MAX_VALUE = HB_TAG_MAX_SIGNED /*< skip >*/
 } hb_aat_layout_feature_selector_t;
 
 HB_EXTERN unsigned int

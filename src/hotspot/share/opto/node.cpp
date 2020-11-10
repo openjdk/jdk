@@ -581,8 +581,11 @@ void Node::setup_is_top() {
 
 //------------------------------~Node------------------------------------------
 // Fancy destructor; eagerly attempt to reclaim Node numberings and storage
-void Node::destruct() {
-  Compile* compile = Compile::current();
+void Node::destruct(PhaseValues* phase) {
+  Compile* compile = (phase != NULL) ? phase->C : Compile::current();
+  if (phase != NULL && phase->is_IterGVN()) {
+    phase->is_IterGVN()->_worklist.remove(this);
+  }
   // If this is the most recently created node, reclaim its index. Otherwise,
   // record the node as dead to keep liveness information accurate.
   if ((uint)_idx+1 == compile->unique()) {
@@ -1399,7 +1402,6 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
       // Done with outputs.
       igvn->hash_delete(dead);
       igvn->_worklist.remove(dead);
-      igvn->C->remove_modified_node(dead);
       igvn->set_type(dead, Type::TOP);
       if (dead->is_macro()) {
         igvn->C->remove_macro_node(dead);
@@ -1435,6 +1437,7 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
           }
         }
       }
+      igvn->C->remove_modified_node(dead);
     } // (dead->outcnt() == 0)
   }   // while (nstack.size() > 0) for outputs
   return;

@@ -354,7 +354,6 @@ public class ModuleDescriptor
         }
     }
 
-
 
     /**
      * <p> A package exported by a module, may be qualified or unqualified. </p>
@@ -892,7 +891,6 @@ public class ModuleDescriptor
 
     }
 
-
 
     /**
      * A module's version string.
