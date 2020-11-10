@@ -129,7 +129,7 @@ public final class EventWriter {
         }
         if (length > StringPool.MIN_LIMIT && length < StringPool.MAX_LIMIT) {
             long l = StringPool.addString(s);
-            if (l > -1) {
+            if (l >= 0) {
                 putByte(StringParser.Encoding.CONSTANT_POOL.byteValue());
                 putLong(l);
                 return;
