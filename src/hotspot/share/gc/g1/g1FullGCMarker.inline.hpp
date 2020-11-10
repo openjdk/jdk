@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_G1_G1FULLGCMARKER_INLINE_HPP
 #define SHARE_GC_G1_G1FULLGCMARKER_INLINE_HPP
 
+#include "classfile/javaClasses.inline.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"
@@ -59,7 +60,8 @@ inline bool G1FullGCMarker::mark_object(oop obj) {
   }
 
   // Check if deduplicatable string.
-  if (G1StringDedup::is_enabled()) {
+  if (G1StringDedup::is_enabled() &&
+      java_lang_String::is_instance_inlined(obj)) {
     G1StringDedup::enqueue_from_mark(obj, _worker_id);
   }
   return true;

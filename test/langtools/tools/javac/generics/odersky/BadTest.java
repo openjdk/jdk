@@ -3,6 +3,7 @@
  * @summary Negative regression test from odersky
  * @author odersky
  *
+ * @compile/fail/ref=BadTest-old.out -XDrawDiagnostics -source 15 -Xlint:-options BadTest.java
  * @compile/fail/ref=BadTest.out -XDrawDiagnostics  BadTest.java
  */
 

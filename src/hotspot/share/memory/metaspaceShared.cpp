@@ -1096,6 +1096,9 @@ int MetaspaceShared::preload_classes(const char* class_list_path, TRAPS) {
   int class_count = 0;
 
   while (parser.parse_one_line()) {
+    if (parser.lambda_form_line()) {
+      continue;
+    }
     Klass* klass = parser.load_current_class(THREAD);
     if (HAS_PENDING_EXCEPTION) {
       if (klass == NULL &&
@@ -1163,6 +1166,15 @@ bool MetaspaceShared::try_link_class(InstanceKlass* ik, TRAPS) {
 
 #if INCLUDE_CDS_JAVA_HEAP
 void VM_PopulateDumpSharedSpace::dump_java_heap_objects() {
+  if(!HeapShared::is_heap_object_archiving_allowed()) {
+    log_info(cds)(
+      "Archived java heap is not supported as UseG1GC, "
+      "UseCompressedOops and UseCompressedClassPointers are required."
+      "Current settings: UseG1GC=%s, UseCompressedOops=%s, UseCompressedClassPointers=%s.",
+      BOOL_TO_STR(UseG1GC), BOOL_TO_STR(UseCompressedOops),
+      BOOL_TO_STR(UseCompressedClassPointers));
+    return;
+  }
   // Find all the interned strings that should be dumped.
   int i;
   for (i = 0; i < _global_klass_objects->length(); i++) {

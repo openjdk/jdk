@@ -85,7 +85,7 @@ public final class LauncherIconVerifier {
         }
 
         return TKit.SRC_ROOT.resolve(Path.of(components[0],
-                "classes/jdk/incubator/jpackage/internal/resources", components[1]));
+                "classes/jdk/jpackage/internal/resources", components[1]));
     }
 
     private String launcherName;

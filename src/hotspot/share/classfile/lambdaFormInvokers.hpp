@@ -42,9 +42,5 @@ class LambdaFormInvokers : public AllStatic {
   static GrowableArray<char*>* lambdaform_lines() {
     return _lambdaform_lines;
   }
-
-  static const char* lambda_form_invoker_tag() {
-    return "@lambda-form-invoker";
-  }
 };
 #endif // SHARE_MEMORY_LAMBDAFORMINVOKERS_HPP

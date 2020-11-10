@@ -33,19 +33,8 @@ namespace OT {
 
 struct OS2Range
 {
-  static int
-  cmp (const void *_key, const void *_item)
-  {
-    hb_codepoint_t cp = *((hb_codepoint_t *) _key);
-    const OS2Range *range = (OS2Range *) _item;
-
-    if (cp < range->start)
-      return -1;
-    else if (cp <= range->end)
-      return 0;
-    else
-      return +1;
-  }
+  int cmp (hb_codepoint_t key) const
+  { return (key < start) ? -1 : key <= end ? 0 : +1; }
 
   hb_codepoint_t start;
   hb_codepoint_t end;
@@ -233,13 +222,8 @@ static const OS2Range _hb_os2_unicode_ranges[] =
 static unsigned int
 _hb_ot_os2_get_unicode_range_bit (hb_codepoint_t cp)
 {
-  OS2Range *range = (OS2Range*) hb_bsearch (&cp, _hb_os2_unicode_ranges,
-                                            ARRAY_LENGTH (_hb_os2_unicode_ranges),
-                                            sizeof (OS2Range),
-                                            OS2Range::cmp);
-  if (range != nullptr)
-    return range->bit;
-  return -1;
+  auto *range = hb_sorted_array (_hb_os2_unicode_ranges).bsearch (cp);
+  return range ? range->bit : -1;
 }
 
 } /* namespace OT */
