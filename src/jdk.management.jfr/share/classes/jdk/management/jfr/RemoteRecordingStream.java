@@ -269,7 +269,7 @@ public final class RemoteRecordingStream implements EventStream {
      * <p>
      * The following example connects to a remote host and stream events using
      * settings from the "default" configuration.
-     * 
+     *
      * <pre>
      * {
      *     {@literal
