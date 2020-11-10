@@ -9,13 +9,13 @@ final class DownLoadThread extends Thread {
     private final RemoteRecordingStream stream;
     private final Instant startTime;
     private final Instant endTime;
-    private final DiskRepository writeBuffer;
+    private final DiskRepository diskRepository;
 
     DownLoadThread(RemoteRecordingStream stream) {
         this.stream = stream;
         this.startTime = stream.startTime;
         this.endTime = stream.endTime;
-        this.writeBuffer = stream.repository;
+        this.diskRepository = stream.repository;
     }
 
     public void run() {
@@ -36,17 +36,16 @@ final class DownLoadThread extends Thread {
                     return;
                 }
                 if (bytes.length != 0) {
-                    writeBuffer.write(bytes);
+                    diskRepository.write(bytes);
                 } else {
                     takeNap();
                 }
             }
-
         } catch (IOException ioe) {
             ioe.printStackTrace();
         } finally {
             try {
-                writeBuffer.close();
+                diskRepository.close();
             } catch (IOException e) {
                 // ignore
             }

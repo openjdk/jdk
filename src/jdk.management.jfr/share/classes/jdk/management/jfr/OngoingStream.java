@@ -45,70 +45,70 @@ final class OngoingStream extends Stream {
         this.repositoryFiles = new RepositoryFiles(SecuritySupport.PRIVILEGED, null);
     }
 
-    public synchronized byte[] read() throws IOException  {
-        try {
-                return readBytes();
-        } catch (IOException ioe) {
-                if (recording.getState() == RecordingState.CLOSED) {
-                        // Recording closed, return null;
-                        return null;
-                }
-                // Something unexpected has happened.
-                throw ioe;
-        }
-    }
+	public synchronized byte[] read() throws IOException {
+		try {
+			return readBytes();
+		} catch (IOException ioe) {
+			if (recording.getState() == RecordingState.CLOSED) {
+				// Recording closed, return null;
+				return null;
+			}
+			// Something unexpected has happened.
+			throw ioe;
+		}
+	}
 
-    public synchronized byte[] readBytes() throws IOException {
-        touch();
-        while (true) {
-                if (recording.getState() == RecordingState.NEW) {
-                        return EMPTY_ARRAY;
-                }
+	public synchronized byte[] readBytes() throws IOException {
+		touch();
+		while (true) {
+			if (recording.getState() == RecordingState.NEW) {
+				return EMPTY_ARRAY;
+			}
 
-                if (recording.getState() == RecordingState.DELAYED) {
-                        return EMPTY_ARRAY;
-                }
+			if (recording.getState() == RecordingState.DELAYED) {
+				return EMPTY_ARRAY;
+			}
 
-                if (first) {
-                        // In case stream starts before recording
-                        long s = ManagementSupport.getStartTimeNanos(recording);
-                        startTimeNanos = Math.max(s, startTimeNanos);
-                        first = false;
-                }
+			if (first) {
+				// In case stream starts before recording
+				long s = ManagementSupport.getStartTimeNanos(recording);
+				startTimeNanos = Math.max(s, startTimeNanos);
+				first = false;
+			}
 
-            if (startTimeNanos > endTimeNanos) {
-                return null;
-            }
-            if (isRecordingClosed()) {
-                closeInput();
-                return null;
-            }
-            if (!ensurePath()) {
-                return EMPTY_ARRAY;
-            }
-            if (!ensureInput()) {
-                return EMPTY_ARRAY;
-            }
-            if (position < header.getChunkSize()) {
-                long size = Math.min(header.getChunkSize() - position, blockSize);
-                return readBytes((int)size);
-            }
-            if (header.isFinished()) {
-                if (header.getDurationNanos() < 1) {
-                    throw new IOException("No progress");
-                }
-                startTimeNanos += header.getDurationNanos();
-                Instant timestamp = MBeanUtils.epochNanosToInstant(startTimeNanos);
-                ManagementSupport.removeBefore(recording, timestamp);
-                closeInput();
-            } else {
-                header.refresh();
-                if (position >= header.getChunkSize()) {
-                    return EMPTY_ARRAY;
-                }
-            }
-        }
-    }
+			if (startTimeNanos > endTimeNanos) {
+				return null;
+			}
+			if (isRecordingClosed()) {
+				closeInput();
+				return null;
+			}
+			if (!ensurePath()) {
+				return EMPTY_ARRAY;
+			}
+			if (!ensureInput()) {
+				return EMPTY_ARRAY;
+			}
+			if (position < header.getChunkSize()) {
+				long size = Math.min(header.getChunkSize() - position, blockSize);
+				return readBytes((int) size);
+			}
+			if (header.isFinished()) {
+				if (header.getDurationNanos() < 1) {
+					throw new IOException("No progress");
+				}
+				startTimeNanos += header.getDurationNanos();
+				Instant timestamp = MBeanUtils.epochNanosToInstant(startTimeNanos);
+				ManagementSupport.removeBefore(recording, timestamp);
+				closeInput();
+			} else {
+				header.refresh();
+				if (position >= header.getChunkSize()) {
+					return EMPTY_ARRAY;
+				}
+			}
+		}
+	}
 
     private boolean isRecordingClosed() {
         return recording != null && recording.getState() == RecordingState.CLOSED;
