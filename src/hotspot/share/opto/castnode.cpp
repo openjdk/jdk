@@ -246,6 +246,38 @@ Node *CastIINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return progress;
   }
 
+  PhaseIterGVN *igvn = phase->is_IterGVN();
+  const TypeInt* this_type = this->type()->is_int();
+  Node* z = in(1);
+  const TypeInteger* rx = NULL;
+  const TypeInteger* ry = NULL;
+  // Similar to ConvI2LNode::Ideal() for the same reasons
+  if (!_range_check_dependency && Compile::push_thru_add(phase, z, this_type, rx, ry, T_INT)) {
+    if (igvn == NULL) {
+      // Postpone this optimization to iterative GVN, where we can handle deep
+      // AddI chains without an exponential number of recursive Ideal() calls.
+      phase->record_for_igvn(this);
+      return NULL;
+    }
+    int op = z->Opcode();
+    Node* x = z->in(1);
+    Node* y = z->in(2);
+
+    Node* cx = new CastIINode(x, rx->is_int(),
+                              _carry_dependency, _range_check_dependency);
+    cx->set_req(0, in(0));
+    cx = phase->transform(cx);
+    Node* cy = new CastIINode(y, ry->is_int(),
+                              _carry_dependency, _range_check_dependency);
+    cy->set_req(0, in(0));
+    cy = phase->transform(cy);
+    switch (op) {
+      case Op_AddI:  return new AddINode(cx, cy);
+      case Op_SubI:  return new SubINode(cx, cy);
+      default:       ShouldNotReachHere();
+    }
+  }
+
   // Similar to ConvI2LNode::Ideal() for the same reasons
   // Do not narrow the type of range check dependent CastIINodes to
   // avoid corruption of the graph if a CastII is replaced by TOP but
