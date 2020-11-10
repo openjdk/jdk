@@ -75,12 +75,25 @@ public class Connect {
         future.join();
     }
 
+    private static SocketAddress toConnectAddress(SocketAddress address) {
+        if (address instanceof InetSocketAddress) {
+            var inet = (InetSocketAddress) address;
+            if (inet.getAddress().isAnyLocalAddress()) {
+                // if the peer is bound to the wildcard address, use
+                // the loopback address to connect.
+                var loopback = InetAddress.getLoopbackAddress();
+                return new InetSocketAddress(loopback, inet.getPort());
+            }
+        }
+        return address;
+    }
+
     public static class Actor implements AutoCloseable, Runnable {
         final SocketAddress socketAddress;
         final DatagramChannel dc;
 
         Actor(SocketAddress socketAddress) throws IOException {
-            this.socketAddress = socketAddress;
+            this.socketAddress = toConnectAddress(socketAddress);
             dc = DatagramChannel.open();
         }
 
@@ -89,6 +102,7 @@ public class Connect {
                 ByteBuffer bb = ByteBuffer.allocateDirect(256);
                 bb.put("hello".getBytes());
                 bb.flip();
+                log.println("Actor connecting to " + socketAddress);
                 dc.connect(socketAddress);
 
                 // Send a message
@@ -133,7 +147,8 @@ public class Connect {
         final DatagramChannel dc;
 
         Reactor() throws IOException {
-            dc = DatagramChannel.open().bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+            var address = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
+            dc = DatagramChannel.open().bind(address);
         }
 
         SocketAddress getSocketAddress() throws IOException {
