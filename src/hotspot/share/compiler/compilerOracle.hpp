@@ -34,6 +34,7 @@ class methodHandle;
 // CompilerOracle is an interface for turning on and off compilation
 // for some methods
 
+//       OPTION_TYPES: type, store type, name
 #define OPTION_TYPES(type) \
   type(Intx, Intx, "intx") \
   type(Uintx, Uintx, "uintx") \
@@ -42,26 +43,15 @@ class methodHandle;
   type(Ccstrlist, Ccstr, "ccstrlist") \
   type(Double, Double, "double")
 
-enum class OptionType {
-#define enum_of_types(type, internal_type, name) type,
-    OPTION_TYPES(enum_of_types)
-#undef enum_of_types
-    Unknown
-};
-
-static const char * optiontype_names[] = {
-#define enum_of_types(type, internal_type, name) name,
-        OPTION_TYPES(enum_of_types)
-#undef enum_of_types
-};
-
 // Basic option:    break,<method pattern>
 // Trivial option:  quiet
 // Legacy option:   option,<method pattern>,type,<option name>,<value>
 // Standard option: <option name>,<method pattern>,<value>
 
-//       CommandCommand option, type, simple
+//       COMPILECOMMAND_OPTIONS: option, name, variant, type
 #define COMPILECOMMAND_OPTIONS(option) \
+  option(Help, "help", Trivial, Unknown) \
+  option(Quiet, "quiet", Trivial, Unknown) \
   option(Break, "break", Basic, Bool) \
   option(Print, "print", Basic, Bool) \
   option(Exclude, "exclude", Basic, Bool) \
@@ -69,17 +59,15 @@ static const char * optiontype_names[] = {
   option(DontInline, "dontinline", Basic, Bool) \
   option(CompileOnly, "compileonly", Basic, Bool) \
   option(Log, "log", Basic, Bool) \
-  option(Option, "option", Legacy, Unknown) \
-  option(Quiet, "quiet", Trivial, Unknown) \
-  option(Help, "help", Trivial, Unknown) \
   option(CompileThresholdScaling, "CompileThresholdScaling", Standard, Double) \
-  option(ControlIntrinsic, "ControlIntrinsic", Standard, Ccstr) \
-  option(DisableIntrinsic, "DisableIntrinsic", Standard, Ccstr) \
+  option(ControlIntrinsic, "ControlIntrinsic", Standard, Ccstrlist) \
+  option(DisableIntrinsic, "DisableIntrinsic", Standard, Ccstrlist) \
   option(NoRTMLockEliding, "NoRTMLockEliding", Standard, Bool) \
   option(UseRTMLockEliding, "UseRTMLockEliding", Standard, Bool) \
   option(PrintDebugInfo, "PrintDebugInfo", Standard, Bool) \
   option(PrintRelocations, "PrintRelocations", Standard, Bool) \
-  option(PrintDependencies, "PrintDependencies", Standard, Bool)
+  option(PrintDependencies, "PrintDependencies", Standard, Bool) \
+  option(Option, "option", Legacy, Unknown)
 
 enum class CompileCommand {
   Unknown = -1,
@@ -104,12 +92,6 @@ enum class CompileCommandVariant {
 
 static enum CompileCommandVariant command2variant[] = {
 #define enum_of_options(option, name, cvariant, ctype) CompileCommandVariant::cvariant,
-        COMPILECOMMAND_OPTIONS(enum_of_options)
-#undef enum_of_options
-};
-
-static enum OptionType command2types[] = {
-#define enum_of_options(option, name, cvariant, ctype) OptionType::ctype,
         COMPILECOMMAND_OPTIONS(enum_of_options)
 #undef enum_of_options
 };

@@ -38,6 +38,25 @@
 #include "runtime/jniHandles.hpp"
 #include "runtime/os.hpp"
 
+enum class OptionType {
+#define enum_of_types(type, internal_type, name) type,
+    OPTION_TYPES(enum_of_types)
+#undef enum_of_types
+    Unknown
+};
+
+static const char * optiontype_names[] = {
+#define enum_of_types(type, internal_type, name) name,
+        OPTION_TYPES(enum_of_types)
+#undef enum_of_types
+};
+
+static enum OptionType command2types[] = {
+#define enum_of_options(option, name, cvariant, ctype) OptionType::ctype,
+        COMPILECOMMAND_OPTIONS(enum_of_options)
+#undef enum_of_options
+};
+
 /* Methods to map real type names to OptionType */
 template<typename T>
 static OptionType get_type_for() {
@@ -67,14 +86,14 @@ template<> OptionType get_type_for<double>() {
 class MethodMatcher;
 class TypedMethodOptionMatcher;
 
-static BasicMatcher* lists[static_cast<int>(CompileCommand::Count)] = { 0, }; // CMH - use a a single linked list instead
+// static BasicMatcher* lists[static_cast<int>(CompileCommand::Count)] = { 0, }; // CMH - use a a single linked list instead
 static TypedMethodOptionMatcher* option_list = NULL;
 static bool any_set = false;
 
 class TypedMethodOptionMatcher : public MethodMatcher {
  private:
   TypedMethodOptionMatcher* _next;
-  enum CompileCommand _option_enum;
+  enum CompileCommand _option;
   OptionType    _type;
  public:
 
@@ -88,30 +107,29 @@ class TypedMethodOptionMatcher : public MethodMatcher {
 
   TypedMethodOptionMatcher() : MethodMatcher(),
     _next(NULL),
-    _option_enum(CompileCommand::Unknown),
+    _option(CompileCommand::Unknown),
     _type(OptionType::Unknown) {
       memset(&_u, 0, sizeof(_u));
   }
 
   static TypedMethodOptionMatcher* parse_method_pattern(char*& line, const char*& error_msg);
-  //TypedMethodOptionMatcher* match(const methodHandle& method, const char* opt, OptionType type);
-  TypedMethodOptionMatcher* match_enum_option(const methodHandle &method, enum CompileCommand option, OptionType type);
+  TypedMethodOptionMatcher* match(const methodHandle &method, enum CompileCommand option, OptionType type);
 
   void init(enum CompileCommand cc_option, OptionType type, TypedMethodOptionMatcher* next) {
     _next = next;
     _type = type;
-    _option_enum = cc_option;
+    _option = cc_option;
   }
 
   void set_next(TypedMethodOptionMatcher* next) {_next = next; }
   TypedMethodOptionMatcher* next() { return _next; }
   OptionType type() { return _type; }
+  enum CompileCommand option() { return _option; }
   template<typename T> T value();
   template<typename T> void set_value(T value);
   void print();
   void print_all();
   TypedMethodOptionMatcher* clone();
-  // ~TypedMethodOptionMatcher();
 };
 
 // A few templated accessors instead of a full template class.
@@ -158,7 +176,7 @@ template<> void TypedMethodOptionMatcher::set_value(ccstr value) {
 void TypedMethodOptionMatcher::print() {
   ttyLocker ttyl;
   print_base(tty);
-  const char* command_name = command_names[static_cast<int>(_option_enum)];
+  const char* command_name = command_names[static_cast<int>(_option)];
   switch (_type) {
   case OptionType::Intx:
     tty->print_cr(" intx %s = " INTX_FORMAT, command_name, value<intx>());
@@ -219,10 +237,10 @@ TypedMethodOptionMatcher* TypedMethodOptionMatcher::parse_method_pattern(char*& 
   return tom;
 }
 
-TypedMethodOptionMatcher* TypedMethodOptionMatcher::match_enum_option(const methodHandle& method, enum CompileCommand option, OptionType type) {
+TypedMethodOptionMatcher* TypedMethodOptionMatcher::match(const methodHandle& method, enum CompileCommand option, OptionType type) {
   TypedMethodOptionMatcher* current = this;
   while (current != NULL) {
-    if (current->_option_enum == option) {
+    if (current->_option == option) {
       // CMH check option type?
       if (current->matches(method)) {
         return current;
@@ -234,38 +252,24 @@ TypedMethodOptionMatcher* TypedMethodOptionMatcher::match_enum_option(const meth
 }
 
 template<typename T>
-static void add_option_string(TypedMethodOptionMatcher* matcher,
+static void add_option_string(TypedMethodOptionMatcher* matcher,  // CHM chnage name
                               enum CompileCommand cc_option,
                               T value) {
   assert(matcher != option_list, "No circular lists please");
+  if (cc_option == CompileCommand::Log && !LogCompilation) {
+    tty->print_cr("Warning:  +LogCompilation must be enabled in order for individual methods to be logged with ");
+    tty->print_cr("          CompileCommand=log,<method pattern>");
+  }
   enum OptionType type = command2types[static_cast<int>(cc_option)];
   if (type == OptionType::Ccstrlist) {
+    // ccstrlists are stores as ccstr
     type = OptionType::Ccstr;
   }
   assert(type == get_type_for<T>(), "sanity");
   matcher->init(cc_option, get_type_for<T>(), option_list);
   matcher->set_value<T>(value);
   option_list = matcher;
-  any_set = true;
-  return;
-}
-
-static bool check_predicate(enum CompileCommand command, const methodHandle& method) {
-  int command_index = static_cast<int>(command);
-  return ((lists[command_index] != NULL) &&
-          !method.is_null() &&
-          lists[command_index]->match(method));
-}
-
-static void add_predicate(enum CompileCommand command, BasicMatcher* bm) {
-  assert(command != CompileCommand::Option, "must use add_option_string");
-  if (command == CompileCommand::Log && !LogCompilation && lists[static_cast<int>(CompileCommand::Log)] == NULL) {
-    tty->print_cr("Warning:  +LogCompilation must be enabled in order for individual methods to be logged.");
-  }
-  int command_index = static_cast<int>(command);
-  bm->set_next(lists[command_index]);
-  lists[command_index] = bm;
-  if ((command != CompileCommand::DontInline) && (command != CompileCommand::Inline)) {
+  if ((cc_option != CompileCommand::DontInline) && (cc_option != CompileCommand::Inline)) {
     any_set = true;
   }
   return;
@@ -275,7 +279,7 @@ template<typename T>
 bool CompilerOracle::has_option_value(const methodHandle& method, enum CompileCommand option, T& value) {
   assert(command2types[static_cast<int>(option)] == get_type_for<T>(), "Value type must match command type");
   if (option_list != NULL) {
-    TypedMethodOptionMatcher* m = option_list->match_enum_option(method, option, get_type_for<T>());
+    TypedMethodOptionMatcher* m = option_list->match(method, option, get_type_for<T>());
     if (m != NULL) {
       value = m->value<T>();
       return true;
@@ -284,10 +288,30 @@ bool CompilerOracle::has_option_value(const methodHandle& method, enum CompileCo
   return false;
 }
 
+// CMH change command -> option
+static bool check_predicate(enum CompileCommand command, const methodHandle& method) {
+  bool value = false;
+  if (CompilerOracle::has_option_value(method, command, value)) {
+    return value;
+  }
+  return false;
+}
+
+static bool has_command(enum CompileCommand command) {
+  TypedMethodOptionMatcher* m = option_list;
+  while (m != NULL) {
+    if (m->option() == command) {
+      return true;
+    } else {
+      m = m->next();
+    }
+  }
+  return false;
+}
+
 bool CompilerOracle::has_any_option() {
   return any_set;
 }
-
 
 // Explicit instantiation for all OptionTypes supported.
 template bool CompilerOracle::has_option_value<intx>(const methodHandle& method, enum CompileCommand option, intx& value);
@@ -307,9 +331,8 @@ bool CompilerOracle::should_exclude(const methodHandle& method) {
   if (check_predicate(CompileCommand::Exclude, method)) {
     return true;
   }
-  int command_index = static_cast<int>(CompileCommand::CompileOnly);
-  if (lists[command_index] != NULL) {
-    return !lists[command_index]->match(method);
+  if (has_command(CompileCommand::CompileOnly)) {
+    return !check_predicate(CompileCommand::CompileOnly, method);
   }
   return false;
 }
@@ -327,14 +350,14 @@ bool CompilerOracle::should_print(const methodHandle& method) {
 }
 
 bool CompilerOracle::should_print_methods() {
-  int command_index = static_cast<int>(CompileCommand::Print);
-  return lists[command_index] != NULL;
+  return has_command(CompileCommand::Print);
 }
 
 bool CompilerOracle::should_log(const methodHandle& method) {
-  if (!LogCompilation)            return false;
-  int command_index = static_cast<int>(CompileCommand::Log);
-  if (lists[command_index] == NULL)  return true;  // by default, log all
+  if (!LogCompilation) return false;
+  if (!has_command(CompileCommand::Log)) {
+    return true;  // by default, log all
+  }
   return (check_predicate(CompileCommand::Log, method));
 }
 
@@ -542,7 +565,7 @@ void CompilerOracle::print_parse_error(const char*&  error_msg, char* original_l
 
   ttyLocker ttyl;
   tty->print_cr("CompileCommand: An error occurred during parsing");
-  tty->print_cr("Line: %s", original_line);
+  tty->print_cr("Line: %s", original_line); // CMH make a strdup of original line
   tty->print_cr("Error: %s", error_msg);
   CompilerOracle::print_tip();
 }
@@ -663,17 +686,21 @@ void CompilerOracle::parse_from_line(char* line) {
     assert(error_msg == NULL, "Don't call here with error_msg already set");
     enum CompileCommandVariant variant = command2variant[static_cast<int>(command)];
     if (variant == CompileCommandVariant::Basic) {
-      BasicMatcher* matcher = BasicMatcher::parse_method_pattern(line, error_msg, false);
+      //BasicMatcher* matcher = BasicMatcher::parse_method_pattern(line, error_msg, false);
+      // CMH Check that type is bool
+      TypedMethodOptionMatcher* matcher = TypedMethodOptionMatcher::parse_method_pattern(line, error_msg);
+      // CMH error if line not empty
       if (error_msg != NULL) {
         assert(matcher == NULL, "consistency");
         print_parse_error(error_msg, original_line);
         return;
       }
-      add_predicate(command, matcher);
+      add_option_string(matcher, command, true);
+      //add_predicate(command, matcher);
       if (!_quiet) {
         ttyLocker ttyl;
         tty->print("CompileCommand: %s ", command_names[static_cast<int>(command)]);
-        matcher->print(tty);
+        matcher->print();
         tty->cr();
       }
     } else if (variant == CompileCommandVariant::Standard) {
@@ -702,11 +729,32 @@ void CompilerOracle::parse_from_line(char* line) {
   }
 }
 
+void print_Basic(const char* name, const char* type) {
+  tty->print_cr("    %s,<method pattern>", name);
+}
+
+void print_Trivial(const char* name, const char* type) {
+  tty->print_cr("    %s", name);
+}
+
+void print_Standard(const char* name, const char* type) {
+  tty->print_cr("    %s,<method pattern>,<value>  (of type %s)", name, type);
+}
+
+void print_Legacy(const char* name, const char* type) {
+  // dont use this variant
+}
+
 void CompilerOracle::print_tip() {
   tty->cr();
   tty->print_cr("Usage: '-XX:CompileCommand=command,\"package/Class.method()\"'");
   tty->print_cr("Use:   '-XX:CompileCommand=help' for more information.");
   tty->cr();
+  tty->print_cr("All available commands:");
+  tty->print_cr("-XX:CompileCommand=");
+#define enum_of_options(option, name, cvariant, ctype) print_##cvariant(name, #ctype);
+  COMPILECOMMAND_OPTIONS(enum_of_options)
+#undef enum_of_options
 }
 
 static const char* default_cc_file = ".hotspot_compiler";
@@ -781,7 +829,7 @@ void compilerOracle_init() {
               default_cc_file, default_cc_file);
     }
   }
-  if (lists[static_cast<int>(CompileCommand::Print)] != NULL) {
+  if (has_command(CompileCommand::Print)) {
     if (PrintAssembly) {
       warning("CompileCommand and/or %s file contains 'print' commands, but PrintAssembly is also enabled", default_cc_file);
     } else if (FLAG_IS_DEFAULT(DebugNonSafepoints)) {
@@ -790,7 +838,6 @@ void compilerOracle_init() {
     }
   }
 }
-
 
 void CompilerOracle::parse_compile_only(char * line) {
   int i;
@@ -862,12 +909,16 @@ void CompilerOracle::parse_compile_only(char * line) {
       Symbol* m_name = SymbolTable::new_symbol(methodName);
       Symbol* signature = NULL;
 
-      BasicMatcher* bm = new BasicMatcher();
+      //BasicMatcher* bm = new BasicMatcher();
+      TypedMethodOptionMatcher* tom = new TypedMethodOptionMatcher();
+      BasicMatcher* bm = reinterpret_cast<BasicMatcher*>(tom); // CMH fix remove cast
       bm->init(c_name, c_match, m_name, m_match, signature);
-      add_predicate(CompileCommand::CompileOnly, bm);
+      //add_predicate(CompileCommand::CompileOnly, bm);
+      add_option_string(tom, CompileCommand::CompileOnly, true);
       if (PrintVMOptions) {
         tty->print("CompileOnly: compileonly ");
-        lists[static_cast<int>(CompileCommand::CompileOnly)]->print_all(tty);
+        tom->print();
+        // lists[static_cast<int>(CompileCommand::CompileOnly)]->print_all(tty);  // cmh print_all(of_type)?
       }
 
       className = NULL;
