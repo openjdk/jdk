@@ -83,8 +83,12 @@ import java.time.format.FormatStyle;
 import java.time.format.ResolverStyle;
 import java.time.format.SignStyle;
 import java.time.format.TextStyle;
+import java.time.temporal.ChronoField;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalUnit;
+import java.time.temporal.ValueRange;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -802,6 +806,78 @@ public class TestDateTimeFormatterBuilder {
         builder.appendPattern("B");
         DateTimeFormatter f = builder.toFormatter().withLocale(Locale.US).withResolverStyle(ResolverStyle.STRICT);
         LocalTime.parse("at night", f);
+    }
+
+    @Test
+    public void test_dayPeriodUserFieldResolution() {
+        var dtf = builder
+                .appendValue(new TemporalField() {
+                                 @Override
+                                 public TemporalUnit getBaseUnit() {
+                                     return null;
+                                 }
+
+                                 @Override
+                                 public TemporalUnit getRangeUnit() {
+                                     return null;
+                                 }
+
+                                 @Override
+                                 public ValueRange range() {
+                                     return null;
+                                 }
+
+                                 @Override
+                                 public boolean isDateBased() {
+                                     return false;
+                                 }
+
+                                 @Override
+                                 public boolean isTimeBased() {
+                                     return false;
+                                 }
+
+                                 @Override
+                                 public boolean isSupportedBy(TemporalAccessor temporal) {
+                                     return false;
+                                 }
+
+                                 @Override
+                                 public ValueRange rangeRefinedBy(TemporalAccessor temporal) {
+                                     return null;
+                                 }
+
+                                 @Override
+                                 public long getFrom(TemporalAccessor temporal) {
+                                     return 0;
+                                 }
+
+                                 @Override
+                                 public <R extends Temporal> R adjustInto(R temporal, long newValue) {
+                                     return null;
+                                 }
+
+                                 @Override
+                                 public TemporalAccessor resolve(
+                                         Map<TemporalField, Long> fieldValues,
+                                         TemporalAccessor partialTemporal,
+                                         ResolverStyle resolverStyle) {
+                                     fieldValues.remove(this);
+                                     fieldValues.put(ChronoField.HOUR_OF_DAY, 6L);
+                                     return null;
+                                 }
+                             },
+                        1)
+                .appendPattern(" B")
+                .toFormatter()
+                .withLocale(Locale.US);
+        assertEquals((long)dtf.parse("0 in the morning").getLong(ChronoField.HOUR_OF_DAY), 6L);
+        try {
+            dtf.parse("0 at night");
+            throw new RuntimeException("DateTimeParseException should be thrown");
+        } catch (DateTimeParseException e) {
+            // success
+        }
     }
 
     //-----------------------------------------------------------------------
