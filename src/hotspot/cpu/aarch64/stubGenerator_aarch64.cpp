@@ -5478,8 +5478,9 @@ class StubGenerator: public StubCodeGenerator {
     Register doff  = c_rarg4;  // position for writing to dest array
     Register isURL = c_rarg5;  // Base64 or URL chracter set
 
-    Register codec  = r6;
-    Register length = r7;
+    // c_rarg6 and c_rarg7 are free to use as temps
+    Register codec  = c_rarg6;
+    Register length = c_rarg7;
 
     Label ProcessData, Process48B, Process24B, Process3B, SIMDExit, Exit;
 
