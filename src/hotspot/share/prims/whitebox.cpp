@@ -2398,6 +2398,7 @@ WB_END
 
 WB_ENTRY(jstring, WB_GetLibcName(JNIEnv* env, jobject o))
   ThreadToNativeFromVM ttn(thread);
+  Thread::WXExecFromWriteSetter wx_exec;
   jstring info_string = env->NewStringUTF(XSTR(LIBC));
   CHECK_JNI_EXCEPTION_(env, NULL);
   return info_string;
