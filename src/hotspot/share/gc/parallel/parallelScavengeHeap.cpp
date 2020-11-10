@@ -66,7 +66,7 @@ jint ParallelScavengeHeap::initialize() {
   os::trace_page_sizes("Heap",
                        MinHeapSize,
                        reserved_heap_size,
-                       GenAlignment,
+                       os::vm_page_size(),
                        heap_rs.base(),
                        heap_rs.size());
 
