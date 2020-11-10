@@ -3518,12 +3518,10 @@ void NativeInvokerGenerator::generate() {
 
   __ movl(Address(r15_thread, JavaThread::thread_state_offset()), _thread_in_native_trans);
 
-  if (os::is_MP()) {
-    // Force this write out before the read below
-    __ membar(Assembler::Membar_mask_bits(
-            Assembler::LoadLoad | Assembler::LoadStore |
-            Assembler::StoreLoad | Assembler::StoreStore));
-  }
+  // Force this write out before the read below
+  __ membar(Assembler::Membar_mask_bits(
+          Assembler::LoadLoad | Assembler::LoadStore |
+          Assembler::StoreLoad | Assembler::StoreStore));
 
   Label L_after_safepoint_poll;
   Label L_safepoint_poll_slow_path;
