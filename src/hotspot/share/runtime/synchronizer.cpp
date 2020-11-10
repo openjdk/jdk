@@ -26,6 +26,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/padded.hpp"
@@ -55,6 +56,31 @@
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/preserveException.hpp"
+
+class MonitorList {
+  ObjectMonitor* volatile _head;
+  volatile size_t _count;
+  volatile size_t _max;
+
+public:
+  void add(ObjectMonitor* monitor);
+  size_t unlink_deflated(Thread* self, LogStream* ls, elapsedTimer* timer_p,
+                         GrowableArray<ObjectMonitor*>* unlinked_list);
+  size_t count() const;
+  size_t max() const;
+
+  class Iterator;
+  Iterator iterator() const;
+};
+
+class MonitorList::Iterator {
+  ObjectMonitor* _current;
+
+public:
+  Iterator(ObjectMonitor* head) : _current(head) {}
+  bool has_next() const { return _current != NULL; }
+  ObjectMonitor* next();
+};
 
 void MonitorList::add(ObjectMonitor* m) {
   ObjectMonitor* head;
@@ -204,9 +230,20 @@ int dtrace_waited_probe(ObjectMonitor* monitor, Handle obj, Thread* thr) {
 #define NINFLATIONLOCKS 256
 static volatile intptr_t gInflationLocks[NINFLATIONLOCKS];
 
-MonitorList ObjectSynchronizer::_in_use_list;
+static MonitorList _in_use_list;
+// The ratio of the current _in_use_list count to the ceiling is used
+// to determine if we are above MonitorUsedDeflationThreshold and need
+// to do an async monitor deflation cycle. The ceiling is increased by
+// AvgMonitorsPerThreadEstimate when a thread is added to the system
+// and is decreased by AvgMonitorsPerThreadEstimate when a thread is
+// removed from the system.
+// Note: If the _in_use_list max exceeds the ceiling, then
+// monitors_used_above_threshold() will use the in_use_list max instead
+// of the thread count derived ceiling because we have used more
+// ObjectMonitors than the estimated average.
+//
 // Start the ceiling with the estimate for one thread:
-jint ObjectSynchronizer::_in_use_list_ceiling = AvgMonitorsPerThreadEstimate;
+jint _in_use_list_ceiling = AvgMonitorsPerThreadEstimate;
 bool volatile ObjectSynchronizer::_is_async_deflation_requested = false;
 bool volatile ObjectSynchronizer::_is_final_audit = false;
 jlong ObjectSynchronizer::_last_async_deflation_time_ns = 0;
@@ -1130,6 +1167,10 @@ static bool monitors_used_above_threshold(MonitorList* list) {
   return false;
 }
 
+size_t ObjectSynchronizer::in_use_list_ceiling() {
+  return (size_t)_in_use_list_ceiling;
+}
+
 void ObjectSynchronizer::dec_in_use_list_ceiling() {
   Atomic::add(&_in_use_list_ceiling, (jint)-AvgMonitorsPerThreadEstimate);
 #ifdef ASSERT
@@ -1179,7 +1220,9 @@ bool ObjectSynchronizer::request_deflate_idle_monitors() {
     }
     if (self->is_Java_thread()) {
       // JavaThread has to honor the blocking protocol.
-      ThreadBlockInVM tbivm(self->as_Java_thread());
+      {
+        ThreadBlockInVM tbivm(self->as_Java_thread());
+      }
       os::naked_short_sleep(999);  // sleep for almost 1 second
     } else {
       os::naked_short_sleep(999);  // sleep for almost 1 second
@@ -1409,8 +1452,10 @@ void ObjectSynchronizer::chk_for_block_req(JavaThread* self, const char* op_name
                  _in_use_list.count(), _in_use_list.max());
   }
 
-  // Honor block request.
-  ThreadBlockInVM tbivm(self);
+  {
+    // Honor block request.
+    ThreadBlockInVM tbivm(self);
+  }
 
   if (ls != NULL) {
     ls->print_cr("resuming %s: in_use_list stats: ceiling=" SIZE_FORMAT
@@ -1628,7 +1673,7 @@ u_char* ObjectSynchronizer::get_gvars_stw_random_addr() {
 }
 
 // Do the final audit and print of ObjectMonitor stats; must be done
-// by the VMThread (at VM exit time).
+// by the VMThread at VM exit time.
 void ObjectSynchronizer::do_final_audit_and_print_stats() {
   assert(Thread::current()->is_VM_thread(), "sanity check");
 

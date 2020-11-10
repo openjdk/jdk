@@ -506,7 +506,7 @@ int ObjectMonitor::TryLock(Thread * Self) {
 // Contending threads that see that condition know to retry their operation.
 //
 bool ObjectMonitor::deflate_monitor() {
-  if (is_busy()) {
+  if (is_busy() != 0) {
     // Easy checks are first - the ObjectMonitor is busy so no deflation.
     return false;
   }

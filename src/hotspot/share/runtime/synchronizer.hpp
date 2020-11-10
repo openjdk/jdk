@@ -25,40 +25,15 @@
 #ifndef SHARE_RUNTIME_SYNCHRONIZER_HPP
 #define SHARE_RUNTIME_SYNCHRONIZER_HPP
 
-#include "logging/logStream.hpp"
 #include "memory/padded.hpp"
 #include "oops/markWord.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/perfData.hpp"
 
+class LogStream;
 class ObjectMonitor;
 class ThreadsList;
-
-class MonitorList {
-  ObjectMonitor* volatile _head;
-  volatile size_t _count;
-  volatile size_t _max;
-
-public:
-  void add(ObjectMonitor* monitor);
-  size_t unlink_deflated(Thread* self, LogStream* ls, elapsedTimer* timer_p,
-                         GrowableArray<ObjectMonitor*>* unlinked_list);
-  size_t count() const;
-  size_t max() const;
-
-  class Iterator;
-  Iterator iterator() const;
-};
-
-class MonitorList::Iterator {
-  ObjectMonitor* _current;
-
-public:
-  Iterator(ObjectMonitor* head) : _current(head) {}
-  bool has_next() const { return _current != NULL; }
-  ObjectMonitor* next();
-};
 
 class ObjectSynchronizer : AllStatic {
   friend class VMStructs;
@@ -149,7 +124,7 @@ class ObjectSynchronizer : AllStatic {
                                 elapsedTimer* timer_p);
   static size_t deflate_monitor_list(Thread* self, LogStream* ls,
                                      elapsedTimer* timer_p);
-  static size_t in_use_list_ceiling() { return (size_t)_in_use_list_ceiling; }
+  static size_t in_use_list_ceiling();
   static void dec_in_use_list_ceiling();
   static void inc_in_use_list_ceiling();
   static bool is_async_deflation_needed();
@@ -172,18 +147,6 @@ class ObjectSynchronizer : AllStatic {
  private:
   friend class SynchronizerTest;
 
-  static MonitorList   _in_use_list;
-  // The ratio of the current _in_use_list count to the ceiling is used
-  // to determine if we are above MonitorUsedDeflationThreshold and need
-  // to do an async monitor deflation cycle. The ceiling is increased by
-  // AvgMonitorsPerThreadEstimate when a thread is added to the system
-  // and is decreased by AvgMonitorsPerThreadEstimate when a thread is
-  // removed from the system.
-  // Note: If the _in_use_list max exceeds the ceiling, then
-  // monitors_used_above_threshold() will use the in_use_list max instead
-  // of the thread count derived ceiling because we have used more
-  // ObjectMonitors than the estimated average.
-  static jint          _in_use_list_ceiling;
   static volatile bool _is_async_deflation_requested;
   static volatile bool _is_final_audit;
   static jlong         _last_async_deflation_time_ns;
