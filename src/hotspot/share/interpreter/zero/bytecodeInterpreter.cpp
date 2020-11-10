@@ -164,29 +164,27 @@
    to get the current opcode. This will override any other prefetching
    that might have occurred.
 */
-#define DEBUGGER_SINGLE_STEP_NOTIFY()                                            \
-{                                                                                \
-      if (JVMTI_ENABLED) {                                                       \
-        if (JvmtiExport::should_post_single_step()) {                            \
-          DECACHE_STATE();                                                       \
-          SET_LAST_JAVA_FRAME();                                                 \
-          ThreadInVMfromJava trans(THREAD);                                      \
-          JvmtiExport::at_single_stepping_point(THREAD,                          \
-                                          istate->method(),                      \
-                                          pc);                                   \
-          RESET_LAST_JAVA_FRAME();                                               \
-          CACHE_STATE();                                                         \
-          if (THREAD->has_pending_popframe() &&                                  \
-              !THREAD->pop_frame_in_process()) {                                 \
-            goto handle_Pop_Frame;                                               \
-          }                                                                      \
-          if (THREAD->jvmti_thread_state() &&                                    \
-              THREAD->jvmti_thread_state()->is_earlyret_pending()) {             \
-            goto handle_Early_Return;                                            \
-          }                                                                      \
-          opcode = *pc;                                                          \
-        }                                                                        \
-      }                                                                          \
+#define DEBUGGER_SINGLE_STEP_NOTIFY()                                        \
+{                                                                            \
+    if (JVMTI_ENABLED && JvmtiExport::should_post_single_step()) {           \
+      DECACHE_STATE();                                                       \
+      SET_LAST_JAVA_FRAME();                                                 \
+      ThreadInVMfromJava trans(THREAD);                                      \
+      JvmtiExport::at_single_stepping_point(THREAD,                          \
+                                           istate->method(),                 \
+                                           pc);                              \
+      RESET_LAST_JAVA_FRAME();                                               \
+      CACHE_STATE();                                                         \
+      if (THREAD->has_pending_popframe() &&                                  \
+        !THREAD->pop_frame_in_process()) {                                   \
+        goto handle_Pop_Frame;                                               \
+      }                                                                      \
+      if (THREAD->jvmti_thread_state() &&                                    \
+          THREAD->jvmti_thread_state()->is_earlyret_pending()) {             \
+        goto handle_Early_Return;                                            \
+      }                                                                      \
+      opcode = *pc;                                                          \
+   }                                                                         \
 }
 #else
 #define DEBUGGER_SINGLE_STEP_NOTIFY()
@@ -658,14 +656,12 @@ void BytecodeInterpreter::run(interpreterState istate) {
       }
       THREAD->clr_do_not_unlock();
 
-      // Notify jvmti
-      if (JVMTI_ENABLED) {
-        // Whenever JVMTI puts a thread in interp_only_mode, method
-        // entry/exit events are sent for that thread to track stack depth.
-        if (THREAD->is_interp_only_mode()) {
-          CALL_VM(InterpreterRuntime::post_method_entry(THREAD),
-                  handle_exception);
-        }
+      // Notify jvmti.
+      // Whenever JVMTI puts a thread in interp_only_mode, method
+      // entry/exit events are sent for that thread to track stack depth.
+      if (JVMTI_ENABLED && THREAD->is_interp_only_mode()) {
+        CALL_VM(InterpreterRuntime::post_method_entry(THREAD),
+                handle_exception);
       }
 
       goto run;
@@ -2944,16 +2940,13 @@ run:
 
     suppress_exit_event = suppress_exit_event || illegal_state_oop() != NULL;
 
-    if (JVMTI_ENABLED) {
-      // Whenever JVMTI puts a thread in interp_only_mode, method
-      // entry/exit events are sent for that thread to track stack depth.
-      if ( !suppress_exit_event && THREAD->is_interp_only_mode() ) {
-        {
-          // Prevent any HandleMarkCleaner from freeing our live handles
-          HandleMark __hm(THREAD);
-          CALL_VM_NOCHECK(InterpreterRuntime::post_method_exit(THREAD));
-        }
-      }
+    // Whenever JVMTI puts a thread in interp_only_mode, method
+    // entry/exit events are sent for that thread to track stack depth.
+
+    if (JVMTI_ENABLED && !suppress_exit_event && THREAD->is_interp_only_mode()) {
+      // Prevent any HandleMarkCleaner from freeing our live handles
+      HandleMark __hm(THREAD);
+      CALL_VM_NOCHECK(InterpreterRuntime::post_method_exit(THREAD));
     }
 
     //
