@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ G1FullGCReferenceProcessingExecutor::G1RefProcTaskProxy::G1RefProcTaskProxy(Proc
 
 void G1FullGCReferenceProcessingExecutor::G1RefProcTaskProxy::work(uint worker_id) {
   G1FullGCMarker* marker = _collector->marker(worker_id);
-  G1IsAliveClosure is_alive(_collector->mark_bitmap());
+  G1IsAliveClosure is_alive(_collector);
   G1FullKeepAliveClosure keep_alive(marker);
   _proc_task.work(worker_id,
                   is_alive,
@@ -82,7 +82,7 @@ void G1FullGCReferenceProcessingExecutor::execute(STWGCTimer* timer, G1FullGCTra
   GCTraceTime(Debug, gc, phases) debug("Phase 1: Reference Processing", timer);
   // Process reference objects found during marking.
   G1FullGCMarker* marker = _collector->marker(0);
-  G1IsAliveClosure is_alive(_collector->mark_bitmap());
+  G1IsAliveClosure is_alive(_collector);
   G1FullKeepAliveClosure keep_alive(marker);
   ReferenceProcessorPhaseTimes pt(timer, _reference_processor->max_num_queues());
   AbstractRefProcTaskExecutor* executor = _reference_processor->processing_is_mt() ? this : NULL;

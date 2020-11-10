@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,27 +22,24 @@
  *
  */
 
-#ifndef SHARE_MEMORY_HEAPSHARED_INLINE_HPP
-#define SHARE_MEMORY_HEAPSHARED_INLINE_HPP
+#ifndef SHARE_GC_G1_G1FULLCOLLECTOR_INLINE_HPP
+#define SHARE_GC_G1_G1FULLCOLLECTOR_INLINE_HPP
 
-#include "gc/shared/collectedHeap.inline.hpp"
-#include "oops/compressedOops.inline.hpp"
-#include "memory/heapShared.hpp"
-#include "utilities/align.hpp"
+#include "gc/g1/g1FullCollector.hpp"
+#include "gc/g1/g1FullGCHeapRegionAttr.hpp"
+#include "oops/oopsHierarchy.hpp"
 
-#if INCLUDE_CDS_JAVA_HEAP
-
-bool HeapShared::is_archived_object(oop p) {
-  return Universe::heap()->is_archived_object(p);
+bool G1FullCollector::is_in_pinned_or_closed(oop obj) const {
+  return _region_attr_table.is_pinned_or_closed(cast_from_oop<HeapWord*>(obj));
 }
 
-inline oop HeapShared::decode_from_archive(narrowOop v) {
-  assert(!CompressedOops::is_null(v), "narrow oop value can never be zero");
-  oop result = (oop)(void*)((uintptr_t)_narrow_oop_base + ((uintptr_t)v << _narrow_oop_shift));
-  assert(is_object_aligned(result), "address not aligned: " INTPTR_FORMAT, p2i((void*) result));
-  return result;
+bool G1FullCollector::is_in_pinned(oop obj) const {
+  return _region_attr_table.is_pinned(cast_from_oop<HeapWord*>(obj));
 }
 
-#endif
+bool G1FullCollector::is_in_closed(oop obj) const {
+  return _region_attr_table.is_closed_archive(cast_from_oop<HeapWord*>(obj));
+}
 
-#endif // SHARE_MEMORY_HEAPSHARED_INLINE_HPP
+#endif // SHARE_GC_G1_G1FULLCOLLECTOR_INLINE_HPP
+
