@@ -2909,7 +2909,7 @@ void MemoryGraphFixer::fix_memory_uses(Node* mem, Node* replacement, Node* rep_p
 }
 
 ShenandoahLoadReferenceBarrierNode::ShenandoahLoadReferenceBarrierNode(Node* ctrl, Node* obj, DecoratorSet decorators)
-: Node(ctrl, obj), _decorators(decorators & (ON_STRONG_OOP_REF | ON_WEAK_OOP_REF | ON_PHANTOM_OOP_REF | ON_UNKNOWN_OOP_REF | IN_NATIVE)) {
+: Node(ctrl, obj), _decorators(decorators) {
   ShenandoahBarrierSetC2::bsc2()->state()->add_load_reference_barrier(this);
 }
 
@@ -2921,15 +2921,19 @@ uint ShenandoahLoadReferenceBarrierNode::size_of() const {
   return sizeof(*this);
 }
 
+static DecoratorSet mask_decorators(DecoratorSet decorators) {
+  return decorators & (ON_STRONG_OOP_REF | ON_WEAK_OOP_REF | ON_PHANTOM_OOP_REF | ON_UNKNOWN_OOP_REF | IN_NATIVE);
+}
+
 uint ShenandoahLoadReferenceBarrierNode::hash() const {
   uint hash = Node::hash();
-  hash += _decorators;
+  hash += mask_decorators(_decorators);
   return hash;
 }
 
 bool ShenandoahLoadReferenceBarrierNode::cmp( const Node &n ) const {
   return Node::cmp(n) && n.Opcode() == Op_ShenandoahLoadReferenceBarrier &&
-         _decorators == ((const ShenandoahLoadReferenceBarrierNode&)n)._decorators;
+         mask_decorators(_decorators) == mask_decorators(((const ShenandoahLoadReferenceBarrierNode&)n)._decorators);
 }
 
 const Type* ShenandoahLoadReferenceBarrierNode::bottom_type() const {
