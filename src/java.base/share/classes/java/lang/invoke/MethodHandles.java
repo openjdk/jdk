@@ -102,13 +102,16 @@ public class MethodHandles {
      * <a href="MethodHandleInfo.html#directmh">direct method handles</a>
      * for any member that the caller has access to via bytecodes,
      * including protected and private fields and methods.
+     * This lookup object is created by the original lookup class
+     * and has the {@link Lookup#ORIGINAL ORIGINAL} bit set.
      * This lookup object is a <em>capability</em> which may be delegated to trusted agents.
      * Do not store it in place where untrusted code can access it.
      * <p>
      * This method is caller sensitive, which means that it may return different
      * values to different callers.
      * @return a lookup object for the caller of this method, with
-     * {@linkplain Lookup#hasFullPrivilegeAccess() full privilege access}
+     * {@linkplain Lookup#ORIGINAL original} and
+     * {@linkplain Lookup#hasFullPrivilegeAccess() full privilege access}.
      */
     @CallerSensitive
     @ForceInline // to ensure Reflection.getCallerClass optimization
@@ -174,8 +177,8 @@ public class MethodHandles {
      * <li>If there is a security manager, its {@code checkPermission} method is
      * called to check {@code ReflectPermission("suppressAccessChecks")} and
      * that must return normally.
-     * <li>The caller lookup object must have {@linkplain Lookup#PRIVATE private} and
-     * {@linkplain Lookup#MODULE module} access.  Specifically:
+     * <li>The caller lookup object must have {@linkplain Lookup#hasFullPrivilegeAccess()
+     * full privilege access}.  Specifically:
      *   <ul>
      *     <li>The caller lookup object must have the {@link Lookup#MODULE MODULE} lookup mode.
      *         (This is because otherwise there would be no way to ensure the original lookup
@@ -201,13 +204,16 @@ public class MethodHandles {
      * exception.
      * <p>
      * Otherwise, if {@code M1} and {@code M2} are the same module, this method
-     * returns a {@code Lookup} on {@code targetClass} with {@code PRIVATE}
-     * and {@code MODULE} access with {@code null} previous lookup class.
+     * returns a {@code Lookup} on {@code targetClass} with
+     * {@linkplain Lookup#hasFullPrivilegeAccess() full privilege access}
+     * with {@code null} previous lookup class.
      * <p>
      * Otherwise, {@code M1} and {@code M2} are two different modules.  This method
      * returns a {@code Lookup} on {@code targetClass} that records
      * the lookup class of the caller as the new previous lookup class with
      * {@code PRIVATE} access but no {@code MODULE} access.
+     * <p>
+     * The resulting {@code Lookup} object has no {@code ORIGINAL} access.
      *
      * @param targetClass the target class
      * @param caller the caller lookup object
@@ -281,7 +287,7 @@ public class MethodHandles {
      * it has not been initialized.
      *
      * <p> The {@linkplain Lookup#lookupModes() lookup modes} for this lookup
-     * must have {@linkplain Lookup#hasFullPrivilegeAccess() full privilege access}
+     * must have {@linkplain Lookup#ORIGINAL original access}
      * in order to retrieve the class data.
      *
      * @apiNote
@@ -307,7 +313,7 @@ public class MethodHandles {
      * @return the value of the class data if present in the lookup class;
      * otherwise {@code null}
      * @throws IllegalAccessException if the lookup context does not have
-     * full privilege access
+     * {@linkplain Lookup#ORIGINAL original} access
      * @throws ClassCastException if the class data cannot be converted to
      * the given {@code type}
      * @see Lookup#defineHiddenClassWithClassData(byte[], Object, boolean, Lookup.ClassOption...)
@@ -319,8 +325,8 @@ public class MethodHandles {
          Objects.requireNonNull(name);
          Objects.requireNonNull(type);
 
-         if (!caller.hasFullPrivilegeAccess()) {
-             throw new IllegalAccessException(caller + " does not have full privilege access");
+         if ((caller.lookupModes() & Lookup.ORIGINAL) != Lookup.ORIGINAL)  {
+             throw new IllegalAccessException(caller + " does not have ORIGINAL access");
          }
 
          Object classdata = MethodHandleNatives.classData(caller.lookupClass());
@@ -351,7 +357,7 @@ public class MethodHandles {
      * it has not been initialized.
      *
      * <p> The {@linkplain Lookup#lookupModes() lookup modes} for this lookup
-     * must have {@linkplain Lookup#hasFullPrivilegeAccess() full privilege access}
+     * must have {@linkplain Lookup#ORIGINAL original access}
      * in order to retrieve the class data.
      *
      * @apiNote
@@ -376,12 +382,12 @@ public class MethodHandles {
      * @return the element at the given index in the class data
      * if present; otherwise {@code null}
      * @throws IllegalAccessException if the lookup context does not have
-     * full privilege access
+     * {@linkplain Lookup#ORIGINAL original} access
      * @throws ClassCastException if the class data cannot be converted to {@code List}
      * or the element at the specified index cannot be converted to the given type
      * @throws IndexOutOfBoundsException if the index is out of range
-     * @throws NullPointerException if the element at the given index is null
-     * and unboxing operation may fail because the original reference is null,
+     * @throws NullPointerException if unboxing operation fails because
+     * the element at the given index is {@code null}
      *
      * @since 16
      * @see #classData(Lookup, String, Class)
@@ -392,8 +398,8 @@ public class MethodHandles {
     {
         Objects.requireNonNull(type);
 
-        if (!caller.hasFullPrivilegeAccess()) {
-            throw new IllegalAccessException(caller + " does not have full privilege access");
+        if ((caller.lookupModes() & Lookup.ORIGINAL) != Lookup.ORIGINAL)  {
+            throw new IllegalAccessException(caller + " does not have ORIGINAL access");
         }
 
         Object classdata = MethodHandleNatives.classData(caller.lookupClass());
@@ -729,11 +735,17 @@ public class MethodHandles {
      * <p style="font-size:smaller;">
      * Private and module access are independently determined modes; a lookup may have
      * either or both or neither.  A lookup which possesses both access modes is said to
-     * possess {@linkplain #hasFullPrivilegeAccess() full privilege access}.  Such a lookup has
-     * the following additional capability:
+     * possess {@linkplain #hasFullPrivilegeAccess() full privilege access}.
+     * <p style="font-size:smaller;">
+     * A lookup with original access ensures that this lookup is created by
+     * the original lookup class and the bootstrap method invoked by the VM.
+     * Such a lookup with original access also has private and module access
+     * which has the following additional capability:
      * <ul style="font-size:smaller;">
      * <li>create method handles which invoke <a href="MethodHandles.Lookup.html#callsens">caller sensitive</a> methods,
      *     such as {@code Class.forName}
+     * <li>obtain the {@linkplain MethodHandles#classData(Lookup, String, Class)
+     * class data} associated with the lookup class</li>
      * </ul>
      * <p style="font-size:smaller;">
      * Each of these permissions is a consequence of the fact that a lookup object
@@ -1315,7 +1327,8 @@ public class MethodHandles {
      * (If a class or other type is being accessed,
      * the {@code refc} and {@code defc} values are the class itself.)
      * The value {@code lookc} is defined as <em>not present</em>
-     * if the current lookup object does not have private and module access.
+     * if the current lookup object does not have
+     * {@linkplain #hasFullPrivilegeAccess() full privilege access}.
      * The calls are made according to the following rules:
      * <ul>
      * <li><b>Step 1:</b>
@@ -1375,7 +1388,7 @@ public class MethodHandles {
      * In cases where the lookup object is
      * {@link MethodHandles#publicLookup() publicLookup()},
      * or some other lookup object without the
-     * {@linkplain #hasFullPrivilegeAccess() full privilege access},
+     * {@linkplain #ORIGINAL original access},
      * the lookup class is disregarded.
      * In such cases, no caller-sensitive method handle can be created,
      * access is forbidden, and the lookup fails with an
@@ -2464,18 +2477,15 @@ public class MethodHandles {
          * <li>If only public and module access are allowed, the suffix is "/module".
          * <li>If public and package access are allowed, the suffix is "/package".
          * <li>If public, package, and private access are allowed, the suffix is "/private".
-         * <li>If public, package, private and protected access are allowed, the suffix is "/allaccess".
          * </ul>
          * If none of the above cases apply, it is the case that
          * {@linkplain #hasFullPrivilegeAccess() full privilege access}
-         * (public, module, package, private, protected and original) is allowed.
+         * (public, module, package, private, and protected) is allowed.
          * In this case, no suffix is added.
          * This is true only of an object obtained originally from
          * {@link java.lang.invoke.MethodHandles#lookup MethodHandles.lookup}.
-         * Objects created by {@link java.lang.invoke.MethodHandles.Lookup#in Lookup::in}
-         * and {@link java.lang.invoke.MethodHandles#privateLookupIn(Class, Lookup)
-         * MethodHandles::privateLookupIn} always have restricted access,
-         * and will display a suffix.
+         * Objects created by {@link java.lang.invoke.MethodHandles.Lookup#in Lookup.in}
+         * always have restricted access, and will display a suffix.
          * <p>
          * (It may seem strange that protected access should be
          * stronger than private access.  Viewed independently from
@@ -2508,7 +2518,6 @@ public class MethodHandles {
                     return cname + "/private";
             case PUBLIC|PACKAGE|PRIVATE|PROTECTED:
             case PUBLIC|MODULE|PACKAGE|PRIVATE|PROTECTED:
-                    return cname + "/allaccess";
             case FULL_POWER_MODES:
                     return cname;
             case TRUSTED:
@@ -3656,11 +3665,11 @@ return mh1;
 
         /**
          * Find my trustable caller class if m is a caller sensitive method.
-         * If this lookup object has full privilege access, then the caller class is the lookupClass.
+         * If this lookup object has original full privilege access, then the caller class is the lookupClass.
          * Otherwise, if m is caller-sensitive, throw IllegalAccessException.
          */
         Lookup findBoundCallerLookup(MemberName m) throws IllegalAccessException {
-            if (MethodHandleNatives.isCallerSensitive(m) && !hasFullPrivilegeAccess()) {
+            if (MethodHandleNatives.isCallerSensitive(m) && (lookupModes() & ORIGINAL) == 0) {
                 // Only lookups with full privilege access are allowed to resolve caller-sensitive methods
                 throw new IllegalAccessException("Attempt to lookup caller-sensitive method using restricted lookup object");
             }
@@ -3684,22 +3693,17 @@ return mh1;
 
         /**
          * Returns {@code true} if this lookup has <em>full privilege access</em>,
-         * i.e. {@code PRIVATE}, {@code MODULE} and {@code ORIGINAL} access.
+         * i.e. {@code PRIVATE} and {@code MODULE} access.
          * A {@code Lookup} object must have full privilege access in order to
          * access all members that are allowed to the
          * {@linkplain #lookupClass() lookup class}.
-         *
-         * <p>
-         * A lookup object with full privilege access is created by the original
-         * lookup class via {@link MethodHandles#lookup()} method or by
-         * a bootstrap method invocation.
          *
          * @return {@code true} if this lookup has full privilege access.
          * @since 14
          * @see <a href="MethodHandles.Lookup.html#privacc">private and module access</a>
          */
         public boolean hasFullPrivilegeAccess() {
-            return (allowedModes & (PRIVATE|MODULE|ORIGINAL)) == (PRIVATE|MODULE|ORIGINAL);
+            return (allowedModes & (PRIVATE|MODULE)) == (PRIVATE|MODULE);
         }
 
         /**
@@ -3975,8 +3979,10 @@ return mh1;
 
             // boundCaller must have full privilege access.
             // It should have been checked by findBoundCallerLookup. Safe to check this again.
-            if (!boundCaller.hasFullPrivilegeAccess())
+            if ((boundCaller.lookupModes() & ORIGINAL) == 0)
                 throw new IllegalAccessException("Attempt to lookup caller-sensitive method using restricted lookup object");
+
+            assert boundCaller.hasFullPrivilegeAccess();
 
             MethodHandle cbmh = MethodHandleImpl.bindCaller(mh, boundCaller.lookupClass);
             // Note: caller will apply varargs after this step happens.

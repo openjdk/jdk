@@ -148,9 +148,8 @@ public class AccessControlTest {
                     || lookupModes == (PUBLIC|MODULE|PACKAGE|PRIVATE))
                 suffix = "/private";
             else if (lookupModes == (PUBLIC|PACKAGE|PRIVATE|PROTECTED)
-                     || lookupModes == (PUBLIC|MODULE|PACKAGE|PRIVATE|PROTECTED))
-                suffix = "/allaccess";
-            else if (lookupModes == (PUBLIC|MODULE|PACKAGE|PRIVATE|PROTECTED|ORIGINAL))
+                     || lookupModes == (PUBLIC|MODULE|PACKAGE|PRIVATE|PROTECTED)
+                     || lookupModes == (PUBLIC|MODULE|PACKAGE|PRIVATE|PROTECTED|ORIGINAL))
                 suffix = "";
             else
                 suffix = "/#"+Integer.toHexString(lookupModes);
