@@ -306,7 +306,6 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
 
   void  set_flag(MEMFLAGS flag);
   inline MEMFLAGS flag() const            { return _flag;  }
-
   // uncommitted thread stack bottom, above guard pages if there is any.
   address thread_stack_uncommitted_bottom() const;
 
@@ -339,6 +338,8 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
 
     return *this;
   }
+
+  const char* flag_name() { return NMTUtil::flag_to_name(_flag); }
 
  private:
   // The committed region contains the uncommitted region, subtract the uncommitted
