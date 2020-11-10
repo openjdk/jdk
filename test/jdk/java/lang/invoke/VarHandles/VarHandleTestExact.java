@@ -47,7 +47,7 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.testng.Assert.fail;
+import static org.testng.Assert.*;
 
 public class VarHandleTestExact {
 
@@ -80,6 +80,7 @@ public class VarHandleTestExact {
             throws NoSuchFieldException, IllegalAccessException {
         if (ro) throw new SkipException("Can not test setter with read only field");
         VarHandle vh = MethodHandles.lookup().findVarHandle(Widget.class, fieldBaseName + "_RW", fieldType);
+        assertFalse(vh.hasInvokeExactBehavior());
         Widget w = new Widget();
 
         try {
@@ -90,6 +91,7 @@ public class VarHandleTestExact {
         }
 
         vh = vh.withInvokeExactBehavior();
+        assertTrue(vh.hasInvokeExactBehavior());
         try {
             setter.set(vh, w, testValue); // should throw
             fail("Exception expected");
@@ -104,6 +106,7 @@ public class VarHandleTestExact {
                              SetStaticX staticSetter, GetStaticX staticGetter)
             throws NoSuchFieldException, IllegalAccessException {
         VarHandle vh = MethodHandles.lookup().findVarHandle(Widget.class, fieldBaseName + (ro ? "_RO" : "_RW"), fieldType);
+        assertFalse(vh.hasInvokeExactBehavior());
         Widget w = new Widget();
 
         try {
@@ -114,6 +117,7 @@ public class VarHandleTestExact {
         }
 
         vh = vh.withInvokeExactBehavior();
+        assertTrue(vh.hasInvokeExactBehavior());
         try {
             getter.get(vh, w); // should throw
             fail("Exception expected");
@@ -129,6 +133,7 @@ public class VarHandleTestExact {
             throws NoSuchFieldException, IllegalAccessException {
         if (ro) throw new SkipException("Can not test setter with read only field");
         VarHandle vh = MethodHandles.lookup().findStaticVarHandle(Widget.class, fieldBaseName + "_SRW", fieldType);
+        assertFalse(vh.hasInvokeExactBehavior());
 
         try {
             vh.set(testValue);
@@ -138,6 +143,7 @@ public class VarHandleTestExact {
         }
 
         vh = vh.withInvokeExactBehavior();
+        assertTrue(vh.hasInvokeExactBehavior());
         try {
             staticSetter.set(vh, testValue); // should throw
             fail("Exception expected");
@@ -152,6 +158,7 @@ public class VarHandleTestExact {
                                    SetStaticX staticSetter, GetStaticX staticGetter)
             throws NoSuchFieldException, IllegalAccessException {
         VarHandle vh = MethodHandles.lookup().findStaticVarHandle(Widget.class, fieldBaseName + (ro ? "_SRO" : "_SRW"), fieldType);
+        assertFalse(vh.hasInvokeExactBehavior());
 
         try {
             Object o = vh.get();
@@ -161,6 +168,7 @@ public class VarHandleTestExact {
         }
 
         vh = vh.withInvokeExactBehavior();
+        assertTrue(vh.hasInvokeExactBehavior());
         try {
             staticGetter.get(vh); // should throw
             fail("Exception expected");
@@ -173,6 +181,7 @@ public class VarHandleTestExact {
     public void testExactArraySet(Class<?> arrayClass, Object testValue, SetArrayX setter) {
         VarHandle vh = MethodHandles.arrayElementVarHandle(arrayClass);
         Object arr = Array.newInstance(arrayClass.componentType(), 1);
+        assertFalse(vh.hasInvokeExactBehavior());
 
         try {
             vh.set(arr, 0, testValue);
@@ -182,6 +191,7 @@ public class VarHandleTestExact {
         }
 
         vh = vh.withInvokeExactBehavior();
+        assertTrue(vh.hasInvokeExactBehavior());
         try {
             setter.set(vh, arr, testValue); // should throw
             fail("Exception expected");
@@ -194,6 +204,7 @@ public class VarHandleTestExact {
     @Test(dataProvider = "dataSetBuffer")
     public void testExactBufferSet(Class<?> arrayClass, Object testValue, SetBufferX setter) {
         VarHandle vh = MethodHandles.byteBufferViewVarHandle(arrayClass, ByteOrder.nativeOrder());
+        assertFalse(vh.hasInvokeExactBehavior());
         ByteBuffer buff = ByteBuffer.allocateDirect(8);
 
         try {
@@ -204,6 +215,7 @@ public class VarHandleTestExact {
         }
 
         vh = vh.withInvokeExactBehavior();
+        assertTrue(vh.hasInvokeExactBehavior());
         try {
             setter.set(vh, buff, testValue); // should throw
             fail("Exception expected");
@@ -216,6 +228,7 @@ public class VarHandleTestExact {
     @Test(dataProvider = "dataSetMemorySegment")
     public void testExactSegmentSet(Class<?> carrier, Object testValue, SetSegmentX setter) {
         VarHandle vh = MemoryHandles.varHandle(carrier, ByteOrder.nativeOrder());
+        assertFalse(vh.hasInvokeExactBehavior());
         try (MemorySegment seg = MemorySegment.allocateNative(8)) {
             MemoryAddress base = seg.baseAddress();
             try {
@@ -226,6 +239,7 @@ public class VarHandleTestExact {
             }
 
             vh = vh.withInvokeExactBehavior();
+            assertTrue(vh.hasInvokeExactBehavior());
             try {
                 setter.set(vh, base, testValue); // should throw
                 fail("Exception expected");
