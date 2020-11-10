@@ -223,7 +223,7 @@ void G1FullCollector::update_attribute_table(HeapRegion* hr) {
   if (hr->is_closed_archive()) {
     _region_attr_table.set_closed_archive(hr->hrm_index());
   } else if (hr->is_pinned()) {
-    _region_attr_table.set_pinned_or_closed(hr->hrm_index());
+    _region_attr_table.set_pinned(hr->hrm_index());
   } else {
     _region_attr_table.set_normal(hr->hrm_index());
   }

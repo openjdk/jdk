@@ -27,12 +27,14 @@
 
 #include "gc/g1/g1BiasedArray.hpp"
 
-// This table is used to store some per-region attributes needed during full
-// collection.
+// This table is used to store attribute values of all HeapRegions that need
+// fast access during the full collection. In particular some parts of the region
+// type information is encoded in these per-region bytes.
+// Value encoding has been specifically chosen to make required accesses fast.
 class G1FullGCHeapRegionAttr : public G1BiasedMappedArray<uint8_t> {
-  static const uint8_t Normal = 0;
-  static const uint8_t Pinned = 1;
-  static const uint8_t ClosedArchive = 2;
+  static const uint8_t Normal = 0;        // Other kind of region
+  static const uint8_t Pinned = 1;        // Region is a pinned (non-Closed Archive) region
+  static const uint8_t ClosedArchive = 2; // Region is a (pinned) Closed Archive region
 
   STATIC_ASSERT(ClosedArchive > Pinned);
 
@@ -53,7 +55,7 @@ public:
     return get_by_address(obj) == ClosedArchive;
   }
 
-  void set_pinned_or_closed(uint idx) { set_by_index(idx, Pinned); }
+  void set_pinned(uint idx) { set_by_index(idx, Pinned); }
 
   bool is_pinned_or_closed(HeapWord* obj) const {
     assert(!is_invalid(obj), "not initialized yet");
