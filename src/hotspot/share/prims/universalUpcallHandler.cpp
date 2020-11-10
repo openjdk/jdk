@@ -51,7 +51,8 @@ void ProgrammableUpcallHandler::attach_thread_and_do_upcall(jobject rec, address
   JNIEnv* p_env = nullptr;
   if (thread == nullptr) {
     JavaVM_ *vm = (JavaVM *)(&main_vm);
-    vm->functions->AttachCurrentThread(vm, (void**) &p_env, nullptr);
+    jint result = vm->functions->AttachCurrentThread(vm, (void**) &p_env, nullptr);
+    guarantee(result == JNI_OK, "Could not attach thread for upcall. JNI error code: %d", result);
     should_detach = true;
     thread = Thread::current();
   } else {
