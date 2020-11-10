@@ -187,22 +187,6 @@ public class JemmyExt {
     }
 
     /**
-     * Adds timestamp to a filename. The timestamp is added before an extension, if there is one,
-     * or simply at the end. An extension is assumed to be a part of the string after last dot.
-     * @param name File name with or without the extension
-     * @return file name
-     */
-    public static String timeStamp(String name) {
-        int lastSlash = name.lastIndexOf(File.separatorChar);
-        int lastDot = name.lastIndexOf('.');
-        if(lastDot <= lastSlash) { //the dot may be in a dir name or noth may be -1
-            return timeStamp(name, null);
-        } else {
-            return timeStamp(name.substring(0, lastDot), name.substring(lastDot));
-        }
-    }
-
-    /**
      * Saves an image into a file. Filename will be constructed from the given fileID and
      * a timestamp.
      * @param image
