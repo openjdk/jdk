@@ -1150,10 +1150,9 @@ static void check_peepconstraints(FILE *fp, FormDict &globals, PeepMatch *pmatch
       //
       // Check for equivalence
       //
-      // fprintf(fp, "phase->eqv( ");
-      // fprintf(fp, "inst%d->in(%d+%d) /* %s */, inst%d->in(%d+%d) /* %s */",
-      //         left_index,  left_op_base,  left_op_index,  left_op,
-      //         right_index, right_op_base, right_op_index, right_op );
+      // fprintf(fp, "(inst%d->_opnds[%d]->reg(ra_,inst%d%s)  /* %d.%s */ == /* %d.%s */ inst%d->_opnds[%d]->reg(ra_,inst%d%s)",
+      //         left_index, left_op_index, left_index, left_reg_index, left_index, left_op
+      //         right_index, right_op, right_index, right_op_index, right_index, right_reg_index);
       // fprintf(fp, ")");
       //
       switch( left_interface_type ) {
@@ -3001,7 +3000,7 @@ void ArchDesc::define_oper_interface(FILE *fp, OperandForm &oper, FormDict &glob
       // Provide a non-NULL return for disp_as_type() that will allow adr_type()
       // to correctly compute the access type for alias analysis.
       //
-      // See BugId 4796752, operand indOffset32X in i486.ad
+      // See BugId 4796752, operand indOffset32X in x86_32.ad
       int idx = rep_var_to_constant_index(disp, oper, globals);
       fprintf(fp,"  virtual const TypePtr *disp_as_type() const { return _c%d; }\n", idx);
     }

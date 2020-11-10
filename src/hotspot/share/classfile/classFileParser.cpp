@@ -1557,14 +1557,13 @@ class ClassFileParser::FieldAllocationCount : public ResourceObj {
     }
   }
 
-  FieldAllocationType update(bool is_static, BasicType type) {
+  void update(bool is_static, BasicType type) {
     FieldAllocationType atype = basic_type_to_atype(is_static, type);
     if (atype != BAD_ALLOCATION_TYPE) {
       // Make sure there is no overflow with injected fields.
       assert(count[atype] < 0xFFFF, "More than 65535 fields");
       count[atype]++;
     }
-    return atype;
   }
 };
 
@@ -1704,9 +1703,8 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
                       constantvalue_index);
     const BasicType type = cp->basic_type_for_signature_at(signature_index);
 
-    // Remember how many oops we encountered and compute allocation type
-    const FieldAllocationType atype = fac->update(is_static, type);
-    field->set_allocation_type(atype);
+    // Update FieldAllocationCount for this kind of field
+    fac->update(is_static, type);
 
     // After field is initialized with type, we can augment it with aux info
     if (parsed_annotations.has_any_annotations()) {
@@ -1749,9 +1747,8 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
 
       const BasicType type = Signature::basic_type(injected[n].signature());
 
-      // Remember how many oops we encountered and compute allocation type
-      const FieldAllocationType atype = fac->update(false, type);
-      field->set_allocation_type(atype);
+      // Update FieldAllocationCount for this kind of field
+      fac->update(false, type);
       index++;
     }
   }
@@ -3893,9 +3890,16 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
                          class_info_index, CHECK);
           _nest_host = class_info_index;
 
-        } else if (_major_version >= JAVA_15_VERSION) {
-          // Check for PermittedSubclasses tag
-          if (tag == vmSymbols::tag_permitted_subclasses()) {
+        } else if (_major_version >= JAVA_16_VERSION) {
+          if (tag == vmSymbols::tag_record()) {
+            if (parsed_record_attribute) {
+              classfile_parse_error("Multiple Record attributes in class file %s", THREAD);
+              return;
+            }
+            parsed_record_attribute = true;
+            record_attribute_start = cfs->current();
+            record_attribute_length = attribute_length;
+          } else if (tag == vmSymbols::tag_permitted_subclasses()) {
             if (supports_sealed_types()) {
               if (parsed_permitted_subclasses_attribute) {
                 classfile_parse_error("Multiple PermittedSubclasses attributes in class file %s", CHECK);
@@ -3910,23 +3914,9 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
               permitted_subclasses_attribute_start = cfs->current();
               permitted_subclasses_attribute_length = attribute_length;
             }
-            cfs->skip_u1(attribute_length, CHECK);
-
-          } else if (_major_version >= JAVA_16_VERSION) {
-            if (tag == vmSymbols::tag_record()) {
-              if (parsed_record_attribute) {
-                classfile_parse_error("Multiple Record attributes in class file %s", THREAD);
-                return;
-              }
-              parsed_record_attribute = true;
-              record_attribute_start = cfs->current();
-              record_attribute_length = attribute_length;
-              }
-            cfs->skip_u1(attribute_length, CHECK);
-          } else {
-            // Unknown attribute
-            cfs->skip_u1(attribute_length, CHECK);
           }
+          // Skip attribute_length for any attribute where major_verson >= JAVA_16_VERSION
+          cfs->skip_u1(attribute_length, CHECK);
         } else {
           // Unknown attribute
           cfs->skip_u1(attribute_length, CHECK);

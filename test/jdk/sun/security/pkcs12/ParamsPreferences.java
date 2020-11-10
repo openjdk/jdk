@@ -22,217 +22,247 @@
  */
 
 import jdk.test.lib.SecurityTools;
-import sun.security.util.ObjectIdentifier;
+import sun.security.util.KnownOIDs;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static jdk.test.lib.security.DerUtils.*;
-import static sun.security.pkcs.ContentInfo.DATA_OID;
-import static sun.security.pkcs.ContentInfo.ENCRYPTED_DATA_OID;
-import sun.security.util.ObjectIdentifier;
-import sun.security.util.KnownOIDs;
+import static sun.security.util.KnownOIDs.*;
 
 /*
  * @test
- * @bug 8076190 8242151
+ * @bug 8076190 8242151 8153005
  * @library /test/lib
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.util
- * @summary Checks the preferences order of pkcs12 params
+ * @summary Checks the preferences order of pkcs12 params, whether it's
+ *          a system property or a security property, whether the name has
+ *          "pkcs12" or "PKCS12", whether the legacy property is set.
  */
 public class ParamsPreferences {
 
     public static final void main(String[] args) throws Exception {
         int c = 0;
 
-        // with storepass
-        test(c++, "-", "-",
-                oid(KnownOIDs.PBEWithSHA1AndRC2_40), 50000,
-                oid(KnownOIDs.PBEWithSHA1AndDESede), 50000,
-                oid(KnownOIDs.SHA_1), 100000);
+        // default
+        test(c++,
+                Map.of(),
+                Map.of(),
+                PBES2, HmacSHA256, AES_256$CBC$NoPadding, 10000,
+                PBES2, HmacSHA256, AES_256$CBC$NoPadding, 10000,
+                SHA_256, 10000);
+
+        // legacy settings
+        test(c++,
+                Map.of("keystore.pkcs12.legacy", ""),
+                Map.of(),
+                PBEWithSHA1AndRC2_40, 50000,
+                PBEWithSHA1AndDESede, 50000,
+                SHA_1, 100000);
+
+        // legacy override everything else
+        test(c++,
+                Map.of("keystore.pkcs12.legacy", "",
+                        "keystore.pkcs12.certProtectionAlgorithm", "PBEWithHmacSHA256AndAES_128",
+                        "keystore.pkcs12.certPbeIterationCount", 3000,
+                        "keystore.pkcs12.keyProtectionAlgorithm", "PBEWithHmacSHA256AndAES_128",
+                        "keystore.pkcs12.keyPbeIterationCount", 4000,
+                        "keystore.pkcs12.macAlgorithm", "HmacPBESHA384",
+                        "keystore.pkcs12.macIterationCount", 2000),
+                Map.of(),
+                PBEWithSHA1AndRC2_40, 50000,
+                PBEWithSHA1AndDESede, 50000,
+                SHA_1, 100000);
 
         // password-less with system property
-        test(c++, "keystore.pkcs12.certProtectionAlgorithm", "NONE",
-                "keystore.pkcs12.macAlgorithm", "NONE",
-                "-", "-",
-                null, 0,
-                oid(KnownOIDs.PBEWithSHA1AndDESede), 50000,
-                null, 0);
+        test(c++,
+                Map.of("keystore.pkcs12.certProtectionAlgorithm", "NONE",
+                        "keystore.pkcs12.macAlgorithm", "NONE"),
+                Map.of(),
+                null,
+                PBES2, HmacSHA256, AES_256$CBC$NoPadding, 10000,
+                null);
 
         // password-less with security property
-        test(c++, "-",
-                "keystore.pkcs12.certProtectionAlgorithm", "NONE",
-                "keystore.pkcs12.macAlgorithm", "NONE",
-                "-",
-                null, 0,
-                oid(KnownOIDs.PBEWithSHA1AndDESede), 50000,
-                null, 0);
+        test(c++,
+                Map.of(),
+                Map.of("keystore.pkcs12.certProtectionAlgorithm", "NONE",
+                        "keystore.pkcs12.macAlgorithm", "NONE"),
+                null,
+                PBES2, HmacSHA256, AES_256$CBC$NoPadding, 10000,
+                null);
 
         // back to with storepass by overriding security property with system property
-        test(c++, "keystore.pkcs12.certProtectionAlgorithm", "PBEWithSHA1AndDESede",
-                "keystore.pkcs12.macAlgorithm", "HmacPBESHA256",
-                "-",
-                "keystore.pkcs12.certProtectionAlgorithm", "NONE",
-                "keystore.pkcs12.macAlgorithm", "NONE",
-                "-",
-                oid(KnownOIDs.PBEWithSHA1AndDESede), 50000,
-                oid(KnownOIDs.PBEWithSHA1AndDESede), 50000,
-                oid(KnownOIDs.SHA_256), 100000);
+        test(c++,
+                Map.of("keystore.pkcs12.certProtectionAlgorithm", "PBEWithSHA1AndDESede",
+                        "keystore.pkcs12.macAlgorithm", "HmacPBESHA256"),
+                Map.of("keystore.pkcs12.certProtectionAlgorithm", "NONE",
+                        "keystore.pkcs12.macAlgorithm", "NONE"),
+                PBEWithSHA1AndDESede, 10000,
+                PBES2, HmacSHA256, AES_256$CBC$NoPadding, 10000,
+                SHA_256, 10000);
 
         // back to with storepass by using "" to force hardcoded default
-        test(c++, "keystore.pkcs12.certProtectionAlgorithm", "",
-                "keystore.pkcs12.keyProtectionAlgorithm", "",
-                "keystore.pkcs12.macAlgorithm", "",
-                "-",
-                "keystore.pkcs12.certProtectionAlgorithm", "NONE",
-                "keystore.pkcs12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_40",
-                "keystore.pkcs12.macAlgorithm", "NONE",
-                "-",
-                oid(KnownOIDs.PBEWithSHA1AndRC2_40), 50000,
-                oid(KnownOIDs.PBEWithSHA1AndDESede), 50000,
-                oid(KnownOIDs.SHA_1), 100000);
+        test(c++,
+                Map.of("keystore.pkcs12.certProtectionAlgorithm", "",
+                        "keystore.pkcs12.keyProtectionAlgorithm", "",
+                        "keystore.pkcs12.macAlgorithm", ""),
+                Map.of("keystore.pkcs12.certProtectionAlgorithm", "NONE",
+                        "keystore.pkcs12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_40",
+                        "keystore.pkcs12.macAlgorithm", "NONE"),
+                PBES2, HmacSHA256, AES_256$CBC$NoPadding, 10000,
+                PBES2, HmacSHA256, AES_256$CBC$NoPadding, 10000,
+                SHA_256, 10000);
 
         // change everything with system property
-        test(c++, "keystore.pkcs12.certProtectionAlgorithm", "PBEWithSHA1AndDESede",
-                "keystore.pkcs12.certPbeIterationCount", 3000,
-                "keystore.pkcs12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_40",
-                "keystore.pkcs12.keyPbeIterationCount", 4000,
-                "keystore.pkcs12.macAlgorithm", "HmacPBESHA256",
-                "keystore.pkcs12.macIterationCount", 2000,
-                "-", "-",
-                oid(KnownOIDs.PBEWithSHA1AndDESede), 3000,
-                oid(KnownOIDs.PBEWithSHA1AndRC2_40), 4000,
-                oid(KnownOIDs.SHA_256), 2000);
+        test(c++,
+                Map.of("keystore.pkcs12.certProtectionAlgorithm", "PBEWithSHA1AndDESede",
+                        "keystore.pkcs12.certPbeIterationCount", 3000,
+                        "keystore.pkcs12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_40",
+                        "keystore.pkcs12.keyPbeIterationCount", 4000,
+                        "keystore.pkcs12.macAlgorithm", "HmacPBESHA256",
+                        "keystore.pkcs12.macIterationCount", 2000),
+                Map.of(),
+                PBEWithSHA1AndDESede, 3000,
+                PBEWithSHA1AndRC2_40, 4000,
+                SHA_256, 2000);
 
         // change everything with security property
-        test(c++, "-",
-                "keystore.pkcs12.certProtectionAlgorithm", "PBEWithSHA1AndDESede",
-                "keystore.pkcs12.certPbeIterationCount", 3000,
-                "keystore.pkcs12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_40",
-                "keystore.pkcs12.keyPbeIterationCount", 4000,
-                "keystore.pkcs12.macAlgorithm", "HmacPBESHA256",
-                "keystore.pkcs12.macIterationCount", 2000,
-                "-",
-                oid(KnownOIDs.PBEWithSHA1AndDESede), 3000,
-                oid(KnownOIDs.PBEWithSHA1AndRC2_40), 4000,
-                oid(KnownOIDs.SHA_256), 2000);
+        test(c++,
+                Map.of(),
+                Map.of("keystore.pkcs12.certProtectionAlgorithm", "PBEWithSHA1AndDESede",
+                        "keystore.pkcs12.certPbeIterationCount", 3000,
+                        "keystore.pkcs12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_40",
+                        "keystore.pkcs12.keyPbeIterationCount", 4000,
+                        "keystore.pkcs12.macAlgorithm", "HmacPBESHA256",
+                        "keystore.pkcs12.macIterationCount", 2000),
+                PBEWithSHA1AndDESede, 3000,
+                PBEWithSHA1AndRC2_40, 4000,
+                SHA_256, 2000);
 
         // override security property with system property
-        test(c++, "keystore.pkcs12.certProtectionAlgorithm", "PBEWithSHA1AndDESede",
-                "keystore.pkcs12.certPbeIterationCount", 13000,
-                "keystore.pkcs12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_40",
-                "keystore.pkcs12.keyPbeIterationCount", 14000,
-                "keystore.pkcs12.macAlgorithm", "HmacPBESHA256",
-                "keystore.pkcs12.macIterationCount", 12000,
-                "-",
-                "keystore.pkcs12.certProtectionAlgorithm", "PBEWithSHA1AndRC2_40",
-                "keystore.pkcs12.certPbeIterationCount", 3000,
-                "keystore.pkcs12.keyProtectionAlgorithm", "PBEWithSHA1AndDESede",
-                "keystore.pkcs12.keyPbeIterationCount", 4000,
-                "keystore.pkcs12.macAlgorithm", "HmacPBESHA1",
-                "keystore.pkcs12.macIterationCount", 2000,
-                "-",
-                oid(KnownOIDs.PBEWithSHA1AndDESede), 13000,
-                oid(KnownOIDs.PBEWithSHA1AndRC2_40), 14000,
-                oid(KnownOIDs.SHA_256), 12000);
+        test(c++,
+                Map.of("keystore.pkcs12.certProtectionAlgorithm", "PBEWithSHA1AndDESede",
+                        "keystore.pkcs12.certPbeIterationCount", 13000,
+                        "keystore.pkcs12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_40",
+                        "keystore.pkcs12.keyPbeIterationCount", 14000,
+                        "keystore.pkcs12.macAlgorithm", "HmacPBESHA256",
+                        "keystore.pkcs12.macIterationCount", 12000),
+                Map.of("keystore.pkcs12.certProtectionAlgorithm", "PBEWithSHA1AndRC2_40",
+                        "keystore.pkcs12.certPbeIterationCount", 3000,
+                        "keystore.pkcs12.keyProtectionAlgorithm", "PBEWithSHA1AndDESede",
+                        "keystore.pkcs12.keyPbeIterationCount", 4000,
+                        "keystore.pkcs12.macAlgorithm", "HmacPBESHA1",
+                        "keystore.pkcs12.macIterationCount", 2000),
+                PBEWithSHA1AndDESede, 13000,
+                PBEWithSHA1AndRC2_40, 14000,
+                SHA_256, 12000);
 
         // check keyProtectionAlgorithm old behavior. Preferences of
         // 4 different settings.
 
-        test(c++, "-",
-                "keystore.PKCS12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_128",
-                "-",
-                oid(KnownOIDs.PBEWithSHA1AndRC2_40), 50000,
-                oid(KnownOIDs.PBEWithSHA1AndRC2_128), 50000,
-                oid(KnownOIDs.SHA_1), 100000);
-        test(c++, "-",
-                "keystore.PKCS12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_128",
-                "keystore.pkcs12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_40",
-                "-",
-                oid(KnownOIDs.PBEWithSHA1AndRC2_40), 50000,
-                oid(KnownOIDs.PBEWithSHA1AndRC2_40), 50000,
-                oid(KnownOIDs.SHA_1), 100000);
         test(c++,
-                "keystore.PKCS12.keyProtectionAlgorithm", "PBEWithSHA1AndRC4_128",
-                "-",
-                "keystore.PKCS12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_128",
-                "keystore.pkcs12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_40",
-                "-",
-                oid(KnownOIDs.PBEWithSHA1AndRC2_40), 50000,
-                oid(KnownOIDs.PBEWithSHA1AndRC4_128), 50000,
-                oid(KnownOIDs.SHA_1), 100000);
+                Map.of(),
+                Map.of("keystore.PKCS12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_128"),
+                PBES2, HmacSHA256, AES_256$CBC$NoPadding, 10000,
+                PBEWithSHA1AndRC2_128, 10000,
+                SHA_256, 10000);
         test(c++,
-                "keystore.PKCS12.keyProtectionAlgorithm", "PBEWithSHA1AndRC4_128",
-                "keystore.pkcs12.keyProtectionAlgorithm", "PBEWithSHA1AndRC4_40",
-                "-",
-                "keystore.PKCS12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_128",
-                "keystore.pkcs12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_40",
-                "-",
-                oid(KnownOIDs.PBEWithSHA1AndRC2_40), 50000,
-                oid(KnownOIDs.PBEWithSHA1AndRC4_40), 50000,
-                oid(KnownOIDs.SHA_1), 100000);
-    }
-
-    private static ObjectIdentifier oid(KnownOIDs o) {
-        return ObjectIdentifier.of(o);
+                Map.of(),
+                Map.of("keystore.PKCS12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_128",
+                        "keystore.pkcs12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_40"),
+                PBES2, HmacSHA256, AES_256$CBC$NoPadding, 10000,
+                PBEWithSHA1AndRC2_40, 10000,
+                SHA_256, 10000);
+        test(c++,
+                Map.of("keystore.PKCS12.keyProtectionAlgorithm", "PBEWithSHA1AndRC4_128"),
+                Map.of("keystore.PKCS12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_128",
+                        "keystore.pkcs12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_40"),
+                PBES2, HmacSHA256, AES_256$CBC$NoPadding, 10000,
+                PBEWithSHA1AndRC4_128, 10000,
+                SHA_256, 10000);
+        test(c++,
+                Map.of("keystore.PKCS12.keyProtectionAlgorithm", "PBEWithSHA1AndRC4_128",
+                        "keystore.pkcs12.keyProtectionAlgorithm", "PBEWithSHA1AndRC4_40"),
+                Map.of("keystore.PKCS12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_128",
+                        "keystore.pkcs12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_40"),
+                PBES2, HmacSHA256, AES_256$CBC$NoPadding, 10000,
+                PBEWithSHA1AndRC4_40, 10000,
+                SHA_256, 10000);
     }
 
     /**
      * Run once.
      *
-     * @param args an array containing system properties and values, "-",
-     *             security properties and values, "-", expected certPbeAlg,
-     *             certPbeIC, keyPbeAlg, keyPbeIc, macAlg, macIC.
+     * @param sysProps system properties
+     * @param secProps security properties
+     * @param args     an array expected certPbeAlg (sub algs), certPbeIC,
+     *                 keyPbeAlg (sub algs), keyPbeIc, macAlg, macIC.
      */
-    static void test(int n, Object... args) throws Exception {
-        boolean isSysProp = true;
+    static void test(int n, Map<String, ?> sysProps,
+                     Map<String, ?> secProps,
+                     Object... args) throws Exception {
+
         String cmd = "-keystore ks" + n + " -genkeypair -keyalg EC "
                 + "-alias a -dname CN=A -storepass changeit "
                 + "-J-Djava.security.properties=" + n + ".conf";
+
+        for (var p : sysProps.entrySet()) {
+            cmd += " -J-D" + p.getKey() + "=" + p.getValue();
+        }
+
         List<String> jsConf = new ArrayList<>();
-        for (int i = 0; i < args.length; i++) {
-            if (isSysProp) {
-                if (args[i].equals("-")) {
-                    isSysProp = false;
-                } else {
-                    cmd += " -J-D" + args[i] + "=" + args[++i];
-                }
+        for (var p : secProps.entrySet()) {
+            jsConf.add(p.getKey() + "=" + p.getValue());
+        }
+        Files.write(Path.of(n + ".conf"), jsConf);
+        System.out.println("--------- test starts ----------");
+        System.out.println(jsConf);
+        SecurityTools.keytool(cmd).shouldHaveExitValue(0);
+
+        int i = 0;
+        byte[] data = Files.readAllBytes(Path.of("ks" + n));
+
+        // cert pbe alg + ic
+        KnownOIDs certAlg = (KnownOIDs)args[i++];
+        if (certAlg == null) {
+            checkAlg(data, "110c10", Data);
+        } else {
+            checkAlg(data, "110c10", EncryptedData);
+            checkAlg(data, "110c110110", certAlg);
+            if (certAlg == PBES2) {
+                checkAlg(data, "110c11011100", PBKDF2WithHmacSHA1);
+                checkAlg(data, "110c1101110130", args[i++]);
+                checkAlg(data, "110c11011110", args[i++]);
+                checkInt(data, "110c110111011", (int) args[i++]);
             } else {
-                if (args[i] == "-") {
-                    Files.write(Path.of(n + ".conf"), jsConf);
-                    System.out.println("--------- test starts ----------");
-                    System.out.println(jsConf);
-                    SecurityTools.keytool(cmd).shouldHaveExitValue(0);
-
-                    byte[] data = Files.readAllBytes(Path.of("ks" + n));
-
-                    // cert pbe alg + ic
-                    if (args[i+1] == null) {
-                        checkAlg(data, "110c10", DATA_OID);
-                    } else {
-                        checkAlg(data, "110c10", ENCRYPTED_DATA_OID);
-                        checkAlg(data, "110c110110", (ObjectIdentifier)args[i+1]);
-                        checkInt(data, "110c1101111", (int)args[i+2]);
-                    }
-
-                    // key pbe alg + ic
-                    checkAlg(data, "110c010c01000", (ObjectIdentifier)args[i+3]);
-                    checkInt(data, "110c010c010011", (int)args[i+4]);
-
-                    // mac alg + ic
-                    if (args[i+5] == null) {
-                        shouldNotExist(data, "2");
-                    } else {
-                        checkAlg(data, "2000", (ObjectIdentifier)args[i+5]);
-                        checkInt(data, "22", (int)args[i+6]);
-                    }
-                } else {
-                    jsConf.add(args[i] + "=" + args[++i]);
-                }
+                checkInt(data, "110c1101111", (int) args[i++]);
             }
+        }
+
+        // key pbe alg + ic
+        KnownOIDs keyAlg = (KnownOIDs)args[i++];
+        checkAlg(data, "110c010c01000", keyAlg);
+        if (keyAlg == PBES2) {
+            checkAlg(data, "110c010c0100100", PBKDF2WithHmacSHA1);
+            checkAlg(data, "110c010c010010130", args[i++]);
+            checkAlg(data, "110c010c0100110", args[i++]);
+            checkInt(data, "110c010c01001011", (int) args[i++]);
+        } else {
+            checkInt(data, "110c010c010011", (int) args[i++]);
+        }
+
+        // mac alg + ic
+        KnownOIDs macAlg = (KnownOIDs)args[i++];
+        if (macAlg == null) {
+            shouldNotExist(data, "2");
+        } else {
+            checkAlg(data, "2000", macAlg);
+            checkInt(data, "22", (int) args[i++]);
         }
     }
 }

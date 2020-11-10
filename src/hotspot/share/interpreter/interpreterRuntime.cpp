@@ -1269,7 +1269,10 @@ JRT_ENTRY(void, InterpreterRuntime::post_method_entry(JavaThread *thread))
 JRT_END
 
 
-JRT_ENTRY(void, InterpreterRuntime::post_method_exit(JavaThread *thread))
+// This is a JRT_BLOCK_ENTRY because we have to stash away the return oop
+// before transitioning to VM, and restore it after transitioning back
+// to Java. The return oop at the top-of-stack, is not walked by the GC.
+JRT_BLOCK_ENTRY(void, InterpreterRuntime::post_method_exit(JavaThread *thread))
   LastFrameAccessor last_frame(thread);
   JvmtiExport::post_method_exit(thread, last_frame.method(), last_frame.get_frame());
 JRT_END

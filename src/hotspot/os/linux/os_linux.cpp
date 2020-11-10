@@ -4635,6 +4635,12 @@ jint os::init_2(void) {
     set_coredump_filter(FILE_BACKED_SHARED_BIT);
   }
 
+  if (DumpPerfMapAtExit && FLAG_IS_DEFAULT(UseCodeCacheFlushing)) {
+    // Disable code cache flushing to ensure the map file written at
+    // exit contains all nmethods generated during execution.
+    FLAG_SET_DEFAULT(UseCodeCacheFlushing, false);
+  }
+
   return JNI_OK;
 }
 

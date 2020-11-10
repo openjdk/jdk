@@ -416,6 +416,16 @@ class Direct$Type$Buffer$RW$$BO$
 #end[rw]
     }
 
+    public $Type$Buffer put(int index, $Type$Buffer src, int offset, int length) {
+#if[rw]
+        checkSegment();
+        super.put(index, src, offset, length);
+        return this;
+#else[rw]
+        throw new ReadOnlyBufferException();
+#end[rw]
+    }
+
     public $Type$Buffer put($type$[] src, int offset, int length) {
 #if[rw]
         checkSegment();

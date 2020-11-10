@@ -1964,8 +1964,8 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   declare_integer_type(AccessFlags)  /* FIXME: wrong type (not integer) */\
   declare_toplevel_type(address)      /* FIXME: should this be an integer type? */\
   declare_integer_type(BasicType)   /* FIXME: wrong type (not integer) */ \
-  declare_toplevel_type(BreakpointInfo)                                   \
-  declare_toplevel_type(BreakpointInfo*)                                  \
+  JVMTI_ONLY(declare_toplevel_type(BreakpointInfo))                       \
+  JVMTI_ONLY(declare_toplevel_type(BreakpointInfo*))                      \
   declare_toplevel_type(CodeBlob*)                                        \
   declare_toplevel_type(RuntimeBlob*)                                     \
   declare_toplevel_type(CompressedWriteStream*)                           \
@@ -2257,7 +2257,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   /*************************************/                                 \
                                                                           \
   declare_preprocessor_constant("FIELDINFO_TAG_SIZE", FIELDINFO_TAG_SIZE) \
-  declare_preprocessor_constant("FIELDINFO_TAG_MASK", FIELDINFO_TAG_MASK) \
   declare_preprocessor_constant("FIELDINFO_TAG_OFFSET", FIELDINFO_TAG_OFFSET) \
                                                                           \
   /************************************************/                      \
@@ -2600,17 +2599,17 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   /******************************/                                        \
   /*  -XX flags (value origin)  */                                        \
   /******************************/                                        \
-  declare_constant(JVMFlag::DEFAULT)                                      \
-  declare_constant(JVMFlag::COMMAND_LINE)                                 \
-  declare_constant(JVMFlag::ENVIRON_VAR)                                  \
-  declare_constant(JVMFlag::CONFIG_FILE)                                  \
-  declare_constant(JVMFlag::MANAGEMENT)                                   \
-  declare_constant(JVMFlag::ERGONOMIC)                                    \
-  declare_constant(JVMFlag::ATTACH_ON_DEMAND)                             \
-  declare_constant(JVMFlag::INTERNAL)                                     \
-  declare_constant(JVMFlag::JIMAGE_RESOURCE)                              \
+  declare_constant(JVMFlagOrigin::DEFAULT)                                \
+  declare_constant(JVMFlagOrigin::COMMAND_LINE)                           \
+  declare_constant(JVMFlagOrigin::ENVIRON_VAR)                            \
+  declare_constant(JVMFlagOrigin::CONFIG_FILE)                            \
+  declare_constant(JVMFlagOrigin::MANAGEMENT)                             \
+  declare_constant(JVMFlagOrigin::ERGONOMIC)                              \
+  declare_constant(JVMFlagOrigin::ATTACH_ON_DEMAND)                       \
+  declare_constant(JVMFlagOrigin::INTERNAL)                               \
+  declare_constant(JVMFlagOrigin::JIMAGE_RESOURCE)                        \
   declare_constant(JVMFlag::VALUE_ORIGIN_MASK)                            \
-  declare_constant(JVMFlag::ORIG_COMMAND_LINE)
+  declare_constant(JVMFlag::WAS_SET_ON_COMMAND_LINE)
 
 //--------------------------------------------------------------------------------
 // VM_LONG_CONSTANTS
