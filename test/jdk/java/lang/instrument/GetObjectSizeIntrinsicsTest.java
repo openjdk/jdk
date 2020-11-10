@@ -272,10 +272,10 @@ import sun.hotspot.WhiteBox;
 public class GetObjectSizeIntrinsicsTest extends ASimpleInstrumentationTestCase {
 
     static final Boolean compressedOops = WhiteBox.getWhiteBox().getBooleanVMFlag("UseCompressedOops");
-    static final int R = ((compressedOops == null) || (compressedOops == true)) ?  4 : 8;
+    static final int REF_SIZE = ((compressedOops == null) || (compressedOops == true)) ?  4 : 8;
 
     static final Long align = WhiteBox.getWhiteBox().getIntxVMFlag("ObjectAlignmentInBytes");
-    static final int A = (align == null ? 8 : align.intValue());
+    static final int OBJ_ALIGN = (align == null ? 8 : align.intValue());
 
     public GetObjectSizeIntrinsicsTest(String name) {
         super(name);
@@ -328,14 +328,14 @@ public class GetObjectSizeIntrinsicsTest extends ASimpleInstrumentationTestCase 
     }
 
     private void testSize_newObject() {
-        int expected = roundUp(Platform.is64bit() ? 16 : 8, A);
+        int expected = roundUp(Platform.is64bit() ? 16 : 8, OBJ_ALIGN);
         for (int c = 0; c < ITERS; c++) {
             assertEquals(expected, fInst.getObjectSize(new Object()));
         }
     }
 
     private void testSize_localObject() {
-        int expected = roundUp(Platform.is64bit() ? 16 : 8, A);
+        int expected = roundUp(Platform.is64bit() ? 16 : 8, OBJ_ALIGN);
         Object o = new Object();
         for (int c = 0; c < ITERS; c++) {
             assertEquals(expected, fInst.getObjectSize(o));
@@ -345,14 +345,14 @@ public class GetObjectSizeIntrinsicsTest extends ASimpleInstrumentationTestCase 
     static Object staticO = new Object();
 
     private void testSize_fieldObject() {
-        int expected = roundUp(Platform.is64bit() ? 16 : 8, A);
+        int expected = roundUp(Platform.is64bit() ? 16 : 8, OBJ_ALIGN);
         for (int c = 0; c < ITERS; c++) {
             assertEquals(expected, fInst.getObjectSize(staticO));
         }
     }
 
     private void testSize_newSmallByteArray() {
-        int expected = roundUp(1024 + 16, A);
+        int expected = roundUp(1024 + 16, OBJ_ALIGN);
         for (int c = 0; c < ITERS; c++) {
             assertEquals(expected, fInst.getObjectSize(new byte[1024]));
         }
@@ -360,7 +360,7 @@ public class GetObjectSizeIntrinsicsTest extends ASimpleInstrumentationTestCase 
 
     private void testSize_localSmallByteArray() {
         byte[] arr = new byte[1024];
-        int expected = roundUp(arr.length + 16, A);
+        int expected = roundUp(arr.length + 16, OBJ_ALIGN);
         for (int c = 0; c < ITERS; c++) {
             assertEquals(expected, fInst.getObjectSize(arr));
         }
@@ -369,14 +369,14 @@ public class GetObjectSizeIntrinsicsTest extends ASimpleInstrumentationTestCase 
     static byte[] smallArr = new byte[1024];
 
     private void testSize_fieldSmallByteArray() {
-        int expected = roundUp(smallArr.length + 16, A);
+        int expected = roundUp(smallArr.length + 16, OBJ_ALIGN);
         for (int c = 0; c < ITERS; c++) {
             assertEquals(expected, fInst.getObjectSize(smallArr));
         }
     }
 
     private void testSize_newSmallObjArray() {
-        int expected = roundUp(1024*R + 16, A);
+        int expected = roundUp(1024*REF_SIZE + 16, OBJ_ALIGN);
         for (int c = 0; c < ITERS; c++) {
             assertEquals(expected, fInst.getObjectSize(new Object[1024]));
         }
@@ -384,7 +384,7 @@ public class GetObjectSizeIntrinsicsTest extends ASimpleInstrumentationTestCase 
 
     private void testSize_localSmallObjArray() {
         Object[] arr = new Object[1024];
-        int expected = roundUp(arr.length*R + 16, A);
+        int expected = roundUp(arr.length*REF_SIZE + 16, OBJ_ALIGN);
         for (int c = 0; c < ITERS; c++) {
             assertEquals(expected, fInst.getObjectSize(arr));
         }
@@ -393,7 +393,7 @@ public class GetObjectSizeIntrinsicsTest extends ASimpleInstrumentationTestCase 
     static Object[] smallObjArr = new Object[1024];
 
     private void testSize_fieldSmallObjArray() {
-        int expected = roundUp(smallArr.length*R + 16, A);
+        int expected = roundUp(smallArr.length*REF_SIZE + 16, OBJ_ALIGN);
         for (int c = 0; c < ITERS; c++) {
             assertEquals(expected, fInst.getObjectSize(smallObjArr));
         }
