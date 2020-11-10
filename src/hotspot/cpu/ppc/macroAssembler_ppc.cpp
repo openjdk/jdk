@@ -382,25 +382,6 @@ AddressLiteral MacroAssembler::constant_oop_address(jobject obj) {
   return AddressLiteral(address(obj), oop_Relocation::spec(oop_index));
 }
 
-RegisterOrConstant MacroAssembler::delayed_value_impl(intptr_t* delayed_value_addr,
-                                                      Register tmp, int offset) {
-  intptr_t value = *delayed_value_addr;
-  if (value != 0) {
-    return RegisterOrConstant(value + offset);
-  }
-
-  // Load indirectly to solve generation ordering problem.
-  // static address, no relocation
-  int simm16_offset = load_const_optimized(tmp, delayed_value_addr, noreg, true);
-  ld(tmp, simm16_offset, tmp); // must be aligned ((xa & 3) == 0)
-
-  if (offset != 0) {
-    addi(tmp, tmp, offset);
-  }
-
-  return RegisterOrConstant(tmp);
-}
-
 #ifndef PRODUCT
 void MacroAssembler::pd_print_patched_instruction(address branch) {
   Unimplemented(); // TODO: PPC port
@@ -3044,7 +3025,7 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
 }
 
 void MacroAssembler::safepoint_poll(Label& slow_path, Register temp_reg) {
-  ld(temp_reg, in_bytes(Thread::polling_page_offset()), R16_thread);
+  ld(temp_reg, in_bytes(Thread::polling_word_offset()), R16_thread);
   // Armed page has poll_bit set.
   andi_(temp_reg, temp_reg, SafepointMechanism::poll_bit());
   bne(CCR0, slow_path);

@@ -91,14 +91,23 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileManager.Location;
 import javax.tools.StandardLocation;
 
+import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.DocTree.Kind;
 import com.sun.source.doctree.EndElementTree;
 import com.sun.source.doctree.ParamTree;
+import com.sun.source.doctree.ProvidesTree;
+import com.sun.source.doctree.ReturnTree;
+import com.sun.source.doctree.SeeTree;
+import com.sun.source.doctree.SerialDataTree;
+import com.sun.source.doctree.SerialFieldTree;
+import com.sun.source.doctree.SerialTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
+import com.sun.source.doctree.ThrowsTree;
 import com.sun.source.doctree.UnknownBlockTagTree;
+import com.sun.source.doctree.UsesTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.LineMap;
 import com.sun.source.util.DocSourcePositions;
@@ -282,8 +291,7 @@ public class Utils {
     }
 
     /**
-     * According to
-     * <cite>The Java Language Specification</cite>,
+     * According to <cite>The Java Language Specification</cite>,
      * all the outer classes and static inner classes are core classes.
      */
     public boolean isCoreClass(TypeElement e) {
@@ -946,8 +954,8 @@ public class Utils {
         return set;
     }
 
-    public List<? extends DocTree> getSerialDataTrees(ExecutableElement member) {
-        return getBlockTags(member, SERIAL_DATA);
+    public List<? extends SerialDataTree> getSerialDataTrees(ExecutableElement member) {
+        return getBlockTags(member, SERIAL_DATA, SerialDataTree.class);
     }
 
     public FileObject getFileObject(TypeElement te) {
@@ -1338,33 +1346,35 @@ public class Utils {
     }
 
     /**
-     * Given a TypeElement, return the name of its type (Class, Interface, etc.).
+     * Returns the name of the kind of a type element (Class, Interface, etc.).
      *
-     * @param te the TypeElement to check.
-     * @param lowerCaseOnly true if you want the name returned in lower case.
-     *                      If false, the first letter of the name is capitalized.
-     * @return
+     * @param te the type element
+     * @param lowerCaseOnly true if you want the name returned in lower case;
+     *                      if false, the first letter of the name is capitalized
+     * @return the name
      */
-    public String getTypeElementName(TypeElement te, boolean lowerCaseOnly) {
-        String typeName = "";
-        if (isInterface(te)) {
-            typeName = "doclet.Interface";
-        } else if (isException(te)) {
-            typeName = "doclet.Exception";
-        } else if (isError(te)) {
-            typeName = "doclet.Error";
-        } else if (isAnnotationType(te)) {
-            typeName = "doclet.AnnotationType";
-        } else if (isEnum(te)) {
-            typeName = "doclet.Enum";
-        } else if (isOrdinaryClass(te)) {
-            typeName = "doclet.Class";
-        }
-        typeName = lowerCaseOnly ? toLowerCase(typeName) : typeName;
-        return typeNameMap.computeIfAbsent(typeName, resources::getText);
+    public String getTypeElementKindName(TypeElement te, boolean lowerCaseOnly) {
+        String kindName = switch (te.getKind()) {
+            case ANNOTATION_TYPE ->
+                    "doclet.AnnotationType";
+            case ENUM ->
+                    "doclet.Enum";
+            case INTERFACE ->
+                    "doclet.Interface";
+            case RECORD ->
+                    "doclet.Record";
+            case CLASS ->
+                    isException(te) ? "doclet.Exception"
+                    : isError(te) ? "doclet.Error"
+                    : "doclet.Class";
+            default ->
+                    throw new IllegalArgumentException(te.getKind().toString());
+        };
+        kindName = lowerCaseOnly ? toLowerCase(kindName) : kindName;
+        return kindNameMap.computeIfAbsent(kindName, resources::getText);
     }
 
-    private final Map<String, String> typeNameMap = new HashMap<>();
+    private final Map<String, String> kindNameMap = new HashMap<>();
 
     public String getTypeName(TypeMirror t, boolean fullyQualified) {
         return new SimpleTypeVisitor9<String, Void>() {
@@ -2590,8 +2600,20 @@ public class Utils {
                 .collect(Collectors.toList());
     }
 
+    public <T extends DocTree> List<? extends T> getBlockTags(Element element, Predicate<DocTree> filter, Class<T> tClass) {
+        return getBlockTags(element).stream()
+                .filter(t -> t.getKind() != ERRONEOUS)
+                .filter(filter)
+                .map(t -> tClass.cast(t))
+                .collect(Collectors.toList());
+    }
+
     public List<? extends DocTree> getBlockTags(Element element, DocTree.Kind kind) {
         return getBlockTags(element, t -> t.getKind() == kind);
+    }
+
+    public <T extends DocTree> List<? extends T> getBlockTags(Element element, DocTree.Kind kind, Class<T> tClass) {
+        return getBlockTags(element, t -> t.getKind() == kind, tClass);
     }
 
     public List<? extends DocTree> getBlockTags(Element element, DocTree.Kind kind, DocTree.Kind altKind) {
@@ -2659,7 +2681,7 @@ public class Utils {
      * The entries may come from the AST and DocCommentParser, or may be autromatically
      * generated comments for mandated elements and JavaFX properties.
      *
-     * @see CommentUtils.dcInfoMap
+     * @see CommentUtils#dcInfoMap
      */
     private final Map<Element, DocCommentInfo> dcTreeCache = new LinkedHashMap<>();
 
@@ -2779,28 +2801,30 @@ public class Utils {
                 : docCommentTree.getFullBody();
     }
 
-    public List<? extends DocTree> getDeprecatedTrees(Element element) {
-        return getBlockTags(element, DEPRECATED);
+    public List<? extends DeprecatedTree> getDeprecatedTrees(Element element) {
+        return getBlockTags(element, DEPRECATED, DeprecatedTree.class);
     }
 
-    public List<? extends DocTree> getProvidesTrees(Element element) {
-        return getBlockTags(element, PROVIDES);
+    public List<? extends ProvidesTree> getProvidesTrees(Element element) {
+        return getBlockTags(element, PROVIDES, ProvidesTree.class);
     }
 
-    public List<? extends DocTree> getSeeTrees(Element element) {
-        return getBlockTags(element, SEE);
+    public List<? extends SeeTree> getSeeTrees(Element element) {
+        return getBlockTags(element, SEE, SeeTree.class);
     }
 
-    public List<? extends DocTree> getSerialTrees(Element element) {
-        return getBlockTags(element, SERIAL);
+    public List<? extends SerialTree> getSerialTrees(Element element) {
+        return getBlockTags(element, SERIAL, SerialTree.class);
     }
 
-    public List<? extends DocTree> getSerialFieldTrees(VariableElement field) {
-        return getBlockTags(field, DocTree.Kind.SERIAL_FIELD);
+    public List<? extends SerialFieldTree> getSerialFieldTrees(VariableElement field) {
+        return getBlockTags(field, DocTree.Kind.SERIAL_FIELD, SerialFieldTree.class);
     }
 
-    public List<? extends DocTree> getThrowsTrees(Element element) {
-        return getBlockTags(element, DocTree.Kind.EXCEPTION, DocTree.Kind.THROWS);
+    public List<? extends ThrowsTree> getThrowsTrees(Element element) {
+        return getBlockTags(element,
+                t -> switch (t.getKind()) { case EXCEPTION, THROWS -> true; default -> false; },
+                ThrowsTree.class);
     }
 
     public List<? extends ParamTree> getTypeParamTrees(Element element) {
@@ -2812,22 +2836,17 @@ public class Utils {
     }
 
     private  List<? extends ParamTree> getParamTrees(Element element, boolean isTypeParameters) {
-        List<ParamTree> out = new ArrayList<>();
-        for (DocTree dt : getBlockTags(element, PARAM)) {
-            ParamTree pt = (ParamTree) dt;
-            if (pt.isTypeParameter() == isTypeParameters) {
-                out.add(pt);
-            }
-        }
-        return out;
+        return getBlockTags(element,
+                t -> t.getKind() == PARAM && ((ParamTree) t).isTypeParameter() == isTypeParameters,
+                ParamTree.class);
     }
 
-    public  List<? extends DocTree> getReturnTrees(Element element) {
-        return new ArrayList<>(getBlockTags(element, RETURN));
+    public  List<? extends ReturnTree> getReturnTrees(Element element) {
+        return new ArrayList<>(getBlockTags(element, RETURN, ReturnTree.class));
     }
 
-    public List<? extends DocTree> getUsesTrees(Element element) {
-        return getBlockTags(element, USES);
+    public List<? extends UsesTree> getUsesTrees(Element element) {
+        return getBlockTags(element, USES, UsesTree.class);
     }
 
     public List<? extends DocTree> getFirstSentenceTrees(Element element) {

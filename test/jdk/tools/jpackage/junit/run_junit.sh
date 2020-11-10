@@ -17,10 +17,10 @@ for s in $(find "${TESTSRC}" -name  "*.java" | grep -v junit.java); do
 done
 
 common_args=(\
-  --add-modules jdk.incubator.jpackage \
-  --patch-module jdk.incubator.jpackage="${TESTSRC}${PS}${TESTCLASSES}" \
-  --add-reads jdk.incubator.jpackage=ALL-UNNAMED \
-  --add-exports jdk.incubator.jpackage/jdk.incubator.jpackage.internal=ALL-UNNAMED \
+  --add-modules jdk.jpackage \
+  --patch-module jdk.jpackage="${TESTSRC}${PS}${TESTCLASSES}" \
+  --add-reads jdk.jpackage=ALL-UNNAMED \
+  --add-exports jdk.jpackage/jdk.jpackage.internal=ALL-UNNAMED \
   -classpath "${TESTCLASSPATH}" \
 )
 

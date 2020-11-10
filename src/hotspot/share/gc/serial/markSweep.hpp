@@ -191,9 +191,6 @@ class AdjustPointerClosure: public BasicOopIterateClosure {
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }
-
-  // This closure provides its own oop verification code.
-  debug_only(virtual bool should_verify_oops() { return false; })
 };
 
 class PreservedMark {

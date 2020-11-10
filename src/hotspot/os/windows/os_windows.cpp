@@ -2144,6 +2144,8 @@ static int check_pending_signals() {
       }
     } while (threadIsSuspended);
   }
+  ShouldNotReachHere();
+  return 0; // Satisfy compiler
 }
 
 int os::signal_wait() {
@@ -2354,7 +2356,7 @@ static inline void report_error(Thread* t, DWORD exception_code,
                                 address addr, void* siginfo, void* context) {
   VMError::report_and_die(t, exception_code, addr, siginfo, context);
 
-  // If UseOsErrorReporting, this will return here and save the error file
+  // If UseOSErrorReporting, this will return here and save the error file
   // somewhere where we can find it in the minidump.
 }
 
@@ -2473,7 +2475,8 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
 
     // Handle potential stack overflows up front.
     if (exception_code == EXCEPTION_STACK_OVERFLOW) {
-      if (thread->stack_guards_enabled()) {
+      StackOverflow* overflow_state = thread->stack_overflow_state();
+      if (overflow_state->stack_guards_enabled()) {
         if (in_java) {
           frame fr;
           if (os::win32::get_frame_at_stack_banging_point(thread, exceptionInfo, pc, &fr)) {
@@ -2485,14 +2488,14 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         // zone page for us.  Note:  must call disable_stack_yellow_zone to
         // update the enabled status, even if the zone contains only one page.
         assert(!in_vm, "Undersized StackShadowPages");
-        thread->disable_stack_yellow_reserved_zone();
+        overflow_state->disable_stack_yellow_reserved_zone();
         // If not in java code, return and hope for the best.
         return in_java
             ? Handle_Exception(exceptionInfo, SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::STACK_OVERFLOW))
             :  EXCEPTION_CONTINUE_EXECUTION;
       } else {
         // Fatal red zone violation.
-        thread->disable_stack_red_zone();
+        overflow_state->disable_stack_red_zone();
         tty->print_raw_cr("An unrecoverable stack overflow has occurred.");
 #if !defined(USE_VECTORED_EXCEPTION_HANDLING)
         report_error(t, exception_code, pc, exception_record,
@@ -3136,7 +3139,7 @@ void os::split_reserved_memory(char *base, size_t size, size_t split) {
 // Multiple threads can race in this code but it's not possible to unmap small sections of
 // virtual space to get requested alignment, like posix-like os's.
 // Windows prevents multiple thread from remapping over each other so this loop is thread-safe.
-char* os::reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
+static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
   assert((alignment & (os::vm_allocation_granularity() - 1)) == 0,
          "Alignment must be a multiple of allocation granularity (page size)");
   assert((size & (alignment -1)) == 0, "size must be 'alignment' aligned");
@@ -3147,7 +3150,9 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
   char* aligned_base = NULL;
 
   do {
-    char* extra_base = os::reserve_memory_with_fd(extra_size, file_desc);
+    char* extra_base = file_desc != -1 ?
+      os::map_memory_to_file(extra_size, file_desc) :
+      os::reserve_memory(extra_size);
     if (extra_base == NULL) {
       return NULL;
     }
@@ -3160,11 +3165,21 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
       os::release_memory(extra_base, extra_size);
     }
 
-    aligned_base = os::attempt_reserve_memory_at(aligned_base, size, file_desc);
+    aligned_base = file_desc != -1 ?
+      os::attempt_map_memory_to_file_at(aligned_base, size, file_desc) :
+      os::attempt_reserve_memory_at(aligned_base, size);
 
   } while (aligned_base == NULL);
 
   return aligned_base;
+}
+
+char* os::reserve_memory_aligned(size_t size, size_t alignment) {
+  return map_or_reserve_memory_aligned(size, alignment, -1 /* file_desc */);
+}
+
+char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int fd) {
+  return map_or_reserve_memory_aligned(size, alignment, fd);
 }
 
 char* os::pd_reserve_memory(size_t bytes) {
@@ -3204,7 +3219,7 @@ char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes) {
   return res;
 }
 
-char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, int file_desc) {
+char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, int file_desc) {
   assert(file_desc >= 0, "file_desc is not valid");
   return map_memory_to_file(requested_addr, bytes, file_desc);
 }
@@ -4091,8 +4106,8 @@ jint os::init_2(void) {
   // Add in 4*BytesPerWord 4K pages to account for VM stack during
   // class initialization depending on 32 or 64 bit VM.
   size_t min_stack_allowed =
-            (size_t)(JavaThread::stack_guard_zone_size() +
-                     JavaThread::stack_shadow_zone_size() +
+            (size_t)(StackOverflow::stack_guard_zone_size() +
+                     StackOverflow::stack_shadow_zone_size() +
                      (4*BytesPerWord COMPILER2_PRESENT(+2)) * 4 * K);
 
   min_stack_allowed = align_up(min_stack_allowed, os::vm_page_size());
@@ -5066,9 +5081,10 @@ void os::pause() {
 
 Thread* os::ThreadCrashProtection::_protected_thread = NULL;
 os::ThreadCrashProtection* os::ThreadCrashProtection::_crash_protection = NULL;
-volatile intptr_t os::ThreadCrashProtection::_crash_mux = 0;
 
 os::ThreadCrashProtection::ThreadCrashProtection() {
+  _protected_thread = Thread::current();
+  assert(_protected_thread->is_JfrSampler_thread(), "should be JFRSampler");
 }
 
 // See the caveats for this class in os_windows.hpp
@@ -5078,12 +5094,6 @@ os::ThreadCrashProtection::ThreadCrashProtection() {
 // The callback is supposed to provide the method that should be protected.
 //
 bool os::ThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
-
-  Thread::muxAcquire(&_crash_mux, "CrashProtection");
-
-  _protected_thread = Thread::current_or_null();
-  assert(_protected_thread != NULL, "Cannot crash protect a NULL thread");
-
   bool success = true;
   __try {
     _crash_protection = this;
@@ -5094,7 +5104,6 @@ bool os::ThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
   }
   _crash_protection = NULL;
   _protected_thread = NULL;
-  Thread::muxRelease(&_crash_mux);
   return success;
 }
 

@@ -292,7 +292,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
      * @return the 1.4.x style anchor for the executable element.
      */
     protected String getErasureAnchor(ExecutableElement executableElement) {
-        final StringBuilder buf = new StringBuilder(writer.anchorName(executableElement));
+        final StringBuilder buf = new StringBuilder(executableElement.getSimpleName());
         buf.append("(");
         List<? extends VariableElement> parameters = executableElement.getParameters();
         boolean foundTypeVariable = false;

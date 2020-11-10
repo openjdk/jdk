@@ -76,13 +76,6 @@
           " compact - run GC more frequently and with deeper targets to "   \
           "free up more memory.")                                           \
                                                                             \
-  product(uintx, ShenandoahRefProcFrequency, 5, EXPERIMENTAL,               \
-          "Process process weak (soft, phantom, finalizers) references "    \
-          "every Nth cycle. Normally affects concurrent GC cycles only, "   \
-          "as degenerated and full GCs would try to process references "    \
-          "regardless. Set to zero to disable reference processing "        \
-          "completely.")                                                    \
-                                                                            \
   product(uintx, ShenandoahUnloadClassesFrequency, 1, EXPERIMENTAL,         \
           "Unload the classes every Nth cycle. Normally affects concurrent "\
           "GC cycles, as degenerated and full GCs would try to unload "     \
@@ -313,11 +306,6 @@
           "Forcefully flush non-empty SATB buffers at this interval. "      \
           "Time is in milliseconds.")                                       \
                                                                             \
-  product(bool, ShenandoahPreclean, true, DIAGNOSTIC,                       \
-          "Do concurrent preclean phase before final mark: process "        \
-          "definitely alive references to avoid dealing with them during "  \
-          "pause.")                                                         \
-                                                                            \
   product(bool, ShenandoahSuspendibleWorkers, false, EXPERIMENTAL,          \
           "Suspend concurrent GC worker threads at safepoints")             \
                                                                             \
@@ -335,12 +323,6 @@
                                                                             \
   product(bool, ShenandoahLoadRefBarrier, true, DIAGNOSTIC,                 \
           "Turn on/off load-reference barriers in Shenandoah")              \
-                                                                            \
-  product(uintx, ShenandoahCodeRootsStyle, 2, DIAGNOSTIC,                   \
-          "Use this style to scan the code cache roots:"                    \
-          " 0 - sequential iterator;"                                       \
-          " 1 - parallel iterator;"                                         \
-          " 2 - parallel iterator with cset filters;")                      \
                                                                             \
   develop(bool, ShenandoahVerifyOptoBarriers, false,                        \
           "Verify no missing barriers in C2.")                              \

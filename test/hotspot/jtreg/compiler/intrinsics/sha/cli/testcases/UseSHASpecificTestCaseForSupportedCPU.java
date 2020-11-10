@@ -66,7 +66,9 @@ public class UseSHASpecificTestCaseForSupportedCPU
                 CommandLineOptionTest.prepareBooleanFlag(
                         DigestOptionsBase.USE_SHA256_INTRINSICS_OPTION, false),
                 CommandLineOptionTest.prepareBooleanFlag(
-                        DigestOptionsBase.USE_SHA512_INTRINSICS_OPTION, false));
+                        DigestOptionsBase.USE_SHA512_INTRINSICS_OPTION, false),
+                CommandLineOptionTest.prepareBooleanFlag(
+                        DigestOptionsBase.USE_SHA3_INTRINSICS_OPTION, false));
     }
 
     @Override
@@ -83,7 +85,9 @@ public class UseSHASpecificTestCaseForSupportedCPU
                 CommandLineOptionTest.prepareBooleanFlag(
                         DigestOptionsBase.USE_SHA256_INTRINSICS_OPTION, false),
                 CommandLineOptionTest.prepareBooleanFlag(
-                        DigestOptionsBase.USE_SHA512_INTRINSICS_OPTION, false));
+                        DigestOptionsBase.USE_SHA512_INTRINSICS_OPTION, false),
+                CommandLineOptionTest.prepareBooleanFlag(
+                        DigestOptionsBase.USE_SHA3_INTRINSICS_OPTION, false));
 
         CommandLineOptionTest.verifyOptionValueForSameVM(
                 // Verify that UseSHA is disabled when all UseSHA*Intrinsics are
@@ -102,7 +106,9 @@ public class UseSHASpecificTestCaseForSupportedCPU
                 CommandLineOptionTest.prepareBooleanFlag(
                         DigestOptionsBase.USE_SHA256_INTRINSICS_OPTION, false),
                 CommandLineOptionTest.prepareBooleanFlag(
-                        DigestOptionsBase.USE_SHA512_INTRINSICS_OPTION, false));
+                        DigestOptionsBase.USE_SHA512_INTRINSICS_OPTION, false),
+                CommandLineOptionTest.prepareBooleanFlag(
+                        DigestOptionsBase.USE_SHA3_INTRINSICS_OPTION, false));
 
         // Verify that explicitly disabled UseSHA option remains disabled even
         // if all UseSHA*Intrinsics options were enabled.
@@ -121,6 +127,8 @@ public class UseSHASpecificTestCaseForSupportedCPU
                 CommandLineOptionTest.prepareBooleanFlag(
                         DigestOptionsBase.USE_SHA256_INTRINSICS_OPTION, true),
                 CommandLineOptionTest.prepareBooleanFlag(
-                        DigestOptionsBase.USE_SHA512_INTRINSICS_OPTION, true));
+                        DigestOptionsBase.USE_SHA512_INTRINSICS_OPTION, true),
+                CommandLineOptionTest.prepareBooleanFlag(
+                        DigestOptionsBase.USE_SHA3_INTRINSICS_OPTION, true));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import jdk.test.lib.RandomFactory;
 
 /*
  * @test
- * @bug 8080835 8139206
+ * @bug 8080835 8139206 8254742
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
  * @run main ReadNBytes
@@ -44,6 +44,7 @@ public class ReadNBytes {
     private static Random generator = RandomFactory.getRandom();
 
     public static void main(String[] args) throws IOException {
+        test();
         test(new byte[]{1, 2, 3});
         test(createRandomBytes(1024));
         for (int shift : new int[] {13, 15, 17}) {
@@ -135,6 +136,19 @@ public class ReadNBytes {
         check(!in.isClosed(), "Stream unexpectedly closed");
     }
 
+    static void test() throws IOException {
+        final int chunkSize = 8192;
+        int size = (10 + generator.nextInt(11))*chunkSize;
+
+        byte[] buf = new byte[size];
+        generator.nextBytes(buf);
+        InputStream s = new ThrottledByteArrayInputStream(buf);
+
+        byte[] b = s.readNBytes(size);
+
+        check(Arrays.equals(b, buf), "Arrays not equal");
+    }
+
     static byte[] createRandomBytes(int size) {
         byte[] bytes = new byte[size];
         generator.nextBytes(bytes);
@@ -150,11 +164,32 @@ public class ReadNBytes {
         throw new RuntimeException(sb.toString());
     }
 
-
     static class WrapperInputStream extends FilterInputStream {
         private boolean closed;
         WrapperInputStream(InputStream in) { super(in); }
         @Override public void close() throws IOException { closed = true; in.close(); }
         boolean isClosed() { return closed; }
+    }
+
+    static class ThrottledByteArrayInputStream extends ByteArrayInputStream {
+        private int count = 0;
+
+        ThrottledByteArrayInputStream(byte[] buf) {
+            super(buf);
+        }
+
+        @Override
+        //
+        // Sometimes return zero or a smaller count than requested.
+        //
+        public int read(byte[] buf, int off, int len) {
+            if (generator.nextBoolean()) {
+                return 0;
+            } else if (++count / 3 == 0) {
+                len /= 3;
+            }
+
+            return super.read(buf, off, len);
+        }
     }
 }

@@ -37,7 +37,7 @@
 #include "gc/shared/memAllocator.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
-#include "memory/metaspace.hpp"
+#include "memory/classLoaderMetaspace.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceMirrorKlass.hpp"
@@ -597,6 +597,10 @@ oop CollectedHeap::pin_object(JavaThread* thread, oop obj) {
 
 void CollectedHeap::unpin_object(JavaThread* thread, oop obj) {
   ShouldNotReachHere();
+}
+
+bool CollectedHeap::is_archived_object(oop object) const {
+  return false;
 }
 
 void CollectedHeap::deduplicate_string(oop str) {

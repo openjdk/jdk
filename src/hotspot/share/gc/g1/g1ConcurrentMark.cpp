@@ -594,15 +594,19 @@ private:
       HeapWord* const end = r->end();
 
       while (cur < end) {
+        // Abort iteration if necessary.
+        if (_cm != NULL) {
+          _cm->do_yield_check();
+          if (_cm->has_aborted()) {
+            return true;
+          }
+        }
+
         MemRegion mr(cur, MIN2(cur + chunk_size_in_words, end));
         _bitmap->clear_range(mr);
 
         cur += chunk_size_in_words;
 
-        // Abort iteration if after yielding the marking has been aborted.
-        if (_cm != NULL && _cm->do_yield_check() && _cm->has_aborted()) {
-          return true;
-        }
         // Repeat the asserts from before the start of the closure. We will do them
         // as asserts here to minimize their overhead on the product. However, we
         // will have them as guarantees at the beginning / end of the bitmap
@@ -671,9 +675,9 @@ void G1ConcurrentMark::cleanup_for_next_mark() {
   guarantee(!_g1h->collector_state()->mark_or_rebuild_in_progress(), "invariant");
 }
 
-void G1ConcurrentMark::clear_prev_bitmap(WorkGang* workers) {
+void G1ConcurrentMark::clear_next_bitmap(WorkGang* workers) {
   assert_at_safepoint_on_vm_thread();
-  clear_bitmap(_prev_mark_bitmap, workers, false);
+  clear_bitmap(_next_mark_bitmap, workers, false);
 }
 
 class NoteStartOfMarkHRClosure : public HeapRegionClosure {
@@ -1128,6 +1132,8 @@ void G1ConcurrentMark::remark() {
 
     // Install newly created mark bitmap as "prev".
     swap_mark_bitmaps();
+
+    _g1h->collector_state()->set_clearing_next_bitmap(true);
     {
       GCTraceTime(Debug, gc, phases) debug("Update Remembered Set Tracking Before Rebuild", _gc_timer_cm);
 
@@ -1692,7 +1698,6 @@ void G1ConcurrentMark::swap_mark_bitmaps() {
   G1CMBitMap* temp = _prev_mark_bitmap;
   _prev_mark_bitmap = _next_mark_bitmap;
   _next_mark_bitmap = temp;
-  _g1h->collector_state()->set_clearing_next_bitmap(true);
 }
 
 // Closure for marking entries in SATB buffers.
@@ -1971,7 +1976,7 @@ void G1ConcurrentMark::concurrent_cycle_abort() {
   // concurrent bitmap clearing.
   {
     GCTraceTime(Debug, gc) debug("Clear Next Bitmap");
-    clear_bitmap(_next_mark_bitmap, _g1h->workers(), false);
+    clear_next_bitmap(_g1h->workers());
   }
   // Note we cannot clear the previous marking bitmap here
   // since VerifyDuringGC verifies the objects marked during

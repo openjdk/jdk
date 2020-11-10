@@ -306,7 +306,7 @@ AC_DEFUN_ONCE([JVM_FEATURES_CHECK_GRAAL],
     # Graal is only available where JVMCI is available since it requires JVMCI.
     if test "x$OPENJDK_TARGET_CPU" = "xx86_64"; then
       AC_MSG_RESULT([yes])
-    elif test "x$OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU" = "xlinux-aarch64"; then
+    elif test "x$OPENJDK_TARGET_CPU" = "xaarch64"; then
       AC_MSG_RESULT([yes])
     else
       AC_MSG_RESULT([no, $OPENJDK_TARGET_CPU])
@@ -340,7 +340,7 @@ AC_DEFUN_ONCE([JVM_FEATURES_CHECK_JVMCI],
     AC_MSG_CHECKING([if platform is supported by JVMCI])
     if test "x$OPENJDK_TARGET_CPU" = "xx86_64"; then
       AC_MSG_RESULT([yes])
-    elif test "x$OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU" = "xlinux-aarch64"; then
+    elif test "x$OPENJDK_TARGET_CPU" = "xaarch64"; then
       AC_MSG_RESULT([yes])
     else
       AC_MSG_RESULT([no, $OPENJDK_TARGET_CPU])

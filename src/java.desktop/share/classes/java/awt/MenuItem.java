@@ -725,7 +725,8 @@ public class MenuItem extends MenuComponent implements Accessible {
      * as optional data. The non-serializable listeners are
      * detected and no attempt is made to serialize them.
      *
-     * @param s the {@code ObjectOutputStream} to write
+     * @param  s the {@code ObjectOutputStream} to write
+     * @throws IOException if an I/O error occurs
      * @serialData {@code null} terminated sequence of 0
      *   or more pairs; the pair consists of a {@code String}
      *   and an {@code Object}; the {@code String}
@@ -751,10 +752,12 @@ public class MenuItem extends MenuComponent implements Accessible {
      * action events fired by the {@code Menu} Item.
      * Unrecognized keys or values will be ignored.
      *
-     * @param s the {@code ObjectInputStream} to read
-     * @exception HeadlessException if
-     *   {@code GraphicsEnvironment.isHeadless} returns
-     *   {@code true}
+     * @param  s the {@code ObjectInputStream} to read
+     * @throws ClassNotFoundException if the class of a serialized object could
+     *         not be found
+     * @throws IOException if an I/O error occurs
+     * @throws HeadlessException if {@code GraphicsEnvironment.isHeadless()}
+     *         returns {@code true}
      * @see #removeActionListener(ActionListener)
      * @see #addActionListener(ActionListener)
      * @see #writeObject(ObjectOutputStream)

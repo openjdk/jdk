@@ -184,10 +184,6 @@ ifeq ($(call isTargetOs, windows), true)
   java.desktop_EXCLUDES += com/sun/java/swing/plaf/gtk
 endif
 
-ifdef BUILD_HEADLESS_ONLY
-  java.desktop_EXCLUDES += sun/applet
-endif
-
 ifeq ($(call isTargetOs, windows macosx), false)
   java.desktop_EXCLUDE_FILES += sun/awt/AWTCharset.java
 endif
@@ -348,7 +344,7 @@ jdk.dynalink_CLEAN += .properties
 
 ################################################################################
 
-jdk.javadoc_COPY += .xml .css .js .png
+jdk.javadoc_COPY += .xml .css .js .png .txt
 
 ################################################################################
 
@@ -389,11 +385,11 @@ endif
 
 ################################################################################
 
-jdk.incubator.jpackage_COPY += .gif .png .txt .spec .script .prerm .preinst \
+jdk.jpackage_COPY += .gif .png .txt .spec .script .prerm .preinst \
     .postrm .postinst .list .sh .desktop .copyright .control .plist .template \
     .icns .scpt .wxs .wxl .wxi .ico .bmp .tiff
 
-jdk.incubator.jpackage_CLEAN += .properties
+jdk.jpackage_CLEAN += .properties
 
 ################################################################################
 
@@ -545,6 +541,10 @@ jdk.localedata_KEEP_ALL_TRANSLATIONS := true
 jdk.jfr_DISABLED_WARNINGS += exports
 jdk.jfr_COPY := .xsd .xml .dtd
 jdk.jfr_JAVAC_FLAGS := -XDstringConcat=inline
+
+################################################################################
+
+jdk.incubator.vector_DOCLINT += -Xdoclint:all/protected
 
 ################################################################################
 # If this is an imported module that has prebuilt classes, only compile
