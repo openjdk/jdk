@@ -234,7 +234,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   bool is_weak    = ShenandoahBarrierSet::is_weak_access(decorators);
   bool is_phantom = ShenandoahBarrierSet::is_phantom_access(decorators);
   bool is_native  = ShenandoahBarrierSet::is_native_access(decorators);
-  bool is_narrow  = LP64_ONLY(UseCompressedOops &&) !is_native;
+  bool is_narrow  = UseCompressedOops && !is_native;
 
   Label heap_stable, not_cset;
   __ enter();
