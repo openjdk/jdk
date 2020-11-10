@@ -35,6 +35,7 @@
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiDeferredUpdates.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
