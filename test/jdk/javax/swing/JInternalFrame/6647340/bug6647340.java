@@ -35,8 +35,8 @@ import java.beans.PropertyVetoException;
 
 public class bug6647340 {
     private JFrame frame;
-    private Point location;
-    private Point iconloc;
+    private volatile Point location;
+    private volatile Point iconloc;
     private JInternalFrame jif;
     private static Robot robot;
 
