@@ -122,23 +122,11 @@ size_t MonitorList::unlink_deflated(Thread* self, LogStream* ls,
       m = m->next_om();
     }
 
-    if (self->is_Java_thread() &&
-        SafepointMechanism::should_process(self->as_Java_thread())) {
-      // A safepoint/handshake has started.
-      if (ls != NULL) {
-        timer_p->stop();
-        ls->print_cr("pausing unlinking: unlinked_count=" SIZE_FORMAT ", in_use_list stats: ceiling=" SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
-                     unlinked_count, ObjectSynchronizer::in_use_list_ceiling(), count(), max());
-      }
-
-      // Honor block request.
-      ThreadBlockInVM tbivm(self->as_Java_thread());
-
-      if (ls != NULL) {
-        ls->print_cr("resuming unlinking: in_use_list stats: ceiling=" SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
-                     ObjectSynchronizer::in_use_list_ceiling(), count(), max());
-        timer_p->start();
-      }
+    if (self->is_Java_thread()) {
+      // A JavaThread must check for a safepoint/handshake and honor it.
+      ObjectSynchronizer::chk_for_block_req(self->as_Java_thread(), "unlinking",
+                                            "unlinked_count", unlinked_count,
+                                            ls, timer_p);
     }
   } while (m != NULL);
   Atomic::sub(&_count, unlinked_count);
@@ -1405,6 +1393,33 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* self, oop object,
   }
 }
 
+void ObjectSynchronizer::chk_for_block_req(JavaThread* self, const char* op_name,
+                                           const char* cnt_name, size_t cnt,
+                                           LogStream* ls, elapsedTimer* timer_p) {
+  if (!SafepointMechanism::should_process(self)) {
+    return;
+  }
+
+  // A safepoint/handshake has started.
+  if (ls != NULL) {
+    timer_p->stop();
+    ls->print_cr("pausing %s: %s=" SIZE_FORMAT ", in_use_list stats: ceiling="
+                 SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
+                 op_name, cnt_name, cnt, in_use_list_ceiling(),
+                 _in_use_list.count(), _in_use_list.max());
+  }
+
+  // Honor block request.
+  ThreadBlockInVM tbivm(self);
+
+  if (ls != NULL) {
+    ls->print_cr("resuming %s: in_use_list stats: ceiling=" SIZE_FORMAT
+                 ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT, op_name,
+                 in_use_list_ceiling(), _in_use_list.count(), _in_use_list.max());
+    timer_p->start();
+  }
+}
+
 // Walk the in-use list and deflate (at most MonitorDeflationMax) idle
 // ObjectMonitors. Returns the number of deflated ObjectMonitors.
 size_t ObjectSynchronizer::deflate_monitor_list(Thread *self, LogStream* ls,
@@ -1421,23 +1436,10 @@ size_t ObjectSynchronizer::deflate_monitor_list(Thread *self, LogStream* ls,
       deflated_count++;
     }
 
-    if (self->is_Java_thread() &&
-        SafepointMechanism::should_process(self->as_Java_thread())) {
-      // A safepoint/handshake has started.
-      if (ls != NULL) {
-        timer_p->stop();
-        ls->print_cr("pausing deflation: deflated_count=" SIZE_FORMAT ", in_use_list stats: ceiling=" SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
-                     deflated_count, in_use_list_ceiling(), _in_use_list.count(), _in_use_list.max());
-      }
-
-      // Honor block request.
-      ThreadBlockInVM tbivm(self->as_Java_thread());
-
-      if (ls != NULL) {
-        ls->print_cr("resuming deflation: in_use_list stats: ceiling=" SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
-                     in_use_list_ceiling(), _in_use_list.count(), _in_use_list.max());
-        timer_p->start();
-      }
+    if (self->is_Java_thread()) {
+      // A JavaThread must check for a safepoint/handshake and honor it.
+      chk_for_block_req(self->as_Java_thread(), "deflation", "deflated_count",
+                        deflated_count, ls, timer_p);
     }
   }
 
@@ -1523,23 +1525,11 @@ size_t ObjectSynchronizer::deflate_idle_monitors() {
     for (ObjectMonitor* monitor: delete_list) {
       delete monitor;
       deleted_count++;
-      if (self->is_Java_thread() &&
-          SafepointMechanism::should_process(self->as_Java_thread())) {
-        // A safepoint/handshake has started.
-        if (ls != NULL) {
-          timer.stop();
-          ls->print_cr("pausing deletion: deleted_count=" SIZE_FORMAT ", in_use_list stats: ceiling=" SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
-                       deleted_count, in_use_list_ceiling(), _in_use_list.count(), _in_use_list.max());
-        }
 
-        // Honor block request.
-        ThreadBlockInVM tbivm(self->as_Java_thread());
-
-        if (ls != NULL) {
-          ls->print_cr("resuming deletion: in_use_list stats: ceiling=" SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
-                       in_use_list_ceiling(), _in_use_list.count(), _in_use_list.max());
-          timer.start();
-        }
+      if (self->is_Java_thread()) {
+        // A JavaThread must check for a safepoint/handshake and honor it.
+        chk_for_block_req(self->as_Java_thread(), "deletion", "deleted_count",
+                          deleted_count, ls, &timer);
       }
     }
   }

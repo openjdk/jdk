@@ -144,6 +144,9 @@ class ObjectSynchronizer : AllStatic {
   static size_t deflate_idle_monitors();
 
   // Deflate idle monitors:
+  static void chk_for_block_req(JavaThread* self, const char* op_name,
+                                const char* cnt_name, size_t cnt, LogStream* ls,
+                                elapsedTimer* timer_p);
   static size_t deflate_monitor_list(Thread* self, LogStream* ls,
                                      elapsedTimer* timer_p);
   static size_t in_use_list_ceiling() { return (size_t)_in_use_list_ceiling; }
