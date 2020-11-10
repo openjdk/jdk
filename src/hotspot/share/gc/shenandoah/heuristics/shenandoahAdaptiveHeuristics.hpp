@@ -29,6 +29,31 @@
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "utilities/numberSeq.hpp"
 
+class ShenandoahAdaptiveHeuristics;
+
+class ShenandoahAllocationRate : public CHeapObj<mtGC> {
+ public:
+  explicit ShenandoahAllocationRate(ShenandoahAdaptiveHeuristics* heuristics);
+
+  void sample(size_t bytes_allocated_since_gc_start);
+
+  double upper_bound(double standard_deviations) const;
+
+  void allocation_counter_reset();
+
+  bool is_spiking(double instantaneous_rate) const;
+
+  double instantaneous_rate(size_t bytes_allocated_since_gc_start) const;
+
+ private:
+  ShenandoahAdaptiveHeuristics *_heuristics;
+  size_t _last_sample_time;
+  size_t _last_sample_value;
+  uint _interval_ns;
+  TruncatedSeq _rate;
+  TruncatedSeq _rate_avg;
+};
+
 class ShenandoahAdaptiveHeuristics : public ShenandoahHeuristics {
 public:
   ShenandoahAdaptiveHeuristics();
@@ -40,6 +65,9 @@ public:
                                                      size_t actual_free);
 
   void record_cycle_start();
+  void record_success_concurrent();
+  void record_success_degenerated();
+  void record_success_full();
 
   virtual bool should_start_gc() const;
 
@@ -50,7 +78,70 @@ public:
  protected:
   bool is_available_below_min_threshold(size_t capacity, size_t available) const;
   bool is_learning_necessary(size_t capacity, size_t available) const;
-  bool is_allocation_headroom_low(size_t capacity, size_t available) const;
+  bool is_allocation_rate_too_high(size_t capacity,
+                                   size_t available,
+                                   size_t bytes_allocated_since_gc_start) const;
+
+ private:
+  // These are used to adjust the margin of error and the spike threshold
+  // in response to GC cycle outcomes. These values are shared, but the
+  // margin of error and spike threshold trend in opposite directions.
+  const static double FULL_PENALTY_SD;
+  const static double DEGENERATE_PENALTY_SD;
+
+  const static double MINIMUM_CONFIDENCE;
+  const static double MAXIMUM_CONFIDENCE;
+
+  const static double LOWEST_EXPECTED_AVAILABLE_AT_END;
+  const static double HIGHEST_EXPECTED_AVAILABLE_AT_END;
+
+  friend class ShenandoahAllocationRate;
+
+  // Used to record the last trigger that signaled to start a GC.
+  // This itself is used to decide whether or not to adjust the margin of
+  // error for the average cycle time and allocation rate or the allocation
+  // spike detection threshold.
+  enum Trigger {
+    SPIKE, RATE, OTHER
+  };
+
+  void adjust_last_trigger_parameters(double amount);
+  void adjust_margin_of_error(double amount);
+  void adjust_spike_threshold(double amount);
+
+  ShenandoahAllocationRate _allocation_rate;
+
+  // Record the available heap at the start of the cycle so that we can
+  // evaluate the outcome of the cycle. This lets us 'react' to concurrent
+  // cycles that did not degenerate, but perhaps did not reclaim as much
+  // memory as we would like.
+  size_t _available_at_cycle_start;
+
+  // The margin of error expressed in standard deviations to add to our
+  // average cycle time and allocation rate. As this value increases we
+  // tend to over estimate the rate at which mutators will deplete the
+  // heap. In other words, erring on the side of caution will trigger more
+  // concurrent GCs.
+  double _margin_of_error_sd;
+
+  // The allocation spike threshold is expressed in standard deviations.
+  // If the standard deviation of the most recent sample of the allocation
+  // rate exceeds this threshold, a GC cycle is started. As this value
+  // decreases the sensitivity to allocation spikes increases. In other
+  // words, lowering the spike threshold will tend to increase the number
+  // of concurrent GCs.
+  double _spike_threshold_sd;
+
+  // Remember which trigger is responsible for the last GC cycle. When the
+  // outcome of the cycle is evaluated we will adjust the parameters for the
+  // corresponding triggers. Note that successful outcomes will raise
+  // the spike threshold and lower the margin of error.
+  Trigger _last_trigger;
+
+  // Keep track of the available memory at the end of a GC cycle. This
+  // establishes what is 'normal' for the application and is used as a
+  // source of feedback to adjust trigger parameters.
+  TruncatedSeq _available;
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHADAPTIVEHEURISTICS_HPP

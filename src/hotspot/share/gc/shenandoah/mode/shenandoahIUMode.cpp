@@ -27,7 +27,6 @@
 #include "gc/shenandoah/heuristics/shenandoahAdaptiveHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahAggressiveHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahCompactHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahReactiveHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahStaticHeuristics.hpp"
 #include "gc/shenandoah/mode/shenandoahIUMode.hpp"
 #include "logging/log.hpp"
@@ -69,8 +68,6 @@ ShenandoahHeuristics* ShenandoahIUMode::initialize_heuristics() const {
       return new ShenandoahAdaptiveHeuristics();
     } else if (strcmp(ShenandoahGCHeuristics, "compact") == 0) {
       return new ShenandoahCompactHeuristics();
-    } else if (strcmp(ShenandoahGCHeuristics, "reactive") == 0) {
-      return new ShenandoahReactiveHeuristics();
     } else {
       vm_exit_during_initialization("Unknown -XX:ShenandoahGCHeuristics option");
     }
