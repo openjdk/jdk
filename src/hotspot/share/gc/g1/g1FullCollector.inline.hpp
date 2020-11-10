@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,34 +19,27 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-package compiler.codecache.stress;
+#ifndef SHARE_GC_G1_G1FULLCOLLECTOR_INLINE_HPP
+#define SHARE_GC_G1_G1FULLCOLLECTOR_INLINE_HPP
 
-import jdk.test.lib.TimeLimitedRunner;
-import jdk.test.lib.Utils;
+#include "gc/g1/g1FullCollector.hpp"
+#include "gc/g1/g1FullGCHeapRegionAttr.hpp"
+#include "oops/oopsHierarchy.hpp"
 
-public class CodeCacheStressRunner {
-    private final Runnable action;
-
-    public CodeCacheStressRunner(Runnable action) {
-        this.action = action;
-    }
-
-    protected final void runTest() {
-        Helper.startInfiniteLoopThread(action);
-        try {
-            // Adjust timeout and substract vm init and exit time
-            new TimeLimitedRunner(60 * 1000, 2.0d, this::test).call();
-        } catch (Exception e) {
-            throw new Error("Exception occurred during test execution", e);
-        }
-    }
-
-    private boolean test() {
-        Helper.TestCase obj = Helper.TestCase.get();
-        Helper.callMethod(obj.getCallable(), obj.expectedValue());
-        return true;
-    }
-
+bool G1FullCollector::is_in_pinned_or_closed(oop obj) const {
+  return _region_attr_table.is_pinned_or_closed(cast_from_oop<HeapWord*>(obj));
 }
+
+bool G1FullCollector::is_in_pinned(oop obj) const {
+  return _region_attr_table.is_pinned(cast_from_oop<HeapWord*>(obj));
+}
+
+bool G1FullCollector::is_in_closed(oop obj) const {
+  return _region_attr_table.is_closed_archive(cast_from_oop<HeapWord*>(obj));
+}
+
+#endif // SHARE_GC_G1_G1FULLCOLLECTOR_INLINE_HPP
+
