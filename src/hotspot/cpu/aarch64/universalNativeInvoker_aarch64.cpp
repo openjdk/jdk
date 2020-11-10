@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,9 +24,9 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
-#include "prims/universalNativeInvoker.hpp"
-#include "memory/resourceArea.hpp"
 #include "code/codeBlob.hpp"
+#include "memory/resourceArea.hpp"
+#include "prims/universalNativeInvoker.hpp"
 
 void ProgrammableInvoker::Generator::generate() {
   __ enter();

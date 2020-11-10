@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,8 @@ void ProgrammableUpcallHandler::attach_thread_and_do_upcall(jobject rec, address
   JNIEnv* p_env = nullptr;
   if (thread == nullptr) {
     JavaVM_ *vm = (JavaVM *)(&main_vm);
-    vm->functions->AttachCurrentThread(vm, (void**) &p_env, nullptr);
+    jint result = vm->functions->AttachCurrentThread(vm, (void**) &p_env, nullptr);
+    guarantee(result == JNI_OK, "Could not attach thread for upcall. JNI error code: %d", result);
     should_detach = true;
     thread = Thread::current();
   } else {
