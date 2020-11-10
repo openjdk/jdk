@@ -1571,7 +1571,6 @@ class JavaThread: public Thread {
   static ByteSize frame_anchor_offset() {
     return byte_offset_of(JavaThread, _anchor);
   }
-
   static ByteSize callee_target_offset()         { return byte_offset_of(JavaThread, _callee_target); }
   static ByteSize vm_result_offset()             { return byte_offset_of(JavaThread, _vm_result); }
   static ByteSize vm_result_2_offset()           { return byte_offset_of(JavaThread, _vm_result_2); }
