@@ -978,17 +978,19 @@ void ShenandoahBarrierC2Support::call_lrb_stub(Node*& ctrl, Node*& val, Node* lo
   if (is_strong) {
     if (is_narrow) {
       calladdr = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong_narrow);
+      name = "load_reference_barrier_strong_narrow";
     } else {
       calladdr = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong);
+      name = "load_reference_barrier_strong";
     }
-    name = "load_reference_barrier_strong";
   } else if (is_weak) {
     if (is_narrow) {
       calladdr = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak_narrow);
+      name = "load_reference_barrier_weak_narrow";
     } else {
       calladdr = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak);
+      name = "load_reference_barrier_weak";
     }
-    name = "load_reference_barrier_weak";
   } else {
     assert(is_phantom, "only remaining strength");
     assert(!is_narrow, "phantom access cannot be narrow");
