@@ -202,7 +202,7 @@ void Matcher::match( ) {
     uint ireg = range->field_at(TypeFunc::Parms)->ideal_reg();
     // Get machine return register
     uint sop = C->start()->Opcode();
-    OptoRegPair regs = return_value(ireg, false);
+    OptoRegPair regs = return_value(ireg);
 
     // And mask for same
     _return_value_mask = RegMask(regs.first());
