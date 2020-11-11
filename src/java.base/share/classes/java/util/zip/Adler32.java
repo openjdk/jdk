@@ -100,7 +100,6 @@ public class Adler32 implements Checksum {
         if (buffer.isDirect()) {
             try {
                 adler = updateByteBuffer(adler, ((DirectBuffer)buffer).address(), pos, rem);
-
             } finally {
                 Reference.reachabilityFence(buffer);
             }
