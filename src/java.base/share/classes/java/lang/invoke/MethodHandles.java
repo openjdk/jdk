@@ -25,7 +25,6 @@
 
 package java.lang.invoke;
 
-import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
@@ -56,7 +55,6 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -1512,7 +1510,7 @@ public class MethodHandles {
         public static final int ORIGINAL = PACKAGE << 3;
 
         private static final int ALL_MODES = (PUBLIC | PRIVATE | PROTECTED | PACKAGE | MODULE | UNCONDITIONAL | ORIGINAL);
-        private static final int FULL_POWER_MODES = (ALL_MODES & ~UNCONDITIONAL);
+        private static final int FULL_POWER_MODES = (ALL_MODES & ~UNCONDITIONAL);   // with original access
         private static final int TRUSTED   = -1;
 
         /*
@@ -3711,15 +3709,14 @@ return mh1;
             if (smgr == null)  return;
 
             // Step 1:
-            boolean allAccess =
-                    (lookupModes() & (FULL_POWER_MODES & ~ORIGINAL)) == (FULL_POWER_MODES & ~ORIGINAL);
-            if (!allAccess ||
+            boolean fullPrivilegeLookup = hasFullPrivilegeAccess();
+            if (!fullPrivilegeLookup ||
                 !VerifyAccess.classLoaderIsAncestor(lookupClass, refc)) {
                 ReflectUtil.checkPackageAccess(refc);
             }
 
             // Step 2b:
-            if (!allAccess) {
+            if (!fullPrivilegeLookup) {
                 smgr.checkPermission(SecurityConstants.GET_CLASSLOADER_PERMISSION);
             }
         }
@@ -3743,22 +3740,21 @@ return mh1;
             if (smgr == null)  return;
 
             // Step 1:
-            boolean allAccess =
-                    (lookupModes() & (FULL_POWER_MODES & ~ORIGINAL)) == (FULL_POWER_MODES & ~ORIGINAL);
-            if (!allAccess ||
+            boolean fullPrivilegeLookup = hasFullPrivilegeAccess();
+            if (!fullPrivilegeLookup ||
                 !VerifyAccess.classLoaderIsAncestor(lookupClass, refc)) {
                 ReflectUtil.checkPackageAccess(refc);
             }
 
             // Step 2a:
             if (m.isPublic()) return;
-            if (!allAccess) {
+            if (!fullPrivilegeLookup) {
                 smgr.checkPermission(SecurityConstants.CHECK_MEMBER_ACCESS_PERMISSION);
             }
 
             // Step 3:
             Class<?> defc = m.getDeclaringClass();
-            if (!allAccess && defc != refc) {
+            if (!fullPrivilegeLookup && defc != refc) {
                 ReflectUtil.checkPackageAccess(defc);
             }
         }

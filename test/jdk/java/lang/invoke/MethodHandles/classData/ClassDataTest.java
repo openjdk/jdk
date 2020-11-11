@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8230501
  * @library /test/lib
  * @modules java.base/jdk.internal.org.objectweb.asm
  * @build java.base/*
