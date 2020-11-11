@@ -272,7 +272,7 @@ import sun.hotspot.WhiteBox;
 public class GetObjectSizeIntrinsicsTest extends ASimpleInstrumentationTestCase {
 
     static final Boolean compressedOops = WhiteBox.getWhiteBox().getBooleanVMFlag("UseCompressedOops");
-    static final int REF_SIZE = ((compressedOops == null) || (compressedOops == true)) ?  4 : 8;
+    static final int REF_SIZE = (compressedOops == null || compressedOops == true) ?  4 : 8;
 
     static final Long align = WhiteBox.getWhiteBox().getIntxVMFlag("ObjectAlignmentInBytes");
     static final int OBJ_ALIGN = (align == null ? 8 : align.intValue());
