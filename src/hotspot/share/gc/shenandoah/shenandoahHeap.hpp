@@ -338,24 +338,29 @@ public:
 
   void cancel_gc(GCCause::Cause cause);
 
-// ---------- GC subsystems
 public:
+  // Elastic heap support
   void entry_uncommit(double shrink_before, size_t shrink_until);
   void op_uncommit(double shrink_before, size_t shrink_until);
 
+// ---------- GC subsystems
 private:
   // GC support
+  // Reset bitmap, prepare regions for new GC cycle
   void prepare_gc();
   void prepare_regions_and_collection_set(bool concurrent);
+  // Evacuation
   void prepare_evacuation(bool concurrent);
   void evacuate_collection_set(bool concurrent);
-  // Prepare concurrent root processing
+  // Concurrent root processing
   void prepare_concurrent_roots();
   void finish_concurrent_roots();
-
+  // Concurrent class unloading support
   void do_class_unloading();
+  // Reference updating
   void prepare_update_heap_references(bool concurrent);
   void update_heap_references(bool concurrent);
+  // Final update region states
   void update_heap_region_states(bool concurrent);
 
   void rendezvous_threads();

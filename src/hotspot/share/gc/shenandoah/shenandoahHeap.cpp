@@ -1001,6 +1001,7 @@ private:
     }
   }
 };
+
 void ShenandoahHeap::evacuate_collection_set(bool concurrent) {
   ShenandoahEvacuationTask task(this, _collection_set, concurrent);
   workers()->run_task(&task);
@@ -1630,9 +1631,6 @@ public:
 };
 
 void ShenandoahHeap::prepare_gc() {
-  if (ShenandoahPacing) {
-    pacer()->setup_for_reset();
-  }
   reset_mark_bitmap();
 
   ShenandoahResetUpdateRegionStateClosure cl;
