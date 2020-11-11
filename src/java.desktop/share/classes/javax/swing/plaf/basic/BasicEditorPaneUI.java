@@ -313,7 +313,7 @@ public class BasicEditorPaneUI extends BasicTextUI {
             }
             String cssRule = sun.swing.
                 SwingUtilities2.displayPropertiesToCSS(font,
-                                                       fg);
+                                                       fg, fg.getAlpha(), false);
             styleSheet.addRule(cssRule);
             documentStyleSheet.addStyleSheet(styleSheet);
             documentStyleSheet.addRule("BASE_SIZE " +
