@@ -675,9 +675,9 @@ void G1ConcurrentMark::cleanup_for_next_mark() {
   guarantee(!_g1h->collector_state()->mark_or_rebuild_in_progress(), "invariant");
 }
 
-void G1ConcurrentMark::clear_prev_bitmap(WorkGang* workers) {
+void G1ConcurrentMark::clear_next_bitmap(WorkGang* workers) {
   assert_at_safepoint_on_vm_thread();
-  clear_bitmap(_prev_mark_bitmap, workers, false);
+  clear_bitmap(_next_mark_bitmap, workers, false);
 }
 
 class NoteStartOfMarkHRClosure : public HeapRegionClosure {
@@ -1132,6 +1132,8 @@ void G1ConcurrentMark::remark() {
 
     // Install newly created mark bitmap as "prev".
     swap_mark_bitmaps();
+
+    _g1h->collector_state()->set_clearing_next_bitmap(true);
     {
       GCTraceTime(Debug, gc, phases) debug("Update Remembered Set Tracking Before Rebuild", _gc_timer_cm);
 
@@ -1696,7 +1698,6 @@ void G1ConcurrentMark::swap_mark_bitmaps() {
   G1CMBitMap* temp = _prev_mark_bitmap;
   _prev_mark_bitmap = _next_mark_bitmap;
   _next_mark_bitmap = temp;
-  _g1h->collector_state()->set_clearing_next_bitmap(true);
 }
 
 // Closure for marking entries in SATB buffers.
@@ -1975,7 +1976,7 @@ void G1ConcurrentMark::concurrent_cycle_abort() {
   // concurrent bitmap clearing.
   {
     GCTraceTime(Debug, gc) debug("Clear Next Bitmap");
-    clear_bitmap(_next_mark_bitmap, _g1h->workers(), false);
+    clear_next_bitmap(_g1h->workers());
   }
   // Note we cannot clear the previous marking bitmap here
   // since VerifyDuringGC verifies the objects marked during

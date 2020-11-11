@@ -40,6 +40,10 @@ HB_BEGIN_DECLS
 #ifndef HB_DISABLE_DEPRECATED
 
 
+/* https://github.com/harfbuzz/harfbuzz/issues/1734 */
+#define HB_MATH_GLYPH_PART_FLAG_EXTENDER HB_OT_MATH_GLYPH_PART_FLAG_EXTENDER
+
+
 /* Like hb_ot_layout_table_find_script, but takes zero-terminated array of scripts to test */
 HB_EXTERN HB_DEPRECATED_FOR (hb_ot_layout_table_select_script) hb_bool_t
 hb_ot_layout_table_choose_script (hb_face_t      *face,

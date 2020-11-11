@@ -197,7 +197,11 @@ intptr_t NativeMovConstReg::data() const {
   CodeBlob* cb = CodeCache::find_blob_unsafe(addr);
   if (MacroAssembler::is_set_narrow_oop(addr, cb->content_begin())) {
     narrowOop no = MacroAssembler::get_narrow_oop(addr, cb->content_begin());
-    return cast_from_oop<intptr_t>(CompressedOops::decode(no));
+    // We can reach here during GC with 'no' pointing to new object location
+    // while 'heap()->is_in' still reports false (e.g. with SerialGC).
+    // Therefore we use raw decoding.
+    if (CompressedOops::is_null(no)) return 0;
+    return cast_from_oop<intptr_t>(CompressedOops::decode_raw(no));
   } else {
     assert(MacroAssembler::is_load_const_from_method_toc_at(addr), "must be load_const_from_pool");
 

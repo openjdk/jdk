@@ -755,7 +755,7 @@ const intx ObjectAlignmentInBytes = 8;
           "tables")                                                         \
                                                                             \
   product(bool, AllowUserSignalHandlers, false,                             \
-          "Do not complain if the application installs signal handlers "    \
+          "Application will install primary signal handlers for the JVM "   \
           "(Unix only)")                                                    \
                                                                             \
   product(bool, UseSignalChaining, true,                                    \
@@ -871,10 +871,6 @@ const intx ObjectAlignmentInBytes = 8;
   /* This option should be used with caution.                       */      \
   product(bool, StressLdcRewrite, false,                                    \
           "Force ldc -> ldc_w rewrite during RedefineClasses")              \
-                                                                            \
-  /* change to false by default sometime after Mustang */                   \
-  product(bool, VerifyMergedCPBytecodes, true,                              \
-          "Verify bytecodes after RedefineClasses constant pool merging")   \
                                                                             \
   product(bool, AllowRedefinitionToAddDeleteMethods, false,                 \
           "(Deprecated) Allow redefinition to add and delete private "      \
