@@ -499,6 +499,11 @@ jobs:
           sudo chown ${USER} -R ~/sysroot-arm64
         if: steps.cache-sysroot.outputs.cache-hit != 'true'
 
+      - name: Remove special directories in sysroot
+        run: >
+          rm -rf ~/sysroot-arm64-{dev,proc,run,sys}
+        if: steps.cache-sysroot.outputs.cache-hit != 'true'
+
       - name: Configure
         env:
           CC: aarch64-linux-gnu-gcc
@@ -628,6 +633,11 @@ jobs:
       - name: Fix permissions in sysroot
         run: >
           sudo chown ${USER} -R ~/sysroot-armhf
+        if: steps.cache-sysroot.outputs.cache-hit != 'true'
+
+      - name: Remove special directories in sysroot
+        run: >
+          rm -rf ~/sysroot-armhf-{dev,proc,run,sys}
         if: steps.cache-sysroot.outputs.cache-hit != 'true'
 
       - name: Configure
@@ -761,6 +771,11 @@ jobs:
           sudo chown ${USER} -R ~/sysroot-s390x
         if: steps.cache-sysroot.outputs.cache-hit != 'true'
 
+      - name: Remove special directories in sysroot
+        run: >
+          rm -rf ~/sysroot-s390x-{dev,proc,run,sys}
+        if: steps.cache-sysroot.outputs.cache-hit != 'true'
+
       - name: Configure
         env:
           CC: s390x-linux-gnu-gcc
@@ -890,6 +905,11 @@ jobs:
       - name: Fix permissions in sysroot
         run: >
           sudo chown ${USER} -R ~/sysroot-ppc64el
+        if: steps.cache-sysroot.outputs.cache-hit != 'true'
+
+      - name: Remove special directories in sysroot
+        run: >
+          rm -rf ~/sysroot-ppc64el-{dev,proc,run,sys}
         if: steps.cache-sysroot.outputs.cache-hit != 'true'
 
       - name: Configure
