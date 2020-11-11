@@ -1753,7 +1753,9 @@ int MachCallDynamicJavaNode::ret_addr_offset()
 
 int MachCallRuntimeNode::ret_addr_offset() {
   // for generated stubs the call will be
-  //   far_call(addr)
+  //   bl(addr)
+  // or with far branches
+  //   bl(trampoline_stub)
   // for real runtime callouts it will be six instructions
   // see aarch64_enc_java_to_runtime
   //   adr(rscratch2, retaddr)
@@ -1762,7 +1764,7 @@ int MachCallRuntimeNode::ret_addr_offset() {
   //   blr(rscratch1)
   CodeBlob *cb = CodeCache::find_blob(_entry_point);
   if (cb) {
-    return MacroAssembler::far_branch_size();
+    return 1 * NativeInstruction::instruction_size;
   } else {
     return 6 * NativeInstruction::instruction_size;
   }
