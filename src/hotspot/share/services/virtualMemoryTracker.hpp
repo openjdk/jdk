@@ -306,6 +306,7 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
 
   void  set_flag(MEMFLAGS flag);
   inline MEMFLAGS flag() const            { return _flag;  }
+
   // uncommitted thread stack bottom, above guard pages if there is any.
   address thread_stack_uncommitted_bottom() const;
 

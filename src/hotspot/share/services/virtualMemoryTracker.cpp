@@ -383,7 +383,7 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
       // CDS reserves the whole region for mapping CDS archive, then maps each section into the region.
       // NMT reports CDS as a whole.
       if (reserved_rgn->flag() == mtClassShared) {
-        log_info(nmt)("CDS reserved region \'%s\' as a whole type class (" INTPTR_FORMAT ", " SIZE_FORMAT ")",
+        log_info(nmt)("CDS reserved region \'%s\' as a whole (" INTPTR_FORMAT ", " SIZE_FORMAT ")",
                       reserved_rgn->flag_name(), p2i(reserved_rgn->base()), reserved_rgn->size());
         assert(reserved_rgn->contain_region(base_addr, size), "Reserved CDS region should contain this mapping region");
         return true;
@@ -392,7 +392,7 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
       // Mapped CDS string region.
       // The string region(s) is part of the java heap.
       if (reserved_rgn->flag() == mtJavaHeap) {
-        log_info(nmt)("CDS reserved region \'%s\' as a whole type heap " INTPTR_FORMAT ": " SIZE_FORMAT,
+        log_info(nmt)("CDS reserved region \'%s\' as a whole (" INTPTR_FORMAT ", " SIZE_FORMAT ")",
                       reserved_rgn->flag_name(), p2i(reserved_rgn->base()), reserved_rgn->size());
         assert(reserved_rgn->contain_region(base_addr, size), "Reserved heap region should contain this mapping region");
         return true;
