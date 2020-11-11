@@ -59,8 +59,8 @@
 
 // The "core" versions of monitor enter and exit reside in this file.
 // The interpreter and compilers contain specialized transliterated
-// variants of the enter-exit fast-path operations.  See i486.ad fast_lock(),
-// for instance.  If you make changes here, make sure to modify the
+// variants of the enter-exit fast-path operations.  See c2_MacroAssembler_x86.cpp
+// fast_lock(...) for instance.  If you make changes here, make sure to modify the
 // interpreter, and both C1 and C2 fast-path inline locking code emission.
 //
 // -----------------------------------------------------------------------------

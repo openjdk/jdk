@@ -177,20 +177,14 @@ private:
   // The block offset table for the G1 heap.
   G1BlockOffsetTable* _bot;
 
-  // Tears down the region sets / lists so that they are empty and the
-  // regions on the heap do not belong to a region set / list. The
-  // only exception is the humongous set which we leave unaltered. If
-  // free_list_only is true, it will only tear down the master free
-  // list. It is called before a Full GC (free_list_only == false) or
-  // before heap shrinking (free_list_only == true).
-  void tear_down_region_sets(bool free_list_only);
+public:
+  void prepare_region_for_full_compaction(HeapRegion* hr);
 
+private:
   // Rebuilds the region sets / lists so that they are repopulated to
   // reflect the contents of the heap. The only exception is the
   // humongous set which was not torn down in the first place. If
-  // free_list_only is true, it will only rebuild the master free
-  // list. It is called after a Full GC (free_list_only == false) or
-  // after heap shrinking (free_list_only == true).
+  // free_list_only is true, it will only rebuild the free list.
   void rebuild_region_sets(bool free_list_only);
 
   // Callback for region mapping changed events.
@@ -1423,6 +1417,8 @@ public:
   bool is_heterogeneous_heap() const;
 
   virtual WorkGang* safepoint_workers() { return _workers; }
+
+  virtual bool is_archived_object(oop object) const;
 
   // The methods below are here for convenience and dispatch the
   // appropriate method depending on value of the given VerifyOption
