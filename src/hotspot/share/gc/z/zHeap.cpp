@@ -304,6 +304,9 @@ bool ZHeap::mark_end() {
   // Prepare to unload stale metadata and nmethods
   _unload.prepare();
 
+  // Notify JVMTI that some tagmap entry objects may have died.
+  JvmtiTagMap::set_needs_cleaning();
+
   return true;
 }
 

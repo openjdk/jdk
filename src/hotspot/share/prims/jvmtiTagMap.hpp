@@ -41,6 +41,9 @@ class JvmtiTagMap :  public CHeapObj<mtInternal> {
   Mutex                 _lock;                      // lock for this tag map
   JvmtiTagMapTable*     _hashmap;                   // the hashmap for tags
   bool                  _needs_rehashing;
+  bool                  _needs_cleaning;
+
+  static bool           _has_object_free_events;
 
   // create a tag map
   JvmtiTagMap(JvmtiEnv* env);
@@ -107,11 +110,19 @@ class JvmtiTagMap :  public CHeapObj<mtInternal> {
                                    jlong** tag_result_ptr);
 
 
-  void unlink_and_post_locked();
+  void remove_dead_entries(bool post_object_free);
+  void remove_dead_entries_locked(bool post_object_free);
 
   static void check_hashmaps_for_heapwalk();
   static void set_needs_rehashing() NOT_JVMTI_RETURN;
+  static void set_needs_cleaning() NOT_JVMTI_RETURN;
   static void gc_notification(size_t num_dead_entries) NOT_JVMTI_RETURN;
+
+  void flush_object_free_events();
+
+  // For ServiceThread
+  static void flush_all_object_free_events();
+  static bool has_object_free_events_and_reset();
 };
 
 #endif // SHARE_PRIMS_JVMTITAGMAP_HPP

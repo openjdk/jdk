@@ -88,7 +88,7 @@ public:
   bool is_empty() const { return number_of_entries() == 0; }
 
   // Cleanup cleared entries and post
-  void unlink_and_post(JvmtiEnv* env);
+  void remove_dead_entries(JvmtiEnv* env, bool post_object_free);
   void rehash();
 };
 

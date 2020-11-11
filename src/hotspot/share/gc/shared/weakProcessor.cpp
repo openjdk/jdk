@@ -37,8 +37,30 @@
 #include "runtime/globals.hpp"
 #include "utilities/macros.hpp"
 
+#if INCLUDE_JVMTI
+#include "prims/jvmtiTagMap.hpp"
+#endif // INCLUDE_JVMTI
+
+void notify_jvmti_tagmaps() {
+#if INCLUDE_JVMTI
+  // Notify JVMTI tagmaps that a STW weak reference processing might be
+  // clearing entries, so the tagmaps need cleaning.  Doing this here allows
+  // the tagmap's oopstorage notification handler to not care whether it's
+  // invoked by STW or concurrent reference processing.
+  JvmtiTagMap::set_needs_cleaning();
+
+  // Notify JVMTI tagmaps that a STW collection may have moved objects, so
+  // the tagmaps need rehashing.  This isn't the right place for this, but
+  // is convenient because all the STW collectors use WeakProcessor.  One
+  // problem is that the end of a G1 concurrent collection also comes here,
+  // possibly triggering unnecessary rehashes.
+  JvmtiTagMap::set_needs_rehashing();
+#endif // INCLUDE_JVMTI
+}
 
 void WeakProcessor::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* keep_alive) {
+
+  notify_jvmti_tagmaps();
 
   OopStorageSet::Iterator it = OopStorageSet::weak_iterator();
   for ( ; !it.is_end(); ++it) {
@@ -96,6 +118,7 @@ void WeakProcessor::Task::initialize() {
   if (_phase_times) {
     _phase_times->set_active_workers(_nworkers);
   }
+  notify_jvmti_tagmaps();
 }
 
 WeakProcessor::Task::Task(uint nworkers) :

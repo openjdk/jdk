@@ -180,12 +180,8 @@ void JvmtiTagMapTable::resize_if_needed() {
   }
 }
 
-// Serially remove unused oops from the table, and notify jvmti.
-void JvmtiTagMapTable::unlink_and_post(JvmtiEnv* env) {
-
-  // Does this environment have the OBJECT_FREE event enabled?
-  bool post_object_free = env->is_enabled(JVMTI_EVENT_OBJECT_FREE);
-
+// Serially remove entries for dead oops from the table, and notify jvmti.
+void JvmtiTagMapTable::remove_dead_entries(JvmtiEnv* env, bool post_object_free) {
   int oops_removed = 0;
   int oops_counted = 0;
   for (int i = 0; i < table_size(); ++i) {

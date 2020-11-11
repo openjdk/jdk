@@ -51,6 +51,7 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/mutex.hpp"
@@ -65,12 +66,15 @@
 #include "runtime/vmOperations.hpp"
 #include "utilities/macros.hpp"
 
+bool JvmtiTagMap::_has_object_free_events = false;
+
 // create a JvmtiTagMap
 JvmtiTagMap::JvmtiTagMap(JvmtiEnv* env) :
   _env(env),
   _lock(Mutex::nonleaf+1, "JvmtiTagMap_lock", Mutex::_allow_vm_block_flag,
         Mutex::_safepoint_check_never),
-  _needs_rehashing(false) {
+  _needs_rehashing(false),
+  _needs_cleaning(false) {
 
   assert(JvmtiThreadState_lock->is_locked(), "sanity check");
   assert(((JvmtiEnvBase *)env)->tag_map() == NULL, "tag map already exists for environment");
@@ -124,18 +128,15 @@ bool JvmtiTagMap::is_empty() {
 // this tagmap table.  The calls from a JavaThread only rehash, posting is
 // only done before heap walks.
 void JvmtiTagMap::check_hashmap(bool post_events) {
+  assert(!post_events || SafepointSynchronize::is_at_safepoint(), "precondition");
   assert(is_locked(), "checking");
 
-  // The table cleaning, posting and rehashing can race for
-  // concurrent GCs. So fix it here once we have a lock or are
-  // at a safepoint.
   if (is_empty()) { return; }
 
-  // Operating on the hashmap must always be locked, since concurrent GC threads may
-  // notify while running through a safepoint.
-  if (post_events && env()->is_enabled(JVMTI_EVENT_OBJECT_FREE)) {
-    log_info(jvmti, table)("TagMap table needs posting before heap walk");
-    hashmap()->unlink_and_post(env());
+  if (_needs_cleaning &&
+      post_events &&
+      env()->is_enabled(JVMTI_EVENT_OBJECT_FREE)) {
+    remove_dead_entries(true /* post_object_free */);
   }
   if (_needs_rehashing) {
     log_info(jvmti, table)("TagMap table needs rehashing");
@@ -1154,9 +1155,19 @@ void JvmtiTagMap::iterate_through_heap(jint heap_filter,
   VMThread::execute(&op);
 }
 
-void JvmtiTagMap::unlink_and_post_locked() {
+void JvmtiTagMap::remove_dead_entries(bool post_object_free) {
+  assert(is_locked(), "precondition");
+  if (_needs_cleaning) {
+    log_info(jvmti, table)("TagMap table needs cleaning%s",
+                           (post_object_free ? " and posting" : ""));
+    hashmap()->remove_dead_entries(env(), post_object_free);
+    _needs_cleaning = false;
+  }
+}
+
+void JvmtiTagMap::remove_dead_entries_locked(bool post_object_free) {
   MutexLocker ml(lock(), Mutex::_no_safepoint_check_flag);
-  hashmap()->unlink_and_post(env());
+  remove_dead_entries(post_object_free);
 }
 
 class VM_JvmtiPostObjectFree: public VM_Operation {
@@ -1165,8 +1176,7 @@ class VM_JvmtiPostObjectFree: public VM_Operation {
   VM_JvmtiPostObjectFree(JvmtiTagMap* tag_map) : _tag_map(tag_map) {}
   VMOp_Type type() const { return VMOp_Cleanup; }
   void doit() {
-    log_info(jvmti, table)("TagMap table needs posting before GetObjectsWithTags");
-    _tag_map->unlink_and_post_locked();
+    _tag_map->remove_dead_entries_locked(true /* post_object_free */);
   }
 
   // Doesn't need a safepoint, just the VM thread
@@ -1177,6 +1187,24 @@ class VM_JvmtiPostObjectFree: public VM_Operation {
 void JvmtiTagMap::post_dead_objects_on_vm_thread() {
   VM_JvmtiPostObjectFree op(this);
   VMThread::execute(&op);
+}
+
+void JvmtiTagMap::flush_object_free_events() {
+  assert_not_at_safepoint();
+  if (env()->is_enabled(JVMTI_EVENT_OBJECT_FREE)) {
+    {
+      MutexLocker ml(lock(), Mutex::_no_safepoint_check_flag);
+      if (!_needs_cleaning || is_empty()) {
+        _needs_cleaning = false;
+        return;
+      }
+    } // Drop the lock so we can do the cleaning on the VM thread.
+    // Needs both cleaning and event posting (up to some other thread
+    // getting there first after we dropped the lock).
+    post_dead_objects_on_vm_thread();
+  } else {
+    remove_dead_entries_locked(false);
+  }
 }
 
 // support class for get_objects_with_tags
@@ -2994,37 +3022,66 @@ void JvmtiTagMap::set_needs_rehashing() {
   }
 }
 
-void JvmtiTagMap::gc_notification(size_t num_dead_entries) {
+// Verify gc_notification follows set_needs_cleaning.
+DEBUG_ONLY(static bool notified_needs_cleaning = false;)
 
-  bool is_vm_thread = Thread::current()->is_VM_thread();
-  if (!is_vm_thread) {
-    if (num_dead_entries != 0) {
-      JvmtiEnvIterator it;
-      for (JvmtiEnv* env = it.first(); env != NULL; env = it.next(env)) {
-        JvmtiTagMap* tag_map = env->tag_map_acquire();
-        if (tag_map != NULL) {
-          // Lock each hashmap from concurrent posting and cleaning
-          tag_map->unlink_and_post_locked();
-        }
-      }
-      // there's another callback for needs_rehashing
+void JvmtiTagMap::set_needs_cleaning() {
+  assert(SafepointSynchronize::is_at_safepoint(), "called in gc pause");
+  assert(Thread::current()->is_VM_thread(), "should be the VM thread");
+  // Can't assert !notified_needs_cleaning; a partial GC might be upgraded
+  // to a full GC and do this twice without intervening gc_notification.
+  DEBUG_ONLY(notified_needs_cleaning = true;)
+
+  JvmtiEnvIterator it;
+  for (JvmtiEnv* env = it.first(); env != NULL; env = it.next(env)) {
+    JvmtiTagMap* tag_map = env->tag_map_acquire();
+    if (tag_map != NULL) {
+      tag_map->_needs_cleaning = !tag_map->is_empty();
     }
-  } else {
-    assert(SafepointSynchronize::is_at_safepoint(), "must be");
+  }
+}
 
-    TraceTime timer("JvmtiTagMap gc_notification and event posting", TRACETIME_LOG(Debug, gc, phases));
+void JvmtiTagMap::gc_notification(size_t num_dead_entries) {
+  assert(notified_needs_cleaning, "missing GC notification");
+  DEBUG_ONLY(notified_needs_cleaning = false;)
 
+  // Notify ServiceThread if there's work to do.
+  {
+    MonitorLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+    _has_object_free_events = (num_dead_entries != 0);
+    if (_has_object_free_events) ml.notify_all();
+  }
+
+  // If no dead entries then cancel cleaning requests.
+  if (num_dead_entries == 0) {
     JvmtiEnvIterator it;
     for (JvmtiEnv* env = it.first(); env != NULL; env = it.next(env)) {
       JvmtiTagMap* tag_map = env->tag_map_acquire();
-      if (tag_map != NULL && !tag_map->is_empty()) {
-        if (num_dead_entries != 0) {
-          tag_map->hashmap()->unlink_and_post(tag_map->env());
-        }
-        // Later GC code will relocate the oops, so defer rehashing until then.
-        tag_map->_needs_rehashing = true;
+      if (tag_map != NULL) {
+        MutexLocker ml (tag_map->lock(), Mutex::_no_safepoint_check_flag);
+        tag_map->_needs_cleaning = false;
       }
     }
   }
 }
 
+// Used by ServiceThread to discover there is work to do.
+bool JvmtiTagMap::has_object_free_events_and_reset() {
+  assert_lock_strong(Service_lock);
+  bool result = _has_object_free_events;
+  _has_object_free_events = false;
+  return result;
+}
+
+// Used by ServiceThread to clean up tagmaps.
+void JvmtiTagMap::flush_all_object_free_events() {
+  JavaThread* thread = JavaThread::current();
+  JvmtiEnvIterator it;
+  for (JvmtiEnv* env = it.first(); env != NULL; env = it.next(env)) {
+    JvmtiTagMap* tag_map = env->tag_map_acquire();
+    if (tag_map != NULL) {
+      tag_map->flush_object_free_events();
+      ThreadBlockInVM tbiv(thread); // Be safepoint-polite while looping.
+    }
+  }
+}
