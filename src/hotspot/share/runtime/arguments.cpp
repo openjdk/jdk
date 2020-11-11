@@ -556,6 +556,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "InsertMemBarAfterArraycopy",    JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "Debugging",                     JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "UseRDPCForConstantTableBase",   JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+  { "VerifyMergedCPBytecodes",       JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
 
 #ifdef TEST_VERIFY_SPECIAL_JVM_FLAGS
   // These entries will generate build errors.  Their purpose is to test the macros.

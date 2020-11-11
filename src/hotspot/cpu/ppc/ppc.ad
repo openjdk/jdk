@@ -3888,7 +3888,7 @@ frame %{
   // The `sig' array is to be updated. sig[j] represents the location
   // of the j-th argument, either a register or a stack slot.
 
-  // Comment taken from i486.ad:
+  // Comment taken from x86_32.ad:
   // Body of function which returns an integer array locating
   // arguments either in registers or in stack slots. Passed an array
   // of ideal registers called "sig" and a "length" count. Stack-slot
@@ -3900,7 +3900,7 @@ frame %{
     SharedRuntime::java_calling_convention(sig_bt, regs, length, false);
   %}
 
-  // Comment taken from i486.ad:
+  // Comment taken from x86_32.ad:
   // Body of function which returns an integer array locating
   // arguments either in registers or in stack slots. Passed an array
   // of ideal registers called "sig" and a "length" count. Stack-slot

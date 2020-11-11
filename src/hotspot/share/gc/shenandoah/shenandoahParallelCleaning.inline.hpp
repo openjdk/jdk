@@ -53,7 +53,9 @@ ShenandoahParallelWeakRootsCleaningTask<IsAlive, KeepAlive>::~ShenandoahParallel
   if (StringDedup::is_enabled()) {
     StringDedup::gc_epilogue();
   }
-  _weak_processing_task.report_num_dead();
+  if (_include_concurrent_roots) {
+    _weak_processing_task.report_num_dead();
+  }
 }
 
 template<typename IsAlive, typename KeepAlive>

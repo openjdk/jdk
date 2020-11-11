@@ -570,10 +570,6 @@ bool G1CollectedHeap::alloc_archive_regions(MemRegion* ranges,
   // when mmap'ing archived heap data in, so pre-touching is wasted.
   FlagSetting fs(AlwaysPreTouch, false);
 
-  // Enable archive object checking used by G1MarkSweep. We have to let it know
-  // about each archive range, so that objects in those ranges aren't marked.
-  G1ArchiveAllocator::enable_archive_object_check();
-
   // For each specified MemRegion range, allocate the corresponding G1
   // regions and mark them as archive regions. We expect the ranges
   // in ascending starting address order, without overlap.
@@ -649,9 +645,6 @@ bool G1CollectedHeap::alloc_archive_regions(MemRegion* ranges,
       curr_region->set_top(top);
       curr_region = next_region;
     }
-
-    // Notify mark-sweep of the archive
-    G1ArchiveAllocator::set_range_archive(curr_range, open);
   }
   return true;
 }
@@ -802,9 +795,6 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion* ranges, size_t count) {
       _hrm->shrink_at(curr_index, 1);
       uncommitted_regions++;
     }
-
-    // Notify mark-sweep that this is no longer an archive range.
-    G1ArchiveAllocator::clear_range_archive(ranges[i]);
   }
 
   if (uncommitted_regions != 0) {
@@ -815,8 +805,7 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion* ranges, size_t count) {
 }
 
 oop G1CollectedHeap::materialize_archived_object(oop obj) {
-  assert(obj != NULL, "archived obj is NULL");
-  assert(G1ArchiveAllocator::is_archived_object(obj), "must be archived object");
+  assert(is_archived_object(obj), "not an archived obj");
 
   // Loading an archived object makes it strongly reachable. If it is
   // loaded during concurrent marking, it must be enqueued to the SATB
@@ -1016,8 +1005,7 @@ void G1CollectedHeap::prepare_heap_for_full_collection() {
   // after this full GC.
   abandon_collection_set(collection_set());
 
-  tear_down_region_sets(false /* free_list_only */);
-
+  hrm()->remove_all_free_regions();
   hrm()->prepare_for_full_collection_start();
 }
 
@@ -1073,17 +1061,7 @@ void G1CollectedHeap::verify_after_full_collection() {
   _hrm->verify_optional();
   _verifier->verify_region_sets_optional();
   _verifier->verify_after_gc(G1HeapVerifier::G1VerifyFull);
-  // Clear the previous marking bitmap, if needed for bitmap verification.
-  // Note we cannot do this when we clear the next marking bitmap in
-  // G1ConcurrentMark::abort() above since VerifyDuringGC verifies the
-  // objects marked during a full GC against the previous bitmap.
-  // But we need to clear it before calling check_bitmaps below since
-  // the full GC has compacted objects and updated TAMS but not updated
-  // the prev bitmap.
-  if (G1VerifyBitmaps) {
-    GCTraceTime(Debug, gc) tm("Clear Prev Bitmap for Verification");
-    _cm->clear_prev_bitmap(workers());
-  }
+
   // This call implicitly verifies that the next bitmap is clear after Full GC.
   _verifier->check_bitmaps("Full GC End");
 
@@ -1347,7 +1325,7 @@ void G1CollectedHeap::shrink(size_t shrink_bytes) {
   // Instead of tearing down / rebuilding the free lists here, we
   // could instead use the remove_all_pending() method on free_list to
   // remove only the ones that we need to remove.
-  tear_down_region_sets(true /* free_list_only */);
+  hrm()->remove_all_free_regions();
   shrink_helper(shrink_bytes);
   rebuild_region_sets(true /* free_list_only */);
 
@@ -2393,6 +2371,10 @@ bool G1CollectedHeap::supports_concurrent_gc_breakpoints() const {
 
 bool G1CollectedHeap::is_heterogeneous_heap() const {
   return G1Arguments::is_heterogeneous_heap();
+}
+
+bool G1CollectedHeap::is_archived_object(oop object) const {
+  return object != NULL && heap_region_containing(object)->is_archive();
 }
 
 class PrintRegionClosure: public HeapRegionClosure {
@@ -4565,45 +4547,23 @@ bool G1CollectedHeap::check_young_list_empty() {
 
 #endif // ASSERT
 
-class TearDownRegionSetsClosure : public HeapRegionClosure {
-  HeapRegionSet *_old_set;
-
-public:
-  TearDownRegionSetsClosure(HeapRegionSet* old_set) : _old_set(old_set) { }
-
-  bool do_heap_region(HeapRegion* r) {
-    if (r->is_old()) {
-      _old_set->remove(r);
-    } else if(r->is_young()) {
-      r->uninstall_surv_rate_group();
-    } else {
-      // We ignore free regions, we'll empty the free list afterwards.
-      // We ignore humongous and archive regions, we're not tearing down these
-      // sets.
-      assert(r->is_archive() || r->is_free() || r->is_humongous(),
-             "it cannot be another type");
-    }
-    return false;
-  }
-
-  ~TearDownRegionSetsClosure() {
-    assert(_old_set->is_empty(), "post-condition");
-  }
-};
-
-void G1CollectedHeap::tear_down_region_sets(bool free_list_only) {
-  assert_at_safepoint_on_vm_thread();
-
-  if (!free_list_only) {
-    TearDownRegionSetsClosure cl(&_old_set);
-    heap_region_iterate(&cl);
-
+  // Remove the given HeapRegion from the appropriate region set.
+void G1CollectedHeap::prepare_region_for_full_compaction(HeapRegion* hr) {
+  if (hr->is_old()) {
+    _old_set.remove(hr);
+  } else if (hr->is_young()) {
     // Note that emptying the _young_list is postponed and instead done as
     // the first step when rebuilding the regions sets again. The reason for
     // this is that during a full GC string deduplication needs to know if
     // a collected region was young or old when the full GC was initiated.
+    hr->uninstall_surv_rate_group();
+  } else {
+    // We ignore free regions, we'll empty the free list afterwards.
+    // We ignore humongous and archive regions, we're not tearing down these
+    // sets.
+    assert(hr->is_archive() || hr->is_free() || hr->is_humongous(),
+           "it cannot be another type");
   }
-  _hrm->remove_all_free_regions();
 }
 
 void G1CollectedHeap::increase_used(size_t bytes) {
