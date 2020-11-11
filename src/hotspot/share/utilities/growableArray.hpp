@@ -31,6 +31,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "utilities/print.hpp"
 
 // A growable array.
 
@@ -124,6 +125,8 @@ protected:
   ~GrowableArrayView() {}
 
 public:
+  const static GrowableArrayView EMPTY;
+
   bool operator==(const GrowableArrayView<E>& rhs) const {
     if (_len != rhs._len)
       return false;
@@ -310,15 +313,27 @@ public:
     return min;
   }
 
-  void print() {
-    tty->print("Growable Array " INTPTR_FORMAT, p2i(this));
-    tty->print(": length %d (_max %d) { ", _len, _max);
+  size_t data_size_in_bytes() const {
+    return _len * sizeof(E);
+  }
+
+  void print() const {
+    print_on(tty);
+  }
+
+  void print_on(outputStream* st) const {
+    st->print("Growable Array " INTPTR_FORMAT, p2i(this));
+    st->print(": length %d (_max %d) { ", _len, _max);
     for (int i = 0; i < _len; i++) {
-      tty->print(INTPTR_FORMAT " ", *(intptr_t*)&(_data[i]));
+      Print::print_on(_data[i], st);
+      st->print(", ");
     }
-    tty->print("}\n");
+    st->print("}\n");
   }
 };
+
+template<typename E>
+const GrowableArrayView<E> GrowableArrayView<E>::EMPTY(nullptr, 0, 0);
 
 // GrowableArrayWithAllocator extends the "view" with
 // the capability to grow and deallocate the data array.

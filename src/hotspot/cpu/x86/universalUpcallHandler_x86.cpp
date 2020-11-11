@@ -26,6 +26,8 @@
 #include "memory/resourceArea.hpp"
 #include "prims/universalUpcallHandler.hpp"
 
+#define __ _masm->
+
 // 1. Create buffer according to layout
 // 2. Load registers & stack args into buffer
 // 3. Call upcall helper with upcall handler instance & buffer pointer (C++ ABI)
@@ -41,7 +43,7 @@ address ProgrammableUpcallHandler::generate_upcall_stub(jobject rec, jobject jab
   MacroAssembler* _masm = new MacroAssembler(&buffer);
   int stack_alignment_C = 16; // bytes
   int register_size = sizeof(uintptr_t);
-  int buffer_alignment = sizeof(VectorRegister);
+  int buffer_alignment = xmm_reg_size;
 
   // stub code
   __ enter();
@@ -76,14 +78,8 @@ address ProgrammableUpcallHandler::generate_upcall_stub(jobject rec, jobject jab
 
   for (int i = 0; i < abi._vector_argument_registers.length(); i++) {
     XMMRegister reg = abi._vector_argument_registers.at(i);
-    size_t offs = buffer_offset + layout.arguments_vector + i * sizeof(VectorRegister);
-    if (UseAVX >= 3) {
-      __ evmovdqul(Address(rsp, (int)offs), reg, Assembler::AVX_512bit);
-    } else if (UseAVX >= 1) {
-      __ vmovdqu(Address(rsp, (int)offs), reg);
-    } else {
-      __ movdqu(Address(rsp, (int)offs), reg);
-    }
+    size_t offs = buffer_offset + layout.arguments_vector + i * xmm_reg_size;
+    __ movdqu(Address(rsp, (int)offs), reg);
   }
 
   // Capture prev stack pointer (stack arguments base)
@@ -121,14 +117,8 @@ address ProgrammableUpcallHandler::generate_upcall_stub(jobject rec, jobject jab
 
   for (int i = 0; i < abi._vector_return_registers.length(); i++) {
     XMMRegister reg = abi._vector_return_registers.at(i);
-    size_t offs = buffer_offset + layout.returns_vector + i * sizeof(VectorRegister);
-    if (UseAVX >= 3) {
-      __ evmovdqul(reg, Address(rsp, (int)offs), Assembler::AVX_512bit);
-    } else if (UseAVX >= 1) {
-      __ vmovdqu(reg, Address(rsp, (int)offs));
-    } else {
-      __ movdqu(reg, Address(rsp, (int)offs));
-    }
+    size_t offs = buffer_offset + layout.returns_vector + i * xmm_reg_size;
+    __ movdqu(reg, Address(rsp, (int)offs));
   }
 
   for (size_t i = abi._X87_return_registers_noof; i > 0 ; i--) {

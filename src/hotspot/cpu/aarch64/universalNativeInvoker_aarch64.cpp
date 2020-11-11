@@ -28,6 +28,8 @@
 #include "memory/resourceArea.hpp"
 #include "prims/universalNativeInvoker.hpp"
 
+#define __ _masm->
+
 void ProgrammableInvoker::Generator::generate() {
   __ enter();
 
@@ -73,7 +75,7 @@ void ProgrammableInvoker::Generator::generate() {
   __ bind(Ldone);
 
   for (int i = 0; i < _abi->_vector_argument_registers.length(); i++) {
-    ssize_t offs = _layout->arguments_vector + i * sizeof(VectorRegister);
+    ssize_t offs = _layout->arguments_vector + i * float_reg_size;
     __ ldrq(_abi->_vector_argument_registers.at(i), Address(Rctx, offs));
   }
 
@@ -99,7 +101,7 @@ void ProgrammableInvoker::Generator::generate() {
   }
 
   for (int i = 0; i < _abi->_vector_return_registers.length(); i++) {
-    ssize_t offs = _layout->returns_vector + i * sizeof(VectorRegister);
+    ssize_t offs = _layout->returns_vector + i * float_reg_size;
     __ strq(_abi->_vector_return_registers.at(i), Address(Rctx, offs));
   }
 

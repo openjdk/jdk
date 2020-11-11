@@ -1003,6 +1003,7 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
 
   int safepoint_pc_offset = current_offset;
   bool is_method_handle_invoke = false;
+  bool is_opt_native = false;
   bool return_oop = false;
   bool has_ea_local_in_scope = sfn->_has_ea_local_in_scope;
   bool arg_escape = false;
@@ -1021,6 +1022,8 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
         is_method_handle_invoke = true;
       }
       arg_escape = mcall->as_MachCallJava()->_arg_escape;
+    } else if (mcall->is_MachCallNative()) {
+      is_opt_native = true;
     }
 
     // Check if a call returns an object.
@@ -1141,7 +1144,6 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
     // Now we can describe the scope.
     methodHandle null_mh;
     bool rethrow_exception = false;
-    bool is_opt_native = mach->is_MachCallNative();
     C->debug_info()->describe_scope(
       safepoint_pc_offset,
       null_mh,
@@ -3391,16 +3393,6 @@ void PhaseOutput::install_code(ciMethod*         target,
       _code_offsets.set_value(CodeOffsets::OSR_Entry, 0);
     }
 
-    address* native_stubs = NULL;
-    int num_stubs = 0;
-    if (!C->native_stubs().is_empty()) {
-      num_stubs = C->native_stubs().length();
-      native_stubs = NEW_C_HEAP_ARRAY(address, num_stubs, mtInternal);
-      for (int i = 0; i < num_stubs; i++) {
-        native_stubs[i] = C->native_stubs().at(i);
-      }
-    }
-
     C->env()->register_method(target,
                                      entry_bci,
                                      &_code_offsets,
@@ -3414,8 +3406,7 @@ void PhaseOutput::install_code(ciMethod*         target,
                                      has_unsafe_access,
                                      SharedRuntime::is_wide_vector(C->max_vector_size()),
                                      C->rtm_state(),
-                                     native_stubs,
-                                     num_stubs);
+                                     C->native_invokers());
 
     if (C->log() != NULL) { // Print code cache state into compiler log
       C->log()->code_cache_state();

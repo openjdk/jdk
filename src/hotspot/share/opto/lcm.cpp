@@ -863,7 +863,9 @@ uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, Grow
       save_policy = _matcher._register_save_policy;
       break;
     case Op_CallNative:
-      // FIXME compute actual save policy based on nep->abi
+      // We use the c reg save policy here since Panama
+      // only supports the C ABI currently.
+      // TODO compute actual save policy based on nep->abi
       save_policy = _matcher._c_reg_save_policy;
       break;
 

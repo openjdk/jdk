@@ -27,6 +27,8 @@
 #include "memory/resourceArea.hpp"
 #include "prims/universalUpcallHandler.hpp"
 
+#define __ _masm->
+
 // 1. Create buffer according to layout
 // 2. Load registers & stack args into buffer
 // 3. Call upcall helper with upcall handler instance & buffer pointer (C++ ABI)
@@ -63,7 +65,7 @@ address ProgrammableUpcallHandler::generate_upcall_stub(jobject rec, jobject jab
 
   for (int i = 0; i < abi._vector_argument_registers.length(); i++) {
     FloatRegister reg = abi._vector_argument_registers.at(i);
-    ssize_t offset = layout.arguments_vector + i * sizeof(VectorRegister);
+    ssize_t offset = layout.arguments_vector + i * float_reg_size;
     __ strq(reg, Address(sp, offset));
   }
 
@@ -84,7 +86,7 @@ address ProgrammableUpcallHandler::generate_upcall_stub(jobject rec, jobject jab
 
   for (int i = 0; i < abi._vector_return_registers.length(); i++) {
     FloatRegister reg = abi._vector_return_registers.at(i);
-    ssize_t offs = layout.returns_vector + i * sizeof(VectorRegister);
+    ssize_t offs = layout.returns_vector + i * float_reg_size;
     __ ldrq(reg, Address(sp, offs));
   }
 

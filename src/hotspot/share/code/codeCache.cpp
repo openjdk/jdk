@@ -564,7 +564,7 @@ void CodeCache::free(CodeBlob* cb) {
     if (ptr->has_dependencies()) {
       _number_of_nmethods_with_dependencies--;
     }
-    ptr->free_native_stubs();
+    ptr->free_native_invokers();
   }
   if (cb->is_adapter_blob()) {
     heap->set_adapter_count(heap->adapter_count() - 1);

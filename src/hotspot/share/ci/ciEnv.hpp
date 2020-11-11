@@ -381,8 +381,7 @@ public:
                        bool                      has_unsafe_access,
                        bool                      has_wide_vectors,
                        RTMState                  rtm_state = NoRTM,
-                       address*                  native_stubs = NULL,
-                       int                       num_stubs = 0);
+                       const GrowableArrayView<BufferBlob*>& native_invokers = GrowableArrayView<BufferBlob*>::EMPTY);
 
 
   // Access to certain well known ciObjects.

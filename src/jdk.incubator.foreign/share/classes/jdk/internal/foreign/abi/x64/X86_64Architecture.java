@@ -33,7 +33,7 @@ import java.util.stream.IntStream;
 public class X86_64Architecture implements Architecture {
     public static final Architecture INSTANCE = new X86_64Architecture();
     private static final int INTEGER_REG_SIZE = 8; // bytes
-    private static final int VECTOR_REG_SIZE = 64; // sizeof(VectorRegister)
+    private static final int VECTOR_REG_SIZE = 16; // size of XMM register
     private static final int X87_REG_SIZE = 16;
     private static final int STACK_SLOT_SIZE = 8;
 
