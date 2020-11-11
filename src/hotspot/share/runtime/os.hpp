@@ -118,7 +118,7 @@ class os: AllStatic {
     _page_sizes[1] = 0; // sentinel
   }
 
-  static char*  pd_reserve_memory(size_t bytes, bool executable);
+  static char*  pd_reserve_memory(size_t bytes);
 
   static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes);
   static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes, int file_desc);
@@ -133,7 +133,7 @@ class os: AllStatic {
   static void   pd_commit_memory_or_exit(char* addr, size_t size,
                                          size_t alignment_hint,
                                          bool executable, const char* mesg);
-  static bool   pd_uncommit_memory(char* addr, size_t bytes, bool exec);
+  static bool   pd_uncommit_memory(char* addr, size_t bytes);
   static bool   pd_release_memory(char* addr, size_t bytes);
 
   static char*  pd_map_memory(int fd, const char* file_name, size_t file_offset,
@@ -319,7 +319,7 @@ class os: AllStatic {
 
   // Reserves virtual memory.
   // alignment_hint - currently only used by AIX
-  static char*  reserve_memory(size_t bytes, bool executable = false, MEMFLAGS flags = mtOther);
+  static char*  reserve_memory(size_t bytes, MEMFLAGS flags = mtOther);
 
   // Reserves virtual memory.
   // if file_desc != -1, also attaches the memory to the file.
@@ -352,7 +352,7 @@ class os: AllStatic {
   static void   commit_memory_or_exit(char* addr, size_t size,
                                       size_t alignment_hint,
                                       bool executable, const char* mesg);
-  static bool   uncommit_memory(char* addr, size_t bytes, bool exec);
+  static bool   uncommit_memory(char* addr, size_t bytes);
   static bool   release_memory(char* addr, size_t bytes);
 
   // Touch memory pages that cover the memory range from start to end (exclusive)
