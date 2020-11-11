@@ -551,16 +551,16 @@ jlongArray getThreadIntegerRegisterSetFromCore(JNIEnv *env, jobject this_obj, lo
 #elif defined(aarch64)
 #define REG_INDEX(reg) sun_jvm_hotspot_debugger_aarch64_AARCH64ThreadContext_##reg
 
-  regs[REG_INDEX(R0)] = gregs.r_r0;
-  regs[REG_INDEX(R1)] = gregs.r_r1;
-  regs[REG_INDEX(R2)] = gregs.r_r2;
-  regs[REG_INDEX(R3)] = gregs.r_r3;
-  regs[REG_INDEX(R4)] = gregs.r_r4;
-  regs[REG_INDEX(R5)] = gregs.r_r5;
-  regs[REG_INDEX(R6)] = gregs.r_r6;
-  regs[REG_INDEX(R7)] = gregs.r_r7;
-  regs[REG_INDEX(R8)] = gregs.r_r8;
-  regs[REG_INDEX(R9)] = gregs.r_r9;
+  regs[REG_INDEX(R0)]  = gregs.r_r0;
+  regs[REG_INDEX(R1)]  = gregs.r_r1;
+  regs[REG_INDEX(R2)]  = gregs.r_r2;
+  regs[REG_INDEX(R3)]  = gregs.r_r3;
+  regs[REG_INDEX(R4)]  = gregs.r_r4;
+  regs[REG_INDEX(R5)]  = gregs.r_r5;
+  regs[REG_INDEX(R6)]  = gregs.r_r6;
+  regs[REG_INDEX(R7)]  = gregs.r_r7;
+  regs[REG_INDEX(R8)]  = gregs.r_r8;
+  regs[REG_INDEX(R9)]  = gregs.r_r9;
   regs[REG_INDEX(R10)] = gregs.r_r10;
   regs[REG_INDEX(R11)] = gregs.r_r11;
   regs[REG_INDEX(R12)] = gregs.r_r12;
@@ -580,10 +580,10 @@ jlongArray getThreadIntegerRegisterSetFromCore(JNIEnv *env, jobject this_obj, lo
   regs[REG_INDEX(R26)] = gregs.r_r26;
   regs[REG_INDEX(R27)] = gregs.r_r27;
   regs[REG_INDEX(R28)] = gregs.r_r28;
-  regs[REG_INDEX(FP)] = gregs.r_fp;
-  regs[REG_INDEX(LR)] = gregs.r_lr;
-  regs[REG_INDEX(SP)] = gregs.r_sp;
-  regs[REG_INDEX(PC)] = gregs.r_pc;
+  regs[REG_INDEX(FP)]  = gregs.r_fp;
+  regs[REG_INDEX(LR)]  = gregs.r_lr;
+  regs[REG_INDEX(SP)]  = gregs.r_sp;
+  regs[REG_INDEX(PC)]  = gregs.r_pc;
 
 #else
 #error UNSUPPORTED_ARCH
@@ -736,16 +736,16 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_getThreadIntegerRegisterSet0(
 #elif defined(aarch64)
 #define REG_INDEX(reg) sun_jvm_hotspot_debugger_aarch64_AARCH64ThreadContext_##reg
 
-  primitiveArray[REG_INDEX(R0)] = state.__x[0];
-  primitiveArray[REG_INDEX(R1)] = state.__x[1];
-  primitiveArray[REG_INDEX(R2)] = state.__x[2];
-  primitiveArray[REG_INDEX(R3)] = state.__x[3];
-  primitiveArray[REG_INDEX(R4)] = state.__x[4];
-  primitiveArray[REG_INDEX(R5)] = state.__x[5];
-  primitiveArray[REG_INDEX(R6)] = state.__x[6];
-  primitiveArray[REG_INDEX(R7)] = state.__x[7];
-  primitiveArray[REG_INDEX(R8)] = state.__x[8];
-  primitiveArray[REG_INDEX(R9)] = state.__x[9];
+  primitiveArray[REG_INDEX(R0)]  = state.__x[0];
+  primitiveArray[REG_INDEX(R1)]  = state.__x[1];
+  primitiveArray[REG_INDEX(R2)]  = state.__x[2];
+  primitiveArray[REG_INDEX(R3)]  = state.__x[3];
+  primitiveArray[REG_INDEX(R4)]  = state.__x[4];
+  primitiveArray[REG_INDEX(R5)]  = state.__x[5];
+  primitiveArray[REG_INDEX(R6)]  = state.__x[6];
+  primitiveArray[REG_INDEX(R7)]  = state.__x[7];
+  primitiveArray[REG_INDEX(R8)]  = state.__x[8];
+  primitiveArray[REG_INDEX(R9)]  = state.__x[9];
   primitiveArray[REG_INDEX(R10)] = state.__x[10];
   primitiveArray[REG_INDEX(R11)] = state.__x[11];
   primitiveArray[REG_INDEX(R12)] = state.__x[12];
