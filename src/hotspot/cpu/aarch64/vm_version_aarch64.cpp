@@ -332,6 +332,10 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
   }
 
+  if (FLAG_IS_DEFAULT(UseBASE64Intrinsics)) {
+    UseBASE64Intrinsics = true;
+  }
+
   if (is_zva_enabled()) {
     if (FLAG_IS_DEFAULT(UseBlockZeroing)) {
       FLAG_SET_DEFAULT(UseBlockZeroing, true);

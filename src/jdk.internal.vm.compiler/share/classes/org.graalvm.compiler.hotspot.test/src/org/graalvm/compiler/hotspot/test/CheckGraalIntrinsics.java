@@ -437,6 +437,14 @@ public class CheckGraalIntrinsics extends GraalTest {
                             "java/lang/Math.signum(D)D",
                             "java/lang/Math.signum(F)F",
                             "sun/security/provider/MD5.implCompress0([BI)V");
+            if (config.useBase64Intrinsics()) {
+                // Currently implemented on ppc64le only, but could be implemented on others
+                add(toBeInvestigated,
+                            "java/util/Base64$Decoder.decodeBlock([BII[BIZ)I");
+            } else {
+                add(ignore,
+                            "java/util/Base64$Decoder.decodeBlock([BII[BIZ)I");
+            }
         }
 
         if (!config.inlineNotify()) {

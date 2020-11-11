@@ -87,6 +87,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/monitorDeflationThread.hpp"
 #include "runtime/notificationThread.hpp"
 #include "runtime/os.hpp"
 #include "runtime/perfMemory.hpp"
@@ -573,6 +574,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
      static_field(StubRoutines,                _counterMode_AESCrypt,                         address)                               \
      static_field(StubRoutines,                _ghash_processBlocks,                          address)                               \
      static_field(StubRoutines,                _base64_encodeBlock,                           address)                               \
+     static_field(StubRoutines,                _base64_decodeBlock,                           address)                               \
      static_field(StubRoutines,                _updateBytesCRC32,                             address)                               \
      static_field(StubRoutines,                _crc_table_adr,                                address)                               \
      static_field(StubRoutines,                _crc32c_table_addr,                            address)                               \
@@ -888,7 +890,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   volatile_nonstatic_field(ObjectMonitor,      _recursions,                                   intx)                                  \
   nonstatic_field(BasicObjectLock,             _lock,                                         BasicLock)                             \
   nonstatic_field(BasicObjectLock,             _obj,                                          oop)                                   \
-  static_field(ObjectSynchronizer,             g_block_list,                                  PaddedObjectMonitor*)                  \
                                                                                                                                      \
   /*********************/                                                                                                            \
   /* Matcher (C2 only) */                                                                                                            \
@@ -1339,6 +1340,7 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
         declare_type(WatcherThread, NonJavaThread)                        \
       declare_type(JavaThread, Thread)                                    \
         declare_type(JvmtiAgentThread, JavaThread)                        \
+        declare_type(MonitorDeflationThread, JavaThread)                  \
         declare_type(ServiceThread, JavaThread)                           \
         declare_type(NotificationThread, JavaThread)                      \
         declare_type(CompilerThread, JavaThread)                          \
@@ -1463,7 +1465,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   /************/                                                          \
                                                                           \
   declare_toplevel_type(ObjectMonitor)                                    \
-  declare_toplevel_type(PaddedObjectMonitor)                              \
   declare_toplevel_type(ObjectSynchronizer)                               \
   declare_toplevel_type(BasicLock)                                        \
   declare_toplevel_type(BasicObjectLock)                                  \
@@ -1994,7 +1995,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   declare_toplevel_type(nmethod*)                                         \
   COMPILER2_PRESENT(declare_unsigned_integer_type(node_idx_t))            \
   declare_toplevel_type(ObjectMonitor*)                                   \
-  declare_toplevel_type(PaddedObjectMonitor*)                             \
   declare_toplevel_type(oop*)                                             \
   declare_toplevel_type(OopMapCache*)                                     \
   declare_toplevel_type(VMReg)                                            \
@@ -2258,7 +2258,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   /*************************************/                                 \
                                                                           \
   declare_preprocessor_constant("FIELDINFO_TAG_SIZE", FIELDINFO_TAG_SIZE) \
-  declare_preprocessor_constant("FIELDINFO_TAG_MASK", FIELDINFO_TAG_MASK) \
   declare_preprocessor_constant("FIELDINFO_TAG_OFFSET", FIELDINFO_TAG_OFFSET) \
                                                                           \
   /************************************************/                      \
@@ -2522,12 +2521,6 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   /******************/                                                    \
                                                                           \
   declare_constant(JNIHandleBlock::block_size_in_oops)                    \
-                                                                          \
-  /**********************/                                                \
-  /* ObjectSynchronizer */                                                \
-  /**********************/                                                \
-                                                                          \
-  declare_constant(ObjectSynchronizer::_BLOCKSIZE)                        \
                                                                           \
   /**********************/                                                \
   /* PcDesc             */                                                \

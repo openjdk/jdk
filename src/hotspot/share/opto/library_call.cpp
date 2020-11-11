@@ -574,6 +574,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_ghash_processBlocks();
   case vmIntrinsics::_base64_encodeBlock:
     return inline_base64_encodeBlock();
+  case vmIntrinsics::_base64_decodeBlock:
+    return inline_base64_decodeBlock();
 
   case vmIntrinsics::_encodeISOArray:
   case vmIntrinsics::_encodeByteISOArray:
@@ -6172,6 +6174,40 @@ bool LibraryCallKit::inline_base64_encodeBlock() {
                                    OptoRuntime::base64_encodeBlock_Type(),
                                    stubAddr, stubName, TypePtr::BOTTOM,
                                    src_start, offset, len, dest_start, dp, isURL);
+  return true;
+}
+
+bool LibraryCallKit::inline_base64_decodeBlock() {
+  address stubAddr;
+  const char *stubName;
+  assert(UseBASE64Intrinsics, "need Base64 intrinsics support");
+  assert(callee()->signature()->size() == 6, "base64_decodeBlock has 6 parameters");
+  stubAddr = StubRoutines::base64_decodeBlock();
+  stubName = "decodeBlock";
+
+  if (!stubAddr) return false;
+  Node* base64obj = argument(0);
+  Node* src = argument(1);
+  Node* src_offset = argument(2);
+  Node* len = argument(3);
+  Node* dest = argument(4);
+  Node* dest_offset = argument(5);
+  Node* isURL = argument(6);
+
+  src = must_be_not_null(src, true);
+  dest = must_be_not_null(dest, true);
+
+  Node* src_start = array_element_address(src, intcon(0), T_BYTE);
+  assert(src_start, "source array is NULL");
+  Node* dest_start = array_element_address(dest, intcon(0), T_BYTE);
+  assert(dest_start, "destination array is NULL");
+
+  Node* call = make_runtime_call(RC_LEAF,
+                                 OptoRuntime::base64_decodeBlock_Type(),
+                                 stubAddr, stubName, TypePtr::BOTTOM,
+                                 src_start, src_offset, len, dest_start, dest_offset, isURL);
+  Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+  set_result(result);
   return true;
 }
 
