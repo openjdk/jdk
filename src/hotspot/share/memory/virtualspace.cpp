@@ -194,7 +194,11 @@ void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
         base = NULL;
       }
     } else {
-      base = os::reserve_memory_with_fd(size, _fd_for_heap, _executable);
+      if (_executable) {
+        base = os::reserve_memory(size, ExecMem);
+      } else {
+        base = os::reserve_memory_with_fd(size, _fd_for_heap);
+      }
     }
 
     if (base == NULL) return;
