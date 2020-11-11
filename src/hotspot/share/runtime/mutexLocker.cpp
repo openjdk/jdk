@@ -116,6 +116,7 @@ Mutex*   OldSets_lock                 = NULL;
 Monitor* RootRegionScan_lock          = NULL;
 
 Mutex*   Management_lock              = NULL;
+Monitor* MonitorDeflation_lock        = NULL;
 Monitor* Service_lock                 = NULL;
 Monitor* Notification_lock            = NULL;
 Monitor* PeriodicTask_lock            = NULL;
@@ -244,6 +245,7 @@ void mutex_init() {
 
   def(Patching_lock                , PaddedMutex  , special,     true,  _safepoint_check_never);      // used for safepointing and code patching.
   def(CompiledMethod_lock          , PaddedMutex  , special-1,   true,  _safepoint_check_never);
+  def(MonitorDeflation_lock        , PaddedMonitor, tty-2,       true,  _safepoint_check_never);      // used for monitor deflation thread operations
   def(Service_lock                 , PaddedMonitor, tty-2,       true,  _safepoint_check_never);      // used for service thread operations
 
   if (UseNotificationThread) {

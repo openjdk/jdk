@@ -25,8 +25,41 @@
 #include "precompiled.hpp"
 #include "oops/markWord.hpp"
 #include "runtime/thread.inline.hpp"
-#include "runtime/objectMonitor.hpp"
+#include "runtime/objectMonitor.inline.hpp"
 #include "utilities/ostream.hpp"
+
+markWord markWord::displaced_mark_helper() const {
+  assert(has_displaced_mark_helper(), "check");
+  if (has_monitor()) {
+    // Has an inflated monitor. Must be checked before has_locker().
+    ObjectMonitor* monitor = this->monitor();
+    return monitor->header();
+  }
+  if (has_locker()) {  // has a stack lock
+    BasicLock* locker = this->locker();
+    return locker->displaced_header();
+  }
+  // This should never happen:
+  fatal("bad header=" INTPTR_FORMAT, value());
+  return markWord(value());
+}
+
+void markWord::set_displaced_mark_helper(markWord m) const {
+  assert(has_displaced_mark_helper(), "check");
+  if (has_monitor()) {
+    // Has an inflated monitor. Must be checked before has_locker().
+    ObjectMonitor* monitor = this->monitor();
+    monitor->set_header(m);
+    return;
+  }
+  if (has_locker()) {  // has a stack lock
+    BasicLock* locker = this->locker();
+    locker->set_displaced_header(m);
+    return;
+  }
+  // This should never happen:
+  fatal("bad header=" INTPTR_FORMAT, value());
+}
 
 void markWord::print_on(outputStream* st, bool print_monitor_info) const {
   if (is_marked()) {  // last bits = 11

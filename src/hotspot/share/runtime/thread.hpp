@@ -416,14 +416,6 @@ class Thread: public ThreadShadow {
   // ObjectMonitor on which this thread called Object.wait()
   ObjectMonitor* _current_waiting_monitor;
 
-  // Per-thread ObjectMonitor lists:
- public:
-  ObjectMonitor* om_free_list;                  // SLL of free ObjectMonitors
-  int om_free_count;                            // # on om_free_list
-  int om_free_provision;                        // # to try to allocate next
-  ObjectMonitor* om_in_use_list;                // SLL of in-use ObjectMonitors
-  int om_in_use_count;                          // # on om_in_use_list
-
 #ifdef ASSERT
  private:
   volatile uint64_t _visited_for_critical_count;
@@ -485,6 +477,7 @@ class Thread: public ThreadShadow {
   virtual bool is_Compiler_thread() const            { return false; }
   virtual bool is_Code_cache_sweeper_thread() const  { return false; }
   virtual bool is_service_thread() const             { return false; }
+  virtual bool is_monitor_deflation_thread() const   { return false; }
   virtual bool is_hidden_from_external_view() const  { return false; }
   virtual bool is_jvmti_agent_thread() const         { return false; }
   // True iff the thread can perform GC operations at a safepoint.

@@ -110,7 +110,12 @@ class RegMask {
     FORALL_BODY
 #   undef BODY
     int dummy = 0) {
+#if defined(VM_LITTLE_ENDIAN) || !defined(_LP64)
 #   define BODY(I) _RM_I[I] = a##I;
+#else
+    // We need to swap ints.
+#   define BODY(I) _RM_I[I ^ 1] = a##I;
+#endif
     FORALL_BODY
 #   undef BODY
     _lwm = 0;
