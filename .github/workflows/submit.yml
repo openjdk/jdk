@@ -501,7 +501,7 @@ jobs:
 
       - name: Remove special directories in sysroot
         run: >
-          rm -rf ~/sysroot-arm64-{dev,proc,run,sys}
+          rm -rf ~/sysroot-arm64/{dev,proc,run,sys}
         if: steps.cache-sysroot.outputs.cache-hit != 'true'
 
       - name: Configure
@@ -637,7 +637,7 @@ jobs:
 
       - name: Remove special directories in sysroot
         run: >
-          rm -rf ~/sysroot-armhf-{dev,proc,run,sys}
+          rm -rf ~/sysroot-armhf/{dev,proc,run,sys}
         if: steps.cache-sysroot.outputs.cache-hit != 'true'
 
       - name: Configure
@@ -773,7 +773,7 @@ jobs:
 
       - name: Remove special directories in sysroot
         run: >
-          rm -rf ~/sysroot-s390x-{dev,proc,run,sys}
+          rm -rf ~/sysroot-s390x/{dev,proc,run,sys}
         if: steps.cache-sysroot.outputs.cache-hit != 'true'
 
       - name: Configure
@@ -909,7 +909,7 @@ jobs:
 
       - name: Remove special directories in sysroot
         run: >
-          rm -rf ~/sysroot-ppc64el-{dev,proc,run,sys}
+          rm -rf ~/sysroot-ppc64el/{dev,proc,run,sys}
         if: steps.cache-sysroot.outputs.cache-hit != 'true'
 
       - name: Configure
