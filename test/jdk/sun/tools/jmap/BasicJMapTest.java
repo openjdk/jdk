@@ -34,7 +34,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 /*
- * @test
+ * @test id=Serial
  * @requires vm.gc.Serial
  * @summary Unit test for jmap utility (Serial GC)
  * @key intermittent
@@ -44,7 +44,7 @@ import jdk.test.lib.process.ProcessTools;
  */
 
 /*
- * @test
+ * @test id=Parallel
  * @requires vm.gc.Parallel
  * @summary Unit test for jmap utility (Parallel GC)
  * @key intermittent
@@ -54,7 +54,7 @@ import jdk.test.lib.process.ProcessTools;
  */
 
 /*
- * @test
+ * @test id=G1
  * @requires vm.gc.G1
  * @summary Unit test for jmap utility (G1 GC)
  * @key intermittent
@@ -64,7 +64,7 @@ import jdk.test.lib.process.ProcessTools;
  */
 
 /*
- * @test
+ * @test id=Shenandoah
  * @requires vm.gc.Shenandoah
  * @summary Unit test for jmap utility (Shenandoah GC)
  * @key intermittent
@@ -74,7 +74,7 @@ import jdk.test.lib.process.ProcessTools;
  */
 
 /*
- * @test
+ * @test id=Z
  * @requires vm.gc.Z
  * @summary Unit test for jmap utility (Z GC)
  * @key intermittent
