@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.java2d.cmm.lcms;
 
 import java.awt.color.CMMException;
 import java.awt.color.ICC_Profile;
+
 import sun.java2d.cmm.ColorTransform;
 import sun.java2d.cmm.PCMM;
 import sun.java2d.cmm.Profile;
@@ -54,12 +55,6 @@ public class LCMS implements PCMM {
             return (LCMSProfile)p;
         }
         throw new CMMException("Invalid profile: " + p);
-    }
-
-
-    @Override
-    public void freeProfile(Profile p) {
-        // we use disposer, so this method does nothing
     }
 
     @Override

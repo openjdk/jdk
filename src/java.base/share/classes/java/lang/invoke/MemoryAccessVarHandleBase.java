@@ -42,8 +42,8 @@ abstract class MemoryAccessVarHandleBase extends VarHandle {
     /** alignment constraint (in bytes, expressed as a bit mask) **/
     final long alignmentMask;
 
-    MemoryAccessVarHandleBase(VarForm form, boolean be, long length, long offset, long alignmentMask) {
-        super(form);
+    MemoryAccessVarHandleBase(VarForm form, boolean be, long length, long offset, long alignmentMask, boolean exact) {
+        super(form, exact);
         this.be = be;
         this.length = length;
         this.offset = offset;
