@@ -1194,6 +1194,27 @@ const TypeFunc* OptoRuntime::base64_encodeBlock_Type() {
   const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
   return TypeFunc::make(domain, range);
 }
+// Base64 decode function
+const TypeFunc* OptoRuntime::base64_decodeBlock_Type() {
+  int argcnt = 6;
+
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;    // src array
+  fields[argp++] = TypeInt::INT;        // src offset
+  fields[argp++] = TypeInt::INT;        // src length
+  fields[argp++] = TypePtr::NOTNULL;    // dest array
+  fields[argp++] = TypeInt::INT;        // dest offset
+  fields[argp++] = TypeInt::BOOL;       // isURL
+  assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+  // result type needed
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms + 0] = TypeInt::INT; // count of bytes written to dst
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+  return TypeFunc::make(domain, range);
+}
 
 //------------- Interpreter state access for on stack replacement
 const TypeFunc* OptoRuntime::osr_end_Type() {
