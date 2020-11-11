@@ -300,10 +300,7 @@ public class MethodHandles {
      * to a hidden class via class data, it is recommended to load the value
      * of class data as a dynamically computed constant instead of storing
      * the class data in private static field(s) which are accessible to
-     * other nestmates.  If there are more than one objects to be injected
-     * in a hidden class, a class data can be an unmodifiable list and
-     * {@link #classDataAt(Lookup, String, Class, int)} can be used to load
-     * the element at a specified index as a dynamically computed constant.
+     * other nestmates.
      *
      * @param <T> the type to cast the class data object to
      * @param caller the lookup context describing the class performing the
@@ -317,7 +314,6 @@ public class MethodHandles {
      * @throws ClassCastException if the class data cannot be converted to
      * the given {@code type}
      * @see Lookup#defineHiddenClassWithClassData(byte[], Object, boolean, Lookup.ClassOption...)
-     * @see #classDataAt(Lookup, String, Class, int)
      * @since 16
      * @jvms 5.5 Initialization
      */
@@ -393,7 +389,7 @@ public class MethodHandles {
      * @see #classData(Lookup, String, Class)
      * @see Lookup#defineHiddenClassWithClassData(byte[], Object, boolean, Lookup.ClassOption...)
      */
-    public static <T> T classDataAt(Lookup caller, String name, Class<T> type, int index)
+    /* package-private */ static <T> T classDataAt(Lookup caller, String name, Class<T> type, int index)
             throws IllegalAccessException
     {
         Objects.requireNonNull(type);
@@ -737,7 +733,7 @@ public class MethodHandles {
      * either or both or neither.  A lookup which possesses both access modes is said to
      * possess {@linkplain #hasFullPrivilegeAccess() full privilege access}.
      * <p style="font-size:smaller;">
-     * A lookup with original access ensures that this lookup is created by
+     * A lookup with <em>original access</em> ensures that this lookup is created by
      * the original lookup class and the bootstrap method invoked by the VM.
      * Such a lookup with original access also has private and module access
      * which has the following additional capability:
@@ -2136,8 +2132,7 @@ public class MethodHandles {
          * The newly created class is linked by the Java Virtual Machine.
          *
          * <p> The {@link MethodHandles#classData(Lookup, String, Class) MethodHandles::classData}
-         * and {@link MethodHandles#classDataAt(Lookup, String, Class, int)
-         * MethodHandles::classDataAt} methods can be used to retrieve the {@code classData}.
+         * method can be used to retrieve the {@code classData}.
          *
          * @param bytes     the class bytes
          * @param classData pre-initialized class data
@@ -2167,7 +2162,6 @@ public class MethodHandles {
          * @see Lookup#defineHiddenClass(byte[], boolean, ClassOption...)
          * @see Class#isHidden()
          * @see MethodHandles#classData(Lookup, String, Class)
-         * @see MethodHandles#classDataAt(Lookup, String, Class, int)
          * @jvms 4.2.1 Binary Class and Interface Names
          * @jvms 4.2.2 Unqualified Names
          * @jvms 4.7.28 The {@code NestHost} Attribute

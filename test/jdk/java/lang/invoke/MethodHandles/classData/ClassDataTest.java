@@ -25,12 +25,14 @@
  * @test
  * @library /test/lib
  * @modules java.base/jdk.internal.org.objectweb.asm
+ * @build java.base/*
  * @run testng/othervm ClassDataTest
  */
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.lang.invoke.ClassDataHelper;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
@@ -106,7 +108,7 @@ public class ClassDataTest {
     @Test(expectedExceptions = { IndexOutOfBoundsException.class })
     public void invalidIndex() throws Throwable {
         Lookup lookup = hiddenClass(List.of());
-        MethodHandles.classDataAt(lookup, "OOB", Object.class, 0);
+        ClassDataHelper.classDataAt(lookup, "OOB", Object.class, 0);
     }
 
     @Test(expectedExceptions = { NullPointerException.class })
@@ -114,7 +116,7 @@ public class ClassDataTest {
         List<Integer> list = new ArrayList<>();
         list.add(null);
         Lookup lookup = hiddenClass(list);
-        MethodHandles.classDataAt(lookup, "null element", int.class, 0);
+        ClassDataHelper.classDataAt(lookup, "null element", int.class, 0);
     }
 
     @Test
@@ -122,7 +124,7 @@ public class ClassDataTest {
         List<Object> list = new ArrayList<>();
         list.add(null);
         Lookup lookup = hiddenClass(list);
-        assertTrue(MethodHandles.classDataAt(lookup, "null", Object.class, 0) == null);
+        assertTrue(ClassDataHelper.classDataAt(lookup, "null", Object.class, 0) == null);
     }
 
     @Test
@@ -182,7 +184,7 @@ public class ClassDataTest {
         List<Integer> cd = List.of(100, 101, 102, 103);
         int expected = 102;  // element at index=2
         Lookup lookup = LOOKUP.defineHiddenClassWithClassData(bytes, cd, true);
-        int value = MethodHandles.classDataAt(lookup, "2", int.class, 2);
+        int value = ClassDataHelper.classDataAt(lookup, "2", int.class, 2);
         assertEquals(value, expected);
         // call through condy
         assertClassData(lookup, expected);
@@ -196,7 +198,7 @@ public class ClassDataTest {
         Stream.of(100, 101, 102, 103).forEach(cd::add);
         int expected = 101;  // element at index=1
         Lookup lookup = LOOKUP.defineHiddenClassWithClassData(bytes, cd, true);
-        int value = MethodHandles.classDataAt(lookup, "1", int.class, 1);
+        int value = ClassDataHelper.classDataAt(lookup, "1", int.class, 1);
         assertEquals(value, expected);
         // call through condy
         assertClassData(lookup, expected);
@@ -245,7 +247,7 @@ public class ClassDataTest {
         List<Integer> cd = List.of(100, 101, 102, 103);
         int expected = 102;  // element at index=2
         Lookup lookup = LOOKUP.defineHiddenClassWithClassData(bytes, cd, true);
-        int value = MethodHandles.classDataAt(lookup, "2", int.class, 2);
+        int value = ClassDataHelper.classDataAt(lookup, "2", int.class, 2);
         assertEquals(value, expected);
         // call through condy
         Class<?> c = lookup.lookupClass();
@@ -280,7 +282,7 @@ public class ClassDataTest {
         // loading the element using condy returns the original value
         assertClassData(lookup, c.newInstance(), mtype);
         // direct invocation of MethodHandles.classDataAt returns the modified value
-        assertEquals(MethodHandles.classDataAt(lookup, "new MethodType", MethodType.class, 0), newMType);
+        assertEquals(ClassDataHelper.classDataAt(lookup, "new MethodType", MethodType.class, 0), newMType);
     }
 
     static class ClassByteBuilder {
@@ -350,7 +352,7 @@ public class ClassDataTest {
                                               "classData",
                                                mtype.descriptorString(), null, null);
             mv.visitCode();
-            Handle bsm = new Handle(H_INVOKESTATIC, MHS_CLS, "classDataAt",
+            Handle bsm = new Handle(H_INVOKESTATIC, "java/lang/invoke/ClassDataHelper", "classDataAt",
                         "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/Class;I)Ljava/lang/Object;",
                         false);
             ConstantDynamic dynamic = new ConstantDynamic("classDataAt", Type.getDescriptor(returnType), bsm, index);
