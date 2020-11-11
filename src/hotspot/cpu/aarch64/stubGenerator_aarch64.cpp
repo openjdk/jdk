@@ -5403,6 +5403,150 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  void generate_base64_encode_simdround(Register src, Register dst,
+        FloatRegister codec, u8 size) {
+
+    FloatRegister in0  = v4,  in1  = v5,  in2  = v6;
+    FloatRegister out0 = v16, out1 = v17, out2 = v18, out3 = v19;
+    FloatRegister ind0 = v20, ind1 = v21, ind2 = v22, ind3 = v23;
+
+    Assembler::SIMD_Arrangement arrangement = size == 16 ? __ T16B : __ T8B;
+
+    __ ld3(in0, in1, in2, arrangement, __ post(src, 3 * size));
+
+    __ ushr(ind0, arrangement, in0,  2);
+
+    __ ushr(ind1, arrangement, in1,  2);
+    __ shl(in0,   arrangement, in0,  6);
+    __ orr(ind1,  arrangement, ind1, in0);
+    __ ushr(ind1, arrangement, ind1, 2);
+
+    __ ushr(ind2, arrangement, in2,  4);
+    __ shl(in1,   arrangement, in1,  4);
+    __ orr(ind2,  arrangement, in1,  ind2);
+    __ ushr(ind2, arrangement, ind2, 2);
+
+    __ shl(ind3,  arrangement, in2,  2);
+    __ ushr(ind3, arrangement, ind3, 2);
+
+    __ tbl(out0,  arrangement, codec,  4, ind0);
+    __ tbl(out1,  arrangement, codec,  4, ind1);
+    __ tbl(out2,  arrangement, codec,  4, ind2);
+    __ tbl(out3,  arrangement, codec,  4, ind3);
+
+    __ st4(out0,  out1, out2, out3, arrangement, __ post(dst, 4 * size));
+  }
+
+   /**
+   *  Arguments:
+   *
+   *  Input:
+   *  c_rarg0   - src_start
+   *  c_rarg1   - src_offset
+   *  c_rarg2   - src_length
+   *  c_rarg3   - dest_start
+   *  c_rarg4   - dest_offset
+   *  c_rarg5   - isURL
+   *
+   */
+  address generate_base64_encodeBlock() {
+
+    static const char toBase64[64] = {
+      'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+      'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+      'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+      'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+      '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'
+    };
+
+    static const char toBase64URL[64] = {
+      'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+      'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+      'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+      'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+      '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '_'
+    };
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "encodeBlock");
+    address start = __ pc();
+
+    Register src   = c_rarg0;  // source array
+    Register soff  = c_rarg1;  // source start offset
+    Register send  = c_rarg2;  // source end offset
+    Register dst   = c_rarg3;  // dest array
+    Register doff  = c_rarg4;  // position for writing to dest array
+    Register isURL = c_rarg5;  // Base64 or URL chracter set
+
+    // c_rarg6 and c_rarg7 are free to use as temps
+    Register codec  = c_rarg6;
+    Register length = c_rarg7;
+
+    Label ProcessData, Process48B, Process24B, Process3B, SIMDExit, Exit;
+
+    __ add(src, src, soff);
+    __ add(dst, dst, doff);
+    __ sub(length, send, soff);
+
+    // load the codec base address
+    __ lea(codec, ExternalAddress((address) toBase64));
+    __ cbz(isURL, ProcessData);
+    __ lea(codec, ExternalAddress((address) toBase64URL));
+
+    __ BIND(ProcessData);
+
+    // too short to formup a SIMD loop, roll back
+    __ cmp(length, (u1)24);
+    __ br(Assembler::LT, Process3B);
+
+    __ ld1(v0, v1, v2, v3, __ T16B, Address(codec));
+
+    __ BIND(Process48B);
+    __ cmp(length, (u1)48);
+    __ br(Assembler::LT, Process24B);
+    generate_base64_encode_simdround(src, dst, v0, 16);
+    __ sub(length, length, 48);
+    __ b(Process48B);
+
+    __ BIND(Process24B);
+    __ cmp(length, (u1)24);
+    __ br(Assembler::LT, SIMDExit);
+    generate_base64_encode_simdround(src, dst, v0, 8);
+    __ sub(length, length, 24);
+
+    __ BIND(SIMDExit);
+    __ cbz(length, Exit);
+
+    __ BIND(Process3B);
+    //  3 src bytes, 24 bits
+    __ ldrb(r10, __ post(src, 1));
+    __ ldrb(r11, __ post(src, 1));
+    __ ldrb(r12, __ post(src, 1));
+    __ orrw(r11, r11, r10, Assembler::LSL, 8);
+    __ orrw(r12, r12, r11, Assembler::LSL, 8);
+    // codec index
+    __ ubfmw(r15, r12, 18, 23);
+    __ ubfmw(r14, r12, 12, 17);
+    __ ubfmw(r13, r12, 6,  11);
+    __ andw(r12,  r12, 63);
+    // get the code based on the codec
+    __ ldrb(r15, Address(codec, r15, Address::uxtw(0)));
+    __ ldrb(r14, Address(codec, r14, Address::uxtw(0)));
+    __ ldrb(r13, Address(codec, r13, Address::uxtw(0)));
+    __ ldrb(r12, Address(codec, r12, Address::uxtw(0)));
+    __ strb(r15, __ post(dst, 1));
+    __ strb(r14, __ post(dst, 1));
+    __ strb(r13, __ post(dst, 1));
+    __ strb(r12, __ post(dst, 1));
+    __ sub(length, length, 3);
+    __ cbnz(length, Process3B);
+
+    __ BIND(Exit);
+    __ ret(lr);
+
+    return start;
+  }
+
   // Continuation point for throwing of implicit exceptions that are
   // not handled in the current activation. Fabricates an exception
   // oop and initiates normal exception dispatching in this
@@ -6479,6 +6623,10 @@ class StubGenerator: public StubCodeGenerator {
     // generate GHASH intrinsics code
     if (UseGHASHIntrinsics) {
       StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks();
+    }
+
+    if (UseBASE64Intrinsics) {
+        StubRoutines::_base64_encodeBlock = generate_base64_encodeBlock();
     }
 
     // data cache line writeback
