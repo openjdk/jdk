@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -631,18 +631,18 @@ Java_sun_awt_windows_WFileDialogPeer_toBack(JNIEnv *env, jobject peer)
     CATCH_BAD_ALLOC;
 }
 
-int ScaleDownX(int x, HWND hwnd) {
+int ScaleDownAbsX(int x, HWND hwnd) {
     int screen = AwtWin32GraphicsDevice::DeviceIndexForWindow(hwnd);
     Devices::InstanceAccess devices;
     AwtWin32GraphicsDevice* device = devices->GetDevice(screen);
-    return device == NULL ? x : device->ScaleDownX(x);
+    return device == NULL ? x : device->ScaleDownAbsX(x);
 }
 
-int ScaleDownY(int y, HWND hwnd) {
+int ScaleDownAbsY(int y, HWND hwnd) {
     int screen = AwtWin32GraphicsDevice::DeviceIndexForWindow(hwnd);
     Devices::InstanceAccess devices;
     AwtWin32GraphicsDevice* device = devices->GetDevice(screen);
-    return device == NULL ? y : device->ScaleDownY(y);
+    return device == NULL ? y : device->ScaleDownAbsY(y);
 }
 
 jobject AwtFileDialog::_GetLocationOnScreen(void *param)
@@ -657,7 +657,8 @@ jobject AwtFileDialog::_GetLocationOnScreen(void *param)
         RECT rect;
         VERIFY(::GetWindowRect(hwnd, &rect));
         result = JNU_NewObjectByName(env, "java/awt/Point", "(II)V",
-                       ScaleDownX(rect.left, hwnd), ScaleDownY(rect.top, hwnd));
+                                     ScaleDownAbsX(rect.left, hwnd),
+                                     ScaleDownAbsY(rect.top, hwnd));
     }
 
     if (result != NULL)

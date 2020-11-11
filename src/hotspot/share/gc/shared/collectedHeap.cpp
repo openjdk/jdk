@@ -599,6 +599,10 @@ void CollectedHeap::unpin_object(JavaThread* thread, oop obj) {
   ShouldNotReachHere();
 }
 
+bool CollectedHeap::is_archived_object(oop object) const {
+  return false;
+}
+
 void CollectedHeap::deduplicate_string(oop str) {
   // Do nothing, unless overridden in subclass.
 }
