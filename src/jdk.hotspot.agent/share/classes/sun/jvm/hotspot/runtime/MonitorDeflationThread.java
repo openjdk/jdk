@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,28 +19,23 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-#include "precompiled.hpp"
-#include "runtime/objectMonitor.hpp"
-#include "runtime/vm_version.hpp"
-#include "unittest.hpp"
+package sun.jvm.hotspot.runtime;
 
-TEST_VM(ObjectMonitor, sanity) {
- uint cache_line_size = VM_Version::L1_data_cache_line_size();
+import java.io.*;
 
- if (cache_line_size != 0) {
-   // We were able to determine the L1 data cache line size so
-   // do some cache line specific sanity checks
-   EXPECT_EQ((size_t) 0, sizeof (PaddedEnd<ObjectMonitor>) % cache_line_size)
-        << "PaddedEnd<ObjectMonitor> size is not a "
-        << "multiple of a cache line which permits false sharing. "
-        << "sizeof(PaddedEnd<ObjectMonitor>) = "
-        << sizeof (PaddedEnd<ObjectMonitor>)
-        << "; cache_line_size = " << cache_line_size;
+import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.types.*;
 
-   EXPECT_GE((size_t) ObjectMonitor::owner_offset_in_bytes(), cache_line_size)
-        << "the _header and _owner fields are closer "
-        << "than a cache line which permits false sharing.";
+public class MonitorDeflationThread extends JavaThread {
+  public MonitorDeflationThread(Address addr) {
+    super(addr);
   }
+
+  public boolean isJavaThread() { return false; }
+  public boolean isHiddenFromExternalView() { return true; }
+  public boolean isMonitorDeflationThread() { return true; }
+
 }

@@ -728,6 +728,20 @@ const intx ObjectAlignmentInBytes = 8;
           "MonitorUsedDeflationThreshold is exceeded (0 is off).")          \
           range(0, max_jint)                                                \
                                                                             \
+  /* notice: the max range value here is max_jint, not max_intx  */         \
+  /* because of overflow issue                                   */         \
+  product(intx, AvgMonitorsPerThreadEstimate, 1024, DIAGNOSTIC,             \
+          "Used to estimate a variable ceiling based on number of threads " \
+          "for use with MonitorUsedDeflationThreshold (0 is off).")         \
+          range(0, max_jint)                                                \
+                                                                            \
+  /* notice: the max range value here is max_jint, not max_intx  */         \
+  /* because of overflow issue                                   */         \
+  product(intx, MonitorDeflationMax, 1000000, DIAGNOSTIC,                   \
+          "The maximum number of monitors to deflate, unlink and delete "   \
+          "at one time (minimum is 1024).")                      \
+          range(1024, max_jint)                                             \
+                                                                            \
   product(intx, MonitorUsedDeflationThreshold, 90, EXPERIMENTAL,            \
           "Percentage of used monitors before triggering deflation (0 is "  \
           "off). The check is performed on GuaranteedSafepointInterval "    \
