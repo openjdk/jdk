@@ -242,8 +242,10 @@ static MonitorList _in_use_list;
 // of the thread count derived ceiling because we have used more
 // ObjectMonitors than the estimated average.
 //
-// Start the ceiling with the estimate for one thread:
-jint _in_use_list_ceiling = AvgMonitorsPerThreadEstimate;
+// Start the ceiling with the estimate for one thread.
+// This is a 'jint' because the range of AvgMonitorsPerThreadEstimate
+// is 0..max_jint:
+static jint _in_use_list_ceiling = AvgMonitorsPerThreadEstimate;
 bool volatile ObjectSynchronizer::_is_async_deflation_requested = false;
 bool volatile ObjectSynchronizer::_is_final_audit = false;
 jlong ObjectSynchronizer::_last_async_deflation_time_ns = 0;
@@ -1168,6 +1170,8 @@ static bool monitors_used_above_threshold(MonitorList* list) {
 }
 
 size_t ObjectSynchronizer::in_use_list_ceiling() {
+  // _in_use_list_ceiling is a jint so this cast could lose precision,
+  // but in reality the ceiling should never get that high.
   return (size_t)_in_use_list_ceiling;
 }
 
@@ -1220,9 +1224,7 @@ bool ObjectSynchronizer::request_deflate_idle_monitors() {
     }
     if (self->is_Java_thread()) {
       // JavaThread has to honor the blocking protocol.
-      {
-        ThreadBlockInVM tbivm(self->as_Java_thread());
-      }
+      ThreadBlockInVM tbivm(self->as_Java_thread());
       os::naked_short_sleep(999);  // sleep for almost 1 second
     } else {
       os::naked_short_sleep(999);  // sleep for almost 1 second
