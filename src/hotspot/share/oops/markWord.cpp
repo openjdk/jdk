@@ -61,17 +61,19 @@ void markWord::set_displaced_mark_helper(markWord m) const {
   fatal("bad header=" INTPTR_FORMAT, value());
 }
 
-void markWord::print_on(outputStream* st) const {
+void markWord::print_on(outputStream* st, bool print_monitor_info) const {
   if (is_marked()) {  // last bits = 11
     st->print(" marked(" INTPTR_FORMAT ")", value());
   } else if (has_monitor()) {  // last bits = 10
     // have to check has_monitor() before is_locked()
     st->print(" monitor(" INTPTR_FORMAT ")=", value());
-    ObjectMonitor* mon = monitor();
-    if (mon == NULL) {
-      st->print("NULL (this should never be seen!)");
-    } else {
-      mon->print_on(st);
+    if (print_monitor_info) {
+      ObjectMonitor* mon = monitor();
+      if (mon == NULL) {
+        st->print("NULL (this should never be seen!)");
+      } else {
+        mon->print_on(st);
+      }
     }
   } else if (is_locked()) {  // last bits != 01 => 00
     // thin locked

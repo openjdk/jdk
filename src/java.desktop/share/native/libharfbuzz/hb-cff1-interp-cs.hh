@@ -40,7 +40,7 @@ struct cff1_cs_interp_env_t : cs_interp_env_t<number_t, CFF1Subrs>
   template <typename ACC>
   void init (const byte_str_t &str, ACC &acc, unsigned int fd)
   {
-    SUPER::init (str, *acc.globalSubrs, *acc.privateDicts[fd].localSubrs);
+    SUPER::init (str, acc.globalSubrs, acc.privateDicts[fd].localSubrs);
     processed_width = false;
     has_width = false;
     arg_start = 0;
@@ -81,7 +81,7 @@ struct cff1_cs_interp_env_t : cs_interp_env_t<number_t, CFF1Subrs>
   typedef cs_interp_env_t<number_t, CFF1Subrs> SUPER;
 };
 
-template <typename OPSET, typename PARAM, typename PATH=path_procs_null_t<cff1_cs_interp_env_t, PARAM> >
+template <typename OPSET, typename PARAM, typename PATH=path_procs_null_t<cff1_cs_interp_env_t, PARAM>>
 struct cff1_cs_opset_t : cs_opset_t<number_t, OPSET, cff1_cs_interp_env_t, PARAM, PATH>
 {
   /* PostScript-originated legacy opcodes (OpCode_add etc) are unsupported */
