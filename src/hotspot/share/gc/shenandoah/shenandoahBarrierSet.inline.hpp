@@ -109,20 +109,20 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(oop obj, T* load_addr) {
     return NULL;
   }
 
-  // Prevent resurrection of unreachable objects that are visited during
-  // concurrent class-unloading.
-  if (HasDecorator<decorators, AS_NO_KEEPALIVE>::value && obj != NULL &&
-      _heap->is_evacuation_in_progress() &&
-      !_heap->marking_context()->is_marked(obj)) {
-    return obj;
-  }
-
   // Prevent resurrection of unreachable weak references.
   if ((HasDecorator<decorators, ON_WEAK_OOP_REF>::value || HasDecorator<decorators, ON_UNKNOWN_OOP_REF>::value) &&
       obj != NULL && _heap->is_concurrent_weak_root_in_progress() &&
       !_heap->marking_context()->is_marked_strong(obj)) {
     assert(Thread::current()->is_Java_thread(), "only Java threads get here");
     return NULL;
+  }
+
+  // Prevent resurrection of unreachable objects that are visited during
+  // concurrent class-unloading.
+  if (HasDecorator<decorators, AS_NO_KEEPALIVE>::value && obj != NULL &&
+      _heap->is_evacuation_in_progress() &&
+      !_heap->marking_context()->is_marked(obj)) {
+    return obj;
   }
 
   oop fwd = load_reference_barrier(obj);
