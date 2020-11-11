@@ -2411,7 +2411,7 @@ public class ObjectStreamClass implements Serializable {
                 Class<?> referent;
                 return (nullClass ? other.nullClass
                                   : ((referent = get()) != null) &&
-                                    (referent == other.get())) &&
+                                    (other.refersTo(referent))) &&
                         Arrays.equals(sigs, other.sigs);
             } else {
                 return false;
@@ -2532,9 +2532,9 @@ public class ObjectStreamClass implements Serializable {
             }
 
             if (obj instanceof WeakClassKey) {
-                Object referent = get();
+                Class<?> referent = get();
                 return (referent != null) &&
-                       (referent == ((WeakClassKey) obj).get());
+                        (((WeakClassKey) obj).refersTo(referent));
             } else {
                 return false;
             }

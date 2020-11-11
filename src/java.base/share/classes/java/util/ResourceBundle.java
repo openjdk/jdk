@@ -1755,7 +1755,7 @@ public abstract class ResourceBundle {
                 // Otherwise, remove the cached one since we can't keep
                 // the same bundles having different parents.
                 BundleReference bundleRef = cacheList.get(cacheKey);
-                if (bundleRef != null && bundleRef.get() == bundle) {
+                if (bundleRef != null && bundleRef.refersTo(bundle)) {
                     cacheList.remove(cacheKey, bundleRef);
                 }
             }

@@ -120,9 +120,10 @@ class WeakIdentityHashMap<K, V> {
                 return true;
             if (!(o instanceof IdentityWeakReference<?>))
                 return false;
-            IdentityWeakReference<?> wr = (IdentityWeakReference<?>) o;
-            Object got = get();
-            return (got != null && got == wr.get());
+            @SuppressWarnings("unchecked")
+            IdentityWeakReference<T> wr = (IdentityWeakReference<T>) o;
+            T got = get();
+            return got != null && wr.refersTo(got);
         }
 
         public int hashCode() {

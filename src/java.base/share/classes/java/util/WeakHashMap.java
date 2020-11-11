@@ -283,8 +283,14 @@ public class WeakHashMap<K,V>
      * Checks for equality of non-null reference x and possibly-null y.  By
      * default uses Object.equals.
      */
-    private static boolean eq(Object x, Object y) {
-        return x == y || x.equals(y);
+    private boolean matchesKey(Entry<K,V> e, Object key) {
+        // check if the given entry refers to the given key without
+        // keeping a strong reference to the entry's referent
+        if (e.refersTo(key)) return true;
+
+        // then checks for equality
+        Object k = e.get();
+        return key == k || key.equals(k);
     }
 
     /**
@@ -404,17 +410,6 @@ public class WeakHashMap<K,V>
             e = e.next;
         }
         return null;
-    }
-
-    private boolean matchesKey(Entry<K,V> e, Object key) {
-        if (e.refersTo(key)) return true;
-
-        /**
-         * Checks for equality of non-null reference x and possibly-null y.  By
-         * default uses Object.equals.
-         */
-        Object k = e.get();
-        return key == k || key.equals(k);
     }
 
     /**

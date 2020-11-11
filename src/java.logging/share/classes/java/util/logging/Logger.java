@@ -2404,8 +2404,7 @@ public class Logger {
                 // assert parent.kids != null;
                 for (Iterator<LogManager.LoggerWeakRef> iter = parent.kids.iterator(); iter.hasNext(); ) {
                     ref = iter.next();
-                    Logger kid =  ref.get();
-                    if (kid == this) {
+                    if (ref.refersTo(this)) {
                         // ref is used down below to complete the reparenting
                         iter.remove();
                         break;

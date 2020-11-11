@@ -181,12 +181,10 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
         // This is used by tests.
         static boolean isAlive() {
             WeakReference<ExecutorService> ref = executorRef;
-            ExecutorService executor = ref == null ? null : ref.get();
-            if (executor != null) return true;
+            if (ref != null && !ref.refersTo(null)) return true;
             synchronized (BootstrapExecutors.class) {
                 ref = executorRef;
-                executor = ref == null ? null : ref.get();
-                return executor != null;
+                return ref != null && !ref.refersTo(null);
             }
         }
 
