@@ -1215,7 +1215,7 @@ void ADLParser::return_addr_parse(FrameForm *frame, bool native) {
 
 //------------------------------return_value_parse-----------------------------
 char *ADLParser::return_value_parse() {
-  char   *desc = NULL;          // String representation of return_value 
+  char   *desc = NULL;          // String representation of return_value
 
   skipws();                     // Skip leading whitespace
   if ( (desc = find_cpp_block("return value block")) == NULL ) {
