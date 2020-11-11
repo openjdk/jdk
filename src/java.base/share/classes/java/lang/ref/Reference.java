@@ -342,10 +342,17 @@ public abstract class Reference<T> {
         return this.referent;
     }
 
-    // This is only used from Finalizer to bypass the intrinsic,
-    // which might return a null referent, even though it is not
-    // null, and would subsequently not finalize the referent/finalizee.
-    T getRaw() {
+    /**
+     * Load referent with strong semantics. Treating the referent
+     * as strong referent is ok when the Reference is inactive,
+     * because then the referent is switched to strong semantics
+     * anyway.
+     *
+     * This is only used from Finalizer to bypass the intrinsic,
+     * which might return a null referent, even though it is not
+     * null, and would subsequently not finalize the referent/finalizee.
+     */
+    T getInactive() {
         return this.referent;
     }
 
