@@ -71,6 +71,15 @@ import java.security.AccessController;
  * a {@code TrayIcon}. Otherwise the constructor will throw a
  * SecurityException.
  *
+ * <p>
+ * @implnote
+ * When the {@systemProperty apple.awt.enableTemplateImages} property is
+ * set, all images associated with instances of this class are treated
+ * as template images by the native desktop system. This means all color
+ * information is discarded, and the image is adapted automatically to
+ * be visible when desktop theme and/or colors change. This property
+ * only affects MacOSX.
+ *
  * <p> See the {@link SystemTray} class overview for an example on how
  * to use the {@code TrayIcon} API.
  *
