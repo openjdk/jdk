@@ -40,6 +40,7 @@ import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.builders.AbstractBuilder;
 import jdk.javadoc.internal.doclets.toolkit.builders.BuilderFactory;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
+import jdk.javadoc.internal.doclets.toolkit.util.DeprecatedAPIListBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -115,6 +116,21 @@ public class HtmlDoclet extends AbstractDoclet {
         return configuration;
     }
 
+    @Override // defined by AbstractDoclet
+    public void generateClassFiles(ClassTree classTree) throws DocletException {
+
+        if (!(configuration.getOptions().noDeprecated()
+                || configuration.getOptions().noDeprecatedList())) {
+            DeprecatedAPIListBuilder builder = new DeprecatedAPIListBuilder(configuration);
+            if (!builder.isEmpty()) {
+                configuration.deprecatedAPIListBuilder = builder;
+                configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.DEPRECATED);
+            }
+        }
+
+        super.generateClassFiles(classTree);
+    }
+
     /**
      * Start the generation of files. Call generate methods in the individual
      * writers, which will in turn generate the documentation files. Call the
@@ -126,13 +142,12 @@ public class HtmlDoclet extends AbstractDoclet {
      * @throws DocletException if there is a problem while writing the other files
      */
     @Override // defined by AbstractDoclet
-    protected void generateOtherFiles(DocletEnvironment docEnv, ClassTree classtree)
+    protected void generateOtherFiles(ClassTree classtree)
             throws DocletException {
-        super.generateOtherFiles(docEnv, classtree);
+        super.generateOtherFiles(classtree);
         HtmlOptions options = configuration.getOptions();
         if (options.linkSource()) {
-            SourceToHTMLConverter.convertRoot(configuration,
-                docEnv, DocPaths.SOURCE_OUTPUT);
+            SourceToHTMLConverter.convertRoot(configuration,DocPaths.SOURCE_OUTPUT);
         }
         // Modules with no documented classes may be specified on the
         // command line to specify a service provider, allow these.
@@ -156,7 +171,7 @@ public class HtmlDoclet extends AbstractDoclet {
             TreeWriter.generate(configuration, classtree);
         }
 
-        if (!(options.noDeprecatedList() || nodeprecated)) {
+        if (configuration.conditionalPages.contains((HtmlConfiguration.ConditionalPage.DEPRECATED))) {
             DeprecatedListWriter.generate(configuration);
         }
 
@@ -169,18 +184,16 @@ public class HtmlDoclet extends AbstractDoclet {
         }
 
         if (options.createIndex()) {
-            IndexBuilder indexBuilder = new IndexBuilder(configuration, nodeprecated);
-            if (options.splitIndex()) {
-                SplitIndexWriter.generate(configuration, indexBuilder);
-            } else {
-                SingleIndexWriter.generate(configuration, indexBuilder);
-            }
-            AllClassesIndexWriter.generate(configuration,
-                    new IndexBuilder(configuration, nodeprecated, true));
+            SystemPropertiesWriter.generate(configuration);
+            configuration.mainIndex.addElements();
+            IndexBuilder allClassesIndex = new IndexBuilder(configuration, nodeprecated, true);
+            allClassesIndex.addElements();
+            AllClassesIndexWriter.generate(configuration, allClassesIndex);
             if (!configuration.packages.isEmpty()) {
                 AllPackagesIndexWriter.generate(configuration);
             }
-            SystemPropertiesWriter.generate(configuration);
+            configuration.mainIndex.createSearchIndexFiles();
+            IndexWriter.generate(configuration);
         }
 
         if (options.createOverview()) {

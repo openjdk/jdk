@@ -25,7 +25,6 @@
 
 package java.nio;
 
-import jdk.internal.HotSpotIntrinsicCandidate;
 import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.foreign.MemorySegmentProxy;
@@ -33,6 +32,7 @@ import jdk.internal.access.foreign.UnmapperProxy;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM.BufferPool;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import java.io.FileDescriptor;
 import java.util.Spliterator;
@@ -732,7 +732,7 @@ public abstract class Buffer {
      * IndexOutOfBoundsException} if it is not smaller than the limit
      * or is smaller than zero.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     final int checkIndex(int i) {                       // package-private
         if ((i < 0) || (i >= limit))
             throw new IndexOutOfBoundsException();

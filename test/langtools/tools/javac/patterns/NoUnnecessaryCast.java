@@ -27,8 +27,8 @@
  * @summary Verify there are no unnecessary checkcasts and conditions generated
  *          for the pattern matching in instanceof.
  * @modules jdk.jdeps/com.sun.tools.classfile
- * @compile --enable-preview -source ${jdk.version} NoUnnecessaryCast.java
- * @run main/othervm --enable-preview NoUnnecessaryCast
+ * @compile NoUnnecessaryCast.java
+ * @run main NoUnnecessaryCast
  */
 
 import java.io.File;

@@ -74,13 +74,13 @@
  *          /test/lib
  * @build nsk.jdi.ThreadReference.suspend.suspend001
  *        nsk.jdi.ThreadReference.suspend.suspend001a
- * @run main/othervm/timeout=420 PropertyResolvingWrapper
+ * @run main/othervm/timeout=420
  *      nsk.jdi.ThreadReference.suspend.suspend001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
 

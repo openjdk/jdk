@@ -68,7 +68,8 @@ public:
       oop obj = CompressedOops::decode_not_null(heap_oop);
       if (_g1h->is_obj_dead_cond(obj, _vo)) {
         Log(gc, verify) log;
-        log.error("Root location " PTR_FORMAT " points to dead obj " PTR_FORMAT, p2i(p), p2i(obj));
+        log.error("Root location " PTR_FORMAT " points to dead obj " PTR_FORMAT " in region " HR_FORMAT,
+                  p2i(p), p2i(obj), HR_FORMAT_PARAMS(_g1h->heap_region_containing(obj)));
         ResourceMark rm;
         LogStream ls(log.error());
         obj->print_on(&ls);
@@ -239,8 +240,7 @@ public:
 class VerifyArchiveOopClosure: public BasicOopIterateClosure {
   HeapRegion* _hr;
 public:
-  VerifyArchiveOopClosure(HeapRegion *hr)
-    : _hr(hr) { }
+  VerifyArchiveOopClosure(HeapRegion *hr) : _hr(hr) { }
   void do_oop(narrowOop *p) { do_oop_work(p); }
   void do_oop(      oop *p) { do_oop_work(p); }
 
@@ -248,12 +248,12 @@ public:
     oop obj = RawAccess<>::oop_load(p);
 
     if (_hr->is_open_archive()) {
-      guarantee(obj == NULL || G1ArchiveAllocator::is_archived_object(obj),
+      guarantee(obj == NULL || G1CollectedHeap::heap()->heap_region_containing(obj)->is_archive(),
                 "Archive object at " PTR_FORMAT " references a non-archive object at " PTR_FORMAT,
                 p2i(p), p2i(obj));
     } else {
       assert(_hr->is_closed_archive(), "should be closed archive region");
-      guarantee(obj == NULL || G1ArchiveAllocator::is_closed_archive_object(obj),
+      guarantee(obj == NULL || G1CollectedHeap::heap()->heap_region_containing(obj)->is_closed_archive(),
                 "Archive object at " PTR_FORMAT " references a non-archive object at " PTR_FORMAT,
                 p2i(p), p2i(obj));
     }

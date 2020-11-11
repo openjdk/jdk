@@ -108,7 +108,7 @@ void G1ConcurrentMarkThread::delay_to_keep_mmu(bool remark) {
       jlong sleep_time_ms = ceil(sleep_time_sec * MILLIUNITS);
       if (sleep_time_ms <= 0) {
         break;                  // Passed end time.
-      } else if (ml.wait(sleep_time_ms, Monitor::_no_safepoint_check_flag)) {
+      } else if (ml.wait(sleep_time_ms)) {
         break;                  // Timeout => reached end time.
       }
       // Other (possibly spurious) wakeup.  Retry with updated sleep time.
@@ -164,8 +164,6 @@ void G1ConcurrentMarkThread::stop_service() {
 }
 
 bool G1ConcurrentMarkThread::wait_for_next_cycle() {
-  assert(!in_progress(), "should have been cleared");
-
   MonitorLocker ml(CGC_lock, Mutex::_no_safepoint_check_flag);
   while (!in_progress() && !should_terminate()) {
     ml.wait();

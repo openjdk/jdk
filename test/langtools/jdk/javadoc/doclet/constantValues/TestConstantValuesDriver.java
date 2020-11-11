@@ -55,34 +55,34 @@ public class TestConstantValuesDriver extends JavadocTester {
                 """
                     <code>"&lt;Hello World&gt;"</code>""",
                 """
-                    <code id="TestConstantValues.BYTE_MAX_VALUE">public&nbsp;static&nbsp;final&nbsp;byte</code></td>
-                    <th class="col-second" scope="row"><code><a href="TestConstantValues.html#BYTE_MAX_VALUE">BYTE_MAX_VALUE</a></code></th>
-                    <td class="col-last"><code>127</code></td>""",
+                    <code id="TestConstantValues.BYTE_MAX_VALUE">public&nbsp;static&nbsp;final&nbsp;byte</code></div>
+                    <div class="col-second even-row-color"><code><a href="TestConstantValues.html#BYTE_MAX_VALUE">BYTE_MAX_VALUE</a></code></div>
+                    <div class="col-last even-row-color"><code>0x7f</code></div>""",
                 """
-                    <code id="TestConstantValues.BYTE_MIN_VALUE">public&nbsp;static&nbsp;final&nbsp;byte</code></td>
-                    <th class="col-second" scope="row"><code><a href="TestConstantValues.html#BYTE_MIN_VALUE">BYTE_MIN_VALUE</a></code></th>
-                    <td class="col-last"><code>-127</code></td>""",
+                    <code id="TestConstantValues.BYTE_MIN_VALUE">public&nbsp;static&nbsp;final&nbsp;byte</code></div>
+                    <div class="col-second odd-row-color"><code><a href="TestConstantValues.html#BYTE_MIN_VALUE">BYTE_MIN_VALUE</a></code></div>
+                    <div class="col-last odd-row-color"><code>0x81</code></div>""",
                 """
-                    <code id="TestConstantValues.CHAR_MAX_VALUE">public&nbsp;static&nbsp;final&nbsp;char</code></td>
-                    <th class="col-second" scope="row"><code><a href="TestConstantValues.html#CHAR_MAX_VALUE">CHAR_MAX_VALUE</a></code></th>
-                    <td class="col-last"><code>65535</code></td>""",
+                    <code id="TestConstantValues.CHAR_MAX_VALUE">public&nbsp;static&nbsp;final&nbsp;char</code></div>
+                    <div class="col-second even-row-color"><code><a href="TestConstantValues.html#CHAR_MAX_VALUE">CHAR_MAX_VALUE</a></code></div>
+                    <div class="col-last even-row-color"><code>'\\uffff'</code></div>""",
                 """
-                    <code id="TestConstantValues.DOUBLE_MAX_VALUE">public&nbsp;static&nbsp;final&nbsp;double</code></td>""",
-                    """
-                        <th class="col-second" scope="row"><code><a href="TestConstantValues.html#DOUBLE\
-                        _MAX_VALUE">DOUBLE_MAX_VALUE</a></code></th>
-                        <td class="col-last"><code>1.7976931348623157E308</code></td>""",
+                    <code id="TestConstantValues.DOUBLE_MAX_VALUE">public&nbsp;static&nbsp;final&nbsp;double</code></div>""",
                 """
-                    <code id="TestConstantValues.DOUBLE_MIN_VALUE">public&nbsp;static&nbsp;final&nbsp;double</code></td>
-                    <th class="col-second" scope="row"><code><a href="TestConstantValues.html#DOUBLE\
-                    _MIN_VALUE">DOUBLE_MIN_VALUE</a></code></th>""",
+                    <div class="col-second odd-row-color"><code><a href="TestConstantValues.html#DOUBLE_MAX_VALUE">\
+                    DOUBLE_MAX_VALUE</a></code></div>
+                    <div class="col-last odd-row-color"><code>1.7976931348623157E308</code></div>""",
                 """
-                    <code id="TestConstantValues.GOODBYE">public&nbsp;static&nbsp;final&nbsp;boolean</code></td>
-                    <th class="col-second" scope="row"><code><a href="TestConstantValues.html#GOODBYE">GOODBYE</a></code></th>""",
+                    <code id="TestConstantValues.DOUBLE_MIN_VALUE">public&nbsp;static&nbsp;final&nbsp;double</code></div>
+                    <div class="col-second even-row-color"><code><a href="TestConstantValues.html#DOUBLE_MIN_VALUE">\
+                    DOUBLE_MIN_VALUE</a></code></div>""",
                 """
-                    <code id="TestConstantValues.HELLO">public&nbsp;static&nbsp;final&nbsp;boolean</code></td>
-                    <th class="col-second" scope="row"><code><a href="TestConstantValues.html#HELLO">HELLO</a></code></th>
-                    <td class="col-last"><code>true</code></td>"""
+                    <code id="TestConstantValues.GOODBYE">public&nbsp;static&nbsp;final&nbsp;boolean</code></div>
+                    <div class="col-second odd-row-color"><code><a href="TestConstantValues.html#GOODBYE">GOODBYE</a></code></div>""",
+                """
+                    <code id="TestConstantValues.HELLO">public&nbsp;static&nbsp;final&nbsp;boolean</code></div>
+                    <div class="col-second even-row-color"><code><a href="TestConstantValues.html#HELLO">HELLO</a></code></div>
+                    <div class="col-last even-row-color"><code>true</code></div>"""
         );
     }
 }

@@ -22,7 +22,6 @@
  */
 
 import jdk.test.lib.NetworkConfiguration;
-import jdk.test.lib.Platform;
 import jdk.test.lib.net.IPSupport;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
@@ -31,14 +30,12 @@ import org.testng.Assert.ThrowingRunnable;
 import java.io.IOException;
 import java.net.*;
 import java.nio.channels.*;
-import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
 import static java.lang.System.out;
-import static java.lang.System.getProperty;
-import static java.lang.Boolean.parseBoolean;
 import static java.net.StandardProtocolFamily.INET;
 import static java.net.StandardProtocolFamily.INET6;
 import static jdk.test.lib.net.IPSupport.*;
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertThrows;
 
 /*
@@ -305,50 +302,34 @@ public class ProtocolFamilies {
         assertThrows(UOE, () -> SelectorProvider.provider().openDatagramChannel(BAD_PF));
     }
 
-    // A concrete subclass of SelectorProvider, in order to test implSpec
-    static final SelectorProvider customerSelectorProvider = new SelectorProvider() {
-        @Override public DatagramChannel openDatagramChannel() { return null; }
-        @Override public DatagramChannel openDatagramChannel(ProtocolFamily family) { return null; }
-        @Override public Pipe openPipe() { return null; }
-        @Override public AbstractSelector openSelector() { return null; }
-        @Override public ServerSocketChannel openServerSocketChannel() { return null; }
-        @Override public SocketChannel openSocketChannel() { return null; }
-    };
-
-    // Tests the specified default implementation of SelectorProvider
-    @Test
-    public void testCustomProvider() {
-        assertThrows(NPE, () -> customerSelectorProvider.openSocketChannel(null));
-        assertThrows(NPE, () -> customerSelectorProvider.openServerSocketChannel(null));
-
-        assertThrows(UOE, () -> customerSelectorProvider.openSocketChannel(BAD_PF));
-        assertThrows(UOE, () -> customerSelectorProvider.openServerSocketChannel(BAD_PF));
-    }
-
     // Helper methods
 
     private static SocketChannel openSC(StandardProtocolFamily family)
             throws IOException {
-        return family == null ? SocketChannel.open()
+        SocketChannel sc = family == null ? SocketChannel.open()
                 : SocketChannel.open(family);
+        return sc;
     }
 
     private static ServerSocketChannel openSSC(StandardProtocolFamily family)
             throws IOException {
-        return family == null ? ServerSocketChannel.open()
+        ServerSocketChannel ssc = family == null ? ServerSocketChannel.open()
                 : ServerSocketChannel.open(family);
+        return ssc;
     }
 
     private static DatagramChannel openDC(StandardProtocolFamily family)
             throws IOException {
-        return family == null ? DatagramChannel.open()
+        DatagramChannel dc = family == null ? DatagramChannel.open()
                 : DatagramChannel.open(family);
+        return dc;
     }
 
     private static SocketAddress getSocketAddress(StandardProtocolFamily family) {
         return family == null ? null : switch (family) {
             case INET -> new InetSocketAddress(ia4, 0);
             case INET6 -> new InetSocketAddress(ia6, 0);
+            default -> throw new RuntimeException("Unexpected protocol family");
         };
     }
 

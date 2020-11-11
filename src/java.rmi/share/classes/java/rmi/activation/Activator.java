@@ -107,9 +107,9 @@ public interface Activator extends Remote {
      * the remote object's reference; if false, returning the cached value
      * is allowed.
      * @return the remote object (a stub) in a marshalled form
-     * @exception ActivationException if object activation fails
-     * @exception UnknownObjectException if object is unknown (not registered)
-     * @exception RemoteException if remote call fails
+     * @throws ActivationException if object activation fails
+     * @throws UnknownObjectException if object is unknown (not registered)
+     * @throws RemoteException if remote call fails
      * @since 1.2
      */
     public MarshalledObject<? extends Remote> activate(ActivationID id,

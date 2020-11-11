@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,15 +29,16 @@ import java.io.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-import java.util.TimeZone;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -289,9 +290,6 @@ public class FtpClient extends sun.net.ftp.FtpClient {
     }
 
     private class MLSxParser implements FtpDirParser {
-
-        private SimpleDateFormat df = new SimpleDateFormat("yyyyMMddhhmmss");
-
         public FtpDirEntry parseLine(String line) {
             String name = null;
             int i = line.lastIndexOf(';');
@@ -326,22 +324,14 @@ public class FtpClient extends sun.net.ftp.FtpClient {
             }
             s = file.getFact("Modify");
             if (s != null) {
-                Date d = null;
-                try {
-                    d = df.parse(s);
-                } catch (ParseException ex) {
-                }
+                Date d = parseRfc3659TimeValue(s);
                 if (d != null) {
                     file.setLastModified(d);
                 }
             }
             s = file.getFact("Create");
             if (s != null) {
-                Date d = null;
-                try {
-                    d = df.parse(s);
-                } catch (ParseException ex) {
-                }
+                Date d = parseRfc3659TimeValue(s);
                 if (d != null) {
                     file.setCreated(d);
                 }
@@ -1749,18 +1739,9 @@ public class FtpClient extends sun.net.ftp.FtpClient {
         }
         return -1;
     }
-    private static String[] MDTMformats = {
-        "yyyyMMddHHmmss.SSS",
-        "yyyyMMddHHmmss"
-    };
-    private static SimpleDateFormat[] dateFormats = new SimpleDateFormat[MDTMformats.length];
 
-    static {
-        for (int i = 0; i < MDTMformats.length; i++) {
-            dateFormats[i] = new SimpleDateFormat(MDTMformats[i]);
-            dateFormats[i].setTimeZone(TimeZone.getTimeZone("GMT"));
-        }
-    }
+    private static final DateTimeFormatter RFC3659_DATETIME_FORMAT = DateTimeFormatter.ofPattern("yyyyMMddHHmmss[.SSS]")
+                                                                                      .withZone(ZoneOffset.UTC);
 
     /**
      * Issues the MDTM [path] command to the server to get the modification
@@ -1777,19 +1758,20 @@ public class FtpClient extends sun.net.ftp.FtpClient {
     public Date getLastModified(String path) throws sun.net.ftp.FtpProtocolException, IOException {
         issueCommandCheck("MDTM " + path);
         if (lastReplyCode == FtpReplyCode.FILE_STATUS) {
-            String s = getResponseString().substring(4);
-            Date d = null;
-            for (SimpleDateFormat dateFormat : dateFormats) {
-                try {
-                    d = dateFormat.parse(s);
-                } catch (ParseException ex) {
-                }
-                if (d != null) {
-                    return d;
-                }
-            }
+            String s = getResponseString();
+            return parseRfc3659TimeValue(s.substring(4, s.length() - 1));
         }
         return null;
+    }
+
+    private static Date parseRfc3659TimeValue(String s) {
+        Date result = null;
+        try {
+            var d = ZonedDateTime.parse(s, RFC3659_DATETIME_FORMAT);
+            result = Date.from(d.toInstant());
+        } catch (DateTimeParseException ex) {
+        }
+        return result;
     }
 
     /**

@@ -29,7 +29,7 @@ import java.math.BigDecimal;
 import java.util.Random;
 import jdk.internal.math.FloatConsts;
 import jdk.internal.math.DoubleConsts;
-import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
  * The class {@code Math} contains methods for performing basic
@@ -99,7 +99,6 @@ import jdk.internal.HotSpotIntrinsicCandidate;
  * occurs only with a specific minimum or maximum value and
  * should be checked against the minimum or maximum as appropriate.
  *
- * @author  unascribed
  * @author  Joseph D. Darcy
  * @since   1.0
  */
@@ -149,7 +148,7 @@ public final class Math {
      * @param   a   an angle, in radians.
      * @return  the sine of the argument.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double sin(double a) {
         return StrictMath.sin(a); // default impl. delegates to StrictMath
     }
@@ -165,7 +164,7 @@ public final class Math {
      * @param   a   an angle, in radians.
      * @return  the cosine of the argument.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double cos(double a) {
         return StrictMath.cos(a); // default impl. delegates to StrictMath
     }
@@ -183,7 +182,7 @@ public final class Math {
      * @param   a   an angle, in radians.
      * @return  the tangent of the argument.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double tan(double a) {
         return StrictMath.tan(a); // default impl. delegates to StrictMath
     }
@@ -285,7 +284,7 @@ public final class Math {
      * @return  the value <i>e</i><sup>{@code a}</sup>,
      *          where <i>e</i> is the base of the natural logarithms.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double exp(double a) {
         return StrictMath.exp(a); // default impl. delegates to StrictMath
     }
@@ -307,7 +306,7 @@ public final class Math {
      * @return  the value ln&nbsp;{@code a}, the natural logarithm of
      *          {@code a}.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double log(double a) {
         return StrictMath.log(a); // default impl. delegates to StrictMath
     }
@@ -333,7 +332,7 @@ public final class Math {
      * @return  the base 10 logarithm of  {@code a}.
      * @since 1.5
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double log10(double a) {
         return StrictMath.log10(a); // default impl. delegates to StrictMath
     }
@@ -355,7 +354,7 @@ public final class Math {
      * @return  the positive square root of {@code a}.
      *          If the argument is NaN or less than zero, the result is NaN.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double sqrt(double a) {
         return StrictMath.sqrt(a); // default impl. delegates to StrictMath
                                    // Note that hardware sqrt instructions
@@ -440,7 +439,7 @@ public final class Math {
      *          floating-point value that is greater than or equal to
      *          the argument and is equal to a mathematical integer.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double ceil(double a) {
         return StrictMath.ceil(a); // default impl. delegates to StrictMath
     }
@@ -460,7 +459,7 @@ public final class Math {
      *          floating-point value that less than or equal to the argument
      *          and is equal to a mathematical integer.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double floor(double a) {
         return StrictMath.floor(a); // default impl. delegates to StrictMath
     }
@@ -480,7 +479,7 @@ public final class Math {
      * @return  the closest floating-point value to {@code a} that is
      *          equal to a mathematical integer.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double rint(double a) {
         return StrictMath.rint(a); // default impl. delegates to StrictMath
     }
@@ -537,7 +536,7 @@ public final class Math {
      *          in polar coordinates that corresponds to the point
      *          (<i>x</i>,&nbsp;<i>y</i>) in Cartesian coordinates.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double atan2(double y, double x) {
         return StrictMath.atan2(y, x); // default impl. delegates to StrictMath
     }
@@ -665,7 +664,7 @@ public final class Math {
      * @param   b   the exponent.
      * @return  the value {@code a}<sup>{@code b}</sup>.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double pow(double a, double b) {
         return StrictMath.pow(a, b); // default impl. delegates to StrictMath
     }
@@ -820,7 +819,7 @@ public final class Math {
      * @throws ArithmeticException if the result overflows an int
      * @since 1.8
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static int addExact(int x, int y) {
         int r = x + y;
         // HD 2-12 Overflow iff both arguments have the opposite sign of the result
@@ -840,7 +839,7 @@ public final class Math {
      * @throws ArithmeticException if the result overflows a long
      * @since 1.8
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static long addExact(long x, long y) {
         long r = x + y;
         // HD 2-12 Overflow iff both arguments have the opposite sign of the result
@@ -860,7 +859,7 @@ public final class Math {
      * @throws ArithmeticException if the result overflows an int
      * @since 1.8
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static int subtractExact(int x, int y) {
         int r = x - y;
         // HD 2-12 Overflow iff the arguments have different signs and
@@ -881,7 +880,7 @@ public final class Math {
      * @throws ArithmeticException if the result overflows a long
      * @since 1.8
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static long subtractExact(long x, long y) {
         long r = x - y;
         // HD 2-12 Overflow iff the arguments have different signs and
@@ -902,7 +901,7 @@ public final class Math {
      * @throws ArithmeticException if the result overflows an int
      * @since 1.8
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static int multiplyExact(int x, int y) {
         long r = (long)x * (long)y;
         if ((int)r != r) {
@@ -935,7 +934,7 @@ public final class Math {
      * @throws ArithmeticException if the result overflows a long
      * @since 1.8
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static long multiplyExact(long x, long y) {
         long r = x * y;
         long ax = Math.abs(x);
@@ -962,7 +961,7 @@ public final class Math {
      * @throws ArithmeticException if the result overflows an int
      * @since 1.8
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static int incrementExact(int a) {
         if (a == Integer.MAX_VALUE) {
             throw new ArithmeticException("integer overflow");
@@ -981,7 +980,7 @@ public final class Math {
      * @throws ArithmeticException if the result overflows a long
      * @since 1.8
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static long incrementExact(long a) {
         if (a == Long.MAX_VALUE) {
             throw new ArithmeticException("long overflow");
@@ -1000,7 +999,7 @@ public final class Math {
      * @throws ArithmeticException if the result overflows an int
      * @since 1.8
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static int decrementExact(int a) {
         if (a == Integer.MIN_VALUE) {
             throw new ArithmeticException("integer overflow");
@@ -1019,7 +1018,7 @@ public final class Math {
      * @throws ArithmeticException if the result overflows a long
      * @since 1.8
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static long decrementExact(long a) {
         if (a == Long.MIN_VALUE) {
             throw new ArithmeticException("long overflow");
@@ -1038,7 +1037,7 @@ public final class Math {
      * @throws ArithmeticException if the result overflows an int
      * @since 1.8
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static int negateExact(int a) {
         if (a == Integer.MIN_VALUE) {
             throw new ArithmeticException("integer overflow");
@@ -1057,7 +1056,7 @@ public final class Math {
      * @throws ArithmeticException if the result overflows a long
      * @since 1.8
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static long negateExact(long a) {
         if (a == Long.MIN_VALUE) {
             throw new ArithmeticException("long overflow");
@@ -1103,7 +1102,7 @@ public final class Math {
      * @return the result
      * @since 9
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static long multiplyHigh(long x, long y) {
         if (x < 0 || y < 0) {
             // Use technique from section 8-2 of Henry S. Warren, Jr.,
@@ -1365,7 +1364,7 @@ public final class Math {
      * @return  the absolute value of the argument.
      * @see Math#absExact(int)
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static int abs(int a) {
         return (a < 0) ? -a : a;
     }
@@ -1411,7 +1410,7 @@ public final class Math {
      * @return  the absolute value of the argument.
      * @see Math#absExact(long)
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static long abs(long a) {
         return (a < 0) ? -a : a;
     }
@@ -1462,7 +1461,7 @@ public final class Math {
      * @param   a   the argument whose absolute value is to be determined
      * @return  the absolute value of the argument.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static float abs(float a) {
         return (a <= 0.0F) ? 0.0F - a : a;
     }
@@ -1487,7 +1486,7 @@ public final class Math {
      * @param   a   the argument whose absolute value is to be determined
      * @return  the absolute value of the argument.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double abs(double a) {
         return (a <= 0.0D) ? 0.0D - a : a;
     }
@@ -1502,7 +1501,7 @@ public final class Math {
      * @param   b   another argument.
      * @return  the larger of {@code a} and {@code b}.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static int max(int a, int b) {
         return (a >= b) ? a : b;
     }
@@ -1539,7 +1538,7 @@ public final class Math {
      * @param   b   another argument.
      * @return  the larger of {@code a} and {@code b}.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static float max(float a, float b) {
         if (a != a)
             return a;   // a is NaN
@@ -1566,7 +1565,7 @@ public final class Math {
      * @param   b   another argument.
      * @return  the larger of {@code a} and {@code b}.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double max(double a, double b) {
         if (a != a)
             return a;   // a is NaN
@@ -1589,7 +1588,7 @@ public final class Math {
      * @param   b   another argument.
      * @return  the smaller of {@code a} and {@code b}.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static int min(int a, int b) {
         return (a <= b) ? a : b;
     }
@@ -1622,7 +1621,7 @@ public final class Math {
      * @param   b   another argument.
      * @return  the smaller of {@code a} and {@code b}.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static float min(float a, float b) {
         if (a != a)
             return a;   // a is NaN
@@ -1649,7 +1648,7 @@ public final class Math {
      * @param   b   another argument.
      * @return  the smaller of {@code a} and {@code b}.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double min(double a, double b) {
         if (a != a)
             return a;   // a is NaN
@@ -1712,7 +1711,7 @@ public final class Math {
      *
      * @since 9
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double fma(double a, double b, double c) {
         /*
          * Infinity and NaN arithmetic is not quite the same with two
@@ -1829,7 +1828,7 @@ public final class Math {
      *
      * @since 9
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static float fma(float a, float b, float c) {
         /*
          *  Since the double format has more than twice the precision
@@ -1977,7 +1976,7 @@ public final class Math {
      * @author Joseph D. Darcy
      * @since 1.5
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double signum(double d) {
         return (d == 0.0 || Double.isNaN(d))?d:copySign(1.0, d);
     }
@@ -1999,7 +1998,7 @@ public final class Math {
      * @author Joseph D. Darcy
      * @since 1.5
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static float signum(float f) {
         return (f == 0.0f || Float.isNaN(f))?f:copySign(1.0f, f);
     }
@@ -2220,7 +2219,7 @@ public final class Math {
      * and the sign of {@code sign}.
      * @since 1.6
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static double copySign(double magnitude, double sign) {
         return Double.longBitsToDouble((Double.doubleToRawLongBits(sign) &
                                         (DoubleConsts.SIGN_BIT_MASK)) |
@@ -2244,7 +2243,7 @@ public final class Math {
      * and the sign of {@code sign}.
      * @since 1.6
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public static float copySign(float magnitude, float sign) {
         return Float.intBitsToFloat((Float.floatToRawIntBits(sign) &
                                      (FloatConsts.SIGN_BIT_MASK)) |

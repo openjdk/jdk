@@ -82,6 +82,11 @@ vframe* vframe::new_vframe(const frame* f, const RegisterMap* reg_map, JavaThrea
     }
   }
 
+  // Entry frame
+  if (f->is_entry_frame()) {
+    return new entryVFrame(f, reg_map, thread);
+  }
+
   // External frame
   return new externalVFrame(f, reg_map, thread);
 }
@@ -475,7 +480,8 @@ void vframeStreamCommon::found_bad_method_frame() const {
 
 // top-frame will be skipped
 vframeStream::vframeStream(JavaThread* thread, frame top_frame,
-  bool stop_at_java_call_stub) : vframeStreamCommon(thread) {
+                           bool stop_at_java_call_stub) :
+    vframeStreamCommon(thread, true /* process_frames */) {
   _stop_at_java_call_stub = stop_at_java_call_stub;
 
   // skip top frame, as it may not be at safepoint
@@ -663,7 +669,7 @@ void javaVFrame::print() {
     }
     tty->cr();
     tty->print("\t  ");
-    monitor->lock()->print_on(tty);
+    monitor->lock()->print_on(tty, monitor->owner());
     tty->cr();
   }
 }
