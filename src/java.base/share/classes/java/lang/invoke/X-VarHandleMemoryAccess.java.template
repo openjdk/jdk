@@ -64,9 +64,9 @@ final class MemoryAccessVarHandle$Type$Helper extends MemoryAccessVarHandleBase 
 
     @Override
     public MemoryAccessVarHandle$Type$Helper withInvokeBehavior() {
-        return hasInvokeExactBehavior() ?
+        return !hasInvokeExactBehavior() ?
                 this :
-                new MemoryAccessVarHandle$Type$Helper(skipAlignmentMaskCheck, be, length, alignmentMask, false);
+                new MemoryAccessVarHandle$Type$Helper(skipAlignmentMaskCheck, be, length, alignmentMask, true);
     }
 
 #if[floatingPoint]
