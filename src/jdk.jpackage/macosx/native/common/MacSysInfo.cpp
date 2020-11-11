@@ -26,10 +26,13 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <mach-o/dyld.h>
+#include "UnixSysInfo.h"
 #include "FileUtils.h"
 #include "ErrorHandling.h"
 
 namespace SysInfo {
+
+#define PSN_ARG "-psn_"
 
 tstring getRealPath(const std::vector<char>& in) {
     std::vector<char> out(PATH_MAX);
@@ -75,6 +78,17 @@ tstring getProcessModulePath() {
     tstring reply = getRealPath(buffer);
 
     return FileUtils::toAbsolutePath(reply);
+}
+
+tstring_array getCommandArgs(CommandArgProgramNameMode progNameMode) {
+    tstring_array result;
+    for (int i = progNameMode == ExcludeProgramName ? 1 : 0; i < argc; i++) {
+        if (strncmp(argv[i], PSN_ARG, strlen(PSN_ARG)) == 0) {
+            continue;
+        }
+        result.push_back(argv[i]);
+    }
+    return result;
 }
 
 } // end of namespace SysInfo
