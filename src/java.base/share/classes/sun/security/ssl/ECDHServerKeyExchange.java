@@ -424,6 +424,9 @@ final class ECDHServerKeyExchange {
                 case "EC":
                     signer = Signature.getInstance(JsseJce.SIGNATURE_ECDSA);
                     break;
+                case "EdDSA":
+                    signer = Signature.getInstance(JsseJce.SIGNATURE_EDDSA);
+                    break;
                 case "RSA":
                     signer = RSASignature.getInstance();
                     break;

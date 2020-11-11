@@ -91,6 +91,11 @@ final class JsseJce {
     static final String SIGNATURE_ECDSA = "SHA1withECDSA";
 
     /**
+     * JCA identifier for EdDSA signatures.
+     */
+    static final String SIGNATURE_EDDSA = "EdDSA";
+
+    /**
      * JCA identifier string for Raw DSA, i.e. a DSA signature without
      * hashing where the application provides the SHA-1 hash of the data.
      * Note that the standard name is "NONEwithDSA" but we use "RawDSA"

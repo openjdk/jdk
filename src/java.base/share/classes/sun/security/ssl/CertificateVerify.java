@@ -459,6 +459,9 @@ final class CertificateVerify {
                 case "EC":
                     signer = Signature.getInstance(JsseJce.SIGNATURE_RAWECDSA);
                     break;
+                case "EdDSA":
+                    signer = Signature.getInstance(JsseJce.SIGNATURE_EDDSA);
+                    break;
                 default:
                     throw new SignatureException("Unrecognized algorithm: "
                         + algorithm);

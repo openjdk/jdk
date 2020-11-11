@@ -274,11 +274,11 @@ enum SSLExtension implements SSLStringizer {
     SIGNED_CERT_TIMESTAMP   (0x0012, "signed_certificate_timestamp"),
 
     // extensions defined in RFC 7250
-    CLIENT_CERT_TYPE        (0x0013, "padding"),
+    CLIENT_CERT_TYPE        (0x0013, "client_certificate_type"),
     SERVER_CERT_TYPE        (0x0014, "server_certificate_type"),
 
     // extensions defined in RFC 7685
-    PADDING                 (0x0015, "client_certificate_type"),
+    PADDING                 (0x0015, "padding"),
 
     // extensions defined in RFC 7366
     ENCRYPT_THEN_MAC        (0x0016, "encrypt_then_mac"),
