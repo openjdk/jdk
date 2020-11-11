@@ -2578,6 +2578,10 @@ int Deoptimization::last_frame_adjust(int callee_parameters, int callee_locals) 
          frame::z_parent_ijava_frame_abi_size / BytesPerWord;
 }
 
+uint SharedRuntime::in_preserve_stack_slots() {
+  return frame::jit_in_preserve_size_in_4_byte_units;
+}
+
 uint SharedRuntime::out_preserve_stack_slots() {
   return frame::z_jit_out_preserve_size/VMRegImpl::stack_slot_size;
 }

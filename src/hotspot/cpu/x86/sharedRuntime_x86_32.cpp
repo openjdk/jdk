@@ -2198,6 +2198,14 @@ int Deoptimization::last_frame_adjust(int callee_parameters, int callee_locals )
 }
 
 
+// Number of stack slots between incoming argument block and the start of
+// a new frame.  The PROLOG must add this many slots to the stack.  The
+// EPILOG must remove this many slots.  Intel needs one slot for
+// return address and one for rbp, (must save rbp)
+uint SharedRuntime::in_preserve_stack_slots() {
+  return 2+VerifyStackAtCalls;
+}
+
 uint SharedRuntime::out_preserve_stack_slots() {
   return 0;
 }

@@ -4158,9 +4158,6 @@ void ArchDesc::buildFrameMethods(FILE *fp_cpp) {
     fprintf(fp_cpp," return OptoReg::stack2reg(%s); }\n\n",
             _frame->_return_addr);
   }
-  // Java Stack Slot Preservation
-  fprintf(fp_cpp,"uint Compile::in_preserve_stack_slots() ");
-  fprintf(fp_cpp,"{ return %s; }\n\n", _frame->_in_preserve_slots);
   // varargs C out slots killed
   fprintf(fp_cpp,"uint Compile::varargs_C_out_slots_killed() const ");
   fprintf(fp_cpp,"{ return %s; }\n\n", _frame->_varargs_C_out_slots_killed);

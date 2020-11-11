@@ -459,6 +459,11 @@ class SharedRuntime: AllStatic {
   // when an interrupt occurs.
   static uint out_preserve_stack_slots();
 
+  // Stack slots that may be unused by the calling convention but must
+  // otherwise be preserved.  On Intel this includes the return address.
+  // On PowerPC it includes the 4 words holding the old TOC & LR glue.
+  static uint in_preserve_stack_slots();
+
   // Is vector's size (in bytes) bigger than a size saved by default?
   // For example, on x86 16 bytes XMM registers are saved by default.
   static bool is_wide_vector(int size);

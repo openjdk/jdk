@@ -1678,12 +1678,6 @@ frame %{
   //  LP64: Alignment size in bytes (128-bit -> 16 bytes)
   // !LP64: Alignment size in bytes (64-bit  ->  8 bytes)
 
-  // Number of stack slots between incoming argument block and the start of
-  // a new frame.  The PROLOG must add this many slots to the stack.  The
-  // EPILOG must remove this many slots.
-  // FP + LR
-  in_preserve_stack_slots(2 * VMRegImpl::slots_per_word);
-
   // Number of outgoing stack slots killed above the out_preserve_stack_slots
   // for calls to C.  Supports the var-args backing area for register parms.
   // ADLC doesn't support parsing expressions, so I folded the math by hand.

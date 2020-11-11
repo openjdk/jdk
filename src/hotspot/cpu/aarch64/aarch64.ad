@@ -4102,13 +4102,6 @@ frame %{
   // Stack alignment requirement
   stack_alignment(StackAlignmentInBytes); // Alignment size in bytes (128-bit -> 16 bytes)
 
-  // Number of stack slots between incoming argument block and the start of
-  // a new frame.  The PROLOG must add this many slots to the stack.  The
-  // EPILOG must remove this many slots. aarch64 needs two slots for
-  // return address and fp.
-  // TODO think this is correct but check
-  in_preserve_stack_slots(4);
-
   // Number of outgoing stack slots killed above the out_preserve_stack_slots
   // for calls to C.  Supports the var-args backing area for register parms.
   varargs_C_out_slots_killed(frame::arg_reg_save_area_bytes/BytesPerInt);
@@ -12385,7 +12378,7 @@ instruct SubL_reg_LShift_reg(iRegLNoSp dst,
   ins_pipe(ialu_reg_reg_shift);
 %}
 
- 
+
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 
@@ -12692,7 +12685,7 @@ instruct ubfizIConvI2LAndI(iRegLNoSp dst, iRegI src, immI_bitmask msk)
 %}
 
 
-// Rotations 
+// Rotations
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct extrOrL(iRegLNoSp dst, iRegL src1, iRegL src2, immI lshift, immI rshift, rFlagsReg cr)

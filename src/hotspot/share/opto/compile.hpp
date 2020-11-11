@@ -1034,7 +1034,9 @@ class Compile : public Phase {
   // Stack slots that may be unused by the calling convention but must
   // otherwise be preserved.  On Intel this includes the return address.
   // On PowerPC it includes the 4 words holding the old TOC & LR glue.
-  uint in_preserve_stack_slots();
+  uint in_preserve_stack_slots() {
+    return SharedRuntime::in_preserve_stack_slots();
+  }
 
   // "Top of Stack" slots that may be unused by the calling convention but must
   // otherwise be preserved.

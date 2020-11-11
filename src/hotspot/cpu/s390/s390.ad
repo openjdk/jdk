@@ -2454,8 +2454,6 @@ frame %{
   // Use alignment_in_bytes instead of log_2_of_alignment_in_bits.
   stack_alignment(frame::alignment_in_bytes);
 
-  in_preserve_stack_slots(frame::jit_in_preserve_size_in_4_byte_units);
-
   // A `slot' is assumed 4 bytes here!
   // out_preserve_stack_slots(frame::jit_out_preserve_size_in_4_byte_units);
 

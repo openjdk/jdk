@@ -2521,6 +2521,15 @@ void SharedRuntime::generate_deopt_blob() {
 #endif
 }
 
+// Number of stack slots between incoming argument block and the start of
+// a new frame.  The PROLOG must add this many slots to the stack.  The
+// EPILOG must remove this many slots. aarch64 needs two slots for
+// return address and fp.
+// TODO think this is correct but check
+uint SharedRuntime::in_preserve_stack_slots() {
+  return 4;
+}
+
 uint SharedRuntime::out_preserve_stack_slots() {
   return 0;
 }

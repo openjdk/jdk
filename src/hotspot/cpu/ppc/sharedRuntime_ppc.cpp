@@ -2510,6 +2510,10 @@ int Deoptimization::last_frame_adjust(int callee_parameters, int callee_locals) 
   return align_up((callee_locals - callee_parameters) * Interpreter::stackElementWords, frame::alignment_in_bytes);
 }
 
+uint SharedRuntime::in_preserve_stack_slots() {
+  return frame::jit_in_preserve_size / VMRegImpl::stack_slot_size;
+}
+
 uint SharedRuntime::out_preserve_stack_slots() {
 #if defined(COMPILER1) || defined(COMPILER2)
   return frame::jit_out_preserve_size / VMRegImpl::stack_slot_size;

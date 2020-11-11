@@ -3853,8 +3853,6 @@ frame %{
 
   stack_alignment(frame::alignment_in_bytes);
 
-  in_preserve_stack_slots((frame::jit_in_preserve_size / VMRegImpl::stack_slot_size));
-
   // Number of outgoing stack slots killed above the
   // out_preserve_stack_slots for calls to C. Supports the var-args
   // backing area for register parms.

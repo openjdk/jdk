@@ -1019,7 +1019,8 @@ void ADLParser::frame_parse(void) {
         return_addr_parse(frame, false);
       }
       if (strcmp(token,"in_preserve_stack_slots")==0) {
-        preserve_stack_parse(frame);
+        parse_err(WARN, "Using obsolete token, in_preserve_stack_slots");
+        skipws();
       }
       if (strcmp(token,"out_preserve_stack_slots")==0) {
         parse_err(WARN, "Using obsolete token, out_preserve_stack_slots");
@@ -1072,10 +1073,6 @@ void ADLParser::frame_parse(void) {
   }
   if(frame->_return_addr == NULL) {
     parse_err(SYNERR, "missing return address location in frame section.\n");
-    return;
-  }
-  if(frame->_in_preserve_slots == NULL) {
-    parse_err(SYNERR, "missing stack slot preservation definition in frame section.\n");
     return;
   }
   if(frame->_varargs_C_out_slots_killed == NULL) {
@@ -1213,23 +1210,6 @@ void ADLParser::return_addr_parse(FrameForm *frame, bool native) {
   }
   else {
     parse_err(SYNERR, "Missing %c in return_address entry.\n", '(');
-  }
-}
-
-//------------------------------preserve_stack_parse---------------------------
-void ADLParser::preserve_stack_parse(FrameForm *frame) {
-  if(_curchar == '(') {
-    char *token = get_paren_expr("preserve_stack_slots");
-    frame->_in_preserve_slots   = token;
-
-    if(_curchar != ';') {  // check for semi-colon
-      parse_err(SYNERR, "missing %c in preserve stack slot entry.\n", ';');
-      return;
-    }
-    next_char();           // skip the semi-colon
-  }
-  else {
-    parse_err(SYNERR, "Missing %c in preserve stack slot entry.\n", '(');
   }
 }
 

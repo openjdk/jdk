@@ -2591,6 +2591,15 @@ uint SharedRuntime::out_preserve_stack_slots() {
   return 0;
 }
 
+
+// Number of stack slots between incoming argument block and the start of
+// a new frame.  The PROLOG must add this many slots to the stack.  The
+// EPILOG must remove this many slots.  amd64 needs two slots for
+// return address.
+uint SharedRuntime::in_preserve_stack_slots() {
+  return 4 + 2 * VerifyStackAtCalls;
+}
+
 //------------------------------generate_deopt_blob----------------------------
 void SharedRuntime::generate_deopt_blob() {
   // Allocate space for the code

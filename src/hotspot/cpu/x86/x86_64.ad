@@ -2756,12 +2756,6 @@ frame
   // Stack alignment requirement
   stack_alignment(StackAlignmentInBytes); // Alignment size in bytes (128-bit -> 16 bytes)
 
-  // Number of stack slots between incoming argument block and the start of
-  // a new frame.  The PROLOG must add this many slots to the stack.  The
-  // EPILOG must remove this many slots.  amd64 needs two slots for
-  // return address.
-  in_preserve_stack_slots(4 + 2 * VerifyStackAtCalls);
-
   // Number of outgoing stack slots killed above the out_preserve_stack_slots
   // for calls to C.  Supports the var-args backing area for register parms.
   varargs_C_out_slots_killed(frame::arg_reg_save_area_bytes/BytesPerInt);
