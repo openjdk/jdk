@@ -40,6 +40,9 @@ import jdk.test.lib.process.ProcessTools;
  * @key intermittent
  * @library /test/lib
  * @build jdk.test.lib.hprof.*
+ * @build jdk.test.lib.hprof.model.*
+ * @build jdk.test.lib.hprof.parser.*
+ * @build jdk.test.lib.hprof.util.*
  * @run main/othervm/timeout=240 -XX:+UseSerialGC BasicJMapTest
  */
 
@@ -50,6 +53,9 @@ import jdk.test.lib.process.ProcessTools;
  * @key intermittent
  * @library /test/lib
  * @build jdk.test.lib.hprof.*
+ * @build jdk.test.lib.hprof.model.*
+ * @build jdk.test.lib.hprof.parser.*
+ * @build jdk.test.lib.hprof.util.*
  * @run main/othervm/timeout=240 -XX:+UseParallelGC BasicJMapTest
  */
 
@@ -60,6 +66,9 @@ import jdk.test.lib.process.ProcessTools;
  * @key intermittent
  * @library /test/lib
  * @build jdk.test.lib.hprof.*
+ * @build jdk.test.lib.hprof.model.*
+ * @build jdk.test.lib.hprof.parser.*
+ * @build jdk.test.lib.hprof.util.*
  * @run main/othervm/timeout=240 -XX:+UseG1GC BasicJMapTest
  */
 
@@ -70,6 +79,9 @@ import jdk.test.lib.process.ProcessTools;
  * @key intermittent
  * @library /test/lib
  * @build jdk.test.lib.hprof.*
+ * @build jdk.test.lib.hprof.model.*
+ * @build jdk.test.lib.hprof.parser.*
+ * @build jdk.test.lib.hprof.util.*
  * @run main/othervm/timeout=240 -XX:+UseShenandoahGC BasicJMapTest
  */
 
@@ -80,6 +92,9 @@ import jdk.test.lib.process.ProcessTools;
  * @key intermittent
  * @library /test/lib
  * @build jdk.test.lib.hprof.*
+ * @build jdk.test.lib.hprof.model.*
+ * @build jdk.test.lib.hprof.parser.*
+ * @build jdk.test.lib.hprof.util.*
  * @run main/othervm/timeout=240 -XX:+UseZGC BasicJMapTest
  */
 
