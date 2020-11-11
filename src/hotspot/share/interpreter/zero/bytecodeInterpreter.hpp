@@ -503,12 +503,8 @@ static void dup2_x1(intptr_t *tos);   /* insert top 2 slots three down */
 static void dup2_x2(intptr_t *tos);   /* insert top 2 slots four down */
 static void swap(intptr_t *tos);      /* swap top two elements */
 
-// umm don't like this method modifies its object
-
-// The Interpreter used when
+template<bool JVMTI_ENABLED>
 static void run(interpreterState istate);
-// The interpreter used if JVMTI needs interpreter events
-static void runWithChecks(interpreterState istate);
 
 static void astore(intptr_t* topOfStack, int stack_offset,
                    intptr_t* locals,     int locals_offset);

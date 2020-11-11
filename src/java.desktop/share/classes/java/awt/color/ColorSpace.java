@@ -244,25 +244,25 @@ public abstract class ColorSpace implements Serializable {
 
 
     /**
-     * The sRGB color space defined at
+     * The built-in sRGB color space defined at
      * <a href="http://www.w3.org/pub/WWW/Graphics/Color/sRGB.html">
      * http://www.w3.org/pub/WWW/Graphics/Color/sRGB.html</a>.
      */
     @Native public static final int CS_sRGB = 1000;
 
     /**
-     * A built-in linear RGB color space. This space is based on the same RGB
+     * The built-in linear RGB color space. This space is based on the same RGB
      * primaries as {@code CS_sRGB}, but has a linear tone reproduction curve.
      */
     @Native public static final int CS_LINEAR_RGB = 1004;
 
     /**
-     * The CIEXYZ conversion color space defined above.
+     * The built-in CIEXYZ conversion color space defined above.
      */
     @Native public static final int CS_CIEXYZ = 1001;
 
     /**
-     * The Photo YCC conversion color space.
+     * The built-in Photo YCC conversion color space.
      */
     @Native public static final int CS_PYCC = 1002;
 

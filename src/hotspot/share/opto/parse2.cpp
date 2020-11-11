@@ -2337,7 +2337,7 @@ void Parse::do_one_bytecode() {
     if (Matcher::convL2FSupported()) {
       a = pop_pair();
       b = _gvn.transform( new ConvL2FNode(a));
-      // For i486.ad, FILD doesn't restrict precision to 24 or 53 bits.
+      // For x86_32.ad, FILD doesn't restrict precision to 24 or 53 bits.
       // Rather than storing the result into an FP register then pushing
       // out to memory to round, the machine instruction that implements
       // ConvL2D is responsible for rounding.
@@ -2352,7 +2352,7 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_l2d:
     a = pop_pair();
     b = _gvn.transform( new ConvL2DNode(a));
-    // For i486.ad, rounding is always necessary (see _l2f above).
+    // For x86_32.ad, rounding is always necessary (see _l2f above).
     // c = dprecision_rounding(b);
     c = _gvn.transform(b);
     push_pair(c);
