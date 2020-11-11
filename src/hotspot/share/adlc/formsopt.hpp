@@ -347,8 +347,6 @@ public:
   char *_c_return_addr;
   char *_in_preserve_slots;
   char *_varargs_C_out_slots_killed;
-  char *_calling_convention;
-  char *_c_calling_convention;
   char *_return_value;
   char *_c_return_value;
 

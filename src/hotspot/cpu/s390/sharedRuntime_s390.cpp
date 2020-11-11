@@ -649,8 +649,7 @@ void SharedRuntime::restore_native_result(MacroAssembler *masm,
 // advantage out of it.
 int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
                                            VMRegPair *regs,
-                                           int total_args_passed,
-                                           int is_outgoing) {
+                                           int total_args_passed) {
   // c2c calling conventions for compiled-compiled calls.
 
   // An int/float occupies 1 slot here.

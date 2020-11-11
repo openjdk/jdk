@@ -3879,40 +3879,6 @@ frame %{
   //    4 what apparently works and saves us some spills.
   return_addr(STACK 4);
 
-  // This is the body of the function
-  //
-  // void Matcher::calling_convention(OptoRegPair* sig, // array of ideal regs
-  //                                  uint length,      // length of array
-  //                                  bool is_outgoing)
-  //
-  // The `sig' array is to be updated. sig[j] represents the location
-  // of the j-th argument, either a register or a stack slot.
-
-  // Comment taken from x86_32.ad:
-  // Body of function which returns an integer array locating
-  // arguments either in registers or in stack slots. Passed an array
-  // of ideal registers called "sig" and a "length" count. Stack-slot
-  // offsets are based on outgoing arguments, i.e. a CALLER setting up
-  // arguments for a CALLEE. Incoming stack arguments are
-  // automatically biased by the preserve_stack_slots field above.
-  calling_convention %{
-    // No difference between ingoing/outgoing. Just pass false.
-    SharedRuntime::java_calling_convention(sig_bt, regs, length, false);
-  %}
-
-  // Comment taken from x86_32.ad:
-  // Body of function which returns an integer array locating
-  // arguments either in registers or in stack slots. Passed an array
-  // of ideal registers called "sig" and a "length" count. Stack-slot
-  // offsets are based on outgoing arguments, i.e. a CALLER setting up
-  // arguments for a CALLEE. Incoming stack arguments are
-  // automatically biased by the preserve_stack_slots field above.
-  c_calling_convention %{
-    // This is obviously always outgoing.
-    // C argument in register AND stack slot.
-    (void) SharedRuntime::c_calling_convention(sig_bt, regs, /*regs2=*/NULL, length);
-  %}
-
   // Location of native (C/C++) and interpreter return values. This
   // is specified to be the same as Java. In the 32-bit VM, long
   // values are actually returned from native calls in O0:O1 and

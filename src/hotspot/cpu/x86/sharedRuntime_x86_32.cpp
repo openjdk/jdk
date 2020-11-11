@@ -418,8 +418,7 @@ static int reg2offset_out(VMReg r) {
 // the doubles will grab the registers before the floats will.
 int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
                                            VMRegPair *regs,
-                                           int total_args_passed,
-                                           int is_outgoing) {
+                                           int total_args_passed) {
   uint    stack = 0;          // Starting stack position for args on stack
 
 

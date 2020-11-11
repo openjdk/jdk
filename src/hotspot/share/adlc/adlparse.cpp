@@ -1029,7 +1029,8 @@ void ADLParser::frame_parse(void) {
         frame->_varargs_C_out_slots_killed = parse_one_arg("varargs C out slots killed");
       }
       if (strcmp(token,"calling_convention")==0) {
-        frame->_calling_convention = calling_convention_parse();
+        parse_err(WARN, "Using obsolete token, calling_convention");
+        skipws();
       }
       if (strcmp(token,"return_value")==0) {
         frame->_return_value = return_value_parse();
@@ -1041,7 +1042,8 @@ void ADLParser::frame_parse(void) {
         return_addr_parse(frame, true);
       }
       if (strcmp(token,"c_calling_convention")==0) {
-        frame->_c_calling_convention = calling_convention_parse();
+        parse_err(WARN, "Using obsolete token, c_calling_convention");
+        skipws();
       }
       if (strcmp(token,"c_return_value")==0) {
         frame->_c_return_value = return_value_parse();
@@ -1080,10 +1082,6 @@ void ADLParser::frame_parse(void) {
     parse_err(SYNERR, "missing varargs C out slots killed definition in frame section.\n");
     return;
   }
-  if(frame->_calling_convention == NULL) {
-    parse_err(SYNERR, "missing calling convention definition in frame section.\n");
-    return;
-  }
   if(frame->_return_value == NULL) {
     parse_err(SYNERR, "missing return value definition in frame section.\n");
     return;
@@ -1095,9 +1093,6 @@ void ADLParser::frame_parse(void) {
   if(frame->_c_return_addr == NULL) {
     frame->_c_return_addr = frame->_return_addr;
     frame->_c_return_addr_loc = frame->_return_addr_loc;
-  }
-  if(frame->_c_calling_convention == NULL) {
-    frame->_c_calling_convention = frame->_calling_convention;
   }
   if(frame->_c_return_value == NULL) {
     frame->_c_return_value = frame->_return_value;
@@ -1238,20 +1233,9 @@ void ADLParser::preserve_stack_parse(FrameForm *frame) {
   }
 }
 
-//------------------------------calling_convention_parse-----------------------
-char *ADLParser::calling_convention_parse() {
-  char   *desc = NULL;          // String representation of calling_convention
-
-  skipws();                     // Skip leading whitespace
-  if ( (desc = find_cpp_block("calling convention block")) == NULL ) {
-    parse_err(SYNERR, "incorrect or missing block for 'calling_convention'.\n");
-  }
-  return desc;
-}
-
 //------------------------------return_value_parse-----------------------------
 char *ADLParser::return_value_parse() {
-  char   *desc = NULL;          // String representation of calling_convention
+  char   *desc = NULL;          // String representation of return_value 
 
   skipws();                     // Skip leading whitespace
   if ( (desc = find_cpp_block("return value block")) == NULL ) {

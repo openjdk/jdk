@@ -364,13 +364,11 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
 
 int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
                                            VMRegPair *regs,
-                                           int total_args_passed,
-                                           int is_outgoing) {
+                                           int total_args_passed) {
 #ifdef __SOFTFP__
   // soft float is the same as the C calling convention.
   return c_calling_convention(sig_bt, regs, NULL, total_args_passed);
 #endif // __SOFTFP__
-  (void) is_outgoing;
   int slot = 0;
   int ireg = 0;
   int freg = 0;

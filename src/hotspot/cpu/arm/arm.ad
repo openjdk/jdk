@@ -1700,22 +1700,6 @@ frame %{
                         Compile::current()->fixed_slots()),
                        stack_alignment_in_slots()));
 
-  // Body of function which returns an OptoRegs array locating
-  // arguments either in registers or in stack slots for calling
-  // java
-  calling_convention %{
-    (void) SharedRuntime::java_calling_convention(sig_bt, regs, length, is_outgoing);
-
-  %}
-
-  // Body of function which returns an OptoRegs array locating
-  // arguments either in registers or in stack slots for callin
-  // C.
-  c_calling_convention %{
-    // This is obviously always outgoing
-    (void) SharedRuntime::c_calling_convention(sig_bt, regs, /*regs2=*/NULL, length);
-  %}
-
   // Location of compiled Java return values.  Same as C
   return_value %{
     return c2::return_value(ideal_reg);

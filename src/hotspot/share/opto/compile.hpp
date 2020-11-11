@@ -40,6 +40,7 @@
 #include "opto/phase.hpp"
 #include "opto/regmask.hpp"
 #include "runtime/deoptimization.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/ticks.hpp"
@@ -1040,7 +1041,9 @@ class Compile : public Phase {
   // On Intel these are not necessary and the value can be zero.
   // On Sparc this describes the words reserved for storing a register window
   // when an interrupt occurs.
-  static uint out_preserve_stack_slots();
+  static uint out_preserve_stack_slots() {
+    return SharedRuntime::out_preserve_stack_slots();
+  }
 
   // Number of outgoing stack slots killed above the out_preserve_stack_slots
   // for calls to C.  Supports the var-args backing area for register parms.
