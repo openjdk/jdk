@@ -97,7 +97,6 @@ int LogFileStreamOutput::write(const LogDecorations& decorations, const char* ms
   }
   written += jio_fprintf(_stream, "%s\n", msg);
   fflush(_stream);
-  os::funlockfile(_stream);
 
   return written;
 }
@@ -115,7 +114,6 @@ int LogFileStreamOutput::write(LogMessageBuffer::Iterator msg_iterator) {
     written += jio_fprintf(_stream, "%s\n", msg_iterator.message());
   }
   fflush(_stream);
-  os::funlockfile(_stream);
 
   return written;
 }
