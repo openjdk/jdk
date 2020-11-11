@@ -4161,9 +4161,6 @@ void ArchDesc::buildFrameMethods(FILE *fp_cpp) {
   // Java Stack Slot Preservation
   fprintf(fp_cpp,"uint Compile::in_preserve_stack_slots() ");
   fprintf(fp_cpp,"{ return %s; }\n\n", _frame->_in_preserve_slots);
-  // Top Of Stack Slot Preservation, for both Java and C
-  fprintf(fp_cpp,"uint Compile::out_preserve_stack_slots() ");
-  fprintf(fp_cpp,"{ return SharedRuntime::out_preserve_stack_slots(); }\n\n");
   // varargs C out slots killed
   fprintf(fp_cpp,"uint Compile::varargs_C_out_slots_killed() const ");
   fprintf(fp_cpp,"{ return %s; }\n\n", _frame->_varargs_C_out_slots_killed);

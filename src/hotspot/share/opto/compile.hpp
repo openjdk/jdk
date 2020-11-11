@@ -1039,8 +1039,6 @@ class Compile : public Phase {
   // "Top of Stack" slots that may be unused by the calling convention but must
   // otherwise be preserved.
   // On Intel these are not necessary and the value can be zero.
-  // On Sparc this describes the words reserved for storing a register window
-  // when an interrupt occurs.
   static uint out_preserve_stack_slots() {
     return SharedRuntime::out_preserve_stack_slots();
   }
