@@ -1103,7 +1103,6 @@ sudo qemu-debootstrap \
 ```
 
   * Make sure the symlinks inside the newly created chroot point to proper locations:
-
 ```
 sudo chroot ~/sysroot-arm64 symlinks -cr .
 ```
