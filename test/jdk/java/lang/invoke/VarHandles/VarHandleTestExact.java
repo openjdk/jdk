@@ -46,6 +46,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static org.testng.Assert.*;
 
@@ -80,24 +81,12 @@ public class VarHandleTestExact {
             throws NoSuchFieldException, IllegalAccessException {
         if (ro) throw new SkipException("Can not test setter with read only field");
         VarHandle vh = MethodHandles.lookup().findVarHandle(Widget.class, fieldBaseName + "_RW", fieldType);
-        assertFalse(vh.hasInvokeExactBehavior());
         Widget w = new Widget();
 
-        try {
-            vh.set(w, testValue);
-            vh.withInvokeBehavior().set(w, testValue);
-        } catch (WrongMethodTypeException wmte) {
-            fail("Unexpected exception", wmte);
-        }
-
-        vh = vh.withInvokeExactBehavior();
-        assertTrue(vh.hasInvokeExactBehavior());
-        try {
-            setter.set(vh, w, testValue); // should throw
-            fail("Exception expected");
-        } catch (WrongMethodTypeException wmte) {
-            assertMatches(wmte.getMessage(),".*\\Qexpected (Widget," + fieldType.getSimpleName() + ")void \\E.*");
-        }
+        doTest(vh,
+            tvh -> tvh.set(w, testValue),
+            tvh -> setter.set(tvh, w, testValue),
+            ".*\\Qexpected (Widget," + fieldType.getSimpleName() + ")void \\E.*");
     }
 
     @Test(dataProvider = "dataObjectAccess")
@@ -106,24 +95,12 @@ public class VarHandleTestExact {
                              SetStaticX staticSetter, GetStaticX staticGetter)
             throws NoSuchFieldException, IllegalAccessException {
         VarHandle vh = MethodHandles.lookup().findVarHandle(Widget.class, fieldBaseName + (ro ? "_RO" : "_RW"), fieldType);
-        assertFalse(vh.hasInvokeExactBehavior());
         Widget w = new Widget();
 
-        try {
-            Object o = vh.get(w);
-            Object o2 = vh.withInvokeBehavior().get(w);
-        } catch (WrongMethodTypeException wmte) {
-            fail("Unexpected exception", wmte);
-        }
-
-        vh = vh.withInvokeExactBehavior();
-        assertTrue(vh.hasInvokeExactBehavior());
-        try {
-            getter.get(vh, w); // should throw
-            fail("Exception expected");
-        } catch (WrongMethodTypeException wmte) {
-            assertMatches(wmte.getMessage(),".*\\Qexpected (Widget)" + fieldType.getSimpleName() + " \\E.*");
-        }
+        doTest(vh,
+            tvh -> tvh.get(w),
+            tvh -> getter.get(tvh, w),
+            ".*\\Qexpected (Widget)" + fieldType.getSimpleName() + " \\E.*");
     }
 
     @Test(dataProvider = "dataObjectAccess")
@@ -133,23 +110,11 @@ public class VarHandleTestExact {
             throws NoSuchFieldException, IllegalAccessException {
         if (ro) throw new SkipException("Can not test setter with read only field");
         VarHandle vh = MethodHandles.lookup().findStaticVarHandle(Widget.class, fieldBaseName + "_SRW", fieldType);
-        assertFalse(vh.hasInvokeExactBehavior());
 
-        try {
-            vh.set(testValue);
-            vh.withInvokeBehavior().set(testValue);
-        } catch (WrongMethodTypeException wmte) {
-            fail("Unexpected exception", wmte);
-        }
-
-        vh = vh.withInvokeExactBehavior();
-        assertTrue(vh.hasInvokeExactBehavior());
-        try {
-            staticSetter.set(vh, testValue); // should throw
-            fail("Exception expected");
-        } catch (WrongMethodTypeException wmte) {
-            assertMatches(wmte.getMessage(),".*\\Qexpected (" + fieldType.getSimpleName() + ")void \\E.*");
-        }
+        doTest(vh,
+            tvh -> tvh.set(testValue),
+            tvh -> staticSetter.set(tvh, testValue),
+            ".*\\Qexpected (" + fieldType.getSimpleName() + ")void \\E.*");
     }
 
     @Test(dataProvider = "dataObjectAccess")
@@ -158,94 +123,74 @@ public class VarHandleTestExact {
                                    SetStaticX staticSetter, GetStaticX staticGetter)
             throws NoSuchFieldException, IllegalAccessException {
         VarHandle vh = MethodHandles.lookup().findStaticVarHandle(Widget.class, fieldBaseName + (ro ? "_SRO" : "_SRW"), fieldType);
-        assertFalse(vh.hasInvokeExactBehavior());
 
-        try {
-            Object o = vh.get();
-            Object o2 = vh.withInvokeBehavior().get();
-        } catch (WrongMethodTypeException wmte) {
-            fail("Unexpected exception", wmte);
-        }
-
-        vh = vh.withInvokeExactBehavior();
-        assertTrue(vh.hasInvokeExactBehavior());
-        try {
-            staticGetter.get(vh); // should throw
-            fail("Exception expected");
-        } catch (WrongMethodTypeException wmte) {
-            assertMatches(wmte.getMessage(),".*\\Qexpected ()" + fieldType.getSimpleName() + " \\E.*");
-        }
+        doTest(vh,
+            tvh -> tvh.get(),
+            tvh -> staticGetter.get(tvh),
+            ".*\\Qexpected ()" + fieldType.getSimpleName() + " \\E.*");
     }
 
     @Test(dataProvider = "dataSetArray")
     public void testExactArraySet(Class<?> arrayClass, Object testValue, SetArrayX setter) {
         VarHandle vh = MethodHandles.arrayElementVarHandle(arrayClass);
         Object arr = Array.newInstance(arrayClass.componentType(), 1);
-        assertFalse(vh.hasInvokeExactBehavior());
 
-        try {
-            vh.set(arr, 0, testValue);
-            vh.withInvokeBehavior().set(arr, 0, testValue);
-        } catch (WrongMethodTypeException wmte) {
-            fail("Unexpected exception", wmte);
-        }
-
-        vh = vh.withInvokeExactBehavior();
-        assertTrue(vh.hasInvokeExactBehavior());
-        try {
-            setter.set(vh, arr, testValue); // should throw
-            fail("Exception expected");
-        } catch (WrongMethodTypeException wmte) {
-            assertMatches(wmte.getMessage(),
-                ".*\\Qexpected (" + arrayClass.getSimpleName() + ",int," + arrayClass.componentType().getSimpleName() + ")void \\E.*");
-        }
+        doTest(vh,
+            tvh -> tvh.set(arr, 0, testValue),
+            tvh -> setter.set(tvh, arr, testValue),
+            ".*\\Qexpected (" + arrayClass.getSimpleName() + ",int," + arrayClass.componentType().getSimpleName() + ")void \\E.*");
     }
 
     @Test(dataProvider = "dataSetBuffer")
     public void testExactBufferSet(Class<?> arrayClass, Object testValue, SetBufferX setter) {
         VarHandle vh = MethodHandles.byteBufferViewVarHandle(arrayClass, ByteOrder.nativeOrder());
-        assertFalse(vh.hasInvokeExactBehavior());
         ByteBuffer buff = ByteBuffer.allocateDirect(8);
 
-        try {
-            vh.set(buff, 0, testValue);
-            vh.withInvokeBehavior().set(buff, 0, testValue);
-        } catch (WrongMethodTypeException wmte) {
-            fail("Unexpected exception", wmte);
-        }
-
-        vh = vh.withInvokeExactBehavior();
-        assertTrue(vh.hasInvokeExactBehavior());
-        try {
-            setter.set(vh, buff, testValue); // should throw
-            fail("Exception expected");
-        } catch (WrongMethodTypeException wmte) {
-            assertMatches(wmte.getMessage(),
-                ".*\\Qexpected (ByteBuffer,int," + arrayClass.componentType().getSimpleName() + ")void \\E.*");
-        }
+        doTest(vh,
+            tvh -> tvh.set(buff, 0, testValue),
+            tvh -> setter.set(tvh, buff, testValue),
+            ".*\\Qexpected (ByteBuffer,int," + arrayClass.componentType().getSimpleName() + ")void \\E.*");
     }
 
     @Test(dataProvider = "dataSetMemorySegment")
     public void testExactSegmentSet(Class<?> carrier, Object testValue, SetSegmentX setter) {
         VarHandle vh = MemoryHandles.varHandle(carrier, ByteOrder.nativeOrder());
-        assertFalse(vh.hasInvokeExactBehavior());
         try (MemorySegment seg = MemorySegment.allocateNative(8)) {
-            try {
-                vh.set(seg, 0L, testValue);
-                vh.withInvokeBehavior().set(seg, 0L, testValue);
-            } catch (WrongMethodTypeException wmte) {
-                fail("Unexpected exception", wmte);
-            }
 
-            vh = vh.withInvokeExactBehavior();
-            assertTrue(vh.hasInvokeExactBehavior());
-            try {
-                setter.set(vh, seg, 0L, testValue); // should throw
-                fail("Exception expected");
-            } catch (WrongMethodTypeException wmte) {
-                assertMatches(wmte.getMessage(),
-                    ".*\\Qexpected (MemorySegment,long," + carrier.getSimpleName() + ")void \\E.*");
-            }
+            doTest(vh,
+                tvh -> tvh.set(seg, 0L, testValue),
+                tvh -> setter.set(tvh, seg, 0L, testValue),
+                ".*\\Qexpected (MemorySegment,long," + carrier.getSimpleName() + ")void \\E.*");
+        }
+    }
+
+    private static void doTest(VarHandle invokeHandle, Consumer<VarHandle> invokeTest,
+                               Consumer<VarHandle> invokeExactTest, String expectedMessage) {
+        assertFalse(invokeHandle.hasInvokeExactBehavior());
+        assertSame(invokeHandle, invokeHandle.withInvokeBehavior());
+        try {
+            invokeTest.accept(invokeHandle);
+        } catch (WrongMethodTypeException wmte) {
+            fail("Unexpected exception", wmte);
+        }
+
+        VarHandle invokeExactHandle = invokeHandle.withInvokeExactBehavior();
+        assertTrue(invokeExactHandle.hasInvokeExactBehavior());
+        assertSame(invokeExactHandle, invokeExactHandle.withInvokeExactBehavior());
+        try {
+            invokeExactTest.accept(invokeExactHandle); // should throw
+            fail("Exception expected");
+        } catch (WrongMethodTypeException wmte) {
+            assertMatches(wmte.getMessage(), expectedMessage);
+        }
+
+        // try going back
+        VarHandle invokeHandle2 = invokeExactHandle.withInvokeBehavior();
+        assertFalse(invokeHandle2.hasInvokeExactBehavior());
+        try {
+            invokeTest.accept(invokeHandle2);
+        } catch (WrongMethodTypeException wmte) {
+            fail("Unexpected exception", wmte);
         }
     }
 
