@@ -29,6 +29,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jdk.jfr.Event;
 import jdk.jfr.Recording;
@@ -63,11 +64,12 @@ public class TestLastFlush {
             r.stop();
             r.dump(tp);
         }
+        AtomicInteger counter = new AtomicInteger();
         AtomicBoolean lastFlush = new AtomicBoolean();
         try (EventStream es = EventStream.openFile(tp)) {
             es.onEvent(e -> {
                 lastFlush.set(false);
-                System.out.println("onEvent " + Instant.now());
+                System.out.println("onEvent " + counter.incrementAndGet() + " " + Instant.now());
             });
             es.onFlush(() -> {
                 lastFlush.set(true);
