@@ -2945,7 +2945,7 @@ const Type* ShenandoahLoadReferenceBarrierNode::bottom_type() const {
     return t;
   }
 
-  if (kind() == ShenandoahBarrierSet::AccessKind::NORMAL) {
+  if (ShenandoahBarrierSet::is_strong_access(decorators())) {
     return t;
   }
 
@@ -2961,7 +2961,7 @@ const Type* ShenandoahLoadReferenceBarrierNode::Value(PhaseGVN* phase) const {
     return t2;
   }
 
-  if (kind() == ShenandoahBarrierSet::AccessKind::NORMAL) {
+  if (ShenandoahBarrierSet::is_strong_access(decorators())) {
     return t2;
   }
 
