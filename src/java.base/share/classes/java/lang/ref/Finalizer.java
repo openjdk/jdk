@@ -82,7 +82,7 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
         }
 
         try {
-            Object finalizee = this.get();
+            Object finalizee = this.getInactive();
             if (finalizee != null && !(finalizee instanceof java.lang.Enum)) {
                 jla.invokeFinalize(finalizee);
 

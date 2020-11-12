@@ -544,11 +544,6 @@ public:
       Threads::threads_do(&cl);
     }
 
-    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_DEFLATE_MONITORS)) {
-      Tracer t("deflating idle monitors");
-      ObjectSynchronizer::do_safepoint_work();
-    }
-
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_UPDATE_INLINE_CACHES)) {
       Tracer t("updating inline caches");
       InlineCacheBuffer::update_inline_caches();
@@ -610,6 +605,12 @@ void SafepointSynchronize::do_cleanup_tasks() {
   }
 
   assert(InlineCacheBuffer::is_empty(), "should have cleaned up ICBuffer");
+
+  if (log_is_enabled(Debug, monitorinflation)) {
+    // The VMThread calls do_final_audit_and_print_stats() which calls
+    // audit_and_print_stats() at the Info level at VM exit time.
+    ObjectSynchronizer::audit_and_print_stats(false /* on_exit */);
+  }
 }
 
 // Methods for determining if a JavaThread is safepoint safe.
