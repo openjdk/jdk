@@ -24,6 +24,8 @@
 
 #include "precompiled.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
+#include "gc/shenandoah/shenandoahClosures.inline.hpp"
+#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetClone.inline.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
@@ -32,6 +34,8 @@
 #include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/shenandoahStackWatermark.hpp"
+#include "gc/shenandoah/shenandoahUtils.hpp"
 #include "memory/iterator.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #ifdef COMPILER1
@@ -129,6 +133,10 @@ void ShenandoahBarrierSet::on_thread_attach(Thread *thread) {
     ShenandoahThreadLocalData::set_gc_state(thread, _heap->gc_state());
     ShenandoahThreadLocalData::initialize_gclab(thread);
     ShenandoahThreadLocalData::set_disarmed_value(thread, ShenandoahCodeRoots::disarmed_value());
+
+    JavaThread* const jt = thread->as_Java_thread();
+    StackWatermark* const watermark = new ShenandoahStackWatermark(jt);
+    StackWatermarkSet::add_watermark(jt, watermark);
   }
 }
 
@@ -139,6 +147,16 @@ void ShenandoahBarrierSet::on_thread_detach(Thread *thread) {
     PLAB* gclab = ShenandoahThreadLocalData::gclab(thread);
     if (gclab != NULL) {
       gclab->retire();
+    }
+
+    // SATB protocol requires to keep alive reacheable oops from roots at the beginning of GC
+    ShenandoahHeap* const heap = ShenandoahHeap::heap();
+    if (heap->is_concurrent_mark_in_progress()) {
+      ShenandoahKeepAliveClosure oops;
+      StackWatermarkSet::finish_processing(thread->as_Java_thread(), &oops, StackWatermarkKind::gc);
+    } else if (heap->is_concurrent_weak_root_in_progress()) {
+      ShenandoahContextEvacuateUpdateRootsClosure oops;
+      StackWatermarkSet::finish_processing(thread->as_Java_thread(), &oops, StackWatermarkKind::gc);
     }
   }
 }

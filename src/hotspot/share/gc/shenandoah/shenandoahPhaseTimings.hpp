@@ -76,6 +76,9 @@ class outputStream;
   f(init_evac,                                      "  Initial Evacuation")            \
   SHENANDOAH_PAR_PHASE_DO(evac_,                    "    E: ", f)                      \
                                                                                        \
+  f(conc_thread_roots,                              "Concurrent Stack Processing")     \
+  f(conc_thread_roots_work,                           "  Threads")                     \
+  SHENANDOAH_PAR_PHASE_DO(conc_thread_roots_work_,    "    CT: ", f)                   \
   f(conc_weak_refs,                                 "Concurrent Weak References")      \
   f(conc_weak_refs_work,                            "  Process")                       \
   SHENANDOAH_PAR_PHASE_DO(conc_weak_refs_work_,     "    CWRF: ", f)                   \

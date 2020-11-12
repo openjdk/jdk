@@ -104,7 +104,6 @@ private:
   const bool _is_par;
 public:
   ShenandoahThreadRoots(ShenandoahPhaseTimings::Phase phase, bool is_par);
-  ~ShenandoahThreadRoots();
 
   void oops_do(OopClosure* oops_cl, CodeBlobClosure* code_cl, uint worker_id);
   void threads_do(ThreadClosure* tc, uint worker_id);
@@ -214,6 +213,7 @@ public:
 
 class ShenandoahConcurrentRootScanner : public ShenandoahRootProcessor {
 private:
+  ShenandoahJavaThreadsIterator             _java_threads;
   ShenandoahVMRoots<true /*concurrent*/>    _vm_roots;
   ShenandoahClassLoaderDataRoots<true /*concurrent*/, false /* single-threaded*/>
                                            _cld_roots;
@@ -225,6 +225,9 @@ public:
   ~ShenandoahConcurrentRootScanner();
 
   void roots_do(OopClosure* oops, uint worker_id);
+
+private:
+  void update_tlab_stats();
 };
 
 // This scanner is only for SH::object_iteration() and only supports single-threaded

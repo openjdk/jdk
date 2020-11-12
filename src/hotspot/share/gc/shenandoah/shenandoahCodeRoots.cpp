@@ -128,15 +128,16 @@ void ShenandoahCodeRoots::flush_nmethod(nmethod* nm) {
 
 void ShenandoahCodeRoots::arm_nmethods() {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
-  _disarmed_value ++;
+  int* value_addr = disarmed_value_address();
+  (*value_addr) ++;
   // 0 is reserved for new nmethod
-  if (_disarmed_value == 0) {
-    _disarmed_value = 1;
+  if (*value_addr == 0) {
+    *value_addr = 1;
   }
 
   JavaThreadIteratorWithHandle jtiwh;
   for (JavaThread *thr = jtiwh.next(); thr != NULL; thr = jtiwh.next()) {
-    ShenandoahThreadLocalData::set_disarmed_value(thr, _disarmed_value);
+    ShenandoahThreadLocalData::set_disarmed_value(thr, *value_addr);
   }
 }
 

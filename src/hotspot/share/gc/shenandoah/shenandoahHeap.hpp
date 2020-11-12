@@ -512,6 +512,11 @@ public:
   void sync_pinned_region_status();
   void assert_pinned_region_status() NOT_DEBUG_RETURN;
 
+// ---------- Concurrent Stack Processing support
+//
+public:
+  bool uses_stack_watermark_barrier() const { return true; }
+
 // ---------- Allocation support
 //
 private:
@@ -600,7 +605,7 @@ private:
   ShenandoahCollectionSet* _collection_set;
   ShenandoahEvacOOMHandler _oom_evac_handler;
 
-  void evacuate_and_update_roots();
+  void evacuate_and_update_roots(bool cleanup_only);
 
 public:
   static address in_cset_fast_test_addr();

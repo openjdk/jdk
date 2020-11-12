@@ -215,25 +215,6 @@ public:
 ShenandoahConcurrentMark::ShenandoahConcurrentMark() :
   ShenandoahMark() {}
 
-void ShenandoahConcurrentMark::mark_stw_roots() {
-  assert(Thread::current()->is_VM_thread(), "Can only do this in VMThread");
-  assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
-  assert(!_heap->has_forwarded_objects(), "Not expected");
-
-  ShenandoahGCPhase phase(ShenandoahPhaseTimings::scan_roots);
-
-  WorkGang* workers = ShenandoahHeap::heap()->workers();
-  uint nworkers = workers->active_workers();
-
-  assert(nworkers <= task_queues()->size(), "Just check");
-
-  TASKQUEUE_STATS_ONLY(task_queues()->reset_taskqueue_stats());
-  task_queues()->reserve(nworkers);
-
-  ShenandoahInitMarkRootsTask mark_roots(nworkers, task_queues());
-  workers->run_task(&mark_roots);
-}
-
 void ShenandoahConcurrentMark::update_roots(ShenandoahPhaseTimings::Phase root_phase) {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
   assert(root_phase == ShenandoahPhaseTimings::full_gc_update_roots ||

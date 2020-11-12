@@ -31,9 +31,11 @@
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
+#include "gc/shenandoah/shenandoahStackWatermark.hpp"
 #include "gc/shenandoah/shenandoahStringDedup.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/stackWatermarkSet.inline.hpp"
 #include "runtime/thread.hpp"
 
 ShenandoahWeakSerialRoot::ShenandoahWeakSerialRoot(ShenandoahWeakSerialRoot::WeakOopsDo weak_oops_do,
@@ -63,6 +65,23 @@ void ShenandoahSerialWeakRoots::weak_oops_do(OopClosure* cl, uint worker_id) {
   weak_oops_do(&always_true, cl, worker_id);
 }
 
+ShenandoahJavaThreadsIterator::ShenandoahJavaThreadsIterator(ShenandoahPhaseTimings::Phase phase) :
+  _threads(),
+  _claimed(0),
+  _phase(phase) {
+}
+
+uint ShenandoahJavaThreadsIterator::claim() {
+  return Atomic::fetch_and_add(&_claimed, 1u);
+}
+
+void ShenandoahJavaThreadsIterator::threads_do(ThreadClosure* cl, uint worker_id) {
+  ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::ThreadRoots, worker_id);
+  for (uint i = claim(); i < _threads.length(); i = claim()) {
+    cl->do_thread(_threads.thread_at(i));
+  }
+}
+
 ShenandoahThreadRoots::ShenandoahThreadRoots(ShenandoahPhaseTimings::Phase phase, bool is_par) :
   _phase(phase), _is_par(is_par) {
   Threads::change_thread_claim_token();
@@ -78,10 +97,6 @@ void ShenandoahThreadRoots::threads_do(ThreadClosure* tc, uint worker_id) {
   ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::ThreadRoots, worker_id);
   ResourceMark rm;
   Threads::possibly_parallel_threads_do(_is_par, tc);
-}
-
-ShenandoahThreadRoots::~ShenandoahThreadRoots() {
-  Threads::assert_all_threads_claimed();
 }
 
 ShenandoahStringDedupRoots::ShenandoahStringDedupRoots(ShenandoahPhaseTimings::Phase phase) : _phase(phase) {
@@ -189,9 +204,30 @@ ShenandoahSTWRootScanner::ShenandoahSTWRootScanner(ShenandoahPhaseTimings::Phase
    _unload_classes(ShenandoahHeap::heap()->unload_classes()) {
 }
 
+class ShenandoahConcurrentMarkThreadClosure : public ThreadClosure {
+private:
+  OopClosure* const _oops;
+
+public:
+  ShenandoahConcurrentMarkThreadClosure(OopClosure* oops);
+  void do_thread(Thread* thread);
+};
+
+ShenandoahConcurrentMarkThreadClosure::ShenandoahConcurrentMarkThreadClosure(OopClosure* oops) :
+  _oops(oops) {
+}
+
+void ShenandoahConcurrentMarkThreadClosure::do_thread(Thread* thread) {
+  assert(thread->is_Java_thread(), "Must be");
+  JavaThread* const jt = thread->as_Java_thread();
+  StackWatermarkSet::finish_processing(jt, _oops, StackWatermarkKind::gc);
+//  ZThreadLocalAllocBuffer::update_stats(jt);
+}
+
 ShenandoahConcurrentRootScanner::ShenandoahConcurrentRootScanner(uint n_workers,
                                                                  ShenandoahPhaseTimings::Phase phase) :
-   ShenandoahRootProcessor(phase),
+  ShenandoahRootProcessor(phase),
+  _java_threads(phase),
   _vm_roots(phase),
   _cld_roots(phase, n_workers),
   _codecache_snapshot(NULL),
@@ -200,6 +236,7 @@ ShenandoahConcurrentRootScanner::ShenandoahConcurrentRootScanner(uint n_workers,
     CodeCache_lock->lock_without_safepoint_check();
     _codecache_snapshot = ShenandoahCodeRoots::table()->snapshot_for_iteration();
   }
+  update_tlab_stats();
   assert(!ShenandoahHeap::heap()->has_forwarded_objects(), "Not expecting forwarded pointers during concurrent marking");
 }
 
@@ -213,6 +250,10 @@ ShenandoahConcurrentRootScanner::~ShenandoahConcurrentRootScanner() {
 void ShenandoahConcurrentRootScanner::roots_do(OopClosure* oops, uint worker_id) {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   CLDToOopClosure clds_cl(oops, ClassLoaderData::_claim_strong);
+
+  ShenandoahConcurrentMarkThreadClosure thr_cl(oops);
+  _java_threads.threads_do(&thr_cl, worker_id);
+
   _vm_roots.oops_do(oops, worker_id);
 
   if (!heap->unload_classes()) {
@@ -223,6 +264,20 @@ void ShenandoahConcurrentRootScanner::roots_do(OopClosure* oops, uint worker_id)
     _codecache_snapshot->parallel_blobs_do(&blobs);
   } else {
     _cld_roots.always_strong_cld_do(&clds_cl, worker_id);
+  }
+}
+
+void ShenandoahConcurrentRootScanner::update_tlab_stats() {
+  if (UseTLAB) {
+    ThreadLocalAllocStats total;
+    for (uint i = 0; i < _java_threads.length(); i ++) {
+      Thread* thr = _java_threads.thread_at(i);
+      if (thr->is_Java_thread()) {
+        ShenandoahStackWatermark* wm = StackWatermarkSet::get<ShenandoahStackWatermark>(thr->as_Java_thread(), StackWatermarkKind::gc);
+        total.update(wm->stats());
+      }
+    }
+    total.publish();
   }
 }
 
