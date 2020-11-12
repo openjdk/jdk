@@ -19,27 +19,17 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/*
- * @test
- * @modules java.base/jdk.internal.misc
- *          jdk.incubator.foreign/jdk.internal.foreign
- * @run testng TestNoForeignUnsafeOverride
- */
 
-import jdk.incubator.foreign.MemoryAddress;
+#ifndef SHARE_PRIMS_SCOPED_MEMORY_ACCESS_HPP
+#define SHARE_PRIMS_SCOPED_MEMORY_ACCESS_HPP
 
-import jdk.incubator.foreign.MemorySegment;
-import org.testng.annotations.Test;
+#include "jni.h"
 
-public class TestNoForeignUnsafeOverride {
-    static {
-        System.setProperty("foreign.restricted", "permit");
-    }
-
-    @Test(expectedExceptions = IllegalAccessError.class)
-    public void testUnsafeAccess() {
-        MemorySegment.ofNativeRestricted();
-    }
+extern "C" {
+  void JNICALL JVM_RegisterJDKInternalMiscScopedMemoryAccessMethods(JNIEnv *env, jobject rec, jobject scope, jthrowable exception);
 }
+
+#endif // SHARE_PRIMS_SCOPED_MEMORY_ACCESS_HPP

@@ -217,7 +217,8 @@ module java.base {
     exports jdk.internal.platform to
         jdk.management;
     exports jdk.internal.ref to
-        java.desktop;
+        java.desktop,
+        jdk.incubator.foreign;
     exports jdk.internal.reflect to
         java.logging,
         java.sql,
