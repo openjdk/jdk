@@ -92,6 +92,9 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
     private static final boolean disableEagerInitialization;
 
+    // condy to load implMethod from class data
+    private static final ConstantDynamic implMethodCondy;
+
     static {
         final String dumpProxyClassesKey = "jdk.internal.lambda.dumpProxyClasses";
         String dumpPath = GetPropertyAction.privilegedGetProperty(dumpProxyClassesKey);
@@ -99,6 +102,12 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
         final String disableEagerInitializationKey = "jdk.internal.lambda.disableEagerInitialization";
         disableEagerInitialization = GetBooleanAction.privilegedGetProperty(disableEagerInitializationKey);
+
+        // condy to load implMethod from class data
+        MethodType classDataMType = MethodType.methodType(Object.class, MethodHandles.Lookup.class, String.class, Class.class);
+        Handle classDataBsm = new Handle(H_INVOKESTATIC, Type.getInternalName(MethodHandles.class), "classData",
+                                         classDataMType.descriptorString(), false);
+        implMethodCondy = new ConstantDynamic("implMethod", MethodHandle.class.descriptorString(), classDataBsm);
     }
 
     // See context values in AbstractValidatingLambdaMetafactory
@@ -546,10 +555,6 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
                 visitInsn(DUP);
             }
             if (useImplMethodHandle) {
-                MethodType classDataMType = MethodType.methodType(Object.class, MethodHandles.Lookup.class, String.class, Class.class);
-                Handle classDataBsm = new Handle(H_INVOKESTATIC, Type.getInternalName(MethodHandles.class), "classData",
-                                                 classDataMType.descriptorString(), false);
-                ConstantDynamic implMethodCondy = new ConstantDynamic("implMethod", MethodHandle.class.descriptorString(), classDataBsm);
                 visitLdcInsn(implMethodCondy);
             }
             for (int i = 0; i < argNames.length; i++) {

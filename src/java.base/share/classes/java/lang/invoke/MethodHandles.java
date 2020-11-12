@@ -303,7 +303,7 @@ public class MethodHandles {
      * @param <T> the type to cast the class data object to
      * @param caller the lookup context describing the class performing the
      * operation (normally stacked by the JVM)
-     * @param name ignored
+     * @param name unused
      * @param type the type of the class data
      * @return the value of the class data if present in the lookup class;
      * otherwise {@code null}
@@ -311,12 +311,14 @@ public class MethodHandles {
      * {@linkplain Lookup#ORIGINAL original} access
      * @throws ClassCastException if the class data cannot be converted to
      * the given {@code type}
+     * @throws NullPointerException if {@code caller} or {@code type} argument
+     * is {@code null}
      * @see Lookup#defineHiddenClassWithClassData(byte[], Object, boolean, Lookup.ClassOption...)
      * @since 16
      * @jvms 5.5 Initialization
      */
      public static <T> T classData(Lookup caller, String name, Class<T> type) throws IllegalAccessException {
-         Objects.requireNonNull(name);
+         Objects.requireNonNull(caller);
          Objects.requireNonNull(type);
 
          if ((caller.lookupModes() & Lookup.ORIGINAL) != Lookup.ORIGINAL)  {
@@ -374,13 +376,14 @@ public class MethodHandles {
      * @param type the type of the element at the given index in the class data
      * @param index index of the element in the class data
      * @return the element at the given index in the class data
-     * if present; otherwise {@code null}
+     * if the class data is present; otherwise {@code null}
      * @throws IllegalAccessException if the lookup context does not have
      * {@linkplain Lookup#ORIGINAL original} access
      * @throws ClassCastException if the class data cannot be converted to {@code List}
      * or the element at the specified index cannot be converted to the given type
      * @throws IndexOutOfBoundsException if the index is out of range
-     * @throws NullPointerException if unboxing operation fails because
+     * @throws NullPointerException if {@code caller} or {@code type} argument is
+     * {@code null}; or if unboxing operation fails because
      * the element at the given index is {@code null}
      *
      * @since 16
@@ -390,22 +393,14 @@ public class MethodHandles {
     /* package-private */ static <T> T classDataAt(Lookup caller, String name, Class<T> type, int index)
             throws IllegalAccessException
     {
-        Objects.requireNonNull(type);
-
-        if ((caller.lookupModes() & Lookup.ORIGINAL) != Lookup.ORIGINAL)  {
-            throw new IllegalAccessException(caller + " does not have ORIGINAL access");
-        }
-
-        Object classdata = MethodHandleNatives.classData(caller.lookupClass());
+        @SuppressWarnings("unchecked")
+        List<Object> classdata = (List<Object>)classData(caller, name, List.class);
         if (classdata == null) return null;
 
-        @SuppressWarnings("unchecked")
-        List<T> classData = List.class.cast(classdata);
-        Object element = classData.get(index);
-
         try {
+            Object element = classdata.get(index);
             return BootstrapMethodInvoker.widenAndCast(element, type);
-        } catch (ClassCastException|NullPointerException e) {
+        } catch (ClassCastException|NullPointerException|IndexOutOfBoundsException e) {
             throw e;
         } catch (Throwable e) {
             throw new InternalError(e);

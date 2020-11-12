@@ -180,7 +180,7 @@ public class AccessControlTest {
          * {@linkplain #accessClass(Class) accessible} to this lookup,
          * then no members, not even public members, will be accessible
          * i.e. all access modes are lost.
-         * [A8] If the new lookup class, the old lookup class and the previous lookup class
+         * [A7] If the new lookup class, the old lookup class and the previous lookup class
          * are all in different modules i.e. teleporting to a third module,
          * all access modes are lost.
          * <p>

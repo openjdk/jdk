@@ -75,7 +75,7 @@ public class ClassDataTest {
      */
     @Test
     public void noClassData() throws Throwable {
-        assertTrue(MethodHandles.classData(LOOKUP, "dummy", Object.class) == null);
+        assertNull(MethodHandles.classData(LOOKUP, "dummy", Object.class));
     }
 
     @DataProvider(name = "teleportedLookup")
