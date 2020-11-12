@@ -327,7 +327,9 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
 
         final ColorUIResource selectedTabTitlePressedColor = new ColorUIResource(240, 240, 240);
         final ColorUIResource selectedTabTitleDisabledColor = new ColorUIResource(new Color(1, 1, 1, 0.55f));
-        final ColorUIResource selectedTabTitleNormalColor = white;
+        final ColorUIResource selectedTabTitleNormalColor =
+                        System.getProperty("os.version").contains("10.16") ?
+                                    new ColorUIResource(Color.lightGray) : white;
         final ColorUIResource selectedTabTitleShadowDisabledColor = new ColorUIResource(new Color(0, 0, 0, 0.25f));
         final ColorUIResource selectedTabTitleShadowNormalColor = mediumTranslucentBlack;
         final ColorUIResource nonSelectedTabTitleNormalColor = black;
