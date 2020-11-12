@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,34 +23,24 @@
  * questions.
  */
 
-package java.lang.invoke;
+package jdk.incubator.foreign;
 
 /**
- * Base class for memory access var handle implementations.
+ * Represents a type which is <em>addressable</em>. An addressable type is one which can be projected down to
+ * a memory address instance (see {@link #address()}). Examples of addressable types are {@link MemorySegment},
+ * and {@link MemoryAddress}.
+ *
+ * @apiNote In the future, if the Java language permits, {@link Addressable}
+ * may become a {@code sealed} interface, which would prohibit subclassing except by
+ * explicitly permitted types, such as {@link MemorySegment} and {@link MemoryAddress}.
+ *
+ * @implSpec
+ * Implementations of this interface <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  */
-abstract class MemoryAccessVarHandleBase extends VarHandle {
-
-    /** endianness **/
-    final boolean be;
-
-    /** access size (in bytes, computed from var handle carrier type) **/
-    final long length;
-
-    /** alignment constraint (in bytes, expressed as a bit mask) **/
-    final long alignmentMask;
-
-    /** if true, only the base part of the address will be checked for alignment **/
-    final boolean skipAlignmentMaskCheck;
-
-    MemoryAccessVarHandleBase(VarForm form, boolean skipAlignmentMaskCheck, boolean be, long length, long alignmentMask, boolean exact) {
-        super(form, exact);
-        this.skipAlignmentMaskCheck = skipAlignmentMaskCheck;
-        this.be = be;
-        this.length = length;
-        this.alignmentMask = alignmentMask;
-    }
-
-    static IllegalStateException newIllegalStateExceptionForMisalignedAccess(long address) {
-        return new IllegalStateException("Misaligned access at address: " + address);
-    }
+public interface Addressable {
+    /**
+     * Map this object into a {@link MemoryAddress} instance.
+     * @return the {@link MemoryAddress} instance associated with this object.
+     */
+    MemoryAddress address();
 }
