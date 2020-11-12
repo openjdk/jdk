@@ -81,7 +81,21 @@ class G1RegionsLargerThanCommitSizeMapper : public G1RegionToSpaceMapper {
     guarantee(alloc_granularity >= page_size, "allocation granularity smaller than commit granularity");
   }
 
+  bool committed_range(uint start_idx, size_t num_regions) {
+    BitMap::idx_t end = start_idx + num_regions;
+    return _region_commit_map.get_next_zero_offset(start_idx, end) == end;
+  }
+
+  bool uncommitted_range(uint start_idx, size_t num_regions) {
+    BitMap::idx_t end = start_idx + num_regions;
+    return _region_commit_map.get_next_one_offset(start_idx, end) == end;
+  }
+
   virtual void commit_regions(uint start_idx, size_t num_regions, WorkGang* pretouch_gang) {
+    guarantee(uncommitted_range(start_idx, num_regions),
+              "Range not uncommitted, start: %u, num_regions: " SIZE_FORMAT,
+              start_idx, num_regions);
+
     const size_t start_page = (size_t)start_idx * _pages_per_region;
     const size_t size_in_pages = num_regions * _pages_per_region;
     bool zero_filled = _storage.commit(start_page, size_in_pages);
@@ -95,13 +109,17 @@ class G1RegionsLargerThanCommitSizeMapper : public G1RegionToSpaceMapper {
     if (AlwaysPreTouch) {
       _storage.pretouch(start_page, size_in_pages, pretouch_gang);
     }
-    _region_commit_map.set_range(start_idx, start_idx + num_regions);
+    _region_commit_map.par_set_range(start_idx, start_idx + num_regions, BitMap::unknown_range);
     fire_on_commit(start_idx, num_regions, zero_filled);
   }
 
   virtual void uncommit_regions(uint start_idx, size_t num_regions) {
+    guarantee(committed_range(start_idx, num_regions),
+             "Range not committed, start: %u, num_regions: " SIZE_FORMAT,
+              start_idx, num_regions);
+
     _storage.uncommit((size_t)start_idx * _pages_per_region, num_regions * _pages_per_region);
-    _region_commit_map.clear_range(start_idx, start_idx + num_regions);
+    _region_commit_map.par_clear_range(start_idx, start_idx + num_regions, BitMap::unknown_range);
   }
 };
 
@@ -110,6 +128,14 @@ class G1RegionsLargerThanCommitSizeMapper : public G1RegionToSpaceMapper {
 // Basically, the contents of one OS page span several regions.
 class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
   size_t _regions_per_page;
+  // Lock to prevent bitmap updates and the actual underlying
+  // commit to get out of order. This can happen in the cases
+  // where one thread is expanding the heap during a humongous
+  // allocation and at the same time the service thread is
+  // doing uncommit. These operations will not operate on the
+  // same regions, but they might operate on regions sharing
+  // an underlying OS page.
+  Mutex _lock;
 
   size_t region_idx_to_page_idx(uint region_idx) const {
     return region_idx / _regions_per_page;
@@ -139,7 +165,8 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
                                        size_t commit_factor,
                                        MEMFLAGS type) :
     G1RegionToSpaceMapper(rs, actual_size, page_size, alloc_granularity, commit_factor, type),
-    _regions_per_page((page_size * commit_factor) / alloc_granularity) {
+    _regions_per_page((page_size * commit_factor) / alloc_granularity),
+    _lock(Mutex::leaf, "G1 mapper lock", true, Mutex::_safepoint_check_never) {
 
     guarantee((page_size * commit_factor) >= alloc_granularity, "allocation granularity smaller than commit granularity");
   }
@@ -159,29 +186,35 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
     size_t end_page = region_idx_to_page_idx(region_limit - 1);
 
     bool all_zero_filled = true;
-    for (size_t page = start_page; page <= end_page; page++) {
-      if (!is_page_committed(page)) {
-        // Page not committed.
-        if (num_committed == 0) {
-          first_committed = page;
-        }
-        num_committed++;
 
-        if (!_storage.commit(page, 1)) {
-          // Found dirty region during commit.
+    // Concurrent operations might operate on regions sharing the same
+    // underlying OS page. See lock declaration for more details.
+    MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
+    {
+      for (size_t page = start_page; page <= end_page; page++) {
+        if (!is_page_committed(page)) {
+          // Page not committed.
+          if (num_committed == 0) {
+            first_committed = page;
+          }
+          num_committed++;
+
+          if (!_storage.commit(page, 1)) {
+            // Found dirty region during commit.
+            all_zero_filled = false;
+          }
+
+          // Move memory to correct NUMA node for the heap.
+          numa_request_on_node(page);
+        } else {
+          // Page already committed.
           all_zero_filled = false;
         }
-
-        // Move memory to correct NUMA node for the heap.
-        numa_request_on_node(page);
-      } else {
-        // Page already committed.
-        all_zero_filled = false;
       }
-    }
 
-    // Update the commit map for the given range.
-    _region_commit_map.set_range(start_idx, region_limit);
+      // Update the commit map for the given range.
+      _region_commit_map.par_set_range(start_idx, region_limit, BitMap::unknown_range);
+    }
 
     if (AlwaysPreTouch && num_committed > 0) {
       _storage.pretouch(first_committed, num_committed, pretouch_gang);
@@ -199,8 +232,11 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
     size_t start_page = region_idx_to_page_idx(start_idx);
     size_t end_page = region_idx_to_page_idx(region_limit - 1);
 
+    // Concurrent operations might operate on regions sharing the same
+    // underlying OS page. See lock declaration for more details.
+    MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
     // Clear commit map for the given range.
-    _region_commit_map.clear_range(start_idx, region_limit);
+    _region_commit_map.par_clear_range(start_idx, region_limit, BitMap::unknown_range);
 
     for (size_t page = start_page; page <= end_page; page++) {
       // We know all pages were committed before clearing the map. If the
