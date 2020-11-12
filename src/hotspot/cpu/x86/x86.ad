@@ -5787,7 +5787,7 @@ instruct evminmaxFP_reg_eavx(vec dst, vec a, vec b, vec atmp, vec btmp) %{
             is_floating_point_type(vector_element_basic_type(n))); // T_FLOAT, T_DOUBLE
   match(Set dst (MinV a b));
   match(Set dst (MaxV a b));
-  effect(USE a, USE b, TEMP atmp, TEMP btmp);
+  effect(TEMP dst, USE a, USE b, TEMP atmp, TEMP btmp);
   format %{ "vector_minmaxFP  $dst,$a,$b\t!using $atmp, $btmp as TEMP" %}
   ins_encode %{
     assert(UseAVX > 2, "required");

@@ -1452,7 +1452,8 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
       }
     }
 
-    if (VerifyMergedCPBytecodes) {
+#ifdef ASSERT
+    {
       // verify what we have done during constant pool merging
       {
         RedefineVerifyMark rvm(the_class, scratch_class, state);
@@ -1472,6 +1473,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
         }
       }
     }
+#endif // ASSERT
 
     Rewriter::rewrite(scratch_class, THREAD);
     if (!HAS_PENDING_EXCEPTION) {
