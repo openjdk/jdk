@@ -1760,8 +1760,8 @@ final class WPathGraphics extends PathGraphics {
             /* Convert the quad path to a bezier.
              */
              case PathIterator.SEG_QUADTO:
-                int lastX = wPrinterJob.getPenX();
-                int lastY = wPrinterJob.getPenY();
+                float lastX = wPrinterJob.getPenX();
+                float lastY = wPrinterJob.getPenY();
                 float c1x = lastX + (segment[0] - lastX) * 2 / 3;
                 float c1y = lastY + (segment[1] - lastY) * 2 / 3;
                 float c2x = segment[2] - (segment[2] - segment[0]) * 2/ 3;
