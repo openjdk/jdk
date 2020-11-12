@@ -35,7 +35,7 @@ public:
                                                      RegionData* data, size_t size,
                                                      size_t free);
 
-  virtual bool should_start_gc() const;
+  virtual bool should_start_gc();
 
   virtual bool should_unload_classes();
 

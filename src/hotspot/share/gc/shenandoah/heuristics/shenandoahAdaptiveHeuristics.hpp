@@ -69,7 +69,7 @@ public:
   void record_success_degenerated();
   void record_success_full();
 
-  virtual bool should_start_gc() const;
+  virtual bool should_start_gc();
 
   virtual const char* name()     { return "Adaptive"; }
   virtual bool is_diagnostic()   { return false; }
@@ -80,7 +80,7 @@ public:
   bool is_learning_necessary(size_t capacity, size_t available) const;
   bool is_allocation_rate_too_high(size_t capacity,
                                    size_t available,
-                                   size_t bytes_allocated_since_gc_start) const;
+                                   size_t bytes_allocated_since_gc_start);
 
  private:
   // These are used to adjust the margin of error and the spike threshold

@@ -194,7 +194,7 @@ static double saturate(double value, double min, double max) {
   return MAX2(MIN2(value, max), min);
 }
 
-bool ShenandoahAdaptiveHeuristics::should_start_gc() const {
+bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   size_t max_capacity = heap->max_capacity();
   size_t capacity = heap->soft_max_capacity();
@@ -207,9 +207,8 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() const {
   size_t bytes_allocated_since_gc_start = heap->bytes_allocated_since_gc_start();
 
   // Track allocation rate even if we decide to start a cycle for other reasons.
-  ShenandoahAdaptiveHeuristics *heuristic = const_cast<ShenandoahAdaptiveHeuristics *>(this);
-  heuristic->_allocation_rate.sample(bytes_allocated_since_gc_start);
-  heuristic->_last_trigger = OTHER;
+  _allocation_rate.sample(bytes_allocated_since_gc_start);
+  _last_trigger = OTHER;
 
   if (is_available_below_min_threshold(capacity, available)) {
     return true;
@@ -258,7 +257,7 @@ bool ShenandoahAdaptiveHeuristics::is_learning_necessary(size_t capacity,
 
 bool ShenandoahAdaptiveHeuristics::is_allocation_rate_too_high(size_t capacity,
                                                                size_t available,
-                                                               size_t bytes_allocated_since_gc_start) const {
+                                                               size_t bytes_allocated_since_gc_start) {
   // Check if allocation headroom is still okay. This also factors in:
   //   1. Some space to absorb allocation spikes
   //   2. Accumulated penalties from Degenerated and Full GC
@@ -285,7 +284,7 @@ bool ShenandoahAdaptiveHeuristics::is_allocation_rate_too_high(size_t capacity,
                        byte_size_in_proper_unit(penalties),           proper_unit_for_byte_size(penalties),
                        byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom));
 
-    const_cast<ShenandoahAdaptiveHeuristics *>(this)->_last_trigger = RATE;
+    _last_trigger = RATE;
     return true;
   }
 
@@ -295,7 +294,7 @@ bool ShenandoahAdaptiveHeuristics::is_allocation_rate_too_high(size_t capacity,
                  byte_size_in_proper_unit(instantaneous_rate), proper_unit_for_byte_size(instantaneous_rate),
                  byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom),
                  average_cycle_seconds * 1000);
-    const_cast<ShenandoahAdaptiveHeuristics *>(this)->_last_trigger = SPIKE;
+    _last_trigger = SPIKE;
     return true;
   }
 

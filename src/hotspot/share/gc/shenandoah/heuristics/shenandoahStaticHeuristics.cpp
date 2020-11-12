@@ -39,7 +39,7 @@ ShenandoahStaticHeuristics::ShenandoahStaticHeuristics() : ShenandoahHeuristics(
 
 ShenandoahStaticHeuristics::~ShenandoahStaticHeuristics() {}
 
-bool ShenandoahStaticHeuristics::should_start_gc() const {
+bool ShenandoahStaticHeuristics::should_start_gc() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   size_t max_capacity = heap->max_capacity();
