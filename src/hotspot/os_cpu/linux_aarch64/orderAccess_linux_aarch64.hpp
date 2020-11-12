@@ -57,6 +57,4 @@ inline void OrderAccess::cross_modify_fence_impl() {
   asm volatile("isb" : : : "memory");
 }
 
-#undef inlasm_isb
-
 #endif // OS_CPU_LINUX_AARCH64_ORDERACCESS_LINUX_AARCH64_HPP

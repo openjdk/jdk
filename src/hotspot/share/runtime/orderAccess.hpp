@@ -230,7 +230,7 @@
 // order.  If their implementations change such that these assumptions
 // are violated, a whole lot of code will break.
 //
-// Finally, we define an "instruction_fence" operation, as a bidirectional
+// Finally, we define a "cross_modify_fence" operation, as a bidirectional
 // barrier for the instruction code cache. It guarantees that any memory access
 // to the instruction code preceding the fence is not reordered w.r.t. any
 // memory accesses to instruction code subsequent to the fence in program order.
@@ -239,10 +239,6 @@
 // [1] Directly before running a new thread [See JavaThread::run()]
 // [2] Whilst in the VM, on exit from being suspended in a safepoint. [See
 //     SafepointMechanism::process_if_requested_slow()]
-// [3] Whilst in the VM, on exit from blocking [See ThreadBlockInVM
-//     and ThreadBlockInVMWithDeadlockCheck]
-// [4] At the end of a JNI call, on exit from blocking. [See
-//     JavaThread::check_safepoint_and_suspend_for_native_trans()]
 
 class OrderAccess : public AllStatic {
  public:
