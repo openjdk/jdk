@@ -1669,8 +1669,11 @@ char* os::attempt_reserve_memory_at(char* addr, size_t bytes) {
   if (result != NULL) {
     MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
   } else {
-    log_info(metaspace)("Attempt to reserve memory at " INTPTR_FORMAT " for "
-                         SIZE_FORMAT " bytes failed", p2i(addr), bytes);
+    LogTarget(Debug, os, metaspace) lt;
+    if (lt.is_enabled()) {
+      lt.print("Attempt to reserve memory at " INTPTR_FORMAT " for "
+                         SIZE_FORMAT " bytes failed\n", p2i(addr), bytes);
+    }
   }
   return result;
 }
