@@ -83,8 +83,7 @@ jint ParallelScavengeHeap::initialize() {
   assert(MinNewSize <= NewSize && NewSize <= MaxNewSize, "Parameter check");
 
   // Layout the reserved space for the generations.
-  // If OldGen is allocated on nv-dimm, we need to split the reservation (this is required for windows).
-  ReservedSpace old_rs   = heap_rs.first_part(MaxOldSize, ParallelArguments::is_heterogeneous_heap() /* split */);
+  ReservedSpace old_rs   = heap_rs.first_part(MaxOldSize);
   ReservedSpace young_rs = heap_rs.last_part(MaxOldSize);
   assert(young_rs.size() == MaxNewSize, "Didn't reserve all of the heap");
 
@@ -123,8 +122,7 @@ jint ParallelScavengeHeap::initialize() {
                              GCTimeRatio
                              );
 
-  assert(ParallelArguments::is_heterogeneous_heap() ||
-         (old_gen()->virtual_space()->high_boundary() ==
+  assert((old_gen()->virtual_space()->high_boundary() ==
           young_gen()->virtual_space()->low_boundary()),
          "Boundaries must meet");
   // initialize the policy counters - 2 collectors, 2 generations

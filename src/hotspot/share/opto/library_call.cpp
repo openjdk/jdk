@@ -5614,22 +5614,10 @@ bool LibraryCallKit::inline_aescrypt_Block(vmIntrinsics::ID id) {
   Node* k_start = get_key_start_from_aescrypt_object(aescrypt_object);
   if (k_start == NULL) return false;
 
-  if (Matcher::pass_original_key_for_aes()) {
-    // on SPARC we need to pass the original key since key expansion needs to happen in intrinsics due to
-    // compatibility issues between Java key expansion and SPARC crypto instructions
-    Node* original_k_start = get_original_key_start_from_aescrypt_object(aescrypt_object);
-    if (original_k_start == NULL) return false;
-
-    // Call the stub.
-    make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::aescrypt_block_Type(),
-                      stubAddr, stubName, TypePtr::BOTTOM,
-                      src_start, dest_start, k_start, original_k_start);
-  } else {
-    // Call the stub.
-    make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::aescrypt_block_Type(),
-                      stubAddr, stubName, TypePtr::BOTTOM,
-                      src_start, dest_start, k_start);
-  }
+  // Call the stub.
+  make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::aescrypt_block_Type(),
+                    stubAddr, stubName, TypePtr::BOTTOM,
+                    src_start, dest_start, k_start);
 
   return true;
 }
@@ -5712,25 +5700,11 @@ bool LibraryCallKit::inline_cipherBlockChaining_AESCrypt(vmIntrinsics::ID id) {
   if (objRvec == NULL) return false;
   Node* r_start = array_element_address(objRvec, intcon(0), T_BYTE);
 
-  Node* cbcCrypt;
-  if (Matcher::pass_original_key_for_aes()) {
-    // on SPARC we need to pass the original key since key expansion needs to happen in intrinsics due to
-    // compatibility issues between Java key expansion and SPARC crypto instructions
-    Node* original_k_start = get_original_key_start_from_aescrypt_object(aescrypt_object);
-    if (original_k_start == NULL) return false;
-
-    // Call the stub, passing src_start, dest_start, k_start, r_start, src_len and original_k_start
-    cbcCrypt = make_runtime_call(RC_LEAF|RC_NO_FP,
-                                 OptoRuntime::cipherBlockChaining_aescrypt_Type(),
-                                 stubAddr, stubName, TypePtr::BOTTOM,
-                                 src_start, dest_start, k_start, r_start, len, original_k_start);
-  } else {
-    // Call the stub, passing src_start, dest_start, k_start, r_start and src_len
-    cbcCrypt = make_runtime_call(RC_LEAF|RC_NO_FP,
-                                 OptoRuntime::cipherBlockChaining_aescrypt_Type(),
-                                 stubAddr, stubName, TypePtr::BOTTOM,
-                                 src_start, dest_start, k_start, r_start, len);
-  }
+  // Call the stub, passing src_start, dest_start, k_start, r_start and src_len
+  Node* cbcCrypt = make_runtime_call(RC_LEAF|RC_NO_FP,
+                                     OptoRuntime::cipherBlockChaining_aescrypt_Type(),
+                                     stubAddr, stubName, TypePtr::BOTTOM,
+                                     src_start, dest_start, k_start, r_start, len);
 
   // return cipher length (int)
   Node* retvalue = _gvn.transform(new ProjNode(cbcCrypt, TypeFunc::Parms));
@@ -5809,16 +5783,11 @@ bool LibraryCallKit::inline_electronicCodeBook_AESCrypt(vmIntrinsics::ID id) {
   Node* k_start = get_key_start_from_aescrypt_object(aescrypt_object);
   if (k_start == NULL) return false;
 
-  Node* ecbCrypt;
-  if (Matcher::pass_original_key_for_aes()) {
-    // no SPARC version for AES/ECB intrinsics now.
-    return false;
-  }
   // Call the stub, passing src_start, dest_start, k_start, r_start and src_len
-  ecbCrypt = make_runtime_call(RC_LEAF | RC_NO_FP,
-                               OptoRuntime::electronicCodeBook_aescrypt_Type(),
-                               stubAddr, stubName, TypePtr::BOTTOM,
-                               src_start, dest_start, k_start, len);
+  Node* ecbCrypt = make_runtime_call(RC_LEAF | RC_NO_FP,
+                                     OptoRuntime::electronicCodeBook_aescrypt_Type(),
+                                     stubAddr, stubName, TypePtr::BOTTOM,
+                                     src_start, dest_start, k_start, len);
 
   // return cipher length (int)
   Node* retvalue = _gvn.transform(new ProjNode(ecbCrypt, TypeFunc::Parms));
@@ -5893,16 +5862,11 @@ bool LibraryCallKit::inline_counterMode_AESCrypt(vmIntrinsics::ID id) {
   Node* saved_encCounter_start = array_element_address(saved_encCounter, intcon(0), T_BYTE);
   Node* used = field_address_from_object(counterMode_object, "used", "I", /*is_exact*/ false);
 
-  Node* ctrCrypt;
-  if (Matcher::pass_original_key_for_aes()) {
-    // no SPARC version for AES/CTR intrinsics now.
-    return false;
-  }
   // Call the stub, passing src_start, dest_start, k_start, r_start and src_len
-  ctrCrypt = make_runtime_call(RC_LEAF|RC_NO_FP,
-                               OptoRuntime::counterMode_aescrypt_Type(),
-                               stubAddr, stubName, TypePtr::BOTTOM,
-                               src_start, dest_start, k_start, cnt_start, len, saved_encCounter_start, used);
+  Node* ctrCrypt = make_runtime_call(RC_LEAF|RC_NO_FP,
+                                     OptoRuntime::counterMode_aescrypt_Type(),
+                                     stubAddr, stubName, TypePtr::BOTTOM,
+                                     src_start, dest_start, k_start, cnt_start, len, saved_encCounter_start, used);
 
   // return cipher length (int)
   Node* retvalue = _gvn.transform(new ProjNode(ctrCrypt, TypeFunc::Parms));
@@ -5932,17 +5896,6 @@ Node * LibraryCallKit::get_key_start_from_aescrypt_object(Node *aescrypt_object)
   // now have the array, need to get the start address of the K array
   Node* k_start = array_element_address(objAESCryptKey, intcon(0), T_INT);
   return k_start;
-}
-
-//------------------------------get_original_key_start_from_aescrypt_object-----------------------
-Node * LibraryCallKit::get_original_key_start_from_aescrypt_object(Node *aescrypt_object) {
-  Node* objAESCryptKey = load_field_from_object(aescrypt_object, "lastKey", "[B", /*is_exact*/ false);
-  assert (objAESCryptKey != NULL, "wrong version of com.sun.crypto.provider.AESCrypt");
-  if (objAESCryptKey == NULL) return (Node *) NULL;
-
-  // now have the array, need to get the start address of the lastKey array
-  Node* original_k_start = array_element_address(objAESCryptKey, intcon(0), T_BYTE);
-  return original_k_start;
 }
 
 //----------------------------inline_cipherBlockChaining_AESCrypt_predicate----------------------------
