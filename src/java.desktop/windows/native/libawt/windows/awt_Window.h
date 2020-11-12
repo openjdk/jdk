@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,12 +58,6 @@ public:
     static jfieldID securityWarningHeightID;
 
     /* sun.awt.windows.WWindowPeer field and method IDs */
-    // The coordinates at the peer.
-    static jfieldID sysXID;
-    static jfieldID sysYID;
-    static jfieldID sysWID;
-    static jfieldID sysHID;
-
     static jfieldID windowTypeID;
     static jmethodID notifyWindowStateChangedMID;
 
@@ -129,6 +123,7 @@ public:
         return FALSE;
     }
 
+    virtual void Reshape(int x, int y, int w, int h);
     virtual void Invalidate(RECT* r);
     virtual void Show();
     virtual void SetResizable(BOOL isResizable);
@@ -136,7 +131,7 @@ public:
     virtual void RecalcNonClient();
     virtual void RedrawNonClient();
     virtual int  GetScreenImOn();
-    virtual void CheckIfOnNewScreen();
+    virtual void CheckIfOnNewScreen(BOOL force);
     virtual void Grab();
     virtual void Ungrab();
     virtual void Ungrab(BOOL doPost);
@@ -248,7 +243,6 @@ public:
     static void _RepositionSecurityWarning(void* param);
     static void _SetFullScreenExclusiveModeState(void* param);
     static void _GetNativeWindowSize(void* param);
-    static void _WindowDPIChange(void* param);
     static void _OverrideHandle(void *param);
 
     inline static BOOL IsResizing() {
@@ -409,8 +403,7 @@ private:
 
     void InitOwner(AwtWindow *owner);
     void CheckWindowDPIChange();
-    void WindowDPIChange(int prevScreen, float prevScaleX, float prevScaleY,
-                         int newScreen, float scaleX, float scaleY);
+    void WmDPIChanged(const LPARAM &lParam);
 
     Type m_windowType;
     void InitType(JNIEnv *env, jobject peer);

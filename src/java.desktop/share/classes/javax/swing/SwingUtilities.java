@@ -50,7 +50,6 @@ import sun.awt.AWTAccessor.MouseEventAccessor;
 /**
  * A collection of utility methods for Swing.
  *
- * @author unknown
  * @since 1.2
  */
 public class SwingUtilities implements SwingConstants

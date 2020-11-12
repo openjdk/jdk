@@ -135,6 +135,7 @@ address StubRoutines::_electronicCodeBook_decryptAESCrypt  = NULL;
 address StubRoutines::_counterMode_AESCrypt                = NULL;
 address StubRoutines::_ghash_processBlocks                 = NULL;
 address StubRoutines::_base64_encodeBlock                  = NULL;
+address StubRoutines::_base64_decodeBlock                  = NULL;
 
 address StubRoutines::_md5_implCompress      = NULL;
 address StubRoutines::_md5_implCompressMB    = NULL;

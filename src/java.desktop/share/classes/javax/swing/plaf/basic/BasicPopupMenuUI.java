@@ -1226,6 +1226,7 @@ public class BasicPopupMenuUI extends PopupMenuUI {
                 // menu hidden -- return focus to where it had been before
                 // and uninstall menu keybindings
                    removeItems();
+                   menuInputMap = null;
             } else {
                 if (popup != lastPopup) {
                     receivedKeyPressed = false;
