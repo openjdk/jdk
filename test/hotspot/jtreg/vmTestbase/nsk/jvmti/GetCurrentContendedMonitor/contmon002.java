@@ -58,7 +58,7 @@ public class contmon002 {
     }
 
     public static int run(String argv[], PrintStream ref) {
-        doSleep(); // If it would do any class loading, do it now.
+        doSleep(); // If we need to load any classes to execute doSleep(), do it now.
 
         checkMon(1, Thread.currentThread());
 
