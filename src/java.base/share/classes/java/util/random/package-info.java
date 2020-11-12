@@ -64,28 +64,17 @@
  * {@link RandomGenerator.ArbitrarilyJumpableGenerator}) that have specific
  * strategies for creating statistically independent instances.
  *
- * <p> The class {@link RandomSupport} provides utility methods, constants, and
- * abstract classes frequently useful in the implementation of pseudorandom
- * number generators that satisfy the interface {@link RandomGenerator}.
- *
  * <h2>Using the Random Number Generator Interfaces</h2>
  *
  * To get started, an application should first create one instance of a
- * generator class. Assume that the contents of the packages
- * {@link java.util.random} and {@link jdk.random} have been imported:
+ * generator class. Assume that the contents of the package
+ * {@link java.util.random} has been imported:
  *
  * <blockquote>{@code import java.util.random.*;}</blockquote>
- * <blockquote>{@code import jdk.random.*;}</blockquote>
  *
- * Then one can choose a specific implementation class and use one of its
- * constructors, providing either a 64-bit seed value, an array of seed bytes,
- * or no argument at all:
- *
- * <blockquote>{@code RandomGenerator g = new L64X128MixRandom();}</blockquote>
- *
- * or one can give the name of a generator class to the static method
- * {@link RandomGenerator#of}, in which case the no-arguments constructor for
- * that class is used:
+ * Then one can choose a specific implementation by giving the name of a generator
+ * implementation to the static method {@link RandomGenerator#of}, in which case the
+ * no-arguments constructor for that implementation is used:
  *
  * <blockquote>{@code RandomGenerator g = RandomGenerator.of("L64X128MixRandom");}</blockquote>
  *
@@ -140,12 +129,12 @@
  * equidistribution properties.
  *
  * <p> For applications with no special requirements,
- * {@link jdk.random.L64X128MixRandom} has a good balance among speed, space,
+ * "L64X128MixRandom" has a good balance among speed, space,
  * and period, and is suitable for both single-threaded and multi-threaded
  * applications when used properly (a separate instance for each thread).
  *
  * <p> If the application uses only a single thread, then
- * {@link jdk.random.Xoroshiro128PlusPlus} is even smaller and faster, and
+ * "Xoroshiro128PlusPlus" is even smaller and faster, and
  * certainly has a sufficiently long period.
  *
  * <p> For an application running in a 32-bit hardware environment and using
@@ -153,21 +142,21 @@
  *
  * <p> For an application that uses many threads that are allocated in one batch
  * at the start of the computation, either a "jumpable" generator such as
- * {@link jdk.random.Xoroshiro128PlusPlus} or
- * {@link jdk.random.Xoshiro256PlusPlus} may be used, or a "splittable"
- * generator such as {@link jdk.random.L64X128MixRandom} or
- * {@link jdk.random.L64X256MixRandom} may be used.
+ * "Xoroshiro128PlusPlus" or
+ * "Xoshiro256PlusPlus" may be used, or a "splittable"
+ * generator such as "L64X128MixRandom" or
+ * "L64X256MixRandom" may be used.
  *
  * <p> For an application that creates many threads dynamically, perhaps through
  * the use of spliterators, a "splittable" generator such as
- * {@link jdk.random.L64X128MixRandom} or {@link jdk.random.L64X256MixRandom} is
+ * "L64X128MixRandom" or "L64X256MixRandom" is
  * recommended. (The original {@link java.util.SplittableRandom} algorithm may
  * also be used, but it is now known to have certain minor mathematical
  * statistical weaknesses that may or may not matter in practice. If these minor
  * weaknesses do not matter, {@link SpittableRandom} may be a little bit faster
  * for some applications.) If the number of generators created dynamically may
  * be very large (millions or more), then using generators such as
- * {@link jdk.random.L128X128MixRandom} or {@link jdk.random.L128X256MixRandom},
+ * "L128X128MixRandom" or "L128X256MixRandom",
  * which use a 128-bit parameter rather than a 64-bit parameter for their LCG
  * subgenerator, will make it much less likely that two instances use the same
  * state cycle.
@@ -175,8 +164,8 @@
  * <p> For an application that uses tuples of consecutively generated values, it
  * may be desirable to use a generator that is <i>k</i>-equidistributed such
  * that <i>k</i> is at least as large as the length of the tuples being
- * generated. The generator {@link jdk.random.L64X256MixRandom} is provably
- * 4-equidistributed, and {@link jdk.random.L64X1024MixRandom} is provably
+ * generated. The generator "L64X256MixRandom" is provably
+ * 4-equidistributed, and "L64X1024MixRandom" is provably
  * 16-equidistributed.
  *
  * <p> For applications that generate large permutations, it may be best to use
@@ -186,9 +175,9 @@
  * cards, the number of possible permutations is 52! (52 factorial), \ which is
  * larger than 2<sup>225</sup> (but smaller than 2<sup>226</sup>), so it may be
  * best to use a generator whose period at least 2<sup>256</sup>, such as
- * {@link jdk.random.L64X256MixRandom} or {@link jdk.random.L64X1024MixRandom}
- * or {@link jdk.random.L128X256MixRandom} or
- * {@link jdk.random.L128X1024MixRandom}. (It is of course also necessary to
+ * "L64X256MixRandom" or "L64X1024MixRandom"
+ * or "L128X256MixRandom" or
+ * "L128X1024MixRandom". (It is of course also necessary to
  * provide sufficiently many seed bits when the generator is initialized, or
  * else it will still be impossible to generate some of the intended
  * permutations.)
@@ -209,26 +198,28 @@
  * supported by the interface {@link JumpableGenerator}. Sometimes it is
  * desirable to support two levels of jumping (by long distances and by
  * <i>really</i> long distances); this strategy is supported by the interface
- * {@link LeapableGenerator}. There is also an interface
- * {@link ArbitrarilyJumpableGenerator} for algorithms that allow jumping along
- * the state cycle by any user-specified distance. In this package,
+ * {@link RandomGenerator.LeapableGenerator}. There is also an interface
+ * {@link RandomGenerator.ArbitrarilyJumpableGenerator} for algorithms that allow
+ * jumping along the state cycle by any user-specified distance. In this package,
  * implementations of these interfaces include
- * {@link jdk.random.Xoroshiro128PlusPlus}, and
- * {@link jdk.random.Xoshiro256PlusPlus}.
+ * "Xoroshiro128PlusPlus", and
+ * "Xoshiro256PlusPlus".
  *
  * <p> A more recent category of "splittable" pseudorandom generator algorithms
  * uses a large family of state cycles and makes some attempt to ensure that
  * distinct instances use different state cycles; but even if two instances
  * "accidentally" use the same state cycle, they are highly likely to traverse
  * different regions parts of that shared state cycle. This strategy is
- * supported by the interface {@link SplittableGenerator}. In this package,
- * implementations of this interface include
- * {@link jdk.random.L32X64MixRandom},
- * {@link jdk.random.L64X128StarStarRandom},
- * {@link jdk.random.L64X128MixRandom}, {@link jdk.random.L64X256MixRandom},
- * {@link jdk.random.L64X1024MixRandom}, {@link jdk.random.L128X128MixRandom},
- * {@link jdk.random.L128X256MixRandom}, and
- * {@link jdk.random.L128X1024MixRandom}; note that the class
+ * supported by the interface {@link RandomGenerator.SplittableGenerator}.
+ * In this package, implementations of this interface include
+ * "L32X64MixRandom",
+ * "L64X128StarStarRandom",
+ * "L64X128MixRandom",
+ * "L64X256MixRandom",
+ * "L64X1024MixRandom",
+ * "L128X128MixRandom",
+ * "L128X256MixRandom", and
+ * "L128X1024MixRandom"; note that the class
  * {@link java.util.SplittableRandom} also implements this interface.
  *
  *
@@ -291,7 +282,7 @@
  * <p> The specific LXM algorithms used in this package are all chosen so that
  * the 64-bit values produced by the {@link RandomGenerator#nextLong nextLong()}
  * method are exactly equidistributed (for example, for any specific instance of
- * {@link jdk.random.L64X128MixRandom}, over the course of its cycle each of the
+ * "L64X128MixRandom", over the course of its cycle each of the
  * 2<sup>64</sup> possible {@code long} values will be produced
  * 2<sup>128</sup>&minus;1 times). The values produced by the
  * {@link RandomGenerator#nextInt nextInt()},
@@ -310,49 +301,49 @@
  *
  * <table style="padding:0px 20px 0px 0px">
  * <thead>
- *   <tr><th style="text-align:left">Class</th>
+ *   <tr><th style="text-align:left">Implementation</th>
  *       <th style="text-align:right">Period</th>
  *       <th style="text-align:right">State size</th>
  *       <th style="text-align:right">Parameter size</th>
  *       <th style="text-align:left">{@link RandomGenerator#nextLong nextLong()} values are</th></tr>
  * </thead>
  * <tbody>
- *   <tr><td style="text-align:left">{@link jdk.random.L32X64MixRandom L32X64MixRandom}</td>
+ *   <tr><td style="text-align:left">"L32X64MixRandom"</td>
  *       <td style="text-align:right">2<sup>32</sup>(2<sup>64</sup>&minus;1)</td>
  *       <td style="text-align:right">96 bits</td>
  *       <td style="text-align:right">32 bits</td>
  *       <td style="text-align:left"></td></tr>
- *   <tr><td style="text-align:left">{@link jdk.random.L64X128StarStarRandom L64X128StarStarRandom}</td>
+ *   <tr><td style="text-align:left">"L64X128StarStarRandom"</td>
  *       <td style="text-align:right">2<sup>64</sup>(2<sup>128</sup>&minus;1)</td>
  *       <td style="text-align:right">192 bits</td>
  *       <td style="text-align:right">64 bits</td>
  *       <td style="text-align:left">2-equidistributed and exactly equidistributed</td></tr>
- *   <tr><td style="text-align:left">{@link jdk.random.L64X128MixRandom L64X128MixRandom}</td>
+ *   <tr><td style="text-align:left">"L64X128MixRandom"</td>
  *       <td style="text-align:right">2<sup>64</sup>(2<sup>128</sup>&minus;1)</td>
  *       <td style="text-align:right">192 bits</td>
  *       <td style="text-align:right">64 bits</td>
  *       <td style="text-align:left">2-equidistributed and exactly equidistributed</td></tr>
- *   <tr><td style="text-align:left">{@link jdk.random.L64X256MixRandom L64X256MixRandom}</td>
+ *   <tr><td style="text-align:left">"L64X256MixRandom"</td>
  *       <td style="text-align:right">2<sup>64</sup>(2<sup>256</sup>&minus;1)</td>
  *       <td style="text-align:right">320 bits</td>
  *       <td style="text-align:right">64 bits</td>
  *       <td style="text-align:left">4-equidistributed and exactly equidistributed</td></tr>
- *   <tr><td style="text-align:left">{@link jdk.random.L64X1024MixRandom L64X1024MixRandom}</td>
+ *   <tr><td style="text-align:left">"L64X1024MixRandom"</td>
  *       <td style="text-align:right">2<sup>64</sup>(2<sup>1024</sup>&minus;1)</td>
  *       <td style="text-align:right">1088 bits</td>
  *       <td style="text-align:right">64 bits</td>
  *       <td style="text-align:left">16-equidistributed and exactly equidistributed</td></tr>
- *   <tr><td style="text-align:left">{@link jdk.random.L128X128MixRandom L128X128MixRandom}</td>
+ *   <tr><td style="text-align:left">"L128X128MixRandom"</td>
  *       <td style="text-align:right">2<sup>128</sup>(2<sup>128</sup>&minus;1)</td>
  *       <td style="text-align:right">256 bits</td>
  *       <td style="text-align:right">128 bits</td>
  *       <td style="text-align:left">exactly equidistributed</td></tr>
- *   <tr><td style="text-align:left">{@link jdk.random.L128X256MixRandom L128X256MixRandom}</td>
+ *   <tr><td style="text-align:left">"L128X256MixRandom"</td>
  *       <td style="text-align:right">2<sup>128</sup>(2<sup>256</sup>&minus;1)</td>
  *       <td style="text-align:right">384 bits</td>
  *       <td style="text-align:right">128 bits</td>
  *       <td style="text-align:left">exactly equidistributed</td></tr>
- *   <tr><td style="text-align:left">{@link jdk.random.L128X1024MixRandom L128X1024MixRandom}</td>
+ *   <tr><td style="text-align:left">"L128X1024MixRandom"</td>
  *       <td style="text-align:right">2<sup>128</sup>(2<sup>1024</sup>&minus;1)</td>
  *       <td style="text-align:right">1152 bits</td>
  *       <td style="text-align:right">128 bits</td>
@@ -372,7 +363,7 @@
  * equidistributed</i>: every instance, over the course of its cycle, will
  * produce each of the 2<sup>64</sup> possible {@code long} values exactly the
  * same number of times. For example, any specific instance of
- * {@link jdk.random.L64X256MixRandom}, over the course of its cycle each of the
+ * "L64X256MixRandom", over the course of its cycle each of the
  * 2<sup>64</sup> possible {@code long} values will be produced
  * 2<sup>256</sup>&minus;1 times. The values produced by the
  * {@link RandomGenerator#nextInt nextInt()},
@@ -384,8 +375,8 @@
  * {@code L64}, the 64-bit values produced by the
  * {@link RandomGenerator#nextLong nextLong()} method are
  * <i>k</i>-equidistributed (but not exactly <i>k</i>-equidistributed). To be
- * precise, and taking {@link jdk.random.L64X256MixRandom} as an example: for
- * any specific instance of {@link jdk.random.L64X256MixRandom}, consider the
+ * precise, and taking "L64X256MixRandom" as an example: for
+ * any specific instance of "L64X256MixRandom", consider the
  * (overlapping) length-4 subsequences of the cycle of 64-bit values produced by
  * {@link RandomGenerator#nextLong nextLong()} (assuming no other methods are
  * called that would affect the state). There are
@@ -399,7 +390,7 @@
  * and the probability of getting any specific one of the more common
  * subsequence values is 1&minus;2<sup>-64</sup>. (Note that the set of
  * 2<sup>64</sup> less-common subsequence values will differ from one instance
- * of {@link jdk.random.L64X256MixRandom} to another, as a function of the
+ * of "L64X256MixRandom" to another, as a function of the
  * additive parameter of the LCG.) The values produced by the
  * {@link RandomGenerator#nextInt nextInt()},
  * {@link RandomGenerator#nextFloat nextFloat()}, and
@@ -418,53 +409,53 @@
  *
  * <table style="padding:0px 20px 0px 0px">
  * <thead>
- *   <tr><th style="text-align:left">Class</th>
+ *   <tr><th style="text-align:left">Implementation</th>
  *       <th style="text-align:right">LCG multiplier {@code m}</th>
  *       <th style="text-align:left">Xorshift algorithm</th>
  *       <th style="text-align:left">Xorshift parameters</th>
  *       <th style="text-align:left">Mixing function</th></tr>
  * </thead>
  * <tbody>
- *   <tr><td style="text-align:left">{@link jdk.random.L32X64MixRandom L32X64MixRandom}</td>
+ *   <tr><td style="text-align:left">"L32X64MixRandom"</td>
  *       <td style="text-align:right">{@code 0xadb4a92d}</td>
  *       <td style="text-align:left">{@code xoroshiro64}, version 1.0</td>
  *       <td style="text-align:left">{@code (26, 9, 13)}</td>
- *       <td style="text-align:left">{@link RandomSupport#mixLea32}{@code (s+x0)}</td></tr>
- *   <tr><td style="text-align:left">{@link jdk.random.L64X128StarStarRandom L64X128StarStarRandom} </td>
+ *       <td style="text-align:left">mixLea32{@code (s+x0)}</td></tr>
+ *   <tr><td style="text-align:left">"L64X128StarStarRandom" </td>
  *       <td style="text-align:right">{@code 0xd1342543de82ef95L}</td>
  *       <td style="text-align:left">{@code xoroshiro128}, version 1.0</td>
  *       <td style="text-align:left">{@code (24, 16, 37)}</td>
  *       <td style="text-align:left">{@code Long.rotateLeft((s+x0)* 5, 7) * 9}</td></tr>
- *   <tr><td style="text-align:left">{@link jdk.random.L64X128MixRandom L64X128MixRandom}</td>
+ *   <tr><td style="text-align:left">"L64X128MixRandom"</td>
  *       <td style="text-align:right">{@code 0xd1342543de82ef95L}</td>
  *       <td style="text-align:left">{@code xoroshiro128}, version 1.0</td>
  *       <td style="text-align:left">{@code (24, 16, 37)}</td>
- *       <td style="text-align:left">{@link RandomSupport#mixLea64}{@code (s+x0)}</td></tr>
- *   <tr><td style="text-align:left">{@link jdk.random.L64X256MixRandom L64X256MixRandom}</td>
+ *       <td style="text-align:left">mixLea32{@code (s+x0)}</td></tr>
+ *   <tr><td style="text-align:left">"L64X256MixRandom"</td>
  *       <td style="text-align:right">{@code 0xd1342543de82ef95L}</td>
  *       <td style="text-align:left">{@code xoshiro256}, version 1.0</td>
  *       <td style="text-align:left">{@code (17, 45)}</td>
- *       <td style="text-align:left">{@link RandomSupport#mixLea64}{@code (s+x0)}</td></tr>
- *   <tr><td style="text-align:left">{@link jdk.random.L64X1024MixRandom L64X1024MixRandom}</td>
+ *       <td style="text-align:left">mixLea32{@code (s+x0)}</td></tr>
+ *   <tr><td style="text-align:left">"L64X1024MixRandom"</td>
  *       <td style="text-align:right">{@code 0xd1342543de82ef95L}</td>
  *       <td style="text-align:left">{@code xoroshiro1024}, version 1.0</td>
  *       <td style="text-align:left">{@code (25, 27, 36)}</td>
- *       <td style="text-align:left">{@link RandomSupport#mixLea64}{@code (s+x0)}</td></tr>
- *   <tr><td style="text-align:left">{@link jdk.random.L128X128MixRandom L128X128MixRandom}</td>
+ *       <td style="text-align:left">mixLea32{@code (s+x0)}</td></tr>
+ *   <tr><td style="text-align:left">"L128X128MixRandom"</td>
  *       <td style="text-align:right">{@code 0x1d605bbb58c8abbfdL}</td>
  *       <td style="text-align:left">{@code xoroshiro128}, version 1.0</td>
  *       <td style="text-align:left">{@code (24, 16, 37)}</td>
- *       <td style="text-align:left">{@link RandomSupport#mixLea64}{@code (sh+x0)}</td></tr>
- *   <tr><td style="text-align:left">{@link jdk.random.L128X256MixRandom L128X256MixRandom}</td>
+ *       <td style="text-align:left">mixLea32{@code (sh+x0)}</td></tr>
+ *   <tr><td style="text-align:left">"L128X256MixRandom"</td>
  *       <td style="text-align:right">{@code 0x1d605bbb58c8abbfdL}</td>
  *       <td style="text-align:left">{@code xoshiro256}, version 1.0</td>
  *       <td style="text-align:left">{@code (17, 45)}</td>
- *       <td style="text-align:left">{@link RandomSupport#mixLea64}{@code (sh+x0)}</td></tr>
- *   <tr><td style="text-align:left">{@link jdk.random.L128X1024MixRandom L128X1024MixRandom}</td>
+ *       <td style="text-align:left">mixLea32{@code (sh+x0)}</td></tr>
+ *   <tr><td style="text-align:left">"L128X1024MixRandom"</td>
  *       <td style="text-align:right">{@code 0x1d605bbb58c8abbfdL}</td>
  *       <td style="text-align:left">{@code xoroshiro1024}, version 1.0</td>
  *       <td style="text-align:left">{@code (25, 27, 36)}</td>
- *       <td style="text-align:left">{@link RandomSupport#mixLea64}{@code (sh+x0)}</td></tr>
+ *       <td style="text-align:left">mixLea32{@code (sh+x0)}</td></tr>
  * </tbody>
  * </table>
  *
