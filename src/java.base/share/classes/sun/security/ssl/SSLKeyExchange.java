@@ -318,7 +318,7 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
 
     private static class SSLKeyExECDHRSA {
         private static SSLKeyExchange KE = new SSLKeyExchange(
-                List.of(X509Authentication.RSA), T12KeyAgreement.ECDH);
+                List.of(X509Authentication.EC), T12KeyAgreement.ECDH);
     }
 
     private static class SSLKeyExECDHEECDSA {
