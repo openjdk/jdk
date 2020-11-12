@@ -100,8 +100,8 @@ void ShenandoahRootVerifier::oops_do(OopClosure* oops) {
 
   if (verify(WeakRoots)) {
     shenandoah_assert_safepoint();
-    AlwaysTrueClosure always_true;
-    WeakProcessor::weak_oops_do(&always_true, oops);
+    serial_weak_roots_do(oops);
+    concurrent_weak_roots_do(oops);
   } else if (verify(SerialWeakRoots)) {
     shenandoah_assert_safepoint();
     serial_weak_roots_do(oops);
