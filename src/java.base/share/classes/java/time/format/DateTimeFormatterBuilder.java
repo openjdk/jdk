@@ -1464,21 +1464,21 @@ public final class DateTimeFormatterBuilder {
      * text. Mapping to a day period type and its translation both depend on the
      * locale in the formatter.
      * <p>
-     * During parsing, the text will be parsed into a day period type first. If
-     * {@code HOUR_OF_DAY}, and optionally {@code MINUTE_OF_HOUR} exists,
-     * those values are validated with the parsed day period. If they are within the
-     * parsed day period, those values remain intact, otherwise {@code DateTimeException}
-     * is thrown. If {@code HOUR_OF_AMPM} exists and validated with the day period,
-     * {@code HOUR_OF_DAY} is derived from the parsed day period. If neither
-     * {@code HOUR_OF_DAY} nor {@code HOUR_OF_AMPM} exists, {@code HOUR_OF_DAY} and
-     * {@code MINUTE_OF_HOUR} are resolved to the mid-point of the day period in
-     * {@link ResolverStyle#SMART SMART} or {@link ResolverStyle#LENIENT LENIENT} mode.
+     * During parsing, the text will be parsed into a day period type first. Then
+     * the parsed day period is combined with other fields to make a {@code LocalTime} in
+     * the resolving phase. If the {@code HOUR_OF_AMPM} field is present, it is combined
+     * with the day period to make {@code HOUR_OF_DAY} taking into account any
+     * {@code MINUTE_OF_HOUR} value. If {@code HOUR_OF_DAY} is present, it is validated
+     * against the day period taking into account any {@code MINUTE_OF_HOUR} value. If a
+     * day period is present without {@code HOUR_OF_DAY}, {@code MINUTE_OF_HOUR},
+     * {@code SECOND_OF_MINUTE} and {@code NANO_OF_SECOND} then the midpoint of the
+     * day period is set as the time in {@code SMART} and {@code LENIENT} mode.
      * For example, if the parsed day period type is "night1" and the period defined
-     * for it in the formatter locale is from 21:00 to 06:00, then {@code HOUR_OF_DAY}
-     * is set to '1' and {@code MINUTE_OF_HOUR} set to '30'. If {@code AMPM_OF_DAY} exists
-     * and no {@code HOUR_OF_DAY} is resolved, the parsed day period takes precedence.
-     * If any conflict occurs in {@link ResolverStyle#LENIENT LENIENT} mode, no
-     * exception is thrown and the day period is ignored.
+     * for it in the formatter locale is from 21:00 to 06:00, then it results in
+     * the {@code LocalTime} of 01:30.
+     * If the resolved time conflicts with the day period, {@code DateTimeException} is
+     * thrown in {@code STRICT} and {@code SMART} mode. In {@code LENIENT} mode, no
+     * exception is thrown and the parsed day period is ignored.
      * <p>
      * The "midnight" type allows both "00:00" as the start-of-day and "24:00" as the
      * end-of-day, as long as they are valid with the resolved hour field.
@@ -5060,10 +5060,7 @@ public final class DateTimeFormatterBuilder {
                 return false;
             }
             Long moh = context.getValue(MINUTE_OF_HOUR);
-            long value = (hod * 60 + (moh != null ? moh : 0)) % 1_440;
-            if (value < 0) {
-                value += 1_440;
-            }
+            long value = Math.floorMod(hod, 24) * 60 + (moh != null ? Math.floorMod(moh, 60) : 0);
             Locale locale = context.getLocale();
             LocaleStore store = findDayPeriodStore(locale);
             final long val = value;
