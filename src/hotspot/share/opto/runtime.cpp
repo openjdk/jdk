@@ -61,6 +61,7 @@
 #include "opto/output.hpp"
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"

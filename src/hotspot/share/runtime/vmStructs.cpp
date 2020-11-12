@@ -32,6 +32,7 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/dictionary.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/javaThreadStatus.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -2331,18 +2332,18 @@ typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
   declare_constant(ConstantPoolCacheEntry::tos_state_shift)               \
                                                                           \
   /***************************************/                               \
-  /* java_lang_Thread::ThreadStatus enum */                               \
+  /* JavaThreadStatus enum               */                               \
   /***************************************/                               \
                                                                           \
-  declare_constant(java_lang_Thread::NEW)                                 \
-  declare_constant(java_lang_Thread::RUNNABLE)                            \
-  declare_constant(java_lang_Thread::SLEEPING)                            \
-  declare_constant(java_lang_Thread::IN_OBJECT_WAIT)                      \
-  declare_constant(java_lang_Thread::IN_OBJECT_WAIT_TIMED)                \
-  declare_constant(java_lang_Thread::PARKED)                              \
-  declare_constant(java_lang_Thread::PARKED_TIMED)                        \
-  declare_constant(java_lang_Thread::BLOCKED_ON_MONITOR_ENTER)            \
-  declare_constant(java_lang_Thread::TERMINATED)                          \
+  declare_constant(JavaThreadStatus::NEW)                                 \
+  declare_constant(JavaThreadStatus::RUNNABLE)                            \
+  declare_constant(JavaThreadStatus::SLEEPING)                            \
+  declare_constant(JavaThreadStatus::IN_OBJECT_WAIT)                      \
+  declare_constant(JavaThreadStatus::IN_OBJECT_WAIT_TIMED)                \
+  declare_constant(JavaThreadStatus::PARKED)                              \
+  declare_constant(JavaThreadStatus::PARKED_TIMED)                        \
+  declare_constant(JavaThreadStatus::BLOCKED_ON_MONITOR_ENTER)            \
+  declare_constant(JavaThreadStatus::TERMINATED)                          \
                                                                           \
   /******************************/                                        \
   /* Debug info                 */                                        \

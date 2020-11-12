@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/javaThreadStatus.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
@@ -36,6 +37,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/objectMonitor.hpp"
@@ -190,7 +192,7 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
         if (sv->type() == T_OBJECT) {
           Handle o = locs->at(0)->get_obj();
           if (java_lang_Thread::get_thread_status(thread()->threadObj()) ==
-                                java_lang_Thread::BLOCKED_ON_MONITOR_ENTER) {
+                                JavaThreadStatus::BLOCKED_ON_MONITOR_ENTER) {
             wait_state = "waiting to re-lock in wait()";
           }
           print_locked_object_class_name(st, o, wait_state);
