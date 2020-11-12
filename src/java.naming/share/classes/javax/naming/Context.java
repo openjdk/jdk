@@ -1082,6 +1082,6 @@ public interface Context {
      *
      * @since 1.3
      */
-    @Deprecated
+    @Deprecated(since="16", forRemoval=true)
     String APPLET = "java.naming.applet";
 };
