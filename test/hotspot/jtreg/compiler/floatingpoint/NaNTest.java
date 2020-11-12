@@ -24,49 +24,79 @@
  * @test
  * @bug 8076373
  * @summary Verify if signaling NaNs are preserved.
+ * @library /test/lib /
  *
- * @run main compiler.floatingpoint.NaNTest
+ * @build sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   compiler.floatingpoint.NaNTest
  */
 
 package compiler.floatingpoint;
 
+import jdk.test.lib.Platform;
+import sun.hotspot.WhiteBox;
+
 public class NaNTest {
-    static void testFloat() {
+    static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
+
+    static void testFloat(boolean expectStable) {
         int originalValue = 0x7f800001;
         int readBackValue = Float.floatToRawIntBits(Float.intBitsToFloat(originalValue));
-        if (originalValue != readBackValue) {
-            String errorMessage = String.format("Original and read back float values mismatch\n0x%X 0x%X\n",
-                                                originalValue,
-                                                readBackValue);
-            throw new RuntimeException(errorMessage);
-        } else {
+        if (originalValue == readBackValue) {
             System.out.printf("Written and read back float values match\n0x%X 0x%X\n",
                               originalValue,
                               readBackValue);
+        } else {
+            String message = String.format("Original and read back float values mismatch\n0x%X 0x%X\n",
+                                                originalValue,
+                                                readBackValue);
+            if (expectStable) {
+                throw new RuntimeException(message);
+            } else {
+                System.out.println(message);
+            }
         }
     }
 
-    static void testDouble() {
+    static void testDouble(boolean expectStable) {
         long originalValue = 0xFFF0000000000001L;
         long readBackValue = Double.doubleToRawLongBits(Double.longBitsToDouble(originalValue));
-        if (originalValue != readBackValue) {
-            String errorMessage = String.format("Original and read back double values mismatch\n0x%X 0x%X\n",
-                                                originalValue,
-                                                readBackValue);
-            throw new RuntimeException(errorMessage);
-        } else {
+        if (originalValue == readBackValue) {
             System.out.printf("Written and read back double values match\n0x%X 0x%X\n",
                               originalValue,
                               readBackValue);
+        } else {
+            String message = String.format("Original and read back double values mismatch\n0x%X 0x%X\n",
+                                                originalValue,
+                                                readBackValue);
+            if (expectStable) {
+                throw new RuntimeException(message);
+            } else {
+                System.out.println(message);
+            }
         }
-
     }
 
     public static void main(String args[]) {
         System.out.println("### NanTest started");
 
-        testFloat();
-        testDouble();
+        // Some platforms are known not to treat signalling NaNs properly.
+        // The block below can be used to except them.
+        boolean expectStableFloats = true;
+        boolean expectStableDoubles = true;
+
+        // On x86_32 without relevant SSE-enabled stubs, we are entering
+        // native methods that use FPU instructions, and those strip the
+        // signalling NaNs.
+        if (Platform.isX86()) {
+            int sse = WHITE_BOX.getIntxVMFlag("UseSSE").intValue();
+            expectStableFloats = (sse >= 1);
+            expectStableDoubles = (sse >= 2);
+        }
+
+        testFloat(expectStableFloats);
+        testDouble(expectStableDoubles);
 
         System.out.println("### NanTest ended");
     }
