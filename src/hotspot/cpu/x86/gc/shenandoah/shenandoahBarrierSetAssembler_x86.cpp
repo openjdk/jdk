@@ -955,6 +955,7 @@ void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_s
       }
     }
   } else if (is_weak) {
+    assert(!is_native, "weak must not be called off-heap");
     if (UseCompressedOops) {
       __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak_narrow), c_rarg0, c_rarg1);
     } else {
@@ -962,6 +963,7 @@ void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_s
     }
   } else {
     assert(is_phantom, "only remaining strength");
+    assert(is_native, "phantom must only be called off-heap");
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom), c_rarg0, c_rarg1);
   }
 #else
