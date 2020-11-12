@@ -37,7 +37,6 @@ class ShenandoahReferenceProcessor;
 class ShenandoahConcurrentMark: public ShenandoahMark {
   friend class ShenandoahConcurrentMarkingTask;
   friend class ShenandoahFinalMarkingTask;
-  friend class ShenandoahPrecleanCompleteGCClosure;
 
 public:
   ShenandoahConcurrentMark();
