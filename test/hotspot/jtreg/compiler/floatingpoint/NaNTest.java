@@ -49,8 +49,8 @@ public class NaNTest {
                               readBackValue);
         } else {
             String message = String.format("Original and read back float values mismatch\n0x%X 0x%X\n",
-                                                originalValue,
-                                                readBackValue);
+                                           originalValue,
+                                           readBackValue);
             if (expectStable) {
                 throw new RuntimeException(message);
             } else {
@@ -68,8 +68,8 @@ public class NaNTest {
                               readBackValue);
         } else {
             String message = String.format("Original and read back double values mismatch\n0x%X 0x%X\n",
-                                                originalValue,
-                                                readBackValue);
+                                           originalValue,
+                                           readBackValue);
             if (expectStable) {
                 throw new RuntimeException(message);
             } else {
@@ -81,14 +81,14 @@ public class NaNTest {
     public static void main(String args[]) {
         System.out.println("### NanTest started");
 
-        // Some platforms are known not to treat signalling NaNs properly.
+        // Some platforms are known to strip signaling NaNs.
         // The block below can be used to except them.
         boolean expectStableFloats = true;
         boolean expectStableDoubles = true;
 
         // On x86_32 without relevant SSE-enabled stubs, we are entering
         // native methods that use FPU instructions, and those strip the
-        // signalling NaNs.
+        // signaling NaNs.
         if (Platform.isX86()) {
             int sse = WHITE_BOX.getIntxVMFlag("UseSSE").intValue();
             expectStableFloats = (sse >= 1);
