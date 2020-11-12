@@ -209,7 +209,7 @@ module java.base {
         jdk.jartool,
         jdk.jfr,
         jdk.jlink,
-        jdk.incubator.jpackage;
+        jdk.jpackage;
     exports jdk.internal.perf to
         java.management,
         jdk.management.agent,
@@ -270,6 +270,8 @@ module java.base {
         jdk.incubator.foreign;
     exports sun.nio.cs to
         jdk.charsets;
+    exports sun.nio.fs to
+        jdk.net;
     exports sun.reflect.annotation to
         jdk.compiler;
     exports sun.reflect.generics.reflectiveObjects to

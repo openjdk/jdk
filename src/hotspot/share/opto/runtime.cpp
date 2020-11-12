@@ -61,6 +61,7 @@
 #include "opto/output.hpp"
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -1194,6 +1195,27 @@ const TypeFunc* OptoRuntime::base64_encodeBlock_Type() {
   const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
   return TypeFunc::make(domain, range);
 }
+// Base64 decode function
+const TypeFunc* OptoRuntime::base64_decodeBlock_Type() {
+  int argcnt = 6;
+
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;    // src array
+  fields[argp++] = TypeInt::INT;        // src offset
+  fields[argp++] = TypeInt::INT;        // src length
+  fields[argp++] = TypePtr::NOTNULL;    // dest array
+  fields[argp++] = TypeInt::INT;        // dest offset
+  fields[argp++] = TypeInt::BOOL;       // isURL
+  assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+  // result type needed
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms + 0] = TypeInt::INT; // count of bytes written to dst
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+  return TypeFunc::make(domain, range);
+}
 
 //------------- Interpreter state access for on stack replacement
 const TypeFunc* OptoRuntime::osr_end_Type() {
@@ -1209,60 +1231,6 @@ const TypeFunc* OptoRuntime::osr_end_Type() {
   const TypeTuple *range = TypeTuple::make(TypeFunc::Parms, fields);
   return TypeFunc::make(domain, range);
 }
-
-//-------------- methodData update helpers
-
-const TypeFunc* OptoRuntime::profile_receiver_type_Type() {
-  // create input type (domain)
-  const Type **fields = TypeTuple::fields(2);
-  fields[TypeFunc::Parms+0] = TypeAryPtr::NOTNULL;    // methodData pointer
-  fields[TypeFunc::Parms+1] = TypeInstPtr::BOTTOM;    // receiver oop
-  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+2, fields);
-
-  // create result type
-  fields = TypeTuple::fields(1);
-  fields[TypeFunc::Parms+0] = NULL; // void
-  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms, fields);
-  return TypeFunc::make(domain,range);
-}
-
-JRT_LEAF(void, OptoRuntime::profile_receiver_type_C(DataLayout* data, oopDesc* receiver))
-  if (receiver == NULL) return;
-  Klass* receiver_klass = receiver->klass();
-
-  intptr_t* mdp = ((intptr_t*)(data)) + DataLayout::header_size_in_cells();
-  int empty_row = -1;           // free row, if any is encountered
-
-  // ReceiverTypeData* vc = new ReceiverTypeData(mdp);
-  for (uint row = 0; row < ReceiverTypeData::row_limit(); row++) {
-    // if (vc->receiver(row) == receiver_klass)
-    int receiver_off = ReceiverTypeData::receiver_cell_index(row);
-    intptr_t row_recv = *(mdp + receiver_off);
-    if (row_recv == (intptr_t) receiver_klass) {
-      // vc->set_receiver_count(row, vc->receiver_count(row) + DataLayout::counter_increment);
-      int count_off = ReceiverTypeData::receiver_count_cell_index(row);
-      *(mdp + count_off) += DataLayout::counter_increment;
-      return;
-    } else if (row_recv == 0) {
-      // else if (vc->receiver(row) == NULL)
-      empty_row = (int) row;
-    }
-  }
-
-  if (empty_row != -1) {
-    int receiver_off = ReceiverTypeData::receiver_cell_index(empty_row);
-    // vc->set_receiver(empty_row, receiver_klass);
-    *(mdp + receiver_off) = (intptr_t) receiver_klass;
-    // vc->set_receiver_count(empty_row, DataLayout::counter_increment);
-    int count_off = ReceiverTypeData::receiver_count_cell_index(empty_row);
-    *(mdp + count_off) = DataLayout::counter_increment;
-  } else {
-    // Receiver did not match any saved receiver and there is no empty row for it.
-    // Increment total counter to indicate polymorphic case.
-    intptr_t* count_p = (intptr_t*)(((uint8_t*)(data)) + in_bytes(CounterData::count_offset()));
-    *count_p += DataLayout::counter_increment;
-  }
-JRT_END
 
 //-------------------------------------------------------------------------------------
 // register policy

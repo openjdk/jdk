@@ -26,6 +26,7 @@
 #include "classfile/altHashing.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/javaThreadStatus.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
@@ -1815,18 +1816,18 @@ jlong java_lang_Thread::stackSize(oop java_thread) {
 
 // Write the thread status value to threadStatus field in java.lang.Thread java class.
 void java_lang_Thread::set_thread_status(oop java_thread,
-                                         java_lang_Thread::ThreadStatus status) {
-  java_thread->int_field_put(_thread_status_offset, status);
+                                         JavaThreadStatus status) {
+  java_thread->int_field_put(_thread_status_offset, static_cast<int>(status));
 }
 
 // Read thread status value from threadStatus field in java.lang.Thread java class.
-java_lang_Thread::ThreadStatus java_lang_Thread::get_thread_status(oop java_thread) {
+JavaThreadStatus java_lang_Thread::get_thread_status(oop java_thread) {
   // Make sure the caller is operating on behalf of the VM or is
   // running VM code (state == _thread_in_vm).
   assert(Threads_lock->owned_by_self() || Thread::current()->is_VM_thread() ||
          JavaThread::current()->thread_state() == _thread_in_vm,
          "Java Thread is not running in vm");
-  return (java_lang_Thread::ThreadStatus)java_thread->int_field(_thread_status_offset);
+  return static_cast<JavaThreadStatus>(java_thread->int_field(_thread_status_offset));
 }
 
 
@@ -1839,17 +1840,17 @@ oop java_lang_Thread::park_blocker(oop java_thread) {
 }
 
 const char* java_lang_Thread::thread_status_name(oop java_thread) {
-  ThreadStatus status = (java_lang_Thread::ThreadStatus)java_thread->int_field(_thread_status_offset);
+  JavaThreadStatus status = static_cast<JavaThreadStatus>(java_thread->int_field(_thread_status_offset));
   switch (status) {
-    case NEW                      : return "NEW";
-    case RUNNABLE                 : return "RUNNABLE";
-    case SLEEPING                 : return "TIMED_WAITING (sleeping)";
-    case IN_OBJECT_WAIT           : return "WAITING (on object monitor)";
-    case IN_OBJECT_WAIT_TIMED     : return "TIMED_WAITING (on object monitor)";
-    case PARKED                   : return "WAITING (parking)";
-    case PARKED_TIMED             : return "TIMED_WAITING (parking)";
-    case BLOCKED_ON_MONITOR_ENTER : return "BLOCKED (on object monitor)";
-    case TERMINATED               : return "TERMINATED";
+    case JavaThreadStatus::NEW                      : return "NEW";
+    case JavaThreadStatus::RUNNABLE                 : return "RUNNABLE";
+    case JavaThreadStatus::SLEEPING                 : return "TIMED_WAITING (sleeping)";
+    case JavaThreadStatus::IN_OBJECT_WAIT           : return "WAITING (on object monitor)";
+    case JavaThreadStatus::IN_OBJECT_WAIT_TIMED     : return "TIMED_WAITING (on object monitor)";
+    case JavaThreadStatus::PARKED                   : return "WAITING (parking)";
+    case JavaThreadStatus::PARKED_TIMED             : return "TIMED_WAITING (parking)";
+    case JavaThreadStatus::BLOCKED_ON_MONITOR_ENTER : return "BLOCKED (on object monitor)";
+    case JavaThreadStatus::TERMINATED               : return "TERMINATED";
     default                       : return "UNKNOWN";
   };
 }

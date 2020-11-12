@@ -1052,17 +1052,16 @@ Zone	Europe/Prague	0:57:44 -	LMT	1850
 # Denmark, Faroe Islands, and Greenland
 
 # From Jesper Nørgaard Welen (2005-04-26):
-# http://www.hum.aau.dk/~poe/tid/tine/DanskTid.htm says that the law
-# [introducing standard time] was in effect from 1894-01-01....
-# The page http://www.retsinfo.dk/_GETDOCI_/ACCN/A18930008330-REGL
+# the law [introducing standard time] was in effect from 1894-01-01....
+# The page https://www.retsinformation.dk/eli/lta/1893/83
 # confirms this, and states that the law was put forth 1893-03-29.
 #
 # The EU [actually, EEC and Euratom] treaty with effect from 1973:
-# http://www.retsinfo.dk/_GETDOCI_/ACCN/A19722110030-REGL
+# https://www.retsinformation.dk/eli/lta/1972/21100
 #
 # This provoked a new law from 1974 to make possible summer time changes
 # in subsequent decrees with the law
-# http://www.retsinfo.dk/_GETDOCI_/ACCN/A19740022330-REGL
+# https://www.retsinformation.dk/eli/lta/1974/223
 #
 # It seems however that no decree was set forward until 1980.  I have
 # not found any decree, but in another related law, the effecting DST
@@ -1074,7 +1073,7 @@ Zone	Europe/Prague	0:57:44 -	LMT	1850
 # The law is about the management of the extra hour, concerning
 # working hours reported and effect on obligatory-rest rules (which
 # was suspended on that night):
-# http://www.retsinfo.dk/_GETDOCI_/ACCN/C19801120554-REGL
+# https://web.archive.org/web/20140104053304/https://www.retsinformation.dk/Forms/R0710.aspx?id=60267
 
 # From Jesper Nørgaard Welen (2005-06-11):
 # The Herning Folkeblad (1980-09-26) reported that the night between
@@ -1612,6 +1611,8 @@ Rule	Hungary	1946	only	-	Oct	 7	 2:00	0	-
 # https://library.hungaricana.hu/hu/view/Zala_1948_09/?pg=64
 # https://library.hungaricana.hu/hu/view/SatoraljaujhelyiLeveltar_ZempleniNepujsag_1948/?pg=53
 # https://library.hungaricana.hu/hu/view/SatoraljaujhelyiLeveltar_ZempleniNepujsag_1948/?pg=160
+# https://library.hungaricana.hu/hu/view/UjSzo_1949_01-04/?pg=102
+# https://library.hungaricana.hu/hu/view/KeletMagyarorszag_1949_03/?pg=96
 # https://library.hungaricana.hu/hu/view/Delmagyarorszag_1949_09/?pg=94
 Rule	Hungary	1947	1949	-	Apr	Sun>=4	 2:00s	1:00	S
 Rule	Hungary	1947	1949	-	Oct	Sun>=1	 2:00s	0	-
@@ -1627,9 +1628,10 @@ Rule	Hungary	1955	only	-	Oct	 2	 3:00	0	-
 # https://library.hungaricana.hu/hu/view/PestMegyeiHirlap_1957_09/?pg=143
 Rule	Hungary	1956	1957	-	Jun	Sun>=1	 2:00	1:00	S
 Rule	Hungary	1956	1957	-	Sep	lastSun	 3:00	0	-
-# https://library.hungaricana.hu/hu/view/DTT_KOZL_TanacsokKozlonye_1980/?pg=1227
+# https://library.hungaricana.hu/hu/view/DTT_KOZL_TanacsokKozlonye_1980/?pg=189
 Rule	Hungary	1980	only	-	Apr	 6	 0:00	1:00	S
 Rule	Hungary	1980	only	-	Sep	28	 1:00	0	-
+# https://library.hungaricana.hu/hu/view/DTT_KOZL_TanacsokKozlonye_1980/?pg=1227
 # https://library.hungaricana.hu/hu/view/Delmagyarorszag_1981_01/?pg=79
 # https://library.hungaricana.hu/hu/view/DTT_KOZL_TanacsokKozlonye_1982/?pg=115
 # https://library.hungaricana.hu/hu/view/DTT_KOZL_TanacsokKozlonye_1983/?pg=85
@@ -1640,6 +1642,7 @@ Rule	Hungary	1981	1983	-	Sep	lastSun	 1:00	0	-
 Zone	Europe/Budapest	1:16:20 -	LMT	1890 Nov  1
 			1:00	C-Eur	CE%sT	1918
 # https://library.hungaricana.hu/hu/view/OGYK_RT_1941/?pg=1204
+# https://library.hungaricana.hu/hu/view/OGYK_RT_1942/?pg=3955
 			1:00	Hungary	CE%sT	1941 Apr  7 23:00
 			1:00	C-Eur	CE%sT	1945
 			1:00	Hungary	CE%sT	1984

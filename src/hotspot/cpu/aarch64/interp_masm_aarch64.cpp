@@ -551,7 +551,9 @@ void InterpreterMacroAssembler::remove_activation(
   br(Assembler::AL, fast_path);
   bind(slow_path);
   push(state);
-  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind));
+  set_last_Java_frame(esp, rfp, (address)pc(), rscratch1);
+  super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), rthread);
+  reset_last_Java_frame(true);
   pop(state);
   bind(fast_path);
 

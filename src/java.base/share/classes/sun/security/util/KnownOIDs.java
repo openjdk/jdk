@@ -354,7 +354,7 @@ public enum KnownOIDs {
     ECDH("1.3.132.1.12"),
 
     // OIW secsig 1.3.14.3.*
-    OIW_DES_CBC("1.3.14.3.2.7", "DES/CBC"),
+    OIW_DES_CBC("1.3.14.3.2.7", "DES/CBC", "DES"),
 
     OIW_DSA("1.3.14.3.2.12", "DSA") {
         @Override
@@ -370,6 +370,8 @@ public enum KnownOIDs {
         @Override
         boolean registerNames() { return false; }
     },
+
+    DESede("1.3.14.3.2.17", "DESede"),
 
     SHA_1("1.3.14.3.2.26", "SHA-1", "SHA", "SHA1"),
 

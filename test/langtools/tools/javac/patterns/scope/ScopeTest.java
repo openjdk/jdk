@@ -98,10 +98,7 @@ public class ScopeTest extends JavacTemplateTestBase {
     }
 
     private void assertOK(String block) {
-        String sourceVersion = Integer.toString(Runtime.version().feature());
-
         reset();
-        addCompileOptions("--enable-preview", "-source", sourceVersion);
         program(block);
         try {
             compile();
@@ -113,10 +110,7 @@ public class ScopeTest extends JavacTemplateTestBase {
     }
 
     private void assertFail(String expectedDiag, String block) {
-        String sourceVersion = Integer.toString(Runtime.version().feature());
-
         reset();
-        addCompileOptions("--enable-preview", "-source", sourceVersion);
         program(block);
         try {
             compile();

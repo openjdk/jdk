@@ -52,13 +52,6 @@ class Disassembler : public AbstractDisassembler {
                                void* printf_stream,
                                const char* options,
                                int newline);
-  // this is the type of the dll entry point for old version:
-  typedef void* (*decode_func)(void* start_va, void* end_va,
-                               void* (*event_callback)(void*, const char*, void*),
-                               void* event_stream,
-                               int (*printf_callback)(void*, const char*, ...),
-                               void* printf_stream,
-                               const char* options);
   // points to the library.
   static void*    _library;
   // bailout
@@ -66,7 +59,6 @@ class Disassembler : public AbstractDisassembler {
   static bool     _library_usable;
   // points to the decode function.
   static decode_func_virtual _decode_instructions_virtual;
-  static decode_func _decode_instructions;
 
   // tries to load library and return whether it succeeded.
   // Allow (diagnostic) output redirection.

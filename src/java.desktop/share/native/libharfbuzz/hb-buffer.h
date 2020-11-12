@@ -284,6 +284,10 @@ hb_buffer_guess_segment_properties (hb_buffer_t *buffer);
  *                      space glyph and zeroing the advance width.)
  *                      @HB_BUFFER_FLAG_PRESERVE_DEFAULT_IGNORABLES takes
  *                      precedence over this flag. Since: 1.8.0
+ * @HB_BUFFER_FLAG_DO_NOT_INSERT_DOTTED_CIRCLE:
+ *                      flag indicating that a dotted circle should
+ *                      not be inserted in the rendering of incorrect
+ *                      character sequences (such at <0905 093E>). Since: 2.4
  *
  * Since: 0.9.20
  */
@@ -292,7 +296,8 @@ typedef enum { /*< flags >*/
   HB_BUFFER_FLAG_BOT                            = 0x00000001u, /* Beginning-of-text */
   HB_BUFFER_FLAG_EOT                            = 0x00000002u, /* End-of-text */
   HB_BUFFER_FLAG_PRESERVE_DEFAULT_IGNORABLES    = 0x00000004u,
-  HB_BUFFER_FLAG_REMOVE_DEFAULT_IGNORABLES      = 0x00000008u
+  HB_BUFFER_FLAG_REMOVE_DEFAULT_IGNORABLES      = 0x00000008u,
+  HB_BUFFER_FLAG_DO_NOT_INSERT_DOTTED_CIRCLE    = 0x00000010u
 } hb_buffer_flags_t;
 
 HB_EXTERN void

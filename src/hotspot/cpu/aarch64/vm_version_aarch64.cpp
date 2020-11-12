@@ -181,10 +181,6 @@ void VM_Version::initialize() {
   }
 
   if (_cpu == CPU_ARM && (_model == 0xd07 || _model2 == 0xd07)) _features |= CPU_STXR_PREFETCH;
-  // If an olde style /proc/cpuinfo (cores == 1) then if _model is an A57 (0xd07)
-  // we assume the worst and assume we could be on a big little system and have
-  // undisclosed A53 cores which we could be swapped to at any stage
-  if (_cpu == CPU_ARM && os::processor_count() == 1 && _model == 0xd07) _features |= CPU_A53MAC;
 
   char buf[512];
   sprintf(buf, "0x%02x:0x%x:0x%03x:%d", _cpu, _variant, _model, _revision);
@@ -336,6 +332,10 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
   }
 
+  if (FLAG_IS_DEFAULT(UseBASE64Intrinsics)) {
+    UseBASE64Intrinsics = true;
+  }
+
   if (is_zva_enabled()) {
     if (FLAG_IS_DEFAULT(UseBlockZeroing)) {
       FLAG_SET_DEFAULT(UseBlockZeroing, true);
@@ -401,7 +401,7 @@ void VM_Version::initialize() {
       warning("SVE does not support vector length less than 16 bytes. Disabling SVE.");
       UseSVE = 0;
     } else if ((MaxVectorSize % 16) == 0 && is_power_of_2(MaxVectorSize)) {
-      int new_vl = set_and_get_current_sve_vector_lenght(MaxVectorSize);
+      int new_vl = set_and_get_current_sve_vector_length(MaxVectorSize);
       _initial_sve_vector_length = new_vl;
       // Update MaxVectorSize to the largest supported value.
       if (new_vl < 0) {

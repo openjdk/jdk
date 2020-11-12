@@ -46,8 +46,12 @@ requires.extraPropDefns.vmOpts = -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
 requires.properties= \
     sun.arch.data.model \
     java.runtime.name \
-    vm.gc.Z \
+    vm.gc.G1 \
+    vm.gc.Serial \
+    vm.gc.Parallel \
     vm.gc.Shenandoah \
+    vm.gc.Epsilon \
+    vm.gc.Z \
     vm.graal.enabled \
     vm.compiler1.enabled \
     vm.compiler2.enabled \
@@ -58,7 +62,8 @@ requires.properties= \
     vm.hasJFR \
     vm.jvmci \
     docker.support \
-    release.implementor
+    release.implementor \
+    jdk.containerized
 
 # Minimum jtreg version
 requiredVersion=5.1 b1
