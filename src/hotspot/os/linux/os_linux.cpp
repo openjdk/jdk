@@ -4624,7 +4624,7 @@ jint os::init_2(void) {
   // initialize thread priority policy
   prio_init();
 
-  if (!FLAG_IS_DEFAULT(AllocateHeapAt) || !FLAG_IS_DEFAULT(AllocateOldGenAt)) {
+  if (!FLAG_IS_DEFAULT(AllocateHeapAt)) {
     set_coredump_filter(DAX_SHARED_BIT);
   }
 
