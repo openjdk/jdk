@@ -57,6 +57,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/reflectionUtils.hpp"
 #include "runtime/safepoint.hpp"
+#include "runtime/timerTrace.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.hpp"
@@ -3010,6 +3011,9 @@ void JvmtiTagMap::gc_notification(size_t num_dead_entries) {
     }
   } else {
     assert(SafepointSynchronize::is_at_safepoint(), "must be");
+
+    TraceTime timer("JvmtiTagMap gc_notification and event posting", TRACETIME_LOG(Debug, gc, phases));
+
     JvmtiEnvIterator it;
     for (JvmtiEnv* env = it.first(); env != NULL; env = it.next(env)) {
       JvmtiTagMap* tag_map = env->tag_map_acquire();
