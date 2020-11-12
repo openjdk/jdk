@@ -389,7 +389,8 @@ public class TypeAnnotations {
             if (sym.getKind() == ElementKind.PARAMETER ||
                 sym.getKind() == ElementKind.LOCAL_VARIABLE ||
                 sym.getKind() == ElementKind.RESOURCE_VARIABLE ||
-                sym.getKind() == ElementKind.EXCEPTION_PARAMETER) {
+                sym.getKind() == ElementKind.EXCEPTION_PARAMETER ||
+                sym.getKind() == ElementKind.BINDING_VARIABLE) {
                 appendTypeAnnotationsToOwner(sym, typeAnnotations);
             }
         }
@@ -1264,6 +1265,11 @@ public class TypeAnnotations {
                 if (!tree.isImplicitlyTyped()) {
                     separateAnnotationsKinds(tree.vartype, tree.sym.type, tree.sym, pos);
                 }
+            } else if (tree.sym.getKind() == ElementKind.BINDING_VARIABLE) {
+                final TypeAnnotationPosition pos =
+                    TypeAnnotationPosition.localVariable(currentLambda,
+                                                         tree.pos);
+                separateAnnotationsKinds(tree.vartype, tree.sym.type, tree.sym, pos);
             } else if (tree.sym.getKind() == ElementKind.EXCEPTION_PARAMETER) {
                 final TypeAnnotationPosition pos =
                     TypeAnnotationPosition.exceptionParameter(currentLambda,

@@ -933,16 +933,30 @@ public class JavacParser implements Parser {
                 int pos = token.pos;
                 nextToken();
                 int typePos = token.pos;
-                JCExpression type = parseType();
+                JCModifiers mods = modifiersOpt();
+                checkNoMods(mods.flags & ~Flags.DEPRECATED);
+                JCExpression type = unannotatedType(false);
                 JCTree pattern;
                 if (token.kind == IDENTIFIER) {
                     checkSourceLevel(token.pos, Feature.PATTERN_MATCHING_IN_INSTANCEOF);
-                    JCModifiers mods = F.at(Position.NOPOS).Modifiers(0);
                     JCVariableDecl var = toP(F.at(token.pos).VarDef(mods, ident(), type, null));
                     TreeInfo.getStartPos(var);
                     pattern = toP(F.at(typePos).BindingPattern(var));
                     TreeInfo.getStartPos(pattern);
                 } else {
+                    if (mods.annotations.nonEmpty()) {
+                        checkSourceLevel(mods.annotations.head.pos, Feature.TYPE_ANNOTATIONS);
+                        List<JCAnnotation> typeAnnos =
+                                mods.annotations
+                                    .map(decl -> {
+                                        JCAnnotation typeAnno = F.at(decl.pos)
+                                                                 .TypeAnnotation(decl.annotationType,
+                                                                                  decl.args);
+                                        endPosTable.replaceTree(decl, typeAnno);
+                                        return typeAnno;
+                                    });
+                        type = insertAnnotationsToMostInner(type, typeAnnos, false);
+                    }
                     pattern = type;
                 }
                 odStack[top] = F.at(pos).TypeTest(odStack[top], pattern);
