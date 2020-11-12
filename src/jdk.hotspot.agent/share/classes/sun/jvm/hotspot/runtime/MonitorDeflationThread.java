@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,20 @@
  *
  */
 
-#ifndef SHARE_GC_PARALLEL_PSFILEBACKEDVIRTUALSPACE_HPP
-#define SHARE_GC_PARALLEL_PSFILEBACKEDVIRTUALSPACE_HPP
+package sun.jvm.hotspot.runtime;
 
-#include "gc/parallel/psVirtualspace.hpp"
+import java.io.*;
 
-class PSFileBackedVirtualSpace : public PSVirtualSpace {
-private:
-  const char* _file_path;
-  int _fd;
-  bool _mapping_succeeded;
-public:
-  PSFileBackedVirtualSpace(ReservedSpace rs, size_t alignment, const char* file_path);
+import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.types.*;
 
-  bool   initialize();
-  bool   expand_by(size_t bytes);
-  bool   shrink_by(size_t bytes);
-  size_t expand_into(PSVirtualSpace* space, size_t bytes);
-  void   release();
-};
-#endif // SHARE_GC_PARALLEL_PSFILEBACKEDVIRTUALSPACE_HPP
+public class MonitorDeflationThread extends JavaThread {
+  public MonitorDeflationThread(Address addr) {
+    super(addr);
+  }
+
+  public boolean isJavaThread() { return false; }
+  public boolean isHiddenFromExternalView() { return true; }
+  public boolean isMonitorDeflationThread() { return true; }
+
+}
