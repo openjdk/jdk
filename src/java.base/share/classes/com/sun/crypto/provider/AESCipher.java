@@ -652,127 +652,25 @@ abstract class AESCipher extends CipherSpi {
         }
     }
 
+    /**
+     * Finalize crypto operation with ByteBuffers
+     *
+     * @param input the input ByteBuffer
+     * @param output the output ByteBuffer
+     *
+     * @return output length
+     * @throws ShortBufferException
+     * @throws IllegalBlockSizeException
+     * @throws BadPaddingException
+     */
     @Override
     protected int engineDoFinal(ByteBuffer input, ByteBuffer output)
-            throws ShortBufferException, IllegalBlockSizeException,
-            BadPaddingException {
-        return bufferCrypt(input, output, false);
-    }
-
-    /**
-     * Implementation for encryption using ByteBuffers. Used for both
-     * engineUpdate() and engineDoFinal().
-     *
-     * This replaces CipherSpi.bufferCrypt to allow GCM to use ByteBuffers;
-     * otherwise the two should be kept the same.
-     */
-    private int bufferCrypt(ByteBuffer input, ByteBuffer output,
-            boolean isUpdate) throws ShortBufferException,
-            IllegalBlockSizeException, BadPaddingException {
-        if ((input == null) || (output == null)) {
-            throw new NullPointerException
-                ("Input and output buffers must not be null");
+        throws ShortBufferException, IllegalBlockSizeException,
+        BadPaddingException {
+        if (core.getMode() == CipherCore.GCM_MODE && !input.hasArray()) {
+            return core.gcmDoFinal(input, output);
+        } else {
+            return super.engineDoFinal(input, output);
         }
-        int inPos = input.position();
-        int inLimit = input.limit();
-        int inLen = inLimit - inPos;
-        if (isUpdate && (inLen == 0)) {
-            return 0;
-        }
-        int outLenNeeded = engineGetOutputSize(inLen);
-
-        if (output.remaining() < outLenNeeded) {
-            throw new ShortBufferException("Need at least " + outLenNeeded
-                + " bytes of space in output buffer");
-        }
-
-        // detecting input and output buffer overlap may be tricky
-        // we can only write directly into output buffer when we
-        // are 100% sure it's safe to do so
-
-        boolean a1 = input.hasArray();
-        boolean a2 = output.hasArray();
-        int total = 0;
-
-        if (a1) { // input has an accessible byte[]
-            byte[] inArray = input.array();
-            int inOfs = input.arrayOffset() + inPos;
-
-            if (a2) { // output has an accessible byte[]
-                byte[] outArray = output.array();
-                int outPos = output.position();
-                int outOfs = output.arrayOffset() + outPos;
-
-                // check array address and offsets and use temp output buffer
-                // if output offset is larger than input offset and
-                // falls within the range of input data
-                boolean useTempOut = false;
-                if (inArray == outArray &&
-                    ((inOfs < outOfs) && (outOfs < inOfs + inLen))) {
-                    useTempOut = true;
-                    outArray = new byte[outLenNeeded];
-                    outOfs = 0;
-                }
-                if (isUpdate) {
-                    total = engineUpdate(inArray, inOfs, inLen, outArray, outOfs);
-                } else {
-                    total = engineDoFinal(inArray, inOfs, inLen, outArray, outOfs);
-                }
-                if (useTempOut) {
-                    output.put(outArray, outOfs, total);
-                } else {
-                    // adjust output position manually
-                    output.position(outPos + total);
-                }
-                // adjust input position manually
-                input.position(inLimit);
-            } else { // output does not have an accessible byte[]
-                byte[] outArray;
-                if (isUpdate) {
-                    outArray = engineUpdate(inArray, inOfs, inLen);
-                } else {
-                    outArray = engineDoFinal(inArray, inOfs, inLen);
-                }
-                if (outArray != null && outArray.length != 0) {
-                    output.put(outArray);
-                    total = outArray.length;
-                }
-                // adjust input position manually
-                input.position(inLimit);
-            }
-        } else { // input does not have an accessible byte[]
-
-            if (!isUpdate && core.getMode() == CipherCore.GCM_MODE) {
-                    return core.gcmDoFinal(input, output);
-            } else {
-                // have to assume the worst, since we have no way of determine
-                // if input and output overlaps or not
-                byte[] tempOut = new byte[outLenNeeded];
-                int outOfs = 0;
-
-                byte[] tempIn = new byte[Math.min(4096, inLen)];
-                do {
-                    int chunk = Math.min(inLen, tempIn.length);
-                    if (chunk > 0) {
-                        input.get(tempIn, 0, chunk);
-                    }
-                    int n;
-                    if (isUpdate || (inLen > chunk)) {
-                        n = engineUpdate(tempIn, 0, chunk, tempOut, outOfs);
-                    } else {
-                        n = engineDoFinal(tempIn, 0, chunk, tempOut, outOfs);
-                    }
-                    outOfs += n;
-                    total += n;
-                    inLen -= chunk;
-                } while (inLen > 0);
-                if (total > 0) {
-                    output.put(tempOut, 0, total);
-                }
-            }
-        }
-
-        return total;
     }
 }
-

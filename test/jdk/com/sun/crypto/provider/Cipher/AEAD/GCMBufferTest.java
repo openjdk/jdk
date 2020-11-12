@@ -28,7 +28,7 @@
  * in-place buffers.
  *
  * in-place is not tested with different buffer types as it is not a logical
- * scenerio and is complicated by getOutputSize calculations.
+ * scenario and is complicated by getOutputSize calculations.
  *
  */
 
@@ -39,20 +39,35 @@ import javax.crypto.spec.SecretKeySpec;
 import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
 public class GCMBufferTest {
+
     // Data type for the operation
     enum dtype { BYTE, HEAP, DIRECT };
+    // Data map
     static HashMap<String, List<Data>> datamap = new HashMap<>();
     // List of enum values for order of operation
     List<dtype> ops;
 
     static final int AESBLOCK = 16;
+    // The remaining input data length is inserted at the particular index
+    // in sizes[] during execution.
+    static final int REMAINDER = -1;
+
+    String algo;
+    boolean same = true;
+    int[] sizes;
+    boolean incremental = false;
+    // In some cases the theoretical check is too complicated to verify
+    boolean theoreticalCheck;
+    List<Data> dataSet;
 
     static class Data {
+        int id;
         SecretKey key;
         byte[] iv;
         byte[] pt;
@@ -60,8 +75,9 @@ public class GCMBufferTest {
         byte[] ct;
         byte[] tag;
 
-        Data(String keyalgo, String key, String iv, byte[] pt, String aad,
+        Data(String keyalgo, int id, String key, String iv, byte[] pt, String aad,
             String ct, String tag) {
+            this.id = id;
             this.key = new SecretKeySpec(HexToBytes(key), keyalgo);
             this.iv = HexToBytes(iv);
             this.pt = pt;
@@ -70,120 +86,270 @@ public class GCMBufferTest {
             this.tag = HexToBytes(tag);
         }
 
-        Data(String keyalgo, String key, String iv, String pt, String aad,
+        Data(String keyalgo, int id, String key, String iv, String pt, String aad,
             String ct, String tag) {
-            this(keyalgo, key, iv, HexToBytes(pt), aad, ct, tag);
+            this(keyalgo, id, key, iv, HexToBytes(pt), aad, ct, tag);
+        }
 
+        Data(String keyalgo, int id, String key, int ptlen) {
+            this.id = id;
+            this.key = new SecretKeySpec(HexToBytes(key), keyalgo);
+            iv = new byte[16];
+            pt = new byte[ptlen];
+            tag = new byte[12];
+            aad = new byte[0];
+            byte[] tct = null;
+            try {
+                SecureRandom r = new SecureRandom();
+                r.nextBytes(iv);
+                r.nextBytes(pt);
+                Cipher c = Cipher.getInstance("AES/GCM/NoPadding");
+                c.init(Cipher.ENCRYPT_MODE, this.key,
+                    new GCMParameterSpec(tag.length * 8, this.iv));
+                tct = c.doFinal(pt);
+            } catch (Exception e) {
+                System.out.println("Error in generating data for length " +
+                    ptlen);
+            }
+            ct = new byte[ptlen];
+            System.arraycopy(tct, 0, ct, 0, ct.length);
+            System.arraycopy(tct, ct.length, tag, 0, tag.length);
         }
 
     }
 
-
-    GCMBufferTest(String algo, List<dtype> ops, boolean same) throws Exception {
+    /**
+     * Construct a test with an algorithm and a list of dtype.
+     * @param algo Algorithm string
+     * @param ops List of dtypes.  If only one dtype is specified, only a
+     *            doFinal operation will occur.  If multiple dtypes are
+     *            specified, the last is a doFinal, the others are updates.
+     */
+    GCMBufferTest(String algo, List<dtype> ops) {
+        this.algo = algo;
         this.ops = ops;
+        theoreticalCheck = true;
+        dataSet = datamap.get(algo);
+    }
+
+    /**
+     * Define particular data sizes to be tested.  "REMAINDER", which has a
+     * value of -1, can be used to insert the remaining input text length at
+     * that index during execution.
+     * @param sizes Data sizes for each dtype in the list.
+     */
+    GCMBufferTest dataSegments(int[] sizes) {
+        this.sizes = sizes;
+        return this;
+    }
+
+    /**
+     * Do not perform in-place operations
+     */
+    GCMBufferTest differentBufferOnly() {
+        this.same = false;
+        return this;
+    }
+
+    /**
+     * Enable incrementing through each data size available.  This can only be
+     * used when the List has more than one dtype entry.
+     */
+    GCMBufferTest incrementalSegments() {
+        this.incremental = true;
+        //this.theoreticalCheck = false;
+        return this;
+    }
+
+    /**
+     * Specify a particular test dataset.
+     *
+     * @param id id value for the test data to used in this test.
+     */
+    GCMBufferTest dataSet(int id) throws Exception {
+        for (Data d : datamap.get(algo)) {
+            if (d.id == id) {
+                dataSet = List.of(d);
+                return this;
+            }
+        }
+        throw new Exception("Unaeble to find dataSet id = " + id);
+    }
+
+    /**
+     * Reverse recursive loop that starts at the end-1 index, going to 0, in
+     * the size array to calculate all the possible sizes.
+     * It returns the remaining data size not used in the loop.  This remainder
+     * is used for the end index which is the doFinal op.
+     */
+    int inc(int index, int max, int total) {
+        if (sizes[index] == max - total) {
+            sizes[index + 1]++;
+            total++;
+            sizes[index] = 0;
+        } else if (index == 0) {
+            sizes[index]++;
+        }
+
+        total += sizes[index];
+        if (index > 0) {
+            return inc(index - 1, max, total);
+        }
+        return total;
+    }
+
+    // Call recursive loop and take returned remainder value for last index
+    boolean incrementSizes(int max) {
+        sizes[ops.size() - 1] = max - inc(ops.size() - 2, max, 0);
+        if (sizes[ops.size() - 2] == max) {
+            // We are at the end, exit test loop
+            return false;
+        }
+        return true;
+    }
+
+    void test() throws Exception {
         int i = 1;
         System.out.println("Algo: " + algo + " \tOps: " + ops.toString());
-        for (Data data : datamap.get(algo)) {
-            System.out.println("Encrypt:  Data Index: " + i);
-            encrypt(algo, data, 0);
-            encrypt(algo, data, 2);
-            if (same) {
-                encrypt(algo, data, 0, true);
-                encrypt(algo, data, 2, true);
-            }
+        for (Data data : dataSet) {
 
-            System.out.println("Decrypt:  Data Index: " + i);
-            decrypt(algo, data, 0);
-            decrypt(algo, data, 2);
-            if (same) {
-                decrypt(algo, data, 0, true);
-                decrypt(algo, data, 2, true);
+            // If incrementalSegments is enabled, run through that test only
+            if (incremental) {
+                if (ops.size() < 2) {
+                    throw new Exception("To do incrementalSegments you must" +
+                        "have more that 1 dtype in the list");
+                }
+                sizes = new int[ops.size()];
+
+                while (incrementSizes(data.pt.length)) {
+                    System.out.print("Encrypt:  Data Index: " + i + "\tSizes[ ");
+                    for (int v : sizes) {
+                        System.out.print(v + " ");
+                    }
+                    System.out.println("]");
+                    encrypt(data, 0);
+                }
+                Arrays.fill(sizes, 0);
+
+                while (incrementSizes(data.ct.length + data.tag.length)) {
+                    System.out.print("Decrypt:  Data Index: " + i + "\tSizes[ ");
+                    for (int v : sizes) {
+                        System.out.print(v + " ");
+                    }
+                    System.out.println("]");
+                    decrypt(data, 0);
+                }
+
+            } else {
+                // Default test of 0 and 2 offset doing in place and different
+                // i/o buffers
+                System.out.println("Encrypt:  Data Index: " + i);
+                encrypt(data, 0);
+                encrypt(data, 2);
+
+                System.out.println("Decrypt:  Data Index: " + i);
+                decrypt(data, 0);
+                decrypt(data, 2);
             }
             i++;
         }
     }
 
-    GCMBufferTest(String algo, List<dtype> ops) throws Exception {
-        this(algo, ops, true);
-    }
-
-    void encrypt(String algo, Data data, int offset) throws Exception {
-        encrypt(algo, data, offset, false);
-    }
-
-    void encrypt(String algo, Data data, int offset, boolean same)
-        throws Exception {
+    // Setup data for encryption
+    void encrypt(Data data, int offset) throws Exception {
         byte[] input, output;
 
-        System.out.print("\t input len: " + data.pt.length + "  offset: " +
-            offset + "  in-place: ");
-        Cipher cipher = Cipher.getInstance(algo);
-        cipher.init(Cipher.ENCRYPT_MODE, data.key, new GCMParameterSpec(
-            data.tag.length * 8, data.iv));
         input = data.pt;
         output = new byte[data.ct.length + data.tag.length];
         System.arraycopy(data.ct, 0, output, 0, data.ct.length);
         System.arraycopy(data.tag, 0, output, data.ct.length,
             data.tag.length);
-        if (!same) {
-            System.out.println("different");
-            crypto(cipher, true, offset, input, output, data.aad);
-        } else {
-            System.out.println("same");
-            cryptoSameBuffer(cipher, true, offset, input, output, data.aad);
+
+        // Test different input/output buffers
+        System.out.println("\t input len: " + input.length + "  offset: " +
+            offset + "  in/out buffer: different");
+        crypto(true, data, offset, input, output);
+
+        // Test with in-place buffers
+        if (same) {
+            System.out.println("\t input len: " + input.length +
+                "  offset: " + offset + "  in/out buffer: in-place");
+            cryptoSameBuffer(true, data, offset, input, output);
         }
     }
 
-    void decrypt(String algo, Data data, int offset) throws Exception {
-        decrypt(algo, data, offset, false);
-    }
-
-    void decrypt(String algo, Data data, int offset, boolean same)
-        throws Exception {
+    // Setup data for decryption
+    void decrypt(Data data, int offset) throws Exception {
         byte[] input, output;
 
-        System.out.print("\t input len: " + data.pt.length + "  offset: " +
-            offset + "  in-place: ");
-        Cipher cipher = Cipher.getInstance(algo);
-        cipher.init(Cipher.DECRYPT_MODE, data.key,
-            new GCMParameterSpec(data.tag.length * 8, data.iv));
         input = new byte[data.ct.length + data.tag.length];
         System.arraycopy(data.ct, 0, input, 0, data.ct.length);
         System.arraycopy(data.tag, 0, input, data.ct.length, data.tag.length);
         output = data.pt;
-        if (!same) {
-            System.out.println("different");
-            crypto(cipher, false, offset, input, output, data.aad);
-        } else {
-            System.out.println("same");
-            cryptoSameBuffer(cipher, false, offset, input, output, data.aad);
+
+        // Test different input/output buffers
+        System.out.println("\t input len: " + input.length + "  offset: "
+            + offset + "  in-place: different");
+
+        // Test with in-place buffers
+        if (same) {
+            System.out.println("\t input len: " + input.length +
+                "  offset: " + offset + "  in-place: same");
+            cryptoSameBuffer(false, data, offset, input, output);
         }
     }
 
-    void crypto(Cipher cipher, boolean encrypt, int offset, byte[] input,
-        byte[] output, byte[] aad) throws Exception {
+    /**
+     * Perform cipher operation using different input and output buffers.
+     *   This method allows mixing of data types (byte, heap, direct).
+     */
+     void crypto(boolean encrypt, Data d, int offset, byte[] input,
+        byte[] output) throws Exception {
         byte[] pt = new byte[input.length + offset];
         System.arraycopy(input, 0, pt, offset, input.length);
         int plen = input.length / ops.size(); // partial input length
-        int theorticallen = plen - (plen % AESBLOCK); // output length
-        int inofs = 0;
-        int dataoffset = 0;
-        int index = 0;
-        int rlen = 0; // result length
+        int theoreticallen;// expected output length
+        int inofs = offset;
+        int dataoffset = 0; // offset of unconsumed data in pt
+        int index = 0; // index of which op we are on
+        int rlen; // result length
+        int pbuflen = 0; // plen remaining in the GCM internal buffers
 
-        cipher.updateAAD(aad);
+        Cipher cipher = Cipher.getInstance(algo);
+        cipher.init((encrypt ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE),
+            d.key, new GCMParameterSpec(d.tag.length * 8, d.iv));
+        cipher.updateAAD(d.aad);
 
         ByteArrayOutputStream ba = new ByteArrayOutputStream();
         for (dtype v : ops) {
-            if (++index < ops.size()) {
-                int olen = cipher.getOutputSize(plen) + offset; // output length
-                if (plen > offset) {
-                    inofs = offset;
+            if (index < ops.size() - 1) {
+                if (sizes != null && input.length > 0) {
+                    if (sizes[index] == -1) {
+                        plen = input.length - dataoffset;
+                    } else {
+                        if (sizes[index] > input.length) {
+                            plen = input.length;
+                        } else {
+                            plen = sizes[index];
+                        }
+                    }
                 }
+
+                int olen = cipher.getOutputSize(plen) + offset;
+
+                /*
+                 * The theoretical limit is the length of the data sent to
+                 * update() + any data might be setting in CipherCore or GCM
+                 * internal buffers % the block size.
+                 */
+                theoreticallen = (plen + pbuflen) - ((plen + pbuflen) % AESBLOCK);
+
+                // Update operations
                 switch (v) {
                     case BYTE -> {
                         byte[] out = new byte[olen];
-                        rlen = cipher.update(pt, inofs, plen, out, offset);
+                        rlen = cipher.update(pt, dataoffset + inofs, plen, out,
+                            offset);
                         ba.write(out, inofs, rlen);
                     }
                     case HEAP -> {
@@ -215,19 +381,22 @@ public class GCMBufferTest {
                     default -> throw new Exception("Unknown op: " + v.name());
                 }
 
-                if (encrypt && rlen != theorticallen) {
-                    throw new Exception("Wrong update return len (" +
-                        v.name() + "):  " + "rlen=" + rlen +
-                        ", expected output len=" + theorticallen);
+                if (theoreticalCheck) {
+                    pbuflen += plen - rlen;
+                    if (encrypt && rlen != theoreticallen) {
+                        throw new Exception("Wrong update return len (" +
+                            v.name() + "):  " + "rlen=" + rlen +
+                            ", expected output len=" + theoreticallen);
+                    }
                 }
 
                 dataoffset += plen;
+                index++;
 
             } else {
+                // doFinal operation
                 plen = input.length - dataoffset;
-                if (plen > offset) {
-                    inofs = offset;
-                }
+
                 int olen = cipher.getOutputSize(plen) + offset;
                 switch (v) {
                     case BYTE -> {
@@ -269,12 +438,13 @@ public class GCMBufferTest {
                     default -> throw new Exception("Unknown op: " + v.name());
                 }
 
-                if (rlen != olen - offset) {
+                if (theoreticalCheck && rlen != olen - offset) {
                     throw new Exception("Wrong doFinal return len (" +
                         v.name() + "):  " + "rlen=" + rlen +
                         ", expected output len=" + (olen - offset));
                 }
 
+                // Verify results
                 byte[] ctresult = ba.toByteArray();
                 if (ctresult.length != output.length ||
                     Arrays.compare(ctresult, output) != 0) {
@@ -290,21 +460,32 @@ public class GCMBufferTest {
         }
     }
 
-    void cryptoSameBuffer(Cipher cipher, boolean encrypt, int offset,
-        byte[] input, byte[] output, byte[] aad) throws Exception {
+    /**
+     * Perform cipher operation using in-place buffers.  This method does not
+     * allow mixing of data types (byte, heap, direct).
+     *
+     * Mixing data types makes no sense for in-place operations and would
+     * greatly complicate the test code.
+     */
+    void cryptoSameBuffer(boolean encrypt, Data d, int offset,
+        byte[] input, byte[] output) throws Exception {
         byte[] data =
             new byte[(encrypt ? output.length : input.length) + offset], out;
         ByteBuffer bbin = null, bbout = null;
         System.arraycopy(input, 0, data, offset, input.length);
-        cipher.updateAAD(aad);
         int plen = input.length / ops.size(); // partial input length
         int theorticallen = plen - (plen % AESBLOCK); // output length
-        int inofs = 0;
         int dataoffset = 0;
         int index = 0;
         int rlen = 0; // result length
         int len = 0;
 
+        Cipher cipher = Cipher.getInstance(algo);
+        cipher.init((encrypt ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE),
+            d.key, new GCMParameterSpec(d.tag.length * 8, d.iv));
+        cipher.updateAAD(d.aad);
+
+        // Prepare data
         switch (ops.get(0)) {
             case HEAP -> {
                 bbin = ByteBuffer.wrap(data);
@@ -321,6 +502,7 @@ public class GCMBufferTest {
             }
         }
 
+        // Set data limits for bytebuffers
         if (bbin != null) {
             if (encrypt) {
                 bbin.limit(input.length + offset);
@@ -330,15 +512,13 @@ public class GCMBufferTest {
             bbout.position(offset);
         }
 
-        ByteArrayOutputStream ba = new ByteArrayOutputStream();
+        // Iterate through each operation
         for (dtype v : ops) {
-            if (++index < ops.size()) {
-                if (plen > offset) {
-                    inofs = offset;
-                }
+            if (index < ops.size() - 1) {
                 switch (v) {
                     case BYTE -> {
-                        rlen = cipher.update(data, inofs, plen, data, offset);
+                        rlen = cipher.update(data, dataoffset + offset, plen,
+                            data, len + offset);
                     }
                     case HEAP, DIRECT -> {
                         theorticallen = bbin.remaining() -
@@ -348,7 +528,8 @@ public class GCMBufferTest {
                     default -> throw new Exception("Unknown op: " + v.name());
                 }
 
-                if (encrypt && rlen != theorticallen) {
+                // Check that the theoretical return value matches the actual.
+                if (theoreticalCheck && encrypt && rlen != theorticallen) {
                     throw new Exception("Wrong update return len (" +
                         v.name() + "):  " + "rlen=" + rlen +
                         ", expected output len=" + theorticallen);
@@ -356,18 +537,18 @@ public class GCMBufferTest {
 
                 dataoffset += plen;
                 len += rlen;
+                index++;
 
             } else {
+                // Run doFinal op
                 plen = input.length - dataoffset;
-                if (plen > offset) {
-                    inofs = offset;
-                }
+
                 switch (v) {
                     case BYTE -> {
-                        rlen = cipher.doFinal(data, dataoffset + inofs,
-                            plen, data, len + inofs);
-                        out = Arrays.copyOfRange(data, inofs,
-                            len + rlen + inofs);
+                        rlen = cipher.doFinal(data, dataoffset + offset,
+                            plen, data, len + offset);
+                        out = Arrays.copyOfRange(data, offset,
+                            len + rlen + offset);
                     }
                     case HEAP, DIRECT -> {
                         rlen = cipher.doFinal(bbin, bbout);
@@ -380,6 +561,7 @@ public class GCMBufferTest {
                 }
                 len += rlen;
 
+                // Verify results
                 if (len != output.length ||
                     Arrays.compare(out, 0, len, output, 0,
                         output.length) != 0) {
@@ -394,31 +576,76 @@ public class GCMBufferTest {
         }
     }
 
-    String byteToHex(byte[] barray) {
-        StringBuilder s = new StringBuilder();
-        for (byte b : barray) {
-            s.append(String.format("%02x", b));
-        }
-        return s.toString();
-    }
-
     public static void main (String args[]) throws Exception {
 
         initTest();
 
-        new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE));
+        // Test single byte array
+        new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE)).test();
+        // Test update-doFinal with byte arrays
         new GCMBufferTest("AES/GCM/NoPadding",
-            List.of(dtype.BYTE, dtype.BYTE));
-        new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.HEAP));
+            List.of(dtype.BYTE, dtype.BYTE)).test();
+        // Test update-update-doFinal with byte arrays
         new GCMBufferTest("AES/GCM/NoPadding",
-            List.of(dtype.HEAP, dtype.HEAP));
-        new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.DIRECT));
+            List.of(dtype.BYTE, dtype.BYTE, dtype.BYTE)).test();
+
+        // Test single heap bytebuffer
+        new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.HEAP)).test();
+        // Test update-doFinal with heap bytebuffer
         new GCMBufferTest("AES/GCM/NoPadding",
-            List.of(dtype.BYTE, dtype.DIRECT), false);
+            List.of(dtype.HEAP, dtype.HEAP)).test();
+        // Test update-update-doFinal with heap bytebuffer
         new GCMBufferTest("AES/GCM/NoPadding",
-            List.of(dtype.DIRECT, dtype.BYTE), false);
+            List.of(dtype.HEAP, dtype.HEAP, dtype.HEAP)).test();
+
+        // Test single direct bytebuffer
+        new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.DIRECT)).test();
+        // Test update-doFinal with direct bytebuffer
         new GCMBufferTest("AES/GCM/NoPadding",
-            List.of(dtype.BYTE, dtype.HEAP, dtype.DIRECT), false);
+            List.of(dtype.DIRECT, dtype.DIRECT)).test();
+        // Test update-update-doFinal with direct bytebuffer
+        new GCMBufferTest("AES/GCM/NoPadding",
+            List.of(dtype.DIRECT, dtype.DIRECT, dtype.DIRECT)).test();
+
+        // Test update-update-doFinal with byte arrays and preset data sizes
+        new GCMBufferTest("AES/GCM/NoPadding",
+            List.of(dtype.BYTE, dtype.BYTE, dtype.BYTE)).dataSegments(
+            new int[] { 1, 1, GCMBufferTest.REMAINDER}).test();
+
+        // Test update-doFinal with a byte array and a direct bytebuffer
+        new GCMBufferTest("AES/GCM/NoPadding",
+            List.of(dtype.BYTE, dtype.DIRECT)).differentBufferOnly().test();
+        // Test update-doFinal with a byte array and heap and direct bytebuffer
+        new GCMBufferTest("AES/GCM/NoPadding",
+            List.of(dtype.BYTE, dtype.HEAP, dtype.DIRECT)).differentBufferOnly()
+            .test();
+        // Test update-doFinal with a direct bytebuffer and a byte array.
+        new GCMBufferTest("AES/GCM/NoPadding",
+            List.of(dtype.DIRECT, dtype.BYTE)).differentBufferOnly().test();
+
+        // Test update-doFinal with a direct bytebuffer and a byte array with
+        // preset data sizes.
+        new GCMBufferTest("AES/GCM/NoPadding",
+            List.of(dtype.DIRECT, dtype.BYTE)).differentBufferOnly().
+            dataSegments(new int[] { 20, GCMBufferTest.REMAINDER }).test();
+        // Test update-update-doFinal with a direct and heap bytebuffer and a
+        // byte array with preset data sizes.
+        new GCMBufferTest("AES/GCM/NoPadding",
+            List.of(dtype.DIRECT, dtype.BYTE, dtype.HEAP)).
+            differentBufferOnly().dataSet(5).
+            dataSegments(new int[] { 5000, 1000, GCMBufferTest.REMAINDER }).
+            test();
+
+        // Test update-update-doFinal with byte arrays, incrementing through
+        // every data size combination for the Data set 0
+        new GCMBufferTest("AES/GCM/NoPadding",
+            List.of(dtype.BYTE, dtype.BYTE, dtype.BYTE)).incrementalSegments().
+            dataSet(0).test();
+        // Test update-update-doFinal with direct bytebuffers, incrementing through
+        // every data size combination for the Data set 0
+        new GCMBufferTest("AES/GCM/NoPadding",
+            List.of(dtype.DIRECT, dtype.DIRECT, dtype.DIRECT)).
+            incrementalSegments().dataSet(0).test();
     }
 
     private static byte[] HexToBytes(String hexVal) {
@@ -433,14 +660,19 @@ public class GCMBufferTest {
         return result;
     }
 
-    static void initTest() {
-        byte[] in = new byte[256];
-        byte[] inx = new byte[2075];
-        Arrays.fill(in, (byte) 0);
-        Arrays.fill(inx, (byte) 0);
+    private static String byteToHex(byte[] barray) {
+        StringBuilder s = new StringBuilder();
+        for (byte b : barray) {
+            s.append(String.format("%02x", b));
+        }
+        return s.toString();
+    }
 
+    // Test data
+    static void initTest() {
         datamap.put("AES/GCM/NoPadding", List.of(
-            new Data("AES",
+            // GCM KAT
+            new Data("AES", 0,
             "141f1ce91989b07e7eb6ae1dbd81ea5e",
                 "49451da24bd6074509d3cebc2c0394c972e6934b45a1d91f3ce1d3ca69e19" +
                 "4aa1958a7c21b6f21d530ce6d2cc5256a3f846b6f9d2f38df0102c4791e5" +
@@ -454,17 +686,20 @@ public class GCMBufferTest {
             "f4c34e5fbe74c0297313268296cd561d59ccc95bbfcdfcdc71b0097dbd83" +
                 "240446b28dc088abd42b0fc687f208190ff24c0548",
             "dbb93bbb56d0439cd09f620a57687f5d"),
-            new Data("AES", "11754cd72aec309bf52f7687212e8957",
+            // GCM KAT
+            new Data("AES", 1, "11754cd72aec309bf52f7687212e8957",
                 "3c819d9a9bed087615030b65",
                 (String)null, null, null,
                 "250327c674aaf477aef2675748cf6971"),
-            new Data("AES", "272f16edb81a7abbea887357a58c1917",
+            // GCM KAT
+            new Data("AES", 2, "272f16edb81a7abbea887357a58c1917",
                 "794ec588176c703d3d2a7a07",
                 (String)null, null, null,
                 "b6e6f197168f5049aeda32dafbdaeb"),
-            new Data("AES", "272f16edb81a7abbea887357a58c1917",
+            // zero'd test data
+            new Data("AES", 3, "272f16edb81a7abbea887357a58c1917",
                 "794ec588176c703d3d2a7a07",
-                in, null,
+                new byte[256], null,
                 "15b461672153270e8ba1e6789f7641c5411f3e642abda731b6086f535c216457" +
                 "e87305bc59a1ff1f7e1e0bbdf302b75549b136606c67d7e5f71277aeca4bc670" +
                 "07a98f78e0cfa002ed183e62f07893ad31fe67aad1bb37e15b957a14d145f14f" +
@@ -474,9 +709,10 @@ public class GCMBufferTest {
                 "15536c5bb602244e98993ff745f3e523399b2059f0e062d8933fad2366e7e147" +
                 "510a931282bb0e3f635efe7bf05b1dd715f95f5858261b00735224256b6b3e80",
                 "08b3593840d4ed005f5234ae062a5c"),
-            new Data("AES", "272f16edb81a7abbea887357a58c1917",
+            // Random test data
+            new Data("AES", 4, "272f16edb81a7abbea887357a58c1917",
                 "794ec588176c703d3d2a7a07",
-                inx, null,
+                new byte[2075], null,
                 "15b461672153270e8ba1e6789f7641c5411f3e642abda731b6086f535c216457" +
                 "e87305bc59a1ff1f7e1e0bbdf302b75549b136606c67d7e5f71277aeca4bc670" +
                 "07a98f78e0cfa002ed183e62f07893ad31fe67aad1bb37e15b957a14d145f14f" +
@@ -542,6 +778,10 @@ public class GCMBufferTest {
                 "c33a816febcb299dcddf3ec7a8eb6e04cdc90891c6e145bd9fc5f41dc4061a46" +
                 "9feba38545b64ec8203f386ceef52785619e991d274ae80af7e54af535e0b011" +
                 "5effdf847472992875e09398457604d04e0bb965db692c0cdcf11a",
-                "687cc09c89298491deb51061d709af")));
+                "687cc09c89298491deb51061d709af"),
+            // Randomly generated data at the time of execution.
+            new Data("AES", 5, "11754cd72aec309bf52f7687212e8957", 12345)
+            )
+        );
     }
 }

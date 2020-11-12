@@ -124,9 +124,8 @@ final class GCTR extends CounterMode {
         if (inLen < 0 || inLen % AES_BLOCK_SIZE != 0) {
             throw new RuntimeException("input length unsupported");
         }
-        if (dst.remaining() < inLen) {
-            throw new RuntimeException("output buffer too small");
-        }
+        // See GaloisCounterMode. decryptFinal(bytebuffer, bytebuffer) for
+        // details on the check for 'dst' having enough space for the result.
 
         long blocksLeft = blocksUntilRollover();
         int numOfCompleteBlocks = inLen / AES_BLOCK_SIZE;
@@ -150,12 +149,15 @@ final class GCTR extends CounterMode {
             int offset = inOfs;
             while (processed > MAX_LEN) {
                 encrypt(in, offset, MAX_LEN, out, 0);
-                dst.get(out, 0, MAX_LEN);
+                dst.put(out, 0, MAX_LEN);
                 processed -= MAX_LEN;
                 offset += MAX_LEN;
             }
             encrypt(in, offset, processed, out, 0);
-            dst.put(out, 0, processed);
+            // If dst is less than blocksize, insert only what it can.  Extra
+            // bytes would cause buffers with enough size to fail with a
+            // short buffer
+            dst.put(out, 0, Math.min(dst.remaining(), processed));
             return len;
         }
     }

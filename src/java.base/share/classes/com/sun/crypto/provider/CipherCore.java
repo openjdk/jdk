@@ -723,8 +723,7 @@ final class CipherCore {
         len = (len > 0 ? (len - (len % unitBytes)) : 0);
 
         // check output buffer capacity
-        if (getMode() != GCM_MODE && (output == null ||
-            ((output.length - outputOffset) < len))) {
+        if (output == null || (output.length - outputOffset) < len) {
             throw new ShortBufferException("Output buffer must be "
                                            + "(at least) " + len
                                            + " bytes long");
@@ -932,7 +931,7 @@ final class CipherCore {
             // content of cipher has to be preserved in order for
             // users to retry the call with a larger buffer in the
             // case of ShortBufferException.
-            if (output.length - outputOffset < estOutSize) {
+            if (outputCapacity < estOutSize) {
                 cipher.save();
                 // create temporary output buffer if the estimated size is larger
                 // than the user-provided buffer.

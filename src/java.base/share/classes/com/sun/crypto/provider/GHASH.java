@@ -204,11 +204,11 @@ final class GHASH {
 
     // Will process as many blocks it can and will leave the remaining.
     int update(ByteBuffer src, int inLen) {
+        inLen -= (inLen % AES_BLOCK_SIZE);
         if (inLen == 0) {
             return 0;
         }
 
-        inLen -= (inLen % AES_BLOCK_SIZE);
         int processed = inLen;
         byte[] in = new byte[Math.min(MAX_LEN, inLen)];
         while (processed > MAX_LEN ) {
