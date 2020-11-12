@@ -1088,7 +1088,7 @@ public:
     return id;
   }
 
-#ifdef ASSERT
+#ifndef PRODUCT
   // Find out the symbols behind an intrinsic:
   static vmSymbolID     class_for(ID id);
   static vmSymbolID      name_for(ID id);
