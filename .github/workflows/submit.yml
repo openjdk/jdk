@@ -406,12 +406,12 @@ jobs:
       fail-fast: false
       matrix:
         flavor:
-          - build release
-          - build debug
+          - build hotspot no-pch
         include:
-          - flavor: build debug
-            flags: --enable-debug
+          - flavor: build hotspot no-pch
+            flags: --enable-debug --disable-precompiled-headers
             artifact: -debug
+            build-target: hotspot
 
     env:
       JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).DEFAULT_VERSION_FEATURE }}"
@@ -542,12 +542,12 @@ jobs:
       fail-fast: false
       matrix:
         flavor:
-          - build release
-          - build debug
+          - build hotspot no-pch
         include:
-          - flavor: build debug
-            flags: --enable-debug
+          - flavor: build hotspot no-pch
+            flags: --enable-debug --disable-precompiled-headers
             artifact: -debug
+            build-target: hotspot
 
     env:
       JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).DEFAULT_VERSION_FEATURE }}"
@@ -678,12 +678,12 @@ jobs:
       fail-fast: false
       matrix:
         flavor:
-          - build release
-          - build debug
+          - build hotspot no-pch
         include:
-          - flavor: build debug
-            flags: --enable-debug
+          - flavor: build hotspot no-pch
+            flags: --enable-debug --disable-precompiled-headers
             artifact: -debug
+            build-target: hotspot
 
     env:
       JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).DEFAULT_VERSION_FEATURE }}"
@@ -814,12 +814,12 @@ jobs:
       fail-fast: false
       matrix:
         flavor:
-          - build release
-          - build debug
+          - build hotspot no-pch
         include:
-          - flavor: build debug
-            flags: --enable-debug
+          - flavor: build hotspot no-pch
+            flags: --enable-debug --disable-precompiled-headers
             artifact: -debug
+            build-target: hotspot
 
     env:
       JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).DEFAULT_VERSION_FEATURE }}"
