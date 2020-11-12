@@ -177,6 +177,8 @@ define SetupJavaCompilationBody
     $$(error Must specify BIN (in $1))
   endif
 
+  $1_SAFE_NAME := $$(strip $$(subst /,_, $1))
+
   ifeq ($$($1_SMALL_JAVA), )
     # If unspecified, default to true
     $1_SMALL_JAVA := true
@@ -217,7 +219,7 @@ define SetupJavaCompilationBody
 
       # Create a configuration file with the needed information for the javac
       # server to function properly.
-      $1_JAVAC_SERVER_CONFIG := $$(JAVAC_SERVER_DIR)/server.conf
+      $1_JAVAC_SERVER_CONFIG := $$(JAVAC_SERVER_DIR)/$$($1_SAFE_NAME)-server.conf
 
       # The portfile contains the tcp/ip on which the server listens
       # and the cookie necessary to talk to the server.
@@ -343,9 +345,6 @@ define SetupJavaCompilationBody
       $$(error No source files found for $1)
     endif
   else
-
-    $1_SAFE_NAME := $$(strip $$(subst /,_, $1))
-
     # All files below META-INF are always copied.
     $1_ALL_COPIES := $$(filter $$(addsuffix /META-INF%,$$($1_SRC)),$$($1_ALL_SRCS))
     # Find all files to be copied from source to bin.
