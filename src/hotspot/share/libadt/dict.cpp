@@ -75,7 +75,19 @@ Dict::Dict(CmpKey initcmp, Hash inithash, Arena *arena, int size)
 
   _cnt = 0;                     // Dictionary is empty
   _bin = (bucket*)_arena->Amalloc_4(sizeof(bucket)*_size);
-  memset((void*)_bin,0,sizeof(bucket)*_size);
+  memset((void*)_bin, 0, sizeof(bucket)*_size);
+}
+
+// Deep copy into arena of choice
+Dict::Dict(const Dict &d, Arena *arena)
+: _arena(arena), _size(d._size), _cnt(d._cnt), _hash(d._hash), _cmp(d._cmp) {
+  _bin = (bucket*)_arena->Amalloc_4(sizeof(bucket) * _size);
+  memcpy( (void*)_bin, (void*)d._bin, sizeof(bucket) * _size );
+  for (uint i = 0; i < _size; i++) {
+    if ( !_bin[i]._keyvals ) continue;
+    _bin[i]._keyvals = (void**)_arena->Amalloc_4(sizeof(void *) * _bin[i]._max*2);
+    memcpy(_bin[i]._keyvals, d._bin[i]._keyvals, _bin[i]._cnt*2*sizeof(void*));
+  }
 }
 
 //------------------------------~Dict------------------------------------------
@@ -141,41 +153,6 @@ void Dict::doubhash(void) {
       }
     } // End of for all key-value pairs in bucket
   } // End of for all buckets
-}
-
-//------------------------------Dict-----------------------------------------
-// Deep copy a dictionary.
-Dict::Dict( const Dict &d ) : ResourceObj(d), _arena(d._arena), _size(d._size), _cnt(d._cnt), _hash(d._hash), _cmp(d._cmp) {
-  _bin = (bucket*)_arena->Amalloc_4(sizeof(bucket)*_size);
-  memcpy( (void*)_bin, (void*)d._bin, sizeof(bucket)*_size );
-  for( uint i=0; i<_size; i++ ) {
-    if( !_bin[i]._keyvals ) continue;
-    _bin[i]._keyvals=(void**)_arena->Amalloc_4( sizeof(void *)*_bin[i]._max*2);
-    memcpy( _bin[i]._keyvals, d._bin[i]._keyvals,_bin[i]._cnt*2*sizeof(void*));
-  }
-}
-
-//------------------------------Dict-----------------------------------------
-// Deep copy a dictionary.
-Dict &Dict::operator =( const Dict &d ) {
-  if( _size < d._size ) {       // If must have more buckets
-    _arena = d._arena;
-    _bin = (bucket*)_arena->Arealloc( _bin, sizeof(bucket)*_size, sizeof(bucket)*d._size );
-    memset( (void*)(&_bin[_size]), 0, (d._size-_size)*sizeof(bucket) );
-    _size = d._size;
-  }
-  uint i;
-  for( i=0; i<_size; i++ ) // All buckets are empty
-    _bin[i]._cnt = 0;           // But leave bucket allocations alone
-  _cnt = d._cnt;
-  *(Hash*)(&_hash) = d._hash;
-  *(CmpKey*)(&_cmp) = d._cmp;
-  for( i=0; i<_size; i++ ) {
-    bucket *b = &d._bin[i];     // Shortcut to source bucket
-    for( uint j=0; j<b->_cnt; j++ )
-      Insert( b->_keyvals[j+j], b->_keyvals[j+j+1] );
-  }
-  return *this;
 }
 
 //------------------------------Insert----------------------------------------

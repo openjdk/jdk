@@ -57,12 +57,11 @@ class Dict : public ResourceObj { // Dictionary structure
   friend class DictI;            // Friendly iterator function
 
   // cmp is a key comparision routine.  hash is a routine to hash a key.
-  Dict( CmpKey cmp, Hash hash );
-  Dict( CmpKey cmp, Hash hash, Arena *arena, int size=16 );
+  Dict(CmpKey cmp, Hash hash);
+  Dict(CmpKey cmp, Hash hash, Arena *arena, int size = 16);
+  Dict(const Dict &base, Arena *arena); // Deep-copy
   ~Dict();
 
-  Dict( const Dict & );         // Deep-copy guts
-  Dict &operator =( const Dict & );
 
   // Zap to empty; ready for re-use
   void Clear();
