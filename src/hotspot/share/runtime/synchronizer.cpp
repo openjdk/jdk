@@ -227,8 +227,13 @@ int dtrace_waited_probe(ObjectMonitor* monitor, Handle obj, Thread* thr) {
   return 0;
 }
 
-#define NINFLATIONLOCKS 256
-static volatile intptr_t gInflationLocks[NINFLATIONLOCKS];
+os::PlatformMutex* ObjectSynchronizer::gInflationLocks[ObjectSynchronizer::NINFLATIONLOCKS];
+
+void ObjectSynchronizer::initialize() {
+  for (int i = 0; i < NINFLATIONLOCKS; i++) {
+    gInflationLocks[i] = new os::PlatformMutex();
+  }
+}
 
 static MonitorList _in_use_list;
 // The ratio of the current _in_use_list count to the ceiling is used
@@ -793,15 +798,13 @@ static markWord read_stable_mark(oop obj) {
         // and calling park().  When inflation was complete the thread that accomplished inflation
         // would detach the list and set the markword to inflated with a single CAS and
         // then for each thread on the list, set the flag and unpark() the thread.
-        // This is conceptually similar to muxAcquire-muxRelease, except that muxRelease
-        // wakes at most one thread whereas we need to wake the entire list.
-        int ix = (cast_from_oop<intptr_t>(obj) >> 5) & (NINFLATIONLOCKS-1);
+        int ix = (cast_from_oop<intptr_t>(obj) >> 5) & (ObjectSynchronizer::NINFLATIONLOCKS-1);
         int YieldThenBlock = 0;
-        assert(ix >= 0 && ix < NINFLATIONLOCKS, "invariant");
-        assert((NINFLATIONLOCKS & (NINFLATIONLOCKS-1)) == 0, "invariant");
-        Thread::muxAcquire(gInflationLocks + ix, "gInflationLock");
+        assert(ix >= 0 && ix < ObjectSynchronizer::NINFLATIONLOCKS, "invariant");
+        assert((ObjectSynchronizer::NINFLATIONLOCKS & (ObjectSynchronizer::NINFLATIONLOCKS-1)) == 0, "invariant");
+        ObjectSynchronizer::gInflationLocks[ix]->lock();
         while (obj->mark() == markWord::INFLATING()) {
-          // Beware: NakedYield() is advisory and has almost no effect on some platforms
+          // Beware: naked_yield() is advisory and has almost no effect on some platforms
           // so we periodically call self->_ParkEvent->park(1).
           // We use a mixed spin/yield/block mechanism.
           if ((YieldThenBlock++) >= 16) {
@@ -810,7 +813,7 @@ static markWord read_stable_mark(oop obj) {
             os::naked_yield();
           }
         }
-        Thread::muxRelease(gInflationLocks + ix);
+        ObjectSynchronizer::gInflationLocks[ix]->unlock();
       }
     } else {
       SpinPause();       // SMP-polite spinning
