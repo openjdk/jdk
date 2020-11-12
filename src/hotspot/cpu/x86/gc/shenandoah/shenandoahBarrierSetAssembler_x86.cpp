@@ -814,6 +814,11 @@ void ShenandoahBarrierSetAssembler::gen_load_reference_barrier_stub(LIR_Assemble
   ShenandoahBarrierSetC1* bs = (ShenandoahBarrierSetC1*)BarrierSet::barrier_set()->barrier_set_c1();
   __ bind(*stub->entry());
 
+  DecoratorSet decorators = stub->decorators();
+  bool is_strong  = ShenandoahBarrierSet::is_strong_access(decorators);
+  bool is_weak    = ShenandoahBarrierSet::is_weak_access(decorators);
+  bool is_phantom = ShenandoahBarrierSet::is_phantom_access(decorators);
+
   Register obj = stub->obj()->as_register();
   Register res = stub->result()->as_register();
   Register addr = stub->addr()->as_pointer_register();
@@ -829,32 +834,26 @@ void ShenandoahBarrierSetAssembler::gen_load_reference_barrier_stub(LIR_Assemble
     __ mov(res, obj);
   }
 
-  // Check for null.
-  __ testptr(res, res);
-  __ jcc(Assembler::zero, *stub->continuation());
-
-  // Check for object being in the collection set.
-  __ mov(tmp1, res);
-  __ shrptr(tmp1, ShenandoahHeapRegion::region_size_bytes_shift_jint());
-  __ movptr(tmp2, (intptr_t) ShenandoahHeap::in_cset_fast_test_addr());
+  if (is_strong) {
+    // Check for object being in the collection set.
+    __ mov(tmp1, res);
+    __ shrptr(tmp1, ShenandoahHeapRegion::region_size_bytes_shift_jint());
+    __ movptr(tmp2, (intptr_t) ShenandoahHeap::in_cset_fast_test_addr());
 #ifdef _LP64
-  __ movbool(tmp2, Address(tmp2, tmp1, Address::times_1));
-  __ testbool(tmp2);
+    __ movbool(tmp2, Address(tmp2, tmp1, Address::times_1));
+    __ testbool(tmp2);
 #else
-  // On x86_32, C1 register allocator can give us the register without 8-bit support.
-  // Do the full-register access and test to avoid compilation failures.
-  __ movptr(tmp2, Address(tmp2, tmp1, Address::times_1));
-  __ testptr(tmp2, 0xFF);
+    // On x86_32, C1 register allocator can give us the register without 8-bit support.
+    // Do the full-register access and test to avoid compilation failures.
+    __ movptr(tmp2, Address(tmp2, tmp1, Address::times_1));
+    __ testptr(tmp2, 0xFF);
 #endif
-  __ jcc(Assembler::zero, *stub->continuation());
+    __ jcc(Assembler::zero, *stub->continuation());
+  }
 
   __ bind(slow_path);
   ce->store_parameter(res, 0);
   ce->store_parameter(addr, 1);
-  DecoratorSet decorators = stub->decorators();
-  bool is_strong  = ShenandoahBarrierSet::is_strong_access(decorators);
-  bool is_weak    = ShenandoahBarrierSet::is_weak_access(decorators);
-  bool is_phantom = ShenandoahBarrierSet::is_phantom_access(decorators);
   if (is_strong) {
     __ call(RuntimeAddress(bs->load_reference_barrier_strong_rt_code_blob()->code_begin()));
   } else if (is_weak) {
