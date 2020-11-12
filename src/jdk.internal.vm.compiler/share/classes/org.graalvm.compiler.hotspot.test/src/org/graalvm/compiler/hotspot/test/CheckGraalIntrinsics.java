@@ -445,7 +445,7 @@ public class CheckGraalIntrinsics extends GraalTest {
                 add(ignore,
                             "java/util/Base64$Decoder.decodeBlock([BII[BIZ)I");
             }
-	    // Panama
+            // Panama
             add(toBeInvestigated,
                     // Native method handle intrinsics
                     "java/lang/invoke/MethodHandle.linkToNative*");
