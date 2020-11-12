@@ -56,8 +56,8 @@ ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics() :
   ShenandoahHeuristics(),
   _allocation_rate(this),
   _available_at_cycle_start(0),
-  _margin_of_error_sd(ShenandoahReactiveInitialConfidence),
-  _spike_threshold_sd(ShenandoahReactiveInitialSpikeThreshold),
+  _margin_of_error_sd(ShenandoahAdaptiveInitialConfidence),
+  _spike_threshold_sd(ShenandoahAdaptiveInitialSpikeThreshold),
   _last_trigger(OTHER) { }
 
 ShenandoahAdaptiveHeuristics::~ShenandoahAdaptiveHeuristics() {}
@@ -328,14 +328,13 @@ void ShenandoahAdaptiveHeuristics::adjust_spike_threshold(double amount) {
   log_debug(gc, ergo)("Spike threshold now: %.2f", _spike_threshold_sd);
 }
 
-
 ShenandoahAllocationRate::ShenandoahAllocationRate(ShenandoahAdaptiveHeuristics *heuristics) :
   _heuristics(heuristics),
   _last_sample_time(os::javaTimeNanos()),
   _last_sample_value(0),
-  _interval_ns(NANOUNITS / ShenandoahReactiveSampleFrequencyHz),
-  _rate(ShenandoahReactiveSampleSizeSeconds * ShenandoahReactiveSampleFrequencyHz, ShenandoahReactiveDecayFactor),
-  _rate_avg(ShenandoahReactiveSampleSizeSeconds * ShenandoahReactiveSampleFrequencyHz, ShenandoahReactiveDecayFactor) {
+  _interval_ns(NANOUNITS / ShenandoahAdaptiveSampleFrequencyHz),
+  _rate(ShenandoahAdaptiveSampleSizeSeconds * ShenandoahAdaptiveSampleFrequencyHz, ShenandoahAdaptiveDecayFactor),
+  _rate_avg(ShenandoahAdaptiveSampleSizeSeconds * ShenandoahAdaptiveSampleFrequencyHz, ShenandoahAdaptiveDecayFactor) {
 }
 
 void ShenandoahAllocationRate::sample(size_t bytes_allocated_since_gc_start) {
