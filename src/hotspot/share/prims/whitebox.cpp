@@ -1909,10 +1909,10 @@ static bool GetMethodOption(JavaThread* thread, JNIEnv* env, jobject method, jst
   CHECK_JNI_EXCEPTION_(env, false);
   enum CompileCommand option = CompilerOracle::string_to_option(flag_name);
   env->ReleaseStringUTFChars(name, flag_name);
-  if (option != CompileCommand::Unknown) {
+  if (option == CompileCommand::Unknown) {
     return false;
   }
-  return CompilerOracle::has_option_value(mh, option, *value);
+  return CompilerOracle::has_option_value(mh, option, *value, true /* verify type*/);
 }
 
 WB_ENTRY(jobject, WB_GetMethodBooleaneOption(JNIEnv* env, jobject wb, jobject method, jstring name))

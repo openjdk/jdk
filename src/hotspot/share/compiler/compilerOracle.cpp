@@ -241,7 +241,6 @@ TypedMethodOptionMatcher* TypedMethodOptionMatcher::match(const methodHandle& me
   TypedMethodOptionMatcher* current = this;
   while (current != NULL) {
     if (current->_option == option) {
-      // CMH check option type?
       if (current->matches(method)) {
         return current;
       }
@@ -266,20 +265,34 @@ static void add_option_string(TypedMethodOptionMatcher* matcher,  // CHM chnage 
     type = OptionType::Ccstr;
   }
   assert(type == get_type_for<T>(), "sanity");
-  matcher->init(cc_option, get_type_for<T>(), option_list);
+  matcher->init(cc_option, type, option_list);
   matcher->set_value<T>(value);
   option_list = matcher;
-  if ((cc_option != CompileCommand::DontInline) && (cc_option != CompileCommand::Inline)) {
+  if ((cc_option != CompileCommand::DontInline) &&
+      (cc_option != CompileCommand::Inline) &&
+      (cc_option != CompileCommand::Log)) {
     any_set = true;
   }
   return;
 }
 
 template<typename T>
-bool CompilerOracle::has_option_value(const methodHandle& method, enum CompileCommand option, T& value) {
-  assert(command2types[static_cast<int>(option)] == get_type_for<T>(), "Value type must match command type");
+bool CompilerOracle::has_option_value(const methodHandle& method, enum CompileCommand option, T& value, bool verify_type) {
+  enum OptionType type = command2types[static_cast<int>(option)];
+  if (type == OptionType::Ccstrlist) {
+    // CCstrList type options are stored as Ccstr
+    type = OptionType::Ccstr;
+  }
+  if (verify_type) {
+    if (type != get_type_for<T>()) {
+      // Whitebox API expects false if option and type doesn't match
+      return false;
+    }
+  } else {
+    assert(type == get_type_for<T>(), "Value type must match command type");
+  }
   if (option_list != NULL) {
-    TypedMethodOptionMatcher* m = option_list->match(method, option, get_type_for<T>());
+    TypedMethodOptionMatcher* m = option_list->match(method, option, type);
     if (m != NULL) {
       value = m->value<T>();
       return true;
@@ -314,14 +327,13 @@ bool CompilerOracle::has_any_option() {
 }
 
 // Explicit instantiation for all OptionTypes supported.
-template bool CompilerOracle::has_option_value<intx>(const methodHandle& method, enum CompileCommand option, intx& value);
-template bool CompilerOracle::has_option_value<uintx>(const methodHandle& method, enum CompileCommand option, uintx& value);
-template bool CompilerOracle::has_option_value<bool>(const methodHandle& method, enum CompileCommand option, bool& value);
-template bool CompilerOracle::has_option_value<ccstr>(const methodHandle& method, enum CompileCommand option, ccstr& value);
-template bool CompilerOracle::has_option_value<double>(const methodHandle& method, enum CompileCommand option, double& value);
+template bool CompilerOracle::has_option_value<intx>(const methodHandle& method, enum CompileCommand option, intx& value, bool verify_type);
+template bool CompilerOracle::has_option_value<uintx>(const methodHandle& method, enum CompileCommand option, uintx& value, bool verify_type);
+template bool CompilerOracle::has_option_value<bool>(const methodHandle& method, enum CompileCommand option, bool& value, bool verify_type);
+template bool CompilerOracle::has_option_value<ccstr>(const methodHandle& method, enum CompileCommand option, ccstr& value, bool verify_type);
+template bool CompilerOracle::has_option_value<double>(const methodHandle& method, enum CompileCommand option, double& value, bool verify_type);
 
 bool CompilerOracle::has_option(const methodHandle& method, enum CompileCommand option) {
-  // CMH assert check that it is a bool option
   bool value = false;
   has_option_value(method, option, value);
   return value;
@@ -448,8 +460,9 @@ static void scan_value(enum OptionType type, const char* line, int& total_bytes_
   total_bytes_read += skipped;
   if (type == OptionType::Intx) {
     intx value;
-    if (sscanf(line, "%*[ \t]" INTX_FORMAT "%n", &value, &bytes_read) == 1) {
+    if (sscanf(line, "" INTX_FORMAT "%n", &value, &bytes_read) == 1) {
       total_bytes_read += bytes_read;
+      line += bytes_read;
       add_option_string(matcher, cc_option, value);
       return;
     } else {
@@ -457,8 +470,9 @@ static void scan_value(enum OptionType type, const char* line, int& total_bytes_
     }
   } else if (type == OptionType::Uintx) {
     uintx value;
-    if (sscanf(line, "%*[ \t]" UINTX_FORMAT "%n", &value, &bytes_read) == 1) {
+    if (sscanf(line, "" UINTX_FORMAT "%n", &value, &bytes_read) == 1) {
       total_bytes_read += bytes_read;
+      line += bytes_read;
       add_option_string(matcher, cc_option, value);
       return;
     } else {
@@ -467,8 +481,9 @@ static void scan_value(enum OptionType type, const char* line, int& total_bytes_
   } else if (type == OptionType::Ccstr) {
     ResourceMark rm;
     char* value = NEW_RESOURCE_ARRAY(char, strlen(line) + 1);
-    if (sscanf(line, "%*[ \t]%255[_a-zA-Z0-9]%n", value, &bytes_read) == 1) {
+    if (sscanf(line, "%255[_a-zA-Z0-9]%n", value, &bytes_read) == 1) {
       total_bytes_read += bytes_read;
+      line += bytes_read;
       add_option_string(matcher, cc_option, (ccstr)value);
       return;
     } else {
@@ -479,11 +494,11 @@ static void scan_value(enum OptionType type, const char* line, int& total_bytes_
     ResourceMark rm;
     char* value = NEW_RESOURCE_ARRAY(char, strlen(line) + 1);
     char* next_value = value;
-    if (sscanf(line, "%*[ \t]%255[_a-zA-Z0-9+\\-]%n", next_value, &bytes_read) == 1) {
+    if (sscanf(line, "%255[_a-zA-Z0-9+\\-]%n", next_value, &bytes_read) == 1) {
       total_bytes_read += bytes_read;
       line += bytes_read;
-      next_value += bytes_read;
-      char* end_value = next_value-1;
+      next_value += bytes_read + 1;
+      char* end_value = next_value - 1;
       while (sscanf(line, "%*[ \t]%255[_a-zA-Z0-9+\\-]%n", next_value, &bytes_read) == 1) {
         total_bytes_read += bytes_read;
         line += bytes_read;
@@ -498,13 +513,21 @@ static void scan_value(enum OptionType type, const char* line, int& total_bytes_
     }
   } else if (type == OptionType::Bool) {
     char value[256];
-    if (sscanf(line, "%*[ \t]%255[a-zA-Z]%n", value, &bytes_read) == 1) {
+    if (*line == '\0') {
+      // Short version -XXCompileCommand=<BoolCommand>,<method pattern>
+      // Implies setting value to true
+      add_option_string(matcher, cc_option, true);
+      return;
+    }
+    if (sscanf(line, "%255[a-zA-Z]%n", value, &bytes_read) == 1) {
       if (strcmp(value, "true") == 0) {
         total_bytes_read += bytes_read;
+        line += bytes_read;
         add_option_string(matcher, cc_option, true);
         return;
       } else if (strcmp(value, "false") == 0) {
         total_bytes_read += bytes_read;
+        line += bytes_read;
         add_option_string(matcher, cc_option, false);
         return;
       } else {
@@ -521,6 +544,7 @@ static void scan_value(enum OptionType type, const char* line, int& total_bytes_
       char value[512] = "";
       jio_snprintf(value, sizeof(value), "%s.%s", buffer[0], buffer[1]);
       total_bytes_read += bytes_read;
+      line += bytes_read;
       add_option_string(matcher, cc_option, atof(value));
       return;
     } else {
@@ -546,13 +570,22 @@ static void scan_flag_and_value(enum OptionType type, const char* line, int& tot
     line += bytes_read;
     total_bytes_read += bytes_read;
     int bytes_read2 = 0;
+    line++; // skip space or ,
+    total_bytes_read++;
     enum CompileCommand cc_option = parse_command_name(flag, &bytes_read2);
     if (cc_option == CompileCommand::Unknown) {
       jio_snprintf(errorbuf, buf_size, "  Flag name unknown: %s", flag);
       return;
-    } else {
-      scan_value(type, line, total_bytes_read, matcher, cc_option, errorbuf, buf_size);
     }
+    enum OptionType optiontype = command2types[static_cast<int>(cc_option)];
+    if (command2types[static_cast<int>(cc_option)] != type) {
+      const char* optiontype_name = optiontype_names[static_cast<int>(optiontype)];
+      const char* type_name = optiontype_names[static_cast<int>(type)];
+      jio_snprintf(errorbuf, buf_size, "  Flag %s with type %s doesn't match supplied type %s", flag, optiontype_name, type_name);
+      return;
+    }
+    scan_value(type, line, total_bytes_read, matcher, cc_option, errorbuf, buf_size);
+
   } else {
     const char* type_str = optiontype_names[static_cast<int>(type)];
     jio_snprintf(errorbuf, buf_size, "  Flag name for type %s should be alphanumeric ", type_str);
@@ -588,11 +621,25 @@ enum OptionType parse_option_type(const char* option_type) {
   }
 }
 
+class LineCopy : StackObj {
+  const char* _copy;
+public:
+    LineCopy(char* line) {
+      _copy = os::strdup(line, mtInternal);
+    }
+    ~LineCopy() {
+      os::free((void*)_copy);
+    }
+    char* get() {
+      return (char*)_copy;
+    }
+};
+
 void CompilerOracle::parse_from_line(char* line) {
   if (line[0] == '\0') return;
   if (line[0] == '#')  return;
 
-  char* original_line = line;
+  LineCopy original(line);
   int bytes_read;
   enum CompileCommand command = parse_command_name(line, &bytes_read);
   line += bytes_read;
@@ -601,7 +648,7 @@ void CompilerOracle::parse_from_line(char* line) {
   if (command == CompileCommand::Unknown) {
     ttyLocker ttyl;
     tty->print_cr("CompileCommand: unrecognized command");
-    tty->print_cr("  \"%s\"", original_line);
+    tty->print_cr("  \"%s\"", original.get());
     CompilerOracle::print_tip();
     return;
   }
@@ -636,7 +683,7 @@ void CompilerOracle::parse_from_line(char* line) {
     TypedMethodOptionMatcher* archetype = TypedMethodOptionMatcher::parse_method_pattern(line, error_msg);
     if (archetype == NULL) {
       assert(error_msg != NULL, "Must have error_message");
-      print_parse_error(error_msg, original_line);
+      print_parse_error(error_msg, original.get());
       return;
     }
 
@@ -655,7 +702,7 @@ void CompilerOracle::parse_from_line(char* line) {
         scan_flag_and_value(type, line, bytes_read, typed_matcher, errorbuf, sizeof(errorbuf));
         if (*errorbuf != '\0') {
           error_msg = errorbuf;
-          print_parse_error(error_msg, original_line);
+          print_parse_error(error_msg, original.get());
           return;
         }
         line += bytes_read;
@@ -666,7 +713,7 @@ void CompilerOracle::parse_from_line(char* line) {
         if (cc_option == CompileCommand::Unknown) {
           ttyLocker ttyl;
           tty->print_cr("CompileCommand: unrecognized command");
-          tty->print_cr("  \"%s\"", original_line);
+          tty->print_cr("  \"%s\"", original.get());
           CompilerOracle::print_tip();
           return;
         }
@@ -692,7 +739,7 @@ void CompilerOracle::parse_from_line(char* line) {
       // CMH error if line not empty
       if (error_msg != NULL) {
         assert(matcher == NULL, "consistency");
-        print_parse_error(error_msg, original_line);
+        print_parse_error(error_msg, original.get());
         return;
       }
       add_option_string(matcher, command, true);
@@ -708,12 +755,12 @@ void CompilerOracle::parse_from_line(char* line) {
       enum OptionType type = command2types[static_cast<int>(command)];
       int bytes_read = 0;
       char errorbuf[1024] = {0};
-      line++; // skip leading ','
+      line++; // skip leading ',' CMH - assert that it is , or emtpy
       TypedMethodOptionMatcher* matcher = TypedMethodOptionMatcher::parse_method_pattern(line, error_msg);
       scan_value(type, line, bytes_read, matcher, command, errorbuf, sizeof(errorbuf));
       if (*errorbuf != '\0') {
         error_msg = errorbuf;
-        print_parse_error(error_msg, original_line);
+        print_parse_error(error_msg, original.get());
         return;
       }
       if (!_quiet) {
@@ -722,7 +769,6 @@ void CompilerOracle::parse_from_line(char* line) {
         matcher->print();
         tty->cr();
       }
-      line += bytes_read;
     } else {
       assert(0, "sanity");
     }
@@ -750,11 +796,16 @@ void CompilerOracle::print_tip() {
   tty->print_cr("Usage: '-XX:CompileCommand=command,\"package/Class.method()\"'");
   tty->print_cr("Use:   '-XX:CompileCommand=help' for more information.");
   tty->cr();
+}
+
+void CompilerOracle::print_commands() {
+  tty->cr();
   tty->print_cr("All available commands:");
   tty->print_cr("-XX:CompileCommand=");
 #define enum_of_options(option, name, cvariant, ctype) print_##cvariant(name, #ctype);
   COMPILECOMMAND_OPTIONS(enum_of_options)
 #undef enum_of_options
+  tty->cr();
 }
 
 static const char* default_cc_file = ".hotspot_compiler";
@@ -913,12 +964,10 @@ void CompilerOracle::parse_compile_only(char * line) {
       TypedMethodOptionMatcher* tom = new TypedMethodOptionMatcher();
       BasicMatcher* bm = reinterpret_cast<BasicMatcher*>(tom); // CMH fix remove cast
       bm->init(c_name, c_match, m_name, m_match, signature);
-      //add_predicate(CompileCommand::CompileOnly, bm);
       add_option_string(tom, CompileCommand::CompileOnly, true);
       if (PrintVMOptions) {
         tty->print("CompileOnly: compileonly ");
         tom->print();
-        // lists[static_cast<int>(CompileCommand::CompileOnly)]->print_all(tty);  // cmh print_all(of_type)?
       }
 
       className = NULL;
