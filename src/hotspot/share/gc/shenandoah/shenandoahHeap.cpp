@@ -1154,9 +1154,7 @@ void ShenandoahHeap::evacuate_and_update_roots() {
   {
     // Include concurrent roots if current cycle can not process those roots concurrently
     ShenandoahRootEvacuator rp(workers()->active_workers(),
-                               ShenandoahPhaseTimings::init_evac,
-                               !ShenandoahConcurrentRoots::should_do_concurrent_roots(),
-                               !ShenandoahConcurrentRoots::should_do_concurrent_class_unloading());
+                               ShenandoahPhaseTimings::init_evac);
     ShenandoahEvacuateUpdateRootsTask roots_task(&rp);
     workers()->run_task(&roots_task);
   }
