@@ -818,6 +818,7 @@ void ShenandoahBarrierSetAssembler::gen_load_reference_barrier_stub(LIR_Assemble
   bool is_strong  = ShenandoahBarrierSet::is_strong_access(decorators);
   bool is_weak    = ShenandoahBarrierSet::is_weak_access(decorators);
   bool is_phantom = ShenandoahBarrierSet::is_phantom_access(decorators);
+  bool is_native  = ShenandoahBarrierSet::is_native_access(decorators);
 
   Register obj = stub->obj()->as_register();
   Register res = stub->result()->as_register();
@@ -855,7 +856,11 @@ void ShenandoahBarrierSetAssembler::gen_load_reference_barrier_stub(LIR_Assemble
   ce->store_parameter(res, 0);
   ce->store_parameter(addr, 1);
   if (is_strong) {
-    __ call(RuntimeAddress(bs->load_reference_barrier_strong_rt_code_blob()->code_begin()));
+    if (is_native) {
+      __ call(RuntimeAddress(bs->load_reference_barrier_strong_native_rt_code_blob()->code_begin()));
+    } else {
+      __ call(RuntimeAddress(bs->load_reference_barrier_strong_rt_code_blob()->code_begin()));
+    }
   } else if (is_weak) {
     __ call(RuntimeAddress(bs->load_reference_barrier_weak_rt_code_blob()->code_begin()));
   } else {
@@ -934,15 +939,20 @@ void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_s
   bool is_strong  = ShenandoahBarrierSet::is_strong_access(decorators);
   bool is_weak    = ShenandoahBarrierSet::is_weak_access(decorators);
   bool is_phantom = ShenandoahBarrierSet::is_phantom_access(decorators);
+  bool is_native  = ShenandoahBarrierSet::is_native_access(decorators);
 
-#ifdef _LP64
+  #ifdef _LP64
   __ load_parameter(0, c_rarg0);
   __ load_parameter(1, c_rarg1);
   if (is_strong) {
-    if (UseCompressedOops) {
-      __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong_narrow), c_rarg0, c_rarg1);
-    } else {
+    if (is_native) {
       __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong), c_rarg0, c_rarg1);
+    } else {
+      if (UseCompressedOops) {
+        __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong_narrow), c_rarg0, c_rarg1);
+      } else {
+        __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong), c_rarg0, c_rarg1);
+      }
     }
   } else if (is_weak) {
     if (UseCompressedOops) {
