@@ -69,10 +69,9 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
 
   // Complete marking under STW, and start evacuation
   vmop_entry_final_mark();
-//  if (check_cancellation_and_abort(ShenandoahDegenPoint::_mark)) return false;
 
   // Process weak roots that might still point to regions that would be broken by cleanup
-  if (_heap->is_concurrent_weak_root_in_progress()) {
+  if (heap()->is_concurrent_weak_root_in_progress()) {
     entry_weak_refs();
     entry_weak_roots();
   }
@@ -127,10 +126,6 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
     // to perform thread handshake to ensure their consistences.
     entry_rendezvous_roots();
   }
-
-  // Cycle is complete
-  heap()->heuristics()->record_success_concurrent();
-  heap()->shenandoah_policy()->record_success_concurrent();
 
   return true;
 }
