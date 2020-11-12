@@ -395,7 +395,7 @@ void ShenandoahConcurrentGC::entry_cleanup_complete() {
 // Actual work for the phases
 void ShenandoahConcurrentGC::op_reset() {
   if (ShenandoahPacing) {
-    pacer()->setup_for_reset();
+    heap()->pacer()->setup_for_reset();
   }
 
   heap()->prepare_gc();
