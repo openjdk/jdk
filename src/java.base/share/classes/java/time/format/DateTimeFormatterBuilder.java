@@ -1480,7 +1480,7 @@ public final class DateTimeFormatterBuilder {
      * If any conflict occurs in {@link ResolverStyle#LENIENT LENIENT} mode, no
      * exception is thrown and the day period is ignored.
      * <p>
-     * "midnight" type allows both "00:00" as the start-of-day and "24:00" as the
+     * The "midnight" type allows both "00:00" as the start-of-day and "24:00" as the
      * end-of-day, as long as they are valid with the resolved hour field.
      *
      * @param style the text style to use, not null

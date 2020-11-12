@@ -338,23 +338,6 @@ final class Parsed implements TemporalAccessor {
         }
     }
 
-    private void updateCheckDayPeriodConflict(TemporalField changeField, Long changeValue) {
-        Long old = fieldValues.put(changeField, changeValue);
-        if (resolverStyle != ResolverStyle.LENIENT) {
-            if (old != null && old.longValue() != changeValue.longValue()) {
-                throw new DateTimeException("Conflict found: " + changeField + " " + old +
-                        " differs from " + changeField + " " + changeValue +
-                        " while resolving " + dayPeriod);
-            }
-            long hod = fieldValues.get(HOUR_OF_DAY);
-            long moh = fieldValues.containsKey(MINUTE_OF_HOUR) ? fieldValues.get(MINUTE_OF_HOUR) : 0;
-            long mod =  hod * 60 + moh;
-            if (!dayPeriod.includes(mod)) {
-                throw new DateTimeException("Conflict found: Resolved time %02d:%02d".formatted(hod, moh) +
-                        " conflicts with " + dayPeriod);
-            }
-        }
-    }
 
 //-----------------------------------------------------------------------
     private void resolveInstantFields() {
@@ -499,10 +482,11 @@ final class Parsed implements TemporalAccessor {
             if (resolverStyle != ResolverStyle.LENIENT) {
                 HOUR_OF_AMPM.checkValidValue(hoap);
             }
-            if (dayPeriod.includes((hoap % 24 + 12) * 60)) {
-                hoap += 12;
-            }
-            updateCheckDayPeriodConflict(HOUR_OF_DAY, hoap);
+            Long mohObj = fieldValues.get(MINUTE_OF_HOUR);
+            long moh = mohObj != null ? Math.floorMod(mohObj, 60) : 0;
+            long excessHours = dayPeriod.includes((Math.floorMod(hoap, 12) + 12) * 60 + moh) ? 12 : 0;
+            long hod = Math.addExact(hoap, excessHours);
+            updateCheckConflict(HOUR_OF_AMPM, HOUR_OF_DAY, hod);
             dayPeriod = null;
         }
 
@@ -543,19 +527,22 @@ final class Parsed implements TemporalAccessor {
             }
 
             // Set the hour-of-day, if not exist and not in STRICT, to the mid point of the day period or am/pm.
-            if (!fieldValues.containsKey(HOUR_OF_DAY) && resolverStyle != ResolverStyle.STRICT) {
+            if (!fieldValues.containsKey(HOUR_OF_DAY) &&
+                    !fieldValues.containsKey(MINUTE_OF_HOUR) &&
+                    !fieldValues.containsKey(SECOND_OF_MINUTE) &&
+                    !fieldValues.containsKey(NANO_OF_SECOND) &&
+                    resolverStyle != ResolverStyle.STRICT) {
                 if (dayPeriod != null) {
                     long midpoint = dayPeriod.mid();
-                    fieldValues.put(HOUR_OF_DAY, midpoint / 60);
-                    fieldValues.put(MINUTE_OF_HOUR, midpoint % 60);
+                    resolveTime(midpoint / 60, midpoint % 60, 0, 0);
+                    dayPeriod = null;
                 } else if (fieldValues.containsKey(AMPM_OF_DAY)) {
-                    // Set the midpoint time 06:00 and 18:00 for am/pm respectively
                     long ap = fieldValues.remove(AMPM_OF_DAY);
                     if (resolverStyle == ResolverStyle.LENIENT) {
-                        updateCheckConflict(AMPM_OF_DAY, HOUR_OF_DAY, Math.addExact(Math.multiplyExact(ap, 12), 6));
+                        resolveTime(Math.addExact(Math.multiplyExact(ap, 12), 6), 0, 0, 0);
                     } else {  // SMART
                         AMPM_OF_DAY.checkValidValue(ap);
-                        updateCheckConflict(AMPM_OF_DAY, HOUR_OF_DAY, ap * 12 + 6);
+                        resolveTime(ap * 12 + 6, 0, 0, 0);
                     }
                 }
             }
@@ -563,11 +550,6 @@ final class Parsed implements TemporalAccessor {
             // merge hour/minute/second/nano leniently
             Long hod = fieldValues.get(HOUR_OF_DAY);
             if (hod != null) {
-                if (dayPeriod != null) {
-                    // Check whether the hod is within the day period
-                    updateCheckDayPeriodConflict(HOUR_OF_DAY, hod);
-                }
-
                 Long moh = fieldValues.get(MINUTE_OF_HOUR);
                 Long som = fieldValues.get(SECOND_OF_MINUTE);
                 Long nos = fieldValues.get(NANO_OF_SECOND);
@@ -582,6 +564,15 @@ final class Parsed implements TemporalAccessor {
                 long mohVal = (moh != null ? moh : 0);
                 long somVal = (som != null ? som : 0);
                 long nosVal = (nos != null ? nos : 0);
+
+                if (dayPeriod != null && resolverStyle != ResolverStyle.LENIENT) {
+                    // Check whether the hod/mohVal is within the day period
+                    if (!dayPeriod.includes(hod * 60 + mohVal)) {
+                        throw new DateTimeException("Conflict found: Resolved time %02d:%02d".formatted(hod, mohVal) +
+                                " conflicts with " + dayPeriod);
+                    }
+                }
+
                 resolveTime(hod, mohVal, somVal, nosVal);
                 fieldValues.remove(HOUR_OF_DAY);
                 fieldValues.remove(MINUTE_OF_HOUR);
