@@ -36,7 +36,6 @@
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
-#include "gc/shared/weakProcessor.inline.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 
