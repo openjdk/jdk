@@ -953,7 +953,7 @@ void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_s
     }
   } else {
     assert(is_phantom, "only remaining strength");
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak), c_rarg0, c_rarg1);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom), c_rarg0, c_rarg1);
   }
 #else
   __ load_parameter(0, rax);
