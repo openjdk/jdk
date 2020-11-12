@@ -38,7 +38,11 @@ class PosixSignals : public AllStatic {
 
 public:
 
-  static bool are_signal_handlers_installed();
+  // The platform dependent parts of the central hotspot signal handler.
+  // Returns true if the signal had been recognized and handled, false if not. If true, caller should
+  // return from signal handling.
+  static bool pd_hotspot_signal_handler(int sig, siginfo_t* info, ucontext_t* uc, JavaThread* thread);
+
   static void install_signal_handlers();
 
   static bool is_sig_ignored(int sig);

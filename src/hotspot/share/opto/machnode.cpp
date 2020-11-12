@@ -295,7 +295,7 @@ const Node* MachNode::get_base_and_disp(intptr_t &offset, const TypePtr* &adr_ty
     }
     offset = disp;
 
-    // In i486.ad, indOffset32X uses base==RegI and disp==RegP,
+    // In x86_32.ad, indOffset32X uses base==RegI and disp==RegP,
     // this will prevent alias analysis without the following support:
     // Lookup the TypePtr used by indOffset32X, a compile-time constant oop,
     // Add the offset determined by the "base", or use Type::OffsetBot.

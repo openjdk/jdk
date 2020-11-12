@@ -303,7 +303,7 @@ public abstract class AbstractMemorySegmentImpl implements MemorySegment, Memory
         }
     }
 
-   @Override
+    @Override
     public MemorySegment handoff(NativeScope scope) {
         Objects.requireNonNull(scope);
         checkValidState();
@@ -317,7 +317,6 @@ public abstract class AbstractMemorySegmentImpl implements MemorySegment, Memory
         ((AbstractNativeScope)scope).register(dup);
         return dup.withAccessModes(accessModes() & (READ | WRITE));
     }
-
 
     @Override
     public MemorySegment registerCleaner(Cleaner cleaner) {

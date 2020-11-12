@@ -106,14 +106,15 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(oop obj, T* load_addr) {
   if (!HasDecorator<decorators, ON_STRONG_OOP_REF>::value && obj != NULL &&
       _heap->is_concurrent_weak_root_in_progress() &&
       !_heap->marking_context()->is_marked(obj)) {
-    Thread* thr = Thread::current();
-    if (thr->is_Java_thread()) {
-      return NULL;
-    } else {
-      // This path is sometimes (rarely) taken by GC threads.
-      // See e.g.: https://bugs.openjdk.java.net/browse/JDK-8237874
-      return obj;
-    }
+    return NULL;
+  }
+
+  // Prevent resurrection of unreachable objects that are visited during
+  // concurrent class-unloading.
+  if (HasDecorator<decorators, AS_NO_KEEPALIVE>::value && obj != NULL &&
+      _heap->is_evacuation_in_progress() &&
+      !_heap->marking_context()->is_marked(obj)) {
+    return obj;
   }
 
   oop fwd = load_reference_barrier(obj);
@@ -255,7 +256,7 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_ato
 
   // Note: We don't need a keep-alive-barrier here. We already enqueue any loaded reference for SATB anyway,
   // because it must be the previous value.
-  res = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(res);
+  res = ShenandoahBarrierSet::barrier_set()->load_reference_barrier<decorators, T>(res, NULL);
   bs->satb_enqueue(res);
   return res;
 }
@@ -281,7 +282,7 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_ato
 
   // Note: We don't need a keep-alive-barrier here. We already enqueue any loaded reference for SATB anyway,
   // because it must be the previous value.
-  previous = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(previous);
+  previous = ShenandoahBarrierSet::barrier_set()->load_reference_barrier<decorators, T>(previous, NULL);
   bs->satb_enqueue(previous);
   return previous;
 }

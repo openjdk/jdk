@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,8 +106,8 @@ Java_sun_awt_windows_WMouseInfoPeer_fillPointWithCoords(JNIEnv *env, jclass cls,
     yID = env->GetFieldID(pointClass, "y", "I");
     CHECK_NULL_RETURN(yID, (jint)0);
 
-    int x = (device == NULL) ? pt.x : device->ScaleDownX(pt.x);
-    int y = (device == NULL) ? pt.y : device->ScaleDownY(pt.y);
+    int x = (device == NULL) ? pt.x : device->ScaleDownAbsX(pt.x);
+    int y = (device == NULL) ? pt.y : device->ScaleDownAbsY(pt.y);
 
     env->SetIntField(point, xID, x);
     env->SetIntField(point, yID, y);

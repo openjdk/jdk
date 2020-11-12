@@ -565,7 +565,7 @@ public class TestByteBuffer {
         try (FileChannel channel = FileChannel.open(tmp.toPath(), StandardOpenOption.WRITE)) {
             MemorySegment segment = MemorySegment.allocateNative(10).share();
             for (int i = 0; i < 10; i++) {
-                MemoryAccess.setByteAtIndex(segment, i, (byte) i);
+                MemoryAccess.setByteAtOffset(segment, i, (byte) i);
             }
             ByteBuffer bb = segment.asByteBuffer();
             segment.close();
@@ -580,7 +580,7 @@ public class TestByteBuffer {
         try (FileChannel channel = FileChannel.open(tmp.toPath(), StandardOpenOption.WRITE)) {
             MemorySegment segment = MemorySegment.allocateNative(10);
             for (int i = 0; i < 10; i++) {
-                MemoryAccess.setByteAtIndex(segment, i, (byte) i);
+                MemoryAccess.setByteAtOffset(segment, i, (byte) i);
             }
             ByteBuffer bb = segment.asByteBuffer();
             segment.close();
@@ -594,7 +594,7 @@ public class TestByteBuffer {
         try (FileChannel channel = FileChannel.open(tmp.toPath(), StandardOpenOption.WRITE)) {
             MemorySegment segment = MemorySegment.allocateNative(10);
             for (int i = 0; i < 10; i++) {
-                MemoryAccess.setByteAtIndex(segment, i, (byte) i);
+                MemoryAccess.setByteAtOffset(segment, i, (byte) i);
             }
             ByteBuffer bb = segment.asByteBuffer();
             channel.write(bb);
@@ -659,7 +659,7 @@ public class TestByteBuffer {
     @DataProvider(name = "resizeOps")
     public Object[][] resizeOps() {
         Consumer<MemorySegment> byteInitializer =
-                (base) -> initBytes(base, bytes, (addr, pos) -> MemoryAccess.setByteAtIndex(addr, pos, (byte)(long)pos));
+                (base) -> initBytes(base, bytes, (addr, pos) -> MemoryAccess.setByteAtOffset(addr, pos, (byte)(long)pos));
         Consumer<MemorySegment> charInitializer =
                 (base) -> initBytes(base, chars, (addr, pos) -> MemoryAccess.setCharAtIndex(addr, pos, ByteOrder.BIG_ENDIAN, (char)(long)pos));
         Consumer<MemorySegment> shortInitializer =
@@ -674,7 +674,7 @@ public class TestByteBuffer {
                 (base) -> initBytes(base, doubles, (addr, pos) -> MemoryAccess.setDoubleAtIndex(addr, pos, ByteOrder.BIG_ENDIAN, (double)(long)pos));
 
         Consumer<MemorySegment> byteChecker =
-                (base) -> checkBytes(base, bytes, Function.identity(), (addr, pos) -> MemoryAccess.getByteAtIndex(addr, pos), ByteBuffer::get);
+                (base) -> checkBytes(base, bytes, Function.identity(), (addr, pos) -> MemoryAccess.getByteAtOffset(addr, pos), ByteBuffer::get);
         Consumer<MemorySegment> charChecker =
                 (base) -> checkBytes(base, chars, ByteBuffer::asCharBuffer, (addr, pos) -> MemoryAccess.getCharAtIndex(addr, pos, ByteOrder.BIG_ENDIAN), CharBuffer::get);
         Consumer<MemorySegment> shortChecker =
