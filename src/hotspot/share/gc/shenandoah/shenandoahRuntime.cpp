@@ -67,7 +67,7 @@ JRT_LEAF(void, ShenandoahRuntime::shenandoah_clone_barrier(oopDesc* src))
 JRT_END
 
 JRT_LEAF(oopDesc*, ShenandoahRuntime::load_reference_barrier_weak(oopDesc * src, oop* load_addr))
-  return (oopDesc*) ShenandoahBarrierSet::barrier_set()->load_reference_barrier<ON_UNKNOWN_OOP_REF, oop>(oop(src), load_addr);
+  return (oopDesc*) ShenandoahBarrierSet::barrier_set()->load_reference_barrier<ON_WEAK_OOP_REF, oop>(oop(src), load_addr);
 JRT_END
 
 JRT_LEAF(oopDesc*, ShenandoahRuntime::load_reference_barrier_weak_narrow(oopDesc * src, narrowOop* load_addr))
