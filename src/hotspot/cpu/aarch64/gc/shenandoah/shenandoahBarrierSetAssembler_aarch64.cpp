@@ -618,6 +618,12 @@ void ShenandoahBarrierSetAssembler::gen_load_reference_barrier_stub(LIR_Assemble
   ShenandoahBarrierSetC1* bs = (ShenandoahBarrierSetC1*)BarrierSet::barrier_set()->barrier_set_c1();
   __ bind(*stub->entry());
 
+  DecoratorSet decorators = stub->decorators();
+  bool is_strong  = ShenandoahBarrierSet::is_strong_access(decorators);
+  bool is_weak    = ShenandoahBarrierSet::is_weak_access(decorators);
+  bool is_phantom = ShenandoahBarrierSet::is_phantom_access(decorators);
+  bool is_native  = ShenandoahBarrierSet::is_native_access(decorators);
+
   Register obj = stub->obj()->as_register();
   Register res = stub->result()->as_register();
   Register addr = stub->addr()->as_pointer_register();
@@ -630,36 +636,22 @@ void ShenandoahBarrierSetAssembler::gen_load_reference_barrier_stub(LIR_Assemble
     __ mov(res, obj);
   }
 
-  // Check for null.
-  __ cbz(res, *stub->continuation());
+  if (is_strong) {
+    // Check for object in cset.
+    __ mov(tmp2, ShenandoahHeap::in_cset_fast_test_addr());
+    __ lsr(tmp1, res, ShenandoahHeapRegion::region_size_bytes_shift_jint());
+    __ ldrb(tmp2, Address(tmp2, tmp1));
+    __ cbz(tmp2, *stub->continuation());
+  }
 
-  // Check for object in cset.
-  __ mov(tmp2, ShenandoahHeap::in_cset_fast_test_addr());
-  __ lsr(tmp1, res, ShenandoahHeapRegion::region_size_bytes_shift_jint());
-  __ ldrb(tmp2, Address(tmp2, tmp1));
-  __ cbz(tmp2, *stub->continuation());
-
-  // Check if object is already forwarded.
-  Label slow_path;
-  __ ldr(tmp1, Address(res, oopDesc::mark_offset_in_bytes()));
-  __ eon(tmp1, tmp1, zr);
-  __ ands(zr, tmp1, markWord::lock_mask_in_place);
-  __ br(Assembler::NE, slow_path);
-
-  // Decode forwarded object.
-  __ orr(tmp1, tmp1, markWord::marked_value);
-  __ eon(res, tmp1, zr);
-  __ b(*stub->continuation());
-
-  __ bind(slow_path);
   ce->store_parameter(res, 0);
   ce->store_parameter(addr, 1);
-  DecoratorSet decorators = stub->decorators();
-  bool is_strong  = ShenandoahBarrierSet::is_strong_access(decorators);
-  bool is_weak    = ShenandoahBarrierSet::is_weak_access(decorators);
-  bool is_phantom = ShenandoahBarrierSet::is_phantom_access(decorators);
   if (is_strong) {
-    __ far_call(RuntimeAddress(bs->load_reference_barrier_strong_rt_code_blob()->code_begin()));
+    if (is_native) {
+      __ far_call(RuntimeAddress(bs->load_reference_barrier_strong_native_rt_code_blob()->code_begin()));
+    } else {
+      __ far_call(RuntimeAddress(bs->load_reference_barrier_strong_rt_code_blob()->code_begin()));
+    }
   } else if (is_weak) {
     __ far_call(RuntimeAddress(bs->load_reference_barrier_weak_rt_code_blob()->code_begin()));
   } else {
@@ -727,14 +719,20 @@ void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_s
   __ push_call_clobbered_registers();
   __ load_parameter(0, r0);
   __ load_parameter(1, r1);
+
   bool is_strong  = ShenandoahBarrierSet::is_strong_access(decorators);
   bool is_weak    = ShenandoahBarrierSet::is_weak_access(decorators);
   bool is_phantom = ShenandoahBarrierSet::is_phantom_access(decorators);
+  bool is_native  = ShenandoahBarrierSet::is_native_access(decorators);
   if (is_strong) {
-    if (UseCompressedOops) {
-      __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong_narrow));
-    } else {
+    if (is_native) {
       __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong));
+    } else {
+      if (UseCompressedOops) {
+	__ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong_narrow));
+      } else {
+	__ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong));
+      }
     }
   } else if (is_weak) {
     if (UseCompressedOops) {

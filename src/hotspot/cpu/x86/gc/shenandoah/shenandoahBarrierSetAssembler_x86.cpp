@@ -941,7 +941,7 @@ void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_s
   bool is_phantom = ShenandoahBarrierSet::is_phantom_access(decorators);
   bool is_native  = ShenandoahBarrierSet::is_native_access(decorators);
 
-  #ifdef _LP64
+#ifdef _LP64
   __ load_parameter(0, c_rarg0);
   __ load_parameter(1, c_rarg1);
   if (is_strong) {
