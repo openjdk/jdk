@@ -49,12 +49,7 @@ void OptoReg::dump(int r, outputStream *st) {
 
 
 //=============================================================================
-const RegMask RegMask::Empty(
-# define BODY(I) 0,
-  FORALL_BODY
-# undef BODY
-  0
-);
+const RegMask RegMask::Empty;
 
 //=============================================================================
 bool RegMask::is_vector(uint ireg) {

@@ -448,6 +448,12 @@ class methodHandle;
   do_name(encodeBlock_name, "encodeBlock")                                                                              \
   do_signature(encodeBlock_signature, "([BII[BIZ)V")                                                                    \
                                                                                                                         \
+  /* support for java.util.Base64.Decoder*/                                                                             \
+  do_class(java_util_Base64_Decoder, "java/util/Base64$Decoder")                                                        \
+  do_intrinsic(_base64_decodeBlock, java_util_Base64_Decoder, decodeBlock_name, decodeBlock_signature, F_R)             \
+   do_name(decodeBlock_name, "decodeBlock")                                                                             \
+   do_signature(decodeBlock_signature, "([BII[BIZ)I")                                                                   \
+                                                                                                                        \
   /* support for com.sun.crypto.provider.GHASH */                                                                       \
   do_class(com_sun_crypto_provider_ghash, "com/sun/crypto/provider/GHASH")                                              \
   do_intrinsic(_ghash_processBlocks, com_sun_crypto_provider_ghash, processBlocks_name, ghash_processBlocks_signature, F_S) \

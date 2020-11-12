@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,27 @@
  *
  */
 
-#ifndef SHARE_GC_PARALLEL_PSFILEBACKEDVIRTUALSPACE_HPP
-#define SHARE_GC_PARALLEL_PSFILEBACKEDVIRTUALSPACE_HPP
+#ifndef SHARE_RUNTIME_MONITORDEFLATIONTHREAD_HPP
+#define SHARE_RUNTIME_MONITORDEFLATIONTHREAD_HPP
 
-#include "gc/parallel/psVirtualspace.hpp"
+#include "runtime/thread.hpp"
 
-class PSFileBackedVirtualSpace : public PSVirtualSpace {
-private:
-  const char* _file_path;
-  int _fd;
-  bool _mapping_succeeded;
-public:
-  PSFileBackedVirtualSpace(ReservedSpace rs, size_t alignment, const char* file_path);
+// A hidden from external view JavaThread for deflating idle monitors.
 
-  bool   initialize();
-  bool   expand_by(size_t bytes);
-  bool   shrink_by(size_t bytes);
-  size_t expand_into(PSVirtualSpace* space, size_t bytes);
-  void   release();
+class MonitorDeflationThread : public JavaThread {
+  friend class VMStructs;
+ private:
+  static MonitorDeflationThread* _instance;
+
+  static void monitor_deflation_thread_entry(JavaThread* thread, TRAPS);
+  MonitorDeflationThread(ThreadFunction entry_point) : JavaThread(entry_point) {};
+
+ public:
+  static void initialize();
+
+  // Hide this thread from external view.
+  bool is_hidden_from_external_view() const { return true; }
+  bool is_monitor_deflation_thread() const { return true; }
 };
-#endif // SHARE_GC_PARALLEL_PSFILEBACKEDVIRTUALSPACE_HPP
+
+#endif // SHARE_RUNTIME_MONITORDEFLATIONTHREAD_HPP

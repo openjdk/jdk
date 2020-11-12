@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,26 +22,20 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1HETEROGENEOUSHEAPPOLICY_HPP
-#define SHARE_GC_G1_G1HETEROGENEOUSHEAPPOLICY_HPP
+package sun.jvm.hotspot.runtime;
 
-#include "gc/g1/g1Policy.hpp"
-#include "gc/g1/heterogeneousHeapRegionManager.hpp"
+import java.io.*;
 
-class G1HeterogeneousHeapPolicy : public G1Policy {
-  // Stash a pointer to the hrm.
-  HeterogeneousHeapRegionManager* _manager;
+import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.types.*;
 
-public:
-  G1HeterogeneousHeapPolicy(STWGCTimer* gc_timer);
+public class MonitorDeflationThread extends JavaThread {
+  public MonitorDeflationThread(Address addr) {
+    super(addr);
+  }
 
-  // initialize policy
-  virtual void init(G1CollectedHeap* g1h, G1CollectionSet* collection_set);
-  // Record end of an evacuation pause.
-  virtual void record_collection_pause_end(double pause_time_ms, bool concurrent_operation_is_full_mark);
-  // Record the end of full collection.
-  virtual void record_full_collection_end();
+  public boolean isJavaThread() { return false; }
+  public boolean isHiddenFromExternalView() { return true; }
+  public boolean isMonitorDeflationThread() { return true; }
 
-  virtual bool force_upgrade_to_full();
-};
-#endif // SHARE_GC_G1_G1HETEROGENEOUSHEAPPOLICY_HPP
+}

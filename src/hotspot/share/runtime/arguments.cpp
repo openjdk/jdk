@@ -2161,8 +2161,6 @@ bool Arguments::check_vm_args_consistency() {
   }
 #endif
 
-  status = status && GCArguments::check_args_consistency();
-
   return status;
 }
 
@@ -4080,7 +4078,6 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
 
 #if defined(AIX)
   UNSUPPORTED_OPTION_NULL(AllocateHeapAt);
-  UNSUPPORTED_OPTION_NULL(AllocateOldGenAt);
 #endif
 
 #ifndef PRODUCT
