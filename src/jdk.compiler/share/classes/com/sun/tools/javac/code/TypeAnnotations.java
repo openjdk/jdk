@@ -951,9 +951,8 @@ public class TypeAnnotations {
                                                  " within frame " + frame);
                     }
 
-                case BINDING_PATTERN:
                 case VARIABLE:
-                    VarSymbol v = frame.hasTag(Tag.BINDINGPATTERN) ? ((JCBindingPattern) frame).symbol : ((JCVariableDecl) frame).sym;
+                    VarSymbol v = ((JCVariableDecl) frame).sym;
                     if (v.getKind() != ElementKind.FIELD) {
                         appendTypeAnnotationsToOwner(v, v.getRawTypeAttributes());
                     }

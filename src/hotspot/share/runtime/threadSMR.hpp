@@ -26,6 +26,8 @@
 #define SHARE_RUNTIME_THREADSMR_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/thread.hpp"
 #include "runtime/timer.hpp"
 
 class JavaThread;
@@ -33,6 +35,7 @@ class Monitor;
 class outputStream;
 class Thread;
 class ThreadClosure;
+class ThreadsList;
 
 // Thread Safe Memory Reclamation (Thread-SMR) support.
 //

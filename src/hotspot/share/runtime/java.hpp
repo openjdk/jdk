@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ extern void vm_exit(int code);
 
 // Wrapper for ::exit()
 extern void vm_direct_exit(int code);
+extern void vm_direct_exit(int code, const char* message);
 
 // Shutdown the VM but do not exit the process
 extern void vm_shutdown();
@@ -65,6 +66,7 @@ class JDK_Version {
  private:
 
   static JDK_Version _current;
+  static const char* _java_version;
   static const char* _runtime_name;
   static const char* _runtime_version;
   static const char* _runtime_vendor_version;
@@ -129,6 +131,13 @@ class JDK_Version {
   }
 
   void to_string(char* buffer, size_t buflen) const;
+
+  static const char* java_version() {
+    return _java_version;
+  }
+  static void set_java_version(const char* version) {
+    _java_version = version;
+  }
 
   static const char* runtime_name() {
     return _runtime_name;

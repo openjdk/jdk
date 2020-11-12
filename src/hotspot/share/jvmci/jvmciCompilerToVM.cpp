@@ -43,6 +43,7 @@
 #include "oops/constantPool.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "prims/methodHandles.hpp"
 #include "prims/nativeLookup.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/deoptimization.hpp"
@@ -1995,6 +1996,14 @@ C2V_VMENTRY_NULL(jobject, readFieldValue, (JNIEnv* env, jobject, jobject object,
     JVMCI_THROW_MSG_NULL(IllegalArgumentException,
                          err_msg("Unexpected type: %s", JVMCIENV->klass_name(base)));
   }
+
+  if (displacement == java_lang_Class::component_mirror_offset() && java_lang_Class::is_instance(obj()) &&
+      !java_lang_Class::as_Klass(obj())->is_array_klass()) {
+    // Class.componentType for non-array classes can transiently contain an int[] that's
+    // used for locking so always return null to mimic Class.getComponentType()
+    return JVMCIENV->get_jobject(JVMCIENV->get_JavaConstant_NULL_POINTER());
+  }
+
   jlong value = 0;
   JVMCIObject kind;
   switch (constant_type) {
@@ -2220,6 +2229,13 @@ C2V_VMENTRY_NULL(jobject, getObject, (JNIEnv* env, jobject, jobject x, long disp
     JVMCI_THROW_0(NullPointerException);
   }
   Handle xobj = JVMCIENV->asConstant(JVMCIENV->wrap(x), JVMCI_CHECK_0);
+  if (displacement == java_lang_Class::component_mirror_offset() && java_lang_Class::is_instance(xobj()) &&
+      !java_lang_Class::as_Klass(xobj())->is_array_klass()) {
+    // Class.componentType for non-array classes can transiently contain an int[] that's
+    // used for locking so always return null to mimic Class.getComponentType()
+    return JVMCIENV->get_jobject(JVMCIENV->get_JavaConstant_NULL_POINTER());
+  }
+
   oop res = xobj->obj_field(displacement);
   JVMCIObject result = JVMCIENV->get_object_constant(res);
   return JVMCIENV->get_jobject(result);
@@ -2280,6 +2296,7 @@ C2V_VMENTRY_NULL(jlongArray, registerNativeMethods, (JNIEnv* env, jobject, jclas
       // 1) Try JNI short style
       stringStream st;
       char* pure_name = NativeLookup::pure_jni_name(method);
+      guarantee(pure_name != NULL, "Illegal native method name encountered");
       os::print_jni_name_prefix_on(&st, args_size);
       st.print_raw(pure_name);
       os::print_jni_name_suffix_on(&st, args_size);
@@ -2290,6 +2307,7 @@ C2V_VMENTRY_NULL(jlongArray, registerNativeMethods, (JNIEnv* env, jobject, jclas
         // 2) Try JNI long style
         st.reset();
         char* long_name = NativeLookup::long_jni_name(method);
+        guarantee(long_name != NULL, "Illegal native method name encountered");
         os::print_jni_name_prefix_on(&st, args_size);
         st.print_raw(pure_name);
         st.print_raw(long_name);
@@ -2349,13 +2367,25 @@ C2V_VMENTRY_PREFIX(jlong, getCurrentJavaThread, (JNIEnv* env, jobject c2vm))
   return (jlong) p2i(thread);
 C2V_END
 
-C2V_VMENTRY_PREFIX(jboolean, attachCurrentThread, (JNIEnv* env, jobject c2vm, jboolean as_daemon))
+C2V_VMENTRY_PREFIX(jboolean, attachCurrentThread, (JNIEnv* env, jobject c2vm, jbyteArray name, jboolean as_daemon))
   if (thread == NULL) {
     // Called from unattached JVMCI shared library thread
+    guarantee(name != NULL, "libjvmci caller must pass non-null name");
+
     extern struct JavaVM_ main_vm;
     JNIEnv* hotspotEnv;
-    jint res = as_daemon ? main_vm.AttachCurrentThreadAsDaemon((void**) &hotspotEnv, NULL) :
-                           main_vm.AttachCurrentThread((void**) &hotspotEnv, NULL);
+
+    int name_len = env->GetArrayLength(name);
+    char name_buf[64]; // Cannot use Resource heap as it requires a current thread
+    int to_copy = MIN2(name_len, (int) sizeof(name_buf) - 1);
+    env->GetByteArrayRegion(name, 0, to_copy, (jbyte*) name_buf);
+    name_buf[to_copy] = '\0';
+    JavaVMAttachArgs attach_args;
+    attach_args.version = JNI_VERSION_1_2;
+    attach_args.name = name_buf;
+    attach_args.group = NULL;
+    jint res = as_daemon ? main_vm.AttachCurrentThreadAsDaemon((void**) &hotspotEnv, &attach_args) :
+                           main_vm.AttachCurrentThread((void**) &hotspotEnv, &attach_args);
     if (res != JNI_OK) {
       JNI_THROW_("attachCurrentThread", InternalError, err_msg("Trying to attach thread returned %d", res), false);
     }
@@ -2803,7 +2833,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "registerNativeMethods",                        CC "(" CLASS ")[J",                                                                   FN_PTR(registerNativeMethods)},
   {CC "isCurrentThreadAttached",                      CC "()Z",                                                                             FN_PTR(isCurrentThreadAttached)},
   {CC "getCurrentJavaThread",                         CC "()J",                                                                             FN_PTR(getCurrentJavaThread)},
-  {CC "attachCurrentThread",                          CC "(Z)Z",                                                                            FN_PTR(attachCurrentThread)},
+  {CC "attachCurrentThread",                          CC "([BZ)Z",                                                                          FN_PTR(attachCurrentThread)},
   {CC "detachCurrentThread",                          CC "()V",                                                                             FN_PTR(detachCurrentThread)},
   {CC "translate",                                    CC "(" OBJECT ")J",                                                                   FN_PTR(translate)},
   {CC "unhand",                                       CC "(J)" OBJECT,                                                                      FN_PTR(unhand)},

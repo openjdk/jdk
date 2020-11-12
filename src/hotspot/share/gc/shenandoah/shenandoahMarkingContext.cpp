@@ -29,11 +29,11 @@
 #include "gc/shenandoah/shenandoahMarkingContext.hpp"
 
 ShenandoahMarkingContext::ShenandoahMarkingContext(MemRegion heap_region, MemRegion bitmap_region, size_t num_regions) :
+  _mark_bit_map(heap_region, bitmap_region),
   _top_bitmaps(NEW_C_HEAP_ARRAY(HeapWord*, num_regions, mtGC)),
   _top_at_mark_starts_base(NEW_C_HEAP_ARRAY(HeapWord*, num_regions, mtGC)),
   _top_at_mark_starts(_top_at_mark_starts_base -
                       ((uintx) heap_region.start() >> ShenandoahHeapRegion::region_size_bytes_shift())) {
-  _mark_bit_map.initialize(heap_region, bitmap_region);
 }
 
 bool ShenandoahMarkingContext::is_bitmap_clear() const {

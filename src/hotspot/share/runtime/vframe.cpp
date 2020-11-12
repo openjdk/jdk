@@ -82,6 +82,11 @@ vframe* vframe::new_vframe(const frame* f, const RegisterMap* reg_map, JavaThrea
     }
   }
 
+  // Entry frame
+  if (f->is_entry_frame()) {
+    return new entryVFrame(f, reg_map, thread);
+  }
+
   // External frame
   return new externalVFrame(f, reg_map, thread);
 }
@@ -664,7 +669,7 @@ void javaVFrame::print() {
     }
     tty->cr();
     tty->print("\t  ");
-    monitor->lock()->print_on(tty);
+    monitor->lock()->print_on(tty, monitor->owner());
     tty->cr();
   }
 }

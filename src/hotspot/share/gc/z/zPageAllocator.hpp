@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZPAGEALLOCATOR_HPP
 
 #include "gc/z/zAllocationFlags.hpp"
+#include "gc/z/zArray.hpp"
 #include "gc/z/zList.hpp"
 #include "gc/z/zLock.hpp"
 #include "gc/z/zPageCache.hpp"
@@ -124,6 +125,7 @@ public:
 
   ZPage* alloc_page(uint8_t type, size_t size, ZAllocationFlags flags);
   void free_page(ZPage* page, bool reclaimed);
+  void free_pages(const ZArray<ZPage*>* pages, bool reclaimed);
 
   void enable_deferred_delete() const;
   void disable_deferred_delete() const;

@@ -31,6 +31,7 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/oopFactory.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/cpCache.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"

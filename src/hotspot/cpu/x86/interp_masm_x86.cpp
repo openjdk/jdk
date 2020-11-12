@@ -605,6 +605,10 @@ void InterpreterMacroAssembler::push_i(Register r) {
   push(r);
 }
 
+void InterpreterMacroAssembler::push_i_or_ptr(Register r) {
+  push(r);
+}
+
 void InterpreterMacroAssembler::push_f(XMMRegister r) {
   subptr(rsp, wordSize);
   movflt(Address(rsp, 0), r);
@@ -988,7 +992,7 @@ void InterpreterMacroAssembler::remove_activation(
   const Register rmon    = LP64_ONLY(c_rarg1) NOT_LP64(rcx);
                               // monitor pointers need different register
                               // because rdx may have the result in it
-  NOT_LP64(get_thread(rcx);)
+  NOT_LP64(get_thread(rthread);)
 
   // The below poll is for the stack watermark barrier. It allows fixing up frames lazily,
   // that would normally not be safe to use. Such bad returns into unsafe territory of
@@ -999,7 +1003,10 @@ void InterpreterMacroAssembler::remove_activation(
   jmp(fast_path);
   bind(slow_path);
   push(state);
-  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind));
+  set_last_Java_frame(rthread, noreg, rbp, (address)pc());
+  super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), rthread);
+  NOT_LP64(get_thread(rthread);) // call_VM clobbered it, restore
+  reset_last_Java_frame(rthread, true);
   pop(state);
   bind(fast_path);
 
@@ -1952,7 +1959,7 @@ void InterpreterMacroAssembler::profile_switch_case(Register index,
 
 void InterpreterMacroAssembler::_interp_verify_oop(Register reg, TosState state, const char* file, int line) {
   if (state == atos) {
-    MacroAssembler::_verify_oop(reg, "broken oop", file, line);
+    MacroAssembler::_verify_oop_checked(reg, "broken oop", file, line);
   }
 }
 

@@ -673,39 +673,6 @@ bool SafepointSynchronize::handshake_safe(JavaThread *thread) {
   return false;
 }
 
-// See if the thread is running inside a lazy critical native and
-// update the thread critical count if so.  Also set a suspend flag to
-// cause the native wrapper to return into the JVM to do the unlock
-// once the native finishes.
-static void check_for_lazy_critical_native(JavaThread *thread, JavaThreadState state) {
-  if (state == _thread_in_native &&
-      thread->has_last_Java_frame() &&
-      thread->frame_anchor()->walkable()) {
-    // This thread might be in a critical native nmethod so look at
-    // the top of the stack and increment the critical count if it
-    // is.
-    frame wrapper_frame = thread->last_frame();
-    CodeBlob* stub_cb = wrapper_frame.cb();
-    if (stub_cb != NULL &&
-        stub_cb->is_nmethod() &&
-        stub_cb->as_nmethod_or_null()->is_lazy_critical_native()) {
-      // A thread could potentially be in a critical native across
-      // more than one safepoint, so only update the critical state on
-      // the first one.  When it returns it will perform the unlock.
-      if (!thread->do_critical_native_unlock()) {
-#ifdef ASSERT
-        if (!thread->in_critical()) {
-          GCLocker::increment_debug_jni_lock_count();
-        }
-#endif
-        thread->enter_critical();
-        // Make sure the native wrapper calls back on return to
-        // perform the needed critical unlock.
-        thread->set_critical_native_unlock();
-      }
-    }
-  }
-}
 
 // -------------------------------------------------------------------------------------------------------
 // Implementation of Safepoint blocking point
@@ -901,7 +868,6 @@ void ThreadSafepointState::examine_state_of_thread(uint64_t safepoint_count) {
   }
 
   if (safepoint_safe_with(_thread, stable_state)) {
-    check_for_lazy_critical_native(_thread, stable_state);
     account_safe_thread();
     return;
   }
@@ -945,19 +911,21 @@ void ThreadSafepointState::print_on(outputStream *st) const {
 
 // Process pending operation.
 void ThreadSafepointState::handle_polling_page_exception() {
+  JavaThread* self = thread();
+  assert(self == Thread::current()->as_Java_thread(), "must be self");
 
   // Step 1: Find the nmethod from the return address
-  address real_return_addr = thread()->saved_exception_pc();
+  address real_return_addr = self->saved_exception_pc();
 
   CodeBlob *cb = CodeCache::find_blob(real_return_addr);
   assert(cb != NULL && cb->is_compiled(), "return address should be in nmethod");
   CompiledMethod* nm = (CompiledMethod*)cb;
 
   // Find frame of caller
-  frame stub_fr = thread()->last_frame();
+  frame stub_fr = self->last_frame();
   CodeBlob* stub_cb = stub_fr.cb();
   assert(stub_cb->is_safepoint_stub(), "must be a safepoint stub");
-  RegisterMap map(thread(), true, false);
+  RegisterMap map(self, true, false);
   frame caller_fr = stub_fr.sender(&map);
 
   // Should only be poll_return or poll
@@ -978,17 +946,22 @@ void ThreadSafepointState::handle_polling_page_exception() {
       // to keep it in a handle.
       oop result = caller_fr.saved_oop_result(&map);
       assert(oopDesc::is_oop_or_null(result), "must be oop");
-      return_value = Handle(thread(), result);
+      return_value = Handle(self, result);
       assert(Universe::heap()->is_in_or_null(result), "must be heap pointer");
     }
 
     // We get here if compiled return polls found a reason to call into the VM.
     // One condition for that is that the top frame is not yet safe to use.
     // The following stack watermark barrier poll will catch such situations.
-    StackWatermarkSet::after_unwind(thread());
+    StackWatermarkSet::after_unwind(self);
 
     // Process pending operation
-    SafepointMechanism::process_if_requested(thread());
+    SafepointMechanism::process_if_requested(self);
+    // We have to wait if we are here because of a handshake for object deoptimization.
+    if (self->is_obj_deopt_suspend()) {
+      self->wait_for_object_deoptimization();
+    }
+    self->check_and_handle_async_exceptions();
 
     // restore oop result, if any
     if (return_oop) {
@@ -1004,21 +977,25 @@ void ThreadSafepointState::handle_polling_page_exception() {
     assert(real_return_addr == caller_fr.pc(), "must match");
 
     // Process pending operation
-    SafepointMechanism::process_if_requested(thread());
+    SafepointMechanism::process_if_requested(self);
+    // We have to wait if we are here because of a handshake for object deoptimization.
+    if (self->is_obj_deopt_suspend()) {
+      self->wait_for_object_deoptimization();
+    }
     set_at_poll_safepoint(false);
 
     // If we have a pending async exception deoptimize the frame
     // as otherwise we may never deliver it.
-    if (thread()->has_async_condition()) {
-      ThreadInVMfromJavaNoAsyncException __tiv(thread());
-      Deoptimization::deoptimize_frame(thread(), caller_fr.id());
+    if (self->has_async_condition()) {
+      ThreadInVMfromJavaNoAsyncException __tiv(self);
+      Deoptimization::deoptimize_frame(self, caller_fr.id());
     }
 
     // If an exception has been installed we must check for a pending deoptimization
     // Deoptimize frame if exception has been thrown.
 
-    if (thread()->has_pending_exception() ) {
-      RegisterMap map(thread(), true, false);
+    if (self->has_pending_exception() ) {
+      RegisterMap map(self, true, false);
       frame caller_fr = stub_fr.sender(&map);
       if (caller_fr.is_deoptimized_frame()) {
         // The exception patch will destroy registers that are still

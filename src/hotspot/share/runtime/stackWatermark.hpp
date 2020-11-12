@@ -26,9 +26,12 @@
 #define SHARE_RUNTIME_STACKWATERMARK_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/mutex.hpp"
 #include "runtime/stackWatermarkKind.hpp"
 
+class frame;
 class JavaThread;
+class RegisterMap;
 class StackWatermarkFramesIterator;
 
 // The StackWatermark state is a tuple comprising the last epoch in which
@@ -90,6 +93,7 @@ protected:
   StackWatermarkFramesIterator* _iterator;
   Mutex _lock;
   StackWatermarkKind _kind;
+  StackWatermark* _linked_watermark;
 
   void process_one();
 
@@ -125,6 +129,8 @@ public:
   StackWatermark* next() const { return _next; }
   void set_next(StackWatermark* n) { _next = n; }
 
+  void link_watermark(StackWatermark* watermark);
+
   uintptr_t watermark();
   uintptr_t last_processed();
 
@@ -137,6 +143,7 @@ public:
   void after_unwind();
 
   void on_iteration(const frame& f);
+  void on_safepoint();
   void start_processing();
   void finish_processing(void* context);
 };

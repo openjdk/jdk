@@ -30,6 +30,7 @@
 #include "gc/z/zHeap.hpp"
 #include "gc/z/zInitialize.hpp"
 #include "gc/z/zRuntimeWorkers.hpp"
+#include "memory/metaspace.hpp"
 
 class ZDirector;
 class ZDriver;
@@ -94,6 +95,7 @@ public:
   virtual GrowableArray<MemoryPool*> memory_pools();
 
   virtual void object_iterate(ObjectClosure* cl);
+  virtual ParallelObjectIterator* parallel_object_iterator(uint nworkers);
 
   virtual void keep_alive(oop obj);
 

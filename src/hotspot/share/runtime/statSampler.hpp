@@ -51,7 +51,9 @@ class StatSampler : AllStatic {
     static void create_misc_perfdata();
     static void create_sampled_perfdata();
     static void sample_data(PerfDataList* list);
-    static const char* get_system_property(const char* name, TRAPS);
+    static void assert_system_property(const char* name, const char* value, TRAPS);
+    static void add_property_constant(CounterNS name_space, const char* name, TRAPS);
+    static void add_property_constant(CounterNS name_space, const char* name, const char* value, TRAPS);
     static void create_system_property_instrumentation(TRAPS);
 
   public:

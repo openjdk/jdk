@@ -217,13 +217,6 @@ public class ElementKindVisitor6<R, P>
     }
 
     /**
-     * {@preview Associated with records, a preview feature of the Java language.
-     *
-     *           This method is associated with <i>records</i>, a preview
-     *           feature of the Java language. Preview features
-     *           may be removed in a future release, or upgraded to permanent
-     *           features of the Java language.}
-     *
      * Visits a {@code RECORD} type element.
      *
      * @implSpec This implementation calls {@code visitUnknown}.
@@ -232,10 +225,8 @@ public class ElementKindVisitor6<R, P>
      * @param p a visitor-specified parameter
      * @return  the result of {@code visitUnknown}
      *
-     * @since 14
+     * @since 16
      */
-    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.RECORDS,
-                                 essentialAPI=false)
     public R visitTypeAsRecord(TypeElement e, P p) {
         return visitUnknown(e, p);
     }

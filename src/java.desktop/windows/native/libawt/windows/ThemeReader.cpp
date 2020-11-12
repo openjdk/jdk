@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,51 +24,13 @@
  */
 
 #include "sun_awt_windows_ThemeReader.h"
-#include <string.h>
 
 #include "awt.h"
 #include "awt_Toolkit.h"
-#include "awt_Object.h"
-#include "awt_Component.h"
 
 #include "math.h"
 
-// Important note about VC6 and VC7 (or XP Platform SDK)   !
-//
-// These type definitions have been imported from UxTheme.h
-// They have been imported instead of including them, because
-// currently we don't require Platform SDK for building J2SE and
-// VC6 includes do not have UxTheme.h. When we move to VC7
-// we should remove these imports and just include
-//
-//  Uncomment these when we start using VC 7 (or XP Platform SDK)
-//
-//  #include <uxtheme.h>
-//  #incldue <tmschema.h>
-
-
-// Remove everyting inside this ifdef when we start using VC 7 (or XP Platform SDK)
-#ifndef  _UXTHEME_H_
-typedef HANDLE HTHEME;          // handle to a section of theme data for class
-
-typedef enum {
-    TS_MIN,
-    TS_TRUE,
-    TS_DRAW
-} THEME_SIZE;
-
-
-// Remove these when we start using VC 7 (or XP Platform SDK)
-typedef struct _MARGINS
-{
-    int cxLeftWidth;      // width of left border that retains its size
-    int cxRightWidth;     // width of right border that retains its size
-    int cyTopHeight;      // height of top border that retains its size
-    int cyBottomHeight;   // height of bottom border that retains its size
-} MARGINS, *PMARGINS;
-
-#define TMT_TRANSPARENT 2201
-#endif // _UXTHEME_H_
+#include <uxtheme.h>
 
 #if defined(_MSC_VER) && _MSC_VER >= 1800
 #  define ROUND_TO_INT(num)    ((int) round(num))
@@ -119,7 +81,7 @@ typedef HRESULT (__stdcall *PFNGETTHEMEENUMVALUE)(HTHEME hTheme, int iPartId,
 typedef HRESULT (__stdcall *PFNGETTHEMEINT)(HTHEME hTheme, int iPartId,
         int iStateId, int iPropId, int *val);
 typedef HRESULT (__stdcall *PFNGETTHEMEPARTSIZE)(HTHEME hTheme, HDC hdc,
-        int iPartId, int iStateId, RECT *prc, THEME_SIZE eSize, SIZE *size);
+        int iPartId, int iStateId, RECT *prc, THEMESIZE eSize, SIZE *size);
 
 typedef HRESULT (__stdcall *PFNGETTHEMEPOSITION)(HTHEME hTheme, int iPartId,
         int iStateId, int propID, POINT *point);
@@ -134,25 +96,24 @@ typedef HRESULT (__stdcall *PFNGETTHEMETRANSITIONDURATION)
                 (HTHEME hTheme, int iPartId, int iStateIdFrom, int iStateIdTo,
                  int iPropId, DWORD *pdwDuration);
 
-static PFNOPENTHEMEDATA OpenThemeData = NULL;
-static PFNDRAWTHEMEBACKGROUND DrawThemeBackground = NULL;
-static PFNCLOSETHEMEDATA CloseThemeData = NULL;
-static PFNDRAWTHEMETEXT DrawThemeText = NULL;
-static PFNGETTHEMEBACKGROUNDCONTENTRECT GetThemeBackgroundContentRect = NULL;
-static PFNGETTHEMEMARGINS GetThemeMargins = NULL;
-static PFNISTHEMEPARTDEFINED IsThemePartDefined = NULL;
-static PFNGETTHEMEBOOL GetThemeBool=NULL;
-static PFNGETTHEMESYSBOOL GetThemeSysBool=NULL;
-static PFNGETTHEMECOLOR GetThemeColor=NULL;
-static PFNGETTHEMEENUMVALUE GetThemeEnumValue = NULL;
-static PFNGETTHEMEINT GetThemeInt = NULL;
-static PFNGETTHEMEPARTSIZE GetThemePartSize = NULL;
-static PFNGETTHEMEPOSITION GetThemePosition = NULL;
-static PFNSETWINDOWTHEME SetWindowTheme = NULL;
+static PFNOPENTHEMEDATA OpenThemeDataFunc = NULL;
+static PFNDRAWTHEMEBACKGROUND DrawThemeBackgroundFunc = NULL;
+static PFNCLOSETHEMEDATA CloseThemeDataFunc = NULL;
+static PFNDRAWTHEMETEXT DrawThemeTextFunc = NULL;
+static PFNGETTHEMEBACKGROUNDCONTENTRECT GetThemeBackgroundContentRectFunc = NULL;
+static PFNGETTHEMEMARGINS GetThemeMarginsFunc = NULL;
+static PFNISTHEMEPARTDEFINED IsThemePartDefinedFunc = NULL;
+static PFNGETTHEMEBOOL GetThemeBoolFunc=NULL;
+static PFNGETTHEMESYSBOOL GetThemeSysBoolFunc=NULL;
+static PFNGETTHEMECOLOR GetThemeColorFunc=NULL;
+static PFNGETTHEMEENUMVALUE GetThemeEnumValueFunc = NULL;
+static PFNGETTHEMEINT GetThemeIntFunc = NULL;
+static PFNGETTHEMEPARTSIZE GetThemePartSizeFunc = NULL;
+static PFNGETTHEMEPOSITION GetThemePositionFunc = NULL;
+static PFNSETWINDOWTHEME SetWindowThemeFunc = NULL;
 static PFNISTHEMEBACKGROUNDPARTIALLYTRANSPARENT
-                                   IsThemeBackgroundPartiallyTransparent = NULL;
-//this function might not exist on Windows XP
-static PFNGETTHEMETRANSITIONDURATION GetThemeTransitionDuration = NULL;
+                               IsThemeBackgroundPartiallyTransparentFunc = NULL;
+static PFNGETTHEMETRANSITIONDURATION GetThemeTransitionDurationFunc = NULL;
 
 
 BOOL InitThemes() {
@@ -161,67 +122,67 @@ BOOL InitThemes() {
     DTRACE_PRINTLN1("InitThemes hModThemes = %x\n", hModThemes);
     if(hModThemes) {
         DTRACE_PRINTLN("Loaded UxTheme.dll\n");
-        OpenThemeData = (PFNOPENTHEMEDATA)GetProcAddress(hModThemes,
+        OpenThemeDataFunc = (PFNOPENTHEMEDATA)GetProcAddress(hModThemes,
                                                         "OpenThemeData");
-        DrawThemeBackground = (PFNDRAWTHEMEBACKGROUND)GetProcAddress(
+        DrawThemeBackgroundFunc = (PFNDRAWTHEMEBACKGROUND)GetProcAddress(
                                         hModThemes, "DrawThemeBackground");
-        CloseThemeData = (PFNCLOSETHEMEDATA)GetProcAddress(
+        CloseThemeDataFunc = (PFNCLOSETHEMEDATA)GetProcAddress(
                                                 hModThemes, "CloseThemeData");
-        DrawThemeText = (PFNDRAWTHEMETEXT)GetProcAddress(
+        DrawThemeTextFunc = (PFNDRAWTHEMETEXT)GetProcAddress(
                                         hModThemes, "DrawThemeText");
-        GetThemeBackgroundContentRect = (PFNGETTHEMEBACKGROUNDCONTENTRECT)
+        GetThemeBackgroundContentRectFunc = (PFNGETTHEMEBACKGROUNDCONTENTRECT)
                 GetProcAddress(hModThemes, "GetThemeBackgroundContentRect");
-        GetThemeMargins = (PFNGETTHEMEMARGINS)GetProcAddress(
+        GetThemeMarginsFunc = (PFNGETTHEMEMARGINS)GetProcAddress(
                                         hModThemes, "GetThemeMargins");
-        IsThemePartDefined = (PFNISTHEMEPARTDEFINED)GetProcAddress(
+        IsThemePartDefinedFunc = (PFNISTHEMEPARTDEFINED)GetProcAddress(
                                         hModThemes, "IsThemePartDefined");
-        GetThemeBool = (PFNGETTHEMEBOOL)GetProcAddress(
+        GetThemeBoolFunc = (PFNGETTHEMEBOOL)GetProcAddress(
                                         hModThemes, "GetThemeBool");
-        GetThemeSysBool = (PFNGETTHEMESYSBOOL)GetProcAddress(hModThemes,
+        GetThemeSysBoolFunc = (PFNGETTHEMESYSBOOL)GetProcAddress(hModThemes,
                                                         "GetThemeSysBool");
-        GetThemeColor = (PFNGETTHEMECOLOR)GetProcAddress(hModThemes,
+        GetThemeColorFunc = (PFNGETTHEMECOLOR)GetProcAddress(hModThemes,
                                                         "GetThemeColor");
-        GetThemeEnumValue = (PFNGETTHEMEENUMVALUE)GetProcAddress(hModThemes,
+        GetThemeEnumValueFunc = (PFNGETTHEMEENUMVALUE)GetProcAddress(hModThemes,
                                                 "GetThemeEnumValue");
-        GetThemeInt = (PFNGETTHEMEINT)GetProcAddress(hModThemes, "GetThemeInt");
-        GetThemePosition = (PFNGETTHEMEPOSITION)GetProcAddress(hModThemes,
+        GetThemeIntFunc = (PFNGETTHEMEINT)GetProcAddress(hModThemes, "GetThemeInt");
+        GetThemePositionFunc = (PFNGETTHEMEPOSITION)GetProcAddress(hModThemes,
                                                         "GetThemePosition");
-        GetThemePartSize = (PFNGETTHEMEPARTSIZE)GetProcAddress(hModThemes,
+        GetThemePartSizeFunc = (PFNGETTHEMEPARTSIZE)GetProcAddress(hModThemes,
                                                          "GetThemePartSize");
-        SetWindowTheme = (PFNSETWINDOWTHEME)GetProcAddress(hModThemes,
+        SetWindowThemeFunc = (PFNSETWINDOWTHEME)GetProcAddress(hModThemes,
                                                         "SetWindowTheme");
-        IsThemeBackgroundPartiallyTransparent =
+        IsThemeBackgroundPartiallyTransparentFunc =
             (PFNISTHEMEBACKGROUNDPARTIALLYTRANSPARENT)GetProcAddress(hModThemes,
                                        "IsThemeBackgroundPartiallyTransparent");
-        //this function might not exist
-        GetThemeTransitionDuration =
+        GetThemeTransitionDurationFunc =
             (PFNGETTHEMETRANSITIONDURATION)GetProcAddress(hModThemes,
                                         "GetThemeTransitionDuration");
 
-        if(OpenThemeData
-           && DrawThemeBackground
-           && CloseThemeData
-           && DrawThemeText
-           && GetThemeBackgroundContentRect
-           && GetThemeMargins
-           && IsThemePartDefined
-           && GetThemeBool
-           && GetThemeSysBool
-           && GetThemeColor
-           && GetThemeEnumValue
-           && GetThemeInt
-           && GetThemePartSize
-           && GetThemePosition
-           && SetWindowTheme
-           && IsThemeBackgroundPartiallyTransparent
+        if(OpenThemeDataFunc
+           && DrawThemeBackgroundFunc
+           && CloseThemeDataFunc
+           && DrawThemeTextFunc
+           && GetThemeBackgroundContentRectFunc
+           && GetThemeMarginsFunc
+           && IsThemePartDefinedFunc
+           && GetThemeBoolFunc
+           && GetThemeSysBoolFunc
+           && GetThemeColorFunc
+           && GetThemeEnumValueFunc
+           && GetThemeIntFunc
+           && GetThemePartSizeFunc
+           && GetThemePositionFunc
+           && SetWindowThemeFunc
+           && IsThemeBackgroundPartiallyTransparentFunc
+           && GetThemeTransitionDurationFunc
           ) {
               DTRACE_PRINTLN("Loaded function pointers.\n");
               // We need to make sure we can load the Theme. This may not be
               // the case on a WinXP machine with classic mode enabled.
-              HTHEME hTheme = OpenThemeData(AwtToolkit::GetInstance().GetHWnd(), L"Button");
+              HTHEME hTheme = OpenThemeDataFunc(AwtToolkit::GetInstance().GetHWnd(), L"Button");
               if(hTheme) {
                   DTRACE_PRINTLN("Loaded Theme data.\n");
-                  CloseThemeData(hTheme);
+                  CloseThemeDataFunc(hTheme);
                   return TRUE;
               }
             } else {
@@ -290,7 +251,7 @@ JNIEXPORT jlong JNICALL Java_sun_awt_windows_ThemeReader_openTheme
     }
     // We need to open the Theme on a Window that will stick around.
     // The best one for that purpose is the Toolkit window.
-    HTHEME htheme = OpenThemeData(AwtToolkit::GetInstance().GetHWnd(), str);
+    HTHEME htheme = OpenThemeDataFunc(AwtToolkit::GetInstance().GetHWnd(), str);
     JNU_ReleaseStringPlatformChars(env, widget, str);
     return (jlong) htheme;
 }
@@ -308,7 +269,7 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_ThemeReader_setWindowTheme
         str = (LPCTSTR) JNU_GetStringPlatformChars(env, subAppName, NULL);
     }
     // We need to set the Window theme on the same theme that we opened it with.
-    HRESULT hres = SetWindowTheme(AwtToolkit::GetInstance().GetHWnd(), str, NULL);
+    HRESULT hres = SetWindowThemeFunc(AwtToolkit::GetInstance().GetHWnd(), str, NULL);
     assert_result(hres, env);
     if (subAppName != NULL) {
         JNU_ReleaseStringPlatformChars(env, subAppName, str);
@@ -323,7 +284,7 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_ThemeReader_setWindowTheme
 JNIEXPORT void JNICALL Java_sun_awt_windows_ThemeReader_closeTheme
 (JNIEnv *env, jclass klass, jlong theme) {
 
-    HRESULT hres = CloseThemeData((HTHEME)theme);
+    HRESULT hres = CloseThemeDataFunc((HTHEME)theme);
     assert_result(hres, env);
 }
 
@@ -474,7 +435,7 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_ThemeReader_paintBackground
 
     ZeroMemory(pSrcBits,(BITS_PER_PIXEL>>3)*w*h);
 
-    HRESULT hres = DrawThemeBackground(hTheme, memDC, part, state, &rect, NULL);
+    HRESULT hres = DrawThemeBackgroundFunc(hTheme, memDC, part, state, &rect, NULL);
     assert_result(hres, env);
     if (SUCCEEDED(hres)) {
         // Make sure GDI is done.
@@ -482,7 +443,7 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_ThemeReader_paintBackground
         // Copy the resulting pixels to our Java BufferedImage.
         pDstBits = (int *)env->GetPrimitiveArrayCritical(array, 0);
         BOOL transparent = FALSE;
-        transparent = IsThemeBackgroundPartiallyTransparent(hTheme,part,state);
+        transparent = IsThemeBackgroundPartiallyTransparentFunc(hTheme, part, state);
         copyDIBToBufferedImage(pDstBits, pSrcBits, transparent, w, h, stride);
         env->ReleasePrimitiveArrayCritical(array, pDstBits, 0);
     }
@@ -530,7 +491,7 @@ JNIEXPORT jobject JNICALL Java_sun_awt_windows_ThemeReader_getThemeMargins
     HTHEME hTheme = (HTHEME) theme;
 
     if (hTheme != NULL) {
-        HRESULT hres = GetThemeMargins(hTheme, NULL, part, state, property, NULL, &margins);
+        HRESULT hres = GetThemeMarginsFunc(hTheme, NULL, part, state, property, NULL, &margins);
         assert_result(hres, env);
         if (FAILED(hres)) {
             return NULL;
@@ -551,7 +512,7 @@ JNIEXPORT jobject JNICALL Java_sun_awt_windows_ThemeReader_getThemeMargins
 JNIEXPORT jboolean JNICALL Java_sun_awt_windows_ThemeReader_isThemePartDefined
 (JNIEnv *env, jclass klass, jlong theme, jint part, jint state) {
     HTHEME hTheme = (HTHEME) theme;
-    return JNI_IS_TRUE(IsThemePartDefined(hTheme, part, state));
+    return JNI_IS_TRUE(IsThemePartDefinedFunc(hTheme, part, state));
 }
 
 /*
@@ -567,7 +528,7 @@ JNIEXPORT jobject JNICALL Java_sun_awt_windows_ThemeReader_getColor
     if (hTheme != NULL) {
         COLORREF color=0;
 
-        if (GetThemeColor(hTheme, part, state, type, &color) != S_OK) {
+        if (GetThemeColorFunc(hTheme, part, state, type, &color) != S_OK) {
             return NULL;
         }
 
@@ -613,7 +574,7 @@ JNIEXPORT jint JNICALL Java_sun_awt_windows_ThemeReader_getInt
     HTHEME hTheme = (HTHEME) theme;
     int retVal = -1;
     if (hTheme != NULL) {
-        HRESULT hres = GetThemeInt(hTheme, part, state, prop, &retVal);
+        HRESULT hres = GetThemeIntFunc(hTheme, part, state, prop, &retVal);
         assert_result(hres, env);
     }
     return retVal;
@@ -629,7 +590,7 @@ JNIEXPORT jint JNICALL Java_sun_awt_windows_ThemeReader_getEnum
     HTHEME hTheme = (HTHEME) theme;
     int retVal = -1;
     if (hTheme != NULL) {
-        HRESULT hres = GetThemeEnumValue(hTheme, part, state, prop, &retVal);
+        HRESULT hres = GetThemeEnumValueFunc(hTheme, part, state, prop, &retVal);
         assert_result(hres, env);
     }
     return retVal;
@@ -645,7 +606,7 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_windows_ThemeReader_getBoolean
     HTHEME hTheme = (HTHEME) theme;
     BOOL retVal = FALSE;
     if (hTheme != NULL) {
-        HRESULT hres = GetThemeBool(hTheme, part, state, prop, &retVal);
+        HRESULT hres = GetThemeBoolFunc(hTheme, part, state, prop, &retVal);
         assert_result(hres, env);
     }
     return JNI_IS_TRUE(retVal);
@@ -660,7 +621,7 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_windows_ThemeReader_getSysBoolean
 (JNIEnv *env, jclass klass, jlong  theme, jint prop) {
     HTHEME hTheme = (HTHEME)theme;
     if (hTheme != NULL) {
-        return JNI_IS_TRUE(GetThemeSysBool(hTheme, prop));
+        return JNI_IS_TRUE(GetThemeSysBoolFunc(hTheme, prop));
     }
     return JNI_FALSE;
 }
@@ -676,7 +637,7 @@ JNIEXPORT jobject JNICALL Java_sun_awt_windows_ThemeReader_getPoint
     POINT point;
 
     if (hTheme != NULL) {
-        if (GetThemePosition(hTheme, part, state, prop, &point) != S_OK) {
+        if (GetThemePositionFunc(hTheme, part, state, prop, &point) != S_OK) {
             return NULL;
         }
 
@@ -723,7 +684,7 @@ JNIEXPORT jobject JNICALL Java_sun_awt_windows_ThemeReader_getPosition
 
         POINT point;
 
-        HRESULT hres = GetThemePosition(hTheme, part, state, prop, &point);
+        HRESULT hres = GetThemePositionFunc(hTheme, part, state, prop, &point);
         assert_result(hres, env);
         if (FAILED(hres)) {
             return NULL;
@@ -789,7 +750,7 @@ JNIEXPORT jobject JNICALL Java_sun_awt_windows_ThemeReader_getPartSize
     if (theme != NULL) {
         SIZE size;
 
-        if (SUCCEEDED(GetThemePartSize((HTHEME)theme, NULL, part, state,
+        if (SUCCEEDED(GetThemePartSizeFunc((HTHEME)theme, NULL, part, state,
            NULL, TS_TRUE, &size)) && (env->EnsureLocalCapacity(2) >= 0)) {
 
             static jmethodID dimMID = NULL;
@@ -833,9 +794,10 @@ jint boundingWidth, jint boundingHeight) {
         boundingRect.right = boundingWidth;
         boundingRect.bottom = boundingHeight;
         RECT contentRect;
-        if (SUCCEEDED(GetThemeBackgroundContentRect((HTHEME) hTheme, NULL, part,
-                                                    state, &boundingRect,
-                                                    &contentRect))) {
+        if (SUCCEEDED(GetThemeBackgroundContentRectFunc((HTHEME) hTheme, NULL,
+                                                        part, state,
+                                                        &boundingRect,
+                                                        &contentRect))) {
             return newInsets(env,
                              contentRect.top, contentRect.left,
                              boundingHeight - contentRect.bottom,
@@ -855,23 +817,10 @@ Java_sun_awt_windows_ThemeReader_getThemeTransitionDuration
 (JNIEnv *env, jclass klass, jlong theme, jint part, jint stateFrom,
  jint stateTo, jint propId) {
     jlong rv = -1;
-    if (GetThemeTransitionDuration != NULL) {
-        DWORD duration = 0;
-        if (SUCCEEDED(GetThemeTransitionDuration((HTHEME) theme, part,
-                                      stateFrom, stateTo, propId, &duration))) {
-            rv = duration;
-        }
+    DWORD duration = 0;
+    if (SUCCEEDED(GetThemeTransitionDurationFunc((HTHEME) theme, part,
+                                  stateFrom, stateTo, propId, &duration))) {
+        rv = duration;
     }
     return rv;
-}
-
-/*
- * Class:     sun_awt_windows_ThemeReader
- * Method:    isGetThemeTransitionDurationDefined
- * Signature: ()Z
- */
-JNIEXPORT jboolean JNICALL
-Java_sun_awt_windows_ThemeReader_isGetThemeTransitionDurationDefined
-(JNIEnv *env, jclass klass) {
-    return (GetThemeTransitionDuration != NULL) ? JNI_TRUE : JNI_FALSE;
 }
