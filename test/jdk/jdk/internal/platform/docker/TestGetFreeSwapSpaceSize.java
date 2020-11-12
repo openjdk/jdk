@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key cgroups
  * @bug 8242480
  * @requires docker.support
  * @library /test/lib
