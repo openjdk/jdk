@@ -26,7 +26,6 @@
 #define SHARE_RUNTIME_OS_HPP
 
 #include "jvm.h"
-#include "jvmtifiles/jvmti.h"
 #include "metaprogramming/integralConstant.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/ostream.hpp"
@@ -51,6 +50,8 @@ class NativeCallStack;
 class methodHandle;
 class OSThread;
 class Mutex;
+
+struct jvmtiTimerInfo;
 
 template<class E> class GrowableArray;
 

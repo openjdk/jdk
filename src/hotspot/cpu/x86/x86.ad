@@ -1899,12 +1899,6 @@ const bool Matcher::misaligned_vectors_ok() {
   return true;
 }
 
-// x86 AES instructions are compatible with SunJCE expanded
-// keys, hence we do not need to pass the original key to stubs
-const bool Matcher::pass_original_key_for_aes() {
-  return false;
-}
-
 
 const bool Matcher::convi2l_type_required = true;
 

@@ -111,6 +111,7 @@ extern Mutex*   OldSets_lock;                    // protects the old region sets
 extern Monitor* RootRegionScan_lock;             // used to notify that the CM threads have finished scanning the IM snapshot regions
 
 extern Mutex*   Management_lock;                 // a lock used to serialize JVM management
+extern Monitor* MonitorDeflation_lock;           // a lock used for monitor deflation thread operation
 extern Monitor* Service_lock;                    // a lock used for service thread operation
 extern Monitor* Notification_lock;               // a lock used for notification thread operation
 extern Monitor* PeriodicTask_lock;               // protects the periodic task structure

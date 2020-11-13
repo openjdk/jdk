@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @key cgroups
  * @summary Ensure that certain JFR events return correct results for resource values
  *          when run inside Docker container, such as available CPU and memory.
  *          Also make sure that PIDs are based on value provided by container,
