@@ -26,7 +26,6 @@
 #define SHARE_CLASSFILE_JAVACLASSES_HPP
 
 #include "classfile/systemDictionary.hpp"
-#include "jvmtifiles/jvmti.h"
 #include "oops/oop.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/symbol.hpp"
@@ -421,41 +420,10 @@ class java_lang_Thread : AllStatic {
   // Blocker object responsible for thread parking
   static oop park_blocker(oop java_thread);
 
-  // Java Thread Status for JVMTI and M&M use.
-  // This thread status info is saved in threadStatus field of
-  // java.lang.Thread java class.
-  enum ThreadStatus {
-    NEW                      = 0,
-    RUNNABLE                 = JVMTI_THREAD_STATE_ALIVE +          // runnable / running
-                               JVMTI_THREAD_STATE_RUNNABLE,
-    SLEEPING                 = JVMTI_THREAD_STATE_ALIVE +          // Thread.sleep()
-                               JVMTI_THREAD_STATE_WAITING +
-                               JVMTI_THREAD_STATE_WAITING_WITH_TIMEOUT +
-                               JVMTI_THREAD_STATE_SLEEPING,
-    IN_OBJECT_WAIT           = JVMTI_THREAD_STATE_ALIVE +          // Object.wait()
-                               JVMTI_THREAD_STATE_WAITING +
-                               JVMTI_THREAD_STATE_WAITING_INDEFINITELY +
-                               JVMTI_THREAD_STATE_IN_OBJECT_WAIT,
-    IN_OBJECT_WAIT_TIMED     = JVMTI_THREAD_STATE_ALIVE +          // Object.wait(long)
-                               JVMTI_THREAD_STATE_WAITING +
-                               JVMTI_THREAD_STATE_WAITING_WITH_TIMEOUT +
-                               JVMTI_THREAD_STATE_IN_OBJECT_WAIT,
-    PARKED                   = JVMTI_THREAD_STATE_ALIVE +          // LockSupport.park()
-                               JVMTI_THREAD_STATE_WAITING +
-                               JVMTI_THREAD_STATE_WAITING_INDEFINITELY +
-                               JVMTI_THREAD_STATE_PARKED,
-    PARKED_TIMED             = JVMTI_THREAD_STATE_ALIVE +          // LockSupport.park(long)
-                               JVMTI_THREAD_STATE_WAITING +
-                               JVMTI_THREAD_STATE_WAITING_WITH_TIMEOUT +
-                               JVMTI_THREAD_STATE_PARKED,
-    BLOCKED_ON_MONITOR_ENTER = JVMTI_THREAD_STATE_ALIVE +          // (re-)entering a synchronization block
-                               JVMTI_THREAD_STATE_BLOCKED_ON_MONITOR_ENTER,
-    TERMINATED               = JVMTI_THREAD_STATE_TERMINATED
-  };
   // Write thread status info to threadStatus field of java.lang.Thread.
-  static void set_thread_status(oop java_thread_oop, ThreadStatus status);
+  static void set_thread_status(oop java_thread_oop, JavaThreadStatus status);
   // Read thread status info from threadStatus field of java.lang.Thread.
-  static ThreadStatus get_thread_status(oop java_thread_oop);
+  static JavaThreadStatus get_thread_status(oop java_thread_oop);
 
   static const char*  thread_status_name(oop java_thread_oop);
 

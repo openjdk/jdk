@@ -139,6 +139,9 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(UseVectorByteReverseInstructionsPPC64)) {
       FLAG_SET_ERGO(UseVectorByteReverseInstructionsPPC64, true);
     }
+    if (FLAG_IS_DEFAULT(UseBASE64Intrinsics)) {
+      FLAG_SET_ERGO(UseBASE64Intrinsics, true);
+    }
   } else {
     if (UseCountTrailingZerosInstructionsPPC64) {
       warning("UseCountTrailingZerosInstructionsPPC64 specified, but needs at least Power9.");
@@ -151,6 +154,10 @@ void VM_Version::initialize() {
     if (UseVectorByteReverseInstructionsPPC64) {
       warning("UseVectorByteReverseInstructionsPPC64 specified, but needs at least Power9.");
       FLAG_SET_DEFAULT(UseVectorByteReverseInstructionsPPC64, false);
+    }
+    if (UseBASE64Intrinsics) {
+      warning("UseBASE64Intrinsics specified, but needs at least Power9.");
+      FLAG_SET_DEFAULT(UseBASE64Intrinsics, false);
     }
   }
 

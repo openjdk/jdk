@@ -1668,6 +1668,9 @@ char* os::attempt_reserve_memory_at(char* addr, size_t bytes) {
   char* result = pd_attempt_reserve_memory_at(addr, bytes);
   if (result != NULL) {
     MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
+  } else {
+    log_debug(os)("Attempt to reserve memory at " INTPTR_FORMAT " for "
+                 SIZE_FORMAT " bytes failed, errno %d", p2i(addr), bytes, get_last_error());
   }
   return result;
 }
