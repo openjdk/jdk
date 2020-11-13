@@ -219,7 +219,7 @@ define SetupJavaCompilationBody
 
       # Create a configuration file with the needed information for the javac
       # server to function properly.
-      $1_JAVAC_SERVER_CONFIG := $$(JAVAC_SERVER_DIR)/$$($1_SAFE_NAME)-server.conf
+      $1_JAVAC_SERVER_CONFIG := $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$$($1_SAFE_NAME)-server.conf
 
       # The portfile contains the tcp/ip on which the server listens
       # and the cookie necessary to talk to the server.
