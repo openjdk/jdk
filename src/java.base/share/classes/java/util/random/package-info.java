@@ -58,10 +58,10 @@
  * <p> For many purposes, these are the only two interfaces that a consumer of
  * (pseudo)random values will need. There are also some more specialized
  * interfaces that describe more specialized categories of random number
- * generators ({@link RandomGenerator.SplittableGenerator},
+ * generators {@link RandomGenerator.SplittableGenerator},
  * {@link RandomGenerator.JumpableGenerator},
  * {@link RandomGenerator.LeapableGenerator}, and
- * {@link RandomGenerator.ArbitrarilyJumpableGenerator}) that have specific
+ * {@link RandomGenerator.ArbitrarilyJumpableGenerator} that have specific
  * strategies for creating statistically independent instances.
  *
  * <h2>Using the Random Number Generator Interfaces</h2>
@@ -73,7 +73,7 @@
  * <blockquote>{@code import java.util.random.*;}</blockquote>
  *
  * Then one can choose a specific implementation by giving the name of a generator
- * implementation to the static method {@link RandomGenerator#of}, in which case the
+ * algorithm to the static method {@link RandomGenerator#of}, in which case the
  * no-arguments constructor for that implementation is used:
  *
  * <blockquote>{@code RandomGenerator g = RandomGenerator.of("L64X128MixRandom");}</blockquote>
@@ -96,7 +96,7 @@
  * of the generator instance.
  *
  * <p> For a multi-threaded application, one can repeat the preceding steps to
- * create additional {@link RandomGenerator} values, but often it is preferable
+ * create additional {@linkplain RandomGenerator RandomGenerators}, but often it is preferable
  * to use methods of the one single initially created generator to create others
  * like it. (One reason is that some generator algorithms, if asked to create a
  * new set of generators all at once, can make a special effort to ensure that
@@ -150,11 +150,7 @@
  * <p> For an application that creates many threads dynamically, perhaps through
  * the use of spliterators, a "splittable" generator such as
  * "L64X128MixRandom" or "L64X256MixRandom" is
- * recommended. (The original {@link java.util.SplittableRandom} algorithm may
- * also be used, but it is now known to have certain minor mathematical
- * statistical weaknesses that may or may not matter in practice. If these minor
- * weaknesses do not matter, {@link SpittableRandom} may be a little bit faster
- * for some applications.) If the number of generators created dynamically may
+ * recommended. If the number of generators created dynamically may
  * be very large (millions or more), then using generators such as
  * "L128X128MixRandom" or "L128X256MixRandom",
  * which use a 128-bit parameter rather than a 64-bit parameter for their LCG
