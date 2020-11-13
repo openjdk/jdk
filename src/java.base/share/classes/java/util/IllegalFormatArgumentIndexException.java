@@ -44,7 +44,7 @@ class IllegalFormatArgumentIndexException extends IllegalFormatException {
      * Constructs an instance of this class with the specified argument index
      * @param index The value of a corresponding illegal argument index.
      */
-    public IllegalFormatArgumentIndexException(int index) {
+    IllegalFormatArgumentIndexException(int index) {
         illegalIndex = index;
     }
 
@@ -54,7 +54,7 @@ class IllegalFormatArgumentIndexException extends IllegalFormatException {
      * representable by an integer type.
      * @return the illegal index value
      */
-    public int getIndex() {
+    int getIndex() {
         return illegalIndex;
     }
 
