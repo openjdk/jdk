@@ -39,6 +39,7 @@ import java.util.Iterator;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Flow;
+import java.util.function.BiPredicate;
 import java.util.function.Supplier;
 
 import jdk.internal.net.http.HttpRequestBuilderImpl;
@@ -90,8 +91,9 @@ public abstract class HttpRequest {
     /**
      * A builder of {@linkplain HttpRequest HTTP requests}.
      *
-     * <p> Instances of {@code HttpRequest.Builder} are created by calling {@link
-     * HttpRequest#newBuilder(URI)} or {@link HttpRequest#newBuilder()}.
+     * <p> Instances of {@code HttpRequest.Builder} are created by calling
+     * {@link HttpRequest#newBuilder()}, {@link HttpRequest#newBuilder(URI)},
+     * or {@link HttpRequest#newBuilder(HttpRequest, BiPredicate)}.
      *
      * <p> The builder can be used to configure per-request state, such as: the
      * request URI, the request method (default is GET unless explicitly set),
@@ -306,23 +308,52 @@ public abstract class HttpRequest {
     /**
      * Creates a {@code Builder} seeded from an {@code HttpRequest}.
      *
-     * <p> This method can be used to build a new request equivalent to the
-     * given request, but with some parts of its state altered.
+     * This method returns a {@code Builder} whose state is copied from the
+     * given request, subject to the given filter. This builder can be used to
+     * build an {@code HttpRequest}, equivalent to the original, while allowing
+     * amendment of the request state prior to construction - for example,
+     * adding additional headers.
      *
-     * @param request the request
+     * <p> The {@code filter} is applied to each header name value pair as they
+     * are copied from the given request. When completed, only headers that
+     * satisfy the condition as laid out by the {@code filter} will be present
+     * in the {@code Builder} returned from this method.
+     *
+     * @apiNote
+     * The following scenarios demonstrate typical use-cases of the filter.
+     * Given an {@code HttpRequest} <em>request</em>:
+     * <br><br>
+     * <ul>
+     *  <li> Retain all headers:
+     *  <pre>{@code HttpRequest.newBuilder(request, (n, v) -> true)}</pre>
+     *
+     *  <li> Remove all headers:
+     *  <pre>{@code HttpRequest.newBuilder(request, (n, v) -> false)}</pre>
+     *
+     *  <li> Remove a particular header (e.g. Foo-Bar):
+     *  <pre>{@code HttpRequest.newBuilder(request, (name, value) -> name.equalsIgnoreCase("Foo-Bar"))}</pre>
+     * </ul>
+     *
+     * @param request the original request
+     * @param filter a header filter
      * @return a new request builder
      * @throws IllegalArgumentException if a new builder cannot be seeded from
      *         the given request (for instance, if the request contains illegal
      *         parameters)
      * @since 16
      */
-    public static Builder newBuilder(HttpRequest request) {
+    public static Builder newBuilder(HttpRequest request, BiPredicate<String, String> filter) {
         Objects.requireNonNull(request);
+        Objects.requireNonNull(filter);
 
         final HttpRequest.Builder builder = HttpRequest.newBuilder();
         builder.uri(request.uri());
         builder.expectContinue(request.expectContinue());
-        request.headers().map().forEach((name, values) -> values.forEach(value -> builder.header(name, value)));
+
+        // Filter unwanted headers
+        HttpHeaders headers = HttpHeaders.of(request.headers().map(), filter);
+        headers.map().forEach((name, values) ->
+                values.forEach(value -> builder.header(name, value)));
 
         request.version().ifPresent(builder::version);
         request.timeout().ifPresent(builder::timeout);

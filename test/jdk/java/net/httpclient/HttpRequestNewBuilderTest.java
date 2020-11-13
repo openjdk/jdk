@@ -26,24 +26,26 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodySubscriber;
 import java.net.http.HttpResponse.BodySubscribers;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Flow;
 import java.util.function.BiConsumer;
+import java.util.function.BiPredicate;
+
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertThrows;
@@ -57,55 +59,63 @@ import static org.testng.Assert.fail;
 * @run testng/othervm HttpRequestNewBuilderTest
 */
 public class HttpRequestNewBuilderTest {
-   static final Class<NullPointerException> NPE = NullPointerException.class;
-   static final Class<IllegalArgumentException> IAE = IllegalArgumentException.class;
+    static final Class<NullPointerException> NPE = NullPointerException.class;
+    static final Class<IllegalArgumentException> IAE = IllegalArgumentException.class;
 
-   record NamedAssertion (String name, BiConsumer<HttpRequest,HttpRequest> test) { }
-   List<NamedAssertion> REQUEST_ASSERTIONS = List.of(
-           new NamedAssertion("uri",            (r1,r2) -> assertEquals(r1.uri(), r2.uri())),
-           new NamedAssertion("timeout",        (r1,r2) -> assertEquals(r1.timeout(), r2.timeout())),
-           new NamedAssertion("version",        (r1,r2) -> assertEquals(r1.version(), r2.version())),
-           new NamedAssertion("headers",        (r1,r2) -> assertEquals(r1.headers(), r2.headers())),
-           new NamedAssertion("expectContinue", (r1,r2) -> assertEquals(r1.expectContinue(), r2.expectContinue())),
-           new NamedAssertion("method",  (r1,r2) -> {
-               assertEquals(r1.method(), r2.method());
-               assertBodyPublisherEqual(r1, r2);
-           })
-   );
+    record NamedAssertion(String name, BiConsumer<HttpRequest, HttpRequest> test) { }
 
-   @DataProvider(name = "testRequests")
-   public Object[][] variants() {
-       return new Object[][]{
-               { HttpRequest.newBuilder(URI.create("https://a/")).build() },
-               { HttpRequest.newBuilder(URI.create("https://b/")).version(HTTP_1_1).build() },
-               { HttpRequest.newBuilder(URI.create("https://c/")).version(HTTP_2).build() },
+    List<NamedAssertion> REQUEST_ASSERTIONS = List.of(
+            new NamedAssertion("uri", (r1, r2) -> assertEquals(r1.uri(), r2.uri())),
+            new NamedAssertion("timeout", (r1, r2) -> assertEquals(r1.timeout(), r2.timeout())),
+            new NamedAssertion("version", (r1, r2) -> assertEquals(r1.version(), r2.version())),
+            new NamedAssertion("headers", (r1, r2) -> assertEquals(r1.headers(), r2.headers())),
+            new NamedAssertion("expectContinue", (r1, r2) -> assertEquals(r1.expectContinue(), r2.expectContinue())),
+            new NamedAssertion("method", (r1, r2) -> {
+                assertEquals(r1.method(), r2.method());
+                assertBodyPublisherEqual(r1, r2);
+            })
+    );
 
-               { HttpRequest.newBuilder(URI.create("https://d/")).timeout(Duration.ofSeconds(30)).build() },
-               { HttpRequest.newBuilder(URI.create("https://e/")).header("testName", "testValue").build() },
-               // dedicated method
-               { HttpRequest.newBuilder(URI.create("https://f/")).GET().build() },
-               { HttpRequest.newBuilder(URI.create("https://g/")).DELETE().build() },
-               { HttpRequest.newBuilder(URI.create("https://h/")).POST(HttpRequest.BodyPublishers.ofString("testData")).build() },
-               { HttpRequest.newBuilder(URI.create("https://i/")).PUT(HttpRequest.BodyPublishers.ofString("testData")).build() },
-               // method w/body
-               { HttpRequest.newBuilder(URI.create("https://j/")).method("GET", HttpRequest.BodyPublishers.ofString("testData")).build() },
-               { HttpRequest.newBuilder(URI.create("https://k/")).method("DELETE", HttpRequest.BodyPublishers.ofString("testData")).build() },
-               { HttpRequest.newBuilder(URI.create("https://l/")).method("POST", HttpRequest.BodyPublishers.ofString("testData")).build() },
-               { HttpRequest.newBuilder(URI.create("https://m/")).method("PUT", HttpRequest.BodyPublishers.ofString("testData")).build() },
-               // method w/o body
-               { HttpRequest.newBuilder(URI.create("https://n/")).method("GET", HttpRequest.BodyPublishers.noBody()).build() },
-               { HttpRequest.newBuilder(URI.create("https://o/")).method("DELETE", HttpRequest.BodyPublishers.noBody()).build() },
-               { HttpRequest.newBuilder(URI.create("https://p/")).method("POST", HttpRequest.BodyPublishers.noBody()).build() },
-               { HttpRequest.newBuilder(URI.create("https://q/")).method("PUT", HttpRequest.BodyPublishers.noBody()).build() },
-               // user defined methods w/ & w/o body
-               { HttpRequest.newBuilder(URI.create("https://r/")).method("TEST", HttpRequest.BodyPublishers.noBody()).build() },
-               { HttpRequest.newBuilder(URI.create("https://s/")).method("TEST", HttpRequest.BodyPublishers.ofString("testData")).build() },
+    @DataProvider(name = "testRequests")
+    public Object[][] variants() {
+        return new Object[][]{
+                { HttpRequest.newBuilder(URI.create("https://uri-1/")).build() },
+                { HttpRequest.newBuilder(URI.create("https://version-1/")).version(HTTP_1_1).build() },
+                { HttpRequest.newBuilder(URI.create("https://version-2/")).version(HTTP_2).build() },
+                { HttpRequest.newBuilder(URI.create("https://timeout-1/")).timeout(Duration.ofSeconds(30)).build() },
+                { HttpRequest.newBuilder(URI.create("https://header-1/")).header("testName", "testValue").build() },
+                { HttpRequest.newBuilder(URI.create("https://header-2/"))
+                        .headers("testName", "testValue", "a", "1", "b", "2").build() },
+                { HttpRequest.newBuilder(URI.create("https://header-3/"))
+                        .setHeader("testName", "testValue")
+                        .setHeader("testName", "x")
+                        .setHeader("testName", "y")
+                        .setHeader("testName", "z").build() },
+                // dedicated method
+                { HttpRequest.newBuilder(URI.create("https://method-1/")).GET().build() },
+                { HttpRequest.newBuilder(URI.create("https://method-2/")).DELETE().build() },
+                { HttpRequest.newBuilder(URI.create("https://method-3/")).POST(HttpRequest.BodyPublishers.ofString("testData")).build() },
+                { HttpRequest.newBuilder(URI.create("https://method-4/")).PUT(HttpRequest.BodyPublishers.ofString("testData")).build() },
+                // method w/body
+                { HttpRequest.newBuilder(URI.create("https://method-5/")).method("GET", HttpRequest.BodyPublishers.ofString("testData")).build() },
+                { HttpRequest.newBuilder(URI.create("https://method-6/")).method("DELETE", HttpRequest.BodyPublishers.ofString("testData")).build() },
+                { HttpRequest.newBuilder(URI.create("https://method-7/")).method("POST", HttpRequest.BodyPublishers.ofString("testData")).build() },
+                { HttpRequest.newBuilder(URI.create("https://method-8/")).method("PUT", HttpRequest.BodyPublishers.ofString("testData")).build() },
+                // method w/o body
+                { HttpRequest.newBuilder(URI.create("https://method-9/")).method("GET", HttpRequest.BodyPublishers.noBody()).build() },
+                { HttpRequest.newBuilder(URI.create("https://method-10/")).method("DELETE", HttpRequest.BodyPublishers.noBody()).build() },
+                { HttpRequest.newBuilder(URI.create("https://method-11/")).method("POST", HttpRequest.BodyPublishers.noBody()).build() },
+                { HttpRequest.newBuilder(URI.create("https://method-12/")).method("PUT", HttpRequest.BodyPublishers.noBody()).build() },
+                // user defined methods w/ & w/o body
+                { HttpRequest.newBuilder(URI.create("https://method-13/")).method("TEST", HttpRequest.BodyPublishers.noBody()).build() },
+                { HttpRequest.newBuilder(URI.create("https://method-14/")).method("TEST", HttpRequest.BodyPublishers.ofString("testData")).build() },
 
-               { HttpRequest.newBuilder(URI.create("https://z/")).GET().expectContinue(true).version(HTTP_2)
-                       .timeout(Duration.ofSeconds(1)).header("testName", "testValue").build() },
-       };
-   }
+                { HttpRequest.newBuilder(URI.create("https://all-fields-1/")).GET().expectContinue(true).version(HTTP_2)
+                        .timeout(Duration.ofSeconds(1)).header("testName", "testValue").build() },
+        };
+    }
 
+    // test methods
     void assertBodyPublisherEqual(HttpRequest r1, HttpRequest r2) {
         if (r1.bodyPublisher().isPresent()) {
             assertTrue(r2.bodyPublisher().isPresent());
@@ -129,190 +139,252 @@ public class HttpRequestNewBuilderTest {
             }
             var bs1 = BodySubscribers.ofString(UTF_8);
             bp1.subscribe(new TestSubscriber(bs1));
-            var x1 = bs1.getBody().toCompletableFuture().join().getBytes();
+            var b1 = bs1.getBody().toCompletableFuture().join().getBytes();
 
             var bs2 = BodySubscribers.ofString(UTF_8);
             bp2.subscribe(new TestSubscriber(bs2));
-            var x2 = bs2.getBody().toCompletableFuture().join().getBytes();
+            var b2 = bs2.getBody().toCompletableFuture().join().getBytes();
 
-            assertEquals(x1, x2);
+            assertEquals(b1, b2);
         } else {
             assertFalse(r2.bodyPublisher().isPresent());
         }
     }
 
-   void assertAllOtherElementsEqual(HttpRequest r1, HttpRequest r2, String... except) {
-       var ignoreList = Arrays.asList(except);
-       REQUEST_ASSERTIONS.stream()
-               .filter(a -> !ignoreList.contains(a.name()))
-               .forEach(testCaseAssertion -> testCaseAssertion.test().accept(r1, r2));
-   }
+    void assertHeadersEquals(HttpRequest r1, HttpRequest r2, BiPredicate<String, String> filter) {
+        var s1 = r1.headers().map().entrySet().stream();
+        var s2 = r2.headers()
+                .map()
+                .entrySet()
+                .stream()
+                .filter(e -> {
+                    var n = e.getKey();
+                    for (var v : e.getValue()) {
+                        if (filter.test(n, v))
+                            return true;
+                    }
+                    return false;
+                });
+        Iterator<?> iter1 = s1.iterator(), iter2 = s2.iterator();
+        while (iter1.hasNext() && iter2.hasNext())
+            assertEquals(iter1.next(), iter2.next());
+    }
 
-   void testBodyPublisher(String methodName, HttpRequest request) {
-       // method w/body
-       var r = HttpRequest.newBuilder(request)
-               .method(methodName, HttpRequest.BodyPublishers.ofString("testData"))
-               .build();
-       assertEquals(r.method(), methodName);
-       assertTrue(r.bodyPublisher().isPresent());
-       assertEquals(r.bodyPublisher().get().contentLength(), 8);
-       assertAllOtherElementsEqual(r, request, "method");
+    void assertAllOtherElementsEqual(HttpRequest r1, HttpRequest r2, String... except) {
+        var ignoreList = Arrays.asList(except);
+        REQUEST_ASSERTIONS.stream()
+                .filter(a -> !ignoreList.contains(a.name()))
+                .forEach(testCaseAssertion -> testCaseAssertion.test().accept(r1, r2));
+    }
 
-       // method w/o body
-       var noBodyPublisher = HttpRequest.BodyPublishers.noBody();
-       var r1 = HttpRequest.newBuilder(request)
-               .method(methodName, noBodyPublisher)
-               .build();
-       assertEquals(r1.method(), methodName);
-       assertTrue(r1.bodyPublisher().isPresent());
-       assertEquals(r1.bodyPublisher().get(), noBodyPublisher);
-       assertAllOtherElementsEqual(r1, request, "method");
-   }
+    void testBodyPublisher(String methodName, HttpRequest request) {
+        // method w/body
+        var r = HttpRequest.newBuilder(request, (n, v) -> true)
+                .method(methodName, HttpRequest.BodyPublishers.ofString("testData"))
+                .build();
+        assertEquals(r.method(), methodName);
+        assertTrue(r.bodyPublisher().isPresent());
+        assertEquals(r.bodyPublisher().get().contentLength(), 8);
+        assertAllOtherElementsEqual(r, request, "method");
 
-   @Test
-   public void testNull() {
-       HttpRequest request = null;
-       assertThrows(NPE, () -> HttpRequest.newBuilder(request).build());
-   }
+        // method w/o body
+        var noBodyPublisher = HttpRequest.BodyPublishers.noBody();
+        var r1 = HttpRequest.newBuilder(request, (n, v) -> true)
+                .method(methodName, noBodyPublisher)
+                .build();
+        assertEquals(r1.method(), methodName);
+        assertTrue(r1.bodyPublisher().isPresent());
+        assertEquals(r1.bodyPublisher().get(), noBodyPublisher);
+        assertAllOtherElementsEqual(r1, request, "method");
+    }
 
-   @Test(dataProvider = "testRequests")
-   void testBuilder(HttpRequest request) {
-       var r = HttpRequest.newBuilder(request).build();
-       assertEquals(r, request);
-       assertAllOtherElementsEqual(r, request);
-   }
+    @Test
+    public void testNull() {
+        var r = HttpRequest.newBuilder(URI.create("https://foobar/")).build();
+        assertThrows(NPE, () -> HttpRequest.newBuilder(r, null));
+        assertThrows(NPE, () -> HttpRequest.newBuilder(null, (n, v) -> true));
+        assertThrows(NPE, () -> HttpRequest.newBuilder(null, null));
+    }
 
-   @Test(dataProvider = "testRequests")
-   public void testURI(HttpRequest request) {
-       URI newURI = URI.create("http://www.newURI.com/");
-       var r = HttpRequest.newBuilder(request).uri(newURI).build();
+    @Test(dataProvider = "testRequests")
+    void testBuilder(HttpRequest request) {
+        var r = HttpRequest.newBuilder(request, (n, v) -> true).build();
+        assertEquals(r, request);
+        assertAllOtherElementsEqual(r, request);
+    }
 
-       assertEquals(r.uri(), newURI);
-       assertAllOtherElementsEqual(r, request, "uri");
-   }
+    @Test(dataProvider = "testRequests")
+    public void testURI(HttpRequest request) {
+        URI newURI = URI.create("http://www.newURI.com/");
+        var r = HttpRequest.newBuilder(request, (n, v) -> true).uri(newURI).build();
 
-   @Test(dataProvider = "testRequests")
-   public void testHeaders(HttpRequest request) {
-       var r = HttpRequest.newBuilder(request).headers("newName", "newValue").build();
+        assertEquals(r.uri(), newURI);
+        assertAllOtherElementsEqual(r, request, "uri");
+    }
 
-       assertEquals(r.headers().firstValue("newName").get(), "newValue");
-       assertEquals(r.headers().allValues("newName").size(), 1);
-       assertAllOtherElementsEqual(r, request, "headers");
-   }
+    @Test(dataProvider = "testRequests")
+    public void testTimeout(HttpRequest request) {
+        var r = HttpRequest.newBuilder(request, (n, v) -> true).timeout(Duration.ofSeconds(2)).build();
 
-   @Test(dataProvider = "testRequests")
-   public void testTimeout(HttpRequest request) {
-       var r = HttpRequest.newBuilder(request).timeout(Duration.ofSeconds(2)).build();
+        assertEquals(r.timeout().get().getSeconds(), 2);
+        assertAllOtherElementsEqual(r, request, "timeout");
+    }
 
-       assertEquals(r.timeout().get().getSeconds(), 2);
-       assertAllOtherElementsEqual(r, request, "timeout");
-   }
+    @Test(dataProvider = "testRequests")
+    public void testVersion(HttpRequest request) {
+        var r = HttpRequest.newBuilder(request, (n, v) -> true).version(HTTP_1_1).build();
 
-   @Test(dataProvider = "testRequests")
-   public void testVersion(HttpRequest request) {
-       var r = HttpRequest.newBuilder(request).version(HTTP_1_1).build();
+        assertEquals(r.version().get(), HTTP_1_1);
+        assertAllOtherElementsEqual(r, request, "version");
+    }
 
-       assertEquals(r.version().get(), HTTP_1_1);
-       assertAllOtherElementsEqual(r, request, "version");
-   }
+    @Test(dataProvider = "testRequests")
+    public void testGET(HttpRequest request) {
+        var r = HttpRequest.newBuilder(request, (n, v) -> true)
+                .GET()
+                .build();
+        assertEquals(r.method(), "GET");
+        assertTrue(r.bodyPublisher().isEmpty());
+        assertAllOtherElementsEqual(r, request, "method");
 
-   @Test(dataProvider = "testRequests")
-   public void testGET(HttpRequest request) {
-       var r = HttpRequest.newBuilder(request)
-               .GET()
-               .build();
-       assertEquals(r.method(), "GET");
-       assertTrue(r.bodyPublisher().isEmpty());
-       assertAllOtherElementsEqual(r, request, "method");
+        testBodyPublisher("GET", request);
+    }
 
-       testBodyPublisher("GET", request);
-   }
+    @Test(dataProvider = "testRequests")
+    public void testDELETE(HttpRequest request) {
+        var r = HttpRequest.newBuilder(request, (n, v) -> true)
+                .DELETE()
+                .build();
+        assertEquals(r.method(), "DELETE");
+        assertTrue(r.bodyPublisher().isEmpty());
+        assertAllOtherElementsEqual(r, request, "method");
 
-   @Test(dataProvider = "testRequests")
-   public void testDELETE(HttpRequest request) {
-       var r = HttpRequest.newBuilder(request)
-               .DELETE()
-               .build();
-       assertEquals(r.method(), "DELETE");
-       assertTrue(r.bodyPublisher().isEmpty());
-       assertAllOtherElementsEqual(r, request, "method");
+        testBodyPublisher("DELETE", request);
+    }
 
-       testBodyPublisher("DELETE", request);
-   }
+    @Test(dataProvider = "testRequests")
+    public void testPOST(HttpRequest request) {
+        var r = HttpRequest.newBuilder(request, (n, v) -> true)
+                .POST(HttpRequest.BodyPublishers.ofString("testData"))
+                .build();
+        assertEquals(r.method(), "POST");
+        assertTrue(r.bodyPublisher().isPresent());
+        assertEquals(r.bodyPublisher().get().contentLength(), 8);
+        assertAllOtherElementsEqual(r, request, "method");
 
-   @Test(dataProvider = "testRequests")
-   public void testPOST(HttpRequest request) {
-       var r = HttpRequest.newBuilder(request)
-               .POST(HttpRequest.BodyPublishers.ofString("testData"))
-               .build();
-       assertEquals(r.method(), "POST");
-       assertTrue(r.bodyPublisher().isPresent());
-       assertEquals(r.bodyPublisher().get().contentLength(), 8);
-       assertAllOtherElementsEqual(r, request, "method");
+        testBodyPublisher("POST", request);
+    }
 
-       testBodyPublisher("POST", request);
-   }
+    @Test(dataProvider = "testRequests")
+    public void testPUT(HttpRequest request) {
+        var r = HttpRequest.newBuilder(request, (n, v) -> true)
+                .PUT(HttpRequest.BodyPublishers.ofString("testData"))
+                .build();
+        assertEquals(r.method(), "PUT");
+        assertTrue(r.bodyPublisher().isPresent());
+        assertEquals(r.bodyPublisher().get().contentLength(), 8);
+        assertAllOtherElementsEqual(r, request, "method");
 
-   @Test(dataProvider = "testRequests")
-   public void testPUT(HttpRequest request) {
-       var r = HttpRequest.newBuilder(request)
-               .PUT(HttpRequest.BodyPublishers.ofString("testData"))
-               .build();
-       assertEquals(r.method(), "PUT");
-       assertTrue(r.bodyPublisher().isPresent());
-       assertEquals(r.bodyPublisher().get().contentLength(), 8);
-       assertAllOtherElementsEqual(r, request, "method");
+        testBodyPublisher("PUT", request);
+    }
 
-       testBodyPublisher("PUT", request);
-   }
+    @Test(dataProvider = "testRequests")
+    public void testUserDefinedMethod(HttpRequest request) {
+        testBodyPublisher("TEST", request);
+    }
 
-   @Test(dataProvider = "testRequests")
-   public void testUserDefinedMethod(HttpRequest request) {
-       testBodyPublisher("TEST", request);
-   }
+    @Test(dataProvider = "testRequests")
+    public void testHeaders(HttpRequest request) {
+        BiPredicate<String, String> filter = (n, v) -> true;
+        var r = HttpRequest.newBuilder(request, filter).headers("newName", "newValue").build();
 
-   @Test
-   public void testInvalidMethod() throws URISyntaxException {
-       URI testURI = new URI("http://www.foo.com/");
-       var r = new HttpRequest() {
-           @Override
-           public Optional<BodyPublisher> bodyPublisher() { return Optional.empty(); }
-           @Override
-           public String method() { return "CONNECT"; }
-           @Override
-           public Optional<Duration> timeout() { return Optional.empty(); }
-           @Override
-           public boolean expectContinue() { return false; }
-           @Override
-           public URI uri() { return testURI; }
-           @Override
-           public Optional<Version> version() { return Optional.empty(); }
-           @Override
-           public HttpHeaders headers() { return HttpHeaders.of(Map.of(), (x,y) -> true); }
-       };
-       assertThrows(IAE, () -> HttpRequest.newBuilder(r).build());
-   }
+        assertEquals(r.headers().firstValue("newName").get(), "newValue");
+        assertEquals(r.headers().allValues("newName").size(), 1);
+        assertAllOtherElementsEqual(r, request, "headers");
+    }
 
-   @Test
-   public void testInvalidURI() throws URISyntaxException {
-       // invalid URI scheme
-       URI badURI = new URI("ftp://foo.com/somefile");
-       var r = new HttpRequest() {
-           @Override
-           public Optional<BodyPublisher> bodyPublisher() { return Optional.empty(); }
-           @Override
-           public String method() { return "GET"; }
-           @Override
-           public Optional<Duration> timeout() { return Optional.empty(); }
-           @Override
-           public boolean expectContinue() { return false; }
-           @Override
-           public URI uri() { return badURI; }
-           @Override
-           public Optional<Version> version() { return Optional.empty(); }
-           @Override
-           public HttpHeaders headers() { return HttpHeaders.of(Map.of(), (x,y) -> true); }
-       };
-       assertThrows(IAE, () -> HttpRequest.newBuilder(r).build());
-   }
+    @Test(dataProvider = "testRequests")
+    public void testRemoveHeader(HttpRequest request) {
+        BiPredicate<String, String> filter = (n, v) -> !n.equalsIgnoreCase("testName");
+
+        var r = HttpRequest.newBuilder(request, filter).build();
+        assertFalse(r.headers().map().containsKey("testName"));
+        assertHeadersEquals(r, request, filter);
+    }
+
+    @Test(dataProvider = "testRequests")
+    public void testRemoveSingleHeaderValue(HttpRequest request) {
+        BiPredicate<String, String> filter = (n, v) ->
+                n.equalsIgnoreCase("testName") && !v.equalsIgnoreCase("testValue");
+
+        var r = HttpRequest.newBuilder(request, filter).build();
+        assertFalse(r.headers().map().containsValue("testValue"));
+        assertHeadersEquals(r, request, filter);
+    }
+
+    @Test(dataProvider = "testRequests")
+    public void testRemoveAllHeaders(HttpRequest request) {
+        if (!request.headers().map().isEmpty()) {
+            BiPredicate<String, String> filter = (n, v) -> false;
+            var r = HttpRequest.newBuilder(request, filter).build();
+
+            assertTrue(r.headers().map().isEmpty());
+            assertHeadersEquals(r, request, filter);
+        }
+    }
+
+    @Test(dataProvider = "testRequests")
+    public void testRetainAllHeaders(HttpRequest request) {
+        if (!request.headers().map().isEmpty()) {
+            BiPredicate<String, String> filter = (n, v) -> true;
+            var r = HttpRequest.newBuilder(request, filter).build();
+
+            assertFalse(r.headers().map().isEmpty());
+            assertHeadersEquals(r, request, filter);
+        }
+    }
+
+    @Test
+    public void testInvalidMethod() throws URISyntaxException {
+        URI testURI = new URI("http://www.foo.com/");
+        var r = new HttpRequest() {
+            @Override
+            public Optional<BodyPublisher> bodyPublisher() { return Optional.empty(); }
+            @Override
+            public String method() { return "CONNECT"; }
+            @Override
+            public Optional<Duration> timeout() { return Optional.empty(); }
+            @Override
+            public boolean expectContinue() { return false; }
+            @Override
+            public URI uri() { return testURI; }
+            @Override
+            public Optional<Version> version() { return Optional.empty(); }
+            @Override
+            public HttpHeaders headers() { return HttpHeaders.of(Map.of(), (n, v) -> true); }
+        };
+        assertThrows(IAE, () -> HttpRequest.newBuilder(r, (n, v) -> true).build());
+    }
+
+    @Test
+    public void testInvalidURIScheme() throws URISyntaxException {
+        URI badURI = new URI("ftp://foo.com/somefile");
+        var r = new HttpRequest() {
+            @Override
+            public Optional<BodyPublisher> bodyPublisher() { return Optional.empty(); }
+            @Override
+            public String method() { return "GET"; }
+            @Override
+            public Optional<Duration> timeout() { return Optional.empty(); }
+            @Override
+            public boolean expectContinue() { return false; }
+            @Override
+            public URI uri() { return badURI; }
+            @Override
+            public Optional<Version> version() { return Optional.empty(); }
+            @Override
+            public HttpHeaders headers() { return HttpHeaders.of(Map.of(), (n, v) -> true); }
+        };
+        assertThrows(IAE, () -> HttpRequest.newBuilder(r, (n, v) -> true).build());
+    }
 }
