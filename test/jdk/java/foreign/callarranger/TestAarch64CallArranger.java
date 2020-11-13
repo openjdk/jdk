@@ -344,4 +344,40 @@ public class TestAarch64CallArranger extends CallArrangerTestBase {
 
         checkReturnBindings(callingSequence, new Binding[]{});
     }
+
+    @Test
+    public void testStructStackSpill() {
+        // A large (> 16 byte) struct argument that is spilled to the
+        // stack should be passed as a pointer to a copy and occupy one
+        // stack slot.
+
+        MemoryLayout struct = MemoryLayout.ofStruct(C_INT, C_INT, C_DOUBLE, C_INT);
+
+        MethodType mt = MethodType.methodType(
+            void.class, MemorySegment.class, MemorySegment.class, int.class, int.class,
+            int.class, int.class, int.class, int.class, MemorySegment.class, int.class);
+        FunctionDescriptor fd = FunctionDescriptor.ofVoid(
+            struct, struct, C_INT, C_INT, C_INT, C_INT, C_INT, C_INT, struct, C_INT);
+        CallArranger.Bindings bindings = CallArranger.getBindings(mt, fd, false);
+
+        assertFalse(bindings.isInMemoryReturn);
+        CallingSequence callingSequence = bindings.callingSequence;
+        assertEquals(callingSequence.methodType(), mt);
+        assertEquals(callingSequence.functionDesc(), fd);
+
+        checkArgumentBindings(callingSequence, new Binding[][]{
+            { copy(struct), baseAddress(), unboxAddress(), vmStore(r0, long.class) },
+            { copy(struct), baseAddress(), unboxAddress(), vmStore(r1, long.class) },
+            { vmStore(r2, int.class) },
+            { vmStore(r3, int.class) },
+            { vmStore(r4, int.class) },
+            { vmStore(r5, int.class) },
+            { vmStore(r6, int.class) },
+            { vmStore(r7, int.class) },
+            { copy(struct), baseAddress(), unboxAddress(), vmStore(stackStorage(0), long.class) },
+            { vmStore(stackStorage(1), int.class) },
+        });
+
+        checkReturnBindings(callingSequence, new Binding[]{});
+    }
 }
