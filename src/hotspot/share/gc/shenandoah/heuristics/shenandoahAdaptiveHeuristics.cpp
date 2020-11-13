@@ -201,36 +201,16 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   size_t max_capacity = heap->max_capacity();
   size_t capacity = heap->soft_max_capacity();
   size_t available = heap->free_set()->available();
+  size_t allocated = heap->bytes_allocated_since_gc_start();
 
   // Make sure the code below treats available without the soft tail.
   size_t soft_tail = max_capacity - capacity;
   available = (available > soft_tail) ? (available - soft_tail) : 0;
 
-  size_t allocated = heap->bytes_allocated_since_gc_start();
-
   // Track allocation rate even if we decide to start a cycle for other reasons.
   _allocation_rate.sample(allocated);
   _last_trigger = OTHER;
 
-  if (is_available_below_min_threshold(capacity, available)) {
-    return true;
-  }
-
-  if (is_learning_necessary(capacity, available)) {
-    return true;
-  }
-
-  if (is_allocation_rate_too_high(capacity, available, allocated)) {
-    return true;
-  }
-
-  return ShenandoahHeuristics::should_start_gc();
-}
-
-bool ShenandoahAdaptiveHeuristics::is_available_below_min_threshold(size_t capacity,
-                                                                    size_t available) const {
-  // Check if we are falling below the worst limit, time to trigger the GC, regardless of
-  // anything else.
   size_t min_threshold = capacity / 100 * ShenandoahMinFreeThreshold;
   if (available < min_threshold) {
     log_info(gc)("Trigger: Free (" SIZE_FORMAT "%s) is below minimum threshold (" SIZE_FORMAT "%s)",
@@ -238,11 +218,7 @@ bool ShenandoahAdaptiveHeuristics::is_available_below_min_threshold(size_t capac
                  byte_size_in_proper_unit(min_threshold), proper_unit_for_byte_size(min_threshold));
     return true;
   }
-  return false;
-}
 
-bool ShenandoahAdaptiveHeuristics::is_learning_necessary(size_t capacity,
-                                                         size_t available) const {
   const size_t max_learn = ShenandoahLearningSteps;
   if (_gc_times_learned < max_learn) {
     size_t init_threshold = capacity / 100 * ShenandoahInitFreeThreshold;
@@ -254,12 +230,7 @@ bool ShenandoahAdaptiveHeuristics::is_learning_necessary(size_t capacity,
       return true;
     }
   }
-  return false;
-}
 
-bool ShenandoahAdaptiveHeuristics::is_allocation_rate_too_high(size_t capacity,
-                                                               size_t available,
-                                                               size_t allocated) {
   // Check if allocation headroom is still okay. This also factors in:
   //   1. Some space to absorb allocation spikes
   //   2. Accumulated penalties from Degenerated and Full GC
@@ -301,7 +272,7 @@ bool ShenandoahAdaptiveHeuristics::is_allocation_rate_too_high(size_t capacity,
     return true;
   }
 
-  return false;
+  return ShenandoahHeuristics::should_start_gc();
 }
 
 void ShenandoahAdaptiveHeuristics::adjust_last_trigger_parameters(double amount) {

@@ -78,13 +78,6 @@ public:
   virtual bool is_diagnostic()   { return false; }
   virtual bool is_experimental() { return false; }
 
- protected:
-  bool is_available_below_min_threshold(size_t capacity, size_t available) const;
-  bool is_learning_necessary(size_t capacity, size_t available) const;
-  bool is_allocation_rate_too_high(size_t capacity,
-                                   size_t available,
-                                   size_t allocated);
-
  private:
   // These are used to adjust the margin of error and the spike threshold
   // in response to GC cycle outcomes. These values are shared, but the
