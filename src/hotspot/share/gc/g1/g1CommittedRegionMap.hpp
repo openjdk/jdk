@@ -60,7 +60,9 @@ class G1CommittedRegionMap : public CHeapObj<mtGC> {
 
   uint max_length() const;
 
-  // Helpers to mark and do accounting for the bitmaps.
+  // Helpers to mark and do accounting for the bitmaps. Depending on when called
+  // these helpers require to own different locks. See guarantee_mt_safty_* for
+  // details.
   void active_set_range(uint start, uint end);
   void active_clear_range(uint start, uint end);
   void inactive_set_range(uint start, uint end);

@@ -167,7 +167,6 @@ HeapRegion* HeapRegionManager::new_heap_region(uint hrm_index) {
 }
 
 void HeapRegionManager::expand(uint start, uint num_regions, WorkGang* pretouch_gang) {
-  guarantee(num_regions > 0, "No point in calling this for zero regions");
   commit_regions(start, num_regions, pretouch_gang);
   for (uint i = start; i < start + num_regions; i++) {
     HeapRegion* hr = _regions.get_by_index(i);
@@ -259,16 +258,16 @@ void HeapRegionManager::reactivate_regions(uint start, uint num_regions) {
   initialize_regions(start, num_regions);
 }
 
-void HeapRegionManager::deactivate_regions(uint start, size_t num_regions) {
-  guarantee(num_regions >= 1, "Need to specify at least one region to uncommit, tried to uncommit zero regions at %u", start);
-  guarantee(length() >= num_regions, "pre-condition");
+void HeapRegionManager::deactivate_regions(uint start, uint num_regions) {
+  assert(num_regions > 0, "Need to specify at least one region to uncommit, tried to uncommit zero regions at %u", start);
+  assert(length() >= num_regions, "pre-condition");
 
   G1HRPrinter* printer = G1CollectedHeap::heap()->hr_printer();
   bool printer_active = printer->is_active();
 
   // Reset NUMA index to and print if active.
-  uint end = (uint) (start + num_regions);
-  for (uint i = start; i < start + num_regions; i++) {
+  uint end = start + num_regions;
+  for (uint i = start; i < end; i++) {
     HeapRegion* hr = at(i);
     hr->set_node_index(G1NUMA::UnknownNodeIndex);
     if (printer_active) {
@@ -280,10 +279,14 @@ void HeapRegionManager::deactivate_regions(uint start, size_t num_regions) {
 }
 
 void HeapRegionManager::clear_auxiliary_data_structures(uint start, uint num_regions) {
+  // Signal marking bitmaps to clear the given regions.
   _prev_bitmap_mapper->signal_mapping_changed(start, num_regions);
   _next_bitmap_mapper->signal_mapping_changed(start, num_regions);
+  // Signal G1BlockOffsetTable to clear the given regions.
   _bot_mapper->signal_mapping_changed(start, num_regions);
+  // Signal G1CardTable to clear the given regions.
   _cardtable_mapper->signal_mapping_changed(start, num_regions);
+  // Signal G1CardCounts to clear the given regions.
   _card_counts_mapper->signal_mapping_changed(start, num_regions);
 }
 
@@ -310,14 +313,15 @@ bool HeapRegionManager::has_inactive_regions() const {
 }
 
 uint HeapRegionManager::uncommit_inactive_regions(uint limit) {
-  guarantee(limit >= 1, "Need to specify at least one region to uncommit");
+  assert(limit > 0, "Need to specify at least one region to uncommit");
 
   uint uncommitted = 0;
   uint offset = 0;
   do {
     MutexLocker uc(Uncommit_lock, Mutex::_no_safepoint_check_flag);
     HeapRegionRange range = _committed_map.next_inactive_range(offset);
-    // No more regions available for uncommit
+    // No more regions available for uncommit. Return the number of regions
+    // already uncommitted or 0 if there were no longer any inactive regions.
     if (range.length() == 0) {
       return uncommitted;
     }
@@ -661,7 +665,7 @@ void HeapRegionManager::shrink_at(uint index, size_t num_regions) {
   }
 #endif
   // Mark regions as inactive making them ready for uncommit.
-  deactivate_regions(index, num_regions);
+  deactivate_regions(index, (uint) num_regions);
 }
 
 uint HeapRegionManager::find_empty_from_idx_reverse(uint start_idx, uint* res_idx) const {

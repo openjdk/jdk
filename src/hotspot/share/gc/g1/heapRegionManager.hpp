@@ -78,7 +78,8 @@ class HeapRegionManager: public CHeapObj<mtGC> {
   G1RegionToSpaceMapper* _cardtable_mapper;
   G1RegionToSpaceMapper* _card_counts_mapper;
 
-  // Map to keep track of which regions are in use.
+  // Keeps track of the currently committed regions in the heap. The committed regions
+  // can either be active (ready for use) or inactive (ready for uncommit).
   G1CommittedRegionMap _committed_map;
 
   // Internal only. The highest heap region +1 we allocated a HeapRegion instance for.
@@ -119,7 +120,7 @@ class HeapRegionManager: public CHeapObj<mtGC> {
 
   // Clear the auxiliary data structures by notifying them that the mapping has
   // changed. The structures that needs to be cleared will than clear. This is
-  // used to allow reuse regions scheduled for uncommit without uncommiting and
+  // used to allow reuse regions scheduled for uncommit without uncommitting and
   // then committing them.
   void clear_auxiliary_data_structures(uint start, uint num_regions);
 
@@ -129,9 +130,9 @@ class HeapRegionManager: public CHeapObj<mtGC> {
   G1RegionToSpaceMapper* _next_bitmap_mapper;
   FreeRegionList _free_list;
 
-  void expand(uint index, uint num_regions = 1, WorkGang* pretouch_gang = NULL);
-  void activate_regions(uint index, uint num_regions = 1);
-  void deactivate_regions(uint start, size_t num_regions);
+  void expand(uint index, uint num_regions, WorkGang* pretouch_gang = NULL);
+  void activate_regions(uint index, uint num_regions);
+  void deactivate_regions(uint start, uint num_regions);
   void reactivate_regions(uint start, uint num_regions);
   void uncommit_regions(uint start, uint num_regions);
 

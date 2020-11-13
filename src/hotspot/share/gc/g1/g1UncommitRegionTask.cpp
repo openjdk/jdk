@@ -33,7 +33,7 @@ G1UncommitRegionTask* G1UncommitRegionTask::_instance = NULL;
 
 G1UncommitRegionTask::G1UncommitRegionTask() :
     G1ServiceTask("G1 Uncommit Region Task"),
-    _state(TaskState::inactive),
+    _active(false),
     _summary_duration(),
     _summary_region_count(0) { }
 
@@ -43,7 +43,7 @@ void G1UncommitRegionTask::initialize() {
 
   // Register the task with the service thread. This will automatically
   // schedule the task so  we change the state to active.
-  _instance->set_state(TaskState::active);
+  _instance->set_active(true);
   G1CollectedHeap::heap()->service_thread()->register_task(_instance);
 }
 
@@ -54,26 +54,26 @@ G1UncommitRegionTask* G1UncommitRegionTask::instance() {
   return _instance;
 }
 
-void G1UncommitRegionTask::activate() {
+void G1UncommitRegionTask::run() {
   assert_at_safepoint_on_vm_thread();
 
   G1UncommitRegionTask* uncommit_task = instance();
   if (!uncommit_task->is_active()) {
     // Change state to active and schedule with no delay.
-    uncommit_task->set_state(TaskState::active);
+    uncommit_task->set_active(true);
     uncommit_task->schedule(0);
-    // Notify service thread to avoid unnecesarry waiting.
+    // Notify service thread to avoid unnecessary waiting.
     G1CollectedHeap::heap()->service_thread()->notify();
   }
 }
 
 bool G1UncommitRegionTask::is_active() {
-  return _state == TaskState::active;
+  return _active;
 }
 
-void G1UncommitRegionTask::set_state(TaskState state) {
-  assert(_state != state, "Must do a state change");
-  _state = state;
+void G1UncommitRegionTask::set_active(bool state) {
+  assert(_active != state, "Must do a state change");
+  _active = state;
 }
 
 void G1UncommitRegionTask::report_execution(Tickspan time, uint regions) {
@@ -101,9 +101,11 @@ void G1UncommitRegionTask::clear_summary() {
 }
 
 void G1UncommitRegionTask::execute() {
-  assert(_state == TaskState::active, "Must be active");
+  assert(_active, "Must be active");
 
-  // Each execution is limited to uncommit at most 256M worth of regions.
+  // Each execution is limited to uncommit at most 256M worth of regions. This
+  // limit is small enough to ensure that the duration of each invocation is
+  // short, while still making reasonable progress.
   static const uint region_limit = (uint) (256 * M / G1HeapRegionSize);
 
   // Prevent from running during a GC pause.
@@ -125,7 +127,8 @@ void G1UncommitRegionTask::execute() {
     // other tasks to run without waiting for a full uncommit cycle.
     schedule(0);
   } else {
-    set_state(TaskState::inactive);
+    // Nothing more to do, change state and report a summary.
+    set_active(false);
     report_summary();
     clear_summary();
   }

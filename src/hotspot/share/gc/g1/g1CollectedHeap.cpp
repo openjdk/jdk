@@ -2637,7 +2637,7 @@ bool G1CollectedHeap::has_uncommittable_regions() {
 
 void G1CollectedHeap::uncommit_heap_if_necessary() {
   if (has_uncommittable_regions()) {
-    G1UncommitRegionTask::activate();
+    G1UncommitRegionTask::run();
   }
 }
 

@@ -34,13 +34,12 @@ class G1UncommitRegionTask : public G1ServiceTask {
   static void initialize();
   static G1UncommitRegionTask* instance();
 
-  // The state is not guarded by any lock because the places
-  // where it is updated can never run concurrently. The state
-  // is set to active only from a safepoint and it is set to
-  // inactive while running on the service thread joined with
-  // the suspendible thread set.
-  enum class TaskState { active, inactive };
-  TaskState _state;
+  // The _active state is not guarded by a lock since the places
+  // where it is updated can never run in parallel. The state is
+  // set to active only from a safepoint and it is set to false
+  // while running on the service thread joined with the suspendible
+  // thread set.
+  bool _active;
 
   // Members to keep a summary of the current concurrent uncommit
   // work. Used for printing when no more work is available.
@@ -49,14 +48,14 @@ class G1UncommitRegionTask : public G1ServiceTask {
 
   G1UncommitRegionTask();
   bool is_active();
-  void set_state(TaskState state);
+  void set_active(bool state);
 
   void report_execution(Tickspan time, uint regions);
   void report_summary();
   void clear_summary();
 
 public:
-  static void activate();
+  static void run();
   virtual void execute();
 };
 

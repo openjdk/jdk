@@ -52,7 +52,8 @@ G1RegionToSpaceMapper::G1RegionToSpaceMapper(ReservedSpace rs,
 
 // Used to manually signal a mapper to handle a set of regions as committed.
 // Setting the 'zero_filled' parameter to false signals the mapper that the
-// regions have not been cleared by the OS.
+// regions have not been cleared by the OS and that they need to be clear
+// explicitly.
 void G1RegionToSpaceMapper::signal_mapping_changed(uint start_idx, size_t num_regions) {
   fire_on_commit(start_idx, num_regions, false);
 }
