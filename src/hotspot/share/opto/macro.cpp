@@ -2564,7 +2564,7 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
     for (int i = C->macro_count(); i > 0; i--) {
       Node * n = C->macro_node(i-1);
       bool success = false;
-      debug_only(int old_macro_count = C->macro_count(););
+      DEBUG_ONLY(int old_macro_count = C->macro_count();)
       if (n->is_AbstractLock()) {
         success = eliminate_locking_node(n->as_AbstractLock());
       }
@@ -2580,7 +2580,7 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
     for (int i = C->macro_count(); i > 0; i--) {
       Node * n = C->macro_node(i-1);
       bool success = false;
-      debug_only(int old_macro_count = C->macro_count(););
+      DEBUG_ONLY(int old_macro_count = C->macro_count();)
       switch (n->class_id()) {
       case Node::Class_Allocate:
       case Node::Class_AllocateArray:
@@ -2628,7 +2628,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
     for (int i = C->macro_count(); i > 0; i--) {
       Node* n = C->macro_node(i-1);
       bool success = false;
-      debug_only(int old_macro_count = C->macro_count(););
+      DEBUG_ONLY(int old_macro_count = C->macro_count();)
       if (n->Opcode() == Op_LoopLimit) {
         // Remove it from macro list and put on IGVN worklist to optimize.
         C->remove_macro_node(n);
@@ -2714,7 +2714,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       return true;
     }
 
-    debug_only(int old_macro_count = C->macro_count(););
+    DEBUG_ONLY(int old_macro_count = C->macro_count();)
     switch (n->class_id()) {
     case Node::Class_Lock:
       expand_lock_node(n->as_Lock());
