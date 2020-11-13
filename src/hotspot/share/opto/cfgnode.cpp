@@ -394,7 +394,6 @@ bool RegionNode::is_unreachable_from_root(const PhaseGVN* phase) const {
   return true; // The Region node is unreachable - it is dead.
 }
 
-
 bool RegionNode::try_clean_mem_phi(PhaseGVN *phase) {
   // Incremental inlining + PhaseStringOpts sometimes produce:
   //

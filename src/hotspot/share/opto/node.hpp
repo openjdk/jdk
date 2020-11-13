@@ -159,7 +159,6 @@ class LoadVectorGatherNode;
 class StoreVectorNode;
 class StoreVectorScatterNode;
 class VectorMaskCmpNode;
-
 class VectorSet;
 typedef void (*NFunc)(Node&,void*);
 extern "C" {
