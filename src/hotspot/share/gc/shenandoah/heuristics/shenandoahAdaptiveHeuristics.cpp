@@ -274,7 +274,7 @@ bool ShenandoahAdaptiveHeuristics::is_allocation_rate_too_high(size_t capacity,
   double average_cycle_seconds = _gc_time_history->davg() + (_margin_of_error_sd * _gc_time_history->dsd());
   double bytes_allocated_per_second = _allocation_rate.upper_bound(_margin_of_error_sd);
   if (average_cycle_seconds > allocation_headroom / bytes_allocated_per_second) {
-    log_info(gc)("Trigger: Average GC time (%.2f ms) is above the time for allocation rate (%.0f %sB/s) to deplete free headroom (" SIZE_FORMAT "%s) (margin of error = %.2f)",
+    log_info(gc)("Trigger: Average GC time (%.2f ms) is above the time for average allocation rate (%.0f %sB/s) to deplete free headroom (" SIZE_FORMAT "%s) (margin of error = %.2f)",
                  average_cycle_seconds * 1000,
                  byte_size_in_proper_unit(bytes_allocated_per_second), proper_unit_for_byte_size(bytes_allocated_per_second),
                  byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom),
@@ -292,10 +292,11 @@ bool ShenandoahAdaptiveHeuristics::is_allocation_rate_too_high(size_t capacity,
 
   double instantaneous_rate = _allocation_rate.instantaneous_rate(bytes_allocated_since_gc_start);
   if (_allocation_rate.is_spiking(instantaneous_rate) && average_cycle_seconds > allocation_headroom / instantaneous_rate) {
-    log_info(gc)("Trigger: Instantaneous allocation rate (%.0f %sB/s) will deplete free headroom (" SIZE_FORMAT "%s) before average time (%.2f ms) to complete GC cycle.",
-                 byte_size_in_proper_unit(instantaneous_rate), proper_unit_for_byte_size(instantaneous_rate),
+    log_info(gc)("Trigger: Average GC time (%.2f ms) is above the time for instantaneous allocation rate (%.0f %sB/s) to deplete free headroom (" SIZE_FORMAT "%s) (spike threshold = %.2f)",
+                 average_cycle_seconds * 1000,
+                 byte_size_in_proper_unit(instantaneous_rate),  proper_unit_for_byte_size(instantaneous_rate),
                  byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom),
-                 average_cycle_seconds * 1000);
+                 _spike_threshold_sd);
     _last_trigger = SPIKE;
     return true;
   }
