@@ -33,7 +33,7 @@ package java.util;
  *
  * @since 16
  */
-public class IllegalFormatArgumentIndexException extends IllegalFormatException {
+class IllegalFormatArgumentIndexException extends IllegalFormatException {
 
     @java.io.Serial
     private static final long serialVersionUID = 4191767811181838112L;

@@ -693,7 +693,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * value or which is otherwise unsupported, then a {@link
  * IllegalFormatWidthException} or {@link IllegalFormatPrecisionException}
  * respectively will be thrown. Similarly, values of zero for an argument
- * index will result in an {@link IllegalFormatArgumentIndexException}.
+ * index will result in an {@link IllegalFormatException}.
  *
  * <p> If a format specifier contains a conversion character that is not
  * applicable to the corresponding argument, then an {@link
@@ -712,7 +712,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *
  * <p> Values of <i>index</i> must be in the range one to
  * {@link Integer#MAX_VALUE}, inclusive, otherwise
- * {@link IllegalFormatArgumentIndexException} will be thrown.</p>
+ * {@link IllegalFormatException} will be thrown.</p>
  *
  * <p> All specified exceptions may be thrown by any of the {@code format}
  * methods of {@code Formatter} as well as by any {@code format} convenience
