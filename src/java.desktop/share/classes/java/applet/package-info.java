@@ -36,7 +36,11 @@
  * running applets. For example, the applet context could be a Web browser or an
  * applet development environment.
  * <p>
- * The APIs in this package are all deprecated without replacement.
+ * Deprecated.
+ * This package has been deprecated and may be removed in a future version of the Java Platform.
+ * All of the classes and interfaces in this package have been terminally deprecated.
+ * There is no replacement.
+ * Users are advised to migrate their applications to other technologies.
  *
  * @since 1.0
  */
