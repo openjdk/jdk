@@ -812,8 +812,10 @@ public:
 // Make a direct call into a foreign function with an arbitrary ABI
 // safepoints
 class CallNativeNode : public CallNode {
+  friend class MachCallNativeNode;
   virtual bool cmp( const Node &n ) const;
   virtual uint size_of() const;
+  static void print_regs(const GrowableArray<VMReg>& regs, outputStream* st);
 public:
   GrowableArray<VMReg> _arg_regs;
   GrowableArray<VMReg> _ret_regs;

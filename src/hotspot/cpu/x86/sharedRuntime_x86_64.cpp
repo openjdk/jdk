@@ -3462,10 +3462,10 @@ bool target_uses_register(VMReg reg) {
 #endif
 };
 
-address SharedRuntime::make_native_invoker(address call_target,
-                                           int shadow_space_bytes,
-                                           const GrowableArray<VMReg>& input_registers,
-                                           const GrowableArray<VMReg>& output_registers) {
+BufferBlob* SharedRuntime::make_native_invoker(address call_target,
+                                               int shadow_space_bytes,
+                                               const GrowableArray<VMReg>& input_registers,
+                                               const GrowableArray<VMReg>& output_registers) {
   BufferBlob* _invoke_native_blob = BufferBlob::create("nep_invoker_blob", native_invoker_code_size);
   if (_invoke_native_blob == NULL)
     return NULL; // allocation failure
@@ -3475,7 +3475,7 @@ address SharedRuntime::make_native_invoker(address call_target,
   g.generate();
   code.log_section_sizes("nep_invoker_blob");
 
-  return _invoke_native_blob->code_begin();
+  return _invoke_native_blob;
 }
 
 void NativeInvokerGenerator::generate() {

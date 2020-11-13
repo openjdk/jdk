@@ -1993,14 +1993,6 @@ const TypeTuple *TypeTuple::make( uint cnt, const Type **fields ) {
   return (TypeTuple*)(new TypeTuple(cnt,fields))->hashcons();
 }
 
-const TypeTuple *TypeTuple::make_func( uint arg_cnt, const Type **arg_fields ) {
-  const Type** field_array = fields(arg_cnt);
-  for (uint i = 0; i < arg_cnt; i++) {
-    field_array[i + TypeFunc::Parms] = arg_fields[i];
-  }
-  return make(arg_cnt + TypeFunc::Parms, field_array);
-}
-
 //------------------------------fields-----------------------------------------
 // Subroutine call type with space allocated for argument types
 // Memory for Control, I_O, Memory, FramePtr, and ReturnAdr is allocated implicitly

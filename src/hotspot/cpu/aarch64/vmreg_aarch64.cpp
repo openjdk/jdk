@@ -54,7 +54,6 @@ void VMRegImpl::set_regName() {
 
 #define INTEGER_TYPE 0
 #define VECTOR_TYPE 1
-#define X87_TYPE 2
 #define STACK_TYPE 3
 
 VMReg VMRegImpl::vmStorageToVMReg(int type, int index) {

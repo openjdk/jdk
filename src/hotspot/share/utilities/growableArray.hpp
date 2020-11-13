@@ -124,6 +124,8 @@ protected:
   ~GrowableArrayView() {}
 
 public:
+  const static GrowableArrayView EMPTY;
+
   bool operator==(const GrowableArrayView<E>& rhs) const {
     if (_len != rhs._len)
       return false;
@@ -310,7 +312,11 @@ public:
     return min;
   }
 
-  void print() {
+  size_t data_size_in_bytes() const {
+    return _len * sizeof(E);
+  }
+
+  void print() const {
     tty->print("Growable Array " INTPTR_FORMAT, p2i(this));
     tty->print(": length %d (_max %d) { ", _len, _max);
     for (int i = 0; i < _len; i++) {
@@ -319,6 +325,9 @@ public:
     tty->print("}\n");
   }
 };
+
+template<typename E>
+const GrowableArrayView<E> GrowableArrayView<E>::EMPTY(nullptr, 0, 0);
 
 // GrowableArrayWithAllocator extends the "view" with
 // the capability to grow and deallocate the data array.

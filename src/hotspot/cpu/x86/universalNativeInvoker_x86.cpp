@@ -27,6 +27,8 @@
 #include "memory/resourceArea.hpp"
 #include "prims/universalNativeInvoker.hpp"
 
+#define __ _masm->
+
 void ProgrammableInvoker::Generator::generate() {
   __ enter();
 
@@ -73,14 +75,8 @@ void ProgrammableInvoker::Generator::generate() {
     // [8] -> 512 bit -> zmm
 
     XMMRegister reg = _abi->_vector_argument_registers.at(i);
-    size_t offs = _layout->arguments_vector + i * sizeof(VectorRegister);
-    if (UseAVX >= 3) {
-      __ evmovdqul(reg, Address(ctxt_reg, (int)offs), Assembler::AVX_512bit);
-    } else if (UseAVX >= 1) {
-      __ vmovdqu(reg, Address(ctxt_reg, (int)offs));
-    } else {
-      __ movdqu(reg, Address(ctxt_reg, (int)offs));
-    }
+    size_t offs = _layout->arguments_vector + i * xmm_reg_size;
+    __ movdqu(reg, Address(ctxt_reg, (int)offs));
   }
 
   for (int i = 0; i < _abi->_integer_argument_registers.length(); i++) {
@@ -115,14 +111,8 @@ void ProgrammableInvoker::Generator::generate() {
     // [8] -> 512 bit -> zmm (AVX-512, aka AVX3)
 
     XMMRegister reg = _abi->_vector_return_registers.at(i);
-    size_t offs = _layout->returns_vector + i * sizeof(VectorRegister);
-    if (UseAVX >= 3) {
-      __ evmovdqul(Address(ctxt_reg, (int)offs), reg, Assembler::AVX_512bit);
-    } else if (UseAVX >= 1) {
-      __ vmovdqu(Address(ctxt_reg, (int)offs), reg);
-    } else {
-      __ movdqu(Address(ctxt_reg, (int)offs), reg);
-    }
+    size_t offs = _layout->returns_vector + i * xmm_reg_size;
+    __ movdqu(Address(ctxt_reg, (int)offs), reg);
   }
 
   for (size_t i = 0; i < _abi->_X87_return_registers_noof; i++) {

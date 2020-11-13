@@ -65,6 +65,7 @@
 #include "runtime/sweeper.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/align.hpp"
+#include "utilities/copy.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/resourceHash.hpp"
@@ -497,8 +498,7 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
   ImplicitExceptionTable* nul_chk_table,
   AbstractCompiler* compiler,
   int comp_level,
-  address* native_stubs,
-  int num_stubs
+  const GrowableArrayView<BufferBlob*>& native_invokers
 #if INCLUDE_JVMCI
   , char* speculations,
   int speculations_len,
@@ -520,6 +520,7 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
       CodeBlob::allocation_size(code_buffer, sizeof(nmethod))
       + adjust_pcs_size(debug_info->pcs_size())
       + align_up((int)dependencies->size_in_bytes(), oopSize)
+      + align_up(native_invokers.data_size_in_bytes() , oopSize)
       + align_up(handler_table->size_in_bytes()    , oopSize)
       + align_up(nul_chk_table->size_in_bytes()    , oopSize)
 #if INCLUDE_JVMCI
@@ -536,8 +537,7 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
             nul_chk_table,
             compiler,
             comp_level,
-            native_stubs,
-            num_stubs
+            native_invokers
 #if INCLUDE_JVMCI
             , speculations,
             speculations_len,
@@ -601,8 +601,7 @@ nmethod::nmethod(
   : CompiledMethod(method, "native nmethod", type, nmethod_size, sizeof(nmethod), code_buffer, offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false),
   _is_unloading_state(0),
   _native_receiver_sp_offset(basic_lock_owner_sp_offset),
-  _native_basic_lock_sp_offset(basic_lock_sp_offset),
-  _native_stubs(NULL), _num_stubs(0)
+  _native_basic_lock_sp_offset(basic_lock_sp_offset)
 {
   {
     int scopes_data_offset   = 0;
@@ -626,7 +625,8 @@ nmethod::nmethod(
     scopes_data_offset       = _metadata_offset     + align_up(code_buffer->total_metadata_size(), wordSize);
     _scopes_pcs_offset       = scopes_data_offset;
     _dependencies_offset     = _scopes_pcs_offset;
-    _handler_table_offset    = _dependencies_offset;
+    _native_invokers_offset     = _dependencies_offset;
+    _handler_table_offset    = _native_invokers_offset;
     _nul_chk_table_offset    = _handler_table_offset;
 #if INCLUDE_JVMCI
     _speculations_offset     = _nul_chk_table_offset;
@@ -723,8 +723,7 @@ nmethod::nmethod(
   ImplicitExceptionTable* nul_chk_table,
   AbstractCompiler* compiler,
   int comp_level,
-  address* native_stubs,
-  int num_stubs
+  const GrowableArrayView<BufferBlob*>& native_invokers
 #if INCLUDE_JVMCI
   , char* speculations,
   int speculations_len,
@@ -734,8 +733,7 @@ nmethod::nmethod(
   : CompiledMethod(method, "nmethod", type, nmethod_size, sizeof(nmethod), code_buffer, offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false),
   _is_unloading_state(0),
   _native_receiver_sp_offset(in_ByteSize(-1)),
-  _native_basic_lock_sp_offset(in_ByteSize(-1)),
-  _native_stubs(native_stubs), _num_stubs(num_stubs)
+  _native_basic_lock_sp_offset(in_ByteSize(-1))
 {
   assert(debug_info->oop_recorder() == code_buffer->oop_recorder(), "shared OR");
   {
@@ -802,7 +800,8 @@ nmethod::nmethod(
 
     _scopes_pcs_offset       = scopes_data_offset    + align_up(debug_info->data_size       (), oopSize);
     _dependencies_offset     = _scopes_pcs_offset    + adjust_pcs_size(debug_info->pcs_size());
-    _handler_table_offset    = _dependencies_offset  + align_up((int)dependencies->size_in_bytes (), oopSize);
+    _native_invokers_offset  = _dependencies_offset  + align_up((int)dependencies->size_in_bytes(), oopSize);
+    _handler_table_offset    = _native_invokers_offset + align_up(native_invokers.data_size_in_bytes(), oopSize);
     _nul_chk_table_offset    = _handler_table_offset + align_up(handler_table->size_in_bytes(), oopSize);
 #if INCLUDE_JVMCI
     _speculations_offset     = _nul_chk_table_offset + align_up(nul_chk_table->size_in_bytes(), oopSize);
@@ -824,6 +823,10 @@ nmethod::nmethod(
     code_buffer->copy_values_to(this);
     debug_info->copy_to(this);
     dependencies->copy_to(this);
+    if (native_invokers.is_nonempty()) { // can not get address of zero-length array
+      // Copy native stubs
+      memcpy(native_invokers_begin(), native_invokers.adr_at(0), native_invokers.data_size_in_bytes());
+    }
     clear_unloading_state();
 
     Universe::heap()->register_nmethod(this);
@@ -986,6 +989,10 @@ void nmethod::print_nmethod(bool printmethod) {
       print_dependencies();
       tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
     }
+    if (printmethod && native_invokers_begin() < native_invokers_end()) {
+      print_native_invokers();
+      tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
+    }
     if (printmethod || PrintExceptionHandlers) {
       print_handler_table();
       tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
@@ -1046,14 +1053,9 @@ void nmethod::copy_values(GrowableArray<Metadata*>* array) {
   }
 }
 
-void nmethod::free_native_stubs() {
-  if (_native_stubs != NULL) {
-    for (int i = 0; i < _num_stubs; i++) {
-      CodeBlob* cb = CodeCache::find_blob((char*)  _native_stubs[i]);
-      assert(cb != NULL, "Expected to find blob");
-      CodeCache::free(cb);
-    }
-    FREE_C_HEAP_ARRAY(address, _native_stubs);
+void nmethod::free_native_invokers() {
+  for (BufferBlob** it = native_invokers_begin(); it < native_invokers_end(); it++) {
+    CodeCache::free(*it);
   }
 }
 
@@ -2686,6 +2688,14 @@ void nmethod::print_pcs_on(outputStream* st) {
     }
   } else {
     st->print_cr(" <list empty>");
+  }
+}
+
+void nmethod::print_native_invokers() {
+  ResourceMark m;       // in case methods get printed via debugger
+  tty->print_cr("Native invokers:");
+  for (BufferBlob** itt = native_invokers_begin(); itt < native_invokers_end(); itt++) {
+    (*itt)->print_on(tty);
   }
 }
 

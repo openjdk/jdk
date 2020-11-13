@@ -22,12 +22,12 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/symbolTable.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/universalUpcallHandler.hpp"
-#include "runtime/jniHandles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
-#include "classfile/symbolTable.hpp"
+#include "runtime/jniHandles.inline.hpp"
 
 #define FOREIGN_ABI "jdk/internal/foreign/abi/"
 
@@ -74,8 +74,9 @@ const ProgrammableUpcallHandler& ProgrammableUpcallHandler::instance() {
 }
 
 ProgrammableUpcallHandler::ProgrammableUpcallHandler() {
-  Symbol* sym = SymbolTable::new_symbol(FOREIGN_ABI "ProgrammableUpcallHandler");
   Thread* THREAD = Thread::current();
+  ResourceMark rm(THREAD);
+  Symbol* sym = SymbolTable::new_symbol(FOREIGN_ABI "ProgrammableUpcallHandler");
   Klass* k = SystemDictionary::resolve_or_null(sym, Handle(), Handle(), CATCH);
   k->initialize(CATCH);
 

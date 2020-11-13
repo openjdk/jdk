@@ -28,22 +28,7 @@
 #include "asm/macroAssembler.hpp"
 #include "utilities/growableArray.hpp"
 
-#define __ _masm->
-
-struct VectorRegister {
-  static const size_t VECTOR_MAX_WIDTH_BITS = 128;
-  static const size_t VECTOR_MAX_WIDTH_BYTES = VECTOR_MAX_WIDTH_BITS / 8;
-  static const size_t VECTOR_MAX_WIDTH_U64S = VECTOR_MAX_WIDTH_BITS / 64;
-  static const size_t VECTOR_MAX_WIDTH_FLOATS = VECTOR_MAX_WIDTH_BITS / 32;
-  static const size_t VECTOR_MAX_WIDTH_DOUBLES = VECTOR_MAX_WIDTH_BITS / 64;
-
-  union {
-    uint8_t bits[VECTOR_MAX_WIDTH_BYTES];
-    uint64_t u64[VECTOR_MAX_WIDTH_U64S];
-    float f[VECTOR_MAX_WIDTH_FLOATS];
-    double d[VECTOR_MAX_WIDTH_DOUBLES];
-  };
-};
+constexpr size_t float_reg_size = 16; // bytes
 
 struct ABIDescriptor {
   GrowableArray<Register> _integer_argument_registers;

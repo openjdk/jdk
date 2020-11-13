@@ -828,9 +828,9 @@ bool MachCallNativeNode::cmp( const Node &n ) const {
 void MachCallNativeNode::dump_spec(outputStream *st) const {
   st->print("%s ",_name);
   st->print("_arg_regs: ");
-  _arg_regs.print_on(st);
+  CallNativeNode::print_regs(_arg_regs, st);
   st->print("_ret_regs: ");
-  _ret_regs.print_on(st);
+  CallNativeNode::print_regs(_ret_regs, st);
   MachCallNode::dump_spec(st);
 }
 #endif
