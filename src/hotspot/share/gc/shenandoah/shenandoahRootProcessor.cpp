@@ -200,7 +200,6 @@ ShenandoahConcurrentRootScanner::ShenandoahConcurrentRootScanner(uint n_workers,
     CodeCache_lock->lock_without_safepoint_check();
     _codecache_snapshot = ShenandoahCodeRoots::table()->snapshot_for_iteration();
   }
-  assert(!ShenandoahHeap::heap()->has_forwarded_objects(), "Not expecting forwarded pointers during concurrent marking");
 }
 
 ShenandoahConcurrentRootScanner::~ShenandoahConcurrentRootScanner() {
@@ -216,11 +215,12 @@ void ShenandoahConcurrentRootScanner::roots_do(OopClosure* oops, uint worker_id)
   _vm_roots.oops_do(oops, worker_id);
 
   if (!heap->unload_classes()) {
-    AlwaysTrueClosure always_true;
     _cld_roots.cld_do(&clds_cl, worker_id);
-    ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
-    CodeBlobToOopClosure blobs(oops, !CodeBlobToOopClosure::FixRelocations);
-    _codecache_snapshot->parallel_blobs_do(&blobs);
+    {
+      ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
+      CodeBlobToOopClosure blobs(oops, !CodeBlobToOopClosure::FixRelocations);
+      _codecache_snapshot->parallel_blobs_do(&blobs);
+    }
   } else {
     _cld_roots.always_strong_cld_do(&clds_cl, worker_id);
   }
@@ -230,7 +230,8 @@ ShenandoahRootEvacuator::ShenandoahRootEvacuator(uint n_workers,
                                                  ShenandoahPhaseTimings::Phase phase) :
   ShenandoahRootProcessor(phase),
   _thread_roots(phase, n_workers > 1),
-  _serial_weak_roots(phase) {
+  _serial_weak_roots(phase),
+  _scope(n_workers) {
 }
 
 void ShenandoahRootEvacuator::roots_do(uint worker_id, OopClosure* oops) {

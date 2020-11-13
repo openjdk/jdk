@@ -27,6 +27,7 @@
 
 #include "code/codeCache.hpp"
 #include "gc/shared/oopStorageSetParState.hpp"
+#include "gc/shared/strongRootsScope.hpp"
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
@@ -249,8 +250,10 @@ public:
 // Evacuate all roots at a safepoint
 class ShenandoahRootEvacuator : public ShenandoahRootProcessor {
 private:
-  ShenandoahThreadRoots                                     _thread_roots;
-  ShenandoahSerialWeakRoots                                 _serial_weak_roots;
+  ShenandoahThreadRoots       _thread_roots;
+  ShenandoahSerialWeakRoots   _serial_weak_roots;
+  StrongRootsScope            _scope;
+
 public:
   ShenandoahRootEvacuator(uint n_workers, ShenandoahPhaseTimings::Phase phase);
 

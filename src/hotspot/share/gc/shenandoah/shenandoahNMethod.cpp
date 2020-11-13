@@ -598,8 +598,6 @@ ShenandoahConcurrentNMethodIterator::ShenandoahConcurrentNMethodIterator(Shenand
 
 void ShenandoahConcurrentNMethodIterator::nmethods_do_begin() {
   assert(CodeCache_lock->owned_by_self(), "Lock must be held");
-  assert(ShenandoahConcurrentRoots::can_do_concurrent_class_unloading(),
-         "Only for concurrent class unloading");
   _table_snapshot = _table->snapshot_for_iteration();
 }
 
@@ -610,8 +608,6 @@ void ShenandoahConcurrentNMethodIterator::nmethods_do(NMethodClosure* cl) {
 
 void ShenandoahConcurrentNMethodIterator::nmethods_do_end() {
   assert(CodeCache_lock->owned_by_self(), "Lock must be held");
-  assert(ShenandoahConcurrentRoots::can_do_concurrent_class_unloading(),
-         "Only for concurrent class unloading");
   _table->finish_iteration(_table_snapshot);
   CodeCache_lock->notify_all();
 }
