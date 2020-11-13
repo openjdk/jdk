@@ -207,7 +207,7 @@ import static sun.java2d.pipe.hw.ExtendedBufferCapabilities.VSyncType.VSYNC_ON;
  * <a href="https://docs.oracle.com/javase/tutorial/uiswing/misc/focus.html">
  * How to Use the Focus Subsystem</a>,
  * a section in <em>The Java Tutorial</em>, and the
- * <a href="../../java/awt/doc-files/FocusSpec.html">Focus Specification</a>
+ * <a href="doc-files/FocusSpec.html">Focus Specification</a>
  * for more information.
  *
  * @author      Arthur van Hoff
@@ -7651,7 +7651,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @param temporary true if the focus change is temporary,
      *        such as when the window loses the focus; for
      *        more information on temporary focus changes see the
-     *<a href="../../java/awt/doc-files/FocusSpec.html">Focus Specification</a>
+     *<a href="doc-files/FocusSpec.html">Focus Specification</a>
      * @return {@code false} if the focus change request is guaranteed to
      *         fail; {@code true} if it is likely to succeed
      * @see java.awt.event.FocusEvent
@@ -7719,7 +7719,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @param temporary true if the focus change is temporary,
      *        such as when the window loses the focus; for
      *        more information on temporary focus changes see the
-     *<a href="../../java/awt/doc-files/FocusSpec.html">Focus Specification</a>
+     *<a href="doc-files/FocusSpec.html">Focus Specification</a>
      *
      * @param  cause the cause why the focus is requested
      * @return {@code false} if the focus change request is guaranteed to
@@ -7886,7 +7886,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @param temporary true if the focus change is temporary,
      *        such as when the window loses the focus; for
      *        more information on temporary focus changes see the
-     *<a href="../../java/awt/doc-files/FocusSpec.html">Focus Specification</a>
+     *<a href="doc-files/FocusSpec.html">Focus Specification</a>
      * @return {@code false} if the focus change request is guaranteed to
      *         fail; {@code true} if it is likely to succeed
      * @see #requestFocus

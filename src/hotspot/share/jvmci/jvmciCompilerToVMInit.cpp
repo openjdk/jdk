@@ -32,6 +32,7 @@
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/klass.inline.hpp"
+#include "runtime/flags/jvmFlag.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/resourceHash.hpp"
 

@@ -217,7 +217,7 @@ public:
 
   static void patch(address a, int msb, int lsb, uint64_t val) {
     int nbits = msb - lsb + 1;
-    guarantee(val < (1U << nbits), "Field too big for insn");
+    guarantee(val < (1ULL << nbits), "Field too big for insn");
     assert_cond(msb >= lsb);
     unsigned mask = (1U << nbits) - 1;
     val <<= lsb;
@@ -445,8 +445,8 @@ class Address {
   }
 
   Register base() const {
-    guarantee((_mode == base_plus_offset | _mode == base_plus_offset_reg
-               | _mode == post | _mode == post_reg),
+    guarantee((_mode == base_plus_offset || _mode == base_plus_offset_reg
+               || _mode == post || _mode == post_reg),
               "wrong mode");
     return _base;
   }
@@ -2688,6 +2688,8 @@ public:
   INSN(shl,  0, 0b010101, /* isSHR = */ false);
   INSN(sshr, 0, 0b000001, /* isSHR = */ true);
   INSN(ushr, 1, 0b000001, /* isSHR = */ true);
+  INSN(usra, 1, 0b000101, /* isSHR = */ true);
+  INSN(ssra, 0, 0b000101, /* isSHAR =*/ true);
 
 #undef INSN
 
@@ -3218,13 +3220,6 @@ public:
   }
 
   Assembler(CodeBuffer* code) : AbstractAssembler(code) {
-  }
-
-  virtual RegisterOrConstant delayed_value_impl(intptr_t* delayed_value_addr,
-                                                Register tmp,
-                                                int offset) {
-    ShouldNotCallThis();
-    return RegisterOrConstant();
   }
 
   // Stack overflow checking
