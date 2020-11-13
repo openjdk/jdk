@@ -298,6 +298,16 @@ void ShenandoahDegenGC::op_update_roots() {
   update_roots(false /*full_gc*/);
 
   heap()->update_heap_region_states(false /*concurrent*/);
+
+  if (ShenandoahVerify) {
+    heap()->verifier()->verify_after_updaterefs();
+  }
+
+  if (VerifyAfterGC) {
+    Universe::verify();
+  }
+
+  heap()->rebuild_free_set(false /*concurrent*/);
 }
 
 void ShenandoahDegenGC::op_cleanup_complete() {

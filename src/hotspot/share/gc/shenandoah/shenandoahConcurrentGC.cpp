@@ -24,11 +24,13 @@
 
 #include "precompiled.hpp"
 
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
+#include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
@@ -508,12 +510,15 @@ void ShenandoahConcurrentGC::op_final_mark() {
       // From here on, we need to update references.
       heap()->set_has_forwarded_objects(true);
 
-      if (ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
-        ShenandoahCodeRoots::arm_nmethods();
-      }
+      // Arm nmethods for concurrent processing
+      ShenandoahCodeRoots::arm_nmethods();
 
       // Should be gone after 8212879 and concurrent stack processing
       heap()->evacuate_and_update_roots();
+
+      if (ShenandoahVerify) {
+        heap()->verifier()->verify_during_evacuation();
+      }
 
       if (ShenandoahPacing) {
         heap()->pacer()->setup_for_evac();
@@ -701,15 +706,27 @@ void ShenandoahConcurrentGC::op_class_unloading() {
 }
 
 class ShenandoahEvacUpdateCodeCacheClosure : public NMethodClosure {
+private:
+  BarrierSetNMethod* const               _bs;
+  ShenandoahEvacuateUpdateRootsClosure<> _cl;
+
 public:
+  ShenandoahEvacUpdateCodeCacheClosure() :
+    _bs(BarrierSet::barrier_set()->barrier_set_nmethod()),
+    _cl() {
+  }
+
   void do_nmethod(nmethod* n) {
     ShenandoahNMethod* data = ShenandoahNMethod::gc_data(n);
-    ShenandoahNMethod::heal_nmethod_metadata(data);
+    ShenandoahReentrantLocker locker(data->lock());
+    data->oops_do(&_cl, true/*fix relocation*/);
+    _bs->disarm(n);
   }
 };
 
 class ShenandoahConcurrentRootsEvacUpdateTask : public AbstractGangTask {
 private:
+  ShenandoahPhaseTimings::Phase                 _phase;
   ShenandoahVMRoots<true /*concurrent*/>        _vm_roots;
   ShenandoahClassLoaderDataRoots<true /*concurrent*/, false /*single threaded*/> _cld_roots;
   ShenandoahConcurrentNMethodIterator           _nmethod_itr;
@@ -718,6 +735,7 @@ private:
 public:
   ShenandoahConcurrentRootsEvacUpdateTask(ShenandoahPhaseTimings::Phase phase) :
     AbstractGangTask("Shenandoah Evacuate/Update Concurrent Strong Roots"),
+    _phase(phase),
     _vm_roots(phase),
     _cld_roots(phase, ShenandoahHeap::heap()->workers()->active_workers()),
     _nmethod_itr(ShenandoahCodeRoots::table()),
@@ -752,6 +770,7 @@ public:
     }
 
     if (_process_codecache) {
+      ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
       ShenandoahEvacUpdateCodeCacheClosure cl;
       _nmethod_itr.nmethods_do(&cl);
     }
@@ -847,6 +866,8 @@ void ShenandoahConcurrentGC::op_final_updaterefs() {
   if (VerifyAfterGC) {
     Universe::verify();
   }
+
+  heap()->rebuild_free_set(true /*concurrent*/);
 }
 
 void ShenandoahConcurrentGC::op_cleanup_complete() {

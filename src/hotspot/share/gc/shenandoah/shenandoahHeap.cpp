@@ -2151,7 +2151,6 @@ public:
   bool is_thread_safe() { return true; }
 };
 
-
 void ShenandoahHeap::update_heap_region_states(bool concurrent) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
   assert(!is_full_gc_in_progress(), "Only for concurrent and degenerated GC");
@@ -2172,7 +2171,9 @@ void ShenandoahHeap::update_heap_region_states(bool concurrent) {
                             ShenandoahPhaseTimings::degen_final_update_refs_trash_cset);
     trash_cset_regions();
   }
+}
 
+void ShenandoahHeap::rebuild_free_set(bool concurrent) {
   {
     ShenandoahGCPhase phase(concurrent ?
                             ShenandoahPhaseTimings::final_update_refs_rebuild_freeset :

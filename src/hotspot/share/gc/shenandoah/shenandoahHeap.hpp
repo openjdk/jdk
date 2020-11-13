@@ -362,6 +362,7 @@ private:
   void update_heap_references(bool concurrent);
   // Final update region states
   void update_heap_region_states(bool concurrent);
+  void rebuild_free_set(bool concurrent);
 
   void rendezvous_threads();
   void recycle_trash();
