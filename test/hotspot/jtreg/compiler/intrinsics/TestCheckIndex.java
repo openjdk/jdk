@@ -26,6 +26,7 @@
  * @bug 8255150
  * @summary Add utility methods to check long indexes and ranges
  * @requires vm.compiler2.enabled
+ * @requires vm.compMode != "Xcomp"
  * @library /test/lib /
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
