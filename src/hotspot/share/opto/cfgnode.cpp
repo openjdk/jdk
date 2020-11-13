@@ -1105,9 +1105,9 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
           if (bt != BoolTest::ne) {
             if (stride_t->_hi < 0) {          // Down-counter loop
               swap(lo, hi);
-              return TypeInt::make(MIN2(lo->_lo, hi->_lo) , hi->_hi, 3);
+              return TypeInt::make(MIN2(lo->_lo, hi->_lo) , hi->_hi, 3)->filter_speculative(_type);
             } else if (stride_t->_lo >= 0) {
-              return TypeInt::make(lo->_lo, MAX2(lo->_hi, hi->_hi), 3);
+              return TypeInt::make(lo->_lo, MAX2(lo->_hi, hi->_hi), 3)->filter_speculative(_type);
             }
           }
         }
