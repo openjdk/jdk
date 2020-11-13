@@ -524,6 +524,10 @@ class methodHandle;
    do_name(     isCompileConstant_name,                          "isCompileConstant")                                   \
    do_alias(    isCompileConstant_signature,                      object_boolean_signature)                             \
                                                                                                                         \
+  do_intrinsic(_getObjectSize,   sun_instrument_InstrumentationImpl, getObjectSize_name, getObjectSize_signature, F_RN) \
+   do_name(     getObjectSize_name,                               "getObjectSize0")                                     \
+   do_alias(    getObjectSize_signature,                          long_object_long_signature)                           \
+                                                                                                                        \
   /* unsafe memory references (there are a lot of them...) */                                                           \
   do_signature(getReference_signature,    "(Ljava/lang/Object;J)Ljava/lang/Object;")                                    \
   do_signature(putReference_signature,    "(Ljava/lang/Object;JLjava/lang/Object;)V")                                   \
