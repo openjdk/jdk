@@ -81,44 +81,8 @@ public interface JavaLangInvokeAccess {
      * Used by {@code jdk.internal.foreign.LayoutPath} and
      * {@code jdk.incubator.foreign.MemoryHandles}.
      */
-    VarHandle memoryAccessVarHandle(Class<?> carrier, long alignmentMask,
-                                    ByteOrder order, long offset, long[] strides);
-
-    /**
-     * Is {@code handle} a memory access varhandle?
-     * Used by {@code jdk.incubator.foreign.MemoryHandles}.
-     */
-    boolean isMemoryAccessVarHandle(VarHandle handle);
-
-    /**
-     * Returns the carrier associated with a memory access var handle.
-     * Used by {@code jdk.incubator.foreign.MemoryHandles}.
-     */
-    Class<?> memoryAddressCarrier(VarHandle handle);
-
-    /**
-     * Returns the alignment mask associated with a memory access var handle.
-     * Used by {@code jdk.incubator.foreign.MemoryHandles}.
-     */
-    long memoryAddressAlignmentMask(VarHandle handle);
-
-    /**
-     * Returns the byte order associated with a memory access var handle.
-     * Used by {@code jdk.incubator.foreign.MemoryHandles}.
-     */
-    ByteOrder memoryAddressByteOrder(VarHandle handle);
-
-    /**
-     * Returns the offset associated with a memory access var handle.
-     * Used by {@code jdk.incubator.foreign.MemoryHandles}.
-     */
-    long memoryAddressOffset(VarHandle handle);
-
-    /**
-     * Returns the strides associated with a memory access var handle.
-     * Used by {@code jdk.incubator.foreign.MemoryHandles}.
-     */
-    long[] memoryAddressStrides(VarHandle handle);
+    VarHandle memoryAccessVarHandle(Class<?> carrier, boolean skipAlignmentMaskCheck, long alignmentMask,
+                                    ByteOrder order);
 
     /**
      * Var handle carrier combinator.

@@ -102,10 +102,18 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(oop obj) {
 template <DecoratorSet decorators, class T>
 inline oop ShenandoahBarrierSet::load_reference_barrier(oop obj, T* load_addr) {
 
-  // Prevent resurrection of unreachable non-strorg references.
-  if (!HasDecorator<decorators, ON_STRONG_OOP_REF>::value && obj != NULL &&
+  // Prevent resurrection of unreachable phantom (i.e. weak-native) references.
+  if (HasDecorator<decorators, ON_PHANTOM_OOP_REF>::value && obj != NULL &&
       _heap->is_concurrent_weak_root_in_progress() &&
       !_heap->marking_context()->is_marked(obj)) {
+    return NULL;
+  }
+
+  // Prevent resurrection of unreachable weak references.
+  if ((HasDecorator<decorators, ON_WEAK_OOP_REF>::value || HasDecorator<decorators, ON_UNKNOWN_OOP_REF>::value) &&
+      obj != NULL && _heap->is_concurrent_weak_root_in_progress() &&
+      !_heap->marking_context()->is_marked_strong(obj)) {
+    assert(Thread::current()->is_Java_thread(), "only Java threads get here");
     return NULL;
   }
 
