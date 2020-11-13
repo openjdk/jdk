@@ -47,12 +47,12 @@ class ShenandoahAllocationRate : public CHeapObj<mtGC> {
 
  private:
 
-  double instantaneous_rate(size_t time, size_t allocated) const;
+  double instantaneous_rate(double time, size_t allocated) const;
 
   ShenandoahAdaptiveHeuristics *_heuristics;
-  size_t _last_sample_time;
+  double _last_sample_time;
   size_t _last_sample_value;
-  uint _interval_ns;
+  double _interval_sec;
   TruncatedSeq _rate;
   TruncatedSeq _rate_avg;
 };

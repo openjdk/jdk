@@ -332,16 +332,16 @@ void ShenandoahAdaptiveHeuristics::adjust_spike_threshold(double amount) {
 
 ShenandoahAllocationRate::ShenandoahAllocationRate(ShenandoahAdaptiveHeuristics *heuristics) :
   _heuristics(heuristics),
-  _last_sample_time(os::javaTimeNanos()),
+  _last_sample_time(os::elapsedTime()),
   _last_sample_value(0),
-  _interval_ns(NANOUNITS / ShenandoahAdaptiveSampleFrequencyHz),
+  _interval_sec(1.0 / ShenandoahAdaptiveSampleFrequencyHz),
   _rate(ShenandoahAdaptiveSampleSizeSeconds * ShenandoahAdaptiveSampleFrequencyHz, ShenandoahAdaptiveDecayFactor),
   _rate_avg(ShenandoahAdaptiveSampleSizeSeconds * ShenandoahAdaptiveSampleFrequencyHz, ShenandoahAdaptiveDecayFactor) {
 }
 
 void ShenandoahAllocationRate::sample(size_t allocated) {
-  jlong now = os::javaTimeNanos();
-  if (now - _last_sample_time > _interval_ns) {
+  jlong now = os::elapsedTime();
+  if (now - _last_sample_time > _interval_sec) {
     if (allocated > _last_sample_value) {
       _rate.add(instantaneous_rate(now, allocated));
       _rate_avg.add(_rate.avg());
@@ -361,7 +361,7 @@ double ShenandoahAllocationRate::upper_bound(double standard_deviations) const {
 }
 
 void ShenandoahAllocationRate::allocation_counter_reset() {
-  _last_sample_time = os::javaTimeNanos();
+  _last_sample_time = os::elapsedTime();
   _last_sample_value = 0;
 }
 
@@ -379,11 +379,11 @@ bool ShenandoahAllocationRate::is_spiking(double rate) const {
 }
 
 double ShenandoahAllocationRate::instantaneous_rate(size_t allocated) const {
-  return instantaneous_rate(os::javaTimeNanos(), allocated);
+  return instantaneous_rate(os::elapsedTime(), allocated);
 }
 
-double ShenandoahAllocationRate::instantaneous_rate(size_t time, size_t allocated) const {
+double ShenandoahAllocationRate::instantaneous_rate(double time, size_t allocated) const {
   size_t allocation_delta = allocated - _last_sample_value;
-  size_t time_delta_ns = time - _last_sample_time;
-  return ((double) allocation_delta * NANOUNITS) / time_delta_ns;
+  double time_delta_sec = time - _last_sample_time;
+  return allocation_delta / time_delta_sec;
 }
