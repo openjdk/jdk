@@ -92,12 +92,6 @@ public class GetMethodOptionTest {
         TestOptionDouble(1.123d, WB::getMethodDoubleOption),
         TestOptionList("_foo _bar", WB::getMethodStringOption);
 
-       // MyBoolOptionX(false, WB::getMethodBooleanOption),
-       // MyIntxOptionX(-1L, WB::getMethodIntxOption),
-       // MyUintxOptionX(1L, WB::getMethodUintxOption),
-       // MyFlagX(true, WB::getMethodBooleanOption),
-       // MyDoubleOptionX(1.123d, WB::getMethodDoubleOption);
-
         public final Object value;
         public final BiFunction<Executable, String, Object> getter;
         private TestCase(Object value, BiFunction<Executable, String, Object> getter) {

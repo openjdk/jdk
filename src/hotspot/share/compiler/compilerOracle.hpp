@@ -43,72 +43,76 @@ class methodHandle;
   type(Ccstrlist, Ccstr, "ccstrlist") \
   type(Double, Double, "double")
 
-// Basic option:    break,<method pattern>
-// Trivial option:  quiet
-// Legacy option:   option,<method pattern>,type,<option name>,<value>
-// Standard option: <option name>,<method pattern>,<value>
-
 //       COMPILECOMMAND_OPTIONS: option, name, variant, type
 #define COMPILECOMMAND_OPTIONS(option) \
-  option(Help,  "help", Trivial, Unknown) \
-  option(Quiet, "quiet", Trivial, Unknown) \
-  option(Break, "break", Basic, Bool) \
-  option(Print, "print", Basic, Bool) \
-  option(Exclude, "exclude", Basic, Bool) \
-  option(Inline,  "inline", Basic, Bool) \
-  option(DontInline,  "dontinline", Basic, Bool) \
-  option(CompileOnly, "compileonly", Basic, Bool) \
-  option(Log, "log", Basic, Bool) \
-  option(CompileThresholdScaling, "CompileThresholdScaling", Standard, Double) \
-  option(ControlIntrinsic,  "ControlIntrinsic",  Standard, Ccstrlist) \
-  option(DisableIntrinsic,  "DisableIntrinsic",  Standard, Ccstrlist) \
-  option(NoRTMLockEliding,  "NoRTMLockEliding",  Standard, Bool) \
-  option(UseRTMLockEliding, "UseRTMLockEliding", Standard, Bool) \
-  option(PrintDebugInfo,    "PrintDebugInfo",    Standard, Bool) \
-  option(PrintRelocations,  "PrintRelocations",  Standard, Bool) \
-  option(PrintDependencies, "PrintDependencies", Standard, Bool) \
-NOT_PRODUCT(option(TestOptionInt,    "TestOptionInt",    Standard, Intx)) \
-NOT_PRODUCT(option(TestOptionUint,   "TestOptionUint",   Standard, Uintx)) \
-NOT_PRODUCT(option(TestOptionBool,   "TestOptionBool",   Standard, Bool)) \
-NOT_PRODUCT(option(TestOptionBool2,  "TestOptionBool2",   Standard, Bool)) \
-NOT_PRODUCT(option(TestOptionStr,    "TestOptionStr",    Standard, Ccstr)) \
-NOT_PRODUCT(option(TestOptionList,   "TestOptionList",   Standard, Ccstrlist)) \
-NOT_PRODUCT(option(TestOptionDouble, "TestOptionDouble", Standard, Double)) \
-  option(Option, "option", Legacy, Unknown)
+  option(Help,  "help",  Unknown) \
+  option(Quiet, "quiet", Unknown) \
+  option(Log, "log", Bool) \
+  option(Print, "print", Bool) \
+  option(Inline,  "inline", Bool) \
+  option(DontInline,  "dontinline", Bool) \
+  option(CompileOnly, "compileonly", Bool)\
+  option(Exclude, "exclude", Bool) \
+  option(Break, "break", Bool) \
+  option(BreakAtExecute, "BreakAtExecute", Bool) \
+  option(BreakAtCompile, "BreakAtCompile", Bool) \
+  option(PrintAssembly, "PrintAssembly", Bool) \
+  option(PrintInlining, "PrintInlining", Bool) \
+  option(PrintIntrinsics, "PrintIntrinsics", Bool) \
+  option(PrintNMethods, "PrintNMethods", Bool)   \
+  option(PrintOptoAssembly, "PrintOptoAssembly", Bool) \
+  option(PrintDebugInfo,    "PrintDebugInfo",    Bool) \
+  option(PrintRelocations,  "PrintRelocations",  Bool) \
+  option(PrintDependencies, "PrintDependencies", Bool) \
+  option(BackgroundCompilation, "BackgroundCompilation", Bool) \
+  option(RepeatCompilation, "RepeatCompilation", Intx) \
+  option(ReplayInline,   "ReplayInline", Bool) \
+  option(DumpReplay,     "DumpReplay", Bool) \
+  option(DumpInline,     "DumpInline", Bool) \
+  option(CompileThresholdScaling, "CompileThresholdScaling", Double) \
+  option(ControlIntrinsic,  "ControlIntrinsic",  Ccstrlist) \
+  option(DisableIntrinsic,  "DisableIntrinsic",  Ccstrlist) \
+  option(NoRTMLockEliding,  "NoRTMLockEliding",  Bool) \
+  option(UseRTMLockEliding, "UseRTMLockEliding", Bool) \
+  option(BlockLayoutByFrequency, "BlockLayoutByFrequency", Bool) \
+  option(TraceOptoPipelining, "TraceOptoPipelining", Bool) \
+  option(TraceOptoOutput, "TraceOptoOutput", Bool) \
+  option(TraceSpilling, "TraceSpilling", Bool) \
+  option(PrintIdeal, "PrintIdeal", Bool) \
+  option(IGVPrintLevel, "IGVPrintLevel", Intx) \
+  option(Vectorize, "Vectorize", Bool) \
+  option(VectorizeDebug, "VectorizeDebug", Uintx) \
+  option(CloneMapDebug, "CloneMapDebug", Bool) \
+  option(MaxNodeLimit, "MaxNodeLimit", Intx)  \
+NOT_PRODUCT(option(TestOptionInt,    "TestOptionInt",    Intx)) \
+NOT_PRODUCT(option(TestOptionUint,   "TestOptionUint",   Uintx)) \
+NOT_PRODUCT(option(TestOptionBool,   "TestOptionBool",   Bool)) \
+NOT_PRODUCT(option(TestOptionBool2,  "TestOptionBool2",  Bool)) \
+NOT_PRODUCT(option(TestOptionStr,    "TestOptionStr",    Ccstr)) \
+NOT_PRODUCT(option(TestOptionList,   "TestOptionList",   Ccstrlist)) \
+NOT_PRODUCT(option(TestOptionDouble, "TestOptionDouble", Double)) \
+  option(Option, "option", Unknown) \
+  option(Unknown, "unknown", Unknown)
 
 enum class CompileCommand {
-  Unknown = -1,
-  #define enum_of_options(option, name, cvariant, ctype) option,
+  #define enum_of_options(option, name, ctype) option,
     COMPILECOMMAND_OPTIONS(enum_of_options)
   #undef enum_of_options
   Count
 };
 
-static const char * command_names[] = {
-  #define enum_of_options(option, name, cvariant, ctype) name,
-    COMPILECOMMAND_OPTIONS(enum_of_options)
-  #undef enum_of_options
-};
-
-enum class CompileCommandVariant {
-  Trivial,
-  Basic,
-  Legacy,
-  Standard
-};
-
-static enum CompileCommandVariant command2variant[] = {
-#define enum_of_options(option, name, cvariant, ctype) CompileCommandVariant::cvariant,
-        COMPILECOMMAND_OPTIONS(enum_of_options)
-#undef enum_of_options
+enum class OptionType {
+#define enum_of_types(type, internal_type, name) type,
+    OPTION_TYPES(enum_of_types)
+#undef enum_of_types
+    Unknown
 };
 
 class CompilerOracle : AllStatic {
  private:
   static bool _quiet;
-  static void print_tip();
-  static void print_commands();
   static void print_parse_error(const char*&  error_msg, char* original_line);
+  static void print_command(enum CompileCommand option, const char* name, enum OptionType type);
 
  public:
 
@@ -137,6 +141,9 @@ class CompilerOracle : AllStatic {
   // Tells whether to break when compiling method
   static bool should_break_at(const methodHandle& method);
 
+  // Tells whether there are any methods to print for print_method_statistics()
+  static bool should_print_methods();
+
   // A wrapper for checking bool options
   static bool has_option(const methodHandle& method, enum CompileCommand option);
 
@@ -145,20 +152,15 @@ class CompilerOracle : AllStatic {
   template<typename T>
   static bool has_option_value(const methodHandle& method, enum CompileCommand option, T& value, bool verfiy_type = false);
 
-  // Fast check if there is any option available that compile control needs to know about
-  static bool has_any_option();
-
   // Reads from string instead of file
-  static void parse_from_string(const char* command_string, void (*parser)(char*));
-
+  static void parse_from_string(const char* option_string, void (*parser)(char*));
   static void parse_from_line(char* line);
-  static void parse_from_line_impl(char* line, const char* original_line);
   static void parse_compile_only(char * line);
 
-  // Tells whether there are any methods to print for print_method_statistics()
-  static bool should_print_methods();
+   // Fast check if there is any option set that compile control needs to know about
+  static bool has_any_command_set();
 
-  // convert a string to a proper option - used from whitebox.
+  // convert a string to a proper compilecommand option - used from whitebox.
   // returns CompileCommand::Unknown on names not matching an option.
   static enum CompileCommand string_to_option(const char *name);
 };

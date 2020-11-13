@@ -35,7 +35,7 @@
   //      Directives flag name,    type, default value, compile command name
   #define compilerdirectives_common_flags(cflags) \
     cflags(Enable,                  bool, false, Unknown) \
-    cflags(Exclude,                 bool, false, Unknown) \
+    cflags(Exclude,                 bool, false, Exclude) \
     cflags(BreakAtExecute,          bool, false, BreakAtExecute) \
     cflags(BreakAtCompile,          bool, false, BreakAtCompile) \
     cflags(Log,                     bool, LogCompilation, Unknown) \

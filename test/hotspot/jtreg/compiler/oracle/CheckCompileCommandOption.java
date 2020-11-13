@@ -65,29 +65,30 @@ public class CheckCompileCommandOption {
 
     private static final String[][] FILE_EXPECTED_OUTPUT = {
         {
-            "CompileCommand: option com/oracle/Test.test bool MyBoolOption1 = true",
-            "CompileCommand: option com/oracle/Test.test bool MyBoolOption2 = true",
-            "CompileCommand: option com/oracle/Test.test bool MyBoolOption3 = true",
-            "CompileCommand: option com/oracle/Test.test bool MyBoolOption5 = true",
-            "CompileCommand: option com/oracle/Test.test bool MyBoolOption6 = true",
-            "CompileCommand: option com/oracle/Test.test bool MyBoolOption7 = true",
-            "CompileCommand: option com/oracle/Test.test bool MyBoolOption8 = true",
-            "CompileCommand: option com/oracle/Test.test(I) bool MyBoolOption9 = true",
-            "CompileCommand: option com/oracle/Test.test(I) bool MyBoolOption10 = true",
-            "CompileCommand: option com/oracle/Test.test(I) bool MyBoolOption11 = true",
-            "CompileCommand: option com/oracle/Test.test(I) bool MyBoolOption13 = true",
-            "CompileCommand: option com/oracle/Test.test(I) bool MyBoolOption14 = true",
-            "CompileCommand: option com/oracle/Test.test(I) bool MyBoolOption15 = true",
-            "CompileCommand: option com/oracle/Test.test(I) bool MyBoolOption16 = true"
+            "CompileCommand: option Test.test1 bool TestOptionBool = true",
+            "CompileCommand: option Test.test2 bool TestOptionBool = true",
+            "CompileCommand: option Test.test3 bool TestOptionBool = true",
+            "CompileCommand: option Test.test4 bool TestOptionBool = true",
+            "CompileCommand: option Test.test4 bool TestOptionBool2 = true",
+            "CompileCommand: option Test.test5 bool TestOptionBool = true",
+            "CompileCommand: option Test.test5 bool TestOptionBool2 = true",
+            "CompileCommand: option Test.test6 bool TestOptionBool = true",
+            "CompileCommand: option Test.test7 bool TestOptionBool = true",
+            "CompileCommand: option Test.test8 bool TestOptionBool = true",
+            "CompileCommand: option Test.test9 bool TestOptionBool = true",
+            "CompileCommand: option Test.test9 bool TestOptionBool2 = true",
+            "CompileCommand: option Test.test10 bool TestOptionBool = true",
+            "CompileCommand: option Test.test10 bool TestOptionBool2 = true"
         },
         {
-            "CompileCommand: option Test.test const char* MyListOption = '_foo _bar'",
-            "CompileCommand: option Test.test const char* MyStrOption = '_foo'",
-            "CompileCommand: option Test.test bool MyBoolOption = false",
-            "CompileCommand: option Test.test intx MyIntxOption = -1",
-            "CompileCommand: option Test.test uintx MyUintxOption = 1",
-            "CompileCommand: option Test.test bool MyFlag = true",
-            "CompileCommand: option Test.test double MyDoubleOption = 1.123000"
+            "CompileCommand: option Test.test const char* TestOptionList = '_foo _bar'",
+            "CompileCommand: option Test.test const char* TestOptionStr = '_foo'",
+            "CompileCommand: option Test.test bool TestOptionBool = false",
+            "CompileCommand: option Test.test intx TestOptionInt = -1",
+            "CompileCommand: option Test.test uintx TestOptionUint = 1",
+            "CompileCommand: option Test.test bool TestOptionBool2 = true",
+            "CompileCommand: option Test.test double TestOptionDouble = 1.123000",
+            "CompileCommand: option Test.test2 double TestOptionDouble = 1.123000"
         }
     };
 
@@ -187,7 +188,7 @@ public class CheckCompileCommandOption {
             "-XX:CompileCommand=TestOptionBool,Test::test,1",
             "-XX:CompileCommand=TestOptionDouble,Test::test,-1",
             "-XX:CompileCommand=TestOptionUint,Test::test",
-            "-XX:CompileCommand=TestOptionBool2,falsee",
+            "-XX:CompileCommand=TestOptionBool2,Test::test,falsee",
             "-XX:CompileCommand=TestOptionDouble,Test::test,true",
             "-XX:CompileCommand=TestOptionDouble,Test.test2,1.f",
             "-version"
@@ -200,7 +201,7 @@ public class CheckCompileCommandOption {
             "Value cannot be read for flag TestOptionInt of type intx",
             "Value cannot be read for flag TestOptionBool of type bool",
             "Value cannot be read for flag TestOptionDouble of type double",
-            "Value cannot be read for flag TestOptionUint of type uintx",
+            "TestOptionUint is not followed by a value",
             "Value cannot be read for flag TestOptionBool2 of type bool",
             "Value cannot be read for flag TestOptionDouble of type double",
             "Value cannot be read for flag TestOptionDouble of type double"
@@ -338,11 +339,9 @@ public class CheckCompileCommandOption {
             verifyInvalidOption(TYPE_4_INVALID_ARGUMENTS[i], TYPE_4_INVALID_OUTPUTS[i]);
         }
 
-/*
         // Check if commands in command file are parsed correctly
         for (int i = 0; i < FILE_ARGUMENTS.length; i++) {
             verifyValidOption(FILE_ARGUMENTS[i], FILE_EXPECTED_OUTPUT[i]);
         }
-*/
     }
 }
