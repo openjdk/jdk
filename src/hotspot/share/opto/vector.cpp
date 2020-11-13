@@ -242,11 +242,19 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
     SafePointNode* sfpt = safepoints.pop()->as_SafePoint();
 
     uint first_ind = (sfpt->req() - sfpt->jvms()->scloff());
+    ciKlass* cik = vec_box->box_type()->is_oopptr()->klass();
+    assert(cik->is_instance_klass(), "Not supported allocation.");
+    ciInstanceKlass *iklass = NULL;
+    int n_fields = -1;
+    if (cik->is_instance_klass()) {
+        iklass = cik->as_instance_klass();
+        n_fields = iklass->nof_nonstatic_fields();
+    }
     Node* sobj = new SafePointScalarObjectNode(vec_box->box_type(),
 #ifdef ASSERT
                                                NULL,
 #endif // ASSERT
-                                               first_ind, /*n_fields=*/1);
+                                               first_ind, n_fields=1);
     sobj->init_req(0, C->root());
     sfpt->add_req(vec_value);
 
