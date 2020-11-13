@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6493690
+ * @bug 6493690 8246774
  * @summary javadoc should have a javax.tools.Tool service provider
  * @modules java.compiler
  *          jdk.compiler
@@ -78,7 +78,7 @@ public class GetTask_DiagListenerTest extends APITest {
                 }
                 List<String> expect = Arrays.asList(
                         "javadoc.note.msg",         // Loading source file
-                        "compiler.err.expected3",   // class, interface, enum, or __datum expected
+                        "compiler.err.expected4",   // class, interface, enum, or record expected
                         "javadoc.note.msg");        // 1 error
                 if (!diagCodes.equals(expect))
                     throw new Exception("unexpected diagnostics occurred");

@@ -77,9 +77,11 @@
   LOG_TAG(free) \
   LOG_TAG(freelist) \
   LOG_TAG(gc) \
+  NOT_PRODUCT(LOG_TAG(generate)) \
   LOG_TAG(handshake) \
   LOG_TAG(hashtables) \
   LOG_TAG(heap) \
+  NOT_PRODUCT(LOG_TAG(heapsampling)) \
   LOG_TAG(humongous) \
   LOG_TAG(ihop) \
   LOG_TAG(iklass) \
@@ -93,6 +95,7 @@
   LOG_TAG(jit) \
   LOG_TAG(jni) \
   LOG_TAG(jvmti) \
+  LOG_TAG(lambda) \
   LOG_TAG(library) \
   LOG_TAG(liveness) \
   LOG_TAG(load) /* Trace all classes loaded */ \

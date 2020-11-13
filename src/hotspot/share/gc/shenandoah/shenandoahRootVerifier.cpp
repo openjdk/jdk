@@ -41,15 +41,17 @@
 #include "utilities/debug.hpp"
 
 ShenandoahGCStateResetter::ShenandoahGCStateResetter() :
-  _gc_state(ShenandoahHeap::heap()->gc_state()),
+  _heap(ShenandoahHeap::heap()),
+  _gc_state(_heap->gc_state()),
   _concurrent_weak_root_in_progress(ShenandoahHeap::heap()->is_concurrent_weak_root_in_progress()) {
+  _heap->_gc_state.clear();
+  _heap->set_concurrent_weak_root_in_progress(false);
 }
 
 ShenandoahGCStateResetter::~ShenandoahGCStateResetter() {
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  heap->_gc_state.set(_gc_state);
-  assert(heap->gc_state() == _gc_state, "Should be restored");
-  heap->set_concurrent_weak_root_in_progress(_concurrent_weak_root_in_progress);
+  _heap->_gc_state.set(_gc_state);
+  assert(_heap->gc_state() == _gc_state, "Should be restored");
+  _heap->set_concurrent_weak_root_in_progress(_concurrent_weak_root_in_progress);
 }
 
 // Check for overflow of number of root types.
@@ -133,13 +135,6 @@ void ShenandoahRootVerifier::roots_do(OopClosure* oops) {
 
   JNIHandles::oops_do(oops);
   Universe::vm_global()->oops_do(oops);
-
-  AlwaysTrueClosure always_true;
-  WeakProcessor::weak_oops_do(&always_true, oops);
-
-  if (ShenandoahStringDedup::is_enabled()) {
-    ShenandoahStringDedup::oops_do_slow(oops);
-  }
 
   // Do thread roots the last. This allows verification code to find
   // any broken objects from those special roots first, not the accidental

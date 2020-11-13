@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /**
  * @test
  * @key headful
- * @bug 6345003 8171363
+ * @bug 6345003 8171363 8211999
  * @summary grab problems with EmbeddedFrame
  * @requires (os.family == "windows")
  * @modules java.desktop/java.awt.peer
@@ -67,6 +67,7 @@ public class EmbeddedFrameGrabTest {
         final Frame frame = new Frame("AWT Frame");
         frame.pack();
         frame.setSize(200, 200);
+        frame.setLocationRelativeTo(null);
         FramePeer frame_peer = AWTAccessor.getComponentAccessor()
                                     .getPeer(frame);
         Class comp_peer_class
@@ -88,6 +89,7 @@ public class EmbeddedFrameGrabTest {
         final Panel p = new Panel();
         p.setLayout(new BorderLayout());
         embedded_frame.add(p, BorderLayout.CENTER);
+        embedded_frame.setBounds(0, 0, 150, 150);
         embedded_frame.validate();
         p.add(combo);
         p.validate();

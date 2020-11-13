@@ -229,9 +229,6 @@ private:
 
   static ExceptionBlob*    exception_blob()                      { return _exception_blob; }
 
-  // Leaf routines helping with method data update
-  static void profile_receiver_type_C(DataLayout* data, oopDesc* receiver);
-
   // Implicit exception support
   static void throw_div0_exception_C      (JavaThread* thread);
   static void throw_stack_overflow_error_C(JavaThread* thread);
@@ -295,6 +292,7 @@ private:
 
   static const TypeFunc* ghash_processBlocks_Type();
   static const TypeFunc* base64_encodeBlock_Type();
+  static const TypeFunc* base64_decodeBlock_Type();
 
   static const TypeFunc* updateBytesCRC32_Type();
   static const TypeFunc* updateBytesCRC32C_Type();
@@ -303,9 +301,6 @@ private:
 
   // leaf on stack replacement interpreter accessor types
   static const TypeFunc* osr_end_Type();
-
-  // leaf methodData routine types
-  static const TypeFunc* profile_receiver_type_Type();
 
   // leaf on stack replacement interpreter accessor types
   static const TypeFunc* fetch_int_Type();

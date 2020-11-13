@@ -34,16 +34,70 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 /*
- * @test
- * @summary Unit test for jmap utility
+ * @test id=Serial
+ * @requires vm.gc.Serial
+ * @summary Unit test for jmap utility (Serial GC)
  * @key intermittent
  * @library /test/lib
  * @build jdk.test.lib.hprof.*
  * @build jdk.test.lib.hprof.model.*
  * @build jdk.test.lib.hprof.parser.*
  * @build jdk.test.lib.hprof.util.*
- * @run main/timeout=240 BasicJMapTest
+ * @run main/othervm/timeout=240 -XX:+UseSerialGC BasicJMapTest
  */
+
+/*
+ * @test id=Parallel
+ * @requires vm.gc.Parallel
+ * @summary Unit test for jmap utility (Parallel GC)
+ * @key intermittent
+ * @library /test/lib
+ * @build jdk.test.lib.hprof.*
+ * @build jdk.test.lib.hprof.model.*
+ * @build jdk.test.lib.hprof.parser.*
+ * @build jdk.test.lib.hprof.util.*
+ * @run main/othervm/timeout=240 -XX:+UseParallelGC BasicJMapTest
+ */
+
+/*
+ * @test id=G1
+ * @requires vm.gc.G1
+ * @summary Unit test for jmap utility (G1 GC)
+ * @key intermittent
+ * @library /test/lib
+ * @build jdk.test.lib.hprof.*
+ * @build jdk.test.lib.hprof.model.*
+ * @build jdk.test.lib.hprof.parser.*
+ * @build jdk.test.lib.hprof.util.*
+ * @run main/othervm/timeout=240 -XX:+UseG1GC BasicJMapTest
+ */
+
+/*
+ * @test id=Shenandoah
+ * @requires vm.gc.Shenandoah
+ * @summary Unit test for jmap utility (Shenandoah GC)
+ * @key intermittent
+ * @library /test/lib
+ * @build jdk.test.lib.hprof.*
+ * @build jdk.test.lib.hprof.model.*
+ * @build jdk.test.lib.hprof.parser.*
+ * @build jdk.test.lib.hprof.util.*
+ * @run main/othervm/timeout=240 -XX:+UseShenandoahGC BasicJMapTest
+ */
+
+/*
+ * @test id=Z
+ * @requires vm.gc.Z
+ * @summary Unit test for jmap utility (Z GC)
+ * @key intermittent
+ * @library /test/lib
+ * @build jdk.test.lib.hprof.*
+ * @build jdk.test.lib.hprof.model.*
+ * @build jdk.test.lib.hprof.parser.*
+ * @build jdk.test.lib.hprof.util.*
+ * @run main/othervm/timeout=240 -XX:+UseZGC BasicJMapTest
+ */
+
 public class BasicJMapTest {
 
     private static ProcessBuilder processBuilder = new ProcessBuilder();

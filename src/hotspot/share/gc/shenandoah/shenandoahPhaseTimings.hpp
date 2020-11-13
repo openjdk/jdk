@@ -60,8 +60,6 @@ class outputStream;
   f(conc_mark_roots,                                "  Roots ")                        \
   SHENANDOAH_PAR_PHASE_DO(conc_mark_roots,          "    CM: ", f)                     \
                                                                                        \
-  f(conc_preclean,                                  "Concurrent Precleaning")          \
-                                                                                       \
   f(final_mark_gross,                               "Pause Final Mark (G)")            \
   f(final_mark,                                     "Pause Final Mark (N)")            \
   f(update_roots,                                   "  Update Roots")                  \
@@ -82,6 +80,9 @@ class outputStream;
   f(init_evac,                                      "  Initial Evacuation")            \
   SHENANDOAH_PAR_PHASE_DO(evac_,                    "    E: ", f)                      \
                                                                                        \
+  f(conc_weak_refs,                                 "Concurrent Weak References")      \
+  f(conc_weak_refs_work,                            "  Process")                       \
+  SHENANDOAH_PAR_PHASE_DO(conc_weak_refs_work_,     "    CWRF: ", f)                   \
   f(conc_weak_roots,                                "Concurrent Weak Roots")           \
   f(conc_weak_roots_work,                           "  Roots")                         \
   SHENANDOAH_PAR_PHASE_DO(conc_weak_roots_work_,    "    CWR: ", f)                    \

@@ -27,6 +27,7 @@
 #include "aot/aotLoader.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/javaThreadStatus.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -81,6 +82,7 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/jniPeriodicChecker.hpp"
 #include "runtime/memprofiler.hpp"
+#include "runtime/monitorDeflationThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/orderAccess.hpp"
@@ -262,11 +264,6 @@ Thread::Thread() {
   _current_pending_monitor_is_from_java = true;
   _current_waiting_monitor = NULL;
   _current_pending_raw_monitor = NULL;
-  om_free_list = NULL;
-  om_free_count = 0;
-  om_free_provision = 32;
-  om_in_use_list = NULL;
-  om_in_use_count = 0;
 
 #ifdef ASSERT
   _visited_for_critical_count = false;
@@ -503,7 +500,7 @@ void Thread::start(Thread* thread) {
       // exact thread state at that time. It could be in MONITOR_WAIT or
       // in SLEEPING or some other state.
       java_lang_Thread::set_thread_status(thread->as_Java_thread()->threadObj(),
-                                          java_lang_Thread::RUNNABLE);
+                                          JavaThreadStatus::RUNNABLE);
     }
     os::start_thread(thread);
   }
@@ -891,13 +888,36 @@ static void create_initial_thread(Handle thread_group, JavaThread* thread,
   // Set thread status to running since main thread has
   // been started and running.
   java_lang_Thread::set_thread_status(thread_oop(),
-                                      java_lang_Thread::RUNNABLE);
+                                      JavaThreadStatus::RUNNABLE);
 }
 
+char java_version[64] = "";
 char java_runtime_name[128] = "";
 char java_runtime_version[128] = "";
 char java_runtime_vendor_version[128] = "";
 char java_runtime_vendor_vm_bug_url[128] = "";
+
+// extract the JRE version string from java.lang.VersionProps.java_version
+static const char* get_java_version(TRAPS) {
+  Klass* k = SystemDictionary::find(vmSymbols::java_lang_VersionProps(),
+                                    Handle(), Handle(), CHECK_AND_CLEAR_NULL);
+  fieldDescriptor fd;
+  bool found = k != NULL &&
+               InstanceKlass::cast(k)->find_local_field(vmSymbols::java_version_name(),
+                                                        vmSymbols::string_signature(), &fd);
+  if (found) {
+    oop name_oop = k->java_mirror()->obj_field(fd.offset());
+    if (name_oop == NULL) {
+      return NULL;
+    }
+    const char* name = java_lang_String::as_utf8_string(name_oop,
+                                                        java_version,
+                                                        sizeof(java_version));
+    return name;
+  } else {
+    return NULL;
+  }
+}
 
 // extract the JRE name from java.lang.VersionProps.java_runtime_name
 static const char* get_java_runtime_name(TRAPS) {
@@ -1799,7 +1819,7 @@ static void ensure_join(JavaThread* thread) {
   // Ignore pending exception (ThreadDeath), since we are exiting anyway
   thread->clear_pending_exception();
   // Thread is exiting. So set thread_status field in  java.lang.Thread class to TERMINATED.
-  java_lang_Thread::set_thread_status(threadObj(), java_lang_Thread::TERMINATED);
+  java_lang_Thread::set_thread_status(threadObj(), JavaThreadStatus::TERMINATED);
   // Clear the native thread instance - this makes isAlive return false and allows the join()
   // to complete once we've done the notify_all below
   java_lang_Thread::set_thread(threadObj(), NULL);
@@ -3383,6 +3403,7 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   call_initPhase1(CHECK);
 
   // get the Java runtime name, version, and vendor info after java.lang.System is initialized
+  JDK_Version::set_java_version(get_java_version(THREAD));
   JDK_Version::set_runtime_name(get_java_runtime_name(THREAD));
   JDK_Version::set_runtime_version(get_java_runtime_version(THREAD));
   JDK_Version::set_runtime_vendor_version(get_java_runtime_vendor_version(THREAD));
@@ -3666,6 +3687,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // The service thread enqueues JVMTI deferred events and does various hashtable
   // and other cleanups.  Needs to start before the compilers start posting events.
   ServiceThread::initialize();
+
+  // Start the monitor deflation thread:
+  MonitorDeflationThread::initialize();
 
   // initialize compiler(s)
 #if defined(COMPILER1) || COMPILER2_OR_JVMCI
@@ -4209,6 +4233,9 @@ void Threads::add(JavaThread* p, bool force_daemon) {
   // Maintain fast thread list
   ThreadsSMRSupport::add_thread(p);
 
+  // Increase the ObjectMonitor ceiling for the new thread.
+  ObjectSynchronizer::inc_in_use_list_ceiling();
+
   // Possible GC point.
   Events::log(p, "Thread added: " INTPTR_FORMAT, p2i(p));
 
@@ -4217,19 +4244,14 @@ void Threads::add(JavaThread* p, bool force_daemon) {
 }
 
 void Threads::remove(JavaThread* p, bool is_daemon) {
-
-  // Reclaim the ObjectMonitors from the om_in_use_list and om_free_list of the moribund thread.
-  ObjectSynchronizer::om_flush(p);
-
   // Extra scope needed for Thread_lock, so we can check
   // that we do not remove thread without safepoint code notice
   { MonitorLocker ml(Threads_lock);
 
-    // We must flush any deferred card marks and other various GC barrier
-    // related buffers (e.g. G1 SATB buffer and G1 dirty card queue buffer)
-    // before removing a thread from the list of active threads.
-    // This must be done after ObjectSynchronizer::om_flush(), as GC barriers
-    // are used in om_flush().
+    // BarrierSet state must be destroyed after the last thread transition
+    // before the thread terminates. Thread transitions result in calls to
+    // StackWatermarkSet::on_safepoint(), which performs GC processing,
+    // requiring the GC state to be alive.
     BarrierSet::barrier_set()->on_thread_detach(p);
 
     assert(ThreadsSMRSupport::get_java_thread_list()->includes(p), "p must be present");
@@ -4258,6 +4280,9 @@ void Threads::remove(JavaThread* p, bool is_daemon) {
     // Notify threads waiting in EscapeBarriers
     EscapeBarrier::thread_removed(p);
   } // unlock Threads_lock
+
+  // Reduce the ObjectMonitor ceiling for the exiting thread.
+  ObjectSynchronizer::dec_in_use_list_ceiling();
 
   // Since Events::log uses a lock, we grab it outside the Threads_lock
   Events::log(p, "Thread exited: " INTPTR_FORMAT, p2i(p));
