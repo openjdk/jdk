@@ -46,13 +46,27 @@ final class MemoryAccessVarHandle$Type$Helper extends MemoryAccessVarHandleBase 
 
     static final VarForm FORM = new VarForm(MemoryAccessVarHandle$Type$Helper.class, MemorySegmentProxy.class, $type$.class, long.class);
 
-    MemoryAccessVarHandle$Type$Helper(boolean skipAlignmentMaskCheck, boolean be, long length, long alignmentMask) {
-        super(FORM, skipAlignmentMaskCheck, be, length, alignmentMask);
+    MemoryAccessVarHandle$Type$Helper(boolean skipAlignmentMaskCheck, boolean be, long length, long alignmentMask, boolean exact) {
+        super(FORM, skipAlignmentMaskCheck, be, length, alignmentMask, exact);
     }
 
     @Override
-    final MethodType accessModeTypeUncached(AccessMode accessMode) {
-        return accessMode.at.accessModeType(MemorySegmentProxy.class, $type$.class, long.class);
+    final MethodType accessModeTypeUncached(VarHandle.AccessType accessType) {
+        return accessType.accessModeType(MemorySegmentProxy.class, $type$.class, long.class);
+    }
+
+    @Override
+    public MemoryAccessVarHandle$Type$Helper withInvokeExactBehavior() {
+        return hasInvokeExactBehavior() ?
+                this :
+                new MemoryAccessVarHandle$Type$Helper(skipAlignmentMaskCheck, be, length, alignmentMask, true);
+    }
+
+    @Override
+    public MemoryAccessVarHandle$Type$Helper withInvokeBehavior() {
+        return !hasInvokeExactBehavior() ?
+                this :
+                new MemoryAccessVarHandle$Type$Helper(skipAlignmentMaskCheck, be, length, alignmentMask, true);
     }
 
 #if[floatingPoint]

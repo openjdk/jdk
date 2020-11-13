@@ -1770,14 +1770,14 @@ abstract class MethodHandleImpl {
             }
 
             @Override
-            public MethodHandle nativeMethodHandle(NativeEntryPoint nep, MethodHandle fallback) {
-                return NativeMethodHandle.make(nep, fallback);
-            }
-
-            @Override
             public VarHandle memoryAccessVarHandle(Class<?> carrier, boolean skipAlignmentMaskCheck, long alignmentMask,
                                                    ByteOrder order) {
                 return VarHandles.makeMemoryAddressViewHandle(carrier, skipAlignmentMaskCheck, alignmentMask, order);
+            }
+
+            @Override
+            public MethodHandle nativeMethodHandle(NativeEntryPoint nep, MethodHandle fallback) {
+                return NativeMethodHandle.make(nep, fallback);
             }
 
             @Override

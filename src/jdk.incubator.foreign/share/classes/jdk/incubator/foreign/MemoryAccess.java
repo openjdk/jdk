@@ -56,14 +56,13 @@ public final class MemoryAccess {
         // just the one
     }
 
-    private static final VarHandle byte_LE_handle = unalignedHandle(MemoryLayouts.BITS_8_LE, byte.class);
+    private static final VarHandle byte_handle = MemoryHandles.varHandle(byte.class, ByteOrder.nativeOrder());
     private static final VarHandle char_LE_handle = unalignedHandle(MemoryLayouts.BITS_16_LE, char.class);
     private static final VarHandle short_LE_handle = unalignedHandle(MemoryLayouts.BITS_16_LE, short.class);
     private static final VarHandle int_LE_handle = unalignedHandle(MemoryLayouts.BITS_32_LE, int.class);
     private static final VarHandle float_LE_handle = unalignedHandle(MemoryLayouts.BITS_32_LE, float.class);
     private static final VarHandle long_LE_handle = unalignedHandle(MemoryLayouts.BITS_64_LE, long.class);
     private static final VarHandle double_LE_handle = unalignedHandle(MemoryLayouts.BITS_64_LE, double.class);
-    private static final VarHandle byte_BE_handle = unalignedHandle(MemoryLayouts.BITS_8_BE, byte.class);
     private static final VarHandle char_BE_handle = unalignedHandle(MemoryLayouts.BITS_16_BE, char.class);
     private static final VarHandle short_BE_handle = unalignedHandle(MemoryLayouts.BITS_16_BE, short.class);
     private static final VarHandle int_BE_handle = unalignedHandle(MemoryLayouts.BITS_32_BE, int.class);
@@ -93,7 +92,7 @@ public final class MemoryAccess {
      * @return a byte value read from {@code segment}.
      */
     public static byte getByteAtOffset(MemorySegment segment, long offset) {
-        return getByteAtOffset(segment, offset, ByteOrder.nativeOrder());
+        return (byte)byte_handle.get(segment, offset);
     }
 
     /**
@@ -104,7 +103,7 @@ public final class MemoryAccess {
      * @param value the byte value to be written.
      */
     public static void setByteAtOffset(MemorySegment segment, long offset, byte value) {
-        setByteAtOffset(segment, offset, ByteOrder.nativeOrder(), value);
+        byte_handle.set(segment, offset, value);
     }
 
     /**
@@ -320,41 +319,6 @@ public final class MemoryAccess {
     }
 
     /**
-     * Reads a byte from given segment and offset with given byte order.
-     * <p>
-     * This is equivalent to the following code:
-     * <blockquote><pre>{@code
-    VarHandle handle = MemoryHandles.varHandle(byte.class, 1, order);
-    byte value = (byte)handle.get(segment, offset);
-     * }</pre></blockquote>
-     *
-     * @param segment the segment to be dereferenced.
-     * @param offset offset in bytes (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(offset)}.
-     * @param order the specified byte order.
-     * @return a byte value read from {@code segment}.
-     */
-    public static byte getByteAtOffset(MemorySegment segment, long offset, ByteOrder order) {
-        return (byte)((order == ByteOrder.BIG_ENDIAN) ? byte_BE_handle : byte_LE_handle).get(segment, offset);
-    }
-
-    /**
-     * Writes a byte at given segment and offset with given byte order.
-     * <p>
-     * This is equivalent to the following code:
-     * <blockquote><pre>{@code
-    VarHandle handle = MemoryHandles.varHandle(byte.class, 1, order);
-    handle.set(segment, offset, value);
-     * }</pre></blockquote>
-     * @param segment the segment to be dereferenced.
-     * @param offset offset in bytes (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(offset)}.
-     * @param order the specified byte order.
-     * @param value the byte value to be written.
-     */
-    public static void setByteAtOffset(MemorySegment segment, long offset, ByteOrder order, byte value) {
-        ((order == ByteOrder.BIG_ENDIAN) ? byte_BE_handle : byte_LE_handle).set(segment, offset, value);
-    }
-
-    /**
      * Reads a char from given segment and offset with given byte order.
      * <p>
      * This is equivalent to the following code:
@@ -559,7 +523,7 @@ public final class MemoryAccess {
     }
 
     /**
-     * Reads a byte from given segment, with byte order set to {@link ByteOrder#nativeOrder()}.
+     * Reads a byte from given segment.
      * <p>
      * This is equivalent to the following code:
      * <blockquote><pre>{@code
@@ -574,7 +538,7 @@ public final class MemoryAccess {
     }
 
     /**
-     * Writes a byte at given segment, with byte order set to {@link ByteOrder#nativeOrder()}.
+     * Writes a byte at given segment.
      * <p>
      * This is equivalent to the following code:
      * <blockquote><pre>{@code
@@ -784,37 +748,6 @@ public final class MemoryAccess {
     }
 
     /**
-     * Reads a byte from given segment, with given byte order.
-     * <p>
-     * This is equivalent to the following code:
-     * <blockquote><pre>{@code
-    byte value = getByteAtOffset(segment, 0L, order);
-     * }</pre></blockquote>
-     *
-     * @param segment the segment to be dereferenced.
-     * @param order the specified byte order.
-     * @return a byte value read from {@code segment}.
-     */
-    public static byte getByte(MemorySegment segment, ByteOrder order) {
-        return getByteAtOffset(segment, 0L, order);
-    }
-
-    /**
-     * Writes a byte at given segment, with given byte order.
-     * <p>
-     * This is equivalent to the following code:
-     * <blockquote><pre>{@code
-    setByteAtOffset(segment, 0L, order, value);
-     * }</pre></blockquote>
-     * @param segment the segment to be dereferenced.
-     * @param order the specified byte order.
-     * @param value the byte value to be written.
-     */
-    public static void setByte(MemorySegment segment, ByteOrder order, byte value) {
-        setByteAtOffset(segment, 0L, order, value);
-    }
-
-    /**
      * Reads a char from given segment, with given byte order.
      * <p>
      * This is equivalent to the following code:
@@ -992,37 +925,6 @@ public final class MemoryAccess {
      */
     public static void setDouble(MemorySegment segment, ByteOrder order, double value) {
         setDoubleAtOffset(segment, 0L, order, value);
-    }
-
-    /**
-     * Reads a byte from given segment and element index.
-     * <p>
-     * This is equivalent to the following code:
-     * <blockquote><pre>{@code
-    byte value = getByteAtOffset(segment, index);
-     * }</pre></blockquote>
-     *
-     * @param segment the segment to be dereferenced.
-     * @param index element index (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(index)}.
-     * @return a byte value read from {@code segment} at the element index specified by {@code index}.
-     */
-    public static byte getByteAtIndex(MemorySegment segment, long index) {
-        return getByteAtOffset(segment, index);
-    }
-
-    /**
-     * Writes a byte at given segment and element index.
-     * <p>
-     * This is equivalent to the following code:
-     * <blockquote><pre>{@code
-    setByteAtOffset(segment, index, value);
-     * }</pre></blockquote>
-     * @param segment the segment to be dereferenced.
-     * @param index element index (relative to {@code segment}). The final address of this read operation can be expressed as {@code segment.address().addOffset(index)}.
-     * @param value the byte value to be written.
-     */
-    public static void setByteAtIndex(MemorySegment segment, long index, byte value) {
-        setByteAtOffset(segment, index, value);
     }
 
     /**

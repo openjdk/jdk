@@ -38,6 +38,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/biasedLocking.hpp"

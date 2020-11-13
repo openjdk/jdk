@@ -91,6 +91,8 @@ public class DynamicArchiveRelocationTest extends DynamicArchiveTestBase {
         String topArchiveName  = getNewArchiveName("top");
 
         String runtimeMsg = "Try to map archive(s) at an alternative address";
+        String unmapPrefix = ".*Unmapping region #3 at base 0x.*";
+        String unmapPattern = unmapPrefix + "(Bitmap)";
         String unlockArg = "-XX:+UnlockDiagnosticVMOptions";
 
         // (1) Dump base archive (static)
@@ -121,7 +123,12 @@ public class DynamicArchiveRelocationTest extends DynamicArchiveTestBase {
             "-cp", appJar, mainClass)
             .assertNormalExit(output -> {
                     if (run_reloc) {
-                        output.shouldContain(runtimeMsg);
+                        output.shouldContain(runtimeMsg)
+                              // Check that there are two of the following lines in
+                              // the output. One for static archive and one for
+                              // dynamic archive:
+                              // Unmapping region #3 at base 0x<hex digits> (Bitmap)
+                              .shouldMatchByLine(unmapPrefix, "Hello World", unmapPattern);
                     }
                 });
     }
