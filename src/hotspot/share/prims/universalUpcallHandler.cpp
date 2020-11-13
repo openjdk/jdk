@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "memory/resourceArea.hpp"
 #include "prims/universalUpcallHandler.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
