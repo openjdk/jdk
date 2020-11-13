@@ -234,9 +234,14 @@ define SetupJavaCompilationBody
       $1_CONFIG_VARDEPS_FILE := $$(call DependOnVariable, $1_CONFIG_VARDEPS, \
         $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1.config_vardeps)
 
-      $$($1_JAVAC_SERVER_CONFIG): $$($1_CONFIG_VARDEPS_FILE)
-	$(ECHO) portfile=$$($1_JAVAC_PORT_FILE) > $$@
-	$(ECHO) servercmd=$$($1_JAVAC_SERVER_CMD) >> $$@
+      ifeq ($(call isBuildOs, windows), true)
+        $1_ECHO_COMMAND := $(FIXPATH) cmd /c echo
+      else
+        $1_ECHO_COMMAND := $(ECHO)
+      endif
+              $$($1_JAVAC_SERVER_CONFIG): $$($1_CONFIG_VARDEPS_FILE)
+	$$($1_ECHO_COMMAND) portfile=$$($1_JAVAC_PORT_FILE) > $$@
+	$$($1_ECHO_COMMAND) servercmd=$$($1_JAVAC_SERVER_CMD) >> $$@
 
       # Always use small java to launch client
       $1_JAVAC_CMD := $$(JAVA_SMALL) $$($1_JAVA_FLAGS) $$($1_JAVAC) \
