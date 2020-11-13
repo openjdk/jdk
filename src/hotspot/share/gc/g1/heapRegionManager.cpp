@@ -176,10 +176,7 @@ void HeapRegionManager::expand(uint start, uint num_regions, WorkGang* pretouch_
       _regions.set_by_index(i, hr);
       _allocated_heapregions_length = MAX2(_allocated_heapregions_length, i + 1);
     }
-
-    if (G1CollectedHeap::heap()->hr_printer()->is_active()) {
-      G1CollectedHeap::heap()->hr_printer()->commit(hr);
-    }
+    G1CollectedHeap::heap()->hr_printer()->commit(hr);
   }
   activate_regions(start, num_regions);
 }
@@ -234,13 +231,11 @@ void HeapRegionManager::initialize_regions(uint start, uint num_regions) {
   for (uint i = start; i < start + num_regions; i++) {
     assert(is_available(i), "Just made region %u available but is apparently not.", i);
     HeapRegion* hr = at(i);
-    if (G1CollectedHeap::heap()->hr_printer()->is_active()) {
-      G1CollectedHeap::heap()->hr_printer()->active(hr);
-    }
 
     hr->initialize();
     hr->set_node_index(G1NUMA::numa()->index_for_region(hr));
-    insert_into_free_list(at(i));
+    insert_into_free_list(hr);
+    G1CollectedHeap::heap()->hr_printer()->active(hr);
   }
 }
 
@@ -262,17 +257,12 @@ void HeapRegionManager::deactivate_regions(uint start, uint num_regions) {
   assert(num_regions > 0, "Need to specify at least one region to uncommit, tried to uncommit zero regions at %u", start);
   assert(length() >= num_regions, "pre-condition");
 
-  G1HRPrinter* printer = G1CollectedHeap::heap()->hr_printer();
-  bool printer_active = printer->is_active();
-
-  // Reset NUMA index to and print if active.
+  // Reset NUMA index to and print state change.
   uint end = start + num_regions;
   for (uint i = start; i < end; i++) {
     HeapRegion* hr = at(i);
     hr->set_node_index(G1NUMA::UnknownNodeIndex);
-    if (printer_active) {
-      printer->inactive(hr);
-    }
+    G1CollectedHeap::heap()->hr_printer()->inactive(hr);
   }
 
   _committed_map.deactivate(start, end);
