@@ -995,13 +995,7 @@ public class ICC_Profile implements Serializable {
      *         Profile data
      */
     public static ICC_Profile getInstance(InputStream s) throws IOException {
-    byte[] profileData;
-
-        if (s instanceof ProfileDeferralInfo) {
-            /* hack to detect profiles whose loading can be deferred */
-            return getDeferredInstance((ProfileDeferralInfo) s);
-        }
-
+        byte[] profileData;
         if ((profileData = getProfileDataFromStream(s)) == null) {
             throw new IllegalArgumentException("Invalid ICC Profile Data");
         }
