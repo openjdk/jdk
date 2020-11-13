@@ -1055,11 +1055,9 @@ public class ICC_Profile implements Serializable {
     byte[] theHeader;
     int theClassSig, theClass;
 
-        if (deferralInfo != null) {
-            return deferralInfo.profileClass; /* Need to have this info for
-                                                 ICC_ColorSpace without
-                                                 causing a deferred profile
-                                                 to be loaded */
+        ProfileDeferralInfo info = deferralInfo;
+        if (info != null) {
+            return info.profileClass;
         }
 
         theHeader = getData(icSigHead);
@@ -1115,11 +1113,9 @@ public class ICC_Profile implements Serializable {
      *         {@code ColorSpace} class
      */
     public int getColorSpaceType() {
-        if (deferralInfo != null) {
-            return deferralInfo.colorSpaceType; /* Need to have this info for
-                                                   ICC_ColorSpace without
-                                                   causing a deferred profile
-                                                   to be loaded */
+        ProfileDeferralInfo info = deferralInfo;
+        if (info != null) {
+            return info.colorSpaceType;
         }
         activate();
         return    getColorSpaceType(cmmProfile);
@@ -1335,11 +1331,9 @@ public class ICC_Profile implements Serializable {
     byte[]    theHeader;
     int    theColorSpaceSig, theNumComponents;
 
-        if (deferralInfo != null) {
-            return deferralInfo.numComponents; /* Need to have this info for
-                                                  ICC_ColorSpace without
-                                                  causing a deferred profile
-                                                  to be loaded */
+        ProfileDeferralInfo info = deferralInfo;
+        if (info != null) {
+            return info.numComponents;
         }
         theHeader = getData(icSigHead);
 

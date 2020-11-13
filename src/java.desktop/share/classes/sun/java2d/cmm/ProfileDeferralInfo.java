@@ -26,14 +26,21 @@
 package sun.java2d.cmm;
 
 /**
- * A class to pass information about a profile to be loaded from
- * a file to the static getInstance(InputStream) method of
- * ICC_Profile.  Loading of the profile data and initialization
- * of the CMM is to be deferred as long as possible.
+ * A class to pass information about a profile to be loaded from a file to the
+ * static getInstance(InputStream) method of ICC_Profile. Loading of the profile
+ * data and initialization of the CMM is to be deferred as long as possible.
  */
 public class ProfileDeferralInfo {
 
+    /**
+     * Need to have this info for ICC_ColorSpace without causing a deferred
+     * profile to be loaded.
+     */
     public final int colorSpaceType, numComponents, profileClass;
+
+    /**
+     * The profile file name, such as "CIEXYZ.pf", "sRGB.pf", etc.
+     */
     public final String filename;
 
     public ProfileDeferralInfo(String fn, int type, int ncomp, int pclass) {
