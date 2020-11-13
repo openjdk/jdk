@@ -118,6 +118,8 @@ import java.util.stream.Stream;
 public interface RandomGenerator {
     /**
      * Properties of RandomGenerators.
+     *
+     * @hidden
      */
     enum RandomGeneratorProperty {
         /**
