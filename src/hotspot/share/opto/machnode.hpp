@@ -1013,6 +1013,7 @@ public:
 class MachCallNativeNode: public MachCallNode {
   virtual bool cmp( const Node &n ) const;
   virtual uint size_of() const;
+  void print_regs(const GrowableArray<VMReg>& regs, outputStream* st) const;
 public:
   const char *_name;
   GrowableArray<VMReg> _arg_regs;

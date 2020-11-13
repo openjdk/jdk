@@ -1165,13 +1165,24 @@ Node* CallNativeNode::match(const ProjNode *proj, const Matcher *matcher) {
   return NULL;
 }
 #ifndef PRODUCT
+void CallNativeNode::print_regs(const GrowableArray<VMReg>& regs, outputStream* st) {
+  st->print("{ ");
+  for (int i = 0; i < regs.length(); i++) {
+    regs.at(i)->print_on(st);
+    if (i < regs.length() - 1) {
+      st->print(", ");
+    }
+  }
+  st->print(" } ");
+}
+
 void CallNativeNode::dump_spec(outputStream *st) const {
   st->print("# ");
   st->print("%s ", _name);
   st->print("_arg_regs: ");
-  _arg_regs.print_on(st);
+  print_regs(_arg_regs, st);
   st->print("_ret_regs: ");
-  _ret_regs.print_on(st);
+  print_regs(_ret_regs, st);
   CallNode::dump_spec(st);
 }
 #endif

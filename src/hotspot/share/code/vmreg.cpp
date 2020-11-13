@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "code/vmreg.hpp"
-#include "utilities/print.hpp"
 
 // First VMReg value that could refer to a stack slot
 VMReg VMRegImpl::stack0 = (VMReg)(intptr_t)((ConcreteRegisterImpl::number_of_registers + 7) & ~7);
@@ -51,8 +50,3 @@ void VMRegImpl::print_on(outputStream* st) const {
 }
 
 void VMRegImpl::print() const { print_on(tty); }
-
-template<>
-void Print::print_on<VMReg>(const VMReg& value, outputStream* st) {
-  value->print_on(st);
-}

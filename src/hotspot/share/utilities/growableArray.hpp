@@ -31,7 +31,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
-#include "utilities/print.hpp"
 
 // A growable array.
 
@@ -318,17 +317,12 @@ public:
   }
 
   void print() const {
-    print_on(tty);
-  }
-
-  void print_on(outputStream* st) const {
-    st->print("Growable Array " INTPTR_FORMAT, p2i(this));
-    st->print(": length %d (_max %d) { ", _len, _max);
+    tty->print("Growable Array " INTPTR_FORMAT, p2i(this));
+    tty->print(": length %d (_max %d) { ", _len, _max);
     for (int i = 0; i < _len; i++) {
-      Print::print_on(_data[i], st);
-      st->print(", ");
+      tty->print(INTPTR_FORMAT " ", *(intptr_t*)&(_data[i]));
     }
-    st->print("}\n");
+    tty->print("}\n");
   }
 };
 
