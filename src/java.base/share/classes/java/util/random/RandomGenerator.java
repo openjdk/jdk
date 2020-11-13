@@ -89,17 +89,6 @@ import java.util.stream.Stream;
  * generators that implement the {@link SplittableGenerator} or
  * {@link JumpableGenerator} interface.
  *
- * <p> To implement this interface, a class only needs to provide concrete
- * definitions for the methods {@link RandomGenerator#nextLong() and nextLong}()
- * Default implementations are provided for all other methods (but it may be
- * desirable to override some of them, especially
- * {@link RandomGenerator#nextInt() nextInt}() if the underlying algorithm is
- * {@code int}-based). Moreover, it may be preferable instead to implement a more
- * specialized interface such as {@link JumpableGenerator} or
- * {@link LeapableGenerator}, or to extend an abstract implementation-support class
- * such as {@link AbstractSplittableGenerator} or
- * {@link AbstractArbitrarilyJumpableGenerator}.
- *
  * <p> Objects that implement {@link RandomGenerator} are typically not
  * cryptographically secure. Consider instead using {@link SecureRandom} to get
  * a cryptographically secure pseudorandom number generator for use by
@@ -166,8 +155,8 @@ public interface RandomGenerator {
      *
      * @return An instance of {@link RandomGenerator}
      *
-     * @throws IllegalArgumentException when either the name is null or
-     *         not found
+     * @throws NullPointerException if name is null
+     * @throws IllegalArgumentException if the named algorithm is not found
      */
     static RandomGenerator of(String name) {
         Objects.requireNonNull(name);
@@ -182,6 +171,9 @@ public interface RandomGenerator {
      * @param name  Name of random number generator algorithm
      *
      * @return {@link RandomGeneratorFactory} of {@link RandomGenerator}
+     *
+     * @throws NullPointerException if name is null
+     * @throws IllegalArgumentException if the named algorithm is not found
      */
     static RandomGeneratorFactory<RandomGenerator> factoryOf(String name) {
         Objects.requireNonNull(name);
@@ -830,12 +822,6 @@ public interface RandomGenerator {
      * implement the {@link StreamableGenerator#rngs() rngs}() method required by this
      * interface.
      *
-     * <p> An implementation of the {@link StreamableGenerator} interface must
-     * provide concrete definitions for the methods
-     * {@link StreamableGenerator#nextLong() nextLong}(),
-     * {@link StreamableGenerator#rngs() rngs}(). Default implementations are provided
-     * for all other methods.
-     *
      * <p> Objects that implement {@link StreamableGenerator} are typically not
      * cryptographically secure. Consider instead using {@link SecureRandom} to
      * get a cryptographically secure pseudo-random number generator for use by
@@ -862,8 +848,8 @@ public interface RandomGenerator {
          *
          * @return An instance of {@link StreamableGenerator}
          *
-         * @throws IllegalArgumentException when either the name is null or
-         *         not found
+         * @throws NullPointerException if name is null
+         * @throws IllegalArgumentException if the named algorithm is not found
          */
         static StreamableGenerator of(String name) {
             Objects.requireNonNull(name);
@@ -880,8 +866,8 @@ public interface RandomGenerator {
          *
          * @return {@link RandomGeneratorFactory} of {@link StreamableGenerator}
          *
-         * @throws IllegalArgumentException when either the name is null or
-         *         not found
+         * @throws NullPointerException if name is null
+         * @throws IllegalArgumentException if the named algorithm is not found
          */
         static RandomGeneratorFactory<StreamableGenerator> factoryOf(String name) {
             Objects.requireNonNull(name);
@@ -893,7 +879,7 @@ public interface RandomGenerator {
          * Returns an effectively unlimited stream of objects, each of which
          * implements the {@link RandomGenerator} interface. Ideally the
          * generators in the stream will appear to be statistically independent.
-         * The new generators should be of the same kind as this generator.
+         * The new generators are of the same algorithm as this generator.
          *
          * @return a stream of objects that implement the {@link RandomGenerator} interface
          *
@@ -907,7 +893,7 @@ public interface RandomGenerator {
          * Returns an effectively unlimited stream of objects, each of which
          * implements the {@link RandomGenerator} interface. Ideally the
          * generators in the stream will appear to be statistically independent.
-         * The new generators should be of the same kind as this generator.
+         * The new generators are of the same algorithm as this generator.
          *
          * @param streamSize the number of generators to generate
          *
@@ -928,7 +914,7 @@ public interface RandomGenerator {
 
     /**
      * This interface is designed to provide a common protocol for objects that
-     * generate sequences of pseudorandom numbers (or Boolean values) and
+     * generate sequences of pseudorandom numbers (or boolean values) and
      * furthermore can be <i>split</i> into two objects (the original one and a
      * new one) each of which obey that same protocol (and therefore can be
      * recursively split indefinitely).
@@ -945,19 +931,6 @@ public interface RandomGenerator {
      * <p> Methods are provided to perform a single splitting operation and also
      * to produce a stream of generators split off from the original (by either
      * iterative or recursive splitting, or a combination).
-     *
-     * <p> An implementation of the {@link SplittableGenerator} interface must
-     * provide concrete definitions for the methods
-     * {@link RandomGenerator#nextLong nextLong}(),
-     * {@link RandomGenerator#period period}(),
-     * {@link SplittableGenerator#split split}(),
-     * {@link SplittableGenerator#split(SplittableGenerator) split}(SplittableGenerator),
-     * {@link SplittableGenerator#splits() splits}(),
-     * {@link SplittableGenerator#splits splits}(long),
-     * {@link SplittableGenerator#split split}(SplittableGenerator), and
-     * {@link SplittableGenerator#splits splits}(long, SplittableGenerator). Perhaps the
-     * most convenient way to implement this interface is to extend the abstract
-     * class {@link AbstractSplittableGenerator}.
      *
      * <p> Objects that implement {@link SplittableGenerator} are typically not
      * cryptographically secure. Consider instead using {@link SecureRandom} to
@@ -985,8 +958,8 @@ public interface RandomGenerator {
          *
          * @return An instance of {@link SplittableGenerator}
          *
-         * @throws IllegalArgumentException when either the name is null or
-         *         not found
+         * @throws NullPointerException if name is null
+         * @throws IllegalArgumentException if the named algorithm is not found
          */
         static SplittableGenerator of(String name) {
             Objects.requireNonNull(name);
@@ -1003,8 +976,8 @@ public interface RandomGenerator {
          *
          * @return {@link RandomGeneratorFactory} of {@link SplittableGenerator}
          *
-         * @throws IllegalArgumentException when either the name is null or
-         *         not found
+         * @throws NullPointerException if name is null
+         * @throws IllegalArgumentException if the named algorithm is not found
          */
         static RandomGeneratorFactory<SplittableGenerator> factoryOf(String name) {
             Objects.requireNonNull(name);
@@ -1176,15 +1149,6 @@ public interface RandomGenerator {
      * objects in that stream likely do also implement the
      * {@link JumpableGenerator} interface.
      *
-     * <p> An implementation of the {@link JumpableGenerator} interface must
-     * provide concrete definitions for the methods
-     * {@link RandomGenerator#nextLong nextLong}(),
-     * {@link RandomGenerator#period period}(),
-     * {@link JumpableGenerator#copy copy}(),
-     * {@link JumpableGenerator#jump jump}(), and
-     * {@link ArbitrarilyJumpableGenerator#defaultJumpDistance defaultJumpDistance}().
-     * Default implementations are provided for all other methods.
-     *
      * <p> Objects that implement {@link JumpableGenerator} are typically not
      * cryptographically secure. Consider instead using {@link SecureRandom} to
      * get a cryptographically secure pseudo-random number generator for use by
@@ -1211,8 +1175,8 @@ public interface RandomGenerator {
          *
          * @return An instance of {@link JumpableGenerator}
          *
-         * @throws IllegalArgumentException when either the name is null or
-         *         not found
+         * @throws NullPointerException if name is null
+         * @throws IllegalArgumentException if the named algorithm is not found
          */
         static JumpableGenerator of(String name) {
             Objects.requireNonNull(name);
@@ -1228,8 +1192,8 @@ public interface RandomGenerator {
          *
          * @return {@link RandomGeneratorFactory} of {@link JumpableGenerator}
          *
-         * @throws IllegalArgumentException when either the name is null or
-         *         not found
+         * @throws NullPointerException if name is null
+         * @throws IllegalArgumentException if the named algorithm is not found
          */
         static RandomGeneratorFactory<JumpableGenerator> factoryOf(String name) {
             Objects.requireNonNull(name);
@@ -1290,7 +1254,7 @@ public interface RandomGenerator {
          * @return a stream of objects that implement the {@link RandomGenerator} interface
          *
          * @throws IllegalArgumentException if {@code streamSize} is less than zero
-         * 
+         *
          * @implNote The default implementation produces a sequential stream that  repeatedly
          *           calls {@link JumpableGenerator#copy copy}() and {@link JumpableGenerator#jump jump}()
          *           on this generator, and the copies become the generators produced by the stream.
@@ -1382,16 +1346,6 @@ public interface RandomGenerator {
      * each such generator be called to produce a substream of generator
      * objects.
      *
-     * <p> An implementation of the {@link LeapableGenerator} interface must
-     * provide concrete definitions for the methods
-     * {@link RandomGenerator#nextLong() nextLong}(),
-     * {@link LeapableGenerator#copy() copy}(),
-     * {@link JumpableGenerator#jump() jump}(),
-     * {@link ArbitrarilyJumpableGenerator#defaultJumpDistance() defaultJumpDistance}(),
-     * {@link LeapableGenerator#leap() leap}(), and
-     * {@link ArbitrarilyJumpableGenerator#defaultLeapDistance() defaultLeapDistance}().
-     * Default implementations are provided for all other methods.
-     *
      * <p> Objects that implement {@link LeapableGenerator} are typically not
      * cryptographically secure. Consider instead using {@link SecureRandom} to
      * get a cryptographically secure pseudo-random number generator for use by
@@ -1418,8 +1372,8 @@ public interface RandomGenerator {
          *
          * @return An instance of {@link LeapableGenerator}
          *
-         * @throws IllegalArgumentException when either the name is null or
-         *         not found
+         * @throws NullPointerException if name is null
+         * @throws IllegalArgumentException if the named algorithm is not found
          */
         static LeapableGenerator of(String name) {
             Objects.requireNonNull(name);
@@ -1435,8 +1389,8 @@ public interface RandomGenerator {
          *
          * @return {@link RandomGeneratorFactory} of {@link LeapableGenerator}
          *
-         * @throws IllegalArgumentException when either the name is null or
-         *         not found
+         * @throws NullPointerException if name is null
+         * @throws IllegalArgumentException if the named algorithm is not found
          */
         static RandomGeneratorFactory<LeapableGenerator> factoryOf(String name) {
             Objects.requireNonNull(name);
@@ -1497,7 +1451,7 @@ public interface RandomGenerator {
          * @return a stream of objects that implement the {@link JumpableGenerator} interface
          *
          * @throws IllegalArgumentException if {@code streamSize} is less than zero
-         * 
+         *
          * @implNote The default implementation produces a sequential stream that  repeatedly
          *           calls {@link LeapableGenerator#copy() copy}() and {@link LeapableGenerator#leap() leap}()
          *           on this generator, and the copies become the generators produced by the stream.
@@ -1555,25 +1509,6 @@ public interface RandomGenerator {
      * {@link ArbitrarilyJumpableGenerator}; with care, different jump distances
      * can be used to traverse the entire state cycle in various ways.
      *
-     * <p> An implementation of the {@link ArbitrarilyJumpableGenerator}
-     * interface must provide concrete definitions for the methods
-     * {@link RandomGenerator#nextLong() nextLong}(),
-     * {@link ArbitrarilyJumpableGenerator#copy() copy}(),
-     * {@link ArbitrarilyJumpableGenerator#jump(double) jump}(double),
-     * {@link ArbitrarilyJumpableGenerator#defaultJumpDistance() defaultJumpDistance}(),
-     * and
-     * {@link ArbitrarilyJumpableGenerator#defaultLeapDistance defaultLeapDistance()}.
-     * Default implementations are provided for all other methods. Perhaps the
-     * most convenient way to implement this interface is to extend the abstract
-     * class {@link AbstractArbitrarilyJumpableGenerator}, which provides
-     * spliterator-based implementations of the methods
-     * {@link RandomGenerator#ints() ints}(),
-     * {@link RandomGenerator#longs() longs}(),
-     * {@link RandomGenerator#doubles() doubles}(),
-     * {@link JumpableGenerator#rngs() rngs}(),
-     * {@link JumpableGenerator#jump() jump}(), and
-     * {@link LeapableGenerator#leaps() leaps}().
-     *
      * <p> Objects that implement {@link ArbitrarilyJumpableGenerator} are
      * typically not cryptographically secure. Consider instead using
      * {@link SecureRandom} to get a cryptographically secure pseudo-random
@@ -1602,8 +1537,8 @@ public interface RandomGenerator {
          *
          * @return An instance of {@link ArbitrarilyJumpableGenerator}
          *
-         * @throws IllegalArgumentException when either the name is null or
-         *         not found
+         * @throws NullPointerException if name is null
+         * @throws IllegalArgumentException if the named algorithm is not found
          */
         static ArbitrarilyJumpableGenerator of(String name) {
             Objects.requireNonNull(name);
@@ -1620,8 +1555,8 @@ public interface RandomGenerator {
          *
          * @return {@link RandomGeneratorFactory} of {@link ArbitrarilyJumpableGenerator}
          *
-         * @throws IllegalArgumentException when either the name is null or
-         *         not found
+         * @throws NullPointerException if name is null
+         * @throws IllegalArgumentException if the named algorithm is not found
          */
         static RandomGeneratorFactory<ArbitrarilyJumpableGenerator> factoryOf(String name) {
             Objects.requireNonNull(name);
