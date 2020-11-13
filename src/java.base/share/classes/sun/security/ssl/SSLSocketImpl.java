@@ -808,16 +808,6 @@ public final class SSLSocketImpl
             SSLLogger.fine("close inbound of SSLSocket");
         }
 
-        // Is it ready to close inbound?
-        //
-        // No need to throw exception if the initial handshake is not started.
-        if (checkCloseNotify && !conContext.isInputCloseNotified &&
-            (conContext.isNegotiated || conContext.handshakeContext != null)) {
-
-            throw conContext.fatal(Alert.INTERNAL_ERROR,
-                    "closing inbound before receiving peer's close_notify");
-        }
-
         conContext.closeInbound();
         if ((autoClose || !isLayered()) && !super.isInputShutdown()) {
             super.shutdownInput();
