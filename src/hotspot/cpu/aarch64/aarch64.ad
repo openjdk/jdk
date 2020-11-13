@@ -13973,6 +13973,34 @@ instruct absD_reg(vRegD dst, vRegD src) %{
   ins_pipe(fp_uop_d);
 %}
 
+instruct absdF_reg(vRegF dst, vRegF src1, vRegF src2) %{
+  match(Set dst (AbsF (SubF src1 src2)));
+
+  ins_cost(INSN_COST * 3);
+  format %{ "fabds   $dst, $src1, $src2" %}
+  ins_encode %{
+    __ fabds(as_FloatRegister($dst$$reg),
+             as_FloatRegister($src1$$reg),
+             as_FloatRegister($src2$$reg));
+  %}
+
+  ins_pipe(fp_uop_s);
+%}
+
+instruct absdD_reg(vRegD dst, vRegD src1, vRegD src2) %{
+  match(Set dst (AbsD (SubD src1 src2)));
+
+  ins_cost(INSN_COST * 3);
+  format %{ "fabdd   $dst, $src1, $src2" %}
+  ins_encode %{
+    __ fabdd(as_FloatRegister($dst$$reg),
+             as_FloatRegister($src1$$reg),
+             as_FloatRegister($src2$$reg));
+  %}
+
+  ins_pipe(fp_uop_d);
+%}
+
 instruct sqrtD_reg(vRegD dst, vRegD src) %{
   match(Set dst (SqrtD src));
 
@@ -18070,6 +18098,47 @@ instruct vabs2D(vecX dst, vecX src)
   format %{ "fabs  $dst,$src\t# vector (2D)" %}
   ins_encode %{
     __ fabs(as_FloatRegister($dst$$reg), __ T2D, as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(vunop_fp128);
+%}
+
+// --------------------------------- FABS DIFF --------------------------------
+
+instruct vabsd2F(vecD dst, vecD src1, vecD src2)
+%{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (AbsVF (SubVF src1 src2)));
+  ins_cost(INSN_COST * 3);
+  format %{ "fabd  $dst,$src1,$src2\t# vector (2S)" %}
+  ins_encode %{
+    __ fabd(as_FloatRegister($dst$$reg), __ T2S,
+            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(vunop_fp64);
+%}
+
+instruct vabsd4F(vecX dst, vecX src1, vecX src2)
+%{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (AbsVF (SubVF src1 src2)));
+  ins_cost(INSN_COST * 3);
+  format %{ "fabd  $dst,$src1,$src2\t# vector (4S)" %}
+  ins_encode %{
+    __ fabd(as_FloatRegister($dst$$reg), __ T4S,
+            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(vunop_fp128);
+%}
+
+instruct vabsd2D(vecX dst, vecX src1, vecX src2)
+%{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (AbsVD (SubVD src1 src2)));
+  ins_cost(INSN_COST * 3);
+  format %{ "fabd  $dst,$src1,$src2\t# vector (2D)" %}
+  ins_encode %{
+    __ fabd(as_FloatRegister($dst$$reg), __ T2D,
+            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
   %}
   ins_pipe(vunop_fp128);
 %}
