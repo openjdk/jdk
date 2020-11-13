@@ -69,7 +69,15 @@ Java_nsk_jvmti_AttachOnDemand_attach021_attach021Target_setTagFor(JNIEnv * jni,
 JNIEXPORT void JNICALL
 Java_nsk_jvmti_AttachOnDemand_attach021_attach021Target_shutdownAgent(JNIEnv * jni,
         jclass klass) {
-    nsk_jvmti_aod_disableEventAndFinish(agentName, JVMTI_EVENT_OBJECT_FREE, success, jvmti, jni);
+
+    /* Flush any pending ObjectFree events, which may set success to 1 */
+    if (jvmti->SetEventNotificationMode(JVMTI_DISABLE,
+                                        JVMTI_EVENT_OBJECT_FREE,
+                                        NULL) != JVMTI_ERROR_NONE) {
+        success = 0;
+    }
+
+    nsk_aod_agentFinished(jni, agentName, success);
 }
 
 void JNICALL objectFreeHandler(jvmtiEnv *jvmti, jlong tag) {

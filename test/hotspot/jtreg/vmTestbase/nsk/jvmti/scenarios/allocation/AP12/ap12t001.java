@@ -45,6 +45,7 @@ public class ap12t001 extends DebugeeClass {
     }
 
     private native void setTag(long tag);
+    private native void flushObjectFreeEvents();
 
     private static ap12t001[] ap12t001arr =  { new ap12t001(), new ap12t001() };
 
@@ -73,6 +74,7 @@ public class ap12t001 extends DebugeeClass {
         for (int i= 0; i < GC_TRYS; i++)
             ClassUnloader.eatMemory();
         log.display("GC called");
+        flushObjectFreeEvents();
 
         status = checkStatus(status);
         return status;

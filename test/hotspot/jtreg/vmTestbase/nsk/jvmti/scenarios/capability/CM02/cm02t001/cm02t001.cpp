@@ -706,13 +706,14 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     if (!nsk_jvmti_waitForSync(timeout))
         return;
 
-    NSK_DISPLAY0("Testcase #3: check if the events are generated\n");
-    if (!checkGeneratedEvents()) {
+    /* this will also flush any pending ObjectFree events for event check */
+    NSK_DISPLAY0("Testcase #3: check if the object is freed in the tag map\n");
+    if (!checkObjectFreeEvent(jvmti)) {
         nsk_jvmti_setFailStatus();
     }
 
-    NSK_DISPLAY0("Testcase #4: check if the object is freed in the tag map\n");
-    if (!checkObjectFreeEvent(jvmti)) {
+    NSK_DISPLAY0("Testcase #4: check if the events are generated\n");
+    if (!checkGeneratedEvents()) {
         nsk_jvmti_setFailStatus();
     }
 

@@ -65,6 +65,11 @@ void shutdownAgent(JNIEnv* jni) {
 JNIEXPORT jboolean JNICALL
 Java_nsk_jvmti_AttachOnDemand_attach022_attach022Target_shutdownAgent(JNIEnv * jni,
         jclass klass, jint expectedTaggedObjectsCounter) {
+
+    // Flush any pending ObjectFree events.
+    if (!nsk_jvmti_aod_disableEvents(jvmti, testEvents, testEventsNumber))
+        success = 0;
+
     if (taggedObjectsCounter != expectedTaggedObjectsCounter) {
         success = 0;
         NSK_COMPLAIN2("ERROR: unexpected taggedObjectsCounter: %d (expected value is %d)\n", taggedObjectsCounter, expectedTaggedObjectsCounter);

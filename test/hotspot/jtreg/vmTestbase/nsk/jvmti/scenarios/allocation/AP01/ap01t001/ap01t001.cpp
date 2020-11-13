@@ -191,6 +191,16 @@ Java_nsk_jvmti_scenarios_allocation_AP01_ap01t001_allocObject(JNIEnv* jni, jclas
     return result;
 }
 
+JNIEXPORT void JNICALL
+Java_nsk_jvmti_scenarios_allocation_AP01_ap01t001_flushObjectFreeEvents(JNIEnv* jni, jobject obj) {
+    // Already enabled, but this triggers flush of pending events.
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE,
+                                                          JVMTI_EVENT_OBJECT_FREE,
+                                                          NULL))) {
+        nsk_jvmti_setFailStatus();
+    }
+}
+
 static void JNICALL
 agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 

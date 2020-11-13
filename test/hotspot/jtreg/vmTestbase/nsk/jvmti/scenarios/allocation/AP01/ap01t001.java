@@ -52,6 +52,8 @@ public class ap01t001 extends DebugeeClass implements Cloneable {
     // this method returns new ap01t001 instance using JNI AllocObject function
     private static native Object allocObject();
 
+    private native void flushObjectFreeEvents();
+
     private ap01t001[] ap01t001arr = new ap01t001[6];
 
     /* scaffold objects */
@@ -101,6 +103,8 @@ public class ap01t001 extends DebugeeClass implements Cloneable {
             System.gc();
 
         log.display("Sync: GC called");
+
+        flushObjectFreeEvents();
 
         status = checkStatus(status);
         return status;
