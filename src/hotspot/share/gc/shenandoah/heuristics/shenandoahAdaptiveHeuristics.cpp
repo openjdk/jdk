@@ -339,20 +339,16 @@ ShenandoahAllocationRate::ShenandoahAllocationRate(ShenandoahAdaptiveHeuristics 
   _rate_avg(ShenandoahAdaptiveSampleSizeSeconds * ShenandoahAdaptiveSampleFrequencyHz, ShenandoahAdaptiveDecayFactor) {
 }
 
-void ShenandoahAllocationRate::sample(size_t bytes_allocated_since_gc_start) {
+void ShenandoahAllocationRate::sample(size_t allocated) {
   jlong now = os::javaTimeNanos();
   if (now - _last_sample_time > _interval_ns) {
-    if (bytes_allocated_since_gc_start > _last_sample_value) {
-      size_t allocation_delta = bytes_allocated_since_gc_start - _last_sample_value;
-      size_t time_delta_ns = now - _last_sample_time;
-      double alloc_bytes_per_second = ((double) allocation_delta * NANOUNITS) / time_delta_ns;
-
-      _rate.add(alloc_bytes_per_second);
+    if (allocated > _last_sample_value) {
+      _rate.add(instantaneous_rate(now, allocated));
       _rate_avg.add(_rate.avg());
     }
 
     _last_sample_time = now;
-    _last_sample_value = bytes_allocated_since_gc_start;
+    _last_sample_value = allocated;
   }
 }
 
@@ -382,8 +378,12 @@ bool ShenandoahAllocationRate::is_spiking(double rate) const {
   return false;
 }
 
-double ShenandoahAllocationRate::instantaneous_rate(size_t bytes_allocated_since_gc_start) const {
-  size_t allocation_delta = bytes_allocated_since_gc_start - _last_sample_value;
-  size_t time_delta_ns = os::javaTimeNanos() - _last_sample_time;
+double ShenandoahAllocationRate::instantaneous_rate(size_t allocated) const {
+  return instantaneous_rate(os::javaTimeNanos(), allocated);
+}
+
+double ShenandoahAllocationRate::instantaneous_rate(size_t time, size_t allocated) const {
+  size_t allocation_delta = allocated - _last_sample_value;
+  size_t time_delta_ns = time - _last_sample_time;
   return ((double) allocation_delta * NANOUNITS) / time_delta_ns;
 }

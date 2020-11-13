@@ -35,7 +35,7 @@ class ShenandoahAllocationRate : public CHeapObj<mtGC> {
  public:
   explicit ShenandoahAllocationRate(ShenandoahAdaptiveHeuristics* heuristics);
 
-  void sample(size_t bytes_allocated_since_gc_start);
+  void sample(size_t allocated);
 
   double upper_bound(double standard_deviations) const;
 
@@ -43,9 +43,12 @@ class ShenandoahAllocationRate : public CHeapObj<mtGC> {
 
   bool is_spiking(double rate) const;
 
-  double instantaneous_rate(size_t bytes_allocated_since_gc_start) const;
+  double instantaneous_rate(size_t allocated) const;
 
  private:
+
+  double instantaneous_rate(size_t time, size_t allocated) const;
+
   ShenandoahAdaptiveHeuristics *_heuristics;
   size_t _last_sample_time;
   size_t _last_sample_value;
