@@ -3000,7 +3000,7 @@ void ArchDesc::define_oper_interface(FILE *fp, OperandForm &oper, FormDict &glob
       // Provide a non-NULL return for disp_as_type() that will allow adr_type()
       // to correctly compute the access type for alias analysis.
       //
-      // See BugId 4796752, operand indOffset32X in i486.ad
+      // See BugId 4796752, operand indOffset32X in x86_32.ad
       int idx = rep_var_to_constant_index(disp, oper, globals);
       fprintf(fp,"  virtual const TypePtr *disp_as_type() const { return _c%d; }\n", idx);
     }

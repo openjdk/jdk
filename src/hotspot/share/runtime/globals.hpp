@@ -728,6 +728,20 @@ const intx ObjectAlignmentInBytes = 8;
           "MonitorUsedDeflationThreshold is exceeded (0 is off).")          \
           range(0, max_jint)                                                \
                                                                             \
+  /* notice: the max range value here is max_jint, not max_intx  */         \
+  /* because of overflow issue                                   */         \
+  product(intx, AvgMonitorsPerThreadEstimate, 1024, DIAGNOSTIC,             \
+          "Used to estimate a variable ceiling based on number of threads " \
+          "for use with MonitorUsedDeflationThreshold (0 is off).")         \
+          range(0, max_jint)                                                \
+                                                                            \
+  /* notice: the max range value here is max_jint, not max_intx  */         \
+  /* because of overflow issue                                   */         \
+  product(intx, MonitorDeflationMax, 1000000, DIAGNOSTIC,                   \
+          "The maximum number of monitors to deflate, unlink and delete "   \
+          "at one time (minimum is 1024).")                      \
+          range(1024, max_jint)                                             \
+                                                                            \
   product(intx, MonitorUsedDeflationThreshold, 90, EXPERIMENTAL,            \
           "Percentage of used monitors before triggering deflation (0 is "  \
           "off). The check is performed on GuaranteedSafepointInterval "    \
@@ -755,7 +769,7 @@ const intx ObjectAlignmentInBytes = 8;
           "tables")                                                         \
                                                                             \
   product(bool, AllowUserSignalHandlers, false,                             \
-          "Do not complain if the application installs signal handlers "    \
+          "Application will install primary signal handlers for the JVM "   \
           "(Unix only)")                                                    \
                                                                             \
   product(bool, UseSignalChaining, true,                                    \
@@ -871,10 +885,6 @@ const intx ObjectAlignmentInBytes = 8;
   /* This option should be used with caution.                       */      \
   product(bool, StressLdcRewrite, false,                                    \
           "Force ldc -> ldc_w rewrite during RedefineClasses")              \
-                                                                            \
-  /* change to false by default sometime after Mustang */                   \
-  product(bool, VerifyMergedCPBytecodes, true,                              \
-          "Verify bytecodes after RedefineClasses constant pool merging")   \
                                                                             \
   product(bool, AllowRedefinitionToAddDeleteMethods, false,                 \
           "(Deprecated) Allow redefinition to add and delete private "      \
@@ -2459,12 +2469,6 @@ const intx ObjectAlignmentInBytes = 8;
   product(ccstr, AllocateHeapAt, NULL,                                      \
           "Path to the directoy where a temporary file will be created "    \
           "to use as the backing store for Java Heap.")                     \
-                                                                            \
-  product(ccstr, AllocateOldGenAt, NULL, EXPERIMENTAL,                      \
-          "Path to the directoy where a temporary file will be "            \
-          "created to use as the backing store for old generation."         \
-          "File of size Xmx is pre-allocated for performance reason, so"    \
-          "we need that much space available")                              \
                                                                             \
   develop(int, VerifyMetaspaceInterval, DEBUG_ONLY(500) NOT_DEBUG(0),       \
                "Run periodic metaspace verifications (0 - none, "           \

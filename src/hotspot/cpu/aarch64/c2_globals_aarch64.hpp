@@ -33,8 +33,6 @@
 // (see c2_globals.hpp).  Alpha-sorted.
 
 define_pd_global(bool, BackgroundCompilation,        true);
-define_pd_global(bool, UseTLAB,                      true);
-define_pd_global(bool, ResizeTLAB,                   true);
 define_pd_global(bool, CICompileOSR,                 true);
 define_pd_global(bool, InlineIntrinsics,             true);
 define_pd_global(bool, PreferInterpreterNativeStubs, false);
