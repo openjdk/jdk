@@ -539,6 +539,11 @@ public class CheckGraalIntrinsics extends GraalTest {
                                 "jdk/internal/vm/vector/VectorSupport.unaryOp(ILjava/lang/Class;Ljava/lang/Class;ILjava/lang/Object;Ljava/util/function/Function;)Ljava/lang/Object;");
         }
 
+        if (isJDK16OrHigher()) {
+            add(toBeInvestigated,
+                                "sun/instrument/InstrumentationImpl.getObjectSize0(JLjava/lang/Object;)J");
+        }
+
         /*
          * The intrinsics down here are known to be implemented but they are not always enabled on
          * the HotSpot side (e.g., because they require certain CPU features). So, we are ignoring
