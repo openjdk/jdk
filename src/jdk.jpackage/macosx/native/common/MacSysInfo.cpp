@@ -32,8 +32,6 @@
 
 namespace SysInfo {
 
-#define PSN_ARG "-psn_"
-
 tstring getRealPath(const std::vector<char>& in) {
     std::vector<char> out(PATH_MAX);
 
@@ -82,11 +80,12 @@ tstring getProcessModulePath() {
 
 tstring_array getCommandArgs(CommandArgProgramNameMode progNameMode) {
     tstring_array result;
+    const tstring psnArgPrefix = "-psn_";
     for (int i = progNameMode == ExcludeProgramName ? 1 : 0; i < argc; i++) {
-        if (strncmp(argv[i], PSN_ARG, strlen(PSN_ARG)) == 0) {
-            continue;
+        const tstring arg = argv[i];
+        if (!tstrings::startsWith(arg, psnArgPrefix)) {
+            result.push_back(arg);
         }
-        result.push_back(argv[i]);
     }
     return result;
 }
