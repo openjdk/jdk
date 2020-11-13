@@ -825,10 +825,7 @@ nmethod::nmethod(
     dependencies->copy_to(this);
     if (native_invokers.is_nonempty()) { // can not get address of zero-length array
       // Copy native stubs
-      assert(native_invokers.data_size_in_bytes() % sizeof(HeapWord) == 0, "unexpected array size");
-      Copy::disjoint_words((HeapWord*) native_invokers.adr_at(0),
-                          (HeapWord*) native_invokers_begin(),
-                          native_invokers.data_size_in_bytes() / sizeof(HeapWord));
+      memcpy(native_invokers_begin(), native_invokers.adr_at(0), native_invokers.data_size_in_bytes());
     }
     clear_unloading_state();
 
@@ -992,7 +989,7 @@ void nmethod::print_nmethod(bool printmethod) {
       print_dependencies();
       tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
     }
-    if (printmethod) {
+    if (printmethod && native_invokers_begin() < native_invokers_end()) {
       print_native_invokers();
       tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
     }
@@ -2696,14 +2693,9 @@ void nmethod::print_pcs_on(outputStream* st) {
 
 void nmethod::print_native_invokers() {
   ResourceMark m;       // in case methods get printed via debugger
-  tty->print("Native invokers:");
-  if (native_invokers_begin() < native_invokers_end()) {
-    tty->cr();
-    for (BufferBlob** itt = native_invokers_begin(); itt < native_invokers_end(); itt++) {
-      (*itt)->print_on(tty);
-    }
-  } else {
-    tty->print_cr(" <list empty>");
+  tty->print_cr("Native invokers:");
+  for (BufferBlob** itt = native_invokers_begin(); itt < native_invokers_end(); itt++) {
+    (*itt)->print_on(tty);
   }
 }
 
