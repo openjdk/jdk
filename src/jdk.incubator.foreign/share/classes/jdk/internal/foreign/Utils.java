@@ -26,9 +26,9 @@
 
 package jdk.internal.foreign;
 
-import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryHandles;
-import jdk.internal.access.foreign.MemoryAddressProxy;
+import jdk.incubator.foreign.MemorySegment;
+import jdk.internal.access.foreign.MemorySegmentProxy;
 import jdk.internal.misc.VM;
 
 import java.lang.invoke.MethodHandle;
@@ -46,12 +46,12 @@ public final class Utils {
     private static final String foreignRestrictedAccess = Optional.ofNullable(VM.getSavedProperty("foreign.restricted"))
             .orElse("deny");
 
-    private static final MethodHandle ADDRESS_FILTER;
+    private static final MethodHandle SEGMENT_FILTER;
 
     static {
         try {
-            ADDRESS_FILTER = MethodHandles.lookup().findStatic(Utils.class, "filterAddress",
-                    MethodType.methodType(MemoryAddressProxy.class, MemoryAddress.class));
+            SEGMENT_FILTER = MethodHandles.lookup().findStatic(Utils.class, "filterSegment",
+                    MethodType.methodType(MemorySegmentProxy.class, MemorySegment.class));
         } catch (Throwable ex) {
             throw new ExceptionInInitializerError(ex);
         }
@@ -70,13 +70,13 @@ public final class Utils {
     }
 
     public static VarHandle fixUpVarHandle(VarHandle handle) {
-        // This adaptation is required, otherwise the memory access var handle will have type MemoryAddressProxy,
-        // and not MemoryAddress (which the user expects), which causes performance issues with asType() adaptations.
-        return MemoryHandles.filterCoordinates(handle, 0, ADDRESS_FILTER);
+        // This adaptation is required, otherwise the memory access var handle will have type MemorySegmentProxy,
+        // and not MemorySegment (which the user expects), which causes performance issues with asType() adaptations.
+        return MemoryHandles.filterCoordinates(handle, 0, SEGMENT_FILTER);
     }
 
-    private static MemoryAddressProxy filterAddress(MemoryAddress addr) {
-        return (MemoryAddressImpl)addr;
+    private static MemorySegmentProxy filterSegment(MemorySegment segment) {
+        return (AbstractMemorySegmentImpl)segment;
     }
 
     public static void checkRestrictedAccess(String method) {
