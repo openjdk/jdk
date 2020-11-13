@@ -41,7 +41,7 @@ class ShenandoahAllocationRate : public CHeapObj<mtGC> {
 
   void allocation_counter_reset();
 
-  bool is_spiking(double instantaneous_rate) const;
+  bool is_spiking(double rate) const;
 
   double instantaneous_rate(size_t bytes_allocated_since_gc_start) const;
 
@@ -80,7 +80,7 @@ public:
   bool is_learning_necessary(size_t capacity, size_t available) const;
   bool is_allocation_rate_too_high(size_t capacity,
                                    size_t available,
-                                   size_t bytes_allocated_since_gc_start);
+                                   size_t allocated);
 
  private:
   // These are used to adjust the margin of error and the spike threshold

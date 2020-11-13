@@ -129,7 +129,7 @@ void ShenandoahAdaptiveHeuristics::record_cycle_start() {
 void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
   ShenandoahHeuristics::record_success_concurrent();
 
-  double available = ShenandoahHeap::heap()->free_set()->available();
+  size_t available = ShenandoahHeap::heap()->free_set()->available();
 
   _available.add(available);
   double z_score = 0.0;
@@ -138,7 +138,7 @@ void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
   }
 
   log_debug(gc, ergo)("Available: " SIZE_FORMAT " %sB, z-score=%.3f. Average available: %.1f %sB +/- %.1f %sB.",
-                      byte_size_in_proper_unit(size_t(available)), proper_unit_for_byte_size(size_t(available)),
+                      byte_size_in_proper_unit(available), proper_unit_for_byte_size(available),
                       z_score,
                       byte_size_in_proper_unit(_available.avg()), proper_unit_for_byte_size(_available.avg()),
                       byte_size_in_proper_unit(_available.sd()), proper_unit_for_byte_size(_available.sd()));
@@ -206,10 +206,10 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   size_t soft_tail = max_capacity - capacity;
   available = (available > soft_tail) ? (available - soft_tail) : 0;
 
-  size_t bytes_allocated_since_gc_start = heap->bytes_allocated_since_gc_start();
+  size_t allocated = heap->bytes_allocated_since_gc_start();
 
   // Track allocation rate even if we decide to start a cycle for other reasons.
-  _allocation_rate.sample(bytes_allocated_since_gc_start);
+  _allocation_rate.sample(allocated);
   _last_trigger = OTHER;
 
   if (is_available_below_min_threshold(capacity, available)) {
@@ -220,7 +220,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     return true;
   }
 
-  if (is_allocation_rate_too_high(capacity, available, bytes_allocated_since_gc_start)) {
+  if (is_allocation_rate_too_high(capacity, available, allocated)) {
     return true;
   }
 
@@ -259,7 +259,7 @@ bool ShenandoahAdaptiveHeuristics::is_learning_necessary(size_t capacity,
 
 bool ShenandoahAdaptiveHeuristics::is_allocation_rate_too_high(size_t capacity,
                                                                size_t available,
-                                                               size_t bytes_allocated_since_gc_start) {
+                                                               size_t allocated) {
   // Check if allocation headroom is still okay. This also factors in:
   //   1. Some space to absorb allocation spikes
   //   2. Accumulated penalties from Degenerated and Full GC
@@ -271,12 +271,12 @@ bool ShenandoahAdaptiveHeuristics::is_allocation_rate_too_high(size_t capacity,
   allocation_headroom -= MIN2(allocation_headroom, spike_headroom);
   allocation_headroom -= MIN2(allocation_headroom, penalties);
 
-  double average_cycle_seconds = _gc_time_history->davg() + (_margin_of_error_sd * _gc_time_history->dsd());
-  double bytes_allocated_per_second = _allocation_rate.upper_bound(_margin_of_error_sd);
-  if (average_cycle_seconds > allocation_headroom / bytes_allocated_per_second) {
+  double avg_cycle_time = _gc_time_history->davg() + (_margin_of_error_sd * _gc_time_history->dsd());
+  double avg_alloc_rate = _allocation_rate.upper_bound(_margin_of_error_sd);
+  if (avg_cycle_time > allocation_headroom / avg_alloc_rate) {
     log_info(gc)("Trigger: Average GC time (%.2f ms) is above the time for average allocation rate (%.0f %sB/s) to deplete free headroom (" SIZE_FORMAT "%s) (margin of error = %.2f)",
-                 average_cycle_seconds * 1000,
-                 byte_size_in_proper_unit(bytes_allocated_per_second), proper_unit_for_byte_size(bytes_allocated_per_second),
+                 avg_cycle_time * 1000,
+                 byte_size_in_proper_unit(avg_alloc_rate), proper_unit_for_byte_size(avg_alloc_rate),
                  byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom),
                  _margin_of_error_sd);
 
@@ -290,11 +290,11 @@ bool ShenandoahAdaptiveHeuristics::is_allocation_rate_too_high(size_t capacity,
     return true;
   }
 
-  double instantaneous_rate = _allocation_rate.instantaneous_rate(bytes_allocated_since_gc_start);
-  if (_allocation_rate.is_spiking(instantaneous_rate) && average_cycle_seconds > allocation_headroom / instantaneous_rate) {
+  double instant_alloc_rate = _allocation_rate.instantaneous_rate(allocated);
+  if (_allocation_rate.is_spiking(instant_alloc_rate) && avg_cycle_time > allocation_headroom / instant_alloc_rate) {
     log_info(gc)("Trigger: Average GC time (%.2f ms) is above the time for instantaneous allocation rate (%.0f %sB/s) to deplete free headroom (" SIZE_FORMAT "%s) (spike threshold = %.2f)",
-                 average_cycle_seconds * 1000,
-                 byte_size_in_proper_unit(instantaneous_rate),  proper_unit_for_byte_size(instantaneous_rate),
+                 avg_cycle_time * 1000,
+                 byte_size_in_proper_unit(instant_alloc_rate), proper_unit_for_byte_size(instant_alloc_rate),
                  byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom),
                  _spike_threshold_sd);
     _last_trigger = SPIKE;
@@ -369,12 +369,12 @@ void ShenandoahAllocationRate::allocation_counter_reset() {
   _last_sample_value = 0;
 }
 
-bool ShenandoahAllocationRate::is_spiking(double instantaneous_rate) const {
-  double standard_deviation = _rate.sd();
-  if (standard_deviation > 0) {
+bool ShenandoahAllocationRate::is_spiking(double rate) const {
+  double sd = _rate.sd();
+  if (sd > 0) {
     // There is a small chance that that rate has already been sampled, but it
     // seems not to matter in practice.
-    double z_score = (instantaneous_rate - _rate.avg()) / standard_deviation;
+    double z_score = (rate - _rate.avg()) / sd;
     if (z_score > _heuristics->_spike_threshold_sd) {
       return true;
     }
@@ -385,6 +385,5 @@ bool ShenandoahAllocationRate::is_spiking(double instantaneous_rate) const {
 double ShenandoahAllocationRate::instantaneous_rate(size_t bytes_allocated_since_gc_start) const {
   size_t allocation_delta = bytes_allocated_since_gc_start - _last_sample_value;
   size_t time_delta_ns = os::javaTimeNanos() - _last_sample_time;
-  double alloc_bytes_per_second = ((double) allocation_delta * NANOUNITS) / time_delta_ns;
-  return alloc_bytes_per_second;
+  return ((double) allocation_delta * NANOUNITS) / time_delta_ns;
 }
