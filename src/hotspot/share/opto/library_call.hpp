@@ -273,9 +273,9 @@ class LibraryCallKit : public GraphKit {
   Node* inline_electronicCodeBook_AESCrypt_predicate(bool decrypting);
   Node* inline_counterMode_AESCrypt_predicate();
   Node* get_key_start_from_aescrypt_object(Node* aescrypt_object);
-  Node* get_original_key_start_from_aescrypt_object(Node* aescrypt_object);
   bool inline_ghash_processBlocks();
   bool inline_base64_encodeBlock();
+  bool inline_base64_decodeBlock();
   bool inline_digestBase_implCompress(vmIntrinsics::ID id);
   bool inline_digestBase_implCompressMB(int predicate);
   bool inline_digestBase_implCompressMB(Node* digestBaseObj, ciInstanceKlass* instklass,
@@ -344,5 +344,7 @@ class LibraryCallKit : public GraphKit {
     }
 #endif
   }
+
+  bool inline_getObjectSize();
 };
 

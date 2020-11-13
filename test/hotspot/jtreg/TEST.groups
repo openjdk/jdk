@@ -42,8 +42,7 @@ hotspot_compiler_all_gcs = \
   -compiler/graalunit
 
 hotspot_gc = \
-  gc \
-  -gc/nvdimm
+  gc
 
 # By design this group should include ALL tests under runtime sub-directory
 hotspot_runtime = \
@@ -66,7 +65,6 @@ hotspot_misc = \
  -:hotspot_gc \
  -:hotspot_runtime \
  -:hotspot_serviceability \
- -gc/nvdimm \
  -:hotspot_containers
 
 hotspot_native_sanity = \
@@ -203,8 +201,7 @@ tier1_gc_2 = \
   -gc/logging/TestUnifiedLoggingSwitchStress.java \
   -gc/stress \
   -gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java \
-  -gc/shenandoah \
-  -gc/nvdimm
+  -gc/shenandoah
 
 gc_epsilon = \
   gc/epsilon/ \

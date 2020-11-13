@@ -33,18 +33,6 @@
 class ShenandoahBarrierSetAssembler;
 
 class ShenandoahBarrierSet: public BarrierSet {
-public:
-  enum class AccessKind {
-    // Regular in-heap access on reference fields
-    NORMAL,
-
-    // Off-heap reference access
-    NATIVE,
-
-    // In-heap reference access on referent fields of j.l.r.Reference objects
-    WEAK
-  };
-
 private:
   ShenandoahHeap* _heap;
   BufferNode::Allocator _satb_mark_queue_buffer_allocator;
@@ -65,7 +53,22 @@ public:
 
   static bool need_load_reference_barrier(DecoratorSet decorators, BasicType type);
   static bool need_keep_alive_barrier(DecoratorSet decorators, BasicType type);
-  static AccessKind access_kind(DecoratorSet decorators, BasicType type);
+
+  static bool is_strong_access(DecoratorSet decorators) {
+    return (decorators & (ON_WEAK_OOP_REF | ON_PHANTOM_OOP_REF | ON_UNKNOWN_OOP_REF)) == 0;
+  }
+
+  static bool is_weak_access(DecoratorSet decorators) {
+    return (decorators & (ON_WEAK_OOP_REF | ON_UNKNOWN_OOP_REF)) != 0;
+  }
+
+  static bool is_phantom_access(DecoratorSet decorators) {
+    return (decorators & ON_PHANTOM_OOP_REF) != 0;
+  }
+
+  static bool is_native_access(DecoratorSet decorators) {
+    return (decorators & IN_NATIVE) != 0;
+  }
 
   void print_on(outputStream* st) const;
 

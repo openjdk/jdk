@@ -30,7 +30,6 @@
 #include "gc/shared/threadLocalAllocBuffer.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
-#include "prims/jvmtiExport.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/handshake.hpp"
@@ -63,7 +62,9 @@ class ThreadsList;
 class ThreadsSMRSupport;
 
 class JvmtiRawMonitor;
+class JvmtiSampledObjectAllocEventCollector;
 class JvmtiThreadState;
+class JvmtiVMObjectAllocEventCollector;
 class ThreadStatistics;
 class ConcurrentLocksDump;
 class ParkEvent;

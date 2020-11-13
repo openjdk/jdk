@@ -55,6 +55,7 @@ public final class FullscreenWindowProps {
             }
         };
         try {
+            frame.setUndecorated(true); // workaround JDK-8256257
             frame.setBackground(Color.MAGENTA);
             frame.setVisible(true);
             gd.setFullScreenWindow(frame);

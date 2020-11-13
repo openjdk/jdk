@@ -68,7 +68,7 @@ private:
 
   void print_merge_heap_roots_stats();
 
-  void assert_scan_top_is_null(uint hrm_index) PRODUCT_RETURN;
+  void assert_scan_top_is_null(uint hrm_index) NOT_DEBUG_RETURN;
 public:
 
   typedef CardTable::CardValue CardValue;

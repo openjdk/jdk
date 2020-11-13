@@ -184,7 +184,7 @@ HeapRegion* G1CollectedHeap::new_region(size_t word_size,
          "the only time we use this to allocate a humongous region is "
          "when we are allocating a single humongous region");
 
-  HeapRegion* res = _hrm->allocate_free_region(type, node_index);
+  HeapRegion* res = _hrm.allocate_free_region(type, node_index);
 
   if (res == NULL && do_expand && _expand_heap_after_alloc_failure) {
     // Currently, only attempts to allocate GC alloc regions set
@@ -204,7 +204,7 @@ HeapRegion* G1CollectedHeap::new_region(size_t word_size,
       // always expand the heap by an amount aligned to the heap
       // region size, the free list should in theory not be empty.
       // In either case allocate_free_region() will check for NULL.
-      res = _hrm->allocate_free_region(type, node_index);
+      res = _hrm.allocate_free_region(type, node_index);
     } else {
       _expand_heap_after_alloc_failure = false;
     }
@@ -346,12 +346,12 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
   uint obj_regions = (uint) humongous_obj_size_in_regions(word_size);
 
   // Policy: First try to allocate a humongous object in the free list.
-  HeapRegion* humongous_start = _hrm->allocate_humongous(obj_regions);
+  HeapRegion* humongous_start = _hrm.allocate_humongous(obj_regions);
   if (humongous_start == NULL) {
     // Policy: We could not find enough regions for the humongous object in the
     // free list. Look through the heap to find a mix of free and uncommitted regions.
     // If so, expand the heap and allocate the humongous object.
-    humongous_start = _hrm->expand_and_allocate_humongous(obj_regions);
+    humongous_start = _hrm.expand_and_allocate_humongous(obj_regions);
     if (humongous_start != NULL) {
       // We managed to find a region by expanding the heap.
       log_debug(gc, ergo, heap)("Heap expansion (humongous allocation request). Allocation request: " SIZE_FORMAT "B",
@@ -545,7 +545,7 @@ void G1CollectedHeap::end_archive_alloc_range(GrowableArray<MemRegion>* ranges,
 bool G1CollectedHeap::check_archive_addresses(MemRegion* ranges, size_t count) {
   assert(ranges != NULL, "MemRegion array NULL");
   assert(count != 0, "No MemRegions provided");
-  MemRegion reserved = _hrm->reserved();
+  MemRegion reserved = _hrm.reserved();
   for (size_t i = 0; i < count; i++) {
     if (!reserved.contains(ranges[i].start()) || !reserved.contains(ranges[i].last())) {
       return false;
@@ -562,7 +562,7 @@ bool G1CollectedHeap::alloc_archive_regions(MemRegion* ranges,
   assert(count != 0, "No MemRegions provided");
   MutexLocker x(Heap_lock);
 
-  MemRegion reserved = _hrm->reserved();
+  MemRegion reserved = _hrm.reserved();
   HeapWord* prev_last_addr = NULL;
   HeapRegion* prev_last_region = NULL;
 
@@ -592,7 +592,7 @@ bool G1CollectedHeap::alloc_archive_regions(MemRegion* ranges,
     // range ended, and adjust the start address so we don't try to allocate
     // the same region again. If the current range is entirely within that
     // region, skip it, just adjusting the recorded top.
-    HeapRegion* start_region = _hrm->addr_to_region(start_address);
+    HeapRegion* start_region = _hrm.addr_to_region(start_address);
     if ((prev_last_region != NULL) && (start_region == prev_last_region)) {
       start_address = start_region->end();
       if (start_address > last_address) {
@@ -602,12 +602,12 @@ bool G1CollectedHeap::alloc_archive_regions(MemRegion* ranges,
       }
       start_region->set_top(start_address);
       curr_range = MemRegion(start_address, last_address + 1);
-      start_region = _hrm->addr_to_region(start_address);
+      start_region = _hrm.addr_to_region(start_address);
     }
 
     // Perform the actual region allocation, exiting if it fails.
     // Then note how much new space we have allocated.
-    if (!_hrm->allocate_containing_regions(curr_range, &commits, workers())) {
+    if (!_hrm.allocate_containing_regions(curr_range, &commits, workers())) {
       return false;
     }
     increase_used(word_size * HeapWordSize);
@@ -619,8 +619,8 @@ bool G1CollectedHeap::alloc_archive_regions(MemRegion* ranges,
 
     // Mark each G1 region touched by the range as archive, add it to
     // the old set, and set top.
-    HeapRegion* curr_region = _hrm->addr_to_region(start_address);
-    HeapRegion* last_region = _hrm->addr_to_region(last_address);
+    HeapRegion* curr_region = _hrm.addr_to_region(start_address);
+    HeapRegion* last_region = _hrm.addr_to_region(last_address);
     prev_last_region = last_region;
 
     while (curr_region != NULL) {
@@ -637,7 +637,7 @@ bool G1CollectedHeap::alloc_archive_regions(MemRegion* ranges,
       HeapRegion* next_region;
       if (curr_region != last_region) {
         top = curr_region->end();
-        next_region = _hrm->next_region_in_heap(curr_region);
+        next_region = _hrm.next_region_in_heap(curr_region);
       } else {
         top = last_address + 1;
         next_region = NULL;
@@ -653,7 +653,7 @@ void G1CollectedHeap::fill_archive_regions(MemRegion* ranges, size_t count) {
   assert(!is_init_completed(), "Expect to be called at JVM init time");
   assert(ranges != NULL, "MemRegion array NULL");
   assert(count != 0, "No MemRegions provided");
-  MemRegion reserved = _hrm->reserved();
+  MemRegion reserved = _hrm.reserved();
   HeapWord *prev_last_addr = NULL;
   HeapRegion* prev_last_region = NULL;
 
@@ -673,8 +673,8 @@ void G1CollectedHeap::fill_archive_regions(MemRegion* ranges, size_t count) {
            "Ranges not in ascending order: " PTR_FORMAT " <= " PTR_FORMAT ,
            p2i(start_address), p2i(prev_last_addr));
 
-    HeapRegion* start_region = _hrm->addr_to_region(start_address);
-    HeapRegion* last_region = _hrm->addr_to_region(last_address);
+    HeapRegion* start_region = _hrm.addr_to_region(start_address);
+    HeapRegion* last_region = _hrm.addr_to_region(last_address);
     HeapWord* bottom_address = start_region->bottom();
 
     // Check for a range beginning in the same region in which the
@@ -690,7 +690,7 @@ void G1CollectedHeap::fill_archive_regions(MemRegion* ranges, size_t count) {
       guarantee(curr_region->is_archive(),
                 "Expected archive region at index %u", curr_region->hrm_index());
       if (curr_region != last_region) {
-        curr_region = _hrm->next_region_in_heap(curr_region);
+        curr_region = _hrm.next_region_in_heap(curr_region);
       } else {
         curr_region = NULL;
       }
@@ -739,7 +739,7 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion* ranges, size_t count) {
   assert(!is_init_completed(), "Expect to be called at JVM init time");
   assert(ranges != NULL, "MemRegion array NULL");
   assert(count != 0, "No MemRegions provided");
-  MemRegion reserved = _hrm->reserved();
+  MemRegion reserved = _hrm.reserved();
   HeapWord* prev_last_addr = NULL;
   HeapRegion* prev_last_region = NULL;
   size_t size_used = 0;
@@ -761,8 +761,8 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion* ranges, size_t count) {
     size_used += ranges[i].byte_size();
     prev_last_addr = last_address;
 
-    HeapRegion* start_region = _hrm->addr_to_region(start_address);
-    HeapRegion* last_region = _hrm->addr_to_region(last_address);
+    HeapRegion* start_region = _hrm.addr_to_region(start_address);
+    HeapRegion* last_region = _hrm.addr_to_region(last_address);
 
     // Check for ranges that start in the same G1 region in which the previous
     // range ended, and adjust the start address so we don't try to free
@@ -773,7 +773,7 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion* ranges, size_t count) {
       if (start_address > last_address) {
         continue;
       }
-      start_region = _hrm->addr_to_region(start_address);
+      start_region = _hrm.addr_to_region(start_address);
     }
     prev_last_region = last_region;
 
@@ -788,11 +788,11 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion* ranges, size_t count) {
       curr_region->set_free();
       curr_region->set_top(curr_region->bottom());
       if (curr_region != last_region) {
-        curr_region = _hrm->next_region_in_heap(curr_region);
+        curr_region = _hrm.next_region_in_heap(curr_region);
       } else {
         curr_region = NULL;
       }
-      _hrm->shrink_at(curr_index, 1);
+      _hrm.shrink_at(curr_index, 1);
       uncommitted_regions++;
     }
   }
@@ -1005,8 +1005,7 @@ void G1CollectedHeap::prepare_heap_for_full_collection() {
   // after this full GC.
   abandon_collection_set(collection_set());
 
-  hrm()->remove_all_free_regions();
-  hrm()->prepare_for_full_collection_start();
+  _hrm.remove_all_free_regions();
 }
 
 void G1CollectedHeap::verify_before_full_collection(bool explicit_gc) {
@@ -1018,8 +1017,6 @@ void G1CollectedHeap::verify_before_full_collection(bool explicit_gc) {
 }
 
 void G1CollectedHeap::prepare_heap_for_mutators() {
-  hrm()->prepare_for_full_collection_end();
-
   // Delete metaspaces for unloaded class loaders and clean up loader_data graph
   ClassLoaderDataGraph::purge(/*at_safepoint*/true);
   DEBUG_ONLY(MetaspaceUtils::verify();)
@@ -1058,7 +1055,7 @@ void G1CollectedHeap::abort_refinement() {
 }
 
 void G1CollectedHeap::verify_after_full_collection() {
-  _hrm->verify_optional();
+  _hrm.verify_optional();
   _verifier->verify_region_sets_optional();
   _verifier->verify_after_gc(G1HeapVerifier::G1VerifyFull);
 
@@ -1234,7 +1231,7 @@ HeapWord* G1CollectedHeap::expand_and_allocate(size_t word_size) {
 
 
   if (expand(expand_bytes, _workers)) {
-    _hrm->verify_optional();
+    _hrm.verify_optional();
     _verifier->verify_region_sets_optional();
     return attempt_allocation_at_safepoint(word_size,
                                            false /* expect_null_mutator_alloc_region */);
@@ -1259,7 +1256,7 @@ bool G1CollectedHeap::expand(size_t expand_bytes, WorkGang* pretouch_workers, do
   uint regions_to_expand = (uint)(aligned_expand_bytes / HeapRegion::GrainBytes);
   assert(regions_to_expand > 0, "Must expand by at least one region");
 
-  uint expanded_by = _hrm->expand_by(regions_to_expand, pretouch_workers);
+  uint expanded_by = _hrm.expand_by(regions_to_expand, pretouch_workers);
   if (expand_time_ms != NULL) {
     *expand_time_ms = (os::elapsedTime() - expand_heap_start_time_sec) * MILLIUNITS;
   }
@@ -1274,7 +1271,7 @@ bool G1CollectedHeap::expand(size_t expand_bytes, WorkGang* pretouch_workers, do
     // The expansion of the virtual storage space was unsuccessful.
     // Let's see if it was because we ran out of swap.
     if (G1ExitOnExpansionFailure &&
-        _hrm->available() >= regions_to_expand) {
+        _hrm.available() >= regions_to_expand) {
       // We had head room...
       vm_exit_out_of_memory(aligned_expand_bytes, OOM_MMAP_ERROR, "G1 heap expansion");
     }
@@ -1283,10 +1280,10 @@ bool G1CollectedHeap::expand(size_t expand_bytes, WorkGang* pretouch_workers, do
 }
 
 bool G1CollectedHeap::expand_single_region(uint node_index) {
-  uint expanded_by = _hrm->expand_on_preferred_node(node_index);
+  uint expanded_by = _hrm.expand_on_preferred_node(node_index);
 
   if (expanded_by == 0) {
-    assert(is_maximal_no_gc(), "Should be no regions left, available: %u", _hrm->available());
+    assert(is_maximal_no_gc(), "Should be no regions left, available: %u", _hrm.available());
     log_debug(gc, ergo, heap)("Did not expand the heap (heap already fully expanded)");
     return false;
   }
@@ -1302,7 +1299,7 @@ void G1CollectedHeap::shrink_helper(size_t shrink_bytes) {
                                          HeapRegion::GrainBytes);
   uint num_regions_to_remove = (uint)(shrink_bytes / HeapRegion::GrainBytes);
 
-  uint num_regions_removed = _hrm->shrink_by(num_regions_to_remove);
+  uint num_regions_removed = _hrm.shrink_by(num_regions_to_remove);
   size_t shrunk_bytes = num_regions_removed * HeapRegion::GrainBytes;
 
   log_debug(gc, ergo, heap)("Shrink the heap. requested shrinking amount: " SIZE_FORMAT "B aligned shrinking amount: " SIZE_FORMAT "B attempted shrinking amount: " SIZE_FORMAT "B",
@@ -1325,11 +1322,11 @@ void G1CollectedHeap::shrink(size_t shrink_bytes) {
   // Instead of tearing down / rebuilding the free lists here, we
   // could instead use the remove_all_pending() method on free_list to
   // remove only the ones that we need to remove.
-  hrm()->remove_all_free_regions();
+  _hrm.remove_all_free_regions();
   shrink_helper(shrink_bytes);
   rebuild_region_sets(true /* free_list_only */);
 
-  _hrm->verify_optional();
+  _hrm.verify_optional();
   _verifier->verify_region_sets_optional();
 }
 
@@ -1408,7 +1405,7 @@ G1CollectedHeap::G1CollectedHeap() :
   _bot(NULL),
   _listener(),
   _numa(G1NUMA::create()),
-  _hrm(NULL),
+  _hrm(),
   _allocator(NULL),
   _verifier(NULL),
   _summary_bytes_used(0),
@@ -1428,7 +1425,7 @@ G1CollectedHeap::G1CollectedHeap() :
   _survivor(),
   _gc_timer_stw(new (ResourceObj::C_HEAP, mtGC) STWGCTimer()),
   _gc_tracer_stw(new (ResourceObj::C_HEAP, mtGC) G1NewTracer()),
-  _policy(G1Policy::create_policy(_gc_timer_stw)),
+  _policy(new G1Policy(_gc_timer_stw)),
   _heap_sizing_policy(NULL),
   _collection_set(this, _policy),
   _hot_card_cache(NULL),
@@ -1603,12 +1600,12 @@ jint G1CollectedHeap::initialize() {
   // Create space mappers.
   size_t page_size = actual_reserved_page_size(heap_rs);
   G1RegionToSpaceMapper* heap_storage =
-    G1RegionToSpaceMapper::create_heap_mapper(heap_rs,
-                                              heap_rs.size(),
-                                              page_size,
-                                              HeapRegion::GrainBytes,
-                                              1,
-                                              mtJavaHeap);
+    G1RegionToSpaceMapper::create_mapper(heap_rs,
+                                         heap_rs.size(),
+                                         page_size,
+                                         HeapRegion::GrainBytes,
+                                         1,
+                                         mtJavaHeap);
   if(heap_storage == NULL) {
     vm_shutdown_during_initialization("Could not initialize G1 heap");
     return JNI_ERR;
@@ -1644,9 +1641,7 @@ jint G1CollectedHeap::initialize() {
   G1RegionToSpaceMapper* next_bitmap_storage =
     create_aux_memory_mapper("Next Bitmap", bitmap_size, G1CMBitMap::heap_map_factor());
 
-  _hrm = HeapRegionManager::create_manager(this);
-
-  _hrm->initialize(heap_storage, prev_bitmap_storage, next_bitmap_storage, bot_storage, cardtable_storage, card_counts_storage);
+  _hrm.initialize(heap_storage, prev_bitmap_storage, next_bitmap_storage, bot_storage, cardtable_storage, card_counts_storage);
   _card_table->initialize(cardtable_storage);
 
   // Do later initialization work for concurrent refinement.
@@ -1723,7 +1718,7 @@ jint G1CollectedHeap::initialize() {
 
   // Here we allocate the dummy HeapRegion that is required by the
   // G1AllocRegion class.
-  HeapRegion* dummy_region = _hrm->get_dummy_region();
+  HeapRegion* dummy_region = _hrm.get_dummy_region();
 
   // We'll re-use the same region whether the alloc region will
   // require BOT updates or not and, if it doesn't, then a non-young
@@ -1842,11 +1837,11 @@ SoftRefPolicy* G1CollectedHeap::soft_ref_policy() {
 }
 
 size_t G1CollectedHeap::capacity() const {
-  return _hrm->length() * HeapRegion::GrainBytes;
+  return _hrm.length() * HeapRegion::GrainBytes;
 }
 
 size_t G1CollectedHeap::unused_committed_regions_in_bytes() const {
-  return _hrm->total_free_bytes();
+  return _hrm.total_free_bytes();
 }
 
 void G1CollectedHeap::iterate_hcc_closure(G1CardTableEntryClosure* cl, uint worker_id) {
@@ -1902,9 +1897,7 @@ bool G1CollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
 }
 
 bool G1CollectedHeap::should_upgrade_to_full_gc(GCCause::Cause cause) {
-  if (policy()->force_upgrade_to_full()) {
-    return true;
-  } else if (should_do_concurrent_full_gc(_gc_cause)) {
+  if (should_do_concurrent_full_gc(_gc_cause)) {
     return false;
   } else if (has_regions_left_for_allocation()) {
     return false;
@@ -2238,7 +2231,7 @@ bool G1CollectedHeap::try_collect(GCCause::Cause cause) {
 }
 
 bool G1CollectedHeap::is_in(const void* p) const {
-  return is_in_reserved(p) && _hrm->is_available(addr_to_region((HeapWord*)p));
+  return is_in_reserved(p) && _hrm.is_available(addr_to_region((HeapWord*)p));
 }
 
 // Iteration functions.
@@ -2291,18 +2284,18 @@ void G1CollectedHeap::keep_alive(oop obj) {
 }
 
 void G1CollectedHeap::heap_region_iterate(HeapRegionClosure* cl) const {
-  _hrm->iterate(cl);
+  _hrm.iterate(cl);
 }
 
 void G1CollectedHeap::heap_region_par_iterate_from_worker_offset(HeapRegionClosure* cl,
                                                                  HeapRegionClaimer *hrclaimer,
                                                                  uint worker_id) const {
-  _hrm->par_iterate(cl, hrclaimer, hrclaimer->offset_for_worker(worker_id));
+  _hrm.par_iterate(cl, hrclaimer, hrclaimer->offset_for_worker(worker_id));
 }
 
 void G1CollectedHeap::heap_region_par_iterate_from_start(HeapRegionClosure* cl,
                                                          HeapRegionClaimer *hrclaimer) const {
-  _hrm->par_iterate(cl, hrclaimer, 0);
+  _hrm.par_iterate(cl, hrclaimer, 0);
 }
 
 void G1CollectedHeap::collection_set_iterate_all(HeapRegionClosure* cl) {
@@ -2369,10 +2362,6 @@ bool G1CollectedHeap::supports_concurrent_gc_breakpoints() const {
   return true;
 }
 
-bool G1CollectedHeap::is_heterogeneous_heap() const {
-  return G1Arguments::is_heterogeneous_heap();
-}
-
 bool G1CollectedHeap::is_archived_object(oop object) const {
   return object != NULL && heap_region_containing(object)->is_archive();
 }
@@ -2421,13 +2410,11 @@ void G1CollectedHeap::print_heap_regions() const {
 void G1CollectedHeap::print_on(outputStream* st) const {
   size_t heap_used = Heap_lock->owned_by_self() ? used() : used_unlocked();
   st->print(" %-20s", "garbage-first heap");
-  if (_hrm != NULL) {
-    st->print(" total " SIZE_FORMAT "K, used " SIZE_FORMAT "K",
-              capacity()/K, heap_used/K);
-    st->print(" [" PTR_FORMAT ", " PTR_FORMAT ")",
-              p2i(_hrm->reserved().start()),
-              p2i(_hrm->reserved().end()));
-  }
+  st->print(" total " SIZE_FORMAT "K, used " SIZE_FORMAT "K",
+            capacity()/K, heap_used/K);
+  st->print(" [" PTR_FORMAT ", " PTR_FORMAT ")",
+            p2i(_hrm.reserved().start()),
+            p2i(_hrm.reserved().end()));
   st->cr();
   st->print("  region size " SIZE_FORMAT "K, ", HeapRegion::GrainBytes / K);
   uint young_regions = young_regions_count();
@@ -2442,7 +2429,7 @@ void G1CollectedHeap::print_on(outputStream* st) const {
     st->print("  remaining free region(s) on each NUMA node: ");
     const int* node_ids = _numa->node_ids();
     for (uint node_index = 0; node_index < num_nodes; node_index++) {
-      uint num_free_regions = (_hrm != NULL ? _hrm->num_free_regions(node_index) : 0);
+      uint num_free_regions = _hrm.num_free_regions(node_index);
       st->print("%d=%u ", node_ids[node_index], num_free_regions);
     }
     st->cr();
@@ -2451,10 +2438,6 @@ void G1CollectedHeap::print_on(outputStream* st) const {
 }
 
 void G1CollectedHeap::print_regions_on(outputStream* st) const {
-  if (_hrm == NULL) {
-    return;
-  }
-
   st->print_cr("Heap Regions: E=young(eden), S=young(survivor), O=old, "
                "HS=humongous(starts), HC=humongous(continues), "
                "CS=collection set, F=free, "
@@ -2468,10 +2451,8 @@ void G1CollectedHeap::print_extended_on(outputStream* st) const {
   print_on(st);
 
   // Print the per-region information.
-  if (_hrm != NULL) {
-    st->cr();
-    print_regions_on(st);
-  }
+  st->cr();
+  print_regions_on(st);
 }
 
 void G1CollectedHeap::print_on_error(outputStream* st) const {
@@ -3047,7 +3028,7 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
     policy()->print_phases();
     heap_transition.print();
 
-    _hrm->verify_optional();
+    _hrm.verify_optional();
     _verifier->verify_region_sets_optional();
 
     TASKQUEUE_STATS_ONLY(print_taskqueue_stats());
@@ -4009,7 +3990,7 @@ void G1CollectedHeap::record_obj_copy_mem_stats() {
 void G1CollectedHeap::free_region(HeapRegion* hr, FreeRegionList* free_list) {
   assert(!hr->is_free(), "the region should not be free");
   assert(!hr->is_empty(), "the region should not be empty");
-  assert(_hrm->is_available(hr->hrm_index()), "region should be committed");
+  assert(_hrm.is_available(hr->hrm_index()), "region should be committed");
 
   if (G1VerifyBitmaps) {
     MemRegion mr(hr->bottom(), hr->end());
@@ -4054,7 +4035,7 @@ void G1CollectedHeap::prepend_to_freelist(FreeRegionList* list) {
   assert(list != NULL, "list can't be null");
   if (!list->is_empty()) {
     MutexLocker x(FreeList_lock, Mutex::_no_safepoint_check_flag);
-    _hrm->insert_list_into_free_list(list);
+    _hrm.insert_list_into_free_list(list);
   }
 }
 
@@ -4335,7 +4316,7 @@ void G1CollectedHeap::free_collection_set(G1CollectionSet* collection_set, G1Eva
   phase_times()->record_total_free_cset_time_ms((free_cset_end_time - free_cset_start_time).seconds() * 1000.0);
 
   // Now rebuild the free region list.
-  hrm()->rebuild_free_list(workers());
+  _hrm.rebuild_free_list(workers());
   phase_times()->record_total_rebuild_freelist_time_ms((Ticks::now() - free_cset_end_time).seconds() * 1000.0);
 
   collection_set->clear();
@@ -4638,7 +4619,7 @@ void G1CollectedHeap::rebuild_region_sets(bool free_list_only) {
     _survivor.clear();
   }
 
-  RebuildRegionSetsClosure cl(free_list_only, &_old_set, _hrm);
+  RebuildRegionSetsClosure cl(free_list_only, &_old_set, &_hrm);
   heap_region_iterate(&cl);
 
   if (!free_list_only) {
@@ -4755,14 +4736,14 @@ void G1CollectedHeap::retire_gc_alloc_region(HeapRegion* alloc_region,
 
 HeapRegion* G1CollectedHeap::alloc_highest_free_region() {
   bool expanded = false;
-  uint index = _hrm->find_highest_free(&expanded);
+  uint index = _hrm.find_highest_free(&expanded);
 
   if (index != G1_NO_HRM_INDEX) {
     if (expanded) {
       log_debug(gc, ergo, heap)("Attempt heap expansion (requested address range outside heap bounds). region size: " SIZE_FORMAT "B",
                                 HeapRegion::GrainWords * HeapWordSize);
     }
-    return _hrm->allocate_free_regions_starting_at(index, 1);
+    return _hrm.allocate_free_regions_starting_at(index, 1);
   }
   return NULL;
 }

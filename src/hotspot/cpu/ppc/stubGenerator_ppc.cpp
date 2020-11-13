@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3544,6 +3544,480 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+#ifdef VM_LITTLE_ENDIAN
+// The following Base64 decode intrinsic is based on an algorithm outlined
+// in here:
+// http://0x80.pl/notesen/2016-01-17-sse-base64-decoding.html
+// in the section titled "Vector lookup (pshufb with bitmask)"
+//
+// This implementation differs in the following ways:
+//  * Instead of Intel SSE instructions, Power AltiVec VMX and VSX instructions
+//    are used instead.  It turns out that some of the vector operations
+//    needed in the algorithm require fewer AltiVec instructions.
+//  * The algorithm in the above mentioned paper doesn't handle the
+//    Base64-URL variant in RFC 4648.  Adjustments to both the code and to two
+//    lookup tables are needed for this.
+//  * The "Pack" section of the code is a complete rewrite for Power because we
+//    can utilize better instructions for this step.
+//
+
+// Offsets per group of Base64 characters
+// Uppercase
+#define UC  (signed char)((-'A' + 0) & 0xff)
+// Lowercase
+#define LC  (signed char)((-'a' + 26) & 0xff)
+// Digits
+#define DIG (signed char)((-'0' + 52) & 0xff)
+// Plus sign (URL = 0)
+#define PLS (signed char)((-'+' + 62) & 0xff)
+// Hyphen (URL = 1)
+#define HYP (signed char)((-'-' + 62) & 0xff)
+// Slash (URL = 0)
+#define SLS (signed char)((-'/' + 63) & 0xff)
+// Underscore (URL = 1)
+#define US  (signed char)((-'_' + 63) & 0xff)
+
+#define VEC_ALIGN __attribute__ ((aligned(16)))
+
+// In little-endian mode, the lxv instruction loads the element at EA into
+// element 15 of the the vector register, EA+1 goes into element 14, and so
+// on.
+//
+// To make a look-up table easier to read, ARRAY_TO_LXV_ORDER reverses the
+// order of the elements in a vector initialization.
+#define ARRAY_TO_LXV_ORDER(e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13, e14, e15) e15, e14, e13, e12, e11, e10, e9, e8, e7, e6, e5, e4, e3, e2, e1, e0
+
+  //
+  // Base64 decodeBlock intrinsic
+  address generate_base64_decodeBlock() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "base64_decodeBlock");
+    address start   = __ function_entry();
+
+    static const signed char VEC_ALIGN offsetLUT_val[16] = {
+      ARRAY_TO_LXV_ORDER(
+      0,   0, PLS, DIG,  UC,  UC,  LC,  LC,
+      0,   0,   0,   0,   0,   0,   0,   0 ) };
+
+    static const signed char VEC_ALIGN offsetLUT_URL_val[16] = {
+      ARRAY_TO_LXV_ORDER(
+      0,   0, HYP, DIG,  UC,  UC,  LC,  LC,
+      0,   0,   0,   0,   0,   0,   0,   0 ) };
+
+    static const unsigned char VEC_ALIGN maskLUT_val[16] = {
+      ARRAY_TO_LXV_ORDER(
+      /* 0        */ (unsigned char)0b10101000,
+      /* 1 .. 9   */ (unsigned char)0b11111000, (unsigned char)0b11111000, (unsigned char)0b11111000, (unsigned char)0b11111000,
+                     (unsigned char)0b11111000, (unsigned char)0b11111000, (unsigned char)0b11111000, (unsigned char)0b11111000,
+                     (unsigned char)0b11111000,
+      /* 10       */ (unsigned char)0b11110000,
+      /* 11       */ (unsigned char)0b01010100,
+      /* 12 .. 14 */ (unsigned char)0b01010000, (unsigned char)0b01010000, (unsigned char)0b01010000,
+      /* 15       */ (unsigned char)0b01010100 ) };
+
+    static const unsigned char VEC_ALIGN maskLUT_URL_val[16] = {
+      ARRAY_TO_LXV_ORDER(
+      /* 0        */ (unsigned char)0b10101000,
+      /* 1 .. 9   */ (unsigned char)0b11111000, (unsigned char)0b11111000, (unsigned char)0b11111000, (unsigned char)0b11111000,
+                     (unsigned char)0b11111000, (unsigned char)0b11111000, (unsigned char)0b11111000, (unsigned char)0b11111000,
+                     (unsigned char)0b11111000,
+      /* 10       */ (unsigned char)0b11110000,
+      /* 11 .. 12 */ (unsigned char)0b01010000, (unsigned char)0b01010000,
+      /* 13       */ (unsigned char)0b01010100,
+      /* 14       */ (unsigned char)0b01010000,
+      /* 15       */ (unsigned char)0b01110000 ) };
+
+    static const unsigned char VEC_ALIGN bitposLUT_val[16] = {
+      ARRAY_TO_LXV_ORDER(
+      0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, (unsigned char)0x80,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ) };
+
+    static const unsigned char VEC_ALIGN pack_lshift_val[16] = {
+      ARRAY_TO_LXV_ORDER(
+      0, 6, 4, 2, 0, 6, 4, 2, 0, 6, 4, 2, 0, 6, 4, 2 ) };
+
+    static const unsigned char VEC_ALIGN pack_rshift_val[16] = {
+      ARRAY_TO_LXV_ORDER(
+      0, 2, 4, 0, 0, 2, 4, 0, 0, 2, 4, 0, 0, 2, 4, 0 ) };
+
+    // The first 4 index values are "don't care" because
+    // we only use the first 12 bytes of the vector,
+    // which are decoded from 16 bytes of Base64 characters.
+    static const unsigned char VEC_ALIGN pack_permute_val[16] = {
+      ARRAY_TO_LXV_ORDER(
+       0, 0, 0, 0,
+       0,  1,  2,
+       4,  5,  6,
+       8,  9, 10,
+      12, 13, 14 ) };
+
+    static const unsigned char VEC_ALIGN p10_pack_permute_val[16] = {
+      ARRAY_TO_LXV_ORDER(
+       0,  0,  0,  0,  7,  6,  5,  4,
+       3,  2, 15, 14, 13, 12, 11, 10 ) };
+
+    // loop_unrolls needs to be a power of two so that the rounding can be
+    // done using a mask.
+    //
+    // The amount of loop unrolling was determined by running a benchmark
+    // that decodes a 20k block of Base64 data on a Power9 machine:
+    // loop_unrolls = 1 :
+    // (min, avg, max) = (108639.215, 110530.479, 110779.920), stdev = 568.437
+    // loop_unrolls = 2 :
+    // (min, avg, max) = (108259.029, 110174.202, 110399.642), stdev = 561.729
+    // loop_unrolls = 4 :
+    // (min, avg, max) = (106514.175, 108373.110, 108514.786), stdev = 392.237
+    // loop_unrolls = 8 :
+    // (min, avg, max) = (106281.283, 108316.668, 108539.953), stdev = 553.938
+    // loop_unrolls = 16 :
+    // (min, avg, max) = (108580.768, 110631.161, 110766.237), stdev = 430.510
+    //
+    // Comparing only the max values, there's no reason to go past
+    // loop_unrolls = 1.  Performance at loop_unrolls = 16 is similar but
+    // has the disadvantage of requiring a larger minimum block of data to
+    // work with.  A value of 1 gives a minimum of (16 + 12) = 28 bytes
+    // before the intrinsic will decode any data.  See the reason for the
+    // +12 in the following logic.
+    const unsigned loop_unrolls = 1;
+
+    const unsigned vec_size = 16; // size of vector registers in bytes
+    const unsigned block_size = vec_size * loop_unrolls;  // number of bytes to process in each pass through the loop
+    const unsigned block_size_shift = exact_log2(block_size);
+
+    // According to the ELF V2 ABI, registers r3-r12 are volatile and available for use without save/restore
+    Register s      = R3_ARG1; // source starting address of Base64 characters
+    Register sp     = R4_ARG2; // source offset
+    Register sl     = R5_ARG3; // source length = # of Base64 characters to be processed
+    Register d      = R6_ARG4; // destination address
+    Register dp     = R7_ARG5; // destination offset
+    Register isURL  = R8_ARG6; // boolean, if non-zero indicates use of RFC 4648 base64url encoding
+
+    // Local variables
+    Register const_ptr     = R9;  // used for loading constants
+    Register tmp_reg       = R10; // used for speeding up load_constant_optimized()
+
+    // Re-use R9 and R10 to avoid using non-volatile registers (requires save/restore)
+    Register out           = R9;  // moving out (destination) pointer
+    Register in            = R10; // moving in (source) pointer
+
+    // Volatile VSRS are 0..13, 32..51 (VR0..VR13)
+    // VR Constants
+    VectorRegister  vec_0s                  = VR0;
+    VectorRegister  vec_4s                  = VR1;
+    VectorRegister  vec_8s                  = VR2;
+    VectorRegister  vec_special_case_char   = VR3;
+    VectorRegister  pack_rshift             = VR4;
+    VectorRegister  pack_lshift             = VR5;
+    // P10+
+    VectorRegister  vec_0x3fs               = VR4; // safe to reuse pack_rshift's register
+
+    // VSR Constants
+    VectorSRegister offsetLUT               = VSR0;
+    VectorSRegister maskLUT                 = VSR1;
+    VectorSRegister bitposLUT               = VSR2;
+    VectorSRegister vec_0xfs                = VSR3;
+    VectorSRegister vec_special_case_offset = VSR4;
+    VectorSRegister pack_permute            = VSR5;
+
+    // Variables for lookup
+    // VR
+    VectorRegister  input                   = VR6;
+    VectorRegister  higher_nibble           = VR7;
+    VectorRegister  eq_special_case_char    = VR8;
+    VectorRegister  offsets                 = VR9;
+    VectorRegister  non_match               = VR10;
+
+    // VSR
+    VectorSRegister bit                     = VSR6;
+    VectorSRegister lower_nibble            = VSR7;
+    VectorSRegister M                       = VSR8;
+
+    // Variables for pack
+    // VR
+    VectorRegister  l                       = VR7;  // reuse higher_nibble's register
+    VectorRegister  r                       = VR8;  // reuse eq_special_case_char's register
+    VectorRegister  gathered                = VR9;  // reuse offsets's register
+
+    Label not_URL, calculate_size, unrolled_loop_start, unrolled_loop_exit, return_zero;
+
+    // The upper 32 bits of the non-pointer parameter registers are not
+    // guaranteed to be zero, so mask off those upper bits.
+    __ clrldi(sp, sp, 32);
+    __ clrldi(sl, sl, 32);
+
+    // Don't handle the last 4 characters of the source, because this
+    // VSX-based algorithm doesn't handle padding characters.  Also the
+    // vector code will always write 16 bytes of decoded data on each pass,
+    // but only the first 12 of those 16 bytes are valid data (16 base64
+    // characters become 12 bytes of binary data), so for this reason we
+    // need to subtract an additional 8 bytes from the source length, in
+    // order not to write past the end of the destination buffer.  The
+    // result of this subtraction implies that a Java function in the
+    // Base64 class will be used to process the last 12 characters.
+    __ sub(sl, sl, sp);
+    __ subi(sl, sl, 12);
+
+    // Load CTR with the number of passes through the unrolled loop
+    // = sl >> block_size_shift.  After the shift, if sl <= 0, there's too
+    // little data to be processed by this intrinsic.
+    __ srawi_(sl, sl, block_size_shift);
+    __ ble(CCR0, return_zero);
+    __ mtctr(sl);
+
+    // Clear the other two parameter registers upper 32 bits.
+    __ clrldi(isURL, isURL, 32);
+    __ clrldi(dp, dp, 32);
+
+    // Load constant vec registers that need to be loaded from memory
+    __ load_const_optimized(const_ptr, (address)&bitposLUT_val, tmp_reg);
+    __ lxv(bitposLUT, 0, const_ptr);
+    if (PowerArchitecturePPC64 >= 10) {
+        __ load_const_optimized(const_ptr, (address)&p10_pack_permute_val, tmp_reg);
+    } else {
+        __ load_const_optimized(const_ptr, (address)&pack_rshift_val, tmp_reg);
+        __ lxv(pack_rshift->to_vsr(), 0, const_ptr);
+        __ load_const_optimized(const_ptr, (address)&pack_lshift_val, tmp_reg);
+        __ lxv(pack_lshift->to_vsr(), 0, const_ptr);
+        __ load_const_optimized(const_ptr, (address)&pack_permute_val, tmp_reg);
+    }
+    __ lxv(pack_permute, 0, const_ptr);
+
+    // Splat the constants that can use xxspltib
+    __ xxspltib(vec_0s->to_vsr(), 0);
+    __ xxspltib(vec_4s->to_vsr(), 4);
+    __ xxspltib(vec_8s->to_vsr(), 8);
+    __ xxspltib(vec_0xfs, 0xf);
+    if (PowerArchitecturePPC64 >= 10) {
+        __ xxspltib(vec_0x3fs->to_vsr(), 0x3f);
+    }
+
+    // The rest of the constants use different values depending on the
+    // setting of isURL
+    __ cmpwi(CCR0, isURL, 0);
+    __ beq(CCR0, not_URL);
+
+    // isURL != 0 (true)
+    __ load_const_optimized(const_ptr, (address)&offsetLUT_URL_val, tmp_reg);
+    __ lxv(offsetLUT, 0, const_ptr);
+    __ load_const_optimized(const_ptr, (address)&maskLUT_URL_val, tmp_reg);
+    __ lxv(maskLUT, 0, const_ptr);
+    __ xxspltib(vec_special_case_char->to_vsr(), '_');
+    __ xxspltib(vec_special_case_offset, (unsigned char)US);
+    __ b(calculate_size);
+
+    // isURL = 0 (false)
+    __ bind(not_URL);
+    __ load_const_optimized(const_ptr, (address)&offsetLUT_val, tmp_reg);
+    __ lxv(offsetLUT, 0, const_ptr);
+    __ load_const_optimized(const_ptr, (address)&maskLUT_val, tmp_reg);
+    __ lxv(maskLUT, 0, const_ptr);
+    __ xxspltib(vec_special_case_char->to_vsr(), '/');
+    __ xxspltib(vec_special_case_offset, (unsigned char)SLS);
+
+    __ bind(calculate_size);
+
+    // out starts at d + dp
+    __ add(out, d, dp);
+
+    // in starts at s + sp
+    __ add(in, s, sp);
+
+    __ align(32);
+    __ bind(unrolled_loop_start);
+    for (unsigned unroll_cnt=0; unroll_cnt < loop_unrolls; unroll_cnt++) {
+        // We can use a static displacement in the load since it's always a
+        // multiple of 16, which is a requirement of lxv/stxv.  This saves
+        // an addi instruction.
+        __ lxv(input->to_vsr(), unroll_cnt * 16, in);
+        //
+        // Lookup
+        //
+        // Isolate the upper 4 bits of each character by shifting it right 4 bits
+        __ vsrb(higher_nibble, input, vec_4s);
+        // Isolate the lower 4 bits by masking
+        __ xxland(lower_nibble, input->to_vsr(), vec_0xfs);
+
+        // Get the offset (the value to subtract from the byte) by using
+        // a lookup table indexed by the upper 4 bits of the character
+        __ xxperm(offsets->to_vsr(), offsetLUT, higher_nibble->to_vsr());
+
+        // Find out which elements are the special case character (isURL ? '/' : '-')
+        __ vcmpequb(eq_special_case_char, input, vec_special_case_char);
+
+        // For each character in the input which is a special case
+        // character, replace its offset with one that is special for that
+        // character.
+        __ xxsel(offsets->to_vsr(), offsets->to_vsr(), vec_special_case_offset, eq_special_case_char->to_vsr());
+
+        // Use the lower_nibble to select a mask "M" from the lookup table.
+        __ xxperm(M, maskLUT, lower_nibble);
+
+        // "bit" is used to isolate which of the bits in M is relevant.
+        __ xxperm(bit, bitposLUT, higher_nibble->to_vsr());
+
+        // Each element of non_match correspond to one each of the 16 input
+        // characters.  Those elements that become 0x00 after the xxland
+        // instuction are invalid Base64 characters.
+        __ xxland(non_match->to_vsr(), M, bit);
+
+        // Compare each element to zero
+        //
+        // vmcmpequb_ sets the EQ bit of CCR6 if no elements compare equal.
+        // Any element comparing equal to zero means there is an error in
+        // that element.  Note that the comparison result register
+        // non_match is not referenced again.  Only CCR6-EQ matters.
+        __ vcmpequb_(non_match, non_match, vec_0s);
+        __ bne_predict_not_taken(CCR6, unrolled_loop_exit);
+
+        // The Base64 characters had no errors, so add the offsets
+        __ vaddubm(input, input, offsets);
+
+        // Pack
+        //
+        // In the tables below, b0, b1, .. b15 are the bytes of decoded
+        // binary data, the first line of each of the cells (except for
+        // the constants) uses the bit-field nomenclature from the
+        // above-linked paper, whereas the second line is more specific
+        // about which exact bits are present, and is constructed using the
+        // Power ISA 3.x document style, where:
+        //
+        // * The specifier after the colon depicts which bits are there.
+        // * The bit numbering is big endian style (bit 0 is the most
+        //   significant).
+        // * || is a concatenate operator.
+        // * Strings of 0's are a field of zeros with the shown length, and
+        //   likewise for strings of 1's.
+
+        if (PowerArchitecturePPC64 >= 10) {
+            // Note that only e8..e15 are shown here because the extract bit
+            // pattern is the same in e0..e7.
+            //
+            // +===============+=============+======================+======================+=============+=============+======================+======================+=============+
+            // |    Vector     |     e8      |          e9          |         e10          |     e11     |     e12     |         e13          |         e14          |     e15     |
+            // |    Element    |             |                      |                      |             |             |                      |                      |             |
+            // +===============+=============+======================+======================+=============+=============+======================+======================+=============+
+            // | after vaddudb |  00hhhhhh   |       00gggggg       |       00ffffff       |  00eeeeee   |  00dddddd   |       00cccccc       |       00bbbbbb       |  00aaaaaa   |
+            // |               | 00||b5:2..7 | 00||b4:4..7||b5:0..1 | 00||b3:6..7||b4:0..3 | 00||b3:0..5 | 00||b2:2..7 | 00||b1:4..7||b2:0..1 | 00||b0:6..7||b1:0..3 | 00||b0:0..5 |
+            // +---------------+-------------+----------------------+----------------------+-------------+-------------+----------------------+----------------------+-------------+
+            // |  after xxbrd  |  00aaaaaa   |       00bbbbbb       |       00cccccc       |  00dddddd   |  00eeeeee   |       00ffffff       |       00gggggg       |  00hhhhhh   |
+            // |               | 00||b0:0..5 | 00||b0:6..7||b1:0..3 | 00||b1:4..7||b2:0..1 | 00||b2:2..7 | 00||b3:0..5 | 00||b3:6..7||b4:0..3 | 00||b4:4..7||b5:0..1 | 00||b5:2..7 |
+            // +---------------+-------------+----------------------+----------------------+-------------+-------------+----------------------+----------------------+-------------+
+            // |   vec_0x3fs   |  00111111   |       00111111       |       00111111       |  00111111   |  00111111   |       00111111       |       00111111       |  00111111   |
+            // +---------------+-------------+----------------------+----------------------+-------------+-------------+----------------------+----------------------+-------------+
+            // | after vpextd  |  00000000   |       00000000       |       aaaaaabb       |  bbbbcccc   |  ccdddddd   |       eeeeeeff       |       ffffgggg       |  gghhhhhh   |
+            // |               |  00000000   |       00000000       |       b0:0..7        |   b1:0..7   |   b2:0..7   |       b3:0..7        |       b4:0..7        |   b5:0..7   |
+            // +===============+=============+======================+======================+=============+=============+======================+======================+=============+
+
+            __ xxbrd(input->to_vsr(), input->to_vsr());
+            __ vpextd(gathered, input, vec_0x3fs);
+
+            // Final rearrangement of bytes into their correct positions.
+            // +==================+====+====+====+====+=====+=====+=====+=====+====+====+=====+=====+=====+=====+=====+=====+
+            // |      Vector      | e0 | e1 | e2 | e3 | e4  | e5  | e6  | e7  | e8 | e9 | e10 | e11 | e12 | e13 | e14 | e15 |
+            // |     Elements     |    |    |    |    |     |     |     |     |    |    |     |     |     |     |     |     |
+            // +==================+====+====+====+====+=====+=====+=====+=====+====+====+=====+=====+=====+=====+=====+=====+
+            // |   after vpextd   | 0  | 0  | b6 | b7 | b8  | b9  | b10 | b11 | 0  | 0  | b0  | b1  | b2  | b3  | b4  | b5  |
+            // +------------------+----+----+----+----+-----+-----+-----+-----+----+----+-----+-----+-----+-----+-----+-----+
+            // | p10_pack_permute | 0  | 0  | 0  | 0  |  7  |  6  |  5  |  4  | 3  | 2  | 15  | 14  | 13  | 12  | 11  | 10  |
+            // +------------------+----+----+----+----+-----+-----+-----+-----+----+----+-----+-----+-----+-----+-----+-----+
+            // |   after xxperm   | 0  | 0  | 0  | 0  | b11 | b10 | b9  | b8  | b7 | b6 | b5  | b4  | b3  | b2  | b1  | b0  |
+            // +==================+====+====+====+====+=====+=====+=====+=====+====+====+=====+=====+=====+=====+=====+=====+
+
+        } else {
+            // Note that only e12..e15 are shown here because the shifting
+            // and OR'ing pattern replicates for e8..e11, e4..7, and
+            // e0..e3.
+            //
+            // +======================+=================+======================+======================+=============+
+            // |        Vector        |       e12       |         e13          |         e14          |     e15     |
+            // |       Element        |                 |                      |                      |             |
+            // +======================+=================+======================+======================+=============+
+            // |    after vaddubm     |    00dddddd     |       00cccccc       |       00bbbbbb       |  00aaaaaa   |
+            // |                      |   00||b2:2..7   | 00||b1:4..7||b2:0..1 | 00||b0:6..7||b1:0..3 | 00||b0:0..5 |
+            // +----------------------+-----------------+----------------------+----------------------+-------------+
+            // |     pack_lshift      |                 |         << 6         |         << 4         |    << 2     |
+            // +----------------------+-----------------+----------------------+----------------------+-------------+
+            // |     l after vslb     |    00dddddd     |       cc000000       |       bbbb0000       |  aaaaaa00   |
+            // |                      |   00||b2:2..7   |   b2:0..1||000000    |    b1:0..3||0000     | b0:0..5||00 |
+            // +----------------------+-----------------+----------------------+----------------------+-------------+
+            // |     l after vslo     |    cc000000     |       bbbb0000       |       aaaaaa00       |  00000000   |
+            // |                      | b2:0..1||000000 |    b1:0..3||0000     |     b0:0..5||00      |  00000000   |
+            // +----------------------+-----------------+----------------------+----------------------+-------------+
+            // |     pack_rshift      |                 |         >> 2         |         >> 4         |             |
+            // +----------------------+-----------------+----------------------+----------------------+-------------+
+            // |     r after vsrb     |    00dddddd     |       0000cccc       |       000000bb       |  00aaaaaa   |
+            // |                      |   00||b2:2..7   |    0000||b1:4..7     |   000000||b0:6..7    | 00||b0:0..5 |
+            // +----------------------+-----------------+----------------------+----------------------+-------------+
+            // | gathered after xxlor |    ccdddddd     |       bbbbcccc       |       aaaaaabb       |  00aaaaaa   |
+            // |                      |     b2:0..7     |       b1:0..7        |       b0:0..7        | 00||b0:0..5 |
+            // +======================+=================+======================+======================+=============+
+            //
+            // Note: there is a typo in the above-linked paper that shows the result of the gathering process is:
+            // [ddddddcc|bbbbcccc|aaaaaabb]
+            // but should be:
+            // [ccdddddd|bbbbcccc|aaaaaabb]
+            //
+            __ vslb(l, input, pack_lshift);
+            // vslo of vec_8s shifts the vector by one octet toward lower
+            // element numbers, discarding element 0.  This means it actually
+            // shifts to the right (not left) according to the order of the
+            // table above.
+            __ vslo(l, l, vec_8s);
+            __ vsrb(r, input, pack_rshift);
+            __ xxlor(gathered->to_vsr(), l->to_vsr(), r->to_vsr());
+
+            // Final rearrangement of bytes into their correct positions.
+            // +==============+======+======+======+======+=====+=====+====+====+====+====+=====+=====+=====+=====+=====+=====+
+            // |    Vector    |  e0  |  e1  |  e2  |  e3  | e4  | e5  | e6 | e7 | e8 | e9 | e10 | e11 | e12 | e13 | e14 | e15 |
+            // |   Elements   |      |      |      |      |     |     |    |    |    |    |     |     |     |     |     |     |
+            // +==============+======+======+======+======+=====+=====+====+====+====+====+=====+=====+=====+=====+=====+=====+
+            // | after xxlor  | b11  | b10  |  b9  |  xx  | b8  | b7  | b6 | xx | b5 | b4 | b3  | xx  | b2  | b1  | b0  | xx  |
+            // +--------------+------+------+------+------+-----+-----+----+----+----+----+-----+-----+-----+-----+-----+-----+
+            // | pack_permute |  0   |  0   |  0   |  0   |  0  |  1  | 2  | 4  | 5  | 6  |  8  |  9  | 10  | 12  | 13  | 14  |
+            // +--------------+------+------+------+------+-----+-----+----+----+----+----+-----+-----+-----+-----+-----+-----+
+            // | after xxperm | b11* | b11* | b11* | b11* | b11 | b10 | b9 | b8 | b7 | b6 | b5  | b4  | b3  | b2  | b1  | b0  |
+            // +==============+======+======+======+======+=====+=====+====+====+====+====+=====+=====+=====+=====+=====+=====+
+            // xx bytes are not used to form the final data
+            // b0..b15 are the decoded and reassembled 8-bit bytes of data
+            // b11 with asterisk is a "don't care", because these bytes will be
+            // overwritten on the next iteration.
+        }
+        __ xxperm(gathered->to_vsr(), gathered->to_vsr(), pack_permute);
+
+        // We cannot use a static displacement on the store, since it's a
+        // multiple of 12, not 16.  Note that this stxv instruction actually
+        // writes 16 bytes, even though only the first 12 are valid data.
+        __ stxv(gathered->to_vsr(), 0, out);
+        __ addi(out, out, 12);
+    }
+    __ addi(in, in, 16 * loop_unrolls);
+    __ bdnz(unrolled_loop_start);
+
+    __ bind(unrolled_loop_exit);
+
+    // Return the number of out bytes produced, which is (out - (d + dp)) == out - d - dp;
+    __ sub(R3_RET, out, d);
+    __ sub(R3_RET, R3_RET, dp);
+
+    __ blr();
+
+    __ bind(return_zero);
+    __ li(R3_RET, 0);
+    __ blr();
+
+    return start;
+  }
+
+#undef UC
+#undef LC
+#undef DIG
+#undef PLS
+#undef HYP
+#undef SLS
+#undef US
+
+#endif // VM_LITTLE_ENDIAN
+
   // Initialization
   void generate_initial() {
     // Generates all stubs and initializes the entry points
@@ -3642,6 +4116,13 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_sha512_implCompress   = generate_sha512_implCompress(false, "sha512_implCompress");
       StubRoutines::_sha512_implCompressMB = generate_sha512_implCompress(true, "sha512_implCompressMB");
     }
+
+#ifdef VM_LITTLE_ENDIAN
+    // Currently supported on PPC64LE only
+    if (UseBASE64Intrinsics) {
+      StubRoutines::_base64_decodeBlock = generate_base64_decodeBlock();
+    }
+#endif
   }
 
  public:
