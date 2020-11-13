@@ -27,7 +27,6 @@
  * @run testng TestMemoryCopy
  */
 
-import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryLayouts;
 import jdk.incubator.foreign.MemorySegment;
 import org.testng.annotations.DataProvider;
@@ -46,21 +45,19 @@ public class TestMemoryCopy {
 
     @Test(dataProvider = "slices")
     public void testCopy(SegmentSlice s1, SegmentSlice s2) {
-        MemoryAddress addr1 = s1.segment.baseAddress();
-        MemoryAddress addr2 = s2.segment.baseAddress();
         int size = Math.min(s1.size(), s2.size());
         //prepare source and target segments
         for (int i = 0 ; i < size ; i++) {
-            BYTE_HANDLE.set(addr2.addOffset(i), (byte)0);
+            BYTE_HANDLE.set(s2.segment.asSlice(i), (byte)0);
         }
         for (int i = 0 ; i < size ; i++) {
-            BYTE_HANDLE.set(addr1.addOffset(i), (byte) i);
+            BYTE_HANDLE.set(s1.segment.asSlice(i), (byte) i);
         }
         //perform copy
         s2.segment.copyFrom(s1.segment.asSlice(0, size));
         //check that copy actually worked
         for (int i = 0 ; i < size ; i++) {
-            assertEquals((byte)i, BYTE_HANDLE.get(addr2.addOffset(i)));
+            assertEquals((byte)i, BYTE_HANDLE.get(s2.segment.asSlice(i)));
         }
     }
 

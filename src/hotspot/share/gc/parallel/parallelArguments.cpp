@@ -37,8 +37,6 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-static const double MaxRamFractionForYoung = 0.8;
-
 size_t ParallelArguments::conservative_max_heap_alignment() {
   return compute_heap_alignment();
 }
@@ -116,10 +114,6 @@ void ParallelArguments::initialize_heap_flags_and_sizes_one_pass() {
 }
 
 void ParallelArguments::initialize_heap_flags_and_sizes() {
-  if (is_heterogeneous_heap()) {
-    initialize_heterogeneous();
-  }
-
   initialize_heap_flags_and_sizes_one_pass();
 
   const size_t min_pages = 4; // 1 for eden + 1 for each survivor + 1 for old
@@ -134,61 +128,6 @@ void ParallelArguments::initialize_heap_flags_and_sizes() {
     // Redo everything from the start
     initialize_heap_flags_and_sizes_one_pass();
   }
-}
-
-// Check the available dram memory to limit NewSize and MaxNewSize before
-// calling base class initialize_flags().
-void ParallelArguments::initialize_heterogeneous() {
-  FormatBuffer<100> calc_str("");
-
-  julong phys_mem;
-  // If MaxRam is specified, we use that as maximum physical memory available.
-  if (FLAG_IS_DEFAULT(MaxRAM)) {
-    phys_mem = os::physical_memory();
-    calc_str.append("Physical_Memory");
-  } else {
-    phys_mem = (julong)MaxRAM;
-    calc_str.append("MaxRAM");
-  }
-
-  julong reasonable_max = phys_mem;
-
-  // If either MaxRAMFraction or MaxRAMPercentage is specified, we use them to calculate
-  // reasonable max size of young generation.
-  if (!FLAG_IS_DEFAULT(MaxRAMFraction)) {
-    reasonable_max = (julong)(phys_mem / MaxRAMFraction);
-    calc_str.append(" / MaxRAMFraction");
-  } else if (!FLAG_IS_DEFAULT(MaxRAMPercentage)) {
-    reasonable_max = (julong)((phys_mem * MaxRAMPercentage) / 100);
-    calc_str.append(" * MaxRAMPercentage / 100");
-  } else {
-    // We use our own fraction to calculate max size of young generation.
-    reasonable_max = phys_mem * MaxRamFractionForYoung;
-    calc_str.append(" * %0.2f", MaxRamFractionForYoung);
-  }
-  reasonable_max = align_up(reasonable_max, GenAlignment);
-
-  if (MaxNewSize > reasonable_max) {
-    if (FLAG_IS_CMDLINE(MaxNewSize)) {
-      log_warning(gc, ergo)("Setting MaxNewSize to " SIZE_FORMAT " based on dram available (calculation = align(%s))",
-                            (size_t)reasonable_max, calc_str.buffer());
-    } else {
-      log_info(gc, ergo)("Setting MaxNewSize to " SIZE_FORMAT " based on dram available (calculation = align(%s)). "
-                         "Dram usage can be lowered by setting MaxNewSize to a lower value", (size_t)reasonable_max, calc_str.buffer());
-    }
-    MaxNewSize = reasonable_max;
-  }
-  if (NewSize > reasonable_max) {
-    if (FLAG_IS_CMDLINE(NewSize)) {
-      log_warning(gc, ergo)("Setting NewSize to " SIZE_FORMAT " based on dram available (calculation = align(%s))",
-                            (size_t)reasonable_max, calc_str.buffer());
-    }
-    NewSize = reasonable_max;
-  }
-}
-
-bool ParallelArguments::is_heterogeneous_heap() {
-  return AllocateOldGenAt != NULL;
 }
 
 size_t ParallelArguments::heap_reserved_size_bytes() {

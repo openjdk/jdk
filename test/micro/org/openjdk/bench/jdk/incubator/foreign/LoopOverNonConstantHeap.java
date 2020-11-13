@@ -22,6 +22,7 @@
  */
 package org.openjdk.bench.jdk.incubator.foreign;
 
+import jdk.incubator.foreign.MemoryAccess;
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
@@ -90,7 +91,7 @@ public class LoopOverNonConstantHeap {
     @Benchmark
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public int segment_get() {
-        return (int) VH_int.get(segment.baseAddress(), 0L);
+        return (int) VH_int.get(segment, 0L);
     }
 
     @Benchmark
@@ -111,17 +112,25 @@ public class LoopOverNonConstantHeap {
     @Benchmark
     public int segment_loop() {
         int sum = 0;
-        MemoryAddress base = segment.baseAddress();
         for (int i = 0; i < ELEM_SIZE; i++) {
-            sum += (int) VH_int.get(base, (long) i);
+            sum += (int) VH_int.get(segment, (long) i);
         }
         return sum;
     }
 
     @Benchmark
+    public int segment_loop_static() {
+        int res = 0;
+        for (int i = 0; i < ELEM_SIZE; i ++) {
+            res += MemoryAccess.getIntAtIndex(segment, i);
+        }
+        return res;
+    }
+
+    @Benchmark
     public int segment_loop_slice() {
         int sum = 0;
-        MemoryAddress base = segment.asSlice(0, segment.byteSize()).baseAddress();
+        MemorySegment base = segment.asSlice(0, segment.byteSize());
         for (int i = 0; i < ELEM_SIZE; i++) {
             sum += (int) VH_int.get(base, (long) i);
         }
@@ -131,7 +140,7 @@ public class LoopOverNonConstantHeap {
     @Benchmark
     public int segment_loop_readonly() {
         int sum = 0;
-        MemoryAddress base = segment.withAccessModes(MemorySegment.READ).baseAddress();
+        MemorySegment base = segment.withAccessModes(MemorySegment.READ);
         for (int i = 0; i < ELEM_SIZE; i++) {
             sum += (int) VH_int.get(base, (long) i);
         }
