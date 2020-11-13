@@ -177,6 +177,10 @@ define SetupJavaCompilationBody
     $$(error Must specify BIN (in $1))
   endif
 
+  ifneq ($$($1_MODULE), )
+    $1_MODULE_SUBDIR := /$$($1_MODULE)
+  endif
+
   $1_SAFE_NAME := $$(strip $$(subst /,_, $1))
 
   ifeq ($$($1_SMALL_JAVA), )
@@ -280,10 +284,6 @@ define SetupJavaCompilationBody
 
   ifneq ($$($1_CLASSPATH), )
     $1_FLAGS += -cp $$(call PathList, $$($1_CLASSPATH))
-  endif
-
-  ifneq ($$($1_MODULE), )
-    $1_MODULE_SUBDIR := /$$($1_MODULE)
   endif
 
   # Make sure the dirs exist, or that one of the EXTRA_FILES, that may not
