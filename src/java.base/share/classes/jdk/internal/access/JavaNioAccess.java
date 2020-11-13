@@ -104,4 +104,19 @@ public interface JavaNioAccess {
      * Used by {@code jdk.internal.foreign.MappedMemorySegmentImpl} and byte buffer var handle views.
      */
     boolean isLoaded(long address, boolean isSync, long size);
+
+    /**
+     * Used by {@code jdk.internal.foreign.NativeMemorySegmentImpl}.
+     */
+    void reserveMemory(long size, long cap);
+
+    /**
+     * Used by {@code jdk.internal.foreign.NativeMemorySegmentImpl}.
+     */
+    void unreserveMemory(long size, long cap);
+
+    /**
+     * Used by {@code jdk.internal.foreign.NativeMemorySegmentImpl}.
+     */
+    int pageSize();
 }

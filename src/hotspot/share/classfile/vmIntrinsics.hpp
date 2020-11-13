@@ -448,6 +448,12 @@ class methodHandle;
   do_name(encodeBlock_name, "encodeBlock")                                                                              \
   do_signature(encodeBlock_signature, "([BII[BIZ)V")                                                                    \
                                                                                                                         \
+  /* support for java.util.Base64.Decoder*/                                                                             \
+  do_class(java_util_Base64_Decoder, "java/util/Base64$Decoder")                                                        \
+  do_intrinsic(_base64_decodeBlock, java_util_Base64_Decoder, decodeBlock_name, decodeBlock_signature, F_R)             \
+   do_name(decodeBlock_name, "decodeBlock")                                                                             \
+   do_signature(decodeBlock_signature, "([BII[BIZ)I")                                                                   \
+                                                                                                                        \
   /* support for com.sun.crypto.provider.GHASH */                                                                       \
   do_class(com_sun_crypto_provider_ghash, "com/sun/crypto/provider/GHASH")                                              \
   do_intrinsic(_ghash_processBlocks, com_sun_crypto_provider_ghash, processBlocks_name, ghash_processBlocks_signature, F_S) \
@@ -517,6 +523,10 @@ class methodHandle;
   do_intrinsic(_isCompileConstant, java_lang_invoke_MethodHandleImpl, isCompileConstant_name, isCompileConstant_signature, F_S) \
    do_name(     isCompileConstant_name,                          "isCompileConstant")                                   \
    do_alias(    isCompileConstant_signature,                      object_boolean_signature)                             \
+                                                                                                                        \
+  do_intrinsic(_getObjectSize,   sun_instrument_InstrumentationImpl, getObjectSize_name, getObjectSize_signature, F_RN) \
+   do_name(     getObjectSize_name,                               "getObjectSize0")                                     \
+   do_alias(    getObjectSize_signature,                          long_object_long_signature)                           \
                                                                                                                         \
   /* unsafe memory references (there are a lot of them...) */                                                           \
   do_signature(getReference_signature,    "(Ljava/lang/Object;J)Ljava/lang/Object;")                                    \

@@ -1753,7 +1753,9 @@ int MachCallDynamicJavaNode::ret_addr_offset()
 
 int MachCallRuntimeNode::ret_addr_offset() {
   // for generated stubs the call will be
-  //   far_call(addr)
+  //   bl(addr)
+  // or with far branches
+  //   bl(trampoline_stub)
   // for real runtime callouts it will be six instructions
   // see aarch64_enc_java_to_runtime
   //   adr(rscratch2, retaddr)
@@ -1762,7 +1764,7 @@ int MachCallRuntimeNode::ret_addr_offset() {
   //   blr(rscratch1)
   CodeBlob *cb = CodeCache::find_blob(_entry_point);
   if (cb) {
-    return MacroAssembler::far_branch_size();
+    return 1 * NativeInstruction::instruction_size;
   } else {
     return 6 * NativeInstruction::instruction_size;
   }
@@ -2512,11 +2514,6 @@ const uint Matcher::vector_ideal_reg(int len) {
   }
   ShouldNotReachHere();
   return 0;
-}
-
-// AES support not yet implemented
-const bool Matcher::pass_original_key_for_aes() {
-  return false;
 }
 
 // aarch64 supports misaligned vectors store/load.
@@ -18916,6 +18913,216 @@ instruct vsrl2L_imm(vecX dst, vecX src, immI shift) %{
   format %{ "ushr    $dst, $src, $shift\t# vector (2D)" %}
   ins_encode %{
     __ ushr(as_FloatRegister($dst$$reg), __ T2D,
+            as_FloatRegister($src$$reg),
+            (int)$shift$$constant);
+  %}
+  ins_pipe(vshift128_imm);
+%}
+
+instruct vsraa8B_imm(vecD dst, vecD src, immI shift) %{
+  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (AddVB dst (RShiftVB src (RShiftCntV shift))));
+  ins_cost(INSN_COST);
+  format %{ "ssra    $dst, $src, $shift\t# vector (8B)" %}
+  ins_encode %{
+    int sh = (int)$shift$$constant;
+    if (sh >= 8) sh = 7;
+    __ ssra(as_FloatRegister($dst$$reg), __ T8B,
+           as_FloatRegister($src$$reg), sh);
+  %}
+  ins_pipe(vshift64_imm);
+%}
+
+instruct vsraa16B_imm(vecX dst, vecX src, immI shift) %{
+  predicate(n->as_Vector()->length() == 16);
+  match(Set dst (AddVB dst (RShiftVB src (RShiftCntV shift))));
+  ins_cost(INSN_COST);
+  format %{ "ssra    $dst, $src, $shift\t# vector (16B)" %}
+  ins_encode %{
+    int sh = (int)$shift$$constant;
+    if (sh >= 8) sh = 7;
+    __ ssra(as_FloatRegister($dst$$reg), __ T16B,
+           as_FloatRegister($src$$reg), sh);
+  %}
+  ins_pipe(vshift128_imm);
+%}
+
+instruct vsraa4S_imm(vecD dst, vecD src, immI shift) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (AddVS dst (RShiftVS src (RShiftCntV shift))));
+  ins_cost(INSN_COST);
+  format %{ "ssra    $dst, $src, $shift\t# vector (4H)" %}
+  ins_encode %{
+    int sh = (int)$shift$$constant;
+    if (sh >= 16) sh = 15;
+    __ ssra(as_FloatRegister($dst$$reg), __ T4H,
+           as_FloatRegister($src$$reg), sh);
+  %}
+  ins_pipe(vshift64_imm);
+%}
+
+instruct vsraa8S_imm(vecX dst, vecX src, immI shift) %{
+  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (AddVS dst (RShiftVS src (RShiftCntV shift))));
+  ins_cost(INSN_COST);
+  format %{ "ssra    $dst, $src, $shift\t# vector (8H)" %}
+  ins_encode %{
+    int sh = (int)$shift$$constant;
+    if (sh >= 16) sh = 15;
+    __ ssra(as_FloatRegister($dst$$reg), __ T8H,
+           as_FloatRegister($src$$reg), sh);
+  %}
+  ins_pipe(vshift128_imm);
+%}
+
+instruct vsraa2I_imm(vecD dst, vecD src, immI shift) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (AddVI dst (RShiftVI src (RShiftCntV shift))));
+  ins_cost(INSN_COST);
+  format %{ "ssra    $dst, $src, $shift\t# vector (2S)" %}
+  ins_encode %{
+    __ ssra(as_FloatRegister($dst$$reg), __ T2S,
+            as_FloatRegister($src$$reg),
+            (int)$shift$$constant);
+  %}
+  ins_pipe(vshift64_imm);
+%}
+
+instruct vsraa4I_imm(vecX dst, vecX src, immI shift) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (AddVI dst (RShiftVI src (RShiftCntV shift))));
+  ins_cost(INSN_COST);
+  format %{ "ssra    $dst, $src, $shift\t# vector (4S)" %}
+  ins_encode %{
+    __ ssra(as_FloatRegister($dst$$reg), __ T4S,
+            as_FloatRegister($src$$reg),
+            (int)$shift$$constant);
+  %}
+  ins_pipe(vshift128_imm);
+%}
+
+instruct vsraa2L_imm(vecX dst, vecX src, immI shift) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (AddVL dst (RShiftVL src (RShiftCntV shift))));
+  ins_cost(INSN_COST);
+  format %{ "ssra    $dst, $src, $shift\t# vector (2D)" %}
+  ins_encode %{
+    __ ssra(as_FloatRegister($dst$$reg), __ T2D,
+            as_FloatRegister($src$$reg),
+            (int)$shift$$constant);
+  %}
+  ins_pipe(vshift128_imm);
+%}
+
+instruct vsrla8B_imm(vecD dst, vecD src, immI shift) %{
+  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (AddVB dst (URShiftVB src (RShiftCntV shift))));
+  ins_cost(INSN_COST);
+  format %{ "usra    $dst, $src, $shift\t# vector (8B)" %}
+  ins_encode %{
+    int sh = (int)$shift$$constant;
+    if (sh >= 8) {
+      __ eor(as_FloatRegister($src$$reg), __ T8B,
+             as_FloatRegister($src$$reg),
+             as_FloatRegister($src$$reg));
+    } else {
+      __ usra(as_FloatRegister($dst$$reg), __ T8B,
+             as_FloatRegister($src$$reg), sh);
+    }
+  %}
+  ins_pipe(vshift64_imm);
+%}
+
+instruct vsrla16B_imm(vecX dst, vecX src, immI shift) %{
+  predicate(n->as_Vector()->length() == 16);
+  match(Set dst (AddVB dst (URShiftVB src (RShiftCntV shift))));
+  ins_cost(INSN_COST);
+  format %{ "usra    $dst, $src, $shift\t# vector (16B)" %}
+  ins_encode %{
+    int sh = (int)$shift$$constant;
+    if (sh >= 8) {
+      __ eor(as_FloatRegister($src$$reg), __ T16B,
+             as_FloatRegister($src$$reg),
+             as_FloatRegister($src$$reg));
+    } else {
+      __ usra(as_FloatRegister($dst$$reg), __ T16B,
+             as_FloatRegister($src$$reg), sh);
+    }
+  %}
+  ins_pipe(vshift128_imm);
+%}
+
+instruct vsrla4S_imm(vecD dst, vecD src, immI shift) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (AddVS dst (URShiftVS src (RShiftCntV shift))));
+  ins_cost(INSN_COST);
+  format %{ "usra    $dst, $src, $shift\t# vector (4H)" %}
+  ins_encode %{
+    int sh = (int)$shift$$constant;
+    if (sh >= 16) {
+      __ eor(as_FloatRegister($src$$reg), __ T8B,
+             as_FloatRegister($src$$reg),
+             as_FloatRegister($src$$reg));
+    } else {
+      __ ushr(as_FloatRegister($dst$$reg), __ T4H,
+             as_FloatRegister($src$$reg), sh);
+    }
+  %}
+  ins_pipe(vshift64_imm);
+%}
+
+instruct vsrla8S_imm(vecX dst, vecX src, immI shift) %{
+  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (AddVS dst (URShiftVS src (RShiftCntV shift))));
+  ins_cost(INSN_COST);
+  format %{ "usra    $dst, $src, $shift\t# vector (8H)" %}
+  ins_encode %{
+    int sh = (int)$shift$$constant;
+    if (sh >= 16) {
+      __ eor(as_FloatRegister($src$$reg), __ T16B,
+             as_FloatRegister($src$$reg),
+             as_FloatRegister($src$$reg));
+    } else {
+      __ usra(as_FloatRegister($dst$$reg), __ T8H,
+             as_FloatRegister($src$$reg), sh);
+    }
+  %}
+  ins_pipe(vshift128_imm);
+%}
+
+instruct vsrla2I_imm(vecD dst, vecD src, immI shift) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (AddVI dst (URShiftVI src (RShiftCntV shift))));
+  ins_cost(INSN_COST);
+  format %{ "usra    $dst, $src, $shift\t# vector (2S)" %}
+  ins_encode %{
+    __ usra(as_FloatRegister($dst$$reg), __ T2S,
+            as_FloatRegister($src$$reg),
+            (int)$shift$$constant);
+  %}
+  ins_pipe(vshift64_imm);
+%}
+
+instruct vsrla4I_imm(vecX dst, vecX src, immI shift) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (AddVI dst (URShiftVI src (RShiftCntV shift))));
+  ins_cost(INSN_COST);
+  format %{ "usra    $dst, $src, $shift\t# vector (4S)" %}
+  ins_encode %{
+    __ usra(as_FloatRegister($dst$$reg), __ T4S,
+            as_FloatRegister($src$$reg),
+            (int)$shift$$constant);
+  %}
+  ins_pipe(vshift128_imm);
+%}
+
+instruct vsrla2L_imm(vecX dst, vecX src, immI shift) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (AddVL dst (URShiftVL src (RShiftCntV shift))));
+  ins_cost(INSN_COST);
+  format %{ "usra    $dst, $src, $shift\t# vector (2D)" %}
+  ins_encode %{
+    __ usra(as_FloatRegister($dst$$reg), __ T2D,
             as_FloatRegister($src$$reg),
             (int)$shift$$constant);
   %}

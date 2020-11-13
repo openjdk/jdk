@@ -108,10 +108,10 @@ void G1UncommitRegionTask::execute() {
 
   // Prevent from running during a GC pause.
   SuspendibleThreadSetJoiner sts;
-  HeapRegionManager* hrm = G1CollectedHeap::heap()->hrm();
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
   Ticks start = Ticks::now();
-  uint uncommit_count = hrm->uncommit_inactive_regions(region_limit);
+  uint uncommit_count = g1h->uncommit_regions(region_limit);
   Tickspan uncommit_time = (Ticks::now() - start);
 
   if (uncommit_count > 0) {
@@ -120,7 +120,7 @@ void G1UncommitRegionTask::execute() {
 
   // Reschedule if there are more regions to uncommit, otherwise
   // change state to inactive.
-  if (hrm->has_inactive_regions()) {
+  if (g1h->has_uncommittable_regions()) {
     // No delay, reason to reschedule rather then to loop is to allow
     // other tasks to run without waiting for a full uncommit cycle.
     schedule(0);
