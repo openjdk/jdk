@@ -465,8 +465,10 @@ public abstract class MessageDigest extends MessageDigestSpi {
      * the same length and all bytes at corresponding positions are equal.
      *
      * @implNote
-     * If the digests are the same length, all bytes are examined to
-     * determine equality.
+     * All bytes in {@code digesta} are examined to determine equality.
+     * The calculation time depends only on the length of {@code digesta}.
+     * It does not depend on the length of {@code digestb} or the contents
+     * of {@code digesta} and {@code digestb}.
      *
      * @param digesta one of the digests to compare.
      *
@@ -479,14 +481,22 @@ public abstract class MessageDigest extends MessageDigestSpi {
         if (digesta == null || digestb == null) {
             return false;
         }
-        if (digesta.length != digestb.length) {
-            return false;
+
+        int lenA = digesta.length;
+        int lenB = digestb.length;
+
+        if (lenB == 0) {
+            return lenA == 0;
         }
 
         int result = 0;
+        result |= lenA - lenB;
+
         // time-constant comparison
-        for (int i = 0; i < digesta.length; i++) {
-            result |= digesta[i] ^ digestb[i];
+        for (int i = 0; i < lenA; i++) {
+            // If i >= lenB, indexB is 0; otherwise, i.
+            int indexB = ((i - lenB) >>> 31) * i;
+            result |= digesta[i] ^ digestb[indexB];
         }
         return result == 0;
     }

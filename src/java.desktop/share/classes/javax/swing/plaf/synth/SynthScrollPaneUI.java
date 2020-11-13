@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,20 +25,27 @@
 
 package javax.swing.plaf.synth;
 
-import javax.swing.*;
-import javax.swing.text.JTextComponent;
-import javax.swing.border.*;
-import javax.swing.plaf.*;
-import javax.swing.plaf.basic.*;
-
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeEvent;
-
-import java.awt.*;
-import java.awt.event.ContainerListener;
+import java.awt.Component;
+import java.awt.Graphics;
+import java.awt.Insets;
+import java.awt.Rectangle;
 import java.awt.event.ContainerEvent;
-import java.awt.event.FocusListener;
+import java.awt.event.ContainerListener;
 import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+
+import javax.swing.JComponent;
+import javax.swing.JScrollPane;
+import javax.swing.JViewport;
+import javax.swing.UIManager;
+import javax.swing.border.AbstractBorder;
+import javax.swing.border.Border;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.UIResource;
+import javax.swing.plaf.basic.BasicScrollPaneUI;
+import javax.swing.text.JTextComponent;
 
 /**
  * Provides the Synth L&amp;F UI delegate for
@@ -52,6 +59,12 @@ public class SynthScrollPaneUI extends BasicScrollPaneUI
     private SynthStyle style;
     private boolean viewportViewHasFocus = false;
     private ViewportViewFocusHandler viewportViewFocusHandler;
+
+    /**
+     *
+     * Constructs a {@code SynthScrollPaneUI}.
+     */
+    public SynthScrollPaneUI() {}
 
     /**
      * Creates a new UI object for the given component.
@@ -224,7 +237,9 @@ public class SynthScrollPaneUI extends BasicScrollPaneUI
         }
     }
 
-
+    /**
+     * A subclass of {@code AbstractBorder} that implements {@code UIResource}.
+     */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class ViewportBorder extends AbstractBorder implements UIResource {
         private Insets insets;

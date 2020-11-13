@@ -37,12 +37,12 @@
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 
-static OopStorage* global_handles() {
-  return OopStorageSet::jni_global();
+OopStorage* JNIHandles::global_handles() {
+  return _global_handles;
 }
 
-static OopStorage* weak_global_handles() {
-  return OopStorageSet::jni_weak();
+OopStorage* JNIHandles::weak_global_handles() {
+  return _weak_global_handles;
 }
 
 // Serviceability agent support.
@@ -50,48 +50,25 @@ OopStorage* JNIHandles::_global_handles = NULL;
 OopStorage* JNIHandles::_weak_global_handles = NULL;
 
 void jni_handles_init() {
-  JNIHandles::_global_handles = global_handles();
-  JNIHandles::_weak_global_handles = weak_global_handles();
+  JNIHandles::_global_handles = OopStorageSet::create_strong("JNI Global");
+  JNIHandles::_weak_global_handles = OopStorageSet::create_weak("JNI Weak");
 }
-
 
 jobject JNIHandles::make_local(oop obj) {
-  if (obj == NULL) {
-    return NULL;                // ignore null handles
-  } else {
-    Thread* thread = Thread::current();
-    assert(oopDesc::is_oop(obj), "not an oop");
-    assert(!current_thread_in_native(), "must not be in native");
-    return thread->active_handles()->allocate_handle(obj);
-  }
+  return make_local(Thread::current(), obj);
 }
 
-
-// optimized versions
-
-jobject JNIHandles::make_local(Thread* thread, oop obj) {
+// Used by NewLocalRef which requires NULL on out-of-memory
+jobject JNIHandles::make_local(Thread* thread, oop obj, AllocFailType alloc_failmode) {
   if (obj == NULL) {
     return NULL;                // ignore null handles
   } else {
     assert(oopDesc::is_oop(obj), "not an oop");
     assert(thread->is_Java_thread(), "not a Java thread");
     assert(!current_thread_in_native(), "must not be in native");
-    return thread->active_handles()->allocate_handle(obj);
+    return thread->active_handles()->allocate_handle(obj, alloc_failmode);
   }
 }
-
-
-jobject JNIHandles::make_local(JNIEnv* env, oop obj) {
-  if (obj == NULL) {
-    return NULL;                // ignore null handles
-  } else {
-    JavaThread* thread = JavaThread::thread_from_jni_environment(env);
-    assert(oopDesc::is_oop(obj), "not an oop");
-    assert(!current_thread_in_native(), "must not be in native");
-    return thread->active_handles()->allocate_handle(obj);
-  }
-}
-
 
 static void report_handle_allocation_failure(AllocFailType alloc_failmode,
                                              const char* handle_kind) {
@@ -124,7 +101,6 @@ jobject JNIHandles::make_global(Handle obj, AllocFailType alloc_failmode) {
 
   return res;
 }
-
 
 jobject JNIHandles::make_weak_global(Handle obj, AllocFailType alloc_failmode) {
   assert(!Universe::heap()->is_gc_active(), "can't extend the root set during GC");
@@ -201,6 +177,9 @@ void JNIHandles::weak_oops_do(OopClosure* f) {
   weak_global_handles()->weak_oops_do(f);
 }
 
+bool JNIHandles::is_global_storage(const OopStorage* storage) {
+  return _global_handles == storage;
+}
 
 inline bool is_storage_handle(const OopStorage* storage, const oop* ptr) {
   return storage->allocation_status(ptr) == OopStorage::ALLOCATED_ENTRY;
@@ -227,7 +206,7 @@ jobjectRefType JNIHandles::handle_type(Thread* thread, jobject handle) {
       // Not in global storage.  Might be a local handle.
       if (is_local_handle(thread, handle) ||
           (thread->is_Java_thread() &&
-           is_frame_handle((JavaThread*)thread, handle))) {
+           is_frame_handle(thread->as_Java_thread(), handle))) {
         result = JNILocalRefType;
       }
       break;
@@ -322,7 +301,7 @@ void JNIHandles::verify() {
 bool JNIHandles::current_thread_in_native() {
   Thread* thread = Thread::current();
   return (thread->is_Java_thread() &&
-          JavaThread::current()->thread_state() == _thread_in_native);
+          thread->as_Java_thread()->thread_state() == _thread_in_native);
 }
 
 
@@ -363,7 +342,7 @@ void JNIHandleBlock::zap() {
 }
 #endif // ASSERT
 
-JNIHandleBlock* JNIHandleBlock::allocate_block(Thread* thread)  {
+JNIHandleBlock* JNIHandleBlock::allocate_block(Thread* thread, AllocFailType alloc_failmode)  {
   assert(thread == NULL || thread == Thread::current(), "sanity check");
   JNIHandleBlock* block;
   // Check the thread-local free list for a block so we don't
@@ -381,7 +360,14 @@ JNIHandleBlock* JNIHandleBlock::allocate_block(Thread* thread)  {
                    Mutex::_no_safepoint_check_flag);
     if (_block_free_list == NULL) {
       // Allocate new block
-      block = new JNIHandleBlock();
+      if (alloc_failmode == AllocFailStrategy::RETURN_NULL) {
+        block = new (std::nothrow) JNIHandleBlock();
+        if (block == NULL) {
+          return NULL;
+        }
+      } else {
+        block = new JNIHandleBlock();
+      }
       _blocks_allocated++;
       block->zap();
       #ifndef PRODUCT
@@ -481,7 +467,7 @@ void JNIHandleBlock::oops_do(OopClosure* f) {
 }
 
 
-jobject JNIHandleBlock::allocate_handle(oop obj) {
+jobject JNIHandleBlock::allocate_handle(oop obj, AllocFailType alloc_failmode) {
   assert(Universe::heap()->is_in(obj), "sanity check");
   if (_top == 0) {
     // This is the first allocation or the initial block got zapped when
@@ -529,7 +515,7 @@ jobject JNIHandleBlock::allocate_handle(oop obj) {
   if (_last->_next != NULL) {
     // update last and retry
     _last = _last->_next;
-    return allocate_handle(obj);
+    return allocate_handle(obj, alloc_failmode);
   }
 
   // No space available, we have to rebuild free list or expand
@@ -540,12 +526,15 @@ jobject JNIHandleBlock::allocate_handle(oop obj) {
     Thread* thread = Thread::current();
     Handle obj_handle(thread, obj);
     // This can block, so we need to preserve obj across call.
-    _last->_next = JNIHandleBlock::allocate_block(thread);
+    _last->_next = JNIHandleBlock::allocate_block(thread, alloc_failmode);
+    if (_last->_next == NULL) {
+      return NULL;
+    }
     _last = _last->_next;
     _allocate_before_rebuild--;
     obj = obj_handle();
   }
-  return allocate_handle(obj);  // retry
+  return allocate_handle(obj, alloc_failmode);  // retry
 }
 
 void JNIHandleBlock::rebuild_free_list() {

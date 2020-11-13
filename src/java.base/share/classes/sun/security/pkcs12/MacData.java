@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,10 +59,16 @@ class MacData {
         throws IOException, ParsingException
     {
         DerValue[] macData = derin.getSequence(2);
+        if (macData.length < 2 || macData.length > 3) {
+            throw new ParsingException("Invalid length for MacData");
+        }
 
         // Parse the digest info
         DerInputStream digestIn = new DerInputStream(macData[0].toByteArray());
         DerValue[] digestInfo = digestIn.getSequence(2);
+        if (digestInfo.length != 2) {
+            throw new ParsingException("Invalid length for DigestInfo");
+        }
 
         // Parse the DigestAlgorithmIdentifier.
         AlgorithmId digestAlgorithmId = AlgorithmId.parse(digestInfo[0]);

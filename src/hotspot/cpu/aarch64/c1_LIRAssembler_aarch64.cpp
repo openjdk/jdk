@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,6 +211,19 @@ Address LIR_Assembler::as_Address_lo(LIR_Address* addr) {
   // FIXME: This needs to be much more clever.  See x86.
 }
 
+// Ensure a valid Address (base + offset) to a stack-slot. If stack access is
+// not encodable as a base + (immediate) offset, generate an explicit address
+// calculation to hold the address in a temporary register.
+Address LIR_Assembler::stack_slot_address(int index, uint size, Register tmp, int adjust) {
+  precond(size == 4 || size == 8);
+  Address addr = frame_map()->address_for_slot(index, adjust);
+  precond(addr.getMode() == Address::base_plus_offset);
+  precond(addr.base() == sp);
+  precond(addr.offset() > 0);
+  uint mask = size - 1;
+  assert((addr.offset() & mask) == 0, "scaled offsets only");
+  return __ legitimize_address(addr, size, tmp);
+}
 
 void LIR_Assembler::osr_entry() {
   offsets()->set_value(CodeOffsets::OSR_Entry, code_offset());
@@ -491,7 +504,7 @@ void LIR_Assembler::add_debug_info_for_branch(address adr, CodeEmitInfo* info) {
   }
 }
 
-void LIR_Assembler::return_op(LIR_Opr result) {
+void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
   assert(result->is_illegal() || !result->is_single_cpu() || result->as_register() == r0, "word returns are in r0,");
 
   // Pop the stack before the safepoint code
@@ -501,7 +514,9 @@ void LIR_Assembler::return_op(LIR_Opr result) {
     __ reserved_stack_check();
   }
 
-  __ fetch_and_read_polling_page(rscratch1, relocInfo::poll_return_type);
+  code_stub->set_safepoint_offset(__ offset());
+  __ relocate(relocInfo::poll_return_type);
+  __ safepoint_poll(*code_stub->entry(), true /* at_return */, false /* acquire */, true /* in_nmethod */);
   __ ret(lr);
 }
 
@@ -735,32 +750,38 @@ void LIR_Assembler::reg2reg(LIR_Opr src, LIR_Opr dest) {
 }
 
 void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type, bool pop_fpu_stack) {
+  precond(src->is_register() && dest->is_stack());
+
+  uint const c_sz32 = sizeof(uint32_t);
+  uint const c_sz64 = sizeof(uint64_t);
+
   if (src->is_single_cpu()) {
+    int index = dest->single_stack_ix();
     if (is_reference_type(type)) {
-      __ str(src->as_register(), frame_map()->address_for_slot(dest->single_stack_ix()));
+      __ str(src->as_register(), stack_slot_address(index, c_sz64, rscratch1));
       __ verify_oop(src->as_register());
     } else if (type == T_METADATA || type == T_DOUBLE || type == T_ADDRESS) {
-      __ str(src->as_register(), frame_map()->address_for_slot(dest->single_stack_ix()));
+      __ str(src->as_register(), stack_slot_address(index, c_sz64, rscratch1));
     } else {
-      __ strw(src->as_register(), frame_map()->address_for_slot(dest->single_stack_ix()));
+      __ strw(src->as_register(), stack_slot_address(index, c_sz32, rscratch1));
     }
 
   } else if (src->is_double_cpu()) {
-    Address dest_addr_LO = frame_map()->address_for_slot(dest->double_stack_ix(), lo_word_offset_in_bytes);
+    int index = dest->double_stack_ix();
+    Address dest_addr_LO = stack_slot_address(index, c_sz64, rscratch1, lo_word_offset_in_bytes);
     __ str(src->as_register_lo(), dest_addr_LO);
 
   } else if (src->is_single_fpu()) {
-    Address dest_addr = frame_map()->address_for_slot(dest->single_stack_ix());
-    __ strs(src->as_float_reg(), dest_addr);
+    int index = dest->single_stack_ix();
+    __ strs(src->as_float_reg(), stack_slot_address(index, c_sz32, rscratch1));
 
   } else if (src->is_double_fpu()) {
-    Address dest_addr = frame_map()->address_for_slot(dest->double_stack_ix());
-    __ strd(src->as_double_reg(), dest_addr);
+    int index = dest->double_stack_ix();
+    __ strd(src->as_double_reg(), stack_slot_address(index, c_sz64, rscratch1));
 
   } else {
     ShouldNotReachHere();
   }
-
 }
 
 
@@ -845,30 +866,34 @@ void LIR_Assembler::reg2mem(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
 
 
 void LIR_Assembler::stack2reg(LIR_Opr src, LIR_Opr dest, BasicType type) {
-  assert(src->is_stack(), "should not call otherwise");
-  assert(dest->is_register(), "should not call otherwise");
+  precond(src->is_stack() && dest->is_register());
+
+  uint const c_sz32 = sizeof(uint32_t);
+  uint const c_sz64 = sizeof(uint64_t);
 
   if (dest->is_single_cpu()) {
+    int index = src->single_stack_ix();
     if (is_reference_type(type)) {
-      __ ldr(dest->as_register(), frame_map()->address_for_slot(src->single_stack_ix()));
+      __ ldr(dest->as_register(), stack_slot_address(index, c_sz64, rscratch1));
       __ verify_oop(dest->as_register());
     } else if (type == T_METADATA || type == T_ADDRESS) {
-      __ ldr(dest->as_register(), frame_map()->address_for_slot(src->single_stack_ix()));
+      __ ldr(dest->as_register(), stack_slot_address(index, c_sz64, rscratch1));
     } else {
-      __ ldrw(dest->as_register(), frame_map()->address_for_slot(src->single_stack_ix()));
+      __ ldrw(dest->as_register(), stack_slot_address(index, c_sz32, rscratch1));
     }
 
   } else if (dest->is_double_cpu()) {
-    Address src_addr_LO = frame_map()->address_for_slot(src->double_stack_ix(), lo_word_offset_in_bytes);
+    int index = src->double_stack_ix();
+    Address src_addr_LO = stack_slot_address(index, c_sz64, rscratch1, lo_word_offset_in_bytes);
     __ ldr(dest->as_register_lo(), src_addr_LO);
 
   } else if (dest->is_single_fpu()) {
-    Address src_addr = frame_map()->address_for_slot(src->single_stack_ix());
-    __ ldrs(dest->as_float_reg(), src_addr);
+    int index = src->single_stack_ix();
+    __ ldrs(dest->as_float_reg(), stack_slot_address(index, c_sz32, rscratch1));
 
   } else if (dest->is_double_fpu()) {
-    Address src_addr = frame_map()->address_for_slot(src->double_stack_ix());
-    __ ldrd(dest->as_double_reg(), src_addr);
+    int index = src->double_stack_ix();
+    __ ldrd(dest->as_double_reg(), stack_slot_address(index, c_sz64, rscratch1));
 
   } else {
     ShouldNotReachHere();
@@ -1352,7 +1377,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     __ load_klass(klass_RInfo, obj);
     if (k->is_loaded()) {
       // See if we get an immediate positive hit
-      __ ldr(rscratch1, Address(klass_RInfo, long(k->super_check_offset())));
+      __ ldr(rscratch1, Address(klass_RInfo, int64_t(k->super_check_offset())));
       __ cmp(k_RInfo, rscratch1);
       if ((juint)in_bytes(Klass::secondary_super_cache_offset()) != k->super_check_offset()) {
         __ br(Assembler::NE, *failure_target);
@@ -2016,7 +2041,7 @@ void LIR_Assembler::comp_fl2i(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Op
   } else if (code == lir_cmp_l2i) {
     Label done;
     __ cmp(left->as_register_lo(), right->as_register_lo());
-    __ mov(dst->as_register(), (u_int64_t)-1L);
+    __ mov(dst->as_register(), (uint64_t)-1L);
     __ br(Assembler::LT, done);
     __ csinc(dst->as_register(), zr, zr, Assembler::EQ);
     __ bind(done);
@@ -2049,7 +2074,7 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
 }
 
 
-/* Currently, vtable-dispatch is only enabled for sparc platforms */
+/* vtable-dispatch is not enabled for aarch64 platform*/
 void LIR_Assembler::vtable_call(LIR_OpJavaCall* op) {
   ShouldNotReachHere();
 }
@@ -2085,6 +2110,13 @@ void LIR_Assembler::throw_op(LIR_Opr exceptionPC, LIR_Opr exceptionOop, CodeEmit
 
   // get current pc information
   // pc is only needed if the method has an exception handler, the unwind code does not need it.
+  if (compilation()->debug_info_recorder()->last_pc_offset() == __ offset()) {
+    // As no instructions have been generated yet for this LIR node it's
+    // possible that an oop map already exists for the current offset.
+    // In that case insert an dummy NOP here to ensure all oop map PCs
+    // are unique. See JDK-8237483.
+    __ nop();
+  }
   int pc_for_athrow_offset = __ offset();
   InternalAddress pc_for_athrow(__ pc());
   __ adr(exceptionPC->as_register(), pc_for_athrow);
@@ -2284,7 +2316,6 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   assert(default_type != NULL && default_type->is_array_klass() && default_type->is_loaded(), "must be true at this point");
 
   int elem_size = type2aelembytes(basic_type);
-  int shift_amount;
   int scale = exact_log2(elem_size);
 
   Address src_length_addr = Address(src, arrayOopDesc::length_offset_in_bytes());
@@ -2675,7 +2706,7 @@ void LIR_Assembler::emit_updatecrc32(LIR_OpUpdateCRC32* op) {
   Register res = op->result_opr()->as_register();
 
   assert_different_registers(val, crc, res);
-  unsigned long offset;
+  uint64_t offset;
   __ adrp(res, ExternalAddress(StubRoutines::crc_table_addr()), offset);
   if (offset) __ add(res, res, offset);
 

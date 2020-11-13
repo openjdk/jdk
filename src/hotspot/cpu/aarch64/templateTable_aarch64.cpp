@@ -35,6 +35,7 @@
 #include "oops/method.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -43,12 +44,6 @@
 #include "utilities/powerOfTwo.hpp"
 
 #define __ _masm->
-
-// Platform-dependent initialization
-
-void TemplateTable::pd_initialize() {
-  // No aarch64 specific initialization
-}
 
 // Address computation: local variables
 
@@ -413,6 +408,7 @@ void TemplateTable::fast_aldc(bool wide)
     // Stash null_sentinel address to get its value later
     __ movptr(rarg, (uintptr_t)Universe::the_null_sentinel_addr());
     __ ldr(tmp, Address(rarg));
+    __ resolve_oop_handle(tmp);
     __ cmpoop(result, tmp);
     __ br(Assembler::NE, notNull);
     __ mov(result, 0);  // NULL object reference
@@ -1706,7 +1702,7 @@ void TemplateTable::lcmp()
   Label done;
   __ pop_l(r1);
   __ cmp(r1, r0);
-  __ mov(r0, (u_int64_t)-1L);
+  __ mov(r0, (uint64_t)-1L);
   __ br(Assembler::LT, done);
   // __ mov(r0, 1UL);
   // __ csel(r0, r0, zr, Assembler::NE);
@@ -1730,7 +1726,7 @@ void TemplateTable::float_cmp(bool is_float, int unordered_result)
   if (unordered_result < 0) {
     // we want -1 for unordered or less than, 0 for equal and 1 for
     // greater than.
-    __ mov(r0, (u_int64_t)-1L);
+    __ mov(r0, (uint64_t)-1L);
     // for FP LT tests less than or unordered
     __ br(Assembler::LT, done);
     // install 0 for EQ otherwise 1
@@ -1911,7 +1907,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
   __ dispatch_only(vtos, /*generate_poll*/true);
 
   if (UseLoopCounter) {
-    if (ProfileInterpreter) {
+    if (ProfileInterpreter && !TieredCompilation) {
       // Out-of-line code to allocate method data oop.
       __ bind(profile_method);
       __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::profile_method));
@@ -3197,11 +3193,6 @@ void TemplateTable::fast_xaccess(TosState state)
 //-----------------------------------------------------------------------------
 // Calls
 
-void TemplateTable::count_calls(Register method, Register temp)
-{
-  __ call_Unimplemented();
-}
-
 void TemplateTable::prepare_invoke(int byte_no,
                                    Register method, // linked method (or i-klass)
                                    Register index,  // itable index, MethodType, etc.
@@ -3285,7 +3276,7 @@ void TemplateTable::invokevirtual_helper(Register index,
 
   const Register method = index;  // method must be rmethod
   assert(method == rmethod,
-         "methodOop must be rmethod for interpreter calling convention");
+         "Method must be rmethod for interpreter calling convention");
 
   // do the call - the index is actually the method to call
   // that is, f2 is a vtable index if !is_vfinal, else f2 is a Method*
@@ -3308,7 +3299,7 @@ void TemplateTable::invokevirtual_helper(Register index,
   // profile this call
   __ profile_virtual_call(r0, rlocals, r3);
 
-  // get target methodOop & entry point
+  // get target Method & entry point
   __ lookup_virtual_method(r0, index, method);
   __ profile_arguments_type(r3, method, r4, true);
   // FIXME -- this looks completely redundant. is it?
@@ -3443,7 +3434,7 @@ void TemplateTable::invokeinterface(int byte_no) {
                              rmethod, r13,
                              no_such_interface);
 
-  // rmethod,: methodOop to call
+  // rmethod,: Method to call
   // r2: receiver
   // Check for abstract method error
   // Note: This should be done more efficiently via a throw_abstract_method_error
@@ -3455,7 +3446,7 @@ void TemplateTable::invokeinterface(int byte_no) {
 
   // do the call
   // r2: receiver
-  // rmethod,: methodOop
+  // rmethod,: Method
   __ jump_from_interpreted(rmethod, r3);
   __ should_not_reach_here();
 

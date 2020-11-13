@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.text.DateFormat;
 import java.text.Format;
 import java.text.NumberFormat;
 import java.util.Date;
+
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JCheckBox;
@@ -45,7 +46,9 @@ import javax.swing.JLabel;
 import javax.swing.JTable;
 import javax.swing.LookAndFeel;
 import javax.swing.border.Border;
-import javax.swing.plaf.*;
+import javax.swing.plaf.ColorUIResource;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicTableUI;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.JTableHeader;
@@ -86,6 +89,12 @@ public class SynthTableUI extends BasicTableUI
 //
 //  The installation/uninstall procedures and support
 //
+
+    /**
+     *
+     * Constructs a {@code SynthTableUI}.
+     */
+    public SynthTableUI() {}
 
     /**
      * Creates a new UI object for the given component.
@@ -700,6 +709,9 @@ public class SynthTableUI extends BasicTableUI
         }
     }
 
+    /**
+     * The renderer installed by the UI to render the boolean data.
+     */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class SynthBooleanTableCellRenderer extends JCheckBox implements
                       TableCellRenderer {
@@ -739,6 +751,9 @@ public class SynthTableUI extends BasicTableUI
         }
     }
 
+    /**
+     * The {@code DefaultTableCellRenderer} installed by the UI.
+     */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class SynthTableCellRenderer extends DefaultTableCellRenderer {
         private Object numberFormat;

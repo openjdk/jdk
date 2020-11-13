@@ -215,6 +215,9 @@ public final class KeychainStore extends KeyStoreSpi {
 
             // Get the Algorithm ID next
             DerValue[] value = in.getSequence(2);
+            if (value.length < 1 || value.length > 2) {
+                throw new IOException("Invalid length for AlgorithmIdentifier");
+            }
             AlgorithmId algId = new AlgorithmId(value[0].getOID());
             String algName = algId.getName();
 

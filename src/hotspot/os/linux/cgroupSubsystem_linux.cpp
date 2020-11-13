@@ -267,7 +267,7 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
     // as to avoid memory stomping of the _mount_path pointer later on in the cgroup v1
     // block in the hybrid case.
     //
-    if (is_cgroupsV2 && sscanf(p, "%*d %*d %*d:%*d %*s %s %*[^-]- %s cgroup2 %*s", tmp_mount_point, tmp_fs_type) == 2) {
+    if (is_cgroupsV2 && sscanf(p, "%*d %*d %*d:%*d %*s %s %*[^-]- %s %*s %*s", tmp_mount_point, tmp_fs_type) == 2) {
       // we likely have an early match return (e.g. cgroup fs match), be sure we have cgroup2 as fstype
       if (!cgroupv2_mount_point_found && strcmp("cgroup2", tmp_fs_type) == 0) {
         cgroupv2_mount_point_found = true;
@@ -289,29 +289,46 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
      * Example for host:
      * 34 28 0:29 / /sys/fs/cgroup/memory rw,nosuid,nodev,noexec,relatime shared:16 - cgroup cgroup rw,memory
      */
-    if (sscanf(p, "%*d %*d %*d:%*d %s %s %*[^-]- %s cgroup %s", tmproot, tmpmount, tmp_fs_type, tmpcgroups) == 4) {
+    if (sscanf(p, "%*d %*d %*d:%*d %s %s %*[^-]- %s %*s %s", tmproot, tmpmount, tmp_fs_type, tmpcgroups) == 4) {
       if (strcmp("cgroup", tmp_fs_type) != 0) {
         // Skip cgroup2 fs lines on hybrid or unified hierarchy.
         continue;
       }
-      any_cgroup_mounts_found = true;
       while ((token = strsep(&cptr, ",")) != NULL) {
         if (strcmp(token, "memory") == 0) {
+          any_cgroup_mounts_found = true;
           assert(cg_infos[MEMORY_IDX]._mount_path == NULL, "stomping of _mount_path");
           cg_infos[MEMORY_IDX]._mount_path = os::strdup(tmpmount);
           cg_infos[MEMORY_IDX]._root_mount_path = os::strdup(tmproot);
           cg_infos[MEMORY_IDX]._data_complete = true;
         } else if (strcmp(token, "cpuset") == 0) {
-          assert(cg_infos[CPUSET_IDX]._mount_path == NULL, "stomping of _mount_path");
-          cg_infos[CPUSET_IDX]._mount_path = os::strdup(tmpmount);
+          any_cgroup_mounts_found = true;
+          if (cg_infos[CPUSET_IDX]._mount_path != NULL) {
+            // On some systems duplicate cpuset controllers get mounted in addition to
+            // the main cgroup controllers most likely under /sys/fs/cgroup. In that
+            // case pick the one under /sys/fs/cgroup and discard others.
+            if (strstr(cg_infos[CPUSET_IDX]._mount_path, "/sys/fs/cgroup") != cg_infos[CPUSET_IDX]._mount_path) {
+              log_warning(os, container)("Duplicate cpuset controllers detected. Picking %s, skipping %s.",
+                                         tmpmount, cg_infos[CPUSET_IDX]._mount_path);
+              os::free(cg_infos[CPUSET_IDX]._mount_path);
+              cg_infos[CPUSET_IDX]._mount_path = os::strdup(tmpmount);
+            } else {
+              log_warning(os, container)("Duplicate cpuset controllers detected. Picking %s, skipping %s.",
+                                         cg_infos[CPUSET_IDX]._mount_path, tmpmount);
+            }
+          } else {
+            cg_infos[CPUSET_IDX]._mount_path = os::strdup(tmpmount);
+          }
           cg_infos[CPUSET_IDX]._root_mount_path = os::strdup(tmproot);
           cg_infos[CPUSET_IDX]._data_complete = true;
         } else if (strcmp(token, "cpu") == 0) {
+          any_cgroup_mounts_found = true;
           assert(cg_infos[CPU_IDX]._mount_path == NULL, "stomping of _mount_path");
           cg_infos[CPU_IDX]._mount_path = os::strdup(tmpmount);
           cg_infos[CPU_IDX]._root_mount_path = os::strdup(tmproot);
           cg_infos[CPU_IDX]._data_complete = true;
         } else if (strcmp(token, "cpuacct") == 0) {
+          any_cgroup_mounts_found = true;
           assert(cg_infos[CPUACCT_IDX]._mount_path == NULL, "stomping of _mount_path");
           cg_infos[CPUACCT_IDX]._mount_path = os::strdup(tmpmount);
           cg_infos[CPUACCT_IDX]._root_mount_path = os::strdup(tmproot);
@@ -325,7 +342,7 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
   // Neither cgroup2 nor cgroup filesystems mounted via /proc/self/mountinfo
   // No point in continuing.
   if (!any_cgroup_mounts_found) {
-    log_trace(os, container)("No cgroup controllers mounted.");
+    log_trace(os, container)("No relevant cgroup controllers mounted.");
     cleanup(cg_infos);
     *flags = INVALID_CGROUPS_NO_MOUNT;
     return false;

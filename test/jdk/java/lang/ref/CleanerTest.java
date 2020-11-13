@@ -35,8 +35,6 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import jdk.internal.ref.PhantomCleanable;
-import jdk.internal.ref.WeakCleanable;
-import jdk.internal.ref.SoftCleanable;
 import jdk.internal.ref.CleanerFactory;
 
 import sun.hotspot.WhiteBox;
@@ -152,19 +150,11 @@ public class CleanerTest {
     void generateCasesInternal(Cleaner cleaner, Consumer<CleanableCase>... runnables) {
         generateCases(() -> setupPhantomSubclass(cleaner, null),
                 runnables.length, runnables);
-        generateCases(() -> setupWeakSubclass(cleaner, null),
-                runnables.length, runnables);
-        generateCases(() -> setupSoftSubclass(cleaner, null),
-                runnables.length, runnables);
     }
 
     @SuppressWarnings("unchecked")
     void generateExceptionCasesInternal(Cleaner cleaner) {
         generateCases(() -> setupPhantomSubclassException(cleaner, null),
-                1, c -> c.clearRef());
-        generateCases(() -> setupWeakSubclassException(cleaner, null),
-                1, c -> c.clearRef());
-        generateCases(() -> setupSoftSubclassException(cleaner, null),
                 1, c -> c.clearRef());
     }
 
@@ -346,47 +336,6 @@ public class CleanerTest {
 
         return new CleanableCase(new PhantomReference<>(obj, null), c1, s1);
     }
-    /**
-     * Create a CleanableCase for a WeakReference.
-     * @param cleaner the cleaner to use
-     * @param obj an object or null to create a new Object
-     * @return a new CleanableCase preset with the object, cleanup, and semaphore
-     */
-    static CleanableCase setupWeakSubclass(Cleaner cleaner, Object obj) {
-        if (obj == null) {
-            obj = new Object();
-        }
-        Semaphore s1 = new Semaphore(0);
-
-        Cleaner.Cleanable c1 = new WeakCleanable<Object>(obj, cleaner) {
-            protected void performCleanup() {
-                s1.release();
-            }
-        };
-
-        return new CleanableCase(new WeakReference<>(obj, null), c1, s1);
-    }
-
-    /**
-     * Create a CleanableCase for a SoftReference.
-     * @param cleaner the cleaner to use
-     * @param obj an object or null to create a new Object
-     * @return a new CleanableCase preset with the object, cleanup, and semaphore
-     */
-    static CleanableCase setupSoftSubclass(Cleaner cleaner, Object obj) {
-        if (obj == null) {
-            obj = new Object();
-        }
-        Semaphore s1 = new Semaphore(0);
-
-        Cleaner.Cleanable c1 = new SoftCleanable<Object>(obj, cleaner) {
-            protected void performCleanup() {
-                s1.release();
-            }
-        };
-
-        return new CleanableCase(new SoftReference<>(obj, null), c1, s1);
-    }
 
     /**
      * Create a CleanableCase for a PhantomReference.
@@ -408,50 +357,6 @@ public class CleanerTest {
         };
 
         return new CleanableCase(new PhantomReference<>(obj, null), c1, s1, true);
-    }
-
-    /**
-     * Create a CleanableCase for a WeakReference.
-     * @param cleaner the cleaner to use
-     * @param obj an object or null to create a new Object
-     * @return a new CleanableCase preset with the object, cleanup, and semaphore
-     */
-    static CleanableCase setupWeakSubclassException(Cleaner cleaner, Object obj) {
-        if (obj == null) {
-            obj = new Object();
-        }
-        Semaphore s1 = new Semaphore(0);
-
-        Cleaner.Cleanable c1 = new WeakCleanable<Object>(obj, cleaner) {
-            protected void performCleanup() {
-                s1.release();
-                throw new RuntimeException("Exception thrown to cleaner thread");
-            }
-        };
-
-        return new CleanableCase(new WeakReference<>(obj, null), c1, s1, true);
-    }
-
-    /**
-     * Create a CleanableCase for a SoftReference.
-     * @param cleaner the cleaner to use
-     * @param obj an object or null to create a new Object
-     * @return a new CleanableCase preset with the object, cleanup, and semaphore
-     */
-    static CleanableCase setupSoftSubclassException(Cleaner cleaner, Object obj) {
-        if (obj == null) {
-            obj = new Object();
-        }
-        Semaphore s1 = new Semaphore(0);
-
-        Cleaner.Cleanable c1 = new SoftCleanable<Object>(obj, cleaner) {
-            protected void performCleanup() {
-                s1.release();
-                throw new RuntimeException("Exception thrown to cleaner thread");
-            }
-        };
-
-        return new CleanableCase(new SoftReference<>(obj, null), c1, s1, true);
     }
 
     /**
@@ -608,74 +513,6 @@ public class CleanerTest {
             return String.format("Case: %s, expect: %s, events: %s",
                     getRef().getClass().getName(),
                     eventName(expectedResult()), eventsString());
-        }
-    }
-
-
-    /**
-     * Example using a Cleaner to remove WeakKey references from a Map.
-     */
-    @Test
-    void testWeakKey() {
-        ConcurrentHashMap<WeakKey<String>, String> map = new ConcurrentHashMap<>();
-        Cleaner cleaner = Cleaner.create();
-        String key = new String("foo");  //  ensure it is not interned
-        String data = "bar";
-
-        map.put(new WeakKey<>(key, cleaner, map), data);
-
-        WeakKey<String> k2 = new WeakKey<>(key, cleaner, map);
-
-        Assert.assertEquals(map.get(k2), data, "value should be found in the map");
-        key = null;
-        System.gc();
-        Assert.assertNotEquals(map.get(k2), data, "value should not be found in the map");
-
-        final long CYCLE_MAX = Utils.adjustTimeout(30L);
-        for (int i = 1; map.size() > 0 && i < CYCLE_MAX; i++) {
-            map.forEach( (k, v) -> System.out.printf("    k: %s, v: %s%n", k, v));
-            try {
-                Thread.sleep(10L);
-            } catch (InterruptedException ie) {}
-        }
-        Assert.assertEquals(map.size(), 0, "Expected map to be empty;");
-        cleaner = null;
-    }
-
-    /**
-     * Test sample class for WeakKeys in Map.
-     * @param <K> A WeakKey of type K
-     */
-    class WeakKey<K> extends WeakReference<K> {
-        private final int hash;
-        private final ConcurrentHashMap<WeakKey<K>, ?> map;
-        Cleaner.Cleanable cleanable;
-
-        public WeakKey(K key, Cleaner c, ConcurrentHashMap<WeakKey<K>, ?> map) {
-            super(key);
-            this.hash = key.hashCode();
-            this.map = map;
-            cleanable = new WeakCleanable<Object>(key, c) {
-                protected void performCleanup() {
-                    map.remove(WeakKey.this);
-                }
-            };
-        }
-        public int hashCode() { return hash; }
-
-        public boolean equals(Object obj) {
-            if (obj == this) {
-                return true;
-            }
-            if (!(obj instanceof WeakKey)) return false;
-            K key = get();
-            if (key == null) return obj == this;
-            return key == ((WeakKey<?>)obj).get();
-        }
-
-        public String toString() {
-            return "WeakKey:" + Objects.toString(get() + ", cleanableRef: " +
-                    ((Reference)cleanable).get());
         }
     }
 

@@ -42,7 +42,6 @@ frame JavaThread::pd_last_frame() {
 }
 
 bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, bool isInJava) {
-  assert(this->is_Java_thread(), "must be JavaThread");
 
   // If we have a last_Java_frame, then we should use it even if
   // isInJava == true.  It should be more reliable than ucontext info.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4503641 8130394
+ * @bug 4503641 8130394 8249773
  * @summary Check that DatagramChannel.receive returns a new SocketAddress
  *          when it receives a packet from the same source address but
  *          different endpoint.
@@ -31,58 +31,91 @@
 import java.nio.*;
 import java.nio.channels.*;
 import java.net.*;
+import static java.lang.System.out;
 
 public class ReceiveISA {
 
     public static void main(String args[]) throws Exception {
 
-        // clients
-        DatagramChannel dc1 = DatagramChannel.open();
-        DatagramChannel dc2 = DatagramChannel.open();
+        String regex = "Dia duit![0-2]";
 
-        // bind server to any port
-        DatagramChannel dc3 = DatagramChannel.open();
-        dc3.socket().bind((SocketAddress)null);
+        try (DatagramChannel dc1 = DatagramChannel.open();        // client
+             DatagramChannel dc2 = DatagramChannel.open();        // client
+             DatagramChannel dc3 = DatagramChannel.open();
+             DatagramChannel dc4 = DatagramChannel.open()) {      // client
 
-        // get server address
-        InetAddress lh = InetAddress.getLocalHost();
-        InetSocketAddress isa
-            = new InetSocketAddress( lh, dc3.socket().getLocalPort() );
+            dc3.socket().bind((SocketAddress) null); // bind server to any port
 
-        ByteBuffer bb = ByteBuffer.allocateDirect(100);
-        bb.put("Dia duit!".getBytes());
-        bb.flip();
+            // get server address
+            InetAddress lh = InetAddress.getLocalHost();
+            InetSocketAddress isa = new InetSocketAddress(lh, dc3.socket().getLocalPort());
 
-        dc1.send(bb, isa);      // packet 1 from dc1
-        dc1.send(bb, isa);      // packet 2 from dc1
-        dc2.send(bb, isa);      // packet 3 from dc1
+            ByteBuffer bb = ByteBuffer.allocateDirect(100);
+            bb.put("Dia duit!0".getBytes());
+            bb.flip();
 
-        // receive 3 packets
-        dc3.socket().setSoTimeout(1000);
-        ByteBuffer rb = ByteBuffer.allocateDirect(100);
-        SocketAddress sa[] = new SocketAddress[3];
-        for (int i=0; i<3; i++) {
-            sa[i] = dc3.receive(rb);
-            System.out.println("received "+ sa[i] );
-            rb.clear();
-        }
+            ByteBuffer bb1 = ByteBuffer.allocateDirect(100);
+            bb1.put("Dia duit!1".getBytes());
+            bb1.flip();
 
-        dc1.close();
-        dc2.close();
-        dc3.close();
+            ByteBuffer bb2 = ByteBuffer.allocateDirect(100);
+            bb2.put("Dia duit!2".getBytes());
+            bb2.flip();
 
-        /*
-         * Check that sa[0] equals sa[1] (both from dc1)
-         * Check that sa[1] not equal to sa[2] (one from dc1, one from dc2)
-         */
+            ByteBuffer bb3 = ByteBuffer.allocateDirect(100);
+            bb3.put("garbage".getBytes());
+            bb3.flip();
 
-        if (!sa[0].equals(sa[1])) {
-            throw new Exception("Source address for packets 1 & 2 should be equal");
-        }
+            dc1.send(bb, isa);      // packet 1 from dc1
+            dc4.send(bb3, isa);     // interference, packet 4 from dc4
+            dc1.send(bb1, isa);     // packet 2 from dc1
+            dc2.send(bb2, isa);     // packet 3 from dc2
 
-        if (sa[1].equals(sa[2])) {
-            throw new Exception("Source address for packets 2 & 3 should be different");
+
+            // receive 4 packets
+            dc3.socket().setSoTimeout(1000);
+            ByteBuffer rb = ByteBuffer.allocateDirect(100);
+            SocketAddress sa[] = new SocketAddress[3];
+
+            for (int i = 0; i < 3;) {
+                SocketAddress receiver = dc3.receive(rb);
+                rb.flip();
+                byte[] bytes = new byte[rb.limit()];
+                rb.get(bytes, 0, rb.limit());
+                String msg = new String(bytes);
+
+                if (msg.matches("Dia duit![0-2]")) {
+                    if (msg.equals("Dia duit!0")) {
+                        sa[0] = receiver;
+                        i++;
+                    }
+                    if (msg.equals("Dia duit!1")) {
+                        sa[1] = receiver;
+                        i++;
+                    }
+                    if (msg.equals("Dia duit!2")) {
+                        sa[2] = receiver;
+                        i++;
+                    }
+                } else {
+                    out.println("Interfered packet sender address is : " + receiver);
+                    out.println("random interfered packet is : " + msg);
+                }
+                rb.clear();
+            }
+
+            /*
+             * Check that sa[0] equals sa[1] (both from dc1)
+             * Check that sa[1] not equal to sa[2] (one from dc1, one from dc2)
+             */
+
+            if (!sa[0].equals(sa[1])) {
+                throw new Exception("Source address for packets 1 & 2 should be equal");
+            }
+
+            if (sa[1].equals(sa[2])) {
+                throw new Exception("Source address for packets 2 & 3 should be different");
+            }
         }
     }
-
 }

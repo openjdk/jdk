@@ -26,7 +26,6 @@
 #define SHARE_CLASSFILE_CLASSLOADER_HPP
 
 #include "jimage.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/perfData.hpp"
 #include "utilities/exceptions.hpp"

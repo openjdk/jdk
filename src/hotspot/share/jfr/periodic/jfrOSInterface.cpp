@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -265,7 +265,9 @@ const char* JfrOSInterface::virtualization_name() {
   } else if (vrt == VMWare) {
     return "VMWare virtualization";
   } else if (vrt == HyperV) {
-    return "HyperV virtualization";
+    return "Hyper-V virtualization";
+  } else if (vrt == HyperVRole) {
+    return "Hyper-V role";
   } else if (vrt == PowerVM) {
     return "PowerVM virtualization";
   } else if (vrt == PowerKVM) {

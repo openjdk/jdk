@@ -25,10 +25,11 @@ package gc;
 
 /*
  * @test TestFullGCALot
- * @bug 4187687 8187819
+ * @bug 4187687 8187819 8251118
  * @summary Ensure no access violation when using FullGCALot
  * @requires vm.debug
  * @run main/othervm -XX:NewSize=10m -XX:+FullGCALot -XX:FullGCALotInterval=120 gc.TestFullGCALot
+ * @run main/othervm -XX:NewSize=10m -XX:+FullGCALot -XX:FullGCALotInterval=120 -XX:+UseBiasedLocking gc.TestFullGCALot
  */
 
 public class TestFullGCALot {

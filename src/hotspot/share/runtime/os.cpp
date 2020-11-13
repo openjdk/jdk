@@ -88,18 +88,6 @@ static size_t cur_malloc_words = 0;  // current size for MallocMaxTestWords
 
 DEBUG_ONLY(bool os::_mutex_init_done = false;)
 
-static time_t get_timezone(const struct tm* time_struct) {
-#if defined(_ALLBSD_SOURCE)
-  return time_struct->tm_gmtoff;
-#elif defined(_WINDOWS)
-  long zone;
-  _get_timezone(&zone);
-  return static_cast<time_t>(zone);
-#else
-  return timezone;
-#endif
-}
-
 int os::snprintf(char* buf, size_t len, const char* fmt, ...) {
   va_list args;
   va_start(args, fmt);
@@ -152,21 +140,32 @@ char* os::iso8601_time(char* buffer, size_t buffer_length, bool utc) {
       return NULL;
     }
   }
-  const time_t zone = get_timezone(&time_struct);
 
-  // If daylight savings time is in effect,
-  // we are 1 hour East of our time zone
   const time_t seconds_per_minute = 60;
   const time_t minutes_per_hour = 60;
   const time_t seconds_per_hour = seconds_per_minute * minutes_per_hour;
-  time_t UTC_to_local = zone;
-  if (time_struct.tm_isdst > 0) {
-    UTC_to_local = UTC_to_local - seconds_per_hour;
-  }
 
   // No offset when dealing with UTC
-  if (utc) {
-    UTC_to_local = 0;
+  time_t UTC_to_local = 0;
+  if (!utc) {
+#if defined(_ALLBSD_SOURCE) || defined(_GNU_SOURCE)
+    UTC_to_local = -(time_struct.tm_gmtoff);
+#elif defined(_WINDOWS)
+    long zone;
+    _get_timezone(&zone);
+    UTC_to_local = static_cast<time_t>(zone);
+#else
+    UTC_to_local = timezone;
+#endif
+
+    // tm_gmtoff already includes adjustment for daylight saving
+#if !defined(_ALLBSD_SOURCE) && !defined(_GNU_SOURCE)
+    // If daylight savings time is in effect,
+    // we are 1 hour East of our time zone
+    if (time_struct.tm_isdst > 0) {
+      UTC_to_local = UTC_to_local - seconds_per_hour;
+    }
+#endif
   }
 
   // Compute the time zone offset.
@@ -455,13 +454,7 @@ void os::init_before_ergo() {
   // decisions depending on large page support and the calculated large page size.
   large_page_init();
 
-  // We need to adapt the configured number of stack protection pages given
-  // in 4K pages to the actual os page size. We must do this before setting
-  // up minimal stack sizes etc. in os::init_2().
-  JavaThread::set_stack_red_zone_size     (align_up(StackRedPages      * 4 * K, vm_page_size()));
-  JavaThread::set_stack_yellow_zone_size  (align_up(StackYellowPages   * 4 * K, vm_page_size()));
-  JavaThread::set_stack_reserved_zone_size(align_up(StackReservedPages * 4 * K, vm_page_size()));
-  JavaThread::set_stack_shadow_zone_size  (align_up(StackShadowPages   * 4 * K, vm_page_size()));
+  StackOverflow::initialize_stack_zone_sizes();
 
   // VM version initialization identifies some characteristics of the
   // platform that are used during ergonomic decisions.
@@ -816,7 +809,7 @@ void os::init_random(unsigned int initval) {
 }
 
 
-static int random_helper(unsigned int rand_seed) {
+int os::next_random(unsigned int rand_seed) {
   /* standard, well-known linear congruential random generator with
    * next_rand = (16807*seed) mod (2**31-1)
    * see
@@ -854,7 +847,7 @@ int os::random() {
   // Make updating the random seed thread safe.
   while (true) {
     unsigned int seed = _rand_seed;
-    unsigned int rand = random_helper(seed);
+    unsigned int rand = next_random(seed);
     if (Atomic::cmpxchg(&_rand_seed, seed, rand) == seed) {
       return static_cast<int>(rand);
     }
@@ -887,23 +880,22 @@ void os::abort(bool dump_core) {
 //---------------------------------------------------------------------------
 // Helper functions for fatal error handler
 
-void os::print_hex_dump(outputStream* st, address start, address end, int unitsize) {
+void os::print_hex_dump(outputStream* st, address start, address end, int unitsize,
+                        int bytes_per_line, address logical_start) {
   assert(unitsize == 1 || unitsize == 2 || unitsize == 4 || unitsize == 8, "just checking");
 
   start = align_down(start, unitsize);
+  logical_start = align_down(logical_start, unitsize);
+  bytes_per_line = align_up(bytes_per_line, 8);
 
   int cols = 0;
-  int cols_per_line = 0;
-  switch (unitsize) {
-    case 1: cols_per_line = 16; break;
-    case 2: cols_per_line = 8;  break;
-    case 4: cols_per_line = 4;  break;
-    case 8: cols_per_line = 2;  break;
-    default: return;
-  }
+  int cols_per_line = bytes_per_line / unitsize;
 
   address p = start;
-  st->print(PTR_FORMAT ":   ", p2i(start));
+  address logical_p = logical_start;
+
+  // Print out the addresses as if we were starting from logical_start.
+  st->print(PTR_FORMAT ":   ", p2i(logical_p));
   while (p < end) {
     if (is_readable_pointer(p)) {
       switch (unitsize) {
@@ -916,11 +908,12 @@ void os::print_hex_dump(outputStream* st, address start, address end, int unitsi
       st->print("%*.*s", 2*unitsize, 2*unitsize, "????????????????");
     }
     p += unitsize;
+    logical_p += unitsize;
     cols++;
     if (cols >= cols_per_line && p < end) {
        cols = 0;
        st->cr();
-       st->print(PTR_FORMAT ":   ", p2i(p));
+       st->print(PTR_FORMAT ":   ", p2i(logical_p));
     } else {
        st->print(" ");
     }
@@ -1009,8 +1002,14 @@ void os::print_date_and_time(outputStream *st, char* buf, size_t buflen) {
 
   struct tm tz;
   if (localtime_pd(&tloc, &tz) != NULL) {
-    ::strftime(buf, buflen, "%Z", &tz);
-    st->print("Time: %s %s", timestring, buf);
+    wchar_t w_buf[80];
+    size_t n = ::wcsftime(w_buf, 80, L"%Z", &tz);
+    if (n > 0) {
+      ::wcstombs(buf, w_buf, buflen);
+      st->print("Time: %s %s", timestring, buf);
+    } else {
+      st->print("Time: %s", timestring);
+    }
   } else {
     st->print("Time: %s", timestring);
   }
@@ -1376,8 +1375,8 @@ bool os::stack_shadow_pages_available(Thread *thread, const methodHandle& method
   const int framesize_in_bytes =
     Interpreter::size_top_interpreter_activation(method()) * wordSize;
 
-  address limit = ((JavaThread*)thread)->stack_end() +
-                  (JavaThread::stack_guard_zone_size() + JavaThread::stack_shadow_zone_size());
+  address limit = thread->as_Java_thread()->stack_end() +
+                  (StackOverflow::stack_guard_zone_size() + StackOverflow::stack_shadow_zone_size());
 
   return sp > (limit + framesize_in_bytes);
 }
@@ -1653,49 +1652,22 @@ bool os::create_stack_guard_pages(char* addr, size_t bytes) {
   return os::pd_create_stack_guard_pages(addr, bytes);
 }
 
-char* os::reserve_memory(size_t bytes, char* addr, size_t alignment_hint, int file_desc) {
-  char* result = NULL;
-
-  if (file_desc != -1) {
-    // Could have called pd_reserve_memory() followed by replace_existing_mapping_with_file_mapping(),
-    // but AIX may use SHM in which case its more trouble to detach the segment and remap memory to the file.
-    result = os::map_memory_to_file(addr, bytes, file_desc);
-    if (result != NULL) {
-      MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC);
-    }
-  } else {
-    result = pd_reserve_memory(bytes, addr, alignment_hint);
-    if (result != NULL) {
-      MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
+char* os::reserve_memory(size_t bytes, MEMFLAGS flags) {
+  char* result = pd_reserve_memory(bytes);
+  if (result != NULL) {
+    MemTracker::record_virtual_memory_reserve(result, bytes, CALLER_PC);
+    if (flags != mtOther) {
+      MemTracker::record_virtual_memory_type(result, flags);
     }
   }
 
   return result;
 }
 
-char* os::reserve_memory(size_t bytes, char* addr, size_t alignment_hint,
-   MEMFLAGS flags) {
-  char* result = pd_reserve_memory(bytes, addr, alignment_hint);
+char* os::attempt_reserve_memory_at(char* addr, size_t bytes) {
+  char* result = pd_attempt_reserve_memory_at(addr, bytes);
   if (result != NULL) {
     MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
-    MemTracker::record_virtual_memory_type((address)result, flags);
-  }
-
-  return result;
-}
-
-char* os::attempt_reserve_memory_at(size_t bytes, char* addr, int file_desc) {
-  char* result = NULL;
-  if (file_desc != -1) {
-    result = pd_attempt_reserve_memory_at(bytes, addr, file_desc);
-    if (result != NULL) {
-      MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC);
-    }
-  } else {
-    result = pd_attempt_reserve_memory_at(bytes, addr);
-    if (result != NULL) {
-      MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
-    }
   }
   return result;
 }
@@ -1762,6 +1734,25 @@ void os::pretouch_memory(void* start, void* end, size_t page_size) {
   for (volatile char *p = (char*)start; p < (char*)end; p += page_size) {
     *p = 0;
   }
+}
+
+char* os::map_memory_to_file(size_t bytes, int file_desc) {
+  // Could have called pd_reserve_memory() followed by replace_existing_mapping_with_file_mapping(),
+  // but AIX may use SHM in which case its more trouble to detach the segment and remap memory to the file.
+  // On all current implementations NULL is interpreted as any available address.
+  char* result = os::map_memory_to_file(NULL /* addr */, bytes, file_desc);
+  if (result != NULL) {
+    MemTracker::record_virtual_memory_reserve_and_commit(result, bytes, CALLER_PC);
+  }
+  return result;
+}
+
+char* os::attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc) {
+  char* result = pd_attempt_map_memory_to_file_at(addr, bytes, file_desc);
+  if (result != NULL) {
+    MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC);
+  }
+  return result;
 }
 
 char* os::map_memory(int fd, const char* file_name, size_t file_offset,

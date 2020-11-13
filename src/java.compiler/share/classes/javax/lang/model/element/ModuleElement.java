@@ -35,7 +35,6 @@ import javax.lang.model.type.TypeMirror;
  * @see javax.lang.model.util.Elements#getModuleOf
  * @since 9
  * @jls 7.7 Module Declarations
- * @spec JPMS
  */
 public interface ModuleElement extends Element, QualifiedNameable {
     /**
@@ -51,7 +50,8 @@ public interface ModuleElement extends Element, QualifiedNameable {
 
     /**
      * Returns the fully qualified name of this module.  For an
-     * {@linkplain #isUnnamed() unnamed module}, an empty name is returned.
+     * {@linkplain #isUnnamed() unnamed module}, an <a
+     * href=Name.html#empty_name>empty name</a> is returned.
      *
      * @apiNote If the module name consists of one identifier, then
      * this method returns that identifier, which is deemed to be
@@ -69,7 +69,8 @@ public interface ModuleElement extends Element, QualifiedNameable {
 
     /**
      * Returns the simple name of this module.  For an {@linkplain
-     * #isUnnamed() unnamed module}, an empty name is returned.
+     * #isUnnamed() unnamed module}, an <a
+     * href=Name.html#empty_name>empty name</a> is returned.
      *
      * @apiNote If the module name consists of one identifier, then
      * this method returns that identifier.  If the module name
@@ -132,10 +133,9 @@ public interface ModuleElement extends Element, QualifiedNameable {
      *
      * <p>Note that it is possible additional directive kinds will be added
      * to accommodate new, currently unknown, language structures added to
-     * future versions of the Java&trade; programming language.
+     * future versions of the Java programming language.
      *
      * @since 9
-     * @spec JPMS
      */
     enum DirectiveKind {
         /** A "requires (static|transitive)* module-name" directive. */
@@ -156,7 +156,6 @@ public interface ModuleElement extends Element, QualifiedNameable {
      * module in the Java Platform Module System.
      *
      * @since 9
-     * @spec JPMS
      */
     interface Directive {
         /**
@@ -211,7 +210,7 @@ public interface ModuleElement extends Element, QualifiedNameable {
      *
      * <p> <b>WARNING:</b> It is possible that methods will be added to
      * this interface to accommodate new, currently unknown, language
-     * structures added to future versions of the Java&trade; programming
+     * structures added to future versions of the Java programming
      * language. Methods to accommodate new language constructs will
      * be added in a source <em>compatible</em> way using
      * <em>default methods</em>.
@@ -223,7 +222,6 @@ public interface ModuleElement extends Element, QualifiedNameable {
      *            additional parameter.
      *
      * @since 9
-     * @spec JPMS
      */
     interface DirectiveVisitor<R, P> {
         /**
@@ -309,7 +307,6 @@ public interface ModuleElement extends Element, QualifiedNameable {
     /**
      * A dependency of a module.
      * @since 9
-     * @spec JPMS
      */
     interface RequiresDirective extends Directive {
         /**
@@ -334,7 +331,6 @@ public interface ModuleElement extends Element, QualifiedNameable {
     /**
      * An exported package of a module.
      * @since 9
-     * @spec JPMS
      */
     interface ExportsDirective extends Directive {
 
@@ -356,7 +352,6 @@ public interface ModuleElement extends Element, QualifiedNameable {
     /**
      * An opened package of a module.
      * @since 9
-     * @spec JPMS
      */
     interface OpensDirective extends Directive {
 
@@ -378,7 +373,6 @@ public interface ModuleElement extends Element, QualifiedNameable {
     /**
      * An implementation of a service provided by a module.
      * @since 9
-     * @spec JPMS
      */
     interface ProvidesDirective extends Directive {
         /**
@@ -397,7 +391,6 @@ public interface ModuleElement extends Element, QualifiedNameable {
     /**
      * A reference to a service used by a module.
      * @since 9
-     * @spec JPMS
      */
     interface UsesDirective extends Directive {
         /**

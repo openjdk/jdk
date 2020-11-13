@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,11 @@ void MetaspaceClosure::Ref::update(address new_loc) const {
 void MetaspaceClosure::push_impl(MetaspaceClosure::Ref* ref) {
   if (_nest_level < MAX_NEST_LEVEL) {
     do_push(ref);
-    delete ref;
+    if (!ref->keep_after_pushing()) {
+      delete ref;
+    }
   } else {
+    do_pending_ref(ref);
     ref->set_next(_pending_refs);
     _pending_refs = ref;
   }
@@ -59,9 +62,15 @@ void MetaspaceClosure::do_push(MetaspaceClosure::Ref* ref) {
       assert(w == _default, "must be");
       read_only = ref->is_read_only_by_default();
     }
+    if (_nest_level == 0) {
+      assert(_enclosing_ref == NULL, "must be");
+    }
     _nest_level ++;
     if (do_ref(ref, read_only)) { // true means we want to iterate the embedded pointer in <ref>
+      Ref* saved = _enclosing_ref;
+      _enclosing_ref = ref;
       ref->metaspace_pointers_do(this);
+      _enclosing_ref = saved;
     }
     _nest_level --;
   }
@@ -73,7 +82,9 @@ void MetaspaceClosure::finish() {
     Ref* ref = _pending_refs;
     _pending_refs = _pending_refs->next();
     do_push(ref);
-    delete ref;
+    if (!ref->keep_after_pushing()) {
+      delete ref;
+    }
   }
 }
 
@@ -83,12 +94,11 @@ MetaspaceClosure::~MetaspaceClosure() {
 }
 
 bool UniqueMetaspaceClosure::do_ref(MetaspaceClosure::Ref* ref, bool read_only) {
-  bool* found = _has_been_visited.lookup(ref->obj());
-  if (found != NULL) {
-    assert(*found == read_only, "must be");
+  bool created;
+  _has_been_visited.add_if_absent(ref->obj(), read_only, &created);
+  if (!created) {
     return false; // Already visited: no need to iterate embedded pointers.
   } else {
-    _has_been_visited.add(ref->obj(), read_only);
     if (_has_been_visited.maybe_grow(MAX_TABLE_SIZE)) {
       log_info(cds, hashtables)("Expanded _has_been_visited table to %d", _has_been_visited.table_size());
     }

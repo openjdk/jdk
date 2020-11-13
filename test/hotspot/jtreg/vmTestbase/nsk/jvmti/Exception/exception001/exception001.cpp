@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,18 +95,21 @@ Exception(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thr,
         printf("(GetClassSignature) unexpected error: %s (%d)\n",
                TranslateError(err), err);
         result = STATUS_FAILED;
+        return;
     }
     err = jvmti_env->GetMethodDeclaringClass(method, &cls);
     if (err != JVMTI_ERROR_NONE) {
         printf("(GetMethodDeclaringClass#t) unexpected error: %s (%d)\n",
                TranslateError(err), err);
         result = STATUS_FAILED;
+        return;
     }
     err = jvmti_env->GetClassSignature(cls, &ex.t_cls, &generic);
     if (err != JVMTI_ERROR_NONE) {
         printf("(GetClassSignature#t) unexpected error: %s (%d)\n",
                TranslateError(err), err);
         result = STATUS_FAILED;
+        return;
     }
     err = jvmti_env->GetMethodName(method,
         &ex.t_name, &ex.t_sig, &generic);
@@ -114,6 +117,7 @@ Exception(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thr,
         printf("(GetMethodName#t) unexpected error: %s (%d)\n",
                TranslateError(err), err);
         result = STATUS_FAILED;
+        return;
     }
     ex.t_loc = location;
     err = jvmti_env->GetMethodDeclaringClass(catch_method, &cls);
@@ -121,12 +125,14 @@ Exception(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thr,
         printf("(GetMethodDeclaringClass#c) unexpected error: %s (%d)\n",
                TranslateError(err), err);
         result = STATUS_FAILED;
+        return;
     }
     err = jvmti_env->GetClassSignature(cls, &ex.c_cls, &generic);
     if (err != JVMTI_ERROR_NONE) {
         printf("(GetClassSignature#c) unexpected error: %s (%d)\n",
                TranslateError(err), err);
         result = STATUS_FAILED;
+        return;
     }
     err = jvmti_env->GetMethodName(catch_method,
         &ex.c_name, &ex.c_sig, &generic);
@@ -134,6 +140,7 @@ Exception(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thr,
         printf("(GetMethodName#c) unexpected error: %s (%d)\n",
                TranslateError(err), err);
         result = STATUS_FAILED;
+        return;
     }
     ex.c_loc = catch_location;
     if (printdump == JNI_TRUE) {

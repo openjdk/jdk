@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,9 @@
 
 package java.lang;
 
+import java.io.IOException;
 import java.util.Arrays;
-import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
  * A thread-safe, mutable sequence of characters.
@@ -122,7 +123,7 @@ import jdk.internal.HotSpotIntrinsicCandidate;
      * Constructs a string buffer with no characters in it and an
      * initial capacity of 16 characters.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public StringBuffer() {
         super(16);
     }
@@ -135,7 +136,7 @@ import jdk.internal.HotSpotIntrinsicCandidate;
      * @throws     NegativeArraySizeException  if the {@code capacity}
      *             argument is less than {@code 0}.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public StringBuffer(int capacity) {
         super(capacity);
     }
@@ -147,7 +148,7 @@ import jdk.internal.HotSpotIntrinsicCandidate;
      *
      * @param   str   the initial contents of the buffer.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public StringBuffer(String str) {
         super(str);
     }
@@ -301,7 +302,7 @@ import jdk.internal.HotSpotIntrinsicCandidate;
     }
 
     @Override
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public synchronized StringBuffer append(String str) {
         toStringCache = null;
         super.append(str);
@@ -413,7 +414,7 @@ import jdk.internal.HotSpotIntrinsicCandidate;
     }
 
     @Override
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public synchronized StringBuffer append(char c) {
         toStringCache = null;
         super.append(c);
@@ -421,7 +422,7 @@ import jdk.internal.HotSpotIntrinsicCandidate;
     }
 
     @Override
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public synchronized StringBuffer append(int i) {
         toStringCache = null;
         super.append(i);
@@ -703,7 +704,7 @@ import jdk.internal.HotSpotIntrinsicCandidate;
     }
 
     @Override
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public synchronized String toString() {
         if (toStringCache == null) {
             return toStringCache =
@@ -733,8 +734,11 @@ import jdk.internal.HotSpotIntrinsicCandidate;
     };
 
     /**
-     * readObject is called to restore the state of the StringBuffer from
+     * The {@code writeObject} method is called to write the state of the {@code StringBuffer} to
      * a stream.
+     *
+     * @param  s the {@code ObjectOutputStream} to which data is written
+     * @throws IOException if an I/O error occurs
      */
     @java.io.Serial
     private synchronized void writeObject(java.io.ObjectOutputStream s)
@@ -753,8 +757,12 @@ import jdk.internal.HotSpotIntrinsicCandidate;
     }
 
     /**
-     * readObject is called to restore the state of the StringBuffer from
+     * The {@code readObject} method is called to restore the state of the {@code StringBuffer} from
      * a stream.
+     *
+     * @param  s the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)

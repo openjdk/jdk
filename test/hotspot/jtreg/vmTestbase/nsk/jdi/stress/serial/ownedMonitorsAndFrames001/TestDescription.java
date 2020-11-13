@@ -42,7 +42,6 @@
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *
- * @run driver jdk.test.lib.FileInstaller . .
  *
  * @comment build classes required for tests from ownedMonitorsAndFrames001.tests
  * @build nsk.jdi.ThreadReference.ownedMonitorsAndFrames.ownedMonitorsAndFrames001.ownedMonitorsAndFrames001
@@ -55,16 +54,16 @@
  *        nsk.jdi.ThreadReference.ownedMonitorsAndFrames.ownedMonitorsAndFrames007.ownedMonitorsAndFrames007
  *        nsk.jdi.ThreadReference.ownedMonitorsAndFrames.ownedMonitorsAndFrames009.ownedMonitorsAndFrames009
  * @build nsk.share.jdi.SerialExecutionDebugger
- * @run main/othervm/native PropertyResolvingWrapper
+ * @run main/othervm/native
  *      nsk.share.jdi.SerialExecutionDebugger
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=-Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *      -debugee.vmkeys="-Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                       -XX:+WhiteBoxAPI ${test.vm.opts} ${test.java.opts}"
  *      -testClassPath ${test.class.path}
- *      -configFile ./ownedMonitorsAndFrames001.tests
+ *      -configFile ${test.src}/ownedMonitorsAndFrames001.tests
  */
 

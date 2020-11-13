@@ -47,6 +47,12 @@ public class SynthLabelUI extends BasicLabelUI implements SynthUI {
     private SynthStyle style;
 
     /**
+     *
+     * Constructs a {@code SynthLabelUI}.
+     */
+    public SynthLabelUI() {}
+
+    /**
      * Returns the LabelUI implementation used for the skins look and feel.
      *
      * @param c component to create UI object for

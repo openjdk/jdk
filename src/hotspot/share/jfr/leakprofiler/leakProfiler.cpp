@@ -89,14 +89,6 @@ void LeakProfiler::emit_events(int64_t cutoff_ticks, bool emit_all, bool skip_bf
   ObjectSampler::release();
 }
 
-void LeakProfiler::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* f) {
-  assert(SafepointSynchronize::is_at_safepoint(),
-    "Leak Profiler::oops_do(...) may only be called during safepoint");
-  if (is_running()) {
-    ObjectSampler::weak_oops_do(is_alive, f);
-  }
-}
-
 void LeakProfiler::sample(HeapWord* object, size_t size, JavaThread* thread) {
   assert(is_running(), "invariant");
   assert(thread != NULL, "invariant");

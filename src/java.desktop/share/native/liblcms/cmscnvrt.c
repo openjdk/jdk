@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2017 Marti Maria Saguer
+//  Copyright (c) 1998-2020 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -55,19 +55,6 @@
 
 #include "lcms2_internal.h"
 
-
-// Link several profiles to obtain a single LUT modelling the whole color transform. Intents, Black point
-// compensation and Adaptation parameters may vary across profiles. BPC and Adaptation refers to the PCS
-// after the profile. I.e, BPC[0] refers to connexion between profile(0) and profile(1)
-cmsPipeline* _cmsLinkProfiles(cmsContext     ContextID,
-                              cmsUInt32Number nProfiles,
-                              cmsUInt32Number Intents[],
-                              cmsHPROFILE     hProfiles[],
-                              cmsBool         BPC[],
-                              cmsFloat64Number AdaptationStates[],
-                              cmsUInt32Number dwFlags);
-
-//---------------------------------------------------------------------------------
 
 // This is the default routine for ICC-style intents. A user may decide to override it by using a plugin.
 // Supported intents are perceptual, relative colorimetric, saturation and ICC-absolute colorimetric
@@ -739,7 +726,7 @@ typedef struct {
 
 // Preserve black only if that is the only ink used
 static
-int BlackPreservingGrayOnlySampler(register const cmsUInt16Number In[], register cmsUInt16Number Out[], register void* Cargo)
+int BlackPreservingGrayOnlySampler(CMSREGISTER const cmsUInt16Number In[], CMSREGISTER cmsUInt16Number Out[], CMSREGISTER void* Cargo)
 {
     GrayOnlyParams* bp = (GrayOnlyParams*) Cargo;
 
@@ -866,7 +853,7 @@ typedef struct {
 
 // The CLUT will be stored at 16 bits, but calculations are performed at cmsFloat32Number precision
 static
-int BlackPreservingSampler(register const cmsUInt16Number In[], register cmsUInt16Number Out[], register void* Cargo)
+int BlackPreservingSampler(CMSREGISTER const cmsUInt16Number In[], CMSREGISTER cmsUInt16Number Out[], CMSREGISTER void* Cargo)
 {
     int i;
     cmsFloat32Number Inf[4], Outf[4];
@@ -891,18 +878,18 @@ int BlackPreservingSampler(register const cmsUInt16Number In[], register cmsUInt
     }
 
     // Try the original transform,
-    cmsPipelineEvalFloat( Inf, Outf, bp ->cmyk2cmyk);
+    cmsPipelineEvalFloat(Inf, Outf, bp ->cmyk2cmyk);
 
     // Store a copy of the floating point result into 16-bit
     for (i=0; i < 4; i++)
             Out[i] = _cmsQuickSaturateWord(Outf[i] * 65535.0);
 
     // Maybe K is already ok (mostly on K=0)
-    if ( fabs(Outf[3] - LabK[3]) < (3.0 / 65535.0) ) {
+    if (fabsf(Outf[3] - LabK[3]) < (3.0 / 65535.0)) {
         return TRUE;
     }
 
-    // K differ, mesure and keep Lab measurement for further usage
+    // K differ, measure and keep Lab measurement for further usage
     // this is done in relative colorimetric intent
     cmsDoTransform(bp->hProofOutput, Out, &ColorimetricLab, 1);
 
@@ -923,7 +910,7 @@ int BlackPreservingSampler(register const cmsUInt16Number In[], register cmsUInt
     Outf[3] = LabK[3];
 
     // Apply TAC if needed
-    SumCMY   = Outf[0]  + Outf[1] + Outf[2];
+    SumCMY   = (cmsFloat64Number) Outf[0]  + Outf[1] + Outf[2];
     SumCMYK  = SumCMY + Outf[3];
 
     if (SumCMYK > bp ->MaxTAC) {

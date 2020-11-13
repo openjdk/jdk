@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -51,7 +51,7 @@ LIR_Opr LIR_OprFact::double_fpu(int reg1, int reg2) {
 void LIR_Address::verify() const {
   assert(base()->is_cpu_register(), "wrong base operand");
   assert(index()->is_illegal() || index()->is_double_cpu(), "wrong index operand");
-  assert(base()->type() == T_OBJECT || base()->type() == T_LONG || base()->type() == T_METADATA,
+  assert(base()->type() == T_ADDRESS || base()->type() == T_OBJECT || base()->type() == T_LONG || base()->type() == T_METADATA,
          "wrong type for addresses");
 }
 #endif // PRODUCT

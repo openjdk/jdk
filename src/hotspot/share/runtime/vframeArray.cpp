@@ -32,6 +32,7 @@
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiThreadState.hpp"
+#include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/monitorChunk.hpp"
@@ -70,28 +71,34 @@ void vframeArrayElement::fill_in(compiledVFrame* vf, bool realloc_failures) {
 
   int index;
 
-  // Get the monitors off-stack
+  {
+    Thread* current_thread = Thread::current();
+    ResourceMark rm(current_thread);
+    HandleMark hm(current_thread);
 
-  GrowableArray<MonitorInfo*>* list = vf->monitors();
-  if (list->is_empty()) {
-    _monitors = NULL;
-  } else {
+    // Get the monitors off-stack
 
-    // Allocate monitor chunk
-    _monitors = new MonitorChunk(list->length());
-    vf->thread()->add_monitor_chunk(_monitors);
+    GrowableArray<MonitorInfo*>* list = vf->monitors();
+    if (list->is_empty()) {
+      _monitors = NULL;
+    } else {
 
-    // Migrate the BasicLocks from the stack to the monitor chunk
-    for (index = 0; index < list->length(); index++) {
-      MonitorInfo* monitor = list->at(index);
-      assert(!monitor->owner_is_scalar_replaced() || realloc_failures, "object should be reallocated already");
-      BasicObjectLock* dest = _monitors->at(index);
-      if (monitor->owner_is_scalar_replaced()) {
-        dest->set_obj(NULL);
-      } else {
-        assert(monitor->owner() == NULL || (!monitor->owner()->is_unlocked() && !monitor->owner()->has_bias_pattern()), "object must be null or locked, and unbiased");
-        dest->set_obj(monitor->owner());
-        monitor->lock()->move_to(monitor->owner(), dest->lock());
+      // Allocate monitor chunk
+      _monitors = new MonitorChunk(list->length());
+      vf->thread()->add_monitor_chunk(_monitors);
+
+      // Migrate the BasicLocks from the stack to the monitor chunk
+      for (index = 0; index < list->length(); index++) {
+        MonitorInfo* monitor = list->at(index);
+        assert(!monitor->owner_is_scalar_replaced() || realloc_failures, "object should be reallocated already");
+        BasicObjectLock* dest = _monitors->at(index);
+        if (monitor->owner_is_scalar_replaced()) {
+          dest->set_obj(NULL);
+        } else {
+          assert(monitor->owner() == NULL || (!monitor->owner()->is_unlocked() && !monitor->owner()->has_bias_pattern()), "object must be null or locked, and unbiased");
+          dest->set_obj(monitor->owner());
+          monitor->lock()->move_to(monitor->owner(), dest->lock());
+        }
       }
     }
   }
@@ -170,7 +177,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
                                          bool is_top_frame,
                                          bool is_bottom_frame,
                                          int exec_mode) {
-  JavaThread* thread = (JavaThread*) Thread::current();
+  JavaThread* thread = JavaThread::current();
 
   bool realloc_failure_exception = thread->frames_to_pop_failed_realloc() > 0;
 

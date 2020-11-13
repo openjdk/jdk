@@ -167,6 +167,10 @@ define SetupAotModuleBody
     $1_JAOTC_OPTS += --compile-with-assertions
   endif
 
+  ifneq ($$(filter -XX:+VerifyOops, $$($1_VM_OPTIONS)), )
+    $1_JAOTC_OPTS += -J-Dgraal.AOTVerifyOops=true
+  endif
+
   $$($1_AOT_LIB): $$(JDK_UNDER_TEST)/release \
       $$(call DependOnVariable, $1_JAOTC_OPTS) \
       $$(call DependOnVariable, JDK_UNDER_TEST)
@@ -600,6 +604,7 @@ define SetupRunGtestTestBody
 	$$(call LogWarn, Running test '$$($1_TEST)')
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR))
 	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/gtest, ( \
+	    $$(CD) $$($1_TEST_SUPPORT_DIR) && \
 	    $$(FIXPATH) $$(TEST_IMAGE_DIR)/hotspot/gtest/$$($1_VARIANT)/gtestLauncher \
 	        -jdk $(JDK_UNDER_TEST) $$($1_GTEST_FILTER) \
 	        --gtest_output=xml:$$($1_TEST_RESULTS_DIR)/gtest.xml \

@@ -199,6 +199,11 @@ public class BasicListUI extends ListUI
 
     private static final int DROP_LINE_THICKNESS = 2;
 
+    /**
+     * Constructs a {@code BasicListUI}.
+     */
+    public BasicListUI() {}
+
     static void loadActionMap(LazyActionMap map) {
         map.put(new Actions(Actions.SELECT_PREVIOUS_COLUMN));
         map.put(new Actions(Actions.SELECT_PREVIOUS_COLUMN_EXTEND));
@@ -1566,7 +1571,7 @@ public class BasicListUI extends ListUI
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans&trade;
+     * of all JavaBeans
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      *
@@ -1577,6 +1582,11 @@ public class BasicListUI extends ListUI
     @SuppressWarnings("serial") // Same-version serialization only
     public class MouseInputHandler implements MouseInputListener
     {
+        /**
+         * Constructs a {@code MouseInputHandler}.
+         */
+        public MouseInputHandler() {}
+
         public void mouseClicked(MouseEvent e) {
             getHandler().mouseClicked(e);
         }
@@ -1641,6 +1651,11 @@ public class BasicListUI extends ListUI
     public class FocusHandler implements FocusListener
     {
         /**
+         * Constructs a {@code FocusHandler}.
+         */
+        public FocusHandler() {}
+
+        /**
          * Repaints focused cells.
          */
         protected void repaintCellFocus()
@@ -1680,7 +1695,7 @@ public class BasicListUI extends ListUI
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans&trade;
+     * of all JavaBeans
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      *
@@ -1691,6 +1706,11 @@ public class BasicListUI extends ListUI
     @SuppressWarnings("serial") // Same-version serialization only
     public class ListSelectionHandler implements ListSelectionListener
     {
+        /**
+         * Constructs a {@code ListSelectionHandler}.
+         */
+        public ListSelectionHandler() {}
+
         public void valueChanged(ListSelectionEvent e)
         {
             getHandler().valueChanged(e);
@@ -1740,7 +1760,7 @@ public class BasicListUI extends ListUI
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans&trade;
+     * of all JavaBeans
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      *
@@ -1752,6 +1772,11 @@ public class BasicListUI extends ListUI
     @SuppressWarnings("serial") // Same-version serialization only
     public class ListDataHandler implements ListDataListener
     {
+        /**
+         * Constructs a {@code ListDataHandler}.
+         */
+        public ListDataHandler() {}
+
         public void intervalAdded(ListDataEvent e) {
             getHandler().intervalAdded(e);
         }
@@ -1809,7 +1834,7 @@ public class BasicListUI extends ListUI
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans&trade;
+     * of all JavaBeans
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      *
@@ -1820,6 +1845,11 @@ public class BasicListUI extends ListUI
     @SuppressWarnings("serial") // Same-version serialization only
     public class PropertyChangeHandler implements PropertyChangeListener
     {
+        /**
+         * Constructs a {@code PropertyChangeHandler}.
+         */
+        public PropertyChangeHandler() {}
+
         public void propertyChange(PropertyChangeEvent e)
         {
             getHandler().propertyChange(e);

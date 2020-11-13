@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8145239 8129559 8080354 8189248 8010319 8246353
+ * @bug 8145239 8129559 8080354 8189248 8010319 8246353 8247456
  * @summary Tests for EvaluationState.classes
  * @build KullaTesting TestingInputStream ExpectedDiagnostic
  * @run testng ClassesTest
@@ -249,29 +249,23 @@ public class ClassesTest extends KullaTesting {
 
     public void classesIgnoredModifiers() {
         assertEval("public interface A { }");
-        assertDeclareWarn1("static class B implements A { }",
-                new ExpectedDiagnostic("jdk.eval.warn.illegal.modifiers", 0, 6, 0, -1, -1, Diagnostic.Kind.WARNING));
-        assertDeclareWarn1("static interface C extends A { }",
-                new ExpectedDiagnostic("jdk.eval.warn.illegal.modifiers", 0, 6, 0, -1, -1, Diagnostic.Kind.WARNING));
+        assertEval("static class B implements A { }");
+        assertEval("static interface C extends A { }");
         assertActiveKeys();
     }
 
     public void classesIgnoredModifiersAnnotation() {
         assertEval("public @interface X { }");
         assertEval("@X public interface A { }");
-        assertDeclareWarn1("@X static class B implements A { }",
-                new ExpectedDiagnostic("jdk.eval.warn.illegal.modifiers", 0, 9, 0, -1, -1, Diagnostic.Kind.WARNING));
-        assertDeclareWarn1("@X static interface C extends A { }",
-                new ExpectedDiagnostic("jdk.eval.warn.illegal.modifiers", 0, 9, 0, -1, -1, Diagnostic.Kind.WARNING));
+        assertEval("@X static class B implements A { }");
+        assertEval("@X static interface C extends A { }");
         assertActiveKeys();
     }
 
     public void classesIgnoredModifiersOtherModifiers() {
         assertEval("strictfp public interface A { }");
-        assertDeclareWarn1("strictfp static class B implements A { }",
-                new ExpectedDiagnostic("jdk.eval.warn.illegal.modifiers", 0, 15, 0, -1, -1, Diagnostic.Kind.WARNING));
-        assertDeclareWarn1("strictfp static interface C extends A { }",
-                new ExpectedDiagnostic("jdk.eval.warn.illegal.modifiers", 0, 15, 0, -1, -1, Diagnostic.Kind.WARNING));
+        assertEval("strictfp static class B implements A { }");
+        assertEval("strictfp static interface C extends A { }");
         assertActiveKeys();
     }
 

@@ -93,7 +93,7 @@ public class AnchorCertificates {
         boolean result = certs.contains(key);
         if (result && debug != null) {
             debug.println("AnchorCertificate.contains: matched " +
-                    cert.getSubjectDN());
+                    cert.getSubjectX500Principal());
         }
         return result;
     }

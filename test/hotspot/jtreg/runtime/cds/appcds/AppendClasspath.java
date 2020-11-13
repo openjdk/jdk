@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class AppendClasspath {
@@ -54,11 +55,11 @@ public class AppendClasspath {
       .assertNormalExit();
 
     // PASS: 2) runtime has an non-existing jar in the -cp
-    String classDir = System.getProperty("test.classes");
+    String outDir = CDSTestUtils.getOutputDir();
     String newFile = "non-exist.jar";
-    String nonExistPath = classDir + File.separator + newFile;
+    String nonExistPath = outDir + File.separator + newFile;
     String classPath = appJar + File.pathSeparator + nonExistPath;
-    File nonExistJar = new File(classDir, newFile);
+    File nonExistJar = new File(outDir, newFile);
     if (nonExistJar.exists()) {
         nonExistJar.delete();
     }

@@ -26,7 +26,7 @@
 /**
  * Defines the Java Debug Interface.
  * <p>
- * The Java&trade; Debug Interface (JDI) is a high level Java API providing
+ * The Java Debug Interface (JDI) is a high level Java API providing
  * information useful for debuggers and similar systems needing access to the
  * running state of a (usually remote) virtual machine.
  * <p>

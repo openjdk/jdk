@@ -56,7 +56,7 @@ class MarkSweep : AllStatic {
   //
   // Inline closure decls
   //
-  class FollowRootClosure: public BasicOopsInGenClosure {
+  class FollowRootClosure: public BasicOopIterateClosure {
    public:
     virtual void do_oop(oop* p);
     virtual void do_oop(narrowOop* p);
@@ -185,15 +185,12 @@ public:
   }
 };
 
-class AdjustPointerClosure: public BasicOopsInGenClosure {
+class AdjustPointerClosure: public BasicOopIterateClosure {
  public:
   template <typename T> void do_oop_work(T* p);
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }
-
-  // This closure provides its own oop verification code.
-  debug_only(virtual bool should_verify_oops() { return false; })
 };
 
 class PreservedMark {

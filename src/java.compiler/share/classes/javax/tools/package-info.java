@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,29 +28,29 @@
  * for example, compilers.
  *
  * <p>These interfaces and classes are required as part of the
- * Java&trade; Platform, Standard Edition (Java SE),
+ * Java Platform, Standard Edition (Java SE),
  * but there is no requirement to provide any tools implementing them.
  *
  * <p>Unless explicitly allowed, all methods in this package might
- * throw a {@linkplain java.lang.NullPointerException} if given a
+ * throw a {@link java.lang.NullPointerException} if given a
  * {@code null} argument or if given a
  * {@linkplain java.lang.Iterable list or collection} containing
  * {@code null} elements.  Similarly, no method may return
  * {@code null} unless explicitly allowed.
  *
- * <p>This package is the home of the Java programming language compiler framework.  This
- * framework allows clients of the framework to locate and run
+ * <p>This package is the home of the Java programming language compiler framework.
+ * This framework allows clients of the framework to locate and run
  * compilers from programs.  The framework also provides Service
  * Provider Interfaces (SPI) for structured access to diagnostics
- * ({@linkplain javax.tools.DiagnosticListener}) as well as a file
- * abstraction for overriding file access ({@linkplain
- * javax.tools.JavaFileManager} and {@linkplain
- * javax.tools.JavaFileObject}).  See {@linkplain
+ * ({@link javax.tools.DiagnosticListener}) as well as a file
+ * abstraction for overriding file access ({@link
+ * javax.tools.JavaFileManager} and {@link
+ * javax.tools.JavaFileObject}).  See {@link
  * javax.tools.JavaCompiler} for more details on using the SPI.
  *
  * <p>There is no requirement for a compiler at runtime.  However, if
  * a default compiler is provided, it can be located using the
- * {@linkplain javax.tools.ToolProvider}, for example:
+ * {@link javax.tools.ToolProvider}, for example:
  *
  * <p>{@code JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();}
  *

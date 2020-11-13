@@ -211,6 +211,29 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
+
+//------------------------ RotateLeftNode ----------------------------------
+class RotateLeftNode : public TypeNode {
+  public:
+  RotateLeftNode(Node* in1, Node* in2, const Type* type) : TypeNode(type, 3) {
+    init_req(1, in1);
+    init_req(2, in2);
+  }
+  virtual int Opcode() const;
+  virtual const Type* Value(PhaseGVN* phase) const;
+};
+
+//----------------------- RotateRightNode ----------------------------------
+class RotateRightNode : public TypeNode {
+  public:
+  RotateRightNode(Node* in1, Node* in2, const Type* type) : TypeNode(type, 3) {
+    init_req(1, in1);
+    init_req(2, in2);
+  }
+  virtual int Opcode() const;
+  virtual const Type* Value(PhaseGVN* phase) const;
+};
+
 //------------------------------RShiftINode------------------------------------
 // Signed shift right
 class RShiftINode : public Node {
@@ -236,6 +259,25 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
+//------------------------------URShiftBNode-----------------------------------
+// Logical shift right
+class URShiftBNode : public Node {
+public:
+  URShiftBNode( Node *in1, Node *in2 ) : Node(0,in1,in2) {
+    ShouldNotReachHere(); // only vector variant is used
+  }
+  virtual int Opcode() const;
+};
+
+//------------------------------URShiftSNode-----------------------------------
+// Logical shift right
+class URShiftSNode : public Node {
+public:
+  URShiftSNode( Node *in1, Node *in2 ) : Node(0,in1,in2) {
+    ShouldNotReachHere(); // only vector variant is used
+  }
+  virtual int Opcode() const;
+};
 
 //------------------------------URShiftINode-----------------------------------
 // Logical shift right

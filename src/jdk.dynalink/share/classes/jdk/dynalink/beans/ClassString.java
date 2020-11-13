@@ -61,7 +61,6 @@
 package jdk.dynalink.beans;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodType;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -94,10 +93,6 @@ final class ClassString {
         this.classes = classes;
     }
 
-    ClassString(final MethodType type) {
-        this(type.parameterArray());
-    }
-
     @Override
     public boolean equals(final Object other) {
         if(!(other instanceof ClassString)) {
@@ -119,8 +114,8 @@ final class ClassString {
     public int hashCode() {
         if(hashCode == 0) {
             int h = 0;
-            for(int i = 0; i < classes.length; ++i) {
-                h ^= classes[i].hashCode();
+            for(final Class<?> cls: classes) {
+                h ^= cls.hashCode();
             }
             hashCode = h;
         }
@@ -133,16 +128,13 @@ final class ClassString {
     }
 
     boolean isVisibleFrom(final ClassLoader classLoader) {
-        return AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
-            @Override
-            public Boolean run() {
-                for(final Class<?> clazz: classes) {
-                    if(!InternalTypeUtilities.canReferenceDirectly(classLoader, clazz.getClassLoader())) {
-                        return false;
-                    }
+        return AccessController.doPrivileged((PrivilegedAction<Boolean>) () -> {
+            for(final Class<?> clazz: classes) {
+                if(!InternalTypeUtilities.canReferenceDirectly(classLoader, clazz.getClassLoader())) {
+                    return false;
                 }
-                return true;
             }
+            return true;
         }, GET_CLASS_LOADER_CONTEXT);
     }
 

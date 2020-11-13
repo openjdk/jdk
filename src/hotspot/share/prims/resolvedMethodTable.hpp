@@ -33,7 +33,20 @@ class ResolvedMethodTable;
 class ResolvedMethodTableConfig;
 
 class ResolvedMethodTable : public AllStatic {
-  static volatile bool            _has_work;
+  friend class ResolvedMethodTableConfig;
+
+  static volatile bool _has_work;
+  static OopStorage* _oop_storage;
+
+  // Callback for GC to notify of changes that might require cleaning or resize.
+  static void gc_notification(size_t num_dead);
+  static void trigger_concurrent_work();
+
+  static double get_load_factor();
+  static double get_dead_factor(size_t num_dead);
+
+  static void grow(JavaThread* jt);
+  static void clean_dead_entries(JavaThread* jt);
 
 public:
   // Initialization
@@ -50,30 +63,9 @@ public:
   static void item_removed();
 
   // Cleaning
-  static bool has_work() { return _has_work; }
-
-  // Cleaning and table management
-
-  static double get_load_factor();
-  static double get_dead_factor();
-
-  static void check_concurrent_work();
-  static void trigger_concurrent_work();
+  static bool has_work();
   static void do_concurrent_work(JavaThread* jt);
 
-  static void grow(JavaThread* jt);
-  static void clean_dead_entries(JavaThread* jt);
-
-  // GC Notification
-
-  // Must be called before a parallel walk where objects might die.
-  static void reset_dead_counter();
-  // After the parallel walk this method must be called to trigger
-  // cleaning. Note it might trigger a resize instead.
-  static void finish_dead_counter();
-  // If GC uses ParState directly it should add the number of cleared
-  // entries to this method.
-  static void inc_dead_counter(size_t ndead);
 
   // JVMTI Support - It is called at safepoint only for RedefineClasses
   JVMTI_ONLY(static void adjust_method_entries(bool * trace_name_printed);)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,13 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8186334
- * @library /lib/testlibrary/java/util/jar
- * @build JarBuilder
+ * @summary Make sure scanning manifest doesn't throw AIOOBE on certain strings containing backticks.
+ * @library /test/lib/
+ * @build jdk.test.lib.util.JarBuilder
  * @run testng JarBacktickManifest
- * @summary Make sure scanning manifest doesn't throw AIOOBE on certain strings
- *          containing backticks.
  */
 
 import java.io.File;
@@ -40,6 +39,8 @@ import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+
+import jdk.test.lib.util.JarBuilder;
 
 public class JarBacktickManifest {
 

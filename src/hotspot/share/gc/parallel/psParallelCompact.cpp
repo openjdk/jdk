@@ -73,9 +73,9 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/java.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/vmThread.hpp"
-#include "services/management.hpp"
 #include "services/memTracker.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/align.hpp"
@@ -844,7 +844,6 @@ ParallelOldTracer   PSParallelCompact::_gc_tracer;
 elapsedTimer        PSParallelCompact::_accumulated_time;
 unsigned int        PSParallelCompact::_total_invocations = 0;
 unsigned int        PSParallelCompact::_maximum_compaction_gc_num = 0;
-jlong               PSParallelCompact::_time_of_last_gc = 0;
 CollectorCounters*  PSParallelCompact::_counters = NULL;
 ParMarkBitMap       PSParallelCompact::_mark_bitmap;
 ParallelCompactData PSParallelCompact::_summary_data;
@@ -1008,7 +1007,6 @@ void PSParallelCompact::pre_compact()
   heap->ensure_parsability(true);  // retire TLABs
 
   if (VerifyBeforeGC && heap->total_collections() >= VerifyGCStartAt) {
-    HandleMark hm;  // Discard invalid handles created during verification
     Universe::verify("Before GC");
   }
 
@@ -1045,7 +1043,7 @@ void PSParallelCompact::post_compact()
 
   // Update heap occupancy information which is used as input to the soft ref
   // clearing policy at the next gc.
-  Universe::update_heap_info_at_gc();
+  Universe::heap()->update_capacity_and_used_at_gc();
 
   bool young_gen_empty = eden_empty && from_space->is_empty() &&
     to_space->is_empty();
@@ -1059,8 +1057,8 @@ void PSParallelCompact::post_compact()
   }
 
   // Delete metaspaces for unloaded class loaders and clean up loader_data graph
-  ClassLoaderDataGraph::purge();
-  MetaspaceUtils::verify_metrics();
+  ClassLoaderDataGraph::purge(/*at_safepoint*/true);
+  DEBUG_ONLY(MetaspaceUtils::verify();)
 
   heap->prune_scavengable_nmethods();
 
@@ -1072,8 +1070,8 @@ void PSParallelCompact::post_compact()
     heap->gen_mangle_unused_area();
   }
 
-  // Update time of last GC
-  reset_millis_since_last_gc();
+  // Signal that we have completed a visit to all live objects.
+  Universe::heap()->record_whole_heap_examined_timestamp();
 }
 
 HeapWord*
@@ -1612,6 +1610,7 @@ void PSParallelCompact::summary_phase(ParCompactionManager* cm,
 {
   GCTraceTime(Info, gc, phases) tm("Summary Phase", &_gc_timer);
 
+#ifdef ASSERT
   log_develop_debug(gc, marking)(
       "add_obj_count=" SIZE_FORMAT " "
       "add_obj_bytes=" SIZE_FORMAT,
@@ -1622,6 +1621,7 @@ void PSParallelCompact::summary_phase(ParCompactionManager* cm,
       "mark_bitmap_bytes=" SIZE_FORMAT,
       mark_bitmap_count,
       mark_bitmap_size * HeapWordSize);
+#endif // ASSERT
 
   // Quick summarization of each space into itself, to see how much is live.
   summarize_spaces_quick();
@@ -1789,7 +1789,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
 
   {
     ResourceMark rm;
-    HandleMark hm;
 
     const uint active_workers =
       WorkerPolicy::calc_active_workers(ParallelScavengeHeap::heap()->workers().total_workers(),
@@ -1946,7 +1945,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
 #endif // ASSERT
 
   if (VerifyAfterGC && heap->total_collections() >= VerifyGCStartAt) {
-    HandleMark hm;  // Discard invalid handles created during verification
     Universe::verify("After GC");
   }
 
@@ -2012,22 +2010,6 @@ static void mark_from_roots_work(ParallelRootType::Value root_type, uint worker_
   PCMarkAndPushClosure mark_and_push_closure(cm);
 
   switch (root_type) {
-    case ParallelRootType::universe:
-      Universe::oops_do(&mark_and_push_closure);
-      break;
-
-    case ParallelRootType::object_synchronizer:
-      ObjectSynchronizer::oops_do(&mark_and_push_closure);
-      break;
-
-    case ParallelRootType::management:
-      Management::oops_do(&mark_and_push_closure);
-      break;
-
-    case ParallelRootType::jvmti:
-      JvmtiExport::oops_do(&mark_and_push_closure);
-      break;
-
     case ParallelRootType::class_loader_data:
       {
         CLDToOopClosure cld_closure(&mark_and_push_closure, ClassLoaderData::_claim_strong);
@@ -2237,11 +2219,7 @@ void PSParallelCompact::adjust_roots(ParCompactionManager* cm) {
   PCAdjustPointerClosure oop_closure(cm);
 
   // General strong roots.
-  Universe::oops_do(&oop_closure);
   Threads::oops_do(&oop_closure, NULL);
-  ObjectSynchronizer::oops_do(&oop_closure);
-  Management::oops_do(&oop_closure);
-  JvmtiExport::oops_do(&oop_closure);
   OopStorageSet::strong_oops_do(&oop_closure);
   CLDToOopClosure cld_closure(&oop_closure, ClassLoaderData::_claim_strong);
   ClassLoaderDataGraph::cld_do(&cld_closure);
@@ -3209,25 +3187,6 @@ void PSParallelCompact::fill_blocks(size_t region_idx)
       return;
     }
   }
-}
-
-jlong PSParallelCompact::millis_since_last_gc() {
-  // We need a monotonically non-decreasing time in ms but
-  // os::javaTimeMillis() does not guarantee monotonicity.
-  jlong now = os::javaTimeNanos() / NANOSECS_PER_MILLISEC;
-  jlong ret_val = now - _time_of_last_gc;
-  // XXX See note in genCollectedHeap::millis_since_last_gc().
-  if (ret_val < 0) {
-    NOT_PRODUCT(log_warning(gc)("time warp: " JLONG_FORMAT, ret_val);)
-    return 0;
-  }
-  return ret_val;
-}
-
-void PSParallelCompact::reset_millis_since_last_gc() {
-  // We need a monotonically non-decreasing time in ms but
-  // os::javaTimeMillis() does not guarantee monotonicity.
-  _time_of_last_gc = os::javaTimeNanos() / NANOSECS_PER_MILLISEC;
 }
 
 ParMarkBitMap::IterationStatus MoveAndUpdateClosure::copy_until_full()

@@ -25,7 +25,7 @@
 /**
  * @test
  * @summary Check that the verbose message of the AME is printed correctly.
- * @requires !(os.arch=="arm") & vm.flavor == "server" & !vm.emulatedClient & vm.compMode=="Xmixed" & (!vm.graal.enabled | vm.opt.TieredCompilation == true) & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel==4)
+ * @requires !(os.arch=="arm") & vm.flavor == "server" & !vm.emulatedClient & vm.compMode=="Xmixed" & !vm.graal.enabled & vm.opt.UseJVMCICompiler != true & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel==4)
  * @library /test/lib /
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox

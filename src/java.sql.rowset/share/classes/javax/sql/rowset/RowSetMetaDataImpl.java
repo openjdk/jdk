@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,10 @@ import java.lang.reflect.*;
  * @since 1.5
  */
 public class RowSetMetaDataImpl implements RowSetMetaData,  Serializable {
+    /**
+     * Constructs a {@code RowSetMetaDataImpl} object.
+     */
+    public RowSetMetaDataImpl() {}
 
     /**
      * The number of columns in the <code>RowSet</code> object that created
@@ -945,6 +949,11 @@ public class RowSetMetaDataImpl implements RowSetMetaData,  Serializable {
 
     static final long serialVersionUID = 6893806403181801867L;
 
+    /**
+     * {@code ColInfo} objects are used to store information
+     * about each column in the {@code RowSet} object for which
+     * this {@code RowSetMetaDataImpl} object was created.
+     */
     private class ColInfo implements Serializable {
         /**
          * The field that indicates whether the value in this column is a number

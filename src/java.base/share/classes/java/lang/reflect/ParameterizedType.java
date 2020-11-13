@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package java.lang.reflect;
 
 /**
  * ParameterizedType represents a parameterized type such as
- * Collection&lt;String&gt;.
+ * {@code Collection<String>}.
  *
  * <p>A parameterized type is created the first time it is needed by a
  * reflective method, as specified in this package. When a
@@ -42,6 +42,7 @@ package java.lang.reflect;
  * an equals() method that equates any two instances that share the
  * same generic type declaration and have equal type parameters.
  *
+ * @jls 4.5 Parameterized Types
  * @since 1.5
  */
 public interface ParameterizedType extends Type {

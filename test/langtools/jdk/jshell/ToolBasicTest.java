@@ -699,8 +699,7 @@ public class ToolBasicTest extends ReplToolTesting {
                     a -> assertCommand(a, "/set feedback " + off, ""),
                     a -> assertCommand(a, "int a", ""),
                     a -> assertCommand(a, "void f() {}", ""),
-                    a -> assertCommandCheckOutput(a, "aaaa", assertStartsWith("|  Error:")),
-                    a -> assertCommandCheckOutput(a, "static void f() {}", assertStartsWith("|  Warning:"))
+                    a -> assertCommandCheckOutput(a, "aaaa", assertStartsWith("|  Error:"))
             );
         }
     }

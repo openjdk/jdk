@@ -25,55 +25,7 @@
 
 ################################################################################
 # The order of these defines the priority by which we try to find them.
-VALID_VS_VERSIONS="2019 2017 2013 2015 2012 2010"
-
-VS_DESCRIPTION_2010="Microsoft Visual Studio 2010"
-VS_VERSION_INTERNAL_2010=100
-VS_MSVCR_2010=msvcr100.dll
-# We don't use msvcp on Visual Studio 2010
-#VS_MSVCP_2010=msvcp100.dll
-VS_ENVVAR_2010="VS100COMNTOOLS"
-VS_VS_INSTALLDIR_2010="Microsoft Visual Studio 10.0"
-VS_SDK_INSTALLDIR_2010="Microsoft SDKs/Windows/v7.1"
-VS_VS_PLATFORM_NAME_2010="v100"
-VS_SDK_PLATFORM_NAME_2010="Windows7.1SDK"
-VS_SUPPORTED_2010=false
-
-VS_DESCRIPTION_2012="Microsoft Visual Studio 2012"
-VS_VERSION_INTERNAL_2012=110
-VS_MSVCR_2012=msvcr110.dll
-VS_MSVCP_2012=msvcp110.dll
-VS_ENVVAR_2012="VS110COMNTOOLS"
-VS_VS_INSTALLDIR_2012="Microsoft Visual Studio 11.0"
-VS_SDK_INSTALLDIR_2012=
-VS_VS_PLATFORM_NAME_2012="v110"
-VS_SDK_PLATFORM_NAME_2012=
-VS_SUPPORTED_2012=false
-
-VS_DESCRIPTION_2013="Microsoft Visual Studio 2013"
-VS_VERSION_INTERNAL_2013=120
-VS_MSVCR_2013=msvcr120.dll
-VS_MSVCP_2013=msvcp120.dll
-VS_ENVVAR_2013="VS120COMNTOOLS"
-VS_VS_INSTALLDIR_2013="Microsoft Visual Studio 12.0"
-VS_SDK_INSTALLDIR_2013=
-VS_VS_PLATFORM_NAME_2013="v120"
-VS_SDK_PLATFORM_NAME_2013=
-VS_SUPPORTED_2013=false
-
-VS_DESCRIPTION_2015="Microsoft Visual Studio 2015"
-VS_VERSION_INTERNAL_2015=140
-VS_MSVCR_2015=vcruntime140.dll
-VS_MSVCP_2015=msvcp140.dll
-VS_ENVVAR_2015="VS140COMNTOOLS"
-VS_VS_INSTALLDIR_2015="Microsoft Visual Studio 14.0"
-VS_SDK_INSTALLDIR_2015=
-VS_VS_PLATFORM_NAME_2015="v140"
-VS_SDK_PLATFORM_NAME_2015=
-# The vcvars of 2015 breaks if 2017 is also installed. Work around this by
-# explicitly specifying Windows Kit 8.1 to be used.
-VS_ENV_ARGS_2015="8.1"
-VS_SUPPORTED_2015=false
+VALID_VS_VERSIONS="2019 2017"
 
 VS_DESCRIPTION_2017="Microsoft Visual Studio 2017"
 VS_VERSION_INTERNAL_2017=141
@@ -128,11 +80,15 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT],
       fi
 
       AC_MSG_NOTICE([Found Visual Studio installation at $VS_BASE using $METHOD])
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+      if test "x$OPENJDK_TARGET_CPU" = xx86; then
         VCVARSFILES="vc/bin/vcvars32.bat vc/auxiliary/build/vcvars32.bat"
-      else
+      elif test "x$OPENJDK_TARGET_CPU" = xx86_64; then
         VCVARSFILES="vc/bin/amd64/vcvars64.bat vc/bin/x86_amd64/vcvarsx86_amd64.bat \
             vc/auxiliary/build/vcvarsx86_amd64.bat vc/auxiliary/build/vcvars64.bat"
+      elif test "x$OPENJDK_TARGET_CPU" = xaarch64; then
+        # for host x86-64, target aarch64
+        VCVARSFILES="vc/auxiliary/build/vcvarsamd64_arm64.bat \
+            vc/auxiliary/build/vcvarsx86_arm64.bat"
       fi
 
       for VCVARSFILE in $VCVARSFILES; do
@@ -174,10 +130,12 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT],
       elif test -f "$WIN_SDK_BASE/bin/setenv.cmd"; then
         AC_MSG_NOTICE([Found Windows SDK installation at $WIN_SDK_BASE using $METHOD])
         VS_ENV_CMD="$WIN_SDK_BASE/bin/setenv.cmd"
-        if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        if test "x$OPENJDK_TARGET_CPU" = xx86; then
           VS_ENV_ARGS="/x86"
-        else
+        elif test "x$OPENJDK_TARGET_CPU" = xx86_64; then
           VS_ENV_ARGS="/x64"
+        elif test "x$OPENJDK_TARGET_CPU" = xaarch64; then
+          VS_ENV_ARGS="/arm64"
         fi
         # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
         # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be 'Windows7.1SDK' for Windows7.1SDK
@@ -427,20 +385,8 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
       # Turn VS_PATH into TOOLCHAIN_PATH
       TOOLCHAIN_PATH="$TOOLCHAIN_PATH:$VS_PATH"
 
-      # Convert VS_INCLUDE into SYSROOT_CFLAGS
-      OLDIFS="$IFS"
-      IFS=":"
-
-      for ipath in $VS_INCLUDE; do
-        SYSROOT_CFLAGS="$SYSROOT_CFLAGS -I$ipath"
-      done
-
-      # Convert VS_LIB into SYSROOT_LDFLAGS
-      for libpath in $VS_LIB; do
-        SYSROOT_LDFLAGS="$SYSROOT_LDFLAGS -libpath:$libpath"
-      done
-
-      IFS="$OLDIFS"
+      # Convert VS_INCLUDE and VS_LIB into sysroot flags
+      TOOLCHAIN_SETUP_VISUAL_STUDIO_SYSROOT_FLAGS
     fi
   else
     AC_MSG_RESULT([not found])
@@ -466,10 +412,15 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL],
     # Need to check if the found msvcr is correct architecture
     AC_MSG_CHECKING([found $DLL_NAME architecture])
     MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
-    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+    if test "x$OPENJDK_TARGET_CPU" = xx86; then
       CORRECT_MSVCR_ARCH=386
-    else
+    elif test "x$OPENJDK_TARGET_CPU" = xx86_64; then
       CORRECT_MSVCR_ARCH=x86-64
+    elif test "x$OPENJDK_TARGET_CPU" = xaarch64; then
+      # The cygwin 'file' command only returns "PE32+ executable (DLL) (console), for MS Windows",
+      # without specifying which architecture it is for specifically. This has been fixed upstream.
+      # https://github.com/file/file/commit/b849b1af098ddd530094bf779b58431395db2e10#diff-ff2eced09e6860de75057dd731d092aeR142
+      CORRECT_MSVCR_ARCH="PE32+ executable"
     fi
     if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
       AC_MSG_RESULT([ok])
@@ -488,22 +439,22 @@ AC_DEFUN([TOOLCHAIN_SETUP_MSVC_DLL],
   DLL_NAME="$1"
   MSVC_DLL=
 
+  if test "x$OPENJDK_TARGET_CPU" = xx86; then
+    vs_target_cpu=x86
+  elif test "x$OPENJDK_TARGET_CPU" = xx86_64; then
+    vs_target_cpu=x64
+  elif test "x$OPENJDK_TARGET_CPU" = xaarch64; then
+    vs_target_cpu=arm64
+  fi
+
   if test "x$MSVC_DLL" = x; then
     if test "x$VCINSTALLDIR" != x; then
       if test "$VS_VERSION" -lt 2017; then
         # Probe: Using well-known location from Visual Studio 12.0 and older
-        if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-          POSSIBLE_MSVC_DLL="$VCINSTALLDIR/redist/x64/microsoft.vc${VS_VERSION_INTERNAL}.crt/$DLL_NAME"
-        else
-          POSSIBLE_MSVC_DLL="$VCINSTALLDIR/redist/x86/microsoft.vc${VS_VERSION_INTERNAL}.crt/$DLL_NAME"
-        fi
+        POSSIBLE_MSVC_DLL="$VCINSTALLDIR/redist/$vs_target_cpu/microsoft.vc${VS_VERSION_INTERNAL}.crt/$DLL_NAME"
       else
         # Probe: Using well-known location from VS 2017 and VS 2019
-        if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-          POSSIBLE_MSVC_DLL="`ls $VCToolsRedistDir/x64/microsoft.vc${VS_VERSION_INTERNAL}.crt/$DLL_NAME`"
-        else
-          POSSIBLE_MSVC_DLL="`ls $VCToolsRedistDir/x86/microsoft.vc${VS_VERSION_INTERNAL}.crt/$DLL_NAME`"
-        fi
+        POSSIBLE_MSVC_DLL="`ls $VCToolsRedistDir/$vs_target_cpu/microsoft.vc${VS_VERSION_INTERNAL}.crt/$DLL_NAME`"
       fi
       # In case any of the above finds more than one file, loop over them.
       for possible_msvc_dll in $POSSIBLE_MSVC_DLL; do
@@ -537,13 +488,8 @@ AC_DEFUN([TOOLCHAIN_SETUP_MSVC_DLL],
       WIN_VS_TOOLS_DIR="$VS100COMNTOOLS/.."
       UTIL_FIXUP_PATH(WIN_VS_TOOLS_DIR, NOFAIL)
       if test "x$WIN_VS_TOOLS_DIR" != x; then
-        if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-          POSSIBLE_MSVC_DLL=`$FIND "$WIN_VS_TOOLS_DIR" -name $DLL_NAME \
-          | $GREP -i /x64/ | $HEAD --lines 1`
-        else
-          POSSIBLE_MSVC_DLL=`$FIND "$WIN_VS_TOOLS_DIR" -name $DLL_NAME \
-          | $GREP -i /x86/ | $HEAD --lines 1`
-        fi
+        POSSIBLE_MSVC_DLL=`$FIND "$WIN_VS_TOOLS_DIR" -name $DLL_NAME \
+        | $GREP -i /$vs_target_cpu/ | $HEAD --lines 1`
         TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL([$DLL_NAME], [$POSSIBLE_MSVC_DLL],
             [search of VS100COMNTOOLS])
       fi
@@ -554,17 +500,17 @@ AC_DEFUN([TOOLCHAIN_SETUP_MSVC_DLL],
     # Probe: Search wildly in the VCINSTALLDIR. We've probably lost by now.
     # (This was the original behaviour; kept since it might turn something up)
     if test "x$VCINSTALLDIR" != x; then
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+      if test "x$OPENJDK_TARGET_CPU" = xx86; then
         POSSIBLE_MSVC_DLL=`$FIND "$VCINSTALLDIR" -name $DLL_NAME \
-        | $GREP x64 | $HEAD --lines 1`
-      else
-        POSSIBLE_MSVC_DLL=`$FIND "$VCINSTALLDIR" -name $DLL_NAME \
-        | $GREP x86 | $GREP -v ia64 | $GREP -v x64 | $HEAD --lines 1`
+        | $GREP x86 | $GREP -v ia64 | $GREP -v x64 | $GREP -v arm64 | $HEAD --lines 1`
         if test "x$POSSIBLE_MSVC_DLL" = x; then
           # We're grasping at straws now...
           POSSIBLE_MSVC_DLL=`$FIND "$VCINSTALLDIR" -name $DLL_NAME \
           | $HEAD --lines 1`
         fi
+      else
+        POSSIBLE_MSVC_DLL=`$FIND "$VCINSTALLDIR" -name $DLL_NAME \
+        | $GREP x64 | $HEAD --lines 1`
       fi
 
       TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL([$DLL_NAME], [$POSSIBLE_MSVC_DLL],
@@ -628,9 +574,9 @@ AC_DEFUN([TOOLCHAIN_SETUP_VS_RUNTIME_DLLS],
   fi
 
   AC_ARG_WITH(vcruntime-1-dll, [AS_HELP_STRING([--with-vcruntime-1-dll],
-      [path to microsoft C++ runtime dll (vcruntime*_1.dll) (Windows x64 only) @<:@probed@:>@])])
+      [path to microsoft C++ runtime dll (vcruntime*_1.dll) (Windows 64-bits only) @<:@probed@:>@])])
 
-  if test "x$VCRUNTIME_1_NAME" != "x" && test "x$OPENJDK_TARGET_BITS" = x64; then
+  if test "x$VCRUNTIME_1_NAME" != "x" -a "x$OPENJDK_TARGET_CPU_BITS" = x64; then
     if test "x$with_vcruntime_1_dll" != x; then
       # If given explicitly by user, do not probe. If not present, fail directly.
       TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL($VCRUNTIME_1_NAME, [$with_vcruntime_1_dll],
@@ -671,7 +617,9 @@ AC_DEFUN([TOOLCHAIN_SETUP_VS_RUNTIME_DLLS],
       AC_MSG_RESULT($UCRT_DLL_DIR)
     else
       dll_subdir=$OPENJDK_TARGET_CPU
-      if test "x$dll_subdir" = "xx86_64"; then
+      if test "x$dll_subdir" = "xaarch64"; then
+        dll_subdir="arm64"
+      elif test "x$dll_subdir" = "xx86_64"; then
         dll_subdir="x64"
       fi
       UCRT_DLL_DIR="$WINDOWSSDKDIR/redist/ucrt/dlls/$dll_subdir"
@@ -694,4 +642,29 @@ AC_DEFUN([TOOLCHAIN_SETUP_VS_RUNTIME_DLLS],
     UCRT_DLL_DIR=
   fi
   AC_SUBST(UCRT_DLL_DIR)
+])
+
+# Setup the sysroot flags and add them to global CFLAGS and LDFLAGS so
+# that configure can use them while detecting compilers.
+# TOOLCHAIN_TYPE is available here.
+# Param 1 - Optional prefix to all variables. (e.g BUILD_)
+AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_SYSROOT_FLAGS],
+[
+  # Convert VS_INCLUDE into SYSROOT_CFLAGS
+  OLDIFS="$IFS"
+  IFS=":"
+
+  for ipath in [$]$1VS_INCLUDE; do
+    $1SYSROOT_CFLAGS="[$]$1SYSROOT_CFLAGS -I$ipath"
+  done
+
+  # Convert VS_LIB into SYSROOT_LDFLAGS
+  for libpath in [$]$1VS_LIB; do
+    $1SYSROOT_LDFLAGS="[$]$1SYSROOT_LDFLAGS -libpath:$libpath"
+  done
+
+  IFS="$OLDIFS"
+
+  AC_SUBST($1SYSROOT_CFLAGS)
+  AC_SUBST($1SYSROOT_LDFLAGS)
 ])

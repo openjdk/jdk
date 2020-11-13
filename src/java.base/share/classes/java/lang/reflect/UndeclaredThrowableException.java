@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,17 +107,21 @@ public class UndeclaredThrowableException extends RuntimeException {
     /**
      * Serializable fields for UndeclaredThrowableException.
      *
-     * @serialField undeclaredThrowable Throwable
+     * @serialField undeclaredThrowable Throwable the undeclared exception
      */
     @java.io.Serial
     private static final ObjectStreamField[] serialPersistentFields = {
         new ObjectStreamField("undeclaredThrowable", Throwable.class)
     };
 
-    /*
+    /**
      * Reconstitutes the UndeclaredThrowableException instance from a stream
      * and initialize the cause properly when deserializing from an older
      * version.
+     *
+     * @param  s the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     @java.io.Serial
     private void readObject(ObjectInputStream s) throws IOException, ClassNotFoundException {
@@ -128,9 +132,12 @@ public class UndeclaredThrowableException extends RuntimeException {
         }
     }
 
-    /*
+    /**
      * To maintain compatibility with older implementation, write a serial
      * "ex" field with the cause as the value.
+     *
+     * @param  out the {@code ObjectOutputStream} to which data is written
+     * @throws IOException if an I/O error occurs
      */
     @java.io.Serial
     private void writeObject(ObjectOutputStream out) throws IOException {

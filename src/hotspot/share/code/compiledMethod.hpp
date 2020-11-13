@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,7 +157,6 @@ protected:
   // set during construction
   unsigned int _has_unsafe_access:1;         // May fault due to unsafe access.
   unsigned int _has_method_handle_invokes:1; // Has this method MethodHandle invokes?
-  unsigned int _lazy_critical_native:1;      // Lazy JNI critical native
   unsigned int _has_wide_vectors:1;          // Preserve wide vectors at safepoints
 
   Method*   _method;
@@ -195,9 +194,6 @@ public:
 
   bool  has_method_handle_invokes() const         { return _has_method_handle_invokes; }
   void  set_has_method_handle_invokes(bool z)     { _has_method_handle_invokes = z; }
-
-  bool  is_lazy_critical_native() const           { return _lazy_critical_native; }
-  void  set_lazy_critical_native(bool z)          { _lazy_critical_native = z; }
 
   bool  has_wide_vectors() const                  { return _has_wide_vectors; }
   void  set_has_wide_vectors(bool z)              { _has_wide_vectors = z; }
@@ -253,8 +249,6 @@ public:
     // The latter happens during uncommon traps when deoptimized nmethod is made not entrant.
     return _mark_for_deoptimization_status != deoptimize_noupdate;
   }
-
-  static bool nmethod_access_is_safe(nmethod* nm);
 
   // tells whether frames described by this nmethod can be deoptimized
   // note: native wrappers cannot be deoptimized.
@@ -330,7 +324,7 @@ public:
   // Deopt
   // Return true is the PC is one would expect if the frame is being deopted.
   inline bool is_deopt_pc(address pc);
-  bool is_deopt_mh_entry(address pc) { return pc == deopt_mh_handler_begin(); }
+  inline bool is_deopt_mh_entry(address pc);
   inline bool is_deopt_entry(address pc);
 
   virtual bool can_convert_to_zombie() = 0;

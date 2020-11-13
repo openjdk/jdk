@@ -48,17 +48,21 @@ import java.util.logging.LogRecord;
 
 public class HttpURLConWithProxy {
 
+    private static Logger logger =
+        Logger.getLogger("sun.net.www.protocol.http.HttpURLConnection");
+
     public static void main(String... arg) throws Exception {
         // Remove the default nonProxyHosts to use localhost for testing
         System.setProperty("http.nonProxyHosts", "");
 
         System.setProperty("http.proxyHost", "1.1.1.1");
         System.setProperty("http.proxyPort", "1111");
-        String HTTPLOG = "sun.net.www.protocol.http.HttpURLConnection";
-        Logger.getLogger(HTTPLOG).setLevel(Level.ALL);
+
+        // Use the logger to help verify the Proxy was used
+        logger.setLevel(Level.ALL);
         Handler h = new ProxyHandler();
         h.setLevel(Level.ALL);
-        Logger.getLogger(HTTPLOG).addHandler(h);
+        logger.addHandler(h);
 
         ServerSocket ss;
         URL url;

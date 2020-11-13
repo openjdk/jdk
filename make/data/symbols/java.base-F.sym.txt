@@ -69,6 +69,9 @@ class name java/lang/Math
 method name absExact descriptor (I)I flags 9
 method name absExact descriptor (J)J flags 9
 
+class name java/lang/NullPointerException
+method name fillInStackTrace descriptor ()Ljava/lang/Throwable; flags 21
+
 class name java/lang/Short
 header extends java/lang/Number implements java/lang/Comparable,java/lang/constant/Constable flags 31 signature Ljava/lang/Number;Ljava/lang/Comparable<Ljava/lang/Short;>;Ljava/lang/constant/Constable;
 method name describeConstable descriptor ()Ljava/util/Optional; flags 1 signature ()Ljava/util/Optional<Ljava/lang/constant/DynamicConstantDesc<Ljava/lang/Short;>;>;
@@ -254,18 +257,18 @@ method name merge descriptor (Ljava/lang/Object;Ljava/lang/Object;Ljava/util/fun
 
 class name java/util/concurrent/locks/StampedLock
 header extends java/lang/Object implements java/io/Serializable flags 21 classAnnotations @Ljdk/Profile+Annotation;(value=I1)
-method name tryWriteLock descriptor ()J flags 1
-method name writeLockInterruptibly descriptor ()J thrownTypes java/lang/InterruptedException flags 1
-method name tryReadLock descriptor ()J flags 1
-method name tryReadLock descriptor (JLjava/util/concurrent/TimeUnit;)J thrownTypes java/lang/InterruptedException flags 1
-method name readLockInterruptibly descriptor ()J thrownTypes java/lang/InterruptedException flags 1
-method name unlock descriptor (J)V flags 1
 -method name tryWriteLock descriptor ()J
 -method name writeLockInterruptibly descriptor ()J
 -method name tryReadLock descriptor ()J
 -method name tryReadLock descriptor (JLjava/util/concurrent/TimeUnit;)J
 -method name readLockInterruptibly descriptor ()J
 -method name unlock descriptor (J)V
+method name tryWriteLock descriptor ()J flags 1
+method name writeLockInterruptibly descriptor ()J thrownTypes java/lang/InterruptedException flags 1
+method name tryReadLock descriptor ()J flags 1
+method name tryReadLock descriptor (JLjava/util/concurrent/TimeUnit;)J thrownTypes java/lang/InterruptedException flags 1
+method name readLockInterruptibly descriptor ()J thrownTypes java/lang/InterruptedException flags 1
+method name unlock descriptor (J)V flags 1
 
 class name javax/net/ssl/SSLSession
 -method name getPeerCertificateChain descriptor ()[Ljavax/security/cert/X509Certificate;

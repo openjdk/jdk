@@ -25,8 +25,8 @@
 #include "precompiled.hpp"
 #include "ci/ciMethodData.hpp"
 #include "ci/ciTypeFlow.hpp"
+#include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "compiler/compileLog.hpp"
 #include "libadt/dict.hpp"
 #include "memory/oopFactory.hpp"
@@ -62,18 +62,21 @@ const Type::TypeInfo Type::_type_info[Type::lastype] = {
   { Bad,             T_ARRAY,      "array:",        false, Node::NotAMachineReg, relocInfo::none          },  // Array
 
 #if defined(PPC64)
+  { Bad,             T_ILLEGAL,    "vectora:",      false, Op_VecA,              relocInfo::none          },  // VectorA.
   { Bad,             T_ILLEGAL,    "vectors:",      false, 0,                    relocInfo::none          },  // VectorS
   { Bad,             T_ILLEGAL,    "vectord:",      false, Op_RegL,              relocInfo::none          },  // VectorD
   { Bad,             T_ILLEGAL,    "vectorx:",      false, Op_VecX,              relocInfo::none          },  // VectorX
   { Bad,             T_ILLEGAL,    "vectory:",      false, 0,                    relocInfo::none          },  // VectorY
   { Bad,             T_ILLEGAL,    "vectorz:",      false, 0,                    relocInfo::none          },  // VectorZ
 #elif defined(S390)
+  { Bad,             T_ILLEGAL,    "vectora:",      false, Op_VecA,              relocInfo::none          },  // VectorA.
   { Bad,             T_ILLEGAL,    "vectors:",      false, 0,                    relocInfo::none          },  // VectorS
   { Bad,             T_ILLEGAL,    "vectord:",      false, Op_RegL,              relocInfo::none          },  // VectorD
   { Bad,             T_ILLEGAL,    "vectorx:",      false, 0,                    relocInfo::none          },  // VectorX
   { Bad,             T_ILLEGAL,    "vectory:",      false, 0,                    relocInfo::none          },  // VectorY
   { Bad,             T_ILLEGAL,    "vectorz:",      false, 0,                    relocInfo::none          },  // VectorZ
 #else // all other
+  { Bad,             T_ILLEGAL,    "vectora:",      false, Op_VecA,              relocInfo::none          },  // VectorA.
   { Bad,             T_ILLEGAL,    "vectors:",      false, Op_VecS,              relocInfo::none          },  // VectorS
   { Bad,             T_ILLEGAL,    "vectord:",      false, Op_VecD,              relocInfo::none          },  // VectorD
   { Bad,             T_ILLEGAL,    "vectorx:",      false, Op_VecX,              relocInfo::none          },  // VectorX
@@ -247,7 +250,7 @@ const Type* Type::make_from_constant(ciConstant constant, bool require_constant,
           guarantee(require_constant || oop_constant->should_be_constant(), "con_type must get computed");
           con_type = TypeOopPtr::make_from_constant(oop_constant, require_constant);
           if (Compile::current()->eliminate_boxing() && is_autobox_cache) {
-            con_type = con_type->is_aryptr()->cast_to_autobox_cache(true);
+            con_type = con_type->is_aryptr()->cast_to_autobox_cache();
           }
           if (stable_dimension > 0) {
             assert(FoldStableValues, "sanity");
@@ -436,16 +439,22 @@ void Type::Initialize_shared(Compile* current) {
   BOTTOM  = make(Bottom);       // Everything
   HALF    = make(Half);         // Placeholder half of doublewide type
 
+  TypeF::MAX = TypeF::make(max_jfloat); // Float MAX
+  TypeF::MIN = TypeF::make(min_jfloat); // Float MIN
   TypeF::ZERO = TypeF::make(0.0); // Float 0 (positive zero)
   TypeF::ONE  = TypeF::make(1.0); // Float 1
   TypeF::POS_INF = TypeF::make(jfloat_cast(POSITIVE_INFINITE_F));
   TypeF::NEG_INF = TypeF::make(-jfloat_cast(POSITIVE_INFINITE_F));
 
+  TypeD::MAX = TypeD::make(max_jdouble); // Double MAX
+  TypeD::MIN = TypeD::make(min_jdouble); // Double MIN
   TypeD::ZERO = TypeD::make(0.0); // Double 0 (positive zero)
   TypeD::ONE  = TypeD::make(1.0); // Double 1
   TypeD::POS_INF = TypeD::make(jdouble_cast(POSITIVE_INFINITE_D));
   TypeD::NEG_INF = TypeD::make(-jdouble_cast(POSITIVE_INFINITE_D));
 
+  TypeInt::MAX = TypeInt::make(max_jint); // Int MAX
+  TypeInt::MIN = TypeInt::make(min_jint); // Int MIN
   TypeInt::MINUS_1 = TypeInt::make(-1);  // -1
   TypeInt::ZERO    = TypeInt::make( 0);  //  0
   TypeInt::ONE     = TypeInt::make( 1);  //  1
@@ -474,6 +483,8 @@ void Type::Initialize_shared(Compile* current) {
   assert( TypeInt::CC_GE == TypeInt::BOOL,    "types must match for CmpL to work" );
   assert( (juint)(TypeInt::CC->_hi - TypeInt::CC->_lo) <= SMALLINT, "CC is truly small");
 
+  TypeLong::MAX = TypeLong::make(max_jlong);  // Long MAX
+  TypeLong::MIN = TypeLong::make(min_jlong);  // Long MIN
   TypeLong::MINUS_1 = TypeLong::make(-1);        // -1
   TypeLong::ZERO    = TypeLong::make( 0);        //  0
   TypeLong::ONE     = TypeLong::make( 1);        //  1
@@ -646,6 +657,10 @@ void Type::Initialize_shared(Compile* current) {
   // get_zero_type() should not happen for T_CONFLICT
   _zero_type[T_CONFLICT]= NULL;
 
+  if (Matcher::supports_scalable_vector()) {
+    TypeVect::VECTA = TypeVect::make(T_BYTE, Matcher::scalable_vector_reg_size(T_BYTE));
+  }
+
   // Vector predefined types, it needs initialized _const_basic_type[].
   if (Matcher::vector_size_supported(T_BYTE,4)) {
     TypeVect::VECTS = TypeVect::make(T_BYTE,4);
@@ -662,6 +677,8 @@ void Type::Initialize_shared(Compile* current) {
   if (Matcher::vector_size_supported(T_FLOAT,16)) {
     TypeVect::VECTZ = TypeVect::make(T_FLOAT,16);
   }
+
+  mreg2type[Op_VecA] = TypeVect::VECTA;
   mreg2type[Op_VecS] = TypeVect::VECTS;
   mreg2type[Op_VecD] = TypeVect::VECTD;
   mreg2type[Op_VecX] = TypeVect::VECTX;
@@ -981,6 +998,7 @@ const Type::TYPES Type::dual_type[Type::lastype] = {
 
   Bad,          // Tuple - handled in v-call
   Bad,          // Array - handled in v-call
+  Bad,          // VectorA - handled in v-call
   Bad,          // VectorS - handled in v-call
   Bad,          // VectorD - handled in v-call
   Bad,          // VectorX - handled in v-call
@@ -1109,6 +1127,8 @@ void Type::typerr( const Type *t ) const {
 
 //=============================================================================
 // Convenience common pre-built types.
+const TypeF *TypeF::MAX;        // Floating point max
+const TypeF *TypeF::MIN;        // Floating point min
 const TypeF *TypeF::ZERO;       // Floating point zero
 const TypeF *TypeF::ONE;        // Floating point one
 const TypeF *TypeF::POS_INF;    // Floating point positive infinity
@@ -1219,6 +1239,8 @@ bool TypeF::empty(void) const {
 
 //=============================================================================
 // Convenience common pre-built types.
+const TypeD *TypeD::MAX;        // Floating point max
+const TypeD *TypeD::MIN;        // Floating point min
 const TypeD *TypeD::ZERO;       // Floating point zero
 const TypeD *TypeD::ONE;        // Floating point one
 const TypeD *TypeD::POS_INF;    // Floating point positive infinity
@@ -1325,6 +1347,8 @@ bool TypeD::empty(void) const {
 
 //=============================================================================
 // Convience common pre-built types.
+const TypeInt *TypeInt::MAX;    // INT_MAX
+const TypeInt *TypeInt::MIN;    // INT_MIN
 const TypeInt *TypeInt::MINUS_1;// -1
 const TypeInt *TypeInt::ZERO;   // 0
 const TypeInt *TypeInt::ONE;    // 1
@@ -1594,6 +1618,8 @@ bool TypeInt::empty(void) const {
 
 //=============================================================================
 // Convenience common pre-built types.
+const TypeLong *TypeLong::MAX;
+const TypeLong *TypeLong::MIN;
 const TypeLong *TypeLong::MINUS_1;// -1
 const TypeLong *TypeLong::ZERO; // 0
 const TypeLong *TypeLong::ONE;  // 1
@@ -1880,7 +1906,6 @@ const TypeTuple *TypeTuple::INT_PAIR;
 const TypeTuple *TypeTuple::LONG_PAIR;
 const TypeTuple *TypeTuple::INT_CC_PAIR;
 const TypeTuple *TypeTuple::LONG_CC_PAIR;
-
 
 //------------------------------make-------------------------------------------
 // Make a TypeTuple from the range of a method signature
@@ -2252,6 +2277,7 @@ bool TypeAry::ary_must_be_exact() const {
 
 //==============================TypeVect=======================================
 // Convenience common pre-built types.
+const TypeVect *TypeVect::VECTA = NULL; // vector length agnostic
 const TypeVect *TypeVect::VECTS = NULL; //  32-bit vectors
 const TypeVect *TypeVect::VECTD = NULL; //  64-bit vectors
 const TypeVect *TypeVect::VECTX = NULL; // 128-bit vectors
@@ -2262,10 +2288,11 @@ const TypeVect *TypeVect::VECTZ = NULL; // 512-bit vectors
 const TypeVect* TypeVect::make(const Type *elem, uint length) {
   BasicType elem_bt = elem->array_element_basic_type();
   assert(is_java_primitive(elem_bt), "only primitive types in vector");
-  assert(length > 1 && is_power_of_2(length), "vector length is power of 2");
   assert(Matcher::vector_size_supported(elem_bt, length), "length in range");
   int size = length * type2aelembytes(elem_bt);
   switch (Matcher::vector_ideal_reg(size)) {
+  case Op_VecA:
+    return (TypeVect*)(new TypeVectA(elem, length))->hashcons();
   case Op_VecS:
     return (TypeVect*)(new TypeVectS(elem, length))->hashcons();
   case Op_RegL:
@@ -2297,7 +2324,7 @@ const Type *TypeVect::xmeet( const Type *t ) const {
 
   default:                      // All else is a mistake
     typerr(t);
-
+  case VectorA:
   case VectorS:
   case VectorD:
   case VectorX:
@@ -2352,6 +2379,8 @@ bool TypeVect::empty(void) const {
 #ifndef PRODUCT
 void TypeVect::dump2(Dict &d, uint depth, outputStream *st) const {
   switch (base()) {
+  case VectorA:
+    st->print("vectora["); break;
   case VectorS:
     st->print("vectors["); break;
   case VectorD:
@@ -3005,7 +3034,7 @@ TypeOopPtr::TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, bool xk, ciObject* o, int o
       } else if (_offset == OffsetBot || _offset == OffsetTop) {
         // unsafe access
         _is_ptr_to_narrowoop = UseCompressedOops;
-      } else { // exclude unsafe ops
+      } else {
         assert(this->isa_instptr(), "must be an instance ptr.");
 
         if (klass() == ciEnv::current()->Class_klass() &&
@@ -3017,12 +3046,18 @@ TypeOopPtr::TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, bool xk, ciObject* o, int o
         } else if (klass() == ciEnv::current()->Class_klass() &&
                    _offset >= InstanceMirrorKlass::offset_of_static_fields()) {
           // Static fields
-          assert(o != NULL, "must be constant");
-          ciInstanceKlass* k = o->as_instance()->java_lang_Class_klass()->as_instance_klass();
-          ciField* field = k->get_field_by_offset(_offset, true);
-          assert(field != NULL, "missing field");
-          BasicType basic_elem_type = field->layout_type();
-          _is_ptr_to_narrowoop = UseCompressedOops && is_reference_type(basic_elem_type);
+          ciField* field = NULL;
+          if (const_oop() != NULL) {
+            ciInstanceKlass* k = const_oop()->as_instance()->java_lang_Class_klass()->as_instance_klass();
+            field = k->get_field_by_offset(_offset, true);
+          }
+          if (field != NULL) {
+            BasicType basic_elem_type = field->layout_type();
+            _is_ptr_to_narrowoop = UseCompressedOops && is_reference_type(basic_elem_type);
+          } else {
+            // unsafe access
+            _is_ptr_to_narrowoop = UseCompressedOops;
+          }
         } else {
           // Instance fields which contains a compressed oop references.
           field = ik->get_field_by_offset(_offset, false);
@@ -4186,15 +4221,14 @@ int TypeAryPtr::stable_dimension() const {
 }
 
 //----------------------cast_to_autobox_cache-----------------------------------
-const TypeAryPtr* TypeAryPtr::cast_to_autobox_cache(bool cache) const {
-  if (is_autobox_cache() == cache)  return this;
+const TypeAryPtr* TypeAryPtr::cast_to_autobox_cache() const {
+  if (is_autobox_cache())  return this;
   const TypeOopPtr* etype = elem()->make_oopptr();
   if (etype == NULL)  return this;
   // The pointers in the autobox arrays are always non-null.
-  TypePtr::PTR ptr_type = cache ? TypePtr::NotNull : TypePtr::AnyNull;
   etype = etype->cast_to_ptr_type(TypePtr::NotNull)->is_oopptr();
   const TypeAry* new_ary = TypeAry::make(etype, size(), is_stable());
-  return make(ptr(), const_oop(), new_ary, klass(), klass_is_exact(), _offset, _instance_id, _speculative, _inline_depth, cache);
+  return make(ptr(), const_oop(), new_ary, klass(), klass_is_exact(), _offset, _instance_id, _speculative, _inline_depth, /*is_autobox_cache=*/true);
 }
 
 //------------------------------eq---------------------------------------------

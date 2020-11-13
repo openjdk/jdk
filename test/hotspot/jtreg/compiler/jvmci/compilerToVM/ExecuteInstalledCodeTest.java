@@ -27,7 +27,7 @@
  * @requires vm.jvmci
  * @library /test/lib /
  * @library ../common/patches
- * @ignore Not supported JVMCI API
+ * @ignore 8249621
  * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.org.objectweb.asm.tree

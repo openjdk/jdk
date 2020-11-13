@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/javaClasses.hpp"
 #include "compiler/compileLog.hpp"
 #include "opto/addnode.hpp"
 #include "opto/callGenerator.hpp"
@@ -248,13 +249,13 @@ class StringConcat : public ResourceObj {
 
       _stringopts->gvn()->transform(call);
       C->gvn_replace_by(uct, call);
-      uct->disconnect_inputs(NULL, C);
+      uct->disconnect_inputs(C);
     }
   }
 
   void cleanup() {
     // disconnect the hook node
-    _arguments->disconnect_inputs(NULL, _stringopts->C);
+    _arguments->disconnect_inputs(_stringopts->C);
   }
 };
 
@@ -372,7 +373,7 @@ void StringConcat::eliminate_initialize(InitializeNode* init) {
     C->gvn_replace_by(mem_proj, mem);
   }
   C->gvn_replace_by(init, C->top());
-  init->disconnect_inputs(NULL, C);
+  init->disconnect_inputs(C);
 }
 
 Node_List PhaseStringOpts::collect_toString_calls() {
@@ -539,6 +540,15 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
                 cnode->method()->signature()->as_symbol() == int_sig)) {
       sc->add_control(cnode);
       Node* arg = cnode->in(TypeFunc::Parms + 1);
+      if (arg == NULL || arg->is_top()) {
+#ifndef PRODUCT
+        if (PrintOptimizeStringConcat) {
+          tty->print("giving up because the call is effectively dead");
+          cnode->jvms()->dump_spec(tty); tty->cr();
+        }
+#endif
+        break;
+      }
       if (cnode->method()->signature()->as_symbol() == int_sig) {
         sc->push_int(arg);
       } else if (cnode->method()->signature()->as_symbol() == char_sig) {
@@ -1200,6 +1210,7 @@ Node* PhaseStringOpts::int_stringSize(GraphKit& kit, Node* arg) {
 
     // Add loop predicate first.
     kit.add_empty_predicates();
+    C->set_has_loops(true);
 
     RegionNode *loop = new RegionNode(3);
     loop->init_req(1, kit.control());
@@ -1277,6 +1288,7 @@ void PhaseStringOpts::getChars(GraphKit& kit, Node* arg, Node* dst_array, BasicT
   // Add loop predicate first.
   kit.add_empty_predicates();
 
+  C->set_has_loops(true);
   RegionNode* head = new RegionNode(3);
   head->init_req(1, kit.control());
 
@@ -1971,6 +1983,6 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
   kit.replace_call(sc->end(), result);
 
   // Unhook any hook nodes
-  string_sizes->disconnect_inputs(NULL, C);
+  string_sizes->disconnect_inputs(C);
   sc->cleanup();
 }

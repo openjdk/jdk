@@ -109,7 +109,6 @@ class Compilation: public StackObj {
   ExceptionInfoList* exception_info_list() const { return _exception_info_list; }
   ExceptionHandlerTable* exception_handler_table() { return &_exception_handler_table; }
 
-  LinearScan* allocator()                          { return _allocator;      }
   void        set_allocator(LinearScan* allocator) { _allocator = allocator; }
 
   Instruction*       _current_instruction;       // the instruction currently being processed
@@ -150,6 +149,7 @@ class Compilation: public StackObj {
   Arena* arena()                                 { return _arena; }
   bool has_access_indexed()                      { return _has_access_indexed; }
   bool should_install_code()                     { return _install_code && InstallMethods; }
+  LinearScan* allocator()                        { return _allocator; }
 
   // Instruction ids
   int get_next_id()                              { return _next_id++; }

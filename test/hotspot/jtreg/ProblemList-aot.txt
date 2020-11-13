@@ -78,12 +78,5 @@ serviceability/sa/TestRevPtrsForInvokeDynamic.java      8216181   generic-all
 serviceability/sa/TestType.java                         8216181   generic-all
 serviceability/sa/TestUniverse.java                     8216181   generic-all
 
-compiler/intrinsics/sha/sanity/TestSHA256MultiBlockIntrinsics.java  8167430 generic-all
-compiler/intrinsics/sha/sanity/TestSHA1Intrinsics.java              8167430 generic-all
-compiler/intrinsics/sha/sanity/TestSHA512Intrinsics.java            8167430 generic-all
-compiler/intrinsics/sha/sanity/TestSHA256Intrinsics.java            8167430 generic-all
-compiler/intrinsics/sha/sanity/TestSHA1MultiBlockIntrinsics.java    8167430 generic-all
-compiler/intrinsics/sha/sanity/TestSHA512MultiBlockIntrinsics.java  8167430 generic-all
-
 vmTestbase/vm/mlvm/indy/stress/java/relinkMutableCallSiteFreq/Test.java   8226689 generic-all
 vmTestbase/vm/mlvm/indy/stress/java/relinkVolatileCallSiteFreq/Test.java  8226689 generic-all

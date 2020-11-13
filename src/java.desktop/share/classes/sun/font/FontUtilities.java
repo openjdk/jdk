@@ -26,10 +26,6 @@
 package sun.font;
 
 import java.awt.Font;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
 import java.lang.ref.SoftReference;
 import java.util.concurrent.ConcurrentHashMap;
 import java.security.AccessController;
@@ -112,10 +108,6 @@ public final class FontUtilities {
                     } else if (debugLevel.equals("severe")) {
                         logger.setLevel(PlatformLogger.Level.SEVERE);
                     }
-                }
-
-                if (debugFonts) {
-                    logger = PlatformLogger.getLogger("sun.java2d");
                     logging = logger.isEnabled();
                 }
 
@@ -324,6 +316,17 @@ public final class FontUtilities {
         return debugFonts;
     }
 
+    public static void logWarning(String s) {
+        getLogger().warning(s);
+    }
+
+    public static void logInfo(String s) {
+        getLogger().info(s);
+    }
+
+    public static void logSevere(String s) {
+        getLogger().severe(s);
+    }
 
     // The following methods are used by Swing.
 

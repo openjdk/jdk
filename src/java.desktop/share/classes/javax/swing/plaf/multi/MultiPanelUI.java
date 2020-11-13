@@ -49,6 +49,11 @@ public class MultiPanelUI extends PanelUI {
      */
     protected Vector<ComponentUI> uis = new Vector<>();
 
+    /**
+     * Constructs a {@code MultiPanelUI}.
+     */
+    public MultiPanelUI() {}
+
 ////////////////////
 // Common UI methods
 ////////////////////

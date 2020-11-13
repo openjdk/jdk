@@ -31,14 +31,16 @@
 #include "classfile/classLoaderExt.hpp"
 #include "classfile/dictionary.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/verificationType.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "gc/shared/oopStorageSet.hpp"
+#include "interpreter/bootstrapInfo.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.hpp"
 #include "memory/archiveUtils.hpp"
 #include "memory/dynamicArchive.hpp"
@@ -46,6 +48,7 @@
 #include "memory/heapShared.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -54,6 +57,7 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -67,6 +71,7 @@ OopHandle SystemDictionaryShared::_shared_protection_domains;
 OopHandle SystemDictionaryShared::_shared_jar_urls;
 OopHandle SystemDictionaryShared::_shared_jar_manifests;
 DEBUG_ONLY(bool SystemDictionaryShared::_no_class_loading_should_happen = false;)
+bool SystemDictionaryShared::_dump_in_progress = false;
 
 class DumpTimeSharedClassInfo: public CHeapObj<mtClass> {
   bool                         _excluded;
@@ -97,6 +102,7 @@ public:
   };
 
   InstanceKlass*               _klass;
+  InstanceKlass*               _nest_host;
   bool                         _failed_verification;
   bool                         _is_archived_lambda_proxy;
   int                          _id;
@@ -108,6 +114,7 @@ public:
 
   DumpTimeSharedClassInfo() {
     _klass = NULL;
+    _nest_host = NULL;
     _failed_verification = false;
     _is_archived_lambda_proxy = false;
     _id = -1;
@@ -145,6 +152,7 @@ public:
 
   void metaspace_pointers_do(MetaspaceClosure* it) {
     it->push(&_klass);
+    it->push(&_nest_host);
     if (_verifier_constraints != NULL) {
       for (int i = 0; i < _verifier_constraints->length(); i++) {
         DTVerifierConstraint* cons = _verifier_constraints->adr_at(i);
@@ -176,6 +184,14 @@ public:
   bool failed_verification() {
     return _failed_verification;
   }
+
+  void set_nest_host(InstanceKlass* nest_host) {
+    _nest_host = nest_host;
+  }
+
+  InstanceKlass* nest_host() {
+    return _nest_host;
+  }
 };
 
 inline unsigned DumpTimeSharedClassTable_hash(InstanceKlass* const& k) {
@@ -201,15 +217,22 @@ class DumpTimeSharedClassTable: public ResourceHashtable<
   int _builtin_count;
   int _unregistered_count;
 public:
-  DumpTimeSharedClassInfo* find_or_allocate_info_for(InstanceKlass* k) {
+  DumpTimeSharedClassInfo* find_or_allocate_info_for(InstanceKlass* k, bool dump_in_progress) {
     bool created = false;
-    DumpTimeSharedClassInfo* p = put_if_absent(k, &created);
+    DumpTimeSharedClassInfo* p;
+    if (!dump_in_progress) {
+      p = put_if_absent(k, &created);
+    } else {
+      p = get(k);
+    }
     if (created) {
       assert(!SystemDictionaryShared::no_class_loading_should_happen(),
              "no new classes can be loaded while dumping archive");
       p->_klass = k;
     } else {
-      assert(p->_klass == k, "Sanity");
+      if (!dump_in_progress) {
+        assert(p->_klass == k, "Sanity");
+      }
     }
     return p;
   }
@@ -249,7 +272,9 @@ public:
 class LambdaProxyClassKey {
   template <typename T> static void original_to_target(T& field) {
     if (field != NULL) {
-      field = DynamicArchive::original_to_target(field);
+      if (DynamicDumpSharedSpaces) {
+        field = DynamicArchive::original_to_target(field);
+      }
       ArchivePtrMarker::mark_pointer(&field);
     }
   }
@@ -274,6 +299,15 @@ public:
     _method_type(method_type),
     _member_method(member_method),
     _instantiated_method_type(instantiated_method_type) {}
+
+  void metaspace_pointers_do(MetaspaceClosure* it) {
+    it->push(&_caller_ik);
+    it->push(&_invoked_name);
+    it->push(&_invoked_type);
+    it->push(&_method_type);
+    it->push(&_member_method);
+    it->push(&_instantiated_method_type);
+  }
 
   void original_to_target() {
     original_to_target(_caller_ik);
@@ -301,12 +335,20 @@ public:
            SystemDictionaryShared::hash_for_shared_dictionary(_instantiated_method_type);
   }
 
+  static unsigned int dumptime_hash(Symbol* sym)  {
+    if (sym == NULL) {
+      // _invoked_name maybe NULL
+      return 0;
+    }
+    return java_lang_String::hash_code((const jbyte*)sym->bytes(), sym->utf8_length());
+  }
+
   unsigned int dumptime_hash() const {
-    return primitive_hash<InstanceKlass*>(_caller_ik) +
-           primitive_hash<Symbol*>(_invoked_name) +
-           primitive_hash<Symbol*>(_invoked_type) +
-           primitive_hash<Symbol*>(_method_type) +
-           primitive_hash<Symbol*>(_instantiated_method_type);
+    return dumptime_hash(_caller_ik->name()) +
+           dumptime_hash(_invoked_name) +
+           dumptime_hash(_invoked_type) +
+           dumptime_hash(_method_type) +
+           dumptime_hash(_instantiated_method_type);
   }
 
   static inline unsigned int DUMPTIME_HASH(LambdaProxyClassKey const& key) {
@@ -331,14 +373,20 @@ public:
     assert(_proxy_klasses != NULL, "sanity");
     _proxy_klasses->append(proxy_klass);
   }
+
+  void metaspace_pointers_do(MetaspaceClosure* it) {
+    for (int i=0; i<_proxy_klasses->length(); i++) {
+      it->push(_proxy_klasses->adr_at(i));
+    }
+  }
 };
 
 class RunTimeLambdaProxyClassInfo {
   LambdaProxyClassKey _key;
   InstanceKlass* _proxy_klass_head;
 public:
-  RunTimeLambdaProxyClassInfo(LambdaProxyClassKey key, InstanceKlass* proxy_klass) :
-    _key(key), _proxy_klass_head(proxy_klass) {}
+  RunTimeLambdaProxyClassInfo(LambdaProxyClassKey key, InstanceKlass* proxy_klass_head) :
+    _key(key), _proxy_klass_head(proxy_klass_head) {}
 
   InstanceKlass* proxy_klass_head() const { return _proxy_klass_head; }
 
@@ -350,12 +398,17 @@ public:
   void init(LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
     _key = key;
     _key.original_to_target();
-    _proxy_klass_head = DynamicArchive::original_to_target(info._proxy_klasses->at(0));
+    _proxy_klass_head = DynamicDumpSharedSpaces ?
+                          DynamicArchive::original_to_target(info._proxy_klasses->at(0)) :
+                          info._proxy_klasses->at(0);
     ArchivePtrMarker::mark_pointer(&_proxy_klass_head);
   }
 
   unsigned int hash() const {
     return _key.hash();
+  }
+  LambdaProxyClassKey key() const {
+    return _key;
   }
 };
 
@@ -365,6 +418,8 @@ class LambdaProxyClassDictionary : public OffsetCompactHashtable<
   RunTimeLambdaProxyClassInfo::EQUALS> {};
 
 LambdaProxyClassDictionary _lambda_proxy_class_dictionary;
+
+LambdaProxyClassDictionary _dynamic_lambda_proxy_class_dictionary;
 
 class DumpTimeLambdaProxyClassDictionary
   : public ResourceHashtable<LambdaProxyClassKey,
@@ -577,15 +632,15 @@ public:
         ld_constraints[i]._loader_type2 = info._loader_constraints->at(i)._loader_type2;
       }
     }
-    if (DynamicDumpSharedSpaces) {
-      if (_klass->is_hidden()) {
-        Thread* THREAD = Thread::current();
-        InstanceKlass* n_h = _klass->nest_host(THREAD);
+
+    if (_klass->is_hidden()) {
+      InstanceKlass* n_h = info.nest_host();
+      if (DynamicDumpSharedSpaces) {
         n_h = DynamicArchive::original_to_target(n_h);
-        set_nest_host(n_h);
       }
-      _klass = DynamicArchive::original_to_target(info._klass);
+      set_nest_host(n_h);
     }
+    _klass = DynamicDumpSharedSpaces ? DynamicArchive::original_to_target(info._klass) : info._klass;
     ArchivePtrMarker::mark_pointer(&_klass);
   }
 
@@ -600,8 +655,8 @@ public:
   }
 
 private:
-  // ArchiveCompactor::allocate() has reserved a pointer immediately before
-  // archived InstanceKlasses. We can use this slot to do a quick
+  // ArchiveBuilder::make_shallow_copy() has reserved a pointer immediately
+  // before archived InstanceKlasses. We can use this slot to do a quick
   // lookup of InstanceKlass* -> RunTimeSharedClassInfo* without
   // building a new hashtable.
   //
@@ -648,6 +703,22 @@ static RunTimeSharedDictionary _unregistered_dictionary;
 static RunTimeSharedDictionary _dynamic_builtin_dictionary;
 static RunTimeSharedDictionary _dynamic_unregistered_dictionary;
 
+
+Handle SystemDictionaryShared::create_jar_manifest(const char* manifest_chars, size_t size, TRAPS) {
+  typeArrayOop buf = oopFactory::new_byteArray((int)size, CHECK_NH);
+  typeArrayHandle bufhandle(THREAD, buf);
+  ArrayAccess<>::arraycopy_from_native(reinterpret_cast<const jbyte*>(manifest_chars),
+                                         buf, typeArrayOopDesc::element_offset<jbyte>(0), size);
+  Handle bais = JavaCalls::construct_new_instance(SystemDictionary::ByteArrayInputStream_klass(),
+                      vmSymbols::byte_array_void_signature(),
+                      bufhandle, CHECK_NH);
+  // manifest = new Manifest(ByteArrayInputStream)
+  Handle manifest = JavaCalls::construct_new_instance(SystemDictionary::Jar_Manifest_klass(),
+                      vmSymbols::input_stream_void_signature(),
+                      bais, CHECK_NH);
+  return manifest;
+}
+
 oop SystemDictionaryShared::shared_protection_domain(int index) {
   return ((objArrayOop)_shared_protection_domains.resolve())->obj_at(index);
 }
@@ -664,30 +735,17 @@ Handle SystemDictionaryShared::get_shared_jar_manifest(int shared_path_index, TR
   Handle manifest ;
   if (shared_jar_manifest(shared_path_index) == NULL) {
     SharedClassPathEntry* ent = FileMapInfo::shared_path(shared_path_index);
-    long size = ent->manifest_size();
-    if (size <= 0) {
+    size_t size = (size_t)ent->manifest_size();
+    if (size == 0) {
       return Handle();
     }
 
     // ByteArrayInputStream bais = new ByteArrayInputStream(buf);
     const char* src = ent->manifest();
     assert(src != NULL, "No Manifest data");
-    typeArrayOop buf = oopFactory::new_byteArray(size, CHECK_NH);
-    typeArrayHandle bufhandle(THREAD, buf);
-    ArrayAccess<>::arraycopy_from_native(reinterpret_cast<const jbyte*>(src),
-                                         buf, typeArrayOopDesc::element_offset<jbyte>(0), size);
-
-    Handle bais = JavaCalls::construct_new_instance(SystemDictionary::ByteArrayInputStream_klass(),
-                      vmSymbols::byte_array_void_signature(),
-                      bufhandle, CHECK_NH);
-
-    // manifest = new Manifest(bais)
-    manifest = JavaCalls::construct_new_instance(SystemDictionary::Jar_Manifest_klass(),
-                      vmSymbols::input_stream_void_signature(),
-                      bais, CHECK_NH);
+    manifest = create_jar_manifest(src, size, THREAD);
     atomic_set_shared_jar_manifest(shared_path_index, manifest());
   }
-
   manifest = Handle(THREAD, shared_jar_manifest(shared_path_index));
   assert(manifest.not_null(), "sanity");
   return manifest;
@@ -717,7 +775,7 @@ Handle SystemDictionaryShared::get_shared_jar_url(int shared_path_index, TRAPS) 
 Handle SystemDictionaryShared::get_package_name(Symbol* class_name, TRAPS) {
   ResourceMark rm(THREAD);
   Handle pkgname_string;
-  Symbol* pkg = ClassLoader::package_from_class_name(class_name);
+  TempNewSymbol pkg = ClassLoader::package_from_class_name(class_name);
   if (pkg != NULL) { // Package prefix found
     const char* pkgname = pkg->as_klass_external_name();
     pkgname_string = java_lang_String::create_from_str(pkgname,
@@ -1023,7 +1081,7 @@ void SystemDictionaryShared::allocate_shared_protection_domain_array(int size, T
   if (_shared_protection_domains.resolve() == NULL) {
     oop spd = oopFactory::new_objArray(
         SystemDictionary::ProtectionDomain_klass(), size, CHECK);
-    _shared_protection_domains = OopHandle(OopStorageSet::vm_global(), spd);
+    _shared_protection_domains = OopHandle(Universe::vm_global(), spd);
   }
 }
 
@@ -1031,7 +1089,7 @@ void SystemDictionaryShared::allocate_shared_jar_url_array(int size, TRAPS) {
   if (_shared_jar_urls.resolve() == NULL) {
     oop sju = oopFactory::new_objArray(
         SystemDictionary::URL_klass(), size, CHECK);
-    _shared_jar_urls = OopHandle(OopStorageSet::vm_global(), sju);
+    _shared_jar_urls = OopHandle(Universe::vm_global(), sju);
   }
 }
 
@@ -1039,7 +1097,7 @@ void SystemDictionaryShared::allocate_shared_jar_manifest_array(int size, TRAPS)
   if (_shared_jar_manifests.resolve() == NULL) {
     oop sjm = oopFactory::new_objArray(
         SystemDictionary::Jar_Manifest_klass(), size, CHECK);
-    _shared_jar_manifests = OopHandle(OopStorageSet::vm_global(), sjm);
+    _shared_jar_manifests = OopHandle(Universe::vm_global(), sjm);
   }
 }
 
@@ -1123,19 +1181,24 @@ InstanceKlass* SystemDictionaryShared::acquire_class_for_current_thread(
   return shared_klass;
 }
 
-static ResourceHashtable<
+class LoadedUnregisteredClassesTable : public ResourceHashtable<
   Symbol*, bool,
   primitive_hash<Symbol*>,
   primitive_equals<Symbol*>,
   6661,                             // prime number
-  ResourceObj::C_HEAP> _loaded_unregistered_classes;
+  ResourceObj::C_HEAP> {};
+
+static LoadedUnregisteredClassesTable* _loaded_unregistered_classes = NULL;
 
 bool SystemDictionaryShared::add_unregistered_class(InstanceKlass* k, TRAPS) {
   // We don't allow duplicated unregistered classes of the same name.
   assert(DumpSharedSpaces, "only when dumping");
   Symbol* name = k->name();
+  if (_loaded_unregistered_classes == NULL) {
+    _loaded_unregistered_classes = new (ResourceObj::C_HEAP, mtClass)LoadedUnregisteredClassesTable();
+  }
   bool created = false;
-  _loaded_unregistered_classes.put_if_absent(name, true, &created);
+  _loaded_unregistered_classes->put_if_absent(name, true, &created);
   if (created) {
     MutexLocker mu_r(THREAD, Compile_lock); // add_to_hierarchy asserts this.
     SystemDictionary::add_to_hierarchy(k, CHECK_false);
@@ -1177,20 +1240,27 @@ InstanceKlass* SystemDictionaryShared::dump_time_resolve_super_or_fail(
   }
 }
 
+void SystemDictionaryShared::start_dumping() {
+  MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
+  _dump_in_progress = true;
+}
+
 DumpTimeSharedClassInfo* SystemDictionaryShared::find_or_allocate_info_for(InstanceKlass* k) {
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
   if (_dumptime_table == NULL) {
     _dumptime_table = new (ResourceObj::C_HEAP, mtClass)DumpTimeSharedClassTable();
   }
-  return _dumptime_table->find_or_allocate_info_for(k);
+  return _dumptime_table->find_or_allocate_info_for(k, _dump_in_progress);
 }
 
 void SystemDictionaryShared::set_shared_class_misc_info(InstanceKlass* k, ClassFileStream* cfs) {
   Arguments::assert_is_dumping_archive();
   assert(!is_builtin(k), "must be unregistered class");
   DumpTimeSharedClassInfo* info = find_or_allocate_info_for(k);
-  info->_clsfile_size  = cfs->length();
-  info->_clsfile_crc32 = ClassLoader::crc32(0, (const char*)cfs->buffer(), cfs->length());
+  if (info != NULL) {
+    info->_clsfile_size  = cfs->length();
+    info->_clsfile_crc32 = ClassLoader::crc32(0, (const char*)cfs->buffer(), cfs->length());
+  }
 }
 
 void SystemDictionaryShared::init_dumptime_info(InstanceKlass* k) {
@@ -1329,7 +1399,8 @@ bool SystemDictionaryShared::should_be_excluded(InstanceKlass* k) {
   }
 
   if (k->is_hidden() && !is_registered_lambda_proxy_class(k)) {
-    warn_excluded(k, "Hidden class");
+    ResourceMark rm;
+    log_debug(cds)("Skipping %s: %s", k->name()->as_C_string(), "Hidden class");
     return true;
   }
 
@@ -1346,7 +1417,7 @@ bool SystemDictionaryShared::should_be_excluded(InstanceKlass* k) {
   return false;
 }
 
-// k is a class before relocating by ArchiveCompactor
+// k is a class before relocating by ArchiveBuilder
 void SystemDictionaryShared::validate_before_archiving(InstanceKlass* k) {
   ResourceMark rm;
   const char* name = k->name()->as_C_string();
@@ -1370,7 +1441,7 @@ void SystemDictionaryShared::validate_before_archiving(InstanceKlass* k) {
 class ExcludeDumpTimeSharedClasses : StackObj {
 public:
   bool do_entry(InstanceKlass* k, DumpTimeSharedClassInfo& info) {
-    if (SystemDictionaryShared::should_be_excluded(k)) {
+    if (SystemDictionaryShared::should_be_excluded(k) || info.is_excluded()) {
       info.set_excluded();
     }
     return true; // keep on iterating
@@ -1386,12 +1457,24 @@ void SystemDictionaryShared::check_excluded_classes() {
 bool SystemDictionaryShared::is_excluded_class(InstanceKlass* k) {
   assert(_no_class_loading_should_happen, "sanity");
   Arguments::assert_is_dumping_archive();
-  return find_or_allocate_info_for(k)->is_excluded();
+  DumpTimeSharedClassInfo* p = find_or_allocate_info_for(k);
+  return (p == NULL) ? true : p->is_excluded();
+}
+
+void SystemDictionaryShared::set_excluded(InstanceKlass* k) {
+  Arguments::assert_is_dumping_archive();
+  DumpTimeSharedClassInfo* info = find_or_allocate_info_for(k);
+  if (info != NULL) {
+    info->set_excluded();
+  }
 }
 
 void SystemDictionaryShared::set_class_has_failed_verification(InstanceKlass* ik) {
   Arguments::assert_is_dumping_archive();
-  find_or_allocate_info_for(ik)->set_failed_verification();
+  DumpTimeSharedClassInfo* p = find_or_allocate_info_for(ik);
+  if (p != NULL) {
+    p->set_failed_verification();
+  }
 }
 
 bool SystemDictionaryShared::has_class_failed_verification(InstanceKlass* ik) {
@@ -1418,18 +1501,38 @@ public:
   }
 };
 
+class IterateDumpTimeLambdaProxyClassDictionary : StackObj {
+  MetaspaceClosure *_it;
+public:
+  IterateDumpTimeLambdaProxyClassDictionary(MetaspaceClosure* it) : _it(it) {}
+
+  bool do_entry(LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
+    info.metaspace_pointers_do(_it);
+    key.metaspace_pointers_do(_it);
+    return true;
+  }
+};
+
 void SystemDictionaryShared::dumptime_classes_do(class MetaspaceClosure* it) {
+  assert_locked_or_safepoint(DumpTimeTable_lock);
   IterateDumpTimeSharedClassTable iter(it);
   _dumptime_table->iterate(&iter);
+  if (_dumptime_lambda_proxy_class_dictionary != NULL) {
+    IterateDumpTimeLambdaProxyClassDictionary iter_lambda(it);
+    _dumptime_lambda_proxy_class_dictionary->iterate(&iter_lambda);
+  }
 }
 
 bool SystemDictionaryShared::add_verification_constraint(InstanceKlass* k, Symbol* name,
          Symbol* from_name, bool from_field_is_protected, bool from_is_array, bool from_is_object) {
   Arguments::assert_is_dumping_archive();
   DumpTimeSharedClassInfo* info = find_or_allocate_info_for(k);
-  info->add_verification_constraint(k, name, from_name, from_field_is_protected,
-                                    from_is_array, from_is_object);
-
+  if (info != NULL) {
+    info->add_verification_constraint(k, name, from_name, from_field_is_protected,
+                                      from_is_array, from_is_object);
+  } else {
+    return true;
+  }
   if (DynamicDumpSharedSpaces) {
     // For dynamic dumping, we can resolve all the constraint classes for all class loaders during
     // the initial run prior to creating the archive before vm exit. We will also perform verification
@@ -1488,7 +1591,8 @@ void SystemDictionaryShared::add_lambda_proxy_class(InstanceKlass* caller_ik,
                                                     Symbol* invoked_type,
                                                     Symbol* method_type,
                                                     Method* member_method,
-                                                    Symbol* instantiated_method_type) {
+                                                    Symbol* instantiated_method_type,
+                                                    TRAPS) {
 
   assert(caller_ik->class_loader() == lambda_ik->class_loader(), "mismatched class loader");
   assert(caller_ik->class_loader_data() == lambda_ik->class_loader_data(), "mismatched class loader data");
@@ -1498,12 +1602,14 @@ void SystemDictionaryShared::add_lambda_proxy_class(InstanceKlass* caller_ik,
 
   lambda_ik->assign_class_loader_type();
   lambda_ik->set_shared_classpath_index(caller_ik->shared_classpath_index());
+  InstanceKlass* nest_host = caller_ik->nest_host(THREAD);
 
   DumpTimeSharedClassInfo* info = _dumptime_table->get(lambda_ik);
   if (info != NULL && !lambda_ik->is_non_strong_hidden() && is_builtin(lambda_ik) && is_builtin(caller_ik)) {
     // Set _is_archived_lambda_proxy in DumpTimeSharedClassInfo so that the lambda_ik
     // won't be excluded during dumping of shared archive. See ExcludeDumpTimeSharedClasses.
     info->_is_archived_lambda_proxy = true;
+    info->set_nest_host(nest_host);
 
     LambdaProxyClassKey key(caller_ik,
                             invoked_name,
@@ -1525,6 +1631,10 @@ InstanceKlass* SystemDictionaryShared::get_shared_lambda_proxy_class(InstanceKla
   LambdaProxyClassKey key(caller_ik, invoked_name, invoked_type,
                           method_type, member_method, instantiated_method_type);
   const RunTimeLambdaProxyClassInfo* info = _lambda_proxy_class_dictionary.lookup(&key, key.hash(), 0);
+  if (info == NULL) {
+    // Try lookup from the dynamic lambda proxy class dictionary.
+    info = _dynamic_lambda_proxy_class_dictionary.lookup(&key, key.hash(), 0);
+  }
   InstanceKlass* proxy_klass = NULL;
   if (info != NULL) {
     InstanceKlass* curr_klass = info->proxy_klass_head();
@@ -1542,7 +1652,7 @@ InstanceKlass* SystemDictionaryShared::get_shared_lambda_proxy_class(InstanceKla
       proxy_klass->clear_lambda_proxy_is_available();
       if (log_is_enabled(Debug, cds)) {
         ResourceMark rm;
-        log_debug(cds)("Loaded lambda proxy: %s", proxy_klass->external_name());
+        log_debug(cds)("Loaded lambda proxy: %s ", proxy_klass->external_name());
       }
     } else {
       if (log_is_enabled(Debug, cds)) {
@@ -1577,6 +1687,10 @@ InstanceKlass* SystemDictionaryShared::prepare_shared_lambda_proxy_class(Instanc
   InstanceKlass* loaded_lambda =
     SystemDictionary::load_shared_lambda_proxy_class(lambda_ik, class_loader, protection_domain, pkg_entry, CHECK_NULL);
 
+  if (loaded_lambda == NULL) {
+    return NULL;
+  }
+
   // Ensures the nest host is the same as the lambda proxy's
   // nest host recorded at dump time.
   InstanceKlass* nest_host = caller_ik->nest_host(THREAD);
@@ -1594,8 +1708,7 @@ InstanceKlass* SystemDictionaryShared::prepare_shared_lambda_proxy_class(Instanc
   loaded_lambda->link_class(CHECK_NULL);
   // notify jvmti
   if (JvmtiExport::should_post_class_load()) {
-    assert(THREAD->is_Java_thread(), "thread->is_Java_thread()");
-    JvmtiExport::post_class_load((JavaThread *) THREAD, loaded_lambda);
+    JvmtiExport::post_class_load(THREAD->as_Java_thread(), loaded_lambda);
   }
   if (class_load_start_event.should_commit()) {
     SystemDictionary::post_class_load_event(&class_load_start_event, loaded_lambda, ClassLoaderData::class_loader_data(class_loader()));
@@ -1758,7 +1871,9 @@ void SystemDictionaryShared::record_linking_constraint(Symbol* name, InstanceKla
   }
   Arguments::assert_is_dumping_archive();
   DumpTimeSharedClassInfo* info = find_or_allocate_info_for(klass);
-  info->record_linking_constraint(name, loader1, loader2);
+  if (info != NULL) {
+    info->record_linking_constraint(name, loader1, loader2);
+  }
 }
 
 // returns true IFF there's no need to re-initialize the i/v-tables for klass for
@@ -1774,7 +1889,7 @@ bool SystemDictionaryShared::check_linking_constraints(InstanceKlass* klass, TRA
     RunTimeSharedClassInfo* info = RunTimeSharedClassInfo::get_for(klass);
     assert(info != NULL, "Sanity");
     if (info->_num_loader_constraints > 0) {
-      HandleMark hm;
+      HandleMark hm(THREAD);
       for (int i = 0; i < info->_num_loader_constraints; i++) {
         RunTimeSharedClassInfo::RTLoaderConstraint* lc = info->loader_constraint_at(i);
         Symbol* name = lc->constraint_name();
@@ -1810,6 +1925,51 @@ bool SystemDictionaryShared::check_linking_constraints(InstanceKlass* klass, TRA
   return false;
 }
 
+bool SystemDictionaryShared::is_supported_invokedynamic(BootstrapInfo* bsi) {
+  LogTarget(Debug, cds, lambda) log;
+  if (bsi->arg_values() == NULL || !bsi->arg_values()->is_objArray()) {
+    if (log.is_enabled()) {
+      LogStream log_stream(log);
+      log.print("bsi check failed");
+      log.print("    bsi->arg_values().not_null() %d", bsi->arg_values().not_null());
+      if (bsi->arg_values().not_null()) {
+        log.print("    bsi->arg_values()->is_objArray() %d", bsi->arg_values()->is_objArray());
+        bsi->print_msg_on(&log_stream);
+      }
+    }
+    return false;
+  }
+
+  Handle bsm = bsi->bsm();
+  if (bsm.is_null() || !java_lang_invoke_DirectMethodHandle::is_instance(bsm())) {
+    if (log.is_enabled()) {
+      log.print("bsm check failed");
+      log.print("    bsm.is_null() %d", bsm.is_null());
+      log.print("    java_lang_invoke_DirectMethodHandle::is_instance(bsm()) %d",
+        java_lang_invoke_DirectMethodHandle::is_instance(bsm()));
+    }
+    return false;
+  }
+
+  oop mn = java_lang_invoke_DirectMethodHandle::member(bsm());
+  Method* method = java_lang_invoke_MemberName::vmtarget(mn);
+  if (method->klass_name()->equals("java/lang/invoke/LambdaMetafactory") &&
+      method->name()->equals("metafactory") &&
+      method->signature()->equals("(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;")) {
+      return true;
+  } else {
+    if (log.is_enabled()) {
+      ResourceMark rm;
+      log.print("method check failed");
+      log.print("    klass_name() %s", method->klass_name()->as_C_string());
+      log.print("    name() %s", method->name()->as_C_string());
+      log.print("    signature() %s", method->signature()->as_C_string());
+    }
+  }
+
+  return false;
+}
+
 class EstimateSizeForArchive : StackObj {
   size_t _shared_class_info_size;
   int _num_builtin_klasses;
@@ -1825,7 +1985,7 @@ public:
   bool do_entry(InstanceKlass* k, DumpTimeSharedClassInfo& info) {
     if (!info.is_excluded()) {
       size_t byte_size = RunTimeSharedClassInfo::byte_size(info._klass, info.num_verifier_constraints(), info.num_loader_constraints());
-      _shared_class_info_size += align_up(byte_size, BytesPerWord);
+      _shared_class_info_size += align_up(byte_size, SharedSpaceObjectAlignment);
     }
     return true; // keep on iterating
   }
@@ -1842,8 +2002,9 @@ size_t SystemDictionaryShared::estimate_size_for_archive() {
     CompactHashtableWriter::estimate_size(_dumptime_table->count_of(true)) +
     CompactHashtableWriter::estimate_size(_dumptime_table->count_of(false));
   if (_dumptime_lambda_proxy_class_dictionary != NULL) {
+    size_t bytesize = align_up(sizeof(RunTimeLambdaProxyClassInfo), SharedSpaceObjectAlignment);
     total_size +=
-      (sizeof(RunTimeLambdaProxyClassInfo) * _dumptime_lambda_proxy_class_dictionary->_count) +
+      (bytesize * _dumptime_lambda_proxy_class_dictionary->_count) +
       CompactHashtableWriter::estimate_size(_dumptime_lambda_proxy_class_dictionary->_count);
   } else {
     total_size += CompactHashtableWriter::estimate_size(0);
@@ -1857,9 +2018,15 @@ public:
   CopyLambdaProxyClassInfoToArchive(CompactHashtableWriter* writer)
     : _writer(writer) {}
   bool do_entry(LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
-    if (SystemDictionaryShared::is_excluded_class(info._proxy_klasses->at(0))) {
-      return true;
-    }
+    // In static dump, info._proxy_klasses->at(0) is already relocated to point to the archived class
+    // (not the original class).
+    //
+    // The following check has been moved to SystemDictionaryShared::check_excluded_classes(), which
+    // happens before the classes are copied.
+    //
+    // if (SystemDictionaryShared::is_excluded_class(info._proxy_klasses->at(0))) {
+    //  return true;
+    //}
     ResourceMark rm;
     log_info(cds,dynamic)("Archiving hidden %s", info._proxy_klasses->at(0)->external_name());
     size_t byte_size = sizeof(RunTimeLambdaProxyClassInfo);
@@ -1867,7 +2034,9 @@ public:
         (RunTimeLambdaProxyClassInfo*)MetaspaceShared::read_only_space_alloc(byte_size);
     runtime_info->init(key, info);
     unsigned int hash = runtime_info->hash(); // Fields in runtime_info->_key already point to target space.
-    u4 delta = MetaspaceShared::object_delta_u4(DynamicArchive::buffer_to_target(runtime_info));
+    u4 delta = DynamicDumpSharedSpaces ?
+                 MetaspaceShared::object_delta_u4((void*)DynamicArchive::buffer_to_target(runtime_info)) :
+                 MetaspaceShared::object_delta_u4((void*)runtime_info);
     _writer->add(hash, delta);
     return true;
   }
@@ -1877,16 +2046,13 @@ class AdjustLambdaProxyClassInfo : StackObj {
 public:
   AdjustLambdaProxyClassInfo() {}
   bool do_entry(LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
-    if (SystemDictionaryShared::is_excluded_class(info._proxy_klasses->at(0))) {
-      return true;
-    }
     int len = info._proxy_klasses->length();
     if (len > 1) {
       for (int i = 0; i < len-1; i++) {
         InstanceKlass* ok0 = info._proxy_klasses->at(i+0); // this is original klass
         InstanceKlass* ok1 = info._proxy_klasses->at(i+1); // this is original klass
-        InstanceKlass* bk0 = DynamicArchive::original_to_buffer(ok0);
-        InstanceKlass* bk1 = DynamicArchive::original_to_buffer(ok1);
+        InstanceKlass* bk0 = DynamicDumpSharedSpaces ? DynamicArchive::original_to_buffer(ok0) : ok0;
+        InstanceKlass* bk1 = DynamicDumpSharedSpaces ? DynamicArchive::original_to_buffer(ok1) : ok1;
         assert(bk0->next_link() == 0, "must be called after Klass::remove_unshareable_info()");
         assert(bk1->next_link() == 0, "must be called after Klass::remove_unshareable_info()");
         bk0->set_next_link(bk1);
@@ -1894,7 +2060,11 @@ public:
         ArchivePtrMarker::mark_pointer(bk0->next_link_addr());
       }
     }
-    DynamicArchive::original_to_buffer(info._proxy_klasses->at(0))->set_lambda_proxy_is_available();
+    if (DynamicDumpSharedSpaces) {
+      DynamicArchive::original_to_buffer(info._proxy_klasses->at(0))->set_lambda_proxy_is_available();
+    } else {
+      info._proxy_klasses->at(0)->set_lambda_proxy_is_available();
+    }
     return true;
   }
 };
@@ -1904,8 +2074,7 @@ class CopySharedClassInfoToArchive : StackObj {
   bool _is_builtin;
 public:
   CopySharedClassInfoToArchive(CompactHashtableWriter* writer,
-                               bool is_builtin,
-                               bool is_static_archive)
+                               bool is_builtin)
     : _writer(writer), _is_builtin(is_builtin) {}
 
   bool do_entry(InstanceKlass* k, DumpTimeSharedClassInfo& info) {
@@ -1954,12 +2123,12 @@ void SystemDictionaryShared::write_lambda_proxy_class_dictionary(LambdaProxyClas
 }
 
 void SystemDictionaryShared::write_dictionary(RunTimeSharedDictionary* dictionary,
-                                              bool is_builtin,
-                                              bool is_static_archive) {
+                                              bool is_builtin) {
   CompactHashtableStats stats;
   dictionary->reset();
   CompactHashtableWriter writer(_dumptime_table->count_of(is_builtin), &stats);
-  CopySharedClassInfoToArchive copy(&writer, is_builtin, is_static_archive);
+  CopySharedClassInfoToArchive copy(&writer, is_builtin);
+  MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
   _dumptime_table->iterate(&copy);
   writer.dump(dictionary, is_builtin ? "builtin dictionary" : "unregistered dictionary");
 }
@@ -1986,13 +2155,21 @@ void SystemDictionaryShared::adjust_lambda_proxy_class_dictionary() {
 
 void SystemDictionaryShared::serialize_dictionary_headers(SerializeClosure* soc,
                                                           bool is_static_archive) {
+  FileMapInfo *dynamic_mapinfo = FileMapInfo::dynamic_info();
   if (is_static_archive) {
     _builtin_dictionary.serialize_header(soc);
     _unregistered_dictionary.serialize_header(soc);
+    if (dynamic_mapinfo == NULL || DynamicDumpSharedSpaces || (dynamic_mapinfo != NULL && UseSharedSpaces)) {
+      _lambda_proxy_class_dictionary.serialize_header(soc);
+    }
   } else {
     _dynamic_builtin_dictionary.serialize_header(soc);
     _dynamic_unregistered_dictionary.serialize_header(soc);
-    _lambda_proxy_class_dictionary.serialize_header(soc);
+    if (DynamicDumpSharedSpaces) {
+      _lambda_proxy_class_dictionary.serialize_header(soc);
+    } else {
+      _dynamic_lambda_proxy_class_dictionary.serialize_header(soc);
+    }
   }
 }
 
@@ -2028,6 +2205,7 @@ InstanceKlass* SystemDictionaryShared::find_builtin_class(Symbol* name) {
   const RunTimeSharedClassInfo* record = find_record(&_builtin_dictionary, &_dynamic_builtin_dictionary, name);
   if (record != NULL) {
     assert(!record->_klass->is_hidden(), "hidden class cannot be looked up by name");
+    assert(check_alignment(record->_klass), "Address not aligned");
     return record->_klass;
   } else {
     return NULL;
@@ -2069,20 +2247,28 @@ public:
   }
 };
 
+void SystemDictionaryShared::print_on(const char* prefix,
+                                      RunTimeSharedDictionary* builtin_dictionary,
+                                      RunTimeSharedDictionary* unregistered_dictionary,
+                                      LambdaProxyClassDictionary* lambda_dictionary,
+                                      outputStream* st) {
+  st->print_cr("%sShared Dictionary", prefix);
+  SharedDictionaryPrinter p(st);
+  builtin_dictionary->iterate(&p);
+  unregistered_dictionary->iterate(&p);
+  if (!lambda_dictionary->empty()) {
+    st->print_cr("%sShared Lambda Dictionary", prefix);
+    SharedLambdaDictionaryPrinter ldp(st);
+    lambda_dictionary->iterate(&ldp);
+  }
+}
+
 void SystemDictionaryShared::print_on(outputStream* st) {
   if (UseSharedSpaces) {
-    st->print_cr("Shared Dictionary");
-    SharedDictionaryPrinter p(st);
-    _builtin_dictionary.iterate(&p);
-    _unregistered_dictionary.iterate(&p);
+    print_on("", &_builtin_dictionary, &_unregistered_dictionary, &_lambda_proxy_class_dictionary, st);
     if (DynamicArchive::is_mapped()) {
-      _dynamic_builtin_dictionary.iterate(&p);
-      _unregistered_dictionary.iterate(&p);
-      if (!_lambda_proxy_class_dictionary.empty()) {
-        st->print_cr("Shared Lambda Dictionary");
-        SharedLambdaDictionaryPrinter ldp(st);
-        _lambda_proxy_class_dictionary.iterate(&ldp);
-      }
+      print_on("", &_dynamic_builtin_dictionary, &_dynamic_unregistered_dictionary,
+               &_dynamic_lambda_proxy_class_dictionary, st);
     }
   }
 }
@@ -2091,10 +2277,11 @@ void SystemDictionaryShared::print_table_statistics(outputStream* st) {
   if (UseSharedSpaces) {
     _builtin_dictionary.print_table_statistics(st, "Builtin Shared Dictionary");
     _unregistered_dictionary.print_table_statistics(st, "Unregistered Shared Dictionary");
+    _lambda_proxy_class_dictionary.print_table_statistics(st, "Lambda Shared Dictionary");
     if (DynamicArchive::is_mapped()) {
       _dynamic_builtin_dictionary.print_table_statistics(st, "Dynamic Builtin Shared Dictionary");
       _dynamic_unregistered_dictionary.print_table_statistics(st, "Unregistered Shared Dictionary");
-      _lambda_proxy_class_dictionary.print_table_statistics(st, "Lambda Shared Dictionary");
+      _dynamic_lambda_proxy_class_dictionary.print_table_statistics(st, "Dynamic Lambda Shared Dictionary");
     }
   }
 }
@@ -2113,6 +2300,7 @@ bool SystemDictionaryShared::empty_dumptime_table() {
 #if INCLUDE_CDS_JAVA_HEAP
 
 class ArchivedMirrorPatcher {
+protected:
   static void update(Klass* k) {
     if (k->has_raw_archived_mirror()) {
       oop m = HeapShared::materialize_archived_object(k->archived_java_mirror_raw_narrow());
@@ -2137,8 +2325,25 @@ public:
   }
 };
 
+class ArchivedLambdaMirrorPatcher : public ArchivedMirrorPatcher {
+public:
+  void do_value(const RunTimeLambdaProxyClassInfo* info) {
+    InstanceKlass* ik = info->proxy_klass_head();
+    while (ik != NULL) {
+      update(ik);
+      Klass* k = ik->next_link();
+      ik = (k != NULL) ? InstanceKlass::cast(k) : NULL;
+    }
+  }
+};
+
 void SystemDictionaryShared::update_archived_mirror_native_pointers_for(RunTimeSharedDictionary* dict) {
   ArchivedMirrorPatcher patcher;
+  dict->iterate(&patcher);
+}
+
+void SystemDictionaryShared::update_archived_mirror_native_pointers_for(LambdaProxyClassDictionary* dict) {
+  ArchivedLambdaMirrorPatcher patcher;
   dict->iterate(&patcher);
 }
 
@@ -2151,6 +2356,7 @@ void SystemDictionaryShared::update_archived_mirror_native_pointers() {
   }
   update_archived_mirror_native_pointers_for(&_builtin_dictionary);
   update_archived_mirror_native_pointers_for(&_unregistered_dictionary);
+  update_archived_mirror_native_pointers_for(&_lambda_proxy_class_dictionary);
 
   for (int t = T_BOOLEAN; t <= T_LONG; t++) {
     Klass* k = Universe::typeArrayKlassObj((BasicType)t);

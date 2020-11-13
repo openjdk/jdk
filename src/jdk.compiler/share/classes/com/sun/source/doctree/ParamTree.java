@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,17 +28,18 @@ package com.sun.source.doctree;
 import java.util.List;
 
 /**
- * A tree node for an @param block tag.
+ * A tree node for an {@code @param} block tag.
  *
- * <p>
- * &#064;param parameter-name description
+ * <pre>
+ *    &#064;param parameter-name description
+ * </pre>
  *
  * @since 1.8
  */
 public interface ParamTree extends BlockTagTree {
     /**
-     * Returns true if this is documenting a type parameter.
-     * @return true if this is documenting a type parameter
+     * Returns {@code true} if this is documenting a type parameter.
+     * @return {@code true} if this is documenting a type parameter
      */
     boolean isTypeParameter();
 

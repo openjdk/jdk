@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,10 +84,12 @@ Java_nsk_jvmti_unit_clsldrclss00x_check(JNIEnv *env, jclass appCls, jclass objCl
         printf("(GetClassLoader app) unexpected error: %s (%d)\n",
                TranslateError(err), err);
         result = STATUS_FAILED;
+        return result;
     }
     if (appClassloader == NULL) {
         printf("(GetClassLoader app) unexpected loader - NULL\n");
         result = STATUS_FAILED;
+        return result;
     }
 
     err = jvmti->GetClassLoader(objCls, &objClassloader);
@@ -95,16 +97,19 @@ Java_nsk_jvmti_unit_clsldrclss00x_check(JNIEnv *env, jclass appCls, jclass objCl
         printf("(GetClassLoader obj) unexpected error: %s (%d)\n",
                TranslateError(err), err);
         result = STATUS_FAILED;
+        return result;
     }
     if (objClassloader != NULL) {
         printf("(GetClassLoader obj) unexpected loader - !NULL\n");
         result = STATUS_FAILED;
+        return result;
     }
 
     err = jvmti->GetClassLoaderClasses(appClassloader, &classCount, &classes);
     if (err != JVMTI_ERROR_NONE) {
         printf("Error (GetClassLoaderClasses app): %s (%d)\n", TranslateError(err), err);
         result = STATUS_FAILED;
+        return result;
     }
     if (printdump) {
       printf(">>> number of classes in app class loader: %d\n", classCount);

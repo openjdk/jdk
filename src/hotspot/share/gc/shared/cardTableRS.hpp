@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,18 +32,6 @@
 class DirtyCardToOopClosure;
 class Generation;
 class Space;
-class OopsInGenClosure;
-
-// Helper to remember modified oops in all clds.
-class CLDRemSet {
-  bool _accumulate_modified_oops;
- public:
-  CLDRemSet() : _accumulate_modified_oops(false) {}
-  void set_accumulate_modified_oops(bool value) { _accumulate_modified_oops = value; }
-  bool accumulate_modified_oops() { return _accumulate_modified_oops; }
-  bool mod_union_is_clear();
-  void clear_mod_union();
-};
 
 // This RemSet uses a card table both as shared data structure
 // for a mod ref barrier set and for the rem set information.
@@ -53,8 +41,6 @@ class CardTableRS: public CardTable {
   // Below are private classes used in impl.
   friend class VerifyCTSpaceClosure;
   friend class ClearNoncleanCardWrapper;
-
-  CLDRemSet _cld_rem_set;
 
   void verify_space(Space* s, HeapWord* gen_start);
 
@@ -102,19 +88,15 @@ public:
   CardTableRS(MemRegion whole_heap, bool scanned_concurrently);
   ~CardTableRS();
 
-  CLDRemSet* cld_rem_set() { return &_cld_rem_set; }
-
-  void younger_refs_in_space_iterate(Space* sp, OopsInGenClosure* cl, uint n_threads);
+  void younger_refs_in_space_iterate(Space* sp, HeapWord* gen_boundary, OopIterateClosure* cl, uint n_threads);
 
   virtual void verify_used_region_at_save_marks(Space* sp) const NOT_DEBUG_RETURN;
 
   // Override.
   void prepare_for_younger_refs_iterate(bool parallel);
 
-  // Card table entries are cleared before application; "blk" is
-  // responsible for dirtying if the oop is still older-to-younger after
-  // closure application.
-  void younger_refs_iterate(Generation* g, OopsInGenClosure* blk, uint n_threads);
+  // Card table entries are cleared before application;
+  void at_younger_refs_iterate();
 
   void inline_write_ref_field_gc(void* field, oop new_val) {
     CardValue* byte = byte_for(field);
@@ -150,7 +132,7 @@ public:
 
   // dirty and precleaned are equivalent wrt younger_refs_iter.
   static bool card_is_dirty_wrt_gen_iter(CardValue cv) {
-    return cv == dirty_card || cv == precleaned_card;
+    return cv == dirty_card;
   }
 
   // Returns "true" iff the value "cv" will cause the card containing it
@@ -165,14 +147,14 @@ public:
   // Iterate over the portion of the card-table which covers the given
   // region mr in the given space and apply cl to any dirty sub-regions
   // of mr. Clears the dirty cards as they are processed.
-  void non_clean_card_iterate_possibly_parallel(Space* sp, MemRegion mr,
-                                                OopsInGenClosure* cl, CardTableRS* ct,
-                                                uint n_threads);
+  void non_clean_card_iterate_possibly_parallel(Space* sp, HeapWord* gen_boundary,
+                                                MemRegion mr, OopIterateClosure* cl,
+                                                CardTableRS* ct, uint n_threads);
 
   // Work method used to implement non_clean_card_iterate_possibly_parallel()
   // above in the parallel case.
   virtual void non_clean_card_iterate_parallel_work(Space* sp, MemRegion mr,
-                                                    OopsInGenClosure* cl, CardTableRS* ct,
+                                                    OopIterateClosure* cl, CardTableRS* ct,
                                                     uint n_threads);
 
   // This is an array, one element per covered region of the card table.

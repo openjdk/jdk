@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,8 +54,11 @@ public:
 
   // If an expansion would be appropriate, because recent GC overhead had
   // exceeded the desired limit, return an amount to expand by.
-  size_t expansion_amount();
+  size_t young_collection_expansion_amount();
 
+  // Returns the amount of bytes to resize the heap; if expand is set, the heap
+  // should by expanded by that amount, shrunk otherwise.
+  size_t full_collection_resize_amount(bool& expand);
   // Clear ratio tracking data used by expansion_amount().
   void clear_ratio_check_data();
 

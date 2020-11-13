@@ -317,7 +317,7 @@ class GenerateOopMap {
 
   // Timing and statistics
   static elapsedTimer _total_oopmap_time;   // Holds cumulative oopmap generation time
-  static long         _total_byte_count;    // Holds cumulative number of bytes inspected
+  static uint64_t     _total_byte_count;    // Holds cumulative number of bytes inspected
 
   // Cell type methods
   void            init_state();

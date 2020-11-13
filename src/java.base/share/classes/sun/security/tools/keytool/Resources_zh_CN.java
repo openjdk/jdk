@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -422,6 +422,8 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
 
         {"warning.not.verified.make.sure.keystore.is.correct",
             "\u8B66\u544A: \u672A\u9A8C\u8BC1\u3002\u8BF7\u786E\u4FDD\u5BC6\u94A5\u5E93\u662F\u6B63\u786E\u7684\u3002"},
+        {"warning.not.verified.make.sure.keystore.is.correct.or.specify.trustcacerts",
+            "\u8B66\u544A\uFF1A\u672A\u9A8C\u8BC1\u3002\u8BF7\u786E\u4FDD\u5BC6\u94A5\u5E93\u662F\u6B63\u786E\u7684\uFF0C\u6216\u8005\u6307\u5B9A -trustcacerts\u3002"},
 
         {"Extensions.", "\u6269\u5C55: "},
         {".Empty.value.", "(\u7A7A\u503C)"},
@@ -452,16 +454,20 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         {"alias.in.cacerts", "cacerts \u4E2D\u7684\u53D1\u5E03\u8005 <%s>"},
         {"alias.in.keystore", "\u53D1\u5E03\u8005 <%s>"},
         {"with.weak", "%s (\u5F31)"},
+        {"with.disabled", "%s\uFF08\u7981\u7528\uFF09"},
         {"key.bit", "%1$d \u4F4D %2$s \u5BC6\u94A5"},
         {"key.bit.weak", "%1$d \u4F4D %2$s \u5BC6\u94A5 (\u5F31)"},
+        {"key.bit.disabled", "%1$d \u4F4D %2$s \u5BC6\u94A5\uFF08\u7981\u7528\uFF09"},
         {"unknown.size.1", "\u672A\u77E5\u5927\u5C0F\u7684 %s \u5BC6\u94A5"},
         {".PATTERN.printX509Cert.with.weak",
                 "\u6240\u6709\u8005: {0}\n\u53D1\u5E03\u8005: {1}\n\u5E8F\u5217\u53F7: {2}\n\u751F\u6548\u65F6\u95F4: {3}, \u5931\u6548\u65F6\u95F4: {4}\n\u8BC1\u4E66\u6307\u7EB9:\n\t SHA1: {5}\n\t SHA256: {6}\n\u7B7E\u540D\u7B97\u6CD5\u540D\u79F0: {7}\n\u4E3B\u4F53\u516C\u5171\u5BC6\u94A5\u7B97\u6CD5: {8}\n\u7248\u672C: {9}"},
         {"PKCS.10.with.weak",
                 "PKCS #10 \u8BC1\u4E66\u8BF7\u6C42 (\u7248\u672C 1.0)\n\u4E3B\u4F53: %1$s\n\u683C\u5F0F: %2$s\n\u516C\u5171\u5BC6\u94A5: %3$s\n\u7B7E\u540D\u7B97\u6CD5: %4$s\n"},
         {"verified.by.s.in.s.weak", "\u7531 %2$s \u4E2D\u7684 %1$s \u4EE5 %3$s \u9A8C\u8BC1"},
-        {"whose.sigalg.risk", "%1$s \u4F7F\u7528\u7684 %2$s \u7B7E\u540D\u7B97\u6CD5\u5B58\u5728\u5B89\u5168\u98CE\u9669\u3002"},
-        {"whose.key.risk", "%1$s \u4F7F\u7528\u7684 %2$s \u5B58\u5728\u5B89\u5168\u98CE\u9669\u3002"},
+        {"whose.sigalg.disabled", "%1$s \u4F7F\u7528\u7684 %2$s \u7B7E\u540D\u7B97\u6CD5\u88AB\u89C6\u4E3A\u5B58\u5728\u5B89\u5168\u98CE\u9669\u800C\u4E14\u88AB\u7981\u7528\u3002"},
+        {"whose.sigalg.weak", "%1$s \u4F7F\u7528\u7684 %2$s \u7B7E\u540D\u7B97\u6CD5\u88AB\u89C6\u4E3A\u5B58\u5728\u5B89\u5168\u98CE\u9669\u3002\u6B64\u7B97\u6CD5\u5C06\u5728\u672A\u6765\u7684\u66F4\u65B0\u4E2D\u88AB\u7981\u7528\u3002"},
+        {"whose.key.disabled", "%1$s \u4F7F\u7528\u7684 %2$s \u88AB\u89C6\u4E3A\u5B58\u5728\u5B89\u5168\u98CE\u9669\u800C\u4E14\u88AB\u7981\u7528\u3002"},
+        {"whose.key.weak", "%1$s \u4F7F\u7528\u7684 %2$s \u88AB\u89C6\u4E3A\u5B58\u5728\u5B89\u5168\u98CE\u9669\u3002\u6B64\u5BC6\u94A5\u5927\u5C0F\u5C06\u5728\u672A\u6765\u7684\u66F4\u65B0\u4E2D\u88AB\u7981\u7528\u3002"},
         {"jks.storetype.warning", "%1$s \u5BC6\u94A5\u5E93\u4F7F\u7528\u4E13\u7528\u683C\u5F0F\u3002\u5EFA\u8BAE\u4F7F\u7528 \"keytool -importkeystore -srckeystore %2$s -destkeystore %2$s -deststoretype pkcs12\" \u8FC1\u79FB\u5230\u884C\u4E1A\u6807\u51C6\u683C\u5F0F PKCS12\u3002"},
         {"migrate.keystore.warning", "\u5DF2\u5C06 \"%1$s\" \u8FC1\u79FB\u5230 %4$s\u3002\u5C06 %2$s \u5BC6\u94A5\u5E93\u4F5C\u4E3A \"%3$s\" \u8FDB\u884C\u4E86\u5907\u4EFD\u3002"},
         {"backup.keystore.warning", "\u5DF2\u5C06\u539F\u59CB\u5BC6\u94A5\u5E93 \"%1$s\" \u5907\u4EFD\u4E3A \"%3$s\"..."},

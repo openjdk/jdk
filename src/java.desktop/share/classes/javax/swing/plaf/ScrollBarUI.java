@@ -31,4 +31,8 @@ package javax.swing.plaf;
  * @author David Kloba
  */
 public abstract class ScrollBarUI extends ComponentUI {
+    /**
+     * Constructor for subclasses to call.
+     */
+    protected ScrollBarUI() {}
 }

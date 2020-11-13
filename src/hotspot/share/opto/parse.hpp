@@ -48,12 +48,7 @@ class InlineTree : public ResourceObj {
   ciMethod*   _method;            // method being called by the caller_jvms
   InlineTree* _caller_tree;
   uint        _count_inline_bcs;  // Accumulated count of inlined bytecodes
-  // Call-site count / interpreter invocation count, scaled recursively.
-  // Always between 0.0 and 1.0.  Represents the percentage of the method's
-  // total execution time used at this call site.
-  const float _site_invoke_ratio;
   const int   _max_inline_level;  // the maximum inline level for this sub-tree (may be adjusted)
-  float compute_callee_frequency( int caller_bci ) const;
 
   GrowableArray<InlineTree*> _subtrees;
 
@@ -67,7 +62,6 @@ protected:
              ciMethod* callee_method,
              JVMState* caller_jvms,
              int caller_bci,
-             float site_invoke_ratio,
              int max_inline_level);
   InlineTree *build_inline_tree_for_callee(ciMethod* callee_method,
                                            JVMState* caller_jvms,
@@ -125,7 +119,6 @@ public:
   ciMethod   *method()            const { return _method; }
   int         caller_bci()        const { return _caller_jvms ? _caller_jvms->bci() : InvocationEntryBci; }
   uint        count_inline_bcs()  const { return _count_inline_bcs; }
-  float       site_invoke_ratio() const { return _site_invoke_ratio; };
 
 #ifndef PRODUCT
 private:
@@ -337,8 +330,6 @@ class Parse : public GraphKit {
   bool          _wrote_volatile;     // Did we write a volatile field?
   bool          _wrote_stable;       // Did we write a @Stable field?
   bool          _wrote_fields;       // Did we write any field?
-  bool          _count_invocations;  // update and test invocation counter
-  bool          _method_data_update; // update method data oop
   Node*         _alloc_with_final;   // An allocation node with final field
 
   // Variables which track Java semantics during bytecode parsing:
@@ -384,8 +375,6 @@ class Parse : public GraphKit {
   void      set_wrote_stable(bool z)  { _wrote_stable = z; }
   bool         wrote_fields() const   { return _wrote_fields; }
   void     set_wrote_fields(bool z)   { _wrote_fields = z; }
-  bool          count_invocations() const  { return _count_invocations; }
-  bool          method_data_update() const { return _method_data_update; }
   Node*    alloc_with_final() const   { return _alloc_with_final; }
   void set_alloc_with_final(Node* n)  {
     assert((_alloc_with_final == NULL) || (_alloc_with_final == n), "different init objects?");
@@ -507,9 +496,6 @@ class Parse : public GraphKit {
   // Helper function to uncommon-trap or bailout for non-compilable call-sites
   bool can_not_compile_call_site(ciMethod *dest_method, ciInstanceKlass *klass);
 
-  // Helper function to setup for type-profile based inlining
-  bool prepare_type_profile_inline(ciInstanceKlass* prof_klass, ciMethod* prof_method);
-
   // Helper functions for type checking bytecodes:
   void  do_checkcast();
   void  do_instanceof();
@@ -562,9 +548,9 @@ class Parse : public GraphKit {
   void    maybe_add_predicate_after_if(Block* path);
   IfNode* jump_if_fork_int(Node* a, Node* b, BoolTest::mask mask, float prob, float cnt);
   Node*   jump_if_join(Node* iffalse, Node* iftrue);
-  void    jump_if_true_fork(IfNode *ifNode, int dest_bci_if_true, int prof_table_index, bool unc);
-  void    jump_if_false_fork(IfNode *ifNode, int dest_bci_if_false, int prof_table_index, bool unc);
-  void    jump_if_always_fork(int dest_bci_if_true, int prof_table_index, bool unc);
+  void    jump_if_true_fork(IfNode *ifNode, int dest_bci_if_true, bool unc);
+  void    jump_if_false_fork(IfNode *ifNode, int dest_bci_if_false, bool unc);
+  void    jump_if_always_fork(int dest_bci_if_true, bool unc);
 
   friend class SwitchRange;
   void    do_tableswitch();
@@ -574,23 +560,6 @@ class Parse : public GraphKit {
   void    linear_search_switch_ranges(Node* key_val, SwitchRange*& lo, SwitchRange*& hi);
 
   void decrement_age();
-  // helper functions for methodData style profiling
-  void test_counter_against_threshold(Node* cnt, int limit);
-  void increment_and_test_invocation_counter(int limit);
-  void test_for_osr_md_counter_at(ciMethodData* md, ciProfileData* data, ByteSize offset, int limit);
-  Node* method_data_addressing(ciMethodData* md, ciProfileData* data, ByteSize offset, Node* idx = NULL, uint stride = 0);
-  void increment_md_counter_at(ciMethodData* md, ciProfileData* data, ByteSize offset, Node* idx = NULL, uint stride = 0);
-  void set_md_flag_at(ciMethodData* md, ciProfileData* data, int flag_constant);
-
-  void profile_method_entry();
-  void profile_taken_branch(int target_bci, bool force_update = false);
-  void profile_not_taken_branch(bool force_update = false);
-  void profile_call(Node* receiver);
-  void profile_generic_call();
-  void profile_receiver_type(Node* receiver);
-  void profile_ret(int target_bci);
-  void profile_null_checkcast();
-  void profile_switch_case(int table_index);
 
   // helper function for call statistics
   void count_compiled_calls(bool at_method_entry, bool is_inline) PRODUCT_RETURN;

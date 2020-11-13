@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,8 +80,9 @@ public class PendingTextPingClose extends PendingOperations {
             assertFails(ISE, webSocket.sendPong(ByteBuffer.allocate(125)));
             cfClose = webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "ok");
             assertHangs(cfClose);
+            assertNotDone(cfText);
             return null;
-        }, () -> cfText.isDone() ? true : false);
+        }, () -> cfText.isDone());
         webSocket.abort();
         assertFails(IOE, cfText);
         assertFails(IOE, cfPing);

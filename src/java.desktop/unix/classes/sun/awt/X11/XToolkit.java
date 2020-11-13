@@ -121,7 +121,6 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Properties;
-import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.Vector;
@@ -212,12 +211,6 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     private static volatile int maxWindowHeightInPixels = -1;
 
     private static XMouseInfoPeer xPeer;
-
-    /**
-     * Should we check "_NET_WM_STRUT/_NET_WM_STRUT_PARTIAL" during insets
-     * calculation.
-     */
-    private static Boolean checkSTRUT;
 
     static {
         initSecurityWarning();
@@ -861,24 +854,10 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         }
 
         XToolkit.awtLock();
-        try
-        {
-            X11GraphicsEnvironment x11ge = (X11GraphicsEnvironment)
-                    GraphicsEnvironment.getLocalGraphicsEnvironment();
-            X11GraphicsConfig x11gc = (X11GraphicsConfig) gc;
-            long root = XlibUtil.getRootWindow(x11gc.getDevice().getScreen());
-            int scale = x11gc.getScale();
-            if (x11ge.runningXinerama() && checkSTRUT()) {
-                // implementation based on _NET_WM_STRUT/_NET_WM_STRUT_PARTIAL
-                Rectangle rootBounds = XlibUtil.getWindowGeometry(root, scale);
-                Insets insets = getScreenInsetsManually(root, rootBounds,
-                                                        gc.getBounds(), scale);
-                if ((insets.left | insets.top | insets.bottom | insets.right) != 0
-                        || rootBounds == null) {
-                    return insets;
-                }
-            }
-            Rectangle workArea = XToolkit.getWorkArea(root, scale);
+        try {
+            X11GraphicsDevice x11gd = (X11GraphicsDevice) gd;
+            long root = XlibUtil.getRootWindow(x11gd.getScreen());
+            Rectangle workArea = getWorkArea(root, x11gd.getScaleFactor());
             Rectangle screen = gc.getBounds();
             if (workArea != null && screen.contains(workArea.getLocation())) {
                 workArea = workArea.intersection(screen);
@@ -890,148 +869,9 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             }
             // Note that it is better to return zeros than inadequate values
             return new Insets(0, 0, 0, 0);
-        }
-        finally
-        {
+        } finally {
             XToolkit.awtUnlock();
         }
-    }
-
-    /**
-     * Returns the value of "sun.awt.X11.checkSTRUT" property. Default value is
-     * {@code false}.
-     */
-    private static boolean checkSTRUT() {
-        if (checkSTRUT == null) {
-            checkSTRUT = AccessController.doPrivileged(
-                    new GetBooleanAction("sun.awt.X11.checkSTRUT"));
-        }
-        return checkSTRUT;
-    }
-
-    /*
-     * Manual calculation of screen insets: get all the windows with
-     * _NET_WM_STRUT/_NET_WM_STRUT_PARTIAL hints and add these
-     * hints' values to screen insets.
-     *
-     * This method should be called under XToolkit.awtLock()
-     *
-     * This method is unused by default because of two reasons:
-     *  - Iteration over windows may be extremely slow, and execution of
-     *    getScreenInsets() can be x100 slower than in one monitor config.
-     *  - _NET_WM_STRUT/_NET_WM_STRUT_PARTIAL are hints for the applications.
-     *    WM should take into account these hints when "_NET_WORKAREA" is
-     *    calculated, but the system panels do not necessarily contain these
-     *    hints(Gnome 3 for example).
-     */
-    private Insets getScreenInsetsManually(long root, Rectangle rootBounds,
-                                           Rectangle screenBounds, int scale)
-    {
-        /*
-         * During the manual calculation of screen insets we iterate
-         * all the X windows hierarchy starting from root window. This
-         * constant is the max level inspected in this hierarchy.
-         * 3 is a heuristic value: I suppose any the toolbar-like
-         * window is a child of either root or desktop window.
-         */
-        final int MAX_NESTED_LEVEL = 3;
-
-        XAtom XA_NET_WM_STRUT = XAtom.get("_NET_WM_STRUT");
-        XAtom XA_NET_WM_STRUT_PARTIAL = XAtom.get("_NET_WM_STRUT_PARTIAL");
-
-        Insets insets = new Insets(0, 0, 0, 0);
-
-        java.util.List<Object> search = new LinkedList<>();
-        search.add(root);
-        search.add(0);
-        while (!search.isEmpty())
-        {
-            long window = (Long)search.remove(0);
-            int windowLevel = (Integer)search.remove(0);
-
-            /*
-             * Note that most of the modern window managers unmap
-             * application window if it is iconified. Thus, any
-             * _NET_WM_STRUT[_PARTIAL] hints for iconified windows
-             * are not included to the screen insets.
-             */
-            if (XlibUtil.getWindowMapState(window) == XConstants.IsUnmapped)
-            {
-                continue;
-            }
-
-            long native_ptr = Native.allocateLongArray(4);
-            try
-            {
-                // first, check if _NET_WM_STRUT or _NET_WM_STRUT_PARTIAL are present
-                // if both are set on the window, _NET_WM_STRUT_PARTIAL is used (see _NET spec)
-                boolean strutPresent = XA_NET_WM_STRUT_PARTIAL.getAtomData(window, XAtom.XA_CARDINAL, native_ptr, 4);
-                if (!strutPresent)
-                {
-                    strutPresent = XA_NET_WM_STRUT.getAtomData(window, XAtom.XA_CARDINAL, native_ptr, 4);
-                }
-                if (strutPresent)
-                {
-                    // second, verify that window is located on the proper screen
-                    Rectangle windowBounds = XlibUtil.getWindowGeometry(window,
-                                                                        scale);
-                    if (windowLevel > 1)
-                    {
-                        windowBounds = XlibUtil.translateCoordinates(window, root,
-                                                                     windowBounds,
-                                                                     scale);
-                    }
-                    // if _NET_WM_STRUT_PARTIAL is present, we should use its values to detect
-                    // if the struts area intersects with screenBounds, however some window
-                    // managers don't set this hint correctly, so we just get intersection with windowBounds
-                    if (windowBounds != null && windowBounds.intersects(screenBounds))
-                    {
-                        int left = scaleDown((int)Native.getLong(native_ptr, 0), scale);
-                        int right = scaleDown((int)Native.getLong(native_ptr, 1), scale);
-                        int top = scaleDown((int)Native.getLong(native_ptr, 2), scale);
-                        int bottom = scaleDown((int)Native.getLong(native_ptr, 3), scale);
-
-                        /*
-                         * struts could be relative to root window bounds, so
-                         * make them relative to the screen bounds in this case
-                         */
-                        left = rootBounds.x + left > screenBounds.x ?
-                                rootBounds.x + left - screenBounds.x : 0;
-                        right = rootBounds.x + rootBounds.width - right <
-                                screenBounds.x + screenBounds.width ?
-                                screenBounds.x + screenBounds.width -
-                                (rootBounds.x + rootBounds.width - right) : 0;
-                        top = rootBounds.y + top > screenBounds.y ?
-                                rootBounds.y + top - screenBounds.y : 0;
-                        bottom = rootBounds.y + rootBounds.height - bottom <
-                                screenBounds.y + screenBounds.height ?
-                                screenBounds.y + screenBounds.height -
-                                (rootBounds.y + rootBounds.height - bottom) : 0;
-
-                        insets.left = Math.max(left, insets.left);
-                        insets.right = Math.max(right, insets.right);
-                        insets.top = Math.max(top, insets.top);
-                        insets.bottom = Math.max(bottom, insets.bottom);
-                    }
-                }
-            }
-            finally
-            {
-                XlibWrapper.unsafe.freeMemory(native_ptr);
-            }
-
-            if (windowLevel < MAX_NESTED_LEVEL)
-            {
-                Set<Long> children = XlibUtil.getChildWindows(window);
-                for (long child : children)
-                {
-                    search.add(child);
-                    search.add(windowLevel + 1);
-                }
-            }
-        }
-
-        return insets;
     }
 
     /*

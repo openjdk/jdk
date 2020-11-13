@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,7 +190,7 @@ import jdk.xml.internal.SecuritySupport;
  * @author Sunitha Reddy
  * @see javax.xml.datatype.Duration
  * @since 1.5
- * @LastModified: June 2018
+ * @LastModified: Aug 2020
  */
 
 public class XMLGregorianCalendarImpl
@@ -1681,49 +1681,6 @@ public class XMLGregorianCalendarImpl
 
         return Pfield.compareTo(Qfield);
     }
-
-    /**
-     * <p>Indicates whether parameter <code>obj</code> is "equal to" this one.</p>
-     *
-     * @param obj to compare.
-     *
-     * @return <code>true</code> when <code>compare(this,(XMLGregorianCalendar)obj) == EQUAL.</code>.
-     */
-    public boolean equals(Object obj) {
-
-        if (obj == null || !(obj instanceof XMLGregorianCalendar)) {
-            return false;
-        }
-        if (obj == this) {
-            return true;
-        }
-        return compare((XMLGregorianCalendar) obj) == DatatypeConstants.EQUAL;
-    }
-
-    /**
-     * <p>Returns a hash code consistent with the definition of the equals method.</p>
-     *
-     * @return hash code of this object.
-     */
-    public int hashCode() {
-
-        // Following two dates compare to EQUALS since in different timezones.
-        // 2000-01-15T12:00:00-05:00 == 2000-01-15T13:00:00-04:00
-        //
-        // Must ensure both instances generate same hashcode by normalizing
-        // this to UTC timezone.
-        int timezone = getTimezone();
-        if (timezone == DatatypeConstants.FIELD_UNDEFINED) {
-            timezone = 0;
-        }
-        XMLGregorianCalendar gc = this;
-        if (timezone != 0) {
-            gc = this.normalizeToTimezone(getTimezone());
-        }
-        return gc.getYear() + gc.getMonth() + gc.getDay() +
-                gc.getHour() + gc.getMinute() + gc.getSecond();
-    }
-
 
     /**
      * <p>Constructs a new XMLGregorianCalendar object by

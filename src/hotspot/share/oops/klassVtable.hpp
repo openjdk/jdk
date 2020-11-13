@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -320,7 +320,7 @@ class klassItable {
 
   // Statistics
   NOT_PRODUCT(static int  _total_classes;)   // Total no. of classes with itables
-  NOT_PRODUCT(static long _total_size;)      // Total no. of bytes used for itables
+  NOT_PRODUCT(static size_t _total_size;)    // Total no. of bytes used for itables
 
   static void update_stats(int size) PRODUCT_RETURN NOT_PRODUCT({ _total_classes++; _total_size += size; })
 };

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,6 +98,7 @@ void check(jvmtiEnv *jvmti_env, jmethodID mid, jlocation loc, int i) {
         printf("(%s, GetClassSignature#%d) unexpected error: %s (%d)\n",
                note, i, TranslateError(err), err);
         result = STATUS_FAILED;
+        return;
     }
 
     err = jvmti_env->GetMethodName(mid, &name, &sig, &generic);
@@ -105,6 +106,7 @@ void check(jvmtiEnv *jvmti_env, jmethodID mid, jlocation loc, int i) {
         printf("(%s, GetMethodName#%d) unexpected error: %s (%d)\n",
                note, i, TranslateError(err), err);
         result = STATUS_FAILED;
+        return;
     }
 
     if (sigClass == NULL || strcmp(sigClass, checks[i].cls) != 0) {

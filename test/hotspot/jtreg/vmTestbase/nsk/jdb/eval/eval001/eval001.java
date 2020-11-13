@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,14 +46,14 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdb.eval.eval001.eval001
  *
  * @comment make sure eval001a is compiled w/ full debug info
  * @clean nsk.jdb.eval.eval001.eval001a
  * @compile -g:lines,source,vars eval001a.java
  *
- * @run main/othervm PropertyResolvingWrapper nsk.jdb.eval.eval001.eval001
+ * @run main/othervm
+ *      nsk.jdb.eval.eval001.eval001
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

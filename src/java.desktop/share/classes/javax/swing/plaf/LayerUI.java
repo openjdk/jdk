@@ -66,6 +66,11 @@ public class LayerUI<V extends Component>
             new PropertyChangeSupport(this);
 
     /**
+     * Constructs a {@code LayerUI}.
+     */
+    public LayerUI() {}
+
+    /**
      * Paints the specified component.
      * Subclasses should override this method and use
      * the specified {@code Graphics} object to

@@ -185,7 +185,7 @@ void ShenandoahUnload::unload() {
 
     {
       ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_class_unload_purge_cldg);
-      ClassLoaderDataGraph::purge();
+      ClassLoaderDataGraph::purge(/*at_safepoint*/false);
     }
 
     {
@@ -197,5 +197,5 @@ void ShenandoahUnload::unload() {
 
 void ShenandoahUnload::finish() {
   MetaspaceGC::compute_new_size();
-  MetaspaceUtils::verify_metrics();
+  DEBUG_ONLY(MetaspaceUtils::verify();)
 }

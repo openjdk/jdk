@@ -26,6 +26,7 @@
  * @bug 8193369
  * @summary Tests that all FieldAccess and FieldModification notifications
             are generated.
+ * @requires vm.jvmti
  * @compile FieldAccessWatch.java
  * @run main/othervm/native -agentlib:FieldAccessWatch FieldAccessWatch
  */

@@ -54,15 +54,17 @@ public class PMap extends Tool {
    }
 
    public void run(PrintStream out, Debugger dbg) {
-      if (PlatformInfo.getOS().equals("darwin")) {
-        out.println("Not available on Mac OS X");
-        return;
-      }
-
       CDebugger cdbg = dbg.getCDebugger();
       if (cdbg != null) {
          List<LoadObject> l = cdbg.getLoadObjectList();
-         for (Iterator<LoadObject> itr = l.iterator() ; itr.hasNext();) {
+         Iterator<LoadObject> itr = l.iterator();
+         if (!itr.hasNext() && PlatformInfo.getOS().equals("darwin")) {
+             // If the list is empty, we assume we attached to a process, and on OSX we can only
+             // get LoadObjects for a core file.
+             out.println("Not available for Mac OS X processes");
+             return;
+         }
+         while (itr.hasNext()) {
             LoadObject lo = itr.next();
             out.print(lo.getBase() + "\t");
             out.print(lo.getSize()/1024 + "K\t");

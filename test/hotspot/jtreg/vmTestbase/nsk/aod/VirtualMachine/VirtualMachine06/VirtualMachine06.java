@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
  *
- * @run driver jdk.test.lib.FileInstaller . .
  *
  * @comment compile VM06Agent0[0-3].java to current directory
  * @build nsk.aod.VirtualMachine.VirtualMachine06.VM06Agent00
@@ -54,43 +53,52 @@
  *      nsk.aod.VirtualMachine.VirtualMachine06.VM06Agent03
  *
  * @comment create VM06Agent0[0-3].jar in current directory
- * @build ExecDriver
- * @run driver PropertyResolvingWrapper ExecDriver --cmd
- *      ${test.jdk}/bin/jar -cmf VM06Agent00.mf VM06Agent00.jar
+ * @run driver ExecDriver --cmd
+ *      ${test.jdk}/bin/jar
+ *      -cmf ${test.src}/VM06Agent00.mf
+ *      VM06Agent00.jar
  *      nsk/aod/VirtualMachine/VirtualMachine06/VM06Agent00.class
- * @run driver PropertyResolvingWrapper ExecDriver --cmd
- *      ${test.jdk}/bin/jar -cmf VM06Agent01.mf VM06Agent01.jar
+ * @run driver ExecDriver --cmd
+ *      ${test.jdk}/bin/jar
+ *      -cmf ${test.src}/VM06Agent01.mf
+ *      VM06Agent01.jar
  *      nsk/aod/VirtualMachine/VirtualMachine06/VM06Agent01.class
- * @run driver PropertyResolvingWrapper ExecDriver --cmd
- *      ${test.jdk}/bin/jar -cmf VM06Agent02.mf VM06Agent02.jar
+ * @run driver ExecDriver --cmd
+ *      ${test.jdk}/bin/jar
+ *      -cmf ${test.src}/VM06Agent02.mf
+ *      VM06Agent02.jar
  *      nsk/aod/VirtualMachine/VirtualMachine06/VM06Agent02.class
- * @run driver PropertyResolvingWrapper ExecDriver --cmd
- *      ${test.jdk}/bin/jar -cmf VM06Agent03.mf VM06Agent03.jar
+ * @run driver ExecDriver --cmd
+ *      ${test.jdk}/bin/jar
+ *      -cmf ${test.src}/VM06Agent03.mf
+ *      VM06Agent03.jar
  *      nsk/aod/VirtualMachine/VirtualMachine06/VM06Agent03.class
  *
  *
- * @build nsk.aod.VirtualMachine.VirtualMachine06.VirtualMachine06
- *        nsk.share.aod.TargetApplicationWaitingAgents
- * @run main/othervm -XX:+UsePerfData PropertyResolvingWrapper
+ * @build nsk.share.aod.TargetApplicationWaitingAgents
+ * @run main/othervm
+ *      -XX:+UsePerfData
  *      nsk.aod.VirtualMachine.VirtualMachine06.VirtualMachine06
  *      -jdk ${test.jdk}
- *      "-javaOpts=-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
+ *      -javaOpts="-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
  *      -target nsk.share.aod.TargetApplicationWaitingAgents
  *      -ja VM06Agent00.jar,VM06Agent01.jar,VM06Agent02.jar,VM06Agent03.jar
  */
 
 package nsk.aod.VirtualMachine.VirtualMachine06;
 
+import com.sun.tools.attach.AgentInitializationException;
+import com.sun.tools.attach.VirtualMachine;
 import nsk.share.TestBug;
-import nsk.share.aod.*;
+import nsk.share.aod.AODTestRunner;
+import nsk.share.aod.AgentInformation;
 import nsk.share.test.TestUtils;
-import java.util.*;
-import com.sun.tools.attach.*;
+
+import java.util.List;
 
 /*
  * Test checks following methods:
  *      - VirtualMachine.loadAgent(String)
- *
  *      - VirtualMachine.loadAgent(String, String)
  */
 public class VirtualMachine06 extends AODTestRunner {
@@ -102,12 +110,13 @@ public class VirtualMachine06 extends AODTestRunner {
     public void doTestActions(String targetVMId) throws Throwable {
         // check that all required parameters were passed to the test
         List<AgentInformation> agents = argParser.getAgents();
-        if (agents.size() != 4)
+        if (agents.size() != 4) {
             throw new TestBug("Test requires 4 agents, actually " + agents.size() + " were specified");
-
+        }
         for (AgentInformation agent : agents) {
-            if (!agent.jarAgent)
+            if (!agent.jarAgent) {
                 throw new TestBug("Non JAR agent was specified");
+            }
         }
 
         VirtualMachine vm = VirtualMachine.attach(targetVMId);

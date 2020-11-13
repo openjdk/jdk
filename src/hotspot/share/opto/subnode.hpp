@@ -195,6 +195,7 @@ class CmpLNode : public CmpNode {
 public:
   CmpLNode( Node *in1, Node *in2 ) : CmpNode(in1,in2) {}
   virtual int    Opcode() const;
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *sub( const Type *, const Type * ) const;
 };
 
@@ -401,6 +402,28 @@ public:
 class NegNode : public Node {
 public:
   NegNode( Node *in1 ) : Node(0,in1) {}
+};
+
+//------------------------------NegINode---------------------------------------
+// Negate value an int.  For int values, negation is the same as subtraction
+// from zero
+class NegINode : public NegNode {
+public:
+  NegINode(Node *in1) : NegNode(in1) {}
+  virtual int Opcode() const;
+  const Type *bottom_type() const { return TypeInt::INT; }
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+//------------------------------NegLNode---------------------------------------
+// Negate value an int.  For int values, negation is the same as subtraction
+// from zero
+class NegLNode : public NegNode {
+public:
+  NegLNode(Node *in1) : NegNode(in1) {}
+  virtual int Opcode() const;
+  const Type *bottom_type() const { return TypeLong::LONG; }
+  virtual uint ideal_reg() const { return Op_RegL; }
 };
 
 //------------------------------NegFNode---------------------------------------

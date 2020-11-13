@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,11 @@ package java.awt.dnd;
  * @since 1.4
  */
 public abstract class DropTargetAdapter implements DropTargetListener {
+
+    /**
+     * Constructs a {@code DropTargetAdapter}.
+     */
+    protected DropTargetAdapter() {}
 
     /**
      * Called while a drag operation is ongoing, when the mouse pointer enters

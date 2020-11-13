@@ -31,6 +31,7 @@
 #include "jfr/recorder/stringpool/jfrStringPoolBuffer.hpp"
 #include "jfr/utilities/jfrLinkedList.hpp"
 
+class JavaThread;
 class JfrChunkWriter;
 class JfrStringPool;
 

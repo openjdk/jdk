@@ -131,7 +131,7 @@ public class ToolFormatTest extends ReplToolTesting {
                 (a) -> assertCommand(a, "/se fo tm x \"iii\" method,class", ""),
                 (a) -> assertCommand(a, "/se fo tm x",
                         "|  /set format tm x \"aaa\" \n" +
-                        "|  /set format tm x \"iii\" class,method"),
+                        "|  /set format tm x \"iii\" method,class"),
                 (a) -> assertCommand(a, "/se fo tm x \"jjj\"", ""),
                 (a) -> assertCommand(a, "/se fo tm x",
                         "|  /set format tm x \"jjj\"")

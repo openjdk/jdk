@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdi.ClassLoaderReference.definedClasses.definedclasses005
  *        nsk.jdi.ClassLoaderReference.definedClasses.definedclasses005a
  *
@@ -61,13 +60,13 @@
  * @run driver nsk.share.ExtraClassesBuilder
  *      loadclass
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdi.ClassLoaderReference.definedClasses.definedclasses005
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=${test.vm.opts} ${test.java.opts}" ./bin
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}" ./bin
  */
 

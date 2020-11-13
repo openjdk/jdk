@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,13 +50,13 @@ public interface XMLEventWriter extends XMLEventConsumer {
 
   /**
    * Writes any cached events to the underlying output mechanism
-   * @throws XMLStreamException
+   * @throws XMLStreamException if an error occurs
    */
   public void flush() throws XMLStreamException;
 
   /**
    * Frees any resources associated with this stream
-   * @throws XMLStreamException
+   * @throws XMLStreamException if an error occurs
    */
   public void close() throws XMLStreamException;
 
@@ -180,7 +180,7 @@ public interface XMLEventWriter extends XMLEventConsumer {
    *   </tbody>
    * </table>
    * @param event the event to be added
-   * @throws XMLStreamException
+   * @throws XMLStreamException if an error occurs
    */
   public void add(XMLEvent event) throws XMLStreamException;
 
@@ -192,7 +192,7 @@ public interface XMLEventWriter extends XMLEventConsumer {
    * event reader and call add on each event.
    *
    * @param reader the event stream to add to the output
-   * @throws XMLStreamException
+   * @throws XMLStreamException if an error occurs
    */
 
   public void add(XMLEventReader reader) throws XMLStreamException;
@@ -200,7 +200,8 @@ public interface XMLEventWriter extends XMLEventConsumer {
   /**
    * Gets the prefix the uri is bound to
    * @param uri the uri to look up
-   * @throws XMLStreamException
+   * @return the prefix
+   * @throws XMLStreamException if an error occurs
    */
   public String getPrefix(String uri) throws XMLStreamException;
 
@@ -211,7 +212,7 @@ public interface XMLEventWriter extends XMLEventConsumer {
    * the prefix is bound in the root scope.
    * @param prefix the prefix to bind to the uri
    * @param uri the uri to bind to the prefix
-   * @throws XMLStreamException
+   * @throws XMLStreamException if an error occurs
    */
   public void setPrefix(String prefix, String uri) throws XMLStreamException;
 
@@ -222,7 +223,7 @@ public interface XMLEventWriter extends XMLEventConsumer {
    * If this method is called before a START_ELEMENT has been written
    * the uri is bound in the root scope.
    * @param uri the uri to bind to the default namespace
-   * @throws XMLStreamException
+   * @throws XMLStreamException if an error occurs
    */
   public void setDefaultNamespace(String uri) throws XMLStreamException;
 
@@ -234,7 +235,7 @@ public interface XMLEventWriter extends XMLEventConsumer {
    * the context passed to the method as the root context for resolving
    * namespaces.
    * @param context the namespace context to use for this writer
-   * @throws XMLStreamException
+   * @throws XMLStreamException if an error occurs
    */
   public void setNamespaceContext(NamespaceContext context)
     throws XMLStreamException;

@@ -38,11 +38,9 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build ExecDriver
- *        nsk.jvmti.scenarios.allocation.AP12.ap12t001
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
- *      "-agentlib:ap12t001=-waittime=5 -verbose"
+ * @build nsk.jvmti.scenarios.allocation.AP12.ap12t001
+ * @run main/othervm/native
+ *      -agentlib:ap12t001=-waittime=5,-verbose
  *      -XX:-UseGCOverheadLimit
  *      nsk.jvmti.scenarios.allocation.AP12.ap12t001
  */

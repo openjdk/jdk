@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@
 #include "memory/allocation.hpp"
 #include "utilities/xmlstream.hpp"
 
+JVMCI_ONLY(class JVMCICompileState;)
+
 // CompileTask
 //
 // An entry in the compile queue.  It represents a pending or current
@@ -42,15 +44,12 @@ class CompileTask : public CHeapObj<mtCompiler> {
 
  public:
   // Different reasons for a compilation
-  // The order is important - Reason_Whitebox and higher can not become
-  // stale, see CompileTask::can_become_stale()
-  // Also mapped to reason_names[]
+  // The order is important - mapped to reason_names[]
   enum CompileReason {
       Reason_None,
       Reason_InvocationCount,  // Simple/StackWalk-policy
       Reason_BackedgeCount,    // Simple/StackWalk-policy
       Reason_Tiered,           // Tiered-policy
-      Reason_CTW,              // Compile the world
       Reason_Replay,           // ciReplay
       Reason_Whitebox,         // Whitebox API
       Reason_MustBeCompiled,   // Used for -Xcomp or AlwaysCompileLoopMethods (see CompilationPolicy::must_be_compiled())
@@ -64,7 +63,6 @@ class CompileTask : public CHeapObj<mtCompiler> {
       "count",
       "backedge_count",
       "tiered",
-      "CTW",
       "replay",
       "whitebox",
       "must_be_compiled",
@@ -85,8 +83,8 @@ class CompileTask : public CHeapObj<mtCompiler> {
   bool         _is_blocking;
 #if INCLUDE_JVMCI
   bool         _has_waiter;
-  // Compiler thread for a blocking JVMCI compilation
-  CompilerThread* _jvmci_compiler_thread;
+  // Compilation state for a blocking JVMCI compilation
+  JVMCICompileState* _blocking_jvmci_compile_state;
 #endif
   int          _comp_level;
   int          _num_inlined_bytecodes;
@@ -137,7 +135,6 @@ class CompileTask : public CHeapObj<mtCompiler> {
   bool         should_wait_for_compilation() const {
     // Wait for blocking compilation to finish.
     switch (_compile_reason) {
-        case Reason_CTW:
         case Reason_Replay:
         case Reason_Whitebox:
         case Reason_Bootstrap:
@@ -149,11 +146,9 @@ class CompileTask : public CHeapObj<mtCompiler> {
 
   bool         has_waiter() const                { return _has_waiter; }
   void         clear_waiter()                    { _has_waiter = false; }
-  CompilerThread* jvmci_compiler_thread() const  { return _jvmci_compiler_thread; }
-  void         set_jvmci_compiler_thread(CompilerThread* t) {
-    assert(is_blocking(), "must be");
-    assert((t == NULL) != (_jvmci_compiler_thread == NULL), "must be");
-    _jvmci_compiler_thread = t;
+  JVMCICompileState* blocking_jvmci_compile_state() const { return _blocking_jvmci_compile_state; }
+  void         set_blocking_jvmci_compile_state(JVMCICompileState* state) {
+    _blocking_jvmci_compile_state = state;
   }
 #endif
 

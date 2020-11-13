@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,12 +38,10 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build ExecDriver
- *        nsk.jvmti.scenarios.hotswap.HS102.hs102t001
+ * @build nsk.jvmti.scenarios.hotswap.HS102.hs102t001
  *        nsk.share.jvmti.ProfileCollector
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
- *      "-agentlib:HotSwap=-waittime=5 package=java/lang samples=10 mode=compiled"
+ * @run main/othervm/native
+ *      -agentlib:HotSwap=-waittime=5,package=java/lang,samples=10,mode=compiled
  *      nsk.jvmti.scenarios.hotswap.HS102.hs102t001
  */
 

@@ -26,6 +26,7 @@ package MyPackage;
 /**
  * @test
  * @summary Verifies the JVMTI AddModuleReads API
+ * @requires vm.jvmti
  * @compile AddModuleReadsTest.java
  * @run main/othervm/native -agentlib:AddModuleReadsTest MyPackage.AddModuleReadsTest
  */

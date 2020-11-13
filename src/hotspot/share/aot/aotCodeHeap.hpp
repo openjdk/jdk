@@ -27,7 +27,6 @@
 #include "aot/aotCompiledMethod.hpp"
 #include "classfile/symbolTable.hpp"
 #include "metaprogramming/integralConstant.hpp"
-#include "metaprogramming/isRegisteredEnum.hpp"
 #include "oops/metadata.hpp"
 #include "oops/method.hpp"
 
@@ -36,8 +35,6 @@ enum CodeState {
   in_use  = 1, // _aot field is set to corresponding AOTCompiledMethod
   invalid = 2  // AOT code is invalidated because dependencies failed
 };
-
-template<> struct IsRegisteredEnum<CodeState> : public TrueType {};
 
 typedef struct {
   AOTCompiledMethod* _aot;

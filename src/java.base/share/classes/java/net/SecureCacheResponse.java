@@ -40,6 +40,11 @@ import java.util.Optional;
  */
 public abstract class SecureCacheResponse extends CacheResponse {
     /**
+     * Constructor for subclasses to call.
+     */
+    public SecureCacheResponse() {}
+
+    /**
      * Returns the cipher suite in use on the original connection that
      * retrieved the network resource.
      *

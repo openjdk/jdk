@@ -28,34 +28,42 @@
 #include "gc/g1/heapRegion.hpp"
 #include "memory/allocation.hpp"
 
+class G1AdaptiveIHOPControl;
+
 // Track allocation details in the old generation.
 class G1OldGenAllocationTracker : public CHeapObj<mtGC> {
-  // New bytes allocated in old gen between the end of the last GC and
-  // the end of the GC before that.
-  size_t _last_cycle_old_bytes;
-  // The number of seconds between the end of the last GC and
-  // the end of the GC before that.
-  double _last_cycle_duration;
+  // Total number of bytes allocated in the old generaton during
+  // last mutator period.
+  size_t _last_period_old_gen_bytes;
+  // Total growth of the old geneneration for last mutator period,
+  // taking eager reclaim into consideration.
+  size_t _last_period_old_gen_growth;
 
+  // Total size of humongous objects for last gc.
+  size_t _humongous_bytes_after_last_gc;
+
+  // Non-humongous old generation allocations during last mutator period.
   size_t _allocated_bytes_since_last_gc;
-
-  void reset_cycle_after_gc() {
-    _last_cycle_old_bytes = _allocated_bytes_since_last_gc;
-    _allocated_bytes_since_last_gc = 0;
-  }
+  // Humongous allocations during last mutator period.
+  size_t _allocated_humongous_bytes_since_last_gc;
 
 public:
   G1OldGenAllocationTracker();
-  // Add the given number of bytes to the total number of allocated bytes in the old gen.
+
   void add_allocated_bytes_since_last_gc(size_t bytes) { _allocated_bytes_since_last_gc += bytes; }
+  void add_allocated_humongous_bytes_since_last_gc(size_t bytes) { _allocated_humongous_bytes_since_last_gc += bytes; }
 
-  size_t last_cycle_old_bytes() { return _last_cycle_old_bytes; }
+  // Record a humongous allocation in a collection pause. This allocation
+  // is accounted to the previous mutator period.
+  void record_collection_pause_humongous_allocation(size_t bytes) {
+    _humongous_bytes_after_last_gc += bytes;
+  }
 
-  double last_cycle_duration() { return _last_cycle_duration; }
+  size_t last_period_old_gen_bytes() const { return _last_period_old_gen_bytes; }
+  size_t last_period_old_gen_growth() const { return _last_period_old_gen_growth; };
 
-  // Reset stats after a collection.
-  void reset_after_full_gc();
-  void reset_after_young_gc(double allocation_duration_s);
+  // Calculates and resets stats after a collection.
+  void reset_after_gc(size_t humongous_bytes_after_gc);
 };
 
 #endif // SHARE_VM_GC_G1_G1OLDGENALLOCATIONTRACKER_HPP

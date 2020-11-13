@@ -36,6 +36,11 @@ import javax.swing.JTabbedPane;
  */
 public abstract class TabbedPaneUI extends ComponentUI {
     /**
+     * Constructor for subclasses to call.
+     */
+    protected TabbedPaneUI() {}
+
+    /**
      * Returns the tab for the coordinate.
      * @param pane the pane
      * @param x the x coordinate

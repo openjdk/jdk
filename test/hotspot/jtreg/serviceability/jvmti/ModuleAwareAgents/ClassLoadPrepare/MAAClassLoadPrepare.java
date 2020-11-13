@@ -26,6 +26,7 @@
  * @bug 8165681
  * @summary Verify ClassLoad and ClassPrepare JVMTI event with
  * and without can_generate_early_vmstart capability
+ * @requires vm.jvmti
  * @run main/othervm/native -agentlib:MAAClassLoadPrepare MAAClassLoadPrepare
  * @run main/othervm/native -agentlib:MAAClassLoadPrepare=with_early_vmstart MAAClassLoadPrepare
  */

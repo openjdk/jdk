@@ -43,10 +43,10 @@ import compiler.intrinsics.sha.cli.testcases.UseSHASpecificTestCaseForSupportedC
 
 public class TestUseSHAOptionOnSupportedCPU {
     public static void main(String args[]) throws Throwable {
-        new SHAOptionsBase(
+        new DigestOptionsBase(
                 new GenericTestCaseForSupportedCPU(
-                        SHAOptionsBase.USE_SHA_OPTION),
+                        DigestOptionsBase.USE_SHA_OPTION),
                 new UseSHASpecificTestCaseForSupportedCPU(
-                        SHAOptionsBase.USE_SHA_OPTION)).test();
+                        DigestOptionsBase.USE_SHA_OPTION)).test();
     }
 }

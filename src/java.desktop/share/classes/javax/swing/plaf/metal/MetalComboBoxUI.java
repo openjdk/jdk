@@ -43,7 +43,7 @@ import java.beans.*;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans&trade;
+ * of all JavaBeans
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -53,6 +53,11 @@ import java.beans.*;
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class MetalComboBoxUI extends BasicComboBoxUI {
+
+    /**
+     * Constructs a {@code MetalComboBoxUI}.
+     */
+    public MetalComboBoxUI() {}
 
     /**
      * Constructs an instance of {@code MetalComboBoxUI}.
@@ -210,6 +215,11 @@ public class MetalComboBoxUI extends BasicComboBoxUI {
      * Instantiate it only within subclasses of {@code MetalComboBoxUI}.
      */
     public class MetalPropertyChangeListener extends BasicComboBoxUI.PropertyChangeHandler {
+        /**
+         * Constructs a {@code MetalPropertyChangeListener}.
+         */
+        public MetalPropertyChangeListener() {}
+
         public void propertyChange(PropertyChangeEvent e) {
             super.propertyChange( e );
             String propertyName = e.getPropertyName();
@@ -255,6 +265,11 @@ public class MetalComboBoxUI extends BasicComboBoxUI {
      * Instantiate it only within subclasses of {@code MetalComboBoxUI}.
      */
     public class MetalComboBoxLayoutManager extends BasicComboBoxUI.ComboBoxLayoutManager {
+        /**
+         * Constructs a {@code MetalComboBoxLayoutManager}.
+         */
+        public MetalComboBoxLayoutManager() {}
+
         public void layoutContainer( Container parent ) {
             layoutComboBox( parent, this );
         }

@@ -82,14 +82,14 @@ class DerivedColor extends Color {
         if (src != null) {
             float[] tmp = Color.RGBtoHSB(src.getRed(), src.getGreen(), src.getBlue(), null);
             // apply offsets
-            tmp[0] = clamp(tmp[0] + hOffset);
+            tmp[0] = tmp[0] + hOffset;
             tmp[1] = clamp(tmp[1] + sOffset);
             tmp[2] = clamp(tmp[2] + bOffset);
             int alpha = clamp(src.getAlpha() + aOffset);
             argbValue = (Color.HSBtoRGB(tmp[0], tmp[1], tmp[2]) & 0xFFFFFF) | (alpha << 24);
         } else {
             float[] tmp = new float[3];
-            tmp[0] = clamp(hOffset);
+            tmp[0] = hOffset;
             tmp[1] = clamp(sOffset);
             tmp[2] = clamp(bOffset);
             int alpha = clamp(aOffset);

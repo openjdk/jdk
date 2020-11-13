@@ -210,7 +210,7 @@ public final class Guards {
         assert test.type().parameterCount() == 1;
         assert test.type().returnType() == Boolean.TYPE;
         return MethodHandles.permuteArguments(test.asType(test.type().changeParameterType(0, type.parameterType(pos))),
-                type.changeReturnType(Boolean.TYPE), new int[] { pos });
+                type.changeReturnType(Boolean.TYPE), pos);
     }
 
     private static final MethodHandle IS_INSTANCE = Lookup.PUBLIC.findVirtual(Class.class, "isInstance",

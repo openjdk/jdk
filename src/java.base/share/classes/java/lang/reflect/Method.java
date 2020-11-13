@@ -25,12 +25,12 @@
 
 package java.lang.reflect;
 
-import jdk.internal.HotSpotIntrinsicCandidate;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.MethodAccessor;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 import sun.reflect.annotation.ExceptionProxy;
 import sun.reflect.annotation.TypeNotPresentExceptionProxy;
 import sun.reflect.generics.repository.MethodRepository;
@@ -277,7 +277,7 @@ public final class Method extends Executable {
      * @throws GenericSignatureFormatError
      *     if the generic method signature does not conform to the format
      *     specified in
-     *     <cite>The Java&trade; Virtual Machine Specification</cite>
+     *     <cite>The Java Virtual Machine Specification</cite>
      * @throws TypeNotPresentException if the underlying method's
      *     return type refers to a non-existent type declaration
      * @throws MalformedParameterizedTypeException if the
@@ -546,7 +546,7 @@ public final class Method extends Executable {
      */
     @CallerSensitive
     @ForceInline // to ensure Reflection.getCallerClass optimization
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public Object invoke(Object obj, Object... args)
         throws IllegalAccessException, IllegalArgumentException,
            InvocationTargetException

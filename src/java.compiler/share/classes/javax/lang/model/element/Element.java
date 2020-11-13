@@ -137,7 +137,8 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      *
      * If this element represents an unnamed {@linkplain
      * PackageElement#getSimpleName package} or unnamed {@linkplain
-     * ModuleElement#getSimpleName module}, an empty name is returned.
+     * ModuleElement#getSimpleName module}, an <a
+     * href=Name.html#empty_name>empty name</a> is returned.
      *
      * If it represents a {@linkplain ExecutableElement#getSimpleName
      * constructor}, the name "{@code <init>}" is returned.  If it
@@ -146,7 +147,8 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      *
      * If it represents an {@linkplain TypeElement#getSimpleName
      * anonymous class} or {@linkplain ExecutableElement#getSimpleName
-     * instance initializer}, an empty name is returned.
+     * instance initializer}, an <a href=Name.html#empty_name>empty
+     * name</a> is returned.
      *
      * @return the simple name of this element
      * @see PackageElement#getSimpleName
@@ -156,7 +158,6 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      * @see ModuleElement#getSimpleName
      * @see RecordComponentElement#getSimpleName
      * @revised 9
-     * @spec JPMS
      */
     Name getSimpleName();
 
@@ -198,7 +199,6 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      * @return the enclosing element, or {@code null} if there is none
      * @see Elements#getPackageOf
      * @revised 9
-     * @spec JPMS
      */
     Element getEnclosingElement();
 
@@ -235,7 +235,6 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      * @jls 8.8.9 Default Constructor
      * @jls 8.9 Enum Types
      * @revised 9
-     * @spec JPMS
      */
     List<? extends Element> getEnclosedElements();
 

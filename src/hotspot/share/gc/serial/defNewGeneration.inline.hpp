@@ -45,7 +45,7 @@ inline void DefNewGeneration::KeepAliveClosure::do_oop_work(T* p) {
   }
 #endif // ASSERT
 
-  Devirtualizer::do_oop_no_verify(_cl, p);
+  Devirtualizer::do_oop(_cl, p);
 
   // Card marking is trickier for weak refs.
   // This oop is a 'next' field which was filled in while we
@@ -77,7 +77,7 @@ inline void DefNewGeneration::FastKeepAliveClosure::do_oop_work(T* p) {
   }
 #endif // ASSERT
 
-  Devirtualizer::do_oop_no_verify(_cl, p);
+  Devirtualizer::do_oop(_cl, p);
 
   // Optimized for Defnew generation if it's the youngest generation:
   // we set a younger_gen card if we have an older->youngest
@@ -90,11 +90,10 @@ inline void DefNewGeneration::FastKeepAliveClosure::do_oop_work(T* p) {
 
 template <typename OopClosureType>
 void DefNewGeneration::oop_since_save_marks_iterate(OopClosureType* cl) {
-  cl->set_generation(this);
   eden()->oop_since_save_marks_iterate(cl);
   to()->oop_since_save_marks_iterate(cl);
   from()->oop_since_save_marks_iterate(cl);
-  cl->reset_generation();
+
   save_marks();
 }
 

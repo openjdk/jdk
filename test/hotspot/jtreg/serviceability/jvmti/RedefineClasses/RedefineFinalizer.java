@@ -25,6 +25,7 @@
  * @test
  * @bug 6904403 8010319
  * @summary Don't assert if we redefine finalize method
+ * @requires vm.jvmti
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.compiler

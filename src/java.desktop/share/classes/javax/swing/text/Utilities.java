@@ -50,6 +50,11 @@ import static sun.swing.SwingUtilities2.getFontCharsWidth;
  */
 public class Utilities {
     /**
+     * Constructs a {@code Utilities}.
+     */
+    public Utilities() {}
+
+    /**
      * If <code>view</code>'s container is a <code>JComponent</code> it
      * is returned, after casting.
      */

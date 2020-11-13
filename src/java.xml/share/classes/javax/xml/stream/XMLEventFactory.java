@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,10 +45,14 @@ import javax.xml.stream.events.*;
  * @since 1.6
  */
 public abstract class XMLEventFactory {
-  protected XMLEventFactory(){}
-
     static final String JAXPFACTORYID = "javax.xml.stream.XMLEventFactory";
     static final String DEFAULIMPL = "com.sun.xml.internal.stream.events.XMLEventFactoryImpl";
+
+    /**
+     * Protected constructor to prevent instantiation.
+     * Use {@link #newFactory()} instead.
+     */
+    protected XMLEventFactory(){}
 
    /**
    * Creates a new instance of the {@code XMLEventFactory} builtin
@@ -66,6 +70,8 @@ public abstract class XMLEventFactory {
   /**
    * Creates a new instance of the factory in exactly the same manner as the
    * {@link #newFactory()} method.
+   *
+   * @return an instance of the {@code XMLEventFactory}
    * @throws FactoryConfigurationError if an instance of this factory cannot be loaded
    */
   public static XMLEventFactory newInstance()
@@ -126,6 +132,7 @@ public abstract class XMLEventFactory {
    *   Once an application has obtained a reference to a XMLEventFactory it
    *   can use the factory to configure and obtain stream instances.
    *
+   * @return an instance of the {@code XMLEventFactory}
    * @throws FactoryConfigurationError in case of {@linkplain
    *   java.util.ServiceConfigurationError service configuration error} or if
    *   the implementation is not available or cannot be instantiated.
@@ -474,9 +481,9 @@ public abstract class XMLEventFactory {
   public abstract EntityReference createEntityReference(String name,
                                                         EntityDeclaration declaration);
   /**
-   * Create a comment
+   * Create a comment.
    * @param text The text of the comment
-   * a Comment event
+   * @return a Comment event
    */
   public abstract Comment createComment(String text);
 

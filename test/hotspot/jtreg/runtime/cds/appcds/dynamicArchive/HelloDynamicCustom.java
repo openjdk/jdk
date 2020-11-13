@@ -36,11 +36,11 @@
  */
 
 import java.io.File;
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class HelloDynamicCustom extends DynamicArchiveTestBase {
-    private static final String ARCHIVE_NAME =
-        System.getProperty("test.classes") + File.separator + "HelloDynamicCustom-top.jsa";
+    private static final String ARCHIVE_NAME = CDSTestUtils.getOutputFileName("top.jsa");
 
     public static void main(String[] args) throws Exception {
         runTest(HelloDynamicCustom::testDefaultBase);

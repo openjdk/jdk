@@ -34,6 +34,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  *
  * @test
  * @bug 8005056 8009728 8218399
+ * @requires vm.jvmti
  * @requires !vm.graal.enabled
  * @library /test/lib
  * @modules java.base/jdk.internal.misc

@@ -28,6 +28,7 @@ package MyPackage;
  * @test
  * @build Frame HeapMonitor ThreadInformation
  * @summary Verifies the JVMTI Heap Monitor does not work with two agents.
+ * @requires vm.jvmti
  * @compile HeapMonitorTwoAgentsTest.java
  * @run main/othervm/native -agentlib:HeapMonitorTest MyPackage.HeapMonitorTwoAgentsTest
  */

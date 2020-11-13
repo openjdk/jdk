@@ -163,6 +163,11 @@ public class BasicScrollBarUI
      */
     protected int decrGap;
 
+    /**
+     * Constructs a {@code BasicScrollBarUI}.
+     */
+    public BasicScrollBarUI() {}
+
     static void loadActionMap(LazyActionMap map) {
         map.put(new Actions(Actions.POSITIVE_UNIT_INCREMENT));
         map.put(new Actions(Actions.POSITIVE_BLOCK_INCREMENT));
@@ -1171,6 +1176,11 @@ public class BasicScrollBarUI
      * A listener to listen for model changes.
      */
     protected class ModelListener implements ChangeListener {
+        /**
+         * Constructs a {@code ModelListener}.
+         */
+        protected ModelListener() {}
+
         public void stateChanged(ChangeEvent e) {
             if (!useCachedValue) {
                 scrollBarValue = scrollbar.getValue();
@@ -1194,6 +1204,11 @@ public class BasicScrollBarUI
         /** Current mouse y position */
         protected transient int currentMouseY;
         private transient int direction = +1;
+
+        /**
+         * Constructs a {@code TrackListener}.
+         */
+        protected TrackListener() {}
 
         /** {@inheritDoc} */
         public void mouseReleased(MouseEvent e)
@@ -1493,6 +1508,11 @@ public class BasicScrollBarUI
         // (keyfocus on scrollbars causes action without mousePress
         boolean handledEvent;
 
+        /**
+         * Constructs an {@code ArrowButtonListener}.
+         */
+        protected ArrowButtonListener() {}
+
         public void mousePressed(MouseEvent e)          {
             if(!scrollbar.isEnabled()) { return; }
             // not an unmodified left mouse button
@@ -1645,6 +1665,11 @@ public class BasicScrollBarUI
     /** Property change handler */
     public class PropertyChangeHandler implements PropertyChangeListener
     {
+        /**
+         * Constructs a {@code PropertyChangeHandler}.
+         */
+        public PropertyChangeHandler() {}
+
         // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this

@@ -242,16 +242,6 @@ ifneq ($(filter product-bundles% legacy-bundles, $(MAKECMDGOALS)), )
       )
 
   JDK_SYMBOLS_BUNDLE_FILES := \
-      $(filter \
-          $(JDK_SYMBOLS_EXCLUDE_PATTERN) \
-          $(SYMBOLS_EXCLUDE_PATTERN) \
-          , \
-          $(filter-out \
-              $(JDK_IMAGE_HOMEDIR)/demo/% %.stripped.pdb \
-              , \
-              $(ALL_JDK_SYMBOLS_FILES) \
-          ) \
-      ) \
       $(call FindFiles, $(SYMBOLS_IMAGE_DIR))
 
   TEST_DEMOS_BUNDLE_FILES := $(filter $(JDK_DEMOS_IMAGE_HOMEDIR)/demo/%, \
@@ -383,7 +373,7 @@ ifneq ($(filter product-bundles% legacy-bundles, $(MAKECMDGOALS)), )
     $(eval $(call SetupBundleFile, BUILD_JDK_SYMBOLS_BUNDLE, \
         BUNDLE_NAME := $(JDK_SYMBOLS_BUNDLE_NAME), \
         FILES := $(JDK_SYMBOLS_BUNDLE_FILES), \
-        BASE_DIRS := $(JDK_SYMBOLS_IMAGE_DIR) $(wildcard $(SYMBOLS_IMAGE_DIR)), \
+        BASE_DIRS := $(SYMBOLS_IMAGE_DIR), \
         SUBDIR := $(JDK_BUNDLE_SUBDIR), \
         UNZIP_DEBUGINFO := true, \
     ))
@@ -420,17 +410,43 @@ endif
 
 ################################################################################
 
-ifneq ($(filter docs-bundles, $(MAKECMDGOALS)), )
-  DOCS_BUNDLE_FILES := $(call FindFiles, $(DOCS_IMAGE_DIR))
+ifneq ($(filter docs-jdk-bundles, $(MAKECMDGOALS)), )
+  DOCS_JDK_BUNDLE_FILES := $(call FindFiles, $(DOCS_JDK_IMAGE_DIR))
 
-  $(eval $(call SetupBundleFile, BUILD_DOCS_BUNDLE, \
-      BUNDLE_NAME := $(DOCS_BUNDLE_NAME), \
-      FILES := $(DOCS_BUNDLE_FILES), \
-      BASE_DIRS := $(DOCS_IMAGE_DIR), \
+  $(eval $(call SetupBundleFile, BUILD_DOCS_JDK_BUNDLE, \
+      BUNDLE_NAME := $(DOCS_JDK_BUNDLE_NAME), \
+      FILES := $(DOCS_JDK_BUNDLE_FILES), \
+      BASE_DIRS := $(DOCS_JDK_IMAGE_DIR), \
       SUBDIR := docs, \
   ))
 
-  DOCS_TARGETS += $(BUILD_DOCS_BUNDLE)
+  DOCS_JDK_TARGETS += $(BUILD_DOCS_JDK_BUNDLE)
+endif
+
+ifneq ($(filter docs-javase-bundles, $(MAKECMDGOALS)), )
+  DOCS_JAVASE_BUNDLE_FILES := $(call FindFiles, $(DOCS_JAVASE_IMAGE_DIR))
+
+  $(eval $(call SetupBundleFile, BUILD_DOCS_JAVASE_BUNDLE, \
+      BUNDLE_NAME := $(DOCS_JAVASE_BUNDLE_NAME), \
+      FILES := $(DOCS_JAVASE_BUNDLE_FILES), \
+      BASE_DIRS := $(DOCS_JAVASE_IMAGE_DIR), \
+      SUBDIR := docs-javase, \
+  ))
+
+  DOCS_JAVASE_TARGETS += $(BUILD_DOCS_JAVASE_BUNDLE)
+endif
+
+ifneq ($(filter docs-reference-bundles, $(MAKECMDGOALS)), )
+  DOCS_REFERENCE_BUNDLE_FILES := $(call FindFiles, $(DOCS_REFERENCE_IMAGE_DIR))
+
+  $(eval $(call SetupBundleFile, BUILD_DOCS_REFERENCE_BUNDLE, \
+      BUNDLE_NAME := $(DOCS_REFERENCE_BUNDLE_NAME), \
+      FILES := $(DOCS_REFERENCE_BUNDLE_FILES), \
+      BASE_DIRS := $(DOCS_REFERENCE_IMAGE_DIR), \
+      SUBDIR := docs-reference, \
+  ))
+
+  DOCS_REFERENCE_TARGETS += $(BUILD_DOCS_REFERENCE_BUNDLE)
 endif
 
 ################################################################################
@@ -479,9 +495,12 @@ $(eval $(call IncludeCustomExtension, Bundles.gmk))
 product-bundles: $(PRODUCT_TARGETS)
 legacy-bundles: $(LEGACY_TARGETS)
 test-bundles: $(TEST_TARGETS)
-docs-bundles: $(DOCS_TARGETS)
+docs-jdk-bundles: $(DOCS_JDK_TARGETS)
+docs-javase-bundles: $(DOCS_JAVASE_TARGETS)
+docs-reference-bundles: $(DOCS_REFERENCE_TARGETS)
 static-libs-bundles: $(STATIC_LIBS_TARGETS)
 jcov-bundles: $(JCOV_TARGETS)
 
-.PHONY: all default product-bundles test-bundles docs-bundles \
+.PHONY: all default product-bundles test-bundles \
+    docs-jdk-bundles docs-javase-bundles docs-reference-bundles \
     static-libs-bundles jcov-bundles

@@ -63,10 +63,8 @@ package jdk.dynalink.beans;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
-import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.security.AccessControlContext;
@@ -76,8 +74,6 @@ import jdk.dynalink.CallSiteDescriptor;
 import jdk.dynalink.SecureLookupSupplier;
 import jdk.dynalink.internal.AccessControlContextFactory;
 import jdk.dynalink.linker.support.Lookup;
-import jdk.internal.reflect.CallerSensitive;
-
 
 /**
  * A dynamic method bound to exactly one Java method or constructor that is caller sensitive. Since the target method is
@@ -90,21 +86,18 @@ class CallerSensitiveDynamicMethod extends SingleDynamicMethod {
             AccessControlContextFactory.createAccessControlContext(
                     SecureLookupSupplier.GET_LOOKUP_PERMISSION_NAME);
 
-    // Typed as "AccessibleObject" as it can be either a method or a constructor.
-    // If we were Java8-only, we could use java.lang.reflect.Executable
-    private final AccessibleObject target;
+    private final Executable target;
     private final MethodType type;
 
-    CallerSensitiveDynamicMethod(final AccessibleObject target) {
+    CallerSensitiveDynamicMethod(final Executable target) {
         super(getName(target));
         this.target = target;
         this.type = getMethodType(target);
     }
 
-    private static String getName(final AccessibleObject target) {
-        final Member m = (Member)target;
+    private static String getName(final Executable m) {
         final boolean constructor = m instanceof Constructor;
-        return getMethodNameWithSignature(getMethodType(target), constructor ? m.getName() :
+        return getMethodNameWithSignature(getMethodType(m), constructor ? m.getName() :
             getClassAndMethodName(m.getDeclaringClass(), m.getName()), !constructor);
     }
 
@@ -113,12 +106,11 @@ class CallerSensitiveDynamicMethod extends SingleDynamicMethod {
         return type;
     }
 
-    private static MethodType getMethodType(final AccessibleObject ao) {
-        final boolean isMethod = ao instanceof Method;
-        final Class<?> rtype = isMethod ? ((Method)ao).getReturnType() : ((Constructor<?>)ao).getDeclaringClass();
-        final Class<?>[] ptypes = isMethod ? ((Method)ao).getParameterTypes() : ((Constructor<?>)ao).getParameterTypes();
+    private static MethodType getMethodType(final Executable m) {
+        final boolean isMethod = m instanceof Method;
+        final Class<?> rtype = isMethod ? ((Method)m).getReturnType() : ((Constructor<?>)m).getDeclaringClass();
+        final Class<?>[] ptypes = m.getParameterTypes();
         final MethodType type = MethodType.methodType(rtype, ptypes);
-        final Member m = (Member)ao;
         return type.insertParameterTypes(0,
                 isMethod ?
                         Modifier.isStatic(m.getModifiers()) ?
@@ -129,18 +121,18 @@ class CallerSensitiveDynamicMethod extends SingleDynamicMethod {
 
     @Override
     boolean isVarArgs() {
-        return target instanceof Method ? ((Method)target).isVarArgs() : ((Constructor<?>)target).isVarArgs();
+        return target.isVarArgs();
     }
 
     @Override
     MethodHandle getTarget(final CallSiteDescriptor desc) {
         final MethodHandles.Lookup lookup = AccessController.doPrivileged(
-                (PrivilegedAction<MethodHandles.Lookup>)()->desc.getLookup(),
+                (PrivilegedAction<MethodHandles.Lookup>)desc::getLookup,
                 GET_LOOKUP_CONTEXT);
 
         if(target instanceof Method) {
             final MethodHandle mh = unreflect(lookup, (Method)target);
-            if(Modifier.isStatic(((Member)target).getModifiers())) {
+            if(Modifier.isStatic(target.getModifiers())) {
                 return StaticClassIntrospector.editStaticMethodHandle(mh);
             }
             return mh;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @run main/othervm
  *      nsk.monitoring.RuntimeMXBean.RuntimeMXBean006.RuntimeMXBean006
  *      -testMode=directly
@@ -57,7 +56,8 @@ public class RuntimeMXBean006 extends MonitoringTestBase implements Initializabl
     public void initialize() {
         runtime = monitoringFactory.getRuntimeMXBean();
         /* Name should be on the format <pid>@<hostname>. */
-        namePattern = Pattern.compile("^[0-9]+@(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\\-]*[A-Za-z0-9])$");
+        namePattern = Pattern.compile("^[0-9]+@(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*" +
+                                      "[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$");
     }
 
     private void testGetName() {

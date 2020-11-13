@@ -168,7 +168,7 @@
 
 -(int) getOSXKeyCodeForJavaKey : (int) javaKey {
     id val = [javaToMacKeyMap objectForKey : [NSNumber numberWithInt : javaKey]];
-	
+
     if (nil != val) {
         return [val intValue];
     } else {

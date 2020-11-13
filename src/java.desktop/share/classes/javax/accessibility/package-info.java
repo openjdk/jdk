@@ -57,7 +57,7 @@
  * accessible name, description, <a href="#AccessibleRole">role</a>, and
  * <a href="#AccessibleState">state</a> of the object, as well as information
  * about the parent and children of the object.&nbsp; In addition,
- * JavaBeans&trade; property change support is also included to allow assistive
+ * JavaBeans property change support is also included to allow assistive
  * technologies learn when the values of the accessible properties change.
  * AccessibleContext also contains methods for obtaining more specific
  * accessibility information about a component. If the component supports it,

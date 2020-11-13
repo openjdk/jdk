@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package java.nio;
 
-import jdk.internal.HotSpotIntrinsicCandidate;
 import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.foreign.MemorySegmentProxy;
@@ -33,6 +32,7 @@ import jdk.internal.access.foreign.UnmapperProxy;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM.BufferPool;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import java.io.FileDescriptor;
 import java.util.Spliterator;
@@ -364,8 +364,8 @@ public abstract class Buffer {
         if (newLimit > capacity | newLimit < 0)
             throw createLimitException(newLimit);
         limit = newLimit;
-        if (position > limit) position = limit;
-        if (mark > limit) mark = -1;
+        if (position > newLimit) position = newLimit;
+        if (mark > newLimit) mark = -1;
         return this;
     }
 
@@ -689,16 +689,18 @@ public abstract class Buffer {
      * @return  The current position value, before it is incremented
      */
     final int nextGetIndex() {                          // package-private
-        if (position >= limit)
+        int p = position;
+        if (p >= limit)
             throw new BufferUnderflowException();
-        return position++;
+        position = p + 1;
+        return p;
     }
 
     final int nextGetIndex(int nb) {                    // package-private
-        if (limit - position < nb)
-            throw new BufferUnderflowException();
         int p = position;
-        position += nb;
+        if (limit - p < nb)
+            throw new BufferUnderflowException();
+        position = p + nb;
         return p;
     }
 
@@ -710,16 +712,18 @@ public abstract class Buffer {
      * @return  The current position value, before it is incremented
      */
     final int nextPutIndex() {                          // package-private
-        if (position >= limit)
+        int p = position;
+        if (p >= limit)
             throw new BufferOverflowException();
-        return position++;
+        position = p + 1;
+        return p;
     }
 
     final int nextPutIndex(int nb) {                    // package-private
-        if (limit - position < nb)
-            throw new BufferOverflowException();
         int p = position;
-        position += nb;
+        if (limit - p < nb)
+            throw new BufferOverflowException();
+        position = p + nb;
         return p;
     }
 
@@ -728,7 +732,7 @@ public abstract class Buffer {
      * IndexOutOfBoundsException} if it is not smaller than the limit
      * or is smaller than zero.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     final int checkIndex(int i) {                       // package-private
         if ((i < 0) || (i >= limit))
             throw new IndexOutOfBoundsException();

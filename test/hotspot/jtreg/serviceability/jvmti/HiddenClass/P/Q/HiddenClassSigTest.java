@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @requires vm.jvmti
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          jdk.compiler

@@ -70,6 +70,11 @@ import java.security.spec.InvalidKeySpecException;
 public abstract class KeyFactorySpi {
 
     /**
+     * Constructor for subclasses to call.
+     */
+    public KeyFactorySpi() {}
+
+    /**
      * Generates a public key object from the provided key
      * specification (key material).
      *

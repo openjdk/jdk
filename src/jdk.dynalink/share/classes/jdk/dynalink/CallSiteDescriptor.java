@@ -269,8 +269,7 @@ public class CallSiteDescriptor extends SecureLookupSupplier {
         final String mt = methodType.toString();
         final String l = getLookupPrivileged().toString();
         final String o = operation.toString();
-        final StringBuilder b = new StringBuilder(o.length() + mt.length() + 1 + l.length());
-        return b.append(o).append(mt).append('@').append(l).toString();
+        return o + mt + '@' + l;
     }
 
     private void assertChangeInvariants(final CallSiteDescriptor changed, final String caller) {

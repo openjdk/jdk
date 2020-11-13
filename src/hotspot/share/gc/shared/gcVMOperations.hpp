@@ -28,6 +28,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "memory/heapInspection.hpp"
+#include "memory/metaspace.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/jniHandles.hpp"
@@ -125,12 +126,15 @@ class VM_GC_HeapInspection: public VM_GC_Operation {
  private:
   outputStream* _out;
   bool _full_gc;
+  uint _parallel_thread_num;
  public:
-  VM_GC_HeapInspection(outputStream* out, bool request_full_gc) :
+  VM_GC_HeapInspection(outputStream* out, bool request_full_gc,
+                       uint parallel_thread_num = 1) :
     VM_GC_Operation(0 /* total collections,      dummy, ignored */,
                     GCCause::_heap_inspection /* GC Cause */,
                     0 /* total full collections, dummy, ignored */,
-                    request_full_gc), _out(out), _full_gc(request_full_gc) {}
+                    request_full_gc), _out(out), _full_gc(request_full_gc),
+                    _parallel_thread_num(parallel_thread_num) {}
 
   ~VM_GC_HeapInspection() {}
   virtual VMOp_Type type() const { return VMOp_GC_HeapInspection; }

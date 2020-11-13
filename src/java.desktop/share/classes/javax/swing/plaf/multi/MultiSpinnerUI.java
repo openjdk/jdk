@@ -50,6 +50,11 @@ public class MultiSpinnerUI extends SpinnerUI {
      */
     protected Vector<ComponentUI> uis = new Vector<>();
 
+    /**
+     * Constructs a {@code MultiSpinnerUI}.
+     */
+    public MultiSpinnerUI() {}
+
 ////////////////////
 // Common UI methods
 ////////////////////

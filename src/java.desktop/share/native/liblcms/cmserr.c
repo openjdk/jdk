@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2017 Marti Maria Saguer
+//  Copyright (c) 1998-2020 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -67,7 +67,7 @@ int CMSEXPORT cmsGetEncodedCMMversion(void)
 // compare two strings ignoring case
 int CMSEXPORT cmsstrcasecmp(const char* s1, const char* s2)
 {
-    register const unsigned char *us1 = (const unsigned char *)s1,
+    CMSREGISTER const unsigned char *us1 = (const unsigned char *)s1,
                                  *us2 = (const unsigned char *)s2;
 
     while (toupper(*us1) == toupper(*us2++))
@@ -464,7 +464,7 @@ void* _cmsSubAllocDup(_cmsSubAllocator* s, const void *ptr, cmsUInt32Number size
 // There is no error handling at all. When a function fails, it returns proper value.
 // For example, all create functions does return NULL on failure. Other return FALSE
 // It may be interesting, for the developer, to know why the function is failing.
-// for that reason, lcms2 does offer a logging function. This function does recive
+// for that reason, lcms2 does offer a logging function. This function does receive
 // a ENGLISH string with some clues on what is going wrong. You can show this
 // info to the end user, or just create some sort of log.
 // The logging function should NOT terminate the program, as this obviously can leave

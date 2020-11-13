@@ -45,6 +45,7 @@
 
 class AdjoiningGenerations;
 class GCHeapSummary;
+class HeapBlockClaimer;
 class MemoryManager;
 class MemoryPool;
 class PSAdaptiveSizePolicy;
@@ -202,18 +203,16 @@ class ParallelScavengeHeap : public CollectedHeap {
   void ensure_parsability(bool retire_tlabs);
   void resize_all_tlabs();
 
-  bool supports_tlab_allocation() const { return true; }
-
   size_t tlab_capacity(Thread* thr) const;
   size_t tlab_used(Thread* thr) const;
   size_t unsafe_max_tlab_alloc(Thread* thr) const;
 
   void object_iterate(ObjectClosure* cl);
+  void object_iterate_parallel(ObjectClosure* cl, HeapBlockClaimer* claimer);
+  virtual ParallelObjectIterator* parallel_object_iterator(uint thread_num);
 
   HeapWord* block_start(const void* addr) const;
   bool block_is_obj(const HeapWord* addr) const;
-
-  jlong millis_since_last_gc();
 
   void prepare_for_verify();
   PSHeapSummary create_ps_heap_summary();
@@ -222,7 +221,7 @@ class ParallelScavengeHeap : public CollectedHeap {
   virtual void gc_threads_do(ThreadClosure* tc) const;
   virtual void print_tracing_info() const;
 
-  virtual WorkGang* get_safepoint_workers() { return &_workers; }
+  virtual WorkGang* safepoint_workers() { return &_workers; }
 
   PreGenGCValues get_pre_gc_values() const;
   void print_heap_change(const PreGenGCValues& pre_gc_values) const;

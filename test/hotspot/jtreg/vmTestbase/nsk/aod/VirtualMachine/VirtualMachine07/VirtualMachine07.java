@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,13 +40,12 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build nsk.aod.VirtualMachine.VirtualMachine07.VirtualMachine07
- *        nsk.share.aod.TargetApplicationWaitingAgents
- * @run main/othervm/native -XX:+UsePerfData PropertyResolvingWrapper
+ * @build nsk.share.aod.TargetApplicationWaitingAgents
+ * @run main/othervm/native
+ *      -XX:+UsePerfData
  *      nsk.aod.VirtualMachine.VirtualMachine07.VirtualMachine07
  *      -jdk ${test.jdk}
- *      "-javaOpts=-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
+ *      -javaOpts="-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
  *      -target nsk.share.aod.TargetApplicationWaitingAgents
  *      -na VirtualMachine07agent00,VirtualMachine07agent01,VirtualMachine07agent02,VirtualMachine07agent03
  *      -testedMethod loadAgentLibrary
@@ -54,27 +53,26 @@
 
 package nsk.aod.VirtualMachine.VirtualMachine07;
 
-import nsk.share.*;
-import nsk.share.aod.*;
+import com.sun.tools.attach.AgentInitializationException;
+import com.sun.tools.attach.VirtualMachine;
+import nsk.share.TestBug;
+import nsk.share.aod.AODRunnerArgParser;
+import nsk.share.aod.AODTestRunner;
+import nsk.share.aod.AgentInformation;
 import nsk.share.test.TestUtils;
 
-import java.util.*;
-
-import com.sun.tools.attach.*;
+import java.util.List;
 
 /*
  * Test is written to test following methods:
  *      - VirtualMachine.loadAgentLibrary
- *
  *      - VirtualMachine.loadAgentPath
  *
  *(method to test is specified via command line parameter 'testedMethod')
  */
 public class VirtualMachine07 extends AODTestRunner {
-
-    static class ArgParser extends AODRunnerArgParser {
-
-        final String testedMethodOpt = "testedMethod";
+    private static class ArgParser extends AODRunnerArgParser {
+        private static final String TESTED_METHOD_OPT = "testedMethod";
 
         ArgParser(String[] args) {
             super(args);
@@ -84,11 +82,12 @@ public class VirtualMachine07 extends AODTestRunner {
             if (super.checkOption(option, value))
                 return true;
 
-            if (option.equals(testedMethodOpt)) {
-                if (value.equals("loadAgentLibrary") || value.equals("loadAgentPath"))
+            if (option.equals(TESTED_METHOD_OPT)) {
+                if ("loadAgentLibrary".equals(value) || "loadAgentPath".equals(value)) {
                     return true;
-                else
-                    throw new TestBug("Unexpected value of '" + testedMethodOpt + "': " + value);
+                } else {
+                    throw new TestBug("Unexpected value of '" + TESTED_METHOD_OPT + "': " + value);
+                }
             }
 
             return false;
@@ -99,13 +98,14 @@ public class VirtualMachine07 extends AODTestRunner {
 
             // if test loadAgentPath parameter arch is needed
             if (!testLoadAgentLibrary()) {
-                if (!options.containsKey("arch"))
+                if (!options.containsKey("arch")) {
                     throw new TestBug("Option 'arch' wasn't specified");
+                }
             }
         }
 
         boolean testLoadAgentLibrary() {
-            return options.getProperty(testedMethodOpt).equals("loadAgentLibrary");
+            return options.getProperty(TESTED_METHOD_OPT).equals("loadAgentLibrary");
         }
     }
 
@@ -142,10 +142,11 @@ public class VirtualMachine07 extends AODTestRunner {
     protected void loadAgent(VirtualMachine vm, String agent) throws Throwable {
         boolean testLoadAgentLibrary = ((ArgParser) argParser).testLoadAgentLibrary();
 
-        if (testLoadAgentLibrary)
+        if (testLoadAgentLibrary) {
             log.display("Test method VirtualMachine.loadAgentLibrary");
-        else
+        } else {
             log.display("Test method VirtualMachine.loadAgentPath");
+        }
 
         if (testLoadAgentLibrary) {
             log.display("Loading '" + agent + "'");
@@ -160,10 +161,11 @@ public class VirtualMachine07 extends AODTestRunner {
     protected void loadAgent(VirtualMachine vm, String agent, String options) throws Throwable {
         boolean testLoadAgentLibrary = ((ArgParser) argParser).testLoadAgentLibrary();
 
-        if (testLoadAgentLibrary)
+        if (testLoadAgentLibrary) {
             log.display("Test method VirtualMachine.loadAgentLibrary");
-        else
+        } else {
             log.display("Test method VirtualMachine.loadAgentPath");
+        }
 
         if (testLoadAgentLibrary) {
             log.display("Loading '" + agent + "'");
@@ -178,12 +180,13 @@ public class VirtualMachine07 extends AODTestRunner {
     public void doTestActions(String targetVMId) throws Throwable {
         // check that all required parameters were passed to the test
         List<AgentInformation> agents = argParser.getAgents();
-        if (agents.size() != 4)
+        if (agents.size() != 4) {
             throw new TestBug("Test requires 4 agents, actually " + agents.size() + " were specified");
-
+        }
         for (AgentInformation agent : agents) {
-            if (agent.jarAgent)
+            if (agent.jarAgent) {
                 throw new TestBug("Non native agent was specified");
+            }
         }
 
         VirtualMachine vm = VirtualMachine.attach(targetVMId);
@@ -210,7 +213,7 @@ public class VirtualMachine07 extends AODTestRunner {
                 log.display("Expected AgentInitializationException was caught");
                 log.display("AgentInitializationException.returnValue(): " + e.returnValue());
                 TestUtils.assertEquals(e.returnValue(), 10,
-                        "AgentInitializationException.returnValue() returns unexpected value: " + e.returnValue()+ ", expected value is 10");
+                        "AgentInitializationException.returnValue() returns unexpected value: " + e.returnValue() + ", expected value is 10");
             }
         } finally {
             vm.detach();

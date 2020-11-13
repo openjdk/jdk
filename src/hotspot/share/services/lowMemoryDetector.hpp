@@ -26,6 +26,7 @@
 #define SHARE_SERVICES_LOWMEMORYDETECTOR_HPP
 
 #include "memory/allocation.hpp"
+#include "oops/oopHandle.hpp"
 #include "runtime/atomic.hpp"
 #include "services/memoryPool.hpp"
 #include "services/memoryService.hpp"
@@ -117,7 +118,7 @@ class ThresholdSupport : public CHeapObj<mtInternal> {
 
 class SensorInfo : public CHeapObj<mtInternal> {
 private:
-  instanceOop     _sensor_obj;
+  OopHandle       _sensor_obj;
   bool            _sensor_on;
   size_t          _sensor_count;
 
@@ -141,10 +142,7 @@ private:
   void trigger(int count, TRAPS);
 public:
   SensorInfo();
-  void set_sensor(instanceOop sensor) {
-    assert(_sensor_obj == NULL, "Should be set only once");
-    _sensor_obj = sensor;
-  }
+  void set_sensor(instanceOop sensor);
 
   bool has_pending_requests() {
     return (_pending_trigger_count > 0 || _pending_clear_count > 0);
@@ -205,7 +203,6 @@ public:
   void set_counter_sensor_level(MemoryUsage usage, ThresholdSupport* counter_threshold);
 
   void process_pending_requests(TRAPS);
-  void oops_do(OopClosure* f);
 
 #ifndef PRODUCT
   // printing on default output stream;
@@ -223,7 +220,6 @@ private:
   // > 0 if temporary disabed
   static volatile jint _disabled_count;
 
-  static void check_memory_usage();
   static bool has_pending_requests();
   static bool temporary_disabled() { return _disabled_count > 0; }
   static void disable() { Atomic::inc(&_disabled_count); }

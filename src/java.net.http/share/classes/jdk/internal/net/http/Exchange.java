@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,8 @@ final class Exchange<T> {
     final AccessControlContext acc;
     final MultiExchange<T> multi;
     final Executor parentExecutor;
-    boolean upgrading; // to HTTP/2
+    volatile boolean upgrading; // to HTTP/2
+    volatile boolean upgraded;  // to HTTP/2
     final PushGroup<T> pushGroup;
     final String dbgTag;
 
@@ -139,12 +140,15 @@ final class Exchange<T> {
     // exchange so that it can be aborted/timed out mid setup.
     static final class ConnectionAborter {
         private volatile HttpConnection connection;
+        private volatile boolean closeRequested;
 
         void connection(HttpConnection connection) {
             this.connection = connection;
+            if (closeRequested) closeConnection();
         }
 
         void closeConnection() {
+            closeRequested = true;
             HttpConnection connection = this.connection;
             this.connection = null;
             if (connection != null) {
@@ -154,6 +158,11 @@ final class Exchange<T> {
                     // ignore
                 }
             }
+        }
+
+        void disable() {
+            connection = null;
+            closeRequested = false;
         }
     }
 
@@ -278,6 +287,30 @@ final class Exchange<T> {
         }
     }
 
+    <T> CompletableFuture<T> checkCancelled(CompletableFuture<T> cf, HttpConnection connection) {
+        return cf.handle((r,t) -> {
+            if (t == null) {
+                if (multi.requestCancelled()) {
+                    // if upgraded, we don't close the connection.
+                    // cancelling will be handled by the HTTP/2 exchange
+                    // in its own time.
+                    if (!upgraded) {
+                        t = getCancelCause();
+                        if (t == null) t = new IOException("Request cancelled");
+                        if (debug.on()) debug.log("exchange cancelled during connect: " + t);
+                        try {
+                            connection.close();
+                        } catch (Throwable x) {
+                            if (debug.on()) debug.log("Failed to close connection", x);
+                        }
+                        return MinimalFuture.<T>failedFuture(t);
+                    }
+                }
+            }
+            return cf;
+        }).thenCompose(Function.identity());
+    }
+
     public void h2Upgrade() {
         upgrading = true;
         request.setH2Upgrade(client.client2());
@@ -299,7 +332,10 @@ final class Exchange<T> {
         Throwable t = getCancelCause();
         checkCancelled();
         if (t != null) {
-            return MinimalFuture.failedFuture(t);
+            if (debug.on()) {
+                debug.log("exchange was cancelled: returned failed cf (%s)", String.valueOf(t));
+            }
+            return exchangeCF = MinimalFuture.failedFuture(t);
         }
 
         CompletableFuture<? extends ExchangeImpl<T>> cf, res;
@@ -481,11 +517,14 @@ final class Exchange<T> {
                     debug.log("Ignored body");
                     // we pass e::getBuffer to allow the ByteBuffers to accumulate
                     // while we build the Http2Connection
+                    ex.upgraded();
+                    upgraded = true;
                     return Http2Connection.createAsync(e.connection(),
                                                  client.client2(),
                                                  this, e::drainLeftOverBytes)
                         .thenCompose((Http2Connection c) -> {
                             boolean cached = c.offerConnection();
+                            if (cached) connectionAborter.disable();
                             Stream<T> s = c.getStream(1);
 
                             if (s == null) {
@@ -520,11 +559,12 @@ final class Exchange<T> {
                             }
                             // Check whether the HTTP/1.1 was cancelled.
                             if (t == null) t = e.getCancelCause();
-                            // if HTTP/1.1 exchange was timed out, don't
-                            // try to go further.
-                            if (t instanceof HttpTimeoutException) {
-                                 s.cancelImpl(t);
-                                 return MinimalFuture.failedFuture(t);
+                            // if HTTP/1.1 exchange was timed out, or the request
+                            // was cancelled don't try to go further.
+                            if (t instanceof HttpTimeoutException || multi.requestCancelled()) {
+                                if (t == null) t = new IOException("Request cancelled");
+                                s.cancelImpl(t);
+                                return MinimalFuture.failedFuture(t);
                             }
                             if (debug.on())
                                 debug.log("Getting response async %s", s);

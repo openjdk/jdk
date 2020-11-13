@@ -76,8 +76,8 @@ inline HeapRegion* G1CollectedHeap::next_region_in_humongous(HeapRegion* hr) con
 inline uint G1CollectedHeap::addr_to_region(HeapWord* addr) const {
   assert(is_in_reserved(addr),
          "Cannot calculate region index for address " PTR_FORMAT " that is outside of the heap [" PTR_FORMAT ", " PTR_FORMAT ")",
-         p2i(addr), p2i(reserved_region().start()), p2i(reserved_region().end()));
-  return (uint)(pointer_delta(addr, reserved_region().start(), sizeof(uint8_t)) >> HeapRegion::LogOfHRGrainBytes);
+         p2i(addr), p2i(reserved().start()), p2i(reserved().end()));
+  return (uint)(pointer_delta(addr, reserved().start(), sizeof(uint8_t)) >> HeapRegion::LogOfHRGrainBytes);
 }
 
 inline HeapWord* G1CollectedHeap::bottom_addr_for_region(uint index) const {
@@ -87,18 +87,18 @@ inline HeapWord* G1CollectedHeap::bottom_addr_for_region(uint index) const {
 template <class T>
 inline HeapRegion* G1CollectedHeap::heap_region_containing(const T addr) const {
   assert(addr != NULL, "invariant");
-  assert(is_in_g1_reserved((const void*) addr),
+  assert(is_in_reserved((const void*) addr),
          "Address " PTR_FORMAT " is outside of the heap ranging from [" PTR_FORMAT " to " PTR_FORMAT ")",
-         p2i((void*)addr), p2i(g1_reserved().start()), p2i(g1_reserved().end()));
+         p2i((void*)addr), p2i(reserved().start()), p2i(reserved().end()));
   return _hrm->addr_to_region((HeapWord*)(void*) addr);
 }
 
 template <class T>
 inline HeapRegion* G1CollectedHeap::heap_region_containing_or_null(const T addr) const {
   assert(addr != NULL, "invariant");
-  assert(is_in_g1_reserved((const void*) addr),
+  assert(is_in_reserved((const void*) addr),
          "Address " PTR_FORMAT " is outside of the heap ranging from [" PTR_FORMAT " to " PTR_FORMAT ")",
-         p2i((void*)addr), p2i(g1_reserved().start()), p2i(g1_reserved().end()));
+         p2i((void*)addr), p2i(reserved().start()), p2i(reserved().end()));
   uint const region_idx = addr_to_region(addr);
   return region_at_or_null(region_idx);
 }
@@ -193,14 +193,14 @@ void G1CollectedHeap::register_optional_region_with_region_attr(HeapRegion* r) {
 
 inline bool
 G1CollectedHeap::evacuation_failure_alot_for_gc_type(bool for_young_gc,
-                                                     bool during_initial_mark,
+                                                     bool during_concurrent_start,
                                                      bool mark_or_rebuild_in_progress) {
   bool res = false;
   if (mark_or_rebuild_in_progress) {
     res |= G1EvacuationFailureALotDuringConcMark;
   }
-  if (during_initial_mark) {
-    res |= G1EvacuationFailureALotDuringInitialMark;
+  if (during_concurrent_start) {
+    res |= G1EvacuationFailureALotDuringConcurrentStart;
   }
   if (for_young_gc) {
     res |= G1EvacuationFailureALotDuringYoungGC;
@@ -227,12 +227,12 @@ G1CollectedHeap::set_evacuation_failure_alot_for_current_gc() {
 
     // Now check if G1EvacuationFailureALot is enabled for the current GC type.
     const bool in_young_only_phase = collector_state()->in_young_only_phase();
-    const bool in_initial_mark_gc = collector_state()->in_initial_mark_gc();
+    const bool in_concurrent_start_gc = collector_state()->in_concurrent_start_gc();
     const bool mark_or_rebuild_in_progress = collector_state()->mark_or_rebuild_in_progress();
 
     _evacuation_failure_alot_for_current_gc &=
       evacuation_failure_alot_for_gc_type(in_young_only_phase,
-                                          in_initial_mark_gc,
+                                          in_concurrent_start_gc,
                                           mark_or_rebuild_in_progress);
   }
 }

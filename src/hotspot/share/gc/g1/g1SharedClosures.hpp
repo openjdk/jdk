@@ -34,7 +34,7 @@ template <G1Mark Mark>
 class G1SharedClosures {
   static bool needs_strong_processing() {
     // Request strong code root processing when G1MarkFromRoot is passed in during
-    // initial mark.
+    // concurrent start.
     return Mark == G1MarkFromRoot;
   }
 public:

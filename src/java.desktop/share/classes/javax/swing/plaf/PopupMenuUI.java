@@ -39,6 +39,11 @@ import javax.swing.JPopupMenu;
 
 public abstract class PopupMenuUI extends ComponentUI {
     /**
+     * Constructor for subclasses to call.
+     */
+    protected PopupMenuUI() {}
+
+    /**
      * Returns whether or not the given {@code MouseEvent} is the popup menu
      * trigger event for the platform
      *

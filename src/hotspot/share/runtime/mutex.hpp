@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,10 +99,8 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   void no_safepoint_verifier   (Thread* thread, bool enable)          NOT_DEBUG_RETURN;
 
  public:
-  enum {
-    _allow_vm_block_flag        = true,
-    _as_suspend_equivalent_flag = true
-  };
+  static const bool _allow_vm_block_flag        = true;
+  static const bool _as_suspend_equivalent_flag = true;
 
   // Locks can be acquired with or without a safepoint check. NonJavaThreads do not follow
   // the safepoint protocol when acquiring locks.
@@ -124,12 +122,17 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   // deadlock can occur. We should check this by noting which
   // locks are shared, and walk held locks during safepoint checking.
 
-  enum SafepointCheckFlag {
+  enum class SafepointCheckFlag {
     _safepoint_check_flag,
     _no_safepoint_check_flag
   };
+  // Bring the enumerator names into class scope.
+  static const SafepointCheckFlag _safepoint_check_flag =
+    SafepointCheckFlag::_safepoint_check_flag;
+  static const SafepointCheckFlag _no_safepoint_check_flag =
+    SafepointCheckFlag::_no_safepoint_check_flag;
 
-  enum SafepointCheckRequired {
+  enum class SafepointCheckRequired {
     _safepoint_check_never,       // Mutexes with this value will cause errors
                                   // when acquired by a JavaThread with a safepoint check.
     _safepoint_check_sometimes,   // A couple of special locks are acquired by JavaThreads sometimes
@@ -138,6 +141,13 @@ class Mutex : public CHeapObj<mtSynchronizer> {
     _safepoint_check_always       // Mutexes with this value will cause errors
                                   // when acquired by a JavaThread without a safepoint check.
   };
+  // Bring the enumerator names into class scope.
+  static const SafepointCheckRequired _safepoint_check_never =
+    SafepointCheckRequired::_safepoint_check_never;
+  static const SafepointCheckRequired _safepoint_check_sometimes =
+    SafepointCheckRequired::_safepoint_check_sometimes;
+  static const SafepointCheckRequired _safepoint_check_always =
+    SafepointCheckRequired::_safepoint_check_always;
 
   NOT_PRODUCT(SafepointCheckRequired _safepoint_check_required;)
 
@@ -198,9 +208,9 @@ class Monitor : public Mutex {
   // Defaults are to make safepoint checks, wait time is forever (i.e.,
   // zero), and not a suspend-equivalent condition. Returns true if wait
   // times out; otherwise returns false.
-  bool wait(long timeout = 0,
+  bool wait(int64_t timeout = 0,
             bool as_suspend_equivalent = !_as_suspend_equivalent_flag);
-  bool wait_without_safepoint_check(long timeout = 0);
+  bool wait_without_safepoint_check(int64_t timeout = 0);
   void notify();
   void notify_all();
 };

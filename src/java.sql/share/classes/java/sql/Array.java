@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,9 +80,9 @@ public interface Array {
    * @return a <code>String</code> that is the database-specific
    * name for a built-in base type; or the fully-qualified SQL type
    * name for a base type that is a UDT
-   * @exception SQLException if an error occurs while attempting
+   * @throws SQLException if an error occurs while attempting
    * to access the type name
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */
@@ -95,9 +95,9 @@ public interface Array {
    * @return a constant from the class {@link java.sql.Types} that is
    * the type code for the elements in the array designated by this
    * <code>Array</code> object
-   * @exception SQLException if an error occurs while attempting
+   * @throws SQLException if an error occurs while attempting
    * to access the base type
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */
@@ -119,9 +119,9 @@ public interface Array {
    * @return an array in the Java programming language that contains
    * the ordered elements of the SQL <code>ARRAY</code> value
    * designated by this <code>Array</code> object
-   * @exception SQLException if an error occurs while attempting to
+   * @throws SQLException if an error occurs while attempting to
    * access the array
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */
@@ -147,9 +147,9 @@ public interface Array {
    *            of SQL type names to classes in the Java programming language
    * @return an array in the Java programming language that contains the ordered
    *         elements of the SQL array designated by this object
-   * @exception SQLException if an error occurs while attempting to
-   *                         access the array
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLException if an error occurs while attempting to
+   *                      access the array
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */
@@ -172,9 +172,9 @@ public interface Array {
    * @param count the number of successive SQL array elements to retrieve
    * @return an array containing up to <code>count</code> consecutive elements
    * of the SQL array, beginning with element <code>index</code>
-   * @exception SQLException if an error occurs while attempting to
+   * @throws SQLException if an error occurs while attempting to
    * access the array
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */
@@ -210,9 +210,9 @@ public interface Array {
    * consecutive elements of the SQL <code>ARRAY</code> value designated by this
    * <code>Array</code> object, beginning with element
    * <code>index</code>
-   * @exception SQLException if an error occurs while attempting to
+   * @throws SQLException if an error occurs while attempting to
    * access the array
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */
@@ -236,9 +236,9 @@ public interface Array {
    * @return a {@link ResultSet} object containing one row for each
    * of the elements in the array designated by this <code>Array</code>
    * object, with the rows in ascending order based on the indices.
-   * @exception SQLException if an error occurs while attempting to
+   * @throws SQLException if an error occurs while attempting to
    * access the array
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */
@@ -267,9 +267,9 @@ public interface Array {
    * @return a <code>ResultSet</code> object containing one row for each
    * of the elements in the array designated by this <code>Array</code>
    * object, with the rows in ascending order based on the indices.
-   * @exception SQLException if an error occurs while attempting to
+   * @throws SQLException if an error occurs while attempting to
    * access the array
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */
@@ -298,9 +298,9 @@ public interface Array {
    * <code>count</code> consecutive elements of the SQL array
    * designated by this <code>Array</code> object, starting at
    * index <code>index</code>.
-   * @exception SQLException if an error occurs while attempting to
+   * @throws SQLException if an error occurs while attempting to
    * access the array
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */
@@ -335,9 +335,9 @@ public interface Array {
    * <code>count</code> consecutive elements of the SQL array
    * designated by this <code>Array</code> object, starting at
    * index <code>index</code>.
-   * @exception SQLException if an error occurs while attempting to
+   * @throws SQLException if an error occurs while attempting to
    * access the array
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.2
    */
@@ -356,7 +356,7 @@ public interface Array {
      *
      * @throws SQLException if an error occurs releasing
      * the Array's resources
-     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.6
      */

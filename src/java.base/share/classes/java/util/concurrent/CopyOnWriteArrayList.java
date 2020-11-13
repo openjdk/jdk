@@ -36,6 +36,7 @@ package java.util.concurrent;
 
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
@@ -139,9 +140,7 @@ public class CopyOnWriteArrayList<E>
             es = ((CopyOnWriteArrayList<?>)c).getArray();
         else {
             es = c.toArray();
-            // defend against c.toArray (incorrectly) not returning Object[]
-            // (see e.g. https://bugs.openjdk.java.net/browse/JDK-6260652)
-            if (es.getClass() != Object[].class)
+            if (c.getClass() != java.util.ArrayList.class)
                 es = Arrays.copyOf(es, es.length, Object[].class);
         }
         setArray(es);
@@ -690,6 +689,9 @@ public class CopyOnWriteArrayList<E>
      */
     public int addAllAbsent(Collection<? extends E> c) {
         Object[] cs = c.toArray();
+        if (c.getClass() != ArrayList.class) {
+            cs = cs.clone();
+        }
         if (cs.length == 0)
             return 0;
         synchronized (lock) {
@@ -741,9 +743,10 @@ public class CopyOnWriteArrayList<E>
             Object[] es = getArray();
             int len = es.length;
             Object[] newElements;
-            if (len == 0 && cs.getClass() == Object[].class)
+            if (len == 0 && (c.getClass() == CopyOnWriteArrayList.class ||
+                             c.getClass() == ArrayList.class)) {
                 newElements = cs;
-            else {
+            } else {
                 newElements = Arrays.copyOf(es, len + cs.length);
                 System.arraycopy(cs, 0, newElements, len, cs.length);
             }

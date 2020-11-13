@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +30,12 @@
  * VM Testbase keywords: [feature_mlvm]
  * VM Testbase readme:
  * DESCRIPTION
- *     Try to load anonymous class derived from java.lang.System. The verification
- *     system (split verifier and system class loader) should reject such attempt and
- *     throw VerifyError.
+ *     Try to load anonymous class derived from java.lang.System. The class file
+ *     loader should reject such attempt and throw IncompatibleClassChangeError
+ *     because java.lang.System is a final class.
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  *
  * @comment build test class and indify classes
  * @build vm.mlvm.anonloader.share.ReplaceClassParentTest
@@ -45,6 +44,6 @@
  * @run main/othervm
  *      vm.mlvm.anonloader.share.ReplaceClassParentTest
  *      -newParent java/lang/System
- *      -requireExceptions java.lang.VerifyError
+ *      -requireExceptions java.lang.IncompatibleClassChangeError
  */
 

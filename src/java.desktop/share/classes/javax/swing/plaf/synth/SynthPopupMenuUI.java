@@ -46,6 +46,12 @@ public class SynthPopupMenuUI extends BasicPopupMenuUI
     private SynthStyle style;
 
     /**
+     *
+     * Constructs a {@code SynthPopupMenuUI}.
+     */
+    public SynthPopupMenuUI() {}
+
+    /**
      * Creates a new UI object for the given component.
      *
      * @param x component to create UI object for

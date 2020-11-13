@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,7 +31,6 @@
 
 // Sets the default values for platform dependent flags used by the client compiler.
 // (see c1_globals.hpp)
-// Flags sorted according to sparc.
 
 #ifndef TIERED
 define_pd_global(bool,     BackgroundCompilation,        true);
@@ -44,9 +43,7 @@ define_pd_global(bool,     TieredCompilation,            false);
 define_pd_global(intx,     CompileThreshold,             1000);
 
 define_pd_global(intx,     OnStackReplacePercentage,     1400);
-define_pd_global(bool,     UseTLAB,                      true);
 define_pd_global(bool,     ProfileInterpreter,           false);
-define_pd_global(bool,     ResizeTLAB,                   true);
 define_pd_global(uintx,    ReservedCodeCacheSize,        32*M);
 define_pd_global(uintx,    NonProfiledCodeHeapSize,      13*M);
 define_pd_global(uintx,    ProfiledCodeHeapSize,         14*M);

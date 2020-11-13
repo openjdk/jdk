@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,11 @@ import com.sun.source.tree.Tree;
  * @author Peter von der Ah&eacute;
  */
 public abstract class Trees {
+    /**
+     * Constructor for subclasses to call.
+     */
+    public Trees() {}
+
     /**
      * Returns a Trees object for a given CompilationTask.
      * @param task the compilation task for which to get the Trees object
@@ -231,8 +236,8 @@ public abstract class Trees {
 
     /**
       * Returns the original type from the ErrorType object.
-      * @param errorType The errorType for which we want to get the original type.
-      * @return javax.lang.model.type.TypeMirror corresponding to the original type, replaced by the ErrorType.
+      * @param errorType the errorType for which we want to get the original type
+      * @return the type mirror corresponding to the original type, replaced by the ErrorType
       */
     public abstract TypeMirror getOriginalType(ErrorType errorType);
 
@@ -252,7 +257,7 @@ public abstract class Trees {
     /**
      * Returns the lub of an exception parameter declared in a catch clause.
      * @param tree the tree for the catch clause
-     * @return The lub of the exception parameter
+     * @return the lub of the exception parameter
      */
     public abstract TypeMirror getLub(CatchTree tree);
 }

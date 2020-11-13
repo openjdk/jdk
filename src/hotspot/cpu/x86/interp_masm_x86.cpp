@@ -605,6 +605,10 @@ void InterpreterMacroAssembler::push_i(Register r) {
   push(r);
 }
 
+void InterpreterMacroAssembler::push_i_or_ptr(Register r) {
+  push(r);
+}
+
 void InterpreterMacroAssembler::push_f(XMMRegister r) {
   subptr(rsp, wordSize);
   movflt(Address(rsp, 0), r);
@@ -853,7 +857,7 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
   Label no_safepoint, dispatch;
   if (table != safepoint_table && generate_poll) {
     NOT_PRODUCT(block_comment("Thread-local Safepoint poll"));
-    testb(Address(r15_thread, Thread::polling_page_offset()), SafepointMechanism::poll_bit());
+    testb(Address(r15_thread, Thread::polling_word_offset()), SafepointMechanism::poll_bit());
 
     jccb(Assembler::zero, no_safepoint);
     lea(rscratch1, ExternalAddress((address)safepoint_table));
@@ -872,7 +876,7 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
     Label no_safepoint;
     const Register thread = rcx;
     get_thread(thread);
-    testb(Address(thread, Thread::polling_page_offset()), SafepointMechanism::poll_bit());
+    testb(Address(thread, Thread::polling_word_offset()), SafepointMechanism::poll_bit());
 
     jccb(Assembler::zero, no_safepoint);
     ArrayAddress dispatch_addr(ExternalAddress((address)safepoint_table), index);
@@ -961,6 +965,7 @@ void InterpreterMacroAssembler::narrow(Register result) {
 
 // remove activation
 //
+// Apply stack watermark barrier.
 // Unlock the receiver if this is a synchronized method.
 // Unlock any Java monitors from syncronized blocks.
 // Remove the activation from the stack.
@@ -987,7 +992,23 @@ void InterpreterMacroAssembler::remove_activation(
   const Register rmon    = LP64_ONLY(c_rarg1) NOT_LP64(rcx);
                               // monitor pointers need different register
                               // because rdx may have the result in it
-  NOT_LP64(get_thread(rcx);)
+  NOT_LP64(get_thread(rthread);)
+
+  // The below poll is for the stack watermark barrier. It allows fixing up frames lazily,
+  // that would normally not be safe to use. Such bad returns into unsafe territory of
+  // the stack, will call InterpreterRuntime::at_unwind.
+  Label slow_path;
+  Label fast_path;
+  safepoint_poll(slow_path, rthread, true /* at_return */, false /* in_nmethod */);
+  jmp(fast_path);
+  bind(slow_path);
+  push(state);
+  set_last_Java_frame(rthread, noreg, rbp, (address)pc());
+  super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), rthread);
+  NOT_LP64(get_thread(rthread);) // call_VM clobbered it, restore
+  reset_last_Java_frame(rthread, true);
+  pop(state);
+  bind(fast_path);
 
   // get the value of _do_not_unlock_if_synchronized into rdx
   const Address do_not_unlock_if_synchronized(rthread,
@@ -1130,7 +1151,7 @@ void InterpreterMacroAssembler::remove_activation(
 
     NOT_LP64(get_thread(rthread);)
 
-    cmpl(Address(rthread, JavaThread::stack_guard_state_offset()), JavaThread::stack_guard_enabled);
+    cmpl(Address(rthread, JavaThread::stack_guard_state_offset()), StackOverflow::stack_guard_enabled);
     jcc(Assembler::equal, no_reserved_zone_enabling);
 
     cmpptr(rbx, Address(rthread, JavaThread::reserved_stack_activation_offset()));
@@ -1186,6 +1207,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
     const Register tmp_reg = rbx; // Will be passed to biased_locking_enter to avoid a
                                   // problematic case where tmp_reg = no_reg.
     const Register obj_reg = LP64_ONLY(c_rarg3) NOT_LP64(rcx); // Will contain the oop
+    const Register rklass_decode_tmp = LP64_ONLY(rscratch1) NOT_LP64(noreg);
 
     const int obj_offset = BasicObjectLock::obj_offset_in_bytes();
     const int lock_offset = BasicObjectLock::lock_offset_in_bytes ();
@@ -1197,8 +1219,14 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
     // Load object pointer into obj_reg
     movptr(obj_reg, Address(lock_reg, obj_offset));
 
+    if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+      load_klass(tmp_reg, obj_reg, rklass_decode_tmp);
+      movl(tmp_reg, Address(tmp_reg, Klass::access_flags_offset()));
+      testl(tmp_reg, JVM_ACC_IS_BOX_CLASS);
+      jcc(Assembler::notZero, slow_case);
+    }
+
     if (UseBiasedLocking) {
-      Register rklass_decode_tmp = LP64_ONLY(rscratch1) NOT_LP64(noreg);
       biased_locking_enter(lock_reg, obj_reg, swap_reg, tmp_reg, rklass_decode_tmp, false, done, &slow_case);
     }
 
@@ -1274,9 +1302,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
          "The argument is only for looks. It must be c_rarg1");
 
   if (UseHeavyMonitors) {
-    call_VM(noreg,
-            CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit),
-            lock_reg);
+    call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), lock_reg);
   } else {
     Label done;
 
@@ -1317,12 +1343,10 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
     // zero for simple unlock of a stack-lock case
     jcc(Assembler::zero, done);
 
+
     // Call the runtime routine for slow case.
-    movptr(Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()),
-         obj_reg); // restore obj
-    call_VM(noreg,
-            CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit),
-            lock_reg);
+    movptr(Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()), obj_reg); // restore obj
+    call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), lock_reg);
 
     bind(done);
 
@@ -1935,7 +1959,7 @@ void InterpreterMacroAssembler::profile_switch_case(Register index,
 
 void InterpreterMacroAssembler::_interp_verify_oop(Register reg, TosState state, const char* file, int line) {
   if (state == atos) {
-    MacroAssembler::_verify_oop(reg, "broken oop", file, line);
+    MacroAssembler::_verify_oop_checked(reg, "broken oop", file, line);
   }
 }
 

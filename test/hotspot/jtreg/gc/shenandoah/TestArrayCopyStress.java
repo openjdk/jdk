@@ -28,7 +28,7 @@ import jdk.test.lib.Utils;
 /*
  * @test TestArrayCopyStress
  * @key randomness
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  * @library /test/lib
  *
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:TieredStopAtLevel=0 -Xmx16m TestArrayCopyStress

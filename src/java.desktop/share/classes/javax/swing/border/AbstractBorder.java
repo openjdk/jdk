@@ -40,7 +40,7 @@ import java.io.Serializable;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans&trade;
+ * of all JavaBeans
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -49,6 +49,11 @@ import java.io.Serializable;
 @SuppressWarnings("serial")
 public abstract class AbstractBorder implements Border, Serializable
 {
+    /**
+     * Constructor for subclasses to call.
+     */
+    protected AbstractBorder() {}
+
     /**
      * This default implementation does no painting.
      * @param c the component for which this border is being painted

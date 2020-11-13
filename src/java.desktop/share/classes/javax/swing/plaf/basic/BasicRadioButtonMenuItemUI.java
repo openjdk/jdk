@@ -40,6 +40,11 @@ import javax.swing.border.*;
 public class BasicRadioButtonMenuItemUI extends BasicMenuItemUI
 {
     /**
+     * Constructs a {@code BasicRadioButtonMenuItemUI}.
+     */
+    public BasicRadioButtonMenuItemUI() {}
+
+    /**
      * Returns a new instance of {@code BasicRadioButtonMenuItemUI}.
      *
      * @param b a component

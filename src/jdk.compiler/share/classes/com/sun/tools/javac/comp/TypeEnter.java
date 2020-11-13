@@ -1000,6 +1000,7 @@ public class TypeEnter implements Completer {
             // Add default constructor if needed.
             DefaultConstructorHelper helper = getDefaultConstructorHelper(env);
             if (helper != null) {
+                chk.checkDefaultConstructor(sym, tree.pos());
                 defaultConstructor = defaultConstructor(make.at(tree.pos), helper);
                 tree.defs = tree.defs.prepend(defaultConstructor);
             }
@@ -1087,9 +1088,11 @@ public class TypeEnter implements Completer {
                  * it could be that some of those annotations are not applicable to the accessor, they will be striped
                  * away later at Check::validateAnnotation
                  */
+                TreeCopier<JCTree> tc = new TreeCopier<JCTree>(make.at(tree.pos));
                 List<JCAnnotation> originalAnnos = rec.getOriginalAnnos().isEmpty() ?
                         rec.getOriginalAnnos() :
-                        new TreeCopier<JCTree>(make.at(tree.pos)).copy(rec.getOriginalAnnos());
+                        tc.copy(rec.getOriginalAnnos());
+                JCVariableDecl recordField = TreeInfo.recordFields((JCClassDecl) env.tree).stream().filter(rf -> rf.name == tree.name).findAny().get();
                 JCMethodDecl getter = make.at(tree.pos).
                         MethodDef(
                                 make.Modifiers(PUBLIC | Flags.GENERATED_MEMBER, originalAnnos),
@@ -1099,7 +1102,7 @@ public class TypeEnter implements Completer {
                            * return type: javac issues an error if a type annotation is applied to java.lang.String
                            * but applying a type annotation to String is kosher
                            */
-                          tree.vartype.hasTag(IDENT) ? make.Ident(tree.vartype.type.tsym) : make.Type(tree.sym.type),
+                          tc.copy(recordField.vartype),
                           List.nil(),
                           List.nil(),
                           List.nil(), // thrown
@@ -1404,10 +1407,11 @@ public class TypeEnter implements Completer {
                  * parameter in the constructor.
                  */
                 RecordComponent rc = ((ClassSymbol) owner).getRecordComponent(arg.sym);
+                TreeCopier<JCTree> tc = new TreeCopier<JCTree>(make.at(arg.pos));
                 arg.mods.annotations = rc.getOriginalAnnos().isEmpty() ?
                         List.nil() :
-                        new TreeCopier<JCTree>(make.at(arg.pos)).copy(rc.getOriginalAnnos());
-                arg.vartype = tmpRecordFieldDecls.head.vartype;
+                        tc.copy(rc.getOriginalAnnos());
+                arg.vartype = tc.copy(tmpRecordFieldDecls.head.vartype);
                 tmpRecordFieldDecls = tmpRecordFieldDecls.tail;
             }
             return md;

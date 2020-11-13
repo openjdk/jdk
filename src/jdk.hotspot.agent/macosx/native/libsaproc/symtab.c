@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include <unistd.h>
 #include <search.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include <db.h>
@@ -57,12 +58,14 @@ typedef struct symtab {
 
 void build_search_table(symtab_t *symtab) {
   int i;
+  print_debug("build_search_table\n");
   for (i = 0; i < symtab->num_symbols; i++) {
     DBT key, value;
     key.data = symtab->symbols[i].name;
     key.size = strlen(key.data) + 1;
     value.data = &(symtab->symbols[i]);
     value.size = sizeof(symtab_symbol);
+    //print_debug("build_search_table: %d 0x%x %s\n", i, symtab->symbols[i].offset, symtab->symbols[i].name);
     (*symtab->hash_table->put)(symtab->hash_table, &key, &value, 0);
 
     // check result
@@ -90,12 +93,14 @@ void build_search_table(symtab_t *symtab) {
 }
 
 // read symbol table from given fd.
-struct symtab* build_symtab(int fd) {
+struct symtab* build_symtab(int fd, size_t *p_max_offset) {
   symtab_t* symtab = NULL;
-  int i;
+  int i, j;
   mach_header_64 header;
   off_t image_start;
+  size_t max_offset = 0;
 
+  print_debug("build_symtab\n");
   if (!get_arch_off(fd, CPU_TYPE_X86_64, &image_start)) {
     print_debug("failed in get fat header\n");
     return NULL;
@@ -151,6 +156,7 @@ struct symtab* build_symtab(int fd) {
   if (symtab->hash_table == NULL)
     goto quit;
 
+  // allocate the symtab
   symtab->num_symbols = symtabcmd.nsyms;
   symtab->symbols = (symtab_symbol *)malloc(sizeof(symtab_symbol) * symtab->num_symbols);
   symtab->strs    = (char *)malloc(sizeof(char) * symtabcmd.strsize);
@@ -158,17 +164,8 @@ struct symtab* build_symtab(int fd) {
      print_debug("out of memory: allocating symtab.symbol or symtab.strs\n");
      goto quit;
   }
-  lseek(fd, image_start + symtabcmd.symoff, SEEK_SET);
-  for (i = 0; i < symtab->num_symbols; i++) {
-    if (read(fd, (void *)&lentry, sizeof(nlist_64)) != sizeof(nlist_64)) {
-      print_debug("read nlist_64 failed at %i\n", i);
-      goto quit;
-    }
-    symtab->symbols[i].offset = lentry.n_value;
-    symtab->symbols[i].size  = lentry.n_un.n_strx;        // index
-  }
 
-  // string table
+  // read in the string table
   lseek(fd, image_start + symtabcmd.stroff, SEEK_SET);
   int size = read(fd, (void *)(symtab->strs), symtabcmd.strsize * sizeof(char));
   if (size != symtabcmd.strsize * sizeof(char)) {
@@ -176,25 +173,57 @@ struct symtab* build_symtab(int fd) {
      goto quit;
   }
 
-  for (i = 0; i < symtab->num_symbols; i++) {
-    symtab->symbols[i].name = symtab->strs + symtab->symbols[i].size;
-    if (i > 0) {
-      // fix size
-      symtab->symbols[i - 1].size = symtab->symbols[i].size - symtab->symbols[i - 1].size;
-      print_debug("%s size = %d\n", symtab->symbols[i - 1].name, symtab->symbols[i - 1].size);
-
+  // read in each nlist_64 from the symbol table and use to fill in symtab->symbols
+  lseek(fd, image_start + symtabcmd.symoff, SEEK_SET);
+  i = 0;
+  for (j = 0; j < symtab->num_symbols; j++) {
+    if (read(fd, (void *)&lentry, sizeof(nlist_64)) != sizeof(nlist_64)) {
+      print_debug("read nlist_64 failed at %j\n", j);
+      goto quit;
     }
 
-    if (i == symtab->num_symbols - 1) {
-      // last index
-      symtab->symbols[i].size =
-            symtabcmd.strsize - symtab->symbols[i].size;
-      print_debug("%s size = %d\n", symtab->symbols[i].name, symtab->symbols[i].size);
+    uintptr_t offset = lentry.n_value;     // offset of the symbol code/data in the file
+    uintptr_t stridx = lentry.n_un.n_strx; // offset of symbol string in the symtabcmd.symoff section
+
+    if (stridx == 0 || offset == 0) {
+      continue; // Skip this entry. It's not a reference to code or data
     }
+    if (lentry.n_type == N_OSO) {
+      // This is an object file name/path. These entries have something other than
+      // an offset in lentry.n_value, so we need to ignore them.
+      continue;
+    }
+    symtab->symbols[i].offset = offset;
+    symtab->symbols[i].name = symtab->strs + stridx;
+    symtab->symbols[i].size = strlen(symtab->symbols[i].name);
+
+    if (symtab->symbols[i].size == 0) {
+      continue; // Skip this entry. It points to an empty string.
+    }
+
+    // Track the maximum offset we've seen. This is used to determine the address range
+    // that the library covers.
+    if (offset > max_offset) {
+      max_offset = (offset + 4096) & ~0xfff; // Round up to next page boundary
+    }
+    print_debug("symbol read: %d %d n_type=0x%x n_sect=0x%x n_desc=0x%x n_strx=0x%lx offset=0x%lx %s\n",
+                j, i, lentry.n_type, lentry.n_sect, lentry.n_desc, stridx, offset, symtab->symbols[i].name);
+    i++;
+  }
+
+  // Update symtab->num_symbols to be the actual number of symbols we added. Since the symbols
+  // array was allocated larger, reallocate it to the proper size.
+  print_debug("build_symtab: included %d of %d entries.\n", i, symtab->num_symbols);
+  symtab->num_symbols = i;
+  symtab->symbols = (symtab_symbol *)realloc(symtab->symbols, sizeof(symtab_symbol) * symtab->num_symbols);
+  if (symtab->symbols == NULL) {
+     print_debug("out of memory: reallocating symtab.symbol\n");
+     goto quit;
   }
 
   // build a hashtable for fast query
   build_search_table(symtab);
+  *p_max_offset = max_offset;
   return symtab;
 quit:
   if (symtab) destroy_symtab(symtab);
@@ -389,14 +418,37 @@ uintptr_t search_symbol(struct symtab* symtab, uintptr_t base, const char *sym_n
 const char* nearest_symbol(struct symtab* symtab, uintptr_t offset,
                            uintptr_t* poffset) {
   int n = 0;
+  char* result = NULL;
+  ptrdiff_t lowest_offset_from_sym = -1;
   if (!symtab) return NULL;
+  // Search the symbol table for the symbol that is closest to the specified offset, but is not under.
+  //
+  // Note we can't just use the first symbol that is >= the offset because the symbols may not be
+  // sorted by offset.
+  //
+  // Note this is a rather slow search that is O(n/2), and libjvm has as many as 250k symbols.
+  // Probably would be good to sort the array and do a binary search, or use a hash table like
+  // we do for name -> address lookups. However, this functionality is not used often and
+  // generally just involves one lookup, such as with the clhsdb "findpc" command.
   for (; n < symtab->num_symbols; n++) {
     symtab_symbol* sym = &(symtab->symbols[n]);
-    if (sym->name != NULL &&
-      offset >= sym->offset && offset < sym->offset + sym->size) {
-      if (poffset) *poffset = (offset - sym->offset);
-      return sym->name;
+    if (sym->size != 0 && offset >= sym->offset) {
+      ptrdiff_t offset_from_sym = offset - sym->offset;
+      if (offset_from_sym >= 0) { // ignore symbols that come after "offset"
+        if (lowest_offset_from_sym == -1 || offset_from_sym < lowest_offset_from_sym) {
+          lowest_offset_from_sym = offset_from_sym;
+          result = sym->name;
+          //print_debug("nearest_symbol: found %d %s 0x%x 0x%x 0x%x\n",
+          //            n, sym->name, offset, sym->offset, lowest_offset_from_sym);
+        }
+      }
     }
   }
-  return NULL;
+  print_debug("nearest_symbol: found symbol %d file_offset=0x%lx sym_offset=0x%lx %s\n",
+              n, offset, lowest_offset_from_sym, result);
+  // Save the offset from the symbol if requested.
+  if (result != NULL && poffset) {
+    *poffset = lowest_offset_from_sym;
+  }
+  return result;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,9 @@
  * questions.
  */
 
-
 /*
  * @test
+ * @key randomness
  *
  * @summary converted from VM Testbase vm/mlvm/meth/func/jdi/breakpointOtherStratum.
  * VM Testbase keywords: [feature_mlvm, nonconcurrent, fds, jdk, quarantine]
@@ -35,7 +35,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  *
  * @comment build debuggee class
  * @build vm.mlvm.share.jdi.MHDebuggee
@@ -50,7 +49,7 @@
  *      vm.mlvm.share.StratumClassesBuilder
  *      vmTestbase/vm/mlvm/share/jpda/SDE_MHDebuggeeBase.java
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      vm.mlvm.meth.func.jdi.breakpointOtherStratum.Test
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
@@ -71,7 +70,7 @@ import vm.mlvm.share.jpda.StratumInfo;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Test  extends JDIBreakpointTest {
+public class Test extends JDIBreakpointTest {
     @Override
     protected List<BreakpointInfo> getBreakpoints(String debuggeeClassName) {
         List<BreakpointInfo> result = new ArrayList<>();
@@ -107,9 +106,9 @@ public class Test  extends JDIBreakpointTest {
             info.stratumInfo = new StratumInfo("Logo", "SDE_MHDebuggeeBase.logo", 6);
             result.add(info);
         }
+
         return result;
     }
-
 
     public static void main(String[] args) {
         launch(new ArgumentHandler(args));

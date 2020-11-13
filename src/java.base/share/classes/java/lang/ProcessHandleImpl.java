@@ -36,6 +36,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -83,12 +84,19 @@ final class ProcessHandleImpl implements ProcessHandle {
      */
     private static final Executor processReaperExecutor =
             doPrivileged((PrivilegedAction<Executor>) () -> {
+                // Initialize ThreadLocalRandom now to avoid using the smaller stack
+                // of the processReaper threads.
+                ThreadLocalRandom.current();
 
                 ThreadGroup tg = Thread.currentThread().getThreadGroup();
                 while (tg.getParent() != null) tg = tg.getParent();
                 ThreadGroup systemThreadGroup = tg;
+
+                // For a debug build, the stack shadow zone is larger;
+                // Increase the total stack size to avoid potential stack overflow.
+                int debugDelta = "release".equals(System.getProperty("jdk.debug")) ? 0 : (4*4096);
                 final long stackSize = Boolean.getBoolean("jdk.lang.processReaperUseDefaultStackSize")
-                        ? 0 : REAPER_DEFAULT_STACKSIZE;
+                        ? 0 : REAPER_DEFAULT_STACKSIZE + debugDelta;
 
                 ThreadFactory threadFactory = grimReaper -> {
                     Thread t = new Thread(systemThreadGroup, grimReaper,

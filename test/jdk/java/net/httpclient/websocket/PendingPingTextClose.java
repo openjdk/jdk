@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,44 +44,61 @@ import static java.net.http.HttpClient.newBuilder;
 
 public class PendingPingTextClose extends PendingOperations {
 
+    static boolean debug = false; // avoid too verbose output
     CompletableFuture<WebSocket> cfText;
     CompletableFuture<WebSocket> cfPing;
     CompletableFuture<WebSocket> cfClose;
 
     @Test(dataProvider = "booleans")
     public void pendingPingTextClose(boolean last) throws Exception {
-        repeatable( () -> {
-            server = Support.notReadingServer();
-            server.open();
-            webSocket = newBuilder().proxy(NO_PROXY).build().newWebSocketBuilder()
-                    .buildAsync(server.getURI(), new WebSocket.Listener() { })
-                    .join();
-            ByteBuffer data = ByteBuffer.allocate(125);
-            for (int i = 0; ; i++) {  // fill up the send buffer
-                long start = System.currentTimeMillis();
-                System.out.printf("begin cycle #%s at %s%n", i, start);
-                cfPing = webSocket.sendPing(data);
-                try {
-                    cfPing.get(MAX_WAIT_SEC, TimeUnit.SECONDS);
-                    data.clear();
-                } catch (TimeoutException e) {
-                    break;
-                } finally {
-                    long stop = System.currentTimeMillis();
-                    System.out.printf("end cycle #%s at %s (%s ms)%n", i, stop, stop - start);
+        try {
+            repeatable(() -> {
+                server = Support.notReadingServer();
+                server.open();
+                webSocket = newBuilder().proxy(NO_PROXY).build().newWebSocketBuilder()
+                        .buildAsync(server.getURI(), new WebSocket.Listener() {
+                        })
+                        .join();
+                ByteBuffer data = ByteBuffer.allocate(125);
+                boolean done = false;
+                for (int i = 0; ; i++) {  // fill up the send buffer
+                    long start = System.currentTimeMillis();
+                    if (debug) System.out.printf("begin cycle #%s at %s%n", i, start);
+                    cfPing = webSocket.sendPing(data);
+                    try {
+                        cfPing.get(MAX_WAIT_SEC, TimeUnit.SECONDS);
+                        data.clear();
+                    } catch (TimeoutException e) {
+                        done = true;
+                        System.out.printf("Got expected timeout after %d iterations%n", i);
+                        break;
+                    } finally {
+                        long stop = System.currentTimeMillis();
+                        if (debug || done || (stop - start) > (MAX_WAIT_SEC * 1000L)/2L)
+                            System.out.printf("end cycle #%s at %s (%s ms)%n", i, stop, stop - start);
+                    }
                 }
-            }
-            assertFails(ISE, webSocket.sendPing(ByteBuffer.allocate(125)));
-            assertFails(ISE, webSocket.sendPong(ByteBuffer.allocate(125)));
-            cfText = webSocket.sendText("hello", last);
-            assertHangs(cfText);
-            cfClose = webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "ok");
-            assertHangs(cfClose);
-            return null;
-        }, () -> cfPing.isDone() ? true : false);
-        webSocket.abort();
-        assertFails(IOE, cfPing);
-        assertFails(IOE, cfText);
-        assertFails(IOE, cfClose);
+                assertFails(ISE, webSocket.sendPing(ByteBuffer.allocate(125)));
+                assertFails(ISE, webSocket.sendPong(ByteBuffer.allocate(125)));
+                System.out.println("asserting that sendText hangs");
+                cfText = webSocket.sendText("hello", last);
+                assertHangs(cfText);
+                System.out.println("asserting that sendClose hangs");
+                cfClose = webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "ok");
+                assertHangs(cfClose);
+                System.out.println("asserting that cfPing is not completed");
+                assertNotDone(cfPing);
+                System.out.println("finishing");
+                return null;
+            }, () -> cfPing.isDone()); // can't use method ref: cfPing not initialized
+            webSocket.abort();
+            assertFails(IOE, cfPing);
+            assertFails(IOE, cfText);
+            assertFails(IOE, cfClose);
+        } catch (Throwable t) {
+            System.err.printf("pendingPingTextClose(%s) failed: %s%n", last, t);
+            t.printStackTrace();
+            throw t;
+        }
     }
 }

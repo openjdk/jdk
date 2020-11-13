@@ -43,7 +43,7 @@ private:
 
 public:
   static bool is_crossing_or_ending_at_32_byte_boundary(uintptr_t start_pc, uintptr_t end_pc);
-  static bool is_jcc_erratum_branch(const Block* block, const MachNode* node, uint node_index);
+  static bool is_jcc_erratum_branch(const MachNode* node);
   // Analyze JCC erratum branches. Affected nodes get tagged with Flag_intel_jcc_erratum.
   // The function returns a conservative estimate of all required nops on all mach nodes.
   static int tag_affected_machnodes(Compile* C, PhaseCFG* cfg, PhaseRegAlloc* regalloc);

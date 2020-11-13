@@ -50,7 +50,7 @@ JNIEXPORT void JNICALL
     Java_sun_font_NativeStrikeDisposer_freeNativeScalerContext
     (JNIEnv *env, jobject disposer, jlong pScalerContext) {
 
-    NativeScalerContext *context = (NativeScalerContext*)pScalerContext;
+    NativeScalerContext *context = (NativeScalerContext*)(uintptr_t)(pScalerContext);
 
     if (context != NULL) {
         if (context->xFont != NULL) {
@@ -210,8 +210,8 @@ Java_sun_font_NativeFont_countGlyphs
     (JNIEnv *env, jobject font, jbyteArray xlfdBytes, jint ptSize) {
 
     NativeScalerContext *context = (NativeScalerContext*)
-        Java_sun_font_NativeStrike_createScalerContext
-        (env, NULL, xlfdBytes, ptSize, 1);
+        (uintptr_t)(Java_sun_font_NativeStrike_createScalerContext
+        (env, NULL, xlfdBytes, ptSize, 1));
 
     if (context == NULL) {
         return 0;
@@ -227,7 +227,7 @@ JNIEXPORT jint JNICALL
 Java_sun_font_NativeStrike_getMaxGlyph
     (JNIEnv *env, jobject strike, jlong pScalerContext) {
 
-    NativeScalerContext *context = (NativeScalerContext*)pScalerContext;
+    NativeScalerContext *context = (NativeScalerContext*)(uintptr_t)(pScalerContext);
     if (context == NULL) {
         return (jint)0;
     } else {
@@ -242,7 +242,7 @@ Java_sun_font_NativeFont_getGlyphAdvance
     AWTChar xcs = NULL;
     jfloat advance = 0.0f;
     AWTFont xFont;
-    NativeScalerContext *context = (NativeScalerContext*)pScalerContext;
+    NativeScalerContext *context = (NativeScalerContext*)(uintptr_t)(pScalerContext);
     if (context == NULL) {
         return advance;
     } else {
@@ -285,7 +285,7 @@ Java_sun_font_NativeFont_getGlyphImageNoDefault
 
     AWTChar2b xChar;
     AWTFont xFont;
-    NativeScalerContext *context = (NativeScalerContext*)pScalerContext;
+    NativeScalerContext *context = (NativeScalerContext*)(uintptr_t)(pScalerContext);
     if (context == NULL) {
         return (jlong)0;
     } else {
@@ -311,7 +311,7 @@ Java_sun_font_NativeFont_getGlyphImage
 
     AWTChar2b xChar;
     AWTFont xFont;
-    NativeScalerContext *context = (NativeScalerContext*)pScalerContext;
+    NativeScalerContext *context = (NativeScalerContext*)(uintptr_t)(pScalerContext);
     if (context == NULL) {
         return (jlong)0;
     } else {
@@ -338,7 +338,7 @@ JNIEXPORT jobject JNICALL
     jfloat j0=0, j1=1, ay=j0, dy=j0, mx=j0;
     jobject metrics;
     AWTFont xFont;
-    NativeScalerContext *context = (NativeScalerContext*)pScalerContext;
+    NativeScalerContext *context = (NativeScalerContext*)(uintptr_t)(pScalerContext);
     if (context == NULL) {
         return NULL;
     } else {

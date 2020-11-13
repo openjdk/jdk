@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,6 +176,7 @@ public class JPEGImageWriter extends ImageWriter {
     static {
         java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Void>() {
+                @Override
                 public Void run() {
                     System.loadLibrary("javajpeg");
                     return null;
@@ -194,6 +195,7 @@ public class JPEGImageWriter extends ImageWriter {
         Disposer.addRecord(disposerReferent, disposerRecord);
     }
 
+    @Override
     public void setOutput(Object output) {
         setThreadLock();
         try {
@@ -209,10 +211,12 @@ public class JPEGImageWriter extends ImageWriter {
         }
     }
 
+    @Override
     public ImageWriteParam getDefaultWriteParam() {
         return new JPEGImageWriteParam(null);
     }
 
+    @Override
     public IIOMetadata getDefaultStreamMetadata(ImageWriteParam param) {
         setThreadLock();
         try {
@@ -222,6 +226,7 @@ public class JPEGImageWriter extends ImageWriter {
         }
     }
 
+    @Override
     public IIOMetadata
         getDefaultImageMetadata(ImageTypeSpecifier imageType,
                                 ImageWriteParam param) {
@@ -233,6 +238,7 @@ public class JPEGImageWriter extends ImageWriter {
         }
     }
 
+    @Override
     public IIOMetadata convertStreamMetadata(IIOMetadata inData,
                                              ImageWriteParam param) {
         // There isn't much we can do.  If it's one of ours, then
@@ -248,6 +254,7 @@ public class JPEGImageWriter extends ImageWriter {
         return null;
     }
 
+    @Override
     public IIOMetadata
         convertImageMetadata(IIOMetadata inData,
                              ImageTypeSpecifier imageType,
@@ -299,6 +306,7 @@ public class JPEGImageWriter extends ImageWriter {
         return null;
     }
 
+    @Override
     public int getNumThumbnailsSupported(ImageTypeSpecifier imageType,
                                          ImageWriteParam param,
                                          IIOMetadata streamMetadata,
@@ -319,7 +327,7 @@ public class JPEGImageWriter extends ImageWriter {
 
     static final Dimension [] preferredThumbSizes = {new Dimension(1, 1),
                                                      new Dimension(255, 255)};
-
+    @Override
     public Dimension[] getPreferredThumbnailSizes(ImageTypeSpecifier imageType,
                                                   ImageWriteParam param,
                                                   IIOMetadata streamMetadata,
@@ -357,10 +365,12 @@ public class JPEGImageWriter extends ImageWriter {
         return true;
     }
 
+    @Override
     public boolean canWriteRasters() {
         return true;
     }
 
+    @Override
     public void write(IIOMetadata streamMetadata,
                       IIOImage image,
                       ImageWriteParam param) throws IOException {
@@ -1049,6 +1059,7 @@ public class JPEGImageWriter extends ImageWriter {
         return true;
     }
 
+    @Override
     public void prepareWriteSequence(IIOMetadata streamMetadata)
         throws IOException {
         setThreadLock();
@@ -1130,6 +1141,7 @@ public class JPEGImageWriter extends ImageWriter {
         sequencePrepared = true;
     }
 
+    @Override
     public void writeToSequence(IIOImage image, ImageWriteParam param)
         throws IOException {
         setThreadLock();
@@ -1146,6 +1158,7 @@ public class JPEGImageWriter extends ImageWriter {
         }
     }
 
+    @Override
     public void endWriteSequence() throws IOException {
         setThreadLock();
         try {
@@ -1160,6 +1173,7 @@ public class JPEGImageWriter extends ImageWriter {
         }
     }
 
+    @Override
     public synchronized void abort() {
         setThreadLock();
         try {
@@ -1204,6 +1218,7 @@ public class JPEGImageWriter extends ImageWriter {
         metadata = null;
     }
 
+    @Override
     public void reset() {
         setThreadLock();
         try {
@@ -1215,6 +1230,7 @@ public class JPEGImageWriter extends ImageWriter {
         }
     }
 
+    @Override
     public void dispose() {
         setThreadLock();
         try {
@@ -1735,6 +1751,7 @@ public class JPEGImageWriter extends ImageWriter {
             this.pData = pData;
         }
 
+        @Override
         public synchronized void dispose() {
             if (pData != 0) {
                 disposeWriter(pData);

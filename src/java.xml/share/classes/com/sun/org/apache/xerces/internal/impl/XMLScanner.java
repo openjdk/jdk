@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -67,7 +67,7 @@ import com.sun.xml.internal.stream.Entity;
  * @author Eric Ye, IBM
  * @author K.Venugopal SUN Microsystems
  * @author Sunitha Reddy, SUN Microsystems
- * @LastModified: Nov 2017
+ * @LastModified: Feb 2020
  */
 public abstract class XMLScanner
         implements XMLComponent {
@@ -1239,10 +1239,10 @@ public abstract class XMLScanner
      * @throws XNIException Thrown by handler to signal an error.
      */
     public void endEntity(String name, Augmentations augs) throws IOException, XNIException {
-
         // keep track of the entity depth
-        fEntityDepth--;
-
+        if (fEntityDepth > 0) {
+            fEntityDepth--;
+        }
     } // endEntity(String)
 
     /**

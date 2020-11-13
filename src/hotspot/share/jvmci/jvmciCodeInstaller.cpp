@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@
 #include "jvmci/jvmciRuntime.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.inline.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "prims/methodHandles.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -788,7 +790,7 @@ int CodeInstaller::estimate_stubs_size(JVMCI_TRAPS) {
 
 // perform data and call relocation on the CodeBuffer
 JVMCI::CodeInstallResult CodeInstaller::initialize_buffer(CodeBuffer& buffer, bool check_size, JVMCI_TRAPS) {
-  HandleMark hm;
+  HandleMark hm(Thread::current());
   JVMCIObjectArray sites = this->sites();
   int locs_buffer_size = JVMCIENV->get_length(sites) * (relocInfo::length_limit + sizeof(relocInfo));
 
@@ -897,8 +899,14 @@ JVMCI::CodeInstallResult CodeInstaller::initialize_buffer(CodeBuffer& buffer, bo
           JVMCI_ERROR_OK("method contains safepoint, but has no deopt rescue slot");
         }
         if (JVMCIENV->equals(reason, jvmci_env()->get_site_InfopointReason_IMPLICIT_EXCEPTION())) {
-          JVMCI_event_4("implicit exception at %i", pc_offset);
-          _implicit_exception_table.add_deoptimize(pc_offset);
+          if (jvmci_env()->isa_site_ImplicitExceptionDispatch(site)) {
+            jint dispatch_offset = jvmci_env()->get_site_ImplicitExceptionDispatch_dispatchOffset(site);
+            JVMCI_event_4("implicit exception at %i, dispatch to %i", pc_offset, dispatch_offset);
+            _implicit_exception_table.append(pc_offset, dispatch_offset);
+          } else {
+            JVMCI_event_4("implicit exception at %i", pc_offset);
+            _implicit_exception_table.add_deoptimize(pc_offset);
+          }
         }
       } else {
         JVMCI_event_4("infopoint at %i", pc_offset);
@@ -919,7 +927,7 @@ JVMCI::CodeInstallResult CodeInstaller::initialize_buffer(CodeBuffer& buffer, bo
     last_pc_offset = pc_offset;
 
     JavaThread* thread = JavaThread::current();
-    if (SafepointMechanism::should_block(thread)) {
+    if (SafepointMechanism::should_process(thread)) {
       // this is a hacky way to force a safepoint check but nothing else was jumping out at me.
       ThreadToNativeFromVM ttnfv(thread);
     }
@@ -1043,7 +1051,7 @@ GrowableArray<ScopeValue*>* CodeInstaller::record_virtual_objects(JVMCIObject de
   return objects;
 }
 
-void CodeInstaller::record_scope(jint pc_offset, JVMCIObject debug_info, ScopeMode scope_mode, bool return_oop, JVMCI_TRAPS) {
+void CodeInstaller::record_scope(jint pc_offset, JVMCIObject debug_info, ScopeMode scope_mode, bool is_mh_invoke, bool return_oop, JVMCI_TRAPS) {
   JVMCIObject position = jvmci_env()->get_DebugInfo_bytecodePosition(debug_info);
   if (position.is_null()) {
     // Stubs do not record scope info, just oop maps
@@ -1056,7 +1064,7 @@ void CodeInstaller::record_scope(jint pc_offset, JVMCIObject debug_info, ScopeMo
   } else {
     objectMapping = NULL;
   }
-  record_scope(pc_offset, position, scope_mode, objectMapping, return_oop, JVMCI_CHECK);
+  record_scope(pc_offset, position, scope_mode, objectMapping, is_mh_invoke, return_oop, JVMCI_CHECK);
 }
 
 int CodeInstaller::map_jvmci_bci(int bci) {
@@ -1079,7 +1087,7 @@ int CodeInstaller::map_jvmci_bci(int bci) {
   return bci;
 }
 
-void CodeInstaller::record_scope(jint pc_offset, JVMCIObject position, ScopeMode scope_mode, GrowableArray<ScopeValue*>* objects, bool return_oop, JVMCI_TRAPS) {
+void CodeInstaller::record_scope(jint pc_offset, JVMCIObject position, ScopeMode scope_mode, GrowableArray<ScopeValue*>* objects, bool is_mh_invoke, bool return_oop, JVMCI_TRAPS) {
   JVMCIObject frame;
   if (scope_mode == CodeInstaller::FullFrame) {
     if (!jvmci_env()->isa_BytecodeFrame(position)) {
@@ -1089,7 +1097,7 @@ void CodeInstaller::record_scope(jint pc_offset, JVMCIObject position, ScopeMode
   }
   JVMCIObject caller_frame = jvmci_env()->get_BytecodePosition_caller(position);
   if (caller_frame.is_non_null()) {
-    record_scope(pc_offset, caller_frame, scope_mode, objects, return_oop, JVMCI_CHECK);
+    record_scope(pc_offset, caller_frame, scope_mode, objects, is_mh_invoke, return_oop, JVMCI_CHECK);
   }
 
   JVMCIObject hotspot_method = jvmci_env()->get_BytecodePosition_method(position);
@@ -1181,7 +1189,11 @@ void CodeInstaller::record_scope(jint pc_offset, JVMCIObject position, ScopeMode
     throw_exception = jvmci_env()->get_BytecodeFrame_rethrowException(frame) == JNI_TRUE;
   }
 
-  _debug_recorder->describe_scope(pc_offset, method, NULL, bci, reexecute, throw_exception, false, return_oop,
+  // has_ea_local_in_scope and arg_escape should be added to JVMCI
+  const bool has_ea_local_in_scope = false;
+  const bool arg_escape            = false;
+  _debug_recorder->describe_scope(pc_offset, method, NULL, bci, reexecute, throw_exception, is_mh_invoke, return_oop,
+                                  has_ea_local_in_scope, arg_escape,
                                   locals_token, expressions_token, monitors_token);
 }
 
@@ -1236,9 +1248,19 @@ void CodeInstaller::site_Call(CodeBuffer& buffer, jint pc_offset, JVMCIObject si
     OopMap *map = create_oop_map(debug_info, JVMCI_CHECK);
     _debug_recorder->add_safepoint(next_pc_offset, map);
 
-    bool return_oop = hotspot_method.is_non_null() && jvmci_env()->asMethod(hotspot_method)->is_returning_oop();
-
-    record_scope(next_pc_offset, debug_info, CodeInstaller::FullFrame, return_oop, JVMCI_CHECK);
+    if (hotspot_method.is_non_null()) {
+      Method *method = jvmci_env()->asMethod(hotspot_method);
+      vmIntrinsics::ID iid = method->intrinsic_id();
+      bool is_mh_invoke = false;
+      if (jvmci_env()->get_site_Call_direct(site)) {
+        is_mh_invoke = !method->is_static() && (iid == vmIntrinsics::_compiledLambdaForm ||
+                (MethodHandles::is_signature_polymorphic(iid) && MethodHandles::is_signature_polymorphic_intrinsic(iid)));
+      }
+      bool return_oop = method->is_returning_oop();
+      record_scope(next_pc_offset, debug_info, CodeInstaller::FullFrame, is_mh_invoke, return_oop, JVMCI_CHECK);
+    } else {
+      record_scope(next_pc_offset, debug_info, CodeInstaller::FullFrame, JVMCI_CHECK);
+    }
   }
 
   if (foreign_call.is_non_null()) {
@@ -1347,6 +1369,9 @@ void CodeInstaller::site_Mark(CodeBuffer& buffer, jint pc_offset, JVMCIObject si
       case DEOPT_HANDLER_ENTRY:
         _offsets.set_value(CodeOffsets::Deopt, pc_offset);
         break;
+      case DEOPT_MH_HANDLER_ENTRY:
+        _offsets.set_value(CodeOffsets::DeoptMH, pc_offset);
+        break;
       case FRAME_COMPLETE:
         _offsets.set_value(CodeOffsets::Frame_Complete, pc_offset);
         break;
@@ -1373,6 +1398,10 @@ void CodeInstaller::site_Mark(CodeBuffer& buffer, jint pc_offset, JVMCIObject si
       case CRC_TABLE_ADDRESS:
       case LOG_OF_HEAP_REGION_GRAIN_BYTES:
       case INLINE_CONTIGUOUS_ALLOCATION_SUPPORTED:
+      case VERIFY_OOPS:
+      case VERIFY_OOP_BITS:
+      case VERIFY_OOP_MASK:
+      case VERIFY_OOP_COUNT_ADDRESS:
         break;
       default:
         JVMCI_ERROR("invalid mark id: %d", id);

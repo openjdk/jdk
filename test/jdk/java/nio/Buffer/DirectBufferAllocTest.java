@@ -26,7 +26,7 @@
  * @bug 6857566
  * @summary DirectByteBuffer garbage creation can outpace reclamation
  *
- * @run main/othervm -XX:MaxDirectMemorySize=128m DirectBufferAllocTest
+ * @run main/othervm -XX:MaxDirectMemorySize=128m -XX:-ExplicitGCInvokesConcurrent DirectBufferAllocTest
  */
 
 import java.nio.ByteBuffer;

@@ -919,6 +919,13 @@ public class DeferredAttr extends JCTree.Visitor {
             }
 
             @Override
+            public void visitConditional(JCTree.JCConditional tree) {
+                //skip tree.cond
+                scan(tree.truepart);
+                scan(tree.falsepart);
+            }
+
+            @Override
             public void visitReference(JCMemberReference tree) {
                 Assert.checkNonNull(tree.getOverloadKind());
                 Check.CheckContext checkContext = resultInfo.checkContext;
@@ -1322,20 +1329,28 @@ public class DeferredAttr extends JCTree.Visitor {
      */
     enum AttributionMode {
         /**Normal, non-speculative, attribution.*/
-        FULL(false),
+        FULL(false, true),
         /**Speculative attribution on behalf of an Analyzer.*/
-        ANALYZER(true),
+        ATTRIB_TO_TREE(true, true),
+        /**Speculative attribution on behalf of an Analyzer.*/
+        ANALYZER(true, false),
         /**Speculative attribution.*/
-        SPECULATIVE(true);
+        SPECULATIVE(true, false);
 
-        AttributionMode(boolean isSpeculative) {
+        AttributionMode(boolean isSpeculative, boolean recover) {
             this.isSpeculative = isSpeculative;
+            this.recover = recover;
         }
 
         boolean isSpeculative() {
             return isSpeculative;
         }
 
+        boolean recover() {
+            return recover;
+        }
+
         final boolean isSpeculative;
+        final boolean recover;
     }
 }

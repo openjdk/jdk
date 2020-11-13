@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -120,7 +120,7 @@ $(CLASSES):
 mkdirs: $(DIST) $(CLASSES)
 
 $(CLASSES)/j2dbench/%.class: $(SOURCEPATH)/j2dbench/%.java
-	javac -g:none -source 1.6 -target 1.6 -d $(CLASSES) -sourcepath $(SOURCEPATH) $<
+	javac -g:none -source 1.7 -target 1.7 -d $(CLASSES) -sourcepath $(SOURCEPATH) $<
 
 clean:
 	rm -rf $(CLASSES)

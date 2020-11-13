@@ -42,15 +42,18 @@ import jdk.jshell.Key.MethodKey;
 public class MethodSnippet extends DeclarationSnippet {
 
     final String signature;
+    final String unresolvedSelf;
     private String qualifiedParameterTypes;
 
     MethodSnippet(MethodKey key, String userSource, Wrap guts,
             String name, String signature, Wrap corralled,
             Collection<String> declareReferences, Collection<String> bodyReferences,
+            String unresolvedSelf,
             DiagList syntheticDiags) {
         super(key, userSource, guts, name, SubKind.METHOD_SUBKIND, corralled,
                 declareReferences, bodyReferences, syntheticDiags);
         this.signature = signature;
+        this.unresolvedSelf = unresolvedSelf;
     }
 
     /**

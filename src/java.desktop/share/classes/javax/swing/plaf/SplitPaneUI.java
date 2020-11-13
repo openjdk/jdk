@@ -36,6 +36,11 @@ import java.awt.Graphics;
 public abstract class SplitPaneUI extends ComponentUI
 {
     /**
+     * Constructor for subclasses to call.
+     */
+    protected SplitPaneUI() {}
+
+    /**
      * Messaged to relayout the JSplitPane based on the preferred size
      * of the children components.
      *

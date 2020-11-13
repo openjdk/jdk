@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,18 @@
 
 package java.io;
 
+import java.util.Objects;
+
 /**
  * A data input stream lets an application read primitive Java data
  * types from an underlying input stream in a machine-independent
  * way. An application uses a data output stream to write data that
  * can later be read by a data input stream.
  * <p>
- * DataInputStream is not necessarily safe for multithreaded access.
- * Thread safety is optional and is the responsibility of users of
- * methods in this class.
+ * A DataInputStream is not safe for use by multiple concurrent
+ * threads. If a DataInputStream is to be used by more than one
+ * thread then access to the data input stream should be controlled
+ * by appropriate synchronization.
  *
  * @author  Arthur van Hoff
  * @see     java.io.DataOutputStream
@@ -192,8 +195,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      * @see        java.io.FilterInputStream#in
      */
     public final void readFully(byte b[], int off, int len) throws IOException {
-        if (len < 0)
-            throw new IndexOutOfBoundsException();
+        Objects.checkFromIndexSize(off, len, b.length);
         int n = 0;
         while (n < len) {
             int count = in.read(b, off + n, len - n);

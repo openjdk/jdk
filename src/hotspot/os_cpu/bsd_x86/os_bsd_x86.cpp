@@ -49,6 +49,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
+#include "signals_posix.hpp"
 #include "utilities/align.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
@@ -338,41 +339,12 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
   return frame(sp, fp, epc);
 }
 
-bool os::Bsd::get_frame_at_stack_banging_point(JavaThread* thread, ucontext_t* uc, frame* fr) {
-  address pc = (address) os::Bsd::ucontext_get_pc(uc);
-  if (Interpreter::contains(pc)) {
-    // interpreter performs stack banging after the fixed frame header has
-    // been generated while the compilers perform it before. To maintain
-    // semantic consistency between interpreted and compiled frames, the
-    // method returns the Java sender of the current frame.
-    *fr = os::fetch_frame_from_context(uc);
-    if (!fr->is_first_java_frame()) {
-      // get_frame_at_stack_banging_point() is only called when we
-      // have well defined stacks so java_sender() calls do not need
-      // to assert safe_for_sender() first.
-      *fr = fr->java_sender();
-    }
-  } else {
-    // more complex code with compiled code
-    assert(!Interpreter::contains(pc), "Interpreted methods should have been handled above");
-    CodeBlob* cb = CodeCache::find_blob(pc);
-    if (cb == NULL || !cb->is_nmethod() || cb->is_frame_complete_at(pc)) {
-      // Not sure where the pc points to, fallback to default
-      // stack overflow handling
-      return false;
-    } else {
-      *fr = os::fetch_frame_from_context(uc);
-      // in compiled code, the stack banging is performed just after the return pc
-      // has been pushed on the stack
-      *fr = frame(fr->sp() + 1, fr->fp(), (address)*(fr->sp()));
-      if (!fr->is_java_frame()) {
-        // See java_sender() comment above.
-        *fr = fr->java_sender();
-      }
-    }
-  }
-  assert(fr->is_java_frame(), "Safety check");
-  return true;
+frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
+  const ucontext_t* uc = (const ucontext_t*)ucVoid;
+  frame fr = os::fetch_frame_from_context(uc);
+  // in compiled code, the stack banging is performed just after the return pc
+  // has been pushed on the stack
+  return frame(fr.sp() + 1, fr.fp(), (address)*(fr.sp()));
 }
 
 // By default, gcc always save frame pointer (%ebp/%rbp) on stack. It may get
@@ -413,57 +385,14 @@ frame os::current_frame() {
   }
 }
 
-// Utility functions
-
 // From IA32 System Programming Guide
 enum {
   trap_page_fault = 0xE
 };
 
-extern "C" JNIEXPORT int
-JVM_handle_bsd_signal(int sig,
-                        siginfo_t* info,
-                        void* ucVoid,
-                        int abort_if_unrecognized) {
-  ucontext_t* uc = (ucontext_t*) ucVoid;
+bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
+                                             ucontext_t* uc, JavaThread* thread) {
 
-  Thread* t = Thread::current_or_null_safe();
-
-  // Must do this before SignalHandlerMark, if crash protection installed we will longjmp away
-  // (no destructors can be run)
-  os::ThreadCrashProtection::check_crash_protection(sig, t);
-
-  SignalHandlerMark shm(t);
-
-  // Note: it's not uncommon that JNI code uses signal/sigset to install
-  // then restore certain signal handler (e.g. to temporarily block SIGPIPE,
-  // or have a SIGILL handler when detecting CPU type). When that happens,
-  // JVM_handle_bsd_signal() might be invoked with junk info/ucVoid. To
-  // avoid unnecessary crash when libjsig is not preloaded, try handle signals
-  // that do not require siginfo/ucontext first.
-
-  if (sig == SIGPIPE || sig == SIGXFSZ) {
-    // allow chained handler to go first
-    if (os::Bsd::chained_handler(sig, info, ucVoid)) {
-      return true;
-    } else {
-      // Ignoring SIGPIPE/SIGXFSZ - see bugs 4229104 or 6499219
-      return true;
-    }
-  }
-
-  JavaThread* thread = NULL;
-  VMThread* vmthread = NULL;
-  if (os::Bsd::signal_handlers_are_installed) {
-    if (t != NULL ){
-      if(t->is_Java_thread()) {
-        thread = (JavaThread*)t;
-      }
-      else if(t->is_VM_thread()){
-        vmthread = (VMThread *)t;
-      }
-    }
-  }
 /*
   NOTE: does not seem to work on bsd.
   if (info == NULL || info->si_code <= 0 || info->si_code == SI_NOINFO) {
@@ -484,7 +413,7 @@ JVM_handle_bsd_signal(int sig,
 
     if (StubRoutines::is_safefetch_fault(pc)) {
       os::Bsd::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
-      return 1;
+      return true;
     }
 
     // Handle ALL stack overflow variations here
@@ -494,39 +423,8 @@ JVM_handle_bsd_signal(int sig,
       // check if fault address is within thread stack
       if (thread->is_in_full_stack(addr)) {
         // stack overflow
-        if (thread->in_stack_yellow_reserved_zone(addr)) {
-          if (thread->thread_state() == _thread_in_Java) {
-            if (thread->in_stack_reserved_zone(addr)) {
-              frame fr;
-              if (os::Bsd::get_frame_at_stack_banging_point(thread, uc, &fr)) {
-                assert(fr.is_java_frame(), "Must be a Java frame");
-                frame activation = SharedRuntime::look_for_reserved_stack_annotated_method(thread, fr);
-                if (activation.sp() != NULL) {
-                  thread->disable_stack_reserved_zone();
-                  if (activation.is_interpreted_frame()) {
-                    thread->set_reserved_stack_activation((address)(
-                      activation.fp() + frame::interpreter_frame_initial_sp_offset));
-                  } else {
-                    thread->set_reserved_stack_activation((address)activation.unextended_sp());
-                  }
-                  return 1;
-                }
-              }
-            }
-            // Throw a stack overflow exception.  Guard pages will be reenabled
-            // while unwinding the stack.
-            thread->disable_stack_yellow_reserved_zone();
-            stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::STACK_OVERFLOW);
-          } else {
-            // Thread was in the vm or native code.  Return and try to finish.
-            thread->disable_stack_yellow_reserved_zone();
-            return 1;
-          }
-        } else if (thread->in_stack_red_zone(addr)) {
-          // Fatal red zone violation.  Disable the guard pages and fall through
-          // to handle_unexpected_exception way down below.
-          thread->disable_stack_red_zone();
-          tty->print_raw_cr("An irrecoverable stack overflow has occurred.");
+        if (os::Posix::handle_stack_overflow(thread, addr, pc, uc, &stub)) {
+          return true; // continue
         }
       }
     }
@@ -609,7 +507,7 @@ JVM_handle_bsd_signal(int sig,
         int op = pc[0];
         if (op == 0xDB) {
           // FIST
-          // TODO: The encoding of D2I in i486.ad can cause an exception
+          // TODO: The encoding of D2I in x86_32.ad can cause an exception
           // prior to the fist instruction if there was an invalid operation
           // pending. We want to dismiss that exception. From the win_32
           // side it also seems that if it really was the fist causing
@@ -738,29 +636,6 @@ JVM_handle_bsd_signal(int sig,
     return true;
   }
 
-  // signal-chaining
-  if (os::Bsd::chained_handler(sig, info, ucVoid)) {
-     return true;
-  }
-
-  if (!abort_if_unrecognized) {
-    // caller wants another chance, so give it to him
-    return false;
-  }
-
-  if (pc == NULL && uc != NULL) {
-    pc = os::Bsd::ucontext_get_pc(uc);
-  }
-
-  // unmask current signal
-  sigset_t newset;
-  sigemptyset(&newset);
-  sigaddset(&newset, sig);
-  sigprocmask(SIG_UNBLOCK, &newset, NULL);
-
-  VMError::report_and_die(t, sig, pc, info, ucVoid);
-
-  ShouldNotReachHere();
   return false;
 }
 
@@ -791,7 +666,7 @@ bool os::is_allocatable(size_t bytes) {
     return true;
   }
 
-  char* addr = reserve_memory(bytes, NULL);
+  char* addr = reserve_memory(bytes);
 
   if (addr != NULL) {
     release_memory(addr, bytes);
@@ -799,6 +674,18 @@ bool os::is_allocatable(size_t bytes) {
 
   return addr != NULL;
 #endif // AMD64
+}
+
+juint os::cpu_microcode_revision() {
+  juint result = 0;
+  char data[8];
+  size_t sz = sizeof(data);
+  int ret = sysctlbyname("machdep.cpu.microcode_version", data, &sz, NULL, 0);
+  if (ret == 0) {
+    if (sz == 4) result = *((juint*)data);
+    if (sz == 8) result = *((juint*)data + 1); // upper 32-bits
+  }
+  return result;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -843,7 +730,7 @@ size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
 //    |                        |\
 //    |  HotSpot Guard Pages   | - red, yellow and reserved pages
 //    |                        |/
-//    +------------------------+ JavaThread::stack_reserved_zone_base()
+//    +------------------------+ StackOverflow::stack_reserved_zone_base()
 //    |                        |\
 //    |      Normal Stack      | -
 //    |                        |/

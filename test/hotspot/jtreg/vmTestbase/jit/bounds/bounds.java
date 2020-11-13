@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build jit.bounds.bounds
- * @run driver ExecDriver --java jit.bounds.bounds
+ * @run main/othervm jit.bounds.bounds
  */
 
 package jit.bounds;
@@ -41,7 +39,7 @@ package jit.bounds;
 
 import nsk.share.TestFailure;
 
-class bounds {
+public class bounds {
     public static void main(String[] argv) {
         int i;
         int a[] = new int[2];

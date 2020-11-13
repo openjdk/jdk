@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,9 @@ package javax.lang.model.element;
  * implementation are usable in collections while {@code Name}s from
  * different implementations may not work properly in collections.
  *
- * <p>An empty {@code Name} has a length of zero.
+ * <p id="empty_name">An {@linkplain CharSequence#isEmpty() empty}
+ * {@code Name} has a {@linkplain CharSequence#length() length} of
+ * zero.
  *
  * <p>In the context of {@linkplain
  * javax.annotation.processing.ProcessingEnvironment annotation

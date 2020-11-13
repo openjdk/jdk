@@ -134,6 +134,10 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
 
       WARNINGS_ENABLE_ALL="-W3"
       DISABLED_WARNINGS="4800"
+      if test "x$TOOLCHAIN_VERSION" = x2017; then
+        # VS2017 incorrectly triggers this warning for constexpr
+        DISABLED_WARNINGS+=" 4307"
+      fi
       ;;
 
     gcc)
@@ -227,8 +231,14 @@ AC_DEFUN([FLAGS_SETUP_OPTIMIZATION],
     # -D_FORTIFY_SOURCE=2 hardening option needs optimization (at least -O1) enabled
     # set for lower O-levels -U_FORTIFY_SOURCE to overwrite previous settings
     if test "x$OPENJDK_TARGET_OS" = xlinux -a "x$DEBUG_LEVEL" = "xfastdebug"; then
-      ENABLE_FORTIFY_CFLAGS="-D_FORTIFY_SOURCE=2"
       DISABLE_FORTIFY_CFLAGS="-U_FORTIFY_SOURCE"
+      # ASan doesn't work well with _FORTIFY_SOURCE
+      # See https://github.com/google/sanitizers/wiki/AddressSanitizer#faq
+      if test "x$ASAN_ENABLED" = xyes; then
+        ENABLE_FORTIFY_CFLAGS="${DISABLE_FORTIFY_CFLAGS}"
+      else
+        ENABLE_FORTIFY_CFLAGS="-D_FORTIFY_SOURCE=2"
+      fi
       C_O_FLAG_HIGHEST_JVM="${C_O_FLAG_HIGHEST_JVM} ${ENABLE_FORTIFY_CFLAGS}"
       C_O_FLAG_HIGHEST="${C_O_FLAG_HIGHEST} ${ENABLE_FORTIFY_CFLAGS}"
       C_O_FLAG_HI="${C_O_FLAG_HI} ${ENABLE_FORTIFY_CFLAGS}"
@@ -512,6 +522,18 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   fi
   TOOLCHAIN_CFLAGS_JDK_CONLY="$LANGSTD_CFLAGS $TOOLCHAIN_CFLAGS_JDK_CONLY"
 
+  # CXXFLAGS C++ language level for all of JDK, including Hotspot.
+  if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang || test "x$TOOLCHAIN_TYPE" = xxlc; then
+    LANGSTD_CXXFLAGS="-std=c++14"
+  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+    LANGSTD_CXXFLAGS="-std:c++14"
+  else
+    AC_MSG_ERROR([Don't know how to enable C++14 for this toolchain])
+  fi
+  TOOLCHAIN_CFLAGS_JDK_CXXONLY="$TOOLCHAIN_CFLAGS_JDK_CXXONLY $LANGSTD_CXXFLAGS"
+  TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM $LANGSTD_CXXFLAGS"
+  ADLC_LANGSTD_CXXFLAGS="$LANGSTD_CXXFLAGS"
+
   # CFLAGS WARNINGS STUFF
   # Set JVM_CFLAGS warning handling
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
@@ -540,6 +562,11 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
         OS_CFLAGS="$OS_CFLAGS \
             -DMAC_OS_X_VERSION_MAX_ALLOWED=$MACOSX_VERSION_MAX_NODOTS"
     fi
+  fi
+
+  OS_CFLAGS="$OS_CFLAGS -DLIBC=$OPENJDK_TARGET_LIBC"
+  if test "x$OPENJDK_TARGET_LIBC" = xmusl; then
+    OS_CFLAGS="$OS_CFLAGS -DMUSL_LIBC"
   fi
 
   # Where does this really belong??
@@ -636,21 +663,17 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
   $1_DEFINES_CPU_JDK="${$1_DEFINES_CPU_JDK} -DARCH='\"$FLAGS_CPU_LEGACY\"' \
       -D$FLAGS_CPU_LEGACY"
 
-  if test "x$FLAGS_CPU_BITS" = x64; then
-    # -D_LP64=1 is only set on linux and mac. Setting on windows causes diff in
-    # unpack200.exe.
-    if test "x$FLAGS_OS" = xlinux || test "x$FLAGS_OS" = xmacosx; then
-      $1_DEFINES_CPU_JDK="${$1_DEFINES_CPU_JDK} -D_LP64=1"
-    fi
-    if test "x$FLAGS_OS" != xaix; then
-      # xlc on AIX defines _LP64=1 by default and issues a warning if we redefine it.
-      $1_DEFINES_CPU_JVM="${$1_DEFINES_CPU_JVM} -D_LP64=1"
-    fi
+  if test "x$FLAGS_CPU_BITS" = x64 && test "x$FLAGS_OS" != xaix; then
+    # xlc on AIX defines _LP64=1 by default and issues a warning if we redefine it.
+    $1_DEFINES_CPU_JDK="${$1_DEFINES_CPU_JDK} -D_LP64=1"
+    $1_DEFINES_CPU_JVM="${$1_DEFINES_CPU_JVM} -D_LP64=1"
   fi
 
   # toolchain dependend, per-cpu
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    if test "x$FLAGS_CPU" = xx86_64; then
+    if test "x$FLAGS_CPU" = xaarch64; then
+      $1_DEFINES_CPU_JDK="${$1_DEFINES_CPU_JDK} -D_ARM64_ -Darm64"
+    elif test "x$FLAGS_CPU" = xx86_64; then
       $1_DEFINES_CPU_JDK="${$1_DEFINES_CPU_JDK} -D_AMD64_ -Damd64"
     else
       $1_DEFINES_CPU_JDK="${$1_DEFINES_CPU_JDK} -D_X86_ -Dx86"
@@ -693,13 +716,6 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
       # for all archs except arm and ppc, prevent gcc to omit frame pointer
       $1_CFLAGS_CPU_JDK="${$1_CFLAGS_CPU_JDK} -fno-omit-frame-pointer"
     fi
-
-    $1_CXXSTD_CXXFLAG="-std=gnu++98"
-    FLAGS_CXX_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${$1_CXXSTD_CXXFLAG}],
-        PREFIX: $3, IF_FALSE: [$1_CXXSTD_CXXFLAG=""])
-    $1_TOOLCHAIN_CFLAGS_JDK_CXXONLY="${$1_CXXSTD_CXXFLAG}"
-    $1_TOOLCHAIN_CFLAGS_JVM="${$1_TOOLCHAIN_CFLAGS_JVM} ${$1_CXXSTD_CXXFLAG}"
-    $2ADLC_CXXFLAG="${$1_CXXSTD_CXXFLAG}"
 
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     if test "x$FLAGS_OS" = xlinux; then
@@ -795,7 +811,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
   AC_SUBST($2CFLAGS_JDKEXE)
   AC_SUBST($2CXXFLAGS_JDKLIB)
   AC_SUBST($2CXXFLAGS_JDKEXE)
-  AC_SUBST($2ADLC_CXXFLAG)
+  AC_SUBST($2ADLC_LANGSTD_CXXFLAGS)
 
   COMPILER_FP_CONTRACT_OFF_FLAG="-ffp-contract=off"
   # Check that the compiler supports -ffp-contract=off flag

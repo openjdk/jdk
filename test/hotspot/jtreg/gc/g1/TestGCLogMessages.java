@@ -39,6 +39,7 @@ package gc.g1;
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import sun.hotspot.code.Compiler;
 
@@ -121,11 +122,7 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("LAB Undo Waste", Level.DEBUG),
         // Ext Root Scan
         new LogMessageWithLevel("Thread Roots", Level.TRACE),
-        new LogMessageWithLevel("Universe Roots", Level.TRACE),
-        new LogMessageWithLevel("ObjectSynchronizer Roots", Level.TRACE),
-        new LogMessageWithLevel("Management Roots", Level.TRACE),
         new LogMessageWithLevel("CLDG Roots", Level.TRACE),
-        new LogMessageWithLevel("JVMTI Roots", Level.TRACE),
         new LogMessageWithLevel("CM RefProcessor Roots", Level.TRACE),
         new LogMessageWithLevel("JNI Global Roots", Level.TRACE),
         new LogMessageWithLevel("VM Global Roots", Level.TRACE),
@@ -186,8 +183,10 @@ public class TestGCLogMessages {
     public static void main(String[] args) throws Exception {
         new TestGCLogMessages().testNormalLogs();
         new TestGCLogMessages().testConcurrentRefinementLogs();
-        new TestGCLogMessages().testWithToSpaceExhaustionLogs();
-        new TestGCLogMessages().testWithInitialMark();
+        if (Platform.isDebugBuild()) {
+          new TestGCLogMessages().testWithEvacuationFailureLogs();
+        }
+        new TestGCLogMessages().testWithConcurrentStart();
         new TestGCLogMessages().testExpandHeap();
     }
 
@@ -244,12 +243,15 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Remove Self Forwards", Level.TRACE),
     };
 
-    private void testWithToSpaceExhaustionLogs() throws Exception {
+    private void testWithEvacuationFailureLogs() throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
                                                                   "-Xmx32M",
                                                                   "-Xmn16M",
+                                                                  "-XX:+G1EvacuationFailureALot",
+                                                                  "-XX:G1EvacuationFailureALotCount=100",
+                                                                  "-XX:G1EvacuationFailureALotInterval=1",
                                                                   "-Xlog:gc+phases=debug",
-                                                                  GCTestWithToSpaceExhaustion.class.getName());
+                                                                  GCTestWithEvacuationFailure.class.getName());
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         checkMessagesAtLevel(output, exhFailureMessages, Level.DEBUG);
@@ -259,21 +261,21 @@ public class TestGCLogMessages {
                                                    "-Xmx32M",
                                                    "-Xmn16M",
                                                    "-Xlog:gc+phases=trace",
-                                                   GCTestWithToSpaceExhaustion.class.getName());
+                                                   GCTestWithEvacuationFailure.class.getName());
 
         output = new OutputAnalyzer(pb.start());
         checkMessagesAtLevel(output, exhFailureMessages, Level.TRACE);
         output.shouldHaveExitValue(0);
     }
 
-    private void testWithInitialMark() throws Exception {
+    private void testWithConcurrentStart() throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
                                                                   "-Xmx10M",
                                                                   "-Xbootclasspath/a:.",
                                                                   "-Xlog:gc*=debug",
                                                                   "-XX:+UnlockDiagnosticVMOptions",
                                                                   "-XX:+WhiteBoxAPI",
-                                                                  GCTestWithInitialMark.class.getName());
+                                                                  GCTestWithConcurrentStart.class.getName());
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Clear Claimed Marks");
@@ -308,22 +310,25 @@ public class TestGCLogMessages {
         }
     }
 
-    static class GCTestWithToSpaceExhaustion {
+    static class GCTestWithEvacuationFailure {
         private static byte[] garbage;
         private static byte[] largeObject;
+        private static Object[] holder = new Object[200]; // Must be larger than G1EvacuationFailureALotCount
+
         public static void main(String [] args) {
             largeObject = new byte[16*1024*1024];
             System.out.println("Creating garbage");
-            // create 128MB of garbage. This should result in at least one GC,
-            // some of them with to-space exhaustion.
-            for (int i = 0; i < 1024; i++) {
-                garbage = new byte[128 * 1024];
+            // Create 16 MB of garbage. This should result in at least one GC,
+            // (Heap size is 32M, we use 17MB for the large object above)
+            // which is larger than G1EvacuationFailureALotInterval.
+            for (int i = 0; i < 16 * 1024; i++) {
+                holder[i % holder.length] = new byte[1024];
             }
             System.out.println("Done");
         }
     }
 
-    static class GCTestWithInitialMark {
+    static class GCTestWithConcurrentStart {
         public static void main(String [] args) {
             sun.hotspot.WhiteBox WB = sun.hotspot.WhiteBox.getWhiteBox();
             WB.g1StartConcMarkCycle();

@@ -43,14 +43,13 @@ import java.util.Optional;
 import java.util.Spliterator;
 import java.util.StringJoiner;
 import java.util.function.Function;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
 
 import static java.util.function.Predicate.not;
@@ -90,7 +89,7 @@ import static java.util.function.Predicate.not;
  * The Java language provides special support for the string
  * concatenation operator (&nbsp;+&nbsp;), and for conversion of
  * other objects to strings. For additional information on string
- * concatenation and conversion, see <i>The Java&trade; Language Specification</i>.
+ * concatenation and conversion, see <i>The Java Language Specification</i>.
  *
  * <p> Unless otherwise noted, passing a {@code null} argument to a constructor
  * or method in this class will cause a {@link NullPointerException} to be
@@ -113,7 +112,7 @@ import static java.util.function.Predicate.not;
  *
  * @implNote The implementation of the string concatenation operator is left to
  * the discretion of a Java compiler, as long as the compiler ultimately conforms
- * to <i>The Java&trade; Language Specification</i>. For example, the {@code javac} compiler
+ * to <i>The Java Language Specification</i>. For example, the {@code javac} compiler
  * may implement the operator with {@code StringBuffer}, {@code StringBuilder},
  * or {@code java.lang.invoke.StringConcatFactory} depending on the JDK version. The
  * implementation of string conversion is typically through the method {@code toString},
@@ -249,7 +248,7 @@ public final class String
      * @param  original
      *         A {@code String}
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public String(String original) {
         this.value = original.value;
         this.coder = original.coder;
@@ -1134,16 +1133,16 @@ public final class String
     /**
      * Compares this {@code String} to another {@code String}, ignoring case
      * considerations.  Two strings are considered equal ignoring case if they
-     * are of the same length and corresponding characters in the two strings
-     * are equal ignoring case.
+     * are of the same length and corresponding Unicode code points in the two
+     * strings are equal ignoring case.
      *
-     * <p> Two characters {@code c1} and {@code c2} are considered the same
+     * <p> Two Unicode code points are considered the same
      * ignoring case if at least one of the following is true:
      * <ul>
-     *   <li> The two characters are the same (as compared by the
+     *   <li> The two Unicode code points are the same (as compared by the
      *        {@code ==} operator)
-     *   <li> Calling {@code Character.toLowerCase(Character.toUpperCase(char))}
-     *        on each character produces the same result
+     *   <li> Calling {@code Character.toLowerCase(Character.toUpperCase(int))}
+     *        on each Unicode code point produces the same result
      * </ul>
      *
      * <p>Note that this method does <em>not</em> take locale into account, and
@@ -1158,6 +1157,7 @@ public final class String
      *          false} otherwise
      *
      * @see  #equals(Object)
+     * @see  #codePoints()
      */
     public boolean equalsIgnoreCase(String anotherString) {
         return (this == anotherString) ? true
@@ -1224,7 +1224,8 @@ public final class String
 
     /**
      * A Comparator that orders {@code String} objects as by
-     * {@code compareToIgnoreCase}. This comparator is serializable.
+     * {@link #compareToIgnoreCase(String) compareToIgnoreCase}.
+     * This comparator is serializable.
      * <p>
      * Note that this Comparator does <em>not</em> take locale into account,
      * and will result in an unsatisfactory ordering for certain locales.
@@ -1235,6 +1236,10 @@ public final class String
      */
     public static final Comparator<String> CASE_INSENSITIVE_ORDER
                                          = new CaseInsensitiveComparator();
+
+    /**
+     * CaseInsensitiveComparator for Strings.
+     */
     private static class CaseInsensitiveComparator
             implements Comparator<String>, java.io.Serializable {
         // use serialVersionUID from JDK 1.2.2 for interoperability
@@ -1261,10 +1266,10 @@ public final class String
     /**
      * Compares two strings lexicographically, ignoring case
      * differences. This method returns an integer whose sign is that of
-     * calling {@code compareTo} with normalized versions of the strings
+     * calling {@code compareTo} with case folded versions of the strings
      * where case differences have been eliminated by calling
-     * {@code Character.toLowerCase(Character.toUpperCase(character))} on
-     * each character.
+     * {@code Character.toLowerCase(Character.toUpperCase(int))} on
+     * each Unicode code point.
      * <p>
      * Note that this method does <em>not</em> take locale into account,
      * and will result in an unsatisfactory ordering for certain locales.
@@ -1275,6 +1280,7 @@ public final class String
      *          specified String is greater than, equal to, or less
      *          than this String, ignoring case considerations.
      * @see     java.text.Collator
+     * @see     #codePoints()
      * @since   1.2
      */
     public int compareToIgnoreCase(String str) {
@@ -1362,30 +1368,26 @@ public final class String
      * <p>
      * A substring of this {@code String} object is compared to a substring
      * of the argument {@code other}. The result is {@code true} if these
-     * substrings represent character sequences that are the same, ignoring
-     * case if and only if {@code ignoreCase} is true. The substring of
-     * this {@code String} object to be compared begins at index
-     * {@code toffset} and has length {@code len}. The substring of
-     * {@code other} to be compared begins at index {@code ooffset} and
-     * has length {@code len}. The result is {@code false} if and only if
-     * at least one of the following is true:
-     * <ul><li>{@code toffset} is negative.
-     * <li>{@code ooffset} is negative.
-     * <li>{@code toffset+len} is greater than the length of this
+     * substrings represent Unicode code point sequences that are the same,
+     * ignoring case if and only if {@code ignoreCase} is true.
+     * The sequences {@code tsequence} and {@code osequence} are compared,
+     * where {@code tsequence} is the sequence produced as if by calling
+     * {@code this.substring(toffset, len).codePoints()} and {@code osequence}
+     * is the sequence produced as if by calling
+     * {@code other.substring(ooffset, len).codePoints()}.
+     * The result is {@code true} if and only if all of the following
+     * are true:
+     * <ul><li>{@code toffset} is non-negative.
+     * <li>{@code ooffset} is non-negative.
+     * <li>{@code toffset+len} is less than or equal to the length of this
      * {@code String} object.
-     * <li>{@code ooffset+len} is greater than the length of the other
+     * <li>{@code ooffset+len} is less than or equal to the length of the other
      * argument.
-     * <li>{@code ignoreCase} is {@code false} and there is some nonnegative
-     * integer <i>k</i> less than {@code len} such that:
-     * <blockquote><pre>
-     * this.charAt(toffset+k) != other.charAt(ooffset+k)
-     * </pre></blockquote>
-     * <li>{@code ignoreCase} is {@code true} and there is some nonnegative
-     * integer <i>k</i> less than {@code len} such that:
-     * <blockquote><pre>
-     * Character.toLowerCase(Character.toUpperCase(this.charAt(toffset+k))) !=
-     * Character.toLowerCase(Character.toUpperCase(other.charAt(ooffset+k)))
-     * </pre></blockquote>
+     * <li>if {@code ignoreCase} is {@code false}, all pairs of corresponding Unicode
+     * code points are equal integer values; or if {@code ignoreCase} is {@code true},
+     * {@link Character#toLowerCase(int) Character.toLowerCase(}
+     * {@link Character#toUpperCase(int)}{@code )} on all pairs of Unicode code points
+     * results in equal integer values.
      * </ul>
      *
      * <p>Note that this method does <em>not</em> take locale into account,
@@ -1400,12 +1402,14 @@ public final class String
      * @param   other        the string argument.
      * @param   ooffset      the starting offset of the subregion in the string
      *                       argument.
-     * @param   len          the number of characters to compare.
+     * @param   len          the number of characters (Unicode code units -
+     *                       16bit {@code char} value) to compare.
      * @return  {@code true} if the specified subregion of this string
      *          matches the specified subregion of the string argument;
      *          {@code false} otherwise. Whether the matching is exact
      *          or case insensitive depends on the {@code ignoreCase}
      *          argument.
+     * @see     #codePoints()
      */
     public boolean regionMatches(boolean ignoreCase, int toffset,
             String other, int ooffset, int len) {
@@ -1936,7 +1940,6 @@ public final class String
      *          or if {@code beginIndex} is greater than {@code endIndex}
      *
      * @since 1.4
-     * @spec JSR-51
      */
     public CharSequence subSequence(int beginIndex, int endIndex) {
         return this.substring(beginIndex, endIndex);
@@ -2034,7 +2037,6 @@ public final class String
      * @see java.util.regex.Pattern
      *
      * @since 1.4
-     * @spec JSR-51
      */
     public boolean matches(String regex) {
         return Pattern.matches(regex, this);
@@ -2091,7 +2093,6 @@ public final class String
      * @see java.util.regex.Pattern
      *
      * @since 1.4
-     * @spec JSR-51
      */
     public String replaceFirst(String regex, String replacement) {
         return Pattern.compile(regex).matcher(this).replaceFirst(replacement);
@@ -2136,7 +2137,6 @@ public final class String
      * @see java.util.regex.Pattern
      *
      * @since 1.4
-     * @spec JSR-51
      */
     public String replaceAll(String regex, String replacement) {
         return Pattern.compile(regex).matcher(this).replaceAll(replacement);
@@ -2297,7 +2297,6 @@ public final class String
      * @see java.util.regex.Pattern
      *
      * @since 1.4
-     * @spec JSR-51
      */
     public String[] split(String regex, int limit) {
         /* fastpath if the regex is a
@@ -2395,7 +2394,6 @@ public final class String
      * @see java.util.regex.Pattern
      *
      * @since 1.4
-     * @spec JSR-51
      */
     public String[] split(String regex) {
         return split(regex, 0);
@@ -3176,12 +3174,12 @@ public final class String
      * string. The function should expect a single String argument
      * and produce an {@code R} result.
      * <p>
-     * Any exception thrown by {@code f()} will be propagated to the
+     * Any exception thrown by {@code f.apply()} will be propagated to the
      * caller.
      *
-     * @param f    functional interface to a apply
+     * @param f    a function to apply
      *
-     * @param <R>  class of the result
+     * @param <R>  the type of the result
      *
      * @return     the result of applying the function to this string
      *
@@ -3269,7 +3267,7 @@ public final class String
      *         extra arguments are ignored.  The number of arguments is
      *         variable and may be zero.  The maximum number of arguments is
      *         limited by the maximum dimension of a Java array as defined by
-     *         <cite>The Java&trade; Virtual Machine Specification</cite>.
+     *         <cite>The Java Virtual Machine Specification</cite>.
      *         The behaviour on a
      *         {@code null} argument depends on the <a
      *         href="../util/Formatter.html#syntax">conversion</a>.
@@ -3310,7 +3308,7 @@ public final class String
      *         extra arguments are ignored.  The number of arguments is
      *         variable and may be zero.  The maximum number of arguments is
      *         limited by the maximum dimension of a Java array as defined by
-     *         <cite>The Java&trade; Virtual Machine Specification</cite>.
+     *         <cite>The Java Virtual Machine Specification</cite>.
      *         The behaviour on a
      *         {@code null} argument depends on the
      *         <a href="../util/Formatter.html#syntax">conversion</a>.
@@ -3533,12 +3531,11 @@ public final class String
      * if and only if {@code s.equals(t)} is {@code true}.
      * <p>
      * All literal strings and string-valued constant expressions are
-     * interned. String literals are defined in section 3.10.5 of the
-     * <cite>The Java&trade; Language Specification</cite>.
+     * interned. String literals are defined in section {@jls 3.10.5} of the
+     * <cite>The Java Language Specification</cite>.
      *
      * @return  a string that has the same contents as this string, but is
      *          guaranteed to be from a pool of unique strings.
-     * @jls 3.10.5 String Literals
      */
     public native String intern();
 

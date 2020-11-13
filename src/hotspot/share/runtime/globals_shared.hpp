@@ -37,7 +37,7 @@
 // parts of the memory system may require additional alignment
 // and are responsible for those alignments.
 #ifdef _LP64
-#define ScaleForWordSize(x) align_down_((x) * 13 / 10, HeapWordSize)
+#define ScaleForWordSize(x) align_down((x) * 13 / 10, HeapWordSize)
 #else
 #define ScaleForWordSize(x) (x)
 #endif
@@ -77,18 +77,14 @@
 // Only materialize src code for contraint checking when required, ignore otherwise
 #define IGNORE_CONSTRAINT(func,type)
 
+#define IGNORE_FLAG(...)
+
 #define VM_FLAGS(             \
     develop,                  \
     develop_pd,               \
     product,                  \
     product_pd,               \
-    diagnostic,               \
-    diagnostic_pd,            \
-    experimental,             \
     notproduct,               \
-    manageable,               \
-    product_rw,               \
-    lp64_product,             \
     range,                    \
     constraint)               \
                               \
@@ -97,13 +93,7 @@
     develop_pd,               \
     product,                  \
     product_pd,               \
-    diagnostic,               \
-    diagnostic_pd,            \
-    experimental,             \
     notproduct,               \
-    manageable,               \
-    product_rw,               \
-    lp64_product,             \
     range,                    \
     constraint)               \
                               \
@@ -112,54 +102,28 @@
     develop_pd,               \
     product,                  \
     product_pd,               \
-    diagnostic,               \
-    diagnostic_pd,            \
-    experimental,             \
     notproduct,               \
-    manageable,               \
-    product_rw,               \
-    lp64_product,             \
     range,                    \
     constraint)               \
 
+// Put the LP64/JVMCI/COMPILER1/COMPILER1/ARCH at
+// the top, as they are processed by jvmFlags.cpp in that
+// order.
 
 #define ALL_FLAGS(            \
     develop,                  \
     develop_pd,               \
     product,                  \
     product_pd,               \
-    diagnostic,               \
-    diagnostic_pd,            \
-    experimental,             \
     notproduct,               \
-    manageable,               \
-    product_rw,               \
-    lp64_product,             \
     range,                    \
     constraint)               \
                               \
-  VM_FLAGS(                   \
+  LP64_RUNTIME_FLAGS(         \
     develop,                  \
     develop_pd,               \
     product,                  \
     product_pd,               \
-    diagnostic,               \
-    diagnostic_pd,            \
-    experimental,             \
-    notproduct,               \
-    manageable,               \
-    product_rw,               \
-    lp64_product,             \
-    range,                    \
-    constraint)               \
-                              \
-  RUNTIME_OS_FLAGS(           \
-    develop,                  \
-    develop_pd,               \
-    product,                  \
-    product_pd,               \
-    diagnostic,               \
-    diagnostic_pd,            \
     notproduct,               \
     range,                    \
     constraint)               \
@@ -169,9 +133,6 @@
     develop_pd,               \
     product,                  \
     product_pd,               \
-    diagnostic,               \
-    diagnostic_pd,            \
-    experimental,             \
     notproduct,               \
     range,                    \
     constraint))              \
@@ -181,8 +142,6 @@
     develop_pd,               \
     product,                  \
     product_pd,               \
-    diagnostic,               \
-    diagnostic_pd,            \
     notproduct,               \
     range,                    \
     constraint))              \
@@ -192,9 +151,6 @@
     develop_pd,               \
     product,                  \
     product_pd,               \
-    diagnostic,               \
-    diagnostic_pd,            \
-    experimental,             \
     notproduct,               \
     range,                    \
     constraint))              \
@@ -202,10 +158,31 @@
   ARCH_FLAGS(                 \
     develop,                  \
     product,                  \
-    diagnostic,               \
-    experimental,             \
+    notproduct,               \
+    range,                    \
+    constraint)               \
+                              \
+  VM_FLAGS(                   \
+    develop,                  \
+    develop_pd,               \
+    product,                  \
+    product_pd,               \
+    notproduct,               \
+    range,                    \
+    constraint)               \
+                              \
+  RUNTIME_OS_FLAGS(           \
+    develop,                  \
+    develop_pd,               \
+    product,                  \
+    product_pd,               \
     notproduct,               \
     range,                    \
     constraint)
+
+#define ALL_CONSTRAINTS(f)    \
+  COMPILER_CONSTRAINTS(f)     \
+  RUNTIME_CONSTRAINTS(f)      \
+  GC_CONSTRAINTS(f)
 
 #endif // SHARE_RUNTIME_GLOBALS_SHARED_HPP

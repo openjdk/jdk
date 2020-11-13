@@ -545,11 +545,11 @@ static BOOL shouldUsePressAndHold() {
     if ((codePoint == 0x0024) || (codePoint == 0x00A3) ||
         (codePoint == 0x00A5) ||
         ((codePoint >= 0x20A3) && (codePoint <= 0x20BF)) ||
-	((codePoint >= 0x3000) && (codePoint <= 0x303F)) ||
+        ((codePoint >= 0x3000) && (codePoint <= 0x303F)) ||
         ((codePoint >= 0xFF00) && (codePoint <= 0xFFEF))) {
         // Code point is in 'CJK Symbols and Punctuation' or
         // 'Halfwidth and Fullwidth Forms' Unicode block or
-	// currency symbols unicode
+        // currency symbols unicode
         return YES;
     }
     return NO;
@@ -1335,7 +1335,7 @@ JNF_CLASS_CACHE(jc_CInputMethod, "sun/lwawt/macosx/CInputMethod");
 
     NSTextInputContext *curContxt = [NSTextInputContext currentInputContext];
     kbdLayout = curContxt.selectedKeyboardInputSource;
-    [[NSNotificationCenter defaultCenter] addObserver:self
+    [[NSNotificationCenter defaultCenter] addObserver:[AWTView class]
                                            selector:@selector(keyboardInputSourceChanged:)
                                                name:NSTextInputContextKeyboardSelectionDidChangeNotification
                                              object:nil];

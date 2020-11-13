@@ -37,93 +37,64 @@
 #include "gc/serial/defNewGeneration.inline.hpp"
 #endif
 
-inline OopsInGenClosure::OopsInGenClosure(Generation* gen) :
-  OopIterateClosure(gen->ref_processor()), _orig_gen(gen), _rs(NULL) {
-  set_generation(gen);
-}
+#if INCLUDE_SERIALGC
 
-inline void OopsInGenClosure::set_generation(Generation* gen) {
-  _gen = gen;
-  _gen_boundary = _gen->reserved().start();
-  // Barrier set for the heap, must be set after heap is initialized
-  if (_rs == NULL) {
-    _rs = GenCollectedHeap::heap()->rem_set();
+template <typename Derived>
+inline FastScanClosure<Derived>::FastScanClosure(DefNewGeneration* g) :
+    BasicOopIterateClosure(g->ref_processor()),
+    _young_gen(g),
+    _young_gen_end(g->reserved().end()) {}
+
+template <typename Derived>
+template <typename T>
+inline void FastScanClosure<Derived>::do_oop_work(T* p) {
+  T heap_oop = RawAccess<>::oop_load(p);
+  // Should we copy the obj?
+  if (!CompressedOops::is_null(heap_oop)) {
+    oop obj = CompressedOops::decode_not_null(heap_oop);
+    if (cast_from_oop<HeapWord*>(obj) < _young_gen_end) {
+      assert(!_young_gen->to()->is_in_reserved(obj), "Scanning field twice?");
+      oop new_obj = obj->is_forwarded() ? obj->forwardee()
+                                        : _young_gen->copy_to_survivor_space(obj);
+      RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
+
+      static_cast<Derived*>(this)->barrier(p);
+    }
   }
 }
 
-template <class T> inline void OopsInGenClosure::do_barrier(T* p) {
-  assert(generation()->is_in_reserved(p), "expected ref in generation");
+template <typename Derived>
+inline void FastScanClosure<Derived>::do_oop(oop* p)       { do_oop_work(p); }
+template <typename Derived>
+inline void FastScanClosure<Derived>::do_oop(narrowOop* p) { do_oop_work(p); }
+
+inline DefNewYoungerGenClosure::DefNewYoungerGenClosure(DefNewGeneration* young_gen, Generation* old_gen) :
+    FastScanClosure<DefNewYoungerGenClosure>(young_gen),
+    _old_gen(old_gen),
+    _old_gen_start(old_gen->reserved().start()),
+    _rs(GenCollectedHeap::heap()->rem_set()) {}
+
+template <typename T>
+void DefNewYoungerGenClosure::barrier(T* p) {
+  assert(_old_gen->is_in_reserved(p), "expected ref in generation");
   T heap_oop = RawAccess<>::oop_load(p);
   assert(!CompressedOops::is_null(heap_oop), "expected non-null oop");
   oop obj = CompressedOops::decode_not_null(heap_oop);
   // If p points to a younger generation, mark the card.
-  if (cast_from_oop<HeapWord*>(obj) < _gen_boundary) {
+  if (cast_from_oop<HeapWord*>(obj) < _old_gen_start) {
     _rs->inline_write_ref_field_gc(p, obj);
   }
 }
 
-inline BasicOopsInGenClosure::BasicOopsInGenClosure(Generation* gen) : OopsInGenClosure(gen) {
-}
+inline DefNewScanClosure::DefNewScanClosure(DefNewGeneration* g) :
+    FastScanClosure<DefNewScanClosure>(g), _scanned_cld(NULL) {}
 
-inline void OopsInClassLoaderDataOrGenClosure::do_cld_barrier() {
-  assert(_scanned_cld != NULL, "Must be");
-  if (!_scanned_cld->has_modified_oops()) {
+template <class T>
+void DefNewScanClosure::barrier(T* p) {
+  if (_scanned_cld != NULL && !_scanned_cld->has_modified_oops()) {
     _scanned_cld->record_modified_oops();
   }
 }
-
-#if INCLUDE_SERIALGC
-
-// NOTE! Any changes made here should also be made
-// in FastScanClosure::do_oop_work()
-template <class T> inline void ScanClosure::do_oop_work(T* p) {
-  T heap_oop = RawAccess<>::oop_load(p);
-  // Should we copy the obj?
-  if (!CompressedOops::is_null(heap_oop)) {
-    oop obj = CompressedOops::decode_not_null(heap_oop);
-    if (cast_from_oop<HeapWord*>(obj) < _boundary) {
-      assert(!_g->to()->is_in_reserved(obj), "Scanning field twice?");
-      oop new_obj = obj->is_forwarded() ? obj->forwardee()
-                                        : _g->copy_to_survivor_space(obj);
-      RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
-    }
-
-    if (is_scanning_a_cld()) {
-      do_cld_barrier();
-    } else if (_gc_barrier) {
-      // Now call parent closure
-      do_barrier(p);
-    }
-  }
-}
-
-inline void ScanClosure::do_oop(oop* p)       { ScanClosure::do_oop_work(p); }
-inline void ScanClosure::do_oop(narrowOop* p) { ScanClosure::do_oop_work(p); }
-
-// NOTE! Any changes made here should also be made
-// in ScanClosure::do_oop_work()
-template <class T> inline void FastScanClosure::do_oop_work(T* p) {
-  T heap_oop = RawAccess<>::oop_load(p);
-  // Should we copy the obj?
-  if (!CompressedOops::is_null(heap_oop)) {
-    oop obj = CompressedOops::decode_not_null(heap_oop);
-    if (cast_from_oop<HeapWord*>(obj) < _boundary) {
-      assert(!_g->to()->is_in_reserved(obj), "Scanning field twice?");
-      oop new_obj = obj->is_forwarded() ? obj->forwardee()
-                                        : _g->copy_to_survivor_space(obj);
-      RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
-      if (is_scanning_a_cld()) {
-        do_cld_barrier();
-      } else if (_gc_barrier) {
-        // Now call parent closure
-        do_barrier(p);
-      }
-    }
-  }
-}
-
-inline void FastScanClosure::do_oop(oop* p)       { FastScanClosure::do_oop_work(p); }
-inline void FastScanClosure::do_oop(narrowOop* p) { FastScanClosure::do_oop_work(p); }
 
 #endif // INCLUDE_SERIALGC
 
@@ -142,7 +113,7 @@ inline void FilteringClosure::do_oop(narrowOop* p) { FilteringClosure::do_oop_wo
 
 #if INCLUDE_SERIALGC
 
-// Note similarity to ScanClosure; the difference is that
+// Note similarity to FastScanClosure; the difference is that
 // the barrier set is taken care of outside this closure.
 template <class T> inline void ScanWeakRefClosure::do_oop_work(T* p) {
   oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);

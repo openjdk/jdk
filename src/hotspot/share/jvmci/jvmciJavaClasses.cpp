@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,9 @@
 #include "jvmci/jvmciJavaClasses.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/jniHandles.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
+#include "runtime/jniHandles.inline.hpp"
+#include "runtime/java.hpp"
 
 // ------------------------------------------------------------------
 
@@ -89,7 +90,7 @@ void HotSpotJVMCI::compute_offset(int &dest_offset, Klass* klass, const char* na
 #ifndef PRODUCT
 static void check_resolve_method(const char* call_type, Klass* resolved_klass, Symbol* method_name, Symbol* method_signature, TRAPS) {
   Method* method;
-  LinkInfo link_info(resolved_klass, method_name, method_signature, NULL, LinkInfo::skip_access_check);
+  LinkInfo link_info(resolved_klass, method_name, method_signature, NULL, LinkInfo::AccessCheck::skip, LinkInfo::LoaderConstraintCheck::skip);
   if (strcmp(call_type, "call_static") == 0) {
     method = LinkResolver::resolve_static_call_or_null(link_info);
   } else if (strcmp(call_type, "call_virtual") == 0) {

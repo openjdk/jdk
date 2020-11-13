@@ -29,6 +29,7 @@ import java.util.List;
 /**
  * @test
  * @summary Verifies the JVMTI Heap Monitor API does not do infinite recursion.
+ * @requires vm.jvmti
  * @build Frame HeapMonitor
  * @compile HeapMonitorRecursiveTest.java
  * @run main/othervm/native -agentlib:HeapMonitorTest MyPackage.HeapMonitorRecursiveTest

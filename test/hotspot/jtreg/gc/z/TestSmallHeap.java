@@ -25,7 +25,7 @@ package gc.z;
 
 /*
  * @test TestSmallHeap
- * @requires vm.gc.Z & !vm.graal.enabled
+ * @requires vm.gc.Z
  * @summary Test ZGC with small heaps
  * @library / /test/lib
  * @run driver gc.z.TestSmallHeap 8M 16M 32M 64M 128M 256M 512M 1024M

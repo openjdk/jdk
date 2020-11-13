@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -40,9 +40,11 @@
 
 package j2dbench;
 
-import java.awt.Image;
 import java.awt.Component;
+import java.awt.Frame;
 import java.awt.GraphicsConfiguration;
+import java.awt.Image;
+import java.awt.Polygon;
 import java.awt.Transparency;
 import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
@@ -50,11 +52,14 @@ import java.awt.image.ComponentColorModel;
 import java.awt.image.DataBuffer;
 import java.awt.image.WritableRaster;
 
+import javax.swing.SwingUtilities;
+
 import j2dbench.tests.GraphicsTests;
 import j2dbench.tests.ImageTests;
 
 public abstract class Destinations extends Option.Enable {
     public static Group.EnableSet destroot;
+    public static Group frameroot;
     public static Group bufimgdestroot;
     public static Group compatimgdestroot;
     public static Group volimgdestroot;
@@ -63,8 +68,21 @@ public abstract class Destinations extends Option.Enable {
         destroot = new Group.EnableSet(TestEnvironment.globaloptroot,
                                        "dest", "Output Destination Options");
 
-        new Screen();
         new OffScreen();
+
+        frameroot = new Group.EnableSet(destroot, "frame", "Output to Frame");
+        frameroot.setHorizontal();
+
+        new Screen(false, false);
+        if (ImageTests.hasOpacityWindow) {
+            new Screen(true, false);
+        }
+        if (ImageTests.hasShapedWindow) {
+            new Screen(false, true);
+        }
+        if (ImageTests.hasShapedWindow && ImageTests.hasOpacityWindow) {
+            new Screen(true, true);
+        }
 
         if (GraphicsTests.hasGraphics2D) {
             if (ImageTests.hasCompatImage) {
@@ -129,16 +147,94 @@ public abstract class Destinations extends Option.Enable {
     public abstract void setDestination(TestEnvironment env);
 
     public static class Screen extends Destinations {
-        public Screen() {
-            super(destroot, "screen", "Output to Screen", false);
+
+        private boolean opacity;
+        private boolean shaped;
+
+        public Screen(boolean opacity, boolean shaped) {
+            super(frameroot, getDescription(opacity,shaped),
+                  getLongDescription(opacity,shaped), false);
+            this.opacity = opacity;
+            this.shaped = shaped;
+        }
+
+        private static String getDescription(boolean opacity, boolean shaped){
+            if (opacity && shaped) {
+                return "shapedtransframe";
+            }
+            if (shaped) {
+                return "shapedframe";
+            }
+            if (opacity) {
+                return "transframe";
+            }
+            return "defaultframe";
+        }
+
+        private static String getLongDescription(boolean opacity, boolean shaped){
+            if (opacity && shaped) {
+                return "Translucent and Shaped";
+            }
+            if (shaped) {
+                return "Shaped";
+            }
+            if (opacity) {
+                return "Translucent";
+            }
+            return "Default";
         }
 
         public String getModifierValueName(Object val) {
-            return "Screen";
+            if (opacity && shaped) {
+                return "Translucent and Shaped Frame";
+            }
+            if (shaped) {
+                return "Shaped Frame";
+            }
+            if (opacity) {
+                return "Translucent Frame";
+            }
+            return "Default Frame";
         }
 
         public void setDestination(TestEnvironment env) {
             env.setTestImage(null);
+        }
+
+        public void modifyTest(TestEnvironment env) {
+            setDestination(env);
+            Frame frame = (Frame) SwingUtilities.getWindowAncestor(env.comp);
+            if (frame != null && (opacity || shaped)) {
+                frame.dispose();
+                frame.setUndecorated(true);
+                int w = frame.getWidth();
+                int h = frame.getHeight();
+                if (shaped) {
+                    Polygon p = new Polygon();
+                    p.addPoint(0, 0);
+                    p.addPoint(w, 0);
+                    p.addPoint(0, h);
+                    p.addPoint(w, h);
+                    p.addPoint(0, 0);
+                    frame.setShape(p);
+                }
+                if (opacity) {
+                    frame.setOpacity(0.5f);
+                }
+                frame.setVisible(true);
+            }
+        }
+
+        public void restoreTest(TestEnvironment env) {
+            env.setTestImage(null);
+            Frame frame = (Frame) SwingUtilities.getWindowAncestor(env.comp);
+            if (frame != null && (opacity || shaped)) {
+                frame.dispose();
+                frame.setShape(null);
+                frame.setOpacity(1);
+                frame.setUndecorated(false);
+                frame.setVisible(true);
+            }
         }
     }
 

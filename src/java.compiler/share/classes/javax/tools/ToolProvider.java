@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,14 +44,10 @@ public class ToolProvider {
     private static final String systemJavaCompilerModule = "jdk.compiler";
     private static final String systemJavaCompilerName   = "com.sun.tools.javac.api.JavacTool";
 
-    /**
-     * Do not call.
-     */
-    @Deprecated(forRemoval=true, since="14")
-    public ToolProvider() {}
+    private ToolProvider() {}
 
     /**
-     * Returns the Java&trade; programming language compiler provided
+     * Returns the Java programming language compiler provided
      * with this platform.
      * <p>The file manager returned by calling
      * {@link JavaCompiler#getStandardFileManager getStandardFileManager}
@@ -72,7 +68,7 @@ public class ToolProvider {
     private static final String systemDocumentationToolName = "jdk.javadoc.internal.api.JavadocTool";
 
     /**
-     * Returns the Java&trade; programming language documentation tool provided
+     * Returns the Java programming language documentation tool provided
      * with this platform.
      * <p>The file manager returned by calling
      * {@link DocumentationTool#getStandardFileManager getStandardFileManager}

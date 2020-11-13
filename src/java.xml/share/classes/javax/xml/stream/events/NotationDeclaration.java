@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,16 +40,19 @@ package javax.xml.stream.events;
 public interface NotationDeclaration extends XMLEvent {
   /**
    * The notation name.
+   * @return the notation name
    */
   String getName();
 
   /**
    * The notation's public identifier, or null if none was given.
+   * @return the public identifier
    */
   String getPublicId();
 
   /**
    * The notation's system identifier, or null if none was given.
+   * @return the system identifier
    */
   String getSystemId();
 }

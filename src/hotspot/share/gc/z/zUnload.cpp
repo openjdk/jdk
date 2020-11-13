@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ public:
     ZReentrantLock* const lock = ZNMethod::lock_for_nmethod(nm);
     ZLocker<ZReentrantLock> locker(lock);
     ZIsUnloadingOopClosure cl;
-    ZNMethod::nmethod_oops_do(nm, &cl);
+    ZNMethod::nmethod_oops_do_inner(nm, &cl);
     return cl.is_unloading();
   }
 };
@@ -157,12 +157,12 @@ void ZUnload::purge() {
     ZNMethod::purge(_workers);
   }
 
-  ClassLoaderDataGraph::purge();
+  ClassLoaderDataGraph::purge(/*at_safepoint*/false);
   CodeCache::purge_exception_caches();
 }
 
 void ZUnload::finish() {
   // Resize and verify metaspace
   MetaspaceGC::compute_new_size();
-  MetaspaceUtils::verify_metrics();
+  DEBUG_ONLY(MetaspaceUtils::verify();)
 }

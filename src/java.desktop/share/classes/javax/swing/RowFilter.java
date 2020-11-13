@@ -129,6 +129,11 @@ public abstract class RowFilter<M,I> {
     }
 
     /**
+     * Constructor for subclasses to call.
+     */
+    protected RowFilter() {}
+
+    /**
      * Throws an IllegalArgumentException if any of the values in
      * columns are {@literal <} 0.
      */

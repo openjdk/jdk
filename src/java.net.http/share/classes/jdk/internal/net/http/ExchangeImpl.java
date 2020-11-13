@@ -228,4 +228,9 @@ abstract class ExchangeImpl<T> {
      * @return the cause for which this exchange was canceled, if available.
      */
     abstract Throwable getCancelCause();
+
+    // Mark the exchange as upgraded
+    // Needed to handle cancellation during the upgrade from
+    // Http1Exchange to Stream
+    void upgraded() { }
 }

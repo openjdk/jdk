@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,13 +57,13 @@ class TestGenCollectorPolicy {
   class TestWrapper {
    public:
     static void test(Executor* setter1, Executor* setter2, Executor* checker) {
-      FLAG_GUARD(MinHeapSize);
-      FLAG_GUARD(InitialHeapSize);
-      FLAG_GUARD(MaxHeapSize);
-      FLAG_GUARD(MaxNewSize);
-      FLAG_GUARD(MinHeapDeltaBytes);
-      FLAG_GUARD(NewSize);
-      FLAG_GUARD(OldSize);
+      AutoSaveRestore<size_t> FLAG_GUARD(MinHeapSize);
+      AutoSaveRestore<size_t> FLAG_GUARD(InitialHeapSize);
+      AutoSaveRestore<size_t> FLAG_GUARD(MaxHeapSize);
+      AutoSaveRestore<size_t> FLAG_GUARD(MaxNewSize);
+      AutoSaveRestore<size_t> FLAG_GUARD(MinHeapDeltaBytes);
+      AutoSaveRestore<size_t> FLAG_GUARD(NewSize);
+      AutoSaveRestore<size_t> FLAG_GUARD(OldSize);
 
       MinHeapSize = 40 * M;
       FLAG_SET_ERGO(InitialHeapSize, 100 * M);

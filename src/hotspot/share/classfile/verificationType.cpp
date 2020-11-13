@@ -29,6 +29,7 @@
 #include "classfile/verifier.hpp"
 #include "logging/log.hpp"
 #include "oops/klass.inline.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
 
 VerificationType VerificationType::from_tag(u1 tag) {

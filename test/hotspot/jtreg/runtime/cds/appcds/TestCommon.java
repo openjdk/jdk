@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -321,12 +321,11 @@ public class TestCommon extends CDSTestUtils {
             firstJar = firstJar.substring(0, n);
         }
         String classDir = System.getProperty("test.classes");
-        String expected1 = classDir + File.separator;
-        String expected2 = System.getProperty("user.dir") + File.separator;
+        String expected = getOutputDir() + File.separator;
 
-        if (!firstJar.startsWith(expected1) && !firstJar.startsWith(expected2)) {
+        if (!firstJar.startsWith(expected)) {
             throw new RuntimeException("FIXME: jar file not at a supported location ('"
-                                       + expected1 + "', or '" + expected2 + "'): " + firstJar);
+                                       + expected + "'): " + firstJar);
         }
 
         String replaceJar = firstJar + ".tmp";

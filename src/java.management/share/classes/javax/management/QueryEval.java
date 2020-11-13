@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,11 @@ public abstract class QueryEval implements Serializable {
 
     private static ThreadLocal<MBeanServer> server =
         new InheritableThreadLocal<MBeanServer>();
+
+    /**
+     * Constructor for subclasses to call.
+     */
+    public QueryEval() {}
 
     /**
      * <p>Sets the MBean server on which the query is to be performed.

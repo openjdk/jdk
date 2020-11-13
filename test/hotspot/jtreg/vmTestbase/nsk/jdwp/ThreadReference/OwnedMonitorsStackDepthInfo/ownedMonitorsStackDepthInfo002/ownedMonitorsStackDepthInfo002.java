@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,9 +50,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build nsk.jdwp.ThreadReference.OwnedMonitorsStackDepthInfo.ownedMonitorsStackDepthInfo002.ownedMonitorsStackDepthInfo002
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.ThreadReference.OwnedMonitorsStackDepthInfo.ownedMonitorsStackDepthInfo002.ownedMonitorsStackDepthInfo002
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose
@@ -64,22 +62,26 @@
 
 package nsk.jdwp.ThreadReference.OwnedMonitorsStackDepthInfo.ownedMonitorsStackDepthInfo002;
 
-import java.io.*;
 import nsk.share.Consts;
-import nsk.share.jdwp.*;
+import nsk.share.jdwp.AbstractJDWPDebuggee;
+import nsk.share.jdwp.CommandPacket;
+import nsk.share.jdwp.JDWP;
+import nsk.share.jdwp.TestDebuggerType1;
 import nsk.share.jpda.AbstractDebuggeeTest;
 import nsk.share.jpda.StateTestThread;
+
+import java.io.PrintStream;
 
 public class ownedMonitorsStackDepthInfo002 extends TestDebuggerType1 {
     protected String getDebugeeClassName() {
         return AbstractJDWPDebuggee.class.getName();
     }
 
-    public static void main(String argv[]) {
+    public static void main(String[] argv) {
         System.exit(run(argv, System.out) + Consts.JCK_STATUS_BASE);
     }
 
-    public static int run(String argv[], PrintStream out) {
+    public static int run(String[] argv, PrintStream out) {
         return new ownedMonitorsStackDepthInfo002().runIt(argv, out);
     }
 
@@ -103,8 +105,6 @@ public class ownedMonitorsStackDepthInfo002 extends TestDebuggerType1 {
 
             // in this test always expect reply with error
             getReply(command, true, errorCode);
-
-            return;
         } catch (Exception e) {
             setSuccess(false);
             log.complain("Caught exception while testing JDWP command: " + e);

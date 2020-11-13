@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,14 +51,14 @@ public class LongClassListPath {
 
         // Create a directory with long path and copy the classlist file to
         // the directory.
-        Path classDir = Paths.get(System.getProperty("test.classes"));
+        Path classDir = Paths.get(CDSTestUtils.getOutputDir());
         Path destDir = classDir;
         int subDirLen = MAX_PATH - classDir.toString().length() - 2;
         if (subDirLen > 0) {
             char[] chars = new char[subDirLen];
             Arrays.fill(chars, 'x');
             String subPath = new String(chars);
-            destDir = Paths.get(System.getProperty("test.classes"), subPath);
+            destDir = Paths.get(CDSTestUtils.getOutputDir(), subPath);
         }
         File longDir = destDir.toFile();
         longDir.mkdir();

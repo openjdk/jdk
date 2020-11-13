@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -939,8 +939,6 @@ public final class JceKeyStore extends KeyStoreSpi {
      */
     private static class DeserializationChecker implements ObjectInputFilter {
 
-        private static final int MAX_NESTED_DEPTH = 2;
-
         // Full length of keystore, anything inside a SecretKeyEntry should not
         // be bigger. Otherwise, must be illegal.
         private final int fullLength;
@@ -953,15 +951,28 @@ public final class JceKeyStore extends KeyStoreSpi {
         public ObjectInputFilter.Status
             checkInput(ObjectInputFilter.FilterInfo info) {
 
-            // First run a custom filter
-            long nestedDepth = info.depth();
-            if ((nestedDepth == 1 &&
-                        info.serialClass() != SealedObjectForKeyProtector.class) ||
-                    info.arrayLength() > fullLength ||
-                    (nestedDepth > MAX_NESTED_DEPTH &&
-                        info.serialClass() != null &&
-                        info.serialClass() != Object.class)) {
+            if (info.arrayLength() > fullLength) {
                 return Status.REJECTED;
+            }
+            // First run a custom filter
+            Class<?> clazz = info.serialClass();
+            switch((int)info.depth()) {
+                case 1:
+                    if (clazz != SealedObjectForKeyProtector.class) {
+                        return Status.REJECTED;
+                    }
+                    break;
+                case 2:
+                    if (clazz != null && clazz != SealedObject.class
+                            && clazz != byte[].class) {
+                        return Status.REJECTED;
+                    }
+                    break;
+                default:
+                    if (clazz != null && clazz != Object.class) {
+                        return Status.REJECTED;
+                    }
+                    break;
             }
 
             // Next run the default filter, if available

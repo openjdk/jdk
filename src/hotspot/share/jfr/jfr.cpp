@@ -102,12 +102,6 @@ void Jfr::on_vm_error_report(outputStream* st) {
   }
 }
 
-void Jfr::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* f) {
-  if (LeakProfiler::is_running()) {
-    LeakProfiler::weak_oops_do(is_alive, f);
-  }
-}
-
 bool Jfr::on_flight_recorder_option(const JavaVMOption** option, char* delimiter) {
   return JfrOptionSet::parse_flight_recorder_option(option, delimiter);
 }

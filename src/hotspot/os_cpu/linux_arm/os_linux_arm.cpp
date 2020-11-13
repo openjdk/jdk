@@ -47,6 +47,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/timer.hpp"
+#include "signals_posix.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
@@ -240,19 +241,9 @@ address check_vfp3_32_fault_instr = NULL;
 address check_simd_fault_instr = NULL;
 address check_mp_ext_fault_instr = NULL;
 
-// Utility functions
 
-extern "C" int JVM_handle_linux_signal(int sig, siginfo_t* info,
-                                       void* ucVoid, int abort_if_unrecognized) {
-  ucontext_t* uc = (ucontext_t*) ucVoid;
-
-  Thread* t = Thread::current_or_null_safe();
-
-  // Must do this before SignalHandlerMark, if crash protection installed we will longjmp away
-  // (no destructors can be run)
-  os::ThreadCrashProtection::check_crash_protection(sig, t);
-
-  SignalHandlerMark shm(t);
+bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
+                                             ucontext_t* uc, JavaThread* thread) {
 
   if (sig == SIGILL &&
       ((info->si_addr == (caddr_t)check_simd_fault_instr)
@@ -264,44 +255,6 @@ extern "C" int JVM_handle_linux_signal(int sig, siginfo_t* info,
     os::Linux::ucontext_set_pc(uc, (address)info->si_addr + 8);
     uc->uc_mcontext.arm_r0 = 0;
     return true;
-  }
-
-  // Note: it's not uncommon that JNI code uses signal/sigset to install
-  // then restore certain signal handler (e.g. to temporarily block SIGPIPE,
-  // or have a SIGILL handler when detecting CPU type). When that happens,
-  // JVM_handle_linux_signal() might be invoked with junk info/ucVoid. To
-  // avoid unnecessary crash when libjsig is not preloaded, try handle signals
-  // that do not require siginfo/ucontext first.
-
-  if (sig == SIGPIPE || sig == SIGXFSZ) {
-    // allow chained handler to go first
-    if (os::Linux::chained_handler(sig, info, ucVoid)) {
-      return true;
-    } else {
-      // Ignoring SIGPIPE/SIGXFSZ - see bugs 4229104 or 6499219
-      return true;
-    }
-  }
-
-#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
-  if ((sig == SIGSEGV || sig == SIGBUS) && info != NULL && info->si_addr == g_assert_poison) {
-    if (handle_assert_poison_fault(ucVoid, info->si_addr)) {
-      return 1;
-    }
-  }
-#endif
-
-  JavaThread* thread = NULL;
-  VMThread* vmthread = NULL;
-  if (os::Linux::signal_handlers_are_installed) {
-    if (t != NULL ){
-      if(t->is_Java_thread()) {
-        thread = (JavaThread*)t;
-      }
-      else if(t->is_VM_thread()){
-        vmthread = (VMThread *)t;
-      }
-    }
   }
 
   address stub = NULL;
@@ -317,25 +270,26 @@ extern "C" int JVM_handle_linux_signal(int sig, siginfo_t* info,
 
       if (StubRoutines::is_safefetch_fault(pc)) {
         os::Linux::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
-        return 1;
+        return true;
       }
       // check if fault address is within thread stack
       if (thread->is_in_full_stack(addr)) {
         // stack overflow
-        if (thread->in_stack_yellow_reserved_zone(addr)) {
-          thread->disable_stack_yellow_reserved_zone();
+        StackOverflow* overflow_state = thread->stack_overflow_state();
+        if (overflow_state->in_stack_yellow_reserved_zone(addr)) {
+          overflow_state->disable_stack_yellow_reserved_zone();
           if (thread->thread_state() == _thread_in_Java) {
             // Throw a stack overflow exception.  Guard pages will be reenabled
             // while unwinding the stack.
             stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::STACK_OVERFLOW);
           } else {
             // Thread was in the vm or native code.  Return and try to finish.
-            return 1;
+            return true;
           }
-        } else if (thread->in_stack_red_zone(addr)) {
+        } else if (overflow_state->in_stack_red_zone(addr)) {
           // Fatal red zone violation.  Disable the guard pages and fall through
           // to handle_unexpected_exception way down below.
-          thread->disable_stack_red_zone();
+          overflow_state->disable_stack_red_zone();
           tty->print_raw_cr("An irrecoverable stack overflow has occurred.");
         } else {
           // Accessing stack address below sp may cause SEGV if current
@@ -346,7 +300,7 @@ extern "C" int JVM_handle_linux_signal(int sig, siginfo_t* info,
              thread->osthread()->set_expanding_stack();
              if (os::Linux::manually_expand_stack(thread, addr)) {
                thread->osthread()->clear_expanding_stack();
-               return 1;
+               return true;
              }
              thread->osthread()->clear_expanding_stack();
           } else {
@@ -439,30 +393,8 @@ extern "C" int JVM_handle_linux_signal(int sig, siginfo_t* info,
     return true;
   }
 
-  // signal-chaining
-  if (os::Linux::chained_handler(sig, info, ucVoid)) {
-     return true;
-  }
-
-  if (!abort_if_unrecognized) {
-    // caller wants another chance, so give it to him
-    return false;
-  }
-
-  if (pc == NULL && uc != NULL) {
-    pc = os::Linux::ucontext_get_pc(uc);
-  }
-
-  // unmask current signal
-  sigset_t newset;
-  sigemptyset(&newset);
-  sigaddset(&newset, sig);
-  sigprocmask(SIG_UNBLOCK, &newset, NULL);
-
-  VMError::report_and_die(t, sig, pc, info, ucVoid);
-
-  ShouldNotReachHere();
   return false;
+
 }
 
 void os::Linux::init_thread_fpu_state(void) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,26 +22,37 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.java.swing.plaf.motif;
 
-import java.awt.*;
-import javax.swing.*;
-import javax.swing.plaf.*;
-import javax.swing.border.*;
-import javax.swing.plaf.basic.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Insets;
+import java.awt.LayoutManager;
+import java.awt.Rectangle;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseMotionAdapter;
+import java.awt.event.MouseMotionListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.Serializable;
-import java.awt.event.*;
-import java.beans.*;
+
+import javax.swing.Icon;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
+import javax.swing.ListCellRenderer;
+import javax.swing.UIManager;
+import javax.swing.border.Border;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.basic.BasicComboBoxUI;
+import javax.swing.plaf.basic.BasicComboPopup;
+import javax.swing.plaf.basic.ComboPopup;
 
 /**
- * ComboBox motif look and feel
- * <p>
- * <strong>Warning:</strong>
- * Serialized objects of this class will not be compatible with
- * future Swing releases.  The current serialization support is appropriate
- * for short term storage or RMI between applications running the same
- * version of Swing.  A future release of Swing will provide support for
- * long term persistence.
+ * ComboBox motif look and feel.
  *
  * @author Arnaud Weber
  */
@@ -59,16 +70,6 @@ public class MotifComboBoxUI extends BasicComboBoxUI implements Serializable {
         arrowIcon = new MotifComboBoxArrowIcon(UIManager.getColor("controlHighlight"),
                                                UIManager.getColor("controlShadow"),
                                                UIManager.getColor("control"));
-
-        Runnable initCode = new Runnable() {
-            public void run(){
-                if ( motifGetEditor() != null ) {
-                    motifGetEditor().setBackground( UIManager.getColor( "text" ) );
-                }
-            }
-        };
-
-        SwingUtilities.invokeLater( initCode );
     }
 
     public Dimension getMinimumSize( JComponent c ) {
@@ -175,6 +176,8 @@ public class MotifComboBoxUI extends BasicComboBoxUI implements Serializable {
             g.setColor(UIManager.getColor("controlHighlight"));
             g.fillRect(r.x,r.y,r.width,r.height);
         }
+        // Empty out the renderer pane, allowing renderers to be gc'ed.
+        currentValuePane.removeAll();
     }
 
     public void paintCurrentValue(Graphics g,Rectangle bounds,boolean hasFocus) {

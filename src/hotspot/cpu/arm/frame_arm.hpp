@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,9 +71,9 @@
   // The interpreter and adapters will extend the frame of the caller.
   // Since oopMaps are based on the sp of the caller before extension
   // we need to know that value. However in order to compute the address
-  // of the return address we need the real "raw" sp. Since sparc already
-  // uses sp() to mean "raw" sp and unextended_sp() to mean the caller's
-  // original sp we use that convention.
+  // of the return address we need the real "raw" sp. By convention we
+  // use sp() to mean "raw" sp and unextended_sp() to mean the caller's
+  // original sp.
 
   intptr_t* _unextended_sp;
   void adjust_unextended_sp();

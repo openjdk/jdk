@@ -26,7 +26,6 @@
 #define SHARE_SERVICES_ATTACHLISTENER_HPP
 
 #include "memory/allocation.hpp"
-#include "metaprogramming/isRegisteredEnum.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -56,8 +55,6 @@ enum AttachListenerState {
   AL_INITIALIZING,
   AL_INITIALIZED
 };
-
-template<> struct IsRegisteredEnum<AttachListenerState> : public TrueType {};
 
 class AttachListener: AllStatic {
  public:

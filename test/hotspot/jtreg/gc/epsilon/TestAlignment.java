@@ -25,7 +25,7 @@ package gc.epsilon;
 
 /**
  * @test TestAlignment
- * @requires vm.gc.Epsilon & !vm.graal.enabled
+ * @requires vm.gc.Epsilon
  * @summary Check Epsilon runs fine with (un)usual alignments
  * @bug 8212005
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -Xmx128m -XX:+UseEpsilonGC -XX:+UseTLAB gc.epsilon.TestAlignment

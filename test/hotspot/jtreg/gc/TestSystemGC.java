@@ -44,12 +44,11 @@ package gc;
  * @run main/othervm -XX:+UseG1GC gc.TestSystemGC
  * @run main/othervm -XX:+UseG1GC -XX:+ExplicitGCInvokesConcurrent gc.TestSystemGC
  * @run main/othervm -XX:+UseLargePages gc.TestSystemGC
- * @run main/othervm -XX:+UseLargePages -XX:+UseLargePagesInMetaspace gc.TestSystemGC
- */
+  */
 
 /*
  * @test TestSystemGCShenandoah
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  * @summary Runs System.gc() with different flags.
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC gc.TestSystemGC
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:+ExplicitGCInvokesConcurrent gc.TestSystemGC

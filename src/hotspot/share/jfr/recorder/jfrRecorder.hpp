@@ -45,6 +45,7 @@ class JfrRecorder : public JfrCHeapObj {
   static bool create_chunk_repository();
   static bool create_java_event_writer();
   static bool create_jvmti_agent();
+  static bool create_oop_storages();
   static bool create_os_interface();
   static bool create_post_box();
   static bool create_recorder_thread();

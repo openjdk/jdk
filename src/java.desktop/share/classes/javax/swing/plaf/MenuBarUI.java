@@ -36,4 +36,9 @@ import javax.swing.JMenu;
  * @author David Karlton
  */
 
-public abstract class MenuBarUI extends ComponentUI { }
+public abstract class MenuBarUI extends ComponentUI {
+    /**
+     * Constructor for subclasses to call.
+     */
+    protected MenuBarUI() {}
+}

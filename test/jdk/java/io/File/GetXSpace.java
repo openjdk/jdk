@@ -23,12 +23,10 @@
 
 /**
  * @test
- * @bug 4057701 6286712 6364377
- * @ignore until 6492634 and 6501010 is fixed
- * @run build GetXSpace
- * @run shell GetXSpace.sh
+ * @bug 4057701 6286712 6364377 8181919
+ * @requires (os.family == "linux" | os.family == "mac" |
+ *            os.family == "windows")
  * @summary Basic functionality of File.get-X-Space methods.
- * @key randomness
  */
 
 import java.io.BufferedReader;
@@ -36,11 +34,15 @@ import java.io.File;
 import java.io.FilePermission;
 import java.io.InputStreamReader;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.FileStore;
+import java.nio.file.Path;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static java.lang.System.err;
 import static java.lang.System.out;
 
 public class GetXSpace {
@@ -48,74 +50,65 @@ public class GetXSpace {
     private static SecurityManager [] sma = { null, new Allow(), new DenyFSA(),
                                               new DenyRead() };
 
-    private static final String name = System.getProperty("os.name");
-    private static final String dfFormat;
-    static {
-        if (name.equals("Linux") || name.contains("OS X")) {
-            // FileSystem Total Used Available Use% MountedOn
-            dfFormat = "([^\\s]+)\\s+(\\d+)\\s+\\d+\\s+(\\d+)\\s+\\d+%\\s+([^\\s]+)";
-        } else if (name.startsWith("Windows")) {
-            // Drive (MountedOn) Available/Total
-            dfFormat = "([^\\s]+)\\s+\\(([^\\s]+)\\)\\s+(\\d+)\\/(\\d+)\\s+";
-        } else {
-            throw new RuntimeException("unrecognized system:"
-                                       + " os.name == " + name);
-        }
-    }
-    private static Pattern dfPattern = Pattern.compile(dfFormat);
+    private static final String OS_NAME = System.getProperty("os.name");
+    private static final boolean IS_MAC = OS_NAME.startsWith("Mac");
+    private static final boolean IS_WIN = OS_NAME.startsWith("Windows");
+
+    // FileSystem Total Used Available Use% MountedOn
+    private static final Pattern DF_PATTERN = Pattern.compile("([^\\s]+)\\s+(\\d+)\\s+\\d+\\s+(\\d+)\\s+\\d+%\\s+([^\\s].*)\n");
 
     private static int fail = 0;
     private static int pass = 0;
     private static Throwable first;
+
+    static void reset() {
+        fail = 0;
+        pass = 0;
+        first = null;
+    }
 
     static void pass() {
         pass++;
     }
 
     static void fail(String p) {
-        if (first == null)
-            setFirst(p);
+        setFirst(p);
         System.err.format("FAILED: %s%n", p);
         fail++;
     }
 
     static void fail(String p, long exp, String cmp, long got) {
         String s = String.format("'%s': %d %s %d", p, exp, cmp, got);
-        if (first == null)
-            setFirst(s);
+        setFirst(s);
         System.err.format("FAILED: %s%n", s);
         fail++;
     }
 
     private static void fail(String p, Class ex) {
         String s = String.format("'%s': expected %s - FAILED%n", p, ex.getName());
-        if (first == null)
-            setFirst(s);
+        setFirst(s);
         System.err.format("FAILED: %s%n", s);
         fail++;
     }
 
     private static void setFirst(String s) {
-        try {
-            throw new RuntimeException(s);
-        } catch (RuntimeException x) {
-            first = x;
+        if (first == null) {
+            first = new RuntimeException(s);
         }
     }
 
     private static class Space {
         private static final long KSIZE = 1024;
-        private String name;
-        private long total;
-        private long free;
+        private final String name;
+        private final long total;
+        private final long free;
 
         Space(String total, String free, String name) {
             try {
                 this.total = Long.valueOf(total) * KSIZE;
                 this.free = Long.valueOf(free) * KSIZE;
             } catch (NumberFormatException x) {
-                // the regex should have caught this
-                assert false;
+                throw new RuntimeException("the regex should have caught this", x);
             }
             this.name = name;
         }
@@ -131,36 +124,35 @@ public class GetXSpace {
         }
     }
 
-    private static ArrayList space(String f) throws IOException {
-        ArrayList al = new ArrayList();
+    private static ArrayList<Space> space(String f) throws IOException {
+        ArrayList<Space> al = new ArrayList<>();
 
-        Process p = null;
-        String cmd = "df -k" + (f == null ? "" : " " + f);
-        p = Runtime.getRuntime().exec(cmd);
-        BufferedReader in = new BufferedReader
-            (new InputStreamReader(p.getInputStream()));
-        String s;
-        int i = 0;
+        String cmd = "df -k -P" + (f == null ? "" : " " + f);
         StringBuilder sb = new StringBuilder();
-        while ((s = in.readLine()) != null) {
-            // skip header
-            if (i++ == 0 && !name.startsWith("Windows")) continue;
-            sb.append(s).append("\n");
+        Process p = Runtime.getRuntime().exec(cmd);
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+            String s;
+            int i = 0;
+            while ((s = in.readLine()) != null) {
+                // skip header
+                if (i++ == 0) continue;
+                sb.append(s).append("\n");
+            }
         }
+        out.println(sb);
 
-        Matcher m = dfPattern.matcher(sb);
+        Matcher m = DF_PATTERN.matcher(sb);
         int j = 0;
         while (j < sb.length()) {
             if (m.find(j)) {
-                if (!name.startsWith("Windows")) {
-                    // swap can change while this test is running
-                    if (!m.group(1).equals("swap")) {
-                        String name = (f == null ? m.group(4): f);
-                        al.add(new Space(m.group(2), m.group(3), name));;
+                // swap can change while this test is running
+                if (!m.group(1).equals("swap")) {
+                    String name = f;
+                    if (name == null) {
+                        // cygwin's df lists windows path as FileSystem (1st group)
+                        name = IS_WIN ? m.group(1) : m.group(4);
                     }
-                } else {
-                    String name = (f == null ? m.group(2) : f);
-                    al.add(new Space(m.group(4), m.group(3), name ));;
+                    al.add(new Space(m.group(2), m.group(3), name));;
                 }
                 j = m.end() + 1;
             } else {
@@ -175,7 +167,6 @@ public class GetXSpace {
             String name = (f == null ? "" : f);
             al.add(new Space("0", "0", name));
         }
-        in.close();
         return al;
     }
 
@@ -221,27 +212,49 @@ public class GetXSpace {
         out.format(fmt, "getX", ts, fs, us);
 
         // if the file system can dynamically change size, this check will fail
-        if (ts != s.total())
-            fail(s.name(), s.total(), "!=", ts);
-        else
+        if (ts != s.total()) {
+            long blockSize = 1;
+            long numBlocks = 0;
+            try {
+                FileStore fileStore = Files.getFileStore(f.toPath());
+                blockSize = fileStore.getBlockSize();
+                numBlocks = fileStore.getTotalSpace()/blockSize;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+
+            // On macOS, the number of 1024 byte blocks might be incorrectly
+            // calculated by 'df' using integer division by 2 of the number of
+            // 512 byte blocks, resulting in a size smaller than the actual
+            // value when the number of blocks is odd.
+            if (!IS_MAC || blockSize != 512 || numBlocks % 2 == 0
+                || ts - s.total() != 512) {
+                fail(s.name(), s.total(), "!=", ts);
+            }
+        } else {
             pass();
+        }
 
         // unix df returns statvfs.f_bavail
-        long tsp = (!name.startsWith("Windows") ? us : fs);
-        if (!s.woomFree(tsp))
+        long tsp = (!IS_WIN ? us : fs);
+        if (!s.woomFree(tsp)) {
             fail(s.name(), s.free(), "??", tsp);
-        else
+        } else {
             pass();
+        }
 
-        if (fs > s.total())
+        if (fs > s.total()) {
             fail(s.name(), s.total(), ">", fs);
-        else
+        } else {
             pass();
+        }
 
-        if (us > s.total())
+        if (us > s.total()) {
             fail(s.name(), s.total(), ">", us);
-        else
+        } else {
             pass();
+        }
     }
 
     private static String FILE_PREFIX = "/getSpace.";
@@ -249,18 +262,20 @@ public class GetXSpace {
         File f;
         while (true) {
             f = new File(FILE_PREFIX + Math.random());
-            if (f.exists())
+            if (f.exists()) {
                 continue;
+            }
             break;
         }
 
         long [] s = { f.getTotalSpace(), f.getFreeSpace(), f.getUsableSpace() };
 
         for (int i = 0; i < s.length; i++) {
-            if (s[i] != 0L)
+            if (s[i] != 0L) {
                 fail(f.getName(), s[i], "!=", 0L);
-            else
+            } else {
                 pass();
+            }
         }
     }
 
@@ -271,12 +286,14 @@ public class GetXSpace {
             long [] s = { f.getTotalSpace(), f.getFreeSpace(), f.getUsableSpace() };
 
             for (int i = 0; i < s.length; i++) {
-                if (s[i] == 0L)
+                if (s[i] == 0L) {
                     fail(f.getName(), s[i], "==", 0L);
-                else
+                } else {
                     pass();
+                }
             }
         } catch (IOException x) {
+            x.printStackTrace();
             fail("Couldn't create temp file for test");
         }
     }
@@ -327,22 +344,32 @@ public class GetXSpace {
         }
     }
 
-    private static void testFile(String dirName) {
+    private static int testFile(Path dir) {
+        String dirName = dir.toString();
         out.format("--- Testing %s%n", dirName);
-        ArrayList l;
+        ArrayList<Space> l;
         try {
             l = space(dirName);
         } catch (IOException x) {
             throw new RuntimeException(dirName + " can't get file system information", x);
         }
-        compare((GetXSpace.Space) l.get(0));
+        compare(l.get(0));
+
+        if (fail != 0) {
+            err.format("%d tests: %d failure(s); first: %s%n",
+                fail + pass, fail, first);
+        } else {
+            out.format("all %d tests passed%n", fail + pass);
+        }
+
+        return fail != 0 ? 1 : 0;
     }
 
-    private static void testDF() {
-        out.format("--- Testing df");
+    private static int testDF() {
+        out.println("--- Testing df");
         // Find all of the partitions on the machine and verify that the size
         // returned by "df" is equivalent to File.getXSpace() values.
-        ArrayList l;
+        ArrayList<Space> l;
         try {
             l = space(null);
         } catch (IOException x) {
@@ -360,8 +387,7 @@ public class GetXSpace {
 
             out.format("%nSecurityManager = %s%n" ,
                        (sm == null ? "null" : sm.getClass().getName()));
-            for (int j = 0; j < l.size(); j++) {
-                Space s = (GetXSpace.Space) l.get(j);
+            for (var s : l) {
                 if (sm instanceof Deny) {
                     tryCatch(s);
                 } else {
@@ -371,19 +397,51 @@ public class GetXSpace {
                 }
             }
         }
-    }
 
-    public static void main(String [] args) {
-        if (args.length > 0) {
-            testFile(args[0]);
+        System.setSecurityManager(null);
+
+        if (fail != 0) {
+            err.format("%d tests: %d failure(s); first: %s%n",
+                fail + pass, fail, first);
         } else {
-            testDF();
+            out.format("all %d tests passed%n", fail + pass);
         }
 
-        if (fail != 0)
-            throw new RuntimeException((fail + pass) + " tests: "
-                                       + fail + " failure(s), first", first);
-        else
-            out.format("all %d tests passed%n", fail + pass);
+        return fail != 0 ? 1 : 0;
+    }
+
+    private static void perms(File file, boolean allow) throws IOException {
+        file.setExecutable(allow, false);
+        file.setReadable(allow, false);
+        file.setWritable(allow, false);
+    }
+
+    private static void deny(Path path) throws IOException {
+        perms(path.toFile(), false);
+    }
+
+    private static void allow(Path path) throws IOException {
+        perms(path.toFile(), true);
+    }
+
+    public static void main(String[] args) throws Exception {
+        int failedTests = testDF();
+        reset();
+
+        Path tmpDir = Files.createTempDirectory(null);
+        Path tmpSubdir = Files.createTempDirectory(tmpDir, null);
+        Path tmpFile = Files.createTempFile(tmpSubdir, "foo", null);
+
+        deny(tmpSubdir);
+        failedTests += testFile(tmpFile);
+
+        allow(tmpSubdir);
+        Files.delete(tmpFile);
+        Files.delete(tmpSubdir);
+        Files.delete(tmpDir);
+
+        if (failedTests > 0) {
+            throw new RuntimeException(failedTests + " test(s) failed");
+        }
     }
 }

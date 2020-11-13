@@ -23,13 +23,19 @@
 
 /*
  * @test
- * @bug 8235332
+ * @key stress randomness
+ * @bug 8235332 8248226
  * @summary Test cloning with more than 8 (=ArrayCopyLoadStoreMaxElem) fields with StressGCM
  * @library /
  *
  * @run main/othervm -Xbatch
  *                   -XX:CompileCommand=dontinline,compiler.arraycopy.TestCloneAccessStressGCM::test
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:-ReduceInitialCardMarks
+ *                   compiler.arraycopy.TestCloneAccessStressGCM
+ * @run main/othervm -Xbatch
+ *                   -XX:CompileCommand=dontinline,compiler.arraycopy.TestCloneAccessStressGCM::test
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:-ReduceInitialCardMarks
+ *                   -XX:-ReduceBulkZeroing
  *                   compiler.arraycopy.TestCloneAccessStressGCM
  */
 

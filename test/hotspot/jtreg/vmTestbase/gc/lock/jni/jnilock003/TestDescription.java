@@ -31,7 +31,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @run main/othervm/native
  *      -XX:-UseGCOverheadLimit
  *      gc.lock.LockerTest

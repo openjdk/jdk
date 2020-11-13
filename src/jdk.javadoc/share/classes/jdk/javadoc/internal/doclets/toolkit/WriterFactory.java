@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ public interface WriterFactory {
     /**
      * Return the writer for the package summary.
      *
-     * @param packageElement the package being documented.
+     * @param packageElement the package being documented
      * @return the writer for the package summary.  Return null if this
      * writer is not supported by the doclet.
      */
@@ -64,7 +64,7 @@ public interface WriterFactory {
     /**
      * Return the writer for the module summary.
      *
-     * @param mdle the module being documented.
+     * @param mdle the module being documented
      * @return the writer for the module summary.  Return null if this
      * writer is not supported by the doclet.
      */
@@ -122,7 +122,7 @@ public interface WriterFactory {
      * Return the field writer for a given type element,
      * or null if this writer is not supported by the doclet.
      *
-     * @param classWriter the writer for the class being documented.
+     * @param classWriter the writer for the class being documented
      * @return the field writer for the given class.  Return null if this
      * writer is not supported by the doclet.
      */
@@ -132,7 +132,7 @@ public interface WriterFactory {
      * Return the property writer for a given class,
      * or null if this writer is not supported by the doclet.
      *
-     * @param classWriter the writer for the type elemen t being documented.
+     * @param classWriter the writer for the type element being documented
      * @return the property writer
      */
     PropertyWriter getPropertyWriter(ClassWriter classWriter);
@@ -150,9 +150,9 @@ public interface WriterFactory {
      * Return the specified member summary writer for a given type element,
      * or null if this writer is not supported by the doclet.
      *
-     * @param classWriter the writer for the class being documented.
+     * @param classWriter the writer for the class being documented
      * @param memberType  the {@link VisibleMemberTable} member type indicating
-     *                    the type of member summary that should be returned.
+     *                    the type of member summary that should be returned
      * @return the summary writer
      *
      * @see VisibleMemberTable

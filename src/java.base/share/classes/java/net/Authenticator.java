@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,11 @@ class Authenticator {
     private URL requestingURL;
     private RequestorType requestingAuthType;
     private final String key = AuthenticatorKeys.computeKey(this);
+
+    /**
+     * Constructor for subclasses to call.
+     */
+    public Authenticator() {}
 
     /**
      * The type of the entity requesting authentication.

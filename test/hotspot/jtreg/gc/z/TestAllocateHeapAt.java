@@ -25,7 +25,7 @@ package gc.z;
 
 /*
  * @test TestAllocateHeapAt
- * @requires vm.gc.Z & os.family == "linux" & !vm.graal.enabled
+ * @requires vm.gc.Z & os.family == "linux"
  * @summary Test ZGC with -XX:AllocateHeapAt
  * @library /test/lib
  * @run main/othervm gc.z.TestAllocateHeapAt . true

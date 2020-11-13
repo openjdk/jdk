@@ -29,9 +29,9 @@
  * @library /test/lib ..
  * @library ../../../../java/security/testlibrary
  * @key randomness
- * @modules jdk.crypto.cryptoki
- * @run main/othervm -Djdk.sunec.disableNative=false ReadPKCS12
- * @run main/othervm -Djdk.sunec.disableNative=false ReadPKCS12 sm policy
+ * @modules jdk.crypto.cryptoki jdk.crypto.ec/sun.security.ec
+ * @run main/othervm ReadPKCS12
+ * @run main/othervm ReadPKCS12 sm policy
  */
 
 import java.io.BufferedReader;

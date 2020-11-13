@@ -54,16 +54,14 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jvmti.scenarios.events.EM07.em07t002
  *
  * @comment compile loadclassXX to bin/loadclassXX
  * @run driver nsk.share.ExtraClassesBuilder
  *      loadclass
  *
- * @build ExecDriver
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
- *      "-agentlib:em07t002=attempts=2 -waittime=5"
+ * @run main/othervm/native
+ *      -agentlib:em07t002=attempts=2,-waittime=5
  *      -XX:-UseGCOverheadLimit
  *      nsk.jvmti.scenarios.events.EM07.em07t002
  *      ./bin/loadclass

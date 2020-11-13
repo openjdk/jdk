@@ -31,7 +31,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @run main/othervm
  *      -XX:-UseGCOverheadLimit
  *      vm.gc.containers.ContainersTest

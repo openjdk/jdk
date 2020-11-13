@@ -89,7 +89,7 @@ import org.xml.sax.*;
  * makes it possible to describe them in XML. The
  * metadata describing the various standard JavaBeans properties as defined
  * in the RowSet interface plus the standard properties defined in
- * the {@code CachedRowSet}&trade; interface
+ * the {@code CachedRowSet} interface
  * provide key details that describe WebRowSet
  * properties. Outputting the WebRowSet object to XML using the standard
  * {@code writeXml} methods describes the internal properties as follows:

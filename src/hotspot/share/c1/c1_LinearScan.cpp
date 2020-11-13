@@ -46,17 +46,19 @@
   // helper macro for short definition of timer
   #define TIME_LINEAR_SCAN(timer_name)  TraceTime _block_timer("", _total_timer.timer(LinearScanTimers::timer_name), TimeLinearScan || TimeEachLinearScan, Verbose);
 
+#else
+  #define TIME_LINEAR_SCAN(timer_name)
+#endif
+
+#ifdef ASSERT
+
   // helper macro for short definition of trace-output inside code
   #define TRACE_LINEAR_SCAN(level, code)       \
     if (TraceLinearScanLevel >= level) {       \
       code;                                    \
     }
-
 #else
-
-  #define TIME_LINEAR_SCAN(timer_name)
   #define TRACE_LINEAR_SCAN(level, code)
-
 #endif
 
 // Map BasicType to spill size in 32-bit words, matching VMReg's notion of words
@@ -792,7 +794,7 @@ void LinearScan::compute_global_live_sets() {
         live_in.set_union(block->live_gen());
       }
 
-#ifndef PRODUCT
+#ifdef ASSERT
       if (TraceLinearScanLevel >= 4) {
         char c = ' ';
         if (iteration_count == 0 || change_occurred_in_block) {
@@ -2702,7 +2704,7 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
       if (!frame_map()->locations_for_slot(opr->double_stack_ix(), loc_type, &loc1, NULL)) {
         bailout("too large frame");
       }
-      // Does this reverse on x86 vs. sparc?
+
       first =  new LocationValue(loc1);
       second = _int_0_scope_value;
 #else
@@ -3201,7 +3203,53 @@ void LinearScan::print_lir(int level, const char* label, bool hir_valid) {
   }
 }
 
-#endif //PRODUCT
+void LinearScan::print_reg_num(outputStream* out, int reg_num) {
+  if (reg_num == -1) {
+    out->print("[ANY]");
+    return;
+  } else if (reg_num >= LIR_OprDesc::vreg_base) {
+    out->print("[VREG %d]", reg_num);
+    return;
+  }
+
+  LIR_Opr opr = get_operand(reg_num);
+  assert(opr->is_valid(), "unknown register");
+  opr->print(out);
+}
+
+LIR_Opr LinearScan::get_operand(int reg_num) {
+  LIR_Opr opr = LIR_OprFact::illegal();
+
+#ifdef X86
+  int last_xmm_reg = pd_last_xmm_reg;
+#ifdef _LP64
+  if (UseAVX < 3) {
+    last_xmm_reg = pd_first_xmm_reg + (pd_nof_xmm_regs_frame_map / 2) - 1;
+  }
+#endif
+#endif
+  if (reg_num >= pd_first_cpu_reg && reg_num <= pd_last_cpu_reg) {
+    opr = LIR_OprFact::single_cpu(reg_num);
+  } else if (reg_num >= pd_first_fpu_reg && reg_num <= pd_last_fpu_reg) {
+    opr = LIR_OprFact::single_fpu(reg_num - pd_first_fpu_reg);
+#ifdef X86
+  } else if (reg_num >= pd_first_xmm_reg && reg_num <= last_xmm_reg) {
+    opr = LIR_OprFact::single_xmm(reg_num - pd_first_xmm_reg);
+#endif
+  } else {
+    // reg_num == -1 or a virtual register, return the illegal operand
+  }
+  return opr;
+}
+
+Interval* LinearScan::find_interval_at(int reg_num) const {
+  if (reg_num < 0 || reg_num >= _intervals.length()) {
+    return NULL;
+  }
+  return interval_at(reg_num);
+}
+
+#endif // PRODUCT
 
 
 // ********** verification functions for allocation
@@ -4542,49 +4590,51 @@ bool Interval::has_hole_between(int hole_from, int hole_to) {
   return false;
 }
 
+// Check if there is an intersection with any of the split children of 'interval'
+bool Interval::intersects_any_children_of(Interval* interval) const {
+  if (interval->_split_children != NULL) {
+    for (int i = 0; i < interval->_split_children->length(); i++) {
+      if (intersects(interval->_split_children->at(i))) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 
 #ifndef PRODUCT
-void Interval::print(outputStream* out) const {
+void Interval::print_on(outputStream* out, bool is_cfg_printer) const {
   const char* SpillState2Name[] = { "no definition", "no spill store", "one spill store", "store at definition", "start in memory", "no optimization" };
   const char* UseKind2Name[] = { "N", "L", "S", "M" };
 
   const char* type_name;
-  LIR_Opr opr = LIR_OprFact::illegal();
   if (reg_num() < LIR_OprDesc::vreg_base) {
     type_name = "fixed";
-    // need a temporary operand for fixed intervals because type() cannot be called
-#ifdef X86
-    int last_xmm_reg = pd_last_xmm_reg;
-#ifdef _LP64
-    if (UseAVX < 3) {
-      last_xmm_reg = pd_first_xmm_reg + (pd_nof_xmm_regs_frame_map / 2) - 1;
-    }
-#endif
-#endif
-    if (assigned_reg() >= pd_first_cpu_reg && assigned_reg() <= pd_last_cpu_reg) {
-      opr = LIR_OprFact::single_cpu(assigned_reg());
-    } else if (assigned_reg() >= pd_first_fpu_reg && assigned_reg() <= pd_last_fpu_reg) {
-      opr = LIR_OprFact::single_fpu(assigned_reg() - pd_first_fpu_reg);
-#ifdef X86
-    } else if (assigned_reg() >= pd_first_xmm_reg && assigned_reg() <= last_xmm_reg) {
-      opr = LIR_OprFact::single_xmm(assigned_reg() - pd_first_xmm_reg);
-#endif
-    } else {
-      ShouldNotReachHere();
-    }
   } else {
     type_name = type2name(type());
-    if (assigned_reg() != -1 &&
-        (LinearScan::num_physical_regs(type()) == 1 || assigned_regHi() != -1)) {
-      opr = LinearScan::calc_operand_for_interval(this);
-    }
   }
-
   out->print("%d %s ", reg_num(), type_name);
-  if (opr->is_valid()) {
-    out->print("\"");
-    opr->print(out);
-    out->print("\" ");
+
+  if (is_cfg_printer) {
+    // Special version for compatibility with C1 Visualizer.
+    LIR_Opr opr = LinearScan::get_operand(reg_num());
+    if (opr->is_valid()) {
+      out->print("\"");
+      opr->print(out);
+      out->print("\" ");
+    }
+  } else {
+    // Improved output for normal debugging.
+    if (reg_num() < LIR_OprDesc::vreg_base) {
+      LinearScan::print_reg_num(out, assigned_reg());
+    } else if (assigned_reg() != -1 && (LinearScan::num_physical_regs(type()) == 1 || assigned_regHi() != -1)) {
+      LinearScan::calc_operand_for_interval(this)->print(out);
+    } else {
+      // Virtual register that has no assigned register yet.
+      out->print("[ANY]");
+    }
+    out->print(" ");
   }
   out->print("%d %d ", split_parent()->reg_num(), (register_hint(false) != NULL ? register_hint(false)->reg_num() : -1));
 
@@ -4610,7 +4660,28 @@ void Interval::print(outputStream* out) const {
   out->print(" \"%s\"", SpillState2Name[spill_state()]);
   out->cr();
 }
-#endif
+
+void Interval::print_parent() const {
+  if (_split_parent != this) {
+    _split_parent->print_on(tty);
+  } else {
+    tty->print_cr("Parent: this");
+  }
+}
+
+void Interval::print_children() const {
+  if (_split_children == NULL) {
+    tty->print_cr("Children: []");
+  } else {
+    tty->print_cr("Children:");
+    for (int i = 0; i < _split_children->length(); i++) {
+      tty->print("%d: ", i);
+      _split_children->at(i)->print_on(tty);
+    }
+  }
+}
+#endif // NOT PRODUCT
+
 
 
 
@@ -4715,7 +4786,7 @@ void IntervalWalker::walk_to(IntervalState state, int from) {
         if (cur->current_at_end()) {
           // move to handled state (not maintained as a list)
           cur->set_state(handledState);
-          interval_moved(cur, kind, state, handledState);
+          DEBUG_ONLY(interval_moved(cur, kind, state, handledState);)
         } else if (cur->current_from() <= from){
           // sort into active list
           append_sorted(active_first_addr(kind), cur);
@@ -4724,7 +4795,7 @@ void IntervalWalker::walk_to(IntervalState state, int from) {
             assert(state == activeState, "check");
             prev = cur->next_addr();
           }
-          interval_moved(cur, kind, state, activeState);
+          DEBUG_ONLY(interval_moved(cur, kind, state, activeState);)
         } else {
           // sort into inactive list
           append_sorted(inactive_first_addr(kind), cur);
@@ -4733,7 +4804,7 @@ void IntervalWalker::walk_to(IntervalState state, int from) {
             assert(state == inactiveState, "check");
             prev = cur->next_addr();
           }
-          interval_moved(cur, kind, state, inactiveState);
+          DEBUG_ONLY(interval_moved(cur, kind, state, inactiveState);)
         }
       } else {
         prev = cur->next_addr();
@@ -4789,7 +4860,7 @@ void IntervalWalker::walk_to(int lir_op_id) {
       current()->set_state(activeState);
       if (activate_current()) {
         append_sorted(active_first_addr(current_kind()), current());
-        interval_moved(current(), current_kind(), unhandledState, activeState);
+        DEBUG_ONLY(interval_moved(current(), current_kind(), unhandledState, activeState);)
       }
 
       next_interval();
@@ -4799,8 +4870,8 @@ void IntervalWalker::walk_to(int lir_op_id) {
   }
 }
 
+#ifdef ASSERT
 void IntervalWalker::interval_moved(Interval* interval, IntervalKind kind, IntervalState from, IntervalState to) {
-#ifndef PRODUCT
   if (TraceLinearScanLevel >= 4) {
     #define print_state(state) \
     switch(state) {\
@@ -4817,10 +4888,8 @@ void IntervalWalker::interval_moved(Interval* interval, IntervalKind kind, Inter
 
     #undef print_state
   }
-#endif
 }
-
-
+#endif // ASSERT
 
 // **** Implementation of LinearScanWalker **************************
 
@@ -5293,7 +5362,6 @@ void LinearScanWalker::split_and_spill_interval(Interval* it) {
   }
 }
 
-
 int LinearScanWalker::find_free_reg(int reg_needed_until, int interval_to, int hint_reg, int ignore_reg, bool* need_split) {
   int min_full_reg = any_reg;
   int max_partial_reg = any_reg;
@@ -5355,7 +5423,6 @@ int LinearScanWalker::find_free_double_reg(int reg_needed_until, int interval_to
   }
 }
 
-
 bool LinearScanWalker::alloc_free_reg(Interval* cur) {
   TRACE_LINEAR_SCAN(2, tty->print("trying to find free register for "); cur->print());
 
@@ -5369,8 +5436,16 @@ bool LinearScanWalker::alloc_free_reg(Interval* cur) {
   // _use_pos contains the start of the next interval that has this register assigned
   // (either as a fixed register or a normal allocated register in the past)
   // only intervals overlapping with cur are processed, non-overlapping invervals can be ignored safely
-  TRACE_LINEAR_SCAN(4, tty->print_cr("      state of registers:"));
-  TRACE_LINEAR_SCAN(4, for (int i = _first_reg; i <= _last_reg; i++) tty->print_cr("      reg %d: use_pos: %d", i, _use_pos[i]));
+#ifdef ASSERT
+  if (TraceLinearScanLevel >= 4) {
+    tty->print_cr("      state of registers:");
+    for (int i = _first_reg; i <= _last_reg; i++) {
+      tty->print("      reg %d (", i);
+      LinearScan::print_reg_num(i);
+      tty->print_cr("): use_pos: %d", _use_pos[i]);
+    }
+  }
+#endif
 
   int hint_reg, hint_regHi;
   Interval* register_hint = cur->register_hint();
@@ -5378,12 +5453,20 @@ bool LinearScanWalker::alloc_free_reg(Interval* cur) {
     hint_reg = register_hint->assigned_reg();
     hint_regHi = register_hint->assigned_regHi();
 
-    if (allocator()->is_precolored_cpu_interval(register_hint)) {
+    if (_num_phys_regs == 2 && allocator()->is_precolored_cpu_interval(register_hint)) {
       assert(hint_reg != any_reg && hint_regHi == any_reg, "must be for fixed intervals");
       hint_regHi = hint_reg + 1;  // connect e.g. eax-edx
     }
-    TRACE_LINEAR_SCAN(4, tty->print("      hint registers %d, %d from interval ", hint_reg, hint_regHi); register_hint->print());
-
+#ifdef ASSERT
+    if (TraceLinearScanLevel >= 4) {
+      tty->print("      hint registers %d (", hint_reg);
+      LinearScan::print_reg_num(hint_reg);
+      tty->print("), %d (", hint_regHi);
+      LinearScan::print_reg_num(hint_regHi);
+      tty->print(") from interval ");
+      register_hint->print();
+    }
+#endif
   } else {
     hint_reg = any_reg;
     hint_regHi = any_reg;
@@ -5438,8 +5521,15 @@ bool LinearScanWalker::alloc_free_reg(Interval* cur) {
   }
 
   cur->assign_reg(reg, regHi);
-  TRACE_LINEAR_SCAN(2, tty->print_cr("selected register %d, %d", reg, regHi));
-
+#ifdef ASSERT
+  if (TraceLinearScanLevel >= 2) {
+    tty->print("      selected registers %d (", reg);
+    LinearScan::print_reg_num(reg);
+    tty->print("), %d (", regHi);
+    LinearScan::print_reg_num(regHi);
+    tty->print_cr(")");
+  }
+#endif
   assert(split_pos > 0, "invalid split_pos");
   if (need_split) {
     // register not available for full interval, so split it
@@ -5527,11 +5617,13 @@ void LinearScanWalker::alloc_locked_reg(Interval* cur) {
   spill_collect_active_any();
   spill_collect_inactive_any(cur);
 
-#ifndef PRODUCT
+#ifdef ASSERT
   if (TraceLinearScanLevel >= 4) {
     tty->print_cr("      state of registers:");
     for (int i = _first_reg; i <= _last_reg; i++) {
-      tty->print("      reg %d: use_pos: %d, block_pos: %d, intervals: ", i, _use_pos[i], _block_pos[i]);
+      tty->print("      reg %d(", i);
+      LinearScan::print_reg_num(i);
+      tty->print("): use_pos: %d, block_pos: %d, intervals: ", _use_pos[i], _block_pos[i]);
       for (int j = 0; j < _spill_intervals[i]->length(); j++) {
         tty->print("%d ", _spill_intervals[i]->at(j)->reg_num());
       }
@@ -5601,7 +5693,15 @@ void LinearScanWalker::alloc_locked_reg(Interval* cur) {
 
     split_and_spill_interval(cur);
   } else {
-    TRACE_LINEAR_SCAN(4, tty->print_cr("decided to use register %d, %d", reg, regHi));
+#ifdef ASSERT
+    if (TraceLinearScanLevel >= 4) {
+      tty->print("decided to use register %d (", reg);
+      LinearScan::print_reg_num(reg);
+      tty->print("), %d (", regHi);
+      LinearScan::print_reg_num(regHi);
+      tty->print_cr(")");
+    }
+#endif
     assert(reg != any_reg && (_num_phys_regs == 1 || regHi != any_reg), "no register found");
     assert(split_pos > 0, "invalid split_pos");
     assert(need_split == false || split_pos > cur->from(), "splitting interval at from");
@@ -5722,6 +5822,13 @@ void LinearScanWalker::combine_spilled_intervals(Interval* cur) {
     return;
   }
   assert(register_hint->canonical_spill_slot() != -1, "must be set when part of interval was spilled");
+  assert(!cur->intersects(register_hint), "cur should not intersect register_hint");
+
+  if (cur->intersects_any_children_of(register_hint)) {
+    // Bail out if cur intersects any split children of register_hint, which have the same spill slot as their parent. An overlap of two intervals with
+    // the same spill slot could result in a situation where both intervals are spilled at the same time to the same stack location which is not correct.
+    return;
+  }
 
   // modify intervals such that cur gets the same stack slot as register_hint
   // delete use positions to prevent the intervals to get a register at beginning
@@ -6320,7 +6427,7 @@ void ControlFlowOptimizer::delete_jumps_to_return(BlockList* code) {
           if (pred_last_branch->block() == block && pred_last_branch->cond() == lir_cond_always && pred_last_branch->info() == NULL) {
             // replace the jump to a return with a direct return
             // Note: currently the edge between the blocks is not deleted
-            pred_instructions->at_put(pred_instructions->length() - 1, new LIR_Op1(lir_return, return_opr));
+            pred_instructions->at_put(pred_instructions->length() - 1, new LIR_OpReturn(return_opr));
 #ifdef ASSERT
             return_converted.set_bit(pred->block_id());
 #endif

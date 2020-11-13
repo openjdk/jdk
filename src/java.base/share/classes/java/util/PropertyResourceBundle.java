@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,7 +120,7 @@ import sun.util.ResourceBundleEnumeration;
  * and throws the exception if it encounters an invalid sequence.
  * If "ISO-8859-1" is specified, characters that cannot be represented in
  * ISO-8859-1 encoding must be represented by Unicode Escapes as defined in section
- * 3.3 of <cite>The Java&trade; Language Specification</cite>
+ * {@jls 3.3} of <cite>The Java Language Specification</cite>
  * whereas the other constructor which takes a {@code Reader} does not have that limitation.
  * Other encoding values are ignored for this system property.
  * The system property is read and evaluated when initializing this class.

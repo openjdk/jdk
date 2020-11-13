@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,9 +107,9 @@ public final class MarshalledObject<T> implements Serializable {
      * parameters for RMI calls.
      *
      * @param obj the object to be serialized (must be serializable)
-     * @exception IOException if an <code>IOException</code> occurs; an
-     * <code>IOException</code> may occur if <code>obj</code> is not
-     * serializable.
+     * @throws IOException if an <code>IOException</code> occurs; an
+     *         <code>IOException</code> may occur if <code>obj</code> is not
+     *         serializable.
      * @since 1.2
      */
     public MarshalledObject(T obj) throws IOException {
@@ -161,12 +161,12 @@ public final class MarshalledObject<T> implements Serializable {
      * the filter from that stream is used to deserialize the object.
      *
      * @return a copy of the contained object
-     * @exception IOException if an <code>IOException</code> occurs while
-     * deserializing the object from its internal representation.
-     * @exception ClassNotFoundException if a
-     * <code>ClassNotFoundException</code> occurs while deserializing the
-     * object from its internal representation.
-     * could not be found
+     * @throws IOException if an <code>IOException</code> occurs while
+     *         deserializing the object from its internal representation.
+     * @throws ClassNotFoundException if a
+     *         <code>ClassNotFoundException</code> occurs while deserializing
+     *         the object from its internal representation.
+     *         could not be found
      * @since 1.2
      */
     public T get() throws IOException, ClassNotFoundException {

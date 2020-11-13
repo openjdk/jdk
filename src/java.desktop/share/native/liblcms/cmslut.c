@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2017 Marti Maria Saguer
+//  Copyright (c) 1998-2020 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -426,37 +426,31 @@ cmsStage*  CMSEXPORT cmsStageAllocMatrix(cmsContext ContextID, cmsUInt32Number R
 
 
     NewElem = (_cmsStageMatrixData*) _cmsMallocZero(ContextID, sizeof(_cmsStageMatrixData));
-    if (NewElem == NULL) return NULL;
-
+    if (NewElem == NULL) goto Error;
+    NewMPE->Data = (void*)NewElem;
 
     NewElem ->Double = (cmsFloat64Number*) _cmsCalloc(ContextID, n, sizeof(cmsFloat64Number));
-
-    if (NewElem->Double == NULL) {
-        MatrixElemTypeFree(NewMPE);
-        return NULL;
-    }
+    if (NewElem->Double == NULL) goto Error;
 
     for (i=0; i < n; i++) {
         NewElem ->Double[i] = Matrix[i];
     }
 
-
     if (Offset != NULL) {
 
         NewElem ->Offset = (cmsFloat64Number*) _cmsCalloc(ContextID, Rows, sizeof(cmsFloat64Number));
-        if (NewElem->Offset == NULL) {
-           MatrixElemTypeFree(NewMPE);
-           return NULL;
-        }
+        if (NewElem->Offset == NULL) goto Error;
 
         for (i=0; i < Rows; i++) {
                 NewElem ->Offset[i] = Offset[i];
         }
-
     }
 
-    NewMPE ->Data  = (void*) NewElem;
     return NewMPE;
+
+Error:
+    cmsStageFree(NewMPE);
+    return NULL;
 }
 
 
@@ -729,7 +723,7 @@ cmsStage* CMSEXPORT cmsStageAllocCLutFloatGranular(cmsContext ContextID, const c
 
 
 static
-int IdentitySampler(register const cmsUInt16Number In[], register cmsUInt16Number Out[], register void * Cargo)
+int IdentitySampler(CMSREGISTER const cmsUInt16Number In[], CMSREGISTER cmsUInt16Number Out[], CMSREGISTER void * Cargo)
 {
     int nChan = *(int*) Cargo;
     int i;
@@ -1346,7 +1340,7 @@ cmsBool BlessLUT(cmsPipeline* lut)
 
 // Default to evaluate the LUT on 16 bit-basis. Precision is retained.
 static
-void _LUTeval16(register const cmsUInt16Number In[], register cmsUInt16Number Out[],  register const void* D)
+void _LUTeval16(CMSREGISTER const cmsUInt16Number In[], CMSREGISTER cmsUInt16Number Out[],  CMSREGISTER const void* D)
 {
     cmsPipeline* lut = (cmsPipeline*) D;
     cmsStage *mpe;
@@ -1372,7 +1366,7 @@ void _LUTeval16(register const cmsUInt16Number In[], register cmsUInt16Number Ou
 
 // Does evaluate the LUT on cmsFloat32Number-basis.
 static
-void _LUTevalFloat(register const cmsFloat32Number In[], register cmsFloat32Number Out[], const void* D)
+void _LUTevalFloat(CMSREGISTER const cmsFloat32Number In[], CMSREGISTER cmsFloat32Number Out[], const void* D)
 {
     cmsPipeline* lut = (cmsPipeline*) D;
     cmsStage *mpe;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.share.jvmti.JVMTITest
  *        nsk.share.Consts
  *
@@ -67,15 +66,15 @@
  *      ../systemclssearch001/newclass
  *
  * @comment create systemclssearch001.jar in current directory
- * @build ExecDriver
- * @run driver PropertyResolvingWrapper ExecDriver --cmd
+ * @run driver ExecDriver --cmd
  *      ${compile.jdk}/bin/jar
  *      -cf systemclssearch001.jar
  *      -C ./bin/newclass/
  *      nsk/jvmti/AddToSystemClassLoaderSearch/systemclssearch001.class
  *
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
- *      "-agentlib:systemclssearch_agent=-waittime=5 phasetocheck=live segment1=systemclssearch001.jar"
+ * @comment ExecDriver is used b/c main class isn't on source/class path
+ * @run main/othervm/native ExecDriver --java
+ *      -agentlib:systemclssearch_agent=-waittime=5,phasetocheck=live,segment1=systemclssearch001.jar
  *      nsk.jvmti.AddToSystemClassLoaderSearch.systemclssearch001
  */
 

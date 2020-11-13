@@ -133,7 +133,7 @@ int ObjectSampleCheckpoint::save_mark_words(const ObjectSampler* sampler, Object
   if (sampler->last() == NULL) {
     return 0;
   }
-  SampleMarker sample_marker(marker, emit_all ? max_jlong : sampler->last_sweep().value());
+  SampleMarker sample_marker(marker, emit_all ? max_jlong : ObjectSampler::last_sweep());
   iterate_samples(sample_marker, true);
   return sample_marker.count();
 }
@@ -261,10 +261,10 @@ static void install_stack_traces(const ObjectSampler* sampler, JfrStackTraceRepo
 void ObjectSampleCheckpoint::on_rotation(const ObjectSampler* sampler, JfrStackTraceRepository& stack_trace_repo) {
   assert(sampler != NULL, "invariant");
   assert(LeakProfiler::is_running(), "invariant");
-  Thread* const thread = Thread::current();
+  JavaThread* const thread = JavaThread::current();
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(thread);)
   // can safepoint here
-  ThreadInVMfromNative transition((JavaThread*)thread);
+  ThreadInVMfromNative transition(thread);
   MutexLocker lock(ClassLoaderDataGraph_lock);
   // the lock is needed to ensure the unload lists do not grow in the middle of inspection.
   install_stack_traces(sampler, stack_trace_repo);
@@ -361,7 +361,7 @@ class BlobWriter {
 
 static void write_sample_blobs(const ObjectSampler* sampler, bool emit_all, Thread* thread) {
   // sample set is predicated on time of last sweep
-  const jlong last_sweep = emit_all ? max_jlong : sampler->last_sweep().value();
+  const jlong last_sweep = emit_all ? max_jlong : ObjectSampler::last_sweep();
   JfrCheckpointWriter writer(thread, false);
   BlobWriter cbw(sampler, writer, last_sweep);
   iterate_samples(cbw, true);

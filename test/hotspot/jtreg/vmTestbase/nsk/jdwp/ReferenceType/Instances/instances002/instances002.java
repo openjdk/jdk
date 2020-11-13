@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,9 +57,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build nsk.jdwp.ReferenceType.Instances.instances002.instances002
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.jdwp.ReferenceType.Instances.instances002.instances002
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose
@@ -71,20 +69,24 @@
 
 package nsk.jdwp.ReferenceType.Instances.instances002;
 
-import java.io.*;
 import nsk.share.Consts;
-import nsk.share.jdwp.*;
+import nsk.share.jdwp.CommandPacket;
+import nsk.share.jdwp.JDWP;
+import nsk.share.jdwp.ReplyPacket;
+import nsk.share.jdwp.TestDebuggerType1;
+
+import java.io.PrintStream;
 
 public class instances002 extends TestDebuggerType1 {
     protected String getDebugeeClassName() {
         return nsk.jdwp.ReferenceType.Instances.instances002.instances002a.class.getName();
     }
 
-    public static void main(String argv[]) {
+    public static void main(String[] argv) {
         System.exit(run(argv, System.out) + Consts.JCK_STATUS_BASE);
     }
 
-    public static int run(String argv[], PrintStream out) {
+    public static int run(String[] argv, PrintStream out) {
         return new instances002().runIt(argv, out);
     }
 
@@ -119,7 +121,7 @@ public class instances002 extends TestDebuggerType1 {
                 log.complain("Unexpected 'instances' value: " + instances + ", expected is " + expectedInstances);
             }
 
-            long expectedInstancesID[] = new long[expectedInstances];
+            long[] expectedInstancesID = new long[expectedInstances];
 
             // initialize expected IDs of instances
             for (int i = 0; i < expectedInstances; i++) {
@@ -127,21 +129,21 @@ public class instances002 extends TestDebuggerType1 {
                         JDWP.Tag.OBJECT);
             }
 
-            long receivedInstancesID[] = new long[instances];
+            long[] receivedInstancesID = new long[instances];
 
             for (int i = 0; i < instances; i++) {
                 JDWP.Value value = reply.getValue();
                 log.display("tagged-ObjectID = " + value);
 
-                receivedInstancesID[i] = ((Long) value.getValue()).longValue();
+                receivedInstancesID[i] = (Long) value.getValue();
             }
 
             // check that correct IDs of instances was received
             for (int i = 0; i < instances; i++) {
                 boolean isIDExpected = false;
 
-                for (int j = 0; j < expectedInstancesID.length; j++) {
-                    if (receivedInstancesID[i] == expectedInstancesID[j]) {
+                for (long l : expectedInstancesID) {
+                    if (receivedInstancesID[i] == l) {
                         isIDExpected = true;
                         break;
                     }
@@ -155,8 +157,9 @@ public class instances002 extends TestDebuggerType1 {
 
             if (!getSuccess()) {
                 log.complain("Expected IDs:");
-                for (int i = 0; i < expectedInstancesID.length; i++)
-                    log.complain("" + expectedInstancesID[i]);
+                for (long l : expectedInstancesID) {
+                    log.complain("" + l);
+                }
             }
 
             if (!reply.isParsed()) {

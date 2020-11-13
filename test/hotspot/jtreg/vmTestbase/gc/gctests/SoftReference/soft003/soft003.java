@@ -30,7 +30,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @run main/othervm -XX:-UseGCOverheadLimit gc.gctests.SoftReference.soft003.soft003 -t 1
  */
 

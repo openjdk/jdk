@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,89 +24,102 @@
  */
 
 package com.sun.net.httpserver;
-import java.net.*;
-import java.io.*;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 /**
- * HttpContext represents a mapping between the root URI path of an application
- * to a {@link HttpHandler} which is invoked to handle requests destined
- * for that path on the associated HttpServer or HttpsServer.
- * <p>
- * HttpContext instances are created by the create methods in HttpServer
- * and HttpsServer
- * <p>
- * A chain of {@link Filter} objects can be added to a HttpContext. All exchanges processed by the
- * context can be pre- and post-processed by each Filter in the chain.
+ * {@code HttpContext} represents a mapping between the root {@link java.net.URI}
+ * path of an application to a {@link HttpHandler} which is invoked to handle
+ * requests destined for that path on the associated {@link HttpServer} or
+ * {@link HttpsServer}.
+ *
+ * <p> {@code HttpContext} instances are created by the create methods in
+ * {@code HttpServer} and {@code HttpsServer}.
+ *
+ * <p> A chain of {@link Filter} objects can be added to a {@code HttpContext}.
+ * All exchanges processed by the context can be pre- and post-processed by each
+ * {@code Filter} in the chain.
+ *
  * @since 1.6
  */
 public abstract class HttpContext {
 
-    protected HttpContext () {
+    /**
+     * Constructor for subclasses to call.
+     */
+    protected HttpContext() {
     }
 
     /**
-     * returns the handler for this context
-     * @return the HttpHandler for this context
+     * Returns the handler for this context.
+     *
+     * @return the {@code HttpHandler} for this context
      */
-    public abstract HttpHandler getHandler () ;
+    public abstract HttpHandler getHandler();
 
     /**
      * Sets the handler for this context, if not already set.
-     * @param h the handler to set for this context
-     * @throws IllegalArgumentException if this context's handler is already set.
-     * @throws NullPointerException if handler is <code>null</code>
+     *
+     * @param handler the handler to set for this context
+     * @throws IllegalArgumentException if the context for this handler is already set.
+     * @throws NullPointerException if handler is {@code null}
      */
-    public abstract void setHandler (HttpHandler h) ;
+    public abstract void setHandler(HttpHandler handler);
 
     /**
-     * returns the path this context was created with
-     * @return this context's path
+     * Returns the path this context was created with.
+     *
+     * @return the context of this path
      */
-    public abstract String getPath() ;
+    public abstract String getPath();
 
     /**
-     * returns the server this context was created with
-     * @return this context's server
+     * Returns the server this context was created with.
+     *
+     * @return the context of this server
      */
-    public abstract HttpServer getServer () ;
+    public abstract HttpServer getServer();
 
     /**
-     * returns a mutable Map, which can be used to pass
-     * configuration and other data to Filter modules
-     * and to the context's exchange handler.
-     * <p>
-     * Every attribute stored in this Map will be visible to
-     * every HttpExchange processed by this context
+     * Returns a mutable {@link Map}, which can be used to pass configuration
+     * and other data to {@link Filter} modules and to the context's exchange
+     * handler.
+     *
+     * <p> Every attribute stored in this {@code Map} will be visible to every
+     * {@code HttpExchange} processed by this context.
+     *
+     * @return a {@code Map} containing the attributes of this context
      */
     public abstract Map<String,Object> getAttributes() ;
 
     /**
-     * returns this context's list of Filters. This is the
-     * actual list used by the server when dispatching requests
-     * so modifications to this list immediately affect the
-     * the handling of exchanges.
+     * Returns this context's {@link List} of {@linkplain Filter filters}. This
+     * is the actual list used by the server when dispatching requests so
+     * modifications to this list immediately affect the the handling of exchanges.
+     *
+     * @return a {@link List} containing the filters of this context
      */
     public abstract List<Filter> getFilters();
 
     /**
-     * Sets the Authenticator for this HttpContext. Once an authenticator
-     * is establised on a context, all client requests must be
-     * authenticated, and the given object will be invoked to validate each
-     * request. Each call to this method replaces any previous value set.
-     * @param auth the authenticator to set. If <code>null</code> then any
-     *         previously set authenticator is removed,
-     *         and client authentication will no longer be required.
-     * @return the previous Authenticator, if any set, or <code>null</code>
-     *         otherwise.
+     * Sets the {@link Authenticator} for this {@code HttpContext}. Once an authenticator
+     * is establised on a context, all client requests must be authenticated,
+     * and the given object will be invoked to validate each request. Each call
+     * to this method replaces any previous value set.
+     *
+     * @param auth the {@code Authenticator} to set. If {@code null} then any previously
+     *             set {@code Authenticator} is removed, and client authentication
+     *             will no longer be required.
+     * @return the previous {@code Authenticator}, if any set, or {@code null} otherwise.
      */
-    public abstract Authenticator setAuthenticator (Authenticator auth);
+    public abstract Authenticator setAuthenticator(Authenticator auth);
 
     /**
-     * Returns the currently set Authenticator for this context
+     * Returns the currently set {@link Authenticator} for this context
      * if one exists.
-     * @return this HttpContext's Authenticator, or <code>null</code>
-     *         if none is set.
+     *
+     * @return this {@linkplain HttpContext HttpContext's} {@code Authenticator},
+     * or {@code null} if none is set
      */
-    public abstract Authenticator getAuthenticator ();
+    public abstract Authenticator getAuthenticator();
 }

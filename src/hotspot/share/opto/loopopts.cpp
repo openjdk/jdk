@@ -46,7 +46,7 @@
 //=============================================================================
 //------------------------------split_thru_phi---------------------------------
 // Split Node 'n' through merge point if there is enough win.
-Node *PhaseIdealLoop::split_thru_phi( Node *n, Node *region, int policy ) {
+Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
   if (n->Opcode() == Op_ConvI2L && n->bottom_type() != TypeLong::LONG) {
     // ConvI2L may have type information on it which is unsafe to push up
     // so disable this for now
@@ -61,13 +61,28 @@ Node *PhaseIdealLoop::split_thru_phi( Node *n, Node *region, int policy ) {
     return NULL;
   }
 
+  // Bail out if 'n' is a Div or Mod node whose zero check was removed earlier (i.e. control is NULL) and its divisor is an induction variable
+  // phi p of a trip-counted (integer) loop whose inputs could be zero (include zero in their type range). p could have a more precise type
+  // range that does not necessarily include all values of its inputs. Since each of these inputs will be a divisor of the newly cloned nodes
+  // of 'n', we need to bail out of one of these divisors could be zero (zero in its type range).
+  if ((n->Opcode() == Op_DivI || n->Opcode() == Op_ModI) && n->in(0) == NULL
+      && region->is_CountedLoop() && n->in(2) == region->as_CountedLoop()->phi()) {
+    Node* phi = region->as_CountedLoop()->phi();
+    for (uint i = 1; i < phi->req(); i++) {
+      if (_igvn.type(phi->in(i))->filter_speculative(TypeInt::ZERO) != Type::TOP) {
+        // Zero could be a possible value but we already removed the zero check. Bail out to avoid a possible division by zero at a later point.
+        return NULL;
+      }
+    }
+  }
+
   int wins = 0;
   assert(!n->is_CFG(), "");
   assert(region->is_Region(), "");
 
   const Type* type = n->bottom_type();
-  const TypeOopPtr *t_oop = _igvn.type(n)->isa_oopptr();
-  Node *phi;
+  const TypeOopPtr* t_oop = _igvn.type(n)->isa_oopptr();
+  Node* phi;
   if (t_oop != NULL && t_oop->is_known_instance_field()) {
     int iid    = t_oop->instance_id();
     int index  = C->get_alias_index(t_oop);
@@ -78,7 +93,7 @@ Node *PhaseIdealLoop::split_thru_phi( Node *n, Node *region, int policy ) {
   }
   uint old_unique = C->unique();
   for (uint i = 1; i < region->req(); i++) {
-    Node *x;
+    Node* x;
     Node* the_clone = NULL;
     if (region->in(i) == C->top()) {
       x = C->top();             // Dead path?  Use a dead data op
@@ -89,13 +104,13 @@ Node *PhaseIdealLoop::split_thru_phi( Node *n, Node *region, int policy ) {
       if (n->in(0) == region)
         x->set_req( 0, region->in(i) );
       for (uint j = 1; j < n->req(); j++) {
-        Node *in = n->in(j);
+        Node* in = n->in(j);
         if (in->is_Phi() && in->in(0) == region)
-          x->set_req( j, in->in(i) ); // Use pre-Phi input for the clone
+          x->set_req(j, in->in(i)); // Use pre-Phi input for the clone
       }
     }
     // Check for a 'win' on some paths
-    const Type *t = x->Value(&_igvn);
+    const Type* t = x->Value(&_igvn);
 
     bool singleton = t->singleton();
 
@@ -952,29 +967,43 @@ void PhaseIdealLoop::try_move_store_after_loop(Node* n) {
 Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
   // Cloning these guys is unlikely to win
   int n_op = n->Opcode();
-  if( n_op == Op_MergeMem ) return n;
-  if( n->is_Proj() ) return n;
+  if (n_op == Op_MergeMem) {
+    return n;
+  }
+  if (n->is_Proj()) {
+    return n;
+  }
   // Do not clone-up CmpFXXX variations, as these are always
   // followed by a CmpI
-  if( n->is_Cmp() ) return n;
-  // Attempt to use a conditional move instead of a phi/branch
-  if( ConditionalMoveLimit > 0 && n_op == Op_Region ) {
-    Node *cmov = conditional_move( n );
-    if( cmov ) return cmov;
-  }
-  if( n->is_CFG() || n->is_LoadStore() )
+  if (n->is_Cmp()) {
     return n;
-  if( n_op == Op_Opaque1 ||     // Opaque nodes cannot be mod'd
-      n_op == Op_Opaque2 ) {
-    if( !C->major_progress() )   // If chance of no more loop opts...
+  }
+  // Attempt to use a conditional move instead of a phi/branch
+  if (ConditionalMoveLimit > 0 && n_op == Op_Region) {
+    Node *cmov = conditional_move( n );
+    if (cmov) {
+      return cmov;
+    }
+  }
+  if (n->is_CFG() || n->is_LoadStore()) {
+    return n;
+  }
+  if (n->is_Opaque1() ||     // Opaque nodes cannot be mod'd
+      n_op == Op_Opaque2) {
+    if (!C->major_progress()) {   // If chance of no more loop opts...
       _igvn._worklist.push(n);  // maybe we'll remove them
+    }
     return n;
   }
 
-  if( n->is_Con() ) return n;   // No cloning for Con nodes
+  if (n->is_Con()) {
+    return n;   // No cloning for Con nodes
+  }
 
   Node *n_ctrl = get_ctrl(n);
-  if( !n_ctrl ) return n;       // Dead node
+  if (!n_ctrl) {
+    return n;       // Dead node
+  }
 
   Node* res = try_move_store_before_loop(n, n_ctrl);
   if (res != NULL) {
@@ -1009,7 +1038,9 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
 
   // Do not clone the trip counter through on a CountedLoop
   // (messes up the canonical shape).
-  if( n_blk->is_CountedLoop() && n->Opcode() == Op_AddI ) return n;
+  if ((n_blk->is_CountedLoop() || (n_blk->is_Loop() && n_blk->as_Loop()->is_transformed_long_loop())) && n->Opcode() == Op_AddI) {
+    return n;
+  }
 
   // Check for having no control input; not pinned.  Allow
   // dominating control.
@@ -1466,7 +1497,10 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
             // to fold a StoreP and an AddP together (as part of an
             // address expression) and the AddP and StoreP have
             // different controls.
-            if (!x->is_Load() && !x->is_DecodeNarrowPtr()) _igvn._worklist.yank(x);
+            BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+            if (!x->is_Load() && !x->is_DecodeNarrowPtr() && !x->is_AddP() && !bs->is_gc_barrier_node(x)) {
+              _igvn._worklist.yank(x);
+            }
           }
           _igvn.remove_dead_node(n);
         }
@@ -2526,7 +2560,13 @@ IfNode* PhaseIdealLoop::insert_cmpi_loop_exit(IfNode* if_cmpu, IdealLoopTree *lo
 
   ProjNode* lp_continue = lp_proj->as_Proj();
   ProjNode* lp_exit     = if_cmpu->proj_out(!lp_continue->is_IfTrue())->as_Proj();
-
+  if (!lp_exit->is_IfFalse()) {
+    // The loop exit condition is (i <u limit) ==> (i >= 0 && i < limit).
+    // We therefore can't add a single exit condition.
+    return NULL;
+  }
+  // The loop exit condition is !(i <u limit) ==> (i < 0 || i >= limit).
+  // Split out the exit condition (i < 0) for stride < 0 or (i >= limit) for stride > 0.
   Node* limit = NULL;
   if (stride > 0) {
     limit = cmpu->in(2);

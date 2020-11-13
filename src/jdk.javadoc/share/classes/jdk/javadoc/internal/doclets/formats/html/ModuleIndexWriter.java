@@ -34,7 +34,6 @@ import javax.lang.model.element.ModuleElement;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
@@ -91,13 +90,11 @@ public class ModuleIndexWriter extends AbstractOverviewIndexWriter {
 
         if (!groupModuleMap.keySet().isEmpty()) {
             TableHeader tableHeader = new TableHeader(contents.moduleLabel, contents.descriptionLabel);
-            Table table =  new Table(HtmlStyle.overviewSummary, HtmlStyle.summaryTable)
+            Table table =  new Table(HtmlStyle.summaryTable)
                     .setHeader(tableHeader)
                     .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
                     .setId("all-modules-table")
-                    .setDefaultTab(resources.getText("doclet.All_Modules"))
-                    .setTabScript(i -> "show(" + i + ");")
-                    .setTabId(i -> (i == 0) ? "t0" : ("t" + (1 << (i - 1))));
+                    .setDefaultTab(resources.getText("doclet.All_Modules"));
 
             // add the tabs in command-line order
             for (String groupName : configuration.group.getGroupList()) {

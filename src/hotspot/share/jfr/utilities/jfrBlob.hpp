@@ -50,7 +50,7 @@ class JfrBlob : public JfrCHeapObj {
   static JfrBlobHandle make(const u1* data, size_t size);
   template <typename Writer>
   void write(Writer& writer) const {
-    writer.bytes(_data, _size);
+    writer.write_bytes(_data, _size);
     if (_next.valid()) {
       _next->write(writer);
     }
@@ -60,7 +60,7 @@ class JfrBlob : public JfrCHeapObj {
     if (_written) {
       return;
     }
-    writer.bytes(_data, _size);
+    writer.write_bytes(_data, _size);
     _written = true;
     if (_next.valid()) {
       _next->exclusive_write(writer);

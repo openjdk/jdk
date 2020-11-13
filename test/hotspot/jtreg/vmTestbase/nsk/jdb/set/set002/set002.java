@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,14 +47,14 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdb.set.set002.set002
  *
  * @comment make sure set002a is compiled w/ full debug info
  * @clean nsk.jdb.set.set002.set002a
  * @compile -g:lines,source,vars set002a.java
  *
- * @run main/othervm PropertyResolvingWrapper nsk.jdb.set.set002.set002
+ * @run main/othervm
+ *      nsk.jdb.set.set002.set002
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

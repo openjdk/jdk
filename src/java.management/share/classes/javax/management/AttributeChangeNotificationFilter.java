@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,10 @@ public class AttributeChangeNotificationFilter implements NotificationFilter {
      */
     private Vector<String> enabledAttributes = new Vector<String>();
 
+    /**
+     * Constructs an {@code AttributeChangeNotificationFilter}.
+     */
+    public AttributeChangeNotificationFilter() {}
 
     /**
      * Invoked before sending the specified notification to the listener.

@@ -700,7 +700,6 @@ void Compilation::compile_only_this_method() {
   compile_only_this_scope(&stream, hir()->top_scope());
 }
 
-
 void Compilation::compile_only_this_scope(outputStream* st, IRScope* scope) {
   st->print("CompileOnly=");
   scope->method()->holder()->name()->print_symbol_on(st);
@@ -708,7 +707,6 @@ void Compilation::compile_only_this_scope(outputStream* st, IRScope* scope) {
   scope->method()->name()->print_symbol_on(st);
   st->cr();
 }
-
 
 void Compilation::exclude_this_method() {
   fileStream stream(fopen(".hotspot_compiler", "at"));
@@ -719,4 +717,10 @@ void Compilation::exclude_this_method() {
   stream.cr();
   stream.cr();
 }
-#endif
+
+// Called from debugger to get the interval with 'reg_num' during register allocation.
+Interval* find_interval(int reg_num) {
+  return Compilation::current()->allocator()->find_interval_at(reg_num);
+}
+
+#endif // NOT PRODUCT

@@ -237,7 +237,7 @@ public class BootClassPathMismatch {
     }
 
     private static void copyHelloToNewDir() throws Exception {
-        String classDir = System.getProperty("test.classes");
+        String classDir = CDSTestUtils.getOutputDir();
         String dstDir = classDir + File.separator + "newdir";
         try {
             Files.createDirectory(Paths.get(dstDir));

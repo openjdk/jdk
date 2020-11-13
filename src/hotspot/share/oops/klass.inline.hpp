@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,8 @@
 #define SHARE_OOPS_KLASS_INLINE_HPP
 
 #include "classfile/classLoaderData.inline.hpp"
-#include "oops/compressedOops.hpp"
 #include "oops/klass.hpp"
 #include "oops/markWord.hpp"
-#include "oops/oopHandle.inline.hpp"
 
 inline void Klass::set_prototype_header(markWord header) {
   assert(!header.has_bias_pattern() || is_instance_klass(), "biased locking currently only supported for Java instances");

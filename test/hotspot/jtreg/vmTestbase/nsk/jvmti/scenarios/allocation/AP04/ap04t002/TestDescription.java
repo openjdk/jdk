@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,11 +57,9 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build ExecDriver
- *        nsk.jvmti.scenarios.allocation.AP04.ap04t002
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
- *      "-agentlib:ap04t002=-waittime=5 -verbose"
+ * @build nsk.jvmti.scenarios.allocation.AP04.ap04t002
+ * @run main/othervm/native
+ *      -agentlib:ap04t002=-waittime=5,-verbose
  *      nsk.jvmti.scenarios.allocation.AP04.ap04t002
  */
 

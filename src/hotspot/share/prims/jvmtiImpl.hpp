@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "prims/jvmtiEventController.hpp"
 #include "prims/jvmtiTrace.hpp"
 #include "prims/jvmtiUtil.hpp"
+#include "runtime/escapeBarrier.hpp"
 #include "runtime/stackValueCollection.hpp"
 #include "runtime/vmOperations.hpp"
 #include "utilities/ostream.hpp"
@@ -159,10 +160,10 @@ class JvmtiBreakpoint : public GrowableElement {
 private:
   Method*               _method;
   int                   _bci;
-  oop*                  _class_holder;  // keeps _method memory from being deallocated
+  OopHandle             _class_holder;  // keeps _method memory from being deallocated
 
 public:
-  JvmtiBreakpoint() : _method(NULL), _bci(0), _class_holder(NULL) {}
+  JvmtiBreakpoint() : _method(NULL), _bci(0) {}
   JvmtiBreakpoint(Method* m_method, jlocation location);
   virtual ~JvmtiBreakpoint();
   bool equals(JvmtiBreakpoint& bp);
@@ -320,6 +321,8 @@ class VM_GetOrSetLocal : public VM_Operation {
   jvalue      _value;
   javaVFrame* _jvf;
   bool        _set;
+
+  EscapeBarrier _eb;
 
   // It is possible to get the receiver out of a non-static native wrapper
   // frame.  Use VM_GetReceiver to do this.

@@ -393,7 +393,7 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_readBytesFromProcess0(
   // Try to read each of the pages.
   for (i = 0; i < pageCount; i++) {
     result = vm_read(gTask, alignedAddress + i*vm_page_size, vm_page_size,
-		     &pages[i], &byteCount);
+                     &pages[i], &byteCount);
     mapped[i] = (result == KERN_SUCCESS);
     // assume all failures are unmapped pages
   }
@@ -699,8 +699,8 @@ Java_sun_jvm_hotspot_debugger_macosx_MacOSXDebuggerLocal_translateTID0(
 
   task_t gTask = getTask(env, this_obj);
   result = mach_port_extract_right(gTask, foreign_tid,
-				   MACH_MSG_TYPE_COPY_SEND,
-				   &usable_tid, &type);
+                                   MACH_MSG_TYPE_COPY_SEND,
+                                   &usable_tid, &type);
   if (result != KERN_SUCCESS)
     return -1;
 

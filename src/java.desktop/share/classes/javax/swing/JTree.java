@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,7 +134,7 @@ import static sun.swing.SwingUtilities2.Section.*;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans&trade;
+ * of all JavaBeans
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *</p>
@@ -3312,7 +3312,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans&trade;
+     * of all JavaBeans
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
@@ -3320,6 +3320,11 @@ public class JTree extends JComponent implements Scrollable, Accessible
     protected static class EmptySelectionModel extends
               DefaultTreeSelectionModel
     {
+        /**
+         * Constructs an {@code EmptySelectionModel}.
+         */
+        protected EmptySelectionModel() {}
+
         /**
          * The single instance of {@code EmptySelectionModel}.
          */
@@ -3434,7 +3439,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans&trade;
+     * of all JavaBeans
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
@@ -3442,6 +3447,11 @@ public class JTree extends JComponent implements Scrollable, Accessible
     protected class TreeSelectionRedirector implements Serializable,
                     TreeSelectionListener
     {
+        /**
+         * Constructs a {@code TreeSelectionRedirector}.
+         */
+        protected TreeSelectionRedirector() {}
+
         /**
          * Invoked by the <code>TreeSelectionModel</code> when the
          * selection changes.
@@ -3863,6 +3873,12 @@ public class JTree extends JComponent implements Scrollable, Accessible
       * accordingly when nodes are removed, or changed.
       */
     protected class TreeModelHandler implements TreeModelListener {
+
+        /**
+         * Constructs a {@code TreeModelHandler}.
+         */
+        protected TreeModelHandler() {}
+
         public void treeNodesChanged(TreeModelEvent e) { }
 
         public void treeNodesInserted(TreeModelEvent e) { }
@@ -3954,7 +3970,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans&trade;
+     * of all JavaBeans
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
@@ -4190,7 +4206,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans&trade;
+     * of all JavaBeans
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */

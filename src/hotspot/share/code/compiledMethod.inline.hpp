@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,14 @@ inline bool CompiledMethod::is_deopt_entry(address pc) {
   return pc == deopt_handler_begin()
 #if INCLUDE_JVMCI
     || (is_compiled_by_jvmci() && pc == (deopt_handler_begin() + NativeCall::instruction_size))
+#endif
+    ;
+}
+
+inline bool CompiledMethod::is_deopt_mh_entry(address pc) {
+  return pc == deopt_mh_handler_begin()
+#if INCLUDE_JVMCI
+    || (is_compiled_by_jvmci() && pc == (deopt_mh_handler_begin() + NativeCall::instruction_size))
 #endif
     ;
 }

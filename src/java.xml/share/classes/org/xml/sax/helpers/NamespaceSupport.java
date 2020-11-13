@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -487,9 +487,11 @@ public class NamespaceSupport
      * by {@link #processName processName()}.  This may only be
      * changed before any contexts have been pushed.
      *
+     * @param value a flag indicating whether namespace declaration attributes
+     * are placed into the {@link #NSDECL NSDECL} namespace
      * @since 1.5, SAX 2.1alpha
      *
-     * @exception IllegalStateException when attempting to set this
+     * @throws IllegalStateException when attempting to set this
      *  after any context has been pushed.
      */
     public void setNamespaceDeclUris (boolean value)
@@ -511,6 +513,8 @@ public class NamespaceSupport
      * Returns true if namespace declaration attributes are placed into
      * a namespace.  This behavior is not the default.
      *
+     * @return true if namespace declaration attributes are placed into a namespace,
+     * false otherwise
      * @since 1.5, SAX 2.1alpha
      */
     public boolean isNamespaceDeclUris ()

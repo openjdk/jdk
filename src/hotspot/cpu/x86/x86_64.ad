@@ -161,9 +161,7 @@ alloc_class chunk0(R10,         R10_H,
 // Several register classes are automatically defined based upon information in
 // this architecture description.
 // 1) reg_class inline_cache_reg           ( /* as def'd in frame section */ )
-// 2) reg_class compiler_method_oop_reg    ( /* as def'd in frame section */ )
-// 2) reg_class interpreter_method_oop_reg ( /* as def'd in frame section */ )
-// 3) reg_class stack_slots( /* one chunk of stack-based "registers" */ )
+// 2) reg_class stack_slots( /* one chunk of stack-based "registers" */ )
 //
 
 // Empty register class.
@@ -932,8 +930,8 @@ void MachEpilogNode::format(PhaseRegAlloc* ra_, outputStream* st) const
   st->print_cr("popq    rbp");
   if (do_polling() && C->is_method_compilation()) {
     st->print("\t");
-    st->print_cr("movq    rscratch1, poll_offset[r15_thread] #polling_page_address\n\t"
-                 "testl   rax, [rscratch1]\t"
+    st->print_cr("cmpq     rsp, poll_offset[r15_thread] \n\t"
+                 "ja       #safepoint_stub\t"
                  "# Safepoint: poll for GC");
   }
 }
@@ -980,9 +978,13 @@ void MachEpilogNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
 
   if (do_polling() && C->is_method_compilation()) {
     MacroAssembler _masm(&cbuf);
-    __ movq(rscratch1, Address(r15_thread, Thread::polling_page_offset()));
+    Label dummy_label;
+    Label* code_stub = &dummy_label;
+    if (!C->output()->in_scratch_emit_size()) {
+      code_stub = &C->output()->safepoint_poll_table()->add_safepoint(__ offset());
+    }
     __ relocate(relocInfo::poll_return_type);
-    __ testl(rax, Address(rscratch1, 0));
+    __ safepoint_poll(*code_stub, r15_thread, true /* at_return */, true /* in_nmethod */);
   }
 }
 
@@ -1578,11 +1580,6 @@ uint MachUEPNode::size(PhaseRegAlloc* ra_) const
 
 //=============================================================================
 
-int Matcher::regnum_to_fpu_offset(int regnum)
-{
-  return regnum - 32; // The FP registers are in the second chunk
-}
-
 // This is UltraSparc specific, true just means we have fast l2f conversion
 const bool Matcher::convL2FSupported(void) {
   return true;
@@ -1661,9 +1658,6 @@ const bool Matcher::rematerialize_float_constants = true; // XXX
 // and move it piece-by-piece.  Only happens when passing doubles into
 // C code as the Java calling convention forces doubles to be aligned.
 const bool Matcher::misaligned_doubles_ok = true;
-
-// No-op on amd64
-void Matcher::pd_implicit_null_fixup(MachNode *node, uint idx) {}
 
 // Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
 const bool Matcher::strict_fp_requires_explicit_rounding = false;
@@ -2740,14 +2734,9 @@ encode %{
 
 frame
 %{
-  // What direction does stack grow in (assumed to be same for C & Java)
-  stack_direction(TOWARDS_LOW);
-
   // These three registers define part of the calling convention
   // between compiled code and the interpreter.
   inline_cache_reg(RAX);                // Inline Cache Register
-  interpreter_method_oop_reg(RBX);      // Method Oop Register when
-                                        // calling interpreter
 
   // Optional: name the operand used by cisc-spilling to access
   // [stack_pointer + offset]
@@ -2834,7 +2823,7 @@ frame
       RAX_H_num     // Op_RegL
     };
     // Excluded flags and vector registers.
-    assert(ARRAY_SIZE(hi) == _last_machine_leaf - 6, "missing type");
+    assert(ARRAY_SIZE(hi) == _last_machine_leaf - 8, "missing type");
     return OptoRegPair(hi[ideal_reg], lo[ideal_reg]);
   %}
 %}
@@ -2875,7 +2864,7 @@ operand immI()
 %}
 
 // Constant for test vs zero
-operand immI0()
+operand immI_0()
 %{
   predicate(n->get_int() == 0);
   match(ConI);
@@ -2886,7 +2875,7 @@ operand immI0()
 %}
 
 // Constant for increment
-operand immI1()
+operand immI_1()
 %{
   predicate(n->get_int() == 1);
   match(ConI);
@@ -2907,12 +2896,52 @@ operand immI_M1()
   interface(CONST_INTER);
 %}
 
+operand immI_2()
+%{
+  predicate(n->get_int() == 2);
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immI_4()
+%{
+  predicate(n->get_int() == 4);
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immI_8()
+%{
+  predicate(n->get_int() == 8);
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // Valid scale values for addressing modes
 operand immI2()
 %{
   predicate(0 <= n->get_int() && (n->get_int() <= 3));
   match(ConI);
 
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immU7()
+%{
+  predicate((0 <= n->get_int()) && (n->get_int() <= 0x7F));
+  match(ConI);
+
+  op_cost(5);
   format %{ %}
   interface(CONST_INTER);
 %}
@@ -3339,19 +3368,6 @@ operand rdi_RegI()
   interface(REG_INTER);
 %}
 
-operand no_rcx_RegI()
-%{
-  constraint(ALLOC_IN_RC(int_no_rcx_reg));
-  match(RegI);
-  match(rax_RegI);
-  match(rbx_RegI);
-  match(rdx_RegI);
-  match(rdi_RegI);
-
-  format %{ %}
-  interface(REG_INTER);
-%}
-
 operand no_rax_rdx_RegI()
 %{
   constraint(ALLOC_IN_RC(int_no_rax_rdx_reg));
@@ -3556,16 +3572,6 @@ operand no_rax_RegL()
   match(RegL);
   match(rRegL);
   match(rdx_RegL);
-
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand no_rcx_RegL()
-%{
-  constraint(ALLOC_IN_RC(long_no_rcx_reg));
-  match(RegL);
-  match(rRegL);
 
   format %{ %}
   interface(REG_INTER);
@@ -4281,16 +4287,6 @@ pipe_class ialu_reg_fat(rRegI dst)
     ALU    : S3;        // any alu
 %}
 
-// Long ALU reg operation using big decoder
-pipe_class ialu_reg_long_fat(rRegL dst)
-%{
-    instruction_count(2);
-    dst    : S4(write);
-    dst    : S3(read);
-    D0     : S0(2);     // big decoder only; twice
-    ALU    : S3(2);     // any 2 alus
-%}
-
 // Integer ALU reg-reg operation
 pipe_class ialu_reg_reg(rRegI dst, rRegI src)
 %{
@@ -4301,16 +4297,6 @@ pipe_class ialu_reg_reg(rRegI dst, rRegI src)
     ALU    : S3;        // any alu
 %}
 
-// Long ALU reg-reg operation
-pipe_class ialu_reg_reg_long(rRegL dst, rRegL src)
-%{
-    instruction_count(2);
-    dst    : S4(write);
-    src    : S3(read);
-    DECODE : S0(2);     // any 2 decoders
-    ALU    : S3(2);     // both alus
-%}
-
 // Integer ALU reg-reg operation
 pipe_class ialu_reg_reg_fat(rRegI dst, memory src)
 %{
@@ -4319,16 +4305,6 @@ pipe_class ialu_reg_reg_fat(rRegI dst, memory src)
     src    : S3(read);
     D0     : S0;        // big decoder only
     ALU    : S3;        // any alu
-%}
-
-// Long ALU reg-reg operation
-pipe_class ialu_reg_reg_long_fat(rRegL dst, rRegL src)
-%{
-    instruction_count(2);
-    dst    : S4(write);
-    src    : S3(read);
-    D0     : S0(2);     // big decoder only; twice
-    ALU    : S3(2);     // both alus
 %}
 
 // Integer ALU reg-mem operation
@@ -5264,19 +5240,19 @@ instruct maxF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, 
   match(Set dst (MaxF a b));
   effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
   format %{
-     "blendvps         $btmp,$b,$a,$b           \n\t"
-     "blendvps         $atmp,$a,$b,$b           \n\t"
+     "vblendvps        $btmp,$b,$a,$b           \n\t"
+     "vblendvps        $atmp,$a,$b,$b           \n\t"
      "vmaxss           $tmp,$atmp,$btmp         \n\t"
-     "cmpps.unordered  $btmp,$atmp,$atmp        \n\t"
-     "blendvps         $dst,$tmp,$atmp,$btmp    \n\t"
+     "vcmpps.unordered $btmp,$atmp,$atmp        \n\t"
+     "vblendvps        $dst,$tmp,$atmp,$btmp    \n\t"
   %}
   ins_encode %{
     int vector_len = Assembler::AVX_128bit;
-    __ blendvps($btmp$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, vector_len);
-    __ blendvps($atmp$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $b$$XMMRegister, vector_len);
+    __ vblendvps($btmp$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, vector_len);
+    __ vblendvps($atmp$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $b$$XMMRegister, vector_len);
     __ vmaxss($tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister);
-    __ cmpps($btmp$$XMMRegister, $atmp$$XMMRegister, $atmp$$XMMRegister, Assembler::_false, vector_len);
-    __ blendvps($dst$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, vector_len);
+    __ vcmpps($btmp$$XMMRegister, $atmp$$XMMRegister, $atmp$$XMMRegister, Assembler::_false, vector_len);
+    __ vblendvps($dst$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, vector_len);
  %}
   ins_pipe( pipe_slow );
 %}
@@ -5300,19 +5276,19 @@ instruct maxD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, 
   match(Set dst (MaxD a b));
   effect(USE a, USE b, TEMP atmp, TEMP btmp, TEMP tmp);
   format %{
-     "blendvpd         $btmp,$b,$a,$b            \n\t"
-     "blendvpd         $atmp,$a,$b,$b            \n\t"
+     "vblendvpd        $btmp,$b,$a,$b            \n\t"
+     "vblendvpd        $atmp,$a,$b,$b            \n\t"
      "vmaxsd           $tmp,$atmp,$btmp          \n\t"
-     "cmppd.unordered  $btmp,$atmp,$atmp         \n\t"
-     "blendvpd         $dst,$tmp,$atmp,$btmp     \n\t"
+     "vcmppd.unordered $btmp,$atmp,$atmp         \n\t"
+     "vblendvpd        $dst,$tmp,$atmp,$btmp     \n\t"
   %}
   ins_encode %{
     int vector_len = Assembler::AVX_128bit;
-    __ blendvpd($btmp$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, vector_len);
-    __ blendvpd($atmp$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $b$$XMMRegister, vector_len);
+    __ vblendvpd($btmp$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, vector_len);
+    __ vblendvpd($atmp$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $b$$XMMRegister, vector_len);
     __ vmaxsd($tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister);
-    __ cmppd($btmp$$XMMRegister, $atmp$$XMMRegister, $atmp$$XMMRegister, Assembler::_false, vector_len);
-    __ blendvpd($dst$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, vector_len);
+    __ vcmppd($btmp$$XMMRegister, $atmp$$XMMRegister, $atmp$$XMMRegister, Assembler::_false, vector_len);
+    __ vblendvpd($dst$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -5336,19 +5312,19 @@ instruct minF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, 
   match(Set dst (MinF a b));
   effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
   format %{
-     "blendvps         $atmp,$a,$b,$a             \n\t"
-     "blendvps         $btmp,$b,$a,$a             \n\t"
+     "vblendvps        $atmp,$a,$b,$a             \n\t"
+     "vblendvps        $btmp,$b,$a,$a             \n\t"
      "vminss           $tmp,$atmp,$btmp           \n\t"
-     "cmpps.unordered  $btmp,$atmp,$atmp          \n\t"
-     "blendvps         $dst,$tmp,$atmp,$btmp      \n\t"
+     "vcmpps.unordered $btmp,$atmp,$atmp          \n\t"
+     "vblendvps        $dst,$tmp,$atmp,$btmp      \n\t"
   %}
   ins_encode %{
     int vector_len = Assembler::AVX_128bit;
-    __ blendvps($atmp$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, vector_len);
-    __ blendvps($btmp$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, $a$$XMMRegister, vector_len);
+    __ vblendvps($atmp$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, vector_len);
+    __ vblendvps($btmp$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, $a$$XMMRegister, vector_len);
     __ vminss($tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister);
-    __ cmpps($btmp$$XMMRegister, $atmp$$XMMRegister, $atmp$$XMMRegister, Assembler::_false, vector_len);
-    __ blendvps($dst$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, vector_len);
+    __ vcmpps($btmp$$XMMRegister, $atmp$$XMMRegister, $atmp$$XMMRegister, Assembler::_false, vector_len);
+    __ vblendvps($dst$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -5372,19 +5348,19 @@ instruct minD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, 
   match(Set dst (MinD a b));
   effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
   format %{
-     "blendvpd         $atmp,$a,$b,$a           \n\t"
-     "blendvpd         $btmp,$b,$a,$a           \n\t"
+     "vblendvpd        $atmp,$a,$b,$a           \n\t"
+     "vblendvpd        $btmp,$b,$a,$a           \n\t"
      "vminsd           $tmp,$atmp,$btmp         \n\t"
-     "cmppd.unordered  $btmp,$atmp,$atmp        \n\t"
-     "blendvpd         $dst,$tmp,$atmp,$btmp    \n\t"
+     "vcmppd.unordered $btmp,$atmp,$atmp        \n\t"
+     "vblendvpd        $dst,$tmp,$atmp,$btmp    \n\t"
   %}
   ins_encode %{
     int vector_len = Assembler::AVX_128bit;
-    __ blendvpd($atmp$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, vector_len);
-    __ blendvpd($btmp$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, $a$$XMMRegister, vector_len);
+    __ vblendvpd($atmp$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, vector_len);
+    __ vblendvpd($btmp$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, $a$$XMMRegister, vector_len);
     __ vminsd($tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister);
-    __ cmppd($btmp$$XMMRegister, $atmp$$XMMRegister, $atmp$$XMMRegister, Assembler::_false, vector_len);
-    __ blendvpd($dst$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, vector_len);
+    __ vcmppd($btmp$$XMMRegister, $atmp$$XMMRegister, $atmp$$XMMRegister, Assembler::_false, vector_len);
+    __ vblendvpd($dst$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -5608,7 +5584,7 @@ instruct loadConI(rRegI dst, immI src)
   ins_pipe(ialu_reg_fat); // XXX
 %}
 
-instruct loadConI0(rRegI dst, immI0 src, rFlagsReg cr)
+instruct loadConI0(rRegI dst, immI_0 src, rFlagsReg cr)
 %{
   match(Set dst src);
   effect(KILL cr);
@@ -6044,7 +6020,7 @@ instruct storeImmNKlass(memory mem, immNKlass src)
 %}
 
 // Store Integer Immediate
-instruct storeImmI0(memory mem, immI0 zero)
+instruct storeImmI0(memory mem, immI_0 zero)
 %{
   predicate(UseCompressedOops && (CompressedOops::base() == NULL));
   match(Set mem (StoreI mem zero));
@@ -6094,7 +6070,7 @@ instruct storeImmL(memory mem, immL32 src)
 %}
 
 // Store Short/Char Immediate
-instruct storeImmC0(memory mem, immI0 zero)
+instruct storeImmC0(memory mem, immI_0 zero)
 %{
   predicate(UseCompressedOops && (CompressedOops::base() == NULL));
   match(Set mem (StoreC mem zero));
@@ -6120,7 +6096,7 @@ instruct storeImmI16(memory mem, immI16 src)
 %}
 
 // Store Byte Immediate
-instruct storeImmB0(memory mem, immI0 zero)
+instruct storeImmB0(memory mem, immI_0 zero)
 %{
   predicate(UseCompressedOops && (CompressedOops::base() == NULL));
   match(Set mem (StoreB mem zero));
@@ -6145,7 +6121,7 @@ instruct storeImmB(memory mem, immI8 src)
 %}
 
 // Store CMS card-mark Immediate
-instruct storeImmCM0_reg(memory mem, immI0 zero)
+instruct storeImmCM0_reg(memory mem, immI_0 zero)
 %{
   predicate(UseCompressedOops && (CompressedOops::base() == NULL));
   match(Set mem (StoreCM mem zero));
@@ -6158,7 +6134,7 @@ instruct storeImmCM0_reg(memory mem, immI0 zero)
   ins_pipe(ialu_mem_reg);
 %}
 
-instruct storeImmCM0(memory mem, immI0 src)
+instruct storeImmCM0(memory mem, immI_0 src)
 %{
   match(Set mem (StoreCM mem src));
 
@@ -7243,7 +7219,7 @@ instruct addI_mem_imm(memory dst, immI src, rFlagsReg cr)
   ins_pipe(ialu_mem_imm);
 %}
 
-instruct incI_rReg(rRegI dst, immI1 src, rFlagsReg cr)
+instruct incI_rReg(rRegI dst, immI_1 src, rFlagsReg cr)
 %{
   predicate(UseIncDec);
   match(Set dst (AddI dst src));
@@ -7255,7 +7231,7 @@ instruct incI_rReg(rRegI dst, immI1 src, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
-instruct incI_mem(memory dst, immI1 src, rFlagsReg cr)
+instruct incI_mem(memory dst, immI_1 src, rFlagsReg cr)
 %{
   predicate(UseIncDec);
   match(Set dst (StoreI dst (AddI (LoadI dst) src)));
@@ -8138,7 +8114,7 @@ instruct subL_mem_imm(memory dst, immL32 src, rFlagsReg cr)
 
 // Subtract from a pointer
 // XXX hmpf???
-instruct subP_rReg(rRegP dst, rRegI src, immI0 zero, rFlagsReg cr)
+instruct subP_rReg(rRegP dst, rRegI src, immI_0 zero, rFlagsReg cr)
 %{
   match(Set dst (AddP dst (SubI zero src)));
   effect(KILL cr);
@@ -8149,7 +8125,7 @@ instruct subP_rReg(rRegP dst, rRegI src, immI0 zero, rFlagsReg cr)
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct negI_rReg(rRegI dst, immI0 zero, rFlagsReg cr)
+instruct negI_rReg(rRegI dst, immI_0 zero, rFlagsReg cr)
 %{
   match(Set dst (SubI zero dst));
   effect(KILL cr);
@@ -8160,7 +8136,19 @@ instruct negI_rReg(rRegI dst, immI0 zero, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
-instruct negI_mem(memory dst, immI0 zero, rFlagsReg cr)
+instruct negI_rReg_2(rRegI dst, rFlagsReg cr)
+%{
+  match(Set dst (NegI dst));
+  effect(KILL cr);
+
+  format %{ "negl    $dst\t# int" %}
+  ins_encode %{
+    __ negl($dst$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct negI_mem(memory dst, immI_0 zero, rFlagsReg cr)
 %{
   match(Set dst (StoreI dst (SubI zero (LoadI dst))));
   effect(KILL cr);
@@ -8179,6 +8167,18 @@ instruct negL_rReg(rRegL dst, immL0 zero, rFlagsReg cr)
   format %{ "negq    $dst\t# long" %}
   opcode(0xF7, 0x03);  // Opcode F7 /3
   ins_encode(REX_reg_wide(dst), OpcP, reg_opc(dst));
+  ins_pipe(ialu_reg);
+%}
+
+instruct negL_rReg_2(rRegL dst, rFlagsReg cr)
+%{
+  match(Set dst (NegL dst));
+  effect(KILL cr);
+
+  format %{ "negq    $dst\t# int" %}
+  ins_encode %{
+    __ negq($dst$$Register);
+  %}
   ins_pipe(ialu_reg);
 %}
 
@@ -8507,7 +8507,7 @@ instruct modL_rReg(rdx_RegL rdx, rax_RegL rax, no_rax_rdx_RegL div,
 
 // Integer Shift Instructions
 // Shift Left by one
-instruct salI_rReg_1(rRegI dst, immI1 shift, rFlagsReg cr)
+instruct salI_rReg_1(rRegI dst, immI_1 shift, rFlagsReg cr)
 %{
   match(Set dst (LShiftI dst shift));
   effect(KILL cr);
@@ -8519,7 +8519,7 @@ instruct salI_rReg_1(rRegI dst, immI1 shift, rFlagsReg cr)
 %}
 
 // Shift Left by one
-instruct salI_mem_1(memory dst, immI1 shift, rFlagsReg cr)
+instruct salI_mem_1(memory dst, immI_1 shift, rFlagsReg cr)
 %{
   match(Set dst (StoreI dst (LShiftI (LoadI dst) shift)));
   effect(KILL cr);
@@ -8579,7 +8579,7 @@ instruct salI_mem_CL(memory dst, rcx_RegI shift, rFlagsReg cr)
 %}
 
 // Arithmetic shift right by one
-instruct sarI_rReg_1(rRegI dst, immI1 shift, rFlagsReg cr)
+instruct sarI_rReg_1(rRegI dst, immI_1 shift, rFlagsReg cr)
 %{
   match(Set dst (RShiftI dst shift));
   effect(KILL cr);
@@ -8591,7 +8591,7 @@ instruct sarI_rReg_1(rRegI dst, immI1 shift, rFlagsReg cr)
 %}
 
 // Arithmetic shift right by one
-instruct sarI_mem_1(memory dst, immI1 shift, rFlagsReg cr)
+instruct sarI_mem_1(memory dst, immI_1 shift, rFlagsReg cr)
 %{
   match(Set dst (StoreI dst (RShiftI (LoadI dst) shift)));
   effect(KILL cr);
@@ -8651,7 +8651,7 @@ instruct sarI_mem_CL(memory dst, rcx_RegI shift, rFlagsReg cr)
 %}
 
 // Logical shift right by one
-instruct shrI_rReg_1(rRegI dst, immI1 shift, rFlagsReg cr)
+instruct shrI_rReg_1(rRegI dst, immI_1 shift, rFlagsReg cr)
 %{
   match(Set dst (URShiftI dst shift));
   effect(KILL cr);
@@ -8663,7 +8663,7 @@ instruct shrI_rReg_1(rRegI dst, immI1 shift, rFlagsReg cr)
 %}
 
 // Logical shift right by one
-instruct shrI_mem_1(memory dst, immI1 shift, rFlagsReg cr)
+instruct shrI_mem_1(memory dst, immI_1 shift, rFlagsReg cr)
 %{
   match(Set dst (StoreI dst (URShiftI (LoadI dst) shift)));
   effect(KILL cr);
@@ -8724,7 +8724,7 @@ instruct shrI_mem_CL(memory dst, rcx_RegI shift, rFlagsReg cr)
 
 // Long Shift Instructions
 // Shift Left by one
-instruct salL_rReg_1(rRegL dst, immI1 shift, rFlagsReg cr)
+instruct salL_rReg_1(rRegL dst, immI_1 shift, rFlagsReg cr)
 %{
   match(Set dst (LShiftL dst shift));
   effect(KILL cr);
@@ -8736,7 +8736,7 @@ instruct salL_rReg_1(rRegL dst, immI1 shift, rFlagsReg cr)
 %}
 
 // Shift Left by one
-instruct salL_mem_1(memory dst, immI1 shift, rFlagsReg cr)
+instruct salL_mem_1(memory dst, immI_1 shift, rFlagsReg cr)
 %{
   match(Set dst (StoreL dst (LShiftL (LoadL dst) shift)));
   effect(KILL cr);
@@ -8797,7 +8797,7 @@ instruct salL_mem_CL(memory dst, rcx_RegI shift, rFlagsReg cr)
 %}
 
 // Arithmetic shift right by one
-instruct sarL_rReg_1(rRegL dst, immI1 shift, rFlagsReg cr)
+instruct sarL_rReg_1(rRegL dst, immI_1 shift, rFlagsReg cr)
 %{
   match(Set dst (RShiftL dst shift));
   effect(KILL cr);
@@ -8809,7 +8809,7 @@ instruct sarL_rReg_1(rRegL dst, immI1 shift, rFlagsReg cr)
 %}
 
 // Arithmetic shift right by one
-instruct sarL_mem_1(memory dst, immI1 shift, rFlagsReg cr)
+instruct sarL_mem_1(memory dst, immI_1 shift, rFlagsReg cr)
 %{
   match(Set dst (StoreL dst (RShiftL (LoadL dst) shift)));
   effect(KILL cr);
@@ -8870,7 +8870,7 @@ instruct sarL_mem_CL(memory dst, rcx_RegI shift, rFlagsReg cr)
 %}
 
 // Logical shift right by one
-instruct shrL_rReg_1(rRegL dst, immI1 shift, rFlagsReg cr)
+instruct shrL_rReg_1(rRegL dst, immI_1 shift, rFlagsReg cr)
 %{
   match(Set dst (URShiftL dst shift));
   effect(KILL cr);
@@ -8882,7 +8882,7 @@ instruct shrL_rReg_1(rRegL dst, immI1 shift, rFlagsReg cr)
 %}
 
 // Logical shift right by one
-instruct shrL_mem_1(memory dst, immI1 shift, rFlagsReg cr)
+instruct shrL_mem_1(memory dst, immI_1 shift, rFlagsReg cr)
 %{
   match(Set dst (StoreL dst (URShiftL (LoadL dst) shift)));
   effect(KILL cr);
@@ -8969,294 +8969,137 @@ instruct i2s(rRegI dst, rRegI src, immI_16 sixteen)
 
 // ROL/ROR instructions
 
-// ROL expand
-instruct rolI_rReg_imm1(rRegI dst, rFlagsReg cr) %{
-  effect(KILL cr, USE_DEF dst);
-
-  format %{ "roll    $dst" %}
-  opcode(0xD1, 0x0); /* Opcode  D1 /0 */
-  ins_encode(REX_reg(dst), OpcP, reg_opc(dst));
-  ins_pipe(ialu_reg);
-%}
-
-instruct rolI_rReg_imm8(rRegI dst, immI8 shift, rFlagsReg cr) %{
-  effect(USE_DEF dst, USE shift, KILL cr);
-
+// Rotate left by constant.
+instruct rolI_imm(rRegI dst, immI8 shift, rFlagsReg cr)
+%{
+  predicate(n->bottom_type()->basic_type() == T_INT);
+  match(Set dst (RotateLeft dst shift));
+  effect(KILL cr);
   format %{ "roll    $dst, $shift" %}
-  opcode(0xC1, 0x0); /* Opcode C1 /0 ib */
-  ins_encode( reg_opc_imm(dst, shift) );
+  ins_encode %{
+    __ roll($dst$$Register, $shift$$constant);
+  %}
   ins_pipe(ialu_reg);
 %}
 
-instruct rolI_rReg_CL(no_rcx_RegI dst, rcx_RegI shift, rFlagsReg cr)
+// Rotate Left by variable
+instruct rolI_rReg_Var(rRegI dst, rcx_RegI shift, rFlagsReg cr)
 %{
-  effect(USE_DEF dst, USE shift, KILL cr);
-
+  predicate(n->bottom_type()->basic_type() == T_INT);
+  match(Set dst (RotateLeft dst shift));
+  effect(KILL cr);
   format %{ "roll    $dst, $shift" %}
-  opcode(0xD3, 0x0); /* Opcode D3 /0 */
-  ins_encode(REX_reg(dst), OpcP, reg_opc(dst));
+  ins_encode %{
+    __ roll($dst$$Register);
+  %}
   ins_pipe(ialu_reg_reg);
 %}
-// end of ROL expand
 
-// Rotate Left by one
-instruct rolI_rReg_i1(rRegI dst, immI1 lshift, immI_M1 rshift, rFlagsReg cr)
+// Rotate Right by constant.
+instruct rorI_immI8_legacy(rRegI dst, immI8 shift, rFlagsReg cr)
 %{
-  match(Set dst (OrI (LShiftI dst lshift) (URShiftI dst rshift)));
-
-  expand %{
-    rolI_rReg_imm1(dst, cr);
-  %}
-%}
-
-// Rotate Left by 8-bit immediate
-instruct rolI_rReg_i8(rRegI dst, immI8 lshift, immI8 rshift, rFlagsReg cr)
-%{
-  predicate(0 == ((n->in(1)->in(2)->get_int() + n->in(2)->in(2)->get_int()) & 0x1f));
-  match(Set dst (OrI (LShiftI dst lshift) (URShiftI dst rshift)));
-
-  expand %{
-    rolI_rReg_imm8(dst, lshift, cr);
-  %}
-%}
-
-// Rotate Left by variable
-instruct rolI_rReg_Var_C0(no_rcx_RegI dst, rcx_RegI shift, immI0 zero, rFlagsReg cr)
-%{
-  match(Set dst (OrI (LShiftI dst shift) (URShiftI dst (SubI zero shift))));
-
-  expand %{
-    rolI_rReg_CL(dst, shift, cr);
-  %}
-%}
-
-// Rotate Left by variable
-instruct rolI_rReg_Var_C32(no_rcx_RegI dst, rcx_RegI shift, immI_32 c32, rFlagsReg cr)
-%{
-  match(Set dst (OrI (LShiftI dst shift) (URShiftI dst (SubI c32 shift))));
-
-  expand %{
-    rolI_rReg_CL(dst, shift, cr);
-  %}
-%}
-
-// ROR expand
-instruct rorI_rReg_imm1(rRegI dst, rFlagsReg cr)
-%{
-  effect(USE_DEF dst, KILL cr);
-
-  format %{ "rorl    $dst" %}
-  opcode(0xD1, 0x1); /* D1 /1 */
-  ins_encode(REX_reg(dst), OpcP, reg_opc(dst));
-  ins_pipe(ialu_reg);
-%}
-
-instruct rorI_rReg_imm8(rRegI dst, immI8 shift, rFlagsReg cr)
-%{
-  effect(USE_DEF dst, USE shift, KILL cr);
-
+  predicate(!VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_INT);
+  match(Set dst (RotateRight dst shift));
+  effect(KILL cr);
   format %{ "rorl    $dst, $shift" %}
-  opcode(0xC1, 0x1); /* C1 /1 ib */
-  ins_encode(reg_opc_imm(dst, shift));
+  ins_encode %{
+    __ rorl($dst$$Register, $shift$$constant);
+  %}
   ins_pipe(ialu_reg);
 %}
 
-instruct rorI_rReg_CL(no_rcx_RegI dst, rcx_RegI shift, rFlagsReg cr)
+// Rotate Right by constant.
+instruct rorI_immI8(rRegI dst, immI8 shift)
 %{
-  effect(USE_DEF dst, USE shift, KILL cr);
+  predicate(VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_INT);
+  match(Set dst (RotateRight dst shift));
+  format %{ "rorxd     $dst, $shift" %}
+  ins_encode %{
+    __ rorxd($dst$$Register, $dst$$Register, $shift$$constant);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
 
+// Rotate Right by variable
+instruct rorI_rReg_Var(rRegI dst, rcx_RegI shift, rFlagsReg cr)
+%{
+  predicate(n->bottom_type()->basic_type() == T_INT);
+  match(Set dst (RotateRight dst shift));
+  effect(KILL cr);
   format %{ "rorl    $dst, $shift" %}
-  opcode(0xD3, 0x1); /* D3 /1 */
-  ins_encode(REX_reg(dst), OpcP, reg_opc(dst));
+  ins_encode %{
+    __ rorl($dst$$Register);
+  %}
   ins_pipe(ialu_reg_reg);
 %}
-// end of ROR expand
 
-// Rotate Right by one
-instruct rorI_rReg_i1(rRegI dst, immI1 rshift, immI_M1 lshift, rFlagsReg cr)
+
+// Rotate Left by constant.
+instruct rolL_immI8(rRegL dst, immI8 shift, rFlagsReg cr)
 %{
-  match(Set dst (OrI (URShiftI dst rshift) (LShiftI dst lshift)));
-
-  expand %{
-    rorI_rReg_imm1(dst, cr);
-  %}
-%}
-
-// Rotate Right by 8-bit immediate
-instruct rorI_rReg_i8(rRegI dst, immI8 rshift, immI8 lshift, rFlagsReg cr)
-%{
-  predicate(0 == ((n->in(1)->in(2)->get_int() + n->in(2)->in(2)->get_int()) & 0x1f));
-  match(Set dst (OrI (URShiftI dst rshift) (LShiftI dst lshift)));
-
-  expand %{
-    rorI_rReg_imm8(dst, rshift, cr);
-  %}
-%}
-
-// Rotate Right by variable
-instruct rorI_rReg_Var_C0(no_rcx_RegI dst, rcx_RegI shift, immI0 zero, rFlagsReg cr)
-%{
-  match(Set dst (OrI (URShiftI dst shift) (LShiftI dst (SubI zero shift))));
-
-  expand %{
-    rorI_rReg_CL(dst, shift, cr);
-  %}
-%}
-
-// Rotate Right by variable
-instruct rorI_rReg_Var_C32(no_rcx_RegI dst, rcx_RegI shift, immI_32 c32, rFlagsReg cr)
-%{
-  match(Set dst (OrI (URShiftI dst shift) (LShiftI dst (SubI c32 shift))));
-
-  expand %{
-    rorI_rReg_CL(dst, shift, cr);
-  %}
-%}
-
-// for long rotate
-// ROL expand
-instruct rolL_rReg_imm1(rRegL dst, rFlagsReg cr) %{
-  effect(USE_DEF dst, KILL cr);
-
-  format %{ "rolq    $dst" %}
-  opcode(0xD1, 0x0); /* Opcode  D1 /0 */
-  ins_encode(REX_reg_wide(dst), OpcP, reg_opc(dst));
-  ins_pipe(ialu_reg);
-%}
-
-instruct rolL_rReg_imm8(rRegL dst, immI8 shift, rFlagsReg cr) %{
-  effect(USE_DEF dst, USE shift, KILL cr);
-
+  predicate(n->bottom_type()->basic_type() == T_LONG);
+  match(Set dst (RotateLeft dst shift));
+  effect(KILL cr);
   format %{ "rolq    $dst, $shift" %}
-  opcode(0xC1, 0x0); /* Opcode C1 /0 ib */
-  ins_encode( reg_opc_imm_wide(dst, shift) );
+  ins_encode %{
+    __ rolq($dst$$Register, $shift$$constant);
+  %}
   ins_pipe(ialu_reg);
-%}
-
-instruct rolL_rReg_CL(no_rcx_RegL dst, rcx_RegI shift, rFlagsReg cr)
-%{
-  effect(USE_DEF dst, USE shift, KILL cr);
-
-  format %{ "rolq    $dst, $shift" %}
-  opcode(0xD3, 0x0); /* Opcode D3 /0 */
-  ins_encode(REX_reg_wide(dst), OpcP, reg_opc(dst));
-  ins_pipe(ialu_reg_reg);
-%}
-// end of ROL expand
-
-// Rotate Left by one
-instruct rolL_rReg_i1(rRegL dst, immI1 lshift, immI_M1 rshift, rFlagsReg cr)
-%{
-  match(Set dst (OrL (LShiftL dst lshift) (URShiftL dst rshift)));
-
-  expand %{
-    rolL_rReg_imm1(dst, cr);
-  %}
-%}
-
-// Rotate Left by 8-bit immediate
-instruct rolL_rReg_i8(rRegL dst, immI8 lshift, immI8 rshift, rFlagsReg cr)
-%{
-  predicate(0 == ((n->in(1)->in(2)->get_int() + n->in(2)->in(2)->get_int()) & 0x3f));
-  match(Set dst (OrL (LShiftL dst lshift) (URShiftL dst rshift)));
-
-  expand %{
-    rolL_rReg_imm8(dst, lshift, cr);
-  %}
 %}
 
 // Rotate Left by variable
-instruct rolL_rReg_Var_C0(no_rcx_RegL dst, rcx_RegI shift, immI0 zero, rFlagsReg cr)
+instruct rolL_rReg_Var(rRegL dst, rcx_RegI shift, rFlagsReg cr)
 %{
-  match(Set dst (OrL (LShiftL dst shift) (URShiftL dst (SubI zero shift))));
-
-  expand %{
-    rolL_rReg_CL(dst, shift, cr);
+  predicate(n->bottom_type()->basic_type() == T_LONG);
+  match(Set dst (RotateLeft dst shift));
+  effect(KILL cr);
+  format %{ "rolq    $dst, $shift" %}
+  ins_encode %{
+    __ rolq($dst$$Register);
   %}
-%}
-
-// Rotate Left by variable
-instruct rolL_rReg_Var_C64(no_rcx_RegL dst, rcx_RegI shift, immI_64 c64, rFlagsReg cr)
-%{
-  match(Set dst (OrL (LShiftL dst shift) (URShiftL dst (SubI c64 shift))));
-
-  expand %{
-    rolL_rReg_CL(dst, shift, cr);
-  %}
-%}
-
-// ROR expand
-instruct rorL_rReg_imm1(rRegL dst, rFlagsReg cr)
-%{
-  effect(USE_DEF dst, KILL cr);
-
-  format %{ "rorq    $dst" %}
-  opcode(0xD1, 0x1); /* D1 /1 */
-  ins_encode(REX_reg_wide(dst), OpcP, reg_opc(dst));
-  ins_pipe(ialu_reg);
-%}
-
-instruct rorL_rReg_imm8(rRegL dst, immI8 shift, rFlagsReg cr)
-%{
-  effect(USE_DEF dst, USE shift, KILL cr);
-
-  format %{ "rorq    $dst, $shift" %}
-  opcode(0xC1, 0x1); /* C1 /1 ib */
-  ins_encode(reg_opc_imm_wide(dst, shift));
-  ins_pipe(ialu_reg);
-%}
-
-instruct rorL_rReg_CL(no_rcx_RegL dst, rcx_RegI shift, rFlagsReg cr)
-%{
-  effect(USE_DEF dst, USE shift, KILL cr);
-
-  format %{ "rorq    $dst, $shift" %}
-  opcode(0xD3, 0x1); /* D3 /1 */
-  ins_encode(REX_reg_wide(dst), OpcP, reg_opc(dst));
   ins_pipe(ialu_reg_reg);
 %}
-// end of ROR expand
 
-// Rotate Right by one
-instruct rorL_rReg_i1(rRegL dst, immI1 rshift, immI_M1 lshift, rFlagsReg cr)
+
+// Rotate Right by constant.
+instruct rorL_immI8_legacy(rRegL dst, immI8 shift, rFlagsReg cr)
 %{
-  match(Set dst (OrL (URShiftL dst rshift) (LShiftL dst lshift)));
-
-  expand %{
-    rorL_rReg_imm1(dst, cr);
+  predicate(!VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_LONG);
+  match(Set dst (RotateRight dst shift));
+  effect(KILL cr);
+  format %{ "rorq    $dst, $shift" %}
+  ins_encode %{
+    __ rorq($dst$$Register, $shift$$constant);
   %}
+  ins_pipe(ialu_reg);
 %}
 
-// Rotate Right by 8-bit immediate
-instruct rorL_rReg_i8(rRegL dst, immI8 rshift, immI8 lshift, rFlagsReg cr)
+
+// Rotate Right by constant
+instruct rorL_immI8(rRegL dst, immI8 shift)
 %{
-  predicate(0 == ((n->in(1)->in(2)->get_int() + n->in(2)->in(2)->get_int()) & 0x3f));
-  match(Set dst (OrL (URShiftL dst rshift) (LShiftL dst lshift)));
-
-  expand %{
-    rorL_rReg_imm8(dst, rshift, cr);
+  predicate(VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_LONG);
+  match(Set dst (RotateRight dst shift));
+  format %{ "rorxq    $dst, $shift" %}
+  ins_encode %{
+    __ rorxq($dst$$Register, $dst$$Register, $shift$$constant);
   %}
-%}
-
-// Rotate Right by variable
-instruct rorL_rReg_Var_C0(no_rcx_RegL dst, rcx_RegI shift, immI0 zero, rFlagsReg cr)
-%{
-  match(Set dst (OrL (URShiftL dst shift) (LShiftL dst (SubI zero shift))));
-
-  expand %{
-    rorL_rReg_CL(dst, shift, cr);
-  %}
+  ins_pipe(ialu_reg_reg);
 %}
 
 // Rotate Right by variable
-instruct rorL_rReg_Var_C64(no_rcx_RegL dst, rcx_RegI shift, immI_64 c64, rFlagsReg cr)
+instruct rorL_rReg_Var(rRegL dst, rcx_RegI shift, rFlagsReg cr)
 %{
-  match(Set dst (OrL (URShiftL dst shift) (LShiftL dst (SubI c64 shift))));
-
-  expand %{
-    rorL_rReg_CL(dst, shift, cr);
+  predicate(n->bottom_type()->basic_type() == T_LONG);
+  match(Set dst (RotateRight dst shift));
+  effect(KILL cr);
+  format %{ "rorq    $dst, $shift" %}
+  ins_encode %{
+    __ rorq($dst$$Register);
   %}
+  ins_pipe(ialu_reg_reg);
 %}
+
 
 // Logical Instructions
 
@@ -9411,7 +9254,7 @@ instruct andnI_rReg_rReg_rReg(rRegI dst, rRegI src1, rRegI src2, immI_M1 minus_1
   ins_pipe(ialu_reg);
 %}
 
-instruct blsiI_rReg_rReg(rRegI dst, rRegI src, immI0 imm_zero, rFlagsReg cr) %{
+instruct blsiI_rReg_rReg(rRegI dst, rRegI src, immI_0 imm_zero, rFlagsReg cr) %{
   match(Set dst (AndI (SubI imm_zero src) src));
   predicate(UseBMI1Instructions);
   effect(KILL cr);
@@ -9424,7 +9267,7 @@ instruct blsiI_rReg_rReg(rRegI dst, rRegI src, immI0 imm_zero, rFlagsReg cr) %{
   ins_pipe(ialu_reg);
 %}
 
-instruct blsiI_rReg_mem(rRegI dst, memory src, immI0 imm_zero, rFlagsReg cr) %{
+instruct blsiI_rReg_mem(rRegI dst, memory src, immI_0 imm_zero, rFlagsReg cr) %{
   match(Set dst (AndI (SubI imm_zero (LoadI src) ) (LoadI src) ));
   predicate(UseBMI1Instructions);
   effect(KILL cr);
@@ -10107,7 +9950,7 @@ instruct cmpLTMask(rRegI dst, rRegI p, rRegI q, rFlagsReg cr)
   ins_pipe(pipe_slow);
 %}
 
-instruct cmpLTMask0(rRegI dst, immI0 zero, rFlagsReg cr)
+instruct cmpLTMask0(rRegI dst, immI_0 zero, rFlagsReg cr)
 %{
   match(Set dst (CmpLTMask dst zero));
   effect(KILL cr);
@@ -11221,15 +11064,29 @@ instruct string_indexofUL(rdi_RegP str1, rdx_RegI cnt1, rsi_RegP str2, rax_RegI 
   ins_pipe( pipe_slow );
 %}
 
-instruct string_indexofU_char(rdi_RegP str1, rdx_RegI cnt1, rax_RegI ch,
+instruct string_indexof_char(rdi_RegP str1, rdx_RegI cnt1, rax_RegI ch,
                               rbx_RegI result, legRegD tmp_vec1, legRegD tmp_vec2, legRegD tmp_vec3, rcx_RegI tmp, rFlagsReg cr)
 %{
-  predicate(UseSSE42Intrinsics);
+  predicate(UseSSE42Intrinsics && (((StrIndexOfCharNode*)n)->encoding() == StrIntrinsicNode::U));
   match(Set result (StrIndexOfChar (Binary str1 cnt1) ch));
   effect(TEMP tmp_vec1, TEMP tmp_vec2, TEMP tmp_vec3, USE_KILL str1, USE_KILL cnt1, USE_KILL ch, TEMP tmp, KILL cr);
-  format %{ "String IndexOf char[] $str1,$cnt1,$ch -> $result   // KILL all" %}
+  format %{ "StringUTF16 IndexOf char[] $str1,$cnt1,$ch -> $result   // KILL all" %}
   ins_encode %{
     __ string_indexof_char($str1$$Register, $cnt1$$Register, $ch$$Register, $result$$Register,
+                           $tmp_vec1$$XMMRegister, $tmp_vec2$$XMMRegister, $tmp_vec3$$XMMRegister, $tmp$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct stringL_indexof_char(rdi_RegP str1, rdx_RegI cnt1, rax_RegI ch,
+                              rbx_RegI result, legRegD tmp_vec1, legRegD tmp_vec2, legRegD tmp_vec3, rcx_RegI tmp, rFlagsReg cr)
+%{
+  predicate(UseSSE42Intrinsics && (((StrIndexOfCharNode*)n)->encoding() == StrIntrinsicNode::L));
+  match(Set result (StrIndexOfChar (Binary str1 cnt1) ch));
+  effect(TEMP tmp_vec1, TEMP tmp_vec2, TEMP tmp_vec3, USE_KILL str1, USE_KILL cnt1, USE_KILL ch, TEMP tmp, KILL cr);
+  format %{ "StringLatin1 IndexOf char[] $str1,$cnt1,$ch -> $result   // KILL all" %}
+  ins_encode %{
+    __ stringL_indexof_char($str1$$Register, $cnt1$$Register, $ch$$Register, $result$$Register,
                            $tmp_vec1$$XMMRegister, $tmp_vec2$$XMMRegister, $tmp_vec3$$XMMRegister, $tmp$$Register);
   %}
   ins_pipe( pipe_slow );
@@ -11440,7 +11297,7 @@ instruct overflowSubL_rReg_imm(rFlagsReg cr, rRegL op1, immL32 op2)
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct overflowNegI_rReg(rFlagsReg cr, immI0 zero, rax_RegI op2)
+instruct overflowNegI_rReg(rFlagsReg cr, immI_0 zero, rax_RegI op2)
 %{
   match(Set cr (OverflowSubI zero op2));
   effect(DEF cr, USE_KILL op2);
@@ -11549,7 +11406,7 @@ instruct compI_rReg_mem(rFlagsReg cr, rRegI op1, memory op2)
   ins_pipe(ialu_cr_reg_mem);
 %}
 
-instruct testI_reg(rFlagsReg cr, rRegI src, immI0 zero)
+instruct testI_reg(rFlagsReg cr, rRegI src, immI_0 zero)
 %{
   match(Set cr (CmpI src zero));
 
@@ -11559,7 +11416,7 @@ instruct testI_reg(rFlagsReg cr, rRegI src, immI0 zero)
   ins_pipe(ialu_cr_reg_imm);
 %}
 
-instruct testI_reg_imm(rFlagsReg cr, rRegI src, immI con, immI0 zero)
+instruct testI_reg_imm(rFlagsReg cr, rRegI src, immI con, immI_0 zero)
 %{
   match(Set cr (CmpI (AndI src con) zero));
 
@@ -11569,7 +11426,7 @@ instruct testI_reg_imm(rFlagsReg cr, rRegI src, immI con, immI0 zero)
   ins_pipe(ialu_cr_reg_imm);
 %}
 
-instruct testI_reg_mem(rFlagsReg cr, rRegI src, memory mem, immI0 zero)
+instruct testI_reg_mem(rFlagsReg cr, rRegI src, memory mem, immI_0 zero)
 %{
   match(Set cr (CmpI (AndI src (LoadI mem)) zero));
 
@@ -11623,7 +11480,7 @@ instruct compU_rReg_mem(rFlagsRegU cr, rRegI op1, memory op2)
 // //  ins_encode( OpcP, reg_mem( op1, op2) );
 // //%}
 
-instruct testU_reg(rFlagsRegU cr, rRegI src, immI0 zero)
+instruct testU_reg(rFlagsRegU cr, rRegI src, immI_0 zero)
 %{
   match(Set cr (CmpU src zero));
 
@@ -11961,7 +11818,7 @@ instruct compB_mem_imm(rFlagsReg cr, memory mem, immI8 imm)
   ins_pipe(ialu_cr_reg_mem);
 %}
 
-instruct testUB_mem_imm(rFlagsReg cr, memory mem, immU8 imm, immI0 zero)
+instruct testUB_mem_imm(rFlagsReg cr, memory mem, immU7 imm, immI_0 zero)
 %{
   match(Set cr (CmpI (AndI (LoadUB mem) imm) zero));
 
@@ -11971,7 +11828,7 @@ instruct testUB_mem_imm(rFlagsReg cr, memory mem, immU8 imm, immI0 zero)
   ins_pipe(ialu_cr_reg_mem);
 %}
 
-instruct testB_mem_imm(rFlagsReg cr, memory mem, immI8 imm, immI0 zero)
+instruct testB_mem_imm(rFlagsReg cr, memory mem, immI8 imm, immI_0 zero)
 %{
   match(Set cr (CmpI (AndI (LoadB mem) imm) zero));
 
@@ -12587,12 +12444,12 @@ instruct Ret()
 // Also known as an 'interprocedural jump'.
 // Target of jump will eventually return to caller.
 // TailJump below removes the return address.
-instruct TailCalljmpInd(no_rbp_RegP jump_target, rbx_RegP method_oop)
+instruct TailCalljmpInd(no_rbp_RegP jump_target, rbx_RegP method_ptr)
 %{
-  match(TailCall jump_target method_oop);
+  match(TailCall jump_target method_ptr);
 
   ins_cost(300);
-  format %{ "jmp     $jump_target\t# rbx holds method oop" %}
+  format %{ "jmp     $jump_target\t# rbx holds method" %}
   opcode(0xFF, 0x4); /* Opcode FF /4 */
   ins_encode(REX_reg(jump_target), OpcP, reg_opc(jump_target));
   ins_pipe(pipe_jmp);
@@ -12694,7 +12551,7 @@ instruct tlsLoadP(r15_RegP dst) %{
 //   match(Set dst (CopyI src));
 // %}
 //
-// instruct incI_rReg(rRegI dst, immI1 src, rFlagsReg cr)
+// instruct incI_rReg(rRegI dst, immI_1 src, rFlagsReg cr)
 // %{
 //   match(Set dst (AddI dst src));
 //   effect(KILL cr);

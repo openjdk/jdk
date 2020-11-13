@@ -49,6 +49,11 @@ public class MultiScrollBarUI extends ScrollBarUI {
      */
     protected Vector<ComponentUI> uis = new Vector<>();
 
+    /**
+     * Constructs a {@code MultiScrollBarUI}.
+     */
+    public MultiScrollBarUI() {}
+
 ////////////////////
 // Common UI methods
 ////////////////////

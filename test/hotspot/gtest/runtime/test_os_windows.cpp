@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,8 +57,8 @@ TEST_VM(os_windows, reserve_memory_special) {
   }
 
   // set globals to make sure we hit the correct code path
-  FLAG_GUARD(UseLargePagesIndividualAllocation);
-  FLAG_GUARD(UseNUMAInterleaving);
+  AutoSaveRestore<bool> FLAG_GUARD(UseLargePagesIndividualAllocation);
+  AutoSaveRestore<bool> FLAG_GUARD(UseNUMAInterleaving);
   FLAG_SET_CMDLINE(UseLargePagesIndividualAllocation, false);
   FLAG_SET_CMDLINE(UseNUMAInterleaving, false);
 

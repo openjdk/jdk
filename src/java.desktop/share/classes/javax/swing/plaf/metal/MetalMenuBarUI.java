@@ -40,6 +40,11 @@ import javax.swing.plaf.basic.*;
  */
 public class MetalMenuBarUI extends BasicMenuBarUI  {
     /**
+     * Constructs a {@code MetalMenuBarUI}.
+     */
+    public MetalMenuBarUI() {}
+
+    /**
      * Creates the <code>ComponentUI</code> implementation for the passed
      * in component.
      *

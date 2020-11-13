@@ -126,7 +126,7 @@
  *
  * <p>
  * W3C XML Schema data types that have a "<em>natural</em>" mapping to Java types are defined by
- * JSR 31: Java&trade; Architecture for XML Binding (JAXB) Specification, Binding XML Schema to Java Representations.
+ * JSR 31: Java Architecture for XML Binding (JAXB) Specification, Binding XML Schema to Java Representations.
  * JAXB defined mappings for XML Schema built-in data types include:
  *
  * <ul>

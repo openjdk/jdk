@@ -76,7 +76,7 @@ public interface Tool {
     int run(InputStream in, OutputStream out, OutputStream err, String... arguments);
 
     /**
-     * Returns the source versions of the Java&trade; programming language
+     * Returns the source versions of the Java programming language
      * supported by this tool.
      * @return a set of supported source versions
      */

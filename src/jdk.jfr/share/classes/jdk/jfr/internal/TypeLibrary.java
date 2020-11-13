@@ -53,6 +53,7 @@ import jdk.jfr.Description;
 import jdk.jfr.Label;
 import jdk.jfr.MetadataDefinition;
 import jdk.jfr.Name;
+import jdk.jfr.SettingControl;
 import jdk.jfr.SettingDescriptor;
 import jdk.jfr.Timespan;
 import jdk.jfr.Timestamp;
@@ -246,7 +247,7 @@ public final class TypeLibrary {
             superType = Type.SUPER_TYPE_EVENT;
             eventType= true;
         }
-        if (Control.class.isAssignableFrom(clazz)) {
+        if (SettingControl.class.isAssignableFrom(clazz)) {
             superType = Type.SUPER_TYPE_SETTING;
         }
 

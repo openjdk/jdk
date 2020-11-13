@@ -93,6 +93,9 @@ public class ObjectStreamClass implements Serializable {
 
     @java.io.Serial
     private static final long serialVersionUID = -6120832682080437368L;
+    /**
+     * {@code ObjectStreamClass} has no fields for default serialization.
+     */
     @java.io.Serial
     private static final ObjectStreamField[] serialPersistentFields =
         NO_FIELDS;
@@ -2538,7 +2541,9 @@ public class ObjectStreamClass implements Serializable {
         }
     }
 
-    // a LRA cache of record deserialization constructors
+    /**
+     * A LRA cache of record deserialization constructors.
+     */
     @SuppressWarnings("serial")
     private static final class DeserializationConstructorsCache
         extends ConcurrentHashMap<DeserializationConstructorsCache.Key, MethodHandle>  {

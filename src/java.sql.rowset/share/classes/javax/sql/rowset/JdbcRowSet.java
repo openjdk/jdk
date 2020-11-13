@@ -38,7 +38,7 @@ import java.io.*;
  *
  * <h2>1.0 Overview</h2>
  * A wrapper around a <code>ResultSet</code> object that makes it possible
- * to use the result set as a JavaBeans&trade;
+ * to use the result set as a JavaBeans
  * component.  Thus, a <code>JdbcRowSet</code> object can be one of the Beans that
  * a tool makes available for composing an application.  Because
  * a <code>JdbcRowSet</code> is a connected rowset, that is, it continually
@@ -113,7 +113,7 @@ import java.io.*;
  * <P>
  * The implementation of the <code>RowSet</code> method <code>execute</code> in the
  * <code>JdbcRowSet</code> reference implementation differs from that in the
- * <code>CachedRowSet</code>&trade;
+ * <code>CachedRowSet</code>
  * reference implementation to account for the different
  * requirements of connected and disconnected <code>RowSet</code> objects.
  *

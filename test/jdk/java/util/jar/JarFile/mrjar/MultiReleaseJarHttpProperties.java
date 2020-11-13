@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,10 @@
  * @modules jdk.jartool
  *          jdk.compiler
  *          jdk.httpserver
- * @build Compiler JarBuilder CreateMultiReleaseTestJars SimpleHttpServer
+ * @build CreateMultiReleaseTestJars
+ *        SimpleHttpServer
+ *        jdk.test.lib.compiler.Compiler
+ *        jdk.test.lib.util.JarBuilder
  * @run testng MultiReleaseJarHttpProperties
  * @run testng/othervm -Djdk.util.jar.version=0   MultiReleaseJarHttpProperties
  * @run testng/othervm -Djdk.util.jar.version=8   MultiReleaseJarHttpProperties

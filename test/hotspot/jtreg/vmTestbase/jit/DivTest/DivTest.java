@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,16 +32,14 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build jit.DivTest.DivTest
- * @run driver ExecDriver --java jit.DivTest.DivTest
+ * @run main/othervm jit.DivTest.DivTest
  */
 
 package jit.DivTest;
 
 import nsk.share.TestFailure;
 
-class DivTest{
+public class DivTest{
   static int n;
   static boolean test1 (int n1, int n2) {
     try {

@@ -26,7 +26,7 @@
 /**
 
 <p>The scripting API consists of interfaces and classes that define
-Java&trade; Scripting Engines and provides
+Java Scripting Engines and provides
 a framework for their use in Java applications. This API is intended
 for use by application programmers who wish to execute programs
 written in scripting languages in their Java applications. The

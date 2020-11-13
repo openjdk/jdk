@@ -26,8 +26,6 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/nmethod.hpp"
-#include "gc/shared/oopStorage.hpp"
-#include "gc/shared/oopStorageSet.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
@@ -75,7 +73,6 @@ JvmtiAgentThread::start_function_wrapper(JavaThread *thread, TRAPS) {
     // It is expected that any Agent threads will be created as
     // Java Threads.  If this is the case, notification of the creation
     // of the thread is given in JavaThread::thread_main().
-    assert(thread->is_Java_thread(), "debugger thread should be a Java Thread");
     assert(thread == JavaThread::current(), "sanity check");
 
     JvmtiAgentThread *dthread = (JvmtiAgentThread *)thread;
@@ -198,35 +195,23 @@ void GrowableCache::clear() {
 //
 
 JvmtiBreakpoint::JvmtiBreakpoint(Method* m_method, jlocation location)
-    : _method(m_method), _bci((int)location), _class_holder(NULL) {
+    : _method(m_method), _bci((int)location) {
   assert(_method != NULL, "No method for breakpoint.");
   assert(_bci >= 0, "Negative bci for breakpoint.");
   oop class_holder_oop  = _method->method_holder()->klass_holder();
-  _class_holder = OopStorageSet::vm_global()->allocate();
-  if (_class_holder == NULL) {
-    vm_exit_out_of_memory(sizeof(oop), OOM_MALLOC_ERROR,
-                          "Cannot create breakpoint oop handle");
-  }
-  NativeAccess<>::oop_store(_class_holder, class_holder_oop);
+  _class_holder = OopHandle(JvmtiExport::jvmti_oop_storage(), class_holder_oop);
 }
 
 JvmtiBreakpoint::~JvmtiBreakpoint() {
-  if (_class_holder != NULL) {
-    NativeAccess<>::oop_store(_class_holder, (oop)NULL);
-    OopStorageSet::vm_global()->release(_class_holder);
+  if (_class_holder.peek() != NULL) {
+    _class_holder.release(JvmtiExport::jvmti_oop_storage());
   }
 }
 
 void JvmtiBreakpoint::copy(JvmtiBreakpoint& bp) {
   _method   = bp._method;
   _bci      = bp._bci;
-  _class_holder = OopStorageSet::vm_global()->allocate();
-  if (_class_holder == NULL) {
-    vm_exit_out_of_memory(sizeof(oop), OOM_MALLOC_ERROR,
-                          "Cannot create breakpoint oop handle");
-  }
-  oop resolved_ch = NativeAccess<>::oop_load(bp._class_holder);
-  NativeAccess<>::oop_store(_class_holder, resolved_ch);
+  _class_holder = OopHandle(JvmtiExport::jvmti_oop_storage(), bp._class_holder.resolve());
 }
 
 bool JvmtiBreakpoint::equals(JvmtiBreakpoint& bp) {
@@ -441,6 +426,7 @@ VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, jint depth, jint index, B
   , _type(type)
   , _jvf(NULL)
   , _set(false)
+  , _eb(false, NULL, NULL)
   , _result(JVMTI_ERROR_NONE)
 {
 }
@@ -455,6 +441,7 @@ VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, jint depth, jint index, B
   , _value(value)
   , _jvf(NULL)
   , _set(true)
+  , _eb(type == T_OBJECT, JavaThread::current(), thread)
   , _result(JVMTI_ERROR_NONE)
 {
 }
@@ -468,6 +455,7 @@ VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, JavaThread* calling_threa
   , _type(T_OBJECT)
   , _jvf(NULL)
   , _set(false)
+  , _eb(true, calling_thread, thread)
   , _result(JVMTI_ERROR_NONE)
 {
 }
@@ -545,15 +533,15 @@ bool VM_GetOrSetLocal::is_assignable(const char* ty_sign, Klass* klass, Thread* 
 // Returns: 'true' - everything is Ok, 'false' - error code
 
 bool VM_GetOrSetLocal::check_slot_type_lvt(javaVFrame* jvf) {
-  Method* method_oop = jvf->method();
-  jint num_entries = method_oop->localvariable_table_length();
+  Method* method = jvf->method();
+  jint num_entries = method->localvariable_table_length();
   if (num_entries == 0) {
     _result = JVMTI_ERROR_INVALID_SLOT;
     return false;       // There are no slots
   }
   int signature_idx = -1;
   int vf_bci = jvf->bci();
-  LocalVariableTableElement* table = method_oop->localvariable_table_start();
+  LocalVariableTableElement* table = method->localvariable_table_start();
   for (int i = 0; i < num_entries; i++) {
     int start_bci = table[i].start_bci;
     int end_bci = start_bci + table[i].length;
@@ -569,7 +557,7 @@ bool VM_GetOrSetLocal::check_slot_type_lvt(javaVFrame* jvf) {
     _result = JVMTI_ERROR_INVALID_SLOT;
     return false;       // Incorrect slot index
   }
-  Symbol*   sign_sym  = method_oop->constants()->symbol_at(signature_idx);
+  Symbol*   sign_sym  = method->constants()->symbol_at(signature_idx);
   BasicType slot_type = Signature::basic_type(sign_sym);
 
   switch (slot_type) {
@@ -593,16 +581,13 @@ bool VM_GetOrSetLocal::check_slot_type_lvt(javaVFrame* jvf) {
   jobject jobj = _value.l;
   if (_set && slot_type == T_OBJECT && jobj != NULL) { // NULL reference is allowed
     // Check that the jobject class matches the return type signature.
-    JavaThread* cur_thread = JavaThread::current();
-    HandleMark hm(cur_thread);
-
-    Handle obj(cur_thread, JNIHandles::resolve_external_guard(jobj));
+    oop obj = JNIHandles::resolve_external_guard(jobj);
     NULL_CHECK(obj, (_result = JVMTI_ERROR_INVALID_OBJECT, false));
     Klass* ob_k = obj->klass();
     NULL_CHECK(ob_k, (_result = JVMTI_ERROR_INVALID_OBJECT, false));
 
     const char* signature = (const char *) sign_sym->as_utf8();
-    if (!is_assignable(signature, ob_k, cur_thread)) {
+    if (!is_assignable(signature, ob_k, VMThread::vm_thread())) {
       _result = JVMTI_ERROR_TYPE_MISMATCH;
       return false;
     }
@@ -611,10 +596,10 @@ bool VM_GetOrSetLocal::check_slot_type_lvt(javaVFrame* jvf) {
 }
 
 bool VM_GetOrSetLocal::check_slot_type_no_lvt(javaVFrame* jvf) {
-  Method* method_oop = jvf->method();
+  Method* method = jvf->method();
   jint extra_slot = (_type == T_LONG || _type == T_DOUBLE) ? 1 : 0;
 
-  if (_index < 0 || _index + extra_slot >= method_oop->max_locals()) {
+  if (_index < 0 || _index + extra_slot >= method->max_locals()) {
     _result = JVMTI_ERROR_INVALID_SLOT;
     return false;
   }
@@ -644,33 +629,42 @@ static bool can_be_deoptimized(vframe* vf) {
 }
 
 bool VM_GetOrSetLocal::doit_prologue() {
-  _jvf = get_java_vframe();
-  NULL_CHECK(_jvf, false);
-
-  Method* method_oop = _jvf->method();
-  if (getting_receiver()) {
-    if (method_oop->is_static()) {
-      _result = JVMTI_ERROR_INVALID_SLOT;
-      return false;
-    }
-    return true;
-  }
-
-  if (method_oop->is_native()) {
-    _result = JVMTI_ERROR_OPAQUE_FRAME;
+  if (!_eb.deoptimize_objects(_depth, _depth)) {
+    // The target frame is affected by a reallocation failure.
+    _result = JVMTI_ERROR_OUT_OF_MEMORY;
     return false;
   }
 
-  if (!check_slot_type_no_lvt(_jvf)) {
-    return false;
-  }
-  if (method_oop->has_localvariable_table()) {
-    return check_slot_type_lvt(_jvf);
-  }
   return true;
 }
 
 void VM_GetOrSetLocal::doit() {
+  _jvf = _jvf == NULL ? get_java_vframe() : _jvf;
+  if (_jvf == NULL) {
+    return;
+  };
+
+  Method* method = _jvf->method();
+  if (getting_receiver()) {
+    if (method->is_static()) {
+      _result = JVMTI_ERROR_INVALID_SLOT;
+      return;
+    }
+  } else {
+    if (method->is_native()) {
+      _result = JVMTI_ERROR_OPAQUE_FRAME;
+      return;
+    }
+
+    if (!check_slot_type_no_lvt(_jvf)) {
+      return;
+    }
+    if (method->has_localvariable_table() &&
+        !check_slot_type_lvt(_jvf)) {
+      return;
+    }
+  }
+
   InterpreterOopMap oop_mask;
   _jvf->method()->mask_for(_jvf->bci(), &oop_mask);
   if (oop_mask.is_dead(_index)) {
@@ -709,7 +703,8 @@ void VM_GetOrSetLocal::doit() {
       return;
     }
     StackValueCollection *locals = _jvf->locals();
-    HandleMark hm;
+    Thread* current_thread = VMThread::vm_thread();
+    HandleMark hm(current_thread);
 
     switch (_type) {
       case T_INT:    locals->set_int_at   (_index, _value.i); break;
@@ -717,7 +712,7 @@ void VM_GetOrSetLocal::doit() {
       case T_FLOAT:  locals->set_float_at (_index, _value.f); break;
       case T_DOUBLE: locals->set_double_at(_index, _value.d); break;
       case T_OBJECT: {
-        Handle ob_h(Thread::current(), JNIHandles::resolve_external_guard(_value.l));
+        Handle ob_h(current_thread, JNIHandles::resolve_external_guard(_value.l));
         locals->set_obj_at (_index, ob_h);
         break;
       }

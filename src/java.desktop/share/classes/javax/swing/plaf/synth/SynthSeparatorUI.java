@@ -48,6 +48,12 @@ public class SynthSeparatorUI extends SeparatorUI
     private SynthStyle style;
 
     /**
+     *
+     * Constructs a {@code SynthSeparatorUI}.
+     */
+    public SynthSeparatorUI() {}
+
+    /**
      * Creates a new UI object for the given component.
      *
      * @param c component to create UI object for

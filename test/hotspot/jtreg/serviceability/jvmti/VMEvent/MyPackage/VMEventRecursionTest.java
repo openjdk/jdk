@@ -27,6 +27,7 @@ package MyPackage;
 /**
  * @test
  * @summary Verifies that a VM event callback does not recurse if a VM object is allocated during callback.
+ * @requires vm.jvmti
  * @compile VMEventRecursionTest.java
  * @run main/othervm/native -agentlib:VMEventTest MyPackage.VMEventRecursionTest
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import jdk.jfr.Label;
 import jdk.jfr.MetadataDefinition;
 import jdk.jfr.Name;
 import jdk.jfr.internal.PlatformEventType;
-import jdk.jfr.internal.Control;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.Utils;
 
@@ -41,7 +40,7 @@ import jdk.jfr.internal.Utils;
 @Label("Period")
 @Description("Record event at interval")
 @Name(Type.SETTINGS_PREFIX + "Period")
-public final class PeriodSetting extends Control {
+public final class PeriodSetting extends JDKSettingControl {
     private static final long typeId = Type.getTypeId(PeriodSetting.class);
 
     public static final String EVERY_CHUNK = "everyChunk";
@@ -51,8 +50,7 @@ public final class PeriodSetting extends Control {
     private final PlatformEventType eventType;
     private String value = EVERY_CHUNK;
 
-    public PeriodSetting(PlatformEventType eventType, String defaultValue) {
-        super(defaultValue);
+    public PeriodSetting(PlatformEventType eventType) {
         this.eventType = Objects.requireNonNull(eventType);
     }
 

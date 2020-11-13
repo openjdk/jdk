@@ -110,9 +110,7 @@ public class BytecodeDescriptor {
         } else if (type == int.class) {
             return "I";
         }
-        StringBuilder sb = new StringBuilder();
-        unparseSig(type, sb);
-        return sb.toString();
+        return type.descriptorString();
     }
 
     public static String unparse(MethodType type) {

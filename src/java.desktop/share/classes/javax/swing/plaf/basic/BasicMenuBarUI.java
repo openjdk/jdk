@@ -72,6 +72,11 @@ public class BasicMenuBarUI extends MenuBarUI  {
     private Handler handler;
 
     /**
+     * Constructs a {@code BasicMenuBarUI}.
+     */
+    public BasicMenuBarUI() {}
+
+    /**
      * Returns a new instance of {@code BasicMenuBarUI}.
      *
      * @param x a component

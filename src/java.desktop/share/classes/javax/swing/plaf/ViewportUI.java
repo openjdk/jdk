@@ -32,4 +32,8 @@ package javax.swing.plaf;
  * @author Rich Schiavi
  */
 public abstract class ViewportUI extends ComponentUI {
+    /**
+     * Constructor for subclasses to call.
+     */
+    protected ViewportUI() {}
 }

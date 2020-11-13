@@ -46,6 +46,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
+import static java.lang.invoke.GenerateJLIClassesHelper.traceSpeciesType;
 import static java.lang.invoke.LambdaForm.*;
 import static java.lang.invoke.MethodHandleNatives.Constants.REF_getStatic;
 import static java.lang.invoke.MethodHandleNatives.Constants.REF_putStatic;
@@ -475,15 +476,8 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
             Class<?> salvage = null;
             try {
                 salvage = BootLoader.loadClassOrNull(className);
-                if (TRACE_RESOLVE && salvage != null) {
-                    // Used by jlink species pregeneration plugin, see
-                    // jdk.tools.jlink.internal.plugins.GenerateJLIClassesPlugin
-                    System.out.println("[SPECIES_RESOLVE] " + className + " (salvaged)");
-                }
+                traceSpeciesType(className, salvage);
             } catch (Error ex) {
-                if (TRACE_RESOLVE) {
-                    System.out.println("[SPECIES_FRESOLVE] " + className + " (Error) " + ex.getMessage());
-                }
             }
             final Class<? extends T> speciesCode;
             if (salvage != null) {
@@ -494,19 +488,12 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                 // Not pregenerated, generate the class
                 try {
                     speciesCode = generateConcreteSpeciesCode(className, speciesData);
-                    if (TRACE_RESOLVE) {
-                        // Used by jlink species pregeneration plugin, see
-                        // jdk.tools.jlink.internal.plugins.GenerateJLIClassesPlugin
-                        System.out.println("[SPECIES_RESOLVE] " + className + " (generated)");
-                    }
+                    traceSpeciesType(className, salvage);
                     // This operation causes a lot of churn:
                     linkSpeciesDataToCode(speciesData, speciesCode);
                     // This operation commits the relation, but causes little churn:
                     linkCodeToSpeciesData(speciesCode, speciesData, false);
                 } catch (Error ex) {
-                    if (TRACE_RESOLVE) {
-                        System.out.println("[SPECIES_RESOLVE] " + className + " (Error #2)" );
-                    }
                     // We can get here if there is a race condition loading a class.
                     // Or maybe we are out of resources.  Back out of the CHM.get and retry.
                     throw ex;

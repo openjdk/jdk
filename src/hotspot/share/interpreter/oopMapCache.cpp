@@ -321,7 +321,6 @@ void OopMapCacheEntry::fill_for_native(const methodHandle& mh) {
 
 
 void OopMapCacheEntry::fill(const methodHandle& method, int bci) {
-  HandleMark hm;
   // Flush entry to deallocate an existing entry
   flush();
   set_method(method());

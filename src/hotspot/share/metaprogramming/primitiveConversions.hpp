@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,147 +25,102 @@
 #ifndef SHARE_METAPROGRAMMING_PRIMITIVECONVERSIONS_HPP
 #define SHARE_METAPROGRAMMING_PRIMITIVECONVERSIONS_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "metaprogramming/enableIf.hpp"
-#include "metaprogramming/integralConstant.hpp"
-#include "metaprogramming/isFloatingPoint.hpp"
-#include "metaprogramming/isIntegral.hpp"
-#include "metaprogramming/isRegisteredEnum.hpp"
-#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include <type_traits>
 
 class PrimitiveConversions : public AllStatic {
+
+  // True if types are the same size and either is integral.
+  template<typename To, typename From>
+  static constexpr bool check_cast() {
+    return (sizeof(To) == sizeof(From)) &&
+           (std::is_integral<To>::value || std::is_integral<From>::value);
+  }
+
 public:
-  // Return a value of type T with the same representation as x.
+  // template<typename To, typename From> To cast(From x)
   //
-  // T and U must be of the same size.
+  // Return a value of type To with the same value representation as x.
   //
-  // At least one of T or U must be an integral type.  The other must
-  // be an integral, floating point, or pointer type.
-  template<typename T, typename U> static T cast(U x);
+  // To and From must be of the same size.
+  //
+  // At least one of To or From must be an integral type.  The other must
+  // be an integral, enum, floating point, or pointer type.
+
+  // integer -> integer
+  // Use static_cast for conversion.  See C++14 4.7 Integral
+  // conversions. If To is signed and From unsigned, the result is
+  // implementation-defined.  All supported platforms provide two's
+  // complement behavior, and that behavior is required by C++20.
+  // Using an lvalue to reference cast (see C++03 3.10/15) involves a
+  // reinterpret_cast, which prevents constexpr support.
+  template<typename To, typename From,
+           ENABLE_IF(sizeof(To) == sizeof(From)),
+           ENABLE_IF(std::is_integral<To>::value),
+           ENABLE_IF(std::is_integral<From>::value)>
+  static constexpr To cast(From x) {
+    return static_cast<To>(x);
+  }
+
+  // integer -> enum, enum -> integer
+  // Use the enum's underlying type for integer -> integer cast.
+  template<typename To, typename From,
+           ENABLE_IF(check_cast<To, From>()),
+           ENABLE_IF(std::is_enum<To>::value)>
+  static constexpr To cast(From x) {
+    return static_cast<To>(cast<std::underlying_type_t<To>>(x));
+  }
+
+  template<typename To, typename From,
+           ENABLE_IF(check_cast<To, From>()),
+           ENABLE_IF(std::is_enum<From>::value)>
+  static constexpr To cast(From x) {
+    return cast<To>(static_cast<std::underlying_type_t<From>>(x));
+  }
+
+  // integer -> pointer, pointer -> integer
+  // Use reinterpret_cast, so no constexpr support.
+  template<typename To, typename From,
+           ENABLE_IF(check_cast<To, From>()),
+           ENABLE_IF(std::is_pointer<To>::value || std::is_pointer<From>::value)>
+  static To cast(From x) {
+    return reinterpret_cast<To>(x);
+  }
+
+  // integer -> floating point, floating point -> integer
+  // Use the union trick.  The union trick is technically UB, but is
+  // widely and well supported, producing good code.  In some cases,
+  // such as gcc, that support is explicitly documented.  Using memcpy
+  // is the correct method, but some compilers produce wretched code
+  // for that method, even at maximal optimization levels.  Neither
+  // the union trick nor memcpy provides constexpr support.
+  template<typename To, typename From,
+           ENABLE_IF(check_cast<To, From>()),
+           ENABLE_IF(std::is_floating_point<To>::value ||
+                     std::is_floating_point<From>::value)>
+  static To cast(From x) {
+    union { From from; To to; } converter = { x };
+    return converter.to;
+  }
 
   // Support thin wrappers over primitive types.
-  // If derived from TrueType, provides representational conversion
+  // If derived from std::true_type, provides representational conversion
   // from T to some other type.  When true, must provide
   // - Value: typedef for T.
   // - Decayed: typedef for decayed type.
   // - static Decayed decay(T x): return value of type Decayed with
-  //   the same representation as x.
+  //   the same value representation as x.
   // - static T recover(Decayed x): return a value of type T with the
-  //   same representation as x.
-  template<typename T> struct Translate : public FalseType {};
-
-private:
-
-  template<typename T,
-           typename U,
-           bool same_size = sizeof(T) == sizeof(U),
-           typename Enable = void>
-  struct Cast;
-
-  template<typename T, typename U> static T cast_using_union(U x);
+  //   same value representation as x.
+  template<typename T> struct Translate : public std::false_type {};
 };
-
-// Return an object of type T with the same value representation as x.
-//
-// T and U must be of the same size.  It is expected that one of T and
-// U is an integral type, and the other is an integral type, a
-// (registered) enum type, or a floating point type
-//
-// This implementation uses the "union trick", which seems to be the
-// best of a bad set of options.  Though technically undefined
-// behavior, it is widely and well supported, producing good code.  In
-// some cases, such as gcc, that support is explicitly documented.
-//
-// Using memcpy is the correct method, but some compilers produce
-// wretched code for that method, even at maximal optimization levels.
-//
-// Using static_cast is only possible for integral and enum types, not
-// for floating point types.  And for integral and enum conversions,
-// static_cast has unspecified or implementation-defined behavior for
-// some cases.  C++11 <type_traits> can be used to avoid most or all
-// of those unspecified or implementation-defined issues, though that
-// may require multi-step conversions.
-//
-// Using reinterpret_cast of references has undefined behavior for
-// many cases, and there is much less empirical basis for its use, as
-// compared to the union trick.
-template<typename T, typename U>
-inline T PrimitiveConversions::cast_using_union(U x) {
-  STATIC_ASSERT(sizeof(T) == sizeof(U));
-  union { T t; U u; };
-  u = x;
-  return t;
-}
-
-//////////////////////////////////////////////////////////////////////////////
-// cast<T>(x)
-//
-// Cast<T, U, same_size, Enable>
-
-// Give an informative error if the sizes differ.
-template<typename T, typename U>
-struct PrimitiveConversions::Cast<T, U, false> {
-  STATIC_ASSERT(sizeof(T) == sizeof(U));
-};
-
-// Conversion between integral types.
-template<typename T, typename U>
-struct PrimitiveConversions::Cast<
-  T, U, true,
-  typename EnableIf<IsIntegral<T>::value && IsIntegral<U>::value>::type>
-{
-  T operator()(U x) const { return cast_using_union<T>(x); }
-};
-
-// Convert an enum or floating point value to an integer value.
-template<typename T, typename U>
-struct PrimitiveConversions::Cast<
-  T, U, true,
-  typename EnableIf<IsIntegral<T>::value &&
-                    (IsRegisteredEnum<U>::value ||
-                     IsFloatingPoint<U>::value)>::type>
-{
-  T operator()(U x) const { return cast_using_union<T>(x); }
-};
-
-// Convert an integer to an enum or floating point value.
-template<typename T, typename U>
-struct PrimitiveConversions::Cast<
-  T, U, true,
-  typename EnableIf<IsIntegral<U>::value &&
-                    (IsRegisteredEnum<T>::value ||
-                     IsFloatingPoint<T>::value)>::type>
-{
-  T operator()(U x) const { return cast_using_union<T>(x); }
-};
-
-// Convert a pointer to an integral value.
-template<typename T, typename U>
-struct PrimitiveConversions::Cast<
-  T, U*, true,
-  typename EnableIf<IsIntegral<T>::value>::type>
-{
-  T operator()(U* x) const { return reinterpret_cast<T>(x); }
-};
-
-// Convert an integral value to a pointer.
-template<typename T, typename U>
-struct PrimitiveConversions::Cast<
-  T*, U, true,
-  typename EnableIf<IsIntegral<U>::value>::type>
-{
-  T* operator()(U x) const { return reinterpret_cast<T*>(x); }
-};
-
-template<typename T, typename U>
-inline T PrimitiveConversions::cast(U x) {
-  return Cast<T, U>()(x);
-}
 
 // jfloat and jdouble translation to integral types
 
 template<>
-struct PrimitiveConversions::Translate<jdouble> : public TrueType {
+struct PrimitiveConversions::Translate<jdouble> : public std::true_type {
   typedef double Value;
   typedef int64_t Decayed;
 
@@ -174,7 +129,7 @@ struct PrimitiveConversions::Translate<jdouble> : public TrueType {
 };
 
 template<>
-struct PrimitiveConversions::Translate<jfloat> : public TrueType {
+struct PrimitiveConversions::Translate<jfloat> : public std::true_type {
   typedef float Value;
   typedef int32_t Decayed;
 

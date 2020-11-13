@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,23 @@
 
 package javax.swing.plaf.synth;
 
-import java.awt.*;
-import java.beans.*;
-import javax.swing.*;
-import javax.swing.border.*;
-import javax.swing.plaf.*;
-import javax.swing.plaf.basic.*;
-import javax.swing.table.*;
-import sun.swing.table.*;
+import java.awt.Component;
+import java.awt.Graphics;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JTable;
+import javax.swing.RowSorter;
+import javax.swing.border.Border;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.UIResource;
+import javax.swing.plaf.basic.BasicTableHeaderUI;
+import javax.swing.table.JTableHeader;
+import javax.swing.table.TableCellRenderer;
+
+import sun.swing.table.DefaultTableCellHeaderRenderer;
 
 /**
  * Provides the Synth L&amp;F UI delegate for
@@ -52,6 +61,12 @@ public class SynthTableHeaderUI extends BasicTableHeaderUI
     private TableCellRenderer prevRenderer = null;
 
     private SynthStyle style;
+
+    /**
+     *
+     * Constructs a {@code SynthTableHeaderUI}.
+     */
+    public SynthTableHeaderUI() {}
 
     /**
      * Creates a new UI object for the given component.
@@ -211,6 +226,9 @@ public class SynthTableHeaderUI extends BasicTableHeaderUI
         }
     }
 
+    /**
+     * The {@code DefaultTableCellHeaderRenderer} installed by the UI.
+     */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class HeaderRenderer extends DefaultTableCellHeaderRenderer {
         HeaderRenderer() {

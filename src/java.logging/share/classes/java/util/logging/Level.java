@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package java.util.logging;
 
+import java.io.Serial;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
@@ -432,11 +433,20 @@ public class Level implements java.io.Serializable {
         return value;
     }
 
+    @Serial
     private static final long serialVersionUID = -8176160795706313070L;
 
-    // Serialization magic to prevent "doppelgangers".
-    // This is a performance optimization.
+    /**
+     * Returns a {@code Level} instance with the same {@code name},
+     * {@code value}, and {@code resourceBundleName} as the deserialized
+     * object.
+     * @return a {@code Level} instance corresponding to the deserialized
+     * object.
+     */
+    @Serial
     private Object readResolve() {
+        // Serialization magic to prevent "doppelgangers".
+        // This is a performance optimization.
         Optional<Level> level = KnownLevel.matches(this);
         if (level.isPresent()) {
             return level.get();

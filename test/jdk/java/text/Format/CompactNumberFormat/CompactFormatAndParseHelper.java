@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,10 @@
  * questions.
  */
 
-import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.ParsePosition;
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
 
 class CompactFormatAndParseHelper {
 
@@ -47,22 +46,11 @@ class CompactFormatAndParseHelper {
         }
 
         if (returnType != null) {
-            assertEquals(number.getClass(), returnType, "Incorrect return type for string" + parseString);
+            assertEquals(number.getClass(), returnType,
+                    "Incorrect return type for string '" + parseString + "'");
         }
 
-        if (number instanceof Double) {
-            assertEquals(number.doubleValue(), (double) expected,
-                    "Incorrect parsing of the string '" + parseString + "'");
-        } else if (number instanceof Long) {
-            assertEquals(number.longValue(), (long) expected,
-                    "Incorrect parsing of the string '" + parseString + "'");
-        } else if (number instanceof BigDecimal) {
-            BigDecimal num = (BigDecimal) number;
-            assertEquals(num, (BigDecimal) expected,
-                    "Incorrect parsing of the string '" + parseString + "'");
-        } else {
-            assertEquals(number, expected, "Incorrect parsing of the string '"
-                    + parseString + "'");
-        }
+        assertEquals(number, expected, "Incorrect parsing of the string '"
+                + parseString + "'");
     }
 }

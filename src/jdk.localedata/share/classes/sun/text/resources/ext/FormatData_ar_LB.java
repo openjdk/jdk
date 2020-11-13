@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ public class FormatData_ar_LB extends ParallelListResourceBundle {
                     "\u0634\u0628\u0627\u0637", // february
                     "\u0622\u0630\u0627\u0631", // march
                     "\u0646\u064a\u0633\u0627\u0646", // april
-                    "\u0646\u0648\u0627\u0631", // may
+                    "\u0623\u064a\u0627\u0631", // may
                     "\u062d\u0632\u064a\u0631\u0627\u0646", // june
                     "\u062a\u0645\u0648\u0632", // july
                     "\u0622\u0628", // august
@@ -73,7 +73,7 @@ public class FormatData_ar_LB extends ParallelListResourceBundle {
                     "\u0634\u0628\u0627\u0637", // abb february
                     "\u0622\u0630\u0627\u0631", // abb march
                     "\u0646\u064a\u0633\u0627\u0646", // abb april
-                    "\u0646\u0648\u0627\u0631", // abb may
+                    "\u0623\u064a\u0627\u0631", // abb may
                     "\u062d\u0632\u064a\u0631\u0627\u0646", // abb june
                     "\u062a\u0645\u0648\u0632", // abb july
                     "\u0622\u0628", // abb august

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@
  *                 - begins with '*' ('*Subclass')
  *                 - ending  with '*' ('nsk.share.jdi.MonitorWaitExecutor_*')
  *                 - class name ('nsk.share.jdi.MonitorWaitExecutor_1Subclass')
- *         Test executes class nsk.share.jdi.EventTestTemplates$ClassExclusionFilterTest which uses JDI events testing
+ *         Test executes class nsk.share.jdi.ClassExclusionFilterTest which uses JDI events testing
  *         framework based on classes from package nsk.share.jdi.*.
  *         This framework uses following scenario:
  *                 - debugger VM forces debugge VM to create number of objects which should generate events during test
@@ -53,18 +53,17 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build nsk.share.jdi.EventTestTemplates
+ * @build nsk.share.jdi.ClassExclusionFilterTest
  *        nsk.share.jdi.JDIEventsDebuggee
  *        nsk.share.jdi.MonitorEventsDebuggee
- * @run main/othervm PropertyResolvingWrapper
- *      nsk.share.jdi.EventTestTemplates$ClassExclusionFilterTest
+ * @run main/othervm
+ *      nsk.share.jdi.ClassExclusionFilterTest
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  *      -eventType MONITOR_WAIT
  *      -debuggeeClassName nsk.share.jdi.MonitorEventsDebuggee
  *      -classPatterns nsk.share.jdi.MonitorWaitExecutor_'*':'*'Subclass:nsk.share.jdi.MonitorWaitExecutor_1Subclass

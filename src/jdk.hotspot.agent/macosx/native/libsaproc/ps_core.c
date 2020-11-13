@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <sys/errno.h>
 #include "libproc_impl.h"
 #include "ps_core_common.h"
 
@@ -241,18 +242,20 @@ static bool read_core_segments(struct ps_prochandle* ph) {
       goto err;
     }
     offset += lcmd.cmdsize;    // next command position
+    //print_debug("LC: 0x%x\n", lcmd.cmd);
     if (lcmd.cmd == LC_SEGMENT_64) {
       lseek(fd, -sizeof(load_command), SEEK_CUR);
       if (read(fd, (void *)&segcmd, sizeof(segment_command_64)) != sizeof(segment_command_64)) {
         print_debug("failed to read LC_SEGMENT_64 i = %d!\n", i);
         goto err;
       }
-      if (add_map_info(ph, fd, segcmd.fileoff, segcmd.vmaddr, segcmd.vmsize) == NULL) {
+      if (add_map_info(ph, fd, segcmd.fileoff, segcmd.vmaddr, segcmd.vmsize, segcmd.flags) == NULL) {
         print_debug("Failed to add map_info at i = %d\n", i);
         goto err;
       }
-      print_debug("segment added: %" PRIu64 " 0x%" PRIx64 " %d\n",
-                   segcmd.fileoff, segcmd.vmaddr, segcmd.vmsize);
+      print_debug("LC_SEGMENT_64 added: nsects=%d fileoff=0x%llx vmaddr=0x%llx vmsize=0x%llx filesize=0x%llx %s\n",
+                  segcmd.nsects, segcmd.fileoff, segcmd.vmaddr, segcmd.vmsize,
+                  segcmd.filesize, &segcmd.segname[0]);
     } else if (lcmd.cmd == LC_THREAD || lcmd.cmd == LC_UNIXTHREAD) {
       typedef struct thread_fc {
         uint32_t  flavor;
@@ -333,86 +336,110 @@ err:
   return false;
 }
 
-/**local function **/
-bool exists(const char *fname) {
+static bool exists(const char *fname) {
   return access(fname, F_OK) == 0;
 }
 
-// we check: 1. lib
-//           2. lib/server
-//           3. jre/lib
-//           4. jre/lib/server
-// from: 1. exe path
-//       2. JAVA_HOME
-//       3. DYLD_LIBRARY_PATH
+// reverse strstr()
+static char* rstrstr(const char *str, const char *sub) {
+  char *result = NULL;
+  for (char *p = strstr(str, sub); p != NULL; p = strstr(p + 1, sub)) {
+    result = p;
+  }
+  return result;
+}
+
+// Check if <filename> exists in the <jdk_subdir> directory of <jdk_dir>.
+// Note <jdk_subdir> and  <filename> already have '/' prepended.
+static bool get_real_path_jdk_subdir(char* rpath, char* filename, char* jdk_dir, char* jdk_subdir) {
+  char  filepath[BUF_SIZE];
+  strncpy(filepath, jdk_dir, BUF_SIZE);
+  filepath[BUF_SIZE - 1] = '\0'; // just in case jdk_dir didn't fit
+  strncat(filepath, jdk_subdir, BUF_SIZE - 1 - strlen(filepath));
+  strncat(filepath, filename, BUF_SIZE - 1 - strlen(filepath));
+  if (exists(filepath)) {
+    strcpy(rpath, filepath);
+    return true;
+  }
+  return false;
+}
+
+// Look for <filename> in various subdirs of <jdk_dir>.
+static bool get_real_path_jdk_dir(char* rpath, char* filename, char* jdk_dir) {
+  if (get_real_path_jdk_subdir(rpath, filename, jdk_dir, "/lib")) {
+      return true;
+  }
+  if (get_real_path_jdk_subdir(rpath, filename, jdk_dir, "/lib/server")) {
+      return true;
+  }
+  if (get_real_path_jdk_subdir(rpath, filename, jdk_dir, "/jre/lib")) {
+      return true;
+  }
+  if (get_real_path_jdk_subdir(rpath, filename, jdk_dir, "/jre/lib/server")) {
+      return true;
+  }
+  return false;
+}
+
+// Get the file specified by rpath. We check various directories for it.
 static bool get_real_path(struct ps_prochandle* ph, char *rpath) {
-  /** check if they exist in JAVA ***/
   char* execname = ph->core->exec_path;
-  char  filepath[4096];
-  char* filename = strrchr(rpath, '/');               // like /libjvm.dylib
+  char jdk_dir[BUF_SIZE];
+  char* posbin;
+  char* filename = strrchr(rpath, '/'); // like /libjvm.dylib
   if (filename == NULL) {
     return false;
   }
 
-  char* posbin = strstr(execname, "/bin/java");
+  // First look for the library in 3 places where the JDK might be located. For each of
+  // these 3 potential JDK locations we look in lib, lib/server, jre/lib, and jre/lib/server.
+
+  posbin = rstrstr(execname, "/bin/java");
   if (posbin != NULL) {
-    memcpy(filepath, execname, posbin - execname);    // not include trailing '/'
-    filepath[posbin - execname] = '\0';
-  } else {
-    char* java_home = getenv("JAVA_HOME");
-    if (java_home != NULL) {
-      strcpy(filepath, java_home);
-    } else {
-      char* dyldpath = getenv("DYLD_LIBRARY_PATH");
-      char* save_ptr;
-      char* dypath = strtok_r(dyldpath, ":", &save_ptr);
-      while (dypath != NULL) {
-        strcpy(filepath, dypath);
-        strcat(filepath, filename);
-        if (exists(filepath)) {
-           strcpy(rpath, filepath);
-           return true;
-        }
-        dypath = strtok_r(NULL, ":", &save_ptr);
-      }
-      // not found
-      return false;
+    strncpy(jdk_dir, execname, posbin - execname);
+    jdk_dir[posbin - execname] = '\0';
+    if (get_real_path_jdk_dir(rpath, filename, jdk_dir)) {
+      return true;
     }
   }
-  // for exec and java_home, jdkpath now is filepath
-  size_t filepath_base_size = strlen(filepath);
 
-  // first try /lib/ and /lib/server
-  strcat(filepath, "/lib");
-  strcat(filepath, filename);
-  if (exists(filepath)) {
-    strcpy(rpath, filepath);
-    return true;
-  }
-  char* pos = strstr(filepath, filename);    // like /libjvm.dylib
-  *pos = '\0';
-  strcat(filepath, "/server");
-  strcat(filepath, filename);
-  if (exists(filepath)) {
-    strcpy(rpath, filepath);
-    return true;
+  char* java_home = getenv("JAVA_HOME");
+  if (java_home != NULL) {
+    if (get_real_path_jdk_dir(rpath, filename, java_home)) {
+      return true;
+    }
   }
 
-  // then try /jre/lib/ and /jre/lib/server
-  filepath[filepath_base_size] = '\0';
-  strcat(filepath, "/jre/lib");
-  strcat(filepath, filename);
-  if (exists(filepath)) {
-    strcpy(rpath, filepath);
-    return true;
+  // Look for bin directory in path. This is useful when attaching to a core file
+  // that was launched with a JDK tool other than "java".
+  posbin = rstrstr(execname, "/bin/");  // look for the last occurence of "/bin/"
+  if (posbin != NULL) {
+    strncpy(jdk_dir, execname, posbin - execname);
+    jdk_dir[posbin - execname] = '\0';
+    if (get_real_path_jdk_dir(rpath, filename, jdk_dir)) {
+      return true;
+    }
   }
-  pos = strstr(filepath, filename);
-  *pos = '\0';
-  strcat(filepath, "/server");
-  strcat(filepath, filename);
-  if (exists(filepath)) {
-    strcpy(rpath, filepath);
-    return true;
+
+  // If we didn't find the library in any of the 3 above potential JDK locations, then look in
+  // DYLD_LIBRARY_PATH. This is where user libraries might be. We don't treat these
+  // paths as JDK paths, so we don't append the  various JDK subdirs like lib/server.
+  // However, that doesn't preclude JDK libraries from actually being in one of the paths.
+  char* dyldpath = getenv("DYLD_LIBRARY_PATH");
+  if (dyldpath != NULL) {
+    char* save_ptr;
+    char  filepath[BUF_SIZE];
+    char* dypath = strtok_r(dyldpath, ":", &save_ptr);
+    while (dypath != NULL) {
+      strncpy(filepath, dypath, BUF_SIZE);
+      filepath[BUF_SIZE - 1] = '\0'; // just in case dypath didn't fit
+      strncat(filepath, filename, BUF_SIZE - 1 - strlen(filepath));
+      if (exists(filepath)) {
+        strcpy(rpath, filepath);
+        return true;
+      }
+      dypath = strtok_r(NULL, ":", &save_ptr);
+    }
   }
 
   return false;
@@ -440,7 +467,7 @@ static bool read_shared_lib_info(struct ps_prochandle* ph) {
       // only search core file!
       continue;
     }
-    print_debug("map_info %d: vmaddr = 0x%016" PRIx64 "  fileoff = %" PRIu64 "  vmsize = %" PRIu64 "\n",
+    print_debug("map_info %d: vmaddr = 0x%016llx fileoff = 0x%llx vmsize = 0x%lx\n",
                            j, iter->vaddr, iter->offset, iter->memsz);
     lseek(fd, fpos, SEEK_SET);
     // we assume .dylib loaded at segment address --- which is true for JVM libraries
@@ -464,7 +491,7 @@ static bool read_shared_lib_info(struct ps_prochandle* ph) {
         continue;
       }
       lseek(fd, -sizeof(uint32_t), SEEK_CUR);
-      // this is the file begining to core file.
+      // This is the begining of the mach-o file in the segment.
       if (read(fd, (void *)&header, sizeof(mach_header_64)) != sizeof(mach_header_64)) {
         goto err;
       }
@@ -497,18 +524,26 @@ static bool read_shared_lib_info(struct ps_prochandle* ph) {
             if (name[j] == '\0') break;
             j++;
           }
-          print_debug("%s\n", name);
+          print_debug("%d %s\n", lcmd.cmd, name);
           // changed name from @rpath/xxxx.dylib to real path
           if (strrchr(name, '@')) {
             get_real_path(ph, name);
             print_debug("get_real_path returned: %s\n", name);
+          } else {
+            break; // Ignore non-relative paths, which are system libs. See JDK-8249779.
           }
           add_lib_info(ph, name, iter->vaddr);
           break;
         }
       }
       // done with the file, advanced to next page to search more files
+#if 0
+      // This line is disabled due to JDK-8249779. Instead we break out of the loop
+      // and don't attempt to find any more mach-o files in this segment.
       fpos = (ltell(fd) + pagesize - 1) / pagesize * pagesize;
+#else
+      break;
+#endif
     }
   }
   return true;
@@ -553,13 +588,13 @@ struct ps_prochandle* Pgrab_core(const char* exec_file, const char* core_file) {
   ph->core->exec_fd   = -1;
   ph->core->interp_fd = -1;
 
-  print_debug("exec: %s   core: %s", exec_file, core_file);
+  print_debug("exec: %s   core: %s\n", exec_file, core_file);
 
   strncpy(ph->core->exec_path, exec_file, sizeof(ph->core->exec_path));
 
   // open the core file
   if ((ph->core->core_fd = open(core_file, O_RDONLY)) < 0) {
-    print_error("can't open core file\n");
+    print_error("can't open core file: %s\n", strerror(errno));
     goto err;
   }
 
@@ -778,7 +813,7 @@ static bool read_core_segments(struct ps_prochandle* ph, ELF_EHDR* core_ehdr) {
          case PT_LOAD: {
             if (core_php->p_filesz != 0) {
                if (add_map_info(ph, ph->core->core_fd, core_php->p_offset,
-                  core_php->p_vaddr, core_php->p_filesz) == NULL) goto err;
+                  core_php->p_vaddr, core_php->p_filesz, core_php->p_flags) == NULL) goto err;
             }
             break;
          }
@@ -817,7 +852,7 @@ static bool read_lib_segments(struct ps_prochandle* ph, int lib_fd, ELF_EHDR* li
 
       if (existing_map == NULL){
         if (add_map_info(ph, lib_fd, lib_php->p_offset,
-                          target_vaddr, lib_php->p_filesz) == NULL) {
+                          target_vaddr, lib_php->p_filesz, lib_php->p_flags) == NULL) {
           goto err;
         }
       } else {
@@ -883,7 +918,7 @@ static bool read_exec_segments(struct ps_prochandle* ph, ELF_EHDR* exec_ehdr) {
          case PT_LOAD: {
             // add only non-writable segments of non-zero filesz
             if (!(exec_php->p_flags & PF_W) && exec_php->p_filesz != 0) {
-               if (add_map_info(ph, ph->core->exec_fd, exec_php->p_offset, exec_php->p_vaddr, exec_php->p_filesz) == NULL) goto err;
+               if (add_map_info(ph, ph->core->exec_fd, exec_php->p_offset, exec_php->p_vaddr, exec_php->p_filesz, exec_php->p_flags) == NULL) goto err;
             }
             break;
          }

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -934,6 +934,7 @@ const char *ArchDesc::getIdealType(const char *idealOp) {
   // Match Vector types.
   if (strncmp(idealOp, "Vec",3)==0) {
     switch(last_char) {
+    case 'A':  return "TypeVect::VECTA";
     case 'S':  return "TypeVect::VECTS";
     case 'D':  return "TypeVect::VECTD";
     case 'X':  return "TypeVect::VECTX";
@@ -942,6 +943,10 @@ const char *ArchDesc::getIdealType(const char *idealOp) {
     default:
       internal_err("Vector type %s with unrecognized type\n",idealOp);
     }
+  }
+
+  if (strncmp(idealOp, "RegVMask", 8) == 0) {
+    return "Type::BOTTOM";
   }
 
   // !!!!!

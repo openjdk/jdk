@@ -41,6 +41,11 @@ import sun.awt.UngrabEvent;
  */
 public class SwingInterOpUtils {
 
+    /**
+     * Constructs a {@code SwingInterOpUtils}.
+     */
+    public SwingInterOpUtils() {}
+
     public static void postEvent(Object target, java.awt.AWTEvent e) {
         AppContext context = SunToolkit.targetToAppContext(target);
         if (context != null) {

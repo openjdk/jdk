@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,15 @@
  * questions.
  */
 
-#include <stdlib.h>
-#include <string.h>
+#ifdef HEADLESS
+    #error This file should not be included in headless library
+#endif
+
 #include "gtk_interface.h"
 #include "com_sun_java_swing_plaf_gtk_GTKEngine.h"
+#include <jni_util.h>
+#include <stdlib.h>
+#include <string.h>
 
 /* Static buffer for conversion from java.lang.String to UTF-8 */
 static char conversionBuffer[(CONV_BUFFER_SIZE - 1) * 3 + 1];
@@ -309,6 +314,11 @@ JNIEXPORT void JNICALL
 Java_com_sun_java_swing_plaf_gtk_GTKEngine_nativeStartPainting(
         JNIEnv *env, jobject this, jint w, jint h)
 {
+    if (w > 0x7FFF || h > 0x7FFF || (uintptr_t)4 * w * h > 0x7FFFFFFFL) {
+        // Same limitation as in X11SurfaceData.c
+        JNU_ThrowOutOfMemoryError(env, "Can't create offscreen surface");
+        return;
+    }
     gtk->gdk_threads_enter();
     gtk->init_painting(env, w, h);
     gtk->gdk_threads_leave();
@@ -340,10 +350,8 @@ Java_com_sun_java_swing_plaf_gtk_GTKEngine_nativeFinishPainting(
 JNIEXPORT void JNICALL Java_com_sun_java_swing_plaf_gtk_GTKEngine_native_1switch_1theme(
         JNIEnv *env, jobject this)
 {
-    // Note that flush_gtk_event_loop takes care of locks (7053002)
-    gtk->gdk_threads_enter();
+    // Note that gtk->flush_event_loop takes care of locks (7053002), gdk_threads_enter/gdk_threads_leave should not be used.
     gtk->flush_event_loop();
-    gtk->gdk_threads_leave();
 }
 
 /*

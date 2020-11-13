@@ -66,6 +66,11 @@ public class SimpleFormatter extends Formatter {
         SurrogateLogger.getSimpleFormat(SimpleFormatter::getLoggingProperty);
 
     /**
+     * Create a {@code SimpleFormatter}.
+     */
+    public SimpleFormatter() {}
+
+    /**
      * Format the given LogRecord.
      * <p>
      * The formatting can be customized by specifying the format string

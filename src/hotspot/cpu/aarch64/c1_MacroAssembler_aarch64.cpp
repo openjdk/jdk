@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -73,11 +73,18 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   // save object being locked into the BasicObjectLock
   str(obj, Address(disp_hdr, BasicObjectLock::obj_offset_in_bytes()));
 
+  null_check_offset = offset();
+
+  if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+    load_klass(hdr, obj);
+    ldrw(hdr, Address(hdr, Klass::access_flags_offset()));
+    tstw(hdr, JVM_ACC_IS_BOX_CLASS);
+    br(Assembler::NE, slow_case);
+  }
+
   if (UseBiasedLocking) {
     assert(scratch != noreg, "should have scratch register at this point");
-    null_check_offset = biased_locking_enter(disp_hdr, obj, hdr, scratch, false, done, &slow_case);
-  } else {
-    null_check_offset = offset();
+    biased_locking_enter(disp_hdr, obj, hdr, scratch, false, done, &slow_case);
   }
 
   // Load object header

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,12 +37,12 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @ignore 7013634
- * @run main/othervm/native
+ * @run main/othervm/native/timeout=240
  *      -agentlib:resexhausted=-waittime=5
  *      -XX:-UseGCOverheadLimit
+ *      -Xms16m
+ *      -Xmx16m
  *      nsk.jvmti.ResourceExhausted.resexhausted001
- *      -stressTime 1200
+ *      -stressTime 220
  */
 

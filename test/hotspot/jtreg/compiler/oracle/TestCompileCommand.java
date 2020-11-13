@@ -62,7 +62,7 @@ public class TestCompileCommand {
             out.shouldContain(expected_output);
         }
 
-        out.shouldNotContain("CompileCommand: An error occured during parsing");
+        out.shouldNotContain("CompileCommand: An error occurred during parsing");
         out.shouldHaveExitValue(0);
     }
 

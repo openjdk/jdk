@@ -25,7 +25,7 @@ package gc.epsilon;
 
 /**
  * @test TestMaxTLAB
- * @requires vm.gc.Epsilon & !vm.graal.enabled
+ * @requires vm.gc.Epsilon
  * @summary Check EpsilonMaxTLAB options
  * @bug 8212177
  *

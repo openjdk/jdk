@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6700100 8156760
+ * @bug 6700100 8156760 8248226
  * @summary small instance clone as loads/stores
  * @library /
  *
@@ -37,6 +37,10 @@
  * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
  *                   -XX:CompileCommand=dontinline,compiler.arraycopy.TestInstanceCloneAsLoadsStores::m*
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-ReduceInitialCardMarks
+ *                   compiler.arraycopy.TestInstanceCloneAsLoadsStores
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+ *                   -XX:CompileCommand=dontinline,compiler.arraycopy.TestInstanceCloneAsLoadsStores::m*
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-ReduceInitialCardMarks -XX:-ReduceBulkZeroing
  *                   compiler.arraycopy.TestInstanceCloneAsLoadsStores
  */
 

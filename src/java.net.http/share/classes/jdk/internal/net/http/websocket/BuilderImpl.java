@@ -35,7 +35,7 @@ import java.net.ProxySelector;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Collection;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -56,7 +56,7 @@ public final class BuilderImpl implements Builder {
     public BuilderImpl(HttpClient client, ProxySelector proxySelector)
     {
         this(client, null, null, Optional.ofNullable(proxySelector),
-             new LinkedList<>(), new LinkedList<>(), null);
+             new ArrayList<>(), new ArrayList<>(), null);
     }
 
     private BuilderImpl(HttpClient client,
@@ -92,7 +92,7 @@ public final class BuilderImpl implements Builder {
     {
         requireNonNull(mostPreferred, "mostPreferred");
         requireNonNull(lesserPreferred, "lesserPreferred");
-        List<String> subprotocols = new LinkedList<>();
+        List<String> subprotocols = new ArrayList<>(lesserPreferred.length + 1);
         subprotocols.add(mostPreferred);
         for (int i = 0; i < lesserPreferred.length; i++) {
             String p = lesserPreferred[i];

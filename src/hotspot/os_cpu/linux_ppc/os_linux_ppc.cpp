@@ -50,6 +50,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
+#include "signals_posix.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
@@ -161,40 +162,11 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
   return frame(sp, epc);
 }
 
-bool os::Linux::get_frame_at_stack_banging_point(JavaThread* thread, ucontext_t* uc, frame* fr) {
-  address pc = (address) os::Linux::ucontext_get_pc(uc);
-  if (Interpreter::contains(pc)) {
-    // Interpreter performs stack banging after the fixed frame header has
-    // been generated while the compilers perform it before. To maintain
-    // semantic consistency between interpreted and compiled frames, the
-    // method returns the Java sender of the current frame.
-    *fr = os::fetch_frame_from_context(uc);
-    if (!fr->is_first_java_frame()) {
-      assert(fr->safe_for_sender(thread), "Safety check");
-      *fr = fr->java_sender();
-    }
-  } else {
-    // More complex code with compiled code.
-    assert(!Interpreter::contains(pc), "Interpreted methods should have been handled above");
-    CodeBlob* cb = CodeCache::find_blob(pc);
-    if (cb == NULL || !cb->is_nmethod() || cb->is_frame_complete_at(pc)) {
-      // Not sure where the pc points to, fallback to default
-      // stack overflow handling. In compiled code, we bang before
-      // the frame is complete.
-      return false;
-    } else {
-      intptr_t* sp = os::Linux::ucontext_get_sp(uc);
-      address lr = ucontext_get_lr(uc);
-      *fr = frame(sp, lr);
-      if (!fr->is_java_frame()) {
-        assert(fr->safe_for_sender(thread), "Safety check");
-        assert(!fr->is_first_frame(), "Safety check");
-        *fr = fr->java_sender();
-      }
-    }
-  }
-  assert(fr->is_java_frame(), "Safety check");
-  return true;
+frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
+  const ucontext_t* uc = (const ucontext_t*)ucVoid;
+  intptr_t* sp = os::Linux::ucontext_get_sp(uc);
+  address lr = ucontext_get_lr(uc);
+  return frame(sp, lr);
 }
 
 frame os::get_sender_for_C_frame(frame* fr) {
@@ -216,34 +188,8 @@ frame os::current_frame() {
   return os::get_sender_for_C_frame(&tmp);
 }
 
-// Utility functions
-
-extern "C" JNIEXPORT int
-JVM_handle_linux_signal(int sig,
-                        siginfo_t* info,
-                        void* ucVoid,
-                        int abort_if_unrecognized) {
-  ucontext_t* uc = (ucontext_t*) ucVoid;
-
-  Thread* t = Thread::current_or_null_safe();
-
-  SignalHandlerMark shm(t);
-
-  // Note: it's not uncommon that JNI code uses signal/sigset to install
-  // then restore certain signal handler (e.g. to temporarily block SIGPIPE,
-  // or have a SIGILL handler when detecting CPU type). When that happens,
-  // JVM_handle_linux_signal() might be invoked with junk info/ucVoid. To
-  // avoid unnecessary crash when libjsig is not preloaded, try handle signals
-  // that do not require siginfo/ucontext first.
-
-  if (sig == SIGPIPE) {
-    if (os::Linux::chained_handler(sig, info, ucVoid)) {
-      return true;
-    } else {
-      // Ignoring SIGPIPE - see bugs 4229104
-      return true;
-    }
-  }
+bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
+                                             ucontext_t* uc, JavaThread* thread) {
 
   // Make the signal handler transaction-aware by checking the existence of a
   // second (transactional) context with MSR TS bits active. If the signal is
@@ -264,26 +210,6 @@ JVM_handle_linux_signal(int sig,
       }
       // Return control to the HTM abort handler.
       return true;
-    }
-  }
-
-#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
-  if ((sig == SIGSEGV || sig == SIGBUS) && info != NULL && info->si_addr == g_assert_poison) {
-    if (handle_assert_poison_fault(ucVoid, info->si_addr)) {
-      return 1;
-    }
-  }
-#endif
-
-  JavaThread* thread = NULL;
-  VMThread* vmthread = NULL;
-  if (os::Linux::signal_handlers_are_installed) {
-    if (t != NULL) {
-      if(t->is_Java_thread()) {
-        thread = (JavaThread*)t;
-      } else if(t->is_VM_thread()) {
-        vmthread = (VMThread *)t;
-      }
     }
   }
 
@@ -326,59 +252,8 @@ JVM_handle_linux_signal(int sig,
       // Check if fault address is within thread stack.
       if (thread->is_in_full_stack(addr)) {
         // stack overflow
-        if (thread->in_stack_yellow_reserved_zone(addr)) {
-          if (thread->thread_state() == _thread_in_Java) {
-            if (thread->in_stack_reserved_zone(addr)) {
-              frame fr;
-              if (os::Linux::get_frame_at_stack_banging_point(thread, uc, &fr)) {
-                assert(fr.is_java_frame(), "Must be a Javac frame");
-                frame activation =
-                  SharedRuntime::look_for_reserved_stack_annotated_method(thread, fr);
-                if (activation.sp() != NULL) {
-                  thread->disable_stack_reserved_zone();
-                  if (activation.is_interpreted_frame()) {
-                    thread->set_reserved_stack_activation((address)activation.fp());
-                  } else {
-                    thread->set_reserved_stack_activation((address)activation.unextended_sp());
-                  }
-                  return 1;
-                }
-              }
-            }
-            // Throw a stack overflow exception.
-            // Guard pages will be reenabled while unwinding the stack.
-            thread->disable_stack_yellow_reserved_zone();
-            stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::STACK_OVERFLOW);
-          } else {
-            // Thread was in the vm or native code. Return and try to finish.
-            thread->disable_stack_yellow_reserved_zone();
-            return 1;
-          }
-        } else if (thread->in_stack_red_zone(addr)) {
-          // Fatal red zone violation.  Disable the guard pages and fall through
-          // to handle_unexpected_exception way down below.
-          thread->disable_stack_red_zone();
-          tty->print_raw_cr("An irrecoverable stack overflow has occurred.");
-
-          // This is a likely cause, but hard to verify. Let's just print
-          // it as a hint.
-          tty->print_raw_cr("Please check if any of your loaded .so files has "
-                            "enabled executable stack (see man page execstack(8))");
-        } else {
-          // Accessing stack address below sp may cause SEGV if current
-          // thread has MAP_GROWSDOWN stack. This should only happen when
-          // current thread was created by user code with MAP_GROWSDOWN flag
-          // and then attached to VM. See notes in os_linux.cpp.
-          if (thread->osthread()->expanding_stack() == 0) {
-             thread->osthread()->set_expanding_stack();
-             if (os::Linux::manually_expand_stack(thread, addr)) {
-               thread->osthread()->clear_expanding_stack();
-               return 1;
-             }
-             thread->osthread()->clear_expanding_stack();
-          } else {
-             fatal("recursive segv. expanding stack.");
-          }
+        if (os::Posix::handle_stack_overflow(thread, addr, pc, uc, &stub)) {
+          return true; // continue
         }
       }
     }
@@ -386,17 +261,6 @@ JVM_handle_linux_signal(int sig,
     if (thread->thread_state() == _thread_in_Java) {
       // Java thread running in Java code => find exception handler if any
       // a fault inside compiled code, the interpreter, or a stub
-
-      // A VM-related SIGILL may only occur if we are not in the zero page.
-      // On AIX, we get a SIGILL if we jump to 0x0 or to somewhere else
-      // in the zero page, because it is filled with 0x0. We ignore
-      // explicit SIGILLs in the zero page.
-      if (sig == SIGILL && (pc < (address) 0x200)) {
-        if (TraceTraps) {
-          tty->print_raw_cr("SIGILL happened inside zero page.");
-        }
-        goto report_and_die;
-      }
 
       CodeBlob *cb = NULL;
       int stop_type = -1;
@@ -485,10 +349,7 @@ JVM_handle_linux_signal(int sig,
           tty->print_cr("trap: %s: %s (SIGTRAP, stop type %d)", msg, detail_msg, stop_type);
         }
 
-        va_list detail_args;
-        VMError::report_and_die(INTERNAL_ERROR, msg, detail_msg, detail_args, thread,
-                                pc, info, ucVoid, NULL, 0, 0);
-        va_end(detail_args);
+        return false; // Fatal error
       }
 
       else if (sig == SIGBUS) {
@@ -546,31 +407,8 @@ JVM_handle_linux_signal(int sig,
     return true;
   }
 
-  // signal-chaining
-  if (os::Linux::chained_handler(sig, info, ucVoid)) {
-    return true;
-  }
-
-  if (!abort_if_unrecognized) {
-    // caller wants another chance, so give it to him
-    return false;
-  }
-
-  if (pc == NULL && uc != NULL) {
-    pc = os::Linux::ucontext_get_pc(uc);
-  }
-
-report_and_die:
-  // unmask current signal
-  sigset_t newset;
-  sigemptyset(&newset);
-  sigaddset(&newset, sig);
-  sigprocmask(SIG_UNBLOCK, &newset, NULL);
-
-  VMError::report_and_die(t, sig, pc, info, ucVoid);
-
-  ShouldNotReachHere();
   return false;
+
 }
 
 void os::Linux::init_thread_fpu_state(void) {

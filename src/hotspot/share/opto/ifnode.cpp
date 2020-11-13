@@ -86,7 +86,6 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   i1 = cmp->in(1);
   if( i1 == NULL || !i1->is_Phi() ) return NULL;
   PhiNode *phi = i1->as_Phi();
-  if( phi->is_copy() ) return NULL;
   Node *con2 = cmp->in(2);
   if( !con2->is_Con() ) return NULL;
   // See that the merge point contains some constants
@@ -993,11 +992,14 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
   }
 
   if (lo && hi) {
+    Node* hook = new Node(1);
+    hook->init_req(0, lo); // Add a use to lo to prevent him from dying
     // Merge the two compares into a single unsigned compare by building (CmpU (n - lo) (hi - lo))
     Node* adjusted_val = igvn->transform(new SubINode(n,  lo));
     if (adjusted_lim == NULL) {
       adjusted_lim = igvn->transform(new SubINode(hi, lo));
     }
+    hook->destruct(igvn);
     Node* newcmp = igvn->transform(new CmpUNode(adjusted_val, adjusted_lim));
     Node* newbool = igvn->transform(new BoolNode(newcmp, cond));
 

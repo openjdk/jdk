@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,61 +25,27 @@
 #define SHARE_GC_Z_ZARRAY_HPP
 
 #include "memory/allocation.hpp"
-#include "utilities/globalDefinitions.hpp"
+#include "utilities/growableArray.hpp"
 
-template <typename T>
-class ZArray {
-private:
-  static const size_t initial_capacity = 32;
+template <typename T> using ZArray = GrowableArrayCHeap<T, mtGC>;
 
-  T*     _array;
-  size_t _size;
-  size_t _capacity;
-
-  NONCOPYABLE(ZArray);
-
-  void expand(size_t new_capacity);
-
-public:
-  ZArray();
-  ~ZArray();
-
-  size_t size() const;
-  bool is_empty() const;
-
-  T at(size_t index) const;
-
-  void add(T value);
-  void transfer(ZArray<T>* from);
-  void clear();
-};
-
-template <typename T, bool parallel>
+template <typename T, bool Parallel>
 class ZArrayIteratorImpl : public StackObj {
 private:
-  ZArray<T>* const _array;
-  size_t           _next;
+  const T*       _next;
+  const T* const _end;
+
+  bool next_serial(T* elem);
+  bool next_parallel(T* elem);
 
 public:
-  ZArrayIteratorImpl(ZArray<T>* array);
+  ZArrayIteratorImpl(const T* array, size_t length);
+  ZArrayIteratorImpl(const ZArray<T>* array);
 
   bool next(T* elem);
 };
 
-// Iterator types
-#define ZARRAY_SERIAL      false
-#define ZARRAY_PARALLEL    true
-
-template <typename T>
-class ZArrayIterator : public ZArrayIteratorImpl<T, ZARRAY_SERIAL> {
-public:
-  ZArrayIterator(ZArray<T>* array);
-};
-
-template <typename T>
-class ZArrayParallelIterator : public ZArrayIteratorImpl<T, ZARRAY_PARALLEL> {
-public:
-  ZArrayParallelIterator(ZArray<T>* array);
-};
+template <typename T> using ZArrayIterator = ZArrayIteratorImpl<T, false /* Parallel */>;
+template <typename T> using ZArrayParallelIterator = ZArrayIteratorImpl<T, true /* Parallel */>;
 
 #endif // SHARE_GC_Z_ZARRAY_HPP

@@ -91,11 +91,12 @@ DISABLED_WARNINGS_clang := tautological-compare \
     undefined-var-template sometimes-uninitialized unknown-pragmas \
     delete-non-virtual-dtor missing-braces char-subscripts \
     ignored-qualifiers missing-field-initializers mismatched-tags \
-    shift-negative-value
+    shift-negative-value misleading-indentation
 
 DISABLED_WARNINGS_xlc := tautological-compare shift-negative-value
 
-DISABLED_WARNINGS_microsoft := 4100 4127 4201 4244 4291 4351 4511 4512 4514 4996
+DISABLED_WARNINGS_microsoft := 4100 4127 4146 4201 4244 4291 4351 \
+    4511 4512 4514 4624 4996
 
 ################################################################################
 # Platform specific setup
@@ -249,14 +250,14 @@ ifneq ($(GENERATE_COMPILE_COMMANDS_ONLY), true)
 
     define SetupOperatorNewDeleteCheck
         $1.op_check: $1
-	  if [ -n "`$(NM) $$< | $(GREP) $(addprefix -e , $(MANGLED_SYMS)) \
-	      | $(GREP) $(UNDEF_PATTERN)`" ]; then \
-	    $(ECHO) "$$<: Error: Use of global operators new and delete is not allowed in Hotspot:"; \
-	    $(NM) $$< | $(CXXFILT) | $(EGREP) '$(DEMANGLED_REGEXP)' | $(GREP) $(UNDEF_PATTERN); \
-	    $(ECHO) "See: $(TOPDIR)/make/hotspot/lib/CompileJvm.gmk"; \
+	  $$(call ExecuteWithLog, $1.op_check, \
+	      $$(NM) $$<  2>&1 | $$(GREP) $$(addprefix -e , $$(MANGLED_SYMS)) | $$(GREP) $$(UNDEF_PATTERN) > $1.op_check || true)
+	  if [ -s $1.op_check ]; then \
+	    $$(ECHO) "$$(notdir $$<): Error: Use of global operators new and delete is not allowed in Hotspot:"; \
+	    $$(NM) $$< | $$(CXXFILT) | $$(EGREP) '$$(DEMANGLED_REGEXP)' | $$(GREP) $$(UNDEF_PATTERN); \
+	    $$(ECHO) "See: $$(TOPDIR)/make/hotspot/lib/CompileJvm.gmk"; \
 	    exit 1; \
 	  fi
-	  $(TOUCH) $$@
 
       TARGETS += $1.op_check
     endef

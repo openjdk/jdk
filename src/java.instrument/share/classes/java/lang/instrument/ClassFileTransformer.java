@@ -156,7 +156,7 @@ import java.security.ProtectionDomain;
  *
  * <P>
  * Note the term <i>class file</i> is used as defined in section 3.1 of
- * <cite>The Java&trade; Virtual Machine Specification</cite>, to mean a
+ * <cite>The Java Virtual Machine Specification</cite>, to mean a
  * sequence of bytes in class file format, whether or not they reside in a
  * file.
  *
@@ -192,7 +192,6 @@ public interface ClassFileTransformer {
      *         or {@code null} if no transform is performed
      *
      * @revised 9
-     * @spec JPMS
      */
     default byte[]
     transform(  ClassLoader         loader,
@@ -231,7 +230,6 @@ public interface ClassFileTransformer {
      *         or {@code null} if no transform is performed
      *
      * @since  9
-     * @spec JPMS
      */
     default byte[]
     transform(  Module              module,

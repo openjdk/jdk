@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,37 +28,10 @@
   //
   // NOTE: we are back in class os here, not win32
   //
-#ifdef AMD64
-  static int32_t   (*atomic_xchg_func)          (int32_t, volatile int32_t*);
-  static int64_t   (*atomic_xchg_long_func)     (int64_t, volatile int64_t*);
-
-  static int32_t   (*atomic_cmpxchg_func)       (int32_t,  volatile int32_t*, int32_t);
-  static int8_t    (*atomic_cmpxchg_byte_func)  (int8_t,   volatile int8_t*,  int8_t);
-  static int64_t   (*atomic_cmpxchg_long_func)  (int64_t,  volatile int64_t*, int64_t);
-
-  static int32_t   (*atomic_add_func)           (int32_t,  volatile int32_t*);
-  static int64_t   (*atomic_add_long_func)      (int64_t,  volatile int64_t*);
-
-  static int32_t   atomic_xchg_bootstrap        (int32_t,  volatile int32_t*);
-  static int64_t   atomic_xchg_long_bootstrap   (int64_t,  volatile int64_t*);
-
-  static int32_t   atomic_cmpxchg_bootstrap     (int32_t,  volatile int32_t*, int32_t);
-  static int8_t    atomic_cmpxchg_byte_bootstrap(int8_t,   volatile int8_t*,  int8_t);
-#else
-
-  static int64_t (*atomic_cmpxchg_long_func)  (int64_t, volatile int64_t*, int64_t);
-
-#endif // AMD64
-
-  static int64_t atomic_cmpxchg_long_bootstrap(int64_t, volatile int64_t*, int64_t);
-
-#ifdef AMD64
-  static int32_t  atomic_add_bootstrap         (int32_t,  volatile int32_t*);
-  static int64_t  atomic_add_long_bootstrap    (int64_t,  volatile int64_t*);
-#endif // AMD64
 
   static void setup_fpu();
   static bool supports_sse() { return true; }
+  static juint cpu_microcode_revision();
 
   static jlong rdtsc();
 

@@ -43,8 +43,8 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.incubator.jpackage.internal.AppImageFile;
-import jdk.incubator.jpackage.internal.ApplicationLayout;
+import jdk.jpackage.internal.AppImageFile;
+import jdk.jpackage.internal.ApplicationLayout;
 import jdk.jpackage.test.Functional.ThrowingBiConsumer;
 import jdk.jpackage.test.Functional.ThrowingConsumer;
 import jdk.jpackage.test.Functional.ThrowingRunnable;
@@ -317,6 +317,11 @@ public final class PackageTest extends RunnablePackageTest {
         return this;
     }
 
+    public PackageTest addLauncherName(String name) {
+        launcherNames.add(name);
+        return this;
+    }
+
     public final static class Group extends RunnablePackageTest {
         public Group(PackageTest... tests) {
             handlers = Stream.of(tests)
@@ -556,7 +561,12 @@ public final class PackageTest extends RunnablePackageTest {
                 if (PackageType.WINDOWS.contains(cmd.packageType())
                         && !cmd.isPackageUnpacked(
                                 "Not verifying desktop integration")) {
-                    new WindowsHelper.DesktopIntegrationVerifier(cmd);
+                    // Check main launcher
+                    new WindowsHelper.DesktopIntegrationVerifier(cmd, null);
+                    // Check additional launchers
+                    launcherNames.forEach(name -> {
+                        new WindowsHelper.DesktopIntegrationVerifier(cmd, name);
+                    });
                 }
             }
             cmd.assertAppLayout();
@@ -571,7 +581,12 @@ public final class PackageTest extends RunnablePackageTest {
                 TKit.assertPathExists(cmd.appLauncherPath(), false);
 
                 if (PackageType.WINDOWS.contains(cmd.packageType())) {
-                    new WindowsHelper.DesktopIntegrationVerifier(cmd);
+                    // Check main launcher
+                    new WindowsHelper.DesktopIntegrationVerifier(cmd, null);
+                    // Check additional launchers
+                    launcherNames.forEach(name -> {
+                        new WindowsHelper.DesktopIntegrationVerifier(cmd, name);
+                    });
                 }
             }
 
@@ -618,6 +633,7 @@ public final class PackageTest extends RunnablePackageTest {
     private Map<PackageType, Handler> handlers;
     private Set<String> namedInitializers;
     private Map<PackageType, PackageHandlers> packageHandlers;
+    private final List<String> launcherNames = new ArrayList();
 
     private final static File BUNDLE_OUTPUT_DIR;
 

@@ -138,19 +138,5 @@ TEST_VM(markWord, printing) {
     assert_test_pattern(h_obj, "monitor");
     done.wait_with_safepoint_check(THREAD);  // wait till the thread is done.
   }
-
-  if (!AsyncDeflateIdleMonitors) {
-    // With AsyncDeflateIdleMonitors, the collect() call below
-    // does not guarantee monitor deflation.
-    // Make the object older. Not all GCs use this field.
-    Universe::heap()->collect(GCCause::_java_lang_system_gc);
-    if (UseParallelGC) {
-      assert_test_pattern(h_obj, "is_neutral no_hash age 1");
-    }
-
-    // Hash the object then print it.
-    intx hash = h_obj->identity_hash();
-    assert_test_pattern(h_obj, "is_neutral hash=0x");
-  }
 }
 #endif // PRODUCT

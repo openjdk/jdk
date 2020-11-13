@@ -37,7 +37,7 @@ public final class Helper {
     public static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
 
     private static final long THRESHOLD = WHITE_BOX.getIntxVMFlag("CompileThreshold");
-    private static final String TEST_CASE_IMPL_CLASS_NAME = "compiler.codecache.stress.TestCaseImpl";
+    private static final String TEST_CASE_IMPL_CLASS_NAME = TestCaseImpl.class.getName();
     private static byte[] CLASS_DATA;
     static {
         try {

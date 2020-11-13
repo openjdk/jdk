@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ void check(jvmtiEnv *jvmti_env, jthread thr, jclass cls, jmethodID mid, jint i) 
         printf("(GetClassSignature#%d) unexpected error: %s (%d)\n",
                i, TranslateError(err), err);
         result = STATUS_FAILED;
+        return;
     }
 
     err = jvmti_env->GetMethodName(mid, &name, &sig, &generic);
@@ -65,6 +66,7 @@ void check(jvmtiEnv *jvmti_env, jthread thr, jclass cls, jmethodID mid, jint i) 
         printf("(GetMethodName#%d) unexpected error: %s (%d)\n",
                i, TranslateError(err), err);
         result = STATUS_FAILED;
+        return;
     }
 
     err = jvmti_env->GetLocalVariableTable(mid,
@@ -73,6 +75,7 @@ void check(jvmtiEnv *jvmti_env, jthread thr, jclass cls, jmethodID mid, jint i) 
         printf("(GetLocalVariableTable#%d) unexpected error: %s (%d)\n",
                i, TranslateError(err), err);
         result = STATUS_FAILED;
+        return;
     }
     if (table != NULL) {
         for (j = 0; j < entryCount; j++) {

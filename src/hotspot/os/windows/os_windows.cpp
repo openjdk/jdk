@@ -30,11 +30,14 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
+#include "code/nativeInst.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
@@ -47,6 +50,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -117,13 +121,18 @@ static FILETIME process_exit_time;
 static FILETIME process_user_time;
 static FILETIME process_kernel_time;
 
-#ifdef _M_AMD64
+#if defined(_M_ARM64)
+  #define __CPU__ aarch64
+#elif defined(_M_AMD64)
   #define __CPU__ amd64
 #else
   #define __CPU__ i486
 #endif
 
-#if INCLUDE_AOT
+#if defined(USE_VECTORED_EXCEPTION_HANDLING)
+PVOID  topLevelVectoredExceptionHandler = NULL;
+LPTOP_LEVEL_EXCEPTION_FILTER previousUnhandledExceptionFilter = NULL;
+#elif INCLUDE_AOT
 PVOID  topLevelVectoredExceptionHandler = NULL;
 LONG WINAPI topLevelVectoredExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo);
 #endif
@@ -146,7 +155,7 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved) {
     if (ForceTimeHighResolution) {
       timeEndPeriod(1L);
     }
-#if INCLUDE_AOT
+#if defined(USE_VECTORED_EXCEPTION_HANDLING) || INCLUDE_AOT
     if (topLevelVectoredExceptionHandler != NULL) {
       RemoveVectoredExceptionHandler(topLevelVectoredExceptionHandler);
       topLevelVectoredExceptionHandler = NULL;
@@ -455,6 +464,12 @@ static unsigned __stdcall thread_native_entry(Thread* thread) {
 
   log_info(os, thread)("Thread is alive (tid: " UINTX_FORMAT ").", os::current_thread_id());
 
+#ifdef USE_VECTORED_EXCEPTION_HANDLING
+  // Any exception is caught by the Vectored Exception Handler, so VM can
+  // generate error dump when an exception occurred in non-Java thread
+  // (e.g. VM thread).
+  thread->call_run();
+#else
   // Install a win32 structured exception handler around every thread created
   // by VM, so VM can generate error dump when an exception occurred in non-
   // Java thread (e.g. VM thread).
@@ -464,6 +479,7 @@ static unsigned __stdcall thread_native_entry(Thread* thread) {
                                      (_EXCEPTION_POINTERS*)_exception_info())) {
     // Nothing to do.
   }
+#endif
 
   // Note: at this point the thread object may already have deleted itself.
   // Do not dereference it from here on out.
@@ -1426,15 +1442,18 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
 
   static const arch_t arch_array[] = {
     {IMAGE_FILE_MACHINE_I386,      (char*)"IA 32"},
-    {IMAGE_FILE_MACHINE_AMD64,     (char*)"AMD 64"}
+    {IMAGE_FILE_MACHINE_AMD64,     (char*)"AMD 64"},
+    {IMAGE_FILE_MACHINE_ARM64,     (char*)"ARM 64"}
   };
-#if (defined _M_AMD64)
+#if (defined _M_ARM64)
+  static const uint16_t running_arch = IMAGE_FILE_MACHINE_ARM64;
+#elif (defined _M_AMD64)
   static const uint16_t running_arch = IMAGE_FILE_MACHINE_AMD64;
 #elif (defined _M_IX86)
   static const uint16_t running_arch = IMAGE_FILE_MACHINE_I386;
 #else
   #error Method os::dll_load requires that one of following \
-         is defined :_M_AMD64 or _M_IX86
+         is defined :_M_AMD64 or _M_IX86 or _M_ARM64
 #endif
 
 
@@ -1608,9 +1627,7 @@ void os::print_os_info(outputStream* st) {
 
   os::win32::print_uptime_info(st);
 
-#ifdef _LP64
   VM_Version::print_platform_virtualization_info(st);
-#endif
 }
 
 void os::win32::print_windows_version(outputStream* st) {
@@ -1731,7 +1748,8 @@ void os::win32::print_windows_version(outputStream* st) {
   SYSTEM_INFO si;
   ZeroMemory(&si, sizeof(SYSTEM_INFO));
   GetNativeSystemInfo(&si);
-  if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64) {
+  if ((si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64) ||
+      (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_ARM64)) {
     st->print(" , 64 bit");
   }
 
@@ -2127,6 +2145,8 @@ static int check_pending_signals() {
       }
     } while (threadIsSuspended);
   }
+  ShouldNotReachHere();
+  return 0; // Satisfy compiler
 }
 
 int os::signal_wait() {
@@ -2137,19 +2157,26 @@ int os::signal_wait() {
 
 LONG Handle_Exception(struct _EXCEPTION_POINTERS* exceptionInfo,
                       address handler) {
-  JavaThread* thread = (JavaThread*) Thread::current_or_null();
+  Thread* thread = Thread::current_or_null();
   // Save pc in thread
-#ifdef _M_AMD64
+#if defined(_M_ARM64)
   // Do not blow up if no thread info available.
   if (thread) {
-    thread->set_saved_exception_pc((address)(DWORD_PTR)exceptionInfo->ContextRecord->Rip);
+    thread->as_Java_thread()->set_saved_exception_pc((address)(DWORD_PTR)exceptionInfo->ContextRecord->Pc);
+  }
+  // Set pc to handler
+  exceptionInfo->ContextRecord->Pc = (DWORD64)handler;
+#elif defined(_M_AMD64)
+  // Do not blow up if no thread info available.
+  if (thread != NULL) {
+    thread->as_Java_thread()->set_saved_exception_pc((address)(DWORD_PTR)exceptionInfo->ContextRecord->Rip);
   }
   // Set pc to handler
   exceptionInfo->ContextRecord->Rip = (DWORD64)handler;
 #else
   // Do not blow up if no thread info available.
-  if (thread) {
-    thread->set_saved_exception_pc((address)(DWORD_PTR)exceptionInfo->ContextRecord->Eip);
+  if (thread != NULL) {
+    thread->as_Java_thread()->set_saved_exception_pc((address)(DWORD_PTR)exceptionInfo->ContextRecord->Eip);
   }
   // Set pc to handler
   exceptionInfo->ContextRecord->Eip = (DWORD)(DWORD_PTR)handler;
@@ -2237,7 +2264,17 @@ const char* os::exception_name(int exception_code, char *buf, size_t size) {
 LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   // handle exception caused by idiv; should only happen for -MinInt/-1
   // (division by zero is handled explicitly)
-#ifdef  _M_AMD64
+#if defined(_M_ARM64)
+  PCONTEXT ctx = exceptionInfo->ContextRecord;
+  address pc = (address)ctx->Sp;
+  assert(pc[0] == 0x83, "not an sdiv opcode"); //Fixme did i get the right opcode?
+  assert(ctx->X4 == min_jint, "unexpected idiv exception");
+  // set correct result values and continue after idiv instruction
+  ctx->Pc = (uint64_t)pc + 4;        // idiv reg, reg, reg  is 4 bytes
+  ctx->X4 = (uint64_t)min_jint;      // result
+  ctx->X5 = (uint64_t)0;             // remainder
+  // Continue the execution
+#elif defined(_M_AMD64)
   PCONTEXT ctx = exceptionInfo->ContextRecord;
   address pc = (address)ctx->Rip;
   assert(pc[0] >= Assembler::REX && pc[0] <= Assembler::REX_WRXB && pc[1] == 0xF7 || pc[0] == 0xF7, "not an idiv opcode");
@@ -2268,6 +2305,7 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   return EXCEPTION_CONTINUE_EXECUTION;
 }
 
+#if defined(_M_AMD64) || defined(_M_IX86)
 //-----------------------------------------------------------------------------
 LONG WINAPI Handle_FLT_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   PCONTEXT ctx = exceptionInfo->ContextRecord;
@@ -2313,74 +2351,24 @@ LONG WINAPI Handle_FLT_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
 
   return EXCEPTION_CONTINUE_SEARCH;
 }
+#endif
 
 static inline void report_error(Thread* t, DWORD exception_code,
                                 address addr, void* siginfo, void* context) {
   VMError::report_and_die(t, exception_code, addr, siginfo, context);
 
-  // If UseOsErrorReporting, this will return here and save the error file
+  // If UseOSErrorReporting, this will return here and save the error file
   // somewhere where we can find it in the minidump.
 }
-
-bool os::win32::get_frame_at_stack_banging_point(JavaThread* thread,
-        struct _EXCEPTION_POINTERS* exceptionInfo, address pc, frame* fr) {
-  PEXCEPTION_RECORD exceptionRecord = exceptionInfo->ExceptionRecord;
-  address addr = (address) exceptionRecord->ExceptionInformation[1];
-  if (Interpreter::contains(pc)) {
-    *fr = os::fetch_frame_from_context((void*)exceptionInfo->ContextRecord);
-    if (!fr->is_first_java_frame()) {
-      // get_frame_at_stack_banging_point() is only called when we
-      // have well defined stacks so java_sender() calls do not need
-      // to assert safe_for_sender() first.
-      *fr = fr->java_sender();
-    }
-  } else {
-    // more complex code with compiled code
-    assert(!Interpreter::contains(pc), "Interpreted methods should have been handled above");
-    CodeBlob* cb = CodeCache::find_blob(pc);
-    if (cb == NULL || !cb->is_nmethod() || cb->is_frame_complete_at(pc)) {
-      // Not sure where the pc points to, fallback to default
-      // stack overflow handling
-      return false;
-    } else {
-      *fr = os::fetch_frame_from_context((void*)exceptionInfo->ContextRecord);
-      // in compiled code, the stack banging is performed just after the return pc
-      // has been pushed on the stack
-      *fr = frame(fr->sp() + 1, fr->fp(), (address)*(fr->sp()));
-      if (!fr->is_java_frame()) {
-        // See java_sender() comment above.
-        *fr = fr->java_sender();
-      }
-    }
-  }
-  assert(fr->is_java_frame(), "Safety check");
-  return true;
-}
-
-#if INCLUDE_AOT
-LONG WINAPI topLevelVectoredExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
-  PEXCEPTION_RECORD exceptionRecord = exceptionInfo->ExceptionRecord;
-  address addr = (address) exceptionRecord->ExceptionInformation[1];
-  address pc = (address) exceptionInfo->ContextRecord->Rip;
-
-  // Handle the case where we get an implicit exception in AOT generated
-  // code.  AOT DLL's loaded are not registered for structured exceptions.
-  // If the exception occurred in the codeCache or AOT code, pass control
-  // to our normal exception handler.
-  CodeBlob* cb = CodeCache::find_blob(pc);
-  if (cb != NULL) {
-    return topLevelExceptionFilter(exceptionInfo);
-  }
-
-  return EXCEPTION_CONTINUE_SEARCH;
-}
-#endif
 
 //-----------------------------------------------------------------------------
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
   if (InterceptOSException) return EXCEPTION_CONTINUE_SEARCH;
-  DWORD exception_code = exceptionInfo->ExceptionRecord->ExceptionCode;
-#ifdef _M_AMD64
+  PEXCEPTION_RECORD exception_record = exceptionInfo->ExceptionRecord;
+  DWORD exception_code = exception_record->ExceptionCode;
+#if defined(_M_ARM64)
+  address pc = (address) exceptionInfo->ContextRecord->Pc;
+#elif defined(_M_AMD64)
   address pc = (address) exceptionInfo->ContextRecord->Rip;
 #else
   address pc = (address) exceptionInfo->ContextRecord->Eip;
@@ -2398,9 +2386,8 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
   // This is safe to do because we have a new/unique ExceptionInformation
   // code for this condition.
   if (exception_code == EXCEPTION_ACCESS_VIOLATION) {
-    PEXCEPTION_RECORD exceptionRecord = exceptionInfo->ExceptionRecord;
-    int exception_subcode = (int) exceptionRecord->ExceptionInformation[0];
-    address addr = (address) exceptionRecord->ExceptionInformation[1];
+    int exception_subcode = (int) exception_record->ExceptionInformation[0];
+    address addr = (address) exception_record->ExceptionInformation[1];
 
     if (exception_subcode == EXCEPTION_INFO_EXEC_VIOLATION) {
       int page_size = os::vm_page_size();
@@ -2464,30 +2451,35 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
 
       // Last unguard failed or not unguarding
       tty->print_raw_cr("Execution protection violation");
-      report_error(t, exception_code, addr, exceptionInfo->ExceptionRecord,
+#if !defined(USE_VECTORED_EXCEPTION_HANDLING)
+      report_error(t, exception_code, addr, exception_record,
                    exceptionInfo->ContextRecord);
+#endif
       return EXCEPTION_CONTINUE_SEARCH;
     }
   }
 #endif // _WIN64
 
+#if defined(_M_AMD64) || defined(_M_IX86)
   if ((exception_code == EXCEPTION_ACCESS_VIOLATION) &&
       VM_Version::is_cpuinfo_segv_addr(pc)) {
     // Verify that OS save/restore AVX registers.
     return Handle_Exception(exceptionInfo, VM_Version::cpuinfo_cont_addr());
   }
+#endif
 
   if (t != NULL && t->is_Java_thread()) {
-    JavaThread* thread = (JavaThread*) t;
+    JavaThread* thread = t->as_Java_thread();
     bool in_java = thread->thread_state() == _thread_in_Java;
+    bool in_native = thread->thread_state() == _thread_in_native;
+    bool in_vm = thread->thread_state() == _thread_in_vm;
 
     // Handle potential stack overflows up front.
     if (exception_code == EXCEPTION_STACK_OVERFLOW) {
-      if (thread->stack_guards_enabled()) {
+      StackOverflow* overflow_state = thread->stack_overflow_state();
+      if (overflow_state->stack_guards_enabled()) {
         if (in_java) {
           frame fr;
-          PEXCEPTION_RECORD exceptionRecord = exceptionInfo->ExceptionRecord;
-          address addr = (address) exceptionRecord->ExceptionInformation[1];
           if (os::win32::get_frame_at_stack_banging_point(thread, exceptionInfo, pc, &fr)) {
             assert(fr.is_java_frame(), "Must be a Java frame");
             SharedRuntime::look_for_reserved_stack_annotated_method(thread, fr);
@@ -2496,25 +2488,26 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         // Yellow zone violation.  The o/s has unprotected the first yellow
         // zone page for us.  Note:  must call disable_stack_yellow_zone to
         // update the enabled status, even if the zone contains only one page.
-        assert(thread->thread_state() != _thread_in_vm, "Undersized StackShadowPages");
-        thread->disable_stack_yellow_reserved_zone();
+        assert(!in_vm, "Undersized StackShadowPages");
+        overflow_state->disable_stack_yellow_reserved_zone();
         // If not in java code, return and hope for the best.
         return in_java
             ? Handle_Exception(exceptionInfo, SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::STACK_OVERFLOW))
             :  EXCEPTION_CONTINUE_EXECUTION;
       } else {
         // Fatal red zone violation.
-        thread->disable_stack_red_zone();
+        overflow_state->disable_stack_red_zone();
         tty->print_raw_cr("An unrecoverable stack overflow has occurred.");
-        report_error(t, exception_code, pc, exceptionInfo->ExceptionRecord,
+#if !defined(USE_VECTORED_EXCEPTION_HANDLING)
+        report_error(t, exception_code, pc, exception_record,
                       exceptionInfo->ContextRecord);
+#endif
         return EXCEPTION_CONTINUE_SEARCH;
       }
     } else if (exception_code == EXCEPTION_ACCESS_VIOLATION) {
-      // Either stack overflow or null pointer exception.
       if (in_java) {
-        PEXCEPTION_RECORD exceptionRecord = exceptionInfo->ExceptionRecord;
-        address addr = (address) exceptionRecord->ExceptionInformation[1];
+        // Either stack overflow or null pointer exception.
+        address addr = (address) exception_record->ExceptionInformation[1];
         address stack_end = thread->stack_end();
         if (addr < stack_end && addr >= stack_end - os::vm_page_size()) {
           // Stack overflow.
@@ -2533,65 +2526,54 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
             return Handle_Exception(exceptionInfo, stub);
           }
         }
-        {
 #ifdef _WIN64
-          // If it's a legal stack address map the entire region in
-          //
-          PEXCEPTION_RECORD exceptionRecord = exceptionInfo->ExceptionRecord;
-          address addr = (address) exceptionRecord->ExceptionInformation[1];
-          if (thread->is_in_usable_stack(addr)) {
-            addr = (address)((uintptr_t)addr &
-                             (~((uintptr_t)os::vm_page_size() - (uintptr_t)1)));
-            os::commit_memory((char *)addr, thread->stack_base() - addr,
-                              !ExecMem);
-            return EXCEPTION_CONTINUE_EXECUTION;
-          } else
-#endif
-          {
-            // Null pointer exception.
-            if (MacroAssembler::uses_implicit_null_check((void*)addr)) {
-              address stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
-              if (stub != NULL) return Handle_Exception(exceptionInfo, stub);
-            }
-            report_error(t, exception_code, pc, exceptionInfo->ExceptionRecord,
-                         exceptionInfo->ContextRecord);
-            return EXCEPTION_CONTINUE_SEARCH;
-          }
+        // If it's a legal stack address map the entire region in
+        if (thread->is_in_usable_stack(addr)) {
+          addr = (address)((uintptr_t)addr &
+                            (~((uintptr_t)os::vm_page_size() - (uintptr_t)1)));
+          os::commit_memory((char *)addr, thread->stack_base() - addr,
+                            !ExecMem);
+          return EXCEPTION_CONTINUE_EXECUTION;
         }
+#endif
+        // Null pointer exception.
+        if (MacroAssembler::uses_implicit_null_check((void*)addr)) {
+          address stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
+          if (stub != NULL) return Handle_Exception(exceptionInfo, stub);
+        }
+        report_error(t, exception_code, pc, exception_record,
+                      exceptionInfo->ContextRecord);
+        return EXCEPTION_CONTINUE_SEARCH;
       }
 
 #ifdef _WIN64
       // Special care for fast JNI field accessors.
       // jni_fast_Get<Primitive>Field can trap at certain pc's if a GC kicks
       // in and the heap gets shrunk before the field access.
-      if (exception_code == EXCEPTION_ACCESS_VIOLATION) {
-        address addr = JNI_FastGetField::find_slowcase_pc(pc);
-        if (addr != (address)-1) {
-          return Handle_Exception(exceptionInfo, addr);
-        }
+      address slowcase_pc = JNI_FastGetField::find_slowcase_pc(pc);
+      if (slowcase_pc != (address)-1) {
+        return Handle_Exception(exceptionInfo, slowcase_pc);
       }
 #endif
 
       // Stack overflow or null pointer exception in native code.
-      report_error(t, exception_code, pc, exceptionInfo->ExceptionRecord,
+#if !defined(USE_VECTORED_EXCEPTION_HANDLING)
+      report_error(t, exception_code, pc, exception_record,
                    exceptionInfo->ContextRecord);
+#endif
       return EXCEPTION_CONTINUE_SEARCH;
     } // /EXCEPTION_ACCESS_VIOLATION
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     if (exception_code == EXCEPTION_IN_PAGE_ERROR) {
       CompiledMethod* nm = NULL;
-      JavaThread* thread = (JavaThread*)t;
       if (in_java) {
         CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
         nm = (cb != NULL) ? cb->as_compiled_method_or_null() : NULL;
       }
 
-      bool is_unsafe_arraycopy = (thread->thread_state() == _thread_in_native || in_java) && UnsafeCopyMemory::contains_pc(pc);
-      if (((thread->thread_state() == _thread_in_vm ||
-           thread->thread_state() == _thread_in_native ||
-           is_unsafe_arraycopy) &&
-          thread->doing_unsafe_access()) ||
+      bool is_unsafe_arraycopy = (in_native || in_java) && UnsafeCopyMemory::contains_pc(pc);
+      if (((in_vm || in_native || is_unsafe_arraycopy) && thread->doing_unsafe_access()) ||
           (nm != NULL && nm->has_unsafe_access())) {
         address next_pc =  Assembler::locate_next_instruction(pc);
         if (is_unsafe_arraycopy) {
@@ -2600,6 +2582,19 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         return Handle_Exception(exceptionInfo, SharedRuntime::handle_unsafe_access(thread, next_pc));
       }
     }
+
+#ifdef _M_ARM64
+    if (in_java &&
+        (exception_code == EXCEPTION_ILLEGAL_INSTRUCTION ||
+          exception_code == EXCEPTION_ILLEGAL_INSTRUCTION_2)) {
+      if (nativeInstruction_at(pc)->is_sigill_zombie_not_entrant()) {
+        if (TraceTraps) {
+          tty->print_cr("trap: zombie_not_entrant");
+        }
+        return Handle_Exception(exceptionInfo, SharedRuntime::get_handle_wrong_method_stub());
+      }
+    }
+#endif
 
     if (in_java) {
       switch (exception_code) {
@@ -2611,20 +2606,74 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
 
       } // switch
     }
-    if (((thread->thread_state() == _thread_in_Java) ||
-         (thread->thread_state() == _thread_in_native)) &&
-         exception_code != EXCEPTION_UNCAUGHT_CXX_EXCEPTION) {
+
+#if defined(_M_AMD64) || defined(_M_IX86)
+    if ((in_java || in_native) && exception_code != EXCEPTION_UNCAUGHT_CXX_EXCEPTION) {
       LONG result=Handle_FLT_Exception(exceptionInfo);
       if (result==EXCEPTION_CONTINUE_EXECUTION) return result;
     }
+#endif
   }
+
+#if !defined(USE_VECTORED_EXCEPTION_HANDLING)
+  if (exception_code != EXCEPTION_BREAKPOINT) {
+    report_error(t, exception_code, pc, exception_record,
+                 exceptionInfo->ContextRecord);
+  }
+#endif
+  return EXCEPTION_CONTINUE_SEARCH;
+}
+
+#if defined(USE_VECTORED_EXCEPTION_HANDLING) || INCLUDE_AOT
+LONG WINAPI topLevelVectoredExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
+  PEXCEPTION_RECORD exceptionRecord = exceptionInfo->ExceptionRecord;
+#if defined(_M_ARM64)
+  address pc = (address) exceptionInfo->ContextRecord->Pc;
+#elif defined(_M_AMD64)
+  address pc = (address) exceptionInfo->ContextRecord->Rip;
+#else
+  address pc = (address) exceptionInfo->ContextRecord->Eip;
+#endif
+
+  // Fast path for code part of the code cache
+  if (CodeCache::low_bound() <= pc && pc < CodeCache::high_bound()) {
+    return topLevelExceptionFilter(exceptionInfo);
+  }
+
+  // Handle the case where we get an implicit exception in AOT generated
+  // code.  AOT DLL's loaded are not registered for structured exceptions.
+  // If the exception occurred in the codeCache or AOT code, pass control
+  // to our normal exception handler.
+  CodeBlob* cb = CodeCache::find_blob(pc);
+  if (cb != NULL) {
+    return topLevelExceptionFilter(exceptionInfo);
+  }
+
+  return EXCEPTION_CONTINUE_SEARCH;
+}
+#endif
+
+#if defined(USE_VECTORED_EXCEPTION_HANDLING)
+LONG WINAPI topLevelUnhandledExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
+  if (InterceptOSException) goto exit;
+  DWORD exception_code = exceptionInfo->ExceptionRecord->ExceptionCode;
+#if defined(_M_ARM64)
+  address pc = (address)exceptionInfo->ContextRecord->Pc;
+#elif defined(_M_AMD64)
+  address pc = (address) exceptionInfo->ContextRecord->Rip;
+#else
+  address pc = (address) exceptionInfo->ContextRecord->Eip;
+#endif
+  Thread* t = Thread::current_or_null_safe();
 
   if (exception_code != EXCEPTION_BREAKPOINT) {
     report_error(t, exception_code, pc, exceptionInfo->ExceptionRecord,
-                 exceptionInfo->ContextRecord);
+                exceptionInfo->ContextRecord);
   }
-  return EXCEPTION_CONTINUE_SEARCH;
+exit:
+  return previousUnhandledExceptionFilter ? previousUnhandledExceptionFilter(exceptionInfo) : EXCEPTION_CONTINUE_SEARCH;
 }
+#endif
 
 #ifndef _WIN64
 // Special care for fast JNI accessors.
@@ -2711,122 +2760,6 @@ int os::vm_allocation_granularity() {
 #ifndef MEM_LARGE_PAGES
   #define MEM_LARGE_PAGES 0x20000000
 #endif
-
-#define VirtualFreeChecked(mem, size, type)                       \
-  do {                                                            \
-    bool ret = VirtualFree(mem, size, type);                      \
-    assert(ret, "Failed to free memory: " PTR_FORMAT, p2i(mem));  \
-  } while (false)
-
-// The number of bytes is setup to match 1 pixel and 32 bits per pixel.
-static const int gdi_tiny_bitmap_width_bytes = 4;
-
-static HBITMAP gdi_create_tiny_bitmap(void* mem) {
-  // The documentation for CreateBitmap states a word-alignment requirement.
-  STATIC_ASSERT(is_aligned_(gdi_tiny_bitmap_width_bytes, sizeof(WORD)));
-
-  // Some callers use this function to test if memory crossing separate memory
-  // reservations can be used. Create a height of 2 to make sure that one pixel
-  // ends up in the first reservation and the other in the second.
-  int nHeight = 2;
-
-  assert(is_aligned(mem, gdi_tiny_bitmap_width_bytes), "Incorrect alignment");
-
-  // Width is one pixel and correlates with gdi_tiny_bitmap_width_bytes.
-  int nWidth = 1;
-
-  // Calculate bit count - will be 32.
-  UINT nBitCount = gdi_tiny_bitmap_width_bytes / nWidth * BitsPerByte;
-
-  return CreateBitmap(
-      nWidth,
-      nHeight,
-      1,         // nPlanes
-      nBitCount,
-      mem);      // lpBits
-}
-
-// It has been found that some of the GDI functions fail under these two situations:
-//  1) When used with large pages
-//  2) When mem crosses the boundary between two separate memory reservations.
-//
-// This is a small test used to see if the current GDI implementation is
-// susceptible to any of these problems.
-static bool gdi_can_use_memory(void* mem) {
-  HBITMAP bitmap = gdi_create_tiny_bitmap(mem);
-  if (bitmap != NULL) {
-    DeleteObject(bitmap);
-    return true;
-  }
-
-  // Verify that the bitmap could be created with a normal page.
-  // If this fails, the testing method above isn't reliable.
-#ifdef ASSERT
-  void* verify_mem = ::malloc(4 * 1024);
-  HBITMAP verify_bitmap = gdi_create_tiny_bitmap(verify_mem);
-  if (verify_bitmap == NULL) {
-    fatal("Couldn't create test bitmap with malloced memory");
-  } else {
-    DeleteObject(verify_bitmap);
-  }
-  ::free(verify_mem);
-#endif
-
-  return false;
-}
-
-// Test if GDI functions work when memory spans
-// two adjacent memory reservations.
-static bool gdi_can_use_split_reservation_memory(bool use_large_pages, size_t granule) {
-  DWORD mem_large_pages = use_large_pages ? MEM_LARGE_PAGES : 0;
-
-  // Find virtual memory range. Two granules for regions and one for alignment.
-  void* reserved = VirtualAlloc(NULL,
-                                granule * 3,
-                                MEM_RESERVE,
-                                PAGE_NOACCESS);
-  if (reserved == NULL) {
-    // Can't proceed with test - pessimistically report false
-    return false;
-  }
-  VirtualFreeChecked(reserved, 0, MEM_RELEASE);
-
-  // Ensure proper alignment
-  void* res0 = align_up(reserved, granule);
-  void* res1 = (char*)res0 + granule;
-
-  // Reserve and commit the first part
-  void* mem0 = VirtualAlloc(res0,
-                            granule,
-                            MEM_RESERVE|MEM_COMMIT|mem_large_pages,
-                            PAGE_READWRITE);
-  if (mem0 != res0) {
-    // Can't proceed with test - pessimistically report false
-    return false;
-  }
-
-  // Reserve and commit the second part
-  void* mem1 = VirtualAlloc(res1,
-                            granule,
-                            MEM_RESERVE|MEM_COMMIT|mem_large_pages,
-                            PAGE_READWRITE);
-  if (mem1 != res1) {
-    VirtualFreeChecked(mem0, 0, MEM_RELEASE);
-    // Can't proceed with test - pessimistically report false
-    return false;
-  }
-
-  // Set the bitmap's bits to point one "width" bytes before, so that
-  // the bitmap extends across the reservation boundary.
-  void* bitmapBits = (char*)mem1 - gdi_tiny_bitmap_width_bytes;
-
-  bool success = gdi_can_use_memory(bitmapBits);
-
-  VirtualFreeChecked(mem1, 0, MEM_RELEASE);
-  VirtualFreeChecked(mem0, 0, MEM_RELEASE);
-
-  return success;
-}
 
 // Container for NUMA node list info
 class NUMANodeListHolder {
@@ -2926,12 +2859,6 @@ static bool numa_interleaving_init() {
 
   if (!numa_node_list_holder.build()) {
     WARN("Process does not cover multiple NUMA nodes.");
-    WARN("...Ignoring UseNUMAInterleaving flag.");
-    return false;
-  }
-
-  if (!gdi_can_use_split_reservation_memory(UseLargePages, min_interleave_granularity)) {
-    WARN("Windows GDI cannot handle split reservations.");
     WARN("...Ignoring UseNUMAInterleaving flag.");
     return false;
   }
@@ -3096,25 +3023,6 @@ static size_t large_page_init_decide_size() {
     size = LargePageSizeInBytes;
   }
 
-  // Now test allocating a page
-  void* large_page = VirtualAlloc(NULL,
-                                  size,
-                                  MEM_RESERVE|MEM_COMMIT|MEM_LARGE_PAGES,
-                                  PAGE_READWRITE);
-  if (large_page == NULL) {
-    WARN("JVM cannot allocate one single large page.");
-    return 0;
-  }
-
-  // Detect if GDI can use memory backed by large pages
-  if (!gdi_can_use_memory(large_page)) {
-    WARN("JVM cannot use large pages because of bug in Windows GDI.");
-    return 0;
-  }
-
-  // Release test page
-  VirtualFreeChecked(large_page, 0, MEM_RELEASE);
-
 #undef WARN
 
   return size;
@@ -3135,16 +3043,6 @@ void os::large_page_init() {
   }
 
   UseLargePages = _large_page_size != 0;
-
-  if (UseLargePages && UseLargePagesIndividualAllocation) {
-    if (!gdi_can_use_split_reservation_memory(true /* use_large_pages */, _large_page_size)) {
-      if (FLAG_IS_CMDLINE(UseLargePagesIndividualAllocation)) {
-        warning("Windows GDI cannot handle split reservations.");
-        warning("...Ignoring UseLargePagesIndividualAllocation flag.");
-      }
-      UseLargePagesIndividualAllocation = false;
-    }
-  }
 }
 
 int os::create_file_for_heap(const char* dir) {
@@ -3230,8 +3128,8 @@ void os::split_reserved_memory(char *base, size_t size, size_t split) {
   assert(is_aligned(split_address, os::vm_allocation_granularity()), "Sanity");
 
   release_memory(base, size);
-  reserve_memory(split, base);
-  reserve_memory(size - split, split_address);
+  attempt_reserve_memory_at(base, split);
+  attempt_reserve_memory_at(split_address, size - split);
 
   // NMT: nothing to do here. Since Windows implements the split by
   //  releasing and re-reserving memory, the parts are already registered
@@ -3242,7 +3140,7 @@ void os::split_reserved_memory(char *base, size_t size, size_t split) {
 // Multiple threads can race in this code but it's not possible to unmap small sections of
 // virtual space to get requested alignment, like posix-like os's.
 // Windows prevents multiple thread from remapping over each other so this loop is thread-safe.
-char* os::reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
+static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
   assert((alignment & (os::vm_allocation_granularity() - 1)) == 0,
          "Alignment must be a multiple of allocation granularity (page size)");
   assert((size & (alignment -1)) == 0, "size must be 'alignment' aligned");
@@ -3253,7 +3151,9 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
   char* aligned_base = NULL;
 
   do {
-    char* extra_base = os::reserve_memory(extra_size, NULL, alignment, file_desc);
+    char* extra_base = file_desc != -1 ?
+      os::map_memory_to_file(extra_size, file_desc) :
+      os::reserve_memory(extra_size);
     if (extra_base == NULL) {
       return NULL;
     }
@@ -3266,14 +3166,30 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
       os::release_memory(extra_base, extra_size);
     }
 
-    aligned_base = os::reserve_memory(size, aligned_base, 0, file_desc);
+    aligned_base = file_desc != -1 ?
+      os::attempt_map_memory_to_file_at(aligned_base, size, file_desc) :
+      os::attempt_reserve_memory_at(aligned_base, size);
 
   } while (aligned_base == NULL);
 
   return aligned_base;
 }
 
-char* os::pd_reserve_memory(size_t bytes, char* addr, size_t alignment_hint) {
+char* os::reserve_memory_aligned(size_t size, size_t alignment) {
+  return map_or_reserve_memory_aligned(size, alignment, -1 /* file_desc */);
+}
+
+char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int fd) {
+  return map_or_reserve_memory_aligned(size, alignment, fd);
+}
+
+char* os::pd_reserve_memory(size_t bytes) {
+  return pd_attempt_reserve_memory_at(NULL /* addr */, bytes);
+}
+
+// Reserve memory at an arbitrary address, only if that area is
+// available (and not reserved for something else).
+char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes) {
   assert((size_t)addr % os::vm_allocation_granularity() == 0,
          "reserve alignment");
   assert(bytes % os::vm_page_size() == 0, "reserve page size");
@@ -3304,15 +3220,7 @@ char* os::pd_reserve_memory(size_t bytes, char* addr, size_t alignment_hint) {
   return res;
 }
 
-// Reserve memory at an arbitrary address, only if that area is
-// available (and not reserved for something else).
-char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
-  // Windows os::reserve_memory() fails of the requested address range is
-  // not avilable.
-  return reserve_memory(bytes, requested_addr);
-}
-
-char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr, int file_desc) {
+char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, int file_desc) {
   assert(file_desc >= 0, "file_desc is not valid");
   return map_memory_to_file(requested_addr, bytes, file_desc);
 }
@@ -3624,7 +3532,12 @@ char* os::non_memory_address_word() {
   // Must never look like an address returned by reserve_memory,
   // even in its subfields (as defined by the CPU immediate fields,
   // if the CPU splits constants across multiple instructions).
+#ifdef _M_ARM64
+  // AArch64 has a maximum addressable space of 48-bits
+  return (char*)((1ull << 48) - 1);
+#else
   return (char*)-1;
+#endif
 }
 
 #define MAX_ERROR_COUNT 100
@@ -4148,7 +4061,10 @@ jint os::init_2(void) {
 
   // Setup Windows Exceptions
 
-#if INCLUDE_AOT
+#if defined(USE_VECTORED_EXCEPTION_HANDLING)
+  topLevelVectoredExceptionHandler = AddVectoredExceptionHandler(1, topLevelVectoredExceptionFilter);
+  previousUnhandledExceptionFilter = SetUnhandledExceptionFilter(topLevelUnhandledExceptionFilter);
+#elif INCLUDE_AOT
   // If AOT is enabled we need to install a vectored exception handler
   // in order to forward implicit exceptions from code in AOT
   // generated DLLs.  This is necessary since these DLLs are not
@@ -4191,8 +4107,8 @@ jint os::init_2(void) {
   // Add in 4*BytesPerWord 4K pages to account for VM stack during
   // class initialization depending on 32 or 64 bit VM.
   size_t min_stack_allowed =
-            (size_t)(JavaThread::stack_guard_zone_size() +
-                     JavaThread::stack_shadow_zone_size() +
+            (size_t)(StackOverflow::stack_guard_zone_size() +
+                     StackOverflow::stack_shadow_zone_size() +
                      (4*BytesPerWord COMPILER2_PRESENT(+2)) * 4 * K);
 
   min_stack_allowed = align_up(min_stack_allowed, os::vm_page_size());
@@ -4247,9 +4163,7 @@ jint os::init_2(void) {
   // initialize thread priority policy
   prio_init();
 
-  if (UseNUMA && !ForceNUMA) {
-    UseNUMA = false; // We don't fully support this yet
-  }
+  UseNUMA = false; // We don't fully support this yet
 
   if (UseNUMAInterleaving || (UseNUMA && FLAG_IS_DEFAULT(UseNUMAInterleaving))) {
     if (!numa_interleaving_init()) {
@@ -4996,15 +4910,25 @@ static int stdinAvailable(int fd, long *pbytes) {
 char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
                         char *addr, size_t bytes, bool read_only,
                         bool allow_exec) {
+
+  errno_t err;
+  wchar_t* wide_path = wide_abs_unc_path(file_name, err);
+
+  if (wide_path == NULL) {
+    return NULL;
+  }
+
   HANDLE hFile;
   char* base;
 
-  hFile = CreateFile(file_name, GENERIC_READ, FILE_SHARE_READ, NULL,
+  hFile = CreateFileW(wide_path, GENERIC_READ, FILE_SHARE_READ, NULL,
                      OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-  if (hFile == NULL) {
-    log_info(os)("CreateFile() failed: GetLastError->%ld.", GetLastError());
+  if (hFile == INVALID_HANDLE_VALUE) {
+    log_info(os)("CreateFileW() failed: GetLastError->%ld.", GetLastError());
+    os::free(wide_path);
     return NULL;
   }
+  os::free(wide_path);
 
   if (allow_exec) {
     // CreateFileMapping/MapViewOfFileEx can't map executable memory
@@ -5158,9 +5082,10 @@ void os::pause() {
 
 Thread* os::ThreadCrashProtection::_protected_thread = NULL;
 os::ThreadCrashProtection* os::ThreadCrashProtection::_crash_protection = NULL;
-volatile intptr_t os::ThreadCrashProtection::_crash_mux = 0;
 
 os::ThreadCrashProtection::ThreadCrashProtection() {
+  _protected_thread = Thread::current();
+  assert(_protected_thread->is_JfrSampler_thread(), "should be JFRSampler");
 }
 
 // See the caveats for this class in os_windows.hpp
@@ -5170,12 +5095,6 @@ os::ThreadCrashProtection::ThreadCrashProtection() {
 // The callback is supposed to provide the method that should be protected.
 //
 bool os::ThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
-
-  Thread::muxAcquire(&_crash_mux, "CrashProtection");
-
-  _protected_thread = Thread::current_or_null();
-  assert(_protected_thread != NULL, "Cannot crash protect a NULL thread");
-
   bool success = true;
   __try {
     _crash_protection = this;
@@ -5186,7 +5105,6 @@ bool os::ThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
   }
   _crash_protection = NULL;
   _protected_thread = NULL;
-  Thread::muxRelease(&_crash_mux);
   return success;
 }
 
@@ -5607,7 +5525,7 @@ int os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
 // WINDOWS CONTEXT Flags for THREAD_SAMPLING
 #if defined(IA32)
   #define sampling_context_flags (CONTEXT_FULL | CONTEXT_FLOATING_POINT | CONTEXT_EXTENDED_REGISTERS)
-#elif defined (AMD64)
+#elif defined(AMD64) || defined(_M_ARM64)
   #define sampling_context_flags (CONTEXT_FULL | CONTEXT_FLOATING_POINT)
 #endif
 

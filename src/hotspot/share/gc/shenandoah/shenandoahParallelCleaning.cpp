@@ -34,7 +34,7 @@
 ShenandoahClassUnloadingTask::ShenandoahClassUnloadingTask(BoolObjectClosure* is_alive,
                                                            uint num_workers,
                                                            bool unloading_occurred) :
-  AbstractGangTask("Parallel Class Unloading Task"),
+  AbstractGangTask("Shenandoah Class Unloading"),
   _unloading_occurred(unloading_occurred),
   _code_cache_task(num_workers, is_alive, unloading_occurred),
   _klass_cleaning_task() {

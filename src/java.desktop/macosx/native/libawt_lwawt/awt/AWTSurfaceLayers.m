@@ -108,7 +108,7 @@ JNF_COCOA_ENTER(env);
         CALayer *windowLayer = jlong_to_ptr(windowLayerPtr);
         surfaceLayers = [[AWTSurfaceLayers alloc] initWithWindowLayer: windowLayer];
     }];
-    
+
 JNF_COCOA_EXIT(env);
 
   return ptr_to_jlong(surfaceLayers);
@@ -125,7 +125,7 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformComponent_nativeSetBounds
 JNF_COCOA_ENTER(env);
 
   AWTSurfaceLayers *surfaceLayers = OBJC(surfaceLayersPtr);
-    
+
   [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
 
       CGRect rect = CGRectMake(x, y, width, height);

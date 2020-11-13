@@ -168,7 +168,7 @@ import sun.awt.AWTAccessor;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans&trade;
+ * of all JavaBeans
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -233,6 +233,11 @@ public class UIManager implements Serializable
     /* Lock object used in place of class object for synchronization. (4187686)
      */
     private static final Object classLock = new Object();
+
+    /**
+     * Constructs a {@code UIManager}.
+     */
+    public UIManager() {}
 
     /**
      * Return the <code>LAFState</code> object, lazily create one if necessary.

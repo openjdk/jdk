@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,9 @@ public interface StartDocument extends XMLEvent {
   public String getCharacterEncodingScheme();
 
   /**
-   * Returns true if CharacterEncodingScheme was set in
+   * Returns true if CharacterEncodingScheme is set in
    * the encoding declaration of the document
+   * @return true if {@code CharacterEncodingScheme} is set, false otherwise
    */
   public boolean encodingSet();
 
@@ -58,8 +59,9 @@ public interface StartDocument extends XMLEvent {
   public boolean isStandalone();
 
   /**
-   * Returns true if the standalone attribute was set in
+   * Returns true if the standalone attribute is set in
    * the encoding declaration of the document.
+   * @return true if the standalone attribute is set, false otherwise
    */
   public boolean standaloneSet();
 

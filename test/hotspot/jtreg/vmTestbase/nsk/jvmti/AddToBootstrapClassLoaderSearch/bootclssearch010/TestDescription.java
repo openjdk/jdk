@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jvmti.AddToBootstrapClassLoaderSearch.bootclssearch002p
  *
  * @comment compile ../bootclssearch002/loadclassXX to bin/loadclassXX
@@ -94,16 +93,16 @@
  *      ../bootclssearch002/newclass
  *
  * @comment create bootclssearch002.jar in current directory
- * @build ExecDriver
- * @run driver PropertyResolvingWrapper ExecDriver --cmd
+ * @run driver ExecDriver --cmd
  *      ${compile.jdk}/bin/jar
  *      -cf bootclssearch002.jar
  *      -C ./bin/newclass/
  *      nsk/jvmti/AddToBootstrapClassLoaderSearch/bootclssearch002.class
  *
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
+ * @comment ExecDriver is used b/c main class isn't on source/class path
+ * @run main/othervm/native ExecDriver --java
  *      -Xbootclasspath/a:./bin/loadclass
- *      "-agentlib:bootclssearch_agent=-waittime=5 phasetocheck=live segment1=./bootclssearch002.jar"
+ *      -agentlib:bootclssearch_agent=-waittime=5,phasetocheck=live,segment1=./bootclssearch002.jar
  *      nsk.jvmti.AddToBootstrapClassLoaderSearch.bootclssearch002
  */
 

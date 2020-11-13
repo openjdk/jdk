@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "ci/ciUtilities.hpp"
+#include "classfile/javaClasses.hpp"
 #include "compiler/compileLog.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
@@ -162,7 +163,7 @@ void GraphKit::verify_exception_state(SafePointNode* ex_map) {
 void GraphKit::stop_and_kill_map() {
   SafePointNode* dead_map = stop();
   if (dead_map != NULL) {
-    dead_map->disconnect_inputs(NULL, C); // Mark the map as killed.
+    dead_map->disconnect_inputs(C); // Mark the map as killed.
     assert(dead_map->is_killed(), "must be so marked");
   }
 }
@@ -1613,7 +1614,7 @@ Node* GraphKit::access_load(Node* adr,   // actual adress to load val at
     return top(); // Dead path ?
   }
 
-  C2AccessValuePtr addr(adr, NULL);
+  C2AccessValuePtr addr(adr, adr->bottom_type()->is_ptr());
   C2ParseAccess access(this, decorators | C2_READ_ACCESS, bt, NULL, addr);
   if (access.is_raw()) {
     return _barrier_set->BarrierSetC2::load_at(access, val_type);
@@ -1959,7 +1960,7 @@ void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes
   }
 
   // Disconnect the call from the graph
-  call->disconnect_inputs(NULL, C);
+  call->disconnect_inputs(C);
   C->gvn_replace_by(call, C->top());
 
   // Clean up any MergeMems that feed other MergeMems since the

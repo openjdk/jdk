@@ -63,7 +63,7 @@ public class TestRemsetLoggingTools {
             "-Xms20m",
             "-Xmx20m",
             "-XX:ParallelGCThreads=1",
-            "-XX:InitiatingHeapOccupancyPercent=100", // we don't want the additional GCs due to initial marking
+            "-XX:InitiatingHeapOccupancyPercent=100", // we don't want the additional GCs due to marking
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:G1HeapRegionSize=1M",
         };

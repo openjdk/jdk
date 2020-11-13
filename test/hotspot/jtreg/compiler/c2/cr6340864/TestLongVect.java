@@ -30,6 +30,7 @@
  * @run main/othervm/timeout=400 -Xbatch -Xmx128m -XX:MaxVectorSize=8 compiler.c2.cr6340864.TestLongVect
  * @run main/othervm/timeout=400 -Xbatch -Xmx128m -XX:MaxVectorSize=16 compiler.c2.cr6340864.TestLongVect
  * @run main/othervm/timeout=400 -Xbatch -Xmx128m -XX:MaxVectorSize=32 compiler.c2.cr6340864.TestLongVect
+ * @run main/othervm/timeout=400 -Xbatch -Xmx128m -XX:+IgnoreUnrecognizedVMOptions -XX:UseAVX=3 compiler.c2.cr6340864.TestLongVect
  */
 
 package compiler.c2.cr6340864;

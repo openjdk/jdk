@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
  * @run main/othervm/timeout=400 -Xbatch -Xmx128m -XX:MaxVectorSize=8 compiler.c2.cr6340864.TestIntVect
  * @run main/othervm/timeout=400 -Xbatch -Xmx128m -XX:MaxVectorSize=16 compiler.c2.cr6340864.TestIntVect
  * @run main/othervm/timeout=400 -Xbatch -Xmx128m -XX:MaxVectorSize=32 compiler.c2.cr6340864.TestIntVect
+ * @run main/othervm/timeout=400 -Xbatch -Xmx128m -XX:+IgnoreUnrecognizedVMOptions -XX:UseAVX=3 compiler.c2.cr6340864.TestIntVect
  */
 
 package compiler.c2.cr6340864;
@@ -902,6 +903,7 @@ public class TestIntVect {
     }
     end = System.currentTimeMillis();
     System.out.println("test_srlc_and: " + (end - start));
+
     start = System.currentTimeMillis();
     for (int i=0; i<ITERS; i++) {
       test_srlv_and(a0, a1, BIT_MASK);

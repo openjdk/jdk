@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2014 Google Inc. All rights reserved.
+ * Copyright (c) 2014, Google Inc. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +24,11 @@
 
 /*
  * @test
- * @ignore This test has huge memory requirements
- * @run main/timeout=1800/othervm -Xmx8g MaxCapacity
  * @bug 8055949
  * @summary Check that we can write (almost) Integer.MAX_VALUE bytes
  *          to a ByteArrayOutputStream.
+ * @requires (sun.arch.data.model == "64" & os.maxMemory >= 10g)
+ * @run main/timeout=1800/othervm -Xmx8g MaxCapacity
  * @author Martin Buchholz
  */
 import java.io.ByteArrayOutputStream;

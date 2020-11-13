@@ -27,12 +27,10 @@
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLiveMap.inline.hpp"
-#include "gc/z/zMark.hpp"
 #include "gc/z/zNUMA.hpp"
 #include "gc/z/zPage.hpp"
 #include "gc/z/zPhysicalMemory.inline.hpp"
 #include "gc/z/zVirtualMemory.inline.hpp"
-#include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
@@ -159,7 +157,7 @@ inline uint64_t ZPage::last_used() const {
 }
 
 inline void ZPage::set_last_used() {
-  _last_used = os::elapsedTime();
+  _last_used = ceil(os::elapsedTime());
 }
 
 inline bool ZPage::is_in(uintptr_t addr) const {

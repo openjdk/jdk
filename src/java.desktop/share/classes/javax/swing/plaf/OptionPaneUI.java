@@ -36,6 +36,11 @@ import javax.swing.JOptionPane;
 public abstract class OptionPaneUI extends ComponentUI
 {
     /**
+     * Constructor for subclasses to call.
+     */
+    protected OptionPaneUI() {}
+
+    /**
      * Requests the component representing the default value to have
      * focus.
      *

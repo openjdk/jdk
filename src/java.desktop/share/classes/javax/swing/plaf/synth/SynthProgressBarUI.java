@@ -53,6 +53,12 @@ public class SynthProgressBarUI extends BasicProgressBarUI
     private int glowWidth; // Glow around the bar foreground
 
     /**
+     *
+     * Constructs a {@code SynthProgressBarUI}.
+     */
+    public SynthProgressBarUI() {}
+
+    /**
      * Creates a new UI object for the given component.
      *
      * @param x component to create UI object for

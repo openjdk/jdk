@@ -242,6 +242,11 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     private static final int SIGNAL   = 1 << 16; // true if joiner waiting
     private static final int SMASK    = 0xffff;  // short bits for tags
 
+    /**
+     * Constructor for subclasses to call.
+     */
+    public ForkJoinTask() {}
+
     static boolean isExceptionalStatus(int s) {  // needed by subclasses
         return (s & THROWN) != 0;
     }

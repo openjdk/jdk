@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2013 Marti Maria Saguer
+//  Copyright (c) 1998-2020 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -329,7 +329,8 @@ cmsToneCurve* AllocateToneCurveStruct(cmsContext ContextID, cmsUInt32Number nEnt
         return p;
 
 Error:
-    if (p -> Segments) _cmsFree(ContextID, p ->Segments);
+    if (p -> SegInterp) _cmsFree(ContextID, p -> SegInterp);
+    if (p -> Segments) _cmsFree(ContextID, p -> Segments);
     if (p -> Evals) _cmsFree(ContextID, p -> Evals);
     if (p ->Table16) _cmsFree(ContextID, p ->Table16);
     _cmsFree(ContextID, p);
@@ -846,7 +847,7 @@ cmsToneCurve* CMSEXPORT cmsBuildTabulatedToneCurveFloat(cmsContext ContextID, cm
 //
 // Parameters goes as: Curve, a, b, c, d, e, f
 // Type is the ICC type +1
-// if type is negative, then the curve is analyticaly inverted
+// if type is negative, then the curve is analytically inverted
 cmsToneCurve* CMSEXPORT cmsBuildParametricToneCurve(cmsContext ContextID, cmsInt32Number Type, const cmsFloat64Number Params[])
 {
     cmsCurveSegment Seg0;
@@ -917,7 +918,7 @@ void CMSEXPORT cmsFreeToneCurve(cmsToneCurve* Curve)
     if (Curve -> Evals)
         _cmsFree(ContextID, Curve -> Evals);
 
-    if (Curve) _cmsFree(ContextID, Curve);
+    _cmsFree(ContextID, Curve);
 }
 
 // Utility function, free 3 gamma tables
@@ -1287,7 +1288,7 @@ cmsBool  CMSEXPORT cmsSmoothToneCurve(cmsToneCurve* Tab, cmsFloat64Number lambda
 }
 
 // Is a table linear? Do not use parametric since we cannot guarantee some weird parameters resulting
-// in a linear table. This way assures it is linear in 12 bits, which should be enought in most cases.
+// in a linear table. This way assures it is linear in 12 bits, which should be enough in most cases.
 cmsBool CMSEXPORT cmsIsToneCurveLinear(const cmsToneCurve* Curve)
 {
     int i;
@@ -1459,4 +1460,15 @@ cmsFloat64Number CMSEXPORT cmsEstimateGamma(const cmsToneCurve* t, cmsFloat64Num
         return -1.0;
 
     return (sum / n);   // The mean
+}
+
+
+// Retrieve parameters on one-segment tone curves
+
+cmsFloat64Number* CMSEXPORT cmsGetToneCurveParams(const cmsToneCurve* t)
+{
+    _cmsAssert(t != NULL);
+
+    if (t->nSegments != 1) return NULL;
+    return t->Segments[0].Params;
 }

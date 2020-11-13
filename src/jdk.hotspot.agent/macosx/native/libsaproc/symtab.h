@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 struct symtab;
 
 // build symbol table for a given ELF or MachO file escriptor
-struct symtab* build_symtab(int fd);
+struct symtab* build_symtab(int fd, size_t *p_max_offset);
 
 // destroy the symbol table
 void destroy_symtab(struct symtab* symtab);

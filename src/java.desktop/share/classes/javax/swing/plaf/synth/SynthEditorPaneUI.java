@@ -50,6 +50,12 @@ public class SynthEditorPaneUI extends BasicEditorPaneUI implements SynthUI {
     private boolean updateKBAction = true;
 
     /**
+     *
+     * Constructs a {@code SynthEditorPaneUI}.
+     */
+    public SynthEditorPaneUI() {}
+
+    /**
      * Creates a new UI object for the given component.
      *
      * @param c component to create UI object for

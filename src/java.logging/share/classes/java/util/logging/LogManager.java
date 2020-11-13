@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1184,7 +1184,7 @@ public class LogManager {
      * @param   logger the new logger.
      * @return  true if the argument logger was registered successfully,
      *          false if a logger of that name already exists.
-     * @exception NullPointerException if the logger name is null.
+     * @throws NullPointerException if the logger name is null.
      */
     public boolean addLogger(Logger logger) {
         final String name = logger.getName();
@@ -1920,7 +1920,7 @@ public class LogManager {
      * </thead>
      * <tbody>
      * <tr>
-     * <th scope="row" valign="top">{@code <logger>.level}</th>
+     * <th scope="row" style="vertical-align:top">{@code <logger>.level}</th>
      * <td>
      * <ul>
      *   <li>If the resulting configuration defines a level for a logger and
@@ -1941,7 +1941,7 @@ public class LogManager {
      * </ul>
      * </td>
      * <tr>
-     * <th scope="row" valign="top">{@code <logger>.useParentHandlers}</th>
+     * <th scope="row" style="vertical-align:top">{@code <logger>.useParentHandlers}</th>
      * <td>
      * <ul>
      *   <li>If either the resulting or the old value for the useParentHandlers
@@ -1955,7 +1955,7 @@ public class LogManager {
      * </td>
      * </tr>
      * <tr>
-     * <th scope="row" valign="top">{@code <logger>.handlers}</th>
+     * <th scope="row" style="vertical-align:top">{@code <logger>.handlers}</th>
      * <td>
      * <ul>
      *   <li>If the resulting configuration defines a list of handlers for a
@@ -1979,7 +1979,7 @@ public class LogManager {
      * </td>
      * </tr>
      * <tr>
-     * <th scope="row" valign="top">{@code <handler-name>.*}</th>
+     * <th scope="row" style="vertical-align:top">{@code <handler-name>.*}</th>
      * <td>
      * <ul>
      *   <li>Properties configured/changed on handler classes will only affect
@@ -1991,7 +1991,7 @@ public class LogManager {
      * </td>
      * </tr>
      * <tr>
-     * <th scope="row" valign="top">{@code config} and any other property</th>
+     * <th scope="row" style="vertical-align:top">{@code config} and any other property</th>
      * <td>
      * <ul>
      *   <li>The resulting value for these property will be stored in the
@@ -2439,7 +2439,7 @@ public class LogManager {
      * If the check fails we throw a SecurityException, otherwise
      * we return normally.
      *
-     * @exception  SecurityException  if a security manager exists and if
+     * @throws  SecurityException  if a security manager exists and if
      *             the caller does not have LoggingPermission("control").
      */
     public void checkAccess() throws SecurityException {

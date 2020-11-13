@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -381,6 +381,55 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
         }
     };
 
+    static Comparator<LogEvent> sortByNMethodSize = new Comparator<LogEvent>() {
+
+        public int compare(LogEvent a, LogEvent b) {
+            Compilation c1 = a.getCompilation();
+            Compilation c2 = b.getCompilation();
+            if ((c1 != null && c2 == null)) {
+                return -1;
+            } else if (c1 == null && c2 != null) {
+                return 1;
+            } else if (c1 == null && c2 == null) {
+                return 0;
+            }
+
+            if (c1.getNMethod() != null && c2.getNMethod() == null) {
+                return -1;
+            } else if (c1.getNMethod() == null && c2.getNMethod() != null) {
+                return 1;
+            } else if (c1.getNMethod() == null && c2.getNMethod() == null) {
+                return 0;
+            }
+
+            assert c1.getNMethod() != null && c2.getNMethod() != null : "Neither should be null here";
+
+            long c1Size = c1.getNMethod().getInstSize();
+            long c2Size = c2.getNMethod().getInstSize();
+
+            if (c1Size == 0 && c2Size == 0) {
+                return 0;
+            }
+
+            if (c1Size > c2Size) {
+                return -1;
+            } else if (c1Size < c2Size) {
+                return 1;
+            }
+
+            return 0;
+        }
+
+        public boolean equals(Object other) {
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return 7;
+        }
+  };
+
     /**
      * Shrink-wrapped representation of a JVMState (tailored to meet this
      * tool's needs). It only records a method and bytecode instruction index.
@@ -550,6 +599,11 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
      * tool to display in which line of the log file the problem occurred.
      */
     private Locator locator;
+
+    /**
+     * Record the location in a replace_string_concat.
+     */
+    private boolean expectStringConcatTrap = false;
 
     /**
      * Callback for the SAX framework to set the document locator.
@@ -987,6 +1041,8 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
             cs.setIntrinsicName(id);
         } else if (qname.equals("regalloc")) {
             compile.setAttempts(Integer.parseInt(search(atts, "attempts")));
+        } else if (qname.equals("replace_string_concat")) {
+            expectStringConcatTrap = true;
         } else if (qname.equals("inline_fail")) {
             if (methodHandleSite != null) {
                 scopes.peek().add(methodHandleSite);
@@ -1087,9 +1143,14 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
                 Method m = method(search(atts, "method"));
                 site = new CallSite(current_bci, m);
                 lateInlineScope.push(site);
+            } else if (expectStringConcatTrap == true) {
+                // Record the location of the replace_string_concat for the
+                // uncommon_trap 'intrinsic_or_type_checked_inlining' that should follow it
+                current_bci = Integer.parseInt(search(atts, "bci"));
+                Method m = method(search(atts, "method"));
+                site = new CallSite(current_bci, m);
             } else {
                 // Ignore <eliminate_allocation type='667'>,
-                //        <replace_string_concat arguments='2' string_alloc='0' multiple='0'>
             }
         } else if (qname.equals("inline_id")) {
             if (methodHandleSite != null) {
@@ -1106,6 +1167,13 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
             String level = atts.getValue("level");
             if (level != null) {
                 nm.setLevel(parseLong(level));
+            }
+            String iOffset = atts.getValue("insts_offset");
+            String sOffset = atts.getValue("stub_offset");
+            if (iOffset != null && sOffset != null) {
+                long insts_offset = parseLong(iOffset);
+                long stub_offset = parseLong(sOffset);
+                nm.setInstSize(stub_offset - insts_offset);
             }
             String compiler = search(atts, "compiler", "");
             nm.setCompiler(compiler);
@@ -1142,7 +1210,7 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
                 // The method being parsed is *not* the current compilation's
                 // top scope; i.e., we're dealing with an actual call site
                 // in the top scope or somewhere further down a call stack.
-                if (site.getMethod() == m) {
+                if (site != null && site.getMethod() == m) {
                     // We're dealing with monomorphic inlining that didn't have
                     // to be narrowed down, because the receiver was known
                     // beforehand.
@@ -1215,6 +1283,8 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
                 if (scopes.size() == 0) {
                     lateInlining = false;
                 }
+                // Don't carry a stale site to the next parse
+                site = null;
             } else if (qname.equals("uncommon_trap")) {
                 currentTrap = null;
             } else if (qname.startsWith("eliminate_lock")) {
@@ -1289,6 +1359,8 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
                 methods.clear();
                 site = null;
                 lateInlining = false;
+            } else if (qname.equals("replace_string_concat")) {
+                expectStringConcatTrap = false;
             }
         } catch (Exception e) {
             reportInternalError("exception while processing end element", e);

@@ -23,12 +23,20 @@
 
 #include <jni.h>
 
-/*
- * Class:     jdk_test_lib_apps_LingeredApp
- * Method:    crashMe
- * Signature: ()V
- */
-JNIEXPORT void JNICALL
-Java_jdk_test_lib_apps_LingeredApp_crashMe(JNIEnv *env, jclass klass) {
-  *((volatile int*)(1)) = 1;
+// Borrowed from hotspot vmError.cpp.
+// Returns an address which is guaranteed to generate a SIGSEGV on read,
+// which is not NULL and contains bits in every word
+void* get_segfault_address() {
+  return (void*)
+#ifdef _LP64
+    0xABC0000000000ABCULL;
+#else
+    0x00000ABC;
+#endif
+}
+
+JNIEXPORT jint JNICALL
+Java_jdk_test_lib_apps_LingeredApp_crash(JNIEnv *env, jclass clss)
+{
+    return *(jint *)get_segfault_address();
 }

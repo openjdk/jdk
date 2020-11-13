@@ -42,6 +42,11 @@ package javax.swing.event;
  */
 public abstract class InternalFrameAdapter implements InternalFrameListener {
     /**
+     * Constructor for subclasses to call.
+     */
+    protected InternalFrameAdapter() {}
+
+    /**
      * Invoked when an internal frame has been opened.
      */
     public void internalFrameOpened(InternalFrameEvent e) {}

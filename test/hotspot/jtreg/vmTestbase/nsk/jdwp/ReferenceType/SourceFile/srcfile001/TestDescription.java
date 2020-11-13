@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,10 +51,8 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build nsk.jdwp.ReferenceType.SourceFile.srcfile001
- *        nsk.jdwp.ReferenceType.SourceFile.srcfile001a
- * @run main/othervm PropertyResolvingWrapper
+ * @build nsk.jdwp.ReferenceType.SourceFile.srcfile001a
+ * @run main/othervm
  *      nsk.jdwp.ReferenceType.SourceFile.srcfile001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose

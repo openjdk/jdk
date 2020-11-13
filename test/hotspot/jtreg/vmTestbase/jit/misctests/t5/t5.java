@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,16 +29,14 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build jit.misctests.t5.t5
- * @run driver ExecDriver --java jit.misctests.t5.t5
+ * @run main/othervm jit.misctests.t5.t5
  */
 
 package jit.misctests.t5;
 
 import nsk.share.TestFailure;
 
-class t5
+public class t5
 {
     public static void main (String [] args)
     {

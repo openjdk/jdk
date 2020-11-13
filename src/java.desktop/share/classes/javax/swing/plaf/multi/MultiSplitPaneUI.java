@@ -50,6 +50,11 @@ public class MultiSplitPaneUI extends SplitPaneUI {
      */
     protected Vector<ComponentUI> uis = new Vector<>();
 
+    /**
+     * Constructs a {@code MultiSplitPaneUI}.
+     */
+    public MultiSplitPaneUI() {}
+
 ////////////////////
 // Common UI methods
 ////////////////////

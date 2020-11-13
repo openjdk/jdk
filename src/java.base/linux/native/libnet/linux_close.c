@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ typedef struct {
 /*
  * Signal to unblock thread
  */
-static int sigWakeup = (__SIGRTMAX - 2);
+#define WAKEUP_SIGNAL (SIGRTMAX - 2)
 
 /*
  * fdTable holds one entry per file descriptor, up to a certain
@@ -152,10 +152,10 @@ static void __attribute((constructor)) init() {
     sa.sa_handler = sig_wakeup;
     sa.sa_flags   = 0;
     sigemptyset(&sa.sa_mask);
-    sigaction(sigWakeup, &sa, NULL);
+    sigaction(WAKEUP_SIGNAL, &sa, NULL);
 
     sigemptyset(&sigset);
-    sigaddset(&sigset, sigWakeup);
+    sigaddset(&sigset, WAKEUP_SIGNAL);
     sigprocmask(SIG_UNBLOCK, &sigset, NULL);
 }
 
@@ -305,7 +305,7 @@ static int closefd(int fd1, int fd2) {
         threadEntry_t *curr = fdEntry->threads;
         while (curr != NULL) {
             curr->intr = 1;
-            pthread_kill( curr->thr, sigWakeup );
+            pthread_kill( curr->thr, WAKEUP_SIGNAL);
             curr = curr->next;
         }
     }
@@ -437,12 +437,16 @@ int NET_Timeout(JNIEnv *env, int s, long timeout, jlong nanoTimeStamp) {
          * has expired return 0 (indicating timeout expired).
          */
         if (rv < 0 && errno == EINTR) {
-            jlong newNanoTime = JVM_NanoTime(env, 0);
-            nanoTimeout -= newNanoTime - prevNanoTime;
-            if (nanoTimeout < NET_NSEC_PER_MSEC) {
-                return 0;
+            if (timeout > 0) {
+                jlong newNanoTime = JVM_NanoTime(env, 0);
+                nanoTimeout -= newNanoTime - prevNanoTime;
+                if (nanoTimeout < NET_NSEC_PER_MSEC) {
+                    return 0;
+                }
+                prevNanoTime = newNanoTime;
+            } else {
+                continue; // timeout is -1, so  loop again.
             }
-            prevNanoTime = newNanoTime;
         } else {
             return rv;
         }

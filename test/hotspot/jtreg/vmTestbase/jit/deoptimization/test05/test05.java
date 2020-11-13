@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build jit.deoptimization.test05.test05
- * @run driver ExecDriver --java jit.deoptimization.test05.test05
+ * @run main/othervm jit.deoptimization.test05.test05
  */
 
 package jit.deoptimization.test05;
@@ -42,7 +40,7 @@ import nsk.share.TestFailure;
  *
  */
 
-class test05 {
+public class test05 {
         public static void main (String[] args) {
                 A obj = new A();
 

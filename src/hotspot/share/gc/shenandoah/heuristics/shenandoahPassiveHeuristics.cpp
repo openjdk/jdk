@@ -36,11 +36,6 @@ bool ShenandoahPassiveHeuristics::should_start_gc() const {
   return false;
 }
 
-bool ShenandoahPassiveHeuristics::should_process_references() {
-  // Always process references, if we can.
-  return can_process_references();
-}
-
 bool ShenandoahPassiveHeuristics::should_unload_classes() {
   // Always unload classes, if we can.
   return can_unload_classes();
@@ -58,8 +53,8 @@ void ShenandoahPassiveHeuristics::choose_collection_set_from_regiondata(Shenando
 
   // Do not select too large CSet that would overflow the available free space.
   // Take at least the entire evacuation reserve, and be free to overflow to free space.
-  size_t capacity  = ShenandoahHeap::heap()->max_capacity();
-  size_t available = MAX2(capacity / 100 * ShenandoahEvacReserve, actual_free);
+  size_t max_capacity = ShenandoahHeap::heap()->max_capacity();
+  size_t available = MAX2(max_capacity / 100 * ShenandoahEvacReserve, actual_free);
   size_t max_cset  = (size_t)(available / ShenandoahEvacWaste);
 
   log_info(gc, ergo)("CSet Selection. Actual Free: " SIZE_FORMAT "%s, Max CSet: " SIZE_FORMAT "%s",

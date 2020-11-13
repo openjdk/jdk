@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,7 +181,7 @@ public class FontFamily {
             Math.abs(Font2D.FWIDTH_NORMAL - familyWidth))
         {
            if (FontUtilities.debugFonts()) {
-               FontUtilities.getLogger().info(
+               FontUtilities.logInfo(
                "Found more preferred width. New width = " + newWidth +
                " Old width = " + familyWidth + " in font " + font +
                " nulling out fonts plain: " + plain + " bold: " + bold +
@@ -191,7 +191,7 @@ public class FontFamily {
            plain = bold = italic = bolditalic = null;
            return true;
         } else if (FontUtilities.debugFonts()) {
-               FontUtilities.getLogger().info(
+               FontUtilities.logInfo(
                "Family rejecting font " + font +
                " of less preferred width " + newWidth);
         }
@@ -208,7 +208,7 @@ public class FontFamily {
         }
 
         if (FontUtilities.debugFonts()) {
-            FontUtilities.getLogger().info(
+            FontUtilities.logInfo(
             "New weight for style " + style + ". Curr.font=" + currFont +
             " New font="+font+" Curr.weight="+ + currFont.getWeight()+
             " New weight="+font.getWeight());
@@ -242,18 +242,17 @@ public class FontFamily {
                 msg = "Request to add " + font +
                       " with style " + style + " to family " + this;
             }
-            FontUtilities.getLogger().info(msg);
+            FontUtilities.logInfo(msg);
         }
         /* Allow a lower-rank font only if its a file font
          * from the exact same source as any previous font.
          */
         if ((font.getRank() > familyRank) && !isFromSameSource(font)) {
             if (FontUtilities.isLogging()) {
-                FontUtilities.getLogger()
-                                  .warning("Rejecting adding " + font +
-                                           " of lower rank " + font.getRank() +
-                                           " to family " + this +
-                                           " of rank " + familyRank);
+                FontUtilities.logWarning("Rejecting adding " + font +
+                                         " of lower rank " + font.getRank() +
+                                         " to family " + this +
+                                         " of rank " + familyRank);
             }
             return;
         }

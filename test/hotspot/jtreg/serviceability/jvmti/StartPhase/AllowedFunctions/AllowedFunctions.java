@@ -26,6 +26,7 @@
  * @bug 8172970
  * @summary Verify the functions that are allowed to operate in the start phase
  * with and without can_generate_early_vmstart capability.
+ * @requires vm.jvmti
  * @run main/othervm/native -agentlib:AllowedFunctions AllowedFunctions
  * @run main/othervm/native -agentlib:AllowedFunctions=with_early_vmstart AllowedFunctions
  */

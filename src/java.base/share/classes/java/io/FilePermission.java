@@ -1247,9 +1247,12 @@ final class FilePermissionCollection extends PermissionCollection
     /**
      * @serialData "permissions" field (a Vector containing the FilePermissions).
      */
-    /*
+    /**
      * Writes the contents of the perms field out as a Vector for
      * serialization compatibility with earlier releases.
+     *
+     * @param  out the {@code ObjectOutputStream} to which data is written
+     * @throws IOException if an I/O error occurs
      */
     @java.io.Serial
     private void writeObject(ObjectOutputStream out) throws IOException {
@@ -1263,8 +1266,12 @@ final class FilePermissionCollection extends PermissionCollection
         out.writeFields();
     }
 
-    /*
+    /**
      * Reads in a Vector of FilePermissions and saves them in the perms field.
+     *
+     * @param  in the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     @java.io.Serial
     private void readObject(ObjectInputStream in)

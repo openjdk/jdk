@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,18 +40,20 @@ import javax.xml.namespace.QName;
 public interface Attribute extends XMLEvent {
 
   /**
-   * Returns the QName for this attribute
+   * Returns the QName for this attribute.
+   * @return the QName of the attribute
    */
   QName getName();
 
   /**
-   * Gets the normalized value of this attribute
+   * Gets the normalized value of this attribute.
+   * @return the normalized value of the attribute
    */
   public String getValue();
 
   /**
    * Gets the type of this attribute, default is
-   * the String "CDATA"
+   * the String "CDATA".
    * @return the type as a String, default is "CDATA"
    */
   public String getDTDType();

@@ -49,6 +49,11 @@ public class MultiInternalFrameUI extends InternalFrameUI {
      */
     protected Vector<ComponentUI> uis = new Vector<>();
 
+    /**
+     * Constructs a {@code MultiInternalFrameUI}.
+     */
+    public MultiInternalFrameUI() {}
+
 ////////////////////
 // Common UI methods
 ////////////////////

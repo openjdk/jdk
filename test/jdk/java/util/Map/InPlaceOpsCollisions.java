@@ -523,7 +523,8 @@ public class InPlaceOpsCollisions extends MapWithCollisionsProviders {
                 new Object[]{"HashMap", (Supplier<Map<?, ?>>) HashMap::new},
                 new Object[]{"LinkedHashMap", (Supplier<Map<?, ?>>) LinkedHashMap::new},
                 new Object[]{"TreeMap", (Supplier<Map<?, ?>>) TreeMap::new},
-                new Object[]{"TreeMap(cmp)", (Supplier<Map<?, ?>>) () -> new TreeMap<>(Comparator.reverseOrder())}
+                new Object[]{"TreeMap(cmp)", (Supplier<Map<?, ?>>) () -> new TreeMap<>(Comparator.reverseOrder())},
+                new Object[]{"TreeMap.descendingMap", (Supplier<Map<?, ?>>) () -> new TreeMap<>().descendingMap()}
         ).iterator();
     }
 }

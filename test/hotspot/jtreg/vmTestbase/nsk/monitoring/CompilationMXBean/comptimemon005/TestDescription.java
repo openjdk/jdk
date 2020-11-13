@@ -46,7 +46,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @run main/othervm/timeout=300
  *      nsk.monitoring.CompilationMXBean.comptimemon001.comptimemon001
  *      -testMode=proxy

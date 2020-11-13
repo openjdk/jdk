@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -301,11 +301,12 @@ public final class TypeAnnotationParser {
                         l.add(t);
                     }
                 }
+                TypeAnnotation[] typeAnnotations = l.toArray(EMPTY_TYPE_ANNOTATION_ARRAY);
                 res[i] = AnnotatedTypeFactory.buildAnnotatedType(bounds[i],
                         AnnotatedTypeFactory.nestingForType(bounds[i], loc),
-                        l.toArray(EMPTY_TYPE_ANNOTATION_ARRAY),
-                        candidates.toArray(EMPTY_TYPE_ANNOTATION_ARRAY),
-                        (AnnotatedElement)decl);
+                        typeAnnotations,
+                        typeAnnotations,
+                        decl);
             }
             return res;
         }

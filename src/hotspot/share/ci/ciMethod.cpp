@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@
 #include "oops/generateOopMap.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/methodHandles.hpp"
 #include "prims/nativeLookup.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
@@ -809,7 +810,8 @@ ciMethod* ciMethod::resolve_invoke(ciKlass* caller, ciKlass* exact_receiver, boo
    Symbol* h_signature = signature()->get_symbol();
 
    LinkInfo link_info(resolved, h_name, h_signature, caller_klass,
-                      check_access ? LinkInfo::needs_access_check : LinkInfo::skip_access_check);
+                      check_access ? LinkInfo::AccessCheck::required : LinkInfo::AccessCheck::skip,
+                      check_access ? LinkInfo::LoaderConstraintCheck::required : LinkInfo::LoaderConstraintCheck::skip);
    Method* m = NULL;
    // Only do exact lookup if receiver klass has been linked.  Otherwise,
    // the vtable has not been setup, and the LinkResolver will fail.
@@ -1240,7 +1242,7 @@ bool ciMethod::has_unloaded_classes_in_signature() {
   {
     EXCEPTION_MARK;
     methodHandle m(THREAD, get_Method());
-    bool has_unloaded = Method::has_unloaded_classes_in_signature(m, (JavaThread *)THREAD);
+    bool has_unloaded = Method::has_unloaded_classes_in_signature(m, thread);
     if( HAS_PENDING_EXCEPTION ) {
       CLEAR_PENDING_EXCEPTION;
       return true;     // Declare that we may have unloaded classes
@@ -1349,6 +1351,11 @@ bool ciMethod::is_unboxing_method() const {
     }
   }
   return false;
+}
+
+bool ciMethod::is_vector_method() const {
+  return (holder() == ciEnv::current()->vector_VectorSupport_klass()) &&
+         (intrinsic_id() != vmIntrinsics::_none);
 }
 
 BCEscapeAnalyzer  *ciMethod::get_bcea() {

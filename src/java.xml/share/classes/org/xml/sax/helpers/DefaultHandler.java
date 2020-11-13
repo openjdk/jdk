@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,10 @@ import org.xml.sax.SAXParseException;
 public class DefaultHandler
     implements EntityResolver, DTDHandler, ContentHandler, ErrorHandler
 {
-
+    /**
+     * Constructs a {@code DefaultHandler}.
+     */
+    public DefaultHandler() {}
 
     ////////////////////////////////////////////////////////////////////
     // Default implementation of the EntityResolver interface.
@@ -91,12 +94,13 @@ public class DefaultHandler
      *                 document.
      * @return The new input source, or null to require the
      *         default behaviour.
-     * @exception java.io.IOException If there is an error setting
+     * @throws java.io.IOException If there is an error setting
      *            up the new input source.
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly
+     * @throws org.xml.sax.SAXException Any SAX exception, possibly
      *            wrapping another exception.
      * @see org.xml.sax.EntityResolver#resolveEntity
      */
+    @Override
     public InputSource resolveEntity (String publicId, String systemId)
         throws IOException, SAXException
     {
@@ -121,10 +125,11 @@ public class DefaultHandler
      * @param publicId The notation public identifier, or null if not
      *                 available.
      * @param systemId The notation system identifier.
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly
+     * @throws org.xml.sax.SAXException Any SAX exception, possibly
      *            wrapping another exception.
      * @see org.xml.sax.DTDHandler#notationDecl
      */
+    @Override
     public void notationDecl (String name, String publicId, String systemId)
         throws SAXException
     {
@@ -144,10 +149,11 @@ public class DefaultHandler
      *                 available.
      * @param systemId The entity system identifier.
      * @param notationName The name of the associated notation.
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly
+     * @throws org.xml.sax.SAXException Any SAX exception, possibly
      *            wrapping another exception.
      * @see org.xml.sax.DTDHandler#unparsedEntityDecl
      */
+    @Override
     public void unparsedEntityDecl (String name, String publicId,
                                     String systemId, String notationName)
         throws SAXException
@@ -173,6 +179,7 @@ public class DefaultHandler
      * @see org.xml.sax.ContentHandler#setDocumentLocator
      * @see org.xml.sax.Locator
      */
+    @Override
     public void setDocumentLocator (Locator locator)
     {
         // no op
@@ -187,10 +194,11 @@ public class DefaultHandler
      * of a document (such as allocating the root node of a tree or
      * creating an output file).</p>
      *
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly
+     * @throws org.xml.sax.SAXException Any SAX exception, possibly
      *            wrapping another exception.
      * @see org.xml.sax.ContentHandler#startDocument
      */
+    @Override
     public void startDocument ()
         throws SAXException
     {
@@ -206,10 +214,11 @@ public class DefaultHandler
      * of a document (such as finalising a tree or closing an output
      * file).</p>
      *
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly
+     * @throws org.xml.sax.SAXException Any SAX exception, possibly
      *            wrapping another exception.
      * @see org.xml.sax.ContentHandler#endDocument
      */
+    @Override
     public void endDocument ()
         throws SAXException
     {
@@ -226,10 +235,11 @@ public class DefaultHandler
      *
      * @param prefix The Namespace prefix being declared.
      * @param uri The Namespace URI mapped to the prefix.
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly
+     * @throws org.xml.sax.SAXException Any SAX exception, possibly
      *            wrapping another exception.
      * @see org.xml.sax.ContentHandler#startPrefixMapping
      */
+    @Override
     public void startPrefixMapping (String prefix, String uri)
         throws SAXException
     {
@@ -245,10 +255,11 @@ public class DefaultHandler
      * each prefix mapping.</p>
      *
      * @param prefix The Namespace prefix being declared.
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly
+     * @throws org.xml.sax.SAXException Any SAX exception, possibly
      *            wrapping another exception.
      * @see org.xml.sax.ContentHandler#endPrefixMapping
      */
+    @Override
     public void endPrefixMapping (String prefix)
         throws SAXException
     {
@@ -275,10 +286,11 @@ public class DefaultHandler
      * @param attributes The attributes attached to the element.  If
      *        there are no attributes, it shall be an empty
      *        Attributes object.
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly
+     * @throws org.xml.sax.SAXException Any SAX exception, possibly
      *            wrapping another exception.
      * @see org.xml.sax.ContentHandler#startElement
      */
+    @Override
     public void startElement (String uri, String localName,
                               String qName, Attributes attributes)
         throws SAXException
@@ -303,10 +315,11 @@ public class DefaultHandler
      *        performed.
      * @param qName The qualified name (with prefix), or the
      *        empty string if qualified names are not available.
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly
+     * @throws org.xml.sax.SAXException Any SAX exception, possibly
      *            wrapping another exception.
      * @see org.xml.sax.ContentHandler#endElement
      */
+    @Override
     public void endElement (String uri, String localName, String qName)
         throws SAXException
     {
@@ -326,10 +339,11 @@ public class DefaultHandler
      * @param start The start position in the character array.
      * @param length The number of characters to use from the
      *               character array.
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly
+     * @throws org.xml.sax.SAXException Any SAX exception, possibly
      *            wrapping another exception.
      * @see org.xml.sax.ContentHandler#characters
      */
+    @Override
     public void characters (char ch[], int start, int length)
         throws SAXException
     {
@@ -349,10 +363,11 @@ public class DefaultHandler
      * @param start The start position in the character array.
      * @param length The number of characters to use from the
      *               character array.
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly
+     * @throws org.xml.sax.SAXException Any SAX exception, possibly
      *            wrapping another exception.
      * @see org.xml.sax.ContentHandler#ignorableWhitespace
      */
+    @Override
     public void ignorableWhitespace (char ch[], int start, int length)
         throws SAXException
     {
@@ -371,10 +386,11 @@ public class DefaultHandler
      * @param target The processing instruction target.
      * @param data The processing instruction data, or null if
      *             none is supplied.
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly
+     * @throws org.xml.sax.SAXException Any SAX exception, possibly
      *            wrapping another exception.
      * @see org.xml.sax.ContentHandler#processingInstruction
      */
+    @Override
     public void processingInstruction (String target, String data)
         throws SAXException
     {
@@ -391,10 +407,11 @@ public class DefaultHandler
      * invoking other methods.</p>
      *
      * @param name The name of the skipped entity.
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly
+     * @throws org.xml.sax.SAXException Any SAX exception, possibly
      *            wrapping another exception.
      * @see org.xml.sax.ContentHandler#processingInstruction
      */
+    @Override
     public void skippedEntity (String name)
         throws SAXException
     {
@@ -417,11 +434,12 @@ public class DefaultHandler
      * printing it to the console.</p>
      *
      * @param e The warning information encoded as an exception.
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly
+     * @throws org.xml.sax.SAXException Any SAX exception, possibly
      *            wrapping another exception.
      * @see org.xml.sax.ErrorHandler#warning
      * @see org.xml.sax.SAXParseException
      */
+    @Override
     public void warning (SAXParseException e)
         throws SAXException
     {
@@ -438,11 +456,12 @@ public class DefaultHandler
      * printing it to the console.</p>
      *
      * @param e The error information encoded as an exception.
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly
+     * @throws org.xml.sax.SAXException Any SAX exception, possibly
      *            wrapping another exception.
      * @see org.xml.sax.ErrorHandler#warning
      * @see org.xml.sax.SAXParseException
      */
+    @Override
     public void error (SAXParseException e)
         throws SAXException
     {
@@ -462,11 +481,12 @@ public class DefaultHandler
      * the parser may no longer report parsing events.</p>
      *
      * @param e The error information encoded as an exception.
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly
+     * @throws org.xml.sax.SAXException Any SAX exception, possibly
      *            wrapping another exception.
      * @see org.xml.sax.ErrorHandler#fatalError
      * @see org.xml.sax.SAXParseException
      */
+    @Override
     public void fatalError (SAXParseException e)
         throws SAXException
     {

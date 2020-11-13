@@ -38,6 +38,7 @@ class Opaque1Node : public Node {
   Opaque1Node(Compile* C, Node *n) : Node(NULL, n) {
     // Put it on the Macro nodes list to removed during macro nodes expansion.
     init_flags(Flag_is_macro);
+    init_class_id(Class_Opaque1);
     C->add_macro_node(this);
   }
   // Special version for the pre-loop to hold the original loop limit
@@ -45,12 +46,28 @@ class Opaque1Node : public Node {
   Opaque1Node(Compile* C, Node *n, Node* orig_limit) : Node(NULL, n, orig_limit) {
     // Put it on the Macro nodes list to removed during macro nodes expansion.
     init_flags(Flag_is_macro);
+    init_class_id(Class_Opaque1);
     C->add_macro_node(this);
   }
   Node* original_loop_limit() { return req()==3 ? in(2) : NULL; }
   virtual int Opcode() const;
   virtual const Type *bottom_type() const { return TypeInt::INT; }
   virtual Node* Identity(PhaseGVN* phase);
+};
+
+// Opaque nodes specific to range check elimination handling
+class OpaqueLoopInitNode : public Opaque1Node {
+  public:
+  OpaqueLoopInitNode(Compile* C, Node *n) : Opaque1Node(C, n) {
+  }
+  virtual int Opcode() const;
+};
+
+class OpaqueLoopStrideNode : public Opaque1Node {
+  public:
+  OpaqueLoopStrideNode(Compile* C, Node *n) : Opaque1Node(C, n) {
+  }
+  virtual int Opcode() const;
 };
 
 //------------------------------Opaque2Node------------------------------------
@@ -97,12 +114,11 @@ class Opaque3Node : public Opaque2Node {
 // GraphKit::must_be_not_null().
 class Opaque4Node : public Node {
   public:
-  Opaque4Node(Compile* C, Node *tst, Node* final_tst) : Node(NULL, tst, final_tst) {
-    // Put it on the Opaque4 nodes list to be removed after all optimizations
-    C->add_opaque4_node(this);
-  }
+  Opaque4Node(Compile* C, Node *tst, Node* final_tst) : Node(NULL, tst, final_tst) {}
+
   virtual int Opcode() const;
   virtual const Type *bottom_type() const { return TypeInt::BOOL; }
+  virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 

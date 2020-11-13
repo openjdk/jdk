@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,7 @@ import java.io.IOException;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans&trade;
+ * of all JavaBeans
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -174,7 +174,7 @@ public class JTabbedPane extends JComponent
      */
     protected ChangeListener changeListener = null;
 
-    private final java.util.List<Page> pages;
+    private java.util.List<Page> pages;
 
     /* The component that is currently visible */
     private Component visComp = null;
@@ -289,6 +289,12 @@ public class JTabbedPane extends JComponent
      * the tabbedpane (instead of the model itself) as the event source.
      */
     protected class ModelListener implements ChangeListener, Serializable {
+
+        /**
+         * Constructs a {@code ModelListener}.
+         */
+        protected ModelListener() {}
+
         public void stateChanged(ChangeEvent e) {
             fireStateChanged();
         }
@@ -353,7 +359,7 @@ public class JTabbedPane extends JComponent
      * these cases.
      *
      * @see #addChangeListener
-     * @see EventListenerList
+     * @see javax.swing.event.EventListenerList
      */
     @SuppressWarnings("deprecation")
     protected void fireStateChanged() {
@@ -1827,6 +1833,7 @@ public class JTabbedPane extends JComponent
      * <code>JComponent</code> for more
      * information about serialization in Swing.
      */
+    @SuppressWarnings("unchecked")
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException
     {
@@ -1841,6 +1848,7 @@ public class JTabbedPane extends JComponent
         model = (SingleSelectionModel) f.get("model", null);
         haveRegistered = f.get("haveRegistered", false);
         changeListener = (ChangeListener) f.get("changeListener", null);
+        pages = (java.util.List<JTabbedPane.Page>) f.get("pages", null);
         visComp = (Component) f.get("visComp", null);
 
         if ((ui != null) && (getUIClassID().equals(uiClassID))) {
@@ -1921,7 +1929,7 @@ public class JTabbedPane extends JComponent
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans&trade;
+     * of all JavaBeans
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */

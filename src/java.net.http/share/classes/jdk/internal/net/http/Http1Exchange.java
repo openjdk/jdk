@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,7 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
     final HttpClientImpl client;
     final Executor executor;
     private final Http1AsyncReceiver asyncReceiver;
+    private volatile boolean upgraded;
 
     /** Records a possible cancellation raised before any operation
      * has been initiated, or an error received while sending the request. */
@@ -487,8 +488,13 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
                 }
             }
         } finally {
-            connection.close();
+            if (!upgraded)
+                connection.close();
         }
+    }
+
+    void upgraded() {
+        upgraded = true;
     }
 
     private void runInline(Runnable run) {
@@ -543,6 +549,16 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         }
     }
 
+    private void cancelUpstreamSubscription() {
+        final Executor exec = client.theExecutor();
+        if (debug.on()) debug.log("cancelling upstream publisher");
+        if (bodySubscriber != null) {
+            exec.execute(bodySubscriber::cancelSubscription);
+        } else if (debug.on()) {
+            debug.log("bodySubscriber is null");
+        }
+    }
+
     // Invoked only by the publisher
     // ALL tasks should execute off the Selector-Manager thread
     /** Returns the next portion of the HTTP request, or the error. */
@@ -551,12 +567,7 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         final DataPair dp = outgoing.pollFirst();
 
         if (writePublisher.cancelled) {
-            if (debug.on()) debug.log("cancelling upstream publisher");
-            if (bodySubscriber != null) {
-                exec.execute(bodySubscriber::cancelSubscription);
-            } else if (debug.on()) {
-                debug.log("bodySubscriber is null");
-            }
+            cancelUpstreamSubscription();
             headersSentCF.completeAsync(() -> this, exec);
             bodySentCF.completeAsync(() -> this, exec);
             return null;
@@ -642,6 +653,30 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
             return tag;
         }
 
+        @SuppressWarnings("fallthrough")
+        private boolean checkRequestCancelled() {
+            if (exchange.multi.requestCancelled()) {
+                if (debug.on()) debug.log("request cancelled");
+                if (subscriber == null) {
+                    if (debug.on()) debug.log("no subscriber yet");
+                    return true;
+                }
+                switch (state) {
+                    case BODY:
+                        cancelUpstreamSubscription();
+                        // fall trough to HEADERS
+                    case HEADERS:
+                        Throwable cause = getCancelCause();
+                        if (cause == null) cause = new IOException("Request cancelled");
+                        subscriber.onError(cause);
+                        writeScheduler.stop();
+                        return true;
+                }
+            }
+            return false;
+        }
+
+
         final class WriteTask implements Runnable {
             @Override
             public void run() {
@@ -655,10 +690,13 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
                     return;
                 }
 
+                if (checkRequestCancelled()) return;
+
                 if (subscriber == null) {
                     if (debug.on()) debug.log("no subscriber yet");
                     return;
                 }
+
                 if (debug.on()) debug.log(() -> "hasOutgoing = " + hasOutgoing());
                 while (hasOutgoing() && demand.tryDecrement()) {
                     DataPair dp = getOutgoing();
@@ -683,6 +721,7 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
                             // The next Subscriber will eventually take over.
 
                         } else {
+                            if (checkRequestCancelled()) return;
                             if (debug.on())
                                 debug.log("onNext with " + Utils.remaining(data) + " bytes");
                             subscriber.onNext(data);

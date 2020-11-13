@@ -29,7 +29,6 @@
 #include "compiler/compilerDefinitions.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "interpreter/invocationCounter.hpp"
-#include "runtime/arguments.hpp"
 #include "utilities/align.hpp"
 
 class MethodCounters : public Metadata {

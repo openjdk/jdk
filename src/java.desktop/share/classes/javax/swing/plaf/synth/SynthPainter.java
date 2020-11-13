@@ -65,6 +65,10 @@ public abstract class SynthPainter {
      */
     static SynthPainter NULL_PAINTER = new SynthPainter() {};
 
+    /**
+     * Constructor for subclasses to call.
+     */
+    protected SynthPainter() {}
 
     /**
      * Paints the background of an arrow button. Arrow buttons are created by

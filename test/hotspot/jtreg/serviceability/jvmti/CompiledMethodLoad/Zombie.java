@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,8 @@
  * @test
  * @bug 8212159
  * @summary Generate compiled method load events without crashing
- * @run main/othervm/native -agentlib:CompiledZombie -Xcomp -XX:ReservedCodeCacheSize=20m Zombie
+ * @requires vm.jvmti
+ * @run main/othervm/native -agentlib:CompiledZombie -Xcomp -XX:ReservedCodeCacheSize=50m Zombie
  **/
 
  // The stress test that made this fail was -jar SwingSet2.jar from demos (without DISPLAY set so it exits)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,11 @@ import java.io.PrintWriter;
  * module for details on replacement APIs.
  */
 public class Main {
+    /**
+     * Do not call.
+     */
+    @Deprecated(since="16", forRemoval=true)
+    public Main(){}
 
     /** Main entry point for the launcher.
      *  Note: This method calls System.exit.

@@ -79,7 +79,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @run main/othervm gc.gctests.MatrixJuggleGC.MatrixJuggleGC -iterations 1000000
  */
 

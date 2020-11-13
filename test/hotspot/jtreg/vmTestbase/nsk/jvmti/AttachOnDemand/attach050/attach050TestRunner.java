@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,14 +29,13 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jvmti.AttachOnDemand.attach050.attach050TestRunner
  *        nsk.share.aod.TargetApplicationWaitingAgents
- * @run main/othervm/native PropertyResolvingWrapper
+ * @run main/othervm/native
  *      nsk.jvmti.AttachOnDemand.attach050.attach050TestRunner
  *      -jdk ${test.jdk}
  *      -target nsk.share.aod.TargetApplicationWaitingAgents
- *      "-javaOpts=-XX:+UsePerfData -XX:+EnableDynamicAgentLoading ${test.vm.opts} ${test.java.opts}"
+ *      -javaOpts="-XX:+UsePerfData -XX:+EnableDynamicAgentLoading ${test.vm.opts} ${test.java.opts}"
  *      -na attach050Agent00
  */
 

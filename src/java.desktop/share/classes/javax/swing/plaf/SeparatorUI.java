@@ -33,4 +33,8 @@ package javax.swing.plaf;
  */
 
 public abstract class SeparatorUI extends ComponentUI {
+    /**
+     * Constructor for subclasses to call.
+     */
+    protected SeparatorUI() {}
 }

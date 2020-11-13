@@ -28,8 +28,9 @@ import java.util.*;
 
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.types.*;
-import sun.jvm.hotspot.runtime.win32_amd64.Win32AMD64JavaThreadPDAccess;
 import sun.jvm.hotspot.runtime.win32_x86.Win32X86JavaThreadPDAccess;
+import sun.jvm.hotspot.runtime.win32_amd64.Win32AMD64JavaThreadPDAccess;
+import sun.jvm.hotspot.runtime.win32_aarch64.Win32AARCH64JavaThreadPDAccess;
 import sun.jvm.hotspot.runtime.linux_x86.LinuxX86JavaThreadPDAccess;
 import sun.jvm.hotspot.runtime.linux_amd64.LinuxAMD64JavaThreadPDAccess;
 import sun.jvm.hotspot.runtime.linux_aarch64.LinuxAARCH64JavaThreadPDAccess;
@@ -99,6 +100,8 @@ public class Threads {
                 access =  new Win32X86JavaThreadPDAccess();
             } else if (cpu.equals("amd64")) {
                 access =  new Win32AMD64JavaThreadPDAccess();
+            } else if (cpu.equals("aarch64")) {
+                access =  new Win32AARCH64JavaThreadPDAccess();
             }
         } else if (os.equals("linux")) {
             if (cpu.equals("x86")) {
@@ -146,6 +149,7 @@ public class Threads {
         }
         virtualConstructor.addMapping("JvmtiAgentThread", JvmtiAgentThread.class);
         virtualConstructor.addMapping("ServiceThread", ServiceThread.class);
+        virtualConstructor.addMapping("MonitorDeflationThread", MonitorDeflationThread.class);
         virtualConstructor.addMapping("NotificationThread", NotificationThread.class);
     }
 
@@ -154,7 +158,7 @@ public class Threads {
     }
 
     /** NOTE: this returns objects of type JavaThread, CompilerThread,
-      JvmtiAgentThread, NotificationThread, and ServiceThread.
+      JvmtiAgentThread, NotificationThread, MonitorDeflationThread and ServiceThread.
       The latter four are subclasses of the former. Most operations
       (fetching the top frame, etc.) are only allowed to be performed on
       a "pure" JavaThread. For this reason, {@link
@@ -185,7 +189,7 @@ public class Threads {
             return thread;
         } catch (Exception e) {
             throw new RuntimeException("Unable to deduce type of thread from address " + threadAddr +
-            " (expected type JavaThread, CompilerThread, ServiceThread, JvmtiAgentThread or CodeCacheSweeperThread)", e);
+            " (expected type JavaThread, CompilerThread, MonitorDeflationThread, ServiceThread, JvmtiAgentThread or CodeCacheSweeperThread)", e);
         }
     }
 

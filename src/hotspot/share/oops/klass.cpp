@@ -45,6 +45,8 @@
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "utilities/macros.hpp"
@@ -53,12 +55,16 @@
 
 void Klass::set_java_mirror(Handle m) {
   assert(!m.is_null(), "New mirror should never be null.");
-  assert(_java_mirror.resolve() == NULL, "should only be used to initialize mirror");
+  assert(_java_mirror.is_empty(), "should only be used to initialize mirror");
   _java_mirror = class_loader_data()->add_handle(m);
 }
 
 oop Klass::java_mirror_no_keepalive() const {
   return _java_mirror.peek();
+}
+
+void Klass::replace_java_mirror(oop mirror) {
+  _java_mirror.replace(mirror);
 }
 
 bool Klass::is_cloneable() const {
@@ -195,14 +201,11 @@ void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word
 // which zeros out memory - calloc equivalent.
 // The constructor is also used from CppVtableCloner,
 // which doesn't zero out the memory before calling the constructor.
-// Need to set the _java_mirror field explicitly to not hit an assert that the field
-// should be NULL before setting it.
 Klass::Klass(KlassID id) : _id(id),
-                           _java_mirror(NULL),
                            _prototype_header(markWord::prototype()),
                            _shared_class_path_index(-1) {
   CDS_ONLY(_shared_class_flags = 0;)
-  CDS_JAVA_HEAP_ONLY(_archived_mirror = 0;)
+  CDS_JAVA_HEAP_ONLY(_archived_mirror = narrowOop::null;)
   _primary_supers[0] = this;
   set_super_check_offset(in_bytes(primary_supers_offset()));
 }
@@ -555,7 +558,7 @@ void Klass::remove_java_mirror() {
     log_trace(cds, unshareable)("remove java_mirror: %s", external_name());
   }
   // Just null out the mirror.  The class_loader_data() no longer exists.
-  _java_mirror = OopHandle();
+  clear_java_mirror_handle();
 }
 
 void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS) {
@@ -609,13 +612,14 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
 
     // No archived mirror data
     log_debug(cds, mirror)("No archived mirror data for %s", external_name());
-    _java_mirror = OopHandle();
+    clear_java_mirror_handle();
     this->clear_has_raw_archived_mirror();
   }
 
   // Only recreate it if not present.  A previous attempt to restore may have
   // gotten an OOM later but keep the mirror if it was created.
   if (java_mirror() == NULL) {
+    ResourceMark rm(THREAD);
     log_trace(cds, mirror)("Recreate mirror for %s", external_name());
     java_lang_Class::create_mirror(this, loader, module_handle, protection_domain, Handle(), CHECK);
   }

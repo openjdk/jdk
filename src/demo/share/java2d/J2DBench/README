@@ -20,8 +20,9 @@ Minimum requirements
 -----------------------------------------------------------------------
 
 The benchmark requires at least jdk1.4 to compile and run. Note that
-source/target is set to 1.6 in the makefile and build.xml, because of
-support in jdk 9 compiler.
+source/target is set to 1.7 in the makefile and build.xml, because of
+support in jdk 14 compiler. To check compatibility with jdk1.4 you can
+use "-source 1.4 -target 1.4" options and jdk1.7.
 
 -----------------------------------------------------------------------
 How To Compile

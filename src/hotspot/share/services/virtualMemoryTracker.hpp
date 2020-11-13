@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,12 +94,6 @@ class VirtualMemorySnapshot : public ResourceObj {
  public:
   inline VirtualMemory* by_type(MEMFLAGS flag) {
     int index = NMTUtil::flag_to_index(flag);
-    return &_virtual_memory[index];
-  }
-
-  inline VirtualMemory* by_index(int index) {
-    assert(index >= 0, "Index out of bound");
-    assert(index < mt_number_of_types, "Index out of bound");
     return &_virtual_memory[index];
   }
 
@@ -382,6 +376,7 @@ class VirtualMemoryTracker : AllStatic {
   static bool add_committed_region      (address base_addr, size_t size, const NativeCallStack& stack);
   static bool remove_uncommitted_region (address base_addr, size_t size);
   static bool remove_released_region    (address base_addr, size_t size);
+  static bool remove_released_region    (ReservedMemoryRegion* rgn);
   static void set_reserved_region_type  (address addr, MEMFLAGS flag);
 
   // Given an existing memory mapping registered with NMT, split the mapping in
@@ -401,7 +396,7 @@ class VirtualMemoryTracker : AllStatic {
   static SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base>* _reserved_regions;
 };
 
-
+// Todo: clean up after jep387, see JDK-8251392
 class MetaspaceSnapshot : public ResourceObj {
 private:
   size_t  _reserved_in_bytes[Metaspace::MetadataTypeCount];

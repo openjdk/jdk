@@ -400,10 +400,8 @@ abstract class CMap {
         } else {
             subtableLength = buffer.getInt(offset+4) & INTMASK;
         }
-        if (offset+subtableLength > buffer.capacity()) {
-            if (FontUtilities.isLogging()) {
-                FontUtilities.getLogger().warning("Cmap subtable overflows buffer.");
-            }
+        if (FontUtilities.isLogging() && offset + subtableLength > buffer.capacity()) {
+            FontUtilities.logWarning("Cmap subtable overflows buffer.");
         }
         switch (subtableFormat) {
         case 0:  return new CMapFormat0(buffer, offset);
@@ -422,11 +420,8 @@ abstract class CMap {
         int subtableFormat = buffer.getChar(offset);
         if (subtableFormat == 14) {
             long subtableLength = buffer.getInt(offset + 2) & INTMASK;
-            if (offset + subtableLength > buffer.capacity()) {
-                if (FontUtilities.isLogging()) {
-                    FontUtilities.getLogger()
-                            .warning("Cmap UVS subtable overflows buffer.");
-                }
+            if (FontUtilities.isLogging() && offset + subtableLength > buffer.capacity()) {
+                FontUtilities.logWarning("Cmap UVS subtable overflows buffer.");
             }
             try {
                 this.uvs = new UVS(buffer, offset);

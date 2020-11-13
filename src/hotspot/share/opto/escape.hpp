@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -512,6 +512,7 @@ private:
   // offset of a field reference
   int address_offset(Node* adr, PhaseTransform *phase);
 
+  bool is_captured_store_address(Node* addp);
 
   // Propagate unique types created for unescaped allocated objects
   // through the graph
@@ -551,6 +552,11 @@ private:
     Node* phi = _node_map[idx];
     return (phi == NULL) ? NULL : phi->as_Phi();
   }
+
+  // Returns true if there is an object in the scope of sfn that does not escape globally.
+  bool has_ea_local_in_scope(SafePointNode* sfn);
+
+  bool has_arg_escape(CallJavaNode* call);
 
   // Notify optimizer that a node has been modified
   void record_for_optimizer(Node *n);

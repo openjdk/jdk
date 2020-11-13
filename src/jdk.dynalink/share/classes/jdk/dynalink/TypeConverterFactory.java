@@ -93,10 +93,10 @@ final class TypeConverterFactory {
     private final ConversionComparator[] comparators;
     private final MethodTypeConversionStrategy autoConversionStrategy;
 
-    private final ClassValue<ClassMap<MethodHandle>> converterMap = new ClassValue<ClassMap<MethodHandle>>() {
+    private final ClassValue<ClassMap<MethodHandle>> converterMap = new ClassValue<>() {
         @Override
         protected ClassMap<MethodHandle> computeValue(final Class<?> sourceType) {
-            return new ClassMap<MethodHandle>(getClassLoader(sourceType)) {
+            return new ClassMap<>(getClassLoader(sourceType)) {
                 @Override
                 protected MethodHandle computeValue(final Class<?> targetType) {
                     try {
@@ -111,10 +111,10 @@ final class TypeConverterFactory {
         }
     };
 
-    private final ClassValue<ClassMap<MethodHandle>> converterIdentityMap = new ClassValue<ClassMap<MethodHandle>>() {
+    private final ClassValue<ClassMap<MethodHandle>> converterIdentityMap = new ClassValue<>() {
         @Override
         protected ClassMap<MethodHandle> computeValue(final Class<?> sourceType) {
-            return new ClassMap<MethodHandle>(getClassLoader(sourceType)) {
+            return new ClassMap<>(getClassLoader(sourceType)) {
                 @Override
                 protected MethodHandle computeValue(final Class<?> targetType) {
                     if(!canAutoConvert(sourceType, targetType)) {
@@ -129,10 +129,10 @@ final class TypeConverterFactory {
         }
     };
 
-    private final ClassValue<ClassMap<Boolean>> canConvert = new ClassValue<ClassMap<Boolean>>() {
+    private final ClassValue<ClassMap<Boolean>> canConvert = new ClassValue<>() {
         @Override
         protected ClassMap<Boolean> computeValue(final Class<?> sourceType) {
-            return new ClassMap<Boolean>(getClassLoader(sourceType)) {
+            return new ClassMap<>(getClassLoader(sourceType)) {
                 @Override
                 protected Boolean computeValue(final Class<?> targetType) {
                     try {
@@ -148,12 +148,7 @@ final class TypeConverterFactory {
     };
 
     private static ClassLoader getClassLoader(final Class<?> clazz) {
-        return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
-            @Override
-            public ClassLoader run() {
-                return clazz.getClassLoader();
-            }
-        }, GET_CLASS_LOADER_CONTEXT);
+        return AccessController.doPrivileged((PrivilegedAction<ClassLoader>) clazz::getClassLoader, GET_CLASS_LOADER_CONTEXT);
     }
 
     /**

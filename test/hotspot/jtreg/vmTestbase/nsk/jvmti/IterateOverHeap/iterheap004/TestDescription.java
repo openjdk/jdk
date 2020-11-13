@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,11 +48,9 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build ExecDriver
- *        nsk.jvmti.IterateOverHeap.iterheap004
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
- *      "-agentlib:iterheap004=-waittime=5 -verbose"
+ * @build nsk.jvmti.IterateOverHeap.iterheap004
+ * @run main/othervm/native
+ *      -agentlib:iterheap004=-waittime=5,-verbose
  *      nsk.jvmti.IterateOverHeap.iterheap004
  */
 

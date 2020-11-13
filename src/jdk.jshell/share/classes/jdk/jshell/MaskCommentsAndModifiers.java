@@ -40,8 +40,11 @@ class MaskCommentsAndModifiers {
             Stream.of( "public", "protected", "private", "static" )
                     .collect( Collectors.toSet() );
 
-    private final static Set<String> OTHER_MODIFIERS =
-            Stream.of( "abstract", "strictfp", "transient", "volatile", "synchronized", "native", "default", "final" )
+    private final static Set<String> ALL_MODIFIERS =
+            Stream.of(
+                    "public", "protected", "private",
+                    "static", "abstract", "final",
+                    "strictfp", "transient", "volatile", "synchronized", "native", "default" )
                     .collect( Collectors.toSet() );
 
     // Builder to accumulate non-masked characters
@@ -55,6 +58,9 @@ class MaskCommentsAndModifiers {
 
     // Entire input string length
     private final int length;
+
+    // Which modifiers to mask-out
+    private final Set<String> ignoredModifiers;
 
     // The next character position
     private int next = 0;
@@ -70,9 +76,18 @@ class MaskCommentsAndModifiers {
     private boolean openToken = false;
 
     MaskCommentsAndModifiers(String s, boolean maskModifiers) {
+        this(s, maskModifiers, IGNORED_MODIFIERS);
+    }
+
+    MaskCommentsAndModifiers(String s, Set<String> ignoredModifiers) {
+        this(s, true, ignoredModifiers);
+    }
+
+    MaskCommentsAndModifiers(String s, boolean maskModifiers, Set<String> ignoredModifiers) {
         this.str = s;
         this.length = s.length();
         this.maskModifiers = maskModifiers;
+        this.ignoredModifiers = ignoredModifiers;
         read();
         while (c >= 0) {
             next();
@@ -250,11 +265,11 @@ class MaskCommentsAndModifiers {
                     } while (Character.isJavaIdentifierPart(c));
                     unread();
                     String id = sb.toString();
-                    if (maskModifiers && IGNORED_MODIFIERS.contains(id)) {
+                    if (maskModifiers && ignoredModifiers.contains(id)) {
                         writeMask(sb);
                     } else {
                         write(sb);
-                        if (maskModifiers && !OTHER_MODIFIERS.contains(id)) {
+                        if (maskModifiers && !ALL_MODIFIERS.contains(id)) {
                             maskModifiers = false;
                         }
                     }

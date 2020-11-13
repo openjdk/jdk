@@ -59,11 +59,6 @@ public class PStack extends Tool {
    }
 
    public void run(PrintStream out, Debugger dbg) {
-      if (PlatformInfo.getOS().equals("darwin")) {
-        out.println("Not available on Mac OS X");
-        return;
-      }
-
       CDebugger cdbg = dbg.getCDebugger();
       if (cdbg != null) {
          ConcurrentLocksPrinter concLocksPrinter = null;
@@ -80,6 +75,12 @@ public class PStack extends Tool {
          }
 
          List<ThreadProxy> l = cdbg.getThreadList();
+         if (l.isEmpty() && PlatformInfo.getOS().equals("darwin")) {
+           // If the list is empty, we assume we attached to a process, and on OSX we can only
+           // get the native thread list for core files.
+           out.println("Not available for Mac OS X processes");
+           return;
+        }
          final boolean cdbgCanDemangle = cdbg.canDemangle();
          for (Iterator<ThreadProxy> itr = l.iterator() ; itr.hasNext();) {
             ThreadProxy th = itr.next();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include "ci/ciObject.hpp"
 #include "ci/ciSignature.hpp"
 #include "compiler/methodLiveness.hpp"
-#include "prims/methodHandles.hpp"
+#include "runtime/handles.hpp"
 #include "utilities/bitMap.hpp"
 
 class ciMethodBlocks;
@@ -38,6 +38,7 @@ class MethodLiveness;
 class Arena;
 class BCEscapeAnalyzer;
 class InlineTree;
+class xmlStream;
 
 // Whether profiling found an oop to be always, never or sometimes
 // null
@@ -355,6 +356,7 @@ class ciMethod : public ciMetadata {
   bool has_reserved_stack_access() const         { return _has_reserved_stack_access; }
   bool is_boxing_method() const;
   bool is_unboxing_method() const;
+  bool is_vector_method() const;
   bool is_object_initializer() const;
 
   bool can_be_statically_bound(ciInstanceKlass* context) const;

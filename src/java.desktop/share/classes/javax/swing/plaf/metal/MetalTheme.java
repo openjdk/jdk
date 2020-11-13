@@ -77,6 +77,11 @@ public abstract class MetalTheme {
     private static ColorUIResource black = new ColorUIResource( 0, 0, 0 );
 
     /**
+     * Constructor for subclasses to call.
+     */
+    protected MetalTheme() {}
+
+    /**
      * Returns the name of this theme.
      *
      * @return the name of this theme

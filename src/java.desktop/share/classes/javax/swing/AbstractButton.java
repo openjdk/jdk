@@ -62,7 +62,7 @@ import javax.swing.text.*;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans&trade;
+ * of all JavaBeans
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -234,6 +234,11 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
     protected transient ChangeEvent changeEvent;
 
     private boolean hideActionText = false;
+
+    /**
+     * Constructor for subclasses to call.
+     */
+    protected AbstractButton() {}
 
     /**
      * Sets the <code>hideActionText</code> property, which determines
@@ -1918,7 +1923,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans&trade;
+     * of all JavaBeans
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
@@ -2341,7 +2346,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans&trade;
+     * of all JavaBeans
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      * @since 1.4
@@ -2350,6 +2355,11 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
     protected abstract class AccessibleAbstractButton
         extends AccessibleJComponent implements AccessibleAction,
         AccessibleValue, AccessibleText, AccessibleExtendedComponent {
+
+        /**
+         * Constructor for subclasses to call.
+         */
+        protected AccessibleAbstractButton() {}
 
         /**
          * Returns the accessible name of this object.

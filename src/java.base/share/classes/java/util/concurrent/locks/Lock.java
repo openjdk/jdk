@@ -123,7 +123,7 @@ import java.util.concurrent.TimeUnit;
  * memory synchronization semantics as provided by the built-in monitor
  * lock, as described in
  * Chapter 17 of
- * <cite>The Java&trade; Language Specification</cite>:
+ * <cite>The Java Language Specification</cite>:
  * <ul>
  * <li>A successful {@code lock} operation has the same memory
  * synchronization effects as a successful <em>Lock</em> action.

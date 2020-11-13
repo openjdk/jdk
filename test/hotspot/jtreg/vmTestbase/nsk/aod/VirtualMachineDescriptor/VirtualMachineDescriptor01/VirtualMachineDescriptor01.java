@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,21 +37,21 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build nsk.aod.VirtualMachineDescriptor.VirtualMachineDescriptor01.VirtualMachineDescriptor01
- *        nsk.share.aod.DummyTargetApplication
- * @run main/othervm -XX:+UsePerfData PropertyResolvingWrapper
+ * @build nsk.share.aod.DummyTargetApplication
+ * @run main/othervm
+ *      -XX:+UsePerfData
  *      nsk.aod.VirtualMachineDescriptor.VirtualMachineDescriptor01.VirtualMachineDescriptor01
  *      -jdk ${test.jdk}
- *      "-javaOpts=-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
+ *      -javaOpts="-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
  *      -target nsk.share.aod.DummyTargetApplication
  */
 
 package nsk.aod.VirtualMachineDescriptor.VirtualMachineDescriptor01;
 
-import com.sun.tools.attach.*;
+import com.sun.tools.attach.VirtualMachine;
+import com.sun.tools.attach.VirtualMachineDescriptor;
 import com.sun.tools.attach.spi.AttachProvider;
-import nsk.share.aod.*;
+import nsk.share.aod.AODTestRunner;
 import nsk.share.test.TestUtils;
 
 /*
@@ -109,8 +109,7 @@ public class VirtualMachineDescriptor01 extends AODTestRunner {
                     "VirtualMachineDescriptor.equals() returns 'false' for '" + targetVMDesc + "' and '" + targetVMDesc2 + "'");
 
             TestUtils.assertEquals(targetVMDesc.hashCode(), targetVMDesc2.hashCode(),
-                    "VirtualMachineDescriptor.hashCode() returns different values " + "(" + targetVMDesc.hashCode() + " and " + targetVMDesc2.hashCode() + ")" +
-                    " for '" + targetVMDesc + "' and '" + targetVMDesc2 + "'");
+                    "VirtualMachineDescriptor.hashCode() returns different values for '" + targetVMDesc + "' and '" + targetVMDesc2 + "'");
         } finally {
             targetVM.detach();
         }

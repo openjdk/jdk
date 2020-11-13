@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,9 @@
  *          support multi-release jar files
  * @library /lib/testlibrary/java/util/jar /test/lib
  * @build jdk.test.lib.RandomFactory
- *        Compiler JarBuilder CreateMultiReleaseTestJars
+ *        CreateMultiReleaseTestJars
+ *        jdk.test.lib.compiler.Compiler
+ *        jdk.test.lib.util.JarBuilder
  * @run testng MultiReleaseJarAPI
  */
 

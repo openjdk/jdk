@@ -282,7 +282,7 @@ public class setenabled003 extends JDIBase {
 
             //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ variable part
 
-
+            vm.suspend();
             switch (i) {
 
               case 0:
@@ -292,7 +292,6 @@ public class setenabled003 extends JDIBase {
                      log2("......setting up StepRequest");
                      eventRequest1 = eventRManager.createStepRequest
                                      (thread1, StepRequest.STEP_MIN, StepRequest.STEP_INTO);
-
                      try {
                          log2("......eventRequest1.setEnabled(true);  IllegalThreadStateException is expected");
                          eventRequest1.setEnabled(true);
@@ -359,6 +358,7 @@ public class setenabled003 extends JDIBase {
               default:
                       throw new JDITestRuntimeException("** default case 2 **");
             }
+            vm.resume();
 
             //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         }

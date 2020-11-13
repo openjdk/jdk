@@ -830,7 +830,6 @@ void DumperSupport::dump_field_value(DumpWriter* writer, char type, oop obj, int
 
 // returns the size of the instance of the given class
 u4 DumperSupport::instance_size(Klass* k) {
-  HandleMark hm;
   InstanceKlass* ik = InstanceKlass::cast(k);
   u4 size = 0;
 
@@ -843,7 +842,6 @@ u4 DumperSupport::instance_size(Klass* k) {
 }
 
 u4 DumperSupport::get_static_fields_size(InstanceKlass* ik, u2& field_count) {
-  HandleMark hm;
   field_count = 0;
   u4 size = 0;
 
@@ -886,7 +884,6 @@ u4 DumperSupport::get_static_fields_size(InstanceKlass* ik, u2& field_count) {
 
 // dumps static fields of the given class
 void DumperSupport::dump_static_fields(DumpWriter* writer, Klass* k) {
-  HandleMark hm;
   InstanceKlass* ik = InstanceKlass::cast(k);
 
   // dump the field descriptors and raw values
@@ -930,7 +927,6 @@ void DumperSupport::dump_static_fields(DumpWriter* writer, Klass* k) {
 
 // dump the raw values of the instance fields of the given object
 void DumperSupport::dump_instance_fields(DumpWriter* writer, oop o) {
-  HandleMark hm;
   InstanceKlass* ik = InstanceKlass::cast(o->klass());
 
   for (FieldStream fld(ik, false, false); !fld.eos(); fld.next()) {
@@ -943,7 +939,6 @@ void DumperSupport::dump_instance_fields(DumpWriter* writer, oop o) {
 
 // dumps the definition of the instance fields for a given class
 u2 DumperSupport::get_instance_fields_count(InstanceKlass* ik) {
-  HandleMark hm;
   u2 field_count = 0;
 
   for (FieldStream fldc(ik, true, true); !fldc.eos(); fldc.next()) {
@@ -955,7 +950,6 @@ u2 DumperSupport::get_instance_fields_count(InstanceKlass* ik) {
 
 // dumps the definition of the instance fields for a given class
 void DumperSupport::dump_instance_field_descriptors(DumpWriter* writer, Klass* k) {
-  HandleMark hm;
   InstanceKlass* ik = InstanceKlass::cast(k);
 
   // dump the field descriptors
@@ -1385,27 +1379,6 @@ void JNIGlobalsDumper::do_oop(oop* obj_p) {
   }
 };
 
-
-// Support class used to generate HPROF_GC_ROOT_MONITOR_USED records
-
-class MonitorUsedDumper : public OopClosure {
- private:
-  DumpWriter* _writer;
-  DumpWriter* writer() const                { return _writer; }
- public:
-  MonitorUsedDumper(DumpWriter* writer) {
-    _writer = writer;
-  }
-  void do_oop(oop* obj_p) {
-    u4 size = 1 + sizeof(address);
-    writer()->start_sub_record(HPROF_GC_ROOT_MONITOR_USED, size);
-    writer()->write_objectID(*obj_p);
-    writer()->end_sub_record();
-  }
-  void do_oop(narrowOop* obj_p) { ShouldNotReachHere(); }
-};
-
-
 // Support class used to generate HPROF_GC_ROOT_STICKY_CLASS records
 
 class StickyClassDumper : public KlassClosure {
@@ -1777,7 +1750,6 @@ void VM_HeapDumper::do_threads() {
 
 void VM_HeapDumper::doit() {
 
-  HandleMark hm;
   CollectedHeap* ch = Universe::heap();
 
   ch->ensure_parsability(false); // must happen, even if collection does
@@ -1796,7 +1768,7 @@ void VM_HeapDumper::doit() {
   set_global_dumper();
   set_global_writer();
 
-  WorkGang* gang = ch->get_safepoint_workers();
+  WorkGang* gang = ch->safepoint_workers();
 
   if (gang == NULL) {
     work(0);
@@ -1859,15 +1831,12 @@ void VM_HeapDumper::work(uint worker_id) {
   // HPROF_GC_ROOT_THREAD_OBJ + frames + jni locals
   do_threads();
 
-  // HPROF_GC_ROOT_MONITOR_USED
-  MonitorUsedDumper mon_dumper(writer());
-  ObjectSynchronizer::oops_do(&mon_dumper);
-
   // HPROF_GC_ROOT_JNI_GLOBAL
   JNIGlobalsDumper jni_dumper(writer());
   JNIHandles::oops_do(&jni_dumper);
-  Universe::oops_do(&jni_dumper);  // technically not jni roots, but global roots
-                                   // for things like preallocated throwable backtraces
+  // technically not jni roots, but global roots
+  // for things like preallocated throwable backtraces
+  Universe::vm_global()->oops_do(&jni_dumper);
 
   // HPROF_GC_ROOT_STICKY_CLASS
   // These should be classes in the NULL class loader data, and not all classes

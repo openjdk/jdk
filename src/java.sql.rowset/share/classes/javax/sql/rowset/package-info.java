@@ -56,7 +56,7 @@
  * <ul>
  * <li><a href="JdbcRowSet.html"><b>{@code JdbcRowSet}</b></a> - A wrapper around
  * a {@code ResultSet} object that makes it possible to use the result set as a
- * JavaBeans&trade; component. Thus,
+ * JavaBeans component. Thus,
  * a {@code JdbcRowSet} object can be a Bean that any tool
  * makes available for assembling an application as part of a component based
  * architecture. A {@code JdbcRowSet} object is a connected {@code RowSet}
@@ -67,8 +67,8 @@
  * data structure as defined in the JDBC 3.0 specification.
  *
  * <li><a href="CachedRowSet.html">
- * <b>{@code CachedRowSet}&trade;</b></a>
- *  - A {@code CachedRowSet} object is a JavaBeans&trade;
+ * <b>{@code CachedRowSet}</b></a>
+ *  - A {@code CachedRowSet} object is a JavaBeans
  * component that is scrollable, updatable, serializable, and generally disconnected from
  * the source of its data. A {@code CachedRowSet} object
  * typically contains rows from a result set, but it can also contain rows from any

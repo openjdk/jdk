@@ -28,6 +28,8 @@ package jdk.internal.net.http;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -39,7 +41,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Subscription;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiPredicate;
 import java.net.http.HttpClient;
@@ -133,11 +134,17 @@ class Stream<T> extends ExchangeImpl<T> {
     private volatile boolean remotelyClosed;
     private volatile boolean closed;
     private volatile boolean endStreamSent;
-
-    final AtomicBoolean deRegistered = new AtomicBoolean(false);
+    // Indicates the first reason that was invoked when sending a ResetFrame
+    // to the server. A streamState of 0 indicates that no reset was sent.
+    // (see markStream(int code)
+    private volatile int streamState; // assigned using STREAM_STATE varhandle.
+    private volatile boolean deRegistered; // assigned using DEREGISTERED varhandle.
 
     // state flags
     private boolean requestSent, responseReceived;
+
+    // send lock: prevent sending DataFrames after reset occurred.
+    private final Object sendLock = new Object();
 
     /**
      * A reference to this Stream's connection Send Window controller. The
@@ -292,7 +299,7 @@ class Stream<T> extends ExchangeImpl<T> {
     }
 
     boolean deRegister() {
-        return deRegistered.compareAndSet(false, true);
+        return DEREGISTERED.compareAndSet(this, false, true);
     }
 
     @Override
@@ -338,6 +345,36 @@ class Stream<T> extends ExchangeImpl<T> {
         sched.runOrSchedule();
     }
 
+    /**
+     * Records the first reason which was invoked when sending a ResetFrame
+     * to the server in the streamState, and return the previous value
+     * of the streamState. This is an atomic operation.
+     * A possible use of this method would be to send a ResetFrame only
+     * if no previous reset frame has been sent.
+     * For instance: <pre>{@code
+     *  if (markStream(ResetFrame.CANCEL) == 0) {
+     *      connection.sendResetFrame(streamId, ResetFrame.CANCEL);
+     *  }
+     *  }</pre>
+     * @param code the reason code as per HTTP/2 protocol
+     * @return the previous value of the stream state.
+     */
+    int  markStream(int code) {
+        if (code == 0) return streamState;
+        synchronized (sendLock) {
+            return (int) STREAM_STATE.compareAndExchange(this, 0, code);
+        }
+    }
+
+    private void sendDataFrame(DataFrame frame) {
+         synchronized (sendLock) {
+             // must not send DataFrame after reset.
+             if (streamState == 0) {
+                connection.sendDataFrame(frame);
+             }
+        }
+    }
+
     // pushes entire response body into response subscriber
     // blocking when required by local or remote flow control
     CompletableFuture<T> receiveData(BodySubscriber<T> bodySubscriber, Executor executor) {
@@ -377,6 +414,15 @@ class Stream<T> extends ExchangeImpl<T> {
         this.windowUpdater = new StreamWindowUpdateSender(connection);
     }
 
+    private boolean checkRequestCancelled() {
+        if (exchange.multi.requestCancelled()) {
+            if (errorRef.get() == null) cancel();
+            else sendCancelStreamFrame();
+            return true;
+        }
+        return false;
+    }
+
     /**
      * Entry point from Http2Connection reader thread.
      *
@@ -384,8 +430,9 @@ class Stream<T> extends ExchangeImpl<T> {
      */
     void incoming(Http2Frame frame) throws IOException {
         if (debug.on()) debug.log("incoming: %s", frame);
+        var cancelled = checkRequestCancelled() || closed;
         if ((frame instanceof HeaderFrame)) {
-            HeaderFrame hframe = (HeaderFrame)frame;
+            HeaderFrame hframe = (HeaderFrame) frame;
             if (hframe.endHeaders()) {
                 Log.logTrace("handling response (streamid={0})", streamid);
                 handleResponse();
@@ -395,9 +442,10 @@ class Stream<T> extends ExchangeImpl<T> {
                 receiveDataFrame(new DataFrame(streamid, DataFrame.END_STREAM, List.of()));
             }
         } else if (frame instanceof DataFrame) {
-            receiveDataFrame((DataFrame)frame);
+            if (cancelled) connection.dropDataFrame((DataFrame) frame);
+            else receiveDataFrame((DataFrame) frame);
         } else {
-            otherFrame(frame);
+            if (!cancelled) otherFrame(frame);
         }
     }
 
@@ -545,7 +593,7 @@ class Stream<T> extends ExchangeImpl<T> {
             Log.logRequest("PUSH_PROMISE: " + pushRequest.toString());
         }
         PushGroup<T> pushGroup = exchange.getPushGroup();
-        if (pushGroup == null) {
+        if (pushGroup == null || exchange.multi.requestCancelled()) {
             Log.logTrace("Rejecting push promise stream " + streamid);
             connection.resetStream(pushStream.streamid, ResetFrame.REFUSED_STREAM);
             pushStream.close();
@@ -720,6 +768,16 @@ class Stream<T> extends ExchangeImpl<T> {
         } else {
             requestContentLen = 0;
         }
+
+        // At this point the stream doesn't have a streamid yet.
+        // It will be allocated if we send the request headers.
+        Throwable t = errorRef.get();
+        if (t != null) {
+            if (debug.on()) debug.log("stream already cancelled, headers not sent: %s", (Object)t);
+            return MinimalFuture.failedFuture(t);
+        }
+
+        // sending the headers will cause the allocation of the stream id
         OutgoingHeaders<Stream<T>> f = headerFrame(requestContentLen);
         connection.sendFrame(f);
         CompletableFuture<ExchangeImpl<T>> cf = new MinimalFuture<>();
@@ -745,10 +803,17 @@ class Stream<T> extends ExchangeImpl<T> {
         // been already closed (or will be closed shortly after).
     }
 
-    void registerStream(int id) {
-        this.streamid = id;
-        connection.putStream(this, streamid);
-        if (debug.on()) debug.log("Registered stream %d", id);
+    boolean registerStream(int id, boolean registerIfCancelled) {
+        boolean cancelled = closed || exchange.multi.requestCancelled();
+        if (!cancelled || registerIfCancelled) {
+            this.streamid = id;
+            connection.putStream(this, streamid);
+            if (debug.on()) {
+                debug.log("Stream %d registered (cancelled: %b, registerIfCancelled: %b)",
+                        streamid, cancelled, registerIfCancelled);
+            }
+        }
+        return !cancelled;
     }
 
     void signalWindowUpdate() {
@@ -853,6 +918,7 @@ class Stream<T> extends ExchangeImpl<T> {
                     cancelImpl(t);
                     return;
                 }
+                int state = streamState;
 
                 do {
                     // handle COMPLETED;
@@ -865,7 +931,7 @@ class Stream<T> extends ExchangeImpl<T> {
                     }
 
                     // handle bytes to send downstream
-                    while (item.hasRemaining()) {
+                    while (item.hasRemaining() && state == 0) {
                         if (debug.on()) debug.log("trySend: %d", item.remaining());
                         assert !endStreamSent : "internal error, send data after END_STREAM flag";
                         DataFrame df = getDataFrame(item);
@@ -884,6 +950,7 @@ class Stream<T> extends ExchangeImpl<T> {
                                         + "Too many bytes in request body. Expected: "
                                         + contentLength + ", got: "
                                         + (contentLength - remainingContentLength);
+                                assert streamid > 0;
                                 connection.resetStream(streamid, ResetFrame.PROTOCOL_ERROR);
                                 throw new IOException(msg);
                             } else if (remainingContentLength == 0) {
@@ -891,14 +958,25 @@ class Stream<T> extends ExchangeImpl<T> {
                                 endStreamSent = true;
                             }
                         }
+                        if ((state = streamState) != 0) {
+                            if (debug.on()) debug.log("trySend: cancelled: %s", String.valueOf(t));
+                            break;
+                        }
                         if (debug.on())
                             debug.log("trySend: sending: %d", df.getDataLength());
-                        connection.sendDataFrame(df);
+                        sendDataFrame(df);
                     }
+                    if (state != 0) break;
                     assert !item.hasRemaining();
                     ByteBuffer b = outgoing.removeFirst();
                     assert b == item;
                 } while (outgoing.peekFirst() != null);
+
+                if (state != 0) {
+                    t = errorRef.get();
+                    if (t == null) t = new IOException(ResetFrame.stringForCode(streamState));
+                    throw t;
+                }
 
                 if (debug.on()) debug.log("trySend: request 1");
                 subscription.request(1);
@@ -1102,7 +1180,11 @@ class Stream<T> extends ExchangeImpl<T> {
 
     @Override
     void cancel() {
-        cancel(new IOException("Stream " + streamid + " cancelled"));
+        if ((streamid == 0)) {
+            cancel(new IOException("Stream cancelled before streamid assigned"));
+        } else {
+            cancel(new IOException("Stream " + streamid + " cancelled"));
+        }
     }
 
     void onSubscriptionError(Throwable t) {
@@ -1135,9 +1217,13 @@ class Stream<T> extends ExchangeImpl<T> {
     // This method sends a RST_STREAM frame
     void cancelImpl(Throwable e) {
         errorRef.compareAndSet(null, e);
-        if (debug.on()) debug.log("cancelling stream {0}: {1}", streamid, e);
+        if (debug.on()) {
+            if (streamid == 0) debug.log("cancelling stream: %s", (Object)e);
+            else debug.log("cancelling stream %d: %s", streamid, e);
+        }
         if (Log.trace()) {
-            Log.logTrace("cancelling stream {0}: {1}\n", streamid, e);
+            if (streamid == 0) Log.logTrace("cancelling stream: {0}\n", e);
+            else Log.logTrace("cancelling stream {0}: {1}\n", streamid, e);
         }
         boolean closing;
         if (closing = !closed) { // assigning closing to !closed
@@ -1160,19 +1246,28 @@ class Stream<T> extends ExchangeImpl<T> {
         }
         try {
             // will send a RST_STREAM frame
-            if (streamid != 0) {
-                connection.decrementStreamsCount(streamid);
+            if (streamid != 0 && streamState == 0) {
                 e = Utils.getCompletionCause(e);
                 if (e instanceof EOFException) {
                     // read EOF: no need to try & send reset
+                    connection.decrementStreamsCount(streamid);
                     connection.closeStream(streamid);
                 } else {
-                    connection.resetStream(streamid, ResetFrame.CANCEL);
+                    // no use to send CANCEL if already closed.
+                    sendCancelStreamFrame();
                 }
             }
         } catch (Throwable ex) {
             Log.logError(ex);
         }
+    }
+
+    void sendCancelStreamFrame() {
+        // do not reset a stream until it has a streamid.
+        if (streamid > 0 && markStream(ResetFrame.CANCEL) == 0) {
+            connection.resetStream(streamid, ResetFrame.CANCEL);
+        }
+        close();
     }
 
     // This method doesn't send any frame
@@ -1388,6 +1483,19 @@ class Stream<T> extends ExchangeImpl<T> {
                 Log.logTrace("RECEIVED HEADER (streamid={0}): {1}: {2}",
                              streamid, n, v);
             }
+        }
+    }
+
+    private static final VarHandle STREAM_STATE;
+    private static final VarHandle DEREGISTERED;
+    static {
+        try {
+            STREAM_STATE = MethodHandles.lookup()
+                    .findVarHandle(Stream.class, "streamState", int.class);
+            DEREGISTERED = MethodHandles.lookup()
+                    .findVarHandle(Stream.class, "deRegistered", boolean.class);
+        } catch (Exception x) {
+            throw new ExceptionInInitializerError(x);
         }
     }
 }

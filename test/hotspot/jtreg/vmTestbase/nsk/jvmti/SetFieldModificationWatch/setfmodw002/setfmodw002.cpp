@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,6 +115,11 @@ Java_nsk_jvmti_SetFieldModificationWatch_setfmodw002_check(JNIEnv *env,
     jfieldID fid;
 
     fid = env->GetStaticFieldID(cls, "fld1", "I");
+    if (fid == NULL) {
+      printf("(GetStaticFieldID) returns NULL");
+      result = STATUS_FAILED;
+      return result;
+    }
 
     if (!caps.can_generate_field_modification_events) {
         err = jvmti->SetFieldModificationWatch(cls, fid);

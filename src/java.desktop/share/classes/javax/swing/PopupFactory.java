@@ -115,6 +115,10 @@ public class PopupFactory {
      */
     private int popupType = LIGHT_WEIGHT_POPUP;
 
+    /**
+     * Constructs a {@code PopupFactory}.
+     */
+    public PopupFactory() {}
 
     /**
      * Sets the <code>PopupFactory</code> that will be used to obtain

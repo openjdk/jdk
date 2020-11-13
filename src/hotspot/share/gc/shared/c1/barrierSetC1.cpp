@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "c1/c1_Defs.hpp"
 #include "c1/c1_LIRGenerator.hpp"
+#include "classfile/javaClasses.hpp"
 #include "gc/shared/c1/barrierSetC1.hpp"
 #include "utilities/macros.hpp"
 

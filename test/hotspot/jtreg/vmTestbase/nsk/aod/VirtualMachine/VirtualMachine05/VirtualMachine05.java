@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,22 +35,23 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build nsk.aod.VirtualMachine.VirtualMachine05.VirtualMachine05
- *        nsk.share.aod.DummyTargetApplication
- * @run main/othervm -XX:+UsePerfData PropertyResolvingWrapper
+ * @build nsk.share.aod.DummyTargetApplication
+ * @run main/othervm
+ *      -XX:+UsePerfData
  *      nsk.aod.VirtualMachine.VirtualMachine05.VirtualMachine05
  *      -jdk ${test.jdk}
- *      "-javaOpts=-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
+ *      -javaOpts="-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
  *      -target nsk.share.aod.DummyTargetApplication
  */
 
 package nsk.aod.VirtualMachine.VirtualMachine05;
 
-import java.util.List;
-import com.sun.tools.attach.*;
-import nsk.share.aod.*;
+import com.sun.tools.attach.VirtualMachine;
+import com.sun.tools.attach.VirtualMachineDescriptor;
+import nsk.share.aod.AODTestRunner;
 import nsk.share.test.TestUtils;
+
+import java.util.List;
 
 /*
  * Test checks method VirtualMachine.list()
@@ -63,14 +64,14 @@ public class VirtualMachine05 extends AODTestRunner {
         super(args);
     }
 
-    public void doTestActions(String targetVMId) throws Throwable {
+    public void doTestActions(String targetVMId) {
         String currentVMId = getCurrentVMId();
 
         log.display("Checking VirtualMachine.list()");
-        checkList(VirtualMachine.list(), currentVMId, targetVMId);
+        checkList(currentVMId, targetVMId);
     }
 
-    private void checkList(List<VirtualMachineDescriptor> vmDescriptors, String currentVMId, String targetVMId) {
+    private void checkList(String currentVMId, String targetVMId) {
         VirtualMachineDescriptor currentVM = null;
         VirtualMachineDescriptor targetVM = null;
 

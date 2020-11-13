@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ public interface DocSourcePositions extends SourcePositions {
     /**
      * Returns the starting position of the tree within the comment within the file.  If tree is not found within
      * file, or if the starting position is not available,
-     * return {@link javax.tools.Diagnostic#NOPOS}.
+     * returns {@link javax.tools.Diagnostic#NOPOS}.
      * The given tree should be under the given comment tree, and the given documentation
      * comment tree should be returned from a {@link DocTrees#getDocCommentTree(com.sun.source.util.TreePath) }
      * for a tree under the given file.
@@ -54,18 +54,18 @@ public interface DocSourcePositions extends SourcePositions {
      * {@code subtree.getStartPosition() == NOPOS}
      * </p>
      *
-     * @param file CompilationUnit in which to find tree.
+     * @param file compilation unit in which to find tree
      * @param comment the comment tree that encloses the tree for which the
      *                position is being sought
-     * @param tree tree for which a position is sought.
-     * @return the start position of tree.
+     * @param tree tree for which a position is sought
+     * @return the start position of tree
      */
     long getStartPosition(CompilationUnitTree file, DocCommentTree comment, DocTree tree);
 
     /**
      * Returns the ending position of the tree within the comment within the file.  If tree is not found within
      * file, or if the ending position is not available,
-     * return {@link javax.tools.Diagnostic#NOPOS}.
+     * returns {@link javax.tools.Diagnostic#NOPOS}.
      * The given tree should be under the given comment tree, and the given documentation
      * comment tree should be returned from a {@link DocTrees#getDocCommentTree(com.sun.source.util.TreePath) }
      * for a tree under the given file.
@@ -81,16 +81,16 @@ public interface DocSourcePositions extends SourcePositions {
      * In addition, the following must hold:
      *
      * <p>
-     * {@code tree.getStartPosition() <= tree.getEndPosition()}  or <br>
+     * {@code tree.getStartPosition() <= tree.getEndPosition()} or <br>
      * {@code tree.getStartPosition() == NOPOS} or <br>
      * {@code tree.getEndPosition() == NOPOS}
      * </p>
      *
-     * @param file CompilationUnit in which to find tree.
+     * @param file compilation unit in which to find tree
      * @param comment the comment tree that encloses the tree for which the
      *                position is being sought
-     * @param tree tree for which a position is sought.
-     * @return the start position of tree.
+     * @param tree tree for which a position is sought
+     * @return the end position of tree
      */
     long getEndPosition(CompilationUnitTree file, DocCommentTree comment, DocTree tree);
 

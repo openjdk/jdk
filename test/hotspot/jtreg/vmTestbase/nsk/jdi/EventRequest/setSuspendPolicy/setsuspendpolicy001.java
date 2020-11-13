@@ -401,6 +401,7 @@ public class setsuspendpolicy001 extends JDIBase {
                 log3("ERROR: suspendPolicy() != EventRequest.SUSPEND_NONE");
             }
 
+            vm.suspend();
             log2("......eventRequest1.setEnabled(true);");
             eventRequest1.setEnabled(true);
             try {
@@ -421,6 +422,7 @@ public class setsuspendpolicy001 extends JDIBase {
             } catch ( InvalidRequestStateException e ) {
                 log2("        InvalidRequestStateException");
             }
+            vm.resume();
 
             //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         }

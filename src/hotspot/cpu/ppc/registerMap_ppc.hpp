@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -33,8 +33,6 @@
   // This is the hook for finding a register in an "well-known" location,
   // such as a register block of a predetermined format.
   // Since there is none, we just return NULL.
-  // See registerMap_sparc.hpp for an example of grabbing registers
-  // from register save areas of a standard layout.
   address pd_location(VMReg reg) const { return NULL; }
 
   // no PD state to clear or copy:

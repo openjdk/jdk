@@ -24,8 +24,9 @@
 
 #include "precompiled.hpp"
 #include "aot/aotLoader.hpp"
-#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classFileStream.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
+#include "classfile/classLoadInfo.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/symbolTable.hpp"
@@ -95,31 +96,69 @@ static inline InstanceKlass* get_ik(jclass def) {
 // If any of the classes are being redefined, wait
 // Parallel constant pool merging leads to indeterminate constant pools.
 void VM_RedefineClasses::lock_classes() {
+  JvmtiThreadState *state = JvmtiThreadState::state_for(JavaThread::current());
+  GrowableArray<Klass*>* redef_classes = state->get_classes_being_redefined();
+
   MonitorLocker ml(RedefineClasses_lock);
+
+  if (redef_classes == NULL) {
+    redef_classes = new(ResourceObj::C_HEAP, mtClass) GrowableArray<Klass*>(1, mtClass);
+    state->set_classes_being_redefined(redef_classes);
+  }
+
   bool has_redefined;
   do {
     has_redefined = false;
-    // Go through classes each time until none are being redefined.
+    // Go through classes each time until none are being redefined. Skip
+    // the ones that are being redefined by this thread currently. Class file
+    // load hook event may trigger new class redefine when we are redefining
+    // a class (after lock_classes()).
     for (int i = 0; i < _class_count; i++) {
-      if (get_ik(_class_defs[i].klass)->is_being_redefined()) {
-        ml.wait();
-        has_redefined = true;
-        break;  // for loop
+      InstanceKlass* ik = get_ik(_class_defs[i].klass);
+      // Check if we are currently redefining the class in this thread already.
+      if (redef_classes->contains(ik)) {
+        assert(ik->is_being_redefined(), "sanity");
+      } else {
+        if (ik->is_being_redefined()) {
+          ml.wait();
+          has_redefined = true;
+          break;  // for loop
+        }
       }
     }
   } while (has_redefined);
+
   for (int i = 0; i < _class_count; i++) {
-    get_ik(_class_defs[i].klass)->set_is_being_redefined(true);
+    InstanceKlass* ik = get_ik(_class_defs[i].klass);
+    redef_classes->push(ik); // Add to the _classes_being_redefined list
+    ik->set_is_being_redefined(true);
   }
   ml.notify_all();
 }
 
 void VM_RedefineClasses::unlock_classes() {
+  JvmtiThreadState *state = JvmtiThreadState::state_for(JavaThread::current());
+  GrowableArray<Klass*>* redef_classes = state->get_classes_being_redefined();
+  assert(redef_classes != NULL, "_classes_being_redefined is not allocated");
+
   MonitorLocker ml(RedefineClasses_lock);
-  for (int i = 0; i < _class_count; i++) {
-    assert(get_ik(_class_defs[i].klass)->is_being_redefined(),
+
+  for (int i = _class_count - 1; i >= 0; i--) {
+    InstanceKlass* def_ik = get_ik(_class_defs[i].klass);
+    if (redef_classes->length() > 0) {
+      // Remove the class from _classes_being_redefined list
+      Klass* k = redef_classes->pop();
+      assert(def_ik == k, "unlocking wrong class");
+    }
+    assert(def_ik->is_being_redefined(),
            "should be being redefined to get here");
-    get_ik(_class_defs[i].klass)->set_is_being_redefined(false);
+
+    // Unlock after we finish all redefines for this class within
+    // the thread. Same class can be pushed to the list multiple
+    // times (not more than once by each recursive redefinition).
+    if (!redef_classes->contains(def_ik)) {
+      def_ik->set_is_being_redefined(false);
+    }
   }
   ml.notify_all();
 }
@@ -1221,6 +1260,44 @@ bool VM_RedefineClasses::is_unresolved_class_mismatch(const constantPoolHandle& 
 } // end is_unresolved_class_mismatch()
 
 
+// The bug 6214132 caused the verification to fail.
+// 1. What's done in RedefineClasses() before verification:
+//  a) A reference to the class being redefined (_the_class) and a
+//     reference to new version of the class (_scratch_class) are
+//     saved here for use during the bytecode verification phase of
+//     RedefineClasses.
+//  b) The _java_mirror field from _the_class is copied to the
+//     _java_mirror field in _scratch_class. This means that a jclass
+//     returned for _the_class or _scratch_class will refer to the
+//     same Java mirror. The verifier will see the "one true mirror"
+//     for the class being verified.
+// 2. See comments in JvmtiThreadState for what is done during verification.
+
+class RedefineVerifyMark : public StackObj {
+ private:
+  JvmtiThreadState* _state;
+  Klass*            _scratch_class;
+  Handle            _scratch_mirror;
+
+ public:
+
+  RedefineVerifyMark(Klass* the_class, Klass* scratch_class,
+                     JvmtiThreadState* state) : _state(state), _scratch_class(scratch_class)
+  {
+    _state->set_class_versions_map(the_class, scratch_class);
+    _scratch_mirror = Handle(_state->get_thread(), _scratch_class->java_mirror());
+    _scratch_class->replace_java_mirror(the_class->java_mirror());
+  }
+
+  ~RedefineVerifyMark() {
+    // Restore the scratch class's mirror, so when scratch_class is removed
+    // the correct mirror pointing to it can be cleared.
+    _scratch_class->replace_java_mirror(_scratch_mirror());
+    _state->clear_class_versions_map();
+  }
+};
+
+
 jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
 
   // For consistency allocate memory using os::malloc wrapper.
@@ -1375,7 +1452,8 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
       }
     }
 
-    if (VerifyMergedCPBytecodes) {
+#ifdef ASSERT
+    {
       // verify what we have done during constant pool merging
       {
         RedefineVerifyMark rvm(the_class, scratch_class, state);
@@ -1395,6 +1473,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
         }
       }
     }
+#endif // ASSERT
 
     Rewriter::rewrite(scratch_class, THREAD);
     if (!HAS_PENDING_EXCEPTION) {

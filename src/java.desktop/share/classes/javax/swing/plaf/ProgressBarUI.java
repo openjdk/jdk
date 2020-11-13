@@ -32,4 +32,8 @@ package javax.swing.plaf;
  * @author Rob Davis
  */
 public abstract class ProgressBarUI extends ComponentUI {
+    /**
+     * Constructor for subclasses to call.
+     */
+    protected ProgressBarUI() {}
 }

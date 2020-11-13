@@ -69,7 +69,7 @@ import java.beans.PropertyChangeListener;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans&trade;
+ * of all JavaBeans
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -534,13 +534,6 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
             return;
         }
         m.setValue(n);
-
-        if (accessibleContext != null) {
-            accessibleContext.firePropertyChange(
-                                                AccessibleContext.ACCESSIBLE_VALUE_PROPERTY,
-                                                Integer.valueOf(oldValue),
-                                                Integer.valueOf(m.getValue()));
-        }
     }
 
 
@@ -1407,14 +1400,25 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans&trade;
+     * of all JavaBeans
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
     @SuppressWarnings("serial") // Same-version serialization only
     protected class AccessibleJSlider extends AccessibleJComponent
-    implements AccessibleValue {
+    implements AccessibleValue, ChangeListener {
 
+
+        private int oldModelValue;
+
+        /**
+         * constructs an AccessibleJSlider
+         */
+        protected AccessibleJSlider() {
+            // model is guaranteed to be non-null
+            oldModelValue = getModel().getValue();
+            JSlider.this.addChangeListener(this);
+        }
         /**
          * Get the state set of this object.
          *
@@ -1434,6 +1438,24 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
                 states.add(AccessibleState.HORIZONTAL);
             }
             return states;
+        }
+
+        /**
+         * Invoked when the target of the listener has changed its state.
+         *
+         * @param e  a {@code ChangeEvent} object. Must not be {@code null}
+         * @throws NullPointerException if the parameter is {@code null}
+         */
+        public void stateChanged(ChangeEvent e) {
+            if (e == null) {
+                throw new NullPointerException();
+            }
+            int newModelValue = getModel().getValue();
+            firePropertyChange(
+                    AccessibleContext.ACCESSIBLE_VALUE_PROPERTY,
+                    Integer.valueOf(oldModelValue),
+                    Integer.valueOf(newModelValue));
+            oldModelValue = newModelValue;
         }
 
         /**

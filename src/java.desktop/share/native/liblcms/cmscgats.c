@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2017 Marti Maria Saguer
+//  Copyright (c) 1998-2020 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -158,7 +158,7 @@ typedef struct _Table {
 
 // File stream being parsed
 typedef struct _FileContext {
-        char           FileName[cmsMAX_PATH];    // File name if being readed from file
+        char           FileName[cmsMAX_PATH];    // File name if being read from file
         FILE*          Stream;                   // File stream or NULL if holded in memory
     } FILECTX;
 
@@ -285,7 +285,7 @@ static PROPERTY PredefinedProperties[] = {
                                                    // needed.
 
         {"SAMPLE_BACKING",   WRITE_STRINGIFY},     // Identifies the backing material used behind the sample during
-                                                   // measurement. Allowed values are “black”, “white”, or {"na".
+                                                   // measurement. Allowed values are "black", "white", or {"na".
 
         {"CHISQ_DOF",        WRITE_STRINGIFY},     // Degrees of freedom associated with the Chi squared statistic
                                                    // below properties are new in recent specs:
@@ -300,7 +300,7 @@ static PROPERTY PredefinedProperties[] = {
                                                    // denote the use of filters such as none, D65, Red, Green or Blue.
 
        {"POLARIZATION",      WRITE_STRINGIFY},     // Identifies the use of a physical polarization filter during measurement. Allowed
-                                                   // values are {"yes”, “white”, “none” or “na”.
+                                                   // values are {"yes", "white", "none" or "na".
 
        {"WEIGHTING_FUNCTION", WRITE_PAIR},         // Indicates such functions as: the CIE standard observer functions used in the
                                                    // calculation of various data parameters (2 degree and 10 degree), CIE standard
@@ -712,8 +712,8 @@ cmsFloat64Number ParseFloatNumber(const char *Buffer)
 static
 void InSymbol(cmsIT8* it8)
 {
-    register char *idptr;
-    register int k;
+    CMSREGISTER char *idptr;
+    CMSREGISTER int k;
     SYMBOL key;
     int sng;
 
@@ -2195,65 +2195,47 @@ void CookPointers(cmsIT8* it8)
         if (cmsstrcasecmp(Fld, "SAMPLE_ID") == 0) {
 
             t -> SampleID = idField;
-
-            for (i=0; i < t -> nPatches; i++) {
-
-                char *Data = GetData(it8, i, idField);
-                if (Data) {
-                    char Buffer[256];
-
-                    strncpy(Buffer, Data, 255);
-                    Buffer[255] = 0;
-
-                    if (strlen(Buffer) <= strlen(Data))
-                        strcpy(Data, Buffer);
-                    else
-                        SetData(it8, i, idField, Buffer);
-
-                }
-            }
-
         }
 
         // "LABEL" is an extension. It keeps references to forward tables
 
-        if ((cmsstrcasecmp(Fld, "LABEL") == 0) || Fld[0] == '$' ) {
+        if ((cmsstrcasecmp(Fld, "LABEL") == 0) || Fld[0] == '$') {
 
-                    // Search for table references...
-                    for (i=0; i < t -> nPatches; i++) {
+            // Search for table references...
+            for (i = 0; i < t->nPatches; i++) {
 
-                            char *Label = GetData(it8, i, idField);
+                char* Label = GetData(it8, i, idField);
 
-                            if (Label) {
+                if (Label) {
 
-                                cmsUInt32Number k;
+                    cmsUInt32Number k;
 
-                                // This is the label, search for a table containing
-                                // this property
+                    // This is the label, search for a table containing
+                    // this property
 
-                                for (k=0; k < it8 ->TablesCount; k++) {
+                    for (k = 0; k < it8->TablesCount; k++) {
 
-                                    TABLE* Table = it8 ->Tab + k;
-                                    KEYVALUE* p;
+                        TABLE* Table = it8->Tab + k;
+                        KEYVALUE* p;
 
-                                    if (IsAvailableOnList(Table->HeaderList, Label, NULL, &p)) {
+                        if (IsAvailableOnList(Table->HeaderList, Label, NULL, &p)) {
 
-                                        // Available, keep type and table
-                                        char Buffer[256];
+                            // Available, keep type and table
+                            char Buffer[256];
 
-                                        char *Type  = p ->Value;
-                                        int  nTable = (int) k;
+                            char* Type = p->Value;
+                            int  nTable = (int)k;
 
-                                        snprintf(Buffer, 255, "%s %d %s", Label, nTable, Type );
+                            snprintf(Buffer, 255, "%s %d %s", Label, nTable, Type);
 
-                                        SetData(it8, i, idField, Buffer);
-                                    }
-                                }
-
-
-                            }
-
+                            SetData(it8, i, idField, Buffer);
+                        }
                     }
+
+
+                }
+
+            }
 
 
         }
@@ -2349,6 +2331,11 @@ cmsHANDLE  CMSEXPORT cmsIT8LoadFromMem(cmsContext ContextID, const void *Ptr, cm
 
     it8 = (cmsIT8*) hIT8;
     it8 ->MemoryBlock = (char*) _cmsMalloc(ContextID, len + 1);
+    if (it8->MemoryBlock == NULL)
+    {
+        cmsIT8Free(hIT8);
+        return FALSE;
+    }
 
     strncpy(it8 ->MemoryBlock, (const char*) Ptr, len);
     it8 ->MemoryBlock[len] = 0;

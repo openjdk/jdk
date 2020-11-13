@@ -29,6 +29,7 @@ import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.FileAssociations;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.Annotations.Parameter;
 
 /**
  * Test --file-associations parameter. Output of the test should be
@@ -60,7 +61,7 @@ import jdk.jpackage.test.Annotations.Test;
  * @key jpackagePlatformPackage
  * @requires jpackage.test.SQETest == null
  * @build jdk.jpackage.test.*
- * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
+ * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile FileAssociationsTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=FileAssociationsTest
@@ -73,7 +74,7 @@ import jdk.jpackage.test.Annotations.Test;
  * @key jpackagePlatformPackage
  * @requires jpackage.test.SQETest != null
  * @build jdk.jpackage.test.*
- * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
+ * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile FileAssociationsTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=FileAssociationsTest.test
@@ -81,13 +82,19 @@ import jdk.jpackage.test.Annotations.Test;
 
 public class FileAssociationsTest {
     @Test
-    public static void test() {
+    @Parameter("true")
+    @Parameter("false")
+    public static void test(boolean includeDescription) {
         PackageTest packageTest = new PackageTest();
 
         // Not supported
         packageTest.excludeTypes(PackageType.MAC_DMG);
 
-        new FileAssociations("jptest1").applyTo(packageTest);
+        FileAssociations fa = new FileAssociations("jptest1");
+        if (!includeDescription) {
+            fa.setDescription(null);
+        }
+        fa.applyTo(packageTest);
 
         Path icon = TKit.TEST_SRC_ROOT.resolve(Path.of("resources", "icon"
                 + TKit.ICON_SUFFIX));

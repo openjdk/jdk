@@ -49,6 +49,11 @@ public class MultiScrollPaneUI extends ScrollPaneUI {
      */
     protected Vector<ComponentUI> uis = new Vector<>();
 
+    /**
+     * Constructs a {@code MultiScrollPaneUI}.
+     */
+    public MultiScrollPaneUI() {}
+
 ////////////////////
 // Common UI methods
 ////////////////////

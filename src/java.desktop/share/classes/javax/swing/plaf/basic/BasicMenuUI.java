@@ -71,6 +71,11 @@ public class BasicMenuUI extends BasicMenuItemUI
     private static boolean crossMenuMnemonic = true;
 
     /**
+     * Constructs a {@code BasicMenuUI}.
+     */
+    public BasicMenuUI() {}
+
+    /**
      * Constructs a new instance of {@code BasicMenuUI}.
      *
      * @param x a component
@@ -364,6 +369,11 @@ public class BasicMenuUI extends BasicMenuItemUI
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
+
+        /**
+         * Constructs a {@code MouseInputHandler}.
+         */
+        protected MouseInputHandler() {}
 
         public void mouseClicked(MouseEvent e) {
             getHandler().mouseClicked(e);

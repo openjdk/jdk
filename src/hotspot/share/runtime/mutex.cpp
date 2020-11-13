@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,8 +50,8 @@ void Mutex::check_safepoint_state(Thread* thread) {
   // If the JavaThread checks for safepoint, verify that the lock wasn't created with safepoint_check_never.
   if (thread->is_active_Java_thread()) {
     assert(_safepoint_check_required != _safepoint_check_never,
-           "This lock should %s have a safepoint check for Java threads: %s",
-           _safepoint_check_required ? "always" : "never", name());
+           "This lock should never have a safepoint check for Java threads: %s",
+           name());
 
     // Also check NoSafepointVerifier, and thread state is _thread_in_vm
     thread->check_for_valid_safepoint_state();
@@ -65,8 +65,8 @@ void Mutex::check_safepoint_state(Thread* thread) {
 void Mutex::check_no_safepoint_state(Thread* thread) {
   check_block_state(thread);
   assert(!thread->is_active_Java_thread() || _safepoint_check_required != _safepoint_check_always,
-         "This lock should %s have a safepoint check for Java threads: %s",
-         _safepoint_check_required ? "always" : "never", name());
+         "This lock should always have a safepoint check for Java threads: %s",
+         name());
 }
 #endif // ASSERT
 
@@ -84,7 +84,7 @@ void Mutex::lock_contended(Thread* self) {
     // Is it a JavaThread participating in the safepoint protocol.
     if (is_active_Java_thread) {
       assert(rank() > Mutex::special, "Potential deadlock with special or lesser rank mutex");
-      { ThreadBlockInVMWithDeadlockCheck tbivmdc((JavaThread *) self, &in_flight_mutex);
+      { ThreadBlockInVMWithDeadlockCheck tbivmdc(self->as_Java_thread(), &in_flight_mutex);
         in_flight_mutex = this;  // save for ~ThreadBlockInVMWithDeadlockCheck
         _lock.lock();
       }
@@ -185,7 +185,7 @@ void Monitor::assert_wait_lock_state(Thread* self) {
 }
 #endif // ASSERT
 
-bool Monitor::wait_without_safepoint_check(long timeout) {
+bool Monitor::wait_without_safepoint_check(int64_t timeout) {
   Thread* const self = Thread::current();
 
   // timeout is in milliseconds - with zero meaning never timeout
@@ -205,8 +205,8 @@ bool Monitor::wait_without_safepoint_check(long timeout) {
   return wait_status != 0;          // return true IFF timeout
 }
 
-bool Monitor::wait(long timeout, bool as_suspend_equivalent) {
-  Thread* const self = Thread::current();
+bool Monitor::wait(int64_t timeout, bool as_suspend_equivalent) {
+  JavaThread* const self = JavaThread::current();
 
   // timeout is in milliseconds - with zero meaning never timeout
   assert(timeout >= 0, "negative timeout");
@@ -223,14 +223,14 @@ bool Monitor::wait(long timeout, bool as_suspend_equivalent) {
   set_owner(NULL);
   // Check safepoint state after resetting owner and possible NSV.
   check_safepoint_state(self);
-  JavaThread *jt = (JavaThread *)self;
+
   Mutex* in_flight_mutex = NULL;
 
   {
-    ThreadBlockInVMWithDeadlockCheck tbivmdc(jt, &in_flight_mutex);
+    ThreadBlockInVMWithDeadlockCheck tbivmdc(self, &in_flight_mutex);
     OSThreadWaitState osts(self->osthread(), false /* not Object.wait() */);
     if (as_suspend_equivalent) {
-      jt->set_suspend_equivalent();
+      self->set_suspend_equivalent();
       // cleared by handle_special_suspend_equivalent_condition() or
       // java_suspend_self()
     }
@@ -239,13 +239,13 @@ bool Monitor::wait(long timeout, bool as_suspend_equivalent) {
     in_flight_mutex = this;  // save for ~ThreadBlockInVMWithDeadlockCheck
 
     // were we externally suspended while we were waiting?
-    if (as_suspend_equivalent && jt->handle_special_suspend_equivalent_condition()) {
+    if (as_suspend_equivalent && self->handle_special_suspend_equivalent_condition()) {
       // Our event wait has finished and we own the lock, but
       // while we were waiting another thread suspended us. We don't
       // want to hold the lock while suspended because that
       // would surprise the thread that suspended us.
       _lock.unlock();
-      jt->java_suspend_self();
+      self->java_suspend_self();
       _lock.lock();
     }
   }

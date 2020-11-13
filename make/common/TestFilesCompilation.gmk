@@ -62,7 +62,11 @@ define SetupTestFilesCompilationBody
     $1_OUTPUT_SUBDIR := lib
     $1_BASE_CFLAGS := $(CFLAGS_JDKLIB)
     $1_BASE_CXXFLAGS := $(CXXFLAGS_JDKLIB)
-    $1_LDFLAGS := $(LDFLAGS_JDKLIB) $$(call SET_SHARED_LIBRARY_ORIGIN)
+    ifeq ($(call isTargetOs, windows), false)
+	$1_LDFLAGS := $(LDFLAGS_JDKLIB) $$(call SET_SHARED_LIBRARY_ORIGIN) -pthread
+    else
+	$1_LDFLAGS := $(LDFLAGS_JDKLIB) $$(call SET_SHARED_LIBRARY_ORIGIN)
+    endif
     $1_COMPILATION_TYPE := LIBRARY
   else ifeq ($$($1_TYPE), PROGRAM)
     $1_PREFIX = exe

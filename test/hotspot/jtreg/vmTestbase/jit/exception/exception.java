@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build jit.exception.exception
- * @run driver ExecDriver --java jit.exception.exception
+ * @run main/othervm jit.exception.exception
  */
 
 package jit.exception;
@@ -50,7 +48,7 @@ package jit.exception;
 
 import nsk.share.TestFailure;
 
-class exception {
+public class exception {
     public static void main(String[] args) {
         int i, j;
 

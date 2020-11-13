@@ -42,6 +42,10 @@ import java.awt.FocusTraversalPolicy;
 public abstract class InternalFrameFocusTraversalPolicy
     extends FocusTraversalPolicy
 {
+    /**
+     * Constructor for subclasses to call.
+     */
+    protected InternalFrameFocusTraversalPolicy() {}
 
     /**
      * Returns the Component that should receive the focus when a

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -347,7 +347,11 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
     VirtualMemorySummary::record_reserved_memory(size, flag);
     return _reserved_regions->add(rgn) != NULL;
   } else {
-    if (reserved_rgn->same_region(base_addr, size)) {
+    // Deal with recursive reservation
+    // os::reserve_memory() -> pd_reserve_memory() -> os::reserve_memory()
+    // See JDK-8198226.
+    if (reserved_rgn->same_region(base_addr, size) &&
+        (reserved_rgn->flag() == flag || reserved_rgn->flag() == mtNone)) {
       reserved_rgn->set_call_stack(stack);
       reserved_rgn->set_flag(flag);
       return true;
@@ -445,6 +449,19 @@ bool VirtualMemoryTracker::remove_uncommitted_region(address addr, size_t size) 
   return result;
 }
 
+bool VirtualMemoryTracker::remove_released_region(ReservedMemoryRegion* rgn) {
+  assert(rgn != NULL, "Sanity check");
+  assert(_reserved_regions != NULL, "Sanity check");
+
+  // uncommit regions within the released region
+  if (!rgn->remove_uncommitted_region(rgn->base(), rgn->size())) {
+    return false;
+  }
+
+  VirtualMemorySummary::record_released_memory(rgn->size(), rgn->flag());
+  return _reserved_regions->remove(*rgn);
+}
+
 bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
   assert(addr != NULL, "Invalid address");
   assert(size > 0, "Invalid size");
@@ -454,6 +471,9 @@ bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
   ReservedMemoryRegion* reserved_rgn = _reserved_regions->find(rgn);
 
   assert(reserved_rgn != NULL, "No reserved region");
+  if (reserved_rgn->same_region(addr, size)) {
+    return remove_released_region(reserved_rgn);
+  }
 
   // uncommit regions within the released region
   if (!reserved_rgn->remove_uncommitted_region(addr, size)) {
@@ -461,8 +481,7 @@ bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
   }
 
   if (reserved_rgn->flag() == mtClassShared &&
-      reserved_rgn->contain_region(addr, size) &&
-      !reserved_rgn->same_region(addr, size)) {
+      reserved_rgn->contain_region(addr, size)) {
     // This is an unmapped CDS region, which is part of the reserved shared
     // memory region.
     // See special handling in VirtualMemoryTracker::add_reserved_region also.
@@ -471,29 +490,25 @@ bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
 
   VirtualMemorySummary::record_released_memory(size, reserved_rgn->flag());
 
-  if (reserved_rgn->same_region(addr, size)) {
-    return _reserved_regions->remove(rgn);
+  assert(reserved_rgn->contain_region(addr, size), "Not completely contained");
+  if (reserved_rgn->base() == addr ||
+      reserved_rgn->end() == addr + size) {
+      reserved_rgn->exclude_region(addr, size);
+    return true;
   } else {
-    assert(reserved_rgn->contain_region(addr, size), "Not completely contained");
-    if (reserved_rgn->base() == addr ||
-        reserved_rgn->end() == addr + size) {
-        reserved_rgn->exclude_region(addr, size);
-      return true;
-    } else {
-      address top = reserved_rgn->end();
-      address high_base = addr + size;
-      ReservedMemoryRegion high_rgn(high_base, top - high_base,
-        *reserved_rgn->call_stack(), reserved_rgn->flag());
+    address top = reserved_rgn->end();
+    address high_base = addr + size;
+    ReservedMemoryRegion high_rgn(high_base, top - high_base,
+      *reserved_rgn->call_stack(), reserved_rgn->flag());
 
-      // use original region for lower region
-      reserved_rgn->exclude_region(addr, top - addr);
-      LinkedListNode<ReservedMemoryRegion>* new_rgn = _reserved_regions->add(high_rgn);
-      if (new_rgn == NULL) {
-        return false;
-      } else {
-        reserved_rgn->move_committed_regions(addr, *new_rgn->data());
-        return true;
-      }
+    // use original region for lower region
+    reserved_rgn->exclude_region(addr, top - addr);
+    LinkedListNode<ReservedMemoryRegion>* new_rgn = _reserved_regions->add(high_rgn);
+    if (new_rgn == NULL) {
+      return false;
+    } else {
+      reserved_rgn->move_committed_regions(addr, *new_rgn->data());
+      return true;
     }
   }
 }
@@ -512,7 +527,7 @@ bool VirtualMemoryTracker::split_reserved_region(address addr, size_t size, size
   NativeCallStack original_stack = *reserved_rgn->call_stack();
   MEMFLAGS original_flags = reserved_rgn->flag();
 
-  _reserved_regions->remove(rgn);
+  remove_released_region(reserved_rgn);
 
   // Now, create two new regions.
   add_reserved_region(addr, split, original_stack, original_flags);
@@ -656,15 +671,14 @@ void MetaspaceSnapshot::snapshot(Metaspace::MetadataType type, MetaspaceSnapshot
   mss._committed_in_bytes[type]  = MetaspaceUtils::committed_bytes(type);
   mss._used_in_bytes[type]       = MetaspaceUtils::used_bytes(type);
 
-  size_t free_in_bytes = (MetaspaceUtils::capacity_bytes(type) - MetaspaceUtils::used_bytes(type))
-                       + MetaspaceUtils::free_chunks_total_bytes(type)
-                       + MetaspaceUtils::free_in_vs_bytes(type);
-  mss._free_in_bytes[type] = free_in_bytes;
+  // The answer to "what is free" in metaspace is complex and cannot be answered with a single number.
+  // Free as in available to all loaders? Free, pinned to one loader? For now, keep it simple.
+  mss._free_in_bytes[type] = mss._committed_in_bytes[type] - mss._used_in_bytes[type];
 }
 
 void MetaspaceSnapshot::snapshot(MetaspaceSnapshot& mss) {
-  snapshot(Metaspace::ClassType, mss);
+  snapshot(Metaspace::NonClassType, mss);
   if (Metaspace::using_class_space()) {
-    snapshot(Metaspace::NonClassType, mss);
+    snapshot(Metaspace::ClassType, mss);
   }
 }

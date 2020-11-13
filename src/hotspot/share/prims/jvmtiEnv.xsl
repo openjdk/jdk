@@ -1,6 +1,6 @@
 <?xml version="1.0"?> 
 <!--
- Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -139,7 +139,7 @@ JvmtiEnv::</xsl:text>
 <xsl:template match="jmethodID" mode="advice">
   <xsl:param name="name"/>
   <xsl:text>
-// method_oop - pre-checked for validity, but may be NULL meaning obsolete method</xsl:text>
+// method - pre-checked for validity, but may be NULL meaning obsolete method</xsl:text>
 </xsl:template>
 
 <xsl:template match="jfieldID" mode="advice">

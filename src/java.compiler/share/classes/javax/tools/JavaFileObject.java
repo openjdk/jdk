@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import javax.lang.model.element.Modifier;
 import java.util.Objects;
 
 /**
- * File abstraction for tools operating on Java&trade; programming language
+ * File abstraction for tools operating on Java programming language
  * source and class files.
  *
  * <p>All methods in this interface might throw a SecurityException if
@@ -63,8 +63,7 @@ public interface JavaFileObject extends FileObject {
         CLASS(".class"),
 
         /**
-         * HTML files.  For example, regular files ending with {@code
-         * .html}.
+         * HTML files.  For example, regular files ending with {@code .html}.
          */
         HTML(".html"),
 
@@ -78,7 +77,7 @@ public interface JavaFileObject extends FileObject {
          * empty string ({@code ""}) is used.
          */
         public final String extension;
-        private Kind(String extension) {
+        Kind(String extension) {
             this.extension = Objects.requireNonNull(extension);
         }
     }
@@ -94,12 +93,11 @@ public interface JavaFileObject extends FileObject {
      * Checks if this file object is compatible with the specified
      * simple name and kind.  A simple name is a single identifier
      * (not qualified) as defined in
-     * <cite>The Java&trade; Language Specification</cite>,
-     * section 6.2 "Names and Identifiers".
+     * <cite>The Java Language Specification</cite>, section {@jls 6.2}.
      *
      * @param simpleName a simple name of a class
      * @param kind a kind
-     * @return {@code true} if this file object is compatible; false
+     * @return {@code true} if this file object is compatible; {@code false}
      * otherwise
      */
     boolean isNameCompatible(String simpleName, Kind kind);
@@ -119,7 +117,7 @@ public interface JavaFileObject extends FileObject {
 
     /**
      * Provides a hint about the access level of the class represented
-     * by this file object.  If the access level is not known or if
+     * by this file object.  If the access level is not known or
      * this file object does not represent a class file this method
      * returns {@code null}.
      *

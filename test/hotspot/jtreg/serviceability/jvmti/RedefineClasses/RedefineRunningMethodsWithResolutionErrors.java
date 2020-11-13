@@ -25,6 +25,7 @@
  * @test
  * @bug 8076110
  * @summary Redefine running methods that have cached resolution errors
+ * @requires vm.jvmti
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.org.objectweb.asm

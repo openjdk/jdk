@@ -55,10 +55,7 @@ class GenerationSpec;
 class CompactibleSpace;
 class ContiguousSpace;
 class CompactPoint;
-class OopsInGenClosure;
 class OopClosure;
-class ScanClosure;
-class FastScanClosure;
 class GenCollectedHeap;
 class GCStats;
 
@@ -75,7 +72,6 @@ struct ScratchBlock {
 class Generation: public CHeapObj<mtGC> {
   friend class VMStructs;
  private:
-  jlong _time_of_last_gc; // time when last gc on this generation happened (ms)
   MemRegion _prev_used_region; // for collectors that want to "remember" a value for
                                // used region at some specific point during collection.
 
@@ -103,13 +99,6 @@ class Generation: public CHeapObj<mtGC> {
 
   // Initialize the generation.
   Generation(ReservedSpace rs, size_t initial_byte_size);
-
-  // Apply "cl->do_oop" to (the address of) (exactly) all the ref fields in
-  // "sp" that point into younger generations.
-  // The iteration is only over objects allocated at the start of the
-  // iterations; objects allocated as a result of applying the closure are
-  // not included.
-  void younger_refs_in_space_iterate(Space* sp, OopsInGenClosure* cl, uint n_threads);
 
  public:
   // The set of possible generation kinds.
@@ -363,25 +352,6 @@ class Generation: public CHeapObj<mtGC> {
   // activity to make them parsable again. The default is to do nothing.
   virtual void ensure_parsability() {}
 
-  // Time (in ms) when we were last collected or now if a collection is
-  // in progress.
-  virtual jlong time_of_last_gc(jlong now) {
-    // Both _time_of_last_gc and now are set using a time source
-    // that guarantees monotonically non-decreasing values provided
-    // the underlying platform provides such a source. So we still
-    // have to guard against non-monotonicity.
-    NOT_PRODUCT(
-      if (now < _time_of_last_gc) {
-        log_warning(gc)("time warp: " JLONG_FORMAT " to " JLONG_FORMAT, _time_of_last_gc, now);
-      }
-    )
-    return _time_of_last_gc;
-  }
-
-  virtual void update_time_of_last_gc(jlong now)  {
-    _time_of_last_gc = now;
-  }
-
   // Generations may keep statistics about collection. This method
   // updates those statistics. current_generation is the generation
   // that was most recently collected. This allows the generation to
@@ -400,17 +370,6 @@ class Generation: public CHeapObj<mtGC> {
   virtual void compact();
   virtual void post_compact() { ShouldNotReachHere(); }
 #endif
-
-  // Support for CMS's rescan. In this general form we return a pointer
-  // to an abstract object that can be used, based on specific previously
-  // decided protocols, to exchange information between generations,
-  // information that may be useful for speeding up certain types of
-  // garbage collectors. A NULL value indicates to the client that
-  // no data recording is expected by the provider. The data-recorder is
-  // expected to be GC worker thread-local, with the worker index
-  // indicated by "thr_num".
-  virtual void* get_data_recorder(int thr_num) { return NULL; }
-  virtual void sample_eden_chunk() {}
 
   // Some generations may require some cleanup actions before allowing
   // a verification.
@@ -469,12 +428,6 @@ class Generation: public CHeapObj<mtGC> {
   // Iterate over all objects in the generation, calling "cl.do_object" on
   // each.
   virtual void object_iterate(ObjectClosure* cl);
-
-  // Apply "cl->do_oop" to (the address of) all and only all the ref fields
-  // in the current generation that contain pointers to objects in younger
-  // generations. Objects allocated since the last "save_marks" call are
-  // excluded.
-  virtual void younger_refs_iterate(OopsInGenClosure* cl, uint n_threads) = 0;
 
   // Inform a generation that it longer contains references to objects
   // in any younger generation.    [e.g. Because younger gens are empty,

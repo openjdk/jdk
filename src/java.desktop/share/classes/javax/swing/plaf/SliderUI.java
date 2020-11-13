@@ -31,4 +31,8 @@ package javax.swing.plaf;
  * @author Hans Muller
  */
 public abstract class SliderUI extends ComponentUI {
+    /**
+     * Constructor for subclasses to call.
+     */
+    protected SliderUI() {}
 }

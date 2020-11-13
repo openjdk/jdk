@@ -30,6 +30,7 @@
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
+#include "classfile/javaClasses.hpp"
 #include "nativeInst_s390.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
@@ -39,6 +40,10 @@
 #define __ ce->masm()->
 #undef  CHECK_BAILOUT
 #define CHECK_BAILOUT() { if (ce->compilation()->bailed_out()) return; }
+
+void C1SafepointPollStub::emit_code(LIR_Assembler* ce) {
+  ShouldNotReachHere();
+}
 
 RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index, LIR_Opr array)
   : _index(index), _array(array), _throw_index_out_of_bounds_exception(false) {

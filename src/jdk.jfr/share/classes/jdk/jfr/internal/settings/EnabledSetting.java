@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,19 +35,17 @@ import jdk.jfr.MetadataDefinition;
 import jdk.jfr.Name;
 import jdk.jfr.internal.PlatformEventType;
 import jdk.jfr.internal.Type;
-import jdk.jfr.internal.Control;
 
 @MetadataDefinition
 @Label("Enabled")
 @Description("Record event")
 @Name(Type.SETTINGS_PREFIX + "Enabled")
 @BooleanFlag
-public final class EnabledSetting extends Control {
+public final class EnabledSetting extends JDKSettingControl {
     private final BooleanValue booleanValue;
     private final PlatformEventType eventType;
 
     public EnabledSetting(PlatformEventType eventType, String defaultValue) {
-        super(defaultValue);
         this.booleanValue = BooleanValue.valueOf(defaultValue);
         this.eventType = Objects.requireNonNull(eventType);
     }

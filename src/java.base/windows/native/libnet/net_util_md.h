@@ -26,6 +26,7 @@
 #include <WS2tcpip.h>
 #include <iphlpapi.h>
 #include <icmpapi.h>
+#include <mstcpip.h>
 
 /* used to disable connection reset messages on Windows XP */
 #ifndef SIO_UDP_CONNRESET
@@ -86,10 +87,29 @@ struct ipv6bind {
 
 #define GET_PORT(X) ((X)->sa.sa_family == AF_INET ? (X)->sa4.sin_port : (X)->sa6.sin6_port)
 
+/**
+ * With dual socket implementation the
+ * IPv4 addresseses might be mapped as IPv6.
+ * The IPv4 loopback adapter address will
+ * be mapped as the following IPv6 ::ffff:127.0.0.1.
+ * For example, this is done by NET_InetAddressToSockaddr.
+ */
+#define IN6_IS_ADDR_V4MAPPED_LOOPBACK(x) ( \
+    (((x)->s6_words[0] == 0)      &&  \
+     ((x)->s6_words[1] == 0)      &&  \
+     ((x)->s6_words[2] == 0)      &&  \
+     ((x)->s6_words[3] == 0)      &&  \
+     ((x)->s6_words[4] == 0)      &&  \
+     ((x)->s6_words[5] == 0xFFFF) &&  \
+     ((x)->s6_words[6] == 0x007F) &&  \
+     ((x)->s6_words[7] == 0x0100))    \
+)
+
 #define IS_LOOPBACK_ADDRESS(x) ( \
     ((x)->sa.sa_family == AF_INET) ? \
         (ntohl((x)->sa4.sin_addr.s_addr) == INADDR_LOOPBACK) : \
-        (IN6ADDR_ISLOOPBACK(x)) \
+        ((IN6_IS_ADDR_LOOPBACK(&(x)->sa6.sin6_addr)) || \
+         (IN6_IS_ADDR_V4MAPPED_LOOPBACK(&(x)->sa6.sin6_addr))) \
 )
 
 JNIEXPORT int JNICALL NET_SocketClose(int fd);
@@ -118,6 +138,8 @@ JNIEXPORT int JNICALL NET_BindV6(struct ipv6bind *b, jboolean exclBind);
 
 JNIEXPORT int JNICALL NET_WinBind(int s, SOCKETADDRESS *sa, int len,
                                   jboolean exclBind);
+
+JNIEXPORT jint JNICALL NET_EnableFastTcpLoopbackConnect(int fd);
 
 /* XP versions of the native routines */
 

@@ -70,6 +70,7 @@
 #include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vmOperations.hpp"
+#include "runtime/vmThread.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -111,7 +112,6 @@ void print_method_profiling_data() {
   if (ProfileInterpreter COMPILER1_PRESENT(|| C1UpdateMethodData) &&
      (PrintMethodData || CompilerOracle::should_print_methods())) {
     ResourceMark rm;
-    HandleMark hm;
     collected_profiled_methods = new GrowableArray<Method*>(1024);
     SystemDictionary::methods_do(collect_profiled_methods);
     collected_profiled_methods->sort(&compare_methods);
@@ -158,7 +158,6 @@ void collect_invoked_methods(Method* m) {
 
 void print_method_invocation_histogram() {
   ResourceMark rm;
-  HandleMark hm;
   collected_invoked_methods = new GrowableArray<Method*>(1024);
   SystemDictionary::methods_do(collect_invoked_methods);
   collected_invoked_methods->sort(&compare_methods);
@@ -479,6 +478,12 @@ void before_exit(JavaThread* thread) {
     BytecodeHistogram::print();
   }
 
+#ifdef LINUX
+  if (DumpPerfMapAtExit) {
+    CodeCache::write_perf_map();
+  }
+#endif
+
   if (JvmtiExport::should_post_thread_life()) {
     JvmtiExport::post_thread_end(thread);
   }
@@ -538,7 +543,7 @@ void vm_exit(int code) {
       // Historically there must have been some exit path for which
       // that was not the case and so we set it explicitly - even
       // though we no longer know what that path may be.
-      ((JavaThread*)thread)->set_thread_state(_thread_in_vm);
+      thread->as_Java_thread()->set_thread_state(_thread_in_vm);
     }
 
     // Fire off a VM_Exit operation to bring VM to a safepoint and exit
@@ -573,13 +578,20 @@ void vm_direct_exit(int code) {
   os::exit(code);
 }
 
+void vm_direct_exit(int code, const char* message) {
+  if (message != nullptr) {
+    tty->print_cr("%s", message);
+  }
+  vm_direct_exit(code);
+}
+
 void vm_perform_shutdown_actions() {
   if (is_init_completed()) {
     Thread* thread = Thread::current_or_null();
     if (thread != NULL && thread->is_Java_thread()) {
       // We are leaving the VM, set state to native (in case any OS exit
       // handlers call back to the VM)
-      JavaThread* jt = (JavaThread*)thread;
+      JavaThread* jt = thread->as_Java_thread();
       // Must always be walkable or have no last_Java_frame when in
       // thread_in_native
       jt->frame_anchor()->make_walkable(jt);
@@ -689,6 +701,7 @@ void vm_shutdown_during_initialization(const char* error, const char* message) {
 }
 
 JDK_Version JDK_Version::_current;
+const char* JDK_Version::_java_version;
 const char* JDK_Version::_runtime_name;
 const char* JDK_Version::_runtime_version;
 const char* JDK_Version::_runtime_vendor_version;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package jdk.javadoc.internal.doclets.toolkit.taglets;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 
 /**
- * A taglet should implement this interface if it supports the inheritDoc
+ * A taglet should implement this interface if it supports an {@code @inheritDoc}
  * tag or is automatically inherited if it is missing.
  *
  *  <p><b>This is NOT part of any supported API.
@@ -43,8 +43,8 @@ public interface InheritableTaglet extends Taglet {
      * object, set its values with the appropriate information to inherit
      * documentation.
      *
-     * @param input  the input for documentation search.
-     * @param output the output for documentation search.
+     * @param input  the input for documentation search
+     * @param output the output for documentation search
      */
     void inherit(DocFinder.Input input, DocFinder.Output output);
 }

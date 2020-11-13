@@ -29,6 +29,7 @@
 #include "gc/shared/gcArguments.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
+#include "runtime/java.hpp"
 
 void ZArguments::initialize_alignments() {
   SpaceAlignment = ZGranuleSize;
@@ -99,18 +100,10 @@ void ZArguments::initialize() {
   FLAG_SET_DEFAULT(VerifyDuringStartup, false);
   FLAG_SET_DEFAULT(VerifyBeforeExit, false);
 
-  // Verification before heap iteration not (yet) supported, for the
-  // same reason we need fixup_partial_loads
-  FLAG_SET_DEFAULT(VerifyBeforeIteration, false);
-
   if (VerifyBeforeGC || VerifyDuringGC || VerifyAfterGC) {
     FLAG_SET_DEFAULT(ZVerifyRoots, true);
     FLAG_SET_DEFAULT(ZVerifyObjects, true);
   }
-
-  // Verification of stacks not (yet) supported, for the same reason
-  // we need fixup_partial_loads
-  DEBUG_ONLY(FLAG_SET_DEFAULT(VerifyStack, false));
 }
 
 size_t ZArguments::conservative_max_heap_alignment() {

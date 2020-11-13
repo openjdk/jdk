@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ public class Resources_ja extends java.util.ListResourceBundle {
 
         // shared (from jarsigner)
         {"SPACE", " "},
-        {"2SPACE", "  "},
         {"6SPACE", "      "},
         {"COMMA", ", "},
 
@@ -45,7 +44,7 @@ public class Resources_ja extends java.util.ListResourceBundle {
         {"provider.class.not.found", "\u30D7\u30ED\u30D0\u30A4\u30C0\"%s\"\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093"},
         {"jarsigner.error.", "jarsigner\u30A8\u30E9\u30FC: "},
         {"Illegal.option.", "\u4E0D\u6B63\u306A\u30AA\u30D7\u30B7\u30E7\u30F3: "},
-        {"This.option.is.deprecated", "\u3053\u306E\u30AA\u30D7\u30B7\u30E7\u30F3\u306F\u975E\u63A8\u5968\u3067\u3059: "},
+        {"This.option.is.forremoval", "\u3053\u306E\u30AA\u30D7\u30B7\u30E7\u30F3\u306F\u975E\u63A8\u5968\u3067\u3042\u308A\u3001\u5C06\u6765\u306E\u30EA\u30EA\u30FC\u30B9\u3067\u524A\u9664\u3055\u308C\u308B\u4E88\u5B9A\u3067\u3059: "},
         {".keystore.must.be.NONE.if.storetype.is.{0}",
                 "-storetype\u304C{0}\u306E\u5834\u5408\u3001-keystore\u306FNONE\u3067\u3042\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059"},
         {".keypass.can.not.be.specified.if.storetype.is.{0}",
@@ -84,6 +83,8 @@ public class Resources_ja extends java.util.ListResourceBundle {
                 "                            \u30B5\u30D6\u30AA\u30D7\u30B7\u30E7\u30F3\u3068\u3057\u3066\u3001all\u3001grouped\u307E\u305F\u306Fsummary\u3092\u4F7F\u7528\u3067\u304D\u307E\u3059"},
         {".certs.display.certificates.when.verbose.and.verifying",
                 "[-certs]                    \u8A73\u7D30\u51FA\u529B\u304A\u3088\u3073\u691C\u8A3C\u6642\u306B\u8A3C\u660E\u66F8\u3092\u8868\u793A"},
+        {".certs.revocation.check",
+                "[-revCheck]                 \u8A3C\u660E\u66F8\u5931\u52B9\u30C1\u30A7\u30C3\u30AF\u306E\u6709\u52B9\u5316"},
         {".tsa.url.location.of.the.Timestamping.Authority",
                 "[-tsa <url>]                \u30BF\u30A4\u30E0\u30B9\u30BF\u30F3\u30D7\u5C40\u306E\u5834\u6240"},
         {".tsacert.alias.public.key.certificate.for.Timestamping.Authority",
@@ -93,9 +94,9 @@ public class Resources_ja extends java.util.ListResourceBundle {
         {".tsadigestalg.algorithm.of.digest.data.in.timestamping.request",
                 "[-tsadigestalg <algorithm>] \u30BF\u30A4\u30E0\u30B9\u30BF\u30F3\u30D7\u30FB\u30EA\u30AF\u30A8\u30B9\u30C8\u306E\u30C0\u30A4\u30B8\u30A7\u30B9\u30C8\u30FB\u30C7\u30FC\u30BF\u306E\u30A2\u30EB\u30B4\u30EA\u30BA\u30E0"},
         {".altsigner.class.class.name.of.an.alternative.signing.mechanism",
-                "[-altsigner <class>]        \u4EE3\u66FF\u7F72\u540D\u30E1\u30AB\u30CB\u30BA\u30E0\u306E\u30AF\u30E9\u30B9\u540D\n                            (\u3053\u306E\u30AA\u30D7\u30B7\u30E7\u30F3\u306F\u975E\u63A8\u5968\u306B\u306A\u308A\u307E\u3057\u305F\u3002)"},
+                "[-altsigner <class>]        \u4EE3\u66FF\u7F72\u540D\u30E1\u30AB\u30CB\u30BA\u30E0\u306E\u30AF\u30E9\u30B9\u540D\n                            (\u3053\u306E\u30AA\u30D7\u30B7\u30E7\u30F3\u306F\u975E\u63A8\u5968\u3067\u3042\u308A\u3001\u5C06\u6765\u306E\u30EA\u30EA\u30FC\u30B9\u3067\u524A\u9664\u3055\u308C\u308B\u4E88\u5B9A\u3067\u3059\u3002)"},
         {".altsignerpath.pathlist.location.of.an.alternative.signing.mechanism",
-                "[-altsignerpath <pathlist>] \u4EE3\u66FF\u7F72\u540D\u30E1\u30AB\u30CB\u30BA\u30E0\u306E\u5834\u6240\n                            (\u3053\u306E\u30AA\u30D7\u30B7\u30E7\u30F3\u306F\u975E\u63A8\u5968\u306B\u306A\u308A\u307E\u3057\u305F\u3002)"},
+                "[-altsignerpath <pathlist>] \u4EE3\u66FF\u7F72\u540D\u30E1\u30AB\u30CB\u30BA\u30E0\u306E\u5834\u6240\n                            (\u3053\u306E\u30AA\u30D7\u30B7\u30E7\u30F3\u306F\u975E\u63A8\u5968\u3067\u3042\u308A\u3001\u5C06\u6765\u306E\u30EA\u30EA\u30FC\u30B9\u3067\u524A\u9664\u3055\u308C\u308B\u4E88\u5B9A\u3067\u3059\u3002)"},
         {".internalsf.include.the.SF.file.inside.the.signature.block",
                 "[-internalsf]               \u30B7\u30B0\u30CD\u30C1\u30E3\u30FB\u30D6\u30ED\u30C3\u30AF\u306B.SF\u30D5\u30A1\u30A4\u30EB\u3092\u542B\u3081\u308B"},
         {".sectionsonly.don.t.compute.hash.of.entire.manifest",
@@ -162,8 +163,10 @@ public class Resources_ja extends java.util.ListResourceBundle {
         {"history.nobk", "- \u7F72\u540D\u95A2\u9023\u30D5\u30A1\u30A4\u30EBMETA-INF/%s.SF\u306E\u30D6\u30ED\u30C3\u30AF\u30FB\u30D5\u30A1\u30A4\u30EB\u304C\u3042\u308A\u307E\u305B\u3093"},
 
         {"with.weak", "%s (\u5F31)"},
+        {"with.disabled", "%s (\u7121\u52B9)"},
         {"key.bit", "%d\u30D3\u30C3\u30C8\u30FB\u30AD\u30FC"},
         {"key.bit.weak", "%d\u30D3\u30C3\u30C8\u30FB\u30AD\u30FC(\u5F31)"},
+        {"key.bit.disabled", "%d\u30D3\u30C3\u30C8\u30FB\u30AD\u30FC (\u7121\u52B9)"},
         {"unknown.size", "\u4E0D\u660E\u30B5\u30A4\u30BA"},
 
         {"jarsigner.", "jarsigner: "},
@@ -194,7 +197,6 @@ public class Resources_ja extends java.util.ListResourceBundle {
                 "\u8A3C\u660E\u66F8\u30C1\u30A7\u30FC\u30F3\u306F\u6307\u5B9A\u3055\u308C\u305F\u30D5\u30A1\u30A4\u30EB\u306B\u898B\u3064\u304B\u308A\u307E\u305B\u3093\u3002"},
         {"found.non.X.509.certificate.in.signer.s.chain",
                 "\u7F72\u540D\u8005\u306E\u9023\u9396\u5185\u3067\u975EX.509\u8A3C\u660E\u66F8\u304C\u691C\u51FA\u3055\u308C\u307E\u3057\u305F"},
-        {"incomplete.certificate.chain", "\u4E0D\u5B8C\u5168\u306A\u8A3C\u660E\u66F8\u30C1\u30A7\u30FC\u30F3"},
         {"Enter.key.password.for.alias.", "{0}\u306E\u30AD\u30FC\u30FB\u30D1\u30B9\u30EF\u30FC\u30C9\u3092\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044: "},
         {"unable.to.recover.key.from.keystore",
                 "\u30AD\u30FC\u30B9\u30C8\u30A2\u304B\u3089\u30AD\u30FC\u3092\u5FA9\u5143\u3067\u304D\u307E\u305B\u3093"},
@@ -236,8 +238,6 @@ public class Resources_ja extends java.util.ListResourceBundle {
                 "\u3053\u306Ejar\u306B\u306F\u3001\u7F72\u540D\u8005\u306E\u8A3C\u660E\u66F8\u304C\u307E\u3060\u6709\u52B9\u306B\u306A\u3063\u3066\u3044\u306A\u3044\u30A8\u30F3\u30C8\u30EA\u304C\u542B\u307E\u308C\u3066\u3044\u307E\u3059\u3002 "},
         {"This.jar.contains.entries.whose.signer.certificate.is.self.signed.",
                 "\u3053\u306Ejar\u306B\u306F\u3001\u7F72\u540D\u8005\u306E\u8A3C\u660E\u66F8\u304C\u81EA\u5DF1\u7F72\u540D\u3055\u308C\u3066\u3044\u308B\u30A8\u30F3\u30C8\u30EA\u304C\u542B\u307E\u308C\u3066\u3044\u307E\u3059\u3002 "},
-        {"Re.run.with.the.verbose.option.for.more.details.",
-                "\u8A73\u7D30\u306F\u3001-verbose\u30AA\u30D7\u30B7\u30E7\u30F3\u3092\u4F7F\u7528\u3057\u3066\u518D\u5B9F\u884C\u3057\u3066\u304F\u3060\u3055\u3044\u3002"},
         {"Re.run.with.the.verbose.and.certs.options.for.more.details.",
                 "\u8A73\u7D30\u306F\u3001-verbose\u304A\u3088\u3073-certs\u30AA\u30D7\u30B7\u30E7\u30F3\u3092\u4F7F\u7528\u3057\u3066\u518D\u5B9F\u884C\u3057\u3066\u304F\u3060\u3055\u3044\u3002"},
         {"The.signer.certificate.has.expired.",
@@ -274,10 +274,20 @@ public class Resources_ja extends java.util.ListResourceBundle {
                 "TSA\u8A3C\u660E\u66F8\u30C1\u30A7\u30FC\u30F3\u304C\u7121\u52B9\u3067\u3059\u3002\u7406\u7531: %s"},
         {"The.signer.s.certificate.is.self.signed.",
                 "\u7F72\u540D\u8005\u306E\u8A3C\u660E\u66F8\u306F\u81EA\u5DF1\u7F72\u540D\u3055\u308C\u3066\u3044\u307E\u3059\u3002"},
-        {"The.1.algorithm.specified.for.the.2.option.is.considered.a.security.risk.",
-                "%1$s\u30A2\u30EB\u30B4\u30EA\u30BA\u30E0(%2$s\u30AA\u30D7\u30B7\u30E7\u30F3\u306B\u6307\u5B9A)\u306F\u3001\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30FB\u30EA\u30B9\u30AF\u3068\u307F\u306A\u3055\u308C\u307E\u3059\u3002"},
-        {"The.1.signing.key.has.a.keysize.of.2.which.is.considered.a.security.risk.",
-                "%1$s\u7F72\u540D\u30AD\u30FC\u306B\u306F\u3001\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30FB\u30EA\u30B9\u30AF\u3068\u307F\u306A\u3055\u308C\u308B%2$d\u306E\u30AD\u30FC\u30FB\u30B5\u30A4\u30BA\u304C\u3042\u308A\u307E\u3059\u3002"},
+        {"The.1.algorithm.specified.for.the.2.option.is.considered.a.security.risk..This.algorithm.will.be.disabled.in.a.future.update.",
+                "%1$s\u30A2\u30EB\u30B4\u30EA\u30BA\u30E0(%2$s\u30AA\u30D7\u30B7\u30E7\u30F3\u306B\u6307\u5B9A)\u306F\u3001\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30FB\u30EA\u30B9\u30AF\u3068\u307F\u306A\u3055\u308C\u307E\u3059\u3002\u3053\u306E\u30A2\u30EB\u30B4\u30EA\u30BA\u30E0\u306F\u5C06\u6765\u306E\u66F4\u65B0\u3067\u7121\u52B9\u5316\u3055\u308C\u307E\u3059\u3002"},
+        {"The.1.algorithm.specified.for.the.2.option.is.considered.a.security.risk.and.is.disabled.",
+                "%1$s\u30A2\u30EB\u30B4\u30EA\u30BA\u30E0(%2$s\u30AA\u30D7\u30B7\u30E7\u30F3\u306B\u6307\u5B9A)\u306F\u3001\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30FB\u30EA\u30B9\u30AF\u3068\u307F\u306A\u3055\u308C\u3001\u7121\u52B9\u5316\u3055\u308C\u3066\u3044\u307E\u3059\u3002"},
+        {"The.timestamp.digest.algorithm.1.is.considered.a.security.risk..This.algorithm.will.be.disabled.in.a.future.update.",
+                "%1$s\u30BF\u30A4\u30E0\u30B9\u30BF\u30F3\u30D7\u30FB\u30C0\u30A4\u30B8\u30A7\u30B9\u30C8\u30FB\u30A2\u30EB\u30B4\u30EA\u30BA\u30E0\u306F\u3001\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30FB\u30EA\u30B9\u30AF\u3068\u307F\u306A\u3055\u308C\u307E\u3059\u3002\u3053\u306E\u30A2\u30EB\u30B4\u30EA\u30BA\u30E0\u306F\u5C06\u6765\u306E\u66F4\u65B0\u3067\u7121\u52B9\u5316\u3055\u308C\u307E\u3059\u3002"},
+        {"The.digest.algorithm.1.is.considered.a.security.risk..This.algorithm.will.be.disabled.in.a.future.update.",
+                "%1$s\u30C0\u30A4\u30B8\u30A7\u30B9\u30C8\u30FB\u30A2\u30EB\u30B4\u30EA\u30BA\u30E0\u306F\u3001\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30FB\u30EA\u30B9\u30AF\u3068\u307F\u306A\u3055\u308C\u307E\u3059\u3002\u3053\u306E\u30A2\u30EB\u30B4\u30EA\u30BA\u30E0\u306F\u5C06\u6765\u306E\u66F4\u65B0\u3067\u7121\u52B9\u5316\u3055\u308C\u307E\u3059\u3002"},
+        {"The.signature.algorithm.1.is.considered.a.security.risk..This.algorithm.will.be.disabled.in.a.future.update.",
+                "%1$s\u7F72\u540D\u30A2\u30EB\u30B4\u30EA\u30BA\u30E0\u306F\u3001\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30FB\u30EA\u30B9\u30AF\u3068\u307F\u306A\u3055\u308C\u307E\u3059\u3002\u3053\u306E\u30A2\u30EB\u30B4\u30EA\u30BA\u30E0\u306F\u5C06\u6765\u306E\u66F4\u65B0\u3067\u7121\u52B9\u5316\u3055\u308C\u307E\u3059\u3002"},
+        {"The.1.signing.key.has.a.keysize.of.2.which.is.considered.a.security.risk..This.key.size.will.be.disabled.in.a.future.update.",
+                "%1$s\u7F72\u540D\u30AD\u30FC\u306B\u306F%2$d\u306E\u30AD\u30FC\u30FB\u30B5\u30A4\u30BA\u304C\u3042\u308A\u3001\u3053\u308C\u306F\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30FB\u30EA\u30B9\u30AF\u3068\u307F\u306A\u3055\u308C\u307E\u3059\u3002\u3053\u306E\u30AD\u30FC\u30FB\u30B5\u30A4\u30BA\u306F\u5C06\u6765\u306E\u66F4\u65B0\u3067\u7121\u52B9\u5316\u3055\u308C\u307E\u3059\u3002"},
+        {"The.1.signing.key.has.a.keysize.of.2.which.is.considered.a.security.risk.and.is.disabled.",
+                "%1$s\u7F72\u540D\u30AD\u30FC\u306B\u306F%2$d\u306E\u30AD\u30FC\u30FB\u30B5\u30A4\u30BA\u304C\u3042\u308A\u3001\u3053\u308C\u306F\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30FB\u30EA\u30B9\u30AF\u3068\u307F\u306A\u3055\u308C\u307E\u3059\u3002"},
         {"This.jar.contains.entries.whose.certificate.chain.is.invalid.reason.1",
                  "\u3053\u306Ejar\u306B\u306F\u3001\u8A3C\u660E\u66F8\u30C1\u30A7\u30FC\u30F3\u304C\u7121\u52B9\u306A\u30A8\u30F3\u30C8\u30EA\u304C\u542B\u307E\u308C\u3066\u3044\u307E\u3059\u3002\u7406\u7531: %s"},
         {"This.jar.contains.entries.whose.tsa.certificate.chain.is.invalid.reason.1",
@@ -300,6 +310,8 @@ public class Resources_ja extends java.util.ListResourceBundle {
         {"Cannot.find.environment.variable.",
                 "\u74B0\u5883\u5909\u6570\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093: "},
         {"Cannot.find.file.", "\u30D5\u30A1\u30A4\u30EB\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093: "},
+        {"event.ocsp.check", "%s\u306EOCSP\u30B5\u30FC\u30D0\u30FC\u306B\u63A5\u7D9A\u3057\u3066\u3044\u307E\u3059..."},
+        {"event.crl.check", "%s\u304B\u3089CRL\u3092\u30C0\u30A6\u30F3\u30ED\u30FC\u30C9\u3057\u3066\u3044\u307E\u3059..."},
     };
 
     /**

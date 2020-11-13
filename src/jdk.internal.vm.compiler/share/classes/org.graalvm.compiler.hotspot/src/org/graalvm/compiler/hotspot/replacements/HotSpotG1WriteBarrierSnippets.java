@@ -149,7 +149,7 @@ public final class HotSpotG1WriteBarrierSnippets extends G1WriteBarrierSnippets 
 
     @Override
     protected boolean verifyOops() {
-        return HotSpotReplacementsUtil.verifyOops(INJECTED_VMCONFIG);
+        return GraalHotSpotVMConfigNode.verifyOops();
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,19 +90,19 @@
  * @library /vmTestbase
  *          /test/lib
  *
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdb.regression.b4689395.b4689395
  *        nsk.jdb.regression.b4689395.b4689395a
  *
  * @comment compile newclass/b4689395a.java to newclass
- * @build ExecDriver
- * @run driver PropertyResolvingWrapper ExecDriver --cmd
+ * @run driver
+ *      ExecDriver --cmd
  *      ${compile.jdk}/bin/javac
  *      -d ${test.classes}/newclass
  *      -cp ${test.class.path}
  *      ${test.src}/newclass/b4689395a.java
  *
- * @run main/othervm PropertyResolvingWrapper nsk.jdb.regression.b4689395.b4689395
+ * @run main/othervm
+ *      nsk.jdb.regression.b4689395.b4689395
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

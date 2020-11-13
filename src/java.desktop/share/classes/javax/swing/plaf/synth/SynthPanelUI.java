@@ -43,6 +43,12 @@ public class SynthPanelUI extends BasicPanelUI
     private SynthStyle style;
 
     /**
+     *
+     * Constructs a {@code SynthPanelUI}.
+     */
+    public SynthPanelUI() {}
+
+    /**
      * Creates a new UI object for the given component.
      *
      * @param c component to create UI object for

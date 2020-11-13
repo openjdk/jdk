@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,11 @@ import static javax.management.monitor.MonitorNotification.*;
 public abstract class Monitor
     extends NotificationBroadcasterSupport
     implements MonitorMBean, MBeanRegistration {
+
+    /**
+     * Constructor for subclasses to call.
+     */
+    public Monitor() {}
 
     /*
      * ------------------------------------------

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,6 +97,7 @@ Java_nsk_jvmti_GetFrameLocation_frameloc002_check(JNIEnv *env, jclass cls, jthre
         printf("(GetFrameLocation) unexpected error: %s (%d)\n",
                TranslateError(err), err);
         result = STATUS_FAILED;
+        return result;
     }
 
     if (printdump == JNI_TRUE) {
@@ -107,18 +108,21 @@ Java_nsk_jvmti_GetFrameLocation_frameloc002_check(JNIEnv *env, jclass cls, jthre
         printf("(GetMethodDeclaringClass) unexpected error: %s (%d)\n",
                TranslateError(err), err);
         result = STATUS_FAILED;
+        return result;
     }
     err = jvmti->GetClassSignature(klass, &cls_sig, &generic);
     if (err != JVMTI_ERROR_NONE) {
         printf("(GetClassSignature) unexpected error: %s (%d)\n",
                TranslateError(err), err);
         result = STATUS_FAILED;
+        return result;
     }
     err = jvmti->GetMethodName(mid, &name, &sig, &generic);
     if (err != JVMTI_ERROR_NONE) {
         printf("(GetMethodName) unexpected error: %s (%d)\n",
                TranslateError(err), err);
         result = STATUS_FAILED;
+        return result;
     }
 
     if (printdump == JNI_TRUE) {

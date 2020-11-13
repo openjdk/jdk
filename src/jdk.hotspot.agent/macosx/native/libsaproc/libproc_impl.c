@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,7 +213,7 @@ lib_info* add_lib_info(struct ps_prochandle* ph, const char* libname, uintptr_t 
 }
 
 lib_info* add_lib_info_fd(struct ps_prochandle* ph, const char* libname, int fd, uintptr_t base) {
-   lib_info* newlib;
+  lib_info* newlib;
   print_debug("add_lib_info_fd %s\n", libname);
 
   if ( (newlib = (lib_info*) calloc(1, sizeof(struct lib_info))) == NULL) {
@@ -258,11 +258,11 @@ lib_info* add_lib_info_fd(struct ps_prochandle* ph, const char* libname, int fd,
   }
 #endif // __APPLE__
 
-  newlib->symtab = build_symtab(newlib->fd);
+  newlib->symtab = build_symtab(newlib->fd, &newlib->memsz);
   if (newlib->symtab == NULL) {
     print_debug("symbol table build failed for %s\n", newlib->name);
   } else {
-    print_debug("built symbol table for %s\n", newlib->name);
+    print_debug("built symbol table for 0x%lx memsz=0x%lx %s\n", newlib, newlib->memsz, newlib->name);
   }
 
   // even if symbol table building fails, we add the lib_info.
@@ -305,8 +305,12 @@ uintptr_t lookup_symbol(struct ps_prochandle* ph,  const char* object_name,
 const char* symbol_for_pc(struct ps_prochandle* ph, uintptr_t addr, uintptr_t* poffset) {
   const char* res = NULL;
   lib_info* lib = ph->libs;
+  print_debug("symbol_for_pc: addr 0x%lx\n", addr);
   while (lib) {
-    if (lib->symtab && addr >= lib->base) {
+    print_debug("symbol_for_pc: checking lib 0x%lx 0x%lx %s\n", lib->base, lib->memsz, lib->name);
+    if (lib->symtab && addr >= lib->base && addr < lib->base + lib->memsz) {
+      print_debug("symbol_for_pc: address=0x%lx offset=0x%lx found inside lib base=0x%lx memsz=0x%lx %s\n",
+                  addr, addr - lib->base, lib->base, lib->memsz, lib->name);
       res = nearest_symbol(lib->symtab, addr - lib->base, poffset);
       if (res) return res;
     }

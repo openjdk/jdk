@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8033626 8246453
+ * @bug 8033626 8246453 8248467
  * @summary assert(ex_map->jvms()->same_calls_as(_exceptions->jvms())) failed: all collected exceptions must come from the same place
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
@@ -33,6 +33,10 @@
  *      compiler.intrinsics.object.TestClone
  * @run main/othervm -XX:-TieredCompilation -Xbatch
  *      -XX:+IgnoreUnrecognizedVMOptions -XX:+StressReflectiveCode
+ *      -XX:CompileCommand=compileonly,compiler.intrinsics.object.TestClone::test*
+ *      compiler.intrinsics.object.TestClone
+ * @run main/othervm -XX:-TieredCompilation -Xbatch
+ *      -XX:+IgnoreUnrecognizedVMOptions -XX:+StressReflectiveCode -XX:+VerifyGraphEdges
  *      -XX:CompileCommand=compileonly,compiler.intrinsics.object.TestClone::test*
  *      compiler.intrinsics.object.TestClone
  */

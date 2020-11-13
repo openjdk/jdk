@@ -675,6 +675,11 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
         private int curOffset;
 
         /**
+         * Constructs a {@code LinkController}.
+         */
+        public LinkController() {}
+
+        /**
          * Called for a mouse click event.
          * If the component is read-only (ie a browser) then
          * the clicked event is used to drive an attempt to
@@ -990,6 +995,11 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      */
     public abstract static class Parser {
         /**
+         * Constructor for subclasses to call.
+         */
+        protected Parser() {}
+
+        /**
          * Parse the given stream and drive the given callback
          * with the results of the parse.  This method should
          * be implemented to be thread-safe.
@@ -1016,6 +1026,11 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * @see javax.swing.text.html.parser.DocumentParser
      */
     public static class ParserCallback {
+        /**
+         * Constructs a {@code ParserCallback}.
+         */
+        public ParserCallback() {}
+
         /**
          * This is passed as an attribute in the attributeset to indicate
          * the element is implied eg, the string '&lt;&gt;foo&lt;\t&gt;'
@@ -1236,6 +1251,10 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * </table>
      */
     public static class HTMLFactory implements ViewFactory {
+        /**
+         * Constructs a {@code HTMLFactory}.
+         */
+        public HTMLFactory() {}
 
         /**
          * Creates a view from an element.

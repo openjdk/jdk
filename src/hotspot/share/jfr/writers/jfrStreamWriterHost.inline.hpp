@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,19 +61,33 @@ inline bool StreamWriterHost<Adapter, AP>::accommodate(size_t used, size_t reque
 }
 
 template <typename Adapter, typename AP>
-inline void StreamWriterHost<Adapter, AP>::bytes(void* dest, const void* buf, size_t len) {
-  if (len > this->available_size()) {
+inline void StreamWriterHost<Adapter, AP>::write_bytes(void* dest, const void* buf, intptr_t len) {
+  assert(len >= 0, "invariant");
+  if (len > (intptr_t)this->available_size()) {
     this->write_unbuffered(buf, len);
     return;
   }
-  MemoryWriterHost<Adapter, AP>::bytes(dest, buf, len);
+  MemoryWriterHost<Adapter, AP>::write_bytes(dest, buf, len);
+}
+
+template <typename Adapter, typename AP>
+inline void StreamWriterHost<Adapter, AP>::write_bytes(const u1* buf, intptr_t len) {
+  assert(len >= 0, "invariant");
+  while (len > 0) {
+    const unsigned int nBytes = len > INT_MAX ? INT_MAX : (unsigned int)len;
+    const ssize_t num_written = (ssize_t)os::write(_fd, buf, nBytes);
+    guarantee(num_written > 0, "Nothing got written, or os::write() failed");
+    _stream_pos += num_written;
+    len -= num_written;
+    buf += num_written;
+  }
 }
 
 template <typename Adapter, typename AP>
 inline void StreamWriterHost<Adapter, AP>::flush(size_t size) {
   assert(size > 0, "invariant");
   assert(this->is_valid(), "invariant");
-  _stream_pos += os::write(_fd, this->start_pos(), (unsigned int)size);
+  this->write_bytes(this->start_pos(), (intptr_t)size);
   StorageHost<Adapter, AP>::reset();
   assert(0 == this->used_offset(), "invariant");
 }
@@ -106,14 +120,10 @@ void StreamWriterHost<Adapter, AP>::flush() {
 }
 
 template <typename Adapter, typename AP>
-void StreamWriterHost<Adapter, AP>::write_unbuffered(const void* buf, size_t len) {
+void StreamWriterHost<Adapter, AP>::write_unbuffered(const void* buf, intptr_t len) {
   this->flush();
   assert(0 == this->used_offset(), "can only seek from beginning");
-  while (len > 0) {
-    const unsigned int n = MIN2((unsigned int)len, (unsigned int)INT_MAX);
-    _stream_pos += os::write(_fd, buf, n);
-    len -= n;
-  }
+  this->write_bytes((const u1*)buf, len);
 }
 
 template <typename Adapter, typename AP>

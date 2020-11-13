@@ -29,6 +29,7 @@
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
+#include "classfile/javaClasses.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_arm.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -36,6 +37,10 @@
 #include "vmreg_arm.inline.hpp"
 
 #define __ ce->masm()->
+
+void C1SafepointPollStub::emit_code(LIR_Assembler* ce) {
+  ShouldNotReachHere();
+}
 
 void CounterOverflowStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);

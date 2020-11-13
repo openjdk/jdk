@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,6 +161,11 @@ public class KeyStoreLoginModule implements LoginModule {
     private boolean nullStream = false;
     private boolean token = false;
     private boolean protectedPath = false;
+
+    /**
+     * Creates a {@code KeyStoreLoginModule}.
+     */
+    public KeyStoreLoginModule() {}
 
     /* -- Methods -- */
 
@@ -659,8 +664,7 @@ public class KeyStoreLoginModule implements LoginModule {
         /* Get principal and keys */
         try {
             X509Certificate certificate = (X509Certificate)fromKeyStore[0];
-            principal = new javax.security.auth.x500.X500Principal
-                (certificate.getSubjectDN().getName());
+            principal = certificate.getSubjectX500Principal();
 
             // if token, privateKeyPassword will be null
             Key privateKey = keyStore.getKey(keyStoreAlias, privateKeyPassword);

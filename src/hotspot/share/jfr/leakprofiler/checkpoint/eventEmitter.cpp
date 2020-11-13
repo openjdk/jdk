@@ -74,7 +74,7 @@ size_t EventEmitter::write_events(ObjectSampler* object_sampler, EdgeStore* edge
   assert(object_sampler != NULL, "invariant");
   assert(edge_store != NULL, "invariant");
 
-  const jlong last_sweep = emit_all ? max_jlong : object_sampler->last_sweep().value();
+  const jlong last_sweep = emit_all ? max_jlong : ObjectSampler::last_sweep();
   size_t count = 0;
 
   // First pass associates a live sample with its immediate edge

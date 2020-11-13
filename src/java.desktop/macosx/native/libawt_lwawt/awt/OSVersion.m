@@ -34,17 +34,17 @@
 // returns 107 for Lion, 106 for SnowLeopard etc.
 int getOSXMajorVersion() {
     char *ver = JRSCopyOSVersion();
-    if (ver == NULL) { 
+    if (ver == NULL) {
         return 0;
     }
 
     int len = strlen(ver);
     int v = 0;
-    
-    // Third char must be a '.'    
+
+    // Third char must be a '.'
     if (len >= 3 && ver[2] == '.') {
         int i;
-        
+
         v = (ver[0] - '0') * 10 + (ver[1] - '0');
         for (i = 3; i < len && isdigit(ver[i]); ++i) {
             v = v * 10 + (ver[i] - '0');
@@ -52,7 +52,7 @@ int getOSXMajorVersion() {
     }
 
     free(ver);
-    
+
     return v;
 }
 

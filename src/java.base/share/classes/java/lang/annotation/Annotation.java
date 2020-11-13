@@ -32,7 +32,7 @@ package java.lang.annotation;
  * define an annotation type.
  *
  * More information about annotation types can be found in section {@jls 9.6} of
- * <cite>The Java&trade; Language Specification</cite>.
+ * <cite>The Java Language Specification</cite>.
  *
  * The {@link java.lang.reflect.AnnotatedElement} interface discusses
  * compatibility concerns when evolving an annotation type from being

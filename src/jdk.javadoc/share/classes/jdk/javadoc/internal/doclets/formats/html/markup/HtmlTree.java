@@ -154,6 +154,18 @@ public class HtmlTree extends Content {
         return put(HtmlAttr.CLASS, style.cssName());
     }
 
+    public HtmlTree addStyle(HtmlStyle style) {
+        return addStyle(style.cssName());
+    }
+
+    public HtmlTree addStyle(String style) {
+        if (attrs.isEmpty())
+            attrs = new LinkedHashMap<>(3);
+        attrs.compute(HtmlAttr.CLASS, (attr, existingStyle) ->
+                existingStyle == null ? style : existingStyle + " " + style);
+        return this;
+    }
+
     /**
      * Adds additional content for the HTML element.
      *
@@ -491,7 +503,7 @@ public class HtmlTree extends Content {
     }
 
     /**
-     * Craetes an HTML {@code HTML} element with the given {@code lang} attribute,
+     * Creates an HTML {@code HTML} element with the given {@code lang} attribute,
      * and {@code HEAD} and {@code BODY} contents.
      *
      * @param lang the value for the {@code lang} attribute

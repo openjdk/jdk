@@ -41,6 +41,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class MoveJDKTest {
@@ -178,12 +179,12 @@ public class MoveJDKTest {
     }
 
     private static String copyFakeModulesFromHelloJar() throws Exception {
-        String classDir = System.getProperty("test.classes");
+        String outDir = CDSTestUtils.getOutputDir();
         String newFile = "hello.modules";
-        String path = classDir + File.separator + newFile;
+        String path = outDir + File.separator + newFile;
 
-        Files.copy(Paths.get(classDir, "hello.jar"),
-            Paths.get(classDir, newFile),
+        Files.copy(Paths.get(outDir, "hello.jar"),
+            Paths.get(outDir, newFile),
             StandardCopyOption.REPLACE_EXISTING);
         return path;
     }

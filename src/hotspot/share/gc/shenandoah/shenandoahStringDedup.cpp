@@ -110,7 +110,7 @@ public:
   ShenandoahStringDedupUnlinkOrOopsDoTask(BoolObjectClosure* is_alive,
                                   OopClosure* keep_alive,
                                   bool allow_resize_and_rehash) :
-    AbstractGangTask("StringDedupUnlinkOrOopsDoTask"),
+    AbstractGangTask("Shenandoah String Dedup Unlink/Process"),
     _cl(is_alive, keep_alive) {
       StringDedup::gc_prologue(allow_resize_and_rehash);
   }

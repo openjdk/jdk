@@ -27,6 +27,8 @@
 
 #include "jfr/utilities/jfrAllocation.hpp"
 
+class JavaThread;
+
 #define MSGBIT(e) (1<<(e))
 
 enum JFR_Msg {

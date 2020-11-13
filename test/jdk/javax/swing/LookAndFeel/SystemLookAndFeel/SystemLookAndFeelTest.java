@@ -21,9 +21,9 @@
  * questions.
  */
 
- /*
+/*
  * @test
- * @bug 8226783
+ * @bug 8226783 8247753
  * @key headful
  * @summary Verify System L&F
  */
@@ -52,23 +52,26 @@ public class SystemLookAndFeelTest {
         } else if (os.contains("macos")) {
             expLAF = "com.apple.laf.AquaLookAndFeel";
         } else if (os.contains("linux")) {
-           /*
-            * The implementation keys off the following desktop setting to
-            * decide if GTK is an appropriate system L&F.
-            * In its absence, there probably isn't support for the GTK L&F
-            * anyway. It does not tell us if the GTK libraries are available
-            * but they really should be if this is a gnome session.
-            * If it proves necessary the test can perhaps be updated to see
-            * if the GTK LAF is listed as installed and can be instantiated.
-            */
-           String gnome = System.getenv("GNOME_DESKTOP_SESSION_ID");
-           System.out.println("Gnome desktop session ID is " + gnome);
-           if (gnome != null) {
-               expLAF = "com.sun.java.swing.plaf.gtk.GTKLookAndFeel";
-           } else if (os.contains("linux")) {
-               expLAF = "javax.swing.plaf.metal.MetalLookAndFeel";
-           }
-       }
+            /*
+             * The implementation keys off the following desktop setting to
+             * decide if GTK is an appropriate system L&F.
+             * In its absence, there probably isn't support for the GTK L&F
+             * anyway. It does not tell us if the GTK libraries are available
+             * but they really should be if this is a gnome session.
+             * If it proves necessary the test can perhaps be updated to see
+             * if the GTK LAF is listed as installed and can be instantiated.
+             */
+            String gnome = System.getenv("GNOME_DESKTOP_SESSION_ID");
+            String desktop = System.getenv("XDG_CURRENT_DESKTOP");
+            System.out.println("Gnome desktop session ID is " + gnome);
+            System.out.println("XDG_CURRENT_DESKTOP is set to " + desktop);
+            if (gnome != null ||
+                    (desktop != null && desktop.toLowerCase().contains("gnome"))) {
+                expLAF = "com.sun.java.swing.plaf.gtk.GTKLookAndFeel";
+            } else {
+                expLAF = "javax.swing.plaf.metal.MetalLookAndFeel";
+            }
+        }
         System.out.println("Expected System LAF is " + expLAF);
         if (expLAF == null) {
             System.out.println("No match for expected LAF, unknown OS ?");
@@ -77,5 +80,5 @@ public class SystemLookAndFeelTest {
         if (!(laf.equals(expLAF))) {
             throw new RuntimeException("LAF not as expected");
         }
-   }
+    }
 }

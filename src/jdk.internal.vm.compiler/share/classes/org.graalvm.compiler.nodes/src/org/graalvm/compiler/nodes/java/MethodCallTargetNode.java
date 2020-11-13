@@ -196,31 +196,35 @@ public class MethodCallTargetNode extends CallTargetNode implements IterableNode
 
         // try to turn a interface call into a virtual call
         ResolvedJavaType declaredReceiverType = targetMethod.getDeclaringClass();
-
-        /*
-         * We need to check the invoke kind to avoid recursive simplification for virtual interface
-         * methods calls.
-         */
-        if (declaredReceiverType.isInterface()) {
-            ResolvedJavaType singleImplementor = declaredReceiverType.getSingleImplementor();
-            if (singleImplementor != null && !singleImplementor.equals(declaredReceiverType)) {
-                TypeReference speculatedType = TypeReference.createTrusted(assumptions, singleImplementor);
-                MethodCallTargetNode callTargetResult = tryCheckCastSingleImplementor(receiver, targetMethod, profile, contextType, speculatedType, insertionPoint, callTarget);
-                if (callTargetResult != null) {
-                    return callTargetResult;
-                }
-            }
-        }
-
-        if (receiver instanceof UncheckedInterfaceProvider) {
-            UncheckedInterfaceProvider uncheckedInterfaceProvider = (UncheckedInterfaceProvider) receiver;
-            Stamp uncheckedStamp = uncheckedInterfaceProvider.uncheckedStamp();
-            if (uncheckedStamp != null) {
-                TypeReference speculatedType = StampTool.typeReferenceOrNull(uncheckedStamp);
-                if (speculatedType != null) {
+        ResolvedJavaType referencedReceiverType = callTarget.referencedType();
+        if (referencedReceiverType != null) {
+            /*
+             * We need to check the invoke kind to avoid recursive simplification for virtual interface
+             * methods calls.
+             */
+            if (declaredReceiverType.isInterface()) {
+                ResolvedJavaType singleImplementor = referencedReceiverType.getSingleImplementor();
+                // If singleImplementor is equal to declaredReceiverType it means that there are
+                // multiple implementors.
+                if (singleImplementor != null && !singleImplementor.equals(declaredReceiverType)) {
+                    TypeReference speculatedType = TypeReference.createTrusted(assumptions, singleImplementor);
                     MethodCallTargetNode callTargetResult = tryCheckCastSingleImplementor(receiver, targetMethod, profile, contextType, speculatedType, insertionPoint, callTarget);
                     if (callTargetResult != null) {
                         return callTargetResult;
+                    }
+                }
+            }
+
+            if (receiver instanceof UncheckedInterfaceProvider) {
+                UncheckedInterfaceProvider uncheckedInterfaceProvider = (UncheckedInterfaceProvider) receiver;
+                Stamp uncheckedStamp = uncheckedInterfaceProvider.uncheckedStamp();
+                if (uncheckedStamp != null) {
+                    TypeReference speculatedType = StampTool.typeReferenceOrNull(uncheckedStamp);
+                    if (speculatedType != null && referencedReceiverType.isAssignableFrom(speculatedType.getType())) {
+                        MethodCallTargetNode callTargetResult = tryCheckCastSingleImplementor(receiver, targetMethod, profile, contextType, speculatedType, insertionPoint, callTarget);
+                        if (callTargetResult != null) {
+                            return callTargetResult;
+                        }
                     }
                 }
             }
@@ -240,7 +244,7 @@ public class MethodCallTargetNode extends CallTargetNode implements IterableNode
                  * with an invoke virtual.
                  *
                  * To do so we need to ensure two properties: 1) the receiver must implement the
-                 * interface (declaredReceiverType). The verifier does not prove this so we need a
+                 * interface (referencedReceiverType). The verifier does not prove this so we need a
                  * dynamic check. 2) we need to ensure that there is still only one implementor of
                  * this interface, i.e. that we are calling the right method. We could do this with
                  * an assumption but as we need an instanceof check anyway we can verify both

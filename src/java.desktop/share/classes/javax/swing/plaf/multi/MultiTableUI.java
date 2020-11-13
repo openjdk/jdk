@@ -49,6 +49,11 @@ public class MultiTableUI extends TableUI {
      */
     protected Vector<ComponentUI> uis = new Vector<>();
 
+    /**
+     * Constructs a {@code MultiTableUI}.
+     */
+    public MultiTableUI() {}
+
 ////////////////////
 // Common UI methods
 ////////////////////

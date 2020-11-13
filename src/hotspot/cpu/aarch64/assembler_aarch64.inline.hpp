@@ -30,4 +30,16 @@
 #include "asm/codeBuffer.hpp"
 #include "code/codeCache.hpp"
 
+
+inline bool Address::offset_ok_for_immed(int64_t offset, uint shift) {
+  uint mask = (1 << shift) - 1;
+  if (offset < 0 || (offset & mask) != 0) {
+    // Unscaled signed offset, encoded in a signed imm9 field.
+    return Assembler::is_simm9(offset);
+  } else {
+    // Scaled unsigned offset, encoded in an unsigned imm12:_ field.
+    return Assembler::is_uimm12(offset >> shift);
+  }
+}
+
 #endif // CPU_AARCH64_ASSEMBLER_AARCH64_INLINE_HPP

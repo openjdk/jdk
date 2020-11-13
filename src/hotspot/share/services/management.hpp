@@ -63,11 +63,8 @@ public:
   static jlong ticks_to_ms(jlong ticks) NOT_MANAGEMENT_RETURN_(0L);
   static jlong timestamp() NOT_MANAGEMENT_RETURN_(0L);
 
-  static void  oops_do(OopClosure* f) NOT_MANAGEMENT_RETURN;
   static void* get_jmm_interface(int version);
   static void  get_optional_support(jmmOptionalSupport* support);
-
-  static void get_loaded_classes(JavaThread* cur_thread, GrowableArray<Klass*>* klass_array);
 
   static void  record_vm_startup_time(jlong begin, jlong duration)
       NOT_MANAGEMENT_RETURN;

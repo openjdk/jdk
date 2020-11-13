@@ -30,6 +30,7 @@
 #include "memory/allocation.hpp"
 #include "runtime/handles.hpp"
 #include "services/memoryUsage.hpp"
+#include "utilities/growableArray.hpp"
 
 // Forward declaration
 class MemoryPool;
@@ -104,8 +105,6 @@ public:
                      bool recordGCEndTime, bool countCollection,
                      GCCause::Cause cause,
                      bool allMemoryPoolsAffected);
-
-  static void oops_do(OopClosure* f);
 
   static bool get_verbose() { return log_is_enabled(Info, gc); }
   static bool set_verbose(bool verbose);

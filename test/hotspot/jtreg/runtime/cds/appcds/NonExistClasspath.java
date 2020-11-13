@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class NonExistClasspath {
@@ -46,9 +47,9 @@ public class NonExistClasspath {
     }
 
     static void doTest(String appJar, boolean bootcp) throws Exception {
-        String classDir = System.getProperty("test.classes");
+        String outDir = CDSTestUtils.getOutputDir();
         String newFile = "non-exist.jar";
-        String nonExistPath = classDir + File.separator + newFile;
+        String nonExistPath = outDir + File.separator + newFile;
         final String errorMessage1 = "Unable to use shared archive";
         final String errorMessage2 = "shared class paths mismatch";
         final String errorMessage3 = (bootcp ? "BOOT" : "APP") + " classpath mismatch";
@@ -90,8 +91,8 @@ public class NonExistClasspath {
             .assertNormalExit();
 
         // Now make nonExistPath exist. CDS will fail to load.
-        Files.copy(Paths.get(classDir, "hello.jar"),
-                   Paths.get(classDir, newFile),
+        Files.copy(Paths.get(outDir, "hello.jar"),
+                   Paths.get(outDir, newFile),
                    StandardCopyOption.REPLACE_EXISTING);
 
         TestCommon.run(make_args(bootcp,

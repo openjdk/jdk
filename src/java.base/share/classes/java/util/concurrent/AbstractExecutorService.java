@@ -77,6 +77,11 @@ import java.util.List;
 public abstract class AbstractExecutorService implements ExecutorService {
 
     /**
+     * Constructor for subclasses to call.
+     */
+    public AbstractExecutorService() {}
+
+    /**
      * Returns a {@code RunnableFuture} for the given runnable and default
      * value.
      *

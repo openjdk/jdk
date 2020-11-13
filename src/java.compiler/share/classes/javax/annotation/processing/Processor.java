@@ -286,7 +286,7 @@ public interface Processor {
      * </blockquote>
      *
      * where <i>TypeName</i> and <i>ModuleName</i> are as defined in
-     * <cite>The Java&trade; Language Specification</cite>
+     * <cite>The Java Language Specification</cite>
      * ({@jls 6.5 Determining the Meaning of a Name}).
      *
      * @apiNote When running in an environment which supports modules,

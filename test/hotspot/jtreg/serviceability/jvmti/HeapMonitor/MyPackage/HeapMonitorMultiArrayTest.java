@@ -29,6 +29,7 @@ import java.util.List;
 /**
  * @test
  * @summary Verifies the JVMTI Heap Monitor API when allocating a multi-array.
+ * @requires vm.jvmti
  * @build Frame HeapMonitor
  * @compile HeapMonitorMultiArrayTest.java
  * @run main/othervm/native -agentlib:HeapMonitorTest MyPackage.HeapMonitorMultiArrayTest

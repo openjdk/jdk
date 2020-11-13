@@ -30,16 +30,7 @@
 #include "utilities/debug.hpp"
 
 ZPage::ZPage(const ZVirtualMemory& vmem, const ZPhysicalMemory& pmem) :
-    _type(type_from_size(vmem.size())),
-    _numa_id((uint8_t)-1),
-    _seqnum(0),
-    _virtual(vmem),
-    _top(start()),
-    _livemap(object_max_count()),
-    _last_used(0),
-    _physical(pmem) {
-  assert_initialized();
-}
+    ZPage(type_from_size(vmem.size()), vmem, pmem) {}
 
 ZPage::ZPage(uint8_t type, const ZVirtualMemory& vmem, const ZPhysicalMemory& pmem) :
     _type(type),

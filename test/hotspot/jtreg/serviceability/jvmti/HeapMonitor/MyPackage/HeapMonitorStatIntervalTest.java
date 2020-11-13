@@ -29,6 +29,7 @@ package MyPackage;
  * @summary Verifies the JVMTI Heap Monitor sampling interval average.
  * @build Frame HeapMonitor
  * @compile HeapMonitorStatIntervalTest.java
+ * @requires vm.jvmti
  * @requires vm.compMode != "Xcomp"
  * @run main/othervm/native -agentlib:HeapMonitorTest MyPackage.HeapMonitorStatIntervalTest
  */

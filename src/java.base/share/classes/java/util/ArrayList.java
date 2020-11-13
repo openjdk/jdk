@@ -178,15 +178,16 @@ public class ArrayList<E> extends AbstractList<E>
      * @throws NullPointerException if the specified collection is null
      */
     public ArrayList(Collection<? extends E> c) {
-        elementData = c.toArray();
-        if ((size = elementData.length) != 0) {
-            // defend against c.toArray (incorrectly) not returning Object[]
-            // (see e.g. https://bugs.openjdk.java.net/browse/JDK-6260652)
-            if (elementData.getClass() != Object[].class)
-                elementData = Arrays.copyOf(elementData, size, Object[].class);
+        Object[] a = c.toArray();
+        if ((size = a.length) != 0) {
+            if (c.getClass() == ArrayList.class) {
+                elementData = a;
+            } else {
+                elementData = Arrays.copyOf(a, size, Object[].class);
+            }
         } else {
             // replace with empty array.
-            this.elementData = EMPTY_ELEMENTDATA;
+            elementData = EMPTY_ELEMENTDATA;
         }
     }
 

@@ -39,11 +39,11 @@ package com.sun.jdi;
 public interface Accessible {
 
     /**
-     * Returns the Java&trade; programming language modifiers, encoded
+     * Returns the Java programming language modifiers, encoded
      * in an integer.
      * <p>
      * The modifier encodings are defined in
-     * <cite>The Java&trade; Virtual Machine Specification</cite>
+     * <cite>The Java Virtual Machine Specification</cite>
      * in the <code>access_flag</code> tables for classes(section 4.1), fields(section 4.5), and methods(section 4.6).
      */
     public int modifiers();

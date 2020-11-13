@@ -218,11 +218,6 @@ jlong Management::timestamp() {
   return t.ticks() - _stamp.ticks();
 }
 
-void Management::oops_do(OopClosure* f) {
-  MemoryService::oops_do(f);
-  ThreadService::oops_do(f);
-}
-
 InstanceKlass* Management::java_lang_management_ThreadInfo_klass(TRAPS) {
   if (_threadInfo_klass == NULL) {
     _threadInfo_klass = load_and_initialize_klass(vmSymbols::java_lang_management_ThreadInfo(), CHECK_NULL);
@@ -308,7 +303,7 @@ static void initialize_ThreadInfo_constructor_arguments(JavaCallArguments* args,
     waited_time = max_julong;
   }
 
-  int thread_status = snapshot->thread_status();
+  int thread_status = static_cast<int>(snapshot->thread_status());
   assert((thread_status & JMM_THREAD_STATE_FLAG_MASK) == 0, "Flags already set in thread_status in Thread object");
   if (snapshot->is_ext_suspended()) {
     thread_status |= JMM_THREAD_STATE_FLAG_SUSPENDED;
@@ -513,7 +508,7 @@ JVM_ENTRY(jobjectArray, jmm_GetMemoryPools(JNIEnv* env, jobject obj))
       poolArray->obj_at_put(i, ph());
     }
   }
-  return (jobjectArray) JNIHandles::make_local(env, poolArray());
+  return (jobjectArray) JNIHandles::make_local(THREAD, poolArray());
 JVM_END
 
 // Returns an array of java/lang/management/MemoryManagerMXBean object
@@ -557,7 +552,7 @@ JVM_ENTRY(jobjectArray, jmm_GetMemoryManagers(JNIEnv* env, jobject obj))
       mgrArray->obj_at_put(i, ph());
     }
   }
-  return (jobjectArray) JNIHandles::make_local(env, mgrArray());
+  return (jobjectArray) JNIHandles::make_local(THREAD, mgrArray());
 JVM_END
 
 
@@ -570,7 +565,7 @@ JVM_ENTRY(jobject, jmm_GetMemoryPoolUsage(JNIEnv* env, jobject obj))
   if (pool != NULL) {
     MemoryUsage usage = pool->get_memory_usage();
     Handle h = MemoryService::create_MemoryUsage_obj(usage, CHECK_NULL);
-    return JNIHandles::make_local(env, h());
+    return JNIHandles::make_local(THREAD, h());
   } else {
     return NULL;
   }
@@ -585,7 +580,7 @@ JVM_ENTRY(jobject, jmm_GetPeakMemoryPoolUsage(JNIEnv* env, jobject obj))
   if (pool != NULL) {
     MemoryUsage usage = pool->get_peak_memory_usage();
     Handle h = MemoryService::create_MemoryUsage_obj(usage, CHECK_NULL);
-    return JNIHandles::make_local(env, h());
+    return JNIHandles::make_local(THREAD, h());
   } else {
     return NULL;
   }
@@ -600,7 +595,7 @@ JVM_ENTRY(jobject, jmm_GetPoolCollectionUsage(JNIEnv* env, jobject obj))
   if (pool != NULL && pool->is_collected_pool()) {
     MemoryUsage usage = pool->get_last_collection_usage();
     Handle h = MemoryService::create_MemoryUsage_obj(usage, CHECK_NULL);
-    return JNIHandles::make_local(env, h());
+    return JNIHandles::make_local(THREAD, h());
   } else {
     return NULL;
   }
@@ -764,7 +759,7 @@ JVM_ENTRY(jobject, jmm_GetMemoryUsage(JNIEnv* env, jboolean heap))
   }
 
   Handle obj = MemoryService::create_MemoryUsage_obj(usage, CHECK_NULL);
-  return JNIHandles::make_local(env, obj());
+  return JNIHandles::make_local(THREAD, obj());
 JVM_END
 
 // Returns the boolean value of a given attribute.
@@ -1232,9 +1227,9 @@ JVM_ENTRY(jobjectArray, jmm_DumpThreads(JNIEnv *env, jlongArray thread_ids, jboo
       for (int depth = 0; depth < num_frames; depth++) {
         StackFrameInfo* frame = stacktrace->stack_frame_at(depth);
         int len = frame->num_locked_monitors();
-        GrowableArray<oop>* locked_monitors = frame->locked_monitors();
+        GrowableArray<OopHandle>* locked_monitors = frame->locked_monitors();
         for (j = 0; j < len; j++) {
-          oop monitor = locked_monitors->at(j);
+          oop monitor = locked_monitors->at(j).resolve();
           assert(monitor != NULL, "must be a Java object");
           monitors_array->obj_at_put(count, monitor);
           depths_array->int_at_put(count, depth);
@@ -1242,9 +1237,9 @@ JVM_ENTRY(jobjectArray, jmm_DumpThreads(JNIEnv *env, jlongArray thread_ids, jboo
         }
       }
 
-      GrowableArray<oop>* jni_locked_monitors = stacktrace->jni_locked_monitors();
+      GrowableArray<OopHandle>* jni_locked_monitors = stacktrace->jni_locked_monitors();
       for (j = 0; j < jni_locked_monitors->length(); j++) {
-        oop object = jni_locked_monitors->at(j);
+        oop object = jni_locked_monitors->at(j).resolve();
         assert(object != NULL, "must be a Java object");
         monitors_array->obj_at_put(count, object);
         // Monitor locked via JNI MonitorEnter call doesn't have stack depth info
@@ -1258,7 +1253,7 @@ JVM_ENTRY(jobjectArray, jmm_DumpThreads(JNIEnv *env, jlongArray thread_ids, jboo
       // Create Object[] filled with locked JSR-166 synchronizers
       assert(ts->threadObj() != NULL, "Must be a valid JavaThread");
       ThreadConcurrentLocks* tcl = ts->get_concurrent_locks();
-      GrowableArray<instanceOop>* locks = (tcl != NULL ? tcl->owned_locks() : NULL);
+      GrowableArray<OopHandle>* locks = (tcl != NULL ? tcl->owned_locks() : NULL);
       int num_locked_synchronizers = (locks != NULL ? locks->length() : 0);
 
       objArrayOop array = oopFactory::new_objArray(SystemDictionary::Object_klass(), num_locked_synchronizers, CHECK_NULL);
@@ -1266,7 +1261,7 @@ JVM_ENTRY(jobjectArray, jmm_DumpThreads(JNIEnv *env, jlongArray thread_ids, jboo
       synchronizers_array = sh;
 
       for (int k = 0; k < num_locked_synchronizers; k++) {
-        synchronizers_array->obj_at_put(k, locks->at(k));
+        synchronizers_array->obj_at_put(k, locks->at(k).resolve());
       }
     }
 
@@ -1279,7 +1274,7 @@ JVM_ENTRY(jobjectArray, jmm_DumpThreads(JNIEnv *env, jlongArray thread_ids, jboo
     result_h->obj_at_put(index, info_obj);
   }
 
-  return (jobjectArray) JNIHandles::make_local(env, result_h());
+  return (jobjectArray) JNIHandles::make_local(THREAD, result_h());
 JVM_END
 
 // Reset statistic.  Return true if the requested statistic is reset.
@@ -1413,7 +1408,7 @@ JVM_ENTRY(jobjectArray, jmm_GetVMGlobalNames(JNIEnv *env))
     }
     // Exclude the locked (experimental, diagnostic) flags
     if (flag->is_unlocked() || flag->is_unlocker()) {
-      Handle s = java_lang_String::create_from_str(flag->_name, CHECK_NULL);
+      Handle s = java_lang_String::create_from_str(flag->name(), CHECK_NULL);
       flags_ah->obj_at_put(num_entries, s());
       num_entries++;
     }
@@ -1425,23 +1420,23 @@ JVM_ENTRY(jobjectArray, jmm_GetVMGlobalNames(JNIEnv *env))
     for(int i = 0; i < num_entries; i++) {
       res->obj_at_put(i, flags_ah->obj_at(i));
     }
-    return (jobjectArray)JNIHandles::make_local(env, res);
+    return (jobjectArray)JNIHandles::make_local(THREAD, res);
   }
 
-  return (jobjectArray)JNIHandles::make_local(env, flags_ah());
+  return (jobjectArray)JNIHandles::make_local(THREAD, flags_ah());
 JVM_END
 
 // Utility function used by jmm_GetVMGlobals.  Returns false if flag type
 // can't be determined, true otherwise.  If false is returned, then *global
 // will be incomplete and invalid.
-bool add_global_entry(JNIEnv* env, Handle name, jmmVMGlobal *global, JVMFlag *flag, TRAPS) {
+bool add_global_entry(Handle name, jmmVMGlobal *global, JVMFlag *flag, TRAPS) {
   Handle flag_name;
   if (name() == NULL) {
-    flag_name = java_lang_String::create_from_str(flag->_name, CHECK_false);
+    flag_name = java_lang_String::create_from_str(flag->name(), CHECK_false);
   } else {
     flag_name = name;
   }
-  global->name = (jstring)JNIHandles::make_local(env, flag_name());
+  global->name = (jstring)JNIHandles::make_local(THREAD, flag_name());
 
   if (flag->is_bool()) {
     global->value.z = flag->get_bool() ? JNI_TRUE : JNI_FALSE;
@@ -1469,7 +1464,7 @@ bool add_global_entry(JNIEnv* env, Handle name, jmmVMGlobal *global, JVMFlag *fl
     global->type = JMM_VMGLOBAL_TYPE_JLONG;
   } else if (flag->is_ccstr()) {
     Handle str = java_lang_String::create_from_str(flag->get_ccstr(), CHECK_false);
-    global->value.l = (jobject)JNIHandles::make_local(env, str());
+    global->value.l = (jobject)JNIHandles::make_local(THREAD, str());
     global->type = JMM_VMGLOBAL_TYPE_JSTRING;
   } else {
     global->type = JMM_VMGLOBAL_TYPE_UNKNOWN;
@@ -1479,25 +1474,25 @@ bool add_global_entry(JNIEnv* env, Handle name, jmmVMGlobal *global, JVMFlag *fl
   global->writeable = flag->is_writeable();
   global->external = flag->is_external();
   switch (flag->get_origin()) {
-    case JVMFlag::DEFAULT:
+    case JVMFlagOrigin::DEFAULT:
       global->origin = JMM_VMGLOBAL_ORIGIN_DEFAULT;
       break;
-    case JVMFlag::COMMAND_LINE:
+    case JVMFlagOrigin::COMMAND_LINE:
       global->origin = JMM_VMGLOBAL_ORIGIN_COMMAND_LINE;
       break;
-    case JVMFlag::ENVIRON_VAR:
+    case JVMFlagOrigin::ENVIRON_VAR:
       global->origin = JMM_VMGLOBAL_ORIGIN_ENVIRON_VAR;
       break;
-    case JVMFlag::CONFIG_FILE:
+    case JVMFlagOrigin::CONFIG_FILE:
       global->origin = JMM_VMGLOBAL_ORIGIN_CONFIG_FILE;
       break;
-    case JVMFlag::MANAGEMENT:
+    case JVMFlagOrigin::MANAGEMENT:
       global->origin = JMM_VMGLOBAL_ORIGIN_MANAGEMENT;
       break;
-    case JVMFlag::ERGONOMIC:
+    case JVMFlagOrigin::ERGONOMIC:
       global->origin = JMM_VMGLOBAL_ORIGIN_ERGONOMIC;
       break;
-    case JVMFlag::ATTACH_ON_DEMAND:
+    case JVMFlagOrigin::ATTACH_ON_DEMAND:
       global->origin = JMM_VMGLOBAL_ORIGIN_ATTACH_ON_DEMAND;
       break;
     default:
@@ -1548,7 +1543,7 @@ JVM_ENTRY(jint, jmm_GetVMGlobals(JNIEnv *env,
       char* str = java_lang_String::as_utf8_string(s);
       JVMFlag* flag = JVMFlag::find_flag(str);
       if (flag != NULL &&
-          add_global_entry(env, sh, &globals[i], flag, THREAD)) {
+          add_global_entry(sh, &globals[i], flag, THREAD)) {
         num_entries++;
       } else {
         globals[i].name = NULL;
@@ -1570,7 +1565,7 @@ JVM_ENTRY(jint, jmm_GetVMGlobals(JNIEnv *env,
       }
       // Exclude the locked (diagnostic, experimental) flags
       if ((flag->is_unlocked() || flag->is_unlocker()) &&
-          add_global_entry(env, null_h, &globals[num_entries], flag, THREAD)) {
+          add_global_entry(null_h, &globals[num_entries], flag, THREAD)) {
         num_entries++;
       }
     }
@@ -1589,7 +1584,7 @@ JVM_ENTRY(void, jmm_SetVMGlobal(JNIEnv *env, jstring flag_name, jvalue new_value
   char* name = java_lang_String::as_utf8_string(fn);
 
   FormatBuffer<80> error_msg("%s", "");
-  int succeed = WriteableFlags::set_flag(name, new_value, JVMFlag::MANAGEMENT, error_msg);
+  int succeed = WriteableFlags::set_flag(name, new_value, JVMFlagOrigin::MANAGEMENT, error_msg);
 
   if (succeed != JVMFlag::SUCCESS) {
     if (succeed == JVMFlag::MISSING_VALUE) {
@@ -1755,7 +1750,7 @@ static Handle find_deadlocks(bool object_monitors_only, TRAPS) {
 //
 JVM_ENTRY(jobjectArray, jmm_FindDeadlockedThreads(JNIEnv *env, jboolean object_monitors_only))
   Handle result = find_deadlocks(object_monitors_only != 0, CHECK_NULL);
-  return (jobjectArray) JNIHandles::make_local(env, result());
+  return (jobjectArray) JNIHandles::make_local(THREAD, result());
 JVM_END
 
 // Finds cycles of threads that are deadlocked on monitor locks
@@ -1763,7 +1758,7 @@ JVM_END
 // Otherwise, returns NULL.
 JVM_ENTRY(jobjectArray, jmm_FindMonitorDeadlockedThreads(JNIEnv *env))
   Handle result = find_deadlocks(true, CHECK_NULL);
-  return (jobjectArray) JNIHandles::make_local(env, result());
+  return (jobjectArray) JNIHandles::make_local(THREAD, result());
 JVM_END
 
 // Gets the information about GC extension attributes including
@@ -1945,7 +1940,7 @@ JVM_ENTRY(jobjectArray, jmm_GetDiagnosticCommands(JNIEnv *env))
     oop cmd_name = java_lang_String::create_oop_from_str(dcmd_list->at(i), CHECK_NULL);
     cmd_array->obj_at_put(i, cmd_name);
   }
-  return (jobjectArray) JNIHandles::make_local(env, cmd_array());
+  return (jobjectArray) JNIHandles::make_local(THREAD, cmd_array());
 JVM_END
 
 JVM_ENTRY(void, jmm_GetDiagnosticCommandInfo(JNIEnv *env, jobjectArray cmds,
@@ -2054,7 +2049,7 @@ JVM_ENTRY(jstring, jmm_ExecuteDiagnosticCommand(JNIEnv *env, jstring commandline
   bufferedStream output;
   DCmd::parse_and_execute(DCmd_Source_MBean, &output, cmdline, ' ', CHECK_NULL);
   oop result = java_lang_String::create_oop_from_str(output.as_string(), CHECK_NULL);
-  return (jstring) JNIHandles::make_local(env, result);
+  return (jstring) JNIHandles::make_local(THREAD, result);
 JVM_END
 
 JVM_ENTRY(void, jmm_SetDiagnosticFrameworkNotificationEnabled(JNIEnv *env, jboolean enabled))
@@ -2076,12 +2071,8 @@ JVM_ENTRY(jlong, jmm_GetOneThreadAllocatedMemory(JNIEnv *env, jlong thread_id))
                "Invalid thread ID", -1);
   }
 
-  if (thread_id == 0) {
-    // current thread
-    if (THREAD->is_Java_thread()) {
-      return ((JavaThread*)THREAD)->cooked_allocated_bytes();
-    }
-    return -1;
+  if (thread_id == 0) { // current thread
+    return thread->cooked_allocated_bytes();
   }
 
   ThreadsListHandle tlh;

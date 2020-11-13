@@ -25,7 +25,7 @@
 /*
  * @test TestChurnNotifications
  * @summary Check that MX notifications are reported for all cycles
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
@@ -41,7 +41,7 @@
 /*
  * @test TestChurnNotifications
  * @summary Check that MX notifications are reported for all cycles
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
@@ -52,7 +52,7 @@
 /*
  * @test TestChurnNotifications
  * @summary Check that MX notifications are reported for all cycles
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive
@@ -63,7 +63,7 @@
 /*
  * @test TestChurnNotifications
  * @summary Check that MX notifications are reported for all cycles
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=static
@@ -74,7 +74,7 @@
 /*
  * @test TestChurnNotifications
  * @summary Check that MX notifications are reported for all cycles
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact
@@ -85,7 +85,7 @@
 /*
  * @test TestChurnNotifications
  * @summary Check that MX notifications are reported for all cycles
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
@@ -167,7 +167,7 @@ public class TestChurnNotifications {
         long maxExpected = mem + HEAP_MB * 1024 * 1024;
 
         String msg = "Expected = [" + minExpected / M + "; " + maxExpected / M + "] (" + mem / M + "), actual = " + actual / M;
-        if (minExpected < actual && actual < maxExpected) {
+        if (minExpected <= actual && actual <= maxExpected) {
             System.out.println(msg);
         } else {
             throw new IllegalStateException(msg);

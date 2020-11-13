@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,6 +120,11 @@ void setWatches(jvmtiEnv *jvmti_env, JNIEnv *env, jclass cls) {
     jmethodID mid;
 
     mid = env->GetStaticMethodID(cls, "meth01", "(I)V");
+    if (mid == NULL) {
+      printf("(GetStaticMethodID) returns NULL");
+      result = STATUS_FAILED;
+      return;
+    }
     err = jvmti->SetBreakpoint(mid, 0);
     if (err == JVMTI_ERROR_NONE) {
         enable(jvmti_env, JVMTI_EVENT_BREAKPOINT);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,14 +35,12 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jvmti.AttachOnDemand.attach036.attach036TestRunner
  *
  * @comment create attach036Agent00.jar in current directory
  * @build nsk.jvmti.AttachOnDemand.attach036.attach036Agent00
  * @run driver ClassFileInstaller nsk.jvmti.AttachOnDemand.attach036.attach036Agent00
- * @build ExecDriver
- * @run driver PropertyResolvingWrapper ExecDriver --cmd
+ * @run driver ExecDriver --cmd
  *      ${compile.jdk}/bin/jar
  *      -cfm attach036Agent00.jar ${test.src}/attach036Agent00.mf
  *      nsk/jvmti/AttachOnDemand/attach036/attach036Agent00.class
@@ -50,7 +48,6 @@
  * @run main/othervm
  *      -XX:+UsePerfData
  *      -Djdk.attach.allowAttachSelf
- *      PropertyResolvingWrapper
  *      nsk.jvmti.AttachOnDemand.attach036.attach036TestRunner
  *      -jdk ${test.jdk}
  *      -ja attach036Agent00.jar

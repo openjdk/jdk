@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2019, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -980,7 +980,7 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
 
     Label slow_path;
     // If we need a safepoint check, generate full interpreter entry.
-    __ safepoint_poll(slow_path);
+    __ safepoint_poll(slow_path, false /* at_return */, false /* acquire */, false /* in_nmethod */);
 
     // We don't generate local frame and don't align stack because
     // we call stub code and there is no safepoint on this path.
@@ -994,7 +994,7 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
     __ ldrw(val, Address(esp, 0));              // byte value
     __ ldrw(crc, Address(esp, wordSize));       // Initial CRC
 
-    unsigned long offset;
+    uint64_t offset;
     __ adrp(tbl, ExternalAddress(StubRoutines::crc_table_addr()), offset);
     __ add(tbl, tbl, offset);
 
@@ -1029,7 +1029,7 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
 
     Label slow_path;
     // If we need a safepoint check, generate full interpreter entry.
-    __ safepoint_poll(slow_path);
+    __ safepoint_poll(slow_path, false /* at_return */, false /* acquire */, false /* in_nmethod */);
 
     // We don't generate local frame and don't align stack because
     // we call stub code and there is no safepoint on this path.
@@ -1120,7 +1120,7 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // an interpreter frame with greater than a page of locals, so each page
   // needs to be checked.  Only true for non-native.
   if (UseStackBanging) {
-    const int n_shadow_pages = JavaThread::stack_shadow_zone_size() / os::vm_page_size();
+    const int n_shadow_pages = (int)(StackOverflow::stack_shadow_zone_size() / os::vm_page_size());
     const int start_page = native_call ? n_shadow_pages : 1;
     const int page_size = os::vm_page_size();
     for (int pages = start_page; pages <= n_shadow_pages ; pages++) {
@@ -1372,6 +1372,11 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ push(dtos);
   __ push(ltos);
 
+  if (UseSVE > 0) {
+    // Make sure that jni code does not change SVE vector length.
+    __ verify_sve_vector_length();
+  }
+
   // change thread state
   __ mov(rscratch1, _thread_in_native_trans);
   __ lea(rscratch2, Address(rthread, JavaThread::thread_state_offset()));
@@ -1383,7 +1388,16 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // check for safepoint operation in progress and/or pending suspend requests
   {
     Label L, Continue;
-    __ safepoint_poll_acquire(L);
+
+    // We need an acquire here to ensure that any subsequent load of the
+    // global SafepointSynchronize::_state flag is ordered after this load
+    // of the thread-local polling word.  We don't want this poll to
+    // return false (i.e. not safepointing) and a later poll of the global
+    // SafepointSynchronize::_state spuriously to return true.
+    //
+    // This is to avoid a race when we're in a native->Java transition
+    // racing the code which wakes up from a safepoint.
+    __ safepoint_poll(L, true /* at_return */, true /* acquire */, false /* in_nmethod */);
     __ ldrw(rscratch2, Address(rthread, JavaThread::suspend_flags_offset()));
     __ cbz(rscratch2, Continue);
     __ bind(L);
@@ -1440,7 +1454,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     Label no_reguard;
     __ lea(rscratch1, Address(rthread, in_bytes(JavaThread::stack_guard_state_offset())));
     __ ldrw(rscratch1, Address(rscratch1));
-    __ cmp(rscratch1, (u1)JavaThread::stack_guard_yellow_reserved_disabled);
+    __ cmp(rscratch1, (u1)StackOverflow::stack_guard_yellow_reserved_disabled);
     __ br(Assembler::NE, no_reguard);
 
     __ pusha(); // XXX only save smashed registers
@@ -1580,6 +1594,9 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 
   // Make room for locals
   __ sub(rscratch1, esp, r3, ext::uxtx, 3);
+
+  // Padding between locals and fixed part of activation frame to ensure
+  // SP is always 16-byte aligned.
   __ andr(sp, rscratch1, -16);
 
   // r3 - # of additional locals

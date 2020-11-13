@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 package compiler.intrinsics.sha.cli.testcases;
 
-import compiler.intrinsics.sha.cli.SHAOptionsBase;
+import compiler.intrinsics.sha.cli.DigestOptionsBase;
 import jdk.test.lib.process.ExitCode;
 import jdk.test.lib.Platform;
 import jdk.test.lib.cli.CommandLineOptionTest;
@@ -36,11 +36,20 @@ import jdk.test.lib.cli.predicate.OrPredicate;
  * support SHA-related instructions.
  */
 public class GenericTestCaseForUnsupportedX86CPU
-        extends SHAOptionsBase.TestCase {
+        extends DigestOptionsBase.TestCase {
+
+    final private boolean checkUseSHA;
+
     public GenericTestCaseForUnsupportedX86CPU(String optionName) {
+        this(optionName, true);
+    }
+
+    public GenericTestCaseForUnsupportedX86CPU(String optionName, boolean checkUseSHA) {
         super(optionName, new AndPredicate(new OrPredicate(Platform::isX64, Platform::isX86),
-                new NotPredicate(SHAOptionsBase.getPredicateForOption(
+                new NotPredicate(DigestOptionsBase.getPredicateForOption(
                         optionName))));
+
+        this.checkUseSHA = checkUseSHA;
     }
 
     @Override
@@ -50,22 +59,22 @@ public class GenericTestCaseForUnsupportedX86CPU
         // Verify that the tested option could be explicitly disabled without
         // a warning.
         CommandLineOptionTest.verifySameJVMStartup(null, new String[] {
-                        SHAOptionsBase.getWarningForUnsupportedCPU(optionName)
+                        DigestOptionsBase.getWarningForUnsupportedCPU(optionName)
                 }, shouldPassMessage, shouldPassMessage, ExitCode.OK,
-                SHAOptionsBase.UNLOCK_DIAGNOSTIC_VM_OPTIONS,
+                DigestOptionsBase.UNLOCK_DIAGNOSTIC_VM_OPTIONS,
                 CommandLineOptionTest.prepareBooleanFlag(optionName, false));
 
         // Verify that when the tested option is enabled, then
         // a warning will occur in VM output if UseSHA is disabled.
-        if (!optionName.equals(SHAOptionsBase.USE_SHA_OPTION)) {
+        if (checkUseSHA && !optionName.equals(DigestOptionsBase.USE_SHA_OPTION)) {
             CommandLineOptionTest.verifySameJVMStartup(
-                    new String[] { SHAOptionsBase.getWarningForUnsupportedCPU(optionName) },
+                    new String[] { DigestOptionsBase.getWarningForUnsupportedCPU(optionName) },
                     null,
                     shouldPassMessage,
                     shouldPassMessage,
                     ExitCode.OK,
-                    SHAOptionsBase.UNLOCK_DIAGNOSTIC_VM_OPTIONS,
-                    CommandLineOptionTest.prepareBooleanFlag(SHAOptionsBase.USE_SHA_OPTION, false),
+                    DigestOptionsBase.UNLOCK_DIAGNOSTIC_VM_OPTIONS,
+                    CommandLineOptionTest.prepareBooleanFlag(DigestOptionsBase.USE_SHA_OPTION, false),
                     CommandLineOptionTest.prepareBooleanFlag(optionName, true));
         }
     }
@@ -76,24 +85,26 @@ public class GenericTestCaseForUnsupportedX86CPU
         CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "false",
                 String.format("Option '%s' should be disabled by default",
                         optionName),
-                SHAOptionsBase.UNLOCK_DIAGNOSTIC_VM_OPTIONS);
+                DigestOptionsBase.UNLOCK_DIAGNOSTIC_VM_OPTIONS);
 
         // Verify that it is not possible to explicitly enable the option.
         CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "false",
                 String.format("Option '%s' should be off on unsupported "
                         + "X86CPU even if set to true directly", optionName),
-                SHAOptionsBase.UNLOCK_DIAGNOSTIC_VM_OPTIONS,
+                DigestOptionsBase.UNLOCK_DIAGNOSTIC_VM_OPTIONS,
                 CommandLineOptionTest.prepareBooleanFlag(optionName, true));
 
-        // Verify that the tested option is disabled even if +UseSHA was passed
-        // to JVM.
-        CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "false",
-                String.format("Option '%s' should be off on unsupported "
-                        + "X86CPU even if %s flag set to JVM",
-                        optionName, CommandLineOptionTest.prepareBooleanFlag(
-                            SHAOptionsBase.USE_SHA_OPTION, true)),
-                SHAOptionsBase.UNLOCK_DIAGNOSTIC_VM_OPTIONS,
-                CommandLineOptionTest.prepareBooleanFlag(
-                        SHAOptionsBase.USE_SHA_OPTION, true));
+        if (checkUseSHA) {
+            // Verify that the tested option is disabled even if +UseSHA was passed
+            // to JVM.
+            CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "false",
+                    String.format("Option '%s' should be off on unsupported "
+                            + "X86CPU even if %s flag set to JVM",
+                            optionName, CommandLineOptionTest.prepareBooleanFlag(
+                                DigestOptionsBase.USE_SHA_OPTION, true)),
+                    DigestOptionsBase.UNLOCK_DIAGNOSTIC_VM_OPTIONS,
+                    CommandLineOptionTest.prepareBooleanFlag(
+                            DigestOptionsBase.USE_SHA_OPTION, true));
+        }
     }
 }

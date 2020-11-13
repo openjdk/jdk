@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8158260
  * @summary Test unaligned Unsafe accesses
  * @modules java.base/jdk.internal.misc:+open
- *
+ * @library /test/lib
  * @run main/othervm -Diters=20000 -XX:-UseOnStackReplacement -XX:-BackgroundCompilation
  *      compiler.unsafe.JdkInternalMiscUnsafeUnalignedAccess
  * @author volker.simonis@gmail.com
@@ -38,6 +38,7 @@ import jdk.internal.misc.Unsafe;
 
 import java.lang.reflect.Field;
 import java.nio.ByteOrder;
+import jtreg.SkippedException;
 
 public class JdkInternalMiscUnsafeUnalignedAccess {
     static final int ITERS = Integer.getInteger("iters", 20_000);
@@ -131,8 +132,7 @@ public class JdkInternalMiscUnsafeUnalignedAccess {
     public static void main(String[] args) throws Exception {
 
         if (!UNSAFE.unalignedAccess()) {
-            System.out.println("Platform is not supporting unaligned access - nothing to test.");
-            return;
+            throw new SkippedException("Platform is not supporting unaligned access - nothing to test.");
         }
 
         memory = UNSAFE.allocateMemory(SIZE);

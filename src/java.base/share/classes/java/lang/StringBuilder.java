@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,9 @@
 
 package java.lang;
 
-import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
+
+import java.io.IOException;
 
 /**
  * A mutable sequence of characters.  This class provides an API compatible
@@ -95,7 +97,7 @@ public final class StringBuilder
      * Constructs a string builder with no characters in it and an
      * initial capacity of 16 characters.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public StringBuilder() {
         super(16);
     }
@@ -108,7 +110,7 @@ public final class StringBuilder
      * @throws     NegativeArraySizeException  if the {@code capacity}
      *               argument is less than {@code 0}.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public StringBuilder(int capacity) {
         super(capacity);
     }
@@ -120,7 +122,7 @@ public final class StringBuilder
      *
      * @param   str   the initial contents of the buffer.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public StringBuilder(String str) {
         super(str);
     }
@@ -168,7 +170,7 @@ public final class StringBuilder
     }
 
     @Override
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public StringBuilder append(String str) {
         super.append(str);
         return this;
@@ -235,14 +237,14 @@ public final class StringBuilder
     }
 
     @Override
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public StringBuilder append(char c) {
         super.append(c);
         return this;
     }
 
     @Override
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public StringBuilder append(int i) {
         super.append(i);
         return this;
@@ -441,7 +443,7 @@ public final class StringBuilder
     }
 
     @Override
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public String toString() {
         // Create a copy, don't share the array
         return isLatin1() ? StringLatin1.newString(value, 0, count)
@@ -458,6 +460,9 @@ public final class StringBuilder
      *             {@code char} array may be greater than the number of
      *             characters currently stored in the string builder, in which
      *             case extra characters are ignored.
+     *
+     * @param  s the {@code ObjectOutputStream} to which data is written
+     * @throws IOException if an I/O error occurs
      */
     @java.io.Serial
     private void writeObject(java.io.ObjectOutputStream s)
@@ -476,10 +481,14 @@ public final class StringBuilder
     /**
      * readObject is called to restore the state of the StringBuffer from
      * a stream.
+     *
+     * @param  s the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
-        throws java.io.IOException, ClassNotFoundException {
+        throws IOException, ClassNotFoundException {
         s.defaultReadObject();
         count = s.readInt();
         char[] val = (char[]) s.readObject();

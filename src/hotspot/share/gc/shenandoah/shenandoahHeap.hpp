@@ -35,11 +35,13 @@
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "gc/shenandoah/shenandoahUnload.hpp"
+#include "memory/metaspace.hpp"
 #include "services/memoryManager.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/stack.hpp"
 
 class ConcurrentGCTimer;
-class ReferenceProcessor;
+class ObjectIterateScanRootClosure;
 class ShenandoahCollectorPolicy;
 class ShenandoahControlThread;
 class ShenandoahGCSession;
@@ -57,6 +59,7 @@ class ShenandoahFreeSet;
 class ShenandoahConcurrentMark;
 class ShenandoahMarkCompact;
 class ShenandoahMonitoringSupport;
+class ShenandoahReferenceProcessor;
 class ShenandoahPacer;
 class ShenandoahVerifier;
 class ShenandoahWorkGang;
@@ -105,19 +108,9 @@ public:
   virtual bool is_thread_safe() { return false; }
 };
 
-#ifdef ASSERT
-class ShenandoahAssertToSpaceClosure : public OopClosure {
-private:
-  template <class T>
-  void do_oop_work(T* p);
-public:
-  void do_oop(narrowOop* p);
-  void do_oop(oop* p);
-};
-#endif
-
 typedef ShenandoahLock    ShenandoahHeapLock;
 typedef ShenandoahLocker  ShenandoahHeapLocker;
+typedef Stack<oop, mtGC>  ShenandoahScanObjectStack;
 
 // Shenandoah GC is low-pause concurrent GC that uses Brooks forwarding pointers
 // to encode forwarding data. See BrooksPointer for details on forwarding data encoding.
@@ -128,7 +121,7 @@ class ShenandoahHeap : public CollectedHeap {
   friend class VMStructs;
   friend class ShenandoahGCSession;
   friend class ShenandoahGCStateResetter;
-
+  friend class ShenandoahParallelObjectIterator;
 // ---------- Locks that guard important data structures in Heap
 //
 private:
@@ -169,6 +162,7 @@ public:
 private:
            size_t _initial_size;
            size_t _minimum_size;
+  volatile size_t _soft_max_size;
   shenandoah_padding(0);
   volatile size_t _used;
   volatile size_t _committed;
@@ -187,12 +181,15 @@ public:
   size_t bytes_allocated_since_gc_start();
   void reset_bytes_allocated_since_gc_start();
 
-  size_t min_capacity()     const;
-  size_t max_capacity()     const;
-  size_t initial_capacity() const;
-  size_t capacity()         const;
-  size_t used()             const;
-  size_t committed()        const;
+  size_t min_capacity()      const;
+  size_t max_capacity()      const;
+  size_t soft_max_capacity() const;
+  size_t initial_capacity()  const;
+  size_t capacity()          const;
+  size_t used()              const;
+  size_t committed()         const;
+
+  void set_soft_max_capacity(size_t v);
 
 // ---------- Workers handling
 //
@@ -206,7 +203,7 @@ public:
   void assert_gc_workers(uint nworker) NOT_DEBUG_RETURN;
 
   WorkGang* workers() const;
-  WorkGang* get_safepoint_workers();
+  WorkGang* safepoint_workers();
 
   void gc_threads_do(ThreadClosure* tcl) const;
 
@@ -392,15 +389,17 @@ public:
   // for concurrent operation.
   void entry_reset();
   void entry_mark();
-  void entry_preclean();
+  void entry_weak_refs();
   void entry_weak_roots();
   void entry_class_unloading();
   void entry_strong_roots();
   void entry_cleanup_early();
+  void entry_rendezvous_roots();
   void entry_evac();
+  void entry_update_thread_roots();
   void entry_updaterefs();
   void entry_cleanup_complete();
-  void entry_uncommit(double shrink_before);
+  void entry_uncommit(double shrink_before, size_t shrink_until);
 
 private:
   // Actual work for the phases
@@ -415,16 +414,20 @@ private:
 
   void op_reset();
   void op_mark();
-  void op_preclean();
+  void op_weak_refs();
   void op_weak_roots();
   void op_class_unloading();
   void op_strong_roots();
   void op_cleanup_early();
+  void op_rendezvous_roots();
   void op_conc_evac();
   void op_stw_evac();
+  void op_update_thread_roots();
   void op_updaterefs();
   void op_cleanup_complete();
-  void op_uncommit(double shrink_before);
+  void op_uncommit(double shrink_before, size_t shrink_until);
+
+  void rendezvous_threads();
 
   // Messages for GC trace events, they have to be immortal for
   // passing around the logging/tracing systems
@@ -490,20 +493,10 @@ public:
 // ---------- Reference processing
 //
 private:
-  AlwaysTrueClosure    _subject_to_discovery;
-  ReferenceProcessor*  _ref_processor;
-  ShenandoahSharedFlag _process_references;
-  bool                 _ref_proc_mt_discovery;
-  bool                 _ref_proc_mt_processing;
-
-  void ref_processing_init();
+  ShenandoahReferenceProcessor* const _ref_processor;
 
 public:
-  ReferenceProcessor* ref_processor() { return _ref_processor; }
-  bool ref_processor_mt_discovery()   { return _ref_proc_mt_discovery;  }
-  bool ref_processor_mt_processing()  { return _ref_proc_mt_processing; }
-  void set_process_references(bool pr);
-  bool process_references() const;
+  ShenandoahReferenceProcessor* ref_processor() { return _ref_processor; }
 
 // ---------- Class Unloading
 //
@@ -527,6 +520,10 @@ private:
   // Prepare and finish concurrent unloading
   void prepare_concurrent_unloading();
   void finish_concurrent_unloading();
+  // Heap iteration support
+  void scan_roots_for_iteration(ShenandoahScanObjectStack* oop_stack, ObjectIterateScanRootClosure* oops);
+  bool prepare_aux_bitmap_for_iteration();
+  void reclaim_aux_bitmap_for_iteration();
 
 // ---------- Generic interface hooks
 // Minor things that super-interface expects us to implement to play nice with
@@ -552,12 +549,11 @@ public:
 
   // Used for native heap walkers: heap dumpers, mostly
   void object_iterate(ObjectClosure* cl);
+  // Parallel heap iteration support
+  virtual ParallelObjectIterator* parallel_object_iterator(uint workers);
 
   // Keep alive an object that was loaded with AS_NO_KEEPALIVE.
   void keep_alive(oop obj);
-
-  // Used by RMI
-  jlong millis_since_last_gc();
 
 // ---------- Safepoint interface hooks
 //
@@ -601,9 +597,6 @@ public:
                                                Metaspace::MetadataType mdtype);
 
   void notify_mutator_alloc_words(size_t words, bool waste);
-
-  // Shenandoah supports TLAB allocation
-  bool supports_tlab_allocation() const { return true; }
 
   HeapWord* allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size);
   size_t tlab_capacity(Thread *thr) const;
@@ -656,7 +649,6 @@ public:
   void reset_mark_bitmap();
 
   // SATB barriers hooks
-  template<bool RESOLVE>
   inline bool requires_marking(const void* entry) const;
   void force_satb_flush_all_threads();
 

@@ -692,7 +692,7 @@ bool klassVtable::needs_new_vtable_entry(const methodHandle& target_method,
   // this check for all access permissions.
   const InstanceKlass *sk = InstanceKlass::cast(super);
   if (sk->has_miranda_methods()) {
-    if (sk->lookup_method_in_all_interfaces(name, signature, Klass::find_defaults) != NULL) {
+    if (sk->lookup_method_in_all_interfaces(name, signature, Klass::DefaultsLookupMode::find) != NULL) {
       return false; // found a matching miranda; we do not need a new entry
     }
   }
@@ -797,7 +797,9 @@ bool klassVtable::is_miranda(Method* m, Array<Method*>* class_methods,
 
   // First look in local methods to see if already covered
   if (InstanceKlass::find_local_method(class_methods, name, signature,
-              Klass::find_overpass, Klass::skip_static, Klass::skip_private) != NULL)
+                                       Klass::OverpassLookupMode::find,
+                                       Klass::StaticLookupMode::skip,
+                                       Klass::PrivateLookupMode::skip) != NULL)
   {
     return false;
   }
@@ -817,7 +819,9 @@ bool klassVtable::is_miranda(Method* m, Array<Method*>* class_methods,
   for (const Klass* cursuper = super; cursuper != NULL; cursuper = cursuper->super())
   {
      Method* found_mth = InstanceKlass::cast(cursuper)->find_local_method(name, signature,
-       Klass::find_overpass, Klass::skip_static, Klass::skip_private);
+                                                                          Klass::OverpassLookupMode::find,
+                                                                          Klass::StaticLookupMode::skip,
+                                                                          Klass::PrivateLookupMode::skip);
      // Ignore non-public methods in java.lang.Object if klass is an interface.
      if (found_mth != NULL && (!is_interface ||
          !SystemDictionary::is_nonpublic_Object_method(found_mth))) {
@@ -861,7 +865,7 @@ void klassVtable::add_new_mirandas_to_lists(
       if (is_miranda(im, class_methods, default_methods, super, is_interface)) { // is it a miranda at all?
         const InstanceKlass *sk = InstanceKlass::cast(super);
         // check if it is a duplicate of a super's miranda
-        if (sk->lookup_method_in_all_interfaces(im->name(), im->signature(), Klass::find_defaults) == NULL) {
+        if (sk->lookup_method_in_all_interfaces(im->name(), im->signature(), Klass::DefaultsLookupMode::find) == NULL) {
           new_mirandas->append(im);
         }
         if (all_mirandas != NULL) {
@@ -1198,7 +1202,7 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Insta
   assert(interf->is_interface(), "must be");
   Array<Method*>* methods = interf->methods();
   int nof_methods = methods->length();
-  HandleMark hm;
+  HandleMark hm(THREAD);
   Handle interface_loader (THREAD, interf->class_loader());
 
   int ime_count = method_count_for_interface(interf);
@@ -1213,7 +1217,7 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Insta
       // Invokespecial does not perform selection based on the receiver, so it does not use
       // the cached itable.
       target = LinkResolver::lookup_instance_method_in_klasses(_klass, m->name(), m->signature(),
-                                                               Klass::skip_private, CHECK);
+                                                               Klass::PrivateLookupMode::skip, CHECK);
     }
     if (target == NULL || !target->is_public() || target->is_abstract() || target->is_overpass()) {
       assert(target == NULL || !target->is_overpass() || target->is_public(),
@@ -1590,7 +1594,6 @@ int VtableStats::array_entries = 0;
 
 void klassVtable::print_statistics() {
   ResourceMark rm;
-  HandleMark hm;
   VtableStats::compute();
   tty->print_cr("vtable statistics:");
   tty->print_cr("%6d classes (%d instance, %d array)", VtableStats::no_klasses, VtableStats::no_instance_klasses, VtableStats::no_array_klasses);
@@ -1601,13 +1604,14 @@ void klassVtable::print_statistics() {
   tty->print_cr("%6d bytes total", total);
 }
 
-int  klassItable::_total_classes;   // Total no. of classes with itables
-long klassItable::_total_size;      // Total no. of bytes used for itables
+int    klassItable::_total_classes;   // Total no. of classes with itables
+size_t klassItable::_total_size;      // Total no. of bytes used for itables
 
 void klassItable::print_statistics() {
  tty->print_cr("itable statistics:");
  tty->print_cr("%6d classes with itables", _total_classes);
- tty->print_cr("%6lu K uses for itables (average by class: %ld bytes)", _total_size / K, _total_size / _total_classes);
+ tty->print_cr(SIZE_FORMAT_W(6) " K uses for itables (average by class: " SIZE_FORMAT " bytes)",
+               _total_size / K, _total_size / _total_classes);
 }
 
 #endif // PRODUCT

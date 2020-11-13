@@ -25,7 +25,7 @@
  /*
  * @test TestWithLogLevel
  * @summary Test Shenandoah with different log levels
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xms256M -Xmx1G -Xlog:gc*=error   TestWithLogLevel
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xms256M -Xmx1G -Xlog:gc*=warning TestWithLogLevel

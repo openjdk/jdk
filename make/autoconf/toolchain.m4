@@ -50,9 +50,9 @@ TOOLCHAIN_DESCRIPTION_microsoft="Microsoft Visual Studio"
 TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 
 # Minimum supported versions, empty means unspecified
-TOOLCHAIN_MINIMUM_VERSION_clang="3.2"
+TOOLCHAIN_MINIMUM_VERSION_clang="3.5"
 TOOLCHAIN_MINIMUM_VERSION_gcc="5.0"
-TOOLCHAIN_MINIMUM_VERSION_microsoft="16.00.30319.01" # VS2010
+TOOLCHAIN_MINIMUM_VERSION_microsoft="19.10.0.0" # VS2017
 TOOLCHAIN_MINIMUM_VERSION_xlc=""
 
 # Minimum supported linker versions, empty means unspecified
@@ -798,14 +798,18 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
           . $CONFIGURESUPPORT_OUTPUTDIR/build-devkit.info
           # This potentially sets the following:
           # A descriptive name of the devkit
-          BASIC_EVAL_DEVKIT_VARIABLE([BUILD_DEVKIT_NAME])
+          BASIC_EVAL_BUILD_DEVKIT_VARIABLE([BUILD_DEVKIT_NAME])
           # Corresponds to --with-extra-path
-          BASIC_EVAL_DEVKIT_VARIABLE([BUILD_DEVKIT_EXTRA_PATH])
+          BASIC_EVAL_BUILD_DEVKIT_VARIABLE([BUILD_DEVKIT_EXTRA_PATH])
           # Corresponds to --with-toolchain-path
-          BASIC_EVAL_DEVKIT_VARIABLE([BUILD_DEVKIT_TOOLCHAIN_PATH])
+          BASIC_EVAL_BUILD_DEVKIT_VARIABLE([BUILD_DEVKIT_TOOLCHAIN_PATH])
           # Corresponds to --with-sysroot
-          BASIC_EVAL_DEVKIT_VARIABLE([BUILD_DEVKIT_SYSROOT])
-          # Skip the Window specific parts
+          BASIC_EVAL_BUILD_DEVKIT_VARIABLE([BUILD_DEVKIT_SYSROOT])
+
+          if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+            BASIC_EVAL_BUILD_DEVKIT_VARIABLE([BUILD_DEVKIT_VS_INCLUDE])
+            BASIC_EVAL_BUILD_DEVKIT_VARIABLE([BUILD_DEVKIT_VS_LIB])
+          fi
         fi
 
         AC_MSG_CHECKING([for build platform devkit])
@@ -815,30 +819,70 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
           AC_MSG_RESULT([$BUILD_DEVKIT_ROOT])
         fi
 
-        BUILD_SYSROOT="$BUILD_DEVKIT_SYSROOT"
-
-         # Fallback default of just /bin if DEVKIT_PATH is not defined
+        # Fallback default of just /bin if DEVKIT_PATH is not defined
         if test "x$BUILD_DEVKIT_TOOLCHAIN_PATH" = x; then
           BUILD_DEVKIT_TOOLCHAIN_PATH="$BUILD_DEVKIT_ROOT/bin"
         fi
         PATH="$BUILD_DEVKIT_TOOLCHAIN_PATH:$BUILD_DEVKIT_EXTRA_PATH"
+
+        BUILD_SYSROOT="$BUILD_DEVKIT_SYSROOT"
+
+        if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+          BUILD_VS_INCLUDE="$BUILD_DEVKIT_VS_INCLUDE"
+          BUILD_VS_LIB="$BUILD_DEVKIT_VS_LIB"
+
+          TOOLCHAIN_SETUP_VISUAL_STUDIO_SYSROOT_FLAGS([BUILD_])
+        fi
       fi
     fi
 
     # FIXME: we should list the discovered compilers as an exclude pattern!
     # If we do that, we can do this detection before POST_DETECTION, and still
     # find the build compilers in the tools dir, if needed.
-    UTIL_REQUIRE_PROGS(BUILD_CC, [cl cc gcc])
-    UTIL_REQUIRE_PROGS(BUILD_CXX, [cl CC g++])
+    if test "x$OPENJDK_BUILD_OS" = xmacosx; then
+      UTIL_REQUIRE_PROGS(BUILD_CC, [clang cl cc gcc])
+      UTIL_REQUIRE_PROGS(BUILD_CXX, [clang++ cl CC g++])
+    else
+      UTIL_REQUIRE_PROGS(BUILD_CC, [cl cc gcc])
+      UTIL_REQUIRE_PROGS(BUILD_CXX, [cl CC g++])
+    fi
     UTIL_LOOKUP_PROGS(BUILD_NM, nm gcc-nm)
     UTIL_LOOKUP_PROGS(BUILD_AR, ar gcc-ar)
     UTIL_LOOKUP_PROGS(BUILD_OBJCOPY, objcopy)
     UTIL_LOOKUP_PROGS(BUILD_STRIP, strip)
     # Assume the C compiler is the assembler
     BUILD_AS="$BUILD_CC -c"
-    # Just like for the target compiler, use the compiler as linker
-    BUILD_LD="$BUILD_CC"
-    BUILD_LDCXX="$BUILD_CXX"
+    if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+      # In the Microsoft toolchain we have a separate LD command "link".
+      # Make sure we reject /usr/bin/link (as determined in CYGWIN_LINK), which is
+      # a cygwin program for something completely different.
+      AC_CHECK_PROG([BUILD_LD], [link$EXE_SUFFIX],[link$EXE_SUFFIX],,, [$CYGWIN_LINK])
+      UTIL_FIXUP_EXECUTABLE(BUILD_LD)
+      # Verify that we indeed succeeded with this trick.
+      AC_MSG_CHECKING([if the found link.exe is actually the Visual Studio linker])
+
+      # Reset PATH since it can contain a mix of WSL/linux paths and Windows paths from VS,
+      # which, in combination with WSLENV, will make the WSL layer complain
+      old_path="$PATH"
+      PATH=
+
+      "$BUILD_LD" --version > /dev/null
+
+      if test $? -eq 0 ; then
+        AC_MSG_RESULT([no])
+        AC_MSG_ERROR([This is the Cygwin link tool. Please check your PATH and rerun configure.])
+      else
+        AC_MSG_RESULT([yes])
+      fi
+
+      PATH="$old_path"
+
+      BUILD_LDCXX="$BUILD_LD"
+    else
+      # Just like for the target compiler, use the compiler as linker
+      BUILD_LD="$BUILD_CC"
+      BUILD_LDCXX="$BUILD_CXX"
+    fi
 
     PATH="$OLDPATH"
 
@@ -888,6 +932,10 @@ AC_DEFUN_ONCE([TOOLCHAIN_MISC_CHECKS],
     elif test "x$OPENJDK_TARGET_CPU" = "xx86_64"; then
       if test "x$COMPILER_CPU_TEST" != "xx64"; then
         AC_MSG_ERROR([Target CPU mismatch. We are building for $OPENJDK_TARGET_CPU but CL is for "$COMPILER_CPU_TEST"; expected "x64".])
+      fi
+    elif test "x$OPENJDK_TARGET_CPU" = "xaarch64"; then
+      if test "x$COMPILER_CPU_TEST" != "xARM64"; then
+        AC_MSG_ERROR([Target CPU mismatch. We are building for $OPENJDK_TARGET_CPU but CL is for "$COMPILER_CPU_TEST"; expected "arm64".])
       fi
     fi
   fi

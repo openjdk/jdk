@@ -106,8 +106,8 @@ public class ConstantGettersTransitionsTest extends LevelTransitionTest {
 
         private ConstantGettersTestCase() {
             String name = "make" + this.name();
-            this.executable = LevelTransitionTest.Helper.getMethod(TrivialMethods.class, name);
-            this.callable = LevelTransitionTest.Helper.getCallable(new TrivialMethods(), name);
+            this.executable = MethodHelper.getMethod(TrivialMethods.class, name);
+            this.callable = MethodHelper.getCallable(new TrivialMethods(), name);
         }
 
         /**

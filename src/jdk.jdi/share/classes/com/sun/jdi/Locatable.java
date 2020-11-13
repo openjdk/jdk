@@ -37,7 +37,7 @@ public interface Locatable {
 
     /**
      * Returns the {@link Location} of this mirror, if there is
-     * executable code associated with it. Note that both Java&trade;
+     * executable code associated with it. Note that both Java
      * programming language methods and native methods have executable
      * code.
      * Returns null for abstract methods, since abstract methods

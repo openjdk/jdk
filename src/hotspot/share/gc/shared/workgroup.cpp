@@ -109,7 +109,7 @@ static void run_foreground_task_if_needed(AbstractGangTask* task, uint num_worke
 //
 // Semaphores don't require the worker threads to re-claim the lock when they wake up.
 // This helps lowering the latency when starting and stopping the worker threads.
-class SemaphoreGangTaskDispatcher : public GangTaskDispatcher {
+class GangTaskDispatcher : public CHeapObj<mtGC> {
   // The task currently being dispatched to the GangWorkers.
   AbstractGangTask* _task;
 
@@ -122,7 +122,7 @@ class SemaphoreGangTaskDispatcher : public GangTaskDispatcher {
   Semaphore* _end_semaphore;
 
 public:
-  SemaphoreGangTaskDispatcher() :
+  GangTaskDispatcher() :
       _task(NULL),
       _started(0),
       _not_finished(0),
@@ -130,11 +130,15 @@ public:
       _end_semaphore(new Semaphore())
 { }
 
-  ~SemaphoreGangTaskDispatcher() {
+  ~GangTaskDispatcher() {
     delete _start_semaphore;
     delete _end_semaphore;
   }
 
+  // Coordinator API.
+
+  // Distributes the task out to num_workers workers.
+  // Returns when the task has been completed by all workers.
   void coordinator_execute_on_workers(AbstractGangTask* task, uint num_workers, bool add_foreground_work) {
     // No workers are allowed to read the state variables until they have been signaled.
     _task         = task;
@@ -155,6 +159,10 @@ public:
 
   }
 
+  // Worker API.
+
+  // Waits for a task to become available to the worker.
+  // Returns when the worker has been assigned a task.
   WorkData worker_wait_for_task() {
     // Wait for the coordinator to dispatch a task.
     _start_semaphore->wait();
@@ -167,6 +175,7 @@ public:
     return WorkData(_task, worker_id);
   }
 
+  // Signal to the coordinator that the worker is done with the assigned task.
   void worker_done_with_task() {
     // Mark that the worker is done with the task.
     // The worker is not allowed to read the state variables after this line.
@@ -179,91 +188,12 @@ public:
   }
 };
 
-class MutexGangTaskDispatcher : public GangTaskDispatcher {
-  AbstractGangTask* _task;
-
-  volatile uint _started;
-  volatile uint _finished;
-  volatile uint _num_workers;
-
-  Monitor* _monitor;
-
- public:
-  MutexGangTaskDispatcher() :
-    _task(NULL),
-    _started(0),
-    _finished(0),
-    _num_workers(0),
-    _monitor(new Monitor(Monitor::leaf, "WorkGang dispatcher lock", false, Monitor::_safepoint_check_never)) {
-  }
-
-  ~MutexGangTaskDispatcher() {
-    delete _monitor;
-  }
-
-  void coordinator_execute_on_workers(AbstractGangTask* task, uint num_workers, bool add_foreground_work) {
-    MonitorLocker ml(_monitor, Mutex::_no_safepoint_check_flag);
-
-    _task        = task;
-    _num_workers = num_workers;
-
-    // Tell the workers to get to work.
-    _monitor->notify_all();
-
-    run_foreground_task_if_needed(task, num_workers, add_foreground_work);
-
-    // Wait for them to finish.
-    while (_finished < _num_workers) {
-      ml.wait();
-    }
-
-    _task        = NULL;
-    _num_workers = 0;
-    _started     = 0;
-    _finished    = 0;
-  }
-
-  WorkData worker_wait_for_task() {
-    MonitorLocker ml(_monitor, Mutex::_no_safepoint_check_flag);
-
-    while (_num_workers == 0 || _started == _num_workers) {
-      _monitor->wait();
-    }
-
-    _started++;
-
-    // Subtract one to get a zero-indexed worker id.
-    uint worker_id = _started - 1;
-
-    return WorkData(_task, worker_id);
-  }
-
-  void worker_done_with_task() {
-    MonitorLocker ml(_monitor, Mutex::_no_safepoint_check_flag);
-
-    _finished++;
-
-    if (_finished == _num_workers) {
-      // This will wake up all workers and not only the coordinator.
-      _monitor->notify_all();
-    }
-  }
-};
-
-static GangTaskDispatcher* create_dispatcher() {
-  if (UseSemaphoreGCThreadsSynchronization) {
-    return new SemaphoreGangTaskDispatcher();
-  }
-
-  return new MutexGangTaskDispatcher();
-}
-
 WorkGang::WorkGang(const char* name,
                    uint  workers,
                    bool  are_GC_task_threads,
                    bool  are_ConcurrentGC_threads) :
     AbstractWorkGang(name, workers, are_GC_task_threads, are_ConcurrentGC_threads),
-    _dispatcher(create_dispatcher())
+    _dispatcher(new GangTaskDispatcher())
 { }
 
 WorkGang::~WorkGang() {

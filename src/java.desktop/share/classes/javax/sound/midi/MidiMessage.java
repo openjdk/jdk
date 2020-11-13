@@ -48,7 +48,7 @@ package javax.sound.midi;
  * Setting them is a subclass responsibility.
  * <p>
  * <a id="integersVsBytes"></a>The MIDI standard expresses MIDI data in bytes.
- * However, because Java&trade; uses signed bytes, the Java Sound API uses
+ * However, because Java uses signed bytes, the Java Sound API uses
  * integers instead of bytes when expressing MIDI data. For example, the
  * {@link #getStatus()} method of {@code MidiMessage} returns MIDI status bytes
  * as integers. If you are processing MIDI data that originated outside Java

@@ -34,7 +34,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @run main/othervm gc.gctests.FinalizerGC02.FinalizerGC02
  */
 

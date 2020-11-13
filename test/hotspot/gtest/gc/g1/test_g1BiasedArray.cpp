@@ -43,8 +43,8 @@ TEST_VM(G1BiasedArray, simple) {
           (HeapWord*) LP64_ONLY(0xBAAA00000) NOT_LP64(0xBA000000);
 
   TestMappedArray array;
-  array.initialize(fake_heap, fake_heap + REGION_SIZE_IN_WORDS * NUM_REGIONS,
-          REGION_SIZE_IN_WORDS * HeapWordSize);
+  MemRegion range(fake_heap, fake_heap + REGION_SIZE_IN_WORDS * NUM_REGIONS);
+  array.initialize(range, REGION_SIZE_IN_WORDS * HeapWordSize);
   const int DEFAULT_VALUE = array.default_value();
 
   // Check address calculation (bounds)

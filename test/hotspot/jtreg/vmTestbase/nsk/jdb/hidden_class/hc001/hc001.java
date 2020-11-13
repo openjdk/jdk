@@ -29,11 +29,10 @@
  *          /test/lib
  * @modules jdk.jdi
  *          jdk.jdwp.agent
- * @run driver jdk.test.lib.FileInstaller . .
- * @build nsk.jdb.hidden_class.hc001.hc001
- *        nsk.jdb.hidden_class.hc001.hc001a
+ * @build nsk.jdb.hidden_class.hc001.hc001a
  *
- * @run main/othervm PropertyResolvingWrapper nsk.jdb.hidden_class.hc001.hc001
+ * @run main/othervm
+ *      nsk.jdb.hidden_class.hc001.hc001
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

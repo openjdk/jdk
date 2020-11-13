@@ -72,8 +72,6 @@ import jdk.dynalink.linker.MethodTypeConversionStrategy;
  * Various static utility methods for working with Java types.
  */
 public final class TypeUtilities {
-    static final Class<Object> OBJECT_CLASS = Object.class;
-
     private TypeUtilities() {
     }
 

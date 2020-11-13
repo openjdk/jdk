@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2019, SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@ void LIR_Assembler::clinit_barrier(ciMethod* method) {
 }
 
 void LIR_Assembler::osr_entry() {
-  // On-stack-replacement entry sequence (interpreter frame layout described in interpreter_sparc.cpp):
+  // On-stack-replacement entry sequence (interpreter frame layout described in frame_s390.hpp):
   //
   //   1. Create a new compiled activation.
   //   2. Initialize local variables in the compiled activation. The expression stack must be empty
@@ -1207,7 +1207,7 @@ void LIR_Assembler::reg2mem(LIR_Opr from, LIR_Opr dest_opr, BasicType type,
 }
 
 
-void LIR_Assembler::return_op(LIR_Opr result) {
+void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
   assert(result->is_illegal() ||
          (result->is_single_cpu() && result->as_register() == Z_R2) ||
          (result->is_double_cpu() && result->as_register_lo() == Z_R2) ||
@@ -1258,7 +1258,7 @@ void LIR_Assembler::emit_static_call_stub() {
 
   __ relocate(static_stub_Relocation::spec(call_pc));
 
-  // See also Matcher::interpreter_method_oop_reg().
+  // See also Matcher::interpreter_method_reg().
   AddressLiteral meta = __ allocate_metadata_address(NULL);
   bool success = __ load_const_from_toc(Z_method, meta);
 
@@ -2524,7 +2524,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   Label *failure_target = op->should_profile() ? &profile_cast_failure : failure;
   Label *success_target = op->should_profile() ? &profile_cast_success : success;
 
-  // Patching may screw with our temporaries on sparc,
+  // Patching may screw with our temporaries,
   // so let's do it before loading the class.
   if (k->is_loaded()) {
     metadata2reg(k->constant_encoding(), k_RInfo);

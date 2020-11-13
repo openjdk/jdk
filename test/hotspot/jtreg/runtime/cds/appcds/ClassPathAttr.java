@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
  * @run driver/timeout=240 ClassPathAttr
  */
 
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import java.io.File;
 import java.nio.file.Files;
@@ -101,7 +102,7 @@ public class ClassPathAttr {
     buildCpAttr("cpattr6", "cpattr6.mf", "CpAttr6", "CpAttr6");
 
     String cp = TestCommon.getTestJar("cpattr6.jar");
-    String nonExistPath = System.getProperty("test.classes") + File.separator + "cpattrX.jar";
+    String nonExistPath = CDSTestUtils.getOutputDir() + File.separator + "cpattrX.jar";
     (new File(nonExistPath)).delete();
 
     TestCommon.testDump(cp, TestCommon.list("CpAttr6"),
@@ -129,7 +130,7 @@ public class ClassPathAttr {
   }
 
   private static void buildCpAttr(String jarName, String manifest, String enclosingClassName, String ...testClassNames) throws Exception {
-    String jarClassesDir = System.getProperty("test.classes") + File.separator + jarName + "_classes";
+    String jarClassesDir = CDSTestUtils.getOutputDir() + File.separator + jarName + "_classes";
     try { Files.createDirectory(Paths.get(jarClassesDir)); } catch (FileAlreadyExistsException e) { }
 
     JarBuilder.compile(jarClassesDir, System.getProperty("test.src") + File.separator +

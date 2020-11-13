@@ -52,7 +52,7 @@ import static javax.lang.model.SourceVersion.*;
  * ElementVisitor} interface implemented by this class may have
  * methods added to it in the future to accommodate new, currently
  * unknown, language structures added to future versions of the
- * Java&trade; programming language.  Therefore, methods whose names
+ * Java programming language.  Therefore, methods whose names
  * begin with {@code "visit"} may be added to this class in the
  * future; to avoid incompatibilities, classes and subclasses which
  * extend this class should not declare any instance methods with

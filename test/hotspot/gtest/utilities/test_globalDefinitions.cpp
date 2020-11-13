@@ -23,9 +23,10 @@
 
 #include "precompiled.hpp"
 #include "runtime/os.hpp"
-#include "unittest.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include <type_traits>
+#include "unittest.hpp"
 
 static ::testing::AssertionResult testPageAddress(
   const char* expected_addr_expr,
@@ -192,7 +193,7 @@ TEST(globalDefinitions, byte_size_in_exact_unit) {
 #define EXPECT_EQ_LOG2(fn, type)                                \
 {                                                               \
   int limit = sizeof (type) * BitsPerByte;                      \
-  if (IsSigned<type>::value) {                                  \
+  if (std::is_signed<type>::value) {                            \
     EXPECT_EQ(limit - 1, fn(std::numeric_limits<type>::min())); \
     EXPECT_EQ(limit - 1, fn((type)-1));                         \
     limit--;                                                    \
@@ -222,4 +223,31 @@ TEST(globalDefinitions, log2) {
   EXPECT_EQ_LOG2(log2_jint, jint);
   EXPECT_EQ_LOG2(log2_uint, uint);
   EXPECT_EQ_LOG2(log2_jlong, jlong);
+}
+
+TEST(globalDefinitions, array_size) {
+  const size_t test_size = 10;
+
+  {
+    int test_array[test_size] = {};
+    static_assert(test_size == ARRAY_SIZE(test_array), "must be");
+  }
+
+  {
+    double test_array[test_size] = {};
+    static_assert(test_size == ARRAY_SIZE(test_array), "must be");
+  }
+
+  struct ArrayElt { int x; };
+
+  {
+    ArrayElt test_array[test_size] = {};
+    static_assert(test_size == ARRAY_SIZE(test_array), "must be");
+  }
+
+  {
+    const ArrayElt test_array[] = { {0}, {1}, {2}, {3}, {4}, {5} };
+    static_assert(6 == ARRAY_SIZE(test_array), "must be");
+  }
+
 }

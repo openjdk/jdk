@@ -35,4 +35,8 @@ import javax.swing.JToolBar;
  */
 
 public abstract class ToolBarUI extends ComponentUI {
+    /**
+     * Constructor for subclasses to call.
+     */
+    protected ToolBarUI() {}
 }

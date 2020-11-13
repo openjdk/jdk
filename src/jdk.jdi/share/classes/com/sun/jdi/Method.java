@@ -176,7 +176,7 @@ public interface Method extends TypeComponent, Locatable, Comparable<Method> {
     /**
      * Determine if this method is a bridge method. Bridge
      * methods are defined in
-     * <cite>The Java&trade; Language Specification</cite>.
+     * <cite>The Java Language Specification</cite>.
      *
      * @return {@code true} if the method is a bridge method,
      * {@code false} otherwise.

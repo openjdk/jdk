@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,34 +20,50 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+/*
+ * @test
+ *
+ * @summary converted from VM Testbase jit/t/t110.
+ * VM Testbase keywords: [jit, quick]
+ * VM Testbase readme:
+ * Clone of t085.  The pass file changed in JDK 1.2.
+ *
+ * @library /vmTestbase
+ *          /test/lib
+ * @build jit.t.t110.t110
+ * @comment ExecDriver is used so golden file won't depend on jtreg
+ * @run driver ExecDriver --java
+ *      -Dtest.src=${test.src}
+ *      jit.t.t110.t110
+ */
+
 package jit.t.t110;
 
-import java.io.*;
-import nsk.share.TestFailure;
 import nsk.share.GoldChecker;
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 // THIS TEST IS LINE NUMBER SENSITIVE
 
 // Uncaught exception, one jit'd frame on the stack, implicit exception.
 
-class t110
-{
-    public static final GoldChecker goldChecker = new GoldChecker( "t110" );
+public class t110 {
+    public static final GoldChecker goldChecker = new GoldChecker("t110");
 
-    public static void main(String argv[])
-    {
+    public static void main(String[] argv) {
         try {
             doit();
-        } catch(Throwable t) {
-                StringWriter sr = new StringWriter();
-                t.printStackTrace(new PrintWriter(sr));
-                t110.goldChecker.print(sr.toString().replace("\t", "        "));
+        } catch (Throwable t) {
+            StringWriter sr = new StringWriter();
+            t.printStackTrace(new PrintWriter(sr));
+            t110.goldChecker.print(sr.toString().replace("\t", "        "));
         }
         t110.goldChecker.check();
     }
 
-    static void doit()
-    {
+    static void doit() {
         int i = 0;
         int j = 39;
         j /= i;

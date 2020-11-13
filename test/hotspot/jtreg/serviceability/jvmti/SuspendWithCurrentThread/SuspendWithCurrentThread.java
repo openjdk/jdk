@@ -25,6 +25,7 @@
  * @test
  * @bug 8231595
  * @summary [TEST] develop a test case for SuspendThreadList including current thread
+ * @requires vm.jvmti
  * @library /test/lib
  * @compile SuspendWithCurrentThread.java
  * @run main/othervm/native -agentlib:SuspendWithCurrentThread SuspendWithCurrentThread SuspenderIndex=first

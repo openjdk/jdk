@@ -49,6 +49,11 @@ public class MultiSliderUI extends SliderUI {
      */
     protected Vector<ComponentUI> uis = new Vector<>();
 
+    /**
+     * Constructs a {@code MultiSliderUI}.
+     */
+    public MultiSliderUI() {}
+
 ////////////////////
 // Common UI methods
 ////////////////////

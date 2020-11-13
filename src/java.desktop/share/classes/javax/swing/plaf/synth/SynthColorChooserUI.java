@@ -48,6 +48,12 @@ public class SynthColorChooserUI extends BasicColorChooserUI implements
     private SynthStyle style;
 
     /**
+     *
+     * Constructs a {@code SynthColorChooserUI}.
+     */
+    public SynthColorChooserUI() {}
+
+    /**
      * Creates a new UI object for the given component.
      *
      * @param c component to create UI object for

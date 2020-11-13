@@ -55,7 +55,7 @@ import sun.awt.AWTAccessor.MouseEventAccessor;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans&trade;
+ * of all JavaBeans
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -734,6 +734,11 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
      */
     protected class InvocationMouseHandler extends MouseAdapter {
         /**
+         * Constructs an {@code InvocationMouseHandler}.
+         */
+        protected InvocationMouseHandler() {}
+
+        /**
          * Responds to mouse-pressed events on the combo box.
          *
          * @param e the mouse-press event to be handled
@@ -758,6 +763,11 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
      * list if it is dragging over the list.
      */
     protected class InvocationMouseMotionHandler extends MouseMotionAdapter {
+        /**
+         * Constructs an {@code InvocationMouseMotionHandler}.
+         */
+        protected InvocationMouseMotionHandler() {}
+
         public void mouseDragged( MouseEvent e ) {
             getHandler().mouseDragged(e);
         }
@@ -771,6 +781,10 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
      * BasicComboBoxUI ActionMap/InputMap methods.
      */
     public class InvocationKeyHandler extends KeyAdapter {
+        /**
+         * Constructs an {@code InvocationKeyHandler}.
+         */
+        public InvocationKeyHandler() {}
         public void keyReleased( KeyEvent e ) {}
     }
 
@@ -780,6 +794,10 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
      * override.
      */
     protected class ListSelectionHandler implements ListSelectionListener {
+        /**
+         * Constructs a {@code ListSelectionHandler}.
+         */
+        protected ListSelectionHandler() {}
         public void valueChanged( ListSelectionEvent e ) {}
     }
 
@@ -793,6 +811,10 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
      * @see #createItemListener
      */
     public class ListDataHandler implements ListDataListener {
+        /**
+         * Constructs a {@code ListDataHandler}.
+         */
+        public ListDataHandler() {}
         public void contentsChanged( ListDataEvent e ) {}
 
         public void intervalAdded( ListDataEvent e ) {
@@ -806,6 +828,10 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
      * This listener hides the popup when the mouse is released in the list.
      */
     protected class ListMouseHandler extends MouseAdapter {
+        /**
+         * Constructs a {@code ListMouseHandler}.
+         */
+        protected ListMouseHandler() {}
         public void mousePressed( MouseEvent e ) {
         }
         public void mouseReleased(MouseEvent anEvent) {
@@ -818,6 +844,11 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
      * The selection change is not committed to the model, this is for user feedback only.
      */
     protected class ListMouseMotionHandler extends MouseMotionAdapter {
+        /**
+         * Constructs a {@code ListMouseMotionHandler}.
+         */
+        protected ListMouseMotionHandler() {}
+
         public void mouseMoved( MouseEvent anEvent ) {
             getHandler().mouseMoved(anEvent);
         }
@@ -828,6 +859,10 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
      * combo box.
      */
     protected class ItemHandler implements ItemListener {
+        /**
+         * Constructs an {@code ItemHandler}.
+         */
+        protected ItemHandler() {}
         public void itemStateChanged( ItemEvent e ) {
             getHandler().itemStateChanged(e);
         }
@@ -844,6 +879,10 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
      * @see #createPropertyChangeListener
      */
     protected class PropertyChangeHandler implements PropertyChangeListener {
+        /**
+         * Constructs a {@code PropertyChangeHandler}.
+         */
+        protected PropertyChangeHandler() {}
         public void propertyChange( PropertyChangeEvent e ) {
             getHandler().propertyChange(e);
         }

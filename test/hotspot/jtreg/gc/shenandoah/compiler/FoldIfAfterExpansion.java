@@ -24,7 +24,7 @@
 /**
  * @test 8238385
  * @summary CTW: C2 (Shenandoah) compilation fails with "Range check dependent CastII node was not removed"
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  * @modules java.base/jdk.internal.misc:+open
  *
  * @run main/othervm -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:-TieredCompilation -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC

@@ -25,6 +25,7 @@
  * @test
  * @bug 8087315 8010319
  * @summary Get old method's stack trace elements after GC
+ * @requires vm.jvmti
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.compiler

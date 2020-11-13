@@ -43,11 +43,9 @@
  * @run driver nsk.sysdict.share.GenClassesBuilder fats
  * @comment build leans.jar
  * @run driver nsk.sysdict.share.GenClassesBuilder leans
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.sysdict.share.ChainTest
  * @run main/othervm
  *      -XX:-UseGCOverheadLimit
- *      PropertyResolvingWrapper
  *      nsk.sysdict.share.ChainTest
  *      -stressHeap
  *      -t 1

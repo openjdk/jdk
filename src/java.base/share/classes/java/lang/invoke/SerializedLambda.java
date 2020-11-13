@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,15 +67,45 @@ import java.util.Objects;
 public final class SerializedLambda implements Serializable {
     @java.io.Serial
     private static final long serialVersionUID = 8025925345765570181L;
+    /**
+     * The capturing class.
+     */
     private final Class<?> capturingClass;
+    /**
+     * The functional interface class.
+     */
     private final String functionalInterfaceClass;
+    /**
+     * The functional interface method name.
+     */
     private final String functionalInterfaceMethodName;
+    /**
+     * The functional interface method signature.
+     */
     private final String functionalInterfaceMethodSignature;
+    /**
+     * The implementation class.
+     */
     private final String implClass;
+    /**
+     * The implementation method name.
+     */
     private final String implMethodName;
+    /**
+     * The implementation method signature.
+     */
     private final String implMethodSignature;
+    /**
+     * The implementation method kind.
+     */
     private final int implMethodKind;
+    /**
+     * The instantiated method type.
+     */
     private final String instantiatedMethodType;
+    /**
+     * The captured arguments.
+     */
     @SuppressWarnings("serial") // Not statically typed as Serializable
     private final Object[] capturedArgs;
 
@@ -227,6 +257,11 @@ public final class SerializedLambda implements Serializable {
         return capturedArgs[i];
     }
 
+    /**
+     * Resolve a {@code SerializedLambda} to an object.
+     * @return a SerializedLambda
+     * @throws ObjectStreamException if the object is not valid
+     */
     @java.io.Serial
     private Object readResolve() throws ObjectStreamException {
         try {

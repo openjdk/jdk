@@ -96,6 +96,7 @@ public class Resolve {
     Log log;
     Symtab syms;
     Attr attr;
+    AttrRecover attrRecover;
     DeferredAttr deferredAttr;
     Check chk;
     Infer infer;
@@ -105,6 +106,7 @@ public class Resolve {
     JCDiagnostic.Factory diags;
     public final boolean allowFunctionalInterfaceMostSpecific;
     public final boolean allowModules;
+    public final boolean allowRecords;
     public final boolean checkVarargsAccessAfterResolution;
     private final boolean compactMethodDiags;
     private final boolean allowLocalVariableTypeInference;
@@ -125,6 +127,7 @@ public class Resolve {
         names = Names.instance(context);
         log = Log.instance(context);
         attr = Attr.instance(context);
+        attrRecover = AttrRecover.instance(context);
         deferredAttr = DeferredAttr.instance(context);
         chk = Check.instance(context);
         infer = Infer.instance(context);
@@ -147,6 +150,7 @@ public class Resolve {
                 Feature.POST_APPLICABILITY_VARARGS_ACCESS_CHECK.allowedInSource(source);
         polymorphicSignatureScope = WriteableScope.create(syms.noSymbol);
         allowModules = Feature.MODULES.allowedInSource(source);
+        allowRecords = Feature.RECORDS.allowedInSource(source);
     }
 
     /** error symbols, which are returned when resolution fails
@@ -1488,15 +1492,18 @@ public class Resolve {
             }
             if (sym.exists()) {
                 if (staticOnly &&
+                   (sym.flags() & STATIC) == 0 &&
                     sym.kind == VAR &&
                         // if it is a field
                         (sym.owner.kind == TYP ||
                         // or it is a local variable but it is not declared inside of the static local type
-                        // only records so far, then error
+                        // then error
+                        allowRecords &&
                         (sym.owner.kind == MTH) &&
-                        (env.enclClass.sym.flags() & STATIC) != 0 &&
-                        sym.enclClass() != env.enclClass.sym) &&
-                    (sym.flags() & STATIC) == 0)
+                        env1 != env &&
+                        !isInnerClassOfMethod(sym.owner, env.tree.hasTag(CLASSDEF) ?
+                                ((JCClassDecl)env.tree).sym :
+                                env.enclClass.sym)))
                     return new StaticError(sym);
                 else
                     return sym;
@@ -2261,17 +2268,33 @@ public class Resolve {
         return bestSoFar;
     }
 
-    Symbol findTypeVar(Env<AttrContext> env, Name name, boolean staticOnly) {
-        for (Symbol sym : env.info.scope.getSymbolsByName(name)) {
+    Symbol findTypeVar(Env<AttrContext> currentEnv, Env<AttrContext> originalEnv, Name name, boolean staticOnly) {
+        for (Symbol sym : currentEnv.info.scope.getSymbolsByName(name)) {
             if (sym.kind == TYP) {
                 if (staticOnly &&
                     sym.type.hasTag(TYPEVAR) &&
-                    sym.owner.kind == TYP)
+                    ((sym.owner.kind == TYP) ||
+                    // are we trying to access a TypeVar defined in a method from a local static type: interface, enum or record?
+                    allowRecords &&
+                    (sym.owner.kind == MTH &&
+                    currentEnv != originalEnv &&
+                    !isInnerClassOfMethod(sym.owner, originalEnv.tree.hasTag(CLASSDEF) ?
+                            ((JCClassDecl)originalEnv.tree).sym :
+                            originalEnv.enclClass.sym)))) {
                     return new StaticError(sym);
+                }
                 return sym;
             }
         }
         return typeNotFound;
+    }
+
+    boolean isInnerClassOfMethod(Symbol msym, Symbol csym) {
+        while (csym.owner != msym) {
+            if (csym.isStatic()) return false;
+            csym = csym.owner.enclClass();
+        }
+        return (csym.owner == msym && !csym.isStatic());
     }
 
     /** Find an unqualified type symbol.
@@ -2287,7 +2310,7 @@ public class Resolve {
         for (Env<AttrContext> env1 = env; env1.outer != null; env1 = env1.outer) {
             if (isStatic(env1)) staticOnly = true;
             // First, look for a type variable and the first member type
-            final Symbol tyvar = findTypeVar(env1, name, staticOnly);
+            final Symbol tyvar = findTypeVar(env1, env, name, staticOnly);
             sym = findImmediateMemberType(env1, env1.enclClass.sym.type,
                                           name, env1.enclClass.sym);
 
@@ -2718,9 +2741,21 @@ public class Resolve {
             // Check that there is already a method symbol for the method
             // type and owner
             if (types.isSameType(mtype, sym.type) &&
-                spMethod.owner == sym.owner) {
+                    spMethod.owner == sym.owner) {
                 return sym;
             }
+        }
+
+        Type spReturnType = spMethod.asType().getReturnType();
+        if (types.isSameType(spReturnType, syms.objectType)) {
+            // Polymorphic return, pass through mtype
+        } else if (!types.isSameType(spReturnType, mtype.getReturnType())) {
+            // Retain the sig poly method's return type, which differs from that of mtype
+            // Will result in an incompatible return type error
+            mtype = new MethodType(mtype.getParameterTypes(),
+                    spReturnType,
+                    mtype.getThrownTypes(),
+                    syms.methodClass);
         }
 
         // Create the desired method
@@ -4021,12 +4056,12 @@ public class Resolve {
 
         @Override
         public Symbol access(Name name, TypeSymbol location) {
-            Symbol sym = bestCandidate();
-            return types.createErrorType(name, location, sym != null ? sym.type : syms.errSymbol.type).tsym;
-        }
-
-        protected Symbol bestCandidate() {
-            return errCandidate().fst;
+            Pair<Symbol, JCDiagnostic> cand = errCandidate();
+            TypeSymbol errSymbol = types.createErrorType(name, location, cand != null ? cand.fst.type : syms.errSymbol.type).tsym;
+            if (cand != null) {
+                attrRecover.wrongMethodSymbolCandidate(errSymbol, cand.fst, cand.snd);
+            }
+            return errSymbol;
         }
 
         protected Pair<Symbol, JCDiagnostic> errCandidate() {
@@ -4159,11 +4194,12 @@ public class Resolve {
             }
 
         @Override
-        protected Symbol bestCandidate() {
+        protected Pair<Symbol, JCDiagnostic> errCandidate() {
             Map<Symbol, JCDiagnostic> candidatesMap = mapCandidates();
             Map<Symbol, JCDiagnostic> filteredCandidates = filterCandidates(candidatesMap);
             if (filteredCandidates.size() == 1) {
-                return filteredCandidates.keySet().iterator().next();
+                return Pair.of(filteredCandidates.keySet().iterator().next(),
+                               filteredCandidates.values().iterator().next());
             }
             return null;
         }

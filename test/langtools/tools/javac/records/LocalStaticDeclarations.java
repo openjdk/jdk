@@ -23,15 +23,14 @@
 
 /*
  * @test
- * @bug 8242293
+ * @bug 8242293 8246774
  * @summary allow for local interfaces and enums plus nested records, interfaces and enums
  * @library /tools/javac/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.util
  * @build combo.ComboTestHelper
- * @compile --enable-preview -source ${jdk.version} LocalStaticDeclarations.java
- * @run main/othervm --enable-preview LocalStaticDeclarations
+ * @run main LocalStaticDeclarations
  */
 
 import javax.lang.model.element.Element;
@@ -78,7 +77,6 @@ public class LocalStaticDeclarations extends ComboInstance<LocalStaticDeclaratio
     enum Container implements ComboParameter {
         NO_CONTAINER("#{STATIC_LOCAL}"),
         INTERFACE("interface CI { #{STATIC_LOCAL} }"),
-        ANNOTATION("@interface CA { #{STATIC_LOCAL} }"),
         ANONYMOUS(
                 """
                     new Object() {
@@ -112,7 +110,6 @@ public class LocalStaticDeclarations extends ComboInstance<LocalStaticDeclaratio
     enum StaticLocalDecl implements ComboParameter {
         ENUM("enum E { E1; #{MEMBER} }"),
         RECORD("record R() { #{MEMBER} }"),
-        ANNOTATION("@interface A { #{MEMBER} }"),
         INTERFACE("interface I { #{MEMBER} }");
 
         String localDecl;
@@ -177,16 +174,13 @@ public class LocalStaticDeclarations extends ComboInstance<LocalStaticDeclaratio
     @Override
     public void doWork() throws Throwable {
         newCompilationTask()
-                .withOptions(new String[]{"--enable-preview", "-source", Integer.toString(Runtime.version().feature())})
                 .withSourceFromTemplate("Test", sourceTemplate)
                 .generate(this::check);
     }
 
     boolean notTriviallyIncorrect() {
         return decl == StaticLocalDecl.INTERFACE && (member == Member.DEFAULT_METHOD || member == Member.NONE) ||
-               decl != StaticLocalDecl.INTERFACE && (member == Member.METHOD || member == Member.NONE) &&
-               ((decl != StaticLocalDecl.ANNOTATION) ||
-               (decl == StaticLocalDecl.ANNOTATION && member == Member.NONE));
+               decl != StaticLocalDecl.INTERFACE && (member == Member.METHOD || member == Member.NONE);
     }
 
     void check(ComboTask.Result<Iterable<? extends JavaFileObject>> result) {
@@ -218,11 +212,7 @@ public class LocalStaticDeclarations extends ComboInstance<LocalStaticDeclaratio
                 !acceptableExpr()) {
             return result.containsKey("compiler.err.non-static.cant.be.ref");
         } else if (container == Container.ENUM) {
-            if (decl == StaticLocalDecl.ANNOTATION) {
-                return result.containsKey("compiler.err.expected");
-            } else {
-                return result.containsKey("compiler.err.enum.constant.expected" );
-            }
+            return result.containsKey("compiler.err.enum.constant.expected" );
         }
         return result.containsKey("compiler.err.static.declaration.not.allowed.in.inner.classes" );
     }

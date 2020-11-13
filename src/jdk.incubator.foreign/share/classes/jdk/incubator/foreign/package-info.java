@@ -56,7 +56,7 @@ try (MemorySegment segment = MemorySegment.allocateNative(10 * 4)) {
  * off-heap memory; the size of the segment is 40 bytes, enough to store 10 values of the primitive type {@code int}.
  * The segment is created inside a <em>try-with-resources</em> construct: this idiom ensures that all the memory resources
  * associated with the segment will be released at the end of the block, according to the semantics described in
- * Section {@jls 14.20.3} of <cite>The Java&trade; Language Specification</cite>. Inside the try-with-resources block, we initialize
+ * Section {@jls 14.20.3} of <cite>The Java Language Specification</cite>. Inside the try-with-resources block, we initialize
  * the contents of the memory segment; more specifically, if we view the memory segment as a set of 10 adjacent slots,
  * {@code s[i]}, where {@code 0 <= i < 10}, where the size of each slot is exactly 4 bytes, the initialization logic above will set each slot
  * so that {@code s[i] = i}, again where {@code 0 <= i < 10}.
@@ -81,7 +81,7 @@ try (MemorySegment segment = MemorySegment.allocateNative(10 * 4)) {
  * a memory address, such an address is validated (upon access), to make sure that it does not point to a memory location
  * which resides <em>outside</em> the boundaries of the memory segment it refers to. We call this guarantee <em>spatial safety</em>;
  * in other words, access to memory segments is bounds-checked, in the same way as array access is, as described in
- * Section {@jls 15.10.4} of <cite>The Java&trade; Language Specification</cite>.
+ * Section {@jls 15.10.4} of <cite>The Java Language Specification</cite>.
  * <p>
  * Since memory segments can be closed (see above), a memory address is also validated (upon access) to make sure that
  * the segment it belongs to has not been closed prematurely. We call this guarantee <em>temporal safety</em>. Note that,

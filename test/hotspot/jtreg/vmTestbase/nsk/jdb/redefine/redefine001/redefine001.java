@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,20 +45,19 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build nsk.jdb.redefine.redefine001.redefine001
- *        nsk.jdb.redefine.redefine001.redefine001a
+ * @build nsk.jdb.redefine.redefine001.redefine001a
  *
  * @comment compile newclass_g/RedefinedClass.java to newclass_g
- * @build ExecDriver
- * @run driver PropertyResolvingWrapper ExecDriver --cmd
+ * @run driver
+ *      ExecDriver --cmd
  *      ${compile.jdk}/bin/javac
  *      -d ${test.classes}/newclass_g
  *      -g:lines,source,vars
  *      -cp ${test.class.path}
  *      ${test.src}/newclass_g/RedefinedClass.java
  *
- * @run main/othervm PropertyResolvingWrapper nsk.jdb.redefine.redefine001.redefine001
+ * @run main/othervm
+ *      nsk.jdb.redefine.redefine001.redefine001
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

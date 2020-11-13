@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 #include "jvm.h"
 #include "asm/macroAssembler.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/stubCodeGenerator.hpp"
@@ -209,6 +211,11 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseFMA, false);
   }
 
+  if (UseMD5Intrinsics) {
+    warning("MD5 intrinsics are not available on this CPU");
+    FLAG_SET_DEFAULT(UseMD5Intrinsics, false);
+  }
+
   if (UseSHA) {
     warning("SHA instructions are not available on this CPU");
     FLAG_SET_DEFAULT(UseSHA, false);
@@ -227,6 +234,11 @@ void VM_Version::initialize() {
   if (UseSHA512Intrinsics) {
     warning("Intrinsics for SHA-384 and SHA-512 crypto hash functions not available on this CPU.");
     FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
+  }
+
+  if (UseSHA3Intrinsics) {
+    warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
+    FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
   }
 
   if (UseCRC32Intrinsics) {

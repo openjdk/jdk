@@ -30,7 +30,7 @@
 #include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1RemSetSummary.hpp"
-#include "gc/g1/g1YoungRemSetSamplingThread.hpp"
+#include "gc/g1/g1ServiceThread.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "memory/allocation.inline.hpp"
@@ -53,7 +53,7 @@ void G1RemSetSummary::update() {
   g1h->concurrent_refine()->threads_do(&collector);
   _num_coarsenings = HeapRegionRemSet::n_coarsenings();
 
-  set_sampling_thread_vtime(g1h->sampling_thread()->vtime_accum());
+  set_service_thread_vtime(g1h->service_thread()->vtime_accum());
 }
 
 void G1RemSetSummary::set_rs_thread_vtime(uint thread, double value) {
@@ -72,7 +72,7 @@ G1RemSetSummary::G1RemSetSummary(bool should_update) :
   _num_coarsenings(0),
   _num_vtimes(G1ConcurrentRefine::max_num_threads()),
   _rs_threads_vtimes(NEW_C_HEAP_ARRAY(double, _num_vtimes, mtGC)),
-  _sampling_thread_vtime(0.0f) {
+  _service_thread_vtime(0.0f) {
 
   memset(_rs_threads_vtimes, 0, sizeof(double) * _num_vtimes);
 
@@ -93,7 +93,7 @@ void G1RemSetSummary::set(G1RemSetSummary* other) {
 
   memcpy(_rs_threads_vtimes, other->_rs_threads_vtimes, sizeof(double) * _num_vtimes);
 
-  set_sampling_thread_vtime(other->sampling_thread_vtime());
+  set_service_thread_vtime(other->service_thread_vtime());
 }
 
 void G1RemSetSummary::subtract_from(G1RemSetSummary* other) {
@@ -106,7 +106,7 @@ void G1RemSetSummary::subtract_from(G1RemSetSummary* other) {
     set_rs_thread_vtime(i, other->rs_thread_vtime(i) - rs_thread_vtime(i));
   }
 
-  _sampling_thread_vtime = other->sampling_thread_vtime() - _sampling_thread_vtime;
+  _service_thread_vtime = other->service_thread_vtime() - _service_thread_vtime;
 }
 
 class RegionTypeCounter {
@@ -327,8 +327,8 @@ void G1RemSetSummary::print_on(outputStream* out) {
     out->print("    %5.2f", rs_thread_vtime(i));
   }
   out->cr();
-  out->print_cr("  Concurrent sampling threads times (s)");
-  out->print_cr("         %5.2f", sampling_thread_vtime());
+  out->print_cr("  Service thread time (s)");
+  out->print_cr("         %5.2f", service_thread_vtime());
 
   HRRSStatsIter blk;
   G1CollectedHeap::heap()->heap_region_iterate(&blk);

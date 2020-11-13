@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,46 +38,6 @@
 #include "runtime/os.hpp"
 #include "utilities/macros.hpp"
 
-class HasAccumulatedModifiedOopsClosure : public CLDClosure {
-  bool _found;
- public:
-  HasAccumulatedModifiedOopsClosure() : _found(false) {}
-  void do_cld(ClassLoaderData* cld) {
-    if (_found) {
-      return;
-    }
-
-    if (cld->has_accumulated_modified_oops()) {
-      _found = true;
-    }
-  }
-  bool found() {
-    return _found;
-  }
-};
-
-bool CLDRemSet::mod_union_is_clear() {
-  HasAccumulatedModifiedOopsClosure closure;
-  ClassLoaderDataGraph::cld_do(&closure);
-
-  return !closure.found();
-}
-
-
-class ClearCLDModUnionClosure : public CLDClosure {
- public:
-  void do_cld(ClassLoaderData* cld) {
-    if (cld->has_accumulated_modified_oops()) {
-      cld->clear_accumulated_modified_oops();
-    }
-  }
-};
-
-void CLDRemSet::clear_mod_union() {
-  ClearCLDModUnionClosure closure;
-  ClassLoaderDataGraph::cld_do(&closure);
-}
-
 CardTable::CardValue CardTableRS::find_unused_youngergenP_card_value() {
   for (CardValue v = youngergenP1_card;
        v < cur_youngergen_and_prev_nonclean_card;
@@ -112,13 +72,10 @@ void CardTableRS::prepare_for_younger_refs_iterate(bool parallel) {
   }
 }
 
-void CardTableRS::younger_refs_iterate(Generation* g,
-                                       OopsInGenClosure* blk,
-                                       uint n_threads) {
+void CardTableRS::at_younger_refs_iterate() {
   // The indexing in this array is slightly odd. We want to access
   // the old generation record here, which is at index 2.
   _last_cur_val_in_gen[2] = cur_youngergen_card_val();
-  g->younger_refs_iterate(blk, n_threads);
 }
 
 inline bool ClearNoncleanCardWrapper::clear_card(CardValue* entry) {
@@ -245,12 +202,13 @@ void ClearNoncleanCardWrapper::do_MemRegion(MemRegion mr) {
 }
 
 void CardTableRS::younger_refs_in_space_iterate(Space* sp,
-                                                OopsInGenClosure* cl,
+                                                HeapWord* gen_boundary,
+                                                OopIterateClosure* cl,
                                                 uint n_threads) {
   verify_used_region_at_save_marks(sp);
 
   const MemRegion urasm = sp->used_region_at_save_marks();
-  non_clean_card_iterate_possibly_parallel(sp, urasm, cl, this, n_threads);
+  non_clean_card_iterate_possibly_parallel(sp, gen_boundary, urasm, cl, this, n_threads);
 }
 
 #ifdef ASSERT
@@ -624,8 +582,9 @@ bool CardTableRS::card_may_have_been_dirty(CardValue cv) {
 
 void CardTableRS::non_clean_card_iterate_possibly_parallel(
   Space* sp,
+  HeapWord* gen_boundary,
   MemRegion mr,
-  OopsInGenClosure* cl,
+  OopIterateClosure* cl,
   CardTableRS* ct,
   uint n_threads)
 {
@@ -638,7 +597,7 @@ void CardTableRS::non_clean_card_iterate_possibly_parallel(
       // This is the single-threaded version used by DefNew.
       const bool parallel = false;
 
-      DirtyCardToOopClosure* dcto_cl = sp->new_dcto_cl(cl, precision(), cl->gen_boundary(), parallel);
+      DirtyCardToOopClosure* dcto_cl = sp->new_dcto_cl(cl, precision(), gen_boundary, parallel);
       ClearNoncleanCardWrapper clear_cl(dcto_cl, ct, parallel);
 
       clear_cl.do_MemRegion(mr);
@@ -647,7 +606,7 @@ void CardTableRS::non_clean_card_iterate_possibly_parallel(
 }
 
 void CardTableRS::non_clean_card_iterate_parallel_work(Space* sp, MemRegion mr,
-                                                       OopsInGenClosure* cl, CardTableRS* ct,
+                                                       OopIterateClosure* cl, CardTableRS* ct,
                                                        uint n_threads) {
   fatal("Parallel gc not supported here.");
 }

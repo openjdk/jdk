@@ -38,7 +38,11 @@ modifiedUtf8LengthOfUtf8(char* string, int length) {
     int i;
 
     new_length = 0;
-    for ( i = 0 ; i < length ; i++ ) {
+    /*
+     * if length < 0 or new_length becomes < 0 => string is too big
+     * (handled as error after the cycle).
+     */
+    for ( i = 0 ; i < length && new_length >= 0 ; i++ ) {
         unsigned byte;
 
         byte = (unsigned char)string[i];

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2019, SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,12 +151,6 @@ class MacroAssembler: public Assembler {
   inline void set_oop_constant(jobject obj, Register d);
   // Same as load_address.
   inline void set_oop         (AddressLiteral obj_addr, Register d);
-
-  // Read runtime constant:  Issue load if constant not yet established,
-  // else use real constant.
-  virtual RegisterOrConstant delayed_value_impl(intptr_t* delayed_value_addr,
-                                                Register tmp,
-                                                int offset);
 
   //
   // branch, jump

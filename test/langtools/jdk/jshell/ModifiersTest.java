@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /*
- * @test 8167643 8129559
+ * @test 8167643 8129559 8247456
  * @summary Tests for modifiers
  * @build KullaTesting TestingInputStream ExpectedDiagnostic
  * @run testng ModifiersTest
@@ -44,10 +44,9 @@ public class ModifiersTest extends KullaTesting {
     public Object[][] getTestCases() {
         List<Object[]> testCases = new ArrayList<>();
         String[] ignoredModifiers = new String[] {
-            "static"
         };
         String[] silentlyIgnoredModifiers = new String[] {
-            "public", "protected", "private"
+            "public", "protected", "private", "static"
         };
         String[] before = new String[] {
             "strictfp", "abstract", "final", "@X", "@X(value=9)"

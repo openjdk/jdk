@@ -32,16 +32,18 @@ import jdk.test.lib.process.ProcessTools;
  * @summary C2 should convert ((var&16) == 16) to ((var&16) != 0) for power-of-two constants
  * @library /test/lib /
  *
- * @run main/othervm compiler.c2.TestBit
+ * @run driver compiler.c2.TestBit
  *
  * @requires os.arch=="aarch64" | os.arch=="amd64" | os.arch == "ppc64le"
- * @requires vm.debug == true & vm.flavor == "server" & !vm.graal.enabled
+ * @requires vm.debug == true & vm.compiler2.enabled
  */
 public class TestBit {
 
     static void runTest(String testName) throws Exception {
         String className = "compiler.c2.TestBit";
         String[] procArgs = {
+            "-Xbatch",
+            "-XX:-TieredCompilation",
             "-XX:+PrintOptoAssembly",
             "-XX:CompileCommand=compileonly," + className + "::tst*",
             className, testName};

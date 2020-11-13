@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build jit.t.t045.t045
- * @run driver ExecDriver --java jit.t.t045.t045
+ * @run main/othervm jit.t.t045.t045
  */
 
 package jit.t.t045;
@@ -40,7 +38,7 @@ import nsk.share.TestFailure;
 
 // Putfield interferes with one lazy load but not the other.
 
-class t045
+public class t045
 {
     static double x = 409.0;
     static double y;

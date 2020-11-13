@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "utilities/tableStatistics.hpp"
 
 class JavaThread;
+template <typename T> class GrowableArray;
 
 // TempNewSymbol acts as a handle class in a handle/body idiom and is
 // responsible for proper resource management of the body (which is a Symbol*).
@@ -207,13 +208,13 @@ public:
 
   // Sharing
 private:
-  static void copy_shared_symbol_table(CompactHashtableWriter* ch_table);
+  static void copy_shared_symbol_table(GrowableArray<Symbol*>* symbols,
+                                       CompactHashtableWriter* ch_table);
 public:
   static size_t estimate_size_for_archive() NOT_CDS_RETURN_(0);
-  static void write_to_archive(bool is_static_archive = true) NOT_CDS_RETURN;
+  static void write_to_archive(GrowableArray<Symbol*>* symbols) NOT_CDS_RETURN;
   static void serialize_shared_table_header(SerializeClosure* soc,
                                             bool is_static_archive = true) NOT_CDS_RETURN;
-  static void metaspace_pointers_do(MetaspaceClosure* it);
 
   // Jcmd
   static void dump(outputStream* st, bool verbose=false);

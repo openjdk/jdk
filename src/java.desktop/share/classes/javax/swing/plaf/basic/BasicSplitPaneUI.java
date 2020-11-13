@@ -286,6 +286,10 @@ public class BasicSplitPaneUI extends SplitPaneUI
     /** If true, setDividerLocation does nothing. */
     boolean             ignoreDividerLocationChange;
 
+    /**
+     * Constructs a {@code BasicSplitPaneUI}.
+     */
+    public BasicSplitPaneUI() {}
 
     /**
      * Creates a new instance of {@code BasicSplitPaneUI}.
@@ -710,6 +714,11 @@ public class BasicSplitPaneUI extends SplitPaneUI
      */
     public class PropertyHandler implements PropertyChangeListener
     {
+        /**
+         * Constructs a {@code PropertyHandler}.
+         */
+        public PropertyHandler() {}
+
         // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
@@ -734,6 +743,11 @@ public class BasicSplitPaneUI extends SplitPaneUI
      */
     public class FocusHandler extends FocusAdapter
     {
+        /**
+         * Constructs a {@code FocusHandler}.
+         */
+        public FocusHandler() {}
+
         // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
@@ -757,6 +771,11 @@ public class BasicSplitPaneUI extends SplitPaneUI
      */
     public class KeyboardUpLeftHandler implements ActionListener
     {
+        /**
+         * Constructs a {@code KeyboardUpLeftHandler}.
+         */
+        public KeyboardUpLeftHandler() {}
+
         public void actionPerformed(ActionEvent ev) {
             if (dividerKeyboardResize) {
                 splitPane.setDividerLocation(Math.max(0,getDividerLocation
@@ -774,6 +793,11 @@ public class BasicSplitPaneUI extends SplitPaneUI
      */
     public class KeyboardDownRightHandler implements ActionListener
     {
+        /**
+         * Constructs a {@code KeyboardDownRightHandler}.
+         */
+        public KeyboardDownRightHandler() {}
+
         public void actionPerformed(ActionEvent ev) {
             if (dividerKeyboardResize) {
                 splitPane.setDividerLocation(getDividerLocation(splitPane) +
@@ -792,6 +816,11 @@ public class BasicSplitPaneUI extends SplitPaneUI
      */
     public class KeyboardHomeHandler implements ActionListener
     {
+        /**
+         * Constructs a {@code KeyboardHomeHandler}.
+         */
+        public KeyboardHomeHandler() {}
+
         public void actionPerformed(ActionEvent ev) {
             if (dividerKeyboardResize) {
                 splitPane.setDividerLocation(0);
@@ -809,6 +838,11 @@ public class BasicSplitPaneUI extends SplitPaneUI
      */
     public class KeyboardEndHandler implements ActionListener
     {
+        /**
+         * Constructs a {@code KeyboardEndHandler}.
+         */
+        public KeyboardEndHandler() {}
+
         public void actionPerformed(ActionEvent ev) {
             if (dividerKeyboardResize) {
                 Insets   insets = splitPane.getInsets();
@@ -837,6 +871,11 @@ public class BasicSplitPaneUI extends SplitPaneUI
      */
     public class KeyboardResizeToggleHandler implements ActionListener
     {
+        /**
+         * Constructs a {@code KeyboardResizeToggleHandler}.
+         */
+        public KeyboardResizeToggleHandler() {}
+
         public void actionPerformed(ActionEvent ev) {
             if (!dividerKeyboardResize) {
                 splitPane.requestFocus();

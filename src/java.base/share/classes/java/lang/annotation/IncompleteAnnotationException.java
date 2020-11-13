@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,13 @@ public class IncompleteAnnotationException extends RuntimeException {
     @java.io.Serial
     private static final long serialVersionUID = 8445097402741811912L;
 
+    /**
+     * The annotation type.
+     */
     private Class<? extends Annotation> annotationType;
+    /**
+     * The element name.
+     */
     private String elementName;
 
     /**

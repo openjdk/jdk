@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build jit.init.init01.init01
- * @run driver ExecDriver --java jit.init.init01.init01
+ * @run main/othervm jit.init.init01.init01
  */
 
 package jit.init.init01;
@@ -53,7 +51,7 @@ class InitTest2 {
   static InitTest1 oop = new InitTest1();
 }
 
-class init01 {
+public class init01 {
 
 
   public static void main (String s[]) {

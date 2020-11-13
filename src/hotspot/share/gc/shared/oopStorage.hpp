@@ -151,6 +151,24 @@ public:
   // Other clients must use serial iteration.
   template<bool concurrent, bool is_const> class ParState;
 
+  // Support GC callbacks reporting dead entries.  This lets clients respond
+  // to entries being cleared.
+
+  typedef void (*NumDeadCallback)(size_t num_dead);
+
+  // Used by a client to register a callback function with the GC.
+  // precondition: No more than one registration per storage object.
+  void register_num_dead_callback(NumDeadCallback f);
+
+  // Called by the GC after an iteration that may clear dead referents.
+  // This calls the registered callback function, if any.  num_dead is the
+  // number of entries which were either already NULL or were cleared by the
+  // iteration.
+  void report_num_dead(size_t num_dead) const;
+
+  // Used by the GC to test whether a callback function has been registered.
+  bool should_report_num_dead() const;
+
   // Service thread cleanup support.
 
   // Called by the service thread to process any pending cleanups for this
@@ -167,7 +185,7 @@ public:
   // cleanups to process.
   static void trigger_cleanup_if_needed();
 
-  // Called by the service thread (while holding Service_lock) to to test
+  // Called by the service thread (while holding Service_lock) to test
   // for pending cleanup requests, and resets the request state to allow
   // recognition of new requests.  Returns true if there was a pending
   // request.
@@ -222,6 +240,7 @@ private:
   Block* volatile _deferred_updates;
   Mutex* _allocation_mutex;
   Mutex* _active_mutex;
+  NumDeadCallback _num_dead_callback;
 
   // Volatile for racy unlocked accesses.
   volatile size_t _allocation_count;

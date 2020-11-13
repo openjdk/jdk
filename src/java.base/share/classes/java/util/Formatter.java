@@ -277,7 +277,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *
  * </ol>
  *
- * <p> For category <i>General</i>, <i>Character</i>, <i>Numberic</i>,
+ * <p> For category <i>General</i>, <i>Character</i>, <i>Numeric</i>,
  * <i>Integral</i> and <i>Date/Time</i> conversion, unless otherwise specified,
  * if the argument <i>arg</i> is {@code null}, then the result is "{@code null}".
  *
@@ -703,7 +703,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * methods such as {@link String#format(String,Object...) String.format} and
  * {@link java.io.PrintStream#printf(String,Object...) PrintStream.printf}.
  *
- * <p> For category <i>General</i>, <i>Character</i>, <i>Numberic</i>,
+ * <p> For category <i>General</i>, <i>Character</i>, <i>Numeric</i>,
  * <i>Integral</i> and <i>Date/Time</i> conversion, unless otherwise specified,
  * if the argument <i>arg</i> is {@code null}, then the result is "{@code null}".
  *
@@ -1898,7 +1898,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *
  * <p> The maximum number of arguments is limited by the maximum dimension of a
  * Java array as defined by
- * <cite>The Java&trade; Virtual Machine Specification</cite>.
+ * <cite>The Java Virtual Machine Specification</cite>.
  * If the argument index does not correspond to an
  * available argument, then a {@link MissingFormatArgumentException} is thrown.
  *
@@ -2589,7 +2589,7 @@ public final class Formatter implements Closeable, Flushable {
      *         string.  If there are more arguments than format specifiers, the
      *         extra arguments are ignored.  The maximum number of arguments is
      *         limited by the maximum dimension of a Java array as defined by
-     *         <cite>The Java&trade; Virtual Machine Specification</cite>.
+     *         <cite>The Java Virtual Machine Specification</cite>.
      *
      * @throws  IllegalFormatException
      *          If a format string contains an illegal syntax, a format
@@ -2628,7 +2628,7 @@ public final class Formatter implements Closeable, Flushable {
      *         string.  If there are more arguments than format specifiers, the
      *         extra arguments are ignored.  The maximum number of arguments is
      *         limited by the maximum dimension of a Java array as defined by
-     *         <cite>The Java&trade; Virtual Machine Specification</cite>.
+     *         <cite>The Java Virtual Machine Specification</cite>.
      *
      * @throws  IllegalFormatException
      *          If a format string contains an illegal syntax, a format

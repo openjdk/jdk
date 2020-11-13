@@ -71,6 +71,10 @@ ifeq ($(FREETYPE_TO_USE), system)
   LEGAL_EXCLUDES += freetype.md
 endif
 
+ifeq ($(USE_EXTERNAL_HARFBUZZ), true)
+  LEGAL_EXCLUDES += harfbuzz.md
+endif
+
 $(eval $(call SetupCopyLegalFiles, COPY_LEGAL, \
     EXCLUDES := $(LEGAL_EXCLUDES), \
 ))

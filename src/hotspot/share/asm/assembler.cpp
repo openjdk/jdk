@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,7 +135,7 @@ void AbstractAssembler::generate_stack_overflow_check(int frame_size_in_bytes) {
     // is greater than a page.
 
     const int page_size = os::vm_page_size();
-    int bang_end = (int)JavaThread::stack_shadow_zone_size();
+    int bang_end = (int)StackOverflow::stack_shadow_zone_size();
 
     // This is how far the previous frame's stack banging extended.
     const int bang_end_safe = bang_end;
@@ -198,19 +198,6 @@ void Label::patch_instructions(MacroAssembler* masm) {
       *(address*)branch = target;
       continue;
     }
-
-#ifdef ASSERT
-    // Cross-section branches only work if the
-    // intermediate section boundaries are frozen.
-    if (target_sect != branch_sect) {
-      for (int n = MIN2(target_sect, branch_sect),
-               nlimit = (target_sect + branch_sect) - n;
-           n < nlimit; n++) {
-        CodeSection* cs = cb->code_section(n);
-        assert(cs->is_frozen(), "cross-section branch needs stable offsets");
-      }
-    }
-#endif //ASSERT
 
     // Push the target offset into the branch instruction.
     masm->pd_patch_instruction(branch, target, file, line);

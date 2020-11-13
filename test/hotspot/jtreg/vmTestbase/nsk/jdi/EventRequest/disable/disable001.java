@@ -411,6 +411,7 @@ public class disable001 {
                       throw new JDITestRuntimeException("** default case 2 **");
             }
 
+            vm.suspend();
             log2("......eventRequest1.setEnabled(true);");
             eventRequest1.setEnabled(true);
 
@@ -423,6 +424,7 @@ public class disable001 {
                 log3("ERROR: EventRequest is still enabled");
             }
             eventRequest1.setEnabled(false);
+            vm.resume();
 
             //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         }

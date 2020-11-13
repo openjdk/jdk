@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@
  *         Test uses 2 event filters:
  *                 - add to request filter for class which has subclass (expect events for class and its subclasses)
  *                 - add to request filter for class without subclasses
- *         Test executes class nsk.share.jdi.EventTestTemplates$ClassExclusionFilterTest which uses JDI events testing
+ *         Test executes class nsk.share.jdi.ClassExclusionFilterTest which uses JDI events testing
  *         framework based on classes from package nsk.share.jdi.*.
  *         This framework uses following scenario:
  *                 - debugger VM forces debugge VM to create number of objects which should generate events during test
@@ -56,18 +56,17 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build nsk.share.jdi.EventTestTemplates
+ * @build nsk.share.jdi.ClassFilterTest_ReferenceType
  *        nsk.share.jdi.JDIEventsDebuggee
  *        nsk.share.jdi.MonitorEventsDebuggee
- * @run main/othervm/native PropertyResolvingWrapper
- *      nsk.share.jdi.EventTestTemplates$ClassFilterTest_ReferenceType
+ * @run main/othervm/native
+ *      nsk.share.jdi.ClassFilterTest_ReferenceType
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  *      -allowMissedEvents MONITOR_CONTENTED_ENTER
  *      -eventType MONITOR_CONTENTED_ENTER
  *      -debuggeeClassName nsk.share.jdi.MonitorEventsDebuggee

@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/classLoaderDataGraph.inline.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/dictionary.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
@@ -58,6 +58,7 @@
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/stackWatermarkSet.inline.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/sweeper.hpp"
@@ -490,9 +491,6 @@ void SafepointSynchronize::end() {
 }
 
 bool SafepointSynchronize::is_cleanup_needed() {
-  // Need a cleanup safepoint if there are too many monitors in use
-  // and the monitor deflation needs to be done at a safepoint.
-  if (ObjectSynchronizer::is_safepoint_deflation_needed()) return true;
   // Need a safepoint if some inline cache buffers is non-empty
   if (!InlineCacheBuffer::is_empty()) return true;
   if (StringTable::needs_rehashing()) return true;
@@ -501,102 +499,79 @@ bool SafepointSynchronize::is_cleanup_needed() {
 }
 
 class ParallelSPCleanupThreadClosure : public ThreadClosure {
-private:
-  DeflateMonitorCounters* _counters;
-
 public:
-  ParallelSPCleanupThreadClosure(DeflateMonitorCounters* counters) :
-    _counters(counters) {}
-
   void do_thread(Thread* thread) {
-    // deflate_thread_local_monitors() handles or requests deflation of
-    // this thread's idle monitors. If !AsyncDeflateIdleMonitors or if
-    // there is a special cleanup request, deflation is handled now.
-    // Otherwise, async deflation is requested via a flag.
-    ObjectSynchronizer::deflate_thread_local_monitors(thread, _counters);
+    if (thread->is_Java_thread()) {
+      StackWatermarkSet::start_processing(thread->as_Java_thread(), StackWatermarkKind::gc);
+    }
   }
 };
 
 class ParallelSPCleanupTask : public AbstractGangTask {
 private:
   SubTasksDone _subtasks;
-  ParallelSPCleanupThreadClosure _cleanup_threads_cl;
   uint _num_workers;
-  DeflateMonitorCounters* _counters;
+  bool _do_lazy_roots;
+
+  class Tracer {
+  private:
+    const char*               _name;
+    EventSafepointCleanupTask _event;
+    TraceTime                 _timer;
+
+  public:
+    Tracer(const char* name) :
+        _name(name),
+        _event(),
+        _timer(name, TRACETIME_LOG(Info, safepoint, cleanup)) {}
+    ~Tracer() {
+      post_safepoint_cleanup_task_event(_event, SafepointSynchronize::safepoint_id(), _name);
+    }
+  };
+
 public:
-  ParallelSPCleanupTask(uint num_workers, DeflateMonitorCounters* counters) :
+  ParallelSPCleanupTask(uint num_workers) :
     AbstractGangTask("Parallel Safepoint Cleanup"),
     _subtasks(SafepointSynchronize::SAFEPOINT_CLEANUP_NUM_TASKS),
-    _cleanup_threads_cl(ParallelSPCleanupThreadClosure(counters)),
     _num_workers(num_workers),
-    _counters(counters) {}
+    _do_lazy_roots(!VMThread::vm_operation()->skip_thread_oop_barriers() &&
+                   Universe::heap()->uses_stack_watermark_barrier()) {}
 
   void work(uint worker_id) {
-    uint64_t safepoint_id = SafepointSynchronize::safepoint_id();
-    // All threads deflate monitors and mark nmethods (if necessary).
-    Threads::possibly_parallel_threads_do(true, &_cleanup_threads_cl);
-
-    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_DEFLATE_MONITORS)) {
-      const char* name = "deflating global idle monitors";
-      EventSafepointCleanupTask event;
-      TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
-      // AsyncDeflateIdleMonitors only uses DeflateMonitorCounters
-      // when a special cleanup has been requested.
-      // Note: This logging output will include global idle monitor
-      // elapsed times, but not global idle monitor deflation count.
-      ObjectSynchronizer::do_safepoint_work(_counters);
-
-      post_safepoint_cleanup_task_event(event, safepoint_id, name);
+    if (_do_lazy_roots && _subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_LAZY_ROOT_PROCESSING)) {
+      Tracer t("lazy partial thread root processing");
+      ParallelSPCleanupThreadClosure cl;
+      Threads::threads_do(&cl);
     }
 
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_UPDATE_INLINE_CACHES)) {
-      const char* name = "updating inline caches";
-      EventSafepointCleanupTask event;
-      TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
+      Tracer t("updating inline caches");
       InlineCacheBuffer::update_inline_caches();
-
-      post_safepoint_cleanup_task_event(event, safepoint_id, name);
     }
 
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_COMPILATION_POLICY)) {
-      const char* name = "compilation policy safepoint handler";
-      EventSafepointCleanupTask event;
-      TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
+      Tracer t("compilation policy safepoint handler");
       CompilationPolicy::policy()->do_safepoint_work();
-
-      post_safepoint_cleanup_task_event(event, safepoint_id, name);
     }
 
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_SYMBOL_TABLE_REHASH)) {
       if (SymbolTable::needs_rehashing()) {
-        const char* name = "rehashing symbol table";
-        EventSafepointCleanupTask event;
-        TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
+        Tracer t("rehashing symbol table");
         SymbolTable::rehash_table();
-
-        post_safepoint_cleanup_task_event(event, safepoint_id, name);
       }
     }
 
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_STRING_TABLE_REHASH)) {
       if (StringTable::needs_rehashing()) {
-        const char* name = "rehashing string table";
-        EventSafepointCleanupTask event;
-        TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
+        Tracer t("rehashing string table");
         StringTable::rehash_table();
-
-        post_safepoint_cleanup_task_event(event, safepoint_id, name);
       }
     }
 
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_SYSTEM_DICTIONARY_RESIZE)) {
       if (Dictionary::does_any_dictionary_needs_resizing()) {
-        const char* name = "resizing system dictionaries";
-        EventSafepointCleanupTask event;
-        TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
+        Tracer t("resizing system dictionaries");
         ClassLoaderDataGraph::resize_dictionaries();
-
-        post_safepoint_cleanup_task_event(event, safepoint_id, name);
       }
     }
 
@@ -615,39 +590,27 @@ void SafepointSynchronize::do_cleanup_tasks() {
 
   TraceTime timer("safepoint cleanup tasks", TRACETIME_LOG(Info, safepoint, cleanup));
 
-  // Prepare for monitor deflation.
-  DeflateMonitorCounters deflate_counters;
-  ObjectSynchronizer::prepare_deflate_idle_monitors(&deflate_counters);
-
   CollectedHeap* heap = Universe::heap();
   assert(heap != NULL, "heap not initialized yet?");
-  WorkGang* cleanup_workers = heap->get_safepoint_workers();
+  WorkGang* cleanup_workers = heap->safepoint_workers();
   if (cleanup_workers != NULL) {
     // Parallel cleanup using GC provided thread pool.
     uint num_cleanup_workers = cleanup_workers->active_workers();
-    ParallelSPCleanupTask cleanup(num_cleanup_workers, &deflate_counters);
-    StrongRootsScope srs(num_cleanup_workers);
+    ParallelSPCleanupTask cleanup(num_cleanup_workers);
     cleanup_workers->run_task(&cleanup);
   } else {
     // Serial cleanup using VMThread.
-    ParallelSPCleanupTask cleanup(1, &deflate_counters);
-    StrongRootsScope srs(1);
+    ParallelSPCleanupTask cleanup(1);
     cleanup.work(0);
   }
 
-  // Needs to be done single threaded by the VMThread.  This walks
-  // the thread stacks looking for references to metadata before
-  // deciding to remove it from the metaspaces.
-  if (ClassLoaderDataGraph::should_clean_metaspaces_and_reset()) {
-    const char* name = "cleanup live ClassLoaderData metaspaces";
-    TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
-    ClassLoaderDataGraph::walk_metadata_and_clean_metaspaces();
-  }
-
-  // Finish monitor deflation.
-  ObjectSynchronizer::finish_deflate_idle_monitors(&deflate_counters);
-
   assert(InlineCacheBuffer::is_empty(), "should have cleaned up ICBuffer");
+
+  if (log_is_enabled(Debug, monitorinflation)) {
+    // The VMThread calls do_final_audit_and_print_stats() which calls
+    // audit_and_print_stats() at the Info level at VM exit time.
+    ObjectSynchronizer::audit_and_print_stats(false /* on_exit */);
+  }
 }
 
 // Methods for determining if a JavaThread is safepoint safe.
@@ -701,7 +664,7 @@ static bool safepoint_safe_with(JavaThread *thread, JavaThreadState state) {
 }
 
 bool SafepointSynchronize::handshake_safe(JavaThread *thread) {
-  if (thread->is_ext_suspended() || thread->is_terminated()) {
+  if (thread->is_terminated()) {
     return true;
   }
   JavaThreadState stable_state;
@@ -711,46 +674,12 @@ bool SafepointSynchronize::handshake_safe(JavaThread *thread) {
   return false;
 }
 
-// See if the thread is running inside a lazy critical native and
-// update the thread critical count if so.  Also set a suspend flag to
-// cause the native wrapper to return into the JVM to do the unlock
-// once the native finishes.
-static void check_for_lazy_critical_native(JavaThread *thread, JavaThreadState state) {
-  if (state == _thread_in_native &&
-      thread->has_last_Java_frame() &&
-      thread->frame_anchor()->walkable()) {
-    // This thread might be in a critical native nmethod so look at
-    // the top of the stack and increment the critical count if it
-    // is.
-    frame wrapper_frame = thread->last_frame();
-    CodeBlob* stub_cb = wrapper_frame.cb();
-    if (stub_cb != NULL &&
-        stub_cb->is_nmethod() &&
-        stub_cb->as_nmethod_or_null()->is_lazy_critical_native()) {
-      // A thread could potentially be in a critical native across
-      // more than one safepoint, so only update the critical state on
-      // the first one.  When it returns it will perform the unlock.
-      if (!thread->do_critical_native_unlock()) {
-#ifdef ASSERT
-        if (!thread->in_critical()) {
-          GCLocker::increment_debug_jni_lock_count();
-        }
-#endif
-        thread->enter_critical();
-        // Make sure the native wrapper calls back on return to
-        // perform the needed critical unlock.
-        thread->set_critical_native_unlock();
-      }
-    }
-  }
-}
 
 // -------------------------------------------------------------------------------------------------------
 // Implementation of Safepoint blocking point
 
 void SafepointSynchronize::block(JavaThread *thread) {
   assert(thread != NULL, "thread must be set");
-  assert(thread->is_Java_thread(), "not a Java thread");
 
   // Threads shouldn't block if they are in the middle of printing, but...
   ttyLocker::break_tty_lock_for_safepoint(os::current_thread_id());
@@ -831,7 +760,7 @@ void SafepointSynchronize::block(JavaThread *thread) {
       !thread->is_at_poll_safepoint() && (state != _thread_in_native_trans));
   }
 
-  // cross_modify_fence is done by SafepointMechanism::block_if_requested_slow
+  // cross_modify_fence is done by SafepointMechanism::process_if_requested
   // which is the only caller here.
 }
 
@@ -840,7 +769,6 @@ void SafepointSynchronize::block(JavaThread *thread) {
 
 
 void SafepointSynchronize::handle_polling_page_exception(JavaThread *thread) {
-  assert(thread->is_Java_thread(), "polling reference encountered by VM thread");
   assert(thread->thread_state() == _thread_in_Java, "should come from Java code");
 
   if (log_is_enabled(Info, safepoint, stats)) {
@@ -938,34 +866,7 @@ void ThreadSafepointState::examine_state_of_thread(uint64_t safepoint_count) {
     return;
   }
 
-  // Check for a thread that is suspended. Note that thread resume tries
-  // to grab the Threads_lock which we own here, so a thread cannot be
-  // resumed during safepoint synchronization.
-
-  // We check to see if this thread is suspended without locking to
-  // avoid deadlocking with a third thread that is waiting for this
-  // thread to be suspended. The third thread can notice the safepoint
-  // that we're trying to start at the beginning of its SR_lock->wait()
-  // call. If that happens, then the third thread will block on the
-  // safepoint while still holding the underlying SR_lock. We won't be
-  // able to get the SR_lock and we'll deadlock.
-  //
-  // We don't need to grab the SR_lock here for two reasons:
-  // 1) The suspend flags are both volatile and are set with an
-  //    Atomic::cmpxchg() call so we should see the suspended
-  //    state right away.
-  // 2) We're being called from the safepoint polling loop; if
-  //    we don't see the suspended state on this iteration, then
-  //    we'll come around again.
-  //
-  bool is_suspended = _thread->is_ext_suspended();
-  if (is_suspended) {
-    account_safe_thread();
-    return;
-  }
-
   if (safepoint_safe_with(_thread, stable_state)) {
-    check_for_lazy_critical_native(_thread, stable_state);
     account_safe_thread();
     return;
   }
@@ -1007,21 +908,23 @@ void ThreadSafepointState::print_on(outputStream *st) const {
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-// Block the thread at poll or poll return for safepoint/handshake.
+// Process pending operation.
 void ThreadSafepointState::handle_polling_page_exception() {
+  JavaThread* self = thread();
+  assert(self == Thread::current()->as_Java_thread(), "must be self");
 
   // Step 1: Find the nmethod from the return address
-  address real_return_addr = thread()->saved_exception_pc();
+  address real_return_addr = self->saved_exception_pc();
 
   CodeBlob *cb = CodeCache::find_blob(real_return_addr);
   assert(cb != NULL && cb->is_compiled(), "return address should be in nmethod");
   CompiledMethod* nm = (CompiledMethod*)cb;
 
   // Find frame of caller
-  frame stub_fr = thread()->last_frame();
+  frame stub_fr = self->last_frame();
   CodeBlob* stub_cb = stub_fr.cb();
   assert(stub_cb->is_safepoint_stub(), "must be a safepoint stub");
-  RegisterMap map(thread(), true);
+  RegisterMap map(self, true, false);
   frame caller_fr = stub_fr.sender(&map);
 
   // Should only be poll_return or poll
@@ -1042,12 +945,22 @@ void ThreadSafepointState::handle_polling_page_exception() {
       // to keep it in a handle.
       oop result = caller_fr.saved_oop_result(&map);
       assert(oopDesc::is_oop_or_null(result), "must be oop");
-      return_value = Handle(thread(), result);
+      return_value = Handle(self, result);
       assert(Universe::heap()->is_in_or_null(result), "must be heap pointer");
     }
 
-    // Block the thread
-    SafepointMechanism::block_if_requested(thread());
+    // We get here if compiled return polls found a reason to call into the VM.
+    // One condition for that is that the top frame is not yet safe to use.
+    // The following stack watermark barrier poll will catch such situations.
+    StackWatermarkSet::after_unwind(self);
+
+    // Process pending operation
+    SafepointMechanism::process_if_requested(self);
+    // We have to wait if we are here because of a handshake for object deoptimization.
+    if (self->is_obj_deopt_suspend()) {
+      self->wait_for_object_deoptimization();
+    }
+    self->check_and_handle_async_exceptions();
 
     // restore oop result, if any
     if (return_oop) {
@@ -1062,22 +975,26 @@ void ThreadSafepointState::handle_polling_page_exception() {
     // verify the blob built the "return address" correctly
     assert(real_return_addr == caller_fr.pc(), "must match");
 
-    // Block the thread
-    SafepointMechanism::block_if_requested(thread());
+    // Process pending operation
+    SafepointMechanism::process_if_requested(self);
+    // We have to wait if we are here because of a handshake for object deoptimization.
+    if (self->is_obj_deopt_suspend()) {
+      self->wait_for_object_deoptimization();
+    }
     set_at_poll_safepoint(false);
 
     // If we have a pending async exception deoptimize the frame
     // as otherwise we may never deliver it.
-    if (thread()->has_async_condition()) {
-      ThreadInVMfromJavaNoAsyncException __tiv(thread());
-      Deoptimization::deoptimize_frame(thread(), caller_fr.id());
+    if (self->has_async_condition()) {
+      ThreadInVMfromJavaNoAsyncException __tiv(self);
+      Deoptimization::deoptimize_frame(self, caller_fr.id());
     }
 
     // If an exception has been installed we must check for a pending deoptimization
     // Deoptimize frame if exception has been thrown.
 
-    if (thread()->has_pending_exception() ) {
-      RegisterMap map(thread(), true);
+    if (self->has_pending_exception() ) {
+      RegisterMap map(self, true, false);
       frame caller_fr = stub_fr.sender(&map);
       if (caller_fr.is_deoptimized_frame()) {
         // The exception patch will destroy registers that are still

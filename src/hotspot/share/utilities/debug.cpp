@@ -71,6 +71,9 @@ static intx g_asserting_thread = 0;
 static void* g_assertion_context = NULL;
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
 
+// Set to suppress secondary error reporting.
+bool Debugging = false;
+
 #ifndef ASSERT
 #  ifdef _DEBUG
    // NOTE: don't turn the lines below into a comment -- if you're getting
@@ -355,8 +358,6 @@ void report_java_out_of_memory(const char* message) {
 class Command : public StackObj {
  private:
   ResourceMark rm;
-  ResetNoHandleMark rnhm;
-  HandleMark   hm;
   bool debug_save;
  public:
   static int level;
@@ -369,9 +370,9 @@ class Command : public StackObj {
   }
 
   ~Command() {
-        tty->flush();
-        Debugging = debug_save;
-        level--;
+    tty->flush();
+    Debugging = debug_save;
+    level--;
   }
 };
 
@@ -456,8 +457,7 @@ extern "C" void verify() {
 
 extern "C" void pp(void* p) {
   Command c("pp");
-  FlagSetting fl(PrintVMMessages, true);
-  FlagSetting f2(DisplayVMOutput, true);
+  FlagSetting fl(DisplayVMOutput, true);
   if (Universe::heap()->is_in(p)) {
     oop obj = oop(p);
     obj->print();
@@ -557,7 +557,7 @@ extern "C" void pss() { // print all stacks
 extern "C" void debug() {               // to set things up for compiler debugging
   Command c("debug");
   WizardMode = true;
-  PrintVMMessages = PrintCompilation = true;
+  PrintCompilation = true;
   PrintInlining = PrintAssembly = true;
   tty->flush();
 }
@@ -740,7 +740,7 @@ void disarm_assert_poison() {
 
 static void store_context(const void* context) {
   memcpy(&g_stored_assertion_context, context, sizeof(ucontext_t));
-#if defined(__linux) && defined(PPC64)
+#if defined(LINUX) && defined(PPC64)
   // on Linux ppc64, ucontext_t contains pointers into itself which have to be patched up
   //  after copying the context (see comment in sys/ucontext.h):
   *((void**) &g_stored_assertion_context.uc_mcontext.regs) = &(g_stored_assertion_context.uc_mcontext.gp_regs);

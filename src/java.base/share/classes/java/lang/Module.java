@@ -55,6 +55,8 @@ import java.util.stream.Stream;
 import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.ClassLoaders;
+import jdk.internal.misc.CDS;
+import jdk.internal.misc.VM;
 import jdk.internal.module.IllegalAccessLogger;
 import jdk.internal.module.ModuleLoaderMap;
 import jdk.internal.module.ServicesCatalog;
@@ -85,7 +87,7 @@ import sun.security.util.SecurityConstants;
  *
  * <p> The package names that are parameters or returned by methods defined in
  * this class are the fully-qualified names of the packages as defined in
- * section 6.5.3 of <cite>The Java&trade; Language Specification</cite>, for
+ * section {@jls 6.5.3} of <cite>The Java Language Specification</cite>, for
  * example, {@code "java.lang"}. </p>
  *
  * <p> Unless otherwise specified, passing a {@code null} argument to a method
@@ -93,7 +95,6 @@ import sun.security.util.SecurityConstants;
  * be thrown. </p>
  *
  * @since 9
- * @spec JPMS
  * @see Class#getModule()
  */
 
@@ -246,12 +247,55 @@ public final class Module implements AnnotatedElement {
     // --
 
     // special Module to mean "all unnamed modules"
-    private static final Module ALL_UNNAMED_MODULE = new Module(null);
-    private static final Set<Module> ALL_UNNAMED_MODULE_SET = Set.of(ALL_UNNAMED_MODULE);
+    private static final Module ALL_UNNAMED_MODULE;
+    private static final Set<Module> ALL_UNNAMED_MODULE_SET;
 
     // special Module to mean "everyone"
-    private static final Module EVERYONE_MODULE = new Module(null);
-    private static final Set<Module> EVERYONE_SET = Set.of(EVERYONE_MODULE);
+    private static final Module EVERYONE_MODULE;
+    private static final Set<Module> EVERYONE_SET;
+
+    private static class ArchivedData {
+        private static ArchivedData archivedData;
+        private final Module allUnnamedModule;
+        private final Set<Module> allUnnamedModules;
+        private final Module everyoneModule;
+        private final Set<Module> everyoneSet;
+
+        private ArchivedData() {
+            this.allUnnamedModule = ALL_UNNAMED_MODULE;
+            this.allUnnamedModules = ALL_UNNAMED_MODULE_SET;
+            this.everyoneModule = EVERYONE_MODULE;
+            this.everyoneSet = EVERYONE_SET;
+        }
+
+        static void archive() {
+            archivedData = new ArchivedData();
+        }
+
+        static ArchivedData get() {
+            return archivedData;
+        }
+
+        static {
+            CDS.initializeFromArchive(ArchivedData.class);
+        }
+    }
+
+    static {
+        ArchivedData archivedData = ArchivedData.get();
+        if (archivedData != null) {
+            ALL_UNNAMED_MODULE = archivedData.allUnnamedModule;
+            ALL_UNNAMED_MODULE_SET = archivedData.allUnnamedModules;
+            EVERYONE_MODULE = archivedData.everyoneModule;
+            EVERYONE_SET = archivedData.everyoneSet;
+        } else {
+            ALL_UNNAMED_MODULE = new Module(null);
+            ALL_UNNAMED_MODULE_SET = Set.of(ALL_UNNAMED_MODULE);
+            EVERYONE_MODULE = new Module(null);
+            EVERYONE_SET = Set.of(EVERYONE_MODULE);
+            ArchivedData.archive();
+        }
+    }
 
     /**
      * The holder of data structures to support readability, exports, and
@@ -672,7 +716,7 @@ public final class Module implements AnnotatedElement {
      * <p> This method has no effect if the package is already exported (or
      * <em>open</em>) to the given module. </p>
      *
-     * @apiNote As specified in section 5.4.3 of the <cite>The Java&trade;
+     * @apiNote As specified in section {@jvms 5.4.3} of the <cite>The Java
      * Virtual Machine Specification </cite>, if an attempt to resolve a
      * symbolic reference fails because of a linkage error, then subsequent
      * attempts to resolve the reference always fail with the same error that

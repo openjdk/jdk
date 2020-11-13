@@ -30,15 +30,19 @@
 #include "memory/memRegion.hpp"
 #include "memory/virtualspace.hpp"
 #include "oops/oop.hpp"
-#include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/resourceHash.hpp"
 
 #define MAX_SHARED_DELTA                (0x7FFFFFFF)
 
+// Metaspace::allocate() requires that all blocks must be aligned with KlassAlignmentInBytes.
+// We enforce the same alignment rule in blocks allocated from the shared space.
+const int SharedSpaceObjectAlignment = KlassAlignmentInBytes;
+
 class outputStream;
-class FileMapInfo;
 class CHeapBitMap;
+class FileMapInfo;
+class DumpRegion;
 struct ArchiveHeapOopmapInfo;
 
 enum MapArchiveResult {
@@ -55,113 +59,6 @@ public:
   CompactHashtableStats symbol;
   CompactHashtableStats string;
 };
-
-#if INCLUDE_CDS
-class DumpRegion {
-private:
-  const char* _name;
-  char* _base;
-  char* _top;
-  char* _end;
-  bool _is_packed;
-  ReservedSpace* _rs;
-  VirtualSpace* _vs;
-
-public:
-  DumpRegion(const char* name) : _name(name), _base(NULL), _top(NULL), _end(NULL), _is_packed(false) {}
-
-  char* expand_top_to(char* newtop);
-  char* allocate(size_t num_bytes, size_t alignment=BytesPerWord);
-
-  void append_intptr_t(intptr_t n, bool need_to_mark = false);
-
-  char* base()      const { return _base;        }
-  char* top()       const { return _top;         }
-  char* end()       const { return _end;         }
-  size_t reserved() const { return _end - _base; }
-  size_t used()     const { return _top - _base; }
-  bool is_packed()  const { return _is_packed;   }
-  bool is_allocatable() const {
-    return !is_packed() && _base != NULL;
-  }
-
-  void print(size_t total_bytes) const;
-  void print_out_of_space_msg(const char* failing_region, size_t needed_bytes);
-
-  void init(ReservedSpace* rs, VirtualSpace* vs);
-
-  void pack(DumpRegion* next = NULL);
-
-  bool contains(char* p) {
-    return base() <= p && p < top();
-  }
-};
-
-// Closure for serializing initialization data out to a data area to be
-// written to the shared file.
-
-class WriteClosure : public SerializeClosure {
-private:
-  DumpRegion* _dump_region;
-
-public:
-  WriteClosure(DumpRegion* r) {
-    _dump_region = r;
-  }
-
-  void do_ptr(void** p) {
-    _dump_region->append_intptr_t((intptr_t)*p, true);
-  }
-
-  void do_u4(u4* p) {
-    _dump_region->append_intptr_t((intptr_t)(*p));
-  }
-
-  void do_bool(bool *p) {
-    _dump_region->append_intptr_t((intptr_t)(*p));
-  }
-
-  void do_tag(int tag) {
-    _dump_region->append_intptr_t((intptr_t)tag);
-  }
-
-  void do_oop(oop* o);
-
-  void do_region(u_char* start, size_t size);
-
-  bool reading() const { return false; }
-};
-
-// Closure for serializing initialization data in from a data area
-// (ptr_array) read from the shared file.
-
-class ReadClosure : public SerializeClosure {
-private:
-  intptr_t** _ptr_array;
-
-  inline intptr_t nextPtr() {
-    return *(*_ptr_array)++;
-  }
-
-public:
-  ReadClosure(intptr_t** ptr_array) { _ptr_array = ptr_array; }
-
-  void do_ptr(void** p);
-
-  void do_u4(u4* p);
-
-  void do_bool(bool *p);
-
-  void do_tag(int tag);
-
-  void do_oop(oop *p);
-
-  void do_region(u_char* start, size_t size);
-
-  bool reading() const { return true; }
-};
-
-#endif // INCLUDE_CDS
 
 // Class Data Sharing Support
 class MetaspaceShared : AllStatic {
@@ -185,6 +82,7 @@ class MetaspaceShared : AllStatic {
   static intx _relocation_delta;
   static char* _requested_base_address;
   static bool _use_optimized_module_handling;
+  static bool _use_full_module_graph;
  public:
   enum {
     // core archive spaces
@@ -213,8 +111,6 @@ class MetaspaceShared : AllStatic {
                              TRAPS) NOT_CDS_RETURN_(0);
 
   static GrowableArray<Klass*>* collected_klasses();
-  static GrowableArray<Symbol*>* collected_symbols();
-  static void add_symbol(Symbol* sym) NOT_CDS_RETURN;
 
   static ReservedSpace* shared_rs() {
     CDS_ONLY(return &_shared_rs);
@@ -276,13 +172,6 @@ class MetaspaceShared : AllStatic {
 
   static bool is_shared_dynamic(void* p) NOT_CDS_RETURN_(false);
 
-  static char* allocate_cpp_vtable_clones();
-  static void clone_cpp_vtables(intptr_t* p);
-  static void zero_cpp_vtable_clones_for_writing();
-  static void patch_cpp_vtable_pointers();
-  static void serialize_cloned_cpp_vtptrs(SerializeClosure* sc);
-
-  static bool is_valid_shared_method(const Method* m) NOT_CDS_RETURN_(false);
   static void serialize(SerializeClosure* sc) NOT_CDS_RETURN;
 
   static MetaspaceSharedStats* stats() {
@@ -303,6 +192,8 @@ class MetaspaceShared : AllStatic {
 
   static bool try_link_class(InstanceKlass* ik, TRAPS);
   static void link_and_cleanup_shared_classes(TRAPS) NOT_CDS_RETURN;
+  static bool link_class_for_cds(InstanceKlass* ik, TRAPS) NOT_CDS_RETURN_(false);
+  static bool linking_required(InstanceKlass* ik) NOT_CDS_RETURN_(false);
 
 #if INCLUDE_CDS
   static size_t reserved_space_alignment();
@@ -322,23 +213,28 @@ class MetaspaceShared : AllStatic {
   // Allocate a block of memory from the "mc" or "ro" regions.
   static char* misc_code_space_alloc(size_t num_bytes);
   static char* read_only_space_alloc(size_t num_bytes);
+  static char* read_write_space_alloc(size_t num_bytes);
 
   template <typename T>
   static Array<T>* new_ro_array(int length) {
-#if INCLUDE_CDS
     size_t byte_size = Array<T>::byte_sizeof(length, sizeof(T));
     Array<T>* array = (Array<T>*)read_only_space_alloc(byte_size);
     array->initialize(length);
     return array;
-#else
-    return NULL;
-#endif
+  }
+
+  template <typename T>
+  static Array<T>* new_rw_array(int length) {
+    size_t byte_size = Array<T>::byte_sizeof(length, sizeof(T));
+    Array<T>* array = (Array<T>*)read_write_space_alloc(byte_size);
+    array->initialize(length);
+    return array;
   }
 
   template <typename T>
   static size_t ro_array_bytesize(int length) {
     size_t byte_size = Array<T>::byte_sizeof(length, sizeof(T));
-    return align_up(byte_size, BytesPerWord);
+    return align_up(byte_size, SharedSpaceObjectAlignment);
   }
 
   static address i2i_entry_code_buffers(size_t total_size);
@@ -353,8 +249,6 @@ class MetaspaceShared : AllStatic {
 
   static Klass* get_relocated_klass(Klass *k, bool is_final=false);
 
-  static void allocate_cloned_cpp_vtptrs();
-  static intptr_t* fix_cpp_vtable_for_dynamic_archive(MetaspaceObj::Type msotype, address obj);
   static void initialize_ptr_marker(CHeapBitMap* ptrmap);
 
   // This is the base address as specified by -XX:SharedBaseAddress during -Xshare:dump.
@@ -372,13 +266,20 @@ class MetaspaceShared : AllStatic {
     return is_windows;
   }
 
-  static void write_core_archive_regions(FileMapInfo* mapinfo,
-                                         GrowableArray<ArchiveHeapOopmapInfo>* closed_oopmaps,
-                                         GrowableArray<ArchiveHeapOopmapInfo>* open_oopmaps);
+  // Returns the bitmap region which is allocated from C heap.
+  // Caller must free it with FREE_C_HEAP_ARRAY()
+  static char* write_core_archive_regions(FileMapInfo* mapinfo,
+                                          GrowableArray<ArchiveHeapOopmapInfo>* closed_oopmaps,
+                                          GrowableArray<ArchiveHeapOopmapInfo>* open_oopmaps,
+                                          size_t& bitmap_size_in_bytes);
 
   // Can we skip some expensive operations related to modules?
-  static bool use_optimized_module_handling()     { return _use_optimized_module_handling;  }
+  static bool use_optimized_module_handling() { return NOT_CDS(false) CDS_ONLY(_use_optimized_module_handling); }
   static void disable_optimized_module_handling() { _use_optimized_module_handling = false; }
+
+  // Can we use the full archived modue graph?
+  static bool use_full_module_graph() NOT_CDS_RETURN_(false);
+  static void disable_full_module_graph() { _use_full_module_graph = false; }
 
 private:
 #if INCLUDE_CDS

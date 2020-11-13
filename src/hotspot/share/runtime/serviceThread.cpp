@@ -23,6 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderDataGraph.inline.hpp"
+#include "classfile/javaClasses.hpp"
 #include "classfile/protectionDomainCache.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
@@ -30,6 +32,7 @@
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/oopStorageSet.hpp"
 #include "memory/universe.hpp"
+#include "oops/oopHandle.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -51,6 +54,36 @@ JvmtiDeferredEvent* ServiceThread::_jvmti_event = NULL;
 // Events can be posted before JVMTI vm_start, so it's too early to call JvmtiThreadState::state_for
 // to add this field to the per-JavaThread event queue.  TODO: fix this sometime later
 JvmtiDeferredEventQueue ServiceThread::_jvmti_service_queue;
+
+// Defer releasing JavaThread OopHandle to the ServiceThread
+class OopHandleList : public CHeapObj<mtInternal> {
+  OopHandle      _handle;
+  OopHandleList* _next;
+ public:
+   OopHandleList(OopHandle h, OopHandleList* next) : _handle(h), _next(next) {}
+   ~OopHandleList() {
+     _handle.release(JavaThread::thread_oop_storage());
+   }
+   OopHandleList* next() const { return _next; }
+};
+
+static OopHandleList* _oop_handle_list = NULL;
+
+static void release_oop_handles() {
+  OopHandleList* list;
+  {
+    MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+    list = _oop_handle_list;
+    _oop_handle_list = NULL;
+  }
+  assert(!SafepointSynchronize::is_at_safepoint(), "cannot be called at a safepoint");
+
+  while (list != NULL) {
+    OopHandleList* l = list;
+    list = l->next();
+    delete l;
+  }
+}
 
 void ServiceThread::initialize() {
   EXCEPTION_MARK;
@@ -110,8 +143,9 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
     bool thread_id_table_work = false;
     bool protection_domain_table_work = false;
     bool oopstorage_work = false;
-    bool deflate_idle_monitors = false;
     JvmtiDeferredEvent jvmti_event;
+    bool oop_handles_to_release = false;
+    bool cldg_cleanup_work = false;
     {
       // Need state transition ThreadBlockInVM so that this thread
       // will be handled by safepoint correctly when this thread is
@@ -138,13 +172,11 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
               (thread_id_table_work = ThreadIdTable::has_work()) |
               (protection_domain_table_work = SystemDictionary::pd_cache_table()->has_work()) |
               (oopstorage_work = OopStorage::has_cleanup_work_and_reset()) |
-              (deflate_idle_monitors = ObjectSynchronizer::is_async_deflation_needed())
+              (oop_handles_to_release = (_oop_handle_list != NULL)) |
+              (cldg_cleanup_work = ClassLoaderDataGraph::should_clean_metaspaces_and_reset())
              ) == 0) {
         // Wait until notified that there is some work to do.
-        // If AsyncDeflateIdleMonitors, then we wait for
-        // GuaranteedSafepointInterval so that is_async_deflation_needed()
-        // is checked at the same interval.
-        ml.wait(AsyncDeflateIdleMonitors ? GuaranteedSafepointInterval : 0);
+        ml.wait();
       }
 
       if (has_jvmti_events) {
@@ -197,8 +229,12 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
       cleanup_oopstorages();
     }
 
-    if (deflate_idle_monitors) {
-      ObjectSynchronizer::deflate_idle_monitors_using_JT();
+    if (oop_handles_to_release) {
+      release_oop_handles();
+    }
+
+    if (cldg_cleanup_work) {
+      ClassLoaderDataGraph::safepoint_and_clean_metaspaces();
     }
   }
 }
@@ -213,18 +249,16 @@ void ServiceThread::enqueue_deferred_event(JvmtiDeferredEvent* event) {
   Service_lock->notify_all();
  }
 
-void ServiceThread::oops_do(OopClosure* f, CodeBlobClosure* cf) {
-  JavaThread::oops_do(f, cf);
+void ServiceThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
+  JavaThread::oops_do_no_frames(f, cf);
   // The ServiceThread "owns" the JVMTI Deferred events, scan them here
   // to keep them alive until they are processed.
-  if (cf != NULL) {
-    if (_jvmti_event != NULL) {
-      _jvmti_event->oops_do(f, cf);
-    }
-    // Requires a lock, because threads can be adding to this queue.
-    MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
-    _jvmti_service_queue.oops_do(f, cf);
+  if (_jvmti_event != NULL) {
+    _jvmti_event->oops_do(f, cf);
   }
+  // Requires a lock, because threads can be adding to this queue.
+  MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+  _jvmti_service_queue.oops_do(f, cf);
 }
 
 void ServiceThread::nmethods_do(CodeBlobClosure* cf) {
@@ -237,4 +271,11 @@ void ServiceThread::nmethods_do(CodeBlobClosure* cf) {
     MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
     _jvmti_service_queue.nmethods_do(cf);
   }
+}
+
+void ServiceThread::add_oop_handle_release(OopHandle handle) {
+  MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+  OopHandleList* new_head = new OopHandleList(handle, _oop_handle_list);
+  _oop_handle_list = new_head;
+  Service_lock->notify_all();
 }

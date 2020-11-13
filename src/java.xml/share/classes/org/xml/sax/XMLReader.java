@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,9 +127,9 @@ public interface XMLReader
      *
      * @param name The feature name, which is a fully-qualified URI.
      * @return The current value of the feature (true or false).
-     * @exception org.xml.sax.SAXNotRecognizedException If the feature
+     * @throws org.xml.sax.SAXNotRecognizedException If the feature
      *            value can't be assigned or retrieved.
-     * @exception org.xml.sax.SAXNotSupportedException When the
+     * @throws org.xml.sax.SAXNotSupportedException When the
      *            XMLReader recognizes the feature name but
      *            cannot determine its value at this time.
      * @see #setFeature
@@ -154,9 +154,9 @@ public interface XMLReader
      *
      * @param name The feature name, which is a fully-qualified URI.
      * @param value The requested value of the feature (true or false).
-     * @exception org.xml.sax.SAXNotRecognizedException If the feature
+     * @throws org.xml.sax.SAXNotRecognizedException If the feature
      *            value can't be assigned or retrieved.
-     * @exception org.xml.sax.SAXNotSupportedException When the
+     * @throws org.xml.sax.SAXNotSupportedException When the
      *            XMLReader recognizes the feature name but
      *            cannot set the requested value.
      * @see #getFeature
@@ -183,9 +183,9 @@ public interface XMLReader
      *
      * @param name The property name, which is a fully-qualified URI.
      * @return The current value of the property.
-     * @exception org.xml.sax.SAXNotRecognizedException If the property
+     * @throws org.xml.sax.SAXNotRecognizedException If the property
      *            value can't be assigned or retrieved.
-     * @exception org.xml.sax.SAXNotSupportedException When the
+     * @throws org.xml.sax.SAXNotSupportedException When the
      *            XMLReader recognizes the property name but
      *            cannot determine its value at this time.
      * @see #setProperty
@@ -213,9 +213,9 @@ public interface XMLReader
      *
      * @param name The property name, which is a fully-qualified URI.
      * @param value The requested value for the property.
-     * @exception org.xml.sax.SAXNotRecognizedException If the property
+     * @throws org.xml.sax.SAXNotRecognizedException If the property
      *            value can't be assigned or retrieved.
-     * @exception org.xml.sax.SAXNotSupportedException When the
+     * @throws org.xml.sax.SAXNotSupportedException When the
      *            XMLReader recognizes the property name but
      *            cannot set the requested value.
      */
@@ -372,9 +372,9 @@ public interface XMLReader
      *
      * @param input The input source for the top-level of the
      *        XML document.
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly
+     * @throws org.xml.sax.SAXException Any SAX exception, possibly
      *            wrapping another exception.
-     * @exception java.io.IOException An IO exception from the parser,
+     * @throws java.io.IOException An IO exception from the parser,
      *            possibly from a byte stream or character stream
      *            supplied by the application.
      * @see org.xml.sax.InputSource
@@ -403,9 +403,9 @@ public interface XMLReader
      * by the application before it is passed to the parser.</p>
      *
      * @param systemId The system identifier (URI).
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly
+     * @throws org.xml.sax.SAXException Any SAX exception, possibly
      *            wrapping another exception.
-     * @exception java.io.IOException An IO exception from the parser,
+     * @throws java.io.IOException An IO exception from the parser,
      *            possibly from a byte stream or character stream
      *            supplied by the application.
      * @see #parse(org.xml.sax.InputSource)

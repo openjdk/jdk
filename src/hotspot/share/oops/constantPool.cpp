@@ -50,6 +50,7 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
@@ -283,7 +284,6 @@ void ConstantPool::archive_resolved_references(Thread* THREAD) {
         ik->is_shared_app_class())) {
     // Archiving resolved references for classes from non-builtin loaders
     // is not yet supported.
-    set_resolved_references(OopHandle());
     return;
   }
 
@@ -293,17 +293,18 @@ void ConstantPool::archive_resolved_references(Thread* THREAD) {
     int ref_map_len = ref_map == NULL ? 0 : ref_map->length();
     int rr_len = rr->length();
     for (int i = 0; i < rr_len; i++) {
-      oop p = rr->obj_at(i);
+      oop obj = rr->obj_at(i);
       rr->obj_at_put(i, NULL);
-      if (p != NULL && i < ref_map_len) {
+      if (obj != NULL && i < ref_map_len) {
         int index = object_to_cp_index(i);
         if (tag_at(index).is_string()) {
-          oop op = StringTable::create_archived_string(p, THREAD);
-          // If the String object is not archived (possibly too large),
-          // NULL is returned. Also set it in the array, so we won't
-          // have a 'bad' reference in the archived resolved_reference
-          // array.
-          rr->obj_at_put(i, op);
+          oop archived_string = HeapShared::find_archived_heap_object(obj);
+          // Update the reference to point to the archived copy
+          // of this string.
+          // If the string is too large to archive, NULL is
+          // stored into rr. At run time, string_at_impl() will create and intern
+          // the string.
+          rr->obj_at_put(i, archived_string);
         }
       }
     }
@@ -315,7 +316,6 @@ void ConstantPool::archive_resolved_references(Thread* THREAD) {
     // resolved references will be created using the normal process
     // when there is no archived value.
     _cache->set_archived_references(archived);
-    set_resolved_references(OopHandle());
   }
 }
 
@@ -332,6 +332,19 @@ void ConstantPool::resolve_class_constants(TRAPS) {
     if (tag_at(index).is_string() && !cp->is_pseudo_string_at(index)) {
       int cache_index = cp->cp_to_object_index(index);
       string_at_impl(cp, index, cache_index, CHECK);
+    }
+  }
+}
+
+void ConstantPool::add_dumped_interned_strings() {
+  objArrayOop rr = resolved_references();
+  if (rr != NULL) {
+    int rr_len = rr->length();
+    for (int i = 0; i < rr_len; i++) {
+      oop p = rr->obj_at(i);
+      if (java_lang_String::is_instance(p)) {
+        HeapShared::add_to_dumped_interned_strings(p);
+      }
     }
   }
 }
@@ -382,15 +395,7 @@ void ConstantPool::remove_unshareable_info() {
   // at runtime.
   set_resolved_reference_length(
     resolved_references() != NULL ? resolved_references()->length() : 0);
-
-  // If archiving heap objects is not allowed, clear the resolved references.
-  // Otherwise, it is cleared after the resolved references array is cached
-  // (see archive_resolved_references()).
-  // If DynamicDumpSharedSpaces is enabled, clear the resolved references also
-  // as java objects are not archived in the top layer.
-  if (!HeapShared::is_heap_object_archiving_allowed() || DynamicDumpSharedSpaces) {
-    set_resolved_references(OopHandle());
-  }
+  set_resolved_references(OopHandle());
 
   // Shared ConstantPools are in the RO region, so the _flags cannot be modified.
   // The _on_stack flag is used to prevent ConstantPools from deallocation during
@@ -478,8 +483,7 @@ void ConstantPool::trace_class_resolution(const constantPoolHandle& this_cp, Kla
 
 Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int which,
                                    bool save_resolution_error, TRAPS) {
-  assert(THREAD->is_Java_thread(), "must be a Java thread");
-  JavaThread* javaThread = (JavaThread*)THREAD;
+  JavaThread* javaThread = THREAD->as_Java_thread();
 
   // A resolved constantPool entry will contain a Klass*, otherwise a Symbol*.
   // It is not safe to rely on the tag bit's here, since we don't have a lock, and

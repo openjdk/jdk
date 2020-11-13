@@ -26,6 +26,7 @@ package MyPackage;
 /**
  * @test
  * @summary Verifies the JVMTI IsModifiableModule API
+ * @requires vm.jvmti
  * @compile IsModifiableModuleTest.java
  * @run main/othervm/native -agentlib:IsModifiableModuleTest MyPackage.IsModifiableModuleTest
  */

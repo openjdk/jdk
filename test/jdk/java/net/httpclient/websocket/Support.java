@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static org.testng.Assert.assertThrows;
+import static org.testng.Assert.assertFalse;
 
 public class Support {
 
@@ -41,6 +42,10 @@ public class Support {
     public static void assertFails(Class<? extends Throwable> clazz,
                                     CompletionStage<?> stage) {
         Support.assertCompletesExceptionally(clazz, stage);
+    }
+
+    public static void assertNotDone(CompletableFuture<?> future) {
+        assertFalse(future.isDone());
     }
 
     public static void assertCompletesExceptionally(Class<? extends Throwable> clazz,

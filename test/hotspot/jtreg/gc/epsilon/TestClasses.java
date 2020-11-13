@@ -25,7 +25,7 @@ package gc.epsilon;
 
 /**
  * @test TestClasses
- * @requires vm.gc.Epsilon & !vm.graal.enabled
+ * @requires vm.gc.Epsilon
  * @summary Epsilon is able to allocate a lot of classes
  *
  * @modules java.base/jdk.internal.org.objectweb.asm

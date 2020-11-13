@@ -518,13 +518,13 @@ public final class Utils {
     }
 
     public static boolean isSettingVisible(Control c, boolean hasEventHook) {
-        if (c instanceof ThresholdSetting) {
+        if (c.isType(ThresholdSetting.class)) {
             return !hasEventHook;
         }
-        if (c instanceof PeriodSetting) {
+        if (c.isType(PeriodSetting.class)) {
             return hasEventHook;
         }
-        if (c instanceof StackTraceSetting) {
+        if (c.isType(StackTraceSetting.class)) {
             return !hasEventHook;
         }
         return true;

@@ -34,8 +34,8 @@
  *      jdk.compiler/com.sun.tools.javac.util
  * @build toolbox.ToolBox toolbox.JavacTask
  * @build combo.ComboTestHelper
- * @compile --enable-preview -source ${jdk.version} BreakAndLoops.java
- * @run main/othervm --enable-preview BreakAndLoops
+ * @compile BreakAndLoops.java
+ * @run main BreakAndLoops
  */
 
 import combo.ComboInstance;
@@ -95,10 +95,7 @@ public class BreakAndLoops extends ComboInstance<BreakAndLoops> {
                         case "NESTED" -> brk;
                         case "BODY" -> innerLabel;
                         default -> throw new UnsupportedOperationException(pname);
-                    })
-                .withOption("--enable-preview")
-                .withOption("-source")
-                .withOption(String.valueOf(Runtime.version().feature()));
+                    });
 
         task.generate(result -> {
             boolean shouldPass;

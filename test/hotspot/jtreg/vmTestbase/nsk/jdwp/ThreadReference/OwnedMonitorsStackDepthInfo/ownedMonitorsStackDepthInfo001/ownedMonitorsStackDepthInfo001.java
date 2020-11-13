@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,9 +62,7 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build nsk.jdwp.ThreadReference.OwnedMonitorsStackDepthInfo.ownedMonitorsStackDepthInfo001.ownedMonitorsStackDepthInfo001
- * @run main/othervm/native/timeout=420 PropertyResolvingWrapper
+ * @run main/othervm/native/timeout=420
  *      nsk.jdwp.ThreadReference.OwnedMonitorsStackDepthInfo.ownedMonitorsStackDepthInfo001.ownedMonitorsStackDepthInfo001
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose
@@ -76,20 +74,24 @@
 
 package nsk.jdwp.ThreadReference.OwnedMonitorsStackDepthInfo.ownedMonitorsStackDepthInfo001;
 
-import java.io.*;
 import nsk.share.Consts;
-import nsk.share.jdwp.*;
+import nsk.share.jdwp.CommandPacket;
+import nsk.share.jdwp.JDWP;
+import nsk.share.jdwp.ReplyPacket;
+import nsk.share.jdwp.TestDebuggerType1;
+
+import java.io.PrintStream;
 
 public class ownedMonitorsStackDepthInfo001 extends TestDebuggerType1 {
     protected String getDebugeeClassName() {
         return nsk.jdwp.ThreadReference.OwnedMonitorsStackDepthInfo.ownedMonitorsStackDepthInfo001.ownedMonitorsStackDepthInfo001a.class.getName();
     }
 
-    public static void main(String argv[]) {
+    public static void main(String[] argv) {
         System.exit(run(argv, System.out) + Consts.JCK_STATUS_BASE);
     }
 
-    public static int run(String argv[], PrintStream out) {
+    public static int run(String[] argv, PrintStream out) {
         return new ownedMonitorsStackDepthInfo001().runIt(argv, out);
     }
 
@@ -127,14 +129,14 @@ public class ownedMonitorsStackDepthInfo001 extends TestDebuggerType1 {
 
             reply = getReply(command);
 
-            MonitorInfo expectedMonitors[] = new MonitorInfo[ownedMonitorsStackDepthInfo001a.expectedMonitorCounts];
+            MonitorInfo[] expectedMonitors = new MonitorInfo[ownedMonitorsStackDepthInfo001a.expectedMonitorCounts];
 
             long classID = debuggee.getReferenceTypeID(createTypeSignature(getDebugeeClassName()));
 
             // obtain information about aquired monitors
             for (int i = 0; i < ownedMonitorsStackDepthInfo001a.expectedMonitorCounts; i++) {
                 long monitorID = queryObjectID(classID, "monitor" + (i + 1));
-                int depth = ((Integer) debuggee.getStaticFieldValue(classID, "depth" + (i + 1), JDWP.Tag.INT).getValue()).intValue();
+                int depth = (Integer) debuggee.getStaticFieldValue(classID, "depth" + (i + 1), JDWP.Tag.INT).getValue();
 
                 expectedMonitors[i] = new MonitorInfo(monitorID, depth);
             }
@@ -149,7 +151,7 @@ public class ownedMonitorsStackDepthInfo001 extends TestDebuggerType1 {
                 log.complain("Unexpected value of 'owned': " + owned + ", expected value is " + expectedMonitors.length);
             }
 
-            MonitorInfo receivedMonitors[] = new MonitorInfo[owned];
+            MonitorInfo[] receivedMonitors = new MonitorInfo[owned];
 
             for (int i = 0; i < owned; i++) {
                 JDWP.Value value = reply.getValue();
@@ -158,21 +160,21 @@ public class ownedMonitorsStackDepthInfo001 extends TestDebuggerType1 {
                 int stack_depth = reply.getInt();
                 log.display("stack_depth = " + stack_depth);
 
-                receivedMonitors[i] = new MonitorInfo(((Long) value.getValue()).longValue(), stack_depth);
+                receivedMonitors[i] = new MonitorInfo((Long) value.getValue(), stack_depth);
             }
 
             // check that correct information about acquired monitors was received
             for (int i = 0; i < owned; i++) {
                 boolean monitorFound = false;
 
-                for (int j = 0; j < expectedMonitors.length; j++) {
-                    if (receivedMonitors[i].monitorObjectID == expectedMonitors[j].monitorObjectID) {
+                for (MonitorInfo expectedMonitor : expectedMonitors) {
+                    if (receivedMonitors[i].monitorObjectID == expectedMonitor.monitorObjectID) {
                         monitorFound = true;
 
-                        if (receivedMonitors[i].depth != expectedMonitors[j].depth) {
+                        if (receivedMonitors[i].depth != expectedMonitor.depth) {
                             setSuccess(false);
                             log.complain("Unexpected monitor depth for monitor " + receivedMonitors[i].monitorObjectID + ": "
-                                    + receivedMonitors[i].depth + ", expected value is " + expectedMonitors[j].depth);
+                                    + receivedMonitors[i].depth + ", expected value is " + expectedMonitor.depth);
                         }
 
                         break;
@@ -187,8 +189,8 @@ public class ownedMonitorsStackDepthInfo001 extends TestDebuggerType1 {
 
             if (!getSuccess()) {
                 log.complain("Expected monitors: ");
-                for (int i = 0; i < expectedMonitors.length; i++) {
-                    log.complain("monitor: " + expectedMonitors[i].monitorObjectID + " " + expectedMonitors[i].depth);
+                for (MonitorInfo expectedMonitor : expectedMonitors) {
+                    log.complain("monitor: " + expectedMonitor.monitorObjectID + " " + expectedMonitor.depth);
                 }
             }
 

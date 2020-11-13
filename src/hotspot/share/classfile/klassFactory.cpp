@@ -28,12 +28,14 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderData.inline.hpp"
+#include "classfile/classLoadInfo.hpp"
 #include "classfile/klassFactory.hpp"
 #include "memory/filemap.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiEnvBase.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_JFR
@@ -118,8 +120,7 @@ static ClassFileStream* check_class_file_load_hook(ClassFileStream* stream,
   assert(stream != NULL, "invariant");
 
   if (JvmtiExport::should_post_class_file_load_hook()) {
-    assert(THREAD->is_Java_thread(), "must be a JavaThread");
-    const JavaThread* jt = (JavaThread*)THREAD;
+    const JavaThread* jt = THREAD->as_Java_thread();
 
     Handle class_loader(THREAD, loader_data->class_loader());
 
@@ -173,8 +174,8 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
   assert(loader_data != NULL, "invariant");
   assert(THREAD->is_Java_thread(), "must be a JavaThread");
 
-  ResourceMark rm;
-  HandleMark hm;
+  ResourceMark rm(THREAD);
+  HandleMark hm(THREAD);
 
   JvmtiCachedClassFileData* cached_class_file = NULL;
 

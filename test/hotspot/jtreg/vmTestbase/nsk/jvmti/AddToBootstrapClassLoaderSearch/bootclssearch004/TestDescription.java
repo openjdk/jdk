@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,16 +63,15 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.share.Consts
  *
  * @comment compile newclassXX to bin/newclassXX
  * @run driver nsk.share.ExtraClassesBuilder
  *      newclass02 newclass01
  *
- * @build ExecDriver
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
- *      "-agentlib:bootclssearch_agent=-waittime=5 phasetocheck=onload segment1=./bin/newclass01 segment2=./bin/newclass02"
+ * @comment ExecDriver is used b/c main class isn't on source/class path
+ * @run main/othervm/native ExecDriver --java
+ *      -agentlib:bootclssearch_agent=-waittime=5,phasetocheck=onload,segment1=./bin/newclass01,segment2=./bin/newclass02
  *      nsk.jvmti.AddToBootstrapClassLoaderSearch.bootclssearch004
  */
 

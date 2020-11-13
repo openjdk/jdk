@@ -25,6 +25,7 @@
  * @test
  * @bug 8228596
  * @summary Test redefining a class with a condy in its constant pool
+ * @requires vm.jvmti
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.compiler

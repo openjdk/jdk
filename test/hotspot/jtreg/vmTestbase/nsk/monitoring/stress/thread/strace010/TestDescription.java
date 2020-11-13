@@ -47,6 +47,5 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @run main/othervm nsk.monitoring.stress.thread.strace010 -depth=100 -threadCount=30
  */

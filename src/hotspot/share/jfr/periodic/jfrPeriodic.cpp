@@ -54,6 +54,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/os_perf.hpp"
 #include "runtime/thread.inline.hpp"
@@ -174,7 +175,13 @@ TRACE_REQUEST_FUNC(CPULoad) {
   double u = 0; // user time
   double s = 0; // kernel time
   double t = 0; // total time
-  int ret_val = JfrOSInterface::cpu_loads_process(&u, &s, &t);
+  int ret_val = OS_ERR;
+  {
+    // Can take some time on certain platforms, especially under heavy load.
+    // Transition to native to avoid unnecessary stalls for pending safepoint synchronizations.
+    ThreadToNativeFromVM transition(JavaThread::current());
+    ret_val = JfrOSInterface::cpu_loads_process(&u, &s, &t);
+  }
   if (ret_val == OS_ERR) {
     log_debug(jfr, system)( "Unable to generate requestable event CPULoad");
     return;
@@ -248,7 +255,13 @@ TRACE_REQUEST_FUNC(SystemProcess) {
 
 TRACE_REQUEST_FUNC(ThreadContextSwitchRate) {
   double rate = 0.0;
-  int ret_val = JfrOSInterface::context_switch_rate(&rate);
+  int ret_val = OS_ERR;
+  {
+    // Can take some time on certain platforms, especially under heavy load.
+    // Transition to native to avoid unnecessary stalls for pending safepoint synchronizations.
+    ThreadToNativeFromVM transition(JavaThread::current());
+    ret_val = JfrOSInterface::context_switch_rate(&rate);
+  }
   if (ret_val == OS_ERR) {
     log_debug(jfr, system)( "Unable to generate requestable event ThreadContextSwitchRate");
     return;
@@ -266,13 +279,13 @@ TRACE_REQUEST_FUNC(ThreadContextSwitchRate) {
 #define SEND_FLAGS_OF_TYPE(eventType, flagType)                   \
   do {                                                            \
     JVMFlag *flag = JVMFlag::flags;                               \
-    while (flag->_name != NULL) {                                 \
+    while (flag->name() != NULL) {                                \
       if (flag->is_ ## flagType()) {                              \
         if (flag->is_unlocked()) {                                \
           Event ## eventType event;                               \
-          event.set_name(flag->_name);                            \
+          event.set_name(flag->name());                           \
           event.set_value(flag->get_ ## flagType());              \
-          event.set_origin(flag->get_origin());                   \
+          event.set_origin(static_cast<u8>(flag->get_origin()));  \
           event.commit();                                         \
         }                                                         \
       }                                                           \
@@ -630,4 +643,3 @@ TRACE_REQUEST_FUNC(ShenandoahHeapRegionInformation) {
   }
 #endif
 }
-

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,7 +168,7 @@ void InterpreterMacroAssembler::get_unsigned_2_byte_index_at_bcp(
 }
 
 void InterpreterMacroAssembler::get_dispatch() {
-  unsigned long offset;
+  uint64_t offset;
   adrp(rdispatch, ExternalAddress((address)Interpreter::dispatch_table()), offset);
   lea(rdispatch, Address(rdispatch, offset));
 }
@@ -473,7 +473,7 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
 
   if (needs_thread_local_poll) {
     NOT_PRODUCT(block_comment("Thread-local Safepoint poll"));
-    ldr(rscratch2, Address(rthread, Thread::polling_page_offset()));
+    ldr(rscratch2, Address(rthread, Thread::polling_word_offset()));
     tbnz(rscratch2, exact_log2(SafepointMechanism::poll_bit()), safepoint);
   }
 
@@ -521,6 +521,7 @@ void InterpreterMacroAssembler::dispatch_via(TosState state, address* table) {
 
 // remove activation
 //
+// Apply stack watermark barrier.
 // Unlock the receiver if this is a synchronized method.
 // Unlock any Java monitors from syncronized blocks.
 // Remove the activation from the stack.
@@ -540,6 +541,21 @@ void InterpreterMacroAssembler::remove_activation(
   // Note: Registers r3 xmm0 may be in use for the
   // result check if synchronized method
   Label unlocked, unlock, no_unlock;
+
+  // The below poll is for the stack watermark barrier. It allows fixing up frames lazily,
+  // that would normally not be safe to use. Such bad returns into unsafe territory of
+  // the stack, will call InterpreterRuntime::at_unwind.
+  Label slow_path;
+  Label fast_path;
+  safepoint_poll(slow_path, true /* at_return */, false /* acquire */, false /* in_nmethod */);
+  br(Assembler::AL, fast_path);
+  bind(slow_path);
+  push(state);
+  set_last_Java_frame(esp, rfp, (address)pc(), rscratch1);
+  super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), rthread);
+  reset_last_Java_frame(true);
+  pop(state);
+  bind(fast_path);
 
   // get the value of _do_not_unlock_if_synchronized into r3
   const Address do_not_unlock_if_synchronized(rthread,
@@ -725,6 +741,13 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     // Load object pointer into obj_reg %c_rarg3
     ldr(obj_reg, Address(lock_reg, obj_offset));
 
+    if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+      load_klass(tmp, obj_reg);
+      ldrw(tmp, Address(tmp, Klass::access_flags_offset()));
+      tstw(tmp, JVM_ACC_IS_BOX_CLASS);
+      br(Assembler::NE, slow_case);
+    }
+
     if (UseBiasedLocking) {
       biased_locking_enter(lock_reg, obj_reg, swap_reg, tmp, false, done, &slow_case);
     }
@@ -765,7 +788,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     // copy
     mov(rscratch1, sp);
     sub(swap_reg, swap_reg, rscratch1);
-    ands(swap_reg, swap_reg, (unsigned long)(7 - os::vm_page_size()));
+    ands(swap_reg, swap_reg, (uint64_t)(7 - os::vm_page_size()));
 
     // Save the test result, for recursive case, the result is zero
     str(swap_reg, Address(lock_reg, mark_offset));
@@ -805,9 +828,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
   assert(lock_reg == c_rarg1, "The argument is only for looks. It must be rarg1");
 
   if (UseHeavyMonitors) {
-    call_VM(noreg,
-            CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit),
-            lock_reg);
+    call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), lock_reg);
   } else {
     Label done;
 
@@ -843,9 +864,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
 
     // Call the runtime routine for slow case.
     str(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes())); // restore obj
-    call_VM(noreg,
-            CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit),
-            lock_reg);
+    call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), lock_reg);
 
     bind(done);
 

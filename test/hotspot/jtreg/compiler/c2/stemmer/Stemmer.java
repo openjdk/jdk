@@ -5,8 +5,7 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  *
- * @run driver jdk.test.lib.FileInstaller words words
- * @run main/othervm -Xbatch compiler.c2.stemmer.Stemmer words
+ * @run main/othervm -Xbatch compiler.c2.stemmer.Stemmer ${test.src}/words
  */
 
 /*

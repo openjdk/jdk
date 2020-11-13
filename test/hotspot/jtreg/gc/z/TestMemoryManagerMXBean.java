@@ -23,7 +23,7 @@
 
 /**
  * @test TestMemoryManagerMXBean
- * @requires vm.gc.Z & !vm.graal.enabled
+ * @requires vm.gc.Z
  * @summary Test ZGC memory manager MXBean
  * @modules java.management
  * @run main/othervm -XX:+UseZGC -Xmx128M TestMemoryManagerMXBean

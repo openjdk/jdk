@@ -228,7 +228,7 @@ class HandleArea: public Arena {
 //
 //   Handle h;
 //   {
-//     HandleMark hm;
+//     HandleMark hm(THREAD);
 //     h = Handle(THREAD, obj);
 //   }
 //   h()->print();       // WRONG, h destroyed by HandleMark destructor.
@@ -257,7 +257,6 @@ class HandleMark {
   // remove all chunks beginning with the next
   void chop_later_chunks();
  public:
-  HandleMark();                            // see handles_inline.hpp
   HandleMark(Thread* thread)                      { initialize(thread); }
   ~HandleMark();
 

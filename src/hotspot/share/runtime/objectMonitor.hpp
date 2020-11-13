@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
 #include "oops/markWord.hpp"
+#include "oops/weakHandle.hpp"
 #include "runtime/os.hpp"
 #include "runtime/park.hpp"
 #include "runtime/perfData.hpp"
@@ -126,29 +127,24 @@ class ObjectWaiter : public StackObj {
 #define OM_CACHE_LINE_SIZE DEFAULT_CACHE_LINE_SIZE
 #endif
 
-class ObjectMonitor {
+class ObjectMonitor : public CHeapObj<mtInternal> {
   friend class ObjectSynchronizer;
   friend class ObjectWaiter;
   friend class VMStructs;
   JVMCI_ONLY(friend class JVMCIVMStructs;)
 
+  static OopStorage* _oop_storage;
+
   // The sync code expects the header field to be at offset zero (0).
   // Enforced by the assert() in header_addr().
   volatile markWord _header;        // displaced object header word - mark
-  void* volatile _object;           // backward object pointer - strong root
-  typedef enum {
-    Free = 0,  // Free must be 0 for monitor to be free after memset(..,0,..).
-    New,
-    Old
-  } AllocationState;
-  AllocationState _allocation_state;
+  WeakHandle _object;               // backward object pointer
   // Separate _header and _owner on different cache lines since both can
-  // have busy multi-threaded access. _header, _object and _allocation_state
-  // are set at initial inflation. _object and _allocation_state don't
-  // change until deflation so _object and _allocation_state are good
-  // choices to share the cache line with _header.
+  // have busy multi-threaded access. _header and _object are set at initial
+  // inflation. The _object does not change, so it is a good choice to share
+  // its cache line with _header.
   DEFINE_PAD_MINUS_SIZE(0, OM_CACHE_LINE_SIZE, sizeof(volatile markWord) +
-                        sizeof(void* volatile) + sizeof(AllocationState));
+                        sizeof(WeakHandle));
   // Used by async deflation as a marker in the _owner field:
   #define DEFLATER_MARKER reinterpret_cast<void*>(-1)
   void* volatile _owner;            // pointer to owning thread OR BasicLock
@@ -175,7 +171,7 @@ class ObjectMonitor {
   jint  _contentions;               // Number of active contentions in enter(). It is used by is_busy()
                                     // along with other fields to determine if an ObjectMonitor can be
                                     // deflated. It is also used by the async deflation protocol. See
-                                    // ObjectSynchronizer::deflate_monitor() and deflate_monitor_using_JT().
+                                    // ObjectMonitor::deflate_monitor().
  protected:
   ObjectWaiter* volatile _WaitSet;  // LL of threads wait()ing on the monitor
   volatile jint  _waiters;          // number of waiting threads
@@ -243,15 +239,11 @@ class ObjectMonitor {
   intptr_t is_busy() const {
     // TODO-FIXME: assert _owner == null implies _recursions = 0
     intptr_t ret_code = _waiters | intptr_t(_cxq) | intptr_t(_EntryList);
-    if (!AsyncDeflateIdleMonitors) {
-      ret_code |= contentions() | intptr_t(_owner);
-    } else {
-      if (contentions() > 0) {
-        ret_code |= contentions();
-      }
-      if (_owner != DEFLATER_MARKER) {
-        ret_code |= intptr_t(_owner);
-      }
+    if (contentions() > 0) {
+      ret_code |= contentions();
+    }
+    if (_owner != DEFLATER_MARKER) {
+      ret_code |= intptr_t(_owner);
     }
     return ret_code;
   }
@@ -268,8 +260,6 @@ class ObjectMonitor {
   void      release_clear_owner(void* old_value);
   // Simply set _owner field to new_value; current value must match old_value.
   void      set_owner_from(void* old_value, void* new_value);
-  // Simply set _owner field to new_value; current value must match old_value1 or old_value2.
-  void      set_owner_from(void* old_value1, void* old_value2, void* new_value);
   // Simply set _owner field to self; current value must match basic_lock_p.
   void      set_owner_from_BasicLock(void* basic_lock_p, Thread* self);
   // Try to set _owner field to new_value if the current value matches
@@ -277,9 +267,14 @@ class ObjectMonitor {
   // _owner field. Returns the prior value of the _owner field.
   void*     try_set_owner_from(void* old_value, void* new_value);
 
+  // Simply get _next_om field.
   ObjectMonitor* next_om() const;
+  // Get _next_om field with acquire semantics.
+  ObjectMonitor* next_om_acquire() const;
   // Simply set _next_om field to new_value.
   void set_next_om(ObjectMonitor* new_value);
+  // Set _next_om field to new_value with release semantics.
+  void release_set_next_om(ObjectMonitor* new_value);
   // Try to set _next_om field to new_value if the current value matches
   // old_value, using Atomic::cmpxchg(). Otherwise, does not change the
   // _next_om field. Returns the prior value of the _next_om field.
@@ -296,51 +291,15 @@ class ObjectMonitor {
   ObjectWaiter* next_waiter(ObjectWaiter* o)                           { return o->_next; }
   Thread* thread_of_waiter(ObjectWaiter* o)                            { return o->_thread; }
 
- protected:
-  // We don't typically expect or want the ctors or dtors to run.
-  // normal ObjectMonitors are type-stable and immortal.
-  ObjectMonitor() { ::memset((void*)this, 0, sizeof(*this)); }
+  ObjectMonitor(oop object);
+  ~ObjectMonitor();
 
-  ~ObjectMonitor() {
-    // TODO: Add asserts ...
-    // _cxq == 0 _succ == NULL _owner == NULL _waiters == 0
-    // _contentions == 0 _EntryList  == NULL etc
-  }
-
- private:
-  void Recycle() {
-    // TODO: add stronger asserts ...
-    // _cxq == 0 _succ == NULL _owner == NULL _waiters == 0
-    // _contentions == 0 EntryList  == NULL
-    // _recursions == 0 _WaitSet == NULL
-#ifdef ASSERT
-    stringStream ss;
-#endif
-    assert((is_busy() | _recursions) == 0, "freeing in-use monitor: %s, "
-           "recursions=" INTX_FORMAT, is_busy_to_string(&ss), _recursions);
-    _succ          = NULL;
-    _EntryList     = NULL;
-    _cxq           = NULL;
-    _WaitSet       = NULL;
-    _recursions    = 0;
-  }
-
- public:
-
-  void*     object() const;
-  void*     object_addr();
-  void      set_object(void* obj);
-  void      set_allocation_state(AllocationState s);
-  AllocationState allocation_state() const;
-  bool      is_free() const;
-  bool      is_old() const;
-  bool      is_new() const;
+  oop       object() const;
+  oop       object_peek() const;
 
   // Returns true if the specified thread owns the ObjectMonitor. Otherwise
   // returns false and throws IllegalMonitorStateException (IMSE).
   bool      check_owner(Thread* THREAD);
-  void      clear();
-  void      clear_common();
 
   bool      enter(TRAPS);
   void      exit(bool not_suspended, TRAPS);
@@ -371,18 +330,10 @@ class ObjectMonitor {
   int       TrySpin(Thread* self);
   void      ExitEpilog(Thread* self, ObjectWaiter* Wakee);
   bool      ExitSuspendEquivalent(JavaThread* self);
+
+  // Deflation support
+  bool      deflate_monitor();
   void      install_displaced_markword_in_object(const oop obj);
 };
-
-// Macro to use guarantee() for more strict AsyncDeflateIdleMonitors
-// checks and assert() otherwise.
-#define ADIM_guarantee(p, ...)       \
-  do {                               \
-    if (AsyncDeflateIdleMonitors) {  \
-      guarantee(p, __VA_ARGS__);     \
-    } else {                         \
-      assert(p, __VA_ARGS__);        \
-    }                                \
-  } while (0)
 
 #endif // SHARE_RUNTIME_OBJECTMONITOR_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,18 +49,11 @@ public interface InstanceOfTree extends ExpressionTree {
     /**
      * Returns the type for which to check.
      * @return the type
+     * @see #getPattern()
      */
     Tree getType();
 
     /**
-     * {@preview Associated with pattern matching for instanceof, a preview feature of
-     *           the Java language.
-     *
-     *           This method is associated with <i>pattern matching for instanceof</i>, a preview
-     *           feature of the Java language. Preview features
-     *           may be removed in a future release, or upgraded to permanent
-     *           features of the Java language.}
-     *
      * Returns the tested pattern, or null if this instanceof does not use
      * a pattern.
      *
@@ -76,8 +69,8 @@ public interface InstanceOfTree extends ExpressionTree {
      * </pre>
      * returns null.
      *
-     * @return the tested pattern, or null if this instanceof does not use a pattern.
-     * @since 14
+     * @return the tested pattern, or null if this instanceof does not use a pattern
+     * @since 16
      */
     PatternTree getPattern();
 }

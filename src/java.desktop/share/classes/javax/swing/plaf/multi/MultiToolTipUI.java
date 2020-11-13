@@ -49,6 +49,11 @@ public class MultiToolTipUI extends ToolTipUI {
      */
     protected Vector<ComponentUI> uis = new Vector<>();
 
+    /**
+     * Constructs a {@code MultiToolTipUI}.
+     */
+    public MultiToolTipUI() {}
+
 ////////////////////
 // Common UI methods
 ////////////////////

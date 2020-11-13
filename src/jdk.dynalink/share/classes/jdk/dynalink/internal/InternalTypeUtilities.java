@@ -179,9 +179,8 @@ public class InternalTypeUtilities {
         if(sc != null) {
             collectAssignables(sc, c2, s);
         }
-        final Class<?>[] itf = c1.getInterfaces();
-        for(int i = 0; i < itf.length; ++i) {
-            collectAssignables(itf[i], c2, s);
+        for(final Class<?> itf: c1.getInterfaces()) {
+            collectAssignables(itf, c2, s);
         }
     }
 }

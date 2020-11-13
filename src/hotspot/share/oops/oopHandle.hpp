@@ -25,17 +25,15 @@
 #ifndef SHARE_OOPS_OOPHANDLE_HPP
 #define SHARE_OOPS_OOPHANDLE_HPP
 
+#include "metaprogramming/primitiveConversions.hpp"
 #include "oops/oopsHierarchy.hpp"
 
 class OopStorage;
 
-// Simple class for encapsulating oop pointers stored in metadata.
-// These are different from Handle.  The Handle class stores pointers
-// to oops on the stack, and manages the allocation from a thread local
-// area in the constructor.
-// This assumes that the caller will allocate the handle in the appropriate
-// area.  The reason for the encapsulation is to help with naming and to allow
-// future uses for read barriers.
+// Simple classes for wrapping oop and atomically accessed oop pointers
+// stored in OopStorage, or stored in the ClassLoaderData handles area.
+// These classes help with allocation, release, and NativeAccess loads and
+// stores with the appropriate barriers.
 
 class OopHandle {
   friend class VMStructs;
@@ -47,13 +45,40 @@ public:
   explicit OopHandle(oop* w) : _obj(w) {}
   OopHandle(OopStorage* storage, oop obj);
 
+  OopHandle(const OopHandle& copy) : _obj(copy._obj) {}
+
+  OopHandle& operator=(const OopHandle& copy) {
+    // Allow "this" to be junk if copy is empty; needed by initialization of
+    // raw memory in hashtables.
+    assert(is_empty() || copy.is_empty(), "can only copy if empty");
+    _obj = copy._obj;
+    return *this;
+  }
+
   inline oop resolve() const;
   inline oop peek() const;
 
+  bool is_empty() const { return _obj == NULL; }
+
   inline void release(OopStorage* storage);
+
+  inline void replace(oop obj);
+
+  inline oop xchg(oop new_value);
 
   // Used only for removing handle.
   oop* ptr_raw() const { return _obj; }
+};
+
+// Convert OopHandle to oop*
+
+template<>
+struct PrimitiveConversions::Translate<OopHandle> : public TrueType {
+  typedef OopHandle Value;
+  typedef oop* Decayed;
+
+  static Decayed decay(Value x) { return x.ptr_raw(); }
+  static Value recover(Decayed x) { return OopHandle(x); }
 };
 
 #endif // SHARE_OOPS_OOPHANDLE_HPP

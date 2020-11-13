@@ -30,6 +30,9 @@
 #include "oops/oop.hpp"
 #include "oops/annotations.hpp"
 #include "utilities/macros.hpp"
+#include "gc/shared/workgroup.hpp"
+
+class ParallelObjectIterator;
 
 #if INCLUDE_SERVICES
 
@@ -51,9 +54,9 @@ class KlassInfoEntry: public CHeapObj<mtInternal> {
  private:
   KlassInfoEntry* _next;
   Klass*          _klass;
-  long            _instance_count;
+  uint64_t        _instance_count;
   size_t          _instance_words;
-  long            _index;
+  int64_t         _index;
   bool            _do_print; // True if we should print this class when printing the class hierarchy.
   GrowableArray<KlassInfoEntry*>* _subclasses;
 
@@ -65,13 +68,13 @@ class KlassInfoEntry: public CHeapObj<mtInternal> {
   ~KlassInfoEntry();
   KlassInfoEntry* next() const   { return _next; }
   bool is_equal(const Klass* k)  { return k == _klass; }
-  Klass* klass()  const      { return _klass; }
-  long count()    const      { return _instance_count; }
-  void set_count(long ct)    { _instance_count = ct; }
-  size_t words()  const      { return _instance_words; }
-  void set_words(size_t wds) { _instance_words = wds; }
-  void set_index(long index) { _index = index; }
-  long index()    const      { return _index; }
+  Klass* klass()  const          { return _klass; }
+  uint64_t count()    const      { return _instance_count; }
+  void set_count(uint64_t ct)    { _instance_count = ct; }
+  size_t words()  const          { return _instance_words; }
+  void set_words(size_t wds)     { _instance_words = wds; }
+  void set_index(int64_t index)  { _index = index; }
+  int64_t index()    const       { return _index; }
   GrowableArray<KlassInfoEntry*>* subclasses() const { return _subclasses; }
   void add_subclass(KlassInfoEntry* cie);
   void set_do_print(bool do_print) { _do_print = do_print; }
@@ -122,6 +125,8 @@ class KlassInfoTable: public StackObj {
   void iterate(KlassInfoClosure* cic);
   bool allocation_failed() { return _buckets == NULL; }
   size_t size_of_instances_in_words() const;
+  bool merge(KlassInfoTable* table);
+  bool merge_entry(const KlassInfoEntry* cie);
 
   friend class KlassInfoHisto;
   friend class KlassHierarchy;
@@ -211,11 +216,46 @@ class KlassInfoClosure;
 
 class HeapInspection : public StackObj {
  public:
-  void heap_inspection(outputStream* st) NOT_SERVICES_RETURN;
-  size_t populate_table(KlassInfoTable* cit, BoolObjectClosure* filter = NULL) NOT_SERVICES_RETURN_(0);
+  void heap_inspection(outputStream* st, uint parallel_thread_num = 1) NOT_SERVICES_RETURN;
+  uintx populate_table(KlassInfoTable* cit, BoolObjectClosure* filter = NULL, uint parallel_thread_num = 1) NOT_SERVICES_RETURN_(0);
   static void find_instances_at_safepoint(Klass* k, GrowableArray<oop>* result) NOT_SERVICES_RETURN;
  private:
   void iterate_over_heap(KlassInfoTable* cit, BoolObjectClosure* filter = NULL);
+};
+
+// Parallel heap inspection task. Parallel inspection can fail due to
+// a native OOM when allocating memory for TL-KlassInfoTable.
+// _success will be set false on an OOM, and serial inspection tried.
+class ParHeapInspectTask : public AbstractGangTask {
+ private:
+  ParallelObjectIterator* _poi;
+  KlassInfoTable* _shared_cit;
+  BoolObjectClosure* _filter;
+  uintx _missed_count;
+  bool _success;
+  Mutex _mutex;
+
+ public:
+  ParHeapInspectTask(ParallelObjectIterator* poi,
+                     KlassInfoTable* shared_cit,
+                     BoolObjectClosure* filter) :
+      AbstractGangTask("Iterating heap"),
+      _poi(poi),
+      _shared_cit(shared_cit),
+      _filter(filter),
+      _missed_count(0),
+      _success(true),
+      _mutex(Mutex::leaf, "Parallel heap iteration data merge lock") {}
+
+  uintx missed_count() const {
+    return _missed_count;
+  }
+
+  bool success() {
+    return _success;
+  }
+
+  virtual void work(uint worker_id);
 };
 
 #endif // SHARE_MEMORY_HEAPINSPECTION_HPP

@@ -773,6 +773,8 @@ bool InstructForm::captures_bottom_type(FormDict &globals) const {
        !strcmp(_matrule->_rChild->_opType,"CheckCastPP")  ||
        !strcmp(_matrule->_rChild->_opType,"GetAndSetP")   ||
        !strcmp(_matrule->_rChild->_opType,"GetAndSetN")   ||
+       !strcmp(_matrule->_rChild->_opType,"RotateLeft")   ||
+       !strcmp(_matrule->_rChild->_opType,"RotateRight")   ||
 #if INCLUDE_SHENANDOAHGC
        !strcmp(_matrule->_rChild->_opType,"ShenandoahCompareAndExchangeP") ||
        !strcmp(_matrule->_rChild->_opType,"ShenandoahCompareAndExchangeN") ||
@@ -3482,7 +3484,7 @@ int MatchNode::needs_ideal_memory_edge(FormDict &globals) const {
     "StoreB","StoreC","Store" ,"StoreFP",
     "LoadI", "LoadL", "LoadP" ,"LoadN", "LoadD" ,"LoadF"  ,
     "LoadB" , "LoadUB", "LoadUS" ,"LoadS" ,"Load" ,
-    "StoreVector", "LoadVector",
+    "StoreVector", "LoadVector", "LoadVectorGather", "StoreVectorScatter",
     "LoadRange", "LoadKlass", "LoadNKlass", "LoadL_unaligned", "LoadD_unaligned",
     "LoadPLocked",
     "StorePConditional", "StoreIConditional", "StoreLConditional",
@@ -3799,6 +3801,7 @@ void MatchNode::count_commutative_op(int& count) {
     "MaxV", "MinV",
     "MulI","MulL","MulF","MulD",
     "MulVB","MulVS","MulVI","MulVL","MulVF","MulVD",
+    "MinV","MaxV",
     "OrI","OrL",
     "OrV",
     "XorI","XorL",
@@ -3940,6 +3943,8 @@ bool MatchRule::is_base_register(FormDict &globals) const {
          strcmp(opType,"RegL")==0 ||
          strcmp(opType,"RegF")==0 ||
          strcmp(opType,"RegD")==0 ||
+         strcmp(opType,"RegVMask")==0 ||
+         strcmp(opType,"VecA")==0 ||
          strcmp(opType,"VecS")==0 ||
          strcmp(opType,"VecD")==0 ||
          strcmp(opType,"VecX")==0 ||
@@ -4147,8 +4152,9 @@ bool MatchRule::is_vector() const {
     "MulVB","MulVS","MulVI","MulVL","MulVF","MulVD",
     "CMoveVD", "CMoveVF",
     "DivVF","DivVD",
+    "MinV","MaxV",
     "AbsVB","AbsVS","AbsVI","AbsVL","AbsVF","AbsVD",
-    "NegVF","NegVD",
+    "NegVF","NegVD","NegVI",
     "SqrtVD","SqrtVF",
     "AndV" ,"XorV" ,"OrV",
     "MaxV", "MinV",
@@ -4164,7 +4170,13 @@ bool MatchRule::is_vector() const {
     "RShiftVB","RShiftVS","RShiftVI","RShiftVL",
     "URShiftVB","URShiftVS","URShiftVI","URShiftVL",
     "ReplicateB","ReplicateS","ReplicateI","ReplicateL","ReplicateF","ReplicateD",
-    "RoundDoubleModeV","LoadVector","StoreVector",
+    "RoundDoubleModeV","RotateLeftV" , "RotateRightV", "LoadVector","StoreVector",
+    "LoadVectorGather", "StoreVectorScatter",
+    "VectorTest", "VectorLoadMask", "VectorStoreMask", "VectorBlend", "VectorInsert",
+    "VectorRearrange","VectorLoadShuffle", "VectorLoadConst",
+    "VectorCastB2X", "VectorCastS2X", "VectorCastI2X",
+    "VectorCastL2X", "VectorCastF2X", "VectorCastD2X",
+    "VectorMaskWrapper", "VectorMaskCmp", "VectorReinterpret",
     "FmaVD", "FmaVF","PopCountVI",
     // Next are not supported currently.
     "PackB","PackS","PackI","PackL","PackF","PackD","Pack2L","Pack2D",

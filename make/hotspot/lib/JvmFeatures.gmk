@@ -116,18 +116,23 @@ endif
 ifneq ($(call check-jvm-feature, cds), true)
   JVM_CFLAGS_FEATURES += -DINCLUDE_CDS=0
   JVM_EXCLUDE_FILES += \
+      archiveBuilder.cpp \
+      archiveUtils.cpp \
       classListParser.cpp \
+      classLoaderDataShared.cpp \
       classLoaderExt.cpp \
+      cppVtables.cpp \
+      dumpAllocStats.cpp \
       dynamicArchive.cpp \
       filemap.cpp \
       heapShared.cpp \
+      lambdaFormInvokers.cpp \
       metaspaceShared.cpp \
       metaspaceShared_$(HOTSPOT_TARGET_CPU).cpp \
       metaspaceShared_$(HOTSPOT_TARGET_CPU_ARCH).cpp \
       sharedClassUtil.cpp \
       sharedPathsMiscInfo.cpp \
-      systemDictionaryShared.cpp \
-      #
+      systemDictionaryShared.cpp
 endif
 
 ifneq ($(call check-jvm-feature, nmt), true)

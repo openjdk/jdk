@@ -24,6 +24,7 @@
 /**
  * @test
  * @summary Verify ThreadStart JVMTI event with can_generate_early_vmstart capability
+ * @requires vm.jvmti
  * @run main/othervm/native -agentlib:MAAThreadStart MAAThreadStart
  */
 

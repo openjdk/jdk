@@ -39,7 +39,7 @@ import java.io.*;
 
 public class HandshakeDirectTest  implements Runnable {
     static final int WORKING_THREADS = 32;
-    static final int DIRECT_HANDSHAKES_MARK = 50000;
+    static final int DIRECT_HANDSHAKES_MARK = 500000;
     static Thread[] workingThreads = new Thread[WORKING_THREADS];
     static Semaphore[] handshakeSem = new Semaphore[WORKING_THREADS];
     static Object[] locks = new Object[WORKING_THREADS];

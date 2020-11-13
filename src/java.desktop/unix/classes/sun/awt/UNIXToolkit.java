@@ -95,10 +95,19 @@ public abstract class UNIXToolkit extends SunToolkit
 
     @Override
     public String getDesktop() {
+        String gnome = "gnome";
         String gsi = AccessController.doPrivileged(
                         (PrivilegedAction<String>) ()
                                 -> System.getenv("GNOME_DESKTOP_SESSION_ID"));
-        return (gsi != null) ? "gnome" : null;
+        if (gsi != null) {
+            return gnome;
+        }
+
+        String desktop = AccessController.doPrivileged(
+                (PrivilegedAction<String>) ()
+                        -> System.getenv("XDG_CURRENT_DESKTOP"));
+        return (desktop != null && desktop.toLowerCase().contains(gnome))
+                ? gnome : null;
     }
 
     /**

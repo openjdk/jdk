@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,16 +35,14 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build jit.init.init02.init02
- * @run driver ExecDriver --java jit.init.init02.init02
+ * @run main/othervm jit.init.init02.init02
  */
 
 package jit.init.init02;
 
 import nsk.share.TestFailure;
 
-class init02 {
+public class init02 {
     public static boolean failed = false;
     public static void main(String args[]) {
         int i, x;

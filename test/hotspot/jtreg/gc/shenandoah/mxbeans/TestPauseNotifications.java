@@ -25,7 +25,7 @@
 /*
  * @test TestPauseNotifications
  * @summary Check that MX notifications are reported for all cycles
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
@@ -41,7 +41,7 @@
 /*
  * @test TestPauseNotifications
  * @summary Check that MX notifications are reported for all cycles
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
@@ -51,7 +51,7 @@
 /*
  * @test TestPauseNotifications
  * @summary Check that MX notifications are reported for all cycles
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive
@@ -61,7 +61,7 @@
 /*
  * @test TestPauseNotifications
  * @summary Check that MX notifications are reported for all cycles
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=static
@@ -71,7 +71,7 @@
 /*
  * @test TestPauseNotifications
  * @summary Check that MX notifications are reported for all cycles
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact
@@ -81,7 +81,7 @@
 /*
  * @test TestPauseNotifications
  * @summary Check that MX notifications are reported for all cycles
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
@@ -158,7 +158,7 @@ public class TestPauseNotifications {
 
         {
             String msg = "Pauses expected = [" + minExpected + "; " + maxExpected + "], actual = " + pausesActual;
-            if (minExpected < pausesActual && pausesActual < maxExpected) {
+            if (minExpected <= pausesActual && pausesActual <= maxExpected) {
                 System.out.println(msg);
             } else {
                 throw new IllegalStateException(msg);
@@ -167,7 +167,7 @@ public class TestPauseNotifications {
 
         {
             String msg = "Cycles expected = [" + minExpected + "; " + maxExpected + "], actual = " + cyclesActual;
-            if (minExpected < cyclesActual && cyclesActual < maxExpected) {
+            if (minExpected <= cyclesActual && cyclesActual <= maxExpected) {
                 System.out.println(msg);
             } else {
                 throw new IllegalStateException(msg);
@@ -176,7 +176,7 @@ public class TestPauseNotifications {
 
         {
             String msg = "Cycle duration (" + cyclesActual + "), pause duration (" + pausesActual + ")";
-            if (pausesActual < cyclesActual) {
+            if (pausesActual <= cyclesActual) {
                 System.out.println(msg);
             } else {
                 throw new IllegalStateException(msg);

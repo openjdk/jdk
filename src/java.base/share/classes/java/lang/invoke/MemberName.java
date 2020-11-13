@@ -1064,7 +1064,7 @@ final class MemberName implements Member, Cloneable {
          *  If lookup fails or access is not permitted, null is returned.
          *  Otherwise a fresh copy of the given member is returned, with modifier bits filled in.
          */
-        private MemberName resolve(byte refKind, MemberName ref, Class<?> lookupClass,
+        private MemberName resolve(byte refKind, MemberName ref, Class<?> lookupClass, int allowedModes,
                                    boolean speculativeResolve) {
             MemberName m = ref.clone();  // JVM will side-effect the ref
             assert(refKind == m.getReferenceKind());
@@ -1084,7 +1084,7 @@ final class MemberName implements Member, Cloneable {
                 //
                 // REFC view on PTYPES doesn't matter, since it is used only as a starting point for resolution and doesn't
                 // participate in method selection.
-                m = MethodHandleNatives.resolve(m, lookupClass, speculativeResolve);
+                m = MethodHandleNatives.resolve(m, lookupClass, allowedModes, speculativeResolve);
                 if (m == null && speculativeResolve) {
                     return null;
                 }
@@ -1108,10 +1108,12 @@ final class MemberName implements Member, Cloneable {
          *  Otherwise a fresh copy of the given member is returned, with modifier bits filled in.
          */
         public <NoSuchMemberException extends ReflectiveOperationException>
-                MemberName resolveOrFail(byte refKind, MemberName m, Class<?> lookupClass,
-                                 Class<NoSuchMemberException> nsmClass)
+                MemberName resolveOrFail(byte refKind, MemberName m,
+                                         Class<?> lookupClass, int allowedModes,
+                                         Class<NoSuchMemberException> nsmClass)
                 throws IllegalAccessException, NoSuchMemberException {
-            MemberName result = resolve(refKind, m, lookupClass, false);
+            assert lookupClass != null || allowedModes == LM_TRUSTED;
+            MemberName result = resolve(refKind, m, lookupClass, allowedModes, false);
             if (result.isResolved())
                 return result;
             ReflectiveOperationException ex = result.makeAccessException();
@@ -1124,8 +1126,9 @@ final class MemberName implements Member, Cloneable {
          *  If lookup fails or access is not permitted, return null.
          *  Otherwise a fresh copy of the given member is returned, with modifier bits filled in.
          */
-        public MemberName resolveOrNull(byte refKind, MemberName m, Class<?> lookupClass) {
-            MemberName result = resolve(refKind, m, lookupClass, true);
+        public MemberName resolveOrNull(byte refKind, MemberName m, Class<?> lookupClass, int allowedModes) {
+            assert lookupClass != null || allowedModes == LM_TRUSTED;
+            MemberName result = resolve(refKind, m, lookupClass, allowedModes, true);
             if (result != null && result.isResolved())
                 return result;
             return null;

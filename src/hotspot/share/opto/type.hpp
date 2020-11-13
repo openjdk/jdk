@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,7 @@ class     TypeNarrowKlass;
 class   TypeAry;
 class   TypeTuple;
 class   TypeVect;
+class     TypeVectA;
 class     TypeVectS;
 class     TypeVectD;
 class     TypeVectX;
@@ -87,6 +88,7 @@ public:
 
     Tuple,                      // Method signature or object layout
     Array,                      // Array types
+    VectorA,                    // (Scalable) Vector types for vector length agnostic
     VectorS,                    //  32bit Vector types
     VectorD,                    //  64bit Vector types
     VectorX,                    // 128bit Vector types
@@ -481,6 +483,8 @@ public:
   virtual const Type *xmeet( const Type *t ) const;
   virtual const Type *xdual() const;    // Compute dual right now.
   // Convenience common pre-built types.
+  static const TypeF *MAX;
+  static const TypeF *MIN;
   static const TypeF *ZERO; // positive zero only
   static const TypeF *ONE;
   static const TypeF *POS_INF;
@@ -510,6 +514,8 @@ public:
   virtual const Type *xmeet( const Type *t ) const;
   virtual const Type *xdual() const;    // Compute dual right now.
   // Convenience common pre-built types.
+  static const TypeD *MAX;
+  static const TypeD *MIN;
   static const TypeD *ZERO; // positive zero only
   static const TypeD *ONE;
   static const TypeD *POS_INF;
@@ -553,6 +559,8 @@ public:
   virtual const Type *narrow( const Type *t ) const;
   // Do not kill _widen bits.
   // Convenience common pre-built types.
+  static const TypeInt *MAX;
+  static const TypeInt *MIN;
   static const TypeInt *MINUS_1;
   static const TypeInt *ZERO;
   static const TypeInt *ONE;
@@ -618,6 +626,8 @@ public:
   virtual const Type *widen( const Type *t, const Type* limit_type ) const;
   virtual const Type *narrow( const Type *t ) const;
   // Convenience common pre-built types.
+  static const TypeLong *MAX;
+  static const TypeLong *MIN;
   static const TypeLong *MINUS_1;
   static const TypeLong *ZERO;
   static const TypeLong *ONE;
@@ -757,6 +767,7 @@ public:
   virtual const Type *xmeet( const Type *t) const;
   virtual const Type *xdual() const;     // Compute dual right now.
 
+  static const TypeVect *VECTA;
   static const TypeVect *VECTS;
   static const TypeVect *VECTD;
   static const TypeVect *VECTX;
@@ -766,6 +777,11 @@ public:
 #ifndef PRODUCT
   virtual void dump2(Dict &d, uint, outputStream *st) const; // Specialized per-Type dumping
 #endif
+};
+
+class TypeVectA : public TypeVect {
+  friend class TypeVect;
+  TypeVectA(const Type* elem, uint length) : TypeVect(VectorA, elem, length) {}
 };
 
 class TypeVectS : public TypeVect {
@@ -1218,7 +1234,7 @@ public:
   const TypeAryPtr* cast_to_stable(bool stable, int stable_dimension = 1) const;
   int stable_dimension() const;
 
-  const TypeAryPtr* cast_to_autobox_cache(bool cache) const;
+  const TypeAryPtr* cast_to_autobox_cache() const;
 
   static jint max_array_length(BasicType etype) ;
 
@@ -1622,12 +1638,12 @@ inline const TypeAry *Type::isa_ary() const {
 }
 
 inline const TypeVect *Type::is_vect() const {
-  assert( _base >= VectorS && _base <= VectorZ, "Not a Vector" );
+  assert( _base >= VectorA && _base <= VectorZ, "Not a Vector" );
   return (TypeVect*)this;
 }
 
 inline const TypeVect *Type::isa_vect() const {
-  return (_base >= VectorS && _base <= VectorZ) ? (TypeVect*)this : NULL;
+  return (_base >= VectorA && _base <= VectorZ) ? (TypeVect*)this : NULL;
 }
 
 inline const TypePtr *Type::is_ptr() const {

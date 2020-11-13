@@ -31,7 +31,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @run main/othervm gc.gctests.CallGC.CallGC02.CallGC02 -t 100 -gp random(arrays)
  */
 

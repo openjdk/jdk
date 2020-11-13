@@ -26,7 +26,7 @@
  * @bug 8244663
  * @summary Shenandoah: C2 assertion fails in Matcher::collect_null_checks
  * @requires vm.flavor == "server"
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
  *                   -XX:CompileCommand=dontinline,TestShenandoahCmpPAfterCall::not_inlined TestShenandoahCmpPAfterCall

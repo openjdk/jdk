@@ -26,7 +26,8 @@
  * @test TestLargeObjectAlignment
  * @summary Shenandoah crashes with -XX:ObjectAlignmentInBytes=16
  * @key randomness
- * @requires vm.gc.Shenandoah & !vm.graal.enabled & (vm.bits == "64")
+ * @requires vm.gc.Shenandoah
+ * @requires vm.bits == "64"
  * @library /test/lib
  *
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ObjectAlignmentInBytes=16 -Xint                   TestLargeObjectAlignment

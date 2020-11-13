@@ -24,7 +24,7 @@
  */
 
 /**
- * Provides the API to attach to a Java&trade; virtual machine.
+ * Provides the API to attach to a Java virtual machine.
  * <p>
  * A tool, written in the Java Language, uses this API to attach to a target
  * virtual machine (VM) and load its tool agent into the target VM. For

@@ -95,7 +95,6 @@ public:
                                       size_t* actual_size);
 
   // TLAB allocation
-  virtual bool supports_tlab_allocation()           const { return true;           }
   virtual size_t tlab_capacity(Thread* thr)         const { return capacity();     }
   virtual size_t tlab_used(Thread* thr)             const { return used();         }
   virtual size_t max_tlab_size()                    const { return _max_tlab_size; }
@@ -128,11 +127,6 @@ public:
   // No heap verification
   virtual void prepare_for_verify() {}
   virtual void verify(VerifyOption option) {}
-
-  virtual jlong millis_since_last_gc() {
-    // Report time since the VM start
-    return os::elapsed_counter() / NANOSECS_PER_MILLISEC;
-  }
 
   MemRegion reserved_region() const { return _reserved; }
   bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }

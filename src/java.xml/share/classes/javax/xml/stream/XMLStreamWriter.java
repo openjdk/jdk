@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -192,7 +192,7 @@ public interface XMLStreamWriter {
    * open a new scope in the internal namespace context.  Writing the
    * corresponding EndElement causes the scope to be closed.
    * @param localName local name of the tag, may not be null
-   * @throws XMLStreamException
+   * @throws XMLStreamException if an error occurs
    */
   public void writeStartElement(String localName)
     throws XMLStreamException;
@@ -212,7 +212,7 @@ public interface XMLStreamWriter {
    * @param localName local name of the tag, may not be null
    * @param prefix the prefix of the tag, may not be null
    * @param namespaceURI the uri to bind the prefix to, may not be null
-   * @throws XMLStreamException
+   * @throws XMLStreamException if an error occurs
    */
   public void writeStartElement(String prefix,
                                 String localName,
@@ -234,7 +234,7 @@ public interface XMLStreamWriter {
    * @param prefix the prefix of the tag, may not be null
    * @param localName local name of the tag, may not be null
    * @param namespaceURI the uri to bind the tag to, may not be null
-   * @throws XMLStreamException
+   * @throws XMLStreamException if an error occurs
    */
   public void writeEmptyElement(String prefix, String localName, String namespaceURI)
     throws XMLStreamException;
@@ -242,7 +242,7 @@ public interface XMLStreamWriter {
   /**
    * Writes an empty element tag to the output
    * @param localName local name of the tag, may not be null
-   * @throws XMLStreamException
+   * @throws XMLStreamException if an error occurs
    */
   public void writeEmptyElement(String localName)
     throws XMLStreamException;
@@ -264,14 +264,14 @@ public interface XMLStreamWriter {
    * Writes an end tag to the output relying on the internal
    * state of the writer to determine the prefix and local name
    * of the event.
-   * @throws XMLStreamException
+   * @throws XMLStreamException if an error occurs
    */
   public void writeEndElement()
     throws XMLStreamException;
 
   /**
    * Closes any start tags and writes corresponding end tags.
-   * @throws XMLStreamException
+   * @throws XMLStreamException if an error occurs
    */
   public void writeEndDocument()
     throws XMLStreamException;
@@ -279,14 +279,14 @@ public interface XMLStreamWriter {
   /**
    * Close this writer and free any resources associated with the
    * writer.  This must not close the underlying output stream.
-   * @throws XMLStreamException
+   * @throws XMLStreamException if an error occurs
    */
   public void close()
     throws XMLStreamException;
 
   /**
    * Write any cached data to the underlying output mechanism.
-   * @throws XMLStreamException
+   * @throws XMLStreamException if an error occurs
    */
   public void flush()
     throws XMLStreamException;
@@ -297,7 +297,7 @@ public interface XMLStreamWriter {
    * @param localName the local name of the attribute
    * @param value the value of the attribute
    * @throws IllegalStateException if the current state does not allow Attribute writing
-   * @throws XMLStreamException
+   * @throws XMLStreamException if an error occurs
    */
   public void writeAttribute(String localName, String value)
     throws XMLStreamException;
@@ -341,7 +341,7 @@ public interface XMLStreamWriter {
    * @param prefix the prefix to bind this namespace to
    * @param namespaceURI the uri to bind the prefix to
    * @throws IllegalStateException if the current state does not allow Namespace writing
-   * @throws XMLStreamException
+   * @throws XMLStreamException if an error occurs
    */
   public void writeNamespace(String prefix, String namespaceURI)
     throws XMLStreamException;
@@ -350,7 +350,7 @@ public interface XMLStreamWriter {
    * Writes the default namespace to the stream
    * @param namespaceURI the uri to bind the default namespace to
    * @throws IllegalStateException if the current state does not allow Namespace writing
-   * @throws XMLStreamException
+   * @throws XMLStreamException if an error occurs
    */
   public void writeDefaultNamespace(String namespaceURI)
     throws XMLStreamException;
@@ -358,7 +358,7 @@ public interface XMLStreamWriter {
   /**
    * Writes an xml comment with the data enclosed
    * @param data the data contained in the comment, may be null
-   * @throws XMLStreamException
+   * @throws XMLStreamException if an error occurs
    */
   public void writeComment(String data)
     throws XMLStreamException;
@@ -366,7 +366,7 @@ public interface XMLStreamWriter {
   /**
    * Writes a processing instruction
    * @param target the target of the processing instruction, may not be null
-   * @throws XMLStreamException
+   * @throws XMLStreamException if an error occurs
    */
   public void writeProcessingInstruction(String target)
     throws XMLStreamException;
@@ -375,7 +375,7 @@ public interface XMLStreamWriter {
    * Writes a processing instruction
    * @param target the target of the processing instruction, may not be null
    * @param data the data contained in the processing instruction, may not be null
-   * @throws XMLStreamException
+   * @throws XMLStreamException if an error occurs
    */
   public void writeProcessingInstruction(String target,
                                          String data)
@@ -384,7 +384,7 @@ public interface XMLStreamWriter {
   /**
    * Writes a CData section
    * @param data the data contained in the CData Section, may not be null
-   * @throws XMLStreamException
+   * @throws XMLStreamException if an error occurs
    */
   public void writeCData(String data)
     throws XMLStreamException;
@@ -394,7 +394,7 @@ public interface XMLStreamWriter {
    * from the XML 1.0 specification.
    *
    * @param dtd the DTD to be written
-   * @throws XMLStreamException
+   * @throws XMLStreamException if an error occurs
    */
   public void writeDTD(String dtd)
     throws XMLStreamException;
@@ -402,14 +402,14 @@ public interface XMLStreamWriter {
   /**
    * Writes an entity reference
    * @param name the name of the entity
-   * @throws XMLStreamException
+   * @throws XMLStreamException if an error occurs
    */
   public void writeEntityRef(String name)
     throws XMLStreamException;
 
   /**
    * Write the XML Declaration. Defaults the XML version to 1.0, and the encoding to utf-8
-   * @throws XMLStreamException
+   * @throws XMLStreamException if an error occurs
    */
   public void writeStartDocument()
     throws XMLStreamException;
@@ -417,7 +417,7 @@ public interface XMLStreamWriter {
   /**
    * Write the XML Declaration. Defaults the XML version to 1.0
    * @param version version of the xml document
-   * @throws XMLStreamException
+   * @throws XMLStreamException if an error occurs
    */
   public void writeStartDocument(String version)
     throws XMLStreamException;
@@ -439,7 +439,7 @@ public interface XMLStreamWriter {
   /**
    * Write text to the output
    * @param text the value to write
-   * @throws XMLStreamException
+   * @throws XMLStreamException if an error occurs
    */
   public void writeCharacters(String text)
     throws XMLStreamException;
@@ -449,15 +449,16 @@ public interface XMLStreamWriter {
    * @param text the value to write
    * @param start the starting position in the array
    * @param len the number of characters to write
-   * @throws XMLStreamException
+   * @throws XMLStreamException if an error occurs
    */
   public void writeCharacters(char[] text, int start, int len)
     throws XMLStreamException;
 
   /**
-   * Gets the prefix the uri is bound to
+   * Gets the prefix the uri is bound to.
+   * @param uri the uri the prefix is bound to
    * @return the prefix or null
-   * @throws XMLStreamException
+   * @throws XMLStreamException if an error occurs
    */
   public String getPrefix(String uri)
     throws XMLStreamException;
@@ -469,7 +470,7 @@ public interface XMLStreamWriter {
    * the prefix is bound in the root scope.
    * @param prefix the prefix to bind to the uri, may not be null
    * @param uri the uri to bind to the prefix, may be null
-   * @throws XMLStreamException
+   * @throws XMLStreamException if an error occurs
    */
   public void setPrefix(String prefix, String uri)
     throws XMLStreamException;
@@ -482,7 +483,7 @@ public interface XMLStreamWriter {
    * If this method is called before a START_ELEMENT has been written
    * the uri is bound in the root scope.
    * @param uri the uri to bind to the default namespace, may be null
-   * @throws XMLStreamException
+   * @throws XMLStreamException if an error occurs
    */
   public void setDefaultNamespace(String uri)
     throws XMLStreamException;
@@ -499,7 +500,7 @@ public interface XMLStreamWriter {
    * context it is treated as declared and the prefix may be used
    * by the StreamWriter.
    * @param context the namespace context to use for this writer, may not be null
-   * @throws XMLStreamException
+   * @throws XMLStreamException if an error occurs
    */
   public void setNamespaceContext(NamespaceContext context)
     throws XMLStreamException;

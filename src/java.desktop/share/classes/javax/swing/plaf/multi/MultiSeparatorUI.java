@@ -49,6 +49,11 @@ public class MultiSeparatorUI extends SeparatorUI {
      */
     protected Vector<ComponentUI> uis = new Vector<>();
 
+    /**
+     * Constructs a {@code MultiSeparatorUI}.
+     */
+    public MultiSeparatorUI() {}
+
 ////////////////////
 // Common UI methods
 ////////////////////

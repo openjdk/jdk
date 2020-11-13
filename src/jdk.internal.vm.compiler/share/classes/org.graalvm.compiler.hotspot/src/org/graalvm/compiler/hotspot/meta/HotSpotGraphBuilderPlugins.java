@@ -30,6 +30,7 @@ import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfigAccess.JDK;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.BASE64_ENCODE_BLOCK;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.GHASH_PROCESS_BLOCKS;
 import static org.graalvm.compiler.hotspot.meta.HotSpotAOTProfilingPlugin.Options.TieredAOT;
+import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.JAVA_THREAD_THREAD_OBJECT_HANDLE_LOCATION;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.JAVA_THREAD_THREAD_OBJECT_LOCATION;
 import static org.graalvm.compiler.java.BytecodeParserOptions.InlineDuringParsing;
 
@@ -58,7 +59,6 @@ import org.graalvm.compiler.hotspot.replacements.CRC32CSubstitutions;
 import org.graalvm.compiler.hotspot.replacements.CRC32Substitutions;
 import org.graalvm.compiler.hotspot.replacements.CallSiteTargetNode;
 import org.graalvm.compiler.hotspot.replacements.CipherBlockChainingSubstitutions;
-import org.graalvm.compiler.hotspot.replacements.ClassGetHubNode;
 import org.graalvm.compiler.hotspot.replacements.CounterModeSubstitutions;
 import org.graalvm.compiler.hotspot.replacements.DigestBaseSubstitutions;
 import org.graalvm.compiler.hotspot.replacements.FastNotifyNode;
@@ -76,12 +76,9 @@ import org.graalvm.compiler.hotspot.replacements.ThreadSubstitutions;
 import org.graalvm.compiler.hotspot.word.HotSpotWordTypes;
 import org.graalvm.compiler.nodes.ComputeObjectAddressNode;
 import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.NamedLocationIdentity;
 import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.AddNode;
-import org.graalvm.compiler.nodes.calc.IntegerConvertNode;
-import org.graalvm.compiler.nodes.calc.LeftShiftNode;
 import org.graalvm.compiler.nodes.extended.ForeignCallNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.ForeignCallPlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.GeneratedPluginFactory;
@@ -109,11 +106,8 @@ import org.graalvm.compiler.replacements.arraycopy.ArrayCopyNode;
 import org.graalvm.compiler.replacements.nodes.MacroNode.MacroParams;
 import org.graalvm.compiler.serviceprovider.GraalServices;
 import org.graalvm.compiler.serviceprovider.JavaVersionUtil;
-import org.graalvm.compiler.word.WordOperationPlugin;
 import org.graalvm.compiler.word.WordTypes;
-import jdk.internal.vm.compiler.word.LocationIdentity;
 
-import jdk.vm.ci.code.CodeUtil;
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.hotspot.VMIntrinsicMethod;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
@@ -191,7 +185,6 @@ public class HotSpotGraphBuilderPlugins {
                     registerCallSitePlugins(invocationPlugins);
                 }
                 registerReflectionPlugins(invocationPlugins, replacements);
-                registerConstantPoolPlugins(invocationPlugins, wordTypes, config, replacements);
                 registerAESPlugins(invocationPlugins, config, replacements);
                 registerCRC32Plugins(invocationPlugins, config, replacements);
                 registerCRC32CPlugins(invocationPlugins, config, replacements);
@@ -381,85 +374,6 @@ public class HotSpotGraphBuilderPlugins {
         });
     }
 
-    private static final LocationIdentity INSTANCE_KLASS_CONSTANTS = NamedLocationIdentity.immutable("InstanceKlass::_constants");
-    private static final LocationIdentity CONSTANT_POOL_LENGTH = NamedLocationIdentity.immutable("ConstantPool::_length");
-
-    /**
-     * Emits a node to get the metaspace {@code ConstantPool} pointer given the value of the
-     * {@code constantPoolOop} field in a ConstantPool value.
-     *
-     * @param constantPoolOop value of the {@code constantPoolOop} field in a ConstantPool value
-     * @return a node representing the metaspace {@code ConstantPool} pointer associated with
-     *         {@code constantPoolOop}
-     */
-    private static ValueNode getMetaspaceConstantPool(GraphBuilderContext b, ValueNode constantPoolOop, WordTypes wordTypes, GraalHotSpotVMConfig config) {
-        // ConstantPool.constantPoolOop is in fact the holder class.
-        ValueNode value = b.nullCheckedValue(constantPoolOop, DeoptimizationAction.None);
-        ValueNode klass = b.add(ClassGetHubNode.create(value, b.getMetaAccess(), b.getConstantReflection(), false));
-
-        boolean notCompressible = false;
-        AddressNode constantsAddress = b.add(new OffsetAddressNode(klass, b.add(ConstantNode.forLong(config.instanceKlassConstantsOffset))));
-        return WordOperationPlugin.readOp(b, wordTypes.getWordKind(), constantsAddress, INSTANCE_KLASS_CONSTANTS, BarrierType.NONE, notCompressible);
-    }
-
-    /**
-     * Emits a node representing an element in a metaspace {@code ConstantPool}.
-     *
-     * @param constantPoolOop value of the {@code constantPoolOop} field in a ConstantPool value
-     */
-    private static boolean readMetaspaceConstantPoolElement(GraphBuilderContext b, ValueNode constantPoolOop, ValueNode index, JavaKind elementKind, WordTypes wordTypes, GraalHotSpotVMConfig config) {
-        ValueNode constants = getMetaspaceConstantPool(b, constantPoolOop, wordTypes, config);
-        int shift = CodeUtil.log2(wordTypes.getWordKind().getByteCount());
-        ValueNode scaledIndex = b.add(new LeftShiftNode(IntegerConvertNode.convert(index, StampFactory.forKind(JavaKind.Long), NodeView.DEFAULT), b.add(ConstantNode.forInt(shift))));
-        ValueNode offset = b.add(new AddNode(scaledIndex, b.add(ConstantNode.forLong(config.constantPoolSize))));
-        AddressNode elementAddress = b.add(new OffsetAddressNode(constants, offset));
-        boolean notCompressible = false;
-        ValueNode elementValue = WordOperationPlugin.readOp(b, elementKind, elementAddress, NamedLocationIdentity.getArrayLocation(elementKind), BarrierType.NONE, notCompressible);
-        b.addPush(elementKind, elementValue);
-        return true;
-    }
-
-    private static void registerConstantPoolPlugins(InvocationPlugins plugins, WordTypes wordTypes, GraalHotSpotVMConfig config, Replacements replacements) {
-        Registration r = new Registration(plugins, constantPoolClass, replacements);
-
-        r.register2("getSize0", Receiver.class, Object.class, new InvocationPlugin() {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode constantPoolOop) {
-                boolean notCompressible = false;
-                ValueNode constants = getMetaspaceConstantPool(b, constantPoolOop, wordTypes, config);
-                AddressNode lengthAddress = b.add(new OffsetAddressNode(constants, b.add(ConstantNode.forLong(config.constantPoolLengthOffset))));
-                ValueNode length = WordOperationPlugin.readOp(b, JavaKind.Int, lengthAddress, CONSTANT_POOL_LENGTH, BarrierType.NONE, notCompressible);
-                b.addPush(JavaKind.Int, length);
-                return true;
-            }
-        });
-
-        r.register3("getIntAt0", Receiver.class, Object.class, int.class, new InvocationPlugin() {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode constantPoolOop, ValueNode index) {
-                return readMetaspaceConstantPoolElement(b, constantPoolOop, index, JavaKind.Int, wordTypes, config);
-            }
-        });
-        r.register3("getLongAt0", Receiver.class, Object.class, int.class, new InvocationPlugin() {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode constantPoolOop, ValueNode index) {
-                return readMetaspaceConstantPoolElement(b, constantPoolOop, index, JavaKind.Long, wordTypes, config);
-            }
-        });
-        r.register3("getFloatAt0", Receiver.class, Object.class, int.class, new InvocationPlugin() {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode constantPoolOop, ValueNode index) {
-                return readMetaspaceConstantPoolElement(b, constantPoolOop, index, JavaKind.Float, wordTypes, config);
-            }
-        });
-        r.register3("getDoubleAt0", Receiver.class, Object.class, int.class, new InvocationPlugin() {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode constantPoolOop, ValueNode index) {
-                return readMetaspaceConstantPoolElement(b, constantPoolOop, index, JavaKind.Double, wordTypes, config);
-            }
-        });
-    }
-
     private static void registerSystemPlugins(InvocationPlugins plugins) {
         Registration r = new Registration(plugins, System.class);
         r.register0("currentTimeMillis", new ForeignCallPlugin(HotSpotHostForeignCallsProvider.JAVA_TIME_MILLIS));
@@ -514,27 +428,33 @@ public class HotSpotGraphBuilderPlugins {
                 AddressNode address = b.add(new OffsetAddressNode(thread, offset));
                 // JavaThread::_threadObj is never compressed
                 ObjectStamp stamp = StampFactory.objectNonNull(TypeReference.create(b.getAssumptions(), metaAccess.lookupJavaType(Thread.class)));
-                b.addPush(JavaKind.Object, new ReadNode(address, JAVA_THREAD_THREAD_OBJECT_LOCATION, stamp, BarrierType.NONE));
+                ReadNode value = b.add(new ReadNode(address, JAVA_THREAD_THREAD_OBJECT_LOCATION,
+                                config.threadObjectFieldIsHandle ? StampFactory.forKind(wordTypes.getWordKind()) : stamp, BarrierType.NONE));
+                if (config.threadObjectFieldIsHandle) {
+                    ValueNode handleOffset = ConstantNode.forIntegerKind(wordTypes.getWordKind(), 0, b.getGraph());
+                    AddressNode handleAddress = b.add(new OffsetAddressNode(value, handleOffset));
+                    value = b.add(new ReadNode(handleAddress, JAVA_THREAD_THREAD_OBJECT_HANDLE_LOCATION, stamp, BarrierType.NONE));
+                }
+                b.push(JavaKind.Object, value);
                 return true;
             }
         });
 
         if (config.osThreadInterruptedOffset != Integer.MAX_VALUE) {
+            // This substitution is no longer in use when threadObj is a handle
+            assert !config.threadObjectFieldIsHandle;
             r.registerMethodSubstitution(ThreadSubstitutions.class, "isInterrupted", Receiver.class, boolean.class);
         }
 
     }
 
     public static final String reflectionClass;
-    public static final String constantPoolClass;
 
     static {
         if (JavaVersionUtil.JAVA_SPEC <= 8) {
             reflectionClass = "sun.reflect.Reflection";
-            constantPoolClass = "sun.reflect.ConstantPool";
         } else {
             reflectionClass = "jdk.internal.reflect.Reflection";
-            constantPoolClass = "jdk.internal.reflect.ConstantPool";
         }
     }
 

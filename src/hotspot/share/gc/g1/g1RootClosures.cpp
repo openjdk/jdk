@@ -47,17 +47,17 @@ public:
   CodeBlobClosure* weak_codeblobs()        { return &_closures._codeblobs; }
 };
 
-// Closures used during initial mark.
+// Closures used during concurrent start.
 // The treatment of "weak" roots is selectable through the template parameter,
 // this is usually used to control unloading of classes and interned strings.
 template <G1Mark MarkWeak>
-class G1InitialMarkClosures : public G1EvacuationRootClosures {
+class G1ConcurrentStartMarkClosures : public G1EvacuationRootClosures {
   G1SharedClosures<G1MarkFromRoot> _strong;
   G1SharedClosures<MarkWeak>       _weak;
 
 public:
-  G1InitialMarkClosures(G1CollectedHeap* g1h,
-                        G1ParScanThreadState* pss) :
+  G1ConcurrentStartMarkClosures(G1CollectedHeap* g1h,
+                                G1ParScanThreadState* pss) :
       _strong(g1h, pss, /* process_only_dirty_klasses */ false),
       _weak(g1h, pss,   /* process_only_dirty_klasses */ false) {}
 
@@ -73,11 +73,11 @@ public:
 
 G1EvacuationRootClosures* G1EvacuationRootClosures::create_root_closures(G1ParScanThreadState* pss, G1CollectedHeap* g1h) {
   G1EvacuationRootClosures* res = NULL;
-  if (g1h->collector_state()->in_initial_mark_gc()) {
+  if (g1h->collector_state()->in_concurrent_start_gc()) {
     if (ClassUnloadingWithConcurrentMark) {
-      res = new G1InitialMarkClosures<G1MarkPromotedFromRoot>(g1h, pss);
+      res = new G1ConcurrentStartMarkClosures<G1MarkPromotedFromRoot>(g1h, pss);
     } else {
-      res = new G1InitialMarkClosures<G1MarkFromRoot>(g1h, pss);
+      res = new G1ConcurrentStartMarkClosures<G1MarkFromRoot>(g1h, pss);
     }
   } else {
     res = new G1EvacuationClosures(g1h, pss, g1h->collector_state()->in_young_only_phase());

@@ -52,6 +52,11 @@ public class MultiTreeUI extends TreeUI {
      */
     protected Vector<ComponentUI> uis = new Vector<>();
 
+    /**
+     * Constructs a {@code MultiTreeUI}.
+     */
+    public MultiTreeUI() {}
+
 ////////////////////
 // Common UI methods
 ////////////////////

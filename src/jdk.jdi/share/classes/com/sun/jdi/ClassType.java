@@ -166,7 +166,7 @@ public interface ClassType extends ReferenceType {
      * Autoboxing is not supported.
      *
      * See Section 5.2 of
-     * <cite>The Java&trade; Language Specification</cite>
+     * <cite>The Java Language Specification</cite>
      * for more information on assignment compatibility.
      * <p>
      * By default, all threads in the target VM are resumed while
@@ -277,7 +277,7 @@ public interface ClassType extends ReferenceType {
      * Autoboxing is not supported.
      *
      * See section 5.2 of
-     * <cite>The Java&trade; Language Specification</cite>
+     * <cite>The Java Language Specification</cite>
      * for more information on assignment compatibility.
      * <p>
      * By default, all threads in the target VM are resumed while

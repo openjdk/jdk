@@ -60,9 +60,8 @@ public class T6439826 extends AbstractProcessor {
             System.err.print(s);
             // Expect the following 2 diagnostics, and no output to log
             //   Foo.java:1: illegal character: \35
-            //   Foo.java:1: reached end of file while parsing
             System.err.println(dl.count + " diagnostics; " + s.length() + " characters");
-            if (dl.count != 2 || s.length() != 0)
+            if (dl.count != 1 || s.length() != 0)
                 throw new AssertionError("unexpected output from compiler");
         }
     }

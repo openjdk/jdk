@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build jit.overflow.overflow
- * @run driver ExecDriver --java jit.overflow.overflow
+ * @run main/othervm jit.overflow.overflow
  */
 
 package jit.overflow;
@@ -47,7 +45,7 @@ import java.lang.*;
 
 import nsk.share.TestFailure;
 
-class overflow {
+public class overflow {
     public static void main(String[] args) {
         try {
            recurse(1);

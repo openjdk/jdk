@@ -25,6 +25,7 @@
  * @test
  * @bug 8139551
  * @summary Scalability problem with redefinition - multiple code cache walks
+ * @requires vm.jvmti
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.compiler

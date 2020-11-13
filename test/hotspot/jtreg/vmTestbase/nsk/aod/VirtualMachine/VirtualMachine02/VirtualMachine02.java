@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,31 +39,30 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build nsk.aod.VirtualMachine.VirtualMachine02.VirtualMachine02
- *        nsk.share.aod.DummyTargetApplication
- * @run main/othervm -Djdk.attach.allowAttachSelf -XX:+UsePerfData
- *      PropertyResolvingWrapper
+ * @build nsk.share.aod.DummyTargetApplication
+ * @run main/othervm
+ *      -Djdk.attach.allowAttachSelf
+ *      -XX:+UsePerfData
  *      nsk.aod.VirtualMachine.VirtualMachine02.VirtualMachine02
  *      -jdk ${test.jdk}
- *      "-javaOpts=-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
+ *      -javaOpts="-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
  *      -target nsk.share.aod.DummyTargetApplication
  */
 
 package nsk.aod.VirtualMachine.VirtualMachine02;
 
-import java.io.IOException;
-import com.sun.tools.attach.*;
+import com.sun.tools.attach.VirtualMachine;
+import com.sun.tools.attach.VirtualMachineDescriptor;
 import com.sun.tools.attach.spi.AttachProvider;
-import nsk.share.aod.*;
+import nsk.share.aod.AODTestRunner;
 import nsk.share.test.TestUtils;
+
+import java.io.IOException;
 
 /*
  * Test checks following methods:
  *      -  VirtualMachine.attach(String) (test tries to attach to current and to another VM)
- *
  *      -  VirtualMachine.attach(VirtualMachineDescriptor) (test tries to attach to current and to another VM)
- *
  *      -  VirtualMachine.detach() (test checks that after detaching operations on VirtualMachine
  *      throw IOException)
  */

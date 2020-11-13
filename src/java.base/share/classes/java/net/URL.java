@@ -397,8 +397,8 @@ public final class URL implements java.io.Serializable {
      * a {@code handler} of {@code null} indicates that the URL
      * should use a default stream handler for the protocol, as outlined
      * for:
-     *     java.net.URL#URL(java.lang.String, java.lang.String, int,
-     *                      java.lang.String)
+     *     {@link java.net.URL#URL(java.lang.String, java.lang.String, int,
+     *                      java.lang.String)}
      *
      * <p>If the handler is not null and there is a security manager,
      * the security manager's {@code checkPermission}

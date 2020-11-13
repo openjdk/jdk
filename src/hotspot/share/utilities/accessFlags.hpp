@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,7 @@ enum {
   JVM_ACC_HAS_FINAL_METHOD        = 0x01000000,     // True if klass has final method
   JVM_ACC_IS_SHARED_CLASS         = 0x02000000,     // True if klass is shared
   JVM_ACC_IS_HIDDEN_CLASS         = 0x04000000,     // True if klass is hidden
+  JVM_ACC_IS_BOX_CLASS            = 0x08000000,     // True if klass is primitive wrapper
 
   // Klass* and Method* flags
   JVM_ACC_HAS_LOCAL_VARIABLE_TABLE= 0x00200000,
@@ -151,6 +152,7 @@ class AccessFlags {
   bool is_cloneable_fast       () const { return (_flags & JVM_ACC_IS_CLONEABLE_FAST      ) != 0; }
   bool is_shared_class         () const { return (_flags & JVM_ACC_IS_SHARED_CLASS        ) != 0; }
   bool is_hidden_class         () const { return (_flags & JVM_ACC_IS_HIDDEN_CLASS        ) != 0; }
+  bool is_box_class            () const { return (_flags & JVM_ACC_IS_BOX_CLASS           ) != 0; }
 
   // Klass* and Method* flags
   bool has_localvariable_table () const { return (_flags & JVM_ACC_HAS_LOCAL_VARIABLE_TABLE) != 0; }
@@ -224,6 +226,7 @@ class AccessFlags {
   void set_has_miranda_methods()       { atomic_set_bits(JVM_ACC_HAS_MIRANDA_METHODS);     }
   void set_is_shared_class()           { atomic_set_bits(JVM_ACC_IS_SHARED_CLASS);         }
   void set_is_hidden_class()           { atomic_set_bits(JVM_ACC_IS_HIDDEN_CLASS);         }
+  void set_is_box_class()              { atomic_set_bits(JVM_ACC_IS_BOX_CLASS);            }
 
  public:
   // field flags

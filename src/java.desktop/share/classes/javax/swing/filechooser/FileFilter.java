@@ -50,6 +50,11 @@ import java.io.File;
  */
 public abstract class FileFilter {
     /**
+     * Constructor for subclasses to call.
+     */
+    protected FileFilter() {}
+
+    /**
      * Whether the given file is accepted by this filter.
      *
      * @param f the File to test

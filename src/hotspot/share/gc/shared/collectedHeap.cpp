@@ -36,7 +36,8 @@
 #include "gc/shared/gcWhen.hpp"
 #include "gc/shared/memAllocator.hpp"
 #include "logging/log.hpp"
-#include "memory/metaspace.hpp"
+#include "logging/logStream.hpp"
+#include "memory/classLoaderMetaspace.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceMirrorKlass.hpp"
@@ -123,14 +124,28 @@ MetaspaceSummary CollectedHeap::create_metaspace_summary() {
 }
 
 void CollectedHeap::print_heap_before_gc() {
-  Universe::print_heap_before_gc();
+  LogTarget(Debug, gc, heap) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    ls.print_cr("Heap before GC invocations=%u (full %u):", total_collections(), total_full_collections());
+    ResourceMark rm;
+    print_on(&ls);
+  }
+
   if (_gc_heap_log != NULL) {
     _gc_heap_log->log_heap_before(this);
   }
 }
 
 void CollectedHeap::print_heap_after_gc() {
-  Universe::print_heap_after_gc();
+  LogTarget(Debug, gc, heap) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    ls.print_cr("Heap after GC invocations=%u (full %u):", total_collections(), total_full_collections());
+    ResourceMark rm;
+    print_on(&ls);
+  }
+
   if (_gc_heap_log != NULL) {
     _gc_heap_log->log_heap_after(this);
   }
@@ -190,7 +205,10 @@ bool CollectedHeap::is_oop(oop object) const {
 
 
 CollectedHeap::CollectedHeap() :
+  _capacity_at_last_gc(0),
+  _used_at_last_gc(0),
   _is_gc_active(false),
+  _last_whole_heap_examined_time_ns(os::javaTimeNanos()),
   _total_collections(0),
   _total_full_collections(0),
   _gc_cause(GCCause::_no_gc),
@@ -229,20 +247,21 @@ CollectedHeap::CollectedHeap() :
 // heap lock is already held and that we are executing in
 // the context of the vm thread.
 void CollectedHeap::collect_as_vm_thread(GCCause::Cause cause) {
-  assert(Thread::current()->is_VM_thread(), "Precondition#1");
+  Thread* thread = Thread::current();
+  assert(thread->is_VM_thread(), "Precondition#1");
   assert(Heap_lock->is_locked(), "Precondition#2");
   GCCauseSetter gcs(this, cause);
   switch (cause) {
     case GCCause::_heap_inspection:
     case GCCause::_heap_dump:
     case GCCause::_metadata_GC_threshold : {
-      HandleMark hm;
+      HandleMark hm(thread);
       do_full_collection(false);        // don't clear all soft refs
       break;
     }
     case GCCause::_archive_time_gc:
     case GCCause::_metadata_GC_clear_soft_refs: {
-      HandleMark hm;
+      HandleMark hm(thread);
       do_full_collection(true);         // do clear all soft refs
       break;
     }
@@ -412,14 +431,14 @@ CollectedHeap::fill_with_object_impl(HeapWord* start, size_t words, bool zap)
 void CollectedHeap::fill_with_object(HeapWord* start, size_t words, bool zap)
 {
   DEBUG_ONLY(fill_args_check(start, words);)
-  HandleMark hm;  // Free handles before leaving.
+  HandleMark hm(Thread::current());  // Free handles before leaving.
   fill_with_object_impl(start, words, zap);
 }
 
 void CollectedHeap::fill_with_objects(HeapWord* start, size_t words, bool zap)
 {
   DEBUG_ONLY(fill_args_check(start, words);)
-  HandleMark hm;  // Free handles before leaving.
+  HandleMark hm(Thread::current());  // Free handles before leaving.
 
   // Multiple objects may be required depending on the filler array maximum size. Fill
   // the range up to that with objects that are filler_array_max_size sized. The
@@ -485,6 +504,14 @@ void CollectedHeap::resize_all_tlabs() {
       thread->tlab().resize();
     }
   }
+}
+
+jlong CollectedHeap::millis_since_last_whole_heap_examined() {
+  return (os::javaTimeNanos() - _last_whole_heap_examined_time_ns) / NANOSECS_PER_MILLISEC;
+}
+
+void CollectedHeap::record_whole_heap_examined_timestamp() {
+  _last_whole_heap_examined_time_ns = os::javaTimeNanos();
 }
 
 void CollectedHeap::full_gc_dump(GCTimer* timer, bool before) {
@@ -572,15 +599,22 @@ void CollectedHeap::unpin_object(JavaThread* thread, oop obj) {
   ShouldNotReachHere();
 }
 
-void CollectedHeap::deduplicate_string(oop str) {
-  // Do nothing, unless overridden in subclass.
+bool CollectedHeap::is_archived_object(oop object) const {
+  return false;
 }
 
-size_t CollectedHeap::obj_size(oop obj) const {
-  return obj->size();
+void CollectedHeap::deduplicate_string(oop str) {
+  // Do nothing, unless overridden in subclass.
 }
 
 uint32_t CollectedHeap::hash_oop(oop obj) const {
   const uintptr_t addr = cast_from_oop<uintptr_t>(obj);
   return static_cast<uint32_t>(addr >> LogMinObjAlignment);
+}
+
+// It's the caller's responsibility to ensure glitch-freedom
+// (if required).
+void CollectedHeap::update_capacity_and_used_at_gc() {
+  _capacity_at_last_gc = capacity();
+  _used_at_last_gc     = used();
 }

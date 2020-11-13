@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ public interface ParameterNameProvider {
      *
      * If the implementation of this method returns null, an automatically synthesized name is used.
      *
-     * @param parameter the parameter for which the name should be inferred.
+     * @param parameter the parameter for which the name should be inferred
      * @return a user-friendly name for the parameter, or null if unknown
      */
     public CharSequence getParameterName(VariableElement parameter);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -256,6 +256,7 @@ public interface XMLStreamReader extends XMLStreamConstants {
    * return buf.toString();
    * </pre>
    *
+   * @return the content of a text-only element
    * @throws XMLStreamException if the current event is not a START_ELEMENT
    * or if a non text element is encountered
    */

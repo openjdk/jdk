@@ -1009,7 +1009,6 @@ class PSParallelCompact : AllStatic {
   static elapsedTimer         _accumulated_time;
   static unsigned int         _total_invocations;
   static unsigned int         _maximum_compaction_gc_num;
-  static jlong                _time_of_last_gc;   // ms
   static CollectorCounters*   _counters;
   static ParMarkBitMap        _mark_bitmap;
   static ParallelCompactData  _summary_data;
@@ -1122,9 +1121,6 @@ class PSParallelCompact : AllStatic {
   // Add dense prefix update tasks to the task queue.
   static void enqueue_dense_prefix_tasks(TaskQueue& task_queue,
                                          uint parallel_gc_threads);
-
-  // Reset time since last full gc
-  static void reset_millis_since_last_gc();
 
 #ifndef PRODUCT
   // Print generic summary data
@@ -1248,9 +1244,6 @@ class PSParallelCompact : AllStatic {
 
   // Return the SpaceId for the given address.
   static SpaceId space_id(HeapWord* addr);
-
-  // Time since last full gc (in milliseconds).
-  static jlong millis_since_last_gc();
 
   static void print_on_error(outputStream* st);
 

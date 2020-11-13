@@ -29,7 +29,7 @@ package sun.jvm.hotspot.gc.shared;
 
 public enum G1YCType {
   Normal ("Normal"),
-  InitialMark ("Initial Mark"),
+  ConcurrentStart ("Concurrent Start"),
   DuringMark ("During Mark"),
   Mixed ("Mixed"),
   G1YCTypeEndSentinel ("Unknown");

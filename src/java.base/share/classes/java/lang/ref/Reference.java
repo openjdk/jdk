@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package java.lang.ref;
 
 import jdk.internal.vm.annotation.ForceInline;
-import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.access.JavaLangRefAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.ref.Cleaner;
@@ -325,13 +325,53 @@ public abstract class Reference<T> {
      * been cleared, either by the program or by the garbage collector, then
      * this method returns {@code null}.
      *
+     * @apiNote
+     * This method returns a strong reference to the referent. This may cause
+     * the garbage collector to treat it as strongly reachable until some later
+     * collection cycle.  The {@link #refersTo(Object) refersTo} method can be
+     * used to avoid such strengthening when testing whether some object is
+     * the referent of a reference object; that is, use {@code ref.refersTo(obj)}
+     * rather than {@code ref.get() == obj}.
+     *
      * @return   The object to which this reference refers, or
      *           {@code null} if this reference object has been cleared
+     * @see refersTo
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     public T get() {
         return this.referent;
     }
+
+    /**
+     * Load referent with strong semantics. Treating the referent
+     * as strong referent is ok when the Reference is inactive,
+     * because then the referent is switched to strong semantics
+     * anyway.
+     *
+     * This is only used from Finalizer to bypass the intrinsic,
+     * which might return a null referent, even though it is not
+     * null, and would subsequently not finalize the referent/finalizee.
+     */
+    T getInactive() {
+        return this.referent;
+    }
+
+    /**
+     * Tests if the referent of this reference object is {@code obj}.
+     * Using a {@code null} {@code obj} returns {@code true} if the
+     * reference object has been cleared.
+     *
+     * @param  obj the object to compare with this reference object's referent
+     * @return {@code true} if {@code obj} is the referent of this reference object
+     * @since 16
+     */
+    public final boolean refersTo(T obj) {
+        return refersTo0(obj);
+    }
+
+    /* Implementation of refersTo(), overridden for phantom references.
+     */
+    native boolean refersTo0(Object o);
 
     /**
      * Clears this reference object.  Invoking this method will not cause this
@@ -418,8 +458,8 @@ public abstract class Reference<T> {
      * {@code synchronized} blocks or methods, or using other synchronization
      * facilities are not possible or do not provide the desired control.  This
      * method is applicable only when reclamation may have visible effects,
-     * which is possible for objects with finalizers (See Section 12.6
-     * of <cite>The Java&trade; Language Specification</cite>) that
+     * which is possible for objects with finalizers (See Section {@jls 12.6}
+     * of <cite>The Java Language Specification</cite>) that
      * are implemented in ways that rely on ordering control for
      * correctness.
      *

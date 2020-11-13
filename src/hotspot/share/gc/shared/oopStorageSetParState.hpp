@@ -46,4 +46,23 @@ public:
   int par_state_count() const { return _par_states.count(); }
 };
 
+template <bool concurrent, bool is_const>
+class OopStorageSetWeakParState {
+  typedef OopStorage::ParState<concurrent, is_const> ParStateType;
+  typedef ValueObjArray<ParStateType, OopStorageSet::weak_count> ParStateArray;
+
+  ParStateArray _par_states;
+
+public:
+  OopStorageSetWeakParState();
+
+  template <typename ClosureType>
+  void oops_do(ClosureType* cl);
+
+  ParStateType* par_state(int i) const { return _par_states.at(i); }
+  int par_state_count() const { return _par_states.count(); }
+
+  void report_num_dead();
+};
+
 #endif // SHARE_GC_SHARED_OOPSTORAGESETPARSTATE_HPP

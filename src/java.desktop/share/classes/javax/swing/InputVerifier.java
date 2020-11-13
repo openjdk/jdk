@@ -99,6 +99,11 @@ import java.util.*;
 public abstract class InputVerifier {
 
     /**
+     * Constructor for subclasses to call.
+     */
+    protected InputVerifier() {}
+
+    /**
      * Checks whether the JComponent's input is valid. This method should
      * have no side effects. It returns a boolean indicating the status
      * of the argument's input.

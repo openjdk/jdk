@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -40,6 +40,8 @@
 
 package j2dbench;
 
+import java.awt.GraphicsEnvironment;
+import java.awt.Rectangle;
 import java.io.PrintWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -780,7 +782,10 @@ public class J2DBench {
         f.getContentPane().add(p, BorderLayout.SOUTH);
         f.pack();
         f.setLocationRelativeTo(null);
-        f.show();
+        Rectangle usable = GraphicsEnvironment.getLocalGraphicsEnvironment()
+                .getMaximumWindowBounds().intersection(f.getBounds());
+        f.setBounds(usable);
+        f.setVisible(true);
     }
 
     public static void runTests(boolean showresults) {

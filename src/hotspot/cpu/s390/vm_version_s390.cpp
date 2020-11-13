@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "compiler/disassembler.hpp"
 #include "code/compiledIC.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/vm_version.hpp"
@@ -179,6 +180,11 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseFMA, true);
   }
 
+  if (UseMD5Intrinsics) {
+    warning("MD5 intrinsics are not available on this CPU");
+    FLAG_SET_DEFAULT(UseMD5Intrinsics, false);
+  }
+
   // On z/Architecture, we take UseSHA as the general switch to enable/disable the SHA intrinsics.
   // The specific switches UseSHAxxxIntrinsics will then be set depending on the actual
   // machine capabilities.
@@ -213,6 +219,11 @@ void VM_Version::initialize() {
   } else if (UseSHA512Intrinsics) {
     warning("Intrinsics for SHA-384 and SHA-512 crypto hash functions not available on this CPU.");
     FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
+  }
+
+  if (UseSHA3Intrinsics) {
+    warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
+    FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
   }
 
   if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) {
@@ -825,7 +836,7 @@ void VM_Version::determine_features() {
                   code_end-code, cbuf_size, cbuf_size-(code_end-code));
 
     // Use existing decode function. This enables the [MachCode] format which is needed to DecodeErrorFile.
-    Disassembler::decode(&cbuf, code, code_end, tty);
+    Disassembler::decode(code, code_end, tty);
   }
 
   // Prepare for detection code execution and clear work buffer.

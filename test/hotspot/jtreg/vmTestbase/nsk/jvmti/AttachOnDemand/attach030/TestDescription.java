@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.share.aod.AODTestRunner
  *        nsk.jvmti.AttachOnDemand.attach030.attach030Target
  *
@@ -52,17 +51,16 @@
  * @comment create attach030Agent00.jar in current directory
  * @build nsk.jvmti.AttachOnDemand.attach030.attach030Agent00
  * @run driver ClassFileInstaller nsk.jvmti.AttachOnDemand.attach030.attach030Agent00
- * @build ExecDriver
- * @run driver PropertyResolvingWrapper ExecDriver --cmd
+ * @run driver ExecDriver --cmd
  *      ${compile.jdk}/bin/jar
  *      -cfm attach030Agent00.jar ${test.src}/attach030Agent00.mf
  *      nsk/jvmti/AttachOnDemand/attach030/attach030Agent00.class
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.share.aod.AODTestRunner
  *      -jdk ${test.jdk}
  *      -target nsk.jvmti.AttachOnDemand.attach030.attach030Target
- *      "-javaOpts=-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
+ *      -javaOpts="-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
  *      -ja attach030Agent00.jar=-pathToNewByteCode=./bin/newclass00
  */
 

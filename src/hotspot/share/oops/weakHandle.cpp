@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/oopStorage.hpp"
-#include "gc/shared/oopStorageSet.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.hpp"
 #include "oops/weakHandle.inline.hpp"
@@ -32,8 +31,11 @@
 #include "utilities/ostream.hpp"
 
 WeakHandle::WeakHandle(OopStorage* storage, Handle obj) :
+    WeakHandle(storage, obj()) {}
+
+WeakHandle::WeakHandle(OopStorage* storage, oop obj) :
     _obj(storage->allocate()) {
-  assert(obj() != NULL, "no need to create weak null oop");
+  assert(obj != NULL, "no need to create weak null oop");
 
   if (_obj == NULL) {
     vm_exit_out_of_memory(sizeof(oop*), OOM_MALLOC_ERROR,
@@ -41,7 +43,7 @@ WeakHandle::WeakHandle(OopStorage* storage, Handle obj) :
                           storage->name());
   }
 
-  NativeAccess<ON_PHANTOM_OOP_REF>::oop_store(_obj, obj());
+  NativeAccess<ON_PHANTOM_OOP_REF>::oop_store(_obj, obj);
 }
 
 void WeakHandle::release(OopStorage* storage) const {

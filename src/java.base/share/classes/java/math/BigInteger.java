@@ -40,9 +40,9 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import jdk.internal.math.DoubleConsts;
 import jdk.internal.math.FloatConsts;
-import jdk.internal.HotSpotIntrinsicCandidate;
-import jdk.internal.vm.annotation.Stable;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
+import jdk.internal.vm.annotation.Stable;
 
 /**
  * Immutable arbitrary-precision integers.  All operations behave as if
@@ -54,7 +54,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * and a few other miscellaneous operations.
  *
  * <p>Semantics of arithmetic operations exactly mimic those of Java's integer
- * arithmetic operators, as defined in <i>The Java&trade; Language Specification</i>.
+ * arithmetic operators, as defined in <i>The Java Language Specification</i>.
  * For example, division by zero throws an {@code ArithmeticException}, and
  * division of a negative by a positive yields a negative (or zero) remainder.
  *
@@ -464,9 +464,10 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * specified radix into a BigInteger.  The String representation
      * consists of an optional minus or plus sign followed by a
      * sequence of one or more digits in the specified radix.  The
-     * character-to-digit mapping is provided by {@code
-     * Character.digit}.  The String may not contain any extraneous
-     * characters (whitespace, for example).
+     * character-to-digit mapping is provided by {@link
+     * Character#digit(char, char) Character.digit}.  The String may
+     * not contain any extraneous characters (whitespace, for
+     * example).
      *
      * @param val String representation of BigInteger.
      * @param radix radix to be used in interpreting {@code val}.
@@ -474,7 +475,6 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *         of a BigInteger in the specified radix, or {@code radix} is
      *         outside the range from {@link Character#MIN_RADIX} to
      *         {@link Character#MAX_RADIX}, inclusive.
-     * @see    Character#digit
      */
     public BigInteger(String val, int radix) {
         int cursor = 0, numDigits;
@@ -658,17 +658,17 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     }
 
     /**
-     * Translates the decimal String representation of a BigInteger into a
-     * BigInteger.  The String representation consists of an optional minus
-     * sign followed by a sequence of one or more decimal digits.  The
-     * character-to-digit mapping is provided by {@code Character.digit}.
-     * The String may not contain any extraneous characters (whitespace, for
-     * example).
+     * Translates the decimal String representation of a BigInteger
+     * into a BigInteger.  The String representation consists of an
+     * optional minus or plus sign followed by a sequence of one or
+     * more decimal digits.  The character-to-digit mapping is
+     * provided by {@link Character#digit(char, char)
+     * Character.digit}.  The String may not contain any extraneous
+     * characters (whitespace, for example).
      *
      * @param val decimal String representation of BigInteger.
      * @throws NumberFormatException {@code val} is not a valid representation
      *         of a BigInteger.
-     * @see    Character#digit
      */
     public BigInteger(String val) {
         this(val, 10);
@@ -1740,7 +1740,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         return implMultiplyToLen(x, xlen, y, ylen, z);
     }
 
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     private static int[] implMultiplyToLen(int[] x, int xlen, int[] y, int ylen, int[] z) {
         int xstart = xlen - 1;
         int ystart = ylen - 1;
@@ -2133,7 +2133,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      /**
       * Java Runtime may use intrinsic for this method.
       */
-     @HotSpotIntrinsicCandidate
+     @IntrinsicCandidate
      private static final int[] implSquareToLen(int[] x, int len, int[] z, int zlen) {
         /*
          * The algorithm used here is adapted from Colin Plumb's C library.
@@ -2836,13 +2836,13 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
     // These methods are intended to be replaced by virtual machine
     // intrinsics.
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     private static int[] implMontgomeryMultiply(int[] a, int[] b, int[] n, int len,
                                          long inv, int[] product) {
         product = multiplyToLen(a, len, b, len, product);
         return montReduce(product, n, len, (int)inv);
     }
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     private static int[] implMontgomerySquare(int[] a, int[] n, int len,
                                        long inv, int[] product) {
         product = squareToLen(a, len, product);
@@ -3174,7 +3174,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     /**
      * Java Runtime may use intrinsic for this method.
      */
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     private static int implMulAdd(int[] out, int[] in, int offset, int len, int k) {
         long kLong = k & LONG_MASK;
         long carry = 0;
@@ -3355,7 +3355,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     }
 
     @ForceInline
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     private static void shiftLeftImplWorker(int[] newArr, int[] oldArr, int newIdx, int shiftCount, int numIter) {
         int shiftCountRight = 32 - shiftCount;
         int oldIdx = 0;
@@ -3440,7 +3440,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     }
 
     @ForceInline
-    @HotSpotIntrinsicCandidate
+    @IntrinsicCandidate
     private static void shiftRightImplWorker(int[] newArr, int[] oldArr, int newIdx, int shiftCount, int numIter) {
         int shiftCountLeft = 32 - shiftCount;
         int idx = numIter;
@@ -4152,7 +4152,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * conversion is analogous to a
      * <i>narrowing primitive conversion</i> from {@code long} to
      * {@code int} as defined in
-     * <cite>The Java&trade; Language Specification</cite>:
+     * <cite>The Java Language Specification</cite>:
      * if this BigInteger is too big to fit in an
      * {@code int}, only the low-order 32 bits are returned.
      * Note that this conversion can lose information about the
@@ -4174,7 +4174,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * conversion is analogous to a
      * <i>narrowing primitive conversion</i> from {@code long} to
      * {@code int} as defined in
-     * <cite>The Java&trade; Language Specification</cite>:
+     * <cite>The Java Language Specification</cite>:
      * if this BigInteger is too big to fit in a
      * {@code long}, only the low-order 64 bits are returned.
      * Note that this conversion can lose information about the
@@ -4198,7 +4198,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * conversion is similar to the
      * <i>narrowing primitive conversion</i> from {@code double} to
      * {@code float} as defined in
-     * <cite>The Java&trade; Language Specification</cite>:
+     * <cite>The Java Language Specification</cite>:
      * if this BigInteger has too great a magnitude
      * to represent as a {@code float}, it will be converted to
      * {@link Float#NEGATIVE_INFINITY} or {@link
@@ -4283,7 +4283,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * conversion is similar to the
      * <i>narrowing primitive conversion</i> from {@code double} to
      * {@code float} as defined in
-     * <cite>The Java&trade; Language Specification</cite>:
+     * <cite>The Java Language Specification</cite>:
      * if this BigInteger has too great a magnitude
      * to represent as a {@code double}, it will be converted to
      * {@link Double#NEGATIVE_INFINITY} or {@link
@@ -4657,6 +4657,10 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * marker value. Therefore, no explicit action to set these fields needs to
      * be taken in readObject because those fields already have a 0 value by
      * default since defaultReadObject is not being used.
+     *
+     * @param  s the stream being read.
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
@@ -4724,6 +4728,9 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * {@code firstNonzeroByteNum}, respectively.  These values are compatible
      * with older implementations, but will be ignored by current
      * implementations.
+     *
+     * @param  s the stream to serialize to.
+     * @throws IOException if an I/O error occurs
      */
     @java.io.Serial
     private void writeObject(ObjectOutputStream s) throws IOException {

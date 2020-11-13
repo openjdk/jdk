@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ public class DocCommentTester {
         this.useBreakIterator = useBreakIterator;
     }
     public static void main(String... args) throws Exception {
-        ArrayList<String> list = new ArrayList(Arrays.asList(args));
+        ArrayList<String> list = new ArrayList<>(Arrays.asList(args));
         if (!list.isEmpty() && "-useBreakIterator".equals(list.get(0))) {
             list.remove(0);
             new DocCommentTester(true).run(list);
@@ -255,7 +255,7 @@ public class DocCommentTester {
          * changes are approved, the new files can be used to replace the old.
          */
         public static void main(String... args) throws Exception {
-            List<File> files = new ArrayList<File>();
+            List<File> files = new ArrayList<>();
             File o = null;
             for (int i = 0; i < args.length; i++) {
                 String arg = args[i];
@@ -305,11 +305,8 @@ public class DocCommentTester {
                     File f = new File(tree.getSourceFile().getName());
                     File outFile = new File(outDir, f.getName());
                     try {
-                        FileWriter out = new FileWriter(outFile);
-                        try {
+                        try (FileWriter out = new FileWriter(outFile)) {
                             out.write(source);
-                        } finally {
-                            out.close();
                         }
                     } catch (IOException e) {
                         System.err.println("Can't write " + tree.getSourceFile().getName()
@@ -701,7 +698,7 @@ public class DocCommentTester {
 
             /*
              * Use this method to start printing a multi-line representation of a
-             * DocTree node. The representation should be termintated by calling
+             * DocTree node. The representation should be terminated by calling
              * out.println("]").
              */
             void header(DocTree node) {
@@ -804,7 +801,7 @@ public class DocCommentTester {
             final DCDocComment dc = (DCDocComment) trees.getDocCommentTree(path);
             DCTree t = (DCTree) trees.getDocCommentTree(path);
 
-            DocTreeScanner scanner = new DocTreeScanner<Void,Void>() {
+            DocTreeScanner<Void, Void> scanner = new DocTreeScanner<>() {
                 @Override
                 public Void scan(DocTree node, Void ignore) {
                     if (node != null) {

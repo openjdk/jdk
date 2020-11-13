@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,8 +151,8 @@ class FrameMap : public CompilationResourceObj {
   VMReg sp_offset2vmreg(ByteSize offset) const;
 
   // platform dependent hook used to check that frame is properly
-  // addressable on the platform.  Used by sparc to verify that all
-  // stack addresses are expressable in a simm13.
+  // addressable on the platform.  Used by arm, ppc to verify that all
+  // stack addresses are valid.
   bool validate_frame();
 
   static LIR_Opr map_to_opr(BasicType type, VMRegPair* reg, bool incoming);

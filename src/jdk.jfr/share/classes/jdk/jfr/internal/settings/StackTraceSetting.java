@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import jdk.jfr.Label;
 import jdk.jfr.MetadataDefinition;
 import jdk.jfr.Name;
 import jdk.jfr.internal.PlatformEventType;
-import jdk.jfr.internal.Control;
 import jdk.jfr.internal.Type;
 
 @MetadataDefinition
@@ -42,13 +41,12 @@ import jdk.jfr.internal.Type;
 @Name(Type.SETTINGS_PREFIX + "StackTrace")
 @Description("Record stack traces")
 @BooleanFlag
-public final class StackTraceSetting extends Control {
+public final class StackTraceSetting extends JDKSettingControl {
     private final static long typeId =  Type.getTypeId(StackTraceSetting.class);
     private final BooleanValue booleanValue;
     private final PlatformEventType eventType;
 
     public StackTraceSetting(PlatformEventType eventType, String defaultValue) {
-        super(defaultValue);
         this.booleanValue = BooleanValue.valueOf(defaultValue);
         this.eventType = Objects.requireNonNull(eventType);
     }

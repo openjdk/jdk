@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_G1_G1IHOPCONTROL_HPP
 #define SHARE_GC_G1_G1IHOPCONTROL_HPP
 
+#include "gc/g1/g1OldGenAllocationTracker.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/numberSeq.hpp"
 
@@ -44,14 +45,14 @@ class G1IHOPControl : public CHeapObj<mtGC> {
 
   // Most recent complete mutator allocation period in seconds.
   double _last_allocation_time_s;
-  // Amount of bytes allocated during _last_allocation_time_s.
-  size_t _last_allocated_bytes;
 
-  // Initialize an instance with the initial IHOP value in percent. The target
-  // occupancy will be updated at the first heap expansion.
-  G1IHOPControl(double initial_ihop_percent);
+  const G1OldGenAllocationTracker* _old_gen_alloc_tracker;
+  // Initialize an instance with the old gen allocation tracker and the
+  // initial IHOP value in percent. The target occupancy will be updated
+  // at the first heap expansion.
+  G1IHOPControl(double ihop_percent, G1OldGenAllocationTracker const* old_gen_alloc_tracker);
 
-  // Most recent time from the end of the initial mark to the start of the first
+  // Most recent time from the end of the concurrent start to the start of the first
   // mixed gc.
   virtual double last_marking_length_s() const = 0;
  public:
@@ -70,8 +71,8 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   // Together with the target occupancy, this additional buffer should contain the
   // difference between old gen size and total heap size at the start of reclamation,
   // and space required for that reclamation.
-  virtual void update_allocation_info(double allocation_time_s, size_t allocated_bytes, size_t additional_buffer_size);
-  // Update the time spent in the mutator beginning from the end of initial mark to
+  virtual void update_allocation_info(double allocation_time_s, size_t additional_buffer_size);
+  // Update the time spent in the mutator beginning from the end of concurrent start to
   // the first mixed gc.
   virtual void update_marking_length(double marking_length_s) = 0;
 
@@ -82,13 +83,13 @@ class G1IHOPControl : public CHeapObj<mtGC> {
 // The returned concurrent mark starting occupancy threshold is a fixed value
 // relative to the maximum heap size.
 class G1StaticIHOPControl : public G1IHOPControl {
-  // Most recent mutator time between the end of initial mark to the start of the
+  // Most recent mutator time between the end of concurrent mark to the start of the
   // first mixed gc.
   double _last_marking_length_s;
  protected:
   double last_marking_length_s() const { return _last_marking_length_s; }
  public:
-  G1StaticIHOPControl(double ihop_percent);
+  G1StaticIHOPControl(double ihop_percent, G1OldGenAllocationTracker const* old_gen_alloc_tracker);
 
   size_t get_conc_mark_start_threshold() {
     guarantee(_target_occupancy > 0, "Target occupancy must have been initialized.");
@@ -104,7 +105,7 @@ class G1StaticIHOPControl : public G1IHOPControl {
 // This algorithm tries to return a concurrent mark starting occupancy value that
 // makes sure that during marking the given target occupancy is never exceeded,
 // based on predictions of current allocation rate and time periods between
-// initial mark and the first mixed gc.
+// concurrent start and the first mixed gc.
 class G1AdaptiveIHOPControl : public G1IHOPControl {
   size_t _heap_reserve_percent; // Percentage of maximum heap capacity we should avoid to touch
   size_t _heap_waste_percent;   // Percentage of free heap that should be considered as waste.
@@ -132,17 +133,22 @@ class G1AdaptiveIHOPControl : public G1IHOPControl {
   // end of marking. This is typically lower than the requested threshold, as the
   // algorithm needs to consider restrictions by the environment.
   size_t actual_target_threshold() const;
+
+  // This method calculates the old gen allocation rate based on the net survived
+  // bytes that are allocated in the old generation in the last mutator period.
+  double last_mutator_period_old_allocation_rate() const;
  protected:
   virtual double last_marking_length_s() const { return _marking_times_s.last(); }
  public:
   G1AdaptiveIHOPControl(double ihop_percent,
+                        G1OldGenAllocationTracker const* old_gen_alloc_tracker,
                         G1Predictions const* predictor,
                         size_t heap_reserve_percent, // The percentage of total heap capacity that should not be tapped into.
                         size_t heap_waste_percent);  // The percentage of the free space in the heap that we think is not usable for allocation.
 
   virtual size_t get_conc_mark_start_threshold();
 
-  virtual void update_allocation_info(double allocation_time_s, size_t allocated_bytes, size_t additional_buffer_size);
+  virtual void update_allocation_info(double allocation_time_s, size_t additional_buffer_size);
   virtual void update_marking_length(double marking_length_s);
 
   virtual void print();

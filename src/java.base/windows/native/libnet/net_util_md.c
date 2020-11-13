@@ -770,6 +770,57 @@ NET_EnableFastTcpLoopback(int fd) {
     return result == SOCKET_ERROR ? WSAGetLastError() : 0;
 }
 
+int
+IsWindows10RS3OrGreater() {
+    OSVERSIONINFOEXW osvi = { sizeof(osvi), 0, 0, 0, 0, {0}, 0, 0 };
+    DWORDLONG const cond_mask = VerSetConditionMask(
+        VerSetConditionMask(
+          VerSetConditionMask(
+            0, VER_MAJORVERSION, VER_GREATER_EQUAL),
+               VER_MINORVERSION, VER_GREATER_EQUAL),
+               VER_BUILDNUMBER,  VER_GREATER_EQUAL);
+
+    osvi.dwMajorVersion = HIBYTE(_WIN32_WINNT_WIN10);
+    osvi.dwMinorVersion = LOBYTE(_WIN32_WINNT_WIN10);
+    osvi.dwBuildNumber  = 16299; // RS3 (Redstone 3)
+
+    return VerifyVersionInfoW(&osvi, VER_MAJORVERSION | VER_MINORVERSION | VER_BUILDNUMBER, cond_mask) != 0;
+}
+
+/**
+ * Shortens the default Windows socket
+ * connect timeout. Recommended for usage
+ * on the loopback adapter only.
+ */
+JNIEXPORT jint JNICALL
+NET_EnableFastTcpLoopbackConnect(int fd) {
+    TCP_INITIAL_RTO_PARAMETERS rto = {
+        TCP_INITIAL_RTO_UNSPECIFIED_RTT,    // Use the default or overriden by the Administrator
+        1                                   // Minimum possible value before Windows 10 RS3
+    };
+
+    /**
+     * In Windows 10 RS3+ we can use the no retransmissions flag to
+     * completely remove the timeout delay, which is fixed to 500ms
+     * if Windows receives RST when the destination port is not open.
+     */
+    if (IsWindows10RS3OrGreater()) {
+        rto.MaxSynRetransmissions = TCP_INITIAL_RTO_NO_SYN_RETRANSMISSIONS;
+    }
+
+    DWORD result_byte_count = -1;
+    int result = WSAIoctl(fd,                       // descriptor identifying a socket
+                          SIO_TCP_INITIAL_RTO,      // dwIoControlCode
+                          &rto,                     // pointer to TCP_INITIAL_RTO_PARAMETERS structure
+                          sizeof(rto),              // size, in bytes, of the input buffer
+                          NULL,                     // pointer to output buffer
+                          0,                        // size of output buffer
+                          &result_byte_count,       // number of bytes returned
+                          NULL,                     // OVERLAPPED structure
+                          NULL);                    // completion routine
+    return (result == SOCKET_ERROR) ? WSAGetLastError() : 0;
+}
+
 /**
  * See net_util.h for documentation
  */

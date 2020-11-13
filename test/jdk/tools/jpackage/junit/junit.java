@@ -27,6 +27,6 @@
  * @test
  * @summary jpackage unit tests
  * @library ${jtreg.home}/lib/junit.jar
- * @modules jdk.incubator.jpackage
+ * @modules jdk.jpackage
  * @run shell run_junit.sh
  */

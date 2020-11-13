@@ -43,7 +43,7 @@ import java.util.Enumeration;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans&trade;
+ * of all JavaBeans
  * has been added to the {@code java.beans} package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -56,6 +56,11 @@ import java.util.Enumeration;
 public class DefaultListModel<E> extends AbstractListModel<E>
 {
     private Vector<E> delegate = new Vector<E>();
+
+    /**
+     * Constructs a {@code DefaultListModel}.
+     */
+    public DefaultListModel() {}
 
     /**
      * Returns the number of components in this list.
@@ -271,7 +276,7 @@ public class DefaultListModel<E> extends AbstractListModel<E>
      * Returns the first component of this list.
      * @return     the first component of this list
      * @see Vector#firstElement()
-     * @throws NoSuchElementException if this
+     * @throws java.util.NoSuchElementException if this
      * vector has no components
      */
     public E firstElement() {
@@ -283,7 +288,7 @@ public class DefaultListModel<E> extends AbstractListModel<E>
      *
      * @return  the last component of the list
      * @see Vector#lastElement()
-     * @throws NoSuchElementException if this vector
+     * @throws java.util.NoSuchElementException if this vector
      * has no components
      */
     public E lastElement() {

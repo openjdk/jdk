@@ -28,6 +28,9 @@
 #include "gc/shared/oopStorageParState.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
 #include "gc/shared/oopStorageSetParState.hpp"
+#include "memory/iterator.hpp"
+#include "runtime/atomic.hpp"
+#include "utilities/debug.hpp"
 
 template <bool concurrent, bool is_const>
 OopStorageSetStrongParState<concurrent, is_const>::OopStorageSetStrongParState() :
@@ -35,11 +38,65 @@ OopStorageSetStrongParState<concurrent, is_const>::OopStorageSetStrongParState()
 }
 
 template <bool concurrent, bool is_const>
-template <typename Closure>
-void OopStorageSetStrongParState<concurrent, is_const>::oops_do(Closure* cl) {
+template <typename ClosureType>
+void OopStorageSetStrongParState<concurrent, is_const>::oops_do(ClosureType* cl) {
   for (int i = 0; i < _par_states.count(); i++) {
     _par_states.at(i)->oops_do(cl);
   }
 }
 
+template <bool concurrent, bool is_const>
+OopStorageSetWeakParState<concurrent, is_const>::OopStorageSetWeakParState() :
+    _par_states(OopStorageSet::weak_iterator()) {
+}
+
+template <typename ClosureType>
+class DeadCounterClosure : public OopClosure {
+private:
+  ClosureType* const _cl;
+  size_t             _num_dead;
+
+public:
+  DeadCounterClosure(ClosureType* cl) :
+      _cl(cl),
+      _num_dead(0) {}
+
+  virtual void do_oop(oop* p) {
+    _cl->do_oop(p);
+    if (Atomic::load(p) == NULL) {
+      _num_dead++;              // Count both already NULL and cleared by closure.
+    }
+  }
+
+  virtual void do_oop(narrowOop* p) {
+    ShouldNotReachHere();
+  }
+
+  size_t num_dead() const {
+    return _num_dead;
+  }
+};
+
+template <bool concurrent, bool is_const>
+template <typename ClosureType>
+void OopStorageSetWeakParState<concurrent, is_const>::oops_do(ClosureType* cl) {
+  for (int i = 0; i < _par_states.count(); i++) {
+    ParStateType* state = _par_states.at(i);
+    if (state->storage()->should_report_num_dead()) {
+      DeadCounterClosure<ClosureType> counting_cl(cl);
+      state->oops_do(&counting_cl);
+      state->increment_num_dead(counting_cl.num_dead());
+    } else {
+      state->oops_do(cl);
+    }
+  }
+}
+
+template <bool concurrent, bool is_const>
+void OopStorageSetWeakParState<concurrent, is_const>::report_num_dead() {
+  for (int i = 0; i < _par_states.count(); i++) {
+    ParStateType* state = _par_states.at(i);
+    state->storage()->report_num_dead(state->num_dead());
+  }
+}
 #endif // SHARE_GC_SHARED_OOPSTORAGESETPARSTATE_INLINE_HPP

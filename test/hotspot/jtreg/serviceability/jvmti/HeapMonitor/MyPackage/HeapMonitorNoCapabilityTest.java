@@ -27,6 +27,7 @@ package MyPackage;
 /**
  * @test
  * @summary Verifies the JVMTI Heap Monitor does not work without the required capability.
+ * @requires vm.jvmti
  * @build Frame HeapMonitor
  * @compile HeapMonitorNoCapabilityTest.java
  * @run main/othervm/native -agentlib:HeapMonitorTest MyPackage.HeapMonitorNoCapabilityTest

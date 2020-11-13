@@ -33,6 +33,11 @@ package javax.swing.table;
  */
 public abstract class TableStringConverter {
     /**
+     * Constructor for subclasses to call.
+     */
+    protected TableStringConverter() {}
+
+    /**
      * Returns the string representation of the value at the specified
      * location.
      *

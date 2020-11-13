@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,47 +25,25 @@
 #ifndef SHARE_RUNTIME_FLAGS_FLAGSETTING_HPP
 #define SHARE_RUNTIME_FLAGS_FLAGSETTING_HPP
 
-#include "memory/allocation.hpp"
+#include "utilities/autoRestore.hpp"
 
-// debug flags control various aspects of the VM and are global accessible
+// Legacy use of FlagSetting and UIntFlagSetting to temporarily change a debug
+// flag/option in the current (local) scope.
+//
+// Example:
+// {
+//   FlagSetting temporarily(DebugThisAndThat, true);
+//   . . .
+// }
+//
+// The previous/original value is restored when leaving the scope.
 
-// use FlagSetting to temporarily change some debug flag
-// e.g. FlagSetting fs(DebugThisAndThat, true);
-// restored to previous value upon leaving scope
-class FlagSetting : public StackObj {
-  bool val;
-  bool* flag;
-public:
-  FlagSetting(bool& fl, bool newValue) { flag = &fl; val = fl; fl = newValue; }
-  ~FlagSetting()                       { *flag = val; }
-};
+typedef AutoModifyRestore<bool> FlagSetting;
+typedef AutoModifyRestore<uint> UIntFlagSetting;
 
-class UIntFlagSetting : public StackObj {
-  uint val;
-  uint* flag;
-public:
-  UIntFlagSetting(uint& fl, uint newValue) { flag = &fl; val = fl; fl = newValue; }
-  ~UIntFlagSetting()                       { *flag = val; }
-};
+// Legacy use of FLAG_GUARD. Retained in the code to help identify use-cases
+// that should be addressed when this file is removed.
 
-class SizeTFlagSetting : public StackObj {
-  size_t val;
-  size_t* flag;
-public:
-  SizeTFlagSetting(size_t& fl, size_t newValue) { flag = &fl; val = fl; fl = newValue; }
-  ~SizeTFlagSetting()                           { *flag = val; }
-};
-
-// Helper class for temporarily saving the value of a flag during a scope.
-template <size_t SIZE>
-class FlagGuard {
-  unsigned char _value[SIZE];
-  void* const _addr;
-public:
-  FlagGuard(void* flag_addr) : _addr(flag_addr) { memcpy(_value, _addr, SIZE); }
-  ~FlagGuard()                                  { memcpy(_addr, _value, SIZE); }
-};
-
-#define FLAG_GUARD(f) FlagGuard<sizeof(f)> f ## _guard(&f)
+#define FLAG_GUARD(f) f ## _guard(f)
 
 #endif // SHARE_RUNTIME_FLAGS_FLAGSETTING_HPP

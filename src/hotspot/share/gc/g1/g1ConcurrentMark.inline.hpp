@@ -106,7 +106,7 @@ inline void G1CMMarkStack::iterate(Fn fn) const {
 inline void G1CMTask::scan_task_entry(G1TaskQueueEntry task_entry) { process_grey_task_entry<true>(task_entry); }
 
 inline void G1CMTask::push(G1TaskQueueEntry task_entry) {
-  assert(task_entry.is_array_slice() || _g1h->is_in_g1_reserved(task_entry.obj()), "invariant");
+  assert(task_entry.is_array_slice() || _g1h->is_in_reserved(task_entry.obj()), "invariant");
   assert(task_entry.is_array_slice() || !_g1h->is_on_master_free_list(
               _g1h->heap_region_containing(task_entry.obj())), "invariant");
   assert(task_entry.is_array_slice() || !_g1h->is_obj_ill(task_entry.obj()), "invariant");  // FIXME!!!
@@ -182,13 +182,13 @@ inline size_t G1CMTask::scan_objArray(objArrayOop obj, MemRegion mr) {
 }
 
 inline HeapWord* G1ConcurrentMark::top_at_rebuild_start(uint region) const {
-  assert(region < _g1h->max_regions(), "Tried to access TARS for region %u out of bounds", region);
+  assert(region < _g1h->max_reserved_regions(), "Tried to access TARS for region %u out of bounds", region);
   return _top_at_rebuild_starts[region];
 }
 
 inline void G1ConcurrentMark::update_top_at_rebuild_start(HeapRegion* r) {
   uint const region = r->hrm_index();
-  assert(region < _g1h->max_regions(), "Tried to access TARS for region %u out of bounds", region);
+  assert(region < _g1h->max_reserved_regions(), "Tried to access TARS for region %u out of bounds", region);
   assert(_top_at_rebuild_starts[region] == NULL,
          "TARS for region %u has already been set to " PTR_FORMAT " should be NULL",
          region, p2i(_top_at_rebuild_starts[region]));

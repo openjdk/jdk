@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.spi.ImageReaderSpi;
 import javax.imageio.stream.ImageInputStream;
 
-import java.io.*;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 
@@ -76,7 +76,7 @@ public class WBMPImageReader extends ImageReader {
         super(originator);
     }
 
-    /** Overrides the method defined in the superclass. */
+    @Override
     public void setInput(Object input,
                          boolean seekForwardOnly,
                          boolean ignoreMetadata) {
@@ -85,7 +85,7 @@ public class WBMPImageReader extends ImageReader {
         gotHeader = false;
     }
 
-    /** Overrides the method defined in the superclass. */
+    @Override
     public int getNumImages(boolean allowSearch) throws IOException {
         if (iis == null) {
             throw new IllegalStateException(I18N.getString("GetNumImages0"));
@@ -96,18 +96,21 @@ public class WBMPImageReader extends ImageReader {
         return 1;
     }
 
+    @Override
     public int getWidth(int imageIndex) throws IOException {
         checkIndex(imageIndex);
         readHeader();
         return width;
     }
 
+    @Override
     public int getHeight(int imageIndex) throws IOException {
         checkIndex(imageIndex);
         readHeader();
         return height;
     }
 
+    @Override
     public boolean isRandomAccessEasy(int imageIndex) throws IOException {
         checkIndex(imageIndex);
         return true;
@@ -152,6 +155,7 @@ public class WBMPImageReader extends ImageReader {
         gotHeader = true;
     }
 
+    @Override
     public Iterator<ImageTypeSpecifier> getImageTypes(int imageIndex)
         throws IOException {
         checkIndex(imageIndex);
@@ -164,10 +168,12 @@ public class WBMPImageReader extends ImageReader {
         return list.iterator();
     }
 
+    @Override
     public ImageReadParam getDefaultReadParam() {
         return new ImageReadParam();
     }
 
+    @Override
     public IIOMetadata getImageMetadata(int imageIndex)
         throws IOException {
         checkIndex(imageIndex);
@@ -177,10 +183,12 @@ public class WBMPImageReader extends ImageReader {
         return metadata;
     }
 
+    @Override
     public IIOMetadata getStreamMetadata() throws IOException {
         return null;
     }
 
+    @Override
     public BufferedImage read(int imageIndex, ImageReadParam param)
         throws IOException {
 
@@ -296,16 +304,19 @@ public class WBMPImageReader extends ImageReader {
         return bi;
     }
 
+    @Override
     public boolean canReadRaster() {
         return true;
     }
 
+    @Override
     public Raster readRaster(int imageIndex,
                              ImageReadParam param) throws IOException {
         BufferedImage bi = read(imageIndex, param);
         return bi.getData();
     }
 
+    @Override
     public void reset() {
         super.reset();
         iis = null;

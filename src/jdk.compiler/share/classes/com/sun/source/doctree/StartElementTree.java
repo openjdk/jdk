@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,9 @@ import javax.lang.model.element.Name;
 /**
  * A tree node for the start of an HTML element.
  *
- * <p>
- * &lt; name [attributes] [/]&gt;
+ * <pre>
+ *    &lt; name [attributes] [/]&gt;
+ * </pre>
  *
  * @since 1.8
  */
@@ -50,9 +51,9 @@ public interface StartElementTree extends DocTree {
     List<? extends DocTree> getAttributes();
 
     /**
-     * Returns true if this is a self-closing element,
-     * as indicated by a "/" before the closing "&gt;".
-     * @return true if this is a self-closing element
+     * Returns {@code true} if this is a self-closing element,
+     * as indicated by a {@code "/"} before the closing {@code ">"}.
+     * @return {@code true} if this is a self-closing element
      */
     boolean isSelfClosing();
 }

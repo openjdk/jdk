@@ -63,7 +63,7 @@ G1CardCounts::G1CardCounts(G1CollectedHeap *g1h):
 }
 
 void G1CardCounts::initialize(G1RegionToSpaceMapper* mapper) {
-  assert(_g1h->max_reserved_capacity() > 0, "initialization order");
+  assert(_g1h->reserved().byte_size() > 0, "initialization order");
   assert(_g1h->capacity() == 0, "initialization order");
 
   if (G1ConcRSHotCardLimit > 0) {
@@ -73,7 +73,7 @@ void G1CardCounts::initialize(G1RegionToSpaceMapper* mapper) {
     guarantee(G1ConcRSHotCardLimit <= max_jubyte, "sanity");
 
     _ct = _g1h->card_table();
-    _ct_bot = _ct->byte_for_const(_g1h->reserved_region().start());
+    _ct_bot = _ct->byte_for_const(_g1h->reserved().start());
 
     _card_counts = (jubyte*) mapper->reserved().start();
     _reserved_max_card_num = mapper->reserved().byte_size();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,17 @@
  *     Document Object Model (DOM) Level 3 Core Specification</a>,
  * and <a href="http://www.w3.org/TR/DOM-Level-3-LS">
  *     Document Object Model (DOM) Level 3 Load and Save Specification</a>.
+ *
+ * @apiNote
+ * The documentation comments for the get and set methods within this API are
+ * written as property definitions and are shared between both methods. These
+ * methods do not follow the standard Java SE specification format.
+ *
+ * <p>
+ * Take the {@link org.w3c.dom.Node Node} TextContent property as an example, both
+ * {@link org.w3c.dom.Node#getTextContent() getTextContent} and
+ * {@link org.w3c.dom.Node#setTextContent(String) setTextContent} shared the same
+ * content that defined the TextContent property itself.
  *
  *
  * @since 1.4

@@ -96,33 +96,10 @@ public:
   void set_all(const T& value);
 };
 
-template <typename T>
-class ZContended : public ZValue<ZContendedStorage, T> {
-public:
-  ZContended();
-  ZContended(const T& value);
-};
-
-template <typename T>
-class ZPerCPU : public ZValue<ZPerCPUStorage, T> {
-public:
-  ZPerCPU();
-  ZPerCPU(const T& value);
-};
-
-template <typename T>
-class ZPerNUMA : public ZValue<ZPerNUMAStorage, T> {
-public:
-  ZPerNUMA();
-  ZPerNUMA(const T& value);
-};
-
-template <typename T>
-class ZPerWorker : public ZValue<ZPerWorkerStorage, T> {
-public:
-  ZPerWorker();
-  ZPerWorker(const T& value);
-};
+template <typename T> using ZContended = ZValue<ZContendedStorage, T>;
+template <typename T> using ZPerCPU = ZValue<ZPerCPUStorage, T>;
+template <typename T> using ZPerNUMA = ZValue<ZPerNUMAStorage, T>;
+template <typename T> using ZPerWorker = ZValue<ZPerWorkerStorage, T>;
 
 //
 // Iterator
@@ -140,23 +117,9 @@ public:
   bool next(T** value);
 };
 
-template <typename T>
-class ZPerCPUIterator : public ZValueIterator<ZPerCPUStorage, T> {
-public:
-  ZPerCPUIterator(ZPerCPU<T>* value);
-};
-
-template <typename T>
-class ZPerNUMAIterator : public ZValueIterator<ZPerNUMAStorage, T> {
-public:
-  ZPerNUMAIterator(ZPerNUMA<T>* value);
-};
-
-template <typename T>
-class ZPerWorkerIterator : public ZValueIterator<ZPerWorkerStorage, T> {
-public:
-  ZPerWorkerIterator(ZPerWorker<T>* value);
-};
+template <typename T> using ZPerCPUIterator = ZValueIterator<ZPerCPUStorage, T>;
+template <typename T> using ZPerNUMAIterator = ZValueIterator<ZPerNUMAStorage, T>;
+template <typename T> using ZPerWorkerIterator = ZValueIterator<ZPerWorkerStorage, T>;
 
 template <typename S, typename T>
 class ZValueConstIterator {
@@ -170,22 +133,8 @@ public:
   bool next(const T** value);
 };
 
-template <typename T>
-class ZPerCPUConstIterator : public ZValueConstIterator<ZPerCPUStorage, T> {
-public:
-  ZPerCPUConstIterator(const ZPerCPU<T>* value);
-};
-
-template <typename T>
-class ZPerNUMAConstIterator : public ZValueConstIterator<ZPerNUMAStorage, T> {
-public:
-  ZPerNUMAConstIterator(const ZPerNUMA<T>* value);
-};
-
-template <typename T>
-class ZPerWorkerConstIterator : public ZValueConstIterator<ZPerWorkerStorage, T> {
-public:
-  ZPerWorkerConstIterator(const ZPerWorker<T>* value);
-};
+template <typename T> using ZPerCPUConstIterator = ZValueConstIterator<ZPerCPUStorage, T>;
+template <typename T> using ZPerNUMAConstIterator = ZValueConstIterator<ZPerNUMAStorage, T>;
+template <typename T> using ZPerWorkerConstIterator = ZValueConstIterator<ZPerWorkerStorage, T>;
 
 #endif // SHARE_GC_Z_ZVALUE_HPP

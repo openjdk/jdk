@@ -49,7 +49,7 @@ class MemoryWriterHost : public StorageHost<Adapter, AP> {
  public:
   typedef typename Adapter::StorageType StorageType;
  protected:
-  void bytes(void* dest, const void* buf, size_t len);
+  void write_bytes(void* dest, const void* buf, intptr_t len);
   MemoryWriterHost(StorageType* storage, Thread* thread);
   MemoryWriterHost(StorageType* storage, size_t size);
   MemoryWriterHost(Thread* thread);

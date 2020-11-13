@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-
 /*
  * @test
  *
@@ -35,7 +34,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  *
  * @comment build debuggee class
  * @build vm.mlvm.share.jdi.IndyDebuggee
@@ -44,7 +42,7 @@
  * @build vm.mlvm.indy.func.jdi.breakpoint.Test
  * @run driver vm.mlvm.share.IndifiedClassesBuilder
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      vm.mlvm.indy.func.jdi.breakpoint.Test
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
@@ -76,9 +74,9 @@ public class Test extends JDIBreakpointTest {
         result.add(new BreakpointInfo("bootstrap"));
         result.add(new BreakpointInfo("target"));
         result.add(new BreakpointInfo("stop"));
+
         return result;
     }
-
 
     public static void main(String[] args) {
         launch(new ArgumentHandler(args));

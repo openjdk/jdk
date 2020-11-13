@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,6 +164,14 @@ public final class Toolkit {
 
 
     static void isFullySpecifiedAudioFormat(AudioFormat format) {
+        // Our code requires a positive frame size, that's probably is not
+        // necessary for non-linear encodings, but for now
+        // IllegalArgumentException is better than ArithmeticException
+        if (format.getFrameSize() <= 0) {
+            throw new IllegalArgumentException("invalid frame size: "
+                                               +((format.getFrameSize() == -1) ?
+                    "NOT_SPECIFIED":String.valueOf(format.getFrameSize())));
+        }
         if (!format.getEncoding().equals(AudioFormat.Encoding.PCM_SIGNED)
             && !format.getEncoding().equals(AudioFormat.Encoding.PCM_UNSIGNED)
             && !format.getEncoding().equals(AudioFormat.Encoding.ULAW)
@@ -185,11 +193,6 @@ public final class Toolkit {
             throw new IllegalArgumentException("invalid sample size in bits: "
                                                +((format.getSampleSizeInBits()==-1)?
                                                  "NOT_SPECIFIED":String.valueOf(format.getSampleSizeInBits())));
-        }
-        if (format.getFrameSize() <= 0) {
-            throw new IllegalArgumentException("invalid frame size: "
-                                               +((format.getFrameSize()==-1)?
-                                                 "NOT_SPECIFIED":String.valueOf(format.getFrameSize())));
         }
         if (format.getChannels() <= 0) {
             throw new IllegalArgumentException("invalid number of channels: "

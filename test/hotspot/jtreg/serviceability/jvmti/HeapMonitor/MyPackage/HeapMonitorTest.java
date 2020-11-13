@@ -27,6 +27,7 @@ package MyPackage;
 /**
  * @test
  * @summary Verifies the JVMTI Heap Monitor API
+ * @requires vm.jvmti
  * @build Frame HeapMonitor
  * @compile HeapMonitorTest.java
  * @run main/othervm/native -agentlib:HeapMonitorTest MyPackage.HeapMonitorTest

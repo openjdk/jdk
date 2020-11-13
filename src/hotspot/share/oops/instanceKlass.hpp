@@ -662,7 +662,7 @@ public:
   Method* uncached_lookup_method(const Symbol* name,
                                  const Symbol* signature,
                                  OverpassLookupMode overpass_mode,
-                                 PrivateLookupMode private_mode = find_private) const;
+                                 PrivateLookupMode private_mode = PrivateLookupMode::find) const;
 
   // lookup a method in all the interfaces that this class implements
   // (returns NULL if not found)
@@ -1322,11 +1322,14 @@ private:
   void link_previous_versions(InstanceKlass* pv) { _previous_versions = pv; }
   void mark_newly_obsolete_methods(Array<Method*>* old_methods, int emcp_method_count);
 #endif
+  // log class name to classlist
+  void log_to_classlist(const ClassFileStream* cfs) const;
 public:
   // CDS support - remove and restore oops from metadata. Oops are not shared.
   virtual void remove_unshareable_info();
   virtual void remove_java_mirror();
   void restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, PackageEntry* pkg_entry, TRAPS);
+  void init_shared_package_entry();
 
   // jvm support
   jint compute_modifier_flags(TRAPS) const;
@@ -1363,7 +1366,7 @@ public:
 
   // Logging
   void print_class_load_logging(ClassLoaderData* loader_data,
-                                const char* module_name,
+                                const ModuleEntry* module_entry,
                                 const ClassFileStream* cfs) const;
 };
 

@@ -25,7 +25,7 @@ package gc.startup_warnings;
 
 /*
 * @test TestShenandoah
-* @requires vm.gc.Shenandoah & !vm.graal.enabled
+* @requires vm.gc.Shenandoah
 * @bug 8006398
 * @summary Test that the Shenandoah collector does not print a warning message
 * @library /test/lib

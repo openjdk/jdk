@@ -82,7 +82,7 @@ public class TestLookForUntestedEvents {
     // Experimental events
     private static final Set<String> experimentalEvents = new HashSet<>(
         Arrays.asList(
-            "Flush")
+            "Flush", "SyncOnPrimitiveWrapper")
     );
 
 

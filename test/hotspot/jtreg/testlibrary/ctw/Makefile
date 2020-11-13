@@ -45,6 +45,7 @@ SRC_FILES = $(shell find $(SRC_DIR) -name '*.java')
 LIB_FILES = $(shell find $(TESTLIBRARY_DIR)/jdk/test/lib/ \
     $(TESTLIBRARY_DIR)/jdk/test/lib/process \
     $(TESTLIBRARY_DIR)/jdk/test/lib/util \
+    $(TESTLIBRARY_DIR)/jtreg \
     -maxdepth 1 -name '*.java')
 WB_SRC_FILES = $(shell find $(TESTLIBRARY_DIR)/sun/hotspot -name '*.java')
 EXPORTS=--add-exports java.base/jdk.internal.jimage=ALL-UNNAMED \

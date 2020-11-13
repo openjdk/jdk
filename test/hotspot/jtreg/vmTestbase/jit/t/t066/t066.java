@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build jit.t.t066.t066
- * @run driver ExecDriver --java jit.t.t066.t066
+ * @run main/othervm jit.t.t066.t066
  */
 
 package jit.t.t066;
@@ -42,7 +40,7 @@ import nsk.share.TestFailure;
 // offsets on the stores of the two halves of the double
 // constant.
 
-class t066
+public class t066
 {
     public static void main(String argv[])
     {

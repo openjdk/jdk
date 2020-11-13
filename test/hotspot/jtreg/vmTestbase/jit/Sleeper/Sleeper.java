@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,16 +29,14 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build jit.Sleeper.Sleeper
- * @run driver ExecDriver --java jit.Sleeper.Sleeper
+ * @run main/othervm jit.Sleeper.Sleeper
  */
 
 package jit.Sleeper;
 
 import nsk.share.TestFailure;
 
-class Sleeper {
+public class Sleeper {
     public static void main(String args[] ) {
       System.out.println ("1");
       try { Thread.sleep(1000); } catch (InterruptedException e) {}

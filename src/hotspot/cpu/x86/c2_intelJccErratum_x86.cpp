@@ -45,11 +45,11 @@ bool IntelJccErratum::is_crossing_or_ending_at_32_byte_boundary(uintptr_t start_
   return boundary(start_pc) != boundary(end_pc);
 }
 
-bool IntelJccErratum::is_jcc_erratum_branch(const Block* block, const MachNode* node, uint node_index) {
+bool IntelJccErratum::is_jcc_erratum_branch(const MachNode* node) {
   if (node->is_MachCall() && !node->is_MachCallJava()) {
     return true;
   }
-  return node_index == (block->number_of_nodes() - 1);
+  return node->is_MachBranch();
 }
 
 int IntelJccErratum::jcc_erratum_taint_node(MachNode* node, PhaseRegAlloc* regalloc) {
@@ -70,7 +70,7 @@ int IntelJccErratum::tag_affected_machnodes(Compile* C, PhaseCFG* cfg, PhaseRegA
         continue;
       }
       MachNode* m = node->as_Mach();
-      if (is_jcc_erratum_branch(block, m, j)) {
+      if (is_jcc_erratum_branch(m)) {
         // Found a root jcc erratum branch, flag it as problematic
         nop_size += jcc_erratum_taint_node(m, regalloc);
 

@@ -25,6 +25,7 @@
  * @test
  * @bug 8174962 8010319
  * @summary Redefine class with interface method call
+ * @requires vm.jvmti
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.compiler

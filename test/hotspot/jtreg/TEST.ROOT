@@ -58,6 +58,7 @@ requires.properties= \
     vm.jvmci \
     vm.emulatedClient \
     vm.cpu.features \
+    vm.pageSize \
     vm.debug \
     vm.hasSA \
     vm.hasJFR \
@@ -68,11 +69,14 @@ requires.properties= \
     vm.cds \
     vm.cds.custom.loaders \
     vm.cds.archived.java.heap \
+    vm.jvmti \
     vm.graal.enabled \
     vm.compiler1.enabled \
     vm.compiler2.enabled \
+    vm.musl \
     docker.support \
-    test.vm.gc.nvdimm
+    test.vm.gc.nvdimm \
+    jdk.containerized
 
 # Minimum jtreg version
 requiredVersion=5.1 b1

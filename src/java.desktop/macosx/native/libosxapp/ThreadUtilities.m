@@ -73,9 +73,9 @@ AWT_ASSERT_APPKIT_THREAD;
 
 + (void)performOnMainThreadWaiting:(BOOL)wait block:(void (^)())block {
     if ([NSThread isMainThread] && wait == YES) {
-        block(); 
-    } else { 
-        [JNFRunLoop performOnMainThreadWaiting:wait withBlock:block]; 
+        block();
+    } else {
+        [JNFRunLoop performOnMainThreadWaiting:wait withBlock:block];
     }
 }
 

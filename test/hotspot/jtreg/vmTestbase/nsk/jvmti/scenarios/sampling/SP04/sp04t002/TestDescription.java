@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,11 +56,10 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build ExecDriver
- *        nsk.jvmti.scenarios.sampling.SP04.sp04t002
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
- *      "-agentlib:sp04t002=-waittime=5 threads=10"
+ * @comment see JDK-8243962 for background on requires expression
+ * @requires !(vm.flightRecorder & vm.debug & os.family == "windows")
+ * @run main/othervm/native
+ *      -agentlib:sp04t002=-waittime=5,threads=10
  *      nsk.jvmti.scenarios.sampling.SP04.sp04t002
  */
 

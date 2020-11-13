@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,17 +28,18 @@ package com.sun.source.doctree;
 import java.util.List;
 
 /**
- * A tree node for an @link or &#064;linkplain inline tag.
+ * A tree node for an {@code @link} or {@code @linkplain} inline tag.
  *
- * <p>
- * {&#064;link reference label} <br>
- * {&#064;linkplain reference label }
+ * <pre>
+ *    {&#064;link reference label}
+ *    {&#064;linkplain reference label}
+ * </pre>
  *
  * @since 1.8
  */
 public interface LinkTree extends InlineTagTree {
     /**
-     * Returns the reference of a link.
+     * Returns the reference of the link.
      * @return the reference
      */
     ReferenceTree getReference();

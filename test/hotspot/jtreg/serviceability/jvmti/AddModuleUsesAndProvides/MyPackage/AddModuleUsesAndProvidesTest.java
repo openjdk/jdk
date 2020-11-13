@@ -26,6 +26,7 @@ package MyPackage;
 /**
  * @test
  * @summary Basic test for JVMTI AddModuleUses and AddModuleProvides
+ * @requires vm.jvmti
  * @build java.base/java.lang.TestProvider
  *        java.base/jdk.internal.test.TestProviderImpl
  * @compile AddModuleUsesAndProvidesTest.java

@@ -71,7 +71,7 @@ public interface Doclet {
 
     /**
      * Returns a name identifying the doclet. A name is a simple identifier
-     * without white spaces, as defined in <cite>The Java&trade; Language Specification</cite>,
+     * without white spaces, as defined in <cite>The Java Language Specification</cite>,
      * section 6.2 "Names and Identifiers".
      *
      * @return name of the Doclet

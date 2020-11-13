@@ -48,7 +48,7 @@ import sun.swing.DefaultLookup;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans&trade;
+ * of all JavaBeans
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -723,6 +723,11 @@ public class BasicInternalFrameTitlePane extends JComponent
      * Instantiate it only within subclasses of <code>Foo</code>.
      */
     public class PropertyChangeHandler implements PropertyChangeListener {
+        /**
+         * Constructs a {@code PropertyChangeHandler}.
+         */
+        public PropertyChangeHandler() {}
+
         // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
@@ -741,6 +746,11 @@ public class BasicInternalFrameTitlePane extends JComponent
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
+        /**
+         * Constructs a {@code TitlePaneLayout}.
+         */
+        public TitlePaneLayout() {}
+
         public void addLayoutComponent(String name, Component c) {
             getHandler().addLayoutComponent(name, c);
         }
@@ -930,6 +940,10 @@ public class BasicInternalFrameTitlePane extends JComponent
      */
     @SuppressWarnings("deprecation")
     public class SystemMenuBar extends JMenuBar {
+        /**
+         * Constructs a {@code SystemMenuBar}.
+         */
+        public SystemMenuBar() {}
         public boolean isFocusTraversable() { return false; }
         public void requestFocus() {}
         public void paint(Graphics g) {

@@ -38,6 +38,7 @@
 #include "utilities/align.hpp"
 #include "utilities/bytes.hpp"
 #include "utilities/macros.hpp"
+#include <type_traits>
 
 enum atomic_memory_order {
   // The modes that align with C++11 are intended to
@@ -383,7 +384,7 @@ template<typename T, typename PlatformOp>
 struct Atomic::LoadImpl<
   T,
   PlatformOp,
-  typename EnableIf<IsIntegral<T>::value || IsRegisteredEnum<T>::value || IsPointer<T>::value>::type>
+  typename EnableIf<IsIntegral<T>::value || std::is_enum<T>::value || IsPointer<T>::value>::type>
 {
   T operator()(T const volatile* dest) const {
     // Forward to the platform handler for the size of T.
@@ -435,7 +436,7 @@ template<typename T, typename PlatformOp>
 struct Atomic::StoreImpl<
   T, T,
   PlatformOp,
-  typename EnableIf<IsIntegral<T>::value || IsRegisteredEnum<T>::value>::type>
+  typename EnableIf<IsIntegral<T>::value || std::is_enum<T>::value>::type>
 {
   void operator()(T volatile* dest, T new_value) const {
     // Forward to the platform handler for the size of T.
@@ -737,7 +738,7 @@ inline bool Atomic::replace_if_null(D* volatile* dest, T* value,
 template<typename T>
 struct Atomic::CmpxchgImpl<
   T, T, T,
-  typename EnableIf<IsIntegral<T>::value || IsRegisteredEnum<T>::value>::type>
+  typename EnableIf<IsIntegral<T>::value || std::is_enum<T>::value>::type>
 {
   T operator()(T volatile* dest, T compare_value, T exchange_value,
                atomic_memory_order order) const {
@@ -871,7 +872,7 @@ inline T Atomic::CmpxchgByteUsingInt::operator()(T volatile* dest,
 template<typename T>
 struct Atomic::XchgImpl<
   T, T,
-  typename EnableIf<IsIntegral<T>::value || IsRegisteredEnum<T>::value>::type>
+  typename EnableIf<IsIntegral<T>::value || std::is_enum<T>::value>::type>
 {
   T operator()(T volatile* dest, T exchange_value, atomic_memory_order order) const {
     // Forward to the platform handler for the size of T.

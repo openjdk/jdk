@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,16 +44,14 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jvmti.scenarios.events.EM06.em06t001
  *
  * @comment compile loadclassXX to bin/loadclassXX
  * @run driver nsk.share.ExtraClassesBuilder
  *      loadclass
  *
- * @build ExecDriver
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
- *      "-agentlib:em06t001=classLoaderCount=500 -waittime=5"
+ * @run main/othervm/native
+ *      -agentlib:em06t001=classLoaderCount=500,-waittime=5
  *      nsk.jvmti.scenarios.events.EM06.em06t001
  *      ./bin/loadclass
  */

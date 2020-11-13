@@ -297,8 +297,6 @@ void CFGPrinterOutput::print_block(BlockBegin* block) {
   print_end("block");
 }
 
-
-
 void CFGPrinterOutput::print_cfg(BlockList* blocks, const char* name) {
   print_begin("cfg");
   print("name \"%s\"", name);
@@ -321,16 +319,13 @@ void CFGPrinterOutput::print_cfg(IR* blocks, const char* name) {
   output()->flush();
 }
 
-
-
-
 void CFGPrinterOutput::print_intervals(IntervalList* intervals, const char* name) {
   print_begin("intervals");
   print("name \"%s\"", name);
 
   for (int i = 0; i < intervals->length(); i++) {
     if (intervals->at(i) != NULL) {
-      intervals->at(i)->print(output());
+      intervals->at(i)->print_on(output(), true);
     }
   }
 
@@ -338,5 +333,4 @@ void CFGPrinterOutput::print_intervals(IntervalList* intervals, const char* name
   output()->flush();
 }
 
-
-#endif
+#endif // NOT PRODUCT

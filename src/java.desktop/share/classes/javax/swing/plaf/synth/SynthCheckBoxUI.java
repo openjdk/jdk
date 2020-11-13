@@ -39,6 +39,12 @@ import javax.swing.plaf.ComponentUI;
  */
 public class SynthCheckBoxUI extends SynthRadioButtonUI {
 
+    /**
+     *
+     * Constructs a {@code SynthCheckBoxUI}.
+     */
+    public SynthCheckBoxUI() {}
+
     // ********************************
     //            Create PLAF
     // ********************************

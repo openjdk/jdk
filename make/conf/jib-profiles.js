@@ -251,6 +251,8 @@ var getJibProfilesCommon = function (input, data) {
         configure_args: concat("--enable-jtreg-failure-handler",
             "--with-exclude-translations=de,es,fr,it,ko,pt_BR,sv,ca,tr,cs,sk,ja_JP_A,ja_JP_HA,ja_JP_HI,ja_JP_I,zh_TW,zh_HK",
             "--disable-manpages",
+            "--disable-jvm-feature-aot",
+            "--disable-jvm-feature-graal",
             "--disable-jvm-feature-shenandoahgc",
             versionArgs(input, common))
     };
@@ -381,7 +383,7 @@ var getJibProfilesCommon = function (input, data) {
         };
     };
 
-    common.boot_jdk_version = "14";
+    common.boot_jdk_version = "15";
     common.boot_jdk_build_number = "36";
     common.boot_jdk_home = input.get("boot_jdk", "install_path") + "/jdk-"
         + common.boot_jdk_version
@@ -404,12 +406,11 @@ var getJibProfilesProfiles = function (input, common, data) {
         "linux-x64": {
             target_os: "linux",
             target_cpu: "x64",
-            dependencies: ["devkit", "gtest", "graphviz", "pandoc", "graalunit_lib"],
+            dependencies: ["devkit", "gtest", "graphviz", "pandoc"],
             configure_args: concat(common.configure_args_64bit,
-                "--enable-full-docs", "--with-zlib=system",
+                "--with-zlib=system", "--disable-dtrace",
                 (isWsl(input) ? [ "--host=x86_64-unknown-linux-gnu",
                     "--build=x86_64-unknown-linux-gnu" ] : [])),
-            default_make_targets: ["docs-bundles"],
         },
 
         "linux-x86": {
@@ -424,7 +425,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "macosx-x64": {
             target_os: "macosx",
             target_cpu: "x64",
-            dependencies: ["devkit", "gtest", "pandoc", "graalunit_lib"],
+            dependencies: ["devkit", "gtest", "pandoc"],
             configure_args: concat(common.configure_args_64bit, "--with-zlib=system",
                 "--with-macosx-version-max=10.9.0",
                 // Use system SetFile instead of the one in the devkit as the
@@ -435,7 +436,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "windows-x64": {
             target_os: "windows",
             target_cpu: "x64",
-            dependencies: ["devkit", "gtest", "pandoc", "graalunit_lib"],
+            dependencies: ["devkit", "gtest", "pandoc"],
             configure_args: concat(common.configure_args_64bit),
         },
 
@@ -455,8 +456,6 @@ var getJibProfilesProfiles = function (input, common, data) {
             configure_args: [
                 "--openjdk-target=aarch64-linux-gnu",
 		"--disable-jvm-feature-jvmci",
-		"--disable-jvm-feature-graal",
-		"--disable-jvm-feature-aot",
             ],
         },
 
@@ -680,20 +679,47 @@ var getJibProfilesProfiles = function (input, common, data) {
             common.debug_profile_artifacts(artifactData[name]));
     });
 
-    profilesArtifacts = {
-        "linux-x64": {
+    buildJdkDep = input.build_os + "-" + input.build_cpu + ".jdk";
+    docsProfiles = {
+        "docs": {
+            target_os: input.build_os,
+            target_cpu: input.build_cpu,
+            dependencies: [
+                "boot_jdk", "devkit", "graphviz", "pandoc", buildJdkDep,
+            ],
+            configure_args: concat(
+                "--enable-full-docs",
+                versionArgs(input, common),
+                "--with-build-jdk=" + input.get(buildJdkDep, "home_path")
+                    + (input.build_os == "macosx" ? "/Contents/Home" : "")
+            ),
+            default_make_targets: ["all-docs-bundles"],
             artifacts: {
                 doc_api_spec: {
-                    local: "bundles/\\(jdk.*doc-api-spec.tar.gz\\)",
+                    local: "bundles/\\(jdk-" + data.version + ".*doc-api-spec.tar.gz\\)",
                     remote: [
                         "bundles/common/jdk-" + data.version + "_doc-api-spec.tar.gz",
+                        "bundles/common/\\1"
+                    ],
+                },
+                javase_doc_api_spec: {
+                    local: "bundles/\\(javase-" + data.version + ".*doc-api-spec.tar.gz\\)",
+                    remote: [
+                        "bundles/common/javase-" + data.version + "_doc-api-spec.tar.gz",
+                        "bundles/common/\\1"
+                    ],
+                },
+                reference_doc_api_spec: {
+                    local: "bundles/\\(jdk-reference-" + data.version + ".*doc-api-spec.tar.gz\\)",
+                    remote: [
+                        "bundles/common/jdk-reference-" + data.version + "_doc-api-spec.tar.gz",
                         "bundles/common/\\1"
                     ],
                 },
             }
         }
     };
-    profiles = concatObjects(profiles, profilesArtifacts);
+    profiles = concatObjects(profiles, docsProfiles);
 
     // Generate open only profiles for all the main and debug profiles.
     // Rewrite artifact remote paths by adding "openjdk/GPL".
@@ -959,10 +985,10 @@ var getJibProfilesProfiles = function (input, common, data) {
 var getJibProfilesDependencies = function (input, common) {
 
     var devkit_platform_revisions = {
-        linux_x64: "gcc9.2.0-OL6.4+1.0",
-        macosx_x64: "Xcode10.1-MacOSX10.14+1.0",
-        windows_x64: "VS2019-16.5.3+1.0",
-        linux_aarch64: "gcc9.2.0-OL7.6+1.0",
+        linux_x64: "gcc10.2.0-OL6.4+1.0",
+        macosx_x64: "Xcode11.3.1-MacOSX10.15+1.1",
+        windows_x64: "VS2019-16.7.2+1.0",
+        linux_aarch64: "gcc10.2.0-OL7.6+1.0",
         linux_arm: "gcc8.2.0-Fedora27+1.0",
         linux_ppc64le: "gcc8.2.0-Fedora27+1.0",
         linux_s390x: "gcc8.2.0-Fedora27+1.0"
@@ -994,17 +1020,8 @@ var getJibProfilesDependencies = function (input, common) {
         ? input.get("gnumake", "install_path") + "/cygwin/bin"
         : input.get("gnumake", "install_path") + "/bin");
 
-    if (input.build_cpu == 'aarch64') {
-        boot_jdk = {
-            organization: common.organization,
-            ext: "tar.gz",
-            module: "jdk-linux_aarch64",
-            revision: "14+1.0",
-            configure_args: "--with-boot-jdk=" + common.boot_jdk_home,
-            environment_path: common.boot_jdk_home + "/bin"
-        }
-    } else {
-        boot_jdk = {
+    var dependencies = {
+        boot_jdk: {
             server: "jpg",
             product: "jdk",
             version: common.boot_jdk_version,
@@ -1013,11 +1030,7 @@ var getJibProfilesDependencies = function (input, common) {
                 + boot_jdk_platform + "_bin" + boot_jdk_ext,
             configure_args: "--with-boot-jdk=" + common.boot_jdk_home,
             environment_path: common.boot_jdk_home + "/bin"
-        }
-    }
-
-    var dependencies = {
-        boot_jdk: boot_jdk,
+        },
 
         devkit: {
             organization: common.organization,
@@ -1062,15 +1075,15 @@ var getJibProfilesDependencies = function (input, common) {
 
         jcov: {
             // Until an official build of JCov is available, use custom
-            // build to support classfile version 57.
-            // See CODETOOLS-7902358 for more info.
+            // build to support classfile version 60.
+            // See CODETOOLS-7902734 for more info.
             // server: "jpg",
             // product: "jcov",
             // version: "3.0",
             // build_number: "b07",
             // file: "bundles/jcov-3_0.zip",
             organization: common.organization,
-            revision: "3.0-59-support+1.0",
+            revision: "3.0-60-support+1.0",
             ext: "zip",
             environment_name: "JCOV_HOME",
         },
@@ -1137,15 +1150,6 @@ var getJibProfilesDependencies = function (input, common) {
             ext: "zip",
             revision: "1.7.1+1.0",
             configure_args: "",
-        },
-
-        graalunit_lib: {
-            organization: common.organization,
-            ext: "zip",
-            revision: "619_Apr_12_2018",
-            module: "graalunit-lib",
-            configure_args: "--with-graalunit-lib=" + input.get("graalunit_lib", "install_path"),
-            environment_name: "GRAALUNIT_LIB"
         },
 
         gtest: {
@@ -1339,13 +1343,17 @@ var versionArgs = function(input, common) {
                       "--with-version-pre=" + version_numbers.get("DEFAULT_PROMOTED_VERSION_PRE"),
                       "--without-version-opt");
     } else if (input.build_type == "ci") {
-        var optString = input.build_id_data.ciBuildNumber;
+        var ciBuildNumber = input.build_id_data.ciBuildNumber;
         var preString = input.build_id_data.projectName;
         if (preString == "jdk") {
             preString = version_numbers.get("DEFAULT_PROMOTED_VERSION_PRE");
         }
         args = concat(args, "--with-version-pre=" + preString,
-                     "--with-version-opt=" + optString);
+                      "--with-version-opt=" + ciBuildNumber);
+        if (input.target_os == "macosx") {
+            args = concat(args, "--with-macosx-bundle-build-version="
+                          + common.build_number + "." + ciBuildNumber);
+        }
     } else {
         args = concat(args, "--with-version-opt=" + common.build_id);
     }

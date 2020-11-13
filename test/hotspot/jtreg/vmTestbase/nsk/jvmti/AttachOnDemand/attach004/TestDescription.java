@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,23 +41,21 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.share.aod.AODTestRunner
  *        nsk.share.aod.TargetApplicationWaitingAgents
  *
  * @comment create attach004Agent00.jar in current directory
  * @build nsk.jvmti.AttachOnDemand.attach004.attach004Agent00
  * @run driver ClassFileInstaller nsk.jvmti.AttachOnDemand.attach004.attach004Agent00
- * @build ExecDriver
- * @run driver PropertyResolvingWrapper ExecDriver --cmd
+ * @run driver ExecDriver --cmd
  *      ${compile.jdk}/bin/jar
  *      -cfm attach004Agent00.jar ${test.src}/attach004Agent00.mf
  *      nsk/jvmti/AttachOnDemand/attach004/attach004Agent00.class
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      nsk.share.aod.AODTestRunner
  *      -jdk ${test.jdk}
- *      "-javaOpts=-XX:+UsePerfData ${test.vm.opts} ${test.java.opts} -Djava.security.manager -Djava.security.policy==${test.src}/attach004.policy"
+ *      -javaOpts="-XX:+UsePerfData ${test.vm.opts} ${test.java.opts} -Djava.security.manager -Djava.security.policy==${test.src}/attach004.policy"
  *      -target nsk.share.aod.TargetApplicationWaitingAgents
  *      -ja attach004Agent00.jar
  */

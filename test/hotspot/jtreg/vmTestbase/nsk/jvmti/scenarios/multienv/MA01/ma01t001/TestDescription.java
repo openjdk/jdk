@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,12 +39,10 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build ExecDriver
- *        nsk.jvmti.scenarios.multienv.MA01.ma01t001
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
- *      "-agentlib:ma01t001=opt1=opt1 -waittime=5"
- *      "-agentlib:ma01t001a=opt2=opt2 -waittime=5"
+ * @build nsk.jvmti.scenarios.multienv.MA01.ma01t001
+ * @run main/othervm/native
+ *      -agentlib:ma01t001=opt1=opt1,-waittime=5
+ *      -agentlib:ma01t001a=opt2=opt2,-waittime=5
  *      nsk.jvmti.scenarios.multienv.MA01.ma01t001
  */
 

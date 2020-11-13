@@ -1,4 +1,4 @@
-Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ Short description of files:
     text processing:
         Grep.java, Paragrep.java
     timeouts handling:
-        Harakiri.java, TimeoutHandler.java
+        Terminator.java, TimeoutHandler.java
     tree structures support:
         Denotation.java, TreeNodesDenotation.java
     RAS mode support:

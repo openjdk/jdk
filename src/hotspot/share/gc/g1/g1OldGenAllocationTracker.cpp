@@ -24,19 +24,39 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1OldGenAllocationTracker.hpp"
+#include "logging/log.hpp"
 
 G1OldGenAllocationTracker::G1OldGenAllocationTracker() :
-  _last_cycle_old_bytes(0),
-  _last_cycle_duration(0.0),
-  _allocated_bytes_since_last_gc(0) {
+  _last_period_old_gen_bytes(0),
+  _last_period_old_gen_growth(0),
+  _humongous_bytes_after_last_gc(0),
+  _allocated_bytes_since_last_gc(0),
+  _allocated_humongous_bytes_since_last_gc(0) {
 }
 
-void G1OldGenAllocationTracker::reset_after_full_gc() {
-  _last_cycle_duration = 0;
-  reset_cycle_after_gc();
-}
+void G1OldGenAllocationTracker::reset_after_gc(size_t humongous_bytes_after_gc) {
+  // Calculate actual increase in old, taking eager reclaim into consideration.
+  size_t last_period_humongous_increase = 0;
+  if (humongous_bytes_after_gc > _humongous_bytes_after_last_gc) {
+    last_period_humongous_increase = humongous_bytes_after_gc - _humongous_bytes_after_last_gc;
+    assert(last_period_humongous_increase <= _allocated_humongous_bytes_since_last_gc,
+           "Increase larger than allocated " SIZE_FORMAT " <= " SIZE_FORMAT,
+           last_period_humongous_increase, _allocated_humongous_bytes_since_last_gc);
+  }
+  _last_period_old_gen_growth = _allocated_bytes_since_last_gc + last_period_humongous_increase;
 
-void G1OldGenAllocationTracker::reset_after_young_gc(double allocation_duration_s) {
-  _last_cycle_duration = allocation_duration_s;
-  reset_cycle_after_gc();
+  // Calculate and record needed values.
+  _last_period_old_gen_bytes = _allocated_bytes_since_last_gc + _allocated_humongous_bytes_since_last_gc;
+  _humongous_bytes_after_last_gc = humongous_bytes_after_gc;
+
+  log_debug(gc, alloc, stats)("Old generation allocation in the last mutator period, "
+                              "old gen allocated: " SIZE_FORMAT "B, humongous allocated: " SIZE_FORMAT "B,"
+                              "old gen growth: " SIZE_FORMAT "B.",
+                              _allocated_bytes_since_last_gc,
+                              _allocated_humongous_bytes_since_last_gc,
+                              _last_period_old_gen_growth);
+
+  // Reset for next mutator period.
+  _allocated_bytes_since_last_gc = 0;
+  _allocated_humongous_bytes_since_last_gc = 0;
 }

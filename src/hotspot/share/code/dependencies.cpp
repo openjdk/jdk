@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,16 +41,18 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/vmThread.hpp"
 #include "utilities/copy.hpp"
 
 
 #ifdef ASSERT
 static bool must_be_in_vm() {
   Thread* thread = Thread::current();
-  if (thread->is_Java_thread())
-    return ((JavaThread*)thread)->thread_state() == _thread_in_vm;
-  else
-    return true;  //something like this: thread->is_VM_thread();
+  if (thread->is_Java_thread()) {
+    return thread->as_Java_thread()->thread_state() == _thread_in_vm;
+  } else {
+    return true;  // Could be VMThread or GC thread
+  }
 }
 #endif //ASSERT
 
@@ -1197,7 +1199,7 @@ class ClassHierarchyWalker {
     } else {
       // Search class hierarchy first, skipping private implementations
       // as they never override any inherited methods
-      Method* m = InstanceKlass::cast(k)->find_instance_method(_name, _signature, Klass::skip_private);
+      Method* m = InstanceKlass::cast(k)->find_instance_method(_name, _signature, Klass::PrivateLookupMode::skip);
       if (!Dependencies::is_concrete_method(m, k)) {
         // Check for re-abstraction of method
         if (!k->is_interface() && m != NULL && m->is_abstract()) {
@@ -1207,7 +1209,7 @@ class ClassHierarchyWalker {
           ClassHierarchyWalker wf(_participants, _num_participants);
           Klass* w = wf.find_witness_subtype(k);
           if (w != NULL) {
-            Method* wm = InstanceKlass::cast(w)->find_instance_method(_name, _signature, Klass::skip_private);
+            Method* wm = InstanceKlass::cast(w)->find_instance_method(_name, _signature, Klass::PrivateLookupMode::skip);
             if (!Dependencies::is_concrete_method(wm, w)) {
               // Found a concrete subtype 'w' which does not override abstract method 'm'.
               // Bail out because 'm' could be called with 'w' as receiver (leading to an

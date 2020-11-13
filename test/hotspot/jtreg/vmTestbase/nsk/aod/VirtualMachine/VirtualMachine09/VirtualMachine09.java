@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,13 +37,12 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build nsk.aod.VirtualMachine.VirtualMachine09.VirtualMachine09
- *        nsk.aod.VirtualMachine.VirtualMachine09.VM09Target
- * @run main/othervm/native -XX:+UsePerfData PropertyResolvingWrapper
+ * @build nsk.aod.VirtualMachine.VirtualMachine09.VM09Target
+ * @run main/othervm/native
+ *      -XX:+UsePerfData
  *      nsk.aod.VirtualMachine.VirtualMachine09.VirtualMachine09
  *      -jdk ${test.jdk}
- *      "-javaOpts=-agentlib:VirtualMachine09agent00 -XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
+ *      -javaOpts="-agentlib:VirtualMachine09agent00 -XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
  *      -target nsk.aod.VirtualMachine.VirtualMachine09.VM09Target
  *      -na VirtualMachine09agent00
  *      -testedMethod loadAgentLibrary
@@ -51,13 +50,12 @@
 
 package nsk.aod.VirtualMachine.VirtualMachine09;
 
+import com.sun.tools.attach.VirtualMachine;
 import nsk.aod.VirtualMachine.VirtualMachine07.VirtualMachine07;
 import nsk.share.TestBug;
-import nsk.share.aod.*;
+import nsk.share.aod.AgentInformation;
 
-import java.util.*;
-
-import com.sun.tools.attach.*;
+import java.util.List;
 
 /*
  * Test checks methods VirtualMachine.loadAgentLib and VirtualMachineloadAgentPath.
@@ -74,12 +72,13 @@ public class VirtualMachine09 extends VirtualMachine07 {
     public void doTestActions(String targetVMId) throws Throwable {
         // check that all required parameters were passed to the test
         List<AgentInformation> agents = argParser.getAgents();
-        if (agents.size() != 1)
+        if (agents.size() != 1) {
             throw new TestBug("Test requires 1 agent, actually " + agents.size() + " were specified");
-
+        }
         for (AgentInformation agent : agents) {
-            if (agent.jarAgent)
+            if (agent.jarAgent) {
                 throw new TestBug("Non native agent was specified");
+            }
         }
 
         VirtualMachine vm = VirtualMachine.attach(targetVMId);

@@ -28,6 +28,7 @@
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/archiveBuilder.hpp"
 #include "memory/dynamicArchive.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/metaspaceShared.hpp"
@@ -56,7 +57,6 @@ const size_t ON_STACK_BUFFER_LENGTH = 128;
 
 inline bool symbol_equals_compact_hashtable_entry(Symbol* value, const char* key, int len) {
   if (value->equals(key, len)) {
-    assert(value->is_permanent(), "must be shared");
     return true;
   } else {
     return false;
@@ -96,7 +96,7 @@ static volatile bool _lookup_shared_first = false;
 // Static arena for symbols that are not deallocated
 Arena* SymbolTable::_arena = NULL;
 
-static juint murmur_seed = 0;
+static uint64_t _alt_hash_seed = 0;
 
 static inline void log_trace_symboltable_helper(Symbol* sym, const char* msg) {
 #ifndef PRODUCT
@@ -108,7 +108,7 @@ static inline void log_trace_symboltable_helper(Symbol* sym, const char* msg) {
 // Pick hashing algorithm.
 static uintx hash_symbol(const char* s, int len, bool useAlt) {
   return useAlt ?
-  AltHashing::murmur3_32(murmur_seed, (const jbyte*)s, len) :
+  AltHashing::halfsiphash_32(_alt_hash_seed, (const uint8_t*)s, len) :
   java_lang_String::hash_code((const jbyte*)s, len);
 }
 
@@ -176,11 +176,6 @@ void SymbolTable::create_table ()  {
 }
 
 void SymbolTable::delete_symbol(Symbol* sym) {
-  if (Arguments::is_dumping_archive()) {
-    // Do not delete symbols as we may be in the middle of preparing the
-    // symbols for dumping.
-    return;
-  }
   if (sym->is_permanent()) {
     MutexLocker ml(SymbolArena_lock, Mutex::_no_safepoint_check_flag); // Protect arena
     // Deleting permanent symbol should not occur very often (insert race condition),
@@ -225,9 +220,9 @@ Symbol* SymbolTable::allocate_symbol(const char* name, int len, bool c_heap) {
   assert (len <= Symbol::max_length(), "should be checked by caller");
 
   Symbol* sym;
-  if (Arguments::is_dumping_archive()) {
-    // Need to make all symbols permanent -- or else some symbols may be GC'ed
-    // during the archive dumping code that's executed outside of a safepoint.
+  if (DumpSharedSpaces) {
+    // TODO: Special handling of Symbol allocation for DumpSharedSpaces will be removed
+    // in JDK-8250989
     c_heap = false;
   }
   if (c_heap) {
@@ -278,24 +273,6 @@ void SymbolTable::symbols_do(SymbolClosure *cl) {
   // all symbols from the dynamic table
   SymbolsDo sd(cl);
   _local_table->do_safepoint_scan(sd);
-}
-
-class MetaspacePointersDo : StackObj {
-  MetaspaceClosure *_it;
-public:
-  MetaspacePointersDo(MetaspaceClosure *it) : _it(it) {}
-  bool operator()(Symbol** value) {
-    assert(value != NULL, "expected valid value");
-    assert(*value != NULL, "value should point to a symbol");
-    _it->push(value);
-    return true;
-  };
-};
-
-void SymbolTable::metaspace_pointers_do(MetaspaceClosure* it) {
-  Arguments::assert_is_dumping_archive();
-  MetaspacePointersDo mpd(it);
-  _local_table->do_safepoint_scan(mpd);
 }
 
 Symbol* SymbolTable::lookup_dynamic(const char* name,
@@ -513,13 +490,6 @@ Symbol* SymbolTable::do_add_if_needed(const char* name, int len, uintx hash, boo
   }
 
   assert((sym == NULL) || sym->refcount() != 0, "found dead symbol");
-#if INCLUDE_CDS
-  if (DumpSharedSpaces) {
-    if (sym != NULL) {
-      MetaspaceShared::add_symbol(sym);
-    }
-  }
-#endif
   return sym;
 }
 
@@ -613,42 +583,37 @@ void SymbolTable::dump(outputStream* st, bool verbose) {
 }
 
 #if INCLUDE_CDS
-struct CopyToArchive : StackObj {
-  CompactHashtableWriter* _writer;
-  CopyToArchive(CompactHashtableWriter* writer) : _writer(writer) {}
-  bool operator()(Symbol** value) {
-    assert(value != NULL, "expected valid value");
-    assert(*value != NULL, "value should point to a symbol");
-    Symbol* sym = *value;
+void SymbolTable::copy_shared_symbol_table(GrowableArray<Symbol*>* symbols,
+                                           CompactHashtableWriter* writer) {
+  int len = symbols->length();
+  for (int i = 0; i < len; i++) {
+    Symbol* sym = ArchiveBuilder::get_relocated_symbol(symbols->at(i));
     unsigned int fixed_hash = hash_shared_symbol((const char*)sym->bytes(), sym->utf8_length());
     assert(fixed_hash == hash_symbol((const char*)sym->bytes(), sym->utf8_length(), false),
            "must not rehash during dumping");
+    sym->set_permanent();
     if (DynamicDumpSharedSpaces) {
-      sym = DynamicArchive::original_to_target(sym);
+      sym = DynamicArchive::buffer_to_target(sym);
     }
-    _writer->add(fixed_hash, MetaspaceShared::object_delta_u4(sym));
-    return true;
+    writer->add(fixed_hash, MetaspaceShared::object_delta_u4(sym));
   }
-};
-
-void SymbolTable::copy_shared_symbol_table(CompactHashtableWriter* writer) {
-  CopyToArchive copy(writer);
-  _local_table->do_safepoint_scan(copy);
 }
 
 size_t SymbolTable::estimate_size_for_archive() {
   return CompactHashtableWriter::estimate_size(int(_items_count));
 }
 
-void SymbolTable::write_to_archive(bool is_static_archive) {
+void SymbolTable::write_to_archive(GrowableArray<Symbol*>* symbols) {
   CompactHashtableWriter writer(int(_items_count),
                                 &MetaspaceShared::stats()->symbol);
-  copy_shared_symbol_table(&writer);
-  if (is_static_archive) {
+  copy_shared_symbol_table(symbols, &writer);
+  if (!DynamicDumpSharedSpaces) {
     _shared_table.reset();
     writer.dump(&_shared_table, "symbol");
 
-    // Verify table is correct
+    // Verify the written shared table is correct -- at this point,
+    // vmSymbols has already been relocated to point to the archived
+    // version of the Symbols.
     Symbol* sym = vmSymbols::java_lang_Object();
     const char* name = (const char*)sym->bytes();
     int len = sym->utf8_length();
@@ -820,7 +785,7 @@ void SymbolTable::rehash_table() {
     return;
   }
 
-  murmur_seed = AltHashing::compute_seed();
+  _alt_hash_seed = AltHashing::compute_seed();
 
   if (do_rehash()) {
     rehashed = true;

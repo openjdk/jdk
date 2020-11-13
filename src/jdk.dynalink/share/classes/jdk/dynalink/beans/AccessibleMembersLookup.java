@@ -93,17 +93,6 @@ class AccessibleMembersLookup {
         lookupAccessibleMembers(clazz);
     }
 
-    /**
-     * Returns an accessible method equivalent of a method.
-     *
-     * @param m the method whose accessible equivalent is requested.
-     * @return the accessible equivalent for the method (can be the same as the passed in method), or null if there is
-     * no accessible method equivalent.
-     */
-    Method getAccessibleMethod(final Method m) {
-        return m == null ? null : methods.get(new MethodSignature(m));
-    }
-
     Collection<Method> getMethods() {
         return methods.values();
     }
@@ -230,9 +219,8 @@ class AccessibleMembersLookup {
             // If we reach here, the class is either not public, or it is in a restricted package. Alternatively, it is
             // public, but some of its methods claim that their declaring class is non-public. We'll try superclasses
             // and implemented interfaces then looking for public ones.
-            final Class<?>[] interfaces = clazz.getInterfaces();
-            for(int i = 0; i < interfaces.length; i++) {
-                lookupAccessibleMembers(interfaces[i]);
+            for (final Class<?> itf: clazz.getInterfaces()) {
+                lookupAccessibleMembers(itf);
             }
             final Class<?> superclass = clazz.getSuperclass();
             if(superclass != null) {

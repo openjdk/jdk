@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -128,6 +128,31 @@ true \ud800\udc00pqr 0
 ///[a-\uffff]
 ///\ud800\udc00
 ///false 0
+
+// unpaired surrogate should match
+[\x{d800}-\x{dbff}\x{dc00}-\x{dfff}]
+xxx\udca9\ud83dyyy
+true \udca9 0
+
+// surrogates in a supplementary character should not match
+[\x{d800}-\x{dbff}\x{dc00}-\x{dfff}]
+\ud83d\udca9
+false 0
+
+// unpaired surrogate should match
+[\p{InHIGH_SURROGATES}\p{InLOW_SURROGATES}]
+xxx\udca9\ud83dyyy
+true \udca9 0
+
+// surrogates part of a supplementary character should not match
+[\p{InHIGH_SURROGATES}\p{InLOW_SURROGATES}]
+\ud83d\udca9
+false 0
+
+// low surrogate part of a supplementary character should not match
+[\x{dc00}-\x{dfff}]
+\ud83d\udca9
+false 0
 
 // use of x modifier
 \ud800\udc61bc(?x)bl\ud800\udc61h

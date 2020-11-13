@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,13 +39,11 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build ExecDriver
- *        nsk.jvmti.GetSystemProperty.getsysprop002
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
+ * @build nsk.jvmti.GetSystemProperty.getsysprop002
+ * @run main/othervm/native
  *      -agentlib:getsysprop002=-waittime=5
- *      "-Dnsk.jvmti.test.property=value of nsk.jvmti.test.property"
- *      "-Dnsk.jvmti.test.property.empty="
+ *      -Dnsk.jvmti.test.property=value_of_nsk.jvmti.test.property
+ *      -Dnsk.jvmti.test.property.empty=
  *      nsk.jvmti.GetSystemProperty.getsysprop002
  */
 

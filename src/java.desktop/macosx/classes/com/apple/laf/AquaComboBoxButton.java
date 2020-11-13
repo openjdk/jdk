@@ -229,5 +229,8 @@ class AquaComboBoxButton extends JButton {
         rendererPane.paintComponent(g, c, this, left, top, cWidth, height, shouldValidate); // h - (insets.top + insets.bottom) );
 
         if (inhibitBackground) c.setBackground(bg);
+
+        // Remove component from renderer pane, allowing it to be gc'ed.
+        rendererPane.remove(c);
     }
 }

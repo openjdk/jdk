@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @requires vm.aot
  * @library / /test/lib /testlibrary
  * @compile IllegalClass.jasm
- * @run driver compiler.aot.cli.jaotc.IgnoreErrorsTest
+ * @run driver/timeout=360 compiler.aot.cli.jaotc.IgnoreErrorsTest
  */
 
 package compiler.aot.cli.jaotc;

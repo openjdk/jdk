@@ -25,7 +25,6 @@
 #include <stdlib.h>
 
 #include "jni.h"
-#include "jni_util.h"
 
 static jclass test_class;
 static jint current_jni_version = JNI_VERSION_10;

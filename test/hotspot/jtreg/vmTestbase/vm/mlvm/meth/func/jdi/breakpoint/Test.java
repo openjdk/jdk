@@ -21,7 +21,6 @@
  * questions.
  */
 
-
 /*
  * @test
  * @key randomness
@@ -35,7 +34,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  *
  * @comment build debuggee class
  * @build vm.mlvm.share.jdi.MHDebuggee
@@ -44,7 +42,7 @@
  * @build vm.mlvm.meth.func.jdi.breakpoint.Test
  * @run driver vm.mlvm.share.IndifiedClassesBuilder
  *
- * @run main/othervm PropertyResolvingWrapper
+ * @run main/othervm
  *      vm.mlvm.meth.func.jdi.breakpoint.Test
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
@@ -59,7 +57,6 @@ package vm.mlvm.meth.func.jdi.breakpoint;
 import vm.mlvm.share.jdi.ArgumentHandler;
 import vm.mlvm.share.jdi.BreakpointInfo;
 import vm.mlvm.share.jdi.JDIBreakpointTest;
-import vm.mlvm.share.jpda.StratumInfo;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -85,7 +82,6 @@ public class Test extends JDIBreakpointTest {
 
         return result;
     }
-
 
     public static void main(String[] args) {
         launch(new ArgumentHandler(args));

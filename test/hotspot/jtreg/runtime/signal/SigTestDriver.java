@@ -45,7 +45,7 @@ public class SigTestDriver {
         }
 
         // At least one argument should be specified
-        if ( (args == null) || (args.length < 1) ) {
+        if ((args == null) || (args.length < 1)) {
             throw new IllegalArgumentException("At lease one argument should be specified, the signal name");
         }
 
@@ -65,7 +65,7 @@ public class SigTestDriver {
             }
         }
 
-        Path test = Paths.get(System.getProperty("test.nativepath"))
+        Path test = Paths.get(Utils.TEST_NATIVE_PATH)
                          .resolve("sigtest")
                          .toAbsolutePath();
         String envVar = Platform.sharedLibraryPathVariableName();
@@ -87,16 +87,17 @@ public class SigTestDriver {
         cmd.addAll(vmargs());
 
         // add test specific arguments w/o signame
-        cmd.addAll(Arrays.asList(args)
-                         .subList(1, args.length));
+        var argList = Arrays.asList(args)
+                            .subList(1, args.length);
+        cmd.addAll(argList);
 
         boolean passed = true;
 
-        for (String mode : new String[]{"sigset", "sigaction"}) {
+        for (String mode : new String[] {"sigset", "sigaction"}) {
             for (String scenario : new String[] {"nojvm", "prepre", "prepost", "postpre", "postpost"}) {
                 cmd.set(modeIdx, mode);
                 cmd.set(scenarioIdx, scenario);
-                System.out.printf("START TESTING: SIGNAL = %s, MODE = %s, SCENARIO=%s%n",signame, mode, scenario);
+                System.out.printf("START TESTING: SIGNAL = %s, MODE = %s, SCENARIO=%s%n", signame, mode, scenario);
                 System.out.printf("Do execute: %s%n", cmd.toString());
 
                 ProcessBuilder pb = new ProcessBuilder(cmd);
@@ -117,7 +118,7 @@ public class SigTestDriver {
                     oa.reportDiagnosticSummary();
                     int exitCode = oa.getExitValue();
                     if (exitCode == 0) {
-                       System.out.println("PASSED with exit code 0");
+                        System.out.println("PASSED with exit code 0");
                     } else {
                         System.out.println("FAILED with exit code " + exitCode);
                         passed = false;

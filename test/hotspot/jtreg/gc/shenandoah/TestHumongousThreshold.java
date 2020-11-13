@@ -25,7 +25,7 @@
 /*
  * @test TestHumongousThreshold
  * @key randomness
- * @requires vm.gc.Shenandoah & !vm.graal.enabled
+ * @requires vm.gc.Shenandoah
  * @library /test/lib
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g
@@ -71,7 +71,8 @@
 /*
  * @test TestHumongousThreshold
  * @key randomness
- * @requires vm.gc.Shenandoah & !vm.graal.enabled & (vm.bits == "64")
+ * @requires vm.gc.Shenandoah
+ * @requires vm.bits == "64"
  * @library /test/lib
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g

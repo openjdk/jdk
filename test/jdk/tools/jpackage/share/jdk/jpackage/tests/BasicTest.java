@@ -48,7 +48,7 @@ import jdk.jpackage.test.Annotations.Parameter;
  * @summary jpackage basic testing
  * @library ../../../../helpers
  * @build jdk.jpackage.test.*
- * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
+ * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile BasicTest.java
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=jdk.jpackage.tests.BasicTest
@@ -62,6 +62,28 @@ public final class BasicTest {
         TKit.assertStringListEquals(List.of("Usage: jpackage <options>",
                 "Use jpackage --help (or -h) for a list of possible options"),
                 output, "Check jpackage output");
+    }
+
+    @Test
+    public void testJpackageProps() {
+        String appVersion = "3.0";
+        JPackageCommand cmd = JPackageCommand.helloAppImage(
+                JavaAppDesc.parse("Hello"))
+                // Disable default logic adding `--verbose` option
+                // to jpackage command line.
+                .ignoreDefaultVerbose(true)
+                .saveConsoleOutput(true)
+                .addArguments("--app-version", appVersion, "--arguments",
+                    "jpackage.app-version jpackage.app-path")
+                .ignoreDefaultRuntime(true);
+
+        cmd.executeAndAssertImageCreated();
+        Path launcherPath = cmd.appLauncherPath();
+
+        List<String> output = HelloApp.executeLauncher(cmd).getOutput();
+
+        TKit.assertTextStream("jpackage.app-version=" + appVersion).apply(output.stream());
+        TKit.assertTextStream("jpackage.app-path=").apply(output.stream());
     }
 
     @Test
@@ -204,6 +226,8 @@ public final class BasicTest {
     @Parameter("com.other/com.other.Hello")
     // Modular app in .jmod file
     @Parameter("hello.jmod:com.other/com.other.Hello")
+    // Modular app in exploded .jmod file
+    @Parameter("hello.ejmod:com.other/com.other.Hello")
     public void testApp(String javaAppDesc) {
         JavaAppDesc appDesc = JavaAppDesc.parse(javaAppDesc);
         JPackageCommand cmd = JPackageCommand.helloAppImage(appDesc);
@@ -245,11 +269,24 @@ public final class BasicTest {
      * @throws IOException
      */
     @Test
-    public void testTemp() throws IOException {
-        final Path tempRoot = TKit.createTempDirectory("temp-root");
-
+    @Parameter("true")
+    @Parameter("false")
+    public void testTemp(boolean withExistingTempDir) throws IOException {
+        final Path tempRoot = TKit.createTempDirectory("tmp");
+        // This Test has problems on windows where path in the temp dir are too long
+        // for the wix tools.  We can't use a tempDir outside the TKit's WorkDir, so
+        // we minimize both the tempRoot directory name (above) and the tempDir name
+        // (below) to the extension part (which is necessary to differenciate between
+        // the multiple PackageTypes that will be run for one JPackageCommand).
+        // It might be beter if the whole work dir name was shortened from:
+        // jtreg_open_test_jdk_tools_jpackage_share_jdk_jpackage_tests_BasicTest_java.
         Function<JPackageCommand, Path> getTempDir = cmd -> {
-            return tempRoot.resolve(cmd.outputBundle().getFileName());
+            String ext = cmd.outputBundle().getFileName().toString();
+            int i = ext.lastIndexOf(".");
+            if (i > 0 && i < (ext.length() - 1)) {
+                ext = ext.substring(i+1);
+            }
+            return tempRoot.resolve(ext);
         };
 
         Supplier<PackageTest> createTest = () -> {
@@ -259,7 +296,11 @@ public final class BasicTest {
             .addInitializer(JPackageCommand::setDefaultInputOutput)
             .addInitializer(cmd -> {
                 Path tempDir = getTempDir.apply(cmd);
-                Files.createDirectories(tempDir);
+                if (withExistingTempDir) {
+                    Files.createDirectories(tempDir);
+                } else {
+                    Files.createDirectories(tempDir.getParent());
+                }
                 cmd.addArguments("--temp", tempDir);
             });
         };

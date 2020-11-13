@@ -38,7 +38,7 @@ import static sun.swing.SwingUtilities2.getAndSetAntialisingHintForScaledGraphic
 
 /**
  * Factory object that vends <code>Icon</code>s for
- * the Java&trade; look and feel (Metal).
+ * the Java look and feel (Metal).
  * These icons are used extensively in Metal via the defaults mechanism.
  * While other look and feels often use GIFs for icons, creating icons
  * in code facilitates switching to other themes.
@@ -54,7 +54,7 @@ import static sun.swing.SwingUtilities2.getAndSetAntialisingHintForScaledGraphic
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans&trade;
+ * of all JavaBeans
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -101,6 +101,11 @@ public class MetalIconFactory implements Serializable {
      * {@code LIGHT} is used for the property {@code Tree.collapsedIcon}.
      */
     public static final boolean LIGHT = true;
+
+    /**
+     * Constructs a {@code MetalIconFactory}.
+     */
+    public MetalIconFactory() {}
 
     // Accessor functions for Icons. Does the caching work.
     /**
@@ -644,6 +649,11 @@ public class MetalIconFactory implements Serializable {
      */
     public static class PaletteCloseIcon implements Icon, UIResource, Serializable{
         int iconSize = 7;
+
+        /**
+         * Constructs a {@code PaletteCloseIcon}.
+         */
+        public PaletteCloseIcon() {}
 
         public void paintIcon(Component c, Graphics g, int x, int y) {
             JButton parentButton = (JButton)c;
@@ -1639,7 +1649,7 @@ public class MetalIconFactory implements Serializable {
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans&trade;
+     * of all JavaBeans
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
@@ -1647,6 +1657,11 @@ public class MetalIconFactory implements Serializable {
     public static class FolderIcon16 implements Icon, Serializable {
 
         ImageCacher imageCacher;
+
+        /**
+         * Constructs a {@code FolderIcon16}.
+         */
+        public FolderIcon16() {}
 
         public void paintIcon(Component c, Graphics g, int x, int y) {
             GraphicsConfiguration gc = c.getGraphicsConfiguration();
@@ -1733,12 +1748,17 @@ public class MetalIconFactory implements Serializable {
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans&trade;
+     * of all JavaBeans
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
     @SuppressWarnings("serial") // Same-version serialization only
     public static class TreeFolderIcon extends FolderIcon16 {
+        /**
+         * Constructs a {@code TreeFolderIcon}.
+         */
+        public TreeFolderIcon() {}
+
         public int getShift() { return -1; }
         public int getAdditionalHeight() { return 2; }
     }
@@ -1753,7 +1773,7 @@ public class MetalIconFactory implements Serializable {
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans&trade;
+     * of all JavaBeans
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
@@ -1761,6 +1781,11 @@ public class MetalIconFactory implements Serializable {
     public static class FileIcon16 implements Icon, Serializable {
 
         ImageCacher imageCacher;
+
+        /**
+         * Constructs a {@code FileIcon16}.
+         */
+        public FileIcon16() {}
 
         public void paintIcon(Component c, Graphics g, int x, int y) {
             GraphicsConfiguration gc = c.getGraphicsConfiguration();
@@ -1839,6 +1864,10 @@ public class MetalIconFactory implements Serializable {
      * The class represents a tree leaf icon.
      */
     public static class TreeLeafIcon extends FileIcon16 {
+        /**
+         * Constructs a {@code TreeLeafIcon}.
+         */
+        public TreeLeafIcon() {}
         public int getShift() { return 2; }
         public int getAdditionalHeight() { return 4; }
     }
@@ -1853,7 +1882,7 @@ public class MetalIconFactory implements Serializable {
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans&trade;
+     * of all JavaBeans
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */

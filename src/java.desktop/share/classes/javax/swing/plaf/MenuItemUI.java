@@ -35,4 +35,8 @@ import java.awt.event.*;
  * @author Arnaud Weber
  */
 public abstract class MenuItemUI extends ButtonUI {
+    /**
+     * Constructor for subclasses to call.
+     */
+    protected MenuItemUI() {}
 }

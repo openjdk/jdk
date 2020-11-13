@@ -41,6 +41,7 @@ import org.graalvm.compiler.graph.Node.ConstantNodeParameter;
 import org.graalvm.compiler.graph.Node.NodeIntrinsic;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
+import org.graalvm.compiler.hotspot.nodes.GraalHotSpotVMConfigNode;
 import org.graalvm.compiler.hotspot.word.KlassPointer;
 import org.graalvm.compiler.nodes.CanonicalizableLocation;
 import org.graalvm.compiler.nodes.CompressionNode;
@@ -192,11 +193,6 @@ public class HotSpotReplacementsUtil {
         return config.useG1GC;
     }
 
-    @Fold
-    public static boolean verifyOops(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.verifyOops;
-    }
-
     /**
      * @see GraalHotSpotVMConfig#doingUnsafeAccessOffset
      */
@@ -307,6 +303,8 @@ public class HotSpotReplacementsUtil {
      * JavaThread is created, before it is published. After that, it is never changed.
      */
     public static final LocationIdentity JAVA_THREAD_THREAD_OBJECT_LOCATION = NamedLocationIdentity.immutable("JavaThread::_threadObj");
+
+    public static final LocationIdentity JAVA_THREAD_THREAD_OBJECT_HANDLE_LOCATION = NamedLocationIdentity.immutable("JavaThread::_threadObj handle");
 
     @Fold
     public static int threadObjectOffset(@InjectedParameter GraalHotSpotVMConfig config) {
@@ -724,7 +722,7 @@ public class HotSpotReplacementsUtil {
     }
 
     public static Object verifyOop(Object object) {
-        if (verifyOops(INJECTED_VMCONFIG)) {
+        if (GraalHotSpotVMConfigNode.verifyOops()) {
             verifyOopStub(VERIFY_OOP, object);
         }
         return object;

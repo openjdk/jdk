@@ -31,4 +31,8 @@ package javax.swing.plaf;
  * @author Dave Moore
  */
 public abstract class ToolTipUI extends ComponentUI {
+    /**
+     * Constructor for subclasses to call.
+     */
+    protected ToolTipUI() {}
 }

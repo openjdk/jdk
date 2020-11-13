@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2019, SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,8 +220,9 @@ address MacroAssembler::patch_set_narrow_oop(address a, address bound, narrowOop
   }
   assert(inst1_found, "inst is not lis");
 
-  int xc = (data >> 16) & 0xffff;
-  int xd = (data >>  0) & 0xffff;
+  uint32_t data_value = CompressedOops::narrow_oop_value(data);
+  int xc = (data_value >> 16) & 0xffff;
+  int xd = (data_value >>  0) & 0xffff;
 
   set_imm((int *)inst1_addr, (short)(xc)); // see enc_load_con_narrow_hi/_lo
   set_imm((int *)inst2_addr,        (xd)); // unsigned int
@@ -254,7 +255,7 @@ narrowOop MacroAssembler::get_narrow_oop(address a, address bound) {
   uint xl = ((unsigned int) (get_imm(inst2_addr, 0) & 0xffff));
   uint xh = (((get_imm(inst1_addr, 0)) & 0xffff) << 16);
 
-  return (int) (xl | xh);
+  return CompressedOops::narrow_oop_cast(xl | xh);
 }
 #endif // _LP64
 
@@ -379,25 +380,6 @@ AddressLiteral MacroAssembler::constant_oop_address(jobject obj) {
   assert(oop_recorder() != NULL, "this assembler needs an OopRecorder");
   int oop_index = oop_recorder()->find_index(obj);
   return AddressLiteral(address(obj), oop_Relocation::spec(oop_index));
-}
-
-RegisterOrConstant MacroAssembler::delayed_value_impl(intptr_t* delayed_value_addr,
-                                                      Register tmp, int offset) {
-  intptr_t value = *delayed_value_addr;
-  if (value != 0) {
-    return RegisterOrConstant(value + offset);
-  }
-
-  // Load indirectly to solve generation ordering problem.
-  // static address, no relocation
-  int simm16_offset = load_const_optimized(tmp, delayed_value_addr, noreg, true);
-  ld(tmp, simm16_offset, tmp); // must be aligned ((xa & 3) == 0)
-
-  if (offset != 0) {
-    addi(tmp, tmp, offset);
-  }
-
-  return RegisterOrConstant(tmp);
 }
 
 #ifndef PRODUCT
@@ -2836,6 +2818,12 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
   // Load markWord from object into displaced_header.
   ld(displaced_header, oopDesc::mark_offset_in_bytes(), oop);
 
+  if (DiagnoseSyncOnPrimitiveWrappers != 0) {
+    load_klass(temp, oop);
+    lwz(temp, in_bytes(Klass::access_flags_offset()), temp);
+    testbitdi(flag, R0, temp, exact_log2(JVM_ACC_IS_BOX_CLASS));
+    bne(flag, cont);
+  }
 
   if (try_bias) {
     biased_locking_enter(flag, oop, displaced_header, temp, current_header, cont);
@@ -3037,7 +3025,7 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
 }
 
 void MacroAssembler::safepoint_poll(Label& slow_path, Register temp_reg) {
-  ld(temp_reg, in_bytes(Thread::polling_page_offset()), R16_thread);
+  ld(temp_reg, in_bytes(Thread::polling_word_offset()), R16_thread);
   // Armed page has poll_bit set.
   andi_(temp_reg, temp_reg, SafepointMechanism::poll_bit());
   bne(CCR0, slow_path);

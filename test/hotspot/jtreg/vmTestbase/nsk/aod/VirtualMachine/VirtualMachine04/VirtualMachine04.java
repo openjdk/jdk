@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,34 +38,31 @@
  *
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build nsk.aod.VirtualMachine.VirtualMachine04.VirtualMachine04
- *        nsk.aod.VirtualMachine.VirtualMachine04.VM04Target
- * @run main/othervm -XX:+UsePerfData PropertyResolvingWrapper
+ * @build nsk.aod.VirtualMachine.VirtualMachine04.VM04Target
+ * @run main/othervm
+ *      -XX:+UsePerfData
  *      nsk.aod.VirtualMachine.VirtualMachine04.VirtualMachine04
  *      -jdk ${test.jdk}
- *      "-javaOpts=-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
+ *      -javaOpts="-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
  *      -target nsk.aod.VirtualMachine.VirtualMachine04.VM04Target
  */
 
 package nsk.aod.VirtualMachine.VirtualMachine04;
 
-import java.util.Properties;
 import com.sun.tools.attach.VirtualMachine;
+import nsk.share.TestBug;
 import nsk.share.aod.AODTestRunner;
 import nsk.share.test.TestUtils;
-import nsk.share.*;
+
+import java.util.Properties;
 
 /*
  * Test checks following methods:
  *      - VirtualMachine.getSystemProperties()
- *
  *      - VirtualMachine.getAgentProperties()
  */
 public class VirtualMachine04 extends AODTestRunner {
-
     static final String SIGNAL_CHANGE_PROPERTY = "change_property";
-
     static final String SIGNAL_PROPERTY_CHANGED = "property_changed";
 
     public VirtualMachine04(String[] args) {
@@ -76,16 +73,16 @@ public class VirtualMachine04 extends AODTestRunner {
         VirtualMachine vm = VirtualMachine.attach(targetVMId);
 
         try {
-            checkSystemProperties(vm, VM04Target.testPropertyKey, VM04Target.testPropertyValue);
+            checkSystemProperties(vm, VM04Target.TEST_PROPERTY_KEY, VM04Target.TEST_PROPERTY_VALUE);
 
             log.display("Sending signal " + SIGNAL_CHANGE_PROPERTY);
             pipe.println(SIGNAL_CHANGE_PROPERTY);
             String signal = pipe.readln();
             log.display("Received signal " + signal);
-            if (!signal.equals(SIGNAL_PROPERTY_CHANGED))
+            if (!signal.equals(SIGNAL_PROPERTY_CHANGED)) {
                 throw new TestBug("Unexpected signal received: " + signal);
-
-            checkSystemProperties(vm, VM04Target.testPropertyKey, VM04Target.changedTestPropertyValue);
+            }
+            checkSystemProperties(vm, VM04Target.TEST_PROPERTY_KEY, VM04Target.CHANGED_TEST_PROPERTY_VALUE);
 
             Properties properties = vm.getAgentProperties();
             System.out.println("VirtualMachine.getAgentProperties(): " + properties);
@@ -96,14 +93,14 @@ public class VirtualMachine04 extends AODTestRunner {
     }
 
     void checkSystemProperties(VirtualMachine vm,
-            String propertyToCheck,
-            String expectedPropertyValue) throws Throwable {
+                               String propertyToCheck,
+                               String expectedPropertyValue) throws Throwable {
 
         Properties properties = vm.getSystemProperties();
         System.out.println("VirtualMachine.getSystemProperties(): " + properties);
         checkProperties(properties);
 
-        String checkedPropertyValue  = properties.getProperty(propertyToCheck);
+        String checkedPropertyValue = properties.getProperty(propertyToCheck);
         TestUtils.assertNotNull(checkedPropertyValue, "Properties doesn't contain property '" + propertyToCheck + "'");
         TestUtils.assertEquals(checkedPropertyValue, expectedPropertyValue,
                 "Unexpected value of the property '" + propertyToCheck + "': " + checkedPropertyValue + ", expected value is '" + expectedPropertyValue + "'");
@@ -121,7 +118,6 @@ public class VirtualMachine04 extends AODTestRunner {
             log.display("Value of '" + key + "' = " + value);
 
             TestUtils.assertTrue(key instanceof String, "Property key isn't String: " + key.getClass().getName());
-
             TestUtils.assertTrue(value instanceof String, "Property value isn't String: " + value.getClass().getName());
         }
     }

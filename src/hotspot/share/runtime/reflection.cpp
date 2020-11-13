@@ -812,8 +812,7 @@ oop Reflection::new_method(const methodHandle& method, bool for_constant_pool_ac
   Handle return_type(THREAD, return_type_oop);
 
   objArrayHandle exception_types = get_exception_types(method, CHECK_NULL);
-
-  if (exception_types.is_null()) return NULL;
+  assert(!exception_types.is_null(), "cannot return null");
 
   Symbol*  method_name = method->name();
   oop name_oop = StringTable::intern(method_name, CHECK_NULL);
@@ -859,7 +858,7 @@ oop Reflection::new_constructor(const methodHandle& method, TRAPS) {
   if (parameter_types.is_null()) return NULL;
 
   objArrayHandle exception_types = get_exception_types(method, CHECK_NULL);
-  if (exception_types.is_null()) return NULL;
+  assert(!exception_types.is_null(), "cannot return null");
 
   const int modifiers = method->access_flags().as_int() & JVM_RECOGNIZED_METHOD_MODIFIERS;
 
@@ -1034,7 +1033,7 @@ static oop invoke(InstanceKlass* klass,
           // JVMTI has already reported the pending exception
           // JVMTI internal flag reset is needed in order to report InvocationTargetException
           if (THREAD->is_Java_thread()) {
-            JvmtiExport::clear_detected_exception((JavaThread*)THREAD);
+            JvmtiExport::clear_detected_exception(THREAD->as_Java_thread());
           }
           JavaCallArguments args(Handle(THREAD, resolution_exception));
           THROW_ARG_0(vmSymbols::java_lang_reflect_InvocationTargetException(),
@@ -1148,7 +1147,7 @@ static oop invoke(InstanceKlass* klass,
     // JVMTI has already reported the pending exception
     // JVMTI internal flag reset is needed in order to report InvocationTargetException
     if (THREAD->is_Java_thread()) {
-      JvmtiExport::clear_detected_exception((JavaThread*)THREAD);
+      JvmtiExport::clear_detected_exception(THREAD->as_Java_thread());
     }
 
     JavaCallArguments args(Handle(THREAD, target_exception));

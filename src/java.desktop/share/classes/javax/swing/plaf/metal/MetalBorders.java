@@ -58,10 +58,20 @@ public class MetalBorders {
         new StringUIClientPropertyKey("NoButtonRollover");
 
     /**
+     * Constructs a {@code MetalBorders}.
+     */
+    public MetalBorders() {}
+
+    /**
      * The class represents the 3D border.
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class Flush3DBorder extends AbstractBorder implements UIResource{
+        /**
+         * Constructs a {@code Flush3DBorder}.
+         */
+        public Flush3DBorder() {}
+
         public void paintBorder(Component c, Graphics g, int x, int y,
                           int w, int h) {
             if (c.isEnabled()) {
@@ -87,6 +97,11 @@ public class MetalBorders {
          * The border insets.
          */
         protected static Insets borderInsets = new Insets( 3, 3, 3, 3 );
+
+        /**
+         * Constructs a {@code ButtonBorder}.
+         */
+        public ButtonBorder() {}
 
         public void paintBorder(Component c, Graphics g, int x, int y, int w, int h) {
             if (!(c instanceof AbstractButton)) {
@@ -204,6 +219,11 @@ public class MetalBorders {
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class InternalFrameBorder extends AbstractBorder implements UIResource {
         private static final int corner = 14;
+
+        /**
+         * Constructs a {@code InternalFrameBorder}.
+         */
+        public InternalFrameBorder() {}
 
         public void paintBorder(Component c, Graphics g, int x, int y,
                           int w, int h) {
@@ -464,6 +484,11 @@ public class MetalBorders {
     public static class PaletteBorder extends AbstractBorder implements UIResource {
         int titleHeight = 0;
 
+        /**
+         * Constructs a {@code PaletteBorder}.
+         */
+        public PaletteBorder() {}
+
         public void paintBorder( Component c, Graphics g, int x, int y, int w, int h ) {
 
             g.translate(x,y);
@@ -489,6 +514,11 @@ public class MetalBorders {
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class OptionDialogBorder extends AbstractBorder implements UIResource {
         int titleHeight = 0;
+
+        /**
+         * Constructs a {@code OptionDialogBorder}.
+         */
+        public OptionDialogBorder() {}
 
         public void paintBorder( Component c, Graphics g, int x, int y, int w, int h ) {
 
@@ -559,6 +589,11 @@ public class MetalBorders {
          */
         protected static Insets borderInsets = new Insets( 1, 0, 1, 0 );
 
+        /**
+         * Constructs a {@code MenuBarBorder}.
+         */
+        public MenuBarBorder() {}
+
         public void paintBorder( Component c, Graphics g, int x, int y, int w, int h ) {
             g.translate(x, y);
 
@@ -599,6 +634,11 @@ public class MetalBorders {
          * The border insets.
          */
         protected static Insets borderInsets = new Insets( 2, 2, 2, 2 );
+
+        /**
+         * Constructs a {@code MenuItemBorder}.
+         */
+        public MenuItemBorder() {}
 
         public void paintBorder( Component c, Graphics g, int x, int y, int w, int h ) {
             if (!(c instanceof JMenuItem)) {
@@ -655,6 +695,11 @@ public class MetalBorders {
          */
         protected static Insets borderInsets = new Insets( 3, 1, 2, 1 );
 
+        /**
+         * Constructs a {@code PopupMenuBorder}.
+         */
+        public PopupMenuBorder() {}
+
         public void paintBorder( Component c, Graphics g, int x, int y, int w, int h ) {
             g.translate( x, y );
 
@@ -681,6 +726,11 @@ public class MetalBorders {
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class RolloverButtonBorder extends ButtonBorder {
+
+        /**
+         * Constructs a {@code RolloverButtonBorder}.
+         */
+        public RolloverButtonBorder() {}
 
         public void paintBorder( Component c, Graphics g, int x, int y, int w, int h ) {
             AbstractButton b = (AbstractButton) c;
@@ -743,6 +793,11 @@ public class MetalBorders {
                                       MetalLookAndFeel.getControlHighlight(),
                                       MetalLookAndFeel.getControlDarkShadow(),
                                      UIManager.getColor("ToolBar.background"));
+
+        /**
+         * Constructs a {@code ToolBarBorder}.
+         */
+        public ToolBarBorder() {}
 
         public void paintBorder( Component c, Graphics g, int x, int y, int w, int h )
         {
@@ -876,6 +931,11 @@ public class MetalBorders {
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class TextFieldBorder extends Flush3DBorder {
 
+        /**
+         * Constructs a {@code TextFieldBorder}.
+         */
+        public TextFieldBorder() {}
+
         public void paintBorder(Component c, Graphics g, int x, int y,
                                 int w, int h) {
 
@@ -903,6 +963,11 @@ public class MetalBorders {
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class ScrollPaneBorder extends AbstractBorder implements UIResource {
+        /**
+         * Constructs a {@code ScrollPaneBorder}.
+         */
+        public ScrollPaneBorder() {}
+
         public void paintBorder(Component c, Graphics g, int x, int y,
                           int w, int h) {
 
@@ -966,6 +1031,11 @@ public class MetalBorders {
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class ToggleButtonBorder extends ButtonBorder {
+        /**
+         * Constructs a {@code ToggleButtonBorder}.
+         */
+        public ToggleButtonBorder() {}
+
         public void paintBorder(Component c, Graphics g, int x, int y, int w, int h) {
             AbstractButton button = (AbstractButton)c;
             ButtonModel model = button.getModel();
@@ -999,6 +1069,11 @@ public class MetalBorders {
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class TableHeaderBorder extends javax.swing.border.AbstractBorder {
+
+        /**
+         * Constructs a {@code TableHeaderBorder}.
+         */
+        public TableHeaderBorder() {}
 
         /**
          * The border insets.

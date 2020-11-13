@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,6 +79,10 @@ import com.sun.jdi.connect.TransportTimeoutException;
  * @since 1.5
  */
 public abstract class TransportService {
+    /**
+     * Constructor for subclasses to call.
+     */
+    public TransportService() {}
 
     /**
      * Returns a name to identify the transport service.
@@ -98,6 +102,10 @@ public abstract class TransportService {
      * The transport service capabilities.
      */
     public static abstract class Capabilities {
+        /**
+         * Constructor for subclasses to call.
+         */
+        public Capabilities() {}
 
         /**
          * Tells whether or not this transport service can support
@@ -229,6 +237,10 @@ public abstract class TransportService {
      * service from listening on an address.
      */
     public static abstract class ListenKey {
+        /**
+         * Constructor for subclasses to call.
+         */
+        public ListenKey() {}
 
         /**
          * Returns a string representation of the listen key.

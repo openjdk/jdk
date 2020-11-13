@@ -83,8 +83,7 @@ public abstract class FontConfiguration {
      */
     public FontConfiguration(SunFontManager fm) {
         if (FontUtilities.debugFonts()) {
-            FontUtilities.getLogger()
-                .info("Creating standard Font Configuration");
+            FontUtilities.logInfo("Creating standard Font Configuration");
         }
         if (FontUtilities.debugFonts() && logger == null) {
             logger = PlatformLogger.getLogger("sun.awt.FontConfiguration");
@@ -116,8 +115,7 @@ public abstract class FontConfiguration {
                              boolean preferPropFonts) {
         fontManager = fm;
         if (FontUtilities.debugFonts()) {
-            FontUtilities.getLogger()
-                .info("Creating alternate Font Configuration");
+            FontUtilities.logInfo("Creating alternate Font Configuration");
         }
         this.preferLocaleFonts = preferLocaleFonts;
         this.preferPropFonts = preferPropFonts;

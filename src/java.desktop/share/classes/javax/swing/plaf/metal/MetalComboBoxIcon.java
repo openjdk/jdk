@@ -44,6 +44,11 @@ import javax.swing.plaf.basic.BasicComboBoxUI;
 public class MetalComboBoxIcon implements Icon, Serializable {
 
     /**
+     * Constructs a {@code MetalComboBoxIcon}.
+     */
+    public MetalComboBoxIcon() {}
+
+    /**
      * Paints the horizontal bars for the
      */
     public void paintIcon(Component c, Graphics g, int x, int y){

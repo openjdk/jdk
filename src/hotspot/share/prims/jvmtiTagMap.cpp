@@ -47,6 +47,7 @@
 #include "prims/jvmtiImpl.hpp"
 #include "prims/jvmtiTagMap.hpp"
 #include "runtime/biasedLocking.hpp"
+#include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -187,8 +188,7 @@ class JvmtiTagHashmap : public CHeapObj<mtInternal> {
 
   // hash a given key (oop) with the specified size
   static unsigned int hash(oop key, int size) {
-    const oop obj = Access<>::resolve(key);
-    const unsigned int hash = Universe::heap()->hash_oop(obj);
+    const unsigned int hash = Universe::heap()->hash_oop(key);
     return hash % size;
   }
 
@@ -805,9 +805,6 @@ class ClassFieldMap: public CHeapObj<mtInternal> {
   // add a field
   void add(int index, char type, int offset);
 
-  // returns the field count for the given class
-  static int compute_field_count(InstanceKlass* ik);
-
  public:
   ~ClassFieldMap();
 
@@ -841,7 +838,6 @@ void ClassFieldMap::add(int index, char type, int offset) {
 // of the given class.
 //
 ClassFieldMap* ClassFieldMap::create_map_of_static_fields(Klass* k) {
-  HandleMark hm;
   InstanceKlass* ik = InstanceKlass::cast(k);
 
   // create the field map
@@ -866,7 +862,6 @@ ClassFieldMap* ClassFieldMap::create_map_of_static_fields(Klass* k) {
 // and private fields declared in superclasses and superinterfaces too).
 //
 ClassFieldMap* ClassFieldMap::create_map_of_instance_fields(oop obj) {
-  HandleMark hm;
   InstanceKlass* ik = InstanceKlass::cast(obj->klass());
 
   // create the field map
@@ -1488,6 +1483,11 @@ void JvmtiTagMap::iterate_over_heap(jvmtiHeapObjectFilter object_filter,
                                     jvmtiHeapObjectCallback heap_object_callback,
                                     const void* user_data)
 {
+  // EA based optimizations on tagged objects are already reverted.
+  EscapeBarrier eb(object_filter == JVMTI_HEAP_OBJECT_UNTAGGED ||
+                   object_filter == JVMTI_HEAP_OBJECT_EITHER,
+                   JavaThread::current());
+  eb.deoptimize_objects_all_threads();
   MutexLocker ml(Heap_lock);
   IterateOverHeapObjectClosure blk(this,
                                    klass,
@@ -1505,6 +1505,9 @@ void JvmtiTagMap::iterate_through_heap(jint heap_filter,
                                        const jvmtiHeapCallbacks* callbacks,
                                        const void* user_data)
 {
+  // EA based optimizations on tagged objects are already reverted.
+  EscapeBarrier eb(!(heap_filter & JVMTI_HEAP_FILTER_UNTAGGED), JavaThread::current());
+  eb.deoptimize_objects_all_threads();
   MutexLocker ml(Heap_lock);
   IterateThroughHeapObjectClosure blk(this,
                                       klass,
@@ -1753,7 +1756,6 @@ static jvmtiHeapRootKind toJvmtiHeapRootKind(jvmtiHeapReferenceKind kind) {
   switch (kind) {
     case JVMTI_HEAP_REFERENCE_JNI_GLOBAL:   return JVMTI_HEAP_ROOT_JNI_GLOBAL;
     case JVMTI_HEAP_REFERENCE_SYSTEM_CLASS: return JVMTI_HEAP_ROOT_SYSTEM_CLASS;
-    case JVMTI_HEAP_REFERENCE_MONITOR:      return JVMTI_HEAP_ROOT_MONITOR;
     case JVMTI_HEAP_REFERENCE_STACK_LOCAL:  return JVMTI_HEAP_ROOT_STACK_LOCAL;
     case JVMTI_HEAP_REFERENCE_JNI_LOCAL:    return JVMTI_HEAP_ROOT_JNI_LOCAL;
     case JVMTI_HEAP_REFERENCE_THREAD:       return JVMTI_HEAP_ROOT_THREAD;
@@ -3019,20 +3021,13 @@ inline bool VM_HeapWalkOperation::collect_simple_roots() {
     return false;
   }
 
-  // Inflated monitors
-  blk.set_kind(JVMTI_HEAP_REFERENCE_MONITOR);
-  ObjectSynchronizer::oops_do(&blk);
-  if (blk.stopped()) {
-    return false;
-  }
-
   // threads are now handled in collect_stack_roots()
 
   // Other kinds of roots maintained by HotSpot
   // Many of these won't be visible but others (such as instances of important
   // exceptions) will be visible.
   blk.set_kind(JVMTI_HEAP_REFERENCE_OTHER);
-  Universe::oops_do(&blk);
+  Universe::vm_global()->oops_do(&blk);
   if (blk.stopped()) {
     return false;
   }
@@ -3260,6 +3255,9 @@ void JvmtiTagMap::iterate_over_reachable_objects(jvmtiHeapRootCallback heap_root
                                                  jvmtiStackReferenceCallback stack_ref_callback,
                                                  jvmtiObjectReferenceCallback object_ref_callback,
                                                  const void* user_data) {
+  JavaThread* jt = JavaThread::current();
+  EscapeBarrier eb(true, jt);
+  eb.deoptimize_objects_all_threads();
   MutexLocker ml(Heap_lock);
   BasicHeapWalkContext context(heap_root_callback, stack_ref_callback, object_ref_callback);
   VM_HeapWalkOperation op(this, Handle(), context, user_data);
@@ -3287,8 +3285,13 @@ void JvmtiTagMap::follow_references(jint heap_filter,
                                     const void* user_data)
 {
   oop obj = JNIHandles::resolve(object);
-  Handle initial_object(Thread::current(), obj);
-
+  JavaThread* jt = JavaThread::current();
+  Handle initial_object(jt, obj);
+  // EA based optimizations that are tagged or reachable from initial_object are already reverted.
+  EscapeBarrier eb(initial_object.is_null() &&
+                   !(heap_filter & JVMTI_HEAP_FILTER_UNTAGGED),
+                   jt);
+  eb.deoptimize_objects_all_threads();
   MutexLocker ml(Heap_lock);
   AdvancedHeapWalkContext context(heap_filter, klass, callbacks);
   VM_HeapWalkOperation op(this, initial_object, context, user_data);

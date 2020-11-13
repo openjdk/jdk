@@ -47,8 +47,13 @@ ShenandoahCompactHeuristics::ShenandoahCompactHeuristics() : ShenandoahHeuristic
 bool ShenandoahCompactHeuristics::should_start_gc() const {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
-  size_t capacity = heap->max_capacity();
+  size_t max_capacity = heap->max_capacity();
+  size_t capacity = heap->soft_max_capacity();
   size_t available = heap->free_set()->available();
+
+  // Make sure the code below treats available without the soft tail.
+  size_t soft_tail = max_capacity - capacity;
+  available = (available > soft_tail) ? (available - soft_tail) : 0;
 
   size_t threshold_bytes_allocated = capacity / 100 * ShenandoahAllocationThreshold;
   size_t min_threshold = capacity / 100 * ShenandoahMinFreeThreshold;

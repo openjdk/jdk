@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,28 +22,30 @@
  */
 package nsk.share.test;
 
-import java.io.PrintStream;
+import jdk.test.lib.Utils;
 import vm.share.options.Option;
+
+import java.io.PrintStream;
 
 /**
  * Options for stress tests.
- *
+ * <p>
  * The following options may be configured:
- *
- *   -stressTime [time] execution time in seconds
- *   -stressIterationsFactor [factor] iterations factor.
- *   The actual number of iterations is obtained by multiplying standard
- *   number of iterations (which is defined by the test itself) and this factor.
- *   -stressThreadsFactor [factor] number of threads factor
- *   The actual number of threads is determined by multiplying standard
- *   number of threads (which is determined by test itself and may also depend
- *   on machine configuration) and this factor.
+ * <p>
+ * -stressTime [time] execution time in seconds
+ * -stressIterationsFactor [factor] iterations factor.
+ * The actual number of iterations is obtained by multiplying standard
+ * number of iterations (which is defined by the test itself) and this factor.
+ * -stressThreadsFactor [factor] number of threads factor
+ * The actual number of threads is determined by multiplying standard
+ * number of threads (which is determined by test itself and may also depend
+ * on machine configuration) and this factor.
  */
 public class StressOptions {
     /**
      * This enum contains names of stress options
      */
-    public static enum StressOptionsParam {
+    public enum StressOptionsParam {
         stressTime,
         stressIterationsFactor,
         stressThreadsFactor,
@@ -88,23 +90,11 @@ public class StressOptions {
     /**
      * Create StressOptions configured from command line arguments.
      *
-     * @param arg arguments
+     * @param args arguments
      */
     public StressOptions(String[] args) {
         this();
         parseCommandLine(args);
-    }
-
-    /**
-     * Create stresser with same parameters as another.
-     *
-     * @param other another instance of StressOptions
-     */
-    public StressOptions(StressOptions other) {
-        this.time = other.time;
-        this.iterationsFactor = other.iterationsFactor;
-        this.threadsFactor = other.threadsFactor;
-        this.runsFactor = other.runsFactor;
     }
 
     public static boolean isValidStressOption(String option) {
@@ -118,7 +108,7 @@ public class StressOptions {
 
     /**
      * Parse command line options related to stress.
-     *
+     * <p>
      * Other options are ignored.
      *
      * @param args arguments
@@ -221,12 +211,12 @@ public class StressOptions {
     }
 
     /**
-     * Obtain execution time in seconds.
+     * Obtain execution time in seconds adjusted for TIMEOUT_FACTOR.
      *
      * @return time
      */
     public long getTime() {
-        return time;
+        return Utils.adjustTimeout(time);
     }
 
     /**

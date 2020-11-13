@@ -45,7 +45,7 @@ import sun.reflect.annotation.AnnotationType;
  * element are on a <em>declaration</em>, whereas annotations on a
  * type are on a specific <em>use</em> of a type name.
  *
- * As defined by <cite>The Java&trade; Language Specification</cite>
+ * As defined by <cite>The Java Language Specification</cite>
  * section {@jls 9.7.4}, an annotation on an element is a
  * <em>declaration annotation</em> and an annotation on a type is a
  * <em>type annotation</em>.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -298,6 +298,31 @@ abstract class DoublePipeline<E_IN>
                         // downstream operation
                         cancellationRequestedCalled = true;
                         return downstream.cancellationRequested();
+                    }
+                };
+            }
+        };
+    }
+
+    @Override
+    public final DoubleStream mapMulti(DoubleMapMultiConsumer mapper) {
+        Objects.requireNonNull(mapper);
+        return new StatelessOp<>(this, StreamShape.DOUBLE_VALUE,
+                StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
+
+            @Override
+            Sink<Double> opWrapSink(int flags, Sink<Double> sink) {
+                return new Sink.ChainedDouble<>(sink) {
+
+                    @Override
+                    public void begin(long size) {
+                        downstream.begin(-1);
+                    }
+
+                    @Override
+                    @SuppressWarnings("unchecked")
+                    public void accept(double t) {
+                            mapper.accept(t, (DoubleConsumer) downstream);
                     }
                 };
             }

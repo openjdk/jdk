@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,8 +232,8 @@ public class BufferedReader extends Reader {
      * Reads characters into a portion of an array.
      *
      * <p> This method implements the general contract of the corresponding
-     * <code>{@link Reader#read(char[], int, int) read}</code> method of the
-     * <code>{@link Reader}</code> class.  As an additional convenience, it
+     * {@link Reader#read(char[], int, int) read} method of the
+     * {@link Reader} class.  As an additional convenience, it
      * attempts to read as many characters as possible by repeatedly invoking
      * the {@code read} method of the underlying stream.  This iterated
      * {@code read} continues until one of the following conditions becomes
@@ -302,6 +302,8 @@ public class BufferedReader extends Reader {
      * (EOF).
      *
      * @param      ignoreLF  If true, the next '\n' will be skipped
+     * @param      term      Output: Whether a line terminator was encountered
+     *                       while reading the line; may be {@code null}.
      *
      * @return     A String containing the contents of the line, not including
      *             any line-termination characters, or null if the end of the
@@ -311,13 +313,14 @@ public class BufferedReader extends Reader {
      *
      * @throws     IOException  If an I/O error occurs
      */
-    String readLine(boolean ignoreLF) throws IOException {
+    String readLine(boolean ignoreLF, boolean[] term) throws IOException {
         StringBuilder s = null;
         int startChar;
 
         synchronized (lock) {
             ensureOpen();
             boolean omitLF = ignoreLF || skipLF;
+            if (term != null) term[0] = false;
 
         bufferLoop:
             for (;;) {
@@ -344,6 +347,7 @@ public class BufferedReader extends Reader {
                 for (i = nextChar; i < nChars; i++) {
                     c = cb[i];
                     if ((c == '\n') || (c == '\r')) {
+                        if (term != null) term[0] = true;
                         eol = true;
                         break charLoop;
                     }
@@ -389,7 +393,7 @@ public class BufferedReader extends Reader {
      * @see java.nio.file.Files#readAllLines
      */
     public String readLine() throws IOException {
-        return readLine(false);
+        return readLine(false, null);
     }
 
     /**

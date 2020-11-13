@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -304,6 +304,45 @@ DocComment[DOC_COMMENT, pos:1
       name: 1
         Text[TEXT, pos:26, jjg]
     ]
+]
+*/
+
+    /**
+     * <a name1="val1" name2='val2' name3=val3 name4>
+     */
+    void multiple_attr() { }
+/*
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: 1
+    StartElement[START_ELEMENT, pos:1
+      name:a
+      attributes: 4
+        Attribute[ATTRIBUTE, pos:4
+          name: name1
+          vkind: DOUBLE
+          value: 1
+            Text[TEXT, pos:11, val1]
+        ]
+        Attribute[ATTRIBUTE, pos:17
+          name: name2
+          vkind: SINGLE
+          value: 1
+            Text[TEXT, pos:24, val2]
+        ]
+        Attribute[ATTRIBUTE, pos:30
+          name: name3
+          vkind: UNQUOTED
+          value: 1
+            Text[TEXT, pos:36, val3]
+        ]
+        Attribute[ATTRIBUTE, pos:41
+          name: name4
+          vkind: EMPTY
+          value: null
+        ]
+    ]
+  body: empty
+  block tags: empty
 ]
 */
 }

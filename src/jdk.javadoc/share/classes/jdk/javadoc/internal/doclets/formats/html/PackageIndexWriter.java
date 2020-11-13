@@ -33,7 +33,6 @@ import javax.lang.model.element.PackageElement;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -92,13 +91,11 @@ public class PackageIndexWriter extends AbstractOverviewIndexWriter {
                 = configuration.group.groupPackages(packages);
 
         if (!groupPackageMap.keySet().isEmpty()) {
-            Table table =  new Table(HtmlStyle.overviewSummary, HtmlStyle.summaryTable)
+            Table table =  new Table(HtmlStyle.summaryTable)
                     .setHeader(getPackageTableHeader())
                     .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
                     .setId("all-packages-table")
-                    .setDefaultTab(resources.getText("doclet.All_Packages"))
-                    .setTabScript(i -> "show(" + i + ");")
-                    .setTabId(i -> (i == 0) ? "t0" : ("t" + (1 << (i - 1))));
+                    .setDefaultTab(resources.getText("doclet.All_Packages"));
 
             // add the tabs in command-line order
             for (String groupName : configuration.group.getGroupList()) {

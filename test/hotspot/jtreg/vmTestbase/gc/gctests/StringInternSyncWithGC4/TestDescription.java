@@ -31,7 +31,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @run main/othervm
  *      -Xlog:gc:gc.log
  *      gc.gctests.StringInternSyncWithGC.StringInternSyncWithGC

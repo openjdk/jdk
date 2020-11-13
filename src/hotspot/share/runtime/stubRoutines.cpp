@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,8 +111,6 @@ address StubRoutines::_arrayof_jlong_disjoint_arraycopy  = CAST_FROM_FN_PTR(addr
 address StubRoutines::_arrayof_oop_disjoint_arraycopy    = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_oop_copy);
 address StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit  = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_oop_copy_uninit);
 
-address StubRoutines::_zero_aligned_words = CAST_FROM_FN_PTR(address, Copy::zero_to_words);
-
 address StubRoutines::_data_cache_writeback              = NULL;
 address StubRoutines::_data_cache_writeback_sync         = NULL;
 
@@ -137,13 +135,18 @@ address StubRoutines::_electronicCodeBook_decryptAESCrypt  = NULL;
 address StubRoutines::_counterMode_AESCrypt                = NULL;
 address StubRoutines::_ghash_processBlocks                 = NULL;
 address StubRoutines::_base64_encodeBlock                  = NULL;
+address StubRoutines::_base64_decodeBlock                  = NULL;
 
+address StubRoutines::_md5_implCompress      = NULL;
+address StubRoutines::_md5_implCompressMB    = NULL;
 address StubRoutines::_sha1_implCompress     = NULL;
 address StubRoutines::_sha1_implCompressMB   = NULL;
 address StubRoutines::_sha256_implCompress   = NULL;
 address StubRoutines::_sha256_implCompressMB = NULL;
 address StubRoutines::_sha512_implCompress   = NULL;
 address StubRoutines::_sha512_implCompressMB = NULL;
+address StubRoutines::_sha3_implCompress     = NULL;
+address StubRoutines::_sha3_implCompressMB   = NULL;
 
 address StubRoutines::_updateBytesCRC32 = NULL;
 address StubRoutines::_crc_table_adr =    NULL;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,16 +49,14 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jvmti.scenarios.hotswap.HS301.hs301t001.hs301t001
  *
  * @comment compile newclassXX to bin/newclassXX
  * @run driver nsk.share.ExtraClassesBuilder
  *      newclass00
  *
- * @build ExecDriver
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
- *      "-agentlib:hs301t001=pathToNewByteCode=./bin -waittime=5 package=nsk samples=100 mode=compiled"
+ * @run main/othervm/native
+ *      -agentlib:hs301t001=pathToNewByteCode=./bin,-waittime=5,package=nsk,samples=100,mode=compiled
  *      nsk.jvmti.scenarios.hotswap.HS301.hs301t001.hs301t001
  */
 

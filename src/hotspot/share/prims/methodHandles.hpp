@@ -25,7 +25,7 @@
 #ifndef SHARE_PRIMS_METHODHANDLES_HPP
 #define SHARE_PRIMS_METHODHANDLES_HPP
 
-#include "classfile/javaClasses.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/globals.hpp"
@@ -60,12 +60,12 @@ class MethodHandles: AllStatic {
 
  public:
   // working with member names
-  static Handle resolve_MemberName(Handle mname, Klass* caller,
+  static Handle resolve_MemberName(Handle mname, Klass* caller, int lookup_mode,
                                    bool speculative_resolve, TRAPS); // compute vmtarget/vmindex from name/type
   static void expand_MemberName(Handle mname, int suppress, TRAPS);  // expand defc/name/type if missing
   static oop init_MemberName(Handle mname_h, Handle target_h, TRAPS); // compute vmtarget/vmindex from target
   static oop init_field_MemberName(Handle mname_h, fieldDescriptor& fd, bool is_setter = false);
-  static oop init_method_MemberName(Handle mname_h, CallInfo& info);
+  static oop init_method_MemberName(Handle mname_h, CallInfo& info, TRAPS);
   static int find_MemberNames(Klass* k, Symbol* name, Symbol* sig,
                               int mflags, Klass* caller,
                               int skip, objArrayHandle results, TRAPS);

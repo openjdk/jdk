@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@
  *         This is stress test for MonitorContendedEnterRequest and MonitorContendedEnterEvent, debugger force
  *         debuggee start several threads which simultaneously generate MonitorContendedEnteredEvents and checks that
  *         all events was received and contain     correct information.
- *         Test executes class nsk.share.jdi.EventTestTemplates$StressTestTemplate which uses JDI events testing
+ *         Test executes class nsk.share.jdi.StressTestTemplate which uses JDI events testing
  *         framework based on classes from package nsk.share.jdi.*.
  *         This framework uses following scenario:
  *             - debugger VM forces debuggee VM to create number of objects which should generate events during test
@@ -48,18 +48,17 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build nsk.share.jdi.EventTestTemplates
+ * @build nsk.share.jdi.StressTestTemplate
  *        nsk.share.jdi.JDIEventsDebuggee
  *        nsk.share.jdi.MonitorEventsDebuggee
- * @run main/othervm/native PropertyResolvingWrapper
- *      nsk.share.jdi.EventTestTemplates$StressTestTemplate
+ * @run main/othervm/native
+ *      nsk.share.jdi.StressTestTemplate
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  *      -allowMissedEvents MONITOR_CONTENTED_ENTER
  *      -eventTypes MONITOR_CONTENTED_ENTER
  *      -debuggeeClassName nsk.share.jdi.MonitorEventsDebuggee

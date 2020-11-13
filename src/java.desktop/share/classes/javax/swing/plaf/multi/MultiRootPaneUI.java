@@ -50,6 +50,11 @@ public class MultiRootPaneUI extends RootPaneUI {
      */
     protected Vector<ComponentUI> uis = new Vector<>();
 
+    /**
+     * Constructs a {@code MultiRootPaneUI}.
+     */
+    public MultiRootPaneUI() {}
+
 ////////////////////
 // Common UI methods
 ////////////////////

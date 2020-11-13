@@ -1315,8 +1315,12 @@ void LIRGenerator::do_isPrimitive(Intrinsic* x) {
 // Example: Thread.currentThread()
 void LIRGenerator::do_currentThread(Intrinsic* x) {
   assert(x->number_of_arguments() == 0, "wrong type");
+  LIR_Opr temp = new_register(T_ADDRESS);
   LIR_Opr reg = rlock_result(x);
-  __ move_wide(new LIR_Address(getThreadPointer(), in_bytes(JavaThread::threadObj_offset()), T_OBJECT), reg);
+  __ move(new LIR_Address(getThreadPointer(), in_bytes(JavaThread::threadObj_offset()), T_ADDRESS), temp);
+  // threadObj = ((OopHandle)_threadObj)->resolve();
+  access_load(IN_NATIVE, T_OBJECT,
+              LIR_OprFact::address(new LIR_Address(temp, T_OBJECT)), reg);
 }
 
 
@@ -1442,10 +1446,6 @@ void LIRGenerator::do_CompareAndSwap(Intrinsic* x, ValueType* type) {
   LIRItem cmp   (x->argument_at(2), this);  // value to compare with field
   LIRItem val   (x->argument_at(3), this);  // replace field with val if matches cmp
   assert(obj.type()->tag() == objectTag, "invalid type");
-
-  // In 64bit the type can be long, sparc doesn't have this assert
-  // assert(offset.type()->tag() == intTag, "invalid type");
-
   assert(cmp.type()->tag() == type->tag(), "invalid type");
   assert(val.type()->tag() == type->tag(), "invalid type");
 

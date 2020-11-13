@@ -248,7 +248,7 @@ abstract class SingleDynamicMethod extends DynamicMethod {
 
     @SuppressWarnings("unused")
     private static boolean canConvertTo(final LinkerServices linkerServices, final Class<?> to, final Object obj) {
-        return obj == null ? false : linkerServices.canConvert(obj.getClass(), to);
+        return obj != null && linkerServices.canConvert(obj.getClass(), to);
     }
 
     /**

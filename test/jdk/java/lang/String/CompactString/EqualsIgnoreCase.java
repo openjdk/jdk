@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ import static org.testng.Assert.assertEquals;
 
 /*
  * @test
- * @bug 8077559
+ * @bug 8077559 8248655
  * @summary Tests Compact String. This one is for String.equalsIgnoreCase.
  * @run testng/othervm -XX:+CompactStrings EqualsIgnoreCase
  * @run testng/othervm -XX:-CompactStrings EqualsIgnoreCase
@@ -54,6 +54,7 @@ public class EqualsIgnoreCase extends CompactString {
                 new Object[] { STRING_M12, "\uFF21A", true },
                 new Object[] { STRING_M11, "a\uFF41", true },
                 new Object[] { STRING_M11, "A\uFF21", true },
+                new Object[] { STRING_SUPPLEMENTARY, STRING_SUPPLEMENTARY_LOWERCASE, true },
 
         };
     }

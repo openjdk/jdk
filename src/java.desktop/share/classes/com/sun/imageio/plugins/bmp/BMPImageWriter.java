@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,7 @@ public class BMPImageWriter extends ImageWriter implements BMPConstants {
         super(originator);
     }
 
+    @Override
     public void setOutput(Object output) {
         super.setOutput(output); // validates output
         if (output != null) {
@@ -106,14 +107,17 @@ public class BMPImageWriter extends ImageWriter implements BMPConstants {
             this.stream = null;
     }
 
+    @Override
     public ImageWriteParam getDefaultWriteParam() {
         return new BMPImageWriteParam();
     }
 
+    @Override
     public IIOMetadata getDefaultStreamMetadata(ImageWriteParam param) {
         return null;
     }
 
+    @Override
     public IIOMetadata getDefaultImageMetadata(ImageTypeSpecifier imageType,
                                                ImageWriteParam param) {
         BMPMetadata meta = new BMPMetadata();
@@ -127,21 +131,25 @@ public class BMPImageWriter extends ImageWriter implements BMPConstants {
         return meta;
     }
 
+    @Override
     public IIOMetadata convertStreamMetadata(IIOMetadata inData,
                                              ImageWriteParam param) {
         return null;
     }
 
+    @Override
     public IIOMetadata convertImageMetadata(IIOMetadata metadata,
                                             ImageTypeSpecifier type,
                                             ImageWriteParam param) {
         return null;
     }
 
+    @Override
     public boolean canWriteRasters() {
         return true;
     }
 
+    @Override
     public void write(IIOMetadata streamMetadata,
                       IIOImage image,
                       ImageWriteParam param) throws IOException {
@@ -1316,6 +1324,7 @@ public class BMPImageWriter extends ImageWriter implements BMPConstants {
         stream.writeInt(dword);
     }
 
+    @Override
     public void reset() {
         super.reset();
         stream = null;
@@ -1336,12 +1345,14 @@ public class BMPImageWriter extends ImageWriter implements BMPConstants {
             }
 
             writer.addIIOWriteProgressListener(new IIOWriteProgressAdapter() {
+                    @Override
                     public void imageProgress(ImageWriter source, float percentageDone) {
                         processImageProgress(percentageDone);
                     }
                 });
 
             writer.addIIOWriteWarningListener(new IIOWriteWarningListener() {
+                    @Override
                     public void warningOccurred(ImageWriter source, int imageIndex, String warning) {
                         processWarningOccurred(imageIndex, warning);
                     }
@@ -1372,26 +1383,33 @@ public class BMPImageWriter extends ImageWriter implements BMPConstants {
         return count;
     }
 
-    private class IIOWriteProgressAdapter implements IIOWriteProgressListener {
+    private static class IIOWriteProgressAdapter implements IIOWriteProgressListener {
 
+        @Override
         public void imageComplete(ImageWriter source) {
         }
 
+        @Override
         public void imageProgress(ImageWriter source, float percentageDone) {
         }
 
+        @Override
         public void imageStarted(ImageWriter source, int imageIndex) {
         }
 
+        @Override
         public void thumbnailComplete(ImageWriter source) {
         }
 
+        @Override
         public void thumbnailProgress(ImageWriter source, float percentageDone) {
         }
 
+        @Override
         public void thumbnailStarted(ImageWriter source, int imageIndex, int thumbnailIndex) {
         }
 
+        @Override
         public void writeAborted(ImageWriter source) {
         }
     }

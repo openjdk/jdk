@@ -67,7 +67,6 @@
 #include "runtime/threadCritical.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
-#include "services/management.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/stack.inline.hpp"
 
@@ -93,27 +92,11 @@ static void scavenge_roots_work(ParallelRootType::Value root_type, uint worker_i
   PSPromoteRootsClosure  roots_to_old_closure(pm);
 
   switch (root_type) {
-    case ParallelRootType::universe:
-      Universe::oops_do(&roots_closure);
-      break;
-
-    case ParallelRootType::object_synchronizer:
-      ObjectSynchronizer::oops_do(&roots_closure);
-      break;
-
     case ParallelRootType::class_loader_data:
       {
         PSScavengeCLDClosure cld_closure(pm);
         ClassLoaderDataGraph::cld_do(&cld_closure);
       }
-      break;
-
-    case ParallelRootType::management:
-      Management::oops_do(&roots_closure);
-      break;
-
-    case ParallelRootType::jvmti:
-      JvmtiExport::oops_do(&roots_closure);
       break;
 
     case ParallelRootType::code_cache:
@@ -439,13 +422,11 @@ bool PSScavenge::invoke_no_policy() {
   heap->ensure_parsability(true);  // retire TLABs
 
   if (VerifyBeforeGC && heap->total_collections() >= VerifyGCStartAt) {
-    HandleMark hm;  // Discard invalid handles created during verification
     Universe::verify("Before GC");
   }
 
   {
     ResourceMark rm;
-    HandleMark hm;
 
     GCTraceCPUTime tcpu;
     GCTraceTime(Info, gc) tm("Pause Young", NULL, gc_cause, true);
@@ -723,7 +704,6 @@ bool PSScavenge::invoke_no_policy() {
   }
 
   if (VerifyAfterGC && heap->total_collections() >= VerifyGCStartAt) {
-    HandleMark hm;  // Discard invalid handles created during verification
     Universe::verify("After GC");
   }
 

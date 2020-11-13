@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,104 +25,56 @@
 #define SHARE_GC_Z_ZARRAY_INLINE_HPP
 
 #include "gc/z/zArray.hpp"
-#include "memory/allocation.inline.hpp"
 #include "runtime/atomic.hpp"
 
-template <typename T>
-inline ZArray<T>::ZArray() :
-    _array(NULL),
-    _size(0),
-    _capacity(0) {}
-
-template <typename T>
-inline ZArray<T>::~ZArray() {
-  FREE_C_HEAP_ARRAY(T, _array);
-}
-
-template <typename T>
-inline size_t ZArray<T>::size() const {
-  return _size;
-}
-
-template <typename T>
-inline bool ZArray<T>::is_empty() const {
-  return size() == 0;
-}
-
-template <typename T>
-inline T ZArray<T>::at(size_t index) const {
-  assert(index < _size, "Index out of bounds");
-  return _array[index];
-}
-
-template <typename T>
-inline void ZArray<T>::expand(size_t new_capacity) {
-  T* new_array = NEW_C_HEAP_ARRAY(T, new_capacity, mtGC);
-  if (_array != NULL) {
-    memcpy(new_array, _array, sizeof(T) * _capacity);
-    FREE_C_HEAP_ARRAY(T, _array);
+template <typename T, bool Parallel>
+inline bool ZArrayIteratorImpl<T, Parallel>::next_serial(T* elem) {
+  if (_next == _end) {
+    return false;
   }
 
-  _array = new_array;
-  _capacity = new_capacity;
+  *elem = *_next;
+  _next++;
+
+  return true;
 }
 
-template <typename T>
-inline void ZArray<T>::add(T value) {
-  if (_size == _capacity) {
-    const size_t new_capacity = (_capacity > 0) ? _capacity * 2 : initial_capacity;
-    expand(new_capacity);
-  }
+template <typename T, bool Parallel>
+inline bool ZArrayIteratorImpl<T, Parallel>::next_parallel(T* elem) {
+  const T* old_next = Atomic::load(&_next);
 
-  _array[_size++] = value;
-}
+  for (;;) {
+    if (old_next == _end) {
+      return false;
+    }
 
-template <typename T>
-inline void ZArray<T>::transfer(ZArray<T>* from) {
-  assert(_array == NULL, "Should be empty");
-  _array = from->_array;
-  _size = from->_size;
-  _capacity = from->_capacity;
-  from->_array = NULL;
-  from->_size = 0;
-  from->_capacity = 0;
-}
-
-template <typename T>
-inline void ZArray<T>::clear() {
-  _size = 0;
-}
-
-template <typename T, bool parallel>
-inline ZArrayIteratorImpl<T, parallel>::ZArrayIteratorImpl(ZArray<T>* array) :
-    _array(array),
-    _next(0) {}
-
-template <typename T, bool parallel>
-inline bool ZArrayIteratorImpl<T, parallel>::next(T* elem) {
-  if (parallel) {
-    const size_t next = Atomic::fetch_and_add(&_next, 1u);
-    if (next < _array->size()) {
-      *elem = _array->at(next);
+    const T* const new_next = old_next + 1;
+    const T* const prev_next = Atomic::cmpxchg(&_next, old_next, new_next);
+    if (prev_next == old_next) {
+      *elem = *old_next;
       return true;
     }
+
+    old_next = prev_next;
+  }
+}
+
+template <typename T, bool Parallel>
+inline ZArrayIteratorImpl<T, Parallel>::ZArrayIteratorImpl(const T* array, size_t length) :
+    _next(array),
+    _end(array + length) {}
+
+template <typename T, bool Parallel>
+inline ZArrayIteratorImpl<T, Parallel>::ZArrayIteratorImpl(const ZArray<T>* array) :
+    ZArrayIteratorImpl<T, Parallel>(array->is_empty() ? NULL : array->adr_at(0), array->length()) {}
+
+template <typename T, bool Parallel>
+inline bool ZArrayIteratorImpl<T, Parallel>::next(T* elem) {
+  if (Parallel) {
+    return next_parallel(elem);
   } else {
-    if (_next < _array->size()) {
-      *elem = _array->at(_next++);
-      return true;
-    }
+    return next_serial(elem);
   }
-
-  // No more elements
-  return false;
 }
-
-template <typename T>
-inline ZArrayIterator<T>::ZArrayIterator(ZArray<T>* array) :
-    ZArrayIteratorImpl<T, ZARRAY_SERIAL>(array) {}
-
-template <typename T>
-inline ZArrayParallelIterator<T>::ZArrayParallelIterator(ZArray<T>* array) :
-    ZArrayIteratorImpl<T, ZARRAY_PARALLEL>(array) {}
 
 #endif // SHARE_GC_Z_ZARRAY_INLINE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,9 +57,11 @@ void JNICALL VMInit(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thr) {
             printf("(CreateRawMonitor#%d) unexpected error: %s (%d)\n",
                    i, TranslateError(err), err);
             result = STATUS_FAILED;
+            return;
         } else if (monitors[i] == NULL) {
             printf("(CreateRawMonitor#%d) jrawMonitorID is null\n", i);
             result = STATUS_FAILED;
+            return;
         }
     }
 

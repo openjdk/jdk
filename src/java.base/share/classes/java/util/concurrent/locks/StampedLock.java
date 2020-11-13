@@ -132,7 +132,7 @@ import jdk.internal.vm.annotation.ReservedStackAccess;
  * <p><b>Memory Synchronization.</b> Methods with the effect of
  * successfully locking in any mode have the same memory
  * synchronization effects as a <em>Lock</em> action, as described in
- * Chapter 17 of <cite>The Java&trade; Language Specification</cite>.
+ * Chapter 17 of <cite>The Java Language Specification</cite>.
  * Methods successfully unlocking in write mode have the same memory
  * synchronization effects as an <em>Unlock</em> action.  In optimistic
  * read usages, actions prior to the most recent write mode unlock action

@@ -37,6 +37,7 @@
 #include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jniCheck.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -52,7 +53,7 @@
 // Implementation of JavaCallWrapper
 
 JavaCallWrapper::JavaCallWrapper(const methodHandle& callee_method, Handle receiver, JavaValue* result, TRAPS) {
-  JavaThread* thread = (JavaThread *)THREAD;
+  JavaThread* thread = THREAD->as_Java_thread();
   bool clear_pending_exception = true;
 
   guarantee(thread->is_Java_thread(), "crucial check - the VM thread cannot and must not escape to Java code");
@@ -88,7 +89,7 @@ JavaCallWrapper::JavaCallWrapper(const methodHandle& callee_method, Handle recei
   THREAD->allow_unhandled_oop(&_receiver);
 #endif // CHECK_UNHANDLED_OOPS
 
-  _thread       = (JavaThread *)thread;
+  _thread       = thread;
   _handles      = _thread->active_handles();    // save previous handle block & Java frame linkage
 
   // For the profiler, the last_Java_frame information in thread must always be in
@@ -108,10 +109,6 @@ JavaCallWrapper::JavaCallWrapper(const methodHandle& callee_method, Handle recei
   if(clear_pending_exception) {
     _thread->clear_pending_exception();
   }
-
-  if (_anchor.last_Java_sp() == NULL) {
-    _thread->record_base_of_stack_pointer();
-  }
 }
 
 
@@ -125,11 +122,6 @@ JavaCallWrapper::~JavaCallWrapper() {
   _thread->frame_anchor()->zap();
 
   debug_only(_thread->dec_java_call_counter());
-
-  if (_anchor.last_Java_sp() == NULL) {
-    _thread->set_base_of_stack_pointer(NULL);
-  }
-
 
   // Old thread-local info. has been restored. We are not back in the VM.
   ThreadStateTransition::transition_from_java(_thread, _thread_in_vm);
@@ -145,6 +137,14 @@ JavaCallWrapper::~JavaCallWrapper() {
   // Release handles after we are marked as being inside the VM again, since this
   // operation might block
   JNIHandleBlock::release_block(_old_handles, _thread);
+
+  if (_thread->has_pending_exception() && _thread->has_last_Java_frame()) {
+    // If we get here, the Java code threw an exception that unwound a frame.
+    // It could be that the new frame anchor has not passed through the required
+    // StackWatermark barriers. Therefore, we process any such deferred unwind
+    // requests here.
+    StackWatermarkSet::after_unwind(_thread);
+  }
 }
 
 
@@ -343,8 +343,7 @@ void JavaCalls::call(JavaValue* result, const methodHandle& method, JavaCallArgu
 
 void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaCallArguments* args, TRAPS) {
 
-  JavaThread* thread = (JavaThread*)THREAD;
-  assert(thread->is_Java_thread(), "must be called by a java thread");
+  JavaThread* thread = THREAD->as_Java_thread();
   assert(method.not_null(), "must have a method to call");
   assert(!SafepointSynchronize::is_at_safepoint(), "call to Java code during VM operation");
   assert(!thread->handle_area()->no_handle_mark_active(), "cannot call out to Java here");
@@ -388,9 +387,7 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
 
   // When we reenter Java, we need to reenable the reserved/yellow zone which
   // might already be disabled when we are in VM.
-  if (!thread->stack_guards_enabled()) {
-    thread->reguard_stack();
-  }
+  thread->stack_overflow_state()->reguard_stack_if_needed();
 
   // Check that there are shadow pages available before changing thread state
   // to Java. Calculate current_stack_pointer here to make sure

@@ -43,6 +43,11 @@ import javax.swing.plaf.*;
 public class BasicPasswordFieldUI extends BasicTextFieldUI {
 
     /**
+     * Constructs a {@code BasicPasswordFieldUI}.
+     */
+    public BasicPasswordFieldUI() {}
+
+    /**
      * Creates a UI for a JPasswordField.
      *
      * @param c the JPasswordField

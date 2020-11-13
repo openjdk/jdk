@@ -283,7 +283,7 @@ int LIR_Assembler::emit_deopt_handler() {
 }
 
 
-void LIR_Assembler::return_op(LIR_Opr result) {
+void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
   // Pop the frame before safepoint polling
   __ remove_frame(initial_frame_size_in_bytes());
   __ read_polling_page(Rtemp, relocInfo::poll_return_type);
@@ -1941,7 +1941,7 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall *op) {
 }
 
 
-/* Currently, vtable-dispatch is only enabled for sparc platforms */
+/* vtable-dispatch is not enabled for arm platforms */
 void LIR_Assembler::vtable_call(LIR_OpJavaCall* op) {
   ShouldNotReachHere();
 }

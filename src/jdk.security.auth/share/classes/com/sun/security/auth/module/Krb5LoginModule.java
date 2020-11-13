@@ -420,6 +420,11 @@ public class Krb5LoginModule implements LoginModule {
     private static final String PWD = "javax.security.auth.login.password";
 
     /**
+     * Creates a {@code Krb5LoginModule}.
+     */
+    public Krb5LoginModule() {}
+
+    /**
      * Initialize this {@code LoginModule}.
      *
      * @param subject the {@code Subject} to be authenticated.

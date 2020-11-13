@@ -135,15 +135,10 @@ void GenMarkSweep::invoke_at_safepoint(ReferenceProcessor* rp, bool clear_all_so
 
   // Update heap occupancy information which is used as
   // input to soft ref clearing policy at the next gc.
-  Universe::update_heap_info_at_gc();
+  Universe::heap()->update_capacity_and_used_at_gc();
 
-  // Update time of last gc for all generations we collected
-  // (which currently is all the generations in the heap).
-  // We need to use a monotonically non-decreasing time in ms
-  // or we will see time-warp warnings and os::javaTimeMillis()
-  // does not guarantee monotonicity.
-  jlong now = os::javaTimeNanos() / NANOSECS_PER_MILLISEC;
-  gch->update_time_of_last_gc(now);
+  // Signal that we have completed a visit to all live objects.
+  Universe::heap()->record_whole_heap_examined_timestamp();
 
   gch->trace_heap_after_gc(_gc_tracer);
 }
@@ -182,12 +177,6 @@ void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
   GCTraceTime(Info, gc, phases) tm("Phase 1: Mark live objects", _gc_timer);
 
   GenCollectedHeap* gch = GenCollectedHeap::heap();
-
-  // Because follow_root_closure is created statically, cannot
-  // use OopsInGenClosure constructor which takes a generation,
-  // as the Universe has not been created when the static constructors
-  // are run.
-  follow_root_closure.set_orig_generation(gch->old_gen());
 
   // Need new claim bits before marking starts.
   ClassLoaderDataGraph::clear_claimed_marks();
@@ -281,12 +270,6 @@ void GenMarkSweep::mark_sweep_phase3() {
 
   // Need new claim bits for the pointer adjustment tracing.
   ClassLoaderDataGraph::clear_claimed_marks();
-
-  // Because the closure below is created statically, we cannot
-  // use OopsInGenClosure constructor which takes a generation,
-  // as the Universe has not been created when the static constructors
-  // are run.
-  adjust_pointer_closure.set_orig_generation(gch->old_gen());
 
   {
     StrongRootsScope srs(1);

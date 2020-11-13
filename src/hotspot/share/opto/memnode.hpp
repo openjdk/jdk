@@ -93,6 +93,7 @@ protected:
   }
 
   virtual Node* find_previous_arraycopy(PhaseTransform* phase, Node* ld_alloc, Node*& mem, bool can_see_stored_value) const { return NULL; }
+  ArrayCopyNode* find_array_copy_clone(PhaseTransform* phase, Node* ld_alloc, Node* mem) const;
   static bool check_if_adr_maybe_raw(Node* adr);
 
 public:
@@ -280,6 +281,9 @@ public:
 
   Node* convert_to_unsigned_load(PhaseGVN& gvn);
   Node* convert_to_signed_load(PhaseGVN& gvn);
+
+  bool  has_reinterpret_variant(const Type* rt);
+  Node* convert_to_reinterpret_load(PhaseGVN& gvn, const Type* rt);
 
   void pin() { _control_dependency = Pinned; }
   bool has_unknown_control_dependency() const { return _control_dependency == UnknownControl; }
@@ -632,6 +636,9 @@ public:
 
   // have all possible loads of the value stored been optimized away?
   bool value_never_loaded(PhaseTransform *phase) const;
+
+  bool  has_reinterpret_variant(const Type* vt);
+  Node* convert_to_reinterpret_store(PhaseGVN& gvn, Node* val, const Type* vt);
 
   MemBarNode* trailing_membar() const;
 };

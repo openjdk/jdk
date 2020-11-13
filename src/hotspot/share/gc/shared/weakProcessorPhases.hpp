@@ -41,15 +41,14 @@ public:
   typedef void (*Processor)(BoolObjectClosure*, OopClosure*);
 
   enum Phase {
-    // Serial phases.
-    JVMTI_ONLY(jvmti JFR_ONLY(COMMA))
-    JFR_ONLY(jfr)
+    // Serial phase.
+    JVMTI_ONLY(jvmti)
 
     // Additional implicit phase values follow for oopstorages.
   };
 
   static const uint serial_phase_start = 0;
-  static const uint serial_phase_count = 0 JVMTI_ONLY(+ 1) JFR_ONLY(+ 1);
+  static const uint serial_phase_count = 0 JVMTI_ONLY(+ 1);
   static const uint oopstorage_phase_start = serial_phase_count;
   static const uint oopstorage_phase_count = OopStorageSet::weak_count;
   static const uint phase_count = serial_phase_count + oopstorage_phase_count;

@@ -52,6 +52,25 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 
 public final class ObjectIdentifier implements Serializable {
+    /*
+     * The maximum encoded OID length, excluding the ASN.1 encoding tag and
+     * length.
+     *
+     * In theory, there is no maximum size for OIDs.  However, there are some
+     * limitation in practice.
+     *
+     * RFC 5280 mandates support for OIDs that have arc elements with values
+     * that are less than 2^28 (that is, they MUST be between 0 and
+     * 268,435,455, inclusive), and implementations MUST be able to handle
+     * OIDs with up to 20 elements (inclusive).  Per RFC 5280, an encoded
+     * OID should be less than 80 bytes for safe interoperability.
+     *
+     * This class could be used for protocols other than X.509 certificates.
+     * To be safe, a relatively large but still reasonable value is chosen
+     * as the restriction in JDK.
+     */
+    private static final int MAXIMUM_OID_SIZE = 4096;    // 2^12
+
     /**
      * We use the DER value (no tag, no length) as the internal format
      * @serial
@@ -118,7 +137,14 @@ public final class ObjectIdentifier implements Serializable {
             if (componentLen > comp.length) {
                 componentLen = comp.length;
             }
+
+            // Check the estimated size before it is too late. The check
+            // will be performed again in init().
+            checkOidSize(componentLen);
             init(comp, componentLen);
+        } else {
+            checkOidSize(encoding.length);
+            check(encoding);
         }
     }
 
@@ -203,6 +229,8 @@ public final class ObjectIdentifier implements Serializable {
                 }
                 start = end + 1;
                 count++;
+
+                checkOidSize(pos);
             } while (end != -1);
 
             checkCount(count);
@@ -217,76 +245,40 @@ public final class ObjectIdentifier implements Serializable {
         }
     }
 
+    // Called by DerValue::getOID. No need to clone input.
+    ObjectIdentifier(byte[] encoding) throws IOException {
+        checkOidSize(encoding.length);
+        check(encoding);
+        this.encoding = encoding;
+    }
+
     /**
-     * Constructor, from an ASN.1 encoded input stream.
-     * Validity check NOT included.
-     * The encoding of the ID in the stream uses "DER", a BER/1 subset.
-     * In this case, that means a triple { typeId, length, data }.
-     *
-     * <P><STRONG>NOTE:</STRONG>  When an exception is thrown, the
-     * input stream has not been returned to its "initial" state.
-     *
-     * @param in DER-encoded data holding an object ID
-     * @exception IOException indicates a decoding error
+     * Reads an ObjectIdentifier from a DerInputStream.
+     * @param in the input stream
+     * @throws IOException if there is an encoding error
      */
     public ObjectIdentifier(DerInputStream in) throws IOException {
-        byte    type_id;
-        int     bufferEnd;
-
-        /*
-         * Object IDs are a "universal" type, and their tag needs only
-         * one byte of encoding.  Verify that the tag of this datum
-         * is that of an object ID.
-         *
-         * Then get and check the length of the ID's encoding.  We set
-         * up so that we can use in.available() to check for the end of
-         * this value in the data stream.
-         */
-        type_id = (byte)in.getByte();
-        if (type_id != DerValue.tag_ObjectId)
-            throw new IOException (
-                "ObjectIdentifier() -- data isn't an object ID"
-                + " (tag = " +  type_id + ")"
-                );
-
-        int len = in.getDefiniteLength();
-        if (len > in.available()) {
-            throw new IOException("ObjectIdentifier() -- length exceeds" +
-                    "data available.  Length: " + len + ", Available: " +
-                    in.available());
-        }
-        encoding = new byte[len];
-        in.getBytes(encoding);
-        check(encoding);
+        encoding = in.getDerValue().getOID().encoding;
     }
 
-    /*
-     * Constructor, from the rest of a DER input buffer;
-     * the tag and length have been removed/verified
-     * Validity check NOT included.
-     */
-    ObjectIdentifier(DerInputBuffer buf) throws IOException {
-        DerInputStream in = new DerInputStream(buf);
-        encoding = new byte[in.available()];
-        in.getBytes(encoding);
-        check(encoding);
-    }
-
-    private void init(int[] components, int length) {
+    private void init(int[] components, int length) throws IOException {
         int pos = 0;
-        byte[] tmp = new byte[length*5+1];  // +1 for empty input
+        byte[] tmp = new byte[length * 5 + 1];  // +1 for empty input
 
-        if (components[1] < Integer.MAX_VALUE - components[0]*40)
-            pos += pack7Oid(components[0]*40+components[1], tmp, pos);
-        else {
+        if (components[1] < Integer.MAX_VALUE - components[0] * 40) {
+            pos += pack7Oid(components[0] * 40 + components[1], tmp, pos);
+        } else {
             BigInteger big = BigInteger.valueOf(components[1]);
-            big = big.add(BigInteger.valueOf(components[0]*40));
+            big = big.add(BigInteger.valueOf(components[0] * 40));
             pos += pack7Oid(big, tmp, pos);
         }
 
-        for (int i=2; i<length; i++) {
+        for (int i = 2; i < length; i++) {
             pos += pack7Oid(components[i], tmp, pos);
+
+            checkOidSize(pos);
         }
+
         encoding = new byte[pos];
         System.arraycopy(tmp, 0, encoding, 0, pos);
     }
@@ -688,6 +680,15 @@ public final class ObjectIdentifier implements Serializable {
         if (num.signum() == -1) {
             throw new IOException("ObjectIdentifier() -- " +
                     "oid component #" + (i+1) + " must be non-negative ");
+        }
+    }
+
+    private static void checkOidSize(int oidLength) throws IOException {
+        if (oidLength > MAXIMUM_OID_SIZE) {
+            throw new IOException(
+                    "ObjectIdentifier encoded length exceeds " +
+                    "the restriction in JDK (OId length(>=): " + oidLength +
+                    ", Restriction: " + MAXIMUM_OID_SIZE + ")");
         }
     }
 }

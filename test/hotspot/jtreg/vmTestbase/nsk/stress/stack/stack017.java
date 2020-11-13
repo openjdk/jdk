@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,7 @@
  * @key stress
  *
  * @summary converted from VM testbase nsk/stress/stack/stack017.
- * VM testbase keywords: [stress, diehard, stack, nonconcurrent, exclude]
- * VM testbase comments: 8139875
+ * VM testbase keywords: [stress, diehard, stack, nonconcurrent]
  * VM testbase readme:
  * DESCRIPTION
  *     The test invokes infinitely recursive method from within stack
@@ -42,15 +41,16 @@
  *     See the bug:
  *     4366625 (P4/S4) multiple stack overflow causes HS crash
  *
- * @ignore 8139875
- * @requires vm.opt.DeoptimizeALot != true
- * @run main/othervm/timeout=900 nsk.stress.stack.stack017 -eager
+ * @requires (vm.opt.DeoptimizeALot != true & vm.compMode != "Xcomp" & vm.pageSize == 4096)
+ * @library /vmTestbase
+ * @build nsk.share.Terminator
+ * @run main/othervm/timeout=900 -Xss220K nsk.stress.stack.stack017 -eager
  */
 
 package nsk.stress.stack;
 
 
-import nsk.share.Harakiri;
+import nsk.share.Terminator;
 
 import java.io.PrintStream;
 
@@ -73,7 +73,7 @@ public class stack017 extends Thread {
             else if (args[i].toLowerCase().equals("-eager"))
                 eager = true;
         if (!eager)
-            Harakiri.appoint(Harakiri.parseAppointment(args));
+            Terminator.appoint(Terminator.parseAppointment(args));
         stack017.out = out;
         stack017 test = new stack017();
         return test.doRun();
@@ -154,7 +154,7 @@ public class stack017 extends Thread {
                 throw error;
 
             //
-            // Stack problem caugth: provoke it again,
+            // Stack problem caught: provoke it again,
             // if current stack is enough deep:
             //
             if (depth < depthToTry - PROBES)

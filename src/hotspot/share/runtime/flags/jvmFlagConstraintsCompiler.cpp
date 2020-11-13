@@ -285,6 +285,17 @@ JVMFlag::Error ArraycopyDstPrefetchDistanceConstraintFunc(uintx value, bool verb
   return JVMFlag::SUCCESS;
 }
 
+JVMFlag::Error AVX3ThresholdConstraintFunc(int value, bool verbose) {
+  if (value != 0 && !is_power_of_2(value)) {
+    JVMFlag::printError(verbose,
+                        "AVX3Threshold ( %d ) must be 0 or "
+                        "a power of two value between 0 and MAX_INT\n", value);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+
+  return JVMFlag::SUCCESS;
+}
+
 JVMFlag::Error ArraycopySrcPrefetchDistanceConstraintFunc(uintx value, bool verbose) {
   if (value >= 4032) {
     JVMFlag::printError(verbose,
@@ -379,3 +390,26 @@ JVMFlag::Error RTMTotalCountIncrRateConstraintFunc(int value, bool verbose) {
 
   return JVMFlag::SUCCESS;
 }
+
+#ifdef COMPILER2
+JVMFlag::Error LoopStripMiningIterConstraintFunc(uintx value, bool verbose) {
+  if (UseCountedLoopSafepoints && LoopStripMiningIter == 0) {
+    if (!FLAG_IS_DEFAULT(UseCountedLoopSafepoints) || !FLAG_IS_DEFAULT(LoopStripMiningIter)) {
+      JVMFlag::printError(verbose,
+                          "When counted loop safepoints are enabled, "
+                          "LoopStripMiningIter must be at least 1 "
+                          "(a safepoint every 1 iteration): setting it to 1\n");
+    }
+    LoopStripMiningIter = 1;
+  } else if (!UseCountedLoopSafepoints && LoopStripMiningIter > 0) {
+    if (!FLAG_IS_DEFAULT(UseCountedLoopSafepoints) || !FLAG_IS_DEFAULT(LoopStripMiningIter)) {
+      JVMFlag::printError(verbose,
+                          "Disabling counted safepoints implies no loop strip mining: "
+                          "setting LoopStripMiningIter to 0\n");
+    }
+    LoopStripMiningIter = 0;
+  }
+
+  return JVMFlag::SUCCESS;
+}
+#endif // COMPILER2

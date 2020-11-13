@@ -131,6 +131,11 @@ public class BasicMenuItemUI extends MenuItemUI
     private static final boolean VERBOSE = false; // show reuse hits/misses
     private static final boolean DEBUG =   false;  // show bad params, misc.
 
+    /**
+     * Constructs a {@code BasicMenuItemUI}.
+     */
+    public BasicMenuItemUI() {}
+
     static void loadActionMap(LazyActionMap map) {
         // NOTE: BasicMenuUI also calls into this method.
         map.put(new Actions(Actions.CLICK));
@@ -922,6 +927,11 @@ public class BasicMenuItemUI extends MenuItemUI
         // its functionality has been moved into Handler. If you need to add
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
+
+        /**
+         * Constructs a {@code MouseInputHandler}.
+         */
+        protected MouseInputHandler() {}
 
         /** {@inheritDoc} */
         public void mouseClicked(MouseEvent e) {

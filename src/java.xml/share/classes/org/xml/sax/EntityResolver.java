@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,9 +115,9 @@ public interface EntityResolver {
      * @return An InputSource object describing the new input source,
      *         or null to request that the parser open a regular
      *         URI connection to the system identifier.
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly
+     * @throws org.xml.sax.SAXException Any SAX exception, possibly
      *            wrapping another exception.
-     * @exception java.io.IOException A Java-specific IO exception,
+     * @throws java.io.IOException A Java-specific IO exception,
      *            possibly the result of creating a new InputStream
      *            or Reader for the InputSource.
      * @see org.xml.sax.InputSource

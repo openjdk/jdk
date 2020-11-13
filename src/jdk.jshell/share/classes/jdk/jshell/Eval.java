@@ -24,15 +24,13 @@
  */
 package jdk.jshell;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.Name;
+
 import com.sun.source.tree.ArrayTypeTree;
 import com.sun.source.tree.AssignmentTree;
 import com.sun.source.tree.ClassTree;
@@ -49,9 +47,7 @@ import com.sun.tools.javac.tree.Pretty;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.util.Arrays;
-import java.util.LinkedHashSet;
-import java.util.Set;
+
 import jdk.jshell.ExpressionToTypeInfo.ExpressionInfo;
 import jdk.jshell.ExpressionToTypeInfo.ExpressionInfo.AnonymousDescription;
 import jdk.jshell.ExpressionToTypeInfo.ExpressionInfo.AnonymousDescription.VariableDesc;
@@ -80,6 +76,9 @@ import static java.util.stream.Collectors.toSet;
 import static java.util.Collections.singletonList;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_GEN;
+import static jdk.jshell.Snippet.Status.RECOVERABLE_DEFINED;
+import static jdk.jshell.Snippet.Status.RECOVERABLE_NOT_DEFINED;
+import static jdk.jshell.Snippet.Status.VALID;
 import static jdk.jshell.Util.DOIT_METHOD_NAME;
 import static jdk.jshell.Util.PREFIX_PATTERN;
 import static jdk.jshell.Util.expunge;
@@ -304,6 +303,7 @@ class Eval {
         for (Tree unitTree : units) {
             VariableTree vt = (VariableTree) unitTree;
             String name = vt.getName().toString();
+//            String name = userReadableName(vt.getName(), compileSource);
             String typeName;
             String fullTypeName;
             String displayType;
@@ -400,13 +400,18 @@ class Eval {
                 winit = Wrap.simpleWrap(sinit);
                 subkind = SubKind.VAR_DECLARATION_SUBKIND;
             }
+            Wrap wname;
             int nameStart = compileSource.lastIndexOf(name, nameMax);
             if (nameStart < 0) {
-                throw new AssertionError("Name '" + name + "' not found");
+                // the name has been transformed (e.g. unicode).
+                // Use it directly
+                wname = Wrap.identityWrap(name);
+            } else {
+                int nameEnd = nameStart + name.length();
+                Range rname = new Range(nameStart, nameEnd);
+                wname = new Wrap.RangeWrap(compileSource, rname);
             }
-            int nameEnd = nameStart + name.length();
-            Range rname = new Range(nameStart, nameEnd);
-            Wrap guts = Wrap.varWrap(compileSource, typeWrap, sbBrackets.toString(), rname,
+            Wrap guts = Wrap.varWrap(compileSource, typeWrap, sbBrackets.toString(), wname,
                                      winit, enhancedDesugaring, anonDeclareWrap);
             DiagList modDiag = modifierDiagnostics(vt.getModifiers(), dis, true);
             Snippet snip = new VarSnippet(state.keyMap.keyForVariable(name), userSource, guts,
@@ -415,6 +420,26 @@ class Eval {
             snippets.add(snip);
         }
         return snippets;
+    }
+
+    private String userReadableName(Name nn, String compileSource) {
+        String s = nn.toString();
+        if (s.length() > 0 && Character.isJavaIdentifierStart(s.charAt(0)) && compileSource.contains(s)) {
+            return s;
+        }
+        String l = nameInUnicode(nn, false);
+        if (compileSource.contains(l)) {
+            return l;
+        }
+        return nameInUnicode(nn, true);
+    }
+
+    private String nameInUnicode(Name nn, boolean upper) {
+        return nn.codePoints()
+                .mapToObj(cp -> (cp > 0x7F)
+                        ? String.format(upper ? "\\u%04X" : "\\u%04x", cp)
+                        : "" + (char) cp)
+                .collect(Collectors.joining());
     }
 
     /**Convert anonymous classes in "init" to member classes, based
@@ -680,6 +705,7 @@ class Eval {
         TreeDissector dis = TreeDissector.createByFirstClass(pt);
 
         ClassTree klassTree = (ClassTree) unitTree;
+//        String name = userReadableName(klassTree.getSimpleName(), compileSource);
         String name = klassTree.getSimpleName().toString();
         DiagList modDiag = modifierDiagnostics(klassTree.getModifiers(), dis, false);
         TypeDeclKey key = state.keyMap.keyForClass(name);
@@ -730,6 +756,7 @@ class Eval {
         final TreeDissector dis = TreeDissector.createByFirstClass(pt);
 
         final MethodTree mt = (MethodTree) unitTree;
+        //String name = userReadableName(mt.getName(), compileSource);
         final String name = mt.getName().toString();
         if (objectMethods.contains(name)) {
             // The name matches a method on Object, short of an overhaul, this
@@ -753,21 +780,40 @@ class Eval {
                 .map(param -> dis.treeToRange(param.getType()).part(compileSource))
                 .collect(Collectors.joining(","));
         Tree returnType = mt.getReturnType();
-        DiagList modDiag = modifierDiagnostics(mt.getModifiers(), dis, true);
-        MethodKey key = state.keyMap.keyForMethod(name, parameterTypes);
-        // Corralling
-        Wrap corralled = new Corraller(dis, key.index(), compileSource).corralMethod(mt);
-
+        DiagList modDiag = modifierDiagnostics(mt.getModifiers(), dis, false);
         if (modDiag.hasErrors()) {
             return compileFailResult(modDiag, userSource, Kind.METHOD);
         }
-        Wrap guts = Wrap.classMemberWrap(compileSource);
+        MethodKey key = state.keyMap.keyForMethod(name, parameterTypes);
+
+        Wrap corralled;
+        Wrap guts;
+        String unresolvedSelf;
+        if (mt.getModifiers().getFlags().contains(Modifier.ABSTRACT)) {
+            if (mt.getBody() == null) {
+                // abstract method -- pre-corral
+                corralled = null; // no fall-back
+                guts = new Corraller(dis, key.index(), compileSource).corralMethod(mt);
+                unresolvedSelf = "method " + name + "(" + parameterTypes + ")";
+            } else {
+                // abstract with body, don't pollute the error message
+                corralled = null;
+                guts = Wrap.simpleWrap(compileSource);
+                unresolvedSelf = null;
+            }
+        } else {
+            // normal method
+            corralled = new Corraller(dis, key.index(), compileSource).corralMethod(mt);
+            guts = Wrap.classMemberWrap(compileSource);
+            unresolvedSelf = null;
+        }
         Range typeRange = dis.treeToRange(returnType);
         String signature = "(" + parameterTypes + ")" + typeRange.part(compileSource);
 
         Snippet snip = new MethodSnippet(key, userSource, guts,
                 name, signature,
-                corralled, tds.declareReferences(), tds.bodyReferences(), modDiag);
+                corralled, tds.declareReferences(), tds.bodyReferences(),
+                unresolvedSelf, modDiag);
         return singletonList(snip);
     }
 
@@ -866,6 +912,18 @@ class Eval {
         Set<Unit> ins = new LinkedHashSet<>();
         ins.add(c);
         Set<Unit> outs = compileAndLoad(ins);
+
+        if (si.status().isActive() && si instanceof MethodSnippet) {
+            // special processing for abstract methods
+            MethodSnippet msi = (MethodSnippet) si;
+            String unresolvedSelf = msi.unresolvedSelf;
+            if (unresolvedSelf != null) {
+                List<String> unresolved = new ArrayList<>(si.unresolved());
+                unresolved.add(unresolvedSelf);
+                si.setCompilationStatus(si.status() == VALID ? RECOVERABLE_DEFINED : si.status(),
+                        unresolved, si.diagnostics());
+            }
+        }
 
         if (!si.status().isDefined()
                 && si.diagnostics().isEmpty()
@@ -1227,6 +1285,9 @@ class Eval {
                     fatal = true;
                     break;
                 case ABSTRACT:
+                    // for classes, abstract is valid
+                    // for variables, generate an error message
+                    // for methods, we generate a placeholder method
                     if (isAbstractProhibited) {
                         list.add(mod);
                         fatal = true;
@@ -1242,7 +1303,7 @@ class Eval {
                     //final classes needed for sealed classes
                     break;
                 case STATIC:
-                    list.add(mod);
+                    // everything is static -- warning just adds noise when pasting
                     break;
             }
         }

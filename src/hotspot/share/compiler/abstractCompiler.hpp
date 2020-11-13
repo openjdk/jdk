@@ -31,7 +31,6 @@
 
 typedef void (*initializer)(void);
 
-#if INCLUDE_JVMCI
 // Per-compiler statistics
 class CompilerStatistics {
   friend class VMStructs;
@@ -58,17 +57,20 @@ class CompilerStatistics {
   Data _osr;       // stats for OSR compilations
   int _nmethods_size; //
   int _nmethods_code_size;
-  int bytes_per_second() {
+
+  double total_time() { return _standard._time.seconds() + _osr._time.seconds(); }
+
+  double bytes_per_second() {
     int bytes = _standard._bytes + _osr._bytes;
     if (bytes == 0) {
-      return 0;
+      return 0.0;
     }
-    double seconds = _standard._time.seconds() + _osr._time.seconds();
-    return seconds == 0.0 ? 0 : (int) (bytes / seconds);
+    double seconds = total_time();
+    return seconds == 0.0 ? 0.0 : (bytes / seconds);
   }
+
   CompilerStatistics() : _nmethods_size(0), _nmethods_code_size(0) {}
 };
-#endif // INCLUDE_JVMCI
 
 class AbstractCompiler : public CHeapObj<mtCompiler> {
  private:
@@ -86,9 +88,7 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
  private:
   const CompilerType _type;
 
-#if INCLUDE_JVMCI
   CompilerStatistics _stats;
-#endif
 
  public:
   AbstractCompiler(CompilerType type) : _num_compiler_threads(0), _compiler_state(uninitialized), _type(type) {}
@@ -176,9 +176,7 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
     ShouldNotReachHere();
   }
 
-#if INCLUDE_JVMCI
   CompilerStatistics* stats() { return &_stats; }
-#endif
 };
 
 #endif // SHARE_COMPILER_ABSTRACTCOMPILER_HPP

@@ -31,7 +31,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jvmti.RedefineClasses.StressRedefine
  * @run main/othervm/native ExecDriver --java
  *      -agentlib:stressRedefine

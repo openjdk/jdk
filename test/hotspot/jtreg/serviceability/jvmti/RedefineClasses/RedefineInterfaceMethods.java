@@ -25,6 +25,7 @@
  * @test
  * @bug 8081800 8010319
  * @summary Redefine private and default interface methods
+ * @requires vm.jvmti
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.compiler

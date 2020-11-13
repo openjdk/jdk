@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,6 +102,7 @@ void JNICALL ClassPrepare(jvmtiEnv *jvmti_env, JNIEnv *env,
         printf("(GetClassSignature#%" PRIuPTR ") unexpected error: %s (%d)\n",
                eventsCount, TranslateError(err), err);
         result = STATUS_FAILED;
+        return;
     }
     err = jvmti_env->GetClassStatus(cls, &inf.status);
     if (err != JVMTI_ERROR_NONE) {
@@ -114,12 +115,14 @@ void JNICALL ClassPrepare(jvmtiEnv *jvmti_env, JNIEnv *env,
         printf("(GetClassMethods#%" PRIuPTR ") unexpected error: %s (%d)\n",
                eventsCount, TranslateError(err), err);
         result = STATUS_FAILED;
+        return;
     }
     err = jvmti_env->GetClassFields(cls, &inf.fcount, &fields);
     if (err != JVMTI_ERROR_NONE) {
         printf("(GetClassMethods#%" PRIuPTR ") unexpected error: %s (%d)\n",
                eventsCount, TranslateError(err), err);
         result = STATUS_FAILED;
+        return;
     }
     err = jvmti_env->GetImplementedInterfaces(cls,
         &inf.icount, &interfaces);
@@ -127,6 +130,7 @@ void JNICALL ClassPrepare(jvmtiEnv *jvmti_env, JNIEnv *env,
         printf("(GetImplementedInterfaces#%" PRIuPTR ") unexpected error: %s (%d)\n",
                eventsCount, TranslateError(err), err);
         result = STATUS_FAILED;
+        return;
     }
 
     if (printdump == JNI_TRUE) {

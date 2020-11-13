@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,37 @@
 
 package javax.swing.plaf.synth;
 
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
-import javax.swing.plaf.*;
-import javax.swing.event.*;
-import javax.swing.plaf.basic.*;
-import java.beans.PropertyChangeListener;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Insets;
+import java.awt.Rectangle;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+
+import javax.swing.ComboBoxEditor;
+import javax.swing.DefaultButtonModel;
+import javax.swing.Icon;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.ListCellRenderer;
+import javax.swing.SwingConstants;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.UIResource;
+import javax.swing.plaf.basic.BasicComboBoxEditor;
+import javax.swing.plaf.basic.BasicComboBoxUI;
+import javax.swing.plaf.basic.ComboPopup;
 
 /**
  * Provides the Synth L&amp;F UI delegate for
@@ -91,6 +114,12 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
      * and forced to opaque after rendering the selected value.
      */
     private boolean forceOpaque = false;
+
+    /**
+     *
+     * Constructs a {@code SynthComboBoxUI}.
+     */
+    public SynthComboBoxUI() {}
 
     /**
      * Creates a new UI object for the given component.
@@ -352,6 +381,8 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
             Rectangle r = rectangleForCurrentValue();
             paintCurrentValue(g,r,hasFocus);
         }
+        // Empty out the renderer pane, allowing renderers to be gc'ed.
+        currentValuePane.removeAll();
     }
 
     /**
@@ -722,9 +753,9 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
             comboBox.addPropertyChangeListener("editor",this);
         }
 
-        public void unregister(){
-            comboBox.removePropertyChangeListener(this);
-            if (editorComponent!=null){
+        public void unregister() {
+            comboBox.removePropertyChangeListener("editor", this);
+            if (editorComponent != null) {
                 editorComponent.removeFocusListener(this);
             }
         }

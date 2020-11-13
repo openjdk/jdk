@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.io.InputStream;
 
 /**
  * The representation (mapping) in
- * the Java&trade; programming language of an SQL
+ * the Java programming language of an SQL
  * {@code BLOB} value.  An SQL {@code BLOB} is a built-in type
  * that stores a Binary Large Object as a column value in a row of
  * a database table. By default drivers implement {@code Blob} using
@@ -63,10 +63,10 @@ public interface Blob {
    * designated by this {@code Blob} object.
    *
    * @return length of the {@code BLOB} in bytes
-   * @exception SQLException if there is an error accessing the
-   *            length of the {@code BLOB}
-   * @exception SQLFeatureNotSupportedException if the JDBC driver
-   *            does not support this method
+   * @throws SQLException if there is an error accessing the
+   *         length of the {@code BLOB}
+   * @throws SQLFeatureNotSupportedException if the JDBC driver
+   *         does not support this method
    * @since 1.2
    */
   long length() throws SQLException;
@@ -86,11 +86,11 @@ public interface Blob {
    *         consecutive bytes from the {@code BLOB} value designated
    *         by this {@code Blob} object, starting with the
    *         byte at position {@code pos}
-   * @exception SQLException if there is an error accessing the
-   *            {@code BLOB} value; if pos is less than 1 or length is
-   *            less than 0
-   * @exception SQLFeatureNotSupportedException if the JDBC driver
-   *            does not support this method
+   * @throws SQLException if there is an error accessing the
+   *         {@code BLOB} value; if pos is less than 1 or length is
+   *         less than 0
+   * @throws SQLFeatureNotSupportedException if the JDBC driver
+   *         does not support this method
    * @see #setBytes
    * @since 1.2
    */
@@ -101,10 +101,10 @@ public interface Blob {
    * {@code Blob} instance as a stream.
    *
    * @return a stream containing the {@code BLOB} data
-   * @exception SQLException if there is an error accessing the
-   *            {@code BLOB} value
-   * @exception SQLFeatureNotSupportedException if the JDBC driver
-   *            does not support this method
+   * @throws SQLException if there is an error accessing the
+   *         {@code BLOB} value
+   * @throws SQLFeatureNotSupportedException if the JDBC driver
+   *         does not support this method
    * @see #setBinaryStream
    * @since 1.2
    */
@@ -121,10 +121,10 @@ public interface Blob {
    * @param start the position at which to begin searching; the
    *        first position is 1
    * @return the position at which the pattern appears, else -1
-   * @exception SQLException if there is an error accessing the
-   *            {@code BLOB} or if start is less than 1
-   * @exception SQLFeatureNotSupportedException if the JDBC driver
-   *            does not support this method
+   * @throws SQLException if there is an error accessing the
+   *         {@code BLOB} or if start is less than 1
+   * @throws SQLFeatureNotSupportedException if the JDBC driver
+   *         does not support this method
    * @since 1.2
    */
   long position(byte pattern[], long start) throws SQLException;
@@ -140,10 +140,10 @@ public interface Blob {
    * @param start the position in the {@code BLOB} value
    *        at which to begin searching; the first position is 1
    * @return the position at which the pattern begins, else -1
-   * @exception SQLException if there is an error accessing the
-   *            {@code BLOB} value or if start is less than 1
-   * @exception SQLFeatureNotSupportedException if the JDBC driver
-   *            does not support this method
+   * @throws SQLException if there is an error accessing the
+   *         {@code BLOB} value or if start is less than 1
+   * @throws SQLFeatureNotSupportedException if the JDBC driver
+   *         does not support this method
    * @since 1.2
    */
   long position(Blob pattern, long start) throws SQLException;
@@ -171,10 +171,10 @@ public interface Blob {
      * @param bytes the array of bytes to be written to the {@code BLOB}
      *        value that this {@code Blob} object represents
      * @return the number of bytes written
-     * @exception SQLException if there is an error accessing the
-     *            {@code BLOB} value or if pos is less than 1
-     * @exception SQLFeatureNotSupportedException if the JDBC driver
-     *            does not support this method
+     * @throws SQLException if there is an error accessing the
+     *         {@code BLOB} value or if pos is less than 1
+     * @throws SQLFeatureNotSupportedException if the JDBC driver
+     *         does not support this method
      * @see #getBytes
      * @since 1.4
      */
@@ -207,10 +207,10 @@ public interface Blob {
      * @param len the number of bytes to be written to the {@code BLOB}
      *        value from the array of bytes {@code bytes}
      * @return the number of bytes written
-     * @exception SQLException if there is an error accessing the
-     *            {@code BLOB} value or if pos is less than 1
-     * @exception SQLFeatureNotSupportedException if the JDBC driver
-     *            does not support this method
+     * @throws SQLException if there is an error accessing the
+     *         {@code BLOB} value or if pos is less than 1
+     * @throws SQLFeatureNotSupportedException if the JDBC driver
+     *         does not support this method
      * @see #getBytes
      * @since 1.4
      */
@@ -236,10 +236,10 @@ public interface Blob {
      *        to start writing; the first position is 1
      * @return a {@code java.io.OutputStream} object to which data can
      *         be written
-     * @exception SQLException if there is an error accessing the
-     *            {@code BLOB} value or if pos is less than 1
-     * @exception SQLFeatureNotSupportedException if the JDBC driver
-     *            does not support this method
+     * @throws SQLException if there is an error accessing the
+     *         {@code BLOB} value or if pos is less than 1
+     * @throws SQLFeatureNotSupportedException if the JDBC driver
+     *         does not support this method
      * @see #getBinaryStream
      * @since 1.4
      */
@@ -257,10 +257,10 @@ public interface Blob {
      *
      * @param len the length, in bytes, to which the {@code BLOB} value
      *        that this {@code Blob} object represents should be truncated
-     * @exception SQLException if there is an error accessing the
-     *            {@code BLOB} value or if len is less than 0
-     * @exception SQLFeatureNotSupportedException if the JDBC driver
-     *            does not support this method
+     * @throws SQLException if there is an error accessing the
+     *         {@code BLOB} value or if len is less than 0
+     * @throws SQLFeatureNotSupportedException if the JDBC driver
+     *         does not support this method
      * @since 1.4
      */
     void truncate(long len) throws SQLException;
@@ -277,8 +277,8 @@ public interface Blob {
      *
      * @throws SQLException if an error occurs releasing
      *         the Blob's resources
-     * @exception SQLFeatureNotSupportedException if the JDBC driver
-     *            does not support this method
+     * @throws SQLFeatureNotSupportedException if the JDBC driver
+     *         does not support this method
      * @since 1.6
      */
     void free() throws SQLException;
@@ -298,8 +298,8 @@ public interface Blob {
      *         pos + length is greater than the number of bytes
      *         in the {@code Blob}
      *
-     * @exception SQLFeatureNotSupportedException if the JDBC driver
-     *            does not support this method
+     * @throws SQLFeatureNotSupportedException if the JDBC driver
+     *         does not support this method
      * @since 1.6
      */
     InputStream getBinaryStream(long pos, long length) throws SQLException;

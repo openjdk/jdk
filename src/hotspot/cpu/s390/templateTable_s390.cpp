@@ -34,6 +34,7 @@
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
@@ -109,12 +110,6 @@
     guarantee(len == e_addr-b_addr, "block len mismatch");                     \
   }
 #endif // ASSERT
-
-// Platform-dependent initialization.
-
-void TemplateTable::pd_initialize() {
-  // No specific initialization.
-}
 
 // Address computation: local variables
 
@@ -466,6 +461,7 @@ void TemplateTable::fast_aldc(bool wide) {
 
   // Convert null sentinel to NULL.
   __ load_const_optimized(Z_R1_scratch, (intptr_t)Universe::the_null_sentinel_addr());
+  __ resolve_oop_handle(Z_R1_scratch);
   __ z_cg(Z_tos, Address(Z_R1_scratch));
   __ z_brne(L_resolved);
   __ clear_reg(Z_tos);
@@ -2012,7 +2008,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
 
   // Out-of-line code runtime calls.
   if (UseLoopCounter) {
-    if (ProfileInterpreter) {
+    if (ProfileInterpreter && !TieredCompilation) {
       // Out-of-line code to allocate method data oop.
       __ bind(profile_method);
 
@@ -2382,7 +2378,7 @@ void TemplateTable::_return(TosState state) {
 
   if (_desc->bytecode() != Bytecodes::_return_register_finalizer) {
     Label no_safepoint;
-    const Address poll_byte_addr(Z_thread, in_bytes(Thread::polling_page_offset()) + 7 /* Big Endian */);
+    const Address poll_byte_addr(Z_thread, in_bytes(Thread::polling_word_offset()) + 7 /* Big Endian */);
     __ z_tm(poll_byte_addr, SafepointMechanism::poll_bit());
     __ z_braz(no_safepoint);
     __ push(state);

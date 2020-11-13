@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,27 +41,27 @@ public interface DocCommentTable {
     /**
      * Check if a tree node has a corresponding doc comment.
      */
-    public boolean hasComment(JCTree tree);
+    boolean hasComment(JCTree tree);
 
     /**
      * Get the Comment token containing the doc comment, if any, for a tree node.
      */
-    public Comment getComment(JCTree tree);
+    Comment getComment(JCTree tree);
 
     /**
      * Get the plain text of the doc comment, if any, for a tree node.
      */
-    public String getCommentText(JCTree tree);
+    String getCommentText(JCTree tree);
 
     /**
      * Get the parsed form of the doc comment as a DocTree. If any errors
      * are detected during parsing, they will be reported via
      * {@link ErroneousTree ErroneousTree} nodes within the resulting tree.
      */
-    public DCDocComment getCommentTree(JCTree tree);
+    DCDocComment getCommentTree(JCTree tree);
 
     /**
      * Set the Comment to be associated with a tree node.
      */
-    public void putComment(JCTree tree, Comment c);
+    void putComment(JCTree tree, Comment c);
 }

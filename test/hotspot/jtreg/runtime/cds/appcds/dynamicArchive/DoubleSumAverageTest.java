@@ -47,8 +47,7 @@ public class DoubleSumAverageTest extends DynamicArchiveTestBase {
 
     static void testImpl() throws Exception {
         String topArchiveName = getNewArchiveName();
-        JarBuilder.build("stream", new File(classDir), null);
-        String appJar = classDir + File.separator + "stream.jar";
+        String appJar = JarBuilder.build("stream", new File(classDir), null);
 
         dumpAndRun(topArchiveName, "-Xlog:cds,cds+dynamic=debug,class+load=trace",
                 "-cp", appJar, mainClass);

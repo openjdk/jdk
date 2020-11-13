@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import jdk.test.lib.util.JarBuilder;
 /*
  * @test
  * @bug 8174151
  * @summary Test for java.protocol.handler.pkgs with jar protocol handler
- * @library /lib/testlibrary/java/util/jar
+ * @library /test/lib/
+ * @build jdk.test.lib.util.JarBuilder
  * @compile handlers/jar/Handler.java
  * @run main/othervm -Djava.protocol.handler.pkgs=handlers JarHandlerPkgPrefix
  */
@@ -63,3 +65,4 @@ public class JarHandlerPkgPrefix {
         }
     }
 }
+

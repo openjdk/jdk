@@ -37,6 +37,9 @@ import javax.swing.plaf.basic.BasicTextUI;
  */
 @Deprecated
 public abstract class DefaultTextUI extends BasicTextUI {
-
+    /**
+     * Constructor for subclasses to call.
+     */
+    protected DefaultTextUI() {}
 
 }

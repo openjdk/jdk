@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,16 +20,21 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package nsk.share;
 
-import java.io.*;
+import jdk.test.lib.Utils;
 
-public class GoldChecker extends AbstractGoldChecker
-{
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+public class GoldChecker extends AbstractGoldChecker {
     private final String goldOutput;
 
-    public GoldChecker(String main_class_name) {
-        goldOutput = readGoldStr(main_class_name + ".gold");
+    public GoldChecker(String mainClassName) {
+        goldOutput = readGoldStr(Path.of(Utils.TEST_SRC, mainClassName + ".gold"));
     }
 
     @Override
@@ -37,35 +42,17 @@ public class GoldChecker extends AbstractGoldChecker
         return goldOutput;
     }
 
-    private String readGoldStr(String gold_file_name) {
-        RandomAccessFile f;
-
-        try {
-            f = new RandomAccessFile(gold_file_name, "r");
-        } catch (FileNotFoundException e) {
-            throw new TestBug("Unable to open golden file '" + gold_file_name + "' for reading");
+    private String readGoldStr(Path goldenFile) {
+        if (Files.notExists(goldenFile)) {
+            throw new TestBug("Unable to open golden file '" + goldenFile + "' for reading");
         }
-
         byte[] data;
-
         try {
-            int len = (int)f.length();
-            data = new byte[len];
-            f.read(data);
+            data = Files.readAllBytes(goldenFile);
         } catch (IOException e) {
-            throw new TestBug("Error reading from golden file'" + gold_file_name + "'");
+            throw new TestBug("Error reading from golden file '" + goldenFile + "'", e);
         }
-
-        try {
-            f.close();
-        } catch (IOException e) {
-        }
-
-        try {
-            return new String(data, "US-ASCII");
-        } catch (UnsupportedEncodingException e) {
-            throw new TestFailure( e );
-        }
+        return new String(data, StandardCharsets.US_ASCII);
     }
 
 }

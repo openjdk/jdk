@@ -27,7 +27,6 @@
 #ifdef _WIN32
 
 #include "jni.h"
-#include "jni_util.h"
 #include <windows.h>
 
 JNIEXPORT jlong JNICALL Java_CheckHandles_getProcessHandleCount(JNIEnv *env)

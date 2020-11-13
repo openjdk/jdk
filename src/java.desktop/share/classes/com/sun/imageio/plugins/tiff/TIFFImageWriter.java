@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -258,10 +258,12 @@ public class TIFFImageWriter extends ImageWriter {
         super(originatingProvider);
     }
 
+    @Override
     public ImageWriteParam getDefaultWriteParam() {
         return new TIFFImageWriteParam(getLocale());
     }
 
+    @Override
     public void setOutput(Object output) {
         if (output != null) {
             if (!(output instanceof ImageOutputStream)) {
@@ -316,11 +318,13 @@ public class TIFFImageWriter extends ImageWriter {
         super.setOutput(output);
     }
 
+    @Override
     public IIOMetadata
         getDefaultStreamMetadata(ImageWriteParam param) {
         return new TIFFStreamMetadata();
     }
 
+    @Override
     public IIOMetadata
         getDefaultImageMetadata(ImageTypeSpecifier imageType,
                                 ImageWriteParam param) {
@@ -342,6 +346,7 @@ public class TIFFImageWriter extends ImageWriter {
         return imageMetadata;
     }
 
+    @Override
     public IIOMetadata convertStreamMetadata(IIOMetadata inData,
                                              ImageWriteParam param) {
         // Check arguments.
@@ -370,6 +375,7 @@ public class TIFFImageWriter extends ImageWriter {
         return outData;
     }
 
+    @Override
     public IIOMetadata
         convertImageMetadata(IIOMetadata inData,
                              ImageTypeSpecifier imageType,
@@ -2305,6 +2311,7 @@ public class TIFFImageWriter extends ImageWriter {
         }
     }
 
+    @Override
     public void write(IIOMetadata sm,
                       IIOImage iioimage,
                       ImageWriteParam p) throws IOException {
@@ -2618,10 +2625,12 @@ public class TIFFImageWriter extends ImageWriter {
         currentImage++;
     }
 
+    @Override
     public boolean canWriteSequence() {
         return true;
     }
 
+    @Override
     public void prepareWriteSequence(IIOMetadata streamMetadata)
         throws IOException {
         if (getOutput() == null) {
@@ -2644,6 +2653,7 @@ public class TIFFImageWriter extends ImageWriter {
         this.isWritingSequence = true;
     }
 
+    @Override
     public void writeToSequence(IIOImage image, ImageWriteParam param)
         throws IOException {
         // Check sequence flag.
@@ -2656,6 +2666,7 @@ public class TIFFImageWriter extends ImageWriter {
         writeInsert(-1, image, param);
     }
 
+    @Override
     public void endWriteSequence() throws IOException {
         // Check output.
         if (getOutput() == null) {
@@ -2678,6 +2689,7 @@ public class TIFFImageWriter extends ImageWriter {
         }
     }
 
+    @Override
     public boolean canInsertImage(int imageIndex) throws IOException {
         if (getOutput() == null) {
             throw new IllegalStateException("getOutput() == null!");
@@ -2764,6 +2776,7 @@ public class TIFFImageWriter extends ImageWriter {
         }
     }
 
+    @Override
     public void writeInsert(int imageIndex,
                             IIOImage image,
                             ImageWriteParam param) throws IOException {
@@ -2844,10 +2857,12 @@ public class TIFFImageWriter extends ImageWriter {
         return isInsertingEmpty || isWritingEmpty;
     }
 
+    @Override
     public boolean canInsertEmpty(int imageIndex) throws IOException {
         return canInsertImage(imageIndex);
     }
 
+    @Override
     public boolean canWriteEmpty() throws IOException {
         if (getOutput() == null) {
             throw new IllegalStateException("getOutput() == null!");
@@ -2894,6 +2909,7 @@ public class TIFFImageWriter extends ImageWriter {
         }
     }
 
+    @Override
     public void prepareInsertEmpty(int imageIndex,
                                    ImageTypeSpecifier imageType,
                                    int width,
@@ -2915,6 +2931,7 @@ public class TIFFImageWriter extends ImageWriter {
                param, false);
     }
 
+    @Override
     public void prepareWriteEmpty(IIOMetadata streamMetadata,
                                   ImageTypeSpecifier imageType,
                                   int width,
@@ -2944,6 +2961,7 @@ public class TIFFImageWriter extends ImageWriter {
         }
     }
 
+    @Override
     public void endInsertEmpty() throws IOException {
         if (getOutput() == null) {
             throw new IllegalStateException("getOutput() == null!");
@@ -2967,6 +2985,7 @@ public class TIFFImageWriter extends ImageWriter {
         this.isInsertingEmpty = false;
     }
 
+    @Override
     public void endWriteEmpty() throws IOException {
         if (getOutput() == null) {
             throw new IllegalStateException("getOutput() == null!");
@@ -3021,6 +3040,7 @@ public class TIFFImageWriter extends ImageWriter {
         return rootIFD;
     }
 
+    @Override
     public boolean canReplacePixels(int imageIndex) throws IOException {
         if (getOutput() == null) {
             throw new IllegalStateException("getOutput() == null!");
@@ -3046,6 +3066,7 @@ public class TIFFImageWriter extends ImageWriter {
 
     private TIFFImageReader reader = null;
 
+    @Override
     public void prepareReplacePixels(int imageIndex,
                                      Rectangle region) throws IOException {
         synchronized(replacePixelsLock) {
@@ -3229,6 +3250,7 @@ public class TIFFImageWriter extends ImageWriter {
                               sourceBands);
     }
 
+    @Override
     public void replacePixels(RenderedImage image, ImageWriteParam param)
         throws IOException {
 
@@ -3568,6 +3590,7 @@ public class TIFFImageWriter extends ImageWriter {
         }
     }
 
+    @Override
     public void replacePixels(Raster raster, ImageWriteParam param)
         throws IOException {
         if (raster == null) {
@@ -3579,6 +3602,7 @@ public class TIFFImageWriter extends ImageWriter {
                       param);
     }
 
+    @Override
     public void endReplacePixels() throws IOException {
         synchronized(replacePixelsLock) {
             if(!this.inReplacePixelsNest) {
@@ -3612,6 +3636,7 @@ public class TIFFImageWriter extends ImageWriter {
         nextSpace = prevNextSpace;
     }
 
+    @Override
     public void reset() {
         super.reset();
 
@@ -3659,6 +3684,7 @@ class EmptyImage extends SimpleRenderedImage {
         this.colorModel = colorModel;
     }
 
+    @Override
     public Raster getTile(int tileX, int tileY) {
         return null;
     }

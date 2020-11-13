@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 4235519 8004212 8005394 8007298 8006295 8006315 8006530 8007379 8008925
- *      8014217 8025003 8026330 8028397 8129544 8165243 8176379
+ *      8014217 8025003 8026330 8028397 8129544 8165243 8176379 8222187
  * @summary tests java.util.Base64
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
@@ -144,6 +144,10 @@ public class TestBase64 {
         testDecoderKeepsAbstinence(Base64.getDecoder());
         testDecoderKeepsAbstinence(Base64.getUrlDecoder());
         testDecoderKeepsAbstinence(Base64.getMimeDecoder());
+
+        // tests patch addressing JDK-8222187
+        // https://bugs.openjdk.java.net/browse/JDK-8222187
+        testJDK_8222187();
     }
 
     private static void test(Base64.Encoder enc, Base64.Decoder dec,
@@ -604,6 +608,28 @@ public class TestBase64 {
                     throw new RuntimeException("No input should be consumed, "
                             + "but consumed " + (input.length() - bais.available())
                             + " bytes");
+            }
+        }
+    }
+
+    private static void testJDK_8222187() throws Throwable {
+        byte[] orig = "12345678".getBytes("US-ASCII");
+        byte[] encoded = Base64.getEncoder().encode(orig);
+        // decode using different buffer sizes, up to a longer one than needed
+        for (int bufferSize = 1; bufferSize <= encoded.length + 1; bufferSize++) {
+            try (
+                    InputStream in = Base64.getDecoder().wrap(
+                            new ByteArrayInputStream(encoded));
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ) {
+                byte[] buffer = new byte[bufferSize];
+                int read;
+                while ((read = in.read(buffer, 0, bufferSize)) >= 0) {
+                    baos.write(buffer, 0, read);
+                }
+                // compare result, output info if lengths do not match
+                byte[] decoded = baos.toByteArray();
+                checkEqual(decoded, orig, "Base64 stream decoding failed!");
             }
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import com.sun.source.doctree.*;
 
 
 /**
- * A TreeVisitor that visits all the child tree nodes.
+ * A DocTreeVisitor that visits all the child tree nodes.
  * To visit nodes of a particular type, just override the
  * corresponding visitXYZ method.
  * Inside your method, call super.visitXYZ to visit descendant
@@ -68,6 +68,10 @@ import com.sun.source.doctree.*;
  * @since 1.8
  */
 public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
+    /**
+     * Constructs a {@code DocTreeScanner}.
+     */
+    public DocTreeScanner() {}
 
     /**
      * Scans a single node.
@@ -271,7 +275,7 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation returns {@code null}.
+     * {@inheritDoc} This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -459,8 +463,7 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
      */
     @Override
     public R visitSummary(SummaryTree node, P p) {
-        R r = scan(node.getSummary(), p);
-        return r;
+        return scan(node.getSummary(), p);
     }
 
     /**

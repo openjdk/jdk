@@ -36,6 +36,12 @@ import javax.swing.plaf.ComponentUI;
  */
 public class SynthFormattedTextFieldUI extends SynthTextFieldUI {
     /**
+     *
+     * Constructs a {@code SynthFormattedTextFieldUI}.
+     */
+    public SynthFormattedTextFieldUI() {}
+
+    /**
      * Creates a UI for a JFormattedTextField.
      *
      * @param c the formatted text field

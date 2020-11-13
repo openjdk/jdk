@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,7 +168,7 @@ extern "C" {
      * Our window proc
      *
      */
-    BOOL CALLBACK AccessBridgeDialogProc(HWND hDlg, UINT message, UINT wParam, LONG lParam) {
+    BOOL CALLBACK AccessBridgeDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
         COPYDATASTRUCT *sentToUs;
         char *package;
 

@@ -52,7 +52,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm/native
@@ -88,8 +87,8 @@ public class TestDriver {
         nsk.jvmti.scenarios.general_functions.GF08.gf08t.main(new String[] {
                 "gf08t001",
                 nsk.jvmti.scenarios.general_functions.GF08.gf08t001.class.getName(),
-                keyPhrase,
-                "gc"});
+                "gc",
+                keyPhrase});
     }
 }
 

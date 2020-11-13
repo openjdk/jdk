@@ -43,7 +43,7 @@ class ShenandoahHeap;
 class ShenandoahPacer : public CHeapObj<mtGC> {
 private:
   ShenandoahHeap* _heap;
-  BinaryMagnitudeSeq _delays;
+  double _last_time;
   TruncatedSeq* _progress_history;
   Monitor* _wait_monitor;
   ShenandoahSharedFlag _need_notify_waiters;
@@ -65,6 +65,7 @@ private:
 public:
   ShenandoahPacer(ShenandoahHeap* heap) :
           _heap(heap),
+          _last_time(os::elapsedTime()),
           _progress_history(new TruncatedSeq(5)),
           _wait_monitor(new Monitor(Mutex::leaf, "_wait_monitor", true, Monitor::_safepoint_check_always)),
           _epoch(0),
@@ -78,7 +79,6 @@ public:
   void setup_for_updaterefs();
 
   void setup_for_reset();
-  void setup_for_preclean();
 
   inline void report_mark(size_t words);
   inline void report_evac(size_t words);
@@ -94,7 +94,8 @@ public:
 
   intptr_t epoch();
 
-  void print_on(outputStream* out) const;
+  void flush_stats_to_cycle();
+  void print_cycle_on(outputStream* out);
 
 private:
   inline void report_internal(size_t words);

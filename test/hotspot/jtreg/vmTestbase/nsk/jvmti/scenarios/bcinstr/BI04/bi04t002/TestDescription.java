@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,26 +51,24 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jvmti.scenarios.bcinstr.BI04.bi04t002
  *        nsk.jvmti.scenarios.bcinstr.BI04.bi04t002a
  *
  * @comment compile newclassXX to bin/newclassXX
- * @build ExecDriver
- * @run driver PropertyResolvingWrapper ExecDriver --cmd
+ * @run driver ExecDriver --cmd
  *      ${compile.jdk}/bin/javac
- *      --patch-module java.base=newclass02/java.base
+ *      --patch-module java.base=${test.src}/newclass02/java.base
  *      -d bin/newclass02
  *      -cp ${test.class.path}
  *      --add-reads=java.base=ALL-UNNAMED
- *      newclass02/java.base/java/lang/Object.java
+ *      ${test.src}/newclass02/java.base/java/lang/Object.java
  *
- * @run main/othervm/native PropertyResolvingWrapper ExecDriver --java
+ * @run main/othervm/native
  *      --add-reads=java.base=ALL-UNNAMED
  *      -XX:+UnlockDiagnosticVMOptions
  *      -XX:-CheckIntrinsics
  *      -Xbootclasspath/a:${test.class.path}
- *      "-agentlib:bi04t002=pathToNewByteCode=./bin -waittime=5"
+ *      -agentlib:bi04t002=pathToNewByteCode=./bin,-waittime=5
  *      nsk.jvmti.scenarios.bcinstr.BI04.bi04t002
  */
 

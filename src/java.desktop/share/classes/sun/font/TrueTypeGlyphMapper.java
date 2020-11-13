@@ -74,10 +74,9 @@ public class TrueTypeGlyphMapper extends CharToGlyphMapper {
                 return glyphCode;
             } else {
                 if (FontUtilities.isLogging()) {
-                    FontUtilities.getLogger().warning
-                        (font + " out of range glyph id=" +
-                         Integer.toHexString((int)glyphCode) +
-                         " for char " + Integer.toHexString(charCode));
+                    FontUtilities.logWarning(font + " out of range glyph id=" +
+                             Integer.toHexString((int)glyphCode) +
+                             " for char " + Integer.toHexString(charCode));
                 }
                 return (char)missingGlyph;
             }
@@ -99,8 +98,7 @@ public class TrueTypeGlyphMapper extends CharToGlyphMapper {
                 return glyphCode;
             } else {
                 if (FontUtilities.isLogging()) {
-                    FontUtilities.getLogger().warning
-                        (font + " out of range glyph id=" +
+                    FontUtilities.logWarning(font + " out of range glyph id=" +
                          Integer.toHexString((int)glyphCode) +
                          " for char " + Integer.toHexString(charCode) +
                          " for vs " + Integer.toHexString(variationSelector));
@@ -115,9 +113,10 @@ public class TrueTypeGlyphMapper extends CharToGlyphMapper {
 
     private void handleBadCMAP() {
         if (FontUtilities.isLogging()) {
-            FontUtilities.getLogger().severe("Null Cmap for " + font +
-                                      "substituting for this font");
+            FontUtilities.logSevere("Null Cmap for " + font +
+                                    "substituting for this font");
         }
+
         SunFontManager.getInstance().deRegisterBadFont(font);
         /* The next line is not really a solution, but might
          * reduce the exceptions until references to this font2D

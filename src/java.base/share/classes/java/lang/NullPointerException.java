@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,6 @@ package java.lang;
  * Throwable, boolean, boolean) suppression were disabled and/or the
  * stack trace was not writable}.
  *
- * @author  unascribed
  * @since   1.0
  */
 public class NullPointerException extends RuntimeException {
@@ -70,6 +69,27 @@ public class NullPointerException extends RuntimeException {
         super(s);
     }
 
+    // 0: no backtrace filled in, no message computed.
+    // 1: backtrace filled in, no message computed.
+    // 2: message computed
+    private transient int extendedMessageState;
+    private transient String extendedMessage;
+
+    /**
+     * {@inheritDoc}
+     */
+    public synchronized Throwable fillInStackTrace() {
+        // If the stack trace is changed the extended NPE algorithm
+        // will compute a wrong message. So compute it beforehand.
+        if (extendedMessageState == 0) {
+            extendedMessageState = 1;
+        } else if (extendedMessageState == 1) {
+            extendedMessage = getExtendedNPEMessage();
+            extendedMessageState = 2;
+        }
+        return super.fillInStackTrace();
+    }
+
     /**
      * Returns the detail message string of this throwable.
      *
@@ -89,7 +109,15 @@ public class NullPointerException extends RuntimeException {
     public String getMessage() {
         String message = super.getMessage();
         if (message == null) {
-            return getExtendedNPEMessage();
+            synchronized(this) {
+                if (extendedMessageState == 1) {
+                    // Only the original stack trace was filled in. Message will
+                    // compute correctly.
+                    extendedMessage = getExtendedNPEMessage();
+                    extendedMessageState = 2;
+                }
+                return extendedMessage;
+            }
         }
         return message;
     }

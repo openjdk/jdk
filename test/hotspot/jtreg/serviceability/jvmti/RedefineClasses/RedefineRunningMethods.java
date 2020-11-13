@@ -25,6 +25,7 @@
  * @test
  * @bug 8055008 8197901 8010319
  * @summary Redefine EMCP and non-EMCP methods that are running in an infinite loop
+ * @requires vm.jvmti
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.compiler

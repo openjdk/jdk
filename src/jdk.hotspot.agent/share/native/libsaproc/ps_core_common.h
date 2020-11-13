@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 
 map_info* core_lookup(struct ps_prochandle *ph, uintptr_t addr);
 map_info* add_map_info(struct ps_prochandle* ph, int fd, off_t offset,
-                       uintptr_t vaddr, size_t memsz);
+                       uintptr_t vaddr, size_t memsz, uint32_t flags);
 void core_release(struct ps_prochandle* ph);
 bool read_string(struct ps_prochandle* ph, uintptr_t addr, char* buf, size_t size);
 bool init_classsharing_workaround(struct ps_prochandle* ph);

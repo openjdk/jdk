@@ -47,15 +47,10 @@ bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, 
 }
 
 bool JavaThread::pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava) {
-
-  assert(this->is_Java_thread(), "must be JavaThread");
-
-  JavaThread* jt = (JavaThread *)this;
-
   // If we have a last_Java_frame, then we should use it even if
   // isInJava == true.  It should be more reliable than CONTEXT info.
-  if (jt->has_last_Java_frame() && jt->frame_anchor()->walkable()) {
-    *fr_addr = jt->pd_last_frame();
+  if (has_last_Java_frame() && frame_anchor()->walkable()) {
+    *fr_addr = pd_last_frame();
     return true;
   }
 
@@ -63,34 +58,23 @@ bool JavaThread::pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava)
   // we try to glean some information out of the CONTEXT
   // if we were running Java code when SIGPROF came in.
   if (isInJava) {
-    CONTEXT* uc = (CONTEXT*)ucontext;
-
-#ifdef AMD64
-    intptr_t* ret_fp = (intptr_t*) uc->Rbp;
-    intptr_t* ret_sp = (intptr_t*) uc->Rsp;
-    address addr = (address)uc->Rip;
-#else
-    intptr_t* ret_fp = (intptr_t*) uc->Ebp;
-    intptr_t* ret_sp = (intptr_t*) uc->Esp;
-    address addr = (address)uc->Eip;
-#endif // AMD64
-    if (addr == NULL || ret_sp == NULL ) {
+    frame ret_frame = os::fetch_frame_from_context(ucontext);
+    if (ret_frame.pc() == NULL || ret_frame.sp() == NULL ) {
       // CONTEXT wasn't useful
       return false;
     }
 
-    if (MetaspaceShared::is_in_trampoline_frame(addr)) {
+    if (MetaspaceShared::is_in_trampoline_frame(ret_frame.pc())) {
       // In the middle of a trampoline call. Bail out for safety.
       // This happens rarely so shouldn't affect profiling.
       return false;
     }
 
-    frame ret_frame(ret_sp, ret_fp, addr);
-    if (!ret_frame.safe_for_sender(jt)) {
+    if (!ret_frame.safe_for_sender(this)) {
 #if COMPILER2_OR_JVMCI
       // C2 and JVMCI use ebp as a general register see if NULL fp helps
-      frame ret_frame2(ret_sp, NULL, addr);
-      if (!ret_frame2.safe_for_sender(jt)) {
+      frame ret_frame2(ret_frame.sp(), NULL, ret_frame.pc());
+      if (!ret_frame2.safe_for_sender(this)) {
         // nothing else to try if the frame isn't good
         return false;
       }

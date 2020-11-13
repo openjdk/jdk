@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ public interface DTDHandler {
      *        none was given.
      * @param systemId The notation's system identifier, or null if
      *        none was given.
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly
+     * @throws org.xml.sax.SAXException Any SAX exception, possibly
      *            wrapping another exception.
      * @see #unparsedEntityDecl
      * @see org.xml.sax.Attributes
@@ -108,7 +108,7 @@ public interface DTDHandler {
      * <p>If the system identifier is a URL, the parser must resolve it
      * fully before passing it to the application.</p>
      *
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly
+     * @throws org.xml.sax.SAXException Any SAX exception, possibly
      *            wrapping another exception.
      * @param name The unparsed entity's name.
      * @param publicId The entity's public identifier, or null if none

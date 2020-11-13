@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,16 @@
 
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "compiler/compileTask.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "jvmci/jvmci.hpp"
 #include "jvmci/jvmciJavaClasses.hpp"
+#include "jvmci/jvmciEnv.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "jvmci/metadataHandles.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "runtime/arguments.hpp"
 
 JVMCIRuntime* JVMCI::_compiler_runtime = NULL;
 JVMCIRuntime* JVMCI::_java_runtime = NULL;
@@ -122,6 +125,18 @@ void JVMCI::initialize_globals() {
   }
 }
 
+JavaThread* JVMCI::compilation_tick(JavaThread* thread) {
+  if (thread->is_Compiler_thread()) {
+    CompileTask *task = thread->as_CompilerThread()->task();
+    if (task != NULL) {
+      JVMCICompileState *state = task->blocking_jvmci_compile_state();
+      if (state != NULL) {
+        state->inc_compilation_ticks();
+      }
+    }
+  }
+  return thread;
+}
 
 void JVMCI::metadata_do(void f(Metadata*)) {
   if (_java_runtime != NULL) {

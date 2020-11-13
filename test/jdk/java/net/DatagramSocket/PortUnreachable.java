@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,26 +43,22 @@ public class PortUnreachable {
     int serverPort;
     int clientPort;
 
-    public void serverSend() {
-        try {
-            InetAddress addr = InetAddress.getLocalHost();
-            Thread.sleep(1000);
-            // send a delayed packet which should mean a delayed icmp
-            // port unreachable
-            byte b[] = "A late msg".getBytes();
-            DatagramPacket packet = new DatagramPacket(b, b.length, addr,
-                                                       serverPort);
-            clientSock.send(packet);
+    public void serverSend() throws Exception {
+        InetAddress addr = InetAddress.getLocalHost();
+        Thread.sleep(1000);
+        // send a delayed packet which should mean a delayed icmp
+        // port unreachable
+        byte b[] = "A late msg".getBytes();
+        DatagramPacket packet = new DatagramPacket(b, b.length, addr,
+                serverPort);
+        clientSock.send(packet);
 
-            DatagramSocket sock = recreateServerSocket(serverPort);
-            b = "Greetings from the server".getBytes();
-            packet = new DatagramPacket(b, b.length, addr, clientPort);
-            sock.send(packet);
-            Thread.sleep(500);  // give time to the kernel to send packet
-            sock.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        DatagramSocket sock = recreateServerSocket(serverPort);
+        b = "Greetings from the server".getBytes();
+        packet = new DatagramPacket(b, b.length, addr, clientPort);
+        sock.send(packet);
+        Thread.sleep(500);  // give time to the kernel to send packet
+        sock.close();
     }
 
     DatagramSocket recreateServerSocket (int serverPort) throws Exception {
@@ -180,9 +176,12 @@ public class PortUnreachable {
                 test.execute();
                 return;
             } catch (BindException bEx) {
+                System.out.println("Failed to bind server: " + bEx);
                 if (++catchCount > 3) {
+                    System.out.printf("Max retry count exceeded (%d)%n", catchCount);
                     throw bEx;
                 }
+                System.out.printf("Retrying; retry count: %d%n", catchCount);
             }
         }
     }

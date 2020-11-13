@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,10 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 
 import sun.nio.cs.ISO_8859_1;
 
-import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
  * This class consists exclusively of static methods for obtaining
@@ -419,7 +418,7 @@ public class Base64 {
             return new Encoder(isURL, newline, linemax, false);
         }
 
-        @HotSpotIntrinsicCandidate
+        @IntrinsicCandidate
         private void encodeBlock(byte[] src, int sp, int sl, byte[] dst, int dp, boolean isURL) {
             char[] base64 = isURL ? toBase64URL : toBase64;
             for (int sp0 = sp, dp0 = dp ; sp0 < sl; ) {
@@ -742,6 +741,67 @@ public class Base64 {
             return 3 * (int) ((len + 3L) / 4) - paddings;
         }
 
+        /**
+         * Decodes base64 characters, and returns the number of data bytes
+         * written into the destination array.
+         *
+         * It is the fast path for full 4-byte to 3-byte decoding w/o errors.
+         *
+         * decodeBlock() can be overridden by an arch-specific intrinsic.
+         * decodeBlock can choose to decode all, none, or a variable-sized
+         * prefix of the src bytes.  This allows the intrinsic to decode in
+         * chunks of the src that are of a favorable size for the specific
+         * processor it's running on.
+         *
+         * If the intrinsic function does not process all of the bytes in
+         * src, it must process a multiple of four of them, making the
+         * returned destination length a multiple of three.
+         *
+         * If any illegal base64 bytes are encountered in src by the
+         * intrinsic, the intrinsic must return the actual number of valid
+         * data bytes already written to dst.  Note that the '=' pad
+         * character is treated as an illegal Base64 character by
+         * decodeBlock, so it will not process a block of 4 bytes
+         * containing pad characters.
+         *
+         * Given the parameters, no length check is possible on dst, so dst
+         * is assumed to be large enough to store the decoded bytes.
+         *
+         * @param  src
+         *         the source byte array of Base64 encoded bytes
+         * @param  sp
+         *         the offset into src array to begin reading
+         * @param  sl
+         *         the offset (exclusive) past the last byte to be converted.
+         * @param  dst
+         *         the destination byte array of decoded data bytes
+         * @param  dp
+         *         the offset into dst array to begin writing
+         * @param  isURL
+         *         boolean, when true decode RFC4648 URL-safe base64 characters
+         * @return the number of destination data bytes produced
+         */
+        @IntrinsicCandidate
+        private int decodeBlock(byte[] src, int sp, int sl, byte[] dst, int dp, boolean isURL) {
+            int[] base64 = isURL ? fromBase64URL : fromBase64;
+            int sl0 = sp + ((sl - sp) & ~0b11);
+            int new_dp = dp;
+            while (sp < sl0) {
+                int b1 = base64[src[sp++] & 0xff];
+                int b2 = base64[src[sp++] & 0xff];
+                int b3 = base64[src[sp++] & 0xff];
+                int b4 = base64[src[sp++] & 0xff];
+                if ((b1 | b2 | b3 | b4) < 0) {    // non base64 byte
+                    return new_dp - dp;
+                }
+                int bits0 = b1 << 18 | b2 << 12 | b3 << 6 | b4;
+                dst[new_dp++] = (byte)(bits0 >> 16);
+                dst[new_dp++] = (byte)(bits0 >>  8);
+                dst[new_dp++] = (byte)(bits0);
+            }
+            return new_dp - dp;
+        }
+
         private int decode0(byte[] src, int sp, int sl, byte[] dst) {
             int[] base64 = isURL ? fromBase64URL : fromBase64;
             int dp = 0;
@@ -749,24 +809,20 @@ public class Base64 {
             int shiftto = 18;       // pos of first byte of 4-byte atom
 
             while (sp < sl) {
-                if (shiftto == 18 && sp + 4 < sl) {       // fast path
-                    int sl0 = sp + ((sl - sp) & ~0b11);
-                    while (sp < sl0) {
-                        int b1 = base64[src[sp++] & 0xff];
-                        int b2 = base64[src[sp++] & 0xff];
-                        int b3 = base64[src[sp++] & 0xff];
-                        int b4 = base64[src[sp++] & 0xff];
-                        if ((b1 | b2 | b3 | b4) < 0) {    // non base64 byte
-                            sp -= 4;
-                            break;
-                        }
-                        int bits0 = b1 << 18 | b2 << 12 | b3 << 6 | b4;
-                        dst[dp++] = (byte)(bits0 >> 16);
-                        dst[dp++] = (byte)(bits0 >>  8);
-                        dst[dp++] = (byte)(bits0);
-                    }
-                    if (sp >= sl)
-                        break;
+                if (shiftto == 18 && sp < sl - 4) {       // fast path
+                    int dl = decodeBlock(src, sp, sl, dst, dp, isURL);
+                    /*
+                     * Calculate how many characters were processed by how many
+                     * bytes of data were returned.
+                     */
+                    int chars_decoded = (dl / 3) * 4;
+
+                    sp += chars_decoded;
+                    dp += dl;
+                }
+                if (sp >= sl) {
+                    // we're done
+                    break;
                 }
                 int b = src[sp++] & 0xff;
                 if ((b = base64[b]) < 0) {
@@ -961,12 +1017,15 @@ public class Base64 {
 
         private final InputStream is;
         private final boolean isMIME;
-        private final int[] base64;      // base64 -> byte mapping
-        private int bits = 0;            // 24-bit buffer for decoding
-        private int nextin = 18;         // next available "off" in "bits" for input;
-                                         // -> 18, 12, 6, 0
-        private int nextout = -8;        // next available "off" in "bits" for output;
-                                         // -> 8, 0, -8 (no byte for output)
+        private final int[] base64;     // base64 -> byte mapping
+        private int bits = 0;           // 24-bit buffer for decoding
+
+        /* writing bit pos inside bits; one of 24 (left, msb), 18, 12, 6, 0 */
+        private int wpos = 0;
+
+        /* reading bit pos inside bits: one of 24 (left, msb), 16, 8, 0 */
+        private int rpos = 0;
+
         private boolean eof = false;
         private boolean closed = false;
 
@@ -983,107 +1042,153 @@ public class Base64 {
             return read(sbBuf, 0, 1) == -1 ? -1 : sbBuf[0] & 0xff;
         }
 
-        private int eof(byte[] b, int off, int len, int oldOff)
-            throws IOException
-        {
+        private int leftovers(byte[] b, int off, int pos, int limit) {
             eof = true;
-            if (nextin != 18) {
-                if (nextin == 12)
-                    throw new IOException("Base64 stream has one un-decoded dangling byte.");
-                // treat ending xx/xxx without padding character legal.
-                // same logic as v == '=' below
-                b[off++] = (byte)(bits >> (16));
-                if (nextin == 0) {           // only one padding byte
-                    if (len == 1) {          // no enough output space
-                        bits >>= 8;          // shift to lowest byte
-                        nextout = 0;
-                    } else {
-                        b[off++] = (byte) (bits >>  8);
-                    }
-                }
+
+            /*
+             * We use a loop here, as this method is executed only a few times.
+             * Unrolling the loop would probably not contribute much here.
+             */
+            while (rpos - 8 >= wpos && pos != limit) {
+                rpos -= 8;
+                b[pos++] = (byte) (bits >> rpos);
             }
-            return off == oldOff ? -1 : off - oldOff;
+            return pos - off != 0 || rpos - 8 >= wpos ? pos - off : -1;
         }
 
-        private int padding(byte[] b, int off, int len, int oldOff)
-            throws IOException
-        {
-            // =     shiftto==18 unnecessary padding
-            // x=    shiftto==12 dangling x, invalid unit
-            // xx=   shiftto==6 && missing last '='
-            // xx=y  or last is not '='
-            if (nextin == 18 || nextin == 12 ||
-                nextin == 6 && is.read() != '=') {
-                throw new IOException("Illegal base64 ending sequence:" + nextin);
+        private int eof(byte[] b, int off, int pos, int limit) throws IOException {
+            /*
+             * pos != limit
+             *
+             * wpos == 18: x     dangling single x, invalid unit
+             * accept ending xx or xxx without padding characters
+             */
+            if (wpos == 18) {
+                throw new IOException("Base64 stream has one un-decoded dangling byte.");
             }
-            b[off++] = (byte)(bits >> (16));
-            if (nextin == 0) {           // only one padding byte
-                if (len == 1) {          // no enough output space
-                    bits >>= 8;          // shift to lowest byte
-                    nextout = 0;
-                } else {
-                    b[off++] = (byte) (bits >>  8);
-                }
+            rpos = 24;
+            return leftovers(b, off, pos, limit);
+        }
+
+        private int padding(byte[] b, int off, int pos, int limit) throws IOException {
+            /*
+             * pos != limit
+             *
+             * wpos == 24: =    (unnecessary padding)
+             * wpos == 18: x=   (dangling single x, invalid unit)
+             * wpos == 12 and missing last '=': xx=  (invalid padding)
+             * wpos == 12 and last is not '=': xx=x (invalid padding)
+             */
+            if (wpos >= 18 || wpos == 12 && is.read() != '=') {
+                throw new IOException("Illegal base64 ending sequence:" + wpos);
             }
-            eof = true;
-            return off - oldOff;
+            rpos = 24;
+            return leftovers(b, off, pos, limit);
         }
 
         @Override
         public int read(byte[] b, int off, int len) throws IOException {
-            if (closed)
+            if (closed) {
                 throw new IOException("Stream is closed");
-            if (eof && nextout < 0)    // eof and no leftover
-                return -1;
-            if (off < 0 || len < 0 || len > b.length - off)
-                throw new IndexOutOfBoundsException();
-            int oldOff = off;
-            while (nextout >= 0) {       // leftover output byte(s) in bits buf
-                if (len == 0)
-                    return off - oldOff;
-                b[off++] = (byte)(bits >> nextout);
-                len--;
-                nextout -= 8;
             }
+            Objects.checkFromIndexSize(off, len, b.length);
+            if (len == 0) {
+                return 0;
+            }
+
+            /*
+             * Rather than keeping 2 running vars (e.g., off and len),
+             * we only keep one (pos), while definitely fixing the boundaries
+             * of the range [off, limit).
+             * More specifically, each use of pos as an index in b meets
+             *      pos - off >= 0 & limit - pos > 0
+             *
+             * Note that limit can overflow to Integer.MIN_VALUE. However,
+             * as long as comparisons with pos are as coded, there's no harm.
+             */
+            int pos = off;
+            final int limit = off + len;
+            if (eof) {
+                return leftovers(b, off, pos, limit);
+            }
+
+            /*
+             * Leftovers from previous invocation; here, wpos = 0.
+             * There can be at most 2 leftover bytes (rpos <= 16).
+             * Further, b has at least one free place.
+             *
+             * The logic could be coded as a loop, (as in method leftovers())
+             * but the explicit "unrolling" makes it possible to generate
+             * better byte extraction code.
+             */
+            if (rpos == 16) {
+                b[pos++] = (byte) (bits >> 8);
+                rpos = 8;
+                if (pos == limit) {
+                    return len;
+                }
+            }
+            if (rpos == 8) {
+                b[pos++] = (byte) bits;
+                rpos = 0;
+                if (pos == limit) {
+                    return len;
+                }
+            }
+
             bits = 0;
-            while (len > 0) {
-                int v = is.read();
-                if (v == -1) {
-                    return eof(b, off, len, oldOff);
+            wpos = 24;
+            for (;;) {
+                /* pos != limit & rpos == 0 */
+                final int i = is.read();
+                if (i < 0) {
+                    return eof(b, off, pos, limit);
                 }
-                if ((v = base64[v]) < 0) {
-                    if (v == -2) {       // padding byte(s)
-                        return padding(b, off, len, oldOff);
-                    }
+                final int v = base64[i];
+                if (v < 0) {
+                    /*
+                     * i not in alphabet, thus
+                     *      v == -2: i is '=', the padding
+                     *      v == -1: i is something else, typically CR or LF
+                     */
                     if (v == -1) {
-                        if (!isMIME)
-                            throw new IOException("Illegal base64 character " +
-                                Integer.toString(v, 16));
-                        continue;        // skip if for rfc2045
+                        if (isMIME) {
+                            continue;
+                        }
+                        throw new IOException("Illegal base64 character 0x" +
+                                Integer.toHexString(i));
                     }
-                    // neve be here
+                    return padding(b, off, pos, limit);
                 }
-                bits |= (v << nextin);
-                if (nextin == 0) {
-                    nextin = 18;         // clear for next in
-                    b[off++] = (byte)(bits >> 16);
-                    if (len == 1) {
-                        nextout = 8;    // 2 bytes left in bits
-                        break;
-                    }
-                    b[off++] = (byte)(bits >> 8);
-                    if (len == 2) {
-                        nextout = 0;    // 1 byte left in bits
-                        break;
-                    }
-                    b[off++] = (byte)bits;
-                    len -= 3;
+                wpos -= 6;
+                bits |= v << wpos;
+                if (wpos != 0) {
+                    continue;
+                }
+                if (limit - pos >= 3) {
+                    /* frequently taken fast path, no need to track rpos */
+                    b[pos++] = (byte) (bits >> 16);
+                    b[pos++] = (byte) (bits >> 8);
+                    b[pos++] = (byte) bits;
                     bits = 0;
-                } else {
-                    nextin -= 6;
+                    wpos = 24;
+                    if (pos == limit) {
+                        return len;
+                    }
+                    continue;
                 }
+
+                /* b has either 1 or 2 free places */
+                b[pos++] = (byte) (bits >> 16);
+                if (pos == limit) {
+                    rpos = 16;
+                    return len;
+                }
+                b[pos++] = (byte) (bits >> 8);
+                /* pos == limit, no need for an if */
+                rpos = 8;
+                return len;
             }
-            return off - oldOff;
         }
 
         @Override

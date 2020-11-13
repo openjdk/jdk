@@ -38,7 +38,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -428,8 +427,8 @@ public class CommentUtils {
                 }
                 break;
             case PACKAGE:
-                fo = configuration.workArounds.getJavaFileObject((PackageElement)e);
-                pe = (PackageElement)e;
+                pe = (PackageElement) e;
+                fo = configuration.workArounds.getJavaFileObject(pe);
                 break;
             default:
                 return null;

@@ -124,7 +124,7 @@ public class TestEagerReclaimHumongousRegionsClearMarkBits {
             "-Xmx128M",
             "-Xmn2M",
             "-XX:G1HeapRegionSize=1M",
-            "-XX:InitiatingHeapOccupancyPercent=0", // Want to have as much as possible initial marks.
+            "-XX:InitiatingHeapOccupancyPercent=0", // Want to have as much as possible mark cycles.
             "-Xlog:gc",
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+VerifyAfterGC",

@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -24,31 +26,9 @@
 package java.lang.invoke;
 
 import jdk.internal.loader.BuiltinClassLoader;
-import jdk.internal.misc.VM;
+import jdk.internal.misc.CDS;
 
 final class LambdaProxyClassArchive {
-    private static final boolean dumpArchive;
-    private static final boolean sharingEnabled;
-
-    static {
-        dumpArchive = VM.isCDSDumpingEnabled();
-        sharingEnabled = VM.isCDSSharingEnabled();
-    }
-
-    /**
-     * Check if CDS dynamic dump is enabled.
-     */
-    static boolean isDumpArchive() {
-        return dumpArchive;
-    }
-
-    /**
-     * Check if CDS sharing is enabled.
-     */
-    static boolean isSharingEnabled() {
-        return sharingEnabled;
-    }
-
     /**
      * Check if the class is loaded by a built-in class loader.
      */
@@ -92,7 +72,7 @@ final class LambdaProxyClassArchive {
                             Class<?>[] markerInterfaces,
                             MethodType[] additionalBridges,
                             Class<?> lambdaProxyClass) {
-        if (!isDumpArchive())
+        if (!CDS.isDumpingArchive())
             throw new IllegalStateException("should only register lambda proxy class at dump time");
 
         if (loadedByBuiltinLoader(caller) &&
@@ -123,11 +103,11 @@ final class LambdaProxyClassArchive {
                          Class<?>[] markerInterfaces,
                          MethodType[] additionalBridges,
                          boolean initialize) {
-        if (isDumpArchive())
+        if (CDS.isDumpingArchive())
             throw new IllegalStateException("cannot load class from CDS archive at dump time");
 
-        if (!loadedByBuiltinLoader(caller) ||
-            !isSharingEnabled() || isSerializable || markerInterfaces.length > 0 || additionalBridges.length > 0)
+        if (!loadedByBuiltinLoader(caller) || !initialize ||
+            !CDS.isSharingEnabled() || isSerializable || markerInterfaces.length > 0 || additionalBridges.length > 0)
             return null;
 
         return findFromArchive(caller, invokedName, invokedType, samMethodType,

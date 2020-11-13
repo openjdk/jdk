@@ -25,6 +25,7 @@
 // key: compiler.err.sealed.class.must.have.subclasses
 // key: compiler.note.preview.filename
 // key: compiler.note.preview.recompile
+// key: compiler.misc.local
 // options: --enable-preview -source ${jdk.version}
 
 sealed class C {
@@ -32,3 +33,4 @@ sealed class C {
         final class D extends C { }
     }
 }
+

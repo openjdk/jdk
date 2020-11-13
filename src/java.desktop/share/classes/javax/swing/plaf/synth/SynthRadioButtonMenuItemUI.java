@@ -40,6 +40,12 @@ import javax.swing.plaf.*;
 public class SynthRadioButtonMenuItemUI extends SynthMenuItemUI {
 
     /**
+     *
+     * Constructs a {@code SynthRadioButtonMenuItemUI}.
+     */
+    public SynthRadioButtonMenuItemUI() {}
+
+    /**
      * Creates a new UI object for the given component.
      *
      * @param b component to create UI object for

@@ -25,7 +25,7 @@ package gc.z;
 
 /*
  * @test TestHighUsage
- * @requires vm.gc.Z & !vm.graal.enabled
+ * @requires vm.gc.Z
  * @summary Test ZGC "High Usage" rule
  * @library /test/lib
  * @run main/othervm gc.z.TestHighUsage

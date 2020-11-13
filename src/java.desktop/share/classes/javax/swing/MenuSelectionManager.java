@@ -52,6 +52,11 @@ public class MenuSelectionManager {
                        new StringBuilder("javax.swing.MenuSelectionManager");
 
     /**
+     * Constructs a {@code MenuSelectionManager}.
+     */
+    public MenuSelectionManager() {}
+
+    /**
      * Returns the default menu selection manager.
      *
      * @return a MenuSelectionManager object

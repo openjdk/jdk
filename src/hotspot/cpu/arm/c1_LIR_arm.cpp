@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,12 +52,12 @@ void LIR_Address::verify() const {
   // be handled by the back-end or will be rejected if not.
 #ifdef _LP64
   assert(index()->is_illegal() || index()->is_double_cpu(), "wrong index operand");
-  assert(base()->type() == T_OBJECT || base()->type() == T_LONG || base()->type() == T_METADATA,
+  assert(base()->type() == T_ADDRESS || base()->type() == T_OBJECT || base()->type() == T_LONG || base()->type() == T_METADATA,
          "wrong type for addresses");
 #else
   assert(base()->is_single_cpu(), "wrong base operand");
   assert(index()->is_illegal() || index()->is_single_cpu(), "wrong index operand");
-  assert(base()->type() == T_OBJECT || base()->type() == T_INT || base()->type() == T_METADATA,
+  assert(base()->type() == T_ADDRESS || base()->type() == T_OBJECT || base()->type() == T_INT || base()->type() == T_METADATA,
          "wrong type for addresses");
 #endif
 }

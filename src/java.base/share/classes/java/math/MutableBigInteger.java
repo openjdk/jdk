@@ -145,7 +145,6 @@ class MutableBigInteger {
      * Makes this number an {@code n}-int number all of whose bits are ones.
      * Used by Burnikel-Ziegler division.
      * @param n number of ints in the {@code value} array
-     * @return a number equal to {@code ((1<<(32*n)))-1}
      */
     private void ones(int n) {
         if (n > value.length)

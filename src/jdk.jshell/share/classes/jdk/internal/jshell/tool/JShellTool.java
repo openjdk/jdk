@@ -41,7 +41,6 @@ import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -110,12 +109,12 @@ import java.util.Spliterators;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import jdk.internal.joptsimple.*;
-import jdk.internal.jshell.tool.Feedback.FormatAction;
-import jdk.internal.jshell.tool.Feedback.FormatCase;
-import jdk.internal.jshell.tool.Feedback.FormatErrors;
-import jdk.internal.jshell.tool.Feedback.FormatResolve;
-import jdk.internal.jshell.tool.Feedback.FormatUnresolved;
-import jdk.internal.jshell.tool.Feedback.FormatWhen;
+import jdk.internal.jshell.tool.Selector.FormatAction;
+import jdk.internal.jshell.tool.Selector.FormatCase;
+import jdk.internal.jshell.tool.Selector.FormatErrors;
+import jdk.internal.jshell.tool.Selector.FormatResolve;
+import jdk.internal.jshell.tool.Selector.FormatUnresolved;
+import jdk.internal.jshell.tool.Selector.FormatWhen;
 import jdk.internal.editor.spi.BuildInEditorProvider;
 import jdk.internal.editor.external.ExternalEditor;
 import static java.util.Arrays.asList;
@@ -231,6 +230,7 @@ public class JShellTool implements MessageHandler {
     static final String STARTUP_KEY  = "STARTUP";
     static final String EDITOR_KEY   = "EDITOR";
     static final String MODE_KEY     = "MODE";
+    static final String MODE2_KEY     = "MODE2";
     static final String FEEDBACK_KEY = "FEEDBACK";
     static final String REPLAY_RESTORE_KEY = "REPLAY_RESTORE";
     public static final String INDENT_KEY   = "INDENT";
@@ -1130,11 +1130,20 @@ public class JShellTool implements MessageHandler {
         // These predefined modes are read-only
         feedback.markModesReadOnly();
         // Restore user defined modes retained on previous run with /set mode -retain
-        String encoded = prefs.get(MODE_KEY);
+        boolean oldModes = false;
+        String encoded = prefs.get(MODE2_KEY);
+        if (encoded == null || encoded.isEmpty()) {
+            // No new layout modes, see if there are old (JDK-14 and before) modes
+            oldModes = true;
+            encoded = prefs.get(MODE_KEY);
+        }
         if (encoded != null && !encoded.isEmpty()) {
             if (!feedback.restoreEncodedModes(initmh, encoded)) {
                 // Catastrophic corruption -- remove the retained modes
-                prefs.remove(MODE_KEY);
+                // Leave old mode corruption clean-up to old versions
+                if (!oldModes) {
+                    prefs.remove(MODE2_KEY);
+                }
             }
         }
         if (initMode != null) {
@@ -1989,7 +1998,7 @@ public class JShellTool implements MessageHandler {
                 return setFeedback(this, at);
             case "mode":
                 return feedback.setMode(this, at,
-                        retained -> prefs.put(MODE_KEY, retained));
+                        retained -> prefs.put(MODE2_KEY, retained));
             case "prompt":
                 return feedback.setPrompt(this, at);
             case "editor":

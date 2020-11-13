@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import jdk.jfr.Label;
 import jdk.jfr.MetadataDefinition;
 import jdk.jfr.Name;
 import jdk.jfr.Timespan;
-import jdk.jfr.internal.Control;
 import jdk.jfr.internal.PlatformEventType;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.Utils;
@@ -43,14 +42,13 @@ import jdk.jfr.internal.Utils;
 @Description("Limit running time of event")
 @Name(Type.SETTINGS_PREFIX + "Cutoff")
 @Timespan
-public final class CutoffSetting extends Control {
+public final class CutoffSetting extends JDKSettingControl {
     private final static long typeId = Type.getTypeId(CutoffSetting.class);
 
     private String value = "0 ns";
     private final PlatformEventType eventType;
 
-    public CutoffSetting(PlatformEventType eventType, String defaultValue) {
-       super(defaultValue);
+    public CutoffSetting(PlatformEventType eventType) {
        this.eventType = Objects.requireNonNull(eventType);
     }
 

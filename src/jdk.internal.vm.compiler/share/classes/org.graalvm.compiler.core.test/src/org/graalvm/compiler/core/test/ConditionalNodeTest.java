@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,9 @@
 
 package org.graalvm.compiler.core.test;
 
+import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.graalvm.compiler.nodes.CallTargetNode.InvokeKind;
+import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.junit.Test;
 
 public class ConditionalNodeTest extends GraalCompilerTest {
@@ -125,5 +127,74 @@ public class ConditionalNodeTest extends GraalCompilerTest {
         }
         node.a = a;
         return a;
+    }
+
+    @SuppressWarnings("all")
+    static int lastIndexOf(char[] source, int sourceOffset, int sourceCount,
+                    char[] target, int targetOffset, int targetCount,
+                    int fromIndex) {
+        /*
+         * Check arguments; return immediately where possible. For consistency, don't check for null
+         * str.
+         */
+        int rightIndex = sourceCount - targetCount;
+        if (fromIndex < 0) {
+            return -1;
+        }
+        if (fromIndex > rightIndex) {
+            fromIndex = rightIndex;
+        }
+        /* Empty string always matches. */
+        if (targetCount == 0) {
+            return fromIndex;
+        }
+
+        int strLastIndex = targetOffset + targetCount - 1;
+        char strLastChar = target[strLastIndex];
+        int min = sourceOffset + targetCount - 1;
+        int i = min + fromIndex;
+
+        startSearchForLastChar: while (true) {
+            while (i >= min && source[i] != strLastChar) {
+                i--;
+            }
+            if (i < min) {
+                return -1;
+            }
+            int j = i - 1;
+            int start = j - (targetCount - 1);
+            int k = strLastIndex - 1;
+
+            while (j > start) {
+                if (source[j--] != target[k--]) {
+                    i--;
+                    continue startSearchForLastChar;
+                }
+            }
+            return start - sourceOffset + 1;
+        }
+    }
+
+    public static String simple(String simpleName) {
+        char[] value = simpleName.toCharArray();
+        char[] target = ".".toCharArray();
+        int lastDotIndex = lastIndexOf(value, 0, value.length,
+                        target, 0, target.length, value.length);
+        if (lastDotIndex < 0) {
+            return null;
+        }
+        GraalDirectives.deoptimize();
+        return simpleName.substring(0, lastDotIndex);
+    }
+
+    @Override
+    protected OptimisticOptimizations getOptimisticOptimizations() {
+        // Disable profile based optimizations
+        return OptimisticOptimizations.NONE;
+    }
+
+    @Test
+    public void testConditionalExit() {
+        test("simple", Object.class.getName());
     }
 }

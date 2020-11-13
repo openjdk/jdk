@@ -65,6 +65,11 @@ public class SynthSplitPaneUI extends BasicSplitPaneUI
      */
     private SynthStyle dividerStyle;
 
+    /**
+     *
+     * Constructs a {@code SynthSplitPaneUI}.
+     */
+    public SynthSplitPaneUI() {}
 
     /**
      * Creates a new SynthSplitPaneUI instance

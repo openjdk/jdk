@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,23 @@
 
 package javax.swing.plaf.synth;
 
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
-import javax.swing.plaf.*;
-import javax.swing.plaf.basic.BasicDesktopIconUI;
-import java.beans.*;
+import java.awt.BorderLayout;
+import java.awt.Graphics;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyVetoException;
 
+import javax.swing.Icon;
+import javax.swing.JComponent;
+import javax.swing.JInternalFrame;
+import javax.swing.JPopupMenu;
+import javax.swing.JToggleButton;
+import javax.swing.ToolTipManager;
+import javax.swing.UIManager;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.basic.BasicDesktopIconUI;
 
 /**
  * Provides the Synth L&amp;F UI delegate for a minimized internal frame on a desktop.
@@ -43,6 +53,12 @@ public class SynthDesktopIconUI extends BasicDesktopIconUI
                                 implements SynthUI, PropertyChangeListener {
     private SynthStyle style;
     private Handler handler = new Handler();
+
+    /**
+     *
+     * Constructs a {@code SynthDesktopIconUI}.
+     */
+    public SynthDesktopIconUI() {}
 
     /**
      * Creates a new UI object for the given component.
@@ -83,6 +99,20 @@ public class SynthDesktopIconUI extends BasicDesktopIconUI
         desktopIcon.add(iconPane, BorderLayout.CENTER);
     }
 
+    @Override
+    protected void uninstallComponents() {
+        // Uninstall the listeners here because the iconPane will be set to null
+        // in the super.uninstallComponents()
+        if (iconPane instanceof JToggleButton) {
+            ((JToggleButton) iconPane).removeActionListener(handler);
+            frame.removePropertyChangeListener(this);
+        } else if (iconPane instanceof SynthInternalFrameTitlePane) {
+            // Uninstall the listeners added by the  SynthInternalFrameTitlePane
+            ((SynthInternalFrameTitlePane) iconPane).uninstallListeners();
+        }
+        super.uninstallComponents();
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -102,10 +132,6 @@ public class SynthDesktopIconUI extends BasicDesktopIconUI
      */
     @Override
     protected void uninstallListeners() {
-        if (iconPane instanceof JToggleButton) {
-            ((JToggleButton)iconPane).removeActionListener(handler);
-            frame.removePropertyChangeListener(this);
-        }
         desktopIcon.removePropertyChangeListener(this);
         super.uninstallListeners();
     }

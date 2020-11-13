@@ -26,7 +26,9 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopHandle.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
@@ -162,12 +164,17 @@ void LowMemoryDetector::recompute_enabled_for_collected_pools() {
 }
 
 SensorInfo::SensorInfo() {
-  _sensor_obj = NULL;
   _sensor_on = false;
   _sensor_count = 0;
   _pending_trigger_count = 0;
   _pending_clear_count = 0;
 }
+
+void SensorInfo::set_sensor(instanceOop sensor) {
+  assert(_sensor_obj.peek() == NULL, "Should be set only once");
+  _sensor_obj = OopHandle(Universe::vm_global(), sensor);
+}
+
 
 // When this method is used, the memory usage is monitored
 // as a gauge attribute.  Sensor notifications (trigger or
@@ -277,10 +284,6 @@ void SensorInfo::set_counter_sensor_level(MemoryUsage usage, ThresholdSupport* c
   }
 }
 
-void SensorInfo::oops_do(OopClosure* f) {
-  f->do_oop((oop*) &_sensor_obj);
-}
-
 void SensorInfo::process_pending_requests(TRAPS) {
   int pending_count = pending_trigger_count();
   if (pending_clear_count() > 0) {
@@ -293,10 +296,9 @@ void SensorInfo::process_pending_requests(TRAPS) {
 
 void SensorInfo::trigger(int count, TRAPS) {
   assert(count <= _pending_trigger_count, "just checking");
-  if (_sensor_obj != NULL) {
+  Handle sensor_h(THREAD, _sensor_obj.resolve());
+  if (sensor_h() != NULL) {
     InstanceKlass* sensorKlass = Management::sun_management_Sensor_klass(CHECK);
-    Handle sensor_h(THREAD, _sensor_obj);
-
     Symbol* trigger_method_signature;
 
     JavaValue result(T_VOID);
@@ -358,10 +360,9 @@ void SensorInfo::clear(int count, TRAPS) {
     _pending_trigger_count = _pending_trigger_count - count;
   }
 
-  if (_sensor_obj != NULL) {
+  Handle sensor(THREAD, _sensor_obj.resolve());
+  if (sensor() != NULL) {
     InstanceKlass* sensorKlass = Management::sun_management_Sensor_klass(CHECK);
-    Handle sensor(THREAD, _sensor_obj);
-
     JavaValue result(T_VOID);
     JavaCallArguments args(sensor);
     args.push_int((int) count);

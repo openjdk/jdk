@@ -133,7 +133,7 @@ import jdk.dynalink.linker.TypeBasedGuardingDynamicLinker;
  * method.</p>
  */
 public class BeansLinker implements GuardingDynamicLinker {
-    private static final ClassValue<TypeBasedGuardingDynamicLinker> linkers = new ClassValue<TypeBasedGuardingDynamicLinker>() {
+    private static final ClassValue<TypeBasedGuardingDynamicLinker> linkers = new ClassValue<>() {
         @Override
         protected TypeBasedGuardingDynamicLinker computeValue(final Class<?> clazz) {
             // If ClassValue.put() were public, we could just pre-populate with these known mappings...

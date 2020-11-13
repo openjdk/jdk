@@ -42,8 +42,14 @@ ShenandoahStaticHeuristics::~ShenandoahStaticHeuristics() {}
 bool ShenandoahStaticHeuristics::should_start_gc() const {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
-  size_t capacity = heap->max_capacity();
+  size_t max_capacity = heap->max_capacity();
+  size_t capacity = heap->soft_max_capacity();
   size_t available = heap->free_set()->available();
+
+  // Make sure the code below treats available without the soft tail.
+  size_t soft_tail = max_capacity - capacity;
+  available = (available > soft_tail) ? (available - soft_tail) : 0;
+
   size_t threshold_available = capacity / 100 * ShenandoahMinFreeThreshold;
 
   if (available < threshold_available) {

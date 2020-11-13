@@ -46,9 +46,9 @@
  * encoding then a map lookup will return 0xffffffff.
  */
 
-u_int64_t logical_immediate_for_encoding(u_int32_t encoding);
-u_int32_t encoding_for_logical_immediate(u_int64_t immediate);
-u_int64_t fp_immediate_for_encoding(u_int32_t imm8, int is_dp);
-u_int32_t encoding_for_fp_immediate(float immediate);
+uint64_t logical_immediate_for_encoding(uint32_t encoding);
+uint32_t encoding_for_logical_immediate(uint64_t immediate);
+uint64_t fp_immediate_for_encoding(uint32_t imm8, int is_dp);
+uint32_t encoding_for_fp_immediate(float immediate);
 
 #endif // _IMMEDIATE_H

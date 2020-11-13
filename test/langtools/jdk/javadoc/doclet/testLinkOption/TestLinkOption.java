@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4720957 5020118 8026567 8038976 8184969 8164407 8182765 8205593
+ *      8216497
  * @summary Test to make sure that -link and -linkoffline link to
  * right files, and URLs with and without trailing slash are accepted.
  * @library ../../lib
@@ -77,12 +78,12 @@ public class TestLinkOption extends JavadocTester {
                 //Make sure the parameters are formatted properly when the -link option is used.
                 """
                     (int&nbsp;p1,
-                    int&nbsp;p2,
-                    int&nbsp;p3)""",
+                     int&nbsp;p2,
+                     int&nbsp;p3)""",
                 """
                     (int&nbsp;p1,
-                    int&nbsp;p2,
-                    <a href=\"""" + url + """
+                     int&nbsp;p2,
+                     <a href=\"""" + url + """
                     java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&nbsp;p3)""");
 
         checkOutput("pkg/B.html", true,
@@ -149,6 +150,7 @@ public class TestLinkOption extends JavadocTester {
                 "-sourcepath", testSrc,
                 "-link", "../" + "out1",
                 "-link", "../" + "out2",
+                "--no-platform-links",
                 "pkg3");
         checkExit(Exit.OK);
         checkOutput("pkg3/A.html", true,
@@ -172,6 +174,7 @@ public class TestLinkOption extends JavadocTester {
                 "-sourcepath", testSrc,
                 "-linkoffline", "../copy/out1", "out1",
                 "-linkoffline", "../copy/out2", "out2",
+                "--no-platform-links",
                 "pkg3");
         checkExit(Exit.OK);
         checkOutput("pkg3/A.html", true,

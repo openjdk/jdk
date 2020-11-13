@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,18 +61,21 @@ void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,
         printf("(GetMethodDeclaringClass#%d) unexpected error: %s (%d)\n",
                eventsCount, TranslateError(err), err);
         result = STATUS_FAILED;
+        return;
     }
     err = jvmti_env->GetClassSignature(cls, &cls_sig, &generic);
     if (err != JVMTI_ERROR_NONE) {
         printf("(GetClassSignature#%d) unexpected error: %s (%d)\n",
                eventsCount, TranslateError(err), err);
         result = STATUS_FAILED;
+        return;
     }
     err = jvmti->GetMethodName(method, &name, &sig, &generic);
     if (err != JVMTI_ERROR_NONE) {
         printf("(GetMethodName#%d) unexpected error: %s (%d)\n",
                eventsCount, TranslateError(err), err);
         result = STATUS_FAILED;
+        return;
     }
     if (printdump == JNI_TRUE && eventsCount == 1) {
         printf(">>>      class: \"%s\"\n", cls_sig);

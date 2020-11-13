@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,6 +139,7 @@ public class InputSource {
      *
      * <p>The character stream shall not include a byte order mark.</p>
      *
+     * @param characterStream the character stream
      * @see #setPublicId
      * @see #setSystemId
      * @see #setByteStream

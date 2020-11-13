@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,6 +99,7 @@ void printInfo(jvmtiEnv *jvmti_env, jthread thr, jmethodID method, int depth) {
         printf("(GetMethodDeclaringClass) unexpected error: %s (%d)\n",
                TranslateError(err), err);
         result = STATUS_FAILED;
+        return;
     }
 
     err = jvmti_env->GetClassSignature(cls, &clsig, &generic);
@@ -106,6 +107,7 @@ void printInfo(jvmtiEnv *jvmti_env, jthread thr, jmethodID method, int depth) {
         printf("(GetClassSignature) unexpected error: %s (%d)\n",
                TranslateError(err), err);
         result = STATUS_FAILED;
+        return;
     }
 
     err = jvmti_env->GetMethodName(method, &name, &sig, &generic);
@@ -113,6 +115,7 @@ void printInfo(jvmtiEnv *jvmti_env, jthread thr, jmethodID method, int depth) {
         printf("(GetMethodName) unexpected error: %s (%d)\n",
                TranslateError(err), err);
         result = STATUS_FAILED;
+        return;
     }
 
     printf("  %s: %s.%s%s, depth = %d\n", inf.name, clsig, name, sig, depth);
