@@ -868,11 +868,11 @@ public class ICC_Profile implements Serializable {
         case ColorSpace.CS_GRAY:
             synchronized(ICC_Profile.class) {
                 if (GRAYprofile == null) {
-                    ProfileDeferralInfo pInfo =
+                    ProfileDeferralInfo pdi =
                         new ProfileDeferralInfo("GRAY.pf",
                                                 ColorSpace.TYPE_GRAY, 1,
                                                 CLASS_DISPLAY);
-                    GRAYprofile = new ICC_ProfileGray(pInfo);
+                    GRAYprofile = new ICC_ProfileGray(pdi);
                 }
                 thisProfile = GRAYprofile;
             }
