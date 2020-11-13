@@ -47,7 +47,6 @@
 #include "gc/g1/g1YCTypes.hpp"
 #include "gc/g1/heapRegionManager.hpp"
 #include "gc/g1/heapRegionSet.hpp"
-#include "gc/g1/heterogeneousHeapRegionManager.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
@@ -194,7 +193,7 @@ private:
   G1NUMA* _numa;
 
   // The sequence of all heap regions in the heap.
-  HeapRegionManager* _hrm;
+  HeapRegionManager _hrm;
 
   // Manages all allocations with regions except humongous object allocations.
   G1Allocator* _allocator;
@@ -1016,8 +1015,6 @@ public:
 
   inline G1GCPhaseTimes* phase_times() const;
 
-  HeapRegionManager* hrm() const { return _hrm; }
-
   const G1CollectionSet* collection_set() const { return &_collection_set; }
   G1CollectionSet* collection_set() { return &_collection_set; }
 
@@ -1063,7 +1060,7 @@ public:
   // But G1CollectedHeap doesn't yet support this.
 
   virtual bool is_maximal_no_gc() const {
-    return _hrm->available() == 0;
+    return _hrm.available() == 0;
   }
 
   // Returns whether there are any regions left in the heap for allocation.
@@ -1072,23 +1069,23 @@ public:
   }
 
   // The current number of regions in the heap.
-  uint num_regions() const { return _hrm->length(); }
+  uint num_regions() const { return _hrm.length(); }
 
   // The max number of regions reserved for the heap. Except for static array
   // sizing purposes you probably want to use max_regions().
-  uint max_reserved_regions() const { return _hrm->reserved_length(); }
+  uint max_reserved_regions() const { return _hrm.reserved_length(); }
 
   // Max number of regions that can be committed.
-  uint max_regions() const { return _hrm->max_length(); }
+  uint max_regions() const { return _hrm.max_length(); }
 
   // The number of regions that are completely free.
-  uint num_free_regions() const { return _hrm->num_free_regions(); }
+  uint num_free_regions() const { return _hrm.num_free_regions(); }
 
   // The number of regions that can be allocated into.
-  uint num_free_or_available_regions() const { return num_free_regions() + _hrm->available(); }
+  uint num_free_or_available_regions() const { return num_free_regions() + _hrm.available(); }
 
   MemoryUsage get_auxiliary_data_memory_usage() const {
-    return _hrm->get_auxiliary_data_memory_usage();
+    return _hrm.get_auxiliary_data_memory_usage();
   }
 
   // The number of regions that are not completely free.
@@ -1096,7 +1093,7 @@ public:
 
 #ifdef ASSERT
   bool is_on_master_free_list(HeapRegion* hr) {
-    return _hrm->is_free(hr);
+    return _hrm.is_free(hr);
   }
 #endif // ASSERT
 
@@ -1151,7 +1148,7 @@ public:
   inline G1HeapRegionAttr region_attr(uint idx) const;
 
   MemRegion reserved() const {
-    return _hrm->reserved();
+    return _hrm.reserved();
   }
 
   bool is_in_reserved(const void* addr) const {
@@ -1414,7 +1411,6 @@ public:
 
   // WhiteBox testing support.
   virtual bool supports_concurrent_gc_breakpoints() const;
-  bool is_heterogeneous_heap() const;
 
   virtual WorkGang* safepoint_workers() { return _workers; }
 

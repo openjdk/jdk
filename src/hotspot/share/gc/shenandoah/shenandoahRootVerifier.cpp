@@ -36,7 +36,6 @@
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
-#include "gc/shared/weakProcessor.inline.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 
@@ -100,8 +99,8 @@ void ShenandoahRootVerifier::oops_do(OopClosure* oops) {
 
   if (verify(WeakRoots)) {
     shenandoah_assert_safepoint();
-    AlwaysTrueClosure always_true;
-    WeakProcessor::weak_oops_do(&always_true, oops);
+    serial_weak_roots_do(oops);
+    concurrent_weak_roots_do(oops);
   } else if (verify(SerialWeakRoots)) {
     shenandoah_assert_safepoint();
     serial_weak_roots_do(oops);

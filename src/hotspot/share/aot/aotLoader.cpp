@@ -30,6 +30,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/method.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
