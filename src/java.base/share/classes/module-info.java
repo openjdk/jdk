@@ -231,6 +231,7 @@ module java.base {
         jdk.internal.jvmstat,
         jdk.management.agent;
     exports jdk.internal.vm.annotation to
+        java.instrument,
         jdk.internal.vm.ci,
         jdk.incubator.vector,
         jdk.incubator.foreign,
