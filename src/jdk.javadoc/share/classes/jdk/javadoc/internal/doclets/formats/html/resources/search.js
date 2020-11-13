@@ -32,6 +32,7 @@ var catMembers = "Members";
 var catSearchTags = "SearchTags";
 var highlight = "<span class=\"result-highlight\">$&</span>";
 var searchPattern = "";
+var fallbackPattern = "";
 var RANKING_THRESHOLD = 2;
 var NO_MATCH = 0xffff;
 var MAX_RESULTS_PER_CATEGORY = 500;
@@ -41,7 +42,11 @@ function escapeHtml(str) {
 }
 function getHighlightedText(item, matcher) {
     var escapedItem = escapeHtml(item);
-    return escapedItem.replace(matcher, highlight);
+    var highlighted = escapedItem.replace(matcher, highlight);
+    if (highlighted === escapedItem) {
+        highlighted = escapedItem.replace(new RegExp(fallbackPattern, "gi"), highlight)
+    }
+    return highlighted;
 }
 function getURLPrefix(ui) {
     var urlPrefix="";
@@ -60,11 +65,10 @@ function getURLPrefix(ui) {
                 }
             });
         }
-        return urlPrefix;
     }
     return urlPrefix;
 }
-function makeCamelCaseRegex(term) {
+function createSearchPattern(term) {
     var pattern = "";
     var isWordToken = false;
     term.replace(/,\s*/g, ", ").trim().split(/\s+/).forEach(function(w, index) {
@@ -93,26 +97,26 @@ function createMatcher(pattern, flags) {
 }
 var watermark = 'Search';
 $(function() {
-    $("#search").val('');
-    $("#search").prop("disabled", false);
-    $("#reset").prop("disabled", false);
-    $("#search").val(watermark).addClass('watermark');
-    $("#search").blur(function() {
-        if ($(this).val().length == 0) {
+    var search = $("#search");
+    var reset = $("#reset");
+    search.val('');
+    search.prop("disabled", false);
+    reset.prop("disabled", false);
+    search.val(watermark).addClass('watermark');
+    search.blur(function() {
+        if ($(this).val().length === 0) {
             $(this).val(watermark).addClass('watermark');
         }
     });
-    $("#search").on('click keydown paste', function() {
-        if ($(this).val() == watermark) {
+    search.on('click keydown paste', function() {
+        if ($(this).val() === watermark) {
             $(this).val('').removeClass('watermark');
         }
     });
-    $("#reset").click(function() {
-        $("#search").val('');
-        $("#search").focus();
+    reset.click(function() {
+        search.val('').focus();
     });
-    $("#search").focus();
-    $("#search")[0].setSelectionRange(0, 0);
+    search.focus()[0].setSelectionRange(0, 0);
 });
 $.widget("custom.catcomplete", $.ui.autocomplete, {
     _create: function() {
@@ -222,88 +226,57 @@ function rankMatch(match, category) {
 }
 function doSearch(request, response) {
     var result = [];
-    var newResults = [];
 
-    searchPattern = makeCamelCaseRegex(request.term);
+    searchPattern = createSearchPattern(request.term);
+    fallbackPattern = createSearchPattern(request.term.toLowerCase());
     if (searchPattern === "") {
         return this.close();
     }
     var camelCaseMatcher = createMatcher(searchPattern, "");
     var boundaryMatcher = createMatcher("\\b" + searchPattern, "");
+    var fallbackMatcher = new RegExp("\\b" + fallbackPattern, "i")
 
-    function concatResults(a1, a2) {
-        a2.sort(function(e1, e2) {
+    function appendResults(newResults) {
+        result = result.concat(newResults.sort(function(e1, e2) {
             return e1.ranking - e2.ranking;
-        });
-        a1 = a1.concat(a2.map(function(e) { return e.item; }));
-        a2.length = 0;
-        return a1;
+        }).map(function(e) {
+            return e.item;
+        }));
     }
 
-    if (moduleSearchIndex) {
-        $.each(moduleSearchIndex, function(index, item) {
-            item.category = catModules;
-            var ranking = rankMatch(boundaryMatcher.exec(item.l), catModules);
-            if (ranking < RANKING_THRESHOLD) {
-                newResults.push({ ranking: ranking, item: item });
+    function searchIndex(indexArray, matcher, category, nameFunc) {
+        if (indexArray) {
+            var newResults = [];
+            $.each(indexArray, function(i, item) {
+                item.category = category;
+                var ranking = rankMatch(matcher.exec(nameFunc(item)), category);
+                if (ranking < RANKING_THRESHOLD) {
+                    newResults.push({ ranking: ranking, item: item });
+                }
+                return newResults.length < MAX_RESULTS_PER_CATEGORY;
+            });
+            if (newResults.length > 0) {
+                appendResults(newResults);
+            } else if (matcher !== fallbackMatcher && matcher.flags.indexOf("i") === -1) {
+                searchIndex(indexArray, fallbackMatcher, category, nameFunc);
             }
-            return newResults.length < MAX_RESULTS_PER_CATEGORY;
-        });
-        result = concatResults(result, newResults);
+        }
     }
-    if (packageSearchIndex) {
-        $.each(packageSearchIndex, function(index, item) {
-            item.category = catPackages;
-            var name = (item.m && request.term.indexOf("/") > -1)
-                ? (item.m + "/" + item.l)
-                : item.l;
-            var ranking = rankMatch(boundaryMatcher.exec(name), catPackages);
-            if (ranking < RANKING_THRESHOLD) {
-                newResults.push({ ranking: ranking, item: item });
-            }
-            return newResults.length < MAX_RESULTS_PER_CATEGORY;
-        });
-        result = concatResults(result, newResults);
-    }
-    if (typeSearchIndex) {
-        $.each(typeSearchIndex, function(index, item) {
-            item.category = catTypes;
-            var name = request.term.indexOf(".") > -1
-                ? item.p + "." + item.l
-                : item.l;
-            var ranking = rankMatch(camelCaseMatcher.exec(name), catTypes);
-            if (ranking < RANKING_THRESHOLD) {
-                newResults.push({ ranking: ranking, item: item });
-            }
-            return newResults.length < MAX_RESULTS_PER_CATEGORY;
-        });
-        result = concatResults(result, newResults);
-    }
-    if (memberSearchIndex) {
-        $.each(memberSearchIndex, function(index, item) {
-            item.category = catMembers;
-            var name = request.term.indexOf(".") > -1
-                ? item.p + "." + item.c + "." + item.l
-                : item.l;
-            var ranking = rankMatch(camelCaseMatcher.exec(name), catMembers);
-            if (ranking < RANKING_THRESHOLD) {
-                newResults.push({ ranking: ranking, item: item });
-            }
-            return newResults.length < MAX_RESULTS_PER_CATEGORY;
-        });
-        result = concatResults(result, newResults);
-    }
-    if (tagSearchIndex) {
-        $.each(tagSearchIndex, function(index, item) {
-            item.category = catSearchTags;
-            var ranking = rankMatch(boundaryMatcher.exec(item.l), catSearchTags);
-            if (ranking < RANKING_THRESHOLD) {
-                newResults.push({ ranking: ranking, item: item });
-            }
-            return newResults.length < MAX_RESULTS_PER_CATEGORY;
-        });
-        result = concatResults(result, newResults);
-    }
+
+    searchIndex(moduleSearchIndex, boundaryMatcher, catModules, function(item) { return item.l; });
+    searchIndex(packageSearchIndex, boundaryMatcher, catPackages, function(item) {
+        return (item.m && request.term.indexOf("/") > -1)
+            ? (item.m + "/" + item.l) : item.l;
+    });
+    searchIndex(typeSearchIndex, camelCaseMatcher, catTypes, function(item) {
+        return request.term.indexOf(".") > -1 ? item.p + "." + item.l : item.l;
+    });
+    searchIndex(memberSearchIndex, camelCaseMatcher, catMembers, function(item) {
+        return request.term.indexOf(".") > -1
+            ? item.p + "." + item.c + "." + item.l : item.l;
+    });
+    searchIndex(tagSearchIndex, boundaryMatcher, catSearchTags, function(item) { return item.l; });
+
     if (!indexFilesLoaded()) {
         updateSearchResults = function() {
             doSearch(request, response);
