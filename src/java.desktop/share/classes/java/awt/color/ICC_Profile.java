@@ -998,11 +998,7 @@ public class ICC_Profile implements Serializable {
                 if (cmmProfile != null) {
                     return;
                 }
-                // from now we cannot use the deferred value, drop it
-                String fileName = deferralInfo.filename;
-                deferralInfo = null;
-
-                InputStream is = getStandardProfileInputStream(fileName);
+                var is = getStandardProfileInputStream(deferralInfo.filename);
                 if (is == null) {
                     return;
                 }
@@ -1010,6 +1006,8 @@ public class ICC_Profile implements Serializable {
                     byte[] data = getProfileDataFromStream(is);
                     if (data != null) {
                         cmmProfile = CMSManager.getModule().loadProfile(data);
+                        // from now we cannot use the deferred value, drop it
+                        deferralInfo = null;
                     }
                     is.close();    /* close the stream */
                 } catch (CMMException | IOException ignore) {
