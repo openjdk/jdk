@@ -162,4 +162,9 @@ public class MGF1ParameterSpec implements AlgorithmParameterSpec {
     public String getDigestAlgorithm() {
         return mdName;
     }
+
+    @Override
+    public String toString() {
+        return "MGF1:" + mdName;
+    }
 }
