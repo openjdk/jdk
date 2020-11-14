@@ -30,9 +30,12 @@
 #include "gc/shared/verifyOption.hpp"
 #include "memory/iterator.inline.hpp"
 
-G1FullGCMarker::G1FullGCMarker(uint worker_id, PreservedMarks* preserved_stack, G1CMBitMap* bitmap) :
+G1FullGCMarker::G1FullGCMarker(G1FullCollector* collector,
+                               uint worker_id,
+                               PreservedMarks* preserved_stack) :
+    _collector(collector),
     _worker_id(worker_id),
-    _bitmap(bitmap),
+    _bitmap(collector->mark_bitmap()),
     _oop_stack(),
     _objarray_stack(),
     _preserved_stack(preserved_stack),

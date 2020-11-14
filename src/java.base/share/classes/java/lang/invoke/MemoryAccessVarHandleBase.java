@@ -36,28 +36,21 @@ abstract class MemoryAccessVarHandleBase extends VarHandle {
     /** access size (in bytes, computed from var handle carrier type) **/
     final long length;
 
-    /** access offset (in bytes); must be compatible with {@code alignmentMask} **/
-    final long offset;
-
     /** alignment constraint (in bytes, expressed as a bit mask) **/
     final long alignmentMask;
 
-    MemoryAccessVarHandleBase(VarForm form, boolean be, long length, long offset, long alignmentMask) {
-        super(form);
+    /** if true, only the base part of the address will be checked for alignment **/
+    final boolean skipAlignmentMaskCheck;
+
+    MemoryAccessVarHandleBase(VarForm form, boolean skipAlignmentMaskCheck, boolean be, long length, long alignmentMask, boolean exact) {
+        super(form, exact);
+        this.skipAlignmentMaskCheck = skipAlignmentMaskCheck;
         this.be = be;
         this.length = length;
-        this.offset = offset;
         this.alignmentMask = alignmentMask;
     }
 
     static IllegalStateException newIllegalStateExceptionForMisalignedAccess(long address) {
         return new IllegalStateException("Misaligned access at address: " + address);
     }
-
-    /**
-     * Strides used for multi-dimensional access; each stride must be compatible with {@code alignmentMask}.
-     */
-    abstract long[] strides();
-
-    abstract Class<?> carrier();
 }
