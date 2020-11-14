@@ -27,7 +27,6 @@
 
 #include "code/codeCache.hpp"
 #include "gc/shared/oopStorageSetParState.hpp"
-#include "gc/shared/strongRootsScope.hpp"
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
