@@ -120,23 +120,6 @@ public class CompressedClassPointers {
         output.shouldHaveExitValue(0);
     }
 
-    // Using large pages for heap and metaspace.
-    // Note that this is still unexciting since the compressed class space always uses small pages;
-    // UseLargePagesInMetaspace only affects non-class metaspace.
-    public static void largePagesForHeapAndMetaspaceTest() throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-Xmx128m",
-            "-XX:+UseLargePages", "-XX:+UseLargePagesInMetaspace",
-            logging_option,
-            "-XX:+VerifyBeforeGC", "-version");
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        if (testNarrowKlassBase()) {
-            output.shouldContain("Narrow klass base:");
-        }
-        output.shouldHaveExitValue(0);
-    }
-
     public static void heapBaseMinAddressTest() throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-XX:HeapBaseMinAddress=1m",
@@ -311,7 +294,6 @@ public class CompressedClassPointers {
         smallHeapTestWith1G();
         largeHeapTest();
         largePagesForHeapTest();
-        largePagesForHeapAndMetaspaceTest();
         heapBaseMinAddressTest();
         sharingTest();
 

@@ -179,7 +179,7 @@ int vmIntrinsics::predicates_needed(vmIntrinsics::ID id) {
   case vmIntrinsics::_counterMode_AESCrypt:
     return 1;
   case vmIntrinsics::_digestBase_implCompressMB:
-    return 4;
+    return 5;
   default:
     return 0;
   }
@@ -436,13 +436,17 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_sha5_implCompress:
     if (!UseSHA512Intrinsics) return true;
     break;
+  case vmIntrinsics::_sha3_implCompress:
+    if (!UseSHA3Intrinsics) return true;
+    break;
   case vmIntrinsics::_digestBase_implCompressMB:
-    if (!(UseMD5Intrinsics || UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) return true;
+    if (!(UseMD5Intrinsics || UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics || UseSHA3Intrinsics)) return true;
     break;
   case vmIntrinsics::_ghash_processBlocks:
     if (!UseGHASHIntrinsics) return true;
     break;
   case vmIntrinsics::_base64_encodeBlock:
+  case vmIntrinsics::_base64_decodeBlock:
     if (!UseBASE64Intrinsics) return true;
     break;
   case vmIntrinsics::_updateBytesCRC32C:
@@ -701,7 +705,7 @@ const char* vmIntrinsics::short_name_as_C_string(vmIntrinsics::ID id, char* buf,
 
 #define ID4(x, y, z, f) ((ID3(x, y, z) << vmIntrinsics::log2_FLAG_LIMIT) | (jlong) (f))
 
-#ifdef ASSERT
+#ifndef PRODUCT
 static const jlong intrinsic_info_array[vmIntrinsics::ID_LIMIT+1] = {
 #define VM_INTRINSIC_INFO(ignore_id, klass, name, sig, fcode) \
   ID4(SID_ENUM(klass), SID_ENUM(name), SID_ENUM(sig), vmIntrinsics::fcode),
@@ -743,4 +747,4 @@ vmIntrinsics::Flags vmIntrinsics::flags_for(vmIntrinsics::ID id) {
   assert(((ID4(1021,1022,1023,15) >> shift) & mask) == 15, "");
   return Flags( (info >> shift) & mask );
 }
-#endif // ASSERT
+#endif // !PRODUCT

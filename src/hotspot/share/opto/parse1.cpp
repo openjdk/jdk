@@ -483,9 +483,6 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   // Accumulate total sum of decompilations, also.
   C->set_decompile_count(C->decompile_count() + md->decompile_count());
 
-  _count_invocations = C->do_count_invocations();
-  _method_data_update = C->do_method_data_update();
-
   if (log != NULL && method()->has_exception_handlers()) {
     log->elem("observe that='has_exception_handlers'");
   }
@@ -1228,10 +1225,6 @@ void Parse::do_method_entry() {
   // Feed profiling data for parameters to the type system so it can
   // propagate it as speculative types
   record_profiled_parameters_for_speculation();
-
-  if (depth() == 1) {
-    increment_and_test_invocation_counter(Tier2CompileThreshold);
-  }
 }
 
 //------------------------------init_blocks------------------------------------
@@ -2254,23 +2247,7 @@ void Parse::return_current(Node* value) {
 
 //------------------------------add_safepoint----------------------------------
 void Parse::add_safepoint() {
-  // See if we can avoid this safepoint.  No need for a SafePoint immediately
-  // after a Call (except Leaf Call) or another SafePoint.
-  Node *proj = control();
   uint parms = TypeFunc::Parms+1;
-  if( proj->is_Proj() ) {
-    Node *n0 = proj->in(0);
-    if( n0->is_Catch() ) {
-      n0 = n0->in(0)->in(0);
-      assert( n0->is_Call(), "expect a call here" );
-    }
-    if( n0->is_Call() ) {
-      if( n0->as_Call()->guaranteed_safepoint() )
-        return;
-    } else if( n0->is_SafePoint() && n0->req() >= parms ) {
-      return;
-    }
-  }
 
   // Clear out dead values from the debug info.
   kill_dead_locals();

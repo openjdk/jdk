@@ -515,20 +515,19 @@ Node *Node::clone() const {
     n->_in[i] = x;
     if (x != NULL) x->add_out(n);
   }
-  if (is_macro())
+  if (is_macro()) {
     C->add_macro_node(n);
-  if (is_expensive())
+  }
+  if (is_expensive()) {
     C->add_expensive_node(n);
+  }
+  if (for_post_loop_opts_igvn()) {
+    // Don't add cloned node to Compile::_for_post_loop_opts_igvn list automatically.
+    // If it is applicable, it will happen anyway when the cloned node is registered with IGVN.
+    n->remove_flag(Node::NodeFlags::Flag_for_post_loop_opts_igvn);
+  }
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   bs->register_potential_barrier_node(n);
-  // If the cloned node is a range check dependent CastII, add it to the list.
-  CastIINode* cast = n->isa_CastII();
-  if (cast != NULL && cast->has_range_check()) {
-    C->add_range_check_cast(cast);
-  }
-  if (n->Opcode() == Op_Opaque4) {
-    C->add_opaque4_node(n);
-  }
 
   n->set_idx(C->next_unique()); // Get new unique index as well
   debug_only( n->verify_construction() );
@@ -582,8 +581,11 @@ void Node::setup_is_top() {
 
 //------------------------------~Node------------------------------------------
 // Fancy destructor; eagerly attempt to reclaim Node numberings and storage
-void Node::destruct() {
-  Compile* compile = Compile::current();
+void Node::destruct(PhaseValues* phase) {
+  Compile* compile = (phase != NULL) ? phase->C : Compile::current();
+  if (phase != NULL && phase->is_IterGVN()) {
+    phase->is_IterGVN()->_worklist.remove(this);
+  }
   // If this is the most recently created node, reclaim its index. Otherwise,
   // record the node as dead to keep liveness information accurate.
   if ((uint)_idx+1 == compile->unique()) {
@@ -635,12 +637,8 @@ void Node::destruct() {
   if (is_expensive()) {
     compile->remove_expensive_node(this);
   }
-  CastIINode* cast = isa_CastII();
-  if (cast != NULL && cast->has_range_check()) {
-    compile->remove_range_check_cast(cast);
-  }
-  if (Opcode() == Op_Opaque4) {
-    compile->remove_opaque4_node(this);
+  if (for_post_loop_opts_igvn()) {
+    compile->remove_from_post_loop_opts_igvn(this);
   }
 
   if (is_SafePoint()) {
@@ -1055,7 +1053,7 @@ bool Node::verify_jvms(const JVMState* using_jvms) const {
 //------------------------------init_NodeProperty------------------------------
 void Node::init_NodeProperty() {
   assert(_max_classes <= max_juint, "too many NodeProperty classes");
-  assert(max_flags() <= max_jushort, "too many NodeProperty flags");
+  assert(max_flags() <= max_juint, "too many NodeProperty flags");
 }
 
 //-----------------------------max_flags---------------------------------------
@@ -1404,7 +1402,6 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
       // Done with outputs.
       igvn->hash_delete(dead);
       igvn->_worklist.remove(dead);
-      igvn->C->remove_modified_node(dead);
       igvn->set_type(dead, Type::TOP);
       if (dead->is_macro()) {
         igvn->C->remove_macro_node(dead);
@@ -1412,12 +1409,8 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
       if (dead->is_expensive()) {
         igvn->C->remove_expensive_node(dead);
       }
-      CastIINode* cast = dead->isa_CastII();
-      if (cast != NULL && cast->has_range_check()) {
-        igvn->C->remove_range_check_cast(cast);
-      }
-      if (dead->Opcode() == Op_Opaque4) {
-        igvn->C->remove_opaque4_node(dead);
+      if (dead->for_post_loop_opts_igvn()) {
+        igvn->C->remove_from_post_loop_opts_igvn(dead);
       }
       BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
       bs->unregister_potential_barrier_node(dead);
@@ -1444,6 +1437,7 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
           }
         }
       }
+      igvn->C->remove_modified_node(dead);
     } // (dead->outcnt() == 0)
   }   // while (nstack.size() > 0) for outputs
   return;

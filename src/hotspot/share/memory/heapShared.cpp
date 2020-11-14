@@ -53,6 +53,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "utilities/bitMap.inline.hpp"
+#include "utilities/copy.hpp"
 #if INCLUDE_G1GC
 #include "gc/g1/g1CollectedHeap.hpp"
 #endif
@@ -206,7 +207,9 @@ oop HeapShared::archive_heap_object(oop obj, Thread* THREAD) {
     log_error(cds, heap)(
       "Cannot allocate space for object " PTR_FORMAT " in archived heap region",
       p2i(obj));
-    vm_exit(1);
+    vm_direct_exit(-1,
+      err_msg("Out of memory. Please run with a larger Java heap, current MaxHeapSize = "
+              SIZE_FORMAT "M", MaxHeapSize/M));
   }
   return archived_oop;
 }
@@ -259,15 +262,6 @@ void HeapShared::run_full_gc_in_vm_thread() {
 
 void HeapShared::archive_java_heap_objects(GrowableArray<MemRegion> *closed,
                                            GrowableArray<MemRegion> *open) {
-  if (!is_heap_object_archiving_allowed()) {
-    log_info(cds)(
-      "Archived java heap is not supported as UseG1GC, "
-      "UseCompressedOops and UseCompressedClassPointers are required."
-      "Current settings: UseG1GC=%s, UseCompressedOops=%s, UseCompressedClassPointers=%s.",
-      BOOL_TO_STR(UseG1GC), BOOL_TO_STR(UseCompressedOops),
-      BOOL_TO_STR(UseCompressedClassPointers));
-    return;
-  }
 
   G1HeapVerifier::verify_ready_for_archiving();
 
@@ -734,7 +728,7 @@ oop HeapShared::archive_reachable_objects_from(int level,
     // these objects that are referenced (directly or indirectly) by static fields.
     ResourceMark rm;
     log_error(cds, heap)("Cannot archive object of class %s", orig_obj->klass()->external_name());
-    vm_exit(1);
+    vm_direct_exit(1);
   }
 
   // java.lang.Class instances cannot be included in an archived object sub-graph. We only support
@@ -744,7 +738,7 @@ oop HeapShared::archive_reachable_objects_from(int level,
   // object that is referenced (directly or indirectly) by static fields.
   if (java_lang_Class::is_instance(orig_obj)) {
     log_error(cds, heap)("(%d) Unknown java.lang.Class object is in the archived sub-graph", level);
-    vm_exit(1);
+    vm_direct_exit(1);
   }
 
   oop archived_obj = find_archived_heap_object(orig_obj);
@@ -780,7 +774,7 @@ oop HeapShared::archive_reachable_objects_from(int level,
         // We don't know how to handle an object that has been archived, but some of its reachable
         // objects cannot be archived. Bail out for now. We might need to fix this in the future if
         // we have a real use case.
-        vm_exit(1);
+        vm_direct_exit(1);
       }
     }
 
@@ -1035,7 +1029,13 @@ void HeapShared::init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
     TempNewSymbol field_name =  SymbolTable::new_symbol(info->field_name);
 
     Klass* k = SystemDictionary::resolve_or_null(klass_name, THREAD);
-    assert(k != NULL && !HAS_PENDING_EXCEPTION, "class must exist");
+    if (HAS_PENDING_EXCEPTION) {
+      ResourceMark rm(THREAD);
+      ArchiveUtils::check_for_oom(PENDING_EXCEPTION); // exit on OOM
+      log_info(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
+                    java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
+      vm_direct_exit(-1, "VM exits due to exception, use -Xlog:cds,exceptions=trace for detail");
+    }
     InstanceKlass* ik = InstanceKlass::cast(k);
     assert(InstanceKlass::cast(ik)->is_shared_boot_class(),
            "Only support boot classes");
@@ -1052,8 +1052,8 @@ void HeapShared::init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
 }
 
 void HeapShared::init_subgraph_entry_fields(Thread* THREAD) {
+  assert(is_heap_object_archiving_allowed(), "Sanity check");
   _dump_time_subgraph_info_table = new (ResourceObj::C_HEAP, mtClass)DumpTimeKlassSubGraphInfoTable();
-
   init_subgraph_entry_fields(closed_archive_subgraph_entry_fields,
                              num_closed_archive_subgraph_entry_fields,
                              THREAD);
@@ -1068,8 +1068,10 @@ void HeapShared::init_subgraph_entry_fields(Thread* THREAD) {
 }
 
 void HeapShared::init_for_dumping(Thread* THREAD) {
-  _dumped_interned_strings = new (ResourceObj::C_HEAP, mtClass)DumpedInternedStrings();
-  init_subgraph_entry_fields(THREAD);
+  if (is_heap_object_archiving_allowed()) {
+    _dumped_interned_strings = new (ResourceObj::C_HEAP, mtClass)DumpedInternedStrings();
+    init_subgraph_entry_fields(THREAD);
+  }
 }
 
 void HeapShared::archive_object_subgraphs(ArchivableStaticFieldInfo fields[],
@@ -1150,9 +1152,6 @@ class FindEmbeddedNonNullPointers: public BasicOopIterateClosure {
   FindEmbeddedNonNullPointers(narrowOop* start, BitMap* oopmap)
     : _start(start), _oopmap(oopmap), _num_total_oops(0),  _num_null_oops(0) {}
 
-  virtual bool should_verify_oops(void) {
-    return false;
-  }
   virtual void do_oop(narrowOop* p) {
     _num_total_oops ++;
     narrowOop v = *p;

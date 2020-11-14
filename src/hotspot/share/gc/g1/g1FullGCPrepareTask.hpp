@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
 #include "gc/shared/referenceProcessor.hpp"
 
 class G1CMBitMap;
+class G1FullCollector;
 
 class G1FullGCPrepareTask : public G1FullGCTask {
 protected:
@@ -52,6 +53,7 @@ protected:
   class G1CalculatePointersClosure : public HeapRegionClosure {
   protected:
     G1CollectedHeap* _g1h;
+    G1FullCollector* _collector;
     G1CMBitMap* _bitmap;
     G1FullGCCompactionPoint* _cp;
     uint _humongous_regions_removed;
@@ -62,7 +64,7 @@ protected:
     void reset_region_metadata(HeapRegion* hr);
 
   public:
-    G1CalculatePointersClosure(G1CMBitMap* bitmap,
+    G1CalculatePointersClosure(G1FullCollector* collector,
                                G1FullGCCompactionPoint* cp);
 
     void update_sets();

@@ -38,6 +38,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/biasedLocking.hpp"
@@ -645,10 +646,11 @@ void JVMCINMethodData::initialize(
 }
 
 void JVMCINMethodData::add_failed_speculation(nmethod* nm, jlong speculation) {
-  uint index = (speculation >> 32) & 0xFFFFFFFF;
-  int length = (int) speculation;
+  jlong index = speculation >> JVMCINMethodData::SPECULATION_LENGTH_BITS;
+  guarantee(index >= 0 && index <= max_jint, "Encoded JVMCI speculation index is not a positive Java int: " INTPTR_FORMAT, index);
+  int length = speculation & JVMCINMethodData::SPECULATION_LENGTH_MASK;
   if (index + length > (uint) nm->speculations_size()) {
-    fatal(INTPTR_FORMAT "[index: %d, length: %d] out of bounds wrt encoded speculations of length %u", speculation, index, length, nm->speculations_size());
+    fatal(INTPTR_FORMAT "[index: " JLONG_FORMAT ", length: %d out of bounds wrt encoded speculations of length %u", speculation, index, length, nm->speculations_size());
   }
   address data = nm->speculations_begin() + index;
   FailedSpeculation::add_failed_speculation(nm, _failed_speculations, data, length);
@@ -1327,29 +1329,23 @@ Method* JVMCIRuntime::lookup_method(InstanceKlass* accessor,
   // Accessibility checks are performed in JVMCIEnv::get_method_by_index_impl().
   assert(check_klass_accessibility(accessor, holder), "holder not accessible");
 
-  Method* dest_method;
-  LinkInfo link_info(holder, name, sig, accessor, LinkInfo::AccessCheck::required, LinkInfo::LoaderConstraintCheck::required, tag);
+  LinkInfo link_info(holder, name, sig, accessor,
+                     LinkInfo::AccessCheck::required,
+                     LinkInfo::LoaderConstraintCheck::required,
+                     tag);
   switch (bc) {
-  case Bytecodes::_invokestatic:
-    dest_method =
-      LinkResolver::resolve_static_call_or_null(link_info);
-    break;
-  case Bytecodes::_invokespecial:
-    dest_method =
-      LinkResolver::resolve_special_call_or_null(link_info);
-    break;
-  case Bytecodes::_invokeinterface:
-    dest_method =
-      LinkResolver::linktime_resolve_interface_method_or_null(link_info);
-    break;
-  case Bytecodes::_invokevirtual:
-    dest_method =
-      LinkResolver::linktime_resolve_virtual_method_or_null(link_info);
-    break;
-  default: ShouldNotReachHere();
+    case Bytecodes::_invokestatic:
+      return LinkResolver::resolve_static_call_or_null(link_info);
+    case Bytecodes::_invokespecial:
+      return LinkResolver::resolve_special_call_or_null(link_info);
+    case Bytecodes::_invokeinterface:
+      return LinkResolver::linktime_resolve_interface_method_or_null(link_info);
+    case Bytecodes::_invokevirtual:
+      return LinkResolver::linktime_resolve_virtual_method_or_null(link_info);
+    default:
+      fatal("Unhandled bytecode: %s", Bytecodes::name(bc));
+      return NULL; // silence compiler warnings
   }
-
-  return dest_method;
 }
 
 

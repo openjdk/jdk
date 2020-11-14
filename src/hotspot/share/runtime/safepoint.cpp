@@ -544,11 +544,6 @@ public:
       Threads::threads_do(&cl);
     }
 
-    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_DEFLATE_MONITORS)) {
-      Tracer t("deflating idle monitors");
-      ObjectSynchronizer::do_safepoint_work();
-    }
-
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_UPDATE_INLINE_CACHES)) {
       Tracer t("updating inline caches");
       InlineCacheBuffer::update_inline_caches();
@@ -610,6 +605,12 @@ void SafepointSynchronize::do_cleanup_tasks() {
   }
 
   assert(InlineCacheBuffer::is_empty(), "should have cleaned up ICBuffer");
+
+  if (log_is_enabled(Debug, monitorinflation)) {
+    // The VMThread calls do_final_audit_and_print_stats() which calls
+    // audit_and_print_stats() at the Info level at VM exit time.
+    ObjectSynchronizer::audit_and_print_stats(false /* on_exit */);
+  }
 }
 
 // Methods for determining if a JavaThread is safepoint safe.
@@ -673,39 +674,6 @@ bool SafepointSynchronize::handshake_safe(JavaThread *thread) {
   return false;
 }
 
-// See if the thread is running inside a lazy critical native and
-// update the thread critical count if so.  Also set a suspend flag to
-// cause the native wrapper to return into the JVM to do the unlock
-// once the native finishes.
-static void check_for_lazy_critical_native(JavaThread *thread, JavaThreadState state) {
-  if (state == _thread_in_native &&
-      thread->has_last_Java_frame() &&
-      thread->frame_anchor()->walkable()) {
-    // This thread might be in a critical native nmethod so look at
-    // the top of the stack and increment the critical count if it
-    // is.
-    frame wrapper_frame = thread->last_frame();
-    CodeBlob* stub_cb = wrapper_frame.cb();
-    if (stub_cb != NULL &&
-        stub_cb->is_nmethod() &&
-        stub_cb->as_nmethod_or_null()->is_lazy_critical_native()) {
-      // A thread could potentially be in a critical native across
-      // more than one safepoint, so only update the critical state on
-      // the first one.  When it returns it will perform the unlock.
-      if (!thread->do_critical_native_unlock()) {
-#ifdef ASSERT
-        if (!thread->in_critical()) {
-          GCLocker::increment_debug_jni_lock_count();
-        }
-#endif
-        thread->enter_critical();
-        // Make sure the native wrapper calls back on return to
-        // perform the needed critical unlock.
-        thread->set_critical_native_unlock();
-      }
-    }
-  }
-}
 
 // -------------------------------------------------------------------------------------------------------
 // Implementation of Safepoint blocking point
@@ -899,7 +867,6 @@ void ThreadSafepointState::examine_state_of_thread(uint64_t safepoint_count) {
   }
 
   if (safepoint_safe_with(_thread, stable_state)) {
-    check_for_lazy_critical_native(_thread, stable_state);
     account_safe_thread();
     return;
   }
@@ -989,6 +956,10 @@ void ThreadSafepointState::handle_polling_page_exception() {
 
     // Process pending operation
     SafepointMechanism::process_if_requested(self);
+    // We have to wait if we are here because of a handshake for object deoptimization.
+    if (self->is_obj_deopt_suspend()) {
+      self->wait_for_object_deoptimization();
+    }
     self->check_and_handle_async_exceptions();
 
     // restore oop result, if any
@@ -1006,6 +977,10 @@ void ThreadSafepointState::handle_polling_page_exception() {
 
     // Process pending operation
     SafepointMechanism::process_if_requested(self);
+    // We have to wait if we are here because of a handshake for object deoptimization.
+    if (self->is_obj_deopt_suspend()) {
+      self->wait_for_object_deoptimization();
+    }
     set_at_poll_safepoint(false);
 
     // If we have a pending async exception deoptimize the frame

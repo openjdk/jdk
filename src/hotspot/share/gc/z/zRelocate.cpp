@@ -36,8 +36,10 @@
 #include "gc/z/zThread.inline.hpp"
 #include "gc/z/zWorkers.hpp"
 #include "logging/log.hpp"
+#include "prims/jvmtiTagMap.hpp"
 
 static const ZStatCounter ZCounterRelocationContention("Contention", "Relocation Contention", ZStatUnitOpsPerSecond);
+static const ZStatSubPhase ZSubPhasePauseRootsJVMTITagMap("Pause Roots JVMTITagMap");
 
 ZRelocate::ZRelocate(ZWorkers* workers) :
     _workers(workers) {}
@@ -67,8 +69,10 @@ public:
     assert(ZThread::worker_id() == 0, "No multi-thread support");
 
     // During relocation we need to visit the JVMTI
-    // export weak roots to rehash the JVMTI tag map
-    ZRelocateRoots::oops_do(&_cl);
+    // tag map to rehash the entries with the new oop addresses.
+    ZStatTimer timer(ZSubPhasePauseRootsJVMTITagMap);
+    AlwaysTrueClosure always_alive;
+    JvmtiTagMap::weak_oops_do(&always_alive, &_cl);
   }
 };
 

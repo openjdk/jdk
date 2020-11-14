@@ -40,7 +40,7 @@ import jdk.jpackage.test.PackageType;
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @requires (os.family == "windows")
- * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
+ * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm/timeout=360 -Xmx512m WinDirChooserTest
  */
 

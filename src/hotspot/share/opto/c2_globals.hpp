@@ -360,9 +360,6 @@
           "Limit of ops to make speculative when using CMOVE")              \
           range(0, max_jint)                                                \
                                                                             \
-  product(bool, UseRDPCForConstantTableBase, false,                         \
-          "Use Sparc RDPC instruction for the constant table base.")        \
-                                                                            \
   notproduct(bool, PrintIdealGraph, false,                                  \
           "Print ideal graph to XML file / network interface. "             \
           "By default attempts to connect to the visualizer on a socket.")  \
@@ -787,7 +784,13 @@
           "Move predicates out of loops based on profiling data")           \
                                                                             \
   product(bool, ExpandSubTypeCheckAtParseTime, false, DIAGNOSTIC,           \
-          "Do not use subtype check macro node")
+          "Do not use subtype check macro node")                            \
+                                                                            \
+  develop(uintx, StressLongCountedLoop, 0,                                  \
+          "if > 0, convert int counted loops to long counted loops"         \
+          "to stress handling of long counted loops: run inner loop"        \
+          "for at most jint_max / StressLongCountedLoop")                   \
+          range(0, max_juint)                                               \
 
 // end of C2_FLAGS
 

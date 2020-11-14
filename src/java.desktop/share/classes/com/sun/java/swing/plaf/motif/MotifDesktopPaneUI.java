@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,25 +25,26 @@
 
 package com.sun.java.swing.plaf.motif;
 
-import javax.swing.*;
-import java.awt.Rectangle;
-import java.awt.Dimension;
-import java.awt.Insets;
 import java.awt.Color;
-import java.awt.Graphics;
 import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Insets;
 import java.awt.Point;
-import javax.swing.plaf.*;
+import java.awt.Rectangle;
 import java.io.Serializable;
 
+import javax.swing.DefaultDesktopManager;
+import javax.swing.JComponent;
+import javax.swing.JDesktopPane;
+import javax.swing.JInternalFrame;
+import javax.swing.JLayeredPane;
+import javax.swing.SwingUtilities;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.UIResource;
+
 /**
- * <p>
- * <strong>Warning:</strong>
- * Serialized objects of this class will not be compatible with
- * future Swing releases.  The current serialization support is appropriate
- * for short term storage or RMI between applications running the same
- * version of Swing.  A future release of Swing will provide support for
- * long term persistence.
+ * Motif desktop pane.
  *
  * @author David Kloba
  */

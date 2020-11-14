@@ -46,6 +46,7 @@
 #include "memory/heapShared.inline.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/metadataFactory.hpp"
+#include "memory/metaspace/testHelpers.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -78,6 +79,7 @@
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadSMR.hpp"
+#include "runtime/vframe.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/align.hpp"
@@ -85,6 +87,7 @@
 #include "utilities/elfFile.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ostream.hpp"
 #if INCLUDE_CDS
 #include "prims/cdsoffsets.hpp"
 #endif // INCLUDE_CDS
@@ -94,7 +97,6 @@
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
-#include "gc/g1/heterogeneousHeapRegionManager.hpp"
 #endif // INCLUDE_G1GC
 #if INCLUDE_PARALLELGC
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
@@ -382,6 +384,11 @@ WB_ENTRY(jboolean, WB_isObjectInOldGen(JNIEnv* env, jobject o, jobject obj))
     return Universe::heap()->is_in(p);
   }
 #endif
+#if INCLUDE_SHENANDOAHGC
+  if (UseShenandoahGC) {
+    return Universe::heap()->is_in(p);
+  }
+#endif
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   return !gch->is_in_young(p);
 WB_END
@@ -498,115 +505,6 @@ WB_ENTRY(jint, WB_G1RegionSize(JNIEnv* env, jobject o))
 WB_END
 
 #endif // INCLUDE_G1GC
-
-#if INCLUDE_G1GC || INCLUDE_PARALLELGC
-WB_ENTRY(jlong, WB_DramReservedStart(JNIEnv* env, jobject o))
-#if INCLUDE_G1GC
-  if (UseG1GC) {
-    G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    HeapWord* base = g1h->reserved().start();
-    if (g1h->is_heterogeneous_heap()) {
-      uint start_region = HeterogeneousHeapRegionManager::manager()->start_index_of_dram();
-      return (jlong)(base + start_region * HeapRegion::GrainBytes);
-    } else {
-      return (jlong)base;
-    }
-  }
-#endif // INCLUDE_G1GC
-#if INCLUDE_PARALLELGC
-  if (UseParallelGC) {
-    ParallelScavengeHeap* ps_heap = ParallelScavengeHeap::heap();
-    if (AllocateOldGenAt != NULL) {
-      MemRegion reserved = ps_heap->young_gen()->reserved();
-      return (jlong)reserved.start();
-    } else {
-      return (jlong)ps_heap->base();
-    }
-  }
-#endif // INCLUDE_PARALLELGC
-  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_DramReservedStart: enabled only for G1 and Parallel GC");
-WB_END
-
-WB_ENTRY(jlong, WB_DramReservedEnd(JNIEnv* env, jobject o))
-#if INCLUDE_G1GC
-  if (UseG1GC) {
-    G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    HeapWord* base = g1h->reserved().start();
-    if (g1h->is_heterogeneous_heap()) {
-      uint end_region = HeterogeneousHeapRegionManager::manager()->end_index_of_dram();
-      return (jlong)(base + (end_region + 1) * HeapRegion::GrainBytes - 1);
-    } else {
-      return (jlong)base + G1Arguments::heap_max_size_bytes();
-    }
-  }
-#endif // INCLUDE_G1GC
-#if INCLUDE_PARALLELGC
-  if (UseParallelGC) {
-    ParallelScavengeHeap* ps_heap = ParallelScavengeHeap::heap();
-    if (AllocateOldGenAt != NULL) {
-      MemRegion reserved = ps_heap->young_gen()->reserved();
-      return (jlong)reserved.end();
-    } else {
-      return (jlong)ps_heap->reserved_region().end();
-    }
-  }
-#endif // INCLUDE_PARALLELGC
-  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_DramReservedEnd: enabled only for G1 and Parallel GC");
-WB_END
-
-WB_ENTRY(jlong, WB_NvdimmReservedStart(JNIEnv* env, jobject o))
-#if INCLUDE_G1GC
-  if (UseG1GC) {
-    G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    if (g1h->is_heterogeneous_heap()) {
-      uint start_region = HeterogeneousHeapRegionManager::manager()->start_index_of_nvdimm();
-      return (jlong)(g1h->reserved().start() + start_region * HeapRegion::GrainBytes);
-    } else {
-      THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_NvdimmReservedStart: Old gen is not allocated on NV-DIMM using AllocateOldGenAt flag");
-    }
-  }
-#endif // INCLUDE_G1GC
-#if INCLUDE_PARALLELGC
-  if (UseParallelGC) {
-    ParallelScavengeHeap* ps_heap = ParallelScavengeHeap::heap();
-    if (AllocateOldGenAt != NULL) {
-      MemRegion reserved = ps_heap->old_gen()->reserved();
-      return (jlong)reserved.start();
-    } else {
-      THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_NvdimmReservedStart: Old gen is not allocated on NV-DIMM using AllocateOldGenAt flag");
-    }
-  }
-#endif // INCLUDE_PARALLELGC
-  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_NvdimmReservedStart: enabled only for G1 and Parallel GC");
-WB_END
-
-WB_ENTRY(jlong, WB_NvdimmReservedEnd(JNIEnv* env, jobject o))
-#if INCLUDE_G1GC
-  if (UseG1GC) {
-    G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    if (g1h->is_heterogeneous_heap()) {
-      uint end_region = HeterogeneousHeapRegionManager::manager()->start_index_of_nvdimm();
-      return (jlong)(g1h->reserved().start() + (end_region + 1) * HeapRegion::GrainBytes - 1);
-    } else {
-      THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_NvdimmReservedEnd: Old gen is not allocated on NV-DIMM using AllocateOldGenAt flag");
-    }
-  }
-#endif // INCLUDE_G1GC
-#if INCLUDE_PARALLELGC
-  if (UseParallelGC) {
-    ParallelScavengeHeap* ps_heap = ParallelScavengeHeap::heap();
-    if (AllocateOldGenAt != NULL) {
-      MemRegion reserved = ps_heap->old_gen()->reserved();
-      return (jlong)reserved.end();
-      } else {
-      THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_NvdimmReservedEnd: Old gen is not allocated on NV-DIMM using AllocateOldGenAt flag");
-    }
-  }
-#endif // INCLUDE_PARALLELGC
-  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_NvdimmReservedEnd: enabled only for G1 and Parallel GC");
-WB_END
-
-#endif // INCLUDE_G1GC || INCLUDE_PARALLELGC
 
 #if INCLUDE_PARALLELGC
 
@@ -878,6 +776,19 @@ WB_ENTRY(jint, WB_DeoptimizeFrames(JNIEnv* env, jobject o, jboolean make_not_ent
   VM_WhiteBoxDeoptimizeFrames op(make_not_entrant == JNI_TRUE);
   VMThread::execute(&op);
   return op.result();
+WB_END
+
+WB_ENTRY(jboolean, WB_IsFrameDeoptimized(JNIEnv* env, jobject o, jint depth))
+  bool result = false;
+  if (thread->has_last_Java_frame()) {
+    RegisterMap reg_map(thread);
+    javaVFrame *jvf = thread->last_java_vframe(&reg_map);
+    for (jint d = 0; d < depth && jvf != NULL; d++) {
+      jvf = jvf->java_sender();
+    }
+    result = jvf != NULL && jvf->fr().is_deoptimized_frame();
+  }
+  return result;
 WB_END
 
 WB_ENTRY(void, WB_DeoptimizeAll(JNIEnv* env, jobject o))
@@ -1229,7 +1140,7 @@ static bool SetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value) {
   const char* flag_name = env->GetStringUTFChars(name, NULL);
   CHECK_JNI_EXCEPTION_(env, false);
   JVMFlag* flag = JVMFlag::find_flag(flag_name);
-  JVMFlag::Error result = JVMFlagAccess::set<T, type_enum>(flag, value, JVMFlag::INTERNAL);
+  JVMFlag::Error result = JVMFlagAccess::set<T, type_enum>(flag, value, JVMFlagOrigin::INTERNAL);
   env->ReleaseStringUTFChars(name, flag_name);
   return (result == JVMFlag::SUCCESS);
 }
@@ -1694,6 +1605,65 @@ int WhiteBox::array_bytes_to_length(size_t bytes) {
   return Array<u1>::bytes_to_length(bytes);
 }
 
+///////////////
+// MetaspaceTestContext and MetaspaceTestArena
+WB_ENTRY(jlong, WB_CreateMetaspaceTestContext(JNIEnv* env, jobject wb, jlong commit_limit, jlong reserve_limit))
+  metaspace::MetaspaceTestContext* context =
+      new metaspace::MetaspaceTestContext("whitebox-metaspace-context", (size_t) commit_limit, (size_t) reserve_limit);
+  return (jlong)p2i(context);
+WB_END
+
+WB_ENTRY(void, WB_DestroyMetaspaceTestContext(JNIEnv* env, jobject wb, jlong context))
+  delete (metaspace::MetaspaceTestContext*) context;
+WB_END
+
+WB_ENTRY(void, WB_PurgeMetaspaceTestContext(JNIEnv* env, jobject wb, jlong context))
+  metaspace::MetaspaceTestContext* context0 = (metaspace::MetaspaceTestContext*) context;
+  context0->purge_area();
+WB_END
+
+WB_ENTRY(void, WB_PrintMetaspaceTestContext(JNIEnv* env, jobject wb, jlong context))
+  metaspace::MetaspaceTestContext* context0 = (metaspace::MetaspaceTestContext*) context;
+  context0->print_on(tty);
+WB_END
+
+WB_ENTRY(jlong, WB_GetTotalCommittedWordsInMetaspaceTestContext(JNIEnv* env, jobject wb, jlong context))
+  metaspace::MetaspaceTestContext* context0 = (metaspace::MetaspaceTestContext*) context;
+  return context0->committed_words();
+WB_END
+
+WB_ENTRY(jlong, WB_GetTotalUsedWordsInMetaspaceTestContext(JNIEnv* env, jobject wb, jlong context))
+  metaspace::MetaspaceTestContext* context0 = (metaspace::MetaspaceTestContext*) context;
+  return context0->used_words();
+WB_END
+
+WB_ENTRY(jlong, WB_CreateArenaInTestContext(JNIEnv* env, jobject wb, jlong context, jboolean is_micro))
+  const Metaspace::MetaspaceType type = is_micro ? Metaspace::ReflectionMetaspaceType : Metaspace::StandardMetaspaceType;
+  metaspace::MetaspaceTestContext* context0 = (metaspace::MetaspaceTestContext*) context;
+  return (jlong)p2i(context0->create_arena(type));
+WB_END
+
+WB_ENTRY(void, WB_DestroyMetaspaceTestArena(JNIEnv* env, jobject wb, jlong arena))
+  delete (metaspace::MetaspaceTestArena*) arena;
+WB_END
+
+WB_ENTRY(jlong, WB_AllocateFromMetaspaceTestArena(JNIEnv* env, jobject wb, jlong arena, jlong word_size))
+  metaspace::MetaspaceTestArena* arena0 = (metaspace::MetaspaceTestArena*) arena;
+  MetaWord* p = arena0->allocate((size_t) word_size);
+  return (jlong)p2i(p);
+WB_END
+
+WB_ENTRY(void, WB_DeallocateToMetaspaceTestArena(JNIEnv* env, jobject wb, jlong arena, jlong p, jlong word_size))
+  metaspace::MetaspaceTestArena* arena0 = (metaspace::MetaspaceTestArena*) arena;
+  arena0->deallocate((MetaWord*)p, (size_t) word_size);
+WB_END
+
+WB_ENTRY(jlong, WB_GetMaxMetaspaceAllocationSize(JNIEnv* env, jobject wb))
+  return (jlong) Metaspace::max_allocation_word_size() * BytesPerWord;
+WB_END
+
+//////////////
+
 WB_ENTRY(jlong, WB_AllocateMetaspace(JNIEnv* env, jobject wb, jobject class_loader, jlong size))
   if (size < 0) {
     THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
@@ -1708,15 +1678,6 @@ WB_ENTRY(jlong, WB_AllocateMetaspace(JNIEnv* env, jobject wb, jobject class_load
   void* metadata = MetadataFactory::new_array<u1>(cld, WhiteBox::array_bytes_to_length((size_t)size), thread);
 
   return (jlong)(uintptr_t)metadata;
-WB_END
-
-WB_ENTRY(void, WB_FreeMetaspace(JNIEnv* env, jobject wb, jobject class_loader, jlong addr, jlong size))
-  oop class_loader_oop = JNIHandles::resolve(class_loader);
-  ClassLoaderData* cld = class_loader_oop != NULL
-      ? java_lang_ClassLoader::loader_data_acquire(class_loader_oop)
-      : ClassLoaderData::the_null_class_loader_data();
-
-  MetadataFactory::free_array(cld, (Array<u1>*)(uintptr_t)addr);
 WB_END
 
 WB_ENTRY(void, WB_DefineModule(JNIEnv* env, jobject o, jobject module, jboolean is_open,
@@ -2347,12 +2308,6 @@ static JNINativeMethod methods[] = {
   {CC"g1MemoryNodeIds",    CC"()[I",                  (void*)&WB_G1MemoryNodeIds },
   {CC"g1GetMixedGCInfo",   CC"(I)[J",                 (void*)&WB_G1GetMixedGCInfo },
 #endif // INCLUDE_G1GC
-#if INCLUDE_G1GC || INCLUDE_PARALLELGC
-  {CC"dramReservedStart",   CC"()J",                  (void*)&WB_DramReservedStart },
-  {CC"dramReservedEnd",     CC"()J",                  (void*)&WB_DramReservedEnd },
-  {CC"nvdimmReservedStart", CC"()J",                  (void*)&WB_NvdimmReservedStart },
-  {CC"nvdimmReservedEnd",   CC"()J",                  (void*)&WB_NvdimmReservedEnd },
-#endif // INCLUDE_G1GC || INCLUDE_PARALLELGC
 #if INCLUDE_PARALLELGC
   {CC"psVirtualSpaceAlignment",CC"()J",               (void*)&WB_PSVirtualSpaceAlignment},
   {CC"psHeapGenerationAlignment",CC"()J",             (void*)&WB_PSHeapGenerationAlignment},
@@ -2374,6 +2329,7 @@ static JNINativeMethod methods[] = {
   {CC"NMTArenaMalloc",      CC"(JJ)V",                (void*)&WB_NMTArenaMalloc     },
 #endif // INCLUDE_NMT
   {CC"deoptimizeFrames",   CC"(Z)I",                  (void*)&WB_DeoptimizeFrames  },
+  {CC"isFrameDeoptimized", CC"(I)Z",                  (void*)&WB_IsFrameDeoptimized},
   {CC"deoptimizeAll",      CC"()V",                   (void*)&WB_DeoptimizeAll     },
   {CC"deoptimizeMethod0",   CC"(Ljava/lang/reflect/Executable;Z)I",
                                                       (void*)&WB_DeoptimizeMethod  },
@@ -2454,8 +2410,6 @@ static JNINativeMethod methods[] = {
   {CC"readReservedMemory", CC"()V",                   (void*)&WB_ReadReservedMemory },
   {CC"allocateMetaspace",
      CC"(Ljava/lang/ClassLoader;J)J",                 (void*)&WB_AllocateMetaspace },
-  {CC"freeMetaspace",
-     CC"(Ljava/lang/ClassLoader;JJ)V",                (void*)&WB_FreeMetaspace },
   {CC"incMetaspaceCapacityUntilGC", CC"(J)J",         (void*)&WB_IncMetaspaceCapacityUntilGC },
   {CC"metaspaceCapacityUntilGC", CC"()J",             (void*)&WB_MetaspaceCapacityUntilGC },
   {CC"metaspaceReserveAlignment", CC"()J",            (void*)&WB_MetaspaceReserveAlignment },
@@ -2551,6 +2505,19 @@ static JNINativeMethod methods[] = {
   {CC"protectionDomainRemovedCount",   CC"()I",       (void*)&WB_ProtectionDomainRemovedCount },
   {CC"aotLibrariesCount", CC"()I",                    (void*)&WB_AotLibrariesCount },
   {CC"getKlassMetadataSize", CC"(Ljava/lang/Class;)I",(void*)&WB_GetKlassMetadataSize},
+
+  {CC"createMetaspaceTestContext", CC"(JJ)J",         (void*)&WB_CreateMetaspaceTestContext},
+  {CC"destroyMetaspaceTestContext", CC"(J)V",         (void*)&WB_DestroyMetaspaceTestContext},
+  {CC"purgeMetaspaceTestContext", CC"(J)V",           (void*)&WB_PurgeMetaspaceTestContext},
+  {CC"printMetaspaceTestContext", CC"(J)V",           (void*)&WB_PrintMetaspaceTestContext},
+  {CC"getTotalCommittedWordsInMetaspaceTestContext", CC"(J)J",(void*)&WB_GetTotalCommittedWordsInMetaspaceTestContext},
+  {CC"getTotalUsedWordsInMetaspaceTestContext", CC"(J)J", (void*)&WB_GetTotalUsedWordsInMetaspaceTestContext},
+  {CC"createArenaInTestContext", CC"(JZ)J",           (void*)&WB_CreateArenaInTestContext},
+  {CC"destroyMetaspaceTestArena", CC"(J)V",           (void*)&WB_DestroyMetaspaceTestArena},
+  {CC"allocateFromMetaspaceTestArena", CC"(JJ)J",     (void*)&WB_AllocateFromMetaspaceTestArena},
+  {CC"deallocateToMetaspaceTestArena", CC"(JJJ)V",    (void*)&WB_DeallocateToMetaspaceTestArena},
+  {CC"maxMetaspaceAllocationSize", CC"()J",           (void*)&WB_GetMaxMetaspaceAllocationSize},
+
   {CC"isJVMTIIncluded", CC"()Z",                      (void*)&WB_IsJVMTIIncluded},
   {CC"waitUnsafe", CC"(I)V",                          (void*)&WB_WaitUnsafe},
   {CC"getLibcName",     CC"()Ljava/lang/String;",     (void*)&WB_GetLibcName},

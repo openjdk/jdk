@@ -57,6 +57,7 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepointVerifiers.hpp"
@@ -69,7 +70,7 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/hashtable.inline.hpp"
 #if INCLUDE_G1GC
-#include "gc/g1/g1CollectedHeap.hpp"
+#include "gc/g1/g1CollectedHeap.inline.hpp"
 #endif
 
 ReservedSpace MetaspaceShared::_shared_rs;
@@ -770,11 +771,16 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   builder.relocate_well_known_klasses();
 
+  log_info(cds)("Update method trampolines");
+  builder.update_method_trampolines();
+
   log_info(cds)("Make classes shareable");
   builder.make_klasses_shareable();
 
   char* serialized_data = dump_read_only_tables();
   _ro_region.pack();
+
+  SystemDictionaryShared::adjust_lambda_proxy_class_dictionary();
 
   // The vtable clones contain addresses of the current process.
   // We don't want to write these addresses into the archive. Same for i2i buffer.
@@ -1091,6 +1097,9 @@ int MetaspaceShared::preload_classes(const char* class_list_path, TRAPS) {
   int class_count = 0;
 
   while (parser.parse_one_line()) {
+    if (parser.lambda_form_line()) {
+      continue;
+    }
     Klass* klass = parser.load_current_class(THREAD);
     if (HAS_PENDING_EXCEPTION) {
       if (klass == NULL &&
@@ -1158,6 +1167,15 @@ bool MetaspaceShared::try_link_class(InstanceKlass* ik, TRAPS) {
 
 #if INCLUDE_CDS_JAVA_HEAP
 void VM_PopulateDumpSharedSpace::dump_java_heap_objects() {
+  if(!HeapShared::is_heap_object_archiving_allowed()) {
+    log_info(cds)(
+      "Archived java heap is not supported as UseG1GC, "
+      "UseCompressedOops and UseCompressedClassPointers are required."
+      "Current settings: UseG1GC=%s, UseCompressedOops=%s, UseCompressedClassPointers=%s.",
+      BOOL_TO_STR(UseG1GC), BOOL_TO_STR(UseCompressedOops),
+      BOOL_TO_STR(UseCompressedClassPointers));
+    return;
+  }
   // Find all the interned strings that should be dumped.
   int i;
   for (i = 0; i < _global_klass_objects->length(); i++) {
@@ -1730,6 +1748,7 @@ void MetaspaceShared::initialize_shared_spaces() {
     SymbolTable::serialize_shared_table_header(&rc, false);
     SystemDictionaryShared::serialize_dictionary_headers(&rc, false);
     dynamic_mapinfo->close();
+    dynamic_mapinfo->unmap_region(MetaspaceShared::bm);
   }
 
   if (PrintSharedArchiveAndExit) {

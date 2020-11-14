@@ -51,7 +51,7 @@ import jdk.jpackage.test.TKit;
  * @requires (jpackage.test.SQETest != null)
  * @build jdk.jpackage.test.*
  * @requires (os.family == "windows")
- * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
+ * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile WinUpgradeUUIDTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinUpgradeUUIDTest.test
@@ -65,7 +65,7 @@ import jdk.jpackage.test.TKit;
  * @requires (jpackage.test.SQETest == null)
  * @build jdk.jpackage.test.*
  * @requires (os.family == "windows")
- * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
+ * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile WinUpgradeUUIDTest.java
  * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinUpgradeUUIDTest
