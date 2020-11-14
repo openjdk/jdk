@@ -25,6 +25,7 @@
 
 package java.io;
 
+import java.io.ObjectInputFilter.Config;
 import java.io.ObjectStreamClass.WeakClassKey;
 import java.io.ObjectStreamClass.RecordSupport;
 import java.lang.System.Logger;
@@ -44,6 +45,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.BiFunction;
 
 import static java.io.ObjectStreamClass.processQueue;
 
@@ -188,15 +190,33 @@ import sun.security.action.GetIntegerAction;
  * protected) or that there are get and set methods that can be used to restore
  * the state.
  *
- * <p>The contents of the stream can be filtered during deserialization.
- * If a {@linkplain #setObjectInputFilter(ObjectInputFilter) filter is set}
- * on an ObjectInputStream, the {@link ObjectInputFilter} can check that
+ * The deserialization filter for a stream is determined in one of the following ways:
+ * <ul>
+ * <li>A JVM-wide filter factory can be set via {@link Config#setSerialFilterFactory(BiFunction)}
+ *     or the system property {@code jdk.serialFilterFactory} or
+ *     the security property {@code jdk.serialFilterFactory}.
+ *     The filter factory is invoked for each new ObjectInputStream and
+ *     when a filter is set for a stream.
+ *     The filter factory determines the filter to be used for each stream based
+ *     on its inputs, thread context, other filters, or state that is available.
+ * <li>If a JVM-wide filter factory is not set, a builtin deserialization filter factory
+ *     provides the {@link Config#getSerialFilter static JVM-wide filter} when invoked from the
+ *     {@link ObjectInputStream#ObjectInputStream(InputStream) ObjectInputStream constructors}
+ *     and replaces the static filter when invoked from
+ *     {@link ObjectInputStream#setObjectInputFilter(ObjectInputFilter)}.
+ *     See {@link Config#getSerialFilterFactory() getSerialFilterFactory}.
+ * <li>A stream-specific filter can be set for an individual ObjectInputStream
+ *     via {@link ObjectInputStream#setObjectInputFilter setObjectInputFilter}.
+ *     Note that the filter may be used directly or combined with other filters by the
+ *     {@linkplain Config#setSerialFilterFactory(BiFunction) JVM-wide filter factory}.
+ * </ul>
+ *
+ * The JVM-wide factory ensures that a filter can be set on every {@link ObjectInputStream}
+ * and every object read from the stream can be checked.
+ * If an ObjectInputStream has a filter, the {@link ObjectInputFilter} can check that
  * the classes, array lengths, number of references in the stream, depth, and
  * number of bytes consumed from the input stream are allowed and
  * if not, can terminate deserialization.
- * A {@linkplain ObjectInputFilter.Config#setSerialFilter(ObjectInputFilter) system-wide filter}
- * can be configured that is applied to each {@code ObjectInputStream} unless replaced
- * using {@link #setObjectInputFilter(ObjectInputFilter) setObjectInputFilter}.
  *
  * <p>Any exception that occurs while deserializing an object will be caught by
  * the ObjectInputStream and abort the reading process.
@@ -353,8 +373,11 @@ public class ObjectInputStream
      * This constructor will block until the corresponding ObjectOutputStream
      * has written and flushed the header.
      *
-     * <p>The serialization filter is initialized to the value of
-     * {@linkplain ObjectInputFilter.Config#getSerialFilter() the system-wide filter}.
+     * <p>The serialization filter is initialized to the filter returned
+     * by invoking the {@link Config#getSerialFilterFactory()}
+     * with {@code null} for the current filter and {@code null} for the requested filter.
+     * The builtin filter factory is returned if a deserialization filter factory
+     * {@linkplain Config#setSerialFilterFactory(BiFunction) has not been set}.
      *
      * <p>If a security manager is installed, this constructor will check for
      * the "enableSubclassImplementation" SerializablePermission when invoked
@@ -377,7 +400,7 @@ public class ObjectInputStream
         bin = new BlockDataInputStream(in);
         handles = new HandleTable(10);
         vlist = new ValidationList();
-        serialFilter = ObjectInputFilter.Config.getSerialFilter();
+        serialFilter = Config.getSerialFilterFactory().apply(null, null);
         enableOverride = false;
         readStreamHeader();
         bin.setBlockDataMode(true);
@@ -388,8 +411,11 @@ public class ObjectInputStream
      * ObjectInputStream to not have to allocate private data just used by this
      * implementation of ObjectInputStream.
      *
-     * <p>The serialization filter is initialized to the value of
-     * {@linkplain ObjectInputFilter.Config#getSerialFilter() the system-wide filter}.
+     * <p>The serialization filter is initialized to the filter returned
+     * by invoking the {@link Config#getSerialFilterFactory()}
+     * with {@code null} for the current filter and {@code null} for the requested filter.
+     * The builtin filter factory is returned if a deserialization filter factory
+     * {@linkplain Config#setSerialFilterFactory(BiFunction) has not been set}.
      *
      * <p>If there is a security manager installed, this method first calls the
      * security manager's {@code checkPermission} method with the
@@ -411,7 +437,7 @@ public class ObjectInputStream
         bin = null;
         handles = null;
         vlist = null;
-        serialFilter = ObjectInputFilter.Config.getSerialFilter();
+        serialFilter = Config.getSerialFilterFactory().apply(null, null);
         enableOverride = true;
     }
 
@@ -1222,10 +1248,10 @@ public class ObjectInputStream
 
     /**
      * Returns the serialization filter for this stream.
-     * The serialization filter is the most recent filter set in
-     * {@link #setObjectInputFilter setObjectInputFilter} or
-     * the initial system-wide filter from
-     * {@link ObjectInputFilter.Config#getSerialFilter() ObjectInputFilter.Config.getSerialFilter}.
+     * The filter is the result of invoking the
+     * {@link Config#getSerialFilterFactory() JVM-wide filter factory}
+     * either by the {@linkplain #ObjectInputStream() constructor} or the most recent invocation of
+     * {@link #setObjectInputFilter setObjectInputFilter}.
      *
      * @return the serialization filter for the stream; may be null
      * @since 9
@@ -1235,8 +1261,16 @@ public class ObjectInputStream
     }
 
     /**
-     * Set the serialization filter for the stream.
-     * The filter's {@link ObjectInputFilter#checkInput checkInput} method is called
+     * Set the deserialization filter for the stream.
+     * The filter must be set before reading any objects from the stream;
+     * for example, by calling {@link #readObject} or {@link #readUnshared}.
+     *
+     * <p>The serialization filter is set to the filter returned
+     * by invoking the {@link Config#getSerialFilterFactory()}
+     * with the current filter and the {@code filter} parameter.
+     * See the {@linkplain ObjectInputFilter filter models} for examples of composition and delegation.
+     *
+     * <p>The filter's {@link ObjectInputFilter#checkInput checkInput} method is called
      * for each class and reference in the stream.
      * The filter can check any or all of the class, the array length, the number
      * of references, the depth of the graph, and the size of the input stream.
@@ -1245,21 +1279,14 @@ public class ObjectInputStream
      * and the current object being deserialized.
      * The number of references is the cumulative number of objects and references
      * to objects already read from the stream including the current object being read.
-     * The filter is invoked only when reading objects from the stream and for
-     * not primitives.
+     * The filter is invoked only when reading objects from the stream and not for
+     * primitives.
      * <p>
      * If the filter returns {@link ObjectInputFilter.Status#REJECTED Status.REJECTED},
      * {@code null} or throws a {@link RuntimeException},
      * the active {@code readObject} or {@code readUnshared}
      * throws {@link InvalidClassException}, otherwise deserialization
      * continues uninterrupted.
-     * <p>
-     * The serialization filter is initialized to the value of
-     * {@link ObjectInputFilter.Config#getSerialFilter() ObjectInputFilter.Config.getSerialFilter}
-     * when the {@code  ObjectInputStream} is constructed and can be set
-     * to a custom filter only once.
-     * The filter must be set before reading any objects from the stream;
-     * for example, by calling {@link #readObject} or {@link #readUnshared}.
      *
      * @implSpec
      * The filter, when not {@code null}, is invoked during {@link #readObject readObject}
@@ -1301,26 +1328,24 @@ public class ObjectInputStream
      * @param filter the filter, may be null
      * @throws SecurityException if there is security manager and the
      *       {@code SerializablePermission("serialFilter")} is not granted
-     * @throws IllegalStateException if the {@linkplain #getObjectInputFilter() current filter}
-     *       is not {@code null} and is not the system-wide filter, or
-     *       if an object has been read
+     * @throws IllegalStateException if an object has been read or
+     *       if the {@link Config#getSerialFilterFactory()}
+     *       does not allow replacement of the serial filter.
      * @since 9
      */
     public final void setObjectInputFilter(ObjectInputFilter filter) {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
+            // TBD double checks, here and in the default serialFilterFactory
             sm.checkPermission(ObjectStreamConstants.SERIAL_FILTER_PERMISSION);
-        }
-        // Allow replacement of the system-wide filter if not already set
-        if (serialFilter != null &&
-                serialFilter != ObjectInputFilter.Config.getSerialFilter()) {
-            throw new IllegalStateException("filter can not be set more than once");
         }
         if (totalObjectRefs > 0 && !Caches.SET_FILTER_AFTER_READ) {
             throw new IllegalStateException(
                     "filter can not be set after an object has been read");
         }
-        this.serialFilter = filter;
+        // Delegate to serialFilterFactory to determine replacement policy
+        serialFilter = Config.getSerialFilterFactory()
+                .apply(serialFilter, filter);
     }
 
     /**
