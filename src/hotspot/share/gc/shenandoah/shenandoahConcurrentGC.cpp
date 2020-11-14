@@ -469,9 +469,6 @@ void ShenandoahConcurrentGC::op_init_mark() {
   rp->reset_thread_locals();
   rp->set_soft_reference_policy(heap()->soft_ref_policy()->should_clear_all_soft_refs());
 
-  // Make above changes visible to worker threads
-  OrderAccess::fence();
-
   if (ShenandoahPacing) {
     heap()->pacer()->setup_for_mark();
   }
