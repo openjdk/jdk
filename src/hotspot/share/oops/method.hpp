@@ -91,7 +91,8 @@ class Method : public Metadata {
     _has_injected_profile  = 1 << 4,
     _running_emcp          = 1 << 5,
     _intrinsic_candidate   = 1 << 6,
-    _reserved_stack_access = 1 << 7
+    _reserved_stack_access = 1 << 7,
+    _scoped                = 1 << 8
   };
   mutable u2 _flags;
 
@@ -899,6 +900,14 @@ public:
 
   void set_hidden(bool x) {
     _flags = x ? (_flags | _hidden) : (_flags & ~_hidden);
+  }
+
+  bool is_scoped() const {
+    return (_flags & _scoped) != 0;
+  }
+
+  void set_scoped(bool x) {
+    _flags = x ? (_flags | _scoped) : (_flags & ~_scoped);
   }
 
   bool intrinsic_candidate() {

@@ -136,7 +136,9 @@ class RegMask {
   }
 
   // Construct an empty mask
-  RegMask() : _RM_UP(), _lwm(_RM_SIZE - 1), _hwm(0) {}
+  RegMask() : _RM_UP(), _lwm(_RM_SIZE - 1), _hwm(0) {
+    assert(valid_watermarks(), "post-condition");
+  }
 
   // Construct a mask with a single bit
   RegMask(OptoReg::Name reg) : RegMask() {

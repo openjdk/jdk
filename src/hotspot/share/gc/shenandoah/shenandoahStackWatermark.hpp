@@ -49,6 +49,7 @@ public:
 
 class ShenandoahStackWatermark : public StackWatermark {
 private:
+  static uint32_t                      _epoch_id;
   ShenandoahHeap* const                _heap;
   ThreadLocalAllocStats                _stats;
 
@@ -61,6 +62,7 @@ public:
   ShenandoahStackWatermark(JavaThread* jt);
   ThreadLocalAllocStats& stats();
 
+  static void change_epoch_id();
 private:
   OopClosure* closure_from_context(void* context);
   virtual uint32_t epoch_id() const;

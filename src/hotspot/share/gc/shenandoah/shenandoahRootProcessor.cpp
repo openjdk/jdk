@@ -220,6 +220,7 @@ ShenandoahConcurrentMarkThreadClosure::ShenandoahConcurrentMarkThreadClosure(Oop
 void ShenandoahConcurrentMarkThreadClosure::do_thread(Thread* thread) {
   assert(thread->is_Java_thread(), "Must be");
   JavaThread* const jt = thread->as_Java_thread();
+
   StackWatermarkSet::finish_processing(jt, _oops, StackWatermarkKind::gc);
 //  ZThreadLocalAllocBuffer::update_stats(jt);
 }
@@ -257,7 +258,6 @@ void ShenandoahConcurrentRootScanner::roots_do(OopClosure* oops, uint worker_id)
   _vm_roots.oops_do(oops, worker_id);
 
   if (!heap->unload_classes()) {
-    AlwaysTrueClosure always_true;
     _cld_roots.cld_do(&clds_cl, worker_id);
     ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
     CodeBlobToOopClosure blobs(oops, !CodeBlobToOopClosure::FixRelocations);
@@ -281,51 +281,13 @@ void ShenandoahConcurrentRootScanner::update_tlab_stats() {
   }
 }
 
-ShenandoahRootEvacuator::ShenandoahRootEvacuator(uint n_workers,
-                                                 ShenandoahPhaseTimings::Phase phase,
-                                                 bool stw_roots_processing,
-                                                 bool stw_class_unloading) :
+ShenandoahRootEvacuator::ShenandoahRootEvacuator(ShenandoahPhaseTimings::Phase phase) :
   ShenandoahRootProcessor(phase),
-  _vm_roots(phase),
-  _cld_roots(phase, n_workers),
-  _thread_roots(phase, n_workers > 1),
-  _serial_weak_roots(phase),
-  _weak_roots(phase),
-  _dedup_roots(phase),
-  _code_roots(phase),
-  _stw_roots_processing(stw_roots_processing),
-  _stw_class_unloading(stw_class_unloading) {
+  _serial_weak_roots(phase) {
 }
 
 void ShenandoahRootEvacuator::roots_do(uint worker_id, OopClosure* oops) {
-  MarkingCodeBlobClosure blobsCl(oops, CodeBlobToOopClosure::FixRelocations);
-  ShenandoahCodeBlobAndDisarmClosure blobs_and_disarm_Cl(oops);
-  CodeBlobToOopClosure* codes_cl = ShenandoahConcurrentRoots::can_do_concurrent_class_unloading() ?
-                                   static_cast<CodeBlobToOopClosure*>(&blobs_and_disarm_Cl) :
-                                   static_cast<CodeBlobToOopClosure*>(&blobsCl);
-  AlwaysTrueClosure always_true;
-
-  // Process serial-claiming roots first
   _serial_weak_roots.weak_oops_do(oops, worker_id);
-
-  // Process light-weight/limited parallel roots then
-  if (_stw_roots_processing) {
-    _vm_roots.oops_do<OopClosure>(oops, worker_id);
-    _weak_roots.oops_do<OopClosure>(oops, worker_id);
-    _dedup_roots.oops_do(&always_true, oops, worker_id);
-  }
-  if (_stw_class_unloading) {
-    CLDToOopClosure clds(oops, ClassLoaderData::_claim_strong);
-    _cld_roots.cld_do(&clds, worker_id);
-  }
-
-  // Process heavy-weight/fully parallel roots the last
-  if (_stw_class_unloading) {
-    _code_roots.code_blobs_do(codes_cl, worker_id);
-    _thread_roots.oops_do(oops, NULL, worker_id);
-  } else {
-    _thread_roots.oops_do(oops, codes_cl, worker_id);
-  }
 }
 
 ShenandoahRootUpdater::ShenandoahRootUpdater(uint n_workers, ShenandoahPhaseTimings::Phase phase) :

@@ -143,7 +143,7 @@ void ShenandoahEvacuateUpdateMetadataClosure<MO>::do_oop(narrowOop* p) {
 }
 
 ShenandoahEvacuateUpdateRootsClosure::ShenandoahEvacuateUpdateRootsClosure() :
-  _heap(ShenandoahHeap::heap()), _thread(Thread::current()) {
+  _heap(ShenandoahHeap::heap()) {
 }
 
 template <typename T>
@@ -164,7 +164,6 @@ void ShenandoahEvacuateUpdateRootsClosure::do_oop_work(T* p, Thread* t) {
         resolved = _heap->evacuate_object(obj, t);
       }
       _heap->cas_oop(resolved, p, o);
-
     }
   }
 }
@@ -176,7 +175,6 @@ void ShenandoahEvacuateUpdateRootsClosure::do_oop(oop* p) {
 void ShenandoahEvacuateUpdateRootsClosure::do_oop(narrowOop* p) {
   do_oop_work(p, Thread::current());
 }
-
 
 ShenandoahContextEvacuateUpdateRootsClosure::ShenandoahContextEvacuateUpdateRootsClosure() :
   ShenandoahEvacuateUpdateRootsClosure(),

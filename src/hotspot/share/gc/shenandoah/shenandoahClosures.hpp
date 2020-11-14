@@ -88,7 +88,7 @@ private:
   ShenandoahHeap* const _heap;
   Thread* const         _thread;
 public:
-  inline ShenandoahEvacuateUpdateRootsClosure();
+  inline ShenandoahEvacuateUpdateMetadataClosure();
   inline void do_oop(oop* p);
   inline void do_oop(narrowOop* p);
 

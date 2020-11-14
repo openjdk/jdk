@@ -27,6 +27,7 @@
 #include "aot/aotLoader.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/javaThreadStatus.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -499,7 +500,7 @@ void Thread::start(Thread* thread) {
       // exact thread state at that time. It could be in MONITOR_WAIT or
       // in SLEEPING or some other state.
       java_lang_Thread::set_thread_status(thread->as_Java_thread()->threadObj(),
-                                          java_lang_Thread::RUNNABLE);
+                                          JavaThreadStatus::RUNNABLE);
     }
     os::start_thread(thread);
   }
@@ -887,7 +888,7 @@ static void create_initial_thread(Handle thread_group, JavaThread* thread,
   // Set thread status to running since main thread has
   // been started and running.
   java_lang_Thread::set_thread_status(thread_oop(),
-                                      java_lang_Thread::RUNNABLE);
+                                      JavaThreadStatus::RUNNABLE);
 }
 
 char java_version[64] = "";
@@ -1818,7 +1819,7 @@ static void ensure_join(JavaThread* thread) {
   // Ignore pending exception (ThreadDeath), since we are exiting anyway
   thread->clear_pending_exception();
   // Thread is exiting. So set thread_status field in  java.lang.Thread class to TERMINATED.
-  java_lang_Thread::set_thread_status(threadObj(), java_lang_Thread::TERMINATED);
+  java_lang_Thread::set_thread_status(threadObj(), JavaThreadStatus::TERMINATED);
   // Clear the native thread instance - this makes isAlive return false and allows the join()
   // to complete once we've done the notify_all below
   java_lang_Thread::set_thread(threadObj(), NULL);

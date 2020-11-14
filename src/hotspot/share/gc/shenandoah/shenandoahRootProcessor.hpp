@@ -27,6 +27,7 @@
 
 #include "code/codeCache.hpp"
 #include "gc/shared/oopStorageSetParState.hpp"
+#include "gc/shared/strongRootsScope.hpp"
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
@@ -96,6 +97,21 @@ public:
 
   template <typename T>
   void oops_do(T* cl, uint worker_id);
+};
+
+class ShenandoahJavaThreadsIterator {
+private:
+  ThreadsListHandle             _threads;
+  volatile uint                 _claimed;
+  ShenandoahPhaseTimings::Phase _phase;
+
+  uint claim();
+public:
+  ShenandoahJavaThreadsIterator(ShenandoahPhaseTimings::Phase phase);
+  void threads_do(ThreadClosure* cl, uint worker_id);
+
+  uint length() const { return _threads.length(); }
+  Thread* thread_at(uint index) const { return _threads.thread_at(index); }
 };
 
 class ShenandoahThreadRoots {
@@ -252,19 +268,10 @@ public:
 // Evacuate all roots at a safepoint
 class ShenandoahRootEvacuator : public ShenandoahRootProcessor {
 private:
-  ShenandoahVMRoots<false /*concurrent*/>                   _vm_roots;
-  ShenandoahClassLoaderDataRoots<false /*concurrent*/, false /*single threaded*/>
-                                                            _cld_roots;
-  ShenandoahThreadRoots                                     _thread_roots;
-  ShenandoahSerialWeakRoots                                 _serial_weak_roots;
-  ShenandoahVMWeakRoots<false /*concurrent*/>               _weak_roots;
-  ShenandoahStringDedupRoots                                _dedup_roots;
-  ShenandoahCodeCacheRoots                                  _code_roots;
-  bool                                                      _stw_roots_processing;
-  bool                                                      _stw_class_unloading;
+  ShenandoahSerialWeakRoots   _serial_weak_roots;
+
 public:
-  ShenandoahRootEvacuator(uint n_workers, ShenandoahPhaseTimings::Phase phase,
-                          bool stw_roots_processing, bool stw_class_unloading);
+  ShenandoahRootEvacuator(ShenandoahPhaseTimings::Phase phase);
 
   void roots_do(uint worker_id, OopClosure* oops);
 };

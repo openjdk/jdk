@@ -292,6 +292,7 @@ void ShenandoahDegenGC::op_init_updaterefs() {
   heap()->set_concurrent_strong_root_in_progress(false);
 
   heap()->prepare_update_heap_references(false /*concurrent*/);
+
   heap()->set_update_refs_in_progress(true);
 }
 
@@ -308,6 +309,16 @@ void ShenandoahDegenGC::op_update_roots() {
   update_roots(false /*full_gc*/);
 
   heap()->update_heap_region_states(false /*concurrent*/);
+
+  if (ShenandoahVerify) {
+    heap()->verifier()->verify_after_updaterefs();
+  }
+
+  if (VerifyAfterGC) {
+    Universe::verify();
+  }
+
+  heap()->rebuild_free_set(false /*concurrent*/);
 }
 
 void ShenandoahDegenGC::op_cleanup_complete() {

@@ -31,6 +31,8 @@
 
 #include "runtime/safepointVerifiers.hpp"
 
+uint32_t ShenandoahStackWatermark::_epoch_id = 1;
+
 ShenandoahOnStackCodeBlobClosure::ShenandoahOnStackCodeBlobClosure() :
     _bs_nm(BarrierSet::barrier_set()->barrier_set_nmethod()) {}
 
@@ -47,11 +49,15 @@ ThreadLocalAllocStats& ShenandoahStackWatermark::stats() {
 }
 
 uint32_t ShenandoahStackWatermark::epoch_id() const {
-  return (uint32_t)ShenandoahCodeRoots::disarmed_value();
+  return _epoch_id;
+}
+
+void ShenandoahStackWatermark::change_epoch_id() {
+  _epoch_id ++;
 }
 
 ShenandoahStackWatermark::ShenandoahStackWatermark(JavaThread* jt) :
-  StackWatermark(jt, StackWatermarkKind::gc, (uint32_t)ShenandoahCodeRoots::disarmed_value()),
+  StackWatermark(jt, StackWatermarkKind::gc, _epoch_id),
   _heap(ShenandoahHeap::heap()),
   _stats(),
   _keep_alive_cl(),
@@ -82,7 +88,14 @@ void ShenandoahStackWatermark::start_processing_impl(void* context) {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
 
   // Process the non-frame part of the thread
-  if (heap->is_concurrent_weak_root_in_progress()) {
+  if (heap->is_concurrent_mark_in_progress()) {
+    // We need to reset all TLABs because they might be below the TAMS, and we need to mark
+    // the objects in them. Do not let mutators allocate any new objects in their current TLABs.
+    // It is also a good place to resize the TLAB sizes for future allocations.
+    retire_tlab();
+
+    _jt->oops_do_no_frames(closure_from_context(context), &_cb_cl);
+  } else if (heap->is_concurrent_weak_root_in_progress()) {
     // Retire the TLABs, which will force threads to reacquire their TLABs.
     // This is needed for two reasons. Strong one: new allocations would be with new freeset,
     // which would be outside the collection set, so no cset writes would happen there.
@@ -92,13 +105,8 @@ void ShenandoahStackWatermark::start_processing_impl(void* context) {
 
     ShenandoahEvacOOMScope oom;
     _jt->oops_do_no_frames(closure_from_context(context), &_cb_cl);
-  } else if (heap->is_concurrent_mark_in_progress()) {
-    // We need to reset all TLABs because they might be below the TAMS, and we need to mark
-    // the objects in them. Do not let mutators allocate any new objects in their current TLABs.
-    // It is also a good place to resize the TLAB sizes for future allocations.
-    retire_tlab();
-
-    _jt->oops_do_no_frames(closure_from_context(context), &_cb_cl);
+  } else {
+    ShouldNotReachHere();
   }
 
   // Publishes the processing start to concurrent threads

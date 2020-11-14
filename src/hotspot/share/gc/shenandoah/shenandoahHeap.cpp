@@ -1148,23 +1148,17 @@ public:
   void work(uint worker_id) {
     ShenandoahParallelWorkerSession worker_session(worker_id);
     ShenandoahEvacOOMScope oom_evac_scope;
-    ShenandoahEvacuateUpdateRootsClosure<> cl;
-    MarkingCodeBlobClosure blobsCl(&cl, CodeBlobToOopClosure::FixRelocations);
+    ShenandoahEvacuateUpdateMetadataClosure<> cl;
     _rp->roots_do(worker_id, &cl);
   }
 };
 
 void ShenandoahHeap::evacuate_and_update_roots(bool cleanup_only) {
+  ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_evac);
   ShenandoahRootEvacuator rp(ShenandoahPhaseTimings::init_evac);
-  if (cleanup_only) {
-    ShenandoahIsAliveClosure is_alive;
-    rp.roots_do(0, &is_alive, &do_nothing_cl);
-  } else {
-    ShenandoahEvacOOMScope evac_scope;
-    ShenandoahEvacuateUpdateMetadataClosure<> keep_alive;
-    ShenandoahForwardedIsAliveClosure is_alive;
-    rp.roots_do(0, &is_alive, &keep_alive);
-  }
+  ShenandoahEvacOOMScope evac_scope;
+  ShenandoahEvacuateUpdateMetadataClosure<> keep_alive;
+  rp.roots_do(0, &keep_alive);
 }
 
 // Returns size in bytes
@@ -2143,7 +2137,6 @@ public:
   bool is_thread_safe() { return true; }
 };
 
-
 void ShenandoahHeap::update_heap_region_states(bool concurrent) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
   assert(!is_full_gc_in_progress(), "Only for concurrent and degenerated GC");
@@ -2164,7 +2157,9 @@ void ShenandoahHeap::update_heap_region_states(bool concurrent) {
                             ShenandoahPhaseTimings::degen_final_update_refs_trash_cset);
     trash_cset_regions();
   }
+}
 
+void ShenandoahHeap::rebuild_free_set(bool concurrent) {
   {
     ShenandoahGCPhase phase(concurrent ?
                             ShenandoahPhaseTimings::final_update_refs_rebuild_freeset :

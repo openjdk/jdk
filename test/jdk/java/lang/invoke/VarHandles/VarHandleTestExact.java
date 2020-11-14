@@ -230,10 +230,9 @@ public class VarHandleTestExact {
         VarHandle vh = MemoryHandles.varHandle(carrier, ByteOrder.nativeOrder());
         assertFalse(vh.hasInvokeExactBehavior());
         try (MemorySegment seg = MemorySegment.allocateNative(8)) {
-            MemoryAddress base = seg.baseAddress();
             try {
-                vh.set(base, testValue);
-                vh.withInvokeBehavior().set(base, testValue);
+                vh.set(seg, 0L, testValue);
+                vh.withInvokeBehavior().set(seg, 0L, testValue);
             } catch (WrongMethodTypeException wmte) {
                 fail("Unexpected exception", wmte);
             }
@@ -241,11 +240,11 @@ public class VarHandleTestExact {
             vh = vh.withInvokeExactBehavior();
             assertTrue(vh.hasInvokeExactBehavior());
             try {
-                setter.set(vh, base, testValue); // should throw
+                setter.set(vh, seg, 0L, testValue); // should throw
                 fail("Exception expected");
             } catch (WrongMethodTypeException wmte) {
                 assertMatches(wmte.getMessage(),
-                    ".*\\Qexpected (MemoryAddress," + carrier.getSimpleName() + ")void \\E.*");
+                    ".*\\Qexpected (MemorySegment,long," + carrier.getSimpleName() + ")void \\E.*");
             }
         }
     }
@@ -281,7 +280,7 @@ public class VarHandleTestExact {
     }
 
     private interface SetSegmentX {
-        void set(VarHandle vh, MemoryAddress addr, Object testValue);
+        void set(VarHandle vh, MemorySegment segment, long offser, Object testValue);
     }
 
     private static void consume(Object o) {}
@@ -418,11 +417,11 @@ public class VarHandleTestExact {
         List<Object[]> cases = new ArrayList<>();
 
         // create a bunch of different sig-poly call sites
-        testCaseSegmentSet(cases, long.class, 1234,         (vh, addr, tv) -> vh.set(addr, (int) tv));
-        testCaseSegmentSet(cases, long.class, (char) 1234,  (vh, addr, tv) -> vh.set(addr, (char) tv));
-        testCaseSegmentSet(cases, long.class, (short) 1234, (vh, addr, tv) -> vh.set(addr, (short) tv));
-        testCaseSegmentSet(cases, long.class, (byte) 1234,  (vh, addr, tv) -> vh.set(addr, (byte) tv));
-        testCaseSegmentSet(cases, double.class, 1234F,      (vh, addr, tv) -> vh.set(addr, (float) tv));
+        testCaseSegmentSet(cases, long.class, 1234,         (vh, seg, off, tv) -> vh.set(seg, off, (int) tv));
+        testCaseSegmentSet(cases, long.class, (char) 1234,  (vh, seg, off, tv) -> vh.set(seg, off, (char) tv));
+        testCaseSegmentSet(cases, long.class, (short) 1234, (vh, seg, off, tv) -> vh.set(seg, off, (short) tv));
+        testCaseSegmentSet(cases, long.class, (byte) 1234,  (vh, seg, off, tv) -> vh.set(seg, off, (byte) tv));
+        testCaseSegmentSet(cases, double.class, 1234F,      (vh, seg, off, tv) -> vh.set(seg, off, (float) tv));
 
         return cases.toArray(Object[][]::new);
     }
