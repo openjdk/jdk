@@ -115,8 +115,7 @@ class ObjectSynchronizer : AllStatic {
   static void release_monitors_owned_by_thread(TRAPS);
   static void monitors_iterate(MonitorClosure* m);
 
-  static const int NINFLATIONLOCKS = 256;
-  static os::PlatformMutex* gInflationLocks[NINFLATIONLOCKS];
+  // Initialize the gInflationLocks
   static void initialize();
 
   // GC: we current use aggressive monitor deflation policy

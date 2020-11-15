@@ -227,9 +227,11 @@ int dtrace_waited_probe(ObjectMonitor* monitor, Handle obj, Thread* thr) {
   return 0;
 }
 
-os::PlatformMutex* ObjectSynchronizer::gInflationLocks[ObjectSynchronizer::NINFLATIONLOCKS];
+static const int NINFLATIONLOCKS = 256;
+static os::PlatformMutex* gInflationLocks[NINFLATIONLOCKS];
 
 void ObjectSynchronizer::initialize() {
+  static_assert(is_power_of_2(NINFLATIONLOCKS), "must be");
   for (int i = 0; i < NINFLATIONLOCKS; i++) {
     gInflationLocks[i] = new os::PlatformMutex();
   }
@@ -772,13 +774,7 @@ static markWord read_stable_mark(oop obj) {
 
     // The object is being inflated by some other thread.
     // The caller of read_stable_mark() must wait for inflation to complete.
-    // Avoid live-lock
-    // TODO: consider calling SafepointSynchronize::do_call_back() while
-    // spinning to see if there's a safepoint pending.  If so, immediately
-    // yielding or blocking would be appropriate.  Avoid spinning while
-    // there is a safepoint pending.
-    // TODO: add inflation contention performance counters.
-    // TODO: restrict the aggregate number of spinners.
+    // Avoid live-lock.
 
     ++its;
     if (its > 10000 || !os::is_MP()) {
@@ -798,11 +794,13 @@ static markWord read_stable_mark(oop obj) {
         // and calling park().  When inflation was complete the thread that accomplished inflation
         // would detach the list and set the markword to inflated with a single CAS and
         // then for each thread on the list, set the flag and unpark() the thread.
-        int ix = (cast_from_oop<intptr_t>(obj) >> 5) & (ObjectSynchronizer::NINFLATIONLOCKS-1);
+
+        // Index into the lock array based on the current object address.
+        int ix = (cast_from_oop<intptr_t>(obj) >> 5) & (NINFLATIONLOCKS-1);
         int YieldThenBlock = 0;
-        assert(ix >= 0 && ix < ObjectSynchronizer::NINFLATIONLOCKS, "invariant");
-        assert((ObjectSynchronizer::NINFLATIONLOCKS & (ObjectSynchronizer::NINFLATIONLOCKS-1)) == 0, "invariant");
-        ObjectSynchronizer::gInflationLocks[ix]->lock();
+        assert(ix >= 0 && ix < NINFLATIONLOCKS, "invariant");
+        assert((NINFLATIONLOCKS & (NINFLATIONLOCKS-1)) == 0, "invariant");
+        gInflationLocks[ix]->lock();
         while (obj->mark() == markWord::INFLATING()) {
           // Beware: naked_yield() is advisory and has almost no effect on some platforms
           // so we periodically call self->_ParkEvent->park(1).
@@ -813,7 +811,7 @@ static markWord read_stable_mark(oop obj) {
             os::naked_yield();
           }
         }
-        ObjectSynchronizer::gInflationLocks[ix]->unlock();
+        gInflationLocks[ix]->unlock();
       }
     } else {
       SpinPause();       // SMP-polite spinning
