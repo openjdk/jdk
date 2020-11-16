@@ -2550,7 +2550,7 @@ public class Attr extends JCTree.Visitor {
                                                  ((JCIdent) clazzid).name);
 
             EndPosTable endPosTable = this.env.toplevel.endPositions;
-            endPosTable.storeEnd(clazzid1, tree.getEndPosition(endPosTable));
+            endPosTable.storeEnd(clazzid1, clazzid.getEndPosition(endPosTable));
             if (clazz.hasTag(ANNOTATED_TYPE)) {
                 JCAnnotatedType annoType = (JCAnnotatedType) clazz;
                 List<JCAnnotation> annos = annoType.annotations;

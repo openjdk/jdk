@@ -127,8 +127,8 @@ public class TreeEndPosTest {
     }
 
     static void testUninitializedVariable() throws IOException {
-        compile(JavaSource.createJavaSource("Object o = new A().new B(); class A { }",
-                "B()"));
+        compile(JavaSource.createJavaSource("Object o = new A().new BT(); class A { }",
+                "BT"));
     }
     static void testMissingAnnotationValue() throws IOException {
         compile(JavaSource.createJavaSource("@Foo(\"vvvv\")",
