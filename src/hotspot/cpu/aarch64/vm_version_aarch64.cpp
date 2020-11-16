@@ -163,6 +163,13 @@ void VM_Version::initialize() {
     }
   }
 
+  // Cortex A72
+  if (_cpu == CPU_ARM && (_model == 0xd08 || _model2 == 0xd08)) {
+    if (FLAG_IS_DEFAULT(UseSIMDForMemoryOps)) {
+      FLAG_SET_DEFAULT(UseSIMDForMemoryOps, true);
+    }
+  }
+
   // Cortex A73
   if (_cpu == CPU_ARM && (_model == 0xd09 || _model2 == 0xd09)) {
     if (FLAG_IS_DEFAULT(SoftwarePrefetchHintDistance)) {
@@ -171,6 +178,13 @@ void VM_Version::initialize() {
     // A73 is faster with short-and-easy-for-speculative-execution-loop
     if (FLAG_IS_DEFAULT(UseSimpleArrayEquals)) {
       FLAG_SET_DEFAULT(UseSimpleArrayEquals, true);
+    }
+  }
+
+  // Neoverse N1
+  if (_cpu == CPU_ARM && (_model == 0xd0c || _model2 == 0xd0c)) {
+    if (FLAG_IS_DEFAULT(UseSIMDForMemoryOps)) {
+      FLAG_SET_DEFAULT(UseSIMDForMemoryOps, true);
     }
   }
 
