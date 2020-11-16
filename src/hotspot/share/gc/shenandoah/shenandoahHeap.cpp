@@ -1153,7 +1153,7 @@ public:
   }
 };
 
-void ShenandoahHeap::evacuate_and_update_roots(bool cleanup_only) {
+void ShenandoahHeap::evacuate_and_update_roots() {
   ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_evac);
   ShenandoahRootEvacuator rp(ShenandoahPhaseTimings::init_evac);
   ShenandoahEvacOOMScope evac_scope;
@@ -2157,9 +2157,7 @@ void ShenandoahHeap::update_heap_region_states(bool concurrent) {
                             ShenandoahPhaseTimings::degen_final_update_refs_trash_cset);
     trash_cset_regions();
   }
-}
 
-void ShenandoahHeap::rebuild_free_set(bool concurrent) {
   {
     ShenandoahGCPhase phase(concurrent ?
                             ShenandoahPhaseTimings::final_update_refs_rebuild_freeset :

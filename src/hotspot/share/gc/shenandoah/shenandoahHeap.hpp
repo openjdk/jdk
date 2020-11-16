@@ -362,7 +362,6 @@ private:
   void update_heap_references(bool concurrent);
   // Final update region states
   void update_heap_region_states(bool concurrent);
-  void rebuild_free_set(bool concurrent);
 
   void rendezvous_threads();
   void recycle_trash();
@@ -606,7 +605,7 @@ private:
   ShenandoahCollectionSet* _collection_set;
   ShenandoahEvacOOMHandler _oom_evac_handler;
 
-  void evacuate_and_update_roots(bool cleanup_only);
+  void evacuate_and_update_roots();
 
 public:
   static address in_cset_fast_test_addr();

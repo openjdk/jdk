@@ -317,8 +317,6 @@ void ShenandoahDegenGC::op_update_roots() {
   if (VerifyAfterGC) {
     Universe::verify();
   }
-
-  heap()->rebuild_free_set(false /*concurrent*/);
 }
 
 void ShenandoahDegenGC::op_cleanup_complete() {

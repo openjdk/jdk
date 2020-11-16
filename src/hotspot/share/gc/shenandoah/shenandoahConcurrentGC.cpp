@@ -520,6 +520,7 @@ void ShenandoahConcurrentGC::op_final_mark() {
       heap()->set_has_forwarded_objects(true);
 
       // Verify before arming for concurrent processing.
+      // Otherwise, verification can trigger stack processing.
       if (ShenandoahVerify) {
         heap()->verifier()->verify_during_evacuation();
       }
@@ -529,14 +530,12 @@ void ShenandoahConcurrentGC::op_final_mark() {
       ShenandoahStackWatermark::change_epoch_id();
 
       // Should be gone after 8212879 and concurrent stack processing
-      heap()->evacuate_and_update_roots(false /*cleanup only*/);
+      heap()->evacuate_and_update_roots();
 
       if (ShenandoahPacing) {
         heap()->pacer()->setup_for_evac();
       }
     } else {
-      heap()->evacuate_and_update_roots(true /*cleanup only*/);
-
       if (ShenandoahVerify) {
         heap()->verifier()->verify_after_concmark();
       }
@@ -921,8 +920,6 @@ void ShenandoahConcurrentGC::op_final_updaterefs() {
   if (VerifyAfterGC) {
     Universe::verify();
   }
-
-  heap()->rebuild_free_set(true /*concurrent*/);
 }
 
 void ShenandoahConcurrentGC::op_cleanup_complete() {
