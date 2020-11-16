@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,26 +22,14 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1HETEROGENEOUSHEAPPOLICY_HPP
-#define SHARE_GC_G1_G1HETEROGENEOUSHEAPPOLICY_HPP
 
-#include "gc/g1/g1Policy.hpp"
-#include "gc/g1/heterogeneousHeapRegionManager.hpp"
+#ifndef SHARE_PRIMS_SCOPED_MEMORY_ACCESS_HPP
+#define SHARE_PRIMS_SCOPED_MEMORY_ACCESS_HPP
 
-class G1HeterogeneousHeapPolicy : public G1Policy {
-  // Stash a pointer to the hrm.
-  HeterogeneousHeapRegionManager* _manager;
+#include "jni.h"
 
-public:
-  G1HeterogeneousHeapPolicy(STWGCTimer* gc_timer);
+extern "C" {
+  void JNICALL JVM_RegisterJDKInternalMiscScopedMemoryAccessMethods(JNIEnv *env, jobject rec, jobject scope, jthrowable exception);
+}
 
-  // initialize policy
-  virtual void init(G1CollectedHeap* g1h, G1CollectionSet* collection_set);
-  // Record end of an evacuation pause.
-  virtual void record_collection_pause_end(double pause_time_ms, bool concurrent_operation_is_full_mark);
-  // Record the end of full collection.
-  virtual void record_full_collection_end();
-
-  virtual bool force_upgrade_to_full();
-};
-#endif // SHARE_GC_G1_G1HETEROGENEOUSHEAPPOLICY_HPP
+#endif // SHARE_PRIMS_SCOPED_MEMORY_ACCESS_HPP
