@@ -65,7 +65,8 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _gclab_allocs(0),
   _live_data(0),
   _critical_pins(0),
-  _update_watermark(start) {
+  _update_watermark(start),
+  _generation(NO_GEN) {
 
   assert(Universe::on_page_boundary(_bottom) && Universe::on_page_boundary(_end),
          "invalid space boundaries");
@@ -360,6 +361,19 @@ void ShenandoahHeapRegion::print_on(outputStream* st) const {
     default:
       ShouldNotReachHere();
   }
+  switch (_generation) {
+    case YOUNG_GEN:
+      st->print("|Y");
+      break;
+    case OLD_GEN:
+      st->print("|O");
+      break;
+    case NO_GEN:
+      st->print("| ");
+      break;
+    default:
+      ShouldNotReachHere();
+  }
   st->print("|BTE " INTPTR_FORMAT_W(12) ", " INTPTR_FORMAT_W(12) ", " INTPTR_FORMAT_W(12),
             p2i(bottom()), p2i(top()), p2i(end()));
   st->print("|TAMS " INTPTR_FORMAT_W(12),
@@ -429,6 +443,7 @@ void ShenandoahHeapRegion::recycle() {
   set_update_watermark(bottom());
 
   make_empty();
+  _generation = NO_GEN;
 
   if (ZapUnusedHeapArea) {
     SpaceMangler::mangle_region(MemRegion(bottom(), end()));

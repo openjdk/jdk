@@ -146,6 +146,12 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     return NULL;
   }
 
+  if (r->generation() == NO_GEN) {
+    r->set_generation(req.generation());
+  } else if (r->generation() != req.generation()) {
+    return NULL;
+  }
+
   try_recycle_trashed(r);
 
   in_new_region = r->is_empty();

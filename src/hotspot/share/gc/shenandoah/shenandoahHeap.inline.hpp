@@ -260,12 +260,21 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
 
   assert(ShenandoahThreadLocalData::is_evac_allowed(thread), "must be enclosed in oom-evac scope");
 
-  size_t size = p->size();
+  ShenandoahGeneration target_gen = heap_region_containing(p)->generation();
+  if (target_gen == YOUNG_GEN) {
+    if (ShenandoahForwarding::is_forwarded(p)) {
+      return ShenandoahBarrierSet::resolve_forwarded(p);
+    } else if (p->mark().age() > InitialTenuringThreshold) {
+      //tty->print_cr("promoting object: " PTR_FORMAT, p2i(p));
+      //target_gen = OLD_GEN;
+    }
+  }
 
   assert(!heap_region_containing(p)->is_humongous(), "never evacuate humongous objects");
 
   bool alloc_from_gclab = true;
   HeapWord* copy = NULL;
+  size_t size = p->size();
 
 #ifdef ASSERT
   if (ShenandoahOOMDuringEvacALot &&
@@ -273,11 +282,11 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
         copy = NULL;
   } else {
 #endif
-    if (UseTLAB) {
+    if (UseTLAB && target_gen == YOUNG_GEN) {
       copy = allocate_from_gclab(thread, size);
     }
     if (copy == NULL) {
-      ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(size);
+      ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(size, target_gen);
       copy = allocate_memory(req);
       alloc_from_gclab = false;
     }
@@ -302,6 +311,12 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
   if (result == copy_val) {
     // Successfully evacuated. Our copy is now the public one!
     shenandoah_assert_correct(NULL, copy_val);
+
+    // Increment age in young copies
+    if (target_gen == YOUNG_GEN) {
+      copy_val->incr_age();
+    }
+
     return copy_val;
   }  else {
     // Failed to evacuate. We need to deal with the object that is left behind. Since this

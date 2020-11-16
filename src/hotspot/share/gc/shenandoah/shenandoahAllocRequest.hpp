@@ -27,6 +27,12 @@
 
 #include "memory/allocation.hpp"
 
+enum ShenandoahGeneration {
+  YOUNG_GEN,
+  OLD_GEN,
+  NO_GEN
+};
+
 class ShenandoahAllocRequest : StackObj {
 public:
   enum Type {
@@ -58,13 +64,14 @@ private:
   size_t _requested_size;
   size_t _actual_size;
   Type _alloc_type;
+  ShenandoahGeneration const _generation;
 #ifdef ASSERT
   bool _actual_size_set;
 #endif
 
-  ShenandoahAllocRequest(size_t _min_size, size_t _requested_size, Type _alloc_type) :
+  ShenandoahAllocRequest(size_t _min_size, size_t _requested_size, Type _alloc_type, ShenandoahGeneration generation) :
           _min_size(_min_size), _requested_size(_requested_size),
-          _actual_size(0), _alloc_type(_alloc_type)
+          _actual_size(0), _alloc_type(_alloc_type), _generation(generation)
 #ifdef ASSERT
           , _actual_size_set(false)
 #endif
@@ -72,19 +79,19 @@ private:
 
 public:
   static inline ShenandoahAllocRequest for_tlab(size_t min_size, size_t requested_size) {
-    return ShenandoahAllocRequest(min_size, requested_size, _alloc_tlab);
+    return ShenandoahAllocRequest(min_size, requested_size, _alloc_tlab, YOUNG_GEN);
   }
 
   static inline ShenandoahAllocRequest for_gclab(size_t min_size, size_t requested_size) {
-    return ShenandoahAllocRequest(min_size, requested_size, _alloc_gclab);
+    return ShenandoahAllocRequest(min_size, requested_size, _alloc_gclab, YOUNG_GEN);
   }
 
-  static inline ShenandoahAllocRequest for_shared_gc(size_t requested_size) {
-    return ShenandoahAllocRequest(0, requested_size, _alloc_shared_gc);
+  static inline ShenandoahAllocRequest for_shared_gc(size_t requested_size, ShenandoahGeneration generation) {
+    return ShenandoahAllocRequest(0, requested_size, _alloc_shared_gc, generation);
   }
 
   static inline ShenandoahAllocRequest for_shared(size_t requested_size) {
-    return ShenandoahAllocRequest(0, requested_size, _alloc_shared);
+    return ShenandoahAllocRequest(0, requested_size, _alloc_shared, YOUNG_GEN);
   }
 
   inline size_t size() {
@@ -157,6 +164,10 @@ public:
         ShouldNotReachHere();
         return false;
     }
+  }
+
+  ShenandoahGeneration generation() const {
+    return _generation;
   }
 };
 
