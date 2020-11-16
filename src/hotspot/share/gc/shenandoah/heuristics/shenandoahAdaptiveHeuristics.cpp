@@ -306,8 +306,8 @@ ShenandoahAllocationRate::ShenandoahAllocationRate(ShenandoahAdaptiveHeuristics 
   _last_sample_time(os::elapsedTime()),
   _last_sample_value(0),
   _interval_sec(1.0 / ShenandoahAdaptiveSampleFrequencyHz),
-  _rate(ShenandoahAdaptiveSampleSizeSeconds * ShenandoahAdaptiveSampleFrequencyHz, ShenandoahAdaptiveDecayFactor),
-  _rate_avg(ShenandoahAdaptiveSampleSizeSeconds * ShenandoahAdaptiveSampleFrequencyHz, ShenandoahAdaptiveDecayFactor) {
+  _rate(int(ShenandoahAdaptiveSampleSizeSeconds * ShenandoahAdaptiveSampleFrequencyHz), ShenandoahAdaptiveDecayFactor),
+  _rate_avg(int(ShenandoahAdaptiveSampleSizeSeconds * ShenandoahAdaptiveSampleFrequencyHz), ShenandoahAdaptiveDecayFactor) {
 }
 
 void ShenandoahAllocationRate::sample(size_t allocated) {
@@ -354,7 +354,9 @@ double ShenandoahAllocationRate::instantaneous_rate(size_t allocated) const {
 }
 
 double ShenandoahAllocationRate::instantaneous_rate(double time, size_t allocated) const {
-  size_t allocation_delta = allocated - _last_sample_value;
-  double time_delta_sec = time - _last_sample_time;
-  return allocation_delta / time_delta_sec;
+  size_t last_value = _last_sample_value;
+  double last_time = _last_sample_time;
+  size_t allocation_delta = (allocated > last_value) ? (allocated - last_value) : 0;
+  double time_delta_sec = time - last_time;
+  return (time_delta_sec > 0)  ? (allocation_delta / time_delta_sec) : 0;
 }
