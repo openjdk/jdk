@@ -80,6 +80,13 @@ void SafepointMechanism::process_if_requested(JavaThread *thread) {
   process_if_requested_slow(thread);
 }
 
+void SafepointMechanism::process_if_requested_with_exit_check(JavaThread* thread, bool check_asyncs) {
+  process_if_requested(thread);
+  if (thread->has_special_runtime_exit_condition()) {
+    thread->handle_special_runtime_exit_condition(check_asyncs);
+  }
+}
+
 void SafepointMechanism::arm_local_poll(JavaThread* thread) {
   thread->poll_data()->set_polling_word(_poll_word_armed_value);
   thread->poll_data()->set_polling_page(_poll_page_armed_value);
