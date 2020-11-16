@@ -36,13 +36,13 @@ import java.util.Map;
 import java.util.random.RandomGenerator.ArbitrarilyJumpableGenerator;
 import java.util.random.RandomGenerator.JumpableGenerator;
 import java.util.random.RandomGenerator.LeapableGenerator;
-import java.util.random.RandomGenerator.RandomGeneratorProperty;
 import java.util.random.RandomGenerator.SplittableGenerator;
 import java.util.random.RandomGenerator.StreamableGenerator;
 import java.util.ServiceLoader;
 import java.util.ServiceLoader.Provider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.internal.util.random.RandomSupport.RandomGeneratorProperty;
 
 /**
  * This is a factory class for generating random number generators of a specific

@@ -29,6 +29,7 @@ import java.io.*;
 import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import jdk.internal.util.random.RandomSupport.AbstractSpliteratorGenerator;
+import jdk.internal.util.random.RandomSupport.RandomGeneratorProperty;
 import jdk.internal.util.random.RandomSupport.RandomIntsSpliterator;
 import jdk.internal.util.random.RandomSupport.RandomLongsSpliterator;
 import jdk.internal.util.random.RandomSupport.RandomDoublesSpliterator;

@@ -49,6 +49,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.random.RandomGenerator;
 import jdk.internal.util.random.RandomSupport;
 import jdk.internal.util.random.RandomSupport.AbstractSpliteratorGenerator;
+import jdk.internal.util.random.RandomSupport.RandomGeneratorProperty;
 import jdk.internal.util.random.RandomSupport.RandomIntsSpliterator;
 import jdk.internal.util.random.RandomSupport.RandomLongsSpliterator;
 import jdk.internal.util.random.RandomSupport.RandomDoublesSpliterator;

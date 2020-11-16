@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.random.RandomGenerator;
 import jdk.internal.util.random.RandomSupport;
 import jdk.internal.util.random.RandomSupport.AbstractSplittableWithBrineGenerator;
+import jdk.internal.util.random.RandomSupport.RandomGeneratorProperty;
 
 /**
  * A "splittable" pseudorandom number generator (PRNG) whose period
