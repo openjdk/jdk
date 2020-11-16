@@ -54,7 +54,6 @@ template <typename T>
 inline void ZListNode<T>::verify_links_unlinked() const {
   assert(_next == this, "Should not be in a list");
   assert(_prev == this, "Should not be in a list");
-  verify_links();
 }
 
 template <typename T>
