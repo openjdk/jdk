@@ -26,8 +26,10 @@
 
 #include "gc/z/zAttachedArray.hpp"
 #include "gc/z/zForwardingEntry.hpp"
+#include "gc/z/zLock.hpp"
 #include "gc/z/zVirtualMemory.hpp"
 
+class ObjectClosure;
 class ZForwardingAllocator;
 class ZPage;
 
@@ -40,15 +42,13 @@ class ZForwarding {
 private:
   typedef ZAttachedArray<ZForwarding, ZForwardingEntry> AttachedArray;
 
-  const ZVirtualMemory _virtual;
-  const size_t         _object_alignment_shift;
-  const AttachedArray  _entries;
-  ZPage*               _page;
-  volatile uint32_t    _refcount;
-  volatile bool        _pinned;
-
-  bool inc_refcount();
-  bool dec_refcount();
+  const ZVirtualMemory   _virtual;
+  const size_t           _object_alignment_shift;
+  const AttachedArray    _entries;
+  ZPage*                 _page;
+  mutable ZConditionLock _ref_lock;
+  volatile int32_t       _ref_count;
+  bool                   _in_place;
 
   ZForwardingEntry* entries() const;
   ZForwardingEntry at(ZForwardingCursor* cursor) const;
@@ -61,18 +61,21 @@ public:
   static uint32_t nentries(const ZPage* page);
   static ZForwarding* alloc(ZForwardingAllocator* allocator, ZPage* page);
 
+  uint8_t type() const;
   uintptr_t start() const;
   size_t size() const;
   size_t object_alignment_shift() const;
-  ZPage* page() const;
-
-  bool is_pinned() const;
-  void set_pinned();
+  void object_iterate(ObjectClosure *cl);
 
   bool retain_page();
+  ZPage* claim_page();
   void release_page();
+  void wait_page_released() const;
+  ZPage* detach_page();
 
-  ZForwardingEntry find(uintptr_t from_index) const;
+  void set_in_place();
+  bool in_place() const;
+
   ZForwardingEntry find(uintptr_t from_index, ZForwardingCursor* cursor) const;
   uintptr_t insert(uintptr_t from_index, uintptr_t to_offset, ZForwardingCursor* cursor);
 

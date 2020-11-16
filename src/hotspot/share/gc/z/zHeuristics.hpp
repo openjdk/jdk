@@ -30,7 +30,7 @@ class ZHeuristics : public AllStatic {
 public:
   static void set_medium_page_size();
 
-  static size_t max_reserve();
+  static size_t relocation_headroom();
 
   static bool use_per_cpu_shared_small_pages();
 

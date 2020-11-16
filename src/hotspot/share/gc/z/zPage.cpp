@@ -63,6 +63,11 @@ void ZPage::reset() {
   _last_used = 0;
 }
 
+void ZPage::reset_for_in_place_relocation() {
+  _seqnum = ZGlobalSeqNum;
+  _top = start();
+}
+
 ZPage* ZPage::retype(uint8_t type) {
   assert(_type != type, "Invalid retype");
   _type = type;
@@ -121,4 +126,12 @@ void ZPage::print_on(outputStream* out) const {
 
 void ZPage::print() const {
   print_on(tty);
+}
+
+void ZPage::verify_live_objects(uint32_t live_objects) const {
+  guarantee(live_objects == _livemap.live_objects(), "Invalid number of live objects");
+}
+
+void ZPage::verify_live_bytes(size_t live_bytes) const {
+  guarantee(live_bytes == _livemap.live_bytes(), "Invalid number of live bytes %zu vs %zu", live_bytes, _livemap.live_bytes());
 }

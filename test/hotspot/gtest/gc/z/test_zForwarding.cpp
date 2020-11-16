@@ -67,7 +67,9 @@ public:
     for (size_t i = 0; i < entries_to_check; i++) {
       uintptr_t from_index = SequenceToFromIndex::one_to_one(i);
 
-      EXPECT_FALSE(forwarding->find(from_index).populated()) << CAPTURE2(from_index, size);
+      ZForwardingCursor cursor;
+      ZForwardingEntry entry = forwarding->find(from_index, &cursor);
+      EXPECT_FALSE(entry.populated()) << CAPTURE2(from_index, size);
     }
   }
 
@@ -90,7 +92,8 @@ public:
     for (size_t i = 0; i < entries_to_populate; i++) {
       uintptr_t from_index = SequenceToFromIndex::one_to_one(i);
 
-      ZForwardingEntry entry = forwarding->find(from_index);
+      ZForwardingCursor cursor;
+      ZForwardingEntry entry = forwarding->find(from_index, &cursor);
       ASSERT_TRUE(entry.populated()) << CAPTURE2(from_index, size);
 
       ASSERT_EQ(entry.from_index(), from_index) << CAPTURE(size);
@@ -132,7 +135,8 @@ public:
     for (size_t i = 0; i < entries_to_populate; i++) {
       uintptr_t from_index = SequenceToFromIndex::odd(i);
 
-      ZForwardingEntry entry = forwarding->find(from_index);
+      ZForwardingCursor cursor;
+      ZForwardingEntry entry = forwarding->find(from_index, &cursor);
 
       ASSERT_FALSE(entry.populated()) << CAPTURE2(from_index, size);
     }

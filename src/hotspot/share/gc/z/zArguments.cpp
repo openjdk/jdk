@@ -71,18 +71,6 @@ void ZArguments::initialize() {
     vm_exit_during_initialization("The flag -XX:+UseZGC can not be combined with -XX:ConcGCThreads=0");
   }
 
-  // Select medium page size so that we can calculate the max reserve
-  ZHeuristics::set_medium_page_size();
-
-  // MinHeapSize/InitialHeapSize must be at least as large as the max reserve
-  const size_t max_reserve = ZHeuristics::max_reserve();
-  if (MinHeapSize < max_reserve) {
-    FLAG_SET_ERGO(MinHeapSize, max_reserve);
-  }
-  if (InitialHeapSize < max_reserve) {
-    FLAG_SET_ERGO(InitialHeapSize, max_reserve);
-  }
-
 #ifdef COMPILER2
   // Enable loop strip mining by default
   if (FLAG_IS_DEFAULT(UseCountedLoopSafepoints)) {

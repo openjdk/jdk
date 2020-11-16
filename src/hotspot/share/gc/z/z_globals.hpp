@@ -59,6 +59,9 @@
           "Time between statistics print outs (in seconds)")                \
           range(1, (uint)-1)                                                \
                                                                             \
+  product(bool, ZStressRelocateInPlace, false, DIAGNOSTIC,                  \
+          "Always relocate pages in-place")                                 \
+                                                                            \
   product(bool, ZVerifyViews, false, DIAGNOSTIC,                            \
           "Verify heap view accesses")                                      \
                                                                             \

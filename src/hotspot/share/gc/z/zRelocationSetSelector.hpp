@@ -36,10 +36,8 @@ private:
   size_t _npages;
   size_t _total;
   size_t _live;
-  size_t _garbage;
   size_t _empty;
-  size_t _compacting_from;
-  size_t _compacting_to;
+  size_t _relocate;
 
 public:
   ZRelocationSetSelectorGroupStats();
@@ -47,10 +45,8 @@ public:
   size_t npages() const;
   size_t total() const;
   size_t live() const;
-  size_t garbage() const;
   size_t empty() const;
-  size_t compacting_from() const;
-  size_t compacting_to() const;
+  size_t relocate() const;
 };
 
 class ZRelocationSetSelectorStats {
@@ -108,8 +104,7 @@ private:
 
   size_t total() const;
   size_t empty() const;
-  size_t compacting_from() const;
-  size_t compacting_to() const;
+  size_t relocate() const;
 
 public:
   ZRelocationSetSelector();
