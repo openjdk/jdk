@@ -661,6 +661,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_VectorExtract:
     return inline_vector_extract();
 
+  case vmIntrinsics::_getObjectSize:
+    return inline_getObjectSize();
+
   default:
     // If you get here, it may be that someone has added a new intrinsic
     // to the list in vmSymbols.hpp without implementing it here.
@@ -6690,5 +6693,121 @@ bool LibraryCallKit::inline_profileBoolean() {
 bool LibraryCallKit::inline_isCompileConstant() {
   Node* n = argument(0);
   set_result(n->is_Con() ? intcon(1) : intcon(0));
+  return true;
+}
+
+//------------------------------- inline_getObjectSize --------------------------------------
+//
+// Calculate the runtime size of the object/array.
+//   native long sun.instrument.InstrumentationImpl.getObjectSize0(long nativeAgent, Object objectToSize);
+//
+bool LibraryCallKit::inline_getObjectSize() {
+  Node* obj = argument(3);
+  Node* klass_node = load_object_klass(obj);
+
+  jint  layout_con = Klass::_lh_neutral_value;
+  Node* layout_val = get_layout_helper(klass_node, layout_con);
+  int   layout_is_con = (layout_val == NULL);
+
+  if (layout_is_con) {
+    // Layout helper is constant, can figure out things at compile time.
+
+    if (Klass::layout_helper_is_instance(layout_con)) {
+      // Instance case:  layout_con contains the size itself.
+      Node *size = longcon(Klass::layout_helper_size_in_bytes(layout_con));
+      set_result(size);
+    } else {
+      // Array case: size is round(header + element_size*arraylength).
+      // Since arraylength is different for every array instance, we have to
+      // compute the whole thing at runtime.
+
+      Node* arr_length = load_array_length(obj);
+
+      int round_mask = MinObjAlignmentInBytes - 1;
+      int hsize  = Klass::layout_helper_header_size(layout_con);
+      int eshift = Klass::layout_helper_log2_element_size(layout_con);
+
+      if ((round_mask & ~right_n_bits(eshift)) == 0) {
+        round_mask = 0;  // strength-reduce it if it goes away completely
+      }
+      assert((hsize & right_n_bits(eshift)) == 0, "hsize is pre-rounded");
+      Node* header_size = intcon(hsize + round_mask);
+
+      Node* lengthx = ConvI2X(arr_length);
+      Node* headerx = ConvI2X(header_size);
+
+      Node* abody = lengthx;
+      if (eshift != 0) {
+        abody = _gvn.transform(new LShiftXNode(lengthx, intcon(eshift)));
+      }
+      Node* size = _gvn.transform( new AddXNode(headerx, abody) );
+      if (round_mask != 0) {
+        size = _gvn.transform( new AndXNode(size, MakeConX(~round_mask)) );
+      }
+      size = ConvX2L(size);
+      set_result(size);
+    }
+  } else {
+    // Layout helper is not constant, need to test for array-ness at runtime.
+
+    enum { _instance_path = 1, _array_path, PATH_LIMIT };
+    RegionNode* result_reg = new RegionNode(PATH_LIMIT);
+    PhiNode* result_val = new PhiNode(result_reg, TypeLong::LONG);
+    record_for_igvn(result_reg);
+
+    Node* array_ctl = generate_array_guard(klass_node, NULL);
+    if (array_ctl != NULL) {
+      // Array case: size is round(header + element_size*arraylength).
+      // Since arraylength is different for every array instance, we have to
+      // compute the whole thing at runtime.
+
+      PreserveJVMState pjvms(this);
+      set_control(array_ctl);
+      Node* arr_length = load_array_length(obj);
+
+      int round_mask = MinObjAlignmentInBytes - 1;
+      Node* mask = intcon(round_mask);
+
+      Node* hss = intcon(Klass::_lh_header_size_shift);
+      Node* hsm = intcon(Klass::_lh_header_size_mask);
+      Node* header_size = _gvn.transform(new URShiftINode(layout_val, hss));
+      header_size = _gvn.transform(new AndINode(header_size, hsm));
+      header_size = _gvn.transform(new AddINode(header_size, mask));
+
+      // There is no need to mask or shift this value.
+      // The semantics of LShiftINode include an implicit mask to 0x1F.
+      assert(Klass::_lh_log2_element_size_shift == 0, "use shift in place");
+      Node* elem_shift = layout_val;
+
+      Node* lengthx = ConvI2X(arr_length);
+      Node* headerx = ConvI2X(header_size);
+
+      Node* abody = _gvn.transform(new LShiftXNode(lengthx, elem_shift));
+      Node* size = _gvn.transform(new AddXNode(headerx, abody));
+      if (round_mask != 0) {
+        size = _gvn.transform(new AndXNode(size, MakeConX(~round_mask)));
+      }
+      size = ConvX2L(size);
+
+      result_reg->init_req(_array_path, control());
+      result_val->init_req(_array_path, size);
+    }
+
+    if (!stopped()) {
+      // Instance case: the layout helper gives us instance size almost directly,
+      // but we need to mask out the _lh_instance_slow_path_bit.
+      Node* size = ConvI2X(layout_val);
+      assert((int) Klass::_lh_instance_slow_path_bit < BytesPerLong, "clear bit");
+      Node* mask = MakeConX(~(intptr_t) right_n_bits(LogBytesPerLong));
+      size = _gvn.transform(new AndXNode(size, mask));
+      size = ConvX2L(size);
+
+      result_reg->init_req(_instance_path, control());
+      result_val->init_req(_instance_path, size);
+    }
+
+    set_result(result_reg, result_val);
+  }
+
   return true;
 }

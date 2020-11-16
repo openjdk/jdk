@@ -19,17 +19,15 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
+package p;
 
-#ifndef SHARE_PRIMS_SCOPED_MEMORY_ACCESS_HPP
-#define SHARE_PRIMS_SCOPED_MEMORY_ACCESS_HPP
+/**
+ * Main class for dummy module.
+ */
 
-#include "jni.h"
-
-extern "C" {
-  void JNICALL JVM_RegisterJDKInternalMiscScopedMemoryAccessMethods(JNIEnv *env, jclass scopedMemoryAccessClass);
+public class Main {
+    public static void main(String[] args) {
+    }
 }
-
-#endif // SHARE_PRIMS_SCOPED_MEMORY_ACCESS_HPP
