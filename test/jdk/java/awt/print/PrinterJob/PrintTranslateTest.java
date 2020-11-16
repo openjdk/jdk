@@ -24,7 +24,7 @@
 /*
  * @test PrintTranslateTest
  * @bug 8255387
- * @summary Virtial mirrored characters should be drawn correctly
+ * @summary Vertial mirrored characters should be drawn correctly
  * @run main PrintTranslateTest
  */
 
@@ -104,7 +104,6 @@ public class PrintTranslateTest{
                         errorCount++;
                     }
                 }
-                sb.append("\n");
             }
             if (errorCount > LIMIT) {
                 System.out.println("ErrorCount="+errorCount);
