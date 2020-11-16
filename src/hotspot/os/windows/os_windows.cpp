@@ -3149,12 +3149,12 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
   assert(extra_size >= size, "overflow, size is too large to allow alignment");
 
   char* aligned_base = NULL;
-  int attempts = 20;
+  static const int max_attempts = 20;
+  int attempts = 0;
 
   do {
-    char* extra_base = file_desc != -1 ?
-      os::map_memory_to_file(extra_size, file_desc) :
-      os::reserve_memory(extra_size);
+    char* extra_base = file_desc != -1 ? os::map_memory_to_file(extra_size, file_desc) :
+                                         os::reserve_memory(extra_size);
     if (extra_base == NULL) {
       return NULL;
     }
@@ -3165,18 +3165,18 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
                                   os::release_memory(extra_base, extra_size);
     assert(rc, "release failed");
     if (!rc) {
-      aligned_base = NULL;
-      break;
+      return NULL;
     }
 
-    aligned_base = file_desc != -1 ?
-      os::attempt_map_memory_to_file_at(aligned_base, size, file_desc) :
-      os::attempt_reserve_memory_at(aligned_base, size);
-    attempts --;
+    // Attempt to map, into the just vacated space, the slightly smaller aligned area.
+    // Which may fail, hence the loop.
+    aligned_base = file_desc != -1 ? os::attempt_map_memory_to_file_at(aligned_base, size, file_desc) :
+                                     os::attempt_reserve_memory_at(aligned_base, size);
+    attempts ++;
 
-  } while (aligned_base == NULL && attempts > 0);
+  } while (aligned_base == NULL && attempts < max_attempts);
 
-  assert(attempts > 0, "Did not manage to re-map after 20 attempts?");
+  assert(aligned_base != NULL, "Did not manage to re-map after %d attempts?", attempts);
 
   return aligned_base;
 }
