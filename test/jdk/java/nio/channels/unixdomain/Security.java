@@ -151,7 +151,7 @@ public class Security {
                 call(() -> {
                     client.connect(saddr);
                 }, null);
-                try (final SocketChannel acc1 = server.accept()) {
+                try (final SocketChannel peer = server.accept()) {
                     // Should succeed
                 }
             }

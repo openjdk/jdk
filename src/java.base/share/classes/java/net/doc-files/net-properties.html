@@ -244,15 +244,11 @@ not set by either the -D option or the {@code System.setProperty()} API,
 instead they are set as security properties.</P>
 <a id="Unixdomain"></a>
 <H2>Unix domain sockets</H2>
-<p><i>Automatic</i> binding of {@link java.nio.channels.ServerSocketChannel ServerSocketChannel}s
 <p>
-Automatic binding of a channel to a server socket occurs when {@link 
-java.nio.channels.ServerSocketChannel#bind(SocketAddress,int) ServerSocketChannel.bind}
-is called with a {@code null} address parameter. In this case, the system
-is requested to choose a unique path for the socket in some predefined system temporary
-directory.
-<P>There are a number of system (and networking) properties that affect the behavior of
-channels to <i>Unix domain</i> server sockets when binding automatically.
+Calling {@link java.nio.channels.ServerSocketChannel#bind(SocketAddress,int) ServerSocketChannel.bind}
+with a {@code null} address parameter will bind to an <i>automatically assigned</i> socket address.
+For Unix domain sockets, this means a unique path in some predefined system temporary directory.
+<P>There are a number of system (and networking) properties that affect this behavior.
 <p>
 Bearing in mind that Unix domain socket addresses are limited in length to approximately 100 
 bytes (depending on the platform), it is important to ensure that the temporary directory's name
