@@ -27,6 +27,7 @@ package java.lang.invoke;
 
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Hidden;
 import jdk.internal.vm.annotation.Stable;
 
 import java.lang.reflect.Array;
@@ -463,7 +464,12 @@ class Invokers {
 
     @ForceInline
     /*non-public*/
+    @Hidden
     static MethodHandle checkVarHandleGenericType(VarHandle handle, VarHandle.AccessDescriptor ad) {
+        if (handle.hasInvokeExactBehavior() && handle.accessModeType(ad.type) != ad.symbolicMethodTypeExact) {
+            throw new WrongMethodTypeException("expected " + handle.accessModeType(ad.type) + " but found "
+                    + ad.symbolicMethodTypeExact);
+        }
         // Test for exact match on invoker types
         // TODO match with erased types and add cast of return value to lambda form
         MethodHandle mh = handle.getMethodHandle(ad.mode);

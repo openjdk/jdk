@@ -34,7 +34,6 @@ class ShenandoahBarrierSetAssembler;
 
 class ShenandoahBarrierSet: public BarrierSet {
 private:
-
   ShenandoahHeap* _heap;
   BufferNode::Allocator _satb_mark_queue_buffer_allocator;
   ShenandoahSATBMarkQueueSet _satb_mark_queue_set;
@@ -53,8 +52,23 @@ public:
   }
 
   static bool need_load_reference_barrier(DecoratorSet decorators, BasicType type);
-  static bool use_load_reference_barrier_native(DecoratorSet decorators, BasicType type);
   static bool need_keep_alive_barrier(DecoratorSet decorators, BasicType type);
+
+  static bool is_strong_access(DecoratorSet decorators) {
+    return (decorators & (ON_WEAK_OOP_REF | ON_PHANTOM_OOP_REF | ON_UNKNOWN_OOP_REF)) == 0;
+  }
+
+  static bool is_weak_access(DecoratorSet decorators) {
+    return (decorators & (ON_WEAK_OOP_REF | ON_UNKNOWN_OOP_REF)) != 0;
+  }
+
+  static bool is_phantom_access(DecoratorSet decorators) {
+    return (decorators & ON_PHANTOM_OOP_REF) != 0;
+  }
+
+  static bool is_native_access(DecoratorSet decorators) {
+    return (decorators & IN_NATIVE) != 0;
+  }
 
   void print_on(outputStream* st) const;
 
@@ -92,8 +106,8 @@ public:
   template <class T>
   inline oop load_reference_barrier_mutator(oop obj, T* load_addr);
 
-  template <class T>
-  inline oop load_reference_barrier_native(oop obj, T* load_addr);
+  template <DecoratorSet decorators, class T>
+  inline oop load_reference_barrier(oop obj, T* load_addr);
 
 private:
   template <class T>

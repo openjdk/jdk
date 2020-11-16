@@ -99,20 +99,30 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(oop obj) {
   return obj;
 }
 
-template <class T>
-inline oop ShenandoahBarrierSet::load_reference_barrier_native(oop obj, T* load_addr) {
-  if (CompressedOops::is_null(obj)) {
+template <DecoratorSet decorators, class T>
+inline oop ShenandoahBarrierSet::load_reference_barrier(oop obj, T* load_addr) {
+
+  // Prevent resurrection of unreachable phantom (i.e. weak-native) references.
+  if (HasDecorator<decorators, ON_PHANTOM_OOP_REF>::value && obj != NULL &&
+      _heap->is_concurrent_weak_root_in_progress() &&
+      !_heap->marking_context()->is_marked(obj)) {
     return NULL;
   }
 
-  ShenandoahMarkingContext* const marking_context = _heap->marking_context();
-  if (_heap->is_concurrent_weak_root_in_progress() && !marking_context->is_marked(obj)) {
-    Thread* thr = Thread::current();
-    if (thr->is_Java_thread()) {
-      return NULL;
-    } else {
-      return obj;
-    }
+  // Prevent resurrection of unreachable weak references.
+  if ((HasDecorator<decorators, ON_WEAK_OOP_REF>::value || HasDecorator<decorators, ON_UNKNOWN_OOP_REF>::value) &&
+      obj != NULL && _heap->is_concurrent_weak_root_in_progress() &&
+      !_heap->marking_context()->is_marked_strong(obj)) {
+    assert(Thread::current()->is_Java_thread(), "only Java threads get here");
+    return NULL;
+  }
+
+  // Prevent resurrection of unreachable objects that are visited during
+  // concurrent class-unloading.
+  if (HasDecorator<decorators, AS_NO_KEEPALIVE>::value && obj != NULL &&
+      _heap->is_evacuation_in_progress() &&
+      !_heap->marking_context()->is_marked(obj)) {
+    return obj;
   }
 
   oop fwd = load_reference_barrier(obj);
@@ -186,7 +196,7 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_loa
   oop value = Raw::oop_load_not_in_heap(addr);
   if (value != NULL) {
     ShenandoahBarrierSet *const bs = ShenandoahBarrierSet::barrier_set();
-    value = bs->load_reference_barrier_native(value, addr);
+    value = bs->load_reference_barrier<decorators, T>(value, addr);
     bs->keep_alive_if_weak<decorators>(value);
   }
   return value;
@@ -197,7 +207,7 @@ template <typename T>
 inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_load_in_heap(T* addr) {
   oop value = Raw::oop_load_in_heap(addr);
   ShenandoahBarrierSet *const bs = ShenandoahBarrierSet::barrier_set();
-  value = bs->load_reference_barrier(value);
+  value = bs->load_reference_barrier<decorators, T>(value, addr);
   bs->keep_alive_if_weak<decorators>(value);
   return value;
 }
@@ -206,9 +216,9 @@ template <DecoratorSet decorators, typename BarrierSetT>
 inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_load_in_heap_at(oop base, ptrdiff_t offset) {
   oop value = Raw::oop_load_in_heap_at(base, offset);
   ShenandoahBarrierSet *const bs = ShenandoahBarrierSet::barrier_set();
-  value = bs->load_reference_barrier(value);
-  bs->keep_alive_if_weak(AccessBarrierSupport::resolve_possibly_unknown_oop_ref_strength<decorators>(base, offset),
-                         value);
+  DecoratorSet resolved_decorators = AccessBarrierSupport::resolve_possibly_unknown_oop_ref_strength<decorators>(base, offset);
+  value = bs->load_reference_barrier<decorators>(value, AccessInternal::oop_field_addr<decorators>(base, offset));
+  bs->keep_alive_if_weak(resolved_decorators, value);
   return value;
 }
 
@@ -216,6 +226,7 @@ template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_store_not_in_heap(T* addr, oop value) {
   shenandoah_assert_marked_if(NULL, value, !CompressedOops::is_null(value) && ShenandoahHeap::heap()->is_evacuation_in_progress());
+  shenandoah_assert_not_in_cset_if(addr, value, value != NULL && !ShenandoahHeap::heap()->cancelled_gc());
   ShenandoahBarrierSet* const bs = ShenandoahBarrierSet::barrier_set();
   bs->storeval_barrier(value);
   bs->satb_barrier<decorators>(addr);
@@ -253,7 +264,7 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_ato
 
   // Note: We don't need a keep-alive-barrier here. We already enqueue any loaded reference for SATB anyway,
   // because it must be the previous value.
-  res = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(res);
+  res = ShenandoahBarrierSet::barrier_set()->load_reference_barrier<decorators, T>(res, NULL);
   bs->satb_enqueue(res);
   return res;
 }
@@ -279,7 +290,7 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_ato
 
   // Note: We don't need a keep-alive-barrier here. We already enqueue any loaded reference for SATB anyway,
   // because it must be the previous value.
-  previous = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(previous);
+  previous = ShenandoahBarrierSet::barrier_set()->load_reference_barrier<decorators, T>(previous, NULL);
   bs->satb_enqueue(previous);
   return previous;
 }
@@ -338,7 +349,7 @@ void ShenandoahBarrierSet::arraycopy_work(T* src, size_t count) {
         oop witness = ShenandoahHeap::cas_oop(fwd, elem_ptr, o);
         obj = fwd;
       }
-      if (ENQUEUE && !ctx->is_marked(obj)) {
+      if (ENQUEUE && !ctx->is_marked_strong(obj)) {
         queue.enqueue_known_active(obj);
       }
     }
