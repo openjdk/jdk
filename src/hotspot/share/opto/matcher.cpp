@@ -1841,12 +1841,12 @@ void Matcher::ReduceInst_Chain_Rule( State *s, int rule, Node *&mem, MachNode *m
   int op = _leftOp[rule];
   // Operand type to catch childs result
   // This is what my child will give me.
-  int opnd_class_instance = s->_rule[op];
+  uint16_t opnd_class_instance = s->_rule[op];
   // Choose between operand class or not.
   // This is what I will receive.
   int catch_op = (FIRST_OPERAND_CLASS <= op && op < NUM_OPERANDS) ? opnd_class_instance : op;
   // New rule for child.  Chase operand classes to get the actual rule.
-  int newrule = s->_rule[catch_op];
+  uint16_t newrule = s->_rule[catch_op];
 
   if( newrule < NUM_OPERANDS ) {
     // Chain from operand or operand class, may be output of shared node

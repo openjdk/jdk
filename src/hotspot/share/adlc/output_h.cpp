@@ -2045,7 +2045,7 @@ void ArchDesc::defineStateClass(FILE *fp) {
   fprintf(fp,"  Node  *_leaf;       // Ideal (non-machine-node) leaf of match tree\n");
   fprintf(fp,"  State *_kids[2];       // Children of state node in label tree\n");
   fprintf(fp,"  unsigned int _cost[_LAST_MACH_OPER];  // Cost vector, indexed by operand opcodes\n");
-  fprintf(fp,"  unsigned int _rule[_LAST_MACH_OPER];  // Rule vector, indexed by operand opcodes\n");
+  fprintf(fp,"  uint16_t     _rule[_LAST_MACH_OPER];  // Rule vector, indexed by operand opcodes\n");
   fprintf(fp,"  unsigned int _valid[(_LAST_MACH_OPER/32)+1]; // Bit Map of valid Cost/Rule entries\n");
   fprintf(fp,"\n");
   fprintf(fp,"  State(void);                      // Constructor\n");
