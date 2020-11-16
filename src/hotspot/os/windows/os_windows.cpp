@@ -3150,9 +3150,8 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
 
   char* aligned_base = NULL;
   static const int max_attempts = 20;
-  int attempts = 0;
 
-  do {
+  for (int attempt = 0; attempt < max_attempts && aligned_base == NULL; attempt ++) {
     char* extra_base = file_desc != -1 ? os::map_memory_to_file(extra_size, file_desc) :
                                          os::reserve_memory(extra_size);
     if (extra_base == NULL) {
@@ -3172,11 +3171,9 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
     // Which may fail, hence the loop.
     aligned_base = file_desc != -1 ? os::attempt_map_memory_to_file_at(aligned_base, size, file_desc) :
                                      os::attempt_reserve_memory_at(aligned_base, size);
-    attempts++;
+  }
 
-  } while (aligned_base == NULL && attempts < max_attempts);
-
-  assert(aligned_base != NULL, "Did not manage to re-map after %d attempts?", attempts);
+  assert(aligned_base != NULL, "Did not manage to re-map after %d attempts?", max_attempts);
 
   return aligned_base;
 }
