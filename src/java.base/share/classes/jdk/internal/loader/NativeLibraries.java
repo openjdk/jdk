@@ -384,7 +384,7 @@ public final class NativeLibraries {
         }
     }
 
-    public static NativeLibrary defaultLibrary = new NativeLibraryImpl(Object.class, "<default>", true, true) {
+    public static final NativeLibrary defaultLibrary = new NativeLibraryImpl(Object.class, "<default>", true, true) {
 
         @Override
         boolean open() {
