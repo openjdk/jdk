@@ -111,8 +111,6 @@ address StubRoutines::_arrayof_jlong_disjoint_arraycopy  = CAST_FROM_FN_PTR(addr
 address StubRoutines::_arrayof_oop_disjoint_arraycopy    = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_oop_copy);
 address StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit  = CAST_FROM_FN_PTR(address, StubRoutines::arrayof_oop_copy_uninit);
 
-address StubRoutines::_zero_aligned_words = CAST_FROM_FN_PTR(address, Copy::zero_to_words);
-
 address StubRoutines::_data_cache_writeback              = NULL;
 address StubRoutines::_data_cache_writeback_sync         = NULL;
 
@@ -137,6 +135,7 @@ address StubRoutines::_electronicCodeBook_decryptAESCrypt  = NULL;
 address StubRoutines::_counterMode_AESCrypt                = NULL;
 address StubRoutines::_ghash_processBlocks                 = NULL;
 address StubRoutines::_base64_encodeBlock                  = NULL;
+address StubRoutines::_base64_decodeBlock                  = NULL;
 
 address StubRoutines::_md5_implCompress      = NULL;
 address StubRoutines::_md5_implCompressMB    = NULL;

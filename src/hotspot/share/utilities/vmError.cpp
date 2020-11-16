@@ -1420,10 +1420,12 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     // are handled properly.
     reset_signal_handlers();
   } else {
-    // If UseOsErrorReporting we call this for each level of the call stack
+#if defined(_WINDOWS)
+    // If UseOSErrorReporting we call this for each level of the call stack
     // while searching for the exception handler.  Only the first level needs
     // to be reported.
     if (UseOSErrorReporting && log_done) return;
+#endif
 
     // This is not the first error, see if it happened in a different thread
     // or in the same thread during error reporting.
@@ -1613,7 +1615,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     OnError = NULL;
   }
 
-  if (!UseOSErrorReporting) {
+  if (WINDOWS_ONLY(!UseOSErrorReporting) NOT_WINDOWS(true)) {
     // os::abort() will call abort hooks, try it first.
     static bool skip_os_abort = false;
     if (!skip_os_abort) {

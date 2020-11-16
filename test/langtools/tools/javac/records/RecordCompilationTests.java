@@ -1672,4 +1672,39 @@ public class RecordCompilationTests extends CompilationTestCase {
             removeLastCompileOptions(2);
         }
     }
+
+    public void testAnnotationsOnVarargsRecComp() {
+        assertOK(
+                """
+                import java.lang.annotation.*;
+
+                @Target({ElementType.TYPE_USE})
+                @interface Simple {}
+
+                record R(@Simple int... val) {
+                    static void test() {
+                        R rec = new R(10, 20);
+                    }
+                }
+                """
+        );
+        assertOK(
+                """
+                import java.lang.annotation.*;
+
+                @Target({ElementType.TYPE_USE})
+                @interface SimpleContainer{ Simple[] value(); }
+
+                @Repeatable(SimpleContainer.class)
+                @Target({ElementType.TYPE_USE})
+                @interface Simple {}
+
+                record R(@Simple int... val) {
+                    static void test() {
+                        R rec = new R(10, 20);
+                    }
+                }
+                """
+        );
+    }
 }

@@ -168,43 +168,8 @@ frame os::current_frame() {
   return os::get_sender_for_C_frame(&tmp);
 }
 
-// Utility functions
-
-extern "C" JNIEXPORT int
-JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrecognized) {
-
-  ucontext_t* uc = (ucontext_t*) ucVoid;
-
-  Thread* t = Thread::current_or_null_safe();
-
-  // Note: it's not uncommon that JNI code uses signal/sigset to install
-  // then restore certain signal handler (e.g. to temporarily block SIGPIPE,
-  // or have a SIGILL handler when detecting CPU type). When that happens,
-  // JVM_handle_aix_signal() might be invoked with junk info/ucVoid. To
-  // avoid unnecessary crash when libjsig is not preloaded, try handle signals
-  // that do not require siginfo/ucontext first.
-
-  if (sig == SIGPIPE || sig == SIGXFSZ) {
-    if (PosixSignals::chained_handler(sig, info, ucVoid)) {
-      return 1;
-    } else {
-      // Ignoring SIGPIPE - see bugs 4229104
-      return 1;
-    }
-  }
-
-  JavaThread* thread = NULL;
-  VMThread* vmthread = NULL;
-  if (PosixSignals::are_signal_handlers_installed()) {
-    if (t != NULL) {
-      if(t->is_Java_thread()) {
-        thread = t->as_Java_thread();
-      }
-      else if(t->is_VM_thread()) {
-        vmthread = (VMThread *)t;
-      }
-    }
-  }
+bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
+                                             ucontext_t* uc, JavaThread* thread) {
 
   // Decide if this trap can be handled by a stub.
   address stub = NULL;
@@ -226,8 +191,8 @@ JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrec
     }
   }
 
-  if (info == NULL || uc == NULL || thread == NULL && vmthread == NULL) {
-    goto run_chained_handler;
+  if (info == NULL || uc == NULL) {
+    return false; // Fatal error
   }
 
   // If we are a java thread...
@@ -237,11 +202,11 @@ JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrec
     if (sig == SIGSEGV && thread->is_in_full_stack(addr)) {
       // stack overflow
       if (os::Posix::handle_stack_overflow(thread, addr, pc, uc, &stub)) {
-        return 1; // continue
+        return true; // continue
       } else if (stub != NULL) {
         goto run_stub;
       } else {
-        goto report_and_die;
+        return false; // Fatal error
       }
     } // end handle SIGSEGV inside stack boundaries
 
@@ -280,17 +245,6 @@ JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrec
       //     If the compiler finds a store it uses it for a null check. Unfortunately this
       //     happens rarely.  In heap based and disjoint base compressd oop modes also loads
       //     are used for null checks.
-
-      // A VM-related SIGILL may only occur if we are not in the zero page.
-      // On AIX, we get a SIGILL if we jump to 0x0 or to somewhere else
-      // in the zero page, because it is filled with 0x0. We ignore
-      // explicit SIGILLs in the zero page.
-      if (sig == SIGILL && (pc < (address) 0x200)) {
-        if (TraceTraps) {
-          tty->print_raw_cr("SIGILL happened inside zero page.");
-        }
-        goto report_and_die;
-      }
 
       int stop_type = -1;
       // Handle signal from NativeJump::patch_verified_entry().
@@ -384,10 +338,7 @@ JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrec
           tty->print_cr("trap: %s: %s (SIGTRAP, stop type %d)", msg, detail_msg, stop_type);
         }
 
-        va_list detail_args;
-        VMError::report_and_die(INTERNAL_ERROR, msg, detail_msg, detail_args, thread,
-                                pc, info, ucVoid, NULL, 0, 0);
-        va_end(detail_args);
+        return false; // Fatal error
       }
 
       else if (sig == SIGBUS) {
@@ -403,7 +354,7 @@ JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrec
           }
           next_pc = SharedRuntime::handle_unsafe_access(thread, next_pc);
           os::Aix::ucontext_set_pc(uc, next_pc);
-          return 1;
+          return true;
         }
       }
     }
@@ -428,7 +379,7 @@ JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrec
         }
         next_pc = SharedRuntime::handle_unsafe_access(thread, next_pc);
         os::Aix::ucontext_set_pc(uc, next_pc);
-        return 1;
+        return true;
       }
     }
 
@@ -450,32 +401,10 @@ run_stub:
     // Save all thread context in case we need to restore it.
     if (thread != NULL) thread->set_saved_exception_pc(pc);
     os::Aix::ucontext_set_pc(uc, stub);
-    return 1;
+    return true;
   }
 
-run_chained_handler:
-
-  // signal-chaining
-  if (PosixSignals::chained_handler(sig, info, ucVoid)) {
-    return 1;
-  }
-  if (!abort_if_unrecognized) {
-    // caller wants another chance, so give it to him
-    return 0;
-  }
-
-report_and_die:
-
-  // Use sigthreadmask instead of sigprocmask on AIX and unmask current signal.
-  sigset_t newset;
-  sigemptyset(&newset);
-  sigaddset(&newset, sig);
-  sigthreadmask(SIG_UNBLOCK, &newset, NULL);
-
-  VMError::report_and_die(t, sig, pc, info, ucVoid);
-
-  ShouldNotReachHere();
-  return 0;
+  return false; // Fatal error
 }
 
 void os::Aix::init_thread_fpu_state(void) {

@@ -749,7 +749,7 @@ ConNode* PhaseValues::uncached_makecon(const Type *t) {
       loc->clear(); // do not put debug info on constants
     }
   } else {
-    x->destruct();              // Hit, destroy duplicate constant
+    x->destruct(this);          // Hit, destroy duplicate constant
     x = k;                      // use existing constant
   }
   return x;
@@ -1069,9 +1069,9 @@ void PhaseIterGVN::init_verifyPhaseIterGVN() {
   Unique_Node_List* modified_list = C->modified_nodes();
   while (modified_list != NULL && modified_list->size()) {
     Node* n = modified_list->pop();
-    if (n->outcnt() != 0 && !n->is_Con() && !_worklist.member(n)) {
+    if (!n->is_Con() && !_worklist.member(n)) {
       n->dump();
-      assert(false, "modified node is not on IGVN._worklist");
+      fatal("modified node is not on IGVN._worklist");
     }
   }
 #endif
@@ -1083,9 +1083,9 @@ void PhaseIterGVN::verify_PhaseIterGVN() {
   Unique_Node_List* modified_list = C->modified_nodes();
   while (modified_list != NULL && modified_list->size()) {
     Node* n = modified_list->pop();
-    if (n->outcnt() != 0 && !n->is_Con()) { // skip dead and Con nodes
+    if (!n->is_Con()) { // skip Con nodes
       n->dump();
-      assert(false, "modified node was not processed by IGVN.transform_old()");
+      fatal("modified node was not processed by IGVN.transform_old()");
     }
   }
 #endif
@@ -1472,8 +1472,7 @@ void PhaseIterGVN::subsume_node( Node *old, Node *nn ) {
     }
   }
 #endif
-  _worklist.remove(temp);   // this can be necessary
-  temp->destruct();         // reuse the _idx of this little guy
+  temp->destruct(this);     // reuse the _idx of this little guy
 }
 
 //------------------------------add_users_to_worklist--------------------------

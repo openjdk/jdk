@@ -31,6 +31,7 @@
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
 #include "utilities/preserveException.hpp"

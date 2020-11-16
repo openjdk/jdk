@@ -25,6 +25,7 @@
 
 package java.util.zip;
 
+import java.lang.ref.Reference;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 
@@ -95,8 +96,12 @@ public class CRC32 implements Checksum {
         int rem = limit - pos;
         if (rem <= 0)
             return;
-        if (buffer instanceof DirectBuffer) {
-            crc = updateByteBuffer(crc, ((DirectBuffer)buffer).address(), pos, rem);
+        if (buffer.isDirect()) {
+            try {
+                crc = updateByteBuffer(crc, ((DirectBuffer)buffer).address(), pos, rem);
+            } finally {
+                Reference.reachabilityFence(buffer);
+            }
         } else if (buffer.hasArray()) {
             crc = updateBytes(crc, buffer.array(), pos + buffer.arrayOffset(), rem);
         } else {
