@@ -29,27 +29,21 @@
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "utilities/numberSeq.hpp"
 
-class ShenandoahAdaptiveHeuristics;
-
 class ShenandoahAllocationRate : public CHeapObj<mtGC> {
  public:
-  explicit ShenandoahAllocationRate(ShenandoahAdaptiveHeuristics* heuristics);
+  explicit ShenandoahAllocationRate();
+  void allocation_counter_reset();
 
   void sample(size_t allocated);
 
-  double upper_bound(double standard_deviations) const;
-
-  void allocation_counter_reset();
-
-  bool is_spiking(double rate) const;
-
   double instantaneous_rate(size_t allocated) const;
+  double upper_bound(double sds) const;
+  bool is_spiking(double rate, double threshold) const;
 
  private:
 
   double instantaneous_rate(double time, size_t allocated) const;
 
-  ShenandoahAdaptiveHeuristics *_heuristics;
   double _last_sample_time;
   size_t _last_sample_value;
   double _interval_sec;

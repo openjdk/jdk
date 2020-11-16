@@ -54,7 +54,6 @@ const double ShenandoahAdaptiveHeuristics::MAXIMUM_CONFIDENCE = 3.291; // 99.9%
 
 ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics() :
   ShenandoahHeuristics(),
-  _allocation_rate(this),
   _available_at_cycle_start(0),
   _margin_of_error_sd(ShenandoahAdaptiveInitialConfidence),
   _spike_threshold_sd(ShenandoahAdaptiveInitialSpikeThreshold),
@@ -262,7 +261,8 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   }
 
   double instant_alloc_rate = _allocation_rate.instantaneous_rate(allocated);
-  if (_allocation_rate.is_spiking(instant_alloc_rate) && avg_cycle_time > allocation_headroom / instant_alloc_rate) {
+  bool is_spiking = _allocation_rate.is_spiking(instant_alloc_rate, _spike_threshold_sd);
+  if (is_spiking && avg_cycle_time > allocation_headroom / instant_alloc_rate) {
     log_info(gc)("Trigger: Average GC time (%.2f ms) is above the time for instantaneous allocation rate (%.0f %sB/s) to deplete free headroom (" SIZE_FORMAT "%s) (spike threshold = %.2f)",
                  avg_cycle_time * 1000,
                  byte_size_in_proper_unit(instant_alloc_rate), proper_unit_for_byte_size(instant_alloc_rate),
@@ -301,8 +301,7 @@ void ShenandoahAdaptiveHeuristics::adjust_spike_threshold(double amount) {
   log_debug(gc, ergo)("Spike threshold now: %.2f", _spike_threshold_sd);
 }
 
-ShenandoahAllocationRate::ShenandoahAllocationRate(ShenandoahAdaptiveHeuristics *heuristics) :
-  _heuristics(heuristics),
+ShenandoahAllocationRate::ShenandoahAllocationRate() :
   _last_sample_time(os::elapsedTime()),
   _last_sample_value(0),
   _interval_sec(1.0 / ShenandoahAdaptiveSampleFrequencyHz),
@@ -323,12 +322,12 @@ void ShenandoahAllocationRate::sample(size_t allocated) {
   }
 }
 
-double ShenandoahAllocationRate::upper_bound(double standard_deviations) const {
+double ShenandoahAllocationRate::upper_bound(double sds) const {
   // Here we are using the standard deviation of the computed running
   // average, rather than the standard deviation of the samples that went
   // into the moving average. This is a much more stable value and is tied
   // to the actual statistic in use (moving average over samples of averages).
-  return _rate.davg() + (standard_deviations * _rate_avg.dsd());
+  return _rate.davg() + (sds * _rate_avg.dsd());
 }
 
 void ShenandoahAllocationRate::allocation_counter_reset() {
@@ -336,13 +335,13 @@ void ShenandoahAllocationRate::allocation_counter_reset() {
   _last_sample_value = 0;
 }
 
-bool ShenandoahAllocationRate::is_spiking(double rate) const {
+bool ShenandoahAllocationRate::is_spiking(double rate, double threshold) const {
   double sd = _rate.sd();
   if (sd > 0) {
     // There is a small chance that that rate has already been sampled, but it
     // seems not to matter in practice.
     double z_score = (rate - _rate.avg()) / sd;
-    if (z_score > _heuristics->_spike_threshold_sd) {
+    if (z_score > threshold) {
       return true;
     }
   }
