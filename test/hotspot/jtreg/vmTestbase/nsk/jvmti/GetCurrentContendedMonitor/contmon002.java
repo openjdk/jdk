@@ -58,8 +58,6 @@ public class contmon002 {
     }
 
     public static int run(String argv[], PrintStream ref) {
-        doSleep(); // If we need to load any classes to execute doSleep(), do it now.
-
         checkMon(1, Thread.currentThread());
 
         contmon002a thr = new contmon002a();

@@ -64,7 +64,6 @@ public class contmon001 {
 
     public static int run(String argv[], PrintStream ref) {
         out = ref;
-        doSleep(); // If we need to load any classes to execute doSleep(), do it now.
         for (int i = 0; i < argv.length; i++) {
             if (argv[i].equals("-v")) // verbose mode
                 DEBUG_MODE = true;
