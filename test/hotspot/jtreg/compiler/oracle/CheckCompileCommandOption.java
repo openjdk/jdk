@@ -65,20 +65,20 @@ public class CheckCompileCommandOption {
 
     private static final String[][] FILE_EXPECTED_OUTPUT = {
         {
-            "CompileCommand: option Test.test1 bool TestOptionBool = true",
-            "CompileCommand: option Test.test2 bool TestOptionBool = true",
-            "CompileCommand: option Test.test3 bool TestOptionBool = true",
-            "CompileCommand: option Test.test4 bool TestOptionBool = true",
-            "CompileCommand: option Test.test4 bool TestOptionBool2 = true",
-            "CompileCommand: option Test.test5 bool TestOptionBool = true",
-            "CompileCommand: option Test.test5 bool TestOptionBool2 = true",
-            "CompileCommand: option Test.test6 bool TestOptionBool = true",
-            "CompileCommand: option Test.test7 bool TestOptionBool = true",
-            "CompileCommand: option Test.test8 bool TestOptionBool = true",
-            "CompileCommand: option Test.test9 bool TestOptionBool = true",
-            "CompileCommand: option Test.test9 bool TestOptionBool2 = true",
-            "CompileCommand: option Test.test10 bool TestOptionBool = true",
-            "CompileCommand: option Test.test10 bool TestOptionBool2 = true"
+            "CompileCommand: option com/oracle/Test.test1 bool TestOptionBool = true",
+            "CompileCommand: option com/oracle/Test.test2 bool TestOptionBool = true",
+            "CompileCommand: option com/oracle/Test.test3 bool TestOptionBool = true",
+            "CompileCommand: option com/oracle/Test.test4 bool TestOptionBool = true",
+            "CompileCommand: option com/oracle/Test.test4 bool TestOptionBool2 = true",
+            "CompileCommand: option com/oracle/Test.test5 bool TestOptionBool = true",
+            "CompileCommand: option com/oracle/Test.test5 bool TestOptionBool2 = true",
+            "CompileCommand: option com/oracle/Test.test6(I) bool TestOptionBool = true",
+            "CompileCommand: option com/oracle/Test.test7(I) bool TestOptionBool = true",
+            "CompileCommand: option com/oracle/Test.test8(I) bool TestOptionBool = true",
+            "CompileCommand: option com/oracle/Test.test9(I) bool TestOptionBool = true",
+            "CompileCommand: option com/oracle/Test.test9(I) bool TestOptionBool2 = true",
+            "CompileCommand: option com/oracle/Test.test10(I) bool TestOptionBool = true",
+            "CompileCommand: option com/oracle/Test.test10(I) bool TestOptionBool2 = true"
         },
         {
             "CompileCommand: option Test.test const char* TestOptionList = '_foo _bar'",
@@ -87,8 +87,7 @@ public class CheckCompileCommandOption {
             "CompileCommand: option Test.test intx TestOptionInt = -1",
             "CompileCommand: option Test.test uintx TestOptionUint = 1",
             "CompileCommand: option Test.test bool TestOptionBool2 = true",
-            "CompileCommand: option Test.test double TestOptionDouble = 1.123000",
-            "CompileCommand: option Test.test2 double TestOptionDouble = 1.123000"
+            "CompileCommand: option Test.test double TestOptionDouble = 1.123000"
         }
     };
 
