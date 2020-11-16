@@ -51,6 +51,46 @@ import java.util.stream.StreamSupport;
  *
  */
 public class RandomSupport {
+    /**
+     * Properties of RandomGenerators.
+     */
+    public enum RandomGeneratorProperty {
+        /**
+         * Name of algorithm (same as class.)
+         */
+        NAME,
+
+        /**
+         * Category of algorithm.
+         */
+        GROUP,
+
+        /**
+         * Algorithm period.
+         */
+        PERIOD,
+
+        /**
+         * Number of bits used to maintain state of seed.
+         */
+        STATE_BITS,
+
+        /**
+         * The equidistribution of the algorithm.
+         */
+        EQUIDISTRIBUTION,
+
+        /**
+         * Is the algorithm based on entropy (true random.)
+         */
+        IS_STOCHASTIC,
+
+        /**
+         * Is the algorithm assisted by hardware (fast true random.)
+         */
+        IS_HARDWARE
+    }
+
 
     /*
      * Implementation Overview.
