@@ -304,8 +304,8 @@ protected:
   };
 
   bool has_archived_mirror_index() const {
-    CDS_JAVA_HEAP_ONLY(return _archived_mirror_index >= 0);
-    NOT_CDS_JAVA_HEAP( return false);
+    CDS_JAVA_HEAP_ONLY(return _archived_mirror_index >= 0;)
+    NOT_CDS_JAVA_HEAP(return false);
   }
 
   void clear_archived_mirror_index() NOT_CDS_JAVA_HEAP_RETURN;

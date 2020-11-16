@@ -52,11 +52,11 @@ bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion*
     } else if (hr->is_open_archive()) {
       bool is_empty = _bitmap->get_next_marked_addr(hr->bottom(), hr->top()) >= hr->top();
       if (is_empty) {
-        free_pinned_region(hr);
+        free_open_archive_region(hr);
       }
     } else {
-      // Never free closed archive regions. This is also be the only other allowed
-      // type at this point.
+      // There are no other pinned regions than humongous or all kinds of archive regions
+      // at this time.
       assert(hr->is_closed_archive(), "Only closed archive regions can also be pinned.");
     }
   } else {
@@ -110,7 +110,7 @@ G1FullGCPrepareTask::G1CalculatePointersClosure::G1CalculatePointersClosure(G1Fu
     _bitmap(collector->mark_bitmap()),
     _cp(cp),
     _humongous_regions_removed(0),
-    _pinned_archive_regions_removed(0) { }
+    _open_archive_regions_freed(0) { }
 
 void G1FullGCPrepareTask::G1CalculatePointersClosure::free_humongous_region(HeapRegion* hr) {
   assert(hr->is_humongous(), "must be but region %u is %s", hr->hrm_index(), hr->get_short_type_str());
@@ -125,14 +125,16 @@ void G1FullGCPrepareTask::G1CalculatePointersClosure::free_humongous_region(Heap
   dummy_free_list.remove_all();
 }
 
-void G1FullGCPrepareTask::G1CalculatePointersClosure::free_pinned_region(HeapRegion* hr) {
+void G1FullGCPrepareTask::G1CalculatePointersClosure::free_open_archive_region(HeapRegion* hr) {
   assert(hr->is_pinned(), "must be");
   assert(!hr->is_humongous(), "handled elsewhere");
+  assert(hr->is_open_archive(),
+         "Only Open archive regions may be freed here.");
 
   FreeRegionList dummy_free_list("Pinned Dummy Free List for G1MarkSweep");
 
   hr->set_containing_set(NULL);
-  _pinned_archive_regions_removed++;
+  _open_archive_regions_freed++;
 
   _g1h->free_region(hr, &dummy_free_list);
   prepare_for_compaction(hr);
@@ -228,8 +230,8 @@ bool G1FullGCPrepareTask::G1CalculatePointersClosure::freed_regions() {
     return true;
   }
 
-  if (_pinned_archive_regions_removed > 0) {
-    // Free regions from dead pinned (archive) regions.
+  if (_open_archive_regions_freed > 0) {
+    // Free regions from dead pinned (open archive) regions.
     return true;
   }
 

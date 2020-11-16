@@ -177,8 +177,8 @@ public:
   bool block_is_obj(const HeapWord* p) const;
 
   // Returns whether the given object is dead based on TAMS and bitmap.
-  // An object is dead iff a) it was not allocated since the last mark, b) it
-  // is not marked, and c) it is not in a closed archive region.
+  // An object is dead iff a) it was not allocated since the last mark (>TAMS), b) it
+  // is not marked (bitmap).
   bool is_obj_dead(const oop obj, const G1CMBitMap* const prev_bitmap) const;
 
   // Returns the object size for all valid block starts

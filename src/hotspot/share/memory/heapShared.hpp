@@ -67,7 +67,7 @@ class KlassSubGraphInfo: public CHeapObj<mtClass> {
   // is_closed_archive flag.
   GrowableArray<int>* _subgraph_entry_fields;
 
-  // Does this KlassSubGraphInfo belong to the arcived full module graph
+  // Does this KlassSubGraphInfo belong to the archived full module graph
   bool _is_full_module_graph;
 
   // Does this KlassSubGraphInfo references any classes that were loaded while
@@ -82,6 +82,7 @@ class KlassSubGraphInfo: public CHeapObj<mtClass> {
     _subgraph_entry_fields(NULL),
     _is_full_module_graph(is_full_module_graph),
     _has_non_early_klasses(false) {}
+
   ~KlassSubGraphInfo() {
     if (_subgraph_object_klasses != NULL) {
       delete _subgraph_object_klasses;
@@ -359,24 +360,24 @@ private:
 
   static bool is_heap_region(int idx) {
     CDS_JAVA_HEAP_ONLY(return (idx >= MetaspaceShared::first_closed_archive_heap_region &&
-                               idx <= MetaspaceShared::last_open_archive_heap_region));
+                               idx <= MetaspaceShared::last_open_archive_heap_region);)
     NOT_CDS_JAVA_HEAP_RETURN_(false);
   }
 
   static void set_closed_archive_heap_region_mapped() {
-    CDS_JAVA_HEAP_ONLY(_closed_archive_heap_region_mapped = true);
+    CDS_JAVA_HEAP_ONLY(_closed_archive_heap_region_mapped = true;)
     NOT_CDS_JAVA_HEAP_RETURN;
   }
   static bool closed_archive_heap_region_mapped() {
-    CDS_JAVA_HEAP_ONLY(return _closed_archive_heap_region_mapped);
+    CDS_JAVA_HEAP_ONLY(return _closed_archive_heap_region_mapped;)
     NOT_CDS_JAVA_HEAP_RETURN_(false);
   }
   static void set_open_archive_heap_region_mapped() {
-    CDS_JAVA_HEAP_ONLY(_open_archive_heap_region_mapped = true);
+    CDS_JAVA_HEAP_ONLY(_open_archive_heap_region_mapped = true;)
     NOT_CDS_JAVA_HEAP_RETURN;
   }
   static bool open_archive_heap_region_mapped() {
-    CDS_JAVA_HEAP_ONLY(return _open_archive_heap_region_mapped);
+    CDS_JAVA_HEAP_ONLY(return _open_archive_heap_region_mapped;)
     NOT_CDS_JAVA_HEAP_RETURN_(false);
   }
   static bool is_mapped() {

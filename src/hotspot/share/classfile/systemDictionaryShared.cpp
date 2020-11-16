@@ -183,6 +183,7 @@ public:
   bool is_early_klass() {
     return _is_early_klass;
   }
+
   void set_failed_verification() {
     _failed_verification = true;
   }

@@ -203,8 +203,8 @@ void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word
 Klass::Klass(KlassID id) : _id(id),
                            _prototype_header(markWord::prototype()),
                            _shared_class_path_index(-1) {
-  CDS_ONLY(_shared_class_flags = 0);
-  CDS_JAVA_HEAP_ONLY(_archived_mirror_index = -1);
+  CDS_ONLY(_shared_class_flags = 0;)
+  CDS_JAVA_HEAP_ONLY(_archived_mirror_index = -1;)
   _primary_supers[0] = this;
   set_super_check_offset(in_bytes(primary_supers_offset()));
 }
