@@ -3062,7 +3062,7 @@ void OptoRuntime::generate_exception_blob() {
 }
 #endif // COMPILER2
 
-address SharedRuntime::make_native_invoker(address call_target,
+BufferBlob* SharedRuntime::make_native_invoker(address call_target,
                                            int shadow_space_bytes,
                                            const GrowableArray<VMReg>& input_registers,
                                            const GrowableArray<VMReg>& output_registers) {
