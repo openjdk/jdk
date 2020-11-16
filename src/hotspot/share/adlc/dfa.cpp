@@ -162,9 +162,7 @@ static void cost_check(FILE *fp, const char *spaces,
   }
 
   // line 2)
-  // no need to set State vector if our state is knownValid
-  const char *production = (validity_check == knownValid) ? dfa_production : dfa_production_set_valid;
-  fprintf(fp, "%s  %s(%s, %s_rule, %s)", spaces, production, arrayIdx, rule, cost->as_string() );
+  fprintf(fp, "%s  DFA_PRODUCTION(%s, %s_rule, %s)", spaces, arrayIdx, rule, cost->as_string() );
   if( validity_check == knownValid ) {
     if( cost_is_below_lower_bound ) { fprintf(fp, "\t  // overwrites higher cost rule"); }
    }
@@ -396,16 +394,8 @@ void ArchDesc::buildDFA(FILE* fp) {
   _attributes.output(fp);
   fprintf(fp, "\n");
   fprintf(fp, "//------------------------- Macros -----------------------------------------\n");
-  // #define DFA_PRODUCTION(result, rule, cost)\
-  //   _cost[ (result) ] = cost; _rule[ (result) ] = rule;
-  fprintf(fp, "#define %s(result, rule, cost)\\\n", dfa_production);
-  fprintf(fp, "  _cost[ (result) ] = cost; _rule[ (result) ] = rule;\n");
-  fprintf(fp, "\n");
-
-  // #define DFA_PRODUCTION__SET_VALID(result, rule, cost)\
-  //     DFA_PRODUCTION( (result), (rule), (cost) ); STATE__SET_VALID( (result) );
-  fprintf(fp, "#define %s(result, rule, cost)\\\n", dfa_production_set_valid);
-  fprintf(fp, "  %s( (result), (rule), (cost) ); STATE__SET_VALID( (result) );\n", dfa_production);
+  fprintf(fp, "#define DFA_PRODUCTION(result, rule, cost)\\\n");
+  fprintf(fp, "  _cost[ (result) ] = cost; _rule[ (result) ] = (rule << 1U) | 0x1;\n");
   fprintf(fp, "\n");
 
   fprintf(fp, "//------------------------- DFA --------------------------------------------\n");
