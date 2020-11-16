@@ -62,7 +62,7 @@ public class LinuxHelper {
         cmd.verifyIsOfType(PackageType.LINUX);
         String desktopFileName = String.format("%s-%s.desktop", getPackageName(
                 cmd), Optional.ofNullable(launcherName).orElseGet(
-                        () -> cmd.name()).replaceAll("\\s+", "_"));
+                        () -> cmd.getApplicationName()).replaceAll("\\s+", "_"));
         return cmd.appLayout().destktopIntegrationDirectory().resolve(
                 desktopFileName);
     }
@@ -211,7 +211,7 @@ public class LinuxHelper {
     static Path getLauncherPath(JPackageCommand cmd) {
         cmd.verifyIsOfType(PackageType.LINUX);
 
-        final String launcherName = cmd.name();
+        final String launcherName = cmd.getApplicationName();
         final String launcherRelativePath = Path.of("/bin", launcherName).toString();
 
         return getPackageFiles(cmd).filter(path -> path.toString().endsWith(

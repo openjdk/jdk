@@ -61,7 +61,7 @@ public class MacHelper {
 
         final Path mountPoint = Path.of(plist.queryValue("mount-point"));
         try {
-            Path dmgImage = mountPoint.resolve(cmd.name() + ".app");
+            Path dmgImage = mountPoint.resolve(cmd.getApplicationName() + ".app");
             TKit.trace(String.format("Exploded [%s] in [%s] directory",
                     cmd.outputBundle(), dmgImage));
             ThrowingConsumer.toConsumer(consumer).accept(dmgImage);
@@ -189,7 +189,7 @@ public class MacHelper {
     static Path getInstallationDirectory(JPackageCommand cmd) {
         cmd.verifyIsOfType(PackageType.MAC);
         return Path.of(cmd.getArgumentValue("--install-dir", () -> "/Applications"))
-                .resolve(cmd.name() + ".app");
+                .resolve(cmd.getApplicationName() + ".app");
     }
 
     private static String getPackageName(JPackageCommand cmd) {

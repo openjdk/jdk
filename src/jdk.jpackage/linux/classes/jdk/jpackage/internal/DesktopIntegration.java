@@ -131,15 +131,22 @@ final class DesktopIntegration {
 
         iconResource = curIconResource;
 
+        List<String> launcherPaths = null;
+        Path appImage = PREDEFINED_APP_IMAGE.fetchFrom(params);
+        String appName = LinuxAppImageBuilder.getLauncherName(params);
+        if (appImage != null) {
+            launcherPaths = AppImageFile.getLauncherNames(appImage, params);
+            if (!launcherPaths.isEmpty()) {
+                appName = launcherPaths.get(0); // main app launcher is first
+            }
+        }
+
         desktopFileData = Collections.unmodifiableMap(
-                createDataForDesktopFile(params));
+                createDataForDesktopFile(appName, params));
 
         nestedIntegrations = new ArrayList<>();
         // Read launchers information from predefine app image
-        if (launchers.isEmpty() &&
-                PREDEFINED_APP_IMAGE.fetchFrom(params) != null) {
-            List<String> launcherPaths = AppImageFile.getLauncherNames(
-                    PREDEFINED_APP_IMAGE.fetchFrom(params), params);
+        if (launchers.isEmpty() && launcherPaths != null) {
             if (!launcherPaths.isEmpty()) {
                 launcherPaths.remove(0); // Remove main launcher
             }
@@ -265,7 +272,7 @@ final class DesktopIntegration {
         return Collections.emptyList();
     }
 
-    private Map<String, String> createDataForDesktopFile(
+    private Map<String, String> createDataForDesktopFile(String appName,
             Map<String, ? super Object> params) {
         Map<String, String> data = new HashMap<>();
         data.put("APPLICATION_NAME", APP_NAME.fetchFrom(params));
@@ -274,8 +281,8 @@ final class DesktopIntegration {
                 iconFile != null ? iconFile.installPath().toString() : null);
         data.put("DEPLOY_BUNDLE_CATEGORY", MENU_GROUP.fetchFrom(params));
 
-        String appLauncher = thePackage.installedApplicationLayout().launchersDirectory().resolve(
-                LinuxAppImageBuilder.getLauncherName(params)).toString();
+        String appLauncher = thePackage.installedApplicationLayout().
+                launchersDirectory().resolve(appName).toString();
         if (Pattern.compile("\\s").matcher(appLauncher).find()) {
             // Path contains whitespace(s). Enclose in double quotes.
             appLauncher = "\"" + appLauncher + "\"";

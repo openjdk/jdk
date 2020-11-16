@@ -76,6 +76,8 @@ public class MultiLauncherTwoPhaseTest {
                 .addInitializer(cmd -> {
                     cmd.addArguments("--app-image", appImageCmd.outputBundle());
                     cmd.removeArgumentWithValue("--input");
+                    cmd.removeArgumentWithValue("--name");
+                    cmd.addArguments("--name", appImageCmd.name() + "-I");
                 })
                 .forTypes(PackageType.WINDOWS)
                 .addInitializer(cmd -> {

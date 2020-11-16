@@ -139,7 +139,7 @@ public class WindowsHelper {
         DesktopIntegrationVerifier(JPackageCommand cmd, String name) {
             cmd.verifyIsOfType(PackageType.WINDOWS);
             this.cmd = cmd;
-            this.name = (name == null ? cmd.name() : name);
+            this.name = (name == null ? cmd.getApplicationName() : name);
             verifyStartMenuShortcut();
             verifyDesktopShortcut();
             verifyFileAssociationsRegistry();

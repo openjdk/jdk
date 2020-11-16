@@ -462,7 +462,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     public Path appLauncherPath(String launcherName) {
         verifyNotRuntime();
         if (launcherName == null) {
-            launcherName = name();
+            launcherName = getApplicationName();
         }
 
         if (TKit.isWindows()) {
@@ -470,6 +470,16 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         }
 
         return appLayout().launchersDirectory().resolve(launcherName);
+    }
+
+    String getApplicationName() {
+        if (!hasArgument("--app-image")) {
+            return name();
+        }
+        // if this is an installer built from an app image, it would more
+        // accurate to extract the application name from the app-image, but in
+        // all cases where we use --app-image the application name is default name
+        return TKit.getCurrentDefaultAppName();
     }
 
     /**
@@ -500,7 +510,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     public Path appLauncherCfgPath(String launcherName) {
         verifyNotRuntime();
         if (launcherName == null) {
-            launcherName = name();
+            launcherName = getApplicationName();
         }
         return appLayout().appDirectory().resolve(launcherName + ".cfg");
     }
