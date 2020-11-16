@@ -31,6 +31,7 @@
 #include "gc/shenandoah/shenandoahRuntime.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -565,8 +566,57 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
   }
 }
 
+void ShenandoahBarrierSetAssembler::store_check(MacroAssembler* masm, Register obj, Address dst) {
+  if (!ShenandoahHeap::heap()->mode()->is_generational()) {
+    return;
+  }
+
+  // Does a store check for the oop in register obj. The content of
+  // register obj is destroyed afterwards.
+  BarrierSet* bs = BarrierSet::barrier_set();
+
+  ShenandoahBarrierSet* ctbs = barrier_set_cast<ShenandoahBarrierSet>(bs);
+  CardTable* ct = ctbs->card_table();
+
+  __ shrptr(obj, CardTable::card_shift);
+
+  Address card_addr;
+
+  // The calculation for byte_map_base is as follows:
+  // byte_map_base = _byte_map - (uintptr_t(low_bound) >> card_shift);
+  // So this essentially converts an address to a displacement and it will
+  // never need to be relocated. On 64bit however the value may be too
+  // large for a 32bit displacement.
+  intptr_t byte_map_base = (intptr_t)ct->byte_map_base();
+  if (__ is_simm32(byte_map_base)) {
+    card_addr = Address(noreg, obj, Address::times_1, byte_map_base);
+  } else {
+    // By doing it as an ExternalAddress 'byte_map_base' could be converted to a rip-relative
+    // displacement and done in a single instruction given favorable mapping and a
+    // smarter version of as_Address. However, 'ExternalAddress' generates a relocation
+    // entry and that entry is not properly handled by the relocation code.
+    AddressLiteral cardtable((address)byte_map_base, relocInfo::none);
+    Address index(noreg, obj, Address::times_1);
+    card_addr = __ as_Address(ArrayAddress(cardtable, index));
+  }
+
+  int dirty = CardTable::dirty_card_val();
+  if (UseCondCardMark) {
+    Label L_already_dirty;
+    if (ct->scanned_concurrently()) {
+      __ membar(Assembler::StoreLoad);
+    }
+    __ cmpb(card_addr, dirty);
+    __ jcc(Assembler::equal, L_already_dirty);
+    __ movb(card_addr, dirty);
+    __ bind(L_already_dirty);
+  } else {
+    __ movb(card_addr, dirty);
+  }
+}
+
 void ShenandoahBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-              Address dst, Register val, Register tmp1, Register tmp2) {
+                                             Address dst, Register val, Register tmp1, Register tmp2) {
 
   bool on_oop = is_reference_type(type);
   bool in_heap = (decorators & IN_HEAP) != 0;
@@ -608,6 +658,7 @@ void ShenandoahBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet 
     } else {
       storeval_barrier(masm, val, tmp3);
       BarrierSetAssembler::store_at(masm, decorators, type, Address(tmp1, 0), val, noreg, noreg);
+      store_check(masm, tmp1, dst);
     }
     NOT_LP64(imasm->restore_bcp());
   } else {
@@ -797,6 +848,62 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
     __ movptr(res, 1);
     __ bind(exit);
   }
+}
+
+#ifdef PRODUCT
+#define BLOCK_COMMENT(str) /* nothing */
+#else
+#define BLOCK_COMMENT(str) __ block_comment(str)
+#endif
+
+#define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
+
+#define TIMES_OOP (UseCompressedOops ? Address::times_4 : Address::times_8)
+
+void ShenandoahBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators, Register addr, Register count, Register tmp) {
+  if (!ShenandoahHeap::heap()->mode()->is_generational()) {
+    return;
+  }
+
+  BarrierSet *bs = BarrierSet::barrier_set();
+  ShenandoahBarrierSet* ctbs = barrier_set_cast<ShenandoahBarrierSet>(bs);
+  CardTable* ct = ctbs->card_table();
+  intptr_t disp = (intptr_t) ct->byte_map_base();
+
+  Label L_loop, L_done;
+  const Register end = count;
+  assert_different_registers(addr, end);
+
+  __ testl(count, count);
+  __ jcc(Assembler::zero, L_done); // zero count - nothing to do
+
+
+#ifdef _LP64
+  __ leaq(end, Address(addr, count, TIMES_OOP, 0));  // end == addr+count*oop_size
+  __ subptr(end, BytesPerHeapOop); // end - 1 to make inclusive
+  __ shrptr(addr, CardTable::card_shift);
+  __ shrptr(end, CardTable::card_shift);
+  __ subptr(end, addr); // end --> cards count
+
+  __ mov64(tmp, disp);
+  __ addptr(addr, tmp);
+__ BIND(L_loop);
+  __ movb(Address(addr, count, Address::times_1), 0);
+  __ decrement(count);
+  __ jcc(Assembler::greaterEqual, L_loop);
+#else
+  __ lea(end,  Address(addr, count, Address::times_ptr, -wordSize));
+  __ shrptr(addr, CardTable::card_shift);
+  __ shrptr(end,   CardTable::card_shift);
+  __ subptr(end, addr); // end --> count
+__ BIND(L_loop);
+  Address cardtable(addr, count, Address::times_1, disp);
+  __ movb(cardtable, 0);
+  __ decrement(count);
+  __ jcc(Assembler::greaterEqual, L_loop);
+#endif
+
+__ BIND(L_done);
 }
 
 #undef __

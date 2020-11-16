@@ -26,6 +26,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHBARRIERSET_INLINE_HPP
 
 #include "gc/shared/barrierSet.hpp"
+#include "gc/shared/cardTable.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
@@ -35,6 +36,7 @@
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/oop.inline.hpp"
 
@@ -160,6 +162,19 @@ inline void ShenandoahBarrierSet::keep_alive_if_weak(oop value) {
   }
 }
 
+template <DecoratorSet decorators, typename T>
+inline void ShenandoahBarrierSet::write_ref_field_post(T* field, oop newVal) {
+  if (ShenandoahHeap::heap()->mode()->is_generational()) {
+    volatile CardTable::CardValue* byte = card_table()->byte_for(field);
+    if (card_table()->scanned_concurrently()) {
+      // Perform a releasing store if the card table is scanned concurrently
+      Atomic::release_store(byte, CardTable::dirty_card_val());
+    } else {
+      *byte = CardTable::dirty_card_val();
+    }
+  }
+}
+
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_load_not_in_heap(T* addr) {
@@ -216,6 +231,7 @@ inline void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_st
   shenandoah_assert_not_in_cset_except    (addr, value, value == NULL || ShenandoahHeap::heap()->cancelled_gc() || !ShenandoahHeap::heap()->is_concurrent_mark_in_progress());
 
   oop_store_not_in_heap(addr, value);
+  ShenandoahBarrierSet::barrier_set()->write_ref_field_post<decorators>(addr, value);
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>
@@ -249,7 +265,9 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_ato
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_atomic_cmpxchg_in_heap(T* addr, oop compare_value, oop new_value) {
-  return oop_atomic_cmpxchg_not_in_heap(addr, compare_value, new_value);
+  oop result = oop_atomic_cmpxchg_not_in_heap(addr, compare_value, new_value);
+  ShenandoahBarrierSet::barrier_set()->write_ref_field_post<decorators>(addr, new_value);
+  return result;
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>
@@ -277,7 +295,9 @@ inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_ato
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline oop ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_atomic_xchg_in_heap(T* addr, oop new_value) {
-  return oop_atomic_xchg_not_in_heap(addr, new_value);
+  oop result = oop_atomic_xchg_not_in_heap(addr, new_value);
+  ShenandoahBarrierSet::barrier_set()->write_ref_field_post<decorators>(addr, new_value);
+  return result;
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>
@@ -299,11 +319,14 @@ template <typename T>
 bool ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_arraycopy_in_heap(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
                                                                                          arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
                                                                                          size_t length) {
+  T* src = arrayOopDesc::obj_offset_to_raw(src_obj, src_offset_in_bytes, src_raw);
+  T* dst = arrayOopDesc::obj_offset_to_raw(dst_obj, dst_offset_in_bytes, dst_raw);
+
   ShenandoahBarrierSet* bs = ShenandoahBarrierSet::barrier_set();
-  bs->arraycopy_barrier(arrayOopDesc::obj_offset_to_raw(src_obj, src_offset_in_bytes, src_raw),
-                        arrayOopDesc::obj_offset_to_raw(dst_obj, dst_offset_in_bytes, dst_raw),
-                        length);
-  return Raw::oop_arraycopy_in_heap(src_obj, src_offset_in_bytes, src_raw, dst_obj, dst_offset_in_bytes, dst_raw, length);
+  bs->arraycopy_barrier(src, dst, length);
+  bool result = Raw::oop_arraycopy_in_heap(src_obj, src_offset_in_bytes, src_raw, dst_obj, dst_offset_in_bytes, dst_raw, length);
+  bs->write_ref_array((HeapWord*) dst, length);
+  return result;
 }
 
 template <class T, bool HAS_FWD, bool EVAC, bool ENQUEUE>

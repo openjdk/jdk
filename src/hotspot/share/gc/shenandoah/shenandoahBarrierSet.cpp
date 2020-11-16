@@ -52,7 +52,7 @@ static BarrierSetNMethod* make_barrier_set_nmethod(ShenandoahHeap* heap) {
   return new ShenandoahBarrierSetNMethod(heap);
 }
 
-ShenandoahBarrierSet::ShenandoahBarrierSet(ShenandoahHeap* heap) :
+ShenandoahBarrierSet::ShenandoahBarrierSet(ShenandoahHeap* heap, MemRegion heap_region) :
   BarrierSet(make_barrier_set_assembler<ShenandoahBarrierSetAssembler>(),
              make_barrier_set_c1<ShenandoahBarrierSetC1>(),
              make_barrier_set_c2<ShenandoahBarrierSetC2>(),
@@ -62,6 +62,10 @@ ShenandoahBarrierSet::ShenandoahBarrierSet(ShenandoahHeap* heap) :
   _satb_mark_queue_buffer_allocator("SATB Buffer Allocator", ShenandoahSATBBufferSize),
   _satb_mark_queue_set(&_satb_mark_queue_buffer_allocator)
 {
+  if (heap->mode()->is_generational()) {
+    _card_table = new ShenandoahCardTable(heap_region);
+    _card_table->initialize();
+  }
 }
 
 ShenandoahBarrierSetAssembler* ShenandoahBarrierSet::assembler() {
@@ -183,5 +187,25 @@ void ShenandoahBarrierSet::clone_barrier_runtime(oop src) {
   if (_heap->has_forwarded_objects() || (ShenandoahStoreValEnqueueBarrier && _heap->is_concurrent_mark_in_progress())) {
     clone_barrier(src);
   }
+}
+
+void ShenandoahBarrierSet::write_ref_array(HeapWord* start, size_t count) {
+  if (!_heap->mode()->is_generational()) {
+    return;
+  }
+
+  HeapWord* end = (HeapWord*)((char*) start + (count * heapOopSize));
+  // In the case of compressed oops, start and end may potentially be misaligned;
+  // so we need to conservatively align the first downward (this is not
+  // strictly necessary for current uses, but a case of good hygiene and,
+  // if you will, aesthetics) and the second upward (this is essential for
+  // current uses) to a HeapWord boundary, so we mark all cards overlapping
+  // this write.
+  HeapWord* aligned_start = align_down(start, HeapWordSize);
+  HeapWord* aligned_end   = align_up  (end,   HeapWordSize);
+  // If compressed oops were not being used, these should already be aligned
+  assert(UseCompressedOops || (aligned_start == start && aligned_end == end),
+         "Expected heap word alignment of start and end");
+  card_table()->dirty_MemRegion(MemRegion(aligned_start, aligned_end));
 }
 

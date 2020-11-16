@@ -27,6 +27,7 @@
 
 #include "gc/shared/accessBarrierSupport.hpp"
 #include "gc/shared/barrierSet.hpp"
+#include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
 
@@ -34,19 +35,21 @@ class ShenandoahBarrierSetAssembler;
 
 class ShenandoahBarrierSet: public BarrierSet {
 private:
-
   ShenandoahHeap* _heap;
+  ShenandoahCardTable* _card_table;
   BufferNode::Allocator _satb_mark_queue_buffer_allocator;
   ShenandoahSATBMarkQueueSet _satb_mark_queue_set;
 
 public:
-  ShenandoahBarrierSet(ShenandoahHeap* heap);
+  ShenandoahBarrierSet(ShenandoahHeap* heap, MemRegion heap_region);
 
   static ShenandoahBarrierSetAssembler* assembler();
 
   inline static ShenandoahBarrierSet* barrier_set() {
     return barrier_set_cast<ShenandoahBarrierSet>(BarrierSet::barrier_set());
   }
+
+  inline CardTable* card_table()  { return _card_table; }
 
   static ShenandoahSATBMarkQueueSet& satb_mark_queue_set() {
     return barrier_set()->_satb_mark_queue_set;
@@ -95,6 +98,11 @@ public:
 
   template <class T>
   inline oop load_reference_barrier_native(oop obj, T* load_addr);
+
+  template <DecoratorSet decorators, typename T>
+  void write_ref_field_post(T* field, oop newVal);
+
+  void write_ref_array(HeapWord* start, size_t count);
 
 private:
   template <class T>

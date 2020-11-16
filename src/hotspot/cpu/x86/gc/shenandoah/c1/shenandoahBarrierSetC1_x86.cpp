@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2020 Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,14 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_cmpxchg_at_resolved(LIRAccess& access, LI
       return result;
     }
   }
-  return BarrierSetC1::atomic_cmpxchg_at_resolved(access, cmp_value, new_value);
+
+  LIR_Opr result =  BarrierSetC1::atomic_cmpxchg_at_resolved(access, cmp_value, new_value);
+
+  if (access.is_oop()) {
+    post_barrier(access, access.resolved_addr(), new_value.result());
+  }
+
+  return result;
 }
 
 LIR_Opr ShenandoahBarrierSetC1::atomic_xchg_at_resolved(LIRAccess& access, LIRItem& value) {
@@ -119,6 +126,7 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_xchg_at_resolved(LIRAccess& access, LIRIt
       pre_barrier(access.gen(), access.access_emit_info(), access.decorators(), LIR_OprFact::illegalOpr,
                   result /* pre_val */);
     }
+    post_barrier(access, access.resolved_addr(), result);
   }
 
   return result;

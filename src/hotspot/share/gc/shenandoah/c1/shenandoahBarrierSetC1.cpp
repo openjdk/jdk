@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "c1/c1_IR.hpp"
 #include "gc/shared/satbMarkQueue.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
@@ -186,6 +187,16 @@ void ShenandoahBarrierSetC1::store_at_resolved(LIRAccess& access, LIR_Opr value)
     value = storeval_barrier(access.gen(), value, access.access_emit_info(), access.decorators());
   }
   BarrierSetC1::store_at_resolved(access, value);
+
+  if (access.is_oop()) {
+    DecoratorSet decorators = access.decorators();
+    bool is_array = (decorators & IS_ARRAY) != 0;
+    bool on_anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
+
+    bool precise = is_array || on_anonymous;
+    LIR_Opr post_addr = precise ? access.resolved_addr() : access.base().opr();
+    post_barrier(access, post_addr, value);
+  }
 }
 
 LIR_Opr ShenandoahBarrierSetC1::resolve_address(LIRAccess& access, bool resolve_in_register) {
@@ -278,5 +289,72 @@ void ShenandoahBarrierSetC1::generate_c1_runtime_stubs(BufferBlob* buffer_blob) 
     _load_reference_barrier_native_rt_code_blob = Runtime1::generate_blob(buffer_blob, -1,
                                                                    "shenandoah_load_reference_barrier_native_slow",
                                                                    false, &lrb_native_code_gen_cl);
+  }
+}
+
+void ShenandoahBarrierSetC1::post_barrier(LIRAccess& access, LIR_OprDesc* addr, LIR_OprDesc* new_val) {
+  if (!ShenandoahHeap::heap()->mode()->is_generational()) {
+    return;
+  }
+
+  DecoratorSet decorators = access.decorators();
+  LIRGenerator* gen = access.gen();
+  bool in_heap = (decorators & IN_HEAP) != 0;
+  if (!in_heap) {
+    return;
+  }
+
+  BarrierSet* bs = BarrierSet::barrier_set();
+  ShenandoahBarrierSet* ctbs = barrier_set_cast<ShenandoahBarrierSet>(bs);
+  CardTable* ct = ctbs->card_table();
+  LIR_Const* card_table_base = new LIR_Const(ct->byte_map_base());
+  if (addr->is_address()) {
+    LIR_Address* address = addr->as_address_ptr();
+    // ptr cannot be an object because we use this barrier for array card marks
+    // and addr can point in the middle of an array.
+    LIR_Opr ptr = gen->new_pointer_register();
+    if (!address->index()->is_valid() && address->disp() == 0) {
+      __ move(address->base(), ptr);
+    } else {
+      assert(address->disp() != max_jint, "lea doesn't support patched addresses!");
+      __ leal(addr, ptr);
+    }
+    addr = ptr;
+  }
+  assert(addr->is_register(), "must be a register at this point");
+
+  LIR_Opr tmp = gen->new_pointer_register();
+  if (TwoOperandLIRForm) {
+    __ move(addr, tmp);
+    __ unsigned_shift_right(tmp, CardTable::card_shift, tmp);
+  } else {
+    __ unsigned_shift_right(addr, CardTable::card_shift, tmp);
+  }
+
+  LIR_Address* card_addr;
+  if (gen->can_inline_as_constant(card_table_base)) {
+    card_addr = new LIR_Address(tmp, card_table_base->as_jint(), T_BYTE);
+  } else {
+    card_addr = new LIR_Address(tmp, gen->load_constant(card_table_base), T_BYTE);
+  }
+
+  LIR_Opr dirty = LIR_OprFact::intConst(CardTable::dirty_card_val());
+  if (UseCondCardMark) {
+    LIR_Opr cur_value = gen->new_register(T_INT);
+    if (ct->scanned_concurrently()) {
+      __ membar_storeload();
+    }
+    __ move(card_addr, cur_value);
+
+    LabelObj* L_already_dirty = new LabelObj();
+    __ cmp(lir_cond_equal, cur_value, dirty);
+    __ branch(lir_cond_equal, L_already_dirty->label());
+    __ move(dirty, card_addr);
+    __ branch_destination(L_already_dirty->label());
+  } else {
+    if (ct->scanned_concurrently()) {
+      __ membar_storestore();
+    }
+    __ move(dirty, card_addr);
   }
 }
