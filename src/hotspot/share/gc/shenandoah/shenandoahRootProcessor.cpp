@@ -194,16 +194,14 @@ ShenandoahRootEvacuator::~ShenandoahRootEvacuator() {
 }
 
 void ShenandoahRootEvacuator::roots_do(uint worker_id, OopClosure* oops) {
-  MarkingCodeBlobClosure blobsCl(oops, CodeBlobToOopClosure::FixRelocations);
-  ShenandoahCodeBlobAndDisarmClosure blobs_and_disarm_Cl(oops);
-  CodeBlobToOopClosure* codes_cl = ShenandoahConcurrentRoots::can_do_concurrent_class_unloading() ?
-                                   static_cast<CodeBlobToOopClosure*>(&blobs_and_disarm_Cl) :
-                                   static_cast<CodeBlobToOopClosure*>(&blobsCl);
+  // Always disarm on-stack nmethods, because we are evacuating/updating them
+  // here
+  ShenandoahCodeBlobAndDisarmClosure codeblob_cl(oops);
   // Process serial-claiming roots first
   _serial_weak_roots.weak_oops_do(oops, worker_id);
 
   // Process light-weight/limited parallel roots then
-  _thread_roots.oops_do(oops, codes_cl, worker_id);
+  _thread_roots.oops_do(oops, &codeblob_cl, worker_id);
 }
 
 ShenandoahRootUpdater::ShenandoahRootUpdater(uint n_workers, ShenandoahPhaseTimings::Phase phase) :
