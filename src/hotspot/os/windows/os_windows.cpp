@@ -3172,7 +3172,7 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
     // Which may fail, hence the loop.
     aligned_base = file_desc != -1 ? os::attempt_map_memory_to_file_at(aligned_base, size, file_desc) :
                                      os::attempt_reserve_memory_at(aligned_base, size);
-    attempts ++;
+    attempts++;
 
   } while (aligned_base == NULL && attempts < max_attempts);
 
