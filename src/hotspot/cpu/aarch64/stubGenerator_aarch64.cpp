@@ -1094,8 +1094,14 @@ class StubGenerator: public StubCodeGenerator {
                    Register count, Register tmp, int step) {
     copy_direction direction = step < 0 ? copy_backwards : copy_forwards;
     bool is_backwards = step < 0;
-    int granularity = uabs(step);
+    unsigned int granularity = uabs(step);
     const Register t0 = r3, t1 = r4;
+
+    // There are no benefits from using SIMD ldpq for copying bytes <= 96.
+    // According to the Arm Optimization Guide the performance of quad-word
+    // load operations decreases when they are not 4B aligned. This can easily
+    // happen in case of copying bytes.
+    const bool use_simd = UseSIMDForMemoryOps && (granularity > sizeof (jbyte));
 
     // <= 96 bytes do inline. Direction doesn't matter because we always
     // load all the data before writing anything
@@ -1106,7 +1112,7 @@ class StubGenerator: public StubCodeGenerator {
 
     if (PrefetchCopyIntervalInBytes > 0)
       __ prfm(Address(s, 0), PLDL1KEEP);
-    __ cmp(count, u1((UseSIMDForMemoryOps ? 96:80)/granularity));
+    __ cmp(count, u1((use_simd ? 96:80)/granularity));
     __ br(Assembler::HI, copy_big);
 
     __ lea(send, Address(s, count, Address::lsl(exact_log2(granularity))));
@@ -1122,7 +1128,7 @@ class StubGenerator: public StubCodeGenerator {
     __ br(Assembler::LS, copy32);
 
     // 33..64 bytes
-    if (UseSIMDForMemoryOps) {
+    if (use_simd) {
       __ ldpq(v0, v1, Address(s, 0));
       __ ldpq(v2, v3, Address(send, -32));
       __ stpq(v0, v1, Address(d, 0));
@@ -1151,7 +1157,7 @@ class StubGenerator: public StubCodeGenerator {
     // 65..80/96 bytes
     // (96 bytes if SIMD because we do 32 byes per instruction)
     __ bind(copy80);
-    if (UseSIMDForMemoryOps) {
+    if (use_simd) {
       __ ld4(v0, v1, v2, v3, __ T16B, Address(s, 0));
       __ ldpq(v4, v5, Address(send, -32));
       __ st4(v0, v1, v2, v3, __ T16B, Address(d, 0));
