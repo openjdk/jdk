@@ -670,7 +670,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 #ifndef PRODUCT
     if ((PrintMiscellaneous && (Verbose || WizardMode)) || PrintOpto) {
       tty->print_cr("*** Warning: Unimplemented intrinsic %s(%d)",
-                    vmIntrinsics::name_at(intrinsic_id()), intrinsic_id());
+                    vmIntrinsics::name_at(intrinsic_id()), vmIntrinsics::as_int(intrinsic_id()));
     }
 #endif
     return false;
@@ -706,7 +706,7 @@ Node* LibraryCallKit::try_to_predicate(int predicate) {
 #ifndef PRODUCT
     if ((PrintMiscellaneous && (Verbose || WizardMode)) || PrintOpto) {
       tty->print_cr("*** Warning: Unimplemented predicate for intrinsic %s(%d)",
-                    vmIntrinsics::name_at(intrinsic_id()), intrinsic_id());
+                    vmIntrinsics::name_at(intrinsic_id()), vmIntrinsics::as_int(intrinsic_id()));
     }
 #endif
     Node* slow_ctl = control();

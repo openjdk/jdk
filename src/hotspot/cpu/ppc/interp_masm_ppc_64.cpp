@@ -1919,7 +1919,7 @@ void InterpreterMacroAssembler::profile_return_type(Register ret, Register tmp1,
       cmpwi(CCR0, tmp1, Bytecodes::_invokedynamic);
       cmpwi(CCR1, tmp1, Bytecodes::_invokehandle);
       cror(CCR0, Assembler::equal, CCR1, Assembler::equal);
-      cmpwi(CCR1, tmp2, vmIntrinsics::_compiledLambdaForm);
+      cmpwi(CCR1, tmp2, static_cast<int>(vmIntrinsics::_compiledLambdaForm));
       cror(CCR0, Assembler::equal, CCR1, Assembler::equal);
       bne(CCR0, profile_continue);
     }

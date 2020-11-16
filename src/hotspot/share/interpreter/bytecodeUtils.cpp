@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "interpreter/bytecodeUtils.hpp"
 #include "memory/resourceArea.hpp"

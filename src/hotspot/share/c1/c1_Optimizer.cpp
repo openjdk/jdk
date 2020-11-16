@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1102,13 +1102,13 @@ void NullCheckEliminator::handle_Intrinsic(Intrinsic* x) {
   if (set_contains(recv)) {
     // Value is non-null => update Intrinsic
     if (PrintNullCheckElimination) {
-      tty->print_cr("Eliminated Intrinsic %d's null check for value %d", x->id(), recv->id());
+      tty->print_cr("Eliminated Intrinsic %d's null check for value %d", vmIntrinsics::as_int(x->id()), recv->id());
     }
     x->set_needs_null_check(false);
   } else {
     set_put(recv);
     if (PrintNullCheckElimination) {
-      tty->print_cr("Intrinsic %d of value %d proves value to be non-null", x->id(), recv->id());
+      tty->print_cr("Intrinsic %d of value %d proves value to be non-null", vmIntrinsics::as_int(x->id()), recv->id());
     }
     // Ensure previous passes do not cause wrong state
     x->set_needs_null_check(true);

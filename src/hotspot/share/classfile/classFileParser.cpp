@@ -5287,7 +5287,8 @@ static void check_methods_for_intrinsics(const InstanceKlass* ik,
       // The check is potentially expensive, therefore it is available
       // only in debug builds.
 
-      for (int id = vmIntrinsics::FIRST_ID; id < (int)vmIntrinsics::ID_LIMIT; ++id) {
+      for (vmIntrinsicsIterator it = vmIntrinsicsRange.begin(); it != vmIntrinsicsRange.end(); ++it) {
+        vmIntrinsicID id = *it;
         if (vmIntrinsics::_compiledLambdaForm == id) {
           // The _compiledLamdbdaForm intrinsic is a special marker for bytecode
           // generated for the JVM from a LambdaForm and therefore no method
@@ -5295,7 +5296,7 @@ static void check_methods_for_intrinsics(const InstanceKlass* ik,
           continue;
         }
 
-        if (vmIntrinsics::class_for(vmIntrinsics::ID_from(id)) == klass_id) {
+        if (vmIntrinsics::class_for(id) == klass_id) {
           // Check if the current class contains a method with the same
           // name, flags, signature.
           bool match = false;
@@ -5311,8 +5312,7 @@ static void check_methods_for_intrinsics(const InstanceKlass* ik,
             char buf[1000];
             tty->print("Compiler intrinsic is defined for method [%s], "
                        "but the method is not available in class [%s].%s",
-                        vmIntrinsics::short_name_as_C_string(vmIntrinsics::ID_from(id),
-                                                             buf, sizeof(buf)),
+                        vmIntrinsics::short_name_as_C_string(id, buf, sizeof(buf)),
                         ik->name()->as_C_string(),
                         NOT_DEBUG("") DEBUG_ONLY(" Exiting.")
             );

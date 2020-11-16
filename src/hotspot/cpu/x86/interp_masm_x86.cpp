@@ -190,7 +190,7 @@ void InterpreterMacroAssembler::profile_return_type(Register mdp, Register ret, 
       cmpb(Address(_bcp_register, 0), Bytecodes::_invokehandle);
       jcc(Assembler::equal, do_profile);
       get_method(tmp);
-      cmpw(Address(tmp, Method::intrinsic_id_offset_in_bytes()), vmIntrinsics::_compiledLambdaForm);
+      cmpw(Address(tmp, Method::intrinsic_id_offset_in_bytes()), static_cast<int>(vmIntrinsics::_compiledLambdaForm));
       jcc(Assembler::notEqual, profile_continue);
 
       bind(do_profile);

@@ -115,7 +115,8 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
     vmIntrinsics::ID id = m->intrinsic_id();
     assert(MethodHandles::is_signature_polymorphic(id), "must match an intrinsic");
     MethodKind kind = (MethodKind)( method_handle_invoke_FIRST +
-                                    ((int)id - vmIntrinsics::FIRST_MH_SIG_POLY) );
+                                    vmIntrinsics::as_int(id) -
+                                    static_cast<int>(vmIntrinsics::FIRST_MH_SIG_POLY) );
     assert(kind <= method_handle_invoke_LAST, "parallel enum ranges");
     return kind;
   }

@@ -4130,7 +4130,7 @@ bool GraphBuilder::try_method_handle_inline(ciMethod* callee, bool ignore_return
     break;
 
   default:
-    fatal("unexpected intrinsic %d: %s", iid, vmIntrinsics::name_at(iid));
+    fatal("unexpected intrinsic %d: %s", vmIntrinsics::as_int(iid), vmIntrinsics::name_at(iid));
     break;
   }
   set_state(state_before->copy_for_parsing());

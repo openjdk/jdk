@@ -102,7 +102,7 @@ class DirectiveSet : public CHeapObj<mtCompiler> {
 private:
   InlineMatcher* _inlinematchers;
   CompilerDirectives* _directive;
-  TriBoolArray<vmIntrinsics::ID_LIMIT, int> _intrinsic_control_words;
+  TriBoolArray<vmIntrinsics::number_of_intrinsics(), int> _intrinsic_control_words;
 
 public:
   DirectiveSet(CompilerDirectives* directive);

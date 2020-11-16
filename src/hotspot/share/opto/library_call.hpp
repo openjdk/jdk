@@ -113,7 +113,7 @@ class LibraryCallKit : public GraphKit {
 
  private:
   void fatal_unexpected_iid(vmIntrinsics::ID iid) {
-    fatal("unexpected intrinsic %d: %s", iid, vmIntrinsics::name_at(iid));
+    fatal("unexpected intrinsic %d: %s", vmIntrinsics::as_int(iid), vmIntrinsics::name_at(iid));
   }
 
   void  set_result(Node* n) { assert(_result == NULL, "only set once"); _result = n; }

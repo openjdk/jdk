@@ -27,6 +27,7 @@
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "jfr/jfr.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"

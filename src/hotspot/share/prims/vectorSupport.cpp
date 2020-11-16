@@ -26,6 +26,7 @@
 #include "jni.h"
 #include "jvm.h"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "code/location.hpp"
 #include "prims/vectorSupport.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"

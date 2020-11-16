@@ -169,24 +169,28 @@ CallGenerator* Compile::find_intrinsic(ciMethod* m, bool is_virtual) {
 #ifndef PRODUCT
 // statistics gathering...
 
-juint  Compile::_intrinsic_hist_count[vmIntrinsics::ID_LIMIT] = {0};
-jubyte Compile::_intrinsic_hist_flags[vmIntrinsics::ID_LIMIT] = {0};
+juint  Compile::_intrinsic_hist_count[vmIntrinsics::number_of_intrinsics()] = {0};
+jubyte Compile::_intrinsic_hist_flags[vmIntrinsics::number_of_intrinsics()] = {0};
+
+inline int as_int(vmIntrinsics::ID id) {
+  return vmIntrinsics::as_int(id);
+}
 
 bool Compile::gather_intrinsic_statistics(vmIntrinsics::ID id, bool is_virtual, int flags) {
   assert(id > vmIntrinsics::_none && id < vmIntrinsics::ID_LIMIT, "oob");
-  int oflags = _intrinsic_hist_flags[id];
+  int oflags = _intrinsic_hist_flags[as_int(id)];
   assert(flags != 0, "what happened?");
   if (is_virtual) {
     flags |= _intrinsic_virtual;
   }
   bool changed = (flags != oflags);
   if ((flags & _intrinsic_worked) != 0) {
-    juint count = (_intrinsic_hist_count[id] += 1);
+    juint count = (_intrinsic_hist_count[as_int(id)] += 1);
     if (count == 1) {
       changed = true;           // first time
     }
     // increment the overall count also:
-    _intrinsic_hist_count[vmIntrinsics::_none] += 1;
+    _intrinsic_hist_count[as_int(vmIntrinsics::_none)] += 1;
   }
   if (changed) {
     if (((oflags ^ flags) & _intrinsic_virtual) != 0) {
@@ -202,10 +206,10 @@ bool Compile::gather_intrinsic_statistics(vmIntrinsics::ID id, bool is_virtual, 
         flags |= _intrinsic_both;
       }
     }
-    _intrinsic_hist_flags[id] = (jubyte) (oflags | flags);
+    _intrinsic_hist_flags[as_int(id)] = (jubyte) (oflags | flags);
   }
   // update the overall flags also:
-  _intrinsic_hist_flags[vmIntrinsics::_none] |= (jubyte) flags;
+  _intrinsic_hist_flags[as_int(vmIntrinsics::_none)] |= (jubyte) flags;
   return changed;
 }
 
@@ -226,19 +230,19 @@ void Compile::print_intrinsic_statistics() {
   ttyLocker ttyl;
   if (xtty != NULL)  xtty->head("statistics type='intrinsic'");
   tty->print_cr("Compiler intrinsic usage:");
-  juint total = _intrinsic_hist_count[vmIntrinsics::_none];
+  juint total = _intrinsic_hist_count[as_int(vmIntrinsics::_none)];
   if (total == 0)  total = 1;  // avoid div0 in case of no successes
   #define PRINT_STAT_LINE(name, c, f) \
     tty->print_cr("  %4d (%4.1f%%) %s (%s)", (int)(c), ((c) * 100.0) / total, name, f);
-  for (int index = 1 + (int)vmIntrinsics::_none; index < (int)vmIntrinsics::ID_LIMIT; index++) {
-    vmIntrinsics::ID id = (vmIntrinsics::ID) index;
-    int   flags = _intrinsic_hist_flags[id];
-    juint count = _intrinsic_hist_count[id];
+  for (vmIntrinsicsIterator it = vmIntrinsicsRange.begin(); it != vmIntrinsicsRange.end(); ++it) {
+    vmIntrinsicID id = *it;
+    int   flags = _intrinsic_hist_flags[as_int(id)];
+    juint count = _intrinsic_hist_count[as_int(id)];
     if ((flags | count) != 0) {
       PRINT_STAT_LINE(vmIntrinsics::name_at(id), count, format_flags(flags, flagsbuf));
     }
   }
-  PRINT_STAT_LINE("total", total, format_flags(_intrinsic_hist_flags[vmIntrinsics::_none], flagsbuf));
+  PRINT_STAT_LINE("total", total, format_flags(_intrinsic_hist_flags[as_int(vmIntrinsics::_none)], flagsbuf));
   if (xtty != NULL)  xtty->tail("statistics");
 }
 
@@ -253,7 +257,7 @@ void Compile::print_statistics() {
     PhaseIdealLoop::print_statistics();
     if (xtty != NULL)  xtty->tail("statistics");
   }
-  if (_intrinsic_hist_flags[vmIntrinsics::_none] != 0) {
+  if (_intrinsic_hist_flags[as_int(vmIntrinsics::_none)] != 0) {
     // put this under its own <statistics> element.
     print_intrinsic_statistics();
   }
