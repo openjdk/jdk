@@ -194,7 +194,7 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
         new_path=`type -p "$path"`
         if test "x$new_path" = x && test "x$OPENJDK_BUILD_OS" = "xwindows"; then
           # Try again with .exe
-          new_path=`type -p "$path.exe"`
+          new_path="`type -p "$path.exe"`"
         fi
         PATH="$old_path"
 
@@ -377,11 +377,11 @@ AC_DEFUN([UTIL_LOOKUP_PROGS],
             continue
           fi
           full_path="$elem/$name"
-          if test ! -e $full_path && test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+          if test ! -e "$full_path" && test "x$OPENJDK_BUILD_OS" = "xwindows"; then
             # Try again with .exe
             full_path="$elem/$name.exe"
           fi
-          if test -e $full_path; then
+          if test -e "$full_path"; then
             $1="$full_path"
             UTIL_FIXUP_EXECUTABLE($1, $3)
             result="[$]$1"
