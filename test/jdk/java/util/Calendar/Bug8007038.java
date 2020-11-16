@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,14 @@
 
 /*
  * @test
- * @bug 8007038
+ * @bug 8007038 8247781
  * @summary Verify ArrayIndexOutOfBoundsException is not thrown on
  *     on calling localizedDateTime().print() with JapaneseChrono
  * @modules java.base/sun.util.locale.provider
+ * @modules jdk.localedata
  * @compile -XDignore.symbol.file Bug8007038.java
- * @run main Bug8007038
+ * @run main/othervm -Djava.locale.providers=COMPAT Bug8007038 COMPAT
+ * @run main/othervm -Djava.locale.providers=CLDR Bug8007038 CLDR
  */
 
 import java.util.*;
@@ -88,11 +90,12 @@ public class Bug8007038 {
                 checkValueRange(calTypes[calIdx], DAY_OF_WEEK, SATURDAY+1, LONG, testLocs[locIdx], false);
 
                 // am/pm
-                for (int fieldIdx = AM; fieldIdx <= PM; fieldIdx++) {
+                int lastIndex = args[0].equals("CLDR") ? 11 : PM;
+                for (int fieldIdx = AM; fieldIdx <= lastIndex; fieldIdx++) {
                     checkValueRange(calTypes[calIdx], AM_PM, fieldIdx, LONG, testLocs[locIdx], true);
                 }
                 checkValueRange(calTypes[calIdx], AM_PM, AM-1, LONG, testLocs[locIdx], false);
-                checkValueRange(calTypes[calIdx], AM_PM, PM+1, LONG, testLocs[locIdx], false);
+                checkValueRange(calTypes[calIdx], AM_PM, lastIndex+1, LONG, testLocs[locIdx], false);
             }
         }
     }
