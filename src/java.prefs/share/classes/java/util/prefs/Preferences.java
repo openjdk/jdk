@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,7 +194,7 @@ import java.lang.Double;
  * <ol>
  *
  * <li><p>If the system property
- * {@code java.util.prefs.PreferencesFactory} is defined, then it is
+ * {@systemProperty java.util.prefs.PreferencesFactory} is defined, then it is
  * taken to be the fully-qualified name of a class implementing the
  * {@code PreferencesFactory} interface.  The class is loaded and
  * instantiated; if this process fails then an unspecified error is

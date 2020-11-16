@@ -434,7 +434,6 @@ public:
 
   virtual void emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const;
   virtual uint size(PhaseRegAlloc* ra_) const;
-  virtual bool pinned() const { return UseRDPCForConstantTableBase; }
 
   static const RegMask& static_out_RegMask() { return _out_RegMask; }
   virtual const RegMask& out_RegMask() const { return static_out_RegMask(); }
@@ -820,10 +819,11 @@ public:
   OopMap*         _oop_map;     // Array of OopMap info (8-bit char) for GC
   JVMState*       _jvms;        // Pointer to list of JVM State Objects
   uint            _jvmadj;      // Extra delta to jvms indexes (mach. args)
+  bool            _has_ea_local_in_scope; // NoEscape or ArgEscape objects in JVM States
   OopMap*         oop_map() const { return _oop_map; }
   void            set_oop_map(OopMap* om) { _oop_map = om; }
 
-  MachSafePointNode() : MachReturnNode(), _oop_map(NULL), _jvms(NULL), _jvmadj(0) {
+  MachSafePointNode() : MachReturnNode(), _oop_map(NULL), _jvms(NULL), _jvmadj(0), _has_ea_local_in_scope(false) {
     init_class_id(Class_MachSafePoint);
   }
 
@@ -922,6 +922,7 @@ public:
   int       _bci;                    // Byte Code index of call byte code
   bool      _optimized_virtual;      // Tells if node is a static call or an optimized virtual
   bool      _method_handle_invoke;   // Tells if the call has to preserve SP
+  bool      _arg_escape;             // ArgEscape in parameter list
   MachCallJavaNode() : MachCallNode(), _override_symbolic_info(false) {
     init_class_id(Class_MachCallJava);
   }

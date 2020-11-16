@@ -25,12 +25,10 @@
 #ifndef OS_POSIX_SIGNALS_POSIX_HPP
 #define OS_POSIX_SIGNALS_POSIX_HPP
 
-#include "memory/allStatic.hpp"
+#include "memory/allocation.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // Forward declarations to be independent of the include structure.
-
-typedef siginfo_t siginfo_t;
-typedef sigset_t sigset_t;
 
 class outputStream;
 class Thread;
@@ -44,8 +42,10 @@ public:
   static int SR_signum;
 
   static int init();
-
-  static bool are_signal_handlers_installed();
+  // The platform dependent parts of the central hotspot signal handler.
+  // Returns true if the signal had been recognized and handled, false if not. If true, caller should
+  // return from signal handling.
+  static bool pd_hotspot_signal_handler(int sig, siginfo_t* info, ucontext_t* uc, JavaThread* thread);
 
   static bool is_sig_ignored(int sig);
 
@@ -61,6 +61,10 @@ public:
 
   // For signal-chaining
   static bool chained_handler(int sig, siginfo_t* siginfo, void* context);
+
+  // Unblock all signals whose delivery cannot be deferred and which, if they happen
+  //  while delivery is blocked, would cause crashes or hangs (see JDK-8252533).
+  static void unblock_error_signals();
 };
 
 #endif // OS_POSIX_SIGNALS_POSIX_HPP

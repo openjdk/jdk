@@ -91,11 +91,11 @@ DISABLED_WARNINGS_clang := tautological-compare \
     undefined-var-template sometimes-uninitialized unknown-pragmas \
     delete-non-virtual-dtor missing-braces char-subscripts \
     ignored-qualifiers missing-field-initializers mismatched-tags \
-    shift-negative-value
+    shift-negative-value misleading-indentation
 
 DISABLED_WARNINGS_xlc := tautological-compare shift-negative-value
 
-DISABLED_WARNINGS_microsoft := 4100 4127 4201 4244 4291 4351 \
+DISABLED_WARNINGS_microsoft := 4100 4127 4146 4201 4244 4291 4351 \
     4511 4512 4514 4624 4996
 
 ################################################################################

@@ -115,9 +115,6 @@ void CLDScanClosure::do_cld(ClassLoaderData* cld) {
   // If the cld has not been dirtied we know that there's
   // no references into  the young gen and we can skip it.
   if (cld->has_modified_oops()) {
-    if (_accumulate_modified_oops) {
-      cld->accumulate_modified_oops();
-    }
 
     // Tell the closure which CLD is being scanned so that it can be dirtied
     // if oops are left pointing into the young gen.
@@ -567,8 +564,7 @@ void DefNewGeneration::collect(bool   full,
   DefNewScanClosure       scan_closure(this);
   DefNewYoungerGenClosure younger_gen_closure(this, _old_gen);
 
-  CLDScanClosure cld_scan_closure(&scan_closure,
-                                  heap->rem_set()->cld_rem_set()->accumulate_modified_oops());
+  CLDScanClosure cld_scan_closure(&scan_closure);
 
   set_promo_failure_scan_stack_closure(&scan_closure);
   FastEvacuateFollowersClosure evacuate_followers(heap,
@@ -715,7 +711,7 @@ oop DefNewGeneration::copy_to_survivor_space(oop old) {
 
   // Try allocating obj in to-space (unless too old)
   if (old->age() < tenuring_threshold()) {
-    obj = (oop) to()->allocate_aligned(s);
+    obj = (oop) to()->allocate(s);
   }
 
   // Otherwise try allocating obj tenured

@@ -23,10 +23,7 @@
 
 // key: compiler.err.invalid.canonical.constructor.in.record
 // key: compiler.misc.canonical.cant.have.return.statement
-// key: compiler.note.preview.filename
-// key: compiler.note.preview.recompile
 // key: compiler.misc.compact
-// options: --enable-preview -source ${jdk.version}
 
 record R() {
     public R {

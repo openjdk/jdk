@@ -68,6 +68,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vframeArray.hpp"
@@ -960,14 +961,15 @@ const TypeFunc* OptoRuntime::counterMode_aescrypt_Type() {
 /*
  * void implCompress(byte[] buf, int ofs)
  */
-const TypeFunc* OptoRuntime::digestBase_implCompress_Type() {
+const TypeFunc* OptoRuntime::digestBase_implCompress_Type(bool is_sha3) {
   // create input type (domain)
-  int num_args = 2;
+  int num_args = is_sha3 ? 3 : 2;
   int argcnt = num_args;
   const Type** fields = TypeTuple::fields(argcnt);
   int argp = TypeFunc::Parms;
   fields[argp++] = TypePtr::NOTNULL; // buf
   fields[argp++] = TypePtr::NOTNULL; // state
+  if (is_sha3) fields[argp++] = TypeInt::INT; // digest_length
   assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
   const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
 
@@ -981,14 +983,15 @@ const TypeFunc* OptoRuntime::digestBase_implCompress_Type() {
 /*
  * int implCompressMultiBlock(byte[] b, int ofs, int limit)
  */
-const TypeFunc* OptoRuntime::digestBase_implCompressMB_Type() {
+const TypeFunc* OptoRuntime::digestBase_implCompressMB_Type(bool is_sha3) {
   // create input type (domain)
-  int num_args = 4;
+  int num_args = is_sha3 ? 5 : 4;
   int argcnt = num_args;
   const Type** fields = TypeTuple::fields(argcnt);
   int argp = TypeFunc::Parms;
   fields[argp++] = TypePtr::NOTNULL; // buf
   fields[argp++] = TypePtr::NOTNULL; // state
+  if (is_sha3) fields[argp++] = TypeInt::INT; // digest_length
   fields[argp++] = TypeInt::INT;     // ofs
   fields[argp++] = TypeInt::INT;     // limit
   assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
@@ -1207,60 +1210,6 @@ const TypeFunc* OptoRuntime::osr_end_Type() {
   return TypeFunc::make(domain, range);
 }
 
-//-------------- methodData update helpers
-
-const TypeFunc* OptoRuntime::profile_receiver_type_Type() {
-  // create input type (domain)
-  const Type **fields = TypeTuple::fields(2);
-  fields[TypeFunc::Parms+0] = TypeAryPtr::NOTNULL;    // methodData pointer
-  fields[TypeFunc::Parms+1] = TypeInstPtr::BOTTOM;    // receiver oop
-  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+2, fields);
-
-  // create result type
-  fields = TypeTuple::fields(1);
-  fields[TypeFunc::Parms+0] = NULL; // void
-  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms, fields);
-  return TypeFunc::make(domain,range);
-}
-
-JRT_LEAF(void, OptoRuntime::profile_receiver_type_C(DataLayout* data, oopDesc* receiver))
-  if (receiver == NULL) return;
-  Klass* receiver_klass = receiver->klass();
-
-  intptr_t* mdp = ((intptr_t*)(data)) + DataLayout::header_size_in_cells();
-  int empty_row = -1;           // free row, if any is encountered
-
-  // ReceiverTypeData* vc = new ReceiverTypeData(mdp);
-  for (uint row = 0; row < ReceiverTypeData::row_limit(); row++) {
-    // if (vc->receiver(row) == receiver_klass)
-    int receiver_off = ReceiverTypeData::receiver_cell_index(row);
-    intptr_t row_recv = *(mdp + receiver_off);
-    if (row_recv == (intptr_t) receiver_klass) {
-      // vc->set_receiver_count(row, vc->receiver_count(row) + DataLayout::counter_increment);
-      int count_off = ReceiverTypeData::receiver_count_cell_index(row);
-      *(mdp + count_off) += DataLayout::counter_increment;
-      return;
-    } else if (row_recv == 0) {
-      // else if (vc->receiver(row) == NULL)
-      empty_row = (int) row;
-    }
-  }
-
-  if (empty_row != -1) {
-    int receiver_off = ReceiverTypeData::receiver_cell_index(empty_row);
-    // vc->set_receiver(empty_row, receiver_klass);
-    *(mdp + receiver_off) = (intptr_t) receiver_klass;
-    // vc->set_receiver_count(empty_row, DataLayout::counter_increment);
-    int count_off = ReceiverTypeData::receiver_count_cell_index(empty_row);
-    *(mdp + count_off) = DataLayout::counter_increment;
-  } else {
-    // Receiver did not match any saved receiver and there is no empty row for it.
-    // Increment total counter to indicate polymorphic case.
-    intptr_t* count_p = (intptr_t*)(((uint8_t*)(data)) + in_bytes(CounterData::count_offset()));
-    *count_p += DataLayout::counter_increment;
-  }
-JRT_END
-
 //-------------------------------------------------------------------------------------
 // register policy
 
@@ -1286,7 +1235,6 @@ static void trace_exception(outputStream* st, oop exception_oop, address excepti
 // directly from compiled code. Compiled code will call the C++ method following.
 // We can't allow async exception to be installed during  exception processing.
 JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* thread, nmethod* &nm))
-
   // Do not confuse exception_oop with pending_exception. The exception_oop
   // is only used to pass arguments into the method. Not for general
   // exception handling.  DO NOT CHANGE IT to use pending_exception, since
@@ -1344,7 +1292,7 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* t
     // otherwise, forcibly unwind the frame.
     //
     // 4826555: use default current sp for reguard_stack instead of &nm: it's more accurate.
-    bool force_unwind = !thread->reguard_stack();
+    bool force_unwind = !thread->stack_overflow_state()->reguard_stack();
     bool deopting = false;
     if (nm->is_deopt_pc(pc)) {
       deopting = true;
@@ -1464,6 +1412,11 @@ address OptoRuntime::handle_exception_C(JavaThread* thread) {
 // *THIS IS NOT RECOMMENDED PROGRAMMING STYLE*
 //
 address OptoRuntime::rethrow_C(oopDesc* exception, JavaThread* thread, address ret_pc) {
+  // The frame we rethrow the exception to might not have been processed by the GC yet.
+  // The stack watermark barrier takes care of detecting that and ensuring the frame
+  // has updated oops.
+  StackWatermarkSet::after_unwind(thread);
+
 #ifndef PRODUCT
   SharedRuntime::_rethrow_ctr++;               // count rethrows
 #endif

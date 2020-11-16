@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public class MessageDigests {
     @Param({"64", "1024", "16384"})
     private int length;
 
-    @Param({"md2", "md5", "SHA-1", "SHA-224", "SHA-256", "SHA-384", "SHA-512"})
+    @Param({"md2", "md5", "SHA-1", "SHA-224", "SHA-256", "SHA-384", "SHA-512", "SHA3-224", "SHA3-256", "SHA3-384", "SHA3-512"})
     private String digesterName;
 
     @Param({"DEFAULT", "SUN"})

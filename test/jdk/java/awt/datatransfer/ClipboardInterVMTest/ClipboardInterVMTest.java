@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,7 @@ public class ClipboardInterVMTest {
             }
         });
 
-        System.out.println("Starting external clipborad modifier...");
+        System.out.println("Starting external clipboard modifier...");
         new Thread(() -> runTest(ClipboardInterVMTest.class.getCanonicalName(), "pong")).start();
 
         String content = "";
@@ -106,7 +106,7 @@ public class ClipboardInterVMTest {
         };
 
         if (!flavorChangedMonitor.await(10, TimeUnit.SECONDS)) {
-            throw new RuntimeException("No LostOwnership event received.");
+            throw new RuntimeException("No FlavorsChanged event received.");
         };
 
         if (!content.equals("pong")) {

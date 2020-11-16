@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "gc/shared/locationPrinter.hpp"
 #include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zArray.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zHeapIterator.hpp"
@@ -35,7 +36,6 @@
 #include "gc/z/zRelocationSetSelector.inline.hpp"
 #include "gc/z/zResurrection.hpp"
 #include "gc/z/zStat.hpp"
-#include "gc/z/zTask.hpp"
 #include "gc/z/zThread.inline.hpp"
 #include "gc/z/zVerify.hpp"
 #include "gc/z/zWorkers.inline.hpp"
@@ -66,7 +66,7 @@ ZHeap::ZHeap() :
     _reference_processor(&_workers),
     _weak_roots_processor(&_workers),
     _relocate(&_workers),
-    _relocation_set(),
+    _relocation_set(&_workers),
     _unload(&_workers),
     _serviceability(min_capacity(), max_capacity()) {
   // Install global heap instance
@@ -221,6 +221,17 @@ void ZHeap::free_page(ZPage* page, bool reclaimed) {
   _page_allocator.free_page(page, reclaimed);
 }
 
+void ZHeap::free_pages(const ZArray<ZPage*>* pages, bool reclaimed) {
+  // Remove page table entries
+  ZArrayIterator<ZPage*> iter(pages);
+  for (ZPage* page; iter.next(&page);) {
+    _page_table.remove(page);
+  }
+
+  // Free pages
+  _page_allocator.free_pages(pages, reclaimed);
+}
+
 void ZHeap::flip_to_marked() {
   ZVerifyViewsFlip flip(&_page_allocator);
   ZAddress::flip_to_marked();
@@ -350,6 +361,16 @@ void ZHeap::process_non_strong_references() {
   _reference_processor.enqueue_references();
 }
 
+void ZHeap::free_garbage_pages(ZRelocationSetSelector* selector, int bulk) {
+  // Freeing garbage pages in bulk is an optimization to avoid grabbing
+  // the page allocator lock, and trying to satisfy stalled allocations
+  // too frequently.
+  if (selector->should_free_garbage_pages(bulk)) {
+    free_pages(selector->garbage_pages(), true /* reclaimed */);
+    selector->clear_garbage_pages();
+  }
+}
+
 void ZHeap::select_relocation_set() {
   // Do not allow pages to be deleted
   _page_allocator.enable_deferred_delete();
@@ -370,16 +391,22 @@ void ZHeap::select_relocation_set() {
       // Register garbage page
       selector.register_garbage_page(page);
 
-      // Reclaim page immediately
-      free_page(page, true /* reclaimed */);
+      // Reclaim garbage pages in bulk
+      free_garbage_pages(&selector, 64 /* bulk */);
     }
   }
+
+  // Reclaim remaining garbage pages
+  free_garbage_pages(&selector, 0 /* bulk */);
 
   // Allow pages to be deleted
   _page_allocator.disable_deferred_delete();
 
-  // Select pages to relocate
-  selector.select(&_relocation_set);
+  // Select relocation set
+  selector.select();
+
+  // Install relocation set
+  _relocation_set.install(&selector);
 
   // Setup forwarding table
   ZRelocationSetIterator rs_iter(&_relocation_set);
@@ -436,9 +463,13 @@ void ZHeap::relocate() {
 
 void ZHeap::object_iterate(ObjectClosure* cl, bool visit_weaks) {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
+  ZHeapIterator iter(1 /* nworkers */, visit_weaks);
+  iter.object_iterate(cl, 0 /* worker_id */);
+}
 
-  ZHeapIterator iter;
-  iter.objects_do(cl, visit_weaks);
+ParallelObjectIterator* ZHeap::parallel_object_iterator(uint nworkers, bool visit_weaks) {
+  assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
+  return new ZHeapIterator(nworkers, visit_weaks);
 }
 
 void ZHeap::pages_do(ZPageClosure* cl) {

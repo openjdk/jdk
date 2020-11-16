@@ -30,6 +30,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "services/memTracker.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/java.hpp"
@@ -296,37 +297,18 @@ char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, in
   return map_memory_to_file(base, size, fd);
 }
 
-// Multiple threads can race in this code, and can remap over each other with MAP_FIXED,
-// so on posix, unmap the section at the start and at the end of the chunk that we mapped
-// rather than unmapping and remapping the whole chunk to get requested alignment.
-char* os::reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
+static size_t calculate_aligned_extra_size(size_t size, size_t alignment) {
   assert((alignment & (os::vm_allocation_granularity() - 1)) == 0,
       "Alignment must be a multiple of allocation granularity (page size)");
   assert((size & (alignment -1)) == 0, "size must be 'alignment' aligned");
 
   size_t extra_size = size + alignment;
   assert(extra_size >= size, "overflow, size is too large to allow alignment");
+  return extra_size;
+}
 
-  char* extra_base;
-  if (file_desc != -1) {
-    // For file mapping, we do not call os:reserve_memory_with_fd since:
-    // - we later chop away parts of the mapping using os::release_memory and that could fail if the
-    //   original mmap call had been tied to an fd.
-    // - The memory API os::reserve_memory uses is an implementation detail. It may (and usually is)
-    //   mmap but it also may System V shared memory which cannot be uncommitted as a whole, so
-    //   chopping off and unmapping excess bits back and front (see below) would not work.
-    extra_base = reserve_mmapped_memory(extra_size, NULL);
-    if (extra_base != NULL) {
-      MemTracker::record_virtual_memory_reserve((address)extra_base, extra_size, CALLER_PC);
-    }
-  } else {
-    extra_base = os::reserve_memory(extra_size);
-  }
-
-  if (extra_base == NULL) {
-    return NULL;
-  }
-
+// After a bigger chunk was mapped, unmaps start and end parts to get the requested alignment.
+static char* chop_extra_memory(size_t size, size_t alignment, char* extra_base, size_t extra_size) {
   // Do manual alignment
   char* aligned_base = align_up(extra_base, alignment);
 
@@ -348,13 +330,39 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
       os::release_memory(extra_base + begin_offset + size, end_offset);
   }
 
-  if (file_desc != -1) {
-    // After we have an aligned address, we can replace anonymous mapping with file mapping
-    if (replace_existing_mapping_with_file_mapping(aligned_base, size, file_desc) == NULL) {
-      vm_exit_during_initialization(err_msg("Error in mapping Java heap at the given filesystem directory"));
-    }
-    MemTracker::record_virtual_memory_commit((address)aligned_base, size, CALLER_PC);
+  return aligned_base;
+}
+
+// Multiple threads can race in this code, and can remap over each other with MAP_FIXED,
+// so on posix, unmap the section at the start and at the end of the chunk that we mapped
+// rather than unmapping and remapping the whole chunk to get requested alignment.
+char* os::reserve_memory_aligned(size_t size, size_t alignment) {
+  size_t extra_size = calculate_aligned_extra_size(size, alignment);
+  char* extra_base = os::reserve_memory(extra_size);
+  if (extra_base == NULL) {
+    return NULL;
   }
+  return chop_extra_memory(size, alignment, extra_base, extra_size);
+}
+
+char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int file_desc) {
+  size_t extra_size = calculate_aligned_extra_size(size, alignment);
+  // For file mapping, we do not call os:map_memory_to_file(size,fd) since:
+  // - we later chop away parts of the mapping using os::release_memory and that could fail if the
+  //   original mmap call had been tied to an fd.
+  // - The memory API os::reserve_memory uses is an implementation detail. It may (and usually is)
+  //   mmap but it also may System V shared memory which cannot be uncommitted as a whole, so
+  //   chopping off and unmapping excess bits back and front (see below) would not work.
+  char* extra_base = reserve_mmapped_memory(extra_size, NULL);
+  if (extra_base == NULL) {
+    return NULL;
+  }
+  char* aligned_base = chop_extra_memory(size, alignment, extra_base, extra_size);
+  // After we have an aligned address, we can replace anonymous mapping with file mapping
+  if (replace_existing_mapping_with_file_mapping(aligned_base, size, file_desc) == NULL) {
+    vm_exit_during_initialization(err_msg("Error in mapping Java heap at the given filesystem directory"));
+  }
+  MemTracker::record_virtual_memory_commit((address)aligned_base, size, CALLER_PC);
   return aligned_base;
 }
 
@@ -800,8 +808,8 @@ jint os::Posix::set_minimum_stack_sizes() {
   size_t os_min_stack_allowed = PTHREAD_STACK_MIN;
 
   _java_thread_min_stack_allowed = _java_thread_min_stack_allowed +
-                                   JavaThread::stack_guard_zone_size() +
-                                   JavaThread::stack_shadow_zone_size();
+                                   StackOverflow::stack_guard_zone_size() +
+                                   StackOverflow::stack_shadow_zone_size();
 
   _java_thread_min_stack_allowed = align_up(_java_thread_min_stack_allowed, vm_page_size());
   _java_thread_min_stack_allowed = MAX2(_java_thread_min_stack_allowed, os_min_stack_allowed);
@@ -824,8 +832,8 @@ jint os::Posix::set_minimum_stack_sizes() {
 
   // Reminder: a compiler thread is a Java thread.
   _compiler_thread_min_stack_allowed = _compiler_thread_min_stack_allowed +
-                                       JavaThread::stack_guard_zone_size() +
-                                       JavaThread::stack_shadow_zone_size();
+                                       StackOverflow::stack_guard_zone_size() +
+                                       StackOverflow::stack_shadow_zone_size();
 
   _compiler_thread_min_stack_allowed = align_up(_compiler_thread_min_stack_allowed, vm_page_size());
   _compiler_thread_min_stack_allowed = MAX2(_compiler_thread_min_stack_allowed, os_min_stack_allowed);
@@ -906,6 +914,123 @@ size_t os::Posix::get_initial_stack_size(ThreadType thr_type, size_t req_stack_s
 
   return stack_size;
 }
+
+#ifndef ZERO
+#ifndef ARM
+static bool get_frame_at_stack_banging_point(JavaThread* thread, address pc, const void* ucVoid, frame* fr) {
+  if (Interpreter::contains(pc)) {
+    // interpreter performs stack banging after the fixed frame header has
+    // been generated while the compilers perform it before. To maintain
+    // semantic consistency between interpreted and compiled frames, the
+    // method returns the Java sender of the current frame.
+    *fr = os::fetch_frame_from_context(ucVoid);
+    if (!fr->is_first_java_frame()) {
+      // get_frame_at_stack_banging_point() is only called when we
+      // have well defined stacks so java_sender() calls do not need
+      // to assert safe_for_sender() first.
+      *fr = fr->java_sender();
+    }
+  } else {
+    // more complex code with compiled code
+    assert(!Interpreter::contains(pc), "Interpreted methods should have been handled above");
+    CodeBlob* cb = CodeCache::find_blob(pc);
+    if (cb == NULL || !cb->is_nmethod() || cb->is_frame_complete_at(pc)) {
+      // Not sure where the pc points to, fallback to default
+      // stack overflow handling
+      return false;
+    } else {
+      // in compiled code, the stack banging is performed just after the return pc
+      // has been pushed on the stack
+      *fr = os::fetch_compiled_frame_from_context(ucVoid);
+      if (!fr->is_java_frame()) {
+        assert(!fr->is_first_frame(), "Safety check");
+        // See java_sender() comment above.
+        *fr = fr->java_sender();
+      }
+    }
+  }
+  assert(fr->is_java_frame(), "Safety check");
+  return true;
+}
+#endif // ARM
+
+// This return true if the signal handler should just continue, ie. return after calling this
+bool os::Posix::handle_stack_overflow(JavaThread* thread, address addr, address pc,
+                                      const void* ucVoid, address* stub) {
+  // stack overflow
+  StackOverflow* overflow_state = thread->stack_overflow_state();
+  if (overflow_state->in_stack_yellow_reserved_zone(addr)) {
+    if (thread->thread_state() == _thread_in_Java) {
+#ifndef ARM
+      // arm32 doesn't have this
+      if (overflow_state->in_stack_reserved_zone(addr)) {
+        frame fr;
+        if (get_frame_at_stack_banging_point(thread, pc, ucVoid, &fr)) {
+          assert(fr.is_java_frame(), "Must be a Java frame");
+          frame activation =
+            SharedRuntime::look_for_reserved_stack_annotated_method(thread, fr);
+          if (activation.sp() != NULL) {
+            overflow_state->disable_stack_reserved_zone();
+            if (activation.is_interpreted_frame()) {
+              overflow_state->set_reserved_stack_activation((address)(activation.fp()
+                // Some platforms use frame pointers for interpreter frames, others use initial sp.
+#if !defined(PPC64) && !defined(S390)
+                + frame::interpreter_frame_initial_sp_offset
+#endif
+                ));
+            } else {
+              overflow_state->set_reserved_stack_activation((address)activation.unextended_sp());
+            }
+            return true; // just continue
+          }
+        }
+      }
+#endif // ARM
+      // Throw a stack overflow exception.  Guard pages will be reenabled
+      // while unwinding the stack.
+      overflow_state->disable_stack_yellow_reserved_zone();
+      *stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::STACK_OVERFLOW);
+    } else {
+      // Thread was in the vm or native code.  Return and try to finish.
+      overflow_state->disable_stack_yellow_reserved_zone();
+      return true; // just continue
+    }
+  } else if (overflow_state->in_stack_red_zone(addr)) {
+    // Fatal red zone violation.  Disable the guard pages and fall through
+    // to handle_unexpected_exception way down below.
+    overflow_state->disable_stack_red_zone();
+    tty->print_raw_cr("An irrecoverable stack overflow has occurred.");
+
+    // This is a likely cause, but hard to verify. Let's just print
+    // it as a hint.
+    tty->print_raw_cr("Please check if any of your loaded .so files has "
+                      "enabled executable stack (see man page execstack(8))");
+
+  } else {
+#if !defined(AIX) && !defined(__APPLE__)
+    // bsd and aix don't have this
+
+    // Accessing stack address below sp may cause SEGV if current
+    // thread has MAP_GROWSDOWN stack. This should only happen when
+    // current thread was created by user code with MAP_GROWSDOWN flag
+    // and then attached to VM. See notes in os_linux.cpp.
+    if (thread->osthread()->expanding_stack() == 0) {
+       thread->osthread()->set_expanding_stack();
+       if (os::Linux::manually_expand_stack(thread, addr)) {
+         thread->osthread()->clear_expanding_stack();
+         return true; // just continue
+       }
+       thread->osthread()->clear_expanding_stack();
+    } else {
+       fatal("recursive segv. expanding stack.");
+    }
+#else
+    tty->print_raw_cr("SIGSEGV happened inside stack but outside yellow and red zone.");
+#endif // AIX or BSD
+  }
+  return false;
+}
+#endif // ZERO
 
 bool os::Posix::is_root(uid_t uid){
     return ROOT_UID == uid;
