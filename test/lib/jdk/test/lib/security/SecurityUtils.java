@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,13 +52,18 @@ public final class SecurityUtils {
         return KeyStore.getInstance(file, (char[])null);
     }
 
-    public static void removeFromTlsDisabledAlgs(List<String> algs) {
-        removeFromDisabledAlgs("jdk.tls.disabledAlgorithms", algs);
+    /**
+     * Removes the specified protocols from the jdk.tls.disabledAlgorithms
+     * security property.
+     */
+    public static void removeFromDisabledTlsAlgs(String... protocols) {
+        removeFromDisabledAlgs("jdk.tls.disabledAlgorithms",
+                               List.<String>of(protocols));
     }
 
     private static void removeFromDisabledAlgs(String prop, List<String> algs) {
         String value = Security.getProperty(prop);
-        value = Arrays.stream(prop.split(","))
+        value = Arrays.stream(value.split(","))
                       .map(s -> s.trim())
                       .filter(s -> !algs.contains(s))
                       .collect(Collectors.joining(","));
