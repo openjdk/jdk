@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
-#include "gc/g1/g1FullCollector.hpp"
+#include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCAdjustTask.hpp"
 #include "gc/g1/g1FullGCCompactionPoint.hpp"
 #include "gc/g1/g1FullGCMarker.hpp"
@@ -51,27 +51,26 @@ public:
 };
 
 class G1AdjustRegionClosure : public HeapRegionClosure {
+  G1FullCollector* _collector;
   G1CMBitMap* _bitmap;
   uint _worker_id;
  public:
-  G1AdjustRegionClosure(G1CMBitMap* bitmap, uint worker_id) :
-    _bitmap(bitmap),
+  G1AdjustRegionClosure(G1FullCollector* collector, uint worker_id) :
+    _collector(collector),
+    _bitmap(collector->mark_bitmap()),
     _worker_id(worker_id) { }
 
   bool do_heap_region(HeapRegion* r) {
-    G1AdjustClosure cl;
+    G1AdjustClosure cl(_collector);
     if (r->is_humongous()) {
+      // Special handling for humongous regions to get somewhat better
+      // work distribution.
       oop obj = oop(r->humongous_start_region()->bottom());
       obj->oop_iterate(&cl, MemRegion(r->bottom(), r->top()));
-    } else if (r->is_open_archive()) {
-      // Only adjust the open archive regions, the closed ones
-      // never change.
-      G1AdjustLiveClosure adjust(&cl);
-      r->apply_to_marked_objects(_bitmap, &adjust);
-      // Open archive regions will not be compacted and the marking information is
-      // no longer needed. Clear it here to avoid having to do it later.
-      _bitmap->clear_region(r);
-    } else {
+    } else if (!r->is_closed_archive() && !r->is_free()) {
+      // Closed archive regions never change references and only contain
+      // references into other closed regions and are always live. Free
+      // regions do not contain objects to iterate. So skip both.
       G1AdjustLiveClosure adjust(&cl);
       r->apply_to_marked_objects(_bitmap, &adjust);
     }
@@ -85,7 +84,7 @@ G1FullGCAdjustTask::G1FullGCAdjustTask(G1FullCollector* collector) :
     _references_done(0),
     _weak_proc_task(collector->workers()),
     _hrclaimer(collector->workers()),
-    _adjust(),
+    _adjust(collector),
     _string_dedup_cleaning_task(NULL, &_adjust, false) {
   // Need cleared claim bits for the roots processing
   ClassLoaderDataGraph::clear_claimed_marks();
@@ -116,7 +115,7 @@ void G1FullGCAdjustTask::work(uint worker_id) {
   _string_dedup_cleaning_task.work(worker_id);
 
   // Now adjust pointers region by region
-  G1AdjustRegionClosure blk(collector()->mark_bitmap(), worker_id);
+  G1AdjustRegionClosure blk(collector(), worker_id);
   G1CollectedHeap::heap()->heap_region_par_iterate_from_worker_offset(&blk, &_hrclaimer, worker_id);
   log_task("Adjust task", worker_id, start);
 }

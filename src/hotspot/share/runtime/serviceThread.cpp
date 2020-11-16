@@ -144,7 +144,6 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
     bool thread_id_table_work = false;
     bool protection_domain_table_work = false;
     bool oopstorage_work = false;
-    bool deflate_idle_monitors = false;
     JvmtiDeferredEvent jvmti_event;
     bool oop_handles_to_release = false;
     bool cldg_cleanup_work = false;
@@ -177,13 +176,10 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
               (oopstorage_work = OopStorage::has_cleanup_work_and_reset()) |
               (oop_handles_to_release = (_oop_handle_list != NULL)) |
               (cldg_cleanup_work = ClassLoaderDataGraph::should_clean_metaspaces_and_reset()) |
-              (deflate_idle_monitors = ObjectSynchronizer::is_async_deflation_needed()) |
               (jvmti_tagmap_work = JvmtiTagMap::has_object_free_events_and_reset())
              ) == 0) {
         // Wait until notified that there is some work to do.
-        // We wait for GuaranteedSafepointInterval so that
-        // is_async_deflation_needed() is checked at the same interval.
-        ml.wait(GuaranteedSafepointInterval);
+        ml.wait();
       }
 
       if (has_jvmti_events) {
@@ -234,10 +230,6 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
 
     if (oopstorage_work) {
       cleanup_oopstorages();
-    }
-
-    if (deflate_idle_monitors) {
-      ObjectSynchronizer::deflate_idle_monitors();
     }
 
     if (oop_handles_to_release) {

@@ -34,6 +34,7 @@
 #include "gc/shenandoah/shenandoahStringDedup.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/thread.hpp"
 
 ShenandoahThreadRoots::ShenandoahThreadRoots(ShenandoahPhaseTimings::Phase phase, bool is_par) :

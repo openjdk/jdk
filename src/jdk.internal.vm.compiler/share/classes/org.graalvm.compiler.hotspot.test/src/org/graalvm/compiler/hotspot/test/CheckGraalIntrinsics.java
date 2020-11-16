@@ -437,6 +437,14 @@ public class CheckGraalIntrinsics extends GraalTest {
                             "java/lang/Math.signum(D)D",
                             "java/lang/Math.signum(F)F",
                             "sun/security/provider/MD5.implCompress0([BI)V");
+            if (config.useBase64Intrinsics()) {
+                // Currently implemented on ppc64le only, but could be implemented on others
+                add(toBeInvestigated,
+                            "java/util/Base64$Decoder.decodeBlock([BII[BIZ)I");
+            } else {
+                add(ignore,
+                            "java/util/Base64$Decoder.decodeBlock([BII[BIZ)I");
+            }
         }
 
         if (!config.inlineNotify()) {
@@ -529,6 +537,11 @@ public class CheckGraalIntrinsics extends GraalTest {
                                 "jdk/internal/vm/vector/VectorSupport.ternaryOp(ILjava/lang/Class;Ljava/lang/Class;ILjava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljdk/internal/vm/vector/VectorSupport$TernaryOperation;)Ljava/lang/Object;",
                                 "jdk/internal/vm/vector/VectorSupport.test(ILjava/lang/Class;Ljava/lang/Class;ILjava/lang/Object;Ljava/lang/Object;Ljava/util/function/BiFunction;)Z",
                                 "jdk/internal/vm/vector/VectorSupport.unaryOp(ILjava/lang/Class;Ljava/lang/Class;ILjava/lang/Object;Ljava/util/function/Function;)Ljava/lang/Object;");
+        }
+
+        if (isJDK16OrHigher()) {
+            add(toBeInvestigated,
+                                "sun/instrument/InstrumentationImpl.getObjectSize0(JLjava/lang/Object;)J");
         }
 
         /*

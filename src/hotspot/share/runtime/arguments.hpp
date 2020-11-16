@@ -684,5 +684,14 @@ do {                                                     \
   }                                                      \
 } while(0)
 
+// Initialize options not supported in this release, with a warning
+// if they were explicitly requested on the command-line
+#define UNSUPPORTED_OPTION_INIT(opt, value)              \
+do {                                                     \
+  if (FLAG_IS_CMDLINE(opt)) {                            \
+    warning("-XX flag " #opt " not supported in this VM"); \
+  }                                                      \
+  FLAG_SET_DEFAULT(opt, value);                          \
+} while(0)
 
 #endif // SHARE_RUNTIME_ARGUMENTS_HPP

@@ -23,6 +23,7 @@
 
 package org.openjdk.tests.java.util.stream;
 
+import jdk.incubator.foreign.MemoryAccess;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemoryLayouts;
 import jdk.incubator.foreign.MemorySegment;
@@ -39,16 +40,8 @@ import org.testng.annotations.DataProvider;
 
 public class SegmentTestDataProvider {
 
-    static VarHandle BYTE_HANDLE = MemoryLayouts.JAVA_BYTE.varHandle(byte.class);
-    static VarHandle CHAR_HANDLE = MemoryLayouts.JAVA_CHAR.withBitAlignment(8).varHandle(char.class);
-    static VarHandle SHORT_HANDLE = MemoryLayouts.JAVA_SHORT.withBitAlignment(8).varHandle(short.class);
-    static VarHandle INT_HANDLE = MemoryLayouts.JAVA_INT.withBitAlignment(8).varHandle(int.class);
-    static VarHandle LONG_HANDLE = MemoryLayouts.JAVA_LONG.withBitAlignment(8).varHandle(long.class);
-    static VarHandle FLOAT_HANDLE = MemoryLayouts.JAVA_FLOAT.withBitAlignment(8).varHandle(float.class);
-    static VarHandle DOUBLE_HANDLE = MemoryLayouts.JAVA_DOUBLE.withBitAlignment(8).varHandle(double.class);
-
     static boolean compareSegmentsByte(Collection<MemorySegment> segments1, Collection<MemorySegment> segments2, boolean isOrdered) {
-        Function<MemorySegment, Byte> mapper = segment -> (byte)BYTE_HANDLE.get(segment.baseAddress());
+        Function<MemorySegment, Byte> mapper = MemoryAccess::getByte;
         List<Byte> list1 = segments1.stream()
                 .map(mapper)
                 .collect(Collectors.toList());
@@ -59,7 +52,7 @@ public class SegmentTestDataProvider {
     }
 
     static boolean compareSegmentsChar(Collection<MemorySegment> segments1, Collection<MemorySegment> segments2, boolean isOrdered) {
-        Function<MemorySegment, Character> mapper = segment -> (char)CHAR_HANDLE.get(segment.baseAddress());
+        Function<MemorySegment, Character> mapper = MemoryAccess::getChar;
         List<Character> list1 = segments1.stream()
                 .map(mapper)
                 .collect(Collectors.toList());
@@ -70,7 +63,7 @@ public class SegmentTestDataProvider {
     }
 
     static boolean compareSegmentsShort(Collection<MemorySegment> segments1, Collection<MemorySegment> segments2, boolean isOrdered) {
-        Function<MemorySegment, Short> mapper = segment -> (short)SHORT_HANDLE.get(segment.baseAddress());
+        Function<MemorySegment, Short> mapper = MemoryAccess::getShort;
         List<Short> list1 = segments1.stream()
                 .map(mapper)
                 .collect(Collectors.toList());
@@ -81,7 +74,7 @@ public class SegmentTestDataProvider {
     }
 
     static boolean compareSegmentsInt(Collection<MemorySegment> segments1, Collection<MemorySegment> segments2, boolean isOrdered) {
-        Function<MemorySegment, Integer> mapper = segment -> (int)INT_HANDLE.get(segment.baseAddress());
+        Function<MemorySegment, Integer> mapper = MemoryAccess::getInt;
         List<Integer> list1 = segments1.stream()
                 .map(mapper)
                 .collect(Collectors.toList());
@@ -92,7 +85,7 @@ public class SegmentTestDataProvider {
     }
 
     static boolean compareSegmentsLong(Collection<MemorySegment> segments1, Collection<MemorySegment> segments2, boolean isOrdered) {
-        Function<MemorySegment, Long> mapper = segment -> (long)LONG_HANDLE.get(segment.baseAddress());
+        Function<MemorySegment, Long> mapper = MemoryAccess::getLong;
         List<Long> list1 = segments1.stream()
                 .map(mapper)
                 .collect(Collectors.toList());
@@ -103,7 +96,7 @@ public class SegmentTestDataProvider {
     }
 
     static boolean compareSegmentsFloat(Collection<MemorySegment> segments1, Collection<MemorySegment> segments2, boolean isOrdered) {
-        Function<MemorySegment, Float> mapper = segment -> (float)FLOAT_HANDLE.get(segment.baseAddress());
+        Function<MemorySegment, Float> mapper = MemoryAccess::getFloat;
         List<Float> list1 = segments1.stream()
                 .map(mapper)
                 .collect(Collectors.toList());
@@ -122,7 +115,7 @@ public class SegmentTestDataProvider {
     }
 
     static boolean compareSegmentsDouble(Collection<MemorySegment> segments1, Collection<MemorySegment> segments2, boolean isOrdered) {
-        Function<MemorySegment, Double> mapper = segment -> (double)DOUBLE_HANDLE.get(segment.baseAddress());
+        Function<MemorySegment, Double> mapper = MemoryAccess::getDouble;
         List<Double> list1 = segments1.stream()
                 .map(mapper)
                 .collect(Collectors.toList());
@@ -134,7 +127,7 @@ public class SegmentTestDataProvider {
 
     static void initSegment(MemorySegment segment) {
         for (int i = 0 ; i < segment.byteSize() ; i++) {
-            BYTE_HANDLE.set(segment.baseAddress(), (byte)i);
+            MemoryAccess.setByte(segment, (byte)i);
         }
     }
 

@@ -51,8 +51,7 @@ static address zero_null_code_stub() {
 
 int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
                                            VMRegPair *regs,
-                                           int total_args_passed,
-                                           int is_outgoing) {
+                                           int total_args_passed) {
   return 0;
 }
 
