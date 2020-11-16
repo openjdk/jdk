@@ -236,19 +236,20 @@ inline bool MacroAssembler::is_bc_far_variant3_at(address instruction_addr) {
          is_endgroup(instruction_2);
 }
 
-// set dst to -1, 0, +1
+// set dst to -1, 0, +1 as follows: if CCR0bi is "greater than", dst is set to 1,
+// if CCR0bi is "equal", dst is set to 0, otherwise it's set to -1.
 inline void MacroAssembler::set_cmp3(Register dst) {
   assert_different_registers(dst, R0);
   // P10, prefer using setbc intructions
   if (VM_Version::has_brw()) {
-    setbc(R0, CCR0, Assembler::greater);
-    setnbc(dst, CCR0, Assembler::less);
+    setbc(R0, CCR0, Assembler::greater); // Set 1 to R0 if CCR0bi is "greater than", otherwise 0
+    setnbc(dst, CCR0, Assembler::less); // Set -1 to dst if CCR0bi is "less than", otherwise 0
   } else {
-    mfcr(R0); // set bit 32..33 as follows: <: 0b10, =: 0b00, >: 0b01
-    srwi(dst, R0, 30);
-    srawi(R0, R0, 31);
+    mfcr(R0); // copy CR register to R0
+    srwi(dst, R0, 30); // copy the first two bits to dst
+    srawi(R0, R0, 31); // move the first bit to last position - sign extended
   }
-  orr(dst, dst, R0);
+  orr(dst, dst, R0); // dst | R0 will be -1, 0, or +1
 }
 
 // set dst to (treat_unordered_like_less ? -1 : +1)

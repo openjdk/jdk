@@ -384,12 +384,12 @@ inline void Assembler::setb(Register d, ConditionRegister cra)
 inline void Assembler::setbc(Register d, int biint)
                                                   { emit_int32(SETBC_OPCODE | rt(d) | bi(biint)); }
 inline void Assembler::setbc(Register d, ConditionRegister cr, Condition cc) {
-    setbc(d, bi0(cr, cc));
+  setbc(d, bi0(cr, cc));
 }
 inline void Assembler::setnbc(Register d, int biint)
                                                   { emit_int32(SETNBC_OPCODE | rt(d) | bi(biint)); }
 inline void Assembler::setnbc(Register d, ConditionRegister cr, Condition cc) {
-    setnbc(d, bi0(cr, cc));
+  setnbc(d, bi0(cr, cc));
 }
 
 // Special purpose registers
