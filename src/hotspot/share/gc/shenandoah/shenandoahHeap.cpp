@@ -1689,6 +1689,9 @@ void ShenandoahHeap::op_final_mark() {
     set_concurrent_mark_in_progress(false);
     mark_complete_marking_context();
 
+    // Notify JVMTI that the tagmap table will need cleaning.
+    JvmtiTagMap::set_needs_cleaning();
+
     parallel_cleaning(false /* full gc*/);
 
     if (ShenandoahVerify) {
