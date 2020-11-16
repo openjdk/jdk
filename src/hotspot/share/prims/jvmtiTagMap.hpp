@@ -121,8 +121,8 @@ class JvmtiTagMap :  public CHeapObj<mtInternal> {
   void flush_object_free_events();
 
   // For ServiceThread
-  static void flush_all_object_free_events();
-  static bool has_object_free_events_and_reset();
+  static void flush_all_object_free_events() NOT_JVMTI_RETURN;
+  static bool has_object_free_events_and_reset() NOT_JVMTI_RETURN_(false);
 };
 
 #endif // SHARE_PRIMS_JVMTITAGMAP_HPP
