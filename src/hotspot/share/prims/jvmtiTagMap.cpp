@@ -136,7 +136,7 @@ void JvmtiTagMap::check_hashmap(bool post_events) {
   if (_needs_cleaning &&
       post_events &&
       env()->is_enabled(JVMTI_EVENT_OBJECT_FREE)) {
-    remove_dead_entries(true /* post_object_free */);
+    remove_dead_entries_locked(true /* post_object_free */);
   }
   if (_needs_rehashing) {
     log_info(jvmti, table)("TagMap table needs rehashing");
@@ -1155,7 +1155,7 @@ void JvmtiTagMap::iterate_through_heap(jint heap_filter,
   VMThread::execute(&op);
 }
 
-void JvmtiTagMap::remove_dead_entries(bool post_object_free) {
+void JvmtiTagMap::remove_dead_entries_locked(bool post_object_free) {
   assert(is_locked(), "precondition");
   if (_needs_cleaning) {
     log_info(jvmti, table)("TagMap table needs cleaning%s",
@@ -1165,9 +1165,9 @@ void JvmtiTagMap::remove_dead_entries(bool post_object_free) {
   }
 }
 
-void JvmtiTagMap::remove_dead_entries_locked(bool post_object_free) {
+void JvmtiTagMap::remove_dead_entries(bool post_object_free) {
   MutexLocker ml(lock(), Mutex::_no_safepoint_check_flag);
-  remove_dead_entries(post_object_free);
+  remove_dead_entries_locked(post_object_free);
 }
 
 class VM_JvmtiPostObjectFree: public VM_Operation {
@@ -1176,7 +1176,7 @@ class VM_JvmtiPostObjectFree: public VM_Operation {
   VM_JvmtiPostObjectFree(JvmtiTagMap* tag_map) : _tag_map(tag_map) {}
   VMOp_Type type() const { return VMOp_Cleanup; }
   void doit() {
-    _tag_map->remove_dead_entries_locked(true /* post_object_free */);
+    _tag_map->remove_dead_entries(true /* post_object_free */);
   }
 
   // Doesn't need a safepoint, just the VM thread
@@ -1203,7 +1203,7 @@ void JvmtiTagMap::flush_object_free_events() {
     // getting there first after we dropped the lock).
     post_dead_objects_on_vm_thread();
   } else {
-    remove_dead_entries_locked(false);
+    remove_dead_entries(false);
   }
 }
 
