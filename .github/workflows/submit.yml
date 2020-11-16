@@ -134,7 +134,7 @@ jobs:
             flags: --enable-debug --disable-precompiled-headers --with-jvm-variants=minimal
             build-target: hotspot
           - flavor: build hotspot optimized
-            flags: --with-debug-level=optimized
+            flags: --with-debug-level=optimized --disable-precompiled-headers
             build-target: hotspot
 
     env:
