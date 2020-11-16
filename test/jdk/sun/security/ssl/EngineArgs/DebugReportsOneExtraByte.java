@@ -75,6 +75,8 @@ import java.io.*;
 import java.security.*;
 import java.nio.*;
 
+import jdk.test.lib.security.SecurityUtils;
+
 public class DebugReportsOneExtraByte {
 
     /*
@@ -133,6 +135,9 @@ public class DebugReportsOneExtraByte {
         if (debug) {
             System.setProperty("javax.net.debug", "all");
         }
+
+        // Re-enable TLSv1 since test depends on it
+        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1");
 
         DebugReportsOneExtraByte test = new DebugReportsOneExtraByte();
         test.runTest();

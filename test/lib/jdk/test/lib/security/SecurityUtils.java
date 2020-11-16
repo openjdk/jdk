@@ -25,6 +25,10 @@ package jdk.test.lib.security;
 
 import java.io.File;
 import java.security.KeyStore;
+import java.security.Security;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Common library for various security test helper functions.
@@ -46,6 +50,19 @@ public final class SecurityUtils {
             return null;
         }
         return KeyStore.getInstance(file, (char[])null);
+    }
+
+    public static void removeFromTlsDisabledAlgs(List<String> algs) {
+        removeFromDisabledAlgs("jdk.tls.disabledAlgorithms", algs);
+    }
+
+    private static void removeFromDisabledAlgs(String prop, List<String> algs) {
+        String value = Security.getProperty(prop);
+        value = Arrays.stream(prop.split(","))
+                      .map(s -> s.trim())
+                      .filter(s -> !algs.contains(s))
+                      .collect(Collectors.joining(","));
+        Security.setProperty(prop, value);
     }
 
     private SecurityUtils() {}
