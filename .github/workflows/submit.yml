@@ -1227,7 +1227,7 @@ jobs:
 
   windows_x64_build:
     name: Windows x64
-    runs-on: "windows-latest"
+    runs-on: "windows-2019"
     needs: prerequisites
     if: needs.prerequisites.outputs.should_run != 'false' && needs.prerequisites.outputs.platform_windows_x64 != 'false'
 
@@ -1307,12 +1307,19 @@ jobs:
           path: ~/jtreg/
         if: steps.jtreg_restore.outcome == 'failure'
 
+      - name: Ensure a specific version of MSVC is installed
+        run: >
+          Start-Process -FilePath 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe' -Wait -NoNewWindow -ArgumentList 
+          'modify --installPath "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise" --quiet 
+          --add Microsoft.VisualStudio.Component.VC.14.27.x86.x64'
+
       - name: Configure
         run: >
           $env:Path = "$HOME\cygwin\cygwin64\bin;$HOME\cygwin\cygwin64\bin;$env:Path" ;
           $env:Path = $env:Path -split ";" -match "C:\\Windows|PowerShell|cygwin" -join ";" ;
           & bash configure
           --with-conf-name=windows-x64
+          --with-msvc-toolset-version=14.27
           ${{ matrix.flags }}
           --with-version-opt="$env:GITHUB_ACTOR-$env:GITHUB_SHA"
           --with-version-build=0
@@ -1342,7 +1349,7 @@ jobs:
 
   windows_x64_test:
     name: Windows x64
-    runs-on: "windows-latest"
+    runs-on: "windows-2019"
     needs:
       - prerequisites
       - windows_x64_build
