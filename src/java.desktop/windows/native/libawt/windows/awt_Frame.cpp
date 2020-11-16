@@ -651,31 +651,38 @@ MsgRouting AwtFrame::WmNcMouseDown(WPARAM hitTest, int x, int y, int button) {
 
 // Override AwtWindow::Reshape() to handle minimized/maximized
 // frames (see 6525850, 4065534)
-void AwtFrame::Reshape(int x, int y, int width, int height)
+void AwtFrame::Reshape(int x, int y, int w, int h)
 {
     if (isIconic()) {
     // normal AwtComponent::Reshape will not work for iconified windows so...
+        POINT pt = {x + w / 2, y + h / 2};
+        Devices::InstanceAccess devices;
+        HMONITOR monitor = MonitorFromPoint(pt, MONITOR_DEFAULTTONEAREST);
+        int screen = AwtWin32GraphicsDevice::GetScreenFromHMONITOR(monitor);
+        AwtWin32GraphicsDevice *device = devices->GetDevice(screen);
+        // Try to set the correct size and jump to the correct location, even if
+        // it is on the different monitor. Note that for the "size" we use the
+        // current monitor, so the WM_DPICHANGED will adjust it for the "target"
+        // monitor.
+        MONITORINFO *miInfo = AwtWin32GraphicsDevice::GetMonitorInfo(screen);
+        x = device == NULL ? x : device->ScaleUpAbsX(x);
+        y = device == NULL ? y : device->ScaleUpAbsY(y);
+        w = ScaleUpX(w);
+        h = ScaleUpY(h);
+        // SetWindowPlacement takes workspace coordinates, but if taskbar is at
+        // top/left of screen, workspace coords != screen coords, so offset by
+        // workspace origin
+        x = x - (miInfo->rcWork.left - miInfo->rcMonitor.left);
+        y = y - (miInfo->rcWork.top - miInfo->rcMonitor.top);
         WINDOWPLACEMENT wp;
-        POINT       ptMinPosition = {x,y};
-        POINT       ptMaxPosition = {0,0};
-        RECT        rcNormalPosition = {x,y,x+width,y+height};
-        RECT        rcWorkspace;
-        HWND        hWndDesktop = GetDesktopWindow();
-        HWND        hWndSelf = GetHWnd();
-
-        // SetWindowPlacement takes workspace coordinates, but
-        // if taskbar is at top of screen, workspace coords !=
-        // screen coords, so offset by workspace origin
-        VERIFY(::SystemParametersInfo(SPI_GETWORKAREA, 0, (PVOID)&rcWorkspace, 0));
-        ::OffsetRect(&rcNormalPosition, -rcWorkspace.left, -rcWorkspace.top);
-
+        ::ZeroMemory(&wp, sizeof(WINDOWPLACEMENT));
         // set the window size for when it is not-iconified
         wp.length = sizeof(wp);
         wp.flags = WPF_SETMINPOSITION;
         wp.showCmd = IsVisible() ? SW_SHOWMINIMIZED : SW_HIDE;
-        wp.ptMinPosition = ptMinPosition;
-        wp.ptMaxPosition = ptMaxPosition;
-        wp.rcNormalPosition = rcNormalPosition;
+        wp.ptMinPosition = {x, y};
+        wp.ptMaxPosition = {0, 0};
+        wp.rcNormalPosition = {x, y, x + w, y + h};
 
         // If the call is not guarded with ignoreWmSize,
         // a regression for bug 4851435 appears.
@@ -683,7 +690,7 @@ void AwtFrame::Reshape(int x, int y, int width, int height)
         // changing the iconified state of the frame
         // while calling the Frame.setBounds() method.
         m_ignoreWmSize = TRUE;
-        ::SetWindowPlacement(hWndSelf, &wp);
+        ::SetWindowPlacement(GetHWnd(), &wp);
         m_ignoreWmSize = FALSE;
 
         return;
@@ -703,7 +710,7 @@ void AwtFrame::Reshape(int x, int y, int width, int height)
         }
     }
 
-    AwtWindow::Reshape(x, y, width, height);
+    AwtWindow::Reshape(x, y, w, h);
 }
 
 
