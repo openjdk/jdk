@@ -70,6 +70,7 @@ public class CLDRConverter {
     private static String TIMEZONE_SOURCE_FILE;
     private static String WINZONES_SOURCE_FILE;
     private static String PLURALS_SOURCE_FILE;
+    private static String DAYPERIODRULE_SOURCE_FILE;
     static String DESTINATION_DIR = "build/gensrc";
 
     static final String LOCALE_NAME_PREFIX = "locale.displayname.";
@@ -100,6 +101,7 @@ public class CLDRConverter {
     static NumberingSystemsParseHandler handlerNumbering;
     static MetaZonesParseHandler handlerMetaZones;
     static TimeZoneParseHandler handlerTimeZone;
+    static DayPeriodRuleParseHandler handlerDayPeriodRule;
     private static BundleGenerator bundleGenerator;
 
     // java.base module related
@@ -115,6 +117,10 @@ public class CLDRConverter {
     private static String zoneNameTempFile;
     private static String tzDataDir;
     private static final Map<String, String> canonicalTZMap = new HashMap<>();
+
+    // rules maps
+    static Map<String, String> pluralRules;
+    static Map<String, String> dayPeriodRules;
 
     static enum DraftType {
         UNCONFIRMED,
@@ -248,6 +254,7 @@ public class CLDRConverter {
         SPPL_META_SOURCE_FILE = CLDR_BASE + "/supplemental/supplementalMetadata.xml";
         WINZONES_SOURCE_FILE = CLDR_BASE + "/supplemental/windowsZones.xml";
         PLURALS_SOURCE_FILE = CLDR_BASE + "/supplemental/plurals.xml";
+        DAYPERIODRULE_SOURCE_FILE = CLDR_BASE + "/supplemental/dayPeriods.xml";
 
         if (BASE_LOCALES.isEmpty()) {
             setupBaseLocales("en-US");
@@ -259,6 +266,10 @@ public class CLDRConverter {
         parseSupplemental();
         parseBCP47();
 
+        // rules maps
+        pluralRules = generateRules(handlerPlurals);
+        dayPeriodRules = generateRules(handlerDayPeriodRule);
+
         List<Bundle> bundles = readBundleList();
         convertBundles(bundles);
 
@@ -268,9 +279,6 @@ public class CLDRConverter {
 
             // Generate Windows tzmappings
             generateWindowsTZMappings();
-
-            // Generate Plural rules
-            generatePluralRules();
         }
     }
 
@@ -462,6 +470,10 @@ public class CLDRConverter {
         // Parse plurals
         handlerPlurals = new PluralsParseHandler();
         parseLDMLFile(new File(PLURALS_SOURCE_FILE), handlerPlurals);
+
+        // Parse day period rules
+        handlerDayPeriodRule = new DayPeriodRuleParseHandler();
+        parseLDMLFile(new File(DAYPERIODRULE_SOURCE_FILE), handlerDayPeriodRule);
     }
 
     // Parsers for data in "bcp47" directory
@@ -809,7 +821,9 @@ public class CLDRConverter {
         "TimePatterns",
         "DatePatterns",
         "DateTimePatterns",
-        "DateTimePatternChars"
+        "DateTimePatternChars",
+        "PluralRules",
+        "DayPeriodRules",
     };
 
     private static Map<String, Object> extractFormatData(Map<String, Object> map, String id) {
@@ -1125,49 +1139,21 @@ public class CLDRConverter {
     }
 
     /**
-     * Generate ResourceBundle source file for plural rules. The generated
-     * class is {@code sun.text.resources.PluralRules} which has one public
-     * two dimensional array {@code rulesArray}. Each array element consists
-     * of two elements that designate the locale and the locale's plural rules
-     * string. The latter has the syntax from Unicode Consortium's
-     * <a href="http://unicode.org/reports/tr35/tr35-numbers.html#Plural_rules_syntax">
-     * Plural rules syntax</a>. {@code samples} and {@code "other"} are being ommited.
-     *
-     * @throws Exception
+     * Generates rules map for Plural rules and DayPeriod rules. The key is the locale id,
+     * and the value is rules, defined by the LDML spec. Each rule consists of {@code type:rule}
+     * notation, concatenated with a ";" as a delimiter.
+     * @param handler handler containing rules
+     * @return the map
      */
-    private static void generatePluralRules() throws Exception {
-        Files.createDirectories(Paths.get(DESTINATION_DIR, "sun", "text", "resources"));
-        Files.write(Paths.get(DESTINATION_DIR, "sun", "text", "resources", "PluralRules.java"),
-            Stream.concat(
-                Stream.concat(
-                    Stream.of(
-                        "package sun.text.resources;",
-                        "public final class PluralRules {",
-                        "    public static final String[][] rulesArray = {"
-                    ),
-                    pluralRulesStream().sorted()
-                ),
-                Stream.of(
-                    "    };",
-                    "}"
-                )
-            )
-            .collect(Collectors.toList()),
-        StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-    }
-
-    private static Stream<String> pluralRulesStream() {
-        return handlerPlurals.getData().entrySet().stream()
-            .filter(e -> !(e.getValue()).isEmpty())
-            .map(e -> {
-                String loc = e.getKey();
+    private static Map<String, String> generateRules(AbstractLDMLHandler<Map<String, String>> handler) {
+        return handler.getData().entrySet().stream()
+            .collect(Collectors.toMap(Map.Entry::getKey, e -> {
                 Map<String, String> rules = e.getValue();
-                return "        {\"" + loc + "\", \"" +
-                    rules.entrySet().stream()
-                        .map(rule -> rule.getKey() + ":" + rule.getValue().replaceFirst("@.*", ""))
-                        .map(String::trim)
-                        .collect(Collectors.joining(";")) + "\"},";
-            });
+                return rules.entrySet().stream()
+                    .map(rule -> rule.getKey() + ":" + rule.getValue().replaceFirst("@.*", ""))
+                    .map(String::trim)
+                    .collect(Collectors.joining(";"));
+            }));
     }
 
     // for debug
@@ -1188,4 +1174,3 @@ public class CLDRConverter {
             .forEach(System.out::println);
     }
 }
-
