@@ -61,7 +61,7 @@ class G1CommittedRegionMap : public CHeapObj<mtGC> {
   uint max_length() const;
 
   // Helpers to mark and do accounting for the bitmaps. Depending on when called
-  // these helpers require to own different locks. See guarantee_mt_safty_* for
+  // these helpers require to own different locks. See guarantee_mt_safety_* for
   // details.
   void active_set_range(uint start, uint end);
   void active_clear_range(uint start, uint end);
@@ -82,7 +82,7 @@ public:
 
   // Mark a range of regions as active.
   void activate(uint start, uint end);
-  // Mark a range of regions as inactive and ready to be uncommited.
+  // Mark a range of regions as inactive and ready to be uncommitted.
   void deactivate(uint start, uint end);
   // Mark a range of regions active again and no longer ready for uncommit.
   void reactivate(uint start, uint end);
@@ -99,8 +99,8 @@ public:
   HeapRegionRange next_committable_range(uint offset) const;
 
 protected:
-  virtual void guarantee_mt_safty_active() const;
-  virtual void guarantee_mt_safty_inactive() const;
+  virtual void guarantee_mt_safety_active() const;
+  virtual void guarantee_mt_safety_inactive() const;
 
   void verify_active_range(uint start, uint end) const NOT_DEBUG_RETURN;
   void verify_free_range(uint start, uint end) const NOT_DEBUG_RETURN;

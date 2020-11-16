@@ -144,34 +144,34 @@ HeapRegionRange G1CommittedRegionMap::next_inactive_range(uint offset) const {
 }
 
 void G1CommittedRegionMap::active_set_range(uint start, uint end) {
-  guarantee_mt_safty_active();
+  guarantee_mt_safety_active();
 
   _active.par_set_range(start, end, BitMap::unknown_range);
   _num_active += (end - start);
 }
 
 void G1CommittedRegionMap::active_clear_range(uint start, uint end) {
-  guarantee_mt_safty_active();
+  guarantee_mt_safety_active();
 
   _active.par_clear_range(start, end, BitMap::unknown_range);
   _num_active -= (end - start);
 }
 
 void G1CommittedRegionMap::inactive_set_range(uint start, uint end) {
-  guarantee_mt_safty_inactive();
+  guarantee_mt_safety_inactive();
 
   _inactive.par_set_range(start, end, BitMap::unknown_range);
   _num_inactive += (end - start);
 }
 
 void G1CommittedRegionMap::inactive_clear_range(uint start, uint end) {
-  guarantee_mt_safty_inactive();
+  guarantee_mt_safety_inactive();
 
   _inactive.par_clear_range(start, end, BitMap::unknown_range);
   _num_inactive -= (end - start);
 }
 
-void G1CommittedRegionMap::guarantee_mt_safty_active() const {
+void G1CommittedRegionMap::guarantee_mt_safety_active() const {
   // G1CommittedRegionMap _active-map MT safety protocol:
   // (a) If we're at a safepoint, the caller must either be the VM thread or
   //     hold the FreeList_lock.
@@ -192,7 +192,7 @@ void G1CommittedRegionMap::guarantee_mt_safty_active() const {
   }
 }
 
-void G1CommittedRegionMap::guarantee_mt_safty_inactive() const {
+void G1CommittedRegionMap::guarantee_mt_safety_inactive() const {
   // G1CommittedRegionMap _inactive-map MT safety protocol:
   // (a) If we're at a safepoint, the caller must either be the VM thread or
   //     hold the FreeList_lock.

@@ -37,8 +37,8 @@ public:
   }
 
 protected:
-  void guarantee_mt_safty_active() const {  }
-  void guarantee_mt_safty_inactive() const { }
+  void guarantee_mt_safety_active() const { }
+  void guarantee_mt_safety_inactive() const { }
 };
 
 static bool mutate() {

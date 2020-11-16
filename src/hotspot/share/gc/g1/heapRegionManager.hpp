@@ -131,6 +131,12 @@ class HeapRegionManager: public CHeapObj<mtGC> {
   FreeRegionList _free_list;
 
   void expand(uint index, uint num_regions, WorkGang* pretouch_gang = NULL);
+
+  // G1RegionCommittedMap helpers. These functions do the work that comes with
+  // the state changes tracked by G1CommittedRegionMap. To make sure this is
+  // safe from a multi-threading point of view there are two lock protocols in
+  // G1RegionCommittedMap::guarantee_mt_safety_* that are enforced. The lock
+  // needed should have been acquired before calling these functions.
   void activate_regions(uint index, uint num_regions);
   void deactivate_regions(uint start, uint num_regions);
   void reactivate_regions(uint start, uint num_regions);

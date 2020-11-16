@@ -131,7 +131,10 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
   // allocation and at the same time the service thread is
   // doing uncommit. These operations will not operate on the
   // same regions, but they might operate on regions sharing
-  // an underlying OS page.
+  // an underlying OS page. So we need to make sure that both
+  // those resources are in sync:
+  // - G1RegionToSpaceMapper::_region_commit_map;
+  // - G1PageBasedVirtualSpace::_committed (_storage.commit())
   Mutex _lock;
 
   size_t region_idx_to_page_idx(uint region_idx) const {
@@ -186,8 +189,8 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
 
     // Concurrent operations might operate on regions sharing the same
     // underlying OS page. See lock declaration for more details.
-    MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
     {
+      MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
       for (size_t page = start_page; page <= end_page; page++) {
         if (!is_page_committed(page)) {
           // Page not committed.
@@ -209,8 +212,9 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
         }
       }
 
-      // Update the commit map for the given range.
-      _region_commit_map.par_set_range(start_idx, region_limit, BitMap::unknown_range);
+      // Update the commit map for the given range. Not using the par_set_range
+      // since updates to _region_commit_map for this mapper is protected by _lock.
+      _region_commit_map.set_range(start_idx, region_limit, BitMap::unknown_range);
     }
 
     if (AlwaysPreTouch && num_committed > 0) {
@@ -232,8 +236,9 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
     // Concurrent operations might operate on regions sharing the same
     // underlying OS page. See lock declaration for more details.
     MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
-    // Clear commit map for the given range.
-    _region_commit_map.par_clear_range(start_idx, region_limit, BitMap::unknown_range);
+    // Clear commit map for the given range. Not using the par_clear_range since
+    // updates to _region_commit_map for this mapper is protected by _lock.
+    _region_commit_map.clear_range(start_idx, region_limit, BitMap::unknown_range);
 
     for (size_t page = start_page; page <= end_page; page++) {
       // We know all pages were committed before clearing the map. If the
