@@ -406,7 +406,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
     os::Posix::ucontext_set_pc(uc, stub);
     return true;
   }
-  
+
   return false;
 }
 
