@@ -29,7 +29,7 @@
 #include "jni.h"
 
 extern "C" {
-  void JNICALL JVM_RegisterJDKInternalMiscScopedMemoryAccessMethods(JNIEnv *env, jobject rec, jobject scope, jthrowable exception);
+  void JNICALL JVM_RegisterJDKInternalMiscScopedMemoryAccessMethods(JNIEnv *env, jclass scopedMemoryAccessClass);
 }
 
 #endif // SHARE_PRIMS_SCOPED_MEMORY_ACCESS_HPP
