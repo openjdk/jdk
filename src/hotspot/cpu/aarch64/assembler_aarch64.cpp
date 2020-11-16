@@ -1190,7 +1190,7 @@ void entry(CodeBuffer *cb) {
     0x04025774,     0x0407728f,     0x042030fc,     0x04b63270,
     0x0476312f,     0x049a27d9,     0x0418356d,     0x04992a8d,
     0x04082c99,     0x04ca28d1,     0x65c73e04,     0x658629da,
-    0x65983c6b,     0x04813aa1, 
+    0x65983c6b,     0x04813aa1,
   };
 // END  Generated code -- do not edit
 
