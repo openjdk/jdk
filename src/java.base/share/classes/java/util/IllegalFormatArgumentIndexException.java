@@ -51,11 +51,16 @@ class IllegalFormatArgumentIndexException extends IllegalFormatException {
     /**
      * Gets the value of the illegal index.
      * Returns {@code Integer.MIN_VALUE} if the illegal index is not
-     * representable by an integer type.
+     * representable by an {@code int}.
      * @return the illegal index value
      */
     int getIndex() {
         return illegalIndex;
+    }
+
+    @Override
+    public String getMessage() {
+        return String.format("Illegal format argument index = %d", getIndex());
     }
 
 }

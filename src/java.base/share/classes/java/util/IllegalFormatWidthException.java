@@ -51,7 +51,7 @@ public class IllegalFormatWidthException extends IllegalFormatException {
     }
 
     /**
-     * Returns the width. If the width is not representable by an integer type,
+     * Returns the width. If the width is not representable by an {@code int},
      * then returns {@code Integer.MIN_VALUE}.
      *
      * @return  The width

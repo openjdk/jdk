@@ -53,7 +53,7 @@ public class IllegalFormatPrecisionException extends IllegalFormatException {
 
     /**
      * Returns the precision. If the precision isn't representable by an
-     * integer type, then will return {@code Integer.MIN_VALUE}.
+     * @{code int}, then will return {@code Integer.MIN_VALUE}.
      *
      * @return  The precision
      */
