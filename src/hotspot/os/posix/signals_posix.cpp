@@ -29,6 +29,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/thread.hpp"
@@ -1386,11 +1387,7 @@ bool PosixSignals::is_sig_ignored(int sig) {
   }
 }
 
-int PosixSignals::unblock_thread_signal_mask(const sigset_t *set) {
-  return pthread_sigmask(SIG_UNBLOCK, set, NULL);
-}
-
-void signal_sets_init() {
+static void signal_sets_init() {
   sigemptyset(&preinstalled_sigs);
 
   // Should also have an assertion stating we are still single-threaded.
@@ -1721,7 +1718,7 @@ void os::SuspendedThreadTask::internal_do_task() {
 int PosixSignals::init() {
   // initialize suspend/resume support - must do this before signal_sets_init()
   if (SR_initialize() != 0) {
-    perror("SR_initialize failed");
+    vm_exit_during_initialization(err_msg("SR_initialize failed"));
     return JNI_ERR;
   }
 
