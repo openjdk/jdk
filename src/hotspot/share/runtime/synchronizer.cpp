@@ -720,24 +720,6 @@ void ObjectSynchronizer::notifyall(Handle obj, TRAPS) {
 
 // -----------------------------------------------------------------------------
 // Hash Code handling
-//
-// Performance concern:
-// OrderAccess::storestore() calls release() which at one time stored 0
-// into the global volatile OrderAccess::dummy variable. This store was
-// unnecessary for correctness. Many threads storing into a common location
-// causes considerable cache migration or "sloshing" on large SMP systems.
-// As such, I avoided using OrderAccess::storestore(). In some cases
-// OrderAccess::fence() -- which incurs local latency on the executing
-// processor -- is a better choice as it scales on SMP systems.
-//
-// See http://blogs.oracle.com/dave/entry/biased_locking_in_hotspot for
-// a discussion of coherency costs. Note that all our current reference
-// platforms provide strong ST-ST order, so the issue is moot on IA32,
-// x64, and SPARC.
-//
-// As a general policy we use "volatile" to control compiler-based reordering
-// and explicit fences (barriers) to control for architectural reordering
-// performed by the CPU(s) or platform.
 
 struct SharedGlobals {
   char         _pad_prefix[OM_CACHE_LINE_SIZE];

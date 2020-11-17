@@ -1942,15 +1942,14 @@ void LinearScan::resolve_exception_edge(XHandler* handler, int throwing_op_id, i
     move_resolver.set_multiple_reads_allowed();
 
     Constant* con = from_value->as_Constant();
-    if (con != NULL && !con->is_pinned()) {
-      // unpinned constants may have no register, so add mapping from constant to interval
+    if (con != NULL && (!con->is_pinned() || con->operand()->is_constant())) {
+      // Need a mapping from constant to interval if unpinned (may have no register) or if the operand is a constant (no register).
       move_resolver.add_mapping(LIR_OprFact::value_type(con->type()), to_interval);
     } else {
       // search split child at the throwing op_id
       Interval* from_interval = interval_at_op_id(from_value->operand()->vreg_number(), throwing_op_id);
       move_resolver.add_mapping(from_interval, to_interval);
     }
-
   } else {
     // no phi function, so use reg_num also for from_interval
     // search split child at the throwing op_id

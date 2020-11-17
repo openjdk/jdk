@@ -107,9 +107,6 @@ class HeapRegionManager: public CHeapObj<mtGC> {
   // Pass down commit calls to the VirtualSpace.
   void commit_regions(uint index, size_t num_regions = 1, WorkGang* pretouch_gang = NULL);
 
-  // Notify other data structures about change in the heap layout.
-  void update_committed_space(HeapWord* old_end, HeapWord* new_end);
-
   // Find a contiguous set of empty or uncommitted regions of length num_regions and return
   // the index of the first region or G1_NO_HRM_INDEX if the search was unsuccessful.
   // Start and end defines the range to seek in, policy is first-fit.

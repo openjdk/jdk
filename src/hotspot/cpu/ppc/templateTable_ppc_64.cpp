@@ -1591,10 +1591,7 @@ void TemplateTable::lcmp() {
   __ pop_l(Rscratch); // first operand, deeper in stack
 
   __ cmpd(CCR0, Rscratch, R17_tos); // compare
-  __ mfcr(R17_tos); // set bit 32..33 as follows: <: 0b10, =: 0b00, >: 0b01
-  __ srwi(Rscratch, R17_tos, 30);
-  __ srawi(R17_tos, R17_tos, 31);
-  __ orr(R17_tos, Rscratch, R17_tos); // set result as follows: <: -1, =: 0, >: 1
+  __ set_cmp3(R17_tos); // set result as follows: <: -1, =: 0, >: 1
 }
 
 // fcmpl/fcmpg and dcmpl/dcmpg bytecodes
@@ -1611,21 +1608,10 @@ void TemplateTable::float_cmp(bool is_float, int unordered_result) {
     __ pop_d(Rfirst);
   }
 
-  Label Lunordered, Ldone;
   __ fcmpu(CCR0, Rfirst, Rsecond); // compare
-  if (unordered_result) {
-    __ bso(CCR0, Lunordered);
-  }
-  __ mfcr(R17_tos); // set bit 32..33 as follows: <: 0b10, =: 0b00, >: 0b01
-  __ srwi(Rscratch, R17_tos, 30);
-  __ srawi(R17_tos, R17_tos, 31);
-  __ orr(R17_tos, Rscratch, R17_tos); // set result as follows: <: -1, =: 0, >: 1
-  if (unordered_result) {
-    __ b(Ldone);
-    __ bind(Lunordered);
-    __ load_const_optimized(R17_tos, unordered_result);
-  }
-  __ bind(Ldone);
+  // if unordered_result is 1, treat unordered_result like 'greater than'
+  assert(unordered_result == 1 || unordered_result == -1, "unordered_result can be either 1 or -1");
+  __ set_cmpu3(R17_tos, unordered_result != 1);
 }
 
 // Branch_conditional which takes TemplateTable::Condition.

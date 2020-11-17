@@ -483,7 +483,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_copyOfRange:              return inline_array_copyOf(true);
   case vmIntrinsics::_equalsB:                  return inline_array_equals(StrIntrinsicNode::LL);
   case vmIntrinsics::_equalsC:                  return inline_array_equals(StrIntrinsicNode::UU);
-  case vmIntrinsics::_Preconditions_checkIndex: return inline_preconditions_checkIndex();
+  case vmIntrinsics::_Preconditions_checkIndex: return inline_preconditions_checkIndex(T_INT);
+  case vmIntrinsics::_Preconditions_checkLongIndex: return inline_preconditions_checkIndex(T_LONG);
   case vmIntrinsics::_clone:                    return inline_native_clone(intrinsic()->is_virtual());
 
   case vmIntrinsics::_allocateUninitializedArray: return inline_unsafe_newArray(true);
@@ -660,6 +661,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_vector_insert();
   case vmIntrinsics::_VectorExtract:
     return inline_vector_extract();
+
+  case vmIntrinsics::_getObjectSize:
+    return inline_getObjectSize();
 
   default:
     // If you get here, it may be that someone has added a new intrinsic
@@ -998,14 +1002,15 @@ bool LibraryCallKit::inline_hasNegatives() {
   return true;
 }
 
-bool LibraryCallKit::inline_preconditions_checkIndex() {
+bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
   Node* index = argument(0);
-  Node* length = argument(1);
+  Node* length = bt == T_INT ? argument(1) : argument(2);
   if (too_many_traps(Deoptimization::Reason_intrinsic) || too_many_traps(Deoptimization::Reason_range_check)) {
     return false;
   }
 
-  Node* len_pos_cmp = _gvn.transform(new CmpINode(length, intcon(0)));
+  // check that length is positive
+  Node* len_pos_cmp = _gvn.transform(CmpNode::make(length, integercon(0, bt), bt));
   Node* len_pos_bol = _gvn.transform(new BoolNode(len_pos_cmp, BoolTest::ge));
 
   {
@@ -1014,11 +1019,19 @@ bool LibraryCallKit::inline_preconditions_checkIndex() {
                   Deoptimization::Action_make_not_entrant);
   }
 
+  // length is now known postive, add a cast node to make this explicit
+  jlong upper_bound = _gvn.type(length)->is_integer(bt)->hi_as_long();
+  Node* casted_length = ConstraintCastNode::make(control(), length, TypeInteger::make(0, upper_bound, Type::WidenMax, bt), bt);
+  casted_length = _gvn.transform(casted_length);
+  replace_in_map(length, casted_length);
+  length = casted_length;
+
   if (stopped()) {
     return false;
   }
 
-  Node* rc_cmp = _gvn.transform(new CmpUNode(index, length));
+  // Use an unsigned comparison for the range check itself
+  Node* rc_cmp = _gvn.transform(CmpNode::make(index, length, bt, true));
   BoolTest::mask btest = BoolTest::lt;
   Node* rc_bool = _gvn.transform(new BoolNode(rc_cmp, btest));
   RangeCheckNode* rc = new RangeCheckNode(control(), rc_bool, PROB_MAX, COUNT_UNKNOWN);
@@ -1038,8 +1051,8 @@ bool LibraryCallKit::inline_preconditions_checkIndex() {
     return false;
   }
 
-  Node* result = new CastIINode(index, TypeInt::make(0, _gvn.type(length)->is_int()->_hi, Type::WidenMax));
-  result->set_req(0, control());
+  // index is now known to be >= 0 and < length, cast it
+  Node* result = ConstraintCastNode::make(control(), index, TypeInteger::make(0, upper_bound, Type::WidenMax, bt), bt);
   result = _gvn.transform(result);
   set_result(result);
   replace_in_map(index, result);
@@ -6690,5 +6703,121 @@ bool LibraryCallKit::inline_profileBoolean() {
 bool LibraryCallKit::inline_isCompileConstant() {
   Node* n = argument(0);
   set_result(n->is_Con() ? intcon(1) : intcon(0));
+  return true;
+}
+
+//------------------------------- inline_getObjectSize --------------------------------------
+//
+// Calculate the runtime size of the object/array.
+//   native long sun.instrument.InstrumentationImpl.getObjectSize0(long nativeAgent, Object objectToSize);
+//
+bool LibraryCallKit::inline_getObjectSize() {
+  Node* obj = argument(3);
+  Node* klass_node = load_object_klass(obj);
+
+  jint  layout_con = Klass::_lh_neutral_value;
+  Node* layout_val = get_layout_helper(klass_node, layout_con);
+  int   layout_is_con = (layout_val == NULL);
+
+  if (layout_is_con) {
+    // Layout helper is constant, can figure out things at compile time.
+
+    if (Klass::layout_helper_is_instance(layout_con)) {
+      // Instance case:  layout_con contains the size itself.
+      Node *size = longcon(Klass::layout_helper_size_in_bytes(layout_con));
+      set_result(size);
+    } else {
+      // Array case: size is round(header + element_size*arraylength).
+      // Since arraylength is different for every array instance, we have to
+      // compute the whole thing at runtime.
+
+      Node* arr_length = load_array_length(obj);
+
+      int round_mask = MinObjAlignmentInBytes - 1;
+      int hsize  = Klass::layout_helper_header_size(layout_con);
+      int eshift = Klass::layout_helper_log2_element_size(layout_con);
+
+      if ((round_mask & ~right_n_bits(eshift)) == 0) {
+        round_mask = 0;  // strength-reduce it if it goes away completely
+      }
+      assert((hsize & right_n_bits(eshift)) == 0, "hsize is pre-rounded");
+      Node* header_size = intcon(hsize + round_mask);
+
+      Node* lengthx = ConvI2X(arr_length);
+      Node* headerx = ConvI2X(header_size);
+
+      Node* abody = lengthx;
+      if (eshift != 0) {
+        abody = _gvn.transform(new LShiftXNode(lengthx, intcon(eshift)));
+      }
+      Node* size = _gvn.transform( new AddXNode(headerx, abody) );
+      if (round_mask != 0) {
+        size = _gvn.transform( new AndXNode(size, MakeConX(~round_mask)) );
+      }
+      size = ConvX2L(size);
+      set_result(size);
+    }
+  } else {
+    // Layout helper is not constant, need to test for array-ness at runtime.
+
+    enum { _instance_path = 1, _array_path, PATH_LIMIT };
+    RegionNode* result_reg = new RegionNode(PATH_LIMIT);
+    PhiNode* result_val = new PhiNode(result_reg, TypeLong::LONG);
+    record_for_igvn(result_reg);
+
+    Node* array_ctl = generate_array_guard(klass_node, NULL);
+    if (array_ctl != NULL) {
+      // Array case: size is round(header + element_size*arraylength).
+      // Since arraylength is different for every array instance, we have to
+      // compute the whole thing at runtime.
+
+      PreserveJVMState pjvms(this);
+      set_control(array_ctl);
+      Node* arr_length = load_array_length(obj);
+
+      int round_mask = MinObjAlignmentInBytes - 1;
+      Node* mask = intcon(round_mask);
+
+      Node* hss = intcon(Klass::_lh_header_size_shift);
+      Node* hsm = intcon(Klass::_lh_header_size_mask);
+      Node* header_size = _gvn.transform(new URShiftINode(layout_val, hss));
+      header_size = _gvn.transform(new AndINode(header_size, hsm));
+      header_size = _gvn.transform(new AddINode(header_size, mask));
+
+      // There is no need to mask or shift this value.
+      // The semantics of LShiftINode include an implicit mask to 0x1F.
+      assert(Klass::_lh_log2_element_size_shift == 0, "use shift in place");
+      Node* elem_shift = layout_val;
+
+      Node* lengthx = ConvI2X(arr_length);
+      Node* headerx = ConvI2X(header_size);
+
+      Node* abody = _gvn.transform(new LShiftXNode(lengthx, elem_shift));
+      Node* size = _gvn.transform(new AddXNode(headerx, abody));
+      if (round_mask != 0) {
+        size = _gvn.transform(new AndXNode(size, MakeConX(~round_mask)));
+      }
+      size = ConvX2L(size);
+
+      result_reg->init_req(_array_path, control());
+      result_val->init_req(_array_path, size);
+    }
+
+    if (!stopped()) {
+      // Instance case: the layout helper gives us instance size almost directly,
+      // but we need to mask out the _lh_instance_slow_path_bit.
+      Node* size = ConvI2X(layout_val);
+      assert((int) Klass::_lh_instance_slow_path_bit < BytesPerLong, "clear bit");
+      Node* mask = MakeConX(~(intptr_t) right_n_bits(LogBytesPerLong));
+      size = _gvn.transform(new AndXNode(size, mask));
+      size = ConvX2L(size);
+
+      result_reg->init_req(_instance_path, control());
+      result_val->init_req(_instance_path, size);
+    }
+
+    set_result(result_reg, result_val);
+  }
+
   return true;
 }
