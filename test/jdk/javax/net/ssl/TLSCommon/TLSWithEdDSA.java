@@ -22,16 +22,18 @@
  */
 
 /*
+ * SunJSSE does not support dynamic system properties, no way to re-use
+ * system properties in samevm/agentvm mode.
+ * For extra debugging output, add -Djavax.net.debug=ssl:handshake into the
+ * run directive below.
+ */
+
+/*
  * @test
  * @bug 8166596
  * @summary TLS support for the EdDSA signature algorithm
  * @library /javax/net/ssl/templates
  * @run main/othervm TLSWithEdDSA
- */
-
-/*
- *     SunJSSE does not support dynamic system properties, no way to re-use
- *     system properties in samevm/agentvm mode.
  */
 
 import java.io.ByteArrayInputStream;
@@ -71,25 +73,26 @@ import javax.net.ssl.X509ExtendedKeyManager;
 import javax.net.ssl.X509KeyManager;
 
 public class TLSWithEdDSA extends SSLSocketTemplate {
-    static final boolean DEBUG = false;
-    static final String PASSWD = "passphrase";
-    static final String DEF_TRUST_ANCHORS = "CA_DSA_1024:CA_DSA_2048:" +
+    private static final String PASSWD = "passphrase";
+    private static final String DEF_TRUST_ANCHORS = "CA_DSA_1024:CA_DSA_2048:" +
             "CA_ECDSA_SECP256R1:CA_ECDSA_SECP384R1:CA_ECDSA_SECP521R1:" +
             "CA_ED25519:CA_ED448:CA_RSA_2048";
-    static final String DEF_ALL_EE = "EE_ECDSA_SECP256R1:EE_ECDSA_SECP384R1:" +
-            "EE_ECDSA_SECP521R1:EE_RSA_2048:EE_EC_RSA_SECP256R1:" +
-            "EE_DSA_2048:EE_DSA_1024:EE_ED25519:EE_ED448";
-    static final List<String> TEST_PROTOS = List.of("TLSv1.3", "TLSv1.2",
-            "TLSv1.1", "TLSv1");
+    private static final String DEF_ALL_EE = "EE_ECDSA_SECP256R1:" +
+            "EE_ECDSA_SECP384R1:EE_ECDSA_SECP521R1:EE_RSA_2048:" +
+            "EE_EC_RSA_SECP256R1:EE_DSA_2048:EE_DSA_1024:EE_ED25519:EE_ED448";
+    private static final List<String> TEST_PROTOS = List.of(
+            "TLSv1.3", "TLSv1.2", "TLSv1.1", "TLSv1");
 
-    static CertificateFactory certFac;
-    static final Map<ParamType, String> clientParameters = new HashMap<>();
-    static final Map<ParamType, String> serverParameters = new HashMap<>();
+    private static CertificateFactory certFac;
+    private static final Map<ParamType, String> clientParameters =
+            new HashMap<>();
+    private static final Map<ParamType, String> serverParameters =
+            new HashMap<>();
 
-    final SessionChecker clientChecker;
-    final SessionChecker serverChecker;
-    final Class<? extends Throwable> clientException;
-    final Class<? extends Throwable> serverException;
+    private final SessionChecker clientChecker;
+    private final SessionChecker serverChecker;
+    private final Class<? extends Throwable> clientException;
+    private final Class<? extends Throwable> serverException;
 
     interface SessionChecker {
         public void check(SSLSocket socket);
@@ -552,14 +555,11 @@ public class TLSWithEdDSA extends SSLSocketTemplate {
     }
 
     public static void main(String[] args) throws Exception {
-        if (DEBUG) {
-            System.setProperty("javax.net.debug", "ssl:handshake");
-        }
         certFac = CertificateFactory.getInstance("X.509");
         String testFormat;
 
         System.out.println("===== Test KeyManager alias retrieval =====");
-        keyManagerTests(DEF_ALL_EE, "EdDSA",
+        testKeyManager(DEF_ALL_EE, "EdDSA",
                 new String[] {"ee_ed25519", "ee_ed448"});
 
         testFormat =
@@ -589,7 +589,7 @@ public class TLSWithEdDSA extends SSLSocketTemplate {
         runtest(testFormat, null, null, isPeerEd25519, null);
     }
 
-    private static void keyManagerTests(String keyStoreSpec, String keyType,
+    private static void testKeyManager(String keyStoreSpec, String keyType,
             String[] expAliases)
             throws GeneralSecurityException, IOException {
         char[] passChar = PASSWD.toCharArray();
