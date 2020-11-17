@@ -45,13 +45,53 @@ import java.util.stream.Stream;
 import jdk.internal.util.random.RandomSupport.RandomGeneratorProperty;
 
 /**
- * This is a factory class for generating random number generators of a specific
- * category and algorithm.
+ * This is a factory class for generating multiple random number generators
+ * of a specific algorithm. {@link RandomGeneratorFactory} also provides
+ * methods for selecting random number generator algorithms.
+ *
+ * There are three methods for constructing a RandomGenerator instance,
+ * depending on the type of initial seed required.
+ * {@link RandomGeneratorFactory#create(long)} is used for long
+ * seed construction,
+ * {@link RandomGeneratorFactory#create(byte[])} is used for byte[]
+ * seed construction, and
+ * {@link RandomGeneratorFactory#create()} is used for random seed
+ * construction. Example;
+ *
+ * <pre>{@code
+ *    RandomGeneratorFactory<RandomGenerator> factory = RandomGenerator.factoryOf("Random");
+ *
+ *     for (int i = 0; i < 10; i++) {
+ *         new Thread(() -> {
+ *             RandomGenerator random = factory.create(100L);
+ *             System.out.println(random.nextDouble());
+ *         }).start();
+ *     }
+ * }</pre>
+ *
+ * The remaining {@link RandomGeneratorFactory} methods are used to select
+ * random number generators suitable for specific tasks. They are typically used in
+ * conjunction with {@link RandomGenerator#all()}. In this example, the code locates the
+ * {@link RandomGeneratorFactory} that produces {@link RandomGenerator RandomGenerators}
+ * with the highest number of state bits.
+ *
+ * <pre>{@code
+ *     RandomGeneratorFactory<RandomGenerator> best = RandomGenerator.all()
+ *         .sorted((f, g) -> Integer.compare(g.stateBits(), f.stateBits()))
+ *         .findFirst()
+ *         .orElse(RandomGenerator.factoryOf("Random"));
+ *     System.out.println(best.name() + " in " + best.group() + " was selected");
+ *
+ *     RandomGenerator rng = best.create();
+ *     System.out.println(rng.nextLong());
+ * }</pre>
  *
  * @since   16
  *
+ * @see java.util.random
+ *
  */
-public class RandomGeneratorFactory<T extends RandomGenerator> {
+public final class RandomGeneratorFactory<T extends RandomGenerator> {
     /**
      * Map of provider classes.
      */
