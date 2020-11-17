@@ -241,7 +241,7 @@ jint dump_heap(AttachOperation* op, outputStream* out) {
         out->print_cr("Invalid compress level: [%s]", num_str);
         return JNI_ERR;
       } else if (level < 1 || level > 9) {
-        out->print_cr("Compression level out of range (1-9): " JLONG_FORMAT, level);
+        out->print_cr("Compression level out of range (1-9): " UINTX_FORMAT, level);
         return JNI_ERR;
       }
     }
