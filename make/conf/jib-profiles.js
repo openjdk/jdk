@@ -258,8 +258,10 @@ var getJibProfilesCommon = function (input, data) {
     };
     // Extra settings for release profiles
     common.release_profile_base = {
-        configure_args: ["--enable-reproducible-build",
-        "--with-source-date=current"]
+        configure_args: [
+            "--enable-reproducible-build",
+            "--with-source-date=current",
+        ],
     };
     // Extra settings for debug profiles
     common.debug_suffix = "-debug";
