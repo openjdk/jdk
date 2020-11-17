@@ -200,7 +200,7 @@ void klassVtable::initialize_vtable(bool checkconstraints, TRAPS) {
       // update_inherited_vtable can stop for gc - ensure using handles
       methodHandle mh(THREAD, methods->at(i));
 
-      bool needs_new_entry = update_inherited_vtable(ik(), mh, super_vtable_len, -1, checkconstraints, CHECK);
+      bool needs_new_entry = update_inherited_vtable(mh, super_vtable_len, -1, checkconstraints, CHECK);
 
       if (needs_new_entry) {
         put_method_at(mh(), initialized);
@@ -224,13 +224,11 @@ void klassVtable::initialize_vtable(bool checkconstraints, TRAPS) {
         for (int i = 0; i < len; i++) {
           methodHandle mh(THREAD, default_methods->at(i));
           assert(!mh->is_private(), "private interface method in the default method list");
-          bool needs_new_entry = update_inherited_vtable(ik(), mh, super_vtable_len, i, checkconstraints, CHECK);
+          bool needs_new_entry = update_inherited_vtable(mh, super_vtable_len, i, checkconstraints, CHECK);
 
           // needs new entry
           if (needs_new_entry) {
-            // Refetch this default method in case of redefinition in safepoint above.
-            Method* method = default_methods->at(i);
-            put_method_at(method, initialized);
+            put_method_at(mh(), initialized);
             if (is_preinitialized_vtable()) {
               // At runtime initialize_vtable is rerun for a shared class
               // (loaded by the non-boot loader) as part of link_class_impl().
@@ -377,12 +375,13 @@ static void log_vtables(int i, bool overrides, const methodHandle& target_method
 // OR return true if a new vtable entry is required.
 // Only called for InstanceKlass's, i.e. not for arrays
 // If that changed, could not use _klass as handle for klass
-bool klassVtable::update_inherited_vtable(InstanceKlass* klass, const methodHandle& target_method,
+bool klassVtable::update_inherited_vtable(const methodHandle& target_method,
                                           int super_vtable_len, int default_index,
                                           bool checkconstraints, TRAPS) {
   ResourceMark rm(THREAD);
   bool allocate_new = true;
-  assert(klass->is_instance_klass(), "must be InstanceKlass");
+
+  InstanceKlass* klass = ik();
 
   Array<int>* def_vtable_indices = NULL;
   bool is_default = false;
@@ -495,10 +494,6 @@ bool klassVtable::update_inherited_vtable(InstanceKlass* klass, const methodHand
           allocate_new = false;
         }
 
-        // Speculatively set the vtable index before the constraint check safepoint
-        // redefines this method, which is possible if it is a default method.
-        put_method_at(target_method(), i);
-
         // Do not check loader constraints for overpass methods because overpass
         // methods are created by the jvm to throw exceptions.
         if (checkconstraints && !target_method->is_overpass()) {
@@ -536,6 +531,7 @@ bool klassVtable::update_inherited_vtable(InstanceKlass* klass, const methodHand
           }
         }
 
+        put_method_at(target_method(), i);
         overrides = true;
         if (!is_default) {
           target_method->set_vtable_index(i);

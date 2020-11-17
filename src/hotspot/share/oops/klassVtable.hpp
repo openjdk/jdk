@@ -116,7 +116,10 @@ class klassVtable {
                                      AccessFlags access_flags,
                                      u2 major_version);
 
-  bool update_inherited_vtable(InstanceKlass* klass, const methodHandle& target_method, int super_vtable_len, int default_index, bool checkconstraints, TRAPS);
+  bool update_inherited_vtable(const methodHandle& target_method,
+                               int super_vtable_len,
+                               int default_index,
+                               bool checkconstraints, TRAPS);
  InstanceKlass* find_transitive_override(InstanceKlass* initialsuper,
                                          const methodHandle& target_method, int vtable_index,
                                          Handle target_loader, Symbol* target_classname);
