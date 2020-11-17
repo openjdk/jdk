@@ -177,6 +177,7 @@ jobs:
       - name: Configure
         run: >
           bash configure
+          --disable-precompiled-headers
           --with-conf-name=linux-x64
           ${{ matrix.flags }}
           --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}
@@ -392,7 +393,6 @@ jobs:
       fail-fast: false
       matrix:
         flavor:
-          - hs x64 build only
           - hs x64 zero build only
           - hs x64 minimal build only
           - hs x64 optimized build only
@@ -401,29 +401,27 @@ jobs:
           - hs s390x build only
           - hs ppc64le build only
         include:
-          - flavor: hs x64 build only
-            flags: --enable-debug --disable-precompiled-headers
           - flavor: hs x64 zero build only
-            flags: --enable-debug --disable-precompiled-headers --with-jvm-variants=zero
+            flags: --enable-debug --with-jvm-variants=zero
           - flavor: hs x64 minimal build only
-            flags: --enable-debug --disable-precompiled-headers --with-jvm-variants=minimal
+            flags: --enable-debug --with-jvm-variants=minimal
           - flavor: hs x64 optimized build only
-            flags: --with-debug-level=optimized --disable-precompiled-headers
+            flags: --with-debug-level=optimized
           - flavor: hs aarch64 build only
-            flags: --enable-debug --disable-precompiled-headers
+            flags: --enable-debug
             debian-arch: arm64
             gnu-arch: aarch64
           - flavor: hs arm build only
-            flags: --enable-debug --disable-precompiled-headers
+            flags: --enable-debug
             debian-arch: armhf
             gnu-arch: arm
             gnu-flavor: eabihf
           - flavor: hs s390x build only
-            flags: --enable-debug --disable-precompiled-headers
+            flags: --enable-debug
             debian-arch: s390x
             gnu-arch: s390x
           - flavor: hs ppc64le build only
-            flags: --enable-debug --disable-precompiled-headers
+            flags: --enable-debug
             debian-arch: ppc64el
             gnu-arch: powerpc64le
 
@@ -546,6 +544,7 @@ jobs:
       - name: Configure
         run: >
           bash configure
+          --disable-precompiled-headers
           --with-conf-name=linux-${{ matrix.gnu-arch }}-hotspot
           ${{ matrix.flags }}
           ${{ env.cross_flags }}
@@ -643,6 +642,7 @@ jobs:
       - name: Configure
         run: >
           bash configure
+          --disable-precompiled-headers
           --with-conf-name=linux-x86
           --with-target-bits=32
           ${{ matrix.flags }}
@@ -1032,6 +1032,7 @@ jobs:
           $env:JT_HOME = cygpath "$HOME/jtreg" ;
           $env:GTEST = cygpath "$env:GITHUB_WORKSPACE/gtest" ;
           & bash configure
+          --disable-precompiled-headers
           --with-conf-name=windows-x64
           --with-msvc-toolset-version=14.27
           ${{ matrix.flags }}
@@ -1339,6 +1340,7 @@ jobs:
       - name: Configure
         run: >
           bash configure
+          --disable-precompiled-headers
           --with-conf-name=macos-x64
           ${{ matrix.flags }}
           --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}
