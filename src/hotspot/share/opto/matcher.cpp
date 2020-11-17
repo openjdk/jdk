@@ -2836,8 +2836,9 @@ void State::dump() {
 }
 
 void State::dump(int depth) {
-  for( int j = 0; j < depth; j++ )
+  for (int j = 0; j < depth; j++) {
     tty->print("   ");
+  }
   tty->print("--N: ");
   _leaf->dump();
   uint i;
@@ -2846,17 +2847,19 @@ void State::dump(int depth) {
     if (valid(i)) {
       for (int j = 0; j < depth; j++) {
         tty->print("   ");
-        assert(cost(i) != max_juint, "cost must be a valid value");
-        assert(rule(i) < _last_Mach_Node, "rule[i] must be valid rule");
-        tty->print_cr("%s  %d  %s",
-                      ruleName[i], cost(i), ruleName[rule(i)] );
       }
+      assert(cost(i) != max_juint, "cost must be a valid value");
+      assert(rule(i) < _last_Mach_Node, "rule[i] must be valid rule");
+      tty->print_cr("%s  %d  %s",
+                    ruleName[i], cost(i), ruleName[rule(i)] );
     }
   }
   tty->cr();
 
-  for( i=0; i<2; i++ )
-    if( _kids[i] )
-      _kids[i]->dump(depth+1);
+  for (i = 0; i < 2; i++) {
+    if (_kids[i]) {
+      _kids[i]->dump(depth + 1);
+    }
+  }
 }
 #endif
