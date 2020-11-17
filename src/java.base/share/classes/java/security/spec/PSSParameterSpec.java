@@ -220,11 +220,12 @@ public class PSSParameterSpec implements AlgorithmParameterSpec {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("MD: " + mdName + ", ")
-                .append("MGF: " + mgfSpec + ", ")
-                .append("SaltLength: " + saltLen + ", ")
-                .append("TrailerField: " + trailerField);
+        StringBuilder sb = new StringBuilder("PSSParameterSpec[");
+        sb.append("hashAlgorithm=" + mdName + ", ")
+                .append("maskGenAlgorithm=" + mgfSpec + ", ")
+                .append("saltLength=" + saltLen + ", ")
+                .append("trailerField=" + trailerField)
+                .append(']');
         return sb.toString();
     }
 }
