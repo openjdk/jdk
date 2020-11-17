@@ -272,7 +272,7 @@ var getJibProfilesCommon = function (input, data) {
     common.optimized_suffix = "-optimized";
     common.optimized_profile_base = {
         configure_args: ["--with-debug-level=optimized"],
-        labels: "optimized"
+        labels: "optimized",
     };
     // Extra settings for openjdk only profiles
     common.open_suffix = "-open";
@@ -521,6 +521,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         var optName = name + common.optimized_suffix;
         profiles[optName] = concatObjects(profiles[name],
                                           common.optimized_profile_base);
+        profiles[optName].default_make_targets = [ "hotspot" ];
     });
     // Generate testmake profiles for the main profile of each build host
     // platform. This profile only runs the makefile tests.
