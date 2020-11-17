@@ -26,6 +26,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <mach-o/dyld.h>
+#include "UnixSysInfo.h"
 #include "FileUtils.h"
 #include "ErrorHandling.h"
 
@@ -75,6 +76,18 @@ tstring getProcessModulePath() {
     tstring reply = getRealPath(buffer);
 
     return FileUtils::toAbsolutePath(reply);
+}
+
+tstring_array getCommandArgs(CommandArgProgramNameMode progNameMode) {
+    tstring_array result;
+    const tstring psnArgPrefix = "-psn_";
+    for (int i = progNameMode == ExcludeProgramName ? 1 : 0; i < argc; i++) {
+        const tstring arg = argv[i];
+        if (!tstrings::startsWith(arg, psnArgPrefix)) {
+            result.push_back(arg);
+        }
+    }
+    return result;
 }
 
 } // end of namespace SysInfo
