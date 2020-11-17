@@ -3200,20 +3200,23 @@ public:
   }
 
   // SVE dup imm
-  void sve_dup(FloatRegister Zd, SIMD_RegVariant T, int imm8) {
+  void sve_dup(FloatRegister Zd, SIMD_RegVariant T, int imm16) {
     starti;
     assert(T != Q, "invalid size");
     int sh = 0;
-    if (imm8 <= 127 && imm8 >= -128) {
+    unsigned imm = imm16;
+    if (imm16 <= 127 && imm16 >= -128) {
       sh = 0;
-    } else if (T != B && imm8 <= 32512 && imm8 >= -32768 && (imm8 & 0xff) == 0) {
+    } else if (T != B && imm16 <= 32512 && imm16 >= -32768 && (imm16 & 0xff) == 0) {
       sh = 1;
-      imm8 = (imm8 >> 8);
+      imm = (imm >> 8);
     } else {
       guarantee(false, "invalid immediate");
     }
+    unsigned mask = (1U << 8) - 1;
+    imm &= mask;
     f(0b00100101, 31, 24), f(T, 23, 22), f(0b11100011, 21, 14);
-    f(sh, 13), sf(imm8, 12, 5), rf(Zd, 0);
+    f(sh, 13), f(imm, 12, 5), rf(Zd, 0);
   }
 
   void sve_ptrue(PRegister pd, SIMD_RegVariant esize, int pattern = 0b11111) {
