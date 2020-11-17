@@ -179,7 +179,7 @@ public final class RemoteRecordingStream implements EventStream {
     public RemoteRecordingStream(MBeanServerConnection connection, Path directory) throws IOException {
         this(connection, directory, false);
     }
-    
+
     private RemoteRecordingStream(MBeanServerConnection connection, Path directory, boolean delete) throws IOException {
         Objects.requireNonNull(connection);
         Objects.requireNonNull(directory);
