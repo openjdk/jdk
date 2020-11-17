@@ -1754,9 +1754,9 @@ public class RandomSupport {
      * {@link ArbitrarilyJumpableGenerator#copy() copy}(),
      * {@link JumpableGenerator#jumps(long) jumps}(long),
      * {@link ArbitrarilyJumpableGenerator#jumpPowerOfTwo(int) jumpPowerOfTwo}(logDistance),
-     * {@link JumpableGenerator#defaultJumpDistance() defaultJumpDistance}(),
+     * {@link JumpableGenerator#jumpDistance() jumpDistance}(),
      * and
-     * {@link LeapableGenerator#defaultLeapDistance() defaultLeapDistance}().
+     * {@link LeapableGenerator#leapDistance() leapDistance}().
      *
      * <p> (If the (pseudo)random number generator also has the ability to
      * split, then the programmer may wish to consider instead extending
@@ -1781,9 +1781,9 @@ public class RandomSupport {
      * {@link RandomGenerator#nextInt() nextInt}(),
      * {@link RandomGenerator#nextLong() nextLong}(),
      * {@link AbstractArbitrarilyJumpableGenerator#jumps(double) jumps}(double),
-     * {@link JumpableGenerator#defaultJumpDistance() defaultJumpDistance}(),
+     * {@link JumpableGenerator#jumpDistance() jumpDistance}(),
      * and
-     * {@link LeapableGenerator#defaultLeapDistance() defaultLeapDistance}().
+     * {@link LeapableGenerator#leapDistance() leapDistance}().
      * Default implementations are provided for all other methods.
      *
      * <p> The documentation for each non-abstract method in this class
@@ -1877,7 +1877,7 @@ public class RandomSupport {
          *         jumps(Long.MAX_VALUE)}.
          */
         public Stream<RandomGenerator> jumps() {
-            return stream(makeJumpsSpliterator(0L, Long.MAX_VALUE, defaultJumpDistance()));
+            return stream(makeJumpsSpliterator(0L, Long.MAX_VALUE, jumpDistance()));
         }
 
         /**
@@ -1895,7 +1895,7 @@ public class RandomSupport {
          */
         public Stream<RandomGenerator> jumps(long streamSize) {
             RandomSupport.checkStreamSize(streamSize);
-            return stream(makeJumpsSpliterator(0L, streamSize, defaultJumpDistance()));
+            return stream(makeJumpsSpliterator(0L, streamSize, jumpDistance()));
         }
 
         /**
@@ -1939,10 +1939,10 @@ public class RandomSupport {
          * forward a very large, fixed distance (typically 2<sup>128</sup> or
          * more) within its state cycle. The distance used is that returned by
          * method
-         * {@link LeapableGenerator#defaultLeapDistance() defaultLeapDistance}().
+         * {@link LeapableGenerator#leapDistance() leapDistance}().
          */
         public void leap() {
-            jump(defaultLeapDistance());
+            jump(leapDistance());
         }
 
         // Stream methods for leaping
@@ -1958,7 +1958,7 @@ public class RandomSupport {
          * @return a stream of objects that implement the {@link RandomGenerator} interface
          */
         public Stream<JumpableGenerator> leaps() {
-            return stream(makeLeapsSpliterator(0L, Long.MAX_VALUE, defaultLeapDistance()));
+            return stream(makeLeapsSpliterator(0L, Long.MAX_VALUE, leapDistance()));
         }
 
         /**
@@ -1975,7 +1975,7 @@ public class RandomSupport {
          * @throws IllegalArgumentException if {@code streamSize} is less than zero
          */
         public Stream<JumpableGenerator> leaps(long streamSize) {
-            return stream(makeLeapsSpliterator(0L, streamSize, defaultLeapDistance()));
+            return stream(makeLeapsSpliterator(0L, streamSize, leapDistance()));
         }
 
 
