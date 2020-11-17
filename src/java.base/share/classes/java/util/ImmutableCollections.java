@@ -156,7 +156,8 @@ class ImmutableCollections {
 
     /**
      * Copies a collection into a new List, unless the arg is already a safe,
-     * unmodifiable list, in which case the arg itself is returned.
+     * null-prohibiting unmodifiable list, in which case the arg itself is returned.
+     * Null argument or null elements in the argument will result in NPE.
      *
      * @param <E> the List's element type
      * @param input the input array
@@ -164,10 +165,10 @@ class ImmutableCollections {
      */
     @SuppressWarnings("unchecked")
     static <E> List<E> listCopy(Collection<? extends E> coll) {
-        if (coll instanceof AbstractImmutableList && coll.getClass() != SubList.class) {
+        if (coll instanceof List12 || (coll instanceof ListN && ! ((ListN<?>)coll).allowNulls)) {
             return (List<E>)coll;
         } else {
-            return (List<E>)List.of(coll.toArray());
+            return (List<E>)List.of(coll.toArray()); // implicit nullcheck of coll
         }
     }
 
@@ -305,7 +306,7 @@ class ImmutableCollections {
 
             Iterator<?> oit = ((List<?>) o).iterator();
             for (int i = 0, s = size(); i < s; i++) {
-                if (!oit.hasNext() || !get(i).equals(oit.next())) {
+                if (!oit.hasNext() || !Objects.equals(get(i), oit.next())) {
                     return false;
                 }
             }
@@ -313,32 +314,10 @@ class ImmutableCollections {
         }
 
         @Override
-        public int indexOf(Object o) {
-            Objects.requireNonNull(o);
-            for (int i = 0, s = size(); i < s; i++) {
-                if (o.equals(get(i))) {
-                    return i;
-                }
-            }
-            return -1;
-        }
-
-        @Override
-        public int lastIndexOf(Object o) {
-            Objects.requireNonNull(o);
-            for (int i = size() - 1; i >= 0; i--) {
-                if (o.equals(get(i))) {
-                    return i;
-                }
-            }
-            return -1;
-        }
-
-        @Override
         public int hashCode() {
             int hash = 1;
             for (int i = 0, s = size(); i < s; i++) {
-                hash = 31 * hash + get(i).hashCode();
+                hash = 31 * hash + Objects.hashCode(get(i));
             }
             return hash;
         }
@@ -447,7 +426,7 @@ class ImmutableCollections {
             implements RandomAccess {
 
         @Stable
-        private final List<E> root;
+        private final AbstractImmutableList<E> root;
 
         @Stable
         private final int offset;
@@ -455,7 +434,8 @@ class ImmutableCollections {
         @Stable
         private final int size;
 
-        private SubList(List<E> root, int offset, int size) {
+        private SubList(AbstractImmutableList<E> root, int offset, int size) {
+            assert root instanceof List12 || root instanceof ListN;
             this.root = root;
             this.offset = offset;
             this.size = size;
@@ -472,7 +452,7 @@ class ImmutableCollections {
          * Constructs a sublist of an arbitrary AbstractImmutableList, which is
          * not a SubList itself.
          */
-        static <E> SubList<E> fromList(List<E> list, int fromIndex, int toIndex) {
+        static <E> SubList<E> fromList(AbstractImmutableList<E> list, int fromIndex, int toIndex) {
             return new SubList<>(list, fromIndex, toIndex - fromIndex);
         }
 
@@ -503,6 +483,36 @@ class ImmutableCollections {
             if (index < 0 || index > size) {
                 throw outOfBounds(index);
             }
+        }
+
+        private boolean allowNulls() {
+            return root instanceof ListN && ((ListN<?>)root).allowNulls;
+        }
+
+        @Override
+        public int indexOf(Object o) {
+            if (!allowNulls() && o == null) {
+                throw new NullPointerException();
+            }
+            for (int i = 0, s = size(); i < s; i++) {
+                if (Objects.equals(o, get(i))) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        @Override
+        public int lastIndexOf(Object o) {
+            if (!allowNulls() && o == null) {
+                throw new NullPointerException();
+            }
+            for (int i = size() - 1; i >= 0; i--) {
+                if (Objects.equals(o, get(i))) {
+                    return i;
+                }
+            }
+            return -1;
         }
 
         @Override
@@ -570,6 +580,30 @@ class ImmutableCollections {
                 return (E)e1;
             }
             throw outOfBounds(index);
+        }
+
+        @Override
+        public int indexOf(Object o) {
+            Objects.requireNonNull(o);
+            if (o.equals(e0)) {
+                return 0;
+            } else if (e1 != EMPTY && o.equals(e1)) {
+                return 1;
+            } else {
+                return -1;
+            }
+        }
+
+        @Override
+        public int lastIndexOf(Object o) {
+            Objects.requireNonNull(o);
+            if (e1 != EMPTY && o.equals(e1)) {
+                return 1;
+            } else if (o.equals(e0)) {
+                return 0;
+            } else {
+                return -1;
+            }
         }
 
         @java.io.Serial
