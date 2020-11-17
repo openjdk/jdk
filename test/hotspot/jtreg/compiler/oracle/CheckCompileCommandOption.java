@@ -196,14 +196,14 @@ public class CheckCompileCommandOption {
 
     private static final String[][] TYPE_4_INVALID_OUTPUTS = {
         {
-            "CompileCommand: unrecognized option",
-            "Value cannot be read for option TestOptionInt of type intx",
-            "Value cannot be read for option TestOptionBool of type bool",
-            "Value cannot be read for option TestOptionDouble of type double",
-            "TestOptionUint is not followed by a value",
-            "Value cannot be read for option TestOptionBool2 of type bool",
-            "Value cannot be read for option TestOptionDouble of type double",
-            "Value cannot be read for option TestOptionDouble of type double"
+            "Unrecognized option 'InvalidOption'",
+            "Value cannot be read for option 'TestOptionInt' of type 'intx'",
+            "Value cannot be read for option 'TestOptionBool' of type 'bool'",
+            "Value cannot be read for option 'TestOptionDouble' of type 'double'",
+            "Option 'TestOptionUint' is not followed by a value",
+            "Value cannot be read for option 'TestOptionBool2' of type 'bool'",
+            "Value cannot be read for option 'TestOptionDouble' of type 'double'",
+            "Value cannot be read for option 'TestOptionDouble' of type 'double'"
         }
     };
 
