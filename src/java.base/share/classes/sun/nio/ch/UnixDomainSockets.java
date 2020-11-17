@@ -106,7 +106,7 @@ class UnixDomainSockets {
     static void bind(FileDescriptor fd, Path addr) throws IOException {
         byte[] path = getPathBytes(addr);
         if (path.length == 0) {
-            throw new BindException("server socket cannot bind to unnamed address");
+            throw new BindException("Server socket cannot bind to unnamed address");
         }
         bind0(fd, path);
     }

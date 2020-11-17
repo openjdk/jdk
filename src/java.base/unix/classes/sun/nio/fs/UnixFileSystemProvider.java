@@ -48,7 +48,7 @@ public abstract class UnixFileSystemProvider
     extends AbstractFileSystemProvider
 {
     private static final String USER_DIR = "user.dir";
-    private static final byte[] emptyPath = new byte[0];
+    private static final byte[] EMPTY_PATH = new byte[0];
     private final UnixFileSystem theFileSystem;
 
     public UnixFileSystemProvider() {
@@ -570,7 +570,7 @@ public abstract class UnixFileSystemProvider
     public byte[] getSunPathForSocketFile(Path obj) {
         UnixPath file = UnixPath.toUnixPath(obj);
         if (file.isEmpty()) {
-            return emptyPath;
+            return EMPTY_PATH;
         }
         return file.getByteArrayForSysCalls();
     }

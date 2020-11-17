@@ -628,11 +628,8 @@ class WindowsFileSystemProvider
     @Override
     public byte[] getSunPathForSocketFile(Path obj) {
         WindowsPath file = WindowsPath.toWindowsPath(obj);
-        if (file.toString().length() == 0) {
-            return emptyPath;
-        }
         String s = file.toString();
-        return s.getBytes(StandardCharsets.UTF_8);
+        return s.isEmpty() ? emptyPath : s.getBytes(StandardCharsets.UTF_8);
     }
 
 }
