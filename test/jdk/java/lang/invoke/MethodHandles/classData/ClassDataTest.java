@@ -26,14 +26,13 @@
  * @bug 8230501
  * @library /test/lib
  * @modules java.base/jdk.internal.org.objectweb.asm
- * @build java.base/*
  * @run testng/othervm ClassDataTest
  */
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
-import java.lang.invoke.ClassDataHelper;
+import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
@@ -44,6 +43,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import jdk.internal.org.objectweb.asm.*;
@@ -63,10 +63,10 @@ public class ClassDataTest {
         Lookup lookup = hiddenClass(20);
         assertTrue(lookup.hasFullPrivilegeAccess());
 
-        int value = MethodHandles.classData(lookup, "dummy", int.class);
+        int value = MethodHandles.classData(lookup, "_", int.class);
         assertEquals(value, 20);
 
-        Integer i = MethodHandles.classData(lookup, "dummy", Integer.class);
+        Integer i = MethodHandles.classData(lookup, "_", Integer.class);
         assertEquals(i.intValue(), 20);
     }
 
@@ -75,7 +75,7 @@ public class ClassDataTest {
      */
     @Test
     public void noClassData() throws Throwable {
-        assertNull(MethodHandles.classData(LOOKUP, "dummy", Object.class));
+        assertNull(MethodHandles.classData(LOOKUP, "_", Object.class));
     }
 
     @DataProvider(name = "teleportedLookup")
@@ -97,19 +97,19 @@ public class ClassDataTest {
         int lookupModes = lookup.lookupModes();
         assertTrue((lookupModes & ORIGINAL) == 0);
         assertEquals(lookupModes, access);
-        MethodHandles.classData(lookup, "no original access", int.class);
+        MethodHandles.classData(lookup, "_", int.class);
     }
 
     @Test(expectedExceptions = { ClassCastException.class })
     public void incorrectType() throws Throwable {
         Lookup lookup = hiddenClass(20);
-        MethodHandles.classData(lookup, "incorrect type", Long.class);
+        MethodHandles.classData(lookup, "_", Long.class);
     }
 
     @Test(expectedExceptions = { IndexOutOfBoundsException.class })
     public void invalidIndex() throws Throwable {
         Lookup lookup = hiddenClass(List.of());
-        ClassDataHelper.classDataAt(lookup, "OOB", Object.class, 0);
+        MethodHandles.classDataAt(lookup, "_", Object.class, 0);
     }
 
     @Test(expectedExceptions = { NullPointerException.class })
@@ -117,7 +117,7 @@ public class ClassDataTest {
         List<Integer> list = new ArrayList<>();
         list.add(null);
         Lookup lookup = hiddenClass(list);
-        ClassDataHelper.classDataAt(lookup, "null element", int.class, 0);
+        MethodHandles.classDataAt(lookup, "_", int.class, 0);
     }
 
     @Test
@@ -125,7 +125,7 @@ public class ClassDataTest {
         List<Object> list = new ArrayList<>();
         list.add(null);
         Lookup lookup = hiddenClass(list);
-        assertTrue(ClassDataHelper.classDataAt(lookup, "null", Object.class, 0) == null);
+        assertTrue(MethodHandles.classDataAt(lookup, "_", Object.class, 0) == null);
     }
 
     @Test
@@ -133,7 +133,7 @@ public class ClassDataTest {
         ClassByteBuilder builder = new ClassByteBuilder("T1-int");
         byte[] bytes = builder.classData(ACC_PUBLIC|ACC_STATIC, int.class).build();
         Lookup lookup = LOOKUP.defineHiddenClassWithClassData(bytes, 100, true);
-        int value = MethodHandles.classData(lookup, "dummy", int.class);
+        int value = MethodHandles.classData(lookup, "_", int.class);
         assertEquals(value, 100);
         // call through condy
         assertClassData(lookup, 100);
@@ -144,7 +144,7 @@ public class ClassDataTest {
         ClassByteBuilder builder = new ClassByteBuilder("T1-float");
         byte[] bytes = builder.classData(ACC_PUBLIC|ACC_STATIC, float.class).build();
         Lookup lookup = LOOKUP.defineHiddenClassWithClassData(bytes, 0.1234f, true);
-        float value = MethodHandles.classData(lookup, "dummy", float.class);
+        float value = MethodHandles.classData(lookup, "_", float.class);
         assertEquals(value, 0.1234f);
         // call through condy
         assertClassData(lookup, 0.1234f);
@@ -156,7 +156,7 @@ public class ClassDataTest {
         ClassByteBuilder builder = new ClassByteBuilder("T2");
         byte[] bytes = builder.classData(ACC_PUBLIC|ACC_STATIC, Class.class).build();
         Lookup lookup = LOOKUP.defineHiddenClassWithClassData(bytes, hc, true);
-        Class<?> value = MethodHandles.classData(lookup, "dummy", Class.class);
+        Class<?> value = MethodHandles.classData(lookup, "_", Class.class);
         assertEquals(value, hc);
         // call through condy
         assertClassData(lookup, hc);
@@ -172,7 +172,7 @@ public class ClassDataTest {
         // class data is modifiable and not a constant
         colors[0] = "black";
         // it will get back the modified class data
-        String[] value = MethodHandles.classData(lookup, "dummy", String[].class);
+        String[] value = MethodHandles.classData(lookup, "_", String[].class);
         assertEquals(value, colors);
         // even call through condy as it's not a constant
         assertClassData(lookup, colors);
@@ -185,7 +185,7 @@ public class ClassDataTest {
         List<Integer> cd = List.of(100, 101, 102, 103);
         int expected = 102;  // element at index=2
         Lookup lookup = LOOKUP.defineHiddenClassWithClassData(bytes, cd, true);
-        int value = ClassDataHelper.classDataAt(lookup, "2", int.class, 2);
+        int value = MethodHandles.classDataAt(lookup, "_", int.class, 2);
         assertEquals(value, expected);
         // call through condy
         assertClassData(lookup, expected);
@@ -199,7 +199,7 @@ public class ClassDataTest {
         Stream.of(100, 101, 102, 103).forEach(cd::add);
         int expected = 101;  // element at index=1
         Lookup lookup = LOOKUP.defineHiddenClassWithClassData(bytes, cd, true);
-        int value = ClassDataHelper.classDataAt(lookup, "1", int.class, 1);
+        int value = MethodHandles.classDataAt(lookup, "_", int.class, 1);
         assertEquals(value, expected);
         // call through condy
         assertClassData(lookup, expected);
@@ -233,7 +233,7 @@ public class ClassDataTest {
         assertClassData(hcLookup, 100);
         Class<?> hc = hcLookup.lookupClass();
         Lookup lookup = LOOKUP.defineHiddenClassWithClassData(bytes, hc, true);
-        Class<?> value = MethodHandles.classData(lookup, "dummy", Class.class);
+        Class<?> value = MethodHandles.classData(lookup, "_", Class.class);
         assertEquals(value, hc);
         // call through condy
         Class<?> c = lookup.lookupClass();
@@ -248,7 +248,7 @@ public class ClassDataTest {
         List<Integer> cd = List.of(100, 101, 102, 103);
         int expected = 102;  // element at index=2
         Lookup lookup = LOOKUP.defineHiddenClassWithClassData(bytes, cd, true);
-        int value = ClassDataHelper.classDataAt(lookup, "2", int.class, 2);
+        int value = MethodHandles.classDataAt(lookup, "_", int.class, 2);
         assertEquals(value, expected);
         // call through condy
         Class<?> c = lookup.lookupClass();
@@ -283,7 +283,67 @@ public class ClassDataTest {
         // loading the element using condy returns the original value
         assertClassData(lookup, c.newInstance(), mtype);
         // direct invocation of MethodHandles.classDataAt returns the modified value
-        assertEquals(ClassDataHelper.classDataAt(lookup, "new MethodType", MethodType.class, 0), newMType);
+        assertEquals(MethodHandles.classDataAt(lookup, "_", MethodType.class, 0), newMType);
+    }
+
+    // helper method to extract from a class data map
+    public static <T> T getClassDataEntry(Lookup lookup, String key, Class<T> type) throws Throwable {
+        Map<String, T> cd = MethodHandles.classData(lookup, "_", Map.class);
+        return type.cast(cd.get(key));
+    }
+
+    @Test
+    public void classDataMap() throws Throwable {
+        ClassByteBuilder builder = new ClassByteBuilder("map");
+        // generate classData static method
+        Handle bsm = new Handle(H_INVOKESTATIC, "ClassDataTest", "getClassDataEntry",
+                "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/Class;)Ljava/lang/Object;",
+                false);
+        // generate two accessor methods to get the entries from class data
+        byte[] bytes = builder.classData(ACC_PUBLIC|ACC_STATIC, Map.class)
+                              .classData(ACC_PUBLIC|ACC_STATIC, "getClass",
+                                         Class.class, new ConstantDynamic("class", Type.getDescriptor(Class.class), bsm))
+                              .classData(ACC_PUBLIC|ACC_STATIC, "getMethod",
+                                         MethodHandle.class, new ConstantDynamic("method", Type.getDescriptor(MethodHandle.class), bsm))
+                              .build();
+
+        // generate a hidden class
+        Lookup hcLookup = hiddenClass(100);
+        Class<?> hc = hcLookup.lookupClass();
+        assertClassData(hcLookup, 100);
+
+        MethodHandle mh = hcLookup.findStatic(hc, "classData", MethodType.methodType(int.class));
+        Map<String, Object> cd = Map.of("class", hc, "method", mh);
+        Lookup lookup = LOOKUP.defineHiddenClassWithClassData(bytes, cd, true);
+        assertClassData(lookup, cd);
+
+        // validate the entries from the class data map
+        Class<?> c = lookup.lookupClass();
+        try {
+            Method m = c.getMethod("getClass");
+            Class<?> v = (Class<?>)m.invoke(null);
+            assertEquals(hc, v);
+        } catch (InvocationTargetException e) {
+            throw e.getCause();
+        }
+        try {
+            Method m = c.getMethod("getMethod");
+            MethodHandle v = (MethodHandle)m.invoke(null);
+            assertEquals(mh, v);
+        } catch (InvocationTargetException e) {
+            throw e.getCause();
+        }
+    }
+
+    @Test(expectedExceptions = { IllegalArgumentException.class })
+    public void nonDefaultName() throws Throwable {
+        ClassByteBuilder builder = new ClassByteBuilder("nonDefaultName");
+        byte[] bytes = builder.classData(ACC_PUBLIC|ACC_STATIC, Class.class)
+                              .build();
+        Lookup lookup = LOOKUP.defineHiddenClassWithClassData(bytes, ClassDataTest.class, true);
+        assertClassData(lookup, ClassDataTest.class);
+        // throw IAE
+        MethodHandles.classData(lookup, "non_default_name", Class.class);
     }
 
     static class ClassByteBuilder {
@@ -335,7 +395,7 @@ public class ClassDataTest {
             Handle bsm = new Handle(H_INVOKESTATIC, MHS_CLS, "classData",
                                     CLASS_DATA_BSM_DESCR,
                                     false);
-            ConstantDynamic dynamic = new ConstantDynamic("dummy", Type.getDescriptor(returnType), bsm);
+            ConstantDynamic dynamic = new ConstantDynamic("_", Type.getDescriptor(returnType), bsm);
             mv.visitLdcInsn(dynamic);
             mv.visitInsn(returnType == int.class ? IRETURN :
                             (returnType == float.class ? FRETURN : ARETURN));
@@ -353,10 +413,23 @@ public class ClassDataTest {
                                               "classData",
                                                mtype.descriptorString(), null, null);
             mv.visitCode();
-            Handle bsm = new Handle(H_INVOKESTATIC, "java/lang/invoke/ClassDataHelper", "classDataAt",
+            Handle bsm = new Handle(H_INVOKESTATIC, "java/lang/invoke/MethodHandles", "classDataAt",
                         "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/Class;I)Ljava/lang/Object;",
                         false);
-            ConstantDynamic dynamic = new ConstantDynamic("classDataAt", Type.getDescriptor(returnType), bsm, index);
+            ConstantDynamic dynamic = new ConstantDynamic("_", Type.getDescriptor(returnType), bsm, index);
+            mv.visitLdcInsn(dynamic);
+            mv.visitInsn(returnType == int.class? IRETURN : ARETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+            return this;
+        }
+
+        ClassByteBuilder classData(int accessFlags, String name, Class<?> returnType, ConstantDynamic dynamic) {
+            MethodType mtype = MethodType.methodType(returnType);
+            MethodVisitor mv = cw.visitMethod(accessFlags,
+                                              name,
+                                              mtype.descriptorString(), null, null);
+            mv.visitCode();
             mv.visitLdcInsn(dynamic);
             mv.visitInsn(returnType == int.class? IRETURN : ARETURN);
             mv.visitMaxs(0, 0);

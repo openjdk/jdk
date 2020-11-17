@@ -41,6 +41,7 @@ import sun.invoke.util.Wrapper;
 import sun.reflect.misc.ReflectUtil;
 import sun.security.util.SecurityConstants;
 
+import java.lang.constant.ConstantDescs;
 import java.lang.invoke.LambdaForm.BasicType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -303,10 +304,12 @@ public class MethodHandles {
      * @param <T> the type to cast the class data object to
      * @param caller the lookup context describing the class performing the
      * operation (normally stacked by the JVM)
-     * @param name unused
+     * @param name must be {@link ConstantDescs#DEFAULT_NAME}
+     *             ({@code "_"})
      * @param type the type of the class data
      * @return the value of the class data if present in the lookup class;
      * otherwise {@code null}
+     * @throws IllegalArgumentException if name is not {@code "_"}
      * @throws IllegalAccessException if the lookup context does not have
      * {@linkplain Lookup#ORIGINAL original} access
      * @throws ClassCastException if the class data cannot be converted to
@@ -314,12 +317,16 @@ public class MethodHandles {
      * @throws NullPointerException if {@code caller} or {@code type} argument
      * is {@code null}
      * @see Lookup#defineHiddenClassWithClassData(byte[], Object, boolean, Lookup.ClassOption...)
+     * @see MethodHandles#classDataAt(Lookup, String, Class, int)
      * @since 16
      * @jvms 5.5 Initialization
      */
      public static <T> T classData(Lookup caller, String name, Class<T> type) throws IllegalAccessException {
          Objects.requireNonNull(caller);
          Objects.requireNonNull(type);
+         if (!ConstantDescs.DEFAULT_NAME.equals(name)) {
+             throw new IllegalArgumentException("name must be \"_\": " + name);
+         }
 
          if ((caller.lookupModes() & Lookup.ORIGINAL) != Lookup.ORIGINAL)  {
              throw new IllegalAccessException(caller + " does not have ORIGINAL access");
@@ -340,8 +347,8 @@ public class MethodHandles {
     /**
      * Returns the element at the specified index in the
      * {@linkplain #classData(Lookup, String, Class) class data},
-     * whose type is a {@code List}, associated with the lookup class
-     * of the given {@code caller} lookup object.
+     * if the class data associated with the lookup class
+     * of the given {@code caller} lookup object is a {@code List}.
      * If the class data is not present in this lookup class, this method
      * returns {@code null}.
      *
@@ -372,11 +379,13 @@ public class MethodHandles {
      * @param <T> the type to cast the result object to
      * @param caller the lookup context describing the class performing the
      * operation (normally stacked by the JVM)
-     * @param name unused
+     * @param name must be {@link java.lang.constant.ConstantDescs#DEFAULT_NAME}
+     *             ({@code "_"})
      * @param type the type of the element at the given index in the class data
      * @param index index of the element in the class data
      * @return the element at the given index in the class data
      * if the class data is present; otherwise {@code null}
+     * @throws IllegalArgumentException if name is not {@code "_"}
      * @throws IllegalAccessException if the lookup context does not have
      * {@linkplain Lookup#ORIGINAL original} access
      * @throws ClassCastException if the class data cannot be converted to {@code List}
@@ -390,7 +399,7 @@ public class MethodHandles {
      * @see #classData(Lookup, String, Class)
      * @see Lookup#defineHiddenClassWithClassData(byte[], Object, boolean, Lookup.ClassOption...)
      */
-    /* package-private */ static <T> T classDataAt(Lookup caller, String name, Class<T> type, int index)
+    public static <T> T classDataAt(Lookup caller, String name, Class<T> type, int index)
             throws IllegalAccessException
     {
         @SuppressWarnings("unchecked")
@@ -1737,7 +1746,7 @@ public class MethodHandles {
          * regardless of its {@linkplain #lookupModes() lookup modes}.
          * {@link #PROTECTED PROTECTED} and {@link #ORIGINAL ORIGINAL} are always
          * dropped and so the resulting lookup mode will never have these access
-         * capability. When dropping {@code PACKAGE}
+         * capabilities. When dropping {@code PACKAGE}
          * then the resulting lookup will not have {@code PACKAGE} or {@code PRIVATE}
          * access. When dropping {@code MODULE} then the resulting lookup will not
          * have {@code MODULE}, {@code PACKAGE}, or {@code PRIVATE} access.
@@ -2125,7 +2134,20 @@ public class MethodHandles {
          * The newly created class is linked by the Java Virtual Machine.
          *
          * <p> The {@link MethodHandles#classData(Lookup, String, Class) MethodHandles::classData}
-         * method can be used to retrieve the {@code classData}.
+         * and {@link MethodHandles#classDataAt(Lookup, String, Class, int) MethodHandles::classDataAt}
+         * methods can be used to retrieve the {@code classData}.
+         *
+         * @apiNote
+         * A framework can create a hidden class with class data with one or more
+         * objects and load the class data as dynamically-computed constant(s)
+         * via a bootstrap method.  {@link MethodHandles#classData(Lookup, String, Class)
+         * Class data} is accessible only to the lookup object created by the newly
+         * defined hidden class but inaccessible to other members in the same nest
+         * (unlike private static fields that are accessible to nestmates).
+         * Care should be taken w.r.t. mutability for example when passing
+         * an array or other mutable structure through the class data.
+         * If you use a {@code List}, it is a good practice to make it unmodifiable
+         * for example via {@link List#of List::of}.
          *
          * @param bytes     the class bytes
          * @param classData pre-initialized class data
@@ -2155,6 +2177,7 @@ public class MethodHandles {
          * @see Lookup#defineHiddenClass(byte[], boolean, ClassOption...)
          * @see Class#isHidden()
          * @see MethodHandles#classData(Lookup, String, Class)
+         * @see MethodHandles#classDataAt(Lookup, String, Class, int)
          * @jvms 4.2.1 Binary Class and Interface Names
          * @jvms 4.2.2 Unqualified Names
          * @jvms 4.7.28 The {@code NestHost} Attribute
