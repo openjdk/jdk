@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,8 +49,10 @@ TEST_VM_F(LogTest, prefix) {
 }
 #endif
 
+// The max logging buffer size is efined in logTag.hpp
+// The part above that will be ignored.
 TEST_VM_F(LogTest, large_message) {
-  char big_msg[4096] = {0};
+  char big_msg[MAX_LOGGING_BUFFER_SIZE + 1024] = {0};
   char Xchar = '~';
 
   set_log_config(TestLogFileName, "logging=trace");
@@ -66,7 +68,7 @@ TEST_VM_F(LogTest, large_message) {
 
   size_t count = 0;
   for (size_t ps = 0 ; output[ps + count] != '\0'; output[ps + count] == Xchar ? count++ : ps++);
-  EXPECT_EQ(sizeof(big_msg) - 1, count);
+  EXPECT_EQ(MAX_LOGGING_BUFFER_SIZE - 1, count);
 }
 
 TEST_VM_F(LogTest, enabled_logtarget) {

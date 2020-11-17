@@ -107,34 +107,20 @@ void LogTagSet::write(LogLevelType level, const char* fmt, ...) {
   va_end(args);
 }
 
-const size_t vwrite_buffer_size = 512;
-
+// The output will be truncated if it is bigger than  MAX_LOGGING_BUFFER_SIZE.
 void LogTagSet::vwrite(LogLevelType level, const char* fmt, va_list args) {
   assert(level >= LogLevel::First && level <= LogLevel::Last, "Log level:%d is incorrect", level);
-  char buf[vwrite_buffer_size];
+  char buf[MAX_LOGGING_BUFFER_SIZE];
   va_list saved_args;           // For re-format on buf overflow.
   va_copy(saved_args, args);
   size_t prefix_len = _write_prefix(buf, sizeof(buf));
-  // Check that string fits in buffer; resize buffer if necessary
-  int ret;
-  if (prefix_len < vwrite_buffer_size) {
+  assert(prefix_len < MAX_LOGGING_BUFFER_SIZE, "Prefix is over vwrite_buffer_size");
+  if (prefix_len < MAX_LOGGING_BUFFER_SIZE) {
+    int ret;
     ret = os::vsnprintf(buf + prefix_len, sizeof(buf) - prefix_len, fmt, args);
-  } else {
-    // Buffer too small. Just call printf to find out the length for realloc below.
-    ret = os::vsnprintf(buf, sizeof(buf), fmt, args);
-  }
-  assert(ret >= 0, "Log message buffer issue");
-  if ((size_t)ret >= sizeof(buf)) {
-    size_t newbuf_len = prefix_len + ret + 1;
-    char* newbuf = NEW_C_HEAP_ARRAY(char, newbuf_len, mtLogging);
-    prefix_len = _write_prefix(newbuf, newbuf_len);
-    ret = os::vsnprintf(newbuf + prefix_len, newbuf_len - prefix_len, fmt, saved_args);
     assert(ret >= 0, "Log message buffer issue");
-    log(level, newbuf);
-    FREE_C_HEAP_ARRAY(char, newbuf);
-  } else {
-    log(level, buf);
   }
+  log(level, buf);
   va_end(saved_args);
 }
 

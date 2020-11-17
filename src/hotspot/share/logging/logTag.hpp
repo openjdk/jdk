@@ -240,4 +240,7 @@ class LogTag : public AllStatic {
 
 typedef LogTag::type LogTagType;
 
+// The max output buffer size for output line including tags.
+const size_t MAX_LOGGING_BUFFER_SIZE = 4096;
+
 #endif // SHARE_LOGGING_LOGTAG_HPP
