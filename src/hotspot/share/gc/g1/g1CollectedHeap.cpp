@@ -4535,8 +4535,7 @@ void G1CollectedHeap::prepare_region_for_full_compaction(HeapRegion* hr) {
     hr->uninstall_surv_rate_group();
   } else {
     // We ignore free regions, we'll empty the free list afterwards.
-    assert(hr->is_free(),
-           "it cannot be another type");
+    assert(hr->is_free(), "it cannot be another type");
   }
 }
 

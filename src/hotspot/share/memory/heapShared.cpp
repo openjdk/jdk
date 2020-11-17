@@ -215,6 +215,7 @@ void HeapShared::set_roots(narrowOop roots) {
   _roots_narrow = roots;
 }
 
+// Returns an objArray that contains all the roots of the archived objects
 oop HeapShared::get_root(int index, bool clear) {
   assert(index >= 0, "sanity");
   if (DumpSharedSpaces) {
@@ -331,9 +332,8 @@ void HeapShared::run_full_gc_in_vm_thread() {
   }
 }
 
-// Returns an objArray that contains all the roots of the archived objects
-void HeapShared::archive_java_heap_objects(GrowableArray<MemRegion> *closed,
-                                           GrowableArray<MemRegion> *open) {
+void HeapShared::archive_java_heap_objects(GrowableArray<MemRegion>* closed,
+                                           GrowableArray<MemRegion>* open) {
 
   G1HeapVerifier::verify_ready_for_archiving();
 
@@ -410,7 +410,7 @@ void HeapShared::copy_open_archive_heap_objects(
 void HeapShared::copy_roots() {
   int length = _pending_roots != NULL ? _pending_roots->length() : 0;
   int size = objArrayOopDesc::object_size(length);
-  Klass *k = Universe::objectArrayKlassObj(); // already relocated to point to archived klass
+  Klass* k = Universe::objectArrayKlassObj(); // already relocated to point to archived klass
   HeapWord* mem = G1CollectedHeap::heap()->archive_mem_allocate(size);
 
   memset(mem, 0, size * BytesPerWord);
@@ -482,7 +482,7 @@ void KlassSubGraphInfo::add_subgraph_entry_field(
 
 // Add the Klass* for an object in the current KlassSubGraphInfo's subgraphs.
 // Only objects of boot classes can be included in sub-graph.
-void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k, Klass *relocated_k) {
+void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k, Klass* relocated_k) {
   assert(DumpSharedSpaces, "dump time only");
   assert(relocated_k == MetaspaceShared::get_relocated_klass(orig_k),
          "must be the relocated Klass in the shared space");
@@ -658,8 +658,8 @@ static void verify_the_heap(Klass* k, const char* which) {
     VM_Verify verify_op;
     VMThread::execute(&verify_op);
     if (!FLAG_IS_DEFAULT(VerifyArchivedFields)) {
-      // If this -XX:+VerifyArchivedFields is specified on the command-line, do extra
-      // checks.
+      // If VerifyArchivedFields has a non-default value (e.g., specified on the command-line), do
+      // more expensive checks.
       if (is_init_completed()) {
         FlagSetting fs1(VerifyBeforeGC, true);
         FlagSetting fs2(VerifyDuringGC, true);
