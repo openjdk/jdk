@@ -29,14 +29,6 @@
 static bool debug_output   = false;
 static bool debug_output1  = false;    // top level chain rules
 
-//---------------------------Access to internals of class State----------------
-static const char *sLeft   = "_kids[0]";
-static const char *sRight  = "_kids[1]";
-
-//---------------------------DFA productions-----------------------------------
-static const char *dfa_production           = "DFA_PRODUCTION";
-static const char *dfa_production_set_valid = "DFA_PRODUCTION__SET_VALID";
-
 //---------------------------Production State----------------------------------
 static const char *knownInvalid = "knownInvalid";    // The result does NOT have a rule defined
 static const char *knownValid   = "knownValid";      // The result must be produced by a rule
@@ -111,7 +103,7 @@ private:
 //---------------------------Helper Functions----------------------------------
 // cost_check template:
 // 1)      if (STATE__NOT_YET_VALID(EBXREGI) || _cost[EBXREGI] > c) {
-// 2)        DFA_PRODUCTION__SET_VALID(EBXREGI, cmovI_memu_rule, c)
+// 2)        DFA_PRODUCTION(EBXREGI, cmovI_memu_rule, c)
 // 3)      }
 //
 static void cost_check(FILE *fp, const char *spaces,
@@ -163,10 +155,12 @@ static void cost_check(FILE *fp, const char *spaces,
 
   // line 2)
   fprintf(fp, "%s  DFA_PRODUCTION(%s, %s_rule, %s)", spaces, arrayIdx, rule, cost->as_string() );
-  if( validity_check == knownValid ) {
-    if( cost_is_below_lower_bound ) { fprintf(fp, "\t  // overwrites higher cost rule"); }
-   }
-   fprintf(fp, "\n");
+  if (validity_check == knownValid) {
+    if (cost_is_below_lower_bound) {
+      fprintf(fp, "\t  // overwrites higher cost rule");
+    }
+  }
+  fprintf(fp, "\n");
 
   // line 3)
   if( cost_check || state_check ) {
@@ -274,7 +268,7 @@ void ArchDesc::gen_match(FILE *fp, MatchList &mList, ProductionState &status, Di
 
   // Check if this rule should be used to generate the chains as well.
   const char *rule = /* set rule to "Invalid" for internal operands */
-    strcmp(mList._opcode,mList._resultStr) ? mList._opcode : "Invalid";
+    strcmp(mList._opcode, mList._resultStr) ? mList._opcode : "Invalid";
 
   // If this rule produces an operand which has associated chain rules,
   // update the operands with the chain rule + this rule cost & this rule.
@@ -395,7 +389,7 @@ void ArchDesc::buildDFA(FILE* fp) {
   fprintf(fp, "\n");
   fprintf(fp, "//------------------------- Macros -----------------------------------------\n");
   fprintf(fp, "#define DFA_PRODUCTION(result, rule, cost)\\\n");
-  fprintf(fp, "  _cost[ (result) ] = cost; _rule[ (result) ] = (rule << 1U) | 0x1;\n");
+  fprintf(fp, "  _cost[ (result) ] = cost; _rule[ (result) ] = (rule << 1) | 0x1;\n");
   fprintf(fp, "\n");
 
   fprintf(fp, "//------------------------- DFA --------------------------------------------\n");

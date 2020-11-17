@@ -2038,6 +2038,7 @@ void ArchDesc::defineStateClass(FILE *fp) {
   fprintf(fp,"  unsigned int _cost[_LAST_MACH_OPER];  // Costs, indexed by operand opcodes\n");
   fprintf(fp,"  uint16_t     _rule[_LAST_MACH_OPER];  // Rule and validity, indexed by operand opcodes\n");
   fprintf(fp,"                                        // Lowest bit encodes validity\n");
+
   fprintf(fp,"public:\n");
   fprintf(fp,"  int    _id;                           // State identifier\n");
   fprintf(fp,"  Node  *_leaf;                         // Ideal (non-machine-node) leaf of match tree\n");
@@ -2057,7 +2058,7 @@ void ArchDesc::defineStateClass(FILE *fp) {
   fprintf(fp,"    return (STATE__VALID(index) != 0);\n");
   fprintf(fp,"  }\n");
   fprintf(fp,"  unsigned int rule(uint index) {\n");
-  fprintf(fp,"    return (_rule[index] >> 1U);\n");
+  fprintf(fp,"    return _rule[index] >> 1;\n");
   fprintf(fp,"  }\n");
   fprintf(fp,"  unsigned int cost(uint index) {\n");
   fprintf(fp,"    return _cost[index];\n");
