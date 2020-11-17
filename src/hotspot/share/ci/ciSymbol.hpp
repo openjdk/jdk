@@ -27,8 +27,8 @@
 
 #include "ci/ciBaseObject.hpp"
 #include "ci/ciObject.hpp"
-#include "utilities/vmEnums.hpp"
 #include "oops/symbol.hpp"
+#include "utilities/vmEnums.hpp"
 
 // ciSymbol
 //
