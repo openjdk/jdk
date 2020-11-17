@@ -796,6 +796,7 @@ public class TreeMap<K,V>
                     }
                     return oldValue;
                 }
+                parent.childCount += 1;
             } while (t != null);
         } else {
             Objects.requireNonNull(key);
@@ -815,6 +816,7 @@ public class TreeMap<K,V>
                     }
                     return oldValue;
                 }
+                parent.childCount += 1;
             } while (t != null);
         }
         addEntry(key, value, parent, cmp < 0);
@@ -1044,6 +1046,19 @@ public class TreeMap<K,V>
      */
     public K higherKey(K key) {
         return keyOrNull(getHigherEntry(key));
+    }
+
+    /**
+     * Returns total number of children of a node including the node
+     * @param key key whose presence in this map is to be tested
+     * @return total number of children of a node
+     */
+    public int childCount(Object key) {
+        Entry<K,V> entry = getEntry(key);
+        if(entry == null)
+            return 0;
+        return 1 + (entry.left != null ? entry.left.childCount : 0) +
+                (entry.right != null ? entry.right.childCount : 0) ;
     }
 
     // Views
@@ -1937,6 +1952,34 @@ public class TreeMap<K,V>
             public int size() {
                 if (fromStart && toEnd)
                     return m.size();
+                if (fromStart) {
+                    size = 0;
+                    TreeMap.Entry<?,?> entry;
+                    if (hiInclusive) {
+                        entry = m.getFloorEntry(hi);
+                    } else {
+                        entry = m.getLowerEntry(hi);
+                    }
+                    if (entry == null) {
+                        return size;
+                    }
+                    size = 1 + (entry.left != null ? entry.left.childCount : 0);
+                    return size;
+                }
+                if (toEnd) {
+                    size = 0;
+                    TreeMap.Entry<?,?> entry;
+                    if (loInclusive) {
+                        entry = m.getCeilingEntry(lo);
+                    } else {
+                        entry = m.getHigherEntry(lo);
+                    }
+                    if (entry == null) {
+                        return size;
+                    }
+                    size = 1 + (entry.right != null ? entry.right.childCount : 0);
+                    return size;
+                }
                 if (size == -1 || sizeModCount != m.modCount) {
                     sizeModCount = m.modCount;
                     size = 0;
@@ -2370,6 +2413,7 @@ public class TreeMap<K,V>
     static final class Entry<K,V> implements Map.Entry<K,V> {
         K key;
         V value;
+        int childCount;
         Entry<K,V> left;
         Entry<K,V> right;
         Entry<K,V> parent;
@@ -2383,6 +2427,7 @@ public class TreeMap<K,V>
             this.key = key;
             this.value = value;
             this.parent = parent;
+            this.childCount = 0;
         }
 
         /**
@@ -2539,6 +2584,7 @@ public class TreeMap<K,V>
         if (p != null) {
             Entry<K,V> r = p.right;
             p.right = r.left;
+            p.childCount = childCount(p.key);
             if (r.left != null)
                 r.left.parent = p;
             r.parent = p.parent;
@@ -2549,6 +2595,7 @@ public class TreeMap<K,V>
             else
                 p.parent.right = r;
             r.left = p;
+            r.childCount = childCount(r.key);
             p.parent = r;
         }
     }
@@ -2558,6 +2605,7 @@ public class TreeMap<K,V>
         if (p != null) {
             Entry<K,V> l = p.left;
             p.left = l.right;
+            p.childCount = childCount(p.key);
             if (l.right != null) l.right.parent = p;
             l.parent = p.parent;
             if (p.parent == null)
@@ -2566,6 +2614,7 @@ public class TreeMap<K,V>
                 p.parent.right = l;
             else p.parent.left = l;
             l.right = p;
+            l.childCount = childCount(l.key);
             p.parent = l;
         }
     }
