@@ -135,6 +135,9 @@ public class DebugReportsOneExtraByte {
 
             System.out.println("Test Passed.");
         } else {
+            // Re-enable TLSv1 since test depends on it
+            SecurityUtils.removeFromDisabledTlsAlgs("TLSv1");
+
             DebugReportsOneExtraByte test = new DebugReportsOneExtraByte();
             test.runTest();
         }
@@ -144,9 +147,6 @@ public class DebugReportsOneExtraByte {
      * Create an initialized SSLContext to use for these tests.
      */
     public DebugReportsOneExtraByte() throws Exception {
-
-        // Re-enable TLSv1 since test depends on it
-        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1");
 
         KeyStore ks = KeyStore.getInstance("JKS");
         KeyStore ts = KeyStore.getInstance("JKS");
