@@ -781,7 +781,6 @@ static markWord read_stable_mark(oop obj) {
         int ix = (cast_from_oop<intptr_t>(obj) >> 5) & (NINFLATIONLOCKS-1);
         int YieldThenBlock = 0;
         assert(ix >= 0 && ix < NINFLATIONLOCKS, "invariant");
-        assert((NINFLATIONLOCKS & (NINFLATIONLOCKS-1)) == 0, "invariant");
         gInflationLocks[ix]->lock();
         while (obj->mark() == markWord::INFLATING()) {
           // Beware: naked_yield() is advisory and has almost no effect on some platforms
