@@ -59,9 +59,7 @@ public abstract class HeapMemorySegmentImpl<H> extends AbstractMemorySegmentImpl
     }
 
     @Override
-    H base() {
-        return base;
-    }
+    abstract H base();
 
     @Override
     long min() {
