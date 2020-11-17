@@ -12757,160 +12757,96 @@ instruct extrAddI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2, immI lshift, 
 
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-
-// rol expander
-instruct rolL_rReg(iRegLNoSp dst, iRegL src, iRegI shift, rFlagsReg cr)
+instruct rorI_imm(iRegINoSp dst, iRegI src, immI shift)
 %{
-  effect(DEF dst, USE src, USE shift);
+  match(Set dst (RotateRight src shift));
 
-  format %{ "rol    $dst, $src, $shift" %}
-  ins_cost(INSN_COST * 3);
-  ins_encode %{
-    __ subw(rscratch1, zr, as_Register($shift$$reg));
-    __ rorv(as_Register($dst$$reg), as_Register($src$$reg),
-            rscratch1);
-    %}
-  ins_pipe(ialu_reg_reg_vshift);
-%}
-
-// This pattern is automatically generated from aarch64_ad.m4
-// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-
-// rol expander
-instruct rolI_rReg(iRegINoSp dst, iRegI src, iRegI shift, rFlagsReg cr)
-%{
-  effect(DEF dst, USE src, USE shift);
-
-  format %{ "rol    $dst, $src, $shift" %}
-  ins_cost(INSN_COST * 3);
-  ins_encode %{
-    __ subw(rscratch1, zr, as_Register($shift$$reg));
-    __ rorvw(as_Register($dst$$reg), as_Register($src$$reg),
-            rscratch1);
-    %}
-  ins_pipe(ialu_reg_reg_vshift);
-%}
-
-// This pattern is automatically generated from aarch64_ad.m4
-// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct rolL_rReg_Var_C_64(iRegLNoSp dst, iRegL src, iRegI shift, immI_64 c_64, rFlagsReg cr)
-%{
-  match(Set dst (OrL (LShiftL src shift) (URShiftL src (SubI c_64 shift))));
-
-  expand %{
-    rolL_rReg(dst, src, shift, cr);
-  %}
-%}
-
-// This pattern is automatically generated from aarch64_ad.m4
-// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct rolL_rReg_Var_C0(iRegLNoSp dst, iRegL src, iRegI shift, immI0 c0, rFlagsReg cr)
-%{
-  match(Set dst (OrL (LShiftL src shift) (URShiftL src (SubI c0 shift))));
-
-  expand %{
-    rolL_rReg(dst, src, shift, cr);
-  %}
-%}
-
-// This pattern is automatically generated from aarch64_ad.m4
-// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct rolI_rReg_Var_C_32(iRegINoSp dst, iRegI src, iRegI shift, immI_32 c_32, rFlagsReg cr)
-%{
-  match(Set dst (OrI (LShiftI src shift) (URShiftI src (SubI c_32 shift))));
-
-  expand %{
-    rolI_rReg(dst, src, shift, cr);
-  %}
-%}
-
-// This pattern is automatically generated from aarch64_ad.m4
-// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct rolI_rReg_Var_C0(iRegINoSp dst, iRegI src, iRegI shift, immI0 c0, rFlagsReg cr)
-%{
-  match(Set dst (OrI (LShiftI src shift) (URShiftI src (SubI c0 shift))));
-
-  expand %{
-    rolI_rReg(dst, src, shift, cr);
-  %}
-%}
-
-// This pattern is automatically generated from aarch64_ad.m4
-// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-
-// ror expander
-instruct rorL_rReg(iRegLNoSp dst, iRegL src, iRegI shift, rFlagsReg cr)
-%{
-  effect(DEF dst, USE src, USE shift);
-
-  format %{ "ror    $dst, $src, $shift" %}
   ins_cost(INSN_COST);
-  ins_encode %{
-    __ rorv(as_Register($dst$$reg), as_Register($src$$reg),
-            as_Register($shift$$reg));
-    %}
-  ins_pipe(ialu_reg_reg_vshift);
-%}
-
-// This pattern is automatically generated from aarch64_ad.m4
-// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-
-// ror expander
-instruct rorI_rReg(iRegINoSp dst, iRegI src, iRegI shift, rFlagsReg cr)
-%{
-  effect(DEF dst, USE src, USE shift);
-
   format %{ "ror    $dst, $src, $shift" %}
-  ins_cost(INSN_COST);
+
   ins_encode %{
-    __ rorvw(as_Register($dst$$reg), as_Register($src$$reg),
-            as_Register($shift$$reg));
-    %}
+     __ extrw(as_Register($dst$$reg), as_Register($src$$reg), as_Register($src$$reg),
+               $shift$$constant & 0x1f);
+  %}
   ins_pipe(ialu_reg_reg_vshift);
 %}
 
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct rorL_rReg_Var_C_64(iRegLNoSp dst, iRegL src, iRegI shift, immI_64 c_64, rFlagsReg cr)
+instruct rorL_imm(iRegLNoSp dst, iRegL src, immI shift)
 %{
-  match(Set dst (OrL (URShiftL src shift) (LShiftL src (SubI c_64 shift))));
+  match(Set dst (RotateRight src shift));
 
-  expand %{
-    rorL_rReg(dst, src, shift, cr);
+  ins_cost(INSN_COST);
+  format %{ "ror    $dst, $src, $shift" %}
+
+  ins_encode %{
+     __ extr(as_Register($dst$$reg), as_Register($src$$reg), as_Register($src$$reg),
+               $shift$$constant & 0x3f);
   %}
+  ins_pipe(ialu_reg_reg_vshift);
 %}
 
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct rorL_rReg_Var_C0(iRegLNoSp dst, iRegL src, iRegI shift, immI0 c0, rFlagsReg cr)
+instruct rorI_reg(iRegINoSp dst, iRegI src, iRegI shift)
 %{
-  match(Set dst (OrL (URShiftL src shift) (LShiftL src (SubI c0 shift))));
+  match(Set dst (RotateRight src shift));
 
-  expand %{
-    rorL_rReg(dst, src, shift, cr);
+  ins_cost(INSN_COST);
+  format %{ "ror    $dst, $src, $shift" %}
+
+  ins_encode %{
+     __ rorvw(as_Register($dst$$reg), as_Register($src$$reg), as_Register($shift$$reg));
   %}
+  ins_pipe(ialu_reg_reg_vshift);
 %}
 
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct rorI_rReg_Var_C_32(iRegINoSp dst, iRegI src, iRegI shift, immI_32 c_32, rFlagsReg cr)
+instruct rorL_reg(iRegLNoSp dst, iRegL src, iRegI shift)
 %{
-  match(Set dst (OrI (URShiftI src shift) (LShiftI src (SubI c_32 shift))));
+  match(Set dst (RotateRight src shift));
 
-  expand %{
-    rorI_rReg(dst, src, shift, cr);
+  ins_cost(INSN_COST);
+  format %{ "ror    $dst, $src, $shift" %}
+
+  ins_encode %{
+     __ rorv(as_Register($dst$$reg), as_Register($src$$reg), as_Register($shift$$reg));
   %}
+  ins_pipe(ialu_reg_reg_vshift);
 %}
 
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct rorI_rReg_Var_C0(iRegINoSp dst, iRegI src, iRegI shift, immI0 c0, rFlagsReg cr)
+instruct rolI_reg(iRegINoSp dst, iRegI src, iRegI shift)
 %{
-  match(Set dst (OrI (URShiftI src shift) (LShiftI src (SubI c0 shift))));
+  match(Set dst (RotateLeft src shift));
 
-  expand %{
-    rorI_rReg(dst, src, shift, cr);
+  ins_cost(INSN_COST);
+  format %{ "rol    $dst, $src, $shift" %}
+
+  ins_encode %{
+     __ subw(rscratch1, zr, as_Register($shift$$reg));
+     __ rorvw(as_Register($dst$$reg), as_Register($src$$reg), rscratch1);
   %}
+  ins_pipe(ialu_reg_reg_vshift);
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct rolL_reg(iRegLNoSp dst, iRegL src, iRegI shift)
+%{
+  match(Set dst (RotateLeft src shift));
+
+  ins_cost(INSN_COST);
+  format %{ "rol    $dst, $src, $shift" %}
+
+  ins_encode %{
+     __ subw(rscratch1, zr, as_Register($shift$$reg));
+     __ rorv(as_Register($dst$$reg), as_Register($src$$reg), rscratch1);
+  %}
+  ins_pipe(ialu_reg_reg_vshift);
 %}
 
 
