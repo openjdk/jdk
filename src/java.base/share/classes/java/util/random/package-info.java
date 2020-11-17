@@ -24,7 +24,10 @@
  */
 
 /**
- * Classes and interfaces that support the definition and use of "random
+ * This package contains classes and interfaces that support a generic API
+ * for random number generation in the JDK.
+ *
+ * These classes and interfaces that support the definition and use of "random
  * generators", a term that is meant to cover what have traditionally been
  * called "random number generators" as well as generators of other sorts of
  * randomly chosen values, and also to cover not only deterministic
@@ -43,6 +46,11 @@
  * parallel processing of their elements). There are also static factory methods
  * for creating an instance of a specific random number generator algorithm
  * given its name.
+ *
+ * <p> The principal supporting class is {@link RandomGenertatorFactor}. This
+ * can be used to generate multiple random number generators for a specific
+ * algorithm. {@link RandomGeneratorFactory} also provides methods for
+ * selecting random number generator algorithms.
  *
  * <p> An important subsidiary interface is
  * {@link RandomGenerator.StreamableGenerator}, which provides methods for

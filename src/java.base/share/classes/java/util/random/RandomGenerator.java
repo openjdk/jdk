@@ -1182,7 +1182,7 @@ public interface RandomGenerator {
          *
          * @return the default jump distance (as a {@code double} value)
          */
-        double defaultJumpDistance();
+        double jumpDistance();
 
         /**
          * Returns an effectively unlimited stream of new pseudorandom number
@@ -1379,7 +1379,7 @@ public interface RandomGenerator {
          *
          * @return the default leap distance (as a {@code double} value)
          */
-        double defaultLeapDistance();
+        double leapDistance();
 
         /**
          * Returns an effectively unlimited stream of new pseudorandom number
@@ -1560,9 +1560,9 @@ public interface RandomGenerator {
          * Alter the state of this pseudorandom number generator so as to jump
          * forward a large, fixed distance (typically 2<sup>64</sup> or more)
          * within its state cycle. The distance used is that returned by method
-         * {@link ArbitrarilyJumpableGenerator#defaultJumpDistance() defaultJumpDistance}().
+         * {@link ArbitrarilyJumpableGenerator#jumpDistance() jumpDistance}().
          */
-        default void jump() { jump(defaultJumpDistance()); }
+        default void jump() { jump(jumpDistance()); }
 
         /**
          * Returns an effectively unlimited stream of new pseudorandom number
@@ -1611,9 +1611,9 @@ public interface RandomGenerator {
          * forward a very large, fixed distance (typically 2<sup>128</sup> or
          * more) within its state cycle. The distance used is that returned by
          * method
-         * {@link ArbitrarilyJumpableGenerator#defaultLeapDistance() defaultLeapDistance}().
+         * {@link ArbitrarilyJumpableGenerator#leapDistance() leapDistance}().
          */
-        default void leap() { jump(defaultLeapDistance()); }
+        default void leap() { jump(leapDistance()); }
 
         /**
          * Copy this generator, jump this generator forward, then return the

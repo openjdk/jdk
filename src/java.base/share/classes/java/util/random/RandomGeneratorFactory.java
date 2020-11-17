@@ -49,6 +49,13 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperty;
  * of a specific algorithm. {@link RandomGeneratorFactory} also provides
  * methods for selecting random number generator algorithms.
  *
+ * A specific {@link RandomGeneratorFactory} can be located by using the
+ * {@link RandomGenerator#factoryOf(String)} method, where the argument string
+ * is the name of the algorithm required. The method
+ * {@link RandomGenerator#all()} produces a {@link Stream} of all available
+ * {@link RandomGenerator RandomGenerators} that can be searched to locate a
+ * {@link RandomGeneratorFactory} suitable to the task.
+ *
  * There are three methods for constructing a RandomGenerator instance,
  * depending on the type of initial seed required.
  * {@link RandomGeneratorFactory#create(long)} is used for long
@@ -69,8 +76,9 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperty;
  *     }
  * }</pre>
  *
- * The remaining {@link RandomGeneratorFactory} methods are used to select
- * random number generators suitable for specific tasks. They are typically used in
+ * RandomGeneratorFactory also provides methods describing the attributes (or properties)
+ * of a generator and can be used to select random number generator algorithms.
+ * These methods are typically used in
  * conjunction with {@link RandomGenerator#all()}. In this example, the code locates the
  * {@link RandomGeneratorFactory} that produces {@link RandomGenerator RandomGenerators}
  * with the highest number of state bits.

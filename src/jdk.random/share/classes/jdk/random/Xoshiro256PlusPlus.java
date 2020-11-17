@@ -295,12 +295,12 @@ public final class Xoshiro256PlusPlus implements LeapableGenerator {
     }
 
     @Override
-    public double defaultJumpDistance() {
+    public double jumpDistance() {
         return 0x1.0p128;
     }
 
     @Override
-    public double defaultLeapDistance() {
+    public double leapDistance() {
         return 0x1.0p192;
     }
 
