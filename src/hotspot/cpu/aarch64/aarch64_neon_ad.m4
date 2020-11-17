@@ -1422,3 +1422,67 @@ dnl             $1  $2
 ALLTRUE_IN_MASK(8,  D)
 ALLTRUE_IN_MASK(16, X)
 dnl
+dnl
+
+// --------------------------------- ABS --------------------------------------
+define(`VABS', `
+instruct vabs$1$2`'(vec$3 dst, vec$3 src)
+%{
+  predicate(n->as_Vector()->length() == $1);
+  match(Set dst (AbsV$2 src));
+  ins_cost(INSN_COST);
+  format %{ "abs  $dst, $src\t# vector ($1$4)" %}
+  ins_encode %{
+    __ absr(as_FloatRegister($dst$$reg), __ T$1$4, as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(vlogical$5);
+%}')dnl
+dnl
+dnl $1   $2 $3 $4 $5
+VABS(8,  B, D, B, 64)
+VABS(16, B, X, B, 128)
+VABS(4,  S, D, H, 64)
+VABS(8,  S, X, H, 128)
+VABS(2,  I, D, S, 64)
+VABS(4,  I, X, S, 128)
+VABS(2,  L, X, D, 128)
+dnl
+define(`VFABS', `
+instruct vabs$1$2`'(vec$3 dst, vec$3 src)
+%{
+  predicate(n->as_Vector()->length() == $1);
+  match(Set dst (AbsV$2 src));
+  ins_cost(INSN_COST * 3);
+  format %{ "fabs  $dst, $src\t# vector ($1$4)" %}
+  ins_encode %{
+    __ fabs(as_FloatRegister($dst$$reg), __ T$1$4, as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(vunop_fp$5);
+%}')dnl
+dnl
+dnl   $1 $2 $3 $4 $5
+VFABS(2, F, D, S, 64)
+VFABS(4, F, X, S, 128)
+VFABS(2, D, X, D, 128)
+dnl
+
+// --------------------------------- FABS DIFF --------------------------------
+define(`VFABD', `
+instruct vabd$1$2`'(vec$3 dst, vec$3 src1, vec$3 src2)
+%{
+  predicate(n->as_Vector()->length() == $1);
+  match(Set dst (AbsV$2 (SubV$2 src1 src2)));
+  ins_cost(INSN_COST * 3);
+  format %{ "fabd  $dst, $src1, $src2\t# vector ($1$4)" %}
+  ins_encode %{
+    __ fabd(as_FloatRegister($dst$$reg), __ T$1$4,
+            as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(vunop_fp$5);
+%}')dnl
+dnl
+dnl   $1 $2 $3 $4 $5
+VFABD(2, F, D, S, 64)
+VFABD(4, F, X, S, 128)
+VFABD(2, D, X, D, 128)
+dnl
