@@ -1843,24 +1843,23 @@ void Matcher::ReduceInst_Chain_Rule(State* s, int rule, Node* &mem, MachNode* ma
   int op = _leftOp[rule];
   // Operand type to catch childs result
   // This is what my child will give me.
-  uint16_t opnd_class_instance = s->rule(op);
+  unsigned int opnd_class_instance = s->rule(op);
   // Choose between operand class or not.
   // This is what I will receive.
   int catch_op = (FIRST_OPERAND_CLASS <= op && op < NUM_OPERANDS) ? opnd_class_instance : op;
   // New rule for child.  Chase operand classes to get the actual rule.
-  uint16_t newrule = s->rule(catch_op);
+  unsigned int newrule = s->rule(catch_op);
 
-  if( newrule < NUM_OPERANDS ) {
+  if (newrule < NUM_OPERANDS) {
     // Chain from operand or operand class, may be output of shared node
-    assert( 0 <= opnd_class_instance && opnd_class_instance < NUM_OPERANDS,
-            "Bad AD file: Instruction chain rule must chain from operand");
+    assert(opnd_class_instance < NUM_OPERANDS, "Bad AD file: Instruction chain rule must chain from operand");
     // Insert operand into array of operands for this instruction
     mach->_opnds[1] = s->MachOperGenerator(opnd_class_instance);
 
-    ReduceOper( s, newrule, mem, mach );
+    ReduceOper(s, newrule, mem, mach);
   } else {
     // Chain from the result of an instruction
-    assert( newrule >= _LAST_MACH_OPER, "Do NOT chain from internal operand");
+    assert(newrule >= _LAST_MACH_OPER, "Do NOT chain from internal operand");
     mach->_opnds[1] = s->MachOperGenerator(_reduceOp[catch_op]);
     Node *mem1 = (Node*)1;
     debug_only(Node *save_mem_node = _mem_node;)
