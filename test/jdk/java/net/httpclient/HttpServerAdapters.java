@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -196,7 +196,7 @@ public interface HttpServerAdapters {
     /**
      * A version agnostic adapter class for HTTP Server Exchange.
      */
-    public static abstract class HttpTestExchange {
+    public static abstract class HttpTestExchange implements AutoCloseable {
         public abstract Version getServerVersion();
         public abstract Version getExchangeVersion();
         public abstract InputStream   getRequestBody();

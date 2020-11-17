@@ -178,6 +178,91 @@ static inline double fileTimeAsDouble(FILETIME* time) {
 
 // Implementation of os
 
+#define RANGE_FORMAT                "[" PTR_FORMAT "-" PTR_FORMAT ")"
+#define RANGE_FORMAT_ARGS(p, len)   p2i(p), p2i((address)p + len)
+
+// A number of wrappers for more frequently used system calls, to add standard logging.
+
+struct PreserveLastError {
+  const DWORD v;
+  PreserveLastError() : v(::GetLastError()) {}
+  ~PreserveLastError() { ::SetLastError(v); }
+};
+
+// Logging wrapper for VirtualAlloc
+static LPVOID virtualAlloc(LPVOID lpAddress, SIZE_T dwSize, DWORD flAllocationType, DWORD flProtect) {
+  LPVOID result = ::VirtualAlloc(lpAddress, dwSize, flAllocationType, flProtect);
+  if (result != NULL) {
+    log_trace(os)("VirtualAlloc(" PTR_FORMAT ", " SIZE_FORMAT ", %x, %x) returned " PTR_FORMAT "%s.",
+                  p2i(lpAddress), dwSize, flAllocationType, flProtect, p2i(result),
+                  ((lpAddress != NULL && result != lpAddress) ? " <different base!>" : ""));
+  } else {
+    PreserveLastError ple;
+    log_info(os)("VirtualAlloc(" PTR_FORMAT ", " SIZE_FORMAT ", %x, %x) failed (%u).",
+                  p2i(lpAddress), dwSize, flAllocationType, flProtect, ple.v);
+  }
+  return result;
+}
+
+// Logging wrapper for VirtualFree
+static BOOL virtualFree(LPVOID lpAddress, SIZE_T dwSize, DWORD  dwFreeType) {
+  BOOL result = ::VirtualFree(lpAddress, dwSize, dwFreeType);
+  if (result != FALSE) {
+    log_trace(os)("VirtualFree(" PTR_FORMAT ", " SIZE_FORMAT ", %x) succeeded",
+                  p2i(lpAddress), dwSize, dwFreeType);
+  } else {
+    PreserveLastError ple;
+    log_info(os)("VirtualFree(" PTR_FORMAT ", " SIZE_FORMAT ", %x) failed (%u).",
+                 p2i(lpAddress), dwSize, dwFreeType, ple.v);
+  }
+  return result;
+}
+
+// Logging wrapper for VirtualAllocExNuma
+static LPVOID virtualAllocExNuma(HANDLE hProcess, LPVOID lpAddress, SIZE_T dwSize, DWORD  flAllocationType,
+                                 DWORD  flProtect, DWORD  nndPreferred) {
+  LPVOID result = ::VirtualAllocExNuma(hProcess, lpAddress, dwSize, flAllocationType, flProtect, nndPreferred);
+  if (result != NULL) {
+    log_trace(os)("VirtualAllocExNuma(" PTR_FORMAT ", " SIZE_FORMAT ", %x, %x, %x) returned " PTR_FORMAT "%s.",
+                  p2i(lpAddress), dwSize, flAllocationType, flProtect, nndPreferred, p2i(result),
+                  ((lpAddress != NULL && result != lpAddress) ? " <different base!>" : ""));
+  } else {
+    PreserveLastError ple;
+    log_info(os)("VirtualAllocExNuma(" PTR_FORMAT ", " SIZE_FORMAT ", %x, %x, %x) failed (%u).",
+                 p2i(lpAddress), dwSize, flAllocationType, flProtect, nndPreferred, ple.v);
+  }
+  return result;
+}
+
+// Logging wrapper for MapViewOfFileEx
+static LPVOID mapViewOfFileEx(HANDLE hFileMappingObject, DWORD  dwDesiredAccess, DWORD  dwFileOffsetHigh,
+                              DWORD  dwFileOffsetLow, SIZE_T dwNumberOfBytesToMap, LPVOID lpBaseAddress) {
+  LPVOID result = ::MapViewOfFileEx(hFileMappingObject, dwDesiredAccess, dwFileOffsetHigh,
+                                    dwFileOffsetLow, dwNumberOfBytesToMap, lpBaseAddress);
+  if (result != NULL) {
+    log_trace(os)("MapViewOfFileEx(" PTR_FORMAT ", " SIZE_FORMAT ") returned " PTR_FORMAT "%s.",
+                  p2i(lpBaseAddress), dwNumberOfBytesToMap, p2i(result),
+                  ((lpBaseAddress != NULL && result != lpBaseAddress) ? " <different base!>" : ""));
+  } else {
+    PreserveLastError ple;
+    log_info(os)("MapViewOfFileEx(" PTR_FORMAT ", " SIZE_FORMAT ") failed (%u).",
+                 p2i(lpBaseAddress), dwNumberOfBytesToMap, ple.v);
+  }
+  return result;
+}
+
+// Logging wrapper for UnmapViewOfFile
+static BOOL unmapViewOfFile(LPCVOID lpBaseAddress) {
+  BOOL result = ::UnmapViewOfFile(lpBaseAddress);
+  if (result != FALSE) {
+    log_trace(os)("UnmapViewOfFile(" PTR_FORMAT ") succeeded", p2i(lpBaseAddress));
+  } else {
+    PreserveLastError ple;
+    log_info(os)("UnmapViewOfFile(" PTR_FORMAT ") failed (%u).",  p2i(lpBaseAddress), ple.v);
+  }
+  return result;
+}
+
 bool os::unsetenv(const char* name) {
   assert(name != NULL, "Null pointer");
   return (SetEnvironmentVariable(name, NULL) == TRUE);
@@ -339,7 +424,6 @@ int os::get_native_stack(address* stack, int frames, int toSkip) {
   }
   return captured;
 }
-
 
 // os::current_stack_base()
 //
@@ -2900,7 +2984,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
     // Overflowed.
     return NULL;
   }
-  p_buf = (char *) VirtualAlloc(addr,
+  p_buf = (char *) virtualAlloc(addr,
                                 size_of_reserve,  // size of Reserve
                                 MEM_RESERVE,
                                 PAGE_READWRITE);
@@ -2946,7 +3030,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
       p_new = NULL;
     } else {
       if (!UseNUMAInterleaving) {
-        p_new = (char *) VirtualAlloc(next_alloc_addr,
+        p_new = (char *) virtualAlloc(next_alloc_addr,
                                       bytes_to_rq,
                                       flags,
                                       prot);
@@ -2954,7 +3038,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
         // get the next node to use from the used_node_list
         assert(numa_node_list_holder.get_count() > 0, "Multiple NUMA nodes expected");
         DWORD node = numa_node_list_holder.get_node_list_entry(count % numa_node_list_holder.get_count());
-        p_new = (char *)VirtualAllocExNuma(hProc, next_alloc_addr, bytes_to_rq, flags, prot, node);
+        p_new = (char *)virtualAllocExNuma(hProc, next_alloc_addr, bytes_to_rq, flags, prot, node);
       }
     }
 
@@ -3100,7 +3184,7 @@ char* os::map_memory_to_file(char* base, size_t size, int fd) {
     return NULL;
   }
 
-  LPVOID addr = MapViewOfFileEx(fileMapping, FILE_MAP_WRITE, 0, 0, size, base);
+  LPVOID addr = mapViewOfFileEx(fileMapping, FILE_MAP_WRITE, 0, 0, size, base);
 
   CloseHandle(fileMapping);
 
@@ -3127,14 +3211,19 @@ void os::split_reserved_memory(char *base, size_t size, size_t split) {
   assert(is_aligned(base, os::vm_allocation_granularity()), "Sanity");
   assert(is_aligned(split_address, os::vm_allocation_granularity()), "Sanity");
 
-  release_memory(base, size);
-  attempt_reserve_memory_at(base, split);
-  attempt_reserve_memory_at(split_address, size - split);
+  const bool rc = release_memory(base, size) &&
+                  (attempt_reserve_memory_at(base, split) != NULL) &&
+                  (attempt_reserve_memory_at(split_address, size - split) != NULL);
+  if (!rc) {
+    log_warning(os)("os::split_reserved_memory failed for [" RANGE_FORMAT ")",
+                    RANGE_FORMAT_ARGS(base, size));
+    assert(false, "os::split_reserved_memory failed for [" RANGE_FORMAT ")",
+                    RANGE_FORMAT_ARGS(base, size));
+  }
 
   // NMT: nothing to do here. Since Windows implements the split by
   //  releasing and re-reserving memory, the parts are already registered
   //  as individual mappings with NMT.
-
 }
 
 // Multiple threads can race in this code but it's not possible to unmap small sections of
@@ -3149,28 +3238,31 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
   assert(extra_size >= size, "overflow, size is too large to allow alignment");
 
   char* aligned_base = NULL;
+  static const int max_attempts = 20;
 
-  do {
-    char* extra_base = file_desc != -1 ?
-      os::map_memory_to_file(extra_size, file_desc) :
-      os::reserve_memory(extra_size);
+  for (int attempt = 0; attempt < max_attempts && aligned_base == NULL; attempt ++) {
+    char* extra_base = file_desc != -1 ? os::map_memory_to_file(extra_size, file_desc) :
+                                         os::reserve_memory(extra_size);
     if (extra_base == NULL) {
       return NULL;
     }
     // Do manual alignment
     aligned_base = align_up(extra_base, alignment);
 
-    if (file_desc != -1) {
-      os::unmap_memory(extra_base, extra_size);
-    } else {
-      os::release_memory(extra_base, extra_size);
+    bool rc = (file_desc != -1) ? os::unmap_memory(extra_base, extra_size) :
+                                  os::release_memory(extra_base, extra_size);
+    assert(rc, "release failed");
+    if (!rc) {
+      return NULL;
     }
 
-    aligned_base = file_desc != -1 ?
-      os::attempt_map_memory_to_file_at(aligned_base, size, file_desc) :
-      os::attempt_reserve_memory_at(aligned_base, size);
+    // Attempt to map, into the just vacated space, the slightly smaller aligned area.
+    // Which may fail, hence the loop.
+    aligned_base = file_desc != -1 ? os::attempt_map_memory_to_file_at(aligned_base, size, file_desc) :
+                                     os::attempt_reserve_memory_at(aligned_base, size);
+  }
 
-  } while (aligned_base == NULL);
+  assert(aligned_base != NULL, "Did not manage to re-map after %d attempts?", max_attempts);
 
   return aligned_base;
 }
@@ -3198,7 +3290,7 @@ char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes) {
   // will go thru reserve_memory_special rather than thru here.
   bool use_individual = (UseNUMAInterleaving && !UseLargePages);
   if (!use_individual) {
-    res = (char*)VirtualAlloc(addr, bytes, MEM_RESERVE, PAGE_READWRITE);
+    res = (char*)virtualAlloc(addr, bytes, MEM_RESERVE, PAGE_READWRITE);
   } else {
     elapsedTimer reserveTimer;
     if (Verbose && PrintMiscellaneous) reserveTimer.start();
@@ -3277,7 +3369,7 @@ char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, char* addr,
 
     // normal policy just allocate it all at once
     DWORD flag = MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES;
-    char * res = (char *)VirtualAlloc(addr, bytes, flag, prot);
+    char * res = (char *)virtualAlloc(addr, bytes, flag, prot);
 
     return res;
   }
@@ -3314,7 +3406,7 @@ bool os::pd_commit_memory(char* addr, size_t bytes, bool exec) {
   // is always within a reserve covered by a single VirtualAlloc
   // in that case we can just do a single commit for the requested size
   if (!UseNUMAInterleaving) {
-    if (VirtualAlloc(addr, bytes, MEM_COMMIT, PAGE_READWRITE) == NULL) {
+    if (virtualAlloc(addr, bytes, MEM_COMMIT, PAGE_READWRITE) == NULL) {
       NOT_PRODUCT(warn_fail_commit_memory(addr, bytes, exec);)
       return false;
     }
@@ -3339,7 +3431,7 @@ bool os::pd_commit_memory(char* addr, size_t bytes, bool exec) {
       MEMORY_BASIC_INFORMATION alloc_info;
       VirtualQuery(next_alloc_addr, &alloc_info, sizeof(alloc_info));
       size_t bytes_to_rq = MIN2(bytes_remaining, (size_t)alloc_info.RegionSize);
-      if (VirtualAlloc(next_alloc_addr, bytes_to_rq, MEM_COMMIT,
+      if (virtualAlloc(next_alloc_addr, bytes_to_rq, MEM_COMMIT,
                        PAGE_READWRITE) == NULL) {
         NOT_PRODUCT(warn_fail_commit_memory(next_alloc_addr, bytes_to_rq,
                                             exec);)
@@ -3391,7 +3483,7 @@ bool os::pd_uncommit_memory(char* addr, size_t bytes) {
   }
   assert((size_t) addr % os::vm_page_size() == 0, "uncommit on page boundaries");
   assert(bytes % os::vm_page_size() == 0, "uncommit in page-sized chunks");
-  return (VirtualFree(addr, bytes, MEM_DECOMMIT) != 0);
+  return (virtualFree(addr, bytes, MEM_DECOMMIT) == TRUE);
 }
 
 bool os::pd_release_memory(char* addr, size_t bytes) {
@@ -3428,10 +3520,9 @@ bool os::pd_release_memory(char* addr, size_t bytes) {
         }
       }
     }
-    // Handle mapping error
+    // Handle mapping error. We assert in debug, unconditionally print a warning in release.
     if (err != NULL) {
       log_warning(os)("bad release: [" PTR_FORMAT "-" PTR_FORMAT "): %s", p2i(start), p2i(end), err);
-      // TODO: make this a guarantee?
 #ifdef ASSERT
       os::print_memory_mappings((char*)start, bytes, tty);
       assert(false, "bad release: [" PTR_FORMAT "-" PTR_FORMAT "): %s", p2i(start), p2i(end), err);
@@ -3439,9 +3530,7 @@ bool os::pd_release_memory(char* addr, size_t bytes) {
       return false;
     }
     // Free this range
-    if (::VirtualFree(p, 0, MEM_RELEASE) == FALSE) {
-      log_info(os)("VirtualFree [" PTR_FORMAT "-" PTR_FORMAT ") failed (%u)",
-                   p2i(start), p2i(end), ::GetLastError());
+    if (virtualFree(p, 0, MEM_RELEASE) == FALSE) {
       return false;
     }
     first_mapping = false;
@@ -4994,10 +5083,9 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
     // we might consider DLLizing the shared archive with a proper PE
     // header so that mapping executable + sharing is possible.
 
-    base = (char*) VirtualAlloc(addr, bytes, MEM_COMMIT | MEM_RESERVE,
+    base = (char*) virtualAlloc(addr, bytes, MEM_COMMIT | MEM_RESERVE,
                                 PAGE_READWRITE);
     if (base == NULL) {
-      log_info(os)("VirtualAlloc() failed: GetLastError->%ld.", GetLastError());
       CloseHandle(hFile);
       return NULL;
     }
@@ -5029,10 +5117,9 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
     }
 
     DWORD access = read_only ? FILE_MAP_READ : FILE_MAP_COPY;
-    base = (char*)MapViewOfFileEx(hMap, access, 0, (DWORD)file_offset,
+    base = (char*)mapViewOfFileEx(hMap, access, 0, (DWORD)file_offset,
                                   (DWORD)bytes, addr);
     if (base == NULL) {
-      log_info(os)("MapViewOfFileEx() failed: GetLastError->%ld.", GetLastError());
       CloseHandle(hMap);
       CloseHandle(hFile);
       return NULL;
@@ -5104,9 +5191,8 @@ bool os::pd_unmap_memory(char* addr, size_t bytes) {
     return pd_release_memory(addr, bytes);
   }
 
-  BOOL result = UnmapViewOfFile(addr);
+  BOOL result = unmapViewOfFile(addr);
   if (result == 0) {
-    log_info(os)("UnmapViewOfFile() failed: GetLastError->%ld.", GetLastError());
     return false;
   }
   return true;
@@ -5858,11 +5944,11 @@ static bool checkedVirtualQuery(address addr, MEMORY_BASIC_INFORMATION* minfo) {
   return false;
 }
 
-// Given an address p which points into an area allocated with VirtualAlloc(),
-// return information about that area.
+// Given a pointer pointing into an allocation (an area allocated with VirtualAlloc),
+//  return information about that allocation.
 bool os::win32::find_mapping(address addr, mapping_info_t* mi) {
-  // Query at addr to find allocation base; then, starting at allocation base, query all regions, until
-  // we either find the next allocation or a free area.
+  // Query at addr to find allocation base; then, starting at allocation base,
+  //  query all regions, until we either find the next allocation or a free area.
   ZeroMemory(mi, sizeof(mapping_info_t));
   MEMORY_BASIC_INFORMATION minfo;
   address allocation_base = NULL;
@@ -5906,10 +5992,9 @@ bool os::win32::find_mapping(address addr, mapping_info_t* mi) {
 }
 
 // Helper function for print_memory_mappings:
-// Given a filled MEMORY_BASIC_INFORMATION area, the result of a successful VirtualQuery call which
-// returned information about a non-free region:
-// Print out all regions in that allocation until its end is reached. Indicate, in the output,
-// regions that are outside the given range [start, end).
+//  Given a MEMORY_BASIC_INFORMATION, containing information about a non-free region:
+//  print out all regions in that allocation. If any of those regions
+//  fall outside the given range [start, end), indicate that in the output.
 // Return the pointer to the end of the allocation.
 static address print_one_mapping(MEMORY_BASIC_INFORMATION* minfo, address start, address end, outputStream* st) {
   assert(start != NULL && end != NULL && end > start, "Sanity");
@@ -5972,8 +6057,9 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
         assert(p2 > p, "Sanity");
         p = p2;
       } else {
-        // Note: for free regions, allmost all members in MEMORY_BASIC_INFORMATION are undefined but
-        //  region start and size. Use those to jump to the end of the free range.
+        // Note: for free regions, most of MEMORY_BASIC_INFORMATION is undefined.
+        //  Only region dimensions are not: use those to jump to the end of
+        //  the free range.
         address region_start = (address)minfo.BaseAddress;
         address region_end = region_start + minfo.RegionSize;
         assert(p >= region_start && p < region_end, "Sanity");

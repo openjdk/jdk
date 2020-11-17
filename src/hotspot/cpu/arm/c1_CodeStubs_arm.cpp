@@ -421,7 +421,7 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
 
   VMRegPair args[5];
   BasicType signature[5] = { T_OBJECT, T_INT, T_OBJECT, T_INT, T_INT };
-  SharedRuntime::java_calling_convention(signature, args, 5, true);
+  SharedRuntime::java_calling_convention(signature, args, 5);
 
   Register r[5];
   r[0] = src()->as_pointer_register();
