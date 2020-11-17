@@ -1585,7 +1585,7 @@ bool CompileBroker::compilation_is_prohibited(const methodHandle& method, int os
   // The method may be explicitly excluded by the user.
   double scale;
   if (excluded || (CompilerOracle::has_option_value(method, CompileCommand::CompileThresholdScaling, scale) && scale == 0)) {
-    bool quietly = CompilerOracle::should_exclude_quietly();
+    bool quietly = CompilerOracle::be_quiet();
     if (PrintCompilation && !quietly) {
       // This does not happen quietly...
       ResourceMark rm;

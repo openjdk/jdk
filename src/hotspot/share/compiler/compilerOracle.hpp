@@ -34,14 +34,14 @@ class methodHandle;
 // CompilerOracle is an interface for turning on and off compilation
 // for some methods
 
-//       OPTION_TYPES: type, store type, name
+//       OPTION_TYPES: type, name
 #define OPTION_TYPES(type) \
-  type(Intx, Intx, "intx") \
-  type(Uintx, Uintx, "uintx") \
-  type(Bool, Bool, "bool") \
-  type(Ccstr, Ccstr, "ccstr") \
-  type(Ccstrlist, Ccstr, "ccstrlist") \
-  type(Double, Double, "double")
+  type(Intx, "intx") \
+  type(Uintx, "uintx") \
+  type(Bool, "bool") \
+  type(Ccstr, "ccstr") \
+  type(Ccstrlist, "ccstrlist") \
+  type(Double, "double")
 
 //       COMPILECOMMAND_OPTIONS: option, name, variant, type
 #define COMPILECOMMAND_OPTIONS(option) \
@@ -102,7 +102,7 @@ enum class CompileCommand {
 };
 
 enum class OptionType {
-#define enum_of_types(type, internal_type, name) type,
+#define enum_of_types(type, name) type,
     OPTION_TYPES(enum_of_types)
 #undef enum_of_types
     Unknown
@@ -115,16 +115,15 @@ class CompilerOracle : AllStatic {
   static void print_command(enum CompileCommand option, const char* name, enum OptionType type);
 
  public:
-
   // True if the command file has been specified or is implicit
   static bool has_command_file();
 
   // Reads from file and adds to lists
   static void parse_from_file();
 
-  // Tells whether we to exclude compilation of method
+    // Tells whether we to exclude compilation of method
   static bool should_exclude(const methodHandle& method);
-  static bool should_exclude_quietly() { return _quiet; }
+  static bool be_quiet() { return _quiet; }
 
   // Tells whether we want to inline this method
   static bool should_inline(const methodHandle& method);

@@ -65,29 +65,29 @@ public class CheckCompileCommandOption {
 
     private static final String[][] FILE_EXPECTED_OUTPUT = {
         {
-            "CompileCommand: option com/oracle/Test.test1 bool TestOptionBool = true",
-            "CompileCommand: option com/oracle/Test.test2 bool TestOptionBool = true",
-            "CompileCommand: option com/oracle/Test.test3 bool TestOptionBool = true",
-            "CompileCommand: option com/oracle/Test.test4 bool TestOptionBool = true",
-            "CompileCommand: option com/oracle/Test.test4 bool TestOptionBool2 = true",
-            "CompileCommand: option com/oracle/Test.test5 bool TestOptionBool = true",
-            "CompileCommand: option com/oracle/Test.test5 bool TestOptionBool2 = true",
-            "CompileCommand: option com/oracle/Test.test6(I) bool TestOptionBool = true",
-            "CompileCommand: option com/oracle/Test.test7(I) bool TestOptionBool = true",
-            "CompileCommand: option com/oracle/Test.test8(I) bool TestOptionBool = true",
-            "CompileCommand: option com/oracle/Test.test9(I) bool TestOptionBool = true",
-            "CompileCommand: option com/oracle/Test.test9(I) bool TestOptionBool2 = true",
-            "CompileCommand: option com/oracle/Test.test10(I) bool TestOptionBool = true",
-            "CompileCommand: option com/oracle/Test.test10(I) bool TestOptionBool2 = true"
+            "com/oracle/Test.test1 bool TestOptionBool = true",
+            "com/oracle/Test.test2 bool TestOptionBool = true",
+            "com/oracle/Test.test3 bool TestOptionBool = true",
+            "com/oracle/Test.test4 bool TestOptionBool = true",
+            "com/oracle/Test.test4 bool TestOptionBool2 = true",
+            "com/oracle/Test.test5 bool TestOptionBool = true",
+            "com/oracle/Test.test5 bool TestOptionBool2 = true",
+            "com/oracle/Test.test6(I) bool TestOptionBool = true",
+            "com/oracle/Test.test7(I) bool TestOptionBool = true",
+            "com/oracle/Test.test8(I) bool TestOptionBool = true",
+            "com/oracle/Test.test9(I) bool TestOptionBool = true",
+            "com/oracle/Test.test9(I) bool TestOptionBool2 = true",
+            "com/oracle/Test.test10(I) bool TestOptionBool = true",
+            "com/oracle/Test.test10(I) bool TestOptionBool2 = true"
         },
         {
-            "CompileCommand: option Test.test const char* TestOptionList = '_foo _bar'",
-            "CompileCommand: option Test.test const char* TestOptionStr = '_foo'",
-            "CompileCommand: option Test.test bool TestOptionBool = false",
-            "CompileCommand: option Test.test intx TestOptionInt = -1",
-            "CompileCommand: option Test.test uintx TestOptionUint = 1",
-            "CompileCommand: option Test.test bool TestOptionBool2 = true",
-            "CompileCommand: option Test.test double TestOptionDouble = 1.123000"
+            "Test.test const char* TestOptionList = '_foo _bar'",
+            "Test.test const char* TestOptionStr = '_foo'",
+            "Test.test bool TestOptionBool = false",
+            "Test.test intx TestOptionInt = -1",
+            "Test.test uintx TestOptionUint = 1",
+            "Test.test bool TestOptionBool2 = true",
+            "Test.test double TestOptionDouble = 1.123000"
         }
     };
 
@@ -102,10 +102,10 @@ public class CheckCompileCommandOption {
 
     private static final String[][] TYPE_1_EXPECTED_OUTPUTS = {
         {
-            "CompileCommand: option com/oracle/Test.test bool TestOptionBool = true",
-            "CompileCommand: option com/oracle/Test.test bool TestOptionBool2 = true",
-            "CompileCommand: option com/oracle/Test.test2 bool TestOptionBool = true",
-            "CompileCommand: option com/oracle/Test.test2 bool TestOptionBool2 = true",
+            "com/oracle/Test.test bool TestOptionBool = true",
+            "com/oracle/Test.test bool TestOptionBool2 = true",
+            "com/oracle/Test.test2 bool TestOptionBool = true",
+            "com/oracle/Test.test2 bool TestOptionBool2 = true",
         }
     };
 
@@ -125,14 +125,14 @@ public class CheckCompileCommandOption {
 
     private static final String[][] TYPE_2_EXPECTED_OUTPUTS = {
         {
-            "CompileCommand: option Test.test const char* TestOptionList = '_foo _bar'",
-            "CompileCommand: option Test.test const char* TestOptionStr = '_foo'",
-            "CompileCommand: option Test.test bool TestOptionBool = false",
-            "CompileCommand: option Test.test intx TestOptionInt = -1",
-            "CompileCommand: option Test.test uintx TestOptionUint = 1",
-            "CompileCommand: option Test.test bool TestOptionBool2 = true",
-            "CompileCommand: option Test.test double TestOptionDouble = 1.123000",
-            "CompileCommand: option Test.test2 double TestOptionDouble = 1.123000"
+            "Test.test const char* TestOptionList = '_foo _bar'",
+            "Test.test const char* TestOptionStr = '_foo'",
+            "Test.test bool TestOptionBool = false",
+            "Test.test intx TestOptionInt = -1",
+            "Test.test uintx TestOptionUint = 1",
+            "Test.test bool TestOptionBool2 = true",
+            "Test.test double TestOptionDouble = 1.123000",
+            "Test.test2 double TestOptionDouble = 1.123000"
         }
     };
 
@@ -145,11 +145,11 @@ public class CheckCompileCommandOption {
 
     private static final String[][] TYPE_3_EXPECTED_OUTPUTS = {
         {
-            "CompileCommand: option Test.test bool TestOptionBool = false",
-            "CompileCommand: option Test.test intx TestOptionInt = -1",
-            "CompileCommand: option Test.test uintx TestOptionUint = 1",
-            "CompileCommand: option Test.test bool TestOptionBool2 = true",
-            "CompileCommand: option Test.test double TestOptionDouble = 1.123000"
+            "Test.test bool TestOptionBool = false",
+            "Test.test intx TestOptionInt = -1",
+            "Test.test uintx TestOptionUint = 1",
+            "Test.test bool TestOptionBool2 = true",
+            "Test.test double TestOptionDouble = 1.123000"
         }
     };
 

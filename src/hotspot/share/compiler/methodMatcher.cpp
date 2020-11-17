@@ -427,8 +427,7 @@ InlineMatcher* InlineMatcher::parse_inline_pattern(char* str, const char*& error
    }
    str++;
 
-   int bytes_read = 0;
-   assert(error_msg== NULL, "error_msg must not be set yet");
+   assert(error_msg == NULL, "error_msg must not be set yet");
    InlineMatcher* im = InlineMatcher::parse_method_pattern(str, error_msg);
    if (im == NULL) {
      assert(error_msg != NULL, "Must have error message");

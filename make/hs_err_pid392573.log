@@ -1,0 +1,480 @@
+#
+# A fatal error has been detected by the Java Runtime Environment:
+#
+#  SIGSEGV (0xb) at pc=0x00007f348d32b4cc, pid=392573, tid=392578
+#
+# JRE version:  (16.0) (slowdebug build )
+# Java VM: Java HotSpot(TM) 64-Bit Server VM (slowdebug 16-internal+0-2020-10-22-1522536.neliasso..., mixed mode, tiered, compressed oops, serial gc, linux-amd64)
+# Problematic frame:
+# V  [libjvm.so+0xf204cc]  MethodMatcher::parse_method_pattern(char*&, char const*&, MethodMatcher*)+0x33a
+#
+# Core dump will be written. Default location: Core dumps may be processed with "/usr/share/apport/apport %p %s %c %d %P %E" (or dumping to /home/neliasso/jdkgit/jdk/open/make/core.392573)
+#
+#
+
+---------------  S U M M A R Y ------------
+
+Command Line: -Dapplication.home=/home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/jdk -Xms8m -XX:+UseSerialGC -Xms32M -Xmx512M -XX:TieredStopAtLevel=1 -Djdk.module.main=jdk.jlink jdk.jlink/jdk.tools.jmod.Main create --module-version 16-internal --target-platform linux-amd64 --module-path /home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/support/interim-jmods --libs /home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/support/modules_libs/java.base --cmds /home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/support/modules_cmds/java.base --config /home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/support/modules_conf/java.base --class-path /home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/jdk/modules/java.base --header-files /home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/support/modules_include/java.base --man-pages /home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/support/modules_man/java.base --legal-notices /home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/support/modules_legal/common:/home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/support/modules_legal/java.base --exclude **{_the.*,_*.marker,*.diz,*.debuginfo,*.dSYM/**,*.dSYM} /home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/support/interim-jmods/support/java.base.jmod
+
+Host: neliasso08, Intel(R) Core(TM) i7-8750H CPU @ 2.20GHz, 12 cores, 31G, Ubuntu 20.04.1 LTS
+Time: Tue Nov 17 18:32:08 2020 CET elapsed time: 0.216355 seconds (0d 0h 0m 0s)
+
+---------------  T H R E A D  ---------------
+
+Current thread (0x00007f3488026810):  JavaThread "Unknown thread" [_thread_in_vm, id=392578, stack(0x00007f348c1bb000,0x00007f348c2bc000)]
+
+Stack: [0x00007f348c1bb000,0x00007f348c2bc000],  sp=0x00007f348c2ba400,  free space=1021k
+Native frames: (J=compiled Java code, A=aot compiled Java code, j=interpreted, Vv=VM code, C=native code)
+V  [libjvm.so+0xf204cc]  MethodMatcher::parse_method_pattern(char*&, char const*&, MethodMatcher*)+0x33a
+V  [libjvm.so+0xf20c3c]  BasicMatcher::parse_method_pattern(char*, char const*&, bool)+0xa2
+V  [libjvm.so+0x7bcfda]  CompilerDirectives::add_match(char*, char const*&)+0x2c
+V  [libjvm.so+0x7bf2c4]  DirectivesStack::init()+0x62
+V  [libjvm.so+0x7a3fb7]  compileBroker_init()+0x52
+V  [libjvm.so+0xa8ba9a]  init_globals()+0x9b
+V  [libjvm.so+0x11ab62c]  Threads::create_vm(JavaVMInitArgs*, bool*)+0x36e
+V  [libjvm.so+0xb9753a]  JNI_CreateJavaVM_inner(JavaVM_**, void**, void*)+0xda
+V  [libjvm.so+0xb9783f]  JNI_CreateJavaVM+0x32
+C  [libjli.so+0x7324]  InitializeJVM+0x13d
+C  [libjli.so+0x3f12]  JavaMain+0xdc
+C  [libjli.so+0xac37]  ThreadJavaMain+0x27
+
+
+siginfo: si_signo: 11 (SIGSEGV), si_code: 1 (SEGV_MAPERR), si_addr: 0x0000000000000000
+
+Registers:
+RAX=0x0000000000000000, RBX=0x00007f348813b340, RCX=0x0000000000000000, RDX=0x00007f348c2ba670
+RSP=0x00007f348c2ba400, RBP=0x00007f348c2baa70, RSI=0x00007f348c2bab28, RDI=0x00007f348c2baa60
+R8 =0x0000000000000000, R9 =0x000055e06c671070, R10=0x00007f34880008d0, R11=0x00007f3488000080
+R12=0x00007ffd50c8964e, R13=0x00007ffd50c8964f, R14=0x00007ffd50c89700, R15=0x00007f348c2bafc0
+RIP=0x00007f348d32b4cc, EFLAGS=0x0000000000010246, CSGSFS=0x002b000000000033, ERR=0x0000000000000004
+  TRAPNO=0x000000000000000e
+
+Top of Stack: (sp=0x00007f348c2ba400)
+0x00007f348c2ba400:   0000000000000000 00007f348813b340
+0x00007f348c2ba410:   00007f348c2bab28 00007f348c2baa98
+0x00007f348c2ba420:   0000000000000000 0000000000000000
+0x00007f348c2ba430:   0000000000000000 0000000000000000 
+
+Instructions: (pc=0x00007f348d32b4cc)
+0x00007f348d32b3cc:   ff 00 00 00 00 48 c7 85 70 fb ff ff 00 00 00 00
+0x00007f348d32b3dc:   48 c7 85 78 fb ff ff 00 00 00 00 48 c7 85 80 fb
+0x00007f348d32b3ec:   ff ff 00 00 00 00 48 c7 85 88 fb ff ff 00 00 00
+0x00007f348d32b3fc:   00 48 c7 85 90 fb ff ff 00 00 00 00 48 c7 85 98
+0x00007f348d32b40c:   fb ff ff 00 00 00 00 48 c7 85 a0 fb ff ff 00 00
+0x00007f348d32b41c:   00 00 48 c7 85 a8 fb ff ff 00 00 00 00 48 c7 85
+0x00007f348d32b42c:   b0 fb ff ff 00 00 00 00 48 c7 85 b8 fb ff ff 00
+0x00007f348d32b43c:   00 00 00 48 c7 85 c0 fb ff ff 00 00 00 00 48 c7
+0x00007f348d32b44c:   85 c8 fb ff ff 00 00 00 00 48 c7 85 d0 fb ff ff
+0x00007f348d32b45c:   00 00 00 00 48 c7 85 d8 fb ff ff 00 00 00 00 48
+0x00007f348d32b46c:   c7 85 e0 fb ff ff 00 00 00 00 48 c7 85 e8 fb ff
+0x00007f348d32b47c:   ff 00 00 00 00 48 c7 85 f0 fb ff ff 00 00 00 00
+0x00007f348d32b48c:   48 c7 85 f8 fb ff ff 00 00 00 00 48 8d 95 00 fc
+0x00007f348d32b49c:   ff ff b8 00 00 00 00 b9 7e 00 00 00 48 89 d7 f3
+0x00007f348d32b4ac:   48 ab c7 85 b8 f9 ff ff 00 00 00 00 c7 85 bc f9
+0x00007f348d32b4bc:   ff ff 00 00 00 00 48 8b 85 a0 f9 ff ff 48 8b 00
+0x00007f348d32b4cc:   0f b6 00 84 c0 74 36 48 8d 05 5e 93 ee 00 48 8b
+0x00007f348d32b4dc:   00 c6 00 58 48 8d 0d 29 2a 7f 00 48 8d 15 52 2a
+0x00007f348d32b4ec:   7f 00 be fe 00 00 00 48 8d 3d 6e 2a 7f 00 b8 00
+0x00007f348d32b4fc:   00 00 00 e8 70 99 8c ff e8 f5 22 08 00 48 8b 85
+0x00007f348d32b50c:   a8 f9 ff ff 48 8b 00 48 8b 95 a0 f9 ff ff 48 89
+0x00007f348d32b51c:   d6 48 89 c7 e8 99 f7 ff ff 83 f0 01 84 c0 74 4e
+0x00007f348d32b52c:   48 8b 85 a0 f9 ff ff 48 8b 00 48 85 c0 0f 85 e5
+0x00007f348d32b53c:   03 00 00 48 8d 05 f2 92 ee 00 48 8b 00 c6 00 58
+0x00007f348d32b54c:   48 8d 0d 65 2a 7f 00 48 8d 15 86 2a 7f 00 be 01
+0x00007f348d32b55c:   01 00 00 48 8d 3d 02 2a 7f 00 b8 00 00 00 00 e8
+0x00007f348d32b56c:   04 99 8c ff e8 89 22 08 00 e9 aa 03 00 00 48 8d
+0x00007f348d32b57c:   95 bc f9 ff ff 48 8b 85 a8 f9 ff ff 48 89 d6 48
+0x00007f348d32b58c:   89 c7 e8 97 fb ff ff 48 8b 85 a8 f9 ff ff 48 8b
+0x00007f348d32b59c:   00 48 8d b5 b8 f9 ff ff 48 8d 8d f0 fa ff ff 48
+0x00007f348d32b5ac:   8d 95 f0 f9 ff ff 49 89 f0 48 8d 35 4c 2a 7f 00
+0x00007f348d32b5bc:   48 89 c7 b8 00 00 00 00 e8 37 6c 3a ff 83 f8 02 
+
+
+
+---------------  P R O C E S S  ---------------
+
+uid  : 1000 euid : 1000 gid  : 1000 egid : 1000
+
+umask: 0002 (-------w-)
+
+Threads class SMR info:
+_java_thread_list=0x00007f348e2eb760, length=0, elements={
+}
+_java_thread_list_alloc_cnt=1, _java_thread_list_free_cnt=0, _java_thread_list_max=0, _nested_thread_list_max=0
+_delete_lock_wait_cnt=0, _delete_lock_wait_max=0
+_to_delete_list_cnt=0, _to_delete_list_max=0
+
+Java Threads: ( => current thread )
+
+Other Threads:
+
+=>0x00007f3488026810 (exited) JavaThread "Unknown thread" [_thread_in_vm, id=392578, stack(0x00007f348c1bb000,0x00007f348c2bc000)]
+
+Threads with active compile tasks:
+
+VM state: not at safepoint (not fully initialized)
+
+VM Mutex/Monitor currently owned by a thread: None
+
+Heap address: 0x00000000e0000000, size: 512 MB, Compressed Oops mode: 32-bit
+CDS disabled.
+Compressed class space mapped at: 0x0000000100000000-0x0000000140000000, reserved size: 1073741824
+Narrow klass base: 0x0000000000000000, Narrow klass shift: 3, Narrow klass range: 0x140000000
+
+GC Precious Log:
+ CPUs: 12 total, 12 available
+ Memory: 31752M
+ Large Page Support: Disabled
+ NUMA Support: Disabled
+ Compressed Oops: Enabled (32-bit)
+ Heap Min Capacity: 32M
+ Heap Initial Capacity: 32M
+ Heap Max Capacity: 512M
+ Pre-touch: Disabled
+
+Heap:
+ def new generation   total 9792K, used 174K [0x00000000e0000000, 0x00000000e0aa0000, 0x00000000eaaa0000)
+  eden space 8704K,   2% used [0x00000000e0000000, 0x00000000e002b860, 0x00000000e0880000)
+  from space 1088K,   0% used [0x00000000e0880000, 0x00000000e0880000, 0x00000000e0990000)
+  to   space 1088K,   0% used [0x00000000e0990000, 0x00000000e0990000, 0x00000000e0aa0000)
+ tenured generation   total 21888K, used 0K [0x00000000eaaa0000, 0x00000000ec000000, 0x0000000100000000)
+   the space 21888K,   0% used [0x00000000eaaa0000, 0x00000000eaaa0000, 0x00000000eaaa0200, 0x00000000ec000000)
+ Metaspace       used 1366K, committed 1408K, reserved 1056768K
+  class space    used 96K, committed 128K, reserved 1048576K
+
+Card table byte_map: [0x00007f348c044000,0x00007f348c145000] _byte_map_base: 0x00007f348b944000
+
+Compilation events (0 events):
+No events
+
+GC Heap History (0 events):
+No events
+
+Deoptimization events (0 events):
+No events
+
+Classes unloaded (0 events):
+No events
+
+Classes redefined (0 events):
+No events
+
+Internal exceptions (0 events):
+No events
+
+Events (20 events):
+Event: 0.184 loading class java/lang/Short
+Event: 0.185 loading class java/lang/Short done
+Event: 0.185 loading class java/lang/Integer
+Event: 0.186 loading class java/lang/Integer done
+Event: 0.186 loading class java/lang/Long
+Event: 0.187 loading class java/lang/Long done
+Event: 0.187 loading class java/util/Iterator
+Event: 0.188 loading class java/util/Iterator done
+Event: 0.188 loading class java/lang/reflect/RecordComponent
+Event: 0.188 loading class java/lang/reflect/RecordComponent done
+Event: 0.188 loading class jdk/internal/vm/vector/VectorSupport
+Event: 0.189 loading class jdk/internal/vm/vector/VectorSupport done
+Event: 0.189 loading class jdk/internal/vm/vector/VectorSupport$VectorPayload
+Event: 0.189 loading class jdk/internal/vm/vector/VectorSupport$VectorPayload done
+Event: 0.189 loading class jdk/internal/vm/vector/VectorSupport$Vector
+Event: 0.189 loading class jdk/internal/vm/vector/VectorSupport$Vector done
+Event: 0.189 loading class jdk/internal/vm/vector/VectorSupport$VectorMask
+Event: 0.190 loading class jdk/internal/vm/vector/VectorSupport$VectorMask done
+Event: 0.190 loading class jdk/internal/vm/vector/VectorSupport$VectorShuffle
+Event: 0.190 loading class jdk/internal/vm/vector/VectorSupport$VectorShuffle done
+
+
+Dynamic libraries:
+e0000000-e0aa0000 rw-p 00000000 00:00 0 
+e0aa0000-eaaa0000 ---p 00000000 00:00 0 
+eaaa0000-ec000000 rw-p 00000000 00:00 0 
+ec000000-100040000 ---p 00000000 00:00 0 
+100040000-100060000 rw-p 00000000 00:00 0 
+100060000-140000000 ---p 00000000 00:00 0 
+55e06b059000-55e06b05b000 r-xp 00000000 103:05 4617784                   /home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/jdk/bin/jmod
+55e06b05b000-55e06b05c000 r--p 00001000 103:05 4617784                   /home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/jdk/bin/jmod
+55e06b05c000-55e06b05d000 rw-p 00002000 103:05 4617784                   /home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/jdk/bin/jmod
+55e06c656000-55e06c677000 rw-p 00000000 00:00 0                          [heap]
+7f34774dd000-7f3478540000 rw-p 00000000 00:00 0 
+7f3478540000-7f3478c00000 ---p 00000000 00:00 0 
+7f3478ca7000-7f3478d8e000 rw-p 00000000 00:00 0 
+7f3478d8e000-7f3478e2e000 ---p 00000000 00:00 0 
+7f3478e2e000-7f3478e33000 rw-p 00000000 00:00 0 
+7f3478e33000-7f3479000000 ---p 00000000 00:00 0 
+7f3479000000-7f3479270000 rwxp 00000000 00:00 0 
+7f3479270000-7f3479734000 ---p 00000000 00:00 0 
+7f3479734000-7f34799a4000 rwxp 00000000 00:00 0 
+7f34799a4000-7f3488000000 ---p 00000000 00:00 0 
+7f3488000000-7f348814b000 rw-p 00000000 00:00 0 
+7f348814b000-7f348c000000 ---p 00000000 00:00 0 
+7f348c003000-7f348c04a000 rw-p 00000000 00:00 0 
+7f348c04a000-7f348c099000 ---p 00000000 00:00 0 
+7f348c099000-7f348c0a4000 rw-p 00000000 00:00 0 
+7f348c0a4000-7f348c144000 ---p 00000000 00:00 0 
+7f348c144000-7f348c14a000 rw-p 00000000 00:00 0 
+7f348c14a000-7f348c154000 ---p 00000000 00:00 0 
+7f348c154000-7f348c181000 r-xp 00000000 103:05 4617723                   /home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/jdk/lib/libjava.so
+7f348c181000-7f348c182000 ---p 0002d000 103:05 4617723                   /home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/jdk/lib/libjava.so
+7f348c182000-7f348c183000 r--p 0002d000 103:05 4617723                   /home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/jdk/lib/libjava.so
+7f348c183000-7f348c184000 rw-p 0002e000 103:05 4617723                   /home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/jdk/lib/libjava.so
+7f348c184000-7f348c185000 rw-p 00000000 00:00 0 
+7f348c185000-7f348c18d000 rw-s 00000000 103:04 521634                    /tmp/hsperfdata_neliasso/392573
+7f348c18d000-7f348c1ad000 r-xp 00000000 103:05 4617733                   /home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/jdk/lib/libjimage.so
+7f348c1ad000-7f348c1af000 r--p 0001f000 103:05 4617733                   /home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/jdk/lib/libjimage.so
+7f348c1af000-7f348c1b0000 rw-p 00021000 103:05 4617733                   /home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/jdk/lib/libjimage.so
+7f348c1b0000-7f348c1b3000 r--p 00000000 103:04 394226                    /lib/x86_64-linux-gnu/librt-2.31.so
+7f348c1b3000-7f348c1b7000 r-xp 00003000 103:04 394226                    /lib/x86_64-linux-gnu/librt-2.31.so
+7f348c1b7000-7f348c1b8000 r--p 00007000 103:04 394226                    /lib/x86_64-linux-gnu/librt-2.31.so
+7f348c1b8000-7f348c1b9000 ---p 00008000 103:04 394226                    /lib/x86_64-linux-gnu/librt-2.31.so
+7f348c1b9000-7f348c1ba000 r--p 00008000 103:04 394226                    /lib/x86_64-linux-gnu/librt-2.31.so
+7f348c1ba000-7f348c1bb000 rw-p 00009000 103:04 394226                    /lib/x86_64-linux-gnu/librt-2.31.so
+7f348c1bb000-7f348c1bf000 ---p 00000000 00:00 0 
+7f348c1bf000-7f348c2bc000 rw-p 00000000 00:00 0 
+7f348c2bc000-7f348c2cb000 r--p 00000000 103:04 394153                    /lib/x86_64-linux-gnu/libm-2.31.so
+7f348c2cb000-7f348c372000 r-xp 0000f000 103:04 394153                    /lib/x86_64-linux-gnu/libm-2.31.so
+7f348c372000-7f348c409000 r--p 000b6000 103:04 394153                    /lib/x86_64-linux-gnu/libm-2.31.so
+7f348c409000-7f348c40a000 r--p 0014c000 103:04 394153                    /lib/x86_64-linux-gnu/libm-2.31.so
+7f348c40a000-7f348c40b000 rw-p 0014d000 103:04 394153                    /lib/x86_64-linux-gnu/libm-2.31.so
+7f348c40b000-7f348e128000 r-xp 00000000 103:05 4617306                   /home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/jdk/lib/server/libjvm.so
+7f348e128000-7f348e210000 r--p 01d1c000 103:05 4617306                   /home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/jdk/lib/server/libjvm.so
+7f348e210000-7f348e247000 rw-p 01e04000 103:05 4617306                   /home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/jdk/lib/server/libjvm.so
+7f348e247000-7f348e2f9000 rw-p 00000000 00:00 0 
+7f348e2f9000-7f348e31e000 r--p 00000000 103:04 394139                    /lib/x86_64-linux-gnu/libc-2.31.so
+7f348e31e000-7f348e496000 r-xp 00025000 103:04 394139                    /lib/x86_64-linux-gnu/libc-2.31.so
+7f348e496000-7f348e4e0000 r--p 0019d000 103:04 394139                    /lib/x86_64-linux-gnu/libc-2.31.so
+7f348e4e0000-7f348e4e1000 ---p 001e7000 103:04 394139                    /lib/x86_64-linux-gnu/libc-2.31.so
+7f348e4e1000-7f348e4e4000 r--p 001e7000 103:04 394139                    /lib/x86_64-linux-gnu/libc-2.31.so
+7f348e4e4000-7f348e4e7000 rw-p 001ea000 103:04 394139                    /lib/x86_64-linux-gnu/libc-2.31.so
+7f348e4e7000-7f348e4eb000 rw-p 00000000 00:00 0 
+7f348e4eb000-7f348e4ec000 r--p 00000000 103:04 394147                    /lib/x86_64-linux-gnu/libdl-2.31.so
+7f348e4ec000-7f348e4ee000 r-xp 00001000 103:04 394147                    /lib/x86_64-linux-gnu/libdl-2.31.so
+7f348e4ee000-7f348e4ef000 r--p 00003000 103:04 394147                    /lib/x86_64-linux-gnu/libdl-2.31.so
+7f348e4ef000-7f348e4f0000 r--p 00003000 103:04 394147                    /lib/x86_64-linux-gnu/libdl-2.31.so
+7f348e4f0000-7f348e4f1000 rw-p 00004000 103:04 394147                    /lib/x86_64-linux-gnu/libdl-2.31.so
+7f348e4f1000-7f348e4f8000 r--p 00000000 103:04 394218                    /lib/x86_64-linux-gnu/libpthread-2.31.so
+7f348e4f8000-7f348e509000 r-xp 00007000 103:04 394218                    /lib/x86_64-linux-gnu/libpthread-2.31.so
+7f348e509000-7f348e50e000 r--p 00018000 103:04 394218                    /lib/x86_64-linux-gnu/libpthread-2.31.so
+7f348e50e000-7f348e50f000 r--p 0001c000 103:04 394218                    /lib/x86_64-linux-gnu/libpthread-2.31.so
+7f348e50f000-7f348e510000 rw-p 0001d000 103:04 394218                    /lib/x86_64-linux-gnu/libpthread-2.31.so
+7f348e510000-7f348e514000 rw-p 00000000 00:00 0 
+7f348e514000-7f348e527000 r-xp 00000000 103:05 4617722                   /home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/jdk/lib/libjli.so
+7f348e527000-7f348e528000 r--p 00012000 103:05 4617722                   /home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/jdk/lib/libjli.so
+7f348e528000-7f348e529000 rw-p 00013000 103:05 4617722                   /home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/jdk/lib/libjli.so
+7f348e529000-7f348e52b000 r--p 00000000 103:04 417875                    /lib/x86_64-linux-gnu/libz.so.1.2.11
+7f348e52b000-7f348e53c000 r-xp 00002000 103:04 417875                    /lib/x86_64-linux-gnu/libz.so.1.2.11
+7f348e53c000-7f348e542000 r--p 00013000 103:04 417875                    /lib/x86_64-linux-gnu/libz.so.1.2.11
+7f348e542000-7f348e543000 ---p 00019000 103:04 417875                    /lib/x86_64-linux-gnu/libz.so.1.2.11
+7f348e543000-7f348e544000 r--p 00019000 103:04 417875                    /lib/x86_64-linux-gnu/libz.so.1.2.11
+7f348e544000-7f348e545000 rw-p 0001a000 103:04 417875                    /lib/x86_64-linux-gnu/libz.so.1.2.11
+7f348e54a000-7f348e54d000 r--p 00000000 103:04 394210                    /lib/x86_64-linux-gnu/libnss_files-2.31.so
+7f348e54d000-7f348e554000 r-xp 00003000 103:04 394210                    /lib/x86_64-linux-gnu/libnss_files-2.31.so
+7f348e554000-7f348e556000 r--p 0000a000 103:04 394210                    /lib/x86_64-linux-gnu/libnss_files-2.31.so
+7f348e556000-7f348e557000 r--p 0000b000 103:04 394210                    /lib/x86_64-linux-gnu/libnss_files-2.31.so
+7f348e557000-7f348e558000 rw-p 0000c000 103:04 394210                    /lib/x86_64-linux-gnu/libnss_files-2.31.so
+7f348e558000-7f348e55e000 rw-p 00000000 00:00 0 
+7f348e55e000-7f348e55f000 ---p 00000000 00:00 0 
+7f348e55f000-7f348e560000 r--p 00000000 00:00 0 
+7f348e560000-7f348e562000 rw-p 00000000 00:00 0 
+7f348e562000-7f348e563000 r--p 00000000 103:04 392322                    /lib/x86_64-linux-gnu/ld-2.31.so
+7f348e563000-7f348e586000 r-xp 00001000 103:04 392322                    /lib/x86_64-linux-gnu/ld-2.31.so
+7f348e586000-7f348e58e000 r--p 00024000 103:04 392322                    /lib/x86_64-linux-gnu/ld-2.31.so
+7f348e58e000-7f348e58f000 ---p 00000000 00:00 0 
+7f348e58f000-7f348e590000 r--p 0002c000 103:04 392322                    /lib/x86_64-linux-gnu/ld-2.31.so
+7f348e590000-7f348e591000 rw-p 0002d000 103:04 392322                    /lib/x86_64-linux-gnu/ld-2.31.so
+7f348e591000-7f348e592000 rw-p 00000000 00:00 0 
+7ffd50c6d000-7ffd50c8f000 rw-p 00000000 00:00 0                          [stack]
+7ffd50cfa000-7ffd50cfd000 r--p 00000000 00:00 0                          [vvar]
+7ffd50cfd000-7ffd50cfe000 r-xp 00000000 00:00 0                          [vdso]
+ffffffffff600000-ffffffffff601000 --xp 00000000 00:00 0                  [vsyscall]
+
+
+VM Arguments:
+jvm_args: -Dapplication.home=/home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/jdk -Xms8m -XX:+UseSerialGC -Xms32M -Xmx512M -XX:TieredStopAtLevel=1 -Djdk.module.main=jdk.jlink 
+java_command: jdk.jlink/jdk.tools.jmod.Main create --module-version 16-internal --target-platform linux-amd64 --module-path /home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/support/interim-jmods --libs /home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/support/modules_libs/java.base --cmds /home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/support/modules_cmds/java.base --config /home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/support/modules_conf/java.base --class-path /home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/jdk/modules/java.base --header-files /home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/support/modules_include/java.base --man-pages /home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/support/modules_man/java.base --legal-notices /home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/support/modules_legal/common:/home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/support/modules_legal/java.base --exclude **{_the.*,_*.marker,*.diz,*.debuginfo,*.dSYM/**,*.dSYM} /home/neliasso/jdkgit/jdk/build/linux-x64-slowdebug/support/interim-jmods/support/java.base.jmod
+java_class_path (initial): <not set>
+Launcher Type: SUN_STANDARD
+
+[Global flags]
+     intx CICompilerCount                          = 4                                         {product} {ergonomic}     Number of compiler threads to run
+   size_t InitialHeapSize                          = 33554432                                  {product} {command line}  Initial heap size (in bytes); zero means use ergonomics
+   size_t MaxHeapSize                              = 536870912                                 {product} {command line}  Maximum heap size (in bytes)
+   size_t MaxNewSize                               = 178913280                                 {product} {ergonomic}     Maximum new generation size (in bytes), max_uintx means set ergonomically
+   size_t MinHeapDeltaBytes                        = 196608                                    {product} {ergonomic}     The minimum change in heap space due to GC (in bytes)
+   size_t MinHeapSize                              = 33554432                                  {product} {command line}  Minimum heap size (in bytes); zero means use ergonomics
+   size_t NewSize                                  = 11141120                                  {product} {ergonomic}     Initial new generation size (in bytes)
+    uintx NonNMethodCodeHeapSize                   = 7549744                                {pd product} {ergonomic}     Size of code heap with non-nmethods (in bytes)
+    uintx NonProfiledCodeHeapSize                  = 244108496                              {pd product} {ergonomic}     Size of code heap with non-profiled methods (in bytes)
+   size_t OldSize                                  = 22413312                                  {product} {ergonomic}     Initial tenured generation size (in bytes)
+    uintx ProfiledCodeHeapSize                     = 0                                      {pd product} {ergonomic}     Size of code heap with profiled methods (in bytes)
+    uintx ReservedCodeCacheSize                    = 251658240                              {pd product} {ergonomic}     Reserved code cache size (in bytes) - maximum code cache size
+     bool SegmentedCodeCache                       = true                                      {product} {ergonomic}     Use a segmented code cache
+   size_t SoftMaxHeapSize                          = 536870912                              {manageable} {ergonomic}     Soft limit for maximum heap size (in bytes)
+     intx TieredStopAtLevel                        = 1                                         {product} {command line}  Stop at given compilation level
+     bool UseCompressedClassPointers               = true                           {product lp64_product} {ergonomic}   Use 32-bit class pointers in 64-bit VM. lp64_product means flag is always constant in 32 bit VM
+     bool UseCompressedOops                        = true                           {product lp64_product} {ergonomic}   Use 32-bit object references in 64-bit VM. lp64_product means flag is always constant in 32 bit VM
+     bool UseSerialGC                              = true                                      {product} {command line}  Use the Serial garbage collector
+
+Logging:
+Log output configuration:
+ #0: stdout all=warning uptime,level,tags
+ #1: stderr all=off uptime,level,tags
+
+Environment Variables:
+PATH=/home/neliasso/.sdkman/candidates/kotlin/current/bin:/home/neliasso/.jenv/shims:/home/neliasso/.jenv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+USERNAME=neliasso
+SHELL=/bin/bash
+DISPLAY=:0
+LANG=en_US.UTF-8
+LC_ALL=C
+
+Signal Handlers:
+SIGSEGV: [libjvm.so+0x123dfc1], sa_mask[0]=11111111011111111101111111111110, sa_flags=SA_RESTART|SA_SIGINFO
+SIGBUS: [libjvm.so+0x123dfc1], sa_mask[0]=11111111011111111101111111111110, sa_flags=SA_RESTART|SA_SIGINFO
+SIGFPE: [libjvm.so+0x123dfc1], sa_mask[0]=11111111011111111101111111111110, sa_flags=SA_RESTART|SA_SIGINFO
+SIGPIPE: [libjvm.so+0x10b28fc], sa_mask[0]=11111111011111111101111111111110, sa_flags=SA_RESTART|SA_SIGINFO
+SIGXFSZ: [libjvm.so+0x10b28fc], sa_mask[0]=11111111011111111101111111111110, sa_flags=SA_RESTART|SA_SIGINFO
+SIGILL: [libjvm.so+0x123dfc1], sa_mask[0]=11111111011111111101111111111110, sa_flags=SA_RESTART|SA_SIGINFO
+SIGUSR2: [libjvm.so+0x10b4aa5], sa_mask[0]=00000000000000000000000000000000, sa_flags=SA_RESTART|SA_SIGINFO
+SIGHUP: SIG_DFL, sa_mask[0]=00000000000000000000000000000000, sa_flags=none
+SIGINT: SIG_DFL, sa_mask[0]=00000000000000000000000000000000, sa_flags=none
+SIGTERM: SIG_DFL, sa_mask[0]=00000000000000000000000000000000, sa_flags=none
+SIGQUIT: SIG_DFL, sa_mask[0]=00000000000000000000000000000000, sa_flags=none
+
+
+---------------  S Y S T E M  ---------------
+
+OS:
+DISTRIB_ID=Ubuntu
+DISTRIB_RELEASE=20.04
+DISTRIB_CODENAME=focal
+DISTRIB_DESCRIPTION="Ubuntu 20.04.1 LTS"
+uname: Linux neliasso08 5.4.0-48-generic #52-Ubuntu SMP Thu Sep 10 10:58:49 UTC 2020 x86_64
+OS uptime: 46 days 13:41 hours
+libc: glibc 2.31 NPTL 2.31 
+rlimit (soft/hard): STACK 8192k/infinity , CORE 0k/infinity , NPROC 126791/126791 , NOFILE 1048576/1048576 , AS infinity/infinity , CPU infinity/infinity , DATA infinity/infinity , FSIZE infinity/infinity , MEMLOCK 65536k/65536k
+load average: 2.92 2.42 2.20
+
+/proc/meminfo:
+MemTotal:       32514952 kB
+MemFree:         1319152 kB
+MemAvailable:   10511472 kB
+Buffers:         1432088 kB
+Cached:         12407936 kB
+SwapCached:       299652 kB
+Active:         22992688 kB
+Inactive:        6024456 kB
+Active(anon):   16824492 kB
+Inactive(anon):  3670400 kB
+Active(file):    6168196 kB
+Inactive(file):  2354056 kB
+Unevictable:      348700 kB
+Mlocked:             368 kB
+SwapTotal:      43164668 kB
+SwapFree:       35202196 kB
+Dirty:              1756 kB
+Writeback:             0 kB
+AnonPages:      15509796 kB
+Mapped:          1634872 kB
+Shmem:           5323916 kB
+KReclaimable:    1138760 kB
+Slab:            1513856 kB
+SReclaimable:    1138760 kB
+SUnreclaim:       375096 kB
+KernelStack:       26260 kB
+PageTables:        95392 kB
+NFS_Unstable:          0 kB
+Bounce:                0 kB
+WritebackTmp:          0 kB
+CommitLimit:    59422144 kB
+Committed_AS:   33011080 kB
+VmallocTotal:   34359738367 kB
+VmallocUsed:       68344 kB
+VmallocChunk:          0 kB
+Percpu:            16576 kB
+HardwareCorrupted:     0 kB
+AnonHugePages:         0 kB
+ShmemHugePages:        0 kB
+ShmemPmdMapped:        0 kB
+FileHugePages:         0 kB
+FilePmdMapped:         0 kB
+CmaTotal:              0 kB
+CmaFree:               0 kB
+HugePages_Total:       0
+HugePages_Free:        0
+HugePages_Rsvd:        0
+HugePages_Surp:        0
+Hugepagesize:       2048 kB
+Hugetlb:               0 kB
+DirectMap4k:    24282552 kB
+DirectMap2M:     8898560 kB
+DirectMap1G:           0 kB
+
+/sys/kernel/mm/transparent_hugepage/enabled: always [madvise] never
+/sys/kernel/mm/transparent_hugepage/defrag (defrag/compaction efforts parameter): always defer defer+madvise [madvise] never
+
+Process Memory:
+Virtual Size: 1950020K (peak: 1950020K)
+Resident Set Size: 81656K (peak: 81656K) (anon: 58924K, file: 22732K, shmem: 0K)
+Swapped out: 0K
+C-Heap outstanding allocations: 1429K
+
+/proc/sys/kernel/threads-max (system-wide limit on the number of threads): 253582
+/proc/sys/vm/max_map_count (maximum number of memory map areas a process may have): 65530
+/proc/sys/kernel/pid_max (system-wide limit on number of process identifiers): 4194304
+
+container (cgroup) information:
+container_type: cgroupv1
+cpu_cpuset_cpus: 0-11
+cpu_memory_nodes: 0
+active_processor_count: 12
+cpu_quota: no quota
+cpu_period: 100000
+cpu_shares: no shares
+memory_limit_in_bytes: unlimited
+memory_and_swap_limit_in_bytes: not supported
+memory_soft_limit_in_bytes: unlimited
+memory_usage_in_bytes: 28011024384
+memory_max_usage_in_bytes: 32230785024
+
+Steal ticks since vm start: 0
+Steal ticks percentage since vm start:  0.000
+
+CPU: total 12 (initial active 12) (6 cores per cpu, 2 threads per core) family 6 model 158 stepping 10 microcode 0xd6, cx8, cmov, fxsr, ht, mmx, 3dnowpref, sse, sse2, sse3, ssse3, sse4.1, sse4.2, popcnt, lzcnt, tsc, tscinvbit, avx, avx2, aes, erms, clmul, bmi1, bmi2, adx, fma, vzeroupper, clflush, clflushopt
+CPU Model and flags from /proc/cpuinfo:
+model name	: Intel(R) Core(TM) i7-8750H CPU @ 2.20GHz
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault epb invpcid_single pti ssbd ibrs ibpb stibp tpr_shadow vnmi flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx rdseed adx smap clflushopt intel_pt xsaveopt xsavec xgetbv1 xsaves dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp md_clear flush_l1d
+
+Online cpus: 0-11
+Offline cpus: 
+cache level: 1
+cache type: Data
+cache size: 32K
+cache coherency line size: 64
+cache level: 1
+cache type: Instruction
+cache size: 32K
+cache coherency line size: 64
+cache level: 2
+cache type: Unified
+cache size: 256K
+cache coherency line size: 64
+cache level: 3
+cache type: Unified
+cache size: 9216K
+cache coherency line size: 64
+BIOS frequency limitation: <Not Available>
+Frequency switch latency (ns): 0
+Available cpu frequencies: <Not Available>
+Maximum cpu frequency: 4100000
+Minimum cpu frequency: 800000
+Current cpu frequency: 3171848
+Available governors: performance powersave
+Current governor: powersave
+Core performance/turbo boost: <Not Available>
+
+Memory: 4k page, physical 32514952k(1319364k free), swap 43164668k(35202196k free)
+
+vm_info: Java HotSpot(TM) 64-Bit Server VM (slowdebug 16-internal+0-2020-10-22-1522536.neliasso...) for linux-amd64 JRE (16-internal+0-2020-10-22-1522536.neliasso...), built on Nov 17 2020 17:31:23 by "neliasso" with gcc 10.2.0
+
+END.
