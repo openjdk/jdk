@@ -47,6 +47,7 @@ class WindowsFileSystemProvider
     extends AbstractFileSystemProvider
 {
     private static final Unsafe unsafe = Unsafe.getUnsafe();
+    private static final byte[] emptyPath = new byte[0];
 
     private final WindowsFileSystem theFileSystem;
 
@@ -627,6 +628,9 @@ class WindowsFileSystemProvider
     @Override
     public byte[] getSunPathForSocketFile(Path obj) {
         WindowsPath file = WindowsPath.toWindowsPath(obj);
+        if (file.isEmpty()) {
+            return emptyPath;
+        }
         String s = file.toString();
         return s.getBytes(StandardCharsets.UTF_8);
     }
