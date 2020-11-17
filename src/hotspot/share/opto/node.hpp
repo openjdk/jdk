@@ -370,6 +370,8 @@ protected:
 
   // Reference to the i'th input Node.  Error if out of bounds.
   Node* in(uint i) const { assert(i < _max, "oob: i=%d, _max=%d", i, _max); return _in[i]; }
+  // Reference to the i'th input Node.  NULL if out of bounds.
+  Node* lookup(uint i) const { return ((i < _max) ? _in[i] : NULL); }
   // Reference to the i'th output Node.  Error if out of bounds.
   // Use this accessor sparingly.  We are going trying to use iterators instead.
   Node* raw_out(uint i) const { assert(i < _outcnt,"oob"); return _out[i]; }
