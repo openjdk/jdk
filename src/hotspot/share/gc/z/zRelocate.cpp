@@ -141,7 +141,7 @@ uintptr_t ZRelocate::relocate_object(ZForwarding* forwarding, uintptr_t from_add
       return to_addr;
     }
 
-    // Failed to relocate obejct. Wait for a worker thread to
+    // Failed to relocate object. Wait for a worker thread to
     // complete relocation of this page, and then forward object.
     forwarding->wait_page_released();
   }

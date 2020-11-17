@@ -33,7 +33,6 @@ inline ZPageAllocatorStats::ZPageAllocatorStats(size_t min_capacity,
                                                 size_t used,
                                                 size_t used_high,
                                                 size_t used_low,
-                                                size_t claimed,
                                                 size_t reclaimed) :
     _min_capacity(min_capacity),
     _max_capacity(max_capacity),
@@ -42,7 +41,6 @@ inline ZPageAllocatorStats::ZPageAllocatorStats(size_t min_capacity,
     _used(used),
     _used_high(used_high),
     _used_low(used_low),
-    _claimed(claimed),
     _reclaimed(reclaimed) {}
 
 inline size_t ZPageAllocatorStats::min_capacity() const {
@@ -71,10 +69,6 @@ inline size_t ZPageAllocatorStats::used_high() const {
 
 inline size_t ZPageAllocatorStats::used_low() const {
   return _used_low;
-}
-
-inline size_t ZPageAllocatorStats::claimed() const {
-  return _claimed;
 }
 
 inline size_t ZPageAllocatorStats::reclaimed() const {

@@ -111,8 +111,7 @@ public:
   void print_on(outputStream* out) const;
   void print() const;
 
-  void verify_live_objects(uint32_t live_objects) const;
-  void verify_live_bytes(size_t live_bytes) const;
+  void verify_live(uint32_t live_objects, size_t live_bytes) const;
 };
 
 class ZPageClosure {

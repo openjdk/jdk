@@ -25,7 +25,6 @@
 #define SHARE_GC_Z_ZHEAP_INLINE_HPP
 
 #include "gc/z/zAddress.inline.hpp"
-#include "gc/z/zForwarding.inline.hpp"
 #include "gc/z/zForwardingTable.inline.hpp"
 #include "gc/z/zHash.inline.hpp"
 #include "gc/z/zHeap.hpp"

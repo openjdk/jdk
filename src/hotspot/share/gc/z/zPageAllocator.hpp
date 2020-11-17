@@ -54,10 +54,10 @@ private:
   const size_t               _max_capacity;
   volatile size_t            _current_max_capacity;
   volatile size_t            _capacity;
+  volatile size_t            _claimed;
   volatile size_t            _used;
   size_t                     _used_high;
   size_t                     _used_low;
-  size_t                     _claimed;
   ssize_t                    _reclaimed;
   ZList<ZPageAllocation>     _stalled;
   ZList<ZPageAllocation>     _satisfied;
@@ -145,7 +145,6 @@ private:
   size_t _used;
   size_t _used_high;
   size_t _used_low;
-  size_t _claimed;
   size_t _reclaimed;
 
 public:
@@ -156,7 +155,6 @@ public:
                       size_t used,
                       size_t used_high,
                       size_t used_low,
-                      size_t claimed,
                       size_t reclaimed);
 
   size_t min_capacity() const;
@@ -166,7 +164,6 @@ public:
   size_t used() const;
   size_t used_high() const;
   size_t used_low() const;
-  size_t claimed() const;
   size_t reclaimed() const;
 };
 

@@ -49,7 +49,7 @@ static const ZStatCriticalPhase ZCriticalPhaseRelocationStall("Relocation Stall"
 
 bool ZForwarding::retain_page() {
   for (;;) {
-    const int32_t ref_count = Atomic::load(&_ref_count);
+    const int32_t ref_count = Atomic::load_acquire(&_ref_count);
 
     if (ref_count == 0) {
       // Released
@@ -79,8 +79,9 @@ ZPage* ZForwarding::claim_page() {
       continue;
     }
 
-    // Wait until claimed
-    if (Atomic::load(&_ref_count) != -1) {
+    // If the previous reference count was 1, then we just changed it to -1,
+    // and we have now claimed the page. Otherwise we wait until it is claimed.
+    if (ref_count != 1) {
       ZLocker<ZConditionLock> locker(&_ref_lock);
       while (Atomic::load(&_ref_count) != -1) {
         _ref_lock.wait();
@@ -102,7 +103,7 @@ void ZForwarding::release_page() {
         continue;
       }
 
-      // If the previous ref_count was 1, then we just decremented
+      // If the previous reference count was 1, then we just decremented
       // it to 0 and we should signal that the page is now released.
       if (ref_count == 1) {
         // Notify released
@@ -115,9 +116,8 @@ void ZForwarding::release_page() {
         continue;
       }
 
-      // If the previous ref_count was -2 or -1, then we just incremented
-      // it to -1 or 0, and we should signal the that page is now claimed
-      // or released.
+      // If the previous reference count was -2 or -1, then we just incremented it
+      // to -1 or 0, and we should signal the that page is now claimed or released.
       if (ref_count == -2 || ref_count == -1) {
         // Notify claimed or released
         ZLocker<ZConditionLock> locker(&_ref_lock);
@@ -130,7 +130,7 @@ void ZForwarding::release_page() {
 }
 
 void ZForwarding::wait_page_released() const {
-  if (Atomic::load(&_ref_count) != 0) {
+  if (Atomic::load_acquire(&_ref_count) != 0) {
     ZStatTimer timer(ZCriticalPhaseRelocationStall);
     ZLocker<ZConditionLock> locker(&_ref_lock);
     while (Atomic::load(&_ref_count) != 0) {
@@ -141,7 +141,7 @@ void ZForwarding::wait_page_released() const {
 
 ZPage* ZForwarding::detach_page() {
   // Wait until released
-  if (Atomic::load(&_ref_count) != 0) {
+  if (Atomic::load_acquire(&_ref_count) != 0) {
     ZLocker<ZConditionLock> locker(&_ref_lock);
     while (Atomic::load(&_ref_count) != 0) {
       _ref_lock.wait();
@@ -191,6 +191,5 @@ void ZForwarding::verify() const {
   }
 
   // Verify number of live objects and bytes
-  _page->verify_live_objects(live_objects);
-  _page->verify_live_bytes(live_bytes);
+  _page->verify_live(live_objects, live_bytes);
 }

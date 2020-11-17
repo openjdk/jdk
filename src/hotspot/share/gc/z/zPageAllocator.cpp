@@ -139,10 +139,10 @@ ZPageAllocator::ZPageAllocator(ZWorkers* workers,
     _max_capacity(max_capacity),
     _current_max_capacity(max_capacity),
     _capacity(0),
+    _claimed(0),
     _used(0),
     _used_high(0),
     _used_low(0),
-    _claimed(0),
     _reclaimed(0),
     _stalled(),
     _satisfied(),
@@ -260,8 +260,11 @@ size_t ZPageAllocator::used() const {
 }
 
 size_t ZPageAllocator::unused() const {
-  const ZPageAllocatorStats st = stats();
-  return st.capacity() - st.used() - st.claimed();
+  const ssize_t capacity = (ssize_t)Atomic::load(&_capacity);
+  const ssize_t used = (ssize_t)Atomic::load(&_used);
+  const ssize_t claimed = (ssize_t)Atomic::load(&_claimed);
+  const ssize_t unused = capacity - used - claimed;
+  return unused > 0 ? (size_t)unused : 0;
 }
 
 ZPageAllocatorStats ZPageAllocator::stats() const {
@@ -273,7 +276,6 @@ ZPageAllocatorStats ZPageAllocator::stats() const {
                              _used,
                              _used_high,
                              _used_low,
-                             _claimed,
                              _reclaimed);
 }
 
@@ -747,7 +749,7 @@ size_t ZPageAllocator::uncommit(uint64_t* timeout) {
     }
 
     // Record flushed pages as claimed
-    _claimed += flushed;
+    Atomic::add(&_claimed, flushed);
   }
 
   // Unmap, uncommit, and destroy flushed pages
@@ -763,7 +765,7 @@ size_t ZPageAllocator::uncommit(uint64_t* timeout) {
     ZLocker<ZLock> locker(&_lock);
 
     // Adjust claimed and capacity to reflect the uncommit
-    _claimed -= flushed;
+    Atomic::sub(&_claimed, flushed);
     decrease_capacity(flushed, false /* set_max_capacity */);
   }
 

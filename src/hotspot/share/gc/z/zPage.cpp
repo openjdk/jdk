@@ -128,10 +128,7 @@ void ZPage::print() const {
   print_on(tty);
 }
 
-void ZPage::verify_live_objects(uint32_t live_objects) const {
+void ZPage::verify_live(uint32_t live_objects, size_t live_bytes) const {
   guarantee(live_objects == _livemap.live_objects(), "Invalid number of live objects");
-}
-
-void ZPage::verify_live_bytes(size_t live_bytes) const {
-  guarantee(live_bytes == _livemap.live_bytes(), "Invalid number of live bytes %zu vs %zu", live_bytes, _livemap.live_bytes());
+  guarantee(live_bytes == _livemap.live_bytes(), "Invalid number of live bytes");
 }
