@@ -256,6 +256,13 @@ var getJibProfilesCommon = function (input, data) {
             "--disable-jvm-feature-shenandoahgc",
             versionArgs(input, common))
     };
+    // Extra settings for release profiles
+    common.release_profile_base = {
+        configure_args: [
+            "--enable-reproducible-build",
+            "--with-source-date=current",
+        ],
+    };
     // Extra settings for debug profiles
     common.debug_suffix = "-debug";
     common.debug_profile_base = {
@@ -795,6 +802,13 @@ var getJibProfilesProfiles = function (input, common, data) {
             // Do not inherit artifact definitions from base profile
             delete profiles[cmpBaselineName].artifacts;
         });
+    });
+
+    // After creating all derived profiles, we can add the release profile base
+    // to the main profiles
+    common.main_profile_names.forEach(function (name) {
+        profiles[name] = concatObjects(profiles[name],
+            common.release_profile_base);
     });
 
     // Artifacts of JCov profiles
