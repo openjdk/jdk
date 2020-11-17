@@ -52,7 +52,7 @@ private:
   ciSymbol(Symbol* s);  // normal case, for symbols not mentioned in vmSymbols
   ciSymbol(Symbol* s, vmSymbolID sid);   // for use with vmSymbols
 
-  bool sid_ok() NOT_DEBUG_RETURN;
+  DEBUG_ONLY(bool sid_ok();)
 
   Symbol* get_symbol() const { return _symbol; }
 
