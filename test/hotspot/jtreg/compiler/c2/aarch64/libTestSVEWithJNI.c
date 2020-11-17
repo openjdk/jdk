@@ -23,7 +23,7 @@
 *
 */
 
-#if defined(__aarch64__) && defined(LINUX)
+#if defined(__aarch64__) && defined (__linux__)
 
 #include <jni.h>
 #include <pthread.h>

@@ -32,7 +32,7 @@ int VM_Version::get_current_sve_vector_length() {
   return -1;
 }
 
-int VM_Version::set_and_get_current_sve_vector_lenght(int length) {
+int VM_Version::set_and_get_current_sve_vector_length(int length) {
   ShouldNotReachHere();
   return -1;
 }

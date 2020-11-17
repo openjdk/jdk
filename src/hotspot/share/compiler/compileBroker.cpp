@@ -50,6 +50,7 @@
 #include "prims/whitebox.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/escapeBarrier.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
@@ -798,19 +799,98 @@ Handle CompileBroker::create_thread_oop(const char* name, TRAPS) {
                        CHECK_NH);
 }
 
+#if defined(ASSERT) && COMPILER2_OR_JVMCI
+// Stress testing. Dedicated threads revert optimizations based on escape analysis concurrently to
+// the running java application.  Configured with vm options DeoptimizeObjectsALot*.
+class DeoptimizeObjectsALotThread : public JavaThread {
 
-JavaThread* CompileBroker::make_thread(jobject thread_handle, CompileQueue* queue, AbstractCompiler* comp, Thread* THREAD) {
+  static void deopt_objs_alot_thread_entry(JavaThread* thread, TRAPS);
+  void deoptimize_objects_alot_loop_single();
+  void deoptimize_objects_alot_loop_all();
+
+public:
+  DeoptimizeObjectsALotThread() : JavaThread(&deopt_objs_alot_thread_entry) { }
+
+  bool is_hidden_from_external_view() const      { return true; }
+};
+
+// Entry for DeoptimizeObjectsALotThread. The threads are started in
+// CompileBroker::init_compiler_sweeper_threads() iff DeoptimizeObjectsALot is enabled
+void DeoptimizeObjectsALotThread::deopt_objs_alot_thread_entry(JavaThread* thread, TRAPS) {
+    DeoptimizeObjectsALotThread* dt = ((DeoptimizeObjectsALotThread*) thread);
+    bool enter_single_loop;
+    {
+      MonitorLocker ml(dt, EscapeBarrier_lock, Mutex::_no_safepoint_check_flag);
+      static int single_thread_count = 0;
+      enter_single_loop = single_thread_count++ < DeoptimizeObjectsALotThreadCountSingle;
+    }
+    if (enter_single_loop) {
+      dt->deoptimize_objects_alot_loop_single();
+    } else {
+      dt->deoptimize_objects_alot_loop_all();
+    }
+  }
+
+// Execute EscapeBarriers in an endless loop to revert optimizations based on escape analysis. Each
+// barrier targets a single thread which is selected round robin.
+void DeoptimizeObjectsALotThread::deoptimize_objects_alot_loop_single() {
+  HandleMark hm(this);
+  while (true) {
+    for (JavaThreadIteratorWithHandle jtiwh; JavaThread *deoptee_thread = jtiwh.next(); ) {
+      { // Begin new scope for escape barrier
+        HandleMarkCleaner hmc(this);
+        ResourceMark rm(this);
+        EscapeBarrier eb(true, this, deoptee_thread);
+        eb.deoptimize_objects(100);
+      }
+      // Now sleep after the escape barriers destructor resumed deoptee_thread.
+      sleep(DeoptimizeObjectsALotInterval);
+    }
+  }
+}
+
+// Execute EscapeBarriers in an endless loop to revert optimizations based on escape analysis. Each
+// barrier targets all java threads in the vm at once.
+void DeoptimizeObjectsALotThread::deoptimize_objects_alot_loop_all() {
+  HandleMark hm(this);
+  while (true) {
+    { // Begin new scope for escape barrier
+      HandleMarkCleaner hmc(this);
+      ResourceMark rm(this);
+      EscapeBarrier eb(true, this);
+      eb.deoptimize_objects_all_threads();
+    }
+    // Now sleep after the escape barriers destructor resumed the java threads.
+    sleep(DeoptimizeObjectsALotInterval);
+  }
+}
+#endif // defined(ASSERT) && COMPILER2_OR_JVMCI
+
+
+JavaThread* CompileBroker::make_thread(ThreadType type, jobject thread_handle, CompileQueue* queue, AbstractCompiler* comp, Thread* THREAD) {
   JavaThread* new_thread = NULL;
   {
     MutexLocker mu(THREAD, Threads_lock);
-    if (comp != NULL) {
-      if (!InjectCompilerCreationFailure || comp->num_compiler_threads() == 0) {
-        CompilerCounters* counters = new CompilerCounters();
-        new_thread = new CompilerThread(queue, counters);
-      }
-    } else {
-      new_thread = new CodeCacheSweeperThread();
+    switch (type) {
+      case compiler_t:
+        assert(comp != NULL, "Compiler instance missing.");
+        if (!InjectCompilerCreationFailure || comp->num_compiler_threads() == 0) {
+          CompilerCounters* counters = new CompilerCounters();
+          new_thread = new CompilerThread(queue, counters);
+        }
+        break;
+      case sweeper_t:
+        new_thread = new CodeCacheSweeperThread();
+        break;
+#if defined(ASSERT) && COMPILER2_OR_JVMCI
+      case deoptimizer_t:
+        new_thread = new DeoptimizeObjectsALotThread();
+        break;
+#endif // ASSERT
+      default:
+        ShouldNotReachHere();
     }
+
     // At this point the new CompilerThread data-races with this startup
     // thread (which I believe is the primoridal thread and NOT the VM
     // thread).  This means Java bytecodes being executed at startup can
@@ -852,7 +932,7 @@ JavaThread* CompileBroker::make_thread(jobject thread_handle, CompileQueue* queu
       java_lang_Thread::set_daemon(JNIHandles::resolve_non_null(thread_handle));
 
       new_thread->set_threadObj(JNIHandles::resolve_non_null(thread_handle));
-      if (comp != NULL) {
+      if (type == compiler_t) {
         new_thread->as_CompilerThread()->set_compiler(comp);
       }
       Threads::add(new_thread);
@@ -862,7 +942,7 @@ JavaThread* CompileBroker::make_thread(jobject thread_handle, CompileQueue* queu
 
   // First release lock before aborting VM.
   if (new_thread == NULL || new_thread->osthread() == NULL) {
-    if (UseDynamicNumberOfCompilerThreads && comp != NULL && comp->num_compiler_threads() > 0) {
+    if (UseDynamicNumberOfCompilerThreads && type == compiler_t && comp->num_compiler_threads() > 0) {
       if (new_thread != NULL) {
         new_thread->smr_delete();
       }
@@ -917,7 +997,7 @@ void CompileBroker::init_compiler_sweeper_threads() {
     _compiler2_logs[i] = NULL;
 
     if (!UseDynamicNumberOfCompilerThreads || i == 0) {
-      JavaThread *ct = make_thread(thread_handle, _c2_compile_queue, _compilers[1], THREAD);
+      JavaThread *ct = make_thread(compiler_t, thread_handle, _c2_compile_queue, _compilers[1], THREAD);
       assert(ct != NULL, "should have been handled for initial thread");
       _compilers[1]->set_num_compiler_threads(i + 1);
       if (TraceCompilerThreads) {
@@ -937,7 +1017,7 @@ void CompileBroker::init_compiler_sweeper_threads() {
     _compiler1_logs[i] = NULL;
 
     if (!UseDynamicNumberOfCompilerThreads || i == 0) {
-      JavaThread *ct = make_thread(thread_handle, _c1_compile_queue, _compilers[0], THREAD);
+      JavaThread *ct = make_thread(compiler_t, thread_handle, _c1_compile_queue, _compilers[0], THREAD);
       assert(ct != NULL, "should have been handled for initial thread");
       _compilers[0]->set_num_compiler_threads(i + 1);
       if (TraceCompilerThreads) {
@@ -956,8 +1036,20 @@ void CompileBroker::init_compiler_sweeper_threads() {
     // Initialize the sweeper thread
     Handle thread_oop = create_thread_oop("Sweeper thread", CHECK);
     jobject thread_handle = JNIHandles::make_local(THREAD, thread_oop());
-    make_thread(thread_handle, NULL, NULL, THREAD);
+    make_thread(sweeper_t, thread_handle, NULL, NULL, THREAD);
   }
+
+#if defined(ASSERT) && COMPILER2_OR_JVMCI
+  if (DeoptimizeObjectsALot) {
+    // Initialize and start the object deoptimizer threads
+    const int total_count = DeoptimizeObjectsALotThreadCountSingle + DeoptimizeObjectsALotThreadCountAll;
+    for (int count = 0; count < total_count; count++) {
+      Handle thread_oop = create_thread_oop("Deoptimize objects a lot single mode", CHECK);
+      jobject thread_handle = JNIHandles::make_local(THREAD, thread_oop());
+      make_thread(deoptimizer_t, thread_handle, NULL, NULL, THREAD);
+    }
+  }
+#endif // defined(ASSERT) && COMPILER2_OR_JVMCI
 }
 
 void CompileBroker::possibly_add_compiler_threads(Thread* THREAD) {
@@ -1011,7 +1103,7 @@ void CompileBroker::possibly_add_compiler_threads(Thread* THREAD) {
         _compiler2_objects[i] = thread_handle;
       }
 #endif
-      JavaThread *ct = make_thread(compiler2_object(i), _c2_compile_queue, _compilers[1], THREAD);
+      JavaThread *ct = make_thread(compiler_t, compiler2_object(i), _c2_compile_queue, _compilers[1], THREAD);
       if (ct == NULL) break;
       _compilers[1]->set_num_compiler_threads(i + 1);
       if (TraceCompilerThreads) {
@@ -1031,7 +1123,7 @@ void CompileBroker::possibly_add_compiler_threads(Thread* THREAD) {
         (int)(available_cc_p / (128*K)));
 
     for (int i = old_c1_count; i < new_c1_count; i++) {
-      JavaThread *ct = make_thread(compiler1_object(i), _c1_compile_queue, _compilers[0], THREAD);
+      JavaThread *ct = make_thread(compiler_t, compiler1_object(i), _c1_compile_queue, _compilers[0], THREAD);
       if (ct == NULL) break;
       _compilers[0]->set_num_compiler_threads(i + 1);
       if (TraceCompilerThreads) {

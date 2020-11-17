@@ -35,13 +35,13 @@
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "gc/shenandoah/shenandoahUnload.hpp"
+#include "memory/metaspace.hpp"
 #include "services/memoryManager.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.hpp"
 
 class ConcurrentGCTimer;
 class ObjectIterateScanRootClosure;
-class ReferenceProcessor;
 class ShenandoahCollectorPolicy;
 class ShenandoahControlThread;
 class ShenandoahGCSession;
@@ -59,7 +59,7 @@ class ShenandoahFreeSet;
 class ShenandoahConcurrentMark;
 class ShenandoahMarkCompact;
 class ShenandoahMonitoringSupport;
-class ShenandoahObjToScanQueueSet;
+class ShenandoahReferenceProcessor;
 class ShenandoahPacer;
 class ShenandoahVerifier;
 class ShenandoahWorkGang;
@@ -389,7 +389,7 @@ public:
   // for concurrent operation.
   void entry_reset();
   void entry_mark();
-  void entry_preclean();
+  void entry_weak_refs();
   void entry_weak_roots();
   void entry_class_unloading();
   void entry_strong_roots();
@@ -414,7 +414,7 @@ private:
 
   void op_reset();
   void op_mark();
-  void op_preclean();
+  void op_weak_refs();
   void op_weak_roots();
   void op_class_unloading();
   void op_strong_roots();
@@ -493,20 +493,10 @@ public:
 // ---------- Reference processing
 //
 private:
-  AlwaysTrueClosure    _subject_to_discovery;
-  ReferenceProcessor*  _ref_processor;
-  ShenandoahSharedFlag _process_references;
-  bool                 _ref_proc_mt_discovery;
-  bool                 _ref_proc_mt_processing;
-
-  void ref_processing_init();
+  ShenandoahReferenceProcessor* const _ref_processor;
 
 public:
-  ReferenceProcessor* ref_processor() { return _ref_processor; }
-  bool ref_processor_mt_discovery()   { return _ref_proc_mt_discovery;  }
-  bool ref_processor_mt_processing()  { return _ref_proc_mt_processing; }
-  void set_process_references(bool pr);
-  bool process_references() const;
+  ShenandoahReferenceProcessor* ref_processor() { return _ref_processor; }
 
 // ---------- Class Unloading
 //

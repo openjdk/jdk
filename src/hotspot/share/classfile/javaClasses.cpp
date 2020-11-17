@@ -53,6 +53,7 @@
 #include "oops/recordComponent.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "prims/methodHandles.hpp"
 #include "prims/resolvedMethodTable.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
@@ -84,7 +85,7 @@
 #endif
 
 #define DECLARE_INJECTED_FIELD(klass, name, signature, may_be_java)           \
-  { SystemDictionary::WK_KLASS_ENUM_NAME(klass), vmSymbols::VM_SYMBOL_ENUM_NAME(name##_name), vmSymbols::VM_SYMBOL_ENUM_NAME(signature), may_be_java },
+  { SystemDictionary::WK_KLASS_ENUM_NAME(klass), VM_SYMBOL_ENUM_NAME(name##_name), VM_SYMBOL_ENUM_NAME(signature), may_be_java },
 
 InjectedField JavaClasses::_injected_fields[] = {
   ALL_INJECTED_FIELDS(DECLARE_INJECTED_FIELD)
@@ -112,8 +113,8 @@ int JavaClasses::compute_injected_offset(InjectedFieldID id) {
 InjectedField* JavaClasses::get_injected(Symbol* class_name, int* field_count) {
   *field_count = 0;
 
-  vmSymbols::SID sid = vmSymbols::find_sid(class_name);
-  if (sid == vmSymbols::NO_SID) {
+  vmSymbolID sid = vmSymbols::find_sid(class_name);
+  if (sid == vmSymbolID::NO_SID) {
     // Only well known classes can inject fields
     return NULL;
   }
@@ -122,7 +123,7 @@ InjectedField* JavaClasses::get_injected(Symbol* class_name, int* field_count) {
   int start = -1;
 
 #define LOOKUP_INJECTED_FIELD(klass, name, signature, may_be_java) \
-  if (sid == vmSymbols::VM_SYMBOL_ENUM_NAME(klass)) {              \
+  if (sid == VM_SYMBOL_ENUM_NAME(klass)) {                         \
     count++;                                                       \
     if (start == -1) start = klass##_##name##_enum;                \
   }
@@ -1246,6 +1247,8 @@ oop java_lang_Class::process_archived_mirror(Klass* k, oop mirror,
     java_lang_Class:set_init_lock(archived_mirror, NULL);
 
     set_protection_domain(archived_mirror, NULL);
+    set_signers(archived_mirror, NULL);
+    set_source_file(archived_mirror, NULL);
   }
 
   // clear class loader and mirror_module_field
@@ -4537,6 +4540,30 @@ void java_util_concurrent_locks_AbstractOwnableSynchronizer::serialize_offsets(S
   AOS_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
 }
 #endif
+
+int vector_VectorPayload::_payload_offset;
+
+#define VECTORPAYLOAD_FIELDS_DO(macro) \
+  macro(_payload_offset, k, "payload", object_signature, false)
+
+void vector_VectorPayload::compute_offsets() {
+  InstanceKlass* k = SystemDictionary::vector_VectorPayload_klass();
+  VECTORPAYLOAD_FIELDS_DO(FIELD_COMPUTE_OFFSET);
+}
+
+#if INCLUDE_CDS
+void vector_VectorPayload::serialize_offsets(SerializeClosure* f) {
+  VECTORPAYLOAD_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
+}
+#endif
+
+void vector_VectorPayload::set_payload(oop o, oop val) {
+  o->obj_field_put(_payload_offset, val);
+}
+
+bool vector_VectorPayload::is_instance(oop obj) {
+  return obj != NULL && is_subclass(obj->klass());
+}
 
 int java_lang_Integer_IntegerCache::_static_cache_offset;
 int java_lang_Long_LongCache::_static_cache_offset;

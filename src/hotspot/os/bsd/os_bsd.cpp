@@ -1823,9 +1823,8 @@ bool os::remove_stack_guard_pages(char* addr, size_t size) {
 // may not start from the requested address. Unlike Bsd mmap(), this
 // function returns NULL to indicate failure.
 static char* anon_mmap(char* requested_addr, size_t bytes, bool executable) {
-  int flags;
-
-  flags = MAP_PRIVATE | MAP_NORESERVE | MAP_ANONYMOUS;
+  // MAP_FIXED is intentionally left out, to leave existing mappings intact.
+  int flags = MAP_PRIVATE | MAP_NORESERVE | MAP_ANONYMOUS;
 #ifdef __APPLE__
   if (executable) {
     flags |= MAP_JIT;
@@ -1928,7 +1927,7 @@ bool os::can_execute_large_page_memory() {
   return false;
 }
 
-char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, int file_desc) {
+char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, int file_desc) {
   assert(file_desc >= 0, "file_desc is not valid");
   char* result = pd_attempt_reserve_memory_at(requested_addr, bytes);
   if (result != NULL) {

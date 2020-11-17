@@ -26,4 +26,6 @@ package pkg;
 import java.io.Serializable;
 
 public class MyClass implements Serializable {
+    @Deprecated
+    public static final int ZERO = 0;
 }

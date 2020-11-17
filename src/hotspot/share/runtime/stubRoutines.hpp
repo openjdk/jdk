@@ -207,9 +207,6 @@ class StubRoutines: AllStatic {
   static address _arrayof_jshort_fill;
   static address _arrayof_jint_fill;
 
-  // zero heap space aligned to jlong (8 bytes)
-  static address _zero_aligned_words;
-
   static address _aescrypt_encryptBlock;
   static address _aescrypt_decryptBlock;
   static address _cipherBlockChaining_encryptAESCrypt;
@@ -228,6 +225,8 @@ class StubRoutines: AllStatic {
   static address _sha256_implCompressMB;
   static address _sha512_implCompress;
   static address _sha512_implCompressMB;
+  static address _sha3_implCompress;
+  static address _sha3_implCompressMB;
 
   static address _updateBytesCRC32;
   static address _crc_table_adr;
@@ -407,6 +406,8 @@ class StubRoutines: AllStatic {
   static address sha256_implCompressMB() { return _sha256_implCompressMB; }
   static address sha512_implCompress()   { return _sha512_implCompress; }
   static address sha512_implCompressMB() { return _sha512_implCompressMB; }
+  static address sha3_implCompress()     { return _sha3_implCompress; }
+  static address sha3_implCompressMB()   { return _sha3_implCompressMB; }
 
   static address updateBytesCRC32()    { return _updateBytesCRC32; }
   static address crc_table_addr()      { return _crc_table_adr; }
@@ -437,8 +438,6 @@ class StubRoutines: AllStatic {
   static address dtan()                { return _dtan; }
 
   static address select_fill_function(BasicType t, bool aligned, const char* &name);
-
-  static address zero_aligned_words()  { return _zero_aligned_words; }
 
   //
   // Safefetch stub support

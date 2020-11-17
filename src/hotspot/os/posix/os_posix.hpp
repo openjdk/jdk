@@ -106,6 +106,10 @@ public:
 #endif
 
   static void to_RTC_abstime(timespec* abstime, int64_t millis);
+
+  static bool handle_stack_overflow(JavaThread* thread, address addr, address pc,
+                                    const void* ucVoid,
+                                    address* stub);
 };
 
 /*
