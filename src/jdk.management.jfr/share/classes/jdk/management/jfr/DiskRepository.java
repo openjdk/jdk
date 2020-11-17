@@ -16,6 +16,8 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.Objects;
 
+import jdk.jfr.internal.management.ManagementSupport;
+
 final class DiskRepository implements Closeable {
 
     final static class DiskChunk {
@@ -51,6 +53,7 @@ final class DiskRepository implements Closeable {
 
     private final Deque<DiskChunk> activeChunks = new ArrayDeque<>(); // O(n) on remove, consider LinkedList
     private final Deque<DiskChunk> deadChunks = new ArrayDeque<>(); // O(n) on remove, consider LinkedList
+    private final boolean deleteDirectory;
 
     private ByteBuffer buffer = ByteBuffer.allocate(256);
     private final Path directory;
@@ -79,8 +82,9 @@ final class DiskRepository implements Closeable {
     private volatile long maxSize;
     private long size;
 
-    public DiskRepository(Path path) throws IOException {
+    public DiskRepository(Path path, boolean deleteDirectory) throws IOException {
         this.directory = path;
+        this.deleteDirectory = deleteDirectory;
     }
 
     public void write(byte[] bytes) throws IOException {
@@ -352,6 +356,13 @@ final class DiskRepository implements Closeable {
         }
         deadChunks.addAll(activeChunks);
         cleanUpDeadChunk(Integer.MAX_VALUE);
+        if (deleteDirectory) {
+            try {
+                Files.delete(directory);
+            } catch (IOException ioe) {
+                ManagementSupport.logDebug("Could not delete temp stream repository: " + ioe.getMessage());
+            }
+        }
     }
 
     public synchronized void setMaxAge(Duration maxAge) {
@@ -397,7 +408,6 @@ final class DiskRepository implements Closeable {
         while (!activeChunks.isEmpty()) {
             DiskChunk oldestChunk = activeChunks.peek();
             if (oldestChunk.startTime.isBefore(timestamp)) {
-                System.out.println("Remove chunk " + oldestChunk.path.toAbsolutePath());
                 removeOldestChunk();
                 count++;
             } else {
@@ -436,6 +446,16 @@ final class DiskRepository implements Closeable {
             count++;
             if (count == maxCount) {
                 return;
+            }
+        }
+    }
+
+    public void complete() {
+        if (currentChunk != null) {
+            try {
+                completePrevious(currentChunk);
+            } catch (IOException ioe) {
+                ManagementSupport.logDebug("Could not complete chunk " + currentChunk.path + " : " + ioe.getMessage());
             }
         }
     }

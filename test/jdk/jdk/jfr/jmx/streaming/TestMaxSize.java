@@ -66,8 +66,6 @@ public class TestMaxSize {
                 try {
                     Thread.sleep(10);
                 } catch (InterruptedException e1) {
-                    // TODO Auto-generated catch block
-                    e1.printStackTrace();
                 }
             });
             while (directorySize(dir) < 50_000_000) {

@@ -32,7 +32,6 @@ final class DownLoadThread extends Thread {
             while (!stream.isClosed()) {
                 byte[] bytes = stream.mbean.readStream(streamId);
                 if (bytes == null) {
-                    stream.close();
                     return;
                 }
                 if (bytes.length != 0) {
@@ -42,13 +41,9 @@ final class DownLoadThread extends Thread {
                 }
             }
         } catch (IOException ioe) {
-            ioe.printStackTrace();
+           // ignore
         } finally {
-            try {
-                diskRepository.close();
-            } catch (IOException e) {
-                // ignore
-            }
+           diskRepository.complete();
         }
     }
 
@@ -59,5 +54,4 @@ final class DownLoadThread extends Thread {
             // ignore
         }
     }
-
 }

@@ -147,9 +147,13 @@ final class FlightRecorderMXBeanImpl extends StandardEmitterMBean implements Fli
         Instant starttime = MBeanUtils.parseTimestamp(s.get("startTime"), Instant.MIN);
         Instant endtime = MBeanUtils.parseTimestamp(s.get("endTime"), Instant.MAX);
         int blockSize = MBeanUtils.parseBlockSize(s.get("blockSize"), StreamManager.DEFAULT_BLOCK_SIZE);
-        if (options.containsKey("streamVersion")) {
-            Recording r = getRecording(id);
-            return streamHandler.createOngoing(r, blockSize, starttime, endtime).getId();
+        String version = s.get("streamVersion");
+        if (version != null) {
+            if ("1.0".equals(version)) {
+                Recording r = getRecording(id);
+                return streamHandler.createOngoing(r, blockSize, starttime, endtime).getId();
+            }
+            throw new IllegalArgumentException("Unsupported stream version " + version);
         }
 
         InputStream is = getExistingRecording(id).getStream(starttime, endtime);

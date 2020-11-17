@@ -31,8 +31,6 @@ public class TestRotate {
     public static void main(String... args) throws Exception {
         MBeanServerConnection conn = ManagementFactory.getPlatformMBeanServer();
         Path p = Files.createDirectory(Paths.get("test-stream-rotate-" + System.currentTimeMillis()));
-        System.out.println(p.toAbsolutePath());
-        System.out.println("Go");
         CountDownLatch latch = new CountDownLatch(100);
         try (RemoteRecordingStream r = new RemoteRecordingStream(conn, p)) {
             r.onEvent(e -> {
@@ -49,6 +47,7 @@ public class TestRotate {
                 }
                 Thread.sleep(10);
             }
+            System.out.println("Events generated. Awaiting consumption");
             latch.await();
         }
     }

@@ -51,7 +51,7 @@ public class TestClose {
         MBeanServerConnection conn = ManagementFactory.getPlatformMBeanServer();
         Path p = Files.createDirectory(Paths.get("test-close-" + System.currentTimeMillis()));
 
-        RemoteRecordingStream e = new RemoteRecordingStream(conn);
+        RemoteRecordingStream e = new RemoteRecordingStream(conn, p);
         e.startAsync();
         // Produce enough to generate multiple chunks
         for (int i = 0; i < 200_000; i++) {

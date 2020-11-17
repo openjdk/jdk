@@ -10,9 +10,11 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import javax.management.JMX;
@@ -67,6 +69,8 @@ import jdk.jfr.internal.management.ManagementSupport;
  */
 public final class RemoteRecordingStream implements EventStream {
 
+    static final String NAME = "Remote Recording Stream";
+
     private static final String ENABLED = "enabled";
 
     static final class RemoteSettings implements EventSettingsModifier {
@@ -111,7 +115,6 @@ public final class RemoteRecordingStream implements EventStream {
 
         @Override
         public void accept(Long endNanos) {
-            System.out.println("OnComplete " + endNanos);
             Instant t = MBeanUtils.epochNanosToInstant(endNanos);
             repository.onChunkComplete(t);
         }
@@ -123,7 +126,6 @@ public final class RemoteRecordingStream implements EventStream {
     final FlightRecorderMXBean mbean;
     final long recordingId;
     final EventStream stream;
-    final Map<String, String> options;
     final AccessControlContext accessControllerContext;
     final DiskRepository repository;
     final Object lock = new Object();
@@ -150,7 +152,7 @@ public final class RemoteRecordingStream implements EventStream {
      *                           directory, or files in the directory.
      */
     public RemoteRecordingStream(MBeanServerConnection connection) throws IOException {
-        this(connection, makeTempDirectory());
+        this(connection, makeTempDirectory(), true);
     }
 
     /**
@@ -175,6 +177,10 @@ public final class RemoteRecordingStream implements EventStream {
      *                           directory, or files in the directory.
      */
     public RemoteRecordingStream(MBeanServerConnection connection, Path directory) throws IOException {
+        this(connection, directory, false);
+    }
+    
+    private RemoteRecordingStream(MBeanServerConnection connection, Path directory, boolean delete) throws IOException {
         Objects.requireNonNull(connection);
         Objects.requireNonNull(directory);
 
@@ -192,9 +198,8 @@ public final class RemoteRecordingStream implements EventStream {
         stream = new EventDirectoryStream(AccessController.getContext(), directory, FileAccess.UNPRIVILEGED, null,
                 configurations(mbean));
         stream.setStartTime(Instant.MIN);
-        options = getRecordingOptions();
         accessControllerContext = AccessController.getContext();
-        repository = new DiskRepository(path);
+        repository = new DiskRepository(path, delete);
         ManagementSupport.setOnChunkCompleteHandler(stream, new ChunkConsumer(repository));
     }
 
@@ -210,7 +215,7 @@ public final class RemoteRecordingStream implements EventStream {
 
     @Override
     public void onMetadata(Consumer<MetadataEvent> action) {
-        stream.onMetadata(e -> action.accept(e));
+        stream.onMetadata(action);
     }
 
     private static void checkFileAccess(Path directory) throws IOException {
@@ -250,7 +255,11 @@ public final class RemoteRecordingStream implements EventStream {
 
     private long createRecording() throws IOException {
         try {
-            return mbean.newRecording();
+            long id = mbean.newRecording();
+            Map<String, String> options = new HashMap<>();
+            options.put("name", NAME + ": " + Instant.now());
+            mbean.setRecordingOptions(id, options);
+            return id;
         } catch (Exception e) {
             throw new IOException("Could not create new recording: " + e.getMessage(), e);
         }
@@ -439,6 +448,7 @@ public final class RemoteRecordingStream implements EventStream {
         if (closed) {
             return;
         }
+        closed = true;
         try {
             ManagementSupport.setOnChunkCompleteHandler(stream, null);
             repository.close();
@@ -452,7 +462,6 @@ public final class RemoteRecordingStream implements EventStream {
         } catch (IOException e) {
             ManagementSupport.logDebug(e.getMessage());
         }
-        closed = true;
     }
 
     @Override
@@ -485,7 +494,11 @@ public final class RemoteRecordingStream implements EventStream {
     @Override
     public void start() {
         try {
-            mbean.startRecording(recordingId);
+            try {
+                mbean.startRecording(recordingId);
+            } catch (IllegalStateException ise) {
+                throw ise;
+            }
             startDownload();
         } catch (Exception e) {
             ManagementSupport.logDebug(e.getMessage());

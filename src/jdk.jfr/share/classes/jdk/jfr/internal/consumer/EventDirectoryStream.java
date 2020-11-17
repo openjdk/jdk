@@ -130,9 +130,9 @@ public class EventDirectoryStream extends AbstractEventStream {
         Path path;
         boolean validStartTime = recording != null || disp.startTime != null;
         if (validStartTime) {
-            path = repositoryFiles.firstPath(disp.startNanos);
+            path = repositoryFiles.firstPath(disp.startNanos, true);
         } else {
-            path = repositoryFiles.lastPath();
+            path = repositoryFiles.lastPath(true);
         }
         if (path == null) { // closed
             return;
@@ -186,7 +186,7 @@ public class EventDirectoryStream extends AbstractEventStream {
                     // duration is 0 ns
                     durationNanos++;
                 }
-                path = repositoryFiles.nextPath(currentChunkStartNanos + durationNanos);
+                path = repositoryFiles.nextPath(currentChunkStartNanos + durationNanos, true);
                 if (path == null) {
                     return; // stream closed
                 }

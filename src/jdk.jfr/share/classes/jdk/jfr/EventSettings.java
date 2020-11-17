@@ -59,21 +59,21 @@ public abstract class EventSettings {
 
     // Used to provide EventSettings for jdk.management.jfr module
     static class ModifierSettings extends EventSettings {
-        private final EventSettingsModifier modifier;
+        private final EventSettingsModifier delegate;
 
-        ModifierSettings(EventSettingsModifier modigfier) {
-            this.modifier = modigfier;
+        ModifierSettings(EventSettingsModifier modifier) {
+            this.delegate = modifier;
         }
 
         @Override
         public EventSettings with(String name, String value) {
-             modifier.with(name, value);
+             delegate.with(name, value);
              return this;
         }
 
         @Override
         Map<String, String> toMap() {
-            return modifier.toMap();
+            return delegate.toMap();
         }
     }
 

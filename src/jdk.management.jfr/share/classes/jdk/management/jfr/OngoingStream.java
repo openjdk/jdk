@@ -173,7 +173,6 @@ final class OngoingStream extends Stream {
                     int left = bytes.length - HEADER_SIZE;
                     input.readFully(bytes, HEADER_SIZE, left);
                     position += bytes.length;
-                    startTimeNanos = buffer.getLong(32);
                     return bytes;
                 }
             }
@@ -212,11 +211,10 @@ final class OngoingStream extends Stream {
 
     private boolean ensurePath() {
         if (path == null) {
-            boolean validStartTime = recording != null || startTimeNanos != Long.MIN_VALUE;
-            if (validStartTime) {
-                path = repositoryFiles.firstPath(startTimeNanos);
+            if (first) {
+                path = repositoryFiles.firstPath(startTimeNanos, false);
             } else {
-                path = repositoryFiles.lastPath();
+                path = repositoryFiles.nextPath(startTimeNanos, false);
             }
         }
         return path != null;
@@ -225,5 +223,9 @@ final class OngoingStream extends Stream {
     @Override
     public void close() throws IOException {
         closeInput();
+        // Close recording if stream times out.
+        if (recording.getName().startsWith(RemoteRecordingStream.NAME)) {
+            recording.close();
+        }
     }
 }
