@@ -804,17 +804,6 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion* ranges, size_t count) {
   decrease_used(size_used);
 }
 
-oop G1CollectedHeap::materialize_archived_object(oop obj) {
-  assert(is_archived_object(obj), "not an archived obj");
-
-  // Loading an archived object makes it strongly reachable. If it is
-  // loaded during concurrent marking, it must be enqueued to the SATB
-  // queue, shading the previously white object gray.
-  G1BarrierSet::enqueue(obj);
-
-  return obj;
-}
-
 HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
   ResourceMark rm; // For retrieving the thread names in log messages.
 

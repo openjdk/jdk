@@ -52,6 +52,7 @@
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/init.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/safepointVerifiers.hpp"
@@ -122,7 +123,7 @@ void HeapShared::fixup_mapped_heap_regions() {
   mapinfo->fixup_mapped_heap_regions();
   set_archive_heap_region_fixed();
   if (is_mapped()) {
-    _roots = OopHandle(Universe::vm_global(), HeapShared::materialize_archived_object(_roots_narrow));
+    _roots = OopHandle(Universe::vm_global(), decode_from_archive(_roots_narrow));
     if (!MetaspaceShared::use_full_module_graph()) {
       // Need to remove all the archived java.lang.Module objects from HeapShared::roots().
       ClassLoaderDataShared::clear_archived_oops();
@@ -292,16 +293,6 @@ oop HeapShared::archive_heap_object(oop obj, Thread* THREAD) {
               SIZE_FORMAT "M", MaxHeapSize/M));
   }
   return archived_oop;
-}
-
-oop HeapShared::materialize_archived_object(narrowOop v) {
-  assert(archive_heap_region_fixed(),
-         "must be called after archive heap regions are fixed");
-  if (!CompressedOops::is_null(v)) {
-    oop obj = HeapShared::decode_from_archive(v);
-    return G1CollectedHeap::heap()->materialize_archived_object(obj);
-  }
-  return NULL;
 }
 
 void HeapShared::archive_klass_objects(Thread* THREAD) {
@@ -487,7 +478,6 @@ void KlassSubGraphInfo::add_subgraph_entry_field(
   }
   _subgraph_entry_fields->append(static_field_offset);
   _subgraph_entry_fields->append(HeapShared::append_root(v));
-  _subgraph_entry_fields->append(is_closed_archive ? 1 : 0);
 }
 
 // Add the Klass* for an object in the current KlassSubGraphInfo's subgraphs.
@@ -585,7 +575,7 @@ void ArchivedKlassSubGraphInfoRecord::init(KlassSubGraphInfo* info) {
   GrowableArray<int>* entry_fields = info->subgraph_entry_fields();
   if (entry_fields != NULL) {
     int num_entry_fields = entry_fields->length();
-    assert(num_entry_fields % 3 == 0, "sanity");
+    assert(num_entry_fields % 2 == 0, "sanity");
     _entry_field_records =
       MetaspaceShared::new_ro_array<int>(num_entry_fields);
     for (int i = 0 ; i < num_entry_fields; i++) {
@@ -667,16 +657,16 @@ static void verify_the_heap(Klass* k, const char* which) {
                         which, k->external_name());
     VM_Verify verify_op;
     VMThread::execute(&verify_op);
-#if 0
-    // For some reason, this causes jtreg to lock up with
-    // "jtreg -vmoptions:-XX:+VerifyArchivedFields HelloTest.java"
-    if (is_init_completed()) {
-      FlagSetting fs1(VerifyBeforeGC, true);
-      FlagSetting fs2(VerifyDuringGC, true);
-      FlagSetting fs3(VerifyAfterGC,  true);
-      Universe::heap()->collect(GCCause::_java_lang_system_gc);
+    if (!FLAG_IS_DEFAULT(VerifyArchivedFields)) {
+      // If this -XX:+VerifyArchivedFields is specified on the command-line, do extra
+      // checks.
+      if (is_init_completed()) {
+        FlagSetting fs1(VerifyBeforeGC, true);
+        FlagSetting fs2(VerifyDuringGC, true);
+        FlagSetting fs3(VerifyAfterGC,  true);
+        Universe::heap()->collect(GCCause::_java_lang_system_gc);
+      }
     }
-#endif
   }
 }
 
@@ -813,11 +803,10 @@ void HeapShared::init_archived_fields_for(Klass* k, const ArchivedKlassSubGraphI
   Array<int>* entry_field_records = record->entry_field_records();
   if (entry_field_records != NULL) {
     int efr_len = entry_field_records->length();
-    assert(efr_len % 3 == 0, "sanity");
-    for (int i = 0; i < efr_len; i += 3) {
+    assert(efr_len % 2 == 0, "sanity");
+    for (int i = 0; i < efr_len; i += 2) {
       int field_offset = entry_field_records->at(i);
       int root_index = entry_field_records->at(i+1);
-      int is_closed_archive = entry_field_records->at(i+2);
       oop v = get_root(root_index, /*clear=*/true);
       m->obj_field_put(field_offset, v);
       log_debug(cds, heap)("  " PTR_FORMAT " init field @ %2d = " PTR_FORMAT, p2i(k), field_offset, p2i(v));
@@ -842,8 +831,8 @@ void HeapShared::clear_archived_roots_of(Klass* k) {
     Array<int>* entry_field_records = record->entry_field_records();
     if (entry_field_records != NULL) {
       int efr_len = entry_field_records->length();
-      assert(efr_len % 3 == 0, "sanity");
-      for (int i = 0; i < efr_len; i += 3) {
+      assert(efr_len % 2 == 0, "sanity");
+      for (int i = 0; i < efr_len; i += 2) {
         int root_index = entry_field_records->at(i+1);
         clear_root(root_index);
       }
