@@ -83,7 +83,8 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
 
         try {
             Object finalizee = this.getInactive();
-            if (finalizee != null && !(finalizee instanceof java.lang.Enum)) {
+            assert finalizee != null;
+            if (!(finalizee instanceof java.lang.Enum)) {
                 jla.invokeFinalize(finalizee);
 
                 // Clear stack slot containing this variable, to decrease
