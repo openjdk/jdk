@@ -411,7 +411,12 @@ void JVMState::format(PhaseRegAlloc *regalloc, const Node *n, outputStream* st) 
   st->print("        #");
   if (_method) {
     _method->print_short_name(st);
-    st->print(" @ bci:%d ",_bci);
+    int lineno = _method->line_number_from_bci(_bci);
+    if (lineno != -1) {
+      st->print(" @ bci:%d (line %d) ", _bci, lineno);
+    } else {
+      st->print(" @ bci:%d ", _bci);
+    }
   } else {
     st->print_cr(" runtime stub ");
     return;
@@ -539,7 +544,12 @@ void JVMState::dump_spec(outputStream *st) const {
     }
     if (!printed)
       _method->print_short_name(st);
-    st->print(" @ bci:%d",_bci);
+    int lineno = _method->line_number_from_bci(_bci);
+    if (lineno != -1) {
+      st->print(" @ bci:%d (line %d)", _bci, lineno);
+    } else {
+      st->print(" @ bci:%d", _bci);
+    }
     if(_reexecute == Reexecute_True)
       st->print(" reexecute");
   } else {
