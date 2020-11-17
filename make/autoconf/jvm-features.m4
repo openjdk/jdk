@@ -352,6 +352,7 @@ AC_DEFUN_ONCE([JVM_FEATURES_CHECK_JVMCI],
 ###############################################################################
 # Check if the feature 'shenandoahgc' is available on this platform.
 #
+# TODO: Need to allow Zero builds on all platforms
 AC_DEFUN_ONCE([JVM_FEATURES_CHECK_SHENANDOAHGC],
 [
   JVM_FEATURES_CHECK_AVAILABILITY(shenandoahgc, [
@@ -476,7 +477,7 @@ AC_DEFUN([JVM_FEATURES_PREPARE_VARIANT],
     JVM_FEATURES_VARIANT_UNAVAILABLE="cds minimal zero"
   elif test "x$variant" = "xzero"; then
     JVM_FEATURES_VARIANT_UNAVAILABLE="aot cds compiler1 compiler2 \
-        epsilongc g1gc graal jvmci minimal shenandoahgc zgc"
+        epsilongc graal jvmci minimal zgc"
   else
     JVM_FEATURES_VARIANT_UNAVAILABLE="minimal zero"
   fi
