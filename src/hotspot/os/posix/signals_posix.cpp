@@ -1,4 +1,4 @@
-    /*
+/*
  * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1718,7 +1718,7 @@ void os::SuspendedThreadTask::internal_do_task() {
 int PosixSignals::init() {
   // initialize suspend/resume support - must do this before signal_sets_init()
   if (SR_initialize() != 0) {
-    vm_exit_during_initialization(err_msg("SR_initialize failed"));
+    vm_exit_during_initialization("SR_initialize failed");
     return JNI_ERR;
   }
 
