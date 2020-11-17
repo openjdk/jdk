@@ -310,7 +310,7 @@ ShenandoahAllocationRate::ShenandoahAllocationRate() :
 }
 
 void ShenandoahAllocationRate::sample(size_t allocated) {
-  jlong now = os::elapsedTime();
+  double now = os::elapsedTime();
   if (now - _last_sample_time > _interval_sec) {
     if (allocated > _last_sample_value) {
       _rate.add(instantaneous_rate(now, allocated));
