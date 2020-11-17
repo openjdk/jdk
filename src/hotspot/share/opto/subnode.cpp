@@ -563,7 +563,26 @@ void CmpNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_re
     }
   }
 }
+
 #endif
+
+CmpNode *CmpNode::make(Node *in1, Node *in2, BasicType bt, bool unsigned_comp) {
+  switch (bt) {
+    case T_INT:
+      if (unsigned_comp) {
+        return new CmpUNode(in1, in2);
+      }
+      return new CmpINode(in1, in2);
+    case T_LONG:
+      if (unsigned_comp) {
+        return new CmpULNode(in1, in2);
+      }
+      return new CmpLNode(in1, in2);
+    default:
+      fatal("Not implemented for %s", type2name(bt));
+  }
+  return NULL;
+}
 
 //=============================================================================
 //------------------------------cmp--------------------------------------------
