@@ -47,7 +47,6 @@ public:
 
   static bool is_sig_ignored(int sig);
 
-  // unblocks the signal masks for current thread
   static void hotspot_sigmask(Thread* thread);
 
   static void print_signal_handler(outputStream* st, int sig, char* buf, size_t buflen);
