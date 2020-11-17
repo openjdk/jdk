@@ -25,8 +25,8 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.ArrayList;
 import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.HelloApp;
+import jdk.jpackage.test.Annotations.Test;
 
 /**
  * Tests generation of app image and then launches app by passing -psn_1_1
@@ -40,32 +40,33 @@ import jdk.jpackage.test.HelloApp;
  * @test
  * @summary jpackage with -psn
  * @library ../helpers
- * @library /test/lib
- * @library base
  * @build jdk.jpackage.test.*
  * @modules jdk.jpackage/jdk.jpackage.internal
+ * @compile ArgumentsFilteringTest.java
  * @requires (os.family == "mac")
- * @run main/othervm -Xmx512m ArgumentsFilteringTest
+ * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
+ *  --jpt-run=ArgumentsFilteringTest
  */
 public class ArgumentsFilteringTest {
 
-    public static void main(String[] args) throws Exception {
-        TKit.run(args, () -> {
-            // Case 1
-            JPackageCommand cmd = JPackageCommand.helloAppImage();
-            cmd.executeAndAssertHelloAppImageCreated();
-            Path launcherPath = cmd.appLauncherPath();
-            HelloApp.assertApp(launcherPath)
-                    .executeAndVerifyOutput(false, List.of("-psn_1_1"),
-                            new ArrayList<>());
+    @Test
+    public void test1() {
+        JPackageCommand cmd = JPackageCommand.helloAppImage();
+        cmd.executeAndAssertHelloAppImageCreated();
+        Path launcherPath = cmd.appLauncherPath();
+        HelloApp.assertApp(launcherPath)
+                .executeAndVerifyOutput(false, List.of("-psn_1_1"),
+                        new ArrayList<>());
+    }
 
-            // Case 2
-            cmd.addArguments("--arguments", "-psn_2_2");
-            cmd.executeAndAssertHelloAppImageCreated();
-            launcherPath = cmd.appLauncherPath();
-            HelloApp.assertApp(launcherPath)
-                    .executeAndVerifyOutput(false, List.of("-psn_1_1"),
-                            List.of("-psn_2_2"));
-        });
+    @Test
+    public void test2() {
+        JPackageCommand cmd = JPackageCommand.helloAppImage()
+                .addArguments("--arguments", "-psn_2_2");
+        cmd.executeAndAssertHelloAppImageCreated();
+        Path launcherPath = cmd.appLauncherPath();
+        HelloApp.assertApp(launcherPath)
+                .executeAndVerifyOutput(false, List.of("-psn_1_1"),
+                        List.of("-psn_2_2"));
     }
 }
