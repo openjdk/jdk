@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,6 +177,7 @@ void NativeFarCall::verify() {
 address NativeMovConstReg::next_instruction_address() const {
 #ifdef ASSERT
   CodeBlob* nm = CodeCache::find_blob(instruction_address());
+  assert(nm != NULL, "Could not find code blob");
   assert(!MacroAssembler::is_set_narrow_oop(addr_at(0), nm->content_begin()), "Should not patch narrow oop here");
 #endif
 
@@ -195,6 +196,7 @@ intptr_t NativeMovConstReg::data() const {
   }
 
   CodeBlob* cb = CodeCache::find_blob_unsafe(addr);
+  assert(cb != NULL, "Could not find code blob");
   if (MacroAssembler::is_set_narrow_oop(addr, cb->content_begin())) {
     narrowOop no = MacroAssembler::get_narrow_oop(addr, cb->content_begin());
     // We can reach here during GC with 'no' pointing to new object location
@@ -297,6 +299,7 @@ void NativeMovConstReg::set_data(intptr_t data) {
 void NativeMovConstReg::set_narrow_oop(narrowOop data, CodeBlob *code /* = NULL */) {
   address   inst2_addr = addr_at(0);
   CodeBlob* cb = (code) ? code : CodeCache::find_blob(instruction_address());
+  assert(cb != NULL, "Could not find code blob");
   if (MacroAssembler::get_narrow_oop(inst2_addr, cb->content_begin()) == data) {
     return;
   }
@@ -403,6 +406,7 @@ address NativeCallTrampolineStub::encoded_destination_addr() const {
 
 address NativeCallTrampolineStub::destination(nmethod *nm) const {
   CodeBlob* cb = nm ? nm : CodeCache::find_blob_unsafe(addr_at(0));
+  assert(cb != NULL, "Could not find code blob");
   address ctable = cb->content_begin();
 
   return *(address*)(ctable + destination_toc_offset());
@@ -414,6 +418,7 @@ int NativeCallTrampolineStub::destination_toc_offset() const {
 
 void NativeCallTrampolineStub::set_destination(address new_destination) {
   CodeBlob* cb = CodeCache::find_blob(addr_at(0));
+  assert(cb != NULL, "Could not find code blob");
   address ctable = cb->content_begin();
 
   *(address*)(ctable + destination_toc_offset()) = new_destination;
