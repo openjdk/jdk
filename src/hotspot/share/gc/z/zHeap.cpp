@@ -361,13 +361,13 @@ void ZHeap::process_non_strong_references() {
   _reference_processor.enqueue_references();
 }
 
-void ZHeap::free_garbage_pages(ZRelocationSetSelector* selector, int bulk) {
-  // Freeing garbage pages in bulk is an optimization to avoid grabbing
+void ZHeap::free_empty_pages(ZRelocationSetSelector* selector, int bulk) {
+  // Freeing empty pages in bulk is an optimization to avoid grabbing
   // the page allocator lock, and trying to satisfy stalled allocations
   // too frequently.
-  if (selector->should_free_garbage_pages(bulk)) {
-    free_pages(selector->garbage_pages(), true /* reclaimed */);
-    selector->clear_garbage_pages();
+  if (selector->should_free_empty_pages(bulk)) {
+    free_pages(selector->empty_pages(), true /* reclaimed */);
+    selector->clear_empty_pages();
   }
 }
 
@@ -388,16 +388,16 @@ void ZHeap::select_relocation_set() {
       // Register live page
       selector.register_live_page(page);
     } else {
-      // Register garbage page
-      selector.register_garbage_page(page);
+      // Register empty page
+      selector.register_empty_page(page);
 
-      // Reclaim garbage pages in bulk
-      free_garbage_pages(&selector, 64 /* bulk */);
+      // Reclaim empty pages in bulk
+      free_empty_pages(&selector, 64 /* bulk */);
     }
   }
 
-  // Reclaim remaining garbage pages
-  free_garbage_pages(&selector, 0 /* bulk */);
+  // Reclaim remaining empty pages
+  free_empty_pages(&selector, 0 /* bulk */);
 
   // Allow pages to be deleted
   _page_allocator.disable_deferred_delete();
