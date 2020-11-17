@@ -39,9 +39,9 @@ import java.util.function.Supplier;
 /**
  * Implementation for heap memory segments. An heap memory segment is composed by an offset and
  * a base object (typically an array). To enhance performances, the access to the base object needs to feature
- * sharp type information, as well as sharp null-check information. For this reason, the factories for heap segments
- * use a lambda to implement the base object accessor, so that the type information will remain sharp (e.g.
- * the static compiler will generate specialized base accessor for us).
+ * sharp type information, as well as sharp null-check information. For this reason, many concrete subclasses
+ * of {@link HeapMemorySegmentImpl} are defined (e.g. {@link OfFloat}, so that each subclass can override the
+ * {@link HeapMemorySegmentImpl#base()} method so that it returns an array ogf the correct (sharp) type.
  */
 public abstract class HeapMemorySegmentImpl<H> extends AbstractMemorySegmentImpl {
 
@@ -80,7 +80,7 @@ public abstract class HeapMemorySegmentImpl<H> extends AbstractMemorySegmentImpl
 
     // factories
 
-    static class OfByte extends HeapMemorySegmentImpl<byte[]> {
+    public static class OfByte extends HeapMemorySegmentImpl<byte[]> {
 
         OfByte(long offset, byte[] base, long length, int mask, MemoryScope scope) {
             super(offset, base, length, mask, scope);
@@ -95,15 +95,15 @@ public abstract class HeapMemorySegmentImpl<H> extends AbstractMemorySegmentImpl
         byte[] base() {
             return Objects.requireNonNull(base);
         }
+
+        public static MemorySegment fromArray(byte[] arr) {
+            int byteSize = arr.length * Unsafe.ARRAY_BYTE_INDEX_SCALE;
+            MemoryScope scope = MemoryScope.createConfined(null, MemoryScope.DUMMY_CLEANUP_ACTION, null);
+            return new OfByte(Unsafe.ARRAY_BYTE_BASE_OFFSET, arr, byteSize, defaultAccessModes(byteSize), scope);
+        }
     }
 
-    public static MemorySegment makeArraySegment(byte[] arr) {
-        int byteSize = arr.length * Unsafe.ARRAY_BYTE_INDEX_SCALE;
-        MemoryScope scope = MemoryScope.createConfined(null, MemoryScope.DUMMY_CLEANUP_ACTION, null);
-        return new OfByte(Unsafe.ARRAY_BYTE_BASE_OFFSET, arr, byteSize, defaultAccessModes(byteSize), scope);
-    }
-
-    static class OfChar extends HeapMemorySegmentImpl<char[]> {
+    public static class OfChar extends HeapMemorySegmentImpl<char[]> {
 
         OfChar(long offset, char[] base, long length, int mask, MemoryScope scope) {
             super(offset, base, length, mask, scope);
@@ -118,15 +118,15 @@ public abstract class HeapMemorySegmentImpl<H> extends AbstractMemorySegmentImpl
         char[] base() {
             return Objects.requireNonNull(base);
         }
+
+        public static MemorySegment fromArray(char[] arr) {
+            int byteSize = arr.length * Unsafe.ARRAY_CHAR_INDEX_SCALE;
+            MemoryScope scope = MemoryScope.createConfined(null, MemoryScope.DUMMY_CLEANUP_ACTION, null);
+            return new OfChar(Unsafe.ARRAY_CHAR_BASE_OFFSET, arr, byteSize, defaultAccessModes(byteSize), scope);
+        }
     }
 
-    public static MemorySegment makeArraySegment(char[] arr) {
-        int byteSize = arr.length * Unsafe.ARRAY_CHAR_INDEX_SCALE;
-        MemoryScope scope = MemoryScope.createConfined(null, MemoryScope.DUMMY_CLEANUP_ACTION, null);
-        return new OfChar(Unsafe.ARRAY_CHAR_BASE_OFFSET, arr, byteSize, defaultAccessModes(byteSize), scope);
-    }
-
-    static class OfShort extends HeapMemorySegmentImpl<short[]> {
+    public static class OfShort extends HeapMemorySegmentImpl<short[]> {
 
         OfShort(long offset, short[] base, long length, int mask, MemoryScope scope) {
             super(offset, base, length, mask, scope);
@@ -141,15 +141,15 @@ public abstract class HeapMemorySegmentImpl<H> extends AbstractMemorySegmentImpl
         short[] base() {
             return Objects.requireNonNull(base);
         }
+
+        public static MemorySegment fromArray(short[] arr) {
+            int byteSize = arr.length * Unsafe.ARRAY_SHORT_INDEX_SCALE;
+            MemoryScope scope = MemoryScope.createConfined(null, MemoryScope.DUMMY_CLEANUP_ACTION, null);
+            return new OfShort(Unsafe.ARRAY_SHORT_BASE_OFFSET, arr, byteSize, defaultAccessModes(byteSize), scope);
+        }
     }
 
-    public static MemorySegment makeArraySegment(short[] arr) {
-        int byteSize = arr.length * Unsafe.ARRAY_SHORT_INDEX_SCALE;
-        MemoryScope scope = MemoryScope.createConfined(null, MemoryScope.DUMMY_CLEANUP_ACTION, null);
-        return new OfShort(Unsafe.ARRAY_SHORT_BASE_OFFSET, arr, byteSize, defaultAccessModes(byteSize), scope);
-    }
-
-    static class OfInt extends HeapMemorySegmentImpl<int[]> {
+    public static class OfInt extends HeapMemorySegmentImpl<int[]> {
 
         OfInt(long offset, int[] base, long length, int mask, MemoryScope scope) {
             super(offset, base, length, mask, scope);
@@ -164,15 +164,15 @@ public abstract class HeapMemorySegmentImpl<H> extends AbstractMemorySegmentImpl
         int[] base() {
             return Objects.requireNonNull(base);
         }
+
+        public static MemorySegment fromArray(int[] arr) {
+            int byteSize = arr.length * Unsafe.ARRAY_INT_INDEX_SCALE;
+            MemoryScope scope = MemoryScope.createConfined(null, MemoryScope.DUMMY_CLEANUP_ACTION, null);
+            return new OfInt(Unsafe.ARRAY_INT_BASE_OFFSET, arr, byteSize, defaultAccessModes(byteSize), scope);
+        }
     }
 
-    public static MemorySegment makeArraySegment(int[] arr) {
-        int byteSize = arr.length * Unsafe.ARRAY_INT_INDEX_SCALE;
-        MemoryScope scope = MemoryScope.createConfined(null, MemoryScope.DUMMY_CLEANUP_ACTION, null);
-        return new OfInt(Unsafe.ARRAY_INT_BASE_OFFSET, arr, byteSize, defaultAccessModes(byteSize), scope);
-    }
-
-    static class OfLong extends HeapMemorySegmentImpl<long[]> {
+    public static class OfLong extends HeapMemorySegmentImpl<long[]> {
 
         OfLong(long offset, long[] base, long length, int mask, MemoryScope scope) {
             super(offset, base, length, mask, scope);
@@ -187,15 +187,15 @@ public abstract class HeapMemorySegmentImpl<H> extends AbstractMemorySegmentImpl
         long[] base() {
             return Objects.requireNonNull(base);
         }
+
+        public static MemorySegment fromArray(long[] arr) {
+            int byteSize = arr.length * Unsafe.ARRAY_LONG_INDEX_SCALE;
+            MemoryScope scope = MemoryScope.createConfined(null, MemoryScope.DUMMY_CLEANUP_ACTION, null);
+            return new OfLong(Unsafe.ARRAY_LONG_BASE_OFFSET, arr, byteSize, defaultAccessModes(byteSize), scope);
+        }
     }
 
-    public static MemorySegment makeArraySegment(long[] arr) {
-        int byteSize = arr.length * Unsafe.ARRAY_LONG_INDEX_SCALE;
-        MemoryScope scope = MemoryScope.createConfined(null, MemoryScope.DUMMY_CLEANUP_ACTION, null);
-        return new OfLong(Unsafe.ARRAY_LONG_BASE_OFFSET, arr, byteSize, defaultAccessModes(byteSize), scope);
-    }
-
-    static class OfFloat extends HeapMemorySegmentImpl<float[]> {
+    public static class OfFloat extends HeapMemorySegmentImpl<float[]> {
 
         OfFloat(long offset, float[] base, long length, int mask, MemoryScope scope) {
             super(offset, base, length, mask, scope);
@@ -210,15 +210,15 @@ public abstract class HeapMemorySegmentImpl<H> extends AbstractMemorySegmentImpl
         float[] base() {
             return Objects.requireNonNull(base);
         }
+
+        public static MemorySegment fromArray(float[] arr) {
+            int byteSize = arr.length * Unsafe.ARRAY_FLOAT_INDEX_SCALE;
+            MemoryScope scope = MemoryScope.createConfined(null, MemoryScope.DUMMY_CLEANUP_ACTION, null);
+            return new OfFloat(Unsafe.ARRAY_FLOAT_BASE_OFFSET, arr, byteSize, defaultAccessModes(byteSize), scope);
+        }
     }
 
-    public static MemorySegment makeArraySegment(float[] arr) {
-        int byteSize = arr.length * Unsafe.ARRAY_FLOAT_INDEX_SCALE;
-        MemoryScope scope = MemoryScope.createConfined(null, MemoryScope.DUMMY_CLEANUP_ACTION, null);
-        return new OfFloat(Unsafe.ARRAY_FLOAT_BASE_OFFSET, arr, byteSize, defaultAccessModes(byteSize), scope);
-    }
-
-    static class OfDouble extends HeapMemorySegmentImpl<double[]> {
+    public static class OfDouble extends HeapMemorySegmentImpl<double[]> {
 
         OfDouble(long offset, double[] base, long length, int mask, MemoryScope scope) {
             super(offset, base, length, mask, scope);
@@ -233,11 +233,11 @@ public abstract class HeapMemorySegmentImpl<H> extends AbstractMemorySegmentImpl
         double[] base() {
             return Objects.requireNonNull(base);
         }
-    }
 
-    public static MemorySegment makeArraySegment(double[] arr) {
-        int byteSize = arr.length * Unsafe.ARRAY_DOUBLE_INDEX_SCALE;
-        MemoryScope scope = MemoryScope.createConfined(null, MemoryScope.DUMMY_CLEANUP_ACTION, null);
-        return new OfDouble(Unsafe.ARRAY_DOUBLE_BASE_OFFSET, arr, byteSize, defaultAccessModes(byteSize), scope);
+        public static MemorySegment fromArray(double[] arr) {
+            int byteSize = arr.length * Unsafe.ARRAY_DOUBLE_INDEX_SCALE;
+            MemoryScope scope = MemoryScope.createConfined(null, MemoryScope.DUMMY_CLEANUP_ACTION, null);
+            return new OfDouble(Unsafe.ARRAY_DOUBLE_BASE_OFFSET, arr, byteSize, defaultAccessModes(byteSize), scope);
+        }
     }
 }
