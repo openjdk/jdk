@@ -341,7 +341,7 @@ bool ObjectSynchronizer::quick_enter(oop obj, Thread* self,
     if (m->object_peek() == NULL) {
       return false;
     }
-    Thread* const owner = (Thread *) m->_owner;
+    Thread* const owner = (Thread *) m->owner_raw();
 
     // Lock contention and Transactional Lock Elision (TLE) diagnostics
     // and observability

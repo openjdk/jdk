@@ -31,7 +31,7 @@
 #include "runtime/synchronizer.hpp"
 
 inline intptr_t ObjectMonitor::is_entered(TRAPS) const {
-  if (THREAD == _owner || THREAD->is_lock_owned((address) _owner)) {
+  if (THREAD == owner_raw() || THREAD->is_lock_owned((address) owner_raw())) {
     return 1;
   }
   return 0;
@@ -55,14 +55,18 @@ inline jint ObjectMonitor::waiters() const {
 
 // Returns NULL if DEFLATER_MARKER is observed.
 inline void* ObjectMonitor::owner() const {
-  void* owner = _owner;
+  void* owner = owner_raw();
   return owner != DEFLATER_MARKER ? owner : NULL;
+}
+
+inline void* ObjectMonitor::owner_raw() const {
+  return Atomic::load(&_owner);
 }
 
 // Returns true if owner field == DEFLATER_MARKER and false otherwise.
 // This accessor is called when we really need to know if the owner
 // field == DEFLATER_MARKER and any non-NULL value won't do the trick.
-inline bool ObjectMonitor::owner_is_DEFLATER_MARKER() {
+inline bool ObjectMonitor::owner_is_DEFLATER_MARKER() const {
   return Atomic::load(&_owner) == DEFLATER_MARKER;
 }
 
