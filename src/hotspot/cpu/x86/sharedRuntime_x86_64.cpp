@@ -451,8 +451,7 @@ static int reg2offset_out(VMReg r) {
 
 int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
                                            VMRegPair *regs,
-                                           int total_args_passed,
-                                           int is_outgoing) {
+                                           int total_args_passed) {
 
   // Create the mapping between argument positions and
   // registers.
@@ -2590,6 +2589,15 @@ int Deoptimization::last_frame_adjust(int callee_parameters, int callee_locals )
 
 uint SharedRuntime::out_preserve_stack_slots() {
   return 0;
+}
+
+
+// Number of stack slots between incoming argument block and the start of
+// a new frame.  The PROLOG must add this many slots to the stack.  The
+// EPILOG must remove this many slots.  amd64 needs two slots for
+// return address.
+uint SharedRuntime::in_preserve_stack_slots() {
+  return 4 + 2 * VerifyStackAtCalls;
 }
 
 //------------------------------generate_deopt_blob----------------------------
