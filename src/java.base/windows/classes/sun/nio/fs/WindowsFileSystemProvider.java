@@ -628,7 +628,7 @@ class WindowsFileSystemProvider
     @Override
     public byte[] getSunPathForSocketFile(Path obj) {
         WindowsPath file = WindowsPath.toWindowsPath(obj);
-        if (file.isEmpty()) {
+        if (file.toString().length() == 0) {
             return emptyPath;
         }
         String s = file.toString();
