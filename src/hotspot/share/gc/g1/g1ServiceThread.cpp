@@ -176,14 +176,29 @@ G1ServiceThread::G1ServiceThread() :
              true,
              Monitor::_safepoint_check_never),
     _task_queue(),
+    _remset_task(new G1RemSetSamplingTask("Remembered Set Sampling Task")),
+    _periodic_gc_task(new G1PeriodicGCTask("Periodic GC Task")),
     _vtime_accum(0) {
   set_name("G1 Service");
   create_and_start();
 }
 
+G1ServiceThread::~G1ServiceThread() {
+  delete _remset_task;
+  delete _periodic_gc_task;
+}
+
 void G1ServiceThread::register_task(G1ServiceTask* task, jlong delay) {
   guarantee(!task->is_registered(), "Task already registered");
   guarantee(task->next() == NULL, "Task already in queue");
+
+  // Make sure the service thread is still up and running, there is a race
+  // during shutdown where the service thread has been stopped, but other
+  // GC threads might still be running and trying to add tasks.
+  if (has_terminated()) {
+    log_debug(gc, task)("G1 Service Thread (%s) (terminated)", task->name());
+    return;
+  }
 
   log_debug(gc, task)("G1 Service Thread (%s) (register)", task->name());
 
@@ -272,13 +287,9 @@ void G1ServiceThread::run_task(G1ServiceTask* task) {
 void G1ServiceThread::run_service() {
   double vtime_start = os::elapsedVTime();
 
-  // Setup the tasks handeled by the service thread and
-  // add them to the task list.
-  G1PeriodicGCTask gc_task("Periodic GC Task");
-  register_task(&gc_task);
-
-  G1RemSetSamplingTask remset_task("Remembered Set Sampling Task");
-  register_task(&remset_task);
+  // Register the tasks handled by the service thread.
+  register_task(_periodic_gc_task);
+  register_task(_remset_task);
 
   while (!should_terminate()) {
     G1ServiceTask* task = pop_due_task();
@@ -293,6 +304,8 @@ void G1ServiceThread::run_service() {
     }
     sleep_before_next_cycle();
   }
+
+  log_debug(gc, task)("G1 Service Thread (stopping)");
 }
 
 void G1ServiceThread::stop_service() {

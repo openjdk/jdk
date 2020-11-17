@@ -3607,9 +3607,19 @@ void InstanceKlass::oop_print_value_on(oop obj, outputStream* st) {
       st->print(" = ");
       vmtarget->print_value_on(st);
     } else {
-      java_lang_invoke_MemberName::clazz(obj)->print_value_on(st);
+      oop clazz = java_lang_invoke_MemberName::clazz(obj);
+      oop name  = java_lang_invoke_MemberName::name(obj);
+      if (clazz != NULL) {
+        clazz->print_value_on(st);
+      } else {
+        st->print("NULL");
+      }
       st->print(".");
-      java_lang_invoke_MemberName::name(obj)->print_value_on(st);
+      if (name != NULL) {
+        name->print_value_on(st);
+      } else {
+        st->print("NULL");
+      }
     }
   }
 }

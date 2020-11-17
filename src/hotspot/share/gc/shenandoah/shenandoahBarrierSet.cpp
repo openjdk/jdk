@@ -98,16 +98,6 @@ bool ShenandoahBarrierSet::need_keep_alive_barrier(DecoratorSet decorators,Basic
   return (on_weak_ref || unknown) && keep_alive;
 }
 
-ShenandoahBarrierSet::AccessKind ShenandoahBarrierSet::access_kind(DecoratorSet decorators, BasicType type) {
-  if ((decorators & IN_NATIVE) != 0) {
-    return AccessKind::NATIVE;
-  } else if ((decorators & (ON_WEAK_OOP_REF | ON_PHANTOM_OOP_REF | ON_UNKNOWN_OOP_REF)) != 0) {
-    return AccessKind::WEAK;
-  } else {
-    return AccessKind::NORMAL;
-  }
-}
-
 void ShenandoahBarrierSet::on_thread_create(Thread* thread) {
   // Create thread local data
   ShenandoahThreadLocalData::create(thread);
