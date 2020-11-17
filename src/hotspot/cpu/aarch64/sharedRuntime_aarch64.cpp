@@ -2038,8 +2038,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ str(zr, Address(rthread, in_bytes(Thread::pending_exception_offset())));
 
     rt_call(masm, CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_unlocking_C));
-    // An instruction sync is required here after the call into the VM. However,
-    // that will have been caught in the VM by a cross_modify_fence call.
 
 #ifdef ASSERT
     {
@@ -2067,8 +2065,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ bind(reguard);
   save_native_result(masm, ret_type, stack_slots);
   rt_call(masm, CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages));
-  // An instruction sync is required here after the call into the VM. However,
-  // that will have been caught in the VM by a cross_modify_fence call.
   restore_native_result(masm, ret_type, stack_slots);
   // and continue
   __ b(reguard_done);
@@ -2772,8 +2768,6 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   __ mov(c_rarg0, rthread);
   __ lea(rscratch1, RuntimeAddress(call_ptr));
   __ blr(rscratch1);
-  // An instruction sync is required here after the call into the VM. However,
-  // that will have been caught in the VM by a cross_modify_fence call.
   __ bind(retaddr);
 
   // Set an oopmap for the call site.  This oopmap will map all
@@ -2884,8 +2878,6 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
     __ lea(rscratch1, RuntimeAddress(destination));
 
     __ blr(rscratch1);
-    // An instruction sync is required here after the call into the VM. However,
-    // that will have been caught in the VM by a cross_modify_fence call.
     __ bind(retaddr);
   }
 

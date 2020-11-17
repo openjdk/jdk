@@ -1381,8 +1381,6 @@ void MacroAssembler::call_VM_leaf_base(address entry_point,
     bind(*retaddr);
 
   ldp(rscratch1, rmethod, Address(post(sp, 2 * wordSize)));
-  // An instruction sync is required here after the call into the VM. However,
-  // that will have been caught in the VM by a cross_modify_fence call.
 }
 
 void MacroAssembler::call_VM_leaf(address entry_point, int number_of_arguments) {

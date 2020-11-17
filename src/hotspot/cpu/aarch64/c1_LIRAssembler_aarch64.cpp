@@ -2919,9 +2919,6 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest, const LIR_OprList* arg
     __ blr(rscratch1);
   }
 
-  // An instruction sync is required here after the call into the VM. However,
-  // that will have been caught in the VM by a cross_modify_fence call.
-
   if (info != NULL) {
     add_call_info_here(info);
   }
