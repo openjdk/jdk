@@ -41,7 +41,7 @@ import static org.testng.Assert.assertEquals;
  */
 public class EmptySunPathForSocketFile {
     public static void main(String[] args) throws Exception {
-	Path path = Path.of("");
+        Path path = Path.of("");
         FileSystemProvider provider = FileSystems.getDefault().provider();
         byte[] bb = ((AbstractFileSystemProvider) provider).getSunPathForSocketFile(path);
         assertEquals(bb, new byte[0]);
