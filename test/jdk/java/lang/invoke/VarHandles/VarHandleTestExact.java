@@ -24,16 +24,31 @@
 /*
  * @test
  * @modules jdk.incubator.foreign
+ *          java.base/jdk.internal.access.foreign
  *
- * @run testng/othervm -Xverify:all VarHandleTestExact
- * @run testng/othervm -Xverify:all -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true VarHandleTestExact
- * @run testng/othervm -Xverify:all -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=false VarHandleTestExact
- * @run testng/othervm -Xverify:all -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true VarHandleTestExact
+ * @run testng/othervm -Xverify:all
+ *   -Djdk.internal.foreign.SHOULD_ADAPT_HANDLES=false
+ *   VarHandleTestExact
+ * @run testng/othervm -Xverify:all
+ *   -Djdk.internal.foreign.SHOULD_ADAPT_HANDLES=false
+ *   -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=true
+ *   -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true
+ *   VarHandleTestExact
+ * @run testng/othervm -Xverify:all
+ *   -Djdk.internal.foreign.SHOULD_ADAPT_HANDLES=false
+ *   -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false
+ *   -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=false
+ *   VarHandleTestExact
+ * @run testng/othervm -Xverify:all
+ *   -Djdk.internal.foreign.SHOULD_ADAPT_HANDLES=false
+ *   -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false
+ *   -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true
+ *   VarHandleTestExact
  */
 
-import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryHandles;
 import jdk.incubator.foreign.MemorySegment;
+import jdk.internal.access.foreign.MemorySegmentProxy;
 import org.testng.SkipException;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -160,7 +175,7 @@ public class VarHandleTestExact {
             doTest(vh,
                 tvh -> tvh.set(seg, 0L, testValue),
                 tvh -> setter.set(tvh, seg, 0L, testValue),
-                ".*\\Qexpected (MemorySegment,long," + carrier.getSimpleName() + ")void \\E.*");
+                ".*\\Qexpected (MemorySegmentProxy,long," + carrier.getSimpleName() + ")void \\E.*");
         }
     }
 
@@ -225,7 +240,7 @@ public class VarHandleTestExact {
     }
 
     private interface SetSegmentX {
-        void set(VarHandle vh, MemorySegment segment, long offser, Object testValue);
+        void set(VarHandle vh, MemorySegment segment, long offset, Object testValue);
     }
 
     private static void consume(Object o) {}
@@ -362,11 +377,11 @@ public class VarHandleTestExact {
         List<Object[]> cases = new ArrayList<>();
 
         // create a bunch of different sig-poly call sites
-        testCaseSegmentSet(cases, long.class, 1234,         (vh, seg, off, tv) -> vh.set(seg, off, (int) tv));
-        testCaseSegmentSet(cases, long.class, (char) 1234,  (vh, seg, off, tv) -> vh.set(seg, off, (char) tv));
-        testCaseSegmentSet(cases, long.class, (short) 1234, (vh, seg, off, tv) -> vh.set(seg, off, (short) tv));
-        testCaseSegmentSet(cases, long.class, (byte) 1234,  (vh, seg, off, tv) -> vh.set(seg, off, (byte) tv));
-        testCaseSegmentSet(cases, double.class, 1234F,      (vh, seg, off, tv) -> vh.set(seg, off, (float) tv));
+        testCaseSegmentSet(cases, long.class, 1234,         (vh, seg, off, tv) -> vh.set((MemorySegmentProxy) seg, off, (int) tv));
+        testCaseSegmentSet(cases, long.class, (char) 1234,  (vh, seg, off, tv) -> vh.set((MemorySegmentProxy) seg, off, (char) tv));
+        testCaseSegmentSet(cases, long.class, (short) 1234, (vh, seg, off, tv) -> vh.set((MemorySegmentProxy) seg, off, (short) tv));
+        testCaseSegmentSet(cases, long.class, (byte) 1234,  (vh, seg, off, tv) -> vh.set((MemorySegmentProxy) seg, off, (byte) tv));
+        testCaseSegmentSet(cases, double.class, 1234F,      (vh, seg, off, tv) -> vh.set((MemorySegmentProxy) seg, off, (float) tv));
 
         return cases.toArray(Object[][]::new);
     }
