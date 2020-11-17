@@ -758,6 +758,11 @@ public class DateFormatSymbols implements Serializable, Cloneable {
             dfs.months = resource.getStringArray("MonthNames");
             dfs.shortMonths = resource.getStringArray("MonthAbbreviations");
             dfs.ampms = resource.getStringArray("AmPmMarkers");
+            // the array in the resource bundle may contain more elements for day periods.
+            // Extract only am/pm.
+            if (dfs.ampms.length > 2) {
+                dfs.ampms = Arrays.copyOf(dfs.ampms, 2);
+            }
             dfs.localPatternChars = resource.getString("DateTimePatternChars");
 
             // Day of week names are stored in a 1-based array.
