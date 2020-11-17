@@ -701,15 +701,8 @@ void Type::Initialize(Compile* current) {
   Arena* type_arena = current->type_arena();
 
   // Create the hash-cons'ing dictionary with top-level storage allocation
-  Dict *tdic = new (type_arena) Dict( (CmpKey)Type::cmp,(Hash)Type::uhash, type_arena, 128 );
+  Dict *tdic = new (type_arena) Dict(*_shared_type_dict, type_arena);
   current->set_type_dict(tdic);
-
-  // Transfer the shared types.
-  DictI i(_shared_type_dict);
-  for( ; i.test(); ++i ) {
-    Type* t = (Type*)i._value;
-    tdic->Insert(t,t);  // New Type, insert into Type table
-  }
 }
 
 //------------------------------hashcons---------------------------------------
