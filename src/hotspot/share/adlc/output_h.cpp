@@ -2017,9 +2017,6 @@ void ArchDesc::defineStateClass(FILE *fp) {
   fprintf(fp,"\n");
   fprintf(fp,"// MACROS to inline and constant fold State::valid(index)...\n");
   fprintf(fp,"// when given a constant 'index' in dfa_<arch>.cpp\n");
-  fprintf(fp,"#define STATE__VALID(index) ");
-  fprintf(fp,"    (%s)\n", state__valid);
-  fprintf(fp,"\n");
   fprintf(fp,"#define STATE__NOT_YET_VALID(index) ");
   fprintf(fp,"  ( (%s) == 0 )\n", state__valid);
   fprintf(fp,"\n");
@@ -2055,7 +2052,7 @@ void ArchDesc::defineStateClass(FILE *fp) {
   fprintf(fp,"  bool DFA( int opcode, const Node *ideal );\n");
   fprintf(fp,"\n");
   fprintf(fp,"  bool valid(uint index) {\n");
-  fprintf(fp,"    return (STATE__VALID(index) != 0);\n");
+  fprintf(fp,"    return %s;\n", state__valid);
   fprintf(fp,"  }\n");
   fprintf(fp,"  unsigned int rule(uint index) {\n");
   fprintf(fp,"    return _rule[index] >> 1;\n");

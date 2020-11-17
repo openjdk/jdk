@@ -1967,16 +1967,17 @@ void Matcher::ReduceOper( State *s, int rule, Node *&mem, MachNode *mach ) {
     }
   }
 
-  for( uint i=0; kid != NULL && i<2; kid = s->_kids[1], i++ ) {   // binary tree
+  for (uint i = 0; kid != NULL && i < 2; kid = s->_kids[1], i++) {   // binary tree
     int newrule;
-    if( i == 0)
+    if( i == 0) {
       newrule = kid->rule(_leftOp[rule]);
-    else
+    } else {
       newrule = kid->rule(_rightOp[rule]);
+    }
 
-    if( newrule < _LAST_MACH_OPER ) { // Operand or instruction?
+    if (newrule < _LAST_MACH_OPER) { // Operand or instruction?
       // Internal operand; recurse but do nothing else
-      ReduceOper( kid, newrule, mem, mach );
+      ReduceOper(kid, newrule, mem, mach);
 
     } else {                    // Child is a new instruction
       // Reduce the instruction, and add a direct pointer from this
