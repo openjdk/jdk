@@ -567,7 +567,7 @@ static const char* vm_intrinsic_name_bodies =
                    VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE);
 
 static const char* vm_intrinsic_name_table[vmIntrinsics::number_of_intrinsics()];
-static TriBoolArray<vmIntrinsics::number_of_intrinsics(), int> vm_intrinsic_control_words;
+static TriBoolArray<(size_t)vmIntrinsics::number_of_intrinsics(), int> vm_intrinsic_control_words;
 
 void vmIntrinsics::init_vm_intrinsic_name_table() {
   const char** nt = &vm_intrinsic_name_table[0];

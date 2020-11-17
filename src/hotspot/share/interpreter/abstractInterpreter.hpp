@@ -95,7 +95,7 @@ class AbstractInterpreter: AllStatic {
   // Conversion from the part of the above enum to vmIntrinsics::_invokeExact, etc.
   static vmIntrinsics::ID method_handle_intrinsic(MethodKind kind) {
     if (kind >= method_handle_invoke_FIRST && kind <= method_handle_invoke_LAST)
-      return vmIntrinsics::ID_from(static_cast<int>(vmIntrinsics::FIRST_MH_SIG_POLY) + (kind - method_handle_invoke_FIRST) );
+      return vmIntrinsics::ID_from(static_cast<int>(vmIntrinsics::FIRST_MH_SIG_POLY) + (kind - method_handle_invoke_FIRST));
     else
       return vmIntrinsics::_none;
   }

@@ -1082,15 +1082,13 @@ class vmIntrinsics : AllStatic {
     return static_cast<int>(id);
   }
 
-  static constexpr size_t number_of_intrinsics() {
-    //static_assert(NO_SID == 0, "must be a valid array index");
-    //static_assert(FIRST_SID == 1, "must not be the same as NO_SID");
-    return static_cast<size_t>(ID_LIMIT);
+  static constexpr int number_of_intrinsics() {
+    return static_cast<int>(ID_LIMIT);
   }
 
 public:
   static constexpr bool is_valid_id(int raw_id) {
-    return (raw_id >= (int)_none && raw_id < (int)ID_LIMIT);
+    return (raw_id >= static_cast<int>(_none) && raw_id < static_cast<int>(ID_LIMIT));
   }
 
   static constexpr bool is_valid_id(ID id) {
@@ -1099,7 +1097,7 @@ public:
 
   static constexpr ID ID_from(int raw_id) {
     assert(is_valid_id(raw_id), "must be a valid intrinsic ID");
-    return (ID)raw_id;
+    return static_cast<ID>(raw_id);
   }
 
   static const char* name_at(ID id);
