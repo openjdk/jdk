@@ -109,8 +109,7 @@ G1FullGCPrepareTask::G1CalculatePointersClosure::G1CalculatePointersClosure(G1Fu
     _collector(collector),
     _bitmap(collector->mark_bitmap()),
     _cp(cp),
-    _humongous_regions_removed(0),
-    _open_archive_regions_freed(0) { }
+    _regions_freed(false) { }
 
 void G1FullGCPrepareTask::G1CalculatePointersClosure::free_humongous_region(HeapRegion* hr) {
   assert(hr->is_humongous(), "must be but region %u is %s", hr->hrm_index(), hr->get_short_type_str());
@@ -118,7 +117,7 @@ void G1FullGCPrepareTask::G1CalculatePointersClosure::free_humongous_region(Heap
   FreeRegionList dummy_free_list("Humongous Dummy Free List for G1MarkSweep");
 
   hr->set_containing_set(NULL);
-  _humongous_regions_removed++;
+  _regions_freed = true;
 
   _g1h->free_humongous_region(hr, &dummy_free_list);
   prepare_for_compaction(hr);
@@ -134,7 +133,7 @@ void G1FullGCPrepareTask::G1CalculatePointersClosure::free_open_archive_region(H
   FreeRegionList dummy_free_list("Pinned Dummy Free List for G1MarkSweep");
 
   hr->set_containing_set(NULL);
-  _open_archive_regions_freed++;
+  _regions_freed = true;
 
   _g1h->free_region(hr, &dummy_free_list);
   prepare_for_compaction(hr);
@@ -225,13 +224,7 @@ void G1FullGCPrepareTask::prepare_serial_compaction() {
 }
 
 bool G1FullGCPrepareTask::G1CalculatePointersClosure::freed_regions() {
-  if (_humongous_regions_removed > 0) {
-    // Free regions from dead humongous regions.
-    return true;
-  }
-
-  if (_open_archive_regions_freed > 0) {
-    // Free regions from dead pinned (open archive) regions.
+  if (_regions_freed) {
     return true;
   }
 

@@ -56,8 +56,7 @@ protected:
     G1FullCollector* _collector;
     G1CMBitMap* _bitmap;
     G1FullGCCompactionPoint* _cp;
-    uint _humongous_regions_removed;
-    uint _open_archive_regions_freed;
+    bool _regions_freed;
 
     virtual void prepare_for_compaction(HeapRegion* hr);
     void prepare_for_compaction_work(G1FullGCCompactionPoint* cp, HeapRegion* hr);
