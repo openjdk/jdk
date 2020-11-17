@@ -75,7 +75,6 @@ import sun.net.PlatformSocketImpl;
  * </blockquote>
  * Additional (implementation specific) options may also be supported.
  *
- * @author  unascribed
  * @see     java.net.SocketImpl
  * @see     java.net.ServerSocket#setSocketFactory(java.net.SocketImplFactory)
  * @see     java.nio.channels.ServerSocketChannel

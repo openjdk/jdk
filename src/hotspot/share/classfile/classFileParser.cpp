@@ -1086,6 +1086,7 @@ public:
     _method_InjectedProfile,
     _method_LambdaForm_Compiled,
     _method_Hidden,
+    _method_Scoped,
     _method_IntrinsicCandidate,
     _jdk_internal_vm_annotation_Contended,
     _field_Stable,
@@ -1557,14 +1558,13 @@ class ClassFileParser::FieldAllocationCount : public ResourceObj {
     }
   }
 
-  FieldAllocationType update(bool is_static, BasicType type) {
+  void update(bool is_static, BasicType type) {
     FieldAllocationType atype = basic_type_to_atype(is_static, type);
     if (atype != BAD_ALLOCATION_TYPE) {
       // Make sure there is no overflow with injected fields.
       assert(count[atype] < 0xFFFF, "More than 65535 fields");
       count[atype]++;
     }
-    return atype;
   }
 };
 
@@ -1704,9 +1704,8 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
                       constantvalue_index);
     const BasicType type = cp->basic_type_for_signature_at(signature_index);
 
-    // Remember how many oops we encountered and compute allocation type
-    const FieldAllocationType atype = fac->update(is_static, type);
-    field->set_allocation_type(atype);
+    // Update FieldAllocationCount for this kind of field
+    fac->update(is_static, type);
 
     // After field is initialized with type, we can augment it with aux info
     if (parsed_annotations.has_any_annotations()) {
@@ -1749,9 +1748,8 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
 
       const BasicType type = Signature::basic_type(injected[n].signature());
 
-      // Remember how many oops we encountered and compute allocation type
-      const FieldAllocationType atype = fac->update(false, type);
-      field->set_allocation_type(atype);
+      // Update FieldAllocationCount for this kind of field
+      fac->update(false, type);
       index++;
     }
   }
@@ -2120,6 +2118,11 @@ AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
       if (!privileged)              break;  // only allow in privileged code
       return _method_Hidden;
     }
+    case VM_SYMBOL_ENUM_NAME(jdk_internal_misc_Scoped_signature): {
+      if (_location != _in_method)  break;  // only allow for methods
+      if (!privileged)              break;  // only allow in privileged code
+      return _method_Scoped;
+    }
     case VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_IntrinsicCandidate_signature): {
       if (_location != _in_method)  break;  // only allow for methods
       if (!privileged)              break;  // only allow in privileged code
@@ -2177,6 +2180,8 @@ void MethodAnnotationCollector::apply_to(const methodHandle& m) {
     m->set_intrinsic_id(vmIntrinsics::_compiledLambdaForm);
   if (has_annotation(_method_Hidden))
     m->set_hidden(true);
+  if (has_annotation(_method_Scoped))
+    m->set_scoped(true);
   if (has_annotation(_method_IntrinsicCandidate) && !m->is_synthetic())
     m->set_intrinsic_candidate(true);
   if (has_annotation(_jdk_internal_vm_annotation_ReservedStackAccess))

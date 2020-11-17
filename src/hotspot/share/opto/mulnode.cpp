@@ -87,12 +87,13 @@ Node *MulNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     Node *mul1 = in(1);
 #ifdef ASSERT
     // Check for dead loop
-    int   op1 = mul1->Opcode();
-    if( phase->eqv( mul1, this ) || phase->eqv( in(2), this ) ||
-        ( ( op1 == mul_opcode() || op1 == add_opcode() ) &&
-          ( phase->eqv( mul1->in(1), this ) || phase->eqv( mul1->in(2), this ) ||
-            phase->eqv( mul1->in(1), mul1 ) || phase->eqv( mul1->in(2), mul1 ) ) ) )
+    int op1 = mul1->Opcode();
+    if ((mul1 == this) || (in(2) == this) ||
+        ((op1 == mul_opcode() || op1 == add_opcode()) &&
+         ((mul1->in(1) == this) || (mul1->in(2) == this) ||
+          (mul1->in(1) == mul1) || (mul1->in(2) == mul1)))) {
       assert(false, "dead loop in MulNode::Ideal");
+    }
 #endif
 
     if( mul1->Opcode() == mul_opcode() ) {  // Left input is a multiply?
@@ -436,7 +437,9 @@ const Type *AndINode::mul_ring( const Type *t0, const Type *t1 ) const {
 Node* AndINode::Identity(PhaseGVN* phase) {
 
   // x & x => x
-  if (phase->eqv(in(1), in(2))) return in(1);
+  if (in(1) == in(2)) {
+    return in(1);
+  }
 
   Node* in1 = in(1);
   uint op = in1->Opcode();
@@ -558,7 +561,9 @@ const Type *AndLNode::mul_ring( const Type *t0, const Type *t1 ) const {
 Node* AndLNode::Identity(PhaseGVN* phase) {
 
   // x & x => x
-  if (phase->eqv(in(1), in(2))) return in(1);
+  if (in(1) == in(2)) {
+    return in(1);
+  }
 
   Node *usr = in(1);
   const TypeLong *t2 = phase->type( in(2) )->isa_long();
@@ -1482,6 +1487,22 @@ const Type* RotateLeftNode::Value(PhaseGVN* phase) const {
     }
     return TypeLong::LONG;
   }
+}
+
+Node* RotateLeftNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  const Type *t1 = phase->type(in(1));
+  const Type *t2 = phase->type(in(2));
+  if (t2->isa_int() && t2->is_int()->is_con()) {
+    if (t1->isa_int()) {
+      int lshift = t2->is_int()->get_con() & 31;
+      return new RotateRightNode(in(1), phase->intcon(32 - (lshift & 31)), TypeInt::INT);
+    } else {
+      assert(t1->isa_long(), "Type must be a long");
+      int lshift = t2->is_int()->get_con() & 63;
+      return new RotateRightNode(in(1), phase->intcon(64 - (lshift & 63)), TypeLong::LONG);
+    }
+  }
+  return NULL;
 }
 
 const Type* RotateRightNode::Value(PhaseGVN* phase) const {

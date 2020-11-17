@@ -32,6 +32,7 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
@@ -4623,7 +4624,7 @@ jint os::init_2(void) {
   // initialize thread priority policy
   prio_init();
 
-  if (!FLAG_IS_DEFAULT(AllocateHeapAt) || !FLAG_IS_DEFAULT(AllocateOldGenAt)) {
+  if (!FLAG_IS_DEFAULT(AllocateHeapAt)) {
     set_coredump_filter(DAX_SHARED_BIT);
   }
 
@@ -4633,6 +4634,12 @@ jint os::init_2(void) {
 
   if (DumpSharedMappingsInCore) {
     set_coredump_filter(FILE_BACKED_SHARED_BIT);
+  }
+
+  if (DumpPerfMapAtExit && FLAG_IS_DEFAULT(UseCodeCacheFlushing)) {
+    // Disable code cache flushing to ensure the map file written at
+    // exit contains all nmethods generated during execution.
+    FLAG_SET_DEFAULT(UseCodeCacheFlushing, false);
   }
 
   return JNI_OK;

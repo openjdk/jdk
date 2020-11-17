@@ -274,6 +274,7 @@ public:
   // Fast int or long constant.  Same as TypeInt::make(i) or TypeLong::make(l).
   ConINode* intcon(jint i);
   ConLNode* longcon(jlong l);
+  ConNode* integercon(jlong l, BasicType bt);
 
   // Fast zero or null constant.  Same as makecon(Type::get_zero_type(bt)).
   ConNode* zerocon(BasicType bt);
@@ -281,11 +282,6 @@ public:
   // Return a node which computes the same function as this node, but
   // in a faster or cheaper fashion.
   virtual Node *transform( Node *n ) = 0;
-
-  // Return whether two Nodes are equivalent.
-  // Must not be recursive, since the recursive version is built from this.
-  // For pessimistic optimizations this is simply pointer equivalence.
-  bool eqv(const Node* n1, const Node* n2) const { return n1 == n2; }
 
   // For pessimistic passes, the return type must monotonically narrow.
   // For optimistic  passes, the return type must monotonically widen.

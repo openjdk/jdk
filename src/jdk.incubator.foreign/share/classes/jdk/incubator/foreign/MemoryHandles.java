@@ -46,43 +46,21 @@ import java.util.Objects;
  * (all primitive types but {@code void} and {@code boolean} are supported), as well as the alignment constraint and the
  * byte order associated to a memory access var handle. The resulting memory access var handle can then be combined in various ways
  * to emulate different addressing modes. The var handles created by this class feature a <em>mandatory</em> coordinate type
- * (of type {@link MemoryAddress}), and zero or more {@code long} coordinate types, which can be used to emulate
- * multi-dimensional array indexing.
+ * (of type {@link MemorySegment}), and one {@code long} coordinate type, which represents the offset, in bytes, relative
+ * to the segment, at which dereference should occur.
  * <p>
- * As an example, consider the memory layout expressed by a {@link SequenceLayout} instance constructed as follows:
+ * As an example, consider the memory layout expressed by a {@link GroupLayout} instance constructed as follows:
  * <blockquote><pre>{@code
-SequenceLayout seq = MemoryLayout.ofSequence(5,
-    MemoryLayout.ofStruct(
+GroupLayout seq = MemoryLayout.ofStruct(
         MemoryLayout.ofPaddingBits(32),
         MemoryLayout.ofValueBits(32, ByteOrder.BIG_ENDIAN).withName("value")
-    ));
+);
  * }</pre></blockquote>
  * To access the member layout named {@code value}, we can construct a memory access var handle as follows:
  * <blockquote><pre>{@code
-VarHandle handle = MemoryHandles.varHandle(int.class, ByteOrder.BIG_ENDIAN); //(MemoryAddress) -> int
-handle = MemoryHandles.withOffset(handle, 4); //(MemoryAddress) -> int
-handle = MemoryHandles.withStride(handle, 8); //(MemoryAddress, long) -> int
+VarHandle handle = MemoryHandles.varHandle(int.class, ByteOrder.BIG_ENDIAN); //(MemorySegment, long) -> int
+handle = MemoryHandles.insertCoordinates(handle, 1, 4); //(MemorySegment) -> int
  * }</pre></blockquote>
- *
- * <h2>Addressing mode</h2>
- *
- * The final memory location accessed by a memory access var handle can be computed as follows:
- *
- * <blockquote><pre>{@code
-address = base + offset
- * }</pre></blockquote>
- *
- * where {@code base} denotes the address expressed by the {@link MemoryAddress} access coordinate, and {@code offset}
- * can be expressed in the following form:
- *
- * <blockquote><pre>{@code
-offset = c_1 + c_2 + ... + c_m + (x_1 * s_1) + (x_2 * s_2) + ... + (x_n * s_n)
- * }</pre></blockquote>
- *
- * where {@code x_1}, {@code x_2}, ... {@code x_n} are <em>dynamic</em> values provided as optional {@code long}
- * access coordinates, whereas {@code c_1}, {@code c_2}, ... {@code c_m} and {@code s_0}, {@code s_1}, ... {@code s_n} are
- * <em>static</em> constants which are can be acquired through the {@link MemoryHandles#withOffset(VarHandle, long)}
- * and the {@link MemoryHandles#withStride(VarHandle, long)} combinators, respectively.
  *
  * <h2><a id="memaccess-mode"></a>Alignment and access modes</h2>
  *
@@ -130,9 +108,6 @@ public final class MemoryHandles {
 
     private static final MethodHandle LONG_TO_ADDRESS;
     private static final MethodHandle ADDRESS_TO_LONG;
-    private static final MethodHandle ADD_OFFSET;
-    private static final MethodHandle ADD_STRIDE;
-
     private static final MethodHandle INT_TO_BYTE;
     private static final MethodHandle BYTE_TO_UNSIGNED_INT;
     private static final MethodHandle INT_TO_SHORT;
@@ -150,12 +125,6 @@ public final class MemoryHandles {
                     MethodType.methodType(MemoryAddress.class, long.class));
             ADDRESS_TO_LONG = MethodHandles.lookup().findStatic(MemoryHandles.class, "addressToLong",
                     MethodType.methodType(long.class, MemoryAddress.class));
-            ADD_OFFSET = MethodHandles.lookup().findStatic(MemoryHandles.class, "addOffset",
-                    MethodType.methodType(MemoryAddress.class, MemoryAddress.class, long.class));
-
-            ADD_STRIDE = MethodHandles.lookup().findStatic(MemoryHandles.class, "addStride",
-                    MethodType.methodType(MemoryAddress.class, MemoryAddress.class, long.class, long.class));
-
             INT_TO_BYTE = MethodHandles.explicitCastArguments(MethodHandles.identity(byte.class),
                     MethodType.methodType(byte.class, int.class));
             BYTE_TO_UNSIGNED_INT = MethodHandles.lookup().findStatic(Byte.class, "toUnsignedInt",
@@ -184,11 +153,12 @@ public final class MemoryHandles {
     /**
      * Creates a memory access var handle with the given carrier type and byte order.
      *
-     * The resulting memory access var handle features a single {@link MemoryAddress} access coordinate,
-     * and its variable type is set by the given carrier type.
-     *
-     * The alignment constraint for the resulting memory access var handle is the same as the in memory size of the
-     * carrier type, and the accessed offset is set at zero.
+     * The returned var handle's type is {@code carrier} and the list of coordinate types is
+     * {@code (MemorySegment, long)}, where the {@code long} coordinate type corresponds to byte offset into
+     * a given memory segment. The returned var handle accesses bytes at an offset in a given
+     * memory segment, composing bytes to or from a value of the type {@code carrier} according to the given endianness;
+     * the alignment constraint (in bytes) for the resulting memory access var handle is the same as the size (in bytes) of the
+     * carrier type {@code carrier}.
      *
      * @apiNote the resulting var handle features certain <a href="#memaccess-mode">access mode restrictions</a>,
      * which are common to all memory access var handles.
@@ -209,10 +179,11 @@ public final class MemoryHandles {
     /**
      * Creates a memory access var handle with the given carrier type, alignment constraint, and byte order.
      *
-     * The resulting memory access var handle features a single {@link MemoryAddress} access coordinate,
-     * and its variable type is set by the given carrier type.
-     *
-     * The accessed offset is zero.
+     * The returned var handle's type is {@code carrier} and the list of coordinate types is
+     * {@code (MemorySegment, long)}, where the {@code long} coordinate type corresponds to byte offset into
+     * a given memory segment. The returned var handle accesses bytes at an offset in a given
+     * memory segment, composing bytes to or from a value of the type {@code carrier} according to the given endianness;
+     * the alignment constraint (in bytes) for the resulting memory access var handle is given by {@code alignmentBytes}.
      *
      * @apiNote the resulting var handle features certain <a href="#memaccess-mode">access mode restrictions</a>,
      * which are common to all memory access var handles.
@@ -232,94 +203,11 @@ public final class MemoryHandles {
             throw new IllegalArgumentException("Bad alignment: " + alignmentBytes);
         }
 
-        return Utils.fixUpVarHandle(JLI.memoryAccessVarHandle(carrier, alignmentBytes - 1, byteOrder, 0, new long[]{}));
+        return Utils.fixUpVarHandle(JLI.memoryAccessVarHandle(carrier, false, alignmentBytes - 1, byteOrder));
     }
 
     /**
-     * Returns a var handle that adds a <em>fixed</em> offset to the incoming {@link MemoryAddress} coordinate
-     * and then propagates such value to the target var handle. That is,
-     * when the returned var handle receives a memory address coordinate pointing at a memory location at
-     * offset <em>O</em>, a memory address coordinate pointing at a memory location at offset <em>O' + O</em>
-     * is created, and then passed to the target var handle.
-     *
-     * The returned var handle will feature the same type and access coordinates as the target var handle.
-     *
-     * @param target the target memory access handle to access after the offset adjustment.
-     * @param bytesOffset the offset, in bytes. Must be positive or zero.
-     * @return the adapted var handle.
-     * @throws IllegalArgumentException if the first access coordinate type is not of type {@link MemoryAddress}.
-     */
-    public static VarHandle withOffset(VarHandle target, long bytesOffset) {
-        if (bytesOffset == 0) {
-            return target; //nothing to do
-        }
-
-        checkAddressFirstCoordinate(target);
-
-        if (JLI.isMemoryAccessVarHandle(target) &&
-                (bytesOffset & JLI.memoryAddressAlignmentMask(target)) == 0) {
-            //flatten
-            return Utils.fixUpVarHandle(JLI.memoryAccessVarHandle(
-                    JLI.memoryAddressCarrier(target),
-                    JLI.memoryAddressAlignmentMask(target),
-                    JLI.memoryAddressByteOrder(target),
-                    JLI.memoryAddressOffset(target) + bytesOffset,
-                    JLI.memoryAddressStrides(target)));
-        } else {
-            //slow path
-            VarHandle res = collectCoordinates(target, 0, ADD_OFFSET);
-            return insertCoordinates(res, 1, bytesOffset);
-        }
-    }
-
-    /**
-     * Returns a var handle which adds a <em>variable</em> offset to the incoming {@link MemoryAddress}
-     * access coordinate value and then propagates such value to the target var handle.
-     * That is, when the returned var handle receives a memory address coordinate pointing at a memory location at
-     * offset <em>O</em>, a new memory address coordinate pointing at a memory location at offset <em>(S * X) + O</em>
-     * is created, and then passed to the target var handle,
-     * where <em>S</em> is a constant <em>stride</em>, whereas <em>X</em> is a dynamic value that will be
-     * provided as an additional access coordinate (of type {@code long}).
-     *
-     * The returned var handle will feature the same type as the target var handle; an additional access coordinate
-     * of type {@code long} will be added to the access coordinate types of the target var handle at the position
-     * immediately following the leading access coordinate of type {@link MemoryAddress}.
-     *
-     * @param target the target memory access handle to access after the scale adjustment.
-     * @param bytesStride the stride, in bytes, by which to multiply the coordinate value.
-     * @return the adapted var handle.
-     * @throws IllegalArgumentException if the first access coordinate type is not of type {@link MemoryAddress}.
-     */
-    public static VarHandle withStride(VarHandle target, long bytesStride) {
-        if (bytesStride == 0) {
-            return dropCoordinates(target, 1, long.class); // dummy coordinate
-        }
-
-        checkAddressFirstCoordinate(target);
-
-        if (JLI.isMemoryAccessVarHandle(target) &&
-                (bytesStride & JLI.memoryAddressAlignmentMask(target)) == 0) {
-            //flatten
-            long[] strides = JLI.memoryAddressStrides(target);
-            long[] newStrides = new long[strides.length + 1];
-            System.arraycopy(strides, 0, newStrides, 1, strides.length);
-            newStrides[0] = bytesStride;
-
-            return Utils.fixUpVarHandle(JLI.memoryAccessVarHandle(
-                    JLI.memoryAddressCarrier(target),
-                    JLI.memoryAddressAlignmentMask(target),
-                    JLI.memoryAddressByteOrder(target),
-                    JLI.memoryAddressOffset(target),
-                    newStrides));
-        } else {
-            //slow path
-            VarHandle res = collectCoordinates(target, 0, ADD_STRIDE);
-            return insertCoordinates(res, 2, bytesStride);
-        }
-    }
-
-    /**
-     * Adapt an existing var handle into a new var handle whose carrier type is {@link MemoryAddress}.
+     * Adapt an existing var handle into a new var handle whose carrier type is {@link MemorySegment}.
      * That is, when calling {@link VarHandle#get(Object...)} on the returned var handle,
      * the read numeric value will be turned into a memory address (as if by calling {@link MemoryAddress#ofLong(long)});
      * similarly, when calling {@link VarHandle#set(Object...)}, the memory address to be set will be converted
@@ -362,8 +250,8 @@ public final class MemoryHandles {
     MemorySegment segment = MemorySegment.allocateNative(2);
     VarHandle SHORT_VH = MemoryLayouts.JAVA_SHORT.varHandle(short.class);
     VarHandle INT_VH = MemoryHandles.asUnsigned(SHORT_VH, int.class);
-    SHORT_VH.set(segment.baseAddress(), (short)-1);
-    INT_VH.get(segment.baseAddress()); // returns 65535
+    SHORT_VH.set(segment, (short)-1);
+    INT_VH.get(segment); // returns 65535
      * }</pre></blockquote>
      * <p>
      * When calling e.g. {@link VarHandle#set(Object...)} on the resulting var
@@ -620,8 +508,8 @@ public final class MemoryHandles {
 
     private static void checkAddressFirstCoordinate(VarHandle handle) {
         if (handle.coordinateTypes().size() < 1 ||
-                handle.coordinateTypes().get(0) != MemoryAddress.class) {
-            throw new IllegalArgumentException("Expected var handle with leading coordinate of type MemoryAddress");
+                handle.coordinateTypes().get(0) != MemorySegment.class) {
+            throw new IllegalArgumentException("Expected var handle with leading coordinate of type MemorySegment");
         }
     }
 
@@ -661,13 +549,5 @@ public final class MemoryHandles {
 
     private static long addressToLong(MemoryAddress value) {
         return value.toRawLongValue();
-    }
-
-    private static MemoryAddress addOffset(MemoryAddress address, long offset) {
-        return address.addOffset(offset);
-    }
-
-    private static MemoryAddress addStride(MemoryAddress address, long index, long stride) {
-        return address.addOffset(index * stride);
     }
 }

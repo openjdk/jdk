@@ -662,11 +662,12 @@ intptr_t* frame::real_fp() const {
 
 #undef DESCRIBE_FP_OFFSET
 
-#define DESCRIBE_FP_OFFSET(name)                                        \
-  {                                                                     \
-    uintptr_t *p = (uintptr_t *)fp;                                     \
-    printf("0x%016lx 0x%016lx %s\n", (uintptr_t)(p + frame::name##_offset), \
-           p[frame::name##_offset], #name);                             \
+#define DESCRIBE_FP_OFFSET(name)                     \
+  {                                                  \
+    uintptr_t *p = (uintptr_t *)fp;                  \
+    printf(INTPTR_FORMAT " " INTPTR_FORMAT " %s\n",  \
+           (uintptr_t)(p + frame::name##_offset),    \
+           p[frame::name##_offset], #name);          \
   }
 
 static THREAD_LOCAL uintptr_t nextfp;

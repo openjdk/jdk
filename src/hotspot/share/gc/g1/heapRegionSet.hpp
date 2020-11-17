@@ -234,8 +234,6 @@ public:
 
   virtual void verify();
 
-  uint num_of_regions_in_range(uint start, uint end) const;
-
   using HeapRegionSetBase::length;
   uint length(uint node_index) const;
 };

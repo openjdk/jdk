@@ -116,10 +116,6 @@ class VMError : public AllStatic {
   // and the offending address points into CDS store.
   static void check_failing_cds_access(outputStream* st, const void* siginfo);
 
-  static void report_and_die(Thread* thread, unsigned int sig, address pc, void* siginfo,
-                             void* context, const char* detail_fmt, ...) ATTRIBUTE_PRINTF(6, 7);
-  static void report_and_die(const char* message, const char* detail_fmt, ...) ATTRIBUTE_PRINTF(2, 3);
-
   // Timeout handling.
   // Hook functions for platform dependend functionality:
   static void reporting_started();
@@ -147,6 +143,9 @@ public:
   static void print_vm_info(outputStream* st);
 
   // main error reporting function
+  static void report_and_die(Thread* thread, unsigned int sig, address pc, void* siginfo,
+                             void* context, const char* detail_fmt, ...) ATTRIBUTE_PRINTF(6, 7);
+
   static void report_and_die(int id, const char* message, const char* detail_fmt, va_list detail_args,
                              Thread* thread, address pc, void* siginfo, void* context,
                              const char* filename, int lineno, size_t size) ATTRIBUTE_PRINTF(3, 0);
@@ -160,8 +159,6 @@ public:
   static void report_and_die(Thread* thread, const char* filename, int lineno, size_t size,
                              VMErrorType vm_err_type, const char* detail_fmt,
                              va_list detail_args) ATTRIBUTE_PRINTF(6, 0);
-
-  static void report_and_die(const char* message);
 
   // reporting OutOfMemoryError
   static void report_java_out_of_memory(const char* message);

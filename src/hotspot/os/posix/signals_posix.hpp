@@ -38,14 +38,16 @@ class PosixSignals : public AllStatic {
 
 public:
 
-  static bool are_signal_handlers_installed();
+  // The platform dependent parts of the central hotspot signal handler.
+  // Returns true if the signal had been recognized and handled, false if not. If true, caller should
+  // return from signal handling.
+  static bool pd_hotspot_signal_handler(int sig, siginfo_t* info, ucontext_t* uc, JavaThread* thread);
+
   static void install_signal_handlers();
 
   static bool is_sig_ignored(int sig);
   static void signal_sets_init();
 
-  // unblocks the signal masks for current thread
-  static int unblock_thread_signal_mask(const sigset_t *set);
   static void hotspot_sigmask(Thread* thread);
 
   static void print_signal_handler(outputStream* st, int sig, char* buf, size_t buflen);
@@ -64,6 +66,11 @@ public:
 
   // sun.misc.Signal support
   static void jdk_misc_signal_init();
+
+  // Unblock all signals whose delivery cannot be deferred and which, if they happen
+  //  while delivery is blocked, would cause crashes or hangs (see JDK-8252533).
+  static void unblock_error_signals();
+
 };
 
 #endif // OS_POSIX_SIGNALS_POSIX_HPP
