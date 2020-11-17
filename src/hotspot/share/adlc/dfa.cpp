@@ -389,7 +389,7 @@ void ArchDesc::buildDFA(FILE* fp) {
   fprintf(fp, "\n");
   fprintf(fp, "//------------------------- Macros -----------------------------------------\n");
   fprintf(fp, "#define DFA_PRODUCTION(result, rule, cost)\\\n");
-  fprintf(fp, "  _cost[ (result) ] = cost; _rule[ (result) ] = (rule << 1) | 0x1;\n");
+  fprintf(fp, "  assert(rule < (1 << 15), \"too many rules\"); _cost[ (result) ] = cost; _rule[ (result) ] = (rule << 1) | 0x1;\n");
   fprintf(fp, "\n");
 
   fprintf(fp, "//------------------------- DFA --------------------------------------------\n");
