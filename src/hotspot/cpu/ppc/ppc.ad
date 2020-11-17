@@ -11385,90 +11385,20 @@ instruct testL_reg_imm(flagsRegCR0 cr0, iRegLsrc src1, uimmL16 src2, immL_0 zero
   ins_pipe(pipe_class_compare);
 %}
 
-instruct cmovI_conIvalueMinus1_conIvalue1(iRegIdst dst, flagsRegSrc crx) %{
-  // no match-rule, false predicate
-  effect(DEF dst, USE crx);
-  predicate(false);
-
-  ins_variable_size_depending_on_alignment(true);
-
-  format %{ "cmovI   $crx, $dst, -1, 0, +1" %}
-  // Worst case is branch + move + branch + move + stop, no stop without scheduler.
-  size(16);
-  ins_encode %{
-    Label done;
-    // li(Rdst, 0);              // equal -> 0
-    __ beq($crx$$CondRegister, done);
-    __ li($dst$$Register, 1);    // greater -> +1
-    __ bgt($crx$$CondRegister, done);
-    __ li($dst$$Register, -1);   // unordered or less -> -1
-    __ bind(done);
-  %}
-  ins_pipe(pipe_class_compare);
-%}
-
-instruct cmovI_conIvalueMinus1_conIvalue0_conIvalue1_Ex(iRegIdst dst, flagsRegSrc crx) %{
-  // no match-rule, false predicate
-  effect(DEF dst, USE crx);
-  predicate(false);
-
-  format %{ "CmovI    $crx, $dst, -1, 0, +1 \t// postalloc expanded" %}
-  postalloc_expand %{
-    //
-    // replaces
-    //
-    //   region  crx
-    //    \       |
-    //     dst=cmovI_conIvalueMinus1_conIvalue0_conIvalue1
-    //
-    // with
-    //
-    //   region
-    //    \
-    //     dst=loadConI16(0)
-    //      |
-    //      ^  region  crx
-    //      |   \       |
-    //      dst=cmovI_conIvalueMinus1_conIvalue1
-    //
-
-    // Create new nodes.
-    MachNode *m1 = new loadConI16Node();
-    MachNode *m2 = new cmovI_conIvalueMinus1_conIvalue1Node();
-
-    // inputs for new nodes
-    m1->add_req(n_region);
-    m2->add_req(n_region, n_crx);
-    m2->add_prec(m1);
-
-    // operands for new nodes
-    m1->_opnds[0] = op_dst;
-    m1->_opnds[1] = new immI16Oper(0);
-    m2->_opnds[0] = op_dst;
-    m2->_opnds[1] = op_crx;
-
-    // registers for new nodes
-    ra_->set_pair(m1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this)); // dst
-    ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this)); // dst
-
-    // Insert new nodes.
-    nodes->push(m1);
-    nodes->push(m2);
-  %}
-%}
-
-// Manifest a CmpL3 result in an integer register. Very painful.
-// This is the test to avoid.
-// (src1 < src2) ? -1 : ((src1 > src2) ? 1 : 0)
-instruct cmpL3_reg_reg_ExEx(iRegIdst dst, iRegLsrc src1, iRegLsrc src2) %{
+// Manifest a CmpL3 result in an integer register.
+instruct cmpL3_reg_reg(iRegIdst dst, iRegLsrc src1, iRegLsrc src2, flagsRegCR0 cr0) %{
   match(Set dst (CmpL3 src1 src2));
-  ins_cost(DEFAULT_COST*5+BRANCH_COST);
+  effect(KILL cr0);
+  ins_cost(DEFAULT_COST * 5);
+  size(VM_Version::has_brw() ? 16 : 20);
 
-  expand %{
-    flagsReg tmp1;
-    cmpL_reg_reg(tmp1, src1, src2);
-    cmovI_conIvalueMinus1_conIvalue0_conIvalue1_Ex(dst, tmp1);
+  format %{ "cmpL3_reg_reg $dst, $src1, $src2" %}
+
+  ins_encode %{
+    __ cmpd(CCR0, $src1$$Register, $src2$$Register);
+    __ set_cmp3($dst$$Register);
   %}
+  ins_pipe(pipe_class_default);
 %}
 
 // Implicit range checks.
@@ -11791,15 +11721,19 @@ instruct cmpF_reg_reg_Ex(flagsReg crx, regF src1, regF src2) %{
 %}
 
 // Compare float, generate -1,0,1
-instruct cmpF3_reg_reg_ExEx(iRegIdst dst, regF src1, regF src2) %{
+instruct cmpF3_reg_reg(iRegIdst dst, regF src1, regF src2, flagsRegCR0 cr0) %{
   match(Set dst (CmpF3 src1 src2));
-  ins_cost(DEFAULT_COST*5+BRANCH_COST);
+  effect(KILL cr0);
+  ins_cost(DEFAULT_COST * 6);
+  size(VM_Version::has_brw() ? 20 : 24);
 
-  expand %{
-    flagsReg tmp1;
-    cmpFUnordered_reg_reg(tmp1, src1, src2);
-    cmovI_conIvalueMinus1_conIvalue0_conIvalue1_Ex(dst, tmp1);
+  format %{ "cmpF3_reg_reg $dst, $src1, $src2" %}
+
+  ins_encode %{
+    __ fcmpu(CCR0, $src1$$FloatRegister, $src2$$FloatRegister);
+    __ set_cmpu3($dst$$Register, true); // C2 requires unordered to get treated like less
   %}
+  ins_pipe(pipe_class_default);
 %}
 
 instruct cmpDUnordered_reg_reg(flagsReg crx, regD src1, regD src2) %{
@@ -11871,15 +11805,19 @@ instruct cmpD_reg_reg_Ex(flagsReg crx, regD src1, regD src2) %{
 %}
 
 // Compare double, generate -1,0,1
-instruct cmpD3_reg_reg_ExEx(iRegIdst dst, regD src1, regD src2) %{
+instruct cmpD3_reg_reg(iRegIdst dst, regD src1, regD src2, flagsRegCR0 cr0) %{
   match(Set dst (CmpD3 src1 src2));
-  ins_cost(DEFAULT_COST*5+BRANCH_COST);
+  effect(KILL cr0);
+  ins_cost(DEFAULT_COST * 6);
+  size(VM_Version::has_brw() ? 20 : 24);
 
-  expand %{
-    flagsReg tmp1;
-    cmpDUnordered_reg_reg(tmp1, src1, src2);
-    cmovI_conIvalueMinus1_conIvalue0_conIvalue1_Ex(dst, tmp1);
+  format %{ "cmpD3_reg_reg $dst, $src1, $src2" %}
+
+  ins_encode %{
+    __ fcmpu(CCR0, $src1$$FloatRegister, $src2$$FloatRegister);
+    __ set_cmpu3($dst$$Register, true); // C2 requires unordered to get treated like less
   %}
+  ins_pipe(pipe_class_default);
 %}
 
 // Compare char
