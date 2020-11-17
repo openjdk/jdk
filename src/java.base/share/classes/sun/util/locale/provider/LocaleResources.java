@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,15 +46,22 @@ import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import sun.security.action.GetPropertyAction;
 import sun.util.resources.LocaleData;
 import sun.util.resources.OpenListResourceBundle;
@@ -91,6 +98,7 @@ public class LocaleResources {
     private static final String COMPACT_NUMBER_PATTERNS_CACHEKEY = "CNP";
     private static final String DATE_TIME_PATTERN = "DTP.";
     private static final String RULES_CACHEKEY = "RULE";
+    private static final String SKELETON_PATTERN = "SP.";
 
     // TimeZoneNamesBundle exemplar city prefix
     private static final String TZNB_EXCITY_PREFIX = "timezone.excity.";
@@ -531,6 +539,181 @@ public class LocaleResources {
         return rb;
     }
 
+    /**
+     *
+     * @param requestedSkeleton
+     * @param calType
+     * @return
+     */
+    public String getSkeletonPattern(String requestedSkeleton, String calType) {
+        initSkeletonIfNeeded();
+
+        // input skeleton substitution
+        final String skeleton = substituteInputSkeletons(requestedSkeleton);
+        var inferred = possibleInferred(skeleton);
+        ResourceBundle r = localeData.getDateFormatData(locale);
+
+System.out.println("req :"+requestedSkeleton);
+        var matched = inferred
+//.peek(s -> System.out.println("inf: "+s))
+                .map(s -> skeletonFromRB(r, CalendarDataUtility.normalizeCalendarType(calType), s))
+                .filter(Objects::nonNull)
+//.peek(s -> System.out.println("mch: "+s))
+                .findFirst()
+                .map(s -> adjustSkeletonLength(skeleton, s))
+                .orElse(null);
+
+System.out.println("requested: " + requestedSkeleton + ", matched: "+matched);
+        return matched;
+    }
+
+    private static Set<String> validSkeletons;
+    private static Map<String, String> preferredInputSkeletons;
+    private static Map<String, String> allowedInputSkeletons;
+    private String jPattern;
+    private String CPattern;
+    private void initSkeletonIfNeeded() {
+        if (validSkeletons == null) {
+            preferredInputSkeletons = new HashMap<>();
+            allowedInputSkeletons = new HashMap<>();
+            Pattern p = Pattern.compile("([^:]+):([^;]+);");
+            ResourceBundle r = localeData.getDateFormatData(Locale.ROOT);
+            validSkeletons = Arrays.stream(r.getString("DateFormatItemValidPatterns").split(","))
+                .map(String::trim)
+                .collect(Collectors.toUnmodifiableSet());
+            p.matcher(r.getString("DateFormatItemInputRegions.preferred")).results()
+                .forEach(mr -> {
+                    Arrays.stream(mr.group(2).split(" "))
+                        .forEach(region -> preferredInputSkeletons.put(region, mr.group(1)));
+                });
+            p.matcher(r.getString("DateFormatItemInputRegions.allowed")).results()
+                .forEach(mr -> {
+                    Arrays.stream(mr.group(2).split(" "))
+                        .forEach(region -> allowedInputSkeletons.put(region, mr.group(1)));
+                });
+        }
+        if (jPattern == null) {
+            jPattern = resolveInputSkeleton(preferredInputSkeletons);
+            CPattern = resolveInputSkeleton(allowedInputSkeletons);
+            // hack: "allowed" contains reversed order for hour/period, e.g, "hB" which should be "Bh" as a skeleton
+            if (CPattern.length() == 2) {
+                CPattern = String.format("%c%c", CPattern.charAt(1), CPattern.charAt(0));
+            }
+        }
+    }
+
+    /**
+     * Resolve locale specific input skeletons. Fall back method is different from usual
+     * resource bundle's, as it has to be "lang-region" -> "region" -> "lang-001" -> "001"
+     * @param inputSkeletons
+     * @return
+     */
+    private String resolveInputSkeleton(Map<String, String> inputSkeletons) {
+        return inputSkeletons.getOrDefault(locale.getLanguage() + "-" + locale.getCountry(),
+            inputSkeletons.getOrDefault(locale.getCountry(),
+                inputSkeletons.getOrDefault(locale.getLanguage() + "-001",
+                    inputSkeletons.get("001"))));
+    }
+
+    /**
+     * Replace 'j' and 'C' input skeletons with locale specific patterns. Note that 'j'
+     * is guaranteed to be replaced with one char [hkHK], while 'C' may be replaced with
+     * multiple chars. Repeat each as much as 'C' count.
+     * @param requested
+     * @return
+     */
+    private String substituteInputSkeletons(String requested) {
+        return requested.replaceAll("j", jPattern)
+                .replaceFirst("C+",
+                    CPattern.chars()
+                            .mapToObj(c -> String.valueOf((char)c).repeat(requested.lastIndexOf('C') - requested.indexOf('C') + 1))
+                            .collect(Collectors.joining()));
+    }
+
+    private String skeletonFromRB(ResourceBundle r, String calT, String key) {
+        String skeleton = null;
+        key = ("gregory".equals(calT) ? "" : calT + ".") + "DateFormatItem." + key;
+        if (r.containsKey(key)) {
+            skeleton = r.getString(key);
+        }
+        return skeleton;
+    }
+
+    private Stream<String> possibleInferred(String skeleton) {
+        return List.of(skeleton).stream()
+            .flatMap(s -> {
+                Stream<String> ret = List.of(s).stream();
+                if (s.indexOf('M') >= 0) {
+                    return Stream.concat(priorityList(s, "M", "M"), priorityList(s, "M", "L"));
+                } else if (s.indexOf('L') >= 0) {
+                    return Stream.concat(priorityList(s, "L", "L"), priorityList(s, "L", "M"));
+                }
+                return List.of(s).stream();
+            })
+            .flatMap(s -> {
+                if (s.indexOf('E') >= 0) {
+                    return Stream.concat(priorityList(s, "E", "E"), priorityList(s, "E", "c"));
+                } else if (s.indexOf('c') >= 0) {
+                    return Stream.concat(priorityList(s, "c", "c"), priorityList(s, "c", "E"));
+                }
+                return List.of(s).stream();
+            })
+            .distinct()
+            .filter(validSkeletons::contains);
+    }
+
+    private Stream<String> priorityList(String skeleton, String pChar, String subChar) {
+        List<String> list;
+        int last = skeleton.lastIndexOf(pChar);
+        if (last >= 0) {
+            // 1->2->3->4
+            // 2->1->3->4
+            // 3->4->2->1
+            // 4->3->2->1
+            final String s1 = skeleton.replaceFirst(pChar + "+", subChar);
+            final String s2 = skeleton.replaceFirst(pChar + "+", subChar.repeat(2));
+            final String s3 = skeleton.replaceFirst(pChar + "+", subChar.repeat(3));
+            final String s4 = skeleton.replaceFirst(pChar + "+", subChar.repeat(4));
+            list = switch (last - skeleton.indexOf(pChar) + 1) {
+                case 1 -> List.of(s1, s2, s3, s4);
+                case 2 -> List.of(s2, s1, s3, s4);
+                case 3 -> List.of(s3, s4, s2, s1);
+                case 4 -> List.of(s4, s3, s2, s1);
+                default -> List.of(skeleton);
+            };
+        } else {
+            list = List.of(skeleton);
+        }
+//System.out.println("priorityList: "+list);
+        return list.stream();
+    }
+
+    private String adjustSkeletonLength(String requested, String matched) {
+        if (!requested.equals(matched)) {
+            // adjust the lengths
+            int monthsR = Math.max(requested.lastIndexOf('M') - requested.indexOf('M'),
+                                    requested.lastIndexOf('L') - requested.indexOf('L')) + 1;
+            int daysR = Math.max(requested.lastIndexOf('E') - requested.indexOf('E'),
+                    requested.lastIndexOf('c') - requested.indexOf('c')) + 1;
+            int monthsM = Math.max(matched.lastIndexOf('M') - matched.indexOf('M'),
+                    matched.lastIndexOf('L') - matched.indexOf('L')) + 1;
+            int daysM = Math.max(matched.lastIndexOf('E') - matched.indexOf('E'),
+                    matched.lastIndexOf('c') - matched.indexOf('c')) + 1;
+            // do not cross number/text boundary.
+            if (monthsR >= 3 && monthsM <= 2) {
+                monthsR = 2;
+            }
+            if (daysR >= 3 && daysM <= 2) {
+                daysR = 2;
+            }
+            matched = matched.replaceFirst("M+", "M".repeat(monthsR))
+                    .replaceFirst("L+", "L".repeat(monthsR))
+                    .replaceFirst("E+", "E".repeat(daysR))
+                    .replaceFirst("c+", "c".repeat(daysR != 2 ? daysR : 1)); // "cc" is not allowed in JDK
+        }
+        return matched;
+    }
+
     private String getDateTimePattern(String prefix, String key, int styleIndex, String calendarType) {
         StringBuilder sb = new StringBuilder();
         if (prefix != null) {
@@ -605,7 +788,7 @@ public class LocaleResources {
         }
     }
 
-    private static final boolean TRACE_ON = Boolean.valueOf(
+    private static final boolean TRACE_ON = Boolean.parseBoolean(
         GetPropertyAction.privilegedGetProperty("locale.resources.debug", "false"));
 
     public static void trace(String format, Object... params) {

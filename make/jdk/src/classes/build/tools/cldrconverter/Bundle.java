@@ -25,6 +25,9 @@
 
 package build.tools.cldrconverter;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -34,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 class Bundle {
@@ -57,8 +61,8 @@ class Bundle {
     };
 
     private final static String[] COMPACT_NUMBER_PATTERN_KEYS = {
-            "short.CompactNumberPatterns",
-            "long.CompactNumberPatterns"
+        "short.CompactNumberPatterns",
+        "long.CompactNumberPatterns"
     };
 
     private final static String[] NUMBER_ELEMENT_KEYS = {
@@ -103,6 +107,11 @@ class Bundle {
         "Eras",
         "narrow.Eras"
     };
+
+    // DateFormatItem prefix
+    final static String DATEFORMATITEM_KEY_PREFIX = "DateFormatItem.";
+    final static String DATEFORMATITEM_INPUT_REGIONS_PREFIX = "DateFormatItemInputRegions.";
+    final static String DATEFORMATITEM_VALID_PATTERNS = "DateFormatItemValidPatterns";
 
     // Keys for individual time zone names
     private final static String TZ_GEN_LONG_KEY = "timezone.displayname.generic.long";
@@ -262,7 +271,7 @@ class Bundle {
         CLDRConverter.handleAliases(myMap);
 
         // another hack: parentsMap is not used for date-time resources.
-        if ("root".equals(id)) {
+        if (isRoot()) {
             parentsMap = null;
         }
 
@@ -287,6 +296,15 @@ class Bundle {
             handleDateTimeFormatPatterns(TIME_PATTERN_KEYS, myMap, parentsMap, calendarType, "TimePatterns");
             handleDateTimeFormatPatterns(DATE_PATTERN_KEYS, myMap, parentsMap, calendarType, "DatePatterns");
             handleDateTimeFormatPatterns(DATETIME_PATTERN_KEYS, myMap, parentsMap, calendarType, "DateTimePatterns");
+
+            // Skeleton
+            handleSkeletonPatterns(myMap, calendarType);
+        }
+
+        // Skeleton validation
+        if (isRoot()) {
+            skeletonInputRegions(myMap);
+            myMap.put(DATEFORMATITEM_VALID_PATTERNS, validSkeletonPatterns());
         }
 
         // First, weed out any empty timezone or metazone names from myMap.
@@ -647,8 +665,9 @@ class Bundle {
     private void convertDateTimePatternLetter(CalendarType calendarType, char cldrLetter, int count, StringBuilder sb) {
         switch (cldrLetter) {
             case 'u':
-                // Change cldr letter 'u' to 'y', as 'u' is interpreted as
-                // "Extended year (numeric)" in CLDR/LDML,
+            case 'U':
+                // Change cldr letter 'u'/'U' to 'y', as 'u' is interpreted as
+                // "Extended year (numeric)", and 'U' as "Cyclic year" in CLDR/LDML,
                 // which is not supported in SimpleDateFormat and
                 // j.t.f.DateTimeFormatter, so it is replaced with 'y'
                 // as the best approximation
@@ -742,6 +761,19 @@ class Bundle {
         return false;
     }
 
+    private void handleSkeletonPatterns(Map<String, Object> myMap, CalendarType calendarType) {
+        String calendarPrefix = calendarType.keyElementName();
+        myMap.putAll(myMap.entrySet().stream()
+            .filter(e -> e.getKey().startsWith(Bundle.DATEFORMATITEM_KEY_PREFIX))
+            .collect(Collectors.toMap(
+                e -> calendarPrefix + e.getKey(),
+                e -> translateDateFormatLetters(calendarType,
+                        (String)e.getValue(),
+                        this::convertDateTimePatternLetter)
+            ))
+        );
+    }
+
     @FunctionalInterface
     private interface ConvertDateTimeLetters {
         void convert(CalendarType calendarType, char cldrLetter, int count, StringBuilder sb);
@@ -789,5 +821,27 @@ class Bundle {
                     }});
         }
         return numArray;
+    }
+
+    private static void skeletonInputRegions(Map<String, Object> myMap) {
+        myMap.putAll(myMap.entrySet().stream()
+                .filter(e -> e.getKey().startsWith(Bundle.DATEFORMATITEM_INPUT_REGIONS_PREFIX))
+                .collect(Collectors.toMap(
+                        e -> e.getKey(),
+                        e -> ((String)e.getValue()).trim()
+                ))
+        );
+    }
+
+    // Since there is no way to parse LDML DTD, where valid skeleton patterns
+    // are listed as "comment", let's scrape it in a brute-force way.
+    private static String validSkeletonPatterns() throws IOException {
+        return Files.lines(Path.of(CLDRConverter.LOCAL_LDML_DTD))
+                .dropWhile(line -> !line.equals("<!ATTLIST dateFormatItem id CDATA #REQUIRED >"))
+                .takeWhile(line -> !line.contains("<!ELEMENT"))
+                .filter(line -> line.contains("<!--@MATCH:literal/"))
+                .findFirst()
+                .map(line -> line.replaceFirst("[^<]*<!--@MATCH:literal/", "").replaceFirst("-->", ""))
+                .orElse("");
     }
 }

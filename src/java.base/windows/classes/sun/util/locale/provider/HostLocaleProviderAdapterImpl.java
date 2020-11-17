@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -567,6 +567,12 @@ public class HostLocaleProviderAdapterImpl {
                 String timePattern = timeStyle != - 1 ? patterns.get(timeStyle / 2 + 2) : "";
                 String delim = dateStyle != -1 && timeStyle != - 1 ? " " : "";
                 return toJavaTimeDateTimePattern(calType, datePattern + delim + timePattern);
+            }
+
+            @Override
+            public String getJavaTimeDateTimePattern(String skeleton, String calType, Locale locale) {
+                // do nothing
+                return toJavaTimeDateTimePattern(calType, skeleton);
             }
 
             private AtomicReferenceArray<String> getDateTimePatterns(Locale locale) {

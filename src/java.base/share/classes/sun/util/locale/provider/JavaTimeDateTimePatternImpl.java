@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 package sun.util.locale.provider;
 
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 import sun.text.spi.JavaTimeDateTimePatternProvider;
 
@@ -66,7 +67,19 @@ public class JavaTimeDateTimePatternImpl extends JavaTimeDateTimePatternProvider
         String pattern = lr.getJavaTimeDateTimePattern(
                 timeStyle, dateStyle, calType);
         return pattern;
+    }
 
+    @Override
+    public String getJavaTimeDateTimePattern(String skeleton, String calType, Locale locale) {
+        LocaleProviderAdapter lpa = LocaleProviderAdapter.getResourceBundleBased();
+        // CLDR's 'u'/'U' are not supported in the JDK. Replace them with 'y' instead
+        final var modifiedSkeeleton = skeleton.replaceAll("[uU]", "y");
+        return ((ResourceBundleBasedAdapter)lpa).getCandidateLocales("", locale).stream()
+                .map(lpa::getLocaleResources)
+                .map(lr -> lr.getSkeletonPattern(modifiedSkeeleton, calType))
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(skeleton); // should we fallback to parent locale?
     }
 
     @Override
