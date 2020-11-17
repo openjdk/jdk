@@ -27,7 +27,7 @@
  * This package contains classes and interfaces that support a generic API
  * for random number generation in the JDK.
  *
- * These classes and interfaces that support the definition and use of "random
+ * <p>These classes and interfaces that support the definition and use of "random
  * generators", a term that is meant to cover what have traditionally been
  * called "random number generators" as well as generators of other sorts of
  * randomly chosen values, and also to cover not only deterministic
