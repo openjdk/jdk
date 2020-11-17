@@ -32,6 +32,7 @@
 #include "ci/ciField.hpp"
 #include "ci/ciKlass.hpp"
 #include "ci/ciMemberName.hpp"
+#include "ci/ciSymbols.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
@@ -1477,7 +1478,7 @@ void GraphBuilder::method_return(Value x, bool ignore_return) {
 
   // The conditions for a memory barrier are described in Parse::do_exits().
   bool need_mem_bar = false;
-  if (method()->name() == ciSymbol::object_initializer_name() &&
+  if (method()->name() == ciSymbols::object_initializer_name() &&
        (scope()->wrote_final() ||
          (AlwaysSafeConstructors && scope()->wrote_fields()) ||
          (support_IRIW_for_not_multiple_copy_atomic_cpu && scope()->wrote_volatile()))) {
@@ -3820,7 +3821,7 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ign
     }
 
     // don't inline throwable methods unless the inlining tree is rooted in a throwable class
-    if (callee->name() == ciSymbol::object_initializer_name() &&
+    if (callee->name() == ciSymbols::object_initializer_name() &&
         callee->holder()->is_subclass_of(ciEnv::current()->Throwable_klass())) {
       // Throwable constructor call
       IRScope* top = scope();

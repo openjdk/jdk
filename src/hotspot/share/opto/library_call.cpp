@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
+#include "ci/ciSymbols.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -5459,7 +5460,7 @@ bool LibraryCallKit::inline_reference_get() {
   assert(tinst->klass()->is_loaded(), "obj is not loaded");
   ciInstanceKlass* referenceKlass = tinst->klass()->as_instance_klass();
   ciField* field = referenceKlass->get_field_by_name(ciSymbol::make("referent"),
-                                                     ciSymbol::make("Ljava/lang/Object;"),
+                                                     ciSymbols::object_signature(),
                                                      false);
   assert (field != NULL, "undefined field");
 

@@ -37,6 +37,7 @@
 #include "ci/ciObject.hpp"
 #include "ci/ciObjectFactory.hpp"
 #include "ci/ciSymbol.hpp"
+#include "ci/ciSymbols.hpp"
 #include "ci/ciTypeArray.hpp"
 #include "ci/ciTypeArrayKlass.hpp"
 #include "ci/ciUtilities.inline.hpp"
@@ -141,7 +142,7 @@ void ciObjectFactory::init_shared_objects() {
       ciSymbol* sym = vm_symbol_at(index);
       assert(sym->get_symbol() == vmsym, "oop must match");
     }
-    assert(ciSymbol::void_class_signature()->get_symbol() == vmSymbols::void_class_signature(), "spot check");
+    assert(ciSymbols::void_class_signature()->get_symbol() == vmSymbols::void_class_signature(), "spot check");
 #endif
   }
 

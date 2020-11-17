@@ -27,10 +27,8 @@
 
 #include "ci/ciBaseObject.hpp"
 #include "ci/ciObject.hpp"
-#include "ci/ciObjectFactory.hpp"
-#include "classfile/vmSymbols.hpp"
-#include "oops/symbol.hpp"
 #include "utilities/vmEnums.hpp"
+#include "oops/symbol.hpp"
 
 // ciSymbol
 //
@@ -97,11 +95,6 @@ public:
   // Consider adding to vmSymbols.hpp instead of using this constructor.
   // (Your code will be less subject to typographical bugs.)
   static ciSymbol* make(const char* s);
-
-#define CI_SYMBOL_DECLARE(name, ignore_def) \
-  static ciSymbol* name() { return ciObjectFactory::vm_symbol_at(VM_SYMBOL_ENUM_NAME(name)); }
-  VM_SYMBOLS_DO(CI_SYMBOL_DECLARE, CI_SYMBOL_DECLARE)
-#undef CI_SYMBOL_DECLARE
 
   void print() {
     _symbol->print();

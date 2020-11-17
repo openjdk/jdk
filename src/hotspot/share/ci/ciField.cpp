@@ -216,7 +216,7 @@ ciField::ciField(fieldDescriptor *fd) :
 static bool trust_final_non_static_fields(ciInstanceKlass* holder) {
   if (holder == NULL)
     return false;
-  if (holder->name() == ciSymbol::java_lang_System())
+  if (holder->name() == ciSymbols::java_lang_System())
     // Never trust strangely unstable finals:  System.out, etc.
     return false;
   // Even if general trusting is disabled, trust system-built closures in these packages.
@@ -237,14 +237,14 @@ static bool trust_final_non_static_fields(ciInstanceKlass* holder) {
   if (holder->is_record())
     return true;
   // Trust final fields in String
-  if (holder->name() == ciSymbol::java_lang_String())
+  if (holder->name() == ciSymbols::java_lang_String())
     return true;
   // Trust Atomic*FieldUpdaters: they are very important for performance, and make up one
   // more reason not to use Unsafe, if their final fields are trusted. See more in JDK-8140483.
-  if (holder->name() == ciSymbol::java_util_concurrent_atomic_AtomicIntegerFieldUpdater_Impl() ||
-      holder->name() == ciSymbol::java_util_concurrent_atomic_AtomicLongFieldUpdater_CASUpdater() ||
-      holder->name() == ciSymbol::java_util_concurrent_atomic_AtomicLongFieldUpdater_LockedUpdater() ||
-      holder->name() == ciSymbol::java_util_concurrent_atomic_AtomicReferenceFieldUpdater_Impl()) {
+  if (holder->name() == ciSymbols::java_util_concurrent_atomic_AtomicIntegerFieldUpdater_Impl() ||
+      holder->name() == ciSymbols::java_util_concurrent_atomic_AtomicLongFieldUpdater_CASUpdater() ||
+      holder->name() == ciSymbols::java_util_concurrent_atomic_AtomicLongFieldUpdater_LockedUpdater() ||
+      holder->name() == ciSymbols::java_util_concurrent_atomic_AtomicReferenceFieldUpdater_Impl()) {
     return true;
   }
   return TrustFinalNonStaticFields;
