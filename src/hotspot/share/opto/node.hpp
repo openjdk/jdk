@@ -159,10 +159,6 @@ class StoreVectorNode;
 class StoreVectorScatterNode;
 class VectorMaskCmpNode;
 class VectorSet;
-typedef void (*NFunc)(Node&,void*);
-extern "C" {
-  typedef int (*C_sort_func_t)(const void *, const void *);
-}
 
 // The type of all node counts and indexes.
 // It must hold at least 16 bits, but must also be fast to load and store.
@@ -1120,18 +1116,9 @@ public:
   virtual int cisc_operand() const { return AdlcVMDeps::Not_cisc_spillable; }
   bool is_cisc_alternate() const { return (_flags & Flag_is_cisc_alternate) != 0; }
 
-//----------------- Graph walking
-public:
-  // Walk and apply member functions recursively.
-  // Supplied (this) pointer is root.
-  void walk(NFunc pre, NFunc post, void *env);
-  static void nop(Node &, void*); // Dummy empty function
-  static void packregion( Node &n, void* );
-private:
-  void walk_(NFunc pre, NFunc post, void *env, VectorSet &visited);
-
 //----------------- Printing, etc
 #ifndef PRODUCT
+ private:
   int _indent;
 
  public:
@@ -1485,29 +1472,27 @@ class SimpleDUIterator : public StackObj {
 class Node_Array : public ResourceObj {
   friend class VMStructs;
 protected:
-  Arena *_a;                    // Arena to allocate in
+  Arena* _a;                    // Arena to allocate in
   uint   _max;
-  Node **_nodes;
+  Node** _nodes;
   void   grow( uint i );        // Grow array node to fit
 public:
-  Node_Array(Arena *a) : _a(a), _max(OptoNodeListSize) {
-    _nodes = NEW_ARENA_ARRAY( a, Node *, OptoNodeListSize );
-    for( int i = 0; i < OptoNodeListSize; i++ ) {
+  Node_Array(Arena* a) : _a(a), _max(OptoNodeListSize) {
+    _nodes = NEW_ARENA_ARRAY(a, Node*, OptoNodeListSize);
+    for (int i = 0; i < OptoNodeListSize; i++) {
       _nodes[i] = NULL;
     }
   }
 
-  Node_Array(Node_Array *na) : _a(na->_a), _max(na->_max), _nodes(na->_nodes) {}
+  Node_Array(Node_Array* na) : _a(na->_a), _max(na->_max), _nodes(na->_nodes) {}
   Node *operator[] ( uint i ) const // Lookup, or NULL for not mapped
   { return (i<_max) ? _nodes[i] : (Node*)NULL; }
-  Node *at( uint i ) const { assert(i<_max,"oob"); return _nodes[i]; }
-  Node **adr() { return _nodes; }
+  Node* at(uint i) const { assert(i<_max,"oob"); return _nodes[i]; }
+  Node** adr() { return _nodes; }
   // Extend the mapping: index i maps to Node *n.
   void map( uint i, Node *n ) { if( i>=_max ) grow(i); _nodes[i] = n; }
   void insert( uint i, Node *n );
   void remove( uint i );        // Remove, preserving order
-  void sort( C_sort_func_t func);
-  void reset( Arena *new_a );   // Zap mapping to empty; reclaim storage
   void clear();                 // Set all entries to NULL, keep storage
   uint Size() const { return _max; }
   void dump() const;
@@ -1530,7 +1515,6 @@ public:
   void push( Node *b ) { map(_cnt++,b); }
   void yank( Node *n );         // Find and remove
   Node *pop() { return _nodes[--_cnt]; }
-  Node *rpop() { Node *b = _nodes[0]; _nodes[0]=_nodes[--_cnt]; return b;}
   void clear() { _cnt = 0; Node_Array::clear(); } // retain storage
   uint size() const { return _cnt; }
   void dump() const;
