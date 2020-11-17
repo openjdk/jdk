@@ -102,11 +102,14 @@
   There really shouldn't be any handles remaining to trash but this is cheap
   in relation to a safepoint.
 */
-#define SAFEPOINT                                                                 \
-    {                                                                             \
-       /* zap freed handles rather than GC'ing them */                            \
-       HandleMarkCleaner __hmc(THREAD);                                           \
-       CALL_VM(SafepointMechanism::process_if_requested(THREAD), handle_exception); \
+#define SAFEPOINT                                                                                            \
+    {                                                                                                        \
+       /* zap freed handles rather than GC'ing them */                                                       \
+       HandleMarkCleaner __hmc(THREAD);                                                                      \
+       if (SafepointMechanism::should_process(THREAD)) {                                                     \
+         CALL_VM(SafepointMechanism::process_if_requested_with_exit_check(THREAD, true /* check asyncs */),  \
+                 handle_exception);                                                                          \
+       }                                                                                                     \
     }
 
 /*
