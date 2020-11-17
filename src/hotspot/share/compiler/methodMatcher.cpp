@@ -259,6 +259,10 @@ void MethodMatcher::parse_method_pattern(char*& line, const char*& error_msg, Me
   }
 
   skip_leading_spaces(line, &total_bytes_read);
+  if (*line == '\0') {
+    error_msg = "Method pattern missing from command";
+    return;
+  }
 
   if (2 == sscanf(line, "%255" RANGESLASH "%*[ ]" "%255"  RANGE0 "%n", class_name, method_name, &bytes_read)) {
     c_match = check_mode(class_name, error_msg);

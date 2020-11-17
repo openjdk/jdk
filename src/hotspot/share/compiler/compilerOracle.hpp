@@ -111,7 +111,7 @@ enum class OptionType {
 class CompilerOracle : AllStatic {
  private:
   static bool _quiet;
-  static void print_parse_error(const char*&  error_msg, char* original_line);
+  static void print_parse_error(char *error_msg, char* original_line);
   static void print_command(enum CompileCommand option, const char* name, enum OptionType type);
 
  public:
@@ -121,7 +121,7 @@ class CompilerOracle : AllStatic {
   // Reads from file and adds to lists
   static void parse_from_file();
 
-    // Tells whether we to exclude compilation of method
+  // Tells whether we to exclude compilation of method
   static bool should_exclude(const methodHandle& method);
   static bool be_quiet() { return _quiet; }
 
@@ -156,7 +156,7 @@ class CompilerOracle : AllStatic {
   static void parse_from_line(char* line);
   static void parse_compile_only(char * line);
 
-   // Fast check if there is any option set that compile control needs to know about
+  // Fast check if there is any option set that compile control needs to know about
   static bool has_any_command_set();
 
   // convert a string to a proper compilecommand option - used from whitebox.

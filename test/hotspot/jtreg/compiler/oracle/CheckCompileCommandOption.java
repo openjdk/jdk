@@ -43,12 +43,12 @@ public class CheckCompileCommandOption {
     // Currently, two types of trailing options can be used with
     // -XX:CompileCommand=option
     //
-    // (1) CompileCommand=option,Klass::method,flag
-    // (2) CompileCommand=option,Klass::method,type,flag,value
+    // (1) CompileCommand=option,Klass::method,option
+    // (2) CompileCommand=option,Klass::method,type,option,value
     //
-    // Type (1) is used to enable a boolean flag for a method.
+    // Type (1) is used to enable a boolean option for a method.
     //
-    // Type (2) is used to support flags with a value. Values can
+    // Type (2) is used to support options with a value. Values can
     // have the the following types: intx, uintx, bool, ccstr,
     // ccstrlist, and double.
 
@@ -196,14 +196,14 @@ public class CheckCompileCommandOption {
 
     private static final String[][] TYPE_4_INVALID_OUTPUTS = {
         {
-            "CompileCommand: unrecognized command",
-            "Value cannot be read for flag TestOptionInt of type intx",
-            "Value cannot be read for flag TestOptionBool of type bool",
-            "Value cannot be read for flag TestOptionDouble of type double",
+            "CompileCommand: unrecognized option",
+            "Value cannot be read for option TestOptionInt of type intx",
+            "Value cannot be read for option TestOptionBool of type bool",
+            "Value cannot be read for option TestOptionDouble of type double",
             "TestOptionUint is not followed by a value",
-            "Value cannot be read for flag TestOptionBool2 of type bool",
-            "Value cannot be read for flag TestOptionDouble of type double",
-            "Value cannot be read for flag TestOptionDouble of type double"
+            "Value cannot be read for option TestOptionBool2 of type bool",
+            "Value cannot be read for option TestOptionDouble of type double",
+            "Value cannot be read for option TestOptionDouble of type double"
         }
     };
 
