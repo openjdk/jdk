@@ -1742,7 +1742,7 @@ void ShenandoahHeap::op_final_mark() {
       set_has_forwarded_objects(true);
 
       if (!is_degenerated_gc_in_progress()) {
-        // Arm nmethods for concurrent codecache process.
+        // Arm nmethods for concurrent codecache processing.
         ShenandoahCodeRoots::arm_nmethods();
         evacuate_and_update_roots();
       }
