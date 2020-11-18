@@ -1334,10 +1334,9 @@ generate(FourRegMulOp,
          ["maddw", "msubw", "madd", "msub", "smaddl", "smsubl", "umaddl", "umsubl"])
 
 generate(ThreeRegFloatOp,
-         [["fmuls", "sss"], ["fdivs", "sss"], ["fadds", "sss"], ["fsubs", "sss"],
-          ["fmuls", "sss"],
-          ["fmuld", "ddd"], ["fdivd", "ddd"], ["faddd", "ddd"], ["fsubd", "ddd"],
-          ["fmuld", "ddd"]])
+         [["fabds", "sss"], ["fmuls", "sss"], ["fdivs", "sss"], ["fadds", "sss"], ["fsubs", "sss"],
+          ["fabdd", "ddd"], ["fmuld", "ddd"], ["fdivd", "ddd"], ["faddd", "ddd"], ["fsubd", "ddd"],
+          ])
 
 generate(FourRegFloatOp,
          [["fmadds", "ssss"], ["fmsubs", "ssss"], ["fnmadds", "ssss"], ["fnmadds", "ssss"],
@@ -1437,6 +1436,8 @@ generate(ThreeRegNEONOp,
           ["mulv", "mul", "8B"], ["mulv", "mul", "16B"],
           ["mulv", "mul", "4H"], ["mulv", "mul", "8H"],
           ["mulv", "mul", "2S"], ["mulv", "mul", "4S"],
+          ["fabd", "fabd", "2S"], ["fabd", "fabd", "4S"],
+          ["fabd", "fabd", "2D"],
           ["fmul", "fmul", "2S"], ["fmul", "fmul", "4S"],
           ["fmul", "fmul", "2D"],
           ["mlav", "mla", "4H"], ["mlav", "mla", "8H"],

@@ -44,19 +44,11 @@
 class ShenandoahBarrierSetC1;
 class ShenandoahBarrierSetC2;
 
-static BarrierSetNMethod* make_barrier_set_nmethod(ShenandoahHeap* heap) {
-  // NMethod barriers are only used when concurrent nmethod unloading is enabled
-  if (!ShenandoahConcurrentRoots::can_do_concurrent_class_unloading()) {
-    return NULL;
-  }
-  return new ShenandoahBarrierSetNMethod(heap);
-}
-
 ShenandoahBarrierSet::ShenandoahBarrierSet(ShenandoahHeap* heap) :
   BarrierSet(make_barrier_set_assembler<ShenandoahBarrierSetAssembler>(),
              make_barrier_set_c1<ShenandoahBarrierSetC1>(),
              make_barrier_set_c2<ShenandoahBarrierSetC2>(),
-             make_barrier_set_nmethod(heap),
+             new ShenandoahBarrierSetNMethod(heap),
              BarrierSet::FakeRtti(BarrierSet::ShenandoahBarrierSet)),
   _heap(heap),
   _satb_mark_queue_buffer_allocator("SATB Buffer Allocator", ShenandoahSATBBufferSize),

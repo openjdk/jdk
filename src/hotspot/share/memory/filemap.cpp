@@ -246,6 +246,7 @@ void FileMapHeader::populate(FileMapInfo* mapinfo, size_t alignment) {
 
   if (!DynamicDumpSharedSpaces) {
     set_shared_path_table(mapinfo->_shared_path_table);
+    CDS_JAVA_HEAP_ONLY(_heap_obj_roots = CompressedOops::encode(HeapShared::roots());)
   }
 }
 
@@ -1902,6 +1903,7 @@ void FileMapInfo::map_heap_regions_impl() {
                       &num_open_archive_heap_ranges,
                       true /* open */)) {
       HeapShared::set_open_archive_heap_region_mapped();
+      HeapShared::set_roots(header()->heap_obj_roots());
     }
   }
 }
