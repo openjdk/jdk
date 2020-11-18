@@ -2493,7 +2493,7 @@ const intx ObjectAlignmentInBytes = 8;
                 "Make nmethod barriers deoptimise a lot.")                  \
                                                                             \
   develop(bool, VerifyCrossModifyFence,                                     \
-          false AARCH64_ONLY(DEBUG_ONLY(||true)),                            \
+          false AARCH64_ONLY(DEBUG_ONLY(||true)),                           \
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
 
