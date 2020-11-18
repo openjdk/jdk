@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,6 +126,17 @@ static NSObject *sAttributeNamesLOCK = nil;
 - (NSArray *)accessibilityColumnsAttribute;
 @end
 
+
+// In order to use a new NSAccessibility API and since our components
+// are represented as a custom UI elements we need to implement a set
+// of custom protocols. Definitions of these protocols will start here.
+
+// This is a root interface in the NSAccessibility* protocols hierarchy
+// and all the component-specific protocols should be derived from it.
+// It is also a place for the functions that might be exposed by all the
+// component accessibility peers.
+// Please see https://developer.apple.com/documentation/appkit/nsaccessibilityprotocol
+// for more details.
 @interface CommonComponentAccessibility : JavaComponentAccessibility <NSAccessibilityElement> {
 
 }
