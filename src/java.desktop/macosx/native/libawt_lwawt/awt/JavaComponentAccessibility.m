@@ -126,6 +126,12 @@ static NSObject *sAttributeNamesLOCK = nil;
 - (NSArray *)accessibilityColumnsAttribute;
 @end
 
+@interface CommonComponentAccessibility : JavaComponentAccessibility <NSAccessibilityElement> {
+
+}
+- (NSRect)accessibilityFrame;
+- (nullable id)accessibilityParent;
+@end
 
 @implementation JavaComponentAccessibility
 
@@ -1915,6 +1921,32 @@ static BOOL ObjectEquals(JNIEnv *env, jobject a, jobject b, jobject component);
 - (id)accessibilityColumnCountAttribute {
     return [self getTableInfo:JAVA_AX_COLS];
 }
+@end
+
+@implementation CommonComponentAccessibility
+// NSAccessibilityElement protocol implementation
+- (NSRect)accessibilityFrame
+{
+    JNIEnv* env = [ThreadUtilities getJNIEnv];
+    jobject axComponent = JNFCallStaticObjectMethod(env, sjm_getAccessibleComponent,
+                                                    fAccessible, fComponent);
+
+    NSSize size = getAxComponentSize(env, axComponent, fComponent);
+    NSPoint point = getAxComponentLocationOnScreen(env, axComponent, fComponent);
+    (*env)->DeleteLocalRef(env, axComponent);
+    point.y += size.height;
+
+    point.y = [[[[self view] window] screen] frame].size.height - point.y;
+
+    NSRect retval = NSMakeRect(point.x, point.y, size.width, size.height);
+    return retval;
+}
+
+- (nullable id)accessibilityParent
+{
+    return [self accessibilityParentAttribute];
+}
+
 @end
 
 /*
