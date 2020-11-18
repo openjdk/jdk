@@ -208,7 +208,23 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public String name() {
+        String appImage = getArgumentValue("--app-image", () -> null);
+        if (appImage != null) {
+            return AppImageFile.extractAppName(Path.of(appImage));
+        }
         return getArgumentValue("--name", () -> getArgumentValue("--main-class"));
+    }
+
+    public String installerName() {
+        String installerName = getArgumentValue("--name",
+                () -> getArgumentValue("--main-class", () -> null));
+        if (installerName == null) {
+            String appImage = getArgumentValue("--app-image");
+            if (appImage != null) {
+                installerName = AppImageFile.extractAppName(Path.of(appImage));
+            }
+        }
+        return installerName;
     }
 
     public boolean isRuntime() {

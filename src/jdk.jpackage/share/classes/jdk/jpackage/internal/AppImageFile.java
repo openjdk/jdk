@@ -233,6 +233,16 @@ public class AppImageFile {
         return launchers;
     }
 
+    public static String extractAppName(Path appImageDir) {
+        try {
+            return AppImageFile.load(appImageDir).getLauncherName();
+        } catch (IOException ioe) {
+            Log.verbose(MessageFormat.format(I18N.getString(
+                    "warning.foreign-app-image"), appImageDir));
+            return null;
+        }
+    }
+
     private static String xpathQueryNullable(XPath xPath, String xpathExpr,
             Document xml) throws XPathExpressionException {
         NodeList nodes = (NodeList) xPath.evaluate(xpathExpr, xml,

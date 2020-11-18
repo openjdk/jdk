@@ -194,7 +194,7 @@ public class MacHelper {
 
     private static String getPackageName(JPackageCommand cmd) {
         return cmd.getArgumentValue("--mac-package-name",
-                () -> cmd.name());
+                () -> cmd.installerName());
     }
 
     public static final class PListWrapper {

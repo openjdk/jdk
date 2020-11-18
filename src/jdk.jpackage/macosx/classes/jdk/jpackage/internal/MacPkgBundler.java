@@ -448,7 +448,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             IOUtils.exec(pb);
 
             // build final package
-            Path finalPKG = outdir.resolve(INSTALLER_NAME.fetchFrom(params)
+            Path finalPKG = outdir.resolve(MAC_INSTALLER_NAME.fetchFrom(params)
                     + INSTALLER_SUFFIX.fetchFrom(params)
                     + ".pkg");
             Files.createDirectories(outdir);

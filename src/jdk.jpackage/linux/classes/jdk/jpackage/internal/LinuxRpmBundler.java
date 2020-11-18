@@ -38,6 +38,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
+import static jdk.jpackage.internal.StandardBundlerParam.INSTALLER_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.LICENSE_FILE;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.RELEASE;
@@ -73,7 +74,7 @@ public class LinuxRpmBundler extends LinuxPackageBundler {
             Arguments.CLIOptions.LINUX_BUNDLE_NAME.getId(),
             String.class,
             params -> {
-                String nm = APP_NAME.fetchFrom(params);
+                String nm = INSTALLER_NAME.fetchFrom(params);
                 if (nm == null) return null;
 
                 // make sure to lower case and spaces become dashes

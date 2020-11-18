@@ -143,7 +143,7 @@ public class MacAppStoreBundler extends MacBaseInstallerBundler {
             ProcessBuilder pb;
 
             // create the final pkg file
-            Path finalPKG = outdir.resolve(INSTALLER_NAME.fetchFrom(params)
+            Path finalPKG = outdir.resolve(MAC_INSTALLER_NAME.fetchFrom(params)
                     + INSTALLER_SUFFIX.fetchFrom(params)
                     + ".pkg");
             Files.createDirectories(outdir);
