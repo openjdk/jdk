@@ -1152,9 +1152,11 @@ class StubGenerator: public StubCodeGenerator {
     // (96 bytes if SIMD because we do 32 byes per instruction)
     __ bind(copy80);
     if (UseSIMDForMemoryOps) {
-      __ ld4(v0, v1, v2, v3, __ T16B, Address(s, 0));
+      __ ldpq(v0, v1, Address(s, 0));
+      __ ldpq(v2, v3, Address(s, 32));
       __ ldpq(v4, v5, Address(send, -32));
-      __ st4(v0, v1, v2, v3, __ T16B, Address(d, 0));
+      __ stpq(v0, v1, Address(d, 0));
+      __ stpq(v2, v3, Address(d, 32));
       __ stpq(v4, v5, Address(dend, -32));
     } else {
       __ ldp(t0, t1, Address(s, 0));
