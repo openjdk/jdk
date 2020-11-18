@@ -59,7 +59,6 @@ class ShenandoahFreeSet;
 class ShenandoahConcurrentMark;
 class ShenandoahMarkCompact;
 class ShenandoahMonitoringSupport;
-class ShenandoahObjToScanQueueSet;
 class ShenandoahPacer;
 class ShenandoahReferenceProcessor;
 class ShenandoahVerifier;
@@ -446,12 +445,6 @@ private:
 // ---------- GC subsystems
 //
 // Mark support
-private:
-  ShenandoahObjToScanQueueSet* _task_queues;
-
-public:
-  ShenandoahObjToScanQueueSet* task_queues() const { return _task_queues; }
-
 private:
   ShenandoahControlThread*   _control_thread;
   ShenandoahCollectorPolicy* _shenandoah_policy;

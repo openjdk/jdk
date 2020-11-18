@@ -59,7 +59,6 @@
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahStringDedup.hpp"
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
-#include "gc/shenandoah/shenandoahTaskqueue.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
@@ -247,7 +246,7 @@ jint ShenandoahHeap::initialize() {
                               "Cannot commit bitmap memory");
   }
 
-  _marking_context = new ShenandoahMarkingContext(_heap_region, _bitmap_region, _num_regions);
+  _marking_context = new ShenandoahMarkingContext(_heap_region, _bitmap_region, _num_regions, MAX2(_max_workers, 1U));
 
   if (ShenandoahVerify) {
     ReservedSpace verify_bitmap(_bitmap_size, bitmap_page_size);
@@ -458,7 +457,6 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _num_regions(0),
   _regions(NULL),
   _update_refs_iterator(this),
-  _task_queues(NULL),
   _control_thread(NULL),
   _shenandoah_policy(policy),
   _heuristics(NULL),
@@ -609,16 +607,6 @@ void ShenandoahHeap::post_initialize() {
   // gclab can not be initialized early during VM startup, as it can not determinate its max_size.
   // Now, we will let WorkGang to initialize gclab when new worker is created.
   _workers->set_initialize_gclab();
-
-  // Task queues
-  uint num_queues = MAX2(_max_workers, 1U);
-  _task_queues = new ShenandoahObjToScanQueueSet((int) num_queues);
-  for (uint i = 0; i < num_queues; ++i) {
-    ShenandoahObjToScanQueue* task_queue = new ShenandoahObjToScanQueue();
-    task_queue->initialize();
-    _task_queues->register_queue(i, task_queue);
-  }
-
 
   _heuristics->initialize();
 
