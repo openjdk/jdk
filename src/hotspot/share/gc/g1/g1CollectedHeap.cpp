@@ -804,17 +804,6 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion* ranges, size_t count) {
   decrease_used(size_used);
 }
 
-oop G1CollectedHeap::materialize_archived_object(oop obj) {
-  assert(is_archived_object(obj), "not an archived obj");
-
-  // Loading an archived object makes it strongly reachable. If it is
-  // loaded during concurrent marking, it must be enqueued to the SATB
-  // queue, shading the previously white object gray.
-  G1BarrierSet::enqueue(obj);
-
-  return obj;
-}
-
 HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
   ResourceMark rm; // For retrieving the thread names in log messages.
 
@@ -4021,11 +4010,13 @@ void G1CollectedHeap::free_humongous_region(HeapRegion* hr,
   free_region(hr, free_list);
 }
 
-void G1CollectedHeap::remove_from_old_sets(const uint old_regions_removed,
-                                           const uint humongous_regions_removed) {
-  if (old_regions_removed > 0 || humongous_regions_removed > 0) {
+void G1CollectedHeap::remove_from_old_gen_sets(const uint old_regions_removed,
+                                               const uint archive_regions_removed,
+                                               const uint humongous_regions_removed) {
+  if (old_regions_removed > 0 || archive_regions_removed > 0 || humongous_regions_removed > 0) {
     MutexLocker x(OldSets_lock, Mutex::_no_safepoint_check_flag);
     _old_set.bulk_remove(old_regions_removed);
+    _archive_set.bulk_remove(archive_regions_removed);
     _humongous_set.bulk_remove(humongous_regions_removed);
   }
 
@@ -4453,7 +4444,7 @@ void G1CollectedHeap::eagerly_reclaim_humongous_regions() {
   G1FreeHumongousRegionClosure cl(&local_cleanup_list);
   heap_region_iterate(&cl);
 
-  remove_from_old_sets(0, cl.humongous_regions_reclaimed());
+  remove_from_old_gen_sets(0, 0, cl.humongous_regions_reclaimed());
 
   G1HRPrinter* hrp = hr_printer();
   if (hrp->is_active()) {
@@ -4528,22 +4519,23 @@ bool G1CollectedHeap::check_young_list_empty() {
 
 #endif // ASSERT
 
-  // Remove the given HeapRegion from the appropriate region set.
+// Remove the given HeapRegion from the appropriate region set.
 void G1CollectedHeap::prepare_region_for_full_compaction(HeapRegion* hr) {
-  if (hr->is_old()) {
+   if (hr->is_archive()) {
+    _archive_set.remove(hr);
+  } else if (hr->is_humongous()) {
+    _humongous_set.remove(hr);
+  } else if (hr->is_old()) {
     _old_set.remove(hr);
   } else if (hr->is_young()) {
-    // Note that emptying the _young_list is postponed and instead done as
-    // the first step when rebuilding the regions sets again. The reason for
-    // this is that during a full GC string deduplication needs to know if
+    // Note that emptying the eden and survivor lists is postponed and instead
+    // done as the first step when rebuilding the regions sets again. The reason
+    // for this is that during a full GC string deduplication needs to know if
     // a collected region was young or old when the full GC was initiated.
     hr->uninstall_surv_rate_group();
   } else {
     // We ignore free regions, we'll empty the free list afterwards.
-    // We ignore humongous and archive regions, we're not tearing down these
-    // sets.
-    assert(hr->is_archive() || hr->is_free() || hr->is_humongous(),
-           "it cannot be another type");
+    assert(hr->is_free(), "it cannot be another type");
   }
 }
 
@@ -4567,6 +4559,9 @@ private:
   bool _free_list_only;
 
   HeapRegionSet* _old_set;
+  HeapRegionSet* _archive_set;
+  HeapRegionSet* _humongous_set;
+
   HeapRegionManager* _hrm;
 
   size_t _total_used;
@@ -4574,12 +4569,16 @@ private:
 public:
   RebuildRegionSetsClosure(bool free_list_only,
                            HeapRegionSet* old_set,
+                           HeapRegionSet* archive_set,
+                           HeapRegionSet* humongous_set,
                            HeapRegionManager* hrm) :
-    _free_list_only(free_list_only),
-    _old_set(old_set), _hrm(hrm), _total_used(0) {
+    _free_list_only(free_list_only), _old_set(old_set), _archive_set(archive_set),
+    _humongous_set(humongous_set), _hrm(hrm), _total_used(0) {
     assert(_hrm->num_free_regions() == 0, "pre-condition");
     if (!free_list_only) {
       assert(_old_set->is_empty(), "pre-condition");
+      assert(_archive_set->is_empty(), "pre-condition");
+      assert(_humongous_set->is_empty(), "pre-condition");
     }
   }
 
@@ -4592,11 +4591,14 @@ public:
     } else if (!_free_list_only) {
       assert(r->rem_set()->is_empty(), "At this point remembered sets must have been cleared.");
 
-      if (r->is_archive() || r->is_humongous()) {
-        // We ignore archive and humongous regions. We left these sets unchanged.
+      if (r->is_humongous()) {
+        _humongous_set->add(r);
+      } else if (r->is_archive()) {
+        _archive_set->add(r);
       } else {
         assert(r->is_young() || r->is_free() || r->is_old(), "invariant");
-        // We now move all (non-humongous, non-old, non-archive) regions to old gen, and register them as such.
+        // We now move all (non-humongous, non-old, non-archive) regions to old gen,
+        // and register them as such.
         r->move_to_old();
         _old_set->add(r);
       }
@@ -4619,7 +4621,9 @@ void G1CollectedHeap::rebuild_region_sets(bool free_list_only) {
     _survivor.clear();
   }
 
-  RebuildRegionSetsClosure cl(free_list_only, &_old_set, &_hrm);
+  RebuildRegionSetsClosure cl(free_list_only,
+                              &_old_set, &_archive_set, &_humongous_set,
+                              &_hrm);
   heap_region_iterate(&cl);
 
   if (!free_list_only) {
