@@ -88,7 +88,7 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   int     _rank;                 // rank (to avoid/detect potential deadlocks)
   Mutex*  _next;                 // Used by a Thread to link up owned locks
   Thread* _last_owner;           // the last thread to own the lock
-  bool _skip_rank_check;         // read only by owner whend doing rank checks
+  bool _skip_rank_check;         // read only by owner when doing rank checks
 
   static bool contains(Mutex* locks, Mutex* lock);
   static Mutex* get_least_ranked_lock(Mutex* locks);

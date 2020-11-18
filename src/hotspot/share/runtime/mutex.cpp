@@ -418,7 +418,7 @@ void Mutex::check_rank(Thread* thread) {
     if (least != NULL && least->rank() <= this->rank() && !check_can_be_skipped) {
       thread->print_owned_locks();
       assert(false, "Attempting to acquire lock %s/%d out of order with lock %s/%d -- "
-             "possible deadlock", this->name(), this->rank(),least->name(), least->rank());
+             "possible deadlock", this->name(), this->rank(), least->name(), least->rank());
     }
   }
 }
