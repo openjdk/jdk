@@ -672,11 +672,18 @@ jobject createNetworkInterface
         (*env)->SetObjectArrayElement(env, addrArr, addr_index, iaObj);
         addrs = addrs->next;
         addr_index++;
+        (*env)->DeleteLocalRef(env, iaObj);
+        (*env)->DeleteLocalRef(env, ibObj);
+        (*env)->DeleteLocalRef(env, ia2Obj);
     }
     (*env)->SetObjectField(env, netifObj, ni_addrsID, addrArr);
     (*env)->SetObjectField(env, netifObj, ni_bindsID, bindsArr);
 
     free_netaddr(netaddrP);
+    (*env)->DeleteLocalRef(env, name);
+    (*env)->DeleteLocalRef(env, displayName);
+    (*env)->DeleteLocalRef(env, addrArr);
+    (*env)->DeleteLocalRef(env, bindsArr);
 
     /*
      * Windows doesn't have virtual interfaces, so child array
@@ -687,6 +694,7 @@ jobject createNetworkInterface
       return NULL;
     }
     (*env)->SetObjectField(env, netifObj, ni_childsID, childArr);
+    (*env)->DeleteLocalRef(env, childArr);
 
     /* return the NetworkInterface */
     return netifObj;
@@ -959,6 +967,7 @@ JNIEXPORT jobjectArray JNICALL Java_java_net_NetworkInterface_getAll
 
         /* put the NetworkInterface into the array */
         (*env)->SetObjectArrayElement(env, netIFArr, arr_index++, netifObj);
+        (*env)->DeleteLocalRef(env, netifObj);
 
         curr = curr->next;
     }
