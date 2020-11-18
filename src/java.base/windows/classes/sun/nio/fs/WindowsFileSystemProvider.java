@@ -46,7 +46,7 @@ import static sun.nio.fs.WindowsConstants.*;
 class WindowsFileSystemProvider
     extends AbstractFileSystemProvider
 {
-    private static final Unsafe unsafe = Unsafe.getUnsafe();
+    private static final byte[] EMPTY_PATH = new byte[0];
 
     private final WindowsFileSystem theFileSystem;
 
@@ -628,7 +628,7 @@ class WindowsFileSystemProvider
     public byte[] getSunPathForSocketFile(Path obj) {
         WindowsPath file = WindowsPath.toWindowsPath(obj);
         String s = file.toString();
-        return s.getBytes(StandardCharsets.UTF_8);
+        return s.isEmpty() ? EMPTY_PATH : s.getBytes(StandardCharsets.UTF_8);
     }
 
 }
