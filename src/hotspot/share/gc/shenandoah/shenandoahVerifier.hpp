@@ -65,7 +65,11 @@ public:
     _verify_marked_incomplete,
 
     // Objects should be marked in "complete" bitmap.
-    _verify_marked_complete
+    _verify_marked_complete,
+
+    // Objects should be marked in "complete" bitmap, except j.l.r.Reference referents, which
+    // may be dangling after marking but before conc-weakrefs-processing.
+    _verify_marked_complete_except_references
   } VerifyMarked;
 
   typedef enum {
@@ -192,6 +196,7 @@ public:
   void verify_roots_in_to_space_except(ShenandoahRootVerifier::RootTypes types);
 
   void verify_roots_no_forwarded();
+  void verify_roots_no_forwarded(ShenandoahRootVerifier::RootTypes types);
   void verify_roots_no_forwarded_except(ShenandoahRootVerifier::RootTypes types);
 };
 

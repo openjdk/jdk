@@ -1899,12 +1899,6 @@ const bool Matcher::misaligned_vectors_ok() {
   return true;
 }
 
-// x86 AES instructions are compatible with SunJCE expanded
-// keys, hence we do not need to pass the original key to stubs
-const bool Matcher::pass_original_key_for_aes() {
-  return false;
-}
-
 
 const bool Matcher::convi2l_type_required = true;
 
@@ -5787,7 +5781,7 @@ instruct evminmaxFP_reg_eavx(vec dst, vec a, vec b, vec atmp, vec btmp) %{
             is_floating_point_type(vector_element_basic_type(n))); // T_FLOAT, T_DOUBLE
   match(Set dst (MinV a b));
   match(Set dst (MaxV a b));
-  effect(USE a, USE b, TEMP atmp, TEMP btmp);
+  effect(TEMP dst, USE a, USE b, TEMP atmp, TEMP btmp);
   format %{ "vector_minmaxFP  $dst,$a,$b\t!using $atmp, $btmp as TEMP" %}
   ins_encode %{
     assert(UseAVX > 2, "required");
@@ -6957,6 +6951,7 @@ instruct extractI(rRegI dst, legVec src, immU8 idx) %{
 #ifdef _LP64
   match(Set dst (ExtractB src idx));
 #endif
+  format %{ "extractI $dst,$src,$idx\t!" %}
   ins_encode %{
     assert($idx$$constant < (int)vector_length(this, $src), "out of bounds");
 
@@ -6975,6 +6970,7 @@ instruct vextractI(rRegI dst, legVec src, immI idx, legVec vtmp) %{
   match(Set dst (ExtractB src idx));
 #endif
   effect(TEMP vtmp);
+  format %{ "vextractI $dst,$src,$idx\t! using $vtmp as TEMP" %}
   ins_encode %{
     assert($idx$$constant < (int)vector_length(this, $src), "out of bounds");
 
@@ -6989,6 +6985,7 @@ instruct vextractI(rRegI dst, legVec src, immI idx, legVec vtmp) %{
 instruct extractL(rRegL dst, legVec src, immU8 idx) %{
   predicate(vector_length(n->in(1)) <= 2); // src
   match(Set dst (ExtractL src idx));
+  format %{ "extractL $dst,$src,$idx\t!" %}
   ins_encode %{
     assert(UseSSE >= 4, "required");
     assert($idx$$constant < (int)vector_length(this, $src), "out of bounds");
@@ -7003,6 +7000,7 @@ instruct vextractL(rRegL dst, legVec src, immU8 idx, legVec vtmp) %{
             vector_length(n->in(1)) == 8);  // src
   match(Set dst (ExtractL src idx));
   effect(TEMP vtmp);
+  format %{ "vextractL $dst,$src,$idx\t! using $vtmp as TEMP" %}
   ins_encode %{
     assert($idx$$constant < (int)vector_length(this, $src), "out of bounds");
 
@@ -7017,6 +7015,7 @@ instruct extractF(legRegF dst, legVec src, immU8 idx, rRegI tmp, legVec vtmp) %{
   predicate(vector_length(n->in(1)) <= 4);
   match(Set dst (ExtractF src idx));
   effect(TEMP dst, TEMP tmp, TEMP vtmp);
+  format %{ "extractF $dst,$src,$idx\t! using $tmp, $vtmp as TEMP" %}
   ins_encode %{
     assert($idx$$constant < (int)vector_length(this, $src), "out of bounds");
 
@@ -7030,6 +7029,7 @@ instruct vextractF(legRegF dst, legVec src, immU8 idx, rRegI tmp, legVec vtmp) %
             vector_length(n->in(1)/*src*/) == 16);
   match(Set dst (ExtractF src idx));
   effect(TEMP tmp, TEMP vtmp);
+  format %{ "vextractF $dst,$src,$idx\t! using $tmp, $vtmp as TEMP" %}
   ins_encode %{
     assert($idx$$constant < (int)vector_length(this, $src), "out of bounds");
 
@@ -7042,6 +7042,7 @@ instruct vextractF(legRegF dst, legVec src, immU8 idx, rRegI tmp, legVec vtmp) %
 instruct extractD(legRegD dst, legVec src, immU8 idx) %{
   predicate(vector_length(n->in(1)) == 2); // src
   match(Set dst (ExtractD src idx));
+  format %{ "extractD $dst,$src,$idx\t!" %}
   ins_encode %{
     assert($idx$$constant < (int)vector_length(this, $src), "out of bounds");
 
@@ -7055,6 +7056,7 @@ instruct vextractD(legRegD dst, legVec src, immU8 idx, legVec vtmp) %{
             vector_length(n->in(1)) == 8);  // src
   match(Set dst (ExtractD src idx));
   effect(TEMP vtmp);
+  format %{ "vextractD $dst,$src,$idx\t! using $vtmp as TEMP" %}
   ins_encode %{
     assert($idx$$constant < (int)vector_length(this, $src), "out of bounds");
 

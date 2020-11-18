@@ -77,7 +77,7 @@ struct maxp
 
   void set_num_glyphs (unsigned int count)
   {
-    numGlyphs.set (count);
+    numGlyphs = count;
   }
 
   bool sanitize (hb_sanitize_context_t *c) const
@@ -94,46 +94,43 @@ struct maxp
     return_trace (likely (version.major == 0 && version.minor == 0x5000u));
   }
 
-  bool subset (hb_subset_plan_t *plan) const
+  bool subset (hb_subset_context_t *c) const
   {
-    hb_blob_t *maxp_blob = hb_sanitize_context_t().reference_table<maxp> (plan->source);
-    hb_blob_t *maxp_prime_blob = hb_blob_copy_writable_or_fail (maxp_blob);
-    hb_blob_destroy (maxp_blob);
+    TRACE_SUBSET (this);
+    maxp *maxp_prime = c->serializer->embed (this);
+    if (unlikely (!maxp_prime)) return_trace (false);
 
-    if (unlikely (!maxp_prime_blob)) {
-      return false;
-    }
-    maxp *maxp_prime = (maxp *) hb_blob_get_data (maxp_prime_blob, nullptr);
-
-    maxp_prime->set_num_glyphs (plan->glyphs.length);
-    if (plan->drop_hints)
-      drop_hint_fields (plan, maxp_prime);
-
-    bool result = plan->add_table (HB_OT_TAG_maxp, maxp_prime_blob);
-    hb_blob_destroy (maxp_prime_blob);
-    return result;
-  }
-
-  static void drop_hint_fields (hb_subset_plan_t *plan HB_UNUSED, maxp *maxp_prime)
-  {
+    maxp_prime->numGlyphs = c->plan->num_output_glyphs ();
     if (maxp_prime->version.major == 1)
     {
-      maxpV1Tail &v1 = StructAfter<maxpV1Tail> (*maxp_prime);
-      v1.maxZones.set (1);
-      v1.maxTwilightPoints.set (0);
-      v1.maxStorage.set (0);
-      v1.maxFunctionDefs.set (0);
-      v1.maxInstructionDefs.set (0);
-      v1.maxStackElements.set (0);
-      v1.maxSizeOfInstructions.set (0);
+      const maxpV1Tail *src_v1 = &StructAfter<maxpV1Tail> (*this);
+      maxpV1Tail *dest_v1 = c->serializer->embed<maxpV1Tail> (src_v1);
+      if (unlikely (!dest_v1)) return_trace (false);
+
+      if (c->plan->drop_hints)
+        drop_hint_fields (dest_v1);
     }
+
+    return_trace (true);
+  }
+
+  static void drop_hint_fields (maxpV1Tail* dest_v1)
+  {
+    dest_v1->maxZones = 1;
+    dest_v1->maxTwilightPoints = 0;
+    dest_v1->maxStorage = 0;
+    dest_v1->maxFunctionDefs = 0;
+    dest_v1->maxInstructionDefs = 0;
+    dest_v1->maxStackElements = 0;
+    dest_v1->maxSizeOfInstructions = 0;
   }
 
   protected:
-  FixedVersion<>version;                /* Version of the maxp table (0.5 or 1.0),
-                                         * 0x00005000u or 0x00010000u. */
-  HBUINT16      numGlyphs;              /* The number of glyphs in the font. */
-/*maxpV1Tail    v1Tail[VAR]; */
+  FixedVersion<>version;/* Version of the maxp table (0.5 or 1.0),
+                         * 0x00005000u or 0x00010000u. */
+  HBUINT16      numGlyphs;
+                        /* The number of glyphs in the font. */
+/*maxpV1Tail    v1Tail[HB_VAR_ARRAY]; */
   public:
   DEFINE_SIZE_STATIC (6);
 };

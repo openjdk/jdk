@@ -400,7 +400,7 @@ public final class Utils {
         for (char c : allowedTokenChars) {
             tchar[c] = true;
         }
-        for (char c = 0x21; c < 0xFF; c++) {
+        for (char c = 0x21; c <= 0xFF; c++) {
             fieldvchar[c] = true;
         }
         fieldvchar[0x7F] = false; // a little hole (DEL) in the range
