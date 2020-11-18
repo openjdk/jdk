@@ -6851,7 +6851,9 @@ address generate_avx_ghash_processBlocks() {
     StubRoutines::x86::_vector_iota_indices = generate_iota_indices("iota_indices");
 
     // support for verify_oop (must happen after universe_init)
-    StubRoutines::_verify_oop_subroutine_entry = generate_verify_oop();
+    if (VerifyOops) {
+      StubRoutines::_verify_oop_subroutine_entry = generate_verify_oop();
+    }
 
     // data cache line writeback
     StubRoutines::_data_cache_writeback = generate_data_cache_writeback();

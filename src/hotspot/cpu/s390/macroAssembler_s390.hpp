@@ -350,9 +350,6 @@ class MacroAssembler: public Assembler {
   // Uses constant_metadata_address.
   inline bool set_metadata_constant(Metadata* md, Register d);
 
-  virtual RegisterOrConstant delayed_value_impl(intptr_t* delayed_value_addr,
-                                                Register tmp,
-                                                int offset);
   //
   // branch, jump
   //

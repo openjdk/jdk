@@ -119,8 +119,6 @@ protected:
   void cisc_spilling_operand_name_parse(FrameForm *frame, bool native);
   void stack_alignment_parse(FrameForm *frame);
   void return_addr_parse(FrameForm *frame, bool native);
-  void preserve_stack_parse(FrameForm *frame);
-  char *calling_convention_parse();
   char *return_value_parse();
 
   // Parse components of the register section

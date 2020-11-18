@@ -52,6 +52,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/threadCritical.hpp"
 #include "utilities/exceptions.hpp"
+#include "utilities/macros.hpp"
 
 // no precompiled headers
 
@@ -101,11 +102,14 @@
   There really shouldn't be any handles remaining to trash but this is cheap
   in relation to a safepoint.
 */
-#define SAFEPOINT                                                                 \
-    {                                                                             \
-       /* zap freed handles rather than GC'ing them */                            \
-       HandleMarkCleaner __hmc(THREAD);                                           \
-       CALL_VM(SafepointMechanism::process_if_requested(THREAD), handle_exception); \
+#define SAFEPOINT                                                                                            \
+    {                                                                                                        \
+       /* zap freed handles rather than GC'ing them */                                                       \
+       HandleMarkCleaner __hmc(THREAD);                                                                      \
+       if (SafepointMechanism::should_process(THREAD)) {                                                     \
+         CALL_VM(SafepointMechanism::process_if_requested_with_exit_check(THREAD, true /* check asyncs */),  \
+                 handle_exception);                                                                          \
+       }                                                                                                     \
     }
 
 /*
@@ -153,7 +157,7 @@
 #endif
 
 #undef DEBUGGER_SINGLE_STEP_NOTIFY
-#ifdef VM_JVMTI
+#if INCLUDE_JVMTI
 /* NOTE: (kbr) This macro must be called AFTER the PC has been
    incremented. JvmtiExport::at_single_stepping_point() may cause a
    breakpoint opcode to get inserted at the current PC to allow the
@@ -163,33 +167,31 @@
    to get the current opcode. This will override any other prefetching
    that might have occurred.
 */
-#define DEBUGGER_SINGLE_STEP_NOTIFY()                                            \
-{                                                                                \
-      if (_jvmti_interp_events) {                                                \
-        if (JvmtiExport::should_post_single_step()) {                            \
-          DECACHE_STATE();                                                       \
-          SET_LAST_JAVA_FRAME();                                                 \
-          ThreadInVMfromJava trans(THREAD);                                      \
-          JvmtiExport::at_single_stepping_point(THREAD,                          \
-                                          istate->method(),                      \
-                                          pc);                                   \
-          RESET_LAST_JAVA_FRAME();                                               \
-          CACHE_STATE();                                                         \
-          if (THREAD->has_pending_popframe() &&                                  \
-              !THREAD->pop_frame_in_process()) {                                 \
-            goto handle_Pop_Frame;                                               \
-          }                                                                      \
-          if (THREAD->jvmti_thread_state() &&                                    \
-              THREAD->jvmti_thread_state()->is_earlyret_pending()) {             \
-            goto handle_Early_Return;                                            \
-          }                                                                      \
-          opcode = *pc;                                                          \
-        }                                                                        \
-      }                                                                          \
+#define DEBUGGER_SINGLE_STEP_NOTIFY()                                        \
+{                                                                            \
+    if (JVMTI_ENABLED && JvmtiExport::should_post_single_step()) {           \
+      DECACHE_STATE();                                                       \
+      SET_LAST_JAVA_FRAME();                                                 \
+      ThreadInVMfromJava trans(THREAD);                                      \
+      JvmtiExport::at_single_stepping_point(THREAD,                          \
+                                           istate->method(),                 \
+                                           pc);                              \
+      RESET_LAST_JAVA_FRAME();                                               \
+      CACHE_STATE();                                                         \
+      if (THREAD->has_pending_popframe() &&                                  \
+        !THREAD->pop_frame_in_process()) {                                   \
+        goto handle_Pop_Frame;                                               \
+      }                                                                      \
+      if (THREAD->jvmti_thread_state() &&                                    \
+          THREAD->jvmti_thread_state()->is_earlyret_pending()) {             \
+        goto handle_Early_Return;                                            \
+      }                                                                      \
+      opcode = *pc;                                                          \
+   }                                                                         \
 }
 #else
 #define DEBUGGER_SINGLE_STEP_NOTIFY()
-#endif
+#endif // INCLUDE_JVMTI
 
 /*
  * CONTINUE - Macro for executing the next opcode.
@@ -387,22 +389,18 @@
 
 /*
  * BytecodeInterpreter::run(interpreterState istate)
- * BytecodeInterpreter::runWithChecks(interpreterState istate)
  *
  * The real deal. This is where byte codes actually get interpreted.
  * Basically it's a big while loop that iterates until we return from
  * the method passed in.
- *
- * The runWithChecks is used if JVMTI is enabled.
- *
  */
-#if defined(VM_JVMTI)
-void
-BytecodeInterpreter::runWithChecks(interpreterState istate) {
-#else
-void
-BytecodeInterpreter::run(interpreterState istate) {
-#endif
+
+// Instantiate two variants of the method for future linking.
+template void BytecodeInterpreter::run<true>(interpreterState istate);
+template void BytecodeInterpreter::run<false>(interpreterState istate);
+
+template<bool JVMTI_ENABLED>
+void BytecodeInterpreter::run(interpreterState istate) {
 
   // In order to simplify some tests based on switches set at runtime
   // we invoke the interpreter a single time after switches are enabled
@@ -417,9 +415,6 @@ BytecodeInterpreter::run(interpreterState istate) {
   if (checkit && *c_addr != c_value) {
     os::breakpoint();
   }
-#ifdef VM_JVMTI
-  static bool _jvmti_interp_events = 0;
-#endif
 
 #ifdef ASSERT
   if (istate->_msg != initialize) {
@@ -555,9 +550,6 @@ BytecodeInterpreter::run(interpreterState istate) {
   switch (istate->msg()) {
     case initialize: {
       if (initialized++) ShouldNotReachHere(); // Only one initialize call.
-#ifdef VM_JVMTI
-      _jvmti_interp_events = JvmtiExport::can_post_interpreter_events();
-#endif
       return;
     }
     break;
@@ -667,17 +659,13 @@ BytecodeInterpreter::run(interpreterState istate) {
       }
       THREAD->clr_do_not_unlock();
 
-      // Notify jvmti
-#ifdef VM_JVMTI
-      if (_jvmti_interp_events) {
-        // Whenever JVMTI puts a thread in interp_only_mode, method
-        // entry/exit events are sent for that thread to track stack depth.
-        if (THREAD->is_interp_only_mode()) {
-          CALL_VM(InterpreterRuntime::post_method_entry(THREAD),
-                  handle_exception);
-        }
+      // Notify jvmti.
+      // Whenever JVMTI puts a thread in interp_only_mode, method
+      // entry/exit events are sent for that thread to track stack depth.
+      if (JVMTI_ENABLED && THREAD->is_interp_only_mode()) {
+        CALL_VM(InterpreterRuntime::post_method_entry(THREAD),
+                handle_exception);
       }
-#endif /* VM_JVMTI */
 
       goto run;
     }
@@ -1800,8 +1788,7 @@ run:
             cache = cp->entry_at(index);
           }
 
-#ifdef VM_JVMTI
-          if (_jvmti_interp_events) {
+          if (JVMTI_ENABLED) {
             int *count_addr;
             oop obj;
             // Check to see if a field modification watch has been set
@@ -1820,7 +1807,6 @@ run:
                                           handle_exception);
             }
           }
-#endif /* VM_JVMTI */
 
           oop obj;
           if ((Bytecodes::Code)opcode == Bytecodes::_getstatic) {
@@ -1898,8 +1884,7 @@ run:
             cache = cp->entry_at(index);
           }
 
-#ifdef VM_JVMTI
-          if (_jvmti_interp_events) {
+          if (JVMTI_ENABLED) {
             int *count_addr;
             oop obj;
             // Check to see if a field modification watch has been set
@@ -1925,7 +1910,6 @@ run:
                                           handle_exception);
             }
           }
-#endif /* VM_JVMTI */
 
           // QQQ Need to make this as inlined as possible. Probably need to split all the bytecode cases
           // out so c++ compiler has a chance for constant prop to fold everything possible away.
@@ -2011,30 +1995,13 @@ run:
           if (ik->is_initialized() && ik->can_be_fastpath_allocated() ) {
             size_t obj_size = ik->size_helper();
             oop result = NULL;
-            // If the TLAB isn't pre-zeroed then we'll have to do it
-            bool need_zero = !ZeroTLAB;
             if (UseTLAB) {
               result = (oop) THREAD->tlab().allocate(obj_size);
             }
-            // Disable non-TLAB-based fast-path, because profiling requires that all
-            // allocations go through InterpreterRuntime::_new() if THREAD->tlab().allocate
-            // returns NULL.
-            if (result == NULL) {
-              need_zero = true;
-              // Try allocate in shared eden
-            retry:
-              HeapWord* compare_to = *Universe::heap()->top_addr();
-              HeapWord* new_top = compare_to + obj_size;
-              if (new_top <= *Universe::heap()->end_addr()) {
-                if (Atomic::cmpxchg(Universe::heap()->top_addr(), compare_to, new_top) != compare_to) {
-                  goto retry;
-                }
-                result = (oop) compare_to;
-              }
-            }
             if (result != NULL) {
-              // Initialize object (if nonzero size and need) and then the header
-              if (need_zero ) {
+              // Initialize object (if nonzero size and need) and then the header.
+              // If the TLAB isn't pre-zeroed then we'll have to do it.
+              if (!ZeroTLAB) {
                 HeapWord* to_zero = cast_from_oop<HeapWord*>(result) + sizeof(oopDesc) / oopSize;
                 obj_size -= sizeof(oopDesc) / oopSize;
                 if (obj_size > 0 ) {
@@ -2404,11 +2371,9 @@ run:
         if (callee != NULL) {
           istate->set_callee(callee);
           istate->set_callee_entry_point(callee->from_interpreted_entry());
-#ifdef VM_JVMTI
-          if (JvmtiExport::can_post_interpreter_events() && THREAD->is_interp_only_mode()) {
+          if (JVMTI_ENABLED && THREAD->is_interp_only_mode()) {
             istate->set_callee_entry_point(callee->interpreter_entry());
           }
-#endif /* VM_JVMTI */
           istate->set_bcp_advance(5);
           UPDATE_PC_AND_RETURN(0); // I'll be back...
         }
@@ -2466,11 +2431,9 @@ run:
 
         istate->set_callee(callee);
         istate->set_callee_entry_point(callee->from_interpreted_entry());
-#ifdef VM_JVMTI
-        if (JvmtiExport::can_post_interpreter_events() && THREAD->is_interp_only_mode()) {
+        if (JVMTI_ENABLED && THREAD->is_interp_only_mode()) {
           istate->set_callee_entry_point(callee->interpreter_entry());
         }
-#endif /* VM_JVMTI */
         istate->set_bcp_advance(5);
         UPDATE_PC_AND_RETURN(0); // I'll be back...
       }
@@ -2536,11 +2499,9 @@ run:
 
           istate->set_callee(callee);
           istate->set_callee_entry_point(callee->from_interpreted_entry());
-#ifdef VM_JVMTI
-          if (JvmtiExport::can_post_interpreter_events() && THREAD->is_interp_only_mode()) {
+          if (JVMTI_ENABLED && THREAD->is_interp_only_mode()) {
             istate->set_callee_entry_point(callee->interpreter_entry());
           }
-#endif /* VM_JVMTI */
           istate->set_bcp_advance(3);
           UPDATE_PC_AND_RETURN(0); // I'll be back...
         }
@@ -2963,25 +2924,16 @@ run:
     // (with this note) in anticipation of changing the vm and the tests
     // simultaneously.
 
-
-    //
     suppress_exit_event = suppress_exit_event || illegal_state_oop() != NULL;
 
+    // Whenever JVMTI puts a thread in interp_only_mode, method
+    // entry/exit events are sent for that thread to track stack depth.
 
-
-#ifdef VM_JVMTI
-      if (_jvmti_interp_events) {
-        // Whenever JVMTI puts a thread in interp_only_mode, method
-        // entry/exit events are sent for that thread to track stack depth.
-        if ( !suppress_exit_event && THREAD->is_interp_only_mode() ) {
-          {
-            // Prevent any HandleMarkCleaner from freeing our live handles
-            HandleMark __hm(THREAD);
-            CALL_VM_NOCHECK(InterpreterRuntime::post_method_exit(THREAD));
-          }
-        }
-      }
-#endif /* VM_JVMTI */
+    if (JVMTI_ENABLED && !suppress_exit_event && THREAD->is_interp_only_mode()) {
+      // Prevent any HandleMarkCleaner from freeing our live handles
+      HandleMark __hm(THREAD);
+      CALL_VM_NOCHECK(InterpreterRuntime::post_method_exit(THREAD));
+    }
 
     //
     // See if we are returning any exception
@@ -3032,13 +2984,6 @@ finish:
   return;
 }
 
-/*
- * All the code following this point is only produced once and is not present
- * in the JVMTI version of the interpreter
-*/
-
-#ifndef VM_JVMTI
-
 // This constructor should only be used to contruct the object to signal
 // interpreter initialization. All other instances should be created by
 // the frame manager.
@@ -3049,150 +2994,11 @@ BytecodeInterpreter::BytecodeInterpreter(messages msg) {
   _prev_link = NULL;
 }
 
-// Inline static functions for Java Stack and Local manipulation
-
-// The implementations are platform dependent. We have to worry about alignment
-// issues on some machines which can change on the same platform depending on
-// whether it is an LP64 machine also.
-address BytecodeInterpreter::stack_slot(intptr_t *tos, int offset) {
-  return (address) tos[Interpreter::expr_index_at(-offset)];
-}
-
-jint BytecodeInterpreter::stack_int(intptr_t *tos, int offset) {
-  return *((jint*) &tos[Interpreter::expr_index_at(-offset)]);
-}
-
-jfloat BytecodeInterpreter::stack_float(intptr_t *tos, int offset) {
-  return *((jfloat *) &tos[Interpreter::expr_index_at(-offset)]);
-}
-
-oop BytecodeInterpreter::stack_object(intptr_t *tos, int offset) {
-  return cast_to_oop(tos [Interpreter::expr_index_at(-offset)]);
-}
-
-jdouble BytecodeInterpreter::stack_double(intptr_t *tos, int offset) {
-  return ((VMJavaVal64*) &tos[Interpreter::expr_index_at(-offset)])->d;
-}
-
-jlong BytecodeInterpreter::stack_long(intptr_t *tos, int offset) {
-  return ((VMJavaVal64 *) &tos[Interpreter::expr_index_at(-offset)])->l;
-}
-
-// only used for value types
-void BytecodeInterpreter::set_stack_slot(intptr_t *tos, address value,
-                                                        int offset) {
-  *((address *)&tos[Interpreter::expr_index_at(-offset)]) = value;
-}
-
-void BytecodeInterpreter::set_stack_int(intptr_t *tos, int value,
-                                                       int offset) {
-  *((jint *)&tos[Interpreter::expr_index_at(-offset)]) = value;
-}
-
-void BytecodeInterpreter::set_stack_float(intptr_t *tos, jfloat value,
-                                                         int offset) {
-  *((jfloat *)&tos[Interpreter::expr_index_at(-offset)]) = value;
-}
-
-void BytecodeInterpreter::set_stack_object(intptr_t *tos, oop value,
-                                                          int offset) {
-  *((oop *)&tos[Interpreter::expr_index_at(-offset)]) = value;
-}
-
-// needs to be platform dep for the 32 bit platforms.
-void BytecodeInterpreter::set_stack_double(intptr_t *tos, jdouble value,
-                                                          int offset) {
-  ((VMJavaVal64*)&tos[Interpreter::expr_index_at(-offset)])->d = value;
-}
-
-void BytecodeInterpreter::set_stack_double_from_addr(intptr_t *tos,
-                                              address addr, int offset) {
-  (((VMJavaVal64*)&tos[Interpreter::expr_index_at(-offset)])->d =
-                        ((VMJavaVal64*)addr)->d);
-}
-
-void BytecodeInterpreter::set_stack_long(intptr_t *tos, jlong value,
-                                                        int offset) {
-  ((VMJavaVal64*)&tos[Interpreter::expr_index_at(-offset+1)])->l = 0xdeedbeeb;
-  ((VMJavaVal64*)&tos[Interpreter::expr_index_at(-offset)])->l = value;
-}
-
-void BytecodeInterpreter::set_stack_long_from_addr(intptr_t *tos,
-                                            address addr, int offset) {
-  ((VMJavaVal64*)&tos[Interpreter::expr_index_at(-offset+1)])->l = 0xdeedbeeb;
-  ((VMJavaVal64*)&tos[Interpreter::expr_index_at(-offset)])->l =
-                        ((VMJavaVal64*)addr)->l;
-}
-
-// Locals
-
-address BytecodeInterpreter::locals_slot(intptr_t* locals, int offset) {
-  return (address)locals[Interpreter::local_index_at(-offset)];
-}
-jint BytecodeInterpreter::locals_int(intptr_t* locals, int offset) {
-  return (jint)locals[Interpreter::local_index_at(-offset)];
-}
-jfloat BytecodeInterpreter::locals_float(intptr_t* locals, int offset) {
-  return (jfloat)locals[Interpreter::local_index_at(-offset)];
-}
-oop BytecodeInterpreter::locals_object(intptr_t* locals, int offset) {
-  return cast_to_oop(locals[Interpreter::local_index_at(-offset)]);
-}
-jdouble BytecodeInterpreter::locals_double(intptr_t* locals, int offset) {
-  return ((VMJavaVal64*)&locals[Interpreter::local_index_at(-(offset+1))])->d;
-}
-jlong BytecodeInterpreter::locals_long(intptr_t* locals, int offset) {
-  return ((VMJavaVal64*)&locals[Interpreter::local_index_at(-(offset+1))])->l;
-}
-
-// Returns the address of locals value.
-address BytecodeInterpreter::locals_long_at(intptr_t* locals, int offset) {
-  return ((address)&locals[Interpreter::local_index_at(-(offset+1))]);
-}
-address BytecodeInterpreter::locals_double_at(intptr_t* locals, int offset) {
-  return ((address)&locals[Interpreter::local_index_at(-(offset+1))]);
-}
-
-// Used for local value or returnAddress
-void BytecodeInterpreter::set_locals_slot(intptr_t *locals,
-                                   address value, int offset) {
-  *((address*)&locals[Interpreter::local_index_at(-offset)]) = value;
-}
-void BytecodeInterpreter::set_locals_int(intptr_t *locals,
-                                   jint value, int offset) {
-  *((jint *)&locals[Interpreter::local_index_at(-offset)]) = value;
-}
-void BytecodeInterpreter::set_locals_float(intptr_t *locals,
-                                   jfloat value, int offset) {
-  *((jfloat *)&locals[Interpreter::local_index_at(-offset)]) = value;
-}
-void BytecodeInterpreter::set_locals_object(intptr_t *locals,
-                                   oop value, int offset) {
-  *((oop *)&locals[Interpreter::local_index_at(-offset)]) = value;
-}
-void BytecodeInterpreter::set_locals_double(intptr_t *locals,
-                                   jdouble value, int offset) {
-  ((VMJavaVal64*)&locals[Interpreter::local_index_at(-(offset+1))])->d = value;
-}
-void BytecodeInterpreter::set_locals_long(intptr_t *locals,
-                                   jlong value, int offset) {
-  ((VMJavaVal64*)&locals[Interpreter::local_index_at(-(offset+1))])->l = value;
-}
-void BytecodeInterpreter::set_locals_double_from_addr(intptr_t *locals,
-                                   address addr, int offset) {
-  ((VMJavaVal64*)&locals[Interpreter::local_index_at(-(offset+1))])->d = ((VMJavaVal64*)addr)->d;
-}
-void BytecodeInterpreter::set_locals_long_from_addr(intptr_t *locals,
-                                   address addr, int offset) {
-  ((VMJavaVal64*)&locals[Interpreter::local_index_at(-(offset+1))])->l = ((VMJavaVal64*)addr)->l;
-}
-
 void BytecodeInterpreter::astore(intptr_t* tos,    int stack_offset,
                           intptr_t* locals, int locals_offset) {
   intptr_t value = tos[Interpreter::expr_index_at(-stack_offset)];
   locals[Interpreter::local_index_at(-locals_offset)] = value;
 }
-
 
 void BytecodeInterpreter::copy_stack_slot(intptr_t *tos, int from_offset,
                                    int to_offset) {
@@ -3203,6 +3009,7 @@ void BytecodeInterpreter::copy_stack_slot(intptr_t *tos, int from_offset,
 void BytecodeInterpreter::dup(intptr_t *tos) {
   copy_stack_slot(tos, -1, 0);
 }
+
 void BytecodeInterpreter::dup2(intptr_t *tos) {
   copy_stack_slot(tos, -2, 0);
   copy_stack_slot(tos, -1, 1);
@@ -3307,5 +3114,3 @@ extern "C" {
   }
 }
 #endif // PRODUCT
-
-#endif // JVMTI

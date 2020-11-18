@@ -274,6 +274,7 @@ public:
   // Fast int or long constant.  Same as TypeInt::make(i) or TypeLong::make(l).
   ConINode* intcon(jint i);
   ConLNode* longcon(jlong l);
+  ConNode* integercon(jlong l, BasicType bt);
 
   // Fast zero or null constant.  Same as makecon(Type::get_zero_type(bt)).
   ConNode* zerocon(BasicType bt);

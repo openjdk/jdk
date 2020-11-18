@@ -1105,9 +1105,9 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
           if (bt != BoolTest::ne) {
             if (stride_t->_hi < 0) {          // Down-counter loop
               swap(lo, hi);
-              return TypeInt::make(MIN2(lo->_lo, hi->_lo) , hi->_hi, 3);
+              return TypeInt::make(MIN2(lo->_lo, hi->_lo) , hi->_hi, 3)->filter_speculative(_type);
             } else if (stride_t->_lo >= 0) {
-              return TypeInt::make(lo->_lo, MAX2(lo->_hi, hi->_hi), 3);
+              return TypeInt::make(lo->_lo, MAX2(lo->_hi, hi->_hi), 3)->filter_speculative(_type);
             }
           }
         }
@@ -1970,12 +1970,14 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // Wait until after parsing for the type information to propagate from the casts.
       assert(can_reshape, "Invalid during parsing");
       const Type* phi_type = bottom_type();
-      assert(phi_type->isa_int() || phi_type->isa_ptr(), "bad phi type");
+      assert(phi_type->isa_int() || phi_type->isa_ptr() || phi_type->isa_long(), "bad phi type");
       // Add casts to carry the control dependency of the Phi that is
       // going away
       Node* cast = NULL;
       if (phi_type->isa_int()) {
         cast = ConstraintCastNode::make_cast(Op_CastII, r, uin, phi_type, true);
+      } else if (phi_type->isa_long()) {
+        cast = ConstraintCastNode::make_cast(Op_CastLL, r, uin, phi_type, true);
       } else {
         const Type* uin_type = phase->type(uin);
         if (!phi_type->isa_oopptr() && !uin_type->isa_oopptr()) {
@@ -2302,12 +2304,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           Node* phi = mms.memory();
           mms.set_memory(phase->transform(phi));
         }
-        if (igvn) { // Unhook.
-          igvn->hash_delete(hook);
-          for (uint i = 1; i < hook->req(); i++) {
-            hook->set_req(i, NULL);
-          }
-        }
+        hook->destruct(igvn);
         // Replace self with the result.
         return result;
       }

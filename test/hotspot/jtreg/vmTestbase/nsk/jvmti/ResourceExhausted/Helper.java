@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,28 @@
  */
 package nsk.jvmti.ResourceExhausted;
 
+import jtreg.SkippedException;
+
 public class Helper {
 
-    static native boolean gotExhaustedEvent();
+    static native int getExhaustedEventFlags();
     static native void resetExhaustedEvent();
 
-    static boolean checkResult(String eventName) {
-        if ( ! gotExhaustedEvent() ) {
+    static final int JVMTI_RESOURCE_EXHAUSTED_OOM_ERROR = 1;
+    static final int JVMTI_RESOURCE_EXHAUSTED_JAVA_HEAP = 2;
+    static final int JVMTI_RESOURCE_EXHAUSTED_THREADS = 4;
+
+    static boolean checkResult(int expectedFlag, String eventName) {
+        int got = getExhaustedEventFlags();
+        if (got == 0) {
             System.err.println("Failure: Expected ResourceExhausted event after " + eventName + " did not occur");
             return false;
         }
 
+        if ((got & expectedFlag) == 0) {
+            System.err.println("Warning: did not get expected flag bit (expected: "+ expectedFlag + ", got: " + got + ")");
+            throw new SkippedException("Test did not get expected flag value");
+        }
         System.out.println("Got expected ResourceExhausted event");
         return true;
     }
