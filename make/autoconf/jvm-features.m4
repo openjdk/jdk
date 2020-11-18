@@ -352,7 +352,6 @@ AC_DEFUN_ONCE([JVM_FEATURES_CHECK_JVMCI],
 ###############################################################################
 # Check if the feature 'shenandoahgc' is available on this platform.
 #
-# TODO: Need to allow Zero builds on all platforms
 AC_DEFUN_ONCE([JVM_FEATURES_CHECK_SHENANDOAHGC],
 [
   JVM_FEATURES_CHECK_AVAILABILITY(shenandoahgc, [
