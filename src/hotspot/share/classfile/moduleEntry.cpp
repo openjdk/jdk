@@ -467,7 +467,7 @@ void ModuleEntry::init_archived_oops() {
   if (module_obj != NULL) {
     oop m = HeapShared::find_archived_heap_object(module_obj);
     assert(m != NULL, "sanity");
-    _archived_module_narrow_oop = CompressedOops::encode(m);
+    _archived_module_index = HeapShared::append_root(m);
   }
   assert(shared_protection_domain() == NULL, "never set during -Xshare:dump");
   // Clear handles and restore at run time. Handles cannot be archived.
@@ -481,8 +481,8 @@ void ModuleEntry::load_from_archive(ClassLoaderData* loader_data) {
   JFR_ONLY(INIT_ID(this);)
 }
 
-void ModuleEntry::restore_archive_oops(ClassLoaderData* loader_data) {
-  Handle module_handle(Thread::current(), HeapShared::materialize_archived_object(_archived_module_narrow_oop));
+void ModuleEntry::restore_archived_oops(ClassLoaderData* loader_data) {
+  Handle module_handle(Thread::current(), HeapShared::get_root(_archived_module_index, /*clear=*/true));
   assert(module_handle.not_null(), "huh");
   set_module(loader_data->add_handle(module_handle));
 
@@ -493,6 +493,10 @@ void ModuleEntry::restore_archive_oops(ClassLoaderData* loader_data) {
   if (loader_data->class_loader() != NULL) {
     java_lang_Module::set_loader(module_handle(), loader_data->class_loader());
   }
+}
+
+void ModuleEntry::clear_archived_oops() {
+  HeapShared::clear_root(_archived_module_index);
 }
 
 static int compare_module_by_name(ModuleEntry* a, ModuleEntry* b) {
@@ -561,7 +565,7 @@ void ModuleEntryTable::restore_archived_oops(ClassLoaderData* loader_data, Array
   assert(UseSharedSpaces, "runtime only");
   for (int i = 0; i < archived_modules->length(); i++) {
     ModuleEntry* archived_entry = archived_modules->at(i);
-    archived_entry->restore_archive_oops(loader_data);
+    archived_entry->restore_archived_oops(loader_data);
   }
 }
 #endif // INCLUDE_CDS_JAVA_HEAP

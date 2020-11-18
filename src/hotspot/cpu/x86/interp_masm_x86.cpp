@@ -1252,15 +1252,33 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
 
     const int zero_bits = LP64_ONLY(7) NOT_LP64(3);
 
-    // Test if the oopMark is an obvious stack pointer, i.e.,
+    // Fast check for recursive lock.
+    //
+    // Can apply the optimization only if this is a stack lock
+    // allocated in this thread. For efficiency, we can focus on
+    // recently allocated stack locks (instead of reading the stack
+    // base and checking whether 'mark' points inside the current
+    // thread stack):
     //  1) (mark & zero_bits) == 0, and
     //  2) rsp <= mark < mark + os::pagesize()
+    //
+    // Warning: rsp + os::pagesize can overflow the stack base. We must
+    // neither apply the optimization for an inflated lock allocated
+    // just above the thread stack (this is why condition 1 matters)
+    // nor apply the optimization if the stack lock is inside the stack
+    // of another thread. The latter is avoided even in case of overflow
+    // because we have guard pages at the end of all stacks. Hence, if
+    // we go over the stack base and hit the stack of another thread,
+    // this should not be in a writeable area that could contain a
+    // stack lock allocated by that thread. As a consequence, a stack
+    // lock less than page size away from rsp is guaranteed to be
+    // owned by the current thread.
     //
     // These 3 tests can be done by evaluating the following
     // expression: ((mark - rsp) & (zero_bits - os::vm_page_size())),
     // assuming both stack pointer and pagesize have their
     // least significant bits clear.
-    // NOTE: the oopMark is in swap_reg %rax as the result of cmpxchg
+    // NOTE: the mark is in swap_reg %rax as the result of cmpxchg
     subptr(swap_reg, rsp);
     andptr(swap_reg, zero_bits - os::vm_page_size());
 

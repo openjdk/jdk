@@ -656,6 +656,7 @@ SafePointNode* PhaseIdealLoop::find_safepoint(Node* back_control, Node* x, Ideal
     MergeMemNode* mm = NULL;
     if (mem->is_MergeMem()) {
       mm = mem->clone()->as_MergeMem();
+      _igvn._worklist.push(mm);
       for (MergeMemStream mms(mem->as_MergeMem()); mms.next_non_empty(); ) {
         if (mms.alias_idx() != Compile::AliasIdxBot && loop != get_loop(ctrl_or_self(mms.memory()))) {
           mm->set_memory_at(mms.alias_idx(), mem->as_MergeMem()->base_memory());
