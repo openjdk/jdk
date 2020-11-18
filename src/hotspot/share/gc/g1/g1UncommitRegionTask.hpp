@@ -30,15 +30,18 @@
 #include "utilities/ticks.hpp"
 
 class G1UncommitRegionTask : public G1ServiceTask {
+  // Each execution of the uncommit task is limited to uncommit at most 256M.
+  // This limit is small enough to ensure that the duration of each invocation
+  // is short, while still making reasonable progress.
+  static const uint UncommitSizeLimit = 256 * M;
+
   static G1UncommitRegionTask* _instance;
   static void initialize();
   static G1UncommitRegionTask* instance();
 
-  // The _active state is not guarded by a lock since the places
-  // where it is updated can never run in parallel. The state is
-  // set to active only from a safepoint and it is set to false
-  // while running on the service thread joined with the suspendible
-  // thread set.
+  // The _active state is used to prevent the task from being enqueued on the
+  // service thread multiple times. If the task is active, a new requst to
+  // enqueue it will be ignored.
   bool _active;
 
   // Members to keep a summary of the current concurrent uncommit
@@ -55,7 +58,7 @@ class G1UncommitRegionTask : public G1ServiceTask {
   void clear_summary();
 
 public:
-  static void run();
+  static void enqueue();
   virtual void execute();
 };
 

@@ -43,6 +43,17 @@ class HeapRegionRange : public StackObj {
   uint length() const { return _end - _start; }
 };
 
+// The G1CommittedRegionMap keeps track of which regions are currently committed.
+// It tracks both regions ready for use and if there are any regions ready for
+// uncommit. We basically have three states. Uncommitted, Active, Inactive. All
+// regions that are either Active or Inactive are committed.
+//
+// State transitions:
+//   Uncommitted -> Active      (activate())
+//   Active      -> Inactive    (deactivate())
+//   Inactive    -> Active      (reactivate())
+//   Inactive    -> Uncommitted (uncommit())
+//
 class G1CommittedRegionMap : public CHeapObj<mtGC> {
   // Each bit in this bitmap indicates that the corresponding region is active
   // and available for allocation.
@@ -95,7 +106,7 @@ public:
   HeapRegionRange next_inactive_range(uint offset) const;
   // Finds the next range of committable regions starting at offset.
   // This function must only be called when no inactive regions are
-  // present and can be used to active more regions.
+  // present and can be used to activate more regions.
   HeapRegionRange next_committable_range(uint offset) const;
 
 protected:

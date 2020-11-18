@@ -78,18 +78,18 @@ class G1RegionsLargerThanCommitSizeMapper : public G1RegionToSpaceMapper {
     guarantee(alloc_granularity >= page_size, "allocation granularity smaller than commit granularity");
   }
 
-  bool committed_range(uint start_idx, size_t num_regions) {
+  bool is_range_committed(uint start_idx, size_t num_regions) {
     BitMap::idx_t end = start_idx + num_regions;
     return _region_commit_map.get_next_zero_offset(start_idx, end) == end;
   }
 
-  bool uncommitted_range(uint start_idx, size_t num_regions) {
+  bool is_range_uncommitted(uint start_idx, size_t num_regions) {
     BitMap::idx_t end = start_idx + num_regions;
     return _region_commit_map.get_next_one_offset(start_idx, end) == end;
   }
 
   virtual void commit_regions(uint start_idx, size_t num_regions, WorkGang* pretouch_gang) {
-    guarantee(uncommitted_range(start_idx, num_regions),
+    guarantee(is_range_uncommitted(start_idx, num_regions),
               "Range not uncommitted, start: %u, num_regions: " SIZE_FORMAT,
               start_idx, num_regions);
 
@@ -111,7 +111,7 @@ class G1RegionsLargerThanCommitSizeMapper : public G1RegionToSpaceMapper {
   }
 
   virtual void uncommit_regions(uint start_idx, size_t num_regions) {
-    guarantee(committed_range(start_idx, num_regions),
+    guarantee(is_range_committed(start_idx, num_regions),
              "Range not committed, start: %u, num_regions: " SIZE_FORMAT,
               start_idx, num_regions);
 

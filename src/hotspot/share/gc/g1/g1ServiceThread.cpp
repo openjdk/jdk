@@ -213,7 +213,7 @@ void G1ServiceThread::register_task(G1ServiceTask* task, jlong delay) {
   notify();
 }
 
-void G1ServiceThread::schedule_task(G1ServiceTask* task, jlong delay_ms) {
+void G1ServiceThread::schedule(G1ServiceTask* task, jlong delay_ms) {
   guarantee(task->is_registered(), "Must be registered before scheduled");
   guarantee(task->next() == NULL, "Task already in queue");
 
@@ -226,6 +226,11 @@ void G1ServiceThread::schedule_task(G1ServiceTask* task, jlong delay_ms) {
 
   log_trace(gc, task)("G1 Service Thread (%s) (schedule) @%1.3fs",
                       task->name(), TimeHelper::counter_to_seconds(task->time()));
+}
+
+void G1ServiceThread::schedule_task(G1ServiceTask* task, jlong delay_ms) {
+  schedule(task, delay_ms);
+  notify();
 }
 
 int64_t G1ServiceThread::time_to_next_task_ms() {
@@ -331,7 +336,7 @@ bool G1ServiceTask::is_registered() {
 }
 
 void G1ServiceTask::schedule(jlong delay_ms) {
-  _service_thread->schedule_task(this, delay_ms);
+  _service_thread->schedule(this, delay_ms);
 }
 
 const char* G1ServiceTask::name() {

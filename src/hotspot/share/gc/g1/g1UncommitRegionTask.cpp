@@ -42,7 +42,7 @@ void G1UncommitRegionTask::initialize() {
   _instance = new G1UncommitRegionTask();
 
   // Register the task with the service thread. This will automatically
-  // schedule the task so  we change the state to active.
+  // schedule the task so we change the state to active.
   _instance->set_active(true);
   G1CollectedHeap::heap()->service_thread()->register_task(_instance);
 }
@@ -54,16 +54,14 @@ G1UncommitRegionTask* G1UncommitRegionTask::instance() {
   return _instance;
 }
 
-void G1UncommitRegionTask::run() {
+void G1UncommitRegionTask::enqueue() {
   assert_at_safepoint_on_vm_thread();
 
   G1UncommitRegionTask* uncommit_task = instance();
   if (!uncommit_task->is_active()) {
     // Change state to active and schedule with no delay.
     uncommit_task->set_active(true);
-    uncommit_task->schedule(0);
-    // Notify service thread to avoid unnecessary waiting.
-    G1CollectedHeap::heap()->service_thread()->notify();
+    G1CollectedHeap::heap()->service_thread()->schedule_task(uncommit_task, 0);
   }
 }
 
@@ -73,6 +71,10 @@ bool G1UncommitRegionTask::is_active() {
 
 void G1UncommitRegionTask::set_active(bool state) {
   assert(_active != state, "Must do a state change");
+  // There is no need to guard _active with a lock since the places where it
+  // is updated can never run in parallel. The state is set to true only in
+  // a safepoint and it is set to false while running on the service thread
+  // joined with the suspendible thread set.
   _active = state;
 }
 
@@ -103,10 +105,9 @@ void G1UncommitRegionTask::clear_summary() {
 void G1UncommitRegionTask::execute() {
   assert(_active, "Must be active");
 
-  // Each execution is limited to uncommit at most 256M worth of regions. This
-  // limit is small enough to ensure that the duration of each invocation is
-  // short, while still making reasonable progress.
-  static const uint region_limit = (uint) (256 * M / G1HeapRegionSize);
+  // Translate the size limit into a number of regions. This cannot be a
+  // compile time constant because G1HeapRegionSize is set ergonomically.
+  static const uint region_limit = (uint) (UncommitSizeLimit / G1HeapRegionSize);
 
   // Prevent from running during a GC pause.
   SuspendibleThreadSetJoiner sts;

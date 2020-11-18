@@ -744,7 +744,7 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion* ranges, size_t count) {
   HeapWord* prev_last_addr = NULL;
   HeapRegion* prev_last_region = NULL;
   size_t size_used = 0;
-  size_t shrink_count = 0;
+  uint shrink_count = 0;
 
   // For each Memregion, free the G1 regions that constitute it, and
   // notify mark-sweep that the range is no longer to be considered 'archive.'
@@ -803,7 +803,7 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion* ranges, size_t count) {
     log_debug(gc, ergo, heap)("Attempt heap shrinking (archive regions). Total size: " SIZE_FORMAT "B",
                               HeapRegion::GrainWords * HeapWordSize * shrink_count);
     // Explicit uncommit.
-    _hrm.uncommit_inactive_regions((uint) shrink_count);
+    uncommit_regions(shrink_count);
   }
   decrease_used(size_used);
 }
@@ -1030,6 +1030,7 @@ void G1CollectedHeap::prepare_heap_for_mutators() {
   rebuild_region_sets(false /* free_list_only */);
   abort_refinement();
   resize_heap_if_necessary();
+  uncommit_regions_if_necessary();
 
   // Rebuild the strong code root lists for each region
   rebuild_strong_code_roots();
@@ -1309,7 +1310,7 @@ void G1CollectedHeap::shrink_helper(size_t shrink_bytes) {
   log_debug(gc, ergo, heap)("Shrink the heap. requested shrinking amount: " SIZE_FORMAT "B aligned shrinking amount: " SIZE_FORMAT "B attempted shrinking amount: " SIZE_FORMAT "B",
                             shrink_bytes, aligned_shrink_bytes, shrunk_bytes);
   if (num_regions_removed > 0) {
-    log_debug(gc, heap)("Regions ready for uncommit: %u", num_regions_removed);
+    log_debug(gc, heap)("Uncommittable regions after shrink: %u", num_regions_removed);
     policy()->record_new_heap_size(num_regions());
   } else {
     log_debug(gc, ergo, heap)("Did not expand the heap (heap shrinking operation failed)");
@@ -2635,9 +2636,9 @@ bool G1CollectedHeap::has_uncommittable_regions() {
   return _hrm.has_inactive_regions();
 }
 
-void G1CollectedHeap::uncommit_heap_if_necessary() {
+void G1CollectedHeap::uncommit_regions_if_necessary() {
   if (has_uncommittable_regions()) {
-    G1UncommitRegionTask::run();
+    G1UncommitRegionTask::enqueue();
   }
 }
 
