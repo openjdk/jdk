@@ -516,7 +516,7 @@ AC_DEFUN([BOOTJDK_CHECK_BUILD_JDK],
       else
         # Oh, this is looking good! We probably have found a proper JDK. Is it the correct version?
         # Additional [] needed to keep m4 from mangling shell constructs.
-        [ BUILD_JDK_VERSION=`"$BUILD_JDK/bin/java" -version 2>&1 | $AWK '/version \"[0-9a-zA-Z\._\-]+\"/{print $ 0; exit;}'` ]
+        [ BUILD_JDK_VERSION=`"$BUILD_JDK/bin/java" -version 2>&1 | $AWK '/version "[0-9a-zA-Z\._\-]+"/ {print $ 0; exit;}'` ]
 
         # Extra M4 quote needed to protect [] in grep expression.
         [FOUND_CORRECT_VERSION=`echo $BUILD_JDK_VERSION | $EGREP "\"$VERSION_FEATURE([\.+-].*)?\""`]
