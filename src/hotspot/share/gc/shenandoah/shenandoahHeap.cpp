@@ -1142,9 +1142,7 @@ void ShenandoahHeap::evacuate_and_update_roots() {
   {
     // Include concurrent roots if current cycle can not process those roots concurrently
     ShenandoahRootEvacuator rp(workers()->active_workers(),
-                               ShenandoahPhaseTimings::init_evac,
-                               !ShenandoahConcurrentRoots::should_do_concurrent_roots(),
-                               !ShenandoahConcurrentRoots::should_do_concurrent_class_unloading());
+                               ShenandoahPhaseTimings::init_evac);
     ShenandoahEvacuateUpdateRootsTask roots_task(&rp);
     workers()->run_task(&roots_task);
   }
@@ -1744,9 +1742,8 @@ void ShenandoahHeap::op_final_mark() {
       set_has_forwarded_objects(true);
 
       if (!is_degenerated_gc_in_progress()) {
-        if (ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
-          ShenandoahCodeRoots::arm_nmethods();
-        }
+        // Arm nmethods for concurrent codecache processing.
+        ShenandoahCodeRoots::arm_nmethods();
         evacuate_and_update_roots();
       }
 
@@ -1757,17 +1754,10 @@ void ShenandoahHeap::op_final_mark() {
       if (ShenandoahVerify) {
         // If OOM while evacuating/updating of roots, there is no guarantee of their consistencies
         if (!cancelled_gc()) {
-          ShenandoahRootVerifier::RootTypes types = ShenandoahRootVerifier::None;
-          if (ShenandoahConcurrentRoots::should_do_concurrent_roots()) {
-            types = ShenandoahRootVerifier::combine(ShenandoahRootVerifier::JNIHandleRoots, ShenandoahRootVerifier::WeakRoots);
-            types = ShenandoahRootVerifier::combine(types, ShenandoahRootVerifier::CLDGRoots);
-            types = ShenandoahRootVerifier::combine(types, ShenandoahRootVerifier::StringDedupRoots);
-          }
-
-          if (ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
-            types = ShenandoahRootVerifier::combine(types, ShenandoahRootVerifier::CodeRoots);
-          }
-          verifier()->verify_roots_no_forwarded_except(types);
+          // We only evacuate/update thread and serial weak roots at this pause
+          ShenandoahRootVerifier::RootTypes types = ShenandoahRootVerifier::combine(ShenandoahRootVerifier::ThreadRoots,
+                                                                                    ShenandoahRootVerifier::SerialWeakRoots);
+          verifier()->verify_roots_no_forwarded(types);
         }
         verifier()->verify_during_evacuation();
       }
@@ -1840,16 +1830,53 @@ void ShenandoahHeap::op_cleanup_complete() {
   free_set()->recycle_trash();
 }
 
+class ShenandoahEvacUpdateCodeCacheClosure : public NMethodClosure {
+private:
+  BarrierSetNMethod* const               _bs;
+  ShenandoahEvacuateUpdateRootsClosure<> _cl;
+
+public:
+  ShenandoahEvacUpdateCodeCacheClosure() :
+    _bs(BarrierSet::barrier_set()->barrier_set_nmethod()),
+    _cl() {
+  }
+
+  void do_nmethod(nmethod* n) {
+    ShenandoahNMethod* data = ShenandoahNMethod::gc_data(n);
+    ShenandoahReentrantLocker locker(data->lock());
+    data->oops_do(&_cl, true/*fix relocation*/);
+    _bs->disarm(n);
+  }
+};
+
 class ShenandoahConcurrentRootsEvacUpdateTask : public AbstractGangTask {
 private:
+  ShenandoahPhaseTimings::Phase                 _phase;
   ShenandoahVMRoots<true /*concurrent*/>        _vm_roots;
   ShenandoahClassLoaderDataRoots<true /*concurrent*/, false /*single threaded*/> _cld_roots;
+  ShenandoahConcurrentNMethodIterator           _nmethod_itr;
+  bool                                          _process_codecache;
 
 public:
   ShenandoahConcurrentRootsEvacUpdateTask(ShenandoahPhaseTimings::Phase phase) :
     AbstractGangTask("Shenandoah Evacuate/Update Concurrent Strong Roots"),
+    _phase(phase),
     _vm_roots(phase),
-    _cld_roots(phase, ShenandoahHeap::heap()->workers()->active_workers()) {}
+    _cld_roots(phase, ShenandoahHeap::heap()->workers()->active_workers()),
+    _nmethod_itr(ShenandoahCodeRoots::table()),
+    _process_codecache(!ShenandoahConcurrentRoots::should_do_concurrent_class_unloading()) {
+    if (_process_codecache) {
+      MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+      _nmethod_itr.nmethods_do_begin();
+    }
+  }
+
+  ~ShenandoahConcurrentRootsEvacUpdateTask() {
+    if (_process_codecache) {
+      MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+      _nmethod_itr.nmethods_do_end();
+    }
+  }
 
   void work(uint worker_id) {
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
@@ -1865,6 +1892,12 @@ public:
       ShenandoahEvacuateUpdateRootsClosure<> cl;
       CLDToOopClosure clds(&cl, ClassLoaderData::_claim_strong);
       _cld_roots.cld_do(&clds, worker_id);
+    }
+
+    if (_process_codecache) {
+      ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
+      ShenandoahEvacUpdateCodeCacheClosure cl;
+      _nmethod_itr.nmethods_do(&cl);
     }
   }
 };
