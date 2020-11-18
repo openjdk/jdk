@@ -57,6 +57,7 @@ public class bug8041694 {
             // Set Metal L&F to make the test compatible with OS X.
             UIManager.setLookAndFeel(new MetalLookAndFeel());
             Robot robot = new Robot();
+            robot.setAutoDelay(100);
 
             dir1 = Files.createTempDirectory("bug8041694").toFile();
             if (Platform.isWindows()) {
@@ -83,15 +84,17 @@ public class bug8041694 {
                 }
             });
 
-            robot.setAutoDelay(50);
             robot.delay(1000);
             robot.waitForIdle();
             robot.keyPress(KeyEvent.VK_D);
             robot.keyRelease(KeyEvent.VK_D);
+            robot.waitForIdle();
             robot.keyPress(KeyEvent.VK_SPACE);
             robot.keyRelease(KeyEvent.VK_SPACE);
+            robot.waitForIdle();
             robot.keyPress(KeyEvent.VK_ENTER);
             robot.keyRelease(KeyEvent.VK_ENTER);
+            robot.waitForIdle();
 
             fChooserClosedSignal.await();
             if (selectedDir == null) {

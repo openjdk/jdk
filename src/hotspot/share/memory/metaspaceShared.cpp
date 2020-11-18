@@ -27,8 +27,9 @@
 #include "classfile/classLoaderDataShared.hpp"
 #include "classfile/classListParser.hpp"
 #include "classfile/classLoaderExt.hpp"
-#include "classfile/loaderConstraints.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/lambdaFormInvokers.hpp"
+#include "classfile/loaderConstraints.hpp"
 #include "classfile/placeholders.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/stringTable.hpp"
@@ -68,7 +69,7 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/hashtable.inline.hpp"
 #if INCLUDE_G1GC
-#include "gc/g1/g1CollectedHeap.hpp"
+#include "gc/g1/g1CollectedHeap.inline.hpp"
 #endif
 
 ReservedSpace MetaspaceShared::_shared_rs;
@@ -500,7 +501,7 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   SystemDictionaryShared::serialize_well_known_klasses(soc);
   soc->do_tag(--tag);
 
-  CppVtables::serialize_cloned_cpp_vtptrs(soc);
+  CppVtables::serialize(soc);
   soc->do_tag(--tag);
 
   CDS_JAVA_HEAP_ONLY(ClassLoaderDataShared::serialize(soc));
@@ -731,9 +732,7 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   builder.gather_source_objs();
 
-  CppVtables::allocate_cloned_cpp_vtptrs();
-  char* cloned_vtables = _mc_region.top();
-  CppVtables::allocate_cpp_vtable_clones();
+  char* cloned_vtables = CppVtables::dumptime_init();
 
   {
     _mc_region.pack(&_rw_region);
@@ -771,15 +770,20 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   builder.relocate_well_known_klasses();
 
+  log_info(cds)("Update method trampolines");
+  builder.update_method_trampolines();
+
   log_info(cds)("Make classes shareable");
   builder.make_klasses_shareable();
 
   char* serialized_data = dump_read_only_tables();
   _ro_region.pack();
 
+  SystemDictionaryShared::adjust_lambda_proxy_class_dictionary();
+
   // The vtable clones contain addresses of the current process.
   // We don't want to write these addresses into the archive. Same for i2i buffer.
-  CppVtables::zero_cpp_vtable_clones_for_writing();
+  CppVtables::zero_archived_vtables();
   memset(MetaspaceShared::i2i_entry_code_buffers(), 0,
          MetaspaceShared::i2i_entry_code_buffers_size());
 
@@ -1050,8 +1054,14 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
     if (SharedArchiveConfigFile) {
       log_info(cds)("Reading extra data from %s ...", SharedArchiveConfigFile);
       read_extra_data(SharedArchiveConfigFile, THREAD);
+      log_info(cds)("Reading extra data: done.");
     }
-    log_info(cds)("Reading extra data: done.");
+
+    if (LambdaFormInvokers::lambdaform_lines() != NULL) {
+      log_info(cds)("Regenerate MethodHandle Holder classes...");
+      LambdaFormInvokers::regenerate_holder_classes(THREAD);
+      log_info(cds)("Regenerate MethodHandle Holder classes done.");
+    }
 
     HeapShared::init_for_dumping(THREAD);
 
@@ -1086,6 +1096,9 @@ int MetaspaceShared::preload_classes(const char* class_list_path, TRAPS) {
   int class_count = 0;
 
   while (parser.parse_one_line()) {
+    if (parser.lambda_form_line()) {
+      continue;
+    }
     Klass* klass = parser.load_current_class(THREAD);
     if (HAS_PENDING_EXCEPTION) {
       if (klass == NULL &&
@@ -1153,6 +1166,15 @@ bool MetaspaceShared::try_link_class(InstanceKlass* ik, TRAPS) {
 
 #if INCLUDE_CDS_JAVA_HEAP
 void VM_PopulateDumpSharedSpace::dump_java_heap_objects() {
+  if(!HeapShared::is_heap_object_archiving_allowed()) {
+    log_info(cds)(
+      "Archived java heap is not supported as UseG1GC, "
+      "UseCompressedOops and UseCompressedClassPointers are required."
+      "Current settings: UseG1GC=%s, UseCompressedOops=%s, UseCompressedClassPointers=%s.",
+      BOOL_TO_STR(UseG1GC), BOOL_TO_STR(UseCompressedOops),
+      BOOL_TO_STR(UseCompressedClassPointers));
+    return;
+  }
   // Find all the interned strings that should be dumped.
   int i;
   for (i = 0; i < _global_klass_objects->length(); i++) {
@@ -1700,12 +1722,10 @@ void MetaspaceShared::initialize_shared_spaces() {
   FileMapInfo *static_mapinfo = FileMapInfo::current_info();
   _i2i_entry_code_buffers = static_mapinfo->i2i_entry_code_buffers();
   _i2i_entry_code_buffers_size = static_mapinfo->i2i_entry_code_buffers_size();
-  char* buffer = static_mapinfo->cloned_vtables();
-  CppVtables::clone_cpp_vtables((intptr_t*)buffer);
 
   // Verify various attributes of the archive, plus initialize the
   // shared string/symbol tables
-  buffer = static_mapinfo->serialized_data();
+  char* buffer = static_mapinfo->serialized_data();
   intptr_t* array = (intptr_t*)buffer;
   ReadClosure rc(&array);
   serialize(&rc);

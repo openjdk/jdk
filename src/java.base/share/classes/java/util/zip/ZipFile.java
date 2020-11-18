@@ -1335,18 +1335,6 @@ public class ZipFile implements ZipConstants, Closeable {
             }
         }
 
-        private static final int hashN(byte[] a, int off, int len) {
-            int h = 1;
-            while (len-- > 0) {
-                h = 31 * h + a[off++];
-            }
-            return h;
-        }
-
-        private static final int hash_append(int hash, byte b) {
-            return hash * 31 + b;
-        }
-
         private static class End {
             int  centot;     // 4 bytes
             long cenlen;     // 4 bytes

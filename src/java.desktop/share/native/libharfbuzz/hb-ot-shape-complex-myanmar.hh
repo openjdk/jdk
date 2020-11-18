@@ -49,10 +49,10 @@ enum myanmar_category_t {
   OT_MW  = 23, /* Various consonant medial types */
   OT_MY  = 24, /* Various consonant medial types */
   OT_PT  = 25, /* Pwo and other tones */
-  OT_VAbv = 26,
-  OT_VBlw = 27,
-  OT_VPre = 28,
-  OT_VPst = 29,
+  //OT_VAbv = 26,
+  //OT_VBlw = 27,
+  //OT_VPre = 28,
+  //OT_VPst = 29,
   OT_VS   = 30, /* Variation selectors */
   OT_P    = 31, /* Punctuation */
   OT_D    = 32, /* Digits except zero */
@@ -146,7 +146,7 @@ set_myanmar_properties (hb_glyph_info_t &info)
       break;
 
     case 0xAA74u: case 0xAA75u: case 0xAA76u:
-      /* https://github.com/roozbehp/unicode-data/issues/3 */
+      /* https://github.com/harfbuzz/harfbuzz/issues/218 */
       cat = OT_C;
       break;
   }
@@ -155,11 +155,11 @@ set_myanmar_properties (hb_glyph_info_t &info)
   {
     switch ((int) pos)
     {
-      case POS_PRE_C:   cat = OT_VPre;
+      case POS_PRE_C:   cat = (myanmar_category_t) OT_VPre;
                         pos = POS_PRE_M; break;
-      case POS_ABOVE_C: cat = OT_VAbv;   break;
-      case POS_BELOW_C: cat = OT_VBlw;   break;
-      case POS_POST_C:  cat = OT_VPst;   break;
+      case POS_ABOVE_C: cat = (myanmar_category_t) OT_VAbv;   break;
+      case POS_BELOW_C: cat = (myanmar_category_t) OT_VBlw;   break;
+      case POS_POST_C:  cat = (myanmar_category_t) OT_VPst;   break;
     }
   }
 

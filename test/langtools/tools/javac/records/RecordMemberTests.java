@@ -24,11 +24,10 @@
  */
 
 /**
- * RecordMemberTests
- *
  * @test
- * @compile --enable-preview -source ${jdk.version} RecordMemberTests.java
- * @run testng/othervm --enable-preview RecordMemberTests
+ * @bug 8246774
+ * @summary test several assertions on record classes members
+ * @run testng RecordMemberTests
  */
 
 import java.lang.reflect.Constructor;

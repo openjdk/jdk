@@ -53,17 +53,17 @@ inline void Thread::set_has_async_exception() {
 inline void Thread::clear_has_async_exception() {
   clear_suspend_flag(_has_async_exception);
 }
-inline void Thread::set_critical_native_unlock() {
-  set_suspend_flag(_critical_native_unlock);
-}
-inline void Thread::clear_critical_native_unlock() {
-  clear_suspend_flag(_critical_native_unlock);
-}
 inline void Thread::set_trace_flag() {
   set_suspend_flag(_trace_flag);
 }
 inline void Thread::clear_trace_flag() {
   clear_suspend_flag(_trace_flag);
+}
+inline void Thread::set_obj_deopt_flag() {
+  set_suspend_flag(_obj_deopt);
+}
+inline void Thread::clear_obj_deopt_flag() {
+  clear_suspend_flag(_obj_deopt);
 }
 
 inline jlong Thread::cooked_allocated_bytes() {
@@ -164,23 +164,6 @@ void JavaThread::enter_critical() {
 inline void JavaThread::set_done_attaching_via_jni() {
   _jni_attach_state = _attached_via_jni;
   OrderAccess::fence();
-}
-
-// The release make sure this store is done after storing the handshake
-// operation or global state
-inline void JavaThread::set_polling_page_release(void* poll_value) {
-  Atomic::release_store(polling_page_addr(), poll_value);
-}
-
-// Caller is responsible for using a memory barrier if needed.
-inline void JavaThread::set_polling_page(void* poll_value) {
-  *polling_page_addr() = poll_value;
-}
-
-// The aqcquire make sure reading of polling page is done before
-// the reading the handshake operation or the global state
-inline volatile void* JavaThread::get_polling_page() {
-  return Atomic::load_acquire(polling_page_addr());
 }
 
 inline bool JavaThread::is_exiting() const {

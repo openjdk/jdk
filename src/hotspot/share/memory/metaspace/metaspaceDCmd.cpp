@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, SAP and/or its affiliates.
+ * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,27 +22,27 @@
  * questions.
  *
  */
+
 #include "precompiled.hpp"
-#include "memory/metaspace.hpp"
 #include "memory/metaspace/metaspaceDCmd.hpp"
+#include "memory/metaspace/metaspaceReporter.hpp"
 #include "memory/resourceArea.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "services/nmtCommon.hpp"
 
 namespace metaspace {
 
-MetaspaceDCmd::MetaspaceDCmd(outputStream* output, bool heap)
-  : DCmdWithParser(output, heap)
-  , _basic("basic", "Prints a basic summary (does not need a safepoint).", "BOOLEAN", false, "false")
-  , _show_loaders("show-loaders", "Shows usage by class loader.", "BOOLEAN", false, "false")
-  , _by_spacetype("by-spacetype", "Break down numbers by loader type.", "BOOLEAN", false, "false")
-  , _by_chunktype("by-chunktype", "Break down numbers by chunk type.", "BOOLEAN", false, "false")
-  , _show_vslist("vslist", "Shows details about the underlying virtual space.", "BOOLEAN", false, "false")
-  , _show_vsmap("vsmap", "Shows chunk composition of the underlying virtual spaces", "BOOLEAN", false, "false")
-  , _scale("scale", "Memory usage in which to scale. Valid values are: 1, KB, MB or GB (fixed scale) "
-           "or \"dynamic\" for a dynamically choosen scale.",
-           "STRING", false, "dynamic")
-  , _show_classes("show-classes", "If show-loaders is set, shows loaded classes for each loader.", "BOOLEAN", false, "false")
+MetaspaceDCmd::MetaspaceDCmd(outputStream* output, bool heap) :
+  DCmdWithParser(output, heap),
+  _basic("basic", "Prints a basic summary (does not need a safepoint).", "BOOLEAN", false, "false"),
+  _show_loaders("show-loaders", "Shows usage by class loader.", "BOOLEAN", false, "false"),
+  _by_spacetype("by-spacetype", "Break down numbers by loader type.", "BOOLEAN", false, "false"),
+  _by_chunktype("by-chunktype", "Break down numbers by chunk type.", "BOOLEAN", false, "false"),
+  _show_vslist("vslist", "Shows details about the underlying virtual space.", "BOOLEAN", false, "false"),
+  _scale("scale", "Memory usage in which to scale. Valid values are: 1, KB, MB or GB (fixed scale) "
+         "or \"dynamic\" for a dynamically choosen scale.",
+         "STRING", false, "dynamic"),
+  _show_classes("show-classes", "If show-loaders is set, shows loaded classes for each loader.", "BOOLEAN", false, "false")
 {
   _dcmdparser.add_dcmd_option(&_basic);
   _dcmdparser.add_dcmd_option(&_show_loaders);
@@ -50,7 +50,6 @@ MetaspaceDCmd::MetaspaceDCmd(outputStream* output, bool heap)
   _dcmdparser.add_dcmd_option(&_by_chunktype);
   _dcmdparser.add_dcmd_option(&_by_spacetype);
   _dcmdparser.add_dcmd_option(&_show_vslist);
-  _dcmdparser.add_dcmd_option(&_show_vsmap);
   _dcmdparser.add_dcmd_option(&_scale);
 }
 
@@ -81,7 +80,7 @@ void MetaspaceDCmd::execute(DCmdSource source, TRAPS) {
   }
   if (_basic.value() == true) {
     if (_show_loaders.value() || _by_chunktype.value() || _by_spacetype.value() ||
-        _show_vslist.value() || _show_vsmap.value()) {
+        _show_vslist.value()) {
       // Basic mode. Just print essentials. Does not need to be at a safepoint.
       output()->print_cr("In basic mode, additional arguments are ignored.");
     }
@@ -89,12 +88,11 @@ void MetaspaceDCmd::execute(DCmdSource source, TRAPS) {
   } else {
     // Full mode. Requires safepoint.
     int flags = 0;
-    if (_show_loaders.value())         flags |= MetaspaceUtils::rf_show_loaders;
-    if (_show_classes.value())         flags |= MetaspaceUtils::rf_show_classes;
-    if (_by_chunktype.value())         flags |= MetaspaceUtils::rf_break_down_by_chunktype;
-    if (_by_spacetype.value())         flags |= MetaspaceUtils::rf_break_down_by_spacetype;
-    if (_show_vslist.value())          flags |= MetaspaceUtils::rf_show_vslist;
-    if (_show_vsmap.value())           flags |= MetaspaceUtils::rf_show_vsmap;
+    if (_show_loaders.value())         flags |= (int)MetaspaceReporter::Option::ShowLoaders;
+    if (_show_classes.value())         flags |= (int)MetaspaceReporter::Option::ShowClasses;
+    if (_by_chunktype.value())         flags |= (int)MetaspaceReporter::Option::BreakDownByChunkType;
+    if (_by_spacetype.value())         flags |= (int)MetaspaceReporter::Option::BreakDownBySpaceType;
+    if (_show_vslist.value())          flags |= (int)MetaspaceReporter::Option::ShowVSList;
     VM_PrintMetadata op(output(), scale, flags);
     VMThread::execute(&op);
   }

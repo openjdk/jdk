@@ -41,6 +41,11 @@
 // offset from the heap base.  Saving the check for null can save instructions
 // in inner GC loops so these are separated.
 
+inline oop CompressedOops::decode_raw_not_null(narrowOop v) {
+  assert(!is_null(v), "narrow oop value can never be zero");
+  return decode_raw(v);
+}
+
 inline oop CompressedOops::decode_raw(narrowOop v) {
   return (oop)(void*)((uintptr_t)base() + ((uintptr_t)v << shift()));
 }
@@ -49,6 +54,7 @@ inline oop CompressedOops::decode_not_null(narrowOop v) {
   assert(!is_null(v), "narrow oop value can never be zero");
   oop result = decode_raw(v);
   assert(is_object_aligned(result), "address not aligned: " INTPTR_FORMAT, p2i((void*) result));
+  assert(Universe::heap()->is_in(result), "object not in heap " PTR_FORMAT, p2i((void*) result));
   return result;
 }
 
@@ -63,12 +69,30 @@ inline narrowOop CompressedOops::encode_not_null(oop v) {
   uint64_t  pd = (uint64_t)(pointer_delta((void*)v, (void*)base(), 1));
   assert(OopEncodingHeapMax > pd, "change encoding max if new encoding");
   narrowOop result = narrow_oop_cast(pd >> shift());
-  assert(decode(result) == v, "reversibility");
+  assert(decode_raw(result) == v, "reversibility");
   return result;
 }
 
 inline narrowOop CompressedOops::encode(oop v) {
   return is_null(v) ? narrowOop::null : encode_not_null(v);
+}
+
+inline oop CompressedOops::decode_not_null(oop v) {
+  assert(Universe::heap()->is_in(v), "object not in heap " PTR_FORMAT, p2i((void*) v));
+  return v;
+}
+
+inline oop CompressedOops::decode(oop v) {
+  assert(Universe::heap()->is_in_or_null(v), "object not in heap " PTR_FORMAT, p2i((void*) v));
+  return v;
+}
+
+inline narrowOop CompressedOops::encode_not_null(narrowOop v) {
+  return v;
+}
+
+inline narrowOop CompressedOops::encode(narrowOop v) {
+  return v;
 }
 
 inline uint32_t CompressedOops::narrow_oop_value(oop o) {

@@ -50,6 +50,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "prims/methodHandles.hpp"
 #include "prims/nativeLookup.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/biasedLocking.hpp"
@@ -64,6 +65,7 @@
 #include "runtime/jfieldIDWorkaround.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/threadCritical.hpp"
@@ -447,6 +449,10 @@ JRT_END
 // from a call, the expression stack contains the values for the bci at the
 // invoke w/o arguments (i.e., as if one were inside the call).
 JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThread* thread, oopDesc* exception))
+  // We get here after we have unwound from a callee throwing an exception
+  // into the interpreter. Any deferred stack processing is notified of
+  // the event via the StackWatermarkSet.
+  StackWatermarkSet::after_unwind(thread);
 
   LastFrameAccessor last_frame(thread);
   Handle             h_exception(thread, exception);
@@ -1153,12 +1159,28 @@ JRT_ENTRY(void, InterpreterRuntime::at_safepoint(JavaThread* thread))
   // if this is called during a safepoint
 
   if (JvmtiExport::should_post_single_step()) {
+    // This function is called by the interpreter when single stepping. Such single
+    // stepping could unwind a frame. Then, it is important that we process any frames
+    // that we might return into.
+    StackWatermarkSet::before_unwind(thread);
+
     // We are called during regular safepoints and when the VM is
     // single stepping. If any thread is marked for single stepping,
     // then we may have JVMTI work to do.
     LastFrameAccessor last_frame(thread);
     JvmtiExport::at_single_stepping_point(thread, last_frame.method(), last_frame.bcp());
   }
+JRT_END
+
+JRT_LEAF(void, InterpreterRuntime::at_unwind(JavaThread* thread))
+  // This function is called by the interpreter when the return poll found a reason
+  // to call the VM. The reason could be that we are returning into a not yet safe
+  // to access frame. We handle that below.
+  // Note that this path does not check for single stepping, because we do not want
+  // to single step when unwinding frames for an exception being thrown. Instead,
+  // such single stepping code will use the safepoint table, which will use the
+  // InterpreterRuntime::at_safepoint callback.
+  StackWatermarkSet::before_unwind(thread);
 JRT_END
 
 JRT_ENTRY(void, InterpreterRuntime::post_field_access(JavaThread *thread, oopDesc* obj,
@@ -1247,7 +1269,10 @@ JRT_ENTRY(void, InterpreterRuntime::post_method_entry(JavaThread *thread))
 JRT_END
 
 
-JRT_ENTRY(void, InterpreterRuntime::post_method_exit(JavaThread *thread))
+// This is a JRT_BLOCK_ENTRY because we have to stash away the return oop
+// before transitioning to VM, and restore it after transitioning back
+// to Java. The return oop at the top-of-stack, is not walked by the GC.
+JRT_BLOCK_ENTRY(void, InterpreterRuntime::post_method_exit(JavaThread *thread))
   LastFrameAccessor last_frame(thread);
   JvmtiExport::post_method_exit(thread, last_frame.method(), last_frame.get_frame());
 JRT_END

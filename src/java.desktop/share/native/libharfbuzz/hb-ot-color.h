@@ -59,11 +59,11 @@ hb_ot_color_palette_color_get_name_id (hb_face_t *face,
 
 /**
  * hb_ot_color_palette_flags_t:
- * @HB_OT_COLOR_PALETTE_FLAG_DEFAULT: default indicating that there is nothing special
+ * @HB_OT_COLOR_PALETTE_FLAG_DEFAULT: Default indicating that there is nothing special
  *   to note about a color palette.
- * @HB_OT_COLOR_PALETTE_FLAG_USABLE_WITH_LIGHT_BACKGROUND: flag indicating that the color
+ * @HB_OT_COLOR_PALETTE_FLAG_USABLE_WITH_LIGHT_BACKGROUND: Flag indicating that the color
  *   palette is appropriate to use when displaying the font on a light background such as white.
- * @HB_OT_COLOR_PALETTE_FLAG_USABLE_WITH_DARK_BACKGROUND: flag indicating that the color
+ * @HB_OT_COLOR_PALETTE_FLAG_USABLE_WITH_DARK_BACKGROUND: Flag indicating that the color
  *   palette is appropriate to use when displaying the font on a dark background such as black.
  *
  * Since: 2.1.0
@@ -110,7 +110,7 @@ HB_EXTERN unsigned int
 hb_ot_color_glyph_get_layers (hb_face_t           *face,
                               hb_codepoint_t       glyph,
                               unsigned int         start_offset,
-                              unsigned int        *count, /* IN/OUT.  May be NULL. */
+                              unsigned int        *layer_count, /* IN/OUT.  May be NULL. */
                               hb_ot_color_layer_t *layers /* OUT.     May be NULL. */);
 
 /*

@@ -41,7 +41,7 @@ import jdk.jpackage.test.MacHelper.PListWrapper;
  * @summary jpackage with --file-associations and mac specific file association args
  * @library ../helpers
  * @build jdk.jpackage.test.*
- * @modules jdk.incubator.jpackage/jdk.incubator.jpackage.internal
+ * @modules jdk.jpackage/jdk.jpackage.internal
  * @requires (os.family == "mac")
  * @run main/othervm -Xmx512m MacFileAssociationsTest
  */
