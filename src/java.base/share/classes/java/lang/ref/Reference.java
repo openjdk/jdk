@@ -100,10 +100,10 @@ public abstract class Reference<T> {
      *   [active/unregistered] [1]
      *
      * Transitions:
-     *                            clear
+     *                            clear [2]
      *   [active/registered]     ------->   [inactive/registered]
      *          |                                 |
-     *          |                                 | enqueue [2]
+     *          |                                 | enqueue
      *          | GC              enqueue [2]     |
      *          |                -----------------|
      *          |                                 |
@@ -114,7 +114,7 @@ public abstract class Reference<T> {
      *          v                   |             |
      *   [pending/enqueued]      ---              |
      *          |                                 | poll/remove
-     *          | poll/remove                     |
+     *          | poll/remove                     | + clear [4]
      *          |                                 |
      *          v            ReferenceHandler     v
      *   [pending/dequeued]      ------>    [inactive/dequeued]
@@ -140,12 +140,14 @@ public abstract class Reference<T> {
      * [1] Unregistered is not permitted for FinalReferences.
      *
      * [2] These transitions are not possible for FinalReferences, making
-     * [pending/enqueued] and [pending/dequeued] unreachable, and
-     * [inactive/registered] terminal.
+     * [pending/enqueued], [pending/dequeued], and [inactive/registered]
+     * unreachable.
      *
      * [3] The garbage collector may directly transition a Reference
      * from [active/unregistered] to [inactive/unregistered],
      * bypassing the pending-Reference list.
+     *
+     * [4] The queue handler for FinalReferences also clears the reference.
      */
 
     private T referent;         /* Treated specially by GC */
@@ -343,22 +345,6 @@ public abstract class Reference<T> {
     }
 
     /**
-     * Load referent with strong semantics. Treating the referent
-     * as strong referent is ok when the Reference is inactive,
-     * because then the referent is switched to strong semantics
-     * anyway.
-     *
-     * This is only used from Finalizer to bypass the intrinsic,
-     * which might return a null referent, even though it is not
-     * null, and would subsequently not finalize the referent/finalizee.
-     */
-    T getInactive() {
-        assert this instanceof FinalReference;
-        assert next == this; // I.e. FinalReference is inactive
-        return this.referent;
-    }
-
-    /**
      * Tests if the referent of this reference object is {@code obj}.
      * Using a {@code null} {@code obj} returns {@code true} if the
      * reference object has been cleared.
@@ -383,6 +369,41 @@ public abstract class Reference<T> {
      * clears references it does so directly, without invoking this method.
      */
     public void clear() {
+        clear0();
+    }
+
+    /* Implementation of clear(), also used by enqueue().  A simple
+     * assignment of the referent field won't do for some garbage
+     * collectors.
+     */
+    private native void clear0();
+
+    /* -- Operations on inactive FinalReferences -- */
+
+    /* These functions are only used by FinalReference, and must only be
+     * called after the reference becomes inactive. While active, a
+     * FinalReference is considered weak but the referent is not normally
+     * accessed. Once a FinalReference becomes inactive it is considered a
+     * strong reference. These functions are used to bypass the
+     * corresponding weak implementations, directly accessing the referent
+     * field with strong semantics.
+     */
+
+    /**
+     * Load referent with strong semantics.
+     */
+    T getFromInactiveFinalReference() {
+        assert this instanceof FinalReference;
+        assert next != null; // I.e. FinalReference is inactive
+        return this.referent;
+    }
+
+    /**
+     * Clear referent with strong semantics.
+     */
+    void clearInactiveFinalReference() {
+        assert this instanceof FinalReference;
+        assert next != null; // I.e. FinalReference is inactive
         this.referent = null;
     }
 
@@ -413,7 +434,7 @@ public abstract class Reference<T> {
      *           it was not registered with a queue when it was created
      */
     public boolean enqueue() {
-        this.referent = null;
+        clear0();               // Intentionally clear0() rather than clear()
         return this.queue.enqueue(this);
     }
 
