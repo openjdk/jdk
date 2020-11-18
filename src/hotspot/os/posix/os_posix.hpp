@@ -211,7 +211,10 @@ class PlatformParker : public CHeapObj<mtSynchronizer> {
 #define PLATFORM_MONITOR_IMPL_INDIRECT 0
 #endif
 
-// Platform specific implementations that underpin VM Mutex/Monitor classes
+// Platform specific implementations that underpin VM Mutex/Monitor classes.
+// Note that we use "normal" pthread_mutex_t attributes so that recursive
+// locking is not supported, which matches the expected semantics of the
+// VM Mutex class.
 
 class PlatformMutex : public CHeapObj<mtSynchronizer> {
 #if PLATFORM_MONITOR_IMPL_INDIRECT
