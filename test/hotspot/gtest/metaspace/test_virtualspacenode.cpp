@@ -493,11 +493,11 @@ TEST_VM(metaspace, virtual_space_node_test_basics) {
 
   MutexLocker fcl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
 
-  const size_t word_size = metaspace::chunklevel::MAX_CHUNK_WORD_SIZE * 10;
+  const size_t word_size = metaspace::chunklevel::MAX_CHUNK_WORD_SIZE * 5;
 
   SizeCounter scomm;
   SizeCounter sres;
-  CommitLimiter cl (word_size * 2); // basically, no commit limiter.
+  CommitLimiter cl(word_size * 2); // basically, no commit limiter.
 
   VirtualSpaceNode* node = VirtualSpaceNode::create_node(word_size, &cl, &sres, &scomm);
   ASSERT_NOT_NULL(node);
@@ -518,7 +518,7 @@ TEST_VM(metaspace, virtual_space_node_test_basics) {
   DEBUG_ONLY(node->verify_locked();)
 
   const int num_granules = (int)(word_size / Settings::commit_granule_words());
-  for (int i = 1; i < num_granules; i += 4) {
+  for (int i = 1; i <= num_granules; i ++) {
     b = node->ensure_range_is_committed(node->base(), i * Settings::commit_granule_words());
     ASSERT_TRUE(b);
     ASSERT_EQ(node->committed_words(), i * Settings::commit_granule_words());
@@ -532,6 +532,23 @@ TEST_VM(metaspace, virtual_space_node_test_basics) {
   ASSERT_EQ(node->committed_words(), scomm.get());
   DEBUG_ONLY(node->verify_locked();)
 
+  // Test is_range_fully_committed
+#ifdef ASSERT
+  {
+    const size_t l = 2 * Settings::commit_granule_words();
+    MetaWord* const p1 = node->base() + l;
+    node->uncommit_range(node->base(), node->word_size());
+    ASSERT_TRUE(node->ensure_range_is_committed(p1, l));
+    ASSERT_TRUE(node->is_range_fully_committed(p1, l));
+    ASSERT_TRUE(node->is_range_fully_committed(p1, 1));
+    ASSERT_TRUE(node->is_range_fully_committed(p1, 0));
+    ASSERT_TRUE(node->is_range_fully_committed(p1 + l/2, l/2));
+    ASSERT_FALSE(node->is_range_fully_committed(p1 + l/2, l));
+    ASSERT_FALSE(node->is_range_fully_committed(p1 - l/2, l));
+    ASSERT_FALSE(node->is_range_fully_committed(p1 - 1, 2));
+    ASSERT_FALSE(node->is_range_fully_committed(p1 + l, 2));
+  }
+#endif
 }
 
 // Note: we unfortunately need TEST_VM even though the system tested
@@ -589,5 +606,4 @@ TEST_VM(metaspace, virtual_space_node_test_7) {
         metaspace::chunklevel::MAX_CHUNK_WORD_SIZE * 100);
     test.test_exhaust_node();
   }
-
 }
