@@ -259,9 +259,9 @@ public final class RMIConnectionImpl_Stub
             throws java.io.IOException {
         try {
             Object $result = ref.invoke(this, $method_fetchNotifications_7,
-                    new java.lang.Object[]{java.lang.Long.valueOf($param_long_1),
-                            java.lang.Integer.valueOf($param_int_2),
-                            java.lang.Long.valueOf($param_long_3)}, -5037523307973544478L);
+                    new java.lang.Object[]{$param_long_1,
+                            $param_int_2,
+                            $param_long_3}, -5037523307973544478L);
             return ((javax.management.remote.NotificationResult) $result);
         } catch (java.lang.RuntimeException e) {
             throw e;

@@ -438,8 +438,8 @@ public final class HTMLdtd
     private static void defineEntity( String name, char value )
     {
         if ( _byName.get( name ) == null ) {
-            _byName.put( name, Integer.valueOf( value ) );
-            _byChar.put( Integer.valueOf( value ), name );
+            _byName.put( name, (int) value);
+            _byChar.put( (int) value , name );
         }
     }
 

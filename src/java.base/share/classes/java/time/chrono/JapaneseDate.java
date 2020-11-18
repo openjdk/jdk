@@ -141,11 +141,11 @@ public final class JapaneseDate
     /**
      * The JapaneseEra of this date.
      */
-    private transient JapaneseEra era;
+    private final transient JapaneseEra era;
     /**
      * The Japanese imperial calendar year of this date.
      */
-    private transient int yearOfEra;
+    private final transient int yearOfEra;
 
     /**
      * The first day supported by the JapaneseChronology is Meiji 6, January 1st.

@@ -89,7 +89,7 @@ public class EscapeAnalysisTest extends EATestBase {
         testEscapeAnalysis("testMonitorSnippet", JavaConstant.forInt(0), false);
     }
 
-    @SuppressWarnings({"deprecation", "removal"})
+    @SuppressWarnings({"deprecation", "removal", "synchronization"})
     public static int testMonitorSnippet() {
         Integer x = new Integer(0);
         Double y = new Double(0);
@@ -113,7 +113,7 @@ public class EscapeAnalysisTest extends EATestBase {
      * This test case differs from the last one in that it requires inlining within a synchronized
      * region.
      */
-    @SuppressWarnings({"deprecation", "removal"})
+    @SuppressWarnings({"deprecation", "removal", "synchronization"})
     public static int testMonitor2Snippet() {
         Integer x = new Integer(0);
         Double y = new Double(0);
