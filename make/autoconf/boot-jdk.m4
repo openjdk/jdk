@@ -75,7 +75,7 @@ AC_DEFUN([BOOTJDK_DO_CHECK],
         else
           # Oh, this is looking good! We probably have found a proper JDK. Is it the correct version?
           # Additional [] needed to keep m4 from mangling shell constructs.
-          [ BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java$EXE_SUFFIX" $USER_BOOT_JDK_OPTIONS -version 2>&1 | $AWK '/version \"[0-9a-zA-Z\._\-]+\"/{print $ 0; exit;}'` ]
+          [ BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java$EXE_SUFFIX" $USER_BOOT_JDK_OPTIONS -version 2>&1 | $AWK '/version "[0-9a-zA-Z\._\-]+"/ {print $ 0; exit;}'` ]
           if [ [[ "$BOOT_JDK_VERSION" =~ "Picked up" ]] ]; then
             AC_MSG_NOTICE([You have _JAVA_OPTIONS or JAVA_TOOL_OPTIONS set. This can mess up the build. Please use --with-boot-jdk-jvmargs instead.])
             AC_MSG_NOTICE([Java reports: "$BOOT_JDK_VERSION".])
