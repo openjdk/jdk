@@ -60,6 +60,12 @@ class IllegalFormatArgumentIndexException extends IllegalFormatException {
 
     @Override
     public String getMessage() {
+        int index = getIndex();
+
+        if (index == Integer.MIN_VALUE) {
+           return "Format argument index value is invalid.";
+        }
+
         return String.format("Illegal format argument index = %d", getIndex());
     }
 
