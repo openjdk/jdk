@@ -400,7 +400,7 @@ bool CountedLoopReserveKit::create_reserve() {
     return false;
   }
   CountedLoopNode *cl = _lpt->_head->as_CountedLoop();
-  if (!cl->is_valid_counted_loop()) {
+  if (!cl->is_valid_counted_loop(T_INT)) {
     if (TraceLoopOpts) {
       tty->print_cr("CountedLoopReserveKit::create_reserve: %d not valid counted loop", cl->_idx);
     }

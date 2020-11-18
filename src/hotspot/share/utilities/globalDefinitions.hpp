@@ -718,6 +718,22 @@ extern const char* type2name_tab[T_CONFLICT+1];     // Map a BasicType to a jcha
 inline const char* type2name(BasicType t) { return (uint)t < T_CONFLICT+1 ? type2name_tab[t] : NULL; }
 extern BasicType name2type(const char* name);
 
+inline jlong max_signed_integer(BasicType bt) {
+  if (bt == T_INT) {
+    return max_jint;
+  }
+  assert(bt == T_LONG, "unsupported");
+  return max_jlong;
+}
+
+inline jlong min_signed_integer(BasicType bt) {
+  if (bt == T_INT) {
+    return min_jint;
+  }
+  assert(bt == T_LONG, "unsupported");
+  return min_jlong;
+}
+
 // Auxiliary math routines
 // least common multiple
 extern size_t lcm(size_t a, size_t b);

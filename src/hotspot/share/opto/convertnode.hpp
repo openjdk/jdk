@@ -178,11 +178,13 @@ class ConvL2FNode : public Node {
 
 //------------------------------ConvL2INode------------------------------------
 // Convert long to integer
-class ConvL2INode : public Node {
+class ConvL2INode : public TypeNode {
   public:
-  ConvL2INode( Node *in1 ) : Node(0,in1) {}
+  ConvL2INode(Node *in1, const TypeInt* t = TypeInt::INT)
+  : TypeNode(t, 2) {
+    init_req(1, in1);
+  }
   virtual int Opcode() const;
-  virtual const Type *bottom_type() const { return TypeInt::INT; }
   virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);

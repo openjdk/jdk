@@ -284,7 +284,6 @@ public:
 
   const TypeInt    *is_int() const;
   const TypeInt    *isa_int() const;             // Returns NULL if not an Int
-  const TypeInteger* isa_integer() const;
   const TypeInteger* is_integer(BasicType bt) const;
   const TypeInteger* isa_integer(BasicType bt) const;
   const TypeLong   *is_long() const;
@@ -539,6 +538,8 @@ public:
   jlong get_con_as_long(BasicType bt) const;
 
   static const TypeInteger* make(jlong lo, jlong hi, int w, BasicType bt);
+
+  static const TypeInteger* bottom(BasicType type);
 };
 
 

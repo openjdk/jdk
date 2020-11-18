@@ -460,14 +460,14 @@ const Type* ConvL2INode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return Type::TOP;
   const TypeLong *tl = t->is_long();
+  const TypeInt* ti = TypeInt::INT;
   if (tl->is_con()) {
-  // Easy case.
-  return TypeInt::make((jint)tl->get_con());
+    // Easy case.
+    ti = TypeInt::make((jint)tl->get_con());
+  } else if (tl->_lo >= min_jint && tl->_hi <= max_jint) {
+    ti = TypeInt::make((jint)tl->_lo, (jint)tl->_hi, tl->_widen);
   }
-  if (tl->_lo >= min_jint && tl->_hi <= max_jint) {
-    return TypeInt::make((jint)tl->_lo, (jint)tl->_hi, tl->_widen);
-  }
-  return bottom_type();
+  return ti->filter(_type);
 }
 
 //------------------------------Ideal------------------------------------------
