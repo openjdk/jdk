@@ -51,8 +51,8 @@ final class DiskRepository implements Closeable {
     static final int HEADER_SIZE = 68;
     private static final int HEADER_FILE_DURATION = 40;
 
-    private final Deque<DiskChunk> activeChunks = new ArrayDeque<>(); // O(n) on remove, consider LinkedList
-    private final Deque<DiskChunk> deadChunks = new ArrayDeque<>(); // O(n) on remove, consider LinkedList
+    private final Deque<DiskChunk> activeChunks = new ArrayDeque<>();
+    private final Deque<DiskChunk> deadChunks = new ArrayDeque<>(); 
     private final boolean deleteDirectory;
 
     private ByteBuffer buffer = ByteBuffer.allocate(256);
@@ -355,6 +355,9 @@ final class DiskRepository implements Closeable {
             raf.close();
         }
         deadChunks.addAll(activeChunks);
+        if (currentChunk != null) {
+            deadChunks.add(currentChunk);
+        }
         cleanUpDeadChunk(Integer.MAX_VALUE);
         if (deleteDirectory) {
             try {

@@ -59,11 +59,15 @@ public class TestClose {
             event.commit();
         }
         e.onFlush(() -> {
-            e.close();
+            e.close(); // <- should clean up files.
         });
-        e.awaitTermination();
-
-        if (Files.list(p).count() > 0) {
+        e.awaitTermination(); 
+        int count = 0;
+        for (Object path : Files.list(p).toArray()) {
+            System.out.println(path);
+            count++;
+        }
+        if (count > 0) {
             throw new Exception("Expected repository to be empty");
         }
     }
