@@ -130,7 +130,7 @@ public class JavadocExamples {
 
         // Remove a particular header (e.g. Foo-Bar):
         HttpRequest.newBuilder(request, (name, value) ->
-                name.equalsIgnoreCase("Foo-Bar"));
+                !name.equalsIgnoreCase("Foo-Bar"));
     }
 
     void fromHttpResponse() throws Exception {

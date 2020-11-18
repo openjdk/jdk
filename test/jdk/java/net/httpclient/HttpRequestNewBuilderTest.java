@@ -31,21 +31,18 @@ import java.net.http.HttpResponse.BodySubscribers;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Flow;
 import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
-
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
-
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertThrows;
@@ -92,14 +89,14 @@ public class HttpRequestNewBuilderTest {
                         .headers("a", "1", "b", "2", "c", "3", "d", "4", "testName1", "testValue1").build() },
                 { HttpRequest.newBuilder(URI.create("https://header-5/"))
                         .headers( "a", "1", "b", "2", "testName1", "testValue1", "testName2", "testValue2", "c", "3", "d", "4").build() },
-                { HttpRequest.newBuilder(URI.create("https://header-multiValue-1/"))
+                { HttpRequest.newBuilder(URI.create("https://header-6/"))
                         .headers("testName1", "testValue1")
                         .headers("testName1", "v")
                         .headers("testName1", "w")
                         .headers("testName1", "x")
                         .headers("testName1", "y")
                         .headers("testName1", "z").build() },
-                { HttpRequest.newBuilder(URI.create("https://header-multiValue-2/"))
+                { HttpRequest.newBuilder(URI.create("https://header-7/"))
                         .headers("testName1", "testValue1")
                         .headers("testName1", "v")
                         .headers("testName1", "w")
@@ -107,14 +104,14 @@ public class HttpRequestNewBuilderTest {
                         .headers("testName1", "y")
                         .headers("testName1", "z")
                         .headers("testName1", "testValue2").build() },
-                { HttpRequest.newBuilder(URI.create("https://header-multiValue-3/"))
+                { HttpRequest.newBuilder(URI.create("https://header-8/"))
                         .headers("testName1", "v")
                         .headers("testName1", "w")
                         .headers("testName1", "x")
                         .headers("testName1", "y")
                         .headers("testName1", "z")
                         .headers("testName1", "testValue1").build() },
-                { HttpRequest.newBuilder(URI.create("https://header-multiValue-4/"))
+                { HttpRequest.newBuilder(URI.create("https://header-9/"))
                         .headers("testName1", "v")
                         .headers("testName1", "w")
                         .headers("testName1", "testValue1")
@@ -142,7 +139,7 @@ public class HttpRequestNewBuilderTest {
                 { HttpRequest.newBuilder(URI.create("https://method-14/")).method("TEST", HttpRequest.BodyPublishers.ofString("testData")).build() },
 
                 { HttpRequest.newBuilder(URI.create("https://all-fields-1/")).GET().expectContinue(true).version(HTTP_2)
-                        .timeout(Duration.ofSeconds(1)).header("testName", "testValue").build() },
+                        .timeout(Duration.ofSeconds(1)).header("testName1", "testValue1").build() },
         };
     }
 
@@ -317,6 +314,9 @@ public class HttpRequestNewBuilderTest {
 
     @Test(dataProvider = "testRequests")
     public void testRemoveHeader(HttpRequest request) {
+        if(!request.headers().map().isEmpty()) {
+            assertTrue(request.headers().map().containsKey("testName1"));
+        }
         BiPredicate<String, String> filter = (n, v) -> !n.equalsIgnoreCase("testName1");
 
         var r = HttpRequest.newBuilder(request, filter).build();
@@ -326,8 +326,11 @@ public class HttpRequestNewBuilderTest {
 
     @Test(dataProvider = "testRequests")
     public void testRemoveSingleHeaderValue(HttpRequest request) {
+        if(!request.headers().map().isEmpty()) {
+            assertTrue(request.headers().allValues("testName1").contains("testValue1"));
+        }
         BiPredicate<String, String> filter = (n, v) ->
-                n.equalsIgnoreCase("testName1") && !v.equalsIgnoreCase("testValue1");
+                !(n.equalsIgnoreCase("testName1") && v.equals("testValue1"));
 
         var r = HttpRequest.newBuilder(request, filter).build();
         assertFalse(r.headers().map().containsValue("testValue1"));
@@ -336,16 +339,17 @@ public class HttpRequestNewBuilderTest {
 
     @Test(dataProvider = "testRequests")
     public void testRemoveMultipleHeaders(HttpRequest request) {
-        BiPredicate<String, String> filter = (n, v) ->
-                !(((n.equalsIgnoreCase("testName1") && v.equalsIgnoreCase("testValue1")))
-                || ((n.equalsIgnoreCase("testName2") && v.equalsIgnoreCase("testValue2"))));
+        BiPredicate<String, String> isTestName1Value1 = (n ,v) ->
+                n.equalsIgnoreCase("testName1") && v.equals("testValue1");
+        BiPredicate<String, String> isTestName2Value2 = (n ,v) ->
+                n.equalsIgnoreCase("testName2") && v.equals("testValue2");
+        var filter = (isTestName1Value1.or(isTestName2Value2)).negate();
 
         var r = HttpRequest.newBuilder(request, filter).build();
         assertEquals(r.headers().map(), HttpHeaders.of(request.headers().map(), filter).map());
 
         BiPredicate<String, String> filter1 = (n, v) ->
-                !(n.equalsIgnoreCase("testName1") &&
-                 (v.equalsIgnoreCase("firstValue1") || v.equalsIgnoreCase("lastValue2")));
+                !(n.equalsIgnoreCase("testName1") && (v.equals("testValue1") || v.equals("testValue2")));
 
         var r1 = HttpRequest.newBuilder(request, filter1).build();
         assertEquals(r1.headers().map(), HttpHeaders.of(request.headers().map(), filter1).map());
@@ -371,6 +375,17 @@ public class HttpRequestNewBuilderTest {
             assertFalse(r.headers().map().isEmpty());
             assertEquals(r.headers().map(), HttpHeaders.of(request.headers().map(), filter).map());
         }
+    }
+
+    @Test
+    public void testHeaderExample() {
+        var request = HttpRequest.newBuilder(URI.create("https://example/"))
+                .header("Foo-Bar", "baz").build();
+
+        BiPredicate<String, String> filter = (n, v) -> !n.equalsIgnoreCase("Foo-Bar");
+        var r = HttpRequest.newBuilder(request, filter).build();
+        assertFalse(r.headers().map().containsKey("Foo-Bar"));
+        assertEquals(r.headers().map(), HttpHeaders.of(request.headers().map(), filter).map());
     }
 
     @Test

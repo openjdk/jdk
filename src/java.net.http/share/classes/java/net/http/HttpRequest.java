@@ -331,7 +331,7 @@ public abstract class HttpRequest {
      *  <pre>{@code HttpRequest.newBuilder(request, (n, v) -> false)}</pre>
      *
      *  <li> Remove a particular header (e.g. Foo-Bar):
-     *  <pre>{@code HttpRequest.newBuilder(request, (name, value) -> name.equalsIgnoreCase("Foo-Bar"))}</pre>
+     *  <pre>{@code HttpRequest.newBuilder(request, (name, value) -> !name.equalsIgnoreCase("Foo-Bar"))}</pre>
      * </ul>
      *
      * @param request the original request
