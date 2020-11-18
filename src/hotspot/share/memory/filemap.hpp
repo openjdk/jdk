@@ -295,7 +295,6 @@ public:
   void set_ptrmap_size_in_bits(size_t s)         { _ptrmap_size_in_bits = s; }
   void set_mapped_base_address(char* p)          { _mapped_base_address = p; }
   void set_heap_obj_roots(narrowOop r)           { _heap_obj_roots = r; }
-  void set_i2i_entry_code_buffers(address p, size_t s) {
   void set_i2i_entry_code_buffers(address p) {
     set_mapped_offset((char*)p, &_i2i_entry_code_buffers_offset);
   }
