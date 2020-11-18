@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.awt.GraphicsConfiguration;
 import java.awt.ImageCapabilities;
 import java.awt.Transparency;
 import java.awt.image.ColorModel;
+
 import sun.awt.X11GraphicsConfig;
 import sun.awt.image.SunVolatileImage;
 import sun.awt.image.VolatileSurfaceManager;
@@ -93,7 +94,8 @@ public class X11VolatileSurfaceManager extends VolatileSurfaceManager {
                                               vImg.getWidth(),
                                               vImg.getHeight(),
                                               cm, vImg, drawable,
-                                              Transparency.OPAQUE);
+                                              Transparency.OPAQUE,
+                                              false);
         } catch (NullPointerException ex) {
             sData = null;
         } catch (OutOfMemoryError er) {
