@@ -271,7 +271,7 @@ void klassVtable::initialize_vtable(bool checkconstraints, TRAPS) {
 // See JLS 3rd edition 8.4.6.1
 // Assumes name-signature match
 // Note that the InstanceKlass of the method in the targetclassname has not always been created yet
-static bool is_override(Method* super_method, Handle targetclassloader, Symbol* targetclassname) {
+static bool can_be_overridden(Method* super_method, Handle targetclassloader, Symbol* targetclassname) {
    // Private methods can not be overridden
    assert(!super_method->is_private(), "shouldn't call with a private method");
 
@@ -318,7 +318,7 @@ InstanceKlass* klassVtable::find_transitive_override(InstanceKlass* initialsuper
       assert(super_method->name() == name && super_method->signature() == signature, "vtable entry name/sig mismatch");
 #endif
 
-      if (is_override(super_method, target_loader, target_classname)) {
+      if (can_be_overridden(super_method, target_loader, target_classname)) {
         if (log_develop_is_enabled(Trace, vtables)) {
           ResourceMark rm;
           LogTarget(Trace, vtables) lt;
@@ -482,7 +482,7 @@ bool klassVtable::update_inherited_vtable(const methodHandle& target_method,
       // private methods are also never overridden
       if (!super_method->is_private() &&
           (is_default ||
-           is_override(super_method, target_loader, target_classname) ||
+           can_be_overridden(super_method, target_loader, target_classname) ||
            (klass->major_version() >= VTABLE_TRANSITIVE_OVERRIDE_VERSION &&
              (super_klass = find_transitive_override(super_klass,
                                                      target_method, i, target_loader,
@@ -668,7 +668,7 @@ bool klassVtable::needs_new_vtable_entry(Method* target_method,
     // methods that have less accessibility
     if (!super_method->is_static() &&
         !super_method->is_private()) {
-      if (is_override(super_method, classloader, classname)) {
+      if (can_be_overridden(super_method, classloader, classname)) {
         return false;
         // else keep looking for transitive overrides
       }
