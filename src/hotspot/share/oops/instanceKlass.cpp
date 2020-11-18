@@ -2972,27 +2972,6 @@ bool InstanceKlass::is_same_class_package(oop other_class_loader,
   }
 }
 
-// Returns true iff super_method can be overridden by a method in targetclassname
-// See JLS 3rd edition 8.4.6.1
-// Assumes name-signature match
-// "this" is InstanceKlass of super_method which must exist
-// note that the InstanceKlass of the method in the targetclassname has not always been created yet
-bool InstanceKlass::is_override(const methodHandle& super_method, Handle targetclassloader, Symbol* targetclassname, TRAPS) {
-   // Private methods can not be overridden
-   if (super_method->is_private()) {
-     return false;
-   }
-   // If super method is accessible, then override
-   if ((super_method->is_protected()) ||
-       (super_method->is_public())) {
-     return true;
-   }
-   // Package-private methods are not inherited outside of package
-   assert(super_method->is_package_private(), "must be package private");
-   return(is_same_class_package(targetclassloader(), targetclassname));
-}
-
-
 static bool is_prohibited_package_slow(Symbol* class_name) {
   // Caller has ResourceMark
   int length;

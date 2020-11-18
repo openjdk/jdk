@@ -70,17 +70,17 @@ void* JVMCI::get_shared_library(char*& path, bool load) {
     char ebuf[1024];
     if (JVMCILibPath != NULL) {
       if (!os::dll_locate_lib(path, sizeof(path), JVMCILibPath, JVMCI_SHARED_LIBRARY_NAME)) {
-        vm_exit_during_initialization("Unable to locate JVMCI shared library in path specified by -XX:JVMCILibPath value", JVMCILibPath);
+        fatal("Unable to create path to JVMCI shared library based on value of JVMCILibPath (%s)", JVMCILibPath);
       }
     } else {
       if (!os::dll_locate_lib(path, sizeof(path), Arguments::get_dll_dir(), JVMCI_SHARED_LIBRARY_NAME)) {
-        vm_exit_during_initialization("Unable to create path to JVMCI shared library");
+        fatal("Unable to create path to JVMCI shared library");
       }
     }
 
     void* handle = os::dll_load(path, ebuf, sizeof ebuf);
     if (handle == NULL) {
-      vm_exit_during_initialization("Unable to load JVMCI shared library", ebuf);
+      fatal("Unable to load JVMCI shared library from %s: %s", path, ebuf);
     }
     _shared_library_handle = handle;
     _shared_library_path = strdup(path);
