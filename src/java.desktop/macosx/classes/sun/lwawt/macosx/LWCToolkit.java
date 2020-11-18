@@ -208,12 +208,12 @@ public final class LWCToolkit extends LWToolkit {
     public static final int KEYBOARD_FOCUS_COLOR = 0;
     public static final int INACTIVE_SELECTION_BACKGROUND_COLOR = 1;
     public static final int INACTIVE_SELECTION_FOREGROUND_COLOR = 2;
-    public static final int CONTROL_TEXT_COLOR = 3;
+    public static final int SELECTED_CONTROL_TEXT_COLOR = 3;
     private static int[] appleColors = {
         0xFF808080, // keyboardFocusColor = Color.gray;
         0xFFC0C0C0, // secondarySelectedControlColor
         0xFF303030, // controlDarkShadowColor
-        0xFFFFFFFF, // controlTextColor
+        0xFFFFFFFF, // selectedControlColor
     };
 
     private native void loadNativeColors(final int[] systemColors, final int[] appleColors);

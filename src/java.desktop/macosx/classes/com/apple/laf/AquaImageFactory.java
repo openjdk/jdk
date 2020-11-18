@@ -498,6 +498,6 @@ public class AquaImageFactory {
     }
 
     public static Color getControlTextColorUIResource() {
-        return new SystemColorProxy(LWCToolkit.getAppleColor(LWCToolkit.CONTROL_TEXT_COLOR));
+        return new SystemColorProxy(LWCToolkit.getAppleColor(LWCToolkit.SELECTED_CONTROL_TEXT_COLOR));
     }
 }
