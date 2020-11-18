@@ -52,28 +52,90 @@ void Metachunk::assert_have_expand_lock() {
 }
 #endif
 
-// Commit uncommitted section of the chunk.
+// Commit space in the chunk, so that _committed_words is at least at
+//  new_committed_words.
+//  new_committed_words has to fall within the limits of the chunk and has
+//  to be larger than the current commit boundary.
 // Fails if we hit a commit limit.
 bool Metachunk::commit_up_to(size_t new_committed_words) {
-  // Please note:
+
+  assert(new_committed_words > _committed_words, "nothing to do.");
+  assert(new_committed_words <= word_size(), "parameter error");
+
+  // lock protection needed since it may modify neighboring chunks.
+  assert_lock_strong(MetaspaceExpand_lock);
+
+  // This function commits additional space within the Metachunk. Committing is done
+  //  for whole commit granules only.
   //
-  // VirtualSpaceNode::ensure_range_is_committed(), when called over a range containing both committed and uncommitted parts,
-  // will replace the whole range with a new mapping, thus erasing the existing content in the committed parts. Therefore
-  // we must make sure never to call VirtualSpaceNode::ensure_range_is_committed() over a range containing live data.
+  // We have two cases:
   //
-  // Luckily, this cannot happen by design. We have two cases:
+  // Case 1: Chunk is larger than a commit granule:
   //
-  // 1) chunks equal or larger than a commit granule.
-  //    In this case, due to chunk geometry, the chunk should cover whole commit granules (in other words, a chunk equal or larger than
-  //    a commit granule will never share a granule with a neighbor). That means whatever we commit or uncommit here does not affect
-  //    neighboring chunks. We only have to take care not to re-commit used parts of ourself. We do this by moving the committed_words
-  //    limit in multiple of commit granules.
+  //  We commit additional granules as are needed to reach the requested
+  //   "new_committed_words" commit boundary. That may over-reach, so the
+  //   resulting commit boundary may be higher.
+  //  The commit boundary has to be at a granule border. That guarantees
+  //   that we never re-commit already committed pages (see remarks below).
   //
-  // 2) chunks smaller than a commit granule.
-  //    In this case, a chunk shares a single commit granule with its neighbors. But this never can be a problem:
-  //    - Either the commit granule is already committed (and maybe the neighbors contain live data). In that case calling
-  //      ensure_range_is_committed() will do nothing.
-  //    - Or the commit granule is not committed, but in this case, the neighbors are uncommitted too and cannot contain live data.
+  // Example: A chunk covering 8 granules. Before this call, we had three
+  //  granules committed and partly used. new_committed_words falls into
+  //  the fifth granule, causing us to commit  two additional granules:
+  //
+  //  granule 1    granule 2    granule 3    granule 4    granule 5    granule 6    granule 7    granule 8
+  // +------------+------------+------------+------------+------------+------------+------------+------------+
+  // |                                      |                         |                                      |
+  // | <.... old committed space .........> | <.... newly committed   | <.... uncommitted .................> |
+  // |                                      |               space ..> |                                      |
+  // | <... live data ...........> |        |                         |                                      |
+  // +------------+------------+---|--------+------------+------|-----+------------+------------+------------+
+  //                               |                            |
+  // ^                             ^        ^                   |     ^                                      ^
+  // base                          used     old                 |     new                                    chunk end
+  //                                        _committed_words    |      _committed_words
+  //                                                            |
+  //                                                           new_committed_words
+  //
+  // Case 2: Chunk is smaller than a commit granule.
+  //
+  //  It shares a single granule with a number of neighbors. Committing this
+  //  granule will affect neighbors.
+  //
+  // Example: calling ensure_committed() on chunk B may commit the granule, thus
+  //  committing space for chunk A and C as well.
+  //
+  // +---------------------- one granule ----------------------------+
+  // |                                                               |
+  //     chunk A         chunk B                 chunk C
+  // +---------------+---------------+-------------------------------+
+  // |               |               |                               |
+  // | <committed    | <committed>   |  <committed as well>          |
+  // |   as well>    |               |                               |
+  // |               |               |                               |
+  // +---------------+---------------+-------------------------------+
+  //                      ^
+  //                      ensure_committed()
+  //
+  ///////
+  //
+  // Safety note: when committing a memory range, that range will be remapped. If that
+  //  range did contain committed pages, those are now lost. Therefore we must ensure
+  //  that we never re-commit parts of chunks which are already in use.
+  //
+  // Happily this is no concern:
+  //
+  // Chunks smaller than a granule have in-granule neighbors which we would
+  //  affect when committing/ uncommitting the underlying granule. But:
+  //  - we never uncommit chunks smaller than a single granule.
+  //  - when committing an uncommitted small chunk, there is no problem since
+  //    all in-granule-neighbors were uncommitted and cannot contain live
+  //    data we could wipe by re-committing.
+  //
+  // Chunks equal or larger than a commit granule occupy whole granules, so
+  //  committing them does not affect neighbors. As long as we take care to move
+  //  the commit boundary inside those chunks along granule borders, we cannot
+  //  accidentally re-commit used pages.
+  //
 
 #ifdef ASSERT
   if (word_size() >= Settings::commit_granule_words()) {
@@ -86,12 +148,12 @@ bool Metachunk::commit_up_to(size_t new_committed_words) {
     assert(_used_words <= _committed_words, "Sanity");
   } else {
     // case (2)
-    assert(_committed_words == 0 || _committed_words == word_size(), "Sanity");
+    // Small chunks (< granule) are either fully committed or fully uncommitted.
+    // Moreover, at this point they cannot be committed, since we only do this
+    // if the new commit boundary is higher than the current one.
+    assert(_committed_words == 0, "Sanity");
   }
 #endif
-
-  // We should hold the expand lock at this point.
-  assert_lock_strong(MetaspaceExpand_lock);
 
   const size_t commit_from = _committed_words;
   const size_t commit_to =   MIN2(align_up(new_committed_words, Settings::commit_granule_words()), word_size());
@@ -108,7 +170,28 @@ bool Metachunk::commit_up_to(size_t new_committed_words) {
 
   // Remember how far we have committed.
   _committed_words = commit_to;
+
+  // If this chunk was smaller than a granule we just committed, we committed the memory
+  //  underlying the in-granule neighbors as well. Lets correct their commit boundaries.
+  // Note that this is not strictly necessary: these boundaries would silently be corrected
+  //  the first time someone were to use those chunks. But doing it now keeps statistics happy
+  //  and we save some work later on.
+  if (word_size() < Settings::commit_granule_words()) {
+    const MetaWord* granule_start = align_down(base(), Settings::commit_granule_bytes());
+    const MetaWord* granule_end = granule_start + Settings::commit_granule_words();
+    assert(granule_end >= end(), "Sanity");
+    for (Metachunk* c = prev_in_vs(); c != NULL && c->base() >= granule_start; c = c->prev_in_vs()) {
+      assert(c->committed_words() == 0, "neighbor was already committed?");
+      c->_committed_words = c->word_size();
+    }
+    for (Metachunk* c = next_in_vs(); c != NULL && c->end() <= granule_end; c = c->next_in_vs()) {
+      assert(c->committed_words() == 0, "neighbor was already committed?");
+      c->_committed_words = c->word_size();
+    }
+  }
+
   DEBUG_ONLY(verify();)
+  DEBUG_ONLY(verify_neighborhood();)
   return true;
 }
 
@@ -181,11 +264,22 @@ void Metachunk::zap_header(uint8_t c) {
   memset(this, c, sizeof(Metachunk));
 }
 
+// Checks the chunk local commit watermark against the underlying commit mask.
+void Metachunk::verify_committed_words() const {
+  assert_lock_strong(MetaspaceExpand_lock);
+  if (_committed_words > 0) {
+    assert(_vsnode->is_range_fully_committed(base(), committed_words()),
+           "commit mismatch - Chunk: " METACHUNK_FULL_FORMAT ".",
+           METACHUNK_FULL_FORMAT_ARGS(this));
+  }
+}
+
 // Verifies linking with neighbors in virtual space.
 // Can only be done under expand lock protection.
 void Metachunk::verify_neighborhood() const {
   assert_lock_strong(MetaspaceExpand_lock);
   assert(!is_dead(), "Do not call on dead chunks.");
+  verify_committed_words();
   if (is_root_chunk()) {
     // Root chunks are all alone in the world.
     assert(next_in_vs() == NULL || prev_in_vs() == NULL, "Root chunks should have no neighbors");
@@ -202,6 +296,7 @@ void Metachunk::verify_neighborhood() const {
       assert(prev_in_vs()->next_in_vs() == this,
              "Chunk " METACHUNK_FULL_FORMAT ": broken link to left neighbor: " METACHUNK_FULL_FORMAT " (" PTR_FORMAT ").",
              METACHUNK_FULL_FORMAT_ARGS(this), METACHUNK_FULL_FORMAT_ARGS(prev_in_vs()), p2i(prev_in_vs()->next_in_vs()));
+      prev_in_vs()->verify_committed_words();
     }
     if (next_in_vs() != NULL) {
       assert(end() == next_in_vs()->base(),
@@ -210,6 +305,7 @@ void Metachunk::verify_neighborhood() const {
       assert(next_in_vs()->prev_in_vs() == this,
              "Chunk " METACHUNK_FULL_FORMAT ": broken link to right neighbor: " METACHUNK_FULL_FORMAT " (" PTR_FORMAT ").",
              METACHUNK_FULL_FORMAT_ARGS(this), METACHUNK_FULL_FORMAT_ARGS(next_in_vs()), p2i(next_in_vs()->prev_in_vs()));
+      next_in_vs()->verify_committed_words();
     }
 
     // One of the neighbors must be the buddy. It can be whole or splintered.

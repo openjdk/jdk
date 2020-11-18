@@ -260,6 +260,9 @@ public:
   //  - mark it as uncommitted in the commit mask
   void uncommit_range(MetaWord* p, size_t word_size);
 
+  // Returns true if range [p, p + word_size) is fully committed.
+  DEBUG_ONLY(bool is_range_fully_committed(const MetaWord* p, size_t word_size) const;)
+
   //// List stuff ////
   VirtualSpaceNode* next() const        { return _next; }
   void set_next(VirtualSpaceNode* vsn)  { _next = vsn; }

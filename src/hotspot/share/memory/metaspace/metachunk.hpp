@@ -221,6 +221,9 @@ class Metachunk {
 
   DEBUG_ONLY(static void assert_have_expand_lock();)
 
+  // Checks the chunk local commit watermark against the underlying commit mask.
+  DEBUG_ONLY(void verify_committed_words() const;)
+
 public:
 
   Metachunk() :

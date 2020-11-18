@@ -205,12 +205,9 @@ TEST_VM(metaspace, chunk_buddy_stuff) {
       EXPECT_NULL(c1->prev_in_vs()); // since we know this is the first in the area
       EXPECT_EQ(c2->prev_in_vs(), c1);
     }
-
     context.return_chunk(c1);
     context.return_chunk(c2);
-
   }
-
 }
 
 TEST_VM(metaspace, chunk_allocate_with_commit_limit) {
@@ -246,6 +243,63 @@ TEST_VM(metaspace, chunk_allocate_with_commit_limit) {
 
   context.return_chunk(c);
 
+}
+
+#ifdef ASSERT
+// Test that an assert fires if commit information goes out
+// of sync between metaspace chunk and underlying VirtualSpaceNode.
+TEST_VM_ASSERT_MSG(metaspace, chunk_commit_mismatch, "commit mismatch") {
+
+  ChunkGtestContext context;
+
+  // A big chunk...
+  Metachunk* c = NULL;
+  context.alloc_chunk_expect_success(&c, ROOT_CHUNK_LEVEL, ROOT_CHUNK_LEVEL, 0);
+
+  // commit fully
+  context.commit_chunk_with_test(c, c->word_size());
+
+  // uncommit underlying space
+  {
+    MutexLocker cl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+    c->vsnode()->uncommit_range(c->base() + Settings::commit_granule_words(), Settings::commit_granule_words());
+  }
+
+  {
+    MutexLocker cl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+    // This will assert (see: Metachunk::verify_committed_words())
+    c->verify_neighborhood();
+  }
+
+  ShouldNotReachHere();
+}
+#endif
+
+// Test that committing a small chunk correctly commits their in-granule-neighbors.
+TEST_VM(metaspace, chunk_commit_in_granule_neighbors) {
+  // For details, see comment in Metachunk::commit_up_to().
+
+  // Bit difficult to test since ChunkManager::get_chunk() automatically commits the returned
+  // chunk. Here, we just test that, after requesting a single 1K chunk from the ChunkManager,
+  // the remainder *committed space* in the ChunkManager is <commit granule size> - 1K.
+  ChunkGtestContext context;
+
+  // Freelist should be empty now
+  ASSERT_0(context.cm().calc_committed_word_size());
+
+  const size_t len = word_size_for_level(CHUNK_LEVEL_1K);
+  Metachunk* c = NULL;
+  context.alloc_chunk_expect_success(&c, CHUNK_LEVEL_1K, CHUNK_LEVEL_1K, len);
+
+  // A single granule should have been committed...
+  ASSERT_EQ(context.committed_words(), Settings::commit_granule_words());
+
+  // ...divided into the chunk we just got and the committed splinter chunks in the freelist:
+  ASSERT_EQ(c->committed_words(), len);
+  ASSERT_EQ(context.cm().calc_committed_word_size(),
+            Settings::commit_granule_words() - len);
+
+  context.return_chunk(c);
 }
 
 // Test splitting a chunk

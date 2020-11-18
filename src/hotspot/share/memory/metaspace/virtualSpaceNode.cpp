@@ -209,6 +209,16 @@ void VirtualSpaceNode::uncommit_range(MetaWord* p, size_t word_size) {
   InternalStats::inc_num_space_uncommitted();
 }
 
+#ifdef ASSERT
+// Returns true if range [p, p + word_size) is fully committed.
+bool VirtualSpaceNode::is_range_fully_committed(const MetaWord* p, size_t word_size) const {
+  assert_lock_strong(MetaspaceExpand_lock);
+  const MetaWord* p_start = align_down(p, Settings::commit_granule_bytes());
+  const size_t s2 = align_up(word_size, Settings::commit_granule_words());
+  return _commit_mask.get_committed_size_in_range(p_start, s2) == s2;
+}
+#endif
+
 //// creation, destruction ////
 
 VirtualSpaceNode::VirtualSpaceNode(ReservedSpace rs, bool owns_rs, CommitLimiter* limiter,
