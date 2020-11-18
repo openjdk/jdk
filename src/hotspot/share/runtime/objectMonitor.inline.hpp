@@ -31,7 +31,8 @@
 #include "runtime/synchronizer.hpp"
 
 inline intptr_t ObjectMonitor::is_entered(TRAPS) const {
-  if (THREAD == owner_raw() || THREAD->is_lock_owned((address) owner_raw())) {
+  void* owner = owner_raw();
+  if (THREAD == owner || THREAD->is_lock_owned((address)owner)) {
     return 1;
   }
   return 0;
@@ -67,7 +68,7 @@ inline void* ObjectMonitor::owner_raw() const {
 // This accessor is called when we really need to know if the owner
 // field == DEFLATER_MARKER and any non-NULL value won't do the trick.
 inline bool ObjectMonitor::owner_is_DEFLATER_MARKER() const {
-  return Atomic::load(&_owner) == DEFLATER_MARKER;
+  return owner_raw() == DEFLATER_MARKER;
 }
 
 // Returns true if 'this' is being async deflated and false otherwise.
