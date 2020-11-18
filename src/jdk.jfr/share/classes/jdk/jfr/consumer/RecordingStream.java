@@ -35,8 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import javax.security.auth.login.ConfigurationSpi;
-
 import jdk.jfr.Configuration;
 import jdk.jfr.Event;
 import jdk.jfr.EventSettings;

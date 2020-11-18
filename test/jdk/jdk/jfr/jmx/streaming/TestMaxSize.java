@@ -61,11 +61,12 @@ public class TestMaxSize {
                 if (finished.get()) {
                     return;
                 }
-                // Consumer some events, but give back control
+                // Consume some events, but give back control
                 // to stream so it can be closed.
                 try {
                     Thread.sleep(10);
                 } catch (InterruptedException e1) {
+                    // ignore
                 }
             });
             while (directorySize(dir) < 50_000_000) {
