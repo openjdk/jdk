@@ -3459,7 +3459,7 @@ instruct alltrue_in_mask16B(iRegINoSp dst, vecX src1, vecX src2, vecX tmp, rFlag
 
 instruct vabs8B(vecD dst, vecD src)
 %{
-  predicate(n->as_Vector()->length() == 8);
+  predicate(n->as_Vector()->length() == 4 || n->as_Vector()->length() == 8);
   match(Set dst (AbsVB src));
   ins_cost(INSN_COST);
   format %{ "abs  $dst, $src\t# vector (8B)" %}
