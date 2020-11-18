@@ -30,7 +30,6 @@
 #include "ci/ciFlags.hpp"
 #include "ci/ciInstance.hpp"
 #include "ci/ciUtilities.hpp"
-#include "ci/ciSymbols.hpp"
 
 // ciField
 //
@@ -186,16 +185,7 @@ public:
     return (holder()->is_subclass_of(callsite_klass) && (name() == ciSymbols::target_name()));
   }
 
-  bool is_autobox_cache() {
-    ciSymbol* klass_name = holder()->name();
-    return (name() == ciSymbols::cache_field_name() &&
-            holder()->uses_default_loader() &&
-            (klass_name == ciSymbols::java_lang_Character_CharacterCache() ||
-             klass_name == ciSymbols::java_lang_Byte_ByteCache() ||
-             klass_name == ciSymbols::java_lang_Short_ShortCache() ||
-             klass_name == ciSymbols::java_lang_Integer_IntegerCache() ||
-             klass_name == ciSymbols::java_lang_Long_LongCache()));
-  }
+  bool is_autobox_cache();
 
   // Debugging output
   void print();

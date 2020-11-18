@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "ci/ciField.hpp"
 #include "ci/ciInstanceKlass.hpp"
+#include "ci/ciSymbols.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -413,6 +414,17 @@ bool ciField::will_link(ciMethod* accessing_method,
   }
 
   return true;
+}
+
+bool ciField::is_autobox_cache() {
+  ciSymbol* klass_name = holder()->name();
+  return (name() == ciSymbols::cache_field_name() &&
+          holder()->uses_default_loader() &&
+          (klass_name == ciSymbols::java_lang_Character_CharacterCache() ||
+            klass_name == ciSymbols::java_lang_Byte_ByteCache() ||
+            klass_name == ciSymbols::java_lang_Short_ShortCache() ||
+            klass_name == ciSymbols::java_lang_Integer_IntegerCache() ||
+            klass_name == ciSymbols::java_lang_Long_LongCache()));
 }
 
 // ------------------------------------------------------------------
