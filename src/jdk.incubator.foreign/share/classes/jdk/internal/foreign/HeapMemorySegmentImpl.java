@@ -41,7 +41,7 @@ import java.util.function.Supplier;
  * a base object (typically an array). To enhance performances, the access to the base object needs to feature
  * sharp type information, as well as sharp null-check information. For this reason, many concrete subclasses
  * of {@link HeapMemorySegmentImpl} are defined (e.g. {@link OfFloat}, so that each subclass can override the
- * {@link HeapMemorySegmentImpl#base()} method so that it returns an array ogf the correct (sharp) type.
+ * {@link HeapMemorySegmentImpl#base()} method so that it returns an array of the correct (sharp) type.
  */
 public abstract class HeapMemorySegmentImpl<H> extends AbstractMemorySegmentImpl {
 
