@@ -52,7 +52,7 @@ final class DiskRepository implements Closeable {
     private static final int HEADER_FILE_DURATION = 40;
 
     private final Deque<DiskChunk> activeChunks = new ArrayDeque<>();
-    private final Deque<DiskChunk> deadChunks = new ArrayDeque<>(); 
+    private final Deque<DiskChunk> deadChunks = new ArrayDeque<>();
     private final boolean deleteDirectory;
 
     private ByteBuffer buffer = ByteBuffer.allocate(256);
@@ -63,14 +63,12 @@ final class DiskRepository implements Closeable {
     private int bufferIndex;
 
     private State state = State.HEADER;
-    // private int offset;
     private byte[] currentByteArray;
 
     private int typeId;
     private int typeIdshift;
     private int sizeShift;
     private int payLoadSize;
-    // private int longValue;
     private int longValueshift;
     private int eventFieldSize;
     private int lastFlush;
@@ -462,5 +460,4 @@ final class DiskRepository implements Closeable {
             }
         }
     }
-
 }

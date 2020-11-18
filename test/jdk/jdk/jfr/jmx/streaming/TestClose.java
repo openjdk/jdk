@@ -61,7 +61,7 @@ public class TestClose {
         e.onFlush(() -> {
             e.close(); // <- should clean up files.
         });
-        e.awaitTermination(); 
+        e.awaitTermination();
         int count = 0;
         for (Object path : Files.list(p).toArray()) {
             System.out.println(path);
