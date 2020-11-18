@@ -416,6 +416,13 @@ bool ciField::will_link(ciMethod* accessing_method,
   return true;
 }
 
+bool ciField::is_call_site_target() {
+  ciInstanceKlass* callsite_klass = CURRENT_ENV->CallSite_klass();
+  if (callsite_klass == NULL)
+    return false;
+  return (holder()->is_subclass_of(callsite_klass) && (name() == ciSymbols::target_name()));
+}
+
 bool ciField::is_autobox_cache() {
   ciSymbol* klass_name = holder()->name();
   return (name() == ciSymbols::cache_field_name() &&
