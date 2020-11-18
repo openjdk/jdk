@@ -319,7 +319,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
 
   __ movptr(tmp2, queue_index);
   __ testptr(tmp2, tmp2);
-  __ jcc(Assembler::equal, runtime);
+  __ jcc(Assembler::zero, runtime);
   __ subptr(tmp2, wordSize);
   __ movptr(queue_index, tmp2);
   __ addptr(tmp2, buffer);
