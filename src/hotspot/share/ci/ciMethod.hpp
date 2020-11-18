@@ -75,7 +75,7 @@ class ciMethod : public ciMetadata {
   int _code_size;
   int _max_stack;
   int _max_locals;
-  vmIntrinsics::ID _intrinsic_id;
+  vmIntrinsicsID _intrinsic_id;
   int _handler_count;
   int _nmethod_age;
   int _interpreter_invocation_count;
