@@ -34,6 +34,7 @@ import sun.security.action.GetBooleanAction;
 
 import java.io.FilePermission;
 import java.io.Serializable;
+import java.lang.constant.ConstantDescs;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
@@ -107,7 +108,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         MethodType classDataMType = MethodType.methodType(Object.class, MethodHandles.Lookup.class, String.class, Class.class);
         Handle classDataBsm = new Handle(H_INVOKESTATIC, Type.getInternalName(MethodHandles.class), "classData",
                                          classDataMType.descriptorString(), false);
-        implMethodCondy = new ConstantDynamic("implMethod", MethodHandle.class.descriptorString(), classDataBsm);
+        implMethodCondy = new ConstantDynamic(ConstantDescs.DEFAULT_NAME, MethodHandle.class.descriptorString(), classDataBsm);
     }
 
     // See context values in AbstractValidatingLambdaMetafactory
