@@ -291,7 +291,6 @@ Thread::Thread() {
   // The stack would act as a cache to avoid calls to ParkEvent::Allocate()
   // and ::Release()
   _ParkEvent   = ParkEvent::Allocate(this);
-  _MuxEvent    = ParkEvent::Allocate(this);
 
 #ifdef CHECK_UNHANDLED_OOPS
   if (CheckUnhandledOops) {
@@ -439,7 +438,6 @@ Thread::~Thread() {
   // It's possible we can encounter a null _ParkEvent, etc., in stillborn threads.
   // We NULL out the fields for good hygiene.
   ParkEvent::Release(_ParkEvent); _ParkEvent   = NULL;
-  ParkEvent::Release(_MuxEvent); _MuxEvent    = NULL;
 
   delete handle_area();
   delete metadata_handles();
@@ -3560,6 +3558,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Initialize Java-Level synchronization subsystem
   ObjectMonitor::Initialize();
+  ObjectSynchronizer::initialize();
 
   // Initialize global modules
   jint status = init_globals();
@@ -4582,22 +4581,11 @@ void Threads::print_threads_compiling(outputStream* st, char* buf, int buflen, b
 }
 
 
-// Internal SpinLock and Mutex
-// Based on ParkEvent
-
-// Ad-hoc mutual exclusion primitives: SpinLock and Mux
+// Ad-hoc mutual exclusion primitives: SpinLock
 //
 // We employ SpinLocks _only for low-contention, fixed-length
 // short-duration critical sections where we're concerned
 // about native mutex_t or HotSpot Mutex:: latency.
-// The mux construct provides a spin-then-block mutual exclusion
-// mechanism.
-//
-// Testing has shown that contention on the ListLock guarding gFreeList
-// is common.  If we implement ListLock as a simple SpinLock it's common
-// for the JVM to devolve to yielding with little progress.  This is true
-// despite the fact that the critical sections protected by ListLock are
-// extremely short.
 //
 // TODO-FIXME: ListLock should be of type SpinLock.
 // We should make this a 1st-class type, integrated into the lock
@@ -4648,150 +4636,6 @@ void Thread::SpinRelease(volatile int * adr) {
   // the ST of 0 into the lock-word which releases the lock, so fence
   // more than covers this on all platforms.
   *adr = 0;
-}
-
-// muxAcquire and muxRelease:
-//
-// *  muxAcquire and muxRelease support a single-word lock-word construct.
-//    The LSB of the word is set IFF the lock is held.
-//    The remainder of the word points to the head of a singly-linked list
-//    of threads blocked on the lock.
-//
-// *  The current implementation of muxAcquire-muxRelease uses its own
-//    dedicated Thread._MuxEvent instance.  If we're interested in
-//    minimizing the peak number of extant ParkEvent instances then
-//    we could eliminate _MuxEvent and "borrow" _ParkEvent as long
-//    as certain invariants were satisfied.  Specifically, care would need
-//    to be taken with regards to consuming unpark() "permits".
-//    A safe rule of thumb is that a thread would never call muxAcquire()
-//    if it's enqueued (cxq, EntryList, WaitList, etc) and will subsequently
-//    park().  Otherwise the _ParkEvent park() operation in muxAcquire() could
-//    consume an unpark() permit intended for monitorenter, for instance.
-//    One way around this would be to widen the restricted-range semaphore
-//    implemented in park().  Another alternative would be to provide
-//    multiple instances of the PlatformEvent() for each thread.  One
-//    instance would be dedicated to muxAcquire-muxRelease, for instance.
-//
-// *  Usage:
-//    -- Only as leaf locks
-//    -- for short-term locking only as muxAcquire does not perform
-//       thread state transitions.
-//
-// Alternatives:
-// *  We could implement muxAcquire and muxRelease with MCS or CLH locks
-//    but with parking or spin-then-park instead of pure spinning.
-// *  Use Taura-Oyama-Yonenzawa locks.
-// *  It's possible to construct a 1-0 lock if we encode the lockword as
-//    (List,LockByte).  Acquire will CAS the full lockword while Release
-//    will STB 0 into the LockByte.  The 1-0 scheme admits stranding, so
-//    acquiring threads use timers (ParkTimed) to detect and recover from
-//    the stranding window.  Thread/Node structures must be aligned on 256-byte
-//    boundaries by using placement-new.
-// *  Augment MCS with advisory back-link fields maintained with CAS().
-//    Pictorially:  LockWord -> T1 <-> T2 <-> T3 <-> ... <-> Tn <-> Owner.
-//    The validity of the backlinks must be ratified before we trust the value.
-//    If the backlinks are invalid the exiting thread must back-track through the
-//    the forward links, which are always trustworthy.
-// *  Add a successor indication.  The LockWord is currently encoded as
-//    (List, LOCKBIT:1).  We could also add a SUCCBIT or an explicit _succ variable
-//    to provide the usual futile-wakeup optimization.
-//    See RTStt for details.
-//
-
-
-const intptr_t LOCKBIT = 1;
-
-void Thread::muxAcquire(volatile intptr_t * Lock, const char * LockName) {
-  intptr_t w = Atomic::cmpxchg(Lock, (intptr_t)0, LOCKBIT);
-  if (w == 0) return;
-  if ((w & LOCKBIT) == 0 && Atomic::cmpxchg(Lock, w, w|LOCKBIT) == w) {
-    return;
-  }
-
-  ParkEvent * const Self = Thread::current()->_MuxEvent;
-  assert((intptr_t(Self) & LOCKBIT) == 0, "invariant");
-  for (;;) {
-    int its = (os::is_MP() ? 100 : 0) + 1;
-
-    // Optional spin phase: spin-then-park strategy
-    while (--its >= 0) {
-      w = *Lock;
-      if ((w & LOCKBIT) == 0 && Atomic::cmpxchg(Lock, w, w|LOCKBIT) == w) {
-        return;
-      }
-    }
-
-    Self->reset();
-    Self->OnList = intptr_t(Lock);
-    // The following fence() isn't _strictly necessary as the subsequent
-    // CAS() both serializes execution and ratifies the fetched *Lock value.
-    OrderAccess::fence();
-    for (;;) {
-      w = *Lock;
-      if ((w & LOCKBIT) == 0) {
-        if (Atomic::cmpxchg(Lock, w, w|LOCKBIT) == w) {
-          Self->OnList = 0;   // hygiene - allows stronger asserts
-          return;
-        }
-        continue;      // Interference -- *Lock changed -- Just retry
-      }
-      assert(w & LOCKBIT, "invariant");
-      Self->ListNext = (ParkEvent *) (w & ~LOCKBIT);
-      if (Atomic::cmpxchg(Lock, w, intptr_t(Self)|LOCKBIT) == w) break;
-    }
-
-    while (Self->OnList != 0) {
-      Self->park();
-    }
-  }
-}
-
-// Release() must extract a successor from the list and then wake that thread.
-// It can "pop" the front of the list or use a detach-modify-reattach (DMR) scheme
-// similar to that used by ParkEvent::Allocate() and ::Release().  DMR-based
-// Release() would :
-// (A) CAS() or swap() null to *Lock, releasing the lock and detaching the list.
-// (B) Extract a successor from the private list "in-hand"
-// (C) attempt to CAS() the residual back into *Lock over null.
-//     If there were any newly arrived threads and the CAS() would fail.
-//     In that case Release() would detach the RATs, re-merge the list in-hand
-//     with the RATs and repeat as needed.  Alternately, Release() might
-//     detach and extract a successor, but then pass the residual list to the wakee.
-//     The wakee would be responsible for reattaching and remerging before it
-//     competed for the lock.
-//
-// Both "pop" and DMR are immune from ABA corruption -- there can be
-// multiple concurrent pushers, but only one popper or detacher.
-// This implementation pops from the head of the list.  This is unfair,
-// but tends to provide excellent throughput as hot threads remain hot.
-// (We wake recently run threads first).
-//
-// All paths through muxRelease() will execute a CAS.
-// Release consistency -- We depend on the CAS in muxRelease() to provide full
-// bidirectional fence/MEMBAR semantics, ensuring that all prior memory operations
-// executed within the critical section are complete and globally visible before the
-// store (CAS) to the lock-word that releases the lock becomes globally visible.
-void Thread::muxRelease(volatile intptr_t * Lock)  {
-  for (;;) {
-    const intptr_t w = Atomic::cmpxchg(Lock, LOCKBIT, (intptr_t)0);
-    assert(w & LOCKBIT, "invariant");
-    if (w == LOCKBIT) return;
-    ParkEvent * const List = (ParkEvent *) (w & ~LOCKBIT);
-    assert(List != NULL, "invariant");
-    assert(List->OnList == intptr_t(Lock), "invariant");
-    ParkEvent * const nxt = List->ListNext;
-    guarantee((intptr_t(nxt) & LOCKBIT) == 0, "invariant");
-
-    // The following CAS() releases the lock and pops the head element.
-    // The CAS() also ratifies the previously fetched lock-word value.
-    if (Atomic::cmpxchg(Lock, w, intptr_t(nxt)) != w) {
-      continue;
-    }
-    List->OnList = 0;
-    OrderAccess::fence();
-    List->unpark();
-    return;
-  }
 }
 
 
