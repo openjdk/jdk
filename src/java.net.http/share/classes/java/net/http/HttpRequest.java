@@ -306,13 +306,12 @@ public abstract class HttpRequest {
     }
 
     /**
-     * Creates a {@code Builder} seeded from an {@code HttpRequest}.
+     * Creates a {@code Builder} whose initial state is copied from an existing
+     * {@code HttpRequest}.
      *
-     * This method returns a {@code Builder} whose state is copied from the
-     * given request, subject to the given filter. This builder can be used to
-     * build an {@code HttpRequest}, equivalent to the original, while allowing
-     * amendment of the request state prior to construction - for example,
-     * adding additional headers.
+     * <p> This builder can be used to build an {@code HttpRequest}, equivalent
+     * to the original, while allowing amendment of the request state prior to
+     * construction - for example, adding additional headers.
      *
      * <p> The {@code filter} is applied to each header name value pair as they
      * are copied from the given request. When completed, only headers that
