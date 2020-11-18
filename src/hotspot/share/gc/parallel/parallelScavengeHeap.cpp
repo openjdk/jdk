@@ -63,12 +63,7 @@ jint ParallelScavengeHeap::initialize() {
 
   ReservedHeapSpace heap_rs = Universe::reserve_heap(reserved_heap_size, HeapAlignment);
 
-  os::trace_page_sizes("Heap",
-                       MinHeapSize,
-                       reserved_heap_size,
-                       os::vm_page_size(),
-                       heap_rs.base(),
-                       heap_rs.size());
+  trace_actual_reserved_page_size(reserved_heap_size, heap_rs);
 
   initialize_reserved_region(heap_rs);
 
@@ -682,6 +677,32 @@ void ParallelScavengeHeap::trace_heap(GCWhen::Type when, const GCTracer* gc_trac
 
   const MetaspaceSummary& metaspace_summary = create_metaspace_summary();
   gc_tracer->report_metaspace_summary(when, metaspace_summary);
+}
+
+void ParallelScavengeHeap::trace_actual_reserved_page_size(const size_t reserved_heap_size, const ReservedSpace rs) {
+  // Check if Info level is enabled, since os::trace_page_sizes() logs on Info level.
+  if(log_is_enabled(Info, pagesize)) {
+    size_t page_size = os::vm_page_size();
+    if (UseLargePages) {
+      // There are two ways to manage large page memory.
+      // 1. OS supports committing large page memory.
+      // 2. OS doesn't support committing large page memory so ReservedSpace manages it.
+      //    And ReservedSpace calls it 'special'. If we failed to set 'special',
+      //    we reserved memory without large page.
+      if (os::can_commit_large_page_memory() || rs.special()) {
+        // An alignment at ReservedSpace comes from preferred page size or
+        // heap alignment, and if the alignment came from heap alignment, it could be
+        // larger than large pages size. So need to cap with the large page size.
+        page_size = MIN2(rs.alignment(), os::large_page_size());
+      }
+    }
+    os::trace_page_sizes("Heap",
+                        MinHeapSize,
+                        reserved_heap_size,
+                        page_size,
+                        rs.base(),
+                        rs.size());
+  }
 }
 
 CardTableBarrierSet* ParallelScavengeHeap::barrier_set() {
