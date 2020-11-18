@@ -1626,17 +1626,22 @@ InstanceKlass* SystemDictionaryShared::get_shared_lambda_proxy_class(InstanceKla
                                                                      Symbol* invoked_type,
                                                                      Symbol* method_type,
                                                                      Method* member_method,
-                                                                     Symbol* instantiated_method_type) {
+                                                                     Symbol* instantiated_method_type,
+                                                                     bool disable_eager_init) {
   MutexLocker ml(CDSLambda_lock, Mutex::_no_safepoint_check_flag);
   LambdaProxyClassKey key(caller_ik, invoked_name, invoked_type,
                           method_type, member_method, instantiated_method_type);
+  FileMapInfo* map_info;
   const RunTimeLambdaProxyClassInfo* info = _lambda_proxy_class_dictionary.lookup(&key, key.hash(), 0);
   if (info == NULL) {
     // Try lookup from the dynamic lambda proxy class dictionary.
     info = _dynamic_lambda_proxy_class_dictionary.lookup(&key, key.hash(), 0);
+    map_info = FileMapInfo::dynamic_info();
+  } else {
+    map_info = FileMapInfo::current_info();
   }
   InstanceKlass* proxy_klass = NULL;
-  if (info != NULL) {
+  if (info != NULL && disable_eager_init == map_info->disable_eager_init()) {
     InstanceKlass* curr_klass = info->proxy_klass_head();
     InstanceKlass* prev_klass = curr_klass;
     if (curr_klass->lambda_proxy_is_available()) {
@@ -1673,7 +1678,7 @@ InstanceKlass* SystemDictionaryShared::get_shared_nest_host(InstanceKlass* lambd
 
 InstanceKlass* SystemDictionaryShared::prepare_shared_lambda_proxy_class(InstanceKlass* lambda_ik,
                                                                          InstanceKlass* caller_ik,
-                                                                         bool initialize, TRAPS) {
+                                                                         bool disable_eager_init, TRAPS) {
   Handle class_loader(THREAD, caller_ik->class_loader());
   Handle protection_domain;
   PackageEntry* pkg_entry = get_package_entry_from_class_name(class_loader, caller_ik->name());
@@ -1714,7 +1719,7 @@ InstanceKlass* SystemDictionaryShared::prepare_shared_lambda_proxy_class(Instanc
     SystemDictionary::post_class_load_event(&class_load_start_event, loaded_lambda, ClassLoaderData::class_loader_data(class_loader()));
   }
 
-  if (initialize) {
+  if (!disable_eager_init) {
     loaded_lambda->initialize(CHECK_NULL);
   }
 

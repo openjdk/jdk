@@ -1471,6 +1471,9 @@ bool Arguments::add_property(const char* prop, PropertyWriteable writeable, Prop
     MetaspaceShared::disable_full_module_graph();
     log_info(cds)("full module graph: disabled due to incompatible property: %s=%s", key, value);
   }
+  if (strcmp(key, "jdk.internal.lambda.disableEagerInitialization") == 0) {
+    MetaspaceShared::set_disable_eager_init(value);
+  }
 #endif
 
   if (strcmp(key, "java.compiler") == 0) {

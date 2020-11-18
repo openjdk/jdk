@@ -83,6 +83,7 @@ class MetaspaceShared : AllStatic {
   static char* _requested_base_address;
   static bool _use_optimized_module_handling;
   static bool _use_full_module_graph;
+  static bool _disable_eager_init; // setting of the jdk.internal.lambda.disableEagerInitialization property
  public:
   enum {
     // core archive spaces
@@ -280,6 +281,10 @@ class MetaspaceShared : AllStatic {
   // Can we use the full archived modue graph?
   static bool use_full_module_graph() NOT_CDS_RETURN_(false);
   static void disable_full_module_graph() { _use_full_module_graph = false; }
+
+  // _disable_eager_init getter and setter
+  static bool disable_eager_init() { return _disable_eager_init; }
+  static void set_disable_eager_init(const char* value);
 
 private:
 #if INCLUDE_CDS

@@ -289,7 +289,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
                                                            isSerializable,
                                                            markerInterfaces,
                                                            additionalBridges,
-                                                           !disableEagerInitialization);
+                                                           disableEagerInitialization);
         if (innerClass == null) {
             innerClass = generateInnerClass();
         }

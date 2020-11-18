@@ -238,6 +238,7 @@ class FileMapHeader: private CDSFileMapHeaderBase {
                                         // some expensive operations.
   bool   _use_full_module_graph;        // Can we use the full archived module graph?
   size_t _ptrmap_size_in_bits;          // Size of pointer relocation bitmap
+  bool   _disable_eager_init;           // setting of the jdk.internal.lambda.disableEagerInitialization property
 
   char* from_mapped_offset(size_t offset) const {
     return mapped_base_address() + offset;
@@ -286,6 +287,7 @@ public:
   jshort app_module_paths_start_index()    const { return _app_module_paths_start_index; }
   jshort app_class_paths_start_index()     const { return _app_class_paths_start_index; }
   jshort num_module_paths()                const { return _num_module_paths; }
+  bool disable_eager_init()                const { return _disable_eager_init; }
 
   void set_has_platform_or_app_classes(bool v)   { _has_platform_or_app_classes = v; }
   void set_cloned_vtables(char* p)               { set_mapped_offset(p, &_cloned_vtables_offset); }
@@ -400,6 +402,7 @@ public:
   uintx   max_heap_size()      const { return header()->max_heap_size(); }
   address narrow_klass_base()  const { return header()->narrow_klass_base(); }
   int     narrow_klass_shift() const { return header()->narrow_klass_shift(); }
+  bool    disable_eager_init() const { return header()->disable_eager_init(); }
 
   CompressedOops::Mode narrow_oop_mode()      const { return header()->narrow_oop_mode(); }
   jshort app_module_paths_start_index()       const { return header()->app_module_paths_start_index(); }

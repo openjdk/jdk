@@ -243,6 +243,7 @@ void FileMapHeader::populate(FileMapInfo* mapinfo, size_t alignment) {
   // the following 2 fields will be set in write_header for dynamic archive header
   _base_archive_name_size = 0;
   _base_archive_is_default = false;
+  _disable_eager_init = MetaspaceShared::disable_eager_init();
 
   if (!DynamicDumpSharedSpaces) {
     set_shared_path_table(mapinfo->_shared_path_table);
@@ -297,6 +298,7 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- use_optimized_module_handling:  %d", _use_optimized_module_handling);
   st->print_cr("- use_full_module_graph           %d", _use_full_module_graph);
   st->print_cr("- ptrmap_size_in_bits:            " SIZE_FORMAT, _ptrmap_size_in_bits);
+  st->print_cr("- disable_eager_init              %d", _disable_eager_init);
 }
 
 void SharedClassPathEntry::init_as_non_existent(const char* path, TRAPS) {

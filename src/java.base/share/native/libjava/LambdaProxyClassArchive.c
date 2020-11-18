@@ -52,8 +52,8 @@ Java_java_lang_invoke_LambdaProxyClassArchive_findFromArchive(JNIEnv *env, jclas
                                                             jobject methodType,
                                                             jobject implMethodMember,
                                                             jobject instantiatedMethodType,
-                                                            jboolean initialize) {
+                                                            jboolean disableEagerInitialization) {
     return JVM_LookupLambdaProxyClassFromArchive(env, caller, invokedName, invokedType,
                                                  methodType, implMethodMember,
-                                                 instantiatedMethodType, initialize);
+                                                 instantiatedMethodType, disableEagerInitialization);
 }

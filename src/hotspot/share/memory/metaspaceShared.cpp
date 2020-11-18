@@ -73,6 +73,8 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #endif
 
+#include <string.h>
+
 ReservedSpace MetaspaceShared::_shared_rs;
 VirtualSpace MetaspaceShared::_shared_vs;
 ReservedSpace MetaspaceShared::_symbol_rs;
@@ -88,6 +90,7 @@ intx MetaspaceShared::_relocation_delta;
 char* MetaspaceShared::_requested_base_address;
 bool MetaspaceShared::_use_optimized_module_handling = true;
 bool MetaspaceShared::_use_full_module_graph = true;
+bool MetaspaceShared::_disable_eager_init = false;
 
 // The CDS archive is divided into the following regions:
 //     mc  - misc code (the method entry trampolines, c++ vtables)
@@ -1815,6 +1818,14 @@ bool MetaspaceShared::use_full_module_graph() {
            "CDS should be disabled if early class hooks are enabled");
   }
   return result;
+}
+
+void MetaspaceShared::set_disable_eager_init(const char* value) {
+#ifdef _WINDOWS
+  _disable_eager_init = (_stricmp(value, "true") == 0) ? true : false;
+#else
+  _disable_eager_init = (strcasecmp(value, "true") == 0) ? true : false;
+#endif
 }
 
 void MetaspaceShared::print_on(outputStream* st) {
