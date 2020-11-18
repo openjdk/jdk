@@ -46,7 +46,7 @@ public class TestFormatSpecifierBounds {
             String r = String.format("%2147483648$s", "A", "B");
         });
         //assertEquals(e.getMessage(), "Illegal format argument index = " + Integer.MIN_VALUE);
-        assertEquals(e.getMessage(), "Format argument index: (unrepresentable as int)");
+        assertEquals(e.getMessage(), "Format argument index: (not representable as int)");
     }
 
     public void testZeroWidth() {

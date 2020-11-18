@@ -63,7 +63,7 @@ class IllegalFormatArgumentIndexException extends IllegalFormatException {
         int index = getIndex();
 
         if (index == Integer.MIN_VALUE) {
-           return "Format argument index: (unrepresentable as int)";
+           return "Format argument index: (not representable as int)";
         }
 
         return String.format("Illegal format argument index = %d", getIndex());
