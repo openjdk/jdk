@@ -52,8 +52,11 @@ static bool cpu_has(const char* optional) {
 void VM_Version::get_os_cpu_info() {
   size_t sysctllen;
 
-  // hw.optional.floatingpoint always returns 1.
+  // hw.optional.floatingpoint always returns 1, see
+  // https://github.com/apple/darwin-xnu/blob/master/bsd/kern/kern_mib.c#L416.
   // ID_AA64PFR0_EL1 describes AdvSIMD always equals to FP field.
+  assert(cpu_has("hw.optional.floatingpoint"), "should be");
+  assert(cpu_has("hw.optional.neon"), "should be");
   _features = CPU_FP | CPU_ASIMD;
 
   // Only few features are available via sysctl, see line 614
