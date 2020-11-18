@@ -322,6 +322,7 @@ void ZDriver::concurrent_mark_continue() {
 
 void ZDriver::concurrent_process_non_strong_references() {
   ZStatTimer timer(ZPhaseConcurrentProcessNonStrongReferences);
+  ZBreakpoint::at_after_reference_processing_started();
   ZHeap::heap()->process_non_strong_references();
 }
 
