@@ -547,6 +547,8 @@ public:
 
   bool is_in(const void* p) const;
 
+  bool is_in_young(const void* p) const;
+
   MemRegion reserved_region() const { return _reserved; }
   bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }
 

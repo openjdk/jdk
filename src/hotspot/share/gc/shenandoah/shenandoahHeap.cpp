@@ -716,6 +716,10 @@ bool ShenandoahHeap::is_in(const void* p) const {
   return p >= heap_base && p < last_region_end;
 }
 
+bool ShenandoahHeap::is_in_young(const void* p) const {
+  return heap_region_containing(p)->affiliation() == YOUNG_GENERATION;
+}
+
 void ShenandoahHeap::op_uncommit(double shrink_before, size_t shrink_until) {
   assert (ShenandoahUncommit, "should be enabled");
 

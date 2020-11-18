@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
+#include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
@@ -66,7 +67,7 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _live_data(0),
   _critical_pins(0),
   _update_watermark(start),
-  _generation(NO_GEN) {
+  _affiliation(ShenandoahRegionAffiliation::FREE) {
 
   assert(Universe::on_page_boundary(_bottom) && Universe::on_page_boundary(_end),
          "invalid space boundaries");
@@ -361,15 +362,15 @@ void ShenandoahHeapRegion::print_on(outputStream* st) const {
     default:
       ShouldNotReachHere();
   }
-  switch (_generation) {
-    case YOUNG_GEN:
+  switch (_affiliation) {
+    case FREE:
+      st->print("|F");
+      break;
+    case YOUNG_GENERATION:
       st->print("|Y");
       break;
-    case OLD_GEN:
+    case OLD_GENERATION:
       st->print("|O");
-      break;
-    case NO_GEN:
-      st->print("| ");
       break;
     default:
       ShouldNotReachHere();
@@ -443,7 +444,7 @@ void ShenandoahHeapRegion::recycle() {
   set_update_watermark(bottom());
 
   make_empty();
-  _generation = NO_GEN;
+  _affiliation = ShenandoahRegionAffiliation::FREE;
 
   if (ZapUnusedHeapArea) {
     SpaceMangler::mangle_region(MemRegion(bottom(), end()));
@@ -676,4 +677,67 @@ void ShenandoahHeapRegion::record_unpin() {
 
 size_t ShenandoahHeapRegion::pin_count() const {
   return Atomic::load(&_critical_pins);
+}
+
+class UpdateOopCardValueClosure : public BasicOopIterateClosure {
+  CardTable* _card_table;
+
+public:
+  UpdateOopCardValueClosure(CardTable *card_table) : _card_table(card_table) { }
+
+  void do_oop(oop* p) {
+    if (ShenandoahHeap::heap()->is_in_young(*p)) {
+      volatile CardTable::CardValue* card_value = _card_table->byte_for(*p);
+      *card_value = CardTable::dirty_card_val();
+    }
+  }
+
+  void do_oop(narrowOop* p) {
+    ShouldNotReachHere();
+  }
+};
+
+class UpdateObjectCardValuesClosure : public BasicOopIterateClosure {
+  UpdateOopCardValueClosure* _oop_closure;
+
+public:
+  UpdateObjectCardValuesClosure(UpdateOopCardValueClosure *oop_closure) :
+    _oop_closure(oop_closure) {
+  }
+
+  void do_oop(oop* p) {
+    (*p)->oop_iterate(_oop_closure);
+  }
+
+  void do_oop(narrowOop* p) {
+    ShouldNotReachHere();
+  }
+};
+
+void ShenandoahHeapRegion::set_affiliation(ShenandoahRegionAffiliation new_affiliation) {
+  if (_affiliation == new_affiliation) {
+    return;
+  }
+  CardTable* card_table = ShenandoahBarrierSet::barrier_set()->card_table();
+  switch (new_affiliation) {
+    case FREE:
+      card_table->clear_MemRegion(MemRegion(_bottom, _end));
+      break;
+    case YOUNG_GENERATION:
+      break;
+    case OLD_GENERATION:
+      if (_affiliation == YOUNG_GENERATION) {
+        assert(SafepointSynchronize::is_at_safepoint(), "old gen card values must be updated in a safepoint");
+        card_table->clear_MemRegion(MemRegion(_bottom, _end));
+
+        UpdateOopCardValueClosure oop_closure(card_table);
+        UpdateObjectCardValuesClosure object_closure(&oop_closure);
+        oop_iterate(&object_closure);
+      }
+      break;
+    default:
+      ShouldNotReachHere();
+      return;
+  }
+  _affiliation = new_affiliation;
 }
