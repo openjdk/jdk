@@ -30,7 +30,6 @@
 #include "tstrings.h"
 
 class Jvm;
-class LogAppender;
 
 class AppLauncher {
 public:
@@ -64,17 +63,6 @@ public:
     Jvm* createJvmLauncher() const;
 
     void launch() const;
-
-    static LogAppender& defaultLastErrorLogAppender();
-
-    static bool isWithLogging();
-
-    typedef void (*LauncherFunc) ();
-
-    static int launch(const std::nothrow_t&, LauncherFunc func,
-            LogAppender* lastErrorLogAppender = 0);
-
-    static std::string lastErrorMsg();
 
 private:
     tstring_array args;

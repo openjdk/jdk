@@ -28,6 +28,7 @@
 #include "IconSwap.h"
 #include "VersionInfo.h"
 #include "JniUtils.h"
+#include "MsiDb.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -140,8 +141,16 @@ extern "C" {
 
         const std::wstring msiPath = jni::toUnicodeString(pEnv, jmsiPath);
 
+        // Put msi file in resources.
         const ResourceEditor::FileLock lock(reinterpret_cast<HANDLE>(jResourceLock));
         ResourceEditor().id(L"msi").type(RT_RCDATA).apply(lock, msiPath);
+
+        // Get product code of the msi being embedded
+        const Guid productCode = Guid(msi::Database(msiPath).getProperty(L"ProductCode"));
+
+        // Save product code in resources
+        std::istringstream in(tstrings::toUtf8(productCode.toString()));
+        ResourceEditor().id(L"product_code").type(RT_RCDATA).apply(lock, in);
 
         return 0;
 

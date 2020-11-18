@@ -30,6 +30,7 @@
 #include "UnixSysInfo.h"
 #include "Package.h"
 #include "Log.h"
+#include "app.h"
 #include "ErrorHandling.h"
 
 
@@ -124,5 +125,5 @@ void launchApp() {
 int main(int argc, char *argv[]) {
     SysInfo::argc = argc;
     SysInfo::argv = argv;
-    return AppLauncher::launch(std::nothrow, launchApp);
+    return app::launch(std::nothrow, launchApp);
 }

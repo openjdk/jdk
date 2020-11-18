@@ -93,12 +93,12 @@ public:
     ResourceEditor& id(LPCWSTR v);
 
     /**
-     * Relaces resource configured in the given binary with the given data stream.
+     * Replaces resource configured in the given binary with the given data stream.
      */
     ResourceEditor& apply(const FileLock& dstBinary, std::istream& srcStream, std::streamsize size=0);
 
     /**
-     * Relaces resource configured in the given binary with contents of
+     * Replaces resource configured in the given binary with contents of
      * the given binary file.
      */
     ResourceEditor& apply(const FileLock& dstBinary, const std::wstring& srcFile);

@@ -119,29 +119,21 @@ private:
     std::unique_ptr<Channel> stderrChannel;
 };
 
-class RunWithConsole: public app::RunnableAdapter {
-public:
-    RunWithConsole(app::LauncherFunc func): RunnableAdapter(func) {
-    }
-
-    virtual void run() {
-        std::unique_ptr<Console> console;
-        if (app::isWithLogging()) {
-            console = std::unique_ptr<Console>(new Console());
-        }
-        RunnableAdapter::run();
-    }
-};
-
 } // namespace
 
 
 namespace app {
 int wlaunch(const std::nothrow_t&, LauncherFunc func) {
+    std::unique_ptr<Console> console;
+    JP_TRY;
+    if (app::isWithLogging()) {
+        console = std::unique_ptr<Console>(new Console());
+    }
+    JP_CATCH_ALL;
+
     LastErrorGuiLogAppender lastErrorLogAppender;
     TeeLogAppender logAppender(&app::defaultLastErrorLogAppender(),
             &lastErrorLogAppender);
-    RunWithConsole adapter(func);
-    return app::launch(std::nothrow, adapter, &logAppender);
+    return app::launch(std::nothrow, func, &logAppender);
 }
 } // namespace app

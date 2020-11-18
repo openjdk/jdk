@@ -110,13 +110,6 @@ bool isWithLogging() {
 
 int launch(const std::nothrow_t&,
         LauncherFunc func, LogAppender* lastErrorLogAppender) {
-    RunnableAdapter adapter(func);
-    return launch(std::nothrow, adapter, lastErrorLogAppender);
-}
-
-
-int launch(const std::nothrow_t&,
-        Runnable& runnable, LogAppender* lastErrorLogAppender) {
     if (isWithLogging()) {
         Logger::defaultLogger().setAppender(standardLogAppender);
     } else {
@@ -139,7 +132,7 @@ int launch(const std::nothrow_t&,
     // Log appenders config of the default logger will be restored to
     // the original state at function exit automatically.
     const SetLoggerAtEndOfScope setLogger(withLogAppender, lastErrorLogAppender);
-    runnable.run();
+    func();
     return 0;
 
     // The point of all these redefines is to save the last raw error message in

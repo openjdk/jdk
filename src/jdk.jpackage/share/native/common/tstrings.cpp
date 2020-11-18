@@ -287,5 +287,36 @@ std::wstring toUtf16(const std::string& utf8str) {
     return fromMultiByte(utf8str, CP_UTF8);
 }
 
+// converts utf16-encoded string to Windows encoded string (WIDECHAR or ACP)
+tstring toWinString(const std::wstring& utf16) {
+#if defined(_UNICODE) || defined(UNICODE)
+    return utf16;
+#else
+    return toMultiByte(utf16, CP_ACP);
+#endif
+}
+
+// converts utf8-encoded string to Windows encoded string (WIDECHAR or ACP)
+tstring toWinString(const std::string& utf8) {
+    return toWinString(tstrings::toUtf16(utf8));
+}
+
+
+std::string winStringToUtf8(const std::wstring& winStr) {
+    return toUtf8(winStr);
+}
+
+std::string winStringToUtf8(const std::string& winStr) {
+    return toUtf8(fromMultiByte(winStr, CP_ACP));
+}
+
+std::wstring winStringToUtf16(const std::wstring& winStr) {
+    return winStr;
+}
+
+std::wstring winStringToUtf16(const std::string& winStr) {
+    return fromMultiByte(winStr, CP_ACP);
+}
+
 } // namespace tstrings
 #endif // ifdef TSTRINGS_WITH_WCHAR
