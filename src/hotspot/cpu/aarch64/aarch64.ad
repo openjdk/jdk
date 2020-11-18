@@ -13894,6 +13894,34 @@ instruct absD_reg(vRegD dst, vRegD src) %{
   ins_pipe(fp_uop_d);
 %}
 
+instruct absdF_reg(vRegF dst, vRegF src1, vRegF src2) %{
+  match(Set dst (AbsF (SubF src1 src2)));
+
+  ins_cost(INSN_COST * 3);
+  format %{ "fabds   $dst, $src1, $src2" %}
+  ins_encode %{
+    __ fabds(as_FloatRegister($dst$$reg),
+             as_FloatRegister($src1$$reg),
+             as_FloatRegister($src2$$reg));
+  %}
+
+  ins_pipe(fp_uop_s);
+%}
+
+instruct absdD_reg(vRegD dst, vRegD src1, vRegD src2) %{
+  match(Set dst (AbsD (SubD src1 src2)));
+
+  ins_cost(INSN_COST * 3);
+  format %{ "fabdd   $dst, $src1, $src2" %}
+  ins_encode %{
+    __ fabdd(as_FloatRegister($dst$$reg),
+             as_FloatRegister($src1$$reg),
+             as_FloatRegister($src2$$reg));
+  %}
+
+  ins_pipe(fp_uop_d);
+%}
+
 instruct sqrtD_reg(vRegD dst, vRegD src) %{
   match(Set dst (SqrtD src));
 
@@ -17870,129 +17898,6 @@ instruct vsqrt2D(vecX dst, vecX src)
              as_FloatRegister($src$$reg));
   %}
   ins_pipe(vsqrt_fp128);
-%}
-
-// --------------------------------- ABS --------------------------------------
-
-instruct vabs8B(vecD dst, vecD src)
-%{
-  predicate(n->as_Vector()->length() == 4 ||
-            n->as_Vector()->length() == 8);
-  match(Set dst (AbsVB src));
-  ins_cost(INSN_COST);
-  format %{ "abs  $dst, $src\t# vector (8B)" %}
-  ins_encode %{
-    __ absr(as_FloatRegister($dst$$reg), __ T8B, as_FloatRegister($src$$reg));
-  %}
-  ins_pipe(vlogical64);
-%}
-
-instruct vabs16B(vecX dst, vecX src)
-%{
-  predicate(n->as_Vector()->length() == 16);
-  match(Set dst (AbsVB src));
-  ins_cost(INSN_COST);
-  format %{ "abs  $dst, $src\t# vector (16B)" %}
-  ins_encode %{
-    __ absr(as_FloatRegister($dst$$reg), __ T16B, as_FloatRegister($src$$reg));
-  %}
-  ins_pipe(vlogical128);
-%}
-
-instruct vabs4S(vecD dst, vecD src)
-%{
-  predicate(n->as_Vector()->length() == 4);
-  match(Set dst (AbsVS src));
-  ins_cost(INSN_COST);
-  format %{ "abs  $dst, $src\t# vector (4H)" %}
-  ins_encode %{
-    __ absr(as_FloatRegister($dst$$reg), __ T4H, as_FloatRegister($src$$reg));
-  %}
-  ins_pipe(vlogical64);
-%}
-
-instruct vabs8S(vecX dst, vecX src)
-%{
-  predicate(n->as_Vector()->length() == 8);
-  match(Set dst (AbsVS src));
-  ins_cost(INSN_COST);
-  format %{ "abs  $dst, $src\t# vector (8H)" %}
-  ins_encode %{
-    __ absr(as_FloatRegister($dst$$reg), __ T8H, as_FloatRegister($src$$reg));
-  %}
-  ins_pipe(vlogical128);
-%}
-
-instruct vabs2I(vecD dst, vecD src)
-%{
-  predicate(n->as_Vector()->length() == 2);
-  match(Set dst (AbsVI src));
-  ins_cost(INSN_COST);
-  format %{ "abs  $dst, $src\t# vector (2S)" %}
-  ins_encode %{
-    __ absr(as_FloatRegister($dst$$reg), __ T2S, as_FloatRegister($src$$reg));
-  %}
-  ins_pipe(vlogical64);
-%}
-
-instruct vabs4I(vecX dst, vecX src)
-%{
-  predicate(n->as_Vector()->length() == 4);
-  match(Set dst (AbsVI src));
-  ins_cost(INSN_COST);
-  format %{ "abs  $dst, $src\t# vector (4S)" %}
-  ins_encode %{
-    __ absr(as_FloatRegister($dst$$reg), __ T4S, as_FloatRegister($src$$reg));
-  %}
-  ins_pipe(vlogical128);
-%}
-
-instruct vabs2L(vecX dst, vecX src)
-%{
-  predicate(n->as_Vector()->length() == 2);
-  match(Set dst (AbsVL src));
-  ins_cost(INSN_COST);
-  format %{ "abs  $dst, $src\t# vector (2D)" %}
-  ins_encode %{
-    __ absr(as_FloatRegister($dst$$reg), __ T2D, as_FloatRegister($src$$reg));
-  %}
-  ins_pipe(vlogical128);
-%}
-
-instruct vabs2F(vecD dst, vecD src)
-%{
-  predicate(n->as_Vector()->length() == 2);
-  match(Set dst (AbsVF src));
-  ins_cost(INSN_COST * 3);
-  format %{ "fabs  $dst,$src\t# vector (2S)" %}
-  ins_encode %{
-    __ fabs(as_FloatRegister($dst$$reg), __ T2S, as_FloatRegister($src$$reg));
-  %}
-  ins_pipe(vunop_fp64);
-%}
-
-instruct vabs4F(vecX dst, vecX src)
-%{
-  predicate(n->as_Vector()->length() == 4);
-  match(Set dst (AbsVF src));
-  ins_cost(INSN_COST * 3);
-  format %{ "fabs  $dst,$src\t# vector (4S)" %}
-  ins_encode %{
-    __ fabs(as_FloatRegister($dst$$reg), __ T4S, as_FloatRegister($src$$reg));
-  %}
-  ins_pipe(vunop_fp128);
-%}
-
-instruct vabs2D(vecX dst, vecX src)
-%{
-  predicate(n->as_Vector()->length() == 2);
-  match(Set dst (AbsVD src));
-  ins_cost(INSN_COST * 3);
-  format %{ "fabs  $dst,$src\t# vector (2D)" %}
-  ins_encode %{
-    __ fabs(as_FloatRegister($dst$$reg), __ T2D, as_FloatRegister($src$$reg));
-  %}
-  ins_pipe(vunop_fp128);
 %}
 
 // --------------------------------- NEG --------------------------------------
