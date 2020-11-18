@@ -38,7 +38,7 @@
 #include "runtime/jniHandles.hpp"
 #include "runtime/os.hpp"
 
-static const char * optiontype_names[] = {
+static const char* optiontype_names[] = {
 #define enum_of_types(type, name) name,
         OPTION_TYPES(enum_of_types)
 #undef enum_of_types
@@ -58,7 +58,7 @@ enum OptionType option2type(enum CompileCommand option) {
   return option_types[static_cast<int>(option)];
 }
 
-static const char * option_names[] = {
+static const char* option_names[] = {
 #define enum_of_options(option, name, ctype) name,
         COMPILECOMMAND_OPTIONS(enum_of_options)
 #undef enum_of_options
@@ -403,7 +403,7 @@ bool CompilerOracle::should_break_at(const methodHandle& method) {
   return check_predicate(CompileCommand::Break, method);
 }
 
-static enum CompileCommand parse_option_name(const char * line, int* bytes_read, char* errorbuf, int bufsize) {
+static enum CompileCommand parse_option_name(const char* line, int* bytes_read, char* errorbuf, int bufsize) {
   assert(ARRAY_SIZE(option_names) == static_cast<int>(CompileCommand::Count), "option_names size mismatch");
 
   *bytes_read = 0;
@@ -649,7 +649,7 @@ static void scan_option_and_value(enum OptionType type, char* line, int& total_b
   return;
 }
 
-void CompilerOracle::print_parse_error(char *error_msg, char* original_line) {
+void CompilerOracle::print_parse_error(char* error_msg, char* original_line) {
   assert(*error_msg != '\0', "Must have error_message");
   ttyLocker ttyl;
   tty->print_cr("CompileCommand: An error occurred during parsing");
@@ -724,7 +724,7 @@ void CompilerOracle::parse_from_line(char* line) {
 
     char option_type[256]; // stores option for Type (1) and type of Type (2)
     skip_comma(line);
-    TypedMethodOptionMatcher *archetype = TypedMethodOptionMatcher::parse_method_pattern(line, error_buf, sizeof(error_buf));
+    TypedMethodOptionMatcher* archetype = TypedMethodOptionMatcher::parse_method_pattern(line, error_buf, sizeof(error_buf));
     if (archetype == NULL) {
       print_parse_error(error_buf, original.get());
       return;
@@ -878,7 +878,7 @@ void compilerOracle_init() {
   }
 }
 
-void CompilerOracle::parse_compile_only(char * line) {
+void CompilerOracle::parse_compile_only(char* line) {
   int i;
   char name[1024];
   const char* className = NULL;
@@ -964,7 +964,7 @@ void CompilerOracle::parse_compile_only(char * line) {
   }
 }
 
-enum CompileCommand CompilerOracle::string_to_option(const char *name) {
+enum CompileCommand CompilerOracle::string_to_option(const char* name) {
   int bytes_read = 0;
   char errorbuf[1024] = {0};
   return parse_option_name(name, &bytes_read, errorbuf, sizeof(errorbuf));

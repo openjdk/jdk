@@ -111,7 +111,7 @@ enum class OptionType {
 class CompilerOracle : AllStatic {
  private:
   static bool _quiet;
-  static void print_parse_error(char *error_msg, char* original_line);
+  static void print_parse_error(char* error_msg, char* original_line);
   static void print_command(enum CompileCommand option, const char* name, enum OptionType type);
 
  public:
@@ -154,14 +154,14 @@ class CompilerOracle : AllStatic {
   // Reads from string instead of file
   static void parse_from_string(const char* option_string, void (*parser)(char*));
   static void parse_from_line(char* line);
-  static void parse_compile_only(char * line);
+  static void parse_compile_only(char* line);
 
   // Fast check if there is any option set that compile control needs to know about
   static bool has_any_command_set();
 
   // convert a string to a proper compilecommand option - used from whitebox.
   // returns CompileCommand::Unknown on names not matching an option.
-  static enum CompileCommand string_to_option(const char *name);
+  static enum CompileCommand string_to_option(const char* name);
 };
 
 #endif // SHARE_COMPILER_COMPILERORACLE_HPP
