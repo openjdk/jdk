@@ -285,6 +285,11 @@ public class MethodHandles {
      * class of the given {@code caller} lookup object be executed if
      * it has not been initialized.
      *
+     * <p> A hidden class created by {@link Lookup#defineHiddenClass(byte[], boolean, Lookup.ClassOption...)
+     * Lookup::defineHiddenClass} and non-hidden classes have no class data.
+     * {@code null} is returned if this method is called on the lookup object
+     * on these classes.
+     *
      * <p> The {@linkplain Lookup#lookupModes() lookup modes} for this lookup
      * must have {@linkplain Lookup#ORIGINAL original access}
      * in order to retrieve the class data.
@@ -337,8 +342,8 @@ public class MethodHandles {
 
          try {
              return BootstrapMethodInvoker.widenAndCast(classdata, type);
-         } catch (ClassCastException e) {
-             throw e;
+         } catch (RuntimeException|Error e) {
+             throw e; // let CCE and other runtime exceptions through
          } catch (Throwable e) {
              throw new InternalError(e);
          }
@@ -358,6 +363,11 @@ public class MethodHandles {
      * This method will cause the static class initializer of the lookup
      * class of the given {@code caller} lookup object be executed if
      * it has not been initialized.
+     *
+     * <p> A hidden class created by {@link Lookup#defineHiddenClass(byte[], boolean, Lookup.ClassOption...)
+     * Lookup::defineHiddenClass} and non-hidden classes have no class data.
+     * {@code null} is returned if this method is called on the lookup object
+     * on these classes.
      *
      * <p> The {@linkplain Lookup#lookupModes() lookup modes} for this lookup
      * must have {@linkplain Lookup#ORIGINAL original access}
@@ -409,8 +419,8 @@ public class MethodHandles {
         try {
             Object element = classdata.get(index);
             return BootstrapMethodInvoker.widenAndCast(element, type);
-        } catch (ClassCastException|NullPointerException|IndexOutOfBoundsException e) {
-            throw e;
+        } catch (RuntimeException|Error e) {
+            throw e; // let specified exceptions and other runtime exceptions/errors through
         } catch (Throwable e) {
             throw new InternalError(e);
         }
