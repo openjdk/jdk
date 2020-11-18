@@ -353,6 +353,8 @@ public abstract class Reference<T> {
      * null, and would subsequently not finalize the referent/finalizee.
      */
     T getInactive() {
+        assert this instanceof FinalReference;
+        assert next == this; // I.e. FinalReference is inactive
         return this.referent;
     }
 

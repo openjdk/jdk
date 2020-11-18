@@ -28,9 +28,12 @@
  * <p> Classes to support low-level, safe and efficient memory access.
  * <p>
  * The key abstractions introduced by this package are {@link jdk.incubator.foreign.MemorySegment} and {@link jdk.incubator.foreign.MemoryAddress}.
- * The first models a contiguous memory region, which can reside either inside or outside the Java heap; the latter models an address - which can
- * sometimes be expressed as an offset into a given segment. A memory address represents the main access coordinate of a memory access var handle, which can be obtained
- * using the combinator methods defined in the {@link jdk.incubator.foreign.MemoryHandles} class. Finally, the {@link jdk.incubator.foreign.MemoryLayout} class
+ * The first models a contiguous memory region, which can reside either inside or outside the Java heap; the latter models an address - which also can
+ * reside either inside or outside the Java heap (and can sometimes be expressed as an offset into a given segment).
+ * A memory segment represents the main access coordinate of a memory access var handle, which can be obtained
+ * using the combinator methods defined in the {@link jdk.incubator.foreign.MemoryHandles} class; a set of
+ * common dereference operations is provided also by the {@link jdk.incubator.foreign.MemoryAccess} class, which can
+ * be useful for simple, non-structured access. Finally, the {@link jdk.incubator.foreign.MemoryLayout} class
  * hierarchy enables description of <em>memory layouts</em> and basic operations such as computing the size in bytes of a given
  * layout, obtain its alignment requirements, and so on. Memory layouts also provide an alternate, more abstract way, to produce
  * memory access var handles, e.g. using <a href="MemoryLayout.html#layout-paths"><em>layout paths</em></a>.
@@ -39,25 +42,21 @@
  * ranging from {@code 0} to {@code 9}, we can use the following code:
  *
  * <pre>{@code
-static final VarHandle intHandle = MemoryHandles.varHandle(int.class, ByteOrder.nativeOrder());
-
 try (MemorySegment segment = MemorySegment.allocateNative(10 * 4)) {
-    MemoryAddress base = segment.baseAddress();
-    for (long i = 0 ; i < 10 ; i++) {
-       intHandle.set(base.addOffset(i * 4), (int)i);
+    for (int i = 0 ; i < 10 ; i++) {
+       MemoryAccess.setIntAtIndex(segment, i);
     }
 }
  * }</pre>
  *
- * Here we create a var handle, namely {@code intHandle}, to manipulate values of the primitive type {@code int}, at
- * a given memory location. Also, {@code intHandle} is stored in a {@code static} and {@code final} field, to achieve
- * better performance and allow for inlining of the memory access operation through the {@link java.lang.invoke.VarHandle}
- * instance. We then create a <em>native</em> memory segment, that is, a memory segment backed by
+ * Here create a <em>native</em> memory segment, that is, a memory segment backed by
  * off-heap memory; the size of the segment is 40 bytes, enough to store 10 values of the primitive type {@code int}.
  * The segment is created inside a <em>try-with-resources</em> construct: this idiom ensures that all the memory resources
  * associated with the segment will be released at the end of the block, according to the semantics described in
  * Section {@jls 14.20.3} of <cite>The Java Language Specification</cite>. Inside the try-with-resources block, we initialize
- * the contents of the memory segment; more specifically, if we view the memory segment as a set of 10 adjacent slots,
+ * the contents of the memory segment using the
+ * {@link jdk.incubator.foreign.MemoryAccess#setIntAtIndex(jdk.incubator.foreign.MemorySegment, long, int)} helper method;
+ * more specifically, if we view the memory segment as a set of 10 adjacent slots,
  * {@code s[i]}, where {@code 0 <= i < 10}, where the size of each slot is exactly 4 bytes, the initialization logic above will set each slot
  * so that {@code s[i] = i}, again where {@code 0 <= i < 10}.
  *
@@ -77,18 +76,18 @@ try (MemorySegment segment = MemorySegment.allocateNative(10 * 4)) {
  *
  * <h2><a id="safety"></a>Safety</h2>
  *
- * This API provides strong safety guarantees when it comes to memory access. First, when dereferencing a memory segment using
- * a memory address, such an address is validated (upon access), to make sure that it does not point to a memory location
- * which resides <em>outside</em> the boundaries of the memory segment it refers to. We call this guarantee <em>spatial safety</em>;
+ * This API provides strong safety guarantees when it comes to memory access. First, when dereferencing a memory segment,
+ * the access coordinates are validated (upon access), to make sure that access does not occur at an address which resides
+ * <em>outside</em> the boundaries of the memory segment used by the dereference operation. We call this guarantee <em>spatial safety</em>;
  * in other words, access to memory segments is bounds-checked, in the same way as array access is, as described in
  * Section {@jls 15.10.4} of <cite>The Java Language Specification</cite>.
  * <p>
- * Since memory segments can be closed (see above), a memory address is also validated (upon access) to make sure that
- * the segment it belongs to has not been closed prematurely. We call this guarantee <em>temporal safety</em>. Note that,
+ * Since memory segments can be closed (see above), segments are also validated (upon access) to make sure that
+ * the segment being accessed has not been closed prematurely. We call this guarantee <em>temporal safety</em>. Note that,
  * in the general case, guaranteeing temporal safety can be hard, as multiple threads could attempt to access and/or close
  * the same memory segment concurrently. The memory access API addresses this problem by imposing strong
- * <a href="MemorySegment.html#thread-confinement"><em>thread-confinement</em></a> guarantees on memory segments: each
- * memory segment is associated with an owner thread, which is the only thread that can either access or close the segment.
+ * <em>thread-confinement</em> guarantees on memory segments: upon creation, a memory segment is associated with an owner thread,
+ * which is the only thread that can either access or close the segment.
  * <p>
  * Together, spatial and temporal safety ensure that each memory access operation either succeeds - and accesses a valid
  * memory location - or fails.

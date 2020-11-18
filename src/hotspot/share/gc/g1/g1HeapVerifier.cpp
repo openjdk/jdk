@@ -597,14 +597,14 @@ void G1HeapVerifier::verify_region_sets() {
   assert_heap_locked_or_at_safepoint(true /* should_be_vm_thread */);
 
   // First, check the explicit lists.
-  _g1h->_hrm->verify();
+  _g1h->_hrm.verify();
 
   // Finally, make sure that the region accounting in the lists is
   // consistent with what we see in the heap.
 
-  VerifyRegionListsClosure cl(&_g1h->_old_set, &_g1h->_archive_set, &_g1h->_humongous_set, _g1h->_hrm);
+  VerifyRegionListsClosure cl(&_g1h->_old_set, &_g1h->_archive_set, &_g1h->_humongous_set, &_g1h->_hrm);
   _g1h->heap_region_iterate(&cl);
-  cl.verify_counts(&_g1h->_old_set, &_g1h->_archive_set, &_g1h->_humongous_set, _g1h->_hrm);
+  cl.verify_counts(&_g1h->_old_set, &_g1h->_archive_set, &_g1h->_humongous_set, &_g1h->_hrm);
 }
 
 void G1HeapVerifier::prepare_for_verify() {
@@ -845,7 +845,7 @@ public:
 
 bool G1HeapVerifier::check_region_attr_table() {
   G1CheckRegionAttrTableClosure cl;
-  _g1h->_hrm->iterate(&cl);
+  _g1h->_hrm.iterate(&cl);
   return !cl.failures();
 }
 #endif // PRODUCT

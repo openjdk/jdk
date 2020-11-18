@@ -80,7 +80,7 @@ void SafepointMechanism::process(JavaThread *thread) {
     // Any load in ::block must not pass the global poll load.
     // Otherwise we might load an old safepoint counter (for example).
     OrderAccess::loadload();
-    SafepointSynchronize::block(thread); // Recursive
+    SafepointSynchronize::block(thread);
   }
 
   // The call to on_safepoint fixes the thread's oops and the first few frames.
