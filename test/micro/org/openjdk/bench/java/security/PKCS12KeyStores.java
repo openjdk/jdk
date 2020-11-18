@@ -30,18 +30,13 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.concurrent.TimeUnit;
-import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.Fork;
-import org.openjdk.jmh.annotations.Measurement;
-import org.openjdk.jmh.annotations.OutputTimeUnit;
-import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.Warmup;
+
+import org.openjdk.jmh.annotations.*;
 
 /**
  * Tests various algorithm settings for PKCS12 keystores.
  */
-@State(Scope.Thread)
+@State(Scope.Benchmark)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @Warmup(iterations = 5)
 @Measurement(iterations = 10)
@@ -50,48 +45,45 @@ public class PKCS12KeyStores {
 
     static char[] pass = "changeit".toCharArray();
 
-    static Key pk;
-    static Certificate[] certs;
-    static byte[] bw2048;
-    static byte[] bw50000;
-    static byte[] bs50000;
-    static byte[] bs10000;
-    static byte[] bs2048;
+    Key pk;
+    Certificate[] certs;
+    byte[] bw2048;
+    byte[] bw50000;
+    byte[] bs50000;
+    byte[] bs10000;
+    byte[] bs2048;
 
     private static byte[] xeh(String in) {
         return new BigInteger(in, 16).toByteArray();
     }
 
-    static {
-        try {
-            // Just generate a keypair and dump getEncoded() of key and cert.
-            byte[] x1 = xeh("3041020100301306072A8648CE3D020106082A8648CE3D03" +
-                    "0107042730250201010420B561D1FBE150488508BBE8FF4540F09057" +
-                    "58712F5D2D3CC80F9A15BA5D481117");
-            byte[] x2 = xeh("3082012D3081D5A00302010202084EE6ECC5585640A7300A" +
-                    "06082A8648CE3D040302300C310A30080603550403130161301E170D" +
-                    "3230313131373230343730355A170D3233303831343230343730355A" +
-                    "300C310A300806035504031301613059301306072A8648CE3D020106" +
-                    "082A8648CE3D030107034200041E761F511841602E272B40A021995D" +
-                    "1BD828DDC7F71412D6A66CC0CB858C856D32C58273E494676D1D2B05" +
-                    "B8E9B08207A122265C2AA5FCBDCE19E5E88CA7A1B6A321301F301D06" +
-                    "03551D0E04160414173F278D77096E5C8EA182D12F147694587B5D9A" +
-                    "300A06082A8648CE3D04030203470030440220760CEAF1FA7041CB8C" +
-                    "1CA80AF60E4F9C9D5136D96B2AF0AAA9440F79561C44E502205D5C72" +
-                    "886C92B95A681C4393C67AAEC8DA9FD7910FF9BF2BCB721AE71D1B6F88");
-            KeyFactory kf = KeyFactory.getInstance("EC");
-            pk = kf.generatePrivate(new PKCS8EncodedKeySpec(x1));
-            CertificateFactory cf = CertificateFactory.getInstance("X.509");
-            certs = new Certificate[] { cf.generateCertificate(new ByteArrayInputStream(x2)) };
+    @Setup
+    public void setup() throws Exception {
+        // Just generate a keypair and dump getEncoded() of key and cert.
+        byte[] x1 = xeh("3041020100301306072A8648CE3D020106082A8648CE3D03" +
+                "0107042730250201010420B561D1FBE150488508BBE8FF4540F09057" +
+                "58712F5D2D3CC80F9A15BA5D481117");
+        byte[] x2 = xeh("3082012D3081D5A00302010202084EE6ECC5585640A7300A" +
+                "06082A8648CE3D040302300C310A30080603550403130161301E170D" +
+                "3230313131373230343730355A170D3233303831343230343730355A" +
+                "300C310A300806035504031301613059301306072A8648CE3D020106" +
+                "082A8648CE3D030107034200041E761F511841602E272B40A021995D" +
+                "1BD828DDC7F71412D6A66CC0CB858C856D32C58273E494676D1D2B05" +
+                "B8E9B08207A122265C2AA5FCBDCE19E5E88CA7A1B6A321301F301D06" +
+                "03551D0E04160414173F278D77096E5C8EA182D12F147694587B5D9A" +
+                "300A06082A8648CE3D04030203470030440220760CEAF1FA7041CB8C" +
+                "1CA80AF60E4F9C9D5136D96B2AF0AAA9440F79561C44E502205D5C72" +
+                "886C92B95A681C4393C67AAEC8DA9FD7910FF9BF2BCB721AE71D1B6F88");
+        KeyFactory kf = KeyFactory.getInstance("EC");
+        pk = kf.generatePrivate(new PKCS8EncodedKeySpec(x1));
+        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        certs = new Certificate[]{cf.generateCertificate(new ByteArrayInputStream(x2))};
 
-            bw2048 = genweak2048();
-            bw50000 = genweak50000();
-            bs50000 = genstrong50000();
-            bs10000 = genstrong10000();
-            bs2048 = genstrong2048();
-        } catch (Exception e) {
-            throw new AssertionError(e);
-        }
+        bw2048 = outweak2048();
+        bw50000 = outweak50000();
+        bs50000 = outstrong50000();
+        bs10000 = outstrong10000();
+        bs2048 = outstrong2048();
     }
 
     @Benchmark
@@ -115,7 +107,7 @@ public class PKCS12KeyStores {
         return in(bs2048);
     }
 
-    static KeyStore in(byte[] b) throws Exception {
+    private KeyStore in(byte[] b) throws Exception {
         KeyStore ks = KeyStore.getInstance("pkcs12");
         ks.load(new ByteArrayInputStream(b), pass);
         if (!ks.getCertificate("a").getPublicKey().getAlgorithm().equals(
@@ -127,10 +119,6 @@ public class PKCS12KeyStores {
 
     @Benchmark
     public byte[] outweak2048() throws Exception {
-        return genweak2048();
-    }
-
-    private static byte[] genweak2048() throws Exception {
         return out("PBEWithSHA1AndRC2_40", "2048",
                 "PBEWithSHA1AndDESede", "2048",
                 "HmacPBESHA1", "2048");
@@ -138,10 +126,6 @@ public class PKCS12KeyStores {
 
     @Benchmark
     public byte[] outweak50000() throws Exception {
-        return genweak50000();
-    }
-
-    private static byte[] genweak50000() throws Exception {
         return out("PBEWithSHA1AndRC2_40", "50000",
                 "PBEWithSHA1AndDESede", "50000",
                 "HmacPBESHA1", "100000");
@@ -149,10 +133,6 @@ public class PKCS12KeyStores {
 
     @Benchmark
     public byte[] outstrong50000() throws Exception {
-        return genstrong50000();
-    }
-
-    private static byte[] genstrong50000() throws Exception {
         return out("PBEWithHmacSHA256AndAES_256", "50000",
                 "PBEWithHmacSHA256AndAES_256", "50000",
                 "HmacPBESHA256", "100000");
@@ -160,10 +140,6 @@ public class PKCS12KeyStores {
 
     @Benchmark
     public byte[] outstrong10000() throws Exception {
-        return genstrong10000();
-    }
-
-    private static byte[] genstrong10000() throws Exception {
         return out("PBEWithHmacSHA256AndAES_256", "10000",
                 "PBEWithHmacSHA256AndAES_256", "10000",
                 "HmacPBESHA256", "10000");
@@ -171,17 +147,13 @@ public class PKCS12KeyStores {
 
     @Benchmark
     public byte[] outstrong2048() throws Exception {
-        return genstrong2048();
-    }
-
-    private static byte[] genstrong2048() throws Exception {
         return out("PBEWithHmacSHA256AndAES_256", "2048",
                 "PBEWithHmacSHA256AndAES_256", "2048",
                 "HmacPBESHA256", "2048");
     }
 
     // Create a keystore
-    private static byte[] out(String cAlg, String cIc, String kAlg, String kIc,
+    private byte[] out(String cAlg, String cIc, String kAlg, String kIc,
                       String mAlg, String mIc) throws Exception {
         System.setProperty("keystore.pkcs12.certProtectionAlgorithm", cAlg);
         System.setProperty("keystore.pkcs12.certPbeIterationCount", cIc);
