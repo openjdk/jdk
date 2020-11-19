@@ -234,7 +234,8 @@ void klassVtable::initialize_vtable(bool checkconstraints, TRAPS) {
 
           // needs new entry
           if (needs_new_entry) {
-            // Refetch this default method in case of redefinition in safepoint above.
+            // Refetch this default method in case of redefinition that might
+            // happen during constraint checking in the update_inherited_vtable call above.
             Method* method = default_methods->at(i);
             put_method_at(method, initialized);
             if (is_preinitialized_vtable()) {
@@ -502,9 +503,9 @@ bool klassVtable::update_inherited_vtable(const methodHandle& target_method,
           allocate_new = false;
         }
 
-        // Set the vtable index before the constraint check safepoint potentially
-        // redefines this method, which is possible if it is a default method belonging
-        // to a super class or interface.
+        // Set the vtable index before the constraint check safepoint, which potentially
+        // redefines this method if this method is a default method belonging to a
+        // super class or interface.
         put_method_at(target_method(), i);
 
         // Do not check loader constraints for overpass methods because overpass
