@@ -49,7 +49,7 @@ bool ShenandoahBarrierC2Support::expand(Compile* C, PhaseIterGVN& igvn) {
        state->load_reference_barriers_count()) > 0) {
     bool attempt_more_loopopts = ShenandoahLoopOptsAfterExpansion;
     C->clear_major_progress();
-    PhaseIdealLoop ideal_loop(igvn, LoopOptsShenandoahExpand);
+    PhaseIdealLoop::optimize(igvn, LoopOptsShenandoahExpand);
     if (C->failing()) return false;
     PhaseIdealLoop::verify(igvn);
     DEBUG_ONLY(verify_raw_mem(C->root());)
