@@ -395,42 +395,6 @@ public abstract class VectorOperators {
             return ConversionImpl.ofReinterpret(dom, ran).check(from, to);
         }
 
-        /**
-         * An in-place version of a narrowing
-         * conversion between two types.
-         * The output of the conversion must be no larger
-         * than the type {@code E}.
-         * Any unused lane bits are ignored and
-         * overwritten by zero bits (not a copied sign bit).
-         * @param <E> the domain and range type (boxed version of a lane type)
-         * @param conv the narrowing conversion to treat in-place
-         * @return a Java narrowing conversion,
-         *          stored back to the original lane of type {@code E}
-         */
-        @ForceInline
-        static <E> Conversion<E,E> ofNarrowing(Conversion<E,?> conv) {
-            Class<E> lt = conv.domainType();
-            return ConversionImpl.ofInplace((ConversionImpl<?,?>) conv, false).check(lt, lt);
-        }
-
-        /**
-         * An in-place version of a widening
-         * conversion between two types.
-         * The input of the conversion must be no larger
-         * than the type {@code E}.
-         * Any unused lane bits are ignored and
-         * overwritten by the result.
-         * @param <E> the domain and range type (boxed version of a lane type)
-         * @param conv the widening conversion to treat in-place
-         * @return a Java widening conversion,
-         *          loading its input from same lane of type {@code E}
-         */
-        @ForceInline
-        static <E> Conversion<E,E> ofWidening(Conversion<?,E> conv) {
-            Class<E> lt = conv.rangeType();
-            return ConversionImpl.ofInplace((ConversionImpl<?,?>) conv, true).check(lt, lt);
-        }
-
     }
 
     /*package-private*/
@@ -467,8 +431,7 @@ public abstract class VectorOperators {
         VO_DOM_SHIFT               = 4,
         VO_DOM_RAN_MASK            = 0x0FF,
         VO_KIND_CAST               = 0x000,
-        VO_KIND_BITWISE            = 0x100,
-        VO_KIND_INPLACE            = 0x200;
+        VO_KIND_BITWISE            = 0x100;
 
     private static final HashMap<Integer, String> OPC_NAME
         = new HashMap<>();
@@ -666,58 +629,6 @@ public abstract class VectorOperators {
     public static final Conversion<Short,Integer> S2I = convert("S2I", 'C', short.class, int.class, VO_KIND_CAST, VO_ALL);
     /** Convert {@code shortVal} to {@code (long)shortVal}. */
     public static final Conversion<Short,Long> S2L = convert("S2L", 'C', short.class, long.class, VO_KIND_CAST, VO_ALL);
-    /** In-place narrow {@code doubleVal} to {@code (byte)doubleVal} inside double. */
-    public static final Conversion<Double,Double> INPLACE_D2B = convert("INPLACE_D2B", 'N', double.class, double.class, VO_KIND_INPLACE + 0x78, VO_ALL);
-    /** In-place narrow {@code doubleVal} to {@code (float)doubleVal} inside double. */
-    public static final Conversion<Double,Double> INPLACE_D2F = convert("INPLACE_D2F", 'N', double.class, double.class, VO_KIND_INPLACE + 0x76, VO_ALL);
-    /** In-place narrow {@code doubleVal} to {@code (int)doubleVal} inside double. */
-    public static final Conversion<Double,Double> INPLACE_D2I = convert("INPLACE_D2I", 'N', double.class, double.class, VO_KIND_INPLACE + 0x7a, VO_ALL);
-    /** In-place narrow {@code doubleVal} to {@code (short)doubleVal} inside double. */
-    public static final Conversion<Double,Double> INPLACE_D2S = convert("INPLACE_D2S", 'N', double.class, double.class, VO_KIND_INPLACE + 0x79, VO_ALL);
-    /** In-place narrow {@code floatVal} to {@code (byte)floatVal} inside float. */
-    public static final Conversion<Float,Float> INPLACE_F2B = convert("INPLACE_F2B", 'N', float.class, float.class, VO_KIND_INPLACE + 0x68, VO_ALL);
-    /** In-place narrow {@code floatVal} to {@code (short)floatVal} inside float. */
-    public static final Conversion<Float,Float> INPLACE_F2S = convert("INPLACE_F2S", 'N', float.class, float.class, VO_KIND_INPLACE + 0x69, VO_ALL);
-    /** In-place narrow {@code intVal} to {@code (byte)intVal} inside int. */
-    public static final Conversion<Integer,Integer> INPLACE_I2B = convert("INPLACE_I2B", 'N', int.class, int.class, VO_KIND_INPLACE + 0xa8, VO_ALL);
-    /** In-place narrow {@code intVal} to {@code (short)intVal} inside int. */
-    public static final Conversion<Integer,Integer> INPLACE_I2S = convert("INPLACE_I2S", 'N', int.class, int.class, VO_KIND_INPLACE + 0xa9, VO_ALL);
-    /** In-place narrow {@code longVal} to {@code (byte)longVal} inside long. */
-    public static final Conversion<Long,Long> INPLACE_L2B = convert("INPLACE_L2B", 'N', long.class, long.class, VO_KIND_INPLACE + 0xb8, VO_ALL);
-    /** In-place narrow {@code longVal} to {@code (float)longVal} inside long. */
-    public static final Conversion<Long,Long> INPLACE_L2F = convert("INPLACE_L2F", 'N', long.class, long.class, VO_KIND_INPLACE + 0xb6, VO_ALL);
-    /** In-place narrow {@code longVal} to {@code (int)longVal} inside long. */
-    public static final Conversion<Long,Long> INPLACE_L2I = convert("INPLACE_L2I", 'N', long.class, long.class, VO_KIND_INPLACE + 0xba, VO_ALL);
-    /** In-place narrow {@code longVal} to {@code (short)longVal} inside long. */
-    public static final Conversion<Long,Long> INPLACE_L2S = convert("INPLACE_L2S", 'N', long.class, long.class, VO_KIND_INPLACE + 0xb9, VO_ALL);
-    /** In-place narrow {@code shortVal} to {@code (byte)shortVal} inside short. */
-    public static final Conversion<Short,Short> INPLACE_S2B = convert("INPLACE_S2B", 'N', short.class, short.class, VO_KIND_INPLACE + 0x98, VO_ALL);
-    /** In-place widen {@code byteVal} inside double to {@code (double)byteVal}. */
-    public static final Conversion<Double,Double> INPLACE_B2D = convert("INPLACE_B2D", 'W', double.class, double.class, VO_KIND_INPLACE + 0x87, VO_ALL);
-    /** In-place widen {@code byteVal} inside float to {@code (float)byteVal}. */
-    public static final Conversion<Float,Float> INPLACE_B2F = convert("INPLACE_B2F", 'W', float.class, float.class, VO_KIND_INPLACE + 0x86, VO_ALL);
-    /** In-place widen {@code byteVal} inside int to {@code (int)byteVal}. */
-    public static final Conversion<Integer,Integer> INPLACE_B2I = convert("INPLACE_B2I", 'W', int.class, int.class, VO_KIND_INPLACE + 0x8a, VO_ALL);
-    /** In-place widen {@code byteVal} inside long to {@code (long)byteVal}. */
-    public static final Conversion<Long,Long> INPLACE_B2L = convert("INPLACE_B2L", 'W', long.class, long.class, VO_KIND_INPLACE + 0x8b, VO_ALL);
-    /** In-place widen {@code byteVal} inside short to {@code (short)byteVal}. */
-    public static final Conversion<Short,Short> INPLACE_B2S = convert("INPLACE_B2S", 'W', short.class, short.class, VO_KIND_INPLACE + 0x89, VO_ALL);
-    /** In-place widen {@code floatVal} inside double to {@code (double)floatVal}. */
-    public static final Conversion<Double,Double> INPLACE_F2D = convert("INPLACE_F2D", 'W', double.class, double.class, VO_KIND_INPLACE + 0x67, VO_ALL);
-    /** In-place widen {@code floatVal} inside long to {@code (long)floatVal}. */
-    public static final Conversion<Long,Long> INPLACE_F2L = convert("INPLACE_F2L", 'W', long.class, long.class, VO_KIND_INPLACE + 0x6b, VO_ALL);
-    /** In-place widen {@code intVal} inside double to {@code (double)intVal}. */
-    public static final Conversion<Double,Double> INPLACE_I2D = convert("INPLACE_I2D", 'W', double.class, double.class, VO_KIND_INPLACE + 0xa7, VO_ALL);
-    /** In-place widen {@code intVal} inside long to {@code (long)intVal}. */
-    public static final Conversion<Long,Long> INPLACE_I2L = convert("INPLACE_I2L", 'W', long.class, long.class, VO_KIND_INPLACE + 0xab, VO_ALL);
-    /** In-place widen {@code shortVal} inside double to {@code (double)shortVal}. */
-    public static final Conversion<Double,Double> INPLACE_S2D = convert("INPLACE_S2D", 'W', double.class, double.class, VO_KIND_INPLACE + 0x97, VO_ALL);
-    /** In-place widen {@code shortVal} inside float to {@code (float)shortVal}. */
-    public static final Conversion<Float,Float> INPLACE_S2F = convert("INPLACE_S2F", 'W', float.class, float.class, VO_KIND_INPLACE + 0x96, VO_ALL);
-    /** In-place widen {@code shortVal} inside int to {@code (int)shortVal}. */
-    public static final Conversion<Integer,Integer> INPLACE_S2I = convert("INPLACE_S2I", 'W', int.class, int.class, VO_KIND_INPLACE + 0x9a, VO_ALL);
-    /** In-place widen {@code shortVal} inside long to {@code (long)shortVal}. */
-    public static final Conversion<Long,Long> INPLACE_S2L = convert("INPLACE_S2L", 'W', long.class, long.class, VO_KIND_INPLACE + 0x9b, VO_ALL);
     /** Reinterpret bits of {@code doubleVal} as {@code long}. As if by {@link Double#doubleToRawLongBits(double)} */
     public static final Conversion<Double,Long> REINTERPRET_D2L = convert("REINTERPRET_D2L", 'R', double.class, long.class, VO_KIND_BITWISE, VO_ALL);
     /** Reinterpret bits of {@code floatVal} as {@code int}. As if by {@link Float#floatToRawIntBits(float)} */
@@ -796,9 +707,6 @@ public abstract class VectorOperators {
         if (opCode >= 0) {
             if ((opCode & VO_DOM_RAN_MASK) == 0) {
                 opCode += domran;
-            } else {
-                // only the widening or narrowing guys specify their own opcode dom/ran
-                assert(dom == ran && "WN".indexOf(kind) >= 0);
             }
             if ((flags & VO_PRIVATE) == 0)
                 CONV_OPC_NAME.put(opCode, name);
@@ -1032,19 +940,6 @@ public abstract class VectorOperators {
             // }
             return findConv('R', dom, ran);
         }
-        static ConversionImpl<?,?> ofInplace(ConversionImpl<?,?> conv,
-                                             boolean widening) {
-            int domSize = conv.dom.elementSize;
-            int ranSize = conv.ran.elementSize;
-            if (domSize >= ranSize && widening)
-                throw new IllegalArgumentException(conv + ": must be a widening conversion");
-            if (domSize <= ranSize && !widening)
-                throw new IllegalArgumentException(conv + ": must be a narrowing conversion");
-            if (conv.kind != 'C')
-                throw new IllegalArgumentException(conv + ": must be a standard Java conversion");
-            char kind = (widening ? 'W' : 'N');
-            return findConv(kind, conv.dom, conv.ran);
-        }
 
         @ForceInline
         private static ConversionImpl<?,?>
@@ -1087,16 +982,6 @@ public abstract class VectorOperators {
             case 'Z':
                 name = "ZERO_EXTEND_"+a2b(dom, ran);
                 opCode = VO_KIND_BITWISE;
-                break;
-            case 'W':
-                name = "INPLACE_"+a2b(dom, ran);
-                opCode += VO_KIND_INPLACE;
-                domType = ranType;  // slice narrow domain from range
-                break;
-            case 'N':
-                name = "INPLACE_"+a2b(dom, ran);
-                opCode += VO_KIND_INPLACE;
-                ranType = domType;  // zero-fill narrow range
                 break;
             default:  throw new AssertionError();
             }
@@ -1184,12 +1069,10 @@ public abstract class VectorOperators {
             ArrayList<String> defs = new ArrayList<>();
             for (LaneType l1 : LaneType.values()) {
                 for (LaneType l2 : LaneType.values()) {
-                    for (int i = 0; i <= 2; i++) {
+                    for (int i = 0; i <= 1; i++) {
                         ConversionImpl<?,?> c;
                         try {
-                            c = ((i == 0) ? ofCast(l1, l2) :
-                                 (i == 1) ? ofReinterpret(l1, l2) :
-                                 ofInplace(ofCast(l1, l2), (l1.elementSize < l2.elementSize)));
+                            c = ((i == 0) ? ofCast(l1, l2) : ofReinterpret(l1, l2));
                         } catch (IllegalArgumentException ex) {
                             assert((i == 1 && l1.elementSize != l2.elementSize) ||
                                    (i == 2 && l1.elementSize == l2.elementSize));
@@ -1206,7 +1089,6 @@ public abstract class VectorOperators {
                             switch (opc & ~VO_DOM_RAN_MASK) {
                             case VO_KIND_CAST: opcs = "VO_KIND_CAST"; break;
                             case VO_KIND_BITWISE: opcs = "VO_KIND_BITWISE"; break;
-                            case VO_KIND_INPLACE: opcs = "VO_KIND_INPLACE"; break;
                             default: opcs = Integer.toHexString(opc);
                             }
                             String code = c.genCode(opcs);
