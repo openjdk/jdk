@@ -137,13 +137,14 @@ void Mutex::lock_without_safepoint_check() {
 
 
 // Returns true if thread succeeds in grabbing the lock, otherwise false.
-
 bool Mutex::try_lock() {
   Thread * const self = Thread::current();
   // Some safepoint_check_always locks use try_lock, so cannot check
   // safepoint state, but can check blocking state.
   check_block_state(self);
-  if (_lock.try_lock()) {
+  // Checking the owner hides the potential difference in recursive locking behaviour
+  // on some platforms.
+  if (_owner != self && _lock.try_lock()) {
     assert_owner(NULL);
     set_owner(self);
     return true;

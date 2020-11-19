@@ -1010,6 +1010,12 @@ void ShenandoahVerifier::verify_roots_no_forwarded() {
   verifier.oops_do(&cl);
 }
 
+void ShenandoahVerifier::verify_roots_no_forwarded(ShenandoahRootVerifier::RootTypes types) {
+  ShenandoahRootVerifier verifier(types);
+  ShenandoahVerifyNoForwared cl;
+  verifier.oops_do(&cl);
+}
+
 void ShenandoahVerifier::verify_roots_no_forwarded_except(ShenandoahRootVerifier::RootTypes types) {
   ShenandoahRootVerifier verifier;
   verifier.excludes(types);
