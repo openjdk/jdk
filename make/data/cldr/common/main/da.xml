@@ -107,6 +107,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="chy">cheyenne</language>
 			<language type="ckb">sorani</language>
 			<language type="ckb" alt="menu">kurdisk, sorani</language>
+			<language type="ckb" alt="variant">centralkurdisk</language>
 			<language type="co">korsikansk</language>
 			<language type="cop">koptisk</language>
 			<language type="cr">cree</language>
@@ -149,6 +150,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="en_AU">australsk engelsk</language>
 			<language type="en_CA">canadisk engelsk</language>
 			<language type="en_GB">britisk engelsk</language>
+			<language type="en_GB" alt="short">britisk engelsk</language>
 			<language type="en_US">amerikansk engelsk</language>
 			<language type="en_US" alt="short">amerikansk engelsk</language>
 			<language type="enm">middelengelsk</language>
@@ -178,12 +180,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="fro">oldfransk</language>
 			<language type="frr">nordfrisisk</language>
 			<language type="frs">østfrisisk</language>
-			<language type="fur">friulian</language>
+			<language type="fur">friulisk</language>
 			<language type="fy">vestfrisisk</language>
 			<language type="ga">irsk</language>
 			<language type="gaa">ga</language>
 			<language type="gag">gagauzisk</language>
-			<language type="gan" draft="contributed">gan-kinesisk</language>
+			<language type="gan">gan-kinesisk</language>
 			<language type="gay">gayo</language>
 			<language type="gba">gbaya</language>
 			<language type="gd">skotsk gælisk</language>
@@ -205,7 +207,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="gwi">gwichin</language>
 			<language type="ha">hausa</language>
 			<language type="hai">haida</language>
-			<language type="hak" draft="contributed">hakka-kinesisk</language>
+			<language type="hak">hakka-kinesisk</language>
 			<language type="haw">hawaiiansk</language>
 			<language type="he">hebraisk</language>
 			<language type="hi">hindi</language>
@@ -356,7 +358,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="nan" draft="contributed">min-kinesisk</language>
 			<language type="nap">napolitansk</language>
 			<language type="naq">nama</language>
-			<language type="nb">norsk bokmål</language>
+			<language type="nb">bokmål</language>
 			<language type="nd">nordndebele</language>
 			<language type="nds">nedertysk</language>
 			<language type="nds_NL" draft="unconfirmed">plattysk (Holland)</language>
@@ -428,7 +430,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="rwk">rwa</language>
 			<language type="sa">sanskrit</language>
 			<language type="sad">sandawe</language>
-			<language type="sah">yakut</language>
+			<language type="sah">jakutisk</language>
 			<language type="sam">samaritansk aramæisk</language>
 			<language type="saq">samburu</language>
 			<language type="sas">sasak</language>
@@ -538,7 +540,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="wo">wolof</language>
 			<language type="wuu" draft="contributed">wu-kinesisk</language>
 			<language type="xal">kalmyk</language>
-			<language type="xh">isiXhosa</language>
+			<language type="xh">xhosa</language>
 			<language type="xog">soga</language>
 			<language type="yao">yao</language>
 			<language type="yap">yapese</language>
@@ -849,7 +851,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="FR">Frankrig</territory>
 			<territory type="GA">Gabon</territory>
 			<territory type="GB">Storbritannien</territory>
-			<territory type="GB" alt="short">UK</territory>
 			<territory type="GD">Grenada</territory>
 			<territory type="GE">Georgien</territory>
 			<territory type="GF">Fransk Guyana</territory>
@@ -1100,21 +1101,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<keys>
 			<key type="calendar">kalender</key>
 			<key type="cf">valutaformat</key>
-			<key type="colAlternate" draft="contributed">Ignorer symboler under sortering</key>
-			<key type="colBackwards" draft="contributed">Omvendt sortering efter accenter</key>
-			<key type="colCaseFirst" draft="contributed">Sortering efter store/små bogstaver</key>
-			<key type="colCaseLevel" draft="contributed">Sortering med forskel på små og store bogstaver</key>
+			<key type="colAlternate">Ignorer symboler under sortering</key>
+			<key type="colBackwards">Omvendt sortering efter accenter</key>
+			<key type="colCaseFirst">Sortering efter store/små bogstaver</key>
+			<key type="colCaseLevel">Sortering med forskel på små og store bogstaver</key>
 			<key type="collation">sorteringsrækkefølge</key>
-			<key type="colNormalization" draft="contributed">Normaliseret sortering</key>
-			<key type="colNumeric" draft="contributed">Numerisk sortering</key>
-			<key type="colStrength" draft="contributed">Sorteringsstyrke</key>
+			<key type="colNormalization">Normaliseret sortering</key>
+			<key type="colNumeric">Numerisk sortering</key>
+			<key type="colStrength">Sorteringsstyrke</key>
 			<key type="currency">valuta</key>
 			<key type="hc">timeur (12 vs. 24)</key>
 			<key type="lb">linjeskift</key>
 			<key type="ms">målesystem</key>
 			<key type="numbers">tal</key>
-			<key type="timezone" draft="contributed">Tidszone</key>
-			<key type="va" draft="contributed">Sprogvariant</key>
+			<key type="timezone">Tidszone</key>
+			<key type="va">Sprogvariant</key>
 			<key type="x">Privatbrug</key>
 		</keys>
 		<types>
@@ -1489,6 +1490,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 						<intervalFormatItem id="Bhm">
 							<greatestDifference id="B">h.mm B–h.mm B</greatestDifference>
+							<greatestDifference id="h">h.mm–h.mm B</greatestDifference>
+							<greatestDifference id="m">h.mm–h.mm B</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d.–d.</greatestDifference>
@@ -1498,21 +1501,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">y–y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyM">
-							<greatestDifference id="G">M/y GGGGG–M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">M/y–M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">M/y–M/y GGGGG</greatestDifference>
+							<greatestDifference id="G">MM.y GGGGG–MM.y GGGGG</greatestDifference>
+							<greatestDifference id="M">MM.y–MM.y GGGGG</greatestDifference>
+							<greatestDifference id="y">MM.y–MM.y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMd">
-							<greatestDifference id="d">d/M/y–d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="G">d/M/y GGGGG–d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">d/M/y–d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">d/M/y–d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="d">dd.MM.y–dd.MM.y GGGGG</greatestDifference>
+							<greatestDifference id="G">dd.MM.y GGGGG–dd.MM.y GGGGG</greatestDifference>
+							<greatestDifference id="M">dd.MM.y–dd.MM.y GGGGG</greatestDifference>
+							<greatestDifference id="y">dd.MM.y–dd.MM.y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMEd">
-							<greatestDifference id="d">E 'den' d/M/y–E 'den' d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="G">E 'den' d/M/y GGGGG–E 'den' d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">E 'den' d/M/y–E 'den' d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">E 'den' d/M/y–E 'den' d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="d">E 'den' dd.MM.y–E 'den' dd.MM.y GGGGG</greatestDifference>
+							<greatestDifference id="G">E 'den' dd.MM.y GGGGG–E 'den' dd.MM.y GGGGG</greatestDifference>
+							<greatestDifference id="M">E 'den' dd.MM.y–E 'den' dd.MM.y GGGGG</greatestDifference>
+							<greatestDifference id="y">E 'den' dd.MM.y–E 'den' dd.MM.y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMM">
 							<greatestDifference id="G">MMM y G–MMM y G</greatestDifference>
@@ -1567,12 +1570,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">M–M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">dd/MM–dd/MM</greatestDifference>
-							<greatestDifference id="M">dd/MM–dd/MM</greatestDifference>
+							<greatestDifference id="d">dd.MM–dd.MM</greatestDifference>
+							<greatestDifference id="M">dd.MM–dd.MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E dd/MM–E dd/MM</greatestDifference>
-							<greatestDifference id="M">E dd/MM–E dd/MM</greatestDifference>
+							<greatestDifference id="d">E dd.MM–E dd.MM</greatestDifference>
+							<greatestDifference id="M">E dd.MM–E dd.MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M">MMM–MMM</greatestDifference>
@@ -1589,18 +1592,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">y–y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">MM/y–MM/y G</greatestDifference>
-							<greatestDifference id="y">MM/y–MM/y G</greatestDifference>
+							<greatestDifference id="M">MM.y–MM.y G</greatestDifference>
+							<greatestDifference id="y">MM.y–MM.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">dd/MM/y–dd/MM/y G</greatestDifference>
-							<greatestDifference id="M">dd/MM/y–dd/MM/y G</greatestDifference>
-							<greatestDifference id="y">dd/MM/y–dd/MM/y G</greatestDifference>
+							<greatestDifference id="d">dd.MM.y–dd.MM.y G</greatestDifference>
+							<greatestDifference id="M">dd.MM.y–dd.MM.y G</greatestDifference>
+							<greatestDifference id="y">dd.MM.y–dd.MM.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E dd/MM/y–E dd/MM/y G</greatestDifference>
-							<greatestDifference id="M">E dd/MM/y–E dd/MM/y G</greatestDifference>
-							<greatestDifference id="y">E dd/MM/y–E dd/MM/y G</greatestDifference>
+							<greatestDifference id="d">E dd.MM.y–E dd.MM.y G</greatestDifference>
+							<greatestDifference id="M">E dd.MM.y–E dd.MM.y G</greatestDifference>
+							<greatestDifference id="y">E dd.MM.y–E dd.MM.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M">MMM–MMM y G</greatestDifference>
@@ -2094,11 +2097,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="GyMMMd">
 							<greatestDifference id="d">d.–d. MMM y G</greatestDifference>
 							<greatestDifference id="G">d. MMM y G–d. MMM y G</greatestDifference>
-							<greatestDifference id="M">d. MMM y–d. MMM G</greatestDifference>
+							<greatestDifference id="M">d. MMM–d. MMM y G</greatestDifference>
 							<greatestDifference id="y">d. MMM y–d. MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMEd">
-							<greatestDifference id="d">E d. MMM y–E d. MMM G</greatestDifference>
+							<greatestDifference id="d">E d. MMM–E d. MMM y G</greatestDifference>
 							<greatestDifference id="G">E d. MMM y G–E d. MMM y G</greatestDifference>
 							<greatestDifference id="M">E d. MMM–E d. MMM y G</greatestDifference>
 							<greatestDifference id="y">E d. MMM y–E d. MMM y G</greatestDifference>
@@ -2396,8 +2399,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">om {0} år</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">for {0} år siden</relativeTimePattern>
-					<relativeTimePattern count="other">for {0} år siden</relativeTimePattern>
+					<relativeTimePattern count="one">{0} år siden</relativeTimePattern>
+					<relativeTimePattern count="other">{0} år siden</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="year-narrow">
@@ -2410,8 +2413,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">om {0} år</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">for {0} år siden</relativeTimePattern>
-					<relativeTimePattern count="other">for {0} år siden</relativeTimePattern>
+					<relativeTimePattern count="one">{0} år siden</relativeTimePattern>
+					<relativeTimePattern count="other">{0} år siden</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="quarter">
@@ -2438,8 +2441,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">om {0} kvt.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">for {0} kvt. siden</relativeTimePattern>
-					<relativeTimePattern count="other">for {0} kvt. siden</relativeTimePattern>
+					<relativeTimePattern count="one">{0} kvt. siden</relativeTimePattern>
+					<relativeTimePattern count="other">{0} kvt. siden</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="quarter-narrow">
@@ -2452,8 +2455,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">om {0} kvt.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">for {0} kvt. siden</relativeTimePattern>
-					<relativeTimePattern count="other">for {0} kvt. siden</relativeTimePattern>
+					<relativeTimePattern count="one">{0} kvt. siden</relativeTimePattern>
+					<relativeTimePattern count="other">{0} kvt. siden</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="month">
@@ -2480,8 +2483,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">om {0} mdr.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">for {0} md. siden</relativeTimePattern>
-					<relativeTimePattern count="other">for {0} mdr. siden</relativeTimePattern>
+					<relativeTimePattern count="one">{0} md. siden</relativeTimePattern>
+					<relativeTimePattern count="other">{0} mdr. siden</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="month-narrow">
@@ -2494,8 +2497,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">om {0} mdr.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">for {0} md. siden</relativeTimePattern>
-					<relativeTimePattern count="other">for {0} mdr. siden</relativeTimePattern>
+					<relativeTimePattern count="one">{0} md. siden</relativeTimePattern>
+					<relativeTimePattern count="other">{0} mdr. siden</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="week">
@@ -2523,8 +2526,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">om {0} uger</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">for {0} uge siden</relativeTimePattern>
-					<relativeTimePattern count="other">for {0} uger siden</relativeTimePattern>
+					<relativeTimePattern count="one">{0} uge siden</relativeTimePattern>
+					<relativeTimePattern count="other">{0} uger siden</relativeTimePattern>
 				</relativeTime>
 				<relativePeriod>i ugen med {0}</relativePeriod>
 			</field>
@@ -2538,8 +2541,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">om {0} uger</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">for {0} uge siden</relativeTimePattern>
-					<relativeTimePattern count="other">for {0} uger siden</relativeTimePattern>
+					<relativeTimePattern count="one">{0} uge siden</relativeTimePattern>
+					<relativeTimePattern count="other">{0} uger siden</relativeTimePattern>
 				</relativeTime>
 				<relativePeriod>i ugen med {0}</relativePeriod>
 			</field>
@@ -2580,8 +2583,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">om {0} dage</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">for {0} dag siden</relativeTimePattern>
-					<relativeTimePattern count="other">for {0} dage siden</relativeTimePattern>
+					<relativeTimePattern count="one">{0} dag siden</relativeTimePattern>
+					<relativeTimePattern count="other">{0} dage siden</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="day-narrow">
@@ -2596,8 +2599,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">om {0} dage</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">for {0} dag siden</relativeTimePattern>
-					<relativeTimePattern count="other">for {0} dage siden</relativeTimePattern>
+					<relativeTimePattern count="one">{0} dag siden</relativeTimePattern>
+					<relativeTimePattern count="other">{0} dage siden</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="dayOfYear">
@@ -2630,7 +2633,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<field type="sun">
 				<relative type="-1">sidste søndag</relative>
 				<relative type="0">på søndag</relative>
-				<relative type="1">næste søndag</relative>
+				<relative type="1">på søndag</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">om {0} søndag</relativeTimePattern>
 					<relativeTimePattern count="other">om {0} søndage</relativeTimePattern>
@@ -2643,33 +2646,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<field type="sun-short">
 				<relative type="-1">sidste søn.</relative>
 				<relative type="0">på søn.</relative>
-				<relative type="1">næste søn.</relative>
+				<relative type="1">på søn.</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">om {0} søndag</relativeTimePattern>
-					<relativeTimePattern count="other">om {0} søndage</relativeTimePattern>
+					<relativeTimePattern count="one">om {0} søn.</relativeTimePattern>
+					<relativeTimePattern count="other">om {0} søn.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">for {0} søndag siden</relativeTimePattern>
-					<relativeTimePattern count="other">for {0} søndage siden</relativeTimePattern>
+					<relativeTimePattern count="one">{0} søn. siden</relativeTimePattern>
+					<relativeTimePattern count="other">{0} søn. siden</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="sun-narrow">
 				<relative type="-1">sidste sø.</relative>
 				<relative type="0">på sø.</relative>
-				<relative type="1">næste sø.</relative>
+				<relative type="1">på sø.</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">om {0} søndag</relativeTimePattern>
-					<relativeTimePattern count="other">om {0} søndage</relativeTimePattern>
+					<relativeTimePattern count="one">om {0} sø.</relativeTimePattern>
+					<relativeTimePattern count="other">om {0} sø.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">for {0} søndag siden</relativeTimePattern>
-					<relativeTimePattern count="other">for {0} søndage siden</relativeTimePattern>
+					<relativeTimePattern count="one">{0} sø. siden</relativeTimePattern>
+					<relativeTimePattern count="other">{0} sø. siden</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="mon">
 				<relative type="-1">sidste mandag</relative>
 				<relative type="0">på mandag</relative>
-				<relative type="1">næste mandag</relative>
+				<relative type="1">på mandag</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">om {0} mandag</relativeTimePattern>
 					<relativeTimePattern count="other">om {0} mandage</relativeTimePattern>
@@ -2682,33 +2685,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<field type="mon-short">
 				<relative type="-1">sidste man.</relative>
 				<relative type="0">på man.</relative>
-				<relative type="1">næste man.</relative>
+				<relative type="1">på man.</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">om {0} mandag</relativeTimePattern>
-					<relativeTimePattern count="other">om {0} mandage</relativeTimePattern>
+					<relativeTimePattern count="one">om {0} man.</relativeTimePattern>
+					<relativeTimePattern count="other">om {0} man.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">for {0} mandag siden</relativeTimePattern>
-					<relativeTimePattern count="other">for {0} mandage siden</relativeTimePattern>
+					<relativeTimePattern count="one">{0} man. siden</relativeTimePattern>
+					<relativeTimePattern count="other">{0} man. siden</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="mon-narrow">
 				<relative type="-1">sidste ma.</relative>
 				<relative type="0">på ma.</relative>
-				<relative type="1">næste ma.</relative>
+				<relative type="1">på ma.</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">om {0} mandag</relativeTimePattern>
-					<relativeTimePattern count="other">om {0} mandage</relativeTimePattern>
+					<relativeTimePattern count="one">om {0} ma.</relativeTimePattern>
+					<relativeTimePattern count="other">om {0} ma.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">for {0} mandag siden</relativeTimePattern>
-					<relativeTimePattern count="other">for {0} mandage siden</relativeTimePattern>
+					<relativeTimePattern count="one">{0} ma. siden</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ma. siden</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="tue">
 				<relative type="-1">sidste tirsdag</relative>
 				<relative type="0">på tirsdag</relative>
-				<relative type="1">næste tirsdag</relative>
+				<relative type="1">på tirsdag</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">om {0} tirsdag</relativeTimePattern>
 					<relativeTimePattern count="other">om {0} tirsdage</relativeTimePattern>
@@ -2721,33 +2724,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<field type="tue-short">
 				<relative type="-1">sidste tir.</relative>
 				<relative type="0">på tir.</relative>
-				<relative type="1">næste tir.</relative>
+				<relative type="1">på tir.</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">om {0} tirsdag</relativeTimePattern>
-					<relativeTimePattern count="other">om {0} tirsdage</relativeTimePattern>
+					<relativeTimePattern count="one">om {0} tir.</relativeTimePattern>
+					<relativeTimePattern count="other">om {0} tir.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">for {0} tirsdag siden</relativeTimePattern>
-					<relativeTimePattern count="other">for {0} tirsdage siden</relativeTimePattern>
+					<relativeTimePattern count="one">{0} tir. siden</relativeTimePattern>
+					<relativeTimePattern count="other">{0} tir. siden</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="tue-narrow">
 				<relative type="-1">sidste ti.</relative>
 				<relative type="0">på ti.</relative>
-				<relative type="1">næste ti.</relative>
+				<relative type="1">på ti.</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">om {0} tirsdag</relativeTimePattern>
-					<relativeTimePattern count="other">om {0} tirsdage</relativeTimePattern>
+					<relativeTimePattern count="one">om {0} ti.</relativeTimePattern>
+					<relativeTimePattern count="other">om {0} ti.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">for {0} tirsdag siden</relativeTimePattern>
-					<relativeTimePattern count="other">for {0} tirsdage siden</relativeTimePattern>
+					<relativeTimePattern count="one">{0} ti. siden</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ti. siden</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="wed">
 				<relative type="-1">sidste onsdag</relative>
 				<relative type="0">på onsdag</relative>
-				<relative type="1">næste onsdag</relative>
+				<relative type="1">på onsdag</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">om {0} onsdag</relativeTimePattern>
 					<relativeTimePattern count="other">om {0} onsdage</relativeTimePattern>
@@ -2760,33 +2763,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<field type="wed-short">
 				<relative type="-1">sidste ons.</relative>
 				<relative type="0">på ons.</relative>
-				<relative type="1">næste ons.</relative>
+				<relative type="1">på ons.</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">om {0} onsdag</relativeTimePattern>
-					<relativeTimePattern count="other">om {0} onsdage</relativeTimePattern>
+					<relativeTimePattern count="one">om {0} ons.</relativeTimePattern>
+					<relativeTimePattern count="other">om {0} ons.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">for {0} onsdag siden</relativeTimePattern>
-					<relativeTimePattern count="other">for {0} onsdage siden</relativeTimePattern>
+					<relativeTimePattern count="one">{0} ons. siden</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ons. siden</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="wed-narrow">
 				<relative type="-1">sidste on.</relative>
 				<relative type="0">på on.</relative>
-				<relative type="1">næste on.</relative>
+				<relative type="1">på on.</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">om {0} onsdag</relativeTimePattern>
-					<relativeTimePattern count="other">om {0} onsdage</relativeTimePattern>
+					<relativeTimePattern count="one">om {0} on.</relativeTimePattern>
+					<relativeTimePattern count="other">om {0} on.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">for {0} onsdag siden</relativeTimePattern>
-					<relativeTimePattern count="other">for {0} onsdage siden</relativeTimePattern>
+					<relativeTimePattern count="one">{0} on. siden</relativeTimePattern>
+					<relativeTimePattern count="other">{0} on. siden</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="thu">
 				<relative type="-1">sidste torsdag</relative>
 				<relative type="0">på torsdag</relative>
-				<relative type="1">næste torsdag</relative>
+				<relative type="1">på torsdag</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">om {0} torsdag</relativeTimePattern>
 					<relativeTimePattern count="other">om {0} torsdage</relativeTimePattern>
@@ -2799,33 +2802,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<field type="thu-short">
 				<relative type="-1">sidste tor.</relative>
 				<relative type="0">på tor.</relative>
-				<relative type="1">næste tor.</relative>
+				<relative type="1">på tor.</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">om {0} torsdag</relativeTimePattern>
-					<relativeTimePattern count="other">om {0} torsdage</relativeTimePattern>
+					<relativeTimePattern count="one">om {0} tor.</relativeTimePattern>
+					<relativeTimePattern count="other">om {0} tor.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">for {0} torsdag siden</relativeTimePattern>
-					<relativeTimePattern count="other">for {0} torsdage siden</relativeTimePattern>
+					<relativeTimePattern count="one">{0} tor. siden</relativeTimePattern>
+					<relativeTimePattern count="other">{0} tor. siden</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="thu-narrow">
 				<relative type="-1">sidste to.</relative>
 				<relative type="0">på to.</relative>
-				<relative type="1">næste to.</relative>
+				<relative type="1">på to.</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">om {0} torsdag</relativeTimePattern>
-					<relativeTimePattern count="other">om {0} torsdage</relativeTimePattern>
+					<relativeTimePattern count="one">om {0} to.</relativeTimePattern>
+					<relativeTimePattern count="other">om {0} to.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">for {0} torsdag siden</relativeTimePattern>
-					<relativeTimePattern count="other">for {0} torsdage siden</relativeTimePattern>
+					<relativeTimePattern count="one">{0} to. siden</relativeTimePattern>
+					<relativeTimePattern count="other">{0} to. siden</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="fri">
 				<relative type="-1">sidste fredag</relative>
 				<relative type="0">på fredag</relative>
-				<relative type="1">næste fredag</relative>
+				<relative type="1">på fredag</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">om {0} fredag</relativeTimePattern>
 					<relativeTimePattern count="other">om {0} fredage</relativeTimePattern>
@@ -2838,33 +2841,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<field type="fri-short">
 				<relative type="-1">sidste fre.</relative>
 				<relative type="0">på fre.</relative>
-				<relative type="1">næste fre.</relative>
+				<relative type="1">på fre.</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">om {0} fredag</relativeTimePattern>
-					<relativeTimePattern count="other">om {0} fredage</relativeTimePattern>
+					<relativeTimePattern count="one">om {0} fre.</relativeTimePattern>
+					<relativeTimePattern count="other">om {0} fre.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">for {0} fredag siden</relativeTimePattern>
-					<relativeTimePattern count="other">for {0} fredage siden</relativeTimePattern>
+					<relativeTimePattern count="one">{0} fre. siden</relativeTimePattern>
+					<relativeTimePattern count="other">{0} fre. siden</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="fri-narrow">
 				<relative type="-1">sidste fr.</relative>
 				<relative type="0">på fr.</relative>
-				<relative type="1">næste fr.</relative>
+				<relative type="1">på fr.</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">om {0} fredag</relativeTimePattern>
-					<relativeTimePattern count="other">om {0} fredage</relativeTimePattern>
+					<relativeTimePattern count="one">om {0} fr.</relativeTimePattern>
+					<relativeTimePattern count="other">om {0} fr.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">for {0} fredag siden</relativeTimePattern>
-					<relativeTimePattern count="other">for {0} fredage siden</relativeTimePattern>
+					<relativeTimePattern count="one">{0} fr. siden</relativeTimePattern>
+					<relativeTimePattern count="other">{0} fr. siden</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="sat">
 				<relative type="-1">sidste lørdag</relative>
 				<relative type="0">på lørdag</relative>
-				<relative type="1">næste lørdag</relative>
+				<relative type="1">på lørdag</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">om {0} lørdag</relativeTimePattern>
 					<relativeTimePattern count="other">om {0} lørdage</relativeTimePattern>
@@ -2877,27 +2880,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<field type="sat-short">
 				<relative type="-1">sidste lør.</relative>
 				<relative type="0">på lør.</relative>
-				<relative type="1">næste lør.</relative>
+				<relative type="1">på lør.</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">om {0} lørdag</relativeTimePattern>
-					<relativeTimePattern count="other">om {0} lørdage</relativeTimePattern>
+					<relativeTimePattern count="one">om {0} lør.</relativeTimePattern>
+					<relativeTimePattern count="other">om {0} lør.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">for {0} lørdag siden</relativeTimePattern>
-					<relativeTimePattern count="other">for {0} lørdage siden</relativeTimePattern>
+					<relativeTimePattern count="one">{0} lør. siden</relativeTimePattern>
+					<relativeTimePattern count="other">{0} lør. siden</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="sat-narrow">
 				<relative type="-1">sidste lø.</relative>
 				<relative type="0">på lø.</relative>
-				<relative type="1">næste lø.</relative>
+				<relative type="1">på lø.</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">om {0} lørdag</relativeTimePattern>
-					<relativeTimePattern count="other">om {0} lørdage</relativeTimePattern>
+					<relativeTimePattern count="one">om {0} lø.</relativeTimePattern>
+					<relativeTimePattern count="other">om {0} lø.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">for {0} lørdag siden</relativeTimePattern>
-					<relativeTimePattern count="other">for {0} lørdage siden</relativeTimePattern>
+					<relativeTimePattern count="one">{0} lø. siden</relativeTimePattern>
+					<relativeTimePattern count="other">{0} lø. siden</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="dayperiod-short">
@@ -2911,7 +2914,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="hour">
 				<displayName>time</displayName>
-				<relative type="0">i den kommende time</relative>
+				<relative type="0">denne time</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">om {0} time</relativeTimePattern>
 					<relativeTimePattern count="other">om {0} timer</relativeTimePattern>
@@ -2929,8 +2932,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">om {0} timer</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">for {0} time siden</relativeTimePattern>
-					<relativeTimePattern count="other">for {0} timer siden</relativeTimePattern>
+					<relativeTimePattern count="one">{0} time siden</relativeTimePattern>
+					<relativeTimePattern count="other">{0} timer siden</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="hour-narrow">
@@ -2941,13 +2944,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">om {0} timer</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">for {0} time siden</relativeTimePattern>
-					<relativeTimePattern count="other">for {0} timer siden</relativeTimePattern>
+					<relativeTimePattern count="one">{0} time siden</relativeTimePattern>
+					<relativeTimePattern count="other">{0} timer siden</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="minute">
 				<displayName>minut</displayName>
-				<relative type="0">i det kommende minut</relative>
+				<relative type="0">dette minut</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">om {0} minut</relativeTimePattern>
 					<relativeTimePattern count="other">om {0} minutter</relativeTimePattern>
@@ -2965,8 +2968,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">om {0} min.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">for {0} min. siden</relativeTimePattern>
-					<relativeTimePattern count="other">for {0} min. siden</relativeTimePattern>
+					<relativeTimePattern count="one">{0} min. siden</relativeTimePattern>
+					<relativeTimePattern count="other">{0} min. siden</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="minute-narrow">
@@ -2977,8 +2980,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">om {0} min.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">for {0} min. siden</relativeTimePattern>
-					<relativeTimePattern count="other">for {0} min. siden</relativeTimePattern>
+					<relativeTimePattern count="one">{0} min. siden</relativeTimePattern>
+					<relativeTimePattern count="other">{0} min. siden</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="second">
@@ -3000,8 +3003,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">om {0} sek.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">for {0} sek. siden</relativeTimePattern>
-					<relativeTimePattern count="other">for {0} sek. siden</relativeTimePattern>
+					<relativeTimePattern count="one">{0} sek. siden</relativeTimePattern>
+					<relativeTimePattern count="other">{0} sek. siden</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="second-narrow">
@@ -3011,8 +3014,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">om {0} sek.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">for {0} sek. siden</relativeTimePattern>
-					<relativeTimePattern count="other">for {0} sek. siden</relativeTimePattern>
+					<relativeTimePattern count="one">{0} sek. siden</relativeTimePattern>
+					<relativeTimePattern count="other">{0} sek. siden</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="zone">
@@ -3980,9 +3983,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Kaliningrad">
 				<exemplarCity>Kaliningrad</exemplarCity>
 			</zone>
-			<zone type="Europe/Simferopol">
-				<exemplarCity>Simferopol</exemplarCity>
-			</zone>
 			<zone type="Europe/Moscow">
 				<exemplarCity>Moskva</exemplarCity>
 			</zone>
@@ -4177,6 +4177,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiev</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity>Simferopol</exemplarCity>
 			</zone>
 			<zone type="Europe/Zaporozhye">
 				<exemplarCity>Zaporizjzja</exemplarCity>
@@ -5023,9 +5026,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<generic draft="contributed">Norfolk Island-tid</generic>
-					<standard draft="contributed">Norfolk Island-normaltid</standard>
-					<daylight draft="contributed">Norfolk Island-sommertid</daylight>
+					<generic>Norfolk Island-tid</generic>
+					<standard>Norfolk Island-normaltid</standard>
+					<daylight>Norfolk Island-sommertid</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -5483,7 +5486,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="ANG">
 				<displayName>Nederlandske Antiller-gylden</displayName>
-				<displayName count="one">Nederlandsk Antiller-gylden</displayName>
+				<displayName count="one">Nederlandske Antiller-gylden</displayName>
 				<displayName count="other">Nederlandske Antiller-gylden</displayName>
 				<symbol draft="contributed">ANG</symbol>
 			</currency>
@@ -6559,7 +6562,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="OMR">
 				<displayName>omansk rial</displayName>
 				<displayName count="one">omansk rial</displayName>
-				<displayName count="other">omanske rial</displayName>
+				<displayName count="other">omanske rialer</displayName>
 				<symbol draft="contributed">OMR</symbol>
 			</currency>
 			<currency type="PAB">
@@ -6870,9 +6873,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol alt="variant" draft="contributed">TL</symbol>
 			</currency>
 			<currency type="TTD">
-				<displayName>dollar fra Trinidad og Tobago</displayName>
-				<displayName count="one">dollar fra Trinidad og Tobago</displayName>
-				<displayName count="other">dollar fra Trinidad og Tobago</displayName>
+				<displayName>trinidadisk dollar</displayName>
+				<displayName count="one">trinidadisk dollar</displayName>
+				<displayName count="other">trinidadiske dollar</displayName>
 				<symbol draft="contributed">TTD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
@@ -7160,6 +7163,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<pluralMinimalPairs count="one">{0} dag</pluralMinimalPairs>
 			<pluralMinimalPairs count="other">{0} dage</pluralMinimalPairs>
 			<ordinalMinimalPairs ordinal="other">Tag den {0}. vej til højre.</ordinalMinimalPairs>
+			<genderMinimalPairs gender="common">En {0}</genderMinimalPairs>
+			<genderMinimalPairs gender="neuter">Et {0}</genderMinimalPairs>
 		</minimalPairs>
 	</numbers>
 	<units>
@@ -7224,28 +7229,58 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>yotta{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>kibi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>mebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>gibi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>tebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>pebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>exbi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>zebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>yobi{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0} pr. {1}</compoundUnitPattern>
 			</compoundUnit>
 			<compoundUnit type="power2">
 				<compoundUnitPattern1>kvadrat{0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one">kvadrat{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" gender="common">kvadrat{0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">kvadrat{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" gender="common">kvadrat{0}</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="power3">
 				<compoundUnitPattern1>kubik{0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one">kubik{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" gender="common">kubik{0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">kubik{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" gender="common">kubik{0}</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="times">
 				<compoundUnitPattern>{0} gange {1}</compoundUnitPattern>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
+				<gender>common</gender>
 				<displayName>G-kraft</displayName>
 				<unitPattern count="one">{0} G-kraft</unitPattern>
 				<unitPattern count="other">{0} G-kraft</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
+				<gender>common</gender>
 				<displayName>meter pr. sekund²</displayName>
 				<unitPattern count="one">{0} meter pr. sekund²</unitPattern>
 				<unitPattern count="other">{0} meter pr. sekund²</unitPattern>
@@ -7276,12 +7311,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} buesekunder</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
+				<gender>common</gender>
 				<displayName>kvadratkilometer</displayName>
 				<unitPattern count="one">{0} kvadratkilometer</unitPattern>
 				<unitPattern count="other">{0} kvadratkilometer</unitPattern>
 				<perUnitPattern>{0} pr. kvadratkilometer</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
+				<gender>common</gender>
 				<displayName>hektar</displayName>
 				<unitPattern count="one">{0} hektar</unitPattern>
 				<unitPattern count="other">{0} hektar</unitPattern>
@@ -7293,18 +7330,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0}/m²</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
+				<gender>common</gender>
 				<displayName>kvadratcentimeter</displayName>
 				<unitPattern count="one">{0} kvadratcentimeter</unitPattern>
 				<unitPattern count="other">{0} kvadratcentimeter</unitPattern>
 				<perUnitPattern>{0}/cm²</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
+				<gender>common</gender>
 				<displayName>kvadrat-engelske mil</displayName>
 				<unitPattern count="one">{0} kvadrat-engelsk mil</unitPattern>
 				<unitPattern count="other">{0} kvadrat-engelske mil</unitPattern>
 				<perUnitPattern>{0} pr. kvadrat-engelske mil</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
+				<gender>common</gender>
 				<displayName>acre</displayName>
 				<unitPattern count="one">{0} acre</unitPattern>
 				<unitPattern count="other">{0} acres</unitPattern>
@@ -7315,6 +7355,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} kvadrat-engelske yard</unitPattern>
 			</unit>
 			<unit type="area-square-foot">
+				<gender>common</gender>
 				<displayName>kvadratfod</displayName>
 				<unitPattern count="one">{0} kvadratfod</unitPattern>
 				<unitPattern count="other">{0} kvadratfod</unitPattern>
@@ -7323,7 +7364,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>kvadrattommer</displayName>
 				<unitPattern count="one">{0} kvadrattomme</unitPattern>
 				<unitPattern count="other">{0} kvadrattommer</unitPattern>
-				<perUnitPattern>{0}/in²</perUnitPattern>
+				<perUnitPattern>{0} pr. kvadrattomme</perUnitPattern>
 			</unit>
 			<unit type="concentr-karat">
 				<displayName>karat</displayName>
@@ -7342,10 +7383,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-permillion">
 				<displayName>parts per million</displayName>
-				<unitPattern count="one">{0} parts per million</unitPattern>
+				<unitPattern count="one">{0} part per million</unitPattern>
 				<unitPattern count="other">{0} parts per million</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
+				<gender>common</gender>
 				<displayName>procent</displayName>
 				<unitPattern count="one">{0} procent</unitPattern>
 				<unitPattern count="other">{0} procent</unitPattern>
@@ -7361,16 +7403,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} liter pr. kilometer</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
+				<gender>common</gender>
 				<displayName>liter pr. 100 kilometer</displayName>
 				<unitPattern count="one">{0} liter pr. 100 kilometer</unitPattern>
 				<unitPattern count="other">{0} liter pr. 100 kilometer</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
+				<gender>common</gender>
 				<displayName>mil pr. gallon</displayName>
 				<unitPattern count="one">mil pr. gallon</unitPattern>
 				<unitPattern count="other">{0} mil pr. gallon</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon-imperial">
+				<gender>common</gender>
 				<displayName>mil pr. engelsk gallon</displayName>
 				<unitPattern count="one">{0} mil pr. engelsk gallon</unitPattern>
 				<unitPattern count="other">{0} mil pr. engelsk gallon</unitPattern>
@@ -7441,42 +7486,49 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} årtier</unitPattern>
 			</unit>
 			<unit type="duration-year">
+				<gender>neuter</gender>
 				<displayName>år</displayName>
 				<unitPattern count="one">{0} år</unitPattern>
 				<unitPattern count="other">{0} år</unitPattern>
 				<perUnitPattern>{0} om året</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
+				<gender>common</gender>
 				<displayName>måneder</displayName>
 				<unitPattern count="one">{0} måned</unitPattern>
 				<unitPattern count="other">{0} måneder</unitPattern>
 				<perUnitPattern>{0} pr. måned</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
+				<gender>common</gender>
 				<displayName>uger</displayName>
 				<unitPattern count="one">{0} uge</unitPattern>
 				<unitPattern count="other">{0} uger</unitPattern>
 				<perUnitPattern>{0} pr. uge</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
+				<gender>common</gender>
 				<displayName>dage</displayName>
 				<unitPattern count="one">{0} dag</unitPattern>
 				<unitPattern count="other">{0} dage</unitPattern>
 				<perUnitPattern>{0} pr. dag</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
+				<gender>common</gender>
 				<displayName>timer</displayName>
 				<unitPattern count="one">{0} time</unitPattern>
 				<unitPattern count="other">{0} timer</unitPattern>
 				<perUnitPattern>{0} pr. time</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
+				<gender>neuter</gender>
 				<displayName>minutter</displayName>
 				<unitPattern count="one">{0} minut</unitPattern>
 				<unitPattern count="other">{0} minutter</unitPattern>
 				<perUnitPattern>{0} pr. min.</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
+				<gender>neuter</gender>
 				<displayName>sekunder</displayName>
 				<unitPattern count="one">{0} sekund</unitPattern>
 				<unitPattern count="other">{0} sekunder</unitPattern>
@@ -7518,6 +7570,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} volt</unitPattern>
 			</unit>
 			<unit type="energy-kilocalorie">
+				<gender>common</gender>
 				<displayName>kilokalorier</displayName>
 				<unitPattern count="one">{0} kilokalorie</unitPattern>
 				<unitPattern count="other">{0} kilokalorier</unitPattern>
@@ -7528,6 +7581,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} kalorier</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
+				<gender>common</gender>
 				<displayName>kalorier</displayName>
 				<unitPattern count="one">{0} kalorie</unitPattern>
 				<unitPattern count="other">{0} kalorier</unitPattern>
@@ -7544,16 +7598,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="energy-kilowatt-hour">
 				<displayName>kilowatt-timer</displayName>
-				<unitPattern count="one">kilowatt-time</unitPattern>
+				<unitPattern count="one">{0} kilowatt-time</unitPattern>
 				<unitPattern count="other">{0} kilowatt-timer</unitPattern>
 			</unit>
 			<unit type="energy-electronvolt">
-				<displayName draft="contributed">elektronvolt</displayName>
-				<unitPattern count="one" draft="contributed">{0} elektronvolt</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} elektronvolt</unitPattern>
+				<displayName>elektronvolt</displayName>
+				<unitPattern count="one">{0} elektronvolt</unitPattern>
+				<unitPattern count="other">{0} elektronvolt</unitPattern>
 			</unit>
 			<unit type="force-newton">
-				<displayName draft="contributed">newton</displayName>
+				<displayName>newton</displayName>
 				<unitPattern count="one">{0} newton</unitPattern>
 				<unitPattern count="other">{0} newton</unitPattern>
 			</unit>
@@ -7582,6 +7636,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} geviert</unitPattern>
 				<unitPattern count="other">{0} geviert</unitPattern>
 			</unit>
+			<unit type="graphics-pixel">
+				<displayName>pixels</displayName>
+				<unitPattern count="one">{0} pixel</unitPattern>
+				<unitPattern count="other">{0} pixels</unitPattern>
+			</unit>
 			<unit type="graphics-megapixel">
 				<displayName>megapixels</displayName>
 				<unitPattern count="one">{0} megapixel</unitPattern>
@@ -7607,13 +7666,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} punkt per tomme</unitPattern>
 				<unitPattern count="other">{0} punkter per tomme</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>prik</displayName>
+				<unitPattern count="one">{0} prik</unitPattern>
+				<unitPattern count="other">{0} punkter</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>jordradius</displayName>
+				<unitPattern count="one">{0} jordradius</unitPattern>
+				<unitPattern count="other">{0} jordradier</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
+				<gender>common</gender>
 				<displayName>kilometer</displayName>
 				<unitPattern count="one">{0} kilometer</unitPattern>
 				<unitPattern count="other">{0} kilometer</unitPattern>
 				<perUnitPattern>{0} pr. kilometer</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
+				<gender>common</gender>
 				<displayName>meter</displayName>
 				<unitPattern count="one">{0} meter</unitPattern>
 				<unitPattern count="other">{0} meter</unitPattern>
@@ -7625,12 +7696,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} decimeter</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
+				<gender>common</gender>
 				<displayName>centimeter</displayName>
 				<unitPattern count="one">{0} centimeter</unitPattern>
 				<unitPattern count="other">{0} centimeter</unitPattern>
 				<perUnitPattern>{0} pr. centimeter</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
+				<gender>common</gender>
 				<displayName>millimeter</displayName>
 				<unitPattern count="one">{0} millimeter</unitPattern>
 				<unitPattern count="other">{0} millimeter</unitPattern>
@@ -7646,33 +7719,39 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} nanometer</unitPattern>
 			</unit>
 			<unit type="length-picometer">
+				<gender>common</gender>
 				<displayName>pikometer</displayName>
 				<unitPattern count="one">{0} pikometer</unitPattern>
 				<unitPattern count="other">{0} pikometer</unitPattern>
 			</unit>
 			<unit type="length-mile">
+				<gender>common</gender>
 				<displayName>engelske mil</displayName>
 				<unitPattern count="one">{0} engelsk mil</unitPattern>
 				<unitPattern count="other">{0} engelske mil</unitPattern>
 			</unit>
 			<unit type="length-yard">
+				<gender>common</gender>
 				<displayName>engelske yard</displayName>
 				<unitPattern count="one">{0} engelsk yard</unitPattern>
 				<unitPattern count="other">{0} engelske yard</unitPattern>
 			</unit>
 			<unit type="length-foot">
+				<gender>common</gender>
 				<displayName>fod</displayName>
 				<unitPattern count="one">{0} fod</unitPattern>
 				<unitPattern count="other">{0} fod</unitPattern>
 				<perUnitPattern>{0} pr. fod</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
+				<gender>common</gender>
 				<displayName>tommer</displayName>
 				<unitPattern count="one">{0} tomme</unitPattern>
 				<unitPattern count="other">{0} tommer</unitPattern>
 				<perUnitPattern>{0} pr. tomme</perUnitPattern>
 			</unit>
 			<unit type="length-parsec">
+				<gender>common</gender>
 				<displayName>parsec</displayName>
 				<unitPattern count="one">{0} parsec</unitPattern>
 				<unitPattern count="other">{0} parsec</unitPattern>
@@ -7686,6 +7765,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>astronomiske enheder</displayName>
 				<unitPattern count="one">{0} astronomisk enhed</unitPattern>
 				<unitPattern count="other">{0} astronomiske enheder</unitPattern>
+			</unit>
+			<unit type="length-furlong">
+				<displayName>furlongs</displayName>
+				<unitPattern count="one">{0} furlong</unitPattern>
+				<unitPattern count="other">{0} furlongs</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>favne</displayName>
+				<unitPattern count="one">{0} favn</unitPattern>
+				<unitPattern count="other">{0} favne</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>sømil</displayName>
@@ -7703,6 +7792,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} punkt</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
+				<gender>common</gender>
 				<displayName>solradier</displayName>
 				<unitPattern count="one">{0} solradius</unitPattern>
 				<unitPattern count="other">{0} solradier</unitPattern>
@@ -7712,24 +7802,40 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} lux</unitPattern>
 				<unitPattern count="other">{0} lux</unitPattern>
 			</unit>
+			<unit type="light-candela">
+				<displayName>candela</displayName>
+				<unitPattern count="one">{0} candela</unitPattern>
+				<unitPattern count="other">{0} candela</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>lumen</displayName>
+				<unitPattern count="one">{0} lumen</unitPattern>
+				<unitPattern count="other">{0} lumen</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<gender>common</gender>
+			</unit>
 			<unit type="mass-metric-ton">
 				<displayName>tons</displayName>
 				<unitPattern count="one">{0} ton</unitPattern>
 				<unitPattern count="other">{0} tons</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
+				<gender>neuter</gender>
 				<displayName>kilogram</displayName>
 				<unitPattern count="one">{0} kilogram</unitPattern>
 				<unitPattern count="other">{0} kilogram</unitPattern>
 				<perUnitPattern>{0} pr. kg</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
+				<gender>neuter</gender>
 				<displayName>gram</displayName>
 				<unitPattern count="one">{0} gram</unitPattern>
 				<unitPattern count="other">{0} gram</unitPattern>
 				<perUnitPattern>{0} pr. gram</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
+				<gender>neuter</gender>
 				<displayName>milligram</displayName>
 				<unitPattern count="one">{0} milligram</unitPattern>
 				<unitPattern count="other">{0} milligram</unitPattern>
@@ -7744,13 +7850,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} short ton</unitPattern>
 				<unitPattern count="other">{0} short ton</unitPattern>
 			</unit>
+			<unit type="mass-stone">
+				<displayName>stone</displayName>
+				<unitPattern count="one">{0} stone</unitPattern>
+				<unitPattern count="other">{0} stone</unitPattern>
+			</unit>
 			<unit type="mass-pound">
+				<gender>neuter</gender>
 				<displayName>pund</displayName>
 				<unitPattern count="one">{0} pund</unitPattern>
 				<unitPattern count="other">{0} pund</unitPattern>
 				<perUnitPattern>{0} pr. pund</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce">
+				<gender>common</gender>
 				<displayName>ounces</displayName>
 				<unitPattern count="one">{0} ounce</unitPattern>
 				<unitPattern count="other">{0} ounces</unitPattern>
@@ -7766,10 +7879,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} karat</unitPattern>
 				<unitPattern count="other">{0} karat</unitPattern>
 			</unit>
+			<unit type="mass-dalton">
+				<gender>common</gender>
+			</unit>
+			<unit type="mass-earth-mass">
+				<gender>common</gender>
+				<displayName>Jordmasser</displayName>
+				<unitPattern count="one">{0} jordmasse</unitPattern>
+				<unitPattern count="other">{0} jordmasser</unitPattern>
+			</unit>
 			<unit type="mass-solar-mass">
+				<gender>common</gender>
 				<displayName>solmasser</displayName>
 				<unitPattern count="one">{0} solmasse</unitPattern>
 				<unitPattern count="other">{0} solmasser</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<gender>neuter</gender>
+				<displayName>gran</displayName>
+				<unitPattern count="one">{0} gran</unitPattern>
+				<unitPattern count="other">{0} gran</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>gigawatt</displayName>
@@ -7809,7 +7938,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>pounds pr. kvadrattomme</displayName>
 				<unitPattern count="one">{0} pound pr. kvadrattomme</unitPattern>
-				<unitPattern count="other">{0} pounds pr. kvadrattommer</unitPattern>
+				<unitPattern count="other">{0} pounds pr. kvadrattomme</unitPattern>
 			</unit>
 			<unit type="pressure-inch-ofhg">
 				<displayName>tommer kviksølv</displayName>
@@ -7837,26 +7966,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} hektopascal</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
-				<displayName draft="contributed">kilopascal</displayName>
+				<gender>common</gender>
+				<displayName>kilopascal</displayName>
 				<unitPattern count="one">{0} kilopascal</unitPattern>
 				<unitPattern count="other">{0} kilopascal</unitPattern>
 			</unit>
 			<unit type="pressure-megapascal">
-				<displayName draft="contributed">megapascal</displayName>
+				<displayName>megapascal</displayName>
 				<unitPattern count="one">{0} megapascal</unitPattern>
 				<unitPattern count="other">{0} megapascal</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
+				<gender>common</gender>
 				<displayName>kilometer i timen</displayName>
 				<unitPattern count="one">kilometer i timen</unitPattern>
 				<unitPattern count="other">{0} kilometer i timen</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
+				<gender>common</gender>
 				<displayName>meter pr. sekund</displayName>
 				<unitPattern count="one">{0} meter i sekundet</unitPattern>
 				<unitPattern count="other">{0} meter i sekundet</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
+				<gender>common</gender>
 				<displayName>engelske mil i timen</displayName>
 				<unitPattern count="one">{0} engelsk mil i timen</unitPattern>
 				<unitPattern count="other">{0} engelske mil i timen</unitPattern>
@@ -7867,29 +8000,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} knob</unitPattern>
 			</unit>
 			<unit type="temperature-generic">
+				<gender>common</gender>
 				<displayName>°</displayName>
 				<unitPattern count="one">{0}°</unitPattern>
 				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
+				<gender>common</gender>
 				<displayName>grader celsius</displayName>
 				<unitPattern count="one">{0} grad celsius</unitPattern>
 				<unitPattern count="other">{0} grader celsius</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
+				<gender>common</gender>
 				<displayName>grader fahrenheit</displayName>
 				<unitPattern count="one">{0} grad fahrenheit</unitPattern>
 				<unitPattern count="other">{0} grader fahrenheit</unitPattern>
 			</unit>
 			<unit type="temperature-kelvin">
+				<gender>common</gender>
 				<displayName>kelvin</displayName>
 				<unitPattern count="one">{0} kelvin</unitPattern>
 				<unitPattern count="other">{0} kelvin</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
-				<displayName draft="contributed">newtonmeter</displayName>
-				<unitPattern count="one" draft="contributed">{0} newtonmeter</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} newtonmeter</unitPattern>
+				<displayName>newtonmeter</displayName>
+				<unitPattern count="one">{0} newtonmeter</unitPattern>
+				<unitPattern count="other">{0} newtonmeter</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>kubikkilometer</displayName>
@@ -7903,12 +8040,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0}/m³</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-centimeter">
+				<gender>common</gender>
 				<displayName>kubikcentimeter</displayName>
 				<unitPattern count="one">{0} kubikcentimeter</unitPattern>
 				<unitPattern count="other">{0} kubikcentimeter</unitPattern>
 				<perUnitPattern>{0}/cm³</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
+				<gender>common</gender>
 				<displayName>kubik-engelske mil</displayName>
 				<unitPattern count="one">{0} kubik-engelsk mil</unitPattern>
 				<unitPattern count="other">{0} kubik-engelske mil</unitPattern>
@@ -7919,6 +8058,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} kubik-engelske yard</unitPattern>
 			</unit>
 			<unit type="volume-cubic-foot">
+				<gender>common</gender>
 				<displayName>kubikfod</displayName>
 				<unitPattern count="one">{0} kubikfod</unitPattern>
 				<unitPattern count="other">{0} kubikfod</unitPattern>
@@ -7939,22 +8079,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} hektoliter</unitPattern>
 			</unit>
 			<unit type="volume-liter">
+				<gender>common</gender>
 				<displayName>liter</displayName>
 				<unitPattern count="one">{0} liter</unitPattern>
 				<unitPattern count="other">{0} liter</unitPattern>
 				<perUnitPattern>{0}/l</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
+				<gender>common</gender>
 				<displayName>deciliter</displayName>
 				<unitPattern count="one">{0} deciliter</unitPattern>
 				<unitPattern count="other">{0} deciliter</unitPattern>
 			</unit>
 			<unit type="volume-centiliter">
+				<gender>common</gender>
 				<displayName>centiliter</displayName>
 				<unitPattern count="one">{0} centiliter</unitPattern>
 				<unitPattern count="other">{0} centiliter</unitPattern>
 			</unit>
 			<unit type="volume-milliliter">
+				<gender>common</gender>
 				<displayName>milliliter</displayName>
 				<unitPattern count="one">{0} milliliter</unitPattern>
 				<unitPattern count="other">{0} milliliter</unitPattern>
@@ -7974,56 +8118,111 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} acre-fod</unitPattern>
 				<unitPattern count="other">{0} acre-fod</unitPattern>
 			</unit>
+			<unit type="volume-bushel">
+				<displayName>skæpper</displayName>
+				<unitPattern count="one">{0} skæppe</unitPattern>
+				<unitPattern count="other">{0} skæpper</unitPattern>
+			</unit>
 			<unit type="volume-gallon">
+				<gender>common</gender>
 				<displayName>gallons</displayName>
 				<unitPattern count="one">{0} gallon</unitPattern>
 				<unitPattern count="other">{0} gallons</unitPattern>
 				<perUnitPattern>{0}/gal</perUnitPattern>
 			</unit>
 			<unit type="volume-gallon-imperial">
+				<gender>common</gender>
 				<displayName>engelske gallons</displayName>
 				<unitPattern count="one">{0} engelsk gallon</unitPattern>
 				<unitPattern count="other">{0} engelske gallons</unitPattern>
 				<perUnitPattern>{0}/engelsk gallon</perUnitPattern>
 			</unit>
 			<unit type="volume-quart">
+				<gender>common</gender>
 				<displayName>engelske quarts</displayName>
 				<unitPattern count="one">{0} engelsk quart</unitPattern>
 				<unitPattern count="other">{0} engelske quarts</unitPattern>
 			</unit>
 			<unit type="volume-pint">
+				<gender>common</gender>
 				<displayName>pints</displayName>
 				<unitPattern count="one">{0} pint</unitPattern>
 				<unitPattern count="other">{0} pints</unitPattern>
 			</unit>
 			<unit type="volume-cup">
+				<gender>common</gender>
 				<displayName>cups</displayName>
-				<unitPattern count="one">cup</unitPattern>
+				<unitPattern count="one">{0} cup</unitPattern>
 				<unitPattern count="other">{0} cups</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce">
+				<gender>common</gender>
 				<displayName>engelske fluid ounces</displayName>
 				<unitPattern count="one">{0} engelsk fluid ounce</unitPattern>
 				<unitPattern count="other">{0} engelske fluid ounces</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce-imperial">
-				<unitPattern count="one" draft="contributed">{0} Imp. fluid ounce</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} Imp. fluid ounces</unitPattern>
+				<gender>common</gender>
+				<unitPattern count="one">{0} Imp. fluid ounce</unitPattern>
+				<unitPattern count="other">{0} Imp. fluid ounces</unitPattern>
 			</unit>
 			<unit type="volume-tablespoon">
+				<gender>common</gender>
 				<displayName>spiseskeer</displayName>
 				<unitPattern count="one">{0} spiseske</unitPattern>
 				<unitPattern count="other">{0} spiseskeer</unitPattern>
 			</unit>
 			<unit type="volume-teaspoon">
+				<gender>common</gender>
 				<displayName>teskeer</displayName>
 				<unitPattern count="one">{0} teske</unitPattern>
 				<unitPattern count="other">{0} teskeer</unitPattern>
 			</unit>
 			<unit type="volume-barrel">
-				<displayName draft="contributed">tønder</displayName>
-				<unitPattern count="one" draft="contributed">{0} tønde</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} tønder</unitPattern>
+				<displayName>tønder</displayName>
+				<unitPattern count="one">{0} tønde</unitPattern>
+				<unitPattern count="other">{0} tønder</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<gender>common</gender>
+				<displayName>dessertske</displayName>
+				<unitPattern count="one">{0} dessertske</unitPattern>
+				<unitPattern count="other">{0} dessertskeer</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<gender>common</gender>
+				<displayName>britisk dessertske</displayName>
+				<unitPattern count="one">{0} britisk dessertske</unitPattern>
+				<unitPattern count="other">{0} britiske dessertskeer</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<gender>common</gender>
+				<displayName>dråbe</displayName>
+				<unitPattern count="one">{0} dråbe</unitPattern>
+				<unitPattern count="other">{0} dråber</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<gender>common</gender>
+				<displayName>britisk flydende dram</displayName>
+				<unitPattern count="one">{0} britisk flydende dram</unitPattern>
+				<unitPattern count="other">{0} britiske flydende dramme</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<gender>common</gender>
+				<unitPattern count="one">{0} jigger</unitPattern>
+				<unitPattern count="other">{0} jigger</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<gender>common</gender>
+				<displayName>knivspids</displayName>
+				<unitPattern count="one">{0} knivspids</unitPattern>
+				<unitPattern count="other">{0} knivspidser</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<gender>common</gender>
+				<displayName>britisk quart</displayName>
+				<unitPattern count="one">{0} britisk quart</unitPattern>
+				<unitPattern count="other">{0} britiske quarts</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>kompasretning</displayName>
@@ -8156,8 +8355,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ‰</unitPattern>
 			</unit>
 			<unit type="concentr-permyriad">
-				<unitPattern count="one" draft="contributed">{0} ‱</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} ‱</unitPattern>
+				<unitPattern count="one">{0} ‱</unitPattern>
+				<unitPattern count="other">{0} ‱</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>l/km</displayName>
@@ -8225,9 +8424,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} kbit</unitPattern>
 			</unit>
 			<unit type="digital-byte">
-				<displayName>byte</displayName>
-				<unitPattern count="one">{0} byte</unitPattern>
-				<unitPattern count="other">{0} byte</unitPattern>
+				<displayName>B</displayName>
+				<unitPattern count="one">{0} B</unitPattern>
+				<unitPattern count="other">{0} B</unitPattern>
 			</unit>
 			<unit type="digital-bit">
 				<displayName>bit</displayName>
@@ -8271,7 +8470,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="duration-hour">
 				<displayName>timer</displayName>
 				<unitPattern count="one">{0} t.</unitPattern>
-				<unitPattern count="other">{0} t</unitPattern>
+				<unitPattern count="other">{0} t.</unitPattern>
 				<perUnitPattern>{0} /t</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
@@ -8352,12 +8551,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} kWh</unitPattern>
 			</unit>
 			<unit type="energy-electronvolt">
-				<displayName draft="contributed">elektronvolt</displayName>
+				<displayName>elektronvolt</displayName>
 			</unit>
 			<unit type="force-newton">
 				<displayName>newton</displayName>
-				<unitPattern count="one" draft="contributed">{0} N</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} N</unitPattern>
+				<unitPattern count="one">{0} N</unitPattern>
+				<unitPattern count="other">{0} N</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>GHz</displayName>
@@ -8378,6 +8577,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Hz</displayName>
 				<unitPattern count="one">{0} Hz</unitPattern>
 				<unitPattern count="other">{0} Hz</unitPattern>
+			</unit>
+			<unit type="graphics-dot">
+				<displayName>prik</displayName>
+				<unitPattern count="one">{0} p</unitPattern>
+				<unitPattern count="other">{0} p</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
@@ -8459,6 +8663,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ae</unitPattern>
 				<unitPattern count="other">{0} ae</unitPattern>
 			</unit>
+			<unit type="length-fathom">
+				<displayName>favn</displayName>
+				<unitPattern count="one">{0} favn</unitPattern>
+				<unitPattern count="other">{0} favne</unitPattern>
+			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>sømil</displayName>
 				<unitPattern count="one">{0} sm</unitPattern>
@@ -8488,7 +8697,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} t</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
-				<displayName>kilogram</displayName>
 				<unitPattern count="one">{0} kg</unitPattern>
 				<unitPattern count="other">{0} kg</unitPattern>
 				<perUnitPattern>{0}/kg</perUnitPattern>
@@ -8538,6 +8746,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="mass-solar-mass">
 				<displayName>solmasser</displayName>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>gran</displayName>
+				<unitPattern count="one">{0} gran</unitPattern>
+				<unitPattern count="other">{0} gran</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>GW</displayName>
@@ -8722,6 +8935,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ac ft</unitPattern>
 				<unitPattern count="other">{0} ac ft</unitPattern>
 			</unit>
+			<unit type="volume-bushel">
+				<displayName>skp.</displayName>
+				<unitPattern count="one">{0} skp.</unitPattern>
+				<unitPattern count="other">{0} skp.</unitPattern>
+			</unit>
 			<unit type="volume-gallon">
 				<displayName>gal</displayName>
 				<unitPattern count="one">{0} gal</unitPattern>
@@ -8765,9 +8983,39 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} tsk.</unitPattern>
 			</unit>
 			<unit type="volume-barrel">
-				<displayName draft="contributed">tønde</displayName>
-				<unitPattern count="one" draft="contributed">{0} td.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} tdr.</unitPattern>
+				<displayName>tønde</displayName>
+				<unitPattern count="one">{0} td.</unitPattern>
+				<unitPattern count="other">{0} tdr.</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>dsk.</displayName>
+				<unitPattern count="one">{0} dsk.</unitPattern>
+				<unitPattern count="other">{0} dsk.</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>brit. dsk.</displayName>
+				<unitPattern count="one">{0} brit. dsk.</unitPattern>
+				<unitPattern count="other">{0} brit. dsk.</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>dråbe</displayName>
+				<unitPattern count="one">{0} dråbe</unitPattern>
+				<unitPattern count="other">{0} dråber</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>br. fl. dr.</displayName>
+				<unitPattern count="one">{0} br. fl. dr.</unitPattern>
+				<unitPattern count="other">{0} br. fl. dr.</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>knsp.</displayName>
+				<unitPattern count="one">{0} knsp.</unitPattern>
+				<unitPattern count="other">{0} knsp.</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>britisk qt</displayName>
+				<unitPattern count="one">{0} britisk qt</unitPattern>
+				<unitPattern count="other">{0} britiske qt</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>retning</displayName>
@@ -8911,6 +9159,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>l/100 km</displayName>
 				<unitPattern count="one">{0} l/100 km</unitPattern>
 				<unitPattern count="other">{0} l/100 km</unitPattern>
+			</unit>
+			<unit type="digital-terabit">
+				<displayName draft="unconfirmed">Tb</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} Tb</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} Tb</unitPattern>
+			</unit>
+			<unit type="digital-gigabit">
+				<displayName draft="unconfirmed">Gb</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} Gb</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} Gb</unitPattern>
+			</unit>
+			<unit type="digital-megabit">
+				<displayName draft="unconfirmed">Mb</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} Mb</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} Mb</unitPattern>
+			</unit>
+			<unit type="digital-kilobit">
+				<displayName draft="unconfirmed">kb</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} kb</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} kb</unitPattern>
+			</unit>
+			<unit type="digital-bit">
+				<displayName draft="unconfirmed">b</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} b</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} b</unitPattern>
 			</unit>
 			<unit type="duration-century">
 				<displayName draft="contributed">årh.</displayName>
@@ -9306,6 +9579,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabelPattern type="scripts">skriftsystemer – {0}</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="one">{0} streg</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="other">{0} streger</characterLabelPattern>
+		<characterLabelPattern type="subscript">sænket skrift {0}</characterLabelPattern>
+		<characterLabelPattern type="superscript">hævet skrift {0}</characterLabelPattern>
 		<characterLabel type="activities">aktiviteter</characterLabel>
 		<characterLabel type="african_scripts">afrikanske skriftsystemer</characterLabel>
 		<characterLabel type="american_scripts">amerikanske skriftsystemer</characterLabel>
@@ -9403,7 +9678,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="opsz" subtype="8">overskrift</styleName>
 		<styleName type="opsz" subtype="12">tekst</styleName>
 		<styleName type="opsz" subtype="18">titel</styleName>
-		<styleName type="opsz" subtype="72">vis</styleName>
+		<styleName type="opsz" subtype="72">visning</styleName>
 		<styleName type="opsz" subtype="144">plakat</styleName>
 		<styleName type="slnt" subtype="-12">bagud hældende</styleName>
 		<styleName type="slnt" subtype="0">oprejst</styleName>
@@ -9456,12 +9731,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<featureName type="cpsp">afstand store bogstaver</featureName>
 		<featureName type="dlig">valgfrie ligaturer</featureName>
 		<featureName type="frac">diagonale brøker</featureName>
-		<featureName type="lnum">moderne tal</featureName>
-		<featureName type="onum">gammeldags tal</featureName>
+		<featureName type="lnum">majuskeltal</featureName>
+		<featureName type="onum">minuskeltal</featureName>
 		<featureName type="ordn">ordinaltal</featureName>
-		<featureName type="pnum">proportionelle tal</featureName>
+		<featureName type="pnum">proportionale tal</featureName>
 		<featureName type="smcp">kapitæler</featureName>
-		<featureName type="tnum">tal i tabelformat</featureName>
+		<featureName type="tnum">tabulære tal</featureName>
 		<featureName type="zero">nul med skråstreg igennem</featureName>
 	</typographicNames>
 </ldml>

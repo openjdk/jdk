@@ -29,7 +29,7 @@
  *
  * @modules java.base/java.lang:open
  *
- * @run main/othervm compiler.intrinsics.Test8237524
+ * @run main/othervm -XX:+CompactStrings compiler.intrinsics.Test8237524
  */
 
 package compiler.intrinsics;

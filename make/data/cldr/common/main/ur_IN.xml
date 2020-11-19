@@ -539,11 +539,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">کیپ ورڈی اسکیوڈو</displayName>
 				<displayName count="other">کیپ ورڈی اسکیوڈو</displayName>
 			</currency>
-			<currency type="ERN">
-				<displayName>اریٹیریائی ناکفا</displayName>
-				<displayName count="one">اریٹیریائی ناکفا</displayName>
-				<displayName count="other">اریٹیریائی ناکفا</displayName>
-			</currency>
 			<currency type="GBP">
 				<displayName>برطانوی پاونڈ سٹرلنگ</displayName>
 				<displayName count="one">برطانوی پاونڈ سٹرلنگ</displayName>

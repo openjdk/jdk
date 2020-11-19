@@ -512,9 +512,6 @@ public:
     enclosing_method_attribute_size = 2
   };
 
-  // method override check
-  bool is_override(const methodHandle& super_method, Handle targetclassloader, Symbol* targetclassname, TRAPS);
-
   // package
   PackageEntry* package() const     { return _package_entry; }
   ModuleEntry* module() const;

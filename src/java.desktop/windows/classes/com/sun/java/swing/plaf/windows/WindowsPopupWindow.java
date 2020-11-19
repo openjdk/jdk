@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.java.swing.plaf.windows;
 
-import javax.swing.JWindow;
-import java.awt.Window;
 import java.awt.Graphics;
+import java.awt.Window;
+
+import javax.swing.JWindow;
 
 /**
  * A class which tags a window with a particular semantic usage,
@@ -39,13 +41,6 @@ import java.awt.Graphics;
  * Note that support for transition effects may be supported with a
  * different mechanism in the future and so this class is
  * package-private and targeted for Swing implementation use only.
- * <p>
- * <strong>Warning:</strong>
- * Serialized objects of this class will not be compatible with
- * future Swing releases.  The current serialization support is appropriate
- * for short term storage or RMI between applications running the same
- * version of Swing.  A future release of Swing will provide support for
- * long term persistence.
  *
  * @author Amy Fowler
  */

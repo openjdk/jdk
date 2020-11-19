@@ -866,10 +866,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[a b d e f g h i j k l m n o p q r s t u v x y z {oʻ} {gʻ} {sh} {ch} ʼ]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[c w]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[á à ă â å ä ã ā æ c ç é è ĕ ê ë ē í ì ĭ î ï ī ñ ó ò ŏ ô ö ø ō œ ú ù ŭ û ü ū w ÿ]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B D E F G H I J K L M N O P Q R S T U V X Y Z {Oʻ} {Gʻ} {Sh} {Ch}]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” „ « » ( ) \[ \] \{ \} § @ * / \&amp; # ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -3327,9 +3327,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Kaliningrad">
 				<exemplarCity>Kaliningrad</exemplarCity>
 			</zone>
-			<zone type="Europe/Simferopol">
-				<exemplarCity>Simferopol</exemplarCity>
-			</zone>
 			<zone type="Europe/Moscow">
 				<exemplarCity>Moskva</exemplarCity>
 			</zone>
@@ -3524,6 +3521,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiyev</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity>Simferopol</exemplarCity>
 			</zone>
 			<zone type="Europe/Zaporozhye">
 				<exemplarCity>Zaporojye</exemplarCity>
@@ -4296,9 +4296,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<generic draft="contributed">Norfolk oroli vaqti</generic>
-					<standard draft="contributed">Norfolk oroli standart vaqti</standard>
-					<daylight draft="contributed">Norfolk oroli yozgi vaqti</daylight>
+					<generic>Norfolk oroli vaqti</generic>
+					<standard>Norfolk oroli standart vaqti</standard>
+					<daylight>Norfolk oroli yozgi vaqti</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -5813,7 +5813,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<minimalPairs>
 			<pluralMinimalPairs count="one">Savatingizda {0}X bor. Uni sotib olasizmi?</pluralMinimalPairs>
 			<pluralMinimalPairs count="other">Savatingizda {0}X bor. Ularni sotib olasizmi?</pluralMinimalPairs>
-			<ordinalMinimalPairs ordinal="other">{0}chi chorraxada oʼngga buriling.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">{0}-chorrahadan o‘ngga buriling</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>
 	<units>
@@ -5877,6 +5877,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>yotta{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>kibi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>mebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>gibi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>tebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>pebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>eksbi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>zebi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>yobe{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
@@ -5992,9 +6016,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} millimol/litr</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
-				<displayName>millionning ulushi</displayName>
-				<unitPattern count="one">milliondan {0}</unitPattern>
-				<unitPattern count="other">milliondan {0}</unitPattern>
+				<displayName>qism/million</displayName>
+				<unitPattern count="one">{0} qism/million</unitPattern>
+				<unitPattern count="other">{0} qism/million</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>foiz</displayName>
@@ -6281,6 +6305,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} nuqta/duym</unitPattern>
 				<unitPattern count="other">{0} nuqta/duym</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>piksel</displayName>
+				<unitPattern count="one">{0} piksel</unitPattern>
+				<unitPattern count="other">{0} piksel</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>yer radiusi</displayName>
+				<unitPattern count="one">{0} yer radiusi</unitPattern>
+				<unitPattern count="other">{0} yer radiusi</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>kilometr</displayName>
 				<unitPattern count="one">{0} kilometr</unitPattern>
@@ -6361,6 +6395,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} astronomik birlik</unitPattern>
 				<unitPattern count="other">{0} astronomik birlik</unitPattern>
 			</unit>
+			<unit type="length-furlong">
+				<displayName>farlong</displayName>
+				<unitPattern count="one">{0} farlong</unitPattern>
+				<unitPattern count="other">{0} farlong</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>fatom</displayName>
+				<unitPattern count="one">{0} fatom</unitPattern>
+				<unitPattern count="other">{0} fatom</unitPattern>
+			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>dengiz mili</displayName>
 				<unitPattern count="one">{0} dengiz mili</unitPattern>
@@ -6385,6 +6429,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>lyuks</displayName>
 				<unitPattern count="one">{0} lyuks</unitPattern>
 				<unitPattern count="other">{0} lyuks</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>kandela</displayName>
+				<unitPattern count="one">{0} kandela</unitPattern>
+				<unitPattern count="other">{0} kandela</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>lumen</displayName>
+				<unitPattern count="one">{0} lumen</unitPattern>
+				<unitPattern count="other">{0} lumen</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>quyosh nuri kuchi</displayName>
@@ -6423,6 +6477,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} amerika tonnasi</unitPattern>
 				<unitPattern count="other">{0} amerika tonnasi</unitPattern>
 			</unit>
+			<unit type="mass-stone">
+				<displayName>tosh</displayName>
+				<unitPattern count="one">{0} tosh</unitPattern>
+				<unitPattern count="other">{0} tosh</unitPattern>
+			</unit>
 			<unit type="mass-pound">
 				<displayName>funt</displayName>
 				<unitPattern count="one">{0} funt</unitPattern>
@@ -6460,6 +6519,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} quyosh massasi</unitPattern>
 				<unitPattern count="other">{0} quyosh massasi</unitPattern>
 			</unit>
+			<unit type="mass-grain">
+				<displayName>gran</displayName>
+				<unitPattern count="one">{0} gran</unitPattern>
+				<unitPattern count="other">{0} gran</unitPattern>
+			</unit>
 			<unit type="power-gigawatt">
 				<displayName>gigavatt</displayName>
 				<unitPattern count="one">{0} gigavatt</unitPattern>
@@ -6496,9 +6560,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} mm simob ustuni</unitPattern>
 			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
-				<displayName>funt/kvadrat duym</displayName>
-				<unitPattern count="one">{0} funt/kvadrat duym</unitPattern>
-				<unitPattern count="other">{0} funt/kvadrat duym</unitPattern>
+				<displayName>funt/duym kvadrat</displayName>
+				<unitPattern count="one">{0} funt/duym kvadrat</unitPattern>
+				<unitPattern count="other">{0} funt/duym kvadrat</unitPattern>
 			</unit>
 			<unit type="pressure-inch-ofhg">
 				<displayName>duym simob ustuni</displayName>
@@ -6577,7 +6641,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="torque-pound-force-foot">
 				<displayName>funt-fut</displayName>
-				<unitPattern count="one">{0} funt-fut</unitPattern>
+				<unitPattern count="one">{0} funt-kuch-fut</unitPattern>
 				<unitPattern count="other">{0} funt-fut</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
@@ -6668,6 +6732,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} akrofut</unitPattern>
 				<unitPattern count="other">{0} akrofut</unitPattern>
 			</unit>
+			<unit type="volume-bushel">
+				<displayName>bushel</displayName>
+				<unitPattern count="one">{0} bushel</unitPattern>
+				<unitPattern count="other">{0} bushel</unitPattern>
+			</unit>
 			<unit type="volume-gallon">
 				<displayName>gallon</displayName>
 				<unitPattern count="one">{0} gallon</unitPattern>
@@ -6719,6 +6788,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>barrel</displayName>
 				<unitPattern count="one">{0} barrel</unitPattern>
 				<unitPattern count="other">{0} barrel</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>desert qoshiq</displayName>
+				<unitPattern count="one">{0} desert qoshiq</unitPattern>
+				<unitPattern count="other">{0} desert qoshiq</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>imp. desert qoshiq</displayName>
+				<unitPattern count="one">{0} imp. desert qoshiq</unitPattern>
+				<unitPattern count="other">{0} imp. desert qoshiq</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>tomchi</displayName>
+				<unitPattern count="one">{0} tomchi</unitPattern>
+				<unitPattern count="other">{0} tomchi</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>draxma</displayName>
+				<unitPattern count="one">{0} draxma</unitPattern>
+				<unitPattern count="other">{0} draxma</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>qadah</displayName>
+				<unitPattern count="one">{0} qadah</unitPattern>
+				<unitPattern count="other">{0} qadah</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>chimdim</displayName>
+				<unitPattern count="one">{0} chimdim</unitPattern>
+				<unitPattern count="other">{0} chimdim</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>imp kvarta</displayName>
+				<unitPattern count="one">{0} imp. kvarta</unitPattern>
+				<unitPattern count="other">{0} imp. kvarta</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>yo‘nalish</displayName>
@@ -6911,9 +7015,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} mmol/L</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
-				<displayName>ppm</displayName>
-				<unitPattern count="one">{0} ppm</unitPattern>
-				<unitPattern count="other">{0} ppm</unitPattern>
+				<displayName>qism/million</displayName>
+				<unitPattern count="one">{0} qism/million</unitPattern>
+				<unitPattern count="other">{0} qism/million</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>foiz</displayName>
@@ -7207,6 +7311,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} nuqta/duym</unitPattern>
 				<unitPattern count="other">{0} nuqta/duym</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>piksel</displayName>
+				<unitPattern count="one">{0} piksel</unitPattern>
+				<unitPattern count="other">{0} piksel</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>yer radiusi</displayName>
+				<unitPattern count="one">{0} yer radiusi</unitPattern>
+				<unitPattern count="other">{0} yer radiusi</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
 				<unitPattern count="one">{0} km</unitPattern>
@@ -7287,6 +7401,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} a.b.</unitPattern>
 				<unitPattern count="other">{0} a.b.</unitPattern>
 			</unit>
+			<unit type="length-furlong">
+				<displayName>farlong</displayName>
+				<unitPattern count="one">{0} farlong</unitPattern>
+				<unitPattern count="other">{0} farlong</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>fatom</displayName>
+				<unitPattern count="one">{0} fatom</unitPattern>
+				<unitPattern count="other">{0} fatom</unitPattern>
+			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>den. mili</displayName>
 				<unitPattern count="one">{0} den. mili</unitPattern>
@@ -7311,6 +7435,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>lk</displayName>
 				<unitPattern count="one">{0} lk</unitPattern>
 				<unitPattern count="other">{0} lk</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>kandela</displayName>
+				<unitPattern count="one">{0} kandela</unitPattern>
+				<unitPattern count="other">{0} kandela</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>lm</displayName>
+				<unitPattern count="one">{0} lm</unitPattern>
+				<unitPattern count="other">{0} lm</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>quyosh nuri kuchi</displayName>
@@ -7349,6 +7483,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} amer. t</unitPattern>
 				<unitPattern count="other">{0} amer. t</unitPattern>
 			</unit>
+			<unit type="mass-stone">
+				<displayName>tosh</displayName>
+				<unitPattern count="one">{0} tosh</unitPattern>
+				<unitPattern count="other">{0} tosh</unitPattern>
+			</unit>
 			<unit type="mass-pound">
 				<displayName>funt</displayName>
 				<unitPattern count="one">{0} funt</unitPattern>
@@ -7386,6 +7525,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} M☉</unitPattern>
 				<unitPattern count="other">{0} M☉</unitPattern>
 			</unit>
+			<unit type="mass-grain">
+				<displayName>gran</displayName>
+				<unitPattern count="one">{0} gran</unitPattern>
+				<unitPattern count="other">{0} gran</unitPattern>
+			</unit>
 			<unit type="power-gigawatt">
 				<displayName>GVt</displayName>
 				<unitPattern count="one">{0} GVt</unitPattern>
@@ -7417,19 +7561,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} o.k.</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-ofhg">
-				<displayName>mm sim.ust</displayName>
-				<unitPattern count="one">{0} mm sim.ust</unitPattern>
-				<unitPattern count="other">{0} mm sim.ust</unitPattern>
+				<unitPattern count="one">{0} mmHg</unitPattern>
+				<unitPattern count="other">{0} mmHg</unitPattern>
 			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
-				<displayName>funt/kv.dy</displayName>
-				<unitPattern count="one">{0} funt/kv.dy</unitPattern>
-				<unitPattern count="other">{0} funt/kv.dy</unitPattern>
+				<displayName>funt/dy.kv</displayName>
+				<unitPattern count="one">{0} funt/dy.kv</unitPattern>
+				<unitPattern count="other">{0} funt/dy.kv</unitPattern>
 			</unit>
 			<unit type="pressure-inch-ofhg">
-				<displayName>dy sim.ust</displayName>
-				<unitPattern count="one">{0} dy sim.ust</unitPattern>
-				<unitPattern count="other">{0} dy sim.ust</unitPattern>
+				<displayName>inHg</displayName>
+				<unitPattern count="one">{0} inHg</unitPattern>
+				<unitPattern count="other">{0} inHg</unitPattern>
 			</unit>
 			<unit type="pressure-bar">
 				<displayName>bar</displayName>
@@ -7507,9 +7650,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} K</unitPattern>
 			</unit>
 			<unit type="torque-pound-force-foot">
-				<displayName>funt-fut</displayName>
-				<unitPattern count="one">{0} funt-fut</unitPattern>
-				<unitPattern count="other">{0} funt-fut</unitPattern>
+				<displayName>funt-kuch-fut</displayName>
+				<unitPattern count="one">{0} funt-kuch-fut</unitPattern>
+				<unitPattern count="other">{0} funt-kuch-fut</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
 				<displayName>N⋅m</displayName>
@@ -7599,6 +7742,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} akrofut</unitPattern>
 				<unitPattern count="other">{0} akrofut</unitPattern>
 			</unit>
+			<unit type="volume-bushel">
+				<displayName>bushel</displayName>
+				<unitPattern count="one">{0} bushel</unitPattern>
+				<unitPattern count="other">{0} bushel</unitPattern>
+			</unit>
 			<unit type="volume-gallon">
 				<displayName>gal</displayName>
 				<unitPattern count="one">{0} gal</unitPattern>
@@ -7650,6 +7798,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>barrel</displayName>
 				<unitPattern count="one">{0} barrel</unitPattern>
 				<unitPattern count="other">{0} barrel</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>desert qoshiq</displayName>
+				<unitPattern count="one">{0} desert qoshiq</unitPattern>
+				<unitPattern count="other">{0} desert qoshiq</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>imp desert qoshiq</displayName>
+				<unitPattern count="one">{0} imp desert qoshiq</unitPattern>
+				<unitPattern count="other">{0} imp desert qoshiq</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>tomchi</displayName>
+				<unitPattern count="one">{0} tomchi</unitPattern>
+				<unitPattern count="other">{0} tomchi</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>suyuqlik draxmasi</displayName>
+				<unitPattern count="one">{0} suyuqlik draxmasi</unitPattern>
+				<unitPattern count="other">{0} suyuqlik draxmasi</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>qadah</displayName>
+				<unitPattern count="one">{0} qadah</unitPattern>
+				<unitPattern count="other">{0} qadah</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>chimdim</displayName>
+				<unitPattern count="one">{0} chimdim</unitPattern>
+				<unitPattern count="other">{0} chimdim</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>imp kvarta</displayName>
+				<unitPattern count="one">{0} imp. kvarta</unitPattern>
+				<unitPattern count="other">{0} imp. kvarta</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>yo‘nalish</displayName>
@@ -7822,6 +8005,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>mson</displayName>
 				<unitPattern count="one">{0} ms</unitPattern>
 				<unitPattern count="other">{0} ms</unitPattern>
+			</unit>
+			<unit type="graphics-dot">
+				<displayName>piksel</displayName>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
@@ -8024,6 +8210,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabelPattern type="scripts">yozuvlar — {0}</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="one">{0} ta chiziq</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="other">{0} ta chiziq</characterLabelPattern>
+		<characterLabelPattern type="subscript">{0} pastki yozuv</characterLabelPattern>
+		<characterLabelPattern type="superscript">{0} ustki yozuv</characterLabelPattern>
 		<characterLabel type="activities">mashg‘ulotlar</characterLabel>
 		<characterLabel type="african_scripts">Afrika yozuvlari</characterLabel>
 		<characterLabel type="american_scripts">Amerika yozuvlari</characterLabel>

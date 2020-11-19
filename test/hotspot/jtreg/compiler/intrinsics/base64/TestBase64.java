@@ -47,10 +47,12 @@ import java.util.Base64;
 import java.util.Base64.Decoder;
 import java.util.Base64.Encoder;
 import java.util.Objects;
+import java.util.Random;
 
 import compiler.whitebox.CompilerWhiteBoxTest;
 import sun.hotspot.code.Compiler;
 import jtreg.SkippedException;
+import jdk.test.lib.Utils;
 
 public class TestBase64 {
     static boolean checkOutput = Boolean.getBoolean("checkOutput");
@@ -59,15 +61,40 @@ public class TestBase64 {
         if (!Compiler.isIntrinsicAvailable(CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION, "java.util.Base64$Encoder", "encodeBlock", byte[].class, int.class, int.class, byte[].class, int.class, boolean.class)) {
             throw new SkippedException("Base64 intrinsic is not available");
         }
-        int iters = (args.length > 0 ? Integer.valueOf(args[0]) : 100000);
+        int iters = (args.length > 0 ? Integer.valueOf(args[0]) : 5_000);
         System.out.println(iters + " iterations");
 
-        test0(Base64Type.BASIC, Base64.getEncoder(), Base64.getDecoder(),"plain.txt", "baseEncode.txt", iters);
-        test0(Base64Type.URLSAFE, Base64.getUrlEncoder(), Base64.getUrlDecoder(),"plain.txt", "urlEncode.txt", iters);
-        test0(Base64Type.MIME, Base64.getMimeEncoder(), Base64.getMimeDecoder(),"plain.txt", "mimeEncode.txt", iters);
+        initNonBase64Arrays();
+
+        warmup();
+
+        test0(FileType.ASCII, Base64Type.BASIC, Base64.getEncoder(), Base64.getDecoder(),"plain.txt", "baseEncode.txt", iters);
+        test0(FileType.ASCII, Base64Type.URLSAFE, Base64.getUrlEncoder(), Base64.getUrlDecoder(),"plain.txt", "urlEncode.txt", iters);
+        test0(FileType.ASCII, Base64Type.MIME, Base64.getMimeEncoder(), Base64.getMimeDecoder(),"plain.txt", "mimeEncode.txt", iters);
+
+        test0(FileType.HEXASCII, Base64Type.BASIC, Base64.getEncoder(), Base64.getDecoder(),"longLineHEX.txt", "longLineBaseEncode.txt", iters);
+        test0(FileType.HEXASCII, Base64Type.URLSAFE, Base64.getUrlEncoder(), Base64.getUrlDecoder(),"longLineHEX.txt", "longLineUrlEncode.txt", iters);
+        test0(FileType.HEXASCII, Base64Type.MIME, Base64.getMimeEncoder(), Base64.getMimeDecoder(),"longLineHEX.txt", "longLineMimeEncode.txt", iters);
     }
 
-    public static void test0(Base64Type type, Encoder encoder, Decoder decoder, String srcFile, String encodedFile, int numIterations) throws Exception {
+    private static void warmup() {
+        final int warmupCount = 20_000;
+        final int bufSize = 60;
+        byte[] srcBuf = new byte[bufSize];
+        byte[] encBuf = new byte[(bufSize / 3) * 4];
+        byte[] decBuf = new byte[bufSize];
+
+        ran.nextBytes(srcBuf);
+
+        // This should be enough to get both encode and decode compiled on
+        // the highest tier.
+        for (int i = 0; i < warmupCount; i++) {
+            Base64.getEncoder().encode(srcBuf, encBuf);
+            Base64.getDecoder().decode(encBuf, decBuf);
+        }
+    }
+
+    public static void test0(FileType inputFileType, Base64Type type, Encoder encoder, Decoder decoder, String srcFile, String encodedFile, int numIterations) throws Exception {
 
         String[] srcLns = Files.readAllLines(Paths.get(SRCDIR, srcFile), DEF_CHARSET)
                                .toArray(new String[0]);
@@ -96,7 +123,18 @@ public class TestBase64 {
                     }
                 }
 
-                byte[] srcArr = srcStr.getBytes(DEF_CHARSET);
+                byte[] srcArr;
+                switch (inputFileType) {
+                case ASCII:
+                    srcArr = srcStr.getBytes(DEF_CHARSET);
+                    break;
+                case HEXASCII:
+                    srcArr = Utils.toByteArray(srcStr);
+                    break;
+                default:
+                    throw new IllegalStateException();
+                }
+
                 byte[] encodedArr = encodedStr.getBytes(DEF_CHARSET);
 
                 ByteBuffer srcBuf = ByteBuffer.wrap(srcArr);
@@ -134,6 +172,25 @@ public class TestBase64 {
                 resArr = decoder.decode(encodedArr);
                 assertEqual(resArr, srcArr);
 
+                // test that an illegal Base64 character is detected
+                if ((type != Base64Type.MIME) && (encodedArr.length > 0)) {
+                    int bytePosToCorrupt = ran.nextInt(encodedArr.length);
+                    byte orig = encodedArr[bytePosToCorrupt];
+                    encodedArr[bytePosToCorrupt] = getBadBase64Char(type);
+                    boolean caught = false;
+                    try {
+                        // resArr is already allocated
+                        len = decoder.decode(encodedArr, resArr);
+                    } catch (IllegalArgumentException e) {
+                        caught = true;
+                    }
+                    if (!caught) {
+                        throw new RuntimeException(String.format("Decoder did not catch an illegal base64 character: 0x%02x at position: %d in encoded buffer of length %d",
+                             encodedArr[bytePosToCorrupt], bytePosToCorrupt, encodedArr.length));
+                    }
+                    encodedArr[bytePosToCorrupt] = orig;
+                }
+
                 // test ByteBuffer decode(ByteBuffer)
                 limit = encodedBuf.limit();
                 resBuf = decoder.decode(encodedBuf);
@@ -150,6 +207,11 @@ public class TestBase64 {
         }
     }
 
+    // Data type in the input file
+    enum FileType {
+        ASCII, HEXASCII
+    }
+
     // helper
     enum Base64Type {
         BASIC, URLSAFE, MIME
@@ -160,6 +222,7 @@ public class TestBase64 {
     private static final String DEF_EXCEPTION_MSG =
         "Assertion failed! The result is not same as expected\n";
     private static final String DEFAULT_CRLF = "\r\n";
+    private static final Random ran = new Random(1000); // Constant seed for repeatability
 
     private static void assertEqual(Object result, Object expect) {
         if (checkOutput) {
@@ -175,6 +238,64 @@ public class TestBase64 {
                 throw new RuntimeException(DEF_EXCEPTION_MSG +
                     " result: " + resultStr + " expected: " + expectStr);
             }
+        }
+    }
+
+    // This array will contain all possible 8-bit values *except* those
+    // that are legal Base64 characters: A-Z a-z 0-9 + / =
+    private static final byte[] nonBase64 = new byte[256 - 65];
+
+    // This array will contain all possible 8-bit values *except* those
+    // that are legal URL-safe Base64 characters: A-Z a-z 0-9 - _ =
+    private static final byte[] nonBase64URL = new byte[256 - 65];
+
+    private static final byte[] legalBase64 = new byte[] {
+        'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+        'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+        'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+        'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
+        '+', '/', '=' };
+
+    private static final byte[] legalBase64URL = new byte[] {
+        'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+        'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+        'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+        'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
+        '-', '_', '=' };
+
+    private static final boolean contains(byte[] ary, byte b) {
+        for (int i = 0; i < ary.length; i++) {
+            if (ary[i] == b) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static final void initNonBase64Arrays() {
+        int i0 = 0, i1 = 0;
+        for (int val = 0; val < 256; val++) {
+            if (! contains(legalBase64, (byte)val)) {
+                nonBase64[i0++] = (byte)val;
+            }
+            if (! contains(legalBase64URL, (byte)val)) {
+                nonBase64URL[i1++] = (byte)val;
+            }
+        }
+    }
+
+    private static final byte getBadBase64Char(Base64Type b64Type) {
+        int ch = ran.nextInt(256 - 65); // 64 base64 characters, and one for the '=' padding character
+        switch (b64Type) {
+        case MIME:
+        case BASIC:
+            return nonBase64[ch];
+        case URLSAFE:
+            return nonBase64URL[ch];
+        default:
+            throw new InternalError("Internal test error: getBadBase64Char called with unknown Base64Type value");
         }
     }
 }

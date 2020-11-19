@@ -282,8 +282,8 @@ import static java.lang.invoke.MethodHandleStatics.UNSAFE;
  * match fails, it means that the access mode method which the caller is
  * invoking is not present on the individual VarHandle being invoked.
  *
- * <p>
- * Invocation of an access mode method behaves as if an invocation of
+ * <p id="invoke-behavior">
+ * Invocation of an access mode method behaves, by default, as if an invocation of
  * {@link MethodHandle#invoke}, where the receiving method handle accepts the
  * VarHandle instance as the leading argument.  More specifically, the
  * following, where {@code {access-mode}} corresponds to the access mode method
@@ -318,7 +318,7 @@ import static java.lang.invoke.MethodHandleStatics.UNSAFE;
  * widen primitive values, as if by {@link MethodHandle#asType asType} (see also
  * {@link MethodHandles#varHandleInvoker}).
  *
- * More concisely, such behaviour is equivalent to:
+ * More concisely, such behavior is equivalent to:
  * <pre> {@code
  * VarHandle vh = ..
  * VarHandle.AccessMode am = VarHandle.AccessMode.valueFromMethodName("{access-mode}");
@@ -328,6 +328,37 @@ import static java.lang.invoke.MethodHandleStatics.UNSAFE;
  * }</pre>
  * Where, in this case, the method handle is bound to the VarHandle instance.
  *
+ * <p id="invoke-exact-behavior">
+ * A VarHandle's invocation behavior can be adjusted (see {@link #withInvokeExactBehavior}) such that invocation of
+ * an access mode method behaves as if invocation of {@link MethodHandle#invokeExact},
+ * where the receiving method handle accepts the VarHandle instance as the leading argument.
+ * More specifically, the following, where {@code {access-mode}} corresponds to the access mode method
+ * name:
+ * <pre> {@code
+ * VarHandle vh = ..
+ * R r = (R) vh.{access-mode}(p1, p2, ..., pN);
+ * }</pre>
+ * behaves as if:
+ * <pre> {@code
+ * VarHandle vh = ..
+ * VarHandle.AccessMode am = VarHandle.AccessMode.valueFromMethodName("{access-mode}");
+ * MethodHandle mh = MethodHandles.varHandleExactInvoker(
+ *                       am,
+ *                       vh.accessModeType(am));
+ *
+ * R r = (R) mh.invokeExact(vh, p1, p2, ..., pN)
+ * }</pre>
+ * (modulo access mode methods do not declare throwing of {@code Throwable}).
+ *
+ * More concisely, such behavior is equivalent to:
+ * <pre> {@code
+ * VarHandle vh = ..
+ * VarHandle.AccessMode am = VarHandle.AccessMode.valueFromMethodName("{access-mode}");
+ * MethodHandle mh = vh.toMethodHandle(am);
+ *
+ * R r = (R) mh.invokeExact(p1, p2, ..., pN)
+ * }</pre>
+ * Where, in this case, the method handle is bound to the VarHandle instance.
  *
  * <h2>Invocation checking</h2>
  * In typical programs, VarHandle access mode type matching will usually
@@ -425,7 +456,7 @@ import static java.lang.invoke.MethodHandleStatics.UNSAFE;
  * {@link java.lang.invoke.MethodHandles#varHandleInvoker}.  The
  * {@link java.lang.invoke.MethodHandles.Lookup#findVirtual Lookup.findVirtual}
  * API is also able to return a method handle to call an access mode method for
- * any specified access mode type and is equivalent in behaviour to
+ * any specified access mode type and is equivalent in behavior to
  * {@link java.lang.invoke.MethodHandles#varHandleInvoker}.
  *
  * <h2>Interoperation between VarHandles and Java generics</h2>
@@ -446,9 +477,15 @@ import static java.lang.invoke.MethodHandleStatics.UNSAFE;
  */
 public abstract class VarHandle implements Constable {
     final VarForm vform;
+    final boolean exact;
 
     VarHandle(VarForm vform) {
+        this(vform, false);
+    }
+
+    VarHandle(VarForm vform, boolean exact) {
         this.vform = vform;
+        this.exact = exact;
     }
 
     RuntimeException unsupported() {
@@ -464,6 +501,18 @@ public abstract class VarHandle implements Constable {
     }
 
     VarHandle target() { return null; }
+
+    /**
+     * Returns {@code true} if this VarHandle has <a href="#invoke-exact-behavior"><em>invoke-exact behavior</em></a>.
+     *
+     * @see #withInvokeExactBehavior()
+     * @see #withInvokeBehavior()
+     * @return {@code true} if this VarHandle has <a href="#invoke-exact-behavior"><em>invoke-exact behavior</em></a>.
+     * @since 16
+     */
+    public boolean hasInvokeExactBehavior() {
+        return exact;
+    }
 
     // Plain accessors
 
@@ -1541,6 +1590,44 @@ public abstract class VarHandle implements Constable {
     @IntrinsicCandidate
     Object getAndBitwiseXorRelease(Object... args);
 
+    /**
+     * Returns a VarHandle, with access to the same variable(s) as this VarHandle, but whose
+     * invocation behavior of access mode methods is adjusted to
+     * <a href="#invoke-exact-behavior"><em>invoke-exact behavior</em></a>.
+     * <p>
+     * If this VarHandle already has invoke-exact behavior this VarHandle is returned.
+     * <p>
+     * Invoking {@link #hasInvokeExactBehavior()} on the returned var handle
+     * is guaranteed to return {@code true}.
+     *
+     * @apiNote
+     * Invoke-exact behavior guarantees that upon invocation of an access mode method
+     * the types and arity of the arguments must match the {@link #accessModeType(AccessMode) access mode type},
+     * otherwise a {@link WrongMethodTypeException} is thrown.
+     *
+     * @see #withInvokeBehavior()
+     * @see #hasInvokeExactBehavior()
+     * @return a VarHandle with invoke-exact behavior
+     * @since 16
+     */
+    public abstract VarHandle withInvokeExactBehavior();
+
+    /**
+     * Returns a VarHandle, with access to the same variable(s) as this VarHandle, but whose
+     * invocation behavior of access mode methods is adjusted to
+     * <a href="#invoke-behavior"><em>invoke behavior</em></a>.
+     * <p>
+     * If this VarHandle already has invoke behavior this VarHandle is returned.
+     * <p>
+     * Invoking {@link #hasInvokeExactBehavior()} on the returned var handle
+     * is guaranteed to return {@code false}.
+     *
+     * @see #withInvokeExactBehavior()
+     * @see #hasInvokeExactBehavior()
+     * @return a VarHandle with invoke behavior
+     * @since 16
+     */
+    public abstract VarHandle withInvokeBehavior();
 
     enum AccessType {
         GET(Object.class),
@@ -1859,6 +1946,7 @@ public abstract class VarHandle implements Constable {
     }
 
     static final class AccessDescriptor {
+        final MethodType symbolicMethodTypeExact;
         final MethodType symbolicMethodTypeErased;
         final MethodType symbolicMethodTypeInvoker;
         final Class<?> returnType;
@@ -1866,6 +1954,7 @@ public abstract class VarHandle implements Constable {
         final int mode;
 
         public AccessDescriptor(MethodType symbolicMethodType, int type, int mode) {
+            this.symbolicMethodTypeExact = symbolicMethodType;
             this.symbolicMethodTypeErased = symbolicMethodType.erase();
             this.symbolicMethodTypeInvoker = symbolicMethodType.insertParameterTypes(0, VarHandle.class);
             this.returnType = symbolicMethodType.returnType();
@@ -1922,15 +2011,25 @@ public abstract class VarHandle implements Constable {
      * @return the access mode type for the given access mode
      */
     public final MethodType accessModeType(AccessMode accessMode) {
+        return accessModeType(accessMode.at.ordinal());
+    }
+
+    @ForceInline
+    final MethodType accessModeType(int accessTypeOrdinal) {
         TypesAndInvokers tis = getTypesAndInvokers();
-        MethodType mt = tis.methodType_table[accessMode.at.ordinal()];
+        MethodType mt = tis.methodType_table[accessTypeOrdinal];
         if (mt == null) {
-            mt = tis.methodType_table[accessMode.at.ordinal()] =
-                    accessModeTypeUncached(accessMode);
+            mt = tis.methodType_table[accessTypeOrdinal] =
+                    accessModeTypeUncached(accessTypeOrdinal);
         }
         return mt;
     }
-    abstract MethodType accessModeTypeUncached(AccessMode accessMode);
+
+    final MethodType accessModeTypeUncached(int accessTypeOrdinal) {
+        return accessModeTypeUncached(AccessType.values()[accessTypeOrdinal]);
+    }
+
+    abstract MethodType accessModeTypeUncached(AccessType accessMode);
 
     /**
      * Returns {@code true} if the given access mode is supported, otherwise
@@ -2047,7 +2146,7 @@ public abstract class VarHandle implements Constable {
         UNSAFE.fullFence();
     }
 
-    static final BiFunction<String, List<Integer>, ArrayIndexOutOfBoundsException>
+    static final BiFunction<String, List<Number>, ArrayIndexOutOfBoundsException>
             AIOOBE_SUPPLIER = Preconditions.outOfBoundsExceptionFormatter(
             new Function<String, ArrayIndexOutOfBoundsException>() {
                 @Override

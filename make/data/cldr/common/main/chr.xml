@@ -3235,9 +3235,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Europe/Kaliningrad">
 				<exemplarCity>ᎧᎵᏂᏆᏗ</exemplarCity>
 			</zone>
-			<zone type="Europe/Simferopol">
-				<exemplarCity>ᏏᎻᏪᎶᏉᎵ</exemplarCity>
-			</zone>
 			<zone type="Europe/Moscow">
 				<exemplarCity>ᎹᏍᎦᏫ</exemplarCity>
 			</zone>
@@ -3432,6 +3429,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>ᎩᏫ</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity>ᏏᎻᏪᎶᏉᎵ</exemplarCity>
 			</zone>
 			<zone type="Europe/Zaporozhye">
 				<exemplarCity>ᏌᏉᎶᏌᏱ</exemplarCity>
@@ -5773,9 +5773,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</compoundUnit>
 			<compoundUnit type="power2">
 				<compoundUnitPattern1>ᏅᎩ ᏧᏅᏏᏯ {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">ᏅᎩ ᏧᏅᏏᏱ {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">ᏅᎩ ᏧᏅᏏᏱ {0}</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="power3">
 				<compoundUnitPattern1>cubic {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">ᏣᏁᎳ ᏧᏅᏏᏱ {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">ᏣᏁᎳ ᏧᏅᏏᏱ {0}</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>ᎠᏓᎾᏌᏁᏍᎩ-ᎦᏌᏙᏯᏍᏗ</displayName>
@@ -7625,6 +7629,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<characterLabelPattern type="scripts">ᏗᎧᏁᎢᏍᏗ — {0}</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="one">{0} ᏗᎬᏂᎸᎯ</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="other">{0} ᏗᎬᏂᎸᎯ</characterLabelPattern>
+		<characterLabelPattern type="subscript">ᎡᎳᏗ ᎤᏍᏗ ᎪᏪᎳ {0}</characterLabelPattern>
+		<characterLabelPattern type="superscript">ᎦᎸᎳᏗ ᎤᏍᏗ ᎪᏪᎳ {0}</characterLabelPattern>
 		<characterLabel type="activities">ᎠᎵᏂᎬᏁᏗ</characterLabel>
 		<characterLabel type="african_scripts">ᎬᎿᎨᏍᏛ ᏗᎧᏁᎢᏍᏗ</characterLabel>
 		<characterLabel type="american_scripts">ᎠᎹᏰᏟ ᏗᎧᏁᎢᏍᏗ</characterLabel>

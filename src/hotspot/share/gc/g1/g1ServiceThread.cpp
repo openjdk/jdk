@@ -176,30 +176,41 @@ G1ServiceThread::G1ServiceThread() :
              true,
              Monitor::_safepoint_check_never),
     _task_queue(),
+    _remset_task(new G1RemSetSamplingTask("Remembered Set Sampling Task")),
+    _periodic_gc_task(new G1PeriodicGCTask("Periodic GC Task")),
     _vtime_accum(0) {
   set_name("G1 Service");
   create_and_start();
+}
+
+G1ServiceThread::~G1ServiceThread() {
+  delete _remset_task;
+  delete _periodic_gc_task;
 }
 
 void G1ServiceThread::register_task(G1ServiceTask* task, jlong delay) {
   guarantee(!task->is_registered(), "Task already registered");
   guarantee(task->next() == NULL, "Task already in queue");
 
+  // Make sure the service thread is still up and running, there is a race
+  // during shutdown where the service thread has been stopped, but other
+  // GC threads might still be running and trying to add tasks.
+  if (has_terminated()) {
+    log_debug(gc, task)("G1 Service Thread (%s) (terminated)", task->name());
+    return;
+  }
+
   log_debug(gc, task)("G1 Service Thread (%s) (register)", task->name());
 
   // Associate the task with the service thread.
   task->set_service_thread(this);
 
-  // Schedule the task to run after the given delay.
+  // Schedule the task to run after the given delay. The service will be
+  // notified to check if this task is first in the queue.
   schedule_task(task, delay);
-
-  // Notify the service thread that there is a new task, thread might
-  // be waiting and the newly added task might be first in the list.
-  MonitorLocker ml(&_monitor, Mutex::_no_safepoint_check_flag);
-  ml.notify();
 }
 
-void G1ServiceThread::schedule_task(G1ServiceTask* task, jlong delay_ms) {
+void G1ServiceThread::schedule(G1ServiceTask* task, jlong delay_ms) {
   guarantee(task->is_registered(), "Must be registered before scheduled");
   guarantee(task->next() == NULL, "Task already in queue");
 
@@ -214,6 +225,11 @@ void G1ServiceThread::schedule_task(G1ServiceTask* task, jlong delay_ms) {
                       task->name(), TimeHelper::counter_to_seconds(task->time()));
 }
 
+void G1ServiceThread::schedule_task(G1ServiceTask* task, jlong delay_ms) {
+  schedule(task, delay_ms);
+  notify();
+}
+
 int64_t G1ServiceThread::time_to_next_task_ms() {
   assert(_monitor.owned_by_self(), "Must be owner of lock");
   assert(!_task_queue.is_empty(), "Should not be called for empty list");
@@ -226,6 +242,11 @@ int64_t G1ServiceThread::time_to_next_task_ms() {
 
   // Return sleep time in milliseconds.
   return (int64_t) TimeHelper::counter_to_millis(time_diff);
+}
+
+void G1ServiceThread::notify() {
+  MonitorLocker ml(&_monitor, Mutex::_no_safepoint_check_flag);
+  ml.notify();
 }
 
 void G1ServiceThread::sleep_before_next_cycle() {
@@ -272,13 +293,9 @@ void G1ServiceThread::run_task(G1ServiceTask* task) {
 void G1ServiceThread::run_service() {
   double vtime_start = os::elapsedVTime();
 
-  // Setup the tasks handeled by the service thread and
-  // add them to the task list.
-  G1PeriodicGCTask gc_task("Periodic GC Task");
-  register_task(&gc_task);
-
-  G1RemSetSamplingTask remset_task("Remembered Set Sampling Task");
-  register_task(&remset_task);
+  // Register the tasks handled by the service thread.
+  register_task(_periodic_gc_task);
+  register_task(_remset_task);
 
   while (!should_terminate()) {
     G1ServiceTask* task = pop_due_task();
@@ -293,11 +310,12 @@ void G1ServiceThread::run_service() {
     }
     sleep_before_next_cycle();
   }
+
+  log_debug(gc, task)("G1 Service Thread (stopping)");
 }
 
 void G1ServiceThread::stop_service() {
-  MonitorLocker ml(&_monitor, Mutex::_no_safepoint_check_flag);
-  ml.notify();
+  notify();
 }
 
 G1ServiceTask::G1ServiceTask(const char* name) :
@@ -315,7 +333,9 @@ bool G1ServiceTask::is_registered() {
 }
 
 void G1ServiceTask::schedule(jlong delay_ms) {
-  _service_thread->schedule_task(this, delay_ms);
+  assert(Thread::current() == _service_thread,
+         "Can only be used when already running on the service thread");
+  _service_thread->schedule(this, delay_ms);
 }
 
 const char* G1ServiceTask::name() {

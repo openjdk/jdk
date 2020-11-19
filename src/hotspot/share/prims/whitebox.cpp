@@ -96,8 +96,8 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
+#include "gc/g1/heapRegionManager.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
-#include "gc/g1/heterogeneousHeapRegionManager.hpp"
 #endif // INCLUDE_G1GC
 #if INCLUDE_PARALLELGC
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
@@ -385,6 +385,11 @@ WB_ENTRY(jboolean, WB_isObjectInOldGen(JNIEnv* env, jobject o, jobject obj))
     return Universe::heap()->is_in(p);
   }
 #endif
+#if INCLUDE_SHENANDOAHGC
+  if (UseShenandoahGC) {
+    return Universe::heap()->is_in(p);
+  }
+#endif
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   return !gch->is_in_young(p);
 WB_END
@@ -500,116 +505,14 @@ WB_ENTRY(jint, WB_G1RegionSize(JNIEnv* env, jobject o))
   THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1RegionSize: G1 GC is not enabled");
 WB_END
 
-#endif // INCLUDE_G1GC
-
-#if INCLUDE_G1GC || INCLUDE_PARALLELGC
-WB_ENTRY(jlong, WB_DramReservedStart(JNIEnv* env, jobject o))
-#if INCLUDE_G1GC
+WB_ENTRY(jboolean, WB_G1HasRegionsToUncommit(JNIEnv* env, jobject o))
   if (UseG1GC) {
-    G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    HeapWord* base = g1h->reserved().start();
-    if (g1h->is_heterogeneous_heap()) {
-      uint start_region = HeterogeneousHeapRegionManager::manager()->start_index_of_dram();
-      return (jlong)(base + start_region * HeapRegion::GrainBytes);
-    } else {
-      return (jlong)base;
-    }
+    return G1CollectedHeap::heap()->has_uncommittable_regions();
   }
-#endif // INCLUDE_G1GC
-#if INCLUDE_PARALLELGC
-  if (UseParallelGC) {
-    ParallelScavengeHeap* ps_heap = ParallelScavengeHeap::heap();
-    if (AllocateOldGenAt != NULL) {
-      MemRegion reserved = ps_heap->young_gen()->reserved();
-      return (jlong)reserved.start();
-    } else {
-      return (jlong)ps_heap->base();
-    }
-  }
-#endif // INCLUDE_PARALLELGC
-  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_DramReservedStart: enabled only for G1 and Parallel GC");
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1HasRegionsToUncommit: G1 GC is not enabled");
 WB_END
 
-WB_ENTRY(jlong, WB_DramReservedEnd(JNIEnv* env, jobject o))
-#if INCLUDE_G1GC
-  if (UseG1GC) {
-    G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    HeapWord* base = g1h->reserved().start();
-    if (g1h->is_heterogeneous_heap()) {
-      uint end_region = HeterogeneousHeapRegionManager::manager()->end_index_of_dram();
-      return (jlong)(base + (end_region + 1) * HeapRegion::GrainBytes - 1);
-    } else {
-      return (jlong)base + G1Arguments::heap_max_size_bytes();
-    }
-  }
 #endif // INCLUDE_G1GC
-#if INCLUDE_PARALLELGC
-  if (UseParallelGC) {
-    ParallelScavengeHeap* ps_heap = ParallelScavengeHeap::heap();
-    if (AllocateOldGenAt != NULL) {
-      MemRegion reserved = ps_heap->young_gen()->reserved();
-      return (jlong)reserved.end();
-    } else {
-      return (jlong)ps_heap->reserved_region().end();
-    }
-  }
-#endif // INCLUDE_PARALLELGC
-  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_DramReservedEnd: enabled only for G1 and Parallel GC");
-WB_END
-
-WB_ENTRY(jlong, WB_NvdimmReservedStart(JNIEnv* env, jobject o))
-#if INCLUDE_G1GC
-  if (UseG1GC) {
-    G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    if (g1h->is_heterogeneous_heap()) {
-      uint start_region = HeterogeneousHeapRegionManager::manager()->start_index_of_nvdimm();
-      return (jlong)(g1h->reserved().start() + start_region * HeapRegion::GrainBytes);
-    } else {
-      THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_NvdimmReservedStart: Old gen is not allocated on NV-DIMM using AllocateOldGenAt flag");
-    }
-  }
-#endif // INCLUDE_G1GC
-#if INCLUDE_PARALLELGC
-  if (UseParallelGC) {
-    ParallelScavengeHeap* ps_heap = ParallelScavengeHeap::heap();
-    if (AllocateOldGenAt != NULL) {
-      MemRegion reserved = ps_heap->old_gen()->reserved();
-      return (jlong)reserved.start();
-    } else {
-      THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_NvdimmReservedStart: Old gen is not allocated on NV-DIMM using AllocateOldGenAt flag");
-    }
-  }
-#endif // INCLUDE_PARALLELGC
-  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_NvdimmReservedStart: enabled only for G1 and Parallel GC");
-WB_END
-
-WB_ENTRY(jlong, WB_NvdimmReservedEnd(JNIEnv* env, jobject o))
-#if INCLUDE_G1GC
-  if (UseG1GC) {
-    G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    if (g1h->is_heterogeneous_heap()) {
-      uint end_region = HeterogeneousHeapRegionManager::manager()->start_index_of_nvdimm();
-      return (jlong)(g1h->reserved().start() + (end_region + 1) * HeapRegion::GrainBytes - 1);
-    } else {
-      THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_NvdimmReservedEnd: Old gen is not allocated on NV-DIMM using AllocateOldGenAt flag");
-    }
-  }
-#endif // INCLUDE_G1GC
-#if INCLUDE_PARALLELGC
-  if (UseParallelGC) {
-    ParallelScavengeHeap* ps_heap = ParallelScavengeHeap::heap();
-    if (AllocateOldGenAt != NULL) {
-      MemRegion reserved = ps_heap->old_gen()->reserved();
-      return (jlong)reserved.end();
-      } else {
-      THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_NvdimmReservedEnd: Old gen is not allocated on NV-DIMM using AllocateOldGenAt flag");
-    }
-  }
-#endif // INCLUDE_PARALLELGC
-  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_NvdimmReservedEnd: enabled only for G1 and Parallel GC");
-WB_END
-
-#endif // INCLUDE_G1GC || INCLUDE_PARALLELGC
 
 #if INCLUDE_PARALLELGC
 
@@ -2407,18 +2310,13 @@ static JNINativeMethod methods[] = {
   {CC"g1NumFreeRegions",   CC"()J",                   (void*)&WB_G1NumFreeRegions  },
   {CC"g1RegionSize",       CC"()I",                   (void*)&WB_G1RegionSize      },
   {CC"g1StartConcMarkCycle",       CC"()Z",           (void*)&WB_G1StartMarkCycle  },
+  {CC"g1HasRegionsToUncommit",  CC"()Z",              (void*)&WB_G1HasRegionsToUncommit},
   {CC"g1AuxiliaryMemoryUsage", CC"()Ljava/lang/management/MemoryUsage;",
                                                       (void*)&WB_G1AuxiliaryMemoryUsage  },
   {CC"g1ActiveMemoryNodeCount", CC"()I",              (void*)&WB_G1ActiveMemoryNodeCount },
   {CC"g1MemoryNodeIds",    CC"()[I",                  (void*)&WB_G1MemoryNodeIds },
   {CC"g1GetMixedGCInfo",   CC"(I)[J",                 (void*)&WB_G1GetMixedGCInfo },
 #endif // INCLUDE_G1GC
-#if INCLUDE_G1GC || INCLUDE_PARALLELGC
-  {CC"dramReservedStart",   CC"()J",                  (void*)&WB_DramReservedStart },
-  {CC"dramReservedEnd",     CC"()J",                  (void*)&WB_DramReservedEnd },
-  {CC"nvdimmReservedStart", CC"()J",                  (void*)&WB_NvdimmReservedStart },
-  {CC"nvdimmReservedEnd",   CC"()J",                  (void*)&WB_NvdimmReservedEnd },
-#endif // INCLUDE_G1GC || INCLUDE_PARALLELGC
 #if INCLUDE_PARALLELGC
   {CC"psVirtualSpaceAlignment",CC"()J",               (void*)&WB_PSVirtualSpaceAlignment},
   {CC"psHeapGenerationAlignment",CC"()J",             (void*)&WB_PSHeapGenerationAlignment},
