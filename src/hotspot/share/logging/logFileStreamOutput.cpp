@@ -87,65 +87,63 @@ public:
   }
 };
 
-#define WRITE_LOG_WITH_RESULT_CHECK(result, op, total)      \
-  result = op;                                              \
-  if (result <= 0) {                                        \
-    jio_fprintf(defaultStream::error_stream(),              \
-                "Could not write log: %s\n", name());       \
-    return -1;                                              \
-  }                                                         \
-  total += result;
+static bool write_error_is_shown = false;
 
-static bool fflush_error_is_shown = false;
+bool LogFileStreamOutput::flush() {
+  bool result = true;
+  if (fflush(_stream) != 0) {
+    if (!write_error_is_shown) {
+      jio_fprintf(defaultStream::error_stream(),
+                  "Could not flush log: %s (%s (%d))\n", name(), os::strerror(errno), errno);
+      jio_fprintf(_stream, "\nERROR: Could not flush log (%d)\n", errno);
+      write_error_is_shown = true;
+    }
+    result = false;
+  }
+  return result;
+}
+
+#define WRITE_LOG_WITH_RESULT_CHECK(op, total)                \
+{                                                             \
+  int result = op;                                            \
+  if (result <= 0) {                                          \
+    if (!write_error_is_shown) {                              \
+      jio_fprintf(defaultStream::error_stream(),              \
+                  "Could not write log: %s\n", name());       \
+      jio_fprintf(_stream, "\nERROR: Could not write log\n"); \
+      write_error_is_shown = true;                            \
+      return -1;                                              \
+    }                                                         \
+  }                                                           \
+  total += result;                                            \
+}
 
 int LogFileStreamOutput::write(const LogDecorations& decorations, const char* msg) {
   const bool use_decorations = !_decorators.is_empty();
 
-  int written;
-  int total_written = 0;
+  int written = 0;
   FileLocker flocker(_stream);
   if (use_decorations) {
-    WRITE_LOG_WITH_RESULT_CHECK(written, write_decorations(decorations), total_written);
-    WRITE_LOG_WITH_RESULT_CHECK(written, jio_fprintf(_stream, " "), total_written);
+    WRITE_LOG_WITH_RESULT_CHECK(write_decorations(decorations), written);
+    WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, " "), written);
   }
-  WRITE_LOG_WITH_RESULT_CHECK(written, jio_fprintf(_stream, "%s\n", msg), total_written);
-  if (fflush(_stream) != 0) {
-    if (!fflush_error_is_shown) {
-      jio_fprintf(defaultStream::error_stream(),
-                  "Could not flush log: %s (%s (%d))\n", name(), os::strerror(errno), errno);
-      fflush_error_is_shown = true;
-    }
-    return -1;
-  }
+  WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", msg), written);
 
-  return total_written;
+  return flush() ? written : -1;
 }
 
 int LogFileStreamOutput::write(LogMessageBuffer::Iterator msg_iterator) {
   const bool use_decorations = !_decorators.is_empty();
 
-  int written;
-  int total_written = 0;
+  int written = 0;
   FileLocker flocker(_stream);
   for (; !msg_iterator.is_at_end(); msg_iterator++) {
     if (use_decorations) {
-      WRITE_LOG_WITH_RESULT_CHECK(written,
-                                  write_decorations(msg_iterator.decorations()),
-                                  total_written);
-      WRITE_LOG_WITH_RESULT_CHECK(written, jio_fprintf(_stream, " "), total_written);
+      WRITE_LOG_WITH_RESULT_CHECK(write_decorations(msg_iterator.decorations()), written);
+      WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, " "), written);
     }
-    WRITE_LOG_WITH_RESULT_CHECK(written,
-                                jio_fprintf(_stream, "%s\n", msg_iterator.message()),
-                                total_written);
-  }
-  if (fflush(_stream) != 0) {
-    if (!fflush_error_is_shown) {
-      jio_fprintf(defaultStream::error_stream(),
-                  "Could not flush log: %s (%s (%d))\n", name(), os::strerror(errno), errno);
-      fflush_error_is_shown = true;
-    }
-    return -1;
+    WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", msg_iterator.message()), written);
   }
 
-  return total_written;
+  return flush() ? written : -1;
 }
