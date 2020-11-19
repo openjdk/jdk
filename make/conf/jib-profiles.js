@@ -464,7 +464,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "windows-aarch64": {
             target_os: "windows",
             target_cpu: "aarch64",
-            dependencies: ["devkit", "gtest"],
+            dependencies: ["devkit", "gtest", "build_devkit"],
             configure_args: [
                 "--openjdk-target=aarch64-unknown-cygwin",
             ],
