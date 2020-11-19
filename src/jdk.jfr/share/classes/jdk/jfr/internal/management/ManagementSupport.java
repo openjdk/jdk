@@ -117,6 +117,8 @@ public final class ManagementSupport {
         return wup == null ? null : wup.getOriginalText();
     }
 
+    // Need to check if destination can be set, so FlightRecorderMXBean::setRecordingOption
+    // can abort if not all data is valid
     public static void checkSetDestination(Recording recording, String destination) throws IOException{
         PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
         if(destination != null){
@@ -125,16 +127,19 @@ public final class ManagementSupport {
         }
     }
 
+    // Need to modify setting using fluent API.
     public static EventSettings newEventSettings(EventSettingsModifier esm) {
         return PrivateAccess.getInstance().newEventSettings(esm);
     }
 
+    // When streaming an ongoing recording, consumed chunks should be removed
     public static void removeBefore(Recording recording, Instant timestamp) {
         PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
         pr.removeBefore(timestamp);
 
     }
 
+    // Need callback to detect when a chunk has been parsed.
     public static void setOnChunkCompleteHandler(EventStream stream, Consumer<Long> consumer) {
         JdkJfrConsumer.instance().setOnChunkCompleteHandler(stream, consumer);
     }
