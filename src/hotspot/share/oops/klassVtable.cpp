@@ -561,7 +561,8 @@ bool klassVtable::update_inherited_vtable(const methodHandle& target_method,
 
 void klassVtable::put_method_at(Method* m, int index) {
   assert(!m->is_private(), "private methods should not be in vtable");
-  JVMTI_ONLY(assert(!m->is_old() || ik()->is_being_redefined(), "old methods should not be in vtable"));
+  JVMTI_ONLY(assert(!m->is_old() || ik()->is_being_redefined() ||
+                    ik()->has_redefined_this_or_super(), "old methods should not be in vtable"));
   if (is_preinitialized_vtable()) {
     // At runtime initialize_vtable is rerun as part of link_class_impl()
     // for shared class loaded by the non-boot loader to obtain the loader
