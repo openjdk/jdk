@@ -99,6 +99,11 @@ static int prepare() {
     if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)threads)))
         return NSK_FALSE;
 
+    if (thread == NULL) {
+        nsk_lcomplain(__FILE__, __LINE__, "tested thread not found\n");
+        return NSK_FALSE;
+    }
+
     /* get tested thread class */
     if (!NSK_JNI_VERIFY(jni, (klass = jni->GetObjectClass(thread)) != NULL))
         return NSK_FALSE;

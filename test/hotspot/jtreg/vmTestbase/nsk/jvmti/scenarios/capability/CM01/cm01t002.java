@@ -107,6 +107,7 @@ public class cm01t002 extends DebugeeClass {
 class cm01t002Thread extends Thread {
     public Object startingMonitor = new Object();
     private Object waitingMonitor = new Object();
+    private boolean timeToDie = false;
 
     public cm01t002Thread(String name) {
         super(name);
@@ -128,7 +129,14 @@ class cm01t002Thread extends Thread {
 
             // wait on monitor
             try {
-                waitingMonitor.wait(cm01t002.timeout);
+                long maxTime = System.currentTimeMillis() + cm01t002.timeout;
+                while (!timeToDie) {
+                    long timeout = maxTime - System.currentTimeMillis();
+                    if (timeout <= 0) {
+                        break;
+                    }
+                    waitingMonitor.wait(timeout);
+                }
             } catch (InterruptedException ignore) {
                 // just finish
             }
@@ -144,6 +152,7 @@ class cm01t002Thread extends Thread {
 
     public void letFinish() {
         synchronized (waitingMonitor) {
+            timeToDie = true;
             waitingMonitor.notify();
         }
     }
