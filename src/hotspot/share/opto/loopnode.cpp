@@ -722,7 +722,6 @@ SafePointNode* PhaseIdealLoop::find_safepoint(Node* back_control, Node* x, Ideal
 // x: for (long phi = init; phi < limit; phi += stride) {
 //   // phi := Phi(L, init, incr)
 //   // incr := AddL(phi, longcon(stride))
-//   // phi_incr := phi (test happens before increment)
 //   long incr = phi + stride;
 //   ... use phi and incr ...
 // }
@@ -732,7 +731,6 @@ SafePointNode* PhaseIdealLoop::find_safepoint(Node* back_control, Node* x, Ideal
 // x: for (long phi = init; (phi += stride) < limit; ) {
 //   // phi := Phi(L, AddL(init, stride), incr)
 //   // incr := AddL(phi, longcon(stride))
-//   // phi_incr := NULL (test happens after increment)
 //   long incr = phi + stride;
 //   ... use phi and (phi + stride) ...
 // }
@@ -944,7 +942,6 @@ bool PhaseIdealLoop::transform_long_counted_loop(IdealLoopTree* loop, Node_List 
   //     back_control: fallthrough;
   //   else
   //     exit_branch: break;
-  //   // test happens before increment => phi == phi_incr != NULL
   //   long incr = phi + stride;
   //   ... use phi and incr ...
   //   phi = incr;
