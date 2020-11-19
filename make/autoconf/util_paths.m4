@@ -65,7 +65,10 @@ AC_DEFUN([UTIL_FIXUP_PATH],
   path="[$]$1"
   if test "x$path" != x; then
     if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
-      imported_path=`$BASH $TOPDIR/make/scripts/fixpath.sh import "$path"`
+      if test "x$2" = "xNOFAIL"; then
+        quiet_option="-q"
+      fi
+      imported_path=`$BASH $TOPDIR/make/scripts/fixpath.sh $quiet_option import "$path"`
       $BASH $TOPDIR/make/scripts/fixpath.sh verify "$imported_path"
       if test $? -ne 0; then
         if test "x$2" != "xNOFAIL"; then
@@ -162,6 +165,7 @@ AC_DEFUN([UTIL_CHECK_WINENV_EXEC_TYPE],
 # it need to be in the PATH.
 # $1: The name of the variable to fix
 # $2: Where to look for the command (replaces $PATH)
+# $3: set to NOFIXPATH to skip prefixing FIXPATH, even if needed on platform
 AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
 [
   input="[$]$1"
@@ -256,6 +260,10 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
       fi
     fi
 
+    if test "x$3" = xNOFIXPATH; then
+      prefix=""
+    fi
+
     # Now join together the path and the arguments once again
     new_complete="$prefix$new_path$arguments"
     $1="$new_complete"
@@ -347,6 +355,7 @@ AC_DEFUN([UTIL_SETUP_TOOL],
 # $1: variable to set
 # $2: executable name (or list of names) to look for
 # $3: [path]
+# $4: set to NOFIXPATH to skip prefixing FIXPATH, even if needed on platform
 AC_DEFUN([UTIL_LOOKUP_PROGS],
 [
   UTIL_SETUP_TOOL($1, [
@@ -383,11 +392,13 @@ AC_DEFUN([UTIL_LOOKUP_PROGS],
           fi
           if test -e "$full_path"; then
             $1="$full_path"
-            UTIL_FIXUP_EXECUTABLE($1, $3)
+            UTIL_FIXUP_EXECUTABLE($1, $3, $4)
             result="[$]$1"
 
-            [ if [[ $FIXPATH != "" && $result =~ ^"$FIXPATH " ]]; then ]
-              result="\$FIXPATH ${result#"$FIXPATH "}"
+            if test "x$4" != xNOFIXPATH; then
+              [ if [[ $FIXPATH != "" && $result =~ ^"$FIXPATH " ]]; then ]
+                result="\$FIXPATH ${result#"$FIXPATH "}"
+              fi
             fi
             AC_MSG_RESULT([$result])
             break 2;

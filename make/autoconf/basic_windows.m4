@@ -134,7 +134,14 @@ AC_DEFUN([BASIC_SETUP_PATHS_WINDOWS],
   UTIL_FIXUP_PATH(FIXPATH_DIR)
 
   # Now that we can, use fixed-up path to rewrite path to fixpath.sh properly
-  FIXPATH_ARGS="-e $PATHTOOL -p $WINENV_PREFIX -r ${WINENV_ROOT/\\/\\\\}  -t $WINENV_TEMP_DIR -c $CMD -q"
+  if test "x$WINENV_PREFIX" = x; then
+    # On msys the prefix is empty, but we need to pass something to have the
+    # fixpath.sh options parser happy.
+    WINENV_PREFIX_ARG="''"
+  else
+    WINENV_PREFIX_ARG="$WINENV_PREFIX"
+  fi
+  FIXPATH_ARGS="-e $PATHTOOL -p $WINENV_PREFIX_ARG -r ${WINENV_ROOT/\\/\\\\}  -t $WINENV_TEMP_DIR -c $CMD -q"
   FIXPATH_BASE="$BASH $FIXPATH_DIR/fixpath.sh $FIXPATH_ARGS"
   FIXPATH="$FIXPATH_BASE exec"
   AC_SUBST(FIXPATH)
