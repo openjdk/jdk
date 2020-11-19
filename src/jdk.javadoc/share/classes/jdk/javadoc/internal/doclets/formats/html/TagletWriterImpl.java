@@ -210,12 +210,13 @@ public class TagletWriterImpl extends TagletWriter {
     }
 
     @Override
-    public Content returnTagOutput(Element element, ReturnTree returnTag) {
+    public Content returnTagOutput(Element element, ReturnTree returnTag, boolean inline) {
         CommentHelper ch = utils.getCommentHelper(element);
-        return new ContentBuilder(
-                HtmlTree.DT(contents.returns),
-                HtmlTree.DD(htmlWriter.commentTagsToContent(
-                        returnTag, element, ch.getDescription(returnTag), false, inSummary)));
+        List<? extends DocTree> desc = ch.getDescription(returnTag);
+        Content content = htmlWriter.commentTagsToContent(returnTag, element, desc , false, inSummary);
+        return inline
+                ? new ContentBuilder(contents.getContent("doclet.Returns_0", content))
+                : new ContentBuilder(HtmlTree.DT(contents.returns), HtmlTree.DD(content));
     }
 
     @Override

@@ -733,7 +733,8 @@ public class TagletManager {
         taglets.addAll(allTaglets.values());
 
         for (Taglet t : taglets) {
-            String name = t.isInlineTag() ? "{@" + t.getName() + "}" : "@" + t.getName();
+            // give preference to simpler block form if a tag can be either
+            String name = t.isBlockTag() ? "@" + t.getName() : "{@" + t.getName() + "}";
             out.println(String.format("%20s", name) + ": "
                     + format(t.isBlockTag(), "block")+ " "
                     + format(t.inOverview(), "overview") + " "

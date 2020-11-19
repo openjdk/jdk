@@ -145,12 +145,13 @@ public abstract class TagletWriter {
     /**
      * Returns the output for a {@code @return} tag.
      *
-     * @param element   The element that owns the doc comment
+     * @param element   the element that owns the doc comment
      * @param returnTag the return tag to document
+     * @param inline    whether this should be written as an inline instance or block instance
      *
      * @return the output
      */
-    protected abstract Content returnTagOutput(Element element, ReturnTree returnTag);
+    protected abstract Content returnTagOutput(Element element, ReturnTree returnTag, boolean inline);
 
     /**
      * Returns the output for {@code @see} tags.
