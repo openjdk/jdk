@@ -69,6 +69,8 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
                             .collect(Collectors.joining());
             String[] tokens = l.split(" ");
             mountPath = tokens[4];
+        } catch (UncheckedIOException e) {
+            return null;
         } catch (IOException e) {
             return null;
         }
@@ -87,6 +89,8 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
                 cgroupPath = tokens[2];
                 break;
             }
+        } catch (UncheckedIOException e) {
+            return null;
         } catch (IOException e) {
             return null;
         }
