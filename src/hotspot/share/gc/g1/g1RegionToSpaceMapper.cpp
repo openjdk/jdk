@@ -28,6 +28,7 @@
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/virtualspace.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
