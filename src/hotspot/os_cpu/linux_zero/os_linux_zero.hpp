@@ -34,6 +34,7 @@
   // Note: Currently only used in 64 bit Windows implementations
   static bool register_code_area(char *low, char *high) { return true; }
 
+#ifdef IA32
   /*
    * Work-around for broken NX emulation using CS limit, Red Hat patch "Exec-Shield"
    * (IA32 only).
@@ -46,6 +47,7 @@
    * @see JDK-8023956
    */
   static void workaround_expand_exec_shield_cs_limit();
+#endif
 
   // Atomically copy 64 bits of data
   static void atomic_copy64(const volatile void *src, volatile void *dst) {
