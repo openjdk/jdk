@@ -32,7 +32,7 @@
  * @test
  * @bug 8166596
  * @summary TLS support for the EdDSA signature algorithm
- * @library /javax/net/ssl/templates
+ * @library /javax/net/ssl/templates /test/lib
  * @run main/othervm TLSWithEdDSA
  */
 
@@ -71,6 +71,7 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509ExtendedKeyManager;
 import javax.net.ssl.X509KeyManager;
+import jdk.test.lib.security.SecurityUtils;
 
 public class TLSWithEdDSA extends SSLSocketTemplate {
     private static final String PASSWD = "passphrase";
@@ -555,6 +556,7 @@ public class TLSWithEdDSA extends SSLSocketTemplate {
     }
 
     public static void main(String[] args) throws Exception {
+        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1.1", "TLSv1");
         certFac = CertificateFactory.getInstance("X.509");
         String testFormat;
 
