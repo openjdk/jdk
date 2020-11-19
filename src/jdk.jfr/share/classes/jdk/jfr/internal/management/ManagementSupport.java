@@ -145,7 +145,7 @@ public final class ManagementSupport {
     }
 
     // Needed to start an ongoing stream at the right chunk, which
-    // can be identified by the start time with nanosecond precision. 
+    // can be identified by the start time with nanosecond precision.
     public static long getStartTimeNanos(Recording recording) {
         PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
         return pr.getStartNanos();
@@ -153,15 +153,15 @@ public final class ManagementSupport {
 
     // Needed to produce Configuration objects for MetadataEvent
     public static Configuration newConfiguration(String name, String label, String description, String provider,
-            Map<String, String> settings, String contents) {
+          Map<String, String> settings, String contents) {
         return PrivateAccess.getInstance().newConfiguration(name, label, description, provider, settings, contents);
     }
-    
+
     // Can't use EventStream.openRepository(...) because
-    // EventStream::onMetadataData need to supply MetadataEvent 
+    // EventStream::onMetadataData need to supply MetadataEvent
     // with configuration objects
     public static EventStream newEventDirectoryStream(
-            AccessControlContext acc, 
+            AccessControlContext acc,
             Path directory,
             List<Configuration> confs) throws IOException {
         return new EventDirectoryStream(acc, directory, FileAccess.UNPRIVILEGED, null, confs);
