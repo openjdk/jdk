@@ -68,7 +68,7 @@ AC_DEFUN([UTIL_FIXUP_PATH],
       if test "x$2" = "xNOFAIL"; then
         quiet_option="-q"
       fi
-      imported_path=`$BASH $TOPDIR/make/scripts/fixpath.sh $quiet_option import "$path"`
+      imported_path=`$FIXPATH_BASE $quiet_option import "$path"`
       $BASH $TOPDIR/make/scripts/fixpath.sh verify "$imported_path"
       if test $? -ne 0; then
         if test "x$2" != "xNOFAIL"; then
@@ -211,12 +211,12 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
       # This is a path with slashes, don't look at $PATH
       if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
         # fixpath.sh import will do all heavy lifting for us
-        new_path=`$BASH $TOPDIR/make/scripts/fixpath.sh import "$path"`
+        new_path=`$FIXPATH_BASE import "$path"`
 
         if test ! -e $new_path; then
           # It failed, but maybe spaces were part of the path and not separating
           # the command and argument. Retry using that assumption.
-          new_path=`$BASH $TOPDIR/make/scripts/fixpath.sh import "$input"`
+          new_path=`$FIXPATH_BASE import "$input"`
           if test ! -e $new_path; then
             AC_MSG_NOTICE([The command for $1, which resolves as "$input", can not be found.])
             AC_MSG_ERROR([Cannot locate $input])
