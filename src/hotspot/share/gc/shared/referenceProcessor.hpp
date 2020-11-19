@@ -71,7 +71,6 @@ private:
   HeapWord*          _current_discovered_addr;
   oop                _next_discovered;
 
-  HeapWord*          _referent_addr;
   oop                _referent;
 
   OopClosure*        _keep_alive;
@@ -120,14 +119,8 @@ public:
   // Remove the current reference from the list
   void remove();
 
-  // Make the referent alive.
-  inline void make_referent_alive() {
-    if (UseCompressedOops) {
-      _keep_alive->do_oop((narrowOop*)_referent_addr);
-    } else {
-      _keep_alive->do_oop((oop*)_referent_addr);
-    }
-  }
+  // Apply the keep_alive function to the referent address.
+  void make_referent_alive();
 
   // Do enqueuing work, i.e. notifying the GC about the changed discovered pointers.
   void enqueue();
