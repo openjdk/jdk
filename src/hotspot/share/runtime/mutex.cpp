@@ -412,7 +412,7 @@ void Mutex::check_rank(Thread* thread) {
              least->rank() <= this->rank() ? "Should wait on the least ranked monitor from "
              "all owned locks." : "Should not block(wait) while holding a lock of rank special.");
     }
-  } else {
+  } else if (!check_can_be_skipped) {
     // lock()/lock_without_safepoint_check()/try_lock() case
     Mutex* least = get_least_ranked_lock(locks_owned);
     // Deadlock prevention rules require us to acquire Mutexes only in
@@ -420,7 +420,7 @@ void Mutex::check_rank(Thread* thread) {
     // that the thread holds and m2 is the mutex the thread is trying
     // to acquire, then deadlock prevention rules require that the rank
     // of m2 be less than the rank of m1. This prevents circular waits.
-    if (least != NULL && least->rank() <= this->rank() && !check_can_be_skipped) {
+    if (least != NULL && least->rank() <= this->rank()) {
       thread->print_owned_locks();
       assert(false, "Attempting to acquire lock %s/%d out of order with lock %s/%d -- "
              "possible deadlock", this->name(), this->rank(), least->name(), least->rank());

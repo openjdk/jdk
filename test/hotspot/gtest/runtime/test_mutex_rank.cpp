@@ -72,7 +72,7 @@ TEST_VM_ASSERT_MSG(MutexRank, mutex_lock_rank_out_of_orderB,
   mutex_rankA->unlock();
 }
 
-TEST_OTHER_VM(MutexRank, mutex_trylock_rank_out_of_order) {
+TEST_OTHER_VM(MutexRank, mutex_trylock_rank_out_of_orderA) {
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative invm(THREAD);
 
@@ -80,12 +80,28 @@ TEST_OTHER_VM(MutexRank, mutex_trylock_rank_out_of_order) {
   Mutex* mutex_rankA_plus_one = new Mutex(rankA + 1, "mutex_rankA_plus_one", false, Mutex::_safepoint_check_always);
   Mutex* mutex_rankA_plus_two = new Mutex(rankA + 2, "mutex_rankA_plus_two", false, Mutex::_safepoint_check_always);
 
-  mutex_rankA_plus_two->lock();
+  mutex_rankA_plus_one->lock();
+  mutex_rankA_plus_two->try_lock_without_rank_check();
+  mutex_rankA->lock();
+  mutex_rankA->unlock();
+  mutex_rankA_plus_two->unlock();
+  mutex_rankA_plus_one->unlock();
+}
+
+TEST_VM_ASSERT_MSG(MutexRank, mutex_trylock_rank_out_of_orderB,
+                   "Attempting to acquire lock mutex_rankA_plus_one/51 out of order with lock mutex_rankA/50 -- possible deadlock") {
+  JavaThread* THREAD = JavaThread::current();
+  ThreadInVMfromNative invm(THREAD);
+
+  Mutex* mutex_rankA = new Mutex(rankA, "mutex_rankA", false, Mutex::_safepoint_check_always);
+  Mutex* mutex_rankA_plus_one = new Mutex(rankA + 1, "mutex_rankA_plus_one", false, Mutex::_safepoint_check_always);
+
   mutex_rankA->lock();
   mutex_rankA_plus_one->try_lock_without_rank_check();
   mutex_rankA_plus_one->unlock();
+  mutex_rankA_plus_one->try_lock();
+  mutex_rankA_plus_one->unlock();
   mutex_rankA->unlock();
-  mutex_rankA_plus_two->unlock();
 }
 
 TEST_OTHER_VM(MutexRank, monitor_wait_rank_in_order) {
