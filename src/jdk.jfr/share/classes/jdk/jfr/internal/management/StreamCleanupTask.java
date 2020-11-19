@@ -23,16 +23,16 @@
  * questions.
  */
 
-package jdk.management.jfr;
+package jdk.jfr.internal.management;
 
 import java.util.TimerTask;
 
 final class StreamCleanupTask extends TimerTask {
 
-    private final Stream stream;
+    private final EventByteStream stream;
     private final StreamManager manager;
 
-    StreamCleanupTask(StreamManager streamManager, Stream stream) {
+    StreamCleanupTask(StreamManager streamManager, EventByteStream stream) {
         this.stream = stream;
         this.manager = streamManager;
     }

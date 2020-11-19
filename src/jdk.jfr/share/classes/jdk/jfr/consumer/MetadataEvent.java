@@ -35,6 +35,8 @@ import jdk.jfr.EventType;
 
 /**
  * Event that contains information about event types and configurations.
+ * 
+ * @since 16
  */
 public final class MetadataEvent {
     private final List<EventType> current;

@@ -1,14 +1,16 @@
-package jdk.management.jfr;
+package jdk.jfr.internal.consumer;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-final class FinishedStream extends Stream {
+import jdk.jfr.internal.management.EventByteStream;
+
+public final class FinishedStream extends EventByteStream {
     private final BufferedInputStream inputStream;
     private final byte[] buffer;
 
-    FinishedStream(InputStream is, int blockSize) {
+    public FinishedStream(InputStream is, int blockSize) {
         super();
         this.inputStream = new BufferedInputStream(is, 50000);
         this.buffer = new byte[blockSize];

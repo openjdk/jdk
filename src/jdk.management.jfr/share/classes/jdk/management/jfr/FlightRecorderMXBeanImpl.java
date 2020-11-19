@@ -71,6 +71,7 @@ import jdk.jfr.FlightRecorderPermission;
 import jdk.jfr.Recording;
 import jdk.jfr.RecordingState;
 import jdk.jfr.internal.management.ManagementSupport;
+import jdk.jfr.internal.management.StreamManager;
 
 // Instantiated by service provider
 final class FlightRecorderMXBeanImpl extends StandardEmitterMBean implements FlightRecorderMXBean, NotificationEmitter {

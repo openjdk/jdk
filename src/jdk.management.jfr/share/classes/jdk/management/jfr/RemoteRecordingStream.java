@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.time.Duration;
@@ -14,12 +15,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
-
+import java.security.AccessControlException;
 import javax.management.JMX;
 import javax.management.MBeanServerConnection;
-import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 
 import jdk.jfr.Configuration;
@@ -29,12 +28,9 @@ import jdk.jfr.Recording;
 import jdk.jfr.consumer.EventStream;
 import jdk.jfr.consumer.MetadataEvent;
 import jdk.jfr.consumer.RecordedEvent;
-import jdk.jfr.consumer.RecordingStream;
-import jdk.jfr.internal.PlatformRecording;
-import jdk.jfr.internal.consumer.EventDirectoryStream;
-import jdk.jfr.internal.consumer.FileAccess;
 import jdk.jfr.internal.management.EventSettingsModifier;
 import jdk.jfr.internal.management.ManagementSupport;
+import jdk.jfr.internal.management.EventByteStream;
 
 /**
  * An implementation of an {@link EventStream} that can serialize events over
@@ -68,9 +64,6 @@ import jdk.jfr.internal.management.ManagementSupport;
  * @since 16
  */
 public final class RemoteRecordingStream implements EventStream {
-
-    static final String NAME = "Remote Recording Stream";
-
     private static final String ENABLED = "enabled";
 
     static final class RemoteSettings implements EventSettingsModifier {
@@ -180,25 +173,25 @@ public final class RemoteRecordingStream implements EventStream {
         this(connection, directory, false);
     }
 
-    private RemoteRecordingStream(MBeanServerConnection connection, Path directory, boolean delete) throws IOException {
+    private RemoteRecordingStream(MBeanServerConnection connection, Path dir, boolean delete) throws IOException {
         Objects.requireNonNull(connection);
-        Objects.requireNonNull(directory);
+        Objects.requireNonNull(dir);
+        accessControllerContext = AccessController.getContext();
 
-        if (!Files.exists(directory)) {
+        // Make sure user can't implement malicious version of a Path object.
+        path = Paths.get(dir.toString());
+        if (!Files.exists(path)) {
             throw new IOException("Download directory doesn't exist");
         }
 
-        if (!Files.isDirectory(directory)) {
+        if (!Files.isDirectory(path)) {
             throw new IOException("Download location must be a directory");
         }
-        checkFileAccess(directory);
-        path = directory;
+        checkFileAccess(path);
         mbean = createProxy(connection);
         recordingId = createRecording();
-        stream = new EventDirectoryStream(AccessController.getContext(), directory, FileAccess.UNPRIVILEGED, null,
-                configurations(mbean));
+        stream = ManagementSupport.newEventDirectoryStream(accessControllerContext, path, configurations(mbean));
         stream.setStartTime(Instant.MIN);
-        accessControllerContext = AccessController.getContext();
         repository = new DiskRepository(path, delete);
         ManagementSupport.setOnChunkCompleteHandler(stream, new ChunkConsumer(repository));
     }
@@ -257,7 +250,7 @@ public final class RemoteRecordingStream implements EventStream {
         try {
             long id = mbean.newRecording();
             Map<String, String> options = new HashMap<>();
-            options.put("name", NAME + ": " + Instant.now());
+            options.put("name", EventByteStream.NAME + ": " + Instant.now());
             mbean.setRecordingOptions(id, options);
             return id;
         } catch (Exception e) {

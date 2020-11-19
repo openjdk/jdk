@@ -34,15 +34,15 @@ import jdk.jfr.internal.MetadataDescriptor;
 import jdk.jfr.internal.Utils;
 
 public final class ChunkHeader {
-    private static final long HEADER_SIZE = 68;
-    private static final byte UPDATING_CHUNK_HEADER = (byte) 255;
-    private static final long CHUNK_SIZE_POSITION = 8;
-    private static final long DURATION_NANOS_POSITION = 40;
-    private static final long FILE_STATE_POSITION = 64;
-    private static final long FLAG_BYTE_POSITION = 67;
-    private static final long METADATA_TYPE_ID = 0;
-    private static final byte[] FILE_MAGIC = { 'F', 'L', 'R', '\0' };
-    private static final int MASK_FINAL_CHUNK = 1 << 1;
+    static final long HEADER_SIZE = 68;
+    static final byte UPDATING_CHUNK_HEADER = (byte) 255;
+    static final long CHUNK_SIZE_POSITION = 8;
+    static final long DURATION_NANOS_POSITION = 40;
+    static final long FILE_STATE_POSITION = 64;
+    static final long FLAG_BYTE_POSITION = 67;
+    static final long METADATA_TYPE_ID = 0;
+    static final byte[] FILE_MAGIC = { 'F', 'L', 'R', '\0' };
+    static final int MASK_FINAL_CHUNK = 1 << 1;
 
     private final short major;
     private final short minor;

@@ -1,4 +1,4 @@
-package jdk.management.jfr;
+package jdk.jfr.internal.consumer;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -7,21 +7,19 @@ import java.time.Instant;
 
 import jdk.jfr.Recording;
 import jdk.jfr.RecordingState;
-import jdk.jfr.internal.PlatformRecording;
-import jdk.jfr.internal.PrivateAccess;
+import jdk.jfr.internal.Utils;
 import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.SecuritySupport.SafePath;
-import jdk.jfr.internal.consumer.ChunkHeader;
-import jdk.jfr.internal.consumer.RecordingInput;
-import jdk.jfr.internal.consumer.RepositoryFiles;
+import jdk.jfr.internal.management.EventByteStream;
 import jdk.jfr.internal.management.ManagementSupport;
 
-final class OngoingStream extends Stream {
+public final class OngoingStream extends EventByteStream {
+
     private static final byte[] EMPTY_ARRAY = new byte[0];
 
-    private static final int HEADER_SIZE = DiskRepository.HEADER_SIZE;
-    private static final int HEADER_FILE_STATE_POSITION = DiskRepository.HEADER_FILE_STATE_POSITION;
-    private static final byte MODIFYING_STATE = DiskRepository.MODIFYING_STATE;
+    private static final int HEADER_SIZE = (int)ChunkHeader.HEADER_SIZE;
+    private static final int HEADER_FILE_STATE_POSITION = (int)ChunkHeader.FILE_STATE_POSITION;
+    private static final byte MODIFYING_STATE = ChunkHeader.UPDATING_CHUNK_HEADER;
 
     private final RepositoryFiles repositoryFiles;
     private final Recording recording;
@@ -98,7 +96,7 @@ final class OngoingStream extends Stream {
                     throw new IOException("No progress");
                 }
                 startTimeNanos += header.getDurationNanos();
-                Instant timestamp = MBeanUtils.epochNanosToInstant(startTimeNanos);
+                Instant timestamp = Utils.epochNanosToInstant(startTimeNanos);
                 ManagementSupport.removeBefore(recording, timestamp);
                 closeInput();
             } else {
@@ -224,7 +222,7 @@ final class OngoingStream extends Stream {
     public void close() throws IOException {
         closeInput();
         // Close recording if stream times out.
-        if (recording.getName().startsWith(RemoteRecordingStream.NAME)) {
+        if (recording.getName().startsWith(EventByteStream.NAME)) {
             recording.close();
         }
     }

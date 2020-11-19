@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.management.jfr;
+package jdk.jfr.internal.management;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,24 +35,26 @@ import java.util.Timer;
 import java.util.concurrent.TimeUnit;
 
 import jdk.jfr.Recording;
+import jdk.jfr.internal.consumer.FinishedStream;
+import jdk.jfr.internal.consumer.OngoingStream;
 
-final class StreamManager {
+public final class StreamManager {
 
     public static final long TIME_OUT = TimeUnit.MINUTES.toMillis(200);
     public static final int DEFAULT_BLOCK_SIZE = 50000;
 
-    private final Map<Long, Stream> streams = new HashMap<>();
+    private final Map<Long, EventByteStream> streams = new HashMap<>();
     private Timer timer;
 
-    public synchronized Stream getStream(long streamIdentifer) {
-        Stream stream = streams.get(streamIdentifer);
+    public synchronized EventByteStream getStream(long streamIdentifer) {
+        EventByteStream stream = streams.get(streamIdentifer);
         if (stream == null) {
             throw new IllegalArgumentException("Unknown stream identifier " + streamIdentifer);
         }
         return stream;
     }
 
-    public synchronized Stream createOngoing(Recording recording, int blockSize, Instant startTime, Instant endTime) {
+    public synchronized EventByteStream createOngoing(Recording recording, int blockSize, Instant startTime, Instant endTime) {
         long startTimeNanos = 0;
         long endTimeNanos = Long.MAX_VALUE;
         if (!startTime.equals(Instant.MIN)) {
@@ -64,21 +66,21 @@ final class StreamManager {
             endTimeNanos+= endTime.getNano();
 
          }
-        Stream stream = new OngoingStream(recording, blockSize, startTimeNanos, endTimeNanos);
+        EventByteStream stream = EventByteStream.newOngoingStream(recording, blockSize, startTimeNanos, endTimeNanos);
         streams.put(stream.getId(), stream);
         scheduleAbort(stream, System.currentTimeMillis() + TIME_OUT);
         return stream;
     }
 
-    public synchronized Stream create(InputStream is, int blockSize) {
-        Stream stream = new FinishedStream(is, blockSize);
+    public synchronized EventByteStream create(InputStream is, int blockSize) {
+        EventByteStream stream = EventByteStream.newFinishedStream(is, blockSize);
         streams.put(stream.getId(), stream);
 
         scheduleAbort(stream, System.currentTimeMillis() + TIME_OUT);
         return stream;
     }
 
-    public synchronized void destroy(Stream stream) {
+    public synchronized void destroy(EventByteStream stream) {
         try {
             stream.close();
         } catch (IOException e) {
@@ -91,7 +93,7 @@ final class StreamManager {
         }
     }
 
-    public synchronized void scheduleAbort(Stream s, long when) {
+    public synchronized void scheduleAbort(EventByteStream s, long when) {
         if (timer == null) {
             timer = new Timer(true);
         }

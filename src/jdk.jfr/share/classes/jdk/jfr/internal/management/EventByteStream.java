@@ -23,22 +23,35 @@
  * questions.
  */
 
-package jdk.management.jfr;
+package jdk.jfr.internal.management;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.concurrent.atomic.AtomicLong;
 
-abstract class Stream implements Closeable {
+import jdk.jfr.Recording;
+import jdk.jfr.internal.consumer.FinishedStream;
+import jdk.jfr.internal.consumer.OngoingStream;
+
+public abstract class EventByteStream implements Closeable {
+    public static final String NAME = "Remote Recording Stream";
 
     private static AtomicLong idCounter = new AtomicLong();;
-
     private final long identifier;
     private volatile long time;
-    public Stream() {
+    public EventByteStream() {
         this.identifier = idCounter.incrementAndGet();
     }
 
+    public static EventByteStream newOngoingStream(Recording recording, int blockSize, long  startTimeNanos,long endTimeNanos) {
+        return new OngoingStream(recording, blockSize, startTimeNanos, endTimeNanos);
+    }
+    
+    public static EventByteStream newFinishedStream(InputStream is, int blockSize) {
+        return new FinishedStream(is, blockSize);
+    }
+    
     final protected void touch() {
         time = System.currentTimeMillis();
     }
@@ -51,6 +64,5 @@ abstract class Stream implements Closeable {
 
     final public long getId() {
         return identifier;
-
     }
 }
