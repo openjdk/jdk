@@ -3922,6 +3922,10 @@ bool Arguments::handle_deprecated_print_gc_flags() {
 }
 
 static void apply_debugger_ergo() {
+  if (ReplayCompiles) {
+    FLAG_SET_ERGO_IF_DEFAULT(UseDebuggerErgo, true);
+  }
+
   if (UseDebuggerErgo) {
     // Turn on sub-flags
     FLAG_SET_ERGO_IF_DEFAULT(UseDebuggerErgo1, true);
