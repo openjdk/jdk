@@ -26,9 +26,7 @@
  * @bug 6232281
  * @requires vm.debug == true & vm.compiler2.enabled
  * @summary Tests that C2 does not crash trivially with a "remove_useless_nodes
- *          missed this node" message when UseLoopSafepoints is disabled. Note
- *          that other parts of C2 assume that this option is enabled and might
- *          fail in more subtle ways otherwise.
+ *          missed this node" message when UseLoopSafepoints is disabled.
  * @run main/othervm -Xcomp -Xbatch -XX:-TieredCompilation
         -XX:CompileOnly=TestDisableUseLoopSafepoints -XX:-UseLoopSafepoints
  *      compiler.arguments.TestDisableUseLoopSafepoints
