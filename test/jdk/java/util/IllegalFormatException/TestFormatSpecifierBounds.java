@@ -45,7 +45,6 @@ public class TestFormatSpecifierBounds {
         IllegalFormatException e = expectThrows(IllegalFormatException.class, () -> {
             String r = String.format("%2147483648$s", "A", "B");
         });
-        //assertEquals(e.getMessage(), "Illegal format argument index = " + Integer.MIN_VALUE);
         assertEquals(e.getMessage(), "Format argument index: (not representable as int)");
     }
 
