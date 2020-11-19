@@ -205,12 +205,9 @@ void G1ServiceThread::register_task(G1ServiceTask* task, jlong delay) {
   // Associate the task with the service thread.
   task->set_service_thread(this);
 
-  // Schedule the task to run after the given delay.
+  // Schedule the task to run after the given delay. The service will be
+  // notified to check if this task is first in the queue.
   schedule_task(task, delay);
-
-  // Notify the service thread that there is a new task, thread might
-  // be waiting and the newly added task might be first in the list.
-  notify();
 }
 
 void G1ServiceThread::schedule(G1ServiceTask* task, jlong delay_ms) {
@@ -336,6 +333,8 @@ bool G1ServiceTask::is_registered() {
 }
 
 void G1ServiceTask::schedule(jlong delay_ms) {
+  assert(Thread::current() == _service_thread,
+         "Can only be used when already running on the service thread");
   _service_thread->schedule(this, delay_ms);
 }
 
