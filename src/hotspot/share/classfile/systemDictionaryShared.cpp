@@ -75,6 +75,7 @@ bool SystemDictionaryShared::_dump_in_progress = false;
 
 class DumpTimeSharedClassInfo: public CHeapObj<mtClass> {
   bool                         _excluded;
+  bool                         _is_early_klass;
 public:
   struct DTLoaderConstraint {
     Symbol* _name;
@@ -121,6 +122,7 @@ public:
     _clsfile_size = -1;
     _clsfile_crc32 = -1;
     _excluded = false;
+    _is_early_klass = JvmtiExport::is_early_phase();
     _verifier_constraints = NULL;
     _verifier_constraint_flags = NULL;
     _loader_constraints = NULL;
@@ -175,6 +177,11 @@ public:
   bool is_excluded() {
     // _klass may become NULL due to DynamicArchiveBuilder::set_to_null
     return _excluded || _failed_verification || _klass == NULL;
+  }
+
+  // Was this class loaded while JvmtiExport::is_early_phase()==true
+  bool is_early_klass() {
+    return _is_early_klass;
   }
 
   void set_failed_verification() {
@@ -1325,6 +1332,11 @@ bool SystemDictionaryShared::is_hidden_lambda_proxy(InstanceKlass* ik) {
   }
 }
 
+bool SystemDictionaryShared::is_early_klass(InstanceKlass* ik) {
+  DumpTimeSharedClassInfo* info = _dumptime_table->get(ik);
+  return (info != NULL) ? info->is_early_klass() : false;
+}
+
 void SystemDictionaryShared::warn_excluded(InstanceKlass* k, const char* reason) {
   ResourceMark rm;
   log_warning(cds)("Skipping %s: %s", k->name()->as_C_string(), reason);
@@ -2302,8 +2314,8 @@ bool SystemDictionaryShared::empty_dumptime_table() {
 class ArchivedMirrorPatcher {
 protected:
   static void update(Klass* k) {
-    if (k->has_raw_archived_mirror()) {
-      oop m = HeapShared::materialize_archived_object(k->archived_java_mirror_raw_narrow());
+    if (k->has_archived_mirror_index()) {
+      oop m = k->archived_java_mirror();
       if (m != NULL) {
         java_lang_Class::update_archived_mirror_native_pointers(m);
       }

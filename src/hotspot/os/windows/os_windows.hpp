@@ -187,7 +187,10 @@ class PlatformParker : public CHeapObj<mtSynchronizer> {
 
 } ;
 
-// Platform specific implementations that underpin VM Mutex/Monitor classes
+// Platform specific implementations that underpin VM Mutex/Monitor classes.
+// Note that CRITICAL_SECTION supports recursive locking, while the semantics
+// of the VM Mutex class does not. It is up to the Mutex class to hide this
+// difference in behaviour.
 
 class PlatformMutex : public CHeapObj<mtSynchronizer> {
   NONCOPYABLE(PlatformMutex);
