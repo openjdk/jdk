@@ -132,7 +132,11 @@ AC_DEFUN([BASIC_CHECK_MAKE_VERSION],
           elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys2"; then
             MAKE_EXPECTED_ENV='msys'
           elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl1" || test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl2"; then
-            MAKE_EXPECTED_ENV='x86_64-.*-linux-gnu'
+            if test "x$OPENJDK_BUILD_CPU" = "xaarch64"; then
+              MAKE_EXPECTED_ENV='aarch64-.*-linux-gnu'
+            else
+              MAKE_EXPECTED_ENV='x86_64-.*-linux-gnu'
+            fi
           else
             AC_MSG_ERROR([Unknown Windows environment])
           fi

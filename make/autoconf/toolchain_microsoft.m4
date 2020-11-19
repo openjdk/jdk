@@ -576,7 +576,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_VS_RUNTIME_DLLS],
   AC_ARG_WITH(vcruntime-1-dll, [AS_HELP_STRING([--with-vcruntime-1-dll],
       [path to microsoft C++ runtime dll (vcruntime*_1.dll) (Windows 64-bits only) @<:@probed@:>@])])
 
-  if test "x$VCRUNTIME_1_NAME" != "x" -a "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+  if test "x$VCRUNTIME_1_NAME" != "x" && test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
     if test "x$with_vcruntime_1_dll" != x; then
       # If given explicitly by user, do not probe. If not present, fail directly.
       TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL($VCRUNTIME_1_NAME, [$with_vcruntime_1_dll],
@@ -650,10 +650,10 @@ AC_DEFUN([TOOLCHAIN_SETUP_VS_RUNTIME_DLLS],
 # Param 1 - Optional prefix to all variables. (e.g BUILD_)
 AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_SYSROOT_FLAGS],
 [
-  # Convert VS_INCLUDE into SYSROOT_CFLAGS
   OLDIFS="$IFS"
   IFS=":"
 
+  # Convert VS_INCLUDE into SYSROOT_CFLAGS
   for ipath in [$]$1VS_INCLUDE; do
     $1SYSROOT_CFLAGS="[$]$1SYSROOT_CFLAGS -I$ipath"
   done
