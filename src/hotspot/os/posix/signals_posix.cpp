@@ -1359,7 +1359,8 @@ void PosixSignals::print_signal_handler(outputStream* st, int sig,
   // May be, handler was resetted by VMError?
   if (rh != NULL) {
     handler = rh;
-    sa.sa_flags = VMError::get_resetted_sigflags(sig);
+    // See comment for SA_RESTORER_FLAG_MASK
+    sa.sa_flags = VMError::get_resetted_sigflags(sig) LINUX_ONLY(& SA_RESTORER_FLAG_MASK);
   }
 
   // Print textual representation of sa_flags.
