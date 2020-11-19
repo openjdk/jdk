@@ -5518,7 +5518,7 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
  * IA32 only: execute code at a high address in case buggy NX emulation is present. I.e. avoid CS limit
  * updates (JDK-8023956).
  */
-#if defined(IA32)
+#ifdef IA32
 void os::workaround_expand_exec_shield_cs_limit() {
   assert(Linux::initial_thread_stack_bottom() != NULL, "sanity");
   size_t page_size = os::vm_page_size();
