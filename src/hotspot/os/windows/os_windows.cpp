@@ -3487,7 +3487,57 @@ bool os::pd_uncommit_memory(char* addr, size_t bytes) {
 }
 
 bool os::pd_release_memory(char* addr, size_t bytes) {
-  return virtualFree(addr, 0, MEM_RELEASE) != 0;
+  // Given a range we are to release, we require a mapping to start at the beginning of that range;
+  //  if NUMA or LP we allow the range to contain multiple mappings, which have to cover the range
+  //  completely; otherwise the range must match an OS mapping exactly.
+  address start = (address)addr;
+  address end = start + bytes;
+  os::win32::mapping_info_t mi;
+  const bool multiple_mappings_allowed = UseLargePagesIndividualAllocation || UseNUMAInterleaving;
+  address p = start;
+  bool first_mapping = true;
+
+  do {
+    // Find mapping and check it
+    const char* err = NULL;
+    if (!os::win32::find_mapping(p, &mi)) {
+      err = "no mapping found";
+    } else {
+      if (first_mapping) {
+        if (mi.base != start) {
+          err = "base address mismatch";
+        }
+        if (multiple_mappings_allowed ? (mi.size > bytes) : (mi.size != bytes)) {
+          err = "size mismatch";
+        }
+      } else {
+        assert(p == mi.base && mi.size > 0, "Sanity");
+        if (mi.base + mi.size > end) {
+          err = "mapping overlaps end";
+        }
+        if (mi.size == 0) {
+          err = "zero length mapping?"; // Should never happen; just to prevent endlessly looping in release.
+        }
+      }
+    }
+    // Handle mapping error. We assert in debug, unconditionally print a warning in release.
+    if (err != NULL) {
+      log_warning(os)("bad release: [" PTR_FORMAT "-" PTR_FORMAT "): %s", p2i(start), p2i(end), err);
+#ifdef ASSERT
+      os::print_memory_mappings((char*)start, bytes, tty);
+      assert(false, "bad release: [" PTR_FORMAT "-" PTR_FORMAT "): %s", p2i(start), p2i(end), err);
+#endif
+      return false;
+    }
+    // Free this range
+    if (virtualFree(p, 0, MEM_RELEASE) == FALSE) {
+      return false;
+    }
+    first_mapping = false;
+    p = mi.base + mi.size;
+  } while (p < end);
+
+  return true;
 }
 
 bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
@@ -5872,4 +5922,152 @@ void os::win32::initialize_thread_ptr_offset() {
 
 bool os::supports_map_sync() {
   return false;
+}
+
+#ifdef ASSERT
+static void check_meminfo(MEMORY_BASIC_INFORMATION* minfo) {
+  assert(minfo->State == MEM_FREE || minfo->State == MEM_COMMIT || minfo->State == MEM_RESERVE, "Invalid state");
+  if (minfo->State != MEM_FREE) {
+    assert(minfo->AllocationBase != NULL && minfo->BaseAddress >= minfo->AllocationBase, "Invalid pointers");
+    assert(minfo->RegionSize > 0, "Invalid region size");
+  }
+}
+#endif
+
+
+static bool checkedVirtualQuery(address addr, MEMORY_BASIC_INFORMATION* minfo) {
+  ZeroMemory(minfo, sizeof(MEMORY_BASIC_INFORMATION));
+  if (::VirtualQuery(addr, minfo, sizeof(MEMORY_BASIC_INFORMATION)) == sizeof(MEMORY_BASIC_INFORMATION)) {
+    DEBUG_ONLY(check_meminfo(minfo);)
+    return true;
+  }
+  return false;
+}
+
+// Given a pointer pointing into an allocation (an area allocated with VirtualAlloc),
+//  return information about that allocation.
+bool os::win32::find_mapping(address addr, mapping_info_t* mi) {
+  // Query at addr to find allocation base; then, starting at allocation base,
+  //  query all regions, until we either find the next allocation or a free area.
+  ZeroMemory(mi, sizeof(mapping_info_t));
+  MEMORY_BASIC_INFORMATION minfo;
+  address allocation_base = NULL;
+  address allocation_end = NULL;
+  bool rc = false;
+  if (checkedVirtualQuery(addr, &minfo)) {
+    if (minfo.State != MEM_FREE) {
+      allocation_base = (address)minfo.AllocationBase;
+      allocation_end = allocation_base;
+      // Iterate through all regions in this allocation to find its end. While we are here, also count things.
+      for (;;) {
+        bool rc = checkedVirtualQuery(allocation_end, &minfo);
+        if (rc == false ||                                       // VirtualQuery error, end of allocation?
+           minfo.State == MEM_FREE ||                            // end of allocation, free memory follows
+           (address)minfo.AllocationBase != allocation_base)     // end of allocation, a new one starts
+        {
+          break;
+        }
+        const size_t region_size = minfo.RegionSize;
+        mi->regions ++;
+        if (minfo.State == MEM_COMMIT) {
+          mi->committed_size += minfo.RegionSize;
+        }
+        allocation_end += region_size;
+      }
+      if (allocation_base != NULL && allocation_end > allocation_base) {
+        mi->base = allocation_base;
+        mi->size = allocation_end - allocation_base;
+        rc = true;
+      }
+    }
+  }
+#ifdef ASSERT
+  if (rc) {
+    assert(mi->size > 0 && mi->size >= mi->committed_size, "Sanity");
+    assert(addr >= mi->base && addr < mi->base + mi->size, "Sanity");
+    assert(mi->regions > 0, "Sanity");
+  }
+#endif
+  return rc;
+}
+
+// Helper function for print_memory_mappings:
+//  Given a MEMORY_BASIC_INFORMATION, containing information about a non-free region:
+//  print out all regions in that allocation. If any of those regions
+//  fall outside the given range [start, end), indicate that in the output.
+// Return the pointer to the end of the allocation.
+static address print_one_mapping(MEMORY_BASIC_INFORMATION* minfo, address start, address end, outputStream* st) {
+  assert(start != NULL && end != NULL && end > start, "Sanity");
+  assert(minfo->State != MEM_FREE, "Not inside an allocation.");
+  address allocation_base = (address)minfo->AllocationBase;
+  address last_region_end = NULL;
+  st->print_cr("AllocationBase: " PTR_FORMAT ":", allocation_base);
+  #define IS_IN(p) (p >= start && p < end)
+  for(;;) {
+    address region_start = (address)minfo->BaseAddress;
+    address region_end = region_start + minfo->RegionSize;
+    assert(region_end > region_start, "Sanity");
+    if (region_end <= start) {
+      st->print("<outside range> ");
+    } else if (region_start >= end) {
+      st->print("<outside range> ");
+    } else if (!IS_IN(region_start) || !IS_IN(region_end - 1)) {
+      st->print("<partly outside range> ");
+    }
+    st->print("[" PTR_FORMAT "-" PTR_FORMAT "), state=", p2i(region_start), p2i(region_end));
+    switch (minfo->State) {
+      case MEM_COMMIT: st->print("MEM_COMMIT"); break;
+      case MEM_FREE: st->print("MEM_FREE"); break;
+      case MEM_RESERVE: st->print("MEM_RESERVE"); break;
+      default: st->print("%x?", (unsigned)minfo->State);
+    }
+    st->print(", prot=%x, type=", (unsigned)minfo->AllocationProtect);
+    switch (minfo->Type) {
+      case MEM_IMAGE: st->print("MEM_IMAGE"); break;
+      case MEM_MAPPED: st->print("MEM_MAPPED"); break;
+      case MEM_PRIVATE: st->print("MEM_PRIVATE"); break;
+      default: st->print("%x?", (unsigned)minfo->State);
+    }
+    st->cr();
+    bool rc = checkedVirtualQuery(region_end, minfo);
+    if (rc == false ||                                         // VirtualQuery error, end of allocation?
+       (minfo->State == MEM_FREE) ||                           // end of allocation, free memory follows
+       ((address)minfo->AllocationBase != allocation_base) ||  // end of allocation, a new one starts
+       (region_end > end))                                     // end of range to print.
+    {
+      return region_end;
+    }
+  }
+  #undef IS_IN
+  ShouldNotReachHere();
+  return NULL;
+}
+
+void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
+  MEMORY_BASIC_INFORMATION minfo;
+  address start = (address)addr;
+  address end = start + bytes;
+  address p = start;
+  while (p < end) {
+    // Probe for the next mapping.
+    if (checkedVirtualQuery(p, &minfo)) {
+      if (minfo.State != MEM_FREE) {
+        // Found one. Print it out.
+        address p2 = print_one_mapping(&minfo, start, end, st);
+        assert(p2 > p, "Sanity");
+        p = p2;
+      } else {
+        // Note: for free regions, most of MEMORY_BASIC_INFORMATION is undefined.
+        //  Only region dimensions are not: use those to jump to the end of
+        //  the free range.
+        address region_start = (address)minfo.BaseAddress;
+        address region_end = region_start + minfo.RegionSize;
+        assert(p >= region_start && p < region_end, "Sanity");
+        p = region_end;
+      }
+    } else {
+      // advance probe pointer.
+      p += os::vm_allocation_granularity();
+    }
+  }
 }
