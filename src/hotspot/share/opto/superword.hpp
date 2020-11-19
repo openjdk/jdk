@@ -311,7 +311,6 @@ class SuperWord : public ResourceObj {
  private:
   IdealLoopTree* _lpt;             // Current loop tree node
   CountedLoopNode* _lp;            // Current CountedLoopNode
-  CountedLoopNode* _pre_loop_head; // Current CountedLoopNode of pre loop
   CountedLoopEndNode* _pre_loop_end; // Current CountedLoopEndNode of pre loop
   Node*          _bb;              // Current basic block
   PhiNode*       _iv;              // Induction var
@@ -341,13 +340,9 @@ class SuperWord : public ResourceObj {
   }
   int iv_stride() const            { return lp()->stride_con(); }
 
-  void set_pre_loop_head(CountedLoopNode* pre_loop_head) {
-    assert(pre_loop_head != NULL, "must be valid");
-    _pre_loop_head = pre_loop_head;
-  }
   CountedLoopNode* pre_loop_head() const {
-    assert(_pre_loop_head != NULL, "should be set when fetched");
-    return _pre_loop_head;
+    assert(_pre_loop_end != NULL && _pre_loop_end->loopnode() != NULL, "should find head from pre loop end");
+    return _pre_loop_end->loopnode();
   }
   void set_pre_loop_end(CountedLoopEndNode* pre_loop_end) {
     assert(pre_loop_end, "must be valid");

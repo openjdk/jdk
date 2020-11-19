@@ -70,7 +70,6 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
   _stk(arena(), 8, 0, NULL),              // scratch stack of nodes
   _lpt(NULL),                             // loop tree node
   _lp(NULL),                              // CountedLoopNode
-  _pre_loop_head(NULL),                   // Pre loop CountedLoopNode
   _pre_loop_end(NULL),                    // Pre loop CountedLoopEndNode
   _bb(NULL),                              // basic block
   _iv(NULL),                              // induction var
@@ -166,7 +165,6 @@ void SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
       return;
     }
     set_pre_loop_end(pre_end);
-    set_pre_loop_head(pre_end->loopnode());
   }
 
   init(); // initialize data structures
@@ -3446,7 +3444,7 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
   Node* lim0 = pre_opaq->in(1);
 
   // Where we put new limit calculations
-  Node* pre_ctrl = pre_end->loopnode()->in(LoopNode::EntryControl);
+  Node* pre_ctrl = pre_loop_head()->in(LoopNode::EntryControl);
 
   // Ensure the original loop limit is available from the
   // pre-loop Opaque1 node.
