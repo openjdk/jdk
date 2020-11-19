@@ -529,8 +529,6 @@ static SpecialFlag const special_jvm_flags[] = {
   { "BiasedLockingDecayTime",              JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "UseOptoBiasInlining",                 JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "PrintPreciseBiasedLockingStatistics", JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "InitialBootClassLoaderMetaspaceSize", JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
-  { "UseLargePagesInMetaspace",            JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "CriticalJNINatives",                  JDK_Version::jdk(16), JDK_Version::jdk(17), JDK_Version::jdk(18) },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
@@ -553,8 +551,12 @@ static SpecialFlag const special_jvm_flags[] = {
   { "UseNewFieldLayout",             JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "UseSemaphoreGCThreadsSynchronization", JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "ForceNUMA",                     JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+  { "InitialBootClassLoaderMetaspaceSize", JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+  { "UseLargePagesInMetaspace",            JDK_Version::jdk(15), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "InsertMemBarAfterArraycopy",    JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
   { "Debugging",                     JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+  { "UseRDPCForConstantTableBase",   JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
+  { "VerifyMergedCPBytecodes",       JDK_Version::undefined(), JDK_Version::jdk(16), JDK_Version::jdk(17) },
 
 #ifdef TEST_VERIFY_SPECIAL_JVM_FLAGS
   // These entries will generate build errors.  Their purpose is to test the macros.
@@ -2158,8 +2160,6 @@ bool Arguments::check_vm_args_consistency() {
     warning("Reserved Stack Area not supported on this platform");
   }
 #endif
-
-  status = status && GCArguments::check_args_consistency();
 
   return status;
 }
@@ -4078,7 +4078,6 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
 
 #if defined(AIX)
   UNSUPPORTED_OPTION_NULL(AllocateHeapAt);
-  UNSUPPORTED_OPTION_NULL(AllocateOldGenAt);
 #endif
 
 #ifndef PRODUCT

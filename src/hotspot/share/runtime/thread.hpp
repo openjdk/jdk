@@ -30,7 +30,6 @@
 #include "gc/shared/threadLocalAllocBuffer.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
-#include "prims/jvmtiExport.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/handshake.hpp"
@@ -63,7 +62,9 @@ class ThreadsList;
 class ThreadsSMRSupport;
 
 class JvmtiRawMonitor;
+class JvmtiSampledObjectAllocEventCollector;
 class JvmtiThreadState;
+class JvmtiVMObjectAllocEventCollector;
 class ThreadStatistics;
 class ConcurrentLocksDump;
 class ParkEvent;
@@ -416,14 +417,6 @@ class Thread: public ThreadShadow {
   // ObjectMonitor on which this thread called Object.wait()
   ObjectMonitor* _current_waiting_monitor;
 
-  // Per-thread ObjectMonitor lists:
- public:
-  ObjectMonitor* om_free_list;                  // SLL of free ObjectMonitors
-  int om_free_count;                            // # on om_free_list
-  int om_free_provision;                        // # to try to allocate next
-  ObjectMonitor* om_in_use_list;                // SLL of in-use ObjectMonitors
-  int om_in_use_count;                          // # on om_in_use_list
-
 #ifdef ASSERT
  private:
   volatile uint64_t _visited_for_critical_count;
@@ -485,6 +478,7 @@ class Thread: public ThreadShadow {
   virtual bool is_Compiler_thread() const            { return false; }
   virtual bool is_Code_cache_sweeper_thread() const  { return false; }
   virtual bool is_service_thread() const             { return false; }
+  virtual bool is_monitor_deflation_thread() const   { return false; }
   virtual bool is_hidden_from_external_view() const  { return false; }
   virtual bool is_jvmti_agent_thread() const         { return false; }
   // True iff the thread can perform GC operations at a safepoint.
@@ -833,8 +827,8 @@ protected:
  public:
   volatile intptr_t _Stalled;
   volatile int _TypeTag;
-  ParkEvent * _ParkEvent;                     // for Object monitors and JVMTI raw monitors
-  ParkEvent * _MuxEvent;                      // for low-level muxAcquire-muxRelease
+  ParkEvent * _ParkEvent;                     // for Object monitors, JVMTI raw monitors,
+                                              // and ObjectSynchronizer::read_stable_mark
   int NativeSyncRecursion;                    // diagnostic
 
   volatile int _OnTrap;                       // Resume-at IP delta
@@ -843,13 +837,10 @@ protected:
   jint _hashStateY;
   jint _hashStateZ;
 
-  // Low-level leaf-lock primitives used to implement synchronization
-  // and native monitor-mutex infrastructure.
+  // Low-level leaf-lock primitives used to implement synchronization.
   // Not for general synchronization use.
   static void SpinAcquire(volatile int * Lock, const char * Name);
   static void SpinRelease(volatile int * Lock);
-  static void muxAcquire(volatile intptr_t * Lock, const char * Name);
-  static void muxRelease(volatile intptr_t * Lock);
 };
 
 // Inline implementation of Thread::current()
