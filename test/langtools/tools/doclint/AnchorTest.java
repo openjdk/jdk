@@ -56,6 +56,11 @@ public class AnchorTest {
     /**
      * <a id=123 ></a>
      */
+    public void a_id_valid() { }
+
+    /**
+     * <a id="123 "></a>
+     */
     public void a_id_invalid() { }
 
     /**

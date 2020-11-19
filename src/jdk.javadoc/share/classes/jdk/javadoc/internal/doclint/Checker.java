@@ -621,18 +621,21 @@ public class Checker extends DocTreePathScanner<Void, Void> {
             }
 
             if (attr != null) {
+                Pattern validPattern = null;
                 switch (attr) {
                     case NAME:
                         if (currTag != HtmlTag.A) {
                             break;
                         }
+                        validPattern = validName;
                         // fallthrough
                     case ID:
                         String value = getAttrValue(tree);
+                        validPattern = validPattern != null ? validPattern : validId;
                         if (value == null) {
                             env.messages.error(HTML, tree, "dc.anchor.value.missing");
                         } else {
-                            if (!validName.matcher(value).matches()) {
+                            if (!validPattern.matcher(value).matches()) {
                                 env.messages.error(HTML, tree, "dc.invalid.anchor", value);
                             }
                             if (!checkAnchor(value)) {
@@ -767,6 +770,9 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     // http://www.w3.org/TR/html401/types.html#type-name
     private static final Pattern validName = Pattern.compile("[A-Za-z][A-Za-z0-9-_:.]*");
+
+    // https://html.spec.whatwg.org/#the-id-attribute
+    private static final Pattern validId = Pattern.compile("[^\s]+");
 
     private static final Pattern validNumber = Pattern.compile("-?[0-9]+");
 
