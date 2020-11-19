@@ -101,13 +101,13 @@ void JVMCIEnv::copy_saved_properties() {
 
   Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_vm_ci_services_Services(), Handle(), Handle(), true, THREAD);
   if (HAS_PENDING_EXCEPTION) {
-    JVMCIRuntime::exit_on_pending_exception(NULL, "Error initializing jdk.vm.ci.services.Services");
+    JVMCIRuntime::fatal_exception(NULL, "Error initializing jdk.vm.ci.services.Services");
   }
   InstanceKlass* ik = InstanceKlass::cast(k);
   if (ik->should_be_initialized()) {
     ik->initialize(THREAD);
     if (HAS_PENDING_EXCEPTION) {
-      JVMCIRuntime::exit_on_pending_exception(NULL, "Error initializing jdk.vm.ci.services.Services");
+      JVMCIRuntime::fatal_exception(NULL, "Error initializing jdk.vm.ci.services.Services");
     }
   }
 
@@ -117,7 +117,7 @@ void JVMCIEnv::copy_saved_properties() {
   JavaCallArguments args;
   JavaCalls::call_static(&result, ik, serializeSavedProperties, vmSymbols::serializePropertiesToByteArray_signature(), &args, THREAD);
   if (HAS_PENDING_EXCEPTION) {
-    JVMCIRuntime::exit_on_pending_exception(NULL, "Error calling jdk.vm.ci.services.Services.serializeSavedProperties");
+    JVMCIRuntime::fatal_exception(NULL, "Error calling jdk.vm.ci.services.Services.serializeSavedProperties");
   }
   oop res = (oop) result.get_jobject();
   assert(res->is_typeArray(), "must be");
@@ -219,7 +219,7 @@ void JVMCIEnv::init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env) {
   if (result != JNI_OK) {
     char message[256];
     jio_snprintf(message, 256, "Uncaught exception pushing local frame for JVMCIEnv scope entered at %s:%d", _file, _line);
-    JVMCIRuntime::exit_on_pending_exception(this, message);
+    JVMCIRuntime::fatal_exception(this, message);
   }
   _pop_frame_on_close = true;
 }
@@ -288,7 +288,7 @@ void JVMCIEnv::translate_hotspot_exception_to_jni_exception(JavaThread* THREAD, 
                           vmSymbols::encodeThrowable_name(),
                           vmSymbols::encodeThrowable_signature(), &jargs, THREAD);
   if (HAS_PENDING_EXCEPTION) {
-    JVMCIRuntime::exit_on_pending_exception(this, "HotSpotJVMCIRuntime.encodeThrowable should not throw an exception");
+    JVMCIRuntime::fatal_exception(this, "HotSpotJVMCIRuntime.encodeThrowable should not throw an exception");
   }
 
   oop encoded_throwable_string = (oop) result.get_jobject();
@@ -329,7 +329,7 @@ JVMCIEnv::~JVMCIEnv() {
     if (has_pending_exception()) {
       char message[256];
       jio_snprintf(message, 256, "Uncaught exception exiting JVMCIEnv scope entered at %s:%d", _file, _line);
-      JVMCIRuntime::exit_on_pending_exception(this, message);
+      JVMCIRuntime::fatal_exception(this, message);
     }
 
     if (_detach_on_close) {

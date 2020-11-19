@@ -29,6 +29,7 @@
 #include "oops/markWord.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/handles.hpp"
+#include "runtime/os.hpp"
 #include "runtime/perfData.hpp"
 
 class LogStream;
@@ -113,6 +114,9 @@ class ObjectSynchronizer : AllStatic {
   // JNI detach support
   static void release_monitors_owned_by_thread(TRAPS);
   static void monitors_iterate(MonitorClosure* m);
+
+  // Initialize the gInflationLocks
+  static void initialize();
 
   // GC: we current use aggressive monitor deflation policy
   // Basically we try to deflate all monitors that are not busy.

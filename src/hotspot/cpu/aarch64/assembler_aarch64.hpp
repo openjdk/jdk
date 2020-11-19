@@ -1949,7 +1949,7 @@ public:
     starti;
     f(op31, 31, 29);
     f(0b11110, 28, 24);
-    f(type, 23, 22), f(1, 21), f(opcode, 15, 12), f(0b10, 11, 10);
+    f(type, 23, 22), f(1, 21), f(opcode, 15, 10);
     rf(Vm, 16), rf(Vn, 5), rf(Vd, 0);
   }
 
@@ -1958,21 +1958,23 @@ public:
     data_processing(op31, type, opcode, Vd, Vn, Vm);    \
   }
 
-  INSN(fmuls, 0b000, 0b00, 0b0000);
-  INSN(fdivs, 0b000, 0b00, 0b0001);
-  INSN(fadds, 0b000, 0b00, 0b0010);
-  INSN(fsubs, 0b000, 0b00, 0b0011);
-  INSN(fmaxs, 0b000, 0b00, 0b0100);
-  INSN(fmins, 0b000, 0b00, 0b0101);
-  INSN(fnmuls, 0b000, 0b00, 0b1000);
+  INSN(fabds,  0b011, 0b10, 0b110101);
+  INSN(fmuls,  0b000, 0b00, 0b000010);
+  INSN(fdivs,  0b000, 0b00, 0b000110);
+  INSN(fadds,  0b000, 0b00, 0b001010);
+  INSN(fsubs,  0b000, 0b00, 0b001110);
+  INSN(fmaxs,  0b000, 0b00, 0b010010);
+  INSN(fmins,  0b000, 0b00, 0b010110);
+  INSN(fnmuls, 0b000, 0b00, 0b100010);
 
-  INSN(fmuld, 0b000, 0b01, 0b0000);
-  INSN(fdivd, 0b000, 0b01, 0b0001);
-  INSN(faddd, 0b000, 0b01, 0b0010);
-  INSN(fsubd, 0b000, 0b01, 0b0011);
-  INSN(fmaxd, 0b000, 0b01, 0b0100);
-  INSN(fmind, 0b000, 0b01, 0b0101);
-  INSN(fnmuld, 0b000, 0b01, 0b1000);
+  INSN(fabdd,  0b011, 0b11, 0b110101);
+  INSN(fmuld,  0b000, 0b01, 0b000010);
+  INSN(fdivd,  0b000, 0b01, 0b000110);
+  INSN(faddd,  0b000, 0b01, 0b001010);
+  INSN(fsubd,  0b000, 0b01, 0b001110);
+  INSN(fmaxd,  0b000, 0b01, 0b010010);
+  INSN(fmind,  0b000, 0b01, 0b010110);
+  INSN(fnmuld, 0b000, 0b01, 0b100010);
 
 #undef INSN
 
@@ -2482,6 +2484,7 @@ public:
     f(T==T2D ? 1:0, 22); f(1, 21), rf(Vm, 16), f(op3, 15, 10), rf(Vn, 5), rf(Vd, 0);    \
   }
 
+  INSN(fabd, 1, 1, 0b110101);
   INSN(fadd, 0, 0, 0b110101);
   INSN(fdiv, 1, 0, 0b111111);
   INSN(fmul, 1, 0, 0b110111);
@@ -2689,7 +2692,7 @@ public:
   INSN(sshr, 0, 0b000001, /* isSHR = */ true);
   INSN(ushr, 1, 0b000001, /* isSHR = */ true);
   INSN(usra, 1, 0b000101, /* isSHR = */ true);
-  INSN(ssra, 0, 0b000101, /* isSHAR =*/ true);
+  INSN(ssra, 0, 0b000101, /* isSHR = */ true);
 
 #undef INSN
 

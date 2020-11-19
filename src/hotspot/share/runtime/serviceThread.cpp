@@ -41,6 +41,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "prims/jvmtiImpl.hpp"
+#include "prims/jvmtiTagMap.hpp"
 #include "prims/resolvedMethodTable.hpp"
 #include "services/diagnosticArgument.hpp"
 #include "services/diagnosticFramework.hpp"
@@ -146,6 +147,7 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
     JvmtiDeferredEvent jvmti_event;
     bool oop_handles_to_release = false;
     bool cldg_cleanup_work = false;
+    bool jvmti_tagmap_work = false;
     {
       // Need state transition ThreadBlockInVM so that this thread
       // will be handled by safepoint correctly when this thread is
@@ -173,7 +175,8 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
               (protection_domain_table_work = SystemDictionary::pd_cache_table()->has_work()) |
               (oopstorage_work = OopStorage::has_cleanup_work_and_reset()) |
               (oop_handles_to_release = (_oop_handle_list != NULL)) |
-              (cldg_cleanup_work = ClassLoaderDataGraph::should_clean_metaspaces_and_reset())
+              (cldg_cleanup_work = ClassLoaderDataGraph::should_clean_metaspaces_and_reset()) |
+              (jvmti_tagmap_work = JvmtiTagMap::has_object_free_events_and_reset())
              ) == 0) {
         // Wait until notified that there is some work to do.
         ml.wait();
@@ -235,6 +238,10 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
 
     if (cldg_cleanup_work) {
       ClassLoaderDataGraph::safepoint_and_clean_metaspaces();
+    }
+
+    if (jvmti_tagmap_work) {
+      JvmtiTagMap::flush_all_object_free_events();
     }
   }
 }

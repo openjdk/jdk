@@ -32,6 +32,8 @@ import javax.naming.directory.InitialDirContext;
  *          Unreachable packet is received, we fail quickly and don't wait for
  *          the full timeout interval. This could be caused, for example, by a
  *          dead DNS server or a flakey router.
+ *          On AIX, no ICMP Destination Unreachable is received, so skip test.
+ * @requires os.family != "aix"
  * @library ../lib/
  * @modules java.base/sun.security.util
  * @run main/othervm -Djdk.net.usePlainDatagramSocketImpl=false PortUnreachable

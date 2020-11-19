@@ -29,6 +29,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/thread.hpp"
@@ -37,22 +38,14 @@
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
 
+#include <signal.h>
+
 // Various signal related mechanism are laid out in the following order:
 //
 // sun.misc.Signal
 // signal chaining
 // signal handling (except suspend/resume)
 // suspend/resume
-
-// glibc on Bsd platform uses non-documented flag
-// to indicate, that some special sort of signal
-// trampoline is used.
-// We will never set this flag, and we should
-// ignore this flag in our diagnostic
-#ifdef SIGNIFICANT_SIGNAL_MASK
-  #undef SIGNIFICANT_SIGNAL_MASK
-#endif
-#define SIGNIFICANT_SIGNAL_MASK (~0x04000000)
 
 // Todo: provide a os::get_max_process_id() or similar. Number of processes
 // may have been configured, can be read more accurately from proc fs etc.
@@ -90,6 +83,10 @@ int sigflags[NSIG];
 #else
   static PosixSemaphore sr_semaphore;
 #endif
+
+// Signal number used to suspend/resume a thread
+// do not use any signal number less than SIGSEGV, see 4355769
+int PosixSignals::SR_signum = SIGUSR2;
 
 // sun.misc.Signal support
 static Semaphore* sig_semaphore = NULL;
@@ -263,7 +260,7 @@ static const char* get_signal_name(int sig, char* out, size_t outlen);
 ////////////////////////////////////////////////////////////////////////////////
 // sun.misc.Signal support
 
-void PosixSignals::jdk_misc_signal_init() {
+void jdk_misc_signal_init() {
   // Initialize signal structures
   ::memset((void*)pending_signals, 0, sizeof(pending_signals));
 
@@ -574,7 +571,7 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
       if (S390_ONLY(sig == SIGILL || sig == SIGFPE) NOT_S390(false)) {
         pc = (address)info->si_addr;
       } else {
-        pc = PosixSignals::ucontext_get_pc(uc);
+        pc = os::Posix::ucontext_get_pc(uc);
       }
     }
 #if defined(ZERO) && !defined(PRODUCT)
@@ -737,9 +734,6 @@ static void check_signal_handler(int sig) {
 
   os_sigaction(sig, (struct sigaction*)NULL, &act);
 
-
-  act.sa_flags &= SIGNIFICANT_SIGNAL_MASK;
-
   address thisHandler = (act.sa_flags & SA_SIGINFO)
     ? CAST_FROM_FN_PTR(address, act.sa_sigaction)
     : CAST_FROM_FN_PTR(address, act.sa_handler);
@@ -763,7 +757,7 @@ static void check_signal_handler(int sig) {
     break;
 
   default:
-    if (sig == SR_signum) {
+    if (sig == PosixSignals::SR_signum) {
       jvmHandler = CAST_FROM_FN_PTR(address, (sa_sigaction_t)SR_handler);
     } else {
       return;
@@ -864,7 +858,7 @@ void os::run_periodic_checks() {
     do_signal_check(BREAK_SIGNAL);
   }
 
-  do_signal_check(SR_signum);
+  do_signal_check(PosixSignals::SR_signum);
 }
 
 // Helper function for PosixSignals::print_siginfo_...():
@@ -1217,8 +1211,7 @@ void set_signal_handler(int sig) {
 
 // install signal handlers for signals that HotSpot needs to
 // handle in order to support Java-level exception handling.
-void PosixSignals::install_signal_handlers() {
-
+void install_signal_handlers() {
   // signal-chaining
   typedef void (*signal_setting_t)();
   signal_setting_t begin_signal_setting = NULL;
@@ -1317,9 +1310,6 @@ void PosixSignals::print_signal_handler(outputStream* st, int sig,
   struct sigaction sa;
   sigaction(sig, NULL, &sa);
 
-  // See comment for SIGNIFICANT_SIGNAL_MASK define
-  sa.sa_flags &= SIGNIFICANT_SIGNAL_MASK;
-
   st->print("%s: ", os::exception_name(sig, buf, buflen));
 
   address handler = (sa.sa_flags & SA_SIGINFO)
@@ -1341,7 +1331,7 @@ void PosixSignals::print_signal_handler(outputStream* st, int sig,
   // May be, handler was resetted by VMError?
   if (rh != NULL) {
     handler = rh;
-    sa.sa_flags = VMError::get_resetted_sigflags(sig) & SIGNIFICANT_SIGNAL_MASK;
+    sa.sa_flags = VMError::get_resetted_sigflags(sig);
   }
 
   // Print textual representation of sa_flags.
@@ -1362,6 +1352,29 @@ void PosixSignals::print_signal_handler(outputStream* st, int sig,
   st->cr();
 }
 
+void os::print_signal_handlers(outputStream* st, char* buf, size_t buflen) {
+  st->print_cr("Signal Handlers:");
+  PosixSignals::print_signal_handler(st, SIGSEGV, buf, buflen);
+  PosixSignals::print_signal_handler(st, SIGBUS , buf, buflen);
+  PosixSignals::print_signal_handler(st, SIGFPE , buf, buflen);
+  PosixSignals::print_signal_handler(st, SIGPIPE, buf, buflen);
+  PosixSignals::print_signal_handler(st, SIGXFSZ, buf, buflen);
+  PosixSignals::print_signal_handler(st, SIGILL , buf, buflen);
+  PosixSignals::print_signal_handler(st, PosixSignals::SR_signum, buf, buflen);
+  PosixSignals::print_signal_handler(st, SHUTDOWN1_SIGNAL, buf, buflen);
+  PosixSignals::print_signal_handler(st, SHUTDOWN2_SIGNAL , buf, buflen);
+  PosixSignals::print_signal_handler(st, SHUTDOWN3_SIGNAL , buf, buflen);
+  PosixSignals::print_signal_handler(st, BREAK_SIGNAL, buf, buflen);
+#if defined(SIGDANGER)
+  // We also want to know if someone else adds a SIGDANGER handler because
+  // that will interfere with OOM killling.
+  PosixSignals::print_signal_handler(st, SIGDANGER, buf, buflen);
+#endif
+#if defined(SIGTRAP)
+  PosixSignals::print_signal_handler(st, SIGTRAP, buf, buflen);
+#endif
+}
+
 bool PosixSignals::is_sig_ignored(int sig) {
   struct sigaction oact;
   sigaction(sig, (struct sigaction*)NULL, &oact);
@@ -1374,31 +1387,7 @@ bool PosixSignals::is_sig_ignored(int sig) {
   }
 }
 
-address PosixSignals::ucontext_get_pc(const ucontext_t* ctx) {
-#if defined(AIX)
-   return os::Aix::ucontext_get_pc(ctx);
-#elif defined(BSD)
-   return os::Bsd::ucontext_get_pc(ctx);
-#elif defined(LINUX)
-   return os::Linux::ucontext_get_pc(ctx);
-#else
-   VMError::report_and_die("unimplemented ucontext_get_pc");
-#endif
-}
-
-void PosixSignals::ucontext_set_pc(ucontext_t* ctx, address pc) {
-#if defined(AIX)
-   os::Aix::ucontext_set_pc(ctx, pc);
-#elif defined(BSD)
-   os::Bsd::ucontext_set_pc(ctx, pc);
-#elif defined(LINUX)
-   os::Linux::ucontext_set_pc(ctx, pc);
-#else
-   VMError::report_and_die("unimplemented ucontext_set_pc");
-#endif
-}
-
-void PosixSignals::signal_sets_init() {
+static void signal_sets_init() {
   sigemptyset(&preinstalled_sigs);
 
   // Should also have an assertion stating we are still single-threaded.
@@ -1422,7 +1411,7 @@ void PosixSignals::signal_sets_init() {
   sigaddset(&unblocked_sigs, SIGBUS);
   sigaddset(&unblocked_sigs, SIGFPE);
   PPC64_ONLY(sigaddset(&unblocked_sigs, SIGTRAP);)
-  sigaddset(&unblocked_sigs, SR_signum);
+  sigaddset(&unblocked_sigs, PosixSignals::SR_signum);
 
   if (!ReduceSignalUsage) {
     if (!PosixSignals::is_sig_ignored(SHUTDOWN1_SIGNAL)) {
@@ -1572,7 +1561,7 @@ static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context) {
 
       // get current set of blocked signals and unblock resume signal
       pthread_sigmask(SIG_BLOCK, NULL, &suspend_set);
-      sigdelset(&suspend_set, SR_signum);
+      sigdelset(&suspend_set, PosixSignals::SR_signum);
 
       sr_semaphore.signal();
 
@@ -1608,7 +1597,7 @@ static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context) {
   errno = old_errno;
 }
 
-int PosixSignals::SR_initialize() {
+int SR_initialize() {
   struct sigaction act;
   char *s;
   // Get signal number to use for suspend/resume
@@ -1616,18 +1605,18 @@ int PosixSignals::SR_initialize() {
     int sig = ::strtol(s, 0, 10);
     if (sig > MAX2(SIGSEGV, SIGBUS) &&  // See 4355769.
         sig < NSIG) {                   // Must be legal signal and fit into sigflags[].
-      SR_signum = sig;
+      PosixSignals::SR_signum = sig;
     } else {
       warning("You set _JAVA_SR_SIGNUM=%d. It must be in range [%d, %d]. Using %d instead.",
-              sig, MAX2(SIGSEGV, SIGBUS)+1, NSIG-1, SR_signum);
+              sig, MAX2(SIGSEGV, SIGBUS)+1, NSIG-1, PosixSignals::SR_signum);
     }
   }
 
-  assert(SR_signum > SIGSEGV && SR_signum > SIGBUS,
+  assert(PosixSignals::SR_signum > SIGSEGV && PosixSignals::SR_signum > SIGBUS,
          "SR_signum must be greater than max(SIGSEGV, SIGBUS), see 4355769");
 
   sigemptyset(&SR_sigset);
-  sigaddset(&SR_sigset, SR_signum);
+  sigaddset(&SR_sigset, PosixSignals::SR_signum);
 
   // Set up signal handler for suspend/resume
   act.sa_flags = SA_RESTART|SA_SIGINFO;
@@ -1637,17 +1626,17 @@ int PosixSignals::SR_initialize() {
   pthread_sigmask(SIG_BLOCK, NULL, &act.sa_mask);
   remove_error_signals_from_set(&(act.sa_mask));
 
-  if (sigaction(SR_signum, &act, 0) == -1) {
+  if (sigaction(PosixSignals::SR_signum, &act, 0) == -1) {
     return -1;
   }
 
   // Save signal flag
-  set_our_sigflags(SR_signum, act.sa_flags);
+  set_our_sigflags(PosixSignals::SR_signum, act.sa_flags);
   return 0;
 }
 
 static int sr_notify(OSThread* osthread) {
-  int status = pthread_kill(osthread->pthread_id(), SR_signum);
+  int status = pthread_kill(osthread->pthread_id(), PosixSignals::SR_signum);
   assert_status(status == 0, status, "pthread_kill");
   return status;
 }
@@ -1716,4 +1705,31 @@ void PosixSignals::do_resume(OSThread* osthread) {
   }
 
   guarantee(osthread->sr.is_running(), "Must be running!");
+}
+
+void os::SuspendedThreadTask::internal_do_task() {
+  if (PosixSignals::do_suspend(_thread->osthread())) {
+    os::SuspendedThreadTaskContext context(_thread, _thread->osthread()->ucontext());
+    do_task(context);
+    PosixSignals::do_resume(_thread->osthread());
+  }
+}
+
+int PosixSignals::init() {
+  // initialize suspend/resume support - must do this before signal_sets_init()
+  if (SR_initialize() != 0) {
+    vm_exit_during_initialization("SR_initialize failed");
+    return JNI_ERR;
+  }
+
+  signal_sets_init();
+
+  install_signal_handlers();
+
+  // Initialize data for jdk.internal.misc.Signal
+  if (!ReduceSignalUsage) {
+    jdk_misc_signal_init();
+  }
+
+  return JNI_OK;
 }

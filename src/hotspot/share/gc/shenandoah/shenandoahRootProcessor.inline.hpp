@@ -198,9 +198,6 @@ void ShenandoahRootUpdater::roots_do(uint worker_id, IsAlive* is_alive, KeepAliv
 
   CLDToOopClosure clds(keep_alive, ClassLoaderData::_claim_strong);
 
-  // Process serial-claiming roots first
-  _serial_weak_roots.weak_oops_do(is_alive, keep_alive, worker_id);
-
   // Process light-weight/limited parallel roots then
   _vm_roots.oops_do(keep_alive, worker_id);
   _weak_roots.weak_oops_do<IsAlive, KeepAlive>(is_alive, keep_alive, worker_id);
