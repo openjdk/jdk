@@ -545,11 +545,9 @@ void trace_method_handle_stub(const char* adaptername,
       // Current C frame
       frame cur_frame = os::current_frame();
 
-      bool walkable = has_mh && cur_frame.fp() != 0; // whether the traced frame should be walkable
+      if (cur_frame.fp() != 0) {  // not walkable
 
-      if (walkable) {
-
-        // Robust search of trace_calling_frame (independant of inlining).
+        // Robust search of trace_calling_frame (independent of inlining).
         // Assumes saved_regs comes from a pusha in the trace_calling_frame.
         assert(cur_frame.sp() < saved_regs, "registers not saved on stack ?");
         frame trace_calling_frame = os::get_sender_for_C_frame(&cur_frame);
@@ -561,14 +559,21 @@ void trace_method_handle_stub(const char* adaptername,
         intptr_t *dump_sp = trace_calling_frame.sender_sp();
         intptr_t *dump_fp = trace_calling_frame.link();
 
-        // The previous definition of walkable may have to be refined
-        // if new call sites cause the next frame constructor to start
-        // failing. Alternatively, frame constructors could be
-        // modified to support the current or future non walkable
-        // frames (but this is more intrusive and is not considered as
-        // part of this RFE, which will instead use a simpler output).
-        frame dump_frame = frame(dump_sp, dump_fp);
-        dump_frame.describe(values, 1);
+        if (has_mh) {
+          // The previous definition of walkable may have to be refined
+          // if new call sites cause the next frame constructor to start
+          // failing. Alternatively, frame constructors could be
+          // modified to support the current or future non walkable
+          // frames (but this is more intrusive and is not considered as
+          // part of this RFE, which will instead use a simpler output).
+          frame dump_frame = frame(dump_sp, dump_fp);
+          dump_frame.describe(values, 1);
+        } else {
+          // Stack may not be walkable (invalid PC above FP):
+          // Add descriptions without building a Java frame to avoid issues
+          values.describe(-1, dump_fp, "fp for #1 <not parsed, cannot trust pc>");
+          values.describe(-1, dump_sp, "sp for #1");
+        }
       }
       values.describe(-1, entry_sp, "raw top of stack");
 
