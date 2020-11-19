@@ -6717,7 +6717,6 @@ address generate_avx_ghash_processBlocks() {
     StubRoutines::_fence_entry                = generate_orderaccess_fence();
 
     // platform dependent
-    StubRoutines::x86::_get_previous_fp_entry = generate_get_previous_fp();
     StubRoutines::x86::_get_previous_sp_entry = generate_get_previous_sp();
 
     StubRoutines::x86::_verify_mxcsr_entry    = generate_verify_mxcsr();
