@@ -580,7 +580,7 @@ public abstract class InputStream implements Closeable {
      * invokes {@link #skip(long) skip()} repeatedly until the requested number
      * of bytes has been skipped or an error condition occurs.  If at any
      * point the return value of {@code skip()} is negative or greater than the
-     * remaining number of bytes to be skipped, then an {@code IOException} is 
+     * remaining number of bytes to be skipped, then an {@code IOException} is
      * thrown.  If {@code skip()} ever returns zero, then {@link #read()} is
      * invoked to read a single byte, and if it returns {@code -1}, then an
      * {@code EOFException} is thrown.  Any exception thrown by {@code skip()}
