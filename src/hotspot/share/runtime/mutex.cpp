@@ -218,7 +218,7 @@ bool Monitor::wait_without_safepoint_check(int64_t timeout) {
 bool Monitor::wait(int64_t timeout, bool as_suspend_equivalent) {
   JavaThread* const self = JavaThread::current();
   // Safepoint checking logically implies an active JavaThread.
-  guarantee(self->is_active_Java_thread(), "invariant");
+  assert(self->is_active_Java_thread(), "invariant");
 
   // timeout is in milliseconds - with zero meaning never timeout
   assert(timeout >= 0, "negative timeout");
