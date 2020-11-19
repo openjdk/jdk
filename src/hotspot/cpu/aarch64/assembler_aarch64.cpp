@@ -337,18 +337,18 @@ void entry(CodeBuffer *cb) {
 
 // pre
 // LoadStoreOp
-    __ str(r11, Address(__ pre(r0, 8)));               //       str     x11, [x0, 8]!
+    __ str(r10, Address(__ pre(r0, 8)));               //       str     x10, [x0, 8]!
     __ strw(r3, Address(__ pre(r0, 29)));              //       str     w3, [x0, 29]!
-    __ strb(r11, Address(__ pre(r14, 9)));             //       strb    w11, [x14, 9]!
-    __ strh(r29, Address(__ pre(r24, -3)));            //       strh    w29, [x24, -3]!
-    __ ldr(r13, Address(__ pre(r17, -144)));           //       ldr     x13, [x17, -144]!
+    __ strb(r10, Address(__ pre(r14, 9)));             //       strb    w10, [x14, 9]!
+    __ strh(r29, Address(__ pre(r25, -3)));            //       strh    w29, [x25, -3]!
+    __ ldr(r12, Address(__ pre(r16, -144)));           //       ldr     x12, [x16, -144]!
     __ ldrw(r12, Address(__ pre(r22, -6)));            //       ldr     w12, [x22, -6]!
-    __ ldrb(r13, Address(__ pre(r12, -10)));           //       ldrb    w13, [x12, -10]!
+    __ ldrb(r13, Address(__ pre(r11, -10)));           //       ldrb    w13, [x11, -10]!
     __ ldrh(r0, Address(__ pre(r21, -21)));            //       ldrh    w0, [x21, -21]!
-    __ ldrsb(r23, Address(__ pre(r7, 4)));             //       ldrsb   x23, [x7, 4]!
+    __ ldrsb(r23, Address(__ pre(r6, 4)));             //       ldrsb   x23, [x6, 4]!
     __ ldrsh(r3, Address(__ pre(r7, -53)));            //       ldrsh   x3, [x7, -53]!
-    __ ldrshw(r28, Address(__ pre(r5, -7)));           //       ldrsh   w28, [x5, -7]!
-    __ ldrsw(r24, Address(__ pre(r9, -18)));           //       ldrsw   x24, [x9, -18]!
+    __ ldrshw(r28, Address(__ pre(r4, -7)));           //       ldrsh   w28, [x4, -7]!
+    __ ldrsw(r24, Address(__ pre(r8, -18)));           //       ldrsw   x24, [x8, -18]!
     __ ldrd(v14, Address(__ pre(r11, 12)));            //       ldr     d14, [x11, 12]!
     __ ldrs(v19, Address(__ pre(r12, -67)));           //       ldr     s19, [x12, -67]!
     __ strd(v20, Address(__ pre(r0, -253)));           //       str     d20, [x0, -253]!
@@ -356,13 +356,13 @@ void entry(CodeBuffer *cb) {
 
 // post
 // LoadStoreOp
-    __ str(r4, Address(__ post(r28, -94)));            //       str     x4, [x28], -94
-    __ strw(r12, Address(__ post(r7, -54)));           //       str     w12, [x7], -54
+    __ str(r3, Address(__ post(r28, -94)));            //       str     x3, [x28], -94
+    __ strw(r11, Address(__ post(r7, -54)));           //       str     w11, [x7], -54
     __ strb(r27, Address(__ post(r10, -24)));          //       strb    w27, [x10], -24
-    __ strh(r6, Address(__ post(r8, 27)));             //       strh    w6, [x8], 27
-    __ ldr(r14, Address(__ post(r10, -202)));          //       ldr     x14, [x10], -202
-    __ ldrw(r16, Address(__ post(r5, -41)));           //       ldr     w16, [x5], -41
-    __ ldrb(r2, Address(__ post(r14, 9)));             //       ldrb    w2, [x14], 9
+    __ strh(r6, Address(__ post(r7, 27)));             //       strh    w6, [x7], 27
+    __ ldr(r13, Address(__ post(r10, -202)));          //       ldr     x13, [x10], -202
+    __ ldrw(r15, Address(__ post(r5, -41)));           //       ldr     w15, [x5], -41
+    __ ldrb(r2, Address(__ post(r13, 9)));             //       ldrb    w2, [x13], 9
     __ ldrh(r28, Address(__ post(r13, -20)));          //       ldrh    w28, [x13], -20
     __ ldrsb(r9, Address(__ post(r13, -31)));          //       ldrsb   x9, [x13], -31
     __ ldrsh(r3, Address(__ post(r24, -36)));          //       ldrsh   x3, [x24], -36
@@ -566,22 +566,22 @@ void entry(CodeBuffer *cb) {
 // LoadStorePairOp
     __ stpw(r20, r6, Address(r15, -32));               //       stp     w20, w6, [x15, #-32]
     __ ldpw(r27, r14, Address(r3, -208));              //       ldp     w27, w14, [x3, #-208]
-    __ ldpsw(r17, r10, Address(r11, -80));             //       ldpsw   x17, x10, [x11, #-80]
+    __ ldpsw(r16, r10, Address(r11, -80));             //       ldpsw   x16, x10, [x11, #-80]
     __ stp(r7, r7, Address(r14, 64));                  //       stp     x7, x7, [x14, #64]
     __ ldp(r12, r23, Address(r0, 112));                //       ldp     x12, x23, [x0, #112]
 
 // LoadStorePairOp
     __ stpw(r13, r7, Address(__ pre(r6, -80)));        //       stp     w13, w7, [x6, #-80]!
-    __ ldpw(r30, r16, Address(__ pre(r2, -144)));      //       ldp     w30, w16, [x2, #-144]!
-    __ ldpsw(r4, r1, Address(__ pre(r26, -144)));      //       ldpsw   x4, x1, [x26, #-144]!
+    __ ldpw(r30, r15, Address(__ pre(r2, -144)));      //       ldp     w30, w15, [x2, #-144]!
+    __ ldpsw(r4, r1, Address(__ pre(r27, -144)));      //       ldpsw   x4, x1, [x27, #-144]!
     __ stp(r23, r14, Address(__ pre(r11, 64)));        //       stp     x23, x14, [x11, #64]!
     __ ldp(r29, r27, Address(__ pre(r21, -192)));      //       ldp     x29, x27, [x21, #-192]!
 
 // LoadStorePairOp
     __ stpw(r22, r5, Address(__ post(r21, -48)));      //       stp     w22, w5, [x21], #-48
     __ ldpw(r27, r17, Address(__ post(r6, -32)));      //       ldp     w27, w17, [x6], #-32
-    __ ldpsw(r17, r6, Address(__ post(r1, -80)));      //       ldpsw   x17, x6, [x1], #-80
-    __ stp(r13, r20, Address(__ post(r21, -208)));     //       stp     x13, x20, [x21], #-208
+    __ ldpsw(r16, r5, Address(__ post(r1, -80)));      //       ldpsw   x16, x5, [x1], #-80
+    __ stp(r13, r20, Address(__ post(r22, -208)));     //       stp     x13, x20, [x22], #-208
     __ ldp(r30, r27, Address(__ post(r10, 80)));       //       ldp     x30, x27, [x10], #80
 
 // LoadStorePairOp
@@ -1049,12 +1049,12 @@ void entry(CodeBuffer *cb) {
     0x781ce322,     0xf850f044,     0xb85e129e,     0x385e92f1,
     0x785ff35d,     0x39801921,     0x7881318b,     0x78dce02b,
     0xb8829313,     0xfc45f318,     0xbc5d50af,     0xfc001375,
-    0xbc1951b7,     0xf8008c0b,     0xb801dc03,     0x38009dcb,
-    0x781fdf1d,     0xf8570e2d,     0xb85faecc,     0x385f6d8d,
-    0x785ebea0,     0x38804cf7,     0x789cbce3,     0x78df9cbc,
-    0xb89eed38,     0xfc40cd6e,     0xbc5bdd93,     0xfc103c14,
-    0xbc040c08,     0xf81a2784,     0xb81ca4ec,     0x381e855b,
-    0x7801b506,     0xf853654e,     0xb85d74b0,     0x384095c2,
+    0xbc1951b7,     0xf8008c0a,     0xb801dc03,     0x38009dca,
+    0x781fdf3d,     0xf8570e0c,     0xb85faecc,     0x385f6d6d,
+    0x785ebea0,     0x38804cd7,     0x789cbce3,     0x78df9c9c,
+    0xb89eed18,     0xfc40cd6e,     0xbc5bdd93,     0xfc103c14,
+    0xbc040c08,     0xf81a2783,     0xb81ca4eb,     0x381e855b,
+    0x7801b4e6,     0xf853654d,     0xb85d74af,     0x384095a2,
     0x785ec5bc,     0x389e15a9,     0x789dc703,     0x78c06474,
     0xb89ff667,     0xfc57e51e,     0xbc4155f9,     0xfc05a6ee,
     0xbc1df408,     0xf835da2a,     0xb836d9a4,     0x3833580d,
@@ -1094,10 +1094,10 @@ void entry(CodeBuffer *cb) {
     0x1e22017c,     0x9e2201b9,     0x1e6202eb,     0x9e620113,
     0x1e2602b1,     0x9e660299,     0x1e270233,     0x9e6703a2,
     0x1e2822c0,     0x1e7322a0,     0x1e202288,     0x1e602168,
-    0x293c19f4,     0x2966387b,     0x69762971,     0xa9041dc7,
-    0xa9475c0c,     0x29b61ccd,     0x29ee405e,     0x69ee0744,
+    0x293c19f4,     0x2966387b,     0x69762970,     0xa9041dc7,
+    0xa9475c0c,     0x29b61ccd,     0x29ee3c5e,     0x69ee0764,
     0xa9843977,     0xa9f46ebd,     0x28ba16b6,     0x28fc44db,
-    0x68f61831,     0xa8b352ad,     0xa8c56d5e,     0x28024565,
+    0x68f61430,     0xa8b352cd,     0xa8c56d5e,     0x28024565,
     0x2874134e,     0xa8027597,     0xa87b1aa0,     0x0c40734f,
     0x4cdfa177,     0x0cc76ee8,     0x4cdf2733,     0x0d40c23d,
     0x4ddfcaf8,     0x0dd9ccaa,     0x4c408d51,     0x0cdf85ec,
