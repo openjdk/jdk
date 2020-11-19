@@ -31,6 +31,11 @@ import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.JPackageCommand;
 
 /**
+ * Test creation of packages in tho phases with different names.
+ * The first phase creates and app image, and the second phase uses that image.
+ * If the first phase has no --name, it will derive name from main-class.
+ * If the second phase has no --name, will derive it from the app-image content.
+ * The resulting name may differ, and all should still work
  */
 
 /*

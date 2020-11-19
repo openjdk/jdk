@@ -210,7 +210,9 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     public String name() {
         String appImage = getArgumentValue("--app-image", () -> null);
         if (appImage != null) {
-            return AppImageFile.extractAppName(Path.of(appImage));
+            String name =  AppImageFile.extractAppName(Path.of(appImage));
+            // can be null if using foreign app-image
+            return ((name != null) ? name : getArgumentValue("--name"));
         }
         return getArgumentValue("--name", () -> getArgumentValue("--main-class"));
     }

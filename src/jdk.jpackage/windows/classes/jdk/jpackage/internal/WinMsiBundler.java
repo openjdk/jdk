@@ -309,7 +309,7 @@ public class WinMsiBundler  extends AbstractBundler {
         String appName = APP_NAME.fetchFrom(params);
         Path appDir;
         if (appName == null) {
-            // this can only happen when no name is given and using forign app-image
+            // Can happen when no name is given, and using a foreign app-image
             throw new PackagerException("error.no.name");
         }
 
