@@ -34,7 +34,7 @@ class ShenandoahAllocationRate : public CHeapObj<mtGC> {
   explicit ShenandoahAllocationRate();
   void allocation_counter_reset();
 
-  void sample(size_t allocated);
+  double sample(size_t allocated);
 
   double instantaneous_rate(size_t allocated) const;
   double upper_bound(double sds) const;

@@ -207,7 +207,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   available = (available > soft_tail) ? (available - soft_tail) : 0;
 
   // Track allocation rate even if we decide to start a cycle for other reasons.
-  _allocation_rate.sample(allocated);
+  double rate = _allocation_rate.sample(allocated);
   _last_trigger = OTHER;
 
   size_t min_threshold = capacity / 100 * ShenandoahMinFreeThreshold;
@@ -260,7 +260,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     return true;
   }
 
-  double instant_alloc_rate = _allocation_rate.instantaneous_rate(allocated);
+  double instant_alloc_rate = (rate != 0.0) ? rate : _allocation_rate.instantaneous_rate(allocated);
   bool is_spiking = _allocation_rate.is_spiking(instant_alloc_rate, _spike_threshold_sd);
   if (is_spiking && avg_cycle_time > allocation_headroom / instant_alloc_rate) {
     log_info(gc)("Trigger: Average GC time (%.2f ms) is above the time for instantaneous allocation rate (%.0f %sB/s) to deplete free headroom (" SIZE_FORMAT "%s) (spike threshold = %.2f)",
@@ -309,17 +309,20 @@ ShenandoahAllocationRate::ShenandoahAllocationRate() :
   _rate_avg(int(ShenandoahAdaptiveSampleSizeSeconds * ShenandoahAdaptiveSampleFrequencyHz), ShenandoahAdaptiveDecayFactor) {
 }
 
-void ShenandoahAllocationRate::sample(size_t allocated) {
+double ShenandoahAllocationRate::sample(size_t allocated) {
   double now = os::elapsedTime();
+  double rate = 0.0;
   if (now - _last_sample_time > _interval_sec) {
     if (allocated > _last_sample_value) {
-      _rate.add(instantaneous_rate(now, allocated));
+      rate = instantaneous_rate(now, allocated);
+      _rate.add(rate);
       _rate_avg.add(_rate.avg());
     }
 
     _last_sample_time = now;
     _last_sample_value = allocated;
   }
+  return rate;
 }
 
 double ShenandoahAllocationRate::upper_bound(double sds) const {
