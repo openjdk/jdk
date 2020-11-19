@@ -124,21 +124,31 @@ void LogTagSet::vwrite(LogLevelType level, const char* fmt, va_list args) {
     ret = os::vsnprintf(buf, sizeof(buf), fmt, args);
   }
   assert(ret >= 0, "Log message buffer issue");
-  if ((size_t)ret >= sizeof(buf)) {
-    size_t newbuf_len = prefix_len + ret + 1;
-    char* newbuf = (char*)::calloc(newbuf_len, sizeof(char));
-    if (newbuf == nullptr) {
-      tty->print_cr("Out of memory at logging, allocate " SIZE_FORMAT " bytes", newbuf_len);
-      va_end(saved_args);
-      return;
-    }
-    prefix_len = _write_prefix(newbuf, newbuf_len);
-    ret = os::vsnprintf(newbuf + prefix_len, newbuf_len - prefix_len, fmt, saved_args);
-    assert(ret >= 0, "Log message buffer issue");
-    log(level, newbuf);
-    ::free(newbuf);
-  } else {
+  size_t newbuf_len = (size_t)ret + prefix_len + 1; // total bytes needed including prefix.
+  if (newbuf_len <= sizeof(buf)) {
     log(level, buf);
+  } else {
+    // Buffer too small, allocate a large enough buffer by using of malloc/free to avoid circularity.
+    char* newbuf = (char*)::calloc(newbuf_len, sizeof(char));
+    if (newbuf != nullptr) {
+      prefix_len = _write_prefix(newbuf, newbuf_len);
+      ret = os::vsnprintf(newbuf + prefix_len, newbuf_len - prefix_len, fmt, saved_args);
+      assert(ret >= 0, "Log message buffer issue");
+      log(level, newbuf);
+      ::free(newbuf);
+    } else {
+      // native OOM, use buf to output the least message, first we fill buffer full
+      // then put trunc_msg at the end of buf
+      const char* trunc_msg = "..(truncated), native OOM";
+      const size_t ltr = strlen(trunc_msg);
+      prefix_len = _write_prefix(buf, sizeof(buf));
+      if (prefix_len < sizeof(buf)) {
+        ret = os::vsnprintf(buf + prefix_len, sizeof(buf) - prefix_len, fmt, args);
+        assert(ret >= 0, "Log message buffer issue");
+      }
+      os::snprintf(buf + sizeof(buf) - ltr - 1, ltr, "%s", trunc_msg);
+      log(level, buf);
+    }
   }
   va_end(saved_args);
 }
