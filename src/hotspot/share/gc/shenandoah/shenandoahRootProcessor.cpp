@@ -78,6 +78,9 @@ void ShenandoahStringDedupRoots::oops_do(BoolObjectClosure* is_alive, OopClosure
 
 ShenandoahConcurrentStringDedupRoots::ShenandoahConcurrentStringDedupRoots(ShenandoahPhaseTimings::Phase phase) :
   _phase(phase) {
+}
+
+void ShenandoahConcurrentStringDedupRoots::prologue() {
   if (ShenandoahStringDedup::is_enabled()) {
     StringDedupTable_lock->lock_without_safepoint_check();
     StringDedupQueue_lock->lock_without_safepoint_check();
@@ -85,7 +88,7 @@ ShenandoahConcurrentStringDedupRoots::ShenandoahConcurrentStringDedupRoots(Shena
   }
 }
 
-ShenandoahConcurrentStringDedupRoots::~ShenandoahConcurrentStringDedupRoots() {
+void ShenandoahConcurrentStringDedupRoots::epilogue() {
   if (ShenandoahStringDedup::is_enabled()) {
     StringDedup::gc_epilogue();
     StringDedupQueue_lock->unlock();
@@ -223,7 +226,12 @@ ShenandoahHeapIterationRootScanner::ShenandoahHeapIterationRootScanner() :
    _weak_roots(ShenandoahPhaseTimings::heap_iteration_roots),
    _dedup_roots(ShenandoahPhaseTimings::heap_iteration_roots),
    _code_roots(ShenandoahPhaseTimings::heap_iteration_roots) {
+   _dedup_roots.prologue();
  }
+
+ShenandoahHeapIterationRootScanner::~ShenandoahHeapIterationRootScanner() {
+  _dedup_roots.epilogue();
+}
 
  void ShenandoahHeapIterationRootScanner::roots_do(OopClosure* oops) {
    assert(Thread::current()->is_VM_thread(), "Only by VM thread");

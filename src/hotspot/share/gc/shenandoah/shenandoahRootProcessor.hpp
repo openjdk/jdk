@@ -93,7 +93,9 @@ private:
 
 public:
   ShenandoahConcurrentStringDedupRoots(ShenandoahPhaseTimings::Phase phase);
-  ~ShenandoahConcurrentStringDedupRoots();
+
+  void prologue();
+  void epilogue();
 
   void oops_do(BoolObjectClosure* is_alive, OopClosure* keep_alive, uint worker_id);
 };
@@ -191,6 +193,7 @@ private:
 
 public:
   ShenandoahHeapIterationRootScanner();
+  ~ShenandoahHeapIterationRootScanner();
 
   void roots_do(OopClosure* cl);
 };
