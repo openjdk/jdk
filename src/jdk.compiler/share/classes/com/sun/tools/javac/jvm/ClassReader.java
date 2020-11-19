@@ -2558,7 +2558,7 @@ public class ClassReader {
                     if (member.erasure_field != null)
                         ((ClassType)member.erasure_field).setEnclosingType(types.erasure(outer.type));
                 }
-                if (c == outer) {
+                if (c == outer && member.owner == c) {
                     member.flags_field = flags;
                     enterMember(c, member);
                 }

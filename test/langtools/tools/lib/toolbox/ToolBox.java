@@ -650,7 +650,7 @@ public class ToolBox {
         private static Pattern packagePattern =
                 Pattern.compile("package\\s+(((?:\\w+\\.)*)(?:\\w+))");
         private static Pattern classPattern =
-                Pattern.compile("(?:public\\s+)?(?:class|enum|interface|record)\\s+(\\w+)");
+                Pattern.compile("(?:public\\s+)?(?:class|enum|interface|record)\\s+((\\w|\\$)+)");
 
         /**
          * Extracts the Java file name from the class declaration.
