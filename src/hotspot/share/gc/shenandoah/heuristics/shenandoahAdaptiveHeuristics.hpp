@@ -101,12 +101,6 @@ public:
 
   ShenandoahAllocationRate _allocation_rate;
 
-  // Record the available heap at the start of the cycle so that we can
-  // evaluate the outcome of the cycle. This lets us 'react' to concurrent
-  // cycles that did not degenerate, but perhaps did not reclaim as much
-  // memory as we would like.
-  size_t _available_at_cycle_start;
-
   // The margin of error expressed in standard deviations to add to our
   // average cycle time and allocation rate. As this value increases we
   // tend to over estimate the rate at which mutators will deplete the
