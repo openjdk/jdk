@@ -311,8 +311,8 @@ bool Mutex::owned_by_self(Thread* thread) const {
   return _owner == thread;
 }
 
-bool Mutex::owned_by_self() const { 
-  return owned_by_self(Thread::current()); 
+bool Mutex::owned_by_self() const {
+  return owned_by_self(Thread::current());
 }
 
 void Mutex::print_on_error(outputStream* st) const {
