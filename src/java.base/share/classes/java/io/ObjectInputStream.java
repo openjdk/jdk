@@ -2322,7 +2322,9 @@ public class ObjectInputStream
         if (slots.length != 1) {
             // skip any superclass stream field values
             for (int i = 0; i < slots.length-1; i++) {
-                new FieldValues(slots[i].desc, true);
+                if (slots[i].hasData) {
+                    new FieldValues(slots[i].desc, true);
+                }
             }
         }
 
@@ -2544,7 +2546,6 @@ public class ObjectInputStream
         /** primitive field values */
         final byte[] primValues;
         /** object field values */
-
         final Object[] objValues;
         /** object field value handles */
         private final int[] objHandles;
@@ -2558,13 +2559,16 @@ public class ObjectInputStream
          */
         FieldValues(ObjectStreamClass desc, boolean recordDependencies) throws IOException {
             this.desc = desc;
-            primValues = new byte[desc.getPrimDataSize()];
-            objValues = new Object[desc.getNumObjFields()];
-            objHandles = new int[objValues.length];
 
-            bin.readFully(primValues, 0, primValues.length, false);
+            int primDataSize = desc.getPrimDataSize();
+            primValues = (primDataSize > 0) ? new byte[primDataSize] : null;
+            if (primDataSize > 0) {
+                bin.readFully(primValues, 0, primDataSize, false);
+            }
 
             int numObjFields = desc.getNumObjFields();
+            objValues = (numObjFields > 0) ? new Object[numObjFields] : null;
+            objHandles = (numObjFields > 0) ? new int[numObjFields] : null;
             if (numObjFields > 0) {
                 int objHandle = passHandle;
                 ObjectStreamField[] fields = desc.getFields(false);
