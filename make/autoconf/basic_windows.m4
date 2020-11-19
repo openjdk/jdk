@@ -132,6 +132,7 @@ AC_DEFUN([BASIC_SETUP_PATHS_WINDOWS],
   FIXPATH_DIR="$TOPDIR/make/scripts"
   FIXPATH="$BASH $FIXPATH_DIR/fixpath.sh exec"
   FIXPATH_BASE="$BASH $FIXPATH_DIR/fixpath.sh"
+  FIXPATH_SAVED_PATH="$PATH"
   UTIL_FIXUP_PATH(FIXPATH_DIR)
 
   # Now that we can, use fixed-up path to rewrite path to fixpath.sh properly
