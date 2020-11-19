@@ -594,20 +594,19 @@ public abstract class InputStream implements Closeable {
      * @see        java.io.InputStream#skip(long)
      */
     public void skipNBytes(long n) throws IOException {
-        if (n > 0) {
+        while (n > 0) {
             long ns = skip(n);
-            if (ns >= 0 && ns < n) { // skipped too few bytes
+            if (ns > 0 && ns <= n) {
                 // adjust number to skip
                 n -= ns;
-                // read until requested number skipped or EOS reached
-                while (n > 0 && read() != -1) {
-                    n--;
-                }
-                // if not enough skipped, then EOFE
-                if (n != 0) {
+            } else if (ns == 0) { // no bytes skipped
+                // read one byte to check for EOS
+                if (read() < 0) {
                     throw new EOFException();
                 }
-            } else if (ns != n) { // skipped negative or too many bytes
+                // one byte read so decrement number to skip
+                n--;
+            } else { // skipped negative or too many bytes
                 throw new IOException("Unable to skip exactly");
             }
         }
