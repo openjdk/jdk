@@ -51,7 +51,7 @@ public class TestPrintOptoAssemblyLineNumbers {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(procArgs);
         String output = new OutputAnalyzer(pb.start()).getOutput();
 
-        if(output.contains("TestPrintOptoAssemblyLineNumbers$CheckC2OptoAssembly::main @ bci:11")){ 
+        if(output.contains("TestPrintOptoAssemblyLineNumbers$CheckC2OptoAssembly::main @ bci:11")){
             // if C2 optimizer invoked ensure output includes line numbers:
             Asserts.assertTrue(output.contains("TestPrintOptoAssemblyLineNumbers$CheckC2OptoAssembly::main @ bci:11 (line 68)"));
         }
