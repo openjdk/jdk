@@ -36,6 +36,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "code/codeCache.hpp"
+#include "interpreter/abstractInterpreter.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "logging/log.hpp"
@@ -61,6 +62,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepointVerifiers.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
@@ -82,7 +84,6 @@ bool MetaspaceShared::_has_error_classes;
 bool MetaspaceShared::_archive_loading_failed = false;
 bool MetaspaceShared::_remapped_readwrite = false;
 address MetaspaceShared::_i2i_entry_code_buffers = NULL;
-size_t MetaspaceShared::_i2i_entry_code_buffers_size = 0;
 void* MetaspaceShared::_shared_metaspace_static_top = NULL;
 intx MetaspaceShared::_relocation_delta;
 char* MetaspaceShared::_requested_base_address;
@@ -339,10 +340,6 @@ void MetaspaceShared::initialize_dumptime_shared_and_meta_spaces() {
   log_info(cds)("Allocated shared space: " SIZE_FORMAT " bytes at " PTR_FORMAT,
                 _shared_rs.size(), p2i(_shared_rs.base()));
 
-  // We don't want any valid object to be at the very bottom of the archive.
-  // See ArchivePtrMarker::mark_pointer().
-  MetaspaceShared::misc_code_space_alloc(16);
-
   size_t symbol_rs_size = LP64_ONLY(3 * G) NOT_LP64(128 * M);
   _symbol_rs = ReservedSpace(symbol_rs_size);
   if (!_symbol_rs.is_reserved()) {
@@ -510,19 +507,19 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   soc->do_tag(666);
 }
 
-address MetaspaceShared::i2i_entry_code_buffers(size_t total_size) {
-  if (DumpSharedSpaces) {
-    if (_i2i_entry_code_buffers == NULL) {
-      _i2i_entry_code_buffers = (address)misc_code_space_alloc(total_size);
-      _i2i_entry_code_buffers_size = total_size;
-    }
-  } else if (UseSharedSpaces) {
-    assert(_i2i_entry_code_buffers != NULL, "must already been initialized");
-  } else {
-    return NULL;
-  }
+void MetaspaceShared::init_misc_code_space() {
+  // We don't want any valid object to be at the very bottom of the archive.
+  // See ArchivePtrMarker::mark_pointer().
+  MetaspaceShared::misc_code_space_alloc(16);
 
-  assert(_i2i_entry_code_buffers_size == total_size, "must not change");
+  size_t trampoline_size = SharedRuntime::trampoline_size();
+  size_t buf_size = (size_t)AbstractInterpreter::number_of_method_entries * trampoline_size;
+  _i2i_entry_code_buffers = (address)misc_code_space_alloc(buf_size);
+}
+
+address MetaspaceShared::i2i_entry_code_buffers() {
+  assert(DumpSharedSpaces || UseSharedSpaces, "must be");
+  assert(_i2i_entry_code_buffers != NULL, "must already been initialized");
   return _i2i_entry_code_buffers;
 }
 
@@ -733,6 +730,10 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   builder.gather_source_objs();
 
+  MetaspaceShared::init_misc_code_space();
+  builder.allocate_method_trampoline_info();
+  builder.allocate_method_trampolines();
+
   char* cloned_vtables = CppVtables::dumptime_init();
 
   {
@@ -785,8 +786,6 @@ void VM_PopulateDumpSharedSpace::doit() {
   // The vtable clones contain addresses of the current process.
   // We don't want to write these addresses into the archive. Same for i2i buffer.
   CppVtables::zero_archived_vtables();
-  memset(MetaspaceShared::i2i_entry_code_buffers(), 0,
-         MetaspaceShared::i2i_entry_code_buffers_size());
 
   // relocate the data so that it can be mapped to MetaspaceShared::requested_base_address()
   // without runtime relocation.
@@ -798,8 +797,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   mapinfo->populate_header(os::vm_allocation_granularity());
   mapinfo->set_serialized_data(serialized_data);
   mapinfo->set_cloned_vtables(cloned_vtables);
-  mapinfo->set_i2i_entry_code_buffers(MetaspaceShared::i2i_entry_code_buffers(),
-                                      MetaspaceShared::i2i_entry_code_buffers_size());
+  mapinfo->set_i2i_entry_code_buffers(MetaspaceShared::i2i_entry_code_buffers());
   mapinfo->open_for_write();
   size_t bitmap_size_in_bytes;
   char* bitmap = MetaspaceShared::write_core_archive_regions(mapinfo, _closed_archive_heap_oopmaps,
@@ -1720,7 +1718,6 @@ void MetaspaceShared::unmap_archive(FileMapInfo* mapinfo) {
 void MetaspaceShared::initialize_shared_spaces() {
   FileMapInfo *static_mapinfo = FileMapInfo::current_info();
   _i2i_entry_code_buffers = static_mapinfo->i2i_entry_code_buffers();
-  _i2i_entry_code_buffers_size = static_mapinfo->i2i_entry_code_buffers_size();
 
   // Verify various attributes of the archive, plus initialize the
   // shared string/symbol tables
