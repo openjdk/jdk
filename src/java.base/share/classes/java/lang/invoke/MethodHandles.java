@@ -3620,7 +3620,7 @@ return mh1;
             }
             if (allowedModes != TRUSTED && member.isCallerSensitive()) {
                 Class<?> callerClass = target.internalCallerClass();
-                if (!hasFullPrivilegeAccess() || callerClass != lookupClass())
+                if ((lookupModes() & ORIGINAL) == 0 || callerClass != lookupClass())
                     throw new IllegalArgumentException("method handle is caller sensitive: "+callerClass);
             }
             // Produce the handle to the results.
