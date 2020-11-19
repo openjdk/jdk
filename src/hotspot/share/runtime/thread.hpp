@@ -1093,6 +1093,7 @@ class JavaThread: public Thread {
  private:
   ThreadSafepointState* _safepoint_state;        // Holds information about a thread during a safepoint
   address               _saved_exception_pc;     // Saved pc of instruction where last implicit exception happened
+  NOT_PRODUCT(bool      _requires_cross_modify_fence;) // State used by VerifyCrossModifyFence
 
   // JavaThread termination support
   enum TerminatedTypes {
@@ -1323,6 +1324,8 @@ class JavaThread: public Thread {
   void set_do_not_unlock_if_synchronized(bool val) { _do_not_unlock_if_synchronized = val; }
 
   SafepointMechanism::ThreadData* poll_data() { return &_poll_data; }
+
+  void set_requires_cross_modify_fence(bool val) PRODUCT_RETURN NOT_PRODUCT({ _requires_cross_modify_fence = val; })
 
  private:
   // Support for thread handshake operations
@@ -1599,6 +1602,7 @@ class JavaThread: public Thread {
     return byte_offset_of(JavaThread, _should_post_on_exceptions_flag);
   }
   static ByteSize doing_unsafe_access_offset() { return byte_offset_of(JavaThread, _doing_unsafe_access); }
+  NOT_PRODUCT(static ByteSize requires_cross_modify_fence_offset()  { return byte_offset_of(JavaThread, _requires_cross_modify_fence); })
 
   // Returns the jni environment for this thread
   JNIEnv* jni_environment()                      { return &_jni_environment; }
@@ -1888,6 +1892,8 @@ public:
   bool is_interrupted(bool clear_interrupted);
 
   static OopStorage* thread_oop_storage();
+
+  static void verify_cross_modify_fence_failure(JavaThread *thread) PRODUCT_RETURN;
 };
 
 // Inline implementation of JavaThread::current

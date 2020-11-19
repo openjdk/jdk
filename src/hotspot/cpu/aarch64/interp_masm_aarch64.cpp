@@ -1617,7 +1617,7 @@ void InterpreterMacroAssembler::call_VM_base(Register oop_result,
     Label L;
     ldr(rscratch1, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
     cbz(rscratch1, L);
-    stop("InterpreterMacroAssembler::call_VM_leaf_base:"
+    stop("InterpreterMacroAssembler::call_VM_base:"
          " last_sp != NULL");
     bind(L);
   }
