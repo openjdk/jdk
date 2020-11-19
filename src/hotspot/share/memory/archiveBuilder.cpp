@@ -281,8 +281,6 @@ void ArchiveBuilder::gather_klasses_and_symbols() {
     // DynamicArchiveBuilder::sort_methods()).
     sort_symbols_and_fix_hash();
     sort_klasses();
-    allocate_method_trampoline_info();
-    allocate_method_trampolines();
   }
 }
 
