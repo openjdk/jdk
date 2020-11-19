@@ -278,7 +278,7 @@ public class BasicJMapTest {
             assertTrue(lines.size() > 0, "hprof parser output file is empty");
             for (String line : lines) {
                 assertFalse(line.matches(".*WARNING(?!.*Failed to resolve " +
-                                                 "object.*constantPoolOop.*).*"));
+                                         "object.*constantPoolOop.*).*"));
             }
 
             out.delete();
