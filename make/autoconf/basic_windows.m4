@@ -137,7 +137,7 @@ AC_DEFUN([BASIC_SETUP_PATHS_WINDOWS],
   if test "x$WINENV_PREFIX" = x; then
     # On msys the prefix is empty, but we need to pass something to have the
     # fixpath.sh options parser happy.
-    WINENV_PREFIX_ARG="''"
+    WINENV_PREFIX_ARG="NONE"
   else
     WINENV_PREFIX_ARG="$WINENV_PREFIX"
   fi

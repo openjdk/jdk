@@ -63,6 +63,10 @@ function setup() {
   if [[ -z ${DRIVEPREFIX+x} ]]; then
     winroot="$($PATHTOOL -u c:/)"
     DRIVEPREFIX="${winroot%/c/}"
+  else
+    if [[ $DRIVEPREFIX == "NONE" ]]; then
+      DRIVEPREFIX=""
+    fi
   fi
 
   if [[ -z ${ENVROOT+x} ]]; then
