@@ -74,6 +74,7 @@
 
 #include "memory/classLoaderMetaspace.hpp"
 #include "oops/compressedOops.inline.hpp"
+#include "prims/jvmtiTagMap.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -1686,6 +1687,9 @@ void ShenandoahHeap::op_final_mark() {
     set_concurrent_mark_in_progress(false);
     mark_complete_marking_context();
 
+    // Notify JVMTI that the tagmap table will need cleaning.
+    JvmtiTagMap::set_needs_cleaning();
+
     parallel_cleaning(false /* full gc*/);
 
     if (ShenandoahVerify) {
@@ -1746,6 +1750,9 @@ void ShenandoahHeap::op_final_mark() {
         ShenandoahCodeRoots::arm_nmethods();
         evacuate_and_update_roots();
       }
+
+      // Notify JVMTI that oops are changed.
+      JvmtiTagMap::set_needs_rehashing();
 
       if (ShenandoahPacing) {
         pacer()->setup_for_evac();

@@ -72,7 +72,6 @@ public:
 private:
   bool verify(RootTypes type) const;
 
-  void serial_weak_roots_do(OopClosure* cl);
   void concurrent_weak_roots_do(OopClosure* cl);
 };
 

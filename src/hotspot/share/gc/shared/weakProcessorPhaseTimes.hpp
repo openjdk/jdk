@@ -43,15 +43,6 @@ class WeakProcessorPhaseTimes : public CHeapObj<mtGC> {
   // Total time for weak processor.
   double _total_time_sec;
 
-  // Total time and associated items for each serially processed phase.
-  static const uint phase_data_count = WeakProcessorPhases::serial_phase_count;
-  // +1 because serial_phase_count == 0 in some build configurations.
-  // Simpler to always allocate extra space than conditionalize.
-  double _phase_times_sec[phase_data_count + 1];
-  size_t _phase_dead_items[phase_data_count + 1];
-  size_t _phase_total_items[phase_data_count + 1];
-  void reset_phase_data();
-
   // Per-worker times and linked items.
   static const uint worker_data_count = WeakProcessorPhases::oopstorage_phase_count;
   WorkerDataArray<double>* _worker_data[worker_data_count];
@@ -108,14 +99,8 @@ private:
   Ticks _start_time;
 
 public:
-  // For tracking serial phase times.
-  // Precondition: WeakProcessorPhases::is_serial(phase)
-  WeakProcessorPhaseTimeTracker(WeakProcessorPhaseTimes* times,
-                                WeakProcessorPhase phase);
-
   // For tracking possibly parallel phase times (even if processed by
   // only one thread).
-  // Precondition: WeakProcessorPhases::is_oopstorage(phase)
   // Precondition: worker_id < times->max_threads().
   WeakProcessorPhaseTimeTracker(WeakProcessorPhaseTimes* times,
                                 WeakProcessorPhase phase,
